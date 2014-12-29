@@ -143,7 +143,7 @@ namespace sc {
         Ref<GmEvalType> Gm_Eval_;
 
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
+          OSAR_CoreInts_G12Base(params), Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14))
           {
             g12_ = reduce(g12_);
           }
@@ -159,7 +159,7 @@ namespace sc {
         Ref<GmEvalType> Gm_Eval_;
 
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
+          OSAR_CoreInts_G12Base(params), Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14))
         {
           g12_ = reduce(g12_);
         }
@@ -175,7 +175,7 @@ namespace sc {
         Ref<GmEvalType> Gm_Eval_;
 
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
+          OSAR_CoreInts_G12Base(params), Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14))
         {
           // [exp(-a r_{12}^2),[T1,exp(-b r_{12}^2)]] = 4 a b (r_{12}^2 exp(- (a+b) r_{12}^2) )
           // i.e. need to scale each coefficient by 4 a b

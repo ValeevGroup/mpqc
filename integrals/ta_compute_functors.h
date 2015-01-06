@@ -21,7 +21,7 @@ namespace ta_detail {
 
 template <typename Engine, typename T, typename... Shells>
 void ta_btas_compute_kernel(Engine &engine, btas::TensorView<T> &view,
-                            Shells... shells) {
+                            Shells&&... shells) {
 
     auto buf = engine.compute(shells...);
 
@@ -102,20 +102,27 @@ struct ta_integral_wrapper<T, 3ul> {
         };
         unit.renorm();
 
+        const auto shell_set1 = clusters[0].flattened_shells();
+        const auto shell_set2 = clusters[1].flattened_shells();
+        const auto shell_set3 = clusters[2].flattened_shells();
+
         auto sh1_start = 0;
-        for (auto const &sh1 : clusters[0].flattened_shells()) {
+        for (auto const &sh1 : shell_set1) {
             auto sh1_size = sh1.size();
+            const auto sh1_upper = sh1_start + sh1_size;
+
             auto sh2_start = 0;
-            for (auto const &sh2 : clusters[1].flattened_shells()) {
+            for (auto const &sh2 : shell_set2) {
                 auto sh2_size = sh2.size();
+                const auto sh2_upper = sh2_start + sh2_size;
+
                 auto sh3_start = 0;
-                for (auto const &sh3 : clusters[2].flattened_shells()) {
+                for (auto const &sh3 : shell_set3) {
                     auto sh3_size = sh3.size();
+                    const auto sh3_upper = sh3_start + sh3_size;
 
                     auto lower_bound = {sh1_start, sh2_start, sh3_start};
-                    auto upper_bound
-                        = {sh1_start + sh1_size, sh2_start + sh2_size,
-                           sh3_start + sh3_size};
+                    auto upper_bound = {sh1_upper, sh2_upper, sh3_upper};
 
                     auto view = btas::make_view(
                         tensor.range().slice(lower_bound, upper_bound),
@@ -123,11 +130,11 @@ struct ta_integral_wrapper<T, 3ul> {
 
                     ta_btas_compute_kernel(engine, view, sh1, unit, sh2, sh3 );
 
-                    sh3_start += sh3_size;
+                    sh3_start = sh3_upper;
                 }
-                sh2_start += sh2_size;
+                sh2_start = sh2_upper;
             }
-            sh1_start += sh1_size;
+            sh1_start = sh1_upper;
         }
 
         return tensor;

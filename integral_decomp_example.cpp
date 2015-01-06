@@ -57,7 +57,6 @@ molecule::Molecule read_xyz(std::ifstream &f) {
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
-    tbb::task_scheduler_init(4);
     std::string mol_file = "";
     std::string basis_file = "";
     std::string df_basis_file = "";
@@ -82,11 +81,23 @@ int main(int argc, char *argv[]) {
                   << " clusters" << std::endl;
     }
 
-    auto cluster_func = molecule::clustering::kmeans{127};
+    std::vector<molecule::Cluster> trial_clusters;
+    bool non_zero = false;
+    auto initial_seed = 127ul;
+    while (!non_zero) {
+        auto cluster_func = molecule::clustering::kmeans{initial_seed};
+        initial_seed += 10;
+        trial_clusters = mol.cluster_molecule(cluster_func, nclusters);
+        non_zero = !std::any_of(trial_clusters.begin(), trial_clusters.end(),
+                                [](molecule::Cluster const &c) {
+            return 0 == c.nelements();
+        });
+    }
+
     std::vector<std::shared_ptr<molecule::Cluster>> clusters;
     clusters.reserve(nclusters);
 
-    for (auto &&cluster : mol.cluster_molecule(cluster_func, nclusters)) {
+    for (auto &cluster : trial_clusters) {
         clusters.push_back(
             std::make_shared<molecule::Cluster>(std::move(cluster)));
     }

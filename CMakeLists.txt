@@ -9,7 +9,7 @@ option(DEBUG_RELEASE OFF)
 enable_testing()
 option(PERFORM_UNIT_TESTS ON)
 
-set(CXX_FLAGS "-std=c++11")
+set(CXX_FLAGS "${CXX_FLAGS} -std=c++11")
 if(RELEASE)
     set(CXX_FLAGS "${CXX_FLAGS} -DNDEBUG -mavx -O3")
     message(STATUS "Performing release build ${CXX_FLAGS}")

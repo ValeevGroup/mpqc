@@ -58,16 +58,23 @@ molecule::Molecule read_xyz(std::ifstream &f) {
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
     tbb::task_scheduler_init(4);
-    basis::BasisSet bs{"3-21G_basis_G94.txt"};
+    std::string mol_file = "";
+    std::string basis_file = "";
+    std::string df_basis_file = "";
+    if (argc == 4) {
+        mol_file = argv[1];
+        basis_file = argv[2];
+        df_basis_file = argv[3];
+    } else {
+        std::cout << "input is $./program mol_file basis_file df_basis_file\n";
+        return 0;
+    }
 
-    std::vector<molecule::Clusterable> clusterables;
-    clusterables.emplace_back(molecule::Atom{{0, -1, 1}, 1, 1});
-    clusterables.emplace_back(molecule::Atom{{0, 1, 1}, 1, 1});
-    clusterables.emplace_back(molecule::Atom{{0, 0, 0}, 16, 8});
-
-    std::ifstream molecule_file("mol.xyz");
+    std::ifstream molecule_file(mol_file);
     auto mol = read_xyz(molecule_file);
-    molecule::Molecule mol_test{std::move(clusterables)};
+
+    basis::BasisSet bs{basis_file};
+    basis::BasisSet df_bs{df_basis_file};
 
     int nclusters = std::max(1, static_cast<int>(mol.nelements() / 5));
     if (world.rank() == 0) {
@@ -83,8 +90,21 @@ int main(int argc, char *argv[]) {
         clusters.push_back(
             std::make_shared<molecule::Cluster>(std::move(cluster)));
     }
+    if (world.rank() == 0) {
+        auto i = 0;
+        for (auto const &cluster : clusters) {
+            std::cout << "Cluster " << i << " has " << cluster->nelements()
+                      << " atoms\n";
+            for (auto &&atom : collapse_to_atoms(*cluster)) {
+                std::cout << "\t" << atom.charge() << " : "
+                          << atom.center().transpose() << "\n";
+            }
+            ++i;
+        }
+    }
 
     basis::Basis basis{bs.create_basis(clusters)};
+    basis::Basis df_basis{df_bs.create_basis(clusters)};
 
     auto max_nprim = 0ul;
     auto max_am = 0ul;
@@ -114,8 +134,8 @@ int main(int argc, char *argv[]) {
 
     auto eri_pool = integrals::make_pool(std::move(eri));
     integrals::Compute_Storage(
-        world, eri_pool, basis,
-        integrals::compute_functors::TaTileFunctor<double>{});
+        world, eri_pool, integrals::compute_functors::TaTileFunctor<double>{},
+        df_basis, basis, basis);
 
     world.gop.fence();
     if (world.rank() == 0) {

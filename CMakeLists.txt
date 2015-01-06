@@ -87,6 +87,11 @@ target_link_libraries(${PROJECT_NAME}
   ${TileClusterChem_LIBRARIES}
 )
 
+add_executable(integral_decomp_example EXCLUDE_FROM_ALL integral_decomp_example.cpp) 
+target_link_libraries(integral_decomp_example
+  ${TileClusterChem_LIBRARIES}
+)
+
 # Makes QT creator show the following file types
 file(GLOB_RECURSE QT_CREATOR_SRC
   "*.h"

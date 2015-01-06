@@ -12,6 +12,7 @@
 
 #include "../tensor/tile_pimpl_devel.h"
 
+#include <tuple>
 
 namespace tcc {
 namespace integrals {
@@ -84,6 +85,57 @@ struct ta_integral_wrapper<T, 2ul> {
 }; // integralwrapper<T, 2ul> specialization
 
 template <typename T>
+struct ta_integral_wrapper<T, 3ul> {
+    template <typename Engine>
+    btas::Tensor<T>
+    operator()(Engine engine,
+               std::vector<basis::ClusterShells> const &clusters) const {
+
+        btas::Tensor<T> tensor{clusters[0].flattened_nfunctions(),
+                               clusters[1].flattened_nfunctions(),
+                               clusters[2].flattened_nfunctions()};
+
+        libint2::Shell unit{
+            {0.0}, // exponent
+            {{0, false, {1.0}}},
+            {{0.0, 0.0, 0.0}} // placed at origin
+        };
+        unit.renorm();
+
+        auto sh1_start = 0;
+        for (auto const &sh1 : clusters[0].flattened_shells()) {
+            auto sh1_size = sh1.size();
+            auto sh2_start = 0;
+            for (auto const &sh2 : clusters[1].flattened_shells()) {
+                auto sh2_size = sh2.size();
+                auto sh3_start = 0;
+                for (auto const &sh3 : clusters[2].flattened_shells()) {
+                    auto sh3_size = sh3.size();
+
+                    auto lower_bound = {sh1_start, sh2_start, sh3_start};
+                    auto upper_bound
+                        = {sh1_start + sh1_size, sh2_start + sh2_size,
+                           sh3_start + sh3_size};
+
+                    auto view = btas::make_view(
+                        tensor.range().slice(lower_bound, upper_bound),
+                        tensor.storage());
+
+                    ta_btas_compute_kernel(engine, view, sh1, unit, sh2, sh3 );
+
+                    sh3_start += sh3_size;
+                }
+                sh2_start += sh2_size;
+            }
+            sh1_start += sh1_size;
+        }
+
+        return tensor;
+    }
+
+}; // integralwrapper<T, 2ul> specialization
+
+template <typename T>
 struct ta_integral_wrapper<T, 4ul> {
     template <typename Engine>
     btas::Tensor<T>
@@ -138,27 +190,41 @@ struct ta_integral_wrapper<T, 4ul> {
 }; // integralwrapper<T, 2ul> specialization
 } // namespace ta_detail
 
+template <typename BasisPtr, typename... Rest>
+struct basis_ptr_type {
+    using type = BasisPtr;
+};
+
+template <typename Index, typename... BasesPtrs>
+std::vector<basis::ClusterShells>
+get_shells(Index idx, BasesPtrs... bases_ptrs) {
+    constexpr auto dims = sizeof...(BasesPtrs);
+    using ptr_t = typename basis_ptr_type<BasesPtrs...>::type;
+    std::array<ptr_t, dims> expanded_bases_ptrs{{bases_ptrs...}};
+
+    std::vector<basis::ClusterShells> clusters;
+    clusters.reserve(dims);
+
+    for (auto i = 0ul; i < dims; ++i) {
+        const auto cluster_number = idx[i];
+        auto basis_ptr = expanded_bases_ptrs[i];
+        clusters.push_back(basis_ptr->cluster_shells()[cluster_number]);
+    }
+    return clusters;
+}
 
 template <typename T>
 struct TaTileFunctor {
     using TileType = TiledArray::Tensor<T>;
 
-    template <typename Index, typename SharedEnginePool>
+    template <typename Index, typename SharedEnginePool, typename... BasesPtrs>
     TileType
-    operator()(TiledArray::Range range, Index index,
-               basis::Basis const *basis, SharedEnginePool engines) const {
+    operator()(TiledArray::Range range, Index index, SharedEnginePool engines,
+               BasesPtrs... bases_ptrs) const {
 
-        std::vector<basis::ClusterShells> clusters;
-        clusters.reserve(index.size());
-
-        for (auto const &i : index) {
-            clusters.push_back(basis->cluster_shells()[i]);
-        }
-
-        auto btas_tensor
-            = ta_detail::ta_integral_wrapper<T,
-                                             pool_order<SharedEnginePool>()>{}(
-                engines->local(), clusters);
+        constexpr auto dims = sizeof...(BasesPtrs);
+        auto btas_tensor = ta_detail::ta_integral_wrapper<T, dims>{}(
+            engines->local(), get_shells(index, bases_ptrs...));
 
         // copy to TA
         TileType ta_tensor{range};

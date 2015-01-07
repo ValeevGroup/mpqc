@@ -60,12 +60,15 @@ int main(int argc, char *argv[]) {
     std::string mol_file = "";
     std::string basis_file = "";
     std::string df_basis_file = "";
-    if (argc == 4) {
+    int nclusters = 0;
+    if (argc == 5) {
         mol_file = argv[1];
         basis_file = argv[2];
         df_basis_file = argv[3];
+        nclusters = std::stoi(argv[4]);
     } else {
-        std::cout << "input is $./program mol_file basis_file df_basis_file\n";
+        std::cout << "input is $./program mol_file basis_file df_basis_file "
+                     "nclusters \n";
         return 0;
     }
 
@@ -75,41 +78,25 @@ int main(int argc, char *argv[]) {
     basis::BasisSet bs{basis_file};
     basis::BasisSet df_bs{df_basis_file};
 
-    int nclusters = std::max(1, static_cast<int>(mol.nelements() / 5));
     if (world.rank() == 0) {
         std::cout << mol.nelements() << " atoms  with " << nclusters
                   << " clusters" << std::endl;
     }
 
-    std::vector<molecule::Cluster> trial_clusters;
-    bool non_zero = false;
-    auto initial_seed = 127ul;
-    while (!non_zero) {
-        auto cluster_func = molecule::clustering::kmeans{initial_seed};
-        initial_seed += 10;
-        trial_clusters = mol.cluster_molecule(cluster_func, nclusters);
-        non_zero = !std::any_of(trial_clusters.begin(), trial_clusters.end(),
-                                [](molecule::Cluster const &c) {
-            return 0 == c.nelements();
-        });
-    }
 
     std::vector<std::shared_ptr<molecule::Cluster>> clusters;
     clusters.reserve(nclusters);
 
-    for (auto &cluster : trial_clusters) {
+    for (auto &&cluster : mol.attach_H_and_kmeans(nclusters)) {
         clusters.push_back(
             std::make_shared<molecule::Cluster>(std::move(cluster)));
     }
     if (world.rank() == 0) {
         auto i = 0;
         for (auto const &cluster : clusters) {
-            std::cout << "Cluster " << i << " has " << cluster->nelements()
+            auto atoms = collapse_to_atoms(*cluster);
+            std::cout << "Cluster " << i << " has " << atoms.size()
                       << " atoms\n";
-            for (auto &&atom : collapse_to_atoms(*cluster)) {
-                std::cout << "\t" << atom.charge() << " : "
-                          << atom.center().transpose() << "\n";
-            }
             ++i;
         }
     }
@@ -134,10 +121,24 @@ int main(int argc, char *argv[]) {
         max_nprim = (temp_nprim > max_nprim) ? temp_nprim : max_nprim;
         max_am = (temp_am > max_am) ? temp_am : max_am;
     }
+    for (auto const &cluster : df_basis.cluster_shells()) {
+        auto const &shell_vec = cluster.flattened_shells();
+
+        auto temp_nprim = std::max_element(shell_vec.begin(), shell_vec.end(),
+                                           [](libint2::Shell const &s,
+                                              libint2::Shell const &t) {
+                                               return t.nprim() > s.nprim();
+                                           })->nprim();
+
+        auto temp_am = cluster.max_am();
+
+        max_nprim = (temp_nprim > max_nprim) ? temp_nprim : max_nprim;
+        max_am = (temp_am > max_am) ? temp_am : max_am;
+    }
 
     libint2::init();
     if (world.rank() == 0) {
-        std::cout << "Computing 4 center integrals now" << std::endl;
+        std::cout << "Computing 3 center integrals now" << std::endl;
     }
 
     libint2::TwoBodyEngine<libint2::Coulomb> eri{max_nprim,
@@ -150,7 +151,7 @@ int main(int argc, char *argv[]) {
 
     world.gop.fence();
     if (world.rank() == 0) {
-        std::cout << "Finished 4 center integrals now" << std::endl;
+        std::cout << "Finished 3 center integrals now" << std::endl;
     }
 
     madness::finalize();

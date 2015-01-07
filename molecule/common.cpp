@@ -1,6 +1,6 @@
 #include "common.h"
 #include "../include/tbb.h"
-#include "cluster.h"
+#include "cluster_concept.h"
 
 #include <algorithm>
 

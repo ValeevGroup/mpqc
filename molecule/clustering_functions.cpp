@@ -4,7 +4,8 @@
 #include "cluster.h"
 
 #include <cassert>
-#include <numeric> 
+#include <numeric>
+#include <iostream>
 #include <random>
 
 namespace tcc {
@@ -16,6 +17,11 @@ double sum_cluster_distances(const std::vector<Cluster> &clusters) {
                            [](double d, const Cluster &c) {
         return d + c.sum_distances_from_center();
     });
+}
+
+bool none_zero(std::vector<Cluster> const &clusters) {
+    return std::all_of(clusters.begin(), clusters.end(),
+                       [](Cluster const &c) { return c.nelements() != 0; });
 }
 
 kmeans::kmeans(unsigned long seed) : seed_{seed}, clusters_() {}
@@ -38,40 +44,36 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
         std::discrete_distribution<unsigned int> random_index(weights.begin(),
                                                               weights.end());
 
-        auto center_guess = clusterables[random_index(engine)].center();
-        it->init_center(center_guess);
+        auto idx = random_index(engine);
+        auto center_guess = clusterables[idx].center();
+        it->set_center(center_guess);
 
-        // For each clusterable
-        tbb::affinity_partitioner ap;
-        tbb::parallel_for(
-            0ul, clusterables.size(),
-            [&](unsigned long i) {
-                const auto clusterable_center = clusterables[i].center();
+        tbb::parallel_for(0ul, clusterables.size(), [&](unsigned long i) {
+            const auto clusterable_center = clusterables[i].center();
 
-                // Find the closes cluster that has been initialized.
-                const auto cluster_center
-                    = closest_cluster(clusters_.begin(), it, clusterable_center)
-                          ->center();
+            // Find the closes cluster that has been initialized.
+            auto last = it;
+            std::advance(last, 1);
+            const auto cluster_center
+                = closest_cluster(clusters_.begin(), last, clusterable_center)
+                      ->center();
 
-                // Calculate weight = dist^2
-                weights[i]
-                    = diff_squaredNorm(clusterable_center, cluster_center);
-            },
-            ap);
+            // Calculate weight = dist^2
+            weights[i] = diff_squaredNorm(clusterable_center, cluster_center);
+        });
     }
 
     attach_clusterables(clusterables);
 }
 
 void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
-    // Erase the ownership information in the cluster.
+    // Erase the ownership information for each cluster.
     tbb::parallel_for_each(clusters_.begin(), clusters_.end(),
                            [](Cluster &c) { c.clear(); });
 
-    // for each clusterable
+    // For each clusterable find the closest cluster and attach too it.
     tbb::spin_mutex cluster_mutex;
     tbb::parallel_for_each(cs.begin(), cs.end(), [&](const Clusterable &c) {
-        // Find closest cluster
         auto iter
             = closest_cluster(clusters_.begin(), clusters_.end(), c.center());
 
@@ -80,12 +82,12 @@ void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
     });
 
     tbb::parallel_for_each(clusters_.begin(), clusters_.end(),
-                           [](Cluster &c) { c.guess_center(); });
+                           [](Cluster &c) { c.compute_com(); });
 }
 
 std::vector<Cluster>::iterator
-kmeans::closest_cluster(const std::vector<Cluster>::iterator begin,
-                        const std::vector<Cluster>::iterator end,
+kmeans::closest_cluster(std::vector<Cluster>::iterator const begin,
+                        std::vector<Cluster>::iterator const end,
                         position_t const &center) {
     return std::min_element(begin, end,
                             [&](const Cluster &a, const Cluster &b) {
@@ -95,29 +97,27 @@ kmeans::closest_cluster(const std::vector<Cluster>::iterator begin,
 }
 
 
-std::vector<Cluster::position_t>
+std::vector<position_t>
 kmeans::update_clusters(std::vector<Clusterable> const &clusterables) {
-    // temp to hold the old clusters must allocate for parallel loop.
-    std::vector<Clusterable::position_t> old_centers(clusters_.size());
+    // Vector to hold the previous iterations centers.
+    std::vector<position_t> old_centers;
+    old_centers.reserve(clusters_.size());
 
-    // store the old centers and guess new ones.
-    tbb::affinity_partitioner ap;
-    tbb::parallel_for(
-        0ul, clusters_.size(),
-        [&](unsigned long i) { old_centers[i] = clusters_[i].center(); }, ap);
+    // Copy the old centers
+    for (auto const &cluster : clusters_) {
+        old_centers.push_back(cluster.center());
+    }
 
+    // Update clusters
     attach_clusterables(clusterables);
-
-    return old_centers; // Let's go rvo!!;
+    return old_centers;
 }
 
-bool
-kmeans::kmeans_converged(const std::vector<Cluster::position_t> &old_centers) {
-
+bool kmeans::kmeans_converged(const std::vector<position_t> &old_centers) {
     return std::equal(
         old_centers.begin(), old_centers.end(), clusters_.begin(),
-        [](const Cluster::position_t &old_center, const Cluster &new_cluster) {
-            return 1e-15 < (old_center - new_cluster.center()).squaredNorm();
+        [](const position_t &old_center, const Cluster &new_cluster) {
+            return 1e-7 < (old_center - new_cluster.center()).squaredNorm();
         });
 }
 
@@ -127,13 +127,14 @@ output_t kmeans::cluster(const std::vector<Clusterable> &clusterables) {
     // initialize the old centers and update the clusters
     auto old_centers = update_clusters(clusterables);
 
+    // Compute new clusters and save the old centers for comparison.
     while (!kmeans_converged(old_centers) && (niter > iter++)) {
-        // save old centers and update the clusters at the same time.
         old_centers = update_clusters(clusterables);
     }
 
     return clusters_;
 }
+
 } // namespace clustering
 } // namespace molecule
 } // namespace tcc

@@ -21,6 +21,7 @@ inline double diff_squaredNorm(position_t const &a, position_t const &b) {
     }
     return out;
 }
+
 } // namespace molecule
 } // namespace tcc
 

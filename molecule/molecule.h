@@ -28,12 +28,14 @@ class Molecule {
     std::vector<Cluster>
     cluster_molecule(cluster_fn_t fn, unsigned long nclusters) const;
 
-    // Will attach any hydrogens to their closest heavy atom. 
+    // Will attach any hydrogens to their closest heavy atom.
     std::vector<Cluster> attach_hydrogens() const;
 
-    /// Will attach hydrogens by calling attach_hydrogens and will then do a 
+    /// Will attach hydrogens by calling attach_hydrogens and will then do a
     /// search for the best k-means clustering by attempting to cluster multiple
-    /// with different seeds.  The criteria for best is determined by taking the minimimum sum of the square distances from each cluster. Any groupings that include a cluster with zero memebers are thrown away. 
+    /// with different seeds.  The criteria for best is determined by taking the
+    /// minimimum sum of the square distances from each cluster. Any groupings
+    /// that include a cluster with zero memebers are thrown away.
     std::vector<Cluster>
     attach_H_and_kmeans(unsigned long nclusters,
                         unsigned long init_seed = 42) const;

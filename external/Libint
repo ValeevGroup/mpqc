@@ -112,7 +112,7 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
     include(ExternalProject)
 
     set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.1.0-beta.tgz)
-    set(LIBINT_URL_HASH MD5=8ce2391326f71ba59abad82b6c7a4865)
+    set(LIBINT_URL_HASH MD5=22ed8ed014dfd830a823a472dc5b4a4e)
     if (NOT EXISTS ${LIBINT_URL})
       message(FATAL_ERROR "Did not find embedded copy of Libint2, something wrong with your source tree")
     endif (NOT EXISTS ${LIBINT_URL})

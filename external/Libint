@@ -54,10 +54,14 @@ if (LIBINT)
           #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==1 && LIBINT_MICRO_VERSION>=0)
           # error \"Libint2 library is too old\"
           #endif
-          int main(int argc, char** argv) { return 0; }
+          int main(int argc, char** argv) {
+            libint2::GaussianGmEvalScratch<double,-1> scr;
+            scr.init(5);
+            return 0;
+          }
       "  LIBINT_IS_UP_TO_DATE)    
     if (NOT LIBINT_IS_UP_TO_DATE)
-      message(FATAL_ERROR "Libint library is too old: version 2.1.0 or later is required")
+      message(FATAL_ERROR "Libint library is too old: a recent beta of 2.1.0 is required")
     endif()
     
     # check that libint2 uses one of orderings supported by MPQC
@@ -108,7 +112,7 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
     include(ExternalProject)
 
     set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.1.0-beta.tgz)
-    set(LIBINT_URL_HASH MD5=cfaacbd492c1ccc73689fccc3b831c26)
+    set(LIBINT_URL_HASH MD5=8ce2391326f71ba59abad82b6c7a4865)
     if (NOT EXISTS ${LIBINT_URL})
       message(FATAL_ERROR "Did not find embedded copy of Libint2, something wrong with your source tree")
     endif (NOT EXISTS ${LIBINT_URL})

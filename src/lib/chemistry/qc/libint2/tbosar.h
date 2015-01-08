@@ -147,7 +147,8 @@ namespace sc {
           {
             g12_ = reduce(g12_);
           }
-        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0,
+                     void* /* thread_local_scratch */ = 0) {
           Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
           return Gm_table;
         }
@@ -163,11 +164,13 @@ namespace sc {
         {
           g12_ = reduce(g12_);
         }
-        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0,
+                     void* thread_local_scratch = 0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_, thread_local_scratch);
           return Gm_table;
         }
     };
+
     template <>
     struct OSAR_CoreInts<TwoBodyOper::g12t1g12> : OSAR_CoreInts_G12Base {
         typedef ::libint2::GaussianGmEval<double, 2> _GmEvalType;
@@ -187,7 +190,8 @@ namespace sc {
               g12_[bk].second *= 4.0 * gbra[b].first * gket[k].first;
           g12_ = reduce(g12_);
         }
-        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0,
+                     void* /* thread_local_scratch */ = 0) {
           Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
           return Gm_table;
         }
@@ -196,7 +200,8 @@ namespace sc {
     template <>
     struct OSAR_CoreInts<TwoBodyOper::delta> {
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) {}
-        const double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) const {
+        const double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0,
+                           void* /* thread_local_scratch */ = 0) const {
           const static double one_over_two_pi = 1.0 / (2.0 * M_PI);
           const double G0 = exp(-T) * rho * one_over_two_pi;
           //const double G0 = 0.5 * sqrt(M_PI / rho);   // <- 1 (=> product of 1-e overlaps), instead of delta function
@@ -280,6 +285,9 @@ class TwoBodyOSARLibint2: public Int2eLibint2 {
     /*--- Compute engines ---*/
     std::vector<Libint_t> Libint_;
     detail::OSAR_CoreInts<OperType> coreints_;
+    // r12_m1_g12 requires per-thread local storage
+    // negligible overhead for other types
+    libint2::GaussianGmEvalScratch<double, -1> coreints_scratch_;
   
   public:
     TwoBodyOSARLibint2(Integral *,
@@ -398,6 +406,9 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
     storage_needed += primitive_pair_storage_estimate;
   }
 
+  if (OperType == TwoBodyOper::r12_m1_g12)
+    coreints_scratch_.init(l1+l2+l3+l4);
+
   storage_used_ = storage_needed;
   // Check if storage_ > storage_needed
   check_storage_();
@@ -475,6 +486,9 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(const TwoBodyOSARLibint2& other
   }
   else
     perm_ints_ = 0;
+
+  if (OperType == TwoBodyOper::r12_m1_g12)
+    coreints_scratch_.init(l1+l2+l3+l4);
 
   storage_used_ = storage_needed;
   // Check if storage_ > storage_needed
@@ -613,7 +627,8 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
   double T = rho*PQ2;
 
   if (!quartet_info_.am) {
-    const double* Fm = coreints_.eval(Data->LIBINT_T_SS_EREP_SS(0), 0, T, rho);
+    const double* Fm = coreints_.eval(Data->LIBINT_T_SS_EREP_SS(0), 0, T, rho,
+                                      static_cast<void*>(&coreints_scratch_));
     Data->LIBINT_T_SS_EREP_SS(0)[0] = Fm[0]*pfac;
   }
   else {
@@ -633,7 +648,8 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
     W[1] = (zeta*P[1] + eta*Q[1])*ooze;
     W[2] = (zeta*P[2] + eta*Q[2])*ooze;
 
-    const double* Gm = coreints_.eval(Data->LIBINT_T_SS_EREP_SS(0), quartet_info_.am, T, rho);
+    const double* Gm = coreints_.eval(Data->LIBINT_T_SS_EREP_SS(0), quartet_info_.am, T, rho,
+                                      static_cast<void*>(&coreints_scratch_));
     std::transform(Gm, Gm+quartet_info_.am+1,
                    Data->LIBINT_T_SS_EREP_SS(0),
                    std::bind2nd(std::multiplies<double>(), pfac));

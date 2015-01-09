@@ -14,9 +14,13 @@ namespace sc {
   class CabsSingles {
 
     public:
-    CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds);
+    CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds, bool extra_basis);
 
     double compute(const std::string &h0);
+
+    const bool extra_basis() {return extra_basis_;}
+
+    const std::shared_ptr <SingleReference_R12Intermediates<double>> r12intermediates() { return singles_r12intrmds_; }
 
     private:
 
@@ -58,11 +62,12 @@ namespace sc {
   };
 
   std::shared_ptr <SingleReference_R12Intermediates<double>> singles_r12intrmds_;
+  bool extra_basis_;
 
-    // compute CABS singles correction using Fock operator as H0
-    double CabsSinglesFock();
-    // compute CABS singles correction using two-body operators in H0
-    double CabsSinglesDyall(const std::string &h0);
+  // compute CABS singles correction using Fock operator as H0
+  double CabsSinglesFock();
+  // compute CABS singles correction using two-body operators in H0
+  double CabsSinglesDyall(const std::string &h0);
   };
 
 }

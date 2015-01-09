@@ -141,7 +141,6 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
       kva->assign("cabs_singles_h0", partition_str_);
     if(cabs_singles_name_.empty() == false){
       Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
-      std::cout << "single cabs name:  " << cabs_singles_name_ << std::endl;
       tmpkv->assign("name", cabs_singles_name_.c_str());
       tmpkv->assign("puream", "true");
       tmpkv->assign("molecule", molecule().pointer());

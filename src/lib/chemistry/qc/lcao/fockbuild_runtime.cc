@@ -133,7 +133,9 @@ void
 FockBuildRuntime::obsolete() {
   registry_->clear();
   psqrtregistry_->clear();
-  if (dfinfo() != 0) dfinfo()->obsolete();
+  if (dfinfo() != NULL){
+    dfinfo()->obsolete();
+  }
 }
 
 namespace {

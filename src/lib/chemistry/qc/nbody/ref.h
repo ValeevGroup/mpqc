@@ -517,6 +517,14 @@ namespace sc {
       bool omit_uocc_;
       mutable bool ordm_idempotent_;
 
+      RefSCMatrix orbs_;
+      std::vector<unsigned int> orbsym_;
+      std::vector<unsigned int> occpi_;
+      std::vector<unsigned int> fzcpi_;
+      std::vector<unsigned int> fzvpi_;
+      std::vector<unsigned int> holepi_;
+      std::vector<unsigned int> partpi_;
+
 
       void init(const RefSCMatrix& orbs,
                 const std::vector<unsigned int>& orbsym,
@@ -525,7 +533,8 @@ namespace sc {
                 std::vector<unsigned int> fzvpi,
                 std::vector<unsigned int> holepi,
                 std::vector<unsigned int> partpi);
-      void init_spaces() {throw sc::ProgrammingError("For Extern_RefWavefunction, spaces must be init-ed in constructor");}
+      void init_spaces() { init_spaces(orbs_, orbsym_, occpi_, fzcpi_, fzvpi_, holepi_, partpi_); }
+        //throw sc::ProgrammingError("For Extern_RefWavefunction, spaces must be init-ed in constructor");}
       //void init_spaces(unsigned int nocc, const RefSCMatrix& orbs,
       //                 const std::vector<unsigned int>& orbsym);
       void init_spaces(const RefSCMatrix& orbs,

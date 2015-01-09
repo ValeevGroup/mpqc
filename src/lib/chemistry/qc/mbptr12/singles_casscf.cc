@@ -13,16 +13,24 @@ using namespace sc;
 using namespace std;
 
 
-CabsSingles::CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds) {
+CabsSingles::CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds, bool extra_basis) {
   singles_r12intrmds_ = srr12intrmds;
+  extra_basis_ = extra_basis;
 }
 
 double CabsSingles::compute(const std::string &h0) {
 
-  singles_r12intrmds_->r12world()->obsolete();
-  singles_r12intrmds_->r12world()->initialize();
-  std::cout << "singles r12 world initialize" << std::endl;
-  singles_r12intrmds_->r12world()->cabs_space(Alpha);
+  if (extra_basis_){
+    singles_r12intrmds_->r12world()->refwfn()->world()->fockbuild_runtime()->obsolete();
+    singles_r12intrmds_->r12world()->refwfn()->world()->tfactory()->orbital_registry()->remove("p'");
+    singles_r12intrmds_->r12world()->refwfn()->world()->tfactory()->orbital_registry()->remove("mu'");
+    singles_r12intrmds_->r12world()->refwfn()->world()->tfactory()->orbital_registry()->remove("a'");
+    singles_r12intrmds_->r12world()->refwfn()->world()->tfactory()->orbital_registry()->remove("A'");
+
+    singles_r12intrmds_->r12world()->initialize();
+    std::cout << "singles r12 world initialize" << std::endl;
+    singles_r12intrmds_->r12world()->cabs_space(Alpha);
+  };
   double cabs_singles_e = 0.0;
   if(h0 == string("dyall_1"))
     cabs_singles_e = CabsSinglesDyall(h0);
@@ -244,9 +252,8 @@ double CabsSingles::CabsSinglesFock() {
 #endif
     // fock matrices
     TArray2 F_ij; F_ij("m,n") = singles_r12intrmds_->_2("<m|F|n>"); // occ occ
-    TArray2 F_iA; F_iA("m,A'") = singles_r12intrmds_->_2("<m|F|A'>"); // occ allvir
-
     TArray2 F_AB; F_AB("A',B'") = singles_r12intrmds_->_2("<A'|F|B'>"); // allvir allvir
+    TArray2 F_iA; F_iA("m,A'") = singles_r12intrmds_->_2("<m|F|A'>"); // occ allvir
 
     //delta
     TArray2 I_AB; I_AB("B',A'") = singles_r12intrmds_->_2("<B'|I|A'>"); // allvir allvir

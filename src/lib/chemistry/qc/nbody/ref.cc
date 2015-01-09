@@ -1180,6 +1180,13 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
                          std::vector<unsigned int> partpi,
                          bool omit_uocc) :
                          RefWavefunction(world, basis, integral),
+                         orbs_(orbs),
+                         orbsym_(orbsym),
+                         occpi_(occpi),
+                         fzcpi_(fzcpi),
+                         fzvpi_(fzvpi),
+                         holepi_(holepi),
+                         partpi_(partpi),
                          omit_uocc_(omit_uocc)
 {
   if (omit_uocc_)
@@ -1255,7 +1262,7 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
 
  // // this object will never become obsolete, so can compute it right now
   force_average_AB_rdm1_ = true; // this is meant to always be used with spin-free algorithms
-  init(orbs, orbsym, occpi, fzcpi, fzvpi, holepi, partpi);
+  //init(orbs, orbsym, occpi, fzcpi, fzvpi, holepi, partpi);
 }
 
 
@@ -1277,8 +1284,8 @@ Extern_RefWavefunction::~Extern_RefWavefunction() {
 void Extern_RefWavefunction::obsolete() {
 //        throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
 //                                                    __FILE__, __LINE__);
-  world()->tfactory()->orbital_registry()->clear();
-  reset();
+  //world()->tfactory()->orbital_registry()->clear();
+  //reset();
 }
 
 void

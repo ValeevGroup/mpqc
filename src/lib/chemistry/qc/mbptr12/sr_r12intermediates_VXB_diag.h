@@ -402,12 +402,12 @@ namespace sc {
             typename SingleReference_R12Intermediates<T>::TArray2>
   SingleReference_R12Intermediates<T>::V_diag() {
 
-    TArray2 V_ij_ij_cabs = dotket(ij_xy("<i j|g|m a'>"), ij_xy("<i j|r|m a'>"));
+    TArray2 V_ij_ij_cabs; V_ij_ij_cabs("i,j") = dotket(ij_xy("<i j|g|m a'>"), ij_xy("<i j|r|m a'>"));
     // don't need this in closed shell!
     //TArray2 V_ij_ij_cabs1 = dotket(ij_xy("<i j|g|a' m>"), ij_xy("<i j|r|a' m>"));
 
-    TArray2 V_ij_ij = take(ij_xy("<i j|gr|p q>"), ij) - dotket(ij_xy("<i j|g|p q>"), ij_xy("<i j|r|p q>"))
-                      - V_ij_ij_cabs("i,j") - V_ij_ij_cabs("j,i");
+    TArray2 V_ij_ij; V_ij_ij("i,j") = take(ij_xy("<i j|gr|p q>"), ij) - dotket(ij_xy("<i j|g|p q>"), ij_xy("<i j|r|p q>"))
+                                      - V_ij_ij_cabs("i,j") - V_ij_ij_cabs("j,i");
 
     TArray2 V_ij_ji_cabs = dotket(ij_xy("<i j|g|m a'>"), ij_xy("<i j|r|m a'>"), true);
     TArray2 V_ij_ji = take(ij_xy("<i j|gr|p q>"), ji) - dotket(ij_xy("<i j|g|p q>"), ij_xy("<i j|r|p q>"), true)

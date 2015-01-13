@@ -102,6 +102,11 @@ target_link_libraries(integral_correctness_test
   ${TileClusterChem_LIBRARIES}
 )
 
+add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 
+target_link_libraries(sqrt_inverse_example
+  ${TileClusterChem_LIBRARIES}
+)
+
 # Makes QT creator show the following file types
 file(GLOB_RECURSE QT_CREATOR_SRC
   "*.h"

@@ -10,19 +10,6 @@
 namespace tcc {
 namespace pure {
 
-template <typename Thing>
-void two_node_print(madness::World &world, Thing const &thing){
-    if(world.rank() == 0){
-        std::cout << "On rank 0" << std::endl;
-        std::cout << "\t" << thing << std::endl;
-    }
-    world.gop.fence();
-    if(world.rank() == 1){
-        std::cout << "On rank 1" << std::endl;
-        std::cout << "\t" << thing << std::endl;
-    }
-    world.gop.fence();
-}
 
 template <typename Array>
 Array create_diagonal_matrix(Array const &model, double val) {
@@ -343,7 +330,6 @@ void third_order_update(Array const &S, Array &Z) {
 
     auto spectral_range = eval_guess(S);
     auto S_scale = 2.0 / (spectral_range[1] - spectral_range[0]);
-    two_node_print(S.get_world(), S_scale);
     Array Y = S;
     Array T;
     Array X;

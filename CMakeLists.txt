@@ -87,8 +87,18 @@ target_link_libraries(${PROJECT_NAME}
   ${TileClusterChem_LIBRARIES}
 )
 
-add_executable(integral_decomp_example EXCLUDE_FROM_ALL integral_decomp_example.cpp) 
-target_link_libraries(integral_decomp_example
+add_executable(sparse_integral_example EXCLUDE_FROM_ALL sparse_integral_example.cpp) 
+target_link_libraries(sparse_integral_example
+  ${TileClusterChem_LIBRARIES}
+)
+
+add_executable(integral_space_savings EXCLUDE_FROM_ALL integral_space_savings.cpp) 
+target_link_libraries(integral_space_savings
+  ${TileClusterChem_LIBRARIES}
+)
+
+add_executable(integral_correctness_test EXCLUDE_FROM_ALL integral_correctness_test.cpp) 
+target_link_libraries(integral_correctness_test
   ${TileClusterChem_LIBRARIES}
 )
 

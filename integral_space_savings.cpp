@@ -20,7 +20,7 @@
 #include "integrals/ta_compute_functors.h"
 #include "integrals/integral_engine_pool.h"
 #include "integrals/task_integrals.h"
-#include "integrals/sparse_task_integrals.h"
+#include "integrals/ta_sparse_space_calculator.h"
 
 #include "purification/purification_devel.h"
 #include "purification/sqrt_inv.h"
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
                                                  static_cast<int>(max_am)};
 
     auto eri_pool = integrals::make_pool(std::move(eri));
-    integrals::Compute_Storage(
+    integrals::space_calculation::Compute_Storage(
         world, eri_pool, integrals::compute_functors::TaTileFunctor<double>{},
         df_basis, basis, basis);
 

@@ -14,8 +14,6 @@
 #include "../include/btas.h"
 #include "../include/libint2.h"
 
-#include "../tensor/tile_algebra.h"
-
 #include "../basis/cluster_shells.h"
 #include "integral_engine_pool.h"
 #include "btas_compute_functors.h"
@@ -27,73 +25,50 @@
 namespace tcc {
 namespace integrals {
 
-using TaTRange1 = TiledArray::TiledRange1;
-using TaTRange = TiledArray::TiledRange;
+template <typename Pmap, typename SharedEnginePool, std::size_t N, typename TF>
+std::vector<std::pair<std::size_t, typename TF::TileType>>
+compute_tiles(Pmap &p, TiledArray::TiledRange const &trange,
+              SharedEnginePool engines,
+              std::array<basis::Basis, N> const &bases, TF tf) {
 
-template <typename It, typename SharedEnginePool, typename TileFunctor,
-          typename... BasesPtrs>
-void call_tf(std::shared_ptr<std::vector<std::array<double, 3>>> tile_vec_ptr,
-             SharedEnginePool engines, TaTRange trange, It it, TileFunctor tf,
-             BasesPtrs &&... bases_ptrs) {
 
-    auto &vec = *tile_vec_ptr;
-    auto const ordinal = *it;
-    auto const idx = trange.tiles().idx(ordinal);
-    auto tile = tf(trange.make_tile_range(ordinal), idx, engines, bases_ptrs...);
+    std::array<std::shared_ptr<std::vector<basis::ClusterShells>>, N>
+        shell_ptrs;
 
-    auto const &extent = tile.range().size();
-    auto X = extent[0]; 
-    auto kl = extent[1] * extent[2];
-
-    double dense_storage = double(X * kl) * 8.0 / 1.0e9;
-    double sparse_storage = dense_storage;
-    double low_rank_storage = dense_storage;
-
-    auto norm = tile.norm();
-    if (norm < TiledArray::SparseShape<float>::threshold()) {
-        sparse_storage = 0.0;
-        low_rank_storage = 0.0;
-    } else {
-        Eigen::MatrixXd eig_tile = TiledArray::eigen_map(tile, X, kl);
-        Eigen::MatrixXd L, R;
-        bool full_rank = algebra::Decompose_Matrix(eig_tile, L, R, 1e-8);
-
-        if (!full_rank) {
-            low_rank_storage = double(L.size() + R.size()) * 8.0 / 1.0e9;
-        }
+    for (auto i = 0ul; i < N; ++i) {
+        shell_ptrs[i] = std::make_shared<std::vector<basis::ClusterShells>>(
+            bases[i].cluster_shells());
     }
 
-    vec[ordinal] = {{low_rank_storage, sparse_storage, dense_storage}};
+    auto call_tf = [=](TiledArray::Range range, TiledArray::Range::index idx,
+                       decltype(shell_ptrs) shells) {
+        return std::make_pair(trange.tiles().ordinal(idx),
+                              tf(std::move(range), idx, engines, shells));
+    };
+
+    std::vector<std::pair<std::size_t, typename TF::TileType>> tiles;
+    const auto end = p->end();
+    for (auto it = p->begin(); it != end; ++it) {
+        tiles.push_back(call_tf(trange.make_tile_range(*it),
+                                trange.tiles().idx(*it), shell_ptrs));
+    }
+
+    return tiles;
 }
 
-template <typename Pmap, typename SharedEnginePool, typename TileFunctor,
-          typename... Bases>
-std::vector<std::array<double, 3>>
-compute_tiles(madness::World &world, Pmap &p,
-              TiledArray::TiledRange const &trange, SharedEnginePool engines,
-              TileFunctor tf, Bases &&... bases) {
+template <std::size_t N>
+TiledArray::TiledRange create_trange(std::array<basis::Basis, N> basis_array) {
+    std::vector<TiledArray::TiledRange1> trange1_collector;
+    trange1_collector.reserve(N);
 
-    std::vector<std::array<double, 3>> tiles(p->size());
-    auto shared_tiles = std::make_shared<decltype(tiles)>(std::move(tiles));
+    for (auto i = 0ul; i < N; ++i) {
+        trange1_collector.push_back(basis_array[i].create_flattend_trange1());
+    }
 
-    madness::Range<decltype(p->begin())> m_range{p->begin(), p->end()};
-
-    world.taskq.for_each(m_range, [=](decltype(p->begin()) it) {
-                             call_tf(shared_tiles, engines, trange, it, tf,
-                                     (&bases)...);
-                             return true;
-                         }).get();
-
-    return *shared_tiles;
-}
-
-template <typename... Bases>
-TiledArray::TiledRange get_trange(Bases &&... bases) {
-    std::vector<TiledArray::TiledRange1> trange1_collector{
-        bases.create_flattend_trange1()...};
     return TiledArray::TiledRange(trange1_collector.begin(),
                                   trange1_collector.end());
 }
+
 
 template <unsigned long order>
 std::shared_ptr<TiledArray::Pmap>
@@ -102,33 +77,38 @@ create_pmap(madness::World &world, TiledArray::TiledRange const &trange) {
                                                   trange.tiles().volume());
 }
 
-template <typename SharedEnginePool, typename TileFunctor, typename... Bases>
-void Compute_Storage(madness::World &world, SharedEnginePool engines,
-                     TileFunctor tf, Bases &&... bases) {
+template <typename SharedEnginePool, std::size_t N,
+          typename TF = compute_functors::BtasTileFunctor<double>>
+TiledArray::Array<double, N, typename TF::TileType, TiledArray::SparsePolicy>
+SparseIntegrals(madness::World &world, SharedEnginePool engines,
+                std::array<basis::Basis, N> const &bases, TF tf = TF{}) {
 
-    constexpr auto tensor_order = sizeof...(bases);
-    using TileType = typename TileFunctor::TileType;
+    using TileType = typename TF::TileType;
 
-    auto trange = get_trange(bases...);
+    auto basis = bases[0];
+    auto trange = create_trange(bases);
+    auto pmap = create_pmap<N>(world, trange);
 
-    auto pmap = create_pmap<tensor_order>(world, trange);
+    auto computed_tiles
+        = compute_tiles(pmap, trange, std::move(engines), bases, tf);
 
-    auto storage_info = compute_tiles(world, pmap, trange, std::move(engines),
-                                      tf, std::forward<Bases>(bases)...);
-
-    std::array<double, 3> out = {{0.0, 0.0, 0.0}};
-    for (auto const &group : storage_info) {
-        out[0] += group[0];
-        out[1] += group[1];
-        out[2] += group[2];
+    TiledArray::Tensor<float> tile_norms(trange.tiles(), 0.0);
+    for (auto &ord_tile_pair : computed_tiles) {
+        tile_norms[ord_tile_pair.first] = ord_tile_pair.second.norm();
     }
-    world.gop.sum(&out[0], 3);
+    TiledArray::SparseShape<float> sparse_S(world, tile_norms, trange);
 
-    if (world.rank() == 0) {
-        std::cout << "Low rank storage was " << out[0] << "GB\n"
-                  << "Sparse storage was " << out[1] << "GB\n"
-                  << "Dense storage was " << out[2] << "GB" << std::endl;
+    TiledArray::Array<double, N, typename TF::TileType,
+                      TiledArray::SparsePolicy> ta_array(world, trange,
+                                                         sparse_S);
+
+    for (auto &pair : computed_tiles) {
+        if (!ta_array.is_zero(pair.first)) {
+            ta_array.set(pair.first, pair.second);
+        }
     }
+
+    return ta_array;
 }
 
 } // namespace integrals

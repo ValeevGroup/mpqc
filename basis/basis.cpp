@@ -61,6 +61,33 @@ TiledArray::TiledRange1 Basis::create_flattend_trange1() const {
     return TiledArray::TiledRange1{blocking.begin(), blocking.end()};
 }
 
+unsigned long Basis::max_nprim() const {
+    auto max = 0ul;
+
+    for(auto const &c : cluster_shells_){
+        auto const &shells = c.flattened_shells();
+        auto guess = std::max_element(shells.begin(), shells.end(), 
+                [](libint2::Shell const &a, libint2::Shell const &b){
+                    return a.nprim() < b.nprim();
+                    })->nprim();
+        max = (max >= guess) ? max : guess;
+    }
+
+    return max;
+}
+   
+
+unsigned long Basis::max_am() const {
+    auto max = 0ul;
+
+    for(auto const &c : cluster_shells_){
+        auto guess = c.max_am();
+        max = (max >= guess) ? max : guess;
+    }
+
+    return max;
+}
+
 std::vector<ClusterShells> const &Basis::cluster_shells() const {
     return cluster_shells_;
 }

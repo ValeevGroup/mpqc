@@ -28,6 +28,8 @@ class Basis {
 
     TiledArray::TiledRange1 create_flattend_trange1() const;
     TiledArray::TiledRange1 create_trange1() const;
+    unsigned long max_nprim() const;
+    unsigned long max_am() const;
 
   private:
     std::vector<ClusterShells> cluster_shells_;

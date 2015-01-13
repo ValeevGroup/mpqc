@@ -3,6 +3,7 @@ project(TileClusterChem)
 
 set(TileClusterChem_VERSION_MAJOR 0)
 set(TileClusterChem_VERSION_MINOR 1)
+SET(CMAKE_COLOR_MAKEFILE ON)
 
 option(RELEASE OFF)
 option(DEBUG_RELEASE OFF)

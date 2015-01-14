@@ -106,7 +106,7 @@ std::array<TiledArray::Tensor<T, AT>, 2>
 
     // Sum the rows of tile into result
     auto reduce_op =
-        [](T restrict &result, const T arg) { result += std::abs(arg); };
+        [](T& restrict result, const T arg) { result += std::abs(arg); };
 
     TiledArray::math::row_reduce(tile.range().size()[0], tile.range().size()[1],
                                  tile.data(), result[0].data(), reduce_op);

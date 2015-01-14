@@ -190,7 +190,7 @@ AtomBasisSet read_atom_basis(std::ifstream &is, std::string &line) {
         }
 
         shells.emplace_back(ang_mo_map[ang_mo], true,
-                            std::move(shell_exp
+                            std::move(shell_exponents),
                             std::move(shell_coeffs));
     }
 

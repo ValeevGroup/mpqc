@@ -112,6 +112,9 @@ int main(int argc, char *argv[]) {
         world, eri_pool, utility::make_array(df_basis, df_basis),
         integrals::compute_functors::BtasToTaTensor{});
 
+    world.gop.fence();
+    std::cout << "Eri2 = \n" << eri2 << std::endl;
+    std::cout << "All done with ints" << std::endl;
     auto sqrt_inv = pure::inverse_sqrt(eri2);
     {
         decltype(sqrt_inv) ident;

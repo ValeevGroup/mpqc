@@ -99,6 +99,8 @@ public:
   const Ref<GaussianBasisSet>& basis() const { return refwfn()->basis(); }
   /// Returns the resolution-of-the-identity basis set (RIBS) object
   const Ref<GaussianBasisSet>& basis_ri() const { return bs_ri_; }
+  /// Returns the auxiliary basis used for computing the RI basis used in R12
+  const Ref<GaussianBasisSet>& basis_aux() const { return bs_aux_; }
   /// Returns the virtuals basis set (VBS) object
   const Ref<GaussianBasisSet>& basis_vir() const { return refwfn()->uocc_basis(); }
   /// Returns true if VBS is equivalent to OBS

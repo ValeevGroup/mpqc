@@ -26,7 +26,7 @@
 //
 
 #include <string>
-#include "extern_pt2r12.h"
+#include <chemistry/qc/mbptr12/extern_pt2r12.h>
 #include <chemistry/qc/basis/uncontract.h>
 #include <iostream>
 

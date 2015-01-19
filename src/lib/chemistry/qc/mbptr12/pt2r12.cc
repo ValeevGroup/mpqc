@@ -763,7 +763,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
 
   const bool print_all = true;
   if(print_all)
-    ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2_mpqc3\n\n";
+    ExEnv::out0() << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2_mpqc3\n\n";
 
   TArray4 Tg_ij_kl; Tg_ij_kl("i,j,k,l") = _Tg("<i j|Tg|k l>");
 
@@ -1332,6 +1332,9 @@ RefSymmSCMatrix PT2R12::rdm2()
 
 void PT2R12::compute()
 {
+  ExEnv::out0() << std::endl << std::endl << indent
+          << "Enter PT2R12::compute \n";
+
   r12world()->initialize();
   const bool debug_printing = false;
   if(debug_printing)
@@ -1710,6 +1713,14 @@ void PT2R12::print(std::ostream & os) const
   os << indent << "nfzc = " << nfzc_ << std::endl;
   os << indent << "omit_uocc = " << (omit_uocc_ ? "true" : "false") << std::endl;
   r12world()->print(os);
+#if defined(HAVE_MPQC3_RUNTIME)
+  os << indent << "cabs_singles = " << (cabs_singles_ ? "true" : "false") << endl;
+  if (cabs_singles_){
+    os << indent << "partition = " << cabs_singles_h0_ << endl;
+    cabs_singles_engine_->print(os);
+  }
+
+#endif
   Wavefunction::print(os);
   os << decindent;
 }

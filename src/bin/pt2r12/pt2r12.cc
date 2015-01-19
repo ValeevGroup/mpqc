@@ -29,8 +29,8 @@
 # include <util/madness/init.h>
 #endif
 
-#include "moinfo.h"
-#include "extern_pt2r12.h"
+#include <extern/moinfo/moinfo.h>
+#include <chemistry/qc/mbptr12/extern_pt2r12.h>
 
 // Force linkages:
 #include <mpqc_config.h>

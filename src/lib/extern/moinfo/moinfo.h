@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _mpqc_src_bin_pt2r12_moinfo_h
-#define _mpqc_src_bin_pt2r12_moinfo_h
+#ifndef _mpqc_src_lib_extern_moinfo_moinfo_h
+#define _mpqc_src_lib_extern_moinfo_moinfo_h
 
 #include <vector>
 #include <string>

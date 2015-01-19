@@ -23,7 +23,8 @@ IF(MPQC_R12)
         creator.cc 
         dkh.cc 
         ebc_contribs.cc 
-        exchange.cc 
+        exchange.cc
+        extern_pt2r12.cc
         fixedcoefficient.cc 
         fock.cc 
         gbc_contribs.cc 

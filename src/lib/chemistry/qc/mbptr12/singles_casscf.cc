@@ -20,6 +20,8 @@ CabsSingles::CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<doubl
 
 double CabsSingles::compute(const std::string &h0) {
 
+  ExEnv::out0() << std::endl << std::endl << indent
+    << "Enter CabsSingles::compute \n";
   if (extra_basis_){
     singles_r12intrmds_->r12world()->refwfn()->world()->fockbuild_runtime()->obsolete();
     singles_r12intrmds_->r12world()->refwfn()->world()->tfactory()->orbital_registry()->remove("p'");
@@ -28,7 +30,6 @@ double CabsSingles::compute(const std::string &h0) {
     singles_r12intrmds_->r12world()->refwfn()->world()->tfactory()->orbital_registry()->remove("A'");
 
     singles_r12intrmds_->r12world()->initialize();
-    std::cout << "singles r12 world initialize" << std::endl;
     singles_r12intrmds_->r12world()->cabs_space(Alpha);
   };
   double cabs_singles_e = 0.0;
@@ -44,6 +45,20 @@ double CabsSingles::compute(const std::string &h0) {
   return cabs_singles_e;
 }
 
+void CabsSingles::print(std::ostream &os) const{
+  os << indent << "CabsSingles:" << endl;
+  os << incindent;
+  os << indent << "extra_basis = " << (extra_basis_ ? "true" : "false" )<< endl;
+  if (extra_basis_){
+    os << indent << "CabsSingles Auxiliary Basis Set (ABS):" << endl;
+    os << incindent;
+    singles_r12intrmds_->r12world()->basis_aux()->print(os);
+    os << decindent << endl;
+  }
+  os << endl;
+
+}
+
 double CabsSingles::CabsSinglesDyall(const std::string &h0)
 {
   /*"Perturbative Correction for the Basis Set Incompleteness Error of CASSCF",
@@ -52,8 +67,7 @@ double CabsSingles::CabsSinglesDyall(const std::string &h0)
    * */
 # define DEBUGG false
 
-    ExEnv::out0() << std::endl << std::endl << indent
-    << "Enter PT2R12::cabs_singles_Dyall MPQC3_RUNTIME\n";
+    ExEnv::out0() << std::endl << indent << "Enter CabsSingles::CabsSinglesDyall \n";
     // set up timer
     Timer tim("cabs singles dyall");
 
@@ -231,17 +245,13 @@ double CabsSingles::CabsSinglesFock() {
    * */
 #define DEBUGG false
 
-    ExEnv::out0() << std::endl << indent
-    << "Enter CabsSingles::CabsSinglesFock MPQC3_RUNTIME \n";
+    ExEnv::out0() << std::endl << indent << "Enter CabsSingles::CabsSinglesFock \n";
 
     Timer tim("cabs single fock");
     typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
     typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
 
     // go to file sr_r12intermediates.h for notation
-
-
-    std::cout << "The address of  fock cabs single r12intermidiates:  " << singles_r12intrmds_.get() << std::endl;
 
     // density matrices
     TArray2 gamma1; gamma1("m,n") = singles_r12intrmds_->_2("<m|gamma|n>"); // occ

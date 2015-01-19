@@ -8,19 +8,21 @@
 #if defined(HAVE_MPQC3_RUNTIME)
 #include <chemistry/qc/mbptr12/sr_r12intermediates.h>
 
-
 namespace sc {
 
   class CabsSingles {
 
     public:
+
     CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds, bool extra_basis);
 
     double compute(const std::string &h0);
 
-    const bool extra_basis() {return extra_basis_;}
+    void print(std::ostream& os = ExEnv::out0()) const;
 
+    const bool extra_basis() {return extra_basis_;}
     const std::shared_ptr <SingleReference_R12Intermediates<double>> r12intermediates() { return singles_r12intrmds_; }
+
 
     private:
 

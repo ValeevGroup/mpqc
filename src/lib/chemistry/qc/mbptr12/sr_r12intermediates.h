@@ -269,8 +269,9 @@ namespace sc {
 
       /**
        * Computes second-order Green's function IPs and EAs
+       * \parame orbital the index of the orbital, -1 = HOMO, +1 = LUMO
        */
-      void gf2_r12();
+      void gf2_r12(int orbital);
 
       /** returns the 1-particle reduced density matrix
       * @return \f$ \gamma^{p}_{q} \f$, respectively

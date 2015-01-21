@@ -79,6 +79,8 @@ class MBPT2_R12: public MBPT2 {
     std::string uocc_orbs_;
     double uocc_orbs_pno_truncate_threshold_;
 
+    int gf2_orbital_; // orbital index to use for Green's function calcs, -1 = HOMO, +1 = LUMO, 0 = skip GF2
+
     // calculate the MP2-R12 energy (or energies, depending on which approximation is chosen)
     void compute_energy_();
 

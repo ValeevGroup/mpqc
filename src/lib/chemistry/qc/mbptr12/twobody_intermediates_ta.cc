@@ -68,10 +68,12 @@ R12IntEval::V_diag_ta() {
 }
 
 void
-R12IntEval::gf2_r12() {
-  SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
-                                                        this->r12world());
-  srr12intrmds.gf2_r12();
+R12IntEval::gf2_r12(int orbital) {
+  if (orbital != 0) {
+    SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
+                                                          this->r12world());
+    srr12intrmds.gf2_r12(orbital);
+  }
 }
 
 void

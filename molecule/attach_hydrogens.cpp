@@ -49,6 +49,7 @@ void assign_hydrogens_to_heavies(
     auto end = cs.end();
     using range = tbb::blocked_range<It>;
 
+    /* TODO find way to make parallel loop deterministic 
     // Lambda finds the closes heavy to each hydrogen then calculates the
     // heavies position in the owner vector and finally adds the hydrogen iter
     // to the list of hydrogens owned by that heavy.
@@ -56,8 +57,9 @@ void assign_hydrogens_to_heavies(
     auto h_attacher = [&](range const &r) {
         for (auto h_it = r.begin(); h_it != r.end(); ++h_it) {
 
-            auto nearest_heavy = std::min_element(first_heavy, end,
-                [&](Clusterable const &a, Clusterable const &b) {
+            auto nearest_heavy
+                = std::min_element(first_heavy, end, [&](Clusterable const &a,
+                                                         Clusterable const &b) {
                     double a_dist = (a.center() - h_it->center()).norm();
                     double b_dist = (b.center() - h_it->center()).norm();
                     return a_dist < b_dist;
@@ -71,6 +73,20 @@ void assign_hydrogens_to_heavies(
     };
 
     tbb::parallel_for(range(cs.begin(), first_heavy), h_attacher);
+    */ 
+
+    // Use serial version until above is fixed
+    for (auto it = cs.begin(); it != first_heavy; ++it) {
+        auto nearest_heavy = std::min_element(
+            first_heavy, end, [&it](Clusterable const &a, Clusterable const &b) {
+                double a_dist = (a.center() - it->center()).norm();
+                double b_dist = (b.center() - it->center()).norm();
+                return a_dist < b_dist;
+            });
+
+        auto heavy_ordinal = std::distance(first_heavy, nearest_heavy);
+        h_owners[heavy_ordinal].second.push_back(it);
+    }
 }
 
 template <typename It>
@@ -102,10 +118,20 @@ std::vector<Cluster> attach_hydrogens::
 operator()(std::vector<Clusterable> clusterables) {
     const auto end = clusterables.end();
 
-    // sort to divide the range into hydrogens and heavies
-    tbb::parallel_sort(
-        clusterables.begin(), end,
-        [](Clusterable &a, Clusterable &b) { return a.charge() < b.charge(); });
+    // TODO ensure test this loop to ensure it doesn't give different orders on 
+    // different nodes
+    // 
+    // tbb::parallel_sort(
+    //     clusterables.begin(), end,
+    //     [](Clusterable &a, Clusterable &b) { return a.charge() <
+    //     b.charge();
+    //     });
+
+    // serial stable sort to divide the range into hydrogens and heavies
+    std::stable_sort(clusterables.begin(), end,
+                     [](Clusterable const &a, Clusterable const &b) {
+        return a.charge() < b.charge();
+    });
 
     // find the location of the first heavy atom.
     decltype(clusterables.cbegin()) first_heavy = std::upper_bound(

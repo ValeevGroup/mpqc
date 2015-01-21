@@ -6,13 +6,19 @@
 #include "../include/eigen.h"
 
 #include <limits>
+#include <type_traits>
+#include <cmath>
 
 namespace tcc {
 namespace pure {
 
 
-template <typename Array>
-Array create_diagonal_matrix(Array const &model, double val) {
+template <typename T, unsigned int N, typename Tile>
+TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
+    TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> const &model,
+    double val) {
+
+    using Array = TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy>;
 
     TiledArray::Tensor<float> tile_shape(model.trange().tiles(), 0.0);
 
@@ -22,7 +28,7 @@ Array create_diagonal_matrix(Array const &model, double val) {
     for (auto it = pmap->begin(); it != pmap_end; ++it) {
         auto idx = model.trange().tiles().idx(*it);
         if (idx[0] == idx[1]) {
-            tile_shape[*it] = 1.0;
+            tile_shape[*it] = val;
         }
     }
 
@@ -30,67 +36,88 @@ Array create_diagonal_matrix(Array const &model, double val) {
                                          model.trange());
 
     Array diag(model.get_world(), model.trange(), shape);
-    diag.set_all_local(0.0);
 
-    auto end = diag.end();
-    for (auto it = diag.begin(); it != end; ++it) {
+    auto const &trange = diag.trange();
+    pmap = diag.get_pmap();
+    auto end = pmap->end();
+    for (auto it = pmap->begin(); it != end; ++it) {
+        const auto ord = *it;
 
-        auto idx = it.index();
+        auto idx = trange.tiles().idx(ord);
         auto diagonal_tile = std::all_of(
             idx.begin(), idx.end(), [&](typename Array::size_type const &x) {
                 return x == idx.front();
             });
 
-        if (diagonal_tile) {
-            auto &tile = it->get();
+        using TileType = typename Array::value_type;
+        if (diagonal_tile && !diag.is_zero(ord)) {
+            auto tile = TileType{trange.make_tile_range(ord)};
             auto const &extent = tile.range().size();
             auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
             for (auto i = 0ul; i < extent[0]; ++i) {
-                map(i, i) = val;
+                for (auto j = 0ul; j < extent[1]; ++j) {
+                    if (i != j) {
+                        map(i, j) = 0;
+                    } else {
+                        map(i, i) = val;
+                    }
+                }
             }
+            diag.set(ord, std::move(tile));
         }
     }
 
     return diag;
 }
 
-template <>
-TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                  TiledArray::DensePolicy>
-create_diagonal_matrix<TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                                         TiledArray::DensePolicy>>(
-    TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                      TiledArray::DensePolicy> const &model,
+template <typename T, unsigned int N, typename Tile>
+TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> create_diagonal_matrix(
+    TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> const &model,
     double val) {
 
-    TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                      TiledArray::DensePolicy> diag(model.get_world(),
-                                                    model.trange());
-    diag.set_all_local(0.0);
-    auto end = diag.end();
-    for (auto it = diag.begin(); it != end; ++it) {
+    using Array = TiledArray::Array<T, N, Tile, TiledArray::DensePolicy>;
 
-        auto idx = it.index();
-        auto diagonal_tile
-            = std::all_of(idx.begin(), idx.end(),
-                          [&](std::size_t &x) { return x == idx.front(); });
+    Array diag(model.get_world(), model.trange());
 
-        if (diagonal_tile) {
-            auto &tile = it->get();
-            auto const &extent = tile.range().size();
-            auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
+    auto pmap_ptr = diag.get_pmap();
+    const auto end = pmap_ptr->end();
+    for (auto it = pmap_ptr->begin(); it != end; ++it) {
+
+        const auto ord = *it;
+        auto const &idx = diag.trange().tiles().idx(ord);
+        auto tile = Tile{diag.trange().make_tile_range(ord)};
+        auto const &extent = tile.range().size();
+        auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
+
+        if (idx[0] == idx[1]) {
             for (auto i = 0ul; i < extent[0]; ++i) {
-                map(i, i) = val;
+                for (auto j = 0ul; j < extent[1]; ++j) {
+                    if (i != j) {
+                        map(i, j) = 0;
+                    } else {
+                        map(i, i) = val;
+                    }
+                }
+            }
+        } else {
+            for (auto i = 0ul; i < extent[0]; ++i) {
+                for (auto j = 0ul; j < extent[1]; ++j) {
+                    map(i, j) = 0;
+                }
             }
         }
+
+        diag.set(ord, std::move(tile));
     }
 
     return diag;
 }
+
 template <typename T, typename AT>
 std::array<TiledArray::Tensor<T, AT>, 2>
     eigen_estimator(std::array<TiledArray::Tensor<T, AT>, 2> &result,
-                    const TiledArray::Tensor<T, AT> &tile) {
+                    TiledArray::Tensor<T, AT> const &tile) {
+
     typedef typename TiledArray::Tensor<T, AT>::size_type size_type;
 
     if (result[0].empty()) {
@@ -326,45 +353,79 @@ eval_guess(Array const &A) {
 
 
 template <typename Array>
+std::pair<double, double> correct_scale(Array const &S) {
+    const auto dim = S.elements().size()[0];
+    Eigen::MatrixXd eig_S = Eigen::MatrixXd::Zero(dim, dim);
+    for (auto it = S.begin(); it != S.end(); ++it) {
+        auto const &tile = (*it).get();
+        const auto i = tile.range().start()[0];
+        const auto j = tile.range().start()[1];
+        const auto m = tile.range().size()[0];
+        const auto n = tile.range().size()[1];
+        eig_S.block(i, j, m, n) = TiledArray::eigen_map(tile, m, n);
+    }
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(eig_S);
+    auto max = eig.eigenvalues().maxCoeff();
+    auto min = eig.eigenvalues().minCoeff();
+    return std::make_pair(min, max);
+}
+
+template <typename Array>
 void third_order_update(Array const &S, Array &Z) {
 
+    // Calculate the lambda parameter, since we are currently only
+    // trying to
+    // invert Posative defininate matrices, we will cap the smallest
+    // eigen value
+    // guess at 0.
     auto spectral_range = eval_guess(S);
-    auto S_scale = 2.0 / (spectral_range[1] - spectral_range[0]);
+    const auto max_eval = spectral_range[1];
+    const auto min_eval = std::max(0.0, spectral_range[0]);
+    auto S_scale = 4.0 / (max_eval + min_eval);
+
     Array Y = S;
     Array T;
     Array X;
-    Array Sdiff;
     auto Tscale = 1.0 / 8.0;
 
+    auto ident = create_diagonal_matrix(Z, 1.0);
+    Array approx_ident;
     auto iter = 0;
-    Array Zold = Z;
-    auto norm_diff = 100.0;
-    auto norm_change = norm_diff;
-    while (norm_diff > 1.0e-7 && norm_change > 5e-10 && iter++ <= 100) {
-        auto old_norm_diff = norm_diff;
+    auto norm_diff = std::numeric_limits<double>::max();
+    while (norm_diff > 1.0e-14 && iter < 25) {
         // Xn = \lambda*Yn*Z
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
+        X.truncate();
+
 
         // Third order update
         T("i,j") = -10 * X("i,j") + 3 * X("i,k") * X("k,j");
         add_to_diag(T, 15);
         T("i,j") = Tscale * T("i,j");
 
-        // Zn+1 = Zn*Tn
-        Z("i,j") = Z("i,k") * T("k,j");
-        // Yn+1 = Tn*Yn
-        Y("i,j") = T("i,k") * Y("k,j");
+
+        // Updating Z and Y
+        Z("i,j") = Z("i,k") * T("k,j"); // Zn+1 = Zn*Tn
+        Y("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
+
         Z.truncate();
         Y.truncate();
-        Zold("i,j") = Zold("i,j") - Z("i,j");
-        norm_diff = Zold("this,doesnt,matter").norm().get()
-                    / Zold.elements().volume();
-        norm_change = std::abs(norm_diff - old_norm_diff);
-        Zold = Z;
-        if(Z.get_world().rank() == 0){
-                std::cout << "Iteration " << iter << " norm diff = " << norm_diff
-                      << " norm change = " << norm_change << std::endl;
+
+        approx_ident("i,j") = X("i,j") - T("i,j");
+
+        const auto current_norm
+            = approx_ident("this,doesnt,matter").norm().get()
+              / approx_ident.elements().volume();
+
+        if (Z.get_world().rank() == 0) {
+            std::cout << "Iteration " << iter << " norm diff = " << current_norm
+                      << std::endl;
+            if (current_norm >= norm_diff) {
+                std::cout << "\tNorm is increasing!!!! BAD" << std::endl;
+            }
         }
+        norm_diff = current_norm;
+        ++iter;
     }
 
     Z("i,j") = std::sqrt(S_scale) * Z("i,j");
@@ -372,7 +433,8 @@ void third_order_update(Array const &S, Array &Z) {
 
 
 // Taken from J. Chem. Phys. 126. 124104 (2007)
-// Uses the third order function, because I didn't feel like typing the longer
+// Uses the third order function, because I didn't feel like typing the
+// longer
 // ones. --Drew
 template <typename Array>
 Array inverse_sqrt(Array const &S) {

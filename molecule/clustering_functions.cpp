@@ -71,6 +71,7 @@ void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
     tbb::parallel_for_each(clusters_.begin(), clusters_.end(),
                            [](Cluster &c) { c.clear(); });
 
+    /* Gives non deterministic ordering, TODO find deterministic parallel way.
     // For each clusterable find the closest cluster and attach too it.
     tbb::spin_mutex cluster_mutex;
     tbb::parallel_for_each(cs.begin(), cs.end(), [&](const Clusterable &c) {
@@ -80,6 +81,14 @@ void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
         tbb::spin_mutex::scoped_lock lock(cluster_mutex);
         iter->add_clusterable(c);
     });
+    */ 
+    
+    // Serial version of above code.
+    for (auto const &clusterable : cs) {
+        auto closest = closest_cluster(clusters_.begin(), clusters_.end(),
+                                       clusterable.center());
+        closest->add_clusterable(clusterable);
+    }
 
     tbb::parallel_for_each(clusters_.begin(), clusters_.end(),
                            [](Cluster &c) { c.compute_com(); });

@@ -67,7 +67,8 @@ int main(int argc, char *argv[]) {
     std::string basis_file = "";
     std::string df_basis_file = "";
     int nclusters = 0;
-    if (argc == 5) {
+    int debug = 0;
+    if (argc >= 5) {
         mol_file = argv[1];
         basis_file = argv[2];
         df_basis_file = argv[3];
@@ -76,6 +77,9 @@ int main(int argc, char *argv[]) {
         std::cout << "input is $./program mol_file basis_file df_basis_file "
                      "nclusters \n";
         return 0;
+    }
+    if (argc == 6) {
+        debug = std::stoi(argv[5]);
     }
 
     std::ifstream molecule_file(mol_file);
@@ -91,7 +95,6 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::shared_ptr<molecule::Cluster>> clusters;
     clusters.reserve(nclusters);
-
     for (auto &&cluster : mol.attach_H_and_kmeans(nclusters)) {
         clusters.push_back(
             std::make_shared<molecule::Cluster>(std::move(cluster)));
@@ -107,32 +110,34 @@ int main(int argc, char *argv[]) {
     libint2::TwoBodyEngine<libint2::Coulomb> eri{max_nprim,
                                                  static_cast<int>(max_am)};
 
+    world.gop.fence();
+    if (world.rank() == 0) {
+        std::cout << "Computing Integrals\n";
+    }
+
     auto eri_pool = integrals::make_pool(std::move(eri));
     auto eri2 = integrals::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(df_basis, df_basis),
         integrals::compute_functors::BtasToTaTensor{});
+    world.gop.fence();
 
-    auto sqrt_inv = pure::inverse_sqrt(eri2);
+    if (world.rank() == 0) {
+        std::cout << "Finished Integrals\nTesting inverse sqrt." << std::endl;
+    }
     {
+        auto sqrt_inv = pure::inverse_sqrt(eri2);
         decltype(sqrt_inv) ident;
         ident("i,j") = sqrt_inv("i,k") * eri2("k,l") * sqrt_inv("l,j");
         const auto id_norm = double{ident("a,b").norm()};
         const auto real_norm = std::sqrt(ident.trange().elements().size()[0]);
-        std::cout << "Ident norm = " << id_norm << " correct = " << real_norm
-                  << std::endl;
+        if (world.rank() == 0) {
+            std::cout << "Ident norm sparse = " << id_norm
+                      << " correct = " << real_norm << std::endl;
+        }
     }
 
-    /*
-    auto eri3 = integrals::BlockSparseIntegrals(
-        world, eri_pool, utility::make_array(df_basis, basis, basis),
-        integrals::compute_functors::BtasToTaTensor{});
-    eri3("P,u,v") = sqrt_inv("P,X")*eri3("X,u,v");
-    */
 
     world.gop.fence();
-    if (world.rank() == 0) {
-        std::cout << "Finished integrals." << std::endl;
-    }
     libint2::cleanup();
     madness::finalize();
     return 0;

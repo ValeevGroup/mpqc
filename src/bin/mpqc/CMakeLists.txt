@@ -27,6 +27,7 @@ target_link_libraries(
   mpqcinit
   chemistry
   util
+  extern_moinfo
 )
 
 # N.B. mpqcinit alone has almost no dependencies

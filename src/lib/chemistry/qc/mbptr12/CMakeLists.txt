@@ -29,7 +29,8 @@ IF(MPQC_R12)
         fock.cc 
         gbc_contribs.cc 
         intermeds_g12.cc 
-        mbptr12.cc 
+        mbptr12.cc
+        molcas_pt2r12.cc
         mp2_pair_energies.cc 
         mp2r12_energy.cc 
         mp2r12_energy_util.cc 

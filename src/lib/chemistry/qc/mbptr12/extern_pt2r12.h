@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _mpqc_src_bin_pt2r12_externpt2r12_h
-#define _mpqc_src_bin_pt2r12_externpt2r12_h
+#ifndef _mpqc_src_lib_chemistry_qc_mbptr12_externpt2r12_h
+#define _mpqc_src_lib_chemistry_qc_mbptr12_externpt2r12_h
 
 #include <chemistry/qc/mbptr12/pt2r12.h>
 #include <extern/moinfo/moinfo.h>

@@ -190,6 +190,7 @@ ExternPT2R12::~ExternPT2R12() {
 void ExternPT2R12::compute()
 {
   const double value = pt2r12_->value();
+  set_value(value);
 }
 
 int ExternPT2R12::nelectron()

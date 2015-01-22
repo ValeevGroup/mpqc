@@ -61,13 +61,18 @@ Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
     cabs_name = R12Technology::default_cabs_name(obs_name);
   }
 
-  std::string cabs_contraction = kv->stringvalue("cabs_contraction", KeyValValuestring(std::string()) );
+  std::string cabs_contraction = kv->stringvalue("cabs_contraction", KeyValValuestring("true") );
   std::string dfbs_name = kv->stringvalue("dfbs", KeyValValuestring(std::string()) );
   if (dfbs_name.empty() && not obs_name.empty())
     dfbs_name = DensityFittingRuntime::default_dfbs_name(obs_name, 1); // for OBS with cardinal number X use DFBS with cardinal number X+1
   if (dfbs_name == "none") dfbs_name = "";
 
-  std::string f12exp = kv->stringvalue("f12exp", KeyValValuestring(std::string()) );
+  //if (kv.exist("f12exp")){
+  std::string f12exp = kv->stringvalue("f12exp", KeyValValuestring("1.0") );
+  //}else {
+    //f12exp = "1.0";
+  //}
+  //std::string f12exp = kv->stringvalue("f12exp", 1.0 );
   // if OBS given but F12 exponent is not, look up a default value
   if (f12exp.empty() && not obs_name.empty()) {
     const double f12exp_default = R12Technology::default_stg_exponent(obs_name);
@@ -77,12 +82,13 @@ Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
       f12exp = oss.str();
     }
   }
+  //std::cout << "f12exp" << f12exp << std::endl;
 
-  std::string r12 = kv->stringvalue("r12", KeyValValuestring(std::string()) );
+  std::string r12 = kv->stringvalue("r12", KeyValValuestring("true") );
 #if defined(HAVE_MPQC3_RUNTIME)
   std::string cabs_singles = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()) );
   std::string cabs_singles_basis = kv->stringvalue("singles_basis", KeyValValuestring(std::string()) );
-  std::string partition = kv->stringvalue("patitionH", KeyValValuestring(std::string()) );
+  std::string partition = kv->stringvalue("patitionH", KeyValValuestring("fock") );
 #endif
 
   Ref<Integral> integral;

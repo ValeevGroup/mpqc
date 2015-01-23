@@ -55,6 +55,12 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
 Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
 
   std::string filename_prefix = kv->stringvalue("prefix", KeyValValuestring(std::string()) );
+  if (filename_prefix.empty()){
+    throw InputError("invalid keyword value",
+            __FILE__, __LINE__, "prefix", filename_prefix.c_str(),
+            this->class_desc());
+  }
+
   std::string obs_name = kv->stringvalue("obs", KeyValValuestring(std::string()) );
   std::string cabs_name = kv->stringvalue("cabs", KeyValValuestring(std::string()) );
   if (cabs_name.empty() && not obs_name.empty()) {
@@ -67,12 +73,8 @@ Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
     dfbs_name = DensityFittingRuntime::default_dfbs_name(obs_name, 1); // for OBS with cardinal number X use DFBS with cardinal number X+1
   if (dfbs_name == "none") dfbs_name = "";
 
-  //if (kv.exist("f12exp")){
-  std::string f12exp = kv->stringvalue("f12exp", KeyValValuestring("1.0") );
-  //}else {
-    //f12exp = "1.0";
-  //}
-  //std::string f12exp = kv->stringvalue("f12exp", 1.0 );
+  std::string f12exp = kv->stringvalue("f12exp", KeyValValuestring(std::string()) );
+
   // if OBS given but F12 exponent is not, look up a default value
   if (f12exp.empty() && not obs_name.empty()) {
     const double f12exp_default = R12Technology::default_stg_exponent(obs_name);
@@ -80,15 +82,27 @@ Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
       std::ostringstream oss;
       oss << f12exp_default;
       f12exp = oss.str();
+    }else{ //if return 0 value, set it to default 1.0
+      f12exp = "1.0";
     }
   }
-  //std::cout << "f12exp" << f12exp << std::endl;
+  std::cout << "f12exp" << f12exp << std::endl;
 
   std::string r12 = kv->stringvalue("r12", KeyValValuestring("true") );
 #if defined(HAVE_MPQC3_RUNTIME)
-  std::string cabs_singles = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()) );
+  std::string cabs_singles = kv->stringvalue("cabs_singles", KeyValValuestring("true") );
   std::string cabs_singles_basis = kv->stringvalue("singles_basis", KeyValValuestring(std::string()) );
   std::string partition = kv->stringvalue("patitionH", KeyValValuestring("fock") );
+
+  if (!partition.empty()){
+    if (partition!= "fock"
+      &partition != "dyall_1"
+      &partition != "dyall_2"){
+        throw InputError("invalid keyword value",
+                       __FILE__, __LINE__, "partitionH", partition.c_str(),
+                       this->class_desc());
+      }
+  }
 #endif
 
   Ref<Integral> integral;

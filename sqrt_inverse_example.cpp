@@ -136,7 +136,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
     world.gop.fence();
     libint2::cleanup();
     madness::finalize();

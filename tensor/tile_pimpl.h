@@ -61,6 +61,7 @@ class TilePimpl {
     TiledArray::Range const &range() const { return range_; }
     double cut() const { return cut_; }
     bool empty() const { return !tile_; }
+    double norm() const { return tile_->norm();}
 
     // maybe expensive
     void setCut(double cut) {

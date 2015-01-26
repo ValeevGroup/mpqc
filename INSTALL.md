@@ -4,8 +4,8 @@ This file describes how to compile MPQC.
 # Want docs only?
 
 To generate documentation without compiling the package do this in the source directory:  
-$ bin/build_docs.sh  
-Then open doc/html/index.html in a web browser.
+$ ```bin/build_docs.sh```   
+Then open ```doc/html/index.html``` in a web browser.
 
 # Prerequisites
 
@@ -20,8 +20,8 @@ To compile even a bare-bones MPQC these prerequisites are needed.
 * [CMake](http://www.cmake.org/)
   * CMake 2.8.8 or above is required. If no CMake is found in path, one will be downloaded and built in ./CMake when first running ./configure.
   * Running   
-   $ ./configure cmake   
-   will *force* building and using CMake in ./cmake directory
+   $ ```./configure cmake```   
+   will *force* building and using CMake in ```./cmake``` directory
 * Standard development tools; most of these should be available on any modern Unix-like system (Linux or OS X)
   * GNU Make
   * C/C++ and Fortran compilers
@@ -60,45 +60,48 @@ that all of them are compiled with the same version of the C++ compiler as used 
 # Build
 
 First, try  
-$ ./configure  
-$ make  
+$ ```./configure```    
+$ ```make```   
 
 If it works - great!
 
 If the build fails, try to disable new features which rely on C++11 features and external packages:  
-$ ./configure  -DMPQC_NEW_FEATURES=OFF
+$ ```./configure  -DMPQC_NEW_FEATURES=OFF```
 
-Several configure options are available:  
-$ ./configure -h
+Several configure options are available, you can be list then by:  
+$ ```./configure -h```
 
 Most relevant options/variables are:
-* --prefix - the installation directory
-* --debug - forces debug build
-* CXX - the C++ compiler
-* -D - passed directly to CMAKE command
+* ```--prefix``` - the installation directory
+* ```--debug``` - forces debug build
+* ```CXX=xxxxx``` - the C++ compiler
+* ```-DXXXXXX=YYYYYY``` - CMAKE option, passed directly to CMAKE command
+
+Example configuration:   
+$ ```./configure '--prefix=/Users/evaleev/Development/workspace/install/mpqc-clang' '--debug' '-DMPQC_NEW_FEATURES=1' '--libint=yes' '--search=/Users/evaleev/Development/general/eigen3' 'CC=/opt/mpich-clang/bin/mpicc' 'CXX=/opt/mpich-clang/bin/mpic++' 'CXXFLAGS=-stdlib=libc++ -Wreorder' 'LDFLAGS=-L/opt/intel/mkl/lib -lmkl_rt -lpthread -lm'  'F77=/opt/local/bin/gfortran-mp-4.8' '-DPSI3=yes' '-DPYTHON=1' '-DPYTHON_EXECUTABLE=/usr/bin/python' '-DMPQC_CI=1'  '-DTILEDARRAY_DIR=/Users/evaleev/Development/workspace/install/tiledarray-clang' '--unittest'```   
 
 The MPQC can either be built in source or in a build directory, e.g.  
-$ mdkir build  
-$ cd build  
-$ ../configure  
-$ make  
+$ ```mdkir build```   
+$ ```cd build```   
+$ ```../configure```     
+$ ```make```   
 
 # Validate
 
 For basic validation of MPQC do this:  
-$ make check0
+$ ```make check0```   
 
 For a thorougher validation of MPQC do this:  
-$ make check1
+$ ```make check1```   
 
 For the most thorough validation of MPQC do this:  
-$ make check2
+$ ```make check2```   
 
 To install MPQC (program, libraries, and header files):  
-$ make install
+$ ```make install```   
 
 # Documentation (optional)
 
 To build and install programmer's documentation for MPQC:  
-$ cd doc  
-$ make html install  
+$ ```cd doc```   
+$ ```make html install```   

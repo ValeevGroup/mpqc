@@ -81,8 +81,8 @@ MOIntsRuntime::obsolete() {
   runtime_2c_->obsolete();
   runtime_3c_->obsolete();
   runtime_4c_->obsolete();
-  if (runtime_df_)
-    runtime_df_->obsolete();
+  if (dfinfo_)
+    dfinfo_->obsolete();
 }
 
 /////////////////////////////////////////////////////////////////////////////

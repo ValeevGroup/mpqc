@@ -4,10 +4,13 @@
 #include "cluster.h"
 #include "attach_hydrogens.h"
 #include "../include/tbb.h"
+#include "../include/libint.h"
 #include "common.h"
+#include "atom_masses.h"
 
 #include <functional>
 #include <limits>
+#include <iostream>
 #include <iostream>
 
 namespace tcc {
@@ -102,7 +105,7 @@ std::vector<Cluster> Molecule::attach_hydrogens() const {
 std::vector<Cluster>
 Molecule::attach_H_and_kmeans(unsigned long nclusters,
                               unsigned long init_seed) const {
-    // if we asked for more clusters than possible return the maximum. 
+    // if we asked for more clusters than possible return the maximum.
     auto h_attached_clusters = attach_hydrogens();
     if (nclusters >= h_attached_clusters.size()) {
         return h_attached_clusters;
@@ -114,7 +117,7 @@ Molecule::attach_H_and_kmeans(unsigned long nclusters,
         new_clusterables.push_back(std::move(c));
     }
 
-    // Compute k-means with a new seed and if that seed give a better answer 
+    // Compute k-means with a new seed and if that seed give a better answer
     // store the seed
     std::vector<Cluster> clusters;
     int best_seed = init_seed;
@@ -131,12 +134,27 @@ Molecule::attach_H_and_kmeans(unsigned long nclusters,
                 best_seed = init_seed;
             }
         }
-        init_seed += 10 * (i + 1); // Vary the seed by a resonably large amount. 
+        init_seed += 10 * (i + 1); // Vary the seed by a resonably large amount.
     }
 
-    // Use the best seed to compute the clusters. 
+    // Use the best seed to compute the clusters.
     clustering::kmeans func(best_seed);
     return func(new_clusterables, nclusters);
+}
+
+Molecule read_xyz(std::string const &file_name) {
+    std::ifstream xyz_file(file_name);
+    auto libint_atoms = libint2::read_dotxyz(xyz_file);
+    xyz_file.close();
+
+    std::vector<Clusterable> clusterables;
+    for (auto const &l_atom : libint_atoms) {
+        Atom atom({l_atom.x, l_atom.y, l_atom.z},
+                  masses::masses[l_atom.atomic_number], l_atom.atomic_number);
+        clusterables.emplace_back(std::move(atom));
+    }
+
+    return Molecule{std::move(clusterables)};
 }
 
 } // namespace molecule

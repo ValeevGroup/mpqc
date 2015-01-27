@@ -4,6 +4,12 @@
 
 #include "cluster_concept.h"
 #include "molecule_fwd.h"
+#include <vector>
+
+// Fwd declare Libint2 Atom
+namespace libint2 {
+    struct Atom;
+};
 
 namespace tcc {
 namespace molecule {
@@ -21,6 +27,10 @@ inline double diff_squaredNorm(position_t const &a, position_t const &b) {
     }
     return out;
 }
+
+/// Function takes tcc::molecule::Atom vector and converts it to a vector 
+/// of libint atoms. 
+std::vector<libint2::Atom> to_libint_atom(std::vector<Atom> const &);
 
 } // namespace molecule
 } // namespace tcc

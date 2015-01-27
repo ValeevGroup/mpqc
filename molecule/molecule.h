@@ -48,6 +48,8 @@ class Molecule {
     int charge_ = 0;
 };
 
+Molecule read_xyz(std::string const&);
+
 } // namespace molecule
 } // namespace tcc
 

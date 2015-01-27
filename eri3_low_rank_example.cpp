@@ -65,14 +65,14 @@ molecule::Molecule read_xyz(std::ifstream &f) {
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
     std::string mol_file = "";
-    std::string basis_file = "";
-    std::string df_basis_file = "";
+    std::string basis_name = "";
+    std::string df_basis_name = "";
     int nclusters = 0;
     int debug = 0;
     if (argc >= 5) {
         mol_file = argv[1];
-        basis_file = argv[2];
-        df_basis_file = argv[3];
+        basis_name = argv[2];
+        df_basis_name = argv[3];
         nclusters = std::stoi(argv[4]);
     } else {
         std::cout << "input is $./program mol_file basis_file df_basis_file "
@@ -83,11 +83,10 @@ int main(int argc, char *argv[]) {
         debug = std::stoi(argv[5]);
     }
 
-    std::ifstream molecule_file(mol_file);
-    auto mol = read_xyz(molecule_file);
+    auto mol = molecule::read_xyz(mol_file);
 
-    basis::BasisSet bs{basis_file};
-    basis::BasisSet df_bs{df_basis_file};
+    basis::BasisSet bs{basis_name};
+    basis::BasisSet df_bs{df_basis_name};
 
     if (world.rank() == 0) {
         std::cout << mol.nelements() << " elements with " << nclusters
@@ -123,19 +122,7 @@ int main(int argc, char *argv[]) {
     world.gop.fence();
 
     if (world.rank() == 0) {
-        std::cout << "Finished Integrals\nTesting inverse sqrt." << std::endl;
-    }
-    if (world.rank() == 0) {
-        for (auto it = eri3.begin(); it != eri3.end(); ++it) {
-            auto t_p = it->get();
-            if (t_p.isFull()) {
-                std::cout << "Tile " << it.ordinal() << " is full rank "
-                          << std::endl;
-            } else {
-                std::cout << "Tile " << it.ordinal() << " is low rank "
-                          << std::endl;
-            }
-        }
+        std::cout << "Finished Integral." << std::endl;
     }
 
     world.gop.fence();

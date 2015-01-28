@@ -29,39 +29,6 @@
 
 using namespace tcc;
 
-molecule::Molecule read_xyz(std::ifstream &f) {
-    // Get number of atoms.
-    unsigned long natoms = 0;
-    f >> natoms;
-
-    constexpr auto ang_to_bohr = 1.0 / 0.52917721092;
-
-    std::string line;
-    std::vector<molecule::Clusterable> clusterables;
-    while (std::getline(f, line)) {
-        if (!line.empty()) {
-            std::stringstream ss(line);
-            std::string atom = "";
-            double x = 0.0;
-            double y = 0.0;
-            double z = 0.0;
-            ss >> atom;
-            ss >> x;
-            ss >> y;
-            ss >> z;
-            x *= ang_to_bohr;
-            y *= ang_to_bohr;
-            z *= ang_to_bohr;
-            if (atom == "H") {
-                clusterables.emplace_back(molecule::Atom({x, y, z}, 1, 1));
-            } else if (atom == "O") {
-                clusterables.emplace_back(molecule::Atom({x, y, z}, 16, 8));
-            }
-        }
-    }
-    return molecule::Molecule{std::move(clusterables)};
-}
-
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
     std::string mol_file = "";
@@ -117,13 +84,15 @@ int main(int argc, char *argv[]) {
 
     auto eri_pool = integrals::make_pool(std::move(eri));
     auto eri3 = integrals::BlockSparseIntegrals(
-        world, eri_pool, utility::make_array(df_basis, basis, basis),
-        integrals::compute_functors::BtasToLowRankTensor{1e-6});
+        world, eri_pool, utility::make_array(df_basis, basis, basis));
+
     world.gop.fence();
 
     if (world.rank() == 0) {
         std::cout << "Finished Integral." << std::endl;
     }
+
+    // auto new_array = TiledArray::to_new_tile_type(eri3);
 
     world.gop.fence();
     libint2::cleanup();

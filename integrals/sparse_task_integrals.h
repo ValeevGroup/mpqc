@@ -17,9 +17,12 @@
 #include "../basis/cluster_shells.h"
 
 #include "integral_engine_pool.h"
+#include "btas_tensor_pass_through.h"
 #include "tile_engine.h"
 
 #include "../basis/basis.h"
+
+#include "../tensor/btas_shallow_copy_wrapper.h"
 
 
 namespace tcc {
@@ -38,9 +41,14 @@ void do_task(std::vector<std::pair<std::size_t, TileType>> *tile_vec,
     auto &vec = *tile_vec;
     const auto idx = trange.tiles().idx(tile_ord);
     auto range = trange.make_tile_range(tile_ord);
-    vec[ord] = std::make_pair(
-        tile_ord,
-        func(std::move(range), TileEngine<double>{}(idx, engines, shell_ptrs)));
+
+    // TODO eventually I need to make this a little bit prettier. TileEngine
+    // should just return the tensor type that ShallowTensor expects.
+    const auto btas_tensor = tensor::ShallowTensor<N>{
+        std::move(range), TileEngine<double>{}(idx, engines, shell_ptrs)};
+
+    // Save the tensor with it's ordinal information for later.
+    vec[ord] = std::make_pair(tile_ord, func(std::move(btas_tensor)));
 }
 
 
@@ -73,7 +81,7 @@ compute_tiles(madness::World &world, Pmap const &p,
     return tiles;
 }
 
-/// Create a trange from the input bases. 
+/// Create a trange from the input bases.
 template <std::size_t N>
 TiledArray::TiledRange
 create_trange(std::array<basis::Basis, N> const &basis_array) {
@@ -106,7 +114,9 @@ TiledArray::Array<double, N, TileType, TiledArray::SparsePolicy> create_array(
 
     TiledArray::Tensor<float> tile_norms(trange.tiles(), 0.0);
     for (auto const &pair : ord_tile_pairs) {
-        tile_norms[pair.first] = pair.second.norm();
+        if(!pair.second.empty()){
+            tile_norms[pair.first] = pair.second.norm();
+        } 
     }
 
     TiledArray::SparseShape<float> shape(world, tile_norms, trange);
@@ -126,10 +136,11 @@ TiledArray::Array<double, N, TileType, TiledArray::SparsePolicy> create_array(
 /// Create a sparse array of tile where the type is specified by the functor.
 /// TF needs to overload () to take a TiledArray::Range and a
 /// btas::Tensor<double, btas::RangeNd<CblasRowMajor, std::array<long, N>>>;
-template <typename SharedEnginePool, std::size_t N, typename TF>
+template <typename SharedEnginePool, std::size_t N,
+          typename TF = BtasTensorPassThrough<N>>
 TiledArray::Array<double, N, typename TF::TileType, TiledArray::SparsePolicy>
 BlockSparseIntegrals(madness::World &world, SharedEnginePool engines,
-                     std::array<basis::Basis, N> const &bases, TF tf) {
+                     std::array<basis::Basis, N> const &bases, TF tf = TF{}) {
 
     using TileType = typename TF::TileType;
 

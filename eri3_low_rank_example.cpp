@@ -21,6 +21,7 @@
 
 #include "integrals/btas_to_ta_tensor.h"
 #include "integrals/btas_to_low_rank_tensor.h"
+#include "integrals/ta_tensor_to_low_rank_tensor.h"
 #include "integrals/integral_engine_pool.h"
 #include "integrals/sparse_task_integrals.h"
 
@@ -28,6 +29,14 @@
 #include "purification/sqrt_inv.h"
 
 using namespace tcc;
+
+struct dummy_converter {
+
+    template <typename T>
+    TiledArray::Tensor<double> operator()(T const &) {
+        return TiledArray::Tensor<double>{};
+    }
+};
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -74,25 +83,48 @@ int main(int argc, char *argv[]) {
     auto max_nprim = std::max(basis.max_nprim(), df_basis.max_nprim());
 
     libint2::init();
-    libint2::TwoBodyEngine<libint2::Coulomb> eri{max_nprim,
-                                                 static_cast<int>(max_am)};
-
     world.gop.fence();
     if (world.rank() == 0) {
         std::cout << "Computing Integrals\n";
     }
 
+    libint2::TwoBodyEngine<libint2::Coulomb> eri{max_nprim,
+                                                 static_cast<int>(max_am)};
+
+
     auto eri_pool = integrals::make_pool(std::move(eri));
     auto eri3 = integrals::BlockSparseIntegrals(
-        world, eri_pool, utility::make_array(df_basis, basis, basis));
+        world, eri_pool, utility::make_array(df_basis, basis, basis),
+        integrals::compute_functors::BtasToLowRankTensor{1e-8});
 
     world.gop.fence();
 
     if (world.rank() == 0) {
-        std::cout << "Finished Integral." << std::endl;
+        std::cout << "Finished 3 center integrals." << std::endl;
     }
 
-    // auto new_array = TiledArray::to_new_tile_type(eri3);
+    auto eri2 = integrals::BlockSparseIntegrals(
+        world, eri_pool, utility::make_array(df_basis, df_basis),
+        integrals::compute_functors::BtasToTaTensor{});
+
+    auto eri2_inv_sqrt = pure::inverse_sqrt(eri2);
+    auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
+        eri2_inv_sqrt, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
+
+    world.gop.fence();
+
+    if (world.rank() == 0) {
+        std::cout << "Finished inverting and converting 2 center intgrals"
+                  << std::endl;
+    }
+
+    decltype(eri3) Xab{eri3.get_world(), eri3.trange(), eri3.get_shape()};
+    Xab("X,a,b") = eri2_inv_sqrt_low_rank("X,P") * eri3("P,a,b");
+
+    world.gop.fence();
+    if (world.rank() == 0) {
+        std::cout << "Finished contracting 2 and 3 center ints" << std::endl;
+    }
 
     world.gop.fence();
     libint2::cleanup();

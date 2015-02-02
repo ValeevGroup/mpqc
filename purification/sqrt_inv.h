@@ -381,7 +381,7 @@ void third_order_update(Array const &S, Array &Z) {
     auto spectral_range = eval_guess(S);
     const auto max_eval = spectral_range[1];
     const auto min_eval = std::max(0.0, spectral_range[0]);
-    auto S_scale = 4.0 / (max_eval + min_eval);
+    auto S_scale = 2.0 / (max_eval + min_eval);
 
     Array Y = S;
     Array T;

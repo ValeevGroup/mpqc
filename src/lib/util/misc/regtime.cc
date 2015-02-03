@@ -72,6 +72,10 @@ extern "C" {
 }
 #endif
 
+#ifdef MPQC_NEW_FEATURES
+#include <chrono>
+#endif
+
 // AIX 3.2 has broken include files, likewise SunOS
 #if defined(_AIX32) || defined(__sun)
 extern "C" {
@@ -414,6 +418,14 @@ RegionTimer::get_flops()
   return (double)counter;
 #endif
 }
+
+#ifdef MPQC_NEW_FEATURES
+std::chrono::time_point<std::chrono::high_resolution_clock>
+RegionTimer::get_time_point()
+{
+  return std::chrono::high_resolution_clock::now();
+}
+#endif
 
 void
 RegionTimer::enter(const char *name)

@@ -141,9 +141,18 @@ class RegionTimer: public DescribedClass {
     void get_flops(double *) const;
     void get_depth(int *) const;
 
+    /// @return the time reported by the system clock (the number of seconds since Epoch)
+    /// @note precision is about a microsecond or less (see documentation for \c gettimeofday ).
     static double get_wall_time();
+    /// @return the CPU time (in seconds) used by this process, as reported by \c getrusage
     static double get_cpu_time();
     static double get_flops();
+
+#ifdef MPQC_NEW_FEATURES
+    /// @return the time_point object for this moment in time
+    static std::chrono::time_point<std::chrono::high_resolution_clock>
+    get_time_point();
+#endif
 
     void add_wall_time(const char *, double);
     void add_cpu_time(const char *, double);

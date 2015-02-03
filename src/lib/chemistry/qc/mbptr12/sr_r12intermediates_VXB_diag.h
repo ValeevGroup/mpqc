@@ -402,12 +402,12 @@ namespace sc {
             typename SingleReference_R12Intermediates<T>::TArray2>
   SingleReference_R12Intermediates<T>::V_diag() {
 
-    TArray2 V_ij_ij_cabs = dotket(ij_xy("<i j|g|m a'>"), ij_xy("<i j|r|m a'>"));
+    TArray2 V_ij_ij_cabs; V_ij_ij_cabs("i,j") = dotket(ij_xy("<i j|g|m a'>"), ij_xy("<i j|r|m a'>"));
     // don't need this in closed shell!
     //TArray2 V_ij_ij_cabs1 = dotket(ij_xy("<i j|g|a' m>"), ij_xy("<i j|r|a' m>"));
 
-    TArray2 V_ij_ij = take(ij_xy("<i j|gr|p q>"), ij) - dotket(ij_xy("<i j|g|p q>"), ij_xy("<i j|r|p q>"))
-                      - V_ij_ij_cabs("i,j") - V_ij_ij_cabs("j,i");
+    TArray2 V_ij_ij; V_ij_ij("i,j") = take(ij_xy("<i j|gr|p q>"), ij) - dotket(ij_xy("<i j|g|p q>"), ij_xy("<i j|r|p q>"))
+                                      - V_ij_ij_cabs("i,j") - V_ij_ij_cabs("j,i");
 
     TArray2 V_ij_ji_cabs = dotket(ij_xy("<i j|g|m a'>"), ij_xy("<i j|r|m a'>"), true);
     TArray2 V_ij_ji = take(ij_xy("<i j|gr|p q>"), ji) - dotket(ij_xy("<i j|g|p q>"), ij_xy("<i j|r|p q>"), true)
@@ -480,13 +480,15 @@ namespace sc {
 
   template <typename T>
   void
-  SingleReference_R12Intermediates<T>::gf2_r12() {
+  SingleReference_R12Intermediates<T>::gf2_r12(int orbital) {
 
     enum CalcType {
       IP, EA
     };
 
-    const CalcType type = IP;
+    MPQC_ASSERT(orbital != 0);
+    const CalcType type = (orbital < 0) ? IP : EA;
+
     const std::string X_label = (type == IP) ? "i1" : "a1"; // active orbital label
     const Ref<OrbitalSpace>& X_space = (type == IP) ? this->r12world()->refwfn()->occ_act()
                                                     : this->r12world()->refwfn()->uocc_act();
@@ -495,7 +497,7 @@ namespace sc {
     TArray2 fab = xy("<a|F|b>");
 
     // use the diagonal element of the Fock matrix as the guess (only HOMO/LUMO supported);
-    const double E = (type == IP) ? X_space->evals()(X_space->rank()-1) : X_space->evals()(0);
+    const double E = (type == IP) ? X_space->evals()(X_space->rank() + orbital) : X_space->evals()(orbital - 1);
 
     // compute Delta_ijaE =  1 / (- E - <a|F|a> + <i|F|i> + <j|F|j>)
     typedef detail::selfenergy_denom<double> sedenom_eval_type;

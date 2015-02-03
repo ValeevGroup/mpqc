@@ -310,7 +310,7 @@ SCF::compute()
     // calculate the nuclear repulsion energy
     double nucrep = nuclear_repulsion_energy();
     ExEnv::out0() << indent
-                  << scprintf("nuclear repulsion energy = %15.10f", nucrep)
+                  << scprintf("nuclear repulsion energy = %20.15f", nucrep)
                   << endl << endl;
 
     double eelec;

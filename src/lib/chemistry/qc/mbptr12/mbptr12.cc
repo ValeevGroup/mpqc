@@ -172,6 +172,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 									));
   }
 
+  gf2_orbital_ = keyval->intvalue("gf2_orbital", KeyValValueint(0));
+
   r12eval_ = 0;
   r12a_energy_ = 0;
   r12ap_energy_ = 0;

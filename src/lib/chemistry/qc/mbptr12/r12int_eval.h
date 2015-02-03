@@ -989,7 +989,8 @@ public:
    */
   void V_diag_ta();
 
-  void gf2_r12();
+  // \param orbital index of the orbital for self-energy calculation, -1 = HOMO (default), +1 = LUMO, 0 = do nothing
+  void gf2_r12(int orbital = -1);
 
   // TiledArray-based MP2-F12 one-electron properties
   void compute_TA_mp2f12_1rdm();

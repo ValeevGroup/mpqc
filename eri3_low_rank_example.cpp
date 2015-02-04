@@ -93,6 +93,7 @@ int main(int argc, char *argv[]) {
 
 
     auto eri_pool = integrals::make_pool(std::move(eri));
+    /*
     auto eri3 = integrals::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToLowRankTensor{1e-8});
@@ -102,10 +103,17 @@ int main(int argc, char *argv[]) {
     if (world.rank() == 0) {
         std::cout << "Finished 3 center integrals." << std::endl;
     }
+    */
 
     auto eri2 = integrals::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(df_basis, df_basis),
         integrals::compute_functors::BtasToTaTensor{});
+
+    world.gop.fence();
+
+    if (world.rank() == 0) {
+        std::cout << "Finished Integrals\n" << std::endl;
+    }
 
     auto eri2_inv_sqrt = pure::inverse_sqrt(eri2);
     auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
@@ -115,11 +123,41 @@ int main(int argc, char *argv[]) {
 
     if (world.rank() == 0) {
         std::cout << "Finished inverting and converting 2 center intgrals"
+                     "\nStarting space counting" << std::endl;
+    }
+    double full_storage = 0.0;
+    double low_rank_storage = 0.0;
+    for (auto it = eri2_inv_sqrt_low_rank.begin();
+         it != eri2_inv_sqrt_low_rank.end(); ++it) {
+        const auto tensor = it->get();
+        if (tensor.isFull()) {
+            low_rank_storage += tensor.tile().ftile().size();
+            full_storage += tensor.tile().ftile().size();
+        } else {
+            std::cout << "There was a low rank tile." << std::endl;
+            low_rank_storage += tensor.tile().lrtile().matrixL().size();
+            low_rank_storage += tensor.tile().lrtile().matrixR().size();
+            full_storage += tensor.tile().lrtile().matrixL().rows()
+                            * tensor.tile().lrtile().matrixR().cols();
+        }
+    }
+
+    full_storage *= sizeof(double) * 1e-9;
+    low_rank_storage *= sizeof(double) * 1e-9;
+    world.gop.fence();
+
+    if (world.rank() == 0) {
+        std::cout << "WARNING FOLLOWING CURRENTLY ONLY VALID ON ONE "
+                     "NODE!!!!!!!!!!!!!!!" << std::endl;
+        std::cout << "Full storage = " << full_storage
+                  << " GB low rank storage = " << low_rank_storage << " GB"
                   << std::endl;
     }
 
+    /*
     decltype(eri3) Xab{eri3.get_world(), eri3.trange(), eri3.get_shape()};
     Xab("X,a,b") = eri2_inv_sqrt_low_rank("X,P") * eri3("P,a,b");
+    */
 
     world.gop.fence();
     if (world.rank() == 0) {

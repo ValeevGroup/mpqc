@@ -46,15 +46,18 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
     Wavefunction(kv)
 {
   world_ << kv->describedclassvalue("world");
-  world_->set_wfn(this);
+  if (world_ != NULL){
+    world_->set_wfn(this);
+  }
 
   orbs_info_ << kv->describedclassvalue("orbs_info");
   rdm2_ << kv->describedclassvalue("rdm2");
   cabs_name_ = kv->stringvalue("cabs", KeyValValuestring(std::string()));
+  obs_name_ = kv->stringvalue("obs", KeyValValuestring(std::string()));
+  dfbs_name_ = kv->stringvalue("dfbs", KeyValValuestring(std::string()));
   f12exp_str_ = kv->stringvalue("f12exp", KeyValValuestring(std::string()));
   cabs_contraction_ = kv->booleanvalue("cabs_contraction", KeyValValueboolean(true));
-
-  std::string r12_str = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
+  r12_str_ = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
 
 #if defined(HAVE_MPQC3_RUNTIME)
   singles_str_ = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()));
@@ -62,6 +65,12 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   cabs_singles_name_ = kv->stringvalue("cabs_singles_basis", KeyValValuestring(std::string()));
 #endif
 
+  pt2r12_ = 0;
+
+}
+
+void ExternPT2R12::initialize()
+{
   Ref<OrbitalSpace> orbs = orbs_info_->orbs();
   const std::vector<unsigned int>& fzcpi = orbs_info_->fzcpi();
   const std::vector<unsigned int>& inactpi = orbs_info_->inactpi();
@@ -108,12 +117,12 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   Ref<Integral> intf = this->integral()->clone();
   intf->set_basis(basis());
   Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world_, basis(), intf,
-                                                            orbs->coefs(), orbs->orbsym(),
-                                                            P1_mo, P1_mo,
-                                                            occpi,
-                                                            fzcpi,
-                                                            fzvpi,
-                                                            holepi);
+          orbs->coefs(), orbs->orbsym(),
+          P1_mo, P1_mo,
+          occpi,
+          fzcpi,
+          fzvpi,
+          holepi);
   if(debug_print_)
   {
     sc::ExEnv::out0() << "debug:print refwfn orbs " << std::endl;
@@ -131,8 +140,8 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
     kva->assign("rdm2", rdm2_.pointer());
     kva->assign("corr_factor", "stg-6g");
     kva->assign("corr_param", f12exp_str_.c_str());
-    if(!r12_str.empty())
-      kva->assign("pt2_correction", r12_str);
+    if(!r12_str_.empty())
+      kva->assign("pt2_correction", r12_str_);
 
 #if defined(HAVE_MPQC3_RUNTIME)
     if(!singles_str_.empty())
@@ -183,12 +192,14 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   }
 }
 
+
 ExternPT2R12::~ExternPT2R12() {
   const bool make_sure_class_desc_initialized = (&class_desc_ != 0);
 }
 
 void ExternPT2R12::compute()
 {
+  initialize();
   const double value = pt2r12_->value();
   set_value(value);
 }

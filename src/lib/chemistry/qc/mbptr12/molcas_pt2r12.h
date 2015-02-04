@@ -37,8 +37,25 @@ namespace sc{
 
       MolcasPT2R12(const Ref<KeyVal>& kv);
 
+
+      void compute();
+
+      // initialize values needed for ExternPT2R12
+      void initialize();
+      void reinitialize();
+
+      // run molcas input file
+      void run_molcas();
+
+      // read molcas log file and get the energy needed
+      void read_energy();
+
     private:
       std::string prefix_;
+      std::string xyz_file_;
+      std::string molcas_;
+      std::string molcas_input_;
+
       Ref<KeyVal> construct_extern_pt2r12(const Ref<KeyVal>& kv);
       static ClassDesc class_desc_;
     };

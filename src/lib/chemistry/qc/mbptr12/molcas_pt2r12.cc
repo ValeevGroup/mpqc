@@ -25,6 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <cstdlib>
+#include <fstream>
+#include <algorithm>
+
 #include <mpqc_config.h>
 #include <chemistry/qc/mbptr12/molcas_pt2r12.h>
 #include <chemistry/molecule/molecule.h>
@@ -32,6 +36,7 @@
 #include <chemistry/qc/lcao/wfnworld.h>
 #include <chemistry/qc/basis/union.h>
 #include <extern/moinfo/moinfo.h>
+
 
 using namespace sc;
 
@@ -47,8 +52,10 @@ ClassDesc MolcasPT2R12::class_desc_(typeid(MolcasPT2R12),
 MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
   ExternPT2R12(construct_extern_pt2r12(kv))
 {
-  prefix_ =  kv->stringvalue("prefix", KeyValValuestring(std::string()));
-
+  prefix_ = kv->stringvalue("prefix", KeyValValuestring(std::string()));
+  molcas_ = kv->stringvalue("molcas", KeyValValuestring(std::string()));
+  molcas_input_ = kv->stringvalue("molcas_input", KeyValValuestring(std::string()));
+  xyz_file_ = kv->stringvalue("xyz_file", KeyValValuestring(std::string()));
 };
 
 
@@ -61,7 +68,10 @@ Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
             this->class_desc());
   }
 
-  std::string obs_name = kv->stringvalue("obs", KeyValValuestring(std::string()) );
+  Ref<GaussianBasisSet> basis;
+  basis << kv->describedclassvalue("obs");
+  std::string obs_name = basis->label();
+
   std::string cabs_name = kv->stringvalue("cabs", KeyValValuestring(std::string()) );
   if (cabs_name.empty() && not obs_name.empty()) {
     cabs_name = R12Technology::default_cabs_name(obs_name);
@@ -86,9 +96,9 @@ Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
       f12exp = "1.0";
     }
   }
-  std::cout << "f12exp" << f12exp << std::endl;
 
   std::string r12 = kv->stringvalue("r12", KeyValValuestring("true") );
+
 #if defined(HAVE_MPQC3_RUNTIME)
   std::string cabs_singles = kv->stringvalue("cabs_singles", KeyValValuestring("true") );
   std::string cabs_singles_basis = kv->stringvalue("singles_basis", KeyValValuestring(std::string()) );
@@ -107,15 +117,178 @@ Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
 
   Ref<Integral> integral;
   integral << kv->describedclassvalue("integrals");
+
+  //construct the keyval object to initialize ExternPT2R12
+  {
+    Ref<AssignedKeyVal> kva = new AssignedKeyVal;
+    kva->assign("orbs_info",0);
+    kva->assign("rdm2", 0);
+    kva->assign("world", 0);
+    kva->assign("f12exp", f12exp);
+    kva->assign("obs", obs_name);
+    kva->assign("cabs", cabs_name);
+    kva->assign("dfbs", dfbs_name);
+    kva->assign("basis", basis.pointer());
+    kva->assign("molecule", basis->molecule().pointer());
+    kva->assign("integrals", integral.pointer());
+    if(not r12.empty())
+      kva->assign("pt2_correction", r12);
+    if(not cabs_contraction.empty())
+      kva->assign("cabs_contraction", cabs_contraction);
+
+#if defined(HAVE_MPQC3_RUNTIME)
+    if(not cabs_singles.empty())
+      kva->assign("cabs_singles", cabs_singles);
+    if(not cabs_singles_basis.empty())
+      kva->assign("cabs_singles_basis", cabs_singles_basis);
+    if(not partition.empty())
+      kva->assign("cabs_singles_h0", partition);
+#endif
+    Ref<KeyVal> kv = kva;
+    return kv;
+  }
+}
+
+
+void MolcasPT2R12::compute()
+{
+  initialize();
+  ExternPT2R12::compute();
+}
+
+
+void MolcasPT2R12::initialize()
+{
+
+  // run molcas
+  run_molcas();
+  // read molcas inputfile
+  //TODO
+  read_energy();
+
+  Ref<Integral> integral = this->integral()->clone();
   //
   // Read molecule, basis, and orbitals
   //
-  Ref<ExternMOInfo> rdorbs = new ExternMOInfo(filename_prefix + ".pt2r12.dat",
+
+
+  Ref<ExternMOInfo> rdorbs = new ExternMOInfo(prefix_ + ".pt2r12.dat",
           integral,
-          obs_name); // all MO info is contained in rdorbs
+          obs_name_); // all MO info is contained in rdorbs
   Ref<OrbitalSpace> orbs = rdorbs->orbs();
   Ref<GaussianBasisSet> basis = orbs->basis();
   RefSCMatrix C_ao = orbs->coefs();
+  const std::vector<unsigned int>& fzcpi = rdorbs->fzcpi();
+  const std::vector<unsigned int>& inactpi = rdorbs->inactpi();
+  const std::vector<unsigned int>& actpi = rdorbs->actpi();
+  const std::vector<unsigned int>& fzvpi = rdorbs->fzvpi();
+  const unsigned int nfzc = std::accumulate(fzcpi.begin(), fzcpi.end(), 0.0);
+  const unsigned int ninact = std::accumulate(inactpi.begin(), inactpi.end(), 0.0);
+  const unsigned int nact = std::accumulate(actpi.begin(), actpi.end(), 0.0);
+  const unsigned int nfzv = std::accumulate(fzvpi.begin(), fzvpi.end(), 0.0);
+  const unsigned int nmo = orbs->rank();
+  const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
+
+  basis = orbs->basis();
+  C_ao = orbs->coefs();
+
+  //set orbs_info_ from ExternPT2R12
+  orbs_info_ = rdorbs;
+
+  /////////////////////////////////////////////
+  // Read 2-RDM
+  /////////////////////////////////////////////
+
+  // molcas reports 2-RDM in terms of active occupied orbitals only, indexed occording to molcas convention
+  // thus use the map from molcas active occupied orbitals to MPQC occupied range
+  // first make an OrbitalSpace for MPQC occupied orbitals
+  Ref<OrbitalSpace> occ_orbs = new OrbitalSpace(std::string("z(sym)"),
+          std::string("symmetry-ordered occupied MOInfo orbitals"),
+          orbs->coefs(),
+          orbs->basis(),
+          orbs->integral(), orbs->evals(),
+          0, nuocc + nfzv,
+          OrbitalSpace::symmetry);
+
+  Ref<ExternSpinFreeRDMTwo> rdrdm2;
+  rdrdm2 = new ExternSpinFreeRDMTwo(prefix_ + ".pt2r12.rdm2.dat",
+          rdorbs->actindexmap_occ(),
+          occ_orbs);
+
+  //set rdm2_ from ExternPT2R12
+  rdm2_ = rdrdm2;
+
+
+  // create World in which we will compute
+  // use defaults for all params
+  Ref<WavefunctionWorld> world;
+  {
+    Ref<AssignedKeyVal> kva = new AssignedKeyVal;
+    if (dfbs_name_.empty() == false) {
+      Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
+      tmpkv->assign("name", dfbs_name_.c_str());
+      if (dfbs_name_.find("aug-cc-pV") != std::string::npos &&
+              dfbs_name_.find("Z-RI") != std::string::npos) { // if aug-cc-pVXZ-RI, make one as a union of
+        // cc-pVXZ-RI and augmentation-cc-pVXZ-RI
+        std::string ccpvxzri_name(dfbs_name_, 4, dfbs_name_.size()-4);
+
+        Ref<AssignedKeyVal> tmpkv1 = new AssignedKeyVal;
+        tmpkv1->assign("name", ccpvxzri_name);
+        tmpkv1->assign("molecule", basis->molecule().pointer());
+
+        Ref<GaussianBasisSet> ccpvxzri = new GaussianBasisSet(tmpkv1);
+
+        Ref<AssignedKeyVal> tmpkv2 = new AssignedKeyVal;
+        tmpkv2->assign("name", std::string("augmentation-") + ccpvxzri_name);
+        tmpkv2->assign("molecule", basis->molecule().pointer());
+        Ref<GaussianBasisSet> augmentationccpvxzri = new GaussianBasisSet(tmpkv2);
+
+        Ref<GaussianBasisSet> df_basis = new UnionBasisSet(ccpvxzri, augmentationccpvxzri);
+        kva->assign("df_basis", df_basis.pointer());
+      }
+      else { // otherwise assume the basis exists in the library
+        tmpkv->assign("molecule", basis->molecule().pointer());
+        Ref<KeyVal> kv = tmpkv;
+        Ref<GaussianBasisSet> df_basis = new GaussianBasisSet(kv);
+        kva->assign("df_basis", df_basis.pointer());
+      }
+    }
+    Ref<KeyVal> kv = kva;
+    world = new WavefunctionWorld(kv);
+  }
+  //set world_ form ExternPT2R12
+  world_ = world;
+  world_->set_wfn(this);
+
+  ExternPT2R12::initialize();
+
+}
+
+
+void MolcasPT2R12::reinitialize()
+{
+  // update the xyz_file
+  std::ofstream new_xyz_file;
+  this->molecule()->print_xyz(new_xyz_file, xyz_file_.c_str());
+
+  // rerun molcas
+  run_molcas();
+
+  std::string obs_name = obs_name_;
+
+  Ref<Integral> integral = this->integral()->clone();
+
+  Ref<ExternMOInfo> rdorbs = new ExternMOInfo(prefix_ + ".pt2r12.dat",
+          integral,
+          obs_name); // all MO info is contained in rdorbs
+
+  // reset orbs_info_
+  orbs_info_ = rdorbs;
+
+  Ref<OrbitalSpace> orbs = rdorbs->orbs();
+  Ref<GaussianBasisSet> basis = orbs->basis();
+  RefSCMatrix C_ao = orbs->coefs();
+
   const std::vector<unsigned int>& fzcpi = rdorbs->fzcpi();
   const std::vector<unsigned int>& inactpi = rdorbs->inactpi();
   const std::vector<unsigned int>& actpi = rdorbs->actpi();
@@ -146,11 +319,16 @@ Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
           OrbitalSpace::symmetry);
 
   Ref<ExternSpinFreeRDMTwo> rdrdm2;
-  rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
+  rdrdm2 = new ExternSpinFreeRDMTwo(prefix_ + ".pt2r12.rdm2.dat",
           rdorbs->actindexmap_occ(),
           occ_orbs);
+
+  // reset rdm2_
+  rdm2_ = rdrdm2;
+
   // create World in which we will compute
   // use defaults for all params
+  std::string dfbs_name = dfbs_name_;
   Ref<WavefunctionWorld> world;
   {
     Ref<AssignedKeyVal> kva = new AssignedKeyVal;
@@ -185,31 +363,88 @@ Ref<KeyVal> MolcasPT2R12::construct_extern_pt2r12(const Ref<KeyVal>& kv){
     }
     Ref<KeyVal> kv = kva;
     world = new WavefunctionWorld(kv);
+
+    //reset world
+    world_ = world;
   }
 
-  {
-    Ref<AssignedKeyVal> kva = new AssignedKeyVal;
-    kva->assign("orbs_info", rdorbs.pointer());
-    kva->assign("rdm2", rdrdm2.pointer());
-    kva->assign("world", world.pointer());
-    kva->assign("f12exp", f12exp);
-    kva->assign("cabs", cabs_name);
-    kva->assign("basis", orbs->basis().pointer());
-    kva->assign("molecule", orbs->basis()->molecule().pointer());
-    if(not r12.empty())
-      kva->assign("pt2_correction", r12);
-    if(not cabs_contraction.empty())
-      kva->assign("cabs_contraction", cabs_contraction);
+}
 
-#if defined(HAVE_MPQC3_RUNTIME)
-    if(not cabs_singles.empty())
-      kva->assign("cabs_singles", cabs_singles);
-    if(not cabs_singles_basis.empty())
-      kva->assign("cabs_singles_basis", cabs_singles_basis);
-    if(not partition.empty())
-      kva->assign("cabs_singles_h0", partition);
-#endif
-    Ref<KeyVal> kv = kva;
-    return kv;
+void MolcasPT2R12::run_molcas()
+{
+  if (molcas_.empty()){
+    throw InputError("empty keyword value",
+            __FILE__, __LINE__, "molcas", molcas_.c_str(),
+            this->class_desc());
   }
+
+  if (molcas_input_.empty()){
+    throw InputError("empty keyword value",
+            __FILE__, __LINE__, "molcas_input", molcas_input_.c_str(),
+            this->class_desc());
+  }
+
+  //excute molcas command
+  std::string command_str;
+  command_str = molcas_ + " -f " + molcas_input_;
+  std::system(command_str.c_str());
+
+  // check molcas status
+  std::ifstream fstatus(prefix_ + ".status");
+  if ( fstatus.good() ){
+
+    std::string status;
+    std::getline(fstatus, status);
+    fstatus.close();
+
+    if ( strcmp(status.c_str(), "Happy landing ") != 0 ){
+      throw InputError("Molcas Failed! Check Your Molcas Input File",
+              __FILE__, __LINE__, "molcas_input", molcas_input_.c_str(),
+              this->class_desc());
+    }
+
+  }else{
+    throw InputError("No Molcas Status File Found! Check Your Molcas Excutable Path",
+            __FILE__, __LINE__, "molcas", molcas_.c_str(),
+            this->class_desc());
+  }
+
+  //check the input for pt2r12
+  std::ifstream fdat(prefix_ + ".pt2r12.dat");
+  std::ifstream frdm2(prefix_ + ".pt2r12.rdm2.dat");
+  if (!fdat.good() || !frdm2.good()){
+    throw InputError("No PT2R12 DAT File Found! Check Your Molcas Input",
+            __FILE__, __LINE__, "molcas_input", molcas_input_.c_str(),
+            this->class_desc());
+  }
+  fdat.close();
+  frdm2.close();
+
+}
+
+void MolcasPT2R12::read_energy()
+{
+
+  std::string molcas_log = prefix_ + ".log";
+  std::fstream flog(molcas_log);
+
+  if (!flog.good()){
+    throw InputError("No Molcas Log File Found! Check Your Molcas Input",
+            __FILE__, __LINE__, "molcas_input", molcas_input_.c_str(),
+            this->class_desc());
+  }
+
+  std::string line;
+
+  while(std::getline(flog, line)){
+    if (line.find("RASSCF") != std::string::npos && line.find("Total energy") != std::string::npos){
+      std::cout << line << std::endl;
+    }
+    else if(line.find("CASPT2") != std::string::npos && line.find("Total energy") != std::string::npos)
+    {
+      std::cout << line << std::endl;
+    }
+  }
+  flog.close();
+
 }

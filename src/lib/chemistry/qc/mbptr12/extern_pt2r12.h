@@ -66,25 +66,35 @@ namespace sc {
       int value_implemented() const { return 1; }
       void set_desired_value_accuracy(double acc);
       void print(std::ostream& os=ExEnv::out0());
+      void initialize();
 
     private:
       static ClassDesc class_desc_;
       static const unsigned int debug_print_ = 0; // set to 1 to print out some debugging info
 
+      // need to initialize with initialize()
+      Ref<PT2R12> pt2r12_;
+
+
+    protected:
       // provided by the user
       Ref<WavefunctionWorld> world_;
       Ref<ExternMOInfo> orbs_info_;
       Ref<SpinFreeRDM<Two> > rdm2_;
+
       std::string cabs_name_;
-      bool cabs_contraction_;
+      std::string obs_name_;
+      std::string dfbs_name_;
       std::string f12exp_str_;
+      std::string r12_str_;
+
       #if defined(HAVE_MPQC3_RUNTIME)
           std::string singles_str_;
           std::string partition_str_;
           std::string cabs_singles_name_;
       #endif
-      // constructed
-      Ref<PT2R12> pt2r12_;
+
+      bool cabs_contraction_;
 
   };
 

@@ -30,6 +30,9 @@
 
 #include <string>
 #include <util/state/stateio.h>
+#include <util/misc/xml.h>
+
+using boost::property_tree::ptree;
 
 namespace sc {
 
@@ -41,9 +44,9 @@ namespace sc {
      * coordinate system of the Molecule. It also has an atomic number. Optionally, it can
      * has a charge, mass, and it can belong to a fragment.
      */
-    class Atom {
+    class Atom : public XMLWritable {
 
-    private:
+      private:
         /// Contains the vector to the atom in units determined by molecule.
         double r_[3];
         int Z_;
@@ -57,7 +60,7 @@ namespace sc {
         double mass_;
         std::string label_;
 
-    public:
+      public:
         /**
          * Creates an atom for use in the sc::Molecule class.
          *
@@ -144,6 +147,8 @@ namespace sc {
 
         // Made friend for direct access for sc::SavableState
         friend void FromStateIn(Atom &a, StateIn &so, int &count);
+
+        virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
    };
 

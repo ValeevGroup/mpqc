@@ -88,6 +88,7 @@ int getrusage (
 #include <util/misc/regtime.h>
 #define _util_misc_regtime_cc
 #include <util/misc/timer.h>
+#include <util/misc/thread_timer.h>
 #include <util/misc/scexception.h>
 
 using namespace std;
@@ -239,6 +240,14 @@ TimedRegion::insert_before(const char *name)
   res->up_ = up_;
   this->prev_ = res;
   return res;
+}
+
+void
+TimedRegion::acquire_subregion(TimedRegion* reg)
+{
+  //TimedRegion* subreg = subregions_;
+  //TimedRegion* new_reg = findinsubregion(reg->name_);
+  //new_reg->merge(reg);
 }
 
 void
@@ -773,6 +782,13 @@ RegionTimer::set_default_regiontimer(const Ref<RegionTimer>& t)
   default_regtimer = t;
 }
 
+void
+RegionTimer::acquire_timed_region(TimedRegion* reg)
+{
+  current_->merge(reg);
+
+}
+
 //////////////////////////////////////////////////////////////////////
 // Timer functions
 
@@ -951,6 +967,13 @@ double Timer::wall_time(const char* region) const {
 
 double Timer::flops(const char* region) const {
   return timer_->flops(region);
+}
+
+void Timer::insert(const MultiThreadTimer& timer) {
+  TimedRegion* reg = timer.make_timed_region();
+  timer_->acquire_timed_region(reg);
+  delete reg;
+  return;
 }
 
 //////////////////////////////////////////////////////////////////////

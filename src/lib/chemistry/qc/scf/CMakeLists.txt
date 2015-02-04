@@ -6,6 +6,20 @@ include(AddLibrary)
 SET(ccfiles 
   clhf.cc
   clscf.cc
+  cadf/cadfclhf.cc
+  cadf/density.cc
+  cadf/statistics.cc
+  cadf/get_ints.cc
+  cadf/init.cc
+  cadf/decomp.cc
+  cadf/coefficients.cc
+  cadf/compute_j.cc
+  cadf/assignments.cc
+  cadf/compute_k.cc
+  cadf/ordered_shells.cc
+  cadf/approx_pairs.cc
+  cadf/new_exchange.cc
+  cadf/count_ints.cc
   effh.cc
   fbclhf.cc
   hsoshf.cc

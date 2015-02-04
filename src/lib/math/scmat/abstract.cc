@@ -27,7 +27,9 @@
 
 #include <math.h>
 
+#include <util/misc/consumableresources.h>
 #include <util/misc/formio.h>
+#include <util/misc/xmlwriter.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
@@ -135,6 +137,25 @@ SCMatrix::save(StateOut&s)
           s.put(get_element(i,j));
         }
     }
+}
+
+ptree&
+SCMatrix::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("SCMatrix", ptree());
+  my_tree.put("<xmlattr>.nrow", nrow());
+  my_tree.put("<xmlattr>.ncol", ncol());
+  ptree& data_tree = my_tree.add_child("data", ptree());
+  double* data = allocate<double>(nrow()*ncol());
+  this->convert(data);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, nrow()*ncol());
+  return my_tree;
 }
 
 void
@@ -481,6 +502,26 @@ SymmSCMatrix::save(StateOut&s)
           s.put(get_element(i,j));
         }
     }
+}
+
+ptree&
+SymmSCMatrix::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("SymmSCMatrix", ptree());
+  my_tree.put("<xmlattr>.n", n());
+  my_tree.put("<xmlattr>.lower_triangle", true);
+  ptree& data_tree = my_tree.add_child("data", ptree());
+  long ndata = n() * (n()+1) / 2;
+  double* data = allocate<double>(ndata);
+  this->convert(data);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, ndata);
+  return my_tree;
 }
 
 void
@@ -837,6 +878,24 @@ DiagSCMatrix::save(StateOut&s)
     }
 }
 
+ptree&
+DiagSCMatrix::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("DiagSCMatrix", ptree());
+  my_tree.put("<xmlattr>.n", n());
+  ptree& data_tree = my_tree.add_child("data", ptree());
+  double* data = allocate<double>(n());
+  this->convert(data);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, n());
+  return my_tree;
+}
+
 void
 DiagSCMatrix::restore(StateIn& s)
 {
@@ -992,6 +1051,8 @@ SCVector::save(StateOut&s)
       s.put(get_element(i));
     }
 }
+
+
 
 void
 SCVector::restore(StateIn& s)

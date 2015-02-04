@@ -474,3 +474,18 @@ ToleranceExceeded::ToleranceExceeded(const ToleranceExceeded& ref) MPQC__NOEXCEP
 ToleranceExceeded::~ToleranceExceeded() MPQC__NOEXCEPT
 {
 }
+
+////////////////////////////////////////////////////////////////////////
+// AssertionFailed
+
+AssertionFailed::AssertionFailed(
+    const char *assertion_text,
+    const char *file, int line
+) MPQC__NOEXCEPT:
+    assertion_text_(assertion_text),
+    SCException(
+        (std::string("Assertion failed: ") + std::string(assertion_text)).c_str(), 
+        file, line, 0, "AssertionFailed"
+    )
+{
+}

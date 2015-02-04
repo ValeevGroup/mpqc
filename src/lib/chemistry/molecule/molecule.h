@@ -28,6 +28,8 @@
 #ifndef _chemistry_molecule_molecule_h
 #define _chemistry_molecule_molecule_h
 
+#undef HAVE_OPENBABEL2  // Won't link on my machine.  Remove this before committing to main branch
+
 #include <stdio.h>
 #include <iostream>
 #include <mpqc_config.h>
@@ -40,7 +42,9 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
 #include <chemistry/molecule/atom.h>
+#include <util/misc/xml.h>
 
+using boost::property_tree::ptree;
 namespace sc {
 
   /// @addtogroup ChemistryMolecule
@@ -140,7 +144,7 @@ atoms can be given too, however, numerical errors in the
 geometry specification can result in the generation of extra
 atoms so be careful.
 */
-class Molecule: public SavableState
+class Molecule: public SavableState, virtual public DescribedXMLWritable
 {
   protected:
     std::vector<Atom> atoms_;
@@ -496,6 +500,8 @@ class Molecule: public SavableState
     SCVector3 ref_origin() const { return ref_origin_; }
 
     void save_data_state(StateOut&);
+
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
   private:
     /// reads molecule from a XYZ file, used by constructor only

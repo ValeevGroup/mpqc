@@ -118,6 +118,18 @@
 */
 
 /**
+  @defgroup ChemistryElectronicStructureOneBodyHF mpqc.Chemistry.ElectronicStructure.OneBody.HF
+  @ingroup ChemistryElectronicStructureOneBody
+  Classes/functions related to Hartree-Fock (HF) one-body models of electronic structure.
+*/
+
+/**
+  @defgroup ChemistryElectronicStructureOneBodyHFCADF mpqc.Chemistry.ElectronicStructure.OneBody.HF.CADF
+  @ingroup ChemistryElectronicStructureOneBody
+  Classes/functions related to concentric atomic density fitting (CADF) formulation of Hartree-Fock
+*/
+
+/**
   @defgroup ChemistryElectronicStructureNBody mpqc.Chemistry.ElectronicStructure.NBody
   @ingroup ChemistryElectronicStructure
   Classes/functions related to many-body models of electronic structure.

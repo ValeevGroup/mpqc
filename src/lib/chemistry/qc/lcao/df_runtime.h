@@ -30,6 +30,9 @@
 
 #include <chemistry/qc/lcao/df.h>
 #include <chemistry/qc/lcao/tbint_runtime.h>
+#include <Eigen/Dense>
+#include <util/misc/sharedptr.h>
+
 
 namespace sc {
 
@@ -85,6 +88,10 @@ namespace sc {
       typedef Ref<Result> ResultRef;
       typedef ParsedDensityFittingKey ParsedResultKey;
       typedef DensityFitting::MOIntsRuntime MOIntsRuntime;
+      typedef Eigen::VectorXd CoefResult;
+      typedef std::shared_ptr<Eigen::VectorXd> CoefResultRef;
+      typedef std::pair<int, int> IntPair;
+      typedef std::pair<std::string, IntPair> CoefKey;
 
       // uses MOIntsRuntime to evaluate integrals
       DensityFittingRuntime(const Ref<MOIntsRuntime>& moints_runtime,
@@ -102,6 +109,10 @@ namespace sc {
         */
       bool exists(const std::string& key) const;
 
+      /** Returns true if the given coefficient block is available
+        */
+      bool exists(const CoefKey& key) const;
+
       /** Returns the DistArray4 object corresponding to this key.
 
           key must be in format recognized by ParsedDensityFittingKey.
@@ -109,6 +120,12 @@ namespace sc {
           and (possibly) computed.
         */
       ResultRef get(const std::string& key);   // non-const: can compute something
+
+      /** Returns the Eigen::MatrixXd (a.k.a. CoefResultRef) object corresponding
+       *  to the CoefKey key given.
+       */
+      const CoefResultRef get(const CoefKey& key);
+      const CoefResultRef get(const std::string& dfkey, int bf1, int bf2){ return get(CoefKey(dfkey, IntPair(bf1, bf2))); }
 
       /// returns the runtime used to compute results
       const Ref<MOIntsRuntime>& moints_runtime() const { return moints_runtime_; }
@@ -134,6 +151,15 @@ namespace sc {
 
       typedef Registry<std::string, ResultRef, detail::NonsingletonCreationPolicy > ResultRegistry;
       Ref<ResultRegistry> results_;
+
+      typedef Registry<CoefKey, CoefResultRef, detail::NonsingletonCreationPolicy > CoefRegistry;
+      Ref<CoefRegistry> coef_results_;
+
+      CoefResultRef get_coefficients(const CoefKey& key);
+
+      typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
+      typedef std::map<IntPair, std::shared_ptr<Decomposition> > DecompositionMap;
+      DecompositionMap decomps_;
 
       // creates the result for a given key
       const ResultRef& create_result(const std::string& key);
@@ -166,11 +192,28 @@ namespace sc {
       const Ref<GaussianBasisSet>& basis() const { return basis_; }
       const std::string& kernel_key() const { return kernel_; }
       DensityFitting::SolveMethod solver() const { return solver_; }
+      bool local_coulomb() const { return local_coulomb_; }
+      void local_coulomb(bool val) { local_coulomb_ = val; }
+      bool local_exchange() const { return local_exchange_; }
+      void local_exchange(bool val) { local_exchange_ = val; }
+      bool exact_diag_J() const { return exact_diag_J_; }
+      void exact_diag_J(bool val) { exact_diag_J_ = val; }
+      bool exact_diag_K() const { return exact_diag_K_; }
+      void exact_diag_K(bool val) { exact_diag_K_ = val; }
+      /// returns the TwoBodyInt::oper_type object that specifies
+      /// the type of the operator kernel_key used for fitting the density
+      TwoBodyOper::type kernel_otype() const;
+      /// returns the IntParams object corresponding to the fitting kernel_key
+      std::string intparams_key() const;
 
       void print(std::ostream& o) const;
     private:
       static ClassDesc class_desc_;
 
+      bool local_coulomb_ = false;
+      bool local_exchange_ = false;
+      bool exact_diag_J_ = false;
+      bool exact_diag_K_ = false;
       Ref<GaussianBasisSet> basis_;
       std::string kernel_;
       DensityFitting::SolveMethod solver_;

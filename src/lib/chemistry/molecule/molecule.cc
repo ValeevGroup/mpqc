@@ -1324,6 +1324,25 @@ Molecule::any_atom_has_label() const {
    return false;
 }
 
+using boost::property_tree::ptree;
+ptree&
+Molecule::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree& child = parent.add_child("Molecule", ptree());
+  child.put("natom", natom());
+  child.put("units", geometry_units()->string_rep());
+  for(int iatom = 0; iatom < natom(); ++iatom){
+    // This is a hack since atom doesn't have an index attribute yet...
+    ptree& atom_parent = child.add_child("atom", ptree());
+    atom_parent.put("<xmlattr>.index", iatom);
+    atoms_[iatom].write_xml(atom_parent, writer);
+  }
+  return child;
+}
+
 bool sc::operator ==(const Molecule& mol1, const Molecule& mol2) {
   if (mol1.natom() != mol2.natom())
     return false;

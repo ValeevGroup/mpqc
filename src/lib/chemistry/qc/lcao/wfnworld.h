@@ -32,10 +32,14 @@
 #include <chemistry/qc/lcao/moints_runtime.h>
 #include <chemistry/qc/lcao/fockbuild_runtime.h>
 
+using boost::property_tree::ptree;
+
 namespace sc {
 
+  class XMLWriter;
+
   /** Class WavefunctionWorld describes the environment of a Wavefunction */
-class WavefunctionWorld : virtual public SavableState {
+class WavefunctionWorld : virtual public SavableState, virtual public DescribedXMLWritable {
 
   // change to 0 to use the old set of OrbitalSpace keys
   static const int USE_NEW_ORBITALSPACE_KEYS = 1;
@@ -129,6 +133,8 @@ public:
 
   void save_data_state(StateOut&);
 
+  virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+
   /// obsoletes this object
   /// every wavefunction that owns a WavefunctionWorld must call this method when it's obsolete() method is called
   /// @sa Compute::obsolete()
@@ -182,6 +188,9 @@ public:
 
 private:
 
+  void xml_data_local(bool do_integrals, ptree& pt, const XMLWriter& writer);
+  void xml_data_nonlocal(bool do_integrals, ptree& pt, const XMLWriter& writer);
+
   /// whose World is it?
   Wavefunction* wfn_;
   bool df_;                       //!< whether to do density fitting
@@ -193,6 +202,13 @@ private:
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
+  typedef enum {
+    DFBasis,
+    DFCoefficients,
+    DFIntegralsERI,
+    ExactIntegralsERI
+  } _XMLOutputData;
+  std::vector<_XMLOutputData> out_data_;
 
   bool dynamic_;
   double print_percent_;
@@ -200,6 +216,11 @@ private:
   StoreMethod::type ints_method_;
   std::string ints_file_;
   double ints_precision_;
+
+  bool df_local_coulomb_;
+  bool df_local_exchange_;
+  bool exact_diag_J_;
+  bool exact_diag_K_;
 
   /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;

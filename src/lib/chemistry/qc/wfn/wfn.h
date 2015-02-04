@@ -38,6 +38,9 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
+#include <util/misc/xml.h>
+
+using boost::property_tree::ptree;
 
 namespace sc {
 
@@ -57,12 +60,12 @@ class Wavefunction: public MolecularEnergy {
   protected:
     ResultRefSCMatrix natural_orbitals_;
     ResultRefDiagSCMatrix natural_density_;
+    Ref<GaussianBasisSet> gbs_;
 
   private:
     double * bs_values;
     double * bsg_values;
 
-    Ref<GaussianBasisSet> gbs_;
     Ref<Integral> integral_;
 
     Ref<GaussianBasisSet> atom_basis_;
@@ -175,6 +178,7 @@ class Wavefunction: public MolecularEnergy {
     virtual ~Wavefunction();
 
     void save_data_state(StateOut&);
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     double density(const SCVector3&);
     double density_gradient(const SCVector3&,double*);

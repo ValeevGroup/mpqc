@@ -51,6 +51,27 @@ sc::FromStateIn(Atom &a, StateIn &si, int &count){
     count += si.get(a.label_);
 }
 
+using boost::property_tree::ptree;
+using namespace sc;
+
+ptree&
+Atom::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree& child = parent.add_child("Atom", ptree());
+  child.put("Z", Z());
+  child.put("label", label());
+  child.put("position.x", r_[0]);
+  child.put("position.y", r_[1]);
+  child.put("position.z", r_[2]);
+  child.put("mass", mass());
+  if(have_fragment()) child.put("fragment", fragment());
+  if(have_charge()) child.put("charge", charge());
+  return child;
+}
+
 bool sc::operator ==(const Atom& a, const Atom& b) {
   if (a.Z() != b.Z())
     return false;

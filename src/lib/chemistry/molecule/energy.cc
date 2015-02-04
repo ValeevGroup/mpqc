@@ -712,6 +712,21 @@ SumMolecularEnergy::save_data_state(StateOut&s)
     }
 }
 
+using boost::property_tree::ptree;
+ptree&
+MolecularEnergy::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree& child = get_my_ptree(parent);
+  molecule()->write_xml(child, writer);
+  if(value_.computed()){
+    child.put("energy", value_.result_noupdate());
+  }
+  return child;
+}
+
 SumMolecularEnergy::~SumMolecularEnergy()
 {
   delete[] mole_;

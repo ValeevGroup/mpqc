@@ -30,6 +30,7 @@
 
 #include <vector>
 #include <chemistry/qc/wfn/wfn.h>
+#include <util/misc/xml.h>
 
 namespace sc {
 

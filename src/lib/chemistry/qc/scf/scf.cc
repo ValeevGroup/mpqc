@@ -34,6 +34,8 @@
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <util/group/mstate.h>
+#include <util/misc/xmlwriter.h>
+#include <util/misc/xml.h>
 
 #include <math/scmat/local.h>
 #include <math/scmat/repl.h>
@@ -46,6 +48,7 @@
 #include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/lcao/df_runtime.h>
+#include <chemistry/qc/scf/iter_logger.h>
 
 using namespace std;
 using namespace sc;
@@ -191,6 +194,12 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
     }
     ExEnv::out0() << decindent << decindent;
   }
+
+  // See if we have an iteration logger
+  if(keyval->exists("iter_log")) {
+    iter_log_ << keyval->describedclassvalue("iter_log");
+  }
+
 }
 
 SCF::~SCF()
@@ -217,6 +226,21 @@ SCF::save_data_state(StateOut& s)
   SavableState::save_state(extrap_.pointer(),s);
   SavableState::save_state(accumdih_.pointer(),s);
   SavableState::save_state(accumddh_.pointer(),s);
+}
+
+
+using boost::property_tree::ptree;
+ptree&
+SCF::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree& my_tree = this->get_my_ptree(parent);
+  if(iter_log_.nonnull()){
+    writer.insert_child(my_tree, iter_log_, "iteration_log");
+  }
+  return OneBodyWavefunction::write_xml(parent, writer);
 }
 
 RefSCMatrix
@@ -464,9 +488,11 @@ SCF::initial_vector()
         if (!g || compute_guess_) {
           oso_eigenvectors_ = guess_wfn_->oso_eigenvectors().copy();
           eigenvalues_ = guess_wfn_->eigenvalues().copy();
+          current_evals_ = eigenvalues_.result_noupdate();
         } else {
           oso_eigenvectors_ = g->oso_eigenvectors_.result_noupdate().copy();
           eigenvalues_ = g->eigenvalues_.result_noupdate().copy();
+          current_evals_ = eigenvalues_.result_noupdate();
         }
         ExEnv::out0() << decindent;
       } else {
@@ -480,6 +506,7 @@ SCF::initial_vector()
         ExEnv::out0() << incindent << incindent;
         oso_eigenvectors_ = projected_eigenvectors(guess_wfn_);
         eigenvalues_ = projected_eigenvalues(guess_wfn_);
+        current_evals_ = eigenvalues_.result_noupdate();
         ExEnv::out0() << decindent << decindent;
       }
       // we should only have to do this once, so free up memory used
@@ -494,6 +521,7 @@ SCF::initial_vector()
       ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
                     << endl;
       oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
+      current_evals_ = eigenvalues_.result_noupdate();
     }
   } else {
     // if vector exists do nothing
@@ -799,6 +827,198 @@ SCF::initial_extrap_data()
 Ref<DensityFittingInfo>
 SCF::dfinfo() const {
   return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// SCFIterationLogger
+
+static ClassDesc SCFIterationLogger_cd(
+  typeid(SCFIterationLogger),"SCFIterationLogger",1,"public XMLWritable, public DescribedClass",
+  0, create<SCFIterationLogger>, 0);
+
+SCFIterationLogger::SCFIterationLogger(const Ref<KeyVal>& keyval) :
+    log_evals_(keyval->booleanvalue("log_evals", KeyValValueboolean(false))),
+    log_density_(keyval->booleanvalue("log_density", KeyValValueboolean(false))),
+    log_coeffs_(keyval->booleanvalue("log_coefficients", KeyValValueboolean(false)))
+{
+
+}
+
+void
+SCFIterationLogger::new_iteration(){
+  SCFIterationData iteration;
+  iteration.parent = this;
+  iteration.number = iterations_.size() + 1;
+  iterations_.push_back(iteration);
+  other_iter_details_.emplace_back(0);
+
+}
+
+void
+SCFIterationLogger::log_density(
+    RefSymmSCMatrix density,
+    SpinCase1 spin
+) {
+  if(not log_density_) return;
+
+  switch (spin) {
+  case AnySpinCase1:
+    iterations_.back().density = density;
+    break;
+  case Alpha:
+    iterations_.back().alpha_density = density;
+    break;
+  case Beta:
+    iterations_.back().beta_density = density;
+    break;
+  case InvalidSpinCase1:
+    throw;
+  }
+}
+
+void
+SCFIterationLogger::log_evals(
+    RefDiagSCMatrix evals,
+    SpinCase1 spin
+) {
+  if(not log_evals_) return;
+
+  switch (spin) {
+  case AnySpinCase1:
+    iterations_.back().evals = evals;
+    break;
+  case Alpha:
+    iterations_.back().alpha_evals = evals;
+    break;
+  case Beta:
+    iterations_.back().beta_evals = evals;
+    break;
+  case InvalidSpinCase1:
+    throw;
+  }
+}
+
+void
+SCFIterationLogger::log_coeffs(
+    RefSCMatrix coeffs,
+    SpinCase1 spin
+) {
+  if(not log_evals_) return;
+
+  switch (spin) {
+  case AnySpinCase1:
+    iterations_.back().coeffs = coeffs;
+    break;
+  case Alpha:
+    iterations_.back().alpha_coeffs = coeffs;
+    break;
+  case Beta:
+    iterations_.back().beta_coeffs = coeffs;
+    break;
+  case InvalidSpinCase1:
+    throw;
+  }
+}
+
+
+using boost::property_tree::ptree;
+ptree&
+SCFIterationLogger::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree* tmp;
+  if(writer.fold_in_class_name()){
+    tmp = &parent;
+    tmp->put("<xmlattr>.typename", "SCFIterationLogger");
+  }
+  else{
+    ptree& tmpref = parent.add_child("SCFIterationLogger", ptree());
+    tmp = &tmpref;
+
+  }
+  ptree& child = *tmp;
+  child.put("density_enabled", log_density_);
+  child.put("coefficients_enabled", log_coeffs_);
+  child.put("evals_enabled", log_evals_);
+  for(auto&& func : other_details_) {
+    func(child, writer);
+  }
+
+  // Write the iterations
+  ptree& iter_tree = child.add_child("iterations", ptree());
+  iter_tree.put("<xmlattr>.n", iterations_.size());
+  int itnum = 0;
+  for(auto& itdata : iterations_){
+    ptree& ichild = writer.insert_child(iter_tree, itdata, "iteration");
+    for(auto&& func : other_iter_details_[itnum]) {
+      func(ichild, writer);
+    }
+    ++itnum;
+  }
+  return child;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// SCFIterationData
+
+ptree&
+SCFIterationData::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree* tmp;
+  if(writer.fold_in_class_name()){
+    tmp = &parent;
+    tmp->put("<xmlattr>.typename", "SCFIterationData");
+  }
+  else{
+    ptree& tmpref = parent.add_child("SCFIterationData", ptree());
+    tmp = &tmpref;
+  }
+  ptree& my_tree = *tmp;
+
+  my_tree.put("<xmlattr>.number", number);
+
+  if(evals.nonnull()){
+    writer.insert_child(my_tree, evals, "evals");
+  }
+  if(alpha_evals.nonnull()){
+    ptree& child = writer.insert_child(my_tree, alpha_evals, "evals");
+    child.put("<xmlattr>.spin", "alpha");
+  }
+  if(beta_evals.nonnull()){
+    ptree& child = writer.insert_child(my_tree, beta_evals, "evals");
+    child.put("<xmlattr>.spin", "beta");
+  }
+  //----------------------------------------//
+  if(density.nonnull()){
+    ptree& child = writer.insert_child(my_tree, density, "density");
+  }
+  if(alpha_density.nonnull()){
+    ptree& child = writer.insert_child(my_tree, alpha_density, "density");
+    child.put("<xmlattr>.spin", "alpha");
+  }
+  if(beta_density.nonnull()){
+    ptree& child = writer.insert_child(my_tree, beta_density, "density");
+    child.put("<xmlattr>.spin", "beta");
+  }
+  //----------------------------------------//
+  if(coeffs.nonnull()){
+    ptree& child = writer.insert_child(my_tree, coeffs, "coefficients");
+  }
+  if(alpha_coeffs.nonnull()){
+    ptree& child = writer.insert_child(my_tree, alpha_coeffs, "coefficients");
+    child.put("<xmlattr>.spin", "alpha");
+  }
+  if(beta_coeffs.nonnull()){
+    ptree& child = writer.insert_child(my_tree, beta_coeffs, "coefficients");
+    child.put("<xmlattr>.spin", "beta");
+  }
+
+  return my_tree;
 }
 
 /////////////////////////////////////////////////////////////////////////////

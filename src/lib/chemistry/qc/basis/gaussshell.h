@@ -32,6 +32,9 @@
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/xml.h>
+
+using boost::property_tree::ptree;
 
 namespace sc {
 
@@ -45,7 +48,7 @@ class Integral;
 /// A shell of Gaussian functions. A shell is a set of functions with same quantum numbers, contraction coefficients,
 /// and exponents, and located on the common origin. GaussianShell does include the origin information.
 /// @sa GaussianBasisSet::Shell
-class GaussianShell: public DescribedClass
+class GaussianShell: public DescribedXMLWritable
 {
   public:
     enum PrimitiveType { Normalized, Unnormalized };
@@ -275,6 +278,10 @@ class GaussianShell: public DescribedClass
     double monobound(double r) const;
 
     void print(std::ostream& =ExEnv::out0()) const;
+
+    virtual ptree& write_xml(
+        ptree& parent, const XMLWriter& writer
+    );
 };
 
   /** constructs a new GaussianShell from @c shell by applying Filter @c filter

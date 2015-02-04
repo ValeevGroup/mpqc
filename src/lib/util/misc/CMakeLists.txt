@@ -11,9 +11,12 @@ add_mpqc_object_library(misc
   formio.cc
   ieee.cc
   regtime.cc
+  thread_timer.cc
   runnable.cc
   scexception.cc
-  units.cc)
+  units.cc
+  xml.cc
+  xmlwriter.cc)
 
 # tests
 

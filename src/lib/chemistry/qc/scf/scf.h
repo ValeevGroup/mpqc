@@ -29,6 +29,7 @@
 #define _chemistry_qc_scf_scf_h
 
 #include <util/group/thread.h>
+#include <util/misc/xml.h>
 
 #include <math/optimize/scextrap.h>
 
@@ -36,8 +37,11 @@
 #include <chemistry/qc/wfn/accum.h>
 #include <chemistry/qc/wfn/obwfn.h>
 
+using boost::property_tree::ptree;
+
 namespace sc {
 
+  class SCFIterationLogger;
   class DensityFittingInfo;
 
 // //////////////////////////////////////////////////////////////////////////
@@ -47,6 +51,8 @@ field procedure to solve an effective one body problem. */
 class SCF: public OneBodyWavefunction {
   protected:
     int compute_guess_;
+
+    RefDiagSCMatrix current_evals_;
 
     int keep_guess_wfn_;
     Ref<OneBodyWavefunction> guess_wfn_;
@@ -62,16 +68,26 @@ class SCF: public OneBodyWavefunction {
     int miniter_;
     int dens_reset_freq_;
     int reset_occ_;
-    int local_dens_;
     size_t storage_;
     int print_all_evals_;
     int print_occ_evals_;
+
+    // Super expert stuff.  Don't mess with this unless you know what you're doing
+    // A subclass can set this to true to make compute_vector() set delta to 0.0 and break after the fock build
+    bool fake_scf_convergence_after_fock_build_ = false;
+    // A subclass can set this to make compute_vector() set delta to 0.0 and break after some numner of iterations no matter what
+    int fake_scf_convergence_after_n_iter_ = -1;
 
     double level_shift_;
 
     Ref<MessageGrp> scf_grp_;
     Ref<ThreadGrp> threadgrp_;
+
+    // Whether or not the matrix kit creates local matrices (int functioning as a bool)
     int local_;
+
+    // Whether or not the density can be stored locally (int functioning as a bool)
+    int local_dens_;
 
     Ref<TwoBodyInt>* tbis_; // a two body integral evaluator for each thread
     virtual void init_threads();
@@ -129,6 +145,8 @@ class SCF: public OneBodyWavefunction {
 
     /// how much lower is the desired accuracy of the guess?
     static double guess_acc_ratio() { return 1e4; }
+
+    Ref<SCFIterationLogger> iter_log_;
 
     /// prints iteration log
     static void iter_print(int iter,
@@ -211,11 +229,17 @@ class SCF: public OneBodyWavefunction {
         matrix that are summed in each iteration SCF procedure.  AccumH's
         that depend on the density must be given here.
 
+        <dt><tt>iter_log</tt><dd>Optional.  An SCFIterationLogger object
+        to log data on a per-iteration basis.  See the SCFIterationLogger
+        class for more information.
+
         </dl> */
     SCF(const Ref<KeyVal>&);
     ~SCF();
 
     void save_data_state(StateOut&);
+
+    ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     RefSCMatrix oso_eigenvectors();
     RefDiagSCMatrix eigenvalues();

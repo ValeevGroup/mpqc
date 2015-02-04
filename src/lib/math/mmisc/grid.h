@@ -29,6 +29,8 @@
 #include <util/misc/units.h>
 
 
+using boost::property_tree::ptree;
+
 namespace sc {
 
 /** The Grid class defines a finite regular Carthesian grid.
@@ -139,7 +141,7 @@ class WriteGrid: public Runnable {
   WriteVectorGrid provides an interface for writing the value
   of a vector function evaluated at a given set of grid points to a file (compare to WriteGrid).
  */
-class WriteVectorGrid: public Runnable {
+class WriteVectorGrid: public Runnable, virtual public DescribedXMLWritable {
   public:
     // see wf_gaussian_cube
     struct DimensionMap {
@@ -201,6 +203,7 @@ class WriteVectorGrid: public Runnable {
                     std::string gridformat, std::string gridfile);
     /// Writes the grid data.
     void run();
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 };
 
 }

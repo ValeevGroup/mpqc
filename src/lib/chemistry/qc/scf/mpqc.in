@@ -41,6 +41,7 @@ mole<DFCLHF>: (
     %name = "STO-6G"
     %name = "3-21G"
     %name = "cc-pVDZ"
+    %name = "cc-pVTZ"
     %name = "Def2-SVP"
     %puream=yes
     matrixkit = $:basis_matrixkit

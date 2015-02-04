@@ -45,6 +45,7 @@
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/clhftmpl.h>
+#include <chemistry/qc/scf/iter_logger.h>
 #include <chemistry/qc/wfn/femo.h>
 
 using namespace std;
@@ -386,6 +387,9 @@ CLSCF::new_density()
 
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
+  if(!iter_log_.null()){
+    iter_log_->log_density(cl_dens_.copy());
+  }
 
   cl_dens_diff_.accumulate(cl_dens_);
 

@@ -3,6 +3,9 @@
 cmake_minimum_required (VERSION 2.8.8)
 project (MPQC)
 
+# extra cmake files are shipped with MPQC
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
+
 set (MPQC_MAJOR_VERSION 3)
 set (MPQC_MINOR_VERSION 0)
 set (MPQC_PATCH_VERSION 0)
@@ -31,6 +34,8 @@ if (NOT DEFINED MPQC_ASSERT_MODE)
   set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
 endif()
 
+include(cotire)
+
 include(CTest)
 enable_testing()
 
@@ -53,8 +58,7 @@ else()
 endif()
 #list(append CMAKE_Fortran_FLAGS "-m64")
 
-# extra cmake files are shipped with MPQC
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
+
 
 ##############################
 # Build Type Information

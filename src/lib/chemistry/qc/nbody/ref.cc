@@ -1179,6 +1179,7 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
                          std::vector<unsigned int> holepi,
                          std::vector<unsigned int> partpi,
                          bool omit_uocc) :
+                         omit_uocc_(omit_uocc),
                          RefWavefunction(world, basis, integral)
 {
   if (omit_uocc_)

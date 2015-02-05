@@ -32,31 +32,42 @@
 #include <chemistry/qc/mbptr12/extern_pt2r12.h>
 
 namespace sc{
-  class MolcasPT2R12 : public ExternPT2R12 {
+  class MolcasPT2R12 : public MolecularEnergy {
     public:
 
       MolcasPT2R12(const Ref<KeyVal>& kv);
 
-
       void compute();
 
-      // initialize values needed for ExternPT2R12
+      /// initialize values needed for ExternPT2R12
       void initialize();
-      void reinitialize();
 
       // run molcas input file
       void run_molcas();
 
-      // read molcas log file and get the energy needed
+      /// read molcas log file and get the energy needed
       void read_energy();
 
+      // purge
+      void purge();
+      // set value implemented
+      int value_implemented() const { return 1; }
+
     private:
+      /// prefix of molcas input file
       std::string prefix_;
       std::string xyz_file_;
+      /// location of molcas program
       std::string molcas_;
+      /// name of molcas input
       std::string molcas_input_;
 
-      Ref<KeyVal> construct_extern_pt2r12(const Ref<KeyVal>& kv);
+      double rasscf_energy_;
+      double caspt2_energy_;
+
+      Ref<ExternPT2R12> extern_pt2r12_;
+      Ref<AssignedKeyVal> extern_pt2r12_akv_;
+
       static ClassDesc class_desc_;
     };
 } // end of namespace sc

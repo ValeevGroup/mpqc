@@ -115,7 +115,9 @@ void ExternPT2R12::initialize()
 
   // use its orbitals to initialize Extern_RefWavefunction
   Ref<Integral> intf = this->integral()->clone();
+
   intf->set_basis(basis());
+
   Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world_, basis(), intf,
           orbs->coefs(), orbs->orbsym(),
           P1_mo, P1_mo,
@@ -201,7 +203,7 @@ void ExternPT2R12::compute()
 {
   initialize();
   const double value = pt2r12_->value();
-  set_value(value);
+  set_energy(value);
 }
 
 int ExternPT2R12::nelectron()

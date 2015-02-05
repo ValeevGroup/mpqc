@@ -1432,8 +1432,8 @@ void PT2R12::compute()
   {
     ExEnv::out0() << indent << scprintf("[2]_R12 energy [au]:                   %17.12lf",
                                         energy_correction_r12) << endl;
-    ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
-                                        energy) << std::endl;
+    ExEnv::out0() << indent << scprintf("[2]_S   energy [au]:                   %17.12lf",
+            cabs_singles_e) << std::endl;
   }
 
   set_energy(energy);

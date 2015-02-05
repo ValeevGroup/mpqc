@@ -127,13 +127,18 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   q_Z_ = atominfo_->string_to_Z("Q");
 
   if (input->exists("file")) {
+    std::string filename = input->stringvalue("file");
+    geometry_units_ = new Units("angstrom");
 #ifdef HAVE_OPENBABEL2
     // use OpenBabel2
-    geometry_units_ = new Units("angstrom");
-    std::string filename = input->stringvalue("file");
     read_openbabel2(filename.c_str());
 #else
-    throw InputError("Keyword \"file\" given but this copy of MPQC does not include OpenBabel2",
+    // if .xyz, use native xyz reader
+    if (filename.rfind(".xyz") != std::string::npos) {
+      read_xyz(filename.c_str());
+    }
+    else // without OpenBABEL can only read xyz files ... buhbye
+      throw InputError("Keyword \"file\" given but this copy of MPQC does not include OpenBabel2",
                      __FILE__, __LINE__);
 #endif // HAVE_OPENBABEL2
   }

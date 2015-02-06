@@ -289,7 +289,7 @@ void MolcasPT2R12::run_molcas()
   //excute molcas command
   std::string command_str;
   command_str = molcas_ + " -f " + molcas_input_;
-  //std::system(command_str.c_str());
+  std::system(command_str.c_str());
 
   // check molcas status
   std::ifstream fstatus(prefix_ + ".status");

@@ -1,0 +1,27 @@
+os:
+  - linux
+language: cpp
+compiler:
+  - clang
+  - gcc
+env:
+  - GCC_VERSION=4.7
+  - GCC_VERSION=4.8
+matrix:
+  exclude:
+    - compiler: clang
+      env: GCC_VERSION=4.7
+before_install:
+  - ./bin/travisci_before_$TRAVIS_OS_NAME.sh
+script:
+  - ./bin/travisci_build_$TRAVIS_OS_NAME.sh
+after_failure:
+  - cat reconf.sh
+  - cat src/lib/mpqc_config.h
+  - cat CMakeFiles/CMakeError.log 
+notifications:
+  email:
+    recipients:
+      - mpqc+travisci@valeyev.net
+    on_success: change
+    on_failure: always

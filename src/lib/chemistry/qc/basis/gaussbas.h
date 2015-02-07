@@ -138,7 +138,10 @@ class SphericalTransformIter;
  *  U.S. Department of Energy under contract DE-AC06-76RLO 1830. Contact David
  *  Feller or Karen Schuchardt for further information.
 */
-class GaussianBasisSet: virtual public SavableState, virtual public DescribedXMLWritable
+class GaussianBasisSet: virtual public SavableState
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif
 {
   public:
 

@@ -138,7 +138,11 @@ class WriteGrid: public Runnable {
   WriteVectorGrid provides an interface for writing the value
   of a vector function evaluated at a given set of grid points to a file (compare to WriteGrid).
  */
-class WriteVectorGrid: public Runnable, virtual public DescribedXMLWritable {
+class WriteVectorGrid: public Runnable
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif // MPQC_NEW_FEATURES
+{
   public:
     // see wf_gaussian_cube
     struct DimensionMap {

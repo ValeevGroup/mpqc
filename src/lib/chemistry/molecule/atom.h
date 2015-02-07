@@ -44,7 +44,11 @@ namespace sc {
      * coordinate system of the Molecule. It also has an atomic number. Optionally, it can
      * has a charge, mass, and it can belong to a fragment.
      */
-    class Atom : public XMLWritable {
+    class Atom
+#ifdef MPQC_NEW_FEATURES
+        : public XMLWritable
+#endif
+    {
 
       private:
         /// Contains the vector to the atom in units determined by molecule.

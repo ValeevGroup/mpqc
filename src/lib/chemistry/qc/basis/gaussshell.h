@@ -48,7 +48,10 @@ class Integral;
 /// A shell of Gaussian functions. A shell is a set of functions with same quantum numbers, contraction coefficients,
 /// and exponents, and located on the common origin. GaussianShell does include the origin information.
 /// @sa GaussianBasisSet::Shell
-class GaussianShell: public DescribedXMLWritable
+class GaussianShell
+#ifdef MPQC_NEW_FEATURES
+    : public DescribedXMLWritable
+#endif
 {
   public:
     enum PrimitiveType { Normalized, Unnormalized };

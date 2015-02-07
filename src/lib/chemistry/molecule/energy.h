@@ -47,7 +47,11 @@ namespace sc {
 /** The MolecularEnergy abstract class inherits from the Function class.
 It computes the energy of the molecule as a function of the geometry.  The
 coordinate system used can be either internal or cartesian.  */
-class MolecularEnergy: public Function, virtual public DescribedXMLWritable {
+class MolecularEnergy: public Function
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif
+{
   private:
     RefSCDimension moldim_; // the number of cartesian variables
     Ref<MolecularCoor> mc_;

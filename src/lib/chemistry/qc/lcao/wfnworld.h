@@ -39,7 +39,11 @@ namespace sc {
   class XMLWriter;
 
   /** Class WavefunctionWorld describes the environment of a Wavefunction */
-class WavefunctionWorld : virtual public SavableState, virtual public DescribedXMLWritable {
+class WavefunctionWorld : virtual public SavableState
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif // MPQC_NEW_FEATURES
+{
 
   // change to 0 to use the old set of OrbitalSpace keys
   static const int USE_NEW_ORBITALSPACE_KEYS = 1;

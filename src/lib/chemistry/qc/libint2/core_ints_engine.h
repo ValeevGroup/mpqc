@@ -51,8 +51,7 @@ namespace sc {
           virtual public RefCount,
           public _Engine
       {
-          Engine(int mmax): RefCount(), _Engine(mmax) {}
-          Engine(int mmax, double prec): RefCount(), _Engine(mmax, prec) {}
+          Engine(int mmax, double prec = 1e-15): RefCount(), _Engine(mmax, prec) {}
       };
 
       template <typename Int>

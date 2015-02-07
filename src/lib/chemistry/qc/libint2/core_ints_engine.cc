@@ -36,9 +36,11 @@
 
 using namespace sc;
 
-//typedef sc::FJT _Engine0;
-//template<> Ref<CoreIntsEngine<_Engine0>::Engine>
-//  CoreIntsEngine<_Engine0>::default_engine_(new CoreIntsEngine<_Engine0>::Engine(12));
+typedef ::libint2::FmEval_Taylor<double, 7> _Engine0;
+template<> Ref<CoreIntsEngine<_Engine0>::Engine>
+  CoreIntsEngine<_Engine0>::default_engine_(
+      new CoreIntsEngine<_Engine0>::Engine(12, 1e-14)
+  );
 
 typedef ::libint2::FmEval_Chebyshev3 _Engine1;
 template<> Ref<CoreIntsEngine<_Engine1>::Engine>

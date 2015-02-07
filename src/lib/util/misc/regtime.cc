@@ -88,8 +88,10 @@ int getrusage (
 #include <util/misc/regtime.h>
 #define _util_misc_regtime_cc
 #include <util/misc/timer.h>
-#include <util/misc/thread_timer.h>
 #include <util/misc/scexception.h>
+#ifdef MPQC_NEW_FEATURES
+#include <util/misc/thread_timer.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -969,12 +971,14 @@ double Timer::flops(const char* region) const {
   return timer_->flops(region);
 }
 
+#ifdef MPQC_NEW_FEATURES
 void Timer::insert(const MultiThreadTimer& timer) {
   TimedRegion* reg = timer.make_timed_region();
   timer_->acquire_timed_region(reg);
   delete reg;
   return;
 }
+#endif
 
 //////////////////////////////////////////////////////////////////////
 // Shorthand to manipulate the global region timer

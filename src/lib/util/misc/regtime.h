@@ -37,7 +37,9 @@
 
 namespace sc {
 
+#if MPQC_NEW_FEATURES
 class MultiThreadTimer;
+#endif
 
 /** TimedRegion is a helper class for RegionTimer. */
 class TimedRegion {
@@ -93,7 +95,9 @@ class TimedRegion {
     void get_flops(double *);
     void get_depth(int *, int depth = 0);
 
+#if MPQC_NEW_FEATURES
     friend class MultiThreadTimer;
+#endif
     friend class RegionTimer;
 };
 
@@ -250,7 +254,9 @@ class Timer {
     double flops(const std::string &region) const { return flops(region.c_str()); }
     //@}
 
+#if MPQC_NEW_FEATURES
     void insert(const MultiThreadTimer& timer);
+#endif
 };
 
 }

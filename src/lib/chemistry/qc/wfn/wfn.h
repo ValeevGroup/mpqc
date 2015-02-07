@@ -38,9 +38,10 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
+#ifdef MPQC_NEW_FEATURES
 #include <util/misc/xml.h>
+#endif // MPQC_NEW_FEATURES
 
-using boost::property_tree::ptree;
 
 namespace sc {
 
@@ -178,7 +179,9 @@ class Wavefunction: public MolecularEnergy {
     virtual ~Wavefunction();
 
     void save_data_state(StateOut&);
-    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
     double density(const SCVector3&);
     double density_gradient(const SCVector3&,double*);

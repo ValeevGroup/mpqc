@@ -28,9 +28,6 @@
 #include <util/misc/runnable.h>
 #include <util/misc/units.h>
 
-
-using boost::property_tree::ptree;
-
 namespace sc {
 
 /** The Grid class defines a finite regular Carthesian grid.
@@ -203,7 +200,10 @@ class WriteVectorGrid: public Runnable, virtual public DescribedXMLWritable {
                     std::string gridformat, std::string gridfile);
     /// Writes the grid data.
     void run();
-    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 };
 
 }

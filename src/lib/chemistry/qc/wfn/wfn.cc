@@ -36,7 +36,9 @@
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/misc/autovec.h>
+#ifdef MPQC_NEW_FEATURES
 #include <util/misc/xmlwriter.h>
+#endif // MPQC_NEW_FEATURES
 #include <util/state/stateio.h>
 #include <util/misc/scexception.h>
 #include <chemistry/qc/basis/uncontract.h>
@@ -416,12 +418,14 @@ Wavefunction::save_data_state(StateOut&s)
   s.put(magnetic_moment_);
 }
 
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 Wavefunction::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree& child = get_my_ptree(parent);
 
   if(natural_orbitals_.computed()){
@@ -447,6 +451,7 @@ Wavefunction::write_xml(
   }
   return MolecularEnergy::write_xml(parent, writer);
 }
+#endif // MPQC_NEW_FEATURES
 
 double
 Wavefunction::total_charge() const

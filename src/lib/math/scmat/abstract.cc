@@ -139,7 +139,8 @@ SCMatrix::save(StateOut&s)
     }
 }
 
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 SCMatrix::write_xml(
     boost::property_tree::ptree& pt,
     const XMLWriter& writer
@@ -157,6 +158,7 @@ SCMatrix::write_xml(
   writer.put_binary_data<double>(data_tree, data, nrow()*ncol());
   return my_tree;
 }
+#endif // MPQC_NEW_FEATURES
 
 void
 SCMatrix::restore(StateIn& s)
@@ -504,7 +506,8 @@ SymmSCMatrix::save(StateOut&s)
     }
 }
 
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 SymmSCMatrix::write_xml(
     boost::property_tree::ptree& pt,
     const XMLWriter& writer
@@ -523,6 +526,7 @@ SymmSCMatrix::write_xml(
   writer.put_binary_data<double>(data_tree, data, ndata);
   return my_tree;
 }
+#endif // MPQC_NEW_FEATURES
 
 void
 SymmSCMatrix::restore(StateIn& s)
@@ -878,7 +882,8 @@ DiagSCMatrix::save(StateOut&s)
     }
 }
 
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 DiagSCMatrix::write_xml(
     boost::property_tree::ptree& pt,
     const XMLWriter& writer
@@ -895,6 +900,7 @@ DiagSCMatrix::write_xml(
   writer.put_binary_data<double>(data_tree, data, n());
   return my_tree;
 }
+#endif // MPQC_NEW_FEATURES
 
 void
 DiagSCMatrix::restore(StateIn& s)

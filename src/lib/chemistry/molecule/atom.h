@@ -30,9 +30,9 @@
 
 #include <string>
 #include <util/state/stateio.h>
+#ifdef MPQC_NEW_FEATURES
 #include <util/misc/xml.h>
-
-using boost::property_tree::ptree;
+#endif
 
 namespace sc {
 
@@ -148,8 +148,9 @@ namespace sc {
         // Made friend for direct access for sc::SavableState
         friend void FromStateIn(Atom &a, StateIn &so, int &count);
 
-        virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
-
+#ifdef MPQC_NEW_FEATURES
+        virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
    };
 
     /// writes Atom to sc::StateOut

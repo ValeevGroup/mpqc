@@ -45,7 +45,7 @@ class SCFIterationData;
 class SCFIterationLogger : public XMLWritable, public DescribedClass {
   public:
 
-    typedef std::function<void(ptree&, const XMLWriter&)> element_write_function;
+    typedef std::function<void(boost::property_tree::ptree&, const XMLWriter&)> element_write_function;
 
   private:
 
@@ -62,7 +62,7 @@ class SCFIterationLogger : public XMLWritable, public DescribedClass {
 
     SCFIterationLogger(const Ref<KeyVal>& keyval);
 
-    ptree& write_xml(ptree& parent, const XMLWriter& writer);
+    boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
 
     // TODO handle alpha and beta for evals and density
 
@@ -111,7 +111,7 @@ class SCFIterationData : public XMLWritable {
     RefSCMatrix beta_coeffs = 0;
 
 
-    ptree& write_xml(ptree& parent, const XMLWriter& writer);
+    boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
 
 };
 

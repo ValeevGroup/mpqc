@@ -54,12 +54,14 @@ sc::FromStateIn(Atom &a, StateIn &si, int &count){
 using boost::property_tree::ptree;
 using namespace sc;
 
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 Atom::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree& child = parent.add_child("Atom", ptree());
   child.put("Z", Z());
   child.put("label", label());
@@ -71,6 +73,7 @@ Atom::write_xml(
   if(have_charge()) child.put("charge", charge());
   return child;
 }
+#endif // MPQC_NEW_FEATURES
 
 bool sc::operator ==(const Atom& a, const Atom& b) {
   if (a.Z() != b.Z())

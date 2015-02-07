@@ -133,7 +133,9 @@ public:
 
   void save_data_state(StateOut&);
 
-  virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+  virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
   /// obsoletes this object
   /// every wavefunction that owns a WavefunctionWorld must call this method when it's obsolete() method is called

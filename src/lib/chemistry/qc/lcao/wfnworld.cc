@@ -30,9 +30,11 @@
 #include <chemistry/qc/basis/petite.h>
 #include <util/misc/scexception.h>
 #include <util/misc/consumableresources.h>
-#include <util/misc/xmlwriter.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <util/misc/xmlwriter.h>
+#  include <Eigen/Dense>
+#endif
 #include <chemistry/qc/lcao/df_runtime.h>
-#include <Eigen/Dense>
 #include <math/optimize/gaussianfit.h>
 #include <math/optimize/gaussianfit.timpl.h>
 
@@ -435,12 +437,14 @@ WavefunctionWorld::print(std::ostream& o) const {
   o << decindent << std::endl;
 }
 
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 WavefunctionWorld::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   //----------------------------------------------------------------------------//
   // Only run this on master (should only be doing that anyway)
   ptree& child = get_my_ptree(parent);
@@ -843,6 +847,7 @@ WavefunctionWorld::xml_data_nonlocal(
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
 }
+#endif // MPQC_NEW_FEATURES
 
 std::pair<TwoBodyOperSet::type, Ref<IntParams> >
 WavefunctionWorld::init_df_kernel(std::string kernel_key) {

@@ -29,8 +29,6 @@
 #include <util/misc/consumableresources.h>
 //TODO add option to gzip data streams
 
-using boost::property_tree::ptree;
-
 namespace sc {
 
   class XMLWriter;
@@ -45,21 +43,21 @@ namespace sc {
 
   class XMLWritable : virtual public RefCount {
     public:
-      virtual ptree& write_xml(ptree& pt, const XMLWriter& writer) = 0;
+      virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer) = 0;
       virtual ~XMLWritable() {}
   };
 
   class DescribedXMLWritable : public XMLWritable, virtual public DescribedClass {
     protected:
-      ptree* my_ptree_ = 0;
-      virtual ptree& get_my_ptree(ptree& parent, std::string name = "");
+      boost::property_tree::ptree* my_ptree_ = 0;
+      virtual boost::property_tree::ptree& get_my_ptree(boost::property_tree::ptree& parent, std::string name = "");
   };
 
   ////////////////////////////////////////////////////////////////////////////////
 
   class XMLReadable {
     public:
-      virtual void read_xml(ptree& pt, const XMLReader& reader) = 0;
+      virtual void read_xml(boost::property_tree::ptree& pt, const XMLReader& reader) = 0;
       virtual ~XMLReadable() {}
   };
 

@@ -606,14 +606,14 @@ GaussianShell::extent(double threshold) const
   return r1;
 }
 
-
-using boost::property_tree::ptree;
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 GaussianShell::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree& child = get_my_ptree(parent);
   child.put("nprimitive", nprimitive());
   child.put("ncontraction", ncontraction());
@@ -649,6 +649,7 @@ GaussianShell::write_xml(
   }
   return child;
 }
+#endif // MPQC_NEW_FEATURES
 
 void
 sc::ToStateOut(const GaussianShell &s, StateOut &so, int &count) {

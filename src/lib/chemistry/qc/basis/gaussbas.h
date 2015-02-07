@@ -43,8 +43,6 @@
 #include "mpqc/range.hpp"
 #endif
 
-using boost::property_tree::ptree;
-
 namespace sc {
 
 class BasisFileSet;
@@ -167,10 +165,9 @@ class GaussianBasisSet: virtual public SavableState, virtual public DescribedXML
         const GaussianBasisSet* basis() const { return basis_; }
         unsigned int center() const { return center_; }
 
-        //const double[3]& r() const {}
-
-
-        virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+        virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
       private:
         friend class GaussianBasisSet;
@@ -466,7 +463,9 @@ class GaussianBasisSet: virtual public SavableState, virtual public DescribedXML
     /// saves this to @c so
     void save_data_state(StateOut& so);
 
-    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
     ///@}
 
@@ -709,7 +708,9 @@ class WriteBasisGrid : public WriteVectorGrid {
 
     virtual ~WriteBasisGrid();
 
-    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
 };
 

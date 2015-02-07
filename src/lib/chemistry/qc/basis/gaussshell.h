@@ -32,9 +32,9 @@
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>
 #include <util/keyval/keyval.h>
-#include <util/misc/xml.h>
-
-using boost::property_tree::ptree;
+#ifdef MPQC_NEW_FEATURES
+#  include <util/misc/xml.h>
+#endif
 
 namespace sc {
 
@@ -279,9 +279,11 @@ class GaussianShell: public DescribedXMLWritable
 
     void print(std::ostream& =ExEnv::out0()) const;
 
-    virtual ptree& write_xml(
-        ptree& parent, const XMLWriter& writer
+#if MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(
+        boost::property_tree::ptree& parent, const XMLWriter& writer
     );
+#endif
 };
 
   /** constructs a new GaussianShell from @c shell by applying Filter @c filter

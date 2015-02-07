@@ -1329,13 +1329,14 @@ Molecule::any_atom_has_label() const {
    return false;
 }
 
-using boost::property_tree::ptree;
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 Molecule::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree& child = parent.add_child("Molecule", ptree());
   child.put("natom", natom());
   child.put("units", geometry_units()->string_rep());
@@ -1347,6 +1348,7 @@ Molecule::write_xml(
   }
   return child;
 }
+#endif // MPQC_NEW_FEATURES
 
 bool sc::operator ==(const Molecule& mol1, const Molecule& mol2) {
   if (mol1.natom() != mol2.natom())

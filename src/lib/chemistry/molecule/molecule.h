@@ -42,9 +42,11 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
 #include <chemistry/molecule/atom.h>
-#include <util/misc/xml.h>
 
-using boost::property_tree::ptree;
+#ifdef MPQC_NEW_FEATURES
+#include <util/misc/xml.h>
+#endif // MPQC_NEW_FEATURES
+
 namespace sc {
 
   /// @addtogroup ChemistryMolecule
@@ -144,7 +146,10 @@ atoms can be given too, however, numerical errors in the
 geometry specification can result in the generation of extra
 atoms so be careful.
 */
-class Molecule: public SavableState, virtual public DescribedXMLWritable
+class Molecule: public SavableState
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif
 {
   protected:
     std::vector<Atom> atoms_;
@@ -501,7 +506,9 @@ class Molecule: public SavableState, virtual public DescribedXMLWritable
 
     void save_data_state(StateOut&);
 
-    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
   private:
     /// reads molecule from a XYZ file, used by constructor only

@@ -6,20 +6,6 @@ include(AddLibrary)
 SET(ccfiles 
   clhf.cc
   clscf.cc
-  cadf/cadfclhf.cc
-  cadf/density.cc
-  cadf/statistics.cc
-  cadf/get_ints.cc
-  cadf/init.cc
-  cadf/decomp.cc
-  cadf/coefficients.cc
-  cadf/compute_j.cc
-  cadf/assignments.cc
-  cadf/compute_k.cc
-  cadf/ordered_shells.cc
-  cadf/approx_pairs.cc
-  cadf/new_exchange.cc
-  cadf/count_ints.cc
   effh.cc
   fbclhf.cc
   hsoshf.cc
@@ -38,6 +24,25 @@ SET(ccfiles
   uscf.cc
 )
 
+IF (MPQC_NEW_FEATURES)
+  APPEND(ccfiles
+    cadf/cadfclhf.cc
+    cadf/density.cc
+    cadf/statistics.cc
+    cadf/get_ints.cc
+    cadf/init.cc
+    cadf/decomp.cc
+    cadf/coefficients.cc
+    cadf/compute_j.cc
+    cadf/assignments.cc
+    cadf/compute_k.cc
+    cadf/ordered_shells.cc
+    cadf/approx_pairs.cc
+    cadf/new_exchange.cc
+    cadf/count_ints.cc
+  )
+ENDIF (MPQC_NEW_FEATURES)
+
 IF(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
     set(newccfiles
       tascf.cpp
@@ -47,11 +52,11 @@ IF(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
     )
 
     # Compiler Warnings for new code
-  if(Future_warning_build)
-    foreach(f ${newccfiles})
-      set_source_files_properties(f COMPILE_FLAGS "-Wall -Wextra ")
-    endforeach()
-  endif(Future_warning_build)
+    if(Future_warning_build)
+      foreach(f ${newccfiles})
+        set_source_files_properties(f COMPILE_FLAGS "-Wall -Wextra ")
+      endforeach()
+    endif(Future_warning_build)
 
     list(APPEND ccfiles ${newccfiles})
 

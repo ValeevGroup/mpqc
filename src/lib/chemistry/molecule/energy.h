@@ -35,9 +35,9 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/deriv.h>
+#ifdef MPQC_NEW_FEATURES
 #include <util/misc/xml.h>
-
-using boost::property_tree::ptree;
+#endif
 
 namespace sc {
 
@@ -168,8 +168,9 @@ class MolecularEnergy: public Function, virtual public DescribedXMLWritable {
     void save_data_state(StateOut&);
 
 
-
-    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
     /// Set up checkpointing
     void set_checkpoint();

@@ -569,12 +569,14 @@ WriteVectorGrid::wf_gaussian_cube(std::ostream &out, const DimensionMap& dmap) {
   }
 }
 
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 WriteVectorGrid::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree& my_tree = this->get_my_ptree(parent);
   //----------------------------------------//
   initialize();
@@ -623,8 +625,7 @@ WriteVectorGrid::write_xml(
   //----------------------------------------//
   return my_tree;
 }
-
-
+#endif // MPQC_NEW_FEATURES
 
 
 

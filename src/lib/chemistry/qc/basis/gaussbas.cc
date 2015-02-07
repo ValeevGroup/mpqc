@@ -79,13 +79,14 @@ bool sc::GaussianBasisSet::Shell::equiv(const Shell& s) const {
   return GaussianShell::equiv(s);
 }
 
-using boost::property_tree::ptree;
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 GaussianBasisSet::Shell::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   // Give it a custom name to avoid writing the "::" in the XML
   ptree& child = GaussianShell::get_my_ptree(parent, "GaussianBasisSetShell");
   child.put("center", center());
@@ -93,6 +94,7 @@ GaussianBasisSet::Shell::write_xml(
   GaussianShell::write_xml(parent, writer);
   return child;
 }
+#endif // MPQC_NEW_FEATURES
 
 //////////////////////////////////////////////////
 
@@ -272,13 +274,14 @@ GaussianBasisSet::save_data_state(StateOut&s)
   s.put(label_);
 }
 
-using boost::property_tree::ptree;
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 GaussianBasisSet::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree& child = get_my_ptree(parent);
   if(not name_.empty()){
     child.put("name", name());
@@ -301,6 +304,7 @@ GaussianBasisSet::write_xml(
   }
   return child;
 }
+#endif // MPQC_NEW_FEATURES
 
 GaussianBasisSet&
 GaussianBasisSet::operator=(const GaussianBasisSet& gbs) {
@@ -1425,12 +1429,14 @@ WriteBasisGrid::initialize() {
 
 }
 
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 WriteBasisGrid::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree& my_tree = this->get_my_ptree(parent);
   if(not basis_->name().empty()){
     my_tree.put("<xmlattr>.basis_name", basis_->name());
@@ -1439,8 +1445,8 @@ WriteBasisGrid::write_xml(
     my_tree.put("<xmlattr>.basis_label", basis_->label());
   }
   return WriteVectorGrid::write_xml(parent, writer);
-
 }
+#endif // MPQC_NEW_FEATURES
 
 WriteBasisGrid::~WriteBasisGrid()
 {

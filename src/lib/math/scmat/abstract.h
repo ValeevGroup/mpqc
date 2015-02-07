@@ -31,11 +31,13 @@
 #include <util/group/message.h>
 
 #include <util/state/state.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <util/misc/xml.h>
+#endif
 #include <math/scmat/dim.h>
 #include <math/scmat/block.h>
-#include <util/misc/xml.h>
 #include <iostream>
-using boost::property_tree::ptree;
+
 namespace sc {
 
 class SCMatrix;
@@ -190,7 +192,11 @@ class SCVector: public DescribedClass {
 /** The SCMatrix class is the abstract base class for general double valued
     n by m matrices.  For symmetric matrices use SymmSCMatrix and for
     diagonal matrices use DiagSCMatrix. */
-class SCMatrix: public DescribedClass, public XMLWritable {
+class SCMatrix: public DescribedClass
+#ifdef MPQC_NEW_FEATURES
+, public XMLWritable
+#endif
+{
   protected:
     RefSCDimension d1,d2;
     Ref<SCMatrixKit> kit_;
@@ -206,7 +212,9 @@ class SCMatrix: public DescribedClass, public XMLWritable {
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
 
-    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
     /// Return the SCMatrixKit used to create this object.
     Ref<SCMatrixKit> kit() const { return kit_; }
@@ -374,7 +382,11 @@ class SCMatrix: public DescribedClass, public XMLWritable {
 
 /** The SymmSCMatrix class is the abstract base class for symmetric
     double valued matrices. */
-class SymmSCMatrix: public DescribedClass, public XMLWritable {
+class SymmSCMatrix: public DescribedClass
+#ifdef MPQC_NEW_FEATURES
+, public XMLWritable
+#endif
+{
   protected:
     RefSCDimension d;
     Ref<SCMatrixKit> kit_;
@@ -389,7 +401,9 @@ class SymmSCMatrix: public DescribedClass, public XMLWritable {
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
 
-    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
     /// Return the maximum absolute value element of this vector.
     virtual double maxabs() const;
@@ -534,7 +548,11 @@ class SymmSCMatrix: public DescribedClass, public XMLWritable {
 
 /** The SymmSCMatrix class is the abstract base class for diagonal double
     valued matrices.  */
-class DiagSCMatrix: public DescribedClass, public XMLWritable {
+class DiagSCMatrix: public DescribedClass
+#ifdef MPQC_NEW_FEATURES
+, public XMLWritable
+#endif
+{
   protected:
     RefSCDimension d;
     Ref<SCMatrixKit> kit_;
@@ -548,7 +566,10 @@ class DiagSCMatrix: public DescribedClass, public XMLWritable {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
-    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
     /// Return the maximum absolute value element of this vector.
     virtual double maxabs() const;

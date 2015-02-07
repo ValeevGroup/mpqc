@@ -45,7 +45,6 @@
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/clhftmpl.h>
-#include <chemistry/qc/scf/iter_logger.h>
 #include <chemistry/qc/wfn/femo.h>
 
 using namespace std;

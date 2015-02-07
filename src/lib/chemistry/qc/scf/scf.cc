@@ -48,7 +48,9 @@
 #include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/lcao/df_runtime.h>
-#include <chemistry/qc/scf/iter_logger.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <chemistry/qc/scf/iter_logger.h>
+#endif // MPQC_NEW_FEATURES
 
 using namespace std;
 using namespace sc;
@@ -228,20 +230,21 @@ SCF::save_data_state(StateOut& s)
   SavableState::save_state(accumddh_.pointer(),s);
 }
 
-
-using boost::property_tree::ptree;
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 SCF::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree& my_tree = this->get_my_ptree(parent);
   if(iter_log_.nonnull()){
     writer.insert_child(my_tree, iter_log_, "iteration_log");
   }
   return OneBodyWavefunction::write_xml(parent, writer);
 }
+#endif // MPQC_NEW_FEATURES
 
 RefSCMatrix
 SCF::oso_eigenvectors()
@@ -829,6 +832,7 @@ SCF::dfinfo() const {
   return 0;
 }
 
+#ifdef MPQC_NEW_FEATURES
 ///////////////////////////////////////////////////////////////////////////
 // SCFIterationLogger
 
@@ -920,14 +924,14 @@ SCFIterationLogger::log_coeffs(
   }
 }
 
-
-using boost::property_tree::ptree;
-ptree&
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
 SCFIterationLogger::write_xml(
     boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree* tmp;
   if(writer.fold_in_class_name()){
     tmp = &parent;
@@ -959,6 +963,7 @@ SCFIterationLogger::write_xml(
   }
   return child;
 }
+#endif // MPQC_NEW_FEATURES
 
 ///////////////////////////////////////////////////////////////////////////
 // SCFIterationData
@@ -1020,6 +1025,7 @@ SCFIterationData::write_xml(
 
   return my_tree;
 }
+#endif // MPQC_NEW_FEATURES
 
 /////////////////////////////////////////////////////////////////////////////
 

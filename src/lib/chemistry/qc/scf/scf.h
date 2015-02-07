@@ -29,15 +29,15 @@
 #define _chemistry_qc_scf_scf_h
 
 #include <util/group/thread.h>
-#include <util/misc/xml.h>
+#ifdef MPQC_NEW_THREADS
+#  include <util/misc/xml.h>
+#endif
 
 #include <math/optimize/scextrap.h>
 
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/wfn/accum.h>
 #include <chemistry/qc/wfn/obwfn.h>
-
-using boost::property_tree::ptree;
 
 namespace sc {
 
@@ -239,7 +239,9 @@ class SCF: public OneBodyWavefunction {
 
     void save_data_state(StateOut&);
 
-    ptree& write_xml(ptree& parent, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+    boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
     RefSCMatrix oso_eigenvectors();
     RefDiagSCMatrix eigenvalues();

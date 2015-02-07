@@ -75,9 +75,9 @@
 #endif
 
 
-using boost::property_tree::ptree;
-
 namespace sc {
+
+  using boost::property_tree::ptree;
 
   ////////////////////////////////////////////////////////////////////////////////
 

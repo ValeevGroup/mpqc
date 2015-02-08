@@ -386,9 +386,11 @@ CLSCF::new_density()
 
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
+#ifdef MPQC_NEW_RUNTIME
   if(!iter_log_.null()){
     iter_log_->log_density(cl_dens_.copy());
   }
+#endif
 
   cl_dens_diff_.accumulate(cl_dens_);
 

@@ -25,7 +25,7 @@ SET(ccfiles
 )
 
 IF (MPQC_NEW_FEATURES)
-  APPEND(ccfiles
+  list(APPEND ccfiles
     cadf/cadfclhf.cc
     cadf/density.cc
     cadf/statistics.cc

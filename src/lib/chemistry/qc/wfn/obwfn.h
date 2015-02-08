@@ -30,7 +30,9 @@
 
 #include <vector>
 #include <chemistry/qc/wfn/wfn.h>
-#include <util/misc/xml.h>
+#ifdef MPQC_NEW_RUNTIME
+#  include <util/misc/xml.h>
+#endif
 
 namespace sc {
 

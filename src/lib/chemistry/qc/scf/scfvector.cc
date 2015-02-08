@@ -29,13 +29,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <boost/property_tree/ptree.hpp>
-
 #include <sstream>
 
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
-#include <util/misc/xmlwriter.h>
 
 #include <util/state/state_bin.h>
 #include <util/group/mstate.h>
@@ -52,9 +49,13 @@
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/scflocal.h>
-#include <chemistry/qc/scf/iter_logger.h>
 
 #include <errno.h>
+
+#ifdef MPQC_NEW_RUNTIME
+#include <chemistry/qc/scf/iter_logger.h>
+#include <util/misc/xmlwriter.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -166,7 +167,9 @@ SCF::compute_vector(double& eelec, double nucrep)
                 << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
 
+#ifdef MPQC_NEW_RUNTIME
     if(iter_log_.nonnull()) iter_log_->new_iteration();
+#endif // MPQC_NEW_RUNTIME
 
     const double wall_time_start = RegionTimer::get_wall_time();
 
@@ -196,6 +199,7 @@ SCF::compute_vector(double& eelec, double nucrep)
         iter_since_reset = 0;
       }
     }
+    ExEnv::out0() << indent << "accuracy = " << accuracy << " new_accuracy = " << new_accuracy << std::endl;
     ao_fock(accuracy);
     tim.exit("fock");
 
@@ -204,6 +208,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     double eother = 0.0;
     if (accumddh_) eother = accumddh_->e();
 
+#ifdef MPQC_NEW_RUNTIME
     if(iter_log_.nonnull()) {
       using boost::property_tree::ptree;
       iter_log_->log_iter_misc([eelec,eother,nucrep,delta](ptree& parent, const XMLWriter& writer) {
@@ -211,6 +216,7 @@ SCF::compute_vector(double& eelec, double nucrep)
         parent.put("delta", delta);
       });
     }
+#endif // MPQC_NEW_RUNTIME
 
     if(fake_scf_convergence_after_fock_build_ ||
         (fake_scf_convergence_after_n_iter_ > 0 && iter+1 >= fake_scf_convergence_after_n_iter_)
@@ -371,6 +377,7 @@ SCF::compute_vector(double& eelec, double nucrep)
       evals.print("scf eigenvalues");
     }
 
+#ifdef MPQC_NEW_RUNTIME
     if (iter_log_.nonnull()){
       iter_log_->log_evals(evals.copy());
 
@@ -389,6 +396,7 @@ SCF::compute_vector(double& eelec, double nucrep)
         );
       }
     }
+#endif // MPQC_NEW_RUNTIME
 
     if (reset_occ_)
       set_occupations(evals);

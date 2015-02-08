@@ -15,12 +15,13 @@
 #include <chemistry/qc/lcao/fockbuild_runtime.h>
 #include <chemistry/qc/lcao/clhfcontrib.h>
 
-#include <util/misc/xmlwriter.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <util/misc/xmlwriter.h>
+static constexpr bool xml_debug = false;
+#endif // MPQC_NEW_FEATURES
 
 using namespace std;
 using namespace sc;
-
-static constexpr bool xml_debug = false;
 
 static ClassDesc FockBuildCLHF_cd(
   typeid(FockBuildCLHF),"FockBuildCLHF",1,"public CLHF",
@@ -197,7 +198,9 @@ DFCLHF::DFCLHF(const Ref<KeyVal>& keyval) :
                      __FILE__, __LINE__, "world");
   if (world_->wfn() == 0) world_->set_wfn(this);
 
+#ifdef MPQC_NEW_RUNTIME
   xml_debug_ = keyval->booleanvalue("xml_debug", KeyValValueboolean(false));
+#endif // MPQC_NEW_RUNTIME
 
   // need a nonblocked cl_gmat_ in this method
   Ref<PetiteList> pl = integral()->petite_list();
@@ -223,11 +226,15 @@ DFCLHF::ao_fock(double accuracy)
   Timer step_tim("misc");
   int nthread = threadgrp_->nthread();
 
+#ifdef MPQC_NEW_RUNTIME
   if(xml_debug_) begin_xml_context("compute_fock", "compute_fock.xml");
+#endif // MPQC_NEW_RUNTIME
 
   // transform the density difference to the AO basis
   RefSymmSCMatrix dd = cl_dens_diff_;
+#ifdef MPQC_NEW_RUNTIME
   if(xml_debug_) write_as_xml("cl_dens_diff_", cl_dens_diff_);
+#endif // MPQC_NEW_RUNTIME
   Ref<PetiteList> pl = integral()->petite_list();
   cl_dens_diff_ = pl->to_AO_basis(dd);
 
@@ -257,22 +264,34 @@ DFCLHF::ao_fock(double accuracy)
   step_tim.change("build");
   Ref<OrbitalSpace> aospace = aoreg->value(basis());
   RefSCMatrix G;
+#ifdef MPQC_NEW_RUNTIME
   if(xml_debug_) write_as_xml("D", Pa);
+#endif // MPQC_NEW_RUNTIME
   {
     const std::string jkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("J"));
+#ifdef MPQC_NEW_RUNTIME
     if(xml_debug_) begin_xml_context("compute_J");
+#endif // MPQC_NEW_RUNTIME
     RefSCMatrix J = fb_rtime->get(jkey);
+#ifdef MPQC_NEW_RUNTIME
     if(xml_debug_) write_as_xml("J", J), end_xml_context("compute_J");
+#endif // MPQC_NEW_RUNTIME
     G = J.copy();
   }
   {
     const std::string kkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("K"),AnySpinCase1);
+#ifdef MPQC_NEW_RUNTIME
     if(xml_debug_) begin_xml_context("compute_K");
+#endif // MPQC_NEW_RUNTIME
     RefSCMatrix K = fb_rtime->get(kkey);
+#ifdef MPQC_NEW_RUNTIME
     if(xml_debug_) write_as_xml("K", K), end_xml_context("compute_K");
+#endif // MPQC_NEW_RUNTIME
     G.accumulate( -1.0 * K);
   }
+#ifdef MPQC_NEW_RUNTIME
   if(xml_debug_) end_xml_context("compute_fock"), assert(false);
+#endif // MPQC_NEW_RUNTIME
   Ref<SCElementOp> accum_G_op = new SCElementAccumulateSCMatrix(G.pointer());
   RefSymmSCMatrix G_symm = G.kit()->symmmatrix(G.coldim()); G_symm.assign(0.0);
   G_symm.element_op(accum_G_op); G = 0;
@@ -311,14 +330,16 @@ DFCLHF::dfinfo() const {
 }
 
 
-using boost::property_tree::ptree;
-ptree&
+#ifdef MPQC_NEW_RUNTIME
+boost::property_tree::ptree&
 DFCLHF::write_xml(
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
+  using boost::property_tree::ptree;
   ptree& child = get_my_ptree(parent);
   world()->write_xml(child, writer);
   return CLHF::write_xml(parent, writer);
 }
+#endif // MPQC_NEW_RUNTIME

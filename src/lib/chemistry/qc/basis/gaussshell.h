@@ -51,7 +51,9 @@ class Integral;
 class GaussianShell
 #ifdef MPQC_NEW_FEATURES
     : public DescribedXMLWritable
-#endif
+#else // MPQC_NEW_FEATURES
+    : public DescribedClass
+#endif // MPQC_NEW_FEATURES
 {
   public:
     enum PrimitiveType { Normalized, Unnormalized };

@@ -51,7 +51,6 @@ sc::FromStateIn(Atom &a, StateIn &si, int &count){
     count += si.get(a.label_);
 }
 
-using boost::property_tree::ptree;
 using namespace sc;
 
 #ifdef MPQC_NEW_FEATURES

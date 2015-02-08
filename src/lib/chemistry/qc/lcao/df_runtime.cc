@@ -29,6 +29,7 @@
 #include <chemistry/qc/lcao/df_runtime.h>
 #include <math/optimize/gaussianfit.h>
 #include <math/optimize/gaussianfit.timpl.h>
+#include <util/misc/consumableresources.h>
 
 using namespace sc;
 
@@ -624,7 +625,11 @@ DensityFittingParams::DensityFittingParams(const Ref<GaussianBasisSet>& basis,
                                            const std::string& kernel,
                                            const std::string& solver) :
                                            basis_(basis),
-                                           kernel_(kernel)
+                                           kernel_(kernel),
+                                           local_coulomb_(false),
+                                           local_exchange_(false),
+                                           exact_diag_J_(false),
+                                           exact_diag_K_(false)
 {
   if (solver == "cholesky_inv")
     solver_ = DensityFitting::SolveMethod_InverseCholesky;
@@ -654,6 +659,8 @@ DensityFittingParams::DensityFittingParams(StateIn& si) : SavableState(si) {
   int s; si.get(s); solver_ = static_cast<DensityFitting::SolveMethod>(s);
   si.get(local_coulomb_);
   si.get(local_exchange_);
+  si.get(exact_diag_J_);
+  si.get(exact_diag_K_);
 }
 
 DensityFittingParams::~DensityFittingParams() {
@@ -666,6 +673,8 @@ DensityFittingParams::save_data_state(StateOut& so) {
   so.put((int)solver_);
   so.put(local_coulomb_);
   so.put(local_exchange_);
+  so.put(exact_diag_J_);
+  so.put(exact_diag_K_);
 }
 
 void

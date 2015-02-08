@@ -74,9 +74,9 @@ class SCF: public OneBodyWavefunction {
 
     // Super expert stuff.  Don't mess with this unless you know what you're doing
     // A subclass can set this to true to make compute_vector() set delta to 0.0 and break after the fock build
-    bool fake_scf_convergence_after_fock_build_ = false;
+    static const bool fake_scf_convergence_after_fock_build_ = false;
     // A subclass can set this to make compute_vector() set delta to 0.0 and break after some numner of iterations no matter what
-    int fake_scf_convergence_after_n_iter_ = -1;
+    static const int fake_scf_convergence_after_n_iter_ = -1;
 
     double level_shift_;
 
@@ -146,7 +146,9 @@ class SCF: public OneBodyWavefunction {
     /// how much lower is the desired accuracy of the guess?
     static double guess_acc_ratio() { return 1e4; }
 
+#ifdef MPQC_NEW_RUNTIME
     Ref<SCFIterationLogger> iter_log_;
+#endif
 
     /// prints iteration log
     static void iter_print(int iter,

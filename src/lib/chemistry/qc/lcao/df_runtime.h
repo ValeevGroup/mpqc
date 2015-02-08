@@ -210,10 +210,10 @@ namespace sc {
     private:
       static ClassDesc class_desc_;
 
-      bool local_coulomb_ = false;
-      bool local_exchange_ = false;
-      bool exact_diag_J_ = false;
-      bool exact_diag_K_ = false;
+      bool local_coulomb_;
+      bool local_exchange_;
+      bool exact_diag_J_;
+      bool exact_diag_K_;
       Ref<GaussianBasisSet> basis_;
       std::string kernel_;
       DensityFitting::SolveMethod solver_;

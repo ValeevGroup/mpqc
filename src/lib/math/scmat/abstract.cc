@@ -29,11 +29,13 @@
 
 #include <util/misc/consumableresources.h>
 #include <util/misc/formio.h>
-#include <util/misc/xmlwriter.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
+#ifdef MPQC_NEW_RUNTIME
+#  include <util/misc/xmlwriter.h>
+#endif
 
 using namespace std;
 using namespace sc;

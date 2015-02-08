@@ -41,8 +41,6 @@
 #endif
 
 
-static constexpr bool xml_debug = false;
-
 #define matprint(var, label) //cout << "====== " label " ======" << endl << var << endl
 
 #include <util/misc/sharedptr.h>
@@ -54,8 +52,11 @@ static constexpr bool xml_debug = false;
 #include<math/scmat/svd.h>
 #include<chemistry/qc/lcao/fockbuilder.h>
 #include<util/misc/consumableresources.h>
-#include<Eigen/Dense>
-#include <util/misc/xmlwriter.h>
+#ifdef MPQC_NEW_RUNTIME
+#  include <Eigen/Dense>
+#  include <util/misc/xmlwriter.h>
+
+static constexpr bool xml_debug = false;
 
 typedef Eigen::Map<Eigen::MatrixXd> EigenMatrixMap;
 typedef Eigen::Map<const Eigen::MatrixXd> ConstEigenMatrixMap;
@@ -70,6 +71,7 @@ typedef std::vector<Eigen::MatrixXd> VectorOfMatrices;
 typedef std::vector<Eigen::VectorXd> VectorOfVectors;
 
 typedef DecompositionMap::iterator DMap_iter;
+#endif // MPQC_NEW_RUNTIME
 
 using namespace std;
 using namespace sc;
@@ -1188,6 +1190,7 @@ namespace sc {
       return result;
     }
 
+#ifdef MPQC_NEW_RUNTIME
     RefSCMatrix coulomb_df_local(const Ref<DensityFittingInfo>& df_info,
                                  const RefSymmSCMatrix& P,
                                  const Ref<GaussianBasisSet>& brabs,
@@ -1697,6 +1700,7 @@ namespace sc {
       /*=======================================================================================*/
       return result;
     }
+#endif // MPQC_NEW_RUNTIME
 
     RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
@@ -1964,6 +1968,7 @@ namespace sc {
       return result;
     }
 
+#ifdef MPQC_NEW_RUNTIME
     RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
                             SpinCase1 spin,
@@ -2448,6 +2453,7 @@ namespace sc {
       /*=======================================================================================*/
       return result;
     }
+#endif // MPQC_NEW_RUNTIME
 
 }} // namespace sc::detail
 

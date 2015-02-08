@@ -16,7 +16,7 @@ set(ccfiles
   units.cc
 )
 if (MPQC_NEW_FEATURES)
-  append(ccfiles
+  list(APPEND ccfiles
     thread_timer.cc
     xml.cc
     xmlwriter.cc

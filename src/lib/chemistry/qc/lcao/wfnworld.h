@@ -32,8 +32,6 @@
 #include <chemistry/qc/lcao/moints_runtime.h>
 #include <chemistry/qc/lcao/fockbuild_runtime.h>
 
-using boost::property_tree::ptree;
-
 namespace sc {
 
   class XMLWriter;
@@ -139,7 +137,7 @@ public:
 
 #ifdef MPQC_NEW_FEATURES
   virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
-#endif
+#endif // MPQC_NEW_FEATURES
 
   /// obsoletes this object
   /// every wavefunction that owns a WavefunctionWorld must call this method when it's obsolete() method is called
@@ -194,8 +192,10 @@ public:
 
 private:
 
-  void xml_data_local(bool do_integrals, ptree& pt, const XMLWriter& writer);
-  void xml_data_nonlocal(bool do_integrals, ptree& pt, const XMLWriter& writer);
+#ifdef MPQC_NEW_FEATURES
+  void xml_data_local(bool do_integrals, boost::property_tree::ptree& pt, const XMLWriter& writer);
+  void xml_data_nonlocal(bool do_integrals, boost::property_tree::ptree& pt, const XMLWriter& writer);
+#endif // MPQC_NEW_FEATURES
 
   /// whose World is it?
   Wavefunction* wfn_;
@@ -208,6 +208,7 @@ private:
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
+#ifdef MPQC_NEW_FEATURES
   typedef enum {
     DFBasis,
     DFCoefficients,
@@ -215,6 +216,7 @@ private:
     ExactIntegralsERI
   } _XMLOutputData;
   std::vector<_XMLOutputData> out_data_;
+#endif // MPQC_NEW_FEATURES
 
   bool dynamic_;
   double print_percent_;

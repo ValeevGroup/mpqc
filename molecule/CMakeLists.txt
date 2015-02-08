@@ -7,6 +7,8 @@ set(sources
   molecule_fwd.h
   clustering_functions.h
   clustering_functions.cpp
+  attach_hydrogens.h
+  attach_hydrogens.cpp
   cluster.cpp
   common.h
   common.cpp

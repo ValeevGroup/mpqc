@@ -367,7 +367,7 @@ void inline CompressLeft(
 template <typename T>
 void inline CompressLeft(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
                          Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                         double cut, bool debug = false) {
+                         double cut) {
     eigen_version::CompressLeft(L, R, cut);
 }
 
@@ -413,7 +413,7 @@ void inline CompressRight(
 template <typename T>
 void inline CompressRight(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
                           Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                          double cut, bool debug = false) {
+                          double cut) {
 
     eigen_version::CompressRight(L, R, cut);
 }

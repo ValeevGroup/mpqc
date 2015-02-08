@@ -17,7 +17,7 @@ ClusterShells::ClusterShells(std::vector<std::vector<libint2::Shell>> shell,
 
 unsigned int ClusterShells::max_am() const { return shells_.size() - 1; }
 bool ClusterShells::has_am(unsigned int am) const {
-    return shells_.size() > am; 
+    return shells_.size() > am;
 }
 
 unsigned int ClusterShells::nfunctions(unsigned int am) const {
@@ -44,8 +44,21 @@ ClusterShells::shells(unsigned int am) const {
     return shells_[am];
 }
 
+unsigned int ClusterShells::nshells(unsigned int am) const {
+    return shells_[am].size();
+}
+
+unsigned int ClusterShells::nshells() const {
+    return std::accumulate(
+        shells_.begin(), shells_.end(), 0u,
+        [](unsigned int n, std::vector<libint2::Shell> const &am_set) {
+            return n + am_set.size();
+        });
+}
+
 std::vector<libint2::Shell> ClusterShells::flattened_shells() const {
     std::vector<libint2::Shell> shells;
+    shells.reserve(nshells());
 
     for (auto const &a : shells_) {
         shells.insert(shells.end(), a.begin(), a.end());

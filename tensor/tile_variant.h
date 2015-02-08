@@ -166,6 +166,10 @@ class TileVariant {
         return apply_unary_op(full_rank_functor);
     }
 
+    double norm() const {
+        return apply_unary_op(norm_functor);
+    }
+
     bool iszero() const { return apply_unary_op(is_zero_functor); }
 
     typename FullRankTile<T>::template Matrix<T> matrix() const {
@@ -249,6 +253,21 @@ class TileVariant {
             return t.matrix();
         }
     } matrix_functor;
+
+    struct {
+        double operator()(FullRankTile<T> const &t) {
+            return t.matrix().template lpNorm<2>();
+        }
+
+        // Going to approximate the norm for now if we assume the R matrix
+        // has the R values from QR along the diagonal and these R values are
+        // approximately equal to the singular values, then the F norm of the
+        // Full matrix is approximately the sqrt of the sum of the squares of
+        // the R values.
+        double operator()(LowRankTile<T> const &t) {
+            return t.matrixR().diagonal().norm();
+        }
+    } norm_functor;
 
 
     /*

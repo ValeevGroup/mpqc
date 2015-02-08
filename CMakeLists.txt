@@ -10,7 +10,7 @@ option(DEBUG_RELEASE OFF)
 enable_testing()
 option(PERFORM_UNIT_TESTS ON)
 
-set(CXX_FLAGS "-std=c++11")
+set(CXX_FLAGS "${CXX_FLAGS} -std=c++11")
 if(RELEASE)
     set(CXX_FLAGS "${CXX_FLAGS} -DNDEBUG -mavx -O3")
     message(STATUS "Performing release build ${CXX_FLAGS}")
@@ -32,15 +32,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 FIND_PACKAGE(MPI REQUIRED)
 SET(EXTRA_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
 
-if(USER_MATH_LIBS)
-  LIST(APPEND EXTRA_FLAGS ${USER_MATH_CXX_FLAGS})
-  Set(LAPACK_INCLUDE_DIRS ${USER_MATH_INCLUDE_DIRS})
-  Set(LAPACK_LIBRARIES ${USER_MATH_LIBS})
-endif(USER_MATH_LIBS)
-
-if(NOT USER_MATH_LIBS)
-  FIND_PACKAGE(LAPACK REQUIRED)
-endif(NOT USER_MATH_LIBS)
+include(external/lapack.cmake)
 
 FIND_PACKAGE(Eigen3 REQUIRED)
 FIND_PACKAGE(TBB REQUIRED)
@@ -85,6 +77,31 @@ ENDIF(PERFORM_UNIT_TESTS)
 
 add_executable(${PROJECT_NAME} ${TileClusterChem_Sources}) 
 target_link_libraries(${PROJECT_NAME}
+  ${TileClusterChem_LIBRARIES}
+)
+
+add_executable(sparse_integral_example EXCLUDE_FROM_ALL sparse_integral_example.cpp) 
+target_link_libraries(sparse_integral_example
+  ${TileClusterChem_LIBRARIES}
+)
+
+add_executable(integral_space_savings EXCLUDE_FROM_ALL integral_space_savings.cpp) 
+target_link_libraries(integral_space_savings
+  ${TileClusterChem_LIBRARIES}
+)
+
+add_executable(integral_correctness_test EXCLUDE_FROM_ALL integral_correctness_test.cpp) 
+target_link_libraries(integral_correctness_test
+  ${TileClusterChem_LIBRARIES}
+)
+
+add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 
+target_link_libraries(sqrt_inverse_example
+  ${TileClusterChem_LIBRARIES}
+)
+
+add_executable(eri3_low_rank_example EXCLUDE_FROM_ALL eri3_low_rank_example.cpp) 
+target_link_libraries(eri3_low_rank_example
   ${TileClusterChem_LIBRARIES}
 )
 

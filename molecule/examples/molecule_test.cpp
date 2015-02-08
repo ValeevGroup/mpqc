@@ -1,49 +1,81 @@
 #include <iostream>
-#include "../include/eigen.h"
-#include "cluster_concept.h"
-#include "cluster_collapse.h"
-#include "cluster.h"
-#include "molecule.h"
-#include "clustering_functions.h"
 #include <vector>
 #include <chrono>
-#include "Atom.h"
-#include "../include/tbb.h"
+
+#include "../Atom.h"
+#include "../../include/tbb.h"
+#include "../cluster_concept.h"
+#include "../molecule.h"
+#include "../cluster_collapse.h"
+
+#include "../cluster.h"
+#include "../clustering_functions.h"
+
+#include "../../include/libint.h"
+#include <fstream>
 
 using namespace tcc;
 using namespace tcc::molecule;
 
-int main(int argc, char **argv) {
-    int nthreads = (argc > 1) ? std::stoi(argv[1]) : 4;
-    unsigned long N = (argc > 2) ? std::stoi(argv[2]) : 5000;
+molecule::Molecule read_xyz(std::ifstream &f) {
+    // Get number of atoms.
+    unsigned long natoms = 0;
+    f >> natoms;
 
-    tbb::task_scheduler_init init(nthreads);
-
-    // Makeing Atoms
-    tbb::tick_count a0 = tbb::tick_count::now();
-    std::vector<Clusterable> atoms;
-    atoms.reserve(N);
-    for (auto i = 0ul; i < N; ++i) {
-        atoms.emplace_back(Atom{{0, 0, i}, 1.0, 1.0});
+    std::string line;
+    std::vector<molecule::Clusterable> clusterables;
+    while (std::getline(f, line)) {
+        if (!line.empty()) {
+            std::stringstream ss(line);
+            std::string atom = "";
+            double x = 0.0;
+            double y = 0.0;
+            double z = 0.0;
+            ss >> atom;
+            ss >> x;
+            ss >> y;
+            ss >> z;
+            if (atom == "H") {
+                clusterables.emplace_back(molecule::Atom({x, y, z}, 1, 1));
+            } else if (atom == "O") {
+                clusterables.emplace_back(molecule::Atom({x, y, z}, 16, 8));
+            }
+        }
     }
-    tbb::tick_count a1 = tbb::tick_count::now();
-    double a_alloc = (a1 - a0).seconds();
-    std::cout << "Atom allocing time = " << a_alloc << std::endl;
+    return molecule::Molecule{std::move(clusterables)};
+}
 
-    // Makeing a Molecule
-    tbb::tick_count m0 = tbb::tick_count::now();
-    Molecule mol(std::move(atoms));
-    tbb::tick_count m1 = tbb::tick_count::now();
-    double m_alloc = (m1 - m0).seconds();
-    std::cout << "mol allocing time = " << m_alloc << std::endl;
+int main(int argc, char **argv) {
+    std::string mol_file = "";
+    int nclusters = 0;
+    if(argc == 3){
+        mol_file = argv[1];
+        nclusters = std::stoi(argv[2]);
+    } else {
+        std::cout << "Need input file and/or number of clusters\n";
+        return 0;
+    }
+    
+    std::ifstream molecule_file(mol_file);
+    auto mol = read_xyz(molecule_file);
+    molecule_file.close();
 
     // Making clusters
     tbb::tick_count mc0 = tbb::tick_count::now();
-    auto clusters = mol.cluster_molecule(clustering::kmeans(10), 60);
+    auto clusters = mol.attach_H_and_kmeans(nclusters);
     tbb::tick_count mc1 = tbb::tick_count::now();
     double mc_alloc = (mc1 - mc0).seconds();
     std::cout << "cluster allocing time = " << mc_alloc << std::endl;
 
+    auto i = 0;
+    for(auto &c : clusters){
+        auto atoms = collapse_to_atoms(c);
+        std::cout << "Cluster " << i << " has " << atoms.size() << " atoms\n";
+        ++i;
+    }
+            
+
+    /*
     using iter_t = decltype(clusters.begin());
     double sum = tbb::parallel_reduce(
         tbb::blocked_range<iter_t>(clusters.begin(), clusters.end()), 0.0,
@@ -55,6 +87,7 @@ int main(int argc, char **argv) {
         std::plus<double>());
 
     std::cout << "Sum of distances = " << sum << std::endl;
+    */
 
     return 0;
 }

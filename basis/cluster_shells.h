@@ -31,6 +31,10 @@ class ClusterShells {
     std::vector<libint2::Shell> flattened_shells() const;
 
     unsigned int nfunctions(unsigned int) const;
+    /// gives number of shells in am provided
+    unsigned int nshells(unsigned int) const;
+    /// Gives number of total shells
+    unsigned int nshells() const;
     unsigned int flattened_nfunctions() const;
 
     unsigned int max_am() const;

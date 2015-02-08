@@ -20,9 +20,9 @@ class ClusterConcept {
     virtual ~ClusterConcept() = default;
 
     virtual ClusterConcept *clone() const = 0;
-    virtual Eigen::Vector3d center() const = 0;
+    virtual position_t center() const = 0;
     virtual double mass() const = 0;
-    virtual double charge() const = 0;
+    virtual int charge() const = 0;
     virtual std::vector<Atom> atoms() const = 0;
 };
 
@@ -45,9 +45,9 @@ class ClusterModel : public ClusterConcept {
         return new ClusterModel(*this);
     }
 
-    Eigen::Vector3d center() const override final { return element_.center(); }
+    position_t center() const override final { return element_.center(); }
     double mass() const override final { return element_.mass(); }
-    double charge() const override final { return element_.charge(); }
+    int charge() const override final { return element_.charge(); }
     std::vector<Atom> atoms() const override final {
         return collapse_to_atoms(element_);
     }
@@ -62,8 +62,6 @@ class ClusterModel : public ClusterConcept {
  */
 class Clusterable {
   public:
-    using position_t = Eigen::Vector3d;
-
     template <typename T>
     Clusterable(T t)
         : element_impl_(std::make_shared<ClusterModel<T>>(std::move(t))) {}
@@ -74,7 +72,7 @@ class Clusterable {
 
     position_t center() const { return element_impl_->center(); }
     double mass() const { return element_impl_->mass(); }
-    double charge() const { return element_impl_->charge(); }
+    int charge() const { return element_impl_->charge(); }
     std::vector<Atom> atoms() const { return element_impl_->atoms(); }
 
   private:

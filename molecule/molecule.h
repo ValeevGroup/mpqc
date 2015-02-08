@@ -17,7 +17,7 @@ class Molecule {
     Molecule(std::vector<Clusterable> c);
 
     position_t center() const;
-    double charge() const;
+    int charge() const;
     double mass() const;
 
     std::vector<Clusterable>::const_iterator begin() const;
@@ -28,13 +28,27 @@ class Molecule {
     std::vector<Cluster>
     cluster_molecule(cluster_fn_t fn, unsigned long nclusters) const;
 
+    // Will attach any hydrogens to their closest heavy atom.
+    std::vector<Cluster> attach_hydrogens() const;
+
+    /// Will attach hydrogens by calling attach_hydrogens and will then do a
+    /// search for the best k-means clustering by attempting to cluster multiple
+    /// with different seeds.  The criteria for best is determined by taking the
+    /// minimimum sum of the square distances from each cluster. Any groupings
+    /// that include a cluster with zero memebers are thrown away.
+    std::vector<Cluster>
+    attach_H_and_kmeans(unsigned long nclusters,
+                        unsigned long init_seed = 42) const;
+
   private:
     std::vector<Clusterable> elements_;
 
     position_t center_ = {0, 0, 0};
     double mass_ = 0.0;
-    double charge_ = 0.0;
+    int charge_ = 0;
 };
+
+Molecule read_xyz(std::string const&);
 
 } // namespace molecule
 } // namespace tcc

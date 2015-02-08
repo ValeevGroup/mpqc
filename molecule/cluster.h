@@ -1,32 +1,25 @@
 #pragma once
-#ifndef CLUSTER_H
-#define CLUSTER_H
+#ifndef TCC_MOLCULE_CLUSTER_H
+#define TCC_MOLCULE_CLUSTER_H
 
 #include <vector>
 #include <numeric>
-#include "../include/eigen.h"
+
 #include "cluster_concept.h"
+#include "molecule_fwd.h"
 
 namespace tcc {
 namespace molecule {
-/**
- * @brief The Cluster class contains a vector of clusterables.
- */
+
 class Cluster {
   public:
-    using position_t = Clusterable::position_t;
-
     Cluster() = default;
     Cluster(const Cluster &c) = default;
     Cluster &operator=(const Cluster &c) = default;
 
-    Cluster(Cluster &&c) noexcept;
-    Cluster &operator=(Cluster &&c) noexcept;
+    Cluster(Cluster &&c) = default;
+    Cluster &operator=(Cluster &&c) = default;
 
-    /**
-     * add_clusterable takes any type which is clusterable and adds it to the
-     * cluster.
-     */
     template <typename T>
     void add_clusterable(T t) {
         mass_ += t.mass();
@@ -37,7 +30,7 @@ class Cluster {
     unsigned long nelements() const { return elements_.size(); }
 
     void clear() {
-        charge_ = 0.0;
+        charge_ = 0;
         mass_ = 0.0;
         elements_.clear();
     }
@@ -46,12 +39,12 @@ class Cluster {
      * @brief init_center just sets the center equal to a point.
      * @param point is a vector which will be swapped into the center.
      */
-    void init_center(position_t point) { center_.swap(point); }
+    void set_center(position_t point) { center_.swap(point); }
 
     /**
      * @brief guess_center will compute a new center of mass for the cluster.
      */
-    void guess_center();
+    void compute_com();
 
     /**
      * @brief sum_distances_from_center calculates the sum of the disances of
@@ -64,7 +57,7 @@ class Cluster {
 
     inline position_t center() const { return center_; }
     inline double mass() const { return mass_; }
-    inline double charge() const { return charge_; }
+    inline int charge() const { return charge_; }
 
     /**
      * @brief begin returns the begin iterator to the vector of clusterables.
@@ -83,11 +76,11 @@ class Cluster {
   private:
     std::vector<Clusterable> elements_;
     position_t center_ = {0, 0, 0};
-    double charge_ = 0.0;
+    int charge_ = 0;
     double mass_ = 0.0;
 };
 
 } // namespace molecule
 } // namespace tcc
 
-#endif // CLUSTER_H
+#endif // TCC_MOLECULE_CLUSTER_H

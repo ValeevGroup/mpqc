@@ -21,11 +21,15 @@ std::ostream &operator<<(std::ostream &os, AtomBasisShell const &abs) {
 
     for (auto i = 0ul; i < abs.contraction_length(); ++i) {
         os << "\t\tExponent " << i << " is " << abs.exponent(i) << " ";
+        auto const &coeffs = abs.coeffs();
         if (is_SP) {
-            os << "With s coefficent " << abs.coeff(i, 0)
-               << " and p coefficent " << abs.coeff(i, 1) << "\n";
+            os << "With coefficents ";
+            for(auto const &elem : coeffs[i]){
+                std::cout << elem << " ";
+            }
+            std::cout << "\n";
         } else {
-            os << "With coefficent " << abs.coeff(i) << "\n";
+            os << "With coefficent " << coeffs[i][0] << "\n";
         }
     }
     return os;

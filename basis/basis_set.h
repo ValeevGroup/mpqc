@@ -20,27 +20,22 @@ namespace basis {
 
 class BasisSet {
   public:
-    BasisSet();
-    BasisSet(BasisSet const &b);
-    BasisSet(BasisSet &&b);
-    BasisSet &operator=(BasisSet const &b);
-    BasisSet &operator=(BasisSet &&b);
+    BasisSet() = delete; // Can't init a basis without name.
+    BasisSet(BasisSet const &b) = default;
+    BasisSet(BasisSet &&b) = default;
+    BasisSet &operator=(BasisSet const &b) = default;
+    BasisSet &operator=(BasisSet &&b) = default;
 
+    /// BasisSet takes a string which specifies the name of the basis set to
+    /// use.
     BasisSet(std::string const &s);
 
-    std::vector<AtomBasisSet> const & atom_basis_set() const;
-    std::vector<libint2::Shell> atom_basis(molecule::Atom const &a) const;
-    
     std::vector<ClusterShells> create_basis(
         std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const;
 
   private:
-    void read_basis(std::string const &s);
-
-    std::vector<AtomBasisSet> atom_bases_;
+    std::string basis_set_name_;
 };
-
-std::ostream &operator<<(std::ostream &os, BasisSet const &bs);
 
 } // namespace basis
 } // namespace tcc

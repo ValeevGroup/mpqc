@@ -983,7 +983,7 @@ public:
   RefSCMatrix V_genref_spinfree(const Ref<OrbitalSpace>& p,
                      const Ref<OrbitalSpace>& q);
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   /**
    * TiledArray-based builder of closed-shell V intermediate
    */

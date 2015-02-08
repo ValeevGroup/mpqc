@@ -31,7 +31,7 @@
 
 #include <mpqc_config.h>
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
 
 #include <chemistry/qc/mbptr12/sr_r12intermediates.h>
 

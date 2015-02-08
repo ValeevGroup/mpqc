@@ -56,7 +56,7 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
 
   std::string r12_str = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   std::string mpqc3_str = kv->stringvalue("use_mpqc3", KeyValValuestring(std::string()));
   std::string singles_str = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()));
   std::string partition_str = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string()));
@@ -134,7 +134,7 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
     if(!r12_str.empty())
       kva->assign("pt2_correction", r12_str);
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
     if(!singles_str.empty())
       kva->assign("cabs_singles", singles_str);
     if(!partition_str.empty())

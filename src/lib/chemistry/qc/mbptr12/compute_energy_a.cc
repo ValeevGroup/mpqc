@@ -104,7 +104,7 @@ MBPT2_R12::compute_energy_()
     cabs_singles_energy_ = r12eval_->emp2_cabs_singles();
   }
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   r12eval_->gf2_r12(gf2_orbital_);
 #endif
 

@@ -35,7 +35,7 @@
 #include <chemistry/qc/wfn/rdm.h>
 
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
 #include <chemistry/qc/mbptr12/sr_r12intermediates.h>
 #include <chemistry/qc/mbptr12/singles_casscf.h>
 #endif
@@ -284,7 +284,7 @@ namespace sc {
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
       bool cabs_singles_;
       std::string cabs_singles_h0_; // specify zeroth order H; options: 'CI'
                                      // 'dyall_1', 'dyall_2', 'complete'; '1' and '2'
@@ -400,7 +400,7 @@ namespace sc {
 
       /// @return the {[2]_R12,reference} pair of energies computed using the MPQC3 runtime
       std::pair<double,double> energy_PT2R12_projector2_mpqc3();
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
       // r12 intermediates are computed by this engine
       std::shared_ptr< SingleReference_R12Intermediates<double> > srr12intrmds_;
 

@@ -160,7 +160,7 @@ int try_main(int argc, char **argv)
   opt.enroll("f12exp", GetLongOpt::MandatoryValue, "f12 exponent; default: 1.0", "1.0");
   opt.enroll("r12", GetLongOpt::MandatoryValue, "compute [2]_R12 correction; default: true", 0);
   opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   opt.enroll("singles", GetLongOpt::MandatoryValue, "compute [2]_s correction; default: false", 0);
   opt.enroll("partitionH", GetLongOpt::MandatoryValue, "How to partition Hamiltonian in [2]_s: fock, dyall_1, dyall_2; default: fock", 0);
   opt.enroll("mpqc3", GetLongOpt::MandatoryValue, "enable MPQC3 runtime features; default: true", 0);
@@ -256,7 +256,7 @@ int try_main(int argc, char **argv)
   const char* r12_cstr = opt.retrieve("r12");
   const std::string r12_str = r12_cstr?r12_cstr:"";
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   const char* singles_cstr = opt.retrieve("singles");
   const std::string singles_str = singles_cstr?singles_cstr:"";
   const char* partition_cstr = opt.retrieve("partitionH");
@@ -415,7 +415,7 @@ int try_main(int argc, char **argv)
     if(not cabs_contraction.empty())
       kva->assign("cabs_contraction", cabs_contraction);
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
     if(not singles_str.empty())
       kva->assign("cabs_singles", singles_str);
     if(not partition_str.empty())

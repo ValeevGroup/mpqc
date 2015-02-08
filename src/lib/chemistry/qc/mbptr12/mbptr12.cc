@@ -279,7 +279,7 @@ MBPT2_R12::compute()
   compute_energy_();
 
   if (r12eval()->compute_1rdm()) {
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
     ExEnv::out0() << indent << "Compute MP2-F12 one-electron properties" << std::endl;
     r12eval()->compute_TA_mp2f12_1rdm();
 #else

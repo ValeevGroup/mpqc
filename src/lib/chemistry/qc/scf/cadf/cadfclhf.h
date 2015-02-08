@@ -1058,14 +1058,14 @@ get_split_range_part(
 boost::property_tree::ptree&
 write_xml(
     const CADFCLHF::ScreeningStatistics& obj,
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 );
 
 boost::property_tree::ptree&
 write_xml(
     const CADFCLHF::ScreeningStatistics::Iteration& obj,
-    ptree& parent,
+    boost::property_tree::ptree& parent,
     const XMLWriter& writer
 );
 

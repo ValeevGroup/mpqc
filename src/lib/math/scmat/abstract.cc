@@ -33,7 +33,7 @@
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
 #  include <util/misc/xmlwriter.h>
 #endif
 

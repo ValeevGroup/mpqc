@@ -52,7 +52,7 @@
 #include<math/scmat/svd.h>
 #include<chemistry/qc/lcao/fockbuilder.h>
 #include<util/misc/consumableresources.h>
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
 #  include <Eigen/Dense>
 #  include <util/misc/xmlwriter.h>
 
@@ -71,7 +71,7 @@ typedef std::vector<Eigen::MatrixXd> VectorOfMatrices;
 typedef std::vector<Eigen::VectorXd> VectorOfVectors;
 
 typedef DecompositionMap::iterator DMap_iter;
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
 
 using namespace std;
 using namespace sc;
@@ -1190,7 +1190,7 @@ namespace sc {
       return result;
     }
 
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
     RefSCMatrix coulomb_df_local(const Ref<DensityFittingInfo>& df_info,
                                  const RefSymmSCMatrix& P,
                                  const Ref<GaussianBasisSet>& brabs,
@@ -1700,7 +1700,7 @@ namespace sc {
       /*=======================================================================================*/
       return result;
     }
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
 
     RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
@@ -1968,7 +1968,7 @@ namespace sc {
       return result;
     }
 
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
     RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
                             SpinCase1 spin,
@@ -2453,7 +2453,7 @@ namespace sc {
       /*=======================================================================================*/
       return result;
     }
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
 
 }} // namespace sc::detail
 

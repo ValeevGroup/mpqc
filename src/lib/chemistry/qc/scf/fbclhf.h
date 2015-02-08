@@ -84,16 +84,16 @@ class DFCLHF: public CLHF {
     void print(std::ostream&o=ExEnv::out0()) const;
     const Ref<WavefunctionWorld>& world() const { return world_; }
     Ref<DensityFittingInfo> dfinfo() const;
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
     virtual boost::property_tree::ptreeptree& write_xml(
         boost::property_tree::ptree& parent, const XMLWriter& writer
     );
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
   private:
     RefSymmSCMatrix gmat_;
     Ref<WavefunctionWorld> world_;
     static ClassDesc cd_;
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
     bool xml_debug_ = false;
 #endif
 };

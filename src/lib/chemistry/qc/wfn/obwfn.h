@@ -30,7 +30,7 @@
 
 #include <vector>
 #include <chemistry/qc/wfn/wfn.h>
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
 #  include <util/misc/xml.h>
 #endif
 

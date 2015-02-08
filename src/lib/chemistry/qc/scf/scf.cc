@@ -34,10 +34,10 @@
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <util/group/mstate.h>
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
 #  include <util/misc/xmlwriter.h>
 #  include <util/misc/xml.h>
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
 
 #include <math/scmat/local.h>
 #include <math/scmat/repl.h>
@@ -199,12 +199,12 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
     ExEnv::out0() << decindent << decindent;
   }
 
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
   // See if we have an iteration logger
   if(keyval->exists("iter_log")) {
     iter_log_ << keyval->describedclassvalue("iter_log");
   }
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
 
 }
 

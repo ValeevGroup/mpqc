@@ -290,13 +290,13 @@ namespace sc {
                            const Ref<GaussianBasisSet>& brabs,
                            const Ref<GaussianBasisSet>& ketbs,
                            const Ref<GaussianBasisSet>& obs);
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
     RefSCMatrix coulomb_df_local(const Ref<DensityFittingInfo>& df_info,
                            const RefSymmSCMatrix& P,
                            const Ref<GaussianBasisSet>& brabs,
                            const Ref<GaussianBasisSet>& ketbs,
                            const Ref<GaussianBasisSet>& obs);
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
     RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
                             SpinCase1 spin,
@@ -304,7 +304,7 @@ namespace sc {
                             const Ref<GaussianBasisSet>& ketbs,
                             const Ref<GaussianBasisSet>& obs,
                             const Ref<FockBuildRuntime::PSqrtRegistry>& psqrtregistry);
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
     RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
                             SpinCase1 spin,
@@ -312,7 +312,7 @@ namespace sc {
                             const Ref<GaussianBasisSet>& ketbs,
                             const Ref<GaussianBasisSet>& obs,
                             const Ref<FockBuildRuntime::PSqrtRegistry>& psqrtregistry);
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
   } // end of namespace detail
 
 
@@ -598,12 +598,12 @@ namespace sc {
 
             if (c == 0) { // coulomb
               if(df_info->params()->local_coulomb()) {
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
                 result_[0][c] = detail::coulomb_df_local(df_info, density, brabasis, ketbasis, densitybasis);
-#else // MPQC_NEW_RUNTIME
+#else // MPQC_NEW_FEATURES
                 throw sc::FeatureNotImplemented("Local DF Coulomb build requires MPQC3 runtime: compile in boost, tiledarray, etc.",
                                                 __FILE__,__LINE__);
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
               }
               else
                 result_[0][c] = detail::coulomb_df(df_info, density, brabasis, ketbasis, densitybasis);
@@ -622,13 +622,13 @@ namespace sc {
               }
               Pspin.scale(0.5);
               if(df_info->params()->local_exchange()) {
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
                 result_[t][c] = detail::exchange_df_local(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis,
                                                     psqrtregistry);
-#else // MPQC_NEW_RUNTIME
+#else // MPQC_NEW_FEATURES
                 throw sc::FeatureNotImplemented("Local DF exchange build requires MPQC3 runtime: compile in boost, tiledarray, etc.",
                                                 __FILE__,__LINE__);
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
               }
               else
                 result_[t][c] = detail::exchange_df(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis,

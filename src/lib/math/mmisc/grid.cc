@@ -26,7 +26,7 @@
 #include <math/scmat/matrix.h>
 #include <math/mmisc/grid.h>
 #include <util/misc/scexception.h>
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
 #  include <util/misc/xmlwriter.h>
 #endif
 

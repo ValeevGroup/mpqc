@@ -112,7 +112,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
     exact_diag_J_ = keyval->booleanvalue("exact_diag_J", KeyValValueboolean(false));
     exact_diag_K_ = keyval->booleanvalue("exact_diag_K", KeyValValueboolean(false));
 
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
     int nout_data = keyval->count("xml_data");
     for(int i = 0; i < nout_data; ++i){
       std::string data_name = keyval->stringvalue("xml_data", i);
@@ -139,7 +139,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
       }
 
     }
-#endif // MPQC_NEW_RUNTIME
+#endif // MPQC_NEW_FEATURES
   }
 
   // Determine how to store MO integrals

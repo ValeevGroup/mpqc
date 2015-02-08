@@ -146,7 +146,7 @@ class SCF: public OneBodyWavefunction {
     /// how much lower is the desired accuracy of the guess?
     static double guess_acc_ratio() { return 1e4; }
 
-#ifdef MPQC_NEW_RUNTIME
+#ifdef MPQC_NEW_FEATURES
     Ref<SCFIterationLogger> iter_log_;
 #endif
 

@@ -19,6 +19,7 @@ after_failure:
   - cat reconf.sh
   - cat src/lib/mpqc_config.h
   - cat CMakeFiles/CMakeError.log 
+  - make mpqc VERBOSE=1
 notifications:
   email:
     recipients:

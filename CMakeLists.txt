@@ -87,9 +87,6 @@ if (MPQC_OPENMP)
   endif()
 endif()
 
-# find threads
-FIND_PACKAGE ( Threads REQUIRED )
-
 include(TestCXXAcceptsFlag)
 include(CheckCXXSourceCompiles)
 
@@ -173,7 +170,7 @@ ENDIF()
 
 find_package(Threads)
 if (Threads_FOUND)
-  #message(STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
+  message(STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
   set(LIBRARIES "${LIBRARIES};${CMAKE_THREAD_LIBS_INIT}")
   check_include_files(pthread.h HAVE_PTHREAD)
 endif()

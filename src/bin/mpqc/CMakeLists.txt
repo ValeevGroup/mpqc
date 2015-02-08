@@ -21,12 +21,14 @@ add_executable(
 target_link_libraries(
   mpqcmain
   mpqcinit
+ ${LINK_LIBRARIES}
 )
 
 target_link_libraries(
   mpqcinit
   chemistry
   util
+  ${LINK_LIBRARIES}
 )
 
 # N.B. mpqcinit alone has almost no dependencies
@@ -34,6 +36,7 @@ target_link_libraries(
 target_link_libraries(
   ${executable}
   mpqcinit
+  ${LINK_LIBRARIES}
 )
 
 set_target_properties(${executable} PROPERTIES COTIRE_UNITY_LINK_LIBRARIES_INIT "COPY")

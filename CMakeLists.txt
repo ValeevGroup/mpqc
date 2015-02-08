@@ -170,8 +170,7 @@ ENDIF()
 
 find_package(Threads)
 if (Threads_FOUND)
-  message(STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
-  set(LIBRARIES "${LIBRARIES};${CMAKE_THREAD_LIBS_INIT}")
+  set(Threads_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
   check_include_files(pthread.h HAVE_PTHREAD)
 endif()
 
@@ -332,7 +331,7 @@ list(APPEND LINK_LIBRARIES ${HDF5_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${ARMCI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${MPI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${PAPI_LIBRARIES})
-list(APPEND LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+list(APPEND LINK_LIBRARIES ${Threads_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${LIBRARIES})
 list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
 
@@ -379,9 +378,6 @@ add_subdirectory(test)
 
 
 # Export include dirs, library list
-
-# get_target_property(LINK_LIBRARIES mpqc LINK_LIBRARIES)
-# message(STATUS "LIBRARIES = ${LIBRARIES}")
 
 set(MPQC_CONFIG_LIBRARIES "")
 

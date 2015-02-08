@@ -85,7 +85,7 @@ class DFCLHF: public CLHF {
     const Ref<WavefunctionWorld>& world() const { return world_; }
     Ref<DensityFittingInfo> dfinfo() const;
 #ifdef MPQC_NEW_FEATURES
-    virtual boost::property_tree::ptreeptree& write_xml(
+    virtual boost::property_tree::ptree& write_xml(
         boost::property_tree::ptree& parent, const XMLWriter& writer
     );
 #endif // MPQC_NEW_FEATURES

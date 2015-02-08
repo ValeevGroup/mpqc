@@ -126,6 +126,8 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
   reset_occ_(0),
   local_dens_(1),
   storage_(0),
+  fake_scf_convergence_after_fock_build_(false),
+  fake_scf_convergence_after_n_iter_(-1),
   level_shift_(0)
 {
   if (keyval->exists("maxiter"))

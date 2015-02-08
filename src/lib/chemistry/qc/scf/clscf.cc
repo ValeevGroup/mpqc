@@ -46,6 +46,9 @@
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/clhftmpl.h>
 #include <chemistry/qc/wfn/femo.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <chemistry/qc/scf/iter_logger.h>
+#endif
 
 using namespace std;
 using namespace sc;

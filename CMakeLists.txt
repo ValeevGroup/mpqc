@@ -1,7 +1,7 @@
 #; -*-CMake-*-
 
 cmake_minimum_required (VERSION 2.8.8)
-project (MPQC)
+project (MPQC C CXX)
 
 # extra cmake files are shipped with MPQC
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
@@ -86,6 +86,9 @@ if (MPQC_OPENMP)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
   endif()
 endif()
+
+# find threads
+FIND_PACKAGE ( Threads REQUIRED )
 
 include(TestCXXAcceptsFlag)
 include(CheckCXXSourceCompiles)
@@ -332,6 +335,7 @@ list(APPEND LINK_LIBRARIES ${HDF5_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${ARMCI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${MPI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${PAPI_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 list(APPEND LINK_LIBRARIES ${LIBRARIES})
 list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
 

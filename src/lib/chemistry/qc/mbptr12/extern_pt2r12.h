@@ -88,7 +88,7 @@ namespace sc {
       std::string f12exp_str_;
       std::string r12_str_;
 
-      #if defined(HAVE_MPQC3_RUNTIME)
+      #if defined(MPQC_NEW_FEATURES)
           std::string singles_str_;
           std::string partition_str_;
           std::string cabs_singles_name_;

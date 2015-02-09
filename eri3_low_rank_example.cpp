@@ -144,69 +144,67 @@ int main(int argc, char *argv[]) {
     if (world.rank() == 0) {
         std::cout << "Eri2 storage: ";
     }
+    auto eri2_storage = array_storage(eri2);
 
-        auto eri2_storage = array_storage(eri2);
+    auto eri2_inv_sqrt = pure::inverse_sqrt(eri2);
+    auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
+        eri2_inv_sqrt, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
 
-        auto eri2_inv_sqrt = pure::inverse_sqrt(eri2);
-        auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
-            eri2_inv_sqrt,
-            integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
+    decltype(eri2_inv_sqrt) eri2_inv;
+    eri2_inv("i,j") = eri2_inv_sqrt("i,k") * eri2_inv_sqrt("k,j");
+    auto eri2_inv_low_rank = TiledArray::conversion::to_new_tile_type(
+        eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
 
-        decltype(eri2_inv_sqrt) eri2_inv;
-        eri2_inv("i,j") = eri2_inv_sqrt("i,k") * eri2_inv_sqrt("k,j");
-        auto eri2_inv_low_rank = TiledArray::conversion::to_new_tile_type(
-            eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
-
-        if (world.rank() == 0) {
-            std::cout << "Eri2 inverse square root storage: ";
-        }
-        auto eri2_inv_sqrt_storage = array_storage(eri2_inv_sqrt_low_rank);
-
-        if (world.rank() == 0) {
-            std::cout << "Eri2 inverse storage: ";
-        }
-        auto eri2_inv_storage = array_storage(eri2_inv_low_rank);
-
-        auto eri3 = integrals::BlockSparseIntegrals(
-            world, eri_pool, utility::make_array(df_basis, basis, basis),
-            integrals::compute_functors::BtasToLowRankTensor{1e-8});
-
-        if (world.rank() == 0) {
-            std::cout << "Eri3 storage: ";
-        }
-        auto eri3_storage = array_storage(eri3);
-
-        world.gop.fence();
-
-        {
-            decltype(eri3) Xab;
-            Xab("X,a,b") = eri2_inv_sqrt_low_rank("X,P") * eri3("P,a,b");
-
-            for (auto it = Xab.begin(); it != Xab.end(); ++it) {
-                it->get().compress();
-            }
-            if (world.rank() == 0) {
-                std::cout << "Eri3 sqrt inverse storage: ";
-            }
-            auto eri3_contract_storage = array_storage(Xab);
-            world.gop.fence();
-        }
-
-        {
-            eri3("X,a,b") = eri2_inv_low_rank("X,P") * eri3("P,a,b");
-
-            for (auto it = eri3.begin(); it != eri3.end(); ++it) {
-                it->get().compress();
-            }
-            if (world.rank() == 0) {
-                std::cout << "Eri3 inverse storage: ";
-            }
-            auto eri3_contract_storage = array_storage(eri3);
-            world.gop.fence();
-        }
-
-        world.gop.fence();
-        libint2::cleanup();
-        madness::finalize();
-        return 0;
+    if (world.rank() == 0) {
+        std::cout << "Eri2 inverse square root storage: ";
     }
+    auto eri2_inv_sqrt_storage = array_storage(eri2_inv_sqrt_low_rank);
+
+    if (world.rank() == 0) {
+        std::cout << "Eri2 inverse storage: ";
+    }
+    auto eri2_inv_storage = array_storage(eri2_inv_low_rank);
+
+    auto eri3 = integrals::BlockSparseIntegrals(
+        world, eri_pool, utility::make_array(df_basis, basis, basis),
+        integrals::compute_functors::BtasToLowRankTensor{1e-8});
+
+    if (world.rank() == 0) {
+        std::cout << "Eri3 storage: ";
+    }
+    auto eri3_storage = array_storage(eri3);
+
+    world.gop.fence();
+
+    {
+        decltype(eri3) Xab;
+        Xab("X,a,b") = eri2_inv_sqrt_low_rank("X,P") * eri3("P,a,b");
+
+        for (auto it = Xab.begin(); it != Xab.end(); ++it) {
+            it->get().compress();
+        }
+        if (world.rank() == 0) {
+            std::cout << "Eri3 sqrt inverse storage: ";
+        }
+        auto eri3_contract_storage = array_storage(Xab);
+        world.gop.fence();
+    }
+
+    {
+        eri3("X,a,b") = eri2_inv_low_rank("X,P") * eri3("P,a,b");
+
+        for (auto it = eri3.begin(); it != eri3.end(); ++it) {
+            it->get().compress();
+        }
+        if (world.rank() == 0) {
+            std::cout << "Eri3 inverse storage: ";
+        }
+        auto eri3_contract_storage = array_storage(eri3);
+        world.gop.fence();
+    }
+
+    world.gop.fence();
+    libint2::cleanup();
+    madness::finalize();
+    return 0;
+}

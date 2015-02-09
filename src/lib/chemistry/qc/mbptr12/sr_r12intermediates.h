@@ -32,7 +32,7 @@
 #ifndef _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediates_h
 #define _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediates_h
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
 # include <tiledarray.h>
 #else
 # error "sr_r12intermediates.h requires MPQC3 runtime, but it is not available"

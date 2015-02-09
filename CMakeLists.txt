@@ -1,7 +1,10 @@
 #; -*-CMake-*-
 
 cmake_minimum_required (VERSION 2.8.8)
-project (MPQC)
+project (MPQC C CXX)
+
+# extra cmake files are shipped with MPQC
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
 
 set (MPQC_MAJOR_VERSION 3)
 set (MPQC_MINOR_VERSION 0)
@@ -31,6 +34,8 @@ if (NOT DEFINED MPQC_ASSERT_MODE)
   set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
 endif()
 
+include(cotire)
+
 include(CTest)
 enable_testing()
 
@@ -53,8 +58,7 @@ else()
 endif()
 #list(append CMAKE_Fortran_FLAGS "-m64")
 
-# extra cmake files are shipped with MPQC
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
+
 
 ##############################
 # Build Type Information
@@ -166,8 +170,7 @@ ENDIF()
 
 find_package(Threads)
 if (Threads_FOUND)
-  #message(STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
-  set(LIBRARIES "${LIBRARIES};${CMAKE_THREAD_LIBS_INIT}")
+  set(Threads_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
   check_include_files(pthread.h HAVE_PTHREAD)
 endif()
 
@@ -328,6 +331,7 @@ list(APPEND LINK_LIBRARIES ${HDF5_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${ARMCI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${MPI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${PAPI_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${Threads_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${LIBRARIES})
 list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
 
@@ -374,9 +378,6 @@ add_subdirectory(test)
 
 
 # Export include dirs, library list
-
-# get_target_property(LINK_LIBRARIES mpqc LINK_LIBRARIES)
-# message(STATUS "LIBRARIES = ${LIBRARIES}")
 
 set(MPQC_CONFIG_LIBRARIES "")
 

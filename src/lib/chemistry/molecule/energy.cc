@@ -712,6 +712,23 @@ SumMolecularEnergy::save_data_state(StateOut&s)
     }
 }
 
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+MolecularEnergy::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& child = get_my_ptree(parent);
+  molecule()->write_xml(child, writer);
+  if(value_.computed()){
+    child.put("energy", value_.result_noupdate());
+  }
+  return child;
+}
+#endif // MPQC_NEW_FEATURES
+
 SumMolecularEnergy::~SumMolecularEnergy()
 {
   delete[] mole_;

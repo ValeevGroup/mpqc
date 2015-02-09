@@ -7,7 +7,7 @@
 #include "mpqc/mpi.hpp"
 #include "mpqc/file.hpp"
 
-#include "mpqc/utility/foreach.hpp"
+#include <boost/foreach.hpp>
 #include "mpqc/utility/check.hpp"
 #include "mpqc/utility/exception.hpp"
 
@@ -66,7 +66,7 @@ namespace ci {
         /// Split the subspace into a vector of subspaces
         std::vector<Subspace> split(size_t block) const {
             std::vector<Subspace> s;
-            foreach (auto r, balanced_split(*this, block)) {
+            BOOST_FOREACH (auto r, balanced_split(*this, block)) {
                 s.push_back(Subspace(*this, r));
             }
             return s;
@@ -90,8 +90,8 @@ namespace ci {
     template<class Spin>
     std::vector< Subspace<Spin> > split(const std::vector< Subspace<Spin> > &V, size_t block) {
         std::vector< Subspace<Spin> > S;
-        foreach (auto v, V) {
-            foreach (auto s, v.split(block)) {
+        BOOST_FOREACH (auto v, V) {
+            BOOST_FOREACH (auto s, v.split(block)) {
                 S.push_back(s);
             }
         }
@@ -180,7 +180,7 @@ namespace ci {
             int begin = 0;
             if (V.size() != N)
                 throw MPQC_EXCEPTION("Subspace vector size must be equal to %i", N);
-            foreach (auto r, V) {
+            BOOST_FOREACH (auto r, V) {
                 if (begin != *r.begin())
                     throw MPQC_EXCEPTION("Subspace vector is not contigous");
                 begin = *r.end();
@@ -218,7 +218,7 @@ namespace ci {
         }
         std::sort(blocks.begin(), blocks.end(), SubspaceBlock::Sort(A,B));
         std::reverse(blocks.begin(), blocks.end());
-        // foreach (auto s, blocks) {
+        // BOOST_FOREACH (auto s, blocks) {
         //     std::cout << "block " << s.alpha << "," << s.beta << " "
         //               << A.at(s.alpha).size()*B.at(s.beta).size() << std::endl;
         // }

@@ -59,7 +59,7 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   cabs_contraction_ = kv->booleanvalue("cabs_contraction", KeyValValueboolean(true));
   r12_str_ = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   singles_str_ = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()));
   partition_str_ = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string()));
   cabs_singles_name_ = kv->stringvalue("cabs_singles_basis", KeyValValuestring(std::string()));
@@ -145,7 +145,7 @@ void ExternPT2R12::initialize()
     if(!r12_str_.empty())
       kva->assign("pt2_correction", r12_str_);
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
     if(!singles_str_.empty())
       kva->assign("cabs_singles", singles_str_);
     if(!partition_str_.empty())

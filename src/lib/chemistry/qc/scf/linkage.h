@@ -36,6 +36,12 @@
 #include <chemistry/qc/scf/osshf.h>
 #include <chemistry/qc/scf/tchf.h>
 #include <chemistry/qc/scf/uhf.h>
+#include <chemistry/qc/scf/scf.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <chemistry/qc/scf/cadf/cadfclhf.h>
+#  include <chemistry/qc/scf/cadf/approx_pairs.h>
+#  include <chemistry/qc/scf/iter_logger.h>
+#endif // MPQC_NEW_FEATURES
 
 #include <math/scmat/linkage.h>
 #include <chemistry/molecule/linkage.h>
@@ -57,6 +63,12 @@ ForceLink<OSSHF> scf_force_link_c_;
 ForceLink<TCHF> scf_force_link_d_;
 ForceLink<UHF> scf_force_link_e_;
 ForceLink<FockBuildCLHF> scf_force_link_f_;
+
+#ifdef MPQC_NEW_FEATURES
+ForceLink<ApproximatePairWriter> scf_force_link_g_;
+ForceLink<SCFIterationLogger> scf_force_link_h_;
+ForceLink<CADFCLHF> scf_force_link_i_;
+#endif
 
 #if MPQC_NEW_FEATURES && MPQC_HAS_ELEMENTAL
   ForceLink<mpqc::TA::CLHF> scf_force_link_g_;

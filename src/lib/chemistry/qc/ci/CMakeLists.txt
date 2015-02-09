@@ -8,10 +8,10 @@ IF(MPQC_CI)
       compute.cc
     )
     add_mpqc_object_library(ci ${ccfiles})
-ENDIF()
 
-# tests
-if (MPQC_UNITTEST)
- # no tests yet
-endif()
+    # tests
+    if (MPQC_UNITTEST)
+       # no tests yet
+    endif()
 
+ENDIF(MPQC_CI)

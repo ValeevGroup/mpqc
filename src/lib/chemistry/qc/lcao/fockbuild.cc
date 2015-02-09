@@ -321,10 +321,13 @@ ReplFockBuildMatrix::scmat_to_data(const RefSymmSCMatrix &m,
         }
     }
 
+  // IS THIS A MEMORY LEAK?
   auto_vec<double*> tmp_blockpointers(new double*[n_shell_block()]);
   auto_vec<double> tmp_data(new double[ndata_]);
 
   blockpointers_ = tmp_blockpointers.release();
+  // DO WE OWN THE DATA NOW?
+  owns_data_ = true;
   blockpointers_[0] = tmp_data.release();
 
   double *current_data = blockpointers_[0];

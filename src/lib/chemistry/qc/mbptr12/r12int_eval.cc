@@ -2195,7 +2195,7 @@ R12IntEval::compute()
   if (evaluated_)
     return;
 
-#ifdef HAVE_MPQC3_RUNTIME
+#ifdef MPQC_NEW_FEATURES
   {
     ExEnv::out0() << indent << "Trying out MPQC3-based R12 code" << std::endl;
     //V_diag_ta();

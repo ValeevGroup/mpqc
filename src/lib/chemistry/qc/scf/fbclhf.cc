@@ -15,6 +15,11 @@
 #include <chemistry/qc/lcao/fockbuild_runtime.h>
 #include <chemistry/qc/lcao/clhfcontrib.h>
 
+#ifdef MPQC_NEW_FEATURES
+#  include <util/misc/xmlwriter.h>
+static constexpr bool xml_debug = false;
+#endif // MPQC_NEW_FEATURES
+
 using namespace std;
 using namespace sc;
 
@@ -193,6 +198,10 @@ DFCLHF::DFCLHF(const Ref<KeyVal>& keyval) :
                      __FILE__, __LINE__, "world");
   if (world_->wfn() == 0) world_->set_wfn(this);
 
+#ifdef MPQC_NEW_FEATURES
+  xml_debug_ = keyval->booleanvalue("xml_debug", KeyValValueboolean(false));
+#endif // MPQC_NEW_FEATURES
+
   // need a nonblocked cl_gmat_ in this method
   Ref<PetiteList> pl = integral()->petite_list();
   gmat_ = basis()->so_matrixkit()->symmmatrix(pl->SO_basisdim());
@@ -217,8 +226,15 @@ DFCLHF::ao_fock(double accuracy)
   Timer step_tim("misc");
   int nthread = threadgrp_->nthread();
 
+#ifdef MPQC_NEW_FEATURES
+  if(xml_debug_) begin_xml_context("compute_fock", "compute_fock.xml");
+#endif // MPQC_NEW_FEATURES
+
   // transform the density difference to the AO basis
   RefSymmSCMatrix dd = cl_dens_diff_;
+#ifdef MPQC_NEW_FEATURES
+  if(xml_debug_) write_as_xml("cl_dens_diff_", cl_dens_diff_);
+#endif // MPQC_NEW_FEATURES
   Ref<PetiteList> pl = integral()->petite_list();
   cl_dens_diff_ = pl->to_AO_basis(dd);
 
@@ -239,24 +255,43 @@ DFCLHF::ao_fock(double accuracy)
     oreg->add(make_keyspace_pair(aospace));
   }
   // feed the spin densities to the builder, cl_dens_diff_ includes total density right now, so halve it
-  Ref<FockBuildRuntime> fb_rtime = world_->fockbuild_runtime();
   RefSymmSCMatrix Pa = cl_dens_diff_.copy(); Pa.scale(0.5);
   RefSymmSCMatrix Pb = Pa;
+
+  Ref<FockBuildRuntime> fb_rtime = world_->fockbuild_runtime();
   fb_rtime->set_densities(Pa, Pb);
 
   step_tim.change("build");
   Ref<OrbitalSpace> aospace = aoreg->value(basis());
   RefSCMatrix G;
+#ifdef MPQC_NEW_FEATURES
+  if(xml_debug_) write_as_xml("D", Pa);
+#endif // MPQC_NEW_FEATURES
   {
     const std::string jkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("J"));
+#ifdef MPQC_NEW_FEATURES
+    if(xml_debug_) begin_xml_context("compute_J");
+#endif // MPQC_NEW_FEATURES
     RefSCMatrix J = fb_rtime->get(jkey);
+#ifdef MPQC_NEW_FEATURES
+    if(xml_debug_) write_as_xml("J", J), end_xml_context("compute_J");
+#endif // MPQC_NEW_FEATURES
     G = J.copy();
   }
   {
     const std::string kkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("K"),AnySpinCase1);
+#ifdef MPQC_NEW_FEATURES
+    if(xml_debug_) begin_xml_context("compute_K");
+#endif // MPQC_NEW_FEATURES
     RefSCMatrix K = fb_rtime->get(kkey);
+#ifdef MPQC_NEW_FEATURES
+    if(xml_debug_) write_as_xml("K", K), end_xml_context("compute_K");
+#endif // MPQC_NEW_FEATURES
     G.accumulate( -1.0 * K);
   }
+#ifdef MPQC_NEW_FEATURES
+  if(xml_debug_) end_xml_context("compute_fock"), assert(false);
+#endif // MPQC_NEW_FEATURES
   Ref<SCElementOp> accum_G_op = new SCElementAccumulateSCMatrix(G.pointer());
   RefSymmSCMatrix G_symm = G.kit()->symmmatrix(G.coldim()); G_symm.assign(0.0);
   G_symm.element_op(accum_G_op); G = 0;
@@ -293,3 +328,18 @@ DFCLHF::dfinfo() const {
   Ref<DensityFittingInfo> result = const_cast<DensityFittingInfo*>(world_->tfactory()->df_info());
   return result;
 }
+
+
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+DFCLHF::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& child = get_my_ptree(parent);
+  world()->write_xml(child, writer);
+  return CLHF::write_xml(parent, writer);
+}
+#endif // MPQC_NEW_FEATURES

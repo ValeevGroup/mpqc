@@ -32,6 +32,7 @@
 #include <chemistry/qc/basis/split.h>
 #include <chemistry/qc/basis/lselect.h>
 #include <chemistry/qc/basis/union.h>
+#include <chemistry/qc/basis/gaussbas.h>
 
 namespace sc {
 
@@ -39,6 +40,7 @@ ForceLink<UncontractedBasisSet> basis_force_link_a_;
 ForceLink<SplitBasisSet> basis_force_link_b_;
 ForceLink<LSelectBasisSet> basis_force_link_c_;
 ForceLink<UnionBasisSet> basis_force_link_d_;
+ForceLink<WriteBasisGrid> basis_force_link_e_;
 
 }
 

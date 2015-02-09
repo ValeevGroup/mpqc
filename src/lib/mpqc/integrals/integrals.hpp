@@ -31,7 +31,7 @@
 #include <vector>
 
 #include <mpqc/math/tensor.hpp>
-#include <mpqc/utility/foreach.hpp>
+#include <boost/foreach.hpp>
 
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
@@ -103,7 +103,7 @@ namespace integrals {
                                    const std::vector<int> &S) {
         int f = 0;
         std::vector<Shell> shells;
-        foreach(int s, S){
+        BOOST_FOREACH(int s, S){
             int n = basis->shell(s).nfunction();
             shells.push_back(Shell(s,range(f,f+n)));
             f += n;
@@ -114,7 +114,7 @@ namespace integrals {
 
     //inline size_t extent(const std::vector<Shell> &S) {
     //    size_t extent = 0;
-    //    foreach(Shell s, S){
+    //    BOOST_FOREACH(Shell s, S){
     //        extent = std::max(extent, *s.end());
     //    }
     //    return extent;
@@ -133,8 +133,8 @@ namespace integrals {
             pack(integral.engine()->basis2(), Q)
         };
 
-        foreach(Shell p, shells[0]){
-            foreach(Shell q, shells[1]){
+        BOOST_FOREACH(Shell p, shells[0]){
+            BOOST_FOREACH(Shell q, shells[1]){
                 ints(p,q) = integral(p,q);
             }
         }
@@ -152,9 +152,9 @@ namespace integrals {
             pack(integral.engine()->basis2(), Q),
             pack(integral.engine()->basis3(), R)
         };
-        foreach(Shell p, shells[0]){
-            foreach(Shell q, shells[1]){
-                foreach(Shell r, shells[2]){
+        BOOST_FOREACH(Shell p, shells[0]){
+            BOOST_FOREACH(Shell q, shells[1]){
+                BOOST_FOREACH(Shell r, shells[2]){
                     ints(p,q,r) = integral(p,q,r);
                 }
             }
@@ -174,10 +174,10 @@ namespace integrals {
             pack(integral.engine()->basis3(), R),
             pack(integral.engine()->basis4(), S),
         };
-        foreach(Shell p, shells[0]){
-            foreach(Shell q, shells[1]){
-                foreach(Shell r, shells[2]){
-                    foreach(Shell s, shells[3]){
+        BOOST_FOREACH(Shell p, shells[0]){
+            BOOST_FOREACH(Shell q, shells[1]){
+                BOOST_FOREACH(Shell r, shells[2]){
+                    BOOST_FOREACH(Shell s, shells[3]){
                         ints(p,q,r,s) = integral(p,q,r,s);
                     }
                 }

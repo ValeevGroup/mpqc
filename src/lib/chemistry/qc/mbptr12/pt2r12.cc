@@ -39,7 +39,7 @@
 
 
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
 #  include <TiledArray/algebra/conjgrad.h>
 #endif
 
@@ -66,7 +66,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("fock")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
@@ -140,14 +140,12 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
     // this may update the accuracy of reference_ object
     this->set_desired_value_accuracy(desired_value_accuracy());
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
     bootup_mpqc3();
     Ref<GaussianBasisSet> cabs_singles_basis;
     cabs_singles_basis << keyval->describedclassvalue("aux_basis_singles");
     if (cabs_singles_basis.pointer() == NULL ){
-
       cabs_singles_engine_ = make_shared <CabsSingles> (srr12intrmds_, false);
-
     }
     else {
       Ref<AssignedKeyVal> aux_basis_akeyval = new AssignedKeyVal;
@@ -174,7 +172,7 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
   r12eval_ << SavableState::restore_state(s);
   s.get(nfzc_);
   s.get(omit_uocc_);
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   s.get(cabs_singles_);
   s.get(cabs_singles_coupling_);
 #endif
@@ -182,7 +180,7 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
 }
 
 PT2R12::~PT2R12() {
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   shutdown_mpqc3();
 #endif
 }
@@ -732,7 +730,7 @@ double PT2R12::energy_PT2R12_projector2() {
   return energy;
 }
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   void PT2R12::bootup_mpqc3() {
     MPQC_ASSERT(not srr12intrmds_);
     srr12intrmds_ = make_shared<SingleReference_R12Intermediates<double>>(madness::World::get_default(),
@@ -749,7 +747,7 @@ double PT2R12::energy_PT2R12_projector2() {
 std::pair<double,double>
 PT2R12::energy_PT2R12_projector2_mpqc3() {
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
 
  // bootup_mpqc3();
 
@@ -1384,7 +1382,7 @@ void PT2R12::compute()
   {
     MPQC_ASSERT(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
       std::pair<double,double> e = energy_PT2R12_projector2_mpqc3();
       energy_pt2r12_sf = e.first;
       recomp_ref_energy = e.second;
@@ -1395,7 +1393,7 @@ void PT2R12::compute()
     energy_correction_r12 = energy_pt2r12_sf;
   }
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   if(cabs_singles_ )
   {
     if (cabs_singles_engine_->extra_basis()){
@@ -1412,7 +1410,7 @@ void PT2R12::compute()
 
     ExEnv::out0() <<endl << indent << scprintf("Reference energy [au]:                 %17.12lf",
                                        energy_ref) << std::endl << std::endl;
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
     if(cabs_singles_)
     {
       std::string es = "CABS singles(" + cabs_singles_h0_ + ")";

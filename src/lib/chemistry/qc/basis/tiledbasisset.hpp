@@ -35,7 +35,7 @@
 #include <chemistry/molecule/atom.h>
 #include <chemistry/molecule/molecule.h>
 
-#include <mpqc/utility/foreach.hpp>
+#include <boost/foreach.hpp>
 #include "shellorder.hpp"
 #include "kcluster.hpp"
 

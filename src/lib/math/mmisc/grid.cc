@@ -26,6 +26,9 @@
 #include <math/scmat/matrix.h>
 #include <math/mmisc/grid.h>
 #include <util/misc/scexception.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <util/misc/xmlwriter.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -568,8 +571,63 @@ WriteVectorGrid::wf_gaussian_cube(std::ostream &out, const DimensionMap& dmap) {
   }
 }
 
-
-
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+WriteVectorGrid::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = this->get_my_ptree(parent);
+  //----------------------------------------//
+  initialize();
+  //----------------------------------------//
+  const double to_atomic = grid_->unit->to_atomic_units();
+  Ref<Units> angstrom = new Units("angstrom");
+  const double to_angstrom = angstrom->from_atomic_units();
+  Ref<Molecule> mol = get_molecule();
+  const int nd = this->ndim();
+  const int npoints = grid_->numx * grid_->numy * grid_->numz;
+  //----------------------------------------//
+  my_tree.put("nfunctions", nd);
+  writer.insert_child(my_tree, grid_);
+  //----------------------------------------//
+  std::vector<SCVector3> Points;
+  for (int i=0; i<grid_->numx; i++)
+  {
+      SCVector3 pointx = grid_->origin + i * grid_->axisx;
+      for (int j=0; j<grid_->numy; j++)
+      {
+          SCVector3 pointy = pointx + j * grid_->axisy;
+          for (int k=0; k<grid_->numz; k++)
+          {
+              SCVector3 pointz = pointy + k * grid_->axisz;
+              Points.push_back(pointz * to_atomic);
+          }
+      }
+  }
+  //----------------------------------------//
+  std::vector<double> Vals;
+  this->calculate_values(Points, Vals);
+  //----------------------------------------//
+  for(int idim = 0; idim < nd; ++idim){
+    ptree& ftree = my_tree.add_child("function", ptree());
+    ftree.put("<xmlattr>.index", idim);
+    double* fdata = allocate<double>(npoints);
+    for(int ipoint = 0; ipoint < npoints; ++ipoint){
+      fdata[ipoint] = Vals[ipoint*nd + idim];
+    }
+    writer.put_binary_data(
+        ftree.add_child("data", ptree()),
+        fdata,
+        npoints
+    );
+  }
+  //----------------------------------------//
+  return my_tree;
+}
+#endif // MPQC_NEW_FEATURES
 
 
 

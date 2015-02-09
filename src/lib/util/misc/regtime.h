@@ -37,6 +37,10 @@
 
 namespace sc {
 
+#if MPQC_NEW_FEATURES
+class MultiThreadTimer;
+#endif
+
 /** TimedRegion is a helper class for RegionTimer. */
 class TimedRegion {
   private:
@@ -59,6 +63,7 @@ class TimedRegion {
     ~TimedRegion();
     const char *name() const { return name_; }
     TimedRegion *findinsubregion(const char *);
+    void acquire_subregion(TimedRegion*);
     void cpu_enter(double);
     void wall_enter(double);
     void flops_enter(double);
@@ -89,6 +94,11 @@ class TimedRegion {
     void get_cpu_times(double *);
     void get_flops(double *);
     void get_depth(int *, int depth = 0);
+
+#if MPQC_NEW_FEATURES
+    friend class MultiThreadTimer;
+#endif
+    friend class RegionTimer;
 };
 
 /** The RegionTimer class is used to record the time spent in a section of
@@ -152,6 +162,9 @@ class RegionTimer: public DescribedClass {
     void add_wall_time(const char *, double);
     void add_cpu_time(const char *, double);
     void add_flops(const char *, double);
+
+    /// Add r as a subregion of current_.  After invocation, r is owned by this RegionTimer
+    void acquire_timed_region(TimedRegion* r);
 
     static RegionTimer *default_regiontimer();
     static void set_default_regiontimer(const Ref<RegionTimer> &);
@@ -240,6 +253,10 @@ class Timer {
     double flops(const char *region) const;
     double flops(const std::string &region) const { return flops(region.c_str()); }
     //@}
+
+#if MPQC_NEW_FEATURES
+    void insert(const MultiThreadTimer& timer);
+#endif
 };
 
 }

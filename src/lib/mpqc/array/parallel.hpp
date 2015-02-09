@@ -51,7 +51,7 @@ namespace detail {
 
                 int n = std::min(dims.back()-i, block);
 
-                foreach (size_t dim, dims) {
+                BOOST_FOREACH (size_t dim, dims) {
                     tile.extents.push_back(range(0, dim));
                 }
                 tile.extents.back() = range(i, i+n);
@@ -79,7 +79,7 @@ namespace detail {
 	}
 
 	~array_parallel_impl() {
-	    foreach (Tile t, tiles_) {
+	    BOOST_FOREACH (Tile t, tiles_) {
 	      if (t.local) delete t.data;
 	    }
 	    thread_comm_.comm().free();
@@ -104,7 +104,7 @@ namespace detail {
 	void _put(const std::vector<range> &r, const T *buffer) {
             size_t total = size(r);
             size_t count = 0;
-            foreach (const auto &tile, tiles_) {
+            BOOST_FOREACH (const auto &tile, tiles_) {
                 auto x = tile.subset(r);
                 if (!x.empty()) {
                     // if (tile.local) {
@@ -125,7 +125,7 @@ namespace detail {
 	void _get(const std::vector<range> &r, T *buffer) const {
             size_t total = size(r);
             size_t count = 0;
-            foreach (const auto &tile, tiles_) {
+            BOOST_FOREACH (const auto &tile, tiles_) {
                 auto x = tile.subset(r);
                 if (!x.empty()) {
                     // if (tile.local) {
@@ -148,7 +148,7 @@ namespace detail {
 
         static size_t size(const std::vector<range> &R) {
             size_t size = R.empty() ? 0 : 1;
-            foreach (range r, R) {
+            BOOST_FOREACH (range r, R) {
                 size *= r.size();
             }
             //printf("size = %lu\n", size);

@@ -67,7 +67,7 @@ namespace ci {
             Matrix s = Matrix::Zero(Ia.size(), Ib.size()); //S(Ia, Ib);
 
             // sigma1
-            foreach (auto Jb, beta) {
+            BOOST_FOREACH (auto Jb, beta) {
                 MPQC_PROFILE_LINE;
                 // only single and double excitations are allowed
                 if (!ci.test(Ia,Jb) || ci.diff(Ib,Jb) > 2) continue;
@@ -83,7 +83,7 @@ namespace ci {
 
             // sigma2, need to transpose s, c
             s = Matrix(s.transpose());
-            foreach (auto Ja, alpha) {
+            BOOST_FOREACH (auto Ja, alpha) {
                 MPQC_PROFILE_LINE;
                 if (!ci.test(Ja,Ib) || ci.diff(Ia,Ja) > 2) continue;
                 Matrix c = Matrix(C(Ja,Ib)).transpose();
@@ -116,14 +116,14 @@ namespace ci {
 
             // excitations from Ib into each Jb subspace
             std::vector< Excitations<Beta> > BB;
-            foreach (auto Jb, beta) {
+            BOOST_FOREACH (auto Jb, beta) {
                 MPQC_PROFILE_LINE;
                 BB.push_back(Excitations<Beta>(ci, Ib, Jb));
             }
 
             // excitations from Ia into each Ja subspace
             std::vector< Excitations<Alpha> > AA;
-            foreach (auto Ja, alpha) {
+            BOOST_FOREACH (auto Ja, alpha) {
                 MPQC_PROFILE_LINE;
                 AA.push_back(Excitations<Alpha>(ci, Ia, Ja));
             }

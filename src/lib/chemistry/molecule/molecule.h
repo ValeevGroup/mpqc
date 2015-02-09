@@ -28,6 +28,8 @@
 #ifndef _chemistry_molecule_molecule_h
 #define _chemistry_molecule_molecule_h
 
+#undef HAVE_OPENBABEL2  // Won't link on my machine.  Remove this before committing to main branch
+
 #include <stdio.h>
 #include <iostream>
 #include <mpqc_config.h>
@@ -40,6 +42,10 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
 #include <chemistry/molecule/atom.h>
+
+#ifdef MPQC_NEW_FEATURES
+#include <util/misc/xml.h>
+#endif // MPQC_NEW_FEATURES
 
 namespace sc {
 
@@ -141,6 +147,9 @@ geometry specification can result in the generation of extra
 atoms so be careful.
 */
 class Molecule: public SavableState
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif
 {
   protected:
     std::vector<Atom> atoms_;
@@ -496,6 +505,10 @@ class Molecule: public SavableState
     SCVector3 ref_origin() const { return ref_origin_; }
 
     void save_data_state(StateOut&);
+
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
   private:
     /// reads molecule from a XYZ file, used by constructor only

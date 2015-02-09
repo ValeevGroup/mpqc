@@ -32,6 +32,9 @@
 #include <util/state/state.h>
 #include <math/scmat/vector3.h>
 #include <util/keyval/keyval.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <util/misc/xml.h>
+#endif
 
 namespace sc {
 
@@ -45,7 +48,12 @@ class Integral;
 /// A shell of Gaussian functions. A shell is a set of functions with same quantum numbers, contraction coefficients,
 /// and exponents, and located on the common origin. GaussianShell does include the origin information.
 /// @sa GaussianBasisSet::Shell
-class GaussianShell: public DescribedClass
+class GaussianShell
+#ifdef MPQC_NEW_FEATURES
+    : public DescribedXMLWritable
+#else // MPQC_NEW_FEATURES
+    : public DescribedClass
+#endif // MPQC_NEW_FEATURES
 {
   public:
     enum PrimitiveType { Normalized, Unnormalized };
@@ -275,6 +283,12 @@ class GaussianShell: public DescribedClass
     double monobound(double r) const;
 
     void print(std::ostream& =ExEnv::out0()) const;
+
+#if MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(
+        boost::property_tree::ptree& parent, const XMLWriter& writer
+    );
+#endif
 };
 
   /** constructs a new GaussianShell from @c shell by applying Filter @c filter

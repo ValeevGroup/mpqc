@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # misc library
 
-add_mpqc_object_library(misc
+set(ccfiles
   bug.cc
   compute.cc
   consumableresources.cc
@@ -13,7 +13,17 @@ add_mpqc_object_library(misc
   regtime.cc
   runnable.cc
   scexception.cc
-  units.cc)
+  units.cc
+)
+if (MPQC_NEW_FEATURES)
+  list(APPEND ccfiles
+    thread_timer.cc
+    xml.cc
+    xmlwriter.cc
+  )
+endif (MPQC_NEW_FEATURES)
+
+add_mpqc_object_library(misc ${ccfiles})
 
 # tests
 
@@ -23,6 +33,7 @@ if (MPQC_UNITTEST)
   add_executable(autovectest autovectest.cc $<TARGET_OBJECTS:misc>)
   target_link_libraries(autovectest
     util
+    ${LINK_LIBRARIES}
   )
   add_test(autovectest autovectest)
 

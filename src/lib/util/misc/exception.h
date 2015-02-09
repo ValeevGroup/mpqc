@@ -30,6 +30,7 @@
 
 #include <cstddef>
 #include <exception>
+#include <stdexcept>
 #include <sstream>
 
 #if __cplusplus > 199711L
@@ -44,7 +45,7 @@ namespace sc {
   /** This is a std::exception specialization that records information
       about where an exception took place. It serves as the basis for all Exceptions thrown by MPQC.
    */
-  class Exception: public std::exception {
+  class Exception: public std::runtime_error {
       const char *description_;
       const char *file_;
       int line_;
@@ -67,7 +68,7 @@ namespace sc {
 
       /** Reimplementation of std::exception::what().  The returned
           std::string is only valid for the lifetime of this object. */
-      virtual const char* what() const MPQC__NOEXCEPT;
+      //virtual const char* what() const MPQC__NOEXCEPT;
 
       /// Returns a description of what caused the exception.  May return
       /// null.

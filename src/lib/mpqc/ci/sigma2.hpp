@@ -52,7 +52,7 @@ namespace ci {
                     singles = true;
                     F(jdx-*S.begin()) += sgn_kl*h(kl);
                     // l->k, i->i
-                    foreach (int i, O) {
+                    BOOST_FOREACH (int i, O) {
                         F(jdx-*S.begin()) += 0.5*sgn_kl*V(index(i,i),kl);
                     }
                 }

@@ -16,6 +16,7 @@ add_mpqc_object_library(molecule
   imcoor.cc
   linip.cc
   linop.cc
+  molden.cc
   molecule.cc
   molfreq.cc
   molrender.cc

@@ -30,6 +30,9 @@
 
 #include <string>
 #include <util/state/stateio.h>
+#ifdef MPQC_NEW_FEATURES
+#include <util/misc/xml.h>
+#endif
 
 namespace sc {
 
@@ -41,9 +44,13 @@ namespace sc {
      * coordinate system of the Molecule. It also has an atomic number. Optionally, it can
      * has a charge, mass, and it can belong to a fragment.
      */
-    class Atom {
+    class Atom
+#ifdef MPQC_NEW_FEATURES
+        : public XMLWritable
+#endif
+    {
 
-    private:
+      private:
         /// Contains the vector to the atom in units determined by molecule.
         double r_[3];
         int Z_;
@@ -57,7 +64,7 @@ namespace sc {
         double mass_;
         std::string label_;
 
-    public:
+      public:
         /**
          * Creates an atom for use in the sc::Molecule class.
          *
@@ -145,6 +152,9 @@ namespace sc {
         // Made friend for direct access for sc::SavableState
         friend void FromStateIn(Atom &a, StateIn &so, int &count);
 
+#ifdef MPQC_NEW_FEATURES
+        virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
    };
 
     /// writes Atom to sc::StateOut

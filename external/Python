@@ -31,9 +31,12 @@ if (PYTHON)
         message(STATUS "\tDid not find ase package; download from wiki.fysik.dtu.dk/ase if you want to use pympqc.ase_mpqc")
       endif(PY_ASE)
     else()
-      message(WARNING "** Could not find matching PYTHON interpreter and libraries")
-      message(WARNING "** Make sure to set CMAKE variable PYTHON_EXECUTABLE to the \"correct\" interpreter")
-      message(WARNING "** You may also need to make the \"correct\" PYTHON interpreter appear first in PATH")
+      message(WARNING 
+        "** Could not find matching PYTHON interpreter and libraries
+** Python interpreter version ${PYTHONINTERP_VERSION_STRING} was found, but Python libraries version ${PYTHONLIBS_VERSION_STRING} was found
+** Make sure to set CMAKE variable PYTHON_EXECUTABLE to the \"correct\" interpreter
+** You may also need to make the \"correct\" PYTHON interpreter appear first in PATH"
+      )
       if (CMAKE_SYSTEM_NAME STREQUAL Darwin)
         message(WARNING "** N.B. With MacPorts you may need to \"port select\", e.g.: port select python python27-apple")
       endif()

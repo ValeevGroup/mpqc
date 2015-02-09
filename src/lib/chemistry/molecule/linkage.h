@@ -35,6 +35,7 @@
 #include <chemistry/molecule/molshape.h>
 #include <chemistry/molecule/findisp.h>
 #include <chemistry/molecule/frag.h>
+#include <chemistry/molecule/molden.h>
 
 #include <util/render/linkage.h>
 #include <math/scmat/linkage.h>
@@ -56,6 +57,7 @@ ForceLink<ConnollyShape> molecule_force_link_k_;
 ForceLink<FinDispMolecularHessian> molecule_force_link_l_;
 ForceLink<FinDispMolecularGradient> molecule_force_link_m_;
 ForceLink<MolecularFragment> molecule_force_link_n_;
+ForceLink<WriteMolden> molecule_force_link_o_;
 
 }
 

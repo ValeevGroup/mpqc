@@ -37,6 +37,7 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussshell.h>
+#include <math/mmisc/grid.h>
 
 #ifdef MPQC_NEW_FEATURES
 #include "mpqc/range.hpp"
@@ -138,6 +139,9 @@ class SphericalTransformIter;
  *  Feller or Karen Schuchardt for further information.
 */
 class GaussianBasisSet: virtual public SavableState
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif
 {
   public:
 
@@ -164,7 +168,9 @@ class GaussianBasisSet: virtual public SavableState
         const GaussianBasisSet* basis() const { return basis_; }
         unsigned int center() const { return center_; }
 
-        //const double[3]& r() const {}
+#ifdef MPQC_NEW_FEATURES
+        virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
       private:
         friend class GaussianBasisSet;
@@ -184,6 +190,7 @@ class GaussianBasisSet: virtual public SavableState
     ///
     std::string name_;    // non-empty if keyword "name" was provided
     std::string label_;   // same as name_ if name_ non-empty, else something else
+
   protected: Ref<Molecule> molecule_;
   private: std::vector<Shell> shells_;
 
@@ -458,6 +465,11 @@ class GaussianBasisSet: virtual public SavableState
     GaussianBasisSet(StateIn& si);
     /// saves this to @c so
     void save_data_state(StateOut& so);
+
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
+
     ///@}
 
     virtual ~GaussianBasisSet();
@@ -665,10 +677,52 @@ class GaussianBasisSetMap : public RefCount {
 
 };
 
+class WriteBasisGrid : public WriteVectorGrid {
+  private:
+    struct BasisFunctionMap : public DimensionMap {
+      std::vector<int> map;
+      int operator()(int o) const { return map[o]; }
+      std::size_t ndim() const { return map.size(); }
+    };
+    Ref<GaussianBasisSet> basis_;
+    Ref<Integral> integral_;
+
+  protected:
+    BasisFunctionMap bfmap_;
+
+    void label(char* buffer);
+    Ref<Molecule> get_molecule() { return basis_->molecule(); }
+    void calculate_values(const std::vector<SCVector3>& Points, std::vector<double>& Values);
+    const DimensionMap& dimension_map() const { return bfmap_; }
+    std::size_t ndim() const { return bfmap_.ndim(); }
+    void initialize();
+
+    static Ref<KeyVal> process_keyval_for_base_class(const Ref<KeyVal>& kv);
+
+  public:
+
+    WriteBasisGrid(const Ref<KeyVal>& keyval);
+    WriteBasisGrid(
+        const Ref<GaussianBasisSet>& basis,
+        const Ref<Grid>& grid,
+        std::string gridformat,
+        std::string gridfile
+    );
+
+    virtual ~WriteBasisGrid();
+
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
+
+};
+
+
 /// @}
 // end of addtogroup ChemistryBasisGaussian
 
-}
+} // end namespace sc
+
 
 #endif
 

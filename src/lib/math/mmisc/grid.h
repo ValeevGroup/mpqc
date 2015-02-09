@@ -28,7 +28,6 @@
 #include <util/misc/runnable.h>
 #include <util/misc/units.h>
 
-
 namespace sc {
 
 /** The Grid class defines a finite regular Carthesian grid.
@@ -139,7 +138,11 @@ class WriteGrid: public Runnable {
   WriteVectorGrid provides an interface for writing the value
   of a vector function evaluated at a given set of grid points to a file (compare to WriteGrid).
  */
-class WriteVectorGrid: public Runnable {
+class WriteVectorGrid: public Runnable
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif // MPQC_NEW_FEATURES
+{
   public:
     // see wf_gaussian_cube
     struct DimensionMap {
@@ -201,6 +204,10 @@ class WriteVectorGrid: public Runnable {
                     std::string gridformat, std::string gridfile);
     /// Writes the grid data.
     void run();
+
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 };
 
 }

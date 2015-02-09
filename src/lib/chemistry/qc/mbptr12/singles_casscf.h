@@ -29,7 +29,7 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_singles_casscf_h
 
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
 #include <chemistry/qc/mbptr12/sr_r12intermediates.h>
 
 namespace sc {

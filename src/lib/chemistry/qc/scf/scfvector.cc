@@ -52,6 +52,11 @@
 
 #include <errno.h>
 
+#ifdef MPQC_NEW_FEATURES
+#include <chemistry/qc/scf/iter_logger.h>
+#include <util/misc/xmlwriter.h>
+#endif
+
 using namespace std;
 using namespace sc;
 
@@ -162,6 +167,10 @@ SCF::compute_vector(double& eelec, double nucrep)
                 << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
 
+#ifdef MPQC_NEW_FEATURES
+    if(iter_log_.nonnull()) iter_log_->new_iteration();
+#endif // MPQC_NEW_FEATURES
+
     const double wall_time_start = RegionTimer::get_wall_time();
 
     // form the density from the current vector
@@ -190,6 +199,7 @@ SCF::compute_vector(double& eelec, double nucrep)
         iter_since_reset = 0;
       }
     }
+    ExEnv::out0() << indent << "accuracy = " << accuracy << " new_accuracy = " << new_accuracy << std::endl;
     ao_fock(accuracy);
     tim.exit("fock");
 
@@ -197,6 +207,39 @@ SCF::compute_vector(double& eelec, double nucrep)
     eelec = scf_energy();
     double eother = 0.0;
     if (accumddh_) eother = accumddh_->e();
+
+#ifdef MPQC_NEW_FEATURES
+    if(iter_log_.nonnull()) {
+      using boost::property_tree::ptree;
+      iter_log_->log_iter_misc([eelec,eother,nucrep,delta](ptree& parent, const XMLWriter& writer) {
+        parent.put("energy", eelec+eother+nucrep);
+        parent.put("delta", delta);
+      });
+    }
+#endif // MPQC_NEW_FEATURES
+
+    if(fake_scf_convergence_after_fock_build_ ||
+        (fake_scf_convergence_after_n_iter_ > 0 && iter+1 >= fake_scf_convergence_after_n_iter_)
+    ) {
+      delta = 0.0;
+      accuracy = 0.0;
+      ExEnv::out0()
+          << indent << "#=================== WARNING =====================#" << endl
+          << indent << "# delta is being artificially set to 0.0 in order #" << endl
+          << indent << "# to emulate convergence for testing purposes.    #" << endl
+          << indent << "# Energy and density are not actually converged   #" << endl
+          << indent << "# and ARE NOT CORRECT!!!  If you are seeing this  #" << endl
+          << indent << "# message and did not expect to see it, please    #" << endl
+          << indent << "# contact a developer immediately, as something   #" << endl
+          << indent << "# has gone seriously wrong.  This feature is only #" << endl
+          << indent << "# for testing and benchmarking purposes.  If you  #" << endl
+          << indent << "# are doing real chemistry, or anything other     #" << endl
+          << indent << "# than benchmarking SCF code, you should NEVER    #" << endl
+          << indent << "# see this message.  DO NOT USE THE ENERGY OUTPUT #" << endl
+          << indent << "# BELOW OR ANYTHING ELSE IN THIS FILE FOR         #" << endl
+          << indent << "# ANYTHING OTHER THAN BENCHMARKING!!!!!!!         #" << endl
+          << indent << "#=================================================#" << endl;
+    }
 
     // check convergence
     if (delta < desired_value_accuracy()
@@ -328,9 +371,32 @@ SCF::compute_vector(double& eelec, double nucrep)
     evals.element_op(level_shift);
 #endif
 
+    current_evals_ = evals;
+
     if (debug_>0) {
       evals.print("scf eigenvalues");
     }
+
+#ifdef MPQC_NEW_FEATURES
+    if (iter_log_.nonnull()){
+      iter_log_->log_evals(evals.copy());
+
+      if (iter_log_->log_coeffs_enabled()){
+        // Get the mospace_ object from the OneBodyWavefunction
+        Ref<PetiteList> pl = integral()->petite_list();
+        RefSCMatrix aocoefs_full = pl->evecs_to_AO_basis((oso_scf_vector_.t() * so_to_orthog_so()).t());
+        Ref<OrbitalSpace> mospace = new OrbitalSpace("p", "energy-ordered MOs to evaluate",
+                                                     aocoefs_full, basis(), integral(),
+                                                     evals,
+                                                     0, 0,
+                                                     OrbitalSpace::energy);
+        iter_log_->log_coeffs(
+            mospace->coefs_nb()
+            //(oso_scf_vector_.t() * so_to_orthog_so() * (integral()->petite_list()->aotoso()).t()).t()
+        );
+      }
+    }
+#endif // MPQC_NEW_FEATURES
 
     if (reset_occ_)
       set_occupations(evals);

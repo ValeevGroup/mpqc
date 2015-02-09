@@ -89,6 +89,9 @@ int getrusage (
 #define _util_misc_regtime_cc
 #include <util/misc/timer.h>
 #include <util/misc/scexception.h>
+#ifdef MPQC_NEW_FEATURES
+#include <util/misc/thread_timer.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -239,6 +242,14 @@ TimedRegion::insert_before(const char *name)
   res->up_ = up_;
   this->prev_ = res;
   return res;
+}
+
+void
+TimedRegion::acquire_subregion(TimedRegion* reg)
+{
+  //TimedRegion* subreg = subregions_;
+  //TimedRegion* new_reg = findinsubregion(reg->name_);
+  //new_reg->merge(reg);
 }
 
 void
@@ -773,6 +784,13 @@ RegionTimer::set_default_regiontimer(const Ref<RegionTimer>& t)
   default_regtimer = t;
 }
 
+void
+RegionTimer::acquire_timed_region(TimedRegion* reg)
+{
+  current_->merge(reg);
+
+}
+
 //////////////////////////////////////////////////////////////////////
 // Timer functions
 
@@ -952,6 +970,15 @@ double Timer::wall_time(const char* region) const {
 double Timer::flops(const char* region) const {
   return timer_->flops(region);
 }
+
+#ifdef MPQC_NEW_FEATURES
+void Timer::insert(const MultiThreadTimer& timer) {
+  TimedRegion* reg = timer.make_timed_region();
+  timer_->acquire_timed_region(reg);
+  delete reg;
+  return;
+}
+#endif
 
 //////////////////////////////////////////////////////////////////////
 // Shorthand to manipulate the global region timer

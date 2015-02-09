@@ -43,7 +43,7 @@ namespace ArrayServer {
                 block *= r[i].size();
             MPQC_ASSERT(block < N);
             
-            foreach (range rj, split(r.back(), N/block)) {
+            BOOST_FOREACH (range rj, split(r.back(), N/block)) {
                 for (int i = 0; i < rank-1; ++i) {
                     data.push_back(*r[i].begin());
                     data.push_back(*r[i].end());

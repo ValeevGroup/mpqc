@@ -31,7 +31,7 @@
 #include <vector>
 
 #include <mpqc/math/tensor.hpp>
-#include <mpqc/utility/foreach.hpp>
+#include <boost/foreach.hpp>
 
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>

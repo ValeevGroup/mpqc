@@ -15,12 +15,11 @@ IF(HAVE_PSI3)
       psiwfn.cc
     )
     add_mpqc_object_library(psi ${ccfiles})
-ENDIF()
 
-# tests
+    # tests
+    set_property(SOURCE psitest.cc PROPERTY COMPILE_DEFINITIONS
+                 SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    add_executable(psitest EXCLUDE_FROM_ALL psitest.cc $<TARGET_OBJECTS:psi>)
+    add_test(psitest psitest)
 
-#set_property(SOURCE psitest.cc PROPERTY COMPILE_DEFINITIONS
-#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(psitest EXCLUDE_FROM_ALL psitest.cc $<TARGET_OBJECTS:psi>)
-#add_test(psitest psitest)
-
+ENDIF(HAVE_PSI3)

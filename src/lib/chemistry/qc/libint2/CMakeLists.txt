@@ -39,20 +39,20 @@ IF(HAVE_LIBINT2)
     )
 
     add_mpqc_object_library(libint2 ${ccfiles})
+
+    # tests
+    if (MPQC_UNITTEST)
+        set_property(SOURCE libint2test.cc PROPERTY COMPILE_DEFINITIONS
+                     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+        add_executable(libint2test libint2test.cc )
+        add_test(libint2test libint2test)
+        target_link_libraries(
+          libint2test
+          chemistry
+          ${LIBINT2_LIBRARY}
+        )
+    endif(MPQC_UNITTEST)
+
 ENDIF(HAVE_LIBINT2)
-
-# tests
-if (MPQC_UNITTEST)
-  set_property(SOURCE libint2test.cc PROPERTY COMPILE_DEFINITIONS
-     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-
-  add_executable(libint2test libint2test.cc )
-  add_test(libint2test libint2test)
-  target_link_libraries(
-    libint2test
-    chemistry
-    ${LIBINT2_LIBRARY}
-  )
-endif()
-
 

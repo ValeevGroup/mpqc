@@ -61,6 +61,8 @@ namespace sc{
       std::string molcas_;
       /// name of molcas input
       std::string molcas_input_;
+      /// molcas command line options
+      std::string molcas_options_;
 
       double rasscf_energy_;
       double caspt2_energy_;

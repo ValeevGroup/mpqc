@@ -72,6 +72,7 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
             this->class_desc());
   }
 
+  molcas_options_ = kv->stringvalue("molcas_options", KeyValValuestring(std::string()));
   xyz_file_ = kv->stringvalue("xyz_file", KeyValValuestring(std::string()));
 
   std::string obs_name = kv->stringvalue("obs",KeyValValuestring(std::string()));
@@ -288,7 +289,7 @@ void MolcasPT2R12::run_molcas()
 
   //excute molcas command
   std::string command_str;
-  command_str = molcas_ + " -f " + molcas_input_;
+  command_str = molcas_ + " " + molcas_options_ + " " + molcas_input_;
   std::system(command_str.c_str());
 
   // check molcas status

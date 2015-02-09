@@ -66,7 +66,7 @@ unsigned long Basis::max_nprim() const {
 
     for(auto const &c : cluster_shells_){
         auto const &shells = c.flattened_shells();
-        auto guess = std::max_element(shells.begin(), shells.end(), 
+        auto guess = std::max_element(shells.begin(), shells.end(),
                 [](libint2::Shell const &a, libint2::Shell const &b){
                     return a.nprim() < b.nprim();
                     })->nprim();
@@ -75,7 +75,7 @@ unsigned long Basis::max_nprim() const {
 
     return max;
 }
-   
+
 
 unsigned long Basis::max_am() const {
     auto max = 0ul;

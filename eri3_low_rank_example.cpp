@@ -152,6 +152,7 @@ int main(int argc, char *argv[]) {
 
     decltype(eri2_inv_sqrt) eri2_inv;
     eri2_inv("i,j") = eri2_inv_sqrt("i,k") * eri2_inv_sqrt("k,j");
+    eri2_inv.truncate();
     auto eri2_inv_low_rank = TiledArray::conversion::to_new_tile_type(
         eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
 

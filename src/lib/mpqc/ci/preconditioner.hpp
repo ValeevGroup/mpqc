@@ -4,7 +4,7 @@
 #include "mpqc/ci/hamiltonian.hpp"
 #include "mpqc/ci/vector.hpp"
 #include "mpqc/math/matrix.hpp"
-#include "mpqc/utility/foreach.hpp"
+#include <boost/foreach.hpp>
 #include "mpqc/mpi.hpp"
 #include "mpqc/mpi/task.hpp"
 

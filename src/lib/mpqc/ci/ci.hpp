@@ -210,7 +210,7 @@ namespace ci {
 
         /// initialize guess vector
         void guess() {
-            foreach (auto r, this->local()) {
+            BOOST_FOREACH (auto r, this->local()) {
                 mpqc::Vector b = mpqc::Vector::Zero(r.size());
                 if (r.test(0)) b(0) = 1;
                 vector.b(r,0) << b;
@@ -242,7 +242,7 @@ namespace ci {
             int r = 0;
             std::vector< Subspace<Spin> > R;
             int begin = 0, end = 0;
-            foreach (const auto &s, S) {
+            BOOST_FOREACH (const auto &s, S) {
                 int x = this->excitation(s);
                 if (x == r+1) {
                     R.push_back(Subspace<Spin>(Space<Spin>(r), mpqc::range(begin, end)));

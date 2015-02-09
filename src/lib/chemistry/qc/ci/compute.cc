@@ -50,12 +50,12 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
       // we need core contribution to the energy
       // E = \sum_i 2 h(i,i) + V(i,i;i,i) + \sum_i<j 4 V(i,i;j,j) - 2 V(i,j;i,j)
       config.e_core = 0.0;
-      foreach(auto i, core_orbs) {
+      BOOST_FOREACH(auto i, core_orbs) {
         const size_t i_offset = i*(i+1)/2;
         const size_t ii = i_offset + i;
         double E_core_i = 2 * h(ii);
         E_core_i += V_occ(ii,ii);
-        foreach(auto j, range(0, i)) {
+        BOOST_FOREACH(auto j, range(0, i)) {
           const size_t ij = i_offset + j;
           const size_t j_offset = j*(j+1)/2;
           const size_t jj = j_offset + j;
@@ -70,9 +70,9 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
         const size_t nact = act_orbs.size();
         Vector h_act(nact*(nact+1)/2);
         size_t ij_act = 0;
-        foreach(auto i, act_orbs) {
+        BOOST_FOREACH(auto i, act_orbs) {
           const size_t i_offset = i*(i+1)/2;
-          foreach(auto j, range(act_orbs.front(), i+1)) {
+          BOOST_FOREACH(auto j, range(act_orbs.front(), i+1)) {
             h_act(ij_act) = h(i_offset + j);
             ++ij_act;
           }
@@ -83,14 +83,14 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
 
       // h needs to include core contributions. For closed-shell case:
       // h'(p,q) = h(p,q) + \sum_i 2 V(p,q;i,i) - V(p,i;q,i)
-      foreach(auto p, act_orbs) {
+      BOOST_FOREACH(auto p, act_orbs) {
         const size_t p_offset = p*(p+1)/2;
-        foreach(auto q, range(act_orbs.front(), p+1)) {
+        BOOST_FOREACH(auto q, range(act_orbs.front(), p+1)) {
           const size_t pq = p_offset + q;
           const size_t q_offset = q*(q+1)/2;
 
           double h_pq_core = 0.0;
-          foreach(auto i, core_orbs) {
+          BOOST_FOREACH(auto i, core_orbs) {
             const size_t pi = p_offset + i;
             const size_t qi = q_offset + i;
             const size_t ii = i*(i+1)/2 + i;

@@ -12,7 +12,7 @@
 #endif
 
 #include "mpqc/utility/check.hpp"
-#include "mpqc/utility/foreach.hpp"
+#include <boost/foreach.hpp>
 #include "mpqc/utility/exception.hpp"
 
 namespace mpqc {
@@ -133,7 +133,7 @@ namespace mpqc {
 			const std::vector<Extent> &extents,
 			Driver driver, MPI::Comm comm) {
 	    
-            foreach (auto e, extents) {
+            BOOST_FOREACH (auto e, extents) {
                 range_.push_back(detail::ArrayBase::extent(e));
                 dims_.push_back(range_.back().size());
                 //std::cout << "extent=" << range_.back() << std::endl;
@@ -159,7 +159,7 @@ namespace mpqc {
         {
             MPQC_CHECK(A.rank() == r.size());
             range_ = r;
-            foreach (range r, range_) {
+            BOOST_FOREACH (range r, range_) {
 		//std::cout << r << ",";
                 dims_.push_back(r.size());
             }

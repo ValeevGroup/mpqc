@@ -3,7 +3,7 @@
 
 #include "mpqc/ci/string.hpp"
 #include "mpqc/math/matrix.hpp"
-#include "mpqc/utility/foreach.hpp"
+#include <boost/foreach.hpp>
 
 // #define MPQC_PROFILE_ENABLE
 // #include "mpqc/profile.hpp"
@@ -36,13 +36,13 @@ namespace ci {
                    const mpqc::Matrix &V, mpqc::Vector &d) {
         //MPQC_PROFILE_LINE;
 	const auto &b = beta.occ();
-        foreach (auto j, b) {
+        BOOST_FOREACH (auto j, b) {
             size_t jj = index(j,j);
             auto const &Vj = V.col(jj);
             for (int k = 0; k < alpha.size(); ++k) {
                 double q = 0;
                 const auto &a = alpha[k].occ();
-                foreach (auto i, a) {
+                BOOST_FOREACH (auto i, a) {
                     size_t ii = index(i,i);
                     q += Vj(i);
                 }
@@ -57,10 +57,10 @@ namespace ci {
         double q = 0;
         const auto &a = alpha.occ();
 	const auto &b = beta.occ();
-        foreach (auto j, b) {
+        BOOST_FOREACH (auto j, b) {
             size_t jj = index(j,j);
             auto const &Vj = V.col(jj);
-            foreach (auto i, a) {
+            BOOST_FOREACH (auto i, a) {
                 size_t ii = index(i,i);
                 q += Vj(ii);
             }

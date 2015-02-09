@@ -72,7 +72,7 @@ namespace ci {
         Excitations(const CI &ci, const Subspace<Spin> &I, const Subspace<Spin> &J)
             : I_(I), J_(J)
         {
-            foreach (int i, I) {
+            BOOST_FOREACH (int i, I) {
                 append(ci, ci.template strings<Spin>()[i], J, data_);
             }
         }
@@ -95,9 +95,9 @@ namespace ci {
     void sigma3(const Excitations<Alpha> &alpha, const Excitations<Beta> &beta,
                 const Matrix &V, const Matrix &C, Matrix &S) {                
         // beta->beta excitations
-        foreach (auto b, beta) {
+        BOOST_FOREACH (auto b, beta) {
             // alpha->alpha excitations
-            foreach (auto a, alpha) {
+            BOOST_FOREACH (auto a, alpha) {
                 int Ia = a.I;
                 int Ja = a.J;
                 int Ib = b.I;

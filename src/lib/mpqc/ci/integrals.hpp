@@ -2,7 +2,7 @@
 #define MPQC_CI_INTEGRALS_HPP
 
 #include "mpqc/math/matrix.hpp"
-#include "mpqc/utility/foreach.hpp"
+#include <boost/foreach.hpp>
 
 #include <chemistry/qc/basis/tbint.h>
 
@@ -27,22 +27,22 @@ namespace mpqc {
       T4.resize(no * no * no, no);
       T4.fill(0);
 
-      foreach (auto s, shells) {
+      BOOST_FOREACH (auto s, shells) {
         range S = basis->range(s);
         int ns = S.size();
         T3.resize(ns*no*no, no);
         T3.fill(0);
-        foreach (auto r, shells) {
+        BOOST_FOREACH (auto r, shells) {
           range R = basis->range(r);
           int nr = R.size();
           T2.resize(nr*ns*no, no);
           T2.fill(0);
-          foreach (auto q, shells) {
+          BOOST_FOREACH (auto q, shells) {
             range Q = basis->range(q);
             int nq = Q.size();
             T1.resize(nq*nr*ns, no);
             T1.fill(0);
-            foreach (auto p, shells) {
+            BOOST_FOREACH (auto p, shells) {
               range P = basis->range(p);
               int np = P.size();
               int2->compute_shell(s, r, q, p);
@@ -98,10 +98,10 @@ namespace mpqc {
       size_t n = C.cols();
       Matrix h_ao(n, n);
       h_ao.fill(0);
-      foreach (auto s, shells) {
+      BOOST_FOREACH (auto s, shells) {
         range S = basis->range(s);
         int ns = S.size();
-        foreach (auto r, shells) {
+        BOOST_FOREACH (auto r, shells) {
           range R = basis->range(r);
           int nr = R.size();
           int1->compute_shell(s, r);

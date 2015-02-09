@@ -15,7 +15,7 @@ extern "C" {
 #endif // HAVE_MPI
 
 #include "mpqc/range.hpp"
-#include "mpqc/utility/foreach.hpp"
+#include <boost/foreach.hpp>
 #include "mpqc/utility/mutex.hpp"
 #include "mpqc/utility/exception.hpp"
 
@@ -213,7 +213,7 @@ namespace detail {
 	    
 	    T *local = (T*)buffer;
 
-	    foreach (Tile t, tiles) {
+	    BOOST_FOREACH (Tile t, tiles) {
 
 		std::vector<range> x = t.subset(r);
 		//std::cout << t.extents << " ^ " << r << " = " << x << std::endl;

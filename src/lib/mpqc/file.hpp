@@ -23,7 +23,7 @@
 #include "mpqc/range/operator.hpp"
 
 #include "mpqc/utility/check.hpp"
-#include "mpqc/utility/foreach.hpp"
+#include <boost/foreach.hpp>
 #include "mpqc/utility/timer.hpp"
 #include "mpqc/utility/mutex.hpp"
 
@@ -315,7 +315,7 @@ namespace mpqc {
             if (name.empty()) return File();
             std::string path = realpath(name);
             // find previously opened file of same realpath
-            foreach (auto id, files_::data) {
+            BOOST_FOREACH (auto id, files_::data) {
                 if (path == realpath(Object::filename(id)))
                     return File(id, true);
             }
@@ -529,7 +529,7 @@ namespace mpqc {
             : Object(Dataset::create(parent, name, extents, dcpl))
         {
             MPQC_ASSERT(id() > 0);
-            foreach (auto e, extents) {
+            BOOST_FOREACH (auto e, extents) {
                 range r = extent(e);
                 //std::cout << "Dataset " << r << std::endl;
                 base_.push_back(*r.begin());
@@ -625,7 +625,7 @@ namespace mpqc {
             {
                 MPQC_FILE_THREADSAFE;
                 std::vector<hsize_t> dims;
-                foreach (auto e, extents) {
+                BOOST_FOREACH (auto e, extents) {
                     dims.push_back(extent(e).size());
                     //std::cout << dims.back() << std::endl;
                 }

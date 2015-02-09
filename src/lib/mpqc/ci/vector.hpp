@@ -39,9 +39,9 @@ namespace ci {
                 }
             }
             MPQC_CHECK(dets == G.dets());
-            foreach (const auto &s, G.alpha())
+            BOOST_FOREACH (const auto &s, G.alpha())
                 this->alpha_.push_back(s);
-            foreach (const auto &s, G.beta())
+            BOOST_FOREACH (const auto &s, G.beta())
                 this->beta_.push_back(s);
             std::vector<size_t> extents;
             extents.push_back(dets);
@@ -161,7 +161,7 @@ namespace ci {
                 const std::vector<mpqc::range> &local,
                 const MPI::Comm &comm) {
         double norm = 0;
-        foreach (auto r, local) {
+        BOOST_FOREACH (auto r, local) {
             mpqc::Vector v(r.size());
             V(r) >> v;
             norm += v.norm();

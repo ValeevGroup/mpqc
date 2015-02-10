@@ -159,8 +159,22 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   //////
   // read the Schoenflies symbol
   std::string pointgroup_symbol; in >> pointgroup_symbol;
-  Ref<PointGroup> pg = new PointGroup(pointgroup_symbol.c_str());
-  molecule->set_point_group(pg);
+  // coordinates may be given in non-canonical frame for the given point group
+  // detect the highest Abelian point group (hopefully same as given) and use its frame
+  Ref<PointGroup> pg;
+  {
+    Ref<PointGroup> highestpg = molecule->highest_point_group();
+    pg = new PointGroup(pointgroup_symbol.c_str(), highestpg->symm_frame(), highestpg->origin());
+    try {
+      molecule->set_point_group(pg);
+    }
+    catch(AlgorithmException& ex) {
+      try {
+        ex.elaborate() << "in ExternMOInfo ctor: could not detect point group " << pointgroup_symbol;
+      }
+      catch(...) {}
+      throw ex;
+    }
   molecule->print();
   ExEnv::out0() << indent << "nuclear repulsion energy = "
                 << scprintf("%25.15f",molecule->nuclear_repulsion_energy()) << std::endl;

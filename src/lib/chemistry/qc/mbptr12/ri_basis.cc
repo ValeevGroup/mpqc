@@ -201,6 +201,14 @@ R12WavefunctionWorld::construct_ortho_comp_svd_()
                                                              std::string("all virtual orbitals"),
                                                              *(refwfn()->uocc_sb(Alpha)), *cabs, true);
       idxreg->add(allvirt->id(), allvirt);
+      // this space potentially uses a union of OBS (or VBS) and ABS
+      // make sure that this AO basis is known
+      Ref<AOSpaceRegistry> aoidxreg = this->world()->tfactory()->ao_registry();
+      if (aoidxreg->key_exists(allvirt->basis()) == false) {
+        Ref<OrbitalSpace> muprime = new AtomicOrbitalSpace("mu''", "VBS(AO)+CABS(AO)", allvirt->basis(), allvirt->integral());
+        idxreg->add(make_keyspace_pair(muprime));
+        aoidxreg->add(muprime->basis(),muprime);
+      }
     }
     else
       throw ProgrammingError("allvirt space should not yet exist", __FILE__, __LINE__);

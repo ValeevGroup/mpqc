@@ -422,8 +422,10 @@ class Molecule: public SavableState
     void symmetrize(const Ref<PointGroup> &pg, double tol = 0.5);
 
     /** This will try to carefully correct symmetry errors
-        in molecules.  If any atom is out of place by more then
-        tol, abort will be called. */
+        in molecules.
+        @throw AlgorithmException will be thrown if any atom is
+               out of place by more then \c tol
+      */
     void cleanup_molecule(double tol = 0.1);
 
     void translate(const double *r);

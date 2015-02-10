@@ -35,20 +35,31 @@ class BtasToLowRankTensor {
     template <std::size_t N>
     TileType operator()(tensor::ShallowTensor<N> const &bt) const {
         Eigen::MatrixXd Tile = eigen_map(bt.tensor());
-        Eigen::MatrixXd L, R;
-        bool is_full = algebra::Decompose_Matrix(Tile, L, R, cut_);
-        if (!is_full) {
+        if (Tile.lpNorm<2>() >= TiledArray::SparseShape<float>::threshold()) {
+            Eigen::MatrixXd L, R;
+            bool is_full = algebra::Decompose_Matrix(Tile, L, R, cut_);
+            if (!is_full) {
+                tensor::TileVariant<double> tile_variant{
+                    tensor::LowRankTile<double>{std::move(L), std::move(R)}};
+
+                return tensor::TilePimpl<double>{bt.range(),
+                                                 std::move(tile_variant), cut_};
+            }
+
             tensor::TileVariant<double> tile_variant{
-                tensor::LowRankTile<double>{std::move(L), std::move(R)}};
+                tensor::FullRankTile<double>{std::move(Tile)}};
 
             return tensor::TilePimpl<double>{bt.range(),
-                                             std::move(tile_variant), cut_};
+                                             std::move(tile_variant)};
+        } else { // For now if tile is super sparse return a 1x1 zero tile.
+            Tile = Eigen::MatrixXd::Zero(1,1);
+            tensor::TileVariant<double> tile_variant{
+                tensor::FullRankTile<double>{std::move(Tile)}};
+
+            return tensor::TilePimpl<double>{bt.range(),
+                                             std::move(tile_variant)};
         }
-
-        tensor::TileVariant<double> tile_variant{
-            tensor::FullRankTile<double>{std::move(Tile)}};
-
-        return tensor::TilePimpl<double>{bt.range(), std::move(tile_variant)};
+        
     }
 
   private:

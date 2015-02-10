@@ -285,6 +285,14 @@ int main(int argc, char *argv[]) {
         eri3 = TiledArray::to_sparse(eri3_dense);
         auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(eri3,
                 integrals::compute_functors::TaToLowRankTensor<3>{1e-8});
+        auto eri3_s2d = TiledArray::to_dense(eri3);
+        if(world.rank() == 0){
+            std::cout << "Best possible difference in accuracy \n";
+        }
+        double best_diff = (eri3_s2d("i,j,X") - eri3_dense("i,j,X")).norm()/eri3_dense.trange().elements().volume();
+        if(world.rank() == 0){
+            std::cout << "\t" << best_diff << std::endl;
+        }
         if(world.rank() == 0){
             std::cout << "Eri3 sparse low rank from dense storage ";
         }

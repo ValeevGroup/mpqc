@@ -81,29 +81,30 @@ array_storage(TiledArray::Array<T, DIM, TileType, Policy> const &A) {
     return out;
 }
 
-template<typename Policy>
+template <typename Policy>
 double array_diff(TiledArray::Array<double, 3, TiledArray::Tensor<double>,
-        Policy> const &other, TiledArray::Array<double, 3,
-        tensor::TilePimpl<double>, TiledArray::SparsePolicy> const &lr) {
+                                    Policy> const &other,
+                  TiledArray::Array<double, 3, tensor::TilePimpl<double>,
+                                    TiledArray::SparsePolicy> const &lr) {
     double out = 0;
     auto const &pmap_ptr = other.get_pmap();
     const auto end = pmap_ptr->end();
     auto it_lr = lr.get_pmap()->begin();
 
-    for(auto it = pmap_ptr->begin(); it != end; ++it, ++it_lr){
+    for (auto it = pmap_ptr->begin(); it != end; ++it, ++it_lr) {
         const auto range = other.trange().make_tile_range(*it);
         const auto rows = range.size()[0];
         const auto cols = range.size()[1] * range.size()[2];
         Eigen::MatrixXd s_tile = Eigen::MatrixXd::Zero(rows, cols);
         Eigen::MatrixXd lr_tile = Eigen::MatrixXd::Zero(rows, cols);
-        
-        if(!other.is_zero(*it)){
-            TiledArray::Tensor<double> const &tensor = other.find(*it);
-            std::copy(tensor.data(), tensor.data()+range.volume(), s_tile.data());
+
+        if (!other.is_zero(*it)) {
+            const auto tensor = other.find(*it).get();
+            s_tile = TiledArray::eigen_map(tensor, rows, cols);
         }
-        if(!lr.is_zero(*it_lr)){
-             tensor::TilePimpl<double> tile_lr = lr.find(*it_lr);
-             lr_tile = tile_lr.tile().matrix();
+        if (!lr.is_zero(*it_lr)) {
+            tensor::TilePimpl<double> tile_lr = lr.find(*it_lr);
+            lr_tile = tile_lr.tile().matrix();
         }
         const auto norm = (s_tile - lr_tile).lpNorm<2>();
         out += norm * norm;
@@ -112,8 +113,8 @@ double array_diff(TiledArray::Array<double, 3, TiledArray::Tensor<double>,
     // sum outs from all nodes
     other.get_world().gop.sum(&out, 1);
     other.get_world().gop.fence();
-    out = std::sqrt(out)/other.trange().elements().volume();
-    return out; 
+    out = std::sqrt(out) / other.trange().elements().volume();
+    return out;
 }
 
 
@@ -171,142 +172,44 @@ int main(int argc, char *argv[]) {
     auto eri_pool = integrals::make_pool(std::move(eri));
 
     world.gop.fence();
-    auto eri2 = integrals::BlockSparseIntegrals(
-        world, eri_pool, utility::make_array(df_basis, df_basis),
-        integrals::compute_functors::BtasToTaTensor{});
-
     auto eri2_dense = integrals::DenseIntegrals(
         world, eri_pool, utility::make_array(df_basis, df_basis),
         integrals::compute_functors::BtasToTaTensor{});
-    {
-        if(world.rank() == 0){
-            std::cout << "Difference between dense and sparse eri2 integrals." << std::endl;
-        }
-        auto eri2_s2d = TiledArray::to_dense(eri2);
-        double diff = (eri2_dense("i,j") - eri2_s2d("i,j")).norm();
-        if(world.rank() == 0){
-            std::cout << "\t" << diff << std::endl;
-        }
-    }
-    world.gop.fence();
-    if (world.rank() == 0) {
-        std::cout << "Eri2 storage: ";
-    }
-    array_storage(eri2);
 
-    eri2 = pure::inverse_sqrt(eri2);
-    {
-        auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
-                eri2, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
-
-        if (world.rank() == 0) {
-            std::cout << "Eri2 inverse square root storage: ";
-        }
-        array_storage(eri2_inv_sqrt_low_rank);
-        if (world.rank() == 0) {
-            std::cout << std::endl;
-        }
-    }
-
-    auto eri3 = integrals::BlockSparseIntegrals(
-        world, eri_pool, utility::make_array(df_basis, basis, basis),
-        integrals::compute_functors::BtasToTaTensor{});
+    eri2_dense = pure::inverse_sqrt(eri2_dense);
 
     auto eri3_dense = integrals::DenseIntegrals(
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToTaTensor{});
 
-    {
-        if(world.rank() == 0){
-            std::cout << "Difference between dense and sparse eri3 integrals." << std::endl;
-        }
-        auto eri3_s2d = TiledArray::to_dense(eri3);
-        double diff = (eri3_dense("i,j,X") - eri3_s2d("i,j,X")).norm()/eri3_dense.trange().elements().volume();
-        if(world.rank() == 0){
-            std::cout << "\t" << diff << std::endl;
-        }
-    }
-
-
-    if (world.rank() == 0) {
-        std::cout << "Eri3 storage: ";
-    }
-    array_storage(eri3);
-    {
-        auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(eri3,
-                integrals::compute_functors::TaToLowRankTensor<3>{1e-8});
-        if (world.rank() == 0) {
-            std::cout << "Eri3 low rank storage: ";
-        }
-        array_storage(eri3_low_rank);
-        double eri3_diff = array_diff(eri3, eri3_low_rank);
-        if (world.rank() == 0) {
-            std::cout << "Difference between TA and LR = " << eri3_diff << "\n" << std::endl;
-        }
-    }
-    world.gop.fence();
-
     eri3_dense("X,a,b") = eri2_dense("X,P") * eri3_dense("P,a,b");
-    eri3("X,a,b") = eri2("X,P") * eri3("P,a,b");
-    eri3.truncate();
-    world.gop.fence();
-    {
-        if(world.rank() == 0){
-            std::cout << "Difference between dense and sparse contracted eri3 integrals." << std::endl;
-        }
-        auto eri3_s2d = TiledArray::to_dense(eri3);
-        double diff = (eri3_dense("i,j,X") - eri3_s2d("i,j,X")).norm()/eri3_dense.trange().elements().volume();
-        if(world.rank() == 0){
-            std::cout << "\t" << diff << std::endl;
-        }
-    }
 
     if (world.rank() == 0) {
-        std::cout << "Eri3 contracted with 1/sqrt(V) storage: ";
+        std::cout << "\nConverting to low rank block sparse array "
+                     "from dense" << std::endl;
     }
-    array_storage(eri3);
     {
-        auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(eri3,
-                integrals::compute_functors::TaToLowRankTensor<3>{1e-8});
-        if (world.rank() == 0) {
-            std::cout << "Eri3 contracted low rank storage: ";
-        }
-        array_storage(eri3_low_rank);
-        double eri3_diff = array_diff(eri3, eri3_low_rank);
-        if (world.rank() == 0) {
-            std::cout << "Difference between TA and LR = " << eri3_diff << std::endl;
-        }
-    }
+        auto eri3 = TiledArray::to_sparse(eri3_dense);
+        auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(
+            eri3, integrals::compute_functors::TaToLowRankTensor<3>{1e-8});
 
-    if(world.rank() == 0){
-        std::cout << "\nComparing all dense vs a sparse low rank array made from dense" << std::endl;
-    }
-    {
-        eri3 = TiledArray::to_sparse(eri3_dense);
-        auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(eri3,
-                integrals::compute_functors::TaToLowRankTensor<3>{1e-8});
-        auto eri3_s2d = TiledArray::to_dense(eri3);
-        if(world.rank() == 0){
-            std::cout << "Best possible difference in accuracy \n";
-        }
-        double best_diff = (eri3_s2d("i,j,X") - eri3_dense("i,j,X")).norm()/eri3_dense.trange().elements().volume();
-        if(world.rank() == 0){
-            std::cout << "\t" << best_diff << std::endl;
-        }
-        if(world.rank() == 0){
+        if (world.rank() == 0) {
             std::cout << "Eri3 sparse low rank from dense storage ";
         }
         array_storage(eri3_low_rank);
         double best_eri3_diff = array_diff(eri3_dense, eri3_low_rank);
         if (world.rank() == 0) {
-            std::cout << "Difference between TA dense and LR sparse = " << best_eri3_diff << std::endl;
+            std::cout << "Block sparse row rank error in the contracted product = "
+                      << best_eri3_diff << std::endl;
         }
     }
 
     const auto thresh = TiledArray::SparseShape<float>::threshold();
-    if(world.rank() == 0){
-        std::cout << "Finally the sparse shape threshold was = " << thresh << std::endl;
+    if (world.rank() == 0) {
+        std::cout << "Finally the sparse shape threshold was = " << thresh
+                  << std::endl;
     }
+
 
     world.gop.fence();
     libint2::cleanup();

@@ -1045,8 +1045,8 @@ Molecule::cleanup_molecule(double tol)
                 }
             }
           if (!found) {
-              SCException ex("cleanup: couldn't find atom",
-                             __FILE__, __LINE__, class_desc());
+              AlgorithmException ex("cleanup_molecule: couldn't find atom",
+                                    __FILE__, __LINE__, class_desc());
               try {
                   ex.elaborate()
                       << "couldn't find atom at " << np << endl

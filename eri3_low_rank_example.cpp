@@ -302,7 +302,11 @@ int main(int argc, char *argv[]) {
             std::cout << "Difference between TA dense and LR sparse = " << best_eri3_diff << std::endl;
         }
     }
-            
+
+    const auto thresh = TiledArray::SparseShape<float>::threshold();
+    if(world.rank() == 0){
+        std::cout << "Finally the sparse shape threshold was = " << thresh << std::endl;
+    }
 
     world.gop.fence();
     libint2::cleanup();

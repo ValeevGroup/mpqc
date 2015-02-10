@@ -362,7 +362,7 @@ main(int argc, char **argv)
 
   {
       cout << "-------------- testing molecule symmetry --------------" << endl;
-      Ref<Molecule> mol;
+      Ref<Molecule> mol = new Molecule;
       // molecular geometry from issue #34
       mol->add_atom(1, 0.000000000000,  1.870882680830,  0.810202552477);
       mol->add_atom(6, 0.000000000000, -0.010330501554, -0.001551090982);

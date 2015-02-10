@@ -23,7 +23,6 @@
 #include "integrals/btas_to_low_rank_tensor.h"
 #include "integrals/ta_tensor_to_low_rank_tensor.h"
 #include "integrals/integral_engine_pool.h"
-#include "integrals/dense_task_integrals.h"
 #include "integrals/sparse_task_integrals.h"
 
 #include "purification/purification_devel.h"
@@ -115,7 +114,6 @@ double array_diff(TiledArray::Array<double, 3, TiledArray::Tensor<double>,
     return out; 
 }
 
-
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
     std::string mol_file = "";
@@ -169,113 +167,70 @@ int main(int argc, char *argv[]) {
 
     auto eri_pool = integrals::make_pool(std::move(eri));
 
+
     world.gop.fence();
     auto eri2 = integrals::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(df_basis, df_basis),
         integrals::compute_functors::BtasToTaTensor{});
 
-    auto eri2_dense = integrals::DenseIntegrals(
-        world, eri_pool, utility::make_array(df_basis, df_basis),
-        integrals::compute_functors::BtasToTaTensor{});
-    {
-        if(world.rank() == 0){
-            std::cout << "Difference between dense and sparse eri2 integrals." << std::endl;
-        }
-        auto eri2_s2d = TiledArray::to_dense(eri2);
-        double diff = (eri2_dense("i,j") - eri2_s2d("i,j")).norm();
-        if(world.rank() == 0){
-            std::cout << "\t" << diff << std::endl;
-        }
-    }
     world.gop.fence();
     if (world.rank() == 0) {
         std::cout << "Eri2 storage: ";
     }
-    array_storage(eri2);
-
+    auto eri2_storage = array_storage(eri2);
 
     eri2 = pure::inverse_sqrt(eri2);
-    {
-        auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
-                eri2, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
+    auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
+        eri2, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
 
-        if (world.rank() == 0) {
-            std::cout << "Eri2 inverse square root storage: ";
-        }
-        array_storage(eri2_inv_sqrt_low_rank);
-        if (world.rank() == 0) {
-            std::cout << std::endl;
-        }
+    if (world.rank() == 0) {
+        std::cout << "Eri2 inverse square root storage: ";
     }
+    auto eri2_inv_sqrt_storage = array_storage(eri2_inv_sqrt_low_rank);
 
     auto eri3 = integrals::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToTaTensor{});
 
-    auto eri3_dense = integrals::DenseIntegrals(
-        world, eri_pool, utility::make_array(df_basis, basis, basis),
-        integrals::compute_functors::BtasToTaTensor{});
-
-    {
-        if(world.rank() == 0){
-            std::cout << "Difference between dense and sparse eri3 integrals." << std::endl;
-        }
-        auto eri3_s2d = TiledArray::to_dense(eri3);
-        double diff = (eri3_dense("i,j") - eri3_s2d("i,j")).norm()/eri3_dense.trange().elements().volume();
-        if(world.rank() == 0){
-            std::cout << "\t" << diff << std::endl;
-        }
+    if (world.rank() == 0) {
+        std::cout << "Eri3 TA::Tensor sparse storage: ";
     }
+    auto eri3_storage = array_storage(eri3);
 
+    auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(eri3,
+            integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
 
     if (world.rank() == 0) {
-        std::cout << "Eri3 storage: ";
+        std::cout << "Eri3 low rank tile storage: ";
     }
-    array_storage(eri3);
-    {
-        auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(eri3,
-                integrals::compute_functors::TaToLowRankTensor<3>{1e-8});
-        if (world.rank() == 0) {
-            std::cout << "Eri3 low rank storage: ";
-        }
-        array_storage(eri3_low_rank);
-        double eri3_diff = array_diff(eri3, eri3_low_rank);
-        if (world.rank() == 0) {
-            std::cout << "Difference between TA and LR = " << eri3_diff << "\n" << std::endl;
-        }
+    auto eri3_low_rank_storage = array_storage(eri3_low_rank);
+
+    double eri3_diff = array_diff(eri3, eri3_low_rank);
+    if(world.rank() == 0){
+        std::cout << "The difference between initial eri3 arrays was " << eri3_diff << std::endl;
     }
+
     world.gop.fence();
 
-    eri3_dense("X,a,b") = eri2_dense("X,P") * eri3_dense("P,a,b");
+    decltype(eri3_low_rank) Xab;
+    Xab("X,a,b") = eri2_inv_sqrt_low_rank("X,P") * eri3_low_rank("P,a,b");
+    Xab.truncate();
+
+    world.gop.fence();
+    for (auto it = Xab.begin(); it != Xab.end(); ++it) {
+        it->get().compress();
+    }
+    if (world.rank() == 0) {
+        std::cout << "Eri3 sqrt inverse storage: ";
+    }
+    auto eri3_contract_storage = array_storage(Xab);
+
     eri3("X,a,b") = eri2("X,P") * eri3("P,a,b");
     eri3.truncate();
-    world.gop.fence();
-    {
-        if(world.rank() == 0){
-            std::cout << "Difference between dense and sparse contracted eri3 integrals." << std::endl;
-        }
-        auto eri3_s2d = TiledArray::to_dense(eri3);
-        double diff = (eri3_dense("i,j") - eri3_s2d("i,j")).norm()/eri3_dense.trange().elements().volume();
-        if(world.rank() == 0){
-            std::cout << "\t" << diff << std::endl;
-        }
-    }
 
-    if (world.rank() == 0) {
-        std::cout << "Eri3 contracted with 1/sqrt(V) storage: ";
-    }
-    array_storage(eri3);
-    {
-        auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(eri3,
-                integrals::compute_functors::TaToLowRankTensor<3>{1e-8});
-        if (world.rank() == 0) {
-            std::cout << "Eri3 contracted low rank storage: ";
-        }
-        array_storage(eri3_low_rank);
-        double eri3_diff = array_diff(eri3, eri3_low_rank);
-        if (world.rank() == 0) {
-            std::cout << "Difference between TA and LR = " << eri3_diff << std::endl;
-        }
+    double diff = array_diff(eri3, Xab);
+    if(world.rank() == 0){
+        std::cout << "The difference between contracted eri3 arrays was " << diff << std::endl;
     }
 
     world.gop.fence();

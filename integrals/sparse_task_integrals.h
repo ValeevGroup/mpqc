@@ -27,6 +27,7 @@
 
 namespace tcc {
 namespace integrals {
+    namespace sparse {
 
 template <std::size_t N>
 using CShellPtrs
@@ -34,7 +35,7 @@ using CShellPtrs
 
 template <typename TileType, typename TF, typename SharedEnginePool,
           std::size_t N>
-void do_task(std::vector<std::pair<std::size_t, TileType>> *tile_vec,
+ void do_task(std::vector<std::pair<std::size_t, TileType>> *tile_vec,
              std::size_t ord, std::size_t tile_ord, TF func,
              TiledArray::TiledRange trange, SharedEnginePool engines,
              CShellPtrs<N> shell_ptrs) {
@@ -53,7 +54,7 @@ void do_task(std::vector<std::pair<std::size_t, TileType>> *tile_vec,
 
 
 template <typename Pmap, typename SharedEnginePool, std::size_t N, typename TF>
-std::vector<std::pair<std::size_t, typename TF::TileType>>
+ std::vector<std::pair<std::size_t, typename TF::TileType>>
 compute_tiles(madness::World &world, Pmap const &p,
               TiledArray::TiledRange const &trange, SharedEnginePool engines,
               std::array<basis::Basis, N> const &bases, TF tf) {
@@ -83,7 +84,7 @@ compute_tiles(madness::World &world, Pmap const &p,
 
 /// Create a trange from the input bases.
 template <std::size_t N>
-TiledArray::TiledRange
+ TiledArray::TiledRange
 create_trange(std::array<basis::Basis, N> const &basis_array) {
 
     std::vector<TiledArray::TiledRange1> trange1_collector;
@@ -133,6 +134,8 @@ TiledArray::Array<double, N, TileType, TiledArray::SparsePolicy> create_array(
     return array;
 }
 
+} // namespace sparse
+
 /// Create a sparse array of tile where the type is specified by the functor.
 /// TF needs to overload () to take a TiledArray::Range and a
 /// btas::Tensor<double, btas::RangeNd<CblasRowMajor, std::array<long, N>>>;
@@ -144,14 +147,14 @@ BlockSparseIntegrals(madness::World &world, SharedEnginePool engines,
 
     using TileType = typename TF::TileType;
 
-    auto trange = create_trange(bases);
-    auto pmap = create_pmap<N>(world, trange);
+    auto trange = sparse::create_trange(bases);
+    auto pmap = sparse::create_pmap<N>(world, trange);
 
     // Compute the tiles for the array and save them in a vector
     auto computed_tiles
-        = compute_tiles(world, pmap, trange, std::move(engines), bases, tf);
+        = sparse::compute_tiles(world, pmap, trange, std::move(engines), bases, tf);
 
-    return create_array<N>(world, trange, computed_tiles);
+    return sparse::create_array<N>(world, trange, computed_tiles);
 }
 
 } // namespace integrals

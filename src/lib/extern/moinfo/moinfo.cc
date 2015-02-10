@@ -168,13 +168,14 @@ ExternMOInfo::ExternMOInfo(std::string filename,
     try {
       molecule->set_point_group(pg);
     }
-    catch(AlgorithmException& ex) {
+    catch (AlgorithmException &ex) {
       try {
         ex.elaborate() << "in ExternMOInfo ctor: could not detect point group " << pointgroup_symbol;
       }
-      catch(...) {}
+      catch (...) {}
       throw ex;
     }
+  }
   molecule->print();
   ExEnv::out0() << indent << "nuclear repulsion energy = "
                 << scprintf("%25.15f",molecule->nuclear_repulsion_energy()) << std::endl;

@@ -265,7 +265,7 @@ class TileVariant {
         // Full matrix is approximately the sqrt of the sum of the squares of
         // the R values.
         double operator()(LowRankTile<T> const &t) {
-            return t.matrixR().diagonal().norm();
+            return t.matrix().template lpNorm<2>();
         }
     } norm_functor;
 

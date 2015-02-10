@@ -285,6 +285,13 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
                                                                *vir, *cabs, true);
         this->orbital_registry()->add(allvirt->id(), allvirt);
         aspace = allvirt;
+        // this space potentially uses a union of OBS (or VBS) and ABS
+        // make sure that this AO basis is known
+        if (this->ao_registry()->key_exists(allvirt->basis()) == false) {
+          Ref<OrbitalSpace> muprime = new AtomicOrbitalSpace("mu''", "VBS(AO)+CABS(AO)", allvirt->basis(), allvirt->integral());
+          this->orbital_registry()->add(make_keyspace_pair(muprime));
+          this->ao_registry()->add(muprime->basis(),muprime);
+        }
       }
       else
         aspace = orbital_registry()->value(allvirt_key);

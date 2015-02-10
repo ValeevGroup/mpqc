@@ -358,6 +358,18 @@ main(int argc, char **argv)
         mol->print_xyz();
       }
 #endif
+  } // Molecule ctors
+
+  {
+      cout << "-------------- testing molecule symmetry --------------" << endl;
+      Ref<Molecule> mol;
+      // molecular geometry from issue #34
+      mol->add_atom(1, 0.000000000000,  1.870882680830,  0.810202552477);
+      mol->add_atom(6, 0.000000000000, -0.010330501554, -0.001551090982);
+      mol->add_atom(1, 0.000000000000, -1.860552181165,  0.805741774591);
+      Ref<PointGroup> pg = new PointGroup("cs");
+      mol->set_point_group(pg);
+      mol->print();
   }
 
   return 0;

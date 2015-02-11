@@ -104,7 +104,7 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
 
   std::string r12 = kv->stringvalue("r12", KeyValValuestring("true") );
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   std::string cabs_singles = kv->stringvalue("cabs_singles", KeyValValuestring("true") );
   std::string cabs_singles_basis = kv->stringvalue("singles_basis", KeyValValuestring(std::string()) );
   std::string partition = kv->stringvalue("patitionH", KeyValValuestring("fock") );
@@ -136,7 +136,7 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
     if(not cabs_contraction.empty())
       kva->assign("cabs_contraction", cabs_contraction);
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
     if(not cabs_singles.empty())
       kva->assign("cabs_singles", cabs_singles);
     if(not cabs_singles_basis.empty())

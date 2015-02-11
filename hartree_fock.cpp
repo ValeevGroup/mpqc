@@ -23,6 +23,7 @@
 
 #include "integrals/btas_to_ta_tensor.h"
 #include "integrals/btas_to_low_rank_tensor.h"
+#include "integrals/make_engine.h"
 #include "integrals/ta_tensor_to_low_rank_tensor.h"
 #include "integrals/integral_engine_pool.h"
 #include "integrals/sparse_task_integrals.h"
@@ -31,6 +32,7 @@
 #include "purification/sqrt_inv.h"
 
 using namespace tcc;
+namespace ints = integrals;
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -66,27 +68,45 @@ int main(int argc, char *argv[]) {
     basis::Basis basis{bs.create_basis(clusters)};
     basis::Basis df_basis{df_bs.create_basis(clusters)};
 
-    /*
-    auto max_am = std::max(basis.max_am(), df_basis.max_am());
-    auto max_nprim = std::max(basis.max_nprim(), df_basis.max_nprim());
 
     libint2::init();
-    libint2::TwoBodyEngine<libint2::Coulomb> eri{max_nprim,
-                                                 static_cast<int>(max_am)};
-    auto eri_pool = integrals::make_pool(std::move(eri));
+    utility::print_par(world, "Computing overlap\n");
+    auto overlap_pool = ints::make_pool(ints::make_1body("overlap", basis));
+    auto overlap = integrals::BlockSparseIntegrals(
+        world, overlap_pool, utility::make_array(basis, basis),
+        integrals::compute_functors::BtasToTaTensor{});
 
-    world.gop.fence();
+    utility::print_par(world, "Computing eri2\n");
+    auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
     auto eri2 = integrals::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(df_basis, df_basis),
         integrals::compute_functors::BtasToTaTensor{});
+    std::cout << overlap << std::endl;
 
-    world.gop.fence();
-    if (world.rank() == 0) {
-        std::cout << "Eri2 storage: ";
-    }
-    auto eri2_storage = array_storage(eri2);
+    utility::print_par(world, "Computing overlap inverse\n");
+    auto overlap_inv_sqrt = pure::inverse_sqrt(overlap);
 
-    eri2 = pure::inverse_sqrt(eri2);
+    utility::print_par(world, "Computing kinetic\n");
+    auto kinetic_pool = ints::make_pool(ints::make_1body("kinetic", basis));
+    auto T = integrals::BlockSparseIntegrals(
+        world, kinetic_pool, utility::make_array(basis, basis),
+        integrals::compute_functors::BtasToTaTensor{});
+
+    // TODO Deal with setting q for nuclear integrals 
+    utility::print_par(world, "Computing nuclear\n");
+    auto nuclear_pool = ints::make_pool(ints::make_1body("nuclear", basis));
+    auto V = integrals::BlockSparseIntegrals(
+        world, nuclear_pool, utility::make_array(basis, basis),
+        integrals::compute_functors::BtasToTaTensor{});
+
+    utility::print_par(world, "Computing Hcore\n");
+    decltype(V) H;
+    H("i,j") = T("i,j") + V("i,j");
+
+    utility::print_par(world, "Computing Density\n");
+    auto D = pure::purify(overlap_inv_sqrt, H);
+
+    /*
     auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
         eri2, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
 
@@ -144,7 +164,7 @@ int main(int argc, char *argv[]) {
 
     */
 
-    world.gop.fence();
+        world.gop.fence();
     libint2::cleanup();
     madness::finalize();
     return 0;

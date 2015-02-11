@@ -2,78 +2,72 @@
 #ifndef TCC_PURIFICATION_PURIFICATIONDEVEL_H
 #define TCC_PURIFICATION_PURIFICATIONDEVEL_H
 
-#include <cstdlib>
-#include "eigen_value_estimation.h"
-#include <iostream>
 #include "../include/eigen.h"
+#include "../include/tiledarray.h"
+
+#include "eigen_value_estimation.h"
+#include "diagonal_array.h"
 
 namespace tcc {
 namespace pure {
 
-template <typename Array>
-Array initial_guess(Array const &H, Array const &S) {
-    return create_eval_scaled_guess(H, S);
-}
-
-template <typename Array>
-class trace_resetting_poly {
+template <typename T, typename TileType, typename Policy>
+class OrthTraceResettingPurifier {
   public:
-    void operator()(Array &D, Array const &S, std::size_t occ) const {
+    using ArrayType = TiledArray::Array<T, 2, TileType, Policy>;
 
-        Array DS(D.get_world(), D.trange());
-        DS("i,j") = D("i,k") * S("k,j");
+    OrthTraceResettingPurifier(ArrayType const &sqrt_inv)
+        : sqrt_inv_(sqrt_inv), I(create_diagonal_matrix(sqrt_inv, 1.0)) {}
 
-        auto trace = array_trace(DS);
+    double trace(ArrayType const &A) const { return A("i,j").trace(); }
+
+    ArrayType operator()(ArrayType const &Fao, std::size_t occ) const {
+        // F = Z F_{ao} Z^{T}
+        ArrayType F;
+        F("i,j") = sqrt_inv_("i,k") * Fao("k,l") * sqrt_inv_("l,j");
+
+        auto eig_pair = eval_guess(F);
+        auto emax = eig_pair[1];
+        auto emin = eig_pair[0];
+        auto scale = 1.0/(emax - emin);
+
+        // D_{o} = \frac{emax I - F}{emax - emin}
+        ArrayType D;
+        D("i,j") = scale * (emax * I("i,j") - F("i,j"));
+        auto tr = trace(D);
+
         occ = occ / 2;
         auto iter = 1;
-
-        while (std::abs(trace - occ) >= 1e-6 && iter <= 1000) {
-            if (trace > occ) {
-                D("i,j") = DS("i,k") * D("k,j");
-                std::cout << "\tshrinking trace" << std::endl;
+        ArrayType D2;
+        while (std::abs(tr - occ) >= 1e-9 && iter <= 100) {
+            // Compute D2
+            D2("i,j") = D("i,k") * D("k,j");
+            if (tr > occ) {
+                D = D2;
             } else {
-                D("i,j") = 2 * D("i,j") - DS("i,k") * D("k,j");
-                std::cout << "\tincreasing trace" << std::endl;
+                D("i,j") = 2 * D("i,j") - D2("i,j");
             }
-
-            DS("i,j") = D("i,k") * S("k,j");
-
-            trace = array_trace(DS);
-
-            std::cout << "DS trace = " << trace << " trace and occ diff "
-                      << std::abs(trace - occ) << std::endl;
+            tr = trace(D);
             ++iter;
             D.get_world().gop.fence();
         }
+
+        // D_{ao} = Z^{T} D Z
+        D("i,j") = sqrt_inv_("i,k") * D("k,l") * sqrt_inv_("l,j");
+        return D;
     }
 
-    double array_trace(Array const &A) const { return A("i,j").trace(); }
-};
-
-
-class purifier {
-  public:
-    explicit purifier(double cut = 1e-07) : cut_{cut} {}
-
-    template <typename Array, typename Polynomial = trace_resetting_poly<Array>>
-    Array operator()(Array const &H, Array const &S, std::size_t occupation,
-                     Polynomial poly = Polynomial{}) {
-        auto P = initial_guess(H, S);
-        Array PS;
-        PS("i,j") = P("i,k") * S("k,j");
-        auto eig_PS = TiledArray::array_to_eigen(PS);
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(eig_PS);
-        std::cout << "Input evals = " << cut_ << " "
-                  << es.eigenvalues().transpose() << std::endl;
-
-        poly(P, S, occupation);
-
-        return P;
-    }
 
   private:
-    double cut_;
-}; // class purifier
+    const ArrayType sqrt_inv_;
+    const ArrayType I;
+};
+
+template <typename T, typename TileType, typename Policy>
+OrthTraceResettingPurifier<T, TileType, Policy> make_orthogonal_tr_reset_pure(
+    TiledArray::Array<T, 2, TileType, Policy> const &sqrt_inv) {
+    return OrthTraceResettingPurifier<T, TileType, Policy>{sqrt_inv};
+}
 
 } // namespace pure
 } // namespace tcc

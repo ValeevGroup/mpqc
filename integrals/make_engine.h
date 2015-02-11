@@ -4,6 +4,8 @@
 
 #include "../include/libint.h"
 #include "../basis/basis.h"
+#include "../basis/cluster_shells.h"
+#include "../molecule/cluster_collapse.h"
 
 namespace tcc {
 namespace integrals {
@@ -15,25 +17,55 @@ libint2::TwoBodyEngine<libint2::Coulomb> make_2body(Bases &&... basis) {
     return libint2::TwoBodyEngine<libint2::Coulomb>{max_nprim, max_am};
 }
 
+// Function to return the q_vector given a basis
+using q_vector = std::vector<std::pair<double, std::array<double, 3>>>;
+inline q_vector make_q(basis::Basis const &bs) {
+    q_vector q;
+
+    // Get the groups of clustered shells
+    for (auto const &cluster_shell : bs.cluster_shells()) {
+        // Each group has a reference to its cluster
+        auto const &cluster = cluster_shell.cluster();
+        for (auto const &atom : molecule::collapse_to_atoms(cluster)) {
+
+            auto const &c = atom.center();
+            std::array<double, 3> O = {{c[0], c[1], c[2]}};
+            const double charge = atom.charge();
+
+            q.emplace_back(charge, std::move(O));
+        }
+    }
+
+    return q;
+}
+
 // q must be set a later time since I am not sure about the ordering aspect.
-libint2::OneBodyEngine
+inline libint2::OneBodyEngine
 make_1body(std::string const &type, basis::Basis const &bs) {
 
+    // Vector to hold q.
+    q_vector q;
+
     libint2::OneBodyEngine::integral_type itype;
-    if(type == "overlap"){
+    if (type == "overlap") {
         itype = libint2::OneBodyEngine::overlap;
-    }
-    else if(type == "nuclear"){
-        itype = libint2::OneBodyEngine::nuclear;
-    }
-    else if(type == "kinetic"){
+    } else if (type == "kinetic") {
         itype = libint2::OneBodyEngine::kinetic;
+    } else if (type == "nuclear") {
+        itype = libint2::OneBodyEngine::nuclear;
+        q = make_q(bs);
     } else {
         std::terminate();
     }
 
-    return libint2::OneBodyEngine{itype, bs.max_nprim(),
+    libint2::OneBodyEngine engine{itype, bs.max_nprim(),
                                   static_cast<int>(bs.max_am()), 0};
+
+    if(itype == libint2::OneBodyEngine::nuclear){
+        engine.set_q(std::move(q));
+    }
+
+    return engine;
 }
 
 } // namespace integrals

@@ -28,11 +28,24 @@
 #include "integrals/integral_engine_pool.h"
 #include "integrals/sparse_task_integrals.h"
 
-#include "purification/purification_devel.h"
 #include "purification/sqrt_inv.h"
+#include "purification/purification_devel.h"
 
 using namespace tcc;
 namespace ints = integrals;
+
+void debug_par(madness::World &world, volatile int debug) {
+    if (0 != debug) {
+        char hostname[256];
+        gethostname(hostname, sizeof(hostname));
+        printf("PID %d on %s ready for attach\n", getpid(), hostname);
+        fflush(stdout);
+        if (world.rank() == 0) {
+            while (0 != debug) sleep(5);
+        }
+    }
+    world.gop.fence();
+}
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -40,7 +53,7 @@ int main(int argc, char *argv[]) {
     std::string basis_name = "";
     std::string df_basis_name = "";
     int nclusters = 0;
-    int debug = 0;
+    volatile int debug = 0;
     if (argc >= 5) {
         mol_file = argv[1];
         basis_name = argv[2];
@@ -54,6 +67,7 @@ int main(int argc, char *argv[]) {
     if (argc == 6) {
         debug = std::stoi(argv[5]);
     }
+    debug_par(world, debug);
 
     auto mol = molecule::read_xyz(mol_file);
 
@@ -92,7 +106,6 @@ int main(int argc, char *argv[]) {
         world, kinetic_pool, utility::make_array(basis, basis),
         integrals::compute_functors::BtasToTaTensor{});
 
-    // TODO Deal with setting q for nuclear integrals 
     utility::print_par(world, "Computing nuclear\n");
     auto nuclear_pool = ints::make_pool(ints::make_1body("nuclear", basis));
     auto V = integrals::BlockSparseIntegrals(
@@ -104,7 +117,8 @@ int main(int argc, char *argv[]) {
     H("i,j") = T("i,j") + V("i,j");
 
     utility::print_par(world, "Computing Density\n");
-    auto D = pure::purify(overlap_inv_sqrt, H);
+    auto purifier = pure::make_orthogonal_tr_reset_pure(overlap_inv_sqrt);
+    auto D = purifier(H, 10);
 
     /*
     auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
@@ -164,7 +178,7 @@ int main(int argc, char *argv[]) {
 
     */
 
-        world.gop.fence();
+    world.gop.fence();
     libint2::cleanup();
     madness::finalize();
     return 0;

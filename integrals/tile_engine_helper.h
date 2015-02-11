@@ -185,12 +185,7 @@ compute_tile(Engine engine,
     std::array<std::size_t, N> old_idx;
     old_idx.fill(0);
 
-    Shell unit_ = {
-        {0.0}, // exponent
-        {{0, false, {1.0}}},
-        {{0.0, 0.0, 0.0}} // placed at origin
-    };
-    unit_.renorm();
+    Shell unit_ = Shell::unit();
 
     for (auto ord = 0ul; ord < nshell_ordinals; ++ord) {
         idx = ord_to_idx(ord, shell_extent);

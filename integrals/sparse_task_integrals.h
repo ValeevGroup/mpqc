@@ -145,8 +145,6 @@ TiledArray::Array<double, N, typename TF::TileType, TiledArray::SparsePolicy>
 BlockSparseIntegrals(madness::World &world, SharedEnginePool engines,
                      std::array<basis::Basis, N> const &bases, TF tf = TF{}) {
 
-    using TileType = typename TF::TileType;
-
     auto trange = sparse::create_trange(bases);
     auto pmap = sparse::create_pmap<N>(world, trange);
 

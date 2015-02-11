@@ -9,6 +9,8 @@ set(sources
   clustering_functions.cpp
   attach_hydrogens.h
   attach_hydrogens.cpp
+  make_clusters.h
+  make_clusters.cpp
   cluster.cpp
   common.h
   common.cpp

@@ -105,8 +105,8 @@ target_link_libraries(eri3_low_rank_example
   ${TileClusterChem_LIBRARIES}
 )
 
-add_executable(test_accuracy EXCLUDE_FROM_ALL test_accuracy.cpp) 
-target_link_libraries(test_accuracy
+add_executable(hartree_fock EXCLUDE_FROM_ALL hartree_fock.cpp) 
+target_link_libraries(hartree_fock
   ${TileClusterChem_LIBRARIES}
 )
 

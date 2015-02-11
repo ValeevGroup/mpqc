@@ -1,0 +1,151 @@
+#include <memory>
+#include <fstream>
+#include <algorithm>
+
+#include "include/tbb.h"
+#include "include/libint.h"
+#include "include/tiledarray.h"
+#include "include/btas.h"
+
+#include "utility/make_array.h"
+#include "utility/parallel_print.h"
+
+#include "molecule/atom.h"
+#include "molecule/cluster.h"
+#include "molecule/molecule.h"
+#include "molecule/clustering_functions.h"
+#include "molecule/make_clusters.h"
+
+#include "basis/atom_basisset.h"
+#include "basis/basis_set.h"
+#include "basis/cluster_shells.h"
+#include "basis/basis.h"
+
+#include "integrals/btas_to_ta_tensor.h"
+#include "integrals/btas_to_low_rank_tensor.h"
+#include "integrals/ta_tensor_to_low_rank_tensor.h"
+#include "integrals/integral_engine_pool.h"
+#include "integrals/sparse_task_integrals.h"
+
+#include "purification/purification_devel.h"
+#include "purification/sqrt_inv.h"
+
+using namespace tcc;
+
+int main(int argc, char *argv[]) {
+    auto &world = madness::initialize(argc, argv);
+    std::string mol_file = "";
+    std::string basis_name = "";
+    std::string df_basis_name = "";
+    int nclusters = 0;
+    int debug = 0;
+    if (argc >= 5) {
+        mol_file = argv[1];
+        basis_name = argv[2];
+        df_basis_name = argv[3];
+        nclusters = std::stoi(argv[4]);
+    } else {
+        std::cout << "input is $./program mol_file basis_file df_basis_file "
+                     "nclusters \n";
+        return 0;
+    }
+    if (argc == 6) {
+        debug = std::stoi(argv[5]);
+    }
+
+    auto mol = molecule::read_xyz(mol_file);
+
+    utility::print_par(world, "Computing ", mol.nelements(), " elements with ",
+                       nclusters, " clusters \n");
+
+    auto clusters = molecule::attach_hydrogens_kmeans(mol, nclusters);
+
+    basis::BasisSet bs{basis_name};
+    basis::BasisSet df_bs{df_basis_name};
+
+    basis::Basis basis{bs.create_basis(clusters)};
+    basis::Basis df_basis{df_bs.create_basis(clusters)};
+
+    /*
+    auto max_am = std::max(basis.max_am(), df_basis.max_am());
+    auto max_nprim = std::max(basis.max_nprim(), df_basis.max_nprim());
+
+    libint2::init();
+    libint2::TwoBodyEngine<libint2::Coulomb> eri{max_nprim,
+                                                 static_cast<int>(max_am)};
+    auto eri_pool = integrals::make_pool(std::move(eri));
+
+    world.gop.fence();
+    auto eri2 = integrals::BlockSparseIntegrals(
+        world, eri_pool, utility::make_array(df_basis, df_basis),
+        integrals::compute_functors::BtasToTaTensor{});
+
+    world.gop.fence();
+    if (world.rank() == 0) {
+        std::cout << "Eri2 storage: ";
+    }
+    auto eri2_storage = array_storage(eri2);
+
+    eri2 = pure::inverse_sqrt(eri2);
+    auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
+        eri2, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
+
+    if (world.rank() == 0) {
+        std::cout << "Eri2 inverse square root storage: ";
+    }
+    auto eri2_inv_sqrt_storage = array_storage(eri2_inv_sqrt_low_rank);
+
+    auto eri3 = integrals::BlockSparseIntegrals(
+        world, eri_pool, utility::make_array(df_basis, basis, basis),
+        integrals::compute_functors::BtasToTaTensor{});
+
+    if (world.rank() == 0) {
+        std::cout << "Eri3 TA::Tensor sparse storage: ";
+    }
+    auto eri3_storage = array_storage(eri3);
+
+    auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(
+        eri3, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
+
+    if (world.rank() == 0) {
+        std::cout << "Eri3 low rank tile storage: ";
+    }
+    auto eri3_low_rank_storage = array_storage(eri3_low_rank);
+
+    double eri3_diff = array_diff(eri3, eri3_low_rank);
+    if (world.rank() == 0) {
+        std::cout << "The difference between initial eri3 arrays was "
+                  << eri3_diff << std::endl;
+    }
+
+    world.gop.fence();
+
+    decltype(eri3_low_rank) Xab;
+    Xab("X,a,b") = eri2_inv_sqrt_low_rank("X,P") * eri3_low_rank("P,a,b");
+    Xab.truncate();
+
+    world.gop.fence();
+    for (auto it = Xab.begin(); it != Xab.end(); ++it) {
+        it->get().compress();
+    }
+    if (world.rank() == 0) {
+        std::cout << "Eri3 sqrt inverse storage: ";
+    }
+    auto eri3_contract_storage = array_storage(Xab);
+
+    eri3("X,a,b") = eri2("X,P") * eri3("P,a,b");
+    eri3.truncate();
+
+    double diff = array_diff(eri3, Xab);
+    if (world.rank() == 0) {
+        std::cout << "The difference between contracted eri3 arrays was "
+                  << diff << std::endl;
+    }
+
+    */
+
+    world.gop.fence();
+    libint2::cleanup();
+    madness::finalize();
+    return 0;
+}

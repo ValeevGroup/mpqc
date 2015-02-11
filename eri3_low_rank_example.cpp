@@ -176,13 +176,26 @@ int main(int argc, char *argv[]) {
         world, eri_pool, utility::make_array(df_basis, df_basis),
         integrals::compute_functors::BtasToTaTensor{});
 
-    eri2_dense = pure::inverse_sqrt(eri2_dense);
+    auto eri2_inv_sqrt = pure::inverse_sqrt(eri2_dense);
+    {
+        decltype(eri2_dense) ident;
+        ident("i,j") = eri2_inv_sqrt("i,k") * eri2_dense("k,l")
+                       * eri2_inv_sqrt("l,j");
+        decltype(eri2_dense) zero;
+        zero("i,j") = pure::create_diagonal_matrix(eri2_dense, 1.0)("i,j")
+                      - ident("i,j");
+        auto norm = zero("i,j").norm().get();
+        if (world.rank() == 0) {
+            std::cout << "Norm of S^{-1/2} * S * S^{-1/2} - ident = " << norm
+                      << std::endl;
+        }
+    }
 
     auto eri3_dense = integrals::DenseIntegrals(
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToTaTensor{});
 
-    eri3_dense("X,a,b") = eri2_dense("X,P") * eri3_dense("P,a,b");
+    eri3_dense("X,a,b") = eri2_inv_sqrt("X,P") * eri3_dense("P,a,b");
 
     if (world.rank() == 0) {
         std::cout << "\nConverting to low rank block sparse array "
@@ -196,11 +209,16 @@ int main(int argc, char *argv[]) {
         if (world.rank() == 0) {
             std::cout << "Eri3 sparse low rank from dense storage ";
         }
+
         array_storage(eri3_low_rank);
-        double best_eri3_diff = array_diff(eri3_dense, eri3_low_rank);
+        double dvlr_eri3_diff = array_diff(eri3_dense, eri3_low_rank);
+        double svlr_eri3_diff = array_diff(eri3, eri3_low_rank);
         if (world.rank() == 0) {
-            std::cout << "Block sparse row rank error in the contracted product = "
-                      << best_eri3_diff << std::endl;
+            std::cout << "Block sparse low rank error with dense array in the "
+                         "contracted product = " << dvlr_eri3_diff << std::endl;
+            std::cout << "Block sparse low rank error with block sparse array "
+                         "in the contracted product = " << dvlr_eri3_diff
+                      << std::endl;
         }
     }
 
@@ -209,7 +227,6 @@ int main(int argc, char *argv[]) {
         std::cout << "Finally the sparse shape threshold was = " << thresh
                   << std::endl;
     }
-
 
     world.gop.fence();
     libint2::cleanup();

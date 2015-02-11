@@ -1,11 +1,14 @@
 #include <memory>
 #include <fstream>
 #include <algorithm>
+#include <iomanip>
 
 #include "include/tbb.h"
 #include "include/libint.h"
 #include "include/tiledarray.h"
 #include "include/btas.h"
+
+#include <TiledArray/algebra/diis.h>
 
 #include "utility/make_array.h"
 #include "utility/parallel_print.h"
@@ -30,6 +33,8 @@
 
 #include "purification/sqrt_inv.h"
 #include "purification/purification_devel.h"
+
+#include <chrono>
 
 using namespace tcc;
 namespace ints = integrals;
@@ -70,9 +75,13 @@ int main(int argc, char *argv[]) {
     debug_par(world, debug);
 
     auto mol = molecule::read_xyz(mol_file);
+    auto charge = 0;
+    auto occupation = mol.occupation(charge);
+    auto repulsion_energy = mol.nuclear_repulsion();
 
     utility::print_par(world, "Computing ", mol.nelements(), " elements with ",
-                       nclusters, " clusters \n");
+                       nclusters, " clusters. Nuclear repulsion energy = ",
+                       repulsion_energy, "\n");
 
     auto clusters = molecule::attach_hydrogens_kmeans(mol, nclusters);
 
@@ -84,21 +93,15 @@ int main(int argc, char *argv[]) {
 
 
     libint2::init();
+
     utility::print_par(world, "Computing overlap\n");
     auto overlap_pool = ints::make_pool(ints::make_1body("overlap", basis));
-    auto overlap = integrals::BlockSparseIntegrals(
+    auto S = integrals::BlockSparseIntegrals(
         world, overlap_pool, utility::make_array(basis, basis),
         integrals::compute_functors::BtasToTaTensor{});
 
-    utility::print_par(world, "Computing eri2\n");
-    auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
-    auto eri2 = integrals::BlockSparseIntegrals(
-        world, eri_pool, utility::make_array(df_basis, df_basis),
-        integrals::compute_functors::BtasToTaTensor{});
-    std::cout << overlap << std::endl;
-
     utility::print_par(world, "Computing overlap inverse\n");
-    auto overlap_inv_sqrt = pure::inverse_sqrt(overlap);
+    auto overlap_inv_sqrt = pure::inverse_sqrt(S);
 
     utility::print_par(world, "Computing kinetic\n");
     auto kinetic_pool = ints::make_pool(ints::make_1body("kinetic", basis));
@@ -118,65 +121,66 @@ int main(int argc, char *argv[]) {
 
     utility::print_par(world, "Computing Density\n");
     auto purifier = pure::make_orthogonal_tr_reset_pure(overlap_inv_sqrt);
-    auto D = purifier(H, 10);
+    auto D = purifier(H, occupation);
 
-    /*
-    auto eri2_inv_sqrt_low_rank = TiledArray::conversion::to_new_tile_type(
-        eri2, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
+    utility::print_par(world, "Computing eri2\n");
+    auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
+    auto eri2 = integrals::BlockSparseIntegrals(
+        world, eri_pool, utility::make_array(df_basis, df_basis),
+        integrals::compute_functors::BtasToTaTensor{});
 
-    if (world.rank() == 0) {
-        std::cout << "Eri2 inverse square root storage: ";
-    }
-    auto eri2_inv_sqrt_storage = array_storage(eri2_inv_sqrt_low_rank);
+    utility::print_par(world, "Computing eri2 sqrt Inverse\n");
+    auto eri2_sqrt_inv = pure::inverse_sqrt(eri2);
 
-    auto eri3 = integrals::BlockSparseIntegrals(
+    utility::print_par(world, "Computing eri3\n");
+    auto Xab = integrals::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToTaTensor{});
 
-    if (world.rank() == 0) {
-        std::cout << "Eri3 TA::Tensor sparse storage: ";
-    }
-    auto eri3_storage = array_storage(eri3);
+    utility::print_par(world, "Forming the symmetric three center product\n");
+    Xab("X,a,b") = eri2_sqrt_inv("X,P") * Xab("P,a,b");
 
-    auto eri3_low_rank = TiledArray::conversion::to_new_tile_type(
-        eri3, integrals::compute_functors::TaToLowRankTensor<2>{1e-8});
+    decltype(D) J, K, F;
+    decltype(Xab) Exch;
+    J("i,j") = (Xab("X,a,b") * D("b,a")) * Xab("X,i,j");
+    // Makes order 4 temp, currently only for testing purposes.
+    Exch("i,a,X") = Xab("X,i,b") * D("b,a");
+    K("i,j") = Exch("i,a,X") * Xab("X,a,j");
+    F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
-    if (world.rank() == 0) {
-        std::cout << "Eri3 low rank tile storage: ";
-    }
-    auto eri3_low_rank_storage = array_storage(eri3_low_rank);
+    D = purifier(F, occupation);
+    auto energy = D("i,j").dot(F("i,j") + H("i,j"), world).get();
 
-    double eri3_diff = array_diff(eri3, eri3_low_rank);
-    if (world.rank() == 0) {
-        std::cout << "The difference between initial eri3 arrays was "
-                  << eri3_diff << std::endl;
-    }
+    auto diis = TiledArray::DIIS<decltype(D)>{3, 7};
+    auto iter = 1;
+    decltype(F) Ferror;
+    auto error = 1.0;
+    const auto volume = double(F.trange().elements().volume());
+    while (error >= 1e-9 && iter <= 100) {
+        auto t0 = std::chrono::high_resolution_clock::now();
+        J("i,j") = (Xab("X,a,b") * D("b,a")) * Xab("X,i,j");
+        Exch("i,a,X") = Xab("X,i,b") * D("b,a");
+        K("i,j") = Exch("i,a,X") * Xab("X,a,j");
+        F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+        Ferror("i,j") = F("i,k") * D("k,l") * S("l,j")
+                        - S("i,k") * D("k,l") * F("l,j");
+        error = Ferror("i,j").abs_max().get() / volume;
+        diis.extrapolate(F, Ferror);
 
-    world.gop.fence();
-
-    decltype(eri3_low_rank) Xab;
-    Xab("X,a,b") = eri2_inv_sqrt_low_rank("X,P") * eri3_low_rank("P,a,b");
-    Xab.truncate();
-
-    world.gop.fence();
-    for (auto it = Xab.begin(); it != Xab.end(); ++it) {
-        it->get().compress();
-    }
-    if (world.rank() == 0) {
-        std::cout << "Eri3 sqrt inverse storage: ";
-    }
-    auto eri3_contract_storage = array_storage(Xab);
-
-    eri3("X,a,b") = eri2("X,P") * eri3("P,a,b");
-    eri3.truncate();
-
-    double diff = array_diff(eri3, Xab);
-    if (world.rank() == 0) {
-        std::cout << "The difference between contracted eri3 arrays was "
-                  << diff << std::endl;
+        D("i,j") = purifier(F, occupation)("i,j");
+        energy = D("i,j").dot(F("i,j") + H("i,j"), world).get();
+        world.gop.fence();
+        auto t1 = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::duration<double>>(
+                        t1 - t0).count();
+        utility::print_par(world, "Iteration: ", iter++, " has energy ",
+                           std::setprecision(11), energy, " with error ", error,
+                           " in ", time, " s\n");
     }
 
-    */
+    utility::print_par(world, "Final energy = ", std::setprecision(11),
+                       energy + repulsion_energy, "\n");
+
 
     world.gop.fence();
     libint2::cleanup();

@@ -94,8 +94,6 @@ TiledArray::Array<double, N, typename TF::TileType, TiledArray::DensePolicy>
 DenseIntegrals(madness::World &world, SharedEnginePool engines,
                      std::array<basis::Basis, N> const &bases, TF tf = TF{}) {
 
-    using TileType = typename TF::TileType;
-
     auto trange = dense::create_trange(bases);
     TiledArray::Array<double, N, typename TF::TileType> array(world, trange);
     dense::compute_tiles(array, std::move(engines), bases, tf);

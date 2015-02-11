@@ -5,6 +5,7 @@
 #pragma GCC diagnostic push
 #pragma GCC system_header
 #include <tiledarray.h>
+#include <TiledArray/algebra/diis.h>
 #pragma GCC diagnostic pop
 
 

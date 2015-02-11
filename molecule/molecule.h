@@ -24,6 +24,8 @@ class Molecule {
     std::vector<Clusterable>::const_iterator end() const;
 
     unsigned long nelements() const;
+    unsigned long occupation(unsigned long total_charge) const;
+    double nuclear_repulsion() const;
 
     std::vector<Cluster>
     cluster_molecule(cluster_fn_t fn, unsigned long nclusters) const;

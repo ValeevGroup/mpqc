@@ -81,7 +81,31 @@ Molecule::Molecule(std::vector<Clusterable> c) : elements_(std::move(c)) {
 
 position_t Molecule::center() const { return center_; }
 int Molecule::charge() const { return charge_; }
+unsigned long Molecule::occupation(unsigned long total_charge) const {
+    return charge_ - total_charge;
+}
 double Molecule::mass() const { return mass_; }
+
+double Molecule::nuclear_repulsion() const {
+
+    // Have to get the atoms from each cluster
+    std::vector<Atom> atoms;
+    for(auto const &cluster : elements_){
+        auto c_atoms = cluster.atoms();
+        atoms.insert(atoms.end(), c_atoms.begin(), c_atoms.end());
+    }
+
+    double energy = 0.0;
+    for(auto i = 0ul; i < atoms.size(); ++i){
+        for(auto j = i + 1; j < atoms.size(); ++j){
+            const auto diff = atoms[i].center() - atoms[j].center();
+            const auto r = diff.norm();
+            energy += atoms[i].charge() * atoms[j].charge() / r;
+        }
+    }
+
+    return energy;
+}
 
 std::vector<Clusterable>::const_iterator Molecule::begin() const {
     return elements_.begin();

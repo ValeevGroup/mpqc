@@ -54,6 +54,7 @@ class OrthTraceResettingPurifier {
 
         // D_{ao} = Z^{T} D Z
         D("i,j") = sqrt_inv_("i,k") * D("k,l") * sqrt_inv_("l,j");
+        D.truncate(); // necessary since norms blow up otherwise
         return D;
     }
 

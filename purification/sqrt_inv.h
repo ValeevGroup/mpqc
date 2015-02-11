@@ -315,13 +315,6 @@ void third_order_update(Array const &S, Array &Z) {
 
         const auto current_norm = approx_zero("i,j").norm().get();
 
-        if (Z.get_world().rank() == 0) {
-            std::cout << "Iteration " << iter << " norm diff = " << current_norm
-                      << std::endl;
-            if (current_norm >= norm_diff) {
-                std::cout << "\tNorm is increasing!!!! BAD" << std::endl;
-            }
-        }
         if (current_norm >= norm_diff) { // Once norm is increasing exit!
             Z("i,j") = std::sqrt(S_scale) * Z("i,j");
             return;

@@ -289,10 +289,10 @@ void third_order_update(Array const &S, Array &Z) {
     auto Tscale = 1.0 / 8.0;
 
     auto ident = create_diagonal_matrix(Z, 1.0);
-    Array approx_ident;
+    Array approx_zero;
     auto iter = 0;
     auto norm_diff = std::numeric_limits<double>::max();
-    while (norm_diff > 1.0e-14 && iter < 25) {
+    while (norm_diff > 1.0e-13 && iter < 25) {
         // Xn = \lambda*Yn*Z
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
         X.truncate();
@@ -311,11 +311,9 @@ void third_order_update(Array const &S, Array &Z) {
         Z.truncate();
         Y.truncate();
 
-        approx_ident("i,j") = X("i,j") - T("i,j");
+        approx_zero("i,j") = X("i,j") - T("i,j");
 
-        const auto current_norm
-            = approx_ident("this,doesnt,matter").norm().get()
-              / approx_ident.elements().volume();
+        const auto current_norm = approx_zero("i,j").norm().get();
 
         if (Z.get_world().rank() == 0) {
             std::cout << "Iteration " << iter << " norm diff = " << current_norm
@@ -323,6 +321,10 @@ void third_order_update(Array const &S, Array &Z) {
             if (current_norm >= norm_diff) {
                 std::cout << "\tNorm is increasing!!!! BAD" << std::endl;
             }
+        }
+        if (current_norm >= norm_diff) { // Once norm is increasing exit!
+            Z("i,j") = std::sqrt(S_scale) * Z("i,j");
+            return;
         }
         norm_diff = current_norm;
         ++iter;

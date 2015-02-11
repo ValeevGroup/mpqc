@@ -39,7 +39,7 @@ class OrthTraceResettingPurifier {
         occ = occ / 2;
         auto iter = 1;
         ArrayType D2;
-        while (std::abs(tr - occ) >= 1e-9 && iter <= 100) {
+        while (std::abs(tr - occ) >= 1e-11 && iter <= 100) {
             // Compute D2
             D2("i,j") = D("i,k") * D("k,j");
             if (tr > occ) {

@@ -52,16 +52,26 @@ void debug_par(madness::World &world, volatile int debug) {
     world.gop.fence();
 }
 
-template <typename Array>
-void print_size_info(Array const &a, std::string name) {
+template <typename T, unsigned int DIM, typename TileType, typename Policy>
+void print_size_info(TiledArray::Array<T, DIM, TileType, Policy> const &a,
+                     std::string name) {
     utility::print_par(a.get_world(), "Printing size information for ", name,
                        "\n");
-    auto data = utility::array_storage(a);
+    std::vector<std::array<double,3>> size_data;
+    for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
+        auto lr_a = TiledArray::conversion::to_new_tile_type(
+            a, integrals::compute_functors::TaToLowRankTensor<DIM>{thresh});
+        size_data.push_back(utility::array_storage(lr_a));
+    }
+    auto const &data = size_data[0];
     utility::print_par(a.get_world(), "\tFull   = ", data[0], " GB\n",
-                       "\tSparse = ", data[1], " GB\n", "\tLow =    ", data[2],
-                       " GB\n");
+                       "\tSparse = ", data[1], " GB\n");
+    auto counter = 0;
+    for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
+        utility::print_par(a.get_world(), "\tLow Rank threshold ", thresh, " = ", 
+            size_data[counter++][2], " GB\n");
+    }
 }
-
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -147,31 +157,59 @@ int main(int argc, char *argv[]) {
 
     utility::print_par(world, "\nComputing eri2\n");
     auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
+    world.gop.fence();
+    auto eri20 = std::chrono::high_resolution_clock::now();
     auto eri2 = integrals::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(df_basis, df_basis),
         integrals::compute_functors::BtasToTaTensor{});
+    world.gop.fence();
+    auto eri21 = std::chrono::high_resolution_clock::now();
+    auto eri2_time = std::chrono::duration_cast<std::chrono::duration<double>>(
+                         eri21 - eri20).count();
+    utility::print_par(world, "Eri2 computation time = ", eri2_time, "\n");
     print_size_info(eri2, "Eri2");
 
     utility::print_par(world, "\nComputing eri2 sqrt Inverse\n");
+    world.gop.fence();
+    auto eri2_inv0 = std::chrono::high_resolution_clock::now();
     auto eri2_sqrt_inv = pure::inverse_sqrt(eri2);
+    world.gop.fence();
+    auto eri2_inv1 = std::chrono::high_resolution_clock::now();
+    auto eri2_inv_time
+        = std::chrono::duration_cast<std::chrono::duration<double>>(
+              eri2_inv1 - eri2_inv0).count();
+    utility::print_par(world, "Eri2 inverse computation time = ", eri2_inv_time,
+                       "\n");
     print_size_info(eri2_sqrt_inv, "Eri2 sqrt inverse");
 
     utility::print_par(world, "\nComputing eri3\n");
+    world.gop.fence();
+    auto eri30 = std::chrono::high_resolution_clock::now();
     auto Xab = integrals::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToTaTensor{});
+    world.gop.fence();
+    auto eri31 = std::chrono::high_resolution_clock::now();
+    auto eri3_time = std::chrono::duration_cast<std::chrono::duration<double>>(
+                         eri31 - eri30).count();
+    utility::print_par(world, "Eri3 computation time = ", eri3_time, "\n");
     print_size_info(Xab, "Eri3");
 
     utility::print_par(world, "\nForming the symmetric three center product\n");
+    world.gop.fence();
+    auto eri3X0 = std::chrono::high_resolution_clock::now();
     Xab("X,a,b") = eri2_sqrt_inv("X,P") * Xab("P,a,b");
     Xab.truncate();
+    world.gop.fence();
+    auto eri3X1 = std::chrono::high_resolution_clock::now();
+    auto eri3X_time = std::chrono::duration_cast<std::chrono::duration<double>>(
+                          eri3X1 - eri3X0).count();
+    utility::print_par(world, "Eri3X contraction time.", eri3X_time, "\n");
     print_size_info(Xab, "Eri3 * 1/sqrt(V)");
 
     utility::print_par(world, "\nCreating intial F matrix\n");
     decltype(D) J, K, F;
-    decltype(Xab) Exch;
     J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j");
-    print_size_info(Exch, "Exchange intermediate");
     K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
@@ -188,7 +226,9 @@ int main(int argc, char *argv[]) {
         auto t0 = std::chrono::high_resolution_clock::now();
         J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j");
         J.truncate();
+        auto k0 = std::chrono::high_resolution_clock::now();
         K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
+        auto k1 = std::chrono::high_resolution_clock::now();
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
         Ferror("i,j") = F("i,k") * D("k,l") * S("l,j")
                         - S("i,k") * D("k,l") * F("l,j");
@@ -202,16 +242,16 @@ int main(int argc, char *argv[]) {
         auto t1 = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::duration_cast<std::chrono::duration<double>>(
                         t1 - t0).count();
+        auto ktime = std::chrono::duration_cast<std::chrono::duration<double>>(
+                         k1 - k0).count();
         utility::print_par(world, "Iteration: ", iter++, " has energy ",
                            std::setprecision(11), energy, " with error ", error,
-                           " in ", time, " s\n");
+                           " in ", time, " s with K time ", ktime, "\n");
     }
 
 
     utility::print_par(world, "Final energy = ", std::setprecision(11),
                        energy + repulsion_energy, "\n");
-
-    print_size_info(Exch, "Final exchange temp");
 
     world.gop.fence();
     libint2::cleanup();

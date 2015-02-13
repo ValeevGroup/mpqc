@@ -170,11 +170,9 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "\nCreating intial F matrix\n");
     decltype(D) J, K, F;
     decltype(Xab) Exch;
-    J("i,j") = (Xab("X,a,b") * D("b,a")) * Xab("X,i,j");
-    Exch("i,a,X") = Xab("X,i,b") * D("b,a");
-    Exch.truncate();
+    J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j");
     print_size_info(Exch, "Exchange intermediate");
-    K("i,j") = Exch("i,a,X") * Xab("X,a,j");
+    K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
     D = purifier(F, occupation);
@@ -188,11 +186,9 @@ int main(int argc, char *argv[]) {
     const auto volume = double(F.trange().elements().volume());
     while (error >= 1e-13 && iter <= 35) {
         auto t0 = std::chrono::high_resolution_clock::now();
-        J("i,j") = (Xab("X,a,b") * D("b,a")) * Xab("X,i,j");
+        J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j");
         J.truncate();
-        Exch("i,a,X") = Xab("X,i,b") * D("b,a");
-        Exch.truncate();
-        K("i,j") = Exch("i,a,X") * Xab("X,a,j");
+        K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
         Ferror("i,j") = F("i,k") * D("k,l") * S("l,j")
                         - S("i,k") * D("k,l") * F("l,j");

@@ -200,28 +200,26 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "\n");
     auto Xab = time_and_print_block_sparse(
         world, eri_pool, utility::make_array(df_basis, basis, basis),
-        integrals::compute_functors::BtasToLowRankTensor{low_rank_threshold},
-        "Eri3 integrals");
+        integrals::compute_functors::BtasToTaTensor{}, "Eri3 integrals");
 
-    // Form symetric order 3 tensor
-    utility::print_par(world, "\nForming the symmetric three center product\n");
-    auto Xabt = utility::make_timer(
-        [&]() { Xab("X,a,b") = eri2_inv_lr("X,P") * Xab("P,a,b"); });
-    Xabt.apply();
+    Xab("X,i,j") = eri2_sqrt_inv("X,P") * Xab("P,i,j");
     Xab.truncate();
-    utility::print_par(world, "Eri3X contraction time = ", Xabt.time(), "\n");
-    print_size_info(Xab, "Eri3 * 1/sqrt(V)");
 
-    // Convert D to low rank
-    utility::print_par(world, "\nCreating Exchange Temp.");
-    auto D_lr = TiledArray::conversion::to_new_tile_type(
-        D,
-        integrals::compute_functors::TaToLowRankTensor<2>{low_rank_threshold});
+    auto Xab_lr = TiledArray::conversion::to_new_tile_type(
+        Xab,
+        integrals::compute_functors::TaToLowRankTensor<3>{low_rank_threshold});
+    print_size_info(Xab_lr, "Xab_lr");
 
-    // Compute the exchange intermediate tensor
-    decltype(Xab) Exch;
-    Exch("i,X,a") = Xab("X,i,b") * D_lr("b,a");
-    print_size_info(Exch, "Exchange temp.");
+    TiledArray::Array<double, 4, TiledArray::Tensor<double>,
+                      TiledArray::SparsePolicy> Exch;
+    Exch("i,j,a,b") = Xab("X,i,j") * Xab("X,a,b");
+    Exch.truncate();
+
+    auto Exch_lr = TiledArray::conversion::to_new_tile_type(
+        Exch,
+        integrals::compute_functors::TaToLowRankTensor<4>{low_rank_threshold});
+
+    print_size_info(Exch_lr, "Exchange 4 center");
 
 
     /*

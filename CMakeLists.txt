@@ -110,6 +110,11 @@ target_link_libraries(hartree_fock
   ${TileClusterChem_LIBRARIES}
 )
 
+add_executable(lr_hartree_fock EXCLUDE_FROM_ALL lr_hartree_fock.cpp) 
+target_link_libraries(lr_hartree_fock
+  ${TileClusterChem_LIBRARIES}
+)
+
 # Makes QT creator show the following file types
 file(GLOB_RECURSE QT_CREATOR_SRC
   "*.h"

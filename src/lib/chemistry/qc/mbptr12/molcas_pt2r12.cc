@@ -27,6 +27,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 #include <algorithm>
 
 #include <mpqc_config.h>
@@ -287,11 +288,14 @@ void MolcasPT2R12::run_molcas()
   this->molecule()->print_xyz(new_xyz_file, xyz_file_.c_str());
   new_xyz_file.close();
 
+  Timer tim("molcas");
+
   //excute molcas command
   std::string command_str;
   command_str = molcas_ + " " + molcas_options_ + " " + molcas_input_;
   std::system(command_str.c_str());
 
+  tim.exit();
   // check molcas status
   std::ifstream fstatus(prefix_ + ".status");
   if ( fstatus.good() ){
@@ -341,13 +345,23 @@ void MolcasPT2R12::read_energy()
 
   while(std::getline(flog, line)){
     if (line.find("RASSCF") != std::string::npos && line.find("Total energy") != std::string::npos){
-      std::string num = line.substr(50, 15);
-      rasscf_energy_ = std::stod(num);
+      std::string num;
+      std::vector<std::string> nums;
+      std::istringstream tmp(line);
+      while (tmp >> num){
+        nums.push_back(num);
+      }
+      rasscf_energy_ = std::stod(nums.back());
     }
     else if(line.find("CASPT2") != std::string::npos && line.find("Total energy") != std::string::npos)
     {
-      std::string num = line.substr(40, 15);
-      caspt2_energy_ = std::stod(num);
+      std::string num;
+      std::vector<std::string> nums;
+      std::istringstream tmp(line);
+      while (tmp >> num){
+        nums.push_back(num);
+      }
+      caspt2_energy_ = std::stod(nums.back());
     }
   }
 

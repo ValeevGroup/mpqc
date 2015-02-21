@@ -46,7 +46,7 @@ class TaToLowRankTensor {
         tensor::TileVariant<double> tile_variant{
             tensor::FullRankTile<double>{std::move(Tile)}};
 
-        return tensor::TilePimpl<double>{tat.range(), std::move(tile_variant)};
+        return tensor::TilePimpl<double>{tat.range(), std::move(tile_variant), cut_};
     }
 
   private:

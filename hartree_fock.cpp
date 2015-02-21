@@ -52,15 +52,15 @@ void debug_par(madness::World &world, volatile int debug) {
     world.gop.fence();
 }
 
-template <typename T, unsigned int DIM, typename TileType, typename Policy>
-void print_size_info(TiledArray::Array<T, DIM, TileType, Policy> const &a,
+template <typename T, typename TileType, typename Policy>
+void print_size_info(TiledArray::Array<T, 2, TileType, Policy> const &a,
                      std::string name) {
     utility::print_par(a.get_world(), "Printing size information for ", name,
                        "\n");
-    std::vector<std::array<double,3>> size_data;
+    std::vector<std::array<double, 3>> size_data;
     for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
         auto lr_a = TiledArray::conversion::to_new_tile_type(
-            a, integrals::compute_functors::TaToLowRankTensor<DIM>{thresh});
+            a, integrals::compute_functors::TaToLowRankTensor<2>{thresh});
         size_data.push_back(utility::array_storage(lr_a));
     }
     auto const &data = size_data[0];
@@ -68,8 +68,31 @@ void print_size_info(TiledArray::Array<T, DIM, TileType, Policy> const &a,
                        "\tSparse = ", data[1], " GB\n");
     auto counter = 0;
     for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
-        utility::print_par(a.get_world(), "\tLow Rank threshold ", thresh, " = ", 
-            size_data[counter++][2], " GB\n");
+        utility::print_par(a.get_world(), "\tLow Rank threshold ", thresh,
+                           " = ", size_data[counter++][2], " GB\n");
+    }
+}
+
+template <typename T, typename TileType, typename Policy>
+void print_size_info(TiledArray::Array<T, 3, TileType, Policy> const &a,
+                     std::string name) {
+    utility::print_par(a.get_world(), "Printing size information for ", name,
+                       "\n");
+    std::vector<std::array<double, 4>> size_data;
+    for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
+        auto lr_a = TiledArray::conversion::to_new_tile_type(
+            a, integrals::compute_functors::TaToLowRankTensor<3>{thresh});
+        size_data.push_back(utility::array_storage_tt(lr_a));
+    }
+    auto const &data = size_data[0];
+    utility::print_par(a.get_world(), "\tFull   = ", data[0], " GB\n",
+                       "\tSparse = ", data[1], " GB\n");
+    auto counter = 0;
+    for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
+        utility::print_par(a.get_world(), "\tLow Rank threshold ", thresh,
+                           " = ", size_data[counter][2], " GB\n\t\tTT = ",
+                           size_data[counter][3], " GB\n");
+        ++counter;
     }
 }
 

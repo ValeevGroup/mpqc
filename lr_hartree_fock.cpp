@@ -210,12 +210,42 @@ int main(int argc, char *argv[]) {
         integrals::compute_functors::TaToLowRankTensor<3>{low_rank_threshold});
     print_size_info(Xab_lr, "Xab_lr");
 
-    auto D_lr = TiledArray::conversion::to_new_tile_type(D, 
+    auto D_lr = TiledArray::conversion::to_new_tile_type(
+        D,
         integrals::compute_functors::TaToLowRankTensor<2>{low_rank_threshold});
+
+    auto dt = D_lr.begin();
+    auto diff = 0.0;
+    for (auto it = D.begin(); it != D.end(); ++it, ++dt) {
+        auto const &s = it->get().range().size();
+        Eigen::MatrixXd correct = TiledArray::eigen_map(it->get(), s[0], s[1]);
+        Eigen::MatrixXd lr = dt->get().tile().matrix();
+        diff += (correct - lr).lpNorm<2>();
+    }
+    utility::print_par(world, "Total diff in Density = ", diff, "\n");
 
     decltype(Xab_lr) X_temp;
     X_temp("X,i,a") = Xab_lr("X,i,j") * D_lr("j,a");
-    X_temp("X,a,i") = X_temp("X,i,a");
+    auto lr_matrix = X_temp.begin()->get().tile().matrix();
+
+    decltype(Xab) corr;
+    corr("X,i,a") = Xab("X,i,j") * D("j,a");
+    auto const &cs = corr.begin()->get().range().size();
+    auto Ctile = corr.begin()->get();
+    Eigen::MatrixXd eCorr = TiledArray::eigen_map(Ctile, cs[0], cs[1] * cs[2]);
+
+    auto Xtile = Xab.begin()->get();
+    auto const &s = Xtile.range().size();
+    Eigen::MatrixXd eXab = TiledArray::eigen_map(Xtile, s[0], s[1] * s[2]);
+    Eigen::MatrixXd eXab_TA = TiledArray::eigen_map(Xtile, s[0] * s[1], s[2]);
+
+    auto Dtile = D.begin()->get();
+    Eigen::MatrixXd eD = TiledArray::eigen_map(Dtile, s[1], s[2]);
+
+    eXab *= (eXab.transpose() * eD.transpose()).transpose();
+
+    std::cout << lr_matrix - eXab << std::endl;
+    std::cout << eCorr - eXab << std::endl;
 
     /*
     decltype(D) J, K, F;
@@ -250,12 +280,15 @@ int main(int argc, char *argv[]) {
         energy = D("i,j").dot(F("i,j") + H("i,j"), world).get();
         world.gop.fence();
         auto t1 = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::duration<double>>(
+        auto time =
+    std::chrono::duration_cast<std::chrono::duration<double>>(
                         t1 - t0).count();
-        auto ktime = std::chrono::duration_cast<std::chrono::duration<double>>(
+        auto ktime =
+    std::chrono::duration_cast<std::chrono::duration<double>>(
                          k1 - k0).count();
         utility::print_par(world, "Iteration: ", iter++, " has energy ",
-                           std::setprecision(11), energy, " with error ", error,
+                           std::setprecision(11), energy, " with error ",
+    error,
                            " in ", time, " s with K time ", ktime, "\n");
     }
 

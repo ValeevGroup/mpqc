@@ -181,9 +181,9 @@ class TilePimpl {
                 std::cout << "Out shape = " << out_mat.rows() << " "
                           << out_mat.cols() << std::endl;
 
-                for (auto X = 0ul; X < sizes_[0]; ++X) {
-                    for (auto i = 0ul; i < sizes_[1]; ++i) {
-                        for (auto j = 0ul; j < sizes_[2]; ++j) {
+                for (auto X = 0; X < sizes_[0]; ++X) {
+                    for (auto i = 0; i < sizes_[1]; ++i) {
+                        for (auto j = 0; j < sizes_[2]; ++j) {
                             out_mat(X, j * sizes_[2] + i)
                                 = in_mat(X, i * sizes_[1] + j);
                         }
@@ -200,8 +200,8 @@ class TilePimpl {
                 Eigen::MatrixXd out_r(lr.rank(), size_ij);
 
                 for (auto X = 0ul; X < lr.rank(); ++X) {
-                    for (auto i = 0ul; i < sizes_[1]; ++i) {
-                        for (auto j = 0ul; j < sizes_[2]; ++j) {
+                    for (auto i = 0; i < sizes_[1]; ++i) {
+                        for (auto j = 0; j < sizes_[2]; ++j) {
                             out_r(X, j * sizes_[2] + i)
                                 = in_r(X, i * sizes_[1] + j);
                         }

@@ -138,12 +138,6 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
         const int K = A.cols();
         const int M = A.rows();
         const int N = B.cols();
-        if (K == 0 || M == 0 || N == 0) { // If zero leave
-            for (auto i = 0; i < C.size(); ++i) {
-                *(C.data() + i) = 0;
-            }
-            return C;
-        }
         const int LDA = M, LDB = K, LDC = M;
         madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
                              madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
@@ -151,6 +145,7 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
                              LDC);
     } else {
         if (A.cols() > B.rows()) {
+            /*
             assert(A.cols() % B.rows() == 0);
             const int K = A.cols() / B.rows();
             const int M = A.rows() * A.cols() / K;
@@ -162,7 +157,14 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
                                  K, alpha, A.data(), LDA, B.data(), LDB, 0.0,
                                  C.data(), LDC);
 
-            // Assume we keep same shape as A for HF exchange
+            */
+
+            // For now lets just use Eigen so we get this correct.
+            Eigen::MatrixXd A_copy = A;
+            const int K = A.cols()/B.rows();
+            A_copy.resize(A.rows() * K, B.rows());
+            C.resize(A_copy.rows(), B.cols());
+            C = A_copy * B;
             C.resize(A.rows(), A.cols());
         } else {
             // I don't need this guy to do HF exchange on Feb 23, 2015, fix

@@ -132,45 +132,21 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
     const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &B,
     double alpha) {
 
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> C;
-    if (A.cols() == B.rows()) {
-        C.resize(A.rows(), B.cols());
-        const int K = A.cols();
-        const int M = A.rows();
-        const int N = B.cols();
-        if (K == 0 || M == 0 || N == 0) { // If zero leave
-            for (auto i = 0; i < C.size(); ++i) {
-                *(C.data() + i) = 0;
-            }
-            return C;
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> C(A.rows(), B.cols());
+    const int K = A.cols();
+    const int M = A.rows();
+    const int N = B.cols();
+    if (K == 0 || M == 0 || N == 0) { // If zero leave
+        for (auto i = 0; i < C.size(); ++i) {
+            *(C.data() + i) = 0;
         }
-        const int LDA = M, LDB = K, LDC = M;
-        madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                             madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
-                             alpha, A.data(), LDA, B.data(), LDB, 0.0, C.data(),
-                             LDC);
-    } else {
-        if (A.cols() > B.rows()) {
-            assert(A.cols() % B.rows() == 0);
-            const int K = A.cols() / B.rows();
-            const int M = A.rows() * A.cols() / K;
-            const int N = B.cols();
-            const int LDA = M, LDB = K, LDC = M;
-            C.resize(M, K);
-            madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                                 madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N,
-                                 K, alpha, A.data(), LDA, B.data(), LDB, 0.0,
-                                 C.data(), LDC);
-
-            // Assume we keep same shape as A for HF exchange
-            C.resize(A.rows(), A.cols());
-        } else {
-            // I don't need this guy to do HF exchange on Feb 23, 2015, fix
-            // later
-            assert(false);
-        }
+        return C;
     }
-
+    const int LDA = M, LDB = K, LDC = M;
+    madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+                         madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
+                         alpha, A.data(), LDA, B.data(), LDB, 0.0, C.data(),
+                         LDC);
     return C;
 }
 
@@ -210,6 +186,10 @@ void inline cblas_gemm_inplace(
     const int K = A.cols();
     const int M = C.rows();
     const int N = C.cols();
+    if (K == 0 || M == 0 || N == 0) { // If zero leave
+        C = beta * C;
+        return;
+    }
     const int LDA = M, LDB = K, LDC = M;
     madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
                          madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,

@@ -1,4 +1,3 @@
-#pragma once
 #ifndef TCC_MATRIX_TILE_PIMPLE_H
 #define TCC_MATRIX_TILE_PIMPLE_H
 
@@ -62,7 +61,7 @@ class TilePimpl {
     TiledArray::Range const &range() const { return range_; }
     double cut() const { return cut_; }
     bool empty() const { return !tile_; }
-    double norm() const { return tile_->norm(); }
+    double norm() const { return tile_->norm();}
 
     // maybe expensive
     void setCut(double cut) {
@@ -92,6 +91,13 @@ class TilePimpl {
         auto result_range
             = gemm_config.make_result_range<range_type>(range(), right.range());
 
+        if (tile_->iszero() || right.tile().iszero()) {
+            const bool zero = true;
+            return TilePimpl(std::move(result_range),
+                             TileVariant<T>{LowRankTile<T>{zero}},
+                             std::max(cut(), right.cut()));
+        }
+
         return TilePimpl(std::move(result_range),
                          tile_->apply_binary_op(
                              right.tile(), binary_ops::gemm_functor(factor)),
@@ -103,6 +109,13 @@ class TilePimpl {
                     TiledArray::math::GemmHelper const &gemm_config) {
         range_
             = gemm_config.make_result_range<range_type>(range(), right.range());
+
+        if (left.tile().iszero() || right.tile().iszero()) {
+            return *this;
+        } else if (tile_->iszero()) {
+            *this = left.gemm(right, 1.0, gemm_config);
+            return *this;
+        }
 
         // Will convert to full when gemm grows the rank to much.
         if (tile_->tag() == TileVariant<T>::LowRank
@@ -153,70 +166,8 @@ class TilePimpl {
 
 
     TilePimpl permute(TiledArray::Permutation const &perm) const {
-        const auto dim = perm.dim();
-        if (dim != 3) {
-            assert(false);
-        }
-
-        // Get double ref so we have auto complete
-        TileVariant<double> const &tile = *tile_;
-
-        class Permute_ {
-          private:
-            TiledArray::Permutation p_;
-            std::array<int, 3> sizes_;
-
-          public:
-            Permute_(TiledArray::Permutation const &p, int X, int i, int j)
-                : p_(p), sizes_{{X, i, j}} {}
-
-            TileVariant<T> operator()(FullRankTile<double> const &f) const {
-                auto size_ij = sizes_[1] * sizes_[2];
-
-                Eigen::MatrixXd out_mat(sizes_[0], size_ij);
-                auto const &in_mat = f.matrix();
-
-                std::cout << "In shape = " << in_mat.rows() << " "
-                          << in_mat.cols() << std::endl;
-                std::cout << "Out shape = " << out_mat.rows() << " "
-                          << out_mat.cols() << std::endl;
-
-                for (auto X = 0ul; X < sizes_[0]; ++X) {
-                    for (auto i = 0ul; i < sizes_[1]; ++i) {
-                        for (auto j = 0ul; j < sizes_[2]; ++j) {
-                            out_mat(X, j * sizes_[2] + i)
-                                = in_mat(X, i * sizes_[1] + j);
-                        }
-                    }
-                }
-
-                return TileVariant<T>{FullRankTile<double>{std::move(out_mat)}};
-            }
-
-            TileVariant<T> operator()(LowRankTile<double> const &lr) const {
-                auto size_ij = sizes_[1] * sizes_[2];
-
-                auto const &in_r = lr.matrixR();
-                Eigen::MatrixXd out_r(lr.rank(), size_ij);
-
-                for (auto X = 0ul; X < lr.rank(); ++X) {
-                    for (auto i = 0ul; i < sizes_[1]; ++i) {
-                        for (auto j = 0ul; j < sizes_[2]; ++j) {
-                            out_r(X, j * sizes_[2] + i)
-                                = in_r(X, i * sizes_[1] + j);
-                        }
-                    }
-                }
-
-                return TileVariant<T>{
-                    LowRankTile<double>{lr.matrixL(), std::move(out_r)}};
-            }
-        };
-
-        auto const &sizes = range_.size();
-        return TilePimpl{range_, tile.apply_unary_op(Permute_(
-                                     perm, sizes[0], sizes[1], sizes[2])),
-                         cut()};
+        assert(false);
+        return TilePimpl();
     }
 
     void compress() {
@@ -291,8 +242,7 @@ class TilePimpl {
                 return clone();
             } else {
                 return TilePimpl{range(), right.tile().apply_unary_op(
-                                              unary_ops::scale_functor(-1.0)),
-                                 cut()};
+                    unary_ops::scale_functor(-1.0)), cut()};
             }
         } else if (right.tile().iszero()) {
             return clone();

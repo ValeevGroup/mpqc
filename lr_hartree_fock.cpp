@@ -210,12 +210,17 @@ int main(int argc, char *argv[]) {
         integrals::compute_functors::TaToLowRankTensor<3>{low_rank_threshold});
     print_size_info(Xab_lr, "Xab_lr");
 
-    auto D_lr = TiledArray::conversion::to_new_tile_type(D, 
-        integrals::compute_functors::TaToLowRankTensor<2>{low_rank_threshold});
+    TiledArray::Array<double, 4, TiledArray::Tensor<double>,
+                      TiledArray::SparsePolicy> Exch;
+    Exch("i,j,a,b") = Xab("X,i,j") * Xab("X,a,b");
+    Exch.truncate();
 
-    decltype(Xab_lr) X_temp;
-    X_temp("X,i,a") = Xab_lr("X,i,j") * D_lr("j,a");
-    X_temp("X,a,i") = X_temp("X,i,a");
+    auto Exch_lr = TiledArray::conversion::to_new_tile_type(
+        Exch,
+        integrals::compute_functors::TaToLowRankTensor<4>{low_rank_threshold});
+
+    print_size_info(Exch_lr, "Exchange 4 center");
+
 
     /*
     decltype(D) J, K, F;

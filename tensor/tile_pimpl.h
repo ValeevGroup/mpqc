@@ -61,7 +61,7 @@ class TilePimpl {
     TiledArray::Range const &range() const { return range_; }
     double cut() const { return cut_; }
     bool empty() const { return !tile_; }
-    double norm() const { return tile_->norm();}
+    double norm() const { return tile_->norm(); }
 
     // maybe expensive
     void setCut(double cut) {
@@ -91,17 +91,21 @@ class TilePimpl {
         auto result_range
             = gemm_config.make_result_range<range_type>(range(), right.range());
 
-        if (tile_->iszero() || right.tile().iszero()) {
-            const bool zero = true;
-            return TilePimpl(std::move(result_range),
-                             TileVariant<T>{LowRankTile<T>{zero}},
-                             std::max(cut(), right.cut()));
+        if (right.range().dim() != 3) {
+            if (range().dim() == 2) {
+                return TilePimpl(
+                    std::move(result_range),
+                    tile_->apply_binary_op(right.tile(),
+                                           binary_ops::gemm_functor(factor)),
+                    std::max(cut(), right.cut()));
+            } else {
+                return TilePimpl(std::move(result_range),
+                        tile_->apply_binary_op(right.tile(), 
+                            binary_ops::D_functor(factor)));
+            }
+        } else {
+            // this is where the Exchange contraction goes.
         }
-
-        return TilePimpl(std::move(result_range),
-                         tile_->apply_binary_op(
-                             right.tile(), binary_ops::gemm_functor(factor)),
-                         std::max(cut(), right.cut()));
     }
 
     TilePimpl &gemm(TilePimpl const &left, TilePimpl const &right,
@@ -242,7 +246,8 @@ class TilePimpl {
                 return clone();
             } else {
                 return TilePimpl{range(), right.tile().apply_unary_op(
-                    unary_ops::scale_functor(-1.0)), cut()};
+                                              unary_ops::scale_functor(-1.0)),
+                                 cut()};
             }
         } else if (right.tile().iszero()) {
             return clone();

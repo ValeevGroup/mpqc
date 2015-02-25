@@ -108,7 +108,6 @@ int main(int argc, char *argv[]) {
     if (argc == 7) {
         debug = std::stoi(argv[6]);
     }
-    debug_par(world, debug);
     TiledArray::SparseShape<float>::threshold(threshold);
     utility::print_par(world, "Sparse threshold is ",
                        TiledArray::SparseShape<float>::threshold(), "\n");
@@ -217,26 +216,8 @@ int main(int argc, char *argv[]) {
     });
     utility::print_par(world, "X_temp storage info\n");
     print_size_info(X_temp, "X_temp");
-    decltype(Xab) Coor;
-    Coor("X,a,i") = Xab("X,i,j") * D("j,a");
-    auto lt = X_temp.begin();
-    auto total_diff = 0.0;
-    auto max_single_tile = 0.0;
-    for (auto it = Coor.begin(); it != Coor.end(); ++it, ++lt) {
-        auto const &extent = it->get().range().size();
-        RowMatrixXd coor
-            = TA::eigen_map(it->get(), extent[0], extent[1] * extent[2]);
-        RowMatrixXd approx = lt->get().tile().matrix();
-        RowMatrixXd diff = coor - approx;
-        auto tile_diff = diff.lpNorm<2>();
-        total_diff += tile_diff;
-        max_single_tile = std::max(max_single_tile, tile_diff);
-    }
 
-    std::cout << "Exchange Temp :: \n";
-    std::cout << "Total diff = " << total_diff << std::endl;
-    std::cout << "Max tile diff = " << max_single_tile << std::endl;
-
+    debug_par(world, debug);
 
     decltype(D_lr) K_lr;
     K_lr("i,j") = X_temp("X,a,i") * Xab_lr("X,a,j");
@@ -244,22 +225,8 @@ int main(int argc, char *argv[]) {
     decltype(D) K;
     K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
 
-    auto kt = K_lr.begin();
-    total_diff = 0.0;
-    max_single_tile = 0.0;
-    for (auto it = K.begin(); it != K.end(); ++it, ++kt) {
-        auto const &extent = it->get().range().size();
-        RowMatrixXd coor = TA::eigen_map(it->get(), extent[0], extent[1]);
-        RowMatrixXd approx = kt->get().tile().matrix();
-        RowMatrixXd diff = coor - approx;
-        auto tile_diff = diff.lpNorm<2>();
-        total_diff += tile_diff;
-        max_single_tile = std::max(max_single_tile, tile_diff);
-    }
-
-    std::cout << "Exchange matrix :: \n";
-    std::cout << "Total diff = " << total_diff << std::endl;
-    std::cout << "Max tile diff = " << max_single_tile << std::endl;
+    utility::print_par(world, "K storage info\n");
+    print_size_info(K_lr, "K");
 
     /*
     decltype(D) J, K, F;

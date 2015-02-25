@@ -10,30 +10,24 @@
 
 namespace algebra {
 
-namespace eigen_version {
+inline namespace eigen_version {
 template <typename T>
-Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &A,
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B, double alpha) {
+RowMatrix<T> inline cblas_gemm(const RowMatrix<T> &A, const RowMatrix<T> &B,
+                               double alpha) {
     return alpha * A * B;
 }
 
 template <typename T>
-void inline cblas_gemm_inplace(
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &A,
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B,
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &C, double alpha,
-    double beta = 1.0) {
+void inline cblas_gemm_inplace(const RowMatrix<T> &A, const RowMatrix<T> &B,
+                               RowMatrix<T> &C, double alpha,
+                               double beta = 1.0) {
     C = alpha * A * B + beta * C;
 }
 
 template <typename T>
-bool inline Decompose_Matrix(
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R, double cut) {
-    Eigen::ColPivHouseholderQR<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-        qr(input);
+bool inline Decompose_Matrix(RowMatrix<T> input, RowMatrix<T> &L,
+                             RowMatrix<T> &R, double cut) {
+    Eigen::ColPivHouseholderQR<RowMatrix<T>> qr(input);
     qr.setThreshold(cut);
     auto rank = qr.rank();
 
@@ -42,45 +36,37 @@ bool inline Decompose_Matrix(
         return true;
     }
 
-    R = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(
-            qr.matrixR()
-                .topLeftCorner(rank, input.cols())
-                .template triangularView<Eigen::Upper>())
+    R = RowMatrix<T>(qr.matrixR()
+                         .topLeftCorner(rank, input.cols())
+                         .template triangularView<Eigen::Upper>())
         * qr.colsPermutation().transpose();
-    L = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(qr.householderQ())
-            .leftCols(rank);
+    L = RowMatrix<T>(qr.householderQ()).leftCols(rank);
 
     return false;
 }
 
 template <typename T>
-void inline ColPivotedQr(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+void inline ColPivotedQr(RowMatrix<T> input, RowMatrix<T> &L, RowMatrix<T> &R,
                          double cut) {
-    Eigen::ColPivHouseholderQR<typename std::remove_reference<decltype(
-        input)>::type> qr(input);
+    Eigen::ColPivHouseholderQR<
+        typename std::remove_reference<decltype(input)>::type> qr(input);
 
     qr.setThreshold(cut);
     auto rank = qr.rank();
 
-    R = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(
-            qr.matrixR()
-                .topLeftCorner(rank, input.cols())
-                .template triangularView<Eigen::Upper>())
+    R = RowMatrix<T>(qr.matrixR()
+                         .topLeftCorner(rank, input.cols())
+                         .template triangularView<Eigen::Upper>())
         * qr.colsPermutation().transpose();
 
-    L = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(qr.householderQ())
-            .leftCols(rank);
+    L = RowMatrix<T>(qr.householderQ()).leftCols(rank);
 }
 
 template <typename T>
-void inline CompressLeft(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                         double cut) {
+void inline CompressLeft(RowMatrix<T> &L, RowMatrix<T> &R, double cut) {
 
-    Eigen::ColPivHouseholderQR<typename std::remove_reference<decltype(
-        L)>::type> qr(L);
+    Eigen::ColPivHouseholderQR<
+        typename std::remove_reference<decltype(L)>::type> qr(L);
 
     qr.setThreshold(cut);
     auto rank = qr.rank();
@@ -89,22 +75,18 @@ void inline CompressLeft(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
         return;
     }
 
-    R = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(
-            qr.matrixR()
-                .topLeftCorner(rank, qr.matrixQR().cols())
-                .template triangularView<Eigen::Upper>())
+    R = RowMatrix<T>(qr.matrixR()
+                         .topLeftCorner(rank, qr.matrixQR().cols())
+                         .template triangularView<Eigen::Upper>())
         * qr.colsPermutation().transpose() * R;
 
-    L = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(qr.householderQ())
-            .leftCols(rank);
+    L = RowMatrix<T>(qr.householderQ()).leftCols(rank);
 }
 
 template <typename T>
-void inline CompressRight(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                          Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                          double cut) {
-    Eigen::ColPivHouseholderQR<typename std::remove_reference<decltype(
-        R)>::type> qr(R);
+void inline CompressRight(RowMatrix<T> &L, RowMatrix<T> &R, double cut) {
+    Eigen::ColPivHouseholderQR<
+        typename std::remove_reference<decltype(R)>::type> qr(R);
 
     qr.setThreshold(cut);
     auto rank = qr.rank();
@@ -113,20 +95,17 @@ void inline CompressRight(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
         return;
     }
 
-    R = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(
-            qr.matrixR()
-                .topLeftCorner(rank, qr.matrixQR().cols())
-                .template triangularView<Eigen::Upper>())
+    R = RowMatrix<T>(qr.matrixR()
+                         .topLeftCorner(rank, qr.matrixQR().cols())
+                         .template triangularView<Eigen::Upper>())
         * qr.colsPermutation().transpose();
 
-    L = L
-        * Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(qr.householderQ())
-              .leftCols(rank);
+    L = L * RowMatrix<T>(qr.householderQ()).leftCols(rank);
 }
 
 } // namespace eigen_version
 
-inline namespace lapack {
+namespace lapack {
 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
     const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &A,
     const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &B,
@@ -151,9 +130,8 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
 }
 
 template <typename T>
-Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &A,
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B, double alpha) {
+RowMatrix<T> inline cblas_gemm(const RowMatrix<T> &A, const RowMatrix<T> &B,
+                               double alpha) {
     return eigen_version::cblas_gemm(A, B, alpha);
 }
 
@@ -198,11 +176,9 @@ void inline cblas_gemm_inplace(
 }
 
 template <typename T>
-void inline cblas_gemm_inplace(
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &A,
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B,
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &C, double alpha,
-    double beta = 1.0) {
+void inline cblas_gemm_inplace(const RowMatrix<T> &A, const RowMatrix<T> &B,
+                               RowMatrix<T> &C, double alpha,
+                               double beta = 1.0) {
 
     eigen_version::cblas_gemm_inplace(A, B, C, alpha, beta);
 }
@@ -274,10 +250,8 @@ bool inline Decompose_Matrix(
 }
 
 template <typename T>
-bool inline Decompose_Matrix(
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R, double cut) {
+bool inline Decompose_Matrix(RowMatrix<T> input, RowMatrix<T> &L,
+                             RowMatrix<T> &R, double cut) {
     return eigen_version::Decompose_Matrix(input, L, R, cut);
 }
 
@@ -317,9 +291,7 @@ void inline ColPivotedQr(
 }
 
 template <typename T>
-void inline ColPivotedQr(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+void inline ColPivotedQr(RowMatrix<T> input, RowMatrix<T> &L, RowMatrix<T> &R,
                          double cut) {
     eigen_version::ColPivotedQr(std::move(input), L, R, cut);
 }
@@ -365,9 +337,7 @@ void inline CompressLeft(
 }
 
 template <typename T>
-void inline CompressLeft(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                         double cut) {
+void inline CompressLeft(RowMatrix<T> &L, RowMatrix<T> &R, double cut) {
     eigen_version::CompressLeft(L, R, cut);
 }
 
@@ -411,10 +381,7 @@ void inline CompressRight(
 }
 
 template <typename T>
-void inline CompressRight(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                          Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                          double cut) {
-
+void inline CompressRight(RowMatrix<T> &L, RowMatrix<T> &R, double cut) {
     eigen_version::CompressRight(L, R, cut);
 }
 } // namespace lapack

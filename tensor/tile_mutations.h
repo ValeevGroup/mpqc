@@ -3,9 +3,10 @@
 
 #include "tile_algebra.h"
 #include "tile_variant.h"
+#include "tile_ops.h"
 
 namespace tcc {
-    namespace tensor {
+namespace tensor {
 
 namespace unary_mutations {
 
@@ -53,7 +54,7 @@ struct compress_functor {
 
     template <typename T>
     TileVariant<T> operator()(FullRankTile<T> &&t) const {
-        typename FullRankTile<T>::template Matrix<T> L, R;
+        typename FullRankTile<T>::Matrix L, R;
 
         if (!algebra::Decompose_Matrix(t.matrix(), L, R, cut)) {
             return TileVariant<T>{LowRankTile<T>{std::move(L), std::move(R)}};
@@ -100,7 +101,7 @@ subt(LowRankTile<T> &&left, LowRankTile<T> const &right, double factor) {
     const auto cols = left.Cols();
     const auto rank_out = left.rank() + right.rank();
 
-    using matrix = typename LowRankTile<T>::template Matrix<T>;
+    using matrix = typename LowRankTile<T>::Matrix;
 
     auto L = matrix{rows, rank_out};
     L.leftCols(left.rank()) = left.matrixL();
@@ -205,7 +206,7 @@ LowRankTile<T> gemm(LowRankTile<T> &&result, LowRankTile<T> const &left,
     const auto rank_C = result.rank();
     const auto rank_out = rank_C + rank_A;
 
-    using matrix = typename LowRankTile<T>::template Matrix<T>;
+    using matrix = typename LowRankTile<T>::Matrix;
 
     auto L = matrix{rows, rank_out};
     L.leftCols(rank_A) = alpha * left.matrixL();
@@ -231,7 +232,7 @@ LowRankTile<T> gemm(LowRankTile<T> &&result, FullRankTile<T> const &left,
     const auto rank_C = result.rank();
     const auto rank_out = rank_C + rank_A;
 
-    using matrix = typename LowRankTile<T>::template Matrix<T>;
+    using matrix = typename LowRankTile<T>::Matrix;
 
     auto L = matrix{rows, rank_out};
     L.leftCols(rank_A)
@@ -259,7 +260,7 @@ LowRankTile<T> gemm(LowRankTile<T> &&result, LowRankTile<T> const &left,
     const auto rank_C = result.rank();
     const auto rank_out = rank_C + rank_AB;
 
-    using matrix = typename LowRankTile<T>::template Matrix<T>;
+    using matrix = typename LowRankTile<T>::Matrix;
 
     const auto mid = algebra::cblas_gemm(left.matrixR(), right.matrixL(), 1.0);
 
@@ -280,7 +281,6 @@ LowRankTile<T> gemm(LowRankTile<T> &&result, LowRankTile<T> const &left,
     return LowRankTile<T>{std::move(L), std::move(R)};
 }
 
-
 struct gemm_functor {
   private:
     double alpha = 1.0, beta = 1.0;
@@ -298,6 +298,42 @@ struct gemm_functor {
     }
 };
 
+
+struct Dgemm_functor {
+  private:
+    double alpha = 1.0, beta = 1.0;
+
+  public:
+    Dgemm_functor(double a) : alpha(a) {}
+    Dgemm_functor(double a, double b) : alpha(a), beta(b) {}
+
+    template <typename Result, typename Left, typename Right>
+    TileVariant<typename Result::scaler_type>
+    operator()(Result &&result, // Fowarding Ref Check that works.
+               Left const &left, Right const &right) const {
+        return TileVariant<double>{
+            binary_ops::add(std::forward<Result>(result),
+                            binary_ops::Dgemm(left, right, alpha), beta)};
+    }
+};
+
+struct Xgemm_functor {
+  private:
+    double alpha = 1.0, beta = 1.0;
+
+  public:
+    Xgemm_functor(double a) : alpha(a) {}
+    Xgemm_functor(double a, double b) : alpha(a), beta(b) {}
+
+    template <typename Result, typename Left, typename Right>
+    TileVariant<typename Result::scaler_type>
+    operator()(Result &&result, // Fowarding Ref Check that works.
+               Left const &left, Right const &right) const {
+        return TileVariant<double>{
+            binary_ops::add(std::forward<Result>(result),
+                            binary_ops::Xgemm(left, right, alpha), beta)};
+    }
+};
 } // namespace ternary_muations
 
 } // namespace tensor

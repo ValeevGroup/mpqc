@@ -23,7 +23,7 @@ namespace compute_functors {
 /// Will convert any 2, 3 or 4 dimensional btas::Tensor into a TilePimpl.
 /// Flattening of order 3 tensors is (0, 1*2).
 /// Flattening of order 4 tensors is (0*1, 2*3).
-template<std::size_t DIM>
+template <std::size_t DIM>
 class TaToLowRankTensor {
   public:
     using TileType = tensor::TilePimpl<double>;
@@ -32,8 +32,8 @@ class TaToLowRankTensor {
     TaToLowRankTensor(double cut) : cut_(cut) {}
 
     TileType operator()(TiledArray::Tensor<double> const &tat) const {
-        Eigen::MatrixXd Tile = eigen_map(tat);
-        Eigen::MatrixXd L, R;
+        RowMatrixXd Tile = eigen_map(tat);
+        RowMatrixXd L, R;
         bool is_full = algebra::Decompose_Matrix(Tile, L, R, cut_);
         if (!is_full) {
             tensor::TileVariant<double> tile_variant{
@@ -46,43 +46,33 @@ class TaToLowRankTensor {
         tensor::TileVariant<double> tile_variant{
             tensor::FullRankTile<double>{std::move(Tile)}};
 
-        return tensor::TilePimpl<double>{tat.range(), std::move(tile_variant), cut_};
+        return tensor::TilePimpl<double>{tat.range(), std::move(tile_variant),
+                                         cut_};
     }
 
   private:
-    using RowMajorMatrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                         Eigen::RowMajor>;
-
-    Eigen::MatrixXd eigen_map(TiledArray::Tensor<double> const &tat) const;
-
+    RowMatrixXd eigen_map(TiledArray::Tensor<double> const &tat) const;
     double cut_ = 1e-7;
 };
 
 template <>
-Eigen::MatrixXd
+RowMatrixXd
 TaToLowRankTensor<2>::eigen_map(TiledArray::Tensor<double> const &tat) const {
     auto const &extent = tat.range().size();
-    return Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>,
-                      Eigen::AutoAlign>(tat.data(), extent[0], extent[1]);
+    return eMap<const RowMatrixXd>(tat.data(), extent[0], extent[1]);
 }
 template <>
-Eigen::MatrixXd
+RowMatrixXd
 TaToLowRankTensor<3>::eigen_map(TiledArray::Tensor<double> const &tat) const {
     auto const &extent = tat.range().size();
-    return Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>,
-                      Eigen::AutoAlign>(tat.data(), extent[0],
-                                        extent[1] * extent[2]);
+    return eMap<const RowMatrixXd>(tat.data(), extent[0], extent[1] * extent[2]);
 }
 template <>
-Eigen::MatrixXd
+RowMatrixXd
 TaToLowRankTensor<4>::eigen_map(TiledArray::Tensor<double> const &tat) const {
     auto const &extent = tat.range().size();
-    return Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>,
-                      Eigen::AutoAlign>(tat.data(), extent[0] * extent[1],
-                                        extent[2] * extent[3]);
+    return eMap<const RowMatrixXd>(tat.data(), extent[0] * extent[1],
+                                   extent[2] * extent[3]);
 }
 
 

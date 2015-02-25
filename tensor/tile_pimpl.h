@@ -61,7 +61,7 @@ class TilePimpl {
     TiledArray::Range const &range() const { return range_; }
     double cut() const { return cut_; }
     bool empty() const { return !tile_; }
-    double norm() const { return tile_->norm();}
+    double norm() const { return tile_->norm(); }
 
     // maybe expensive
     void setCut(double cut) {
@@ -91,31 +91,38 @@ class TilePimpl {
         auto result_range
             = gemm_config.make_result_range<range_type>(range(), right.range());
 
-        if (tile_->iszero() || right.tile().iszero()) {
-            const bool zero = true;
-            return TilePimpl(std::move(result_range),
-                             TileVariant<T>{LowRankTile<T>{zero}},
-                             std::max(cut(), right.cut()));
-        }
+        const auto order_r = gemm_config.right_rank();
+        const auto order_l = gemm_config.left_rank();
+        const auto order_k = gemm_config.num_contract_ranks();
 
-        return TilePimpl(std::move(result_range),
-                         tile_->apply_binary_op(
-                             right.tile(), binary_ops::gemm_functor(factor)),
-                         std::max(cut(), right.cut()));
+        if (order_r == 2 && order_l == 3 && order_k == 1) {
+            return TilePimpl(
+                std::move(result_range),
+                tile_->apply_binary_op(right.tile(),
+                                       binary_ops::Dgemm_functor(factor)),
+                std::max(cut(), right.cut()));
+        } else if (gemm_config.left_op()
+                   == madness::cblas::CBLAS_TRANSPOSE::Trans) {
+            return TilePimpl(
+                std::move(result_range),
+                tile_->apply_binary_op(right.tile(),
+                                       binary_ops::Xgemm_functor(factor)),
+                std::max(cut(), right.cut()));
+        } else {
+
+            return TilePimpl(
+                std::move(result_range),
+                tile_->apply_binary_op(right.tile(),
+                                       binary_ops::gemm_functor(factor)),
+                std::max(cut(), right.cut()));
+        }
     }
 
     TilePimpl &gemm(TilePimpl const &left, TilePimpl const &right,
                     numeric_type factor,
                     TiledArray::math::GemmHelper const &gemm_config) {
-        range_
-            = gemm_config.make_result_range<range_type>(range(), right.range());
-
-        if (left.tile().iszero() || right.tile().iszero()) {
-            return *this;
-        } else if (tile_->iszero()) {
-            *this = left.gemm(right, 1.0, gemm_config);
-            return *this;
-        }
+//         range_
+//             = gemm_config.make_result_range<range_type>(range(), right.range());
 
         // Will convert to full when gemm grows the rank to much.
         if (tile_->tag() == TileVariant<T>::LowRank
@@ -124,8 +131,23 @@ class TilePimpl {
             convert_to_full(*tile_, left.tile(), right.tile());
         }
 
-        tile_->apply_ternary_mutation(left.tile(), right.tile(),
-                                      ternary_mutations::gemm_functor(factor));
+        const auto order_r = gemm_config.right_rank();
+        const auto order_l = gemm_config.left_rank();
+        const auto order_k = gemm_config.num_contract_ranks();
+        if (order_r == 2 && order_l == 3 && order_k == 1) {
+            tile_->apply_ternary_mutation(
+                left.tile(), right.tile(),
+                ternary_mutations::Dgemm_functor(factor));
+        } else if (gemm_config.left_op()
+                   == madness::cblas::CBLAS_TRANSPOSE::Trans) {
+            tile_->apply_ternary_mutation(
+                left.tile(), right.tile(),
+                ternary_mutations::Xgemm_functor(factor));
+        } else {
+            tile_->apply_ternary_mutation(
+                left.tile(), right.tile(),
+                ternary_mutations::gemm_functor(factor));
+        }
 
         return *this;
     }
@@ -166,8 +188,38 @@ class TilePimpl {
 
 
     TilePimpl permute(TiledArray::Permutation const &perm) const {
-        assert(false);
-        return TilePimpl();
+        if (isFull()) {
+            auto mat = tile_->matrix();
+            auto const &old_mat = tile_->ftile().matrix();
+            const int ia_dim = std::sqrt(mat.cols());
+            for (auto X = 0; X < mat.rows(); ++X) {
+                for (auto i = 0; i < ia_dim; ++i) {
+                    for (auto a = 0; a < ia_dim; ++a) {
+                        mat(X, a * ia_dim + i) = old_mat(X, i * ia_dim + a);
+                    }
+                }
+            }
+            return TilePimpl<double>{
+                decltype(range_){perm, range_},
+                TileVariant<double>{FullRankTile<double>{std::move(mat)}},
+                cut_};
+        } else {
+            auto mat = tile_->lrtile().matrixR();
+            auto const &old_mat = tile_->lrtile().matrixR();
+            const int ia_dim = std::sqrt(mat.cols());
+            for (auto r = 0; r < mat.rows(); ++r) {
+                for (auto i = 0; i < ia_dim; ++i) {
+                    for (auto a = 0; a < ia_dim; ++a) {
+                        mat(r, a * ia_dim + i) = old_mat(r, i * ia_dim + a);
+                    }
+                }
+            }
+            return TilePimpl<double>{
+                decltype(range_){perm, range_},
+                TileVariant<double>{LowRankTile<double>{
+                    tile_->lrtile().matrixL(), std::move(mat)}},
+                cut_};
+        }
     }
 
     void compress() {
@@ -242,7 +294,8 @@ class TilePimpl {
                 return clone();
             } else {
                 return TilePimpl{range(), right.tile().apply_unary_op(
-                    unary_ops::scale_functor(-1.0)), cut()};
+                                              unary_ops::scale_functor(-1.0)),
+                                 cut()};
             }
         } else if (right.tile().iszero()) {
             return clone();
@@ -303,8 +356,8 @@ class TilePimpl {
             if (tag == 0) {
                 auto lrows = 0ul, lcols = 0ul, rrows = 0ul, rcols = 0ul;
                 ar &lrows &lcols &rrows &rcols;
-                typename LowRankTile<T>::template Matrix<T> L(lrows, lcols);
-                typename LowRankTile<T>::template Matrix<T> R(rrows, rcols);
+                typename LowRankTile<T>::Matrix L(lrows, lcols);
+                typename LowRankTile<T>::Matrix R(rrows, rcols);
                 ar &madness::archive::wrap(L.data(), L.size())
                     & madness::archive::wrap(R.data(), R.size());
                 LowRankTile<double> l{std::move(L), std::move(R)};
@@ -312,7 +365,7 @@ class TilePimpl {
             } else {
                 auto rows = 0ul, cols = 0ul;
                 ar &rows &cols;
-                typename FullRankTile<T>::template Matrix<T> mat(rows, cols);
+                typename FullRankTile<T>::Matrix mat(rows, cols);
                 ar &madness::archive::wrap(mat.data(), mat.size());
                 FullRankTile<double> f{std::move(mat)};
                 tile_ = std::make_shared<TileVariant<double>>(std::move(f));

@@ -28,6 +28,7 @@
 #include "integrals/btas_to_low_rank_tensor.h"
 #include "integrals/make_engine.h"
 #include "integrals/ta_tensor_to_low_rank_tensor.h"
+#include "integrals/btas_to_decomp_tensor.h"
 #include "integrals/integral_engine_pool.h"
 #include "integrals/sparse_task_integrals.h"
 #include "integrals/dense_task_integrals.h"
@@ -89,7 +90,7 @@ int main(int argc, char *argv[]) {
     std::string df_basis_name = "";
     int nclusters = 0;
     double threshold = 1e-7;
-    double low_rank_threshold = 1e-9;
+    double low_rank_threshold = 1e-7;
     volatile int debug = 0;
     if (argc >= 5) {
         mol_file = argv[1];
@@ -202,25 +203,69 @@ int main(int argc, char *argv[]) {
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToTaTensor{}, "Eri3 integrals");
 
+
     Xab("X,i,j") = eri2_sqrt_inv("X,P") * Xab("P,i,j");
     Xab.truncate();
 
     auto Xab_lr = TiledArray::conversion::to_new_tile_type(
         Xab,
         integrals::compute_functors::TaToLowRankTensor<3>{low_rank_threshold});
-    print_size_info(Xab_lr, "Xab_lr");
 
-    TiledArray::Array<double, 4, TiledArray::Tensor<double>,
-                      TiledArray::SparsePolicy> Exch;
-    Exch("i,j,a,b") = Xab("X,i,j") * Xab("X,a,b");
-    Exch.truncate();
+    auto D_lr = TiledArray::conversion::to_new_tile_type(
+        D,
+        integrals::compute_functors::TaToLowRankTensor<2>{low_rank_threshold});
 
-    auto Exch_lr = TiledArray::conversion::to_new_tile_type(
-        Exch,
-        integrals::compute_functors::TaToLowRankTensor<4>{low_rank_threshold});
+    decltype(Xab_lr) X_temp;
+    X_temp("X,a,i") = Xab_lr("X,i,j") * D_lr("j,a");
+    for(auto it = X_temp.begin(); it != X_temp.end(); ++it){
+        it->get().compress();
+    }
+    utility::print_par(world, "X_temp storage info\n");
+    print_size_info(X_temp, "X_temp");
+    decltype(Xab) Coor;
+    Coor("X,a,i") = Xab("X,i,j") * D("j,a");
+    auto lt = X_temp.begin();
+    auto total_diff = 0.0;
+    auto max_single_tile = 0.0;
+    for (auto it = Coor.begin(); it != Coor.end(); ++it, ++lt) {
+        auto const &extent = it->get().range().size();
+        RowMatrixXd coor
+            = TA::eigen_map(it->get(), extent[0], extent[1] * extent[2]);
+        RowMatrixXd approx = lt->get().tile().matrix();
+        RowMatrixXd diff = coor - approx;
+        auto tile_diff = diff.lpNorm<2>();
+        total_diff += tile_diff;
+        max_single_tile = std::max(max_single_tile, tile_diff);
+    }
 
-    print_size_info(Exch_lr, "Exchange 4 center");
+    std::cout << "Exchange Temp :: \n";
+    std::cout << "Total diff = " << total_diff << std::endl;
+    std::cout << "Max tile diff = " << max_single_tile << std::endl;
 
+
+    decltype(D_lr) K_lr;
+    K_lr("i,j") = X_temp("X,a,i") * Xab_lr("X,a,j");
+
+    decltype(D) K;
+    K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
+
+    auto kt = K_lr.begin();
+    total_diff = 0.0;
+    max_single_tile = 0.0;
+    for (auto it = K.begin(); it != K.end(); ++it, ++kt) {
+        auto const &extent = it->get().range().size();
+        RowMatrixXd coor
+            = TA::eigen_map(it->get(), extent[0], extent[1]);
+        RowMatrixXd approx = kt->get().tile().matrix();
+        RowMatrixXd diff = coor - approx;
+        auto tile_diff = diff.lpNorm<2>();
+        total_diff += tile_diff;
+        max_single_tile = std::max(max_single_tile, tile_diff);
+    }
+
+    std::cout << "Exchange matrix :: \n";
+    std::cout << "Total diff = " << total_diff << std::endl;
+    std::cout << "Max tile diff = " << max_single_tile << std::endl;
 
     /*
     decltype(D) J, K, F;

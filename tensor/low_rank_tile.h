@@ -11,9 +11,7 @@ namespace tensor {
 template <typename T>
 class LowRankTile {
   public:
-    template <typename U>
-    using Matrix = Eigen::Matrix<U, Eigen::Dynamic, Eigen::Dynamic>;
-
+    using Matrix = RowMatrix<T>;
     using scaler_type = T;
 
     /*
@@ -40,7 +38,7 @@ class LowRankTile {
         assert(zero == true);
     }
 
-    LowRankTile(const Matrix<T> &L, const Matrix<T> &R)
+    LowRankTile(const Matrix &L, const Matrix &R)
         : L_(L.rows(), L.cols()), R_(R.rows(), R.cols()) {
         assert(L_.cols() == R_.rows());
         assert(L_.size() != 0 && R_.size() != 0);
@@ -49,7 +47,7 @@ class LowRankTile {
         std::copy(L.data(), L.data() + Lsize, L_.data());
         std::copy(R.data(), R.data() + Rsize, R_.data());
     }
-    LowRankTile(Matrix<T> &&L, Matrix<T> &&R) noexcept : L_(), R_() {
+    LowRankTile(Matrix &&L, Matrix &&R) noexcept : L_(), R_() {
         L_.swap(L);
         R_.swap(R);
         assert(L_.cols() == R_.rows());
@@ -69,11 +67,11 @@ class LowRankTile {
     inline unsigned long size() const { return R_.size() + L_.size(); }
     inline bool iszero() const { return zero_; }
 
-    inline Matrix<T> const &matrixL() const { return L_; }
-    inline Matrix<T> const &matrixR() const { return R_; }
-    inline Matrix<T> &matrixL() { return L_; }
-    inline Matrix<T> &matrixR() { return R_; }
-    inline Matrix<T> matrix() const { return algebra::cblas_gemm(L_, R_, 1.0); }
+    inline Matrix const &matrixL() const { return L_; }
+    inline Matrix const &matrixR() const { return R_; }
+    inline Matrix &matrixL() { return L_; }
+    inline Matrix &matrixR() { return R_; }
+    inline Matrix matrix() const { return algebra::cblas_gemm(L_, R_, 1.0); }
 
     template <typename Archive>
     typename madness::enable_if<madness::archive::is_output_archive<Archive>>::
@@ -92,7 +90,7 @@ class LowRankTile {
         ar &zero;
         decltype(L_.rows()) Lrows, Lcols, Rrows, Rcols;
         ar &Lrows &Lcols &Rrows &Rcols;
-        Matrix<T> L(Lrows, Lcols), R(Rrows, Rcols);
+        Matrix L(Lrows, Lcols), R(Rrows, Rcols);
         ar &madness::archive::wrap(L.data(), L.size())
             & madness::archive::wrap(R.data(), R.size());
 
@@ -102,8 +100,8 @@ class LowRankTile {
     }
 
   private:
-    Matrix<T> L_;
-    Matrix<T> R_;
+    Matrix L_;
+    Matrix R_;
     bool zero_ = false;
 };
 

@@ -6,6 +6,7 @@
 #include "../include/tiledarray.h"
 #include "../tensor/tile_pimpl.h"
 #include "../tensor/tile_algebra.h"
+#include "../include/eigen.h"
 
 namespace tcc {
 namespace utility {
@@ -63,7 +64,7 @@ double tt_tile(tensor::TilePimpl<double> const &t){
         return 0.0;
     }
     auto cut = t.cut();
-    Eigen::MatrixXd Lx, Rx, Lij, Rij;
+    RowMatrixXd Lx, Rx, Lij, Rij;
     if(t.isFull()){
         algebra::ColPivotedQr(t.tile().matrix(), Lx, Rx, cut);
     } else {

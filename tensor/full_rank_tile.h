@@ -13,9 +13,7 @@ template <typename T, typename = typename std::enable_if
                       <std::is_arithmetic<T>::value, T>::type>
 class FullRankTile {
   public:
-    template <typename U>
-    using Matrix = Eigen::Matrix<U, Eigen::Dynamic, Eigen::Dynamic>;
-
+    using Matrix = RowMatrix<T>;
     using scaler_type = T;
 
     FullRankTile() = default;
@@ -32,12 +30,12 @@ class FullRankTile {
         return *this;
     }
 
-    FullRankTile(Matrix<T> t) : tile_() {
+    FullRankTile(Matrix t) : tile_() {
         tile_.swap(t);
     }
 
-    inline Matrix<T> const &matrix() const { return tile_; }
-    inline Matrix<T> &matrix() { return tile_; }
+    inline Matrix const &matrix() const { return tile_; }
+    inline Matrix &matrix() { return tile_; }
 
     inline T const *data() const { return tile_.data(); }
     inline T *data() { return tile_.data(); }
@@ -64,13 +62,13 @@ class FullRankTile {
         serialize(Archive &ar) {
         decltype(tile_.rows())  rows, cols;
         ar & rows & cols;
-        Matrix<T> mat(rows, cols); 
+        Matrix mat(rows, cols); 
         ar & madness::archive::wrap(mat.data(), mat.size());
         tile_.swap(mat);
     }
 
   private:
-    Matrix<T> tile_;
+    Matrix tile_;
 };
 
 } // namespace tensor

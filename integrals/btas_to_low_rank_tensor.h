@@ -34,9 +34,9 @@ class BtasToLowRankTensor {
 
     template <std::size_t N>
     TileType operator()(tensor::ShallowTensor<N> const &bt) const {
-        Eigen::MatrixXd Tile = eigen_map(bt.tensor());
+        RowMatrixXd Tile = eigen_map(bt.tensor());
         if (Tile.lpNorm<2>() >= TiledArray::SparseShape<float>::threshold()) {
-            Eigen::MatrixXd L, R;
+            RowMatrixXd L, R;
             bool is_full = algebra::Decompose_Matrix(Tile, L, R, cut_);
             if (!is_full) {
                 tensor::TileVariant<double> tile_variant{
@@ -52,54 +52,42 @@ class BtasToLowRankTensor {
             return tensor::TilePimpl<double>{bt.range(),
                                              std::move(tile_variant)};
         } else { // For now if tile is super sparse return a 1x1 zero tile.
-            Tile = Eigen::MatrixXd::Zero(1,1);
+            Tile = RowMatrixXd::Zero(1, 1);
             tensor::TileVariant<double> tile_variant{
                 tensor::FullRankTile<double>{std::move(Tile)}};
 
             return tensor::TilePimpl<double>{bt.range(),
                                              std::move(tile_variant)};
         }
-        
     }
 
   private:
-    using RowMajorMatrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                         Eigen::RowMajor>;
-
     template <std::size_t N>
-    Eigen::MatrixXd
-    eigen_map(TileEngine<double>::TileType<N> const &btas_t) const;
+    RowMatrixXd eigen_map(TileEngine<double>::TileType<N> const &btas_t) const;
 
     double cut_ = 1e-7;
 };
 
 template <>
-Eigen::MatrixXd BtasToLowRankTensor::eigen_map<2>(
+RowMatrixXd BtasToLowRankTensor::eigen_map<2>(
     TileEngine<double>::TileType<2> const &btas_t) const {
     auto const &extent = btas_t.extent();
-    return Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>,
-                      Eigen::AutoAlign>(btas_t.data(), extent[0], extent[1]);
+    return eMap<const RowMatrixXd>(btas_t.data(), extent[0], extent[1]);
 }
 
 template <>
-Eigen::MatrixXd BtasToLowRankTensor::eigen_map<3>(
+RowMatrixXd BtasToLowRankTensor::eigen_map<3>(
     TileEngine<double>::TileType<3> const &btas_t) const {
     auto const &extent = btas_t.extent();
-    return Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>,
-                      Eigen::AutoAlign>(btas_t.data(), extent[0],
-                                        extent[1] * extent[2]);
+    return eMap<const RowMatrixXd>(btas_t.data(), extent[0], extent[1] * extent[2]);
 }
 
 template <>
-Eigen::MatrixXd BtasToLowRankTensor::eigen_map<4>(
+RowMatrixXd BtasToLowRankTensor::eigen_map<4>(
     TileEngine<double>::TileType<4> const &btas_t) const {
     auto const &extent = btas_t.extent();
-    return Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>,
-                      Eigen::AutoAlign>(btas_t.data(), extent[0] * extent[1],
-                                        extent[2] * extent[3]);
+    return eMap<const RowMatrixXd>(btas_t.data(), extent[0] * extent[1],
+                             extent[2] * extent[3]);
 }
 
 } // namespace compute_functors

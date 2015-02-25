@@ -172,7 +172,7 @@ class TileVariant {
 
     bool iszero() const { return apply_unary_op(is_zero_functor); }
 
-    typename FullRankTile<T>::template Matrix<T> matrix() const {
+    typename FullRankTile<T>::Matrix matrix() const {
         return apply_unary_op(matrix_functor);
     }
 
@@ -242,13 +242,13 @@ class TileVariant {
     } is_zero_functor;
 
     struct {
-        typename FullRankTile<T>::template Matrix<T>
+        typename FullRankTile<T>::Matrix
         operator()(FullRankTile<T> const &t) {
             return t.matrix();
         }
 
         // Using FullRankTile because tile.matrix() is always a full matrix.
-        typename FullRankTile<T>::template Matrix<T>
+        typename FullRankTile<T>::Matrix
         operator()(LowRankTile<T> const &t) {
             return t.matrix();
         }

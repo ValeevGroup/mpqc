@@ -252,23 +252,23 @@ eval_guess(Array const &A) {
 }
 
 
-template <typename Array>
-std::pair<double, double> correct_scale(Array const &S) {
-    const auto dim = S.elements().size()[0];
-    Eigen::MatrixXd eig_S = Eigen::MatrixXd::Zero(dim, dim);
-    for (auto it = S.begin(); it != S.end(); ++it) {
-        auto const &tile = (*it).get();
-        const auto i = tile.range().start()[0];
-        const auto j = tile.range().start()[1];
-        const auto m = tile.range().size()[0];
-        const auto n = tile.range().size()[1];
-        eig_S.block(i, j, m, n) = TiledArray::eigen_map(tile, m, n);
-    }
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(eig_S);
-    auto max = eig.eigenvalues().maxCoeff();
-    auto min = eig.eigenvalues().minCoeff();
-    return std::make_pair(min, max);
-}
+/* template <typename Array> */
+/* std::pair<double, double> correct_scale(Array const &S) { */
+/*     const auto dim = S.elements().size()[0]; */
+/*     Eigen::MatrixXd eig_S = Eigen::MatrixXd::Zero(dim, dim); */
+/*     for (auto it = S.begin(); it != S.end(); ++it) { */
+/*         auto const &tile = (*it).get(); */
+/*         const auto i = tile.range().start()[0]; */
+/*         const auto j = tile.range().start()[1]; */
+/*         const auto m = tile.range().size()[0]; */
+/*         const auto n = tile.range().size()[1]; */
+/*         eig_S.block(i, j, m, n) = TiledArray::eigen_map(tile, m, n); */
+/*     } */
+/*     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(eig_S); */
+/*     auto max = eig.eigenvalues().maxCoeff(); */
+/*     auto min = eig.eigenvalues().minCoeff(); */
+/*     return std::make_pair(min, max); */
+/* } */
 
 template <typename Array>
 void third_order_update(Array const &S, Array &Z) {

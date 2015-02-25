@@ -135,28 +135,28 @@ double min_eval_est(Array const &H, Array const &S) {
     return min;
 }
 
-// Computing guess based on Niklasson, A. M. N., Weber, V., &
-// Challacombe, M.
-// (2005). Nonorthogonal density-matrix perturbation theory. The
-// Journal of
-// Chemical Physics, 123(4), 044107. doi:10.1063/1.1944725
-template <typename Array>
-Array create_eval_scaled_guess(Array const &H, Array const &S) {
+/* // Computing guess based on Niklasson, A. M. N., Weber, V., & */
+/* // Challacombe, M. */
+/* // (2005). Nonorthogonal density-matrix perturbation theory. The */
+/* // Journal of */
+/* // Chemical Physics, 123(4), 044107. doi:10.1063/1.1944725 */
+/* template <typename Array> */
+/* Array create_eval_scaled_guess(Array const &H, Array const &S) { */
 
-    auto min_eval = min_eval_est(H, S);
-    std::cout << "eval min guess = " << min_eval << std::endl;
-    auto eig_H = TiledArray::array_to_eigen(H);
-    auto eig_S = TiledArray::array_to_eigen(S);
-    Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> es(eig_H,eig_S);
-    std::cout << "Real min eval = " << es.eigenvalues()[0] << std::endl;
-    auto beta = min_eval - 1;
+/*     auto min_eval = min_eval_est(H, S); */
+/*     std::cout << "eval min guess = " << min_eval << std::endl; */
+/*     auto eig_H = TiledArray::array_to_eigen(H); */
+/*     auto eig_S = TiledArray::array_to_eigen(S); */
+/*     Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> es(eig_H,eig_S); */
+/*     std::cout << "Real min eval = " << es.eigenvalues()[0] << std::endl; */
+/*     auto beta = min_eval - 1; */
 
-    // Compute X_0 guess
-    Array HbetaS;
-    HbetaS("i,j") = H("i,j") - beta * S("i,j");
+/*     // Compute X_0 guess */
+/*     Array HbetaS; */
+/*     HbetaS("i,j") = H("i,j") - beta * S("i,j"); */
 
-    return invert(HbetaS);
-}
+/*     return invert(HbetaS); */
+/* } */
 
 
 #endif /* end of include guard: TCC_PURIFICATION_EIGENVALUEESTIMATION_H */

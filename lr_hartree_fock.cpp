@@ -191,18 +191,11 @@ int main(int argc, char *argv[]) {
     /*
      * Start using Low rank arrays
      */
-
-    // Convert 1/sqrt(V) into a low rank tensor.
-    auto eri2_inv_lr = TiledArray::conversion::to_new_tile_type(
-        eri2_sqrt_inv,
-        integrals::compute_functors::TaToLowRankTensor<2>{low_rank_threshold});
-
     // Compute center integrals
     utility::print_par(world, "\n");
     auto Xab = time_and_print_block_sparse(
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToTaTensor{}, "Eri3 integrals");
-
 
     Xab("X,i,j") = eri2_sqrt_inv("X,P") * Xab("P,i,j");
     Xab.truncate();
@@ -217,9 +210,11 @@ int main(int argc, char *argv[]) {
 
     decltype(Xab_lr) X_temp;
     X_temp("X,a,i") = Xab_lr("X,i,j") * D_lr("j,a");
-    for(auto it = X_temp.begin(); it != X_temp.end(); ++it){
+    world.taskq.for_each(madness::Range<decltype(Xab_lr.begin())>(Xab_lr.begin(), Xab_lr.end()),
+                         [](decltype(Xab_lr.begin()) it) {
         it->get().compress();
-    }
+        return madness::Future<bool>(true);
+    });
     utility::print_par(world, "X_temp storage info\n");
     print_size_info(X_temp, "X_temp");
     decltype(Xab) Coor;
@@ -254,8 +249,7 @@ int main(int argc, char *argv[]) {
     max_single_tile = 0.0;
     for (auto it = K.begin(); it != K.end(); ++it, ++kt) {
         auto const &extent = it->get().range().size();
-        RowMatrixXd coor
-            = TA::eigen_map(it->get(), extent[0], extent[1]);
+        RowMatrixXd coor = TA::eigen_map(it->get(), extent[0], extent[1]);
         RowMatrixXd approx = kt->get().tile().matrix();
         RowMatrixXd diff = coor - approx;
         auto tile_diff = diff.lpNorm<2>();

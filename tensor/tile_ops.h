@@ -40,6 +40,80 @@ struct scale_functor {
 
 namespace binary_ops {
 
+// D_gemm is for doing the DF exchange intermediate contraction with the
+// density.
+template <typename T>
+FullRankTile<T> D_gemm(const FullRankTile<T> &left,
+                       const FullRankTile<T> &right, double alpha) {
+    // Reshape for contraction
+    Eigen::MatrixXd L = left.matrix();
+    L.resize(L.rows() * L.cols() / right.matrix().rows(),
+             right.matrix().rows());
+
+    // Contract and reshape to expected shape
+    auto outL = algebra::cblas_gemm(L, right.matrix(), alpha);
+    L.resize(left.matrix().rows(), left.matrix().cols());
+    return FullRankTile<T>{std::move(outL)};
+}
+
+template <typename T>
+LowRankTile<T>
+D_gemm(const LowRankTile<T> &left, const FullRankTile<T> &right, double alpha) {
+    // Compute contraction dim and reshape
+    const auto K = right.matrix().rows();
+    Eigen::MatrixXd leftR = left.matrixR();
+    leftR.resize(leftR.rows() + leftR.cols() / K, K);
+
+    auto out_leftR = algebra::cblas_gemm(leftR, right.matrix(), alpha);
+    out_leftR.resize(left.matrixR().rows(), left.matrixR().cols());
+
+    return LowRankTile<T>{left.matrixL(), std::move(out_leftR)};
+}
+
+template <typename T>
+FullRankTile<T>
+D_gemm(const FullRankTile<T> &left, const LowRankTile<T> &right, double alpha) {
+    const auto K = right.matrixL().rows();
+    Eigen::MatrixXd L = left.matrix();
+    L.resize(L.rows() * L.cols() / K, K);
+
+    auto tmpL = algebra::cblas_gemm(L, right.matrixL(), alpha);
+    L = algebra::cblas_gemm(tmpL, right.matrixR(), 1.0);
+    L.resize(left.matrix().rows(), left.matrix().cols());
+
+    return FullRankTile<T>{std::move(L)};
+}
+
+template <typename T>
+LowRankTile<T>
+D_gemm(const LowRankTile<T> &left, const LowRankTile<T> &right, double alpha) {
+
+    const auto K = right.matrixL().rows();
+    Eigen::MatrixXd leftR = left.matrixR();
+    leftR.resize(leftR.rows() * leftR.cols() / K, K);
+
+    auto mid = algebra::cblas_gemm(leftR, right.matrixL(), 1.0);
+    Eigen::MatrixXd R = algebra::cblas_gemm(mid, right.matrixR(), 1.0);
+    R.resize(left.rank(), right.matrixR().cols());
+
+    return LowRankTile<T>{(alpha * left.matrixL()).eval(), std::move(R)};
+}
+
+struct D_functor {
+  private:
+    double alpha = 1.0;
+
+  public:
+    D_functor(double a) : alpha(a) {}
+
+    template <typename Left, typename Right>
+    TileVariant<typename Left::scaler_type>
+    operator()(Left const &left, Right const &right) const {
+        return TileVariant<typename Left::scaler_type>{
+            D_gemm(left, right, alpha)};
+    }
+};
+
 template <typename T>
 FullRankTile<T>
 gemm(const FullRankTile<T> &left, const FullRankTile<T> &right, double alpha) {

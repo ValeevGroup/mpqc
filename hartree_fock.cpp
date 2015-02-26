@@ -59,7 +59,7 @@ void print_size_info(TiledArray::Array<T, 2, TileType, Policy> const &a,
                        "\n");
     std::vector<std::array<double, 3>> size_data;
     for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
-        auto lr_a = TiledArray::conversion::to_new_tile_type(
+        auto lr_a = TiledArray::to_new_tile_type(
             a, integrals::compute_functors::TaToLowRankTensor<2>{thresh});
         size_data.push_back(utility::array_storage(lr_a));
     }
@@ -80,7 +80,7 @@ void print_size_info(TiledArray::Array<T, 3, TileType, Policy> const &a,
                        "\n");
     std::vector<std::array<double, 4>> size_data;
     for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
-        auto lr_a = TiledArray::conversion::to_new_tile_type(
+        auto lr_a = TiledArray::to_new_tile_type(
             a, integrals::compute_functors::TaToLowRankTensor<3>{thresh});
         size_data.push_back(utility::array_storage_tt(lr_a));
     }

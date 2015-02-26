@@ -199,21 +199,33 @@ int main(int argc, char *argv[]) {
     Xab("X,i,j") = eri2_sqrt_inv("X,P") * Xab("P,i,j");
     Xab.truncate();
 
-    auto Xab_lr = TiledArray::conversion::to_new_tile_type(
+    auto Xab_lr = TiledArray::to_new_tile_type(
         Xab,
         integrals::compute_functors::TaToLowRankTensor<3>{low_rank_threshold});
+    world.taskq.for_each(
+        madness::Range<decltype(Xab_lr.begin())>(Xab_lr.begin(), Xab_lr.end()),
+        [](decltype(Xab_lr.begin()) it) {
+            std::cout << "Cut = " << it->get().cut() << " for tile "
+                      << it.ordinal() << std::endl;
+            return madness::Future<bool>(true);
+        });
 
-    auto D_lr = TiledArray::conversion::to_new_tile_type(
+    auto D_lr = TiledArray::to_new_tile_type(
         D,
         integrals::compute_functors::TaToLowRankTensor<2>{low_rank_threshold});
 
+    std::cout << "LR thresh = " << low_rank_threshold << std::endl;
+
     decltype(Xab_lr) X_temp;
     X_temp("X,a,i") = Xab_lr("X,i,j") * D_lr("j,a");
-    world.taskq.for_each(madness::Range<decltype(Xab_lr.begin())>(Xab_lr.begin(), Xab_lr.end()),
-                         [](decltype(Xab_lr.begin()) it) {
-        it->get().compress();
-        return madness::Future<bool>(true);
-    });
+    world.taskq.for_each(
+        madness::Range<decltype(Xab_lr.begin())>(Xab_lr.begin(), Xab_lr.end()),
+        [](decltype(Xab_lr.begin()) it) {
+            std::cout << "Cut = " << it->get().cut() << " for tile "
+                      << it.ordinal() << std::endl;
+            it->get().compress();
+            return madness::Future<bool>(true);
+        });
     utility::print_par(world, "X_temp storage info\n");
     print_size_info(X_temp, "X_temp");
 

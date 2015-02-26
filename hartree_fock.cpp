@@ -73,16 +73,17 @@ void print_size_info(TiledArray::Array<T, 2, TileType, Policy> const &a,
     }
 }
 
+
 template <typename T, typename TileType, typename Policy>
 void print_size_info(TiledArray::Array<T, 3, TileType, Policy> const &a,
                      std::string name) {
     utility::print_par(a.get_world(), "Printing size information for ", name,
                        "\n");
-    std::vector<std::array<double, 4>> size_data;
+    std::vector<std::array<double, 3>> size_data;
     for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
         auto lr_a = TiledArray::to_new_tile_type(
             a, integrals::compute_functors::TaToLowRankTensor<3>{thresh});
-        size_data.push_back(utility::array_storage_tt(lr_a));
+        size_data.push_back(utility::array_storage(lr_a));
     }
     auto const &data = size_data[0];
     utility::print_par(a.get_world(), "\tFull   = ", data[0], " GB\n",
@@ -90,8 +91,7 @@ void print_size_info(TiledArray::Array<T, 3, TileType, Policy> const &a,
     auto counter = 0;
     for (auto thresh : {1e-8, 1e-9, 1e-10, 1e-11}) {
         utility::print_par(a.get_world(), "\tLow Rank threshold ", thresh,
-                           " = ", size_data[counter][2], " GB\n\t\tTT = ",
-                           size_data[counter][3], " GB\n");
+                           " = ", size_data[counter][2], " GB\n");
         ++counter;
     }
 }
@@ -173,9 +173,7 @@ int main(int argc, char *argv[]) {
     H("i,j") = T("i,j") + V("i,j");
     print_size_info(H, "Hcore");
 
-    utility::print_par(world, "\nComputing Density\n");
-    auto purifier = pure::make_orthogonal_tr_reset_pure(overlap_inv_sqrt);
-    auto D = purifier(H, occupation);
+    utility::print_par(world, "\nComputing Density\n"); auto purifier = pure::make_orthogonal_tr_reset_pure(overlap_inv_sqrt); auto D = purifier(H, occupation);
     print_size_info(D, "D initial");
 
     utility::print_par(world, "\nComputing eri2\n");
@@ -217,6 +215,12 @@ int main(int argc, char *argv[]) {
                          eri31 - eri30).count();
     utility::print_par(world, "Eri3 computation time = ", eri3_time, "\n");
     print_size_info(Xab, "Eri3");
+
+    {
+        decltype(Xab) Test;
+        Test("X,a,i") = Xab("X,i,j") * D("j,a");
+        print_size_info(Test, "Test");
+    }
 
     utility::print_par(world, "\nForming the symmetric three center product\n");
     world.gop.fence();

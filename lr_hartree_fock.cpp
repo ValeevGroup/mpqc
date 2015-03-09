@@ -28,7 +28,7 @@
 #include "integrals/btas_to_low_rank_tensor.h"
 #include "integrals/make_engine.h"
 #include "integrals/ta_tensor_to_low_rank_tensor.h"
-#include "integrals/btas_to_decomp_tensor.h"
+/* #include "integrals/btas_to_decomp_tensor.h" */
 #include "integrals/integral_engine_pool.h"
 #include "integrals/sparse_task_integrals.h"
 #include "integrals/dense_task_integrals.h"
@@ -54,6 +54,7 @@ void debug_par(madness::World &world, volatile int debug) {
     world.gop.fence();
 }
 
+
 template <typename T, unsigned int DIM, typename TileType, typename Policy>
 void print_size_info(TiledArray::Array<T, DIM, TileType, Policy> const &a,
                      std::string name) {
@@ -74,13 +75,60 @@ time_and_print_block_sparse(madness::World &world, Pool &&pool,
                             std::string name) {
 
     utility::print_par(world, name, "\n");
-    auto timer = utility::make_timer([=, &world]() {
+    auto int_timer = utility::make_timer([=, &world]() {
         return integrals::BlockSparseIntegrals(world, pool, bs, fn);
     });
-    auto result = timer.apply();
-    utility::print_par(world, name, " time = ", timer.time(), "\n");
+    auto result = int_timer.apply();
+    utility::print_par(world, name, " time = ", int_timer.time(), "\n");
     print_size_info(result, name);
     return result;
+}
+
+class Ex_info {
+    TiledArray::Array<double, 3, tensor::TilePimpl<double>,
+                      TiledArray::SparsePolicy> Xab;
+    double threshold;
+
+  public:
+    Ex_info(TiledArray::Array<double, 3, TiledArray::Tensor<double>,
+                              TiledArray::SparsePolicy> &A,
+            double thresh)
+        : threshold(thresh) {
+        Xab = TiledArray::to_new_tile_type(
+            A, integrals::compute_functors::TaToLowRankTensor<3>{threshold});
+    }
+
+
+    void
+    contract_and_print(TiledArray::Array<double, 2, TiledArray::Tensor<double>,
+                                         TiledArray::SparsePolicy> const &D) {
+
+        auto D_lr = TiledArray::to_new_tile_type(
+            D, integrals::compute_functors::TaToLowRankTensor<2>{threshold});
+
+        decltype(Xab) X_temp;
+        X_temp("X,a,i") = Xab("X,i,j") * D_lr("j,a");
+
+        // Recompress X_temp
+        using it_t = decltype(Xab.begin());
+        Xab.get_world().taskq.for_each(
+            madness::Range<it_t>(X_temp.begin(), X_temp.end()), [](it_t it) {
+                it->get().compress();
+                return madness::Future<bool>(true);
+            });
+
+        utility::print_par(Xab.get_world(), "X_temp storage info\n");
+        print_size_info(X_temp, "X_temp");
+        D.get_world().gop.fence();
+        utility::print_par(Xab.get_world(), "\n");
+    }
+};
+
+
+template <typename T>
+double dur_time(T &&t0, T &&t1) {
+    return std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0)
+        .count();
 }
 
 int main(int argc, char *argv[]) {
@@ -199,48 +247,8 @@ int main(int argc, char *argv[]) {
     Xab("X,i,j") = eri2_sqrt_inv("X,P") * Xab("P,i,j");
     Xab.truncate();
 
-    auto Xab_lr = TiledArray::to_new_tile_type(
-        Xab,
-        integrals::compute_functors::TaToLowRankTensor<3>{low_rank_threshold});
-    world.taskq.for_each(
-        madness::Range<decltype(Xab_lr.begin())>(Xab_lr.begin(), Xab_lr.end()),
-        [](decltype(Xab_lr.begin()) it) {
-            std::cout << "Cut = " << it->get().cut() << " for tile "
-                      << it.ordinal() << std::endl;
-            return madness::Future<bool>(true);
-        });
+    Ex_info lr_info(Xab, low_rank_threshold);
 
-    auto D_lr = TiledArray::to_new_tile_type(
-        D,
-        integrals::compute_functors::TaToLowRankTensor<2>{low_rank_threshold});
-
-    std::cout << "LR thresh = " << low_rank_threshold << std::endl;
-
-    decltype(Xab_lr) X_temp;
-    X_temp("X,a,i") = Xab_lr("X,i,j") * D_lr("j,a");
-    world.taskq.for_each(
-        madness::Range<decltype(Xab_lr.begin())>(Xab_lr.begin(), Xab_lr.end()),
-        [](decltype(Xab_lr.begin()) it) {
-            std::cout << "Cut = " << it->get().cut() << " for tile "
-                      << it.ordinal() << std::endl;
-            it->get().compress();
-            return madness::Future<bool>(true);
-        });
-    utility::print_par(world, "X_temp storage info\n");
-    print_size_info(X_temp, "X_temp");
-
-    debug_par(world, debug);
-
-    decltype(D_lr) K_lr;
-    K_lr("i,j") = X_temp("X,a,i") * Xab_lr("X,a,j");
-
-    decltype(D) K;
-    K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
-
-    utility::print_par(world, "K storage info\n");
-    print_size_info(K_lr, "K");
-
-    /*
     decltype(D) J, K, F;
     J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j");
     K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
@@ -248,6 +256,8 @@ int main(int argc, char *argv[]) {
 
     D = purifier(F, occupation);
     auto energy = D("i,j").dot(F("i,j") + H("i,j"), world).get();
+
+    lr_info.contract_and_print(D);
 
     utility::print_par(world, "\nStarting SCF iterations\n");
     auto diis = TiledArray::DIIS<decltype(D)>{3, 7};
@@ -273,20 +283,19 @@ int main(int argc, char *argv[]) {
         energy = D("i,j").dot(F("i,j") + H("i,j"), world).get();
         world.gop.fence();
         auto t1 = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::duration<double>>(
-                        t1 - t0).count();
-        auto ktime = std::chrono::duration_cast<std::chrono::duration<double>>(
-                         k1 - k0).count();
+        auto time = dur_time(t0, t1);
+        auto ktime = dur_time(k0, k1);
         utility::print_par(world, "Iteration: ", iter++, " has energy ",
                            std::setprecision(11), energy, " with error ", error,
                            " in ", time, " s with K time ", ktime, "\n");
+
+        lr_info.contract_and_print(D);
     }
 
 
     utility::print_par(world, "Final energy = ", std::setprecision(11),
                        energy + repulsion_energy, "\n");
 
-   */
     world.gop.fence();
     libint2::cleanup();
     madness::finalize();

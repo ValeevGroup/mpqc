@@ -608,7 +608,7 @@ OneBodyWavefunction::nelectron()
 {
   int noso = oso_dimension()->n();
   double tocc = 0.0;
-  if (!spin_polarized()) {
+  if (not spin_unrestricted()) {
     for (int i=0; i<noso; i++) {
       tocc += occupation(i);
     }

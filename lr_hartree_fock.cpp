@@ -41,6 +41,38 @@
 using namespace tcc;
 namespace ints = integrals;
 
+auto lr_to_ta = [](tensor::TilePimpl<double> const &lr_t) {
+    auto matrix = lr_t.tile().matrix();
+    TiledArray::Tensor<double> t(lr_t.range());
+
+    for (auto i = 0; i < matrix.size(); ++i) {
+        t[i] = *(matrix.data() + i);
+    }
+
+    return t;
+};
+
+double array_diff(TiledArray::Array<double, 2, TiledArray::Tensor<double>,
+                                    TiledArray::SparsePolicy> const &fr,
+                  TiledArray::Array<double, 2, tensor::TilePimpl<double>,
+                                    TiledArray::SparsePolicy> const &lr) {
+    typename std::remove_const<
+        typename std::remove_reference<decltype(fr)>::type>::type out;
+    out("i,j") = fr("i,j") - TiledArray::to_new_tile_type(lr, lr_to_ta)("i,j");
+    return out("dont,matter").norm(out.get_world()).get();
+}
+
+double array_diff(TiledArray::Array<double, 3, TiledArray::Tensor<double>,
+                                    TiledArray::SparsePolicy> const &fr,
+                  TiledArray::Array<double, 3, tensor::TilePimpl<double>,
+                                    TiledArray::SparsePolicy> const &lr) {
+    typename std::remove_const<
+        typename std::remove_reference<decltype(fr)>::type>::type out;
+    out("i,j,k") = fr("i,j,k")
+                   - TiledArray::to_new_tile_type(lr, lr_to_ta)("i,j,k");
+    return out("dont,matter").norm(out.get_world()).get();
+}
+
 void debug_par(madness::World &world, volatile int debug) {
     if (0 != debug) {
         char hostname[256];
@@ -85,6 +117,8 @@ time_and_print_block_sparse(madness::World &world, Pool &&pool,
 }
 
 class Ex_info {
+    TiledArray::Array<double, 3, TiledArray::Tensor<double>,
+                      TiledArray::SparsePolicy> &Xab_fr;
     TiledArray::Array<double, 3, tensor::TilePimpl<double>,
                       TiledArray::SparsePolicy> Xab;
     double threshold;
@@ -93,22 +127,71 @@ class Ex_info {
     Ex_info(TiledArray::Array<double, 3, TiledArray::Tensor<double>,
                               TiledArray::SparsePolicy> &A,
             double thresh)
-        : threshold(thresh) {
+        : Xab_fr(A), threshold(thresh) {
         Xab = TiledArray::to_new_tile_type(
             A, integrals::compute_functors::TaToLowRankTensor<3>{threshold});
+
+        utility::print_par(Xab.get_world(), "Xab storage info\n");
+        print_size_info(Xab, "Xab");
+        Xab.get_world().gop.fence();
     }
 
 
     void
     contract_and_print(TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                                         TiledArray::SparsePolicy> const &D) {
+                                         TiledArray::SparsePolicy> const &D,
+                       bool compare = false) {
+        D.get_world().gop.fence(); // Fence to try and promote clean up.
+
+        auto D_lr = TiledArray::to_new_tile_type(
+            D, integrals::compute_functors::TaToLowRankTensor<2>{threshold});
+
+        auto d_norm_diff = array_diff(D, D_lr);
+
+        decltype(Xab) X_temp;
+        X_temp("X,a,i") = Xab("X,i,j") * D_lr("j,a");
+        X_temp.truncate();
+
+        auto lr_thresh = Xab.begin()->get().cut();
+
+        // Recompress X_temp
+        using it_t = decltype(Xab.begin());
+        Xab.get_world().taskq.for_each(
+            madness::Range<it_t>(X_temp.begin(), X_temp.end()), [](it_t it) {
+                it->get().compress();
+                return madness::Future<bool>(true);
+            });
+
+        double norm_diff = 0.0;
+        if (compare) {
+            typename std::remove_reference<decltype(Xab_fr)>::type X_temp_fr;
+            X_temp_fr("X,a,i") = Xab_fr("X,i,j") * D("j,a");
+            norm_diff = array_diff(X_temp_fr, X_temp);
+        }
+
+        utility::print_par(Xab.get_world(), "X_temp storage info\n");
+        print_size_info(X_temp, "X_temp");
+        D.get_world().gop.fence();
+        if(compare){
+        utility::print_par(Xab.get_world(), "\tNorm diff X_temp was ",
+                           norm_diff, " with lr threshold ", lr_thresh, "\n");
+        utility::print_par(Xab.get_world(), "\tNorm diff D was ", d_norm_diff,
+                           "\n");
+        }
+        utility::print_par(Xab.get_world(), "\n");
+    }
+
+    auto contract_and_form_K(
+        TiledArray::Array<double, 2, TiledArray::Tensor<double>,
+                          TiledArray::SparsePolicy> const &D)
+        -> std::remove_reference<decltype(D)>::type {
         D.get_world().gop.fence(); // Fence to try and promote clean up.
 
         auto D_lr = TiledArray::to_new_tile_type(
             D, integrals::compute_functors::TaToLowRankTensor<2>{threshold});
 
         decltype(Xab) X_temp;
-        X_temp("X,i,a") = Xab("X,i,j") * D_lr("j,a");
+        X_temp("X,a,i") = Xab("X,i,j") * D_lr("j,a");
         X_temp.truncate();
 
         // Recompress X_temp
@@ -119,10 +202,28 @@ class Ex_info {
                 return madness::Future<bool>(true);
             });
 
-        utility::print_par(Xab.get_world(), "X_temp storage info\n");
-        print_size_info(X_temp, "X_temp");
+        TiledArray::Array<double, 2, tensor::TilePimpl<double>,
+                          TiledArray::SparsePolicy> K;
+        K("i,j") = X_temp("X,a,i") * X_temp("X,a,j");
+
+        auto K_fr = TiledArray::to_new_tile_type(
+            K, [](tensor::TilePimpl<double> const &lr_t) {
+                auto matrix = lr_t.tile().matrix();
+                TiledArray::Tensor<double> t(lr_t.range());
+
+                auto t_count = 0;
+                for (decltype(matrix.cols()) i = 0; i < matrix.cols(); ++i) {
+                    for (decltype(matrix.rows()) j = 0; j < matrix.rows();
+                         ++j, ++t_count) {
+                        t[t_count] = matrix(j, i);
+                    }
+                }
+                return t;
+            });
+
         D.get_world().gop.fence();
-        utility::print_par(Xab.get_world(), "\n");
+
+        return K_fr;
     }
 };
 
@@ -246,10 +347,11 @@ int main(int argc, char *argv[]) {
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToTaTensor{}, "Eri3 integrals");
 
+    Ex_info lr_info(Xab, low_rank_threshold);
+
     Xab("X,i,j") = eri2_sqrt_inv("X,P") * Xab("P,i,j");
     Xab.truncate();
 
-    Ex_info lr_info(Xab, low_rank_threshold);
 
     decltype(D) J, K, F;
     J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j");
@@ -297,6 +399,17 @@ int main(int argc, char *argv[]) {
 
     utility::print_par(world, "Final energy = ", std::setprecision(11),
                        energy + repulsion_energy, "\n");
+
+    K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
+    decltype(K) K_diff;
+    decltype(K) K_lr = lr_info.contract_and_form_K(D);
+    K_diff("i,j") = K("i,j") - K_lr("i,j");
+
+    auto norm_diff = K_diff("dont,matter").norm(world).get();
+
+    utility::print_par(world, "K_diff norm = ", norm_diff, "\n");
+    utility::print_par(world, "K_diff norm/volume = ",
+                       norm_diff / K_diff.elements().volume(), "\n");
 
     world.gop.fence();
     libint2::cleanup();

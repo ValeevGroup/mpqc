@@ -246,10 +246,10 @@ Dgemm(const LowRankTile<T> &left, const LowRankTile<T> &right, double alpha) {
 
     RowMatrixXd Lr = left.matrixR();
     // Reshape Lr for contraction
-    const auto K = right.matrixR().cols();
+    const auto K = right.matrixL().rows();
     const auto other = Lr.cols() / K;
     const auto Lr_rows_out = Lr.rows();
-    const auto Lr_cols_out = other * right.matrixR().cols();
+    const auto Lr_cols_out = other * right.matrixL().rows();
     Lr.resize(Lr.rows() * other, K);
 
     auto mid = algebra::cblas_gemm(Lr, right.matrixL(), 1.0);

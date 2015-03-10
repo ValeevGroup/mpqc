@@ -246,7 +246,7 @@ Dgemm(const LowRankTile<T> &left, const LowRankTile<T> &right, double alpha) {
 
     RowMatrixXd Lr = left.matrixR();
     // Reshape Lr for contraction
-    const auto K = right.matrixR().rows();
+    const auto K = right.matrixR().cols();
     const auto other = Lr.cols() / K;
     const auto Lr_rows_out = Lr.rows();
     const auto Lr_cols_out = other * right.matrixR().cols();

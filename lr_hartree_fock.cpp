@@ -102,12 +102,14 @@ class Ex_info {
     void
     contract_and_print(TiledArray::Array<double, 2, TiledArray::Tensor<double>,
                                          TiledArray::SparsePolicy> const &D) {
+        D.get_world().gop.fence(); // Fence to try and promote clean up.
 
         auto D_lr = TiledArray::to_new_tile_type(
             D, integrals::compute_functors::TaToLowRankTensor<2>{threshold});
 
         decltype(Xab) X_temp;
-        X_temp("X,a,i") = Xab("X,i,j") * D_lr("j,a");
+        X_temp("X,i,a") = Xab("X,i,j") * D_lr("j,a");
+        X_temp.truncate();
 
         // Recompress X_temp
         using it_t = decltype(Xab.begin());

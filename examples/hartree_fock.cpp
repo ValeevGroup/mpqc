@@ -2,39 +2,39 @@
 #include <fstream>
 #include <algorithm>
 #include <iomanip>
-
-#include "include/tbb.h"
-#include "include/libint.h"
-#include "include/tiledarray.h"
-#include "include/btas.h"
-
-#include "utility/make_array.h"
-#include "utility/parallel_print.h"
-#include "utility/array_storage.h"
-
-#include "molecule/atom.h"
-#include "molecule/cluster.h"
-#include "molecule/molecule.h"
-#include "molecule/clustering_functions.h"
-#include "molecule/make_clusters.h"
-
-#include "basis/atom_basisset.h"
-#include "basis/basis_set.h"
-#include "basis/cluster_shells.h"
-#include "basis/basis.h"
-
-#include "integrals/btas_to_ta_tensor.h"
-#include "integrals/btas_to_low_rank_tensor.h"
-#include "integrals/make_engine.h"
-#include "integrals/ta_tensor_to_low_rank_tensor.h"
-#include "integrals/integral_engine_pool.h"
-#include "integrals/sparse_task_integrals.h"
-#include "integrals/dense_task_integrals.h"
-
-#include "purification/sqrt_inv.h"
-#include "purification/purification_devel.h"
-
 #include <chrono>
+
+#include "../include/tbb.h"
+#include "../include/libint.h"
+#include "../include/tiledarray.h"
+#include "../include/btas.h"
+
+#include "../utility/make_array.h"
+#include "../utility/parallel_print.h"
+#include "../utility/array_storage.h"
+
+#include "../molecule/atom.h"
+#include "../molecule/cluster.h"
+#include "../molecule/molecule.h"
+#include "../molecule/clustering_functions.h"
+#include "../molecule/make_clusters.h"
+
+#include "../basis/atom_basisset.h"
+#include "../basis/basis_set.h"
+#include "../basis/cluster_shells.h"
+#include "../basis/basis.h"
+
+#include "../integrals/btas_to_ta_tensor.h"
+#include "../integrals/btas_to_low_rank_tensor.h"
+#include "../integrals/make_engine.h"
+#include "../integrals/ta_tensor_to_low_rank_tensor.h"
+#include "../integrals/integral_engine_pool.h"
+#include "../integrals/sparse_task_integrals.h"
+#include "../integrals/dense_task_integrals.h"
+
+#include "../purification/sqrt_inv.h"
+#include "../purification/purification_devel.h"
+
 
 using namespace tcc;
 namespace ints = integrals;

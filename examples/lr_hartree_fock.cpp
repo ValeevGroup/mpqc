@@ -2,90 +2,46 @@
 #include <fstream>
 #include <algorithm>
 #include <iomanip>
-
-#include "include/tbb.h"
-#include "include/libint.h"
-#include "include/tiledarray.h"
-#include "include/btas.h"
-
-#include "utility/make_array.h"
-#include "utility/parallel_print.h"
-#include "utility/array_storage.h"
-#include "utility/function_timer.h"
-
-#include "molecule/atom.h"
-#include "molecule/cluster.h"
-#include "molecule/molecule.h"
-#include "molecule/clustering_functions.h"
-#include "molecule/make_clusters.h"
-
-#include "basis/atom_basisset.h"
-#include "basis/basis_set.h"
-#include "basis/cluster_shells.h"
-#include "basis/basis.h"
-
-#include "integrals/btas_to_ta_tensor.h"
-#include "integrals/btas_to_low_rank_tensor.h"
-#include "integrals/make_engine.h"
-#include "integrals/ta_tensor_to_low_rank_tensor.h"
-/* #include "integrals/btas_to_decomp_tensor.h" */
-#include "integrals/integral_engine_pool.h"
-#include "integrals/sparse_task_integrals.h"
-#include "integrals/dense_task_integrals.h"
-
-#include "purification/sqrt_inv.h"
-#include "purification/purification_devel.h"
-
 #include <chrono>
+
+#include "../include/tbb.h"
+#include "../include/libint.h"
+#include "../include/tiledarray.h"
+#include "../include/btas.h"
+
+#include "../utility/make_array.h"
+#include "../utility/parallel_print.h"
+#include "../utility/array_storage.h"
+#include "../utility/time.h"
+#include "../utility/ta_helpers.h"
+
+#include "../tensor/conversions/tile_pimpl_to_ta_tensor.h"
+
+#include "../molecule/atom.h"
+#include "../molecule/cluster.h"
+#include "../molecule/molecule.h"
+#include "../molecule/clustering_functions.h"
+#include "../molecule/make_clusters.h"
+
+#include "../basis/atom_basisset.h"
+#include "../basis/basis_set.h"
+#include "../basis/cluster_shells.h"
+#include "../basis/basis.h"
+
+#include "../integrals/btas_to_ta_tensor.h"
+#include "../integrals/btas_to_low_rank_tensor.h"
+#include "../integrals/make_engine.h"
+#include "../integrals/ta_tensor_to_low_rank_tensor.h"
+#include "../integrals/integral_engine_pool.h"
+#include "../integrals/sparse_task_integrals.h"
+#include "../integrals/dense_task_integrals.h"
+
+#include "../purification/sqrt_inv.h"
+#include "../purification/purification_devel.h"
+
 
 using namespace tcc;
 namespace ints = integrals;
-
-auto lr_to_ta = [](tensor::TilePimpl<double> const &lr_t) {
-    auto matrix = lr_t.tile().matrix();
-    TiledArray::Tensor<double> t(lr_t.range());
-
-    for (auto i = 0; i < matrix.size(); ++i) {
-        t[i] = *(matrix.data() + i);
-    }
-
-    return t;
-};
-
-double array_diff(TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                                    TiledArray::SparsePolicy> const &fr,
-                  TiledArray::Array<double, 2, tensor::TilePimpl<double>,
-                                    TiledArray::SparsePolicy> const &lr) {
-    typename std::remove_const<
-        typename std::remove_reference<decltype(fr)>::type>::type out;
-    out("i,j") = fr("i,j") - TiledArray::to_new_tile_type(lr, lr_to_ta)("i,j");
-    return out("dont,matter").norm(out.get_world()).get();
-}
-
-double array_diff(TiledArray::Array<double, 3, TiledArray::Tensor<double>,
-                                    TiledArray::SparsePolicy> const &fr,
-                  TiledArray::Array<double, 3, tensor::TilePimpl<double>,
-                                    TiledArray::SparsePolicy> const &lr) {
-    typename std::remove_const<
-        typename std::remove_reference<decltype(fr)>::type>::type out;
-    out("i,j,k") = fr("i,j,k")
-                   - TiledArray::to_new_tile_type(lr, lr_to_ta)("i,j,k");
-    return out("dont,matter").norm(out.get_world()).get();
-}
-
-void debug_par(madness::World &world, volatile int debug) {
-    if (0 != debug) {
-        char hostname[256];
-        gethostname(hostname, sizeof(hostname));
-        printf("PID %d on %s ready for attach\n", getpid(), hostname);
-        fflush(stdout);
-        if (world.rank() == 0) {
-            while (0 != debug) sleep(5);
-        }
-    }
-    world.gop.fence();
-}
-
 
 template <typename T, unsigned int DIM, typename TileType, typename Policy>
 void print_size_info(TiledArray::Array<T, DIM, TileType, Policy> const &a,
@@ -105,9 +61,8 @@ TiledArray::Array<double, DIM, typename Fn::TileType, TiledArray::SparsePolicy>
 time_and_print_block_sparse(madness::World &world, Pool &&pool,
                             std::array<Basis, DIM> bs, Fn fn,
                             std::string name) {
-
     utility::print_par(world, name, "\n");
-    auto int_timer = utility::make_timer([=, &world]() {
+    auto int_timer = tcc_time::make_timer([=, &world]() {
         return integrals::BlockSparseIntegrals(world, pool, bs, fn);
     });
     auto result = int_timer.apply();
@@ -117,8 +72,6 @@ time_and_print_block_sparse(madness::World &world, Pool &&pool,
 }
 
 class Ex_info {
-    TiledArray::Array<double, 3, TiledArray::Tensor<double>,
-                      TiledArray::SparsePolicy> &Xab_fr;
     TiledArray::Array<double, 3, tensor::TilePimpl<double>,
                       TiledArray::SparsePolicy> Xab;
     double threshold;
@@ -127,7 +80,8 @@ class Ex_info {
     Ex_info(TiledArray::Array<double, 3, TiledArray::Tensor<double>,
                               TiledArray::SparsePolicy> &A,
             double thresh)
-        : Xab_fr(A), threshold(thresh) {
+        : threshold(thresh) {
+
         Xab = TiledArray::to_new_tile_type(
             A, integrals::compute_functors::TaToLowRankTensor<3>{threshold});
 
@@ -139,45 +93,31 @@ class Ex_info {
 
     void
     contract_and_print(TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                                         TiledArray::SparsePolicy> const &D,
-                       bool compare = false) {
+                                         TiledArray::SparsePolicy> const &D) {
         D.get_world().gop.fence(); // Fence to try and promote clean up.
 
         auto D_lr = TiledArray::to_new_tile_type(
             D, integrals::compute_functors::TaToLowRankTensor<2>{threshold});
 
-        auto d_norm_diff = array_diff(D, D_lr);
-
         decltype(Xab) X_temp;
-        X_temp("X,a,i") = Xab("X,i,j") * D_lr("j,a");
+        X_temp("X,i,a") = Xab("X,i,j") * D_lr("j,a");
         X_temp.truncate();
-
-        auto lr_thresh = Xab.begin()->get().cut();
 
         // Recompress X_temp
         using it_t = decltype(Xab.begin());
-        Xab.get_world().taskq.for_each(
-            madness::Range<it_t>(X_temp.begin(), X_temp.end()), [](it_t it) {
-                it->get().compress();
-                return madness::Future<bool>(true);
-            });
-
-        double norm_diff = 0.0;
-        if (compare) {
-            typename std::remove_reference<decltype(Xab_fr)>::type X_temp_fr;
-            X_temp_fr("X,a,i") = Xab_fr("X,i,j") * D("j,a");
-            norm_diff = array_diff(X_temp_fr, X_temp);
-        }
+        Xab.get_world().taskq.for_each(madness::Range<it_t>(X_temp.begin(),
+                                                            X_temp.end()),
+                                       [=](it_t it) {
+            if (it->get().cut() != threshold) {
+                throw std::runtime_error("Threshold was not correctly set!");
+            }
+            it->get().compress();
+            return madness::Future<bool>(true);
+        });
 
         utility::print_par(Xab.get_world(), "X_temp storage info\n");
         print_size_info(X_temp, "X_temp");
         D.get_world().gop.fence();
-        if(compare){
-        utility::print_par(Xab.get_world(), "\tNorm diff X_temp was ",
-                           norm_diff, " with lr threshold ", lr_thresh, "\n");
-        utility::print_par(Xab.get_world(), "\tNorm diff D was ", d_norm_diff,
-                           "\n");
-        }
         utility::print_par(Xab.get_world(), "\n");
     }
 
@@ -207,19 +147,7 @@ class Ex_info {
         K("i,j") = X_temp("X,a,i") * X_temp("X,a,j");
 
         auto K_fr = TiledArray::to_new_tile_type(
-            K, [](tensor::TilePimpl<double> const &lr_t) {
-                auto matrix = lr_t.tile().matrix();
-                TiledArray::Tensor<double> t(lr_t.range());
-
-                auto t_count = 0;
-                for (decltype(matrix.cols()) i = 0; i < matrix.cols(); ++i) {
-                    for (decltype(matrix.rows()) j = 0; j < matrix.rows();
-                         ++j, ++t_count) {
-                        t[t_count] = matrix(j, i);
-                    }
-                }
-                return t;
-            });
+            K, tensor::tile_pimpl_to_ta_tensor<double>);
 
         D.get_world().gop.fence();
 
@@ -227,20 +155,13 @@ class Ex_info {
     }
 };
 
-
-template <typename T>
-double dur_time(T &&t0, T &&t1) {
-    return std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0)
-        .count();
-}
-
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
     std::string mol_file = "";
     std::string basis_name = "";
     std::string df_basis_name = "";
     int nclusters = 0;
-    double threshold = 1e-7;
+    double threshold = 1e-11;
     double low_rank_threshold = 1e-7;
     volatile int debug = 0;
     if (argc >= 5) {
@@ -332,7 +253,7 @@ int main(int argc, char *argv[]) {
     // Computing the sqrt inverse of Eri2
     utility::print_par(world, "\nComputing eri2 sqrt Inverse\n");
     auto inv_timer
-        = utility::make_timer([&]() { return pure::inverse_sqrt(eri2); });
+        = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2); });
     auto eri2_sqrt_inv = inv_timer.apply();
     utility::print_par(world, "Eri2 inverse computation time = ",
                        inv_timer.time(), "\n");
@@ -347,10 +268,11 @@ int main(int argc, char *argv[]) {
         world, eri_pool, utility::make_array(df_basis, basis, basis),
         integrals::compute_functors::BtasToTaTensor{}, "Eri3 integrals");
 
-    Ex_info lr_info(Xab, low_rank_threshold);
 
     Xab("X,i,j") = eri2_sqrt_inv("X,P") * Xab("P,i,j");
     Xab.truncate();
+
+    Ex_info lr_info(Xab, low_rank_threshold);
 
 
     decltype(D) J, K, F;
@@ -369,13 +291,16 @@ int main(int argc, char *argv[]) {
     decltype(F) Ferror;
     auto error = 1.0;
     const auto volume = double(F.trange().elements().volume());
-    while (error >= 1e-13 && iter <= 35) {
-        auto t0 = std::chrono::high_resolution_clock::now();
+    while (error >= 1e-12 && iter <= 35) {
+        auto t0 = tcc_time::now();
+
         J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j");
         J.truncate();
-        auto k0 = std::chrono::high_resolution_clock::now();
+
+        auto k0 = tcc_time::now();
         K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
-        auto k1 = std::chrono::high_resolution_clock::now();
+        auto k1 = tcc_time::now();
+
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
         Ferror("i,j") = F("i,k") * D("k,l") * S("l,j")
                         - S("i,k") * D("k,l") * F("l,j");
@@ -386,9 +311,12 @@ int main(int argc, char *argv[]) {
         D = purifier(F, occupation);
         energy = D("i,j").dot(F("i,j") + H("i,j"), world).get();
         world.gop.fence();
-        auto t1 = std::chrono::high_resolution_clock::now();
-        auto time = dur_time(t0, t1);
-        auto ktime = dur_time(k0, k1);
+
+        auto t1 = tcc_time::now();
+
+        auto time = tcc_time::duration_in_s(t0, t1);
+        auto ktime = tcc_time::duration_in_s(k0, k1);
+
         utility::print_par(world, "Iteration: ", iter++, " has energy ",
                            std::setprecision(11), energy, " with error ", error,
                            " in ", time, " s with K time ", ktime, "\n");
@@ -400,16 +328,16 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "Final energy = ", std::setprecision(11),
                        energy + repulsion_energy, "\n");
 
-    K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
-    decltype(K) K_diff;
-    decltype(K) K_lr = lr_info.contract_and_form_K(D);
-    K_diff("i,j") = K("i,j") - K_lr("i,j");
+    /* K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j"); */
+    /* decltype(K) K_diff; */
+    /* decltype(K) K_lr = lr_info.contract_and_form_K(D); */
+    /* K_diff("i,j") = K("i,j") - K_lr("i,j"); */
 
-    auto norm_diff = K_diff("dont,matter").norm(world).get();
+    /* auto norm_diff = K_diff("dont,matter").norm(world).get(); */
 
-    utility::print_par(world, "K_diff norm = ", norm_diff, "\n");
-    utility::print_par(world, "K_diff norm/volume = ",
-                       norm_diff / K_diff.elements().volume(), "\n");
+    /* utility::print_par(world, "K_diff norm = ", norm_diff, "\n"); */
+    /* utility::print_par(world, "K_diff norm/volume = ", */
+    /*                    norm_diff / K_diff.elements().volume(), "\n"); */
 
     world.gop.fence();
     libint2::cleanup();

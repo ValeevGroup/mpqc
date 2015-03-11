@@ -71,47 +71,14 @@ message(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")
 
 set(TileClusterChem_Sources "main.cpp")
 
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/examples)
+
 IF(PERFORM_UNIT_TESTS)
   add_subdirectory(${TileClusterChem_SOURCE_DIR}/tests)
 ENDIF(PERFORM_UNIT_TESTS)
 
 add_executable(${PROJECT_NAME} ${TileClusterChem_Sources}) 
 target_link_libraries(${PROJECT_NAME}
-  ${TileClusterChem_LIBRARIES}
-)
-
-add_executable(sparse_integral_example EXCLUDE_FROM_ALL sparse_integral_example.cpp) 
-target_link_libraries(sparse_integral_example
-  ${TileClusterChem_LIBRARIES}
-)
-
-add_executable(integral_space_savings EXCLUDE_FROM_ALL integral_space_savings.cpp) 
-target_link_libraries(integral_space_savings
-  ${TileClusterChem_LIBRARIES}
-)
-
-add_executable(integral_correctness_test EXCLUDE_FROM_ALL integral_correctness_test.cpp) 
-target_link_libraries(integral_correctness_test
-  ${TileClusterChem_LIBRARIES}
-)
-
-add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 
-target_link_libraries(sqrt_inverse_example
-  ${TileClusterChem_LIBRARIES}
-)
-
-add_executable(eri3_low_rank_example EXCLUDE_FROM_ALL eri3_low_rank_example.cpp) 
-target_link_libraries(eri3_low_rank_example
-  ${TileClusterChem_LIBRARIES}
-)
-
-add_executable(hartree_fock EXCLUDE_FROM_ALL hartree_fock.cpp) 
-target_link_libraries(hartree_fock
-  ${TileClusterChem_LIBRARIES}
-)
-
-add_executable(lr_hartree_fock EXCLUDE_FROM_ALL lr_hartree_fock.cpp) 
-target_link_libraries(lr_hartree_fock
   ${TileClusterChem_LIBRARIES}
 )
 

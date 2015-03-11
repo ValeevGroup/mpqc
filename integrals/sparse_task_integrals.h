@@ -48,6 +48,11 @@ template <typename TileType, typename TF, typename SharedEnginePool,
     const auto btas_tensor = tensor::ShallowTensor<N>{
         std::move(range), TileEngine<double>{}(idx, engines, shell_ptrs)};
 
+    auto ta_tensor = func(btas_tensor);
+    auto norm = ta_tensor.norm();
+    assert(norm > 0);
+    assert(norm == norm);
+
     // Save the tensor with it's ordinal information for later.
     vec[ord] = std::make_pair(tile_ord, func(std::move(btas_tensor)));
 }

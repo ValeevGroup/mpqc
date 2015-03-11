@@ -65,11 +65,12 @@ int main(int argc, char *argv[]) {
         basis_name = argv[2];
         nclusters = std::stoi(argv[3]);
     } else {
-        std::cout << "input is $./program mol_file basis_file df_basis_file "
+        std::cout << "input is $./program mol_file basis_file "
                      "nclusters \n";
         return 0;
     }
     if (argc == 5) {
+        utility::print_par(world, "User Selected Metric\n");
         use_columb_metric = std::stoi(argv[4]);
     }
     if (argc == 6) {

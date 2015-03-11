@@ -5,6 +5,7 @@ set(sources
     sqrt_inverse_example.cpp
     hartree_fock.cpp
     lr_hartree_fock.cpp
+    four_center_exchange.cpp
 )
 
 # add_executable(sparse_integral_example EXCLUDE_FROM_ALL sparse_integral_example.cpp) 
@@ -30,3 +31,9 @@ target_link_libraries(lr_hartree_fock
   ${TileClusterChem_LIBRARIES}
 )
 add_dependencies(examples lr_hartree_fock)
+
+add_executable(four_center_exchange EXCLUDE_FROM_ALL four_center_exchange.cpp) 
+target_link_libraries(four_center_exchange
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(examples four_center_exchange)

@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <libint2/libint2.h>
+#include <libint2.h>
 
 // see libint2's configure for the hardwired values
 # if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD

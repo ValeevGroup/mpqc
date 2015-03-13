@@ -33,6 +33,7 @@
 #define _mpqc_src_lib_chemistry_qc_libint2_core_ints_engine_h
 
 #include <util/ref/ref.h>
+#include <util/group/thread.h>
 
 namespace sc {
 
@@ -50,46 +51,38 @@ namespace sc {
           virtual public RefCount,
           public _Engine
       {
-          Engine(int mmax): RefCount(), _Engine(mmax) {}
-          Engine(int mmax, double prec): RefCount(), _Engine(mmax, prec) {}
+          Engine(int mmax, double prec = 1e-15): RefCount(), _Engine(mmax, prec) {}
       };
 
       template <typename Int>
       static Ref<Engine> instance(Int mmax) {
-        default_engine_->lock_ptr();
-        if (default_engine_->max_m() < mmax) {
-          Ref<Engine> new_default_engine = new Engine(mmax);
-          default_engine_->unlock_ptr();
-          // default_engine_ may change between unlock and assignment, but since params are guaranteed to only "improve",
-          // this is safe, although may cause duplicate work
-          default_engine_ = new_default_engine;
-        }
-        else
-          default_engine_->unlock_ptr();
-        // default_engine_ may change between unlock and copy, but since params are guaranteed to only "improve", this is safe ...
+        if (default_engine_->max_m() >= mmax)
+          return default_engine_;
+
+        ThreadLockHolder lh(lock_);
+        Ref<Engine> new_default_engine = new Engine(mmax);
+        default_engine_ = new_default_engine;
         return default_engine_;
       }
 
       template <typename Int, typename Real>
       static Ref<Engine> instance(Int mmax, Real prec) {
-        default_engine_->lock_ptr();
-        if (default_engine_->max_m() < mmax || default_engine_->precision() > prec) {
-          Ref<Engine> new_default_engine = new Engine(mmax, prec);
-          default_engine_->unlock_ptr();
-          // default_engine_ may change between unlock and assignment, but since params are guaranteed to only "improve",
-          // this is safe, although may cause duplicate work
-          default_engine_ = new_default_engine;
-        }
-        else
-          default_engine_->unlock_ptr();
-        // default_engine_ may change between unlock and assignment, but since params are guaranteed to only "improve",
+        if (not (default_engine_->max_m() < mmax || default_engine_->precision() > prec))
+          return default_engine_;
+
+        ThreadLockHolder lh(lock_);
+        Ref<Engine> new_default_engine = new Engine(mmax, prec);
+        default_engine_ = new_default_engine;
         return default_engine_;
       }
 
     private:
       static Ref<Engine> default_engine_;
+      static Ref<ThreadLock> lock_; //!< to serialize access to default_engine_
   };
 
+  template <typename _Engine>
+  Ref<ThreadLock> CoreIntsEngine<_Engine>::lock_ = ThreadGrp::get_default_threadgrp()->new_lock();
 
 } // end of namespace sc
 

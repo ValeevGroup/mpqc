@@ -35,6 +35,9 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/deriv.h>
+#ifdef MPQC_NEW_FEATURES
+#include <util/misc/xml.h>
+#endif
 
 namespace sc {
 
@@ -44,7 +47,11 @@ namespace sc {
 /** The MolecularEnergy abstract class inherits from the Function class.
 It computes the energy of the molecule as a function of the geometry.  The
 coordinate system used can be either internal or cartesian.  */
-class MolecularEnergy: public Function {
+class MolecularEnergy: public Function
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif
+{
   private:
     RefSCDimension moldim_; // the number of cartesian variables
     Ref<MolecularCoor> mc_;
@@ -98,6 +105,7 @@ class MolecularEnergy: public Function {
      * @return true (analytic hessian is available) or false (analytic hessian is not available, default)
      */
     virtual bool analytic_hessian_implemented() const;
+
 
   public:
     MolecularEnergy(const MolecularEnergy&);
@@ -162,6 +170,11 @@ class MolecularEnergy: public Function {
     ~MolecularEnergy();
 
     void save_data_state(StateOut&);
+
+
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
     /// Set up checkpointing
     void set_checkpoint();

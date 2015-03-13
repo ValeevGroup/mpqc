@@ -173,8 +173,10 @@ CLHF::ao_fock(double accuracy)
     tim.exit("stop thread");
       
     double tnint=0;
+    double tinttime=0.0;
     for (i=0; i < nthread; i++) {
       tnint += gblds[i]->tnint;
+      tinttime += gblds[i]->tinttime;
 
       if (i) {
         for (int j=0; j < ntri; j++)
@@ -192,7 +194,12 @@ CLHF::ao_fock(double accuracy)
     delete[] pmax;
       
     scf_grp_->sum(&tnint, 1, 0, 0);
-    ExEnv::out0() << indent << scprintf("%20.0f integrals\n", tnint);
+    scf_grp_->sum(&tinttime, 1, 0, 0);
+    ExEnv::out0() << indent << scprintf("%20.0f integrals", tnint);
+    if (tinttime != 0.0)
+      ExEnv::out0() << scprintf("  ( %7.3lf sec)", tinttime);
+    ExEnv::out0() << std::endl;
+
 
     tim.exit("ao_gmat");
 

@@ -40,7 +40,8 @@ namespace sc {
 template<class T>
 class LocalGBuild : public GBuild<T> {
   public:
-    double tnint;
+    double tnint;    //!< total # of integrals computed in this thread
+    double tinttime; //!< total user time spent computing integrals
     
   protected:
     MessageGrp *grp_;
@@ -81,6 +82,7 @@ class LocalGBuild : public GBuild<T> {
       const double *intbuf = tbi.buffer();
 
       tnint=0;
+      tinttime=0.0;
       sc_int_least64_t threadind=0;
       sc_int_least64_t ijklind=0;
 
@@ -139,7 +141,15 @@ class LocalGBuild : public GBuild<T> {
 #  endif
 #endif
 
+#ifdef MPQC_NEW_FEATURES
+              const auto tstart = sc::RegionTimer::get_time_point();
+#endif
               tbi.compute_shell(i,j,k,l);
+#ifdef MPQC_NEW_FEATURES
+              const auto tstop = RegionTimer::get_time_point();
+              const std::chrono::duration<double> time_elapsed = tstop - tstart;
+              tinttime += time_elapsed.count();
+#endif
 
               int e12 = (i==j);
               int e34 = (k==l);

@@ -47,11 +47,14 @@ World::class_desc_(typeid(World),
 
 World::World() : key_("default"), world_(&madness::World::get_default()) {}
 
-World::World(const Ref<KeyVal>& kv) {
+World::World(const Ref<KeyVal>& kv)
+{
+
   key_ = kv->stringvalue("key", KeyValValuestring("default"));
   // for now only use default world
   MPQC_ASSERT(key_ == "default");
   world_ = &madness::World::get_default();
+
 }
 
 World::~World() {

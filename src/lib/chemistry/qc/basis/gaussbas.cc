@@ -40,6 +40,7 @@
 #include <util/misc/scexception.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/molshape.h>
 #include <chemistry/qc/basis/gaussshell.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/files.h>
@@ -68,15 +69,32 @@ GaussianBasisSet::Shell::Shell(const GaussianBasisSet* basis,
 }
 
 bool sc::GaussianBasisSet::Shell::equiv(const Shell& s) const {
-  const double* r_this = this->basis()->molecule()->r(this->center());
+  const double* r_this = basis_->molecule()->r(center_);
   const double* r_s = s.basis()->molecule()->r(s.center());
   for(unsigned int xyz=0; xyz<3; ++xyz) {
-    if (fabs(r_this[xyz] - r_s[xyz]) > DBL_EPSILON)
+    if (fabs(r_this[xyz] - r_s[xyz]) > DBL_EPSILON){
       return false;
+    }
   }
-
-  return static_cast<const GaussianShell&>(*this).equiv(static_cast<const GaussianShell&>(s));
+  return GaussianShell::equiv(s);
 }
+
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+GaussianBasisSet::Shell::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  // Give it a custom name to avoid writing the "::" in the XML
+  ptree& child = GaussianShell::get_my_ptree(parent, "GaussianBasisSetShell");
+  child.put("center", center());
+
+  GaussianShell::write_xml(parent, writer);
+  return child;
+}
+#endif // MPQC_NEW_FEATURES
 
 //////////////////////////////////////////////////
 
@@ -255,6 +273,38 @@ GaussianBasisSet::save_data_state(StateOut&s)
   s.put(name_);
   s.put(label_);
 }
+
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+GaussianBasisSet::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& child = get_my_ptree(parent);
+  if(not name_.empty()){
+    child.put("name", name());
+  }
+  else{
+    child.put("label", label());
+  }
+  child.put("ncenter", ncenter());
+  child.put("nshell", nshell());
+  child.put("nbasis", nbasis());
+  child.put("nprimitive", nprimitive());
+  child.put("has_pure", has_pure());
+  ptree& shells_tree = child.add_child("shells", ptree());
+  for(int ish = 0; ish < nshell(); ++ish){
+    // Hack because shells don't have an index attribute
+    ptree& shell_parent = shells_tree.add_child("shell", ptree());
+    shell_parent.put("<xmlattr>.index", ish);
+    shell_parent.put("function_offset", shell_to_function(ish));
+    shell(ish).write_xml(shell_parent, writer);
+  }
+  return child;
+}
+#endif // MPQC_NEW_FEATURES
 
 GaussianBasisSet&
 GaussianBasisSet::operator=(const GaussianBasisSet& gbs) {
@@ -1270,6 +1320,138 @@ int
 GaussianBasisSetMap::fblock_size(int b) const { return fblock_size_[b]; }
 
 /////////////////////////////////////////////////////////////////////////////
+
+static ClassDesc WriteBasisGrid_cd(
+    typeid(WriteBasisGrid),"WriteBasisGrid",1,
+    "public WriteVectorGrid", 0, create<WriteBasisGrid>, 0);
+
+Ref<KeyVal>
+WriteBasisGrid::process_keyval_for_base_class(const Ref<KeyVal>& kv)
+{
+  Ref<GaussianBasisSet> basis; basis << kv->describedclassvalue("basis");
+  if (basis.null()) {
+    return kv;  // WriteBasisGrid will fail
+  }
+  else{
+    // create default grid if none given
+    if (kv->exists("grid") == false) {
+      const Ref<VDWShape> vdwshape = new VDWShape(basis->molecule());
+      SCVector3 gmin, gmax;
+      vdwshape->boundingbox(-1.0, 1.0, gmin, gmax);
+      SCVector3 gorigin = gmin;
+      SCVector3 gsize = gmax - gmin;
+      const double resolution = 0.2;
+      int n[3]; for(int i=0; i<3; ++i) n[i] = int(std::ceil(gsize[i] / 0.2));
+      SCVector3 axis0(gsize[0]/n[0], 0.0, 0.0);
+      SCVector3 axis1(0.0, gsize[1]/n[1], 0.0);
+      SCVector3 axis2(0.0, 0.0, gsize[2]/n[2]);
+      Ref<Grid> grid = new Grid(n[0], n[1], n[2], gorigin, axis0, axis1, axis2);
+
+      Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+      akv->assign("grid", grid.pointer());
+
+      Ref<AggregateKeyVal> aggkv = new AggregateKeyVal(kv, akv);
+      return aggkv;
+    }
+    else // grid given, do nothing
+      return kv;
+  }
+}
+
+void
+WriteBasisGrid::label(char* buffer)
+{
+  sprintf(buffer, "%s", basis_->name().c_str());
+}
+
+WriteBasisGrid::WriteBasisGrid(
+    const Ref<KeyVal>& keyval
+) : WriteVectorGrid(WriteBasisGrid::process_keyval_for_base_class(keyval))
+{
+  basis_ << keyval->describedclassvalue("basis");
+
+  if(basis_.null()){
+    throw InputError("missing required value 'basis'",
+        __FILE__, __LINE__,
+        "basis", 0, class_desc()
+    );
+  }
+  for(int i = 0; i < basis_->nbasis(); ++i){
+    // DimensionMap is one based
+    bfmap_.map.push_back(i+1);
+  }
+  integral_ << keyval->describedclassvalue("integral",
+      KeyValValueRefDescribedClass(Integral::get_default_integral())
+  );
+}
+
+WriteBasisGrid::WriteBasisGrid(
+    const Ref<GaussianBasisSet>& basis,
+    const Ref<Grid>& grid,
+    std::string gridformat,
+    std::string gridfile
+) : WriteVectorGrid(grid, gridformat, gridfile),
+    basis_(basis),
+    integral_(Integral::get_default_integral())
+{
+  for(int i = 0; i < basis_->nbasis(); ++i){
+    // DimensionMap is one based
+    bfmap_.map.push_back(i+1);
+  }
+}
+
+void
+WriteBasisGrid::calculate_values(
+    const std::vector<SCVector3>& Points,
+    std::vector<double>& Values
+)
+{
+  integral_->set_basis(basis_);
+  const int npoints = Points.size();
+  const int nbasis = basis_->nbasis();
+
+  // compute the basis set values
+  int offset = 0;
+  Values.resize(npoints * nbasis);
+  ::memset(&(Values[offset]), 0, npoints*nbasis*sizeof(double));
+  for(int i = 0; i < npoints; ++i){
+    GaussianBasisSet::ValueData *valdat
+        = new GaussianBasisSet::ValueData(basis_, integral_);
+    basis_->values(Points[i], valdat, &(Values[offset]));
+    delete valdat;
+    offset += nbasis;
+  }
+}
+
+void
+WriteBasisGrid::initialize() {
+  integral_->set_basis(basis_);
+
+}
+
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+WriteBasisGrid::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = this->get_my_ptree(parent);
+  if(not basis_->name().empty()){
+    my_tree.put("<xmlattr>.basis_name", basis_->name());
+  }
+  else{
+    my_tree.put("<xmlattr>.basis_label", basis_->label());
+  }
+  return WriteVectorGrid::write_xml(parent, writer);
+}
+#endif // MPQC_NEW_FEATURES
+
+WriteBasisGrid::~WriteBasisGrid()
+{
+
+}
 
 // Local Variables:
 // mode: c++

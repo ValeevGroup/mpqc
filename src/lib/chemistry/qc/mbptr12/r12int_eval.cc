@@ -2195,10 +2195,11 @@ R12IntEval::compute()
   if (evaluated_)
     return;
 
-#if 0
+#ifdef MPQC_NEW_FEATURES
   {
     ExEnv::out0() << indent << "Trying out MPQC3-based R12 code" << std::endl;
-    V_diag_ta();
+    //V_diag_ta();
+    gf2_r12();
   }
 #endif
 

@@ -46,6 +46,9 @@
 #include <chemistry/qc/scf/ltbgrad.h>
 #include <chemistry/qc/scf/clhftmpl.h>
 #include <chemistry/qc/wfn/femo.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <chemistry/qc/scf/iter_logger.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -386,6 +389,11 @@ CLSCF::new_density()
 
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
+#ifdef MPQC_NEW_FEATURES
+  if(!iter_log_.null()){
+    iter_log_->log_density(cl_dens_.copy());
+  }
+#endif
 
   cl_dens_diff_.accumulate(cl_dens_);
 

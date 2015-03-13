@@ -983,10 +983,18 @@ public:
   RefSCMatrix V_genref_spinfree(const Ref<OrbitalSpace>& p,
                      const Ref<OrbitalSpace>& q);
 
+#if defined(MPQC_NEW_FEATURES)
   /**
    * TiledArray-based builder of closed-shell V intermediate
    */
   void V_diag_ta();
+
+  // \param orbital index of the orbital for self-energy calculation, -1 = HOMO (default), +1 = LUMO, 0 = do nothing
+  void gf2_r12(int orbital = -1);
+
+  // TiledArray-based MP2-F12 one-electron properties
+  void compute_TA_mp2f12_1rdm();
+#endif
 
   void compute_ccr12_1rdm(const RefSCMatrix& T1, const Ref<DistArray4> (&T2)[NSpinCases2]);
 

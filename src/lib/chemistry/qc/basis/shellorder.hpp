@@ -36,13 +36,10 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/basis.h>
 
-#include <mpqc/utility/foreach.hpp>
 #include "kcluster.hpp"
 
 namespace mpqc{
-namespace basis{
-
-    namespace TA = TiledArray;
+namespace TA{
 
     /**
      * Determines the clustering of shells based on k-means clustering.
@@ -65,10 +62,14 @@ namespace basis{
         ShellOrder(const sc::Ref<sc::GaussianBasisSet> &basis) :
             clusters_(),
             atoms_(),
-            basis_(basis)
+            basis_(basis),
+            com_(Vector3::Zero(3))
         {
             // Get the molecule.
             sc::Ref<sc::Molecule> mol = basis->molecule();
+            com_[0] = mol->center_of_mass()[0];
+            com_[1] = mol->center_of_mass()[1];
+            com_[2] = mol->center_of_mass()[2];
 
             // Get the Atoms and their index out of the molecule for the clusters.
             for(auto i = 0; i < mol->natom(); ++i){
@@ -78,17 +79,26 @@ namespace basis{
 
         /**
          * Returns a list of shells ordered by which cluster they belong to.
+         * Must pass in the new basis so the shells get the correct parent.
          */
-        std::vector<Shell> ordered_shells(std::size_t nclusters){
+        std::vector<Shell>
+        ordered_shells(std::size_t nclusters,
+                       const sc::GaussianBasisSet *new_parent_basis){
             // Number of clusters desired.
             nclusters_ = nclusters;
 
             // Compute clusters using Lloyd's Algorithm
             compute_clusters(nclusters_);
 
-            std::vector<Shell> shells = cluster_shells();
+            std::vector<Shell> shells = cluster_shells(new_parent_basis);
 
             return shells;
+        }
+
+        std::vector<KCluster>& get_clusters(std::size_t nclusters) {
+          nclusters_ = nclusters;
+          compute_clusters(nclusters_);
+          return clusters_;
         }
 
         /**
@@ -113,11 +123,40 @@ namespace basis{
          * Determines initial guess for clusters.
          */
         void init_clusters(){
-            // Sort atoms in molecule by mass
-            std::sort(atoms_.begin(), atoms_.end(),
-                [](const Atom &a, const Atom &b){return a.mass() > b.mass();});
+            // Sort atoms in molecule by distance from COM such that 1. Closest
+            // . . . N. Farthest.  If two atoms are equidistant then sort based
+            // on x, then y, and finally z.
+            auto ordering = [&](const Atom &a, const Atom &b){
+                // Get position vector for each atom.
+                const Vector3 va = Eigen::Map<const Vector3>(a.r(),3);
+                const Vector3 vb = Eigen::Map<const Vector3>(b.r(),3);
 
-            // Initialize the kcluster guess at the position of the heaviest atoms.
+                // Find distance from center of mass for each atom
+                double da = Vector3(va - com_).norm();
+                double db = Vector3(vb - com_).norm();
+
+                // Begin to check coordinates
+                if(da != db) { // Check not equidistant
+                    return (da < db);
+                }
+                else if(va[0] != vb[0]){ // Check x isn't equidistant
+                    return (va[0] < vb[0]);
+                }
+                else if(va[1] != vb[1]){ // Check y isn't equidistant
+                    return (va[1] < vb[1]);
+                }
+                else if(va[2] != vb[2]){ // Check z isn't equidistant
+                    return (va[2] < vb[2]);
+                }
+                else {
+                    return false;
+                }
+            };
+
+            std::sort(atoms_.begin(), atoms_.end(), ordering);
+
+            // Initialize the kcluster guess at the position of atoms closest to
+            // COM.
             for(auto i = 0; i < nclusters_; ++i){
                 clusters_.push_back(
                     Vector3(atoms_[i].r(0), atoms_[i].r(1), atoms_[i].r(2))
@@ -133,14 +172,14 @@ namespace basis{
          */
         void attach_to_closest_cluster(){
             // Loop over all the atoms.
-            foreach(const auto atom, atoms_){
+            for(const auto atom : atoms_){
                 // Guess that first cluster is closest
                 double smallest = clusters_[0].distance(atom);
 
                 // To which cluster the atom belongs.
                 std::size_t kindex = 0;
 
-                // Loop over kclusters
+                // Loop over kclusters using i = 1 because we already computed 0
                 for(auto i = 1; i < nclusters_; ++i){
                     // Compute distance from atom to next kcluster
                     double dist = clusters_[i].distance(atom);
@@ -155,6 +194,11 @@ namespace basis{
                 // Add atom to the closest kcluster
                 clusters_[kindex].add_atom(atom);
             }
+            // Put atoms in correct order inside clusters so that the
+            // Shell ordering becomes deterministic.
+            for(auto& cluster : clusters_){
+                cluster.sort_atoms();
+            }
         }
 
         // Computes Lloyd's algorith to find a local minimium for the clusters.
@@ -163,10 +207,11 @@ namespace basis{
             // Lloyd's algorithm iterations.
             for(auto i = 0; i < niter; ++i){
 
-               // Recompute the center of the cluster using the centroid
+               // Recompute the center of the cluster using the centroid of
                // the atoms.  Will lose information about which atoms
                // go with which center.
-               foreach(auto &cluster, clusters_){ cluster.guess_center(); }
+               for(auto &cluster : clusters_){ cluster.guess_center(); }
+               sort_clusters();
 
                attach_to_closest_cluster();
            }
@@ -174,23 +219,27 @@ namespace basis{
 
         /*
          * Returns a vector of shells in the order they appear in the clusters.
+         * Need to pass in a basis which will become the parent of the new Shells
          */
-        std::vector<Shell> cluster_shells() const {
+        std::vector<Shell>
+        cluster_shells(const sc::GaussianBasisSet *new_parent_basis) const {
 
             std::vector<Shell> shells;
             // Loop over clusters
-            foreach(const auto& cluster, clusters_){
+            for(const auto& cluster : clusters_){
                 // Loop over atoms in cluster
-                foreach(const auto& atom, cluster.atoms()){
+                for(const auto& atom : cluster.atoms()){
                     // Figure out where in the molecule the atom is located.
-                    std::size_t atom_index = atom.mol_index();
+                    std::size_t center_ = atom.mol_index();
                     // Figure out how many shells are on the atom.
                     std::size_t nshells_on_atom =
-                                    basis_->nshell_on_center(atom_index);
+                                    basis_->nshell_on_center(center_);
                     // Loop over the shells on the atom and pack them into
-                    // shells.
+                    // the shell contatiner.
                     for(auto i = 0; i < nshells_on_atom; ++i){
-                        shells.push_back(basis_->operator()(atom_index, i));
+                        shells.push_back(Shell(
+                                new_parent_basis, center_,
+                                basis_->operator()(center_, i)));
                     }
                 }
             }
@@ -213,7 +262,7 @@ namespace basis{
                 // Holds the number of shells on the cluster.
                 std::size_t shells_in_cluster = 0;
                 // Loop over atoms
-                foreach(const auto atom, clusters_[i].atoms()){
+                for(const auto atom : clusters_[i].atoms()){
                     // position of atom in molecule
                     std::size_t atom_index = atom.mol_index();
                     // Get number of shells on the atom.
@@ -226,14 +275,27 @@ namespace basis{
             return  range;
         }
 
+        /*
+         * Sort clusters on distance from com.
+         */
+        void sort_clusters(){
+            std::sort(clusters_.begin(), clusters_.end(),
+                  [&](const KCluster &a, const KCluster &b){
+                   return ((a.center()-com_).norm() < (b.center()-com_).norm());}
+            );
+        }
+
     private:
         std::size_t nclusters_ = 0;
         std::vector<Atom> atoms_;
-        std::vector<KCluster> clusters_;
+        Vector3 com_;
+        std::vector<KCluster> clusters_; // Note that KCluster contains fixed
+                                         // Eigen objects, but these are not vectorizable
+                                         // Thus we don't have to worry about Alignment issues.
         sc::Ref<sc::GaussianBasisSet> basis_;
     };
 
-} // namespace basis
+} // namespace TA
 } // namespace mpqc
 
 #endif /* CHEMISTRY_QC_BASIS_SHELLORDER_HPP */

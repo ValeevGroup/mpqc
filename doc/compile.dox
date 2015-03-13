@@ -15,24 +15,26 @@
 \section compiledownload Obtaining the code
 
    The latest version of the source code is available from
-   <a href="http://www.mpqc.org">http://www.mpqc.org</a>.
+   <a href="https://github.com/ValeevGroup/mpqc">Github</a>.
    Public stable releases of MPQC have not occured since 2006.
    Therefore it is recommended that the users
    obtain the latest source code directly from the code repository.
 
 \section compilepre Prerequisites
 
+MPQC is a complex piece of software and can be customized extensively. For example, to use MPQC on a parallel machine an MPI library
+(see below) may be needed. While the basic subset of MPQC features will work on all platforms, advanced features of MPQC
+will require additional prerequisites.
+
 The following programs are necessary to compile even a bare-bones version of MPQC. Most are
 available on any modern computer system.
 
-  - Code building is performed by <a href="http://cmake.org/">CMake</a>, version 2.8.8 or higher.
+  - Code building is performed by <a href="http://cmake.org/">CMake</a>, version 2.8.8 or higher, and GNU Make.
 
-  - Compilers for the C, C++, and FORTRAN languages are needed.  The
-    FORTRAN compiler is used to determine the linkage conventions for
-    the BLAS libraries. The compilers listed below are
+  - Compilers for the C, C++, and FORTRAN languages are needed. The compilers listed below are
     known to work.  Other ISO C++ compilers should work as well.
 
-      - GCC 4.7 and later, available from <a href="http://gcc.gnu.org">http://gcc.gnu.org</a>.
+      - GCC 4.8 and later, available from <a href="http://gcc.gnu.org">http://gcc.gnu.org</a>.
       - The Intel C/C++ compilers version 12 and later.
       - The C/C++ compiler frontend to LLVM (clang/clang++).
 
@@ -41,38 +43,51 @@ available on any modern computer system.
     It is preferable to use vendor-provided optimized libraries,
     such as Intel Math Kernel Library (MKL) or Apple's Accelerate
     framework. A reference copy of <a href="http://netlib.org/">netlib.org</a>
-    LAPACK+BLAS is included and can be automatically build by cmake.
+    LAPACK+BLAS is included and can be automatically built by cmake.
 
-  - If you modify the scanner source file, then a
+  - (optional) perl: This is used to generate and check the validation suite etc.
+
+  - (developers-only) If you modify the scanner source file, then a
     lexical analyzer generator is required to generate code to read
-	input files.  The flex program is used for this purpose.
+    input files.  The <tt>flex</tt> program is used for this purpose.
 
-  - If you modify a parser source file, then GNU bison (version 1.24
+  - (developers-only) If you modify a parser source file, then GNU bison (version 1.24
     or greater) is needed.  This is a parser generator used to
     generate code to read input files.
 
-  - GNU make.
-
-  - perl: This is used to convert template classes to macros, generate
-    and check the validation suite etc.
-
-\section compilepreopt "New" Prerequisites
+\section compilepreopt Advanced Prerequisites
 
 Certain advanced features of MPQC require additional packages.
 
   -    A Message Passing Interface (MPI) is required to use MPQC in
        parallel on distributed memory machines. A thread-safe version of
-       MPQC is recommended.
+       MPI is recommended.
 
-  -    Libint (version 2.0.3 or higher): This is a machine-generated
+  -    A C++ compiler with support for the C++11 standard. Most recent versions
+       of gcc, clang, and Intel C/C++ compiler are sufficient.
+
+  -    Libint (version 2.1.0(beta) or higher): This is a machine-generated
        library that can be used for evaluation of certain molecular
        integrals. Explicitly-correlated methods in MPQC require
        Libint. The library is freely available under GNU Public License
        (GPL) from <a
-       href="http://libint.valeyev.net">libint.valeyev.net</a>.
-       cmake can automatically download and build Libint.
+       href="https://github.com/evaleev/libint">Github</a>.
+       A copy of Libint is bundled in ./external/libint*.tgz and will be built if requested. <b>NOTE</b> you may
+       require custom version of Libint for some functionaility, such as interfacing with GAMESS.
 
-  -    to be continued
+  -    <a href="https://github.com/ValeevGroup/tiledarray">TiledArray</a> is a block-sparse parallel tensor framework.
+       TiledArray must be compiled manually,
+       preferably with support for <a href="http://libelemental.org/">Elemental</a>.
+  -    <a href="http://eigen.tuxfamily.org/">Eigen</a> is a modern C++ library for linear algebra.
+       A recent version is bundled in ./external/eigen.tar.gz; it will be unpacked if needed (this library is headers-only
+       and does not need to be compiled).
+  -    <a href="http://www.boost.org/">Boost</a> is a collection of modern C++ libraries. A recent version is bundled
+       in ./external/boost*.tar.bz2; it will be built regardless of whether there is one is installed, since usability of Boost
+       depends heavily on compiler.
+  -    <a href="http://www.psicode.org/">Psi3</a> is the old generation of Psi code. Psi3 is bundled in ./external/psi3.tar.gz
+       and will be compiled if needed. <b>NOTE:</b> Psi4 does not work with MPQC.
+  -    <a href="http://www.hdfgroup.org/HDF5/">HDF5</a> is a high-performance data format library. It will be downloaded
+       and built only if not found on the system.
 
 \section compileconf Configuration
 
@@ -84,12 +99,7 @@ Typically, this directory is named to indicate the architecture
 directory below.
 
  A <tt>configure</tt> script is used to prepare MPQC for compilation.
-Release tarballs of MPQC contain a prepared configure script.  Users
-checking out code from the MPQC subversion repository must generate a
-<tt>configure</tt> script by running <tt>make configure</tt> in the
-top-level source directory.
-
- In the target directory execute the <tt>configure</tt> command which is
+In the target directory execute the <tt>configure</tt> command which is
 located in the source directory.  Use the absolute pathname to the
 configure script.  This command should build a hierarchy of target
 directories and the necessary makefiles. Do a <tt>configure --help</tt> to
@@ -112,10 +122,9 @@ hence most, if not all, prerequisites will be checked and built, if needed.
 </dl>
 
   If you would like to further customize your target directory,
-you can edit <tt>src/lib/mpqc_config.h</tt> and <tt>lib/LocalMakefile</tt> to
-suit your needs.  The next time you run configure, these files and
+you can edit <tt>src/lib/mpqc_config.h</tt> to
+suit your needs.  The next time you run configure, this files and
 all the makefiles will be overwritten.
-
 
 @section Compilers Compilers
    
@@ -156,8 +165,8 @@ all the makefiles will be overwritten.
    
    @subsection LibrariesMath BLAS/LAPACK Math Libraries
 
-   CMake will try to find BLAS/LAPACK autoomatically.
-   If it fails, a Netlib Lapack will be built and used.
+   CMake will try to find BLAS/LAPACK automatically.
+   If it fails, a Netlib Lapack will be built and used (this is NOT recommended).
    You can also specify BLAS/LAPACK libraries with \c --lapack option.
 
    BLAS/LAPACK libraries have \c INTEGER types that do not necessarily map to

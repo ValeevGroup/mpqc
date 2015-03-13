@@ -38,6 +38,10 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
+#ifdef MPQC_NEW_FEATURES
+#include <util/misc/xml.h>
+#endif // MPQC_NEW_FEATURES
+
 
 namespace sc {
 
@@ -57,12 +61,12 @@ class Wavefunction: public MolecularEnergy {
   protected:
     ResultRefSCMatrix natural_orbitals_;
     ResultRefDiagSCMatrix natural_density_;
+    Ref<GaussianBasisSet> gbs_;
 
   private:
     double * bs_values;
     double * bsg_values;
 
-    Ref<GaussianBasisSet> gbs_;
     Ref<Integral> integral_;
 
     Ref<GaussianBasisSet> atom_basis_;
@@ -175,6 +179,9 @@ class Wavefunction: public MolecularEnergy {
     virtual ~Wavefunction();
 
     void save_data_state(StateOut&);
+#ifdef MPQC_NEW_FEATURES
+    virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif
 
     double density(const SCVector3&);
     double density_gradient(const SCVector3&,double*);

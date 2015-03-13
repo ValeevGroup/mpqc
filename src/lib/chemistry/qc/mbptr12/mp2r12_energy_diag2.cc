@@ -712,7 +712,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
 
         // Start computing MP2 B coupling
         //  1) compute A^i(spin1)j(spin2)_a(spin1)b(spin2)
-        //     = -C^ij_ab / (e_i + e_j - e_a -e_b)
+        //     = C^ij_ab / (e_i + e_j - e_a -e_b)
         //  2) B_coupling = A^ij_ab C^ab_ij
         if (debug_ >= DefaultPrintThresholds::N2)
           ExEnv::out0() << endl << indent << spinletters << "  MP2 B coupling:"

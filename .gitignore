@@ -3,3 +3,5 @@
 CMakeCache.txt
 cmake_install.cmake
 install_manifest.txt
+src/lib/chemistry/qc/scf/cadf_attic.h
+.settings

@@ -172,6 +172,8 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 									));
   }
 
+  gf2_orbital_ = keyval->intvalue("gf2_orbital", KeyValValueint(0));
+
   r12eval_ = 0;
   r12a_energy_ = 0;
   r12ap_energy_ = 0;
@@ -275,6 +277,16 @@ MBPT2_R12::compute()
   ExEnv::out0() << "switched off integral check in mbptr12.cc/compute" << endl;
 
   compute_energy_();
+
+  if (r12eval()->compute_1rdm()) {
+#if defined(MPQC_NEW_FEATURES)
+    ExEnv::out0() << indent << "Compute MP2-F12 one-electron properties" << std::endl;
+    r12eval()->compute_TA_mp2f12_1rdm();
+#else
+    throw FeatureNotImplemented("F12 property code requires TiledArray. Recompile MPQC with TA support.",
+                                __FILE__, __LINE__);
+#endif
+  }
 
 #define TESTING_PSV 1
 #if TESTING_PSV

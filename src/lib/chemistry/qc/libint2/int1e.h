@@ -106,7 +106,7 @@ class Int1eLibint2: public RefCount {
                                            double PC[3], double gamma, int iang, int jang);
     void OI_OSrecurs_(double **OIX, double **OIY, double **OIZ, double PA[3], double PB[3],
 		      double gamma, int lmaxi, int lmaxj);
-    typedef ::libint2::FmEval_Chebyshev3 _FmEvalType;
+    typedef ::libint2::FmEval_Taylor<double,7> _FmEvalType;
     typedef CoreIntsEngine<_FmEvalType>::Engine FmEvalType;
     Ref<FmEvalType> Fm_Eval_;
     double* Fm_table_;

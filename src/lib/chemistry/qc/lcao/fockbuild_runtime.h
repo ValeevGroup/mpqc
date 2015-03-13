@@ -43,6 +43,9 @@ namespace sc {
   /// Build Fock matrices using some combination of FockBuilder objects
   class FockBuildRuntime : virtual public SavableState {
     public:
+
+      typedef RefSCMatrix ResultType;
+
       FockBuildRuntime(const Ref<OrbitalSpaceRegistry>& oreg,
                        const Ref<AOSpaceRegistry>& aoreg,
                        const Ref<GaussianBasisSet>& refbasis,
@@ -67,7 +70,7 @@ namespace sc {
           key must be in format recognized by ParsedOneBodyIntKey.
           If this key is not known, the matrix will be computed by an appropriate FockMatrixBuild object.
         */
-      RefSCMatrix get(const std::string& key);   // non-const: can add transforms
+      ResultType get(const std::string& key);   // non-const: can add transforms
 
       const Ref<Integral>& integral() const { return integral_; }
       const Ref<MessageGrp>& msg() const { return msg_; }

@@ -22,16 +22,19 @@ if (HAVE_MADNESS)
   list(APPEND utilobjects madness)
 endif()
 
+if (HAVE_ELEMENTAL)
+  list(APPEND utilobjects elemental)
+endif()
+
 add_mpqc_library(util ${utilobjects})
 install(TARGETS util DESTINATION lib)
 
-if (HAVE_MADNESS)
-  target_link_libraries(util ${MADNESS_LIBRARIES})
-endif()
-
-if (HAVE_MPI)
-  target_link_libraries(util ${MPI_LIBRARIES})
-endif()
+target_link_libraries(util ${MADNESS_LIBRARIES})
+target_link_libraries(util ${ELEMENTAL_LIBRARIES})
+target_link_libraries(util ${MPI_LIBRARIES})
+target_link_libraries(util ${Boost_LIBRARIES})
+target_link_libraries(util ${ARMCI_LIBRARIES})
+target_link_libraries(util ${Threads_LIBRARIES})
 
 # N.B. dlopen dependencies
 target_link_libraries(util ${CMAKE_DL_LIBS})

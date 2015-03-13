@@ -27,11 +27,15 @@
 
 #include <math.h>
 
+#include <util/misc/consumableresources.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/blkiter.h>
 #include <math/scmat/elemop.h>
+#ifdef MPQC_NEW_FEATURES
+#  include <util/misc/xmlwriter.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -136,6 +140,27 @@ SCMatrix::save(StateOut&s)
         }
     }
 }
+
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+SCMatrix::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("SCMatrix", ptree());
+  my_tree.put("<xmlattr>.nrow", nrow());
+  my_tree.put("<xmlattr>.ncol", ncol());
+  ptree& data_tree = my_tree.add_child("data", ptree());
+  double* data = allocate<double>(nrow()*ncol());
+  this->convert(data);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, nrow()*ncol());
+  return my_tree;
+}
+#endif // MPQC_NEW_FEATURES
 
 void
 SCMatrix::restore(StateIn& s)
@@ -482,6 +507,28 @@ SymmSCMatrix::save(StateOut&s)
         }
     }
 }
+
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+SymmSCMatrix::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("SymmSCMatrix", ptree());
+  my_tree.put("<xmlattr>.n", n());
+  my_tree.put("<xmlattr>.lower_triangle", true);
+  ptree& data_tree = my_tree.add_child("data", ptree());
+  long ndata = n() * (n()+1) / 2;
+  double* data = allocate<double>(ndata);
+  this->convert(data);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, ndata);
+  return my_tree;
+}
+#endif // MPQC_NEW_FEATURES
 
 void
 SymmSCMatrix::restore(StateIn& s)
@@ -837,6 +884,26 @@ DiagSCMatrix::save(StateOut&s)
     }
 }
 
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+DiagSCMatrix::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("DiagSCMatrix", ptree());
+  my_tree.put("<xmlattr>.n", n());
+  ptree& data_tree = my_tree.add_child("data", ptree());
+  double* data = allocate<double>(n());
+  this->convert(data);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, n());
+  return my_tree;
+}
+#endif // MPQC_NEW_FEATURES
+
 void
 DiagSCMatrix::restore(StateIn& s)
 {
@@ -992,6 +1059,8 @@ SCVector::save(StateOut&s)
       s.put(get_element(i));
     }
 }
+
+
 
 void
 SCVector::restore(StateIn& s)

@@ -637,9 +637,10 @@ class  Ref  : public RefBase {
     /// Print a warning concerning the reference.
     void warn(const char*s) const { RefBase::warn(s); }
 
-  protected:
     /// Return !null().
     bool nonnull() const { return !null(); }
+
+  protected:
 };
 
 template <class T>

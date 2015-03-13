@@ -31,10 +31,15 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include <chrono>
 #include <mpqc_config.h>
 #include <util/class/class.h>
 
 namespace sc {
+
+#if MPQC_NEW_FEATURES
+class MultiThreadTimer;
+#endif
 
 /** TimedRegion is a helper class for RegionTimer. */
 class TimedRegion {
@@ -58,6 +63,7 @@ class TimedRegion {
     ~TimedRegion();
     const char *name() const { return name_; }
     TimedRegion *findinsubregion(const char *);
+    void acquire_subregion(TimedRegion*);
     void cpu_enter(double);
     void wall_enter(double);
     void flops_enter(double);
@@ -88,6 +94,11 @@ class TimedRegion {
     void get_cpu_times(double *);
     void get_flops(double *);
     void get_depth(int *, int depth = 0);
+
+#if MPQC_NEW_FEATURES
+    friend class MultiThreadTimer;
+#endif
+    friend class RegionTimer;
 };
 
 /** The RegionTimer class is used to record the time spent in a section of
@@ -135,13 +146,25 @@ class RegionTimer: public DescribedClass {
     void get_flops(double *) const;
     void get_depth(int *) const;
 
-    double get_wall_time() const;
-    double get_cpu_time() const;
-    double get_flops() const;
+    /// @return the time reported by the system clock (the number of seconds since Epoch)
+    /// @note precision is about a microsecond or less (see documentation for \c gettimeofday ).
+    static double get_wall_time();
+    /// @return the CPU time (in seconds) used by this process, as reported by \c getrusage
+    static double get_cpu_time();
+    static double get_flops();
+
+#ifdef MPQC_NEW_FEATURES
+    /// @return the time_point object for this moment in time
+    static std::chrono::time_point<std::chrono::high_resolution_clock>
+    get_time_point();
+#endif
 
     void add_wall_time(const char *, double);
     void add_cpu_time(const char *, double);
     void add_flops(const char *, double);
+
+    /// Add r as a subregion of current_.  After invocation, r is owned by this RegionTimer
+    void acquire_timed_region(TimedRegion* r);
 
     static RegionTimer *default_regiontimer();
     static void set_default_regiontimer(const Ref<RegionTimer> &);
@@ -230,6 +253,10 @@ class Timer {
     double flops(const char *region) const;
     double flops(const std::string &region) const { return flops(region.c_str()); }
     //@}
+
+#if MPQC_NEW_FEATURES
+    void insert(const MultiThreadTimer& timer);
+#endif
 };
 
 }

@@ -35,7 +35,7 @@
 #include <chemistry/qc/libint2/obintlibint2.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>
 
-#include <libint2/libint2.h>
+#include <libint2.h>
 #if LIBINT2_SUPPORT_ERI
 #  include <chemistry/qc/libint2/tbosar.h>
 #  include <chemistry/qc/libint2/g12nc.h>

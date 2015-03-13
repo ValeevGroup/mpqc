@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <string>
 #include <util/misc/exception.h>
 #include <util/misc/exenv.h>
 
@@ -37,6 +38,14 @@ using namespace sc;
 Exception::Exception(const char *description,
                      const char *file,
                      int line) MPQC__NOEXCEPT:
+  std::runtime_error(
+    std::string(description ? description :
+        (file ? "exception at "
+          : "(no description or file information given for Exception)"
+        ))
+    + std::string(description ? (file ? ", at " : "") : "")
+    + std::string(file ? (std::string(file) + ":" + to_string(line)) : "")
+  ),
   description_(description),
   file_(file),
   line_(line)
@@ -44,6 +53,7 @@ Exception::Exception(const char *description,
 }
 
 Exception::Exception(const Exception& ref) MPQC__NOEXCEPT:
+    std::runtime_error(ref.what()),
     description_(ref.description_),
     file_(ref.file_),
     line_(ref.line_)
@@ -56,23 +66,23 @@ Exception::~Exception() MPQC__NOEXCEPT
   catch(...) {}
 }
 
-const char* 
-Exception::what() const MPQC__NOEXCEPT
-{
-  try {
-      std::ostringstream oss;
-      if (description_) {
-        oss << "Exception: " << description_ << std::endl;
-      }
-      if (file_) {
-        oss   << "Exception: location = " << file_ << ":" << line_ << std::endl;
-      }
-      if (description_ || file_)
-        return oss.str().c_str();
-      else
-        return "";
-    }
-  catch (...) {}
+//const char*
+//Exception::what() const MPQC__NOEXCEPT
+//{
+//  try {
+//      std::ostringstream oss;
+//      if (description_) {
+//        oss << "Exception: " << description_ << std::endl;
+//      }
+//      if (file_) {
+//        oss   << "Exception: location = " << file_ << ":" << line_ << std::endl;
+//      }
+//      if (description_ || file_)
+//        return oss.str().c_str();
+//      else
+//        return "No description or file information given for Exception";
+//    }
+//  catch (...) {}
 
-  return "No information available for Exception";
-}
+//  return "No information available for Exception";
+//}

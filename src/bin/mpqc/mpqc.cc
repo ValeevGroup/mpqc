@@ -923,31 +923,37 @@ try_main(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
-  try {
+  //try {
     try_main(argc, argv);
-  }
-  catch (SCException &e) {
-    cout << argv[0] << ": ERROR: SC EXCEPTION RAISED:" << endl
-         << e.what()
-         << endl;
-    throw;
-  }
-  catch (bad_alloc &e) {
-    cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl
-         << e.what()
-         << endl;
-    throw;
-  }
-  catch (exception &e) {
-    cout << argv[0] << ": ERROR: EXCEPTION RAISED:" << endl
-         << e.what()
-         << endl;
-    throw;
-  }
-  catch (...) {
-    cout << argv[0] << ": ERROR: UNKNOWN EXCEPTION RAISED" << endl;
-    throw;
-  }
+  //}
+  //catch (sc::Exception &e) {
+  //  cout << argv[0] << ": ERROR: SC EXCEPTION RAISED:" << endl;
+  //  cout << e.what() << endl;
+  //  cout.flush();
+  //  throw;
+  //}
+  //catch (SCException &e) {
+  //  cout << argv[0] << ": ERROR: SC EXCEPTION RAISED:" << endl;
+  //  cout << e.what() << endl;
+  //  cout.flush();
+  //  throw;
+  //}
+  //catch (bad_alloc &e) {
+  //  cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl
+  //       << e.what()
+  //       << endl;
+  //  throw;
+  //}
+  //catch (exception &e) {
+  //  cout << argv[0] << ": ERROR: EXCEPTION RAISED:" << endl;
+  //  cout << e.what() << endl;
+  //  cout.flush();
+  //  throw;
+  //}
+  //catch (...) {
+  //  cout << argv[0] << ": ERROR: UNKNOWN EXCEPTION RAISED" << endl;
+  //  throw;
+  //}
   return 0;
 }
 

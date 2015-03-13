@@ -127,13 +127,18 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   q_Z_ = atominfo_->string_to_Z("Q");
 
   if (input->exists("file")) {
+    std::string filename = input->stringvalue("file");
+    geometry_units_ = new Units("angstrom");
 #ifdef HAVE_OPENBABEL2
     // use OpenBabel2
-    geometry_units_ = new Units("angstrom");
-    std::string filename = input->stringvalue("file");
     read_openbabel2(filename.c_str());
 #else
-    throw InputError("Keyword \"file\" given but this copy of MPQC does not include OpenBabel2",
+    // if .xyz, use native xyz reader
+    if (filename.rfind(".xyz") != std::string::npos) {
+      read_xyz(filename.c_str());
+    }
+    else // without OpenBABEL can only read xyz files ... buhbye
+      throw InputError("Keyword \"file\" given but this copy of MPQC does not include OpenBabel2",
                      __FILE__, __LINE__);
 #endif // HAVE_OPENBABEL2
   }
@@ -1040,8 +1045,8 @@ Molecule::cleanup_molecule(double tol)
                 }
             }
           if (!found) {
-              SCException ex("cleanup: couldn't find atom",
-                             __FILE__, __LINE__, class_desc());
+              AlgorithmException ex("cleanup_molecule: couldn't find atom",
+                                    __FILE__, __LINE__, class_desc());
               try {
                   ex.elaborate()
                       << "couldn't find atom at " << np << endl
@@ -1323,6 +1328,27 @@ Molecule::any_atom_has_label() const {
    }
    return false;
 }
+
+#ifdef MPQC_NEW_FEATURES
+boost::property_tree::ptree&
+Molecule::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& child = parent.add_child("Molecule", ptree());
+  child.put("natom", natom());
+  child.put("units", geometry_units()->string_rep());
+  for(int iatom = 0; iatom < natom(); ++iatom){
+    // This is a hack since atom doesn't have an index attribute yet...
+    ptree& atom_parent = child.add_child("atom", ptree());
+    atom_parent.put("<xmlattr>.index", iatom);
+    atoms_[iatom].write_xml(atom_parent, writer);
+  }
+  return child;
+}
+#endif // MPQC_NEW_FEATURES
 
 bool sc::operator ==(const Molecule& mol1, const Molecule& mol2) {
   if (mol1.natom() != mol2.natom())

@@ -29,7 +29,7 @@
 #define MPQC_INTERFACES_PURIFICATION_HPP
 
 #include <mpqc/math/matrix.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <array>
 
 namespace mpqc {

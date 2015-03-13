@@ -32,9 +32,13 @@
 #ifndef _mpqc_src_lib_util_madness_world_h
 #define _mpqc_src_lib_util_madness_world_h
 
-#include <world/worldfwd.h>
+#include <madness/world/worldfwd.h>
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
+
+#ifdef MADNESS_HAS_ELEMENTAL
+#include <elemental.hpp>
+#endif // MADNESS_HAS_ELEMENTAL
 
 namespace mpqc {
 
@@ -62,11 +66,14 @@ namespace mpqc {
       const madness::World* madworld() const { return world_; }
       madness::World* madworld() { return world_; }
 
+
     private:
       static sc::ClassDesc class_desc_;
 
       std::string key_;
       madness::World* world_;
+
+
   };
 
 } // end of namespace sc

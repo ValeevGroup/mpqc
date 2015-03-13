@@ -34,6 +34,12 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/wfn/rdm.h>
 
+
+#if defined(MPQC_NEW_FEATURES)
+#include <chemistry/qc/mbptr12/sr_r12intermediates.h>
+#include <chemistry/qc/mbptr12/singles_casscf.h>
+#endif
+
 namespace sc {
 
   /// SpinOrbitalPT2R12: a universal second-order R12 correction
@@ -98,6 +104,7 @@ namespace sc {
       Ref< RDM<One> > rdm1_;
       Ref<R12IntEval> r12eval_;
       Ref<R12WavefunctionWorld> r12world_;
+
       unsigned int nfzc_;
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
@@ -230,7 +237,7 @@ namespace sc {
           <tr><td><tt>cabs_singles</tt><td>boolean<td>true<td>if set to true, compute 2nd-order
           CABS singes correction.
 
-          <tr><td><tt>cabs_singles_h0</tt><td>string<td>dyall_1<td> the other options include dyall_2/complete/CI.
+          <tr><td><tt>cabs_singles_h0</tt><td>string<td>fock<td> the other options include dyall_2/complete/CI.
           dyall_1 uses Fock operator as H(1); dyall_2 includes both 1- and 2-particle operator in H(1), thus
           more complete; 'complete' refers to the partition that all operators inducing (real and pseudo) one-partilce
           occ->CABS transition are taken as H(1) while the other operators are classified as H(0); CI refers
@@ -276,6 +283,8 @@ namespace sc {
       unsigned int nfzc_;
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
+
+#if defined(MPQC_NEW_FEATURES)
       bool cabs_singles_;
       std::string cabs_singles_h0_; // specify zeroth order H; options: 'CI'
                                      // 'dyall_1', 'dyall_2', 'complete'; '1' and '2'
@@ -284,8 +293,8 @@ namespace sc {
                                      // in H(1).
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
-#if defined(HAVE_MPQC3_RUNTIME)
       bool use_mpqc3_;   // if set to true, then use MPQC3 runtime
+      std::shared_ptr<CABS_Single> CABS_Single_;
 #endif
       bool rotate_core_; // if set to false, when doing rasscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in
                          // first-order Hamiltonian. (this may be used when using frozen core orbitals which
@@ -362,10 +371,10 @@ namespace sc {
       RefSymmSCMatrix hcore_mo();
       /// molecular integrals in chemist's notation
       RefSCMatrix moints();
-      /// This returns <space1 space2 || space1 space2>
+      /// This returns <space1 space2 | space1 space2>
       RefSCMatrix g(const Ref<OrbitalSpace>& space1,
                     const Ref<OrbitalSpace>& space2);
-      /// This returns <bra1 bra2 || ket1 ket2>
+      /// This returns <bra1 bra2 | ket1 ket2>
       RefSCMatrix g(const Ref<OrbitalSpace>& bra1,
                     const Ref<OrbitalSpace>& bra2,
                     const Ref<OrbitalSpace>& ket1,
@@ -391,6 +400,57 @@ namespace sc {
 
       /// @return the {[2]_R12,reference} pair of energies computed using the MPQC3 runtime
       std::pair<double,double> energy_PT2R12_projector2_mpqc3();
+#if defined(MPQC_NEW_FEATURES)
+      // r12 intermediates are computed by this engine
+      std::shared_ptr< SingleReference_R12Intermediates<double> > srr12intrmds_;
+
+      /// boots up r12 intermediates engine
+      void bootup_mpqc3();
+      /// shuts down r12 intermediates engine
+      void shutdown_mpqc3();
+
+      /// shortcuts to engine methods
+      auto _Tg(const std::string& key) -> decltype(srr12intrmds_->_Tg(key)) {
+        return srr12intrmds_->_Tg(key);
+      }
+      auto _4(const std::string& key) -> decltype(srr12intrmds_->_4(key)) {
+        return srr12intrmds_->_4(key);
+      }
+      auto _2(const std::string& key) -> decltype(srr12intrmds_->_2(key)) {
+        return srr12intrmds_->_2(key);
+      }
+      auto V_sf(bool b) -> decltype(srr12intrmds_->V_spinfree(b)) {
+        return srr12intrmds_->V_spinfree(b);
+      }
+      auto X_sf(bool b) -> decltype(srr12intrmds_->X_spinfree(b)) {
+        return srr12intrmds_->X_spinfree(b);
+      }
+      auto B_sf(bool b) -> decltype(srr12intrmds_->B_spinfree(b)) {
+        return srr12intrmds_->B_spinfree(b);
+      }
+
+      /// variant of _4() that returns an array, not expression
+      SingleReference_R12Intermediates<double>::TArray4d __4(const std::string& key) {
+        SingleReference_R12Intermediates<double>::TArray4d result;
+
+        ParsedTwoBodyFourCenterIntKey pkey(key);
+        const std::string annotation = pkey.bra1() + "," + pkey.bra2() + "," + pkey.ket1() + "," + pkey.ket2();
+
+        return srr12intrmds_->ijxy(key);
+      }
+
+      /// variant of _2() that returns an array, not expression
+      SingleReference_R12Intermediates<double>::TArray2 __2(const std::string& key) {
+        SingleReference_R12Intermediates<double>::TArray2 result;
+
+        ParsedOneBodyIntKey pkey(key);
+        const std::string annotation = pkey.bra() + "," + pkey.ket();
+
+        return srr12intrmds_->xy(key);
+      }
+
+
+#endif
 
   };
 

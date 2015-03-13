@@ -8,14 +8,14 @@
 
 if (DEFINED BOOST)
 
-  set(Boost_USE_STATIC_LIBS OFF)
+  set(Boost_USE_STATIC_LIBS ON)
   #set(Boost_USE_MULTITHREADED OFF)
   #set(Boost_USE_STATIC_RUNTIME OFF)
 
   set(BOOST_ROOT ${BOOST})
   set(Boost_NO_SYSTEM_PATHS TRUE)
   set(Boost_DETAILED_FAILURE_MSG TRUE)
-  find_package(Boost 1.48 COMPONENTS thread system)
+  find_package(Boost 1.48 COMPONENTS thread system )
   # COMPONENTS thread ${pythonlibs} system
 
   # reset Boost_LIBRARIES
@@ -56,10 +56,11 @@ else()
   set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
   set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
-  #set(BOOST_URL
-  #  http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.bz2)
-  set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost_1_55_0.tar.bz2)
+  set(BOOST_URL
+    http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.bz2)
   set(BOOST_URL_HASH MD5=d6eef4b4cacb2183f2bf265a5a03a354)
+  #set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost_1_57_0.tar.bz2)
+  #set(BOOST_URL_HASH MD5=1be49befbdd9a5ce9def2983ba3e7b76)
 
   message("** Will build Boost from ${BOOST_URL}")
 
@@ -101,11 +102,11 @@ else()
     set (libraries "${libraries},test")
   endif()
 
-  # Check for apple clang 5.1
+  # Check for apple clang (assuming here it's 5.1 or later)
   execute_process( COMMAND ${CMAKE_CXX_COMPILER} --version OUTPUT_VARIABLE clang_full_version_string )
-  string(REGEX MATCH "Apple LLVM version 5.1" APPLECLANG_NEEDS_BOOST_PATCH ${clang_full_version_string})
+  string(REGEX MATCH "Apple LLVM version" APPLECLANG_NEEDS_BOOST_PATCH ${clang_full_version_string})
   if(APPLECLANG_NEEDS_BOOST_PATCH)
-    message(STATUS "Detected Apple Clang 5.1, will patch boost")
+    message(STATUS "Detected recent Apple Clang, will patch boost")
     
     ExternalProject_Add(
       boost

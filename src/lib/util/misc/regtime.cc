@@ -72,6 +72,10 @@ extern "C" {
 }
 #endif
 
+#ifdef MPQC_NEW_FEATURES
+#include <chrono>
+#endif
+
 // AIX 3.2 has broken include files, likewise SunOS
 #if defined(_AIX32) || defined(__sun)
 extern "C" {
@@ -85,6 +89,9 @@ int getrusage (
 #define _util_misc_regtime_cc
 #include <util/misc/timer.h>
 #include <util/misc/scexception.h>
+#ifdef MPQC_NEW_FEATURES
+#include <util/misc/thread_timer.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -238,6 +245,14 @@ TimedRegion::insert_before(const char *name)
 }
 
 void
+TimedRegion::acquire_subregion(TimedRegion* reg)
+{
+  //TimedRegion* subreg = subregions_;
+  //TimedRegion* new_reg = findinsubregion(reg->name_);
+  //new_reg->merge(reg);
+}
+
+void
 TimedRegion::cpu_enter(double t)
 {
   cpu_enter_ = t;
@@ -370,7 +385,7 @@ RegionTimer::reset()
 }
 
 double
-RegionTimer::get_cpu_time() const
+RegionTimer::get_cpu_time()
 {
 #if defined(HAVE_NX)
   return 0.0;
@@ -384,7 +399,7 @@ RegionTimer::get_cpu_time() const
 }
 
 double
-RegionTimer::get_wall_time() const
+RegionTimer::get_wall_time()
 {
 #if defined(HAVE_NX)
   return dclock();
@@ -395,7 +410,7 @@ RegionTimer::get_wall_time() const
 }
 
 double
-RegionTimer::get_flops() const
+RegionTimer::get_flops()
 {
 #if !HAVE_FLOPS
   return 0.0;
@@ -405,6 +420,14 @@ RegionTimer::get_flops() const
   return (double)counter;
 #endif
 }
+
+#ifdef MPQC_NEW_FEATURES
+std::chrono::time_point<std::chrono::high_resolution_clock>
+RegionTimer::get_time_point()
+{
+  return std::chrono::high_resolution_clock::now();
+}
+#endif
 
 void
 RegionTimer::enter(const char *name)
@@ -761,6 +784,13 @@ RegionTimer::set_default_regiontimer(const Ref<RegionTimer>& t)
   default_regtimer = t;
 }
 
+void
+RegionTimer::acquire_timed_region(TimedRegion* reg)
+{
+  current_->merge(reg);
+
+}
+
 //////////////////////////////////////////////////////////////////////
 // Timer functions
 
@@ -940,6 +970,15 @@ double Timer::wall_time(const char* region) const {
 double Timer::flops(const char* region) const {
   return timer_->flops(region);
 }
+
+#ifdef MPQC_NEW_FEATURES
+void Timer::insert(const MultiThreadTimer& timer) {
+  TimedRegion* reg = timer.make_timed_region();
+  timer_->acquire_timed_region(reg);
+  delete reg;
+  return;
+}
+#endif
 
 //////////////////////////////////////////////////////////////////////
 // Shorthand to manipulate the global region timer

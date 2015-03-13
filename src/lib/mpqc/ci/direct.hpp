@@ -26,7 +26,7 @@ namespace ci {
                      const std::vector<mpqc::range> &local) {
         timer t;
         size_t count = 0;
-        foreach (auto r, local) {
+        BOOST_FOREACH (auto r, local) {
             mpqc::Vector v(r.size());
             F(r) >> v;
             V(r) << v;
@@ -42,7 +42,7 @@ namespace ci {
                       const std::vector<mpqc::range> &local) {
         timer t;
         size_t count = 0;
-        foreach (auto r, local) {
+        BOOST_FOREACH (auto r, local) {
             mpqc::Vector v(r.size());
             V(r) >> v;
             F(r) << v;
@@ -122,7 +122,7 @@ namespace ci {
             {
                 MPQC_PROFILE_LINE;
                 mpqc::Vector g = mpqc::Vector::Zero(M);
-                foreach (auto r, ci.local()) {
+                BOOST_FOREACH (auto r, ci.local()) {
                     mpqc::Vector c(r.size());
                     mpqc::Vector s(r.size());
                     D(r) >> s;

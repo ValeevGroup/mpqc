@@ -32,7 +32,7 @@
 #include <cassert>
 #include <mpqc_config.h>
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
 
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/sr_r12intermediates.h>
@@ -65,6 +65,29 @@ R12IntEval::V_diag_ta() {
   MPQC_ASSERT(this->orbital_registry()->key_exists("A'"));
 
   auto rdm1 = srr12intrmds.rdm1();
+}
+
+void
+R12IntEval::gf2_r12(int orbital) {
+  if (orbital != 0) {
+    SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
+                                                          this->r12world());
+    srr12intrmds.gf2_r12(orbital);
+  }
+}
+
+void
+R12IntEval::compute_TA_mp2f12_1rdm() {
+  SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
+                                                        this->r12world());
+
+  bool vir_cabs_coupling = true; // need CABS singles into vir+CABS? set to true
+  this->compute_emp2_cabs_singles_noncanonical(vir_cabs_coupling);
+  srr12intrmds.set_T1_cabs(this->T1_cabs_[Alpha]);
+
+  MPQC_ASSERT(this->orbital_registry()->key_exists("A'"));
+
+  srr12intrmds.compute_multipole();
 }
 
 void

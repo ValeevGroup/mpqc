@@ -173,6 +173,8 @@ class DistArray4: virtual public SavableState {
 
     const Ref<MessageGrp>& msg() const { return msg_; }
 
+    // return active_
+    bool active() const { return active_; }
 
   private:
     /// Set to nonzero to debug this and derived classes
@@ -192,8 +194,6 @@ class DistArray4: virtual public SavableState {
    protected:
     // return nxy_
     size_t nxy() const { return nxy_; }
-    // return active_
-    bool active() const { return active_; }
     /// total number of tasks
     int ntasks() const { return msg_->n(); }
     /// rank of this task
@@ -220,7 +220,7 @@ Ref<DistArray4> permute23(const Ref<DistArray4>& src);
 */
 Ref<DistArray4> permute34(const Ref<DistArray4>& src);
 
-/** creates an array in which indices 3 and 4 are permuted*/
+/** creates an array in which indices 1 and 2 are permuted*/
 Ref<DistArray4> permute12(const Ref<DistArray4>& src);
 
 

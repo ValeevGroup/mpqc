@@ -18,6 +18,7 @@ endif()
 
 if (MPQC_NEW_FEATURES)
 
+  include(external/Elemental)
   include(external/TiledArray)
   include(external/Python)
   include(external/Boost)

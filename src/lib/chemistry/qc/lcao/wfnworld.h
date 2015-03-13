@@ -34,8 +34,14 @@
 
 namespace sc {
 
+  class XMLWriter;
+
   /** Class WavefunctionWorld describes the environment of a Wavefunction */
-class WavefunctionWorld : virtual public SavableState {
+class WavefunctionWorld : virtual public SavableState
+#ifdef MPQC_NEW_FEATURES
+, virtual public DescribedXMLWritable
+#endif // MPQC_NEW_FEATURES
+{
 
   // change to 0 to use the old set of OrbitalSpace keys
   static const int USE_NEW_ORBITALSPACE_KEYS = 1;
@@ -129,6 +135,10 @@ public:
 
   void save_data_state(StateOut&);
 
+#ifdef MPQC_NEW_FEATURES
+  virtual boost::property_tree::ptree& write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+#endif // MPQC_NEW_FEATURES
+
   /// obsoletes this object
   /// every wavefunction that owns a WavefunctionWorld must call this method when it's obsolete() method is called
   /// @sa Compute::obsolete()
@@ -182,6 +192,11 @@ public:
 
 private:
 
+#ifdef MPQC_NEW_FEATURES
+  void xml_data_local(bool do_integrals, boost::property_tree::ptree& pt, const XMLWriter& writer);
+  void xml_data_nonlocal(bool do_integrals, boost::property_tree::ptree& pt, const XMLWriter& writer);
+#endif // MPQC_NEW_FEATURES
+
   /// whose World is it?
   Wavefunction* wfn_;
   bool df_;                       //!< whether to do density fitting
@@ -193,6 +208,15 @@ private:
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;
+#ifdef MPQC_NEW_FEATURES
+  typedef enum {
+    DFBasis,
+    DFCoefficients,
+    DFIntegralsERI,
+    ExactIntegralsERI
+  } _XMLOutputData;
+  std::vector<_XMLOutputData> out_data_;
+#endif // MPQC_NEW_FEATURES
 
   bool dynamic_;
   double print_percent_;
@@ -200,6 +224,11 @@ private:
   StoreMethod::type ints_method_;
   std::string ints_file_;
   double ints_precision_;
+
+  bool df_local_coulomb_;
+  bool df_local_exchange_;
+  bool exact_diag_J_;
+  bool exact_diag_K_;
 
   /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;

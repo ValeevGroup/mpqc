@@ -37,7 +37,7 @@ mpqc: (
     guess_hessian<FinDispMolecularHessian>: (
       molecule = $:molecule
       only_totally_symmetric = yes
-      eliminate_cubic_terms = no
+      eliminate_quadratic_terms = no
       checkpoint = no
       energy<CLHF>: (
         molecule = $:molecule

@@ -205,7 +205,7 @@ class FinDispMolecularHessian: public MolecularHessian {
       const Ref<PointGroup>& disp_pg() const { return disp_pg_; }
       double disp_size() const { return disp_; }
       bool only_totally_symmetric() const { return only_totally_symmetric_; }
-      bool eliminate_cubic_terms() const { return eliminate_cubic_terms_; }
+      bool eliminate_quadratic_terms() const { return eliminate_quadratic_terms_; }
       bool do_null_displacement() const { return do_null_displacement_; }
       int debug() const { return debug_; }
       bool checkpoint() const { return checkpoint_; }
@@ -217,7 +217,8 @@ class FinDispMolecularHessian: public MolecularHessian {
       double energy_accuracy() const { return energy_accuracy_; }
       int nirrep() const { return disp_pg_->char_table().nirrep(); }
 
-      void set_eliminate_cubic_terms(bool e) { eliminate_cubic_terms_ = e; }
+      void set_eliminate_quadratic_terms(bool e) { eliminate_quadratic_terms_ = e; }
+      void set_disp_size(double s);
       void set_disp_pg(const Ref<PointGroup>& pg) { disp_pg_ = pg; }
       void set_restart(bool r = true) { restart_ = r; }
       void set_checkpoint(bool c = true) { checkpoint_ = c; }
@@ -233,9 +234,9 @@ class FinDispMolecularHessian: public MolecularHessian {
       double disp_;
       // only do the totally symmetric displacements (makes sense if the Hessian is to be used in geometry optimization)
       bool only_totally_symmetric_;
-      // eliminate the cubic terms by doing an extra displacement for
+      // eliminate the quadratic terms in the hessian by doing an extra displacement for
       // each of the totally-symmetric coordinates
-      bool eliminate_cubic_terms_;
+      bool eliminate_quadratic_terms_;
       // use the gradient at the initial geometry to remove first order terms
       // (important if not at equilibrium geometry)
       bool do_null_displacement_;
@@ -393,8 +394,10 @@ class FinDispMolecularHessian: public MolecularHessian {
     Ref<Impl> pimpl_; //<< initliazed lazily
     Ref<MolecularEnergy> mole_init_;   //< pimpl_ is initalized lazily, so this is used to hold the MolecularEnergy object used to initialize the pimpl_
     Ref<Params> params_;
-    bool user_provided_eliminate_cubic_terms_; // default for eliminate_cubic_terms depends on type of Impl ...
+    bool user_provided_eliminate_quadratic_terms_; // default for eliminate_quadratic_terms depends on type of Impl ...
                                                // must know whether the default needs to vary
+
+    void override_default_params(); // override some defaults based on the properties of MolecularEnergy
 
   protected:
 
@@ -441,13 +444,15 @@ class FinDispMolecularHessian: public MolecularHessian {
         hessian will not be complete, but it has enough information
         to use it in a geometry optimization.
 
-        <tr><td><tt>eliminate_cubic_terms</tt><td>boolean<td>see notes<td>
-        If <tt>true</tt>, then cubic terms will be eliminated. If implemented in terms of gradients,
+        <tr><td><tt>eliminate_quadratic_terms</tt><td>boolean<td>see notes<td>
+        If <tt>true</tt>, then contributions to the hessian quadratic in the displacement
+        will be eliminated (i.e. the leading-order errors will be <em>quartic</em> in the displacement).
+        If implemented in terms of gradients,
         this requires that two displacements are done for each totally symmetric
-        coordinate, rather than one. If implementd in terms of energies,
-        this requires twice as many displacements for each force constant regardless
+        coordinate, rather than one. If implemented in terms of energies,
+        this requires twice as many displacements as the standard algorithm for each force constant, regardless
         of its symmetry. If using gradients, the default setting is <tt>true</tt>
-        (in such case seeting this keyword to <tt>false</tt> will produces lower
+        (in such case setting this keyword to <tt>false</tt> will produces lower
         accuracy which will only be sufficient for geometry optimizations).
         If using energies, the default setting is <tt>false</tt>.
         Benchmark calculations should always set this to <tt>true</tt>.
@@ -525,9 +530,9 @@ class FinDispMolecularGradient: public MolecularGradient {
     int checkpoint_;
     // the name of the checkpoint file
     std::string checkpoint_file_;
-    // 2-pt formula for gradient is accurate to O(h^2), i.e. is contaminated by 3rd derivatives
-    // make it O(h^4), i.e. eliminate the cubic terms, by using a 4-pt formula
-    int eliminate_cubic_terms_;
+    // 2-pt formula for gradient is accurate to O(h^2) (contaminated by 3rd derivatives)
+    // make it O(h^4), i.e. eliminate the h^2 terms, by using a 4-pt formula
+    int eliminate_quadratic_terms_;
     // print flag
     int debug_;
     // a basis for the symmetrized cartesian coordinates
@@ -587,8 +592,9 @@ class FinDispMolecularGradient: public MolecularGradient {
         <tr><td><tt>checkpoint</tt><td>boolean<td>false<td>If true,
         checkpoint intermediate data.
 
-        <tr><td><tt>eliminate_cubic_terms</tt><td>boolean<td>false<td>
-        If true, then cubic terms will be eliminated.  This requires
+        <tr><td><tt>eliminate_quadratic_terms</tt><td>boolean<td>false<td>
+        If true, then the terms quadratic in the displacement will be eliminated (i.e. the error
+        in the gradient will be quartic in the displacement size).  This requires
         that four displacements are done for each (totally symmetric)
         coordinate, rather than two.  Setting this to true only makes sense
         for benchmark computations of high precision and should not
@@ -624,160 +630,10 @@ class FinDispMolecularGradient: public MolecularGradient {
     RefSCDimension d3natom() const { return mole_->moldim(); }
 
     void set_desired_accuracy(double acc);
+
+    void set_eliminate_quadratic_terms(bool e) { eliminate_quadratic_terms_ = e; }
+    void set_disp_size(double s);
 };
-
-#if 0
-/** Computes numerical derivatives of a molecular property by finite differences of values
-    (or, if available, lower-order analytic derivatives).
-    This will use the minimum number of displacements, each in the
-    highest possible point group. */
-class MolecularPropertyDerivative: virtual public SavableState {
-  protected:
-    Ref<MolecularEnergy> mole_;
-    // In case molecule must be given in lower symmetry, its actual
-    // symmetry and the symmetry used to compute displacements is this
-    Ref<PointGroup> displacement_point_group_;
-    // The molecule's original point group for restoration at the end.
-    Ref<PointGroup> original_point_group_;
-    // The molecule's original geometry for restoration at the end and
-    //computing displacements.
-    RefSCVector original_geometry_;
-    // the cartesian displacement size in bohr
-    double disp_;
-    // the accuracy for gradient calculations
-    double accuracy_;
-    // the number of completed displacements
-    int ndisp_;
-    // the number of irreps in the displacement point group
-    int nirrep_;
-    // whether or not to attempt a restart
-    int restart_;
-    // the name of the restart file
-    std::string restart_file_;
-    // whether or not to checkpoint
-    int checkpoint_;
-    // the name of the checkpoint file
-    std::string checkpoint_file_;
-    // only do the totally symmetric displacements
-    int only_totally_symmetric_;
-    // eliminate the cubic terms by doing an extra displacement for
-    //each of the totally symmetry coordinates
-    int eliminate_cubic_terms_;
-    // use the gradient at the initial geometry to remove first order terms
-    // (important if not at equilibrium geometry)
-    int do_null_displacement_;
-    // print flag
-    int debug_;
-    // a basis for the symmetrized cartesian coordinates
-    RefSCMatrix symbasis_;
-    // the gradients at each of the displacements
-    RefSCVector *gradients_;
-    /// force computation from energies
-    bool use_energies_;
-
-    void get_disp(int disp, int &irrep, int &index, double &coef);
-    void do_hess_for_irrep(int irrep,
-                           const RefSymmSCMatrix &dhessian,
-                           const RefSymmSCMatrix &xhessian);
-    void init();
-    void restart();
-
-    /// will throw if mole lacks necessary features (e.g. energies); do nothing if mole is null
-    void validate_mole() const;
-
-  public:
-    FinDispMolecularHessian(const Ref<MolecularEnergy>&);
-    /** The FinDispMolecularHessian KeyVal constructor is used to generate a
-        FinDispMolecularHessian object from the input.  It reads the keywords
-        below.
-
-        <table border="1">
-
-        <tr><td>%Keyword<td>Type<td>Default<td>Description
-
-        <tr><td><tt>energy</tt><td>MolecularEnergy<td>none<td>This gives an
-        object which will be used to compute the gradients (or energies) needed to form
-        the hessian.  If this is not specified, the object using
-        FinDispMolecularHessian will, in some cases, fill it in
-        appropriately.  However, even in these cases, it may be desirable
-        to specify this keyword.  For example, this could be used in an
-        optimization to compute frequencies using a lower level of theory.
-
-        <tr><td><tt>debug</tt><td>boolean<td>false<td>If true,
-        print out debugging information.
-
-        <tr><td><tt>point_group</tt><td>PointGroup<td>none<td>
-        The point group to use for generating the displacements.
-
-        <tr><td><tt>restart</tt><td>boolean<td>true<td>If true, and a
-        checkpoint file exists, restart from that file.
-
-        <tr><td><tt>restart_file</tt><td>string
-        <td><em>basename</em><tt>.ckpt.hess</tt><td>The name of
-        the file where checkpoint information is written to or read from.
-
-        <tr><td><tt>checkpoint</tt><td>boolean<td>true<td>If true,
-        checkpoint intermediate data.
-
-        <tr><td><tt>only_totally_symmetric</tt><td>boolean<td>false
-        <td>If true, only follow totally symmetric displacments.  The
-        hessian will not be complete, but it has enough information
-        to use it in a geometry optimization.
-
-        <tr><td><tt>eliminate_cubic_terms</tt><td>boolean<td>true<td>
-        If true, then cubic terms will be eliminated.  This requires
-        that two displacements are done for each totally symmetric
-        coordinate, rather than one.  Setting this to false will reduce
-        the accuracy, but the results will still probably be accurate
-        enough for a geometry optimization.
-
-        <tr><td><tt>do_null_displacement</tt><td>boolean<td>true<td>Run
-        the calculation at the given geometry as well.
-
-        <tr><td><tt>displacement</tt><td>double<td>1.0e-2<td>The size of
-        the displacement in Bohr.
-
-        <tr><td><tt>gradient_accuracy</tt><td>double<td><tt>displacement</tt>
-        / 1000<td>The accuracy to which the gradients will be computed.
-
-        <tr><td><tt>use_energies</tt><td>boolean<td>false<td>Setting to true will
-        force computation from energies.
-
-        </table>
-    */
-    FinDispMolecularHessian(const Ref<KeyVal>&);
-    FinDispMolecularHessian(StateIn&);
-    ~FinDispMolecularHessian();
-    void save_data_state(StateOut&);
-
-    /** These members are used to compute a cartesian hessian from
-        gradients at finite displacements. */
-    RefSymmSCMatrix compute_hessian_from_gradients();
-    int ndisplace() const;
-    int ndisplacements_done() const { return ndisp_; }
-    RefSCMatrix displacements(int irrep) const;
-    void displace(int disp);
-    void original_geometry();
-    void set_gradient(int disp, const RefSCVector &grad);
-    void checkpoint_displacements(StateOut&);
-    void restore_displacements(StateIn&);
-
-    /** This returns the cartesian hessian.  If it has not yet been
-        computed, it will be computed by finite displacements. */
-    RefSymmSCMatrix cartesian_hessian();
-
-    /// Set checkpoint option.
-    void set_checkpoint(int c) { checkpoint_ = c; }
-    /// Return the current value of the checkpoint option.
-    int checkpoint() const { return checkpoint_; }
-
-    void set_energy(const Ref<MolecularEnergy> &energy);
-    MolecularEnergy* energy() const;
-
-    Ref<SCMatrixKit> matrixkit() const { return mole_->matrixkit(); }
-    RefSCDimension d3natom() const { return mole_->moldim(); }
-};
-#endif
 
 /// @}
 // end of addtogroup ChemistryMolecule

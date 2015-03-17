@@ -57,17 +57,17 @@ void serialize(Archive &ar, RowMatrixXd &m, const unsigned int version) {
 
     m.resize(rows, cols);
 
-    ar & boost::serialization::make_array(m.data(), m.size());
+    ar &boost::serialization::make_array(m.data(), m.size());
 }
 
 
 } // serialization
 } // boost
 
-RowMatrixXd read_density_from_file(std::string const &file_name){
+RowMatrixXd read_density_from_file(std::string const &file_name) {
     RowMatrixXd D;
     std::ifstream dfile(file_name.c_str());
-    if(dfile.good()){
+    if (dfile.good()) {
         boost::archive::binary_iarchive ia(dfile, std::ios::binary);
         ia >> D;
         dfile.close();
@@ -102,6 +102,17 @@ int main(int argc, char **argv) {
     }
     auto low_rank_threshold = (argc == 8) ? std::stod(argv[6]) : 1e-7;
     volatile auto debug = (argc == 9) ? std::stoi(argv[7]) : 0;
+    if (world.rank() == 0) {
+        std::cout << "Mol file is " << mol_file << std::endl;
+        std::cout << "D file is " << density_file << std::endl;
+        std::cout << "basis is " << basis_name << std::endl;
+        std::cout << "df basis is " << df_basis_name << std::endl;
+        std::cout << "Using " << bs_nclusters << " bs clusters" << std::endl;
+        std::cout << "Using " << dfbs_nclusters << " dfbs clusters"
+                  << std::endl;
+        std::cout << "low rank threshhold is " << low_rank_threshold
+                  << std::endl;
+    }
 
     TiledArray::SparseShape<float>::threshold(threshold);
     utility::print_par(world, "Sparse threshold is ",
@@ -112,21 +123,51 @@ int main(int argc, char **argv) {
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
     auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
 
-    std::streambuf* cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+    std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
     std::ofstream fout("/dev/null");
     std::cout.rdbuf(fout.rdbuf());
     basis::BasisSet bs{basis_name};
     basis::BasisSet df_bs{df_basis_name};
-    std::cout.rdbuf(cout_sbuf); 
+    std::cout.rdbuf(cout_sbuf);
 
     basis::Basis basis{bs.create_basis(bs_clusters)};
     basis::Basis df_basis{df_bs.create_basis(dfbs_clusters)};
 
-    if(world.rank() == 0){
-        auto D = read_density_from_file(density_file);
-        std::cout << "Density is \n" << D << std::endl;
+    auto tr1 = basis.create_flattend_trange1();
+    auto tr = TA::TiledRange{tr1, tr1};
+
+    auto D_TA = TA::Array<double, 2>(world, tr);
+    auto const &pmap = D_TA.get_pmap();
+    auto beg = pmap->begin();
+    auto end = pmap->end();
+
+    if (world.rank() == 0) {
+        std::cout << "Rank 0\n";
+        for (auto i = 0; i < pmap->size(); ++i) {
+            std::cout << "Owner of " << i << " = "
+                      << pmap->owner(i) << std::endl;
+        }
+        world.gop.send(1, 2, 2.76);
     }
     world.gop.fence();
+    if (world.rank() != 0) {
+        std::cout << "My rank is " << world.rank() << std::endl;
+        for (auto i = 0; i < pmap->size(); ++i) {
+            std::cout << "Owner of " << i << " = "
+                      << pmap->owner(i) << std::endl;
+        }
+        double from_zero;
+        auto is_here = world.gop.recv<double>(0, from_zero);
+        while(is_here.probe()){}
+        std::cout << "Double from 0 = " << from_zero << std::endl;
+    }
 
+    /* if(world.rank() == 0){ */
+    /*     auto D = read_density_from_file(density_file); */
+    /*     std::cout << "Density is \n" << D << std::endl; */
+    /* } */
+    world.gop.fence();
+    
+    madness::finalize();
     return 0;
 }

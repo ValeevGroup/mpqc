@@ -57,7 +57,8 @@ class.
 <dt><tt>grad</tt><dd> This keyword specifies the MolecularGradient object
         that will be used to compute nuclear forces, if they are necessary (i.e. if <tt>opt</tt>
         was given or <tt>do_grad</tt> was set to true. The only useful
-        option at the moment is FinDispMolecularGradient. <b>This keyword will be ignored
+        option at the moment is FinDispMolecularGradient. (see also the <tt>precise_findif</tt> option).
+        <b>This keyword will be ignored
         for mole objects that have analytic gradients
         implemented.</b>
 
@@ -71,6 +72,13 @@ class.
         option at the moment is FinDispMolecularHessian. <b>This keyword
         will be ignored for mole objects that have analytic hessians
         implemented.</b>
+
+<dt><tt>precise_findif</tt><dd> This boolean keyword specifies whether to
+        compute FinDispMolecularGradient and/or FinDispMolecularHessian
+        objects more accurately than normal. The default is false.
+        If true, displacement size \c h will be set to 0.005 bohr, and
+        contributions to the gradient/hessian quadratic in \c h will be eliminated,
+        i.e. they will be accurate to the fourth power of \c h .
 
 <dt><tt>thread</tt><dd> This specifies an object of type ThreadGrp that can
         be used to advantage on shared-memory multiprocessor machines for

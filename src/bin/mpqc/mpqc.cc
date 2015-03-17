@@ -433,6 +433,8 @@ try_main(int argc, char *argv[])
 
   int savestate = keyval->booleanvalue("savestate",truevalue);
 
+  const bool precise_findif = keyval->booleanvalue("precise_findif",falsevalue);
+
   struct stat sb;
   Ref<MolecularEnergy> mole;
   Ref<Optimize> opt;
@@ -614,7 +616,12 @@ try_main(int argc, char *argv[])
            << endl
            << "         Gradient will be computed numerically by finite differences."
            << endl;
-      molgrad = new FinDispMolecularGradient(mole);
+      Ref<FinDispMolecularGradient> fdmolgrad = new FinDispMolecularGradient(mole);
+      if (precise_findif) {
+        fdmolgrad->set_eliminate_quadratic_terms(true);
+        fdmolgrad->set_disp_size(0.005);
+      }
+      molgrad = fdmolgrad;
       have_gradient = true;
     }
 
@@ -770,6 +777,10 @@ try_main(int argc, char *argv[])
         Ref<FinDispMolecularHessian> fdmolhess = new FinDispMolecularHessian(mole);
         fdmolhess->params()->set_restart(restart);
         fdmolhess->params()->set_checkpoint(checkpoint);
+        if (precise_findif) {
+          fdmolhess->params()->set_disp_size(0.005);
+          fdmolhess->params()->set_eliminate_quadratic_terms(true);
+        }
         molhess = fdmolhess;
         xhessian = molhess->cartesian_hessian();
         molhess = 0;

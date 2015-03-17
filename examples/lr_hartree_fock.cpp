@@ -53,7 +53,7 @@ time_and_print_block_sparse(madness::World &world, Pool &&pool,
     });
     auto result = int_timer.apply();
     utility::print_par(world, name, " time = ", int_timer.time(), "\n");
-    print_size_info(result, name);
+    utility::print_size_info(result, name);
     return result;
 }
 
@@ -142,13 +142,13 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "\nComputing Hcore\n");
     decltype(V) H;
     H("i,j") = T("i,j") + V("i,j");
-    print_size_info(H, "Hcore");
+    utility::print_size_info(H, "Hcore");
 
     // Compute intial density
     utility::print_par(world, "\nComputing Density\n");
     auto purifier = pure::make_orthogonal_tr_reset_pure(overlap_inv_sqrt);
     auto D = purifier(H, occupation);
-    print_size_info(D, "D initial");
+    utility::print_size_info(D, "D initial");
 
     // Begin Two electron integrals section.
     auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     auto eri2_sqrt_inv = inv_timer.apply();
     utility::print_par(world, "Eri2 inverse computation time = ",
                        inv_timer.time(), "\n");
-    print_size_info(eri2_sqrt_inv, "Eri2 sqrt inverse");
+    utility::print_size_info(eri2_sqrt_inv, "Eri2 sqrt inverse");
 
     /*
      * Start using Low rank arrays
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
             Xab, integrals::compute_functors::TaToLowRankTensor<3>{
                         low_rank_threshold});
         
-        print_size_info(Xab_lr, "Xab lr");
+        utility::print_size_info(Xab_lr, "Xab lr");
     }
 
     decltype(D) J, K, F;
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
             X_temp, integrals::compute_functors::TaToLowRankTensor<3>{
                         low_rank_threshold});
 
-        print_size_info(X_temp_lr, "X_temp lr");
+        utility::print_size_info(X_temp_lr, "X_temp lr");
         utility::print_par(world, "\n");
 
         K("i,j") = X_temp("X,a,i") * Xab("X,a,j");

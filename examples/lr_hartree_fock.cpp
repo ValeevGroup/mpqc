@@ -256,7 +256,6 @@ int main(int argc, char *argv[]) {
                            " in ", time, " s \n");
     }
 
-
     utility::print_par(world, "Final energy = ", std::setprecision(11),
                        energy + repulsion_energy, "\n");
 

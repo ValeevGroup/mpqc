@@ -37,6 +37,8 @@
 #include "../purification/purification_devel.h"
 #include "../purification/sqrt_inv.h"
 
+#include <ofstream>
+
 using namespace tcc;
 
 template <typename T, unsigned int DIM, typename TileType, typename Policy>
@@ -120,6 +122,8 @@ int main(int argc, char *argv[]) {
     }
 
     { // Compute low rank information for Eri2
+        auto volume = eri2.elements().volume();
+        utility::print_par(world, "Tensor volume = ", volume, "\n");
         auto eri2_lr = TA::to_new_tile_type(
             eri2, integrals::compute_functors::TaToLowRankTensor<2>{
                       low_rank_threshold});
@@ -137,6 +141,7 @@ int main(int argc, char *argv[]) {
         auto inv_lr = TA::to_new_tile_type(
             sqrt_inv, integrals::compute_functors::TaToLowRankTensor<2>{
                           low_rank_threshold});
+
 
         utility::print_par(world, "V^{-1/2} took ", inv_sqrt_timer.time(),
                            " s\n");

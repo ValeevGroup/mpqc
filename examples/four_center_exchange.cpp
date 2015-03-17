@@ -113,10 +113,11 @@ int main(int argc, char *argv[]) {
         operator()(tensor::ShallowTensor<4> const bt) {
             auto const &extent = bt.tensor().extent();
             auto ij = extent[0] * extent[1];
-            auto prange = btas::permute(bt.tensor().range(), {0, 3, 2, 1});
+            auto kl = extent[2] * extent[3];
+            auto prange = btas::permute(bt.tensor().range(), {0, 1, 2, 3});
             remove_ref_const_t<decltype(bt.tensor())> view
                 = btas::make_view(prange, bt.tensor().storage());
-            RowMatrixXd Tile(ij, ij);
+            RowMatrixXd Tile(ij, kl);
             for (auto i = 0; i < Tile.size(); ++i) {
                 auto elem = view[i];
                 *(Tile.data() + i) = elem;

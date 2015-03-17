@@ -43,10 +43,10 @@ using namespace sc;
 // MolecularHessian
 
 static ClassDesc MolecularHessian_cd(
-  typeid(MolecularHessian),"MolecularHessian",1,"public SavableState",
+  typeid(MolecularHessian),"MolecularHessian",2,"public SavableState",
   0, 0, 0);
 
-MolecularHessian::MolecularHessian()
+MolecularHessian::MolecularHessian() : desired_accuracy_(1e-4)
 {
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
@@ -63,6 +63,8 @@ MolecularHessian::MolecularHessian(StateIn&s):
 {
   mol_ << SavableState::restore_state(s);
   d3natom_ << SavableState::restore_state(s);
+  if (s.version(::class_desc<MolecularHessian>()) >= 2)
+    s.get(desired_accuracy_);
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
 
@@ -75,6 +77,7 @@ MolecularHessian::save_data_state(StateOut&s)
 {
   SavableState::save_state(mol_.pointer(),s);
   SavableState::save_state(d3natom_.pointer(),s);
+  s.put(desired_accuracy_);
 }
 
 RefSCDimension
@@ -517,10 +520,10 @@ DiagMolecularHessian::cartesian_hessian()
 // MolecularGradient
 
 static ClassDesc MolecularGradient_cd(
-  typeid(MolecularGradient),"MolecularGradient",1,"public SavableState",
+  typeid(MolecularGradient),"MolecularGradient",2,"public SavableState",
   0, 0, 0);
 
-MolecularGradient::MolecularGradient()
+MolecularGradient::MolecularGradient() : desired_accuracy_(1e-4)
 {
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
@@ -537,8 +540,9 @@ MolecularGradient::MolecularGradient(StateIn&s):
 {
   mol_ << SavableState::restore_state(s);
   d3natom_ << SavableState::restore_state(s);
+  if (s.version(::class_desc<MolecularGradient>()) >= 2)
+    s.get(desired_accuracy_);
   matrixkit_ = SCMatrixKit::default_matrixkit();
-  s.get(desired_accuracy_);
 }
 
 MolecularGradient::~MolecularGradient()

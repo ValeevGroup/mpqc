@@ -1,4 +1,5 @@
 add_custom_target(examples)
+add_custom_target(read_density)
 
 set(sources
     sparse_integral_example.cpp
@@ -37,3 +38,15 @@ target_link_libraries(four_center_exchange
   ${TileClusterChem_LIBRARIES}
 )
 add_dependencies(examples four_center_exchange)
+
+# We need to save the old cmake cxx_flags and append boost include only for this 
+# file.
+set(CMAKE_CXX_FLAGS_ ${CMAKE_CXX_FLAGS}) 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/${USER_BOOST_INCLUDE}")
+add_executable(eri3_with_density_from_disk EXCLUDE_FROM_ALL eri3_with_density_from_disk.cpp) 
+target_link_libraries(eri3_with_density_from_disk 
+  ${TileClusterChem_LIBRARIES}
+  ${USER_BOOST_LIB}
+)
+add_dependencies(read_density eri3_with_density_from_disk)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_}")

@@ -39,22 +39,8 @@
 #include "../purification/sqrt_inv.h"
 #include "../purification/purification_devel.h"
 
-
 using namespace tcc;
 namespace ints = integrals;
-
-template <typename T, unsigned int DIM, typename TileType, typename Policy>
-void print_size_info(TiledArray::Array<T, DIM, TileType, Policy> const &a,
-                     std::string name) {
-    utility::print_par(a.get_world(), "Printing size information for ", name,
-                       "\n");
-
-    auto data = utility::array_storage(a);
-
-    utility::print_par(a.get_world(), "\tFull   = ", data[0], " GB\n",
-                       "\tSparse = ", data[1], " GB\n", "\tLow Rank = ",
-                       data[2], " GB\n");
-}
 
 template <typename Pool, typename Basis, unsigned long DIM, typename Fn>
 TiledArray::Array<double, DIM, typename Fn::TileType, TiledArray::SparsePolicy>
@@ -114,8 +100,12 @@ int main(int argc, char *argv[]) {
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
     auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
 
+    std::streambuf* cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+    std::ofstream fout("/dev/null");
+    std::cout.rdbuf(fout.rdbuf());
     basis::BasisSet bs{basis_name};
     basis::BasisSet df_bs{df_basis_name};
+    std::cout.rdbuf(cout_sbuf); 
 
     basis::Basis basis{bs.create_basis(bs_clusters)};
     basis::Basis df_basis{df_bs.create_basis(dfbs_clusters)};
@@ -132,7 +122,7 @@ int main(int argc, char *argv[]) {
     // Invert overlap
     utility::print_par(world, "\nComputing overlap inverse\n");
     auto overlap_inv_sqrt = pure::inverse_sqrt(S);
-    print_size_info(S, "Overlap inverse sqrt");
+    utility::print_size_info(S, "Overlap inverse sqrt");
 
     // Compute T
     auto kinetic_pool = ints::make_pool(ints::make_1body("kinetic", basis));

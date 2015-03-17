@@ -37,8 +37,6 @@
 #include "../purification/purification_devel.h"
 #include "../purification/sqrt_inv.h"
 
-#include <ofstream>
-
 using namespace tcc;
 
 template <typename T, unsigned int DIM, typename TileType, typename Policy>

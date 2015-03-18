@@ -1,9 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.4.3.  */
+/* A Bison parser, made by GNU Bison 2.7.12-4996.  */
 
-/* Skeleton interface for Bison's Yacc-like parsers in C
+/* Bison interface for Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-   2009, 2010 Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,6 +30,15 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+#ifndef YY_YY_PARSE_TMP_HH_INCLUDED
+# define YY_YY_PARSE_TMP_HH_INCLUDED
+/* Enabling traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int yydebug;
+#endif
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -53,49 +61,49 @@
      T_END_OPT = 270,
      T_CARTESIAN = 271,
      T_INTERNAL = 272,
-     T_REDUNDANT = 273,
-     T_RESTART = 274,
-     T_CHECKPOINT = 275,
-     T_COLON = 276,
-     T_SYMMETRY = 277,
-     T_MEMORY = 278,
-     T_TMPDIR = 279,
-     T_TMPSTORE = 280,
-     T_DEBUG = 281,
-     T_ACCURACY = 282,
-     T_BOHR = 283,
-     T_ANGSTROM = 284,
-     T_FREQUENCIES = 285,
-     T_LINDEP = 286,
-     T_MAXITER = 287,
-     T_SCF = 288,
-     T_UC = 289,
-     T_DOCC = 290,
-     T_SOCC = 291,
-     T_FROZEN_DOCC = 292,
-     T_FROZEN_UOCC = 293,
-     T_ALPHA = 294,
-     T_BETA = 295,
-     T_PCCSD = 296,
-     T_XC = 297,
-     T_GRID = 298,
-     T_RI = 299,
-     T_F12 = 300,
-     T_APP = 301,
-     T_ANSATZ = 302,
-     T_OO_INPUT_KEYWORD = 303,
-     T_STRING = 304,
-     T_BOOL = 305
+     T_CONVERGENCE = 273,
+     T_REDUNDANT = 274,
+     T_RESTART = 275,
+     T_CHECKPOINT = 276,
+     T_COLON = 277,
+     T_SYMMETRY = 278,
+     T_MEMORY = 279,
+     T_TMPDIR = 280,
+     T_TMPSTORE = 281,
+     T_DEBUG = 282,
+     T_ACCURACY = 283,
+     T_BOHR = 284,
+     T_ANGSTROM = 285,
+     T_FREQUENCIES = 286,
+     T_PRECISE_FINDIF = 287,
+     T_LINDEP = 288,
+     T_MAXITER = 289,
+     T_SCF = 290,
+     T_UC = 291,
+     T_DOCC = 292,
+     T_SOCC = 293,
+     T_FROZEN_DOCC = 294,
+     T_FROZEN_UOCC = 295,
+     T_ALPHA = 296,
+     T_BETA = 297,
+     T_PCCSD = 298,
+     T_XC = 299,
+     T_GRID = 300,
+     T_RI = 301,
+     T_F12 = 302,
+     T_APP = 303,
+     T_ANSATZ = 304,
+     T_OO_INPUT_KEYWORD = 305,
+     T_STRING = 306,
+     T_BOOL = 307
    };
 #endif
-
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
 {
-
-/* Line 1685 of yacc.c  */
+/* Line 2053 of yacc.c  */
 #line 28 "parse.yy"
 
   char *str;
@@ -103,9 +111,8 @@ typedef union YYSTYPE
   std::vector<int> *nniv;
   
 
-
-/* Line 1685 of yacc.c  */
-#line 109 "parse.tmp.hh"
+/* Line 2053 of yacc.c  */
+#line 116 "parse.tmp.hh"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -114,4 +121,18 @@ typedef union YYSTYPE
 
 extern YYSTYPE MPQCInylval;
 
+#ifdef YYPARSE_PARAM
+#if defined __STDC__ || defined __cplusplus
+int yyparse (void *YYPARSE_PARAM);
+#else
+int yyparse ();
+#endif
+#else /* ! YYPARSE_PARAM */
+#if defined __STDC__ || defined __cplusplus
+int yyparse (void);
+#else
+int yyparse ();
+#endif
+#endif /* ! YYPARSE_PARAM */
 
+#endif /* !YY_YY_PARSE_TMP_HH_INCLUDED  */

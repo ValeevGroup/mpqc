@@ -14,11 +14,6 @@
 using namespace sc;
 
 #define YY_NO_UNISTD_H
-extern "C" int MPQCInwrap();
-
-#ifndef yywrap
-#  define yywrap MPQCInwrap
-#endif
 
 static inline char *
 cstr(char *yytext)
@@ -47,6 +42,7 @@ qstring \"[^"\n]+\"
 "optimize"      { return T_OPTIMIZE; }
 "gradient"      { return T_GRADIENT; }
 "frequencies"   { return T_FREQUENCIES; }
+"precise_findif" { return T_PRECISE_FINDIF; }
 "yes"           { yylval.i = 1; return T_BOOL; }
 "no"            { yylval.i = 0; return T_BOOL; }
 "charge"        { return T_CHARGE; }
@@ -58,6 +54,7 @@ qstring \"[^"\n]+\"
 "cartesian"     { return T_CARTESIAN; }
 "internal"      { return T_INTERNAL; }
 "redundant"     { return T_REDUNDANT; }
+"convergence"     { return T_CONVERGENCE; }
 "restart"       { return T_RESTART; }
 "checkpoint"    { return T_CHECKPOINT; }
 "tmpstore"      { return T_TMPSTORE; }
@@ -111,7 +108,7 @@ qstring \"[^"\n]+\"
 %%
 
 int
-MPQCInwrap()
+MPQCInFlexLexer::yywrap()
 {
   return 1;
 }

@@ -88,7 +88,7 @@ sc::ToStateOut<EGH>(const EGH& v, StateOut& s, int& count) {
 // FinDispMolecularHessian::Params
 
 ClassDesc FinDispMolecularHessian::Params::class_desc_(
-  typeid(FinDispMolecularHessian::Params),"FinDispMolecularHessian::Params",1,"virtual public SavableState",
+  typeid(FinDispMolecularHessian::Params),"FinDispMolecularHessian::Params",2,"virtual public SavableState",
   create<FinDispMolecularHessian::Params>, create<FinDispMolecularHessian::Params>, create<FinDispMolecularHessian::Params>);
 
 FinDispMolecularHessian::Params::Params()
@@ -97,10 +97,12 @@ FinDispMolecularHessian::Params::Params()
   disp_ = 1.0e-2;
   use_energies_ = false;
   only_totally_symmetric_ = false;
-  // default for eliminate_cubic_terms is overridden by FinDispMolecularHessian
-  eliminate_cubic_terms_ = true;
+  // default for eliminate_quadratic_terms will be overridden by FinDispMolecularHessian
+  // unless user provided eliminate_quadratic_terms
+  user_provided_eliminate_quadratic_terms_ = false;
+  eliminate_quadratic_terms_ = true;
   do_null_displacement_ = true;
-  double desired_accuracy = 1e-4;
+  double desired_accuracy = 1e-5;
   energy_accuracy_ = desired_accuracy*disp_*disp_;
   gradient_accuracy_ = desired_accuracy*disp_;
   checkpoint_ = DEFAULT_CHECKPOINT;
@@ -118,8 +120,8 @@ FinDispMolecularHessian::Params::Params(const Ref<KeyVal>& keyval)
   disp_ = keyval->doublevalue("displacement",KeyValValuedouble(1.0e-2));
   only_totally_symmetric_ = keyval->booleanvalue("only_totally_symmetric",
                                                  KeyValValueboolean(false));
-  // default for eliminate_cubic_terms is overridden by FinDispMolecularHessian
-  eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
+  user_provided_eliminate_quadratic_terms_ = keyval->exists("eliminate_quadratic_terms");
+  eliminate_quadratic_terms_ = keyval->booleanvalue("eliminate_quadratic_terms",
                                                 KeyValValueboolean(true));
   do_null_displacement_ = keyval->booleanvalue("do_null_displacement",
                                                KeyValValueboolean(true));
@@ -147,7 +149,8 @@ FinDispMolecularHessian::Params::Params(StateIn& s)
   disp_pg_ << SavableState::restore_state(s);
   s.get(disp_);
   s.get(only_totally_symmetric_);
-  s.get(eliminate_cubic_terms_);
+  s.get(user_provided_eliminate_quadratic_terms_);
+  s.get(eliminate_quadratic_terms_);
   s.get(do_null_displacement_);
   s.get(energy_accuracy_);
   s.get(gradient_accuracy_);
@@ -169,7 +172,8 @@ FinDispMolecularHessian::Params::save_data_state(StateOut& s)
   SavableState::save_state(disp_pg_.pointer(), s);
   s.put(disp_);
   s.put(only_totally_symmetric_);
-  s.put(eliminate_cubic_terms_);
+  s.put(user_provided_eliminate_quadratic_terms_);
+  s.put(eliminate_quadratic_terms_);
   s.put(do_null_displacement_);
   s.put(energy_accuracy_);
   s.put(gradient_accuracy_);
@@ -183,6 +187,13 @@ void
 FinDispMolecularHessian::Params::set_desired_accuracy(double acc) {
   energy_accuracy_ = acc*disp_*disp_;
   gradient_accuracy_ = acc*disp_;
+}
+
+void
+FinDispMolecularHessian::Params::set_disp_size(double d) {
+  const double base_acc = gradient_accuracy_ / disp_; // extract the accuracy of the hessian (it's displacement-size independent)
+  disp_ = d; // update displacement size
+  set_desired_accuracy(base_acc); // recompute desired accuracy of gradients and energies
 }
 
 /////////////////////////////////////////////////////////////////
@@ -549,8 +560,8 @@ FinDispMolecularHessian::GradientsImpl::ndisplace() const {
   {
     RefSCMatrix dtrans = displacements(0);
     const int n = dtrans.ncol();
-    result += n * (params_->eliminate_cubic_terms() ? 2 : 1);
-    result += (params_->do_null_displacement() && !params_->eliminate_cubic_terms() )? 1 : 0;
+    result += n * (params_->eliminate_quadratic_terms() ? 2 : 1);
+    result += (params_->do_null_displacement() && !params_->eliminate_quadratic_terms() )? 1 : 0;
   }
   // process all nonsymmetric displacements
   if (!params_->only_totally_symmetric()) {
@@ -573,7 +584,7 @@ FinDispMolecularHessian::GradientsImpl::compute_hessian()
 
   // need gradient at reference geometry?
   RefSCVector grad_0;
-  if (params_->do_null_displacement() && !params_->eliminate_cubic_terms()) {
+  if (params_->do_null_displacement() && !params_->eliminate_quadratic_terms()) {
     Displacement empty_disp;
     this->compute_mole(empty_disp);
     grad_0 = values_.find(empty_disp).second.gradient();
@@ -593,7 +604,7 @@ FinDispMolecularHessian::GradientsImpl::compute_hessian()
       grad_i_p = values_.find(disp).second.gradient();
     }
     // gradient at -delta along j
-    if (params_->eliminate_cubic_terms()) {
+    if (params_->eliminate_quadratic_terms()) {
       Displacement disp; disp.push_back(make_pair(i,-1.0));
       this->compute_mole(disp);
       grad_i_m = values_.find(disp).second.gradient();
@@ -609,7 +620,7 @@ FinDispMolecularHessian::GradientsImpl::compute_hessian()
         grad_j_p = values_.find(disp).second.gradient();
       }
       // gradient at -delta along j
-      if (params_->eliminate_cubic_terms()) {
+      if (params_->eliminate_quadratic_terms()) {
         Displacement disp; disp.push_back(make_pair(j,-1.0));
         this->compute_mole(disp);
         grad_j_m = values_.find(disp).second.gradient();
@@ -619,12 +630,12 @@ FinDispMolecularHessian::GradientsImpl::compute_hessian()
       double ncontrib = 2.0;
 
       // gradient at reference geometry
-      if (params_->do_null_displacement() && !params_->eliminate_cubic_terms()) {
+      if (params_->do_null_displacement() && !params_->eliminate_quadratic_terms()) {
         hij -= grad_0(j) + grad_0(i);
       }
 
       // gradients at -delta along i and j
-      if (params_->eliminate_cubic_terms()) {
+      if (params_->eliminate_quadratic_terms()) {
         hij -= grad_i_m(j) + grad_j_m(i);
         ncontrib += 2.0;
       }
@@ -725,9 +736,9 @@ FinDispMolecularHessian::EnergiesImpl::ndisplace() const {
     RefSCMatrix dtrans = displacements(0);
     const int n = dtrans.ncol();
     // diagonal force constants
-    result += (params_->eliminate_cubic_terms() ? 4 : 2) * n;
+    result += (params_->eliminate_quadratic_terms() ? 4 : 2) * n;
     // off-diagonal force constants
-    result += (params_->eliminate_cubic_terms() ? 4 : 2) * n * (n-1) / 2;
+    result += (params_->eliminate_quadratic_terms() ? 4 : 2) * n * (n-1) / 2;
   }
   // process all nonsymmetric displacements
   if (!params_->only_totally_symmetric()) {
@@ -735,9 +746,9 @@ FinDispMolecularHessian::EnergiesImpl::ndisplace() const {
       RefSCMatrix dtrans = displacements(irrep);
       const int n = dtrans.ncol();
       // diagonal force constants
-      result += (params_->eliminate_cubic_terms() ? 2 : 1) * n;
+      result += (params_->eliminate_quadratic_terms() ? 2 : 1) * n;
       // off-diagonal force constants
-      result += (params_->eliminate_cubic_terms() ? 2 : 1) * n * (n-1) / 2;
+      result += (params_->eliminate_quadratic_terms() ? 2 : 1) * n * (n-1) / 2;
     }
   }
   return result;
@@ -784,7 +795,7 @@ FinDispMolecularHessian::EnergiesImpl::compute_hessian()
     const double energy_i_p = e_ii(1,0);
     const double energy_i_m = e_ii(-1,0);
 
-    if (!params_->eliminate_cubic_terms()) {
+    if (!params_->eliminate_quadratic_terms()) {
       dhessian(i,i) = (energy_i_p + energy_i_m - 2.0 * energy_0) / disp_size2;
     }
     else {
@@ -797,7 +808,7 @@ FinDispMolecularHessian::EnergiesImpl::compute_hessian()
 
       Eij e_ij(i, j, *this);
 
-      if (!params_->eliminate_cubic_terms()) {
+      if (!params_->eliminate_quadratic_terms()) {
         dhessian(i,j) = (- e_ij(+1,-1) - e_ij(-1,+1) + e_ij(+1,0) + e_ij(-1,0) + e_ij(0,+1) + e_ij(0,-1) - 2.0 * energy_0) / (2.0 * disp_size2);
       }
       else {
@@ -828,7 +839,7 @@ FinDispMolecularHessian::EnergiesImpl::compute_hessian()
         const double energy_i_p = e_ii(1,0);
         const double energy_i_m = energy_i_p;
 
-        if (!params_->eliminate_cubic_terms()) {
+        if (!params_->eliminate_quadratic_terms()) {
           dhessian(i,i) = (energy_i_p + energy_i_m - 2.0 * energy_0) / disp_size2;
         }
         else {
@@ -841,7 +852,7 @@ FinDispMolecularHessian::EnergiesImpl::compute_hessian()
 
           Eij e_ij(i + coor_offset, j + coor_offset, *this);
 
-          if (!params_->eliminate_cubic_terms()) {
+          if (!params_->eliminate_quadratic_terms()) {
             dhessian(i,j) = (- e_ij(+1,-1) + e_ij(+1,0) + e_ij(0,+1) - energy_0) / (disp_size2);
           }
           else {
@@ -913,22 +924,22 @@ static ClassDesc FinDispMolecularHessian_cd(
   typeid(FinDispMolecularHessian),"FinDispMolecularHessian",1,"public MolecularHessian",
   0, create<FinDispMolecularHessian>, create<FinDispMolecularHessian>);
 
-FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e) :
-    user_provided_eliminate_cubic_terms_(false)
+FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e)
 {
   params_ = new Params;
   //init_pimpl(e);
   mole_init_ = e;
+  if (mole_init_) override_default_params();
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
-  MolecularHessian(keyval), user_provided_eliminate_cubic_terms_(false)
+  MolecularHessian(keyval)
 {
   Ref<MolecularEnergy> e; e << keyval->describedclassvalue("energy");
   params_ = new Params(keyval);
-  user_provided_eliminate_cubic_terms_ = keyval->exists("eliminate_cubic_terms");
   //init_pimpl(e);
   mole_init_ = e;
+  if (mole_init_) override_default_params();
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
@@ -936,7 +947,6 @@ FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
   MolecularHessian(s)
 {
   pimpl_ << SavableState::restore_state(s);
-  s.get(user_provided_eliminate_cubic_terms_);
   mole_init_ = 0;
 }
 
@@ -951,7 +961,6 @@ FinDispMolecularHessian::save_data_state(StateOut&s)
 {
   MolecularHessian::save_data_state(s);
   SavableState::save_state(pimpl_.pointer(),s);
-  s.put(user_provided_eliminate_cubic_terms_);
 }
 
 void
@@ -996,8 +1005,8 @@ FinDispMolecularHessian::cartesian_hessian()
   ExEnv::out0() << indent << "Hessian options: " << endl;
   ExEnv::out0() << indent << "  displacement: " << pimpl_->params()->disp_size()
                << " bohr" << endl;
-  ExEnv::out0() << indent << "  eliminate_cubic_terms: "
-               << (pimpl_->params()->eliminate_cubic_terms() ? "yes" : "no") << endl;
+  ExEnv::out0() << indent << "  eliminate_quadratic_terms: "
+               << (pimpl_->params()->eliminate_quadratic_terms() ? "yes" : "no") << endl;
   ExEnv::out0() << indent << "  only_totally_symmetric: "
                << (pimpl_->params()->only_totally_symmetric() ? "yes" : "no") << endl;
 
@@ -1018,15 +1027,9 @@ FinDispMolecularHessian::init_pimpl(const Ref<MolecularEnergy>& mole) {
   else {
     pimpl_ = 0;
     if (mole->gradient_implemented() && !params_->use_energies()) {
-      // override the default for eliminate_cubic_terms
-      if (user_provided_eliminate_cubic_terms_ == false)
-        params_->set_eliminate_cubic_terms(true);
       pimpl_ = new GradientsImpl(mole, params_);
     }
     else {
-      // override the default for eliminate_cubic_terms
-      if (user_provided_eliminate_cubic_terms_ == false)
-        params_->set_eliminate_cubic_terms(false);
       pimpl_ = new EnergiesImpl(mole, params_);
     }
     pimpl_->init();
@@ -1039,6 +1042,23 @@ FinDispMolecularHessian::set_desired_accuracy(double acc) {
   params_->set_desired_accuracy(acc);
 }
 
+void
+FinDispMolecularHessian::override_default_params()
+{
+  MPQC_ASSERT(params_);
+  MPQC_ASSERT(mole_init_);
+  if (params_->user_provided_eliminate_quadratic_terms() == false) {
+    if (mole_init_->gradient_implemented() && !params_->use_energies()) {
+      // override the default for eliminate_quadratic_terms
+      params_->set_eliminate_quadratic_terms(true);
+    }
+    else {
+      // override the default for eliminate_quadratic_terms
+      params_->set_eliminate_quadratic_terms(false);
+    }
+  }
+}
+
 /////////////////////////////////////////////////////////////////
 // FinDispMolecularGradient
 
@@ -1049,7 +1069,7 @@ static ClassDesc FinDispMolecularGradient_cd(
 FinDispMolecularGradient::FinDispMolecularGradient(const Ref<MolecularEnergy> &e):
   mole_(e)
 {
-  eliminate_cubic_terms_ = 0;
+  eliminate_quadratic_terms_ = 0;
   disp_ = 1.0e-2;
   debug_ = 0;
   energy_accuracy_ = MolecularGradient::desired_accuracy() * disp_;
@@ -1086,8 +1106,8 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<KeyVal>&keyval):
   restart_file_ = keyval->stringvalue("restart_file", def_restart_file);
   checkpoint_ = keyval->booleanvalue("checkpoint", def_checkpoint);
   checkpoint_file_ = keyval->stringvalue("checkpoint_file", def_restart_file);
-  eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
-                                                falsevalue);
+  eliminate_quadratic_terms_ = keyval->booleanvalue("eliminate_quadratic_terms",
+                                                    falsevalue);
 
   energy_accuracy_ = keyval->doublevalue("energy_accuracy",
                                          KeyValValuedouble(MolecularGradient::desired_accuracy() * disp_));
@@ -1209,7 +1229,7 @@ FinDispMolecularGradient::restore_displacements(StateIn& s)
   original_geometry_.restore(s);
 
   s.get(disp_);
-  s.get(eliminate_cubic_terms_);
+  s.get(eliminate_quadratic_terms_);
   s.get(energies_);
 
   if (energies_.size()) {
@@ -1230,7 +1250,7 @@ FinDispMolecularGradient::checkpoint_displacements(StateOut& s)
   original_geometry_.save(s);
 
   s.put(disp_);
-  s.put(eliminate_cubic_terms_);
+  s.put(eliminate_quadratic_terms_);
   s.put(energies_);
 
   if (energies_.size()) {
@@ -1257,18 +1277,18 @@ void
 FinDispMolecularGradient::get_disp(int disp, int &index, double &dispsize)
 {
   int disp_offset = 0;
-  const int ndisp_per_coord = eliminate_cubic_terms_ ? 2 : 1; // number of displacements in each direction for each totally-symmetric coordinate
+  const int ndisp_per_coord = eliminate_quadratic_terms_ ? 2 : 1; // number of displacements in each direction for each totally-symmetric coordinate
   const int ndisp_per_dir = ndisp_per_coord * displacements(0).ncol(); // total number of totally-symmetric displacements in each direction.
 
   // check for +ve totally symmetric displacements
   if (disp < disp_offset + ndisp_per_dir) {
-    dispsize = (eliminate_cubic_terms_ && disp%2 == 1) ? 2.0 : 1.0;  // for 4-pt formula odd displacements are + 2 delta, even are + delta
+    dispsize = (eliminate_quadratic_terms_ && disp%2 == 1) ? 2.0 : 1.0;  // for 4-pt formula odd displacements are + 2 delta, even are + delta
     index = (disp - disp_offset) / ndisp_per_coord;
     return;
     }
   disp_offset += ndisp_per_dir;
   if (disp < disp_offset + ndisp_per_dir) {
-    dispsize = (eliminate_cubic_terms_ && disp%2 == 1) ? -2.0 : -1.0;  // for 4-pt formula odd displacements are + 2 delta, even are + delta
+    dispsize = (eliminate_quadratic_terms_ && disp%2 == 1) ? -2.0 : -1.0;  // for 4-pt formula odd displacements are + 2 delta, even are + delta
     index = (disp - disp_offset) / ndisp_per_coord;
     return;
   }
@@ -1279,7 +1299,7 @@ FinDispMolecularGradient::get_disp(int disp, int &index, double &dispsize)
 int
 FinDispMolecularGradient::ndisplace() const
 {
-  const int ndisp = displacements(0).ncol() * (eliminate_cubic_terms_ ? 4 : 2);
+  const int ndisp = displacements(0).ncol() * (eliminate_quadratic_terms_ ? 4 : 2);
   return ndisp;
 }
 
@@ -1358,7 +1378,7 @@ FinDispMolecularGradient::compute_gradient()
     get_disp(d, coord, dispsize);
     //std::cout << "disp = " << d << "  coord = " << coord << "  dispsize = " << dispsize << "  energy = " << energies_[d] << std::endl;
     double coeff = 0.0;
-    if (!eliminate_cubic_terms_) {
+    if (!eliminate_quadratic_terms_) {
       // 2-pt formula: f' = (f+ - f-)/(2.0 d)
       coeff = (dispsize == 1.0) ? 1.0 : -1.0;
     }
@@ -1371,7 +1391,7 @@ FinDispMolecularGradient::compute_gradient()
     }
     igradient.accumulate_element(coord, coeff * energies_[d]);
   }
-  if (eliminate_cubic_terms_)
+  if (eliminate_quadratic_terms_)
     igradient.scale( (1.0 / 12.0) / disp_);
   else
     igradient.scale(0.5 / disp_);
@@ -1403,8 +1423,8 @@ FinDispMolecularGradient::cartesian_gradient()
                << " bohr" << endl;
   ExEnv::out0() << indent << "  energy_accuracy: "
                << energy_accuracy_ << " au" << endl;
-  ExEnv::out0() << indent << "  eliminate_cubic_terms: "
-               << (eliminate_cubic_terms_==0?"no":"yes") << endl;
+  ExEnv::out0() << indent << "  eliminate_quadratic_terms: "
+               << (eliminate_quadratic_terms_==0?"no":"yes") << endl;
 
   for (int i=ndisplacements_done(); i<ndisplace(); i++) {
     // This produces side-effects in mol
@@ -1443,6 +1463,13 @@ void
 FinDispMolecularGradient::set_desired_accuracy(double acc) {
   MolecularGradient::set_desired_accuracy(acc);
   energy_accuracy_ = acc * disp_;
+}
+
+void
+FinDispMolecularGradient::set_disp_size(double d) {
+  const double base_acc = energy_accuracy_ / disp_; // extract the accuracy of the gradient (it's displacement-size independent)
+  disp_ = d; // update displacement size
+  set_desired_accuracy(base_acc); // recompute desired accuracy of energies
 }
 
 /////////////////////////////////////////////////////////////////////////////

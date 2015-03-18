@@ -426,12 +426,14 @@ try_main(int argc, char *argv[])
   std::string mole_ckpt_file;
   mole_ckpt_file = wfn_file;
 
-  int restart = keyval->booleanvalue("restart",truevalue);
+  const bool restart = keyval->booleanvalue("restart",truevalue);
 
-  int checkpoint = keyval->booleanvalue("checkpoint",truevalue);
-  int checkpoint_freq = keyval->intvalue("checkpoint_freq",KeyValValueint(1));
+  const bool checkpoint = keyval->booleanvalue("checkpoint",truevalue);
+  const bool checkpoint_freq = keyval->intvalue("checkpoint_freq",KeyValValueint(1));
 
-  int savestate = keyval->booleanvalue("savestate",truevalue);
+  const bool savestate = keyval->booleanvalue("savestate",truevalue);
+
+  const bool precise_findif = keyval->booleanvalue("precise_findif",falsevalue);
 
   struct stat sb;
   Ref<MolecularEnergy> mole;
@@ -514,6 +516,8 @@ try_main(int argc, char *argv[])
   const int print_resources = keyval->booleanvalue("print_resources",truevalue);
 
   const int print_timings = keyval->booleanvalue("print_timings",truevalue);
+
+  const double freq_accuracy = keyval->doublevalue("freq_accuracy",KeyValValuedouble(1e-5));
 
   // default value for optimize is true if opt is given, and false if it is not
   const int do_opt = keyval->booleanvalue("optimize", (!opt ? falsevalue : truevalue));
@@ -614,7 +618,12 @@ try_main(int argc, char *argv[])
            << endl
            << "         Gradient will be computed numerically by finite differences."
            << endl;
-      molgrad = new FinDispMolecularGradient(mole);
+      Ref<FinDispMolecularGradient> fdmolgrad = new FinDispMolecularGradient(mole);
+      if (precise_findif) {
+        fdmolgrad->set_eliminate_quadratic_terms(true);
+        fdmolgrad->set_disp_size(0.005);
+      }
+      molgrad = fdmolgrad;
       have_gradient = true;
     }
 
@@ -755,11 +764,20 @@ try_main(int argc, char *argv[])
     if ((opt && ready_for_freq) || !opt) {
       RefSymmSCMatrix xhessian;
       if (mole->hessian_implemented()) { // if mole can compute the hessian, use that hessian
+        // set target accuracy, if not given
+        if (mole->desired_hessian_accuracy_set_to_default())
+          mole->set_desired_hessian_accuracy(freq_accuracy);
+
         xhessian = mole->get_cartesian_hessian();
       }
       else if (molhess) { // else use user-provided hessian
         const bool molhess_needs_mole = (molhess->energy() == 0);
         if (molhess_needs_mole) molhess->set_energy(mole);
+
+        // set target accuracy, if not given
+        if (molhess->desired_accuracy_set_to_default())
+          molhess->set_desired_accuracy(freq_accuracy);
+
         xhessian = molhess->cartesian_hessian();
         if (molhess_needs_mole) molhess->set_energy(0);
       }
@@ -770,7 +788,12 @@ try_main(int argc, char *argv[])
         Ref<FinDispMolecularHessian> fdmolhess = new FinDispMolecularHessian(mole);
         fdmolhess->params()->set_restart(restart);
         fdmolhess->params()->set_checkpoint(checkpoint);
+        if (precise_findif) {
+          fdmolhess->params()->set_disp_size(0.005);
+          fdmolhess->params()->set_eliminate_quadratic_terms(true);
+        }
         molhess = fdmolhess;
+        molhess->set_desired_accuracy(freq_accuracy);
         xhessian = molhess->cartesian_hessian();
         molhess = 0;
       }

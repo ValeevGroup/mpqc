@@ -858,7 +858,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
     madness::World::get_default().gop.fence();
 
   }
-  std::cout << indent << "Delta=" << Delta << std::endl;
+  ExEnv::out0() << indent << "Delta=" << Delta << std::endl;
 
   double eref_recomp = 0.0;
   {

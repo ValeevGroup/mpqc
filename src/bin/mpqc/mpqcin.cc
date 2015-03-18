@@ -27,10 +27,13 @@ MPQCIn::MPQCIn():
   optimize_(0),
   gradient_(0),
   frequencies_(0),
+  precise_findif_(0),
   accuracy_(0),
   lindep_(0),
   opt_type_(T_INTERNAL),
   redund_coor_(0),
+  opt_convergence_(0),
+  freq_accuracy_(0),
   restart_(0),
   checkpoint_(1),
   atom_charge_(0),
@@ -72,6 +75,8 @@ MPQCIn::~MPQCIn()
   if (socc_.val()) free(socc_.val());
   if (accuracy_.val()) free(accuracy_.val());
   if (lindep_.val()) free(lindep_.val());
+  if (opt_convergence_.val()) free(opt_convergence_.val());
+  if (freq_accuracy_.val()) free(freq_accuracy_.val());
   if (debug_.val()) free(debug_.val());
   if (frozen_docc_.val()) free(frozen_docc_.val());
   if (frozen_uocc_.val()) free(frozen_uocc_.val());
@@ -263,6 +268,12 @@ MPQCIn::set_checkpoint(int i)
 }
 
 void
+MPQCIn::set_precise_findif(int i)
+{
+  precise_findif_ = i;
+}
+
+void
 MPQCIn::set_accuracy(char* c)
 {
   accuracy_ = c;
@@ -299,6 +310,18 @@ void
 MPQCIn::set_opt_type(int i)
 {
   opt_type_ = i;
+}
+
+void
+MPQCIn::set_opt_convergence(char* c)
+{
+  opt_convergence_ = c;
+}
+
+void
+MPQCIn::set_freq_accuracy(char* c)
+{
+  freq_accuracy_ = c;
 }
 
 void
@@ -470,6 +493,7 @@ MPQCIn::parse_string(const char *s)
   ostrs << indent << "restart = " << restart_.val() << endl;
   ostrs << indent << "checkpoint = " << checkpoint_.val() << endl;
   ostrs << indent << "savestate = " << checkpoint_.val() << endl;
+  ostrs << indent << "precise_findif = " << precise_findif_.val() << endl;
   IntegralsFactoryType ifactory = IntV3;    // this is set by write_energy_object()
   write_energy_object(ostrs, "mole", method_.val(), 0, optimize_.val(),
                       ifactory);
@@ -491,11 +515,19 @@ MPQCIn::parse_string(const char *s)
       ostrs << indent << "  convergence<MolEnergyConvergence>: (" << endl;
       ostrs << indent << "    cartesian = yes" << endl;
       ostrs << indent << "    energy = $:mpqc:mole" << endl;
+      if (opt_convergence_.val()) {
+        ostrs << indent << "    max_disp = " << opt_convergence_.val() << endl;
+        ostrs << indent << "    max_grad = " << opt_convergence_.val() << endl;
+        ostrs << indent << "    graddisp = " << opt_convergence_.val() << endl;
+      }
       ostrs << indent << "  )" << endl;
       ostrs << indent << ")" << endl;
     }
 
   if (frequencies_.val()) {
+      if (freq_accuracy_.val()) {
+        ostrs << indent << "freq_accuracy = " << freq_accuracy_.val() << endl;
+      }
       ostrs << indent << "freq<MolecularFrequencies>: (" << endl;
       ostrs << indent << "  molecule = $:molecule" << endl;
       ostrs << indent << ")" << endl;

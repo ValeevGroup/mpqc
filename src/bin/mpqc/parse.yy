@@ -33,9 +33,9 @@ int yydebug =1;
 
 %token T_NOT
 %token T_MOLECULE T_MULTIPLICITY T_CHARGE T_METHOD T_BASIS T_AUXBASIS T_DFBASIS T_EQUALS
-%token T_OPTIMIZE T_GRADIENT T_BEG_OPT T_END_OPT T_CARTESIAN T_INTERNAL
+%token T_OPTIMIZE T_GRADIENT T_BEG_OPT T_END_OPT T_CARTESIAN T_INTERNAL T_CONVERGENCE
 %token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_SYMMETRY T_MEMORY T_TMPDIR T_TMPSTORE
-%token T_DEBUG T_ACCURACY T_BOHR T_ANGSTROM T_FREQUENCIES T_LINDEP T_MAXITER
+%token T_DEBUG T_ACCURACY T_BOHR T_ANGSTROM T_FREQUENCIES T_PRECISE_FINDIF T_LINDEP T_MAXITER
 %token T_SCF T_UC
 %token T_DOCC T_SOCC T_FROZEN_DOCC T_FROZEN_UOCC T_ALPHA T_BETA
 %token T_PCCSD
@@ -78,12 +78,14 @@ assignment:     T_MOLECULE T_COLON              { begin_molecule(); }
                                                 { set_optimize($3); }
             |   T_GRADIENT T_COLON bool
                                                 { set_gradient($3); }
-            |   T_FREQUENCIES T_COLON bool
+            |   T_FREQUENCIES T_COLON bool freq_options_list
                                                 { set_frequencies($3); }
             |   T_RESTART T_COLON bool
                                                 { set_restart($3); }
             |   T_CHECKPOINT T_COLON bool
                                                 { set_checkpoint($3); }
+            |   T_PRECISE_FINDIF T_COLON bool
+                                                { set_precise_findif($3); }
             |   T_MEMORY T_COLON string
                                                 { set_memory($3); }
             |   T_TMPSTORE T_COLON string
@@ -138,6 +140,21 @@ optimize_option:
                 T_CARTESIAN                     { set_opt_type(T_CARTESIAN); }
             |   T_INTERNAL                      { set_opt_type(T_INTERNAL); }
             |   T_REDUNDANT                     { set_redund_coor(1); }
+            |   T_CONVERGENCE T_EQUALS string   { set_opt_convergence($3); }
+            ;
+
+freq_options_list:
+                T_BEG_OPT freq_options T_END_OPT
+            |
+            ;
+
+freq_options:
+                freq_options freq_option
+            |
+            ;
+
+freq_option:
+                T_ACCURACY T_EQUALS string   { set_freq_accuracy($3); }
             ;
 
 molecule:       molecule_options_list atoms

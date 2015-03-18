@@ -57,7 +57,8 @@ class.
 <dt><tt>grad</tt><dd> This keyword specifies the MolecularGradient object
         that will be used to compute nuclear forces, if they are necessary (i.e. if <tt>opt</tt>
         was given or <tt>do_grad</tt> was set to true. The only useful
-        option at the moment is FinDispMolecularGradient. <b>This keyword will be ignored
+        option at the moment is FinDispMolecularGradient. (see also the <tt>precise_findif</tt> option).
+        <b>This keyword will be ignored
         for mole objects that have analytic gradients
         implemented.</b>
 
@@ -71,6 +72,22 @@ class.
         option at the moment is FinDispMolecularHessian. <b>This keyword
         will be ignored for mole objects that have analytic hessians
         implemented.</b>
+
+<dt><tt>freq_accuracy</tt><dd> This optional keyword will specify the relative accuracy with which the
+        vibrational frequencies to be computed. This keyword is only used if <tt>do_freq=true</tt>.
+        This specifies the target accuracy with which the hessian of <tt>mole</tt> will be computed.
+        If the hessian is computed analytically, i.e. <tt>mole</tt> object supports analytic computation
+        of the hessian, then this will be used if <tt>mole</tt> object does not have <tt>hessian_accuracy</tt> keyword.
+        If the hessian is computed numerically <em>and</em> <tt>hess</tt> is given explicitly,
+        this will be used if <tt>hess</tt> does not have <tt>accuracy</tt> keyword.
+        The default is <tt>freq_accuracy=1e-5</tt>.
+
+<dt><tt>precise_findif</tt><dd> This boolean keyword specifies whether to
+        compute FinDispMolecularGradient and/or FinDispMolecularHessian
+        objects more accurately than normal. The default is false.
+        If true, displacement size \c h will be set to 0.005 bohr, and
+        contributions to the gradient/hessian quadratic in \c h will be eliminated,
+        i.e. they will be accurate to the fourth power of \c h .
 
 <dt><tt>thread</tt><dd> This specifies an object of type ThreadGrp that can
         be used to advantage on shared-memory multiprocessor machines for
@@ -662,7 +679,7 @@ mpqc: (
     guess_hessian<FinDispMolecularHessian>: (
       molecule = $:molecule
       only_totally_symmetric = yes
-      eliminate_cubic_terms = no
+      eliminate_quadratic_terms = no
       checkpoint = no
       energy<CLHF>: (
         molecule = $:molecule
@@ -742,7 +759,7 @@ mpqc: (
     )
     hessian<FinDispMolecularHessian>: (
       only_totally_symmetric = yes
-      eliminate_cubic_terms = no
+      eliminate_quadratic_terms = no
       checkpoint = no
     )
   )
@@ -1154,7 +1171,7 @@ mpqc: (
     guess_hessian<FinDispMolecularHessian>: (
       molecule = $:molecule
       only_totally_symmetric = yes
-      eliminate_cubic_terms = no
+      eliminate_quadratic_terms = no
       checkpoint = no
       energy<CLHF>: (
         molecule = $:molecule

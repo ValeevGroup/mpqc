@@ -220,7 +220,7 @@ Ref<DistArray4> permute23(const Ref<DistArray4>& src);
 */
 Ref<DistArray4> permute34(const Ref<DistArray4>& src);
 
-/** creates an array in which indices 3 and 4 are permuted*/
+/** creates an array in which indices 1 and 2 are permuted*/
 Ref<DistArray4> permute12(const Ref<DistArray4>& src);
 
 

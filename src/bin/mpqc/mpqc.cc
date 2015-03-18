@@ -517,7 +517,7 @@ try_main(int argc, char *argv[])
 
   const int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
-  const double freq_accuracy = keyval->booleanvalue("freq_accuracy",KeyValValuedouble(1e-5));
+  const double freq_accuracy = keyval->doublevalue("freq_accuracy",KeyValValuedouble(1e-5));
 
   // default value for optimize is true if opt is given, and false if it is not
   const int do_opt = keyval->booleanvalue("optimize", (!opt ? falsevalue : truevalue));

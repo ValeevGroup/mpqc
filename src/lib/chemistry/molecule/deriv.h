@@ -44,7 +44,9 @@ class MolecularEnergy;
     derivatives of the energy with respect to changes in the nuclear
     coordinates. */
 class MolecularHessian: virtual public SavableState {
+    static double desired_accuracy_default_;
     double desired_accuracy_;
+    bool desired_accuracy_set_to_default_;
   protected:
     Ref<Molecule> mol_;
     RefSCDimension d3natom_;
@@ -58,7 +60,7 @@ class MolecularHessian: virtual public SavableState {
         <table border="1">
         <tr><td>%Keyword<td>Type<td>Default<td>Description
         <tr><td><tt>molecule</tt><td>Molecule<td>none<td>The Molecule object.
-        <tr><td><tt>accuracy</tt><td>real<td>1e-4<td>The desired accuracy of the hessian.
+        <tr><td><tt>accuracy</tt><td>real<td>1e-5<td>The desired accuracy of the hessian.
         </table>
     */
     MolecularHessian(const Ref<KeyVal>&);
@@ -106,6 +108,10 @@ class MolecularHessian: virtual public SavableState {
      * @return the desired accuracy
      */
     virtual double desired_accuracy() const;
+    /**
+     * @return whether the desired accuracy was set to default value
+     */
+    bool desired_accuracy_set_to_default() const { return desired_accuracy_set_to_default_; }
 };
 
 

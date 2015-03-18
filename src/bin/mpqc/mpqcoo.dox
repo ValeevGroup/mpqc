@@ -73,6 +73,15 @@ class.
         will be ignored for mole objects that have analytic hessians
         implemented.</b>
 
+<dt><tt>freq_accuracy</tt><dd> This optional keyword will specify the relative accuracy with which the
+        vibrational frequencies to be computed. This keyword is only used if <tt>do_freq=true</tt>.
+        This specifies the target accuracy with which the hessian of <tt>mole</tt> will be computed.
+        If the hessian is computed analytically, i.e. <tt>mole</tt> object supports analytic computation
+        of the hessian, then this will be used if <tt>mole</tt> object does not have <tt>hessian_accuracy</tt> keyword.
+        If the hessian is computed numerically <em>and</em> <tt>hess</tt> is given explicitly,
+        this will be used if <tt>hess</tt> does not have <tt>accuracy</tt> keyword.
+        The default is <tt>freq_accuracy=1e-5</tt>.
+
 <dt><tt>precise_findif</tt><dd> This boolean keyword specifies whether to
         compute FinDispMolecularGradient and/or FinDispMolecularHessian
         objects more accurately than normal. The default is false.

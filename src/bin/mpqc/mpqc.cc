@@ -517,6 +517,8 @@ try_main(int argc, char *argv[])
 
   const int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
+  const double freq_accuracy = keyval->booleanvalue("freq_accuracy",KeyValValuedouble(1e-5));
+
   // default value for optimize is true if opt is given, and false if it is not
   const int do_opt = keyval->booleanvalue("optimize", (!opt ? falsevalue : truevalue));
   if (do_opt && !opt && mole) { // if user requested optimization but no Optimize object given pick a default object
@@ -762,11 +764,20 @@ try_main(int argc, char *argv[])
     if ((opt && ready_for_freq) || !opt) {
       RefSymmSCMatrix xhessian;
       if (mole->hessian_implemented()) { // if mole can compute the hessian, use that hessian
+        // set target accuracy, if not given
+        if (mole->desired_hessian_accuracy_set_to_default())
+          mole->set_desired_hessian_accuracy(freq_accuracy);
+
         xhessian = mole->get_cartesian_hessian();
       }
       else if (molhess) { // else use user-provided hessian
         const bool molhess_needs_mole = (molhess->energy() == 0);
         if (molhess_needs_mole) molhess->set_energy(mole);
+
+        // set target accuracy, if not given
+        if (molhess->desired_accuracy_set_to_default())
+          molhess->set_desired_accuracy(freq_accuracy);
+
         xhessian = molhess->cartesian_hessian();
         if (molhess_needs_mole) molhess->set_energy(0);
       }
@@ -782,6 +793,7 @@ try_main(int argc, char *argv[])
           fdmolhess->params()->set_eliminate_quadratic_terms(true);
         }
         molhess = fdmolhess;
+        molhess->set_desired_accuracy(freq_accuracy);
         xhessian = molhess->cartesian_hessian();
         molhess = 0;
       }

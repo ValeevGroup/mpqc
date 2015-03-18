@@ -102,7 +102,7 @@ FinDispMolecularHessian::Params::Params()
   user_provided_eliminate_quadratic_terms_ = false;
   eliminate_quadratic_terms_ = true;
   do_null_displacement_ = true;
-  double desired_accuracy = 1e-4;
+  double desired_accuracy = 1e-5;
   energy_accuracy_ = desired_accuracy*disp_*disp_;
   gradient_accuracy_ = desired_accuracy*disp_;
   checkpoint_ = DEFAULT_CHECKPOINT;

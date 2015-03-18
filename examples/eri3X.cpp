@@ -1,6 +1,3 @@
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/serialization/array.hpp>
-
 #include <memory>
 #include <fstream>
 #include <algorithm>
@@ -86,28 +83,26 @@ int main(int argc, char **argv) {
     std::string density_file = "";
     int bs_nclusters = 0;
     int dfbs_nclusters = 0;
-    if (argc >= 7) {
+    if (argc >= 6) {
         mol_file = argv[1];
-        density_file = argv[2];
-        basis_name = argv[3];
-        df_basis_name = argv[4];
-        bs_nclusters = std::stoi(argv[5]);
-        dfbs_nclusters = std::stoi(argv[6]);
-    } else if (argc >= 10 || argc < 7) {
-        std::cout << "input is $./program mol_file density_matrix_file "
+        basis_name = argv[2];
+        df_basis_name = argv[3];
+        bs_nclusters = std::stoi(argv[4]);
+        dfbs_nclusters = std::stoi(argv[5]);
+    } else if (argc >= 9 || argc < 6) {
+        std::cout << "input is $./program mol_file "
                      "basis_file df_basis_file "
                      "bs_clusters dfbs_clusters low_rank_threshhold(optional) "
                      "debug(optional)\n";
         return 0;
     }
 
-    double threshold = (argc == 8) ? std::stod(argv[7]) : 1e-11;
-    auto low_rank_threshold = (argc == 9) ? std::stod(argv[8]) : 1e-7;
-    volatile auto debug = (argc == 10) ? std::stoi(argv[9]) : 0;
+    double threshold = (argc == 7) ? std::stod(argv[6]) : 1e-11;
+    auto low_rank_threshold = (argc == 8) ? std::stod(argv[7]) : 1e-7;
+    volatile auto debug = (argc == 9) ? std::stoi(argv[8]) : 0;
 
     if (world.rank() == 0) {
         std::cout << "Mol file is " << mol_file << std::endl;
-        std::cout << "D file is " << density_file << std::endl;
         std::cout << "basis is " << basis_name << std::endl;
         std::cout << "df basis is " << df_basis_name << std::endl;
         std::cout << "Using " << bs_nclusters << " bs clusters" << std::endl;
@@ -136,56 +131,6 @@ int main(int argc, char **argv) {
     basis::Basis df_basis{df_bs.create_basis(dfbs_clusters)};
     std::cout.rdbuf(cout_sbuf);
 
-    auto tr1 = basis.create_flattend_trange1();
-    auto tr = TA::TiledRange{tr1, tr1};
-
-    RowMatrixXd D_eig;
-    if (world.rank() == 0) {
-        D_eig = read_density_from_file(density_file);
-    }
-    world.gop.fence();
-
-    TA::Tensor<float> tile_norms(tr.tiles(), 0.0);
-    if (world.rank() == 0) {
-
-        for (auto i = 0; i < tile_norms.size(); ++i) {
-            auto range = tr.make_tile_range(i);
-            auto const &size = range.size();
-            auto const &start = range.start();
-
-            tile_norms[i]
-                = D_eig.block(start[0], start[1], size[0], size[1]).lpNorm<2>();
-        }
-    }
-
-    TA::SparseShape<float> shape(world, tile_norms, tr);
-
-    auto D_TA = TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy>(
-        world, tr, shape);
-
-    auto const &pmap = D_TA.get_pmap();
-
-    if (world.rank() == 0) {
-        for (auto i = 0; i < pmap->size(); ++i) {
-            if (!D_TA.is_zero(i)) {
-                auto range = tr.make_tile_range(i);
-                auto const &start = range.start();
-                auto const &size = range.size();
-                auto tile = TA::Tensor<double>(range);
-                auto tile_map = TA::eigen_map(tile, size[0], size[1]);
-                tile_map = D_eig.block(start[0], start[1], size[0], size[1]);
-                D_TA.set(i, tile);
-            }
-        }
-    }
-
-    {
-        auto D_lr = TA::to_new_tile_type(
-            D_TA, integrals::compute_functors::TaToLowRankTensor<2>());
-        utility::print_par(world, "\n");
-        utility::print_size_info(D_lr, "D");
-    }
-
     libint2::init();
     auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
 
@@ -196,23 +141,35 @@ int main(int argc, char **argv) {
                                integrals::compute_functors::BtasToTaTensor{});
 
     {
+        auto dfbasis_array = utility::make_array(df_basis, df_basis);
+        auto eri2 = BlockSparseIntegrals(
+            world, eri_pool, basis_array,
+            integrals::compute_functors::BtasToLowRankTensor{});
+
+        auto inv_timer
+            = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2); });
+        auto eri2_inv = inv_timer.apply();
+        utility::print_par(world, "Eri2 inverse computation time = ",
+                           inv_timer.time(), "\n");
+        eri2_inv("i,j") = eri2_inv("i,k") * eri2_inv("k,j");
+        eri2_inv.truncate();
+
+        auto eri2_inv_lr = TA::to_new_tile_type(
+            eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>(
+                     low_rank_threshold));
+
+        utility::print_size_info(eri2_inv_lr, "Eri2 inverse");
+
+        Xab("X, a, b") = eri2_inv("X,P") * Xab("P, a, b");
+        Xab.truncate();
+
         auto Xab_lr = TA::to_new_tile_type(
             Xab, integrals::compute_functors::TaToLowRankTensor<3>(
                      low_rank_threshold));
-        utility::print_size_info(Xab_lr, "Xab");
+
+        utility::print_size_info(Xab_lr, "\\tilde{X}ab");
         utility::print_par(world, "\n");
     }
-
-    decltype(Xab) Xak;
-    Xak("X, a, k") = Xab("X,a,b") * D_TA("b,k");
-    Xak.truncate();
-    world.gop.fence();
-    auto Xak_lr = TA::to_new_tile_type(
-        Xak,
-        integrals::compute_functors::TaToLowRankTensor<3>(low_rank_threshold));
-    world.gop.fence();
-    utility::print_size_info(Xak_lr, "Xab * D");
-
 
     madness::finalize();
     return 0;

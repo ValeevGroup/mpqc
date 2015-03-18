@@ -86,7 +86,6 @@ int main(int argc, char **argv) {
     std::string density_file = "";
     int bs_nclusters = 0;
     int dfbs_nclusters = 0;
-    double threshold = 1e-11;
     if (argc >= 7) {
         mol_file = argv[1];
         density_file = argv[2];
@@ -94,15 +93,18 @@ int main(int argc, char **argv) {
         df_basis_name = argv[4];
         bs_nclusters = std::stoi(argv[5]);
         dfbs_nclusters = std::stoi(argv[6]);
-    } else if (argc > 9 || argc < 7) {
+    } else if (argc >= 10 || argc < 7) {
         std::cout << "input is $./program mol_file density_matrix_file "
                      "basis_file df_basis_file "
                      "bs_clusters dfbs_clusters low_rank_threshhold(optional) "
                      "debug(optional)\n";
         return 0;
     }
-    auto low_rank_threshold = (argc == 8) ? std::stod(argv[6]) : 1e-7;
-    volatile auto debug = (argc == 9) ? std::stoi(argv[7]) : 0;
+
+    double threshold = (argc == 8) ? std::stod(argv[7]) : 1e-11;
+    auto low_rank_threshold = (argc == 9) ? std::stod(argv[8]) : 1e-7;
+    volatile auto debug = (argc == 10) ? std::stoi(argv[9]) : 0;
+
     if (world.rank() == 0) {
         std::cout << "Mol file is " << mol_file << std::endl;
         std::cout << "D file is " << density_file << std::endl;

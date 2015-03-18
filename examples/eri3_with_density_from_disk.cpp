@@ -57,7 +57,7 @@ void serialize(Archive &ar, RowMatrixXd &m, const unsigned int version) {
 
     m.resize(rows, cols);
 
-    ar &boost::serialization::make_array(m.data(), m.size());
+    ar& boost::serialization::make_array(m.data(), m.size());
 }
 
 
@@ -74,6 +74,7 @@ RowMatrixXd read_density_from_file(std::string const &file_name) {
     } else {
         throw;
     }
+
     return D;
 }
 
@@ -138,18 +139,21 @@ int main(int argc, char **argv) {
 
     RowMatrixXd D_eig;
     if (world.rank() == 0) {
-        auto D_eig = read_density_from_file(density_file);
+        D_eig = read_density_from_file(density_file);
     }
     world.gop.fence();
 
     TA::Tensor<float> tile_norms(tr.tiles(), 0.0);
-    for (auto i = 0; i < tile_norms.size(); ++i) {
-        auto range = tr.make_tile_range(i);
-        auto const &size = range.size();
-        auto const &start = range.start();
+    if (world.rank() == 0) {
 
-        tile_norms[i]
-            = D_eig.block(start[0], start[1], size[0], size[1]).lpNorm<2>();
+        for (auto i = 0; i < tile_norms.size(); ++i) {
+            auto range = tr.make_tile_range(i);
+            auto const &size = range.size();
+            auto const &start = range.start();
+
+            tile_norms[i]
+                = D_eig.block(start[0], start[1], size[0], size[1]).lpNorm<2>();
+        }
     }
 
     TA::SparseShape<float> shape(world, tile_norms, tr);
@@ -173,15 +177,15 @@ int main(int argc, char **argv) {
 
                 RowMatrixXd L, R;
                 if (algebra::Decompose_Matrix(mat, L, R, low_rank_threshold)) {
-                    auto tile = tensor::TilePimpl<double>{range, 
-                        tensor::TileVariant<double>{
-                            tensor::FullRankTile<double>{mat}},
+                    auto tile = tensor::TilePimpl<double>{
+                        range, tensor::TileVariant<double>{
+                                   tensor::FullRankTile<double>{mat}},
                         low_rank_threshold};
                     D_TA.set(i, tile);
                 } else {
-                    auto tile = tensor::TilePimpl<double>{range, 
-                        tensor::TileVariant<double>{
-                            tensor::LowRankTile<double>{L,R}},
+                    auto tile = tensor::TilePimpl<double>{
+                        range, tensor::TileVariant<double>{
+                                   tensor::LowRankTile<double>{L, R}},
                         low_rank_threshold};
                     D_TA.set(i, tile);
                 }

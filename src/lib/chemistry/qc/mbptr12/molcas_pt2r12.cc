@@ -155,20 +155,47 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
 
 void MolcasPT2R12::compute()
 {
-  initialize();
+  bool if_compute_r12 = extern_pt2r12_akv_->booleanvalue("pt2_correction", KeyValValueboolean());
 
-  const double value = extern_pt2r12_->value();
+#if defined(MPQC_NEW_FEATURES)
+  bool if_compute_single = extern_pt2r12_akv_->booleanvalue("cabs_singles", KeyValValueboolean());
+  if_compute_r12 = if_compute_r12 || if_compute_single;
+#endif
 
-  double total_energy = value + caspt2_energy_;
-  ExEnv::out0() << indent << scprintf("RASSCF energy [au]:                    %17.12lf",
+  //only do caspt2 if pt2r12 calculation is disabled
+  if(!if_compute_r12){
+    // run molcas
+    run_molcas();
+    // read molcas log file
+    read_energy();
+  
+    ExEnv::out0() << indent << scprintf("RASSCF energy [au]:                    %17.12lf",
           rasscf_energy_) << std::endl;
-  ExEnv::out0() << indent << scprintf("CASPT2 energy [au]:                    %17.12lf",
+    ExEnv::out0() << indent << scprintf("CASPT2 energy [au]:                    %17.12lf",
           caspt2_energy_ - rasscf_energy_) << std::endl;
-  ExEnv::out0() << indent << scprintf("Total PT2R12  energy [au]:             %17.12lf",
-          total_energy) << std::endl;
-  ExEnv::out0() << std::endl << std::endl;
+    ExEnv::out0() << indent << scprintf("Total CASPT2  energy [au]:             %17.12lf",
+          caspt2_energy_) << std::endl;
+    ExEnv::out0() << std::endl << std::endl;
+    
+    set_energy(caspt2_energy_);
+  
+  }
+  else{
 
-  set_energy(total_energy);
+    initialize();
+    const double value = extern_pt2r12_->value();
+
+    double total_energy = value + caspt2_energy_;
+    ExEnv::out0() << indent << scprintf("RASSCF energy [au]:                    %17.12lf",
+          rasscf_energy_) << std::endl;
+    ExEnv::out0() << indent << scprintf("CASPT2 energy [au]:                    %17.12lf",
+          caspt2_energy_ - rasscf_energy_) << std::endl;
+    ExEnv::out0() << indent << scprintf("Total PT2R12  energy [au]:             %17.12lf",
+          total_energy) << std::endl;
+    ExEnv::out0() << std::endl << std::endl;
+
+    set_energy(total_energy);
+  }
 }
 
 

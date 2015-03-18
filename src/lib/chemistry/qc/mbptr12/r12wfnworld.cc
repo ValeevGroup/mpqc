@@ -113,7 +113,7 @@ R12WavefunctionWorld::~R12WavefunctionWorld()
 {
   // boot up madness
 #ifdef HAVE_MADNESS
-  mpqc::MADNESSRuntime::finalize();
+  //mpqc::MADNESSRuntime::finalize();
 #endif
 }
 

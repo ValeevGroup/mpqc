@@ -749,7 +749,6 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
 
 #if defined(MPQC_NEW_FEATURES)
 
- // bootup_mpqc3();
 
   // see J. Chem. Phys. 135, 214105 (2011) for eqns.
 
@@ -868,7 +867,6 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
   eref_recomp += r12world()->refwfn()->basis()->molecule()->nuclear_repulsion_energy();
   madness::World::get_default().gop.fence();
 
- // shutdown_mpqc3();
  tim.exit();
 
   return std::make_pair(VT2 + X + B0 + Delta, eref_recomp);
@@ -1396,31 +1394,15 @@ void PT2R12::compute()
 #if defined(MPQC_NEW_FEATURES)
   if(cabs_singles_ )
   {
+    // if use extra basis for cabs_singles, remove the original ri basis
     if (cabs_singles_engine_->extra_basis()){
       r12world()->refwfn()->world()->fockbuild_runtime()->ao_registry()->remove(r12world()->basis_ri());
-
     }
     cabs_singles_e = cabs_singles_engine_->compute(cabs_singles_h0_);
   }
 #endif
 
   const double energy = energy_ref + energy_correction_r12 + cabs_singles_e;
-
-
-
-    ExEnv::out0() <<endl << indent << scprintf("Reference energy [au]:                 %17.12lf",
-                                       energy_ref) << std::endl << std::endl;
-#if defined(MPQC_NEW_FEATURES)
-    if(cabs_singles_)
-    {
-      std::string es = "CABS singles(" + cabs_singles_h0_ + ")";
-      const unsigned int LL = std::string("Reference energy [au]:                 ").size();
-      es.resize(LL, ' ');
-      ExEnv::out0() << indent << scprintf((es + "%17.12lf").c_str(),  cabs_singles_e) << endl;
-      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
-                                                energy_ref + cabs_singles_e) << endl << endl;
-    }
-#endif
 
     ExEnv::out0() << std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
                                         (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
@@ -1430,9 +1412,16 @@ void PT2R12::compute()
   {
     ExEnv::out0() << indent << scprintf("[2]_R12 energy [au]:                   %17.12lf",
                                         energy_correction_r12) << endl;
-    ExEnv::out0() << indent << scprintf("[2]_S   energy [au]:                   %17.12lf",
-            cabs_singles_e) << std::endl;
   }
+
+#if defined(MPQC_NEW_FEATURES)
+  if(cabs_singles_){
+      std::string es = "[2]_S energy [au](" + cabs_singles_h0_ + ")";
+      const unsigned int LL = std::string("Reference energy [au]:                 ").size();
+      es.resize(LL, ' ');
+      ExEnv::out0() << indent << scprintf((es + "%17.12lf").c_str(),  cabs_singles_e) << endl;
+  }
+#endif
 
   set_energy(energy);
 }

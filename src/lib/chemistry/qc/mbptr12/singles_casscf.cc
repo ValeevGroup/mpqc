@@ -46,6 +46,7 @@ double CabsSingles::compute(const std::string &h0) {
 
   ExEnv::out0() << std::endl << std::endl << indent
     << "Enter CabsSingles::compute \n";
+  // if use extra_basis for singles calculation, remove the original orbital regitstry and reinitialize
   if (extra_basis_){
     singles_r12intrmds_->r12world()->refwfn()->world()->fockbuild_runtime()->obsolete();
     singles_r12intrmds_->r12world()->refwfn()->world()->tfactory()->orbital_registry()->remove("p'");
@@ -89,7 +90,6 @@ double CabsSingles::CabsSinglesDyall(const std::string &h0)
    * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
    * http://dx.doi.org/10.1063/1.3499600.
    * */
-# define DEBUGG false
 
     ExEnv::out0() << std::endl << indent << "Enter CabsSingles::CabsSinglesDyall \n";
     // set up timer
@@ -98,6 +98,8 @@ double CabsSingles::CabsSinglesDyall(const std::string &h0)
     typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
     typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
 
+    // go to file sr_r12intermediates.h for notation
+    //
     // density matrices
     TArray2 gamma1; gamma1("m,n") = singles_r12intrmds_->_2("<m|gamma|n>"); // rdm1 occ
     TArray4 gamma2; gamma2("m,n,m1,n1") = singles_r12intrmds_->_4("<m n|gamma|m1 n1>"); //rdm2 occ

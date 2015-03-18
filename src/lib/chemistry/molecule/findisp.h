@@ -205,6 +205,7 @@ class FinDispMolecularHessian: public MolecularHessian {
       const Ref<PointGroup>& disp_pg() const { return disp_pg_; }
       double disp_size() const { return disp_; }
       bool only_totally_symmetric() const { return only_totally_symmetric_; }
+      bool user_provided_eliminate_quadratic_terms() const { return user_provided_eliminate_quadratic_terms_; }
       bool eliminate_quadratic_terms() const { return eliminate_quadratic_terms_; }
       bool do_null_displacement() const { return do_null_displacement_; }
       int debug() const { return debug_; }
@@ -217,7 +218,11 @@ class FinDispMolecularHessian: public MolecularHessian {
       double energy_accuracy() const { return energy_accuracy_; }
       int nirrep() const { return disp_pg_->char_table().nirrep(); }
 
-      void set_eliminate_quadratic_terms(bool e) { eliminate_quadratic_terms_ = e; }
+      // if called will no need to (re)compute default
+      void set_eliminate_quadratic_terms(bool e) {
+        user_provided_eliminate_quadratic_terms_ = true;
+        eliminate_quadratic_terms_ = e;
+      }
       void set_disp_size(double s);
       void set_disp_pg(const Ref<PointGroup>& pg) { disp_pg_ = pg; }
       void set_restart(bool r = true) { restart_ = r; }
@@ -237,6 +242,8 @@ class FinDispMolecularHessian: public MolecularHessian {
       // eliminate the quadratic terms in the hessian by doing an extra displacement for
       // each of the totally-symmetric coordinates
       bool eliminate_quadratic_terms_;
+      bool user_provided_eliminate_quadratic_terms_; // whether user provided the value eliminate_quadratic_terms
+                                                     // if true, will skip the MolecularEnergy-dependent default override
       // use the gradient at the initial geometry to remove first order terms
       // (important if not at equilibrium geometry)
       bool do_null_displacement_;
@@ -394,8 +401,6 @@ class FinDispMolecularHessian: public MolecularHessian {
     Ref<Impl> pimpl_; //<< initliazed lazily
     Ref<MolecularEnergy> mole_init_;   //< pimpl_ is initalized lazily, so this is used to hold the MolecularEnergy object used to initialize the pimpl_
     Ref<Params> params_;
-    bool user_provided_eliminate_quadratic_terms_; // default for eliminate_quadratic_terms depends on type of Impl ...
-                                               // must know whether the default needs to vary
 
     void override_default_params(); // override some defaults based on the properties of MolecularEnergy
 

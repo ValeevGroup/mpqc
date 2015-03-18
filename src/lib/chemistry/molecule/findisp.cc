@@ -88,7 +88,7 @@ sc::ToStateOut<EGH>(const EGH& v, StateOut& s, int& count) {
 // FinDispMolecularHessian::Params
 
 ClassDesc FinDispMolecularHessian::Params::class_desc_(
-  typeid(FinDispMolecularHessian::Params),"FinDispMolecularHessian::Params",1,"virtual public SavableState",
+  typeid(FinDispMolecularHessian::Params),"FinDispMolecularHessian::Params",2,"virtual public SavableState",
   create<FinDispMolecularHessian::Params>, create<FinDispMolecularHessian::Params>, create<FinDispMolecularHessian::Params>);
 
 FinDispMolecularHessian::Params::Params()
@@ -97,7 +97,9 @@ FinDispMolecularHessian::Params::Params()
   disp_ = 1.0e-2;
   use_energies_ = false;
   only_totally_symmetric_ = false;
-  // default for eliminate_quadratic_terms is overridden by FinDispMolecularHessian
+  // default for eliminate_quadratic_terms will be overridden by FinDispMolecularHessian
+  // unless user provided eliminate_quadratic_terms
+  user_provided_eliminate_quadratic_terms_ = false;
   eliminate_quadratic_terms_ = true;
   do_null_displacement_ = true;
   double desired_accuracy = 1e-4;
@@ -118,7 +120,7 @@ FinDispMolecularHessian::Params::Params(const Ref<KeyVal>& keyval)
   disp_ = keyval->doublevalue("displacement",KeyValValuedouble(1.0e-2));
   only_totally_symmetric_ = keyval->booleanvalue("only_totally_symmetric",
                                                  KeyValValueboolean(false));
-  // default for eliminate_quadratic_terms is overridden by FinDispMolecularHessian
+  user_provided_eliminate_quadratic_terms_ = keyval->exists("eliminate_quadratic_terms");
   eliminate_quadratic_terms_ = keyval->booleanvalue("eliminate_quadratic_terms",
                                                 KeyValValueboolean(true));
   do_null_displacement_ = keyval->booleanvalue("do_null_displacement",
@@ -147,6 +149,7 @@ FinDispMolecularHessian::Params::Params(StateIn& s)
   disp_pg_ << SavableState::restore_state(s);
   s.get(disp_);
   s.get(only_totally_symmetric_);
+  s.get(user_provided_eliminate_quadratic_terms_);
   s.get(eliminate_quadratic_terms_);
   s.get(do_null_displacement_);
   s.get(energy_accuracy_);
@@ -169,6 +172,7 @@ FinDispMolecularHessian::Params::save_data_state(StateOut& s)
   SavableState::save_state(disp_pg_.pointer(), s);
   s.put(disp_);
   s.put(only_totally_symmetric_);
+  s.put(user_provided_eliminate_quadratic_terms_);
   s.put(eliminate_quadratic_terms_);
   s.put(do_null_displacement_);
   s.put(energy_accuracy_);
@@ -920,24 +924,22 @@ static ClassDesc FinDispMolecularHessian_cd(
   typeid(FinDispMolecularHessian),"FinDispMolecularHessian",1,"public MolecularHessian",
   0, create<FinDispMolecularHessian>, create<FinDispMolecularHessian>);
 
-FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e) :
-    user_provided_eliminate_quadratic_terms_(false)
+FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e)
 {
   params_ = new Params;
   //init_pimpl(e);
   mole_init_ = e;
-  override_default_params();
+  if (mole_init_) override_default_params();
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
-  MolecularHessian(keyval), user_provided_eliminate_quadratic_terms_(false)
+  MolecularHessian(keyval)
 {
   Ref<MolecularEnergy> e; e << keyval->describedclassvalue("energy");
   params_ = new Params(keyval);
-  user_provided_eliminate_quadratic_terms_ = keyval->exists("eliminate_quadratic_terms");
   //init_pimpl(e);
   mole_init_ = e;
-  override_default_params();
+  if (mole_init_) override_default_params();
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
@@ -945,7 +947,6 @@ FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
   MolecularHessian(s)
 {
   pimpl_ << SavableState::restore_state(s);
-  s.get(user_provided_eliminate_quadratic_terms_);
   mole_init_ = 0;
 }
 
@@ -960,7 +961,6 @@ FinDispMolecularHessian::save_data_state(StateOut&s)
 {
   MolecularHessian::save_data_state(s);
   SavableState::save_state(pimpl_.pointer(),s);
-  s.put(user_provided_eliminate_quadratic_terms_);
 }
 
 void
@@ -1047,15 +1047,15 @@ FinDispMolecularHessian::override_default_params()
 {
   MPQC_ASSERT(params_);
   MPQC_ASSERT(mole_init_);
-  if (mole_init_->gradient_implemented() && !params_->use_energies()) {
-    // override the default for eliminate_quadratic_terms
-    if (user_provided_eliminate_quadratic_terms_ == false)
+  if (params_->user_provided_eliminate_quadratic_terms() == false) {
+    if (mole_init_->gradient_implemented() && !params_->use_energies()) {
+      // override the default for eliminate_quadratic_terms
       params_->set_eliminate_quadratic_terms(true);
-  }
-  else {
-    // override the default for eliminate_quadratic_terms
-    if (user_provided_eliminate_quadratic_terms_ == false)
+    }
+    else {
+      // override the default for eliminate_quadratic_terms
       params_->set_eliminate_quadratic_terms(false);
+    }
   }
 }
 
@@ -1107,7 +1107,7 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<KeyVal>&keyval):
   checkpoint_ = keyval->booleanvalue("checkpoint", def_checkpoint);
   checkpoint_file_ = keyval->stringvalue("checkpoint_file", def_restart_file);
   eliminate_quadratic_terms_ = keyval->booleanvalue("eliminate_quadratic_terms",
-                                                falsevalue);
+                                                    falsevalue);
 
   energy_accuracy_ = keyval->doublevalue("energy_accuracy",
                                          KeyValValuedouble(MolecularGradient::desired_accuracy() * disp_));

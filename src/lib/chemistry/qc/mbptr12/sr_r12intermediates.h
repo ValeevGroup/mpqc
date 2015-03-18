@@ -317,9 +317,40 @@ namespace sc {
       // using formula from Schaefer III, JCP 87, 5361 (1987)
       void compute_lambda_cc2(const TArray2& t1, const TArray4& t2,
                          TArray2& L1, TArray4& L2);
+
       // use formula from Gauss and Stanton, JCP, 103 (1995)
       void compute_lambda_cc2_2(const TArray2& t1, const TArray4& t2,
                                 TArray2& L1, TArray4& L2);
+      // CCSD (Gauss and Stanton formula)
+      // compute Delta_ai = 1 / (- <a|F|a> + <i|F|i>)
+      //       & Delta_ijab =  1 / (- <a|F|a> - <b|F|b> + <i|F|i> + <j|F|j>)
+      void compute_Delta_cc(const TArray2& fai, const TArray4d& g_abij,
+                            TArray2& D_ai, TArray4& D_abij);
+      // compute intermediates needed for T and lambda amplitudes
+      void compute_intermediates_TFW_ccsd(
+             const TArray2& t1, const TArray4& t2,
+             const TArray4d& g_abij, const TArray4d& g_aikl,
+             const TArray4d& g_aibj, const TArray4d& g_aijb,
+             const TArray4d& g_abci,
+             TArray2& TFkc, TArray2& TFac, TArray2& TFki,
+             TArray4& TW_KBCJ_aa, TArray4& TW_KbCj_ab,TArray4& TW_KbcJ_ba,
+             TArray4& TW_ABCD_aa, TArray4& TW_AbCd_ab,
+             TArray4& TW_KLIJ_aa, TArray4& TW_KlIj_ab);
+      void compute_intermediates_CW_ccsd(
+             const TArray2& t1, const TArray4& t2,
+             TArray2& CFkc, TArray2& CFac, TArray2& CFki,
+             TArray4& CW_MBEJ_aa, TArray4& CW_MbEj_ab, TArray4& CW_MbeJ_ba,
+             TArray4& CW_ABCD_aa, TArray4& CW_AbCd_ab,
+             TArray4& CW_ABCI_aa, TArray4& CW_AbCi_ab,
+             TArray4& CW_KLIJ_aa, TArray4& CW_KlIj_ab,
+             TArray4& CW_KBIJ_aa, TArray4& CW_KbIj_ab,
+             TArray4& CW_KLIC_aa, TArray4& CW_KlIc_ab, TArray4& CW_KliC_ab,
+             TArray4& CW_AKCD_aa, TArray4& CW_AkCd_ab, TArray4& CW_aKCd_ab);
+      // compute CCSD T amplitudes
+      void compute_T_ccsd(TArray2& t1, TArray4& t2);
+      // compute CCSD lambda amplitudes
+      void compute_lambda_ccsd(const TArray2& t1, const TArray4& t2,
+                          TArray2& L1, TArray4& L2);
 
       // compute CC2 one-electron density from amplitudes
       void compute_cc2_1rdm_amp(const TArray2& T1_cc2, const TArray4& T2_cc2,
@@ -333,9 +364,44 @@ namespace sc {
                          const TArray2& L1_cc2, const TArray4& L2_cc2);
 
       // compute CC Xam (the right-hand side of Z-vector equations)
-      void compute_Xam_cc2(const TArray2& T1, const TArray4& T2,
-                           const TArray2& L1, const TArray4& L2,
-                           TArray2& Xam, TArray2& Xai);
+      TArray2 compute_Xam_cc2(const TArray2& T1, const TArray4& T2,
+                      const TArray2& L1, const TArray4& L2);
+
+      // cpmute Gamma intermediates needed for CCSD Xam
+      void compute_Gamma_ijab_ccsd(const TArray2& T1, const TArray4& T2,
+                                   const TArray4& tau_aa, const TArray4& tau_ab,
+                                   const TArray2& L1, const TArray4& L2,
+                                   TArray4& Gamma_IJAB_aa,
+                                   TArray4& Gamma_IjAb_ab);
+      void compute_Gamma_ciab_ccsd(const TArray2& T1, const TArray4& T2,
+                                   const TArray4& tau_aa, const TArray4& tau_ab,
+                                   const TArray2& L1, const TArray4& L2,
+                                   TArray4& Gamma_CIAB_aa,
+                                   TArray4& Gamma_CiAb_ab,
+                                   TArray4& Gamma_cIAb_ba);
+     void compute_Gamma_ijka_ccsd(const TArray2& T1, const TArray4& T2,
+                                  const TArray4& tau_aa, const TArray4& tau_ab,
+                                  const TArray2& L1, const TArray4& L2,
+                                  TArray4& Gamma_IJKA_aa,
+                                  TArray4& Gamma_IjKa_ab,
+                                  TArray4& Gamma_IjkA_ba);
+      void compute_ccsd_1rdm_amp(const TArray2& T1, const TArray4& T2,
+                                 const TArray2& L1, const TArray4& L2,
+                                 TArray2& Dij, TArray2& Dab,
+                                 TArray2& Dia, TArray2& Dai);
+
+      void compute_Gamma2_ccsd(const TArray2& T1, const TArray4& T2,
+                              const TArray2& L1, const TArray4& L2,
+                              const TArray4& tau_aa, const TArray4& tau_ab,
+                              TArray4& Gamma_IjKa_ab,
+                              TArray4& Gamma_AbCi_ab,
+                              TArray4& Gamma_iBjA_ab, TArray4& Gamma_iBJa_ba,
+                              TArray4& Gamma_AbCd_ab, TArray4& Gamma_IjKl_ab,
+                              TArray4& Gamma_IjAb_ab);
+
+      // compute CCSD Xam (JCP, 103, 3561 (1995))
+      TArray2 compute_Xam_ccsd(const TArray2& T1, const TArray4& T2,
+                               const TArray2& L1, const TArray4& L2);
 
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively

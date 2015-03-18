@@ -47,6 +47,7 @@ namespace sc {
       RefSCMatrix Tau2_[NSpinCases2];
       RefSCMatrix Lambda1_[NSpinCases1];
       RefSCMatrix Lambda2_[NSpinCases2];
+      Ref<DistArray4> Lambda2_da4_[NSpinCases2];
 
       Ref<OrbitalSpace> occ_sb_[NSpinCases1];
 
@@ -146,14 +147,17 @@ namespace sc {
       virtual const RefSCMatrix& T1(SpinCase1 spin1);
       /// return T amplitudes of rank 2. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
       virtual const RefSCMatrix& T2(SpinCase2 spin2);
-      /// return T amplitudes of rank 2. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
-      virtual Ref<DistArray4> T2_distarray4(SpinCase2 spin2);
+      /// return T amplitudes of rank 2. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked)
+      /// @param dpdkey libdpd key specifying the data; the default is "t" (seek T2 amplitudes), replace with "tau" to obtain Tau2 amplitudes (t2 + t1 ^ t1)
+      virtual Ref<DistArray4> T2_da4(SpinCase2 spin2, std::string dpdkey = "t");
       /// return Tau2 amplitudes. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked).
       virtual const RefSCMatrix& Tau2(SpinCase2 spin2);
       /// return Lambda amplitudes of rank 1
       virtual const RefSCMatrix& Lambda1(SpinCase1 spin1);
       /// return Lambda amplitudes of rank 2
       virtual const RefSCMatrix& Lambda2(SpinCase2 spin2);
+      /// return T amplitudes of rank 2. The amplitudes are expressed in terms of Psi3 orbitals (symmetry-blocked)
+      virtual Ref<DistArray4> Lambda2_da4(SpinCase2 spin2);
 
       void obsolete();
   };

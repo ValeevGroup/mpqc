@@ -371,10 +371,20 @@ namespace sc {
        */
       void set_T1_cabs(const RefSCMatrix& t1_cabs) { t1_cabs_ = t1_cabs; }
       /**
+       * provides Lambda1 amplitude tensor
+       * @param l1 act_occ by act_vir matrix
+       */
+      void set_L1(const RefSCMatrix& l1) { l1_ = l1; }
+      /**
        * provides T2 amplitudes
        * @param t2 array of T2 amplitudes, for AlphaBeta, AlphaAlpha, and (optionally) BetaBeta
        */
       void set_T2(const Ref<DistArray4> (&t2)[NSpinCases2]) { std::copy(t2, t2+NSpinCases2, t2_); }
+      /**
+       * provides Lambda2 amplitudes
+       * @param l2 array of Lambda2 amplitudes, for AlphaBeta, AlphaAlpha, and (optionally) BetaBeta
+       */
+      void set_L2(const Ref<DistArray4> (&l2)[NSpinCases2]) { std::copy(l2, l2+NSpinCases2, l2_); }
       /**
        * provides (spin-free) RDM2
        * @param rdm2 a SpinFreeRDM<Two> object
@@ -400,7 +410,9 @@ namespace sc {
         *   - r : \f$ f(r_{12}) \f$
         *   - gr : \f$ r_{12}^{-1} f(r_{12}) \f$
         *   - rTr : \f$ [f(r_{12}), [ \hat{T}_1 , f(r_{12})]] \f$
-        *   - gamma : \f$ \Gamma \f$, 2-RDM
+        *   - gamma : \f$ \Gamma \f$, 2-RDM, provided by \c set_rdm2()
+        *   - T2 : 2-body excitation amplitudes, e.g. of the coupled-cluster method, provided by \c set_T2()
+        *   - L2 : 2-body de-excitation amplitudes, e.g. of the coupled-cluster method, provided by \c set_L2()
         *
         *   Indices are interpreted using to_space().
         *
@@ -423,6 +435,10 @@ namespace sc {
         * The following oe_types are understood:
         *   - mu_i : electric dipole integral \f$ \bf{r}_i \f$ (i = x,y,z)
         *   - q_ij : electric quadrupole integral \f$ \bf{r}_i \bf{r}_j \f$ (ij = xx, xy, xz, yy, yz, zz)
+        *   - gamma : \f$ \Gamma \f$, 1-RDM of the reference wave function
+        *   - T1 : 1-body excitation amplitudes, e.g. of the coupled-cluster method, provided by \c set_T1() and/or \c set_T1_cabs()
+        *   - L1 : 1-body de-excitation amplitudes, e.g. of the coupled-cluster method, provided by \c set_L1()
+        *   - I : identity matrix
         *
         *   Indices are interpreted using to_space().
         *
@@ -449,7 +465,9 @@ namespace sc {
       // extra data
       RefSCMatrix t1_;
       RefSCMatrix t1_cabs_;
+      RefSCMatrix l1_;    // lambda1
       Ref<DistArray4> t2_[NSpinCases2];
+      Ref<DistArray4> l2_[NSpinCases2]; // lambda2
       Ref<SpinFreeRDM<Two> > rdm2_;
 
       // utilities

@@ -59,6 +59,11 @@ namespace sc {
       RefSCMatrix T1_cc_[NSpinCases1];
       bool T2_cc_computed_;
       Ref<DistArray4> T2_cc_[NSpinCases2];
+      // lambda amplitudes
+      bool L1_cc_computed_;
+      RefSCMatrix L1_cc_[NSpinCases1];
+      bool L2_cc_computed_;
+      Ref<DistArray4> L2_cc_[NSpinCases2];
       // parameters for importing psi ccsd one-particle density
       bool Onerdm_cc_computed_;
       RefSCMatrix Onerdm_cc_[NSpinCases1];
@@ -82,6 +87,8 @@ namespace sc {
       bool A_computed() const;
       bool T1_cc_computed() const;
       bool T2_cc_computed() const;
+      bool L1_cc_computed() const;
+      bool L2_cc_computed() const;
       bool Onerdm_cc_computed() const;
       bool Onerdm_relax_computed() const;
       const RefSCMatrix& get_V(const SpinCase2 &spincase2) const;
@@ -96,6 +103,10 @@ namespace sc {
       void assign_T1_cc(const SpinCase1 &spincase1, const RefSCMatrix& T1_cc);
       const Ref<DistArray4>& get_T2_cc(const SpinCase2 &spincase2) const;
       void assign_T2_cc(const SpinCase2 &spincase2, const Ref<DistArray4>& T2_cc);
+      const RefSCMatrix& get_L1_cc(const SpinCase1 &spincase1) const;
+      void assign_L1_cc(const SpinCase1 &spincase1, const RefSCMatrix& L1_cc);
+      const Ref<DistArray4>& get_L2_cc(const SpinCase2 &spincase2) const;
+      void assign_L2_cc(const SpinCase2 &spincase2, const Ref<DistArray4>& L2_cc);
       const RefSCMatrix& get_1rdm_cc(const SpinCase1 &spincase1) const;
       void assign_1rdm_cc(const SpinCase1 &spincase1, const RefSCMatrix& Onerdm_cc);
       const RefSCMatrix& get_1rdm_relax(const SpinCase1 &spincase1) const;

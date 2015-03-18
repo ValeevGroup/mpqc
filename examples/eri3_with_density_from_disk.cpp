@@ -57,7 +57,7 @@ void serialize(Archive &ar, RowMatrixXd &m, const unsigned int version) {
 
     m.resize(rows, cols);
 
-    ar& boost::serialization::make_array(m.data(), m.size());
+    ar &boost::serialization::make_array(m.data(), m.size());
 }
 
 
@@ -158,13 +158,10 @@ int main(int argc, char **argv) {
 
     TA::SparseShape<float> shape(world, tile_norms, tr);
 
-    auto D_TA
-        = TA::Array<double, 2, tensor::TilePimpl<double>, TA::SparsePolicy>(
-            world, tr, shape);
+    auto D_TA = TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy>(
+        world, tr, shape);
 
     auto const &pmap = D_TA.get_pmap();
-    auto beg = pmap->begin();
-    auto end = pmap->end();
 
     if (world.rank() == 0) {
         for (auto i = 0; i < pmap->size(); ++i) {
@@ -172,28 +169,45 @@ int main(int argc, char **argv) {
                 auto range = tr.make_tile_range(i);
                 auto const &start = range.start();
                 auto const &size = range.size();
-                RowMatrixXd mat
-                    = D_eig.block(start[0], start[1], size[0], size[1]);
-
-                RowMatrixXd L, R;
-                if (algebra::Decompose_Matrix(mat, L, R, low_rank_threshold)) {
-                    auto tile = tensor::TilePimpl<double>{
-                        range, tensor::TileVariant<double>{
-                                   tensor::FullRankTile<double>{mat}},
-                        low_rank_threshold};
-                    D_TA.set(i, tile);
-                } else {
-                    auto tile = tensor::TilePimpl<double>{
-                        range, tensor::TileVariant<double>{
-                                   tensor::LowRankTile<double>{L, R}},
-                        low_rank_threshold};
-                    D_TA.set(i, tile);
-                }
+                auto tile = TA::Tensor<double>(range);
+                auto tile_map = TA::eigen_map(tile, size[0], size[1]);
+                tile_map = D_eig.block(start[0], start[1], size[0], size[1]);
+                D_TA.set(i, tile);
             }
         }
     }
 
-    utility::print_size_info(D_TA, "D");
+    {
+        auto D_lr = TA::to_new_tile_type(
+            D_TA, integrals::compute_functors::TaToLowRankTensor<2>());
+        utility::print_par(world, "\n");
+        utility::print_size_info(D_lr, "D");
+    }
+
+    libint2::init();
+    auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
+
+    utility::print_par(world, "\n");
+    auto basis_array = utility::make_array(df_basis, basis, basis);
+    auto Xab
+        = BlockSparseIntegrals(world, eri_pool, basis_array,
+                               integrals::compute_functors::BtasToTaTensor{});
+
+    {
+        auto Xab_lr = TA::to_new_tile_type(
+            Xab, integrals::compute_functors::TaToLowRankTensor<3>());
+        utility::print_size_info(Xab_lr, "Xab");
+        utility::print_par(world, "\n");
+    }
+
+    decltype(Xab) Xak;
+    Xak("X, a, k") = Xab("X,a,b") * D_TA("b,k");
+    world.gop.fence();
+    auto Xak_lr = TA::to_new_tile_type(
+        Xak, integrals::compute_functors::TaToLowRankTensor<3>());
+    world.gop.fence();
+    utility::print_size_info(Xak_lr, "Xab * D");
+
 
     madness::finalize();
     return 0;

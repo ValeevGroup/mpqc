@@ -204,6 +204,7 @@ int main(int argc, char **argv) {
 
     decltype(Xab) Xak;
     Xak("X, a, k") = Xab("X,a,b") * D_TA("b,k");
+    Xak.truncate();
     world.gop.fence();
     auto Xak_lr = TA::to_new_tile_type(
         Xak, integrals::compute_functors::TaToLowRankTensor<3>());

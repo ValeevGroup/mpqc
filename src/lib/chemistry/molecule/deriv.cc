@@ -43,10 +43,13 @@ using namespace sc;
 // MolecularHessian
 
 static ClassDesc MolecularHessian_cd(
-  typeid(MolecularHessian),"MolecularHessian",2,"public SavableState",
+  typeid(MolecularHessian),"MolecularHessian",3,"public SavableState",
   0, 0, 0);
 
-MolecularHessian::MolecularHessian() : desired_accuracy_(1e-4)
+double MolecularHessian::desired_accuracy_default_ = 1e-5;
+
+MolecularHessian::MolecularHessian() : desired_accuracy_(desired_accuracy_default_),
+    desired_accuracy_set_to_default_(true)
 {
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
@@ -54,7 +57,8 @@ MolecularHessian::MolecularHessian() : desired_accuracy_(1e-4)
 MolecularHessian::MolecularHessian(const Ref<KeyVal>&keyval)
 {
   mol_ << keyval->describedclassvalue("molecule");
-  desired_accuracy_ = keyval->doublevalue("accuracy", KeyValValuedouble(1e-4));
+  desired_accuracy_set_to_default_ = keyval->exists("accuracy");
+  desired_accuracy_ = keyval->doublevalue("accuracy", KeyValValuedouble(desired_accuracy_default_));
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
 
@@ -65,6 +69,8 @@ MolecularHessian::MolecularHessian(StateIn&s):
   d3natom_ << SavableState::restore_state(s);
   if (s.version(::class_desc<MolecularHessian>()) >= 2)
     s.get(desired_accuracy_);
+  if (s.version(::class_desc<MolecularHessian>()) >= 3)
+    s.get(desired_accuracy_set_to_default_);
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
 
@@ -78,6 +84,7 @@ MolecularHessian::save_data_state(StateOut&s)
   SavableState::save_state(mol_.pointer(),s);
   SavableState::save_state(d3natom_.pointer(),s);
   s.put(desired_accuracy_);
+  s.put(desired_accuracy_set_to_default_);
 }
 
 RefSCDimension
@@ -387,6 +394,7 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
 void
 MolecularHessian::set_desired_accuracy(double acc) {
   desired_accuracy_ = acc;
+  desired_accuracy_set_to_default_ = false;
 }
 
 double

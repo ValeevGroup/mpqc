@@ -1,0 +1,54 @@
+ifndef FLEX
+FLEX=flex
+endif
+
+ifndef BISON
+BISON=bison
+endif
+
+notobjdir_default:
+	@echo "Building in an unconfigured source directory."
+	@echo "The following make targets are available:"
+	@echo "  make FLEX=<flex> scanner"
+	@echo "  make BISON=<bison> parser"
+	@echo "Be sure to replace FlexLexer.h in the include"
+	@echo "directory with the correct version."
+
+# (only works with bison and flex)
+.PHONY: parser
+parser:
+	$(BISON) -v -d -o parse.tmp.cc parse.yy
+	cat parse.tmp.cc \
+		| sed "s/^int yyparse.*;$$//" \
+		| sed "s/^YYPARSE_RETURN_TYPE yyparse.*;$$//" \
+		| sed "s/yylval/MPQCInylval/g" \
+		> parse.cc
+	if test -f parse.tmp.cc.h; then \
+	  echo "Older bison detected."; \
+	  cat parse.tmp.cc.h | sed "s/yylval/MPQCInylval/g" > parse.h; \
+	  /bin/mv parse.tmp.cc.output parse.output; \
+	else \
+	  echo "Newer bison detected."; \
+	  cat parse.tmp.hh | sed "s/yylval/MPQCInylval/g" > parse.h; \
+	  /bin/mv parse.tmp.output parse.output; \
+	fi
+	#-@rm -f parse.tmp*
+
+.PHONY: scanner
+scanner:
+	echo "#ifdef HAVE_CONFIG_H"  > scan.cc
+	echo "#include <mpqc_config.h>" >> scan.cc
+	echo "#endif" >> scan.cc
+	echo "#include <iostream>" >> scan.cc
+	echo "using namespace std;" >> scan.cc
+	$(FLEX) -L -t scan.ll | grep -v "extern FILE .yyin" \
+			| grep -v "static int yy_get_next_buffer.*;" \
+			| grep -v "class istream;" \
+			| sed "s/static int yy_get_next_buffer/int yy_get_next_buffer/" \
+			| grep -v "static void yyunput.*;" \
+			| sed "s/static void yyunput/void yyunput/" \
+			| grep -v "static int yyinput.*;" \
+			| grep -v "extern.*isatty" \
+			| sed "s/static int yyinput/int yyinput/" \
+			| sed "s/yylval/MPQCInylval/g" \
+			>> scan.cc

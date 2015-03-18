@@ -60,19 +60,40 @@ The accepted keywords are:
 
 <dt><tt>optimize</tt><dd> If <tt>yes</tt>, then an optimization will be
   performed.  The default is <tt>no</tt>.  The following options can be
-  given.
+  given:
 
   <dl>
-     <dt><tt>cartesian</tt><dd> Use Cartesian coordinates.
-     <dt><tt>internal</tt><dd> Use internal coordinates.
-     <dt><tt>redundant</tt><dd> Use redundant internal coordinates.
+   <dt> Choice of coordinates </dt>
+   <dd>
+    <dl> Choice of coordinates
+     <dt><tt>cartesian</tt></dt> <dd> Use Cartesian coordinates. </dd>
+     <dt><tt>internal</tt></dt> <dd> Use internal coordinates. </dd>
+     <dt><tt>redundant</tt></dt> <dd> Use redundant internal coordinates. </dd>
+    </dl>
+   </dd>
+   
+   <dt> <tt>convergence</tt> </dt>
+   <dd> A floating-point number that specifies the convergence thresholds. The default is 1e-4. \sa sc::Convergence
+   </dd>
+
   </dl>
 
 <dt><tt>gradient</tt><dd> If <tt>yes</tt>, then a gradient calculation will
   be performed.  The default is <tt>no</tt>.
 
 <dt><tt>frequencies</tt><dd> If <tt>yes</tt>, then the frequencies will be
-  obtained.  The default is <tt>no</tt>.
+  obtained.  The default is <tt>no</tt>. The following options can be
+  given:
+
+  <dl>
+   <dt> <tt>accuracy</tt> </dt>
+   <dd> A floating-point number that specifies the desired relative accuracy of the computed frequencies. The default is
+        1e-5.
+   </dd>
+  </dl>
+
+<dt><tt>precise_findif</tt><dd> Set to <tt>yes</tt> if need to compute numerical gradient/frequencies
+  computation to high precision. The default is <tt>no</tt>.
 
 <dt><tt>accuracy</tt><dd> Specifies an estimate of the accuracy with which the wave function should be
   computed. The value should be given as a real number, which specifies the target accuracy for

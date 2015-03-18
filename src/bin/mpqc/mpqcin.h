@@ -78,10 +78,9 @@ class MPQCIn {
     MPQCInDatum<int> frequencies_;
     MPQCInDatum<int> optimize_;
     MPQCInDatum<int> mult_;
-    MPQCInDatum<int> redund_coor_;
-    MPQCInDatum<int> opt_type_;
     MPQCInDatum<int> restart_;
     MPQCInDatum<int> checkpoint_;
+    MPQCInDatum<int> precise_findif_;
     MPQCInDatum<int> charge_;
     MPQCInDatum<int> atom_charge_;
     MPQCInDatum<int> molecule_bohr_;
@@ -91,6 +90,12 @@ class MPQCIn {
     MPQCInDatum<char *> method_;
     MPQCInDatum<char *> accuracy_;
     MPQCInDatum<char *> lindep_;
+    // options for optimize
+    MPQCInDatum<int> redund_coor_;
+    MPQCInDatum<int> opt_type_;
+    MPQCInDatum<char *> opt_convergence_;
+    // options for frequencies
+    MPQCInDatum<char *> freq_accuracy_;
     // options for SCF
     MPQCInDatum<char *> scf_maxiter_;
     // options for DFT methods
@@ -169,14 +174,17 @@ class MPQCIn {
     void set_lindep(char *);
     void set_optimize(int);
     void set_opt_type(int);
+    void set_opt_convergence(char *);
     void set_atom_charge(char *);
     void set_molecule_unit(char *);
     void set_symmetry(char *);
     void set_redund_coor(int);
     void set_gradient(int);
     void set_frequencies(int);
+    void set_freq_accuracy(char *);
     void set_restart(int);
     void set_checkpoint(int);
+    void set_precise_findif(int);
     void set_molecule_bohr(int);
     void set_debug(char *);
     void set_pccsd(char *, char *, char *);

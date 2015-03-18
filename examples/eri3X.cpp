@@ -42,39 +42,6 @@
 using namespace tcc;
 namespace ints = integrals;
 
-namespace boost {
-namespace serialization {
-
-template <typename Archive>
-void serialize(Archive &ar, RowMatrixXd &m, const unsigned int version) {
-    unsigned int rows = 0;
-    unsigned int cols = 0;
-    ar &rows;
-    ar &cols;
-
-    m.resize(rows, cols);
-
-    ar &boost::serialization::make_array(m.data(), m.size());
-}
-
-
-} // serialization
-} // boost
-
-RowMatrixXd read_density_from_file(std::string const &file_name) {
-    RowMatrixXd D;
-    std::ifstream dfile(file_name.c_str());
-    if (dfile.good()) {
-        boost::archive::binary_iarchive ia(dfile, std::ios::binary);
-        ia >> D;
-        dfile.close();
-    } else {
-        throw;
-    }
-
-    return D;
-}
-
 int main(int argc, char **argv) {
     auto &world = madness::initialize(argc, argv);
     std::string mol_file = "";
@@ -143,13 +110,20 @@ int main(int argc, char **argv) {
     {
         auto dfbasis_array = utility::make_array(df_basis, df_basis);
         auto eri2 = BlockSparseIntegrals(
-            world, eri_pool, basis_array,
-            integrals::compute_functors::BtasToLowRankTensor{});
+            world, eri_pool, dfbasis_array,
+            integrals::compute_functors::BtasToTaTensor{});
+
+        auto eri2_lr = TA::to_new_tile_type(
+            eri2, integrals::compute_functors::TaToLowRankTensor<2>(
+                     low_rank_threshold));
+
+        utility::print_par(world, "\n");
+        utility::print_size_info(eri2_lr, "Eri2");
 
         auto inv_timer
             = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2); });
         auto eri2_inv = inv_timer.apply();
-        utility::print_par(world, "Eri2 inverse computation time = ",
+        utility::print_par(world, "\nEri2 inverse computation time = ",
                            inv_timer.time(), "\n");
         eri2_inv("i,j") = eri2_inv("i,k") * eri2_inv("k,j");
         eri2_inv.truncate();
@@ -158,6 +132,7 @@ int main(int argc, char **argv) {
             eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>(
                      low_rank_threshold));
 
+        utility::print_par(world, "\n");
         utility::print_size_info(eri2_inv_lr, "Eri2 inverse");
 
         Xab("X, a, b") = eri2_inv("X,P") * Xab("P, a, b");
@@ -167,8 +142,8 @@ int main(int argc, char **argv) {
             Xab, integrals::compute_functors::TaToLowRankTensor<3>(
                      low_rank_threshold));
 
-        utility::print_size_info(Xab_lr, "\\tilde{X}ab");
         utility::print_par(world, "\n");
+        utility::print_size_info(Xab_lr, "\\tilde{X}ab");
     }
 
     madness::finalize();

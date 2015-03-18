@@ -123,51 +123,74 @@ int main(int argc, char **argv) {
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
     auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
 
+    basis::BasisSet bs{basis_name};
+    basis::BasisSet df_bs{df_basis_name};
+
     std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
     std::ofstream fout("/dev/null");
     std::cout.rdbuf(fout.rdbuf());
-    basis::BasisSet bs{basis_name};
-    basis::BasisSet df_bs{df_basis_name};
-    std::cout.rdbuf(cout_sbuf);
-
     basis::Basis basis{bs.create_basis(bs_clusters)};
     basis::Basis df_basis{df_bs.create_basis(dfbs_clusters)};
+    std::cout.rdbuf(cout_sbuf);
 
     auto tr1 = basis.create_flattend_trange1();
     auto tr = TA::TiledRange{tr1, tr1};
 
-    auto D_TA = TA::Array<double, 2>(world, tr);
+    RowMatrixXd D_eig;
+    if (world.rank() == 0) {
+        auto D_eig = read_density_from_file(density_file);
+    }
+    world.gop.fence();
+
+    TA::Tensor<float> tile_norms(tr.tiles(), 0.0);
+    for (auto i = 0; i < tile_norms.size(); ++i) {
+        auto range = tr.make_tile_range(i);
+        auto const &size = range.size();
+        auto const &start = range.start();
+
+        tile_norms[i]
+            = D_eig.block(start[0], start[1], size[0], size[1]).lpNorm<2>();
+    }
+
+    TA::SparseShape<float> shape(world, tile_norms, tr);
+
+    auto D_TA
+        = TA::Array<double, 2, tensor::TilePimpl<double>, TA::SparsePolicy>(
+            world, tr, shape);
+
     auto const &pmap = D_TA.get_pmap();
     auto beg = pmap->begin();
     auto end = pmap->end();
 
     if (world.rank() == 0) {
-        std::cout << "Rank 0\n";
         for (auto i = 0; i < pmap->size(); ++i) {
-            std::cout << "Owner of " << i << " = "
-                      << pmap->owner(i) << std::endl;
+            if (!D_TA.is_zero(i)) {
+                auto range = tr.make_tile_range(i);
+                auto const &start = range.start();
+                auto const &size = range.size();
+                RowMatrixXd mat
+                    = D_eig.block(start[0], start[1], size[0], size[1]);
+
+                RowMatrixXd L, R;
+                if (algebra::Decompose_Matrix(mat, L, R, low_rank_threshold)) {
+                    auto tile = tensor::TilePimpl<double>{range, 
+                        tensor::TileVariant<double>{
+                            tensor::FullRankTile<double>{mat}},
+                        low_rank_threshold};
+                    D_TA.set(i, tile);
+                } else {
+                    auto tile = tensor::TilePimpl<double>{range, 
+                        tensor::TileVariant<double>{
+                            tensor::LowRankTile<double>{L,R}},
+                        low_rank_threshold};
+                    D_TA.set(i, tile);
+                }
+            }
         }
-        world.gop.send(1, 2, 2.76);
-    }
-    world.gop.fence();
-    if (world.rank() != 0) {
-        std::cout << "My rank is " << world.rank() << std::endl;
-        for (auto i = 0; i < pmap->size(); ++i) {
-            std::cout << "Owner of " << i << " = "
-                      << pmap->owner(i) << std::endl;
-        }
-        double from_zero;
-        auto is_here = world.gop.recv<double>(0, from_zero);
-        while(is_here.probe()){}
-        std::cout << "Double from 0 = " << from_zero << std::endl;
     }
 
-    /* if(world.rank() == 0){ */
-    /*     auto D = read_density_from_file(density_file); */
-    /*     std::cout << "Density is \n" << D << std::endl; */
-    /* } */
-    world.gop.fence();
-    
+    utility::print_size_info(D_TA, "D");
+
     madness::finalize();
     return 0;
 }

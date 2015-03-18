@@ -426,12 +426,12 @@ try_main(int argc, char *argv[])
   std::string mole_ckpt_file;
   mole_ckpt_file = wfn_file;
 
-  int restart = keyval->booleanvalue("restart",truevalue);
+  const bool restart = keyval->booleanvalue("restart",truevalue);
 
-  int checkpoint = keyval->booleanvalue("checkpoint",truevalue);
-  int checkpoint_freq = keyval->intvalue("checkpoint_freq",KeyValValueint(1));
+  const bool checkpoint = keyval->booleanvalue("checkpoint",truevalue);
+  const bool checkpoint_freq = keyval->intvalue("checkpoint_freq",KeyValValueint(1));
 
-  int savestate = keyval->booleanvalue("savestate",truevalue);
+  const bool savestate = keyval->booleanvalue("savestate",truevalue);
 
   const bool precise_findif = keyval->booleanvalue("precise_findif",falsevalue);
 

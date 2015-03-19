@@ -80,6 +80,8 @@ qstring \"[^"\n]+\"
 "ansatz"        { return T_ANSATZ; }
 "ri"            { return T_RI; }
 "uc"            { return T_UC; }
+"puream"        { return T_PUREAM; }
+"split"         { return T_SPLIT; }
 "="             { return T_EQUALS; }
 ":"             { return T_COLON; }
 "("             { return T_BEG_OPT; }

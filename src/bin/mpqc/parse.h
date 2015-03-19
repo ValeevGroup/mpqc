@@ -80,22 +80,24 @@ extern int yydebug;
      T_MAXITER = 289,
      T_SCF = 290,
      T_UC = 291,
-     T_DOCC = 292,
-     T_SOCC = 293,
-     T_FROZEN_DOCC = 294,
-     T_FROZEN_UOCC = 295,
-     T_ALPHA = 296,
-     T_BETA = 297,
-     T_PCCSD = 298,
-     T_XC = 299,
-     T_GRID = 300,
-     T_RI = 301,
-     T_F12 = 302,
-     T_APP = 303,
-     T_ANSATZ = 304,
-     T_OO_INPUT_KEYWORD = 305,
-     T_STRING = 306,
-     T_BOOL = 307
+     T_PUREAM = 292,
+     T_SPLIT = 293,
+     T_DOCC = 294,
+     T_SOCC = 295,
+     T_FROZEN_DOCC = 296,
+     T_FROZEN_UOCC = 297,
+     T_ALPHA = 298,
+     T_BETA = 299,
+     T_PCCSD = 300,
+     T_XC = 301,
+     T_GRID = 302,
+     T_RI = 303,
+     T_F12 = 304,
+     T_APP = 305,
+     T_ANSATZ = 306,
+     T_OO_INPUT_KEYWORD = 307,
+     T_STRING = 308,
+     T_BOOL = 309
    };
 #endif
 
@@ -112,7 +114,7 @@ typedef union YYSTYPE
   
 
 /* Line 2053 of yacc.c  */
-#line 116 "parse.tmp.hh"
+#line 118 "parse.tmp.hh"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

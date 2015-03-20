@@ -1027,7 +1027,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
     if (frozen_docc_.set())
       write_vector(ostrs, "nfzc", "frozen_docc", frozen_docc_, 0);
     else
-      ostrs << indent << "frozen_docc = auto" << endl;
+      ostrs << indent << "nfzc = auto" << endl;
     write_vector(ostrs, "nfzv", "frozen_uocc", frozen_uocc_, 0);
     }
   else {

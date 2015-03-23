@@ -55,3 +55,13 @@ target_link_libraries(eri3X
 )
 add_dependencies(read_density eri3_with_density_from_disk eri3X)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_}")
+
+add_executable(eri3X12 EXCLUDE_FROM_ALL eri3X12.cpp) 
+target_link_libraries(eri3X12
+  ${TileClusterChem_LIBRARIES}
+  ${USER_BOOST_LIB}
+)
+add_dependencies(read_density eri3_with_density_from_disk eri3X eri3X12)
+
+# Fix cmake flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_}")

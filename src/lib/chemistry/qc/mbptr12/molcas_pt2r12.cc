@@ -59,14 +59,14 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
             this->class_desc());
   }
 
-  molcas_ = kv->stringvalue("molcas", KeyValValuestring(std::string()));
+  molcas_ = kv->stringvalue("molcas", KeyValValuestring(std::string("molcas")));
   if (molcas_.empty()){
     throw InputError("empty keyword value",
             __FILE__, __LINE__, "molcas", molcas_.c_str(),
             this->class_desc());
   }
 
-  molcas_input_ = kv->stringvalue("molcas_input", KeyValValuestring(std::string()));
+  molcas_input_ = kv->stringvalue("molcas_input", KeyValValuestring(std::string("-f")));
   if (molcas_input_.empty()){
     throw InputError("empty keyword value",
             __FILE__, __LINE__, "molcas_input", molcas_input_.c_str(),
@@ -152,6 +152,10 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
   caspt2_energy_ = 0;
 }
 
+
+MolcasPT2R12::~MolcasPT2R12(){
+
+}
 
 void MolcasPT2R12::compute()
 {

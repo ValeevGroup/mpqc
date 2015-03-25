@@ -67,7 +67,14 @@ target_link_libraries(eri3X12
   ${TileClusterChem_LIBRARIES}
   ${USER_BOOST_LIB}
 )
-add_dependencies(read_density eri3_with_density_from_disk eri3X eri3X12)
+
+add_executable(eri3X_with_density EXCLUDE_FROM_ALL eri3X_with_density.cpp) 
+target_link_libraries(eri3X_with_density
+  ${TileClusterChem_LIBRARIES}
+  ${USER_BOOST_LIB}
+)
+
+add_dependencies(read_density eri3_with_density_from_disk eri3X eri3X12 eri3X_with_density)
 
 # Fix cmake flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_}")

@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
         integrals::compute_functors::TaToLowRankTensor<2>(low_rank_threshold));
 
     auto const &dims = eri2_lr.trange().elements().size();
-    auto eig_lr = RowMatrixXd::Zero(dims[0], dims[1]);
+    RowMatrixXd eig_lr = RowMatrixXd::Zero(dims[0], dims[1]);
 
     for(auto it = eri2_lr.begin(); it != eri2_lr.end(); ++it){
         auto const &tile = it->get();
@@ -93,8 +93,8 @@ int main(int argc, char **argv) {
             auto const &L = tile.tile().lrtile().matrixL();
             auto const &R = tile.tile().lrtile().matrixR();
 
-            eig_block.leftCols(L.cols()) = L;
             eig_block.topRows(R.rows()) = R;
+            eig_block.leftCols(L.cols()) = L;
         }
 
         eig_lr.block(start[0], start[1], size[0], size[1]) = eig_block;
@@ -102,6 +102,7 @@ int main(int argc, char **argv) {
 
     std::ofstream out_stream(out_file.c_str());
     out_stream << std::setprecision(15);
+    out_stream << std::fixed;
     out_stream << eig_lr << std::endl;
     out_stream.close();
 

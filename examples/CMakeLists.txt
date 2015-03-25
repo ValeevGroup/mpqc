@@ -39,6 +39,12 @@ target_link_libraries(four_center_exchange
 )
 add_dependencies(examples four_center_exchange)
 
+add_executable(matrix_plot EXCLUDE_FROM_ALL matrix_plot.cpp) 
+target_link_libraries(matrix_plot
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(examples matrix_plot)
+
 # We need to save the old cmake cxx_flags and append boost include only for this 
 # file.
 set(CMAKE_CXX_FLAGS_ ${CMAKE_CXX_FLAGS}) 

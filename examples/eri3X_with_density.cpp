@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
     auto mol = molecule::read_xyz(mol_file);
 
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
-    auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
+    auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
 
     basis::BasisSet bs{basis_name};
     basis::BasisSet df_bs{df_basis_name};

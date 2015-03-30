@@ -7,23 +7,17 @@ target_link_libraries(sqrt_inverse_example
 )
 add_dependencies(examples sqrt_inverse_example)
 
-add_executable(hartree_fock EXCLUDE_FROM_ALL hartree_fock.cpp) 
-target_link_libraries(hartree_fock
-  ${TileClusterChem_LIBRARIES}
-)
-add_dependencies(examples hartree_fock)
-
 add_executable(lr_hartree_fock EXCLUDE_FROM_ALL lr_hartree_fock.cpp) 
 target_link_libraries(lr_hartree_fock
   ${TileClusterChem_LIBRARIES}
 )
 add_dependencies(examples lr_hartree_fock)
 
-add_executable(four_center_exchange EXCLUDE_FROM_ALL four_center_exchange.cpp) 
-target_link_libraries(four_center_exchange
-  ${TileClusterChem_LIBRARIES}
+add_executable(new_tile_test EXCLUDE_FROM_ALL new_tile_test.cpp)
+target_link_libraries(new_tile_test
+    ${TileClusterChem_LIBRARIES}
 )
-add_dependencies(examples four_center_exchange)
+add_dependencies(examples new_tile_test)
 
 add_executable(matrix_plot EXCLUDE_FROM_ALL matrix_plot.cpp) 
 target_link_libraries(matrix_plot

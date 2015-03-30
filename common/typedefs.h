@@ -14,6 +14,8 @@ using LRArray = TA::Array<double, DIM, tcc::tensor::TilePimpl<double>, Policy>;
 template<unsigned int DIM, typename Policy>
 using TAArray = TA::Array<double, DIM, TA::TensorD, Policy>;
 
+template<typename T>
+using Tile = tcc::tensor::Tile<T>;
 
 // Useful typedefs for removing qualifiers from types.
 template<typename T>

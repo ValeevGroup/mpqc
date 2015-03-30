@@ -47,7 +47,7 @@ void assign_hydrogens_to_heavies(
     std::vector<std::pair<It, std::vector<It>>> &h_owners) {
 
     auto end = cs.end();
-    using range = tbb::blocked_range<It>;
+    /* using range = tbb::blocked_range<It>; */
 
     /* TODO find way to make parallel loop deterministic 
     // Lambda finds the closes heavy to each hydrogen then calculates the

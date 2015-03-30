@@ -66,7 +66,6 @@ int main(int argc, char *argv[]) {
     int dfbs_nclusters = 0;
     double threshold = 1e-11;
     double low_rank_threshold = 1e-7;
-    volatile int debug = 0;
     if (argc >= 6) {
         mol_file = argv[1];
         basis_name = argv[2];
@@ -80,9 +79,6 @@ int main(int argc, char *argv[]) {
     }
     if (argc == 7) {
         threshold = std::stod(argv[6]);
-    }
-    if (argc == 8) {
-        debug = std::stoi(argv[7]);
     }
     TiledArray::SparseShape<float>::threshold(threshold);
     utility::print_par(world, "Sparse threshold is ",
@@ -98,7 +94,7 @@ int main(int argc, char *argv[]) {
                        repulsion_energy, "\n");
 
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
-    auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
+    auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
 
     std::streambuf* cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
     std::ofstream fout("/dev/null");

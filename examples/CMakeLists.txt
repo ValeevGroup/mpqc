@@ -1,14 +1,6 @@
 add_custom_target(examples)
 add_custom_target(read_density)
 
-set(sources
-    sparse_integral_example.cpp
-    sqrt_inverse_example.cpp
-    hartree_fock.cpp
-    lr_hartree_fock.cpp
-    four_center_exchange.cpp
-)
-
 # add_executable(sparse_integral_example EXCLUDE_FROM_ALL sparse_integral_example.cpp) 
 # target_link_libraries(sparse_integral_example
 #  ${TileClusterChem_LIBRARIES}
@@ -39,6 +31,12 @@ target_link_libraries(four_center_exchange
 )
 add_dependencies(examples four_center_exchange)
 
+add_executable(four_center_exchange EXCLUDE_FROM_ALL four_center_exchange.cpp) 
+target_link_libraries(four_center_exchange
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(examples four_center_exchange)
+
 # We need to save the old cmake cxx_flags and append boost include only for this 
 # file.
 set(CMAKE_CXX_FLAGS_ ${CMAKE_CXX_FLAGS}) 
@@ -53,8 +51,6 @@ add_executable(eri3X EXCLUDE_FROM_ALL eri3X.cpp)
 target_link_libraries(eri3X
   ${TileClusterChem_LIBRARIES}
 )
-add_dependencies(read_density eri3_with_density_from_disk eri3X)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_}")
 
 add_executable(eri3X12 EXCLUDE_FROM_ALL eri3X12.cpp) 
 target_link_libraries(eri3X12

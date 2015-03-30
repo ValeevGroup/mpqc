@@ -16,6 +16,7 @@
 #include "../utility/ta_helpers.h"
 
 #include "../tensor/conversions/tile_pimpl_to_ta_tensor.h"
+#include "../tensor/conversions/btas_tensor_to_exchange_tensor.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
         basis_name = argv[2];
         nclusters = std::stoi(argv[3]);
     } else {
-        std::cout << "input is $./program mol_file basis_file df_basis_file "
+        std::cout << "input is $./program mol_file basis_file "
                      "nclusters \n";
         return 0;
     }
@@ -100,68 +101,39 @@ int main(int argc, char *argv[]) {
     auto eri_pool
         = ints::make_pool(ints::make_2body(basis, basis, basis, basis));
 
-    class btas_to_four_k {
-      private:
-        double low_rank_threshold;
-
-      public:
-        using TileType = tensor::TilePimpl<double>;
-
-        btas_to_four_k(double l) : low_rank_threshold(l) {}
-
-        tensor::TilePimpl<double>
-        operator()(tensor::ShallowTensor<4> const bt) {
-            auto const &extent = bt.tensor().extent();
-            auto ij = extent[0] * extent[1];
-            auto kl = extent[2] * extent[3];
-            auto prange = btas::permute(bt.tensor().range(), {0, 1, 2, 3});
-            remove_ref_const_t<decltype(bt.tensor())> view
-                = btas::make_view(prange, bt.tensor().storage());
-            RowMatrixXd Tile(ij, kl);
-            for (auto i = 0; i < Tile.size(); ++i) {
-                auto elem = view[i];
-                *(Tile.data() + i) = elem;
-            }
-
-            if (Tile.lpNorm<2>()
-                >= TiledArray::SparseShape<float>::threshold()) {
-                RowMatrixXd L, R;
-                bool is_full
-                    = algebra::Decompose_Matrix(Tile, L, R, low_rank_threshold);
-                if (!is_full) {
-                    tensor::TileVariant<double> tile_variant{
-                        tensor::LowRankTile<double>{std::move(L),
-                                                    std::move(R)}};
-
-                    return tensor::TilePimpl<double>{bt.range(),
-                                                     std::move(tile_variant),
-                                                     low_rank_threshold};
-                }
-
-                tensor::TileVariant<double> tile_variant{
-                    tensor::FullRankTile<double>{std::move(Tile)}};
-
-                return tensor::TilePimpl<double>{bt.range(),
-                                                 std::move(tile_variant)};
-            } else { // For now if tile is super sparse return a 1x1 zero tile.
-                Tile = RowMatrixXd::Zero(1, 1);
-                tensor::TileVariant<double> tile_variant{
-                    tensor::FullRankTile<double>{std::move(Tile)}};
-
-                return tensor::TilePimpl<double>{bt.range(),
-                                                 std::move(tile_variant)};
-            }
-        }
-    };
-
     // Compute center integrals
     utility::print_par(world, "\n");
 
     auto EriK = ints::BlockSparseIntegrals(
         world, eri_pool, utility::make_array(basis, basis, basis, basis),
-        btas_to_four_k{low_rank_threshold});
+        tensor::conversions::BtasToCoulomb{low_rank_threshold});
 
-    print_size_info(EriK, "Low Rank Exchange Tensor");
+    std::array<double, 3> sizes{{0.0, 0.0, 0.0}};
+    auto beg = EriK.get_pmap()->begin();
+    auto end = EriK.get_pmap()->end();
+    auto const &trange = EriK.trange();
+    for(auto it = beg; it != end; ++it){
+        if(EriK.is_local(*it)){
+            auto range = trange.make_tile_range(*it);
+            sizes[0] += range.volume();
+            
+            if(!EriK.is_zero(*it)){
+                auto const &t = EriK.find(*it).get();
+                sizes[1] += t.size();
+                sizes[2] += t.compressed_size();
+            }
+        }
+    }
+    sizes[0] *= 8 * 1e-9;
+    sizes[1] *= 8 * 1e-9;
+    sizes[2] *= 8 * 1e-9;
+
+    world.gop.sum(&sizes[0], 3);
+
+    utility::print_par(world, "Storage for exchange is:\n", 
+            "\tFull = ", sizes[0], 
+            "\n\tSparse = ", sizes[1], 
+            "\n\tLow = ", sizes[2], "\n");
 
 
     world.gop.fence();

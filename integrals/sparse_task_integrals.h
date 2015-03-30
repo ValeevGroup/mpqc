@@ -50,7 +50,7 @@ template <typename TileType, typename TF, typename SharedEnginePool,
 
     auto ta_tensor = func(btas_tensor);
     auto norm = ta_tensor.norm();
-    assert(norm > 0);
+    assert(norm >= 0);
     assert(norm == norm);
 
     // Save the tensor with it's ordinal information for later.

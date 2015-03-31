@@ -35,6 +35,10 @@ class Tile {
     Tile(TA::Range r, std::shared_ptr<T> st)
         : range_{std::move(r)}, tile_{std::move(st)} {}
 
+    template<typename Value>
+    Tile(TA::Range r, Value v)
+        : range_{std::move(r)}, tile_{std::make_shared<T>(T{r,v})} {}
+
     std::shared_ptr<T> tile_ptr() { return tile_; }
     const std::shared_ptr<T> tile_ptr() const { return tile_; }
     T &tile() { return *tile_; }

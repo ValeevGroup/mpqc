@@ -16,18 +16,15 @@ int main(int argc, char **argv) {
     TA::Array<double, 2, Tile<TA::Tensor<double>>, TA::DensePolicy> A(world,
                                                                       tr);
 
-    A.set_all_local(1.0);
+    A.set_all_local(3.0);
 
     std::cout << "Array A\n" << A << std::endl;
-
-    for (auto fut : A) {
-        std::cout << "Tile is empty? " << fut.get().empty() << "\n";
-        std::cout << "Norm of tile = " << fut.get().norm() << "\n";
-    }
 
     TA::Array<double, 2, Tile<TA::Tensor<double>>, TA::DensePolicy> B(world,
                                                                       tr);
     B.set_all_local(2.0);
+
+    std::cout << "B = \n" << B << std::endl;
 
     decltype(A) C;
     C("i,j") = A("i,j") + B("i,j");
@@ -40,6 +37,12 @@ int main(int argc, char **argv) {
 
     C("i,j") = C("i,j") + C("j,i");
 
+    std::cout << "C = \n" << C << std::endl;
+
+    C("j,i") = B("i,j") + A("i,j");
+    std::cout << "C = \n" << C << std::endl;
+
+    C("i,j") = B("i,k") * A("k,j");
     std::cout << "C = \n" << C << std::endl;
 
     madness::finalize();

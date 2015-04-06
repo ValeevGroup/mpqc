@@ -4,6 +4,7 @@
 
 #include "../common/typedefs.h"
 #include "../include/tiledarray.h"
+#include "../utility/meta/get_type.h"
 
 #include <memory>
 
@@ -41,30 +42,78 @@ class TileModel {
 
     T clone_() const { return clone(tile_); }
 
-    template <typename Right>
-    auto add_(Right const &r) const -> decltype(add(tile_, r)) {
-        return add(tile_, r);
-    }
-
-    template <typename Right>
-    auto add_(Right const &r,
-              TA::Permutation const &p) const -> decltype(add(tile_, r, p)) {
-        return add(tile_, r, p);
-    }
-
-    template <typename Right>
-    T &add_to_(Right const &r) {
-        add_to(tile_, r);
-        return tile_;
-    }
-
-    template <typename Right>
-    T &add_to_(Right const &r, TA::Permutation const &p) {
-        add_to(tile_, r, p);
-        return tile_;
-    }
-
     T permute_(TA::Permutation const &p) const { return permute(tile_, p); }
+
+    /*
+     * Add
+     */
+    template <typename ...Args>
+    auto add_(Args&&...args) const -> decltype(add(tile_, std::forward<Args>(args)...)) {
+        return add(tile_, std::forward<Args>(args)...);
+    }
+
+    template <typename ...Args>
+    T &add_to_(Args&& ...args) {
+        add_to(tile_, std::forward<Args>(args)...);
+        return tile_;
+    }
+
+    /*
+     * Subtract
+     */
+    template <typename ...Args>
+    auto subt_(Args&&...args) const -> decltype(subt(tile_, std::forward<Args>(args)...)) {
+        return subt(tile_, std::forward<Args>(args)...);
+    }
+
+    template <typename ...Args>
+    T &subt_to_(Args&& ...args) {
+        subt_to(tile_, std::forward<Args>(args)...);
+        return tile_;
+    }
+
+    /*
+     * Multiply
+     */
+    template <typename ...Args>
+    auto mult_(Args&&...args) const -> decltype(mult(tile_, std::forward<Args>(args)...)) {
+        return mult(tile_, std::forward<Args>(args)...);
+    }
+
+    template <typename ...Args>
+    T &mult_to_(Args&& ...args) {
+        mult_to(tile_, std::forward<Args>(args)...);
+        return tile_;
+    }
+
+    /*
+     * Negate
+     */
+    template <typename ...Args>
+    auto neg_(Args&&...args) const -> decltype(neg(tile_, std::forward<Args>(args)...)) {
+        return neg(tile_, std::forward<Args>(args)...);
+    }
+
+    template <typename ...Args>
+    T &neg_to_(Args&& ...args) {
+        neg_to(tile_, std::forward<Args>(args)...);
+        return tile_;
+    }
+
+    /*
+     * Gemm
+     */
+    template <typename ...Args>
+    auto gemm_(Args&&...args) const -> decltype(gemm(tile_, std::forward<Args>(args)...)) {
+        return gemm(tile_, std::forward<Args>(args)...);
+    }
+
+    template <typename ...Args>
+    T &gemm_to_(Args&& ...args) {
+        gemm(tile_, std::forward<Args>(args)...);
+        return tile_;
+    }
+
 };
 
 } // namespace detail
@@ -100,6 +149,7 @@ class Tile {
               tile_{std::make_shared<detail::TileModel<T>>(
                     detail::TileModel<T>{detail::TileModel<T>{T{r, v}}})} {}
 
+  public: // Member functions for general use
     T &tile() { return tile_->tile(); }
     T const &tile() const { return tile_->tile(); }
 
@@ -109,35 +159,199 @@ class Tile {
 
     bool empty() const { return (!tile_ || tile_->empty_()); }
 
-    auto norm() const -> decltype(tile_ -> norm_()) { return tile_->norm_(); }
+    auto norm() const -> decltype(tile_->norm_()) { return tile_->norm_(); }
 
-    template <typename U>
-    auto add(
-          Tile<U> const &u) const -> Tile<decltype(tile_ -> add_(u.tile()))> {
-        auto out = tile_->add_(u.tile());
-        return Tile<decltype(out)>{range_, std::move(out)};
+    template <typename Op, typename... Args>
+    auto apply(Op op, Args &&... args) const
+          -> decltype(op(tile_->tile(), std::forward<Args>(args)...)) {
+        return op(tile_->tile(), std::forward<Args>(args)...);
     }
 
-    template <typename U>
-    auto add(Tile<U> const &u, TA::Permutation const &p) const
-          -> Tile<decltype(tile_ -> add_(u.tile(), p))> {
-        auto out = tile_->add_(u.tile(), p);
-        return Tile<decltype(out)>{range_, std::move(out)};
-    }
-
-    template <typename U>
-    Tile &add_to(Tile<U> const &u) {
-        tile_->add_to_(u.tile());
+    template <typename Op, typename... Args>
+    Tile& mutate(Op op, Args &&... args) {
+        op(tile_->tile(), std::forward<Args>(args)...);
         return *this;
     }
 
+  private:
+    TA::Range create_new_range(TA::Range const &r) const { return r; }
+
+    template <typename... Args>
+    TA::Range create_new_range(TA::Range const &r, Args &&... args) const {
+        auto do_permutation
+              = std::is_same<typename utility::meta::last_type<Args...>::type,
+                             TA::Permutation const &>::value;
+
+        TA::Range new_range;
+        if (do_permutation) {
+            auto const &perm = utility::meta::back(args...);
+            new_range = perm ^ range_;
+        } else {
+            new_range = range_;
+        }
+
+        return new_range;
+    }
+
+  public: // TA math functions
     Tile permute(TA::Permutation const &p) const {
-        return Tile{range_, tile_->permute_(p)};
+        return Tile{p ^ range_, tile_->permute_(p)};
     }
 
     template <typename Archive>
     void serialize(Archive &ar) {
         assert(false);
+    }
+
+    /*
+     * Add functions
+     */
+    template <typename... Args>
+    auto add(Args &&... args) const
+          -> Tile<decltype(tile_->add_(std::forward<Args>(args)...))> {
+        auto range = create_range(range_, args...);
+        auto out = tile_->add_(std::forward<Args>(args)...);
+        return Tile<decltype(out)>{std::move(range), std::move(out)};
+    }
+
+    // Overload for tcc::Tile
+    template <typename U, typename... Args>
+    auto add(Tile<U> const &u, Args &&... args) const
+          -> Tile<decltype(tile_->add_(u.tile(),
+                                       std::forward<Args>(args)...))> {
+        auto range = create_new_range(range_, args...);
+        auto out = tile_->add_(u.tile(), std::forward<Args>(args)...);
+        return Tile<decltype(out)>{std::move(range), std::move(out)};
+    }
+
+    template <typename... Args>
+    Tile &add_to(Args &&... args) {
+        tile_->add_to_(std::forward<Args>(args)...);
+        return *this;
+    }
+
+    template <typename U, typename... Args>
+    Tile &add_to(Tile<U> const &u, Args &&... args) {
+        tile_->add_to_(u.tile(), std::forward<Args>(args)...);
+        return *this;
+    }
+
+    /*
+     * Subtract functions
+     */
+    template <typename... Args>
+    auto subt(Args &&... args) const
+          -> Tile<decltype(tile_->subt_(std::forward<Args>(args)...))> {
+        auto range = create_range(range_, args...);
+        auto out = tile_->subt_(std::forward<Args>(args)...);
+        return Tile<decltype(out)>{std::move(range), std::move(out)};
+    }
+
+    // Overload for tcc::Tile
+    template <typename U, typename... Args>
+    auto subt(Tile<U> const &u, Args &&... args) const
+          -> Tile<decltype(tile_->subt_(u.tile(),
+                                        std::forward<Args>(args)...))> {
+        auto range = create_new_range(range_, args...);
+        auto out = tile_->subt_(u.tile(), std::forward<Args>(args)...);
+        return Tile<decltype(out)>{std::move(range), std::move(out)};
+    }
+
+    template <typename... Args>
+    Tile &subt_to(Args &&... args) {
+        tile_->subt_to_(std::forward<Args>(args)...);
+        return *this;
+    }
+
+    template <typename U, typename... Args>
+    Tile &subt_to(Tile<U> const &u, Args &&... args) {
+        tile_->subt_to_(u.tile(), std::forward<Args>(args)...);
+        return *this;
+    }
+
+    /*
+     * Multiplication functions
+     */
+    template <typename... Args>
+    auto mult(Args &&... args) const
+          -> Tile<decltype(tile_->mult_(std::forward<Args>(args)...))> {
+        auto range = create_range(range_, args...);
+        auto out = tile_->mult_(std::forward<Args>(args)...);
+        return Tile<decltype(out)>{std::move(range), std::move(out)};
+    }
+
+    // Overload for tcc::Tile
+    template <typename U, typename... Args>
+    auto mult(Tile<U> const &u, Args &&... args) const
+          -> Tile<decltype(tile_->mult_(u.tile(),
+                                        std::forward<Args>(args)...))> {
+        auto range = create_new_range(range_, args...);
+        auto out = tile_->mult_(u.tile(), std::forward<Args>(args)...);
+        return Tile<decltype(out)>{std::move(range), std::move(out)};
+    }
+
+    template <typename... Args>
+    Tile &mult_to(Args &&... args) {
+        tile_->mult_to_(std::forward<Args>(args)...);
+        return *this;
+    }
+
+    template <typename U, typename... Args>
+    Tile &mult_to(Tile<U> const &u, Args &&... args) {
+        tile_->mult_to_(u.tile(), std::forward<Args>(args)...);
+        return *this;
+    }
+
+    /*
+     * Neg functions
+     */
+    template <typename... Args>
+    Tile neg(Args &&... args) const {
+        TA::Range range = create_new_range(range_, args...);
+        return Tile{std::move(range), tile_->neg_(std::forward<Args>(args)...)};
+    };
+
+    Tile &neg_to() {
+        tile_->neg_to_();
+        return *this;
+    };
+
+    /*
+     * Gemm functions
+     */
+    template <typename Other>
+    auto gemm(Other const &o, const numeric_type factor,
+              TA::math::GemmHelper const &gemm_helper) const
+          -> Tile<decltype(tile_->gemm_(o, factor, gemm_helper))> {
+
+        auto range
+              = gemm_helper.make_result_range<TA::Range>(range_, o.range());
+        auto out = tile_->gemm_(o, factor, gemm_helper);
+        return Tile<decltype(out)>{std::move(range), std::move(out)};
+    }
+
+    template <typename U>
+    auto gemm(Tile<U> const &u, const numeric_type factor,
+              TA::math::GemmHelper const &gemm_helper) const
+          -> Tile<decltype(tile_->gemm_(u.tile(), factor, gemm_helper))> {
+        auto range
+              = gemm_helper.make_result_range<TA::Range>(range_, u.range());
+        auto out = tile_->gemm_(u.tile(), factor, gemm_helper);
+        return Tile<decltype(out)>{std::move(range), std::move(out)};
+    }
+
+    template <typename Left, typename Right>
+    Tile &gemm(Left const &l, Right const &r, const numeric_type factor,
+               TA::math::GemmHelper const &gemm_helper) {
+        tile_->gemm_to_(l, r, factor, gemm_helper);
+        return *this;
+    }
+
+    template <typename U, typename V>
+    Tile &gemm(Tile<U> const &l, Tile<V> const &r, const numeric_type factor,
+               TA::math::GemmHelper const &gemm_helper) {
+        tile_->gemm_to_(l.tile(), r.tile(), factor, gemm_helper);
+        return *this;
     }
 };
 

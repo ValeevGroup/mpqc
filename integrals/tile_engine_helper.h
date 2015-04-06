@@ -5,7 +5,7 @@
 #include "../include/libint.h"
 #include "../include/btas.h"
 
-#include "../utility/gen_seq.h"
+#include "../utility/meta/gen_seq.h"
 
 #include "../basis/cluster_shells.h"
 #include "../basis/basis.h"

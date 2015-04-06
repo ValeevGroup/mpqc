@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <spwan.h>
+
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
@@ -39,6 +41,7 @@
 #include <extern/moinfo/moinfo.h>
 
 using namespace sc;
+using namespace std;
 
 ClassDesc MolcasPT2R12::class_desc_(typeid(MolcasPT2R12),
                                 "MolcasPT2R12",
@@ -313,6 +316,11 @@ void MolcasPT2R12::initialize()
 
 void MolcasPT2R12::run_molcas()
 {
+
+  int me = MessageGrp::get_default_messagegrp()->me();
+  // only run on node 0
+  if(me != 0) return;
+
   // update the xyz_file
   std::ofstream new_xyz_file;
   new_xyz_file.open(xyz_file_);
@@ -322,9 +330,79 @@ void MolcasPT2R12::run_molcas()
   Timer tim("molcas");
 
   //excute molcas command
-  std::string command_str;
-  command_str = molcas_ + " " + molcas_options_ + " " + molcas_input_;
-  std::system(command_str.c_str());
+#if HAVE_POSIX_SPAWN
+  {
+    std::string command_str;
+    command_str = molcas_ + " " + molcas_options_ + " " + molcas_input_;
+    std::vector<std::string> v_command_str;
+    std::istringstream ss_command_str(command_str);
+    do{
+      std::string sub;
+      ss_command_str >> sub;
+      v_command_str.push_back(sub);
+    }while(ss_command_str);
+
+    const std::size_t n = v_command_str.size();
+
+    char** spawned_command_str = new char*[n+1];
+    spawned_command_str[n] = NULL;
+    for(int i=0; i<n; ++i){
+      spawned_command_str[i] = strdup(v_command_str[i].c_str());
+    }
+     /* redirect new standard output (fd 1) and error (fd 2) */
+    std::posix_spawn_file_actions_t file_actions;
+    std::posix_spawn_file_actions_init(&file_actions);
+    #posix_spawn_file_actions_addopen(&file_actions, 1, stdout_.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    #posix_spawn_file_actions_addopen(&file_actions, 2, stderr_.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    std::pid_t pid;
+    const int errcod = std::posix_spawn(&pid, spawned_command_str[0], &file_actions, NULL,
+                                   spawned_command_str, environ);
+    if (errcod == 0) {
+      int status;
+      while (waitpid(-1, &status, 0) == -1) {
+        if (errno != EINTR){
+          throw SyscallFailed("run_molcas",
+                              __FILE__,__LINE__,
+                              "waitpid()", 0, class_desc());
+        }
+      }
+      // check the status of the completed call
+      if (WIFEXITED(status)) { // module called exit()
+        const int retval = WEXITSTATUS(status);
+        if (retval != 0) {
+          std::ostringstream oss; oss << "MolcasPT2R12::run_molcas -- module " << molcas_ << " returned nonzero, check psi output";
+          throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+        }
+      }
+      else { // module finished abnornmally
+        std::ostringstream oss; oss << "MolcasPT2R12::run_molcas -- module " << molcas_ << " completed abnormally";
+        throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+      }
+    }
+    else { // posix_spawn failed. How?
+      std::ostringstream oss; oss << "MolcasPT2R12::run_molcas -- posix_spawn failed";
+      throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+    }
+    std::posix_spawn_file_actions_destroy(&file_actions);
+  }
+#else
+  // no posix_spwan, use system instead
+  {
+    std::string command_str;
+    command_str = molcas_ + " " + molcas_options_ + " " + molcas_input_;
+    const int errcod = std::system(command_str.c_str());
+    if (errcod) {
+      // errcod == -1 means fork() failed. check errno
+      if (errcod == -1) {
+        throw SyscallFailed("run_molcas",
+                            __FILE__,__LINE__,
+                            "system()", 0, class_desc());
+      }
+      std::ostringstream oss; oss << "<MolcasPT2R12::run_molcas -- module " << molcas_ << " failed";
+      throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
+    }
+  }
+#endif
 
   tim.exit();
   // check molcas status

@@ -30,8 +30,6 @@
 
 using namespace sc;
 using namespace std;
-using boost::property_tree::ptree;
-using boost::property_tree::xml_writer_settings;
 
 static ClassDesc XMLWriter_cd(
   typeid(XMLWriter), "XMLWriter", 1, "public Runnable",
@@ -135,10 +133,10 @@ XMLWriter::init_filename(const string& filename){
 void
 XMLWriter::init(){
   if(pretty_print_){
-    write_settings_ = xml_writer_settings<char>(pretty_print_space_char_, pretty_print_spaces_);
+    write_settings_ = xml_writer_settings(pretty_print_space_char_, pretty_print_spaces_);
   }
   else{
-    write_settings_ = xml_writer_settings<char>();
+    write_settings_ = xml_writer_settings();
   }
 
   pt_stack_.push(current_root_);

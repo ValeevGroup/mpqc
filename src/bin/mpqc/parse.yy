@@ -36,7 +36,7 @@ int yydebug =1;
 %token T_OPTIMIZE T_GRADIENT T_BEG_OPT T_END_OPT T_CARTESIAN T_INTERNAL T_CONVERGENCE
 %token T_REDUNDANT T_RESTART T_CHECKPOINT T_COLON T_SYMMETRY T_MEMORY T_TMPDIR T_TMPSTORE
 %token T_DEBUG T_ACCURACY T_BOHR T_ANGSTROM T_FREQUENCIES T_PRECISE_FINDIF T_LINDEP T_MAXITER
-%token T_SCF T_UC
+%token T_SCF T_UC T_PUREAM T_SPLIT
 %token T_DOCC T_SOCC T_FROZEN_DOCC T_FROZEN_UOCC T_ALPHA T_BETA
 %token T_PCCSD
 %token T_XC T_GRID
@@ -228,6 +228,8 @@ basis_options:
 
 basis_option:
                 T_UC              { basis_.set_uc(true); }
+            |   T_PUREAM          { basis_.set_puream(true); }
+            |   T_SPLIT           { basis_.set_split(true); }
             ;
 
 abasis_options_list:
@@ -242,6 +244,8 @@ abasis_options:
 
 abasis_option:
                 T_UC              { auxbasis_.set_uc(true); }
+            |   T_PUREAM          { auxbasis_.set_puream(true); }
+            |   T_SPLIT           { auxbasis_.set_split(true); }
             ;
 
 dbasis_options_list:
@@ -256,6 +260,8 @@ dbasis_options:
 
 dbasis_option:
                 T_UC              { dfbasis_.set_uc(true); }
+            |   T_PUREAM          { dfbasis_.set_puream(true); }
+            |   T_SPLIT           { dfbasis_.set_split(true); }
             ;
 
 scf_options_list:

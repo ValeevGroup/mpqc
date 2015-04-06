@@ -48,6 +48,7 @@
 // boost parameter library
 #include <boost/parameter/name.hpp>
 #include <boost/parameter/preprocessor.hpp>
+#include <boost/version.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -78,6 +79,11 @@
 namespace sc {
 
   using boost::property_tree::ptree;
+#if BOOST_VERSION >= 105600
+  typedef boost::property_tree::xml_writer_settings<std::string> xml_writer_settings;
+#else
+  typedef boost::property_tree::xml_writer_settings<char> xml_writer_settings;
+#endif
 
   ////////////////////////////////////////////////////////////////////////////////
 
@@ -226,7 +232,7 @@ namespace sc {
       int pretty_print_spaces_;
       char pretty_print_space_char_;
       std::vector< Ref<XMLWritable> > data_;
-      boost::property_tree::xml_writer_settings<char> write_settings_;
+      xml_writer_settings write_settings_;
 
       void init();
 

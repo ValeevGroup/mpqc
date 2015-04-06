@@ -906,10 +906,20 @@ MPQCIn::write_energy_object(ostream &ostrs,
                strncmp(method,   "CC3(2)_R12", 11)  == 0 ||
                strncmp(method,   "CC3(2)_F12", 11)  == 0 ||
                strncmp(method+1, "CC3(2)_R12", 11)  == 0 || // R/U
-               strncmp(method+1, "CC3(2)_F12", 11)  == 0) { //R/U
+               strncmp(method+1, "CC3(2)_F12", 11)  == 0 || //R/U
+               strncmp(method,   "CCSD", 11) == 0 ||
+               strncmp(method,   "CCSD", 11) == 0 || // R/U
+               strncmp(method,   "CCSD(T)", 11) == 0 ||
+               strncmp(method,   "CCSD(T)", 11) == 0  // R/U
+              ) {
+
+        // R12/F12 method?
+        const std::string method_str(method);
+        const bool do_r12 = method_str.find("R12") != std::string::npos || method_str.find("F12") != std::string::npos;
+
         guess_method = 0;
-        ask_auxbasis = true;
-        need_wfnworld = true;
+        ask_auxbasis = do_r12;
+        need_wfnworld = do_r12;
         psi = true;
         if (method[0] == 'U')
           reference_method = "PsiUHF";
@@ -918,20 +928,27 @@ MPQCIn::write_energy_object(ostream &ostrs,
         else
           error2("invalid method: ", method);
 
-        if ((method[2] == 'S' || method[3] == 'S')) { // CCSD
-          if (method[5] == '2' || method[6] == '2') // CCSD(2)
-            method_object = "PsiCCSD_PT2R12";
-          else  // CCSD(T)
-            method_object = "PsiCCSD_PT2R12T";
+        if (do_r12) {
+          if ((method[2] == 'S' || method[3] == 'S')) { // CCSD
+            if (method[5] == '2' || method[6] == '2') // CCSD(2)
+              method_object = "PsiCCSD_PT2R12";
+            else  // CCSD(T)
+              method_object = "PsiCCSD_PT2R12T";
+          }
+          else { // CC3
+            method_object = "PsiCC3_PT2R12";
+          }
+          r12descr = R12TechDescr::default_instance();
+          r12descr->coupling = false;  // inclusion of coupling in CC-R12 not implemented
+          r12descr->ebc = false;       // do not assume EBC in CC-R12 by default
+          psi_ccr12 = true;
+        } // do_r12
+        else {
+          if (method_str.find("CCSD(T)") != std::string::npos)
+            method_object = "PsiCCSD_T";
+          else
+            method_object = "PsiCCSD";
         }
-        else { // CC3
-          method_object = "PsiCC3_PT2R12";
-        }
-
-        r12descr = R12TechDescr::default_instance();
-        r12descr->coupling = false;  // inclusion of coupling in CC-R12 not implemented
-        r12descr->ebc = false;       // do not assume EBC in CC-R12 by default
-        psi_ccr12 = true;
 
       }
       else if (!strcmp(method, "PsiHF")) {
@@ -1007,8 +1024,11 @@ MPQCIn::write_energy_object(ostream &ostrs,
       ostrs << indent << "print_npa = 1" << endl;
     }
   if (reference_method) {
+    if (frozen_docc_.set())
       write_vector(ostrs, "nfzc", "frozen_docc", frozen_docc_, 0);
-      write_vector(ostrs, "nfzv", "frozen_uocc", frozen_uocc_, 0);
+    else
+      ostrs << indent << "nfzc = auto" << endl;
+    write_vector(ostrs, "nfzv", "frozen_uocc", frozen_uocc_, 0);
     }
   else {
       if (uscf && (docc_.set() || socc_.set())) {
@@ -1034,6 +1054,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
   if (basis) { // if basis is given explicitly, use it
     if (psi) { // Psi only allows all puream or all cartesians. Default to all puream
       Basis puream_basis(*basis);
+      puream_basis.set_puream(true);
       puream_basis.write(ostrs, "basis");
     }
     else
@@ -1077,7 +1098,6 @@ MPQCIn::write_energy_object(ostream &ostrs,
 
   // reference wfn
   if (reference_method) {
-    ostrs << indent << "nfzc = auto" << endl;;
     write_energy_object(ostrs, "reference",
                         reference_method, 0, 0, ifactory);
   }
@@ -1172,7 +1192,12 @@ MPQCIn::psi_method(const char* method) {
           strncmp(method,   "CCSD(T)_R12", 11) == 0 ||
           strncmp(method,   "CCSD(T)_F12", 11) == 0 ||
           strncmp(method+1, "CCSD(T)_R12", 11) == 0 || // R/U
-          strncmp(method+1, "CCSD(T)_F12", 11) == 0 );
+          strncmp(method+1, "CCSD(T)_F12", 11) == 0 || // R/U
+          strncmp(method,   "CCSD", 11) == 0 ||
+          strncmp(method,   "CCSD", 11) == 0 || // R/U
+          strncmp(method,   "CCSD(T)", 11) == 0 ||
+          strncmp(method,   "CCSD(T)", 11) == 0  // R/U
+         );
 }
 
 bool

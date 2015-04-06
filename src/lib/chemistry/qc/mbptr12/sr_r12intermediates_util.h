@@ -172,6 +172,7 @@ namespace sc {
     std::string operset_label;
     bool rdm2 = false;
     bool t2 = false;
+    bool l2 = false;
     const unsigned int oper_idx = 0;
     if (pkey.oper() == "g") {
       operset_label = "ERI";
@@ -193,6 +194,9 @@ namespace sc {
     }
     else if (pkey.oper() == "T2") {
       t2 = true;
+    }
+    else if (pkey.oper() == "L2") {
+      l2 = true;
     }
     else
       throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy : invalid operator key",__FILE__,__LINE__);
@@ -272,7 +276,13 @@ namespace sc {
 //      MPQC_ASSERT(oreg->value(ket2) == r12world_->refwfn()->uocc_act(Beta));
       darray4 = t2_[AlphaBeta];
     }
-    else { // not rdm2 nor t2
+    else if (l2) {
+      if (l2_[AlphaBeta].null())
+        throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for L2, but it had not been given");
+
+      darray4 = l2_[AlphaBeta];
+    }
+    else { // not rdm2 nor t2 nor l2
       std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(bra1, bra2, ket1, ket2,
                                                                  operset_label, "");
 
@@ -507,6 +517,12 @@ namespace sc {
         MPQC_ASSERT(oreg->value(ket_id)->rank() == t1_cabs_.ncol());
         operator_matrix = t1_cabs_;
       }
+    }
+    else if (pkey.oper() == "L1") {
+      MPQC_ASSERT(l1_);
+      MPQC_ASSERT(oreg->value(bra_id)->rank() == l1_.nrow());
+      MPQC_ASSERT(oreg->value(ket_id)->rank() == l1_.ncol());
+      operator_matrix = l1_;
     }
     else {
       std::ostringstream oss;

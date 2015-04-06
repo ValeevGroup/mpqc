@@ -73,6 +73,8 @@ R12EnergyIntermediates::R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
   A_computed_=false;
   T1_cc_computed_=false;
   T2_cc_computed_=false;
+  L1_cc_computed_=false;
+  L2_cc_computed_=false;
   Onerdm_cc_computed_=false;
 }
 
@@ -91,6 +93,8 @@ R12EnergyIntermediates::R12EnergyIntermediates(StateIn &si) {
   }
   T1_cc_computed_=false;
   T2_cc_computed_=false;
+  L1_cc_computed_=false;
+  L2_cc_computed_=false;
   Onerdm_cc_computed_=false;
 }
 
@@ -110,6 +114,8 @@ void R12EnergyIntermediates::save_data_state(StateOut &so) {
 
   T1_cc_computed_=false;
   T2_cc_computed_=false;
+  L1_cc_computed_=false;
+  L2_cc_computed_=false;
   Onerdm_cc_computed_=false;
 }
 
@@ -146,6 +152,12 @@ bool R12EnergyIntermediates::T1_cc_computed() const {
 }
 bool R12EnergyIntermediates::T2_cc_computed() const {
   return(T2_cc_computed_);
+}
+bool R12EnergyIntermediates::L1_cc_computed() const {
+  return(L1_cc_computed_);
+}
+bool R12EnergyIntermediates::L2_cc_computed() const {
+  return(L2_cc_computed_);
 }
 bool R12EnergyIntermediates::Onerdm_cc_computed() const {
   return(Onerdm_cc_computed_);
@@ -205,6 +217,24 @@ const Ref<DistArray4>& R12EnergyIntermediates::get_T2_cc(const SpinCase2 &spinca
 void R12EnergyIntermediates::assign_T2_cc(const SpinCase2 &spincase2, const Ref<DistArray4>& T2_cc) {
   T2_cc_[spincase2]=T2_cc;
   T2_cc_computed_ = true;
+}
+
+const RefSCMatrix& R12EnergyIntermediates::get_L1_cc(const SpinCase1 &spincase1) const {
+  return(L1_cc_[spincase1]);
+}
+
+void R12EnergyIntermediates::assign_L1_cc(const SpinCase1 &spincase1, const RefSCMatrix& L1_cc) {
+  L1_cc_[spincase1]=L1_cc;
+  L1_cc_computed_ = true;
+}
+
+const Ref<DistArray4>& R12EnergyIntermediates::get_L2_cc(const SpinCase2 &spincase2) const {
+  return(L2_cc_[spincase2]);
+}
+
+void R12EnergyIntermediates::assign_L2_cc(const SpinCase2 &spincase2, const Ref<DistArray4>& L2_cc) {
+  L2_cc_[spincase2]=L2_cc;
+  L2_cc_computed_ = true;
 }
 
 const RefSCMatrix& R12EnergyIntermediates::get_1rdm_cc(const SpinCase1 &spincase1) const {

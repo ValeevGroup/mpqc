@@ -223,6 +223,10 @@ The accepted keywords are:
   given:
   <dl>
      <dt><tt>uc</tt><dd> Uncontract the basis.
+     <dt><tt>puream</tt><dd> Force the use of solid harmonics for all shells (see <tt>puream</tt> keyword of GaussianBasisSet).
+     This will be set by default for Psi-based wave functions.
+     <dt><tt>split</tt><dd> Split generally-contracted shells (see SplitBasisSet). May be necessary for
+     certain Integral factory types. Will be set automatically when needed.
   </dl>
 
 <dt><tt>auxbasis</tt><dd> Specifies the auxiliary basis set for R12
@@ -260,7 +264,8 @@ The accepted keywords are:
   spin-unrestricted.
 
 <dt><tt>frozen_docc</tt><dd> Gives the number of frozen core orbitals.  Can
-  be either a single integer or a parenthesized list giving the frozen core
+  be either a single integer (e.g. <tt>frozen_docc=0</tt> will not freeze core orbitals)
+  or a parenthesized list giving the frozen core
   orbitals in each irreducible representation.  In the latter case the
   symmetry must be given and not be <tt>auto</tt>. The default is to automatically
   determine the frozen core orbitals.

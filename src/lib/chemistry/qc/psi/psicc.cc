@@ -198,7 +198,7 @@ namespace sc {
     return T2_[spin2];
   }
 
-  Ref<DistArray4> PsiCC::T2_distarray4(SpinCase2 spin2) {
+  Ref<DistArray4> PsiCC::T2_da4(SpinCase2 spin2, std::string dpdkey) {
     if (T2_da4_[spin2])
       return T2_da4_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
@@ -209,21 +209,21 @@ namespace sc {
 
       if (spin2 == AlphaAlpha) {
         dpdbuf4 D;
-        dpd_buf4_init(&D, CC_TAMPS, 0, 0, 5, 2, 7, 0, "tIJAB");
-        dpd_buf4_copy(&D, CC_TAMPS, "tIJAB (IJ,AB)");
+        dpd_buf4_init(&D, CC_TAMPS, 0, 0, 5, 2, 7, 0, (dpdkey + "IJAB").c_str());
+        dpd_buf4_copy(&D, CC_TAMPS, (dpdkey + "IJAB (IJ,AB)").c_str());
         dpd_buf4_close(&D);
       }
       if (spin2 == BetaBeta) {
         dpdbuf4 D;
-        dpd_buf4_init(&D, CC_TAMPS, 0, 10, 15, 12, 17, 0, "tijab");
-        dpd_buf4_copy(&D, CC_TAMPS, "tijab (ij,ab)");
+        dpd_buf4_init(&D, CC_TAMPS, 0, 10, 15, 12, 17, 0, (dpdkey + "ijab").c_str());
+        dpd_buf4_copy(&D, CC_TAMPS, (dpdkey + "ijab (ij,ab)").c_str());
         dpd_buf4_close(&D);
       }
       dpd_stop();
     }
 
     // Grab T matrices
-    const char* kwd = (spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "tIJAB (IJ,AB)" : "tijab (ij,ab)") : "tIjAb";
+    const char* kwd = (dpdkey + ((spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "IJAB (IJ,AB)" : "ijab (ij,ab)") : "IjAb")).c_str();
     // When computing one-electron density, we use non frozen core for CCSD,
     // but only need the frozen core portion of the amplitude
     T2_da4_[spin2] = ((!compute_1rdm_ || nfzc_ == 0)? T2_distarray4(spin2, kwd)
@@ -266,6 +266,7 @@ namespace sc {
 
   RefSCMatrix PsiCC::T1(SpinCase1 spin, const std::string& dpdlabel) {
     psi::PSIO& psio = exenv()->psio();
+    const int dpdfile = (dpdlabel[0] == 'L') ? CC_LAMBDA : CC_OEI; // Lambda1 amplitudes are in a different file :-(
     // grab orbital info
     const std::vector<unsigned int>& occpi = reference()->occpi(spin);
     const std::vector<unsigned int>& uoccpi = reference()->uoccpi(spin);
@@ -304,10 +305,10 @@ namespace sc {
       nia_dpd += actoccpi[h] * actuoccpi[h];
 
       double* T1 = new double[nia_dpd];
-      psio.open(CC_OEI, PSIO_OPEN_OLD);
-      psio.read_entry(CC_OEI, const_cast<char*>(dpdlabel.c_str()),
+      psio.open(dpdfile, PSIO_OPEN_OLD);
+      psio.read_entry(dpdfile, const_cast<char*>(dpdlabel.c_str()),
                       reinterpret_cast<char*>(T1), nia_dpd*sizeof(double));
-      psio.close(CC_OEI, 1);
+      psio.close(dpdfile, 1);
 
       // form the full matrix
       unsigned int ia = 0;
@@ -328,6 +329,7 @@ namespace sc {
   // from non frozen core PSI CCSD density calculation
   RefSCMatrix PsiCC::T1_fzc(SpinCase1 spin, const std::string& dpdlabel) {
     psi::PSIO& psio = exenv()->psio();
+    const int dpdfile = (dpdlabel[0] == 'L') ? CC_LAMBDA : CC_OEI;
     // grab orbital info
     const std::vector<unsigned int>& occpi = reference()->occpi(spin);
     const std::vector<unsigned int>& uoccpi = reference()->uoccpi(spin);
@@ -379,10 +381,10 @@ namespace sc {
         nia_dpd += occpi[h] * actuoccpi[h];
 
       double* T1 = new double[nia_dpd];
-      psio.open(CC_OEI, PSIO_OPEN_OLD);
-      psio.read_entry(CC_OEI, const_cast<char*>(dpdlabel.c_str()),
+      psio.open(dpdfile, PSIO_OPEN_OLD);
+      psio.read_entry(dpdfile, const_cast<char*>(dpdlabel.c_str()),
                       reinterpret_cast<char*>(T1), nia_dpd*sizeof(double));
-      psio.close(CC_OEI, 1);
+      psio.close(dpdfile, 1);
 
       // form the full matrix
       unsigned int ia = 0;
@@ -554,6 +556,12 @@ namespace sc {
     const SpinCase1 spin1 = case1(spin12);
     const SpinCase1 spin2 = case2(spin12);
 
+    std::string label;
+    if (dpdlabel[0] == 't') label = "T2";
+    if (dpdlabel.find("tau") == 0) label = "Tau2";
+    if (dpdlabel[0] == 'L') label = "L2";
+    const int dpdfile = (label == "T2" || label == "Tau2") ? CC_TAMPS : CC_LAMBDA; // T2/Tau2 are in CC_TAMPS, Lambda2 in CC_LAMBDA
+
     typedef std::vector<unsigned int> uvec;
     // grab orbital info
     const uvec& occpi1 = reference()->occpi(spin1);
@@ -618,7 +626,7 @@ namespace sc {
     // TODO make this work for non-disk-based storage
     {
       const char* spin12_label = (spin12 == AlphaAlpha) ? "aa" : ((spin12 == BetaBeta) ? "bb" : "ab");
-      std::string fileext_str(".T2_distarray4_"); fileext_str += spin12_label;
+      std::string fileext_str("."); fileext_str += label + "_distarray4_" + spin12_label;
       const std::string default_basename_prefix = SCFormIO::fileext_to_filename(fileext_str.c_str());
       const std::string da4_filename = ConsumableResources::get_default_instance()->disk_location() +
           default_basename_prefix;
@@ -630,7 +638,7 @@ namespace sc {
     if (nijab_dpd) {
 
       // read in T2 one ij at a time
-      psio.open(CC_TAMPS, PSIO_OPEN_OLD);
+      psio.open(dpdfile, PSIO_OPEN_OLD);
 
       double* t2_ij = new double[max_nab];
       double* T_ij = new double[nab];
@@ -654,7 +662,7 @@ namespace sc {
               std::fill(T_ij, T_ij+nab, 0.0);
 
               const size_t nab_h = abpi[h];
-              psio.read(CC_TAMPS, const_cast<char*> (dpdlabel.c_str()),
+              psio.read(dpdfile, const_cast<char*> (dpdlabel.c_str()),
                         reinterpret_cast<char*> (t2_ij), nab_h * sizeof(double),
                         t2_ij_address, &t2_ij_address);
 
@@ -684,7 +692,7 @@ namespace sc {
       delete[] t2_ij;
       delete[] T_ij;
 
-      psio.close(CC_TAMPS, 1);
+      psio.close(dpdfile, 1);
 
     }
 
@@ -699,6 +707,12 @@ namespace sc {
 
     const SpinCase1 spin1 = case1(spin12);
     const SpinCase1 spin2 = case2(spin12);
+
+    std::string label;
+    if (dpdlabel[0] == 't') label = "T2";
+    if (dpdlabel.find("tau") == 0) label = "Tau2";
+    if (dpdlabel[0] == 'L') label = "L2";
+    const int dpdfile = (label == "T2" || label == "Tau2") ? CC_TAMPS : CC_LAMBDA; // T2/Tau2 are in CC_TAMPS, Lambda2 in CC_LAMBDA
 
     // grab orbital info
     typedef std::vector<unsigned int> uvec;
@@ -777,7 +791,7 @@ namespace sc {
     // TODO make this work for non-disk-based storage
     {
       const char* spin12_label = (spin12 == AlphaAlpha) ? "aa" : ((spin12 == BetaBeta) ? "bb" : "ab");
-      std::string fileext_str(".T2_distarray4_"); fileext_str += spin12_label;
+      std::string fileext_str("."); fileext_str += label + "_distarray4_" + spin12_label;
       const std::string default_basename_prefix = SCFormIO::fileext_to_filename(fileext_str.c_str());
       const std::string da4_filename = ConsumableResources::get_default_instance()->disk_location() +
           default_basename_prefix;
@@ -788,7 +802,7 @@ namespace sc {
     Ref<DistArray4> T_fzc;   // T2 amplitude excluding the frozen core part
     {
       const char* spin12_label = (spin12 == AlphaAlpha) ? "aa" : ((spin12 == BetaBeta) ? "bb" : "ab");
-      std::string fileext_str(".T2_fzc_distarray4_"); fileext_str += spin12_label;
+      std::string fileext_str("."); fileext_str += label + "_fzc_distarray4_" + spin12_label;
       const std::string default_basename_prefix = SCFormIO::fileext_to_filename(fileext_str.c_str());
       const std::string da4_filename = ConsumableResources::get_default_instance()->disk_location() +
           default_basename_prefix;
@@ -804,7 +818,7 @@ namespace sc {
       const size_t nab = nuocc1_act * nuocc2_act;
 
       // read in T2 one ij at a time
-      psio.open(CC_TAMPS, PSIO_OPEN_OLD);
+      psio.open(dpdfile, PSIO_OPEN_OLD);
 
       double* t2_ij = new double[max_nab];
       double* T_ij = new double[nab];
@@ -828,7 +842,7 @@ namespace sc {
               std::fill(T_ij, T_ij+nab, 0.0);
 
               const size_t nab_h = abpi[h];
-              psio.read(CC_TAMPS, const_cast<char*> (dpdlabel.c_str()),
+              psio.read(dpdfile, const_cast<char*> (dpdlabel.c_str()),
                         reinterpret_cast<char*> (t2_ij), nab_h * sizeof(double),
                         t2_ij_address, &t2_ij_address);
 
@@ -852,7 +866,7 @@ namespace sc {
           }
         }
       }
-      psio.close(CC_TAMPS, 1);
+      psio.close(dpdfile, 1);
 
       delete[] t2_ij;
       delete[] T_ij;
@@ -892,12 +906,19 @@ namespace sc {
     return T_fzc;
   }
 
-  const RefSCMatrix&PsiCC::Lambda1(SpinCase1 spin) {
-    if (Lambda1_[spin])
-      return Lambda1_[spin];
+  const RefSCMatrix&PsiCC::Lambda1(SpinCase1 spin1) {
+    if (Lambda1_[spin1])
+      return Lambda1_[spin1];
 
-    throw FeatureNotImplemented("PsiCC::Lambda1() -- cannot read Lambda1 amplitudes yet",__FILE__,__LINE__);
-    return Lambda1_[spin];
+    PsiSCF::RefType reftype = reference_->reftype();
+
+    // Grab T matrices
+    const char* kwd = (spin1 == Beta && reftype != PsiSCF::rhf) ? "Lia" : "LIA";
+    Lambda1_[spin1] = T1(spin1, kwd);
+    if (debug() >= DefaultPrintThresholds::mostN2)
+      Lambda1_[spin1].print(prepend_spincase(spin1,"Lambda1 amplitudes").c_str());
+
+    return Lambda1_[spin1];
   }
 
   const RefSCMatrix&PsiCC::Lambda2(SpinCase2 spin) {
@@ -906,6 +927,39 @@ namespace sc {
 
     throw FeatureNotImplemented("PsiCC::Lambda2() -- cannot read Lambda2 amplitudes yet",__FILE__,__LINE__);
     return Lambda2_[spin];
+  }
+
+  Ref<DistArray4> PsiCC::Lambda2_da4(SpinCase2 spin2) {
+    if (Lambda2_da4_[spin2])
+      return Lambda2_da4_[spin2];
+    PsiSCF::RefType reftype = reference_->reftype();
+
+    const std::string dpdkey("L");
+
+    // If requesting AA or BB T2s, create their forms with unrestricted indices and read those
+    if (spin2 != AlphaBeta) {
+      dpd_start();
+
+      if (spin2 == AlphaAlpha) {
+        dpdbuf4 D;
+        dpd_buf4_init(&D, CC_LAMBDA, 0, 0, 5, 2, 7, 0, (dpdkey + "IJAB").c_str());
+        dpd_buf4_copy(&D, CC_LAMBDA, (dpdkey + "IJAB (IJ,AB)").c_str());
+        dpd_buf4_close(&D);
+      }
+      if (spin2 == BetaBeta) {
+        dpdbuf4 D;
+        dpd_buf4_init(&D, CC_LAMBDA, 0, 10, 15, 12, 17, 0, (dpdkey + "ijab").c_str());
+        dpd_buf4_copy(&D, CC_LAMBDA, (dpdkey + "ijab (ij,ab)").c_str());
+        dpd_buf4_close(&D);
+      }
+      dpd_stop();
+    }
+
+    // Grab Lambda2 matrices
+    const char* kwd = (dpdkey + ((spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "IJAB (IJ,AB)" : "ijab (ij,ab)") : "IjAb")).c_str();
+    Lambda2_da4_[spin2] = T2_distarray4(spin2, kwd);
+
+    return Lambda2_da4_[spin2];
   }
 
   // import the psi ccsd one-particle density
@@ -1652,11 +1706,12 @@ namespace sc {
     vir_act_sb_[Alpha] = vir_act_sb_[Beta] = 0;
     occ_sb_[Alpha] = occ_sb_[Beta] = 0;
     T1_[Alpha] = T1_[Beta] = 0;
-    T2_[Alpha] = T2_[Beta] = 0;
-    T2_da4_[Alpha] = T2_da4_[Beta] = 0;
-    Tau2_[Alpha] = Tau2_[Beta] = 0;
+    T2_[AlphaBeta] = T2_[AlphaAlpha] = T2_[BetaBeta] = 0;
+    T2_da4_[AlphaBeta] = T2_da4_[AlphaAlpha] = T2_da4_[BetaBeta] = 0;
+    Tau2_[AlphaBeta] = Tau2_[AlphaAlpha] = Tau2_[BetaBeta] = 0;
     Lambda1_[Alpha] = Lambda1_[Beta] = 0;
-    Lambda2_[Alpha] = Lambda2_[Beta] = 0;
+    Lambda2_[AlphaBeta] = Lambda2_[AlphaAlpha] = Lambda2_[BetaBeta] = 0;
+    Lambda2_da4_[AlphaBeta] = Lambda2_da4_[AlphaAlpha] = Lambda2_da4_[BetaBeta] = 0;
     PsiCorrWavefunction::obsolete();
   }
 

@@ -9,6 +9,9 @@
 namespace tcc {
 namespace tensor {
 
+/// Class to hold decomposition of a tensor.  The class can hold an arbitrary
+/// number of decomposition, but the math functions in the helper headers
+/// will initially be written to only handle a two way decomposition.
 template <typename T>
 class DecomposedTensor {
     double cut_ = 1e-7;
@@ -39,14 +42,24 @@ class DecomposedTensor {
 
     double cut() const { return cut_; }
     std::size_t ndecomp() const { return tensors_.size(); }
+    bool empty() const { return tensors_.empty(); }
+
+    // only works for two way atm Get the right dimension of the first tensor.
+    std::size_t rank() const {
+        assert(!empty());
+        return tensors_[0].range().size()[1];
+    }
 
     std::vector<TA::Tensor<T>> &tensors() { return tensors_; }
     std::vector<TA::Tensor<T>> const &tensors() const { return tensors_; }
+
     TA::Tensor<T> &tensor(std::size_t i) { return tensors_[i]; }
     TA::Tensor<T> const &tensor(std::size_t i) const { return tensors_[i]; }
 
+    TA::Range &range(std::size_t i) { return tensors_[i].range(); }
+    TA::Range const &range(std::size_t i) const { return tensors_[i].range(); }
 
-    // I wish this didn't have to be here, but for ease of writing it does
+    // TODO write as nonintrusive and move to unary header.
     template <typename Archive>
     m_enable_if_t<madness::archive::is_input_archive<Archive>>
     serialize(Archive &ar) {

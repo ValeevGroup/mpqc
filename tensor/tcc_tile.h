@@ -207,7 +207,7 @@ class Tile {
           type
           serialize(Archive &ar) {
         ar &range_;
-        bool empty = static_cast<bool>(tile_);
+        bool empty = !static_cast<bool>(tile_);
         ar &empty;
         if (!empty) {
             ar &tile_->tile();

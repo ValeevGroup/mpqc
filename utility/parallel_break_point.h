@@ -13,7 +13,7 @@ void parallal_break_point(madness::World &world, volatile int debug) {
         gethostname(hostname, sizeof(hostname));
         printf("PID %d on %s ready for attach\n", getpid(), hostname);
         fflush(stdout);
-        if (world.rank() == 0) {
+        if (world.rank() == 1) {
             while (0 != debug) sleep(5);
         }
     }

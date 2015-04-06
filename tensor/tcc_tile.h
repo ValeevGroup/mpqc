@@ -353,6 +353,7 @@ class Tile {
 
         auto range
               = gemm_helper.make_result_range<TA::Range>(range_, o.range());
+
         auto out = tile_->gemm_(o, factor, gemm_helper);
         return Tile<decltype(out)>{std::move(range), std::move(out)};
     }

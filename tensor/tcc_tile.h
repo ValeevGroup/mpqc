@@ -47,13 +47,14 @@ class TileModel {
     /*
      * Add
      */
-    template <typename ...Args>
-    auto add_(Args&&...args) const -> decltype(add(tile_, std::forward<Args>(args)...)) {
+    template <typename... Args>
+    auto add_(Args &&... args) const
+          -> decltype(add(tile_, std::forward<Args>(args)...)) {
         return add(tile_, std::forward<Args>(args)...);
     }
 
-    template <typename ...Args>
-    T &add_to_(Args&& ...args) {
+    template <typename... Args>
+    T &add_to_(Args &&... args) {
         add_to(tile_, std::forward<Args>(args)...);
         return tile_;
     }
@@ -61,13 +62,14 @@ class TileModel {
     /*
      * Subtract
      */
-    template <typename ...Args>
-    auto subt_(Args&&...args) const -> decltype(subt(tile_, std::forward<Args>(args)...)) {
+    template <typename... Args>
+    auto subt_(Args &&... args) const
+          -> decltype(subt(tile_, std::forward<Args>(args)...)) {
         return subt(tile_, std::forward<Args>(args)...);
     }
 
-    template <typename ...Args>
-    T &subt_to_(Args&& ...args) {
+    template <typename... Args>
+    T &subt_to_(Args &&... args) {
         subt_to(tile_, std::forward<Args>(args)...);
         return tile_;
     }
@@ -75,13 +77,14 @@ class TileModel {
     /*
      * Multiply
      */
-    template <typename ...Args>
-    auto mult_(Args&&...args) const -> decltype(mult(tile_, std::forward<Args>(args)...)) {
+    template <typename... Args>
+    auto mult_(Args &&... args) const
+          -> decltype(mult(tile_, std::forward<Args>(args)...)) {
         return mult(tile_, std::forward<Args>(args)...);
     }
 
-    template <typename ...Args>
-    T &mult_to_(Args&& ...args) {
+    template <typename... Args>
+    T &mult_to_(Args &&... args) {
         mult_to(tile_, std::forward<Args>(args)...);
         return tile_;
     }
@@ -89,13 +92,14 @@ class TileModel {
     /*
      * Negate
      */
-    template <typename ...Args>
-    auto neg_(Args&&...args) const -> decltype(neg(tile_, std::forward<Args>(args)...)) {
+    template <typename... Args>
+    auto neg_(Args &&... args) const
+          -> decltype(neg(tile_, std::forward<Args>(args)...)) {
         return neg(tile_, std::forward<Args>(args)...);
     }
 
-    template <typename ...Args>
-    T &neg_to_(Args&& ...args) {
+    template <typename... Args>
+    T &neg_to_(Args &&... args) {
         neg_to(tile_, std::forward<Args>(args)...);
         return tile_;
     }
@@ -103,17 +107,17 @@ class TileModel {
     /*
      * Gemm
      */
-    template <typename ...Args>
-    auto gemm_(Args&&...args) const -> decltype(gemm(tile_, std::forward<Args>(args)...)) {
+    template <typename... Args>
+    auto gemm_(Args &&... args) const
+          -> decltype(gemm(tile_, std::forward<Args>(args)...)) {
         return gemm(tile_, std::forward<Args>(args)...);
     }
 
-    template <typename ...Args>
-    T &gemm_to_(Args&& ...args) {
+    template <typename... Args>
+    T &gemm_to_(Args &&... args) {
         gemm(tile_, std::forward<Args>(args)...);
         return tile_;
     }
-
 };
 
 } // namespace detail
@@ -168,7 +172,7 @@ class Tile {
     }
 
     template <typename Op, typename... Args>
-    Tile& mutate(Op op, Args &&... args) {
+    Tile &mutate(Op op, Args &&... args) {
         op(tile_->tile(), std::forward<Args>(args)...);
         return *this;
     }
@@ -199,8 +203,31 @@ class Tile {
     }
 
     template <typename Archive>
-    void serialize(Archive &ar) {
-        assert(false);
+    typename madness::enable_if<madness::archive::is_output_archive<Archive>>::
+          type
+          serialize(Archive &ar) {
+        ar &range_;
+        bool empty = static_cast<bool>(tile_);
+        ar &empty;
+        if (!empty) {
+            ar &tile_->tile();
+        }
+    }
+
+    template <typename Archive>
+    typename madness::enable_if<madness::archive::is_input_archive<Archive>>::
+          type
+          serialize(Archive &ar) {
+
+        ar &range_;
+        bool empty = false;
+        ar &empty;
+        if (!empty) {
+            T tile;
+            ar &tile;
+            tile_ = std::make_shared<detail::TileModel<T>>(
+                  detail::TileModel<T>{std::move(tile)});
+        }
     }
 
     /*

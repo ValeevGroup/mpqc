@@ -3,6 +3,7 @@
 #define TCC_TENSOR_DECOMPOSEDTENSORGEMM_H
 
 #include "decomposed_tensor.h"
+#include "density_tensor.h"
 
 namespace tcc {
 namespace tensor {

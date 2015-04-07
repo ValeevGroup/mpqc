@@ -19,6 +19,9 @@
 #include "../utility/ta_helpers.h"
 
 #include "../tensor/conversions/tile_pimpl_to_ta_tensor.h"
+#include "../tensor/tcc_tile.h"
+#include "../tensor/decomposed_tensor.h"
+#include "../tensor/decomposed_tensor_nonintrusive_interface.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
@@ -153,15 +156,15 @@ int main(int argc, char **argv) {
             auto const &size = range.size();
             auto const &start = range.start();
 
-            tile_norms[i]
-                = D_eig.block(start[0], start[1], size[0], size[1]).lpNorm<2>();
+            tile_norms[i] = D_eig.block(start[0], start[1], size[0], size[1])
+                                  .lpNorm<2>();
         }
     }
 
     TA::SparseShape<float> shape(world, tile_norms, tr);
 
     auto D_TA = TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy>(
-        world, tr, shape);
+          world, tr, shape);
 
     auto const &pmap = D_TA.get_pmap();
 
@@ -181,8 +184,8 @@ int main(int argc, char **argv) {
 
     {
         auto D_lr = TA::to_new_tile_type(
-            D_TA, integrals::compute_functors::TaToLowRankTensor<2>(
-                      low_rank_threshold));
+              D_TA, integrals::compute_functors::TaToLowRankTensor<2>(
+                          low_rank_threshold));
         utility::print_par(world, "\n");
         utility::print_size_info(D_lr, "D");
     }
@@ -193,26 +196,44 @@ int main(int argc, char **argv) {
     utility::print_par(world, "\n");
     auto basis_array = utility::make_array(df_basis, basis, basis);
     auto Xab
-        = BlockSparseIntegrals(world, eri_pool, basis_array,
-                               integrals::compute_functors::BtasToTaTensor{});
+          = BlockSparseIntegrals(world, eri_pool, basis_array,
+                                 integrals::compute_functors::BtasToTaTensor{});
 
     {
-        auto Xab_lr = TA::to_new_tile_type(
-            Xab, integrals::compute_functors::TaToLowRankTensor<3>(
-                     low_rank_threshold));
-        utility::print_size_info(Xab_lr, "Xab");
-        utility::print_par(world, "\n");
+        class to_deomp_tile {
+            double cut_ = 1e-7;
+
+          public:
+            tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>
+            operator()(TA::Tensor<double> const &t) const {
+                tcc::tensor::DecomposedTensor<double> temp(cut_, t);
+                auto test_me = tensor::algebra::two_way_decomposition(temp);
+                if (test_me.empty()) {
+                    return tcc::tensor::Tile<decltype(temp)>{t.range(),
+                                                             std::move(temp)};
+                } else {
+                    return tcc::tensor::Tile<decltype(test_me)>{
+                          t.range(), std::move(test_me)};
+                }
+            }
+        };
+
+        to_decomp_tile T;
+
+        auto Xab_lr = TA::to_new_tile_type(Xab, T);
+        /* utility::print_size_info(Xab_lr, "Xab"); */
+        /* utility::print_par(world, "\n"); */
     }
 
-    decltype(Xab) Xak;
-    Xak("X, a, k") = Xab("X,a,b") * D_TA("b,k");
-    Xak.truncate();
-    world.gop.fence();
-    auto Xak_lr = TA::to_new_tile_type(
-        Xak,
-        integrals::compute_functors::TaToLowRankTensor<3>(low_rank_threshold));
-    world.gop.fence();
-    utility::print_size_info(Xak_lr, "Xab * D");
+    /* decltype(Xab) Xak; */
+    /* Xak("X, a, k") = Xab("X,a,b") * D_TA("b,k"); */
+    /* Xak.truncate(); */
+    /* world.gop.fence(); */
+    /* auto Xak_lr = TA::to_new_tile_type( */
+    /*       Xak, integrals::compute_functors::TaToLowRankTensor<3>( */
+    /*                  low_rank_threshold)); */
+    /* world.gop.fence(); */
+    /* utility::print_size_info(Xak_lr, "Xab * D"); */
 
 
     madness::finalize();

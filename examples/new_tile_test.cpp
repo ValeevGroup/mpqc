@@ -7,6 +7,7 @@
 
 #include "../tensor/decomposed_tensor_nonintrusive_interface.h"
 #include "../tensor/tcc_tile.h"
+#include "../tensor/density_tensor.h"
 
 #include <iostream>
 
@@ -44,12 +45,11 @@ int main(int argc, char **argv) {
     auto tr1 = TA::TiledRange1{0, 2, 4};
     auto tr = TA::TiledRange{tr1, tr1};
 
-    TA::Array<double, 2, Tile<tensor::DecomposedTensor<double>>,
+    TA::Array<double, 2, tensor::DecomposedTensor<double>,
               TA::DensePolicy> A(world, tr);
     A.set_all_local(1.0);
 
     std::cout << A << std::endl;
-
 
     /* decltype(A) B; */
     /* B("i,j") = A("i,j") + A("i,j"); */

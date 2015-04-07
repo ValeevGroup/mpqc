@@ -20,7 +20,7 @@ permute(DecomposedTensor<T> const &t, TA::Permutation const &p) {
 
 template <typename T>
 DecomposedTensor<T> clone(DecomposedTensor<T> const &t) {
-    assert(false);
+    return DecomposedTensor<T>(t.cut(), t.tensors());
 }
 
 template <typename T>

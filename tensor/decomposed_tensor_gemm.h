@@ -17,11 +17,11 @@ gemm(DecomposedTensor<T> const &a, DecomposedTensor<T> const &b, const T factor,
     if (gemm_helper.left_rank() == 3) {
         if (gemm_helper.right_rank() == 2
             && gemm_helper.result_rank() == 3) { // Eri3 * D
-            if (a.ndecomp() == 1) {
+            if (a.ndecomp() == 1) {              // Reg gemm
                 return DecomposedTensor<T>{a.cut(),
                                            a.tensor(0).gemm(b.tensor(0), factor,
                                                             gemm_helper)};
-            } else if (a.ndecomp() == 2) {
+            } else if (a.ndecomp() == 2) { // LR gemm
                 auto Rp = a.tensor(1).gemm(b.tensor(0), factor, gemm_helper);
                 return DecomposedTensor<T>{a.cut(), a.tensor(0).clone(),
                                            std::move(Rp)};
@@ -47,6 +47,8 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
             return c;
         }
 
+        /* auto const &a1_extent = a.tensor(1).range().size(); */
+        /* auto const &b0_extent = b.tensor(0).range().size(); */
         auto Rp = a.tensor(1).gemm(b.tensor(0), factor, gemm_helper);
         auto NoT = gemm_helper.left_op();
         auto gh = TA::math::GemmHelper(NoT, NoT, c.tensor(0).range().dim(),
@@ -57,19 +59,34 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
     } else {
         if (a.ndecomp() == 1) {
             auto ab = gemm(a, b, factor, gemm_helper);
+            auto NoT = gemm_helper.left_op();
+            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
             c = DecomposedTensor<T>{c.cut(),
-                                    algebra::combine(c).add(ab.tensor(0))};
+                                    ab.tensor(0).gemm(c.tensor(0), c.tensor(1),
+                                                      1.0, gh)};
+
             return c;
         }
 
         auto ab = gemm(a, b, factor, gemm_helper);
-
         auto const &c_left_extent = c.tensor(0).range().size();
+        auto const &c_right_extent = c.tensor(1).range().size();
+        const auto long_dim = c_right_extent[1] * c_right_extent[2];
         const auto out_dim = c.rank() + ab.rank();
+
+        if (out_dim >= 0.50 * std::min(c_left_extent[0], long_dim)) {
+            auto NoT = gemm_helper.left_op();
+            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+            auto temp = algebra::combine(c);
+            c = DecomposedTensor<T>{c.cut(), temp.gemm(ab.tensor(0),
+                                                       ab.tensor(1), 1.0, gh)};
+            return c;
+        }
+
+
         TA::Range l_range(c_left_extent[0], out_dim);
         TA::Tensor<T> l_tensor(std::move(l_range));
 
-        auto const &c_right_extent = c.tensor(1).range().size();
         TA::Range r_range(out_dim, c_right_extent[1], c_right_extent[2]);
         TA::Tensor<T> r_tensor(std::move(r_range));
 
@@ -81,7 +98,6 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
         Lmap.rightCols(ab.rank()) = ab_lmap;
 
         // Fill R
-        const auto long_dim = c_right_extent[1] * c_right_extent[2];
         auto Rmap = TA::eigen_map(r_tensor, out_dim, long_dim);
         auto c_rmap = TA::eigen_map(c.tensor(1), c.rank(), long_dim);
         auto ab_rmap = TA::eigen_map(ab.tensor(1), ab.rank(), long_dim);

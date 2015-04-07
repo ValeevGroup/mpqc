@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 
     double threshold = (argc == 8) ? std::stod(argv[7]) : 1e-11;
     auto low_rank_threshold = (argc == 9) ? std::stod(argv[8]) : 1e-7;
-    volatile auto debug = (argc == 10) ? std::stoi(argv[9]) : 0;
+    /* volatile auto debug = (argc == 10) ? std::stoi(argv[9]) : 0; */
 
     if (world.rank() == 0) {
         std::cout << "Mol file is " << mol_file << std::endl;
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
     TA::Tensor<float> tile_norms(tr.tiles(), 0.0);
 
     if (world.rank() == 0) {
-        for (auto i = 0; i < tile_norms.size(); ++i) {
+        for (auto i = 0ul; i < tile_norms.size(); ++i) {
             auto range = tr.make_tile_range(i);
             auto const &size = range.size();
             auto const &start = range.start();
@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
     auto const &pmap = D_TA.get_pmap();
 
     if (world.rank() == 0) {
-        for (auto i = 0; i < pmap->size(); ++i) {
+        for (auto i = 0ul; i < pmap->size(); ++i) {
             if (!D_TA.is_zero(i)) {
                 auto range = tr.make_tile_range(i);
                 auto const &start = range.start();
@@ -208,15 +208,28 @@ int main(int argc, char **argv) {
     utility::print_par(world, "Time for TA contraction = ", time, "\n");
 
     auto func = [=](TA::Tensor<double> const &t) {
+
         tcc::tensor::DecomposedTensor<double> temp(1e-7, t);
         auto test_me = tensor::algebra::two_way_decomposition(temp);
-        test_me = (test_me.empty()) ? temp : test_me;
+
+        if (test_me.empty()) {
+            auto const &extent = t.range().size();
+            TA::Range new_range{extent[0], extent[1], extent[2]};
+            test_me = tcc::tensor::DecomposedTensor<double>(
+                  1e-7, TA::Tensor<double>{new_range, t.data()});
+        }
+
         return tcc::tensor::Tile<decltype(test_me)>(t.range(),
                                                     std::move(test_me));
     };
+
     auto func2 = [](TA::Tensor<double> const &t) {
+        auto const &extent = t.range().size();
+        TA::Range new_range{extent[0], extent[1]};
+        TA::Tensor<double> new_tensor{new_range, t.data()};
         return tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>{
-              t.range(), tcc::tensor::DecomposedTensor<double>{1e-7, t}};
+              t.range(),
+              tcc::tensor::DecomposedTensor<double>{1e-7, new_range}};
     };
     auto Xab_lr = TA::to_new_tile_type(Xab, func);
     auto D_test = TA::to_new_tile_type(D_TA, func2);
@@ -228,7 +241,23 @@ int main(int argc, char **argv) {
     time = std::chrono::duration_cast<std::chrono::duration<double>>(
                  t_me1 - t_me0).count();
 
-    utility::print_par(world, "Time for My contraction = ", time, "\n");
+
+    auto e_it = Xak.begin();
+    auto max_diff = 0.0;
+    for (auto it = Xak_lr.begin(); it != Xak_lr.end(); ++it, ++e_it) {
+        auto const &extent = e_it->get().range().size();
+        TA::Range r{extent[0], extent[1], extent[2]};
+        TA::Tensor<double> other(r, e_it->get().data());
+        auto diff
+              = tensor::algebra::combine(it->get().tile()).subt(other).norm();
+        std::cout << "Tile " << it.ordinal() << " has diff " << diff
+                  << std::endl;
+
+        max_diff = std::max(diff, max_diff);
+    }
+
+    utility::print_par(world, "Time for My contraction = ", time, "\n",
+                       "Max diff = ", max_diff, "\n");
 
     /* Xak.truncate(); */
     /* world.gop.fence(); */

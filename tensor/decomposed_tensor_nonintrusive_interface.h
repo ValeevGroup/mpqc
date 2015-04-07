@@ -7,5 +7,6 @@
 #include "decomposed_tensor_subtraction.h"
 #include "decomposed_tensor_multiplication.h"
 #include "decomposed_tensor_gemm.h"
+#include "decomposed_tensor_algebra.h"
 
 #endif // TCC_TENSOR_DECOMPOSEDTENSORNONINTRUSIVEINTERFACE_H

@@ -49,6 +49,14 @@ class DecomposedTensor {
         assert(!empty());
         return tensors_[0].range().size()[1];
     }
+    std::vector<std::size_t> orders() const {
+        std::vector<std::size_t> o;
+        o.reserve(ndecomp());
+        for (auto i = 0; i < ndecomp(); ++i) {
+            o.push_back(tensors_[i].range().dim());
+        }
+        return o;
+    }
 
     std::vector<TA::Tensor<T>> &tensors() { return tensors_; }
     std::vector<TA::Tensor<T>> const &tensors() const { return tensors_; }

@@ -17,18 +17,46 @@ int main(int argc, char **argv) {
 
     tcc::utility::parallal_break_point(world, debug);
 
-    auto tr1 = TA::TiledRange1{0, 2, 4};
-    auto tr = TA::TiledRange{tr1, tr1};
+    // Make low rank tensor
+    TA::Range r{50, 10, 10};
+    TA::Tensor<double> M(r);
+    auto L = TA::EigenMatrixXd::Random(50, 10);
+    auto R = TA::EigenMatrixXd::Random(10, 100);
+    auto map_M = TA::eigen_map(M, 50, 100);
+    map_M = L * R;
+    tensor::DecomposedTensor<double> lr_tensor{1e-7, std::move(M)};
 
-    TA::Array<double, 2, Tile<tensor::DecomposedTensor<double>>,
-              TA::DensePolicy> A(world, tr);
+    // Decompose it with QR
+    auto output_T = tensor::algebra::two_way_decomposition(lr_tensor);
+
+    auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+    auto tensors = output_T.tensors();
+
+    if (output_T.empty()) {
+        std::cout << "Something be broken" << std::endl;
+    } else {
+        std::cout << "Maybe this actually worked" << std::endl;
+        std::cout << "Output rank = " << output_T.rank() << std::endl;
+
+        auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+        auto out = tensors[0].gemm(tensors[1], 1.0, gh);
+
+        auto diff = lr_tensor.tensor(0).subt(out).norm();
+        std::cout << "The norm diff of the tensors was " << diff << std::endl;
+    }
+
+    /* auto tr1 = TA::TiledRange1{0, 2, 4}; */
+    /* auto tr = TA::TiledRange{tr1, tr1}; */
+
+    /* TA::Array<double, 2, Tile<tensor::DecomposedTensor<double>>, */
+    /*           TA::DensePolicy> A(world, tr); */
 
 
-    decltype(A) B;
-    B("i,j") = A("i,j") + A("i,j");
+    /* decltype(A) B; */
+    /* B("i,j") = A("i,j") + A("i,j"); */
 
-    decltype(A) C;
-    C("i,j") = A("i,k") + B("k,j");
+    /* decltype(A) C; */
+    /* C("i,j") = A("i,k") + B("k,j"); */
 
     madness::finalize();
     return 0;

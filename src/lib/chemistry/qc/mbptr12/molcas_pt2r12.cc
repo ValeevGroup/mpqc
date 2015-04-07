@@ -338,7 +338,6 @@ void MolcasPT2R12::run_molcas()
   //excute molcas command
 #ifdef HAVE_POSIX_SPAWN
   {
-    std::cout << "Have Posix Spawn";
     std::string command_str;
     command_str = molcas_ + " " + molcas_options_ + " " + molcas_input_;
     std::vector<std::string> v_command_str;
@@ -398,18 +397,16 @@ void MolcasPT2R12::run_molcas()
 #else
   // no posix_spwan, use system instead
   {
-    std::cout << "Have System";
     std::string command_str;
     command_str = molcas_ + " " + molcas_options_ + " " + molcas_input_;
     const int errcod = std::system(command_str.c_str());
     if (errcod) {
-      // errcod == -1 means fork() failed. check errno
       if (errcod == -1) {
         throw SyscallFailed("run_molcas",
                             __FILE__,__LINE__,
                             "system()", 0, class_desc());
       }
-      std::ostringstream oss; oss << "<MolcasPT2R12::run_molcas -- module " << molcas_ << " failed";
+      std::ostringstream oss; oss << "<MolcasPT2R12::run_molcas system call failed";
       throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
     }
   }

@@ -25,7 +25,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <spwan.h>
+#include <spawn.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 #include <cstdlib>
 #include <fstream>
@@ -39,6 +41,10 @@
 #include <chemistry/qc/lcao/wfnworld.h>
 #include <chemistry/qc/basis/union.h>
 #include <extern/moinfo/moinfo.h>
+
+
+extern char **environ;
+
 
 using namespace sc;
 using namespace std;
@@ -69,14 +75,14 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
             this->class_desc());
   }
 
-  molcas_input_ = kv->stringvalue("molcas_input", KeyValValuestring(std::string("-f")));
+  molcas_input_ = kv->stringvalue("molcas_input", KeyValValuestring(std::string()));
   if (molcas_input_.empty()){
     throw InputError("empty keyword value",
             __FILE__, __LINE__, "molcas_input", molcas_input_.c_str(),
             this->class_desc());
   }
 
-  molcas_options_ = kv->stringvalue("molcas_options", KeyValValuestring(std::string()));
+  molcas_options_ = kv->stringvalue("molcas_options", KeyValValuestring(std::string("-f")));
   xyz_file_ = kv->stringvalue("xyz_file", KeyValValuestring(std::string()));
 
   std::string obs_name = kv->stringvalue("obs",KeyValValuestring(std::string()));
@@ -330,8 +336,9 @@ void MolcasPT2R12::run_molcas()
   Timer tim("molcas");
 
   //excute molcas command
-#if HAVE_POSIX_SPAWN
+#ifdef HAVE_POSIX_SPAWN
   {
+    std::cout << "Have Posix Spawn";
     std::string command_str;
     command_str = molcas_ + " " + molcas_options_ + " " + molcas_input_;
     std::vector<std::string> v_command_str;
@@ -350,12 +357,15 @@ void MolcasPT2R12::run_molcas()
       spawned_command_str[i] = strdup(v_command_str[i].c_str());
     }
      /* redirect new standard output (fd 1) and error (fd 2) */
-    std::posix_spawn_file_actions_t file_actions;
-    std::posix_spawn_file_actions_init(&file_actions);
-    #posix_spawn_file_actions_addopen(&file_actions, 1, stdout_.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    #posix_spawn_file_actions_addopen(&file_actions, 2, stderr_.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    std::pid_t pid;
-    const int errcod = std::posix_spawn(&pid, spawned_command_str[0], &file_actions, NULL,
+    std::string stdout = prefix_ + ".log";
+    std::string stderr = prefix_ + ".err";
+
+    posix_spawn_file_actions_t file_actions;
+    posix_spawn_file_actions_init(&file_actions);
+    posix_spawn_file_actions_addopen(&file_actions, 1, stdout.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    posix_spawn_file_actions_addopen(&file_actions, 2, stderr.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    pid_t pid;
+    const int errcod = posix_spawn(&pid, spawned_command_str[0], &file_actions, NULL,
                                    spawned_command_str, environ);
     if (errcod == 0) {
       int status;
@@ -370,7 +380,7 @@ void MolcasPT2R12::run_molcas()
       if (WIFEXITED(status)) { // module called exit()
         const int retval = WEXITSTATUS(status);
         if (retval != 0) {
-          std::ostringstream oss; oss << "MolcasPT2R12::run_molcas -- module " << molcas_ << " returned nonzero, check psi output";
+          std::ostringstream oss; oss << "MolcasPT2R12::run_molcas -- module " << molcas_ << " returned nonzero, check molcas output";
           throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
         }
       }
@@ -383,11 +393,12 @@ void MolcasPT2R12::run_molcas()
       std::ostringstream oss; oss << "MolcasPT2R12::run_molcas -- posix_spawn failed";
       throw SystemException(oss.str().c_str(),__FILE__,__LINE__);
     }
-    std::posix_spawn_file_actions_destroy(&file_actions);
+    posix_spawn_file_actions_destroy(&file_actions);
   }
 #else
   // no posix_spwan, use system instead
   {
+    std::cout << "Have System";
     std::string command_str;
     command_str = molcas_ + " " + molcas_options_ + " " + molcas_input_;
     const int errcod = std::system(command_str.c_str());

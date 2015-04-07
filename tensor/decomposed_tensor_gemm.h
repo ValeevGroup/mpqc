@@ -43,21 +43,22 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
     // assume b is never decomposed.
     if (c.ndecomp() == 1) {
         if (a.ndecomp() == 1) {
-            c.tensor(0).gemm(a, b, factor, gemm_helper);
+            c.tensor(0).gemm(a.tensor(0), b.tensor(0), factor, gemm_helper);
             return c;
         }
 
         auto Rp = a.tensor(1).gemm(b.tensor(0), factor, gemm_helper);
         auto NoT = gemm_helper.left_op();
         auto gh = TA::math::GemmHelper(NoT, NoT, c.tensor(0).range().dim(),
-                                        a.tensor(0).range().dim(),
-                                        Rp.range().dim());
+                                       a.tensor(0).range().dim(),
+                                       Rp.range().dim());
         c.tensor(0).gemm(a.tensor(0), Rp, factor, gh);
         return c;
     } else {
         if (a.ndecomp() == 1) {
             auto ab = gemm(a, b, factor, gemm_helper);
-            c = algebra::combine(c).add(ab);
+            c = DecomposedTensor<T>{c.cut(),
+                                    algebra::combine(c).add(ab.tensor(0))};
             return c;
         }
 

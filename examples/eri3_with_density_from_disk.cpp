@@ -215,8 +215,8 @@ int main(int argc, char **argv) {
                                                     std::move(test_me));
     };
     auto func2 = [](TA::Tensor<double> const &t) {
-        return tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>{1e-7,
-                                                                        t};
+        return tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>{
+              t.range(), tcc::tensor::DecomposedTensor<double>{1e-7, t}};
     };
     auto Xab_lr = TA::to_new_tile_type(Xab, func);
     auto D_test = TA::to_new_tile_type(D_TA, func2);
@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
     Xak_lr("X,a,k") = Xab_lr("X,a,b") * D_test("b,k");
     auto t_me1 = std::chrono::high_resolution_clock::now();
     time = std::chrono::duration_cast<std::chrono::duration<double>>(
-                      t_me1 - t_me0).count();
+                 t_me1 - t_me0).count();
 
     utility::print_par(world, "Time for My contraction = ", time, "\n");
 

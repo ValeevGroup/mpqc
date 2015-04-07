@@ -28,6 +28,11 @@ DecomposedTensor<T> compress(DecomposedTensor<T> const &t, double cut) {
     assert(false);
 }
 
+template <typename T>
+bool empty(DecomposedTensor<T> const &t){
+    return t.empty();
+}
+
 } // namespace tensor
 } // namespace tcc
 

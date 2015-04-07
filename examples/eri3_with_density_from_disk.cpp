@@ -149,8 +149,8 @@ int main(int argc, char **argv) {
     world.gop.fence();
 
     TA::Tensor<float> tile_norms(tr.tiles(), 0.0);
-    if (world.rank() == 0) {
 
+    if (world.rank() == 0) {
         for (auto i = 0; i < tile_norms.size(); ++i) {
             auto range = tr.make_tile_range(i);
             auto const &size = range.size();
@@ -200,42 +200,35 @@ int main(int argc, char **argv) {
                                  integrals::compute_functors::BtasToTaTensor{});
 
     {
-        class to_deomp_tile {
-            double cut_ = 1e-7;
-
-          public:
-            tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>
-            operator()(TA::Tensor<double> const &t) const {
-                tcc::tensor::DecomposedTensor<double> temp(cut_, t);
-                auto test_me = tensor::algebra::two_way_decomposition(temp);
-                if (test_me.empty()) {
-                    return tcc::tensor::Tile<decltype(temp)>{t.range(),
-                                                             std::move(temp)};
-                } else {
-                    return tcc::tensor::Tile<decltype(test_me)>{
-                          t.range(), std::move(test_me)};
-                }
-            }
+        auto func = [=](TA::Tensor<double> const &t) {
+            tcc::tensor::DecomposedTensor<double> temp(1e-7, t);
+            auto test_me = tensor::algebra::two_way_decomposition(temp);
+            test_me = (test_me.empty()) ? temp : test_me;
+            return tcc::tensor::Tile<decltype(test_me)>(t.range(),
+                                                        std::move(test_me));
         };
 
-        to_decomp_tile T;
-
-        auto Xab_lr = TA::to_new_tile_type(Xab, T);
-        /* utility::print_size_info(Xab_lr, "Xab"); */
-        /* utility::print_par(world, "\n"); */
+        auto Xab_lr = TA::to_new_tile_type(Xab, func);
+        for (auto it = Xab_lr.begin(); it != Xab_lr.end(); ++it) {
+            std::cout << "Tile : " << it.ordinal() << it->get().tile().rank()
+                      << std::endl;
+        }
     }
 
-    /* decltype(Xab) Xak; */
-    /* Xak("X, a, k") = Xab("X,a,b") * D_TA("b,k"); */
-    /* Xak.truncate(); */
-    /* world.gop.fence(); */
-    /* auto Xak_lr = TA::to_new_tile_type( */
-    /*       Xak, integrals::compute_functors::TaToLowRankTensor<3>( */
-    /*                  low_rank_threshold)); */
-    /* world.gop.fence(); */
-    /* utility::print_size_info(Xak_lr, "Xab * D"); */
+        /* utility::print_size_info(Xab_lr, "Xab"); */
+        /* utility::print_par(world, "\n"); */
+
+        /* decltype(Xab) Xak; */
+        /* Xak("X, a, k") = Xab("X,a,b") * D_TA("b,k"); */
+        /* Xak.truncate(); */
+        /* world.gop.fence(); */
+        /* auto Xak_lr = TA::to_new_tile_type( */
+        /*       Xak, integrals::compute_functors::TaToLowRankTensor<3>( */
+        /*                  low_rank_threshold)); */
+        /* world.gop.fence(); */
+        /* utility::print_size_info(Xak_lr, "Xab * D"); */
 
 
-    madness::finalize();
-    return 0;
-}
+        madness::finalize();
+        return 0;
+    }

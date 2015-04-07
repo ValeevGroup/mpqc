@@ -55,6 +55,7 @@ class DecomposedTensor {
         assert(!empty());
         return tensors_[0].range().size()[1];
     }
+
     std::vector<std::size_t> orders() const {
         std::vector<std::size_t> o;
         o.reserve(ndecomp());
@@ -96,7 +97,6 @@ std::ostream &operator<<(std::ostream &os, DecomposedTensor<T> const &t) {
     }
     return os;
 }
-
 
 } // namespace tensor
 } // namespace tcc

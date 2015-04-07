@@ -385,7 +385,7 @@ class Tile {
 
 template <typename T>
 inline std::ostream &operator<<(std::ostream &os, Tile<T> const &tile) {
-    os << tile.range() << ": " << tile.tile() << "\n";
+    os << tile.range() << ": " << tile.tile();
     return os;
 }
 

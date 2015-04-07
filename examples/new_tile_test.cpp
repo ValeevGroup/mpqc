@@ -29,27 +29,26 @@ int main(int argc, char **argv) {
     // Decompose it with QR
     auto output_T = tensor::algebra::two_way_decomposition(lr_tensor);
 
-    auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
-    auto tensors = output_T.tensors();
-
     if (output_T.empty()) {
         std::cout << "Something be broken" << std::endl;
     } else {
         std::cout << "Maybe this actually worked" << std::endl;
         std::cout << "Output rank = " << output_T.rank() << std::endl;
 
-        auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
-        auto out = tensors[0].gemm(tensors[1], 1.0, gh);
+        auto out = tensor::algebra::combine(output_T);
 
         auto diff = lr_tensor.tensor(0).subt(out).norm();
         std::cout << "The norm diff of the tensors was " << diff << std::endl;
     }
 
-    /* auto tr1 = TA::TiledRange1{0, 2, 4}; */
-    /* auto tr = TA::TiledRange{tr1, tr1}; */
+    auto tr1 = TA::TiledRange1{0, 2, 4};
+    auto tr = TA::TiledRange{tr1, tr1};
 
-    /* TA::Array<double, 2, Tile<tensor::DecomposedTensor<double>>, */
-    /*           TA::DensePolicy> A(world, tr); */
+    TA::Array<double, 2, Tile<tensor::DecomposedTensor<double>>,
+              TA::DensePolicy> A(world, tr);
+    A.set_all_local(1.0);
+
+    std::cout << A << std::endl;
 
 
     /* decltype(A) B; */

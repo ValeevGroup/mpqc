@@ -5,6 +5,7 @@
 #include "../common/namespaces.h"
 #include "../include/tiledarray.h"
 #include <vector>
+#include <iostream>
 
 namespace tcc {
 namespace tensor {
@@ -39,6 +40,11 @@ class DecomposedTensor {
     template <typename... Tensors>
     DecomposedTensor(double c, Tensors &&... ts)
             : cut_(c), tensors_{std::forward<Tensors>(ts)...} {}
+
+    // Will default init cut, this is here to assist with set_all_local
+    // functionality
+    DecomposedTensor(TA::Range const &r, T value)
+            : tensors_{TA::Tensor<T>{r, value}} {}
 
     double cut() const { return cut_; }
     std::size_t ndecomp() const { return tensors_.size(); }
@@ -80,6 +86,16 @@ class DecomposedTensor {
         assert(false);
     }
 };
+
+template <typename T>
+std::ostream &operator<<(std::ostream &os, DecomposedTensor<T> const &t) {
+    std::cout << "DecomposedTensor: Cut = " << t.cut()
+              << ". Times Decomposed = " << t.ndecomp() << ". Tensors:\n";
+    for (auto i = 0ul; i < t.ndecomp(); ++i) {
+        std::cout << "\t" << t.tensor(i) << std::endl;
+    }
+    return os;
+}
 
 
 } // namespace tensor

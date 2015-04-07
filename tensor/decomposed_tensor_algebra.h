@@ -119,6 +119,25 @@ two_way_decomposition(DecomposedTensor<double> const &t) {
                                     std::move(q_tensor));
 }
 
+TA::Tensor<double> combine(DecomposedTensor<double> const &t){
+    if(t.empty()){
+        return TA::Tensor<double>{};
+    }
+
+    const auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+    auto const &tensors = t.tensors();
+    auto out = tensors[0].clone();
+    for(auto i = 1ul; i < tensors.size(); ++i){
+        auto l_dim = out.range().dim();
+        auto r_dim = tensors[i].range().dim();
+        auto result_dim = l_dim + r_dim - 2; // Only one contraction index.
+        auto gh = TA::math::GemmHelper(NoT, NoT, result_dim, l_dim, r_dim);
+        out = out.gemm(tensors[i], 1.0, gh);
+    }
+
+    return out;
+}
+
 } // namespace algebra
 } // namespace tensor
 } // namespace tcc

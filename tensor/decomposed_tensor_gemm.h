@@ -58,12 +58,11 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
         return c;
     } else {
         if (a.ndecomp() == 1) {
-            auto ab = gemm(a, b, factor, gemm_helper);
             auto NoT = gemm_helper.left_op();
-            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
-            c = DecomposedTensor<T>{c.cut(),
-                                    ab.tensor(0).gemm(c.tensor(0), c.tensor(1),
-                                                      1.0, gh)};
+            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 3, 2);
+            auto temp = algebra::combine(c);
+            c = DecomposedTensor<T>(c.cut(), temp.gemm(a.tensor(0), b.tensor(0),
+                                                       1.0, gh));
 
             return c;
         }

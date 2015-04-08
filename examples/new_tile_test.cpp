@@ -14,7 +14,8 @@
 
 using namespace tcc;
 
-TA::Tensor<double> lr_ta_tensor(int dim1, int dim2, int dim3, int rank) {
+TA::Tensor<double> lr_ta_tensor(std::size_t dim1, std::size_t dim2,
+                                std::size_t dim3, std::size_t rank) {
     TA::Range r{dim1, dim2, dim3};
     TA::Tensor<double> M(r);
     auto L = TA::EigenMatrixXd::Random(dim1, rank);
@@ -25,7 +26,7 @@ TA::Tensor<double> lr_ta_tensor(int dim1, int dim2, int dim3, int rank) {
     return M;
 }
 
-TA::Tensor<double> random_matrix(int dim) {
+TA::Tensor<double> random_matrix(std::size_t dim) {
     TA::Range r{dim, dim};
     TA::Tensor<double> M(r);
     auto map_M = TA::eigen_map(M, dim, dim);
@@ -34,11 +35,11 @@ TA::Tensor<double> random_matrix(int dim) {
     return M;
 }
 
-void do_test(tcc::tensor::DecomposedTensor<double> &lr,
-             tcc::tensor::DecomposedTensor<double> const &d,
-             tcc::tensor::DecomposedTensor<double> &output,
-             TA::math::GemmHelper const &gh,
-             TA::Tensor<double> const &correct) {
+void
+do_test(tcc::tensor::DecomposedTensor<double> &lr,
+        tcc::tensor::DecomposedTensor<double> const &d,
+        tcc::tensor::DecomposedTensor<double> &output,
+        TA::math::GemmHelper const &gh, TA::Tensor<double> const &correct) {
     if (output.empty()) {
         auto lr_copy = tensor::clone(lr);
         auto total_time = 0.0;
@@ -79,19 +80,17 @@ int main(int argc, char **argv) {
     const auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
     auto gh = TA::math::GemmHelper(NoT, NoT, 3, 3, 2);
 
-    TA::Tensor<double> correct;
-
-    // dummy call 
+    // dummy call
     TA_lr.gemm(D_TA, 1.0, gh);
 
     auto ta_lr_copy = TA_lr.clone();
     auto t0 = tcc_time::now();
-    correct = TA_lr.gemm(ta_lr_copy, D_TA, 1.0, gh);
+    TA_lr.gemm(ta_lr_copy, D_TA, 1.0, gh);
     auto t1 = tcc_time::now();
     auto total_time = tcc_time::duration_in_s(t0, t1);
     std::cout << "Ta time = " << total_time << std::endl;
 
-    do_test(lr_tensor, d_tensor, output_t, gh, correct);
+    do_test(lr_tensor, d_tensor, output_t, gh, TA_lr);
 
     madness::finalize();
     return 0;

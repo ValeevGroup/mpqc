@@ -250,8 +250,6 @@ int main(int argc, char **argv) {
         TA::Tensor<double> other(r, e_it->get().data());
         auto diff
               = tensor::algebra::combine(it->get().tile()).subt(other).norm();
-        std::cout << "Tile " << it.ordinal() << " has diff " << diff
-                  << std::endl;
 
         max_diff = std::max(diff, max_diff);
     }

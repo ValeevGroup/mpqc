@@ -20,7 +20,12 @@ permute(DecomposedTensor<T> const &t, TA::Permutation const &p) {
 
 template <typename T>
 DecomposedTensor<T> clone(DecomposedTensor<T> const &t) {
-    return DecomposedTensor<T>(t.cut(), t.tensors());
+    std::vector<TA::Tensor<T>> ts;
+    ts.reserve(t.tensors().size());
+    for(auto tensor : t.tensors()){
+        ts.push_back(tensor.clone());
+    }
+    return DecomposedTensor<T>(t.cut(), std::move(ts));
 }
 
 template <typename T>

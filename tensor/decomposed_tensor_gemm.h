@@ -5,6 +5,7 @@
 #include "../include/tiledarray.h"
 #include "decomposed_tensor.h"
 #include "decomposed_tensor_algebra.h"
+#include "decomposed_tensor_addition.h"
 
 namespace tcc {
 namespace tensor {
@@ -47,8 +48,6 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
             return c;
         }
 
-        /* auto const &a1_extent = a.tensor(1).range().size(); */
-        /* auto const &b0_extent = b.tensor(0).range().size(); */
         auto Rp = a.tensor(1).gemm(b.tensor(0), factor, gemm_helper);
         auto NoT = gemm_helper.left_op();
         auto gh = TA::math::GemmHelper(NoT, NoT, c.tensor(0).range().dim(),
@@ -59,10 +58,11 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
     } else {
         if (a.ndecomp() == 1) {
             auto NoT = gemm_helper.left_op();
-            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 3, 2);
-            auto temp = algebra::combine(c);
-            c = DecomposedTensor<T>(c.cut(), temp.gemm(a.tensor(0), b.tensor(0),
-                                                       1.0, gh));
+            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+            auto temp = a.tensor(0)
+                              .gemm(b.tensor(0), 1.0, gemm_helper)
+                              .gemm(c.tensor(0), c.tensor(1), 1.0, gh);
+            c = DecomposedTensor<T>(c.cut(), std::move(temp));
 
             return c;
         }
@@ -82,29 +82,7 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
             return c;
         }
 
-
-        TA::Range l_range(c_left_extent[0], out_dim);
-        TA::Tensor<T> l_tensor(std::move(l_range));
-
-        TA::Range r_range(out_dim, c_right_extent[1], c_right_extent[2]);
-        TA::Tensor<T> r_tensor(std::move(r_range));
-
-        // Fill L
-        auto Lmap = TA::eigen_map(l_tensor, c_left_extent[0], out_dim);
-        auto c_lmap = TA::eigen_map(c.tensor(0), c_left_extent[0], c.rank());
-        auto ab_lmap = TA::eigen_map(ab.tensor(0), c_left_extent[0], ab.rank());
-        Lmap.leftCols(c.rank()) = c_lmap;
-        Lmap.rightCols(ab.rank()) = ab_lmap;
-
-        // Fill R
-        auto Rmap = TA::eigen_map(r_tensor, out_dim, long_dim);
-        auto c_rmap = TA::eigen_map(c.tensor(1), c.rank(), long_dim);
-        auto ab_rmap = TA::eigen_map(ab.tensor(1), ab.rank(), long_dim);
-
-        Rmap.topRows(c.rank()) = c_rmap;
-        Rmap.bottomRows(ab.rank()) = ab_rmap;
-        c = DecomposedTensor<T>{c.cut(), std::move(l_tensor),
-                                std::move(r_tensor)};
+        c = add(c, ab);
         return c;
     }
 

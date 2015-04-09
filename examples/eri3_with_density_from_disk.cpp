@@ -209,30 +209,50 @@ int main(int argc, char **argv) {
 
     auto func = [=](TA::Tensor<double> const &t) {
 
-        tcc::tensor::DecomposedTensor<double> temp(1e-7, t);
+        tcc::tensor::DecomposedTensor<double> temp(low_rank_threshold,
+                                                   t.clone());
         auto test_me = tensor::algebra::two_way_decomposition(temp);
 
         if (test_me.empty()) {
             auto const &extent = t.range().size();
             TA::Range new_range{extent[0], extent[1], extent[2]};
             test_me = tcc::tensor::DecomposedTensor<double>(
-                  1e-7, TA::Tensor<double>{new_range, t.data()});
+                  low_rank_threshold, TA::Tensor<double>{new_range, t.data()});
         }
 
         return tcc::tensor::Tile<decltype(test_me)>(t.range(),
                                                     std::move(test_me));
     };
 
-    auto func2 = [](TA::Tensor<double> const &t) {
+    auto func2 = [=](TA::Tensor<double> const &t) {
         auto const &extent = t.range().size();
         TA::Range new_range{extent[0], extent[1]};
-        TA::Tensor<double> new_tensor{new_range, t.data()};
+        TA::Tensor<double> new_tensor(new_range, t.data());
+
         return tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>{
-              t.range(),
-              tcc::tensor::DecomposedTensor<double>{1e-7, new_range}};
+              t.range(), tcc::tensor::DecomposedTensor<double>(
+                               low_rank_threshold, std::move(new_tensor))};
     };
     auto Xab_lr = TA::to_new_tile_type(Xab, func);
     auto D_test = TA::to_new_tile_type(D_TA, func2);
+    world.gop.fence();
+
+    auto a_it = Xab.begin();
+    auto max_diff = 0.0;
+    for (auto it = Xab_lr.begin(); it != Xab_lr.end(); ++it, ++a_it) {
+        assert(it.ordinal() == a_it.ordinal());
+        auto const &extent = a_it->get().range().size();
+
+        TA::Range r{extent[0], extent[1], extent[2]};
+        TA::Tensor<double> other(r, a_it->get().data());
+        auto diff
+              = tensor::algebra::combine(it->get().tile()).subt(other).norm();
+
+        max_diff = std::max(diff, max_diff);
+    }
+
+
+    utility::print_par(world, "Xab Max diff = ", max_diff, "\n");
 
     auto t_me0 = std::chrono::high_resolution_clock::now();
     decltype(Xab_lr) Xak_lr;
@@ -241,10 +261,10 @@ int main(int argc, char **argv) {
     time = std::chrono::duration_cast<std::chrono::duration<double>>(
                  t_me1 - t_me0).count();
 
-
     auto e_it = Xak.begin();
-    auto max_diff = 0.0;
+    max_diff = 0.0;
     for (auto it = Xak_lr.begin(); it != Xak_lr.end(); ++it, ++e_it) {
+        assert(it.ordinal() == e_it.ordinal());
         auto const &extent = e_it->get().range().size();
         TA::Range r{extent[0], extent[1], extent[2]};
         TA::Tensor<double> other(r, e_it->get().data());
@@ -253,6 +273,7 @@ int main(int argc, char **argv) {
 
         max_diff = std::max(diff, max_diff);
     }
+
 
     utility::print_par(world, "Time for My contraction = ", time, "\n",
                        "Max diff = ", max_diff, "\n");

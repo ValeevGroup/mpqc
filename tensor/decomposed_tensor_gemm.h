@@ -45,65 +45,58 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
     if (c.ndecomp() == 1) {
         if (a.ndecomp() == 1) {
             c.tensor(0).gemm(a.tensor(0), b.tensor(0), factor, gemm_helper);
-            return c;
-        }
+        } else {
 
-        auto Rp = a.tensor(1).gemm(b.tensor(0), factor, gemm_helper);
-        auto NoT = gemm_helper.left_op();
-        auto gh = TA::math::GemmHelper(NoT, NoT, c.tensor(0).range().dim(),
-                                       a.tensor(0).range().dim(),
-                                       Rp.range().dim());
-        c.tensor(0).gemm(a.tensor(0), Rp, factor, gh);
+            auto Rp = a.tensor(1).gemm(b.tensor(0), factor, gemm_helper);
+            auto NoT = gemm_helper.left_op();
+            auto gh = TA::math::GemmHelper(NoT, NoT, c.tensor(0).range().dim(),
+                                           a.tensor(0).range().dim(),
+                                           Rp.range().dim());
+            c.tensor(0).gemm(a.tensor(0), Rp, factor, gh);
+        }
+        auto decomp_c = algebra::two_way_decomposition(c);
+        if (!decomp_c.empty()) {
+            c = std::move(decomp_c);
+        }
         return c;
     } else {
         if (a.ndecomp() == 1) {
             auto ab_tensor = a.tensor(0).gemm(b.tensor(0), 1.0, gemm_helper);
-
-            TA::Tensor<double> al, ar;
-            if (algebra::col_pivoted_qr(ab_tensor, al, ar, c.cut())) {
-                auto const &ab_extent = ab_tensor.range().size();
-                auto full_rank
-                      = std::min(ab_extent[0], ab_extent[1] * ab_extent[2]);
-                const auto rank = al.range().size()[1];
-                const auto combo_rank = rank + c.rank();
-
-                if (combo_rank >= 0.5 * full_rank) {
-                    c = add(c, DecomposedTensor<double>(c.cut(), std::move(al),
-                                                        std::move(ar)));
-                } else {
-                    const auto NoT = gemm_helper.left_op();
-                    auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
-                    auto temp
-                          = ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
-                    c = DecomposedTensor<double>(c.cut(), std::move(temp));
-                }
-                return c;
-
-            } else {
-                const auto NoT = gemm_helper.left_op();
-                auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
-                auto temp = ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
-                c = DecomposedTensor<double>(c.cut(), std::move(temp));
-                return c;
-            }
-        }
-
-        auto ab = gemm(a, b, factor, gemm_helper);
-        auto const &c_left_extent = c.tensor(0).range().size();
-        auto const &c_right_extent = c.tensor(1).range().size();
-        const auto long_dim = c_right_extent[1] * c_right_extent[2];
-        const auto out_dim = c.rank() + ab.rank();
-
-        if (out_dim >= 0.50 * std::min(c_left_extent[0], long_dim)) {
-            auto NoT = gemm_helper.left_op();
+            const auto NoT = gemm_helper.left_op();
             auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
-            auto temp = algebra::combine(c);
-            c = DecomposedTensor<T>{c.cut(), temp.gemm(ab.tensor(0),
-                                                       ab.tensor(1), 1.0, gh)};
+            ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
+            c = DecomposedTensor<double>(c.cut(), std::move(ab_tensor));
+            auto decomp_test = algebra::two_way_decomposition(c);
+
+            if (!decomp_test.empty()) {
+                c = std::move(decomp_test);
+            }
+
             return c;
         }
 
+        auto ab = gemm(a, b, factor, gemm_helper);
         c = add(c, ab);
+        // This doesn't appear to be working to well
+        /* auto decomposed = algebra::recompress_right(c); */
+        /* if (!decomposed.empty()) { */
+        /*     c = std::move(decomposed); */
+        /* } */
+        auto c_test = algebra::two_way_decomposition(
+              DecomposedTensor<double>(c.cut(), algebra::combine(c)));
+        if(!c_test.empty()){
+            c = std::move(c_test);
+        }
+
+        /* auto const &c_left_extent = c.tensor(0).range().size(); */
+        /* auto const &c_right_extent = c.tensor(1).range().size(); */
+        /* const auto long_dim = c_right_extent[1] * c_right_extent[2]; */
+        /* const auto out_dim = c.rank(); */
+
+        /* if (out_dim >= 0.50 * std::min(c_left_extent[0], long_dim)) { */
+        /*     c = DecomposedTensor<T>(c.cut(), algebra::combine(c)); */
+        /* } */
+
         return c;
     }
 

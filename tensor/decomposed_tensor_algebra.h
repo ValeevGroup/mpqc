@@ -38,22 +38,12 @@ inline int qr_rank(double const *data, int rows, int cols, double threshhold) {
     return out_rank;
 }
 
-/// Returns an empty DecomposedTensor if the rank does note decrease
-inline DecomposedTensor<double>
-recompress_left(DecomposedTensor<double> const &t) {
-    assert(false);
-}
+// Returns true if input is low rank.
+bool col_pivoted_qr(TA::Tensor<double> const &in, TA::Tensor<double> &L,
+                    TA::Tensor<double> &R, double thresh) {
+    auto const &extent = in.range().size();
 
-/// Returns an empty DecomposedTensor if the compression rank was to large.
-inline DecomposedTensor<double>
-two_way_decomposition(DecomposedTensor<double> const &t) {
-    if (t.ndecomp() >= 2) {
-        return recompress_left(t);
-    }
-
-    auto const &extent = t.range(0).size();
-
-    // for now assume rank 3 and assume (X, {ab}) decomp
+    // for now assume rank 3 and assume (X, {ab}) or (r, {ab}) decomp
     // swapping cols and rows because dgeqp3 is a column major routine.
     int cols = extent[0];
     int rows = extent[1] * extent[2];
@@ -69,7 +59,7 @@ two_way_decomposition(DecomposedTensor<double> const &t) {
     // Have to copy data since dgeqp3_ eats input
     const auto tensor_size = rows * cols;
     std::unique_ptr<double[]> t_copy{new double[tensor_size]};
-    const auto data = t.tensor(0).data();
+    const auto data = in.data();
     std::copy(data, data + tensor_size, t_copy.get());
 
     // Call routine
@@ -81,9 +71,9 @@ two_way_decomposition(DecomposedTensor<double> const &t) {
             &INFO);
 
     // Determine rank and if decomposing is worth it.
-    auto rank = qr_rank(t_copy.get(), rows, cols, t.cut());
+    auto rank = qr_rank(t_copy.get(), rows, cols, thresh);
     if (rank > 0.5 * double(full_rank)) {
-        return DecomposedTensor<double>{};
+        return false;
     }
 
     // LAPACK assumes 1 based indexing, but we need zero.
@@ -92,42 +82,73 @@ two_way_decomposition(DecomposedTensor<double> const &t) {
 
     // Create L tensor
     TA::Range l_range{extent[0], static_cast<std::size_t>(rank)};
-    TA::Tensor<double> l_tensor(std::move(l_range));
+    L = TA::Tensor<double>(std::move(l_range));
 
     // Eigen map the input
     auto A = Eig::Map<Eig::MatrixXd>(t_copy.get(), rows, cols);
 
     // Assign into l_tensor
-    auto L = Eig::Map<Eig::MatrixXd>(l_tensor.data(), rank, cols);
-    L = Eigen::MatrixXd(A.topLeftCorner(rank, cols)
-                              .template triangularView<Eigen::Upper>())
-        * P.transpose();
+    auto L_map = Eig::Map<Eig::MatrixXd>(L.data(), rank, cols);
+    L_map = Eig::MatrixXd(A.topLeftCorner(rank, cols)
+                                .template triangularView<Eigen::Upper>())
+            * P.transpose();
 
     // compute q .
     dorgqr_(&rows, &rank, &rank, t_copy.get(), &rows, Tau, W.get(), &LWORK,
             &INFO);
 
-    // From Q
-    TA::Range q_range {static_cast<std::size_t>(rank), extent[1], extent[2]};
-    TA::Tensor<double> q_tensor(std::move(q_range));
-    auto Q = Eig::Map<Eig::MatrixXd>(q_tensor.data(), rows, rank);
-    Q = A.leftCols(rank);
-
-    // Return tensors in what looks like the wrong order because the output
-    // of column based QR on row major input will be LQ.
-    return DecomposedTensor<double>(t.cut(), std::move(l_tensor),
-                                    std::move(q_tensor));
+    // From Q goes to R because of column major transpose issues.
+    TA::Range q_range{static_cast<std::size_t>(rank), extent[1], extent[2]};
+    R = TA::Tensor<double>(std::move(q_range));
+    auto R_map = Eig::Map<Eig::MatrixXd>(R.data(), rows, rank);
+    R_map = A.leftCols(rank);
+    return true;
 }
 
-TA::Tensor<double> combine(DecomposedTensor<double> const &t){
-    if(t.empty()){
+/// Returns an empty DecomposedTensor if the rank does not decrease
+inline DecomposedTensor<double>
+recompress_right(DecomposedTensor<double> const &t) {
+    assert(t.ndecomp() >= 2);
+    TA::Tensor<double> Rl, Rr;
+    if (col_pivoted_qr(t.tensor(1), Rl, Rr, t.cut())) {
+        // Make new left tensors
+        constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+        auto gh = TA::math::GemmHelper(NoT, NoT, 2, 2, 2);
+        auto new_left = t.tensor(0).gemm(Rl, 1.0, gh);
+
+        // Use decomposed new left and right tensors.
+        return DecomposedTensor<double>(t.cut(), std::move(new_left),
+                                        std::move(Rr));
+
+    } else {
+        return DecomposedTensor<double>{};
+    }
+}
+
+/// Returns an empty DecomposedTensor if the compression rank was to large.
+inline DecomposedTensor<double>
+two_way_decomposition(DecomposedTensor<double> const &t) {
+    if (t.ndecomp() >= 2) {
+        return recompress_right(t);
+    }
+
+    TA::Tensor<double> L, R;
+    if (col_pivoted_qr(t.tensor(0), L, R, t.cut())) {
+        return DecomposedTensor<double>(t.cut(), std::move(L), std::move(R));
+    } else {
+        return DecomposedTensor<double>{};
+    }
+}
+
+TA::Tensor<double> combine(DecomposedTensor<double> const &t) {
+    if (t.empty()) {
         return TA::Tensor<double>{};
     }
 
     const auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
     auto const &tensors = t.tensors();
     auto out = tensors[0].clone();
-    for(auto i = 1ul; i < tensors.size(); ++i){
+    for (auto i = 1ul; i < tensors.size(); ++i) {
         auto l_dim = out.range().dim();
         auto r_dim = tensors[i].range().dim();
         auto result_dim = l_dim + r_dim - 2; // Only one contraction index.

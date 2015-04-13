@@ -90,25 +90,25 @@ get_TA_density_from_file(madness::World &world, std::string const &file_name,
     TA::Tensor<float> tile_norms(tr.tiles(), 0.0);
     if (world.rank() == 0) {
 
-        for (auto i = 0; i < tile_norms.size(); ++i) {
+        for (auto i = 0ul; i < tile_norms.size(); ++i) {
             auto range = tr.make_tile_range(i);
             auto const &size = range.size();
             auto const &start = range.start();
 
-            tile_norms[i]
-                = D_eig.block(start[0], start[1], size[0], size[1]).lpNorm<2>();
+            tile_norms[i] = D_eig.block(start[0], start[1], size[0], size[1])
+                                  .lpNorm<2>();
         }
     }
 
     TA::SparseShape<float> shape(world, tile_norms, tr);
 
     auto D_TA = TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy>(
-        world, tr, shape);
+          world, tr, shape);
 
     auto const &pmap = D_TA.get_pmap();
 
     if (world.rank() == 0) {
-        for (auto i = 0; i < pmap->size(); ++i) {
+        for (auto i = 0ul; i < pmap->size(); ++i) {
             if (!D_TA.is_zero(i)) {
                 auto range = tr.make_tile_range(i);
                 auto const &start = range.start();
@@ -123,7 +123,8 @@ get_TA_density_from_file(madness::World &world, std::string const &file_name,
 
     {
         auto D_lr = TA::to_new_tile_type(
-            D_TA, integrals::compute_functors::TaToLowRankTensor<2>(lr_thresh));
+              D_TA,
+              integrals::compute_functors::TaToLowRankTensor<2>(lr_thresh));
         utility::print_par(world, "\n");
         utility::print_size_info(D_lr, "D");
     }
@@ -168,6 +169,9 @@ int main(int argc, char **argv) {
                   << std::endl;
         std::cout << "low rank threshhold is " << low_rank_threshold
                   << std::endl;
+        if (debug) {
+            std::cout << "Debugging requested" << std::endl;
+        }
     }
 
     TiledArray::SparseShape<float>::threshold(threshold);
@@ -195,32 +199,32 @@ int main(int argc, char **argv) {
     utility::print_par(world, "\n");
     auto basis_array = utility::make_array(df_basis, basis, basis);
     auto Xab
-        = BlockSparseIntegrals(world, eri_pool, basis_array,
-                               integrals::compute_functors::BtasToTaTensor{});
+          = BlockSparseIntegrals(world, eri_pool, basis_array,
+                                 integrals::compute_functors::BtasToTaTensor{});
 
     {
         auto Xab_lr = TA::to_new_tile_type(
-            Xab, integrals::compute_functors::TaToLowRankTensor<3>(
-                     low_rank_threshold));
+              Xab, integrals::compute_functors::TaToLowRankTensor<3>(
+                         low_rank_threshold));
 
         utility::print_par(world, "\n");
-        utility::print_size_info(Xab_lr, "\Xab");
+        utility::print_size_info(Xab_lr, "Xab");
     }
     {
         auto dfbasis_array = utility::make_array(df_basis, df_basis);
         auto eri2 = BlockSparseIntegrals(
-            world, eri_pool, dfbasis_array,
-            integrals::compute_functors::BtasToTaTensor{});
+              world, eri_pool, dfbasis_array,
+              integrals::compute_functors::BtasToTaTensor{});
 
         auto eri2_lr = TA::to_new_tile_type(
-            eri2, integrals::compute_functors::TaToLowRankTensor<2>(
-                      low_rank_threshold));
+              eri2, integrals::compute_functors::TaToLowRankTensor<2>(
+                          low_rank_threshold));
 
         utility::print_par(world, "\n");
         utility::print_size_info(eri2_lr, "Eri2");
 
-        auto inv_timer
-            = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2); });
+        auto inv_timer = tcc_time::make_timer(
+              [&]() { return pure::inverse_sqrt(eri2); });
         auto eri2_inv = inv_timer.apply();
         utility::print_par(world, "\nEri2 inverse computation time = ",
                            inv_timer.time(), "\n");
@@ -228,8 +232,8 @@ int main(int argc, char **argv) {
         eri2_inv.truncate();
 
         auto eri2_inv_lr = TA::to_new_tile_type(
-            eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>(
-                          low_rank_threshold));
+              eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>(
+                              low_rank_threshold));
 
         utility::print_par(world, "\n");
         utility::print_size_info(eri2_inv_lr, "V inverse");
@@ -238,8 +242,8 @@ int main(int argc, char **argv) {
         Xab.truncate();
 
         auto Xab_lr = TA::to_new_tile_type(
-            Xab, integrals::compute_functors::TaToLowRankTensor<3>(
-                     low_rank_threshold));
+              Xab, integrals::compute_functors::TaToLowRankTensor<3>(
+                         low_rank_threshold));
 
         utility::print_par(world, "\n");
         utility::print_size_info(Xab_lr, "\\tilde{X}ab");
@@ -254,8 +258,8 @@ int main(int argc, char **argv) {
         Xab.truncate();
 
         auto Xab_lr = TA::to_new_tile_type(
-            Xab, integrals::compute_functors::TaToLowRankTensor<3>(
-                     low_rank_threshold));
+              Xab, integrals::compute_functors::TaToLowRankTensor<3>(
+                         low_rank_threshold));
 
         utility::print_par(world, "\n");
         utility::print_size_info(Xab_lr, "Eri3(\\tilde{X}, a, \\kappa_D)");

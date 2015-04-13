@@ -77,6 +77,9 @@ int main(int argc, char **argv) {
                   << std::endl;
         std::cout << "low rank threshhold is " << low_rank_threshold
                   << std::endl;
+        if (debug) {
+            std::cout << "Debuging requested!" << std::endl;
+        }
     }
 
     TiledArray::SparseShape<float>::threshold(threshold);
@@ -104,24 +107,24 @@ int main(int argc, char **argv) {
     utility::print_par(world, "\n");
     auto basis_array = utility::make_array(df_basis, basis, basis);
     auto Xab
-        = BlockSparseIntegrals(world, eri_pool, basis_array,
-                               integrals::compute_functors::BtasToTaTensor{});
+          = BlockSparseIntegrals(world, eri_pool, basis_array,
+                                 integrals::compute_functors::BtasToTaTensor{});
 
     {
         auto dfbasis_array = utility::make_array(df_basis, df_basis);
         auto eri2 = BlockSparseIntegrals(
-            world, eri_pool, dfbasis_array,
-            integrals::compute_functors::BtasToTaTensor{});
+              world, eri_pool, dfbasis_array,
+              integrals::compute_functors::BtasToTaTensor{});
 
         auto eri2_lr = TA::to_new_tile_type(
-            eri2, integrals::compute_functors::TaToLowRankTensor<2>(
-                     low_rank_threshold));
+              eri2, integrals::compute_functors::TaToLowRankTensor<2>(
+                          low_rank_threshold));
 
         utility::print_par(world, "\n");
         utility::print_size_info(eri2_lr, "Eri2");
 
-        auto inv_timer
-            = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2); });
+        auto inv_timer = tcc_time::make_timer(
+              [&]() { return pure::inverse_sqrt(eri2); });
         auto eri2_inv = inv_timer.apply();
         utility::print_par(world, "\nEri2 inverse computation time = ",
                            inv_timer.time(), "\n");
@@ -129,8 +132,8 @@ int main(int argc, char **argv) {
         eri2_inv.truncate();
 
         auto eri2_inv_lr = TA::to_new_tile_type(
-            eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>(
-                     low_rank_threshold));
+              eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>(
+                              low_rank_threshold));
 
         utility::print_par(world, "\n");
         utility::print_size_info(eri2_inv_lr, "Eri2 inverse");
@@ -139,8 +142,8 @@ int main(int argc, char **argv) {
         Xab.truncate();
 
         auto Xab_lr = TA::to_new_tile_type(
-            Xab, integrals::compute_functors::TaToLowRankTensor<3>(
-                     low_rank_threshold));
+              Xab, integrals::compute_functors::TaToLowRankTensor<3>(
+                         low_rank_threshold));
 
         utility::print_par(world, "\n");
         utility::print_size_info(Xab_lr, "\\tilde{X}ab");

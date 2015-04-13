@@ -57,14 +57,35 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
         return c;
     } else {
         if (a.ndecomp() == 1) {
-            auto NoT = gemm_helper.left_op();
-            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
-            auto temp = a.tensor(0)
-                              .gemm(b.tensor(0), 1.0, gemm_helper)
-                              .gemm(c.tensor(0), c.tensor(1), 1.0, gh);
-            c = DecomposedTensor<T>(c.cut(), std::move(temp));
+            auto ab_tensor = a.tensor(0).gemm(b.tensor(0), 1.0, gemm_helper);
 
-            return c;
+            TA::Tensor<double> al, ar;
+            if (algebra::col_pivoted_qr(ab_tensor, al, ar, c.cut())) {
+                auto const &ab_extent = ab_tensor.range().size();
+                auto full_rank
+                      = std::min(ab_extent[0], ab_extent[1] * ab_extent[2]);
+                const auto rank = al.range().size()[1];
+                const auto combo_rank = rank + c.rank();
+
+                if (combo_rank >= 0.5 * full_rank) {
+                    c = add(c, DecomposedTensor<double>(c.cut(), std::move(al),
+                                                        std::move(ar)));
+                } else {
+                    const auto NoT = gemm_helper.left_op();
+                    auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+                    auto temp
+                          = ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
+                    c = DecomposedTensor<double>(c.cut(), std::move(temp));
+                }
+                return c;
+
+            } else {
+                const auto NoT = gemm_helper.left_op();
+                auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+                auto temp = ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
+                c = DecomposedTensor<double>(c.cut(), std::move(temp));
+                return c;
+            }
         }
 
         auto ab = gemm(a, b, factor, gemm_helper);

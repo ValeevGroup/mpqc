@@ -10,8 +10,8 @@ namespace tensor {
 template <typename T>
 DecomposedTensor<T>
 add(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r) {
-    if(l.ndecomp() >= 2){
-        if(r.ndecomp() >= 2){
+    if (l.ndecomp() >= 2) {
+        if (r.ndecomp() >= 2) {
             auto const &l_extent = l.tensor(0).range().size();
             auto const &r_extent = r.tensor(1).range().size();
             const auto l_rank = l.rank();
@@ -29,7 +29,7 @@ add(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r) {
             auto ll_data = l.tensor(0).data();
             auto rl_data = r.tensor(0).data();
             // Access data in stride
-            for(auto i = 0ul; i < l_vol; i += out_rank){
+            for (auto i = 0ul; i < l_vol; i += out_rank) {
                 std::copy(ll_data, ll_data + l_rank, data + i);
                 ll_data += l_rank;
                 std::copy(rl_data, rl_data + r_rank, data + i + l_rank);
@@ -48,6 +48,8 @@ add(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r) {
             return DecomposedTensor<T>(l.cut(), std::move(L), std::move(R));
         }
     }
+    assert(false);
+    return DecomposedTensor<T>(l.cut());
 }
 
 template <typename T>
@@ -58,22 +60,20 @@ add(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r,
 }
 
 template <typename T>
-DecomposedTensor<T>
-add(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r,
-    const T factor) {
+DecomposedTensor<T> add(DecomposedTensor<T> const &l,
+                        DecomposedTensor<T> const &r, const T factor) {
     assert(false);
 }
 
 template <typename T>
 DecomposedTensor<T>
-add(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r,
-    const T factor, TA::Permutation const &p) {
+add(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r, const T factor,
+    TA::Permutation const &p) {
     assert(false);
 }
 
 template <typename T>
-DecomposedTensor<T>
-add(DecomposedTensor<T> const &l, const T factor) {
+DecomposedTensor<T> add(DecomposedTensor<T> const &l, const T factor) {
     assert(false);
 }
 
@@ -84,20 +84,19 @@ add(DecomposedTensor<T> const &l, const T factor, TA::Permutation const &p) {
 }
 
 template <typename T>
-DecomposedTensor<T>&
+DecomposedTensor<T> &
 add_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r) {
     assert(false);
 }
 
 template <typename T>
-DecomposedTensor<T>&
+DecomposedTensor<T> &
 add_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r, const T factor) {
     assert(false);
 }
 
 template <typename T>
-DecomposedTensor<T> &
-add_to(DecomposedTensor<T> &l, const T factor) {
+DecomposedTensor<T> &add_to(DecomposedTensor<T> &l, const T factor) {
     assert(false);
 }
 

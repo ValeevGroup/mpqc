@@ -129,7 +129,7 @@ void gemm_test(LowRankTensors const &l) {
         auto my_full = gemm(full, D, 1.0, gh);
         auto time_full1 = now();
         full_times[i] = duration_in_s(time_full0, time_full1);
-        full_accuracy[i] = correct_answer.subt(my_full.tensor(0)).norm();
+        full_accuracy[i] = correct_answer.subt(algebra::combine(my_full)).norm();
 
         auto my_lr = gemm(low, D, 1.0, gh);
         low_accuracy[i] = correct_answer.subt(algebra::combine(my_lr)).norm();
@@ -198,7 +198,7 @@ void gemm_to_full_full_test(LowRankTensors const &l) {
         auto time_me1 = now();
         my_time.push_back(duration_in_s(time_me0, time_me1));
 
-        my_accuracy.push_back(ta_c_i.subt(my_c_i.tensor(0)).norm());
+        my_accuracy.push_back(ta_c_i.subt(algebra::combine(my_c_i)).norm());
     }
 
     auto avg_ta_time = std::accumulate(ta_time.begin(), ta_time.end(), 0.0)
@@ -250,7 +250,7 @@ void gemm_to_full_low_test(LowRankTensors const &l) {
 
         // For accuracy reasons.
         gemm(my_c_i, my_a, D, 1.0, gh);
-        my_accuracy.push_back(ta_c_i.subt(my_c_i.tensor(0)).norm());
+        my_accuracy.push_back(ta_c_i.subt(algebra::combine(my_c_i)).norm());
     }
 
     auto avg_ta_time = std::accumulate(ta_time.begin(), ta_time.end(), 0.0)
@@ -307,7 +307,7 @@ void gemm_to_low_full_test(LowRankTensors const &l) {
 
         // For accuracy reasons.
         gemm(my_c_i, my_a, D, 1.0, gh);
-        my_accuracy.push_back(ta_c_i.subt(my_c_i.tensor(0)).norm());
+        my_accuracy.push_back(ta_c_i.subt(algebra::combine(my_c_i)).norm());
     }
 
     auto avg_ta_time = std::accumulate(ta_time.begin(), ta_time.end(), 0.0)

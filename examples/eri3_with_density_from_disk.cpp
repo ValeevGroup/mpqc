@@ -236,23 +236,9 @@ int main(int argc, char **argv) {
     auto Xab_lr = TA::to_new_tile_type(Xab, func);
     auto D_test = TA::to_new_tile_type(D_TA, func2);
     world.gop.fence();
-
-    auto a_it = Xab.begin();
-    auto max_diff = 0.0;
-    for (auto it = Xab_lr.begin(); it != Xab_lr.end(); ++it, ++a_it) {
-        assert(it.ordinal() == a_it.ordinal());
-        auto const &extent = a_it->get().range().size();
-
-        TA::Range r{extent[0], extent[1], extent[2]};
-        TA::Tensor<double> other(r, a_it->get().data());
-        auto diff
-              = tensor::algebra::combine(it->get().tile()).subt(other).norm();
-
-        max_diff = std::max(diff, max_diff);
-    }
-
-
-    utility::print_par(world, "Xab Max diff = ", max_diff, "\n");
+    utility::print_size_info(Xab_lr, "Xab_lr");
+    utility::print_array_difference(Xab_lr, Xab, "Xab low rank",
+                                    "Xab full rank");
 
     auto t_me0 = std::chrono::high_resolution_clock::now();
     decltype(Xab_lr) Xak_lr;
@@ -261,22 +247,22 @@ int main(int argc, char **argv) {
     time = std::chrono::duration_cast<std::chrono::duration<double>>(
                  t_me1 - t_me0).count();
 
-    auto e_it = Xak.begin();
-    max_diff = 0.0;
-    for (auto it = Xak_lr.begin(); it != Xak_lr.end(); ++it, ++e_it) {
-        assert(it.ordinal() == e_it.ordinal());
-        auto const &extent = e_it->get().range().size();
-        TA::Range r{extent[0], extent[1], extent[2]};
-        TA::Tensor<double> other(r, e_it->get().data());
-        auto diff
-              = tensor::algebra::combine(it->get().tile()).subt(other).norm();
+    utility::print_par(world, "\nTime for My contraction = ", time, "\n");
+    utility::print_size_info(Xak_lr, "Xak_lr no recompression");
+    utility::print_array_difference(Xak_lr, Xak, "Xak low rank",
+                                    "Xak full rank");
 
-        max_diff = std::max(diff, max_diff);
+    utility::print_par(world, "\nRecompressing\n");
+    for (auto it = Xak_lr.begin(); it != Xak_lr.end(); ++it) {
+        auto tensor = tensor::algebra::combine(it->get().tile());
+        auto decomp = tensor::algebra::two_way_decomposition(
+              tensor::DecomposedTensor<double>(it->get().tile().cut(),
+                                               std::move(tensor)));
+        if (!decomp.empty()) {
+            it->get().tile() = decomp;
+        }
     }
-
-
-    utility::print_par(world, "Time for My contraction = ", time, "\n",
-                       "Max diff = ", max_diff, "\n");
+    utility::print_size_info(Xak_lr, "Xak_lr with recompression");
 
     /* Xak.truncate(); */
     /* world.gop.fence(); */

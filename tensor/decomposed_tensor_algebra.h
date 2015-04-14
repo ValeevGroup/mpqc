@@ -54,7 +54,7 @@ inline std::size_t qr_rank(double const *data, std::size_t rows,
 
     auto squared_sum = 0.0;
     for (int i = (full_rank - 1); i >= 0; --i) { // rows of R
-        for (int j = (cols - 1); j >= i; --j) { // cols of R
+        for (int j = (cols - 1); j >= i; --j) {  // cols of R
             squared_sum += M(i, j) * M(i, j);
         }
 
@@ -156,8 +156,7 @@ recompress_right(DecomposedTensor<double> const &t) {
         auto new_left = t.tensor(0).gemm(Rl, 1.0, gh);
         return DecomposedTensor<double>(t.cut(), std::move(new_left),
                                         std::move(Rr));
-    }
-    else {
+    } else {
         return DecomposedTensor<double>{};
     }
 }

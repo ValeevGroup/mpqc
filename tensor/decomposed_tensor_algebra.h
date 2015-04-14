@@ -31,6 +31,20 @@ int col_pivoted_qr(double *data, double *Tau, int rows, int cols, int *J) {
     return INFO;
 }
 
+int non_pivoted_qr(double *data, double *Tau, int rows, int cols) {
+    double work_dummy;
+    int LWORK = -1; // Ask for space computation
+    int INFO;
+    int LDA = rows;
+
+    // Call routine
+    dgeqrf_(&rows, &cols, data, &LDA, Tau, &work_dummy, &LWORK, &INFO);
+    LWORK = work_dummy;
+    std::unique_ptr<double[]> W{new double[LWORK]};
+    dgeqrf_(&rows, &cols, data, &LDA, Tau, W.get(), &LWORK, &INFO);
+    return INFO;
+}
+
 int form_q(double *data, double *Tau, int rows, int rank) {
     double work_dummy = 0.0;
     int LWORK = -1;
@@ -75,10 +89,11 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
                          = std::numeric_limits<std::size_t>::max()) {
     auto const &extent = in.range().size();
 
-    // for now assume rank 3 and assume (X, {ab}) or (r, {ab}) decomp
-    // swapping cols and rows because dgeqp3 is a column major routine.
     int cols = extent[0];
-    int rows = extent[1] * extent[2];
+    int rows = 1;
+    for (auto i = 1ul; i < extent.size(); ++i) {
+        rows *= extent[i];
+    }
     const auto size = cols * rows;
     auto full_rank = std::min(rows, cols);
 
@@ -130,34 +145,179 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
     }
 
     // From Q goes to R because of column major transpose issues.
-    TA::Range q_range{static_cast<std::size_t>(rank), extent[1], extent[2]};
-    R = TA::Tensor<double>(std::move(q_range));
+    if (extent.size() == 3) {
+        TA::Range q_range{static_cast<std::size_t>(rank), extent[1], extent[2]};
+        R = TA::Tensor<double>(std::move(q_range));
+    } else if (extent.size() == 2){
+        TA::Range q_range{static_cast<std::size_t>(rank), extent[1]};
+        R = TA::Tensor<double>(std::move(q_range));
+    } else {
+        assert(false);
+    }
+
     auto R_map = Eig::Map<Eig::MatrixXd>(R.data(), rows, rank);
     R_map = A.leftCols(rank);
     return true;
 }
 
-/// Returns an empty DecomposedTensor if the rank does not decrease
-inline DecomposedTensor<double>
-recompress_right(DecomposedTensor<double> const &t) {
+// eats in data and outputs L and R tensors.
+inline void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
+                  TA::Tensor<double> &R) {
+
+    auto const &extent = in.range().size();
+
+    // Reverse map
+    // We will always extract the first dimension as cols
+    int cols = extent[0];
+
+    // The rest will be smashed into rows
+    const auto ndims = extent.size();
+    int rows = 1;
+    for (auto i = 1ul; i < ndims; ++i) {
+        rows *= extent[i];
+    }
+
+    auto full_rank = std::min(rows, cols);
+
+    // Will hold the reflectors
+    std::unique_ptr<double[]> Tau{new double[full_rank]};
+
+    // Lets start by not copying data
+    /* const auto size = cols * rows; */
+    /* std::unique_ptr<double[]> in_data{new double[size]}; */
+    /* std::copy(in.data(), in.data() + size, in_data.get()); */
+
+    auto qr_err = non_pivoted_qr(in.data(), Tau.get(), rows, cols);
+
+    if (0 != qr_err) {
+        std::cout << "Something went wrong with computing qr.\n";
+        throw;
+    }
+
+    TA::Range l_range{cols, full_rank};
+    L = TA::Tensor<double>(std::move(l_range));
+
+    // Eigen map the input
+    auto A = Eig::Map<Eig::MatrixXd>(in.data(), rows, cols);
+
+    // Assign into l_tensor
+    auto L_map = Eig::Map<Eig::MatrixXd>(L.data(), full_rank, cols);
+    L_map = A.topLeftCorner(full_rank, cols)
+                  .template triangularView<Eigen::Upper>();
+
+    auto q_err = form_q(in.data(), Tau.get(), rows, full_rank);
+    if (0 != q_err) {
+        std::cout << "Something went wrong with forming q.\n";
+        throw;
+    }
+
+    if (ndims == 2) {
+        TA::Range q_range{full_rank, extent[1]};
+        R = TA::Tensor<double>(std::move(q_range));
+    } else if (ndims == 3) {
+        TA::Range q_range{full_rank, extent[1], extent[2]};
+        R = TA::Tensor<double>(std::move(q_range));
+    } else {
+        assert(false);
+    }
+
+
+    auto R_map = Eig::Map<Eig::MatrixXd>(R.data(), rows, full_rank);
+    R_map = A.leftCols(full_rank);
+}
+
+inline void ta_tensor_svd(TA::Tensor<double> &in, TA::Tensor<double> &L,
+                  TA::Tensor<double> &R) {
+
+    auto const &extent = in.range().size();
+
+    // Reverse map
+    // We will always extract the first dimension as cols
+    int cols = extent[0];
+
+    // The rest will be smashed into rows
+    const auto ndims = extent.size();
+    int rows = 1;
+    for (auto i = 1ul; i < ndims; ++i) {
+        rows *= extent[i];
+    }
+
+    auto full_rank = std::min(rows, cols);
+
+    // Will hold the reflectors
+    std::unique_ptr<double[]> Tau{new double[full_rank]};
+
+    // Lets start by not copying data
+    /* const auto size = cols * rows; */
+    /* std::unique_ptr<double[]> in_data{new double[size]}; */
+    /* std::copy(in.data(), in.data() + size, in_data.get()); */
+
+    auto qr_err = non_pivoted_qr(in.data(), Tau.get(), rows, cols);
+
+    if (0 != qr_err) {
+        std::cout << "Something went wrong with computing qr.\n";
+        throw;
+    }
+
+    TA::Range l_range{cols, full_rank};
+    L = TA::Tensor<double>(std::move(l_range));
+
+    // Eigen map the input
+    auto A = Eig::Map<Eig::MatrixXd>(in.data(), rows, cols);
+
+    // Assign into l_tensor
+    auto L_map = Eig::Map<Eig::MatrixXd>(L.data(), full_rank, cols);
+    L_map = A.topLeftCorner(full_rank, cols)
+                  .template triangularView<Eigen::Upper>();
+
+    auto q_err = form_q(in.data(), Tau.get(), rows, full_rank);
+    if (0 != q_err) {
+        std::cout << "Something went wrong with forming q.\n";
+        throw;
+    }
+
+    if (ndims == 2) {
+        TA::Range q_range{full_rank, extent[1]};
+        R = TA::Tensor<double>(std::move(q_range));
+    } else if (ndims == 3) {
+        TA::Range q_range{full_rank, extent[1], extent[2]};
+        R = TA::Tensor<double>(std::move(q_range));
+    } else {
+        assert(false);
+    }
+
+
+    auto R_map = Eig::Map<Eig::MatrixXd>(R.data(), rows, full_rank);
+    R_map = A.leftCols(full_rank);
+}
+
+/// Currently modifies input data regardless could cause some loss of accuracy.
+inline void recompress(DecomposedTensor<double> &t) {
     assert(t.ndecomp() >= 2);
 
-    auto const &extent = t.tensor(1).range().size();
-    const auto rows = extent[0];
-    const auto cols = extent[0] * extent[1];
-    const auto acceptable_output_rank = std::min(rows, cols) - 1;
-    // perform qr decomposition on the right tensor
-    TA::Tensor<double> Rl, Rr;
-    if (full_rank_decompose(t.tensor(1), Rl, Rr, t.cut(),
-                            acceptable_output_rank)) {
-        constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
-        // new_left_{X, r2} = old_left_{X, r1} * mid_{r1, r1}
-        const auto gh = TA::math::GemmHelper(NoT, NoT, 2, 2, 2);
-        auto new_left = t.tensor(0).gemm(Rl, 1.0, gh);
-        return DecomposedTensor<double>(t.cut(), std::move(new_left),
-                                        std::move(Rr));
+    // Where matrix M = ST;
+    TA::Tensor<double> Ls, Rs, Lt, Rt;
+    ta_tensor_qr(t.tensor(0), Ls, Rs);
+    ta_tensor_qr(t.tensor(1), Lt, Rt);
+
+    // Form a M matrix
+    constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+    const auto gh = TA::math::GemmHelper(NoT, NoT, 2, 2, 2);
+    auto M = Rs.gemm(Lt, 1.0, gh);
+
+    // want to always do the full decomp so make input
+    // max rank larger than rank of M.
+    TA::Tensor<double> Lm, Rm;
+    auto rank_m = std::min(M.range().size()[0], M.range().size()[1]);
+    if (full_rank_decompose(M, Lm, Rm, t.cut(), rank_m + 1)) {
+        auto newL = Ls.gemm(Lm, 1.0, gh);
+
+        const auto gh_r = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+        auto newR = Rm.gemm(Rt, 1.0, gh_r);
+        t = DecomposedTensor<double>(t.cut(), std::move(newL), std::move(newR));
     } else {
-        return DecomposedTensor<double>{};
+        assert(false); // input max rank to full_rank_decompose should force
+                       // this path to never hit.
     }
 }
 
@@ -165,7 +325,7 @@ recompress_right(DecomposedTensor<double> const &t) {
 inline DecomposedTensor<double>
 two_way_decomposition(DecomposedTensor<double> const &t) {
     if (t.ndecomp() >= 2) {
-        return recompress_right(t);
+        assert(false);
     }
 
     auto const &extent = t.tensor(0).range().size();

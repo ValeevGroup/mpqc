@@ -54,10 +54,10 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
                                            Rp.range().dim());
             c.tensor(0).gemm(a.tensor(0), Rp, factor, gh);
         }
-        auto decomp_c = algebra::two_way_decomposition(c);
-        if (!decomp_c.empty()) {
-            c = std::move(decomp_c);
-        }
+        /* auto decomp_c = algebra::two_way_decomposition(c); */
+        /* if (!decomp_c.empty()) { */
+        /*     c = std::move(decomp_c); */
+        /* } */
         return c;
     } else {
         if (a.ndecomp() == 1) {
@@ -77,25 +77,23 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
 
         auto ab = gemm(a, b, factor, gemm_helper);
         c = add(c, ab);
-        // This doesn't appear to be working to well
-        /* auto decomposed = algebra::recompress_right(c); */
-        /* if (!decomposed.empty()) { */
-        /*     c = std::move(decomposed); */
-        /* } */
-        auto c_test = algebra::two_way_decomposition(
-              DecomposedTensor<double>(c.cut(), algebra::combine(c)));
-        if(!c_test.empty()){
-            c = std::move(c_test);
-        }
 
+
+        /* algebra::recompress(c); */
         /* auto const &c_left_extent = c.tensor(0).range().size(); */
         /* auto const &c_right_extent = c.tensor(1).range().size(); */
         /* const auto long_dim = c_right_extent[1] * c_right_extent[2]; */
         /* const auto out_dim = c.rank(); */
 
-        /* if (out_dim >= 0.50 * std::min(c_left_extent[0], long_dim)) { */
+        /* if (out_dim > 0.50 * std::min(c_left_extent[0], long_dim)) { */
         /*     c = DecomposedTensor<T>(c.cut(), algebra::combine(c)); */
         /* } */
+
+        auto c_test = algebra::two_way_decomposition(
+              DecomposedTensor<double>(c.cut(), algebra::combine(c)));
+        if(!c_test.empty()){
+            c = std::move(c_test);
+        }
 
         return c;
     }

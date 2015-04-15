@@ -189,6 +189,7 @@ int main(int argc, char **argv) {
         utility::print_par(world, "\n");
         utility::print_size_info(D_lr, "D");
     }
+    world.gop.fence();
 
     libint2::init();
     auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
@@ -198,14 +199,6 @@ int main(int argc, char **argv) {
     auto Xab
           = BlockSparseIntegrals(world, eri_pool, basis_array,
                                  integrals::compute_functors::BtasToTaTensor{});
-
-    auto t_ta0 = std::chrono::high_resolution_clock::now();
-    decltype(Xab) Xak;
-    Xak("X, a, k") = Xab("X,a,b") * D_TA("b,k");
-    auto t_ta1 = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::duration<double>>(
-                      t_ta1 - t_ta0).count();
-    utility::print_par(world, "Time for TA contraction = ", time, "\n");
 
     auto func = [=](TA::Tensor<double> const &t) {
 
@@ -240,6 +233,13 @@ int main(int argc, char **argv) {
     utility::print_array_difference(Xab_lr, Xab, "Xab low rank",
                                     "Xab full rank");
 
+    auto t_ta0 = std::chrono::high_resolution_clock::now();
+    Xab("X, a, k") = Xab("X,a,b") * D_TA("b,k");
+    auto t_ta1 = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::duration<double>>(
+                      t_ta1 - t_ta0).count();
+    utility::print_par(world, "\nTime for TA contraction = ", time, "\n");
+
     auto t_me0 = std::chrono::high_resolution_clock::now();
     decltype(Xab_lr) Xak_lr;
     Xak_lr("X,a,k") = Xab_lr("X,a,b") * D_test("b,k");
@@ -249,7 +249,7 @@ int main(int argc, char **argv) {
 
     utility::print_par(world, "\nTime for My contraction = ", time, "\n");
     utility::print_size_info(Xak_lr, "Xak_lr no recompression");
-    utility::print_array_difference(Xak_lr, Xak, "Xak low rank",
+    utility::print_array_difference(Xak_lr, Xab, "Xak low rank",
                                     "Xak full rank");
 
     utility::print_par(world, "\nRecompressing\n");

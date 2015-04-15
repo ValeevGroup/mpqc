@@ -240,6 +240,71 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
     return true;
 }
 
+// Returns true if input is low rank.
+void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
+                              TA::Tensor<double> &R, double thresh) {
+    auto const &extent = in.range().size();
+
+    int cols = extent[0];
+    int rows = 1;
+    for (auto i = 1ul; i < extent.size(); ++i) {
+        rows *= extent[i];
+    }
+    const auto size = cols * rows;
+    auto full_rank = std::min(rows, cols);
+
+    // Will hold the column pivot information and reflectors
+    Eig::VectorXi J = Eig::VectorXi::Zero(cols);
+    std::unique_ptr<double[]> Tau{new double[full_rank]};
+
+    // Do initial qr routine
+    auto qr_err = col_pivoted_qr(in.data(), Tau.get(), rows, cols, J.data());
+    if (0 != qr_err) {
+        std::cout << "Something went wrong with computing qr.\n";
+        throw;
+    }
+
+    // Determine rank and if decomposing is worth it.
+    auto rank = qr_rank(in.data(), rows, cols, thresh);
+
+    // LAPACK assumes 1 based indexing, but we need zero.
+    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
+    Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
+
+    // Create L tensor
+    TA::Range l_range{extent[0], static_cast<std::size_t>(rank)};
+    L = TA::Tensor<double>(std::move(l_range));
+
+    // Eigen map the input
+    auto A = Eig::Map<Eig::MatrixXd>(in.data(), rows, cols);
+
+    // Assign into l_tensor
+    auto L_map = Eig::Map<Eig::MatrixXd>(L.data(), rank, cols);
+    L_map = Eig::MatrixXd(A.topLeftCorner(rank, cols)
+                                .template triangularView<Eigen::Upper>())
+            * P.transpose();
+
+    auto q_err = form_q(in.data(), Tau.get(), rows, rank);
+    if (0 != q_err) {
+        std::cout << "Something went wrong with forming q.\n";
+        throw;
+    }
+
+    // Form Q goes to R because of column major transpose issues.
+    if (extent.size() == 3) {
+        TA::Range q_range{static_cast<std::size_t>(rank), extent[1], extent[2]};
+        R = TA::Tensor<double>(std::move(q_range));
+    } else if (extent.size() == 2) {
+        TA::Range q_range{static_cast<std::size_t>(rank), extent[1]};
+        R = TA::Tensor<double>(std::move(q_range));
+    } else {
+        assert(false);
+    }
+
+    auto R_map = Eig::Map<Eig::MatrixXd>(R.data(), rows, rank);
+    R_map = A.leftCols(rank);
+}
+
 // eats in data and outputs L and R tensors.
 inline void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
                          TA::Tensor<double> &R) {
@@ -434,19 +499,13 @@ inline void recompress(DecomposedTensor<double> &t) {
     // want to always do the full decomp so make input
     // max rank larger than rank of M.
     TA::Tensor<double> Lm, Rm;
-    auto rank_m = std::min(M.range().size()[0], M.range().size()[1]);
-    if (full_rank_decompose(M, Lm, Rm, t.cut(), rank_m + 1)) {
-        /* if (true) { */
-        /*     ta_tensor_svd(M, Lm, Rm, t.cut()); */
-        auto newL = Ls.gemm(Lm, 1.0, gh);
+    // ta_tensor_svd(M, Lm, Rm, t.cut());
+    ta_tensor_col_pivoted_qr(M, Lm, Rm, t.cut());
+    auto newL = Ls.gemm(Lm, 1.0, gh);
 
-        const auto gh_r = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
-        auto newR = Rm.gemm(Rt, 1.0, gh_r);
-        t = DecomposedTensor<double>(t.cut(), std::move(newL), std::move(newR));
-    } else {
-        assert(false); // input max rank to full_rank_decompose should force
-                       // this path to never hit.
-    }
+    const auto gh_r = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+    auto newR = Rm.gemm(Rt, 1.0, gh_r);
+    t = DecomposedTensor<double>(t.cut(), std::move(newL), std::move(newR));
 }
 
 /// Returns an empty DecomposedTensor if the compression rank was to large.

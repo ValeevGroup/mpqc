@@ -136,7 +136,7 @@ void svd_test(LowRankTensors const &l) {
         auto approx = L.gemm(R, 1.0, gh);
         diffs[i] = full_copy.subt(approx).norm();
     }
-    std::cout << "SVD Test" << std::endl;
+    std::cout << "SVD Test " << rows << "x" << rows << std::endl;
     for (auto i = 0ul; i < size; ++i) {
         std::cout << "\tFor rank " << ranks[i] << ", the decomp time was "
                   << times[i] << ", with a diff of " << diffs[i] << std::endl;
@@ -147,13 +147,15 @@ void svd_test(LowRankTensors const &l) {
 void lq_test(LowRankTensors const &l) {
     const auto size = l.Ntensors();
     const auto rows = l.full_rank(0).tensor(0).range().size()[0];
-    const auto cols = l.full_rank(0).tensor(0).range().size()[1];
     std::vector<double> times(size);
     std::vector<double> diffs(size);
+    std::vector<double> ranks(size);
     constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
     auto gh = TA::math::GemmHelper(NoT, NoT, 2, 2, 2);
-    auto range = TA::Range{rows, cols};
     for (auto i = 0ul; i < size; ++i) {
+        auto cols = l.low_rank(i).rank();
+        ranks[i] = cols;
+        auto range = TA::Range{rows, cols};
         TA::Tensor<double> ta_tensor(range);
         TA::eigen_map(ta_tensor, rows, cols) = RowMatrixXd::Random(rows, cols);
         auto full_copy = ta_tensor.clone();
@@ -169,8 +171,40 @@ void lq_test(LowRankTensors const &l) {
     }
     std::cout << "LQ Test" << std::endl;
     for (auto i = 0ul; i < size; ++i) {
-        std::cout << "\tthe decomp time was " << times[i] << ", with a diff of "
+        std::cout << "\tfor " << rows << "x" << ranks[i]
+                  << ", the decomp time was " << times[i] << ", with a diff of "
                   << diffs[i] << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+void col_piv_qr_test(LowRankTensors const &l) {
+    const auto size = l.Ntensors();
+    const auto rows = l.full_rank(0).tensor(0).range().size()[1];
+    std::vector<double> times(size);
+    std::vector<double> diffs(size);
+    std::vector<double> ranks(size);
+    constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+    auto gh = TA::math::GemmHelper(NoT, NoT, 2, 2, 2);
+    for (auto i = 0ul; i < size; ++i) {
+        const auto rank = l.low_rank(i).rank();
+        ranks[i] = rank;
+        auto ta_tensor = lr_ta_matrix(rows, rank);
+        auto full_copy = ta_tensor.clone();
+
+        TA::Tensor<double> L, R;
+        auto time_qr0 = now();
+        tensor::algebra::ta_tensor_col_pivoted_qr(ta_tensor, L, R, 1e-7);
+        auto time_qr1 = now();
+
+        times[i] = duration_in_s(time_qr0, time_qr1);
+        auto approx = L.gemm(R, 1.0, gh);
+        diffs[i] = full_copy.subt(approx).norm();
+    }
+    std::cout << "Col pivoted qr Test " << rows << "x" << rows << std::endl;
+    for (auto i = 0ul; i < size; ++i) {
+        std::cout << "\tFor rank " << ranks[i] << ", the decomp time was "
+                  << times[i] << ", with a diff of " << diffs[i] << std::endl;
     }
     std::cout << std::endl;
 }
@@ -485,6 +519,7 @@ int main(int argc, char **argv) {
     LowRankTensors tensors(df_dim, bs_dim, ranks);
 
     svd_test(tensors);
+    col_piv_qr_test(tensors);
     lq_test(tensors);
     gemm_test(tensors);
     gemm_to_test(tensors);

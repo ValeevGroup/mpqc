@@ -134,7 +134,7 @@ inline int svd_rank(double const *s, int N, double thresh) {
         }
     }
 
-    return rank;
+    return std::max(rank, 1);
 }
 
 
@@ -159,7 +159,7 @@ inline std::size_t qr_rank(double const *data, std::size_t rows,
         --out_rank; // Decriment rank and go to next row.
     }
 
-    return out_rank;
+    return std::max(out_rank, 1ul);
 }
 
 // Returns true if input is low rank.

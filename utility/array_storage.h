@@ -92,30 +92,22 @@ void print_array_difference(TA::Array<T, DIM, TileTypeL, PolicyL> const &left,
                             std::string const &right_name) {
     // This really needs to check that both pmaps are the same size.
     auto const &pmap_left = left.get_pmap();
-    auto const &pmap_right = right.get_pmap();
-
     auto l_end = pmap_left->end();
-    auto r_end = pmap_right->end();
 
     // Compute the norm difference for each tile.
     auto diff_norm_sum = 0.0;
-    auto it_r = pmap_right->begin();
-    for (auto it_l = pmap_left->begin(); it_l != l_end && it_r != r_end;
-         ++it_l, ++it_r) {
-        // Ensure we are looking at the same ordinal.
-        assert(*it_l == *it_r);
-
+    for (auto it_l = pmap_left->begin(); it_l != l_end; ++it_l) {
         if (left.is_zero(*it_l)) {
             // do nothing if right is zero
-            if (!right.is_zero(*it_r)) {
-                diff_norm_sum += right.find(*it_r).get().norm();
+            if (!right.is_zero(*it_l)) {
+                diff_norm_sum += right.find(*it_l).get().norm();
             }
         } else {
-            if (right.is_zero(*it_r)) {
+            if (right.is_zero(*it_l)) {
                 diff_norm_sum += left.find(*it_l).get().norm();
             } else {
                 const auto l_t = left.find(*it_l).get();
-                const auto r_t = right.find(*it_r).get();
+                const auto r_t = right.find(*it_l).get();
                 diff_norm_sum += l_t.subt(r_t).norm();
             }
         }

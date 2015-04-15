@@ -236,18 +236,20 @@ int main(int argc, char **argv) {
     auto t_ta0 = std::chrono::high_resolution_clock::now();
     Xab("X, a, k") = Xab("X,a,b") * D_TA("b,k");
     auto t_ta1 = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::duration<double>>(
-                      t_ta1 - t_ta0).count();
-    utility::print_par(world, "\nTime for TA contraction = ", time, "\n");
+    auto time_ta = std::chrono::duration_cast<std::chrono::duration<double>>(
+                         t_ta1 - t_ta0).count();
+    utility::print_par(world, "\nTime for TA contraction = ", time_ta, "\n");
 
     auto t_me0 = std::chrono::high_resolution_clock::now();
     decltype(Xab_lr) Xak_lr;
     Xak_lr("X,a,k") = Xab_lr("X,a,b") * D_test("b,k");
     auto t_me1 = std::chrono::high_resolution_clock::now();
-    time = std::chrono::duration_cast<std::chrono::duration<double>>(
-                 t_me1 - t_me0).count();
+    auto time_me = std::chrono::duration_cast<std::chrono::duration<double>>(
+                    t_me1 - t_me0).count();
 
-    utility::print_par(world, "\nTime for My contraction = ", time, "\n");
+    utility::print_par(world, "\nTime for My contraction = ", time_me, "\n");
+    utility::print_par(world, "Speed up over fully dense = ",
+                       time_ta / time_me, "\n\n");
     utility::print_size_info(Xak_lr, "Xak_lr no recompression");
     utility::print_array_difference(Xak_lr, Xab, "Xak low rank",
                                     "Xak full rank");

@@ -250,7 +250,6 @@ void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
     for (auto i = 1ul; i < extent.size(); ++i) {
         rows *= extent[i];
     }
-    const auto size = cols * rows;
     auto full_rank = std::min(rows, cols);
 
     // Will hold the column pivot information and reflectors

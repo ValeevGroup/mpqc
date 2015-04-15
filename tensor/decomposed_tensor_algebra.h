@@ -11,6 +11,15 @@
 #include <memory>
 #include <limits>
 
+extern "C" void
+sgesdd_(const char *jobz, integer *m, integer *n, real4 *a, integer *lda,
+        real4 *s, real4 *u, integer *ldu, real4 *vt, integer *ldvt, real4 *work,
+        integer *lwork, integer *iwork, integer *info);
+
+extern "C" void
+dgesdd_(const char *jobz, integer *m, integer *n, real8 *a, integer *lda,
+        real8 *s, real8 *u, integer *ldu, real8 *vt, integer *ldvt, real8 *work,
+        integer *lwork, integer *iwork, integer *info);
 
 extern "C" void
 dgelqf_(integer *m, integer *n, real8 *a, integer *lda, real8 *tau, real8 *work,
@@ -427,8 +436,8 @@ inline void recompress(DecomposedTensor<double> &t) {
     TA::Tensor<double> Lm, Rm;
     auto rank_m = std::min(M.range().size()[0], M.range().size()[1]);
     if (full_rank_decompose(M, Lm, Rm, t.cut(), rank_m + 1)) {
-    /* if (true) { */
-    /*     ta_tensor_svd(M, Lm, Rm, t.cut()); */
+        /* if (true) { */
+        /*     ta_tensor_svd(M, Lm, Rm, t.cut()); */
         auto newL = Ls.gemm(Lm, 1.0, gh);
 
         const auto gh_r = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);

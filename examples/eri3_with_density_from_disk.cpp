@@ -12,6 +12,7 @@
 #include "../include/tiledarray.h"
 #include "../include/btas.h"
 
+#include "../utility/parallel_break_point.h"
 #include "../utility/make_array.h"
 #include "../utility/parallel_print.h"
 #include "../utility/array_storage.h"
@@ -106,7 +107,8 @@ int main(int argc, char **argv) {
 
     double threshold = (argc == 8) ? std::stod(argv[7]) : 1e-11;
     auto low_rank_threshold = (argc == 9) ? std::stod(argv[8]) : 1e-7;
-    /* volatile auto debug = (argc == 10) ? std::stoi(argv[9]) : 0; */
+    volatile auto debug = (argc == 10) ? std::stoi(argv[9]) : 0;
+    utility::parallal_break_point(world, debug);
 
     if (world.rank() == 0) {
         std::cout << "Mol file is " << mol_file << std::endl;
@@ -273,7 +275,6 @@ int main(int argc, char **argv) {
     /*                  low_rank_threshold)); */
     /* world.gop.fence(); */
     /* utility::print_size_info(Xak_lr, "Xab * D"); */
-
 
     madness::finalize();
     return 0;

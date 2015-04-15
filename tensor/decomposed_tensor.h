@@ -74,17 +74,29 @@ class DecomposedTensor {
     TA::Range &range(std::size_t i) { return tensors_[i].range(); }
     TA::Range const &range(std::size_t i) const { return tensors_[i].range(); }
 
-    // TODO write as nonintrusive and move to unary header.
-    template <typename Archive>
-    m_enable_if_t<madness::archive::is_input_archive<Archive>>
-    serialize(Archive &ar) {
-        assert(false);
-    }
-
     template <typename Archive>
     m_enable_if_t<madness::archive::is_output_archive<Archive>>
     serialize(Archive &ar) {
-        assert(false);
+        double thresh = cut();
+        ar & thresh;
+        std::size_t ntensors = tensors_.size();
+        ar & ntensors;
+        for(auto const &t : tensors_){
+            ar & t;
+        }
+    }
+
+    template <typename Archive>
+    m_enable_if_t<madness::archive::is_input_archive<Archive>>
+    serialize(Archive &ar) {
+        ar & cut_;
+        std::size_t ntensors = 0;
+        ar & ntensors;
+        for(auto i = 0ul; i < ntensors; ++i){
+            TA::Tensor<T> temp;
+            ar & temp;
+            tensors_.push_back(temp);
+        }
     }
 };
 

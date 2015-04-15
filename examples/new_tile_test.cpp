@@ -40,6 +40,17 @@ lr_ta_tensor(std::size_t df_dim, std::size_t bs_dim, std::size_t rank) {
     return M;
 }
 
+TA::Tensor<double> lr_ta_matrix(std::size_t dim, std::size_t rank) {
+    TA::Range r{dim, dim};
+    TA::Tensor<double> M(r);
+    auto L = TA::EigenMatrixXd::Random(dim, rank);
+    auto R = TA::EigenMatrixXd::Random(rank, dim);
+    auto map_M = TA::eigen_map(M, dim, dim);
+    map_M = L * R;
+
+    return M;
+}
+
 class LowRankTensors {
     std::vector<DecomposedTensor<double>> low_rank_;
     std::vector<DecomposedTensor<double>> full_rank_;
@@ -102,6 +113,68 @@ class LowRankTensors {
     TA::math::GemmHelper gemm_helper() const { return gh; }
 };
 
+void svd_test(LowRankTensors const &l) {
+    const auto size = l.Ntensors();
+    const auto rows = l.full_rank(0).tensor(0).range().size()[1];
+    std::vector<double> times(size);
+    std::vector<double> diffs(size);
+    std::vector<double> ranks(size);
+    constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+    auto gh = TA::math::GemmHelper(NoT, NoT, 2, 2, 2);
+    for (auto i = 0ul; i < size; ++i) {
+        const auto rank = l.low_rank(i).rank();
+        ranks[i] = rank;
+        auto ta_tensor = lr_ta_matrix(rows, rank);
+        auto full_copy = ta_tensor.clone();
+
+        TA::Tensor<double> L, R;
+        auto time_svd0 = now();
+        tensor::algebra::ta_tensor_svd(ta_tensor, L, R, 1e-7);
+        auto time_svd1 = now();
+
+        times[i] = duration_in_s(time_svd0, time_svd1);
+        auto approx = L.gemm(R, 1.0, gh);
+        diffs[i] = full_copy.subt(approx).norm();
+    }
+    std::cout << "SVD Test" << std::endl;
+    for (auto i = 0ul; i < size; ++i) {
+        std::cout << "\tFor rank " << ranks[i] << ", the decomp time was "
+                  << times[i] << ", with a diff of " << diffs[i] << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+void lq_test(LowRankTensors const &l) {
+    const auto size = l.Ntensors();
+    const auto rows = l.full_rank(0).tensor(0).range().size()[0];
+    const auto cols = l.full_rank(0).tensor(0).range().size()[1];
+    std::vector<double> times(size);
+    std::vector<double> diffs(size);
+    constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+    auto gh = TA::math::GemmHelper(NoT, NoT, 2, 2, 2);
+    auto range = TA::Range{rows, cols};
+    for (auto i = 0ul; i < size; ++i) {
+        TA::Tensor<double> ta_tensor(range);
+        TA::eigen_map(ta_tensor, rows, cols) = RowMatrixXd::Random(rows, cols);
+        auto full_copy = ta_tensor.clone();
+
+        TA::Tensor<double> L, R;
+        auto time_lq0 = now();
+        tensor::algebra::ta_tensor_lq(ta_tensor, L, R);
+        auto time_lq1 = now();
+
+        times[i] = duration_in_s(time_lq0, time_lq1);
+        auto approx = L.gemm(R, 1.0, gh);
+        diffs[i] = full_copy.subt(approx).norm();
+    }
+    std::cout << "LQ Test" << std::endl;
+    for (auto i = 0ul; i < size; ++i) {
+        std::cout << "\tthe decomp time was " << times[i] << ", with a diff of "
+                  << diffs[i] << std::endl;
+    }
+    std::cout << std::endl;
+}
+
 void gemm_test(LowRankTensors const &l) {
     const auto size = l.Ntensors();
     auto D = l.density();
@@ -129,7 +202,8 @@ void gemm_test(LowRankTensors const &l) {
         auto my_full = gemm(full, D, 1.0, gh);
         auto time_full1 = now();
         full_times[i] = duration_in_s(time_full0, time_full1);
-        full_accuracy[i] = correct_answer.subt(algebra::combine(my_full)).norm();
+        full_accuracy[i]
+              = correct_answer.subt(algebra::combine(my_full)).norm();
 
         auto my_lr = gemm(low, D, 1.0, gh);
         low_accuracy[i] = correct_answer.subt(algebra::combine(my_lr)).norm();
@@ -168,6 +242,7 @@ void gemm_test(LowRankTensors const &l) {
                   << average_time_ta / low_times[i] << ", accuracy "
                   << low_accuracy[i] << "\n";
     }
+    std::cout << std::endl;
 }
 
 void gemm_to_full_full_test(LowRankTensors const &l) {
@@ -409,6 +484,8 @@ int main(int argc, char **argv) {
 
     LowRankTensors tensors(df_dim, bs_dim, ranks);
 
+    svd_test(tensors);
+    lq_test(tensors);
     gemm_test(tensors);
     gemm_to_test(tensors);
     return 0;

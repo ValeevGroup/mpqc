@@ -236,7 +236,7 @@ int main(int argc, char **argv) {
                                     "Xab full rank");
 
     auto t_ta0 = std::chrono::high_resolution_clock::now();
-    Xab("X, a, k") = Xab("X,a,b") * D_TA("b,k");
+    Xab("X, k, a") = Xab("X,a,b") * D_TA("b,k");
     auto t_ta1 = std::chrono::high_resolution_clock::now();
     auto time_ta = std::chrono::duration_cast<std::chrono::duration<double>>(
                          t_ta1 - t_ta0).count();
@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
 
     auto t_me0 = std::chrono::high_resolution_clock::now();
     decltype(Xab_lr) Xak_lr;
-    Xak_lr("X,a,k") = Xab_lr("X,a,b") * D_test("b,k");
+    Xak_lr("X,k,a") = Xab_lr("X,a,b") * D_test("b,k");
     auto t_me1 = std::chrono::high_resolution_clock::now();
     auto time_me = std::chrono::duration_cast<std::chrono::duration<double>>(
                     t_me1 - t_me0).count();

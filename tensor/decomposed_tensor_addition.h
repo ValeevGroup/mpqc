@@ -3,6 +3,7 @@
 #define TCC_TENSOR_DECOMPOSEDTENSORADDITION_H
 
 #include "decomposed_tensor.h"
+#include "decomposed_tensor_algebra.h"
 
 namespace tcc {
 namespace tensor {
@@ -86,7 +87,42 @@ add(DecomposedTensor<T> const &l, const T factor, TA::Permutation const &p) {
 template <typename T>
 DecomposedTensor<T> &
 add_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r) {
-    assert(false);
+    if (l.ndecomp() == 1) {
+        if (r.ndecomp() == 1) {
+            l.tensor(0).add_to(r.tensor(0));
+        } else {
+            constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+            l.tensor(0).gemm(r.tensor(0), r.tensor(1), 1.0, gh);
+        }
+
+    } else {
+        if (r.ndecomp() == 1) {
+            constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+            auto temp = r.tensor(0).clone();
+            temp.gemm(l.tensor(0), l.tensor(1), 1.0, gh);
+            l = DecomposedTensor<T>(l.cut(), std::move(temp));
+        } else {
+            l = add(l, r);
+            auto const &l_left_extent = l.tensor(0).range().size();
+            auto const &l_right_extent = l.tensor(1).range().size();
+            const auto long_dim = l_right_extent[1] * l_right_extent[2];
+            auto out_dim = l.rank();
+            const auto full_rank = std::min(l_left_extent[0], long_dim);
+
+            if (out_dim >= full_rank / 6) {
+                algebra::recompress(l);
+                out_dim = l.rank();
+            }
+
+            if (out_dim > full_rank / 2) {
+                l = DecomposedTensor<T>(l.cut(), algebra::combine(l));
+            }
+        }
+    }
+
+    return l;
 }
 
 template <typename T>

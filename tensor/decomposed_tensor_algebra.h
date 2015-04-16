@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <limits>
+#include <chrono>
 
 extern "C" void
 sgesdd_(const char *jobz, integer *m, integer *n, real4 *a, integer *lda,
@@ -284,6 +285,7 @@ void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
             * P.transpose();
 
     auto q_err = form_q(in.data(), Tau.get(), rows, rank);
+
     if (0 != q_err) {
         std::cout << "Something went wrong with forming q.\n";
         throw;

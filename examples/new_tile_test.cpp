@@ -511,17 +511,35 @@ int main(int argc, char **argv) {
     auto max_rank = std::min(max_allowed_rank, std::stoul(argv[3]));
     auto rank_step = std::stoul(argv[4]);
 
-    std::vector<decltype(rank_step)> ranks;
-    for (auto i = 1ul; i < max_rank; i += rank_step) {
-        ranks.push_back(i);
+    /* std::vector<decltype(rank_step)> ranks; */
+    /* for (auto i = 1ul; i < max_rank; i += rank_step) { */
+    /*     ranks.push_back(i); */
+    /* } */
+
+    /* LowRankTensors tensors(df_dim, bs_dim, ranks); */
+
+    auto ta_tensor = lr_ta_tensor(df_dim, bs_dim, max_allowed_rank - 1);
+    TA::Tensor<double> L, R;
+    auto time_thing = 0.0;
+    auto time_whole = 0.0;
+    for (auto i = 0; i < 100; ++i) {
+        auto clone = ta_tensor.clone();
+
+        auto t0 = std::chrono::high_resolution_clock::now();
+        time_thing
+              += tensor::algebra::ta_tensor_col_pivoted_qr(clone, L, R, 1e-7);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        time_whole += std::chrono::duration_cast<std::chrono::duration<double>>(
+                            t1 - t0).count();
     }
 
-    LowRankTensors tensors(df_dim, bs_dim, ranks);
+    std::cout << "Map thing is " << 100 * time_thing / time_whole
+              << " of col pivoted qr." << std::endl;
 
-    svd_test(tensors);
-    col_piv_qr_test(tensors);
-    lq_test(tensors);
-    gemm_test(tensors);
-    gemm_to_test(tensors);
+    /* svd_test(tensors); */
+    /* col_piv_qr_test(tensors); */
+    /* lq_test(tensors); */
+    /* gemm_test(tensors); */
+    /* gemm_to_test(tensors); */
     return 0;
 }

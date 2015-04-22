@@ -188,6 +188,25 @@ int main(int argc, char **argv) {
                            f_time / lr_time, "\n");
         utility::print_array_difference(W_lr, W, "W_lr", "W full");
         utility::print_size_info(W_lr, "W");
+
+        auto k_0 = tcc_time::now();
+        TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> K;
+        K("i,j") = Xab("X,k,i") * Xab("X,k,j");
+        auto k_1 = tcc_time::now();
+        auto k_time = tcc_time::duration_in_s(k_0, k_1);
+
+        auto klr_0 = tcc_time::now();
+        TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
+                  TA::SparsePolicy> K_lr;
+        K_lr("i,j") = Xab_lr("X,k,i") * Xab_lr("X,k,j");
+        auto klr_1 = tcc_time::now();
+        auto klr_time = tcc_time::duration_in_s(klr_0, klr_1);
+
+        utility::print_par(world, "\nLow rank K time = ", klr_time,
+                           " full rank time = ", k_time, " speed up = ",
+                           k_time / klr_time, "\n");
+        utility::print_array_difference(K_lr, K, "K_lr", "K full");
+        utility::print_size_info(K_lr, "K");
     }
 
     madness::finalize();

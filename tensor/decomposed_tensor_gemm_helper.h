@@ -17,6 +17,7 @@ using Dtensor = DecomposedTensor<U>;
 using GHelper = TA::math::GemmHelper;
 
 static constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+static constexpr auto Tr = madness::cblas::CBLAS_TRANSPOSE::Trans;
 
 template <unsigned long... Dims>
 struct low_rank_gemm {
@@ -225,14 +226,69 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                     c = Dtensor<T>(c.cut(), algebra::combine(c));
                 }
             }
-
-            return c;
         }
-        assert(false);
         return c;
     }
 };
 
+template <>
+struct low_rank_gemm<2ul, 3ul, 3ul> {
+    // just use the 3 way functions
+    template <typename T>
+    Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
+                          GHelper const &gh) {
+        const auto left_dim = a.tensors().back().range().size()[2];
+        const auto right_dim = b.tensors().back().range().size()[2];
+        const auto out_range = TA::Range{left_dim, right_dim};
+        const auto out_tensor = TA::Tensor<T>(std::move(out_range), T(0.0));
+        auto out = Dtensor<T>(a.cut(), std::move(out_tensor));
+        this->operator()(out, a, b, f, gh);
+        return out;
+    }
+
+    // B^{T}_{a,Xk} * W_{Xk,b}
+    template <typename T>
+    Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a,
+                           Dtensor<T> const &b, const T f, GHelper const &gh) {
+        assert(1 == c.ndecomp());
+        if (a.ndecomp() == 1) {     // Full *
+            if (b.ndecomp() == 1) { //  Full Full
+                c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
+            } else { // Full Low we are going to do this backwards.
+                // S^{wT}_{r,X} * B_{X,ka} = M_{r,ka}
+                const auto gh_right = GHelper(Tr, NoT, 3, 2, 3);
+                auto M = b.tensor(0).gemm(a.tensor(0), 1.0, gh_right);
+
+                // M^{T}_{a, rk} * T^{w}_{rk, b} = K_{a,b}
+                const auto gh_last = GHelper(Tr, NoT, 2, 3, 3);
+                c.tensor(0).gemm(M, b.tensor(1), f, gh_last);
+            }
+        } else {                    //  Low *
+            if (b.ndecomp() == 1) { //  Low Full
+                // S^{bT}_{r,X} * W_{X,kb} = M_{r, kb}
+                const auto gh_right = GHelper(Tr, NoT, 3, 2, 3);
+                auto M = a.tensor(0).gemm(b.tensor(0), 1.0, gh_right);
+
+                // T^{bT}_{a, rk} * M_{rk, b} = K_{a,b}
+                const auto gh_last = GHelper(Tr, NoT, 2, 3, 3);
+                c.tensor(0).gemm(a.tensor(1), M, f, gh_last);
+            } else { //  Low Low
+                // S^{bT}_{r1,X} * S^{w}_{X,r2} = M_{r1,r2}
+                const auto gh_mid = GHelper(Tr, NoT, 2, 2, 2);
+                auto M = a.tensor(0).gemm(b.tensor(0), 1.0, gh_mid);
+
+                // M_{r1,r2} * T^{w}_{r2,kb} = Mp_{r1,kb}
+                const auto gh_right = GHelper(NoT, NoT, 3, 2, 3);
+                auto Mp = M.gemm(b.tensor(1), 1.0, gh_right);
+
+                // T^{bT}_{a,r1k} * Mp_{r1k, b} = K_{a,b}
+                const auto gh_last = GHelper(Tr, NoT, 2, 3, 3);
+                c.tensor(0).gemm(a.tensor(1), Mp, f, gh_last);
+            }
+        }
+        return c;
+    }
+};
 
 } // namespace detail
 } // namespace tensor

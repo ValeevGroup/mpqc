@@ -68,6 +68,8 @@ namespace sc {
       void print(std::ostream& os=ExEnv::out0());
       void initialize();
 
+      void obsolete();
+
     private:
       static ClassDesc class_desc_;
       static const unsigned int debug_print_ = 0; // set to 1 to print out some debugging info

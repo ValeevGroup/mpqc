@@ -170,6 +170,9 @@ namespace sc{
       /// purge
       void purge();
 
+      /// obsolete
+      void obsolete();
+
     /// set value implemented
       int value_implemented() const { return 1; }
 

@@ -41,6 +41,7 @@
 #include <chemistry/qc/lcao/wfnworld.h>
 #include <chemistry/qc/basis/union.h>
 #include <extern/moinfo/moinfo.h>
+#include "../../molecule/energy.h"
 
 
 extern char **environ;
@@ -163,7 +164,6 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
 
 
 MolcasPT2R12::~MolcasPT2R12(){
-
 }
 
 void MolcasPT2R12::compute()
@@ -501,4 +501,11 @@ void MolcasPT2R12::purge()
   extern_pt2r12_ = 0;
   rasscf_energy_ = 0;
   caspt2_energy_ = 0;
+}
+
+void MolcasPT2R12::obsolete(){
+  if(extern_pt2r12_){
+    extern_pt2r12_->obsolete();
+  }
+  MolecularEnergy::obsolete();
 }

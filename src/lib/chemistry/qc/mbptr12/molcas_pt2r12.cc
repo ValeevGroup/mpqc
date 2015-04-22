@@ -41,7 +41,6 @@
 #include <chemistry/qc/lcao/wfnworld.h>
 #include <chemistry/qc/basis/union.h>
 #include <extern/moinfo/moinfo.h>
-#include "../../molecule/energy.h"
 
 
 extern char **environ;

@@ -29,7 +29,6 @@
 #include <chemistry/qc/mbptr12/extern_pt2r12.h>
 #include <chemistry/qc/basis/uncontract.h>
 #include <iostream>
-#include "../wfn/wfn.h"
 
 using namespace sc;
 
@@ -197,13 +196,16 @@ void ExternPT2R12::initialize()
 
 
 ExternPT2R12::~ExternPT2R12() {
-  obsolete();
   const bool make_sure_class_desc_initialized = (&class_desc_ != 0);
 }
 
 void ExternPT2R12::obsolete(){
-  world_->obsolete();
-  rdm2_->obsolete();
+  if (rdm2_){
+    rdm2_->obsolete();
+  }
+  if(pt2r12_){
+    pt2r12_->obsolete();
+  }
   Wavefunction::obsolete();
 }
 

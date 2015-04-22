@@ -199,10 +199,18 @@ void PT2R12::save_data_state(StateOut &s) {
 void
 PT2R12::obsolete() {
   r12eval_->obsolete();
-  rdm1_->obsolete();
-  rdm2_->obsolete();
-  r12world_->world()->obsolete();
-  r12world_->obsolete();
+  if (rdm1_){
+    rdm1_->obsolete();
+  }
+  if (rdm2_){
+    rdm2_->obsolete();
+  }
+  if (r12world_->world()){
+    r12world_->world()->obsolete();
+  }
+  if(r12world_){
+    r12world_->obsolete();
+  }
   Wavefunction::obsolete();
 }
 

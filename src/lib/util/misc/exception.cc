@@ -26,11 +26,22 @@
 //
 
 #include <string>
+#include <sstream>
 #include <util/misc/exception.h>
 #include <util/misc/exenv.h>
 
 using namespace std;
 using namespace sc;
+
+namespace sc {
+  namespace detail {
+    std::string to_string(int i) {
+      ostringstream oss;
+      oss << i;
+      return oss.str();
+    }
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Exception
@@ -44,7 +55,7 @@ Exception::Exception(const char *description,
           : "(no description or file information given for Exception)"
         ))
     + std::string(description ? (file ? ", at " : "") : "")
-    + std::string(file ? (std::string(file) + ":" + to_string(line)) : "")
+    + std::string(file ? (std::string(file) + ":" + sc::detail::to_string(line)) : "")
   ),
   description_(description),
   file_(file),

@@ -236,7 +236,8 @@ int main(int argc, char **argv) {
                                     "Xab full rank");
 
     auto t_ta0 = std::chrono::high_resolution_clock::now();
-    Xab("X, k, a") = Xab("X,a,b") * D_TA("b,k");
+    decltype(Xab) Xak;
+    Xak("X, k, a") = Xab("X,a,b") * D_TA("b,k");
     auto t_ta1 = std::chrono::high_resolution_clock::now();
     auto time_ta = std::chrono::duration_cast<std::chrono::duration<double>>(
                          t_ta1 - t_ta0).count();
@@ -253,28 +254,104 @@ int main(int argc, char **argv) {
     utility::print_par(world, "Speed up over fully dense = ",
                        time_ta / time_me, "\n\n");
     utility::print_size_info(Xak_lr, "Xak_lr no recompression");
-    utility::print_array_difference(Xak_lr, Xab, "Xak low rank",
+    utility::print_array_difference(Xak_lr, Xak, "Xak low rank",
                                     "Xak full rank");
 
-    utility::print_par(world, "\nRecompressing\n");
-    for (auto it = Xak_lr.begin(); it != Xak_lr.end(); ++it) {
-        auto tensor = tensor::algebra::combine(it->get().tile());
-        auto decomp = tensor::algebra::two_way_decomposition(
-              tensor::DecomposedTensor<double>(it->get().tile().cut(),
-                                               std::move(tensor)));
-        if (!decomp.empty()) {
-            it->get().tile() = decomp;
-        }
-    }
-    utility::print_size_info(Xak_lr, "Xak_lr with recompression");
+    /* utility::print_par(world, "\nRecompressing\n"); */
+    /* for (auto it = Xak_lr.begin(); it != Xak_lr.end(); ++it) { */
+    /*     auto tensor = tensor::algebra::combine(it->get().tile()); */
+    /*     auto decomp = tensor::algebra::two_way_decomposition( */
+    /*           tensor::DecomposedTensor<double>(it->get().tile().cut(), */
+    /*                                            std::move(tensor))); */
+    /*     if (!decomp.empty()) { */
+    /*         it->get().tile() = decomp; */
+    /*     } */
+    /* } */
+    /* utility::print_size_info(Xak_lr, "Xak_lr with recompression"); */
 
-    /* Xak.truncate(); */
-    /* world.gop.fence(); */
-    /* auto Xak_lr = TA::to_new_tile_type( */
-    /*       Xak, integrals::compute_functors::TaToLowRankTensor<3>( */
-    /*                  low_rank_threshold)); */
-    /* world.gop.fence(); */
-    /* utility::print_size_info(Xak_lr, "Xab * D"); */
+    // Look at going all the way to K
+    {
+        auto dfbasis_array = utility::make_array(df_basis, df_basis);
+        auto eri2 = BlockSparseIntegrals(
+              world, eri_pool, dfbasis_array,
+              integrals::compute_functors::BtasToTaTensor{});
+
+        auto inv_timer = tcc_time::make_timer(
+              [&]() { return pure::inverse_sqrt(eri2); });
+        auto eri2_inv = inv_timer.apply();
+        utility::print_par(world, "\nEri2 inverse computation time = ",
+                           inv_timer.time(), "\n");
+        eri2_inv("i,j") = eri2_inv("i,k") * eri2_inv("k,j");
+        eri2_inv.truncate();
+
+        auto V_inv_to_lr = [=](TA::Tensor<double> const &t) {
+            tcc::tensor::DecomposedTensor<double> temp(low_rank_threshold,
+                                                       t.clone());
+            auto test_me = tensor::algebra::two_way_decomposition(temp);
+            /* if(true){ */
+            if (test_me.empty()) { // was not low rank.
+                auto const &extent = t.range().size();
+                TA::Range new_range{extent[0], extent[1]};
+                test_me = tcc::tensor::DecomposedTensor<double>(
+                      low_rank_threshold,
+                      TA::Tensor<double>{new_range, t.data()});
+            }
+
+            return tcc::tensor::Tile<decltype(test_me)>(t.range(),
+                                                        std::move(test_me));
+        };
+
+        auto V_inv_lr = TA::to_new_tile_type(eri2_inv, V_inv_to_lr);
+
+        utility::print_par(world, "\n");
+        utility::print_array_difference(V_inv_lr, eri2_inv, "V^{-1} lr",
+                                        "V^{-1}");
+        utility::print_size_info(V_inv_lr, "V^{-1}");
+
+        auto lr_0 = tcc_time::now();
+        decltype(Xab_lr) W_lr;
+        W_lr("X,a,b") = V_inv_lr("X,P") * Xab_lr("P,a,b");
+        auto lr_1 = tcc_time::now();
+        auto lr_time = tcc_time::duration_in_s(lr_0, lr_1);
+
+        auto f_0 = tcc_time::now();
+        decltype(Xab) W;
+        W("X, a, b") = eri2_inv("X,P") * Xab("P, a, b");
+        auto f_1 = tcc_time::now();
+        auto f_time = tcc_time::duration_in_s(f_0, f_1);
+
+        utility::print_par(world, "\nLow rank gemm time = ", lr_time,
+                           " full rank time = ", f_time, " speed up = ",
+                           f_time / lr_time, "\n");
+        utility::print_array_difference(W_lr, W, "W_lr", "W full");
+        utility::print_size_info(W_lr, "W");
+
+        auto k_0 = tcc_time::now();
+        TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> K;
+        K("i,j") = Xak("X,k,i") * W("X,k,j");
+        auto k_1 = tcc_time::now();
+        auto k_time = tcc_time::duration_in_s(k_0, k_1);
+
+        auto klr_0 = tcc_time::now();
+        TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
+                  TA::SparsePolicy> K_lr;
+        K_lr("i,j") = Xak_lr("X,k,i") * W_lr("X,k,j");
+        auto klr_1 = tcc_time::now();
+        auto klr_time = tcc_time::duration_in_s(klr_0, klr_1);
+
+        utility::print_par(world, "\nLow rank K time = ", klr_time,
+                           " full rank time = ", k_time, " speed up = ",
+                           k_time / klr_time, "\n");
+        utility::print_array_difference(K_lr, K, "K_lr", "K full");
+        utility::print_size_info(K_lr, "K");
+
+        auto k_iter_time = k_time + time_ta;
+        auto klr_iter_time = klr_time + time_me;
+        utility::print_par(world, "\nLow rank total K time = ", klr_iter_time,
+                           " full rank time = ", k_iter_time, " speed up = ",
+                           k_iter_time / klr_iter_time, "\n");
+
+    }
 
     madness::finalize();
     return 0;

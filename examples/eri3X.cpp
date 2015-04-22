@@ -47,7 +47,6 @@ int main(int argc, char **argv) {
     std::string mol_file = "";
     std::string basis_name = "";
     std::string df_basis_name = "";
-    std::string density_file = "";
     int bs_nclusters = 0;
     int dfbs_nclusters = 0;
     if (argc >= 6) {
@@ -116,12 +115,6 @@ int main(int argc, char **argv) {
               world, eri_pool, dfbasis_array,
               integrals::compute_functors::BtasToTaTensor{});
 
-        auto eri2_lr = TA::to_new_tile_type(
-              eri2, integrals::compute_functors::TaToLowRankTensor<2>(
-                          low_rank_threshold));
-
-        utility::print_par(world, "\n");
-        utility::print_size_info(eri2_lr, "Eri2");
 
         auto inv_timer = tcc_time::make_timer(
               [&]() { return pure::inverse_sqrt(eri2); });
@@ -131,22 +124,70 @@ int main(int argc, char **argv) {
         eri2_inv("i,j") = eri2_inv("i,k") * eri2_inv("k,j");
         eri2_inv.truncate();
 
-        auto eri2_inv_lr = TA::to_new_tile_type(
-              eri2_inv, integrals::compute_functors::TaToLowRankTensor<2>(
-                              low_rank_threshold));
+        auto V_inv_to_lr = [=](TA::Tensor<double> const &t) {
+            tcc::tensor::DecomposedTensor<double> temp(low_rank_threshold,
+                                                       t.clone());
+            auto test_me = tensor::algebra::two_way_decomposition(temp);
+            /* if(true){ */
+            if (test_me.empty()) { // was not low rank.
+                auto const &extent = t.range().size();
+                TA::Range new_range{extent[0], extent[1]};
+                test_me = tcc::tensor::DecomposedTensor<double>(
+                      low_rank_threshold,
+                      TA::Tensor<double>{new_range, t.data()});
+            }
+
+            return tcc::tensor::Tile<decltype(test_me)>(t.range(),
+                                                        std::move(test_me));
+        };
+
+        auto V_inv_lr = TA::to_new_tile_type(eri2_inv, V_inv_to_lr);
 
         utility::print_par(world, "\n");
-        utility::print_size_info(eri2_inv_lr, "Eri2 inverse");
+        utility::print_array_difference(V_inv_lr, eri2_inv, "V^{-1} lr",
+                                        "V^{-1}");
+        utility::print_size_info(V_inv_lr, "V^{-1}");
 
-        Xab("X, a, b") = eri2_inv("X,P") * Xab("P, a, b");
-        Xab.truncate();
+        auto Eri3_inv_to_lr = [=](TA::Tensor<double> const &t) {
+            tcc::tensor::DecomposedTensor<double> temp(low_rank_threshold,
+                                                       t.clone());
+            auto test_me = tensor::algebra::two_way_decomposition(temp);
 
-        auto Xab_lr = TA::to_new_tile_type(
-              Xab, integrals::compute_functors::TaToLowRankTensor<3>(
-                         low_rank_threshold));
+            /* if(true){ */
+            if (test_me.empty()) { // was not low rank.
+                auto const &extent = t.range().size();
+                TA::Range new_range{extent[0], extent[1], extent[2]};
+                test_me = tcc::tensor::DecomposedTensor<double>(
+                      low_rank_threshold,
+                      TA::Tensor<double>{new_range, t.data()});
+            }
 
+            return tcc::tensor::Tile<decltype(test_me)>(t.range(),
+                                                        std::move(test_me));
+        };
+
+        auto Xab_lr = TA::to_new_tile_type(Xab, Eri3_inv_to_lr);
         utility::print_par(world, "\n");
-        utility::print_size_info(Xab_lr, "\\tilde{X}ab");
+        utility::print_array_difference(Xab_lr, Xab, "Xab_lr", "Xab");
+        utility::print_size_info(Xab_lr, "Xab");
+
+        auto lr_0 = tcc_time::now();
+        decltype(Xab_lr) W_lr;
+        W_lr("X,a,b") = V_inv_lr("X,P") * Xab_lr("P,a,b");
+        auto lr_1 = tcc_time::now();
+        auto lr_time = tcc_time::duration_in_s(lr_0, lr_1);
+
+        auto f_0 = tcc_time::now();
+        decltype(Xab) W;
+        W("X, a, b") = eri2_inv("X,P") * Xab("P, a, b");
+        auto f_1 = tcc_time::now();
+        auto f_time = tcc_time::duration_in_s(f_0, f_1);
+
+        utility::print_par(world, "\nLow rank gemm time = ", lr_time,
+                           " full rank time = ", f_time, " speed up = ",
+                           f_time / lr_time, "\n");
+        utility::print_array_difference(W_lr, W, "W_lr", "W full");
+        utility::print_size_info(W_lr, "W");
     }
 
     madness::finalize();

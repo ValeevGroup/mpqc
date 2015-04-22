@@ -80,7 +80,7 @@ void print_size_info(TA::Array<T, DIM, TileType, Policy> const &a,
 
     auto data = array_storage(a);
 
-    print_par(a.get_world(), "\tFull   = ", data[0], " GB\n", "\tSparse = ",
+    print_par(a.get_world(), "\tFull     = ", data[0], " GB\n", "\tSparse   = ",
               data[1], " GB\n", "\tLow Rank = ", data[2], " GB\n");
 }
 

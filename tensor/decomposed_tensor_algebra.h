@@ -340,7 +340,7 @@ inline void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
         throw;
     }
 
-    TA::Range l_range{cols, full_rank};
+    TA::Range l_range{static_cast<unsigned int>(cols), full_rank};
     L = TA::Tensor<double>(std::move(l_range));
 
     // Eigen map the input
@@ -358,10 +358,11 @@ inline void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
     }
 
     if (ndims == 2) {
-        TA::Range q_range{full_rank, extent[1]};
+        TA::Range q_range{static_cast<unsigned int>(full_rank), extent[1]};
         R = TA::Tensor<double>(std::move(q_range));
     } else if (ndims == 3) {
-        TA::Range q_range{full_rank, extent[1], extent[2]};
+        TA::Range q_range{static_cast<unsigned int>(full_rank), extent[1],
+                          extent[2]};
         R = TA::Tensor<double>(std::move(q_range));
     } else {
         assert(false);
@@ -400,10 +401,10 @@ inline void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
     }
 
     if (ndims == 2) {
-        TA::Range q_range{full_rank, extent[1]};
+        TA::Range q_range{static_cast<unsigned int>(full_rank), extent[1]};
         R = TA::Tensor<double>(std::move(q_range));
     } else if (ndims == 3) {
-        TA::Range q_range{full_rank, extent[1], extent[2]};
+        TA::Range q_range{static_cast<unsigned int>(full_rank), extent[1], extent[2]};
         R = TA::Tensor<double>(std::move(q_range));
     } else {
         assert(false);
@@ -421,7 +422,7 @@ inline void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
         throw;
     }
 
-    TA::Range l_range{cols, full_rank};
+    TA::Range l_range{static_cast<unsigned int>(cols), static_cast<unsigned int>(full_rank)};
     L = TA::Tensor<double>(std::move(l_range));
 
     Eig::Map<Eig::MatrixXd> L_map(L.data(), full_rank, cols);
@@ -518,7 +519,13 @@ two_way_decomposition(DecomposedTensor<double> const &t) {
 
     auto const &extent = t.tensor(0).range().size();
     const auto rows = extent[0];
-    const auto cols = extent[1] * extent[2];
+    auto second = extent.begin();
+    std::advance(second, 1);
+    const auto cols
+          = std::accumulate(second, extent.end(), 1ul,
+                            [=](unsigned long val, decltype(extent[1]) next) {
+              return val *= next;
+          });
     const auto max_out_rank = std::min(rows, cols) / 2;
     TA::Tensor<double> L, R;
     if (full_rank_decompose(t.tensor(0), L, R, t.cut(), max_out_rank)) {

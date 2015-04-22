@@ -507,9 +507,93 @@ void gemm_to_test(LowRankTensors const &l) {
 int main(int argc, char **argv) {
     auto df_dim = std::stoul(argv[1]);
     auto bs_dim = std::stoul(argv[2]);
-    auto max_allowed_rank = std::min(df_dim, bs_dim * bs_dim);
-    auto max_rank = std::min(max_allowed_rank, std::stoul(argv[3]));
-    auto rank_step = std::stoul(argv[4]);
+    /* auto max_allowed_rank = std::min(df_dim, bs_dim * bs_dim); */
+    auto rank_V  = std::stoul(argv[3]);
+    auto rank_eri3 = std::stoul(argv[4]);
+
+    auto lr_V = lr_ta_matrix(df_dim, rank_V);
+    auto lr_Eri3 = lr_ta_tensor(df_dim, bs_dim, rank_eri3);
+
+    const auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+    const auto gh_c = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+    auto correct = lr_V.gemm(lr_Eri3, 1.0, gh_c);
+
+    auto DT_V_full = DecomposedTensor<double>(1e-7, lr_V.clone());
+    auto DT_Eri3_full = DecomposedTensor<double>(1e-7, lr_Eri3.clone());
+
+    auto DT_V_lr = tensor::algebra::two_way_decomposition(DT_V_full);
+    auto DT_Eri3_lr = tensor::algebra::two_way_decomposition(DT_Eri3_full);
+
+    std::cout << "Testing decomps\n";
+    std::cout << "Norm diff in V = "
+              << lr_V.subt(algebra::combine(DT_V_lr)).norm() << std::endl;
+    std::cout << "Norm diff in Eri3 = "
+              << lr_Eri3.subt(algebra::combine(DT_Eri3_lr)).norm() << std::endl;
+
+    std::cout << "\nTesting matrix multiply\n";
+    // Full Full
+    auto lr_full_full = gemm(DT_V_full, DT_Eri3_full, 1.0, gh_c);
+    // Full Low
+    auto lr_full_low = gemm(DT_V_full, DT_Eri3_lr, 1.0, gh_c);
+    // Low Full
+    auto lr_low_full = gemm(DT_V_lr, DT_Eri3_full, 1.0, gh_c);
+    // Low Low
+    auto lr_low_low = gemm(DT_V_lr, DT_Eri3_lr, 1.0, gh_c);
+    std::cout << "Norm diff for full full = " << 
+        correct.subt(algebra::combine(lr_full_full)).norm() << std::endl;
+    std::cout << "Norm diff for full low = " << 
+        correct.subt(algebra::combine(lr_full_low)).norm() << std::endl;
+    std::cout << "Norm diff for low full = " << 
+        correct.subt(algebra::combine(lr_low_full)).norm() << std::endl;
+    std::cout << "Norm diff for low low = " << 
+        correct.subt(algebra::combine(lr_low_low)).norm() << std::endl;
+
+    std::cout << "\nTesting gemm\n";
+    correct.gemm(lr_V, lr_Eri3, 1.0, gh_c);
+    // Full Full Full
+    auto fff = clone(lr_full_full);
+    gemm(fff, DT_V_full, DT_Eri3_full, 1.0, gh_c);
+    std::cout << "Norm diff for full full full = " << 
+        correct.subt(algebra::combine(fff)).norm() << std::endl;
+
+    // Full Full Low
+    auto ffl = clone(lr_full_full);
+    gemm(ffl, DT_V_full, DT_Eri3_lr, 1.0, gh_c);
+    std::cout << "Norm diff for full full low = " << 
+        correct.subt(algebra::combine(ffl)).norm() << std::endl;
+
+    // Full Low Full
+    auto flf = clone(lr_full_full);
+    gemm(flf, DT_V_lr, DT_Eri3_full, 1.0, gh_c);
+    std::cout << "Norm diff for full low full = " << 
+        correct.subt(algebra::combine(flf)).norm() << std::endl;
+
+    // Full Low Low
+    auto fll = clone(lr_full_full);
+    gemm(fll, DT_V_lr, DT_Eri3_lr, 1.0, gh_c);
+    std::cout << "Norm diff for full low low = " << 
+        correct.subt(algebra::combine(fll)).norm() << std::endl;
+
+    std::cout << "\nRank of c = " << lr_low_low.rank() << std::endl;
+    auto lff = clone(lr_low_low);
+    gemm(lff, DT_V_full, DT_Eri3_full, 1.0, gh_c);
+    std::cout << "Norm diff for low full full = " << 
+        correct.subt(algebra::combine(lff)).norm() << std::endl;
+
+    auto lfl = clone(lr_low_low);
+    gemm(lfl, DT_V_full, DT_Eri3_lr, 1.0, gh_c);
+    std::cout << "Norm diff for low full low = " << 
+        correct.subt(algebra::combine(lfl)).norm() << std::endl;
+
+    auto llf = clone(lr_low_low);
+    gemm(llf, DT_V_lr, DT_Eri3_full, 1.0, gh_c);
+    std::cout << "Norm diff for low low full = " << 
+        correct.subt(algebra::combine(llf)).norm() << std::endl;
+
+    auto lll = clone(lr_low_low);
+    gemm(lll, DT_V_lr, DT_Eri3_lr, 1.0, gh_c);
+    std::cout << "Norm diff for low low low = " << 
+        correct.subt(algebra::combine(lll)).norm() << std::endl;
 
     /* std::vector<decltype(rank_step)> ranks; */
     /* for (auto i = 1ul; i < max_rank; i += rank_step) { */
@@ -517,24 +601,6 @@ int main(int argc, char **argv) {
     /* } */
 
     /* LowRankTensors tensors(df_dim, bs_dim, ranks); */
-
-    auto ta_tensor = lr_ta_tensor(df_dim, bs_dim, max_allowed_rank - 1);
-    TA::Tensor<double> L, R;
-    auto time_thing = 0.0;
-    auto time_whole = 0.0;
-    for (auto i = 0; i < 100; ++i) {
-        auto clone = ta_tensor.clone();
-
-        auto t0 = std::chrono::high_resolution_clock::now();
-        time_thing
-              += tensor::algebra::ta_tensor_col_pivoted_qr(clone, L, R, 1e-7);
-        auto t1 = std::chrono::high_resolution_clock::now();
-        time_whole += std::chrono::duration_cast<std::chrono::duration<double>>(
-                            t1 - t0).count();
-    }
-
-    std::cout << "Map thing is " << 100 * time_thing / time_whole
-              << " of col pivoted qr." << std::endl;
 
     /* svd_test(tensors); */
     /* col_piv_qr_test(tensors); */

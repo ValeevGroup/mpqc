@@ -15,19 +15,23 @@ template <typename T>
 DecomposedTensor<T>
 gemm(DecomposedTensor<T> const &a, DecomposedTensor<T> const &b, const T factor,
      TA::math::GemmHelper const &gh) {
+
+    auto out = DecomposedTensor<T>{};
     if (gh.result_rank() == 3) {
         if (gh.left_rank() == 3) {
             if (gh.right_rank() == 2) {
-                return detail::low_rank_gemm<3, 3, 2>{}(a, b, factor, gh);
+                out = detail::low_rank_gemm<3, 3, 2>{}(a, b, factor, gh);
             }
         } else if (gh.left_rank() == 2) {
             if (gh.right_rank() == 3) {
-                return detail::low_rank_gemm<3, 2, 3>{}(a, b, factor, gh);
+                out = detail::low_rank_gemm<3, 2, 3>{}(a, b, factor, gh);
             }
         }
+    } else {
+        assert(false);
+        return DecomposedTensor<T>{};
     }
-    assert(false);
-    return DecomposedTensor<T>{};
+    return out;
 }
 
 template <typename T>
@@ -37,15 +41,17 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
     if (gh.result_rank() == 3) {
         if (gh.left_rank() == 3) {
             if (gh.right_rank() == 2) { // Eri3 * D
-                return detail::low_rank_gemm<3, 3, 2>{}(c, a, b, factor, gh);
+                detail::low_rank_gemm<3, 3, 2>{}(c, a, b, factor, gh);
             }
-        } else if(gh.left_rank() == 2){
-            if(gh.right_rank() == 3){
-                return detail::low_rank_gemm<3,2,3>{}(c,a, b, factor, gh);
+        } else if (gh.left_rank() == 2) {
+            if (gh.right_rank() == 3) {
+                detail::low_rank_gemm<3, 2, 3>{}(c, a, b, factor, gh);
             }
         }
+    } else {
+        assert(false);
+        return c;
     }
-    assert(false);
     return c;
 }
 

@@ -45,6 +45,8 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
             auto Rp = a.tensor(1).gemm(b.tensor(0), f, gh);
             return Dtensor<T>{a.cut(), a.tensor(0).clone(), std::move(Rp)};
         }
+        assert(false);
+        return Dtensor<T>{};
     }
 
     template <typename T>
@@ -115,7 +117,7 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
     template <typename T>
     Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
                           GHelper const &gh) {
-        if (a.ndecomp() == 1) { // Full * 
+        if (a.ndecomp() == 1) {     // Full *
             if (b.ndecomp() == 1) { // Full Full
                 return Dtensor<T>{a.cut(),
                                   a.tensor(0).gemm(b.tensor(0), f, gh)};
@@ -124,7 +126,7 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                 auto sw = a.tensor(0).gemm(b.tensor(0), f, gh_fl);
                 return Dtensor<T>{a.cut(), std::move(sw), b.tensor(1).clone()};
             }
-        } else { // Low *
+        } else {                    // Low *
             if (b.ndecomp() == 1) { // Low Full
                 auto Tw = a.tensor(1).gemm(b.tensor(0), f, gh);
                 return Dtensor<T>{a.cut(), a.tensor(0).clone(), std::move(Tw)};
@@ -139,7 +141,7 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                     return Dtensor<T>{a.cut(), a.tensor(0).gemm(M, f, gh_left),
                                       b.tensor(1).clone()};
                 } else {
-                    const auto gh_right = GHelper(NoT, NoT, 2, 3, 3);
+                    const auto gh_right = GHelper(NoT, NoT, 3, 2, 3);
                     return Dtensor<T>{a.cut(), a.tensor(0).clone(),
                                       M.gemm(b.tensor(1), f, gh_right)};
                 }
@@ -151,8 +153,8 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
     Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a,
                            Dtensor<T> const &b, const T f, GHelper const &gh) {
         // assume b is never decomposed.
-        if (c.ndecomp() == 1) { // Full * * 
-            if (a.ndecomp() == 1) { // Full Full *
+        if (c.ndecomp() == 1) {         // Full * *
+            if (a.ndecomp() == 1) {     // Full Full *
                 if (b.ndecomp() == 1) { //  Full Full Full
                     c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
                 } else { // Full Full Low
@@ -161,7 +163,7 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                           .gemm(a.tensor(0).gemm(b.tensor(0), 1.0, gh_left),
                                 b.tensor(1), f, gh);
                 }
-            } else { // Full Low *
+            } else {                    // Full Low *
                 if (b.ndecomp() == 1) { //  Full Low Full
                     const auto gh_right = GHelper(NoT, NoT, 3, 2, 3);
                     c.tensor(0).gemm(
@@ -200,19 +202,18 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                 }
                 return c;
             }
-        } else { // Low * * 
-            if (a.ndecomp() == 1) { // Low Full *
-                if (b.ndecomp() == 1) { // Low Full Full
-                    auto temp = a.tensor(0).gemm(b.tensor(0), f, gh);
-                    temp.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
+        } else {                                        // Low * *
+            if (a.ndecomp() == 1 && b.ndecomp() == 1) { // Low Full Full
+                auto temp = a.tensor(0).gemm(b.tensor(0), f, gh);
+                temp.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
 
-                    c = Dtensor<T>{c.cut(), std::move(temp)};
-                    auto decomp_c = algebra::two_way_decomposition(c);
-                    if (!decomp_c.empty()) {
-                        c = std::move(decomp_c);
-                    }
+                c = Dtensor<T>{c.cut(), std::move(temp)};
+                auto decomp_c = algebra::two_way_decomposition(c);
+                if (!decomp_c.empty()) {
+                    c = std::move(decomp_c);
                 }
-            } else { // Other cases can be handled by the following LFL LLF and LLL
+            } else { // Other cases can be handled by the following LFL LLF and
+                     // LLL
                 auto ab = this->operator()(a, b, f, gh);
                 c = add(c, ab);
                 algebra::recompress(c);
@@ -227,6 +228,8 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
 
             return c;
         }
+        assert(false);
+        return c;
     }
 };
 

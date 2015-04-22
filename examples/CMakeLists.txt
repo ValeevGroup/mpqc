@@ -25,6 +25,12 @@ target_link_libraries(matrix_plot
 )
 add_dependencies(examples matrix_plot)
 
+add_executable(eri3X EXCLUDE_FROM_ALL eri3X.cpp) 
+target_link_libraries(eri3X
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(examples eri3X)
+
 # We need to save the old cmake cxx_flags and append boost include only for this 
 # file.
 set(CMAKE_CXX_FLAGS_ ${CMAKE_CXX_FLAGS}) 
@@ -35,10 +41,6 @@ target_link_libraries(eri3_with_density_from_disk
   ${USER_BOOST_LIB}
 )
 
-add_executable(eri3X EXCLUDE_FROM_ALL eri3X.cpp) 
-target_link_libraries(eri3X
-  ${TileClusterChem_LIBRARIES}
-)
 
 add_executable(eri3X12 EXCLUDE_FROM_ALL eri3X12.cpp) 
 target_link_libraries(eri3X12
@@ -52,7 +54,7 @@ target_link_libraries(eri3X_with_density
   ${USER_BOOST_LIB}
 )
 
-add_dependencies(read_density eri3_with_density_from_disk eri3X eri3X12 eri3X_with_density)
+add_dependencies(read_density eri3_with_density_from_disk eri3X12 eri3X_with_density)
 
 # Fix cmake flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_}")

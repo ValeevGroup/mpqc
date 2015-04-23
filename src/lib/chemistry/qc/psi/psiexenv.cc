@@ -248,7 +248,7 @@ void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>
   // delete chkpt file in case it gets overwritten
   if (chkpt_) { delete chkpt_;  chkpt_ = 0; }
 
-#if HAVE_POSIX_SPAWN
+#ifdef HAVE_POSIX_SPAWN
   {
     std::vector<std::string> allargs(7 + args.size());
     allargs[0] = psiprefix_ + "/" + module;

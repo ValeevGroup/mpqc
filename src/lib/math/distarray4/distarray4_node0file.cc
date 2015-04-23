@@ -85,9 +85,11 @@ DistArray4_Node0File::~DistArray4_Node0File() {
 
   // Destroy the file
 #if  CREATE_FILE_ON_NODE0_ONLY
-  if (me() == 0)
+  if (me() == 0) {
 #endif
+    deactivate();
     unlink(filename_);
+  }
   free(filename_);
 }
 

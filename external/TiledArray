@@ -32,7 +32,7 @@ if(MADNESS_FOUND)
     endif(MPQC_HAS_ELEMENTAL)
     CHECK_CXX_SOURCE_COMPILES(
       "
-      #include <madness/world/world.h>
+      #include <madness/world/parallel_runtime.h>
       
       int main(int argc, char** argv) {
         madness::World& world = madness::initialize(argc, argv);

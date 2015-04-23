@@ -369,22 +369,9 @@ namespace sc {
 
       // cpmute Gamma intermediates needed for CCSD Xam
       void compute_Gamma_ijab_ccsd(const TArray2& T1, const TArray4& T2,
-                                   const TArray4& tau_aa, const TArray4& tau_ab,
+                                   const TArray4& tau_ab,
                                    const TArray2& L1, const TArray4& L2,
-                                   TArray4& Gamma_IJAB_aa,
                                    TArray4& Gamma_IjAb_ab);
-      void compute_Gamma_ciab_ccsd(const TArray2& T1, const TArray4& T2,
-                                   const TArray4& tau_aa, const TArray4& tau_ab,
-                                   const TArray2& L1, const TArray4& L2,
-                                   TArray4& Gamma_CIAB_aa,
-                                   TArray4& Gamma_CiAb_ab,
-                                   TArray4& Gamma_cIAb_ba);
-     void compute_Gamma_ijka_ccsd(const TArray2& T1, const TArray4& T2,
-                                  const TArray4& tau_aa, const TArray4& tau_ab,
-                                  const TArray2& L1, const TArray4& L2,
-                                  TArray4& Gamma_IJKA_aa,
-                                  TArray4& Gamma_IjKa_ab,
-                                  TArray4& Gamma_IjkA_ba);
       void compute_ccsd_1rdm_amp(const TArray2& T1, const TArray4& T2,
                                  const TArray2& L1, const TArray4& L2,
                                  TArray2& Dij, TArray2& Dab,

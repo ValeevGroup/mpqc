@@ -212,6 +212,10 @@ PT2R12::obsolete() {
     r12world_->obsolete();
   }
   Wavefunction::obsolete();
+#if defined(MPQC_NEW_FEATURES)
+  shutdown_mpqc3();
+  bootup_mpqc3();
+#endif
 }
 
 void
@@ -748,6 +752,8 @@ double PT2R12::energy_PT2R12_projector2() {
 
   void PT2R12::shutdown_mpqc3() {
     srr12intrmds_ = 0;
+    CABS_Single_ = 0;
+    madness::World::get_default().gop.fence();
   }
 
 #endif

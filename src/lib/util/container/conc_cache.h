@@ -60,7 +60,7 @@
 
 // Madness includes
 #include <madness/world/worldhashmap.h>
-#include <madness/world/worldfut.h>
+#include <madness/world/future.h>
 
 // MPQC imcludes
 #include <util/misc/iterators.h>

@@ -286,8 +286,6 @@ R12IntEval::obsolete()
 
   emp2_obs_singles_ = 1.0;
   emp2_cabs_singles_ = 1.0;
-
-  init_intermeds_();
 }
 
 const RefSCMatrix&

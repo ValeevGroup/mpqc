@@ -140,8 +140,6 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   this->set_desired_value_accuracy(desired_value_accuracy());
 #if defined(MPQC_NEW_FEATURES)
   bootup_mpqc3();
-  CABS_Single_ = make_shared <CABS_Single> (srr12intrmds_);
-
 #endif
 }
 
@@ -184,6 +182,10 @@ PT2R12::obsolete() {
   r12world_->world()->obsolete();
   r12world_->obsolete();
   Wavefunction::obsolete();
+#if defined(MPQC_NEW_FEATURES)
+  shutdown_mpqc3();
+  bootup_mpqc3();
+#endif
 }
 
 void
@@ -716,10 +718,13 @@ double PT2R12::energy_PT2R12_projector2() {
     srr12intrmds_ = make_shared<SingleReference_R12Intermediates<double>>(madness::World::get_default(),
         this->r12world());
     srr12intrmds_->set_rdm2(this->rdm2_);
+    CABS_Single_ = make_shared <CABS_Single> (srr12intrmds_);
   }
 
   void PT2R12::shutdown_mpqc3() {
     srr12intrmds_ = 0;
+    CABS_Single_ = 0;
+    madness::World::get_default().gop.fence();
   }
 
 #endif

@@ -3,10 +3,22 @@
 set(LIBINT "" CACHE STRING "Libint on/off/prefix")
 set_property(CACHE LIBINT PROPERTY STRINGS "" "on" "off") 
 
-# default libint action
+# default libint action:
+# optional, if new features not needed
+# mandatory, if new features are requested
 if ("${LIBINT}" STREQUAL "")
-  set(LIBINT "optional")
-endif()
+  if (NOT MPQC_NEW_FEATURES)
+    set(LIBINT "optional")
+  else (NOT MPQC_NEW_FEATURES)
+    set(LIBINT TRUE)
+  endif (NOT MPQC_NEW_FEATURES)
+endif("${LIBINT}" STREQUAL "")
+
+# LIBINT == "check0" means LIBINT=TRUE, but use small library for testing
+if ("${LIBINT}" STREQUAL "check0")
+  set(LIBINT TRUE)
+  set(LIBINT_USE_CHECK0 TRUE)
+endif ("${LIBINT}" STREQUAL "check0")
 
 if (LIBINT)
 
@@ -57,6 +69,10 @@ if (LIBINT)
           int main(int argc, char** argv) {
             libint2::GaussianGmEvalScratch<double,-1> scr;
             scr.init(5);
+            // FmEval_Chebyshev3 converted to template in 30ea3cd4474c740bee7713bbc633d60f95b3a4c2
+            libint2::FmEval_Chebyshev3<double> cheb_boys_eval(12,1e-15);
+            // libint2::finalize defined in 06be4d68a7b0da073469c40ccf49acb9ed62a18e
+            libint2::finalize();
             return 0;
           }
       "  LIBINT_IS_UP_TO_DATE)    
@@ -111,8 +127,14 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
 
     include(ExternalProject)
 
-    set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.1.0-beta.tgz)
-    set(LIBINT_URL_HASH MD5=301be69e6dc97a937788f0cfc5bef11f)
+    if (LIBINT_USE_CHECK0)
+      set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.1.0-beta.check0.tgz)
+      set(LIBINT_URL_HASH MD5=1b27d78487d6f6612943449ec9361754)
+    else (LIBINT_USE_CHECK0)
+      set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.1.0-beta.tgz)
+      set(LIBINT_URL_HASH MD5=e0a28af51744e7abac0e07f4af3cfb20)
+    endif (LIBINT_USE_CHECK0)
+    
     if (NOT EXISTS ${LIBINT_URL})
       message(FATAL_ERROR "Did not find embedded copy of Libint2, something wrong with your source tree")
     endif (NOT EXISTS ${LIBINT_URL})

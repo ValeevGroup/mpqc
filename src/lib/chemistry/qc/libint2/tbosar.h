@@ -56,7 +56,7 @@ namespace sc {
     struct OSAR_CoreInts<TwoBodyOper::eri> {
 
         //typedef FJT _FmEvalType; // Curt's Taylor code
-        typedef ::libint2::FmEval_Chebyshev3 _FmEvalType; // Frank's Chebyshev code, faster but slower startup
+        typedef ::libint2::FmEval_Chebyshev3<double> _FmEvalType; // Frank's Chebyshev code, faster but slower startup
         typedef CoreIntsEngine<_FmEvalType>::Engine FmEvalType;
         Ref<FmEvalType> Fm_Eval_;
 

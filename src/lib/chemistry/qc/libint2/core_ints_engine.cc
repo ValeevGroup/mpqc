@@ -42,7 +42,7 @@ template<> Ref<CoreIntsEngine<_Engine0>::Engine>
       new CoreIntsEngine<_Engine0>::Engine(12, 1e-14)
   );
 
-typedef ::libint2::FmEval_Chebyshev3 _Engine1;
+typedef ::libint2::FmEval_Chebyshev3<double> _Engine1;
 template<> Ref<CoreIntsEngine<_Engine1>::Engine>
   CoreIntsEngine<_Engine1>::default_engine_(new CoreIntsEngine<_Engine1>::Engine(12));
 

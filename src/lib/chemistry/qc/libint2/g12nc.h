@@ -114,7 +114,7 @@ class G12NCLibint2: public Int2eLibint2 {
                              const ContractedGeminal* gket);
     /*--- Compute engines ---*/
     std::vector<Libint_t> Libint_;
-    typedef ::libint2::FmEval_Chebyshev3 _FmEvalType;
+    typedef ::libint2::FmEval_Chebyshev3<double> _FmEvalType;
     typedef CoreIntsEngine<_FmEvalType>::Engine FmEvalType;
     Ref<FmEvalType> Fm_Eval_;
     double* Fm_table_;

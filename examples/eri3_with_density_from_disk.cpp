@@ -184,13 +184,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    {
-        auto D_lr = TA::to_new_tile_type(
-              D_TA, integrals::compute_functors::TaToLowRankTensor<2>(
-                          low_rank_threshold));
-        utility::print_par(world, "\n");
-        utility::print_size_info(D_lr, "D");
-    }
     world.gop.fence();
 
     libint2::init();
@@ -248,26 +241,14 @@ int main(int argc, char **argv) {
     Xak_lr("X,k,a") = Xab_lr("X,a,b") * D_test("b,k");
     auto t_me1 = std::chrono::high_resolution_clock::now();
     auto time_me = std::chrono::duration_cast<std::chrono::duration<double>>(
-                    t_me1 - t_me0).count();
+                         t_me1 - t_me0).count();
 
     utility::print_par(world, "\nTime for My contraction = ", time_me, "\n");
-    utility::print_par(world, "Speed up over fully dense = ",
-                       time_ta / time_me, "\n\n");
+    utility::print_par(world, "Speed up over fully dense = ", time_ta / time_me,
+                       "\n\n");
     utility::print_size_info(Xak_lr, "Xak_lr no recompression");
     utility::print_array_difference(Xak_lr, Xak, "Xak low rank",
                                     "Xak full rank");
-
-    /* utility::print_par(world, "\nRecompressing\n"); */
-    /* for (auto it = Xak_lr.begin(); it != Xak_lr.end(); ++it) { */
-    /*     auto tensor = tensor::algebra::combine(it->get().tile()); */
-    /*     auto decomp = tensor::algebra::two_way_decomposition( */
-    /*           tensor::DecomposedTensor<double>(it->get().tile().cut(), */
-    /*                                            std::move(tensor))); */
-    /*     if (!decomp.empty()) { */
-    /*         it->get().tile() = decomp; */
-    /*     } */
-    /* } */
-    /* utility::print_size_info(Xak_lr, "Xak_lr with recompression"); */
 
     // Look at going all the way to K
     {
@@ -326,6 +307,23 @@ int main(int argc, char **argv) {
         utility::print_array_difference(W_lr, W, "W_lr", "W full");
         utility::print_size_info(W_lr, "W");
 
+        auto j_0 = tcc_time::now();
+        TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> J;
+        J("i,j") = W("X,i,j") * (Xak("X,a,b") * D_TA("a,b"));
+        auto j_1 = tcc_time::now();
+        auto j_time = tcc_time::duration_in_s(j_0, j_1);
+
+        auto jlr_0 = tcc_time::now();
+        decltype(D_test) J_lr;
+        J_lr("i,j") = W_lr("X,i,j") * (Xab_lr("X,a,b") * D_test("a,b"));
+        auto jlr_1 = tcc_time::now();
+        auto jlr_time = tcc_time::duration_in_s(jlr_0, jlr_1);
+        utility::print_par(world, "\nLow rank J time = ", jlr_time,
+                           " full rank time = ", j_time, " speed up = ",
+                           j_time / jlr_time, "\n");
+        utility::print_array_difference(J_lr, J, "J_lr", "J full");
+        utility::print_size_info(J_lr, "J");
+
         auto k_0 = tcc_time::now();
         TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> K;
         K("i,j") = Xak("X,k,i") * W("X,k,j");
@@ -350,7 +348,6 @@ int main(int argc, char **argv) {
         utility::print_par(world, "\nLow rank total K time = ", klr_iter_time,
                            " full rank time = ", k_iter_time, " speed up = ",
                            k_iter_time / klr_iter_time, "\n");
-
     }
 
     madness::finalize();

@@ -290,6 +290,81 @@ struct low_rank_gemm<2ul, 3ul, 3ul> {
     }
 };
 
+// Eri3("X,a,b") * D("a,b") = M("X")
+template <>
+struct low_rank_gemm<1ul, 3ul, 2ul> {
+    template <typename T>
+    Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
+                          GHelper const &gh) {
+        const auto X = a.tensor(0).range().size()[0]; // X from above.
+        auto range = TA::Range{X};
+        auto out_tensor
+              = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range)));
+        this->operator()(out_tensor, a, b, f, gh);
+        return out_tensor;
+    }
+
+    template <typename T>
+    Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a,
+                           Dtensor<T> const &b, const T f, GHelper const &gh) {
+        // assume b and c are never decomposed.
+        if (c.ndecomp() == 1) {
+            if (a.ndecomp() == 1) {
+                c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
+            } else {
+                auto gh_right = TA::math::GemmHelper(NoT, NoT, 1, 3, 2);
+                auto Rp = a.tensor(1).gemm(b.tensor(0), 1.0, gh_right);
+                auto gh_left = TA::math::GemmHelper(NoT, NoT, 1, 2, 1);
+                c.tensor(0).gemm(a.tensor(0), Rp, f, gh_left);
+            }
+            return c;
+        }
+        assert(false);
+    }
+};
+
+// W("X,i,j") * M("X") = J("i,j");
+template <>
+struct low_rank_gemm<2ul, 3ul, 1ul> {
+    template <typename T>
+    Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
+                          GHelper const &gh) {
+        auto out_tensor = Dtensor<T>(a.cut());
+        if(a.ndecomp() == 1){
+            const auto i = a.tensor(0).range().size()[1];
+            const auto j = a.tensor(0).range().size()[2];
+            auto range = TA::Range{i,j};
+            out_tensor = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range)));
+        } else if (a.ndecomp() == 2){
+            const auto i = a.tensor(1).range().size()[1];
+            const auto j = a.tensor(1).range().size()[2];
+            auto range = TA::Range{i,j};
+            out_tensor = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range)));
+        }
+        this->operator()(out_tensor, a, b, f, gh);
+        return out_tensor;
+    }
+
+    template <typename T>
+    Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a,
+                           Dtensor<T> const &b, const T f, GHelper const &gh) {
+        // assume b and c are never decomposed.
+        if (c.ndecomp() == 1) {
+            if (a.ndecomp() == 1) {
+                c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
+            } else {
+                auto gh_right = TA::math::GemmHelper(Tr, NoT, 1, 2, 1);
+                auto Rp = a.tensor(0).gemm(b.tensor(0), 1.0, gh_right);
+                auto gh_left = TA::math::GemmHelper(Tr, NoT, 2, 3, 1);
+                c.tensor(0).gemm(a.tensor(1), Rp, f, gh_left);
+            }
+            return c;
+        }
+        assert(false);
+    }
+};
+
+
 } // namespace detail
 } // namespace tensor
 } // namespace tcc

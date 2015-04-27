@@ -30,13 +30,22 @@ gemm(DecomposedTensor<T> const &a, DecomposedTensor<T> const &b, const T factor,
     } else if (gh.result_rank() == 2) {
         if (gh.left_rank() == 3) {
             if (gh.right_rank() == 3) {
-                out = detail::low_rank_gemm<2,3,3>{}(a,b,factor,gh);
+                out = detail::low_rank_gemm<2, 3, 3>{}(a, b, factor, gh);
+            } else if (gh.right_rank() == 1) {
+                out = detail::low_rank_gemm<2, 3, 1>{}(a, b, factor, gh);
+            }
+        }
+    } else if (gh.result_rank() == 1) {
+        if (gh.left_rank() == 3) {
+            if (gh.right_rank() == 2) {
+                out = detail::low_rank_gemm<1, 3, 2>{}(a, b, factor, gh);
             }
         }
     } else {
         assert(false);
         return DecomposedTensor<T>{};
     }
+    assert(!out.empty());
     return out;
 }
 
@@ -54,13 +63,22 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
                 detail::low_rank_gemm<3, 2, 3>{}(c, a, b, factor, gh);
             }
         }
-    } else if(gh.result_rank() == 2){
-        if(gh.left_rank() == 3){
-            if(gh.right_rank() == 3){
-                detail::low_rank_gemm<2,3,3>{}(c, a, b, factor, gh);
+    } else if (gh.result_rank() == 2) {
+        if (gh.left_rank() == 3) {
+            if (gh.right_rank() == 3) {
+                detail::low_rank_gemm<2, 3, 3>{}(c, a, b, factor, gh);
+            }
+            if (gh.right_rank() == 1) {
+                detail::low_rank_gemm<2, 3, 1>{}(c, a, b, factor, gh);
             }
         }
-    }else {
+    } else if (gh.result_rank() == 1) {
+        if (gh.left_rank() == 3) {
+            if (gh.right_rank() == 2) {
+                detail::low_rank_gemm<1, 3, 2>{}(c, a, b, factor, gh);
+            }
+        }
+    } else {
         assert(false);
         return c;
     }

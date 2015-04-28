@@ -113,6 +113,7 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
     }
 };
 
+// W("X,a,b") = V^{-1}("X,P") * X("P,a,b")
 template <>
 struct low_rank_gemm<3ul, 2ul, 3ul> {
     template <typename T>
@@ -231,6 +232,7 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
     }
 };
 
+// K("i,j") = W("X,k,i") * B("X,k,j")
 template <>
 struct low_rank_gemm<2ul, 3ul, 3ul> {
     // just use the 3 way functions
@@ -299,7 +301,7 @@ struct low_rank_gemm<1ul, 3ul, 2ul> {
         const auto X = a.tensor(0).range().size()[0]; // X from above.
         auto range = TA::Range{X};
         auto out_tensor
-              = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range)));
+              = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
         this->operator()(out_tensor, a, b, f, gh);
         return out_tensor;
     }
@@ -330,16 +332,18 @@ struct low_rank_gemm<2ul, 3ul, 1ul> {
     Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
                           GHelper const &gh) {
         auto out_tensor = Dtensor<T>(a.cut());
-        if(a.ndecomp() == 1){
+        if (a.ndecomp() == 1) {
             const auto i = a.tensor(0).range().size()[1];
             const auto j = a.tensor(0).range().size()[2];
-            auto range = TA::Range{i,j};
-            out_tensor = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range)));
-        } else if (a.ndecomp() == 2){
+            auto range = TA::Range{i, j};
+            out_tensor
+                  = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
+        } else if (a.ndecomp() == 2) {
             const auto i = a.tensor(1).range().size()[1];
             const auto j = a.tensor(1).range().size()[2];
-            auto range = TA::Range{i,j};
-            out_tensor = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range)));
+            auto range = TA::Range{i, j};
+            out_tensor
+                  = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
         }
         this->operator()(out_tensor, a, b, f, gh);
         return out_tensor;

@@ -309,7 +309,7 @@ int main(int argc, char **argv) {
 
         auto j_0 = tcc_time::now();
         TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> J;
-        J("i,j") = W("X,i,j") * (Xak("X,a,b") * D_TA("a,b"));
+        J("i,j") = W("X,i,j") * (Xab("X,a,b") * D_TA("a,b"));
         auto j_1 = tcc_time::now();
         auto j_time = tcc_time::duration_in_s(j_0, j_1);
 

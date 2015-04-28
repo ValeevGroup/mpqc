@@ -511,89 +511,105 @@ int main(int argc, char **argv) {
     auto rank_V  = std::stoul(argv[3]);
     auto rank_eri3 = std::stoul(argv[4]);
 
-    auto lr_V = lr_ta_matrix(df_dim, rank_V);
+    auto lr_D = lr_ta_matrix(bs_dim, rank_V);
     auto lr_Eri3 = lr_ta_tensor(df_dim, bs_dim, rank_eri3);
 
     const auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
-    const auto gh_c = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
-    auto correct = lr_V.gemm(lr_Eri3, 1.0, gh_c);
+    const auto gh_c = TA::math::GemmHelper(NoT, NoT, 1, 3, 2);
+    auto correct = lr_Eri3.gemm(lr_D, 1.0, gh_c);
 
-    auto DT_V_full = DecomposedTensor<double>(1e-7, lr_V.clone());
+    auto DT_D_full = DecomposedTensor<double>(1e-7, lr_D.clone());
     auto DT_Eri3_full = DecomposedTensor<double>(1e-7, lr_Eri3.clone());
 
-    auto DT_V_lr = tensor::algebra::two_way_decomposition(DT_V_full);
+    auto DT_D_lr = tensor::algebra::two_way_decomposition(DT_D_full);
     auto DT_Eri3_lr = tensor::algebra::two_way_decomposition(DT_Eri3_full);
+    std::cout << "Testing first contraction in J\n";
+    auto full_full = gemm(DT_Eri3_full, DT_D_full, 1.0, gh_c);
+    auto low_full = gemm(DT_Eri3_lr, DT_D_full, 1.0, gh_c);
 
-    std::cout << "Testing decomps\n";
-    std::cout << "Norm diff in V = "
-              << lr_V.subt(algebra::combine(DT_V_lr)).norm() << std::endl;
-    std::cout << "Norm diff in Eri3 = "
-              << lr_Eri3.subt(algebra::combine(DT_Eri3_lr)).norm() << std::endl;
+    std::cout << "Norm diff of correct and approximated in gemm\n";
+    std::cout << "\tFull Full = " << correct.subt(full_full.tensor(0)).norm() << "\n";
+    std::cout << "\tLow Full  = " << correct.subt(low_full.tensor(0)).norm() << "\n";
 
-    std::cout << "\nTesting matrix multiply\n";
-    // Full Full
-    auto lr_full_full = gemm(DT_V_full, DT_Eri3_full, 1.0, gh_c);
-    // Full Low
-    auto lr_full_low = gemm(DT_V_full, DT_Eri3_lr, 1.0, gh_c);
-    // Low Full
-    auto lr_low_full = gemm(DT_V_lr, DT_Eri3_full, 1.0, gh_c);
-    // Low Low
-    auto lr_low_low = gemm(DT_V_lr, DT_Eri3_lr, 1.0, gh_c);
-    std::cout << "Norm diff for full full = " << 
-        correct.subt(algebra::combine(lr_full_full)).norm() << std::endl;
-    std::cout << "Norm diff for full low = " << 
-        correct.subt(algebra::combine(lr_full_low)).norm() << std::endl;
-    std::cout << "Norm diff for low full = " << 
-        correct.subt(algebra::combine(lr_low_full)).norm() << std::endl;
-    std::cout << "Norm diff for low low = " << 
-        correct.subt(algebra::combine(lr_low_low)).norm() << std::endl;
+    correct.gemm(lr_Eri3, lr_D, 1.0, gh_c);
 
-    std::cout << "\nTesting gemm\n";
-    correct.gemm(lr_V, lr_Eri3, 1.0, gh_c);
-    // Full Full Full
-    auto fff = clone(lr_full_full);
-    gemm(fff, DT_V_full, DT_Eri3_full, 1.0, gh_c);
-    std::cout << "Norm diff for full full full = " << 
-        correct.subt(algebra::combine(fff)).norm() << std::endl;
+    gemm(full_full, DT_Eri3_full, DT_D_full, 1.0, gh_c);
+    gemm(low_full, DT_Eri3_lr, DT_D_full, 1.0, gh_c);
 
-    // Full Full Low
-    auto ffl = clone(lr_full_full);
-    gemm(ffl, DT_V_full, DT_Eri3_lr, 1.0, gh_c);
-    std::cout << "Norm diff for full full low = " << 
-        correct.subt(algebra::combine(ffl)).norm() << std::endl;
+    std::cout << "Norm diff of correct and approximated in gemm_to\n";
+    std::cout << "\tFull Full = " << correct.subt(full_full.tensor(0)).norm() << "\n";
+    std::cout << "\tLow Full  = " << correct.subt(low_full.tensor(0)).norm() << "\n";
 
-    // Full Low Full
-    auto flf = clone(lr_full_full);
-    gemm(flf, DT_V_lr, DT_Eri3_full, 1.0, gh_c);
-    std::cout << "Norm diff for full low full = " << 
-        correct.subt(algebra::combine(flf)).norm() << std::endl;
+    /* std::cout << "Testing decomps\n"; */
+    /* std::cout << "Norm diff in V = " */
+    /*           << lr_V.subt(algebra::combine(DT_V_lr)).norm() << std::endl; */
+    /* std::cout << "Norm diff in Eri3 = " */
+    /*           << lr_Eri3.subt(algebra::combine(DT_Eri3_lr)).norm() << std::endl; */
 
-    // Full Low Low
-    auto fll = clone(lr_full_full);
-    gemm(fll, DT_V_lr, DT_Eri3_lr, 1.0, gh_c);
-    std::cout << "Norm diff for full low low = " << 
-        correct.subt(algebra::combine(fll)).norm() << std::endl;
+    /* std::cout << "\nTesting matrix multiply\n"; */
+    /* // Full Full */
+    /* auto lr_full_full = gemm(DT_V_full, DT_Eri3_full, 1.0, gh_c); */
+    /* // Full Low */
+    /* auto lr_full_low = gemm(DT_V_full, DT_Eri3_lr, 1.0, gh_c); */
+    /* // Low Full */
+    /* auto lr_low_full = gemm(DT_V_lr, DT_Eri3_full, 1.0, gh_c); */
+    /* // Low Low */
+    /* auto lr_low_low = gemm(DT_V_lr, DT_Eri3_lr, 1.0, gh_c); */
+    /* std::cout << "Norm diff for full full = " << */ 
+    /*     correct.subt(algebra::combine(lr_full_full)).norm() << std::endl; */
+    /* std::cout << "Norm diff for full low = " << */ 
+    /*     correct.subt(algebra::combine(lr_full_low)).norm() << std::endl; */
+    /* std::cout << "Norm diff for low full = " << */ 
+    /*     correct.subt(algebra::combine(lr_low_full)).norm() << std::endl; */
+    /* std::cout << "Norm diff for low low = " << */ 
+    /*     correct.subt(algebra::combine(lr_low_low)).norm() << std::endl; */
 
-    std::cout << "\nRank of c = " << lr_low_low.rank() << std::endl;
-    auto lff = clone(lr_low_low);
-    gemm(lff, DT_V_full, DT_Eri3_full, 1.0, gh_c);
-    std::cout << "Norm diff for low full full = " << 
-        correct.subt(algebra::combine(lff)).norm() << std::endl;
+    /* std::cout << "\nTesting gemm\n"; */
+    /* correct.gemm(lr_V, lr_Eri3, 1.0, gh_c); */
+    /* // Full Full Full */
+    /* auto fff = clone(lr_full_full); */
+    /* gemm(fff, DT_V_full, DT_Eri3_full, 1.0, gh_c); */
+    /* std::cout << "Norm diff for full full full = " << */ 
+    /*     correct.subt(algebra::combine(fff)).norm() << std::endl; */
 
-    auto lfl = clone(lr_low_low);
-    gemm(lfl, DT_V_full, DT_Eri3_lr, 1.0, gh_c);
-    std::cout << "Norm diff for low full low = " << 
-        correct.subt(algebra::combine(lfl)).norm() << std::endl;
+    /* // Full Full Low */
+    /* auto ffl = clone(lr_full_full); */
+    /* gemm(ffl, DT_V_full, DT_Eri3_lr, 1.0, gh_c); */
+    /* std::cout << "Norm diff for full full low = " << */ 
+    /*     correct.subt(algebra::combine(ffl)).norm() << std::endl; */
 
-    auto llf = clone(lr_low_low);
-    gemm(llf, DT_V_lr, DT_Eri3_full, 1.0, gh_c);
-    std::cout << "Norm diff for low low full = " << 
-        correct.subt(algebra::combine(llf)).norm() << std::endl;
+    /* // Full Low Full */
+    /* auto flf = clone(lr_full_full); */
+    /* gemm(flf, DT_V_lr, DT_Eri3_full, 1.0, gh_c); */
+    /* std::cout << "Norm diff for full low full = " << */ 
+    /*     correct.subt(algebra::combine(flf)).norm() << std::endl; */
 
-    auto lll = clone(lr_low_low);
-    gemm(lll, DT_V_lr, DT_Eri3_lr, 1.0, gh_c);
-    std::cout << "Norm diff for low low low = " << 
-        correct.subt(algebra::combine(lll)).norm() << std::endl;
+    /* // Full Low Low */
+    /* auto fll = clone(lr_full_full); */
+    /* gemm(fll, DT_V_lr, DT_Eri3_lr, 1.0, gh_c); */
+    /* std::cout << "Norm diff for full low low = " << */ 
+    /*     correct.subt(algebra::combine(fll)).norm() << std::endl; */
+
+    /* std::cout << "\nRank of c = " << lr_low_low.rank() << std::endl; */
+    /* auto lff = clone(lr_low_low); */
+    /* gemm(lff, DT_V_full, DT_Eri3_full, 1.0, gh_c); */
+    /* std::cout << "Norm diff for low full full = " << */ 
+    /*     correct.subt(algebra::combine(lff)).norm() << std::endl; */
+
+    /* auto lfl = clone(lr_low_low); */
+    /* gemm(lfl, DT_V_full, DT_Eri3_lr, 1.0, gh_c); */
+    /* std::cout << "Norm diff for low full low = " << */ 
+    /*     correct.subt(algebra::combine(lfl)).norm() << std::endl; */
+
+    /* auto llf = clone(lr_low_low); */
+    /* gemm(llf, DT_V_lr, DT_Eri3_full, 1.0, gh_c); */
+    /* std::cout << "Norm diff for low low full = " << */ 
+    /*     correct.subt(algebra::combine(llf)).norm() << std::endl; */
+
+    /* auto lll = clone(lr_low_low); */
+    /* gemm(lll, DT_V_lr, DT_Eri3_lr, 1.0, gh_c); */
+    /* std::cout << "Norm diff for low low low = " << */ 
+    /*     correct.subt(algebra::combine(lll)).norm() << std::endl; */
 
     /* std::vector<decltype(rank_step)> ranks; */
     /* for (auto i = 1ul; i < max_rank; i += rank_step) { */

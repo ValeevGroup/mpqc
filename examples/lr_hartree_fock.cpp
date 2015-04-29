@@ -215,13 +215,42 @@ int main(int argc, char *argv[]) {
 
     /* // Compute Hcore */
     utility::print_par(world, "Computing Hcore\n");
+
+    auto T_TA = TA::to_new_tile_type(T, to_ta);
+    auto V_TA = TA::to_new_tile_type(V, to_ta);
+    decltype(V_TA) H_TA;
+    H_TA("i,j") = T_TA("i,j") + V_TA("i,j");
+    world.gop.fence();
+    /* utility::print_size_info(H, "Hcore"); */
+
+#if 1
+    // Super werid race condition
     decltype(V) H;
     H("i,j") = T("i,j") + V("i,j");
     world.gop.fence();
-    utility::print_size_info(H, "Hcore");
-    auto H_TA = TA::to_new_tile_type(H, to_ta);
-    std::cout << "Decomp H \n" << H << std::endl;
-    std::cout << "\nTA H\n" << H_TA << std::endl;
+    std::cout << "\nH ranges" << std::endl;
+    for(auto fut : H){
+        std::cout << fut.get().range() << std::endl;
+    }
+    std::cout << "\nH_TA ranges" << std::endl;
+    for(auto fut : H_TA){
+        std::cout << fut.get().range() << std::endl;
+    }
+    auto H_race = TA::to_new_tile_type(H,to_ta);
+    std::cout << "\nH_race ranges" << std::endl;
+    for(auto fut : H_race){
+        std::cout << fut.get().range() << std::endl;
+    }
+    std::cout << "H_TA " << H_TA << "\n" << std::endl;
+    std::cout << "H_race " << H_race << "\n" << std::endl;
+
+    // If ranges bad will fail here.
+    decltype(H_TA) diff;
+    diff("i,j") = H_race("i,j") - H_TA("i,j");
+    double norm_diff = diff("i,j").norm();
+    std::cout << "Diff norm = " << norm_diff << std::endl;
+    world.gop.fence();
+#endif
 
     /* // Compute intial density */
     utility::print_par(world, "\nComputing Density\n");

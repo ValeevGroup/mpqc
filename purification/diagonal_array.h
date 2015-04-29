@@ -3,14 +3,38 @@
 #define TCC_PUREIFICATION_DIAGONALARRAY_H
 
 #include "../include/tiledarray.h"
+#include "../tensor/tcc_tile.h"
+#include "../tensor/decomposed_tensor.h"
 
 namespace tcc {
 namespace pure {
 
+template <typename T>
+void make_diagonal_tile(TiledArray::Tensor<T> &tile, T val) {
+    auto const &extent = tile.range().size();
+    auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
+    for (auto i = 0ul; i < extent[0]; ++i) {
+        map(i, i) = val;
+    }
+}
+
+template <typename T>
+void make_diagonal_tile(tensor::Tile<tensor::DecomposedTensor<T>> &tile,
+                        T val) {
+    assert(tile.tile().ndecomp() == 1);
+    auto &tensor = tile.tile().tensor(0);
+    auto const &extent = tensor.range().size();
+    auto map = TiledArray::eigen_map(tensor, extent[0], extent[1]);
+    for (auto i = 0ul; i < extent[0]; ++i) {
+        map(i, i) = val;
+    }
+}
+
+
 template <typename T, unsigned int N, typename Tile>
 TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
-    TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> const &model,
-    double val) {
+      TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> const &model,
+      double val) {
 
     using Array = TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy>;
 
@@ -38,25 +62,16 @@ TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
         const auto ord = *it;
 
         auto idx = trange.tiles().idx(ord);
-        auto diagonal_tile = std::all_of(
-            idx.begin(), idx.end(), [&](typename Array::size_type const &x) {
-                return x == idx.front();
-            });
+        auto diagonal_tile
+              = std::all_of(idx.begin(), idx.end(),
+                            [&](typename Array::size_type const &x) {
+                  return x == idx.front();
+              });
 
         using TileType = typename Array::value_type;
         if (diagonal_tile && !diag.is_zero(ord)) {
-            auto tile = TileType{trange.make_tile_range(ord)};
-            auto const &extent = tile.range().size();
-            auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
-            for (auto i = 0ul; i < extent[0]; ++i) {
-                for (auto j = 0ul; j < extent[1]; ++j) {
-                    if (i != j) {
-                        map(i, j) = 0;
-                    } else {
-                        map(i, i) = val;
-                    }
-                }
-            }
+            auto tile = TileType(trange.make_tile_range(ord), 0.0);
+            make_diagonal_tile(tile, val);
             diag.set(ord, std::move(tile));
         }
     }
@@ -66,8 +81,8 @@ TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
 
 template <typename T, unsigned int N, typename Tile>
 TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> create_diagonal_matrix(
-    TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> const &model,
-    double val) {
+      TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> const &model,
+      double val) {
 
     using Array = TiledArray::Array<T, N, Tile, TiledArray::DensePolicy>;
 

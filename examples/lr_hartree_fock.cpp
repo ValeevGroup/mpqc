@@ -42,9 +42,9 @@
 using namespace tcc;
 namespace ints = integrals;
 
-void
-main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-                    std::ostream &os) {
+void main_print_clusters(
+      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+      std::ostream &os) {
     std::vector<std::vector<molecule::Atom>> clusters;
     auto total_atoms = 0ul;
     for (auto const &cluster : bs) {
@@ -123,8 +123,8 @@ int main(int argc, char *argv[]) {
                        TiledArray::SparseShape<float>::threshold(), "\n");
 
     auto mol = molecule::read_xyz(mol_file);
-    /* auto charge = 0; */
-    /* auto occupation = mol.occupation(charge); */
+    auto charge = 0;
+    auto occupation = mol.occupation(charge);
     auto repulsion_energy = mol.nuclear_repulsion();
 
     utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy,
@@ -192,33 +192,59 @@ int main(int argc, char *argv[]) {
     auto S = BlockSparseIntegrals(world, overlap_pool, bs_basis_array,
                                   convert_2d(low_rank_threshold));
 
+    auto to_ta = [](tensor::Tile<tensor::DecomposedTensor<double>> const &t) {
+        auto tensor = tensor::algebra::combine(t.tile());
+        auto range = t.range();
+        return TA::Tensor<double>(range, tensor.data());
+    };
+    auto S_TA = TA::to_new_tile_type(S, to_ta);
+
     // Invert overlap
     utility::print_par(world, "\nComputing overlap inverse\n");
+    auto S_inv_sqrt = pure::inverse_sqrt(S_TA);
 
     // Compute T
     auto kinetic_pool = ints::make_pool(ints::make_1body("kinetic", basis));
-    auto T = BlockSparseIntegrals(world, kinetic_pool,
-                                  bs_basis_array,
+    auto T = BlockSparseIntegrals(world, kinetic_pool, bs_basis_array,
                                   convert_2d(low_rank_threshold));
 
     /* // Compute V */
     auto nuclear_pool = ints::make_pool(ints::make_1body("nuclear", basis));
-    auto V = BlockSparseIntegrals(world, nuclear_pool,
-                                  bs_basis_array,
+    auto V = BlockSparseIntegrals(world, nuclear_pool, bs_basis_array,
                                   convert_2d(low_rank_threshold));
 
     /* // Compute Hcore */
     utility::print_par(world, "Computing Hcore\n");
     decltype(V) H;
     H("i,j") = T("i,j") + V("i,j");
+    world.gop.fence();
     utility::print_size_info(H, "Hcore");
+    auto H_TA = TA::to_new_tile_type(H, to_ta);
+    std::cout << "Decomp H \n" << H << std::endl;
+    std::cout << "\nTA H\n" << H_TA << std::endl;
 
     /* // Compute intial density */
-    /* utility::print_par(world, "\nComputing Density\n"); */
-    /* auto purifier =
-     * pure::make_orthogonal_tr_reset_pure(overlap_inv_sqrt); */
-    /* auto D = purifier(H, occupation); */
-    /* utility::print_size_info(D, "D initial"); */
+    utility::print_par(world, "\nComputing Density\n");
+    auto purifier = pure::make_orthogonal_tr_reset_pure(S_inv_sqrt);
+    auto D_TA = purifier(H_TA, occupation);
+    /* utility::print_size_info(D_TA, "D initial"); */
+
+    /* auto to_decomp = [=](TA::Tensor<double> const &t) { */
+    /*     auto range = t.range(); */
+
+    /*     auto const &extent = range.size(); */
+    /*     const auto i = extent[0]; */
+    /*     const auto j = extent[1]; */
+    /*     auto local_range = TA::Range{i, j}; */
+
+    /*     auto tensor = TA::Tensor<double>(local_range, t.data()); */
+    /*     auto dense = tensor::DecomposedTensor<double>(low_rank_threshold, */
+    /*                                                   std::move(tensor)); */
+
+    /*     return tensor::Tile<tensor::DecomposedTensor<double>>(range, */
+    /*                                                           std::move(dense)); */
+    /* }; */
+    /* auto D = TA::to_new_tile_type(D_TA, to_decomp); */
 
     /* // Begin Two electron integrals section. */
     /* auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));

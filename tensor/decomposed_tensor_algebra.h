@@ -11,6 +11,7 @@
 #include <memory>
 #include <limits>
 #include <chrono>
+#include <numeric>
 
 extern "C" void
 sgesdd_(const char *jobz, integer *m, integer *n, real4 *a, integer *lda,

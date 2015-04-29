@@ -18,10 +18,11 @@ template <typename T>
 DecomposedTensor<T>
 permute(DecomposedTensor<T> const &t, TA::Permutation const &p) {
     assert(!t.empty());
-    if(t.ndecomp() == 1){
+    if (t.ndecomp() == 1) {
         return DecomposedTensor<T>(t.cut(), t.tensor(0).permute(p));
     } else {
-        return DecomposedTensor<T>(t.cut(), t.tensor(0), t.tensor(1).permute(p));
+        return DecomposedTensor<T>(t.cut(), t.tensor(0),
+                                   t.tensor(1).permute(p));
     }
 }
 

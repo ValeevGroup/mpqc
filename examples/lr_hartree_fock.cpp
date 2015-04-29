@@ -42,210 +42,300 @@
 using namespace tcc;
 namespace ints = integrals;
 
-template <typename Pool, typename Basis, unsigned long DIM, typename Fn>
-TiledArray::Array<double, DIM, typename Fn::TileType, TiledArray::SparsePolicy>
-time_and_print_block_sparse(madness::World &world, Pool &&pool,
-                            std::array<Basis, DIM> bs, Fn fn,
-                            std::string name) {
-    utility::print_par(world, name, "\n");
-    auto int_timer = tcc_time::make_timer([=, &world]() {
-        return integrals::BlockSparseIntegrals(world, pool, bs, fn);
-    });
-    auto result = int_timer.apply();
-    utility::print_par(world, name, " time = ", int_timer.time(), "\n");
-    utility::print_size_info(result, name);
-    return result;
+void
+main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+                    std::ostream &os) {
+    std::vector<std::vector<molecule::Atom>> clusters;
+    auto total_atoms = 0ul;
+    for (auto const &cluster : bs) {
+        std::vector<molecule::Atom> temp;
+        for (auto atom : molecule::collapse_to_atoms(*cluster)) {
+            temp.push_back(std::move(atom));
+            ++total_atoms;
+        }
+        clusters.push_back(std::move(temp));
+    }
+
+    os << total_atoms << std::endl;
+    os << "Whole molecule" << std::endl;
+
+    for (auto const &cluster : clusters) {
+        for (auto const &atom : cluster) {
+            auto center = 0.52917721092 * atom.center();
+            os << atom.charge() << " " << center[0] << " " << center[1] << " "
+               << center[2] << std::endl;
+        }
+    }
+    os << std::endl;
+    auto counter = 0ul;
+    for (auto const &cluster : clusters) {
+        os << cluster.size() << std::endl;
+        os << "Cluster " << counter++ << std::endl;
+        for (auto const &atom : cluster) {
+            auto center = 0.52917721092 * atom.center();
+            os << atom.charge() << " " << center[0] << " " << center[1] << " "
+               << center[2] << std::endl;
+        }
+        os << std::endl;
+    }
 }
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
-    std::string mol_file = "";
-    std::string basis_name = "";
-    std::string df_basis_name = "";
-    int bs_nclusters = 0;
-    int dfbs_nclusters = 0;
-    double threshold = 1e-11;
-    double low_rank_threshold = 1e-7;
-    if (argc >= 6) {
-        mol_file = argv[1];
-        basis_name = argv[2];
-        df_basis_name = argv[3];
-        bs_nclusters = std::stoi(argv[4]);
-        dfbs_nclusters = std::stoi(argv[5]);
-    } else {
-        std::cout << "input is $./program mol_file basis_file df_basis_file "
-                     "nclusters \n";
+
+    std::string mol_file = (argc >= 2) ? argv[1] : "";
+    int bs_nclusters = (argc >= 3) ? std::stoi(argv[2]) : 0;
+    int dfbs_nclusters = (argc >= 4) ? std::stoi(argv[3]) : 0;
+
+    if (mol_file.empty() || 0 == bs_nclusters || 0 == dfbs_nclusters) {
+        std::cout << "input is $./program mol_file "
+                     "bs_cluster dfbs_clusters "
+                     "basis_set(cc-pvdz) df_basis_set(cc-pvdz-ri) "
+                     "sparse_threshold(1e-11) "
+                     "low_rank_threshhold(1e-7) print_cluster_xyz(true)\n";
         return 0;
     }
-    if (argc == 7) {
-        threshold = std::stod(argv[6]);
+
+    std::string basis_name = (argc >= 5) ? argv[4] : "cc-pvdz";
+    std::string df_basis_name = (argc >= 6) ? argv[5] : "cc-pvdz-ri";
+
+    auto threshold = (argc >= 7) ? std::stod(argv[6]) : 1e-11;
+    auto low_rank_threshold = (argc >= 8) ? std::stod(argv[7]) : 1e-7;
+    bool print_clusters = (argc >= 9) ? std::stod(argv[8]) : true;
+
+    if (world.rank() == 0) {
+        std::cout << "Mol file is " << mol_file << std::endl;
+        std::cout << "basis is " << basis_name << std::endl;
+        std::cout << "df basis is " << df_basis_name << std::endl;
+        std::cout << "Using " << bs_nclusters << " bs clusters" << std::endl;
+        std::cout << "Using " << dfbs_nclusters << " dfbs clusters"
+                  << std::endl;
+        std::cout << "low rank threshhold is " << low_rank_threshold
+                  << std::endl;
+        if (print_clusters) {
+            std::cout << "Printing clusters to clusters_bs.xyz and "
+                         "cluster_dfbs.xyz." << std::endl;
+        }
     }
+
     TiledArray::SparseShape<float>::threshold(threshold);
     utility::print_par(world, "Sparse threshold is ",
                        TiledArray::SparseShape<float>::threshold(), "\n");
 
     auto mol = molecule::read_xyz(mol_file);
-    auto charge = 0;
-    auto occupation = mol.occupation(charge);
+    /* auto charge = 0; */
+    /* auto occupation = mol.occupation(charge); */
     auto repulsion_energy = mol.nuclear_repulsion();
 
-    utility::print_par(world, "Computing ", mol.nelements(), " elements with ",
-                       bs_nclusters, " clusters. Nuclear repulsion energy = ",
-                       repulsion_energy, "\n");
+    utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy,
+                       "\n");
 
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
     auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
 
-    std::streambuf* cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
-    std::ofstream fout("/dev/null");
-    std::cout.rdbuf(fout.rdbuf());
+    if (world.rank() == 0) {
+        if (print_clusters) {
+            std::cout << "Printing clusters\n";
+            std::ofstream bs_cluster_file("clusters_bs.xyz");
+            main_print_clusters(bs_clusters, bs_cluster_file);
+            bs_cluster_file.close();
+            std::ofstream dfbs_cluster_file("clusters_dfbs.xyz");
+            main_print_clusters(dfbs_clusters, dfbs_cluster_file);
+            dfbs_cluster_file.close();
+        }
+    }
+    world.gop.fence();
+
     basis::BasisSet bs{basis_name};
     basis::BasisSet df_bs{df_basis_name};
-    std::cout.rdbuf(cout_sbuf); 
 
+    std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+    std::ofstream fout("/dev/null");
+    std::cout.rdbuf(fout.rdbuf());
     basis::Basis basis{bs.create_basis(bs_clusters)};
     basis::Basis df_basis{df_bs.create_basis(dfbs_clusters)};
+    std::cout.rdbuf(cout_sbuf);
 
 
     libint2::init();
 
+    // Make a btas to decomposed tensor function
+    struct convert_2d {
+        double cut_;
+        convert_2d(double thresh) : cut_{thresh} {}
+        using TileType = tensor::Tile<tensor::DecomposedTensor<double>>;
+        TileType operator()(tensor::ShallowTensor<2> const &bt) {
+            auto range = bt.range();
+
+            auto const &extent = range.size();
+            const auto i = extent[0];
+            const auto j = extent[1];
+            auto local_range = TA::Range{i, j};
+
+            auto tensor = TA::Tensor<double>(local_range);
+            const auto b_data = bt.tensor().data();
+            const auto size = bt.tensor().size();
+            std::copy(b_data, b_data + size, tensor.data());
+
+            auto dense
+                  = tensor::DecomposedTensor<double>(cut_, std::move(tensor));
+
+            return tensor::Tile<tensor::DecomposedTensor<double>>(
+                  range, std::move(dense));
+        }
+    };
+
+    auto bs_basis_array = utility::make_array(basis, basis);
+
     // Compute overlap.
     auto overlap_pool = ints::make_pool(ints::make_1body("overlap", basis));
-    auto S = time_and_print_block_sparse(
-        world, overlap_pool, utility::make_array(basis, basis),
-        integrals::compute_functors::BtasToTaTensor{}, "Overlap");
+    auto S = BlockSparseIntegrals(world, overlap_pool, bs_basis_array,
+                                  convert_2d(low_rank_threshold));
 
     // Invert overlap
     utility::print_par(world, "\nComputing overlap inverse\n");
-    auto overlap_inv_sqrt = pure::inverse_sqrt(S);
-    utility::print_size_info(S, "Overlap inverse sqrt");
 
     // Compute T
     auto kinetic_pool = ints::make_pool(ints::make_1body("kinetic", basis));
-    utility::print_par(world, "\n");
-    auto T = time_and_print_block_sparse(
-        world, kinetic_pool, utility::make_array(basis, basis),
-        integrals::compute_functors::BtasToTaTensor{}, "Kinetic");
+    auto T = BlockSparseIntegrals(world, kinetic_pool,
+                                  bs_basis_array,
+                                  convert_2d(low_rank_threshold));
 
-    // Compute V
+    /* // Compute V */
     auto nuclear_pool = ints::make_pool(ints::make_1body("nuclear", basis));
-    utility::print_par(world, "\n");
-    auto V = time_and_print_block_sparse(
-        world, nuclear_pool, utility::make_array(basis, basis),
-        integrals::compute_functors::BtasToTaTensor{}, "Nuclear");
+    auto V = BlockSparseIntegrals(world, nuclear_pool,
+                                  bs_basis_array,
+                                  convert_2d(low_rank_threshold));
 
-    // Compute Hcore
-    utility::print_par(world, "\nComputing Hcore\n");
+    /* // Compute Hcore */
+    utility::print_par(world, "Computing Hcore\n");
     decltype(V) H;
     H("i,j") = T("i,j") + V("i,j");
     utility::print_size_info(H, "Hcore");
 
-    // Compute intial density
-    utility::print_par(world, "\nComputing Density\n");
-    auto purifier = pure::make_orthogonal_tr_reset_pure(overlap_inv_sqrt);
-    auto D = purifier(H, occupation);
-    utility::print_size_info(D, "D initial");
+    /* // Compute intial density */
+    /* utility::print_par(world, "\nComputing Density\n"); */
+    /* auto purifier =
+     * pure::make_orthogonal_tr_reset_pure(overlap_inv_sqrt); */
+    /* auto D = purifier(H, occupation); */
+    /* utility::print_size_info(D, "D initial"); */
 
-    // Begin Two electron integrals section.
-    auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
-
-    // Computing Eri2
-    utility::print_par(world, "\n");
-    auto eri2 = time_and_print_block_sparse(
-        world, eri_pool, utility::make_array(df_basis, df_basis),
-        integrals::compute_functors::BtasToTaTensor{}, "Eri2 Integrals");
-
-    // Computing the sqrt inverse of Eri2
-    utility::print_par(world, "\nComputing eri2 sqrt Inverse\n");
-    auto inv_timer
-        = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2); });
-    auto eri2_sqrt_inv = inv_timer.apply();
-    utility::print_par(world, "Eri2 inverse computation time = ",
-                       inv_timer.time(), "\n");
-    utility::print_size_info(eri2_sqrt_inv, "Eri2 sqrt inverse");
-
-    /*
-     * Start using Low rank arrays
+    /* // Begin Two electron integrals section. */
+    /* auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
      */
-    // Compute center integrals
-    utility::print_par(world, "\n");
-    auto Xab = time_and_print_block_sparse(
-        world, eri_pool, utility::make_array(df_basis, basis, basis),
-        integrals::compute_functors::BtasToTaTensor{}, "Eri3 integrals");
+
+    /* // Computing Eri2 */
+    /* utility::print_par(world, "\n"); */
+    /* auto eri2 = time_and_print_block_sparse( */
+    /*       world, eri_pool, utility::make_array(df_basis, df_basis), */
+    /*       integrals::compute_functors::BtasToTaTensor{}, "Eri2
+     * Integrals");
+     */
+
+    /* // Computing the sqrt inverse of Eri2 */
+    /* utility::print_par(world, "\nComputing eri2 sqrt Inverse\n"); */
+    /* auto inv_timer */
+    /*       = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2);
+     * });
+     */
+    /* auto eri2_sqrt_inv = inv_timer.apply(); */
+    /* utility::print_par(world, "Eri2 inverse computation time = ", */
+    /*                    inv_timer.time(), "\n"); */
+    /* utility::print_size_info(eri2_sqrt_inv, "Eri2 sqrt inverse"); */
+
+    /*  * Start using Low rank arrays */
+    /* // Compute center integrals */
+    /* utility::print_par(world, "\n"); */
+    /* auto Xab = time_and_print_block_sparse( */
+    /*       world, eri_pool, utility::make_array(df_basis, basis, basis),
+     */
+    /*       integrals::compute_functors::BtasToTaTensor{}, "Eri3
+     * integrals");
+     */
 
 
-    Xab("X,i,j") = eri2_sqrt_inv("X,P") * Xab("P,i,j");
-    Xab.truncate();
+    /* Xab("X,i,j") = eri2_sqrt_inv("X,P") * Xab("P,i,j"); */
+    /* Xab.truncate(); */
 
-    {
-        auto Xab_lr = TA::to_new_tile_type(
-            Xab, integrals::compute_functors::TaToLowRankTensor<3>{
-                        low_rank_threshold});
-        
-        utility::print_size_info(Xab_lr, "Xab lr");
-    }
+    /* { */
+    /*     auto Xab_lr = TA::to_new_tile_type( */
+    /*           Xab, integrals::compute_functors::TaToLowRankTensor<3>{ */
+    /*                      low_rank_threshold}); */
 
-    decltype(D) J, K, F;
-    J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j");
-    K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j");
-    F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+    /*     utility::print_size_info(Xab_lr, "Xab lr"); */
+    /* } */
 
-    D = purifier(F, occupation);
-    auto energy = D("i,j").dot(F("i,j") + H("i,j"), world).get();
+    /* decltype(D) J, K, F; */
+    /* J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j"); */
+    /* K("i,j") = (Xab("X,i,b") * D("b,a")) * Xab("X,a,j"); */
+    /* F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j"); */
 
-    utility::print_par(world, "\nStarting SCF iterations\n");
-    auto diis = TiledArray::DIIS<decltype(D)>{3, 7};
-    auto iter = 1;
-    decltype(F) Ferror;
-    auto error = 1.0;
-    const auto volume = double(F.trange().elements().volume());
-    while (error >= 1e-12 && iter <= 35) {
-        auto t0 = tcc_time::now();
+    /* D = purifier(F, occupation); */
+    /* auto energy = D("i,j").dot(F("i,j") + H("i,j"), world).get(); */
 
-        J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j");
-        J.truncate();
+    /* utility::print_par(world, "\nStarting SCF iterations\n"); */
+    /* auto diis = TiledArray::DIIS<decltype(D)>{3, 7}; */
+    /* auto iter = 1; */
+    /* decltype(F) Ferror; */
+    /* auto error = 1.0; */
+    /* const auto volume = double(F.trange().elements().volume()); */
+    /* while (error >= 1e-12 && iter <= 35) { */
+    /*     auto t0 = tcc_time::now(); */
 
-        decltype(Xab) X_temp;
-        X_temp("X,a,i") = Xab("X,i,b") * D("b,a");
+    /*     J("i,j") = (Xab("X,a,b") * D("a,b")) * Xab("X,i,j"); */
+    /*     J.truncate(); */
 
-        auto X_temp_lr = TA::to_new_tile_type(
-            X_temp, integrals::compute_functors::TaToLowRankTensor<3>{
-                        low_rank_threshold});
+    /*     decltype(Xab) X_temp; */
+    /*     X_temp("X,a,i") = Xab("X,i,b") * D("b,a"); */
 
-        utility::print_size_info(X_temp_lr, "X_temp lr");
-        utility::print_par(world, "\n");
+    /*     auto X_temp_lr = TA::to_new_tile_type( */
+    /*           X_temp, integrals::compute_functors::TaToLowRankTensor<3>{
+     */
+    /*                         low_rank_threshold}); */
 
-        K("i,j") = X_temp("X,a,i") * Xab("X,a,j");
+    /*     utility::print_size_info(X_temp_lr, "X_temp lr"); */
+    /*     utility::print_par(world, "\n"); */
 
-        F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
-        Ferror("i,j") = F("i,k") * D("k,l") * S("l,j")
-                        - S("i,k") * D("k,l") * F("l,j");
-        Ferror.truncate();
-        error = Ferror("i,j").norm().get() / volume;
-        diis.extrapolate(F, Ferror);
+    /*     K("i,j") = X_temp("X,a,i") * Xab("X,a,j"); */
 
-        D = purifier(F, occupation);
-        energy = D("i,j").dot(F("i,j") + H("i,j"), world).get();
-        world.gop.fence();
+    /*     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j"); */
+    /*     Ferror("i,j") = F("i,k") * D("k,l") * S("l,j") */
+    /*                     - S("i,k") * D("k,l") * F("l,j"); */
+    /*     Ferror.truncate(); */
+    /*     error = Ferror("i,j").norm().get() / volume; */
+    /*     diis.extrapolate(F, Ferror); */
 
-        auto t1 = tcc_time::now();
+    /*     D = purifier(F, occupation); */
+    /*     energy = D("i,j").dot(F("i,j") + H("i,j"), world).get(); */
+    /*     world.gop.fence(); */
 
-        auto time = tcc_time::duration_in_s(t0, t1);
-        /* auto ktime = tcc_time::duration_in_s(k0, k1); */
+    /*     auto t1 = tcc_time::now(); */
 
-        /* utility::print_par(world, "Iteration: ", iter++, " has energy ", */
-        /*                    std::setprecision(11), energy, " with error ",
-         * error, */
-        /*                    " in ", time, " s with K time ", ktime, "\n"); */
-        utility::print_par(world, "Iteration: ", iter++, " has energy ",
-                           std::setprecision(11), energy, " with error ", error,
-                           " in ", time, " s \n");
-    }
+    /*     auto time = tcc_time::duration_in_s(t0, t1); */
+    /*     /1* auto ktime = tcc_time::duration_in_s(k0, k1); *1/ */
 
-    utility::print_par(world, "Final energy = ", std::setprecision(11),
-                       energy + repulsion_energy, "\n");
+    /*     /1* utility::print_par(world, "Iteration: ", iter++, " has energy
+     * ",
+     * *1/ */
+    /*     /1*                    std::setprecision(11), energy, " with
+     * error ",
+     */
+    /*      * error, *1/ */
+    /*     /1*                    " in ", time, " s with K time ", ktime,
+     * "\n");
+     * *1/ */
+    /*     utility::print_par(world, "Iteration: ", iter++, " has energy ",
+     */
+    /*                        std::setprecision(11), energy, " with error ",
+     * error, */
+    /*                        " in ", time, " s \n"); */
+    /* } */
 
-    world.gop.fence();
+    /* utility::print_par(world, "Final energy = ", std::setprecision(11),
+     */
+    /*                    energy + repulsion_energy, "\n"); */
+
+    /* world.gop.fence(); */
     libint2::cleanup();
     madness::finalize();
     return 0;

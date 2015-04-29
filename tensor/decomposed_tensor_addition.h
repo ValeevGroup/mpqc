@@ -48,6 +48,11 @@ add(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r) {
             std::copy(rr_data, rr_data + old_r_vol, data + old_l_vol);
             return DecomposedTensor<T>(l.cut(), std::move(L), std::move(R));
         }
+    } else if (l.ndecomp() == 1){
+        if(r.ndecomp() == 1){
+            auto out = l.tensor(0).add(r.tensor(0));
+            return DecomposedTensor<T>(l.cut(), std::move(out));
+        }
     }
     assert(false);
     return DecomposedTensor<T>(l.cut());

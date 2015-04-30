@@ -47,7 +47,6 @@ using namespace std;
 using namespace sc;
 
 #include <chemistry/qc/mbptr12/pt2r12_utils.h>
-#include "../basis/gaussbas.h"
 
 static ClassDesc PT2R12_cd(typeid(PT2R12),"PT2R12",
                            1,"public Wavefunction",
@@ -214,7 +213,7 @@ PT2R12::obsolete() {
   Wavefunction::obsolete();
 #if defined(MPQC_NEW_FEATURES)
   shutdown_mpqc3();
-  bootup_mpqc3();
+  //bootup_mpqc3();
 #endif
 }
 
@@ -751,8 +750,8 @@ double PT2R12::energy_PT2R12_projector2() {
   }
 
   void PT2R12::shutdown_mpqc3() {
+    cabs_singles_engine_ = 0;
     srr12intrmds_ = 0;
-    CABS_Single_ = 0;
     madness::World::get_default().gop.fence();
   }
 

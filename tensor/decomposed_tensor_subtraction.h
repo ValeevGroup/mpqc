@@ -13,7 +13,11 @@ namespace tensor {
 template <typename T>
 DecomposedTensor<T>
 subt(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r) {
-    assert(false);
+    if (l.ndecomp() == 1) {
+        if (r.ndecomp() == 1) {
+            return DecomposedTensor<T>(l.cut(), l.tensor(0).subt(r.tensor(0)));
+        }
+    }
 }
 
 template <typename T>
@@ -21,7 +25,7 @@ DecomposedTensor<T>
 subt(DecomposedTensor<T> const &l, TA::Tensor<double> const &r) {
 
     auto l_tensor = algebra::combine(l);
-    
+
     // Get around Justus' range checks
     decltype(l_tensor) out_t(l_tensor.range());
     auto size = l_tensor.range().volume();
@@ -65,7 +69,12 @@ subt(DecomposedTensor<T> const &l, const T factor, TA::Permutation const &p) {
 template <typename T>
 DecomposedTensor<T> &
 subt_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r) {
-    assert(false);
+    if (l.ndecomp() == 1) {
+        if (r.ndecomp() == 1) {
+            l.tensor(0).subt_to(r.tensor(0));
+        }
+    }
+    return l;
 }
 
 template <typename T>

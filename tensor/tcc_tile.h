@@ -105,6 +105,21 @@ class TileModel {
     }
 
     /*
+     * Scale
+     */
+    template <typename... Args>
+    auto scale_(Args &&... args) const
+          -> decltype(scale(tile_, std::forward<Args>(args)...)) {
+        return scale(tile_, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    T& scale_to_(Args &&... args){
+        scale_to(tile_, std::forward<Args>(args)...);
+        return tile_;
+    }
+
+    /*
      * Gemm
      */
     template <typename... Args>
@@ -335,6 +350,19 @@ class Tile {
     Tile neg(Args &&... args) const {
         TA::Range range = create_new_range(range_, args...);
         return Tile{std::move(range), tile_->neg_(std::forward<Args>(args)...)};
+    };
+
+    template <typename... Args>
+    Tile scale(Args &&... args) const {
+        TA::Range range = create_new_range(range_, args...);
+        return Tile{std::move(range),
+                    tile_->scale_(std::forward<Args>(args)...)};
+    };
+
+    template <typename... Args>
+    Tile &scale_to(Args &&... args) {
+        tile_->scale_to_(std::forward<Args>(args)...);
+        return *this;
     };
 
     Tile &neg_to() {

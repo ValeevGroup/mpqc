@@ -37,6 +37,68 @@ DecomposedTensor<T> clone(DecomposedTensor<T> const &t) {
 }
 
 template <typename T>
+DecomposedTensor<T> scale(DecomposedTensor<T> const &t, T factor) {
+    auto left = t.tensor(0).scale(factor);
+    auto right = TA::Tensor<T>();
+    if (t.ndecomp() == 2) {
+        right = t.tensor(1).clone();
+        return DecomposedTensor<T>(t.cut(), std::move(left), std::move(right));
+    }
+
+    return DecomposedTensor<T>(t.cut(), std::move(left));
+}
+
+template <typename T>
+DecomposedTensor<T>
+scale(DecomposedTensor<T> const &t, T factor, TA::Permutation const &p) {
+    assert(false);
+}
+
+template <typename T>
+DecomposedTensor<T>
+neg(DecomposedTensor<T> const &t) {
+    auto left = t.tensor(0).neg();
+    auto right = TA::Tensor<T>();
+    if (t.ndecomp() == 2) {
+        right = t.tensor(1).clone();
+        return DecomposedTensor<T>(t.cut(), std::move(left), std::move(right));
+    }
+
+    return DecomposedTensor<T>(t.cut(), std::move(left));
+}
+
+template <typename T>
+DecomposedTensor<T>
+neg(DecomposedTensor<T> const &t, TA::Permutation const &p) {
+    assert(false);
+}
+
+template <typename T>
+DecomposedTensor<T>&
+neg_to(DecomposedTensor<T> const &t, TA::Permutation const &p) {
+    assert(false);
+}
+
+template <typename T>
+DecomposedTensor<T>&
+neg_to(DecomposedTensor<T> const &t) {
+    assert(false);
+}
+
+template <typename T>
+DecomposedTensor<T>&
+scale_to(DecomposedTensor<T> &t, T factor) {
+    t.tensor(0).scale(factor);
+    return t;
+}
+
+template <typename T>
+DecomposedTensor<T>&
+scale_to(DecomposedTensor<T> &t, T factor, TA::Permutation const &p) {
+    assert(false);
+}
+
+template <typename T>
 DecomposedTensor<T> compress(DecomposedTensor<T> const &t, double cut) {
     assert(false);
 }

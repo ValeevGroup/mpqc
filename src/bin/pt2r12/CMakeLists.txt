@@ -17,9 +17,6 @@ target_link_libraries(
     chemistry
     math
     util
-    #chemistry
-    #math
-    #util
     extern_moinfo
     ${LINK_LIBRARIES}
 )

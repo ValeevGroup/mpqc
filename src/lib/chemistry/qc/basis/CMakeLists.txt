@@ -59,7 +59,7 @@ IF(MPQC_NEW_FEATURES)
   set_property(SOURCE integral_scaling_test.cpp PROPERTY COMPILE_DEFINITIONS
         SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(integral_scaling_test integral_scaling_test.cpp $<TARGET_OBJECTS:basis>)
-  target_link_libraries(integral_scaling_test chemistry)
+  target_link_libraries(integral_scaling_test chemistry extern_moinfo)
 ENDIF(MPQC_NEW_FEATURES)
 
 # tests

@@ -351,6 +351,9 @@ int main(int argc, char *argv[]) {
     decltype(F_TA) Ferror;
     auto error = 1.0;
     const auto volume = double(F.trange().elements().volume());
+    decltype(D) D_old;
+    decltype(D) K_old;
+    D_old("i,j") = D("i,j");
     while (error >= 1e-12 && iter <= 35) {
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
@@ -359,8 +362,12 @@ int main(int argc, char *argv[]) {
         auto j1 = tcc_time::now();
 
         auto k0 = tcc_time::now();
-        K("i,j") = W("X,a,j") * (Xab("X,i,b") * D("b,a"));
+        decltype(D) D_diff;
+        D_diff("i,j") = D("i,j") - D_old("i,j");
+        D_diff.truncate();
+        K("i,j") = K("i,j") + W("X,a,j") * (Xab("X,i,b") * D_diff("b,a"));
         auto k1 = tcc_time::now();
+        D_old = D;
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
         F_TA = TA::to_new_tile_type(F, to_ta);
@@ -375,6 +382,15 @@ int main(int argc, char *argv[]) {
         energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
 
         auto t1 = tcc_time::now();
+        if (iter % 5 == 0) {
+            decltype(Xab) Xtemp;
+            Xtemp("X,a,i") = Xab("X,i,b") * D("b,a");
+            utility::print_par(world, "\nPrinting size info for Xtemp, iter ",
+                               iter, "\n");
+            utility::print_size_info(Xtemp, "Xtemp");
+            utility::print_par(world, "\n");
+            world.gop.fence();
+        }
 
         auto time = tcc_time::duration_in_s(t0, t1);
         auto jtime = tcc_time::duration_in_s(j0, j1);

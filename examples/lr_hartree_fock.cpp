@@ -354,8 +354,13 @@ int main(int argc, char *argv[]) {
     while (error >= 1e-12 && iter <= 35) {
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
+        auto j0 = tcc_time::now();
         J("i,j") = W("X,i,j") * (Xab("X,a,b") * D("a,b"));
+        auto j1 = tcc_time::now();
+
+        auto k0 = tcc_time::now();
         K("i,j") = W("X,a,j") * (Xab("X,i,b") * D("b,a"));
+        auto k1 = tcc_time::now();
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
         F_TA = TA::to_new_tile_type(F, to_ta);
@@ -368,14 +373,17 @@ int main(int argc, char *argv[]) {
 
         D_TA = purifier(F_TA, occupation);
         energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
-        world.gop.fence();
 
         auto t1 = tcc_time::now();
 
         auto time = tcc_time::duration_in_s(t0, t1);
+        auto jtime = tcc_time::duration_in_s(j0, j1);
+        auto ktime = tcc_time::duration_in_s(k0, k1);
         utility::print_par(world, "Iteration: ", iter++, " has energy ",
                            std::setprecision(11), energy + repulsion_energy,
                            " with error ", error, " in ", time, " s \n");
+        utility::print_par(world, "\tJ time ", jtime, " s\n\tK time ", ktime,
+                           " s\n");
     }
 
     utility::print_par(world, "Final energy = ", std::setprecision(11),

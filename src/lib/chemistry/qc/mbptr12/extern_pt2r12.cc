@@ -26,7 +26,7 @@
 //
 
 #include <string>
-#include "extern_pt2r12.h"
+#include <chemistry/qc/mbptr12/extern_pt2r12.h>
 #include <chemistry/qc/basis/uncontract.h>
 #include <iostream>
 
@@ -46,22 +46,31 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
     Wavefunction(kv)
 {
   world_ << kv->describedclassvalue("world");
-  world_->set_wfn(this);
+  if (world_ != NULL){
+    world_->set_wfn(this);
+  }
 
   orbs_info_ << kv->describedclassvalue("orbs_info");
   rdm2_ << kv->describedclassvalue("rdm2");
   cabs_name_ = kv->stringvalue("cabs", KeyValValuestring(std::string()));
+  obs_name_ = kv->stringvalue("obs", KeyValValuestring(std::string()));
+  dfbs_name_ = kv->stringvalue("dfbs", KeyValValuestring(std::string()));
   f12exp_str_ = kv->stringvalue("f12exp", KeyValValuestring(std::string()));
   cabs_contraction_ = kv->booleanvalue("cabs_contraction", KeyValValueboolean(true));
-
-  std::string r12_str = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
+  r12_str_ = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
 
 #if defined(MPQC_NEW_FEATURES)
-  std::string mpqc3_str = kv->stringvalue("use_mpqc3", KeyValValuestring(std::string()));
-  std::string singles_str = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()));
-  std::string partition_str = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string()));
+  singles_str_ = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()));
+  partition_str_ = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string()));
+  cabs_singles_name_ = kv->stringvalue("cabs_singles_basis", KeyValValuestring(std::string()));
 #endif
 
+  pt2r12_ = 0;
+
+}
+
+void ExternPT2R12::initialize()
+{
   Ref<OrbitalSpace> orbs = orbs_info_->orbs();
   const std::vector<unsigned int>& fzcpi = orbs_info_->fzcpi();
   const std::vector<unsigned int>& inactpi = orbs_info_->inactpi();
@@ -106,14 +115,16 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
 
   // use its orbitals to initialize Extern_RefWavefunction
   Ref<Integral> intf = this->integral()->clone();
+
   intf->set_basis(basis());
+
   Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world_, basis(), intf,
-                                                            orbs->coefs(), orbs->orbsym(),
-                                                            P1_mo, P1_mo,
-                                                            occpi,
-                                                            fzcpi,
-                                                            fzvpi,
-                                                            holepi);
+          orbs->coefs(), orbs->orbsym(),
+          P1_mo, P1_mo,
+          occpi,
+          fzcpi,
+          fzvpi,
+          holepi);
   if(debug_print_)
   {
     sc::ExEnv::out0() << "debug:print refwfn orbs " << std::endl;
@@ -131,16 +142,33 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
     kva->assign("rdm2", rdm2_.pointer());
     kva->assign("corr_factor", "stg-6g");
     kva->assign("corr_param", f12exp_str_.c_str());
-    if(!r12_str.empty())
-      kva->assign("pt2_correction", r12_str);
+    if(!r12_str_.empty())
+      kva->assign("pt2_correction", r12_str_);
 
 #if defined(MPQC_NEW_FEATURES)
-    if(!singles_str.empty())
-      kva->assign("cabs_singles", singles_str);
-    if(!partition_str.empty())
-      kva->assign("cabs_singles_h0", partition_str);
-    if(!mpqc3_str.empty())
-      kva->assign("use_mpqc3", mpqc3_str);
+    if(!singles_str_.empty())
+      kva->assign("cabs_singles", singles_str_);
+    if(!partition_str_.empty())
+      kva->assign("cabs_singles_h0", partition_str_);
+    if(cabs_singles_name_.empty() == false){
+      Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
+      tmpkv->assign("name", cabs_singles_name_.c_str());
+      tmpkv->assign("puream", "true");
+      tmpkv->assign("molecule", molecule().pointer());
+      Ref<KeyVal> kv = tmpkv;
+      if (cabs_contraction_){
+        Ref<GaussianBasisSet> aux_basis_singles = new GaussianBasisSet(kv);
+        kva->assign("aux_basis_singles", aux_basis_singles.pointer());
+      }
+      else{
+        Ref<GaussianBasisSet> aux_basis_singles = new UncontractedBasisSet(kv);
+        kva->assign("aux_basis_singles", aux_basis_singles.pointer());
+      }
+
+    }
+    else{
+      kva->assign("aux_basis_singles", NULL);
+    }
 #endif
     if (cabs_name_.empty() == false) {
       Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
@@ -166,13 +194,26 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   }
 }
 
+
 ExternPT2R12::~ExternPT2R12() {
   const bool make_sure_class_desc_initialized = (&class_desc_ != 0);
 }
 
+void ExternPT2R12::obsolete(){
+  if (rdm2_){
+    rdm2_->obsolete();
+  }
+  if(pt2r12_){
+    pt2r12_->obsolete();
+  }
+  Wavefunction::obsolete();
+}
+
 void ExternPT2R12::compute()
 {
+  initialize();
   const double value = pt2r12_->value();
+  set_energy(value);
 }
 
 int ExternPT2R12::nelectron()

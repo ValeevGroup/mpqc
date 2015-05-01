@@ -525,6 +525,7 @@ RefWavefunction::init() const
 
 void
 RefWavefunction::obsolete() {
+
   reset();
 }
 
@@ -1178,8 +1179,8 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
                          std::vector<unsigned int> holepi,
                          std::vector<unsigned int> partpi,
                          bool omit_uocc) :
-                         RefWavefunction(world, basis, integral),
-                         omit_uocc_(omit_uocc)
+                         omit_uocc_(omit_uocc),
+                         RefWavefunction(world, basis, integral)
 {
   if (omit_uocc_)
     throw FeatureNotImplemented("omit_uocc=true is not yet implemented",
@@ -1271,6 +1272,13 @@ Extern_RefWavefunction::Extern_RefWavefunction(StateIn& si) : RefWavefunction(si
 }
 
 Extern_RefWavefunction::~Extern_RefWavefunction() {
+}
+
+void Extern_RefWavefunction::obsolete() {
+        //throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
+        //                                            __FILE__, __LINE__);
+  //world()->tfactory()->orbital_registry()->clear();
+  //reset();
 }
 
 void

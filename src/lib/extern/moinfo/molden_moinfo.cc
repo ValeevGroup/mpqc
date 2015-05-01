@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <molden_moinfo.h>
+#include <extern/moinfo/molden_moinfo.h>
 #include <iostream>
 #include <map>
 #include <chemistry/qc/basis/petite.h>

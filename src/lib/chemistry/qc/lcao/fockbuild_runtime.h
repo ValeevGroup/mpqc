@@ -79,6 +79,9 @@ namespace sc {
       const Ref<DensityFittingInfo>& dfinfo() const { return dfinfo_; }
       void dfinfo(const Ref<DensityFittingInfo>& d) { dfinfo_ = d; }
       const Ref<OrbitalSpaceRegistry>& orbital_registry() const { return oreg_; }
+      typedef Registry<std::string, RefSCMatrix, detail::NonsingletonCreationPolicy> FockMatrixRegistry;
+      const Ref<FockMatrixRegistry>& fock_registry() const { return registry_; }
+      const Ref<AOSpaceRegistry>& ao_registry() const { return aoreg_; }
       /**
        * @return prec \f$ \log_2(\epsilon) \f$, where \f$ \epsilon \f$ is the abolute numerical precision of the integrals
        *         requested from the produced operator matrices
@@ -137,7 +140,6 @@ namespace sc {
       RefSymmSCMatrix P_, Po_;
 
       // Registry of known Fock matrices
-      typedef Registry<std::string, RefSCMatrix, detail::NonsingletonCreationPolicy> FockMatrixRegistry;
       Ref<FockMatrixRegistry> registry_;
 
       /// throws if key is not parsable by ParsedOneBodyIntKey

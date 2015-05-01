@@ -69,7 +69,6 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("fock")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
-  use_mpqc3_ = keyval->booleanvalue("use_mpqc3",KeyValValueboolean(true));
 #endif
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
 
@@ -117,29 +116,51 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   // some defaults need to be overridden for R12WavefunctionWorld
   // spinadapted should by default be false
   {
-    Ref<KeyVal> r12world_keyval = keyval;
-    if (keyval->exists("spinadapted") == false) {
-      Ref<AssignedKeyVal> akeyval = new AssignedKeyVal;
-      akeyval->assignboolean("spinadapted", true);
-      r12world_keyval = new AggregateKeyVal(keyval, akeyval);
-    }
-    else //doubly check
+    Ref <KeyVal> r12world_keyval = keyval;
     {
-      bool adapted = keyval->booleanvalue("spinadapted");
-      if(not adapted)
-        throw InputError("spinadapted must be true for spin-free PT2R12 (the default is correct)",
-                         __FILE__, __LINE__, "PT2R12");
+      if (keyval->exists("spinadapted") == false) {
+        Ref <AssignedKeyVal> akeyval = new AssignedKeyVal;
+        akeyval->assignboolean("spinadapted", true);
+        r12world_keyval = new AggregateKeyVal(keyval, akeyval);
+      }
+      else //doubly check
+      {
+        bool adapted = keyval->booleanvalue("spinadapted");
+        if (not adapted)
+          throw InputError("spinadapted must be true for spin-free PT2R12 (the default is correct)",
+                  __FILE__, __LINE__, "PT2R12");
+      }
+      r12world_ = new R12WavefunctionWorld(r12world_keyval, ref);
     }
-    r12world_ = new R12WavefunctionWorld(r12world_keyval, ref);
-  }
-  r12eval_ = new R12IntEval(r12world_);
+    r12eval_ = new R12IntEval(r12world_);
 
-  debug_ = keyval->intvalue("debug", KeyValValueint(0));
-  r12eval_->debug(debug_);
-  // this may update the accuracy of reference_ object
-  this->set_desired_value_accuracy(desired_value_accuracy());
+    debug_ = keyval->intvalue("debug", KeyValValueint(0));
+    r12eval_->debug(debug_);
+    // this may update the accuracy of reference_ object
+    this->set_desired_value_accuracy(desired_value_accuracy());
+
 #if defined(MPQC_NEW_FEATURES)
-  bootup_mpqc3();
+    bootup_mpqc3();
+    Ref<GaussianBasisSet> cabs_singles_basis;
+    cabs_singles_basis << keyval->describedclassvalue("aux_basis_singles");
+    if (cabs_singles_basis.pointer() == NULL ){
+      cabs_singles_engine_ = make_shared <CabsSingles> (srr12intrmds_, false);
+    }
+    else {
+      Ref<AssignedKeyVal> aux_basis_akeyval = new AssignedKeyVal;
+      aux_basis_akeyval->assign("aux_basis", cabs_singles_basis.pointer());
+      Ref<KeyVal> single_r12world_keyval = new AggregateKeyVal(aux_basis_akeyval,  r12world_keyval);
+
+      Ref<R12WavefunctionWorld> single_r12world = new R12WavefunctionWorld(single_r12world_keyval, ref);
+
+      std::shared_ptr< SingleReference_R12Intermediates<double> > single_r12intrmds = make_shared<SingleReference_R12Intermediates<double>>(madness::World::get_default(),
+        single_r12world);
+
+      single_r12intrmds->set_rdm2(this->rdm2_);
+      cabs_singles_engine_ = make_shared <CabsSingles> (single_r12intrmds, true);
+
+    }
+  }
 #endif
 }
 
@@ -177,14 +198,22 @@ void PT2R12::save_data_state(StateOut &s) {
 void
 PT2R12::obsolete() {
   r12eval_->obsolete();
-  rdm1_->obsolete();
-  rdm2_->obsolete();
-  r12world_->world()->obsolete();
-  r12world_->obsolete();
+  if (rdm1_){
+    rdm1_->obsolete();
+  }
+  if (rdm2_){
+    rdm2_->obsolete();
+  }
+  if (r12world_->world()){
+    r12world_->world()->obsolete();
+  }
+  if(r12world_){
+    r12world_->obsolete();
+  }
   Wavefunction::obsolete();
 #if defined(MPQC_NEW_FEATURES)
   shutdown_mpqc3();
-  bootup_mpqc3();
+  //bootup_mpqc3();
 #endif
 }
 
@@ -377,23 +406,23 @@ RefSCMatrix PT2R12::moints() {
 }
 
 RefSCMatrix PT2R12::C() {
-  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
-  RefSCMatrix Cmat = local_matrix_kit->matrix(r12eval_->dim_GG(AlphaBeta),r12eval_->dim_gg(AlphaBeta));
-  SpinMOPairIter OW_iter(r12eval_->GGspace(AnySpinCase1)->rank(), r12eval_->GGspace(AnySpinCase1)->rank(), AlphaBeta );
-  SpinMOPairIter PQ_iter(r12eval_->ggspace(AnySpinCase1)->rank(), r12eval_->ggspace(AnySpinCase1)->rank(), AlphaBeta );
+  Ref <LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  RefSCMatrix Cmat = local_matrix_kit->matrix(r12eval_->dim_GG(AlphaBeta), r12eval_->dim_gg(AlphaBeta));
+  SpinMOPairIter OW_iter(r12eval_->GGspace(AnySpinCase1)->rank(), r12eval_->GGspace(AnySpinCase1)->rank(), AlphaBeta);
+  SpinMOPairIter PQ_iter(r12eval_->ggspace(AnySpinCase1)->rank(), r12eval_->ggspace(AnySpinCase1)->rank(), AlphaBeta);
   CuspConsistentGeminalCoefficient coeff_gen(AlphaBeta);
-  for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
-    for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
+  for (OW_iter.start(); int(OW_iter); OW_iter.next()) {
+    for (PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
       unsigned int O = OW_iter.i();
       unsigned int W = OW_iter.j();
       unsigned int P = PQ_iter.i();
       unsigned int Q = PQ_iter.j();
       int OW = OW_iter.ij();
       int PQ = PQ_iter.ij();
-      Cmat.set_element(OW,PQ,coeff_gen.C(O,W,P,Q));
+      Cmat.set_element(OW, PQ, coeff_gen.C(O, W, P, Q));
     }
   }
-  return(Cmat);
+  return (Cmat);
 }
 
 RefSCMatrix PT2R12::V_genref_projector2() {
@@ -718,12 +747,11 @@ double PT2R12::energy_PT2R12_projector2() {
     srr12intrmds_ = make_shared<SingleReference_R12Intermediates<double>>(madness::World::get_default(),
         this->r12world());
     srr12intrmds_->set_rdm2(this->rdm2_);
-    CABS_Single_ = make_shared <CABS_Single> (srr12intrmds_);
   }
 
   void PT2R12::shutdown_mpqc3() {
+    cabs_singles_engine_ = 0;
     srr12intrmds_ = 0;
-    CABS_Single_ = 0;
     madness::World::get_default().gop.fence();
   }
 
@@ -734,16 +762,18 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
 
 #if defined(MPQC_NEW_FEATURES)
 
- // bootup_mpqc3();
 
   // see J. Chem. Phys. 135, 214105 (2011) for eqns.
 
   typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
   typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
 
+
+  Timer tim("pt2r12");
+
   const bool print_all = true;
   if(print_all)
-    ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2_mpqc3\n\n";
+    ExEnv::out0() << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2_mpqc3\n\n";
 
   TArray4 Tg_ij_kl; Tg_ij_kl("i,j,k,l") = _Tg("<i j|Tg|k l>");
 
@@ -850,7 +880,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
   eref_recomp += r12world()->refwfn()->basis()->molecule()->nuclear_repulsion_energy();
   madness::World::get_default().gop.fence();
 
- // shutdown_mpqc3();
+ tim.exit();
 
   return std::make_pair(VT2 + X + B0 + Delta, eref_recomp);
 #else
@@ -1311,6 +1341,9 @@ RefSymmSCMatrix PT2R12::rdm2()
 
 void PT2R12::compute()
 {
+  ExEnv::out0() << std::endl << std::endl << indent
+          << "Enter PT2R12::compute \n";
+
   r12world()->initialize();
   const bool debug_printing = false;
   if(debug_printing)
@@ -1361,43 +1394,28 @@ void PT2R12::compute()
     MPQC_ASSERT(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
 
 #if defined(MPQC_NEW_FEATURES)
-    if (use_mpqc3_) {
       std::pair<double,double> e = energy_PT2R12_projector2_mpqc3();
       energy_pt2r12_sf = e.first;
       recomp_ref_energy = e.second;
-    } else
-#endif
-    {
+#else
       energy_pt2r12_sf = energy_PT2R12_projector2();
       recomp_ref_energy = this->energy_recomputed_from_densities();
-    }
+#endif
     energy_correction_r12 = energy_pt2r12_sf;
   }
 
 #if defined(MPQC_NEW_FEATURES)
-  if(cabs_singles_ && use_mpqc3_)
+  if(cabs_singles_ )
   {
-    cabs_singles_e = CABS_Single_->compute(cabs_singles_h0_);
+    // if use extra basis for cabs_singles, remove the original ri basis
+    if (cabs_singles_engine_->extra_basis()){
+      r12world()->refwfn()->world()->fockbuild_runtime()->ao_registry()->remove(r12world()->basis_ri());
+    }
+    cabs_singles_e = cabs_singles_engine_->compute(cabs_singles_h0_);
   }
 #endif
 
   const double energy = energy_ref + energy_correction_r12 + cabs_singles_e;
-
-
-
-    ExEnv::out0() <<endl << indent << scprintf("Reference energy [au]:                 %17.12lf",
-                                       energy_ref) << std::endl << std::endl;
-#if defined(MPQC_NEW_FEATURES)
-    if(cabs_singles_)
-    {
-      std::string es = "CABS singles(" + cabs_singles_h0_ + ")";
-      const unsigned int LL = std::string("Reference energy [au]:                 ").size();
-      es.resize(LL, ' ');
-      ExEnv::out0() << indent << scprintf((es + "%17.12lf").c_str(),  cabs_singles_e) << endl;
-      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
-                                                energy_ref + cabs_singles_e) << endl << endl;
-    }
-#endif
 
     ExEnv::out0() << std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
                                         (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
@@ -1407,9 +1425,16 @@ void PT2R12::compute()
   {
     ExEnv::out0() << indent << scprintf("[2]_R12 energy [au]:                   %17.12lf",
                                         energy_correction_r12) << endl;
-    ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
-                                        energy) << std::endl;
   }
+
+#if defined(MPQC_NEW_FEATURES)
+  if(cabs_singles_){
+      std::string es = "[2]_S energy [au](" + cabs_singles_h0_ + ")";
+      const unsigned int LL = std::string("Reference energy [au]:                 ").size();
+      es.resize(LL, ' ');
+      ExEnv::out0() << indent << scprintf((es + "%17.12lf").c_str(),  cabs_singles_e) << endl;
+  }
+#endif
 
   set_energy(energy);
 }
@@ -1688,6 +1713,14 @@ void PT2R12::print(std::ostream & os) const
   os << indent << "nfzc = " << nfzc_ << std::endl;
   os << indent << "omit_uocc = " << (omit_uocc_ ? "true" : "false") << std::endl;
   r12world()->print(os);
+#if defined(HAVE_MPQC3_RUNTIME)
+  os << indent << "cabs_singles = " << (cabs_singles_ ? "true" : "false") << endl;
+  if (cabs_singles_){
+    os << indent << "partition = " << cabs_singles_h0_ << endl;
+    cabs_singles_engine_->print(os);
+  }
+
+#endif
   Wavefunction::print(os);
   os << decindent;
 }

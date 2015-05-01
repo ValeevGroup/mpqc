@@ -29,8 +29,8 @@
 # include <util/madness/init.h>
 #endif
 
-#include "moinfo.h"
-#include "extern_pt2r12.h"
+#include <extern/moinfo/moinfo.h>
+#include <chemistry/qc/mbptr12/extern_pt2r12.h>
 
 // Force linkages:
 #include <mpqc_config.h>
@@ -162,8 +162,8 @@ int try_main(int argc, char **argv)
   opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
 #if defined(MPQC_NEW_FEATURES)
   opt.enroll("singles", GetLongOpt::MandatoryValue, "compute [2]_s correction; default: false", 0);
+  opt.enroll("cabs_singles", GetLongOpt::MandatoryValue, "CABS basis for [2]_s method; default: none", 0);
   opt.enroll("partitionH", GetLongOpt::MandatoryValue, "How to partition Hamiltonian in [2]_s: fock, dyall_1, dyall_2; default: fock", 0);
-  opt.enroll("mpqc3", GetLongOpt::MandatoryValue, "enable MPQC3 runtime features; default: true", 0);
 #endif
 
   // initialize the environment
@@ -259,10 +259,10 @@ int try_main(int argc, char **argv)
 #if defined(MPQC_NEW_FEATURES)
   const char* singles_cstr = opt.retrieve("singles");
   const std::string singles_str = singles_cstr?singles_cstr:"";
+  const char* cabs_singles_cstr = opt.retrieve("cabs_singles");
+  const std::string cabs_singles_str = cabs_singles_cstr ? cabs_singles_cstr:"";
   const char* partition_cstr = opt.retrieve("partitionH");
   const std::string partition_str = partition_cstr?partition_cstr:"";
-  const char* mpqc3_cstr = opt.retrieve("mpqc3");
-  const std::string mpqc3_str = mpqc3_cstr?mpqc3_cstr:"";
 #endif
 
   ExEnv::out0() << indent << "Given resources: " << resources->sprint() << endl
@@ -418,10 +418,10 @@ int try_main(int argc, char **argv)
 #if defined(MPQC_NEW_FEATURES)
     if(not singles_str.empty())
       kva->assign("cabs_singles", singles_str);
+    if(not cabs_singles_str.empty())
+      kva->assign("cabs_singles_basis", cabs_singles_str);
     if(not partition_str.empty())
       kva->assign("cabs_singles_h0", partition_str);
-    if(not mpqc3_str.empty())
-      kva->assign("use_mpqc3", mpqc3_str);
 #endif
     Ref<KeyVal> kv = kva;
     extern_pt2r12 = new ExternPT2R12(kv);

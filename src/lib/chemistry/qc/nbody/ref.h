@@ -489,10 +489,7 @@ namespace sc {
 
       void print(std::ostream& os = ExEnv::out0()) const;
 
-      void obsolete() {
-//        throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
-//                                                    __FILE__, __LINE__);
-      }
+      void obsolete();
 
       bool sdref() const;
       double energy() { return 0.0; }
@@ -520,7 +517,6 @@ namespace sc {
       bool omit_uocc_;
       mutable bool ordm_idempotent_;
 
-
       void init(const RefSCMatrix& orbs,
                 const std::vector<unsigned int>& orbsym,
                 std::vector<unsigned int> occpi,
@@ -528,7 +524,8 @@ namespace sc {
                 std::vector<unsigned int> fzvpi,
                 std::vector<unsigned int> holepi,
                 std::vector<unsigned int> partpi);
-      void init_spaces() {throw sc::ProgrammingError("For Extern_RefWavefunction, spaces must be init-ed in constructor");}
+
+      void init_spaces() {  throw sc::ProgrammingError("For Extern_RefWavefunction, spaces must be init-ed in constructor");}
       //void init_spaces(unsigned int nocc, const RefSCMatrix& orbs,
       //                 const std::vector<unsigned int>& orbsym);
       void init_spaces(const RefSCMatrix& orbs,

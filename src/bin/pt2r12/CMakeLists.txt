@@ -9,8 +9,6 @@ set(executable pt2r12)
 add_executable(
     ${executable}
     pt2r12.cc
-    moinfo.cc
-    extern_pt2r12.cc
 )
 
 target_link_libraries(
@@ -19,9 +17,7 @@ target_link_libraries(
     chemistry
     math
     util
-    chemistry
-    math
-    util
+    extern_moinfo
     ${LINK_LIBRARIES}
 )
 

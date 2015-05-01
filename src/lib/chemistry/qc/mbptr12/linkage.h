@@ -32,6 +32,7 @@
 #include <chemistry/qc/mbptr12/mbptr12.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/pt2r12.h>
+#include <chemistry/qc/mbptr12/molcas_pt2r12.h>
 
 #include <chemistry/qc/mbpt/linkage.h>
 
@@ -40,6 +41,7 @@ namespace sc {
 ForceLink<MBPT2_R12> mbptr12_force_link_a_;
 ForceLink<PT2R12> mbptr12_force_link_b_;
 ForceLink<SpinOrbitalPT2R12> mbptr12_force_link_c_;
+ForceLink<MolcasPT2R12> mbptr12_force_link_d_;
 
 }
 

@@ -25,11 +25,11 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _mpqc_src_bin_pt2r12_externpt2r12_h
-#define _mpqc_src_bin_pt2r12_externpt2r12_h
+#ifndef _mpqc_src_lib_chemistry_qc_mbptr12_externpt2r12_h
+#define _mpqc_src_lib_chemistry_qc_mbptr12_externpt2r12_h
 
 #include <chemistry/qc/mbptr12/pt2r12.h>
-#include "moinfo.h"
+#include <extern/moinfo/moinfo.h>
 
 namespace sc {
 
@@ -66,21 +66,37 @@ namespace sc {
       int value_implemented() const { return 1; }
       void set_desired_value_accuracy(double acc);
       void print(std::ostream& os=ExEnv::out0());
+      void initialize();
+
+      void obsolete();
 
     private:
       static ClassDesc class_desc_;
       static const unsigned int debug_print_ = 0; // set to 1 to print out some debugging info
 
+      // need to initialize with initialize()
+      Ref<PT2R12> pt2r12_;
+
+
+    protected:
       // provided by the user
       Ref<WavefunctionWorld> world_;
       Ref<ExternMOInfo> orbs_info_;
       Ref<SpinFreeRDM<Two> > rdm2_;
-      std::string cabs_name_;
-      bool cabs_contraction_;
-      std::string f12exp_str_;
 
-      // constructed
-      Ref<PT2R12> pt2r12_;
+      std::string cabs_name_;
+      std::string obs_name_;
+      std::string dfbs_name_;
+      std::string f12exp_str_;
+      std::string r12_str_;
+
+      #if defined(MPQC_NEW_FEATURES)
+          std::string singles_str_;
+          std::string partition_str_;
+          std::string cabs_singles_name_;
+      #endif
+
+      bool cabs_contraction_;
 
   };
 

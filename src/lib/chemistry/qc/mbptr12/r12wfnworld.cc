@@ -40,6 +40,8 @@
 #include <chemistry/qc/lcao/transform_factory.h>
 #include <util/misc/registry.timpl.h>
 #include <chemistry/qc/nbody/ref.h>
+#include "r12wfnworld.h"
+
 #ifdef HAVE_MADNESS
 # include <util/madness/init.h>
 #endif
@@ -111,7 +113,7 @@ R12WavefunctionWorld::~R12WavefunctionWorld()
 {
   // boot up madness
 #ifdef HAVE_MADNESS
-  mpqc::MADNESSRuntime::finalize();
+  //mpqc::MADNESSRuntime::finalize();
 #endif
 }
 

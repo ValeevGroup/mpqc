@@ -180,17 +180,6 @@ class Tile {
 
     auto norm() const -> decltype(tile_->norm_()) { return tile_->norm_(); }
 
-    template <typename Op, typename... Args>
-    auto apply(Op op, Args &&... args) const
-          -> decltype(op(tile_->tile(), std::forward<Args>(args)...)) {
-        return op(tile_->tile(), std::forward<Args>(args)...);
-    }
-
-    template <typename Op, typename... Args>
-    Tile &mutate(Op op, Args &&... args) {
-        op(tile_->tile(), std::forward<Args>(args)...);
-        return *this;
-    }
 
   private:
     template <typename... Args,

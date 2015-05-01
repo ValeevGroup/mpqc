@@ -35,6 +35,7 @@
 #include "../integrals/integral_engine_pool.h"
 #include "../integrals/sparse_task_integrals.h"
 #include "../integrals/dense_task_integrals.h"
+#include "../integrals/scf/soad.h"
 
 #include "../purification/sqrt_inv.h"
 #include "../purification/purification_devel.h"
@@ -221,10 +222,6 @@ int main(int argc, char *argv[]) {
 
     auto H_TA = TA::to_new_tile_type(H, to_ta);
 
-    /* // Compute intial density */
-    utility::print_par(world, "\nComputing Density\n");
-    auto purifier = pure::make_orthogonal_tr_reset_pure(S_inv_sqrt);
-    auto D_TA = purifier(H_TA, occupation);
 
     auto to_decomp = [=](TA::Tensor<double> const &t) {
         auto range = t.range();
@@ -241,7 +238,6 @@ int main(int argc, char *argv[]) {
         return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                               std::move(dense));
     };
-    auto D = TA::to_new_tile_type(D_TA, to_decomp);
 
     /* // Begin Two electron integrals section. */
     auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
@@ -334,26 +330,27 @@ int main(int argc, char *argv[]) {
 
     utility::print_size_info(W, "W");
 
-    decltype(D) J, K, F;
-    J("i,j") = W("X,i,j") * (Xab("X,a,b") * D("a,b"));
-    K("i,j") = W("X,a,j") * (Xab("X,i,b") * D("b,a"));
-    F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
-
+    decltype(H) F;
+    F = ints::scf::fock_from_minimal(world, basis, df_basis, eri_pool, V_inv, H,
+                                     W, bs_clusters, low_rank_threshold,
+                                     convert_3d(low_rank_threshold));
     auto F_TA = TA::to_new_tile_type(F, to_ta);
 
-    D_TA = purifier(F_TA, occupation);
+    auto purifier = pure::make_orthogonal_tr_reset_pure(S_inv_sqrt);
+    auto D_TA = purifier(F_TA, occupation);
     auto energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
     std::cout << "Initial energy = " << energy + repulsion_energy << std::endl;
+    auto D = to_new_tile_type(D_TA, to_decomp);
 
+    decltype(H) J, K;
     utility::print_par(world, "\nStarting SCF iterations\n");
     auto diis = TiledArray::DIIS<decltype(D_TA)>{3, 7};
     auto iter = 1;
     decltype(F_TA) Ferror;
     auto error = 1.0;
     const auto volume = double(F.trange().elements().volume());
-    decltype(D) D_old;
-    decltype(D) K_old;
-    D_old("i,j") = D("i,j");
+    decltype(D) D_old = D;
+    decltype(D) D_diff;
     while (error >= 1e-12 && iter <= 35) {
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
@@ -362,12 +359,16 @@ int main(int argc, char *argv[]) {
         auto j1 = tcc_time::now();
 
         auto k0 = tcc_time::now();
-        decltype(D) D_diff;
-        D_diff("i,j") = D("i,j") - D_old("i,j");
-        D_diff.truncate();
-        K("i,j") = K("i,j") + W("X,a,j") * (Xab("X,i,b") * D_diff("b,a"));
+        if (iter <= 5) {
+            K("i,j") = W("X,a,i") * (Xab("X,j,b") * D("b,a"));
+        } else {
+            D_diff("i,j") = D("i,j") - D_old("i,j");
+            D_diff.truncate();
+            K("i,j") = K("i,j") + W("X,a,i") * (Xab("X,j,b") * D_diff("b,a"));
+        }
         auto k1 = tcc_time::now();
         D_old = D;
+
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
         F_TA = TA::to_new_tile_type(F, to_ta);

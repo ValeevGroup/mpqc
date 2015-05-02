@@ -25,7 +25,6 @@ class OrthTraceResettingPurifier {
 
     ArrayType operator()(ArrayType const &Fao, std::size_t occ) const {
         // F = Z F_{ao} Z^{T}
-        auto t0 = utility::time::now();
         ArrayType F;
         F("i,j") = sqrt_inv_("i,k") * Fao("k,l") * sqrt_inv_("l,j");
 
@@ -60,10 +59,6 @@ class OrthTraceResettingPurifier {
         // D_{ao} = Z^{T} D Z
         D("i,j") = sqrt_inv_("i,k") * D("k,l") * sqrt_inv_("l,j");
         D.truncate(); // necessary since norms blow up otherwise
-        auto t1 = utility::time::now();
-        auto time = utility::time::duration_in_s(t0, t1);
-        utility::print_par(D.get_world(), "\tPurification iters ", iter - 1,
-                           " with error ", error, " in time ", time, "\n");
         return D;
     }
 

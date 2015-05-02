@@ -11,7 +11,20 @@ namespace tensor {
 // TODO try and find faster way of doing this.
 template <typename T>
 T norm(DecomposedTensor<T> const &t) {
-    return algebra::combine(t).norm();
+    if (t.empty()) {
+        return T(0.0);
+    }
+    // Norm is bounded by ||M|| <= ||S^M|| * ||T^M||
+    // if single tile then norm is exact
+    auto norm_bound = 1.0;
+    for (auto const &tensor : t.tensors()) {
+        norm_bound *= tensor.norm();
+    }
+    return norm_bound;
+}
+template <typename T>
+T squared_norm(DecomposedTensor<T> const &t) {
+    return algebra::combine(t).squared_norm();
 }
 
 template <typename T>
@@ -39,10 +52,11 @@ DecomposedTensor<T> clone(DecomposedTensor<T> const &t) {
 template <typename T>
 DecomposedTensor<T> scale(DecomposedTensor<T> const &t, T factor) {
     auto left = t.tensor(0).scale(factor);
-    auto right = TA::Tensor<T>();
     if (t.ndecomp() == 2) {
-        right = t.tensor(1).clone();
-        return DecomposedTensor<T>(t.cut(), std::move(left), std::move(right));
+        assert(false);
+        //        right = t.tensor(1).clone();
+        //       return DecomposedTensor<T>(t.cut(), std::move(left),
+        //       std::move(right));
     }
 
     return DecomposedTensor<T>(t.cut(), std::move(left));
@@ -55,8 +69,7 @@ scale(DecomposedTensor<T> const &t, T factor, TA::Permutation const &p) {
 }
 
 template <typename T>
-DecomposedTensor<T>
-neg(DecomposedTensor<T> const &t) {
+DecomposedTensor<T> neg(DecomposedTensor<T> const &t) {
     auto left = t.tensor(0).neg();
     auto right = TA::Tensor<T>();
     if (t.ndecomp() == 2) {
@@ -74,26 +87,24 @@ neg(DecomposedTensor<T> const &t, TA::Permutation const &p) {
 }
 
 template <typename T>
-DecomposedTensor<T>&
+DecomposedTensor<T> &
 neg_to(DecomposedTensor<T> const &t, TA::Permutation const &p) {
     assert(false);
 }
 
 template <typename T>
-DecomposedTensor<T>&
-neg_to(DecomposedTensor<T> const &t) {
+DecomposedTensor<T> &neg_to(DecomposedTensor<T> const &t) {
     assert(false);
 }
 
 template <typename T>
-DecomposedTensor<T>&
-scale_to(DecomposedTensor<T> &t, T factor) {
+DecomposedTensor<T> &scale_to(DecomposedTensor<T> &t, T factor) {
     t.tensor(0).scale(factor);
     return t;
 }
 
 template <typename T>
-DecomposedTensor<T>&
+DecomposedTensor<T> &
 scale_to(DecomposedTensor<T> &t, T factor, TA::Permutation const &p) {
     assert(false);
 }

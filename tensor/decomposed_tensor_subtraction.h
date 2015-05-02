@@ -18,6 +18,8 @@ subt(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r) {
             return DecomposedTensor<T>(l.cut(), l.tensor(0).subt(r.tensor(0)));
         }
     }
+    assert(false);
+    return DecomposedTensor<T>(l.cut());
 }
 
 template <typename T>
@@ -80,7 +82,12 @@ subt_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r) {
 template <typename T>
 DecomposedTensor<T> &
 subt_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r, const T factor) {
-    assert(false);
+    if (l.ndecomp() == 1) {
+        if (r.ndecomp() == 1) {
+            l.tensor(0).subt_to(r.tensor(0), factor);
+        }
+    }
+    return l;
 }
 
 template <typename T>

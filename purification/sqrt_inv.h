@@ -230,7 +230,7 @@ eval_guess(Array const &A) {
 
     auto end = A.end();
     for (auto it = A.begin(); it != end; ++it) {
-        tasks[it.index()[0]].add(it->get());
+        tasks[it.index()[0]].add(A.find(it.ordinal()));
     }
 
     TiledArray::detail::ReduceTask<pair_smasher> local_reduce(A.get_world(),

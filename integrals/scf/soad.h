@@ -73,7 +73,7 @@ ArrayType minimal_density_guess(
                                 tile_norms.range().size()[1]);
 
     auto ord = 0ul;
-    for (auto i = 0ul; i < tn_map.rows(); ++i) {
+    for (auto i = 0; i < tn_map.rows(); ++i) {
         auto range = trange.make_tile_range(ord);
         tn_map(i, i) = range.size()[1];
         ord += trange.tiles().weight()[1] + 1;
@@ -126,8 +126,23 @@ ArrayType fock_from_minimal(
     Eri3ArrayType W_K;
     W_K("X,a,i") = V_inv("X,P") * EriK("P,i,a");
     K("i,j") = W_K("X,a,i") * (EriK("X, j, b") * D_min("b,a"));
+    decltype(D_min) temp;
+    temp("i,j") = 2 * J("i,j") - K("i,j");
+    F("i,j") = H("i,j") + temp("i,j");
+    // F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+//    auto tnorm = temp("i,j").norm().get();
+    /* auto jnorm = J("i,j").norm().get(); */
+    /* auto knorm = K("i,j").norm().get(); */
+    /* auto hnorm = H("i,j").norm().get(); */
+    /* auto fnorm = F("i,j").norm().get(); */
 
-    F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+    /* if (J.get_world().rank() == 0) { */
+    /*     std::cout << "Norm J_min = " << jnorm << std::endl; */
+    /*     std::cout << "Norm K_min = " << knorm << std::endl; */
+    /*     std::cout << "Norm H_min = " << hnorm << std::endl; */
+    /*     std::cout << "Norm F_min = " << fnorm << std::endl; */
+    /*     std::cout << "Norm temp = " << tnorm << std::endl; */
+    /* } */
 
     return F;
 }

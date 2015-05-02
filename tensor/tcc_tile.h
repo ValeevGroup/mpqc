@@ -39,6 +39,9 @@ class TileModel {
 
     bool empty_() const { return empty(tile_); }
     auto norm_() const -> decltype(norm(tile_)) { return norm(tile_); }
+    auto squared_norm_() const -> decltype(squared_norm(tile_)) {
+        return squared_norm(tile_);
+    }
 
     T clone_() const { return clone(tile_); }
 
@@ -114,7 +117,7 @@ class TileModel {
     }
 
     template <typename... Args>
-    T& scale_to_(Args &&... args){
+    T &scale_to_(Args &&... args) {
         scale_to(tile_, std::forward<Args>(args)...);
         return tile_;
     }
@@ -178,7 +181,13 @@ class Tile {
 
     bool empty() const { return (!tile_ || tile_->empty_()); }
 
-    auto norm() const -> decltype(tile_->norm_()) { return tile_->norm_(); }
+    auto norm() const -> decltype(tile_->norm_()) {
+        return tile_->norm_();
+    }
+    
+    auto squared_norm() const -> decltype(tile_->squared_norm_()) {
+        return tile_->squared_norm_();
+    }
 
 
   private:

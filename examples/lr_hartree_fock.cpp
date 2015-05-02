@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
 
     decltype(H) J, K;
     utility::print_par(world, "\nStarting SCF iterations\n");
-    auto diis = TiledArray::DIIS<decltype(D_TA)>{3, 7};
+    auto diis = TiledArray::DIIS<decltype(D_TA)>(1);
     auto iter = 1;
     decltype(F_TA) Ferror;
     auto error = 1.0;

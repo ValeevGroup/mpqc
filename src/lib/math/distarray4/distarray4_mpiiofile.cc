@@ -267,6 +267,8 @@ void DistArray4_MPIIOFile_Ind::store_pair_block(int i, int j,
                                                 const double *ints)
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
 
   const int nproc = ntasks();
   const int ij = ij_index(i,j);
@@ -291,6 +293,8 @@ void DistArray4_MPIIOFile_Ind::store_pair_subblock(int i, int j, tbint_type oper
                                                    const double *buf)
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
 
   const bool contiguous = (ystart == 0) && (yfence == ny());
   const int xsize = xfence - xstart;
@@ -333,6 +337,8 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type
                                               double* buf) const
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   // Always first check if it's already in memory
@@ -392,6 +398,8 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_subblock(int i, int j, tbint_type oper_t
                                                  double* buf) const
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
   static ScratchBuffer<char> scratch;
   Ref<ThreadLock> scratch_lock = ThreadGrp::get_default_threadgrp()->new_lock();
 

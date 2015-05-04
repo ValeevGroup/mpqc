@@ -133,6 +133,8 @@ void
 DistArray4_MemoryGrp::store_pair_block(int i, int j, tbint_type oper_type, const double *ints)
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
 
   const int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
@@ -159,6 +161,8 @@ DistArray4_MemoryGrp::store_pair_subblock(int i, int j, tbint_type oper_type,
                                           const double *buf)
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
   MPQC_ASSERT(is_local(i,j));   // store blocks local to this node ONLY
 
   const bool contiguous = (ystart == 0) && (yfence == ny());
@@ -195,6 +199,8 @@ DistArray4_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type,
                                           double* buf) const
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
   const int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   // if it's local all is easy
@@ -234,6 +240,8 @@ DistArray4_MemoryGrp::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
                                              double* buf) const
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
   const bool contiguous = (ystart == 0) && (yfence == ny());
   const int xsize = xfence - xstart;
   const int ysize = yfence - ystart;

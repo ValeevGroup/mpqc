@@ -207,10 +207,21 @@ DistArray4_Node0File::activate()
 {
   if (active()) return;
 
+  // make sure there are no stale pair blocks
+  for(int i=0,ij=0;i<ni();i++) {
+    for(int j=0;j<nj();j++,ij++) {
+      for(int type=0; type<num_te_types(); type++) {
+        MPQC_ASSERT(pairblk_[ij].ints_[type] == NULL);
+      }
+      pairblk_[ij].offset_ = (off_t)ij*blocksize();
+    }
+  }
+
 #if CREATE_FILE_ON_NODE0_ONLY
   if (me() == 0)
 #endif
     datafile_ = open(filename_, O_RDWR);
+  check_filedescr_();
   DistArray4::activate();
   if (classdebug() > 0)
     ExEnv::out0() << indent << "opened file=" << filename_ << " datafile=" << datafile_ << endl;
@@ -234,6 +245,8 @@ void
 DistArray4_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const double *data)
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
   // Can write blocks?
   if (!is_avail(i,j))
     throw ProgrammingError("DistArray4_Node0File::store_pair_block -- can only be called on node 0",
@@ -272,6 +285,8 @@ DistArray4_Node0File::store_pair_subblock(int i, int j, tbint_type oper_type,
                                           const double *buf)
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
   // Can write blocks?
   if (!is_avail(i,j))
     throw ProgrammingError("DistArray4_Node0File::store_pair_block -- can only be called on node 0",
@@ -330,6 +345,8 @@ const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
     ExEnv::outn() << oss.str();
     throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
   }
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
   // Can read blocks?
   if (!is_avail(i, j))
     throw ProgrammingError("DistArray4_Node0File::retrieve_pair_block -- can only be called on node 0",
@@ -369,6 +386,10 @@ const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
     if (read_this_much != blksize()) {
       std::ostringstream oss;
       oss << "DistArray4_Node0File::store_pair_block() -- read failed: " << strerror(errno);
+      if (read_this_much == -1)
+        oss << ", read() returned -1";
+      if (read_this_much == 0)
+        oss << ", read() reached end of file";
       throw FileOperationFailed(oss.str().c_str(),
           __FILE__,
           __LINE__,
@@ -416,6 +437,8 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
                                              double* buf) const
 {
   MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(i>=0 && i<ni());
+  MPQC_ASSERT(j>=0 && j<nj());
   static ScratchBuffer<char> scratch;
   static Ref<ThreadLock> read_lock = ThreadGrp::get_default_threadgrp()->new_lock();
 

@@ -450,7 +450,7 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
 
   // Can read blocks?
   if (!is_avail(i, j))
-    throw ProgrammingError("DistArray4_Node0File::retrieve_pair_block() -- can only be called on node 0",
+    throw ProgrammingError("DistArray4_Node0File::retrieve_pair_subblock() -- can only be called on node 0",
         __FILE__,__LINE__);
 
   const int ij = ij_index(i, j);
@@ -466,7 +466,7 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
     off_t result_offset = lseek(datafile_, offset, SEEK_SET);
     if (offset == (off_t)-1 || result_offset != offset) {
       std::ostringstream oss;
-      oss << "DistArray4_Node0File::retrieve_pair_block() -- lseek failed: " << strerror(errno);
+      oss << "DistArray4_Node0File::retrieve_pair_subblock() -- lseek failed: " << strerror(errno);
       read_lock->unlock();
       throw FileOperationFailed(oss.str().c_str(),
           __FILE__,

@@ -345,38 +345,24 @@ int main(int argc, char *argv[]) {
                        "\n");
     auto D = to_new_tile_type(D_TA, to_decomp);
 
-    struct compress_loose {
+    struct compress {
         double cut_;
-        compress_loose(double thresh) : cut_{thresh} {}
+        compress(double thresh) : cut_{thresh} {}
         using TileType = tensor::Tile<tensor::DecomposedTensor<double>>;
-        double operator()(TileType &result, TileType const &in) {
-            auto copy
-                  = tensor::DecomposedTensor<double>(cut_, in.tile().tensors());
-            if (copy.ndecomp() == 1) {
-                auto test = tensor::algebra::two_way_decomposition(copy);
+        double operator()(TileType &result) {
+            if (result.tile().ndecomp() == 1) {
+                auto test
+                      = tensor::algebra::two_way_decomposition(result.tile());
                 if (!test.empty()) {
-                    copy = std::move(test);
+                    result.tile() = std::move(test);
                 }
             } else {
-                tensor::algebra::recompress(copy);
+                tensor::algebra::recompress(result.tile());
             }
 
-            result = TileType(result.range(), std::move(copy));
             return result.norm();
         }
     };
-
-    utility::print_par(world, "\nCompressing for scf\n");
-    auto lr_thresh_scf = low_rank_threshold * 1e3;
-    auto Xab_scf = TA::foreach (Xab, compress_loose(lr_thresh_scf));
-    utility::print_par(world, "Compressing Xab with thresh ", lr_thresh_scf,
-                       "\n");
-    utility::print_size_info(Xab_scf, "Xab_scf");
-
-    auto W_scf = TA::foreach (W, compress_loose(lr_thresh_scf));
-    utility::print_par(world, "Compressing W with thresh ", lr_thresh_scf,
-                       "\n");
-    utility::print_size_info(W_scf, "W_scf");
 
     decltype(H) J, K;
     utility::print_par(world, "\nStarting SCF iterations\n");
@@ -387,32 +373,27 @@ int main(int argc, char *argv[]) {
     const auto volume = double(F.trange().elements().volume());
     decltype(D) D_old = D;
     decltype(D) D_diff;
-    bool change_precision = false;
     double d_diff_norm = 0.0;
     while (error >= 1e-12 && iter <= 35) {
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
         auto j0 = tcc_time::now();
-        J("i,j") = W_scf("X,i,j") * (Xab_scf("X,a,b") * D("a,b"));
+        J("i,j") = W("X,i,j") * (Xab("X,a,b") * D("a,b"));
         auto j1 = tcc_time::now();
 
         auto k0 = tcc_time::now();
         if (iter == 1 || iter % 8 == 0) {
-            K("i,j") = W_scf("X,a,i") * (Xab_scf("X,j,b") * D("b,a"));
+            K("i,j") = W("X,a,i") * (Xab("X,j,b") * D("b,a"));
         } else {
             D_diff("i,j") = D("i,j") - D_old("i,j");
             D_diff.truncate();
             d_diff_norm = D_diff("i,j").norm();
-            K("i,j") = K("i,j")
-                       + W_scf("X,a,i") * (Xab_scf("X,j,b") * D_diff("b,a"));
+            K("i,j") = K("i,j") + W("X,a,i") * (Xab("X,j,b") * D_diff("b,a"));
         }
         auto k1 = tcc_time::now();
         D_old = D;
 
-        decltype(D) temp;
-        temp("i,j") = 2 * J("i,j") - K("i,j");
-        F("i,j") = H("i,j") + temp("i,j");
-        // F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+        F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
         F_TA = TA::to_new_tile_type(F, to_ta);
 
@@ -439,28 +420,36 @@ int main(int argc, char *argv[]) {
                            " s\n\tPure time ", puretime, " s\n\t D diff norm ",
                            d_diff_norm, "\n");
 
-        change_precision = (0 == iter % 5);
-        if (change_precision && lr_thresh_scf > low_rank_threshold * 0.9e1) {
-            utility::print_par(world, "\n");
-            if (iter < 15) {
-                decltype(Xab) Xtemp;
-                Xtemp("X,a,i") = Xab_scf("X,i,b") * D("b,a");
-                utility::print_par(world,
-                                   "\nPrinting size info for Xtemp, iter ",
-                                   iter, "\n");
-                utility::print_size_info(Xtemp, "Xtemp");
-                utility::print_par(world, "\n");
-            }
-            lr_thresh_scf *= 1e-1;
-            auto Xab_scf = TA::foreach (Xab, compress_loose(lr_thresh_scf));
-            utility::print_par(world, "Compressing Xab with thresh ",
-                               lr_thresh_scf, "\n");
-            utility::print_size_info(Xab_scf, "Xab_scf");
+        utility::print_par(world, "\n");
+        if (0 == iter % 5) {
+            decltype(Xab) Xtemp;
+            auto t0 = tcc_time::now();
+            Xtemp("X,a,i") = Xab("X,i,b") * D("b,a");
+            Xtemp.truncate();
+            auto t1 = tcc_time::now();
+            auto time = tcc_time::duration_in_s(t0, t1);
 
-            auto W_scf = TA::foreach (W, compress_loose(lr_thresh_scf));
-            utility::print_par(world, "Compressing W with thresh ",
-                               lr_thresh_scf, "\n");
-            utility::print_size_info(W_scf, "W_scf");
+            decltype(K) Ktest;
+            auto tw0 = tcc_time::now();
+            Ktest("i,j") = W("X,a,i") * Xtemp("X,a,j");
+            auto tw1 = tcc_time::now();
+            auto timew = tcc_time::duration_in_s(tw0, tw1);
+            utility::print_par(world, "\nB formation time ", time, " s\n");
+            utility::print_size_info(Xtemp, "Xtemp");
+            utility::print_par(world, "\nK formation time (W * B) ", timew,
+                               " s\n");
+            auto tc0 = tcc_time::now();
+            TA::foreach_inplace(Xtemp, compress(low_rank_threshold));
+            auto tc1 = tcc_time::now();
+            auto timec = tcc_time::duration_in_s(tc0, tc1);
+            utility::print_par(world, "\nCompression time ", timec, " s\n");
+            utility::print_size_info(Xtemp, "Xtemp");
+            tw0 = tcc_time::now();
+            Ktest("i,j") = W("X,a,i") * Xtemp("X,a,j");
+            tw1 = tcc_time::now();
+            timew = tcc_time::duration_in_s(tw0, tw1);
+            utility::print_par(world, "\nK formation time (W * B(compressed)) ",
+                               timew, " s\n");
             utility::print_par(world, "\n");
         }
         ++iter;

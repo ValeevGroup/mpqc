@@ -8,7 +8,7 @@
 namespace tcc {
 namespace tensor {
 
-// TODO try and find faster way of doing this.
+
 template <typename T>
 T norm(DecomposedTensor<T> const &t) {
     if (t.empty()) {
@@ -99,7 +99,7 @@ DecomposedTensor<T> &neg_to(DecomposedTensor<T> const &t) {
 
 template <typename T>
 DecomposedTensor<T> &scale_to(DecomposedTensor<T> &t, T factor) {
-    t.tensor(0).scale(factor);
+    t.tensor(0).scale_to(factor);
     return t;
 }
 

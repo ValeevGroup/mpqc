@@ -26,10 +26,13 @@
 //
 
 #include <cassert>
+#include <cmath>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
+#ifdef MPQC_NEW_FEATURES
+#include <chemistry/qc/mbptr12/sr_r12intermediates.h>
+#endif // MPQC_NEW_FEATURES
 #include <util/misc/print.h>
 #include <math/scmat/blas.h>
-#include <cmath>
 
 using namespace std;
 using namespace sc;

@@ -72,10 +72,6 @@ extern "C" {
 }
 #endif
 
-#ifdef MPQC_NEW_FEATURES
-#include <chrono>
-#endif
-
 // AIX 3.2 has broken include files, likewise SunOS
 #if defined(_AIX32) || defined(__sun)
 extern "C" {

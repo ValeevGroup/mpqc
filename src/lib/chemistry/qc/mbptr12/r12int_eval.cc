@@ -46,6 +46,9 @@
 #include <chemistry/qc/mbptr12/debug.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
 #include <chemistry/qc/basis/obintfactory.h>
+#ifdef MPQC_NEW_FEATURES
+#include <chemistry/qc/mbptr12/sr_r12intermediates.h>
+#endif
 
 using namespace std;
 using namespace sc;

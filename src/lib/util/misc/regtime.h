@@ -31,7 +31,9 @@
 #include <iostream>
 #include <string>
 #include <list>
+#ifdef MPQC_NEW_FEATURES
 #include <chrono>
+#endif
 #include <mpqc_config.h>
 #include <util/class/class.h>
 

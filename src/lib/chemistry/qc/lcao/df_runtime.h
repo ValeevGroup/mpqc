@@ -88,10 +88,12 @@ namespace sc {
       typedef Ref<Result> ResultRef;
       typedef ParsedDensityFittingKey ParsedResultKey;
       typedef DensityFitting::MOIntsRuntime MOIntsRuntime;
+#ifdef MPQC_NEW_FEATURES
       typedef Eigen::VectorXd CoefResult;
       typedef std::shared_ptr<Eigen::VectorXd> CoefResultRef;
       typedef std::pair<int, int> IntPair;
       typedef std::pair<std::string, IntPair> CoefKey;
+#endif // MPQC_NEW_FEATURES
 
       // uses MOIntsRuntime to evaluate integrals
       DensityFittingRuntime(const Ref<MOIntsRuntime>& moints_runtime,
@@ -109,9 +111,11 @@ namespace sc {
         */
       bool exists(const std::string& key) const;
 
+#ifdef MPQC_NEW_FEATURES
       /** Returns true if the given coefficient block is available
         */
       bool exists(const CoefKey& key) const;
+#endif // MPQC_NEW_FEATURES
 
       /** Returns the DistArray4 object corresponding to this key.
 
@@ -121,11 +125,13 @@ namespace sc {
         */
       ResultRef get(const std::string& key);   // non-const: can compute something
 
+#ifdef MPQC_NEW_FEATURES
       /** Returns the Eigen::MatrixXd (a.k.a. CoefResultRef) object corresponding
        *  to the CoefKey key given.
        */
       const CoefResultRef get(const CoefKey& key);
       const CoefResultRef get(const std::string& dfkey, int bf1, int bf2){ return get(CoefKey(dfkey, IntPair(bf1, bf2))); }
+#endif // MPQC_NEW_FEATURES
 
       /// returns the runtime used to compute results
       const Ref<MOIntsRuntime>& moints_runtime() const { return moints_runtime_; }
@@ -152,6 +158,7 @@ namespace sc {
       typedef Registry<std::string, ResultRef, detail::NonsingletonCreationPolicy > ResultRegistry;
       Ref<ResultRegistry> results_;
 
+#ifdef MPQC_NEW_FEATURES
       typedef Registry<CoefKey, CoefResultRef, detail::NonsingletonCreationPolicy > CoefRegistry;
       Ref<CoefRegistry> coef_results_;
 
@@ -160,6 +167,7 @@ namespace sc {
       typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
       typedef std::map<IntPair, std::shared_ptr<Decomposition> > DecompositionMap;
       DecompositionMap decomps_;
+#endif // MPQC_NEW_FEATURES
 
       // creates the result for a given key
       const ResultRef& create_result(const std::string& key);

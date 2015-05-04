@@ -103,9 +103,11 @@ DensityFittingRuntime::DensityFittingRuntime(const Ref<MOIntsRuntime>& r,
                                              const DensityFittingParams* dfp) :
   moints_runtime_(r),
   dfparams_(dfp),
-  results_(ResultRegistry::instance()),
-  coef_results_(CoefRegistry::instance()),
+  results_(ResultRegistry::instance())
+#ifdef MPQC_NEW_FEATURES
+  ,coef_results_(CoefRegistry::instance()),
   decomps_()
+#endif
 {
 }
 
@@ -138,12 +140,13 @@ DensityFittingRuntime::exists(const std::string& key) const
   return results_->key_exists(key);
 }
 
+#ifdef MPQC_NEW_FEATURES
 bool
 DensityFittingRuntime::exists(const CoefKey& key) const
 {
   return coef_results_->key_exists(key);
 }
-
+#endif
 
 struct ParsedDensityFittingKeyInvolvesSpace {
     ParsedDensityFittingKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
@@ -181,6 +184,7 @@ DensityFittingRuntime::get(const std::string& key)
   MPQC_ASSERT(false); // unreachable
 }
 
+#ifdef MPQC_NEW_FEATURES
 const DensityFittingRuntime::CoefResultRef
 DensityFittingRuntime::get(const CoefKey& key)
 {
@@ -396,7 +400,7 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
   tim.exit();
   return Cpart;
 }
-
+#endif // MPQC_NEW_FEATURES
 
 #define USE_TRANSFORMED_DF 1
 #define ALWAYS_MAKE_AO2_DF 1

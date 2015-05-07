@@ -38,8 +38,10 @@
 #include "../integrals/dense_task_integrals.h"
 #include "../integrals/scf/soad.h"
 
-#include "../purification/sqrt_inv.h"
-#include "../purification/purification_devel.h"
+#include "../density/sqrt_inv.h"
+#include "../density/purification_devel.h"
+
+#include "../array_ops/array_to_eigen.h"
 
 using namespace tcc;
 namespace ints = integrals;
@@ -281,7 +283,8 @@ int main(int argc, char *argv[]) {
         return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                               std::move(dense));
     };
-    auto V_inv_oh = TA::to_new_tile_type(eri2_sqrt_inv, to_decomp_with_decompose);
+    auto V_inv_oh
+          = TA::to_new_tile_type(eri2_sqrt_inv, to_decomp_with_decompose);
     utility::print_size_info(V_inv_oh, "V^{-1/2}");
 
 
@@ -330,8 +333,9 @@ int main(int argc, char *argv[]) {
 
     decltype(H) F;
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
-                                     V_inv_oh, Xab, bs_clusters, low_rank_threshold,
-                                     convert_3d(low_rank_threshold));
+                                          V_inv_oh, Xab, bs_clusters,
+                                          low_rank_threshold,
+                                          convert_3d(low_rank_threshold));
     auto F_TA = TA::to_new_tile_type(F, to_ta);
 
     auto purifier = pure::make_orthogonal_tr_reset_pure(S_inv_sqrt);
@@ -369,8 +373,9 @@ int main(int argc, char *argv[]) {
     const auto volume = double(F.trange().elements().volume());
     decltype(D) D_old = D;
     decltype(D) D_diff;
+    decltype(D) L;
     double d_diff_norm = 0.0;
-    while (error >= 1e-13 && iter <= 55) {
+    while (error >= 1e-12 && iter <= 35) {
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
         auto j0 = tcc_time::now();
@@ -378,14 +383,55 @@ int main(int argc, char *argv[]) {
         auto j1 = tcc_time::now();
 
         auto k0 = tcc_time::now();
-        if (iter == 1 || iter % 8 == 0) {
-            K("i,j") = Xab("X,a,i") * (Xab("X,j,b") * D("b,a"));
-        } else {
-            D_diff("i,j") = D("i,j") - D_old("i,j");
-            D_diff.truncate();
-            d_diff_norm = D_diff("i,j").norm();
-            K("i,j") = K("i,j") + Xab("X,a,i") * (Xab("X,j,b") * D_diff("b,a"));
+        {
+            auto Eig_D = array_ops::array_to_eigen(D);
+            Eig::LDLT<decltype(Eig_D)> ldl(Eig_D);
+            array_ops::Matrix<double> P
+                  = ldl.transpositionsP()
+                    * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
+            P.transposeInPlace();
+            array_ops::Matrix<double> L_eig
+                  = P
+                    * array_ops::Matrix<double>(ldl.matrixL())
+                            .leftCols(occupation / 2);
+            Eig::VectorXd vec_d = ldl.vectorD();
+            for (auto i = 0; i < vec_d.size(); ++i) {
+                vec_d[i] = std::sqrt(vec_d[i]);
+            }
+            array_ops::Matrix<double> diag
+                  = array_ops::Matrix<double>(vec_d.asDiagonal())
+                          .block(0, 0, occupation / 2, occupation / 2);
+            L_eig *= diag;
+            TA::TiledRange1 tr0 = D.trange().data().front();
+            auto nblocks = (dfbs_nclusters < (occupation / 2)) ? dfbs_nclusters
+                                                               : occupation / 2;
+            auto block_size
+                  = std::max(std::size_t(L_eig.cols() / nblocks), 1ul);
+            std::vector<std::size_t> blocks;
+            blocks.reserve(nblocks + 1);
+            blocks.push_back(0);
+            for (auto i = block_size; i < L_eig.cols(); i += block_size) {
+                blocks.push_back(i);
+            }
+            blocks.push_back(L_eig.cols());
+            auto tr1 = TA::TiledRange1(blocks.begin(), blocks.end());
+            L = array_ops::
+                  eigen_to_array<tensor::
+                                       Tile<tensor::DecomposedTensor<double>>>(
+                        world, L_eig, tr0, tr1);
         }
+        decltype(Xab) Eai;
+        Eai("X,i,a") = Xab("X,a,b") * L("b,i");
+        K("a,b") = Eai("X,i,a") * Eai("X,i,b");
+        // if (iter == 1 || iter % 8 == 0) {
+        //     K("i,j") = Xab("X,a,i") * (Xab("X,j,b") * D("b,a"));
+        // } else {
+        //     D_diff("i,j") = D("i,j") - D_old("i,j");
+        //     D_diff.truncate();
+        //     d_diff_norm = D_diff("i,j").norm();
+        //     K("i,j") = K("i,j") + Xab("X,a,i") * (Xab("X,j,b") *
+        //     D_diff("b,a"));
+        // }
         auto k1 = tcc_time::now();
         D_old = D;
 
@@ -418,33 +464,32 @@ int main(int argc, char *argv[]) {
 
         utility::print_par(world, "\n");
         if (0 == iter % 5) {
-            decltype(Xab) Xtemp;
+            decltype(Xab) Eai;
             auto t0 = tcc_time::now();
-            Xtemp("X,a,i") = Xab("X,i,b") * D("b,a");
-            Xtemp.truncate();
+            Eai("X,i,a") = Xab("X,a,b") * L("b,i");
             auto t1 = tcc_time::now();
             auto time = tcc_time::duration_in_s(t0, t1);
 
             decltype(K) Ktest;
             auto tw0 = tcc_time::now();
-            Ktest("i,j") = Xab("X,a,i") * Xtemp("X,a,j");
+            Ktest("a,b") = Eai("X,i,a") * Eai("X,i,b");
             auto tw1 = tcc_time::now();
             auto timew = tcc_time::duration_in_s(tw0, tw1);
-            utility::print_par(world, "\nB formation time ", time, " s\n");
-            utility::print_size_info(Xtemp, "Xtemp");
-            utility::print_par(world, "\nK formation time (W * B) ", timew,
+            utility::print_par(world, "\nEai formation time ", time, " s\n");
+            utility::print_size_info(Eai, "Eai");
+            utility::print_par(world, "\nK formation time (Eai^T * Eai) ", timew,
                                " s\n");
             auto tc0 = tcc_time::now();
-            TA::foreach_inplace(Xtemp, compress(low_rank_threshold));
+            TA::foreach_inplace(Eai, compress(low_rank_threshold));
             auto tc1 = tcc_time::now();
             auto timec = tcc_time::duration_in_s(tc0, tc1);
             utility::print_par(world, "\nCompression time ", timec, " s\n");
-            utility::print_size_info(Xtemp, "Xtemp");
+            utility::print_size_info(Eai, "Eai");
             tw0 = tcc_time::now();
-            Ktest("i,j") = Xab("X,a,i") * Xtemp("X,a,j");
+            Ktest("a,b") = Eai("X,i,a") * Eai("X,i,b");
             tw1 = tcc_time::now();
             timew = tcc_time::duration_in_s(tw0, tw1);
-            utility::print_par(world, "\nK formation time (W * B(compressed)) ",
+            utility::print_par(world, "\nK formation time (Eai^T * Eai)) ",
                                timew, " s\n");
             utility::print_par(world, "\n");
         }
@@ -453,6 +498,79 @@ int main(int argc, char *argv[]) {
 
     utility::print_par(world, "Final energy = ", std::setprecision(11),
                        energy + repulsion_energy, "\n");
+
+    utility::print_par(world, "\n\n\nTEST REGION FOLLOWS\n\n\n");
+
+    { // TEST REGION
+        auto tl0 = tcc_time::now();
+        {
+            auto Eig_D = array_ops::array_to_eigen(D);
+            Eig::LDLT<decltype(Eig_D)> ldl(Eig_D);
+            array_ops::Matrix<double> P
+                  = ldl.transpositionsP()
+                    * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
+            P.transposeInPlace();
+            array_ops::Matrix<double> L_eig
+                  = P
+                    * array_ops::Matrix<double>(ldl.matrixL())
+                            .leftCols(occupation / 2);
+            Eig::VectorXd vec_d = ldl.vectorD();
+            for (auto i = 0; i < vec_d.size(); ++i) {
+                vec_d[i] = std::sqrt(vec_d[i]);
+            }
+            array_ops::Matrix<double> diag
+                  = array_ops::Matrix<double>(vec_d.asDiagonal())
+                          .block(0, 0, occupation / 2, occupation / 2);
+            L_eig *= diag;
+            TA::TiledRange1 tr0 = D.trange().data().front();
+            auto nblocks = (dfbs_nclusters < (occupation / 2)) ? dfbs_nclusters
+                                                               : occupation / 2;
+            auto block_size
+                  = std::max(std::size_t(L_eig.cols() / nblocks), 1ul);
+            std::vector<std::size_t> blocks;
+            blocks.reserve(nblocks + 1);
+            blocks.push_back(0);
+            for (auto i = block_size; i < L_eig.cols(); i += block_size) {
+                blocks.push_back(i);
+            }
+            blocks.push_back(L_eig.cols());
+            auto tr1 = TA::TiledRange1(blocks.begin(), blocks.end());
+            L = array_ops::
+                  eigen_to_array<tensor::
+                                       Tile<tensor::DecomposedTensor<double>>>(
+                        world, L_eig, tr0, tr1);
+        }
+        auto tl1 = tcc_time::now();
+        auto timel = tcc_time::duration_in_s(tl0, tl1);
+        utility::print_par(world, "\nMade TA L in ", timel, " s\n");
+
+        decltype(Xab) Eai;
+        auto te0 = tcc_time::now();
+        Eai("X,i,a") = Xab("X,a,b") * L("b,i");
+        Eai.truncate();
+        auto te1 = tcc_time::now();
+        auto timee = tcc_time::duration_in_s(te0, te1);
+        utility::print_par(world, "Made Eia in ", timee, " s\n");
+        utility::print_size_info(Eai, "Eia");
+        auto tec0 = tcc_time::now();
+        TA::foreach_inplace(D, compress(low_rank_threshold));
+        auto tec1 = tcc_time::now();
+        auto timeec = tcc_time::duration_in_s(tec0, tec1);
+        utility::print_par(world, "Compressed Eai in ", timeec, " s\n");
+        utility::print_size_info(Eai, "Eai");
+
+        utility::print_par(world, "\nForming K\n");
+        decltype(K) Ktest;
+        auto t0 = tcc_time::now();
+        Ktest("a,b") = Eai("X,i,a") * Eai("X,i,b");
+        auto t1 = tcc_time::now();
+        auto time = tcc_time::duration_in_s(t0, t1);
+        Ktest("i,j") = Ktest("i,j") - K("i,j");
+        auto diff = Ktest("i,j").norm().get();
+
+        utility::print_par(world, "\nK formation time (Eia^T * Eia) ", time,
+                           " s with norm diff ", diff, "\n");
+    }
 
     world.gop.fence();
     libint2::cleanup();

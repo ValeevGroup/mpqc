@@ -38,8 +38,10 @@
 #include "../integrals/dense_task_integrals.h"
 #include "../integrals/scf/soad.h"
 
-#include "../purification/sqrt_inv.h"
-#include "../purification/purification_devel.h"
+#include "../array_ops/array_to_eigen.h"
+
+#include "../density/sqrt_inv.h"
+#include "../density/purification_devel.h"
 
 using namespace tcc;
 namespace ints = integrals;
@@ -470,6 +472,68 @@ int main(int argc, char *argv[]) {
 
     utility::print_par(world, "Final energy = ", std::setprecision(11),
                        energy + repulsion_energy, "\n");
+
+    utility::print_par(world, "\n\n\nTEST REGION FOLLOWS\n\n\n");
+
+    { // TEST REGION
+        decltype(D) L;
+        auto tl0 = tcc_time::now();
+        {
+            auto Eig_D = array_ops::array_to_eigen(D);
+            Eig::LDLT<decltype(Eig_D)> ldl(Eig_D);
+            array_ops::Matrix<double> P
+                  = ldl.transpositionsP()
+                    * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
+            P.transposeInPlace();
+            array_ops::Matrix<double> L_eig
+                  = P
+                    * array_ops::Matrix<double>(ldl.matrixL())
+                            .leftCols(occupation / 2);
+            Eig::VectorXd vec_d = ldl.vectorD();
+            for (auto i = 0; i < vec_d.size(); ++i) {
+                vec_d[i] = std::sqrt(vec_d[i]);
+            }
+            array_ops::Matrix<double> diag
+                  = array_ops::Matrix<double>(vec_d.asDiagonal())
+                          .block(0, 0, occupation / 2, occupation / 2);
+            L_eig *= diag;
+            TA::TiledRange1 tr0 = D.trange().data().front();
+            auto nblocks = (dfbs_nclusters < (occupation / 2)) ? dfbs_nclusters
+                                                               : occupation / 2;
+            auto block_size = std::max(std::size_t(L_eig.cols() / nblocks), 1ul);
+            std::vector<std::size_t> blocks;
+            blocks.reserve(nblocks + 1);
+            blocks.push_back(0);
+            for (auto i = block_size; i < L_eig.cols(); i += block_size) {
+                blocks.push_back(i);
+            }
+            blocks.push_back(L_eig.cols());
+            auto tr1 = TA::TiledRange1(blocks.begin(), blocks.end());
+            L = array_ops::
+                  eigen_to_array<tensor::
+                                       Tile<tensor::DecomposedTensor<double>>>(
+                        world, L_eig, tr0, tr1);
+        }
+        auto tl1 = tcc_time::now();
+        auto timel = tcc_time::duration_in_s(tl0, tl1);
+        utility::print_par(world, "\nMade TA L in ", timel, " s\n");
+
+        decltype(Xab) Eai;
+        auto te0 = tcc_time::now();
+        Eai("X,a,i") = Xab("X,a,b") * L("b,i");
+        auto te1 = tcc_time::now();
+        auto timee = tcc_time::duration_in_s(te0, te1);
+        utility::print_par(world, "Made Eai in ", timee, " s\n");
+        utility::print_size_info(Eai, "Eai");
+        utility::print_par(world, "\nCompressing Eai\n");
+
+        auto tec0 = tcc_time::now();
+        TA::foreach_inplace(D, compress(low_rank_threshold));
+        auto tec1 = tcc_time::now();
+        auto timeec = tcc_time::duration_in_s(tec0, tec1);
+        utility::print_par(world, "Compressed Eai in ", timeec, " s\n");
+        utility::print_size_info(Eai, "Eai");
+    }
 
     world.gop.fence();
     libint2::cleanup();

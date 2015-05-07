@@ -34,8 +34,8 @@
 #include "../integrals/sparse_task_integrals.h"
 #include "../integrals/make_engine.h"
 
-#include "../purification/purification_devel.h"
-#include "../purification/sqrt_inv.h"
+#include "../density/purification_devel.h"
+#include "../density/sqrt_inv.h"
 
 using namespace tcc;
 

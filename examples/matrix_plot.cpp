@@ -36,8 +36,8 @@
 #include "../integrals/sparse_task_integrals.h"
 #include "../integrals/dense_task_integrals.h"
 
-#include "../purification/sqrt_inv.h"
-#include "../purification/purification_devel.h"
+#include "../density/sqrt_inv.h"
+#include "../density/purification_devel.h"
 
 using namespace tcc;
 namespace ints = integrals;

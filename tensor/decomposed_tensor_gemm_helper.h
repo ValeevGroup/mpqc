@@ -89,8 +89,7 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
                 return c;
             }
 
-            auto ab = this->operator()(a, b, f, gh);
-            c = add(c, ab);
+            c = add(c, this->operator()(a,b,f,gh));
             auto const &c_left_extent = c.tensor(0).range().size();
             auto const &c_right_extent = c.tensor(1).range().size();
             const auto long_dim = c_right_extent[1] * c_right_extent[2];

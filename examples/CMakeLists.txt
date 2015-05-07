@@ -13,6 +13,12 @@ target_link_libraries(lr_hartree_fock
 )
 add_dependencies(examples lr_hartree_fock)
 
+add_executable(lr_hartree_fock_inv_oh EXCLUDE_FROM_ALL lr_hartree_fock_inv_oh.cpp) 
+target_link_libraries(lr_hartree_fock_inv_oh
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(examples lr_hartree_fock_inv_oh)
+
 add_executable(new_tile_test EXCLUDE_FROM_ALL new_tile_test.cpp)
 target_link_libraries(new_tile_test
     ${TileClusterChem_LIBRARIES}

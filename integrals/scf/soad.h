@@ -126,27 +126,46 @@ ArrayType fock_from_minimal(
     Eri3ArrayType W_K;
     W_K("X,a,i") = V_inv("X,P") * EriK("P,i,a");
     K("i,j") = W_K("X,a,i") * (EriK("X, j, b") * D_min("b,a"));
-    decltype(D_min) temp;
-    temp("i,j") = 2 * J("i,j") - K("i,j");
-    F("i,j") = H("i,j") + temp("i,j");
-    // F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
-//    auto tnorm = temp("i,j").norm().get();
-    /* auto jnorm = J("i,j").norm().get(); */
-    /* auto knorm = K("i,j").norm().get(); */
-    /* auto hnorm = H("i,j").norm().get(); */
-    /* auto fnorm = F("i,j").norm().get(); */
-
-    /* if (J.get_world().rank() == 0) { */
-    /*     std::cout << "Norm J_min = " << jnorm << std::endl; */
-    /*     std::cout << "Norm K_min = " << knorm << std::endl; */
-    /*     std::cout << "Norm H_min = " << hnorm << std::endl; */
-    /*     std::cout << "Norm F_min = " << fnorm << std::endl; */
-    /*     std::cout << "Norm temp = " << tnorm << std::endl; */
-    /* } */
+    F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
     return F;
 }
 
+template <typename SharedEnginePool, typename Op>
+ArrayType fock_from_minimal_v_oh(
+      madness::World &world, basis::Basis const &obs, basis::Basis const &df_bs,
+      SharedEnginePool eng_pool, ArrayType const &H,
+      ArrayType const &V_inv_oh, Eri3ArrayType const &Xab,
+      std::vector<std::shared_ptr<molecule::Cluster>> const &clusters,
+      double cut, Op op) {
+
+    basis::BasisSet min_bs_set("sto-3g");
+
+    std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+    std::ofstream fout("/dev/null");
+    std::cout.rdbuf(fout.rdbuf());
+    basis::Basis min_bs{min_bs_set.create_basis(clusters)};
+    std::cout.rdbuf(cout_sbuf);
+    auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
+
+    auto EriJ = BlockSparseIntegrals(
+          world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
+    auto EriK
+          = BlockSparseIntegrals(world, eng_pool,
+                                 utility::make_array(df_bs, obs, min_bs), op);
+
+    decltype(D_min) J, K, F;
+    decltype(EriJ) Jsymm;
+    Jsymm("X,a,b") = V_inv_oh("X,P") * EriJ("P,a,b");
+    J("i,j") =  Xab("X,i,j") * (Jsymm("X,a,b") * D_min("a,b"));
+    decltype(EriK) Ksymm, Temp;
+    Ksymm("X,a,b") = V_inv_oh("X,P") * EriK("P,a,b");
+    Temp("X,a,i") = Ksymm("X,i,a");
+    K("i,j") = Temp("X,a,i") * (Ksymm("X, j, b") * D_min("b,a"));
+    F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+
+    return F;
+}
 
 } // namespace scf
 } // namespace integrals

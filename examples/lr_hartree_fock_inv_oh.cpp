@@ -260,8 +260,6 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "Eri2 inverse computation time = ",
                        inv_timer.time(), "\n");
     utility::print_size_info(eri2_sqrt_inv, "Eri2 sqrt inverse");
-    decltype(eri2_sqrt_inv) V_inv_TA;
-    V_inv_TA("i,j") = eri2_sqrt_inv("i,k") * eri2_sqrt_inv("k,j");
 
     auto to_decomp_with_decompose = [=](TA::Tensor<double> const &t) {
         auto range = t.range();
@@ -283,8 +281,8 @@ int main(int argc, char *argv[]) {
         return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                               std::move(dense));
     };
-    auto V_inv = TA::to_new_tile_type(V_inv_TA, to_decomp_with_decompose);
-    utility::print_size_info(V_inv, "V_inv");
+    auto V_inv_oh = TA::to_new_tile_type(eri2_sqrt_inv, to_decomp_with_decompose);
+    utility::print_size_info(V_inv_oh, "V^{-1/2}");
 
 
     struct convert_3d {
@@ -322,31 +320,17 @@ int main(int argc, char *argv[]) {
     auto Xab = ints::BlockSparseIntegrals(
           world, eri_pool, utility::make_array(df_basis, basis, basis),
           convert_3d(low_rank_threshold));
-
-    { // Check V^{-1/2} just to be sure it's bad :(.
-        auto V_oh_inv
-              = TA::to_new_tile_type(eri2_sqrt_inv, to_decomp_with_decompose);
-        utility::print_size_info(V_oh_inv, "V^{-1/2}");
-        decltype(Xab) W;
-        W("X,i,j") = V_oh_inv("X,P") * Xab("P,i,j");
-        W.truncate();
-
-        utility::print_size_info(W, "W with V^{-1/2}");
-        utility::print_par(world, "\n");
-    }
-
     utility::print_size_info(Xab, "E");
 
+    Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
+    Xab.truncate();
 
-    decltype(Xab) W;
-    W("X,i,j") = V_inv("X,P") * Xab("P,i,j");
-    W.truncate();
-
-    utility::print_size_info(W, "W");
+    utility::print_size_info(Xab, "Xab with V^{-1/2}");
+    utility::print_par(world, "\n");
 
     decltype(H) F;
-    F = ints::scf::fock_from_minimal(world, basis, df_basis, eri_pool, V_inv, H,
-                                     W, bs_clusters, low_rank_threshold,
+    F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
+                                     V_inv_oh, Xab, bs_clusters, low_rank_threshold,
                                      convert_3d(low_rank_threshold));
     auto F_TA = TA::to_new_tile_type(F, to_ta);
 
@@ -386,21 +370,21 @@ int main(int argc, char *argv[]) {
     decltype(D) D_old = D;
     decltype(D) D_diff;
     double d_diff_norm = 0.0;
-    while (error >= 1e-13 && iter <= 35) {
+    while (error >= 1e-13 && iter <= 55) {
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
         auto j0 = tcc_time::now();
-        J("i,j") = W("X,i,j") * (Xab("X,a,b") * D("a,b"));
+        J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
         auto j1 = tcc_time::now();
 
         auto k0 = tcc_time::now();
         if (iter == 1 || iter % 8 == 0) {
-            K("i,j") = W("X,a,i") * (Xab("X,j,b") * D("b,a"));
+            K("i,j") = Xab("X,a,i") * (Xab("X,j,b") * D("b,a"));
         } else {
             D_diff("i,j") = D("i,j") - D_old("i,j");
             D_diff.truncate();
             d_diff_norm = D_diff("i,j").norm();
-            K("i,j") = K("i,j") + W("X,a,i") * (Xab("X,j,b") * D_diff("b,a"));
+            K("i,j") = K("i,j") + Xab("X,a,i") * (Xab("X,j,b") * D_diff("b,a"));
         }
         auto k1 = tcc_time::now();
         D_old = D;
@@ -443,27 +427,26 @@ int main(int argc, char *argv[]) {
 
             decltype(K) Ktest;
             auto tw0 = tcc_time::now();
-            Ktest("i,j") = W("X,a,i") * Xtemp("X,a,j");
+            Ktest("i,j") = Xab("X,a,i") * Xtemp("X,a,j");
             auto tw1 = tcc_time::now();
             auto timew = tcc_time::duration_in_s(tw0, tw1);
             utility::print_par(world, "\nB formation time ", time, " s\n");
             utility::print_size_info(Xtemp, "Xtemp");
             utility::print_par(world, "\nK formation time (W * B) ", timew,
                                " s\n");
-
             auto tc0 = tcc_time::now();
             TA::foreach_inplace(Xtemp, compress(low_rank_threshold));
             auto tc1 = tcc_time::now();
             auto timec = tcc_time::duration_in_s(tc0, tc1);
             utility::print_par(world, "\nCompression time ", timec, " s\n");
             utility::print_size_info(Xtemp, "Xtemp");
-
             tw0 = tcc_time::now();
-            Ktest("i,j") = W("X,a,i") * Xtemp("X,a,j");
+            Ktest("i,j") = Xab("X,a,i") * Xtemp("X,a,j");
             tw1 = tcc_time::now();
             timew = tcc_time::duration_in_s(tw0, tw1);
             utility::print_par(world, "\nK formation time (W * B(compressed)) ",
                                timew, " s\n");
+            utility::print_par(world, "\n");
         }
         ++iter;
     }

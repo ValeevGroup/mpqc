@@ -155,12 +155,28 @@ int main(int argc, char *argv[]) {
     basis::BasisSet bs{basis_name};
     basis::BasisSet df_bs{df_basis_name};
 
+
     std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
     std::ofstream fout("/dev/null");
     std::cout.rdbuf(fout.rdbuf());
     basis::Basis basis{bs.create_basis(bs_clusters)};
     basis::Basis df_basis{df_bs.create_basis(dfbs_clusters)};
     std::cout.rdbuf(cout_sbuf);
+
+    if (world.rank() == 0) {
+        std::cout << "Basis trange " << std::endl;
+        TA::TiledRange1 bs_range = basis.create_flattend_trange1();
+        std::cout << bs_range << std::endl;
+        for (auto range : bs_range) {
+            std::cout << range.first << " " << range.second << std::endl;
+        }
+        TA::TiledRange1 dfbs_range = df_basis.create_flattend_trange1();
+        std::cout << "DF Basis trange " << std::endl;
+        std::cout << dfbs_range << std::endl;
+        for (auto range : dfbs_range) {
+            std::cout << range.first << " " << range.second << std::endl;
+        }
+    }
 
     libint2::init();
 
@@ -197,7 +213,7 @@ int main(int argc, char *argv[]) {
     auto S = BlockSparseIntegrals(world, overlap_pool, bs_basis_array,
                                   convert_2d(low_rank_threshold));
 
-    auto to_ta = [](tensor::Tile<tensor::DecomposedTensor<double>> t) {
+    auto to_ta = [](tensor::Tile<tensor::DecomposedTensor<double>> const &t) {
         auto tensor = tensor::algebra::combine(t.tile());
         auto range = t.range();
         return TA::Tensor<double>(range, tensor.data());
@@ -364,6 +380,27 @@ int main(int argc, char *argv[]) {
         }
     };
 
+    auto nblocks = (dfbs_nclusters < (occupation / 2)) ? dfbs_nclusters
+                                                       : occupation / 2;
+    auto block_size = std::max(std::size_t((occupation / 2) / nblocks), 1ul);
+    std::vector<std::size_t> blocks;
+    blocks.reserve(nblocks + 1);
+    blocks.push_back(0);
+    for (auto i = block_size; i < occupation / 2; i += block_size) {
+        blocks.push_back(i);
+    }
+    blocks.push_back(occupation / 2);
+    auto tr1 = TA::TiledRange1(blocks.begin(), blocks.end());
+    auto counter = 0;
+    if (world.rank() == 0) {
+        std::cout << "Range for occupied orbital\n";
+        for (auto range : tr1) {
+            std::cout << counter++ << ": " << range.first << " " << range.second
+                      << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
     decltype(H) J, K;
     utility::print_par(world, "\nStarting SCF iterations\n");
     auto diis = TiledArray::DIIS<decltype(D_TA)>(1);
@@ -384,37 +421,27 @@ int main(int argc, char *argv[]) {
 
         auto k0 = tcc_time::now();
         {
-            auto Eig_D = array_ops::array_to_eigen(D);
-            Eig::LDLT<decltype(Eig_D)> ldl(Eig_D);
-            array_ops::Matrix<double> P
-                  = ldl.transpositionsP()
-                    * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
-            P.transposeInPlace();
-            array_ops::Matrix<double> L_eig
-                  = P
-                    * array_ops::Matrix<double>(ldl.matrixL())
-                            .leftCols(occupation / 2);
-            Eig::VectorXd vec_d = ldl.vectorD();
-            for (auto i = 0; i < vec_d.size(); ++i) {
-                vec_d[i] = std::sqrt(vec_d[i]);
-            }
-            array_ops::Matrix<double> diag
-                  = array_ops::Matrix<double>(vec_d.asDiagonal())
-                          .block(0, 0, occupation / 2, occupation / 2);
-            L_eig *= diag;
+             auto Eig_D = array_ops::array_to_eigen(D);
+             Eig::LDLT<decltype(Eig_D)> ldl(Eig_D);
+             array_ops::Matrix<double> P
+                   = ldl.transpositionsP()
+                     * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
+             P.transposeInPlace();
+             array_ops::Matrix<double> L_eig
+                   = P
+                     * array_ops::Matrix<double>(ldl.matrixL())
+                             .leftCols(occupation / 2);
+             Eig::VectorXd vec_d = ldl.vectorD();
+             for (auto i = 0; i < vec_d.size(); ++i) {
+                 vec_d[i] = std::sqrt(vec_d[i]);
+             }
+             array_ops::Matrix<double> diag
+                   = array_ops::Matrix<double>(vec_d.asDiagonal())
+                           .block(0, 0, occupation / 2, occupation / 2);
+             L_eig *= diag;
+            // Eig::SelfAdjointEigenSolver<decltype(Eig_D)> es(Eig_D);
+            // decltype(Eig_D) L_eig = es.eigenvectors().leftCols(occupation / 2);
             TA::TiledRange1 tr0 = D.trange().data().front();
-            auto nblocks = (dfbs_nclusters < (occupation / 2)) ? dfbs_nclusters
-                                                               : occupation / 2;
-            auto block_size
-                  = std::max(std::size_t(L_eig.cols() / nblocks), 1ul);
-            std::vector<std::size_t> blocks;
-            blocks.reserve(nblocks + 1);
-            blocks.push_back(0);
-            for (auto i = block_size; i < L_eig.cols(); i += block_size) {
-                blocks.push_back(i);
-            }
-            blocks.push_back(L_eig.cols());
-            auto tr1 = TA::TiledRange1(blocks.begin(), blocks.end());
             L = array_ops::
                   eigen_to_array<tensor::
                                        Tile<tensor::DecomposedTensor<double>>>(
@@ -477,8 +504,8 @@ int main(int argc, char *argv[]) {
             auto timew = tcc_time::duration_in_s(tw0, tw1);
             utility::print_par(world, "\nEai formation time ", time, " s\n");
             utility::print_size_info(Eai, "Eai");
-            utility::print_par(world, "\nK formation time (Eai^T * Eai) ", timew,
-                               " s\n");
+            utility::print_par(world, "\nK formation time (Eai^T * Eai) ",
+                               timew, " s\n");
             auto tc0 = tcc_time::now();
             TA::foreach_inplace(Eai, compress(low_rank_threshold));
             auto tc1 = tcc_time::now();

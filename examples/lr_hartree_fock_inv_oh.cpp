@@ -46,9 +46,9 @@
 using namespace tcc;
 namespace ints = integrals;
 
-void main_print_clusters(
-      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-      std::ostream &os) {
+void
+main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+                    std::ostream &os) {
     std::vector<std::vector<molecule::Atom>> clusters;
     auto total_atoms = 0ul;
     for (auto const &cluster : bs) {
@@ -258,6 +258,11 @@ int main(int argc, char *argv[]) {
         return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                               std::move(dense));
     };
+    decltype(S_TA) sqrt_S_TA;
+    sqrt_S_TA("i,j") = S_inv_sqrt("i,k") * S_TA("k,j");
+    sqrt_S_TA.truncate();
+    auto sqrt_S = TA::to_new_tile_type(sqrt_S_TA, to_decomp);
+    std::cout << sqrt_S << std::endl;
 
     /* // Begin Two electron integrals section. */
     auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
@@ -401,6 +406,7 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl;
     }
 
+    decltype(D) L;
     decltype(H) J, K;
     utility::print_par(world, "\nStarting SCF iterations\n");
     auto diis = TiledArray::DIIS<decltype(D_TA)>(1);
@@ -410,61 +416,91 @@ int main(int argc, char *argv[]) {
     const auto volume = double(F.trange().elements().volume());
     decltype(D) D_old = D;
     decltype(D) D_diff;
-    decltype(D) L;
     double d_diff_norm = 0.0;
+    double time;
+    double puretime, ktime, jtime;
     while (error >= 1e-12 && iter <= 35) {
+        utility::print_par(world, "Iteration: ", iter, "\n");
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
+        utility::print_par(world, "\tStarting Coulomb...\n");
         auto j0 = tcc_time::now();
         J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
         auto j1 = tcc_time::now();
 
+        utility::print_par(world, "\tStarting Exchange...\n");
         auto k0 = tcc_time::now();
         {
-             auto Eig_D = array_ops::array_to_eigen(D);
-             Eig::LDLT<decltype(Eig_D)> ldl(Eig_D);
-             array_ops::Matrix<double> P
-                   = ldl.transpositionsP()
-                     * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
-             P.transposeInPlace();
-             array_ops::Matrix<double> L_eig
-                   = P
-                     * array_ops::Matrix<double>(ldl.matrixL())
-                             .leftCols(occupation / 2);
-             Eig::VectorXd vec_d = ldl.vectorD();
-             for (auto i = 0; i < vec_d.size(); ++i) {
-                 vec_d[i] = std::sqrt(vec_d[i]);
-             }
-             array_ops::Matrix<double> diag
-                   = array_ops::Matrix<double>(vec_d.asDiagonal())
-                           .block(0, 0, occupation / 2, occupation / 2);
-             L_eig *= diag;
-            // Eig::SelfAdjointEigenSolver<decltype(Eig_D)> es(Eig_D);
-            // decltype(Eig_D) L_eig = es.eigenvectors().leftCols(occupation / 2);
+            decltype(D) D_orth;
+            D_orth("i,j") = sqrt_S("i,k") * D("k,l") * sqrt_S("l,j");
+            world.gop.fence();
+            auto Eig_D = array_ops::array_to_eigen(D_orth);
+            Eig::LDLT<decltype(Eig_D)> ldl(Eig_D);
+            Eig::VectorXd d_vec = ldl.vectorD();
+            bool use_cholesky = true;
+            for (auto i = 0ul; i < occupation / 2; ++i) {
+                if (d_vec[i] <= 0) {
+                    use_cholesky = false;
+                    break;
+                }
+            }
+
+            array_ops::Matrix<double> L_eig;
+            if (use_cholesky) {
+                utility::print_par(world, "\tUsing LDLT for density\n");
+                array_ops::Matrix<double> P
+                      = ldl.transpositionsP()
+                        * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
+                P.transposeInPlace();
+
+                L_eig = P
+                        * array_ops::Matrix<double>(ldl.matrixL())
+                                .leftCols(occupation / 2);
+
+                for (auto i = 0ul; i < occupation / 2; ++i) {
+                    d_vec[i] = std::sqrt(d_vec[i]);
+                }
+
+                array_ops::Matrix<double> diag
+                      = array_ops::Matrix<double>(d_vec.asDiagonal())
+                              .block(0, 0, occupation / 2, occupation / 2);
+                L_eig *= diag;
+            } else {
+                utility::print_par(world, "\tUsing EVD for density\n");
+                Eig::SelfAdjointEigenSolver<decltype(Eig_D)> es(Eig_D);
+                L_eig = es.eigenvectors().rightCols(occupation / 2);
+
+                auto diag
+                      = array_ops::Matrix<double>(es.eigenvalues().asDiagonal())
+                              .bottomRightCorner(occupation / 2,
+                                                 occupation / 2);
+
+                for (auto i = 0; i < diag.cols(); ++i) {
+                    diag(i, i) = std::sqrt(diag(i, i));
+                }
+
+                L_eig = L_eig * diag;
+            }
+
             TA::TiledRange1 tr0 = D.trange().data().front();
             L = array_ops::
                   eigen_to_array<tensor::
                                        Tile<tensor::DecomposedTensor<double>>>(
                         world, L_eig, tr0, tr1);
         }
+
         decltype(Xab) Eai;
         Eai("X,i,a") = Xab("X,a,b") * L("b,i");
         K("a,b") = Eai("X,i,a") * Eai("X,i,b");
-        // if (iter == 1 || iter % 8 == 0) {
-        //     K("i,j") = Xab("X,a,i") * (Xab("X,j,b") * D("b,a"));
-        // } else {
-        //     D_diff("i,j") = D("i,j") - D_old("i,j");
-        //     D_diff.truncate();
-        //     d_diff_norm = D_diff("i,j").norm();
-        //     K("i,j") = K("i,j") + Xab("X,a,i") * (Xab("X,j,b") *
-        //     D_diff("b,a"));
-        // }
         auto k1 = tcc_time::now();
+
         D_old = D;
 
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
+
         F_TA = TA::to_new_tile_type(F, to_ta);
+        F = to_new_tile_type(F_TA, to_decomp);
 
         Ferror("i,j") = F_TA("i,k") * D_TA("k,l") * S_TA("l,j")
                         - S_TA("i,k") * D_TA("k,l") * F_TA("l,j");
@@ -472,54 +508,23 @@ int main(int argc, char *argv[]) {
         error = Ferror("i,j").norm().get() / volume;
         diis.extrapolate(F_TA, Ferror);
 
+
+        utility::print_par(world, "\tStarting Purification...\n");
         auto td0 = tcc_time::now();
         D_TA = purifier(F_TA, occupation);
         energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
         auto td1 = tcc_time::now();
 
         auto t1 = tcc_time::now();
-        auto time = tcc_time::duration_in_s(t0, t1);
-        auto jtime = tcc_time::duration_in_s(j0, j1);
-        auto ktime = tcc_time::duration_in_s(k0, k1);
-        auto puretime = tcc_time::duration_in_s(td0, td1);
-        utility::print_par(world, "Iteration: ", iter, " has energy ",
-                           std::setprecision(11), energy + repulsion_energy,
+        time = tcc_time::duration_in_s(t0, t1);
+        jtime = tcc_time::duration_in_s(j0, j1);
+        ktime = tcc_time::duration_in_s(k0, k1);
+        puretime = tcc_time::duration_in_s(td0, td1);
+        utility::print_par(world, "\tHas energy ",
+                           std::setprecision(14), energy + repulsion_energy,
                            " with error ", error, " in ", time, " s \n");
-        utility::print_par(world, "\tJ time ", jtime, " s\n\tK time ", ktime,
-                           " s\n\tPure time ", puretime, " s\n\t D diff norm ",
-                           d_diff_norm, "\n");
-
-        utility::print_par(world, "\n");
-        if (0 == iter % 5) {
-            decltype(Xab) Eai;
-            auto t0 = tcc_time::now();
-            Eai("X,i,a") = Xab("X,a,b") * L("b,i");
-            auto t1 = tcc_time::now();
-            auto time = tcc_time::duration_in_s(t0, t1);
-
-            decltype(K) Ktest;
-            auto tw0 = tcc_time::now();
-            Ktest("a,b") = Eai("X,i,a") * Eai("X,i,b");
-            auto tw1 = tcc_time::now();
-            auto timew = tcc_time::duration_in_s(tw0, tw1);
-            utility::print_par(world, "\nEai formation time ", time, " s\n");
-            utility::print_size_info(Eai, "Eai");
-            utility::print_par(world, "\nK formation time (Eai^T * Eai) ",
-                               timew, " s\n");
-            auto tc0 = tcc_time::now();
-            TA::foreach_inplace(Eai, compress(low_rank_threshold));
-            auto tc1 = tcc_time::now();
-            auto timec = tcc_time::duration_in_s(tc0, tc1);
-            utility::print_par(world, "\nCompression time ", timec, " s\n");
-            utility::print_size_info(Eai, "Eai");
-            tw0 = tcc_time::now();
-            Ktest("a,b") = Eai("X,i,a") * Eai("X,i,b");
-            tw1 = tcc_time::now();
-            timew = tcc_time::duration_in_s(tw0, tw1);
-            utility::print_par(world, "\nK formation time (Eai^T * Eai)) ",
-                               timew, " s\n");
-            utility::print_par(world, "\n");
-        }
+        utility::print_par(world, "\tJ time ", jtime, " s\n\tK time ",
+                           ktime, " s\n\tPure time ", puretime, "\n");
         ++iter;
     }
 
@@ -533,39 +538,56 @@ int main(int argc, char *argv[]) {
         {
             auto Eig_D = array_ops::array_to_eigen(D);
             Eig::LDLT<decltype(Eig_D)> ldl(Eig_D);
-            array_ops::Matrix<double> P
-                  = ldl.transpositionsP()
-                    * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
-            P.transposeInPlace();
-            array_ops::Matrix<double> L_eig
-                  = P
-                    * array_ops::Matrix<double>(ldl.matrixL())
-                            .leftCols(occupation / 2);
-            Eig::VectorXd vec_d = ldl.vectorD();
-            for (auto i = 0; i < vec_d.size(); ++i) {
-                vec_d[i] = std::sqrt(vec_d[i]);
+            Eig::VectorXd d_vec = ldl.vectorD();
+            bool use_cholesky = true;
+            for (auto i = 0ul; i < occupation / 2; ++i) {
+                if (d_vec[i] <= 0) {
+                    use_cholesky = false;
+                    break;
+                }
             }
-            array_ops::Matrix<double> diag
-                  = array_ops::Matrix<double>(vec_d.asDiagonal())
-                          .block(0, 0, occupation / 2, occupation / 2);
-            L_eig *= diag;
-            TA::TiledRange1 tr0 = D.trange().data().front();
-            auto nblocks = (dfbs_nclusters < (occupation / 2)) ? dfbs_nclusters
-                                                               : occupation / 2;
-            auto block_size
-                  = std::max(std::size_t(L_eig.cols() / nblocks), 1ul);
-            std::vector<std::size_t> blocks;
-            blocks.reserve(nblocks + 1);
-            blocks.push_back(0);
-            for (auto i = block_size; i < L_eig.cols(); i += block_size) {
-                blocks.push_back(i);
+
+            array_ops::Matrix<double> L_eig;
+            if (use_cholesky) {
+                utility::print_par(world, "\tUsing LDLT for density\n");
+                array_ops::Matrix<double> P
+                      = ldl.transpositionsP()
+                        * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
+                P.transposeInPlace();
+
+                L_eig = P
+                        * array_ops::Matrix<double>(ldl.matrixL())
+                                .leftCols(occupation / 2);
+
+                for (auto i = 0ul; i < occupation / 2; ++i) {
+                    d_vec[i] = std::sqrt(d_vec[i]);
+                }
+
+                array_ops::Matrix<double> diag
+                      = array_ops::Matrix<double>(d_vec.asDiagonal())
+                              .block(0, 0, occupation / 2, occupation / 2);
+                L_eig *= diag;
+            } else {
+                utility::print_par(world, "\tUsing EVD for density\n");
+                Eig::SelfAdjointEigenSolver<decltype(Eig_D)> es(Eig_D);
+                for (auto i = 0; i < Eig_D.rows(); ++i) {
+                    if (es.eigenvalues()[i] < 0) {
+                        std::cout << "D had a negative Eigenvalue" << std::endl;
+                    }
+                }
+                L_eig = es.eigenvectors().rightCols(occupation / 2);
+
+                auto diag
+                      = array_ops::Matrix<double>(es.eigenvalues().asDiagonal())
+                              .bottomRightCorner(occupation / 2,
+                                                 occupation / 2);
+
+                for (auto i = 0; i < diag.cols(); ++i) {
+                    diag(i, i) = std::sqrt(diag(i, i));
+                }
+
+                L_eig = L_eig * diag;
             }
-            blocks.push_back(L_eig.cols());
-            auto tr1 = TA::TiledRange1(blocks.begin(), blocks.end());
-            L = array_ops::
-                  eigen_to_array<tensor::
-                                       Tile<tensor::DecomposedTensor<double>>>(
-                        world, L_eig, tr0, tr1);
         }
         auto tl1 = tcc_time::now();
         auto timel = tcc_time::duration_in_s(tl0, tl1);

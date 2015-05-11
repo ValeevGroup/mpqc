@@ -42,7 +42,7 @@ class OrthTraceResettingPurifier {
         auto iter = 1;
         ArrayType D2;
         auto error = std::abs(tr - occ);
-        while (error >= 1e-12 && iter <= 100) {
+        while (error >= 1e-13 && iter <= 100) {
             // Compute D2
             D2("i,j") = D("i,k") * D("k,j");
             if (tr > occ) {
@@ -55,9 +55,24 @@ class OrthTraceResettingPurifier {
             error = std::abs(tr - occ);
             ++iter;
         }
+        if (iter >= 100) {
+            if (D.get_world().rank() == 0) {
+                std::cout << "Purification took " << iter
+                          << " iterations with error " << error
+                          << " this is likely unconverged." << std::endl;
+            }
+        }
+
+        auto d_norm = D("i,j").norm().get();
+        if (d_norm != d_norm) { // check for nan
+            std::cout << "D norm was nan" << std::endl;
+            throw;
+        }
 
         // D_{ao} = Z^{T} D Z
         D("i,j") = sqrt_inv_("i,k") * D("k,l") * sqrt_inv_("l,j");
+        // Symmetrize D
+        // D("i,j") = 0.5 * D("i,j") + D("j,i");
         D.truncate(); // necessary since norms blow up otherwise
         return D;
     }

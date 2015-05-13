@@ -50,5 +50,31 @@ std::vector<ClusterShells> BasisSet::create_basis(
     return cs;
 }
 
+std::vector<ClusterShells> BasisSet::create_soad_basis(
+    std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const {
+
+    using namespace molecule;
+
+    std::vector<ClusterShells> cs;
+    for (auto const &c : clusters) {
+
+        const auto libint_atoms = to_libint_atom(collapse_to_atoms(*c));
+
+        // Sneaky Libint2::Basis inherits from std::vector<libint2::Shell> !
+        libint2::BasisSet libint_basis(basis_set_name_, libint_atoms); 
+
+        // For soad just wrap shells once
+        std::vector<std::vector<libint2::Shell>> binned_shells(1);
+
+        for (auto const &shell : libint_basis) {
+            binned_shells[0].push_back(shell);
+        }
+
+        cs.emplace_back(std::move(binned_shells), c);
+    }
+
+    return cs;
+}
+
 } // namespace basis
 } // namespace tcc

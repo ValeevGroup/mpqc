@@ -48,9 +48,9 @@
 using namespace tcc;
 namespace ints = integrals;
 
-void main_print_clusters(
-      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-      std::ostream &os) {
+void
+main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+                    std::ostream &os) {
     std::vector<std::vector<molecule::Atom>> clusters;
     auto total_atoms = 0ul;
     for (auto const &cluster : bs) {
@@ -424,7 +424,7 @@ int main(int argc, char *argv[]) {
 
     utility::print_par(world, "\nMP2 Test\n");
 
-    { // Begin MP2
+    if (mol.nelements() <= 30) { // Begin MP2
         utility::print_par(world, "\nBegining MP2\n");
         auto F_eig = array_ops::array_to_eigen(F);
         auto S_eig = array_ops::array_to_eigen(S);
@@ -526,10 +526,12 @@ int main(int argc, char *argv[]) {
         utility::print_par(world, "MP2 energy = ", energy_mp2,
                            " total energy = ",
                            energy + energy_mp2 + repulsion_energy, "\n");
-    }
+    } else {
+        utility::print_par(world, "Skipping MP2 because molecule had ",
+                           mol.nelements(), " atoms.\n");
 
-    world.gop.fence();
-    libint2::cleanup();
-    madness::finalize();
-    return 0;
-}
+        world.gop.fence();
+        libint2::cleanup();
+        madness::finalize();
+        return 0;
+    }

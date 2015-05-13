@@ -169,15 +169,9 @@ int main(int argc, char *argv[]) {
         std::cout << "Basis trange " << std::endl;
         TA::TiledRange1 bs_range = basis.create_flattend_trange1();
         std::cout << bs_range << std::endl;
-        for (auto range : bs_range) {
-            std::cout << range.first << " " << range.second << std::endl;
-        }
         TA::TiledRange1 dfbs_range = df_basis.create_flattend_trange1();
         std::cout << "DF Basis trange " << std::endl;
         std::cout << dfbs_range << std::endl;
-        for (auto range : dfbs_range) {
-            std::cout << range.first << " " << range.second << std::endl;
-        }
     }
 
     libint2::init();
@@ -529,9 +523,10 @@ int main(int argc, char *argv[]) {
     } else {
         utility::print_par(world, "Skipping MP2 because molecule had ",
                            mol.nelements(), " atoms.\n");
-
-        world.gop.fence();
-        libint2::cleanup();
-        madness::finalize();
-        return 0;
     }
+
+    world.gop.fence();
+    libint2::cleanup();
+    madness::finalize();
+    return 0;
+}

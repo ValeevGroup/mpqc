@@ -15,22 +15,26 @@
 #include "../tensor/decomposed_tensor_nonintrusive_interface.h"
 
 #include "../integrals/sparse_task_integrals.h"
-#include "../integrals/btas_to_ta_tensor.h"
 
 #include <memory>
 #include <vector>
 
 namespace tcc {
+namespace integrals {
 namespace scf {
 
-using TileType = TA::Tensor<double>;
-using Array2 = TA::Array<double, 2, TileType, TA::SparsePolicy>;
-using Array4 = TA::Array<double, 4, TileType, TA::SparsePolicy>;
+using DataType = tensor::DecomposedTensor<double>;
+using TileType = tensor::Tile<DataType>;
+using ArrayType = TA::Array<double, 2, TileType, TA::SparsePolicy>;
+using Eri3ArrayType = TA::Array<double, 3, TileType, TA::SparsePolicy>;
 
-TileType
-soad_tile(std::shared_ptr<molecule::Cluster> cluster, TA::Range range) {
+TileType soad_tile(std::shared_ptr<molecule::Cluster> cluster, TA::Range range,
+                   double cut) {
     // make range for decomposed tensor
-    TA::Tensor<double> tensor(range, 0.0);
+    const auto i = range.size()[0];
+    const auto j = range.size()[1];
+    TA::Range local_range{i, j};
+    TA::Tensor<double> tensor(std::move(local_range), 0.0);
     auto atoms = molecule::collapse_to_atoms(*cluster);
 
     auto t_map = TA::eigen_map(tensor, range.size()[0], range.size()[1]);
@@ -53,16 +57,17 @@ soad_tile(std::shared_ptr<molecule::Cluster> cluster, TA::Range range) {
         }
     }
     t_map *= 0.5;
-    return tensor;
+    return TileType(range, DataType(cut, std::move(tensor)));
 }
 
-Array2 minimal_density_guess(
+
+ArrayType minimal_density_guess(
       madness::World &world,
       std::vector<std::shared_ptr<molecule::Cluster>> const &clusters,
-      basis::Basis const &min_bs) {
+      basis::Basis const &min_bs, double cut) {
 
-    TA::TiledRange trange = integrals::sparse::create_trange(
-          utility::make_array(min_bs, min_bs));
+    TA::TiledRange trange
+          = sparse::create_trange(utility::make_array(min_bs, min_bs));
     TA::Tensor<float> tile_norms(trange.tiles(), 0.0);
     auto tn_map = TA::eigen_map(tile_norms, tile_norms.range().size()[0],
                                 tile_norms.range().size()[1]);
@@ -76,7 +81,7 @@ Array2 minimal_density_guess(
 
     TA::SparseShape<float> shape(world, tile_norms, trange);
 
-    Array2 D_min(world, trange, shape);
+    ArrayType D_min(world, trange, shape);
 
     auto const &pmap = *D_min.get_pmap();
     auto it = pmap.begin();
@@ -84,20 +89,22 @@ Array2 minimal_density_guess(
     for (; it != end; ++it) {
         if (!D_min.is_zero(*it)) {
             auto cluster_ord = trange.tiles().idx(*it)[0];
-            madness::Future<TA::Tensor<double>> tile
+            madness::Future<tensor::Tile<tensor::DecomposedTensor<double>>> tile
                   = world.taskq.add(soad_tile, clusters[cluster_ord],
-                                    trange.make_tile_range(*it));
+                                    trange.make_tile_range(*it), cut);
             D_min.set(*it, tile);
         }
     }
     return D_min;
 }
 
-template <typename SharedEnginePool>
-Array2
-F_soad_guess(madness::World &world, basis::Basis const &obs,
-             SharedEnginePool eng_pool, Array2 const &H,
-             std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) {
+template <typename SharedEnginePool, typename Op>
+ArrayType fock_from_minimal(
+      madness::World &world, basis::Basis const &obs, basis::Basis const &df_bs,
+      SharedEnginePool eng_pool, ArrayType const &V_inv, ArrayType const &H,
+      Eri3ArrayType const &W,
+      std::vector<std::shared_ptr<molecule::Cluster>> const &clusters,
+      double cut, Op op) {
 
     basis::BasisSet min_bs_set("sto-3g");
 
@@ -106,26 +113,62 @@ F_soad_guess(madness::World &world, basis::Basis const &obs,
     std::cout.rdbuf(fout.rdbuf());
     basis::Basis min_bs{min_bs_set.create_basis(clusters)};
     std::cout.rdbuf(cout_sbuf);
-    auto D_min = minimal_density_guess(world, clusters, min_bs);
+    auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
 
-    auto EriJ
-          = BlockSparseIntegrals(world, eng_pool,
-                                 utility::make_array(obs, obs, min_bs, min_bs),
-                                 integrals::compute_functors::BtasToTaTensor{});
+    auto EriJ = BlockSparseIntegrals(
+          world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
     auto EriK
           = BlockSparseIntegrals(world, eng_pool,
-                                 utility::make_array(obs, min_bs, obs, min_bs),
-                                 integrals::compute_functors::BtasToTaTensor{});
+                                 utility::make_array(df_bs, obs, min_bs), op);
 
-    Array2 J, K, F;
-    J("i,j") = EriJ("i,j,a,b") * D_min("a,b");
-    K("i,j") = EriK("i, a, j, b") * D_min("a,b");
+    decltype(D_min) J, K, F;
+    J("i,j") = W("X,i,j") * (EriJ("X,a,b") * D_min("a,b"));
+    Eri3ArrayType W_K;
+    W_K("X,a,i") = V_inv("X,P") * EriK("P,i,a");
+    K("i,j") = W_K("X,a,i") * (EriK("X, j, b") * D_min("b,a"));
+    F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+
+    return F;
+}
+
+template <typename SharedEnginePool, typename Op>
+ArrayType fock_from_minimal_v_oh(
+      madness::World &world, basis::Basis const &obs, basis::Basis const &df_bs,
+      SharedEnginePool eng_pool, ArrayType const &H, ArrayType const &V_inv_oh,
+      Eri3ArrayType const &Xab,
+      std::vector<std::shared_ptr<molecule::Cluster>> const &clusters,
+      double cut, Op op) {
+
+    basis::BasisSet min_bs_set("sto-3g");
+
+    std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+    std::ofstream fout("/dev/null");
+    std::cout.rdbuf(fout.rdbuf());
+    basis::Basis min_bs{min_bs_set.create_basis(clusters)};
+    std::cout.rdbuf(cout_sbuf);
+    auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
+
+    auto EriJ = BlockSparseIntegrals(
+          world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
+    auto EriK
+          = BlockSparseIntegrals(world, eng_pool,
+                                 utility::make_array(df_bs, obs, min_bs), op);
+
+    decltype(D_min) J, K, F;
+    decltype(EriJ) Jsymm;
+    Jsymm("X,a,b") = V_inv_oh("X,P") * EriJ("P,a,b");
+    J("i,j") = Xab("X,i,j") * (Jsymm("X,a,b") * D_min("a,b"));
+    decltype(EriK) Ksymm, Temp;
+    Ksymm("X,a,b") = V_inv_oh("X,P") * EriK("P,a,b");
+    Temp("X,a,i") = Ksymm("X,i,a");
+    K("i,j") = Temp("X,a,i") * (Ksymm("X, j, b") * D_min("b,a"));
     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
     return F;
 }
 
 } // namespace scf
+} // namespace integrals
 } // namespace tcc
 
 #endif // TCC_INTEGRALS_SCF_SOAD_H

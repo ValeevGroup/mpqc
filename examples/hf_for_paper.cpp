@@ -343,10 +343,13 @@ int main(int argc, char *argv[]) {
     utility::print_size_info(Xab, "Xab with V^{-1/2}");
     utility::print_par(world, "\n");
 
-    decltype(H_TA) F_TA;
-    F_TA = scf::F_soad_guess(world, basis, eri_pool, H_TA, bs_clusters);
+    decltype(H) F;
+    F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
+                                          V_inv_oh, Xab, bs_clusters,
+                                          low_rank_threshold,
+                                          convert_3d(low_rank_threshold));
 
-    auto F = TA::to_new_tile_type(F_TA, to_decomp);
+    auto F_TA = TA::to_new_tile_type(F, to_ta);
 
     auto n_occ = occupation / 2;
     auto tr_i = scf::tr_occupied(dfbs_nclusters, n_occ);

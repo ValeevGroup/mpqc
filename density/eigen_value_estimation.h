@@ -53,7 +53,7 @@ std::pair<double, double> symmetric_min_max_evals(Array const &S) {
 
     for (auto it = S.begin(); it != S.end(); ++it) {
         auto const &tile = it->get();
-        auto const &extent = tile.range().size();
+        auto const extent = tile.range().extent();
         auto matrix_map = TiledArray::eigen_map(tile, extent[0], extent[1]);
 
         Eigen::VectorXd tile_row_sums(extent[0]);

@@ -40,9 +40,11 @@ std::array<TiledArray::Tensor<T, AT>, 2>
                                  tile.data(), result[0].data(), reduce_op);
 
 
-    auto const &start = tile.range().start();
-    auto const &finish = tile.range().finish();
-    auto const &weight = tile.range().weight();
+    TA::Range range = tile.range();
+    auto const start = range.lobound();
+    auto const finish = range.upbound(); auto const weight_ptr = tile.range().weight();
+    auto const dims = tile.range().rank();  
+    std::vector<unsigned int> weight(weight_ptr, weight_ptr + dims);
 
     size_type const start_max = *std::max_element(start.begin(), start.end());
     size_type const finish_min
@@ -81,7 +83,7 @@ double max_eval_est(Array const &S) {
 
     for (auto it = S.begin(); it != S.end(); ++it) {
         auto const &tile = it->get();
-        auto const &extent = tile.range().size();
+        auto const extent = tile.range().extent();
         auto matrix_map = TiledArray::eigen_map(tile, extent[0], extent[1]);
 
         Eigen::VectorXd tile_row_sums(extent[0]);
@@ -122,7 +124,7 @@ void add_to_diag(Array &A, double val) {
 
         if (diagonal_tile) {
             auto &tile = it->get();
-            auto const &extent = tile.range().size();
+            auto const extent = tile.range().extent();
             auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
             for (auto i = 0ul; i < extent[0]; ++i) {
                 map(i, i) += val;

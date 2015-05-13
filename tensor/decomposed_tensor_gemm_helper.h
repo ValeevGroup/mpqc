@@ -89,7 +89,7 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
                 return c;
             }
 
-            c = add(c, this->operator()(a,b,f,gh));
+            c = add(c, this->operator()(a, b, f, gh));
             auto const &c_left_extent = c.tensor(0).range().size();
             auto const &c_right_extent = c.tensor(1).range().size();
             const auto long_dim = c_right_extent[1] * c_right_extent[2];
@@ -362,6 +362,42 @@ struct low_rank_gemm<2ul, 3ul, 1ul> {
                 c.tensor(0).gemm(a.tensor(1), Rp, f, gh_left);
             }
             return c;
+        }
+        assert(false);
+    }
+};
+
+// C("i,j") = A("i,k") * B("k,j") + C("i,j");
+template <>
+struct low_rank_gemm<2ul, 2ul, 2ul> {
+    template <typename T>
+    Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
+                          GHelper const &gh) {
+        if (a.ndecomp() == 1) {
+            if (b.ndecomp() == 1) {
+                return Dtensor<T>(a.cut(),
+                                  a.tensor(0).gemm(b.tensor(0), f, gh));
+            } else {
+                assert(false);
+            }
+        } else {
+            assert(false);
+        }
+
+        return Dtensor<T>(a.cut());
+    }
+
+    template <typename T>
+    Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a,
+                           Dtensor<T> const &b, const T f, GHelper const &gh) {
+        // assume b and c are never decomposed.
+        if (c.ndecomp() == 1) {
+            if (a.ndecomp() == 1) {
+                if(b.ndecomp() == 1){
+                    c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
+                    return c;
+                }
+            }
         }
         assert(false);
     }

@@ -36,12 +36,14 @@
 #include "../integrals/integral_engine_pool.h"
 #include "../integrals/sparse_task_integrals.h"
 #include "../integrals/dense_task_integrals.h"
-#include "../integrals/scf/soad.h"
 
-#include "../array_ops/array_to_eigen.h"
+#include "../scf/soad.h"
+#include "../scf/diagonalize_for_coffs.hpp"
 
 #include "../density/sqrt_inv.h"
 #include "../density/purification_devel.h"
+
+#include "../array_ops/array_to_eigen.h"
 
 using namespace tcc;
 namespace ints = integrals;
@@ -155,12 +157,28 @@ int main(int argc, char *argv[]) {
     basis::BasisSet bs{basis_name};
     basis::BasisSet df_bs{df_basis_name};
 
+
     std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
     std::ofstream fout("/dev/null");
     std::cout.rdbuf(fout.rdbuf());
     basis::Basis basis{bs.create_basis(bs_clusters)};
     basis::Basis df_basis{df_bs.create_basis(dfbs_clusters)};
     std::cout.rdbuf(cout_sbuf);
+
+    if (world.rank() == 0) {
+        std::cout << "Basis trange " << std::endl;
+        TA::TiledRange1 bs_range = basis.create_flattend_trange1();
+        std::cout << bs_range << std::endl;
+        for (auto range : bs_range) {
+            std::cout << range.first << " " << range.second << std::endl;
+        }
+        TA::TiledRange1 dfbs_range = df_basis.create_flattend_trange1();
+        std::cout << "DF Basis trange " << std::endl;
+        std::cout << dfbs_range << std::endl;
+        for (auto range : dfbs_range) {
+            std::cout << range.first << " " << range.second << std::endl;
+        }
+    }
 
     libint2::init();
 
@@ -197,16 +215,12 @@ int main(int argc, char *argv[]) {
     auto S = BlockSparseIntegrals(world, overlap_pool, bs_basis_array,
                                   convert_2d(low_rank_threshold));
 
-    auto to_ta = [](tensor::Tile<tensor::DecomposedTensor<double>> t) {
+    auto to_ta = [](tensor::Tile<tensor::DecomposedTensor<double>> const &t) {
         auto tensor = tensor::algebra::combine(t.tile());
         auto range = t.range();
         return TA::Tensor<double>(range, tensor.data());
     };
     auto S_TA = TA::to_new_tile_type(S, to_ta);
-
-    // Invert overlap
-    utility::print_par(world, "\nComputing overlap inverse\n");
-    auto S_inv_sqrt = pure::inverse_sqrt(S_TA);
 
     // Compute T
     auto kinetic_pool = ints::make_pool(ints::make_1body("kinetic", basis));
@@ -225,7 +239,6 @@ int main(int argc, char *argv[]) {
     world.gop.fence();
 
     auto H_TA = TA::to_new_tile_type(H, to_ta);
-
 
     auto to_decomp = [=](TA::Tensor<double> const &t) {
         auto range = t.range();
@@ -252,7 +265,6 @@ int main(int argc, char *argv[]) {
           world, eri_pool, utility::make_array(df_basis, df_basis),
           integrals::compute_functors::BtasToTaTensor{});
 
-
     /* // Computing the sqrt inverse of Eri2 */
     utility::print_par(world, "\nComputing eri2 sqrt Inverse\n");
     auto inv_timer
@@ -262,8 +274,6 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "Eri2 inverse computation time = ",
                        inv_timer.time(), "\n");
     utility::print_size_info(eri2_sqrt_inv, "Eri2 sqrt inverse");
-    decltype(eri2_sqrt_inv) V_inv_TA;
-    V_inv_TA("i,j") = eri2_sqrt_inv("i,k") * eri2_sqrt_inv("k,j");
 
     auto to_decomp_with_decompose = [=](TA::Tensor<double> const &t) {
         auto range = t.range();
@@ -285,8 +295,9 @@ int main(int argc, char *argv[]) {
         return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                               std::move(dense));
     };
-    auto V_inv = TA::to_new_tile_type(V_inv_TA, to_decomp_with_decompose);
-    utility::print_size_info(V_inv, "V_inv");
+    auto V_inv_oh
+          = TA::to_new_tile_type(eri2_sqrt_inv, to_decomp_with_decompose);
+    utility::print_size_info(V_inv_oh, "V^{-1/2}");
 
 
     struct convert_3d {
@@ -324,91 +335,60 @@ int main(int argc, char *argv[]) {
     auto Xab = ints::BlockSparseIntegrals(
           world, eri_pool, utility::make_array(df_basis, basis, basis),
           convert_3d(low_rank_threshold));
-
-    { // Check V^{-1/2} just to be sure it's bad :(.
-        auto V_oh_inv
-              = TA::to_new_tile_type(eri2_sqrt_inv, to_decomp_with_decompose);
-        utility::print_size_info(V_oh_inv, "V^{-1/2}");
-        decltype(Xab) W;
-        W("X,i,j") = V_oh_inv("X,P") * Xab("P,i,j");
-        W.truncate();
-
-        utility::print_size_info(W, "W with V^{-1/2}");
-        utility::print_par(world, "\n");
-    }
-
     utility::print_size_info(Xab, "E");
 
+    Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
+    Xab.truncate();
 
-    decltype(Xab) W;
-    W("X,i,j") = V_inv("X,P") * Xab("P,i,j");
-    W.truncate();
+    utility::print_size_info(Xab, "Xab with V^{-1/2}");
+    utility::print_par(world, "\n");
 
-    utility::print_size_info(W, "W");
+    decltype(H_TA) F_TA;
+    F_TA = scf::F_soad_guess(world, basis, eri_pool, H_TA, bs_clusters);
 
-    decltype(H) F;
-    F = ints::scf::fock_from_minimal(world, basis, df_basis, eri_pool, V_inv, H,
-                                     W, bs_clusters, low_rank_threshold,
-                                     convert_3d(low_rank_threshold));
-    auto F_TA = TA::to_new_tile_type(F, to_ta);
+    auto F = TA::to_new_tile_type(F_TA, to_decomp);
 
-    auto purifier = pure::make_orthogonal_tr_reset_pure(S_inv_sqrt);
-    auto D_TA = purifier(F_TA, occupation);
+    auto n_occ = occupation / 2;
+    auto tr_i = scf::tr_occupied(dfbs_nclusters, n_occ);
+    auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+    auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
+
+    decltype(Coeffs_TA) D_TA;
+    D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
+
     auto energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
     utility::print_par(world, "Initial energy = ", energy + repulsion_energy,
                        "\n");
+
     auto D = to_new_tile_type(D_TA, to_decomp);
 
-    struct compress {
-        double cut_;
-        compress(double thresh) : cut_{thresh} {}
-        using TileType = tensor::Tile<tensor::DecomposedTensor<double>>;
-        double operator()(TileType &result) {
-            if (result.tile().ndecomp() == 1) {
-                auto test
-                      = tensor::algebra::two_way_decomposition(result.tile());
-                if (!test.empty()) {
-                    result.tile() = std::move(test);
-                }
-            } else {
-                tensor::algebra::recompress(result.tile());
-            }
-
-            return result.norm();
-        }
-    };
-
-    decltype(H) J, K;
+    decltype(D) J, K;
     utility::print_par(world, "\nStarting SCF iterations\n");
     auto diis = TiledArray::DIIS<decltype(D_TA)>(1);
     auto iter = 1;
     decltype(F_TA) Ferror;
     auto error = 1.0;
     const auto volume = double(F.trange().elements().volume());
-    decltype(D) D_old = D;
-    decltype(D) D_diff;
-    double d_diff_norm = 0.0;
-    while (error >= 1e-13 && iter <= 35) {
+    double time;
+    double ktime, jtime;
+    while (error >= 1e-12 && iter <= 35) {
+        utility::print_par(world, "Iteration: ", iter, "\n");
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
+
+        utility::print_par(world, "\tStarting Coulomb...\n");
         auto j0 = tcc_time::now();
-        J("i,j") = W("X,i,j") * (Xab("X,a,b") * D("a,b"));
+        J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
         auto j1 = tcc_time::now();
 
+        utility::print_par(world, "\tStarting Exchange...\n");
         auto k0 = tcc_time::now();
-        if (iter == 1 || iter % 8 == 0) {
-            K("i,j") = W("X,a,i") * (Xab("X,j,b") * D("b,a"));
-        } else {
-            D_diff("i,j") = D("i,j") - D_old("i,j");
-            D_diff.truncate();
-            d_diff_norm = D_diff("i,j").norm();
-            K("i,j") = K("i,j") + W("X,a,i") * (Xab("X,j,b") * D_diff("b,a"));
-        }
+        decltype(Xab) Eai;
+        Eai("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
+        K("a,b") = Eai("X,i,a") * Eai("X,i,b");
         auto k1 = tcc_time::now();
-        D_old = D;
 
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
-
         F_TA = TA::to_new_tile_type(F, to_ta);
 
         Ferror("i,j") = F_TA("i,k") * D_TA("k,l") * S_TA("l,j")
@@ -417,122 +397,132 @@ int main(int argc, char *argv[]) {
         error = Ferror("i,j").norm().get() / volume;
         diis.extrapolate(F_TA, Ferror);
 
-        auto td0 = tcc_time::now();
-        D_TA = purifier(F_TA, occupation);
+        Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+        Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
+        D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
+
         energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
-        auto td1 = tcc_time::now();
 
         auto t1 = tcc_time::now();
-        auto time = tcc_time::duration_in_s(t0, t1);
-        auto jtime = tcc_time::duration_in_s(j0, j1);
-        auto ktime = tcc_time::duration_in_s(k0, k1);
-        auto puretime = tcc_time::duration_in_s(td0, td1);
-        utility::print_par(world, "Iteration: ", iter, " has energy ",
-                           std::setprecision(11), energy + repulsion_energy,
-                           " with error ", error, " in ", time, " s \n");
+        time = tcc_time::duration_in_s(t0, t1);
+        jtime = tcc_time::duration_in_s(j0, j1);
+        ktime = tcc_time::duration_in_s(k0, k1);
+
+        utility::print_par(world, "\tHas energy ", std::setprecision(14),
+                           energy + repulsion_energy, " with error ", error,
+                           " in ", time, " s \n");
         utility::print_par(world, "\tJ time ", jtime, " s\n\tK time ", ktime,
-                           " s\n\tPure time ", puretime, " s\n\t D diff norm ",
-                           d_diff_norm, "\n");
-
-        utility::print_par(world, "\n");
-        if (0 == iter % 5) {
-            decltype(Xab) Xtemp;
-            auto t0 = tcc_time::now();
-            Xtemp("X,a,i") = Xab("X,i,b") * D("b,a");
-            Xtemp.truncate();
-            auto t1 = tcc_time::now();
-            auto time = tcc_time::duration_in_s(t0, t1);
-
-            decltype(K) Ktest;
-            auto tw0 = tcc_time::now();
-            Ktest("i,j") = W("X,a,i") * Xtemp("X,a,j");
-            auto tw1 = tcc_time::now();
-            auto timew = tcc_time::duration_in_s(tw0, tw1);
-            utility::print_par(world, "\nB formation time ", time, " s\n");
-            utility::print_size_info(Xtemp, "Xtemp");
-            utility::print_par(world, "\nK formation time (W * B) ", timew,
-                               " s\n");
-
-            auto tc0 = tcc_time::now();
-            TA::foreach_inplace(Xtemp, compress(low_rank_threshold));
-            auto tc1 = tcc_time::now();
-            auto timec = tcc_time::duration_in_s(tc0, tc1);
-            utility::print_par(world, "\nCompression time ", timec, " s\n");
-            utility::print_size_info(Xtemp, "Xtemp");
-
-            tw0 = tcc_time::now();
-            Ktest("i,j") = W("X,a,i") * Xtemp("X,a,j");
-            tw1 = tcc_time::now();
-            timew = tcc_time::duration_in_s(tw0, tw1);
-            utility::print_par(world, "\nK formation time (W * B(compressed)) ",
-                               timew, " s\n");
-        }
+                           " s\n");
         ++iter;
     }
 
     utility::print_par(world, "Final energy = ", std::setprecision(11),
                        energy + repulsion_energy, "\n");
 
-    utility::print_par(world, "\n\n\nTEST REGION FOLLOWS\n\n\n");
+    utility::print_par(world, "\nMP2 Test\n");
 
-    { // TEST REGION
-        decltype(D) L;
-        auto tl0 = tcc_time::now();
-        {
-            auto Eig_D = array_ops::array_to_eigen(D);
-            Eig::LDLT<decltype(Eig_D)> ldl(Eig_D);
-            array_ops::Matrix<double> P
-                  = ldl.transpositionsP()
-                    * decltype(Eig_D)::Identity(Eig_D.rows(), Eig_D.cols());
-            P.transposeInPlace();
-            array_ops::Matrix<double> L_eig
-                  = P
-                    * array_ops::Matrix<double>(ldl.matrixL())
-                            .leftCols(occupation / 2);
-            Eig::VectorXd vec_d = ldl.vectorD();
-            for (auto i = 0; i < vec_d.size(); ++i) {
-                vec_d[i] = std::sqrt(vec_d[i]);
-            }
-            array_ops::Matrix<double> diag
-                  = array_ops::Matrix<double>(vec_d.asDiagonal())
-                          .block(0, 0, occupation / 2, occupation / 2);
-            L_eig *= diag;
-            TA::TiledRange1 tr0 = D.trange().data().front();
-            auto nblocks = (dfbs_nclusters < (occupation / 2)) ? dfbs_nclusters
-                                                               : occupation / 2;
-            auto block_size = std::max(std::size_t(L_eig.cols() / nblocks), 1ul);
-            std::vector<std::size_t> blocks;
-            blocks.reserve(nblocks + 1);
-            blocks.push_back(0);
-            for (auto i = block_size; i < L_eig.cols(); i += block_size) {
-                blocks.push_back(i);
-            }
-            blocks.push_back(L_eig.cols());
-            auto tr1 = TA::TiledRange1(blocks.begin(), blocks.end());
-            L = array_ops::
-                  eigen_to_array<tensor::
-                                       Tile<tensor::DecomposedTensor<double>>>(
-                        world, L_eig, tr0, tr1);
+    { // Begin MP2
+        utility::print_par(world, "\nBegining MP2\n");
+        auto F_eig = array_ops::array_to_eigen(F);
+        auto S_eig = array_ops::array_to_eigen(S);
+        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+                                                                   S_eig);
+        Eig::VectorXd evals = es.eigenvalues();
+        decltype(S_eig) C_occ = es.eigenvectors().leftCols(occupation / 2);
+        decltype(S_eig) C_vir
+              = es.eigenvectors().rightCols(S_eig.rows() - occupation / 2);
+
+        auto nblocks = (dfbs_nclusters < (S_eig.rows() - occupation / 2))
+                             ? dfbs_nclusters
+                             : S_eig.rows() - occupation / 2;
+        auto block_size
+              = std::max(std::size_t((S_eig.rows() - occupation / 2) / nblocks),
+                         1ul);
+        std::vector<std::size_t> blocks;
+        blocks.reserve(nblocks + 1);
+        blocks.push_back(0);
+        for (auto i = block_size; i < S_eig.rows() - occupation / 2;
+             i += block_size) {
+            blocks.push_back(i);
         }
-        auto tl1 = tcc_time::now();
-        auto timel = tcc_time::duration_in_s(tl0, tl1);
-        utility::print_par(world, "\nMade TA L in ", timel, " s\n");
+        blocks.push_back(S_eig.rows() - occupation / 2);
+        auto tr_vir = TA::TiledRange1(blocks.begin(), blocks.end());
 
-        decltype(Xab) Eai;
-        auto te0 = tcc_time::now();
-        Eai("X,a,i") = Xab("X,a,b") * L("b,i");
-        auto te1 = tcc_time::now();
-        auto timee = tcc_time::duration_in_s(te0, te1);
-        utility::print_par(world, "Made Eai in ", timee, " s\n");
-        utility::print_size_info(Eai, "Eai");
-        utility::print_par(world, "\nCompressing Eai\n");
+        TA::TiledRange1 tr0 = D.trange().data().front();
+        auto Ci = array_ops::
+              eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
+                    world, C_occ, tr0, tr_i);
+        auto Cv = array_ops::
+              eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
+                    world, C_vir, tr0, tr_vir);
 
-        auto tec0 = tcc_time::now();
-        TA::foreach_inplace(D, compress(low_rank_threshold));
-        auto tec1 = tcc_time::now();
-        auto timeec = tcc_time::duration_in_s(tec0, tec1);
-        utility::print_par(world, "Compressed Eai in ", timeec, " s\n");
-        utility::print_size_info(Eai, "Eai");
+        decltype(Xab) Xia;
+        Xia("X,i,a") = Xab("X,mu,nu") * Ci("nu,i") * Cv("mu,a");
+
+        utility::print_size_info(Xia, "Xia");
+
+        auto Xia_TA = TA::to_new_tile_type(Xia, to_ta);
+        TA::Array<double, 4, TA::Tensor<double>, TA::SparsePolicy> IAJB;
+        IAJB("i,a,j,b") = Xia_TA("X,i,a") * Xia_TA("X,j,b");
+        utility::print_size_info(IAJB, "IAJB");
+        auto vec_ptr = std::make_shared<Eig::VectorXd>(std::move(evals));
+        struct Mp2Red {
+            using result_type = double;
+            using argument_type = TA::Tensor<double>;
+
+            std::shared_ptr<Eig::VectorXd> vec_;
+            unsigned int n_occ_;
+
+            Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+                    : vec_(std::move(vec)), n_occ_(n_occ) {}
+            Mp2Red(Mp2Red const &) = default;
+
+            result_type operator()() const { return 0.0; }
+            result_type operator()(result_type const &t) const { return t; }
+            void operator()(result_type &me, result_type const &other) const {
+                me += other;
+            }
+
+            void operator()(result_type &me, argument_type const &tile) const {
+                auto const &range = tile.range();
+                auto const &vec = *vec_;
+                auto const st = range.start();
+                auto const fn = range.finish();
+                auto tile_idx = 0;
+                for (auto i = st[0]; i < fn[0]; ++i) {
+                    const auto e_i = vec[i];
+                    for (auto a = st[1]; a < fn[1]; ++a) {
+                        const auto e_ia = e_i - vec[a + n_occ_];
+                        for (auto j = st[2]; j < fn[2]; ++j) {
+                            const auto e_iaj = e_ia + vec[j];
+                            for (auto b = st[3]; b < fn[3]; ++b, ++tile_idx) {
+                                const auto e_iajb = e_iaj - vec[b + n_occ_];
+                                me += 1 / (e_iajb)*tile.data()[tile_idx];
+                            }
+                        }
+                    }
+                }
+                // for (auto i = 0ul; i < range.volume(); ++i) {
+                //     auto idx = range.idx(i);
+                //     // vals are ordered i, a, j, b
+                //     // need e_i + e_j - e_a - e_b
+                //     auto ival = vec[idx[0]];
+                //     auto aval = vec[n_occ_ + idx[1]];
+                //     auto jval = vec[idx[2]];
+                //     auto bval = vec[n_occ_ + idx[3]];
+                //     auto total = 1.0 / (ival + jval - aval - bval);
+                //     me += total * tile.data()[i];
+                // }
+            }
+        };
+
+        double energy_mp2
+              = (IAJB("i,a,j,b") * (2 * IAJB("i,a,j,b") - IAJB("i,b,j,a")))
+                      .reduce(Mp2Red(vec_ptr, occupation / 2));
+
+        utility::print_par(world, "MP2 energy = ", energy_mp2,
+                           " total energy = ",
+                           energy + energy_mp2 + repulsion_energy, "\n");
     }
 
     world.gop.fence();

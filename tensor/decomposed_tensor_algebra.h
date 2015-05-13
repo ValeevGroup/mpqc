@@ -169,11 +169,12 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
                          TA::Tensor<double> &R, double thresh,
                          std::size_t max_out_rank
                          = std::numeric_limits<std::size_t>::max()) {
-    auto const &extent = in.range().size();
+    auto const extent = in.range().extent();
+    auto dims = in.range().rank();
 
     int cols = extent[0];
     int rows = 1;
-    for (auto i = 1ul; i < extent.size(); ++i) {
+    for (auto i = 1ul; i < dims; ++i) {
         rows *= extent[i];
     }
     const auto size = cols * rows;
@@ -208,7 +209,7 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
     Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
 
     // Create L tensor
-    TA::Range l_range{extent[0], static_cast<std::size_t>(rank)};
+    TA::Range l_range(extent[0], static_cast<std::size_t>(rank));
     L = TA::Tensor<double>(std::move(l_range));
 
     // Eigen map the input
@@ -227,10 +228,10 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
     }
 
     // From Q goes to R because of column major transpose issues.
-    if (extent.size() == 3) {
+    if (dims == 3) {
         TA::Range q_range{static_cast<std::size_t>(rank), extent[1], extent[2]};
         R = TA::Tensor<double>(std::move(q_range));
-    } else if (extent.size() == 2) {
+    } else if (dims == 2) {
         TA::Range q_range{static_cast<std::size_t>(rank), extent[1]};
         R = TA::Tensor<double>(std::move(q_range));
     } else {
@@ -245,7 +246,7 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
 // Returns true if input is low rank.
 void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
                               TA::Tensor<double> &R, double thresh) {
-    auto const &extent = in.range().size();
+    auto const extent = in.range().extent();
 
     int cols = extent[0];
     int rows = 1;
@@ -311,7 +312,7 @@ void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
 inline void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
                          TA::Tensor<double> &R) {
 
-    auto const &extent = in.range().size();
+    auto const extent = in.range().extent();
 
     // Reverse map
     // We will always extract the first dimension as cols
@@ -378,7 +379,7 @@ inline void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
 inline void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
                          TA::Tensor<double> &R) {
 
-    auto const &extent = in.range().size();
+    auto const extent = in.range().extent();
 
     // Reverse map
     // We will always extract the first dimension as cols
@@ -433,7 +434,7 @@ inline void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
 // Sacrifice input data
 inline void ta_tensor_svd(TA::Tensor<double> &in, TA::Tensor<double> &L,
                           TA::Tensor<double> &R, double thresh) {
-    auto const &extent = in.range().size();
+    auto const extent = in.range().extent();
     auto ndims = extent.size();
     assert(ndims == 2);
 
@@ -518,7 +519,7 @@ two_way_decomposition(DecomposedTensor<double> const &t) {
         assert(false);
     }
 
-    auto const &extent = t.tensor(0).range().size();
+    auto const extent = t.tensor(0).range().extent();
     const auto rows = extent[0];
     auto second = extent.begin();
     std::advance(second, 1);

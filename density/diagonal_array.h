@@ -11,7 +11,7 @@ namespace pure {
 
 template <typename T>
 void make_diagonal_tile(TiledArray::Tensor<T> &tile, T val) {
-    auto const &extent = tile.range().size();
+    auto const extent = tile.range().extent();
     auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
     for (auto i = 0ul; i < extent[0]; ++i) {
         map(i, i) = val;
@@ -23,7 +23,7 @@ void make_diagonal_tile(tensor::Tile<tensor::DecomposedTensor<T>> &tile,
                         T val) {
     assert(tile.tile().ndecomp() == 1);
     auto &tensor = tile.tile().tensor(0);
-    auto const &extent = tensor.range().size();
+    auto const extent = tensor.range().extent();
     auto map = TiledArray::eigen_map(tensor, extent[0], extent[1]);
     for (auto i = 0ul; i < extent[0]; ++i) {
         map(i, i) = val;
@@ -95,7 +95,7 @@ TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> create_diagonal_matrix(
         const auto ord = *it;
         auto const &idx = diag.trange().tiles().idx(ord);
         auto tile = Tile{diag.trange().make_tile_range(ord)};
-        auto const &extent = tile.range().size();
+        auto const extent = tile.range().extent();
         auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
 
         if (idx[0] == idx[1]) {

@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
             auto test_me = tensor::algebra::two_way_decomposition(temp);
             /* if(true){ */
             if (test_me.empty()) { // was not low rank.
-                auto const &extent = t.range().size();
+                auto const extent = t.range().extent();
                 TA::Range new_range{extent[0], extent[1]};
                 test_me = tcc::tensor::DecomposedTensor<double>(
                       low_rank_threshold,
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
 
             /* if(true){ */
             if (test_me.empty()) { // was not low rank.
-                auto const &extent = t.range().size();
+                auto const extent = t.range().extent();
                 TA::Range new_range{extent[0], extent[1], extent[2]};
                 test_me = tcc::tensor::DecomposedTensor<double>(
                       low_rank_threshold,

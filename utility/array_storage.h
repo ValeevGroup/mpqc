@@ -53,7 +53,7 @@ array_storage(TA::Array<T, DIM, TileType, Policy> const &A) {
     const auto end = pmap->end();
     for (auto it = pmap->begin(); it != end; ++it) {
         const TA::Range range = trange.make_tile_range(*it);
-        auto const &size_array = range.size();
+        auto const size_array = range.extent();
         auto const size = std::accumulate(size_array.begin(), size_array.end(),
                                           1, std::multiplies<unsigned long>{});
         full_size += size;

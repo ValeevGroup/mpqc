@@ -18,7 +18,7 @@ using Matrix = Eig::Matrix<T, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
 
 template <typename T>
 Matrix<T> tile_to_eigen(TA::Tensor<T> const &t) {
-    auto const &extent = t.range().size();
+    auto const extent = t.range().extent();
     return TA::eigen_map(t, extent[0], extent[1]);
 }
 
@@ -51,19 +51,36 @@ Matrix<T> array_to_eigen(TA::Array<T, 2, Tile, Policy> const &A) {
     return out_mat;
 }
 
+template <typename TileType>
+TileType mat_to_tile(TA::Range range, Matrix<double> const &M);
+
+template <>
 tensor::Tile<tensor::DecomposedTensor<double>>
-mat_to_tile(TA::Range range, Matrix<double> const &M) {
-    auto const &extent = range.size();
+mat_to_tile<tensor::Tile<tensor::DecomposedTensor<double>>>(
+      TA::Range range, Matrix<double> const &M) {
+    auto const extent = range.extent();
     auto local_range = TA::Range{extent[0], extent[1]};
     // TODO fix 1e-7 to use cut
     auto tensor = tensor::DecomposedTensor<double>(1e-7, TA::Tensor<double>(
                                                                local_range));
     auto t_map = TA::eigen_map(tensor.tensor(0), extent[0], extent[1]);
 
-    auto const &start = range.start();
+    auto const start = range.start();
     t_map = M.block(start[0], start[1], extent[0], extent[1]);
     return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                           std::move(tensor));
+}
+
+template <>
+TA::Tensor<double>
+mat_to_tile<TA::Tensor<double>>(TA::Range range, Matrix<double> const &M) {
+    const auto extent = range.extent();
+    auto tensor = TA::Tensor<double>(range);
+    auto t_map = TA::eigen_map(tensor, extent[0], extent[1]);
+
+    auto const start = range.start();
+    t_map = M.block(start[0], start[1], extent[0], extent[1]);
+    return tensor;
 }
 
 // M must be replicated on all nodes.
@@ -83,7 +100,8 @@ eigen_to_array(madness::World &world, Matrix<double> const &M,
     for (auto it = pmap->begin(); it != end; ++it) {
         if (!array.is_zero(*it)) {
             auto range = trange.make_tile_range(*it);
-            madness::Future<Tile> tile = world.taskq.add(mat_to_tile, range, M);
+            madness::Future<Tile> tile
+                  = world.taskq.add(mat_to_tile<Tile>, range, M);
             array.set(*it, tile);
         }
     }

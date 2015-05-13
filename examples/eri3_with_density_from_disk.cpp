@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
         auto test_me = tensor::algebra::two_way_decomposition(temp);
 
         if (test_me.empty()) {
-            auto const &extent = t.range().size();
+            auto const extent = t.range().extent();
             TA::Range new_range{extent[0], extent[1], extent[2]};
             test_me = tcc::tensor::DecomposedTensor<double>(
                   low_rank_threshold, TA::Tensor<double>{new_range, t.data()});
@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
     };
 
     auto func2 = [=](TA::Tensor<double> const &t) {
-        auto const &extent = t.range().size();
+        auto const extent = t.range().extent();
         TA::Range new_range{extent[0], extent[1]};
         TA::Tensor<double> new_tensor(new_range, t.data());
 
@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
             auto test_me = tensor::algebra::two_way_decomposition(temp);
             /* if(true){ */
             if (test_me.empty()) { // was not low rank.
-                auto const &extent = t.range().size();
+                auto const extent = t.range().extent();
                 TA::Range new_range{extent[0], extent[1]};
                 test_me = tcc::tensor::DecomposedTensor<double>(
                       low_rank_threshold,

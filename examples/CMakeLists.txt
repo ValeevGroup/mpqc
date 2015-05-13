@@ -1,5 +1,13 @@
 add_custom_target(examples)
+add_custom_target(paper)
 add_custom_target(read_density)
+
+add_executable(hf_for_paper EXCLUDE_FROM_ALL hf_for_paper.cpp)
+target_link_libraries(hf_for_paper
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(paper hf_for_paper)
+
 
 add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 
 target_link_libraries(sqrt_inverse_example

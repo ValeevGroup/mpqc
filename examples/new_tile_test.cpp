@@ -260,7 +260,7 @@ void gemm_test(LowRankTensors const &l) {
           = std::accumulate(full_accuracy.begin(), full_accuracy.end(), 0.0)
             / double(size);
 
-    auto const &extent = l.full_rank(0).tensor(0).range().size();
+    auto const extent = l.full_rank(0).tensor(0).range().extent();
     auto full_rank = std::min(extent[0], extent[1] * extent[2]);
     std::cout << "Gemm Test: DF dimension " << extent[0] << ", BS dimension "
               << extent[1] << "\n";

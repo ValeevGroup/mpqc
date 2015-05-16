@@ -413,7 +413,7 @@ int main(int argc, char *argv[]) {
         ++iter;
     }
 
-    utility::print_par(world, "Final energy = ", std::setprecision(11),
+    utility::print_par(world, "Final energy = ", std::setprecision(15),
                        energy + repulsion_energy, "\n");
 
     utility::print_par(world, "\nMP2 Test\n");

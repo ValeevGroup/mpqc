@@ -123,7 +123,7 @@ namespace mpqc {
 
       // passes the TiledArray size into a fixed c-style array for Tensor class
       const std::size_t (&dim)[rank] =
-              *reinterpret_cast<const std::size_t (*)[rank]>(tile.range().size().data());
+              *reinterpret_cast<const std::size_t (*)[rank]>(tile.range().size());
 
       TensorRef<double, rank, TensorRowMajor> tile_map(tile.data(), dim);
 

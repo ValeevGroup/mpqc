@@ -287,7 +287,6 @@ int main(int argc, char *argv[]) {
     decltype(V_inv_TA) tmp;
     tmp("i,j") = V_inv_TA("i,k") * eri2("k,j");
     auto norm_diff = tmp("i,j").norm().get();
-    std::cout << "norm_diff V^{-1} = " << norm_diff << std::endl;
 
     auto to_decomp_with_decompose = [=](TA::Tensor<double> const &t) {
         auto range = t.range();

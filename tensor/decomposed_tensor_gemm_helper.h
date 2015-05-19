@@ -197,10 +197,10 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                     }
                 }
                 // For V into Eri always recompress
-                auto decomp_c = algebra::two_way_decomposition(c);
-                if (!decomp_c.empty()) {
-                    c = std::move(decomp_c);
-                }
+                // auto decomp_c = algebra::two_way_decomposition(c);
+                // if (!decomp_c.empty()) {
+                //     c = std::move(decomp_c);
+                // }
                 return c;
             }
         } else {                                        // Low * *
@@ -314,6 +314,39 @@ struct low_rank_gemm<1ul, 3ul, 2ul> {
                 c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
             } else {
                 auto gh_right = TA::math::GemmHelper(NoT, NoT, 1, 3, 2);
+                auto Rp = a.tensor(1).gemm(b.tensor(0), 1.0, gh_right);
+                auto gh_left = TA::math::GemmHelper(NoT, NoT, 1, 2, 1);
+                c.tensor(0).gemm(a.tensor(0), Rp, f, gh_left);
+            }
+            return c;
+        }
+        assert(false);
+    }
+};
+
+// ("X") = M("X,P") * ("P")
+template <>
+struct low_rank_gemm<1ul, 2ul, 1ul> {
+    template <typename T>
+    Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
+                          GHelper const &gh) {
+        const auto X = a.tensor(0).range().size()[0]; // X from above.
+        auto range = TA::Range{X};
+        auto out_tensor
+              = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
+        this->operator()(out_tensor, a, b, f, gh);
+        return out_tensor;
+    }
+
+    template <typename T>
+    Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a,
+                           Dtensor<T> const &b, const T f, GHelper const &gh) {
+        // assume b and c are never decomposed.
+        if (c.ndecomp() == 1) {
+            if (a.ndecomp() == 1) {
+                c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
+            } else {
+                auto gh_right = TA::math::GemmHelper(NoT, NoT, 1, 2, 1);
                 auto Rp = a.tensor(1).gemm(b.tensor(0), 1.0, gh_right);
                 auto gh_left = TA::math::GemmHelper(NoT, NoT, 1, 2, 1);
                 c.tensor(0).gemm(a.tensor(0), Rp, f, gh_left);

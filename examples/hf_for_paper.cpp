@@ -48,9 +48,9 @@
 using namespace tcc;
 namespace ints = integrals;
 
-void
-main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-                    std::ostream &os) {
+void main_print_clusters(
+      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+      std::ostream &os) {
     std::vector<std::vector<molecule::Atom>> clusters;
     auto total_atoms = 0ul;
     for (auto const &cluster : bs) {
@@ -267,7 +267,9 @@ int main(int argc, char *argv[]) {
     auto eri2_sqrt_inv = inv_timer.apply();
     utility::print_par(world, "Eri2 inverse computation time = ",
                        inv_timer.time(), "\n");
-    utility::print_size_info(eri2_sqrt_inv, "Eri2 sqrt inverse");
+
+    decltype(eri2_sqrt_inv) eri2_inv;
+    eri2_inv("i,j") = eri2_sqrt_inv("i,k") * eri2_sqrt_inv("k,j");
 
     auto to_decomp_with_decompose = [=](TA::Tensor<double> const &t) {
         auto range = t.range();
@@ -292,6 +294,8 @@ int main(int argc, char *argv[]) {
     auto V_inv_oh
           = TA::to_new_tile_type(eri2_sqrt_inv, to_decomp_with_decompose);
     utility::print_size_info(V_inv_oh, "V^{-1/2}");
+    auto V_inv = TA::to_new_tile_type(eri2_inv, to_decomp_with_decompose);
+    utility::print_size_info(V_inv, "V^{-1}");
 
 
     struct convert_3d {
@@ -326,20 +330,26 @@ int main(int argc, char *argv[]) {
     };
     // Compute center integrals
     utility::print_par(world, "\n");
+    auto E0 = tcc_time::now();
     auto Xab = ints::BlockSparseIntegrals(
           world, eri_pool, utility::make_array(df_basis, basis, basis),
           convert_3d(low_rank_threshold));
+    auto E1 = tcc_time::now();
+    auto etime = tcc_time::duration_in_s(E0, E1);
+    utility::print_par(world, "Time to compute 3 center integrals ", etime,
+                       " s\n");
     utility::print_size_info(Xab, "E");
-
-    Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
-    Xab.truncate();
-
-    utility::print_size_info(Xab, "Xab with V^{-1/2}");
     utility::print_par(world, "\n");
+
+    // Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
+    // Xab.truncate();
+
+    // utility::print_size_info(Xab, "Xab with V^{-1/2}");
+    // utility::print_par(world, "\n");
 
     decltype(H) F;
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
-                                          V_inv_oh, Xab, bs_clusters,
+                                          V_inv_oh, V_inv, Xab, bs_clusters,
                                           low_rank_threshold,
                                           convert_3d(low_rank_threshold));
 
@@ -365,6 +375,8 @@ int main(int argc, char *argv[]) {
     auto iter = 1;
     decltype(F_TA) Ferror;
     auto error = 1.0;
+    auto old_e = energy;
+    auto delta_e = energy;
     const auto volume = double(F.trange().elements().volume());
     double time;
     double ktime, jtime;
@@ -373,17 +385,27 @@ int main(int argc, char *argv[]) {
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
 
-        utility::print_par(world, "\tStarting Coulomb...\n");
+        utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
+        J("i,j") = Xab("X,i,j") * (V_inv("X,P") * (Xab("P,a,b") * D("a,b")));
         auto j1 = tcc_time::now();
+        jtime = tcc_time::duration_in_s(j0, j1);
+        utility::print_par(world, jtime, " s\n");
 
-        utility::print_par(world, "\tStarting Exchange...\n");
+        utility::print_par(world, "\tStarting Exchange... ");
         auto k0 = tcc_time::now();
         decltype(Xab) Eai;
-        Eai("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
+        Eai("X,i,a") = V_inv_oh("X,P") * (Xab("P,a,b") * Coeffs("b,i"));
         K("a,b") = Eai("X,i,a") * Eai("X,i,b");
         auto k1 = tcc_time::now();
+        ktime = tcc_time::duration_in_s(k0, k1);
+        utility::print_par(world, ktime, " s\n");
+
+        if (iter == 5) {
+            utility::print_par(world, "\n\nTemporary Info:\n");
+            utility::print_size_info(Eai, "Exch Temp");
+            utility::print_par(world, "\n\n");
+        }
 
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
         F_TA = TA::to_new_tile_type(F, to_ta);
@@ -399,21 +421,20 @@ int main(int argc, char *argv[]) {
         D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
 
         energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
+        delta_e = energy - old_e;
+        old_e = energy;
 
         auto t1 = tcc_time::now();
         time = tcc_time::duration_in_s(t0, t1);
-        jtime = tcc_time::duration_in_s(j0, j1);
-        ktime = tcc_time::duration_in_s(k0, k1);
 
         utility::print_par(world, "\tHas energy ", std::setprecision(14),
                            energy + repulsion_energy, " with error ", error,
                            " in ", time, " s \n");
-        utility::print_par(world, "\tJ time ", jtime, " s\n\tK time ", ktime,
-                           " s\n");
+        utility::print_par(world, "\t\tDelta e = ", delta_e, "\n");
         ++iter;
     }
 
-    utility::print_par(world, "Final energy = ", std::setprecision(15),
+    utility::print_par(world, "\nFinal energy = ", std::setprecision(15),
                        energy + repulsion_energy, "\n");
 
     utility::print_par(world, "\nMP2 Test\n");
@@ -429,7 +450,7 @@ int main(int argc, char *argv[]) {
         decltype(S_eig) C_vir
               = es.eigenvectors().rightCols(S_eig.rows() - occupation / 2);
 
-        auto nblocks = (dfbs_nclusters < (S_eig.rows() - occupation / 2))
+        auto nblocks = (dfbs_nclusters < int(S_eig.rows() - occupation / 2))
                              ? dfbs_nclusters
                              : S_eig.rows() - occupation / 2;
         auto block_size
@@ -454,7 +475,8 @@ int main(int argc, char *argv[]) {
                     world, C_vir, tr0, tr_vir);
 
         decltype(Xab) Xia;
-        Xia("X,i,a") = Xab("X,mu,nu") * Ci("nu,i") * Cv("mu,a");
+        Xia("X,i,a") = V_inv_oh("X,P")
+                       * (Xab("P,mu,nu") * Ci("nu,i") * Cv("mu,a"));
 
         utility::print_size_info(Xia, "Xia");
 

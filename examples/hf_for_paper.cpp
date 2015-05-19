@@ -505,17 +505,6 @@ int main(int argc, char *argv[]) {
                         }
                     }
                 }
-                // for (auto i = 0ul; i < range.volume(); ++i) {
-                //     auto idx = range.idx(i);
-                //     // vals are ordered i, a, j, b
-                //     // need e_i + e_j - e_a - e_b
-                //     auto ival = vec[idx[0]];
-                //     auto aval = vec[n_occ_ + idx[1]];
-                //     auto jval = vec[idx[2]];
-                //     auto bval = vec[n_occ_ + idx[3]];
-                //     auto total = 1.0 / (ival + jval - aval - bval);
-                //     me += total * tile.data()[i];
-                // }
             }
         };
 

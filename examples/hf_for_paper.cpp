@@ -259,17 +259,35 @@ int main(int argc, char *argv[]) {
           world, eri_pool, utility::make_array(df_basis, df_basis),
           integrals::compute_functors::BtasToTaTensor{});
 
+    decltype(eri2) L_inv_TA;
+    {
+        auto eig_E2 = array_ops::array_to_eigen(eri2);
+        Eig::LLT<decltype(eig_E2)> llt(eig_E2);
+        eig_E2 = llt.matrixL();
+        decltype(eig_E2) eig_L_inv = eig_E2.inverse();
+        L_inv_TA = array_ops::eigen_to_array<TA::Tensor<double>>(
+              world, eig_L_inv, eri2.trange().data()[0],
+              eri2.trange().data()[1]);
+    }
+
+
     /* // Computing the sqrt inverse of Eri2 */
-    utility::print_par(world, "\nComputing eri2 sqrt Inverse\n");
-    auto inv_timer
-          = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2); });
+    //    utility::print_par(world, "\nComputing eri2 sqrt Inverse\n");
+    //    auto inv_timer
+    //          = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2);
+    //          });
+    //
+    //    auto eri2_sqrt_inv = inv_timer.apply();
+    //    utility::print_par(world, "Eri2 inverse computation time = ",
+    //                       inv_timer.time(), "\n");
+    //
+    decltype(L_inv_TA) V_inv_TA;
+    V_inv_TA("i,j") = L_inv_TA("k,i") * L_inv_TA("k,j");
 
-    auto eri2_sqrt_inv = inv_timer.apply();
-    utility::print_par(world, "Eri2 inverse computation time = ",
-                       inv_timer.time(), "\n");
-
-    decltype(eri2_sqrt_inv) eri2_inv;
-    eri2_inv("i,j") = eri2_sqrt_inv("i,k") * eri2_sqrt_inv("k,j");
+    decltype(V_inv_TA) tmp;
+    tmp("i,j") = V_inv_TA("i,k") * eri2("k,j");
+    auto norm_diff = tmp("i,j").norm().get();
+    std::cout << "norm_diff V^{-1} = " << norm_diff << std::endl;
 
     auto to_decomp_with_decompose = [=](TA::Tensor<double> const &t) {
         auto range = t.range();
@@ -291,10 +309,9 @@ int main(int argc, char *argv[]) {
         return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                               std::move(dense));
     };
-    auto V_inv_oh
-          = TA::to_new_tile_type(eri2_sqrt_inv, to_decomp_with_decompose);
+    auto V_inv_oh = TA::to_new_tile_type(L_inv_TA, to_decomp_with_decompose);
     utility::print_size_info(V_inv_oh, "V^{-1/2}");
-    auto V_inv = TA::to_new_tile_type(eri2_inv, to_decomp_with_decompose);
+    auto V_inv = TA::to_new_tile_type(V_inv_TA, to_decomp_with_decompose);
     utility::print_size_info(V_inv, "V^{-1}");
 
 

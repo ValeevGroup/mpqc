@@ -135,8 +135,7 @@ template <typename SharedEnginePool, typename Op>
 ArrayType fock_from_minimal_v_oh(
       madness::World &world, basis::Basis const &obs, basis::Basis const &df_bs,
       SharedEnginePool eng_pool, ArrayType const &H, ArrayType const &V_inv_oh,
-      ArrayType const &V_inv,
-      Eri3ArrayType const &Xab,
+      ArrayType const &V_inv, Eri3ArrayType const &Xab,
       std::vector<std::shared_ptr<molecule::Cluster>> const &clusters,
       double cut, Op op) {
 
@@ -157,9 +156,10 @@ ArrayType fock_from_minimal_v_oh(
 
     decltype(D_min) J, K, F;
     J("i,j") = Xab("X,i,j") * (V_inv("X,P") * (EriJ("P,a,b") * D_min("a,b")));
-    decltype(EriK) Ksymm;
-    Ksymm("X,k,a") = V_inv_oh("X,P") * (EriK("P,a,b") * D_min("b,k"));
-    K("i,j") = Ksymm("X,k,i") * Ksymm("X,k,j");
+    decltype(EriK) Temp;
+    Temp("X,k,i") = EriK("X,i,k");
+    K("i,j") = Temp("X,k,i")
+               * (V_inv("X,P") * (EriK("P,j,a") * D_min("a,k")));
     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
 
     return F;

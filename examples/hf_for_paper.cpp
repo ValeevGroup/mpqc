@@ -48,9 +48,9 @@
 using namespace tcc;
 namespace ints = integrals;
 
-void main_print_clusters(
-      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-      std::ostream &os) {
+void
+main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+                    std::ostream &os) {
     std::vector<std::vector<molecule::Atom>> clusters;
     auto total_atoms = 0ul;
     for (auto const &cluster : bs) {
@@ -169,15 +169,9 @@ int main(int argc, char *argv[]) {
         std::cout << "Basis trange " << std::endl;
         TA::TiledRange1 bs_range = basis.create_flattend_trange1();
         std::cout << bs_range << std::endl;
-        for (auto range : bs_range) {
-            std::cout << range.first << " " << range.second << std::endl;
-        }
         TA::TiledRange1 dfbs_range = df_basis.create_flattend_trange1();
         std::cout << "DF Basis trange " << std::endl;
         std::cout << dfbs_range << std::endl;
-        for (auto range : dfbs_range) {
-            std::cout << range.first << " " << range.second << std::endl;
-        }
     }
 
     libint2::init();
@@ -419,12 +413,12 @@ int main(int argc, char *argv[]) {
         ++iter;
     }
 
-    utility::print_par(world, "Final energy = ", std::setprecision(11),
+    utility::print_par(world, "Final energy = ", std::setprecision(15),
                        energy + repulsion_energy, "\n");
 
     utility::print_par(world, "\nMP2 Test\n");
 
-    { // Begin MP2
+    if (mol.nelements() <= 30) { // Begin MP2
         utility::print_par(world, "\nBegining MP2\n");
         auto F_eig = array_ops::array_to_eigen(F);
         auto S_eig = array_ops::array_to_eigen(S);
@@ -515,6 +509,9 @@ int main(int argc, char *argv[]) {
         utility::print_par(world, "MP2 energy = ", energy_mp2,
                            " total energy = ",
                            energy + energy_mp2 + repulsion_energy, "\n");
+    } else {
+        utility::print_par(world, "Skipping MP2 because molecule had ",
+                           mol.nelements(), " atoms.\n");
     }
 
     world.gop.fence();

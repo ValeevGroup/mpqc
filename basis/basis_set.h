@@ -33,6 +33,9 @@ class BasisSet {
     std::vector<ClusterShells> create_basis(
         std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const;
 
+    std::vector<ClusterShells> create_soad_basis(
+        std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const;
+
   private:
     std::string basis_set_name_;
 };

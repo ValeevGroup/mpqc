@@ -111,7 +111,7 @@ ArrayType fock_from_minimal(
     std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
     std::ofstream fout("/dev/null");
     std::cout.rdbuf(fout.rdbuf());
-    basis::Basis min_bs{min_bs_set.create_basis(clusters)};
+    basis::Basis min_bs{min_bs_set.create_soad_basis(clusters)};
     std::cout.rdbuf(cout_sbuf);
     auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
 
@@ -144,7 +144,7 @@ ArrayType fock_from_minimal_v_oh(
     std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
     std::ofstream fout("/dev/null");
     std::cout.rdbuf(fout.rdbuf());
-    basis::Basis min_bs{min_bs_set.create_basis(clusters)};
+    basis::Basis min_bs{min_bs_set.create_soad_basis(clusters)};
     std::cout.rdbuf(cout_sbuf);
     auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
 

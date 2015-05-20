@@ -364,10 +364,14 @@ int main(int argc, char *argv[]) {
     // utility::print_par(world, "\n");
 
     decltype(H) F;
+    auto soad0 = tcc_time::now();
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
                                           V_inv_oh, V_inv, Xab, bs_clusters,
                                           low_rank_threshold,
                                           convert_3d(low_rank_threshold));
+    auto soad1 = tcc_time::now();
+    auto soad_time = tcc_time::duration_in_s(soad0, soad1);
+    utility::print_par(world, "\nSoad time ", soad_time, " s\n");
 
     auto F_TA = TA::to_new_tile_type(F, to_ta);
 
@@ -417,11 +421,6 @@ int main(int argc, char *argv[]) {
         ktime = tcc_time::duration_in_s(k0, k1);
         utility::print_par(world, ktime, " s\n");
 
-        if (iter == 5) {
-            utility::print_par(world, "\n\nTemporary Info:\n");
-            utility::print_size_info(Eai, "Exch Temp");
-            utility::print_par(world, "\n\n");
-        }
 
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
         F_TA = TA::to_new_tile_type(F, to_ta);
@@ -447,6 +446,11 @@ int main(int argc, char *argv[]) {
                            energy + repulsion_energy, " with error ", error,
                            " in ", time, " s \n");
         utility::print_par(world, "\t\tDelta e = ", delta_e, "\n");
+        if (iter == 5) {
+            utility::print_par(world, "\n\nTemporary Info:\n");
+            utility::print_size_info(Eai, "Exch Temp");
+            utility::print_par(world, "\n\n");
+        }
         ++iter;
     }
 

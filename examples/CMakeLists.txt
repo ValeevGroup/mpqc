@@ -8,6 +8,12 @@ target_link_libraries(hf_for_paper
 )
 add_dependencies(paper hf_for_paper)
 
+add_executable(hf_l_inv EXCLUDE_FROM_ALL hf_l_inv.cpp)
+target_link_libraries(hf_l_inv
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(paper hf_l_inv)
+
 
 add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 
 target_link_libraries(sqrt_inverse_example

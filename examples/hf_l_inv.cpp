@@ -372,6 +372,11 @@ int main(int argc, char *argv[]) {
     auto soad_time = tcc_time::duration_in_s(soad0, soad1);
     utility::print_par(world, "\nSoad time ", soad_time, " s\n");
 
+    // Make B tensor
+    Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
+    Xab.truncate();
+    utility::print_size_info(Xab, "B Tensor");
+
     auto F_TA = TA::to_new_tile_type(F, to_ta);
 
     auto n_occ = occupation / 2;
@@ -406,7 +411,7 @@ int main(int argc, char *argv[]) {
 
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (V_inv("X,P") * (Xab("P,a,b") * D("a,b")));
+        J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");
@@ -414,7 +419,7 @@ int main(int argc, char *argv[]) {
         utility::print_par(world, "\tStarting Exchange... ");
         auto k0 = tcc_time::now();
         decltype(Xab) Eai;
-        Eai("X,i,a") = V_inv_oh("X,P") * (Xab("P,a,b") * Coeffs("b,i"));
+        Eai("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
         K("a,b") = Eai("X,i,a") * Eai("X,i,b");
         auto k1 = tcc_time::now();
         ktime = tcc_time::duration_in_s(k0, k1);

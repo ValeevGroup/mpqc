@@ -253,40 +253,6 @@ int main(int argc, char *argv[]) {
     /* // Begin Two electron integrals section. */
     auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
 
-    /* // Computing Eri2 */
-    utility::print_par(world, "\n");
-    auto eri2 = ints::BlockSparseIntegrals(
-          world, eri_pool, utility::make_array(df_basis, df_basis),
-          integrals::compute_functors::BtasToTaTensor{});
-
-    decltype(eri2) L_inv_TA;
-    {
-        auto eig_E2 = array_ops::array_to_eigen(eri2);
-        Eig::LLT<decltype(eig_E2)> llt(eig_E2);
-        eig_E2 = llt.matrixL();
-        decltype(eig_E2) eig_L_inv = eig_E2.inverse();
-        L_inv_TA = array_ops::eigen_to_array<TA::Tensor<double>>(
-              world, eig_L_inv, eri2.trange().data()[0],
-              eri2.trange().data()[1]);
-    }
-
-
-    /* // Computing the sqrt inverse of Eri2 */
-    //    utility::print_par(world, "\nComputing eri2 sqrt Inverse\n");
-    //    auto inv_timer
-    //          = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2);
-    //          });
-    //
-    //    auto eri2_sqrt_inv = inv_timer.apply();
-    //    utility::print_par(world, "Eri2 inverse computation time = ",
-    //                       inv_timer.time(), "\n");
-    //
-    decltype(L_inv_TA) V_inv_TA;
-    V_inv_TA("i,j") = L_inv_TA("k,i") * L_inv_TA("k,j");
-
-    decltype(V_inv_TA) tmp;
-    tmp("i,j") = V_inv_TA("i,k") * eri2("k,j");
-
     auto to_decomp_with_decompose = [=](TA::Tensor<double> const &t) {
         auto range = t.range();
 
@@ -307,10 +273,30 @@ int main(int argc, char *argv[]) {
         return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                               std::move(dense));
     };
-    auto V_inv_oh = TA::to_new_tile_type(L_inv_TA, to_decomp_with_decompose);
-    utility::print_size_info(V_inv_oh, "V^{-1/2}");
-    auto V_inv = TA::to_new_tile_type(V_inv_TA, to_decomp_with_decompose);
-    utility::print_size_info(V_inv, "V^{-1}");
+    /* // Computing Eri2 */
+    TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
+              TA::SparsePolicy> V_inv_oh;
+    {
+        utility::print_par(world, "\n");
+        auto eri2 = ints::BlockSparseIntegrals(
+              world, eri_pool, utility::make_array(df_basis, df_basis),
+              integrals::compute_functors::BtasToTaTensor{});
+
+        decltype(eri2) L_inv_TA;
+        {
+            auto eig_E2 = array_ops::array_to_eigen(eri2);
+            Eig::LLT<decltype(eig_E2)> llt(eig_E2);
+            eig_E2 = llt.matrixL();
+            decltype(eig_E2) eig_L_inv = eig_E2.inverse();
+            L_inv_TA = array_ops::eigen_to_array<TA::Tensor<double>>(
+                  world, eig_L_inv, eri2.trange().data()[0],
+                  eri2.trange().data()[1]);
+        }
+
+        V_inv_oh = TA::to_new_tile_type(L_inv_TA, to_decomp_with_decompose);
+        utility::print_size_info(V_inv_oh, "V^{-1/2}");
+    }
+    decltype(V_inv_oh)::wait_for_lazy_cleanup(world, 2);
 
 
     struct convert_3d {
@@ -343,6 +329,7 @@ int main(int argc, char *argv[]) {
                   range, std::move(dense));
         }
     };
+
     // Compute center integrals
     utility::print_par(world, "\n");
     auto E0 = tcc_time::now();
@@ -356,26 +343,22 @@ int main(int argc, char *argv[]) {
     utility::print_size_info(Xab, "E");
     utility::print_par(world, "\n");
 
-    // Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
-    // Xab.truncate();
-
-    // utility::print_size_info(Xab, "Xab with V^{-1/2}");
-    // utility::print_par(world, "\n");
+    // Make B tensor
+    Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
+    Xab.truncate();
+    utility::print_size_info(Xab, "B Tensor");
+    decltype(Xab)::wait_for_lazy_cleanup(world, 2);
 
     decltype(H) F;
     auto soad0 = tcc_time::now();
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
-                                          V_inv_oh, V_inv, Xab, bs_clusters,
-                                          low_rank_threshold,
+                                          V_inv_oh, Xab, bs_clusters,
+                                          low_rank_threshold/100, 
                                           convert_3d(low_rank_threshold));
     auto soad1 = tcc_time::now();
     auto soad_time = tcc_time::duration_in_s(soad0, soad1);
     utility::print_par(world, "\nSoad time ", soad_time, " s\n");
 
-    // Make B tensor
-    Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
-    Xab.truncate();
-    utility::print_size_info(Xab, "B Tensor");
 
     auto F_TA = TA::to_new_tile_type(F, to_ta);
 
@@ -499,8 +482,7 @@ int main(int argc, char *argv[]) {
                     world, C_vir, tr0, tr_vir);
 
         decltype(Xab) Xia;
-        Xia("X,i,a") = V_inv_oh("X,P")
-                       * (Xab("P,mu,nu") * Ci("nu,i") * Cv("mu,a"));
+        Xia("X,i,a") = Xab("X,mu,nu") * Ci("nu,i") * Cv("mu,a");
 
         utility::print_size_info(Xia, "Xia");
 

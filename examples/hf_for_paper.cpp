@@ -365,8 +365,8 @@ int main(int argc, char *argv[]) {
     decltype(H) F;
     auto soad0 = tcc_time::now();
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
-                                          V_inv_oh, V_inv, Xab, bs_clusters,
-                                          low_rank_threshold,
+                                          V_inv_oh,  Xab, bs_clusters,
+                                          low_rank_threshold/100, 
                                           convert_3d(low_rank_threshold));
     auto soad1 = tcc_time::now();
     auto soad_time = tcc_time::duration_in_s(soad0, soad1);
@@ -406,7 +406,7 @@ int main(int argc, char *argv[]) {
 
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (V_inv("X,P") * (Xab("P,a,b") * D("a,b")));
+        J("i,j") = Xab("X,i,j") * (V_inv("Q,P") * (Xab("P,a,b") * D("a,b")));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");

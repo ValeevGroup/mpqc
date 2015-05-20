@@ -16,6 +16,8 @@
 
 #include "../integrals/sparse_task_integrals.h"
 
+#include "../array_ops/array_to_eigen.h"
+
 #include <memory>
 #include <vector>
 
@@ -135,7 +137,7 @@ template <typename SharedEnginePool, typename Op>
 ArrayType fock_from_minimal_v_oh(
       madness::World &world, basis::Basis const &obs, basis::Basis const &df_bs,
       SharedEnginePool eng_pool, ArrayType const &H, ArrayType const &V_inv_oh,
-      ArrayType const &V_inv, Eri3ArrayType const &Xab,
+      Eri3ArrayType const &Xab,
       std::vector<std::shared_ptr<molecule::Cluster>> const &clusters,
       double cut, Op op) {
 
@@ -148,19 +150,25 @@ ArrayType fock_from_minimal_v_oh(
     std::cout.rdbuf(cout_sbuf);
     auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
 
-    auto EriJ = BlockSparseIntegrals(
-          world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
+
+    decltype(D_min) J, K, F, Coeffs;
+    {
+        auto EriJ = BlockSparseIntegrals(
+              world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
+        J("i,j") = Xab("X,i,j")
+                   * (V_inv_oh("X,P") * (EriJ("P,a,b") * D_min("a,b")));
+    }
+    J.get_world().gop.fence();
+
     auto EriK
           = BlockSparseIntegrals(world, eng_pool,
                                  utility::make_array(df_bs, obs, min_bs), op);
-
-    decltype(D_min) J, K, F;
-    J("i,j") = Xab("X,i,j") * (V_inv("X,P") * (EriJ("P,a,b") * D_min("a,b")));
-    decltype(EriK) Temp;
-    Temp("X,k,i") = EriK("X,i,k");
-    K("i,j") = Temp("X,k,i")
-               * (V_inv("X,P") * (EriK("P,j,a") * D_min("a,k")));
+    decltype(EriK) Perm, Dterm;
+    Dterm("X,a,b") = V_inv_oh("X,P") * EriK("P,a,b");
+    Perm("X,b,a") = Dterm("X,a,b");
+    K("i,j") = Perm("X,k,i") * (Dterm("X,j,a") * D_min("a,k"));
     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+    decltype(F)::wait_for_lazy_cleanup(F.get_world(), 1);
 
     return F;
 }

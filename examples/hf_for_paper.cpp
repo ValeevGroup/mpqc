@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
     auto soad0 = tcc_time::now();
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
                                           V_inv_oh,  Xab, bs_clusters,
-                                          low_rank_threshold/100, 
+                                          low_rank_threshold*100, 
                                           convert_3d(low_rank_threshold));
     auto soad1 = tcc_time::now();
     auto soad_time = tcc_time::duration_in_s(soad0, soad1);

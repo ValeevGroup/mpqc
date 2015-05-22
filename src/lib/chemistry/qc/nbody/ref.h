@@ -104,6 +104,10 @@ namespace sc {
       const Ref<OrbitalSpace>& occ_act_sb() const { return occ_act_sb_; }
       /// @return energy-ordered active occupied orbitals
       const Ref<OrbitalSpace>& occ_act() const { return occ_act_; }
+      /// @return symmetry-blocked frozen (as in ``not participating in correlation treatment'', or inactive) occupied orbitals
+      const Ref<OrbitalSpace>& occ_frz_sb() const { return occ_frz_sb_; }
+      /// @return energy-ordered inactive occupied orbitals
+      const Ref<OrbitalSpace>& occ_frz() const { return occ_frz_; }
       /// @return symmetry-blocked unoccupied orbitals
       const Ref<OrbitalSpace>& uocc_sb() const { return uocc_sb_; }
       /// @return energy-ordered unoccupied orbitals
@@ -121,8 +125,10 @@ namespace sc {
       Ref<OrbitalSpace> orbs_;
       Ref<OrbitalSpace> occ_sb_;
       Ref<OrbitalSpace> occ_act_sb_;
+      Ref<OrbitalSpace> occ_frz_sb_;
       Ref<OrbitalSpace> occ_;
       Ref<OrbitalSpace> occ_act_;
+      Ref<OrbitalSpace> occ_frz_;
       Ref<OrbitalSpace> uocc_sb_;
       Ref<OrbitalSpace> uocc_act_sb_;
       Ref<OrbitalSpace> uocc_;
@@ -272,10 +278,14 @@ namespace sc {
     const Ref<OrbitalSpace>& occ_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmery-blocked active occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ_act_sb(SpinCase1 spin = AnySpinCase1) const;
+    /// Return the space of symmery-blocked frozen occupied MOs of the given spin
+    const Ref<OrbitalSpace>& occ_frz_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of active occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ_act(SpinCase1 spin = AnySpinCase1) const;
+    /// Return the space of frozen occupied MOs of the given spin
+    const Ref<OrbitalSpace>& occ_frz(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmetry-blocked active unoccupied (virtual) MOs of the given spin

@@ -914,6 +914,8 @@ namespace sc {
       return "i";
     if (index == "m" || index == "n")
       return "m";
+    if (index == "i'" || index == "j'" || index == "k'" || index == "l'")
+      return "i'";
     if (index == "a" || index == "b" || index == "c" || index == "d")
       return "a";
     if (index == "e" || index == "f")

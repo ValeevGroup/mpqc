@@ -225,6 +225,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   //active tells which orbitals are active; the 'masks' are selectors
   std::vector<bool> occ_mask(nmo, false);
   std::vector<bool> occ_act_mask(nmo, false);
+  std::vector<bool> occ_frz_mask(nmo, false);
   std::vector<bool> uocc_mask(nmo, false);
   std::vector<bool> uocc_act_mask(nmo, false);
   const bool debug = false;
@@ -233,6 +234,8 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
       occ_mask[i] = true;
       occ_act_mask[i] = (active[i] == ParticleHoleOrbitalAttributes::Hole ||
                          active[i] == ParticleHoleOrbitalAttributes::Any);
+      occ_frz_mask[i] = (active[i] != ParticleHoleOrbitalAttributes::Hole &&
+                         active[i] != ParticleHoleOrbitalAttributes::Any);
     }
     else {
       uocc_mask[i] = true;
@@ -284,6 +287,20 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
     std::string id = ParsedOrbitalSpaceKey::key(std::string("i~"),spin);
     occ_act_ = blocked_to_nonblocked_space(id, oss.str(),
                                            occ_act_sb_,
+                                           eorder_increasing);
+  }
+  {
+     ostringstream oss;
+     oss << prefix << " frozen occupied symmetry-blocked MOs";
+     std::string id = ParsedOrbitalSpaceKey::key(std::string("i'"),spin);
+     occ_frz_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_frz_mask);
+  }
+  {
+    ostringstream oss;
+    oss << prefix << " frozen occupied MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("i'~"),spin);
+    occ_frz_ = blocked_to_nonblocked_space(id, oss.str(),
+                                           occ_frz_sb_,
                                            eorder_increasing);
   }
 
@@ -342,6 +359,8 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   idxreg->add(make_keyspace_pair(uocc_));
   idxreg->add(make_keyspace_pair(occ_act_sb_));
   idxreg->add(make_keyspace_pair(occ_act_));
+  idxreg->add(make_keyspace_pair(occ_frz_sb_));
+  idxreg->add(make_keyspace_pair(occ_frz_));
   idxreg->add(make_keyspace_pair(uocc_act_sb_));
   idxreg->add(make_keyspace_pair(uocc_act_));
 
@@ -360,8 +379,10 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(StateIn& si) : SavableState(si) {
   orbs_ << SavableState::restore_state(si);
   occ_sb_ << SavableState::restore_state(si);
   occ_act_sb_ << SavableState::restore_state(si);
+  occ_frz_sb_ << SavableState::restore_state(si);
   occ_ << SavableState::restore_state(si);
   occ_act_ << SavableState::restore_state(si);
+  occ_frz_ << SavableState::restore_state(si);
   uocc_sb_ << SavableState::restore_state(si);
   uocc_act_sb_ << SavableState::restore_state(si);
   uocc_ << SavableState::restore_state(si);
@@ -379,6 +400,8 @@ void PopulatedOrbitalSpace::purge() {
   oreg_->remove(occ_->id());
   oreg_->remove(occ_act_sb_->id());
   oreg_->remove(occ_act_->id());
+  oreg_->remove(occ_frz_sb_->id());
+  oreg_->remove(occ_frz_->id());
   oreg_->remove(uocc_sb_->id());
   oreg_->remove(uocc_->id());
   oreg_->remove(uocc_act_sb_->id());
@@ -392,8 +415,10 @@ PopulatedOrbitalSpace::save_data_state(StateOut& so) {
   SavableState::save_state(orbs_.pointer(),so);
   SavableState::save_state(occ_sb_.pointer(),so);
   SavableState::save_state(occ_act_sb_.pointer(),so);
+  SavableState::save_state(occ_frz_sb_.pointer(),so);
   SavableState::save_state(occ_.pointer(),so);
   SavableState::save_state(occ_act_.pointer(),so);
+  SavableState::save_state(occ_frz_.pointer(),so);
   SavableState::save_state(uocc_sb_.pointer(),so);
   SavableState::save_state(uocc_act_sb_.pointer(),so);
   SavableState::save_state(uocc_.pointer(),so);
@@ -634,6 +659,14 @@ RefWavefunction::occ_act_sb(SpinCase1 s) const
 }
 
 const Ref<OrbitalSpace>&
+RefWavefunction::occ_frz_sb(SpinCase1 s) const
+{
+  init();
+  s = valid_spincase(s);
+  return spinspaces_[s]->occ_frz_sb();
+}
+
+const Ref<OrbitalSpace>&
 RefWavefunction::uocc_sb(SpinCase1 s) const
 {
   init();
@@ -672,6 +705,13 @@ RefWavefunction::occ_act(SpinCase1 s) const
   return spinspaces_[s]->occ_act();
 }
 
+const Ref<OrbitalSpace>&
+RefWavefunction::occ_frz(SpinCase1 s) const
+{
+  init();
+  s = valid_spincase(s);
+  return spinspaces_[s]->occ_frz();
+}
 
 
 const Ref<OrbitalSpace>&
@@ -1570,10 +1610,12 @@ Extern_RefWavefunction::init_spaces(const RefSCMatrix& coefs,
 #if 0
   spinspaces_[Alpha]->occ_sb()->print_detail();
   spinspaces_[Alpha]->occ_act_sb()->print_detail();
+  spinspaces_[Alpha]->occ_frz_sb()->print_detail();
   spinspaces_[Alpha]->uocc_sb()->print_detail();
   spinspaces_[Alpha]->uocc_act_sb()->print_detail();
   spinspaces_[Alpha]->occ()->print_detail();
   spinspaces_[Alpha]->occ_act()->print_detail();
+  spinspaces_[Alpha]->occ_frz()->print_detail();
 #endif
 
 }

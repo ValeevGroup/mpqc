@@ -234,8 +234,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
       occ_mask[i] = true;
       occ_act_mask[i] = (active[i] == ParticleHoleOrbitalAttributes::Hole ||
                          active[i] == ParticleHoleOrbitalAttributes::Any);
-      occ_frz_mask[i] = (active[i] != ParticleHoleOrbitalAttributes::Hole &&
-                         active[i] != ParticleHoleOrbitalAttributes::Any);
+      occ_frz_mask[i] = not occ_act_mask[i];
     }
     else {
       uocc_mask[i] = true;

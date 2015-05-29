@@ -48,6 +48,20 @@
 using namespace tcc;
 namespace ints = integrals;
 
+static std::map<int, std::string> atom_names = { {1 , "H"}
+                                             , {2 , "He"}
+                                             , {3 , "Li"}
+                                             , {4 , "Be"}
+                                             , {5 , "B"}
+                                             , {6 , "C"}
+                                             , {7 , "N"}
+                                             , {8 , "O"}
+                                             , {9 , "F"}
+                                             , {10 , "Ne"}
+                                             , {11 , "Na"}
+                                             , {12 , "Mg"}
+};
+
 void main_print_clusters(
       std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
       std::ostream &os) {
@@ -68,7 +82,7 @@ void main_print_clusters(
     for (auto const &cluster : clusters) {
         for (auto const &atom : cluster) {
             auto center = 0.52917721092 * atom.center();
-            os << atom.charge() << " " << center[0] << " " << center[1] << " "
+            os << atom_names[atom.charge()] << " " << center[0] << " " << center[1] << " "
                << center[2] << std::endl;
         }
     }
@@ -79,7 +93,7 @@ void main_print_clusters(
         os << "Cluster " << counter++ << std::endl;
         for (auto const &atom : cluster) {
             auto center = 0.52917721092 * atom.center();
-            os << atom.charge() << " " << center[0] << " " << center[1] << " "
+            os << atom_names[atom.charge()] << " " << center[0] << " " << center[1] << " "
                << center[2] << std::endl;
         }
         os << std::endl;
@@ -141,6 +155,7 @@ int main(int argc, char *argv[]) {
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
     auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
 
+    world.gop.fence();
     if (world.rank() == 0) {
         if (print_clusters) {
             std::cout << "Printing clusters\n";

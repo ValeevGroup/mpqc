@@ -197,7 +197,7 @@ class Tile {
                     TA::Permutation const &>::value>::type * = nullptr>
     TA::Range create_new_range(TA::Range const &r, Args &&... args) const {
         auto const &perm = utility::meta::back(args...);
-        return perm ^ r;
+        return perm * r;
     }
     template <
           typename... Args,
@@ -211,7 +211,7 @@ class Tile {
 
   public: // TA math functions
     Tile permute(TA::Permutation const &p) const {
-        return Tile{p ^ range_, tile_->permute_(p)};
+        return Tile{p * range_, tile_->permute_(p)};
     }
 
     template <typename Archive>

@@ -365,7 +365,7 @@ namespace sc {
 
       // compute CC Xam (the right-hand side of Z-vector equations)
       TArray2 compute_Xam_cc2(const TArray2& T1, const TArray4& T2,
-                      const TArray2& L1, const TArray4& L2);
+                              const TArray2& L1, const TArray4& L2);
 
       // cpmute Gamma intermediates needed for CCSD Xam
       void compute_Gamma_ijab_ccsd(const TArray2& T1, const TArray4& T2,
@@ -387,8 +387,9 @@ namespace sc {
                               TArray4& Gamma_IjAb_ab);
 
       // compute CCSD Xam (JCP, 103, 3561 (1995))
-      TArray2 compute_Xam_ccsd(const TArray2& T1, const TArray4& T2,
-                               const TArray2& L1, const TArray4& L2);
+      void compute_Xam_ccsd(const TArray2& T1, const TArray4& T2,
+                            const TArray2& L1, const TArray4& L2,
+                            TArray2& Xam_tot, TArray2& Xiip);
 
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively

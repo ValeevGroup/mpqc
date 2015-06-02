@@ -783,6 +783,21 @@ namespace sc {
 //      }
 //    }
 
+    TArray2 Iam, Iia, Ima;
+    Iam("a,m") = - (2.0 * T2_ijab("k,l,a,c") - T2_ijab("k,l,c,a"))
+                   * _4("<m c|g|k l>")
+                   ;
+    Iia("a,i") = _4("<a l|g|c d>")
+                 * (2.0 * T2_ijab("i,l,c,d") - T2_ijab("l,i,c,d"));
+    Ima("a,m") =   (2.0 * _4("<a c|g|m d>") - _4("<a c|g|d m>"))
+                   * Dab("d,c")
+                 - (2.0 * _4("<a l|g|m k>") - _4("<a l|g|k m>"))
+                   * Dij("k,l")
+                 ;
+    TArray2 Iima = XaiAddToXam(Ima, Iia);
+    std::cout << "MP2 Iam: " << std::endl << Iam << std::endl;
+    std::cout << "MP2 Ima: " << std::endl << Iima << std::endl;
+
     return XaiAddToXam(Xam_mp2, Xai_mp2);
   }
 
@@ -3711,7 +3726,9 @@ namespace sc {
     TArray4d g_aijb = ijxy("<a i|g|j b>");
     TArray4d g_abci = ijxy("<a b|g|c i>");
 
-    while (Delta_E >= 1.0e-11) {
+    TArray4 t2_unsymm;
+
+    while (Delta_E >= 1.0e-12) {
       // compute intermediates
       compute_intermediates_TFW_ccsd(t1, t2,
                                      g_abij, g_aikl,
@@ -3740,54 +3757,55 @@ namespace sc {
                  + t2("c,d,i,k") * g_abci("c,d,a,k")
                   );
 
-      t2("a,b,i,j") = Delta_abij("a,b,i,j") * (
-                       //   g^ab_ij
-                       g_abij("a,b,i,j")
+      t2_unsymm("a,b,i,j") = Delta_abij("a,b,i,j") * (
+                              //   g^ab_ij
+                              g_abij("a,b,i,j")
 
-                       // + P_(ab) t^ac_ij (TFbc - 1/2 t^b_k TFkc)
-                     + t2("a,c,i,j") * (TFac("b,c") - 0.5 * t1("b,k") * TFkc("k,c"))
-                     + t2("c,b,i,j") * (TFac("a,c") - 0.5 * t1("a,k") * TFkc("k,c"))
+                              // + P_(ab) t^ac_ij (TFbc - 1/2 t^b_k TFkc)
+                            + t2("a,c,i,j") * (TFac("b,c") - 0.5 * t1("b,k") * TFkc("k,c"))
+                            + t2("c,b,i,j") * (TFac("a,c") - 0.5 * t1("a,k") * TFkc("k,c"))
 
-                       // - P_(ij)  T^ab_ik (TFkj + 1/2 t^c_j TFkc)
-                     - t2("a,b,i,k") * (TFki("k,j") + 0.5 * t1("c,j") * TFkc("k,c"))
-                     - t2("a,b,k,j") * (TFki("k,i") + 0.5 * t1("c,i") * TFkc("k,c"))
+                              // - P_(ij)  T^ab_ik (TFkj + 1/2 t^c_j TFkc)
+                            - t2("a,b,i,k") * (TFki("k,j") + 0.5 * t1("c,j") * TFkc("k,c"))
+                            - t2("a,b,k,j") * (TFki("k,i") + 0.5 * t1("c,i") * TFkc("k,c"))
 
-                       // + 1/2 tau^ab_kl TW_klij
-                     + tau_ab("a,b,k,l") * TW_KlIj_ab("k,l,i,j")
+                              // + 1/2 tau^ab_kl TW_klij
+                            + tau_ab("a,b,k,l") * TW_KlIj_ab("k,l,i,j")
 
-                       // + 1/2 tau^cd_ij TW_abcd
-                     + tau_ab("c,d,i,j") * TW_AbCd_ab("a,b,c,d")
+                              // + 1/2 tau^cd_ij TW_abcd
+                            + tau_ab("c,d,i,j") * TW_AbCd_ab("a,b,c,d")
 
-                       // + P_(ij) P_(ab) (t^ac_ik TW_kbcj - t^c_i t^a_k g^kb_cj)
-                     + (  t2("a,c,i,k") * TW_KBCJ_aa("k,b,c,j") // TW_kbcj => TW_KBCJ_aa
-                        + (t2("a,c,i,k") - t2("c,a,i,k")) * TW_KbCj_ab("k,b,c,j")
-                        //
-                        - t1("c,i") * t1("a,k") * g_aijb("b,k,j,c")
-                       )
-                       // - P(ab)
-                     - (- t2("c,b,i,k") * TW_KbcJ_ba("k,a,c,j") // TW_kBCj_ba => TW_KbcJ_ba
-                        + t1("c,i") * t1("b,k") * g_aibj("a,k,c,j")
-                       )
-                       // - P(ij)
-                     - (- t2("a,c,k,j") * TW_KbcJ_ba("k,b,c,i")
-                        + t1("c,j") * t1("a,k") * g_aibj("b,k,c,i")
-                       )
-                       // + P_(ij) P_(ab)
-                     + (  t2("b,c,j,k") * TW_KBCJ_aa("k,a,c,i")
-                        + (t2("b,c,j,k") - t2("c,b,j,k")) * TW_KbCj_ab("k,a,c,i")
-                          //
-                        - t1("c,j") * t1("b,k") * g_aijb("a,k,i,c")
-                       )
+                              // + P_(ij) P_(ab) (t^ac_ik TW_kbcj - t^c_i t^a_k g^kb_cj)
+                            + (  t2("a,c,i,k") * TW_KBCJ_aa("k,b,c,j") // TW_kbcj => TW_KBCJ_aa
+                               + (t2("a,c,i,k") - t2("c,a,i,k")) * TW_KbCj_ab("k,b,c,j")
+                               //
+                               - t1("c,i") * t1("a,k") * g_aijb("b,k,j,c")
+                              )
+                              // - P(ab)
+                            - (- t2("c,b,i,k") * TW_KbcJ_ba("k,a,c,j") // TW_kBCj_ba => TW_KbcJ_ba
+                               + t1("c,i") * t1("b,k") * g_aibj("a,k,c,j")
+                              )
+                              // - P(ij)
+                            - (- t2("a,c,k,j") * TW_KbcJ_ba("k,b,c,i")
+                               + t1("c,j") * t1("a,k") * g_aibj("b,k,c,i")
+                              )
+                              // + P_(ij) P_(ab)
+                            + (  t2("b,c,j,k") * TW_KBCJ_aa("k,a,c,i")
+                               + (t2("b,c,j,k") - t2("c,b,j,k")) * TW_KbCj_ab("k,a,c,i")
+                                 //
+                               - t1("c,j") * t1("b,k") * g_aijb("a,k,i,c")
+                              )
 
-                       // + P(ij) t^c_i g^ab_cj
-                     + t1("c,i") * g_abci("a,b,c,j")
-                     + t1("c,j") * g_abci("b,a,c,i")
+                              // + P(ij) t^c_i g^ab_cj
+                            + t1("c,i") * g_abci("a,b,c,j")
+                            + t1("c,j") * g_abci("b,a,c,i")
 
-                       // - P(ab) t^a_k g^kb_ij
-                     - t1("a,k") * g_aikl("b,k,j,i")
-                     - t1("b,k") * g_aikl("a,k,i,j")
-                     );
+                              // - P(ab) t^a_k g^kb_ij
+                            - t1("a,k") * g_aikl("b,k,j,i")
+                            - t1("b,k") * g_aikl("a,k,i,j")
+                            );
 
+      t2("a,b,i,j") = 0.5 * (t2_unsymm("a,b,i,j") + t2_unsymm("b,a,j,i"));
       tau_ab("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
       // recompute energy
@@ -3853,7 +3871,9 @@ namespace sc {
 
     TArray2 CGac, CGki;
 
-    while (Delta_E_L >= 1.0e-11) {
+    TArray4 L2_unsymm;
+
+    while (Delta_E_L >= 1.0e-12) {
 
       CGac("a,c") =  // - 1/2 t^cd_kl lambda^kl_ad
                    - 0.5 * (t2("c,d,k,l") - t2("d,c,k,l"))
@@ -3887,60 +3907,62 @@ namespace sc {
                  - CGki("k,l") * (CW_KLIC_aa("k,i,l,a") + CW_KlIc_ab("k,i,l,a")) // CW_kLiC => CW_KlIc_ab
                   );
 
-      L2("a,b,i,j") =  Delta_abij("a,b,i,j") * (
-                       //   g^ij_ab
-                       g_abij("a,b,i,j")
+      L2_unsymm("a,b,i,j") =  Delta_abij("a,b,i,j") * (
+                              //   g^ij_ab
+                              g_abij("a,b,i,j")
 
-                       // + P(ij) \lambda^i_c \cal{W}cjab
-                     + L1("c,i") * CW_AkCd_ab("c,j,a,b")
-                     - L1("c,j") * CW_aKCd_ab("c,i,a,b")
+                              // + P(ij) \lambda^i_c \cal{W}cjab
+                            + L1("c,i") * CW_AkCd_ab("c,j,a,b")
+                            - L1("c,j") * CW_aKCd_ab("c,i,a,b")
 
-                       // - P(ab) \lambda^k_a \cal{W}ijkb
-                     - L1("a,k") * CW_KlIc_ab("i,j,k,b")
-                     + L1("b,k") * CW_KliC_ab("i,j,k,a")
+                              // - P(ab) \lambda^k_a \cal{W}ijkb
+                            - L1("a,k") * CW_KlIc_ab("i,j,k,b")
+                            + L1("b,k") * CW_KliC_ab("i,j,k,a")
 
-                       // + P(ij) P(ab) \lambda^i_a \cal{F}jb
-                     + L1("a,i") * CFkc("j,b")
-                       //- L1("b,i") * CFkc("j,a")
-                       //- L1("a,j") * CFkc("i,b")
-                     + L1("b,j") * CFkc("i,a")
+                              // + P(ij) P(ab) \lambda^i_a \cal{F}jb
+                            + L1("a,i") * CFkc("j,b")
+                              //- L1("b,i") * CFkc("j,a")
+                              //- L1("a,j") * CFkc("i,b")
+                            + L1("b,j") * CFkc("i,a")
 
-                       // CCSD term
-                       // + P(ab) \lambda^ij_ac \cal{F}cb
-                     + L2("a,c,i,j") * CFac("c,b")
-                     + L2("c,b,i,j") * CFac("c,a")
+                              // CCSD term
+                              // + P(ab) \lambda^ij_ac \cal{F}cb
+                            + L2("a,c,i,j") * CFac("c,b")
+                            + L2("c,b,i,j") * CFac("c,a")
 
-                       // CCSD term
-                       // - P(ij) \lambda^ik_ab \cal{F}jk
-                     - L2("a,b,i,k") * CFki("j,k")
-                     - L2("a,b,k,j") * CFki("i,k")
+                              // CCSD term
+                              // - P(ij) \lambda^ik_ab \cal{F}jk
+                            - L2("a,b,i,k") * CFki("j,k")
+                            - L2("a,b,k,j") * CFki("i,k")
 
-                       ////// CCSD only terms
-                       // + 1/2 \lambda^kl_ab \cal{W}ijkl
-                     + L2("a,b,k,l") * CW_KlIj_ab("i,j,k,l")
+                              ////// CCSD only terms
+                              // + 1/2 \lambda^kl_ab \cal{W}ijkl
+                            + L2("a,b,k,l") * CW_KlIj_ab("i,j,k,l")
 
-                       // + 1/2 \lambda^ij_cd \cal{W}cdab
-                     + L2("c,d,i,j") * CW_AbCd_ab("c,d,a,b")
+                              // + 1/2 \lambda^ij_cd \cal{W}cdab
+                            + L2("c,d,i,j") * CW_AbCd_ab("c,d,a,b")
 
-                       // + P(ij) P(ab) \lambda^ik_ac \cal{W}jcbk
-                     + (  (L2("a,c,i,k") - L2("c,a,i,k")) * CW_KbCj_ab("j,c,b,k")
-                        + L2("a,c,i,k") * CW_KBCJ_aa("j,c,b,k")) // CW_kbcj => CW_KBCJ_aa
-                       // P(ab)
-                     + L2("c,b,i,k") * CW_KbcJ_ba("j,c,a,k") // CW_kBCj => CW_KbcJ_ab
-                       // P(ij)
-                     + L2("a,c,k,j") * CW_KbcJ_ba("i,c,b,k")
-                       // P(ij) P(ab)
-                     + (  (L2("b,c,j,k") - L2("c,b,j,k")) * CW_KbCj_ab("i,c,a,k")
-                        + L2("b,c,j,k") * CW_KBCJ_aa("i,c,a,k"))
+                              // + P(ij) P(ab) \lambda^ik_ac \cal{W}jcbk
+                            + (  (L2("a,c,i,k") - L2("c,a,i,k")) * CW_KbCj_ab("j,c,b,k")
+                               + L2("a,c,i,k") * CW_KBCJ_aa("j,c,b,k")) // CW_kbcj => CW_KBCJ_aa
+                              // P(ab)
+                            + L2("c,b,i,k") * CW_KbcJ_ba("j,c,a,k") // CW_kBCj => CW_KbcJ_ab
+                              // P(ij)
+                            + L2("a,c,k,j") * CW_KbcJ_ba("i,c,b,k")
+                              // P(ij) P(ab)
+                            + (  (L2("b,c,j,k") - L2("c,b,j,k")) * CW_KbCj_ab("i,c,a,k")
+                               + L2("b,c,j,k") * CW_KBCJ_aa("i,c,a,k"))
 
-                     // + P(ab) g^ij_ac Gbc
-                     + g_abij("a,c,i,j") * CGac("b,c")
-                     + g_abij("c,b,i,j") * CGac("a,c")
+                            // + P(ab) g^ij_ac Gbc
+                            + g_abij("a,c,i,j") * CGac("b,c")
+                            + g_abij("c,b,i,j") * CGac("a,c")
 
-                     // - P(ij) g^ik_ab Gkj
-                     - g_abij("a,b,i,k") * CGki("k,j")
-                     - g_abij("a,b,k,j") * CGki("k,i")
-                     );
+                            // - P(ij) g^ik_ab Gkj
+                            - g_abij("a,b,i,k") * CGki("k,j")
+                            - g_abij("a,b,k,j") * CGki("k,i")
+                            );
+
+      L2("a,b,i,j") = 0.5 * (L2_unsymm("a,b,i,j") + L2_unsymm("b,a,j,i"));
 
       E_0_L = E_1_L;
       E_1_L = dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
@@ -4453,9 +4475,9 @@ namespace sc {
   // compute CCSD Xam (the right-hand side of Z-vector equations)
   // following formula from JCP, 103, 3561 (1995)
   template <typename T>
-  typename SingleReference_R12Intermediates<T>::TArray2
-  SingleReference_R12Intermediates<T>::compute_Xam_ccsd(const TArray2& T1, const TArray4& T2,
-                                                        const TArray2& L1, const TArray4& L2) {
+  void SingleReference_R12Intermediates<T>::compute_Xam_ccsd(const TArray2& T1, const TArray4& T2,
+                                                             const TArray2& L1, const TArray4& L2,
+                                                             TArray2& Xam_tot, TArray2& Xiip) {
 
     TArray4 tau_ab;
     tau_ab("a,b,i,j") = T2("a,b,i,j") + (T1("a,i") * T1("b,j"));
@@ -4606,91 +4628,241 @@ namespace sc {
                    + 2.0 * g_mabi("m,b,a,j") - g_maib("m,b,j,a")
                   ) * (Dia("j,b") + Dai("b,j"))
 
-               + 4.0 * (
-                  //
-                  // (Gamma(kl,ab) + Gamma(ab,kl)) g^kl_mb
-                 (Gamma_IjAb_ab("k,l,a,b") + Gamma_AbIj_ab("a,b,k,l"))
-                 * (g_ijma("k,l,m,b") * 2.0 - g_ijma("l,k,m,b"))
+                + 4.0 * (
+                           //
+                           // (Gamma(kl,ab) + Gamma(ab,kl)) g^kl_mb
+                          (Gamma_IjAb_ab("k,l,a,b") + Gamma_AbIj_ab("a,b,k,l"))
+                          * (g_ijma("k,l,m,b") * 2.0 - g_ijma("l,k,m,b"))
 
-                  // (Gamma(cd,ab) + Gamma(ab, cd)) g^cd_mb
-                + (Gamma_AbCd_ab("c,d,a,b") + Gamma_AbCd_ab("a,b,c,d"))
-                  * (g_mabc("m,b,c,d") * 2.0 - g_mabc("m,b,d,c"))
+                           // (Gamma(cd,ab) + Gamma(ab, cd)) g^cd_mb
+                         + (Gamma_AbCd_ab("c,d,a,b") + Gamma_AbCd_ab("a,b,c,d"))
+                           * (g_mabc("m,b,c,d") * 2.0 - g_mabc("m,b,d,c"))
 
-                  // 2 (Gamma(ck,ab) - Gamma(ba,ck)) g^ck_mb
-                + (  Gamma_CiAb_ab("c,k,a,b") - Gamma_CiAb_ab("c,k,b,a")
-                   - Gamma_AbCi_ab("b,a,c,k") + Gamma_AbCi_ab("a,b,c,k"))
-                  * (g_mabi("m,b,c,k") - g_maib("m,b,k,c"))
-                + (Gamma_CiAb_ab("c,k,a,b") + Gamma_AbCi_ab("a,b,c,k"))
-                  * g_mabi("m,b,c,k")
-                - (- Gamma_CiAb_ab("c,k,b,a") - Gamma_AbCi_ab("b,a,c,k"))
-                  * g_maib("m,b,k,c")
+                           // 2 (Gamma(ck,ab) - Gamma(ba,ck)) g^ck_mb
+                         + (  Gamma_CiAb_ab("c,k,a,b") - Gamma_CiAb_ab("c,k,b,a")
+                            - Gamma_AbCi_ab("b,a,c,k") + Gamma_AbCi_ab("a,b,c,k"))
+                           * (g_mabi("m,b,c,k") - g_maib("m,b,k,c"))
+                         + (Gamma_CiAb_ab("c,k,a,b") + Gamma_AbCi_ab("a,b,c,k"))
+                           * g_mabi("m,b,c,k")
+                         - (- Gamma_CiAb_ab("c,k,b,a") - Gamma_AbCi_ab("b,a,c,k"))
+                           * g_maib("m,b,k,c")
 
-                  //
-                  // (Gamma(lk, ja) + Gamma(aj, kl)) g^kl_mj
-                + (Gamma_IjKa_ab("l,k,j,a") + Gamma_AkIj_ab("a,j,k,l"))
-                  * (g_imkl("j,m,l,k") * 2.0 - g_imkl("j,m,k,l"))
+                           //
+                           // (Gamma(lk, ja) + Gamma(aj, kl)) g^kl_mj
+                         + (Gamma_IjKa_ab("l,k,j,a") + Gamma_AkIj_ab("a,j,k,l"))
+                           * (g_imkl("j,m,l,k") * 2.0 - g_imkl("j,m,k,l"))
 
-                  // (Gamma(cd, aj) + Gamma(aj, cd) g^mj_cd) g^cd_mj
-                + (Gamma_AbCi_ab("c,d,a,j") + Gamma_CiAb_ab("a,j,c,d"))
-                  * (g_miab("m,j,c,d") * 2.0 - g_miab("m,j,d,c"))
+                           // (Gamma(cd, aj) + Gamma(aj, cd) g^mj_cd) g^cd_mj
+                         + (Gamma_AbCi_ab("c,d,a,j") + Gamma_CiAb_ab("a,j,c,d"))
+                           * (g_miab("m,j,c,d") * 2.0 - g_miab("m,j,d,c"))
 
-                  // * (Gamma(ck, ja) + Gamma(aj,kc)) g^kc_mj
-                + (  Gamma_aJiB_ab("c,k,j,a") + Gamma_AjiB_ba("c,k,j,a")
-                   + Gamma_aJiB_ab("a,j,k,c") + Gamma_AjiB_ba("a,j,k,c"))
-                  * (g_imbj("j,m,c,k") - g_imjb("j,m,k,c"))
-                + (Gamma_aJiB_ab("c,k,j,a") + Gamma_aJiB_ab("a,j,k,c"))
-                  * g_imbj("j,m,c,k")
-                - (Gamma_AjiB_ba("c,k,j,a") + Gamma_AjiB_ba("a,j,k,c"))
-                  * g_imjb("j,m,k,c")
-                )
+                           // * (Gamma(ck, ja) + Gamma(aj,kc)) g^kc_mj
+                         + (  Gamma_aJiB_ab("c,k,j,a") + Gamma_AjiB_ba("c,k,j,a")
+                            + Gamma_aJiB_ab("a,j,k,c") + Gamma_AjiB_ba("a,j,k,c"))
+                           * (g_imbj("j,m,c,k") - g_imjb("j,m,k,c"))
+                         + (Gamma_aJiB_ab("c,k,j,a") + Gamma_aJiB_ab("a,j,k,c"))
+                           * g_imbj("j,m,c,k")
+                         - (Gamma_AjiB_ba("c,k,j,a") + Gamma_AjiB_ba("a,j,k,c"))
+                           * g_imjb("j,m,k,c")
+                        )
                 ;
-    //std::cout << "Xam : " << std::endl << Xam << std::endl;
 
-    Xai("a,i") =- _2("<a|F|b>") * (Dai("b,i") + Dia("i,b"))
-                - _2("<a|F|l>") * (Dij("l,i") + Dij("i,l"))
+    Xai("a,i") = - _2("<a|F|b>") * (Dai("b,i") + Dia("i,b"))
+                 - _2("<a|F|l>") * (Dij("l,i") + Dij("i,l"))
 
-                - 4.0 * (
-                  //
-                  // (Gamma(kl,ij) + Gamma(ij, kl)) g^kl_aj
-                  (Gamma_IjKl_ab("k,l,i,j") + Gamma_IjKl_ab("i,j,k,l"))
-                  * (g_ijak("k,l,a,j") * 2.0 - g_ijak("l,k,a,j"))
+                 - 4.0 * (
+                           //
+                           // (Gamma(kl,ij) + Gamma(ij, kl)) g^kl_aj
+                           (Gamma_IjKl_ab("k,l,i,j") + Gamma_IjKl_ab("i,j,k,l"))
+                           * (g_ijak("k,l,a,j") * 2.0 - g_ijak("l,k,a,j"))
 
-                  // (Gamma(cd,ij) + Gamma(ij, cd)) g^cd_aj
-                + (Gamma_AbIj_ab("c,d,i,j") + Gamma_IjAb_ab("i,j,c,d"))
-                  * (g_abci("c,d,a,j") * 2.0 - g_abci("d,c,a,j"))
+                           // (Gamma(cd,ij) + Gamma(ij, cd)) g^cd_aj
+                         + (Gamma_AbIj_ab("c,d,i,j") + Gamma_IjAb_ab("i,j,c,d"))
+                           * (g_abci("c,d,a,j") * 2.0 - g_abci("d,c,a,j"))
 
-                  // (- Gamma(ck,ij) + Gamma(ij,kc)) g^kc_aj
-                + (- (Gamma_AkIj_ab("c,k,i,j") - Gamma_AkIj_ab("c,k,j,i"))
-                   + Gamma_IjKa_ab("i,j,k,c") - Gamma_IjKa_ab("j,i,k,c"))
-                  * (g_iabj("j,a,c,k") - g_aibj("a,j,c,k"))
-                  // - Gamma_aKIj_ba("c,k,i,j") = Gamma_AkIj_ab("c,k,j,i")
-                + ( Gamma_AkIj_ab("c,k,j,i") + Gamma_IjKa_ab("i,j,k,c"))
-                  * g_iabj("j,a,c,k")
-                - ( - Gamma_AkIj_ab("c,k,i,j") - Gamma_IjKa_ab("j,i,k,c"))
-                  * g_aibj("a,j,c,k")
+                           // (- Gamma(ck,ij) + Gamma(ij,kc)) g^kc_aj
+                         + (- (Gamma_AkIj_ab("c,k,i,j") - Gamma_AkIj_ab("c,k,j,i"))
+                            + Gamma_IjKa_ab("i,j,k,c") - Gamma_IjKa_ab("j,i,k,c"))
+                           * (g_iabj("j,a,c,k") - g_aibj("a,j,c,k"))
+                           // - Gamma_aKIj_ba("c,k,i,j") = Gamma_AkIj_ab("c,k,j,i")
+                         + ( Gamma_AkIj_ab("c,k,j,i") + Gamma_IjKa_ab("i,j,k,c"))
+                           * g_iabj("j,a,c,k")
+                         - ( - Gamma_AkIj_ab("c,k,i,j") - Gamma_IjKa_ab("j,i,k,c"))
+                           * g_aibj("a,j,c,k")
 
-                  //
-                  // (Gamma(kl,ib) - Gamma(bi,kl)) g^kl_ab
-                + (Gamma_IjKa_ab("k,l,i,b") + Gamma_AkIj_ab("b,i,l,k"))
-                  * (g_ijab("k,l,a,b") * 2.0 - g_ijab("l,k,a,b"))
+                           //
+                           // (Gamma(kl,ib) - Gamma(bi,kl)) g^kl_ab
+                         + (Gamma_IjKa_ab("k,l,i,b") + Gamma_AkIj_ab("b,i,l,k"))
+                           * (g_ijab("k,l,a,b") * 2.0 - g_ijab("l,k,a,b"))
 
-                  // (- Gamma(cd,bi) + Gamma(bi,dc)) g^cd_ab
-                + (Gamma_AbCi_ab("d,c,b,i") + Gamma_CiAb_ab("b,i,d,c"))
-                  * (g_abcd("c,d,a,b") * 2.0 - g_abcd("d,c,a,b"))
+                           // (- Gamma(cd,bi) + Gamma(bi,dc)) g^cd_ab
+                         + (Gamma_AbCi_ab("d,c,b,i") + Gamma_CiAb_ab("b,i,d,c"))
+                           * (g_abcd("c,d,a,b") * 2.0 - g_abcd("d,c,a,b"))
 
-                  // (Gamma(ck,ib) + Gamma(bi,kc)) g^ck_ab
-                + (  Gamma_aJiB_ab("c,k,i,b") + Gamma_AjiB_ba("c,k,i,b")
-                   + Gamma_aJiB_ab("b,i,k,c") + Gamma_AjiB_ba("b,i,k,c"))
-                  * (g_abci("a,b,c,k") - g_abci("b,a,c,k"))
-                + (Gamma_aJiB_ab("c,k,i,b") + Gamma_aJiB_ab("b,i,k,c"))
-                  * g_abci("a,b,c,k")
-                - (Gamma_AjiB_ba("c,k,i,b") + Gamma_AjiB_ba("b,i,k,c"))
-                  * g_abci("b,a,c,k")
+                           // (Gamma(ck,ib) + Gamma(bi,kc)) g^ck_ab
+                         + (  Gamma_aJiB_ab("c,k,i,b") + Gamma_AjiB_ba("c,k,i,b")
+                            + Gamma_aJiB_ab("b,i,k,c") + Gamma_AjiB_ba("b,i,k,c"))
+                           * (g_abci("a,b,c,k") - g_abci("b,a,c,k"))
+                         + (Gamma_aJiB_ab("c,k,i,b") + Gamma_aJiB_ab("b,i,k,c"))
+                           * g_abci("a,b,c,k")
+                         - (Gamma_AjiB_ba("c,k,i,b") + Gamma_AjiB_ba("b,i,k,c"))
+                           * g_abci("b,a,c,k")
 
-               );
-    //std::cout << "Xai : " << std::endl << Xai << std::endl;
+                        )
+                 ;
+    Xam_tot = XaiAddToXam(Xam, Xai);
 
-    return XaiAddToXam(Xam, Xai);
+    // *** test code: print out Iam & Ima ***
+    TArray4d g_iabc = ijxy("<i a|g|b c>");
+    TArray4d g_ikbj = ijxy("<i k|g|b j>");
+    TArray4d g_ikjb = ijxy("<i k|g|j b>");
+    TArray4d g_kabi = ijxy("<k a|g|b i>");
+    TArray4d g_kaib = ijxy("<k a|g|i b>");
+    TArray4d g_ijkl = ijxy("<i j|g|k l>");
+
+    TArray2 Iam;
+    Iam("a,m") =   2.0 * (
+                           //
+                           // (Gamma(kl,ab) + Gamma(ab,kl)) g^kl_mb
+                          (Gamma_IjAb_ab("k,l,a,b") + Gamma_AbIj_ab("a,b,k,l"))
+                          * (g_ijma("k,l,m,b") * 2.0 - g_ijma("l,k,m,b"))
+
+                           // (Gamma(cd,ab) + Gamma(ab, cd)) g^cd_mb
+                         + (Gamma_AbCd_ab("c,d,a,b") + Gamma_AbCd_ab("a,b,c,d"))
+                           * (g_mabc("m,b,c,d") * 2.0 - g_mabc("m,b,d,c"))
+
+                           // 2 (Gamma(ck,ab) - Gamma(ba,ck)) g^ck_mb
+                         + (  Gamma_CiAb_ab("c,k,a,b") - Gamma_CiAb_ab("c,k,b,a")
+                            - Gamma_AbCi_ab("b,a,c,k") + Gamma_AbCi_ab("a,b,c,k"))
+                           * (g_mabi("m,b,c,k") - g_maib("m,b,k,c"))
+                         + (Gamma_CiAb_ab("c,k,a,b") + Gamma_AbCi_ab("a,b,c,k"))
+                           * g_mabi("m,b,c,k")
+                         - (- Gamma_CiAb_ab("c,k,b,a") - Gamma_AbCi_ab("b,a,c,k"))
+                           * g_maib("m,b,k,c")
+
+                           //
+                           // (Gamma(lk, ja) + Gamma(aj, kl)) g^kl_mj
+                         + (Gamma_IjKa_ab("l,k,j,a") + Gamma_AkIj_ab("a,j,k,l"))
+                           * (g_imkl("j,m,l,k") * 2.0 - g_imkl("j,m,k,l"))
+
+                           // (Gamma(cd, aj) + Gamma(aj, cd) g^mj_cd) g^cd_mj
+                         + (Gamma_AbCi_ab("c,d,a,j") + Gamma_CiAb_ab("a,j,c,d"))
+                           * (g_miab("m,j,c,d") * 2.0 - g_miab("m,j,d,c"))
+
+                           // * (Gamma(ck, ja) + Gamma(aj,kc)) g^kc_mj
+                         + (  Gamma_aJiB_ab("c,k,j,a") + Gamma_AjiB_ba("c,k,j,a")
+                            + Gamma_aJiB_ab("a,j,k,c") + Gamma_AjiB_ba("a,j,k,c"))
+                           * (g_imbj("j,m,c,k") - g_imjb("j,m,k,c"))
+                         + (Gamma_aJiB_ab("c,k,j,a") + Gamma_aJiB_ab("a,j,k,c"))
+                           * g_imbj("j,m,c,k")
+                         - (Gamma_AjiB_ba("c,k,j,a") + Gamma_AjiB_ba("a,j,k,c"))
+                           * g_imjb("j,m,k,c")
+                        )
+                ;
+
+    TArray2 Ima, Iia;
+    Ima("a,m") = - (2.0 * g_mabc("m,c,a,d") - g_mabc("m,c,d,a"))
+                   * (Dab("c,d") + Dab("d,c")) * 0.5
+                 - (2.0 * g_imjb("l,m,k,a") - g_imbj("l,m,a,k"))
+                   * (Dij("k,l") + Dij("l,k")) * 0.5
+                 ;
+    Iia("a,i") = - 2.0 * (
+                           //
+                           // (Gamma(kl,ij) + Gamma(ij, kl)) g^kl_aj
+                           (Gamma_IjKl_ab("k,l,i,j") + Gamma_IjKl_ab("i,j,k,l"))
+                           * (g_ijak("k,l,a,j") * 2.0 - g_ijak("l,k,a,j"))
+
+                           // (Gamma(cd,ij) + Gamma(ij, cd)) g^cd_aj
+                         + (Gamma_AbIj_ab("c,d,i,j") + Gamma_IjAb_ab("i,j,c,d"))
+                           * (g_abci("c,d,a,j") * 2.0 - g_abci("d,c,a,j"))
+
+                           // (- Gamma(ck,ij) + Gamma(ij,kc)) g^kc_aj
+                         + (- (Gamma_AkIj_ab("c,k,i,j") - Gamma_AkIj_ab("c,k,j,i"))
+                            + Gamma_IjKa_ab("i,j,k,c") - Gamma_IjKa_ab("j,i,k,c"))
+                           * (g_iabj("j,a,c,k") - g_aibj("a,j,c,k"))
+                           // - Gamma_aKIj_ba("c,k,i,j") = Gamma_AkIj_ab("c,k,j,i")
+                         + ( Gamma_AkIj_ab("c,k,j,i") + Gamma_IjKa_ab("i,j,k,c"))
+                           * g_iabj("j,a,c,k")
+                         - ( - Gamma_AkIj_ab("c,k,i,j") - Gamma_IjKa_ab("j,i,k,c"))
+                           * g_aibj("a,j,c,k")
+
+                           //
+                           // (Gamma(kl,ib) - Gamma(bi,kl)) g^kl_ab
+                         + (Gamma_IjKa_ab("k,l,i,b") + Gamma_AkIj_ab("b,i,l,k"))
+                           * (g_ijab("k,l,a,b") * 2.0 - g_ijab("l,k,a,b"))
+
+                           // (- Gamma(cd,bi) + Gamma(bi,dc)) g^cd_ab
+                         + (Gamma_AbCi_ab("d,c,b,i") + Gamma_CiAb_ab("b,i,d,c"))
+                           * (g_abcd("c,d,a,b") * 2.0 - g_abcd("d,c,a,b"))
+
+                           // (Gamma(ck,ib) + Gamma(bi,kc)) g^ck_ab
+                         + (  Gamma_aJiB_ab("c,k,i,b") + Gamma_AjiB_ba("c,k,i,b")
+                            + Gamma_aJiB_ab("b,i,k,c") + Gamma_AjiB_ba("b,i,k,c"))
+                           * (g_abci("a,b,c,k") - g_abci("b,a,c,k"))
+                         + (Gamma_aJiB_ab("c,k,i,b") + Gamma_aJiB_ab("b,i,k,c"))
+                           * g_abci("a,b,c,k")
+                         - (Gamma_AjiB_ba("c,k,i,b") + Gamma_AjiB_ba("b,i,k,c"))
+                           * g_abci("b,a,c,k")
+
+                        )
+                 ;
+    TArray2 I_ima = XaiAddToXam(Ima, Iia);
+
+    std::cout << "Ii/m a : " << std::endl << I_ima << std::endl;
+    std::cout << "Iam : " << std::endl << Iam << std::endl;
+
+    // frozen-core contribution
+    const std::size_t nocc = Xam.trange().elements().size()[1];
+    const std::size_t naocc = Xai.trange().elements().size()[1];
+    if (nocc != naocc) {
+      TArray4d g_ijipk = ijxy("<i j|g|i' k>");
+      TArray4d g_abipi = ijxy("<a b|g|i' i>");
+      TArray4d g_ipibj = ijxy("<i' i|g|b j>");
+      TArray4d g_iipbj = ijxy("<i i'|g|b j>");
+      TArray4d g_ijipb = ijxy("<i j|g|i' b>");
+      TArray4d g_abipd = ijxy("<a b|g|i' d>");
+      TArray4d g_aipbi = ijxy("<a i'|g|b i>");
+
+      Xiip("i,i'") = - 4.0 * (
+                             //
+                             // (Gamma(kl,ij) + Gamma(ij, kl)) g^kl_i'j
+                             (Gamma_IjKl_ab("k,l,i,j") + Gamma_IjKl_ab("i,j,k,l"))
+                             * (g_ijipk("k,l,i',j") * 2.0 - g_ijipk("l,k,i',j"))
+
+                             // (Gamma(cd,ij) + Gamma(ij, cd)) g^cd_i'j
+                           + (Gamma_AbIj_ab("c,d,i,j") + Gamma_IjAb_ab("i,j,c,d"))
+                             * (g_abipi("c,d,i',j") * 2.0 - g_abipi("d,c,i',j"))
+
+                             // (- Gamma(ck,ij) + Gamma(ij,kc)) g^kc_i'j
+                           + (- (Gamma_AkIj_ab("c,k,i,j") - Gamma_AkIj_ab("c,k,j,i"))
+                              + Gamma_IjKa_ab("i,j,k,c") - Gamma_IjKa_ab("j,i,k,c"))
+                             * (g_iipbj("j,i',c,k") - g_ipibj("i',j,c,k"))
+                           + ( Gamma_AkIj_ab("c,k,j,i") + Gamma_IjKa_ab("i,j,k,c"))
+                             * g_iipbj("j,i',c,k")
+                           - ( - Gamma_AkIj_ab("c,k,i,j") - Gamma_IjKa_ab("j,i,k,c"))
+                             * g_ipibj("i',j,c,k")
+
+                             //
+                             // (Gamma(kl,ib) - Gamma(bi,kl)) g^kl_i'b
+                           + (Gamma_IjKa_ab("k,l,i,b") + Gamma_AkIj_ab("b,i,l,k"))
+                             * (g_ijipb("k,l,i',b") * 2.0 - g_ijipb("l,k,i',b"))
+
+                             // (- Gamma(cd,bi) + Gamma(bi,dc)) g^cd_i'b
+                           + (Gamma_AbCi_ab("d,c,b,i") + Gamma_CiAb_ab("b,i,d,c"))
+                             * (g_abipd("c,d,i',b") * 2.0 - g_abipd("d,c,i',b"))
+
+                             // (Gamma(ck,ib) + Gamma(bi,kc)) g^ck_i'b
+                           + (  Gamma_aJiB_ab("c,k,i,b") + Gamma_AjiB_ba("c,k,i,b")
+                              + Gamma_aJiB_ab("b,i,k,c") + Gamma_AjiB_ba("b,i,k,c"))
+                             * (g_abipi("c,b,i',k") - g_aipbi("b,i',c,k"))
+                           + (Gamma_aJiB_ab("c,k,i,b") + Gamma_aJiB_ab("b,i,k,c"))
+                             * g_abipi("c,b,i',k")
+                           - (Gamma_AjiB_ba("c,k,i,b") + Gamma_AjiB_ba("b,i,k,c"))
+                             * g_aipbi("b,i',c,k")
+                          )
+                   ;
+
+    }
 
 //    TArray4 GIjKa_ab, GAbCi_ab,
 //            GiBjA_ab, GiBJa_ba,
@@ -5172,12 +5344,21 @@ namespace sc {
     world_.gop.fence(); // clear memory
 #endif
 
+    // determine if it is frozen-core
+    TArray2 Fij = xy("<i|F|j>");
+    const std::size_t nocc = mFmn.trange().elements().size()[0];
+    const std::size_t naocc = Fij.trange().elements().size()[0];
+
     // compute integrals needed for MP2 and following calculations of properties
     // dipole integrals
-    TArray2 mu_z_ij, mu_z_ab;
+    TArray2 mu_z_ij, mu_z_ab, mu_z_ijp;
     if (compute_dipole) {
       mu_z_ij = xy("<i|mu_z|j>");
       mu_z_ab = xy("<a|mu_z|b>");
+
+      if (nocc != naocc) {
+        mu_z_ijp = xy("<i|mu_z|j'>");
+      }
     }
 
     // quadrupole integrasl
@@ -5226,6 +5407,34 @@ namespace sc {
       v_yz_ab = xy("<a|ddphi_yz|b>");
     }
 
+    // compute terms needed for frozen-core
+    TArray2 Delta_ijp_F;
+    TArray4 A_ijpam;
+    if (nocc != naocc) {
+      // compute 1 / (Fi'i' - Fjj)
+      TArray2 Fipjp = xy("<i'|F|j'>");
+      pceval_type Delta_ijp_gen(TA::array_to_eigen(Fij), TA::array_to_eigen(Fipjp));
+
+      TArray2 Fijp = xy("<i|F|j'>");
+      TArray2d Delta_ijp(Fijp.get_world(), Fijp.trange());
+      // construct local tiles
+      for(auto t = Delta_ijp.trange().tiles().begin();
+          t != Delta_ijp.trange().tiles().end(); ++t)
+        if (Delta_ijp.is_local(*t)) {
+          std::array<std::size_t, 2> index;
+          std::copy(t->begin(), t->end(), index.begin());
+          madness::Future < typename TArray2d::value_type >
+            tile((LazyTensor<T, 2, pceval_type >(&Delta_ijp, index, &Delta_ijp_gen)
+                ));
+
+          // Insert the tile into the array
+          Delta_ijp.set(*t, tile);
+        }
+      Delta_ijp_F("i,j'") = Delta_ijp("i,j'");
+
+      A_ijpam("i,j',a,m") = 4.0 * _4("<i a|g|j' m>") - _4("<i a|g|m j'>") - _4("<i m|g|a j'>");
+    }
+
     // compute MP2 and its orbital response contribution
     // compute Delta_ijab = - 1 / (- <i|F|i> - <j|F|j> + <a|F|a> + <b|F|b>)
     // which is needed for MP2 amplitudes & MP2 F12 coupling
@@ -5271,13 +5480,44 @@ namespace sc {
                       * T2_ijab("i,j,b,c");
 
     // MP2 orbital response
-    TArray2 X_mp2 = Xam_mp2(T2_ijab, D_mp2_ij, D_mp2_ab);
+    TArray2 X_mp2_nfzc = Xam_mp2(T2_ijab, D_mp2_ij, D_mp2_ab);
+
+    TArray2 X_mp2;
+    // *** frozen-core contribution ***
+    TArray2 Dijp_or_mp2;
+    if (nocc != naocc) {
+      Dijp_or_mp2("i,j'") = - ( _4("<j' l|g|c d>")
+                                * (2.0 * T2_ijab("i,l,c,d") - T2_ijab("l,i,c,d"))
+                              ) * Delta_ijp_F("i,j'") * 2.0;
+      TArray2 Xam_Dijp_or;
+      Xam_Dijp_or("a,m") = A_ijpam("i,j',a,m") * Dijp_or_mp2("i,j'");
+      X_mp2("a,m") = X_mp2_nfzc("a,m") - Xam_Dijp_or("a,m");
+
+      // test code: print out Ima in frozen-core case
+      TArray2 Iia, Ima;
+      Iia("a,i") = _4("<a l|g|c d>")
+                   * (2.0 * T2_ijab("i,l,c,d") - T2_ijab("l,i,c,d"));
+      Ima("a,m") =   (2.0 * _4("<a c|g|m d>") - _4("<a c|g|d m>"))
+                     * D_mp2_ab("d,c")
+                   - (2.0 * _4("<a l|g|m k>") - _4("<a l|g|k m>"))
+                     * D_mp2_ij("k,l")
+                   ;
+      TArray2 Iima = XaiAddToXam(Ima, Iia);
+      TArray2 Iima_fzc;
+      Iima_fzc("a,m") = Iima("a,m") + Xam_Dijp_or("a,m") * 0.5;
+      ExEnv::out0() << std::endl << "FZC Ima : " << std::endl << Iima_fzc << std::endl;
+    } else {
+      X_mp2("a,m") = X_mp2_nfzc("a,m");
+    }
+     // *** end of frozen-core ***
+
     TArray2 Dbn_mp2(X_mp2.get_world(), X_mp2.trange());
     auto resnorm_mp2 = cg_solver2(Orbital_relaxation_Abnam,
                                   X_mp2,
                                   Dbn_mp2,
                                   preconditioner,
                                   1e-10);
+
     // MP2 dipole
     if (compute_dipole) {
       // MP2 density contribution to dipole
@@ -5286,6 +5526,10 @@ namespace sc {
 
       // MP2 orbital response contribution to dipole
       mu_z_mp2or = dot(mu_z_am("a,m"), Dbn_mp2("a,m"));
+
+      if (nocc != naocc) {
+          mu_z_mp2or += dot(mu_z_ijp("i,j'"), Dijp_or_mp2("i,j'"));
+      }
     }
 
     // MP2 contribution to quadrupoles
@@ -5976,12 +6220,23 @@ namespace sc {
                           Dij_ccsd, Dab_ccsd, Dia_ccsd, Dai_ccsd);
 
     ExEnv::out0() << indent << "Compute CCSD Xam and Xai" << std::endl;
+    TArray2 Xam_ccsd_nfzc, Xiip_ccsd;
+    compute_Xam_ccsd(T1, T2, L1, L2, Xam_ccsd_nfzc, Xiip_ccsd);
 
-    TArray4 T2_symm, L2_symm;
-    T2_symm("a,b,i,j") = 0.5 * (T2("a,b,i,j") + T2("b,a,j,i"));
-    L2_symm("a,b,i,j") = 0.5 * (L2("a,b,i,j") + L2("b,a,j,i"));
-    TArray2 Xam_ccsd = compute_Xam_ccsd(T1, T2_symm, L1, L2_symm);
-    //std::cout << "CCSD Xam : " << std::endl << Xam_ccsd << std::endl;
+    TArray2 Diip_or_ccsd, Xam_Diip_ccsd, Xam_ccsd;
+    if (nocc != naocc) {
+      Diip_or_ccsd("i,i'") = Xiip_ccsd("i,i'") * Delta_ijp_F("i,i'");
+
+      Xam_Diip_ccsd("a,m") = A_ijpam("i,i',a,m") * Diip_or_ccsd("i,i'");
+      Xam_ccsd("a,m") = Xam_ccsd_nfzc("a,m") - Xam_Diip_ccsd("a,m");
+
+      // test code: print out frozen-core contribution to Ima
+      TArray2 I_ma_fzc;
+      I_ma_fzc("a,m") = - Xam_Diip_ccsd("a,m") * 0.5;
+      std::cout << "Ima frozen-core part: " << std::endl << I_ma_fzc << std::endl;
+    } else {
+      Xam_ccsd("a,m") = Xam_ccsd_nfzc("a,m");
+    }
 
     // print results
     if (compute_dipole) {
@@ -6016,18 +6271,21 @@ namespace sc {
                         ;
 
       TArray2 Dbn_ccsd(Xam_ccsd.get_world(), Xam_ccsd.trange());
-      // solve k_bn A_bnam = X_am
+
       auto resnorm_ccsd = cg_solver2(Orbital_relaxation_Abnam,
                                      Xam_ccsd,
                                      Dbn_ccsd,
                                      preconditioner,
                                      1e-14);
       double mu_z_ccsdor = dot(mu_z_am("a,m"), Dbn_ccsd("a,m"));
+      if (nocc != naocc) {
+        mu_z_ccsdor += dot(mu_z_ijp("i,i'"), Diip_or_ccsd("i,i'"));
+      }
 
       std::cout << std::endl << indent
                 << "mu_z (CCSD) = " << scprintf("%15.12f", - mu_z_ccsd * 2.0)
                 << std::endl << indent
-                << "mu_z (CCSD orbital response) = " << scprintf("%20.15f", - mu_z_ccsdor * 2.0)
+                << "mu_z (CCSD orbital response) = " << scprintf("%15.12f", - mu_z_ccsdor * 2.0)
                 << std::endl;
     }
 

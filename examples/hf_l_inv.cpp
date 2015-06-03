@@ -360,6 +360,7 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "Time to compute 3 center integrals ", etime,
                        " s\n");
     utility::print_size_info(Xab, "E");
+    decltype(Xab)::wait_for_lazy_cleanup(world, 60);
 
     // Make B tensor
     auto B0 = tcc_time::now();
@@ -370,7 +371,7 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "\nTime to compute B ", btime,
                        " s\n");
     utility::print_size_info(Xab, "B Tensor");
-    decltype(Xab)::wait_for_lazy_cleanup(world, 2);
+    decltype(Xab)::wait_for_lazy_cleanup(world, 60);
 
     decltype(H) F;
     utility::print_par(world, "\nStarting SOAD guess\n");

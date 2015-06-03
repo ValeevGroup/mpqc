@@ -350,7 +350,7 @@ int main(int argc, char *argv[]) {
     };
 
     // Compute center integrals
-    utility::print_par(world, "\nStarting 3 Center Integrasl\n");
+    utility::print_par(world, "\nStarting 3 Center Integrals\n");
     auto E0 = tcc_time::now();
     auto Xab = ints::BlockSparseIntegrals(
           world, eri_pool, utility::make_array(df_basis, basis, basis),
@@ -373,7 +373,7 @@ int main(int argc, char *argv[]) {
     decltype(Xab)::wait_for_lazy_cleanup(world, 2);
 
     decltype(H) F;
-    utility::print_par(world, "\nStarting SOAD guess\n");
+    utility::print_par(world, "\nStarting SOAD guess");
     auto soad0 = tcc_time::now();
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
                                           V_inv_oh, Xab, bs_clusters,
@@ -382,17 +382,24 @@ int main(int argc, char *argv[]) {
     auto soad1 = tcc_time::now();
     auto soad_time = tcc_time::duration_in_s(soad0, soad1);
     utility::print_par(world, "\nSoad time ", soad_time, " s\n");
+    decltype(F)::wait_for_lazy_cleanup(world);
 
+    utility::print_par(world, "\nConverting Fock to TA::Tensor...\n");
     auto F_TA = TA::to_new_tile_type(F, to_ta);
+    world.gop.fence();
 
     auto n_occ = occupation / 2;
     auto tr_i = scf::tr_occupied(dfbs_nclusters, n_occ);
+    utility::print_par(world, "Computing MO coeffs...\n");
     auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+    utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
     auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
 
     decltype(Coeffs_TA) D_TA;
+    utility::print_par(world, "Forming Density...\n");
     D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
 
+    utility::print_par(world, "Computing Initial energy...\n");
     auto energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
     utility::print_par(world, "Initial energy = ", energy + repulsion_energy,
                        "\n");
@@ -410,7 +417,7 @@ int main(int argc, char *argv[]) {
     const auto volume = double(F.trange().elements().volume());
     double time;
     double ktime, jtime;
-    while (error >= 1e-12 && iter <= 35) {
+    while ((error >= 1e-12 || delta_e >= 1e-8) && iter <= 35) {
         utility::print_par(world, "Iteration: ", iter, "\n");
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);

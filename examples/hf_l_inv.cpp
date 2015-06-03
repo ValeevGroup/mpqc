@@ -418,7 +418,7 @@ int main(int argc, char *argv[]) {
     const auto volume = double(F.trange().elements().volume());
     double time;
     double ktime, jtime;
-    while ((error >= 1e-12 || delta_e >= 1e-8) && iter <= 35) {
+    while ((error >= 1e-13 || std::abs(delta_e) >= 1e-8) && iter <= 35) {
         utility::print_par(world, "Iteration: ", iter, "\n");
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);

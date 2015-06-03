@@ -406,7 +406,7 @@ int main(int argc, char *argv[]) {
 
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (V_inv("Q,P") * (Xab("P,a,b") * D("a,b")));
+        J("i,j") = Xab("Q,i,j") * (V_inv("Q,P") * (Xab("P,a,b") * D("a,b")));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");

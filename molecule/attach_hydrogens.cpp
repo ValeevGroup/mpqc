@@ -19,6 +19,9 @@ individual_clustering(std::vector<Clusterable> const &c_ables) {
         c.add_clusterable(c_able);
         cs.push_back(std::move(c));
     }
+    for(auto &c : cs){
+        c.compute_com();
+    }
     return cs;
 }
 

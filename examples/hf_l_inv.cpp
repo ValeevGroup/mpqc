@@ -48,6 +48,20 @@
 using namespace tcc;
 namespace ints = integrals;
 
+static std::map<int, std::string> atom_names = { {1 , "H"}
+                                             , {2 , "He"}
+                                             , {3 , "Li"}
+                                             , {4 , "Be"}
+                                             , {5 , "B"}
+                                             , {6 , "C"}
+                                             , {7 , "N"}
+                                             , {8 , "O"}
+                                             , {9 , "F"}
+                                             , {10 , "Ne"}
+                                             , {11 , "Na"}
+                                             , {12 , "Mg"}
+};
+
 void main_print_clusters(
       std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
       std::ostream &os) {
@@ -68,7 +82,7 @@ void main_print_clusters(
     for (auto const &cluster : clusters) {
         for (auto const &atom : cluster) {
             auto center = 0.52917721092 * atom.center();
-            os << atom.charge() << " " << center[0] << " " << center[1] << " "
+            os << atom_names[atom.charge()] << " " << center[0] << " " << center[1] << " "
                << center[2] << std::endl;
         }
     }
@@ -79,7 +93,7 @@ void main_print_clusters(
         os << "Cluster " << counter++ << std::endl;
         for (auto const &atom : cluster) {
             auto center = 0.52917721092 * atom.center();
-            os << atom.charge() << " " << center[0] << " " << center[1] << " "
+            os << atom_names[atom.charge()] << " " << center[0] << " " << center[1] << " "
                << center[2] << std::endl;
         }
         os << std::endl;
@@ -141,6 +155,7 @@ int main(int argc, char *argv[]) {
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
     auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
 
+    world.gop.fence();
     if (world.rank() == 0) {
         if (print_clusters) {
             std::cout << "Printing clusters\n";
@@ -274,25 +289,29 @@ int main(int argc, char *argv[]) {
                                                               std::move(dense));
     };
     /* // Computing Eri2 */
+    utility::print_par(world, "Starting 2 Center Integrals\n");
     TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
               TA::SparsePolicy> V_inv_oh;
     {
-        utility::print_par(world, "\n");
+        utility::print_par(world, "\tStarting V\n");
         auto eri2 = ints::BlockSparseIntegrals(
               world, eri_pool, utility::make_array(df_basis, df_basis),
               integrals::compute_functors::BtasToTaTensor{});
 
         decltype(eri2) L_inv_TA;
         {
+            utility::print_par(world, "\tReplicating to Eigen\n");
             auto eig_E2 = array_ops::array_to_eigen(eri2);
             Eig::LLT<decltype(eig_E2)> llt(eig_E2);
             eig_E2 = llt.matrixL();
             decltype(eig_E2) eig_L_inv = eig_E2.inverse();
+            utility::print_par(world, "\tConverting back to TA\n");
             L_inv_TA = array_ops::eigen_to_array<TA::Tensor<double>>(
                   world, eig_L_inv, eri2.trange().data()[0],
                   eri2.trange().data()[1]);
         }
 
+        utility::print_par(world, "\tDecomposing Tiles\n");
         V_inv_oh = TA::to_new_tile_type(L_inv_TA, to_decomp_with_decompose);
         utility::print_size_info(V_inv_oh, "V^{-1/2}");
     }
@@ -331,7 +350,7 @@ int main(int argc, char *argv[]) {
     };
 
     // Compute center integrals
-    utility::print_par(world, "\n");
+    utility::print_par(world, "\nStarting 3 Center Integrasl\n");
     auto E0 = tcc_time::now();
     auto Xab = ints::BlockSparseIntegrals(
           world, eri_pool, utility::make_array(df_basis, basis, basis),
@@ -341,15 +360,20 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "Time to compute 3 center integrals ", etime,
                        " s\n");
     utility::print_size_info(Xab, "E");
-    utility::print_par(world, "\n");
 
     // Make B tensor
+    auto B0 = tcc_time::now();
     Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
     Xab.truncate();
+    auto B1 = tcc_time::now();
+    auto btime = tcc_time::duration_in_s(B0, B1);
+    utility::print_par(world, "\nTime to compute B ", btime,
+                       " s\n");
     utility::print_size_info(Xab, "B Tensor");
     decltype(Xab)::wait_for_lazy_cleanup(world, 2);
 
     decltype(H) F;
+    utility::print_par(world, "\nStarting SOAD guess\n");
     auto soad0 = tcc_time::now();
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
                                           V_inv_oh, Xab, bs_clusters,
@@ -358,7 +382,6 @@ int main(int argc, char *argv[]) {
     auto soad1 = tcc_time::now();
     auto soad_time = tcc_time::duration_in_s(soad0, soad1);
     utility::print_par(world, "\nSoad time ", soad_time, " s\n");
-
 
     auto F_TA = TA::to_new_tile_type(F, to_ta);
 

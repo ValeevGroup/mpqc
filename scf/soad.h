@@ -152,11 +152,13 @@ ArrayType fock_from_minimal_v_oh(
 
 
     decltype(D_min) J, K, F, Coeffs;
+
     {
         auto EriJ = BlockSparseIntegrals(
               world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
-        J("i,j") = Xab("X,i,j")
-                   * (V_inv_oh("X,P") * (EriJ("P,a,b") * D_min("a,b")));
+        TA::Array<double, 1, typename decltype(EriJ)::value_type, TA::SparsePolicy> trans;
+        trans("P") = EriJ("P,a,b") * D_min("a,b");
+        J("i,j") = Xab("X,i,j") * (V_inv_oh("X,P") * trans("P"));
     }
     J.get_world().gop.fence();
 

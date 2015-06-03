@@ -153,7 +153,6 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
     template <typename T>
     Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a,
                            Dtensor<T> const &b, const T f, GHelper const &gh) {
-        // assume b is never decomposed.
         if (c.ndecomp() == 1) {         // Full * *
             if (a.ndecomp() == 1) {     // Full Full *
                 if (b.ndecomp() == 1) { //  Full Full Full
@@ -197,10 +196,10 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                     }
                 }
                 // For V into Eri always recompress
-                // auto decomp_c = algebra::two_way_decomposition(c);
-                // if (!decomp_c.empty()) {
-                //     c = std::move(decomp_c);
-                // }
+                auto decomp_c = algebra::two_way_decomposition(c);
+                if (!decomp_c.empty()) {
+                    c = std::move(decomp_c);
+                }
                 return c;
             }
         } else {                                        // Low * *

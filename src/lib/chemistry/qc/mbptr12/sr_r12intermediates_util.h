@@ -740,12 +740,12 @@ namespace sc {
         return result * scale_;
       }
 
-      result_type operator()(const TiledArray::ZeroTensor<value_type>&, const ArgType&) {
+      result_type operator()(const TiledArray::ZeroTensor&, const ArgType&) {
         TA_ASSERT(false); // Should not be used.
         return result_type();
       }
 
-      result_type operator()(const ArgType&, const TiledArray::ZeroTensor<value_type>&) {
+      result_type operator()(const ArgType&, const TiledArray::ZeroTensor&) {
         TA_ASSERT(false); // Should not be used.
         return result_type();
       }
@@ -796,7 +796,7 @@ namespace sc {
         return result * scale_;
       }
 
-      result_type operator()(const TiledArray::ZeroTensor<value_type>&) {
+      result_type operator()(const TiledArray::ZeroTensor&) {
         TA_ASSERT(false); // Should not be used.
         return result_type();
       }

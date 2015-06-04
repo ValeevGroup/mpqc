@@ -54,14 +54,6 @@ ENDIF(MPQC_NEW_FEATURES)
 
 add_mpqc_object_library(basis ${ccfiles})
 
-IF(MPQC_NEW_FEATURES)
-  set_source_files_properties(integral_scaling_test.cpp EXCLUDE_FROM_ALL COMPILE_FLAGS "-Wall -Wextra ")
-  set_property(SOURCE integral_scaling_test.cpp PROPERTY COMPILE_DEFINITIONS
-        SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-  add_executable(integral_scaling_test integral_scaling_test.cpp $<TARGET_OBJECTS:basis>)
-  target_link_libraries(integral_scaling_test chemistry extern_moinfo)
-ENDIF(MPQC_NEW_FEATURES)
-
 # tests
 IF(MPQC_UNITTEST)
   set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS
@@ -89,5 +81,12 @@ IF(MPQC_UNITTEST)
   add_executable(kcluster_test kcluster_test.cpp $<TARGET_OBJECTS:basis>)
   
   target_link_libraries( kcluster_test chemistry )
+  
+  set_source_files_properties(integral_scaling_test.cpp EXCLUDE_FROM_ALL COMPILE_FLAGS "-Wall -Wextra ")
+  set_property(SOURCE integral_scaling_test.cpp PROPERTY COMPILE_DEFINITIONS
+        SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(integral_scaling_test integral_scaling_test.cpp $<TARGET_OBJECTS:basis>)
+  
+  target_link_libraries(integral_scaling_test chemistry extern_moinfo)
   
 endif()

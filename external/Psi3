@@ -96,6 +96,7 @@ if ("${PSI3}" AND NOT HAVE_PSI3)
         "CFLAGS=${CMAKE_C_FLAGS}"
         "--with-cxx=${CMAKE_CXX_COMPILER}"
         "CXXFLAGS=${CMAKE_CXX_FLAGS}"
+        "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}"
         "--with-fc=${CMAKE_Fortran_COMPILER}"
         "--with-blas=${LAPACK_LIBRARIES} ${BLAS_LIBRARIES}"
         BUILD_COMMAND make SHELL=/bin/bash

@@ -442,6 +442,8 @@ int main(int argc, char *argv[]) {
 
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
         F_TA = TA::to_new_tile_type(F, to_ta);
+        // to make energy variational need to use same density for F and energy!
+        energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
 
         Ferror("i,j") = F_TA("i,k") * D_TA("k,l") * S_TA("l,j")
                         - S_TA("i,k") * D_TA("k,l") * F_TA("l,j");
@@ -453,7 +455,6 @@ int main(int argc, char *argv[]) {
         Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
         D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
 
-        energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
         delta_e = energy - old_e;
         old_e = energy;
 

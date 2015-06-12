@@ -46,7 +46,7 @@ make_1body(std::string const &type, basis::Basis const &bs) {
     // Vector to hold q.
     q_vector q;
 
-    libint2::OneBodyEngine::integral_type itype;
+    libint2::OneBodyEngine::operator_type itype;
     if (type == "overlap") {
         itype = libint2::OneBodyEngine::overlap;
     } else if (type == "kinetic") {
@@ -62,7 +62,7 @@ make_1body(std::string const &type, basis::Basis const &bs) {
                                   static_cast<int>(bs.max_am()), 0};
 
     if(itype == libint2::OneBodyEngine::nuclear){
-        engine.set_q(std::move(q));
+        engine.set_params(std::move(q));
     }
 
     return engine;

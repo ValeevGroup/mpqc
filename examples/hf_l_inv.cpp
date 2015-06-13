@@ -418,7 +418,7 @@ int main(int argc, char *argv[]) {
     const auto volume = double(F.trange().elements().volume());
     double time;
     double ktime, jtime;
-    while ((error >= 1e-13 || std::abs(delta_e) >= 1e-8) && iter <= 35) {
+    while ((error >= 1e-13 || std::abs(delta_e) >= 1e-12) && iter <= 35) {
         utility::print_par(world, "Iteration: ", iter, "\n");
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
@@ -461,7 +461,7 @@ int main(int argc, char *argv[]) {
         auto t1 = tcc_time::now();
         time = tcc_time::duration_in_s(t0, t1);
 
-        utility::print_par(world, "\tHas energy ", std::setprecision(14),
+        utility::print_par(world, "\tHas energy ", std::setprecision(17),
                            energy + repulsion_energy, " with error ", error,
                            " in ", time, " s \n");
         utility::print_par(world, "\t\tDelta e = ", delta_e, "\n");
@@ -473,7 +473,7 @@ int main(int argc, char *argv[]) {
         ++iter;
     }
 
-    utility::print_par(world, "\nFinal energy = ", std::setprecision(15),
+    utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                        energy + repulsion_energy, "\n");
 
     utility::print_par(world, "\nMP2 Test\n");

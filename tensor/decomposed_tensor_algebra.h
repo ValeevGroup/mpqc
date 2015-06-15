@@ -87,7 +87,7 @@ integer svd(double *data, double *s, double *u, double *vt, integer rows, intege
     integer LDU = (rows < cols) ? rows : 1;
     integer LDVT = (rows >= cols) ? cols : 1;
     const char O = 'O';
-    std::unique_ptr<int[]> iwork{new integer[8 * std::min(rows, cols)]};
+    std::unique_ptr<integer[]> iwork{new integer[8 * std::min(rows, cols)]};
 
     // Call routine
     dgesdd_(&O, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
@@ -181,7 +181,8 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
     auto full_rank = std::min(rows, cols);
 
     // Will hold the column pivot information and reflectors
-    Eig::VectorXi J = Eig::VectorXi::Zero(cols);
+    typedef Eigen::Matrix<integer, Eigen::Dynamic, 1> VectorXi;
+    VectorXi J = VectorXi::Zero(cols);
     std::unique_ptr<double[]> Tau{new double[full_rank]};
 
     std::unique_ptr<double[]> in_data{new double[size]};
@@ -205,8 +206,8 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
     }
 
     // LAPACK assumes 1 based indexing, but we need zero.
-    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
-    Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
+    std::for_each(J.data(), J.data() + J.size(), [](integer &val) { --val; });
+    Eigen::PermutationWrapper<VectorXi> P(J);
 
     // Create L tensor
     TA::Range l_range(extent[0], static_cast<std::size_t>(rank));
@@ -256,7 +257,8 @@ void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
     auto full_rank = std::min(rows, cols);
 
     // Will hold the column pivot information and reflectors
-    Eig::VectorXi J = Eig::VectorXi::Zero(cols);
+    typedef Eigen::Matrix<integer, Eigen::Dynamic, 1> VectorXi;
+    VectorXi J = VectorXi::Zero(cols);
     std::unique_ptr<double[]> Tau{new double[full_rank]};
 
     // Do initial qr routine
@@ -270,8 +272,8 @@ void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
     auto rank = qr_rank(in.data(), rows, cols, thresh);
 
     // LAPACK assumes 1 based indexing, but we need zero.
-    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
-    Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
+    std::for_each(J.data(), J.data() + J.size(), [](integer &val) { --val; });
+    Eigen::PermutationWrapper<VectorXi> P(J);
 
     // Create L tensor
     TA::Range l_range{extent[0], static_cast<std::size_t>(rank)};

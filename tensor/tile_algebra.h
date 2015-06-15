@@ -208,6 +208,7 @@ int inline qr_rank(
     return out_rank;
 }
 
+
 bool inline Decompose_Matrix(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input,
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
@@ -230,7 +231,7 @@ bool inline Decompose_Matrix(
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
     const double thresh = cut;
-    auto rank = qr_rank(input, thresh);
+    integer rank = qr_rank(input, thresh);
 
     if (rank > 0.5 * double(full_rank)) {
         return true; // Input is full rank
@@ -278,7 +279,7 @@ void inline ColPivotedQr(
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
     const double thresh = cut;
-    auto rank = qr_rank(input, thresh);
+    integer rank = qr_rank(input, thresh);
 
     // LAPACK assumes 1 based indexing, but we need zero.
     std::for_each(J.data(), J.data() + J.size(), [](integer &val) { --val; });
@@ -321,7 +322,7 @@ void inline CompressLeft(
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
     const double thresh = cut;
-    auto rank = qr_rank(input, thresh);
+    integer rank = qr_rank(input, thresh);
 
     if (!debug && rank == full_rank) {
         return;
@@ -367,7 +368,7 @@ void inline CompressRight(
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
     const double thresh = cut;
-    auto rank = qr_rank(input, thresh);
+    integer rank = qr_rank(input, thresh);
     if (!debug && rank == full_rank && rank == 0) {
         return;
     }

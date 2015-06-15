@@ -37,11 +37,11 @@ namespace algebra {
 
 // Compute the column pivoted qr decomposition into data, will modify input
 // pointers data and J
-int col_pivoted_qr(double *data, double *Tau, int rows, int cols, int *J) {
+integer col_pivoted_qr(double *data, double *Tau, integer rows, integer cols, integer *J) {
     double work_dummy;
-    int LWORK = -1; // Ask for space computation
-    int INFO;
-    int LDA = rows;
+    integer LWORK = -1; // Ask for space computation
+    integer INFO;
+    integer LDA = rows;
 
     // Call routine
     dgeqp3_(&rows, &cols, data, &LDA, J, Tau, &work_dummy, &LWORK, &INFO);
@@ -51,11 +51,11 @@ int col_pivoted_qr(double *data, double *Tau, int rows, int cols, int *J) {
     return INFO;
 }
 
-int non_pivoted_qr(double *data, double *Tau, int rows, int cols) {
+integer non_pivoted_qr(double *data, double *Tau, integer rows, integer cols) {
     double work_dummy;
-    int LWORK = -1; // Ask for space computation
-    int INFO;
-    int LDA = rows;
+    integer LWORK = -1; // Ask for space computation
+    integer INFO;
+    integer LDA = rows;
 
     // Call routine
     dgeqrf_(&rows, &cols, data, &LDA, Tau, &work_dummy, &LWORK, &INFO);
@@ -65,11 +65,11 @@ int non_pivoted_qr(double *data, double *Tau, int rows, int cols) {
     return INFO;
 }
 
-int non_pivoted_lq(double *data, double *Tau, int rows, int cols) {
+integer non_pivoted_lq(double *data, double *Tau, integer rows, integer cols) {
     double work_dummy;
-    int LWORK = -1; // Ask for space computation
-    int INFO;
-    int LDA = rows;
+    integer LWORK = -1; // Ask for space computation
+    integer INFO;
+    integer LDA = rows;
 
     // Call routine
     dgelqf_(&rows, &cols, data, &LDA, Tau, &work_dummy, &LWORK, &INFO);
@@ -79,15 +79,15 @@ int non_pivoted_lq(double *data, double *Tau, int rows, int cols) {
     return INFO;
 }
 
-int svd(double *data, double *s, double *u, double *vt, int rows, int cols) {
+integer svd(double *data, double *s, double *u, double *vt, integer rows, integer cols) {
     double work_dummy;
-    int LWORK = -1; // Ask for space computation
-    int INFO;
-    int LDA = rows;
-    int LDU = (rows < cols) ? rows : 1;
-    int LDVT = (rows >= cols) ? cols : 1;
+    integer LWORK = -1; // Ask for space computation
+    integer INFO;
+    integer LDA = rows;
+    integer LDU = (rows < cols) ? rows : 1;
+    integer LDVT = (rows >= cols) ? cols : 1;
     const char O = 'O';
-    std::unique_ptr<int[]> iwork{new int[8 * std::min(rows, cols)]};
+    std::unique_ptr<int[]> iwork{new integer[8 * std::min(rows, cols)]};
 
     // Call routine
     dgesdd_(&O, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
@@ -100,10 +100,10 @@ int svd(double *data, double *s, double *u, double *vt, int rows, int cols) {
     return INFO;
 }
 
-int form_q(double *data, double *Tau, int rows, int rank) {
+integer form_q(double *data, double *Tau, integer rows, integer rank) {
     double work_dummy = 0.0;
-    int LWORK = -1;
-    int INFO;
+    integer LWORK = -1;
+    integer INFO;
     dorgqr_(&rows, &rank, &rank, data, &rows, Tau, &work_dummy, &LWORK, &INFO);
     LWORK = work_dummy;
     std::unique_ptr<double[]> work{new double[LWORK]};
@@ -113,10 +113,10 @@ int form_q(double *data, double *Tau, int rows, int rank) {
     return INFO;
 }
 
-int form_q_from_lq(double *data, double *Tau, int cols, int rows, int rank) {
+integer form_q_from_lq(double *data, double *Tau, integer cols, integer rows, integer rank) {
     double work_dummy = 0.0;
-    int LWORK = -1;
-    int INFO;
+    integer LWORK = -1;
+    integer INFO;
     dorglq_(&rank, &cols, &rank, data, &rows, Tau, &work_dummy, &LWORK, &INFO);
     LWORK = work_dummy;
     std::unique_ptr<double[]> work{new double[LWORK]};
@@ -126,7 +126,7 @@ int form_q_from_lq(double *data, double *Tau, int cols, int rows, int rank) {
     return INFO;
 }
 
-inline int svd_rank(double const *s, int N, double thresh) {
+inline size_t svd_rank(double const *s, size_t N, double thresh) {
     auto rank = 0;
     for (auto i = 0; i < N; ++i) {
         if (s[i] >= thresh) {

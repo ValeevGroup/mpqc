@@ -261,15 +261,16 @@ void inline ColPivotedQr(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &R, double cut) {
     assert(input.size() >= 0);
-    int M = input.rows();
-    int N = input.cols();
+    integer M = input.rows();
+    integer N = input.cols();
     auto full_rank = std::min(M, N);
-    Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
+    typedef Eigen::Matrix<integer, Eigen::Dynamic, 1> VectorXi;
+    VectorXi J = VectorXi::Zero(N);
     double Tau[full_rank];
     double work;
-    int LWORK = -1; // Ask LAPACK how much space we need.
-    int INFO;
-    int LDA = M;
+    integer LWORK = -1; // Ask LAPACK how much space we need.
+    integer INFO;
+    integer LDA = M;
 
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
     LWORK = work;
@@ -280,8 +281,8 @@ void inline ColPivotedQr(
     auto rank = qr_rank(input, thresh);
 
     // LAPACK assumes 1 based indexing, but we need zero.
-    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
-    Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
+    std::for_each(J.data(), J.data() + J.size(), [](integer &val) { --val; });
+    Eigen::PermutationWrapper<VectorXi> P(J);
     R = Eigen::MatrixXd(input.topLeftCorner(rank, N)
                             .template triangularView<Eigen::Upper>())
         * P.transpose();
@@ -303,15 +304,16 @@ void inline CompressLeft(
     bool debug = false) {
     assert(L.size() >= 0);
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input = L;
-    int M = input.rows();
-    int N = input.cols();
+    integer M = input.rows();
+    integer N = input.cols();
     auto full_rank = std::min(M, N);
-    Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
+    typedef Eigen::Matrix<integer, Eigen::Dynamic, 1> VectorXi;
+    VectorXi J = VectorXi::Zero(N);
     double Tau[full_rank];
     double work;
-    int LWORK = -1; // Ask LAPACK how much space we need.
-    int INFO;
-    int LDA = M;
+    integer LWORK = -1; // Ask LAPACK how much space we need.
+    integer INFO;
+    integer LDA = M;
 
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
     LWORK = work;
@@ -326,8 +328,8 @@ void inline CompressLeft(
     }
 
     // LAPACK assumes 1 based indexing, but we need zero.
-    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
-    Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
+    std::for_each(J.data(), J.data() + J.size(), [](integer &val) { --val; });
+    Eigen::PermutationWrapper<VectorXi> P(J);
     R = Eigen::MatrixXd(input.topLeftCorner(rank, N)
                             .template triangularView<Eigen::Upper>())
         * P.transpose() * R;
@@ -348,15 +350,16 @@ void inline CompressRight(
     bool debug = false) {
     assert(R.size() >= 0);
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input = R;
-    int M = input.rows();
-    int N = input.cols();
+    integer M = input.rows();
+    integer N = input.cols();
     auto full_rank = std::min(M, N);
-    Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
+    typedef Eigen::Matrix<integer, Eigen::Dynamic, 1> VectorXi;
+    VectorXi J = VectorXi::Zero(N);
     double Tau[full_rank];
     double work;
-    int LWORK = -1; // Ask LAPACK how much space we need.
-    int INFO;
-    int LDA = M;
+    integer LWORK = -1; // Ask LAPACK how much space we need.
+    integer INFO;
+    integer LDA = M;
 
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
     LWORK = work;
@@ -370,8 +373,8 @@ void inline CompressRight(
     }
 
     // LAPACK assumes 1 based indexing, but we need zero.
-    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
-    Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
+    std::for_each(J.data(), J.data() + J.size(), [](integer &val) { --val; });
+    Eigen::PermutationWrapper<VectorXi> P(J);
     R = Eigen::MatrixXd(input.topLeftCorner(rank, N)
                             .template triangularView<Eigen::Upper>())
         * P.transpose();

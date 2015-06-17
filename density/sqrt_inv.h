@@ -7,6 +7,8 @@
 
 #include "diagonal_array.h"
 
+#include "../utility/time.h"
+
 #include <limits>
 #include <type_traits>
 #include <cmath>
@@ -16,17 +18,17 @@ namespace pure {
 
 template <typename T, typename AT>
 std::array<TiledArray::Tensor<T, AT>, 2>
-    eigen_estimator(std::array<TiledArray::Tensor<T, AT>, 2> &result,
-                    TiledArray::Tensor<T, AT> const &tile) {
+      eigen_estimator(std::array<TiledArray::Tensor<T, AT>, 2> &result,
+                      TiledArray::Tensor<T, AT> const &tile) {
 
     typedef typename TiledArray::Tensor<T, AT>::size_type size_type;
 
     if (result[0].empty()) {
         // Construct result tensors
         const std::array<size_type, 1> range_start
-            = {{tile.range().start()[0]}};
+              = {{tile.range().start()[0]}};
         const std::array<size_type, 1> range_finish
-            = {{tile.range().finish()[0]}};
+              = {{tile.range().finish()[0]}};
         TiledArray::Range range(range_start, range_finish);
         result[0] = TiledArray::Tensor<T, AT>{range, 0.0};
         result[1] = TiledArray::Tensor<T, AT>{range, 0.0};
@@ -34,7 +36,7 @@ std::array<TiledArray::Tensor<T, AT>, 2>
 
     // Sum the rows of tile into result
     auto reduce_op =
-        [](T &restrict result, const T arg) { result += std::abs(arg); };
+          [](T &restrict result, const T arg) { result += std::abs(arg); };
 
     TiledArray::math::row_reduce(tile.range().size()[0], tile.range().size()[1],
                                  tile.data(), result[0].data(), reduce_op);
@@ -42,13 +44,14 @@ std::array<TiledArray::Tensor<T, AT>, 2>
 
     TA::Range range = tile.range();
     auto const start = range.lobound();
-    auto const finish = range.upbound(); auto const weight_ptr = tile.range().weight();
-    auto const dims = tile.range().rank();  
+    auto const finish = range.upbound();
+    auto const weight_ptr = tile.range().weight();
+    auto const dims = tile.range().rank();
     std::vector<unsigned int> weight(weight_ptr, weight_ptr + dims);
 
     size_type const start_max = *std::max_element(start.begin(), start.end());
     size_type const finish_min
-        = *std::min_element(finish.begin(), finish.end());
+          = *std::min_element(finish.begin(), finish.end());
 
     const size_type n = tile.range().dim();
     if (start_max < finish_min) {
@@ -117,10 +120,11 @@ void add_to_diag(Array &A, double val) {
     auto end = A.end();
     for (auto it = A.begin(); it != end; ++it) {
         auto idx = it.index();
-        auto diagonal_tile = std::all_of(
-            idx.begin(), idx.end(), [&](typename Array::size_type const &x) {
-                return x == idx.front();
-            });
+        auto diagonal_tile
+              = std::all_of(idx.begin(), idx.end(),
+                            [&](typename Array::size_type const &x) {
+                  return x == idx.front();
+              });
 
         if (diagonal_tile) {
             auto &tile = it->get();
@@ -246,8 +250,8 @@ eval_guess(Array const &A) {
         std::array<typename Array::size_type, 1> finish = {{row_ranges.second}};
         TiledArray::Range range(start, finish);
         madness::DistributedID key(A.id(), counter++);
-        local_reduce.add(
-            A.get_world().gop.all_reduce(key, pair, global_accumlator{range}));
+        local_reduce.add(A.get_world().gop.all_reduce(
+              key, pair, global_accumlator{range}));
     }
 
     return local_reduce.submit();
@@ -280,7 +284,14 @@ void third_order_update(Array const &S, Array &Z) {
     // invert Posative defininate matrices, we will cap the smallest
     // eigen value
     // guess at 0.
+    auto evg0 = tcc_time::now();
     auto spectral_range = eval_guess(S);
+    auto evg1 = tcc_time::now();
+    auto eval_time = tcc_time::duration_in_s(evg0, evg1);
+    if (S.get_world().rank() == 0) {
+        std::cout << "\tEigenvalue estimation time = " << eval_time << " s\n";
+    }
+
     const auto max_eval = spectral_range[1];
     const auto min_eval = std::max(0.0, spectral_range[0]);
     auto S_scale = 2.0 / (max_eval + min_eval);
@@ -294,35 +305,93 @@ void third_order_update(Array const &S, Array &Z) {
     Array approx_zero;
     auto iter = 0;
     auto norm_diff = std::numeric_limits<double>::max();
-    while (norm_diff > 1.0e-13 && iter < 25) {
+    while (norm_diff > 1.0e-13 && iter < 30) {
+        if (iter > 0) {
+            auto X_sparsity = X.get_shape().sparsity();
+            auto Y_sparsity = Y.get_shape().sparsity();
+            auto T_sparsity = T.get_shape().sparsity();
+            auto Z_sparsity = Z.get_shape().sparsity();
+            if (S.get_world().rank() == 0) {
+                std::cout << "\titer " << iter << "\n\t\tsparsity percents\n";
+                std::cout << "\t\t\tX sparsity = " << X_sparsity << "\n";
+                std::cout << "\t\t\tY sparsity = " << Y_sparsity << "\n";
+                std::cout << "\t\t\tT sparsity = " << T_sparsity << "\n";
+                std::cout << "\t\t\tZ sparsity = " << Z_sparsity << "\n";
+            }
+        } else {
+            auto Y_sparsity = Y.get_shape().sparsity();
+            auto Z_sparsity = Z.get_shape().sparsity();
+            if (S.get_world().rank() == 0) {
+                std::cout << "\titer " << iter << "\n\t\tsparsity percents\n";
+                std::cout << "\t\t\tX sparsity = N/A\n";
+                std::cout << "\t\t\tY sparsity = " << Y_sparsity << "\n";
+                std::cout << "\t\t\tT sparsity = N/A\n";
+                std::cout << "\t\t\tZ sparsity = " << Z_sparsity << "\n";
+            }
+        }
+
+
+        auto iter0 = tcc_time::now();
         // Xn = \lambda*Yn*Z
+        auto x0 = tcc_time::now();
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
+        auto x1 = tcc_time::now();
         X.truncate();
 
 
         // Third order update
+        auto t0 = tcc_time::now();
         T("i,j") = -10 * X("i,j") + 3 * X("i,k") * X("k,j");
         add_to_diag(T, 15);
         T("i,j") = Tscale * T("i,j");
+        auto t1 = tcc_time::now();
 
 
         // Updating Z and Y
+        auto z0 = tcc_time::now();
         Z("i,j") = Z("i,k") * T("k,j"); // Zn+1 = Zn*Tn
+        auto z1 = tcc_time::now();
         Y("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
+        auto y1 = tcc_time::now();
 
+        auto zy_trn0 = tcc_time::now();
         Z.truncate();
         Y.truncate();
+        auto zy_trn1 = tcc_time::now();
 
         approx_zero("i,j") = X("i,j") - T("i,j");
 
         const auto current_norm = approx_zero("i,j").norm().get();
 
+        auto iter1 = tcc_time::now();
+        auto x_time = tcc_time::duration_in_s(x0, x1);
+        auto t_time = tcc_time::duration_in_s(t0, t1);
+        auto z_time = tcc_time::duration_in_s(z0, z1);
+        auto y_time = tcc_time::duration_in_s(z1, y1);
+        auto trun_time = tcc_time::duration_in_s(zy_trn0, zy_trn1);
+        auto iter_time = tcc_time::duration_in_s(iter0, iter1);
+        if (S.get_world().rank() == 0) {
+            std::cout << "\t\tCurrent difference norm = " << current_norm
+                      << "\n";
+            std::cout << "\t\tIteration time in " << iter_time << "\n";
+            std::cout << "\t\t\tX update time " << x_time << " s\n";
+            std::cout << "\t\t\tT update time " << t_time << " s\n";
+            std::cout << "\t\t\tZ update time " << z_time << " s\n";
+            std::cout << "\t\t\tY update time " << y_time << " s\n";
+            std::cout << "\t\t\tTrun.    time " << trun_time << " s\n";
+        }
         if (current_norm >= norm_diff) { // Once norm is increasing exit!
+            if (S.get_world().rank() == 0) {
+                std::cout << "\n";
+            }
             Z("i,j") = std::sqrt(S_scale) * Z("i,j");
             return;
         }
         norm_diff = current_norm;
         ++iter;
+    }
+    if (S.get_world().rank() == 0) {
+        std::cout << "\n";
     }
 
     Z("i,j") = std::sqrt(S_scale) * Z("i,j");

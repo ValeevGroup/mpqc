@@ -1,12 +1,7 @@
 add_custom_target(examples)
+add_custom_target(sqrt_inverse)
 add_custom_target(paper)
 add_custom_target(read_density)
-
-add_executable(hf_for_paper EXCLUDE_FROM_ALL hf_for_paper.cpp)
-target_link_libraries(hf_for_paper
-  ${TileClusterChem_LIBRARIES}
-)
-# add_dependencies(paper hf_for_paper)
 
 add_executable(hf_l_inv EXCLUDE_FROM_ALL hf_l_inv.cpp)
 target_link_libraries(hf_l_inv
@@ -19,7 +14,7 @@ add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp)
 target_link_libraries(sqrt_inverse_example
   ${TileClusterChem_LIBRARIES}
 )
-add_dependencies(examples sqrt_inverse_example)
+add_dependencies(sqrt_inverse sqrt_inverse_example)
 
 add_executable(lr_hartree_fock EXCLUDE_FROM_ALL lr_hartree_fock.cpp) 
 target_link_libraries(lr_hartree_fock
@@ -32,12 +27,6 @@ target_link_libraries(lr_hartree_fock_inv_oh
   ${TileClusterChem_LIBRARIES}
 )
 add_dependencies(examples lr_hartree_fock_inv_oh)
-
-add_executable(new_tile_test EXCLUDE_FROM_ALL new_tile_test.cpp)
-target_link_libraries(new_tile_test
-    ${TileClusterChem_LIBRARIES}
-)
-add_dependencies(examples new_tile_test)
 
 add_executable(matrix_plot EXCLUDE_FROM_ALL matrix_plot.cpp) 
 target_link_libraries(matrix_plot

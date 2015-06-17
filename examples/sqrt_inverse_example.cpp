@@ -58,18 +58,19 @@ int main(int argc, char *argv[]) {
     std::string basis_name = "";
     int nclusters = 0;
     double threshold = 1e-11;
-    double low_rank_threshold = 1e-7;
     bool use_columb_metric = true;
     if (argc >= 4) {
         mol_file = argv[1];
         basis_name = argv[2];
         nclusters = std::stoi(argv[3]);
     } else {
-        std::cout << "input is $./program mol_file basis_file "
-                     "nclusters \n";
+        std::cout << "input is $./program mol_file basis_file nclusters "
+                     "use_coulomb_metric (Optioinal set to 0 to use overlap "
+                     "matrix) sparse_threshold (Optional, default is 1e-11)\n";
+
         return 0;
     }
-    if (argc == 5) {
+    if (argc >= 5) {
         utility::print_par(world, "User Selected Metric\n");
         use_columb_metric = std::stoi(argv[4]);
     }
@@ -79,24 +80,24 @@ int main(int argc, char *argv[]) {
     TiledArray::SparseShape<float>::threshold(threshold);
     utility::print_par(world, "Sparse threshold is ",
                        TiledArray::SparseShape<float>::threshold(), "\n");
-    utility::print_par(world, "Low Rank threshold is ", low_rank_threshold,
-                       "\n");
-
 
     auto mol = molecule::read_xyz(mol_file);
     auto repulsion_energy = mol.nuclear_repulsion();
 
     utility::print_par(world, "Computing ", mol.nelements(), " elements with ",
-                       nclusters, " clusters. Nuclear repulsion energy = ",
-                       repulsion_energy, "\n");
+                       nclusters, " clusters.\n");
 
     auto clusters = molecule::attach_hydrogens_kmeans(mol, nclusters);
 
+    std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+    std::ofstream fout("/dev/null");
+    std::cout.rdbuf(fout.rdbuf());
     basis::BasisSet bs{basis_name};
     basis::Basis basis{bs.create_basis(clusters)};
+    std::cout.rdbuf(cout_sbuf);
 
     libint2::init();
-    utility::print_par(world, "Starting integrals\n");
+    utility::print_par(world, "Starting integrals ");
 
     TAArray<2, TA::SparsePolicy> eri2;
 
@@ -105,54 +106,68 @@ int main(int argc, char *argv[]) {
         auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
 
         eri2 = integrals::BlockSparseIntegrals(
-            world, eri_pool, utility::make_array(basis, basis),
-            integrals::compute_functors::BtasToTaTensor{});
+              world, eri_pool, utility::make_array(basis, basis),
+              integrals::compute_functors::BtasToTaTensor{});
         world.gop.fence();
     } else {
-        utility::print_par(world, "Using Kinetic Metric\n");
+        utility::print_par(world, "Using Overlap Metric\n");
         auto eri_pool
-            = integrals::make_pool(integrals::make_1body("kinetic", basis));
+              = integrals::make_pool(integrals::make_1body("overlap", basis));
 
         eri2 = integrals::BlockSparseIntegrals(
-            world, eri_pool, utility::make_array(basis, basis),
-            integrals::compute_functors::BtasToTaTensor{});
+              world, eri_pool, utility::make_array(basis, basis),
+              integrals::compute_functors::BtasToTaTensor{});
         world.gop.fence();
     }
 
+    auto volume = eri2.elements().volume();
     { // Compute low rank information for Eri2
-        auto volume = eri2.elements().volume();
-        utility::print_par(world, "Tensor volume = ", volume, "\n");
-        auto eri2_lr = TA::to_new_tile_type(
-            eri2, integrals::compute_functors::TaToLowRankTensor<2>{
-                      low_rank_threshold});
-        print_size_info(eri2_lr, "Eri2");
+        eri2.truncate();
+        utility::print_par(world, "\nM Tensor volume = ", volume, "\n");
+        utility::print_par(world, "M row and col dim = ", std::sqrt(volume), "\n");
+        print_size_info(eri2, "M");
+        if (world.rank() == 0) {
+            std::cout << "\tM sparsity percent = "
+                      << eri2.get_shape().sparsity() << "\n";
+        }
+        auto shape = eri2.get_shape().data();
+        if (world.rank() == 0) {
+            std::ofstream tiles_file("tiles.txt");
+            tiles_file << "tile: (rows, cols) volume scaled_norm\n";
+            auto volume = eri2.trange().tiles().volume();
+            for (auto i = 0; i < volume; ++i) {
+                    auto range = eri2.trange().make_tile_range(i);
+                    tiles_file << i << ": ("
+                              << range.size()[0] << " "
+                              << range.size()[1] << ") "
+                              << range.volume() << " "
+                              << shape[i]
+                              << "\n";
+            }
+        }
     }
 
     if (world.rank() == 0) {
-        std::cout << "Finished Integrals\nTesting inverse sqrt." << std::endl;
+        std::cout << "\nStarting inverse sqrt." << std::endl;
     }
     {
-        auto inv_sqrt_timer
-            = tcc_time::make_timer([&]() { return pure::inverse_sqrt(eri2); });
+        auto inv_sqrt_timer = tcc_time::make_timer(
+              [&]() { return pure::inverse_sqrt(eri2); });
 
         auto sqrt_inv = inv_sqrt_timer.apply();
-        auto inv_lr = TA::to_new_tile_type(
-            sqrt_inv, integrals::compute_functors::TaToLowRankTensor<2>{
-                          low_rank_threshold});
 
-
-        utility::print_par(world, "V^{-1/2} took ", inv_sqrt_timer.time(),
-                           " s\n");
-        print_size_info(inv_lr, "V^{-1/2}");
+        utility::print_par(world, "M^{-1/2} took in total ",
+                           inv_sqrt_timer.time(), " s\n");
+        print_size_info(sqrt_inv, "M^{-1/2}");
+        if (world.rank() == 0) {
+            std::cout << "\tM^{-1/2} sparsity percent = "
+                      << sqrt_inv.get_shape().sparsity() << "\n";
+        }
 
         // Check accuracy
         decltype(sqrt_inv) inv;
         inv("i,j") = sqrt_inv("i,k") * sqrt_inv("k,j");
         inv.truncate();
-        auto inv_full_lr = TA::to_new_tile_type(
-            inv, integrals::compute_functors::TaToLowRankTensor<2>{
-                     low_rank_threshold});
-        print_size_info(inv_full_lr, "V^{-1}");
         // Reuse inv to compute approximate identity.
         inv("i,j") = inv("i,k") * eri2("k,j");
         inv.truncate();
@@ -160,8 +175,11 @@ int main(int argc, char *argv[]) {
         auto ident = pure::create_diagonal_matrix(inv, 1.0);
 
         auto f_norm_diff = utility::array_fnorm_diff(inv, ident);
-        utility::print_par(world, "Idenity-(S*S^{-1}) F norm difference = ",
+        utility::print_par(world, "\nIdenity-(M*M^{-1}) F norm difference = ",
                            f_norm_diff, "\n");
+        utility::print_par(world,
+                           "Idenity-(M*M^{-1}) F norm difference / volume = ",
+                           f_norm_diff / volume, "\n");
     }
 
     world.gop.fence();

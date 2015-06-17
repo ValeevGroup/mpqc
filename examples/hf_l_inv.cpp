@@ -416,6 +416,7 @@ int main(int argc, char *argv[]) {
     auto old_e = energy;
     auto delta_e = energy;
     const auto volume = double(F.trange().elements().volume());
+    decltype(Xab) Eai;
     double time;
     double ktime, jtime;
     while ((error >= 1e-13 || std::abs(delta_e) >= 1e-12) && iter <= 35) {
@@ -432,12 +433,14 @@ int main(int argc, char *argv[]) {
 
         utility::print_par(world, "\tStarting Exchange... ");
         auto k0 = tcc_time::now();
-        decltype(Xab) Eai;
         Eai("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
+        auto w1 = tcc_time::now();
         K("a,b") = Eai("X,i,a") * Eai("X,i,b");
         auto k1 = tcc_time::now();
         ktime = tcc_time::duration_in_s(k0, k1);
+        auto wtime = tcc_time::duration_in_s(k0, w1);
         utility::print_par(world, ktime, " s\n");
+        utility::print_par(world, "\t\tW time ", wtime, " s\n");
 
 
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");

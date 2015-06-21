@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "../include/eigen.h"
+#include "../include/tiledarray.h"
 
 // Compute the min eval guess for a row of tiles.
 template <typename It>
@@ -143,7 +144,8 @@ double min_eval_est(Array const &H, Array const &S) {
 /*     std::cout << "eval min guess = " << min_eval << std::endl; */
 /*     auto eig_H = TiledArray::array_to_eigen(H); */
 /*     auto eig_S = TiledArray::array_to_eigen(S); */
-/*     Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> es(eig_H,eig_S); */
+/*     Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd>
+ * es(eig_H,eig_S); */
 /*     std::cout << "Real min eval = " << es.eigenvalues()[0] << std::endl; */
 /*     auto beta = min_eval - 1; */
 

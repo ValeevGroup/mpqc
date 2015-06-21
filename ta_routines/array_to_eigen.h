@@ -27,6 +27,7 @@ Matrix<T> tile_to_eigen(tensor::Tile<tensor::DecomposedTensor<T>> const &t) {
     return tile_to_eigen(tensor::algebra::combine(t.tile()));
 }
 
+/*! \bug Sometimes this causes a an error when run with multiple mpi process */
 template <typename T, typename Tile, typename Policy>
 Matrix<T> array_to_eigen(TA::Array<T, 2, Tile, Policy> const &A) {
     auto const &mat_extent = A.trange().elements().extent();

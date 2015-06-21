@@ -43,8 +43,7 @@ void do_task(std::vector<std::pair<std::size_t, TileType>> *tile_vec,
     const auto idx = trange.tiles().idx(tile_ord);
     auto range = trange.make_tile_range(tile_ord);
 
-    // TODO eventually I need to make this a little bit prettier. TileEngine
-    // should just return the tensor type that ShallowTensor expects.
+    /*! \todo Fix this to return the correct type and avoid copies */
     const auto btas_tensor = tensor::ShallowTensor<N>{
           std::move(range), TileEngine<double>{}(idx, engines, shell_ptrs)};
 

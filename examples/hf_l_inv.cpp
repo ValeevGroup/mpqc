@@ -14,7 +14,6 @@
 #include "../utility/parallel_break_point.h"
 #include "../utility/array_storage.h"
 #include "../utility/time.h"
-#include "../utility/ta_helpers.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
@@ -31,12 +30,10 @@
 #include "../integrals/make_engine.h"
 #include "../integrals/integral_engine_pool.h"
 #include "../integrals/sparse_task_integrals.h"
-#include "../integrals/dense_task_integrals.h"
 
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
 
-#include "../ta_routines/sqrt_inv.h"
 #include "../ta_routines/array_to_eigen.h"
 
 using namespace tcc;

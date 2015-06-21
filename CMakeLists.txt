@@ -7,8 +7,6 @@ SET(CMAKE_COLOR_MAKEFILE ON)
 
 option(RELEASE OFF)
 option(DEBUG_RELEASE OFF)
-enable_testing()
-option(PERFORM_UNIT_TESTS ON)
 
 set(CXX_FLAGS "${CXX_FLAGS} -std=c++11")
 if(RELEASE)
@@ -60,6 +58,9 @@ LIST(APPEND TileClusterChem_LIBRARIES ${LIBINT_LIBRARIES})
 LIST(APPEND TileClusterChem_LIBRARIES ${TILEDARRAY_LIBRARIES})
 
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/doc)
+
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/tests)
+enable_testing(true)
 
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/molecule)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)

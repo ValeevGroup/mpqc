@@ -1,7 +1,7 @@
 #include "common/namespaces.h"
 #include "common/typedefs.h"
 #include "include/tiledarray.h"
-#include "array_ops/deep_filter.h"
+#include "ta_routines/deep_filter.h"
 
 #include <utility>
 

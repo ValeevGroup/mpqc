@@ -9,10 +9,6 @@
 
 #include "../include/eigen.h"
 
-#include "../tensor/full_rank_tile.h"
-#include "../tensor/low_rank_tile.h"
-#include "../tensor/tile_variant.h"
-
 // Compute the min eval guess for a row of tiles.
 template <typename It>
 double min_eval_guess(It first, It second) {

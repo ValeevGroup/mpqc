@@ -4,7 +4,6 @@
 
 #include "../common/typedefs.h"
 #include "../include/tiledarray.h"
-#include "../tensor/tile_pimpl.h"
 #include "../tensor/tile_algebra.h"
 #include "../tensor/tcc_tile.h"
 #include "../tensor/decomposed_tensor.h"
@@ -19,14 +18,6 @@
 
 namespace tcc {
 namespace utility {
-
-inline double tile_size(tensor::TilePimpl<double> const &tile) {
-    if (tile.isFull()) {
-        return tile.tile().ftile().size();
-    } else {
-        return tile.tile().lrtile().size();
-    }
-}
 
 inline double
 tile_size(tensor::Tile<tensor::DecomposedTensor<double>> const &tile) {

@@ -1,5 +1,0 @@
-add_executable(lr_qr_mult_test   EXCLUDE_FROM_ALL QR_low_rank_multiply_test.cpp) 
-add_executable(lr_qr_add_test   EXCLUDE_FROM_ALL QR_low_rank_add_test.cpp) 
-add_executable(sparse_vs_dgemm_vs_dense  EXCLUDE_FROM_ALL sparse_dense_test.cpp)
-target_link_libraries(sparse_vs_dgemm_vs_dense ${LAPACK_LIBRARIES})
-target_link_libraries(sparse_vs_dgemm_vs_dense ${TILEDARRAY_LIBRARIES})

@@ -16,7 +16,7 @@
 
 #include "../integrals/sparse_task_integrals.h"
 
-#include "../array_ops/array_to_eigen.h"
+#include "../ta_routines/array_to_eigen.h"
 
 #include <memory>
 #include <vector>

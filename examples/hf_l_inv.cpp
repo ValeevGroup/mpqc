@@ -16,8 +16,6 @@
 #include "../utility/time.h"
 #include "../utility/ta_helpers.h"
 
-#include "../tensor/conversions/tile_pimpl_to_ta_tensor.h"
-
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
 #include "../molecule/molecule.h"
@@ -30,9 +28,7 @@
 #include "../basis/basis.h"
 
 #include "../integrals/btas_to_ta_tensor.h"
-#include "../integrals/btas_to_low_rank_tensor.h"
 #include "../integrals/make_engine.h"
-#include "../integrals/ta_tensor_to_low_rank_tensor.h"
 #include "../integrals/integral_engine_pool.h"
 #include "../integrals/sparse_task_integrals.h"
 #include "../integrals/dense_task_integrals.h"
@@ -40,10 +36,8 @@
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
 
-#include "../density/sqrt_inv.h"
-#include "../density/purification_devel.h"
-
-#include "../array_ops/array_to_eigen.h"
+#include "../ta_routines/sqrt_inv.h"
+#include "../ta_routines/array_to_eigen.h"
 
 using namespace tcc;
 namespace ints = integrals;

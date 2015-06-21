@@ -7,7 +7,7 @@
 #include "../include/tiledarray.h"
 #include "../include/eigen.h"
 
-#include "../array_ops/array_to_eigen.h"
+#include "../ta_routines/array_to_eigen.h"
 
 namespace tcc {
 namespace scf {

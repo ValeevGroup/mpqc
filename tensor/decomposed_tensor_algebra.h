@@ -134,7 +134,7 @@ integer form_q_from_lq(double *data, double *Tau, integer cols, integer rows, in
 
 inline size_t svd_rank(double const *s, size_t N, double thresh) {
     auto rank = 0;
-    for (auto i = 0; i < N; ++i) {
+    for (auto i = 0u; i < N; ++i) {
         if (s[i] >= thresh) {
             ++rank;
         } else {

@@ -8,6 +8,12 @@
 namespace tcc {
 namespace molecule {
 
+/*! \class Atom
+ *  \brief A class which holds the basic information for an atom
+ *
+ *  Atom has a position, an atomic number, and a mass.  By default the 
+ *  position is an Eigen::Vector3d.
+ */
 class Atom {
   public:
     Atom() = default;
@@ -19,8 +25,11 @@ class Atom {
     Atom(position_t center, double mass, int Z)
         : center_(std::move(center)), atomic_number_(Z), mass_(mass) {}
 
+    /*! Returns the location of the atom in Bohr. */
     position_t center() const { return center_; }
+    /*! Returns the charge of the atom in atomic units. */
     int charge() const { return atomic_number_; }
+    /*! Returns the mass of the atom in atomic units. */
     double mass() const { return mass_; }
 
   private:

@@ -32,3 +32,4 @@ target_link_libraries(tests ${TileCluterChem_LIBRARIES})
 
 add_dependencies(tests catch)
 add_dependencies(unit_tests tests)
+add_test(NAME TestAll COMMAND ${CMAKE_BINARY_DIR}/tests/tests)

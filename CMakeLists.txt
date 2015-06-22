@@ -59,8 +59,8 @@ LIST(APPEND TileClusterChem_LIBRARIES ${TILEDARRAY_LIBRARIES})
 
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/doc)
 
+enable_testing()
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/tests)
-enable_testing(true)
 
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/molecule)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
@@ -75,10 +75,6 @@ message(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")
 set(TileClusterChem_Sources "main.cpp")
 
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/examples)
-
-IF(PERFORM_UNIT_TESTS)
-  add_subdirectory(${TileClusterChem_SOURCE_DIR}/tests)
-ENDIF(PERFORM_UNIT_TESTS)
 
 add_executable(${PROJECT_NAME} ${TileClusterChem_Sources}) 
 target_link_libraries(${PROJECT_NAME}

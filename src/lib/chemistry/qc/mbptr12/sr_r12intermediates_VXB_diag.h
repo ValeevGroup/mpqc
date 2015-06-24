@@ -6161,30 +6161,31 @@ namespace sc {
                                    preconditioner,
                                    1e-12);
     TArray2 mu_z_ai,mu_z_ia;
+    double mu_z_ccsd, mu_z_ccsdor;
     if (compute_dipole) {
       mu_z_ai = xy("<a|mu_z|i>");
       mu_z_ia = xy("<i|mu_z|a>");
-      double mu_z_ccsd =  dot(mu_z_ij("i,j"), Dij_ccsd("i,j"))
-                        + dot(mu_z_ab("a,b"), Dab_ccsd("a,b"))
-                        + dot(mu_z_ai("a,i"), Dai_ccsd("a,i"))
-                        + dot(mu_z_ia("i,a"), Dia_ccsd("i,a"))
-                        ;
+      mu_z_ccsd =  dot(mu_z_ij("i,j"), Dij_ccsd("i,j"))
+                 + dot(mu_z_ab("a,b"), Dab_ccsd("a,b"))
+                 + dot(mu_z_ai("a,i"), Dai_ccsd("a,i"))
+                 + dot(mu_z_ia("i,a"), Dia_ccsd("i,a"))
+                 ;
 
-      double mu_z_ccsdor = dot(mu_z_am("a,m"), Dbn_ccsd("a,m"));
+      mu_z_ccsdor = dot(mu_z_am("a,m"), Dbn_ccsd("a,m"));
       if (nocc != naocc) {
         mu_z_ccsdor += dot(mu_z_ijp("i,i'"), Diip_or_ccsd("i,i'"));
       }
 
-      std::cout << std::endl << indent
-                  << "mu_z (CCSD) = " << scprintf("%15.12f", - mu_z_ccsd * 2.0)
-                  << std::endl << indent
-                  << "mu_z (CCSD orbital response) = " << scprintf("%15.12f", - mu_z_ccsdor * 2.0)
-                  << std::endl;
-
+//      std::cout << std::endl << indent
+//                  << "mu_z (CCSD) = " << scprintf("%15.12f", - mu_z_ccsd * 2.0)
+//                  << std::endl << indent
+//                  << "mu_z (CCSD orbital response) = " << scprintf("%15.12f", - mu_z_ccsdor * 2.0)
+//                  << std::endl;
     }
 
     // resolve lambda amplitudes, CCSD density, and Xam in the framework of CCSD_F12
 #if 1
+    double mu_z_Cccsdf12;
     ExEnv::out0() << std::endl << indent << "Compute CCSD-F12 L amplitudes " << std::endl;
     TArray2 L1_f12;
     TArray4 L2_f12;
@@ -6224,6 +6225,7 @@ namespace sc {
                   << "mu_z (CCSD orbital response in CCSD-F12) = " << scprintf("%15.12f", - mu_z_ccsdor_f12 * 2.0)
                   << std::endl;
 
+      mu_z_Cccsdf12 = mu_z_ccsd_f12 - mu_z_ccsd + mu_z_ccsdor_f12 - mu_z_ccsdor;
     }
 #endif
 
@@ -6236,11 +6238,6 @@ namespace sc {
     TArray2 RT2_aPb;
     RT2_aPb("a',b") = _4("<a' c|r|k l>")
                       * (R_C1 * T2("b,c,k,l") + R_C2 * T2("c,b,k,l"));
-
-    double mu_z_f12CT2_cc = dot(mu_z_apb("a',b"), RT2_aPb("a',b")) * 2.0;
-    std::cout << std::endl << indent
-              << "mu_z (CCSD F12 CT2 density) = " << scprintf("%15.12f", - mu_z_f12CT2_cc * 2.0)
-              << std::endl;
 
     TArray4d g_abmaP = ijxy("<a b|g|m a'>");
     TArray2 Xam_CT2, Xai_CT2;
@@ -6270,11 +6267,6 @@ namespace sc {
                                      Dbn_CT2_cc,
                                      preconditioner,
                                      1e-10);
-
-    double mu_z_CT2or_cc = dot(mu_z_am("a,m"), Dbn_CT2_cc("a,m"));
-    std::cout << std::endl << indent
-              << "mu_z (CCSD F12 CT2 orbital response) = " << scprintf("%15.12f", - mu_z_CT2or_cc * 2.0)
-              << std::endl;
 
     // VT1 & VT2 coupling contribution to F12 Xam
     const char* i = "i";
@@ -6345,11 +6337,6 @@ namespace sc {
                                      preconditioner,
                                      1e-10);
 
-    double mu_z_VT1or_cc = dot(mu_z_am("a,m"), Dbn_VT1_cc("a,m"));
-    std::cout << std::endl << indent
-              << "mu_z (CCSD F12 VT1 orbital response) = " << scprintf("%15.12f", - mu_z_VT1or_cc * 2.0)
-              << std::endl;
-
     TArray4 V_alcd = VPq_Rs(a,l,c,d,C_0, C_1);
     TArray4 V_klmd = VPq_Rs(k,l,m,d,C_0, C_1);
     TArray2 Xam_VT2, Xai_VT2;
@@ -6376,30 +6363,43 @@ namespace sc {
                                      preconditioner,
                                      1e-10);
 
-    double mu_z_VT2or_cc = dot(mu_z_am("a,m"), Dbn_VT2_cc("a,m"));
-    std::cout << std::endl << indent
-              << "mu_z (CCSD F12 VT2 orbital response) = " << scprintf("%15.12f", - mu_z_VT2or_cc * 2.0)
-              << std::endl;
-
-    TArray2 Xam_CVT_cc;
-    Xam_CVT_cc("a,m") = Xam_CT2_tot("a,m") + Xam_VT1_tot("a,m") + Xam_VT2_tot("a,m");
-
-    TArray2 Dbn_CVT_cc(Xam_CVT_cc.get_world(), Xam_CVT_cc.trange());
-    auto resnorm_CVT_cc = cg_solver2(Orbital_relaxation_Abnam,
-                                     Xam_CVT_cc,
-                                     Dbn_CVT_cc,
-                                     preconditioner,
-                                     1e-10);
+//    TArray2 Xam_CVT_cc;
+//    Xam_CVT_cc("a,m") = Xam_CT2_tot("a,m") + Xam_VT1_tot("a,m") + Xam_VT2_tot("a,m");
+//
+//    TArray2 Dbn_CVT_cc(Xam_CVT_cc.get_world(), Xam_CVT_cc.trange());
+//    auto resnorm_CVT_cc = cg_solver2(Orbital_relaxation_Abnam,
+//                                     Xam_CVT_cc,
+//                                     Dbn_CVT_cc,
+//                                     preconditioner,
+//                                     1e-10);
 
     if (compute_dipole) {
       // F12 coupling density contribution to dipole
-      double mu_z_f12CVT_cc = dot(mu_z_apb("a',b"), RT2_aPb("a',b")) * 2.0;
+      double mu_z_f12CT2_cc = dot(mu_z_apb("a',b"), RT2_aPb("a',b")) * 2.0;
+      std::cout << std::endl << indent
+                << "mu_z (CCSD F12 CT2 density) = " << scprintf("%15.12f", - mu_z_f12CT2_cc * 2.0)
+                << std::endl;
 
-      double mu_z_f12CVTor_cc = dot(mu_z_am("a,m"), Dbn_CVT_cc("a,m"));
+      mu_z_Cccsdf12 += mu_z_f12CT2_cc;
+
+      double mu_z_CT2or_cc = dot(mu_z_am("a,m"), Dbn_CT2_cc("a,m"));
+      double mu_z_VT1or_cc = dot(mu_z_am("a,m"), Dbn_VT1_cc("a,m"));
+      double mu_z_VT2or_cc = dot(mu_z_am("a,m"), Dbn_VT2_cc("a,m"));
 
       std::cout << std::endl << indent
-                << "mu_z (CCSD F12 coupling orbital response) = "
-                << scprintf("%15.12f", - mu_z_f12CVTor_cc * 2.0) << std::endl;
+                << "mu_z (CCSD F12 CT2 orbital response) = " << scprintf("%15.12f", - mu_z_CT2or_cc * 2.0)
+                << std::endl << indent
+                << "mu_z (CCSD F12 VT1 orbital response) = " << scprintf("%15.12f", - mu_z_VT1or_cc * 2.0)
+                << std::endl << indent
+                << "mu_z (CCSD F12 VT2 orbital response) = " << scprintf("%15.12f", - mu_z_VT2or_cc * 2.0)
+                << std::endl;
+
+//      double mu_z_f12CVTor_cc = dot(mu_z_am("a,m"), Dbn_CVT_cc("a,m"));
+//      std::cout << std::endl << indent
+//                << "mu_z (CCSD F12 coupling orbital response) = "
+//                << scprintf("%15.12f", - mu_z_f12CVTor_cc * 2.0) << std::endl;
+
+      mu_z_Cccsdf12 += mu_z_CT2or_cc + mu_z_VT1or_cc + mu_z_VT2or_cc;
     }
 
 #endif
@@ -6426,6 +6426,12 @@ namespace sc {
                 << "mu_z (F12) = " << - mu_z_f12 * 2.0
                 << std::endl << indent
                 << "mu_z (F12 orbital response) = " << scprintf("%15.12f", - mu_z_f12or * 2.0)
+                << std::endl << std::endl << indent
+                << "mu_z (CCSD) = " << scprintf("%15.12f", - mu_z_ccsd * 2.0)
+                << std::endl << indent
+                << "mu_z (CCSD orbital response) = " << scprintf("%15.12f", - mu_z_ccsdor * 2.0)
+                << std::endl << indent
+                << "mu_z (CCSD F12 coupling (CT & VT)) = " << scprintf("%15.12f", - mu_z_Cccsdf12 * 2.0)
                 << std::endl;
     }
 

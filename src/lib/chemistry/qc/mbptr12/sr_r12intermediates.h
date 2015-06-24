@@ -284,11 +284,14 @@ namespace sc {
       TArray2 Bpk_qk(const char* p, const char* q);
       TArray4 Bpr_qs(const char* p, const char* q);
 
-      // compute V^pq_rs
-      TArray4 Vpq_rs(const char* p, const char* q,
-                     const char* r, const char* s);
-      // V^rk_sk which is summed over k
-      TArray2 Vrk_sk(const char* r, const char* s);
+      // compute V^Pq_Rs = 1/2 \bar{R}^Pq_AlphaBeta \bar{g}^AlphaBeta_Rs
+      // P and R are in alpha or beta space
+      TArray4 VPq_Rs(const char* p, const char* q,
+                     const char* r, const char* s,
+                     const double C_0, const double C_1);
+      // V^Rk_Sk which is summed over k
+      TArray2 VRk_Sk(const char* r, const char* s,
+                     const double C_0, const double C_1);
 
       // compute Xam contribution from CABS Singles
       TArray2 Xam_CabsSingles(const TArray2& TmA, const TArray2& Tma);
@@ -350,7 +353,8 @@ namespace sc {
       void compute_T_ccsd(TArray2& t1, TArray4& t2);
       // compute CCSD lambda amplitudes
       void compute_lambda_ccsd(const TArray2& t1, const TArray4& t2,
-                          TArray2& L1, TArray4& L2);
+                               TArray2& L1, TArray4& L2,
+                               const bool include_F12contri);
 
       // compute CC2 one-electron density from amplitudes
       void compute_cc2_1rdm_amp(const TArray2& T1_cc2, const TArray4& T2_cc2,

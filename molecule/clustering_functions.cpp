@@ -51,7 +51,7 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
         tbb::parallel_for(0ul, clusterables.size(), [&](unsigned long i) {
             const auto clusterable_center = clusterables[i].center();
 
-            // Find the closes cluster that has been initialized.
+            // Find the closest cluster that has been initialized.
             auto last = it;
             std::advance(last, 1);
             const auto cluster_center

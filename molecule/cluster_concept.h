@@ -11,8 +11,14 @@
 namespace tcc {
 namespace molecule {
 
-/**
- * @brief ClusterConcept is the base class which defines the operations which
+/*!
+ * \addtogroup Molecule 
+ * 
+ * @{
+ */
+
+/*
+ * ClusterConcept is the base class which defines the operations which
  * different clusterable types must have.
  */
 class ClusterConcept {
@@ -26,8 +32,8 @@ class ClusterConcept {
     virtual std::vector<Atom> atoms() const = 0;
 };
 
-/**
- * @brief ClusterModel is a class which is basically used for type erasure
+/*
+ * ClusterModel is a class which is basically used for type erasure
  */
 template <typename T>
 class ClusterModel : public ClusterConcept {
@@ -56,9 +62,11 @@ class ClusterModel : public ClusterConcept {
     T element_;
 };
 
-/**
- * @brief The Clusterable is a class that holds any clusterable type.
- * The requirements on this type are set by ClusterConcept.
+/*!
+ * \brief The Clusterable is a class that holds any clusterable type.
+ * 
+ * The any type which fits the Clusterable concept must provide the following 
+ * functions
  */
 class Clusterable {
   public:
@@ -78,6 +86,8 @@ class Clusterable {
   private:
     std::shared_ptr<const ClusterConcept> element_impl_;
 };
+
+/*! @} */
 
 } // namespace molecule
 } // namespace tcc

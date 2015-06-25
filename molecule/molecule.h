@@ -9,10 +9,31 @@
 namespace tcc {
 namespace molecule {
 
+/*!
+ * \defgroup Molecule Molecule
+ *
+ * \brief The molecule module contains information about how to make and cluster
+ *molecules
+ *
+ *
+ *  The molecule module contains all of the classes which are needed for 
+ *  clustering.  Ulitimately everything in the molecule module should support 
+ *  the Clusterable interface.
+ *  
+ * @{
+ */
+
+/*! \brief Molecule is a class which contains a vector of clusterables
+ *
+ * At its core molecule is a collection of things which can be collapsed
+ * to atoms.  Its main job is allow for clustering of its clusterables.
+ *
+ */
 class Molecule {
   public:
-    using cluster_fn_t = std::function<std::vector<Cluster>(
-        std::vector<Clusterable>, unsigned long)>;
+    using cluster_fn_t
+          = std::function<std::vector<Cluster>(std::vector<Clusterable>,
+                                               unsigned long)>;
 
     Molecule(std::vector<Clusterable> c);
 
@@ -50,7 +71,11 @@ class Molecule {
     int charge_ = 0;
 };
 
-Molecule read_xyz(std::string const&);
+Molecule read_xyz(std::string const &);
+
+/*!
+ * @}
+ */
 
 } // namespace molecule
 } // namespace tcc

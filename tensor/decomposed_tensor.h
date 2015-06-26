@@ -18,10 +18,6 @@ class DecomposedTensor {
     double cut_ = 1e-7;
     std::vector<TA::Tensor<T>> tensors_;
 
-    // For shorting serialization function name
-    template <typename U>
-    using m_enable_if_t = typename madness::enable_if<U>::type;
-
   public:
     using numeric_type = T;
     using value_type = TA::Tensor<T>;
@@ -53,7 +49,7 @@ class DecomposedTensor {
     // only works for two way atm Get the right dimension of the first tensor.
     std::size_t rank() const {
         assert(!empty());
-        return tensors_[0].range().size()[1];
+        return tensors_[0].range().extent()[1];
     }
 
     std::vector<std::size_t> orders() const {
@@ -75,7 +71,7 @@ class DecomposedTensor {
     TA::Range const &range(std::size_t i) const { return tensors_[i].range(); }
 
     template <typename Archive>
-    m_enable_if_t<madness::archive::is_output_archive<Archive>>
+    typename std::enable_if<madness::archive::is_output_archive<Archive>::value>::type
     serialize(Archive &ar) {
         double thresh = cut();
         ar & thresh;
@@ -87,7 +83,7 @@ class DecomposedTensor {
     }
 
     template <typename Archive>
-    m_enable_if_t<madness::archive::is_input_archive<Archive>>
+    typename std::enable_if<madness::archive::is_input_archive<Archive>::value>::type
     serialize(Archive &ar) {
         ar & cut_;
         std::size_t ntensors = 0;

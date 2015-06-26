@@ -40,8 +40,8 @@ Matrix<T> array_to_eigen(TA::Array<T, 2, Tile, Policy> const &A) {
      for (auto it = pmap->begin(); it != end; ++it) {
          if (!A.is_zero(*it)) {
              auto tile = A.find(*it).get();
-             auto const &start = tile.range().start();
-             auto const &finish = tile.range().finish();
+             auto const &start = tile.range().lobound();
+             auto const &finish = tile.range().upbound();
              const auto nrows = finish[0] - start[0];
              const auto ncols = finish[1] - start[1];
 
@@ -69,7 +69,7 @@ mat_to_tile<tensor::Tile<tensor::DecomposedTensor<double>>>(
                                                                local_range));
     auto t_map = TA::eigen_map(tensor.tensor(0), extent[0], extent[1]);
 
-    auto const start = range.start();
+    auto const start = range.lobound();
     t_map = M.block(start[0], start[1], extent[0], extent[1]);
     return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                           std::move(tensor));
@@ -82,7 +82,7 @@ mat_to_tile<TA::Tensor<double>>(TA::Range range, Matrix<double> const &M) {
     auto tensor = TA::Tensor<double>(range);
     auto t_map = TA::eigen_map(tensor, extent[0], extent[1]);
 
-    auto const start = range.start();
+    auto const start = range.lobound();
     t_map = M.block(start[0], start[1], extent[0], extent[1]);
     return tensor;
 }

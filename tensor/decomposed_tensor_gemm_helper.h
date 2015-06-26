@@ -62,9 +62,9 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
                 auto Rp = a.tensor(1).gemm(b.tensor(0), f, gh);
                 auto NoT = gh.left_op();
                 auto gh = TA::math::GemmHelper(NoT, NoT,
-                                               c.tensor(0).range().dim(),
-                                               a.tensor(0).range().dim(),
-                                               Rp.range().dim());
+                                               c.tensor(0).range().rank(),
+                                               a.tensor(0).range().rank(),
+                                               Rp.range().rank());
                 c.tensor(0).gemm(a.tensor(0), Rp, f, gh);
             }
             // Doesn't seem to be necessary
@@ -90,8 +90,8 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
             }
 
             c = add(c, this->operator()(a, b, f, gh));
-            auto const &c_left_extent = c.tensor(0).range().size();
-            auto const &c_right_extent = c.tensor(1).range().size();
+            auto const &c_left_extent = c.tensor(0).range().extent();
+            auto const &c_right_extent = c.tensor(1).range().extent();
             const auto long_dim = c_right_extent[1] * c_right_extent[2];
             auto out_dim = c.rank();
             const auto full_rank = std::min(c_left_extent[0], long_dim);
@@ -173,9 +173,9 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                     const auto gh_m = GHelper(NoT, NoT, 2, 2, 2);
                     auto mid = a.tensor(1).gemm(b.tensor(0), 1.0, gh_m);
 
-                    auto const &sa_sizes = a.tensor(0).range().size();
-                    auto const &tb_sizes = b.tensor(1).range().size();
-                    auto const &m_sizes = mid.range().size();
+                    auto const &sa_sizes = a.tensor(0).range().extent();
+                    auto const &tb_sizes = b.tensor(1).range().extent();
+                    auto const &m_sizes = mid.range().extent();
                     const auto r1 = m_sizes[0];
                     const auto r2 = m_sizes[1];
                     const auto X = sa_sizes[0];
@@ -218,8 +218,8 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                 c = add(c, ab);
                 algebra::recompress(c);
                 auto out_dim = c.rank();
-                auto left_dim = c.tensor(0).range().size()[0];
-                auto const &right_extent = c.tensor(1).range().size();
+                auto left_dim = c.tensor(0).range().extent()[0];
+                auto const &right_extent = c.tensor(1).range().extent();
                 auto right_dim = right_extent[1] * right_extent[2];
                 if (out_dim >= std::min(left_dim, right_dim) / 2) {
                     c = Dtensor<T>(c.cut(), algebra::combine(c));
@@ -237,8 +237,8 @@ struct low_rank_gemm<2ul, 3ul, 3ul> {
     template <typename T>
     Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
                           GHelper const &gh) {
-        const auto left_dim = a.tensors().back().range().size()[2];
-        const auto right_dim = b.tensors().back().range().size()[2];
+        const auto left_dim = a.tensors().back().range().extent()[2];
+        const auto right_dim = b.tensors().back().range().extent()[2];
         const auto out_range = TA::Range{left_dim, right_dim};
         const auto out_tensor = TA::Tensor<T>(std::move(out_range), T(0.0));
         auto out = Dtensor<T>(a.cut(), std::move(out_tensor));
@@ -296,7 +296,7 @@ struct low_rank_gemm<1ul, 3ul, 2ul> {
     template <typename T>
     Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
                           GHelper const &gh) {
-        const auto X = a.tensor(0).range().size()[0]; // X from above.
+        const auto X = a.tensor(0).range().extent()[0]; // X from above.
         auto range = TA::Range{X};
         auto out_tensor
               = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
@@ -329,7 +329,7 @@ struct low_rank_gemm<1ul, 2ul, 1ul> {
     template <typename T>
     Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
                           GHelper const &gh) {
-        const auto X = a.tensor(0).range().size()[0]; // X from above.
+        const auto X = a.tensor(0).range().extent()[0]; // X from above.
         auto range = TA::Range{X};
         auto out_tensor
               = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
@@ -364,14 +364,14 @@ struct low_rank_gemm<2ul, 3ul, 1ul> {
                           GHelper const &gh) {
         auto out_tensor = Dtensor<T>(a.cut());
         if (a.ndecomp() == 1) {
-            const auto i = a.tensor(0).range().size()[1];
-            const auto j = a.tensor(0).range().size()[2];
+            const auto i = a.tensor(0).range().extent()[1];
+            const auto j = a.tensor(0).range().extent()[2];
             auto range = TA::Range{i, j};
             out_tensor
                   = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
         } else if (a.ndecomp() == 2) {
-            const auto i = a.tensor(1).range().size()[1];
-            const auto j = a.tensor(1).range().size()[2];
+            const auto i = a.tensor(1).range().extent()[1];
+            const auto j = a.tensor(1).range().extent()[2];
             auto range = TA::Range{i, j};
             out_tensor
                   = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));

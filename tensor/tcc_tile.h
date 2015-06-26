@@ -215,7 +215,7 @@ class Tile {
     }
 
     template <typename Archive>
-    typename madness::enable_if<madness::archive::is_output_archive<Archive>>::
+    typename std::enable_if<madness::archive::is_output_archive<Archive>::value>::
           type
           serialize(Archive &ar) {
         ar &range_;
@@ -227,7 +227,7 @@ class Tile {
     }
 
     template <typename Archive>
-    typename madness::enable_if<madness::archive::is_input_archive<Archive>>::
+    typename std::enable_if<madness::archive::is_input_archive<Archive>::value>::
           type
           serialize(Archive &ar) {
 

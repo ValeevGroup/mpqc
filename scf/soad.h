@@ -33,13 +33,13 @@ using Eri3ArrayType = TA::Array<double, 3, TileType, TA::SparsePolicy>;
 TileType soad_tile(std::shared_ptr<molecule::Cluster> cluster, TA::Range range,
                    double cut) {
     // make range for decomposed tensor
-    const auto i = range.size()[0];
-    const auto j = range.size()[1];
+    const auto i = range.extent()[0];
+    const auto j = range.extent()[1];
     TA::Range local_range{i, j};
     TA::Tensor<double> tensor(std::move(local_range), 0.0);
     auto atoms = molecule::collapse_to_atoms(*cluster);
 
-    auto t_map = TA::eigen_map(tensor, range.size()[0], range.size()[1]);
+    auto t_map = TA::eigen_map(tensor, range.extent()[0], range.extent()[1]);
     size_t ao_offset = 0; // first AO of this atom
     for (auto const &atom : atoms) {
         const auto Z = atom.charge();
@@ -71,14 +71,14 @@ ArrayType minimal_density_guess(
     TA::TiledRange trange
           = sparse::create_trange(utility::make_array(min_bs, min_bs));
     TA::Tensor<float> tile_norms(trange.tiles(), 0.0);
-    auto tn_map = TA::eigen_map(tile_norms, tile_norms.range().size()[0],
-                                tile_norms.range().size()[1]);
+    auto tn_map = TA::eigen_map(tile_norms, tile_norms.range().extent()[0],
+                                tile_norms.range().extent()[1]);
 
     auto ord = 0ul;
     for (auto i = 0; i < tn_map.rows(); ++i) {
         auto range = trange.make_tile_range(ord);
-        tn_map(i, i) = range.size()[1];
-        ord += trange.tiles().weight()[1] + 1;
+        tn_map(i, i) = range.extent()[1];
+        ord += trange.tiles().stride()[1] + 1;
     }
 
     TA::SparseShape<float> shape(world, tile_norms, trange);

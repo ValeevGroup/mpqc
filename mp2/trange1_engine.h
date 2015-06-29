@@ -25,11 +25,16 @@ namespace tcc{
       init();
     }
 
-
     void init();
-    TA::TiledRange1 get_occ() const {return tr_occupied_;}
-    TA::TiledRange1 get_vir() const  {return tr_virtual_;}
-    TA::TiledRange1 get_all() const {return tr_all_;}
+
+    TA::TiledRange1 get_occ_tr1() const {return tr_occupied_;}
+    TA::TiledRange1 get_vir_tr1() const  {return tr_virtual_;}
+    TA::TiledRange1 get_all_tr1() const {return tr_all_;}
+    std::size_t get_occ() const {return occ_;}
+    std::size_t get_vir() const {return vir_;}
+    std::size_t get_all() const {return all_;}
+    std::size_t get_occ_blocks() const {return occ_blocks_;}
+    std::size_t get_vir_blocks() const {return vir_blocks_;}
 
   private:
 
@@ -43,10 +48,13 @@ namespace tcc{
     TA::TiledRange1 tr_virtual_;
     TA::TiledRange1 tr_all_;
 
-    std::size_t guess_;
-    std::size_t vir_;
     std::size_t occ_;
     std::size_t all_;
+    std::size_t vir_;
+    std::size_t guess_;
+
+    std::size_t occ_blocks_;
+    std::size_t vir_blocks_;
 
   };
 
@@ -103,6 +111,10 @@ namespace tcc{
     tr_occupied_ = tr_occupied();
     tr_virtual_ = tr_virtual();
     tr_all_ = tr_all();
+    occ_blocks_ = tr_occupied_.tiles().second;
+    vir_blocks_ = tr_virtual_.tiles().second;
+    //std::cout << tr_occupied_ << std::endl;
+    //std::cout << occ_blocks_ << " " << vir_blocks_ << std::endl;
   }
 }
 

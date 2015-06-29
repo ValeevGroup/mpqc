@@ -3,6 +3,12 @@ add_custom_target(sqrt_inverse)
 add_custom_target(paper)
 add_custom_target(bugs)
 
+add_executable(mp2 EXCLUDE_FROM_ALL mp2.cpp)
+target_link_libraries(mp2
+  ${TileClusterChem_LIBRARIES}
+)
+
+
 add_executable(hf_l_inv EXCLUDE_FROM_ALL hf_l_inv.cpp)
 target_link_libraries(hf_l_inv
   ${TileClusterChem_LIBRARIES}

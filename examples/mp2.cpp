@@ -33,7 +33,8 @@
 
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
-
+#include "../mp2/trange1_engine.h"
+#include "../mp2/mp2.h"
 #include "../ta_routines/array_to_eigen.h"
 
 using namespace tcc;
@@ -474,98 +475,21 @@ int main(int argc, char *argv[]) {
 
     if (mol.nelements() <= 30) { // Begin MP2
         utility::print_par(world, "\nBegining MP2\n");
-        auto F_eig = array_ops::array_to_eigen(F);
-        auto S_eig = array_ops::array_to_eigen(S);
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
-                                                                   S_eig);
-        Eig::VectorXd evals = es.eigenvalues();
-        decltype(S_eig) C_occ = es.eigenvectors().leftCols(occupation / 2);
-        decltype(S_eig) C_vir
-              = es.eigenvectors().rightCols(S_eig.rows() - occupation / 2);
 
-        auto nblocks = (dfbs_nclusters < int(S_eig.rows() - occupation / 2))
-                             ? dfbs_nclusters
-                             : S_eig.rows() - occupation / 2;
-        auto block_size
-              = std::max(std::size_t((S_eig.rows() - occupation / 2) / nblocks),
-                         1ul);
-        std::vector<std::size_t> blocks;
-        blocks.reserve(nblocks + 1);
-        blocks.push_back(0);
-        for (auto i = block_size; i < S_eig.rows() - occupation / 2;
-             i += block_size) {
-            blocks.push_back(i);
-        }
-        blocks.push_back(S_eig.rows() - occupation / 2);
-        auto tr_vir = TA::TiledRange1(blocks.begin(), blocks.end());
+        auto S_TA = TA::to_new_tile_type(S, to_ta);
+        auto F_TA = TA::to_new_tile_type(F, to_ta);
+        auto X_ab_TA = TA::to_new_tile_type(Xab, to_ta);
 
-        TA::TiledRange1 tr0 = D.trange().data().front();
-        auto Ci = array_ops::
-              eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_occ, tr0, tr_i);
-        auto Cv = array_ops::
-              eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_vir, tr0, tr_vir);
+        std::size_t all = S.trange().elements().extent()[0];
+        TRange1Engine tre(occupation/2, all, dfbs_nclusters);
 
-        decltype(Xab) Xia;
-        Xia("X,i,a") = Xab("X,mu,nu") * Ci("nu,i") * Cv("mu,a");
+        MP2<TA::Tensor<double>, TA::SparsePolicy> mp2(F_TA, S_TA, X_ab_TA, tre);
 
-        utility::print_size_info(Xia, "Xia");
+        auto two_e = mp2.get_two_e();
+        mp2.compute();
+        //std::cout << two_e << std::endl;
 
-        auto Xia_TA = TA::to_new_tile_type(Xia, to_ta);
-        TA::Array<double, 4, TA::Tensor<double>, TA::SparsePolicy> IAJB;
-        IAJB("i,a,j,b") = Xia_TA("X,i,a") * Xia_TA("X,j,b");
-        utility::print_size_info(IAJB, "IAJB");
 
-        //std::cout << IAJB << std::endl;
-
-        auto vec_ptr = std::make_shared<Eig::VectorXd>(std::move(evals));
-        struct Mp2Red {
-            using result_type = double;
-            using argument_type = TA::Tensor<double>;
-
-            std::shared_ptr<Eig::VectorXd> vec_;
-            unsigned int n_occ_;
-
-            Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
-                    : vec_(std::move(vec)), n_occ_(n_occ) {}
-            Mp2Red(Mp2Red const &) = default;
-
-            result_type operator()() const { return 0.0; }
-            result_type operator()(result_type const &t) const { return t; }
-            void operator()(result_type &me, result_type const &other) const {
-                me += other;
-            }
-
-            void operator()(result_type &me, argument_type const &tile) const {
-                auto const &range = tile.range();
-                auto const &vec = *vec_;
-                auto const st = range.lobound();
-                auto const fn = range.upbound();
-                auto tile_idx = 0;
-                for (auto i = st[0]; i < fn[0]; ++i) {
-                    const auto e_i = vec[i];
-                    for (auto a = st[1]; a < fn[1]; ++a) {
-                        const auto e_ia = e_i - vec[a + n_occ_];
-                        for (auto j = st[2]; j < fn[2]; ++j) {
-                            const auto e_iaj = e_ia + vec[j];
-                            for (auto b = st[3]; b < fn[3]; ++b, ++tile_idx) {
-                                const auto e_iajb = e_iaj - vec[b + n_occ_];
-                                me += 1 / (e_iajb)*tile.data()[tile_idx];
-                            }
-                        }
-                    }
-                }
-            }
-        };
-
-        double energy_mp2
-              = (IAJB("i,a,j,b") * (2 * IAJB("i,a,j,b") - IAJB("i,b,j,a")))
-                      .reduce(Mp2Red(vec_ptr, occupation / 2));
-
-        utility::print_par(world, "MP2 energy = ", energy_mp2,
-                           " total energy = ",
-                           energy + energy_mp2 + repulsion_energy, "\n");
     } else {
         utility::print_par(world, "Skipping MP2 because molecule had ",
                            mol.nelements(), " atoms.\n");
@@ -576,3 +500,5 @@ int main(int argc, char *argv[]) {
     madness::finalize();
     return 0;
 }
+
+

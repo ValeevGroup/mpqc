@@ -35,6 +35,7 @@ namespace tcc{
     std::size_t get_all() const {return all_;}
     std::size_t get_occ_blocks() const {return occ_blocks_;}
     std::size_t get_vir_blocks() const {return vir_blocks_;}
+    std::size_t get_all_blocks() const {return vir_blocks_+occ_blocks_;}
 
   private:
 

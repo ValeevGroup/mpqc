@@ -7,8 +7,12 @@
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
+#include "../ta_routines/deep_filter.h"
 #include "../ta_routines/array_to_eigen.h"
+#include "../ta_routines/tarray_block.h"
 #include "trange1_engine.h"
+#include "mo_block.h"
+
 
 using namespace tcc;
 
@@ -20,6 +24,9 @@ public:
   typedef  TA::Array<double, 2, Tile, Policy> TArray2;
   typedef  TA::Array<double, 3, Tile, Policy> TArray3;
   typedef  TA::Array<double, 4, Tile, Policy> TArray4;
+
+  typedef tcc::TArrayBlock<double, 2, Tile, Policy, tcc::MOBlock> TArrayBlock2;
+  typedef tcc::TArrayBlock<double, 4, Tile, Policy, tcc::MOBlock> TArrayBlock4;
 
 
   MP2(){};
@@ -43,13 +50,25 @@ public:
     std::size_t occ_e = occ_blocks;
     std::size_t vir_b = occ_blocks;
     std::size_t vir_e = occ_blocks + vir_blocks;
-    std::vector<std::size_t> low {occ_b,vir_b,occ_b,vir_b};
-    std::vector<std::size_t> up {occ_e,vir_e,occ_e,vir_e};
-    TArray4 two_e_iajb;
+
+    auto mo_block = std::make_shared<tcc::MOBlock>(tre_);
+    TArrayBlock4 two_e_iajb(two_e_int_mo_, mo_block);
+
+
+//    auto occ_range = std::make_pair(0ul,tre_.get_occ());
+//    auto vir_range = std::make_pair(tre_.get_occ(), tre_.get_all());
+//    std::array<decltype(occ_range), 4> iajb_range = {{occ_range,vir_range,occ_range,vir_range}};
+//
+//    auto two_e_iajb = tcc::array_ops::deep_filter(two_e_int_mo_, iajb_range);
+//    TArray4 two_e_iajb;
     //two_e_iajb("i,a,j,b") = two_e_int_mo_("i,a,j,b").block({occ_b,vir_b,occ_b,vir_b}, {occ_e,vir_e,occ_e,vir_e});
-    two_e_iajb("i,a,j,b") = two_e_int_mo_("i,a,j,b").block(low, up);
+//    two_e_iajb("i,a,j,b") = two_e_int_mo_("i,a,j,b").block(low, up);
+    //two_e_iajb("i,a,j,b") = two_e_int_mo_("i,a,j,b").block(block_range.first, block_range.second);
     double energy_mp2 = (two_e_iajb("i,a,j,b")*(2*two_e_iajb("i,a,j,b")-two_e_iajb("i,b,j,a")))
             .reduce(Mp2Red(en_mo_, tre_.get_occ()));
+    //double energy_mp2 = (two_e_int_mo_("i,a,j,b").block(low,up)*(2*two_e_int_mo_("i,a,j,b").block(low,up)
+    //                                                             -two_e_int_mo_("i,b,j,a").block(low,up)))
+    //        .reduce(Mp2Red(en_mo_, tre_.get_occ()));
 
     //std::cout << two_e_iajb << std::endl;
     std::cout << energy_mp2 << std::endl;

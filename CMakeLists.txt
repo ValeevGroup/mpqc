@@ -23,6 +23,9 @@ INCLUDE_DIRECTORIES(${BTAS_INCLUDE_DIRS})
 
 LIST(APPEND CMAKE_CXX_FLAGS ${TiledArray_COMPILE_FLAGS})
 
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CEREAL_INCLUDE_DIR})
+
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'RelWithDebInfo' as none was specified.")

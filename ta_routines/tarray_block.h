@@ -34,7 +34,7 @@ namespace tcc {
     /// Assignment operator
 
     /// shallow copy
-    TArrayBlock &operator=(const TArrayBlock &other) {
+    TArrayBlock& operator=(const TArrayBlock &other) {
       array_ = other.array_;
       block_engine_ = other.block_engine_;
 
@@ -48,8 +48,7 @@ namespace tcc {
     TA::expressions::BlkTsrExpr<TArray>
     operator()(const std::string &vars) {
 
-      std::pair<std::vector<std::size_t>, std::vector<std::size_t>> range =
-              block_engine_->get(vars);
+      auto range = block_engine_->get(vars);
       return array_(vars).block(range.first, range.second);
     }
 

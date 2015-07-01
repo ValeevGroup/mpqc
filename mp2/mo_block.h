@@ -21,10 +21,31 @@ namespace tcc {
     static char occ_char[4];
     static char vir_char[4];
 
+    /// Default constructor
+    MOBlock() : occ_range_(), vir_range_() { }
+
+    /// constructor
+
     MOBlock(const tcc::TRange1Engine &tre) : occ_range_(0ul,
                                                         tre.get_occ_blocks()),
                                              vir_range_(tre.get_occ_blocks(),
                                                         tre.get_all_blocks()) { }
+
+    /// Copy constructor
+
+    /// deep copy
+    MOBlock(const MOBlock &other) : occ_range_(other.occ_range_),
+                                    vir_range_(other.vir_range_) { }
+
+    /// Assignment operator
+
+    /// deep copy
+    MOBlock& operator=(const MOBlock& other){
+      occ_range_ = other.occ_range_;
+      vir_range_ = other.vir_range_;
+
+      return *this;
+    }
 
     result_type get(const std::string &vars) {
       //select keys from vars

@@ -45,14 +45,14 @@ namespace tcc{
 
 
   private:
-    TA::TiledRange1 tr_occupied_;
-    TA::TiledRange1 tr_virtual_;
-    TA::TiledRange1 tr_all_;
-
     std::size_t occ_;
     std::size_t all_;
     std::size_t vir_;
     std::size_t guess_;
+
+    TA::TiledRange1 tr_occupied_;
+    TA::TiledRange1 tr_virtual_;
+    TA::TiledRange1 tr_all_;
 
     std::size_t occ_blocks_;
     std::size_t vir_blocks_;

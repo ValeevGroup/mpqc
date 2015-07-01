@@ -49,7 +49,7 @@ class DecomposedTensor {
     // only works for two way atm Get the right dimension of the first tensor.
     std::size_t rank() const {
         assert(!empty());
-        return tensors_[0].range().size()[1];
+        return tensors_[0].range().extent()[1];
     }
 
     std::vector<std::size_t> orders() const {

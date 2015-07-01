@@ -38,7 +38,7 @@ std::array<TiledArray::Tensor<T, AT>, 2>
     auto reduce_op =
           [](T &restrict result, const T arg) { result += std::abs(arg); };
 
-    TiledArray::math::row_reduce(tile.range().size()[0], tile.range().size()[1],
+    TiledArray::math::row_reduce(tile.range().extent()[0], tile.range().extent()[1],
                                  tile.data(), result[0].data(), reduce_op);
 
 

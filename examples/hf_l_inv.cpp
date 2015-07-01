@@ -535,8 +535,8 @@ int main(int argc, char *argv[]) {
             void operator()(result_type &me, argument_type const &tile) const {
                 auto const &range = tile.range();
                 auto const &vec = *vec_;
-                auto const st = range.start();
-                auto const fn = range.finish();
+                auto const st = range.lobound();
+                auto const fn = range.upbound();
                 auto tile_idx = 0;
                 for (auto i = st[0]; i < fn[0]; ++i) {
                     const auto e_i = vec[i];

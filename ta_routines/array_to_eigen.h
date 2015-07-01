@@ -27,34 +27,46 @@ Matrix<T> tile_to_eigen(tensor::Tile<tensor::DecomposedTensor<T>> const &t) {
     return tile_to_eigen(tensor::algebra::combine(t.tile()));
 }
 
-/*! \bug Sometimes this causes a an error when run with multiple mpi process */
+/*! \brief converts a TiledArray::Array to an Eigen Matrix
+ *
+ * The function needs to know the tile type and policy type to work.
+ *
+ * \bug Sometimes this causes a an error when run with multiple mpi process
+ */
 template <typename T, typename Tile, typename Policy>
 Matrix<T> array_to_eigen(TA::Array<T, 2, Tile, Policy> const &A) {
+
     auto const &mat_extent = A.trange().elements().extent();
     Matrix<T> out_mat = Matrix<T>::Zero(mat_extent[0], mat_extent[1]);
 
-     auto repl_A = A;
-     repl_A.make_replicated();
-     auto pmap = repl_A.get_pmap();
-     const auto end = pmap->end();
-     for (auto it = pmap->begin(); it != end; ++it) {
-         if (!A.is_zero(*it)) {
-             auto tile = A.find(*it).get();
-             auto const &start = tile.range().start();
-             auto const &finish = tile.range().finish();
-             const auto nrows = finish[0] - start[0];
-             const auto ncols = finish[1] - start[1];
+    // Copy A and make it replicated.  Making A replicated is a mutating op.
+    auto repl_A = A;
+    repl_A.make_replicated();
 
-             out_mat.block(start[0], start[1], nrows, ncols)
-                   = tile_to_eigen(tile);
-         }
-     }
+    // Loop over the array and assign the tiles to blocks of the Eigen Mat.
+    auto pmap = repl_A.get_pmap();
+    const auto end = pmap->end();
+    for (auto it = pmap->begin(); it != end; ++it) {
+        if (!A.is_zero(*it)) {
+            auto tile = A.find(*it).get();
 
-     // overflows for large arrays.
-     // A.get_world().gop.sum(out_mat.data(), out_mat.size());
-     return out_mat;
+            auto const &start = tile.range().lobound();
+            const auto extent = tile.range().extent();
+            out_mat.block(start[0], start[1], extent[0], extent[1])
+                  = tile_to_eigen(tile);
+        }
+    }
+
+    // overflows for large arrays.
+    // A.get_world().gop.sum(out_mat.data(), out_mat.size());
+    return out_mat;
 }
 
+/*! \brief takes an Eigen matrix and converts it to the type of the template.
+ *
+ * The idea is that users will provide a specialization which converts to the
+ * tile type that they want.
+ */
 template <typename TileType>
 TileType mat_to_tile(TA::Range range, Matrix<double> const &M);
 
@@ -69,7 +81,7 @@ mat_to_tile<tensor::Tile<tensor::DecomposedTensor<double>>>(
                                                                local_range));
     auto t_map = TA::eigen_map(tensor.tensor(0), extent[0], extent[1]);
 
-    auto const start = range.start();
+    auto const start = range.lobound();
     t_map = M.block(start[0], start[1], extent[0], extent[1]);
     return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                           std::move(tensor));
@@ -82,7 +94,7 @@ mat_to_tile<TA::Tensor<double>>(TA::Range range, Matrix<double> const &M) {
     auto tensor = TA::Tensor<double>(range);
     auto t_map = TA::eigen_map(tensor, extent[0], extent[1]);
 
-    auto const start = range.start();
+    auto const start = range.lobound();
     t_map = M.block(start[0], start[1], extent[0], extent[1]);
     return tensor;
 }

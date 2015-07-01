@@ -42,7 +42,7 @@ void call_tf(std::shared_ptr<std::vector<std::array<double, 3>>> tile_vec_ptr,
     auto const idx = trange.tiles().idx(ordinal);
     auto tile = tf(trange.make_tile_range(ordinal), idx, engines, bases_ptrs...);
 
-    auto const &extent = tile.range().size();
+    auto const &extent = tile.range().extent();
     auto X = extent[0]; 
     auto kl = extent[1] * extent[2];
 

@@ -13,8 +13,8 @@ DecomposedTensor<T>
 add(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r) {
     if (l.ndecomp() >= 2) {
         if (r.ndecomp() >= 2) {
-            auto const &l_extent = l.tensor(0).range().size();
-            auto const &r_extent = r.tensor(1).range().size();
+            auto const &l_extent = l.tensor(0).range().extent();
+            auto const &r_extent = r.tensor(1).range().extent();
             const auto l_rank = l.rank();
             const auto r_rank = r.rank();
             const auto out_rank = l_rank + r_rank;
@@ -110,8 +110,8 @@ add_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r) {
             l = DecomposedTensor<T>(l.cut(), std::move(temp));
         } else {
             l = add(l, r);
-            auto const &l_left_extent = l.tensor(0).range().size();
-            auto const &l_right_extent = l.tensor(1).range().size();
+            auto const &l_left_extent = l.tensor(0).range().extent();
+            auto const &l_right_extent = l.tensor(1).range().extent();
             const auto long_dim = l_right_extent[1] * l_right_extent[2];
             auto out_dim = l.rank();
             const auto full_rank = std::min(l_left_extent[0], long_dim);

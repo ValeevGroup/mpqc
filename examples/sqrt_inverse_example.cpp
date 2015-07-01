@@ -138,8 +138,8 @@ int main(int argc, char *argv[]) {
             for (auto i = 0; i < volume; ++i) {
                     auto range = eri2.trange().make_tile_range(i);
                     tiles_file << i << ": ("
-                              << range.size()[0] << " "
-                              << range.size()[1] << ") "
+                              << range.extent()[0] << " "
+                              << range.extent()[1] << ") "
                               << range.volume() << " "
                               << shape[i]
                               << "\n";

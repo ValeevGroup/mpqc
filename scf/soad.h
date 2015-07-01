@@ -30,19 +30,27 @@ using TileType = tensor::Tile<DataType>;
 using ArrayType = TA::Array<double, 2, TileType, TA::SparsePolicy>;
 using Eri3ArrayType = TA::Array<double, 3, TileType, TA::SparsePolicy>;
 
+
+/*! \brief constructs a tile using Edwards SOAD strategy.
+ *
+ * This function creates a tile to initialize a density guess based on
+ * the Superposition of Atomic Densities (SOAD) approach.  The function
+ * expects to receive symmetric diagonal ranges.
+ */
 TileType soad_tile(std::shared_ptr<molecule::Cluster> cluster, TA::Range range,
                    double cut) {
-    // make range for decomposed tensor
-    const auto i = range.size()[0];
-    const auto j = range.size()[1];
-    TA::Range local_range{i, j};
-    TA::Tensor<double> tensor(std::move(local_range), 0.0);
+    // Grab the range extent since it will be reused several times.
+    const auto extent = range.extent();
+
+    TA::Tensor<double> tensor(TA::Range{extent[0], extent[1]}, 0.0);
+    auto t_map = TA::eigen_map(tensor, extent[0], extent[1]);
+
     auto atoms = molecule::collapse_to_atoms(*cluster);
 
-    auto t_map = TA::eigen_map(tensor, range.size()[0], range.size()[1]);
     size_t ao_offset = 0; // first AO of this atom
     for (auto const &atom : atoms) {
         const auto Z = atom.charge();
+
         if (Z == 1 || Z == 2) {              // H, He
             t_map(ao_offset, ao_offset) = Z; // all electrons go to the 1s
             ao_offset += 1;
@@ -58,11 +66,19 @@ TileType soad_tile(std::shared_ptr<molecule::Cluster> cluster, TA::Range range,
             ao_offset += 5;
         }
     }
+
+    // Multiply by 1/2 because we are using the convention that the Density is
+    // idempotent.
     t_map *= 0.5;
     return TileType(range, DataType(cut, std::move(tensor)));
 }
 
 
+/*! \brief creates an initial guess for the density matrix using SOAD.
+ *
+ * This function creates a guess in the 3-21g basis using the Superposition
+ * of atomic densities (SOAD) approach.
+ */
 ArrayType minimal_density_guess(
       madness::World &world,
       std::vector<std::shared_ptr<molecule::Cluster>> const &clusters,
@@ -70,21 +86,21 @@ ArrayType minimal_density_guess(
 
     TA::TiledRange trange
           = sparse::create_trange(utility::make_array(min_bs, min_bs));
-    TA::Tensor<float> tile_norms(trange.tiles(), 0.0);
-    auto tn_map = TA::eigen_map(tile_norms, tile_norms.range().size()[0],
-                                tile_norms.range().size()[1]);
 
-    auto ord = 0ul;
+    // Make a shape tensor and set it such that only diagonal elements will 
+    // be significant
+    TA::Tensor<float> tile_norms(trange.tiles(), 0.0);
+    auto const extent = tile_norms.range().extent();
+    auto tn_map = TA::eigen_map(tile_norms, extent[0], extent[1]);
     for (auto i = 0; i < tn_map.rows(); ++i) {
-        auto range = trange.make_tile_range(ord);
-        tn_map(i, i) = range.size()[1];
-        ord += trange.tiles().weight()[1] + 1;
+        tn_map(i, i) = std::numeric_limits<float>::max(); // Go big 
     }
 
+    // Create the array and shape
     TA::SparseShape<float> shape(world, tile_norms, trange);
-
     ArrayType D_min(world, trange, shape);
 
+    // Initialize D_min tiles by calling soad_tile
     auto const &pmap = *D_min.get_pmap();
     auto it = pmap.begin();
     const auto end = pmap.end();
@@ -97,6 +113,8 @@ ArrayType minimal_density_guess(
             D_min.set(*it, tile);
         }
     }
+
+    D_min.truncate(); // Fix tile norms.
     return D_min;
 }
 
@@ -156,7 +174,8 @@ ArrayType fock_from_minimal_v_oh(
     {
         auto EriJ = BlockSparseIntegrals(
               world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
-        TA::Array<double, 1, typename decltype(EriJ)::value_type, TA::SparsePolicy> trans;
+        TA::Array<double, 1, typename decltype(EriJ)::value_type,
+                  TA::SparsePolicy> trans;
         trans("P") = EriJ("P,a,b") * D_min("a,b");
         J("i,j") = Xab("X,i,j") * (V_inv_oh("X,P") * trans("P"));
     }

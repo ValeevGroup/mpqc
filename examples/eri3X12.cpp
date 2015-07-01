@@ -92,7 +92,7 @@ get_TA_density_from_file(madness::World &world, std::string const &file_name,
 
         for (auto i = 0ul; i < tile_norms.size(); ++i) {
             auto range = tr.make_tile_range(i);
-            auto const &size = range.size();
+            auto const &size = range.extent();
             auto const &start = range.start();
 
             tile_norms[i] = D_eig.block(start[0], start[1], size[0], size[1])
@@ -112,7 +112,7 @@ get_TA_density_from_file(madness::World &world, std::string const &file_name,
             if (!D_TA.is_zero(i)) {
                 auto range = tr.make_tile_range(i);
                 auto const &start = range.start();
-                auto const &size = range.size();
+                auto const &size = range.extent();
                 auto tile = TA::Tensor<double>(range);
                 auto tile_map = TA::eigen_map(tile, size[0], size[1]);
                 tile_map = D_eig.block(start[0], start[1], size[0], size[1]);

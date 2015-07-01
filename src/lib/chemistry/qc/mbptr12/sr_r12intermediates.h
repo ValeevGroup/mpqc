@@ -280,8 +280,9 @@ namespace sc {
 
       // compute multipole
       void compute_multipole();
-      // compute B^p_q which is summed over k
-      TArray2 Bpk_qk(const char* p, const char* q);
+      // compute B^P_Q which is summed over k
+      TArray2 BPk_Qk(const char* p, const char* q,
+                     const double C_0, const double C_1);
       TArray4 Bpr_qs(const char* p, const char* q);
 
       // compute V^Pq_Rs = 1/2 \bar{R}^Pq_AlphaBeta \bar{g}^AlphaBeta_Rs
@@ -312,6 +313,20 @@ namespace sc {
       TArray2 Xam_X(const double C_0, const double C_1);
       // compute Xam contribution from F12 B part
       TArray2 Xam_B(const double C_0, const double C_1);
+
+      // compute Xii' contribution from F12 part for frozen-core systems
+      TArray2 Xiip_VBX(const double C_0, const double C_1);
+      // compute Xii' contribution from CCSD F12 coupling
+      // for frozen-core systems
+      TArray2 Xiip_CVT(const double C_0, const double C_1,
+                       const TArray2& T1, const TArray4& T2);
+
+      // Xam contribution of CT2 part resulted from CCSD F12 coupling
+      TArray2 Xam_CT2_ccsd(const double C_0, const double C_1,
+                           const TArray4& T2, const TArray2& RT2_aPb);
+      // Xam contribution of VT(T1&T2) part resulted from CCSD F12 coupling
+      TArray2 Xam_VT_ccsd(const double C_0, const double C_1,
+                          const TArray2& T1, const TArray4& T2);
 
       // compute T1 & T2 amplitudes of CC2
       void compute_T_cc2(TArray2& T1, TArray4& T2);

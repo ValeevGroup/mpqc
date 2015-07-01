@@ -71,12 +71,12 @@ namespace sc {
     return X;
   }
 
+  // compute F^A'_C' R^Pk_A'B' R^Qk_C'B' (P & Q in alpha or beta space)
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray2
-  SingleReference_R12Intermediates<T>::Bpk_qk(const char* p, const char* q) {
+  SingleReference_R12Intermediates<T>::BPk_Qk(const char* p, const char* q,
+                                              const double C_0, const double C_1) {
 
-    const double C_0 = 1.0 / 2.0;
-    const double C_1 = 1.0 / 4.0;
     const double B_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
     const double B_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
 
@@ -133,8 +133,10 @@ namespace sc {
     std::string  pk_AFb = std::string("<") + p + " k|r|a'_F(q) b>";
     std::string  kp_AFb = std::string("<k ") + p + "|r|a'_F(q) b>";
 
+    std::string pq =  p + std::string(",") + q;
+
     TArray2 B_pq;
-    B_pq("p,q") =
+    B_pq(pq.c_str()) =
                  //          diag
                  ( B_C1 * _4(rTr_pkql.c_str()) + B_C2 * _4(rTr_kpql.c_str())
                  //           Q
@@ -1109,6 +1111,257 @@ namespace sc {
                  ;
 
     return XaiAddToXam(B_am, B_ai);
+  }
+
+  // frozen-core F12 Xii' contribution
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xiip_VBX(const double C_0, const double C_1) {
+
+    const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
+    const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
+
+    TArray2 Xiip_V;
+    const char* ip = "i'";
+    const char* i = "i";
+    TArray2 V_ipi = VRk_Sk(ip,i,C_0, C_1);
+    TArray2 V_iip = VRk_Sk(i,ip,C_0, C_1);
+    Xiip_V("i,i'") = // 2 * (1/2 R^i'k_A'C' g^A'C'_ik + 1/2 R^ik_A'C' g^A'C'_i'k)
+                     2.0 * (V_ipi("i',i") + V_iip("i,i'"));
+      // test
+//      TArray4d gr_ipk_ij = ijxy("<i' k|gr|i j>");
+//      TArray4d rpq_kl = ijxy("<p q|r|k l>");
+//      TArray4d rapn_kl = ijxy("<a' n|r|k l>");
+//      TArray4d rnap_kl = ijxy("<n a'|r|k l>");
+//      TArray4d rpq_ipk = ijxy("<p q|r|i' k>");
+//      TArray2 Ikl = xy("<k|I|l>");
+//      Xiip_V("i,i'") =  // 1/2 R^ik_AC g^AC_i'k
+//                      ( (R_C1 * gr_ipk_ij("i',k,i,l") + R_C2 * gr_ipk_ij("i',k,l,i"))
+//                        * Ikl("k,l")
+//                      - _4("<i' k|g|p q>")
+//                         * ( R_C1 * rpq_kl("p,q,i,k") + R_C2 * rpq_kl("p,q,k,i") )
+//                      - _4("<i' k|g|a' n>")
+//                         * ( R_C1 * rapn_kl("a',n,i,k") + R_C2 * rapn_kl("a',n,k,i"))
+//                      - _4("<i' k|g|n a'>")
+//                         * ( R_C1 * rnap_kl("n,a',i,k") + R_C2 * rnap_kl("n,a',k,i"))
+//                      ) * 2.0
+//                      // 1/2 R^i'k_AC g^AC_ik
+//                    + ( (R_C1 * gr_ipk_ij("i',l,i,k") + R_C2 * gr_ipk_ij("i',l,k,i"))
+//                        * Ikl("k,l")
+//                      - _4("<i k|g|p q>")
+//                        * ( R_C1 * rpq_ipk("p,q,i',k") + R_C2 * rpq_ipk("q,p,i',k"))
+//                      - _4("<i k|g|a' n>")
+//                        * ( R_C1 * _4("<a' n|r|i' k>") + R_C2 * _4("<a' n|r|k i'>"))
+//                      - _4("<i k|g|n a'>")
+//                        * ( R_C1 * _4("<n a'|r|i' k>") + R_C2 * _4("<n a'|r|k i'>"))
+//                      ) * 2.0;
+
+    TArray2 Xiip_X;
+    TArray2 F_ij = xy("<i|F|j>");
+    TArray4d r2_ipk_jl = ijxy("<i' k|r2|j l>");
+    TArray4d r_ipk_pq = ijxy("<i' k|r|p q>");
+    TArray4d r_pqkl = ijxy("<p q|r|k l>");
+    TArray4d r_ipk_apn = ijxy("<i' k|r|a' n>");
+    TArray4d r_apn_kl = ijxy("<a' n|r|k l>");
+    TArray4d r_kip_apn = ijxy("<k i'|r|a' n>");
+    Xiip_X("i,i'") = // 2 * (F^i_i + F^k_k) 1/2 R^i'k_A'B' R_ik^A'B'
+                     2.0 * (  (RR_C1 * r2_ipk_jl("i',k,j,l") + RR_C2 * r2_ipk_jl("i',k,l,j"))
+                              * _2("<l|I|k>") * F_ij("j,i")
+                            + (RR_C1 * r2_ipk_jl("i',k,i,l") + RR_C2 * r2_ipk_jl("i',k,l,i"))
+                              * F_ij("l,k")
+
+                            - (RR_C1 * r_ipk_pq("i',k,p,q") + RR_C2 * r_ipk_pq("i',k,q,p"))
+                              * ( r_pqkl("p,q,j,k") * F_ij("j,i")
+                                + r_pqkl("p,q,i,l") * F_ij("l,k"))
+
+                            - (RR_C1 * r_ipk_apn("i',k,a',n") + RR_C2 * r_kip_apn("k,i',a',n"))
+                              * ( r_apn_kl("a',n,j,k") * F_ij("j,i")
+                                + r_apn_kl("a',n,i,l") * F_ij("l,k"))
+
+                            - (RR_C1 * r_kip_apn("k,i',a',n") + RR_C2 * r_ipk_apn("i',k,a',n"))
+                              * ( r_apn_kl("a',n,k,j") * F_ij("j,i")
+                                + r_apn_kl("a',n,l,i") * F_ij("l,k"))
+                           );
+
+    TArray2 Xiip_B;
+    TArray2 B_ipi = BPk_Qk(ip,i,C_0,C_1);
+    Xiip_B("i,i'") = // 2 R^i'k_A'B' F^A'_C' R^ik_C'B'
+                     2.0 * B_ipi("i',i");
+
+    TArray2 Xiip_f12;
+    Xiip_f12("i,i'") = Xiip_V("i,i'") - Xiip_X("i,i'") + Xiip_B("i,i'");
+    return Xiip_f12;
+  }
+
+  // frozen-core Xii' contribution from CCSD F12 coupling
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xiip_CVT(const double C_0, const double C_1,
+                                                   const TArray2& T1, const TArray4& T2){
+
+    const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
+    const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
+
+    TArray2 Xiip_CT2;
+    Xiip_CT2("i,i'") = // 2 F^a'_b R^i'l_a'c T2^bc_il
+                       2.0 * ( _4("<i' l|r|b_F(a') c>")
+                               * (R_C1 * T2("b,c,i,l") + R_C2 * T2("b,c,l,i"))
+                              +  _4("<i' l|r|c b_F(a')>")
+                               * (R_C1 * T2("c,b,i,l") + R_C2 * T2("c,b,l,i"))
+                             );
+
+    TArray2 Xiip_VT2;
+    const char* ip = "i'";
+    const char* i = "i";
+    const char* l = "l";
+    const char* c = "c";
+    const char* d = "d";
+    TArray4 V_ipl_cd = VPq_Rs(ip,l,c,d,C_0, C_1);
+    Xiip_VT2("i,i'") = // 2 * 1/4 R^i'l_A'B' g^A'B'_cd T^cd_il
+                      2.0 * V_ipl_cd("i',l,c,d") * T2("c,d,i,l");
+
+    TArray2 Xiip_VT1;
+    TArray4 V_ipl_ic = VPq_Rs(ip,l,i,c, C_0, C_1);
+    TArray4 V_il_ipc = VPq_Rs(i,l,ip,c,C_0, C_1);
+    TArray2 V_ipc = VRk_Sk(ip,c,C_0, C_1);
+    Xiip_VT1("i,i'") =         // 2 *
+                       2.0 * ( // 1/2 R^i'l_A'B' g^A'B'_ic t1^c_l
+                               // 1/2 R^il_A'B' g^A'B'_i'c t1^c_l
+                               (V_ipl_ic("i',l,i,c") + V_il_ipc("i,l,i',c")) * T1("c,l")
+
+                                // 1/2 R^i'k_A'B' g^A'B'_ck t1^c_i
+                              + V_ipc("i',c") * T1("c,i")
+                             );
+
+    TArray2 Xiip_C;
+    Xiip_C("i,i'") = Xiip_CT2("i,i'") + Xiip_VT2("i,i'") + Xiip_VT1("i,i'");
+    return Xiip_C;
+  }
+
+  // Xam contribution of CT2 part resulted from CCSD F12 coupling
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xam_CT2_ccsd(const double C_0, const double C_1,
+                                                    const TArray4& T2, const TArray2& RT2_aPb) {
+    const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
+    const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
+
+    TArray4d g_abmaP = ijxy("<a b|g|m a'>");
+    TArray2 Xam_CT2, Xai_CT2;
+    Xam_CT2("a,m") = 2.0 * ( // + 1/2 F^a'_m R^kl_a'b T2^ab_kl
+                             // + 1/2 F^a'_b R^kl_ma' T2^ab_kl
+                             (R_C1 * T2("a,b,k,l") + R_C2 * T2("b,a,k,l"))
+                             * (_4("<k l|r|m_F(a') b>") + _4("<k l|r|m b_F(a')>"))
+                             //RT2_aPb("a',a") * _2("<a'|F|m>")
+
+                              // - g^aa'_mb 1/2 R^kl_a'c T2^bc_kl
+                              // - g^ab_ma' 1/2 R^kl_a'c T2^bc_kl
+                            - (  2.0 * _4("<a a'|g|m b>") - _4("<a a'|g|b m>")
+                               + 2.0 * g_abmaP("a,b,m,a'") - g_abmaP("b,a,m,a'")
+                              ) * RT2_aPb("a',b")
+                           );
+    Xai_CT2("a,i") = 2.0 * (  // - F^a'_b R^al_a'c T2^bc_il
+                            - _4("<a l|r|b_F(a') c>")
+                              * (R_C1 * T2("b,c,i,l") + R_C2 * T2("b,c,l,i"))
+                            - _4("<a l|r|c b_F(a')>")
+                              * (R_C1 * T2("c,b,i,l") + R_C2 * T2("c,b,l,i"))
+                           );
+
+    return XaiAddToXam(Xam_CT2, Xai_CT2);
+  }
+
+  // Xam contribution of VT(T1&T2) part resulted from CCSD F12 coupling
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xam_VT_ccsd(const double C_0, const double C_1,
+                                                   const TArray2& T1, const TArray4& T2) {
+
+    const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
+    const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
+
+    const char* i = "i";
+    const char* j = "j";
+    const char* k = "k";
+    const char* l = "l";
+    const char* m = "m";
+
+    const char* a = "a";
+    const char* c = "c";
+    const char* d = "d";
+
+    TArray4 V_alic = VPq_Rs(a,l,i,c, C_0, C_1);
+    TArray4 V_ilac = VPq_Rs(i,l,a,c,C_0, C_1);
+    TArray2 V_ac = VRk_Sk(a,c,C_0, C_1);
+    TArray2 V_jm = VRk_Sk(j,m,C_0, C_1);
+    TArray4d r_klmaP = ijxy("<k l|r|m a'>");
+    TArray4d r_abPkl = ijxy("<a b'|r|k l>");
+    TArray2 Xam_VT1, Xai_VT1;
+    Xam_VT1("a,m") = 2.0 * (  // + 1/2 R^jk_A'B' g^A'B'_mk t1^a_j
+                              T1("a,j") * V_jm("j,m")
+//                             // test
+//                             ( (R_C1 * _4("<j k|gr|m l>") + R_C2 * _4("<k j|gr|m l>"))
+//                               * _2("<k|I|l>")
+//                             - (R_C1 * _4("<j k|r|p q>") + R_C2 * _4("<k j|r|p q>"))
+//                               * _4("<p q|g|m k>")
+//                             - (R_C1 * _4("<j k|r|a' n>") + R_C2 * _4("<k j|r|a' n>"))
+//                               * _4("<a' n|g|m k>")
+//                             - (R_C1 * _4("<j k|r|n a'>") + R_C2 * _4("<k j|r|n a'>"))
+//                               * _4("<n a'|g|m k>")
+//                             )
+
+                            + (  // + R^kl_mb' g^ab'_kc t1^c_l
+                                 _4("<a b'|g|k c>")
+                                 * (R_C1 * r_klmaP("k,l,m,b'") + R_C2 * r_klmaP("l,k,m,b'"))
+                               + _4("<a b'|g|c k>")
+                                 * (R_C1 * r_klmaP("l,k,m,b'") + R_C2 * r_klmaP("k,l,m,b'"))
+                               // + R^kl_ab' g^mb'_kc t1^c_l
+                               + (R_C1 * r_abPkl("a,b',k,l") + R_C2 * r_abPkl("a,b',l,k"))
+                                 * _4("<k c|g|m b'>")
+                               + (R_C1 * r_abPkl("a,b',l,k") + R_C2 * r_abPkl("a,b',k,l"))
+                                 * _4("<c k|g|m b'>")
+                              ) * T1("c,l")
+                           );
+    Xai_VT1("a,i") = 2.0 * (  // - 1/2 R^al_A'B' g^A'B'_ic t1^c_l
+                              // - 1/2 R^il_A'B' g^A'B'_ac t1^c_l
+                            - (V_alic("a,l,i,c") + V_ilac("i,l,a,c")) * T1("c,l")
+
+                              // - 1/2 R^ak_A'B' g^A'B'_ck t1^c_i
+                            - V_ac("a,c") * T1("c,i")
+//                             // test
+//                            ( (R_C1 * _4("<a k|gr|c l>") + R_C2 * _4("<k a|gr|c l>"))
+//                              * _2("<k|I|l>")
+//                            - (R_C1 * _4("<a k|r|p q>") + R_C2 * _4("<k a|r|p q>"))
+//                              * _4("<p q|g|c k>")
+//                            - (R_C1 * _4("<a k|r|a' n>") + R_C2 * _4("<k a|r|a' n>"))
+//                              * _4("<a' n|g|c k>")
+//                            - (R_C1 * _4("<a k|r|n a'>") + R_C2 * _4("<k a|r|n a'>"))
+//                              * _4("<n a'|g|c k>")
+//                            )
+                           );
+    TArray2 Xam_VT1_tot = XaiAddToXam(Xam_VT1, Xai_VT1);
+
+    TArray4 V_alcd = VPq_Rs(a,l,c,d,C_0, C_1);
+    TArray4 V_klmd = VPq_Rs(k,l,m,d,C_0, C_1);
+    TArray2 Xam_VT2, Xai_VT2;
+    Xam_VT2("a,m") = 2.0 * (  //   1/4 R^kl_A'B' g^A'B'_md T^ad_kl
+                              T2("a,d,k,l") * V_klmd("k,l,m,d")
+
+                            + (  // + 1/4 R^kl_ab' g^mb'_cd T^cd_kl
+                                 (R_C1 * r_abPkl("a,b',k,l") + R_C2 * r_abPkl("a,b',l,k"))
+                                 * _4("<c d|g|m b'>")
+                                 // + 1/4 R^kl_mb' g^ab'_cd T^cd_kl
+                               + _4("<a b'|g|c d>")
+                                 * (R_C1 * r_klmaP("k,l,m,b'") + R_C2 * r_klmaP("l,k,m,b'"))
+                              ) * T2("c,d,k,l")
+                           );
+    Xai_VT2("a,i") = 2.0 * (  // - 1/4 R^al_A'B' g^A'B'_cd T^cd_il
+                            - V_alcd("a,l,c,d") * T2("c,d,i,l")
+                           );
+    TArray2 Xam_VT2_tot = XaiAddToXam(Xam_VT2, Xai_VT2);
+
+    TArray2 Xam_VT_tot;
+    Xam_VT_tot("a,m") = Xam_VT1_tot("a,m") + Xam_VT2_tot("a,m");
+    return Xam_VT_tot;
   }
 
   // compute T1 & T2 amplitudes of CC2
@@ -3872,8 +4125,7 @@ namespace sc {
       L2_f12contri("a,b,i,j") = Delta_abij("a,b,i,j")
                                 * (  RC1 * r_ijaFb("i,j,a,b") + RC2 * r_ijaFb("j,i,a,b")
                                    + RC1 * r_ijaFb("j,i,b,a") + RC2 * r_ijaFb("i,j,b,a")
-                                   +
-                                    RC1 * rg_ijab("i,j,a,b") + RC2 * rg_ijab("j,i,a,b")
+                                   + RC1 * rg_ijab("i,j,a,b") + RC2 * rg_ijab("j,i,a,b")
                                   ) * 2.0;
       L2("a,b,i,j") = t2("a,b,i,j") + L2_f12contri("a,b,i,j");
     }
@@ -5531,7 +5783,7 @@ namespace sc {
     TArray2 X_mp2_nfzc = Xam_mp2(T2_ijab, D_mp2_ij, D_mp2_ab);
 
     TArray2 X_mp2;
-    // *** frozen-core contribution ***
+    // frozen-core contribution
     TArray2 Dijp_or_mp2;
     if (nocc != naocc) {
       Dijp_or_mp2("i,j'") = - ( _4("<j' l|g|c d>")
@@ -5542,18 +5794,18 @@ namespace sc {
       X_mp2("a,m") = X_mp2_nfzc("a,m") - Xam_Dijp_or("a,m");
 
       // test code: print out Ima in frozen-core case
-      TArray2 Iia, Ima;
-      Iia("a,i") = _4("<a l|g|c d>")
-                   * (2.0 * T2_ijab("i,l,c,d") - T2_ijab("l,i,c,d"));
-      Ima("a,m") =   (2.0 * _4("<a c|g|m d>") - _4("<a c|g|d m>"))
-                     * D_mp2_ab("d,c")
-                   - (2.0 * _4("<a l|g|m k>") - _4("<a l|g|k m>"))
-                     * D_mp2_ij("k,l")
-                   ;
-      TArray2 Iima = XaiAddToXam(Ima, Iia);
-      TArray2 Iima_fzc;
-      Iima_fzc("a,m") = Iima("a,m") + Xam_Dijp_or("a,m") * 0.5;
-      ExEnv::out0() << std::endl << "FZC Ima : " << std::endl << Iima_fzc << std::endl;
+//      TArray2 Iia, Ima;
+//      Iia("a,i") = _4("<a l|g|c d>")
+//                   * (2.0 * T2_ijab("i,l,c,d") - T2_ijab("l,i,c,d"));
+//      Ima("a,m") =   (2.0 * _4("<a c|g|m d>") - _4("<a c|g|d m>"))
+//                     * D_mp2_ab("d,c")
+//                   - (2.0 * _4("<a l|g|m k>") - _4("<a l|g|k m>"))
+//                     * D_mp2_ij("k,l")
+//                   ;
+//      TArray2 Iima = XaiAddToXam(Ima, Iia);
+//      TArray2 Iima_fzc;
+//      Iima_fzc("a,m") = Iima("a,m") + Xam_Dijp_or("a,m") * 0.5;
+//      ExEnv::out0() << std::endl << "FZC Ima : " << std::endl << Iima_fzc << std::endl;
     } else {
       X_mp2("a,m") = X_mp2_nfzc("a,m");
     }
@@ -5904,19 +6156,19 @@ namespace sc {
     // X and B density contribution to Xam
     TArray4d g_abmc = ijxy("<a b|g|m c>");
     TArray2 gdf12_am;
-    gdf12_am("a,m") =  (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
+    gdf12_am("a,m") =  // X related contribution
+                       (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
                        * D_f12_ij("k,l")
-                     //
+                       // B related contribution
                      - (2.0 * g_abmc("a,b,m,c") - g_abmc("b,a,m,c"))
                        * D_f12_ab("b,c")
-                     //
                      - (2.0 * _4("<a b'|g|m c'>") - _4("<a b'|g|c' m>"))
                        * D_f12_apbp("b',c'")
-                     //
                      - (2.0 * _4("<a b'|g|m c>") - _4("<a b'|g|c m>"))
                        * D_f12_apb("b',c")
                      - (2.0 * _4("<a b|g|m c'>") - _4("<a b|g|c' m>"))
-                       * D_f12_apb("c',b");
+                       * D_f12_apb("c',b")
+                     ;
 
     // Xam from F12 (V, X, and B) contributions
     TArray2 Xam_Vcontri = Xam_V(C_0,C_1);
@@ -5926,10 +6178,9 @@ namespace sc {
     // F12 contribution to orbital response
     TArray2 Xam_f12;
     Xam_f12("a,m") = 2.0 * ( Xam_Vcontri("a,m")
-                           - Xam_Xcontri("a,m")
-                           + Xam_Bcontri("a,m")
-                           + gdf12_am("a,m")  // F12 density terms
-                           // CT2_ai("a,i") + VT1_ai("a,i")+ VT2_ai("a,i") // CC F12 coupling terms
+                            - Xam_Xcontri("a,m")
+                            + Xam_Bcontri("a,m")
+                            + gdf12_am("a,m")  // F12 density terms
                            );
 
     TArray2 Dbn_f12(Xam_f12.get_world(), Xam_f12.trange());
@@ -5942,10 +6193,13 @@ namespace sc {
     if (compute_dipole) {
       TArray2 mu_z_apbp = xy("<a'|mu_z|b'>");
       // F12 density contribution to dipole
-      mu_z_f12 = - dot(mu_z_ij("i,j"), D_f12_ij("i,j"))
+      mu_z_f12 = // X related contribution
+                 - dot(mu_z_ij("i,j"), D_f12_ij("i,j"))
+                 // B related contribution
                  + dot(mu_z_ab("a,b"), D_f12_ab("a,b"))
                  + dot(mu_z_apbp("a',b'"), D_f12_apbp("a',b'"))
-                 + dot(mu_z_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+                 + dot(mu_z_apb("a',b"), D_f12_apb("a',b")) * 2.0
+                 ;
 
       mu_z_f12or = dot(mu_z_am("a,m"), Dbn_f12("a,m"));
     }
@@ -6080,7 +6334,6 @@ namespace sc {
 #endif
 
     ExEnv::out0() << std::endl << indent << "Start CC computation" << std::endl;
-
 #if 0
     // compute CC2 amplitudes using Schaefer's formula
     TArray2 T1_cc2, L1_cc2;
@@ -6146,9 +6399,9 @@ namespace sc {
       Xam_ccsd("a,m") = Xam_ccsd_nfzc("a,m") - Xam_Diip_ccsd("a,m");
 
       // test code: print out frozen-core contribution to Ima
-      TArray2 I_ma_fzc;
-      I_ma_fzc("a,m") = - Xam_Diip_ccsd("a,m") * 0.5;
-      std::cout << "Ima frozen-core part: " << std::endl << I_ma_fzc << std::endl;
+//      TArray2 I_ma_fzc;
+//      I_ma_fzc("a,m") = - Xam_Diip_ccsd("a,m") * 0.5;
+//      std::cout << "Ima frozen-core part: " << std::endl << I_ma_fzc << std::endl;
     } else {
       Xam_ccsd("a,m") = Xam_ccsd_nfzc("a,m");
     }
@@ -6183,9 +6436,10 @@ namespace sc {
 //                  << std::endl;
     }
 
-    // resolve lambda amplitudes, CCSD density, and Xam in the framework of CCSD_F12
-#if 1
+    // CC F12 coupling contribution to Xam
     double mu_z_Cccsdf12;
+#if 1
+    // resolve CCSD lambda amplitudes, density, and Xam in the framework of CCSD(2)_F12
     ExEnv::out0() << std::endl << indent << "Compute CCSD-F12 L amplitudes " << std::endl;
     TArray2 L1_f12;
     TArray4 L2_f12;
@@ -6203,9 +6457,16 @@ namespace sc {
     compute_Xam_ccsd(T1, T2, L1_f12, L2_f12, Xam_ccsd_f12_nfzc, Xiip_ccsd_f12);
     //compute_Xam_ccsd(T1, T2, L1, L2_f12, Xam_ccsd_f12_nfzc, Xiip_ccsd_f12);
 
-    TArray2 Dbn_ccsd_f12(Xam_ccsd_f12_nfzc.get_world(), Xam_ccsd_f12_nfzc.trange());
+    TArray2 Diip_ccsd_f12, Xam_ccsd_f12;
+    if (nocc != naocc) {
+      Diip_ccsd_f12("i,i'") = Xiip_ccsd_f12("i,i'") * Delta_ijp_F("i,i'");
+      Xam_ccsd_f12("a,m") = Xam_ccsd_f12_nfzc("a,m") - A_ijpam("i,i',a,m") * Diip_ccsd_f12("i,i'");
+    } else {
+      Xam_ccsd_f12("a,m") = Xam_ccsd_f12_nfzc("a,m");
+    }
+    TArray2 Dbn_ccsd_f12(Xam_ccsd_f12.get_world(), Xam_ccsd_f12.trange());
     auto resnorm_ccsd_f12 = cg_solver2(Orbital_relaxation_Abnam,
-                                       Xam_ccsd_f12_nfzc,
+                                       Xam_ccsd_f12,
                                        Dbn_ccsd_f12,
                                        preconditioner,
                                        1e-12);
@@ -6219,6 +6480,14 @@ namespace sc {
 
       double mu_z_ccsdor_f12 = dot(mu_z_am("a,m"), Dbn_ccsd_f12("a,m"));
 
+      if (nocc != naocc) {
+        mu_z_ccsdor_f12 += dot(mu_z_ijp("i,i'"), Diip_ccsd_f12("i,i'"));
+//        double mu_z_ccsd_f12_Diip = dot(mu_z_ijp("i,i'"), Diip_ccsd_f12("i,i'"));
+//        std::cout << std::endl << indent
+//                    << "mu_z (CCSD-F12 from Dii') = " << scprintf("%15.12f", - mu_z_ccsd_f12_Diip * 2.0)
+//                    << std::endl;
+      }
+
       std::cout << std::endl << indent
                   << "mu_z (CCSD in CCSD-F12) = " << scprintf("%15.12f", - mu_z_ccsd_f12 * 2.0)
                   << std::endl << indent
@@ -6227,10 +6496,7 @@ namespace sc {
 
       mu_z_Cccsdf12 = mu_z_ccsd_f12 - mu_z_ccsd + mu_z_ccsdor_f12 - mu_z_ccsdor;
     }
-#endif
 
-    // CC F12 coupling contribution to Xam
-#if 1
     ExEnv::out0() << std::endl<< indent
                   << "Compute CCSD-F12 coupling contributions" << std::endl;
     // CC CT2
@@ -6239,139 +6505,22 @@ namespace sc {
     RT2_aPb("a',b") = _4("<a' c|r|k l>")
                       * (R_C1 * T2("b,c,k,l") + R_C2 * T2("c,b,k,l"));
 
-    TArray4d g_abmaP = ijxy("<a b|g|m a'>");
-    TArray2 Xam_CT2, Xai_CT2;
-    Xam_CT2("a,m") = 2.0 * ( // + 1/2 F^a'_m R^kl_a'b T2^ab_kl
-                             // + 1/2 F^a'_b R^kl_ma' T2^ab_kl
-                             (R_C1 * T2("a,b,k,l") + R_C2 * T2("b,a,k,l"))
-                             * (_4("<k l|r|m_F(a') b>") + _4("<k l|r|m b_F(a')>"))
-                             //RT2_aPb("a',a") * _2("<a'|F|m>")
-
-                              // - g^aa'_mb 1/2 R^kl_a'c T2^bc_kl
-                              // - g^ab_ma' 1/2 R^kl_a'c T2^bc_kl
-                            - (  2.0 * _4("<a a'|g|m b>") - _4("<a a'|g|b m>")
-                               + 2.0 * g_abmaP("a,b,m,a'") - g_abmaP("b,a,m,a'")
-                              ) * RT2_aPb("a',b")
-                           );
-    Xai_CT2("a,i") = 2.0 * (  // - F^a'_b R^al_a'c T2^bc_il
-                            - _4("<a l|r|b_F(a') c>")
-                              * (R_C1 * T2("b,c,i,l") + R_C2 * T2("b,c,l,i"))
-                            - _4("<a l|r|c b_F(a')>")
-                              * (R_C1 * T2("c,b,i,l") + R_C2 * T2("c,b,l,i"))
-                           );
-    TArray2 Xam_CT2_tot = XaiAddToXam(Xam_CT2, Xai_CT2);
-
-    TArray2 Dbn_CT2_cc(Xam_CT2_tot.get_world(), Xam_CT2_tot.trange());
+    TArray2 Xam_CT2_cc = Xam_CT2_ccsd(C_0, C_1, T2, RT2_aPb);
+    TArray2 Dbn_CT2_cc(Xam_CT2_cc.get_world(), Xam_CT2_cc.trange());
     auto resnorm_CT2_cc = cg_solver2(Orbital_relaxation_Abnam,
-                                     Xam_CT2_tot,
+                                     Xam_CT2_cc,
                                      Dbn_CT2_cc,
                                      preconditioner,
                                      1e-10);
 
     // VT1 & VT2 coupling contribution to F12 Xam
-    const char* i = "i";
-    const char* j = "j";
-    const char* k = "k";
-    const char* l = "l";
-    const char* m = "m";
-
-    const char* a = "a";
-    const char* c = "c";
-    const char* d = "d";
-
-    TArray4 V_alic = VPq_Rs(a,l,i,c, C_0, C_1);
-    TArray4 V_ilac = VPq_Rs(i,l,a,c,C_0, C_1);
-    TArray2 V_ac = VRk_Sk(a,c,C_0, C_1);
-    TArray2 V_jm = VRk_Sk(j,m,C_0, C_1);
-    TArray4d r_klmaP = ijxy("<k l|r|m a'>");
-    TArray4d r_abPkl = ijxy("<a b'|r|k l>");
-    TArray2 Xam_VT1, Xai_VT1;
-    Xam_VT1("a,m") = 2.0 * (  // + 1/2 R^jk_A'B' g^A'B'_mk t1^a_j
-                              T1("a,j") * V_jm("j,m")
-//                             // test
-//                             ( (R_C1 * _4("<j k|gr|m l>") + R_C2 * _4("<k j|gr|m l>"))
-//                               * _2("<k|I|l>")
-//                             - (R_C1 * _4("<j k|r|p q>") + R_C2 * _4("<k j|r|p q>"))
-//                               * _4("<p q|g|m k>")
-//                             - (R_C1 * _4("<j k|r|a' n>") + R_C2 * _4("<k j|r|a' n>"))
-//                               * _4("<a' n|g|m k>")
-//                             - (R_C1 * _4("<j k|r|n a'>") + R_C2 * _4("<k j|r|n a'>"))
-//                               * _4("<n a'|g|m k>")
-//                             )
-
-                            + (  // + R^kl_mb' g^ab'_kc t1^c_l
-                                 _4("<a b'|g|k c>")
-                                 * (R_C1 * r_klmaP("k,l,m,b'") + R_C2 * r_klmaP("l,k,m,b'"))
-                               + _4("<a b'|g|c k>")
-                                 * (R_C1 * r_klmaP("l,k,m,b'") + R_C2 * r_klmaP("k,l,m,b'"))
-                               // + R^kl_ab' g^mb'_kc t1^c_l
-                               + (R_C1 * r_abPkl("a,b',k,l") + R_C2 * r_abPkl("a,b',l,k"))
-                                 * _4("<k c|g|m b'>")
-                               + (R_C1 * r_abPkl("a,b',l,k") + R_C2 * r_abPkl("a,b',k,l"))
-                                 * _4("<c k|g|m b'>")
-                              ) * T1("c,l")
-                           );
-    Xai_VT1("a,i") = 2.0 * (  // - 1/2 R^al_A'B' g^A'B'_ic t1^c_l
-                              // - 1/2 R^il_A'B' g^A'B'_ac t1^c_l
-                            - (V_alic("a,l,i,c") + V_ilac("i,l,a,c")) * T1("c,l")
-
-                              // - 1/2 R^ak_A'B' g^A'B'_ck t1^c_i
-                            - V_ac("a,c") * T1("c,i")
-//                             // test
-//                            ( (R_C1 * _4("<a k|gr|c l>") + R_C2 * _4("<k a|gr|c l>"))
-//                              * _2("<k|I|l>")
-//                            - (R_C1 * _4("<a k|r|p q>") + R_C2 * _4("<k a|r|p q>"))
-//                              * _4("<p q|g|c k>")
-//                            - (R_C1 * _4("<a k|r|a' n>") + R_C2 * _4("<k a|r|a' n>"))
-//                              * _4("<a' n|g|c k>")
-//                            - (R_C1 * _4("<a k|r|n a'>") + R_C2 * _4("<k a|r|n a'>"))
-//                              * _4("<n a'|g|c k>")
-//                            )
-                           );
-    TArray2 Xam_VT1_tot = XaiAddToXam(Xam_VT1, Xai_VT1);
-
-    TArray2 Dbn_VT1_cc(Xam_VT1_tot.get_world(), Xam_VT1_tot.trange());
-    auto resnorm_VT1_cc = cg_solver2(Orbital_relaxation_Abnam,
-                                     Xam_VT1_tot,
-                                     Dbn_VT1_cc,
-                                     preconditioner,
-                                     1e-10);
-
-    TArray4 V_alcd = VPq_Rs(a,l,c,d,C_0, C_1);
-    TArray4 V_klmd = VPq_Rs(k,l,m,d,C_0, C_1);
-    TArray2 Xam_VT2, Xai_VT2;
-    Xam_VT2("a,m") = 2.0 * (  //   1/4 R^kl_A'B' g^A'B'_md T^ad_kl
-                              T2("a,d,k,l") * V_klmd("k,l,m,d")
-
-                            + (  // + 1/4 R^kl_ab' g^mb'_cd T^cd_kl
-                                 (R_C1 * r_abPkl("a,b',k,l") + R_C2 * r_abPkl("a,b',l,k"))
-                                 * _4("<c d|g|m b'>")
-                                 // + 1/4 R^kl_mb' g^ab'_cd T^cd_kl
-                               + _4("<a b'|g|c d>")
-                                 * (R_C1 * r_klmaP("k,l,m,b'") + R_C2 * r_klmaP("l,k,m,b'"))
-                              ) * T2("c,d,k,l")
-                           );
-    Xai_VT2("a,i") = 2.0 * (  // - 1/4 R^al_A'B' g^A'B'_il T^cd_il
-                            - V_alcd("a,l,c,d") * T2("c,d,i,l")
-                           );
-    TArray2 Xam_VT2_tot = XaiAddToXam(Xam_VT2, Xai_VT2);
-
-    TArray2 Dbn_VT2_cc(Xam_VT2_tot.get_world(), Xam_VT2_tot.trange());
-    auto resnorm_VT2_cc = cg_solver2(Orbital_relaxation_Abnam,
-                                     Xam_VT2_tot,
-                                     Dbn_VT2_cc,
-                                     preconditioner,
-                                     1e-10);
-
-//    TArray2 Xam_CVT_cc;
-//    Xam_CVT_cc("a,m") = Xam_CT2_tot("a,m") + Xam_VT1_tot("a,m") + Xam_VT2_tot("a,m");
-//
-//    TArray2 Dbn_CVT_cc(Xam_CVT_cc.get_world(), Xam_CVT_cc.trange());
-//    auto resnorm_CVT_cc = cg_solver2(Orbital_relaxation_Abnam,
-//                                     Xam_CVT_cc,
-//                                     Dbn_CVT_cc,
-//                                     preconditioner,
-//                                     1e-10);
+    TArray2 Xam_VT_cc = Xam_VT_ccsd(C_0, C_1, T1, T2);
+    TArray2 Dbn_VT_cc(Xam_VT_cc.get_world(), Xam_VT_cc.trange());
+    auto resnorm_VT_cc = cg_solver2(Orbital_relaxation_Abnam,
+                                    Xam_VT_cc,
+                                    Dbn_VT_cc,
+                                    preconditioner,
+                                    1e-10);
 
     if (compute_dipole) {
       // F12 coupling density contribution to dipole
@@ -6383,26 +6532,47 @@ namespace sc {
       mu_z_Cccsdf12 += mu_z_f12CT2_cc;
 
       double mu_z_CT2or_cc = dot(mu_z_am("a,m"), Dbn_CT2_cc("a,m"));
-      double mu_z_VT1or_cc = dot(mu_z_am("a,m"), Dbn_VT1_cc("a,m"));
-      double mu_z_VT2or_cc = dot(mu_z_am("a,m"), Dbn_VT2_cc("a,m"));
+      double mu_z_VTor_cc = dot(mu_z_am("a,m"), Dbn_VT_cc("a,m"));
 
       std::cout << std::endl << indent
                 << "mu_z (CCSD F12 CT2 orbital response) = " << scprintf("%15.12f", - mu_z_CT2or_cc * 2.0)
                 << std::endl << indent
-                << "mu_z (CCSD F12 VT1 orbital response) = " << scprintf("%15.12f", - mu_z_VT1or_cc * 2.0)
-                << std::endl << indent
-                << "mu_z (CCSD F12 VT2 orbital response) = " << scprintf("%15.12f", - mu_z_VT2or_cc * 2.0)
+                << "mu_z (CCSD F12 VT orbital response) = " << scprintf("%15.12f", - mu_z_VTor_cc * 2.0)
                 << std::endl;
 
-//      double mu_z_f12CVTor_cc = dot(mu_z_am("a,m"), Dbn_CVT_cc("a,m"));
-//      std::cout << std::endl << indent
-//                << "mu_z (CCSD F12 coupling orbital response) = "
-//                << scprintf("%15.12f", - mu_z_f12CVTor_cc * 2.0) << std::endl;
-
-      mu_z_Cccsdf12 += mu_z_CT2or_cc + mu_z_VT1or_cc + mu_z_VT2or_cc;
+      mu_z_Cccsdf12 += mu_z_CT2or_cc + mu_z_VTor_cc;
     }
-
 #endif
+
+    // frozen-core contribution of F12 part: Xii'
+    if (nocc != naocc) {
+
+      TArray2 Xiip_f12 = Xiip_VBX(C_0, C_1);
+      TArray2 Xiip_couling = Xiip_CVT(C_0, C_1, T1, T2);
+
+      TArray2 X_iip_f12C;
+      X_iip_f12C("i,i'") =  Xiip_f12("i,i'") + Xiip_couling("i,i'");
+
+      TArray2 D_iip_f12, Xam_Diip_f12;
+      D_iip_f12("i,i'") = - X_iip_f12C("i,i'") * Delta_ijp_F("i,i'");
+      Xam_Diip_f12("a,m") = - A_ijpam("i,j',a,m") * D_iip_f12("i,j'");
+
+      TArray2 Dbn_Xam_Diip_f12(Xam_Diip_f12.get_world(), Xam_Diip_f12.trange());
+      auto resnorm_mp2 = cg_solver2(Orbital_relaxation_Abnam,
+                                    Xam_Diip_f12,
+                                    Dbn_Xam_Diip_f12,
+                                    preconditioner,
+                                    1e-10);
+
+      double mu_z_f12_D_iip = dot(mu_z_ijp("i,j'"), D_iip_f12("i,j'"));
+      double mu_z_f12_Xam_Diip = dot(mu_z_am("a,m"), Dbn_Xam_Diip_f12("a,m"));
+      std::cout << std::endl << indent
+                  << "mu_z (F12 frozen core) = " << scprintf("%15.12f", - mu_z_f12_D_iip * 2.0)
+                  << std::endl << indent
+                  << "mu_z (F12 frozen core orbital response) = " << scprintf("%15.12f", - mu_z_f12_Xam_Diip * 2.0)
+                  << std::endl;
+
+    }
 
     // print results
     if (compute_dipole) {

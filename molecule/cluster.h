@@ -10,7 +10,20 @@
 
 namespace tcc {
 namespace molecule {
+/*! 
+ * \ingroup Molecule
+ *
+ * @{
+ */
 
+/*!
+ * \brief is the unit that holds a collection of clusterables that go together.
+ *
+ * Cluster will hold a vector of clusterables that all belong together.  
+ * To update the center of the cluster compute_com must be called, this is 
+ * to avoid computing a new center of mass (COM) every time a clusterable is 
+ * added.  
+ */
 class Cluster {
   public:
     Cluster() = default;
@@ -79,6 +92,8 @@ class Cluster {
     int charge_ = 0;
     double mass_ = 0.0;
 };
+
+/*! @} */
 
 } // namespace molecule
 } // namespace tcc

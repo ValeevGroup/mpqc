@@ -8,6 +8,12 @@
 namespace tcc {
 namespace molecule {
 
+/*!
+* \ingroup Molecule 
+*
+* @{
+*/
+
 /*! \class Atom
  *  \brief A class which holds the basic information for an atom
  *
@@ -37,6 +43,7 @@ class Atom {
     int atomic_number_ = 0;
     double mass_ = 0;
 };
+/*! @} */
 
 } // namespace molecule
 } // namespace tcc

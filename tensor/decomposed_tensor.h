@@ -18,10 +18,6 @@ class DecomposedTensor {
     double cut_ = 1e-7;
     std::vector<TA::Tensor<T>> tensors_;
 
-    // For shorting serialization function name
-    template <typename U>
-    using m_enable_if_t = typename madness::enable_if<U>::type;
-
   public:
     using numeric_type = T;
     using value_type = TA::Tensor<T>;
@@ -75,26 +71,28 @@ class DecomposedTensor {
     TA::Range const &range(std::size_t i) const { return tensors_[i].range(); }
 
     template <typename Archive>
-    m_enable_if_t<madness::archive::is_output_archive<Archive>>
-    serialize(Archive &ar) {
+    typename std::
+          enable_if<madness::archive::is_output_archive<Archive>::value>::type
+          serialize(Archive &ar) {
         double thresh = cut();
-        ar & thresh;
+        ar &thresh;
         std::size_t ntensors = tensors_.size();
-        ar & ntensors;
-        for(auto const &t : tensors_){
-            ar & t;
+        ar &ntensors;
+        for (auto const &t : tensors_) {
+            ar &t;
         }
     }
 
     template <typename Archive>
-    m_enable_if_t<madness::archive::is_input_archive<Archive>>
-    serialize(Archive &ar) {
-        ar & cut_;
+    typename std::
+          enable_if<madness::archive::is_input_archive<Archive>::value>::type
+          serialize(Archive &ar) {
+        ar &cut_;
         std::size_t ntensors = 0;
-        ar & ntensors;
-        for(auto i = 0ul; i < ntensors; ++i){
+        ar &ntensors;
+        for (auto i = 0ul; i < ntensors; ++i) {
             TA::Tensor<T> temp;
-            ar & temp;
+            ar &temp;
             tensors_.push_back(temp);
         }
     }

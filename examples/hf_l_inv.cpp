@@ -39,19 +39,18 @@
 using namespace tcc;
 namespace ints = integrals;
 
-static std::map<int, std::string> atom_names = { {1 , "H"}
-                                             , {2 , "He"}
-                                             , {3 , "Li"}
-                                             , {4 , "Be"}
-                                             , {5 , "B"}
-                                             , {6 , "C"}
-                                             , {7 , "N"}
-                                             , {8 , "O"}
-                                             , {9 , "F"}
-                                             , {10 , "Ne"}
-                                             , {11 , "Na"}
-                                             , {12 , "Mg"}
-};
+static std::map<int, std::string> atom_names = {{1, "H"},
+                                                {2, "He"},
+                                                {3, "Li"},
+                                                {4, "Be"},
+                                                {5, "B"},
+                                                {6, "C"},
+                                                {7, "N"},
+                                                {8, "O"},
+                                                {9, "F"},
+                                                {10, "Ne"},
+                                                {11, "Na"},
+                                                {12, "Mg"}};
 
 void main_print_clusters(
       std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
@@ -73,8 +72,8 @@ void main_print_clusters(
     for (auto const &cluster : clusters) {
         for (auto const &atom : cluster) {
             auto center = 0.52917721092 * atom.center();
-            os << atom_names[atom.charge()] << " " << center[0] << " " << center[1] << " "
-               << center[2] << std::endl;
+            os << atom_names[atom.charge()] << " " << center[0] << " "
+               << center[1] << " " << center[2] << std::endl;
         }
     }
     os << std::endl;
@@ -84,8 +83,8 @@ void main_print_clusters(
         os << "Cluster " << counter++ << std::endl;
         for (auto const &atom : cluster) {
             auto center = 0.52917721092 * atom.center();
-            os << atom_names[atom.charge()] << " " << center[0] << " " << center[1] << " "
-               << center[2] << std::endl;
+            os << atom_names[atom.charge()] << " " << center[0] << " "
+               << center[1] << " " << center[2] << std::endl;
         }
         os << std::endl;
     }
@@ -359,8 +358,7 @@ int main(int argc, char *argv[]) {
     Xab.truncate();
     auto B1 = tcc_time::now();
     auto btime = tcc_time::duration_in_s(B0, B1);
-    utility::print_par(world, "\nTime to compute B ", btime,
-                       " s\n");
+    utility::print_par(world, "\nTime to compute B ", btime, " s\n");
     utility::print_size_info(Xab, "B Tensor");
     decltype(Xab)::wait_for_lazy_cleanup(world, 60);
 
@@ -369,7 +367,7 @@ int main(int argc, char *argv[]) {
     auto soad0 = tcc_time::now();
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
                                           V_inv_oh, Xab, bs_clusters,
-                                          low_rank_threshold*100, 
+                                          low_rank_threshold * 100,
                                           convert_3d(low_rank_threshold));
     auto soad1 = tcc_time::now();
     auto soad_time = tcc_time::duration_in_s(soad0, soad1);

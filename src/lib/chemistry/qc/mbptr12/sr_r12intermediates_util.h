@@ -550,11 +550,11 @@ namespace sc {
         auto tile_range = result->trange().make_tile_range(*t);
         std::vector<double> ptr_data(tile_range.volume());
 
-        for(size_t r=tile_range.start()[0], rc=0;
-            r != tile_range.finish()[0];
+        for(size_t r=tile_range.lobound()[0], rc=0;
+            r != tile_range.upbound()[0];
             ++r) {
-          for(size_t c=tile_range.start()[1];
-              c != tile_range.finish()[1];
+          for(size_t c=tile_range.lobound()[1];
+              c != tile_range.upbound()[1];
               ++c, ++rc) {
             ptr_data[rc] = operator_matrix->get_element(r,c);
           }

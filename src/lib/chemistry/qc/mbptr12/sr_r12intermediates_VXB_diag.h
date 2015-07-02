@@ -54,14 +54,14 @@ namespace sc {
     typename TArray2::value_type tile_X =
     static_cast<const typename TArray2::value_type&>(Xam.find(0)).clone();
     typename TArray2::value_type tile_Xai = Xai.find(0);
-    const std::size_t zero_cols = tile_X.range().size()[1] - tile_Xai.range().size()[1];
+    const std::size_t zero_cols = tile_X.range().extent()[1] - tile_Xai.range().extent()[1];
 
     std::array<std::size_t, 2> i = {{0, 0}};
     std::size_t ix = 0;
-    for(i[0] = tile_X.range().start()[0];
-      i[0] < tile_X.range().finish()[0]; ++i[0]) {
-      for(i[1] = zero_cols + tile_X.range().start()[1];
-        i[1] < tile_X.range().finish()[1]; ++i[1], ++ix) {
+    for(i[0] = tile_X.range().lobound()[0];
+      i[0] < tile_X.range().upbound()[0]; ++i[0]) {
+      for(i[1] = zero_cols + tile_X.range().lobound()[1];
+        i[1] < tile_X.range().upbound()[1]; ++i[1], ++ix) {
         tile_X[i] +=  tile_Xai[ix];
       }
     }
@@ -773,7 +773,7 @@ namespace sc {
                              * Dij("k,l")
                            );
 
-//    const std::size_t zero_cols = Xam_mp2.range().size()[1] - Xai_mp2.range().size()[1];
+//    const std::size_t zero_cols = Xam_mp2.range().extent()[1] - Xai_mp2.range().extent()[1];
 //    for(auto t = X_mp2.begin(); t != X_mp2.end(); ++t) {
 //      typename TArray2::range_type::index i = t.index();
 //      typename TArray2::value_type tile = Xam_mp2.find(i);
@@ -5112,8 +5112,8 @@ namespace sc {
     std::cout << "Iam : " << std::endl << Iam << std::endl;
 
     // frozen-core contribution
-    const std::size_t nocc = Xam.trange().elements().size()[1];
-    const std::size_t naocc = Xai.trange().elements().size()[1];
+    const std::size_t nocc = Xam.trange().elements().extent()[1];
+    const std::size_t naocc = Xai.trange().elements().extent()[1];
     if (nocc != naocc) {
       TArray4d g_ijipk = ijxy("<i j|g|i' k>");
       TArray4d g_abipi = ijxy("<a b|g|i' i>");
@@ -5646,8 +5646,8 @@ namespace sc {
 
     // determine if it is frozen-core
     TArray2 Fij = xy("<i|F|j>");
-    const std::size_t nocc = mFmn.trange().elements().size()[0];
-    const std::size_t naocc = Fij.trange().elements().size()[0];
+    const std::size_t nocc = mFmn.trange().elements().extent()[0];
+    const std::size_t naocc = Fij.trange().elements().extent()[0];
 
     // compute integrals needed for MP2 and following calculations of properties
     // dipole integrals

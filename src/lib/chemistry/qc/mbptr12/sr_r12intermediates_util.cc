@@ -42,14 +42,14 @@ namespace sc {
 
     eval_type tile(owner_->trange().make_tile_range(index_));
 
-    size_t size34 = tile.range().size()[2] * tile.range().size()[3];
+    size_t size34 = tile.range().extent()[2] * tile.range().extent()[3];
 
-    for(size_t e1=tile.range().start()[0], e12=0; e1!=tile.range().finish()[0]; ++e1) {
-      for(size_t e2=tile.range().start()[1]; e2!=tile.range().finish()[1]; ++e2, ++e12) {
+    for(size_t e1=tile.range().lobound()[0], e12=0; e1!=tile.range().upbound()[0]; ++e1) {
+      for(size_t e2=tile.range().lobound()[1]; e2!=tile.range().upbound()[1]; ++e2, ++e12) {
 
         darray4_->retrieve_pair_subblock(e1, e2, te_type_,
-            tile.range().start()[2], tile.range().finish()[2],
-            tile.range().start()[3], tile.range().finish()[3],
+            tile.range().lobound()[2], tile.range().upbound()[2],
+            tile.range().lobound()[3], tile.range().upbound()[3],
             tile.data() + e12*size34);
 
       }
@@ -64,9 +64,10 @@ namespace sc {
     // make ordinary ranges needed to make 34 tiles
     std::vector<size_t> i3i4_start(2, 0);
     std::vector<size_t> i3i4_finish(2); i3i4_finish[0] = darray4_->nx(); i3i4_finish[1] = darray4_->ny();
+    //std::vector<size_t> i3i4_finish = {darray4_->nx(), darray4_->ny()};
     TA::Range i3i4_range(i3i4_start, i3i4_finish);
-
-    eval_type tile(owner_->trange().make_tile_range(index_), eval_type::value_type(i3i4_range));
+    eval_type::value_type temp(i3i4_range);
+    eval_type tile(owner_->trange().make_tile_range(index_), temp);
 
     darray4_->retrieve_pair_block(index_[0], index_[1], te_type_,
         tile.data()->data());

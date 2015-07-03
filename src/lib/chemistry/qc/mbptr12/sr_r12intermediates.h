@@ -377,15 +377,6 @@ namespace sc {
                                TArray2& Dij_cc2, TArray2& Dab_cc2,
                                TArray2& Dia_cc2, TArray2& Dai_cc2);
 
-      // compute CC Gamma(pq,rs) intermediate
-      // which is needed for Xai
-      void compute_Gamma(const TArray2& T1_cc2, const TArray4& T2_cc2,
-                         const TArray2& L1_cc2, const TArray4& L2_cc2);
-
-      // compute CC Xam (the right-hand side of Z-vector equations)
-      TArray2 compute_Xam_cc2(const TArray2& T1, const TArray4& T2,
-                              const TArray2& L1, const TArray4& L2);
-
       // cpmute Gamma intermediates needed for CCSD Xam
       void compute_Gamma_ijab_ccsd(const TArray2& T1, const TArray4& T2,
                                    const TArray4& tau_ab,

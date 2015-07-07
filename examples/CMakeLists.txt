@@ -8,6 +8,10 @@ target_link_libraries(mp2
   ${TileClusterChem_LIBRARIES}
 )
 
+add_executable(ccsd EXCLUDE_FROM_ALL ccsd.cpp)
+target_link_libraries(ccsd
+  ${TileClusterChem_LIBRARIES}
+)
 
 add_executable(hf_l_inv EXCLUDE_FROM_ALL hf_l_inv.cpp)
 target_link_libraries(hf_l_inv

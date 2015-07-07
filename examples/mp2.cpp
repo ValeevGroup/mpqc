@@ -499,10 +499,10 @@ int main(int argc, char *argv[]) {
             std::size_t all = S.trange().elements().extent()[0];
             TRange1Engine tre(occupation / 2, all, dfbs_nclusters);
 
-            MP2<TA::Tensor < double>, TA::SparsePolicy >
+            MP2<TA::Tensor<double>, TA::SparsePolicy>
                                       mp2(F_TA, S_TA, X_ab_TA, tre);
 
-            auto two_e = mp2.get_two_e();
+            auto two_e = mp2.get_g();
             mp2.compute();
             //std::cout << two_e << std::endl;
 

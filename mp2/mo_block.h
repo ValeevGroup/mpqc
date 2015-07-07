@@ -18,35 +18,42 @@ namespace tcc {
     typedef std::pair<std::size_t, std::size_t> data_type;
     typedef std::pair<std::vector<std::size_t>, std::vector<std::size_t>> result_type;
 
-    static char occ_char[4];
-    static char vir_char[4];
+    static const char occ_char[2];
+    static const char vir_char[2];
+    static const char all_char[2];
 
     /// Default constructor
-    MOBlock() : occ_range_(), vir_range_() { }
+    MOBlock() : occ_range_(), vir_range_(), all_range_() { }
 
     /// constructor
 
-    MOBlock(const tcc::TRange1Engine &tre) : occ_range_(0ul,
-                                                        tre.get_occ_blocks()),
+    MOBlock(const tcc::TRange1Engine &tre) : occ_range_(0ul, tre.get_occ_blocks()),
                                              vir_range_(tre.get_occ_blocks(),
-                                                        tre.get_all_blocks()) { }
+                                                        tre.get_all_blocks()),
+                                             all_range_(0ul, tre.get_all_blocks())
+    { }
 
     /// Copy constructor
 
     /// deep copy
     MOBlock(const MOBlock &other) : occ_range_(other.occ_range_),
-                                    vir_range_(other.vir_range_) { }
+                                    vir_range_(other.vir_range_),
+                                    all_range_(other.all_range_) { }
 
     /// Assignment operator
 
     /// deep copy
-    MOBlock& operator=(const MOBlock& other){
+    MOBlock &operator=(const MOBlock &other) {
       occ_range_ = other.occ_range_;
       vir_range_ = other.vir_range_;
+      all_range_ = other.all_range_;
 
       return *this;
     }
 
+    /// get low_bound and upper_bound for TiledArray blocking
+
+    /// vars is a expression string for TiledArray expression
     result_type get(const std::string &vars) {
       //select keys from vars
       std::vector<char> keys;
@@ -59,13 +66,17 @@ namespace tcc {
       //create ranges based on keys
       result_type result;
       for (auto i : keys) {
-        if (std::find(occ_char, occ_char+4, i) != occ_char+4) {
+        if (i >= occ_char[0] && i <= occ_char[1]) {
           result.first.push_back(occ_range_.first);
           result.second.push_back(occ_range_.second);
         }
-        else if (std::find(vir_char, vir_char+4, i) != vir_char+4) {
+        else if (i >= vir_char[0] && i <= vir_char[1]) {
           result.first.push_back(vir_range_.first);
           result.second.push_back(vir_range_.second);
+        }
+        else if (i >= all_char[0] && i <= all_char[1]) {
+          result.first.push_back(all_range_.first);
+          result.second.push_back(all_range_.second);
         } else {
           throw std::runtime_error("wrong key index");
         }
@@ -76,9 +87,12 @@ namespace tcc {
   private:
     data_type occ_range_;
     data_type vir_range_;
+    data_type all_range_;
   };
 
-  char MOBlock::occ_char[4] = {'i', 'j', 'k', 'l'};
-  char MOBlock::vir_char[4] = {'a', 'b', 'c', 'd'};
+  // set the range of key index to use
+  const char MOBlock::occ_char[2] = {'i', 'l'};
+  const char MOBlock::vir_char[2] = {'a', 'd'};
+  const char MOBlock::all_char[2] = {'p', 's'};
 }
 #endif //TILECLUSTERCHEM_MO_BLOCK_H

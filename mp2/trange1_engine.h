@@ -15,12 +15,12 @@ namespace tcc{
 
   public:
 
-    TRange1Engine() : occ_(0ul), all_(0ul), guess_(0ul), vir_(0ul),
-                      tr_occupied_(), tr_all_(), tr_virtual_()
+    TRange1Engine() : occ_(0ul), all_(0ul), vir_(0ul), guess_(0ul),
+                      tr_occupied_(), tr_virtual_(), tr_all_()
     {}
 
     TRange1Engine(const std::size_t occ, const std::size_t all,
-                  const std::size_t guess) : occ_(occ), all_(all), guess_(guess), vir_(all-occ)
+                  const std::size_t guess) : occ_(occ), all_(all), vir_(all-occ), guess_(guess)
     {
       init();
     }

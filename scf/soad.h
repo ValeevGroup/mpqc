@@ -73,6 +73,19 @@ TileType soad_tile(std::shared_ptr<molecule::Cluster> cluster, TA::Range range,
     return TileType(range, DataType(cut, std::move(tensor)));
 }
 
+/*! \brief just construsts a tile of zero's
+*/
+TileType empty_tile(TA::Range range, double cut) {
+    // make range for decomposed tensor
+    const auto i = range.extent()[0];
+    const auto j = range.extent()[1];
+
+    TA::Range local_range{i, j};
+    TA::Tensor<double> tensor(std::move(local_range), 0.0);
+
+    return TileType(range, DataType(cut, std::move(tensor)));
+}
+
 
 /*! \brief creates an initial guess for the density matrix using SOAD.
  *
@@ -87,13 +100,13 @@ ArrayType minimal_density_guess(
     TA::TiledRange trange
           = sparse::create_trange(utility::make_array(min_bs, min_bs));
 
-    // Make a shape tensor and set it such that only diagonal elements will 
+    // Make a shape tensor and set it such that only diagonal elements will
     // be significant
     TA::Tensor<float> tile_norms(trange.tiles(), 0.0);
     auto const extent = tile_norms.range().extent();
     auto tn_map = TA::eigen_map(tile_norms, extent[0], extent[1]);
     for (auto i = 0; i < tn_map.rows(); ++i) {
-        tn_map(i, i) = std::numeric_limits<float>::max(); // Go big 
+        tn_map(i, i) = std::numeric_limits<float>::max(); // Go big
     }
 
     // Create the array and shape
@@ -106,11 +119,19 @@ ArrayType minimal_density_guess(
     const auto end = pmap.end();
     for (; it != end; ++it) {
         if (!D_min.is_zero(*it)) {
-            auto cluster_ord = trange.tiles().idx(*it)[0];
-            madness::Future<tensor::Tile<tensor::DecomposedTensor<double>>> tile
-                  = world.taskq.add(soad_tile, clusters[cluster_ord],
-                                    trange.make_tile_range(*it), cut);
-            D_min.set(*it, tile);
+            auto idx = trange.tiles().idx(*it);
+            if (idx[0] == idx[1]) {
+                auto cluster_ord = trange.tiles().idx(*it)[0];
+                madness::Future<tensor::Tile<tensor::DecomposedTensor<double>>>
+                      tile = world.taskq.add(soad_tile, clusters[cluster_ord],
+                                             trange.make_tile_range(*it), cut);
+                D_min.set(*it, tile);
+            } else {
+                madness::Future<tensor::Tile<tensor::DecomposedTensor<double>>>
+                      tile = world.taskq.add(empty_tile,
+                                             trange.make_tile_range(*it), cut);
+                D_min.set(*it, tile);
+            }
         }
     }
 

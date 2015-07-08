@@ -20,6 +20,7 @@ def main(argv):
         print '--lthresh <low rank threshold>'
         sys.exit(2)
 
+
     json_file=''
 
     for opt, arg in opts:
@@ -41,23 +42,24 @@ def main(argv):
     with open(json_file) as input_json:
         json_data = json.load(input_json)
 
-    for opt, args in opts:
+
+    for opt, arg in opts:
         if opt == "--xyz":
-            json_data['xyz file']= arg
+            json_data['xyz file']=str(arg)
         elif opt == "--nobs":
-            json_data["number of bs clusters"]=arg
+            json_data["number of bs clusters"]=int(arg)
         elif opt == "--ndfbs":
-            json_data["number of dfbs clusters"]=arg
+            json_data["number of dfbs clusters"]=int(arg)
         elif opt == "--nocc":
-            json_data["number of occupied clusters"]=arg
+            json_data["number of occupied clusters"]=int(arg)
         elif opt == "--obs":
-            json_data["basis"]=arg
+            json_data["basis"]=str(arg)
         elif opt == "--dfbs":
-            json_data["df basis"]=arg
+            json_data["df basis"]=str(arg)
         elif opt == "--sthresh":
-            json_data["block sparse threshold"]=arg
+            json_data["block sparse threshold"]=float(arg)
         elif opt == "--lthresh":
-            json_data["low rank threshold"]=arg
+            json_data["low rank threshold"]=float(arg)
     
     print json.dumps(json_data)
 

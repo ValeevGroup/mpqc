@@ -462,10 +462,9 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                        energy + repulsion_energy, "\n");
 
-    utility::print_par(world, "\nMP2 Test\n");
 
-    if (mol.nelements() <= 30) { // Begin MP2
-        utility::print_par(world, "\nBegining MP2\n");
+    if (in.HasMember("do mp2") && in["do mp2"].GetBool()) { // Begin MP2
+        utility::print_par(world, "\nMP2 Test\n");
         auto F_eig = array_ops::array_to_eigen(F);
         auto S_eig = array_ops::array_to_eigen(S);
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
@@ -555,10 +554,7 @@ int main(int argc, char *argv[]) {
         utility::print_par(world, "MP2 energy = ", energy_mp2,
                            " total energy = ",
                            energy + energy_mp2 + repulsion_energy, "\n");
-    } else {
-        utility::print_par(world, "Skipping MP2 because molecule had ",
-                           mol.nelements(), " atoms.\n");
-    }
+    } 
 
     world.gop.fence();
     libint2::cleanup();

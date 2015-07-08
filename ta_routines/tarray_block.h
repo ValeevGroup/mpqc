@@ -52,6 +52,11 @@ namespace tcc {
       return array_(vars).block(range.first, range.second);
     }
 
+    /// get block engine
+    const std::shared_ptr<BlockEngine>& get_block_engine() const {
+      return block_engine_;
+    }
+
     /// Array accessor
 
     /// \return A reference to the array

@@ -1,5 +1,6 @@
 set(sources
   atom.h
+  atom.cpp
   cluster_concept.h
   cluster.h
   cluster_collapse.h

@@ -2,8 +2,9 @@
 #ifndef TCC_MOLECULE_ATOM_H
 #define TCC_MOLECULE_ATOM_H
 
-#include <array>
 #include "molecule_fwd.h"
+
+#include <string>
 
 namespace tcc {
 namespace molecule {
@@ -17,7 +18,7 @@ namespace molecule {
 /*! \class Atom
  *  \brief A class which holds the basic information for an atom
  *
- *  Atom has a position, an atomic number, and a mass.  By default the 
+ *  Atom has a position in Bohr, an atomic number, and a mass.  By default the 
  *  position is an Eigen::Vector3d.
  */
 class Atom {
@@ -37,6 +38,14 @@ class Atom {
     int charge() const { return atomic_number_; }
     /*! Returns the mass of the atom in atomic units. */
     double mass() const { return mass_; }
+
+    /*! \brief Returns the atom in xyz format.
+     * 
+     * By default the function assumes the units are in Bohr, so it will 
+     * convert to ang, but by passing false to the function it will 
+     * not convert the position.
+     */
+    std::string xyz_string(bool convert_to_ang = true) const;
 
   private:
     position_t center_ = {0, 0, 0};

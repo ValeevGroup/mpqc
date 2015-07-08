@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <numeric>
+#include <iosfwd>
 
 #include "cluster_concept.h"
 #include "molecule_fwd.h"
@@ -92,6 +93,13 @@ class Cluster {
     int charge_ = 0;
     double mass_ = 0.0;
 };
+
+/*! \brief print the cluster by collapsing it to atoms
+ * 
+ * This function prints the cluster by calling collapse to atoms and then 
+ * printing the atoms. The clusters are printed in xyz format.
+ */
+std::ostream & operator<<(std::ostream &, Cluster const &);
 
 /*! @} */
 

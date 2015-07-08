@@ -4,6 +4,7 @@ add_custom_target(paper)
 add_custom_target(bugs)
 
 file(COPY ${CMAKE_SOURCE_DIR}/default_input.json DESTINATION ${CMAKE_BINARY_DIR}/examples)
+file(COPY ${CMAKE_SOURCE_DIR}/generate_input.py DESTINATION ${CMAKE_BINARY_DIR}/examples)
 
 add_executable(hf_l_inv EXCLUDE_FROM_ALL hf_l_inv.cpp)
 target_link_libraries(hf_l_inv

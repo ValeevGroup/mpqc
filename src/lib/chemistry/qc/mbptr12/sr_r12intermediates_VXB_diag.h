@@ -28,9 +28,7 @@
 #ifndef _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediatesVXBdiag_h
 #define _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediatesVXBdiag_h
 
-#include <TiledArray/eigen.h>
-#include <TiledArray/algebra/conjgrad.h>
-#include <TiledArray/expressions.h>
+#include <tiledarray.h>
 #include <cmath>
 
 namespace sc {

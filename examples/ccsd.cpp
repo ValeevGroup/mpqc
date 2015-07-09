@@ -33,6 +33,7 @@
 
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
+#include "../cc/ccsd.h"
 #include "../cc/two_electron_int_mo.h"
 #include "../mp2/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
@@ -487,10 +488,10 @@ int main(int argc, char *argv[]) {
         utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                            energy + repulsion_energy, "\n");
 
-        utility::print_par(world, "\nCCSD Test\n");
+        utility::print_par(world, "\nCC Test\n");
 
         if (mol.nelements() <= 30) { // Begin CCSD
-            utility::print_par(world, "\nBegining CCSD\n");
+            utility::print_par(world, "\nBegining CC\n");
 
             auto S_TA = TA::to_new_tile_type(S, to_ta);
             auto F_TA = TA::to_new_tile_type(F, to_ta);
@@ -500,22 +501,34 @@ int main(int argc, char *argv[]) {
             auto S_eig = array_ops::array_to_eigen(S_TA);
             Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                      S_eig);
-            decltype(S_eig) C_occ = es.eigenvectors().leftCols(occupation / 2);
-            decltype(S_eig) C_vir = es.eigenvectors().rightCols(S_eig.rows() - occupation / 2);
+            auto ens = es.eigenvalues();
+            auto C_all = es.eigenvectors();
+            decltype(S_eig) C_occ = C_all.leftCols(occupation / 2);
+            decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occupation / 2);
 
             std::size_t all = S.trange().elements().extent()[0];
-            TRange1Engine tre(occupation / 2, all, dfbs_nclusters);
+            auto tre = std::make_shared<TRange1Engine>(occupation / 2, all, dfbs_nclusters);
 
             auto tr_0 = Xab.trange().data().back();
-            auto tr_i = tre.get_occ_tr1();
-            auto tr_vir = tre.get_vir_tr1();
+            auto tr_all = tre->get_all_tr1();
+            auto tr_i = tre->get_occ_tr1();
+            auto tr_vir = tre->get_vir_tr1();
 
             auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_occ,tr_0, tr_i);
             auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_vir,tr_0, tr_vir);
-            tcc::TwoElectronIntMO<TA::Tensor<double>, TA::SparsePolicy> g(X_ab_TA,Ci, Cv);
+            auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_all,tr_0, tr_all);
+            auto g = std::make_shared<tcc::TwoElectronIntMO<TA::Tensor<double>, TA::SparsePolicy>>(X_ab_TA,Ci, Cv);
 
-            auto abij = g.get_abij();
-            //std::cout << abij << std::endl;
+            decltype(F_TA) fock_mo;
+            fock_mo("p,q") = F_TA("mu,nu")*Call("mu,p")*Call("nu,q");
+            auto F_diag = ens.asDiagonal().toDenseMatrix();
+//            std::cout << F_diag << std::endl;
+//            std::cout << fock_mo << std::endl;
+            auto F_eig_TA = array_ops::eigen_to_array<TA::Tensor<double>>(world, F_diag, tr_all, tr_all);
+
+            tcc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(F_eig_TA, ens, tre, g);
+            ccsd.compute_cc2();
+
             //std::cout << two_e << std::endl;
 
 

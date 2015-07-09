@@ -41,9 +41,13 @@ namespace tcc{
         // <ab|ci>
         abci_("a,b,c,i") = Xab("X,a,c") * Xai("X,b,i");
 //        std::cout << abci_ << std::endl;
+        // <ab|ic>
+        abic_("a,b,i,c") = Xai("X,a,i")*Xab("X,b,c");
         // <ai|kl>
         aikl_("a,i,k,l") = Xai("X,a,k") * Xij("X,i,l");
 //        std::cout << aikl_ << std::endl;
+        // <ia|kl>
+        iakl_("i,a,k,l") = Xai("X,a,l") * Xij("X,i,k");
         // <ai|bj>
         aibj_("a,i,b,j") = Xab("X,a,b") * Xij("X,i,j");
 //        std::cout << aibj_ << std::endl;
@@ -71,8 +75,16 @@ namespace tcc{
       return abci_;
     }
 
+    const TArray4 &get_abic() const {
+      return abic_;
+    }
+
     const TArray4& get_aikl() const {
       return aikl_;
+    }
+
+    const TArray4 &get_iakl() const {
+      return iakl_;
     }
 
     const TArray4& get_aibj() const {
@@ -91,7 +103,9 @@ namespace tcc{
     TArray4 ijkl_;
     TArray4 abcd_;
     TArray4 abci_;
+    TArray4 abic_;
     TArray4 aikl_;
+    TArray4 iakl_;
     TArray4 aibj_;
     TArray4 aijb_;
   };

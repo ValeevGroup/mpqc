@@ -32,7 +32,7 @@
 #ifndef _mpqc_src_lib_util_madness_world_h
 #define _mpqc_src_lib_util_madness_world_h
 
-#include <madness/world/parallel_runtime.h>
+#include <madness/world/MADworld.h>
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 

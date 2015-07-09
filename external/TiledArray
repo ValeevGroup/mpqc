@@ -25,14 +25,14 @@ if(MADNESS_FOUND)
   
     # sanity check: try compiling a simple program
     list(APPEND CMAKE_REQUIRED_INCLUDES ${MADNESS_INCLUDE_DIRS})
-    list(APPEND CMAKE_REQUIRED_LIBRARIES ${MADNESS_LIBRARIES})
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${MADNESS_LIBRARIES} "${CMAKE_EXE_LINKER_FLAGS}")
     if(MPQC_HAS_ELEMENTAL)
       list(APPEND CMAKE_REQUIRED_INCLUDES ${ELEMENTAL_INCLUDE_DIRS})
       list(APPEND CMAKE_REQUIRED_LIBRARIES ${ELEMENTAL_LIBRARIES})
     endif(MPQC_HAS_ELEMENTAL)
     CHECK_CXX_SOURCE_COMPILES(
       "
-      #include <madness/world/parallel_runtime.h>
+      #include <madness/world/MADworld.h>
       
       int main(int argc, char** argv) {
         madness::World& world = madness::initialize(argc, argv);

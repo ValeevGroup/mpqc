@@ -526,8 +526,10 @@ int main(int argc, char *argv[]) {
 //            std::cout << fock_mo << std::endl;
             auto F_eig_TA = array_ops::eigen_to_array<TA::Tensor<double>>(world, F_diag, tr_all, tr_all);
 
-            tcc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(F_eig_TA, ens, tre, g);
+            tcc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(fock_mo, ens, tre, g);
+
             ccsd.compute_cc2();
+            ccsd.compute_ccsd();
 
             //std::cout << two_e << std::endl;
 

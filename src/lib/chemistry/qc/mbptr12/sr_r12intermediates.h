@@ -339,6 +339,7 @@ namespace sc {
       // use formula from Gauss and Stanton, JCP, 103 (1995)
       void compute_lambda_cc2_2(const TArray2& t1, const TArray4& t2,
                                 TArray2& L1, TArray4& L2);
+
       // CCSD (Gauss and Stanton formula)
       // compute Delta_ai = 1 / (- <a|F|a> + <i|F|i>)
       //       & Delta_ijab =  1 / (- <a|F|a> - <b|F|b> + <i|F|i> + <j|F|j>)

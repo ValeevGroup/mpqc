@@ -4089,10 +4089,15 @@ namespace sc {
     bool compute_quadrupole = false;
     bool compute_EFG = false;
 
-    #define INCLUDE_CABS_Singles_CONTRIBUTIONS 1
-    #define INCLUDE_MP2_CONTRIBUTIONS 1
-    #define INCLUDE_COUPLING_CONTRIBUTIONS 1
-    #define INCLUDE_F12_CONTRIBUTIONS 1
+    #define INCLUDE_CABS_Singles_CONTRI 1
+    #define INCLUDE_MP2_CONTRI 1
+    #define INCLUDE_MP2F12C_CONTRI 1
+    #define INCLUDE_F12_CONTRI 1
+
+    #define INCLUDE_CCSD_CONTRI 1
+    #define INCLUDE_CCSDF12C_CONTRI 1
+
+    double conv_target = 1e-10;
 
     // Obtain property integrals which is needed in multiple places
 
@@ -4288,7 +4293,7 @@ namespace sc {
            q_xy_e2 = 0.0, q_xz_e2 = 0.0, q_yz_e2 = 0.0;
     double q_xx_e2or = 0.0, q_yy_e2or = 0.0, q_zz_e2or = 0.0,
            q_xy_e2or = 0.0, q_xz_e2or = 0.0, q_yz_e2or = 0.0;
-#if INCLUDE_CABS_Singles_CONTRIBUTIONS
+#if INCLUDE_CABS_Singles_CONTRI
     {
     ExEnv::out0() << std::endl << indent
                   << "Compute CABS_singles contributions" << std::endl;
@@ -4311,7 +4316,7 @@ namespace sc {
                                  Xam_E2,
                                  Dbn_E2,
                                  preconditioner,
-                                 1e-10);
+                                 conv_target);
 
     // compute CABS singles contribution to dipole
     if (compute_dipole) {
@@ -4572,7 +4577,7 @@ namespace sc {
            q_xy_mp2 = 0.0, q_xz_mp2 = 0.0, q_yz_mp2 = 0.0;
     double q_xx_mp2or = 0.0, q_yy_mp2or = 0.0, q_zz_mp2or = 0.0,
            q_xy_mp2or = 0.0, q_xz_mp2or = 0.0, q_yz_mp2or = 0.0;
-#if INCLUDE_MP2_CONTRIBUTIONS
+#if INCLUDE_MP2_CONTRI
     {
     ExEnv::out0() << std::endl << indent
                   << "Compute MP2 contributions" << std::endl;
@@ -4622,7 +4627,7 @@ namespace sc {
                                   X_mp2,
                                   Dbn_mp2,
                                   preconditioner,
-                                  1e-10);
+                                  conv_target);
 
     // MP2 dipole
     if (compute_dipole) {
@@ -4768,7 +4773,7 @@ namespace sc {
            q_xy_mp2f12C = 0.0, q_xz_mp2f12C = 0.0, q_yz_mp2f12C = 0.0;
     double q_xx_mp2f12Cor = 0.0, q_yy_mp2f12Cor = 0.0, q_zz_mp2f12Cor = 0.0,
            q_xy_mp2f12Cor = 0.0, q_xz_mp2f12Cor = 0.0, q_yz_mp2f12Cor = 0.0;
-#if INCLUDE_COUPLING_CONTRIBUTIONS
+#if INCLUDE_MP2F12C_CONTRI
     {
     ExEnv::out0() << std::endl << indent
                   << "Compute MP2 F12 coupling contributions" << std::endl;
@@ -4840,7 +4845,7 @@ namespace sc {
                                      Xmp2f12_contri,
                                      Dbn_mp2f12,
                                      preconditioner,
-                                     1e-10);
+                                     conv_target);
 
     // MP2-F12 coupling contribution to dipole
     if (compute_dipole) {
@@ -4962,7 +4967,7 @@ namespace sc {
            q_xy_f12 = 0.0, q_xz_f12 = 0.0, q_yz_f12 = 0.0;
     double q_xx_f12or = 0.0, q_yy_f12or = 0.0, q_zz_f12or = 0.0,
            q_xy_f12or = 0.0, q_xz_f12or = 0.0, q_yz_f12or = 0.0;
-#if INCLUDE_F12_CONTRIBUTIONS
+#if INCLUDE_F12_CONTRI
     ExEnv::out0() << std::endl << indent
                   << "Compute F12 contributions" << std::endl;
     // F12 density from X and B terms
@@ -4987,10 +4992,14 @@ namespace sc {
     D_f12_ab("a,b") = (RR_C1 * r_acpkl("a,c',k,l") + RR_C2 * r_acpkl("a,c',l,k"))
                       * r_acpkl("b,c',k,l");
     //
-    D_f12_apbp("a',b'") =  (RR_C1 * r_acpkl("c,a',l,k") + RR_C2 * r_acpkl("c,a',k,l"))
-                           * r_acpkl("c,b',l,k")
-                         + (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
-                           * r_apcpkl("b',c',k,l");
+//    D_f12_apbp("a',b'") =  (RR_C1 * r_acpkl("c,a',l,k") + RR_C2 * r_acpkl("c,a',k,l"))
+//                           * r_acpkl("c,b',l,k")
+//                         + (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
+//                           * r_apcpkl("b',c',k,l");
+    D_f12_apbp("a',b'") =  (RR_C1 * _4("<a' p'|r|k l>") + RR_C2 * _4("<a' p'|r|l k>"))
+                           * _4("<b' p'|r|k l>")
+                         - (RR_C1 * _4("<a' m|r|k l>") + RR_C2 * _4("<a' m|r|l k>"))
+                           * _4("<b' m|r|k l>");
     //
     D_f12_apb("a',b") = (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
                         * r_acpkl("b,c',k,l");
@@ -5026,7 +5035,6 @@ namespace sc {
                                  + Xam_Bcontri("a,m")
                                  + gdf12_am("a,m")  // F12 density terms
                                 );
-
     TArray2 Xam_f12;
     // frozen-core contribution of F12 part: Xii'
     TArray2 D_iip_f12;
@@ -5046,8 +5054,7 @@ namespace sc {
                                   Xam_f12,
                                   Dbn_f12,
                                   preconditioner,
-                                  1e-10);
-
+                                  conv_target);
     if (compute_dipole) {
       TArray2 mu_z_apbp = xy("<a'|mu_z|b'>");
       // F12 density contribution to dipole
@@ -5058,11 +5065,141 @@ namespace sc {
                  + dot(mu_z_apbp("a',b'"), D_f12_apbp("a',b'"))
                  + dot(mu_z_apb("a',b"), D_f12_apb("a',b")) * 2.0
                  ;
-
       mu_z_f12or = dot(mu_z_am("a,m"), Dbn_f12("a,m"));
       if (nocc != naocc) {
         mu_z_f12or += dot(mu_z_ijp("i,j'"), D_iip_f12("i,j'"));
       }
+    }
+
+    TArray2 gdf12_X_am;
+    gdf12_X_am("a,m") = // X related contribution
+                        (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
+                        * D_f12_ij("k,l");
+    TArray2 gdf12_B_am;
+    gdf12_B_am("a,m") = // B related contribution
+                       - (2.0 * g_abmc("a,b,m,c") - g_abmc("b,a,m,c"))
+                         * D_f12_ab("b,c")
+                       - (2.0 * _4("<a b'|g|m c'>") - _4("<a b'|g|c' m>"))
+                         * D_f12_apbp("b',c'")
+                       - (2.0 * _4("<a b'|g|m c>") - _4("<a b'|g|c m>"))
+                         * D_f12_apb("b',c")
+                       - (2.0 * _4("<a b|g|m c'>") - _4("<a b|g|c' m>"))
+                         * D_f12_apb("c',b");
+
+    TArray2 Xam_V_nfzc;
+    Xam_V_nfzc("a,m") = 2.0 * Xam_Vcontri("a,m");
+    TArray2 Xam_X_nfzc;
+    Xam_X_nfzc("a,m") = 2.0 * (- Xam_Xcontri("a,m") + gdf12_X_am("a,m"));
+    TArray2 Xam_B_nfzc;
+    Xam_B_nfzc("a,m") = 2.0 * (Xam_Bcontri("a,m")+ gdf12_B_am("a,m"));
+
+    TArray2 Xam_V, Xam_X, Xam_B;
+    // frozen-core contribution of F12 part: Xii'
+    TArray2 D_iip_V, D_iip_X, D_iip_B;
+    if (nocc != naocc) {
+      ExEnv::out0() << std::endl << indent
+                    << "Include frozen-core V, X, and B contributions" << std::endl;
+      TArray2 Xiip_V;
+      const char* ip = "i'";
+      const char* i = "i";
+      TArray2 V_ipi = VRk_Sk(ip,i,C_0, C_1);
+      TArray2 V_iip = VRk_Sk(i,ip,C_0, C_1);
+      Xiip_V("i,i'") = // 2 * (1/2 R^i'k_A'C' g^A'C'_ik + 1/2 R^ik_A'C' g^A'C'_i'k)
+                       2.0 * (V_ipi("i',i") + V_iip("i,i'"));
+      D_iip_V("i,i'") = - Xiip_V("i,i'") * Delta_ijp_F("i,i'");
+      Xam_V("a,m") = Xam_V_nfzc("a,m") - A_ijpam("i,j',a,m") * D_iip_V("i,j'");
+
+      TArray2 Xiip_X;
+      TArray2 F_ij = xy("<i|F|j>");
+      TArray4d r2_ipk_jl = ijxy("<i' k|r2|j l>");
+      TArray4d r_ipk_pq = ijxy("<i' k|r|p q>");
+      TArray4d r_pqkl = ijxy("<p q|r|k l>");
+      TArray4d r_ipk_apn = ijxy("<i' k|r|a' n>");
+      TArray4d r_apn_kl = ijxy("<a' n|r|k l>");
+      TArray4d r_kip_apn = ijxy("<k i'|r|a' n>");
+      Xiip_X("i,i'") = // 2 * (F^i_i + F^k_k) 1/2 R^i'k_A'B' R_ik^A'B'
+                      - 2.0 * (  (RR_C1 * r2_ipk_jl("i',k,j,l") + RR_C2 * r2_ipk_jl("i',k,l,j"))
+                                 * _2("<l|I|k>") * F_ij("j,i")
+                               + (RR_C1 * r2_ipk_jl("i',k,i,l") + RR_C2 * r2_ipk_jl("i',k,l,i"))
+                                 * F_ij("l,k")
+
+                               - (RR_C1 * r_ipk_pq("i',k,p,q") + RR_C2 * r_ipk_pq("i',k,q,p"))
+                                 * ( r_pqkl("p,q,j,k") * F_ij("j,i")
+                                   + r_pqkl("p,q,i,l") * F_ij("l,k"))
+
+                               - (RR_C1 * r_ipk_apn("i',k,a',n") + RR_C2 * r_kip_apn("k,i',a',n"))
+                                 * ( r_apn_kl("a',n,j,k") * F_ij("j,i")
+                                   + r_apn_kl("a',n,i,l") * F_ij("l,k"))
+
+                               - (RR_C1 * r_kip_apn("k,i',a',n") + RR_C2 * r_ipk_apn("i',k,a',n"))
+                                 * ( r_apn_kl("a',n,k,j") * F_ij("j,i")
+                                   + r_apn_kl("a',n,l,i") * F_ij("l,k"))
+                              );
+      D_iip_X("i,i'") = - Xiip_X("i,i'") * Delta_ijp_F("i,i'");
+      Xam_X("a,m") = Xam_X_nfzc("a,m") - A_ijpam("i,j',a,m") * D_iip_X("i,j'");
+
+      TArray2 Xiip_B;
+      TArray2 B_ipi = BPk_Qk(ip,i,C_0,C_1);
+      Xiip_B("i,i'") = // 2 R^i'k_A'B' F^A'_C' R^ik_C'B'
+                       2.0 * B_ipi("i',i");
+      D_iip_B("i,i'") = - Xiip_B("i,i'") * Delta_ijp_F("i,i'");
+      Xam_B("a,m") = Xam_B_nfzc("a,m") - A_ijpam("i,j',a,m") * D_iip_B("i,j'");
+    } else {
+      Xam_V("a,m") = Xam_V_nfzc("a,m");
+      Xam_X("a,m") = Xam_X_nfzc("a,m");
+      Xam_B("a,m") = Xam_B_nfzc("a,m");
+    }
+
+    TArray2 Dbn_V(Xam_V.get_world(), Xam_V.trange());
+    auto resnorm_V = cg_solver2(Orbital_relaxation_Abnam,
+                                Xam_V,
+                                Dbn_V,
+                                preconditioner,
+                                conv_target);
+    TArray2 Dbn_X(Xam_X.get_world(), Xam_X.trange());
+    auto resnorm_X = cg_solver2(Orbital_relaxation_Abnam,
+                                Xam_X,
+                                Dbn_X,
+                                preconditioner,
+                                conv_target);
+    TArray2 Dbn_B(Xam_B.get_world(), Xam_B.trange());
+    auto resnorm_B = cg_solver2(Orbital_relaxation_Abnam,
+                                Xam_B,
+                                Dbn_B,
+                                preconditioner,
+                                conv_target);
+
+    if (compute_dipole) {
+      double mu_z_X, mu_z_B, mu_z_Vor, mu_z_Xor, mu_z_Bor;
+      // F12 density contribution to dipole
+      mu_z_X = // X related contribution
+               - dot(mu_z_ij("i,j"), D_f12_ij("i,j"));
+      TArray2 mu_z_apbp = xy("<a'|mu_z|b'>");
+      mu_z_B = // B related contribution
+                dot(mu_z_ab("a,b"), D_f12_ab("a,b"))
+              + dot(mu_z_apbp("a',b'"), D_f12_apbp("a',b'"))
+              + dot(mu_z_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+
+      mu_z_Vor = dot(mu_z_am("a,m"), Dbn_V("a,m"));
+      mu_z_Xor = dot(mu_z_am("a,m"), Dbn_X("a,m"));
+      mu_z_Bor = dot(mu_z_am("a,m"), Dbn_B("a,m"));
+      if (nocc != naocc) {
+        mu_z_Vor += dot(mu_z_ijp("i,j'"), D_iip_V("i,j'"));
+        mu_z_Xor += dot(mu_z_ijp("i,j'"), D_iip_X("i,j'"));
+        mu_z_Bor += dot(mu_z_ijp("i,j'"), D_iip_B("i,j'"));
+      }
+
+      std::cout << std::endl << indent
+                << "mu_z (V orbital response) = " << scprintf("%15.12f", - mu_z_Vor * 2.0)
+                << std::endl << indent
+                << "mu_z (X) = " << scprintf("%15.12f",- mu_z_X * 2.0)
+                << std::endl << indent
+                << "mu_z (X orbital response) = " << scprintf("%15.12f", - mu_z_Xor * 2.0)
+                << std::endl << indent
+                << "mu_z (B) = " << scprintf("%15.12f",- mu_z_B * 2.0)
+                << std::endl << indent
+                << "mu_z (B orbital response) = " << scprintf("%15.12f", - mu_z_Bor * 2.0)
+                << std::endl;
     }
 
     // F12 contribution to quadrupoles
@@ -5195,6 +5332,8 @@ namespace sc {
 #endif
 
     ExEnv::out0() << std::endl << indent << "Start CCSD computation" << std::endl;
+    double mu_z_ccsd = 0.0, mu_z_ccsdor = 0.0;
+    TArray2 mu_z_ai,mu_z_ia;
 #if 0
     // compute CC2 amplitudes using Schaefer's formula
     TArray2 T1_cc2, L1_cc2;
@@ -5231,6 +5370,7 @@ namespace sc {
     TArray4 L2;
     compute_lambda_ccsd(T1, T2, L1, L2, false); // do not include F12 contributions
 
+#if INCLUDE_CCSD_CONTRI
     // compute CCSD density from amplitudes
     TArray2 Dij_ccsd, Dab_ccsd, Dia_ccsd, Dai_ccsd;
     ExEnv::out0() << std::endl << indent
@@ -5266,8 +5406,7 @@ namespace sc {
                                    Dbn_ccsd,
                                    preconditioner,
                                    1e-12);
-    TArray2 mu_z_ai,mu_z_ia;
-    double mu_z_ccsd, mu_z_ccsdor;
+
     if (compute_dipole) {
       mu_z_ai = xy("<a|mu_z|i>");
       mu_z_ia = xy("<i|mu_z|a>");
@@ -5288,10 +5427,11 @@ namespace sc {
 //                  << "mu_z (CCSD orbital response) = " << scprintf("%15.12f", - mu_z_ccsdor * 2.0)
 //                  << std::endl;
     }
+#endif
 
     // CC F12 coupling contribution to Xam
     double mu_z_Cccsdf12 = 0.0;
-#if 1
+#if INCLUDE_CCSDF12C_CONTRI
     // resolve CCSD lambda amplitudes, density, and Xam in the framework of CCSD(2)_F12
     ExEnv::out0() << std::endl << indent << "Compute CCSD(2)_F12 L amplitudes " << std::endl;
     TArray2 L1_f12;
@@ -5338,12 +5478,6 @@ namespace sc {
         mu_z_ccsdor_f12 += dot(mu_z_ijp("i,i'"), Diip_ccsd_f12("i,i'"));
       }
 
-//      std::cout << std::endl << indent
-//                  << "mu_z (CCSD in CCSD-F12) = " << scprintf("%15.12f", - mu_z_ccsd_f12 * 2.0)
-//                  << std::endl << indent
-//                  << "mu_z (CCSD orbital response in CCSD-F12) = " << scprintf("%15.12f", - mu_z_ccsdor_f12 * 2.0)
-//                  << std::endl;
-
       mu_z_Cccsdf12 = mu_z_ccsd_f12 - mu_z_ccsd + mu_z_ccsdor_f12 - mu_z_ccsdor;
     }
 
@@ -5361,7 +5495,7 @@ namespace sc {
                                      Xam_CT2_cc,
                                      Dbn_CT2_cc,
                                      preconditioner,
-                                     1e-10);
+                                     conv_target);
 
     // VT1 & VT2 coupling contribution to F12 Xam
     TArray2 Xam_VT_cc = Xam_VT_ccsd(C_0, C_1, T1, T2);
@@ -5370,7 +5504,7 @@ namespace sc {
                                     Xam_VT_cc,
                                     Dbn_VT_cc,
                                     preconditioner,
-                                    1e-10);
+                                    conv_target);
 
     // frozen-core contribution
     TArray2 Diip_CVT, Dbn_Diip_CVT;
@@ -5388,7 +5522,7 @@ namespace sc {
                                         Xam_Diip_CVT,
                                         Dbn_Diip,
                                         preconditioner,
-                                        1e-10);
+                                        conv_target);
       Dbn_Diip_CVT("a,m") = Dbn_Diip("a,m");
     }
 

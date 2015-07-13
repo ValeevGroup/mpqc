@@ -46,7 +46,8 @@ namespace tcc {
       f_ai("a,i") = fock_("a,i");
 
       auto g_abij = g_->get_abij();
-      std::cout << g_abij << std::endl;
+
+//      std::ofstream f;
 
       TArray2 d1 = guess_t_ai(f_ai, ens_, n_occ);
       TArray4 d2 = guess_t_abij(g_abij, ens_, n_occ);
@@ -84,18 +85,19 @@ namespace tcc {
       g_klai("k,l,a,i") = g_->get_aikl()("a,l,k,i");
       TArray4 g_klia;
       g_klia("k,l,i,a") = g_->get_iakl()("i,a,k,l");
-      TArray4 g_iabj;
-      g_iabj("i,a,b,j") = g_->get_aijb()("a,i,j,b");
 
       // print out g
-      std::cout << g_ijkl << std::endl;
-      std::cout << g_klai << std::endl;
-      std::cout << g_klia << std::endl;
-      std::cout << g_iabj << std::endl;
-      std::cout << g_iajb << std::endl;
-      std::cout << g_iacd << std::endl;
-      std::cout << g_aicd << std::endl;
-      std::cout << g_abcd << std::endl;
+//      std::cout << g_ijkl << std::endl;
+//      std::cout << g_klai << std::endl;
+//      std::cout << g_klia << std::endl;
+//      std::cout << g_iabj << std::endl;
+//      std::cout << g_iajb << std::endl;
+//      std::cout << g_iacd << std::endl;
+//      std::cout << g_aicd << std::endl;
+//      std::cout << g_abcd << std::endl;
+//      f.open("cc2.int");
+//      f << g_aicd << std::endl;
+//      f.close();
 
       //optimize t1 and t2
       std::size_t iter = 0ul;
@@ -126,7 +128,7 @@ namespace tcc {
                   + h_ck("c,k")
                     * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("c,i") * t1("a,k"))
                   //
-                  + (2.0 * g_iabj("k,a,c,i") - g_iajb("k,a,i,c")) * t1("c,k")
+                  + (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k")
                   //
                   + (2.0 * g_iacd("k,a,c,d") - g_iacd("k,a,d,c")) * tau("c,d,k,i")
                   //
@@ -171,8 +173,8 @@ namespace tcc {
                 + (g_iacd("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j")
                 + (g_iacd("j,c,b,a") - g_iajb("k,a,j,c") * t1("b,k")) * t1("c,i")
                 //
-                - (g_klai("i,j,a,k") + g_iabj("i,c,a,k") * t1("c,j")) * t1("b,k")
-                - (g_klai("j,i,b,k") + g_iabj("j,c,b,k") * t1("c,i")) * t1("a,k")
+                - (g_klai("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k")
+                - (g_klai("j,i,b,k") + g_abij("b,c,j,k") * t1("c,i")) * t1("a,k")
         );
 
 //        t1("a,i") = r1("a,i");
@@ -241,14 +243,11 @@ namespace tcc {
       g_klai("k,l,a,i") = g_->get_aikl()("a,l,k,i");
       TArray4 g_klia;
       g_klia("k,l,i,a") = g_->get_iakl()("i,a,k,l");
-      TArray4 g_iabj;
-      g_iabj("i,a,b,j") = g_->get_aijb()("a,i,j,b");
 
       // print out g
-      std::cout << g_ijkl << std::endl;
+//      std::cout << g_ijkl << std::endl;
 //      std::cout << g_klai << std::endl;
 //      std::cout << g_klia << std::endl;
-//      std::cout << g_iabj << std::endl;
 //      std::cout << g_iajb << std::endl;
 //      std::cout << g_iacd << std::endl;
 //      std::cout << g_aicd << std::endl;
@@ -283,7 +282,7 @@ namespace tcc {
                   + h_kc("k,c")
                     * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("c,i") * t1("a,k"))
                   //
-                  + (2.0 * g_iabj("k,a,c,i") - g_iajb("k,a,i,c")) * t1("c,k")
+                  + (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k")
                   //
                   + (2.0 * g_iacd("k,a,c,d") - g_iacd("k,a,d,c")) * tau("c,d,k,i")
                   //
@@ -317,12 +316,12 @@ namespace tcc {
                               + 0.5*(2.0*g_abij("c,d,k,l")- g_abij("d,c,k,l"))*t2("a,d,i,l");
 
           k_kaic("k,a,i,c") = g_iajb("k,a,i,c") - g_klia("k,l,i,c")*t1("a,l") +
-                  g_iacd("k,a,c,d")*t1("d,i") - g_abij("d,c,k,l")*T("d,a,i,l");
+                  g_iacd("k,a,d,c")*t1("d,i") - g_abij("d,c,k,l")*T("d,a,i,l");
 
         }
 
-        TArray4 t2_unsymm;
-        t2_unsymm("a,b,i,j") = d2("a,b,i,j")*(
+//        TArray4 t2_unsymm;
+        t2("a,b,i,j") = d2("a,b,i,j")*(
                 //
                 g_abij("a,b,i,j")
                 //
@@ -348,7 +347,6 @@ namespace tcc {
                 - 0.5*k_kaic("k,b,j,c")*t2("a,c,k,i") - k_kaic("k,a,j,c")*t2("b,c,k,i")
         );
 
-        t2("a,b,i,j") = 0.5*(t2_unsymm("a,b,i,j") + t2_unsymm("b,a,i,j"));
 //        t1("a,i") = r1("a,i");
 //        t2("a,b,i,j") = r2("a,b,i,j");
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");

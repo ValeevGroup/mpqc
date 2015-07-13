@@ -36,6 +36,7 @@
 #include "../cc/ccsd.h"
 #include "../cc/two_electron_int_mo.h"
 #include "../mp2/trange1_engine.h"
+#include "../mp2/mp2.h"
 #include "../ta_routines/array_to_eigen.h"
 
 using namespace tcc;
@@ -509,6 +510,12 @@ int main(int argc, char *argv[]) {
             std::size_t all = S.trange().elements().extent()[0];
             auto tre = std::make_shared<TRange1Engine>(occupation / 2, all, dfbs_nclusters);
 
+          // start mp2
+//            MP2<TA::Tensor<double>, TA::SparsePolicy> mp2(F_TA, S_TA, X_ab_TA, *tre);
+//
+//            auto two_e = mp2.get_g();
+//            mp2.compute();
+
             auto tr_0 = Xab.trange().data().back();
             auto tr_all = tre->get_all_tr1();
             auto tr_i = tre->get_occ_tr1();
@@ -528,7 +535,7 @@ int main(int argc, char *argv[]) {
 
             tcc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(fock_mo, ens, tre, g);
 
-//            ccsd.compute_cc2();
+            ccsd.compute_cc2();
             ccsd.compute_ccsd();
 
             //std::cout << two_e << std::endl;

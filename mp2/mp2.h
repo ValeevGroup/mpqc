@@ -53,6 +53,15 @@ namespace tcc {
                            (2 * two_e("i,a,j,b") - two_e("i,b,j,a")))
               .reduce(Mp2Red(en_mo_, tre_.get_occ()));
 
+//      TArray4 g_print;
+//      g_print("a,c,i,d") = two_e("a,c,i,d");
+//
+//      g_print("a,i,c,d") = g_print("a,c,i,d");
+//
+//      std::ofstream f;
+//      f.open("mp2.int");
+//      f << g_print << std::endl;
+//      f.close();
 
       // use deep_filter in TCC
 

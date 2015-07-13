@@ -51,9 +51,6 @@ namespace tcc{
         // <ai|bj>
         aibj_("a,i,b,j") = Xab("X,a,b") * Xij("X,i,j");
 //        std::cout << aibj_ << std::endl;
-        // <ai|jb>
-        aijb_("a,i,j,b") = Xai("X,a,j") * Xai("X,b,i");
-//        std::cout << aijb_ << std::endl;
 
       }
       TArray3::wait_for_lazy_cleanup(Xpq.get_world());

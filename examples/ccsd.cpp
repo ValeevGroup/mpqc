@@ -524,7 +524,7 @@ int main(int argc, char *argv[]) {
             auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_occ,tr_0, tr_i);
             auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_vir,tr_0, tr_vir);
             auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_all,tr_0, tr_all);
-            auto g = std::make_shared<tcc::TwoElectronIntMO<TA::Tensor<double>, TA::SparsePolicy>>(X_ab_TA,Ci, Cv);
+            auto g = std::make_shared<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::SparsePolicy>>(X_ab_TA,Ci, Cv);
 
             decltype(F_TA) fock_mo;
             fock_mo("p,q") = F_TA("mu,nu")*Call("mu,p")*Call("nu,q");
@@ -533,7 +533,7 @@ int main(int argc, char *argv[]) {
 //            std::cout << fock_mo << std::endl;
             auto F_eig_TA = array_ops::eigen_to_array<TA::Tensor<double>>(world, F_diag, tr_all, tr_all);
 
-            tcc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(fock_mo, ens, tre, g);
+            tcc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(fock_mo, ens, tre, g);
 
             ccsd.compute_cc2();
             ccsd.compute_ccsd();

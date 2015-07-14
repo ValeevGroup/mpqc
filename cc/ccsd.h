@@ -13,9 +13,12 @@
 #include "../ta_routines/tarray_block.h"
 
 #include "./two_electron_int_mo.h"
+#include "./misc.h"
 
 
 namespace tcc {
+  namespace cc {
+
 
   template<typename Tile, typename Policy>
   class CCSD {
@@ -308,7 +311,6 @@ namespace tcc {
 
         }
 
-//        TArray4 t2_unsymm;
         t2("a,b,i,j") = d2("a,b,i,j")*(
                 //
                 g_abij("a,b,i,j")
@@ -428,10 +430,12 @@ namespace tcc {
   private:
     Eigen::VectorXd ens_;
     std::shared_ptr<tcc::TRange1Engine> tre_;
-    std::shared_ptr<tcc::TwoElectronIntMO<Tile, Policy>> g_;
+    std::shared_ptr<tcc::cc::TwoElectronIntMO<Tile, Policy>> g_;
     TArrayBlock2 fock_;
   };
-}
+
+  } //namespace cc
+} //namespace tcc
 
 
 #endif //TILECLUSTERCHEM_CCSD_H

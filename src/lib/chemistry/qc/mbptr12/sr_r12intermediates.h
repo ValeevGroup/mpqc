@@ -352,19 +352,16 @@ namespace sc {
              const TArray4d& g_aibj, const TArray4d& g_aijb,
              const TArray4d& g_abci,
              TArray2& TFkc, TArray2& TFac, TArray2& TFki,
-             TArray4& TW_KBCJ_aa, TArray4& TW_KbCj_ab,TArray4& TW_KbcJ_ba,
-             TArray4& TW_ABCD_aa, TArray4& TW_AbCd_ab,
-             TArray4& TW_KLIJ_aa, TArray4& TW_KlIj_ab);
+             TArray4& TW_KbCj_ab,TArray4& TW_KbcJ_ba,
+             TArray4& TW_AbCd_ab, TArray4& TW_KlIj_ab);
       void compute_intermediates_CW_ccsd(
              const TArray2& t1, const TArray4& t2,
              TArray2& CFkc, TArray2& CFac, TArray2& CFki,
-             TArray4& CW_MBEJ_aa, TArray4& CW_MbEj_ab, TArray4& CW_MbeJ_ba,
-             TArray4& CW_ABCD_aa, TArray4& CW_AbCd_ab,
-             TArray4& CW_ABCI_aa, TArray4& CW_AbCi_ab,
-             TArray4& CW_KLIJ_aa, TArray4& CW_KlIj_ab,
-             TArray4& CW_KBIJ_aa, TArray4& CW_KbIj_ab,
-             TArray4& CW_KLIC_aa, TArray4& CW_KlIc_ab, TArray4& CW_KliC_ab,
-             TArray4& CW_AKCD_aa, TArray4& CW_AkCd_ab, TArray4& CW_aKCd_ab);
+             TArray4& CW_KbEj_ab, TArray4& CW_KbeJ_ba,
+             TArray4& CW_AbCd_ab, TArray4& CW_AbCi_ab,
+             TArray4& CW_KlIj_ab, TArray4& CW_KbIj_ab,
+             TArray4& CW_KlIc_ab, TArray4& CW_KliC_ab,
+             TArray4& CW_AkCd_ab);
       // compute CCSD T amplitudes
       void compute_T_ccsd(TArray2& t1, TArray4& t2);
       // compute CCSD lambda amplitudes

@@ -2400,16 +2400,11 @@ namespace sc {
                                               const TArray4d& g_aibj, const TArray4d& g_aijb,
                                               const TArray4d& g_abci,
                                               TArray2& TFkc, TArray2& TFac, TArray2& TFki,
-                                              TArray4& TW_KBCJ_aa, TArray4& TW_KbCj_ab,TArray4& TW_KbcJ_ba,
-                                              TArray4& TW_ABCD_aa, TArray4& TW_AbCd_ab,
-                                              TArray4& TW_KLIJ_aa, TArray4& TW_KlIj_ab) {
-    TArray4 tau_aa, tau_ab, Ttau_aa, Ttau_ab;
-    tau_aa("a,b,i,j") =  t2("a,b,i,j") - t2("b,a,i,j")
-                        + (t1("a,i") * t1("b,j") - t1("b,i") * t1("a,j"));
+                                              TArray4& TW_KbCj_ab,TArray4& TW_KbcJ_ba,
+                                              TArray4& TW_AbCd_ab, TArray4& TW_KlIj_ab) {
+    TArray4 tau_ab, Ttau_ab;
     tau_ab("a,b,i,j") =  t2("a,b,i,j")
                         + (t1("a,i") * t1("b,j"));
-    Ttau_aa("a,b,i,j") =  t2("a,b,i,j") - t2("b,a,i,j")
-                        + 0.5 * (t1("a,i") * t1("b,j")  - t1("b,i") * t1("a,j"));
     Ttau_ab("a,b,i,j") =  t2("a,b,i,j")
                         + 0.5 * t1("a,i") * t1("b,j");
 
@@ -2423,39 +2418,16 @@ namespace sc {
                    // + t^d_k g^ak_cd
                    t1("d,k") * (2.0 * g_abci("c,d,a,k") - g_abci("d,c,a,k"))
                    // - 1/2 Ttau^ad_kl g^kl_cd
-                 - 0.5 * Ttau_aa("a,d,k,l") * (g_abij("c,d,k,l") - g_abij("d,c,k,l"))
-                 - Ttau_ab("a,d,k,l") * g_abij("c,d,k,l")
+                 - Ttau_ab("a,d,k,l") * ( 2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l"))
                  ;
     TFki("k,i") =  //   fki (1 - delta_ki) + 1/2 fkc t^c_i
                    // + t^c_l g^kl_ic
                    t1("c,l") * (2.0 * g_aikl("c,i,l,k") - g_aikl("c,i,k,l"))
                    // + 1/2 Ttau^cd_il g^kl_cd
-                 + 0.5 * Ttau_aa("c,d,i,l") * (g_abij("c,d,k,l") - g_abij("c,d,l,k"))
-                 + Ttau_ab("c,d,i,l") * g_abij("c,d,k,l")
+                 + Ttau_ab("c,d,i,l") * (2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k"))
                  ;
 
     // \tilde{W}mbej:
-    // alpha-alpha case
-    TW_KBCJ_aa("k,b,c,j") =  //   g^kb_cj
-                             g_aijb("c,j,k,b") - g_aibj("c,j,b,k")
-
-                             // + t^d_j g^kb_cd
-                           + t1("d,j") * (g_abci("d,c,b,k") - g_abci("c,d,b,k"))
-
-                             // - t^b_l g^kl_cj
-                           - t1("b,l") * (g_aikl("c,j,k,l") - g_aikl("c,j,l,k"))
-
-                             // - 1/2 (t^db_jl + 2 t^d_j t^b_l) g^kl_cd:
-                             // + 1/2 t^bd_jl g^kl_cd
-                           + 0.5 * (  (2.0 * t2("b,d,j,l") - t2("d,b,j,l"))
-                                      * g_abij("c,d,k,l")
-                                    - (t2("b,d,j,l") - t2("d,b,j,l"))
-                                      * g_abij("d,c,k,l")
-                                   )
-                             // - t^d_j t^b_l g^kl_cd
-                           - t1("d,j") * t1("b,l")
-                             * (g_abij("c,d,k,l") - g_abij("d,c,k,l"))
-                           ;
     // alpha-beta case
     TW_KbCj_ab("k,b,c,j") = // g^kb_cj
                             g_aijb("c,j,k,b")
@@ -2490,20 +2462,6 @@ namespace sc {
                           ;
 
     // \tilde{W}abef
-    TW_ABCD_aa("a,b,c,d") =  //  g^ab_cd
-                             g_abcd("a,b,c,d") - g_abcd("b,a,c,d")
-
-                             // - P(ab) t^b_k g^ak_cd:
-                             // - t^b_k g^ak_cd
-                           - t1("b,k") * (g_abci("c,d,a,k") - g_abci("d,c,a,k"))
-                             // + t^a_k g^bk_cd
-                           + t1("a,k") * (g_abci("c,d,b,k") - g_abci("d,c,b,k"))
-
-                             ////// CCSD modified terms
-                             // + 1/4 tau^ab_kl g^kl_cd
-                           + 0.25 * tau_aa("a,b,k,l") * (g_abij("c,d,k,l") - g_abij("d,c,k,l"))
-                           ;
-
     TW_AbCd_ab("a,b,c,d") =  //  g^ab_cd
                              g_abcd("a,b,c,d")
 
@@ -2520,19 +2478,6 @@ namespace sc {
 
 
     // \tilde{W}mnij
-    TW_KLIJ_aa("k,l,i,j") =  // g^kl_ij
-                             g_ijkl("k,l,i,j") - g_ijkl("l,k,i,j")
-
-                             // + P(ij) t^c_j g^kl_ic:
-                             // + t^c_j g^kl_ic
-                           + t1("c,j") * (g_aikl("c,i,l,k") - g_aikl("c,i,k,l"))
-                             // + t^c_i g^kl_cj
-                           + t1("c,i") * (g_aikl("c,j,k,l") - g_aikl("c,j,l,k"))
-
-                             ////// CCSD modified terms
-                             // + 0.25 * tau^cd_ij * g^kl_cd
-                           + 0.25 * tau_aa("c,d,i,j") * (g_abij("c,d,k,l") - g_abij("c,d,l,k"))
-                            ;
     TW_KlIj_ab("k,l,i,j") =  // g^kl_ij
                              g_ijkl("k,l,i,j")
 
@@ -2553,29 +2498,16 @@ namespace sc {
   void SingleReference_R12Intermediates<T>::compute_intermediates_CW_ccsd(
                                               const TArray2& t1, const TArray4& t2,
                                               TArray2& CFkc, TArray2& CFac, TArray2& CFki,
-                                              TArray4& CW_KBCJ_aa, TArray4& CW_KbCj_ab, TArray4& CW_KbcJ_ba,
-                                              TArray4& CW_ABCD_aa, TArray4& CW_AbCd_ab,
-                                              TArray4& CW_ABCI_aa, TArray4& CW_AbCi_ab,
-                                              TArray4& CW_KLIJ_aa, TArray4& CW_KlIj_ab,
-                                              TArray4& CW_KBIJ_aa, TArray4& CW_KbIj_ab,
-                                              TArray4& CW_KLIC_aa, TArray4& CW_KlIc_ab, TArray4& CW_KliC_ab,
-                                              TArray4& CW_AKCD_aa, TArray4& CW_AkCd_ab, TArray4& CW_aKCd_ab) {
+                                              TArray4& CW_KbCj_ab, TArray4& CW_KbcJ_ba,
+                                              TArray4& CW_AbCd_ab, TArray4& CW_AbCi_ab,
+                                              TArray4& CW_KlIj_ab, TArray4& CW_KbIj_ab,
+                                              TArray4& CW_KlIc_ab, TArray4& CW_KliC_ab,
+                                              TArray4& CW_AkCd_ab) {
 
-    TArray4 tau_aa, tau_ab, Ttau_aa, Ttau_ab;
-    tau_aa("a,b,i,j") =  t2("a,b,i,j") - t2("b,a,i,j")
-                        + (t1("a,i") * t1("b,j") - t1("b,i") * t1("a,j"));
-    tau_ab("a,b,i,j") =  t2("a,b,i,j")
-                        + (t1("a,i") * t1("b,j"));
-    Ttau_aa("a,b,i,j") =  t2("a,b,i,j") - t2("b,a,i,j")
-                        + 0.5 * (t1("a,i") * t1("b,j")  - t1("b,i") * t1("a,j"));
-    Ttau_ab("a,b,i,j") =  t2("a,b,i,j")
-                        + 0.5 * t1("a,i") * t1("b,j");
+    TArray4 tau_ab, Ttau_ab;
+    tau_ab("a,b,i,j") = t2("a,b,i,j") + (t1("a,i") * t1("b,j"));
 
-    TArray4 taut1_aa, taut1_ab, Ttaut1_aa, Ttaut1_ab;
-    taut1_aa("a,b,i,j") =  t1("a,i") * t1("b,j") - t1("b,i") * t1("a,j");
-    taut1_ab("a,b,i,j") =  t1("a,i") * t1("b,j");
-    Ttaut1_aa("a,b,i,j") =  0.5 * t1("a,i") * t1("b,j")  - t1("b,i") * t1("a,j");
-    Ttaut1_ab("a,b,i,j") =  0.5 * t1("a,i") * t1("b,j");
+    Ttau_ab("a,b,i,j") = t2("a,b,i,j") + 0.5 * t1("a,i") * t1("b,j");
 
     TArray4d g_abij = ijxy("<a b|g|i j>");
     TArray4d g_abci = ijxy("<a b|g|c i>");
@@ -2585,19 +2517,17 @@ namespace sc {
 
     // compute intermediates
     TArray2 TFkc, TFac, TFki;
-    TArray4 TW_KBCJ_aa, TW_KbCj_ab,
+    TArray4 TW_KbCj_ab,
             ////// CCSD only term
             TW_KbcJ_ba,
-            TW_ABCD_aa, TW_AbCd_ab,
-            TW_KLIJ_aa, TW_KlIj_ab;
+            TW_AbCd_ab, TW_KlIj_ab;
 
      compute_intermediates_TFW_ccsd(t1, t2,
                                     g_abij, g_aikl,
                                     g_aibj, g_aijb, g_abci,
                                     TFkc, TFac, TFki,
-                                    TW_KBCJ_aa, TW_KbCj_ab, TW_KbcJ_ba,
-                                    TW_ABCD_aa, TW_AbCd_ab,
-                                    TW_KLIJ_aa, TW_KlIj_ab);
+                                    TW_KbCj_ab, TW_KbcJ_ba,
+                                    TW_AbCd_ab, TW_KlIj_ab);
 
      // \cal{F}
      CFkc("k,c") = TFkc("k,c");
@@ -2605,14 +2535,6 @@ namespace sc {
      CFki("k,i") = TFki("k,i") + 0.5 * t1("c,i") * TFkc("k,c");
 
     // \cal{W}mbej
-    CW_KBCJ_aa("k,b,c,j") =  //   \tilde{W}kbcj
-                             TW_KBCJ_aa("k,b,c,j")
-
-                             // - 1/2 t^db_jl g^kn_cd = + 1/2 t^db_lj g^kl_cd
-                           + 0.5 * (t2("d,b,l,j") - t2("b,d,l,j"))
-                                 * (g_abij("c,d,k,l") - g_abij("d,c,k,l"))
-                           + 0.5 * t2("d,b,l,j") * g_abij("c,d,k,l")
-                           ;
     CW_KbCj_ab("k,b,c,j") =  //   \tilde{W}kbcj
                              TW_KbCj_ab("k,b,c,j")
 
@@ -2631,13 +2553,6 @@ namespace sc {
                            ;
 
     // \cal{W}abef
-    CW_ABCD_aa("a,b,c,d") =  // \tilde{W}abcd
-                             TW_ABCD_aa("a,b,c,d")
-
-                             ////// CCSD modified terms
-                             // + 1/4 tau^ab_kl g^kl_cd
-                           + 0.25 * tau_aa("a,b,k,l") * (g_abij("c,d,k,l") - g_abij("d,c,k,l"));
-
     CW_AbCd_ab("a,b,c,d") =  // \tilde{W}abcd
                              TW_AbCd_ab("a,b,c,d")
 
@@ -2646,47 +2561,6 @@ namespace sc {
                            + 0.5 * tau_ab("a,b,k,l") * g_abij("c,d,k,l");
 
     // \cal{W}abei
-    CW_ABCI_aa("a,b,c,i") =  //   g^ab_ci
-                             g_abci("a,b,c,i") - g_abci("b,a,c,i")
-
-                             // - \cal{F}kc t^ab_ki
-                           - CFkc("k,c") * (t2("a,b,k,i") - t2("b,a,k,i"))
-
-                             // + t^d_i \cal{W}abcd
-                           + t1("d,i") * CW_ABCD_aa("a,b,c,d")
-
-                             ////// CCSD modified terms
-                             // + 1/2 g^kl_ci tau^ab_kl
-                           + 0.5 * (g_aikl("c,i,k,l") - g_aikl("c,i,l,k")) * tau_aa("a,b,k,l")
-
-                             ////// CCSD only terms
-                             // - P(ab) g^kb_cd t^ad_ki:
-                             // - g^kb_cd t^ad_ki = - g^bk_cd t^da_ki
-                           - (2.0 * g_abci("c,d,b,k") * t2("a,d,i,k") - g_abci("d,c,b,k") * t2("a,d,i,k")
-                              - g_abci("c,d,b,k") * t2("d,a,i,k") + g_abci("d,c,b,k") * t2("d,a,i,k"))
-                             // + g^ka_cd t^bd_ki = + g^ak_cd t^db_ki
-                           + (2.0 * g_abci("c,d,a,k") * t2("b,d,i,k") - g_abci("d,c,a,k") * t2("b,d,i,k")
-                              - g_abci("c,d,a,k") * t2("d,b,i,k") + g_abci("d,c,a,k") * t2("d,b,i,k"))
-
-                             // - P(ab) t^a_k (g^kb_ci - t^bd_li g^kl_cd):
-                             // - t^a_k (g^kb_ci - t^bd_li g^kl_cd) = - t^a_k (g^kb_ci + t^db_li g^kl_cd)
-                           - t1("a,k")
-                             * (  g_aijb("b,k,i,c") - g_aibj("b,k,c,i")
-                                  ////// CCSD only terms
-                                + (  2.0 * t2("d,b,l,i") * g_abij("c,d,k,l") - t2("b,d,l,i") * g_abij("c,d,k,l")
-                                   - t2("d,b,l,i") * g_abij("d,c,k,l") + t2("b,d,l,i") * g_abij("d,c,k,l")
-                                  )
-                               )
-                             // + t^b_k (g^ka_ci - t^ad_li g^kl_cd) = + t^b_k (- g^ak_ci + t^ad_il g^kl_cd)
-                           + t1("b,k")
-                             * (- g_aibj("a,k,c,i") + g_aijb("a,k,i,c")
-                                  ////// CCSD only terms
-                                + (  2.0 * t2("d,a,l,i") * g_abij("c,d,k,l") - t2("a,d,l,i") * g_abij("c,d,k,l")
-                                   - t2("d,a,l,i") * g_abij("d,c,k,l") + t2("a,d,l,i") * g_abij("d,c,k,l")
-                                   )
-                                )
-                           ;
-
     CW_AbCi_ab("a,b,c,i") =  //   g^ab_ci
                              g_abci("a,b,c,i")
 
@@ -2725,12 +2599,6 @@ namespace sc {
                            ;
 
     // \cal{W}mnij
-    CW_KLIJ_aa("k,l,i,j") =  //   \tilde{W}klij
-                             TW_KLIJ_aa("k,l,i,j")
-                             ////// CCSD modified terms
-                             // + 1/4 tau^cd_ij g^kl_cd
-                           + 0.25 * tau_aa("c,d,i,j") * (g_abij("c,d,k,l") - g_abij("c,d,l,k"))
-                           ;
     CW_KlIj_ab("k,l,i,j") =  // \tilde{W}klij
                              TW_KlIj_ab("k,l,i,j")
                              ////// CCSD modified terms
@@ -2739,45 +2607,6 @@ namespace sc {
                            ;
 
     // \cal{W}mbij
-    CW_KBIJ_aa("k,b,i,j") =  //   g^kb_ij
-                             g_aikl("b,k,j,i") - g_aikl("b,k,i,j")
-
-                             // - \cal{F}kc t^bc_ij = + CFkc t^cb_ij
-                           + CFkc("k,c") * (t2("c,b,i,j") - t2("b,c,i,j"))
-
-                             // - t^b_l \cal{W}klij
-                           - t1("b,l") * CW_KLIJ_aa("k,l,i,j")
-
-                             ////// CCSD modified terms
-                             // + 0.5 g^kb_cd tau^cd_ij
-                           + 0.5 * (g_abci("d,c,b,k") - g_abci("c,d,b,k")) * tau_aa("c,d,i,j")
-
-                             ////// CCSD only terms
-                             // + P(ij) g^kl_ic t^bc_jl：
-                             // + g^kl_ic t^bc_jl
-                           + 2.0 * g_aikl("c,i,l,k") * t2("b,c,j,l") - g_aikl("c,i,k,l") * t2("b,c,j,l")
-                           - g_aikl("c,i,l,k") * t2("b,c,l,j") + g_aikl("c,i,k,l") * t2("b,c,l,j")
-                             // - g^kl_jc t^bc_il
-                           - (  2.0 * g_aikl("c,j,l,k") * t2("b,c,i,l") - g_aikl("c,j,k,l") * t2("b,c,i,l")
-                              - g_aikl("c,j,l,k") * t2("c,b,i,l") + g_aikl("c,j,k,l") * t2("c,b,i,l"))
-
-                             // + P(IJ) t^c_i (g^kb_cj - t^bd_lj g^kl_cd)
-                             // + t^c_i (g^kb_cj - t^bd_lj g^kl_cd) = + t^c_i (g^kb_cj + t^bd_jl g^kl_cd)
-                           + t1("c,i")
-                             * (  g_aijb("c,j,k,b") - g_aibj("c,j,b,k")
-                                  ////// CCSD only terms
-                                + 2.0 * t2("b,d,j,l") * g_abij("c,d,k,l") - t2("d,b,j,l") * g_abij("c,d,k,l")
-                                - t2("b,d,j,l") * g_abij("d,c,k,l") + t2("d,b,j,l") * g_abij("d,c,k,l")
-                               )
-                             // - t^c_j (g^kb_ci - t^bd_li g^kl_cd) = - t^c_j (g^kb_ci + t^bd_il g^kl_cd)
-                           - t1("c,j")
-                             * (  g_aijb("c,i,k,b") - g_aibj("c,i,b,k")
-                                  ////// CCSD only terms
-                                + 2.0 * t2("b,d,i,l") * g_abij("c,d,k,l") - t2("d,b,i,l") * g_abij("c,d,k,l")
-                                - t2("b,d,i,l") * g_abij("d,c,k,l") + t2("d,b,i,l") * g_abij("d,c,k,l")
-                                )
-                           ;
-
     CW_KbIj_ab("k,b,i,j") =  //   g^kb_ij
                              g_aikl("b,k,j,i")
 
@@ -2816,11 +2645,6 @@ namespace sc {
                            ;
 
     // CCSD only term: CW_MNIE_ab
-    CW_KLIC_aa("k,l,i,c") =  //   g^kl_ic
-                             g_aikl("c,i,l,k") - g_aikl("c,i,k,l")
-                             // + t^d_i g^kl_dc
-                           + t1("d,i") * (g_abij("d,c,k,l") - g_abij("d,c,l,k"))
-                           ;
     CW_KlIc_ab("k,l,i,c") =  //   g^kl_ic
                              g_aikl("c,i,l,k")
                              // + t^d_i g^kl_dc
@@ -2833,20 +2657,10 @@ namespace sc {
                            ;
 
     // CCSD only term: CW_AMEF_aa
-    CW_AKCD_aa("a,k,c,d") =  //   g^ak_cd
-                             g_abci("c,d,a,k") - g_abci("d,c,a,k")
-                             // - t^a_l g^lk_cd
-                           - t1("a,l") * (g_abij("c,d,l,k") - g_abij("d,c,l,k"))
-                           ;
     CW_AkCd_ab("a,k,c,d") =  //   g^ak_cd
                              g_abci("c,d,a,k")
                              // - t^a_l g^lk_cd
                            - t1("a,l") * g_abij("c,d,l,k")
-                           ;
-    CW_aKCd_ab("a,k,c,d") =  //   g^ak_cd
-                            - g_abci("d,c,a,k")
-                             // - t^a_l g^lk_cd
-                           + t1("a,l") * g_abij("d,c,l,k")
                            ;
 
   }
@@ -2883,11 +2697,10 @@ namespace sc {
               << scprintf("%-15.12f", E_1) << std::endl;
 
     TArray2 TFkc, TFac, TFki;
-    TArray4 TW_KBCJ_aa, TW_KbCj_ab,
+    TArray4 TW_KbCj_ab,
             ////// CCSD only term
             TW_KbcJ_ba,
-            TW_ABCD_aa, TW_AbCd_ab,
-            TW_KLIJ_aa, TW_KlIj_ab;
+            TW_AbCd_ab, TW_KlIj_ab;
 
     TArray4d g_aikl = ijxy("<a i|g|k l>");
     TArray4d g_aibj = ijxy("<a i|g|b j>");
@@ -2902,9 +2715,8 @@ namespace sc {
                                      g_abij, g_aikl,
                                      g_aibj, g_aijb, g_abci,
                                      TFkc, TFac, TFki,
-                                     TW_KBCJ_aa, TW_KbCj_ab, TW_KbcJ_ba,
-                                     TW_ABCD_aa, TW_AbCd_ab,
-                                     TW_KLIJ_aa, TW_KlIj_ab);
+                                     TW_KbCj_ab, TW_KbcJ_ba,
+                                     TW_AbCd_ab, TW_KlIj_ab);
 
       t1("a,i") = Delta_ai("a,i") * (
                    //   fai
@@ -2944,8 +2756,8 @@ namespace sc {
                             + tau_ab("c,d,i,j") * TW_AbCd_ab("a,b,c,d")
 
                               // + P_(ij) P_(ab) (t^ac_ik TW_kbcj - t^c_i t^a_k g^kb_cj)
-                            + (  t2("a,c,i,k") * TW_KBCJ_aa("k,b,c,j") // TW_kbcj => TW_KBCJ_aa
-                               + (t2("a,c,i,k") - t2("c,a,i,k")) * TW_KbCj_ab("k,b,c,j")
+                            + (  t2("a,c,i,k") * TW_KbcJ_ba("k,b,c,j")
+                               + ( 2.0 * t2("a,c,i,k") - t2("c,a,i,k")) * TW_KbCj_ab("k,b,c,j")
                                //
                                - t1("c,i") * t1("a,k") * g_aijb("b,k,j,c")
                               )
@@ -2958,8 +2770,8 @@ namespace sc {
                                + t1("c,j") * t1("a,k") * g_aibj("b,k,c,i")
                               )
                               // + P_(ij) P_(ab)
-                            + (  t2("b,c,j,k") * TW_KBCJ_aa("k,a,c,i")
-                               + (t2("b,c,j,k") - t2("c,b,j,k")) * TW_KbCj_ab("k,a,c,i")
+                            + (  t2("b,c,j,k") * TW_KbcJ_ba("k,a,c,i")
+                               + (2.0 * t2("b,c,j,k") - t2("c,b,j,k")) * TW_KbCj_ab("k,a,c,i")
                                  //
                                - t1("c,j") * t1("b,k") * g_aijb("a,k,i,c")
                               )
@@ -3057,22 +2869,21 @@ namespace sc {
     // compute intermediates
     TArray2 CFkc, CFac, CFki;
     // \cal{W}mbej
-    TArray4 CW_KBCJ_aa, CW_KbCj_ab,
+    TArray4 CW_KbCj_ab,
             ////// CCSD only term
             CW_KbcJ_ba,
     // \cal{W}abei
-            CW_ABCD_aa, CW_AbCd_ab, CW_ABCI_aa, CW_AbCi_ab,
+            CW_AbCd_ab, CW_AbCi_ab,
     // \cal{W}mbij
-            CW_KLIJ_aa, CW_KlIj_ab, CW_KBIJ_aa, CW_KbIj_ab,
+            CW_KlIj_ab, CW_KbIj_ab,
     // intermediates for L2
-            CW_KLIC_aa, CW_KlIc_ab, CW_KliC_ab, CW_AKCD_aa, CW_AkCd_ab, CW_aKCd_ab;
+            CW_KlIc_ab, CW_KliC_ab, CW_AkCd_ab;
 
     compute_intermediates_CW_ccsd(t1, t2, CFkc, CFac, CFki,
-                                  CW_KBCJ_aa, CW_KbCj_ab, CW_KbcJ_ba,
-                                  CW_ABCD_aa, CW_AbCd_ab, CW_ABCI_aa, CW_AbCi_ab,
-                                  CW_KLIJ_aa, CW_KlIj_ab, CW_KBIJ_aa, CW_KbIj_ab,
-                                  CW_KLIC_aa, CW_KlIc_ab, CW_KliC_ab,
-                                  CW_AKCD_aa, CW_AkCd_ab, CW_aKCd_ab);
+                                  CW_KbCj_ab, CW_KbcJ_ba,
+                                  CW_AbCd_ab, CW_AbCi_ab,
+                                  CW_KlIj_ab, CW_KbIj_ab,
+                                  CW_KlIc_ab, CW_KliC_ab, CW_AkCd_ab);
 
     TArray2 CGac, CGki;
 
@@ -3097,19 +2908,17 @@ namespace sc {
                       // - \lambda^k_a \cal{F}ik
                     - L1("a,k") * CFki("i,k")
                       // + \lambda^k_c \cal{W}icak
-                    + L1("c,k") * (CW_KBCJ_aa("i,c,a,k") + CW_KbCj_ab("i,c,a,k"))
+                    + L1("c,k") * (2.0 * CW_KbCj_ab("i,c,a,k") + CW_KbcJ_ba("i,c,a,k"))
                       // + 1/2 \lambda^ik_cd \cal{W}cdak
-                    + 0.5 * (L2("c,d,i,k") - L2("c,d,k,i") ) * CW_ABCI_aa("c,d,a,k")
-                    + L2("c,d,i,k") * CW_AbCi_ab("c,d,a,k")
+                    + (2.0 * L2("c,d,i,k") - L2("c,d,k,i")) * CW_AbCi_ab("c,d,a,k")
                       // - 1/2 \lambda^kl_ac \cal{W}ickl
-                    - 0.5 * (L2("a,c,k,l") - L2("c,a,k,l") ) * CW_KBIJ_aa("i,c,k,l")
-                    - L2("a,c,k,l") * CW_KbIj_ab("i,c,k,l")
+                    - (2.0 * L2("a,c,k,l") - L2("c,a,k,l") ) * CW_KbIj_ab("i,c,k,l")
 
                       // CCSD only terms:
                       // - cal{G}cd cal{W}cida
-                    - CGac("c,d") * (CW_AKCD_aa("c,i,d,a") + CW_AkCd_ab("c,i,d,a")) // CW_aKcD => CW_AkCd_ab
+                    - CGac("c,d") * (2.0 * CW_AkCd_ab("c,i,d,a") - CW_AkCd_ab("c,i,a,d")) // CW_aKcD => CW_AkCd_ab
                       // - cal{G}kl cal{W}kila
-                    - CGki("k,l") * (CW_KLIC_aa("k,i,l,a") + CW_KlIc_ab("k,i,l,a")) // CW_kLiC => CW_KlIc_ab
+                    - CGki("k,l") * (2.0 * CW_KlIc_ab("k,i,l,a") + CW_KliC_ab("k,i,l,a"))
                      );
 
       auto L2_temp =  Delta_abij("a,b,i,j") * (
@@ -3118,7 +2927,7 @@ namespace sc {
 
                               // + P(ij) \lambda^i_c \cal{W}cjab
                             + L1("c,i") * CW_AkCd_ab("c,j,a,b")
-                            - L1("c,j") * CW_aKCd_ab("c,i,a,b")
+                            + L1("c,j") * CW_AkCd_ab("c,i,b,a")
 
                               // - P(ab) \lambda^k_a \cal{W}ijkb
                             - L1("a,k") * CW_KlIc_ab("i,j,k,b")
@@ -3148,15 +2957,15 @@ namespace sc {
                             + L2("c,d,i,j") * CW_AbCd_ab("c,d,a,b")
 
                               // + P(ij) P(ab) \lambda^ik_ac \cal{W}jcbk
-                            + (  (L2("a,c,i,k") - L2("c,a,i,k")) * CW_KbCj_ab("j,c,b,k")
-                               + L2("a,c,i,k") * CW_KBCJ_aa("j,c,b,k")) // CW_kbcj => CW_KBCJ_aa
+                            + (  (2.0 * L2("a,c,i,k") - L2("c,a,i,k")) * CW_KbCj_ab("j,c,b,k")
+                               + L2("a,c,i,k") * CW_KbcJ_ba("j,c,b,k")) // CW_kbcj => CW_KBCJ_aa
                               // P(ab)
                             + L2("c,b,i,k") * CW_KbcJ_ba("j,c,a,k") // CW_kBCj => CW_KbcJ_ab
                               // P(ij)
                             + L2("a,c,k,j") * CW_KbcJ_ba("i,c,b,k")
                               // P(ij) P(ab)
-                            + (  (L2("b,c,j,k") - L2("c,b,j,k")) * CW_KbCj_ab("i,c,a,k")
-                               + L2("b,c,j,k") * CW_KBCJ_aa("i,c,a,k"))
+                            + (  (2.0 * L2("b,c,j,k") - L2("c,b,j,k")) * CW_KbCj_ab("i,c,a,k")
+                               + L2("b,c,j,k") * CW_KbcJ_ba("i,c,a,k"))
 
                             // + P(ab) g^ij_ac Gbc
                             + g_abij("a,c,i,j") * CGac("b,c")
@@ -4968,6 +4777,7 @@ namespace sc {
     double q_xx_f12or = 0.0, q_yy_f12or = 0.0, q_zz_f12or = 0.0,
            q_xy_f12or = 0.0, q_xz_f12or = 0.0, q_yz_f12or = 0.0;
 #if INCLUDE_F12_CONTRI
+    {
     ExEnv::out0() << std::endl << indent
                   << "Compute F12 contributions" << std::endl;
     // F12 density from X and B terms
@@ -5329,6 +5139,7 @@ namespace sc {
                 << indent << "  v_yz (F12 or) = " << scprintf("%12.10f", v_yz_f12or * 2.0)
                 << std::endl << std::endl;
     }
+    }
 #endif
 
     ExEnv::out0() << std::endl << indent << "Start CCSD computation" << std::endl;
@@ -5371,6 +5182,7 @@ namespace sc {
     compute_lambda_ccsd(T1, T2, L1, L2, false); // do not include F12 contributions
 
 #if INCLUDE_CCSD_CONTRI
+    {
     // compute CCSD density from amplitudes
     TArray2 Dij_ccsd, Dab_ccsd, Dia_ccsd, Dai_ccsd;
     ExEnv::out0() << std::endl << indent
@@ -5427,11 +5239,13 @@ namespace sc {
 //                  << "mu_z (CCSD orbital response) = " << scprintf("%15.12f", - mu_z_ccsdor * 2.0)
 //                  << std::endl;
     }
+    }
 #endif
 
     // CC F12 coupling contribution to Xam
     double mu_z_Cccsdf12 = 0.0;
 #if INCLUDE_CCSDF12C_CONTRI
+    {
     // resolve CCSD lambda amplitudes, density, and Xam in the framework of CCSD(2)_F12
     ExEnv::out0() << std::endl << indent << "Compute CCSD(2)_F12 L amplitudes " << std::endl;
     TArray2 L1_f12;
@@ -5549,6 +5363,7 @@ namespace sc {
         mu_z_Cccsdf12 +=  dot(mu_z_ijp("i,j'"), Diip_CVT("i,j'"))
                         + dot(mu_z_am("a,m"), Dbn_Diip_CVT("a,m"));
       }
+    }
     }
 #endif
 

@@ -250,8 +250,7 @@ namespace tcc {
       TArray2 r1;
       TArray4 r2;
       TA::DIIS<tcc::cc::T1T2<double, Tile, Policy>> diis(1);
-//      while (dE >= 1.0e-12 || error >= 1e-12){
-      while (dE >= 1.0e-12){
+      while ((dE >= 1.0e-6 || error >= 1e-6)){
 
         // intermediates for t1
         // external index i and a
@@ -260,15 +259,16 @@ namespace tcc {
           h_ac("a,c") = //- f_ab("a,c")
                         - (2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
 
-          h_ki("k,i") =  // f_ij("k,i") +
+          h_ki("k,i") =   //f_ij("k,i") +
                   (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
 
           h_kc("k,c") = f_ai("c,k") + (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t1("d,l");
         }
 
-        // update t1
+        // compute residual r1(n) = t1(n+1) - t1(n)
+        // external index i and a
         {
-          t1("a,i") = d1("a,i")*(
+          r1("a,i") = -t1("a,i") + d1("a,i")*(
                   //
                   f_ai("a,i") - 2.0 * f_ai("c,k") * t1("a,k") * t1("c,i")
                   //
@@ -288,7 +288,7 @@ namespace tcc {
         // intermediates for t2
         // external index i j a b
 
-        TArray4 a_klij, b_abcd, j_akic, k_kaic, T;
+        TArray4 a_klij, b_abij, j_akic, k_kaic, T;
         TArray2 g_ki, g_ac;
         {
           T("d,b,i,l") = 0.5*t2("d,b,i,l") + t1("d,i")*t1("b,l");
@@ -297,7 +297,7 @@ namespace tcc {
                                + g_ijka("k,l,i,c") * t1("c,j") + g_ijak("k,l,c,j") * t1("c,i")
                                + g_abij("c,d,k,l") * tau("c,d,i,j");
 
-          b_abcd("a,b,i,j") =  g_abcd("a,b,c,d")* tau("c,d,i,j")
+          b_abij("a,b,i,j") =  g_abcd("a,b,c,d")* tau("c,d,i,j")
                                - g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k")
                                - g_iabc("k,b,c,d") * tau("c,d,i,j")* t1("a,k");
 
@@ -316,13 +316,14 @@ namespace tcc {
 
         }
 
-        t2("a,b,i,j") = d2("a,b,i,j")*(
+        // compute residual r2(n) = t2(n+1) - t2(n)
+        r2("a,b,i,j") = -t2("a,b,i,j") + d2("a,b,i,j")*(
                 //
                 g_abij("a,b,i,j")
                 //
                 + a_klij("k,l,i,j") * tau("a,b,k,l")
                 //
-                + b_abcd("a,b,i,j")
+                + b_abij("a,b,i,j")
 
                 // permutation part
                 //
@@ -342,12 +343,17 @@ namespace tcc {
                 - 0.5*k_kaic("k,b,j,c")*t2("a,c,k,i") - k_kaic("k,a,j,c")*t2("b,c,k,i")
         );
 
-//        tcc::cc::T1T2<double, Tile, Policy> t(t1,t2);
-//        tcc::cc::T1T2<double, Tile, Policy> r(r1,r2);
-//        error = r.norm()/size(t);
-//        diis.extrapolate(t, r);
-//        std::cout << t.first << std::endl;
+        t1("a,i") = t1("a,i") + r1("a,i");
+        t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
 
+        tcc::cc::T1T2<double, Tile, Policy> t(t1,t2);
+        tcc::cc::T1T2<double, Tile, Policy> r(r1,r2);
+        error = r.norm()/size(t);
+        diis.extrapolate(t, r);
+
+        //update t1 and t2
+        t1("a,i") = t.first("a,i");
+        t2("a,b,i,j") = t.second("a,b,i,j");
 
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 

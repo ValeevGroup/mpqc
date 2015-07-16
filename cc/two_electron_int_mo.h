@@ -39,18 +39,18 @@ namespace tcc{
           // <ab|cd>
           abcd_("a,b,c,d") = Xab("X,a,c") * Xab("X,b,d");
           //std::cout << abcd_ << std::endl;
-          // <ab|ci>
-          abci_("a,b,c,i") = Xab("X,a,c") * Xai("X,b,i");
+          // <ia|bc>
+          iabc_("i,a,b,c") = Xab("X,a,c") * Xai("X,b,i");
 //        std::cout << abci_ << std::endl;
-          // <ab|ic>
-          abic_("a,b,i,c") = Xai("X,a,i") * Xab("X,b,c");
-          // <ai|kl>
-          aikl_("a,i,k,l") = Xai("X,a,k") * Xij("X,i,l");
+          // <ai|bc>
+          aibc_("a,i,b,c") = Xai("X,c,i") * Xab("X,a,b");
+          // <ij|ak>
+          ijak_("i,j,a,k") = Xai("X,a,i") * Xij("X,j,k");
 //        std::cout << aikl_ << std::endl;
-          // <ia|kl>
-          iakl_("i,a,k,l") = Xai("X,a,l") * Xij("X,i,k");
-          // <ai|bj>
-          aibj_("a,i,b,j") = Xab("X,a,b") * Xij("X,i,j");
+          // <ij|ka>
+          ijka_("i,j,k,a") = Xai("X,a,j") * Xij("X,i,k");
+          // <ia|jb>
+          iajb_("i,a,j,b") = Xab("X,a,b") * Xij("X,i,j");
 //        std::cout << aibj_ << std::endl;
 
         }
@@ -69,24 +69,24 @@ namespace tcc{
         return abcd_;
       }
 
-      const TArray4 &get_abci() const {
-        return abci_;
+      const TArray4 &get_iabc() const {
+        return iabc_;
       }
 
-      const TArray4 &get_abic() const {
-        return abic_;
+      const TArray4 &get_aibc() const {
+        return aibc_;
       }
 
-      const TArray4 &get_aikl() const {
-        return aikl_;
+      const TArray4 &get_ijak() const {
+        return ijak_;
       }
 
-      const TArray4 &get_iakl() const {
-        return iakl_;
+      const TArray4 &get_ijka() const {
+        return ijka_;
       }
 
-      const TArray4 &get_aibj() const {
-        return aibj_;
+      const TArray4 &get_iajb() const {
+        return iajb_;
       }
 
       const TArray4 &get_aijb() const {
@@ -100,11 +100,11 @@ namespace tcc{
       TArray4 abij_;
       TArray4 ijkl_;
       TArray4 abcd_;
-      TArray4 abci_;
-      TArray4 abic_;
-      TArray4 aikl_;
-      TArray4 iakl_;
-      TArray4 aibj_;
+      TArray4 iabc_;
+      TArray4 aibc_;
+      TArray4 ijak_;
+      TArray4 ijka_;
+      TArray4 iajb_;
       TArray4 aijb_;
     };
 

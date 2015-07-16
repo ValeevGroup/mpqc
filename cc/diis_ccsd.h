@@ -29,8 +29,8 @@ namespace tcc {
       T1T2(TArray2<T,Tile,Policy> &t1 , TArray4<T,Tile,Policy> &t2)
               : first(t1), second(t2) { }
 
-      TArray2 <T, Tile, Policy> first;
-      TArray4 <T, Tile, Policy> second;
+      TArray2 <T, Tile, Policy>& first;
+      TArray4 <T, Tile, Policy>& second;
 
       double norm(){
         const std::string var2 = TA::detail::dummy_annotation(2ul);

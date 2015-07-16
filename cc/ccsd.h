@@ -297,8 +297,9 @@ namespace tcc {
                                + g_ijka("k,l,i,c") * t1("c,j") + g_ijak("k,l,c,j") * t1("c,i")
                                + g_abij("c,d,k,l") * tau("c,d,i,j");
 
-          b_abcd("a,b,c,d") =  g_abcd("a,b,c,d")
-                               - g_aibc("a,k,c,d") * t1("b,k") - g_iabc("k,b,c,d") * t1("a,k");
+          b_abcd("a,b,i,j") =  g_abcd("a,b,c,d")* tau("c,d,i,j")
+                               - g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k")
+                               - g_iabc("k,b,c,d") * tau("c,d,i,j")* t1("a,k");
 
           g_ki("k,i") = h_ki("k,i") + f_ai("c,k")*t1("c,i")
                         + (2.0*g_ijka("k,l,i,c")-g_ijka("l,k,i,c"))*t1("c,l");
@@ -321,7 +322,7 @@ namespace tcc {
                 //
                 + a_klij("k,l,i,j") * tau("a,b,k,l")
                 //
-                + b_abcd("a,b,c,d") * tau("c,d,i,j")
+                + b_abcd("a,b,i,j")
 
                 // permutation part
                 //

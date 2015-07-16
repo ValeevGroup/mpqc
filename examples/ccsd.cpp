@@ -535,7 +535,7 @@ int main(int argc, char *argv[]) {
 
             tcc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(fock_mo, ens, tre, g);
 
-            ccsd.compute_cc2();
+//            ccsd.compute_cc2();
             ccsd.compute_ccsd();
 
             //std::cout << two_e << std::endl;

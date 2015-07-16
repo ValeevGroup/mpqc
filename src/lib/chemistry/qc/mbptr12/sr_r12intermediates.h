@@ -351,6 +351,7 @@ namespace sc {
              const TArray4d& g_abij, const TArray4d& g_aikl,
              const TArray4d& g_aibj, const TArray4d& g_aijb,
              const TArray4d& g_abci,
+             const TArray4d& g_ijkl, const TArray4d& g_abcd,
              TArray2& TFkc, TArray2& TFac, TArray2& TFki,
              TArray4& TW_KbCj_ab,TArray4& TW_KbcJ_ba,
              TArray4& TW_AbCd_ab, TArray4& TW_KlIj_ab);

@@ -96,13 +96,21 @@ void main_print_clusters(
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
+
+
+    // declare variables needed for ccsd
+    std::shared_ptr<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::SparsePolicy>> g;
+    std::shared_ptr<tcc::TRange1Engine> tre;
+    Eigen::MatrixXd ens;
+    TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> fock_mo;
     {
         std::string mol_file = (argc >= 2) ? argv[1] : "";
-        int bs_nclusters = (argc >= 3) ? std::stoi(argv[2]) : 0;
-        int dfbs_nclusters = (argc >= 4) ? std::stoi(argv[3]) : 0;
+        std::size_t blocksize = (argc >= 3) ? std::stoi(argv[2]) : 16;
+        int bs_nclusters = (argc >= 4) ? std::stoi(argv[3]) : 0;
+        int dfbs_nclusters = (argc >= 5) ? std::stoi(argv[4]) : 0;
 
         if (mol_file.empty() || 0 == bs_nclusters || 0 == dfbs_nclusters) {
-            std::cout << "input is $./program mol_file "
+            std::cout << "input is $./program mol_file blocksize"
                     "bs_cluster dfbs_clusters "
                     "basis_set(cc-pvdz) df_basis_set(cc-pvdz-ri) "
                     "sparse_threshold(1e-11) "
@@ -110,13 +118,13 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        std::string basis_name = (argc >= 5) ? argv[4] : "cc-pvdz";
-        std::string df_basis_name = (argc >= 6) ? argv[5] : "cc-pvdz-ri";
+        std::string basis_name = (argc >= 6) ? argv[5] : "cc-pvdz";
+        std::string df_basis_name = (argc >= 7) ? argv[6] : "cc-pvdz-ri";
 
-        auto threshold = (argc >= 7) ? std::stod(argv[6]) : 1e-11;
-        auto low_rank_threshold = (argc >= 8) ? std::stod(argv[7]) : 1e-7;
-        bool print_clusters = (argc >= 9) ? std::stoi(argv[8]) : true;
-        volatile int debug = (argc >= 10) ? std::stod(argv[9]) : 0;
+        auto threshold = (argc >= 8) ? std::stod(argv[7]) : 1e-11;
+        auto low_rank_threshold = (argc >= 9) ? std::stod(argv[8]) : 1e-7;
+        bool print_clusters = (argc >= 10) ? std::stoi(argv[9]) : true;
+        volatile int debug = (argc >= 11) ? std::stod(argv[10]) : 0;
         utility::parallal_break_point(world, debug);
 
         if (world.rank() == 0) {
@@ -489,64 +497,63 @@ int main(int argc, char *argv[]) {
         utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                            energy + repulsion_energy, "\n");
 
+    // end of SCF
+    // prepare CC
         utility::print_par(world, "\nCC Test\n");
 
-        if (mol.nelements() <= 30) { // Begin CCSD
-            utility::print_par(world, "\nBegining CC\n");
+      S_TA = TA::to_new_tile_type(S, to_ta);
+      F_TA = TA::to_new_tile_type(F, to_ta);
+      auto X_ab_TA = TA::to_new_tile_type(Xab, to_ta);
 
-            auto S_TA = TA::to_new_tile_type(S, to_ta);
-            auto F_TA = TA::to_new_tile_type(F, to_ta);
-            auto X_ab_TA = TA::to_new_tile_type(Xab, to_ta);
+      auto F_eig = array_ops::array_to_eigen(F_TA);
+      auto S_eig = array_ops::array_to_eigen(S_TA);
+      Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+                                                                 S_eig);
+      ens = es.eigenvalues();
+      auto C_all = es.eigenvectors();
+      decltype(S_eig) C_occ = C_all.leftCols(occupation / 2);
+      decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occupation / 2);
 
-            auto F_eig = array_ops::array_to_eigen(F_TA);
-            auto S_eig = array_ops::array_to_eigen(S_TA);
-            Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
-                                                                     S_eig);
-            auto ens = es.eigenvalues();
-            auto C_all = es.eigenvectors();
-            decltype(S_eig) C_occ = C_all.leftCols(occupation / 2);
-            decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occupation / 2);
+      std::size_t all = S.trange().elements().extent()[0];
+      tre = std::make_shared<TRange1Engine>(occupation / 2, all, blocksize);
 
-            std::size_t all = S.trange().elements().extent()[0];
-            auto tre = std::make_shared<TRange1Engine>(occupation / 2, all, dfbs_nclusters);
-
-          // start mp2
+      // start mp2
 //            MP2<TA::Tensor<double>, TA::SparsePolicy> mp2(F_TA, S_TA, X_ab_TA, *tre);
 //
 //            auto two_e = mp2.get_g();
 //            mp2.compute();
 
-            auto tr_0 = Xab.trange().data().back();
-            auto tr_all = tre->get_all_tr1();
-            auto tr_i = tre->get_occ_tr1();
-            auto tr_vir = tre->get_vir_tr1();
+    auto tr_0 = Xab.trange().data().back();
+    auto tr_all = tre->get_all_tr1();
+    auto tr_i0 = tre->get_occ_tr1();
+    auto tr_vir = tre->get_vir_tr1();
 
-            auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_occ,tr_0, tr_i);
-            auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_vir,tr_0, tr_vir);
-            auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_all,tr_0, tr_all);
-            auto g = std::make_shared<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::SparsePolicy>>(X_ab_TA,Ci, Cv);
+    if (world.rank() ==0){
+      std::cout << "TiledRange1 All   ";
+      std::cout << tr_all << std::endl;
+      std::cout << "TiledRange1 Vir   ";
+      std::cout << tr_vir << std::endl;
+    }
 
-            decltype(F_TA) fock_mo;
-            fock_mo("p,q") = F_TA("mu,nu")*Call("mu,p")*Call("nu,q");
-            auto F_diag = ens.asDiagonal().toDenseMatrix();
-//            std::cout << F_diag << std::endl;
-//            std::cout << fock_mo << std::endl;
-            auto F_eig_TA = array_ops::eigen_to_array<TA::Tensor<double>>(world, F_diag, tr_all, tr_all);
+    auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_occ,tr_0, tr_i0);
+    auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_vir,tr_0, tr_vir);
+    auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_all,tr_0, tr_all);
+    g = std::make_shared<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::SparsePolicy>>(X_ab_TA,Ci, Cv);
 
-            tcc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(fock_mo, ens, tre, g);
+    fock_mo("p,q") = F_TA("mu,nu")*Call("mu,p")*Call("nu,q");
+    }
+
+    world.gop.fence();
+
+    utility::print_par(world, "\nBegining CC\n");
+
+
+    tcc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(fock_mo, ens, tre, g);
 
 //            ccsd.compute_cc2();
-            ccsd.compute_ccsd();
-
-            //std::cout << two_e << std::endl;
+    ccsd.compute_ccsd();
 
 
-        } else {
-            utility::print_par(world, "Skipping MP2 because molecule had ",
-                               mol.nelements(), " atoms.\n");
-        }
-
-    }
     world.gop.fence();
     libint2::cleanup();
     madness::finalize();

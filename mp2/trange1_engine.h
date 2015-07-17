@@ -61,8 +61,8 @@ namespace tcc{
 
 
   TA::TiledRange1 TRange1Engine::tr_occupied() {
-    std::size_t nblocks = (guess_ < occ_) ? guess_ : occ_;
-    std::size_t block_size = std::max(occ_ / nblocks, 1ul);
+    std::size_t block_size = guess_;
+    std::size_t nblocks = int((occ_ + 1)/block_size);
     std::vector<std::size_t> blocks;
     blocks.reserve(nblocks + 1);
     blocks.push_back(0);
@@ -74,8 +74,8 @@ namespace tcc{
   }
 
   TA::TiledRange1 TRange1Engine::tr_virtual() {
-    std::size_t nblocks = (guess_ < vir_) ? guess_ : vir_;
-    std::size_t block_size = std::max(vir_/ nblocks, 1ul);
+    std::size_t block_size = guess_;
+    std::size_t nblocks = int((vir_ + 1)/block_size);
     std::vector<std::size_t> blocks;
     blocks.reserve(nblocks + 1);
     blocks.push_back(0);
@@ -89,8 +89,8 @@ namespace tcc{
   TA::TiledRange1 TRange1Engine::tr_all() {
 
     // occ part
-    std::size_t nblocks = (guess_ < occ_) ? guess_ : occ_;
-    std::size_t block_size = std::max(occ_ / nblocks, 1ul);
+    std::size_t block_size = guess_;
+    std::size_t nblocks = int((occ_ + 1)/block_size);
     std::vector<std::size_t> blocks;
     blocks.push_back(0);
     for (std::size_t i = block_size; i < occ_; i += block_size) {
@@ -99,8 +99,7 @@ namespace tcc{
     blocks.push_back(occ_);
 
     //vir part
-    nblocks = (guess_ < vir_) ? guess_ : vir_;
-    block_size = std::max(vir_/ nblocks, 1ul);
+    nblocks = int((vir_ + 1)/block_size);
     for (std::size_t i = occ_ + block_size; i < all_; i += block_size) {
       blocks.push_back(i);
     }

@@ -207,7 +207,7 @@ namespace tcc {
       TArray2 f_ai;
       f_ai("a,i") = fock_("a,i");
 
-      auto g_abij = g_->get_abij();
+      TArray4 g_abij = g_->get_abij();
 //      std::cout << g_abij << std::endl;
 
       TArray2 d1 = guess_t_ai(f_ai, ens_, n_occ);
@@ -250,7 +250,10 @@ namespace tcc {
       TArray2 r1;
       TArray4 r2;
       TA::DIIS<tcc::cc::T1T2<double, Tile, Policy>> diis(1);
-      while ((dE >= 1.0e-6 || error >= 1e-6)){
+      while ((dE >= 1.0e-7 || error >= 1e-7)){
+
+        //start timer
+        std::clock_t start = std::clock();
 
         // intermediates for t1
         // external index i and a
@@ -264,6 +267,7 @@ namespace tcc {
 
           h_kc("k,c") = f_ai("c,k") + (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t1("d,l");
         }
+        g_abij.get_world().gop.fence();
 
         // compute residual r1(n) = t1(n+1) - t1(n)
         // external index i and a
@@ -285,6 +289,7 @@ namespace tcc {
           );
         }
 
+        g_abij.get_world().gop.fence();
         // intermediates for t2
         // external index i j a b
 
@@ -316,32 +321,44 @@ namespace tcc {
 
         }
 
+        g_abij.get_world().gop.fence();
         // compute residual r2(n) = t2(n+1) - t2(n)
-        r2("a,b,i,j") = -t2("a,b,i,j") + d2("a,b,i,j")*(
-                //
-                g_abij("a,b,i,j")
-                //
-                + a_klij("k,l,i,j") * tau("a,b,k,l")
-                //
-                + b_abij("a,b,i,j")
+        {
+          r2("a,b,i,j") = -t2("a,b,i,j") + d2("a,b,i,j") * (
+                  //
+                  g_abij("a,b,i,j")
+                  //
+                  + a_klij("k,l,i,j") * tau("a,b,k,l")
+                  //
+                  + b_abij("a,b,i,j")
 
-                // permutation part
-                //
-                + (g_ac("a,c")*t2("c,b,i,j") - g_ki("k,i")*t2("a,b,k,j"))
-                + (g_ac("b,c")*t2("c,a,j,i") - g_ki("k,j")*t2("b,a,k,i"))
+                  // permutation part
+                  //
+                  + (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"))
+                  + (g_ac("b,c") * t2("c,a,j,i") - g_ki("k,j") * t2("b,a,k,i"))
 
-                + (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j")
-                + (g_iabc("j,c,b,a") - g_iajb("k,a,j,c") * t1("b,k")) * t1("c,i")
-                //
-                - (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k")
-                - (g_ijak("j,i,b,k") + g_abij("b,c,j,k") * t1("c,i")) * t1("a,k")
+                  + (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) *
+                    t1("c,j")
+                  + (g_iabc("j,c,b,a") - g_iajb("k,a,j,c") * t1("b,k")) *
+                    t1("c,i")
+                  //
+                  - (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) *
+                    t1("b,k")
+                  - (g_ijak("j,i,b,k") + g_abij("b,c,j,k") * t1("c,i")) *
+                    t1("a,k")
 
-                + 0.5*(2.0*j_akic("a,k,i,c") - k_kaic("k,a,i,c")) * (2.0*t2("c,b,k,j") - t2("b,c,k,j"))
-                + 0.5*(2.0*j_akic("b,k,j,c") - k_kaic("k,b,j,c")) * (2.0*t2("c,a,k,i") - t2("a,c,k,i"))
+                  + 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
+                    (2.0 * t2("c,b,k,j") - t2("b,c,k,j"))
+                  + 0.5 * (2.0 * j_akic("b,k,j,c") - k_kaic("k,b,j,c")) *
+                    (2.0 * t2("c,a,k,i") - t2("a,c,k,i"))
 
-                - 0.5*k_kaic("k,a,i,c")*t2("b,c,k,j") - k_kaic("k,b,i,c")*t2("a,c,k,j")
-                - 0.5*k_kaic("k,b,j,c")*t2("a,c,k,i") - k_kaic("k,a,j,c")*t2("b,c,k,i")
-        );
+                  - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
+                  k_kaic("k,b,i,c") * t2("a,c,k,j")
+                  - 0.5 * k_kaic("k,b,j,c") * t2("a,c,k,i") -
+                  k_kaic("k,a,j,c") * t2("b,c,k,i")
+          );
+        }
+        g_abij.get_world().gop.fence();
 
         t1("a,i") = t1("a,i") + r1("a,i");
         t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
@@ -363,12 +380,20 @@ namespace tcc {
              + TA::dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), tau("a,b,i,j") );
         dE = std::abs(E0 - E1);
         iter += 1ul;
-        std::cout << iter << "  " << dE << "  " << error << "  " << E1 << std::endl;
+
+        double duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+
+        if (g_abij.get_world().rank() ==0){
+          std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  " << duration << std::endl;
+        }
+
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
 
       }
-      std::cout << E1 << std::endl;
+      if (g_abij.get_world().rank() ==0) {
+        std::cout << E1 << std::endl;
+      }
     }
 
   private:

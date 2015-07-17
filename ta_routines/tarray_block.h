@@ -60,7 +60,7 @@ namespace tcc {
     /// Array accessor
 
     /// \return A reference to the array
-    TArray &get_array() const {
+    const TArray &get_array() const {
       return &array_;
     }
 

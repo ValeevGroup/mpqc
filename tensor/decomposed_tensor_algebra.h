@@ -353,7 +353,7 @@ inline void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
         throw;
     }
 
-    TA::Range l_range{static_cast<unsigned int>(cols), full_rank};
+    TA::Range l_range{static_cast<unsigned int>(cols), static_cast<unsigned long>(full_rank)};
     L = TA::Tensor<double>(std::move(l_range));
 
     // Eigen map the input

@@ -22,8 +22,6 @@
 #include "../molecule/clustering_functions.h"
 #include "../molecule/make_clusters.h"
 
-#include "../integrals/ta_tensor_to_low_rank_tensor.h"
-
 #include "../basis/atom_basisset.h"
 #include "../basis/basis_set.h"
 #include "../basis/cluster_shells.h"
@@ -34,8 +32,9 @@
 #include "../integrals/sparse_task_integrals.h"
 #include "../integrals/make_engine.h"
 
-#include "../density/purification_devel.h"
-#include "../density/sqrt_inv.h"
+/* #include "../scf/purification/purification_devel.h" */
+#include "../ta_routines/sqrt_inv.h"
+#include <madness/world/array_addons.h>
 
 using namespace tcc;
 
@@ -51,6 +50,7 @@ void print_size_info(TiledArray::Array<T, DIM, TileType, Policy> const &a,
                        "\tSparse = ", data[1], " GB\n", "\tLow Rank = ",
                        data[2], " GB\n");
 }
+
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     }
     {
         auto inv_sqrt_timer = tcc_time::make_timer(
-              [&]() { return pure::inverse_sqrt(eri2); });
+              [&]() { return tcc::pure::inverse_sqrt(eri2); });
 
         auto sqrt_inv = inv_sqrt_timer.apply();
 
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
         inv("i,j") = inv("i,k") * eri2("k,j");
         inv.truncate();
 
-        auto ident = pure::create_diagonal_matrix(inv, 1.0);
+        auto ident = tcc::array::create_diagonal_matrix(inv, 1.0);
 
         auto f_norm_diff = utility::array_fnorm_diff(inv, ident);
         utility::print_par(world, "\nIdenity-(M*M^{-1}) F norm difference = ",

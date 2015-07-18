@@ -227,7 +227,7 @@ namespace tcc {
       double E1 = 2.0* TA::dot(f_ai("a,i"), t1("a,i")) +
                   TA::dot(2.0*g_abij("a,b,i,j") - g_abij("b,a,i,j"), tau("a,b,i,j"));
       double dE = std::abs(E1 - E0);
-      std::cout << E1 << std::endl;
+//      std::cout << E1 << std::endl;
 
 
       TArray2 f_ab, f_ij;
@@ -267,7 +267,7 @@ namespace tcc {
 
           h_kc("k,c") = f_ai("c,k") + (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t1("d,l");
         }
-        g_abij.get_world().gop.fence();
+//        g_abij.get_world().gop.fence();
 
         // compute residual r1(n) = t1(n+1) - t1(n)
         // external index i and a
@@ -289,7 +289,7 @@ namespace tcc {
           );
         }
 
-        g_abij.get_world().gop.fence();
+//        g_abij.get_world().gop.fence();
         // intermediates for t2
         // external index i j a b
 
@@ -321,7 +321,7 @@ namespace tcc {
 
         }
 
-        g_abij.get_world().gop.fence();
+//        g_abij.get_world().gop.fence();
         // compute residual r2(n) = t2(n+1) - t2(n)
         {
           r2("a,b,i,j") = -t2("a,b,i,j") + d2("a,b,i,j") * (
@@ -358,7 +358,7 @@ namespace tcc {
                   k_kaic("k,a,j,c") * t2("b,c,k,i")
           );
         }
-        g_abij.get_world().gop.fence();
+//        g_abij.get_world().gop.fence();
 
         t1("a,i") = t1("a,i") + r1("a,i");
         t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
@@ -387,6 +387,7 @@ namespace tcc {
           std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  " << duration << std::endl;
         }
 
+        g_abij.get_world().gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
 

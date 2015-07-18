@@ -253,7 +253,7 @@ namespace tcc {
       while ((dE >= 1.0e-7 || error >= 1e-7)){
 
         //start timer
-        std::clock_t start = std::clock();
+        auto t0 = tcc::tcc_time::now();
 
         // intermediates for t1
         // external index i and a
@@ -381,7 +381,8 @@ namespace tcc {
         dE = std::abs(E0 - E1);
         iter += 1ul;
 
-        double duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+        auto t1 = tcc_time::now();
+        auto duration = tcc_time::duration_in_s(t0, t1);
 
         if (g_abij.get_world().rank() ==0){
           std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  " << duration << std::endl;

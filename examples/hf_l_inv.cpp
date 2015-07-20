@@ -45,7 +45,7 @@ void
 main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
                     std::ostream &os);
 
-int main(int argc, char *argv[]) {
+int try_main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
 
     rapidjson::Document in;
@@ -561,6 +561,22 @@ int main(int argc, char *argv[]) {
     madness::finalize();
     return 0;
 }
+
+int main(int argc, char** argv){
+    try{
+        try_main(argc, argv);
+    } catch(const madness::MadnessException &e){
+        std::cout << "Madness Exception Says " << e.what() << std::endl;
+    } catch(const TiledArray::Exception &e){
+        std::cout << "TA Exception Says " << e.what() << std::endl;
+    } catch(const std::exception &e){
+        std::cout << "std Exception Says " << e.what() << std::endl;
+    } catch(...){
+        std::cout << "Caught unknown exception" << std::endl;
+    }
+    return 0;
+}
+
 
 void
 main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,

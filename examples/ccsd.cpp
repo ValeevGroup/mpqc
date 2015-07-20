@@ -555,7 +555,6 @@ int try_main(int argc, char *argv[], madness::World& world) {
 
     world.gop.fence();
     libint2::cleanup();
-    madness::finalize();
     return 0;
 }
 

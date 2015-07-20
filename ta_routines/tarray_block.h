@@ -57,12 +57,6 @@ namespace tcc {
       return block_engine_;
     }
 
-    /// Array accessor
-
-    /// \return A reference to the array
-    const TArray &get_array() const {
-      return &array_;
-    }
 
   private:
     TArray array_;

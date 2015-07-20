@@ -210,6 +210,10 @@ namespace tcc {
       TArray4 g_abij = g_->get_abij();
 //      std::cout << g_abij << std::endl;
 
+      if (g_abij.get_world().rank() ==0) {
+        std::cout << "start guess" << std::endl;
+      }
+
       TArray2 d1 = guess_t_ai(f_ai, ens_, n_occ);
       TArray4 d2 = guess_t_abij(g_abij, ens_, n_occ);
 
@@ -229,6 +233,9 @@ namespace tcc {
       double dE = std::abs(E1 - E0);
 //      std::cout << E1 << std::endl;
 
+      if (g_abij.get_world().rank() ==0) {
+        std::cout << "start integral prepare" << std::endl;
+      }
 
       TArray2 f_ab, f_ij;
       f_ab("a,b") = fock_("a,b");
@@ -244,6 +251,9 @@ namespace tcc {
       TArray4 g_ijka = g_->get_ijka();
 
 
+      if (g_abij.get_world().rank() ==0) {
+        std::cout << "start iteration" << std::endl;
+      }
       //optimize t1 and t2
       std::size_t iter = 0ul;
       double error = 1.0;
@@ -255,6 +265,9 @@ namespace tcc {
         //start timer
         auto t0 = tcc::tcc_time::now();
 
+        if (g_abij.get_world().rank() ==0) {
+          std::cout << "start t1" << std::endl;
+        }
         // intermediates for t1
         // external index i and a
         TArray2 h_ac, h_ki, h_kc;
@@ -289,6 +302,9 @@ namespace tcc {
           );
         }
 
+        if (g_abij.get_world().rank() ==0) {
+          std::cout << "start t2" << std::endl;
+        }
 //        g_abij.get_world().gop.fence();
         // intermediates for t2
         // external index i j a b
@@ -362,6 +378,10 @@ namespace tcc {
 
         t1("a,i") = t1("a,i") + r1("a,i");
         t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
+
+        if (g_abij.get_world().rank() ==0) {
+          std::cout << "start extrapolate" << std::endl;
+        }
 
         tcc::cc::T1T2<double, Tile, Policy> t(t1,t2);
         tcc::cc::T1T2<double, Tile, Policy> r(r1,r2);

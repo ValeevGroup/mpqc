@@ -219,6 +219,11 @@ namespace tcc {
 
       TArray2 t1;
       TArray4 t2;
+
+      if (g_abij.get_world().rank() ==0) {
+        std::cout << "compute guess" << std::endl;
+      }
+
       t1("a,i") = f_ai("a,i")*d1("a,i");
       t2("a,b,i,j") = g_abij("a,b,i,j")*d2("a,b,i,j");
 
@@ -227,6 +232,9 @@ namespace tcc {
       TArray4 tau;
       tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i")*t1("b,j");
 
+      if (g_abij.get_world().rank() ==0) {
+        std::cout << "compute energy" << std::endl;
+      }
       double E0 = 0.0;
       double E1 = 2.0* TA::dot(f_ai("a,i"), t1("a,i")) +
                   TA::dot(2.0*g_abij("a,b,i,j") - g_abij("b,a,i,j"), tau("a,b,i,j"));

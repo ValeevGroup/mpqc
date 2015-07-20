@@ -94,8 +94,7 @@ void main_print_clusters(
     }
 }
 
-int main(int argc, char *argv[]) {
-    auto &world = madness::initialize(argc, argv);
+int try_main(int argc, char *argv[], madness::World& world) {
 
 
     // declare variables needed for ccsd
@@ -561,3 +560,34 @@ int main(int argc, char *argv[]) {
 }
 
 
+int main(int argc, char *argv[]) {
+
+  int rc = 0;
+
+  auto &world = madness::initialize(argc, argv);
+
+  try {
+
+    try_main(argc, argv, world);
+
+  } catch (TiledArray::Exception &e) {
+    std::cerr << "!! TiledArray exception: " << e.what() << "\n";
+    rc = 1;
+  } catch (madness::MadnessException &e) {
+    std::cerr << "!! MADNESS exception: " << e.what() << "\n";
+    rc = 1;
+  } catch (SafeMPI::Exception &e) {
+    std::cerr << "!! SafeMPI exception: " << e.what() << "\n";
+    rc = 1;
+  } catch (std::exception &e) {
+    std::cerr << "!! std exception: " << e.what() << "\n";
+    rc = 1;
+  } catch (...) {
+    std::cerr << "!! exception: unknown exception\n";
+    rc = 1;
+  }
+
+
+  madness::finalize();
+  return rc;
+}

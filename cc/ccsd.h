@@ -214,11 +214,12 @@ namespace tcc {
         std::cout << "start guess" << std::endl;
       }
 
-      TArray2 d1;
-      d1("a,i") = f_ai("a,i");
+      TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape());
+      // store d1 to local
       d_ai(d1, ens_, n_occ);
-      TArray4 d2;
-      d2("a,b,i,j") = g_abij("a,b,i,j");
+
+      TArray4 d2(g_abij.get_world(), g_abij.trange(), g_abij.get_shape());
+      // store d2 distributed
       d_abij(d2, ens_, n_occ);
 
       TArray2 t1;
@@ -435,8 +436,12 @@ namespace tcc {
     void d_abij(TArray4& abij,
                         const Eigen::VectorXd& ens, std::size_t n_occ)
     {
-      auto convert = [&ens, n_occ](Tile &result_tile) {
-        result_tile = Tile(result_tile.range());
+      typedef typename TArray4::range_type range_type;
+      typedef typename TArray2::iterator iterator;
+
+      auto make_tile = [&ens, n_occ](range_type &range) {
+
+        auto result_tile = Tile(range);
 
         // compute index
         const auto a0 = result_tile.range().lobound()[0];
@@ -449,7 +454,7 @@ namespace tcc {
         const auto jn = result_tile.range().upbound()[3];
 
         auto tile_idx = 0;
-        typename Tile::value_type norm = 0.0;
+        typename Tile::value_type tmp = 1.0;
         for (auto a = a0; a < an; ++a) {
           const auto e_a = ens[a + n_occ];
           for (auto b = b0; b < bn; ++b) {
@@ -459,44 +464,60 @@ namespace tcc {
               for (auto j = j0; j < jn; ++j, ++tile_idx) {
                 const auto e_j = ens[j];
                 const auto e_iajb = e_i + e_j - e_a - e_b;
-                const auto result_abij = 1.0/(e_iajb);
-                norm += result_abij*result_abij;
+                const auto result_abij = tmp/(e_iajb);
                 result_tile[tile_idx] = result_abij;
               }
             }
           }
         }
-        return std::sqrt(norm);
+        return result_tile;
       };
 
-      TA::foreach_inplace(abij, convert);
+      for(iterator it = abij.begin(); it != abij.end(); ++it){
+
+        madness::Future<Tile> tile = abij.get_world().taskq.add(make_tile,
+                             abij.trange().make_tile_range(it.ordinal()));
+
+        *it = tile;
+      }
+
     }
 
     void d_ai(TArray2& f_ai, const Eigen::VectorXd& ens, int n_occ)
     {
-      auto convert = [&ens, n_occ] (Tile& result_tile){
-        result_tile =  Tile(result_tile.range());
+      typedef typename TArray2::range_type range_type;
+      typedef typename TArray2::iterator iterator;
+
+      auto make_tile = [&ens, n_occ] (range_type& range){
+
+        auto result_tile =  Tile(range);
         const auto a0 = result_tile.range().lobound()[0];
         const auto an = result_tile.range().upbound()[0];
         const auto i0 = result_tile.range().lobound()[1];
         const auto in = result_tile.range().upbound()[1];
 
         auto ai = 0;
-        typename Tile::value_type norm = 0.0;
+        typename Tile::value_type tmp = 1.0;
         for (auto a = a0; a < an; ++a) {
           const auto e_a = ens[a + n_occ];
           for (auto i = i0; i < in; ++i, ++ai) {
             const auto e_i = ens[i];
             const auto e_ia = e_i - e_a;
-            const auto result_ai = 1.0 / (e_ia);
-            norm += result_ai * result_ai;
+            const auto result_ai = tmp / (e_ia);
             result_tile[ai] = result_ai;
           }
         }
-        return std::sqrt(norm);
+        return result_tile;
       };
 
-      TA::foreach_inplace(f_ai, convert);
+      for(iterator it = f_ai.begin(); it != f_ai.end(); ++it){
+
+        madness::Future<Tile> tile = f_ai.get_world().taskq.add(make_tile,
+          f_ai.trange().make_tile_range(it.ordinal()));
+
+        *it = tile;
+      }
+
     }
 
   private:

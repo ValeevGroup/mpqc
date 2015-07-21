@@ -214,8 +214,12 @@ namespace tcc {
         std::cout << "start guess" << std::endl;
       }
 
-      TArray2 d1 = guess_t_ai(f_ai, ens_, n_occ);
-      TArray4 d2 = guess_t_abij(g_abij, ens_, n_occ);
+      TArray2 d1;
+      d1("a,i") = f_ai("a,i");
+      d_ai(d1, ens_, n_occ);
+      TArray4 d2;
+      d2("a,b,i,j") = g_abij("a,b,i,j");
+      d_abij(d2, ens_, n_occ);
 
       TArray2 t1;
       TArray4 t2;
@@ -428,21 +432,21 @@ namespace tcc {
 
   private:
 
-    TArray4 guess_t_abij(const TArray4& abij,
+    void d_abij(TArray4& abij,
                         const Eigen::VectorXd& ens, std::size_t n_occ)
     {
-      auto convert = [&ens, n_occ](Tile &result_tile, const Tile &arg_tile) {
-        result_tile = Tile(arg_tile.range());
+      auto convert = [&ens, n_occ](Tile &result_tile) {
+        result_tile = Tile(result_tile.range());
 
         // compute index
-        const auto a0 = arg_tile.range().lobound()[0];
-        const auto an = arg_tile.range().upbound()[0];
-        const auto b0 = arg_tile.range().lobound()[1];
-        const auto bn = arg_tile.range().upbound()[1];
-        const auto i0 = arg_tile.range().lobound()[2];
-        const auto in = arg_tile.range().upbound()[2];
-        const auto j0 = arg_tile.range().lobound()[3];
-        const auto jn = arg_tile.range().upbound()[3];
+        const auto a0 = result_tile.range().lobound()[0];
+        const auto an = result_tile.range().upbound()[0];
+        const auto b0 = result_tile.range().lobound()[1];
+        const auto bn = result_tile.range().upbound()[1];
+        const auto i0 = result_tile.range().lobound()[2];
+        const auto in = result_tile.range().upbound()[2];
+        const auto j0 = result_tile.range().lobound()[3];
+        const auto jn = result_tile.range().upbound()[3];
 
         auto tile_idx = 0;
         typename Tile::value_type norm = 0.0;
@@ -455,7 +459,6 @@ namespace tcc {
               for (auto j = j0; j < jn; ++j, ++tile_idx) {
                 const auto e_j = ens[j];
                 const auto e_iajb = e_i + e_j - e_a - e_b;
-//                const auto result_abij = arg_tile[tile_idx]/(e_iajb);
                 const auto result_abij = 1.0/(e_iajb);
                 norm += result_abij*result_abij;
                 result_tile[tile_idx] = result_abij;
@@ -466,17 +469,17 @@ namespace tcc {
         return std::sqrt(norm);
       };
 
-      return TA::foreach(abij, convert);
+      TA::foreach_inplace(abij, convert);
     }
 
-    TArray2 guess_t_ai(const TArray2& f_ai, const Eigen::VectorXd& ens, int n_occ)
+    void d_ai(TArray2& f_ai, const Eigen::VectorXd& ens, int n_occ)
     {
-      auto convert = [&ens, n_occ] (Tile& result_tile, const Tile& arg_tile){
-        result_tile =  Tile(arg_tile.range());
-        const auto a0 = arg_tile.range().lobound()[0];
-        const auto an = arg_tile.range().upbound()[0];
-        const auto i0 = arg_tile.range().lobound()[1];
-        const auto in = arg_tile.range().upbound()[1];
+      auto convert = [&ens, n_occ] (Tile& result_tile){
+        result_tile =  Tile(result_tile.range());
+        const auto a0 = result_tile.range().lobound()[0];
+        const auto an = result_tile.range().upbound()[0];
+        const auto i0 = result_tile.range().lobound()[1];
+        const auto in = result_tile.range().upbound()[1];
 
         auto ai = 0;
         typename Tile::value_type norm = 0.0;
@@ -485,7 +488,6 @@ namespace tcc {
           for (auto i = i0; i < in; ++i, ++ai) {
             const auto e_i = ens[i];
             const auto e_ia = e_i - e_a;
-//            const auto result_ai = arg_tile[ai] / (e_ia);
             const auto result_ai = 1.0 / (e_ia);
             norm += result_ai * result_ai;
             result_tile[ai] = result_ai;
@@ -494,8 +496,7 @@ namespace tcc {
         return std::sqrt(norm);
       };
 
-      TArray2 t_ai = TA::foreach(f_ai, convert);
-      return  t_ai;
+      TA::foreach_inplace(f_ai, convert);
     }
 
   private:

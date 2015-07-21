@@ -98,10 +98,11 @@ int try_main(int argc, char *argv[], madness::World& world) {
 
 
     // declare variables needed for ccsd
-    std::shared_ptr<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::SparsePolicy>> g;
+    std::shared_ptr<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::DensePolicy>> g;
     std::shared_ptr<tcc::TRange1Engine> tre;
     Eigen::MatrixXd ens;
-    TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> fock_mo;
+    TA::Array<double, 2, TA::Tensor<double>, TA::DensePolicy> fock_mo_dense;
+  TA::Array<double, 2, TA::Tensor<double>, TA::DensePolicy> fock_ai;
     {
         std::string mol_file = (argc >= 2) ? argv[1] : "";
         std::size_t blocksize = (argc >= 3) ? std::stoi(argv[2]) : 16;
@@ -109,7 +110,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
         int dfbs_nclusters = (argc >= 5) ? std::stoi(argv[4]) : 0;
 
         if (mol_file.empty() || 0 == bs_nclusters || 0 == dfbs_nclusters) {
-            std::cout << "input is $./program mol_file blocksize"
+            std::cout << "input is $./program mol_file blocksize "
                     "bs_cluster dfbs_clusters "
                     "basis_set(cc-pvdz) df_basis_set(cc-pvdz-ri) "
                     "sparse_threshold(1e-11) "
@@ -497,10 +498,12 @@ int try_main(int argc, char *argv[], madness::World& world) {
     // prepare CC
         utility::print_par(world, "\nCC Test\n");
 
+
       S_TA = TA::to_new_tile_type(S, to_ta);
       F_TA = TA::to_new_tile_type(F, to_ta);
-      auto X_ab_TA = TA::to_new_tile_type(Xab, to_ta);
+      auto X_ab = TA::to_new_tile_type(Xab, to_ta);
 
+      auto X_ab_TA = TA::to_dense(X_ab);
       auto F_eig = array_ops::array_to_eigen(F_TA);
       auto S_eig = array_ops::array_to_eigen(S_TA);
       Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
@@ -534,17 +537,29 @@ int try_main(int argc, char *argv[], madness::World& world) {
     auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_occ,tr_0, tr_i0);
     auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_vir,tr_0, tr_vir);
     auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world,C_all,tr_0, tr_all);
-    g = std::make_shared<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::SparsePolicy>>(X_ab_TA,Ci, Cv);
 
+    auto Ci_dense = TA::to_dense(Ci);
+    auto Cv_dense = TA::to_dense(Cv);
+
+    g = std::make_shared<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::DensePolicy>>(X_ab_TA,Ci_dense, Cv_dense);
+
+    decltype(F_TA) fock_mo;
     fock_mo("p,q") = F_TA("mu,nu")*Call("mu,p")*Call("nu,q");
+    fock_mo_dense = TA::to_dense(fock_mo);
+
+    decltype(F_TA) fock_ai_aparse;
+    fock_ai_aparse("a,i") = F_TA("mu,nu")*Cv("mu,a")*Ci("nu,i");
+    fock_ai = TA::to_dense(fock_ai_aparse);
+
     }
 
     world.gop.fence();
 
     utility::print_par(world, "\nBegining CC\n");
+    tcc::utility::parallal_break_point(world, 0);
 
 
-    tcc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(fock_mo, ens, tre, g);
+    tcc::cc::CCSD<TA::Tensor<double>, TA::DensePolicy> ccsd(fock_mo_dense, ens, tre, g, fock_ai);
 
 //            ccsd.compute_cc2();
     ccsd.compute_ccsd();

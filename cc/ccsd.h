@@ -34,8 +34,9 @@ namespace tcc {
 
     CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
          const std::shared_ptr<TRange1Engine> &tre,
-         const std::shared_ptr<TwoElectronIntMO<Tile, Policy>> &g) :
-            ens_(ens), tre_(tre), g_(g)
+         const std::shared_ptr<TwoElectronIntMO<Tile, Policy>> &g,
+          const TArray2 &fock_ai) :
+            ens_(ens), tre_(tre), g_(g), f_ai_(fock_ai)
     {
       auto mo_block = std::make_shared<tcc::MOBlock>(*tre_);
       fock_ = TArrayBlock2(fock, mo_block);
@@ -204,24 +205,40 @@ namespace tcc {
 
       auto n_occ = tre_->get_occ();
 
-      TArray2 f_ai;
-      f_ai("a,i") = fock_("a,i");
-
       TArray4 g_abij = g_->get_abij();
+
+      TArray2 f_ai;
+      f_ai("a,i") = f_ai_("a,i");
+
+      g_abij.get_world().gop.fence();
+
 //      std::cout << g_abij << std::endl;
 
       if (g_abij.get_world().rank() ==0) {
         std::cout << "start guess" << std::endl;
       }
 
-      TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape());
+      TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
       // store d1 to local
       d_ai(d1, ens_, n_occ);
 
-      TArray4 d2(g_abij.get_world(), g_abij.trange(), g_abij.get_shape());
+      TArray4 d2(g_abij.get_world(), g_abij.trange(), g_abij.get_shape(), g_abij.get_pmap());
       // store d2 distributed
       d_abij(d2, ens_, n_occ);
 
+      if(d1.get_world().rank() == 1) {
+        std::cout << "Rank 1 tiles" << std::endl;
+        for(auto it = d1.begin(); it != d1.end(); ++it){
+          std::cout << it->get() << std::endl;
+        }
+      }
+      if(d1.get_world().rank() == 0) {
+        std::cout << "Rank 0 tiles" << std::endl;
+        for(auto it = d1.begin(); it != d1.end(); ++it){
+          std::cout << it->get() << std::endl;
+        }
+        std::cout << "Finished Rank 0 tiles" << std::endl;
+      }
       TArray2 t1;
       TArray4 t2;
 
@@ -250,9 +267,6 @@ namespace tcc {
         std::cout << "start integral prepare" << std::endl;
       }
 
-      TArray2 f_ab, f_ij;
-      f_ab("a,b") = fock_("a,b");
-      f_ij("i,j") = fock_("i,j");
       // get all two electron integrals
       // this is a shallow copy
       TArray4 g_ijkl = g_->get_ijkl();
@@ -510,12 +524,14 @@ namespace tcc {
         return result_tile;
       };
 
-      for(iterator it = f_ai.begin(); it != f_ai.end(); ++it){
+      typename TArray2::pmap_interface::const_iterator it = f_ai.get_pmap()->begin();
+      typename TArray2::pmap_interface::const_iterator end = f_ai.get_pmap()->end();
+      for(; it != end; ++it){
 
         madness::Future<Tile> tile = f_ai.get_world().taskq.add(make_tile,
-          f_ai.trange().make_tile_range(it.ordinal()));
+          f_ai.trange().make_tile_range(*it));
 
-        *it = tile;
+        f_ai.set(*it, tile);
       }
 
     }
@@ -524,6 +540,7 @@ namespace tcc {
     Eigen::VectorXd ens_;
     std::shared_ptr<tcc::TRange1Engine> tre_;
     std::shared_ptr<tcc::cc::TwoElectronIntMO<Tile, Policy>> g_;
+    TArray2 f_ai_;
     TArrayBlock2 fock_;
   };
 

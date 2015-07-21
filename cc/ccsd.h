@@ -214,10 +214,6 @@ namespace tcc {
 
 //      std::cout << g_abij << std::endl;
 
-      if (g_abij.get_world().rank() ==0) {
-        std::cout << "start guess" << std::endl;
-      }
-
       TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
       // store d1 to local
       d_ai(d1, ens_, n_occ);
@@ -226,25 +222,8 @@ namespace tcc {
       // store d2 distributed
       d_abij(d2, ens_, n_occ);
 
-      if(d1.get_world().rank() == 1) {
-        std::cout << "Rank 1 tiles" << std::endl;
-        for(auto it = d1.begin(); it != d1.end(); ++it){
-          std::cout << it->get() << std::endl;
-        }
-      }
-      if(d1.get_world().rank() == 0) {
-        std::cout << "Rank 0 tiles" << std::endl;
-        for(auto it = d1.begin(); it != d1.end(); ++it){
-          std::cout << it->get() << std::endl;
-        }
-        std::cout << "Finished Rank 0 tiles" << std::endl;
-      }
       TArray2 t1;
       TArray4 t2;
-
-      if (g_abij.get_world().rank() ==0) {
-        std::cout << "compute guess" << std::endl;
-      }
 
       t1("a,i") = f_ai("a,i")*d1("a,i");
       t2("a,b,i,j") = g_abij("a,b,i,j")*d2("a,b,i,j");
@@ -254,18 +233,11 @@ namespace tcc {
       TArray4 tau;
       tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i")*t1("b,j");
 
-      if (g_abij.get_world().rank() ==0) {
-        std::cout << "compute energy" << std::endl;
-      }
       double E0 = 0.0;
       double E1 = 2.0* TA::dot(f_ai("a,i"), t1("a,i")) +
                   TA::dot(2.0*g_abij("a,b,i,j") - g_abij("b,a,i,j"), tau("a,b,i,j"));
       double dE = std::abs(E1 - E0);
 //      std::cout << E1 << std::endl;
-
-      if (g_abij.get_world().rank() ==0) {
-        std::cout << "start integral prepare" << std::endl;
-      }
 
       // get all two electron integrals
       // this is a shallow copy
@@ -292,9 +264,6 @@ namespace tcc {
         //start timer
         auto t0 = tcc::tcc_time::now();
 
-        if (g_abij.get_world().rank() ==0) {
-          std::cout << "start t1" << std::endl;
-        }
         // intermediates for t1
         // external index i and a
         TArray2 h_ac, h_ki, h_kc;
@@ -329,9 +298,6 @@ namespace tcc {
           );
         }
 
-        if (g_abij.get_world().rank() ==0) {
-          std::cout << "start t2" << std::endl;
-        }
 //        g_abij.get_world().gop.fence();
         // intermediates for t2
         // external index i j a b
@@ -406,10 +372,6 @@ namespace tcc {
         t1("a,i") = t1("a,i") + r1("a,i");
         t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
 
-        if (g_abij.get_world().rank() ==0) {
-          std::cout << "start extrapolate" << std::endl;
-        }
-
         tcc::cc::T1T2<double, Tile, Policy> t(t1,t2);
         tcc::cc::T1T2<double, Tile, Policy> r(r1,r2);
         error = r.norm()/size(t);
@@ -441,7 +403,7 @@ namespace tcc {
 
       }
       if (g_abij.get_world().rank() ==0) {
-        std::cout << E1 << std::endl;
+        std::cout << "CCSD Energy  " << E1 << std::endl;
       }
     }
 

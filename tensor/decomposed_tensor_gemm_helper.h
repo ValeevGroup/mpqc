@@ -297,7 +297,7 @@ struct low_rank_gemm<1ul, 3ul, 2ul> {
     Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
                           GHelper const &gh) {
         const auto X = a.tensor(0).range().extent()[0]; // X from above.
-        auto range = TA::Range{X};
+        auto range = TA::Range(X);
         auto out_tensor
               = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
         this->operator()(out_tensor, a, b, f, gh);
@@ -330,7 +330,7 @@ struct low_rank_gemm<1ul, 2ul, 1ul> {
     Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
                           GHelper const &gh) {
         const auto X = a.tensor(0).range().extent()[0]; // X from above.
-        auto range = TA::Range{X};
+        auto range = TA::Range(X);
         auto out_tensor
               = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
         this->operator()(out_tensor, a, b, f, gh);
@@ -372,7 +372,7 @@ struct low_rank_gemm<2ul, 3ul, 1ul> {
         } else if (a.ndecomp() == 2) {
             const auto i = a.tensor(1).range().extent()[1];
             const auto j = a.tensor(1).range().extent()[2];
-            auto range = TA::Range{i, j};
+            auto range = TA::Range(i, j);
             out_tensor
                   = Dtensor<T>(a.cut(), TA::Tensor<T>(std::move(range), 0.0));
         }

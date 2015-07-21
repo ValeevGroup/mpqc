@@ -25,10 +25,12 @@ add_dependencies(unit_tests catch)
 
 set(utests
     atom_test.cpp
+    cluster_test.cpp
     )
 
-add_executable(tests test_main.cpp ${utests})
-target_link_libraries(tests ${TileCluterChem_LIBRARIES})
+add_executable(tests EXCLUDE_FROM_ALL test_main.cpp ${utests})
+target_link_libraries(tests ${TileClusterChem_LIBRARIES})
+set_target_properties(unit_tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 add_dependencies(tests catch)
 add_dependencies(unit_tests tests)

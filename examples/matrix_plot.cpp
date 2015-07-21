@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
         auto const &tile = it->get();
         auto const &range = tile.range();
         auto const &start = range.start();
-        auto const &size = range.size();
+        auto const &size = range.extent();
 
         RowMatrixXd eig_block = RowMatrixXd::Zero(size[0], size[1]);
         if(tile.isFull()){

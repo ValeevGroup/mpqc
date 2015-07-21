@@ -7,7 +7,7 @@
 #include "../tensor/decomposed_tensor.h"
 
 namespace tcc {
-namespace pure {
+namespace array {
 
 template <typename T>
 void make_diagonal_tile(TiledArray::Tensor<T> &tile, T val) {
@@ -29,7 +29,6 @@ void make_diagonal_tile(tensor::Tile<tensor::DecomposedTensor<T>> &tile,
         map(i, i) = val;
     }
 }
-
 
 template <typename T, unsigned int N, typename Tile>
 TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
@@ -75,6 +74,38 @@ TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
             diag.set(ord, std::move(tile));
         }
     }
+
+    return diag;
+}
+/*!
+ * \breif takes a TiledArray::TiledRange and a value and returns a diagonal
+ *matrix.
+ *
+ * This function creates a diagonal matrix given a TiledArray::TiledRange and
+ * a value.  The template parameters must be a numeric type followed by a
+ * tile type. Finally there must be a create_diagonal_tile overload for the tile
+ * type that gets passed in.
+ *
+ * By default this function will create the array using the default
+ * madness::World, but you can pass in a world as an optional third parameter.
+ *
+ * \todo Finish diagonal matrix this is a little trickier than previous identity
+ *functions because it needs to gracefully handle non symmetric tiling.
+ */
+template <typename T, typename Tile>
+TiledArray::Array<T, 2, Tile, TiledArray::SparsePolicy>
+diagonal_matrix(TiledArray::TiledRange const &trange, double val,
+                madness::World &world = madness::World::get_default()) {
+
+    using Array = TiledArray::Array<T, 2, Tile, TiledArray::SparsePolicy>;
+
+    // TODO initialize tile_norms
+    TiledArray::Tensor<float> tile_norms(trange.tiles(), 0.0);
+
+    TiledArray::SparseShape<float> shape(world, tile_norms, trange);
+
+    Array diag(world, trange, shape);
+    // TODO assign to diagonal tiles.
 
     return diag;
 }

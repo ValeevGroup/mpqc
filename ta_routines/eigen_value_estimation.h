@@ -18,7 +18,7 @@ double min_eval_guess(It first, It second) {
 
     for (; first != second; ++first) {
         auto tensor = first->get();
-        std::vector<std::size_t> extent = tensor.range().size();
+        std::vector<std::size_t> extent = tensor.range().extent();
         auto matrix = TiledArray::eigen_map(tensor, extent[0], extent[1]);
 
         auto idx = first.index();

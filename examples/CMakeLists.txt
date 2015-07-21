@@ -13,6 +13,9 @@ target_link_libraries(ccsd
   ${TileClusterChem_LIBRARIES}
 )
 
+file(COPY ${CMAKE_SOURCE_DIR}/examples/default_input.json DESTINATION ${CMAKE_BINARY_DIR}/examples)
+file(COPY ${CMAKE_SOURCE_DIR}/examples/generate_input.py DESTINATION ${CMAKE_BINARY_DIR}/examples)
+
 add_executable(hf_l_inv EXCLUDE_FROM_ALL hf_l_inv.cpp)
 target_link_libraries(hf_l_inv
   ${TileClusterChem_LIBRARIES}

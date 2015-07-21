@@ -14,6 +14,7 @@
 #include "../utility/parallel_break_point.h"
 #include "../utility/array_storage.h"
 #include "../utility/time.h"
+#include "../utility/json_input.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
@@ -39,81 +40,58 @@
 using namespace tcc;
 namespace ints = integrals;
 
-static std::map<int, std::string> atom_names = { {1 , "H"}
-                                             , {2 , "He"}
-                                             , {3 , "Li"}
-                                             , {4 , "Be"}
-                                             , {5 , "B"}
-                                             , {6 , "C"}
-                                             , {7 , "N"}
-                                             , {8 , "O"}
-                                             , {9 , "F"}
-                                             , {10 , "Ne"}
-                                             , {11 , "Na"}
-                                             , {12 , "Mg"}
-};
 
-void main_print_clusters(
-      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-      std::ostream &os) {
-    std::vector<std::vector<molecule::Atom>> clusters;
-    auto total_atoms = 0ul;
-    for (auto const &cluster : bs) {
-        std::vector<molecule::Atom> temp;
-        for (auto atom : molecule::collapse_to_atoms(*cluster)) {
-            temp.push_back(std::move(atom));
-            ++total_atoms;
-        }
-        clusters.push_back(std::move(temp));
-    }
+void
+main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+                    std::ostream &os);
 
-    os << total_atoms << std::endl;
-    os << "Whole molecule" << std::endl;
-
-    for (auto const &cluster : clusters) {
-        for (auto const &atom : cluster) {
-            auto center = 0.52917721092 * atom.center();
-            os << atom_names[atom.charge()] << " " << center[0] << " " << center[1] << " "
-               << center[2] << std::endl;
-        }
-    }
-    os << std::endl;
-    auto counter = 0ul;
-    for (auto const &cluster : clusters) {
-        os << cluster.size() << std::endl;
-        os << "Cluster " << counter++ << std::endl;
-        for (auto const &atom : cluster) {
-            auto center = 0.52917721092 * atom.center();
-            os << atom_names[atom.charge()] << " " << center[0] << " " << center[1] << " "
-               << center[2] << std::endl;
-        }
-        os << std::endl;
-    }
-}
-
-int main(int argc, char *argv[]) {
+int try_main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
 
-    std::string mol_file = (argc >= 2) ? argv[1] : "";
-    int bs_nclusters = (argc >= 3) ? std::stoi(argv[2]) : 0;
-    int dfbs_nclusters = (argc >= 4) ? std::stoi(argv[3]) : 0;
+    rapidjson::Document in;
+    parse_input(argc, argv, in);
 
-    if (mol_file.empty() || 0 == bs_nclusters || 0 == dfbs_nclusters) {
-        std::cout << "input is $./program mol_file "
-                     "bs_cluster dfbs_clusters "
-                     "basis_set(cc-pvdz) df_basis_set(cc-pvdz-ri) "
-                     "sparse_threshold(1e-11) "
-                     "low_rank_threshhold(1e-7) print_cluster_xyz(true)\n";
-        return 0;
+    if (!in.HasMember("xyz file") || !in.HasMember("number of bs clusters")
+        || !in.HasMember("number of dfbs clusters")) {
+        if (world.rank() == 0) {
+            std::cout << "At a minimum your input file must provide\n";
+            std::cout << "\"xyz file\", which is path to an xyz input\n";
+            std::cout << "\"number of bs clusters\", which is the number of "
+                         "clusters in the obs\n";
+            std::cout << "\"number of dfbs clusters\", which is the number of "
+                         "clusters in the dfbs\n";
+        }
     }
+    // Get necessary info
+    std::string mol_file = in["xyz file"].GetString();
+    int bs_nclusters = in["number of bs clusters"].GetInt();
+    int dfbs_nclusters = in["number of dfbs clusters"].GetInt();
+    int occ_nclusters = in.HasMember("number of occupied clusters")
+                              ? in["number of occupied clusters"].GetInt()
+                              : 1;
 
-    std::string basis_name = (argc >= 5) ? argv[4] : "cc-pvdz";
-    std::string df_basis_name = (argc >= 6) ? argv[5] : "cc-pvdz-ri";
+    // Get basis info
+    std::string basis_name = in.HasMember("basis") ? in["basis"].GetString()
+                                                   : "cc-pvdz";
+    std::string df_basis_name = in.HasMember("df basis")
+                                      ? in["df basis"].GetString()
+                                      : "cc-pvdz-ri";
 
-    auto threshold = (argc >= 7) ? std::stod(argv[6]) : 1e-11;
-    auto low_rank_threshold = (argc >= 8) ? std::stod(argv[7]) : 1e-7;
-    bool print_clusters = (argc >= 9) ? std::stoi(argv[8]) : true;
-    volatile int debug = (argc >= 10) ? std::stod(argv[9]) : 0;
+    // Get thresh info
+    auto threshold = in.HasMember("block sparse threshold")
+                           ? in["block sparse threshold"].GetDouble()
+                           : 1e-13;
+    auto low_rank_threshold = in.HasMember("low rank threshold")
+                                    ? in["low rank threshold"].GetDouble()
+                                    : 1e-8;
+
+    // Get printing info
+    bool print_clusters = in.HasMember("print clusters")
+                                ? in["print clusters"].GetBool()
+                                : false;
+
+    volatile int debug
+          = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
     utility::parallal_break_point(world, debug);
 
     if (world.rank() == 0) {
@@ -122,6 +100,8 @@ int main(int argc, char *argv[]) {
         std::cout << "df basis is " << df_basis_name << std::endl;
         std::cout << "Using " << bs_nclusters << " bs clusters" << std::endl;
         std::cout << "Using " << dfbs_nclusters << " dfbs clusters"
+                  << std::endl;
+        std::cout << "Using " << occ_nclusters << " occupied clusters"
                   << std::endl;
         std::cout << "low rank threshhold is " << low_rank_threshold
                   << std::endl;
@@ -149,11 +129,24 @@ int main(int argc, char *argv[]) {
     world.gop.fence();
     if (world.rank() == 0) {
         if (print_clusters) {
+            std::string obs_file = in.HasMember("basis clusters file")
+                                         ? in["basis clusters file"].GetString()
+                                         : "clusters_bs.xyz";
+            std::string dfbs_file = in.HasMember("df basis clusters file")
+                          ? in["df basis clusters file"].GetString()
+                          : "clusters_dfbs.xyz";
+
             std::cout << "Printing clusters\n";
-            std::ofstream bs_cluster_file("clusters_bs.xyz");
+            std::cout << "\tobs clusters to " << obs_file
+                      << ": over ride with \"basis clusters file\" keyword\n";
+            std::cout
+                  << "\tdfbs clusters to " << dfbs_file
+                  << ": over ride with \"df basis clusters file\" keyword\n";
+
+            std::ofstream bs_cluster_file(obs_file);
             main_print_clusters(bs_clusters, bs_cluster_file);
             bs_cluster_file.close();
-            std::ofstream dfbs_cluster_file("clusters_dfbs.xyz");
+            std::ofstream dfbs_cluster_file(dfbs_file);
             main_print_clusters(dfbs_clusters, dfbs_cluster_file);
             dfbs_cluster_file.close();
         }
@@ -359,8 +352,7 @@ int main(int argc, char *argv[]) {
     Xab.truncate();
     auto B1 = tcc_time::now();
     auto btime = tcc_time::duration_in_s(B0, B1);
-    utility::print_par(world, "\nTime to compute B ", btime,
-                       " s\n");
+    utility::print_par(world, "\nTime to compute B ", btime, " s\n");
     utility::print_size_info(Xab, "B Tensor");
     decltype(Xab)::wait_for_lazy_cleanup(world, 60);
 
@@ -369,7 +361,7 @@ int main(int argc, char *argv[]) {
     auto soad0 = tcc_time::now();
     F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
                                           V_inv_oh, Xab, bs_clusters,
-                                          low_rank_threshold*100, 
+                                          low_rank_threshold * 100,
                                           convert_3d(low_rank_threshold));
     auto soad1 = tcc_time::now();
     auto soad_time = tcc_time::duration_in_s(soad0, soad1);
@@ -381,7 +373,7 @@ int main(int argc, char *argv[]) {
     world.gop.fence();
 
     auto n_occ = occupation / 2;
-    auto tr_i = scf::tr_occupied(dfbs_nclusters, n_occ);
+    auto tr_i = scf::tr_occupied(occ_nclusters, n_occ);
     utility::print_par(world, "Computing MO coeffs...\n");
     auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
     utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
@@ -407,7 +399,7 @@ int main(int argc, char *argv[]) {
     auto old_e = energy;
     auto delta_e = energy;
     const auto volume = double(F.trange().elements().volume());
-    decltype(Xab) Eai;
+    decltype(Xab) W;
     double time;
     double ktime, jtime;
     while ((error >= 1e-13 || std::abs(delta_e) >= 1e-12) && iter <= 35) {
@@ -415,23 +407,27 @@ int main(int argc, char *argv[]) {
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
 
+        utility::print_par(world, "\tStarting W...  ");
+        auto w0 = tcc_time::now();
+        W("X,a,i") = Xab("X,a,b") * Coeffs("b,i");
+        auto w1 = tcc_time::now();
+        auto wtime = tcc_time::duration_in_s(w0, w1);
+        utility::print_par(world, wtime, " s\n");
+
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
+        J("i,j") = Xab("X,i,j") * (W("X,a,i") * Coeffs("a,i"));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");
 
         utility::print_par(world, "\tStarting Exchange... ");
         auto k0 = tcc_time::now();
-        Eai("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
-        auto w1 = tcc_time::now();
-        K("a,b") = Eai("X,i,a") * Eai("X,i,b");
+        W("X,i,a") = W("X,a,i");
+        K("a,b") = W("X,i,a") * W("X,i,b");
         auto k1 = tcc_time::now();
         ktime = tcc_time::duration_in_s(k0, k1);
-        auto wtime = tcc_time::duration_in_s(k0, w1);
         utility::print_par(world, ktime, " s\n");
-        utility::print_par(world, "\t\tW time ", wtime, " s\n");
 
 
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
@@ -461,7 +457,7 @@ int main(int argc, char *argv[]) {
         utility::print_par(world, "\t\tDelta e = ", delta_e, "\n");
         if (iter == 5) {
             utility::print_par(world, "\n\nTemporary Info:\n");
-            utility::print_size_info(Eai, "Exch Temp");
+            utility::print_size_info(W, "Exch Temp");
             utility::print_par(world, "\n\n");
         }
         ++iter;
@@ -470,10 +466,9 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                        energy + repulsion_energy, "\n");
 
-    utility::print_par(world, "\nMP2 Test\n");
 
-    if (mol.nelements() <= 30) { // Begin MP2
-        utility::print_par(world, "\nBegining MP2\n");
+    if (in.HasMember("do mp2") && in["do mp2"].GetBool()) { // Begin MP2
+        utility::print_par(world, "\nMP2 Test\n");
         auto F_eig = array_ops::array_to_eigen(F);
         auto S_eig = array_ops::array_to_eigen(S);
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
@@ -566,13 +561,51 @@ int main(int argc, char *argv[]) {
         utility::print_par(world, "MP2 energy = ", energy_mp2,
                            " total energy = ",
                            energy + energy_mp2 + repulsion_energy, "\n");
-    } else {
-        utility::print_par(world, "Skipping MP2 because molecule had ",
-                           mol.nelements(), " atoms.\n");
-    }
+    } 
 
     world.gop.fence();
     libint2::cleanup();
     madness::finalize();
     return 0;
+}
+
+int main(int argc, char** argv){
+    try{
+        try_main(argc, argv);
+    } catch(const madness::MadnessException &e){
+        std::cout << "Madness Exception Says " << e.what() << std::endl;
+    } catch(const TiledArray::Exception &e){
+        std::cout << "TA Exception Says " << e.what() << std::endl;
+    } catch(const std::exception &e){
+        std::cout << "std Exception Says " << e.what() << std::endl;
+    } catch(...){
+        std::cout << "Caught unknown exception" << std::endl;
+    }
+    return 0;
+}
+
+
+void
+main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+                    std::ostream &os) {
+
+    // Collect atoms
+    std::vector<molecule::Atom> atoms;
+    for (auto const &shared_cluster : bs) {
+        auto current_atoms = molecule::collapse_to_atoms(*shared_cluster);
+        atoms.insert(atoms.end(), current_atoms.begin(), current_atoms.end());
+    }
+
+    // Print all atoms
+    os << atoms.size() << std::endl;
+    os << "Entire Molecule" << std::endl;
+    for (auto const &atom : atoms) {
+        os << atom.xyz_string() << std::endl;
+    }
+    os << std::endl;
+
+    // Print clusters
+    for (auto const &shared_cluster : bs) {
+        os << *shared_cluster << std::endl;
+    }
 }

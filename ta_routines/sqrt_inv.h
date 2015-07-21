@@ -26,9 +26,9 @@ std::array<TiledArray::Tensor<T, AT>, 2>
     if (result[0].empty()) {
         // Construct result tensors
         const std::array<size_type, 1> range_start
-              = {{tile.range().start()[0]}};
+              = {{tile.range().lobound()[0]}};
         const std::array<size_type, 1> range_finish
-              = {{tile.range().finish()[0]}};
+              = {{tile.range().upbound()[0]}};
         TiledArray::Range range(range_start, range_finish);
         result[0] = TiledArray::Tensor<T, AT>{range, 0.0};
         result[1] = TiledArray::Tensor<T, AT>{range, 0.0};
@@ -38,14 +38,14 @@ std::array<TiledArray::Tensor<T, AT>, 2>
     auto reduce_op =
           [](T &restrict result, const T arg) { result += std::abs(arg); };
 
-    TiledArray::math::row_reduce(tile.range().size()[0], tile.range().size()[1],
+    TiledArray::math::row_reduce(tile.range().extent()[0], tile.range().extent()[1],
                                  tile.data(), result[0].data(), reduce_op);
 
 
     TA::Range range = tile.range();
     auto const start = range.lobound();
     auto const finish = range.upbound();
-    auto const weight_ptr = tile.range().weight();
+    auto const weight_ptr = tile.range().stride_data();
     auto const dims = tile.range().rank();
     std::vector<unsigned int> weight(weight_ptr, weight_ptr + dims);
 
@@ -53,7 +53,7 @@ std::array<TiledArray::Tensor<T, AT>, 2>
     size_type const finish_min
           = *std::min_element(finish.begin(), finish.end());
 
-    const size_type n = tile.range().dim();
+    const size_type n = tile.range().rank();
     if (start_max < finish_min) {
         // Compute the first and last ordinal index
         size_type tile_first = 0ul, tile_last = 0ul, tile_stride = 0ul;
@@ -225,8 +225,8 @@ eval_guess(Array const &A) {
 
     using global_accumlator = pair_accumulator<Array>;
     std::vector<TiledArray::detail::ReduceTask<global_accumlator>> tasks;
-    tasks.reserve(A.trange().tiles().size()[0]);
-    for (auto i = 0ul; i < A.trange().tiles().size()[0]; ++i) {
+    tasks.reserve(A.trange().tiles().extent()[0]);
+    for (auto i = 0ul; i < A.trange().tiles().extent()[0]; ++i) {
         auto row_ranges = A.trange().data()[0].tile(i);
         std::array<typename Array::size_type, 1> start = {{row_ranges.first}};
         std::array<typename Array::size_type, 1> finish = {{row_ranges.second}};
@@ -243,7 +243,7 @@ eval_guess(Array const &A) {
                                                               pair_smasher{});
 
     auto counter = 0;
-    for (auto i = 0ul; i < A.trange().tiles().size()[0]; ++i) {
+    for (auto i = 0ul; i < A.trange().tiles().extent()[0]; ++i) {
         auto pair = tasks[i].submit();
         auto row_ranges = A.trange().data()[0].tile(i);
         std::array<typename Array::size_type, 1> start = {{row_ranges.first}};
@@ -301,7 +301,7 @@ void third_order_update(Array const &S, Array &Z) {
     Array X;
     auto Tscale = 1.0 / 8.0;
 
-    auto ident = create_diagonal_matrix(Z, 1.0);
+    auto ident = tcc::array::create_diagonal_matrix(Z, 1.0);
     Array approx_zero;
     auto iter = 0;
     auto norm_diff = std::numeric_limits<double>::max();
@@ -400,11 +400,10 @@ void third_order_update(Array const &S, Array &Z) {
 
 // Taken from J. Chem. Phys. 126. 124104 (2007)
 // Uses the third order function, because I didn't feel like typing the
-// longer
-// ones. --Drew
+// longer ones. --Drew
 template <typename Array>
 Array inverse_sqrt(Array const &S) {
-    Array Z = create_diagonal_matrix(S, 1.0);
+    Array Z = tcc::array::create_diagonal_matrix(S, 1.0);
     third_order_update(S, Z);
     return Z;
 }

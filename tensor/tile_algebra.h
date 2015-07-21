@@ -278,8 +278,7 @@ void inline ColPivotedQr(
     std::unique_ptr<double[]> W{new double[LWORK]};
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
-    const double thresh = cut;
-    integer rank = qr_rank(input, thresh);
+    integer rank = qr_rank(input, cut);
 
     // LAPACK assumes 1 based indexing, but we need zero.
     std::for_each(J.data(), J.data() + J.size(), [](integer &val) { --val; });

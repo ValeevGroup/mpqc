@@ -181,10 +181,8 @@ class Tile {
 
     bool empty() const { return (!tile_ || tile_->empty_()); }
 
-    auto norm() const -> decltype(tile_->norm_()) {
-        return tile_->norm_();
-    }
-    
+    auto norm() const -> decltype(tile_->norm_()) { return tile_->norm_(); }
+
     auto squared_norm() const -> decltype(tile_->squared_norm_()) {
         return tile_->squared_norm_();
     }
@@ -215,9 +213,8 @@ class Tile {
     }
 
     template <typename Archive>
-    typename std::enable_if<madness::archive::is_output_archive<Archive>::value>::
-          type
-          serialize(Archive &ar) {
+    typename std::enable_if<madness::archive::is_output_archive<Archive>::value>::type
+    serialize(Archive &ar) {
         ar &range_;
         bool empty = !static_cast<bool>(tile_);
         ar &empty;
@@ -227,9 +224,8 @@ class Tile {
     }
 
     template <typename Archive>
-    typename std::enable_if<madness::archive::is_input_archive<Archive>::value>::
-          type
-          serialize(Archive &ar) {
+    typename std::enable_if<madness::archive::is_input_archive<Archive>::value>::type
+    serialize(Archive &ar) {
 
         ar &range_;
         bool empty = false;

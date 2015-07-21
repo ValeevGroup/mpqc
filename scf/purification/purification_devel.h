@@ -38,7 +38,7 @@ class OrthTraceResettingPurifier {
         D("i,j") = scale * (emax * I("i,j") - F("i,j"));
         auto tr = trace(D);
 
-        occ = occ / 2;
+        occte = occ / 2;
         auto iter = 1;
         ArrayType D2;
         auto error = std::abs(tr - occ);

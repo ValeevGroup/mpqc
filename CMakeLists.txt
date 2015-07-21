@@ -5,96 +5,61 @@ set(TileClusterChem_VERSION_MAJOR 0)
 set(TileClusterChem_VERSION_MINOR 1)
 SET(CMAKE_COLOR_MAKEFILE ON)
 
-option(RELEASE OFF)
-option(DEBUG_RELEASE OFF)
 
-set(CXX_FLAGS "${CXX_FLAGS} -std=c++11")
-if(RELEASE)
-    set(CXX_FLAGS "${CXX_FLAGS} -DNDEBUG -mavx -O3")
-    message(STATUS "Performing release build ${CXX_FLAGS}")
-ELSEIF(DEBUG_RELEASE)
-    set(CXX_FLAGS "${CXX_FLAGS} -O2 -g")
-    message(STATUS "Performing debug-release build ${CXX_FLAGS}")
-ELSEIF(DEBUG_RELEASE_ASAN)
-    set(CXX_FLAGS "${CXX_FLAGS} -O1 -g -fsanitize=address -fno-omit-frame-pointer")
-    message(STATUS "Performing debug-release-asan build ${CXX_FLAGS}")
-ELSEIF(FAST_BUILD)
-    set(CXX_FLAGS "${CXX_FLAGS} -O0 -g -Wall -Wextra -Wno-unused-parameter")
-    message(STATUS "Performing debug-release build ${CXX_FLAGS}")
-ELSE()
-    set(CXX_FLAGS "${CXX_FLAGS} -g -Wall -Wextra -Wno-unused-parameter")
-    message(STATUS "Performing debug build ${CXX_FLAGS}")
-ENDIF()
-
-set(CMAKE_CXX_FLAGS ${CXX_FLAGS})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
                       "${PROJECT_SOURCE_DIR}/cmake/modules/")
 
-FIND_PACKAGE(MPI REQUIRED)
-SET(EXTRA_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
-
-include(external/lapack.cmake)
-
-FIND_PACKAGE(Eigen3 REQUIRED)
 FIND_PACKAGE(TBB REQUIRED)
 FIND_PACKAGE(Boost REQUIRED)
 FIND_PACKAGE(LIBINT REQUIRED)
 FIND_PACKAGE(BTAS REQUIRED)
-FIND_PACKAGE(TILEDARRAY REQUIRED)
+FIND_PACKAGE(RapidJSON REQUIRED)
+FIND_PACKAGE(TiledArray CONFIG HINTS ${TiledArray_CONFIG_DIR} REQUIRED)
 
-INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
-INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${TBB_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${TILEDARRAY_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${TiledArray_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${LIBINT_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${BTAS_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${LAPACK_INCLUDE_DIRS})
-message(STATUS "boost include dirs: ${Boost_INCLUDE_DIRS}")
-LIST(APPEND TileClusterChem_LIBRARIES ${LAPACK_LIBRARIES})
-LIST(APPEND TileClusterChem_LIBRARIES ${MPI_CXX_LIBRARIES})
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TiledArray_COMPILE_FLAGS}")
+
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CEREAL_INCLUDE_DIR})
+
+# Set a default build type if none was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'RelWithDebInfo' as none was specified.")
+  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+    "MinSizeRel" "RelWithDebInfo")
+endif()
+
 LIST(APPEND TileClusterChem_LIBRARIES ${TBB_LIBRARIES})
 LIST(APPEND TileClusterChem_LIBRARIES ${LIBINT_LIBRARIES})
-LIST(APPEND TileClusterChem_LIBRARIES ${TILEDARRAY_LIBRARIES})
+LIST(APPEND TileClusterChem_LIBRARIES 
+    "${TiledArray_LINKER_FLAGS};${TiledArray_LIBRARIES}")
 
-add_subdirectory(${TileClusterChem_SOURCE_DIR}/doc)
-
-enable_testing()
-add_subdirectory(${TileClusterChem_SOURCE_DIR}/tests)
-
-add_subdirectory(${TileClusterChem_SOURCE_DIR}/molecule)
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/molecule)
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
-LIST(APPEND TileClusterChem_LIBRARIES molecule)
-
-add_subdirectory(${TileClusterChem_SOURCE_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/basis)
-LIST(APPEND TileClusterChem_LIBRARIES basis)
 
-message(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")
+LIST(APPEND TileClusterChem_LIBRARIES molecule basis)
 
-set(TileClusterChem_Sources "main.cpp")
+MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
+MESSAGE(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")
 
-add_subdirectory(${TileClusterChem_SOURCE_DIR}/examples)
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/doc)
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/tests)
+enable_testing(true)
 
-add_executable(${PROJECT_NAME} ${TileClusterChem_Sources}) 
-target_link_libraries(${PROJECT_NAME}
+SET(TileClusterChem_Sources "main.cpp")
+
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/examples)
+
+ADD_EXECUTABLE(${PROJECT_NAME} ${TileClusterChem_Sources}) 
+ADD_DEPENDENCIES(${PROJECT_NAME} cereal)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}
   ${TileClusterChem_LIBRARIES}
 )
-
-# Makes QT creator show the following file types
-file(GLOB_RECURSE QT_CREATOR_SRC
-  "*.h"
-  "*.hpp"
-  "*.cpp"
-  "*.c"
-  "*.txt"
-  "*.in"
-  "*.cc"
-  "TODO"
-  ".clang-format"
-  "README"
-  )
-
-add_library(qt_creator_get_sources EXCLUDE_FROM_ALL ${QT_CREATOR_SRC})
-
-set_target_properties(qt_creator_get_sources PROPERTIES LINKER_LANGUAGE CXX)

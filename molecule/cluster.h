@@ -4,13 +4,27 @@
 
 #include <vector>
 #include <numeric>
+#include <iosfwd>
 
 #include "cluster_concept.h"
 #include "molecule_fwd.h"
 
 namespace tcc {
 namespace molecule {
+/*! 
+ * \ingroup Molecule
+ *
+ * @{
+ */
 
+/*!
+ * \brief is the unit that holds a collection of clusterables that go together.
+ *
+ * Cluster will hold a vector of clusterables that all belong together.  
+ * To update the center of the cluster compute_com must be called, this is 
+ * to avoid computing a new center of mass (COM) every time a clusterable is 
+ * added.  
+ */
 class Cluster {
   public:
     Cluster() = default;
@@ -79,6 +93,15 @@ class Cluster {
     int charge_ = 0;
     double mass_ = 0.0;
 };
+
+/*! \brief print the cluster by collapsing it to atoms
+ * 
+ * This function prints the cluster by calling collapse to atoms and then 
+ * printing the atoms. The clusters are printed in xyz format.
+ */
+std::ostream & operator<<(std::ostream &, Cluster const &);
+
+/*! @} */
 
 } // namespace molecule
 } // namespace tcc

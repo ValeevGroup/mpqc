@@ -399,7 +399,7 @@ int try_main(int argc, char *argv[]) {
     auto old_e = energy;
     auto delta_e = energy;
     const auto volume = double(F.trange().elements().volume());
-    decltype(Xab) Eai;
+    decltype(Xab) W;
     double time;
     double ktime, jtime;
     while ((error >= 1e-13 || std::abs(delta_e) >= 1e-12) && iter <= 35) {
@@ -407,23 +407,27 @@ int try_main(int argc, char *argv[]) {
         auto t0 = tcc_time::now();
         D = to_new_tile_type(D_TA, to_decomp);
 
+        utility::print_par(world, "\tStarting W...  ");
+        auto w0 = tcc_time::now();
+        W("X,a,i") = Xab("X,a,b") * Coeffs("b,i");
+        auto w1 = tcc_time::now();
+        auto wtime = tcc_time::duration_in_s(w0, w1);
+        utility::print_par(world, wtime, " s\n");
+
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
+        J("i,j") = Xab("X,i,j") * (W("X,a,i") * Coeffs("a,i"));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");
 
         utility::print_par(world, "\tStarting Exchange... ");
         auto k0 = tcc_time::now();
-        Eai("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
-        auto w1 = tcc_time::now();
-        K("a,b") = Eai("X,i,a") * Eai("X,i,b");
+        W("X,i,a") = W("X,a,i");
+        K("a,b") = W("X,i,a") * W("X,i,b");
         auto k1 = tcc_time::now();
         ktime = tcc_time::duration_in_s(k0, k1);
-        auto wtime = tcc_time::duration_in_s(k0, w1);
         utility::print_par(world, ktime, " s\n");
-        utility::print_par(world, "\t\tW time ", wtime, " s\n");
 
 
         F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
@@ -453,7 +457,7 @@ int try_main(int argc, char *argv[]) {
         utility::print_par(world, "\t\tDelta e = ", delta_e, "\n");
         if (iter == 5) {
             utility::print_par(world, "\n\nTemporary Info:\n");
-            utility::print_size_info(Eai, "Exch Temp");
+            utility::print_size_info(W, "Exch Temp");
             utility::print_par(world, "\n\n");
         }
         ++iter;

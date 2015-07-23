@@ -10,9 +10,12 @@
 #include "../include/tiledarray.h"
 #include "../common/typedefs.h"
 #include "../utility/make_array.h"
+#include "../utility/array_storage.h"
 #include "../tensor/tcc_tile.h"
 #include "../tensor/decomposed_tensor.h"
 #include "../tensor/decomposed_tensor_nonintrusive_interface.h"
+
+#include "../common/namespaces.h"
 
 #include "../integrals/sparse_task_integrals.h"
 
@@ -189,12 +192,24 @@ ArrayType fock_from_minimal_v_oh(
     std::cout.rdbuf(cout_sbuf);
     auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
 
+    decltype(D_min) L_d;
+    { // TESTING ONLY FOR NOW
+        auto Dm_eig = array_ops::array_to_eigen(D_min);
+        Eig::LLT<decltype(Dm_eig)> llt(Dm_eig);
+        decltype(Dm_eig) L_d_eig = llt.matrixL();
+        L_d = array_ops::eigen_to_array<decltype(D_min)::value_type>(
+                D_min.get_world(), L_d_eig, 
+                D_min.trange().data()[0], D_min.trange().data()[1]); 
+    }
 
-    decltype(D_min) J, K, F, Coeffs;
+
+    decltype(D_min) J, K, F;
 
     {
         auto EriJ = BlockSparseIntegrals(
               world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
+        utility::print_par(EriJ.get_world(), "\n");
+        utility::print_size_info(EriJ, "SOAD EriJ");
         TA::Array<double, 1, typename decltype(EriJ)::value_type,
                   TA::SparsePolicy> trans;
         trans("P") = EriJ("P,a,b") * D_min("a,b");
@@ -205,12 +220,12 @@ ArrayType fock_from_minimal_v_oh(
     auto EriK
           = BlockSparseIntegrals(world, eng_pool,
                                  utility::make_array(df_bs, obs, min_bs), op);
-    decltype(EriK) Perm, Dterm;
-    Dterm("X,a,b") = V_inv_oh("X,P") * EriK("P,a,b");
-    Perm("X,b,a") = Dterm("X,a,b");
-    K("i,j") = Perm("X,k,i") * (Dterm("X,j,a") * D_min("a,k"));
+    utility::print_size_info(EriK, "SOAD EriK");
+    // Reuse EriK so we don't have a temp Array laying around.
+    EriK("X,i,a") = V_inv_oh("X,P") * (EriK("P,a,b") * L_d("b,i"));
+    K("i,j") = EriK("X,k,i") * EriK("X,k,j");
     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
-    decltype(F)::wait_for_lazy_cleanup(F.get_world(), 1);
+    F.get_world().gop.fence();
 
     return F;
 }

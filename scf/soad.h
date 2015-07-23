@@ -221,10 +221,9 @@ ArrayType fock_from_minimal_v_oh(
           = BlockSparseIntegrals(world, eng_pool,
                                  utility::make_array(df_bs, obs, min_bs), op);
     utility::print_size_info(EriK, "SOAD EriK");
-    decltype(EriK) W;
-    W("X,i,a") = V_inv_oh("X,P") * (EriK("P,a,b") * L_d("b,i"));
-    utility::print_size_info(W, "SOAD W");
-    K("i,j") = W("X,k,i") * W("X,k,j");
+    // Reuse EriK so we don't have a temp Array laying around.
+    EriK("X,i,a") = V_inv_oh("X,P") * (EriK("P,a,b") * L_d("b,i"));
+    K("i,j") = EriK("X,k,i") * EriK("X,k,j");
     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
     F.get_world().gop.fence();
 

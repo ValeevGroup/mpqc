@@ -2,6 +2,7 @@ add_custom_target(examples)
 add_custom_target(sqrt_inverse)
 add_custom_target(paper)
 add_custom_target(bugs)
+add_custom_target(fastK)
 
 file(COPY ${CMAKE_SOURCE_DIR}/examples/default_input.json DESTINATION ${CMAKE_BINARY_DIR}/examples)
 file(COPY ${CMAKE_SOURCE_DIR}/examples/generate_input.py DESTINATION ${CMAKE_BINARY_DIR}/examples)
@@ -11,6 +12,12 @@ target_link_libraries(hf_l_inv
   ${TileClusterChem_LIBRARIES}
 )
 add_dependencies(paper hf_l_inv)
+
+add_executable(hf_l_inv_trick EXCLUDE_FROM_ALL hf_l_inv_head_gordon_trick.cpp)
+target_link_libraries(hf_l_inv_trick
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(fastK hf_l_inv_trick)
 
 
 add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 

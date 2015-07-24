@@ -41,9 +41,9 @@ using namespace tcc;
 namespace ints = integrals;
 
 
-void
-main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-                    std::ostream &os);
+void main_print_clusters(
+      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+      std::ostream &os);
 
 int try_main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -90,6 +90,11 @@ int try_main(int argc, char *argv[]) {
                                 ? in["print clusters"].GetBool()
                                 : false;
 
+    // Using Cholesky Vectors?
+    bool cholesky_vectors = in.HasMember("use cholesky vectors")
+                                  ? in["use cholesky vectors"].GetBool()
+                                  : false;
+
     volatile int debug
           = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
     utility::parallal_break_point(world, debug);
@@ -132,7 +137,8 @@ int try_main(int argc, char *argv[]) {
             std::string obs_file = in.HasMember("basis clusters file")
                                          ? in["basis clusters file"].GetString()
                                          : "clusters_bs.xyz";
-            std::string dfbs_file = in.HasMember("df basis clusters file")
+            std::string dfbs_file
+                  = in.HasMember("df basis clusters file")
                           ? in["df basis clusters file"].GetString()
                           : "clusters_dfbs.xyz";
 
@@ -375,7 +381,8 @@ int try_main(int argc, char *argv[]) {
     auto n_occ = occupation / 2;
     auto tr_i = scf::tr_occupied(occ_nclusters, n_occ);
     utility::print_par(world, "Computing MO coeffs...\n");
-    auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+    auto Coeffs_TA
+          = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, use_chol_vectors);
     utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
     auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
 
@@ -416,7 +423,7 @@ int try_main(int argc, char *argv[]) {
 
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (W("X,a,i") * Coeffs("a,i"));
+        J("i,j") = Xab("X,i,j") * (W("X,a,k") * Coeffs("a,k"));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");
@@ -441,7 +448,8 @@ int try_main(int argc, char *argv[]) {
         error = Ferror("i,j").norm().get() / volume;
         diis.extrapolate(F_TA, Ferror);
 
-        Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+        Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
+                                          use_chol_vectors);
         Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
         D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
 
@@ -558,7 +566,7 @@ int try_main(int argc, char *argv[]) {
         utility::print_par(world, "MP2 energy = ", energy_mp2,
                            " total energy = ",
                            energy + energy_mp2 + repulsion_energy, "\n");
-    } 
+    }
 
     world.gop.fence();
     libint2::cleanup();
@@ -566,25 +574,25 @@ int try_main(int argc, char *argv[]) {
     return 0;
 }
 
-int main(int argc, char** argv){
-    try{
+int main(int argc, char **argv) {
+    try {
         try_main(argc, argv);
-    } catch(const madness::MadnessException &e){
+    } catch (const madness::MadnessException &e) {
         std::cout << "Madness Exception Says " << e.what() << std::endl;
-    } catch(const TiledArray::Exception &e){
+    } catch (const TiledArray::Exception &e) {
         std::cout << "TA Exception Says " << e.what() << std::endl;
-    } catch(const std::exception &e){
+    } catch (const std::exception &e) {
         std::cout << "std Exception Says " << e.what() << std::endl;
-    } catch(...){
+    } catch (...) {
         std::cout << "Caught unknown exception" << std::endl;
     }
     return 0;
 }
 
 
-void
-main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-                    std::ostream &os) {
+void main_print_clusters(
+      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+      std::ostream &os) {
 
     // Collect atoms
     std::vector<molecule::Atom> atoms;

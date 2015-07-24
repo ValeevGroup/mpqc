@@ -90,6 +90,11 @@ int try_main(int argc, char *argv[]) {
                                 ? in["print clusters"].GetBool()
                                 : false;
 
+    // Use Chol Vectors? 
+    bool use_chol_vectors = in.HasMember("use cholesky vectors")
+                                ? in["use cholesky vectors"].GetBool()
+                                : false;
+
     volatile int debug
           = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
     utility::parallal_break_point(world, debug);
@@ -375,7 +380,7 @@ int try_main(int argc, char *argv[]) {
     auto n_occ = occupation / 2;
     auto tr_i = scf::tr_occupied(occ_nclusters, n_occ);
     utility::print_par(world, "Computing MO coeffs...\n");
-    auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+    auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, use_chol_vectors);
     utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
     auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
 
@@ -445,7 +450,7 @@ int try_main(int argc, char *argv[]) {
         error = Ferror("i,j").norm().get() / volume;
         diis.extrapolate(F_TA, Ferror);
 
-        Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+        Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, use_chol_vectors);
         Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
         D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
 

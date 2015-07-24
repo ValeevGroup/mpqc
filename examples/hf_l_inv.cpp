@@ -91,7 +91,7 @@ int try_main(int argc, char *argv[]) {
                                 : false;
 
     // Using Cholesky Vectors?
-    bool cholesky_vectors = in.HasMember("use cholesky vectors")
+    bool use_chol_vectors = in.HasMember("use cholesky vectors")
                                   ? in["use cholesky vectors"].GetBool()
                                   : false;
 

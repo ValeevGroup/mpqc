@@ -2,6 +2,7 @@ add_custom_target(examples)
 add_custom_target(sqrt_inverse)
 add_custom_target(paper)
 add_custom_target(bugs)
+add_custom_target(fastK)
 
 add_executable(mp2 EXCLUDE_FROM_ALL mp2.cpp)
 target_link_libraries(mp2
@@ -21,6 +22,12 @@ target_link_libraries(hf_l_inv
   ${TileClusterChem_LIBRARIES}
 )
 add_dependencies(paper hf_l_inv)
+
+add_executable(hf_l_inv_trick EXCLUDE_FROM_ALL hf_l_inv_head_gordon_trick.cpp)
+target_link_libraries(hf_l_inv_trick
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(fastK hf_l_inv_trick)
 
 
 add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 

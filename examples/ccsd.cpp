@@ -35,7 +35,7 @@
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../cc/ccsd.h"
 #include "../cc/two_electron_int_mo.h"
-#include "../mp2/trange1_engine.h"
+#include "../cc/trange1_engine.h"
 #include "../mp2/mp2.h"
 #include "../ta_routines/array_to_eigen.h"
 

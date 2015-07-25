@@ -8,8 +8,8 @@
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 
-#include "../mp2/trange1_engine.h"
-#include "../mp2/mo_block.h"
+#include "trange1_engine.h"
+#include "mo_block.h"
 #include "../ta_routines/tarray_block.h"
 
 #include "./two_electron_int_mo.h"

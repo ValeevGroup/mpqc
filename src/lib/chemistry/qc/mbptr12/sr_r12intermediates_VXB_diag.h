@@ -5237,8 +5237,9 @@ namespace sc {
 #endif
 
     // CC F12 coupling contribution to Xam
-    double mu_z_Cccsdf12 = 0.0;
+    double mu_z_Cccsdf12 = 0.0, mu_z_Cccsdf12or = 0.0;
     double q_xx_Cccsdf12 = 0.0, q_yy_Cccsdf12 = 0.0, q_zz_Cccsdf12 = 0.0;
+    double q_xx_Cccsdf12or = 0.0, q_yy_Cccsdf12or = 0.0, q_zz_Cccsdf12or = 0.0;
 #if INCLUDE_CCSDF12C_CONTRI
     {
     // resolve CCSD lambda amplitudes, density, and Xam in the framework of CCSD(2)_F12
@@ -5329,7 +5330,8 @@ namespace sc {
                           + dot(mu_z_ijp("i,j'"), Diip_CVT_cc("i,j'"));
       }
 
-      mu_z_Cccsdf12 = mu_z_ccsd_f12 - mu_z_ccsd + mu_z_ccsdor_f12 - mu_z_ccsdor;
+      mu_z_Cccsdf12 = mu_z_ccsd_f12 - mu_z_ccsd;
+      mu_z_Cccsdf12or = mu_z_ccsdor_f12 - mu_z_ccsdor;
     }
 
     if (compute_quadrupole) {
@@ -5368,9 +5370,12 @@ namespace sc {
                             + dot(Qzz_ijp("i,j'"), Diip_CVT_cc("i,j'"));
       }
 
-      q_xx_Cccsdf12 = q_xx_ccsd_f12 - q_xx_ccsd + q_xx_ccsdor_f12 - q_xx_ccsdor;
-      q_yy_Cccsdf12 = q_yy_ccsd_f12 - q_yy_ccsd + q_yy_ccsdor_f12 - q_yy_ccsdor;
-      q_zz_Cccsdf12 = q_zz_ccsd_f12 - q_zz_ccsd + q_zz_ccsdor_f12 - q_zz_ccsdor;
+      q_xx_Cccsdf12 = q_xx_ccsd_f12 - q_xx_ccsd;
+      q_yy_Cccsdf12 = q_yy_ccsd_f12 - q_yy_ccsd;
+      q_zz_Cccsdf12 = q_zz_ccsd_f12 - q_zz_ccsd;
+      q_xx_Cccsdf12or = q_xx_ccsdor_f12 - q_xx_ccsdor;
+      q_yy_Cccsdf12or = q_yy_ccsdor_f12 - q_yy_ccsdor;
+      q_zz_Cccsdf12or = q_zz_ccsdor_f12 - q_zz_ccsdor;
     }
 
     }
@@ -5404,6 +5409,8 @@ namespace sc {
                 << "mu_z (CCSD orbital response) = " << scprintf("%15.12f", - mu_z_ccsdor * 2.0)
                 << std::endl << std::endl << indent
                 << "mu_z (CCSD F12 coupling (CT & VT)) = " << scprintf("%15.12f", - mu_z_Cccsdf12 * 2.0)
+                << std::endl << indent
+                << "mu_z (CCSD F12 coupling orbital response) = " << scprintf("%15.12f", - mu_z_Cccsdf12or * 2.0)
                 << std::endl;
     }
 
@@ -5474,6 +5481,10 @@ namespace sc {
                 << "q_xx (CCSDF12 C) = " << scprintf("%12.10f", - q_xx_Cccsdf12 * 2.0)
                 << "  q_yy (CCSDF12 C) = " << scprintf("%12.10f", - q_yy_Cccsdf12 * 2.0)
                 << "  q_zz (CCSDF12 C) = " << scprintf("%12.10f", - q_zz_Cccsdf12 * 2.0)
+                << std::endl << indent
+                << "q_xx (CCSDF12 C or) = " << scprintf("%12.10f", - q_xx_Cccsdf12or * 2.0)
+                << "  q_yy (CCSDF12 C or) = " << scprintf("%12.10f", - q_yy_Cccsdf12or * 2.0)
+                << "  q_zz (CCSDF12 C or) = " << scprintf("%12.10f", - q_zz_Cccsdf12or * 2.0)
                 << std::endl << std::endl;
     }
   }

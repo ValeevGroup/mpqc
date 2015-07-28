@@ -150,6 +150,9 @@ int try_main(int argc, char *argv[], madness::World& world) {
                             ? in["print clusters"].GetBool()
                             : false;
 
+        // get other info
+        auto frozen_core = true;
+
       volatile int debug
               = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
 
@@ -179,6 +182,8 @@ int try_main(int argc, char *argv[], madness::World& world) {
       auto charge = 0;
       auto occupation = mol.occupation(charge);
       auto repulsion_energy = mol.nuclear_repulsion();
+        auto core_electron = mol.core_electrons();
+        std::cout << core_electron << std::endl;
 
       utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy,
                          "\n");
@@ -526,6 +531,13 @@ int try_main(int argc, char *argv[], madness::World& world) {
     // prepare CC
       utility::print_par(world, "\nCC Test\n");
 
+        int n_frozen_core = 0;
+        if (frozen_core){
+            n_frozen_core = mol.core_electrons();
+            std::cout << "Frozen Core: " << n_frozen_core << "  electrons" << std::endl;
+            n_frozen_core = n_frozen_core/2;
+        }
+        std::cout << "Frozen Core: " << n_frozen_core << "  electrons" << std::endl;
 
       S_TA = TA::to_new_tile_type(S, to_ta);
       F_TA = TA::to_new_tile_type(F, to_ta);
@@ -536,13 +548,16 @@ int try_main(int argc, char *argv[], madness::World& world) {
       auto S_eig = array_ops::array_to_eigen(S_TA);
       Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                  S_eig);
-      ens = es.eigenvalues();
+      ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
+        std::cout << ens << std::endl;
       auto C_all = es.eigenvectors();
-      decltype(S_eig) C_occ = C_all.leftCols(occupation / 2);
+      decltype(S_eig) C_occ = C_all.block(0, n_frozen_core, S_eig.rows(), occupation/2-n_frozen_core);
       decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occupation / 2);
 
+        std::cout << C_all << std::endl;
+        std::cout << C_occ << std::endl;
       std::size_t all = S.trange().elements().extent()[0];
-      tre = std::make_shared<TRange1Engine>(occupation / 2, all, blocksize);
+      tre = std::make_shared<TRange1Engine>(occupation/2 - n_frozen_core, all-n_frozen_core, blocksize);
 
       // start mp2
 //            MP2<TA::Tensor<double>, TA::SparsePolicy> mp2(F_TA, S_TA, X_ab_TA, *tre);
@@ -589,7 +604,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
     decltype(F_TA) fock_ai_aparse;
     fock_ai_aparse("a,i") = F_TA("mu,nu")*Cv("mu,a")*Ci("nu,i");
     fock_ai = TA::to_dense(fock_ai_aparse);
-
+        std::cout << fock_ai << std::endl;
     }
 
     world.gop.fence();

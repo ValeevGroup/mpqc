@@ -117,6 +117,34 @@ std::vector<Clusterable>::const_iterator Molecule::end() const {
 
 unsigned long Molecule::nelements() const { return elements_.size(); }
 
+unsigned long Molecule::core_electrons() const {
+
+    //get all the atoms
+    std::vector<Atom> atoms;
+    for(auto const &cluster : elements_){
+        auto c_atoms = cluster.atoms();
+        atoms.insert(atoms.end(), c_atoms.begin(), c_atoms.end());
+    }
+
+    //loop over all atoms to get the total core electron number
+    int i, n = 0;
+    for (i=0; i<atoms.size(); i++){
+        if (atoms[i].charge() == 0) continue;
+        int z = atoms[i].charge();
+        if (z > 2) n += 2;
+        if (z > 10) n += 8;
+        if (z > 18) n += 8;
+        if (z > 30) n += 10;
+        if (z > 36) n += 8;
+        if (z > 48) n += 10;
+        if (z > 54) n += 8;
+        if (z > 72) {
+            throw ("Molecule::core_electrons: atomic number too large");
+        }
+    }
+    return n;
+}
+
 std::vector<Cluster>
 Molecule::cluster_molecule(cluster_fn_t fn, unsigned long nclusters) const {
     return fn(elements_, nclusters);

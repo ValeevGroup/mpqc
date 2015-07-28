@@ -3,6 +3,7 @@
     "number of bs clusters":5,
     "number of dfbs clusters":2,
     "number of occupied clusters":1,
+    "mo block size": 16,
     "basis":"cc-pvdz",
     "df basis":"cc-pvdz-ri",
     "block sparse threshold":1e-13,

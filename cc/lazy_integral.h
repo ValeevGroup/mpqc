@@ -7,7 +7,7 @@
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
-
+#include "lazy_integral.h"
 
 namespace tcc{
   namespace cc{
@@ -69,12 +69,12 @@ namespace tcc{
 
     };
 
-  // lazy two electron integral
+  // direct two electron integral
   typedef tcc::cc::LazyIntegral<4, TwoBodyIntGenerator<libint2::Coulomb>> LazyTwoElectronTile;
-  typedef TA::Array<double, 4, LazyTwoElectronTile, TA::DensePolicy> LazyTwoElectronDenseArray;
+  typedef TA::Array<double, 4, LazyTwoElectronTile, TA::DensePolicy> DirectTwoElectronDenseArray;
 
-
-    LazyTwoElectronDenseArray make_lazy_two_electron_array(
+    // function to make direct two electron dense TArray
+    DirectTwoElectronDenseArray make_lazy_two_electron_array(
             madness::World &world, const tcc::basis::Basis &basis,
             const TA::TiledRange &trange) {
 
@@ -89,11 +89,11 @@ namespace tcc{
       auto two_body_coulomb_generator = std::make_shared<TwoBodyIntGenerator<libint2::Coulomb>>
               (p_engine_pool, p_cluster_shells);
 
-      LazyTwoElectronDenseArray lazy_two_electron(world, trange);
+      DirectTwoElectronDenseArray lazy_two_electron(world, trange);
 
       // set the functor of tile
-      LazyTwoElectronDenseArray::iterator it = lazy_two_electron.begin();
-      LazyTwoElectronDenseArray::iterator end = lazy_two_electron.end();
+      DirectTwoElectronDenseArray::iterator it = lazy_two_electron.begin();
+      DirectTwoElectronDenseArray::iterator end = lazy_two_electron.end();
       for (; it != end; ++it) {
         TA::Range range = lazy_two_electron.trange().make_tile_range(
                 it.ordinal());

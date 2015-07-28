@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <chrono>
+#include <rapidjson/document.h>
 
 #include "../include/tbb.h"
 #include "../include/libint.h"
@@ -14,6 +15,7 @@
 #include "../utility/parallel_break_point.h"
 #include "../utility/array_storage.h"
 #include "../utility/time.h"
+#include "../utility/json_input.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
@@ -99,35 +101,59 @@ void main_print_clusters(
 int try_main(int argc, char *argv[], madness::World& world) {
 
 
+  // parse the input
+  rapidjson::Document in;
+  parse_input(argc, argv, in);
+
+  if (!in.HasMember("xyz file") || !in.HasMember("number of bs clusters")
+      || !in.HasMember("number of dfbs clusters") || !in.HasMember("mo block size")) {
+    if (world.rank() == 0) {
+      std::cout << "At a minimum your input file must provide\n";
+      std::cout << "\"xyz file\", which is path to an xyz input\n";
+      std::cout << "\"number of bs clusters\", which is the number of "
+              "clusters in the obs\n";
+      std::cout << "\"number of dfbs clusters\", which is the number of "
+              "clusters in the dfbs\n";
+      std::cout << "\"mo block size\", which is the block size for MO orbitals\n";
+    }
+  }
+
     // declare variables needed for ccsd
     std::shared_ptr<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::DensePolicy>> g;
     std::shared_ptr<tcc::TRange1Engine> tre;
     Eigen::MatrixXd ens;
     TA::Array<double, 2, TA::Tensor<double>, TA::DensePolicy> fock_mo_dense;
-  TA::Array<double, 2, TA::Tensor<double>, TA::DensePolicy> fock_ai;
+    TA::Array<double, 2, TA::Tensor<double>, TA::DensePolicy> fock_ai;
     {
-        std::string mol_file = (argc >= 2) ? argv[1] : "";
-        std::size_t blocksize = (argc >= 3) ? std::stoi(argv[2]) : 16;
-        int bs_nclusters = (argc >= 4) ? std::stoi(argv[3]) : 0;
-        int dfbs_nclusters = (argc >= 5) ? std::stoi(argv[4]) : 0;
 
-        if (mol_file.empty() || 0 == bs_nclusters || 0 == dfbs_nclusters) {
-            std::cout << "input is $./program mol_file blocksize "
-                    "bs_cluster dfbs_clusters "
-                    "basis_set(cc-pvdz) df_basis_set(cc-pvdz-ri) "
-                    "sparse_threshold(1e-11) "
-                    "low_rank_threshhold(1e-7) print_cluster_xyz(true)\n";
-            return 0;
-        }
+      // Get necessary info
+      std::string mol_file = in["xyz file"].GetString();
+      int bs_nclusters = in["number of bs clusters"].GetInt();
+      int dfbs_nclusters = in["number of dfbs clusters"].GetInt();
+      std::size_t blocksize = in["mo block size"].GetInt();
 
-        std::string basis_name = (argc >= 6) ? argv[5] : "cc-pvdz";
-        std::string df_basis_name = (argc >= 7) ? argv[6] : "cc-pvdz-ri";
 
-        auto threshold = (argc >= 8) ? std::stod(argv[7]) : 1e-11;
-        auto low_rank_threshold = (argc >= 9) ? std::stod(argv[8]) : 1e-7;
-        bool print_clusters = (argc >= 10) ? std::stoi(argv[9]) : true;
-        volatile int debug = (argc >= 11) ? std::stod(argv[10]) : 0;
-        utility::parallal_break_point(world, debug);
+      // Get basis info
+      std::string basis_name = in.HasMember("basis") ? in["basis"].GetString() : "cc-pvdz";
+      std::string df_basis_name = in.HasMember("df basis") ? in["df basis"].GetString() : "cc-pvdz-ri";
+
+      // Get thresh info
+      auto threshold = in.HasMember("block sparse threshold")
+                       ? in["block sparse threshold"].GetDouble()
+                       : 1e-13;
+      auto low_rank_threshold = in.HasMember("low rank threshold")
+                                ? in["low rank threshold"].GetDouble()
+                                : 1e-8;
+
+      // Get printing info
+      bool print_clusters = in.HasMember("print clusters")
+                            ? in["print clusters"].GetBool()
+                            : false;
+
+      volatile int debug
+              = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
+
+      utility::parallal_break_point(world, debug);
 
         if (world.rank() == 0) {
             std::cout << "Mol file is " << mol_file << std::endl;
@@ -543,30 +569,9 @@ int try_main(int argc, char *argv[], madness::World& world) {
     auto Ci_dense = TA::to_dense(Ci);
     auto Cv_dense = TA::to_dense(Cv);
 
-    auto p_cluster_shells = std::make_shared<std::vector<tcc::basis::ClusterShells>>(basis.cluster_shells());
-    auto two_body_coulomb_engine = tcc::integrals::make_2body(basis);
-    auto p_engine_pool = std::make_shared<tcc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(two_body_coulomb_engine);
-    auto two_body_coulomb_generator = std::make_shared<tcc::cc::TwoBodyIntGenerator<libint2::Coulomb>>
-                                    (p_engine_pool, p_cluster_shells);
-
-    typedef tcc::cc::LazyIntegral<4, tcc::cc::TwoBodyIntGenerator<libint2::Coulomb>> LazyTwoElectronTile;
-    typedef TA::Array<double, 4, LazyTwoElectronTile, TA::DensePolicy> LazyTwoElectronArray;
-
     std::vector<TA::TiledRange1> tr_04(4, tr_0);
     TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
-    LazyTwoElectronArray lazy_two_electron_int(world, trange_4);
-
-
-    LazyTwoElectronArray::iterator it = lazy_two_electron_int.begin();
-    LazyTwoElectronArray::iterator end = lazy_two_electron_int.end();
-    for(; it!= end; ++it){
-      TA::Range range = lazy_two_electron_int.trange().make_tile_range(it.ordinal());
-      auto vindex = it.index();
-      std::array<std::size_t, 4> index;
-      std::copy_n(vindex.begin(),4, index.begin());
-      lazy_two_electron_int.set(vindex, LazyTwoElectronTile(range, index, two_body_coulomb_generator));
-
-    }
+    auto lazy_two_electron_int = tcc::cc::make_lazy_two_electron_array(world, basis, trange_4);
 
     // test contraction here
     TA::Array<double,4> test;

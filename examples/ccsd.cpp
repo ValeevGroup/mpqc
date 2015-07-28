@@ -570,10 +570,10 @@ int try_main(int argc, char *argv[], madness::World& world) {
 
     // test contraction here
     TA::Array<double,4> test;
-    test("p,q,i,j") = lazy_two_electron_int("p,q,r,s")*Ci_dense("r,i")*Ci_dense("s,j");
+    test("i,j,a,b") = lazy_two_electron_int("p,q,r,s")*Ci_dense("p,i")*Ci_dense("q,j")*Cv_dense("r,a")*Cv_dense("s,b");
 
-
-
+    test("i,a,j,b") = test("i,j,a,b");
+//    std::cout << test << std::endl;
 
     g = std::make_shared<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::DensePolicy>>(X_ab_TA,Ci_dense, Cv_dense);
 

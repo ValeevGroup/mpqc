@@ -35,7 +35,7 @@ namespace tcc{
 //        std::cout << abij_ << std::endl;
           // <ij|kl>
           ijkl_("i,j,k,l") = Xij("X,i,k") * Xij("X,j,l");
-//        std::cout << ijkl_ << std::endl;
+//          std::cout << ijkl_ << std::endl;
           // <ab|cd>
           abcd_("a,b,c,d") = Xab("X,a,c") * Xab("X,b,d");
           //std::cout << abcd_ << std::endl;
@@ -46,12 +46,12 @@ namespace tcc{
           aibc_("a,i,b,c") = Xai("X,c,i") * Xab("X,a,b");
           // <ij|ak>
           ijak_("i,j,a,k") = Xai("X,a,i") * Xij("X,j,k");
-//        std::cout << aikl_ << std::endl;
+//          std::cout << ijak_ << std::endl;
           // <ij|ka>
           ijka_("i,j,k,a") = Xai("X,a,j") * Xij("X,i,k");
           // <ia|jb>
           iajb_("i,a,j,b") = Xab("X,a,b") * Xij("X,i,j");
-//        std::cout << aibj_ << std::endl;
+//          std::cout << iajb_ << std::endl;
 
         }
         TArray3::wait_for_lazy_cleanup(Xpq.get_world());

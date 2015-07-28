@@ -44,28 +44,31 @@ namespace sc {
     return (array.find(tile_idx).get()[ele_idx]);
   }
 
-  inline TA::Array<double, 2 > XaiAddToXam(const TA::Array<double, 2 >& Xam,
-                                           const TA::Array<double, 2 >& Xai) {
-    MPQC_ASSERT(Xam.size() == 1);
-
-    typedef TA::Array<double, 2> TArray2;
-    typename TArray2::value_type tile_X =
-    static_cast<const typename TArray2::value_type&>(Xam.find(0)).clone();
-    typename TArray2::value_type tile_Xai = Xai.find(0);
-    const std::size_t zero_cols = tile_X.range().extent()[1] - tile_Xai.range().extent()[1];
-
-    std::array<std::size_t, 2> i = {{0, 0}};
-    std::size_t ix = 0;
-    for(i[0] = tile_X.range().lobound()[0];
-      i[0] < tile_X.range().upbound()[0]; ++i[0]) {
-      for(i[1] = zero_cols + tile_X.range().lobound()[1];
-        i[1] < tile_X.range().upbound()[1]; ++i[1], ++ix) {
-        tile_X[i] +=  tile_Xai[ix];
-      }
-    }
-
-    TArray2 X(Xam.get_world(), Xam.trange());
-    X.set(0, tile_X);
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::XaiAddToXam(const TA::Array<double, 2 >& Xam,
+                                                   const TA::Array<double, 2 >& Xai) {
+//    MPQC_ASSERT(Xam.size() == 1);
+//
+//    typename TArray2::value_type tile_X =
+//    static_cast<const typename TArray2::value_type&>(Xam.find(0)).clone();
+//    typename TArray2::value_type tile_Xai = Xai.find(0);
+//    const std::size_t zero_cols = tile_X.range().extent()[1] - tile_Xai.range().extent()[1];
+//
+//    std::array<std::size_t, 2> i = {{0, 0}};
+//    std::size_t ix = 0;
+//    for(i[0] = tile_X.range().lobound()[0];
+//      i[0] < tile_X.range().upbound()[0]; ++i[0]) {
+//      for(i[1] = zero_cols + tile_X.range().lobound()[1];
+//        i[1] < tile_X.range().upbound()[1]; ++i[1], ++ix) {
+//        tile_X[i] +=  tile_Xai[ix];
+//      }
+//    }
+//
+//    TArray2 X(Xam.get_world(), Xam.trange());
+//    X.set(0, tile_X);
+    TArray2 X;
+    X("a,m") = Xam("a,m") + Xai("a,i") * _2("<i|I|m>");
     return X;
   }
 

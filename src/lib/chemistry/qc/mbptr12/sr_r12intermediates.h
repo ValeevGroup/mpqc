@@ -280,6 +280,8 @@ namespace sc {
 
       // compute multipole
       void compute_multipole();
+      TArray2 XaiAddToXam(const TA::Array<double, 2 >& Xam,
+                          const TA::Array<double, 2 >& Xai);
       // compute B^P_Q which is summed over k
       TArray2 BPk_Qk(const char* p, const char* q,
                      const double C_0, const double C_1);

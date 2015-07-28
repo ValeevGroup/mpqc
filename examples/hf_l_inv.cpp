@@ -34,6 +34,7 @@
 
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
+#include "../scf/clusterd_coeffs.h"
 
 #include "../ta_routines/array_to_eigen.h"
 
@@ -95,6 +96,11 @@ int try_main(int argc, char *argv[]) {
                                   ? in["use cholesky vectors"].GetBool()
                                   : false;
 
+    // Cluster Occupied Orbitals
+    bool cluster_orbitals = in.HasMember("cluster orbitals")
+                                  ? in["cluster orbitals"].GetBool()
+                                  : false;
+
     volatile int debug
           = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
     utility::parallal_break_point(world, debug);
@@ -113,6 +119,12 @@ int try_main(int argc, char *argv[]) {
         if (print_clusters) {
             std::cout << "Printing clusters to clusters_bs.xyz and "
                          "cluster_dfbs.xyz." << std::endl;
+        }
+        if (use_chol_vectors) {
+            std::cout << "Using Cholesky based occupied vectors." << std::endl;
+        }
+        if (cluster_orbitals) {
+            std::cout << "Clustering Occupied Orbitals" << std::endl;
         }
     }
 
@@ -220,6 +232,13 @@ int try_main(int argc, char *argv[]) {
         return TA::Tensor<double>(range, tensor.data());
     };
     auto S_TA = TA::to_new_tile_type(S, to_ta);
+
+    std::cout << "Overlap finished :)" << std::endl;
+    auto multipole_pool
+          = ints::make_pool(ints::make_1body("emultipole2", basis));
+    auto dipole_ints
+          = BlockSparseIntegrals(world, multipole_pool, bs_basis_array,
+                                 ints::compute_functors::BtasToTaTensor(), 4);
 
     // Compute T
     auto kinetic_pool = ints::make_pool(ints::make_1body("kinetic", basis));
@@ -381,15 +400,19 @@ int try_main(int argc, char *argv[]) {
     auto n_occ = occupation / 2;
     auto tr_i = scf::tr_occupied(occ_nclusters, n_occ);
     utility::print_par(world, "Computing MO coeffs...\n");
-    auto Coeffs_TA
-          = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, use_chol_vectors);
+    auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
+                                           occ_nclusters, use_chol_vectors);
+    if(cluster_orbitals){
+        scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
+    }
+
     utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
     auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
+    utility::print_size_info(Coeffs, "SOAD Coeffs");
 
     decltype(Coeffs_TA) D_TA;
     utility::print_par(world, "Forming Density...\n");
-    D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
-
+    D_TA("mu,nu") = Coeffs_TA("mu,i") * Coeffs_TA("nu,i");
     utility::print_par(world, "Computing Initial energy...\n");
     auto energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
     utility::print_par(world, "Initial energy = ", energy + repulsion_energy,
@@ -449,9 +472,15 @@ int try_main(int argc, char *argv[]) {
         diis.extrapolate(F_TA, Ferror);
 
         Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
-                                          use_chol_vectors);
+                                          occ_nclusters, use_chol_vectors);
+
+        if(cluster_orbitals){
+            scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
+        }
+
         Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
         D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
+
 
         delta_e = energy - old_e;
         old_e = energy;
@@ -470,6 +499,7 @@ int try_main(int argc, char *argv[]) {
         }
         ++iter;
     }
+
 
     utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                        energy + repulsion_energy, "\n");

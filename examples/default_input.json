@@ -12,5 +12,6 @@
     "df basis clusters file":"5waters_dfbs_clusters.xyz",
     "debug break":0,
     "do mp2":false,
-    "use choleksy vectors":false
+    "use cholesky vectors":false,
+    "cluster orbitals":true,
 }

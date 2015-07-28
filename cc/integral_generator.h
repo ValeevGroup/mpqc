@@ -34,8 +34,10 @@ namespace tcc{
                           const std::shared_ptr<std::vector<basis::ClusterShells>> &cluster_shells)
               : pool_(pool), cluster_shells_(cluster_shells) { }
 
-      TA::Tensor<double> compute(const TA::Range& r, const std::array<std::size_t, 4>& index){
+      TA::Tensor<double> compute(const TA::Range& r, const std::vector<std::size_t>& index){
 
+      // assert size of index is 4
+      assert(index.size() == 4);
       // create the tile
       TA::Tensor<double> tile(r);
 
@@ -59,10 +61,8 @@ namespace tcc{
       std::size_t nfunctions23 = nfunctions2*nfunctions3;
       std::size_t nfunctions123 = nfunctions1*nfunctions23;
 
-
       // get the engine
       auto engine = pool_->local();
-
 
       // bf, to track the position in total basis function
       std::size_t bf0, bf1, bf2, bf3;

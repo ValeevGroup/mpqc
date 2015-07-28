@@ -42,15 +42,15 @@ namespace tcc{
       }
 
       /// Constructor
-      LazyIntegral(range_type owner,
+      LazyIntegral(range_type range,
                   const std::array<std::size_t, DIM>& index,
                   std::shared_ptr<IntegralGenerator>  integral_generator):
-              range_(owner), index_(index), integral_generator_(integral_generator)
+              range_(range), index_(index), integral_generator_(integral_generator)
               { }
 
       // Convert lazy tile to data tile
       operator TA::Tensor<double>() const {
-        return integral_generator_.compute(range_, index_);
+        return integral_generator_->compute(range_, index_);
       }
 
       template<typename Archive>

@@ -34,6 +34,8 @@
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../cc/ccsd.h"
+#include "../cc/integral_generator.h"
+#include "../cc/lazy_integral.h"
 #include "../cc/two_electron_int_mo.h"
 #include "../cc/trange1_engine.h"
 #include "../mp2/mp2.h"
@@ -496,7 +498,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
 
     // end of SCF
     // prepare CC
-        utility::print_par(world, "\nCC Test\n");
+      utility::print_par(world, "\nCC Test\n");
 
 
       S_TA = TA::to_new_tile_type(S, to_ta);
@@ -540,6 +542,38 @@ int try_main(int argc, char *argv[], madness::World& world) {
 
     auto Ci_dense = TA::to_dense(Ci);
     auto Cv_dense = TA::to_dense(Cv);
+
+    auto p_cluster_shells = std::make_shared<std::vector<tcc::basis::ClusterShells>>(basis.cluster_shells());
+    auto two_body_coulomb_engine = tcc::integrals::make_2body(basis);
+    auto p_engine_pool = std::make_shared<tcc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(two_body_coulomb_engine);
+    auto two_body_coulomb_generator = std::make_shared<tcc::cc::TwoBodyIntGenerator<libint2::Coulomb>>
+                                    (p_engine_pool, p_cluster_shells);
+
+    typedef tcc::cc::LazyIntegral<4, tcc::cc::TwoBodyIntGenerator<libint2::Coulomb>> LazyTwoElectronTile;
+    typedef TA::Array<double, 4, LazyTwoElectronTile, TA::DensePolicy> LazyTwoElectronArray;
+
+    std::vector<TA::TiledRange1> tr_04(4, tr_0);
+    TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
+    LazyTwoElectronArray lazy_two_electron_int(world, trange_4);
+
+
+    LazyTwoElectronArray::iterator it = lazy_two_electron_int.begin();
+    LazyTwoElectronArray::iterator end = lazy_two_electron_int.end();
+    for(; it!= end; ++it){
+      TA::Range range = lazy_two_electron_int.trange().make_tile_range(it.ordinal());
+      auto vindex = it.index();
+      std::array<std::size_t, 4> index;
+      std::copy_n(vindex.begin(),4, index.begin());
+      lazy_two_electron_int.set(vindex, LazyTwoElectronTile(range, index, two_body_coulomb_generator));
+
+    }
+
+    // test contraction here
+    TA::Array<double,4> test;
+    test("p,q,i,j") = lazy_two_electron_int("p,q,r,s")*Ci_dense("r,i")*Ci_dense("s,j");
+
+
+
 
     g = std::make_shared<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::DensePolicy>>(X_ab_TA,Ci_dense, Cv_dense);
 

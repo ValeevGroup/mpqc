@@ -725,6 +725,11 @@ namespace sc {
     // D^A'_B' = t^A'_m * t^m_B'
     D_e2_AB("A',B'") = TmA("m,A'") * TmA("m,B'");
 
+    // compute intermediate to reduce memory consumption
+    TArray4 g_aAmB;
+    {g_aAmB("a,A',m,B'") = 2.0 * _4("<a A'|g|m B'>") - _4("<a A'|g|B' m>");}
+    TArray4::wait_for_lazy_cleanup(g.get_world());
+
     TArray4d g_aAmn = ijxy("<a A'|g|m n>");
     TArray4d g_ammn = ijxy("<a m|g|m1 n>");
     TArray2 Xam_E2;
@@ -737,8 +742,7 @@ namespace sc {
                             + 2.0 * g_aAmn("a,A',m,n") - g_aAmn("a,A',n,m")
                             ) * TmA("n,A'")
                           //
-                          - (2.0 * _4("<a A'|g|m B'>") - _4("<a A'|g|B' m>"))
-                            * D_e2_AB("A',B'")
+                          - g_aAmB("a,A',m,B'") * D_e2_AB("A',B'")
                           //
                           + (2.0 * g_ammn("a,n1,m,n2") - g_ammn("a,n1,n2,m"))
                             * D_e2_mn("n1,n2")

@@ -202,7 +202,7 @@ namespace tcc {
 
     void compute_ccsd(){
 
-      auto n_occ = tre_->get_occ();
+      auto n_occ = tre_->get_actual_occ();
 
       TArray4 g_abij = g_->get_abij();
 

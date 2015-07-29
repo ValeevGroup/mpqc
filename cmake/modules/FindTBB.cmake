@@ -213,6 +213,9 @@ endif ((NOT ${TBB_ARCHITECTURE} STREQUAL "") AND (NOT ${TBB_COMPILER} STREQUAL "
 # GvdB: Mac OS X distribution places libraries directly in lib directory.
 list(APPEND _TBB_LIBRARY_DIR ${_TBB_INSTALL_DIR}/lib)
 
+# github/@evaleev@: prefer _TBB_LIBRARY_DIR to default paths, hence on OS X look for TBB Framework last
+set(CMAKE_FIND_FRAMEWORK LAST)
+
 # Jiri: No reason not to check the default paths. From recent versions,
 #       tbbvars has started exporting the LIBRARY_PATH and LD_LIBRARY_PATH
 #       variables, which now point to the directories of the lib files.
@@ -223,9 +226,9 @@ list(APPEND _TBB_LIBRARY_DIR ${_TBB_INSTALL_DIR}/lib)
 #       that tbbvars doesn't export TBB_ARCH_PLATFORM and it facilitates
 #       the use of TBB built from sources.
 find_library(TBB_LIBRARY ${_TBB_LIB_NAME} HINTS ${_TBB_LIBRARY_DIR}
-        PATHS ENV LIBRARY_PATH ENV LD_LIBRARY_PATH)
+        PATHS ENV LIBRARY_PATH ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH)
 find_library(TBB_MALLOC_LIBRARY ${_TBB_LIB_MALLOC_NAME} HINTS ${_TBB_LIBRARY_DIR}
-        PATHS ENV LIBRARY_PATH ENV LD_LIBRARY_PATH)
+        PATHS ENV LIBRARY_PATH ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH)
 
 #Extract path from TBB_LIBRARY name
 get_filename_component(TBB_LIBRARY_DIR ${TBB_LIBRARY} PATH)

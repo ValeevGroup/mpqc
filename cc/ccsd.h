@@ -34,9 +34,8 @@ namespace tcc {
 
     CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
          const std::shared_ptr<TRange1Engine> &tre,
-         const std::shared_ptr<TwoElectronIntMO<Tile, Policy>> &g,
-          const TArray2 &fock_ai) :
-            ens_(ens), tre_(tre), g_(g), f_ai_(fock_ai)
+         const std::shared_ptr<TwoElectronIntMO<Tile, Policy>> &g) :
+            ens_(ens), tre_(tre), g_(g)
     {
       auto mo_block = std::make_shared<tcc::MOBlock>(*tre_);
       fock_ = TArrayBlock2(fock, mo_block);
@@ -208,7 +207,7 @@ namespace tcc {
       TArray4 g_abij = g_->get_abij();
 
       TArray2 f_ai;
-      f_ai("a,i") = f_ai_("a,i");
+      f_ai("a,i") = fock_("a,i");
 
       g_abij.get_world().gop.fence();
 
@@ -502,7 +501,6 @@ namespace tcc {
     Eigen::VectorXd ens_;
     std::shared_ptr<tcc::TRange1Engine> tre_;
     std::shared_ptr<tcc::cc::TwoElectronIntMO<Tile, Policy>> g_;
-    TArray2 f_ai_;
     TArrayBlock2 fock_;
   };
 

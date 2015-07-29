@@ -597,9 +597,6 @@ int try_main(int argc, char *argv[], madness::World& world) {
     fock_mo("p,q") = F_TA("mu,nu")*Call("mu,p")*Call("nu,q");
     fock_mo_dense = TA::to_dense(fock_mo);
 
-    decltype(F_TA) fock_ai_aparse;
-    fock_ai_aparse("a,i") = F_TA("mu,nu")*Cv("mu,a")*Ci("nu,i");
-    fock_ai = TA::to_dense(fock_ai_aparse);
     }
 
     world.gop.fence();
@@ -608,7 +605,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
     tcc::utility::parallal_break_point(world, 0);
 
 
-    tcc::cc::CCSD<TA::Tensor<double>, TA::DensePolicy> ccsd(fock_mo_dense, ens, tre, g, fock_ai);
+    tcc::cc::CCSD<TA::Tensor<double>, TA::DensePolicy> ccsd(fock_mo_dense, ens, tre, g);
 
 //            ccsd.compute_cc2();
     ccsd.compute_ccsd();

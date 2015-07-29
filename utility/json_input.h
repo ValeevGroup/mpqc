@@ -6,6 +6,7 @@
 #include <rapidjson/document.h>
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 
 /*! \brief looks for input json file and parses it to a document
  *
@@ -14,9 +15,9 @@
  * a copy constructor.
  */
 void parse_input(int argc, char *argv[], rapidjson::Document &d) {
-    if (argc == 1) {
-        std::cout << "No input file" << std::endl;
-        std::abort();
+    if (argc != 2) {
+      std::cout << "usage: " << argv[0] << " <input_file.json>" << std::endl;
+      throw std::invalid_argument("no input file given");
     }
 
     std::string input_file_name = argv[1];

@@ -728,7 +728,7 @@ namespace sc {
     // compute intermediate to reduce memory consumption
     TArray4 g_aAmB;
     {g_aAmB("a,A',m,B'") = 2.0 * _4("<a A'|g|m B'>") - _4("<a A'|g|B' m>");}
-    TArray4::wait_for_lazy_cleanup(g.get_world());
+    TArray4::wait_for_lazy_cleanup(g_aAmB.get_world());
 
     TArray4d g_aAmn = ijxy("<a A'|g|m n>");
     TArray4d g_ammn = ijxy("<a m|g|m1 n>");

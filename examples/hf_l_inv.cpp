@@ -608,13 +608,16 @@ int main(int argc, char **argv) {
     try {
         try_main(argc, argv);
     } catch (const madness::MadnessException &e) {
-        std::cout << "Madness Exception Says " << e.what() << std::endl;
+        std::cout << "MADNESS exception: " << e.what() << std::endl;
     } catch (const TiledArray::Exception &e) {
-        std::cout << "TA Exception Says " << e.what() << std::endl;
+        std::cout << "TA exception: " << e.what() << std::endl;
+    } catch (const std::invalid_argument &e) {
+        std::cout << "std::invalid_argument: " << e.what() << std::endl;
+        return 1;
     } catch (const std::exception &e) {
-        std::cout << "std Exception Says " << e.what() << std::endl;
+        std::cout << "std::exception: " << e.what() << std::endl;
     } catch (...) {
-        std::cout << "Caught unknown exception" << std::endl;
+        std::cout << "unknown exception" << std::endl;
     }
     return 0;
 }

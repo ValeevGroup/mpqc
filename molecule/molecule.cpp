@@ -168,6 +168,10 @@ Molecule::attach_H_and_kmeans(unsigned long nclusters,
 
 Molecule read_xyz(std::string const &file_name) {
     std::ifstream xyz_file(file_name);
+    if (xyz_file.fail()) {
+      std::ostringstream oss; oss << "could not open file \"" << file_name << "\"";
+      throw std::invalid_argument(oss.str().c_str());
+    }
     auto libint_atoms = libint2::read_dotxyz(xyz_file);
     xyz_file.close();
 

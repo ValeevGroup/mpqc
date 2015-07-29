@@ -38,7 +38,7 @@
 #include "../cc/ccsd.h"
 #include "../cc/integral_generator.h"
 #include "../cc/lazy_integral.h"
-#include "../cc/two_electron_int_mo.h"
+#include "../cc/ccsd_intermediates.h"
 #include "../cc/trange1_engine.h"
 #include "../mp2/mp2.h"
 #include "../ta_routines/array_to_eigen.h"
@@ -119,7 +119,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
   }
 
     // declare variables needed for ccsd
-    std::shared_ptr<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::DensePolicy>> g;
+    std::shared_ptr<tcc::cc::CCSDIntermediate<TA::Tensor<double>, TA::DensePolicy>> g;
     std::shared_ptr<tcc::TRange1Engine> tre;
     Eigen::MatrixXd ens;
     TA::Array<double, 2, TA::Tensor<double>, TA::DensePolicy> fock_mo_dense;
@@ -545,15 +545,16 @@ int try_main(int argc, char *argv[], madness::World& world) {
       auto X_ab_TA = TA::to_dense(X_ab);
       auto F_eig = array_ops::array_to_eigen(F_TA);
       auto S_eig = array_ops::array_to_eigen(S_TA);
-      Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
-                                                                 S_eig);
+      Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
+
       ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
       auto C_all = es.eigenvectors();
       decltype(S_eig) C_occ = C_all.block(0, n_frozen_core, S_eig.rows(), occupation/2-n_frozen_core);
       decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occupation / 2);
+        C_all = C_all.rightCols(S_eig.rows()-n_frozen_core);
 
       std::size_t all = S.trange().elements().extent()[0];
-      tre = std::make_shared<TRange1Engine>(occupation/2 - n_frozen_core, all-n_frozen_core, blocksize);
+      tre = std::make_shared<TRange1Engine>(occupation/2, all, blocksize,  n_frozen_core);
 
       // start mp2
 //            MP2<TA::Tensor<double>, TA::SparsePolicy> mp2(F_TA, S_TA, X_ab_TA, *tre);
@@ -591,7 +592,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
     test("i,a,j,b") = test("i,j,a,b");
 //    std::cout << test << std::endl;
 
-    g = std::make_shared<tcc::cc::TwoElectronIntMO<TA::Tensor<double>, TA::DensePolicy>>(X_ab_TA,Ci_dense, Cv_dense);
+    g = std::make_shared<tcc::cc::CCSDIntermediate<TA::Tensor<double>, TA::DensePolicy>>(X_ab_TA,Ci_dense, Cv_dense);
 
     decltype(F_TA) fock_mo;
     fock_mo("p,q") = F_TA("mu,nu")*Call("mu,p")*Call("nu,q");

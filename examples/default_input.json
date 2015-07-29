@@ -13,5 +13,5 @@
     "debug break":0,
     "do mp2":false,
     "use cholesky vectors":false,
-    "cluster orbitals":true,
+    "cluster orbitals":true
 }

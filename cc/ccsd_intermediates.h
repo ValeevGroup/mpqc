@@ -187,7 +187,7 @@ namespace tcc {
             const TArray4 compute_u1a(const TArray2& t1){
                if(direct_){
                    TArray4 u1a;
-                   u1a("i,j,q,s") = (t1("a,i")*Ca_("p,a"))*Ci_("r,j")*direct_ao_("p,q,r,s");
+                   u1a("q,s,i,j") = (t1("a,i")*Ca_("p,a"))*Ci_("r,j")*direct_ao_("p,q,r,s");
                    return u1a;
                } else{
                    throw std::runtime_error("CCSDIntermediate no diret ao available");
@@ -197,7 +197,7 @@ namespace tcc {
             const TArray4 compute_u1b(const TArray2& t1){
                 if(direct_){
                     TArray4 u1b;
-                    u1b("i,r,j,s") = (t1("a,i")*Ca_("p,a"))*Ci_("q,j")*direct_ao_("p,q,r,s");
+                    u1b("r,s,i,j") = (t1("a,i")*Ca_("p,a"))*Ci_("q,j")*direct_ao_("p,q,r,s");
                     return u1b;
                 } else{
                     throw std::runtime_error("CCSDIntermediate no diret ao available");

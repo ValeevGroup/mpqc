@@ -44,7 +44,7 @@ namespace tcc {
                 fock_ = TArrayBlock2(fock, mo_block);
             }
 
-            void compute_ccsd() {
+            void compute_ccsd_dummy() {
 
                 auto n_occ = tre_->get_actual_occ();
 
@@ -94,7 +94,7 @@ namespace tcc {
                 TArray4 g_ijak = intermediate_->get_ijak();
                 TArray4 g_ijka = intermediate_->get_ijka();
 
-                intermediate_->clean();
+//                intermediate_->clean();
 
                 if (g_abij.get_world().rank() == 0) {
                     std::cout << "start iteration" << std::endl;
@@ -162,7 +162,7 @@ namespace tcc {
                     // external index i j a b
 
                     TArray4 a_klij, b_abij, j_akic, k_kaic, T;
-                    TArray2 g_ki, g_ac, u2;
+                    TArray2 g_ki, g_ac;
                     {
 
                         T("d,b,i,l") =
@@ -229,6 +229,259 @@ namespace tcc {
                                 + (g_iabc("j,c,b,a") -
                                    g_iajb("k,a,j,c") * t1("b,k")) *
                                   t1("c,i")
+                                //
+                                - (g_ijak("i,j,a,k") +
+                                   g_abij("a,c,i,k") * t1("c,j")) *
+                                  t1("b,k")
+                                - (g_ijak("j,i,b,k") +
+                                   g_abij("b,c,j,k") * t1("c,i")) *
+                                  t1("a,k")
+
+                                + 0.5 * (2.0 * j_akic("a,k,i,c") -
+                                         k_kaic("k,a,i,c")) *
+                                  (2.0 * t2("c,b,k,j") - t2("b,c,k,j"))
+                                + 0.5 * (2.0 * j_akic("b,k,j,c") -
+                                         k_kaic("k,b,j,c")) *
+                                  (2.0 * t2("c,a,k,i") - t2("a,c,k,i"))
+
+                                - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
+                                k_kaic("k,b,i,c") * t2("a,c,k,j")
+                                - 0.5 * k_kaic("k,b,j,c") * t2("a,c,k,i") -
+                                k_kaic("k,a,j,c") * t2("b,c,k,i")
+                        );
+                    }
+//        g_abij.get_world().gop.fence();
+
+                    t1("a,i") = t1("a,i") + r1("a,i");
+                    t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
+
+                    tcc::cc::T1T2<double, Tile, Policy> t(t1, t2);
+                    tcc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+                    error = r.norm() / size(t);
+                    diis.extrapolate(t, r);
+
+                    //update t1 and t2
+                    t1("a,i") = t.first("a,i");
+                    t2("a,b,i,j") = t.second("a,b,i,j");
+
+                    tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+
+                    // recompute energy
+                    E0 = E1;
+                    E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i"))
+                         +
+                         TA::dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")),
+                                 tau("a,b,i,j"));
+                    dE = std::abs(E0 - E1);
+                    iter += 1ul;
+
+                    auto t1 = tcc_time::now();
+                    auto duration = tcc_time::duration_in_s(t0, t1);
+
+                    if (g_abij.get_world().rank() == 0) {
+                        std::cout << iter << "  " << dE << "  " << error <<
+                        "  " << E1 << "  " << duration << std::endl;
+                    }
+
+                    g_abij.get_world().gop.fence();
+//        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
+//        << scprintf("%-15.10f", E_1) << std::endl;
+
+                }
+                if (g_abij.get_world().rank() == 0) {
+                    std::cout << "CCSD Energy  " << E1 << std::endl;
+                }
+            }
+
+
+            void compute_ccsd() {
+
+                auto n_occ = tre_->get_actual_occ();
+
+                TArray4 g_abij = intermediate_->get_abij();
+
+                TArray2 f_ai;
+                f_ai("a,i") = fock_("a,i");
+
+                g_abij.get_world().gop.fence();
+
+//      std::cout << g_abij << std::endl;
+
+                TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
+                           f_ai.get_pmap());
+                d_ai(d1, ens_, n_occ);
+
+                TArray4 d2(g_abij.get_world(), g_abij.trange(),
+                           g_abij.get_shape(), g_abij.get_pmap());
+                d_abij(d2, ens_, n_occ);
+
+                TArray2 t1;
+                TArray4 t2;
+
+                t1("a,i") = f_ai("a,i") * d1("a,i");
+                t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
+
+//      std::cout << t1 << std::endl;
+//      std::cout << t2 << std::endl;
+                TArray4 tau;
+                tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+
+                double E0 = 0.0;
+                double E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
+                            TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"),
+                                    tau("a,b,i,j"));
+                double dE = std::abs(E1 - E0);
+//      std::cout << E1 << std::endl;
+
+                // get all two electron integrals
+                TArray4 g_ijkl = intermediate_->get_ijkl();
+                TArray4 g_iajb = intermediate_->get_iajb();
+                TArray4 g_aibc = intermediate_->get_aibc();
+                TArray4 g_ijak = intermediate_->get_ijak();
+                TArray4 g_ijka = intermediate_->get_ijka();
+
+                intermediate_->clean();
+
+                TArray2 ca = intermediate_->get_Ca();
+                TArray2 ci = intermediate_->get_Ci();
+
+                if (g_abij.get_world().rank() == 0) {
+                    std::cout << "start iteration" << std::endl;
+                }
+                //optimize t1 and t2
+                std::size_t iter = 0ul;
+                double error = 1.0;
+                TArray2 r1;
+                TArray4 r2;
+                TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1);
+                while ((dE >= 1.0e-7 || error >= 1e-7)) {
+
+                    //start timer
+                    auto t0 = tcc::tcc_time::now();
+
+                    TArray4 u2, u11, u1a, u1b;
+                    // compute half transformed intermediates
+                    u2 = intermediate_->compute_u2(t2);
+                    u11 = intermediate_->compute_u11(t1);
+                    u1a = intermediate_->compute_u1a(t1);
+                    u1b = intermediate_->compute_u1b(t1);
+
+                    // intermediates for t1
+                    // external index i and a
+                    TArray2 h_ac, h_ki, h_kc;
+                    {
+                        h_ac("a,c") = //- f_ab("a,c")
+                                -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) *
+                                tau("a,d,k,l");
+
+                        h_ki("k,i") =   //f_ij("k,i") +
+                                (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) *
+                                tau("c,d,i,l");
+
+                        h_kc("k,c") = f_ai("c,k") + (2.0 * g_abij("c,d,k,l") -
+                                                     g_abij("d,c,k,l")) *
+                                                    t1("d,l");
+                    }
+//        g_abij.get_world().gop.fence();
+
+                    // compute residual r1(n) = t1(n+1) - t1(n)
+                    // external index i and a
+                    {
+                        r1("a,i") = -t1("a,i") + d1("a,i") * (
+                                //
+                                f_ai("a,i") -
+                                2.0 * f_ai("c,k") * t1("a,k") * t1("c,i")
+                                //
+                                + h_ac("a,c") * t1("c,i") -
+                                t1("a,k") * h_ki("k,i")
+                                //
+                                + h_kc("k,c")
+                                  * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") +
+                                     t1("c,i") * t1("a,k"))
+                                //
+                                +
+                                (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) *
+                                t1("c,k")
+                                //
+                                + 2.0*(u2("p,r,k,i")+u11("p,r,k,i"))*ci("p,k")*ca("r,a")
+
+                                -(u2("p,r,i,k")+u11("p,r,i,k"))*ci("p,k")*ca("r,a")
+                                //
+                                -
+                                (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) *
+                                tau("c,a,k,l")
+                        );
+                    }
+
+//        g_abij.get_world().gop.fence();
+                    // intermediates for t2
+                    // external index i j a b
+
+                    TArray4 a_klij, b_abij, j_akic, k_kaic, T;
+                    TArray2 g_ki, g_ac;
+                    {
+
+
+
+                        T("d,b,i,l") =
+                                0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
+
+                        a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
+                                            + g_ijka("k,l,i,c") * t1("c,j") +
+                                            g_ijak("k,l,c,j") * t1("c,i")
+                                            +
+                                            g_abij("c,d,k,l") * tau("c,d,i,j");
+
+                        b_abij("a,b,i,j") = (u2("p,r,i,j")+u11("p,r,i,j"))*ca("p,a")*ca("r,b")
+                                            - (u2("p,r,i,j")+u11("p,r,i,j"))*ca("p,a")*ci("r,k")*t1("b,k")
+                                            - (u2("p,r,i,j")+u11("p,r,i,j"))*ci("p,k")*ca("r,b")*t1("a,k");
+
+                        g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i")
+                                      + (2.0 * g_ijka("k,l,i,c") -
+                                         g_ijka("l,k,i,c")) * t1("c,l");
+
+                        g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
+//                                      2.0*u1b("r,s,i,j")-u1b("r,s,j,i"))*ca("r,a")*ca("s,c")
+                                      + (2.0 * g_aibc("a,k,c,d") -
+                                         g_aibc("a,k,d,c")) * t1("d,k");
+
+                        j_akic("a,k,i,c") = g_abij("a,c,i,k") -
+                                            g_ijka("l,k,i,c") * t1("a,l") +
+                                            u1a("q,s,i,k")*ca("q,a")*ca("s,c")
+                                            -g_abij("c,d,k,l") * T("d,a,i,l")
+                                            + 0.5 * (2.0 * g_abij("c,d,k,l") -
+                                                     g_abij("d,c,k,l")) *
+                                              t2("a,d,i,l");
+
+                        k_kaic("k,a,i,c") = g_iajb("k,a,i,c") -
+                                            g_ijka("k,l,i,c") * t1("a,l") +
+                                            u1b("r,s,k,i")*ca("r,a")*ca("s,c") -
+                                            g_abij("d,c,k,l") * T("d,a,i,l");
+
+                    }
+
+//        g_abij.get_world().gop.fence();
+                    // compute residual r2(n) = t2(n+1) - t2(n)
+                    {
+                        r2("a,b,i,j") = -t2("a,b,i,j") + d2("a,b,i,j") * (
+                                //
+                                g_abij("a,b,i,j")
+                                //
+                                + a_klij("k,l,i,j") * tau("a,b,k,l")
+                                //
+                                + b_abij("a,b,i,j")
+
+                                // permutation part
+                                //
+                                + (g_ac("a,c") * t2("c,b,i,j") -
+                                   g_ki("k,i") * t2("a,b,k,j"))
+                                + (g_ac("b,c") * t2("c,a,j,i") -
+                                   g_ki("k,j") * t2("b,a,k,i"))
+
+                                + u1a("q,s,i,j")*ca("q,a")*ca("s,b")
+                                + u1a("q,s,j,i")*ca("q,b")*ca("s,a")
+                                - g_iajb("k,b,i,c") * t1("a,k") * t1("c,j")
+                                - g_iajb("k,a,j,c") * t1("b,k")*t1("c,i")
                                 //
                                 - (g_ijak("i,j,a,k") +
                                    g_abij("a,c,i,k") * t1("c,j")) *

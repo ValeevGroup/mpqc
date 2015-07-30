@@ -586,13 +586,13 @@ int try_main(int argc, char *argv[], madness::World& world) {
     auto lazy_two_electron_int = tcc::cc::make_lazy_two_electron_array(world, basis, trange_4);
 
     // test contraction here
-    TA::Array<double,4> test;
-    test("i,j,a,b") = lazy_two_electron_int("p,q,r,s")*Ci_dense("p,i")*Ci_dense("q,j")*Cv_dense("r,a")*Cv_dense("s,b");
+//    TA::Array<double,4> test;
+//    test("i,j,a,b") = lazy_two_electron_int("p,q,r,s")*Ci_dense("p,i")*Ci_dense("q,j")*Cv_dense("r,a")*Cv_dense("s,b");
 
-    test("i,a,j,b") = test("i,j,a,b");
+//    test("i,a,j,b") = test("i,j,a,b");
 //    std::cout << test << std::endl;
 
-    g = std::make_shared<tcc::cc::CCSDIntermediate<TA::Tensor<double>, TA::DensePolicy>>(X_ab_TA,Ci_dense, Cv_dense);
+    g = std::make_shared<tcc::cc::CCSDIntermediate<TA::Tensor<double>, TA::DensePolicy>>(X_ab_TA,Ci_dense, Cv_dense,lazy_two_electron_int);
 
     decltype(F_TA) fock_mo;
     fock_mo("p,q") = F_TA("mu,nu")*Call("mu,p")*Call("nu,q");
@@ -609,6 +609,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
     tcc::cc::CCSD<TA::Tensor<double>, TA::DensePolicy> ccsd(fock_mo_dense, ens, tre, g);
 
 //            ccsd.compute_cc2();
+    ccsd.compute_ccsd_dummy();
     ccsd.compute_ccsd();
 
 

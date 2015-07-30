@@ -58,36 +58,32 @@ namespace tcc {
                 std::size_t nshells2 = shells2.size();
                 std::size_t nshells3 = shells3.size();
 
-                // total number of basis function in each dimension
-                std::size_t nfunctions0 = (*cluster_shells_)[index[0]].flattened_nfunctions();
-                std::size_t nfunctions1 = (*cluster_shells_)[index[1]].flattened_nfunctions();
-                std::size_t nfunctions2 = (*cluster_shells_)[index[2]].flattened_nfunctions();
-                std::size_t nfunctions3 = (*cluster_shells_)[index[3]].flattened_nfunctions();
-                std::size_t nfunctions23 = nfunctions2 * nfunctions3;
-                std::size_t nfunctions123 = nfunctions1 * nfunctions23;
-
                 // get the engine
                 auto engine = pool_->local();
 
                 // bf, to track the position in total basis function
-                std::size_t bf0, bf1, bf2, bf3;
-                bf0 = bf1 = bf2 = bf3 = 0l;
+                std::size_t bf0, bf1, bf2, bf3 = 0;
+                auto lo0 = r.lobound_data()[0];
+                auto lo1 = r.lobound_data()[1];
+                auto lo2 = r.lobound_data()[2];
+                auto lo3 = r.lobound_data()[3];
 
                 // compute
+                bf0 = lo0;
                 for (auto s0 = 0l; s0 != nshells0; ++s0) {
 
                     std::size_t ns0 = shells0[s0].size();
-                    bf1 = 0l;
+                    bf1 = lo1;
 
                     for (auto s1 = 0l; s1 != nshells1; ++s1) {
 
                         std::size_t ns1 = shells1[s1].size();
-                        bf2 = 0l;
+                        bf2 = lo2;
 
                         for (auto s2 = 0l; s2 != nshells2; ++s2) {
 
                             std::size_t ns2 = shells2[s2].size();
-                            bf3 = 0l;
+                            bf3 = lo3;
 
                             for (auto s3 = 0l; s3 != nshells3; ++s3) {
 
@@ -100,10 +96,9 @@ namespace tcc {
                                                                  shells2[s2],
                                                                  shells3[s3]);
 
-                                //store it into tile
                                 auto lowbound = {bf0, bf1, bf2, bf3};
                                 auto upbound = {bf0 + ns0, bf1 + ns1, bf2 + ns2,
-                                                bf3 + ns3};
+                                                    bf3 + ns3};
                                 auto view = tile.block(lowbound, upbound);
                                 auto map = TA::make_map(buf, lowbound, upbound);
                                 view = map;

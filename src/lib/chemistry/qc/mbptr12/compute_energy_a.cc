@@ -106,6 +106,10 @@ MBPT2_R12::compute_energy_()
 
 #if defined(MPQC_NEW_FEATURES)
   r12eval_->gf2_r12(gf2_orbital_);
+  if (r12eval()->compute_1rdm()) {
+    ExEnv::out0() << indent << "Compute MP2-F12 one-electron properties" << std::endl;
+    r12eval()->compute_TA_mp2f12_1rdm();
+  }
 #endif
 
   //

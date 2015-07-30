@@ -726,11 +726,17 @@ namespace sc {
     D_e2_AB("A',B'") = TmA("m,A'") * TmA("m,B'");
 
     // compute intermediate to reduce memory consumption
+    ExEnv::out0() << indent
+                  << "Compute CABS_singles g_aAmB" << std::endl;
     TArray4 g_aAmB;
-    {g_aAmB("a,A',m,B'") = 2.0 * _4("<a A'|g|m B'>") - _4("<a A'|g|B' m>");}
+    g_aAmB("a,A',m,B'") = 2.0 * _4("<a A'|g|m B'>") - _4("<a A'|g|B' m>");
     TArray4::wait_for_lazy_cleanup(g_aAmB.get_world());
 
+    ExEnv::out0() << indent
+                  << "Compute CABS_singles g_aAmn" << std::endl;
     TArray4d g_aAmn = ijxy("<a A'|g|m n>");
+    ExEnv::out0() << indent
+                  << "Compute CABS_singles g_ammn" << std::endl;
     TArray4d g_ammn = ijxy("<a m|g|m1 n>");
     TArray2 Xam_E2;
     Xam_E2("a,m") = 2.0 * (
@@ -853,6 +859,53 @@ namespace sc {
     return XaiAddToXam(Xam_mp2f12, Xai_mp2f12);
   }
 
+  // compute F12 density from X and B terms
+  template <typename T>
+  void SingleReference_R12Intermediates<T>::compute_Df12_XB(const double C_0, const double C_1,
+                                                            TArray2& D_f12_ij, TArray2& D_f12_ab,
+                                                            TArray2& D_f12_apbp, TArray2& D_f12_apb) {
+
+    const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
+    const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
+
+    // Dij = 1/2 R^ik_A'B' R^A'B'_kl (A': all virtual)
+    {
+    TArray4d r2_ijkl = ijxy("<i j|r2|k l>");
+    TArray4d r_ijpq = ijxy("<i j|r|p q>");
+    TArray4d r_ijapn = ijxy("<i j|r|a' n>");
+    D_f12_ij("i,j") =  (RR_C1 * r2_ijkl("i,k,j,l") + RR_C2 * r2_ijkl("k,i,j,l"))
+                       * _2("<k|I|l>")
+                     - (RR_C1 * r_ijpq("i,k,p,q") + RR_C2 * r_ijpq("k,i,p,q"))
+                       * r_ijpq("j,k,p,q")
+                     - (RR_C1 * r_ijapn("i,k,a',n") + RR_C2 * r_ijapn("k,i,a',n"))
+                       * r_ijapn("j,k,a',n")
+                     - (RR_C1 * r_ijapn("k,i,a',n") + RR_C2 * r_ijapn("i,k,a',n"))
+                       * r_ijapn("k,j,a',n");
+    }
+    TArray4d::wait_for_lazy_cleanup(D_f12_ij.get_world());
+
+    // DA'B' = 1/2 R^A'C'_kl R^kl_B'C' (A': all virtual)
+    TArray4d r_acpkl = ijxy("<a c'|r|k l>");
+    {
+    TArray4d r_apcpkl = ijxy("<a' c'|r|k l>");
+    D_f12_apb("a',b") = (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
+                        * r_acpkl("b,c',k,l");
+
+    D_f12_apbp("a',b'") =  (RR_C1 * r_acpkl("c,a',l,k") + RR_C2 * r_acpkl("c,a',k,l"))
+                           * r_acpkl("c,b',l,k")
+                         + (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
+                           * r_apcpkl("b',c',k,l");
+//    D_f12_apbp("a',b'") =  (RR_C1 * _4("<a' p'|r|k l>") + RR_C2 * _4("<a' p'|r|l k>"))
+//                           * _4("<b' p'|r|k l>")
+//                         - (RR_C1 * _4("<a' m|r|k l>") + RR_C2 * _4("<a' m|r|l k>"))
+//                           * _4("<b' m|r|k l>");
+    }
+    TArray4d::wait_for_lazy_cleanup(D_f12_ij.get_world());
+
+    D_f12_ab("a,b") = (RR_C1 * r_acpkl("a,c',k,l") + RR_C2 * r_acpkl("a,c',l,k"))
+                      * r_acpkl("b,c',k,l");
+  }
+
   // Xam contribution from F12 V part
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray2
@@ -861,17 +914,19 @@ namespace sc {
     const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
     const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
 
+    TArray2 Xai_V, Xam_V;
+    {
     TArray4d gr_ak_ij = ijxy("<a k|gr|i j>");
     TArray4d rpq_kl = ijxy("<p q|r|k l>");
     TArray4d rapn_kl = ijxy("<a' n|r|k l>");
-    TArray4d rnap_kl = ijxy("<n a'|r|k l>");
+    TArray4d rpq_ak = ijxy("<p q|r|a k>");
 
-    TArray4d raap_kl = ijxy("<a a'|r|k l>");
-    TArray4d rmap_kl = ijxy("<m a'|r|k l>");
+    TArray4d gij_apm = ijxy("<i j|g|a' m>");
+    TArray4d rapn_ak = ijxy("<a' n|r|a k>");
+    TArray4d rapn_ka = ijxy("<a' n|r|k a>");
+
     TArray2 Ikl = xy("<k|I|l>");
 
-    TArray4d rpq_ak = ijxy("<p q|r|a k>");
-    TArray2 Xai_V, Xam_V;
     Xai_V("a,i") =  // 1/2 R^ik_AC g^AC_ak
                   - ( (R_C1 * gr_ak_ij("a,k,i,l") + R_C2 * gr_ak_ij("a,k,l,i"))
                       * Ikl("k,l")
@@ -879,19 +934,25 @@ namespace sc {
                        * ( R_C1 * rpq_kl("p,q,i,k") + R_C2 * rpq_kl("p,q,k,i") )
                     - _4("<a k|g|a' n>")
                        * ( R_C1 * rapn_kl("a',n,i,k") + R_C2 * rapn_kl("a',n,k,i"))
-                    - _4("<a k|g|n a'>")
-                       * ( R_C1 * rnap_kl("n,a',i,k") + R_C2 * rnap_kl("n,a',k,i"))
+                    - _4("<k a|g|a' n>")
+                       * ( R_C1 * rapn_kl("a',n,k,i") + R_C2 * rapn_kl("a',n,i,k"))
                     )
                     // 1/2 R^ak_AC g^AC_ik
                   - ( (R_C1 * gr_ak_ij("a,l,i,k") + R_C2 * gr_ak_ij("a,l,k,i"))
                       * Ikl("k,l")
                     - _4("<i k|g|p q>")
                       * ( R_C1 * rpq_ak("p,q,a,k") + R_C2 * rpq_ak("q,p,a,k"))
-                    - _4("<i k|g|a' n>")
-                      * ( R_C1 * _4("<a' n|r|a k>") + R_C2 * _4("<a' n|r|k a>"))
-                    - _4("<i k|g|n a'>")
-                      * ( R_C1 * _4("<n a'|r|a k>") + R_C2 * _4("<n a'|r|k a>"))
+                    - gij_apm("i,k,a',n")
+                      * ( R_C1 * rapn_ak("a',n,a,k") + R_C2 * rapn_ka("a',n,k,a"))
+                    - gij_apm("k,i,a',n")
+                      * ( R_C1 * rapn_ka("a',n,k,a") + R_C2 * rapn_ak("a',n,a,k"))
                     );
+    }
+    TArray4d::wait_for_lazy_cleanup(Xai_V.get_world());
+
+    TArray4d raap_kl = ijxy("<a a'|r|k l>");
+    TArray4d rmap_kl = ijxy("<m a'|r|k l>");
+
     Xam_V("a,m") =  // 1/2 R^kl_ac' g^mc'_kl
                     ( R_C1 * raap_kl("a,a',k,l") + R_C2 * raap_kl("a,a',l,k"))
                     * _4("<k l|g|m a'>")
@@ -4120,11 +4181,15 @@ namespace sc {
     // D^m_n =  t^m_A' * t^A'_n
     // D^A'_B' = t^A'_m * t^m_B'
     // D^A'_m = t^A'_m
+    ExEnv::out0() << indent
+                  << "Compute CABS_singles D" << std::endl;
     TArray2 D_e2_mn, D_e2_AB;
     D_e2_mn("m,n") = TmA("m,A'") * TmA("n,A'");
     D_e2_AB("A',B'") = TmA("m,A'") * TmA("m,B'");
 
     // CABS singles orbital response
+    ExEnv::out0() << indent
+                  << "Compute CABS_singles Xam" << std::endl;
     TArray2 Xam_E2 = Xam_CabsSingles(TmA, Tma);
     TArray2 Dbn_E2(Xam_E2.get_world(), Xam_E2.trange());
     // solve k_bn A_bnam = X_am
@@ -4753,42 +4818,18 @@ namespace sc {
     {
     ExEnv::out0() << std::endl << indent
                   << "Compute F12 contributions" << std::endl;
-    // F12 density from X and B terms
-    TArray4d r2_ijkl = ijxy("<i j|r2|k l>");
-    TArray4d r_ijpq = ijxy("<i j|r|p q>");
-    TArray4d r_ijapn = ijxy("<i j|r|a' n>");
-    TArray4d r_ijnap = ijxy("<i j|r|n a'>");
-    TArray4d r_acpkl = ijxy("<a c'|r|k l>");
-    TArray4d r_apcpkl = ijxy("<a' c'|r|k l>");
 
+    ExEnv::out0() << std::endl << indent << "Compute D_f12" << std::endl;
+    // F12 density from X and B terms
     TArray2 D_f12_ij, D_f12_ab, D_f12_apbp, D_f12_apb;
-    // Dij = 1/2 R^ik_A'B' R^A'B'_kl (A': all virtual)
-    D_f12_ij("i,j") =  (RR_C1 * r2_ijkl("i,k,j,l") + RR_C2 * r2_ijkl("k,i,j,l"))
-                       * _2("<k|I|l>")
-                     - (RR_C1 * r_ijpq("i,k,p,q") + RR_C2 * r_ijpq("k,i,p,q"))
-                       * r_ijpq("j,k,p,q")
-                     - (RR_C1 * r_ijapn("i,k,a',n") + RR_C2 * r_ijapn("k,i,a',n"))
-                       * r_ijapn("j,k,a',n")
-                     - (RR_C1 * r_ijnap("i,k,n,a'") + RR_C2 * r_ijnap("k,i,n,a'"))
-                       * r_ijnap("j,k,n,a'");
-    // DA'B' = 1/2 R^A'C'_kl R^kl_B'C' (A': all virtual)
-    D_f12_ab("a,b") = (RR_C1 * r_acpkl("a,c',k,l") + RR_C2 * r_acpkl("a,c',l,k"))
-                      * r_acpkl("b,c',k,l");
-    //
-//    D_f12_apbp("a',b'") =  (RR_C1 * r_acpkl("c,a',l,k") + RR_C2 * r_acpkl("c,a',k,l"))
-//                           * r_acpkl("c,b',l,k")
-//                         + (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
-//                           * r_apcpkl("b',c',k,l");
-    D_f12_apbp("a',b'") =  (RR_C1 * _4("<a' p'|r|k l>") + RR_C2 * _4("<a' p'|r|l k>"))
-                           * _4("<b' p'|r|k l>")
-                         - (RR_C1 * _4("<a' m|r|k l>") + RR_C2 * _4("<a' m|r|l k>"))
-                           * _4("<b' m|r|k l>");
-    //
-    D_f12_apb("a',b") = (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
-                        * r_acpkl("b,c',k,l");
+    compute_Df12_XB(C_0, C_1, D_f12_ij, D_f12_ab, D_f12_apbp, D_f12_apb);
+
 
     // F12 orbital response contribution
     //
+
+    ExEnv::out0() << std::endl << indent << "Compute X and B density contribution to Xam" << std::endl;
+
     // X and B density contribution to Xam
     TArray4d g_abmc = ijxy("<a b|g|m c>");
     TArray2 gdf12_am;
@@ -4807,8 +4848,11 @@ namespace sc {
                      ;
 
     // Xam from F12 (V, X, and B) contributions
+    ExEnv::out0() << std::endl << indent << "Compute V Xam" << std::endl;
     TArray2 Xam_Vcontri = Xam_V(C_0,C_1);
+    ExEnv::out0() << std::endl << indent << "Compute X Xam" << std::endl;
     TArray2 Xam_Xcontri = Xam_X(C_0,C_1);
+    ExEnv::out0() << std::endl << indent << "Compute B Xam" << std::endl;
     TArray2 Xam_Bcontri = Xam_B(C_0,C_1);
 
     // F12 contribution to orbital response

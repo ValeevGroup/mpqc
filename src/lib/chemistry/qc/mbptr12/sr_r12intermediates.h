@@ -309,6 +309,11 @@ namespace sc {
                           const TArray2& Dij, const TArray2& Dab,
                           const TArray2& RT_apb);
 
+      // compute F12 density from X and B terms
+      void compute_Df12_XB(const double C_0, const double C_1,
+                           TArray2& D_f12_ij, TArray2& D_f12_ab,
+                           TArray2& D_f12_apbp, TArray2& D_f12_apb);
+
       // compute Xam contribution from F12 V part
       TArray2 Xam_V(const double C_0, const double C_1);
       // compute Xam contribution from F12 X part

@@ -116,6 +116,9 @@ namespace tcc{
       return lazy_two_electron;
     }
 
+      // direct ao integral using DF three center integral
+      typedef tcc::cc::LazyIntegral<4, TwoElectronIntDFGenerator<TA::DensePolicy>> LazyTwoElectronDFDenseTile;
+      typedef TA::Array<double, 4, LazyTwoElectronDFDenseTile, TA::DensePolicy> DirectTwoElectronDFDenseArray;
   } // namespace cc
 } // namespace tcc
 

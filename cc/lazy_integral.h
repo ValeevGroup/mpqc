@@ -9,6 +9,8 @@
 #include "../common/namespaces.h"
 #include "lazy_integral.h"
 
+static auto DIRECTAOTWOELECTONINTEGRAL = std::make_shared<tcc::cc::TwoBodyIntGenerator<libint2::Coulomb>>();
+
 namespace tcc{
   namespace cc{
 
@@ -58,10 +60,19 @@ namespace tcc{
       }
 
       template<typename Archive>
-      void serialize(Archive& ar){
-        assert(false);
+      typename std::enable_if<madness::archive::is_output_archive<Archive>::value>::type
+      serialize(Archive& ar){
+          ar &range_;
+          ar &index_;
       }
 
+        template<typename Archive>
+        typename std::enable_if<madness::archive::is_input_archive<Archive>::value>::type
+        serialize(Archive& ar){
+            ar &range_;
+            ar &index_;
+            integral_generator_ = DIRECTAOTWOELECTONINTEGRAL;
+        }
     private:
       range_type range_;
       std::vector<std::size_t> index_;
@@ -86,8 +97,8 @@ namespace tcc{
       auto p_engine_pool = std::make_shared<tcc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(
               two_body_coulomb_engine);
 
-      auto two_body_coulomb_generator = std::make_shared<TwoBodyIntGenerator<libint2::Coulomb>>
-              (p_engine_pool, p_cluster_shells);
+        DIRECTAOTWOELECTONINTEGRAL->set_pool(p_engine_pool);
+        DIRECTAOTWOELECTONINTEGRAL->set_shell(p_cluster_shells);
 
       DirectTwoElectronDenseArray lazy_two_electron(world, trange);
 
@@ -99,7 +110,7 @@ namespace tcc{
                 it.ordinal());
         auto index = it.index();
         lazy_two_electron.set(index, LazyTwoElectronTile(range, index,
-                                                         two_body_coulomb_generator));
+                                                         DIRECTAOTWOELECTONINTEGRAL));
 
       }
       return lazy_two_electron;

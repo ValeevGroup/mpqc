@@ -16,7 +16,7 @@ namespace tcc {
     namespace  cc {
 
 
-        //IntegralGenerator for two body AO integrals, use to work with LazyIntegral
+        //IntegralGenerator for two body integrals, use to work with LazyIntegral
         // it used libint2 for generation of integrals
         template<libint2::MultiplicativeSphericalTwoBodyKernel Kernel>
         class TwoBodyIntGenerator {
@@ -26,7 +26,7 @@ namespace tcc {
             typedef tcc::integrals::EnginePool<Engine> EnginePool;
 
 
-            TwoBodyIntGenerator() = delete;
+            TwoBodyIntGenerator() = default;
 
             TwoBodyIntGenerator(TwoBodyIntGenerator const &) = default;
 
@@ -38,6 +38,17 @@ namespace tcc {
                                 const std::shared_ptr<std::vector<basis::ClusterShells>> &cluster_shells)
                     : pool_(pool), cluster_shells_(cluster_shells) { }
 
+
+            void set_pool(const std::shared_ptr<EnginePool> &pool){
+                pool_ = pool;
+            }
+
+            void set_shell(const std::shared_ptr<std::vector<basis::ClusterShells>> &cluster_shells){
+                cluster_shells_ = cluster_shells;
+            }
+
+            // return a tile of integral in chemical notation
+            // (block1 block2| block3 block4)
             TA::Tensor <double> compute(const TA::Range &r,
                                         const std::vector<std::size_t> &index) {
 

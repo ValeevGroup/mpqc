@@ -361,10 +361,19 @@ namespace tcc {
 
                     TArray4 u2, u11, u1a, u1b;
                     // compute half transformed intermediates
+                    auto tu0 = tcc::tcc_time::now();
                     u2 = intermediate_->compute_u2(t2);
                     u11 = intermediate_->compute_u11(t1);
                     u1a = intermediate_->compute_u1a(t1);
                     u1b = intermediate_->compute_u1b(t1);
+
+                    auto tu1 = tcc_time::now();
+                    auto duration = tcc_time::duration_in_s(tu0, tu1);
+
+                    if (g_abij.get_world().rank() == 0) {
+                        std::cout << "Time to compute U intermediates   " << duration << std::endl;
+                    }
+
 
                     // intermediates for t1
                     // external index i and a
@@ -529,7 +538,7 @@ namespace tcc {
                     iter += 1ul;
 
                     auto t1 = tcc_time::now();
-                    auto duration = tcc_time::duration_in_s(t0, t1);
+                    duration = tcc_time::duration_in_s(t0, t1);
 
                     if (g_abij.get_world().rank() == 0) {
                         std::cout << iter << "  " << dE << "  " << error <<

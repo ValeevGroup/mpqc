@@ -50,6 +50,7 @@ namespace tcc {
                 TArray3::wait_for_lazy_cleanup(Xpq.get_world());
             }
 
+            // clean the three center ingeral
             void clean(){
                 Xab_ = TArray3();
                 Xai_ = TArray3();
@@ -170,7 +171,7 @@ namespace tcc {
                     u2("p, r, i, j") = (t2("a,b,i,j")*Ca_("q,a")*Ca_("s,b"))*direct_ao_("p,q,r,s");
                     return u2;
                 }else{
-                    throw std::runtime_error("CCSDIntermediate no diret ao available");
+                    throw std::runtime_error("CCSDIntermediate no diret AO available");
                 }
             }
 
@@ -180,7 +181,7 @@ namespace tcc {
                     u11("p,r,i,j") = (t1("c,i")*Ca_("q,c"))*(t1("d,j")*Ca_("s,d"))*direct_ao_("p,q,r,s");
                     return u11;
                 }else{
-                    throw std::runtime_error("CCSDIntermediate no diret ao available");
+                    throw std::runtime_error("CCSDIntermediate no diret AO available");
                 }
             }
 
@@ -190,7 +191,7 @@ namespace tcc {
                    u1a("q,s,i,j") = (t1("a,i")*Ca_("p,a"))*Ci_("r,j")*direct_ao_("p,q,r,s");
                    return u1a;
                } else{
-                   throw std::runtime_error("CCSDIntermediate no diret ao available");
+                   throw std::runtime_error("CCSDIntermediate no diret AO available");
                }
             }
 
@@ -200,7 +201,7 @@ namespace tcc {
                     u1b("r,s,i,j") = (t1("a,i")*Ca_("p,a"))*Ci_("q,j")*direct_ao_("p,q,r,s");
                     return u1b;
                 } else{
-                    throw std::runtime_error("CCSDIntermediate no diret ao available");
+                    throw std::runtime_error("CCSDIntermediate no diret AO available");
                 }
             }
 

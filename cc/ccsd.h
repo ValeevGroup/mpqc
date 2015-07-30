@@ -336,12 +336,15 @@ namespace tcc {
                 // get all two electron integrals
                 TArray4 g_ijkl = intermediate_->get_ijkl();
                 TArray4 g_iajb = intermediate_->get_iajb();
-                TArray4 g_aibc = intermediate_->get_aibc();
                 TArray4 g_ijak = intermediate_->get_ijak();
                 TArray4 g_ijka = intermediate_->get_ijka();
 
-                intermediate_->clean();
+                // get three center integrals
+                TArray3 Xab = intermediate_->get_Xab();
+                TArray3 Xij = intermediate_->get_Xij();
+                TArray3 Xai = intermediate_->get_Xai();
 
+                // get mo coefficient
                 TArray2 ca = intermediate_->get_Ca();
                 TArray2 ci = intermediate_->get_Ci();
 
@@ -359,13 +362,14 @@ namespace tcc {
                     //start timer
                     auto t0 = tcc::tcc_time::now();
 
-                    TArray4 u2, u11, u1a, u1b;
+                    TArray4 u2_u11;
                     // compute half transformed intermediates
                     auto tu0 = tcc::tcc_time::now();
-                    u2 = intermediate_->compute_u2(t2);
-                    u11 = intermediate_->compute_u11(t1);
-                    u1a = intermediate_->compute_u1a(t1);
-                    u1b = intermediate_->compute_u1b(t1);
+                    {
+                        TArray4 u2 = intermediate_->compute_u2(t2);
+                        TArray4 u11 = intermediate_->compute_u11(t1);
+                        u2_u11("p,r,i,j") = u2("p,r,i,j") + u11("p,r,i,j");
+                    }
 
                     auto tu1 = tcc_time::now();
                     auto duration = tcc_time::duration_in_s(tu0, tu1);
@@ -412,9 +416,9 @@ namespace tcc {
                                 (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) *
                                 t1("c,k")
                                 //
-                                + 2.0*(u2("p,r,k,i")+u11("p,r,k,i"))*ci("p,k")*ca("r,a")
+                                + 2.0*u2_u11("p,r,k,i")*ci("p,k")*ca("r,a")
 
-                                -(u2("p,r,i,k")+u11("p,r,i,k"))*ci("p,k")*ca("r,a")
+                                - u2_u11("p,r,i,k")*ci("p,k")*ca("r,a")
                                 //
                                 -
                                 (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) *
@@ -441,31 +445,30 @@ namespace tcc {
                                             +
                                             g_abij("c,d,k,l") * tau("c,d,i,j");
 
-                        b_abij("a,b,i,j") = (u2("p,r,i,j")+u11("p,r,i,j"))*ca("p,a")*ca("r,b")
-                                            - (u2("p,r,i,j")+u11("p,r,i,j"))*ca("p,a")*ci("r,k")*t1("b,k")
-                                            - (u2("p,r,i,j")+u11("p,r,i,j"))*ci("p,k")*ca("r,b")*t1("a,k");
+                        b_abij("a,b,i,j") = (u2_u11("p,r,i,j")*ca("r,b")
+                                            - ci("r,k")*t1("b,k")*u2_u11("p,r,i,j"))*ca("p,a")
+                                            - u2_u11("p,r,i,j")*ci("p,k")*ca("r,b")*t1("a,k");
 
                         g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i")
                                       + (2.0 * g_ijka("k,l,i,c") -
                                          g_ijka("l,k,i,c")) * t1("c,l");
 
                         g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
-//                                      2.0*u1b("r,s,i,j")-u1b("r,s,j,i"))*ca("r,a")*ca("s,c")
-                                      + (2.0 * g_aibc("a,k,c,d") -
-                                         g_aibc("a,k,d,c")) * t1("d,k");
+                                      + (2.0*Xai("X,d,k")*t1("d,k"))*Xab("X,a,c")
+                                      - (Xab("X,a,d")*t1("d,k"))*Xai("X,c,k");
 
                         j_akic("a,k,i,c") = g_abij("a,c,i,k") -
                                             g_ijka("l,k,i,c") * t1("a,l") +
-                                            u1a("q,s,i,k")*ca("q,a")*ca("s,c")
+                                            (Xab("X,a,d")*t1("d,i"))*Xai("X,c,k")
                                             -g_abij("c,d,k,l") * T("d,a,i,l")
                                             + 0.5 * (2.0 * g_abij("c,d,k,l") -
                                                      g_abij("d,c,k,l")) *
                                               t2("a,d,i,l");
 
-                        k_kaic("k,a,i,c") = g_iajb("k,a,i,c") -
-                                            g_ijka("k,l,i,c") * t1("a,l") +
-                                            u1b("r,s,k,i")*ca("r,a")*ca("s,c") -
-                                            g_abij("d,c,k,l") * T("d,a,i,l");
+                        k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
+                                            - g_ijka("k,l,i,c") * t1("a,l")
+                                            + (Xai("X,d,k")*t1("d,i"))*Xab("X,a,c")
+                                            - g_abij("d,c,k,l") * T("d,a,i,l");
 
                     }
 
@@ -487,8 +490,9 @@ namespace tcc {
                                 + (g_ac("b,c") * t2("c,a,j,i") -
                                    g_ki("k,j") * t2("b,a,k,i"))
 
-                                + u1a("q,s,i,j")*ca("q,a")*ca("s,b")
-                                + u1a("q,s,j,i")*ca("q,b")*ca("s,a")
+                                + Xab("X,b,c")*t1("c,j")*Xai("X,a,i")
+                                + Xab("X,a,c")*t1("c,i")*Xai("X,b,j")
+
                                 - g_iajb("k,b,i,c") * t1("a,k") * t1("c,j")
                                 - g_iajb("k,a,j,c") * t1("b,k")*t1("c,i")
                                 //

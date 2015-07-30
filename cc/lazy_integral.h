@@ -28,7 +28,7 @@ namespace tcc{
       typedef TA::Range range_type;
 
       /// Default constructor
-      LazyIntegral() {}
+      LazyIntegral() = default;
 
       /// Copy constructor
       LazyIntegral(const LazyIntegral& other) :

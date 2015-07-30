@@ -35,7 +35,7 @@ namespace tcc {
                     Xab_("X,a,b") = Xpq("X,mu,nu") * Ca("nu,a") * Ca("mu,b");
                     Xij_("X,i,j") = Xpq("X,mu,nu") * Ci("nu,i") * Ci("mu,j");
                     Xai_("X,a,i") = Xpq("X,mu,nu") * Ca("nu,a") * Ci("mu,i");
-
+                    Xpa_("X,p,a") = Xpq("X,p,q")*Ca("q,a");
                     Ci_= Ci;
                     Ca_ = Ca;
 
@@ -67,6 +67,33 @@ namespace tcc {
             // vir part
             const TArray2 get_Ca() const{
                 return Ca_;
+            }
+
+            // get three center integral (X|ab)
+            const TArray3 get_Xab() const{
+                if(!cleaned_){
+                    return Xab_;
+                }else{
+                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                }
+            }
+
+            // get three center integral (X|ij)
+            const TArray3 get_Xij() const{
+                if(!cleaned_){
+                    return Xij_;
+                }else{
+                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                }
+            }
+
+            // get three center integral (X|ai)
+            const TArray3 get_Xai() const{
+                if(!cleaned_){
+                    return Xai_;
+                }else{
+                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                }
             }
 
             // get two electron integrals
@@ -178,7 +205,13 @@ namespace tcc {
             const TArray4 compute_u11(const TArray2& t1){
                 if (direct_){
                     TArray4 u11;
-                    u11("p,r,i,j") = (t1("c,i")*Ca_("q,c"))*(t1("d,j")*Ca_("s,d"))*direct_ao_("p,q,r,s");
+                    TArray3 tmp;
+                    tmp("X,p,j") = Xpa_("X,p,a")*t1("a,j");
+                    u11("p,r,i,j") = tmp("X,r,j")*tmp("X,p,i");
+//                    TArray4 u11;
+//                    TArray2 tc;
+//                    tc("i,q") = t1("c,i")*Ca_("q,c");
+//                    u11("p,r,i,j") = (tc("i,q") * tc("j,s"))*direct_ao_("p,q,r,s");
                     return u11;
                 }else{
                     throw std::runtime_error("CCSDIntermediate no diret AO available");
@@ -211,6 +244,7 @@ namespace tcc {
             TArray3 Xab_;
             TArray3 Xai_;
             TArray3 Xij_;
+            TArray3 Xpa_;
 
             // mo coefficient
             TArray2 Ci_;

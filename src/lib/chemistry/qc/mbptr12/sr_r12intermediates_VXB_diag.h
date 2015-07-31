@@ -807,54 +807,61 @@ namespace sc {
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray2
   SingleReference_R12Intermediates<T>::Xam_Cmp2f12(const double C_0, const double C_1,
-                                         const TArray4& T2_ijab, const TArray4& A_ijab,
-                                         const TArray2& Dij, const TArray2& Dab,
-                                         const TArray2& RT_apb) {
+                                                   const TArray4& T2_ijab, const TArray4& A_ijab,
+                                                   const TArray2& Dij, const TArray2& Dab,
+                                                   const TArray2& RT_apb) {
     const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
     const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
     const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
     const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
 
-    TArray2 Xai_mp2f12, Xam_mp2f12;
-    Xai_mp2f12("a,i") =
-                       // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
-                       // g^al_cd \tilde{T}^cd_il
-                       -  _4("<a l|g|c d>")
-                          * (R_C1 * A_ijab("i,l,c,d") + R_C2 * A_ijab("l,i,c,d"))
+    TArray4 T2pA_temp;
+    T2pA_temp("i,j,a,b") =  R_C1 * T2_ijab("i,j,a,b") + R_C2 * T2_ijab("j,i,a,b")
+                          + RR_C1 * A_ijab("i,j,a,b") + RR_C2 * A_ijab("j,i,a,b");
 
-                       // F^a'_b R^al_a'c \tilde{T}^bc_il
-                       - _4("<a l|r|b_F(a') c>")
-                         * (  R_C1 * T2_ijab("i,l,b,c") + R_C2 * T2_ijab("l,i,b,c")
-                            + RR_C1 * A_ijab("i,l,b,c") + RR_C2 * A_ijab("l,i,b,c"))
-                       - _4("<a l|r|c b_F(a')>")
-                         * (  R_C1 * T2_ijab("i,l,c,b") + R_C2 * T2_ijab("l,i,c,b")
-                            + RR_C1 * A_ijab("i,l,c,b") + RR_C2 * A_ijab("l,i,c,b"));
-    Xam_mp2f12("a,m") =
-                       // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
-                       // g_ic^kl \tilde{T}^Ac_kl
+    TArray2 Xai_mp2f12, Xam_mp2f12;
+    // Xai
+    Xai_mp2f12("a,i") =  // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
+                         // g^al_cd \tilde{T}^cd_il
+                       -  _4("<a l|g|c d>")
+                          * (R_C1 * A_ijab("i,l,c,d") + R_C2 * A_ijab("l,i,c,d"));
+    Xai_mp2f12("a,i") =  Xai_mp2f12("a,i")
+                         // F^a'_b R^al_a'c \tilde{T}^bc_il
+                         // 1st part
+                       - _4("<a l|r|b_F(a') c>") * T2pA_temp("i,l,b,c");
+    Xai_mp2f12("a,i") =  Xai_mp2f12("a,i")
+                         // 2nd part
+                       - _4("<a l|r|c b_F(a')>") * T2pA_temp("i,l,c,b");
+
+    // Xam
+    Xam_mp2f12("a,m") =  // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
+                         // g_ic^kl \tilde{T}^Ac_kl
                          (R_C1 * A_ijab("k,l,a,c") + R_C2 * A_ijab("k,l,c,a"))
                          * _4("<m c|g|k l>")
 
-                       // derivatives of 1/2 F^c_d D^d_c - 1/2 F^l_k D^k_l
-                       // g^ac_md D^d_c
+                         // derivatives of 1/2 F^c_d D^d_c - 1/2 F^l_k D^k_l
+                         // g^ac_md D^d_c
                        - (2.0 * _4("<a c|g|m d>") - _4("<a c|g|d m>"))
                          * Dab("d,c")
-                       // g^al_mk D^k_l
+                         // g^al_mk D^k_l
                        + (2.0 * _4("<a l|g|m k>") - _4("<a l|g|k m>"))
-                         * Dij("k,l")
-
-                       // derivatives of 1/2 F^a'_b R^kl_a'c \tilde{T}^bc_kl
-                       //   1/2 F^a'_m R^kl_a'b \tilde{T}^ab_kl
-                       // & 1/2 F^a'_b R^kl_ma' \tilde{T}^ab_kl
-                       + (  R_C1 * T2_ijab("k,l,a,b") + R_C2 * T2_ijab("k,l,b,a")
-                          + RR_C1 * A_ijab("k,l,a,b") + RR_C2 * A_ijab("k,l,b,a"))
-                         * (_4("<k l|r|m_F(a') b>") + _4("<k l|r|m b_F(a')>"))
-
-                       //   g^aa'_mb 1/2 R^kl_a'c \tilde{T}^bc_kl
-                       // & g^ab_ma' 1/2 R^kl_a'c \tilde{T}^bc_kl
-                       - (  2.0 * _4("<a a'|g|m b>") - _4("<a a'|g|b m>")
-                          + 2.0 * _4("<a b|g|m a'>") - _4("<a b|g|a' m>"))
-                         * RT_apb("a',b");
+                         * Dij("k,l");
+    Xam_mp2f12("a,m") =  Xam_mp2f12("a,m")
+                         // derivatives of 1/2 F^a'_b R^kl_a'c \tilde{T}^bc_kl
+                         //   1/2 F^a'_m R^kl_a'b \tilde{T}^ab_kl
+                         // & 1/2 F^a'_b R^kl_ma' \tilde{T}^ab_kl
+                       + T2pA_temp("k,l,a,b")
+                         * (_4("<k l|r|m_F(a') b>") + _4("<k l|r|m b_F(a')>"));
+    TArray4 g_tempt;
+    {
+    TArray4d gab_map = ijxy("<a b|g|m a'>");
+    g_tempt("a,a',m,b") =  2.0 * _4("<a a'|g|m b>") - _4("<a a'|g|b m>")
+                         + 2.0 * gab_map("a,b,m,a'") - gab_map("b,a,m,a'");
+    }
+    Xam_mp2f12("a,m") =  Xam_mp2f12("a,m")
+                         //   g^aa'_mb 1/2 R^kl_a'c \tilde{T}^bc_kl
+                         // & g^ab_ma' 1/2 R^kl_a'c \tilde{T}^bc_kl
+                       - g_tempt("a,a',m,b") * RT_apb("a',b");
 
     return XaiAddToXam(Xam_mp2f12, Xai_mp2f12);
   }
@@ -4639,6 +4646,8 @@ namespace sc {
     A_ijab("i,j,a,b") = C_ijab("i,j,a,b") * Delta_ijab("i,j,a,b");
 
     // Coupling and F12 part of MP2F12 density
+    ExEnv::out0() << indent
+                  << "Compute density from coupling contribution" << std::endl;
     TArray2 D_mp2f12_ij, D_mp2f12_ab;
     D_mp2f12_ij("i,j") =  (R_C1 * A_ijab("i,k,a,b") + R_C2 * A_ijab("k,i,a,b"))
                           * T2_ijab("j,k,a,b")
@@ -4665,6 +4674,8 @@ namespace sc {
                        );
 
     // MP2 F12 coupling contribution to orbital response
+    ExEnv::out0() << indent
+                  << "Compute orbital response from coupling contribution" << std::endl;
     TArray2 Xmp2f12_contri_nfzc = Xam_Cmp2f12(C_0, C_1,T2_ijab, A_ijab,
                                               D_mp2f12_ij, D_mp2f12_ab, RT_apb);
 

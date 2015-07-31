@@ -913,6 +913,40 @@ namespace sc {
                       * r_acpkl("b,c',k,l");
   }
 
+  // compute X and B density contribution to Xam
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xam_Df12_XB(const double C_0, const double C_1,
+                                                   const TArray2& Df12_ij, const TArray2& Df12_ab,
+                                                   const TArray2& Df12_apbp, const TArray2& Df12_apb) {
+    TArray2 gdf12_am;
+    gdf12_am("a,m") =  // X related contribution
+                       (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
+                       * Df12_ij("k,l");
+    {
+    TArray4d g_abmc = ijxy("<a b|g|m c>");
+    gdf12_am("a,m") =  gdf12_am("a,m")
+                       // B related contribution
+                       // 1st part
+                     - (2.0 * g_abmc("a,b,m,c") - g_abmc("b,a,m,c"))
+                       * Df12_ab("b,c");
+    }
+    gdf12_am("a,m") =  gdf12_am("a,m")
+                       // 2nd part
+                     - (2.0 * _4("<a b'|g|m c'>") - _4("<a b'|g|c' m>"))
+                       * Df12_apbp("b',c'");
+    gdf12_am("a,m") =  gdf12_am("a,m")
+                       // 3rd part
+                     - (2.0 * _4("<a b'|g|m c>") - _4("<a b'|g|c m>"))
+                       * Df12_apb("b',c");
+    TArray4d g_abmcp = ijxy("<a b|g|m c'>");
+    gdf12_am("a,m") =  gdf12_am("a,m")
+                       // 4th part
+                     - (2.0 * g_abmcp("a,b,m,c'") - g_abmcp("b,a,m,c'"))
+                       * Df12_apb("c',b");
+    return gdf12_am;
+  }
+
   // Xam contribution from F12 V part
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray2
@@ -4837,34 +4871,19 @@ namespace sc {
 
 
     // F12 orbital response contribution
-    //
 
     ExEnv::out0() << std::endl << indent << "Compute X and B density contribution to Xam" << std::endl;
-
     // X and B density contribution to Xam
-    TArray4d g_abmc = ijxy("<a b|g|m c>");
-    TArray2 gdf12_am;
-    gdf12_am("a,m") =  // X related contribution
-                       (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
-                       * D_f12_ij("k,l")
-                       // B related contribution
-                     - (2.0 * g_abmc("a,b,m,c") - g_abmc("b,a,m,c"))
-                       * D_f12_ab("b,c")
-                     - (2.0 * _4("<a b'|g|m c'>") - _4("<a b'|g|c' m>"))
-                       * D_f12_apbp("b',c'")
-                     - (2.0 * _4("<a b'|g|m c>") - _4("<a b'|g|c m>"))
-                       * D_f12_apb("b',c")
-                     - (2.0 * _4("<a b|g|m c'>") - _4("<a b|g|c' m>"))
-                       * D_f12_apb("c',b")
-                     ;
+    TArray2 gdf12_am = Xam_Df12_XB(C_0, C_1, D_f12_ij,D_f12_ab,
+                                   D_f12_apbp, D_f12_apb);
 
     // Xam from F12 (V, X, and B) contributions
     ExEnv::out0() << std::endl << indent << "Compute V Xam" << std::endl;
-    TArray2 Xam_Vcontri = Xam_V(C_0,C_1);
+    TArray2 Xam_Vcontri = Xam_V(C_0, C_1);
     ExEnv::out0() << std::endl << indent << "Compute X Xam" << std::endl;
-    TArray2 Xam_Xcontri = Xam_X(C_0,C_1);
+    TArray2 Xam_Xcontri = Xam_X(C_0, C_1);
     ExEnv::out0() << std::endl << indent << "Compute B Xam" << std::endl;
-    TArray2 Xam_Bcontri = Xam_B(C_0,C_1);
+    TArray2 Xam_Bcontri = Xam_B(C_0, C_1);
 
     // F12 contribution to orbital response
     TArray2 Xam_f12_nfzc;
@@ -4894,6 +4913,8 @@ namespace sc {
                                   preconditioner,
                                   conv_target);
 
+    // print out each contribution in F12 contribution
+#if 0
     TArray2 gdf12_X_am;
     gdf12_X_am("a,m") = // X related contribution
                         (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
@@ -5024,6 +5045,7 @@ namespace sc {
                 << "mu_z (B orbital response) = " << scprintf("%15.12f", - mu_z_Bor * 2.0)
                 << std::endl;
     }
+#endif
 
     if (compute_dipole) {
       TArray2 mu_z_apbp = xy("<a'|mu_z|b'>");

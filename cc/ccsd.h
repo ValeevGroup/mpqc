@@ -21,6 +21,7 @@
 namespace tcc {
     namespace cc {
 
+        // CCSD class that computed CCSD energy
 
         template<typename Tile, typename Policy>
         class CCSD {
@@ -39,11 +40,15 @@ namespace tcc {
             CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &g) :
-                    ens_(ens), tre_(tre), intermediate_(g) {
+                    ens_(ens), tre_(tre), intermediate_(g)
+            {
                 auto mo_block = std::make_shared<tcc::MOBlock>(*tre_);
                 fock_ = TArrayBlock2(fock, mo_block);
             }
 
+            // dummy way of doing CCSD
+            // store all the integrals in memory
+            // used as reference for development
             void compute_ccsd_dummy() {
 
                 auto n_occ = tre_->get_actual_occ();
@@ -294,6 +299,7 @@ namespace tcc {
             }
 
 
+            // ccsd energy for performance calculation
             void compute_ccsd() {
 
                 auto n_occ = tre_->get_actual_occ();

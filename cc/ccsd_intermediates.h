@@ -13,8 +13,18 @@
 namespace tcc {
 
     namespace cc {
-        // class to compute the two electron integrals and intermediate needed for ccsd
 
+        // class to compute the two electron integrals and intermediate needed for ccsd
+        // to construct this object needs:
+        //   three center integral Xpq
+        //   mo coefficient Cpi Cqa
+        //   direct ao integral array (optional for compute_dummy())
+        // p q r s stands for AO indices
+        // a b c d stands for virtual MO indices
+        // i j k l stands for occupied MO indices
+        // AO integrals uses chemical notation (pq|rs)
+        // three center uses chemical notation (X|pq)
+        // MO integrals used physical noation <ij|ab>
         template<typename Tile, typename Policy,
                 typename IntegralGenerator=tcc::cc::TwoBodyIntGenerator<libint2::Coulomb> >
         class CCSDIntermediate {
@@ -32,9 +42,10 @@ namespace tcc {
                 {
                     // convert to MO, store this temporary,
                     // call clean() to clean Xab_ Xij_ Xai_
-                    Xab_("X,a,b") = Xpq("X,mu,nu") * Ca("nu,a") * Ca("mu,b");
-                    Xij_("X,i,j") = Xpq("X,mu,nu") * Ci("nu,i") * Ci("mu,j");
-                    Xai_("X,a,i") = Xpq("X,mu,nu") * Ca("nu,a") * Ci("mu,i");
+                    Xab_("X,a,b") = Xpq("X,p,q") * Ca("q,a") * Ca("p,b");
+                    Xij_("X,i,j") = Xpq("X,p,q") * Ci("q,i") * Ci("p,j");
+                    Xai_("X,a,i") = Xpq("X,p,q") * Ca("q,a") * Ci("p,i");
+                    // this term is only for compute_u11
                     Xpa_("X,p,a") = Xpq("X,p,q")*Ca("q,a");
                     Ci_= Ci;
                     Ca_ = Ca;
@@ -55,6 +66,7 @@ namespace tcc {
                 Xab_ = TArray3();
                 Xai_ = TArray3();
                 Xij_ = TArray3();
+                Xpa_ = TArray3();
                 cleaned_ = true;
             }
 
@@ -189,6 +201,7 @@ namespace tcc {
             }
 
             // compute half transformed amplitudes
+            // onlyu u2 is not using density fitting
             // p q r s stands for AO indices
             // a b c d stands for virtual MO indices
             // i j k l stands for occupied MO indices

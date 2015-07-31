@@ -12,6 +12,12 @@
 
 namespace tcc {
 
+    // an easier interface to use TA's block expression to block by MO
+    // use this class to initialize TArrayBlock class to block at occ or vir
+    // occ: i,j,k,l
+    // vir: a,b,c,d
+    // all: p,q,r,s
+    //
   class MOBlock {
 
   public:

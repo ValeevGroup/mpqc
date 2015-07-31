@@ -648,7 +648,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                         ccsd(fock_mo_dense, ens, tre, g);
 
 //            ccsd.compute_cc2();
-    ccsd.compute_ccsd_dummy();
+//    ccsd.compute_ccsd_dummy();
     ccsd.compute_ccsd();
 
 

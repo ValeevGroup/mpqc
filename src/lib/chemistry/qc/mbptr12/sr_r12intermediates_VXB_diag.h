@@ -931,14 +931,20 @@ namespace sc {
                      - (2.0 * g_abmc("a,b,m,c") - g_abmc("b,a,m,c"))
                        * Df12_ab("b,c");
     }
+    {
+    TArray4 g_tempt;
+    g_tempt("a,b',m,c'") = 2.0 * _4("<a b'|g|m c'>") - _4("<a b'|g|c' m>");
     gdf12_am("a,m") =  gdf12_am("a,m")
                        // 2nd part
-                     - (2.0 * _4("<a b'|g|m c'>") - _4("<a b'|g|c' m>"))
-                       * Df12_apbp("b',c'");
+                     - g_tempt("a,b',m,c'") * Df12_apbp("b',c'");
+    }
+    {
+    TArray4 g_tempt;
+    g_tempt("a,b',m,c") = 2.0 * _4("<a b'|g|m c>") - _4("<a b'|g|c m>");
     gdf12_am("a,m") =  gdf12_am("a,m")
                        // 3rd part
-                     - (2.0 * _4("<a b'|g|m c>") - _4("<a b'|g|c m>"))
-                       * Df12_apb("b',c");
+                     - g_tempt("a,b',m,c") * Df12_apb("b',c");
+    }
     TArray4d g_abmcp = ijxy("<a b|g|m c'>");
     gdf12_am("a,m") =  gdf12_am("a,m")
                        // 4th part

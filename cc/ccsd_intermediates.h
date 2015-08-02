@@ -45,8 +45,6 @@ namespace tcc {
                     Xab_("X,a,b") = Xpq("X,p,q") * Ca("q,a") * Ca("p,b");
                     Xij_("X,i,j") = Xpq("X,p,q") * Ci("q,i") * Ci("p,j");
                     Xai_("X,a,i") = Xpq("X,p,q") * Ca("q,a") * Ci("p,i");
-                    // this term is only for compute_u11
-                    Xpa_("X,p,a") = Xpq("X,p,q")*Ca("q,a");
                     Ci_= Ci;
                     Ca_ = Ca;
 
@@ -218,13 +216,9 @@ namespace tcc {
             const TArray4 compute_u11(const TArray2& t1){
                 if (direct_){
                     TArray4 u11;
-                    TArray3 tmp;
-                    tmp("X,p,j") = Xpa_("X,p,a")*t1("a,j");
-                    u11("p,r,i,j") = tmp("X,r,j")*tmp("X,p,i");
-//                    TArray4 u11;
-//                    TArray2 tc;
-//                    tc("i,q") = t1("c,i")*Ca_("q,c");
-//                    u11("p,r,i,j") = (tc("i,q") * tc("j,s"))*direct_ao_("p,q,r,s");
+                    TArray2 tc;
+                    tc("i,q") = t1("c,i")*Ca_("q,c");
+                    u11("p,r,i,j") = (tc("i,q") * tc("j,s"))*direct_ao_("p,q,r,s");
                     return u11;
                 }else{
                     throw std::runtime_error("CCSDIntermediate no diret AO available");
@@ -257,7 +251,6 @@ namespace tcc {
             TArray3 Xab_;
             TArray3 Xai_;
             TArray3 Xij_;
-            TArray3 Xpa_;
 
             // mo coefficient
             TArray2 Ci_;

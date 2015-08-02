@@ -932,11 +932,55 @@ namespace sc {
                        * Df12_ab("b,c");
     }
     {
-    TArray4 g_tempt;
-    g_tempt("a,b',m,c'") = 2.0 * _4("<a b'|g|m c'>") - _4("<a b'|g|c' m>");
+
+    // Construct lazy-tile arrays
+    TArray4d gabp_mcp = ijxy("<a b'|g|m c'>");
+    TArray4d gabp_cpm = ijxy("<a b'|g|c' m>");
+
+#if 1
+    // The following code is used to minimize memory usage for very large
+    // memory operations. It is preferable to use the other branch if
+    // if there is enough available memory.
+
+
+    // The array that will hold the result
+    TArray4 g_temp(gabp_mcp.get_world(), gabp_mcp.trange());
+
+    TA::Permutation perm{0,1,3,2};
+
+    // Construct functor used to permute array indices
+    TA::detail::PermIndex perm_index_op(gabp_cpm.range(), perm);
+
+    // Functors used to permute tiles
+    auto input_op = [] (const double arg) -> double { return arg; };
+    auto output_op = [](double* result, const double arg) {
+      (*result) *= 2.0;
+      (*result) -= arg;
+    };
+
+    // Iterate over local tiles of the left-hand array
+    auto it = g_temp.get_pmap()->begin();
+    auto end = g_temp.get_pmap()->end();
+    for(; it != end; ++it) {
+        const auto index = *it;
+        const auto perm_index = perm_index_op(index);
+
+        // gabp_mcp and gabp_cpm are lazy arrays, so the tiles are consumable.
+        TA::Tensor<double> left = gabp_mcp.find(index).get();
+        TA::Tensor<double> right = gabp_cpm.find(index).get();
+
+        // Add right to left
+        TA::detail::permute(input_op, output_op, left, perm, right);
+
+        // Set the result tile
+        g_temp.set(index, left);
+    }
+#else
+    g_temp("a,b',m,c'") = 2.0 * gabp_mcp("a,b',m,c'") - gabp_cpm("a,b',c',m");
+#endif
     gdf12_am("a,m") =  gdf12_am("a,m")
                        // 2nd part
-                     - g_tempt("a,b',m,c'") * Df12_apbp("b',c'");
+                     - g_temp("a,b',m,c'") * Df12_apbp("b',c'");
     }
     {
     TArray4 g_tempt;

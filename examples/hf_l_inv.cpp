@@ -122,9 +122,13 @@ int try_main(int argc, char *argv[]) {
         }
         if (use_chol_vectors) {
             std::cout << "Using Cholesky based occupied vectors." << std::endl;
+        } else {
+            std::cout << "Using Canonical occupied vectors." << std::endl;
         }
         if (cluster_orbitals) {
             std::cout << "Clustering Occupied Orbitals" << std::endl;
+        } else {
+            std::cout << "Not Clustering Occupied Orbitals" << std::endl;
         }
     }
 
@@ -186,9 +190,37 @@ int try_main(int argc, char *argv[]) {
         std::cout << "Basis trange " << std::endl;
         TA::TiledRange1 bs_range = basis.create_flattend_trange1();
         std::cout << bs_range << std::endl;
+        auto max_obs = 0ul;
+        auto avg_obs = 0.0;
+        auto counter = 0;
+        for (auto &i : bs_range) {
+            auto tile_size = i.second - i.first;
+            max_obs = std::max(max_obs, tile_size);
+            avg_obs += tile_size;
+            ++counter;
+        }
+        avg_obs /= double(counter);
+        counter = 0;
+        std::cout << "Max obs dim = " << max_obs << std::endl;
+        std::cout << "Avg obs dim = " << avg_obs << std::endl;
+
         TA::TiledRange1 dfbs_range = df_basis.create_flattend_trange1();
         std::cout << "DF Basis trange " << std::endl;
         std::cout << dfbs_range << std::endl;
+        auto max_dfbs = 0ul;
+        auto avg_dfbs = 0.0;
+        for (auto &i : dfbs_range) {
+            auto tile_size = i.second - i.first;
+            max_dfbs = std::max(max_dfbs, tile_size);
+            avg_dfbs += tile_size;
+            ++counter;
+        }
+        avg_dfbs /= double(counter);
+        std::cout << "Max dfbs dim = " << max_dfbs << std::endl;
+        std::cout << "Avg dfbs dim = " << avg_dfbs << std::endl;
+        std::cout << "Largest tile storage = "
+                  << (max_obs * max_obs * max_dfbs * 8) / 1e6 << " MB\n"
+                  << std::endl;
     }
 
     libint2::init();
@@ -402,7 +434,7 @@ int try_main(int argc, char *argv[]) {
     utility::print_par(world, "Computing MO coeffs...\n");
     auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
                                            occ_nclusters, use_chol_vectors);
-    if(cluster_orbitals){
+    if (cluster_orbitals) {
         scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
     }
 
@@ -474,7 +506,7 @@ int try_main(int argc, char *argv[]) {
         Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
                                           occ_nclusters, use_chol_vectors);
 
-        if(cluster_orbitals){
+        if (cluster_orbitals) {
             scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
         }
 
@@ -499,7 +531,6 @@ int try_main(int argc, char *argv[]) {
         }
         ++iter;
     }
-
 
     utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                        energy + repulsion_energy, "\n");

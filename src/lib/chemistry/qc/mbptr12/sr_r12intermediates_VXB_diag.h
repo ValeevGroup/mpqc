@@ -852,16 +852,16 @@ namespace sc {
                          // & 1/2 F^a'_b R^kl_ma' \tilde{T}^ab_kl
                        + T2pA_temp("k,l,a,b")
                          * (_4("<k l|r|m_F(a') b>") + _4("<k l|r|m b_F(a')>"));
-    TArray4 g_tempt;
+    TArray4 g_temp;
     {
     TArray4d gab_map = ijxy("<a b|g|m a'>");
-    g_tempt("a,a',m,b") =  2.0 * _4("<a a'|g|m b>") - _4("<a a'|g|b m>")
-                         + 2.0 * gab_map("a,b,m,a'") - gab_map("b,a,m,a'");
+    g_temp("a,a',m,b") =  2.0 * _4("<a a'|g|m b>") - _4("<a a'|g|b m>")
+                        + 2.0 * gab_map("a,b,m,a'") - gab_map("b,a,m,a'");
     }
     Xam_mp2f12("a,m") =  Xam_mp2f12("a,m")
                          //   g^aa'_mb 1/2 R^kl_a'c \tilde{T}^bc_kl
                          // & g^ab_ma' 1/2 R^kl_a'c \tilde{T}^bc_kl
-                       - g_tempt("a,a',m,b") * RT_apb("a',b");
+                       - g_temp("a,a',m,b") * RT_apb("a',b");
 
     return XaiAddToXam(Xam_mp2f12, Xai_mp2f12);
   }
@@ -920,75 +920,53 @@ namespace sc {
                                                    const TArray2& Df12_ij, const TArray2& Df12_ab,
                                                    const TArray2& Df12_apbp, const TArray2& Df12_apb) {
     TArray2 gdf12_am;
+    ExEnv::out0() << indent
+                  << "Compute X contribution" << std::endl;
     gdf12_am("a,m") =  // X related contribution
                        (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
                        * Df12_ij("k,l");
-    {
+
+    ExEnv::out0() << indent
+                  << "Compute B contribution" << std::endl;
+    ExEnv::out0() << indent
+                  << "1st term" << std::endl;
     TArray4d g_abmc = ijxy("<a b|g|m c>");
     gdf12_am("a,m") =  gdf12_am("a,m")
                        // B related contribution
                        // 1st part
                      - (2.0 * g_abmc("a,b,m,c") - g_abmc("b,a,m,c"))
                        * Df12_ab("b,c");
-    }
     {
-
+    ExEnv::out0() << indent
+                  << "2nd term" << std::endl;
     // Construct lazy-tile arrays
+    TArray4 g_temp;
+    {
     TArray4d gabp_mcp = ijxy("<a b'|g|m c'>");
-    TArray4d gabp_cpm = ijxy("<a b'|g|c' m>");
-
-#if 1
-    // The following code is used to minimize memory usage for very large
-    // memory operations. It is preferable to use the other branch if
-    // if there is enough available memory.
-
-
-    // The array that will hold the result
-    TArray4 g_temp(gabp_mcp.get_world(), gabp_mcp.trange());
-
-    TA::Permutation perm{0,1,3,2};
-
-    // Construct functor used to permute array indices
-    TA::detail::PermIndex perm_index_op(gabp_cpm.range(), perm);
-
-    // Functors used to permute tiles
-    auto input_op = [] (const double arg) -> double { return arg; };
-    auto output_op = [](double* result, const double arg) {
-      (*result) *= 2.0;
-      (*result) -= arg;
-    };
-
-    // Iterate over local tiles of the left-hand array
-    auto it = g_temp.get_pmap()->begin();
-    auto end = g_temp.get_pmap()->end();
-    for(; it != end; ++it) {
-        const auto index = *it;
-        const auto perm_index = perm_index_op(index);
-
-        // gabp_mcp and gabp_cpm are lazy arrays, so the tiles are consumable.
-        TA::Tensor<double> left = gabp_mcp.find(index).get();
-        TA::Tensor<double> right = gabp_cpm.find(index).get();
-
-        // Add right to left
-        TA::detail::permute(input_op, output_op, left, perm, right);
-
-        // Set the result tile
-        g_temp.set(index, left);
+    g_temp("a,b',m,c'") = 2.0 * gabp_mcp("a,b',m,c'");
     }
-#else
-    g_temp("a,b',m,c'") = 2.0 * gabp_mcp("a,b',m,c'") - gabp_cpm("a,b',c',m");
-#endif
+    TArray4d::wait_for_lazy_cleanup(g_temp.get_world());
+    {
+    TArray4d gabp_cpm = ijxy("<a b'|g|c' m>");
+    g_temp("a,b',m,c'") = g_temp("a,b',m,c'") - gabp_cpm("a,b',c',m");
+    }
+    TArray4d::wait_for_lazy_cleanup(g_temp.get_world());
+
     gdf12_am("a,m") =  gdf12_am("a,m")
                        // 2nd part
                      - g_temp("a,b',m,c'") * Df12_apbp("b',c'");
     }
     {
-    TArray4 g_tempt;
-    g_tempt("a,b',m,c") = 2.0 * _4("<a b'|g|m c>") - _4("<a b'|g|c m>");
+    ExEnv::out0() << indent
+                  << "3rd term" << std::endl;
+    TArray4 g_temp;
+    g_temp("a,b',m,c") = 2.0 * _4("<a b'|g|m c>") - _4("<a b'|g|c m>");
     gdf12_am("a,m") =  gdf12_am("a,m")
                        // 3rd part
-                     - g_tempt("a,b',m,c") * Df12_apb("b',c");
+                     - g_temp("a,b',m,c") * Df12_apb("b',c");
     }
+    ExEnv::out0() << indent
+                    << "4th term" << std::endl;
     TArray4d g_abmcp = ijxy("<a b|g|m c'>");
     gdf12_am("a,m") =  gdf12_am("a,m")
                        // 4th part

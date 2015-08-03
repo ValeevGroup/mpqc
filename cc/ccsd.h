@@ -356,6 +356,8 @@ namespace tcc {
 
                 if (g_abij.get_world().rank() == 0) {
                     std::cout << "start iteration" << std::endl;
+                    std::cout << "iter " << "    deltaE    " << "            residual       "
+                    << "      energy     " << "    U/second  " << " total/second "<<std::endl;
                 }
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
@@ -377,11 +379,11 @@ namespace tcc {
                         u2_u11("p,r,i,j") = u2("p,r,i,j") + u11("p,r,i,j");
                     }
                     auto tu1 = tcc_time::now();
-                    auto duration = tcc_time::duration_in_s(tu0, tu1);
+                    auto duration_u = tcc_time::duration_in_s(tu0, tu1);
 
-                    if (g_abij.get_world().rank() == 0) {
-                        std::cout << "Time to compute U intermediates   " << duration << std::endl;
-                    }
+//                    if (g_abij.get_world().rank() == 0) {
+//                        std::cout << "Time to compute U intermediates   " << duration << std::endl;
+//                    }
 
 
                     // intermediates for t1
@@ -546,11 +548,13 @@ namespace tcc {
                     iter += 1ul;
 
                     auto t1 = tcc_time::now();
-                    duration = tcc_time::duration_in_s(t0, t1);
+                    auto duration_t = tcc_time::duration_in_s(t0, t1);
 
                     if (g_abij.get_world().rank() == 0) {
-                        std::cout << iter << "  " << dE << "  " << error <<
-                        "  " << E1 << "  " << duration << std::endl;
+                        std::cout.precision(15);
+                        std::cout<< iter << "  " << dE << "  " << error <<
+                        "  " << E1 << "  " << duration_u << " " << duration_t
+                        <<std::endl;
                     }
 
                     g_abij.get_world().gop.fence();

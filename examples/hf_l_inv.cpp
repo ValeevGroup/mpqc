@@ -34,6 +34,7 @@
 
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
+#include "../scf/clusterd_coeffs.h"
 
 #include "../ta_routines/array_to_eigen.h"
 
@@ -41,9 +42,9 @@ using namespace tcc;
 namespace ints = integrals;
 
 
-void
-main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-                    std::ostream &os);
+void main_print_clusters(
+      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+      std::ostream &os);
 
 int try_main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -90,6 +91,16 @@ int try_main(int argc, char *argv[]) {
                                 ? in["print clusters"].GetBool()
                                 : false;
 
+    // Using Cholesky Vectors?
+    bool use_chol_vectors = in.HasMember("use cholesky vectors")
+                                  ? in["use cholesky vectors"].GetBool()
+                                  : false;
+
+    // Cluster Occupied Orbitals
+    bool cluster_orbitals = in.HasMember("cluster orbitals")
+                                  ? in["cluster orbitals"].GetBool()
+                                  : false;
+
     volatile int debug
           = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
     utility::parallal_break_point(world, debug);
@@ -109,6 +120,16 @@ int try_main(int argc, char *argv[]) {
             std::cout << "Printing clusters to clusters_bs.xyz and "
                          "cluster_dfbs.xyz." << std::endl;
         }
+        if (use_chol_vectors) {
+            std::cout << "Using Cholesky based occupied vectors." << std::endl;
+        } else {
+            std::cout << "Using Canonical occupied vectors." << std::endl;
+        }
+        if (cluster_orbitals) {
+            std::cout << "Clustering Occupied Orbitals" << std::endl;
+        } else {
+            std::cout << "Not Clustering Occupied Orbitals" << std::endl;
+        }
     }
 
     TiledArray::SparseShape<float>::threshold(threshold);
@@ -123,8 +144,10 @@ int try_main(int argc, char *argv[]) {
     utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy,
                        "\n");
 
-    auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
-    auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
+    /* auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters); */
+    /* auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters); */
+    auto bs_clusters = molecule::kmeans(mol, bs_nclusters);
+    auto dfbs_clusters = molecule::kmeans(mol, dfbs_nclusters);
 
     world.gop.fence();
     if (world.rank() == 0) {
@@ -132,7 +155,8 @@ int try_main(int argc, char *argv[]) {
             std::string obs_file = in.HasMember("basis clusters file")
                                          ? in["basis clusters file"].GetString()
                                          : "clusters_bs.xyz";
-            std::string dfbs_file = in.HasMember("df basis clusters file")
+            std::string dfbs_file
+                  = in.HasMember("df basis clusters file")
                           ? in["df basis clusters file"].GetString()
                           : "clusters_dfbs.xyz";
 
@@ -168,9 +192,37 @@ int try_main(int argc, char *argv[]) {
         std::cout << "Basis trange " << std::endl;
         TA::TiledRange1 bs_range = basis.create_flattend_trange1();
         std::cout << bs_range << std::endl;
+        auto max_obs = 0ul;
+        auto avg_obs = 0.0;
+        auto counter = 0;
+        for (auto &i : bs_range) {
+            auto tile_size = i.second - i.first;
+            max_obs = std::max(max_obs, tile_size);
+            avg_obs += tile_size;
+            ++counter;
+        }
+        avg_obs /= double(counter);
+        counter = 0;
+        std::cout << "Max obs dim = " << max_obs << std::endl;
+        std::cout << "Avg obs dim = " << avg_obs << std::endl;
+
         TA::TiledRange1 dfbs_range = df_basis.create_flattend_trange1();
         std::cout << "DF Basis trange " << std::endl;
         std::cout << dfbs_range << std::endl;
+        auto max_dfbs = 0ul;
+        auto avg_dfbs = 0.0;
+        for (auto &i : dfbs_range) {
+            auto tile_size = i.second - i.first;
+            max_dfbs = std::max(max_dfbs, tile_size);
+            avg_dfbs += tile_size;
+            ++counter;
+        }
+        avg_dfbs /= double(counter);
+        std::cout << "Max dfbs dim = " << max_dfbs << std::endl;
+        std::cout << "Avg dfbs dim = " << avg_dfbs << std::endl;
+        std::cout << "Largest tile storage = "
+                  << (max_obs * max_obs * max_dfbs * 8) / 1e6 << " MB\n"
+                  << std::endl;
     }
 
     libint2::init();
@@ -214,6 +266,13 @@ int try_main(int argc, char *argv[]) {
         return TA::Tensor<double>(range, tensor.data());
     };
     auto S_TA = TA::to_new_tile_type(S, to_ta);
+
+    std::cout << "Overlap finished :)" << std::endl;
+    auto multipole_pool
+          = ints::make_pool(ints::make_1body("emultipole2", basis));
+    auto dipole_ints
+          = BlockSparseIntegrals(world, multipole_pool, bs_basis_array,
+                                 ints::compute_functors::BtasToTaTensor(), 4);
 
     // Compute T
     auto kinetic_pool = ints::make_pool(ints::make_1body("kinetic", basis));
@@ -375,14 +434,19 @@ int try_main(int argc, char *argv[]) {
     auto n_occ = occupation / 2;
     auto tr_i = scf::tr_occupied(occ_nclusters, n_occ);
     utility::print_par(world, "Computing MO coeffs...\n");
-    auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+    auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
+                                           occ_nclusters, use_chol_vectors);
+    if (cluster_orbitals) {
+        scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
+    }
+
     utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
     auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
+    utility::print_size_info(Coeffs, "SOAD Coeffs");
 
     decltype(Coeffs_TA) D_TA;
     utility::print_par(world, "Forming Density...\n");
-    D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
-
+    D_TA("mu,nu") = Coeffs_TA("mu,i") * Coeffs_TA("nu,i");
     utility::print_par(world, "Computing Initial energy...\n");
     auto energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
     utility::print_par(world, "Initial energy = ", energy + repulsion_energy,
@@ -409,21 +473,20 @@ int try_main(int argc, char *argv[]) {
 
         utility::print_par(world, "\tStarting W...  ");
         auto w0 = tcc_time::now();
-        W("X,a,i") = Xab("X,a,b") * Coeffs("b,i");
+        W("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
         auto w1 = tcc_time::now();
         auto wtime = tcc_time::duration_in_s(w0, w1);
         utility::print_par(world, wtime, " s\n");
 
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (W("X,a,i") * Coeffs("a,i"));
+        J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");
 
         utility::print_par(world, "\tStarting Exchange... ");
         auto k0 = tcc_time::now();
-        W("X,i,a") = W("X,a,i");
         K("a,b") = W("X,i,a") * W("X,i,b");
         auto k1 = tcc_time::now();
         ktime = tcc_time::duration_in_s(k0, k1);
@@ -441,9 +504,16 @@ int try_main(int argc, char *argv[]) {
         error = Ferror("i,j").norm().get() / volume;
         diis.extrapolate(F_TA, Ferror);
 
-        Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+        Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
+                                          occ_nclusters, use_chol_vectors);
+
+        if (cluster_orbitals) {
+            scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
+        }
+
         Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
         D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
+
 
         delta_e = energy - old_e;
         old_e = energy;
@@ -561,7 +631,7 @@ int try_main(int argc, char *argv[]) {
         utility::print_par(world, "MP2 energy = ", energy_mp2,
                            " total energy = ",
                            energy + energy_mp2 + repulsion_energy, "\n");
-    } 
+    }
 
     world.gop.fence();
     libint2::cleanup();
@@ -569,25 +639,28 @@ int try_main(int argc, char *argv[]) {
     return 0;
 }
 
-int main(int argc, char** argv){
-    try{
+int main(int argc, char **argv) {
+    try {
         try_main(argc, argv);
-    } catch(const madness::MadnessException &e){
-        std::cout << "Madness Exception Says " << e.what() << std::endl;
-    } catch(const TiledArray::Exception &e){
-        std::cout << "TA Exception Says " << e.what() << std::endl;
-    } catch(const std::exception &e){
-        std::cout << "std Exception Says " << e.what() << std::endl;
-    } catch(...){
-        std::cout << "Caught unknown exception" << std::endl;
+    } catch (const madness::MadnessException &e) {
+        std::cout << "MADNESS exception: " << e.what() << std::endl;
+    } catch (const TiledArray::Exception &e) {
+        std::cout << "TA exception: " << e.what() << std::endl;
+    } catch (const std::invalid_argument &e) {
+        std::cout << "std::invalid_argument: " << e.what() << std::endl;
+        return 1;
+    } catch (const std::exception &e) {
+        std::cout << "std::exception: " << e.what() << std::endl;
+    } catch (...) {
+        std::cout << "unknown exception" << std::endl;
     }
     return 0;
 }
 
 
-void
-main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-                    std::ostream &os) {
+void main_print_clusters(
+      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+      std::ostream &os) {
 
     // Collect atoms
     std::vector<molecule::Atom> atoms;

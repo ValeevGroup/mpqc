@@ -79,12 +79,13 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
                 const auto NoT = gh.left_op();
                 auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
                 ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
+                // Test if this extra decomp is necessary
                 c = DecomposedTensor<double>(c.cut(), std::move(ab_tensor));
-                /* auto decomp_test = algebra::two_way_decomposition(c); */
+                auto decomp_test = algebra::two_way_decomposition(c);
 
-                /* if (!decomp_test.empty()) { */
-                /*     c = std::move(decomp_test); */
-                /* } */
+                if (!decomp_test.empty()) {
+                    c = std::move(decomp_test);
+                }
 
                 return c;
             }

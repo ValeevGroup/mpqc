@@ -231,6 +231,62 @@ ArrayType fock_from_minimal_v_oh(
     return F;
 }
 
+template <typename SharedEnginePool, typename Op>
+ArrayType fock_from_minimal_low_mem(
+      madness::World &world, basis::Basis const &obs, basis::Basis const &df_bs,
+      SharedEnginePool eng_pool, ArrayType const &H, ArrayType const &V_inv_oh,
+      ArrayType const &V_inv, 
+      Eri3ArrayType const &Xab,
+      std::vector<std::shared_ptr<molecule::Cluster>> const &clusters,
+      double cut, Op op) {
+
+    basis::BasisSet min_bs_set("sto-3g");
+
+    std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+    std::ofstream fout("/dev/null");
+    std::cout.rdbuf(fout.rdbuf());
+    basis::Basis min_bs{min_bs_set.create_soad_basis(clusters)};
+    std::cout.rdbuf(cout_sbuf);
+    auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
+
+    decltype(D_min) L_d;
+    { // TESTING ONLY FOR NOW
+        auto Dm_eig = array_ops::array_to_eigen(D_min);
+        Eig::LLT<decltype(Dm_eig)> llt(Dm_eig);
+        decltype(Dm_eig) L_d_eig = llt.matrixL();
+        L_d = array_ops::eigen_to_array<decltype(D_min)::value_type>(
+                D_min.get_world(), L_d_eig, 
+                D_min.trange().data()[0], D_min.trange().data()[1]); 
+    }
+
+
+    decltype(D_min) J, K, F;
+
+    {
+        auto EriJ = BlockSparseIntegrals(
+              world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
+        utility::print_par(EriJ.get_world(), "\n");
+        utility::print_size_info(EriJ, "SOAD EriJ");
+        TA::Array<double, 1, typename decltype(EriJ)::value_type,
+                  TA::SparsePolicy> trans;
+        trans("P") = V_inv("P,X") * EriJ("X,a,b") * D_min("a,b");
+        J("i,j") = Xab("X,i,j") * (trans("P"));
+    }
+    J.get_world().gop.fence();
+
+    auto EriK
+          = BlockSparseIntegrals(world, eng_pool,
+                                 utility::make_array(df_bs, obs, min_bs), op);
+    utility::print_size_info(EriK, "SOAD EriK");
+    // Reuse EriK so we don't have a temp Array laying around.
+    EriK("X,i,a") = V_inv_oh("X,P") * (EriK("P,a,b") * L_d("b,i"));
+    K("i,j") = EriK("X,k,i") * EriK("X,k,j");
+    F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+    F.get_world().gop.fence();
+
+    return F;
+}
+
 } // namespace scf
 } // namespace integrals
 } // namespace tcc

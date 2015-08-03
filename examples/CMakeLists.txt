@@ -29,6 +29,12 @@ target_link_libraries(hf_l_inv_trick
 )
 add_dependencies(fastK hf_l_inv_trick)
 
+add_executable(hf_low_mem EXCLUDE_FROM_ALL hf_low_mem_plus_trick.cpp)
+target_link_libraries(hf_low_mem
+  ${TileClusterChem_LIBRARIES}
+)
+add_dependencies(fastK hf_low_mem)
+
 
 add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 
 target_link_libraries(sqrt_inverse_example

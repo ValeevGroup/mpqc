@@ -8,6 +8,11 @@
 #include "../include/eigen.h"
 
 #include "../ta_routines/array_to_eigen.h"
+#include "../tensor/decomposed_tensor_algebra.h"
+
+#include "../integrals/make_engine.h"
+
+#include "../tensor/vector_localization.h"
 
 namespace tcc {
 namespace scf {
@@ -28,12 +33,26 @@ TA::TiledRange1 tr_occupied(int guess, int occ) {
 }
 
 Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1 tr_i,
-                        unsigned int occ) {
+                        unsigned int occ, unsigned int nocc_clusters, 
+                        bool use_chol_vectors = false) {
     auto F_eig = array_ops::array_to_eigen(F);
     auto S_eig = array_ops::array_to_eigen(S);
 
     Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
     decltype(S_eig) C = es.eigenvectors().leftCols(occ);
+
+    if (use_chol_vectors) {
+        decltype(S_eig) D = C * C.transpose();
+        unsigned int rank = tensor::algebra::piv_cholesky(D);
+        if (rank == occ) {
+            C = D;
+        } else {
+            std::cout << "Cholesky Rank was " << rank << std::endl;
+            throw std::runtime_error("The rank of the cholesky vectors was not "
+                                     "equal to the number of occupied "
+                                     "orbitals");
+        }
+    }
 
     auto tr_ao = S.trange().data()[0];
 

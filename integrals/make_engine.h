@@ -54,12 +54,14 @@ make_1body(std::string const &type, basis::Basis const &bs) {
     } else if (type == "nuclear") {
         itype = libint2::OneBodyEngine::nuclear;
         q = make_q(bs);
+    } else if (type == "emultipole2") {
+        itype = libint2::OneBodyEngine::emultipole2;
     } else {
         std::terminate();
     }
 
-    libint2::OneBodyEngine engine{itype, bs.max_nprim(),
-                                  static_cast<int>(bs.max_am()), 0};
+    libint2::OneBodyEngine engine(itype, bs.max_nprim(),
+                                  static_cast<int>(bs.max_am()), 0);
 
     if(itype == libint2::OneBodyEngine::nuclear){
         engine.set_params(std::move(q));

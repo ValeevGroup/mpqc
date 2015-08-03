@@ -31,13 +31,18 @@ extern "C" void
 dorglq_(integer *m, integer *n, integer *k, real8 *a, integer *lda, real8 *tau,
         real8 *work, integer *lwork, integer *info);
 
+extern "C" void
+dpstrf_(const char *uplo, integer *n, real8 *a, integer *lda, integer *piv,
+        integer *rank, real8 *tol, real8 *work, integer *info);
+
 namespace tcc {
 namespace tensor {
 namespace algebra {
 
 // Compute the column pivoted qr decomposition into data, will modify input
 // pointers data and J
-integer col_pivoted_qr(double *data, double *Tau, integer rows, integer cols, integer *J) {
+integer col_pivoted_qr(double *data, double *Tau, integer rows, integer cols,
+                       integer *J) {
     double work_dummy;
     integer LWORK = -1; // Ask for space computation
     integer INFO;
@@ -45,7 +50,7 @@ integer col_pivoted_qr(double *data, double *Tau, integer rows, integer cols, in
 
     // Call routine
     dgeqp3_(&rows, &cols, data, &LDA, J, Tau, &work_dummy, &LWORK, &INFO);
-    assert(INFO==0);
+    assert(INFO == 0);
     LWORK = work_dummy;
     std::unique_ptr<double[]> W{new double[LWORK]};
     dgeqp3_(&rows, &cols, data, &LDA, J, Tau, W.get(), &LWORK, &INFO);
@@ -60,7 +65,7 @@ integer non_pivoted_qr(double *data, double *Tau, integer rows, integer cols) {
 
     // Call routine
     dgeqrf_(&rows, &cols, data, &LDA, Tau, &work_dummy, &LWORK, &INFO);
-    assert(INFO==0);
+    assert(INFO == 0);
     LWORK = work_dummy;
     std::unique_ptr<double[]> W{new double[LWORK]};
     dgeqrf_(&rows, &cols, data, &LDA, Tau, W.get(), &LWORK, &INFO);
@@ -75,14 +80,15 @@ integer non_pivoted_lq(double *data, double *Tau, integer rows, integer cols) {
 
     // Call routine
     dgelqf_(&rows, &cols, data, &LDA, Tau, &work_dummy, &LWORK, &INFO);
-    assert(INFO==0);
+    assert(INFO == 0);
     LWORK = work_dummy;
     std::unique_ptr<double[]> W{new double[LWORK]};
     dgelqf_(&rows, &cols, data, &LDA, Tau, W.get(), &LWORK, &INFO);
     return INFO;
 }
 
-integer svd(double *data, double *s, double *u, double *vt, integer rows, integer cols) {
+integer svd(double *data, double *s, double *u, double *vt, integer rows,
+            integer cols) {
     double work_dummy;
     integer LWORK = -1; // Ask for space computation
     integer INFO;
@@ -95,7 +101,7 @@ integer svd(double *data, double *s, double *u, double *vt, integer rows, intege
     // Call routine
     dgesdd_(&O, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, &work_dummy,
             &LWORK, iwork.get(), &INFO);
-    assert(INFO==0);
+    assert(INFO == 0);
     LWORK = work_dummy;
     std::unique_ptr<double[]> W{new double[LWORK]};
     dgesdd_(&O, &rows, &cols, data, &LDA, s, u, &LDU, vt, &LDVT, W.get(),
@@ -109,7 +115,7 @@ integer form_q(double *data, double *Tau, integer rows, integer rank) {
     integer LWORK = -1;
     integer INFO;
     dorgqr_(&rows, &rank, &rank, data, &rows, Tau, &work_dummy, &LWORK, &INFO);
-    assert(INFO==0);
+    assert(INFO == 0);
     LWORK = work_dummy;
     std::unique_ptr<double[]> work{new double[LWORK]};
 
@@ -118,12 +124,13 @@ integer form_q(double *data, double *Tau, integer rows, integer rank) {
     return INFO;
 }
 
-integer form_q_from_lq(double *data, double *Tau, integer cols, integer rows, integer rank) {
+integer form_q_from_lq(double *data, double *Tau, integer cols, integer rows,
+                       integer rank) {
     double work_dummy = 0.0;
     integer LWORK = -1;
     integer INFO;
     dorglq_(&rank, &cols, &rank, data, &rows, Tau, &work_dummy, &LWORK, &INFO);
-    assert(INFO==0);
+    assert(INFO == 0);
     LWORK = work_dummy;
     std::unique_ptr<double[]> work{new double[LWORK]};
 
@@ -198,8 +205,9 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
     auto qr_err
           = col_pivoted_qr(in_data.get(), Tau.get(), rows, cols, J.data());
     if (0 != qr_err) {
-        assert(qr_err<0);
-        std::cout << "problem with " << qr_err << "th argument to LAPACK in col_pivoted_qr.\n";
+        assert(qr_err < 0);
+        std::cout << "problem with " << qr_err
+                  << "th argument to LAPACK in col_pivoted_qr.\n";
         throw;
     }
 
@@ -271,8 +279,9 @@ void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
     // Do initial qr routine
     auto qr_err = col_pivoted_qr(in.data(), Tau.get(), rows, cols, J.data());
     if (0 != qr_err) {
-        assert(qr_err<0);
-        std::cout << "problem with " << qr_err << "th argument to LAPACK in col_pivoted_qr.\n";
+        assert(qr_err < 0);
+        std::cout << "problem with " << qr_err
+                  << "th argument to LAPACK in col_pivoted_qr.\n";
         throw;
     }
 
@@ -348,12 +357,14 @@ inline void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
     auto qr_err = non_pivoted_qr(in.data(), Tau.get(), rows, cols);
 
     if (0 != qr_err) {
-        assert(qr_err<0);
-        std::cout << "problem with " << qr_err << "th argument to LAPACK in non_pivoted_qr.\n";
+        assert(qr_err < 0);
+        std::cout << "problem with " << qr_err
+                  << "th argument to LAPACK in non_pivoted_qr.\n";
         throw;
     }
 
-    TA::Range l_range{static_cast<unsigned int>(cols), static_cast<unsigned long>(full_rank)};
+    TA::Range l_range{static_cast<unsigned int>(cols),
+                      static_cast<unsigned long>(full_rank)};
     L = TA::Tensor<double>(std::move(l_range));
 
     // Eigen map the input
@@ -409,8 +420,9 @@ inline void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
     std::unique_ptr<double[]> Tau{new double[full_rank]};
     auto qr_err = non_pivoted_lq(in.data(), Tau.get(), rows, cols);
     if (0 != qr_err) {
-        assert(qr_err<0);
-        std::cout << "problem with " << qr_err << "th argument to LAPACK in non_pivoted_lq.\n";
+        assert(qr_err < 0);
+        std::cout << "problem with " << qr_err
+                  << "th argument to LAPACK in non_pivoted_lq.\n";
         throw;
     }
 
@@ -418,7 +430,8 @@ inline void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
         TA::Range q_range{static_cast<unsigned int>(full_rank), extent[1]};
         R = TA::Tensor<double>(std::move(q_range));
     } else if (ndims == 3) {
-        TA::Range q_range{static_cast<unsigned int>(full_rank), extent[1], extent[2]};
+        TA::Range q_range{static_cast<unsigned int>(full_rank), extent[1],
+                          extent[2]};
         R = TA::Tensor<double>(std::move(q_range));
     } else {
         assert(false);
@@ -436,7 +449,8 @@ inline void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
         throw;
     }
 
-    TA::Range l_range{static_cast<unsigned int>(cols), static_cast<unsigned int>(full_rank)};
+    TA::Range l_range{static_cast<unsigned int>(cols),
+                      static_cast<unsigned int>(full_rank)};
     L = TA::Tensor<double>(std::move(l_range));
 
     Eig::Map<Eig::MatrixXd> L_map(L.data(), full_rank, cols);
@@ -566,6 +580,43 @@ TA::Tensor<double> combine(DecomposedTensor<double> const &t) {
     }
 
     return out;
+}
+
+/*&! \brief performs the pivoted Cholesky decomposition
+ *
+ * This function will take a matrix that is symmetric semi-positive definate
+ * and over write it with the permuted and truncated Cholesky vectors 
+ * corresponding to the matrix.
+*/
+integer piv_cholesky(
+      Eig::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor> &a) {
+
+    integer dim = a.rows();
+    Eig::Matrix<integer, Eigen::Dynamic, 1> piv
+          = Eig::Matrix<integer, Eigen::Dynamic, 1>::Zero(dim);
+
+    integer rank = 0;
+    integer info;
+    double tol = -1; // Use default tolerence if negative
+    const char uplo = 'U';
+    std::unique_ptr<double[]> work{new double[2 * dim]};
+
+    Eigen::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor> D = a;
+    dpstrf_(&uplo, &dim, a.data(), &dim, piv.data(), &rank, &tol, work.get(),
+            &info);
+
+    // Fortran using 1 based indexing :(
+    for (auto i = 0; i < piv.size(); ++i) {
+        --piv[i];
+    }
+
+    Eig::PermutationWrapper<decltype(piv)> P(piv);
+    a = a.triangularView<Eig::Lower>();
+    // Eigen doesn't like you to assign to a with this expression directly
+    decltype(D) L = P * a.leftCols(rank);
+    a = L;
+
+    return rank;
 }
 
 } // namespace algebra

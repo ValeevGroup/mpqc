@@ -34,6 +34,7 @@
 
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
+#include "../scf/clusterd_coeffs.h"
 
 #include "../ta_routines/array_to_eigen.h"
 
@@ -41,9 +42,9 @@ using namespace tcc;
 namespace ints = integrals;
 
 
-void
-main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-                    std::ostream &os);
+void main_print_clusters(
+      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+      std::ostream &os);
 
 int try_main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -90,10 +91,15 @@ int try_main(int argc, char *argv[]) {
                                 ? in["print clusters"].GetBool()
                                 : false;
 
-    // Use Chol Vectors? 
+    // Using Cholesky Vectors?
     bool use_chol_vectors = in.HasMember("use cholesky vectors")
-                                ? in["use cholesky vectors"].GetBool()
-                                : false;
+                                  ? in["use cholesky vectors"].GetBool()
+                                  : false;
+
+    // Cluster Occupied Orbitals
+    bool cluster_orbitals = in.HasMember("cluster orbitals")
+                                  ? in["cluster orbitals"].GetBool()
+                                  : false;
 
     volatile int debug
           = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
@@ -113,6 +119,12 @@ int try_main(int argc, char *argv[]) {
         if (print_clusters) {
             std::cout << "Printing clusters to clusters_bs.xyz and "
                          "cluster_dfbs.xyz." << std::endl;
+        }
+        if (use_chol_vectors) {
+            std::cout << "Using Cholesky based occupied vectors." << std::endl;
+        }
+        if (cluster_orbitals) {
+            std::cout << "Clustering Occupied Orbitals" << std::endl;
         }
     }
 
@@ -137,7 +149,8 @@ int try_main(int argc, char *argv[]) {
             std::string obs_file = in.HasMember("basis clusters file")
                                          ? in["basis clusters file"].GetString()
                                          : "clusters_bs.xyz";
-            std::string dfbs_file = in.HasMember("df basis clusters file")
+            std::string dfbs_file
+                  = in.HasMember("df basis clusters file")
                           ? in["df basis clusters file"].GetString()
                           : "clusters_dfbs.xyz";
 
@@ -220,6 +233,13 @@ int try_main(int argc, char *argv[]) {
     };
     auto S_TA = TA::to_new_tile_type(S, to_ta);
 
+    std::cout << "Overlap finished :)" << std::endl;
+    auto multipole_pool
+          = ints::make_pool(ints::make_1body("emultipole2", basis));
+    auto dipole_ints
+          = BlockSparseIntegrals(world, multipole_pool, bs_basis_array,
+                                 ints::compute_functors::BtasToTaTensor(), 4);
+
     // Compute T
     auto kinetic_pool = ints::make_pool(ints::make_1body("kinetic", basis));
     auto T = BlockSparseIntegrals(world, kinetic_pool, bs_basis_array,
@@ -280,14 +300,14 @@ int try_main(int argc, char *argv[]) {
     /* // Computing Eri2 */
     utility::print_par(world, "Starting 2 Center Integrals\n");
     TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
-              TA::SparsePolicy> V_inv_oh;
+              TA::SparsePolicy> V_inv_oh, V_inv;
     {
         utility::print_par(world, "\tStarting V\n");
         auto eri2 = ints::BlockSparseIntegrals(
               world, eri_pool, utility::make_array(df_basis, df_basis),
               integrals::compute_functors::BtasToTaTensor{});
 
-        decltype(eri2) L_inv_TA;
+        decltype(eri2) L_inv_TA, V_inv_TA;
         {
             utility::print_par(world, "\tReplicating to Eigen\n");
             auto eig_E2 = array_ops::array_to_eigen(eri2);
@@ -298,11 +318,14 @@ int try_main(int argc, char *argv[]) {
             L_inv_TA = array_ops::eigen_to_array<TA::Tensor<double>>(
                   world, eig_L_inv, eri2.trange().data()[0],
                   eri2.trange().data()[1]);
+            V_inv_TA("i,j") = L_inv_TA("i,k") * L_inv_TA("j,k");
         }
 
         utility::print_par(world, "\tDecomposing Tiles\n");
         V_inv_oh = TA::to_new_tile_type(L_inv_TA, to_decomp_with_decompose);
         utility::print_size_info(V_inv_oh, "V^{-1/2}");
+        V_inv = TA::to_new_tile_type(V_inv_TA, to_decomp_with_decompose);
+        utility::print_size_info(V_inv, "V^{-1}");
     }
     decltype(V_inv_oh)::wait_for_lazy_cleanup(world, 2);
 
@@ -351,21 +374,11 @@ int try_main(int argc, char *argv[]) {
     utility::print_size_info(Xab, "E");
     decltype(Xab)::wait_for_lazy_cleanup(world, 60);
 
-    // Make B tensor
-    auto B0 = tcc_time::now();
-    Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
-    Xab.truncate();
-    auto B1 = tcc_time::now();
-    auto btime = tcc_time::duration_in_s(B0, B1);
-    utility::print_par(world, "\nTime to compute B ", btime, " s\n");
-    utility::print_size_info(Xab, "B Tensor");
-    decltype(Xab)::wait_for_lazy_cleanup(world, 60);
-
     decltype(H) F;
     utility::print_par(world, "\nStarting SOAD guess");
     auto soad0 = tcc_time::now();
-    F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
-                                          V_inv_oh, Xab, bs_clusters,
+    F = ints::scf::fock_from_minimal_low_mem(world, basis, df_basis, eri_pool, H,
+                                          V_inv_oh, V_inv, Xab, bs_clusters,
                                           low_rank_threshold * 100,
                                           convert_3d(low_rank_threshold));
     auto soad1 = tcc_time::now();
@@ -380,14 +393,19 @@ int try_main(int argc, char *argv[]) {
     auto n_occ = occupation / 2;
     auto tr_i = scf::tr_occupied(occ_nclusters, n_occ);
     utility::print_par(world, "Computing MO coeffs...\n");
-    auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, use_chol_vectors);
+    auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
+                                           occ_nclusters, use_chol_vectors);
+    if(cluster_orbitals){
+        scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
+    }
+    Coeffs_TA.truncate();
+
     utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
     auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
 
     decltype(Coeffs_TA) D_TA;
     utility::print_par(world, "Forming Density...\n");
-    D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
-
+    D_TA("mu,nu") = Coeffs_TA("mu,i") * Coeffs_TA("nu,i");
     utility::print_par(world, "Computing Initial energy...\n");
     auto energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
     utility::print_par(world, "Initial energy = ", energy + repulsion_energy,
@@ -415,13 +433,14 @@ int try_main(int argc, char *argv[]) {
         utility::print_par(world, "\tStarting W...  ");
         auto w0 = tcc_time::now();
         W("X,a,i") = Xab("X,a,b") * Coeffs("b,i");
+        W.truncate();
         auto w1 = tcc_time::now();
         auto wtime = tcc_time::duration_in_s(w0, w1);
         utility::print_par(world, wtime, " s\n");
 
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (W("X,a,i") * Coeffs("a,i"));
+        J("i,j") = Xab("X,i,j") * (V_inv("X,P") * (W("P,a,k") * Coeffs("a,k")));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");
@@ -429,7 +448,7 @@ int try_main(int argc, char *argv[]) {
         utility::print_par(world, "\tStarting Exchange... ");
         auto k0 = tcc_time::now();
         W("X,i,a") = W("X,a,i");
-        K("a,j") = W("X,i,a") * (W("X,i,b") * Coeffs("b,j"));
+        K("a,j") = W("X,i,a") * (V_inv("X,P") * (W("P,i,b") * Coeffs("b,j")));
         Kocc("i,j") = Coeffs("a,i") * K("a,j");
         SC("a,i") = S("a,k") * Coeffs("k,i");
         K("a,b") = SC("a,i") * K("b,i") + K("a,i") * SC("b,i") - 
@@ -450,7 +469,13 @@ int try_main(int argc, char *argv[]) {
         error = Ferror("i,j").norm().get() / volume;
         diis.extrapolate(F_TA, Ferror);
 
-        Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, use_chol_vectors);
+        Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
+                                          occ_nclusters, use_chol_vectors);
+
+        if(cluster_orbitals){
+            scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
+        }
+
         Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
         D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
 
@@ -472,9 +497,103 @@ int try_main(int argc, char *argv[]) {
         ++iter;
     }
 
+
     utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                        energy + repulsion_energy, "\n");
 
+
+    if (in.HasMember("do mp2") && in["do mp2"].GetBool()) { // Begin MP2
+        utility::print_par(world, "\nMP2 Test\n");
+        auto F_eig = array_ops::array_to_eigen(F);
+        auto S_eig = array_ops::array_to_eigen(S);
+        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+                                                                   S_eig);
+        Eig::VectorXd evals = es.eigenvalues();
+        decltype(S_eig) C_occ = es.eigenvectors().leftCols(occupation / 2);
+        decltype(S_eig) C_vir
+              = es.eigenvectors().rightCols(S_eig.rows() - occupation / 2);
+
+        auto nblocks = (dfbs_nclusters < int(S_eig.rows() - occupation / 2))
+                             ? dfbs_nclusters
+                             : S_eig.rows() - occupation / 2;
+        auto block_size
+              = std::max(std::size_t((S_eig.rows() - occupation / 2) / nblocks),
+                         1ul);
+        std::vector<std::size_t> blocks;
+        blocks.reserve(nblocks + 1);
+        blocks.push_back(0);
+        for (auto i = block_size; i < S_eig.rows() - occupation / 2;
+             i += block_size) {
+            blocks.push_back(i);
+        }
+        blocks.push_back(S_eig.rows() - occupation / 2);
+        auto tr_vir = TA::TiledRange1(blocks.begin(), blocks.end());
+
+        TA::TiledRange1 tr0 = D.trange().data().front();
+        auto Ci = array_ops::
+              eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
+                    world, C_occ, tr0, tr_i);
+        auto Cv = array_ops::
+              eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
+                    world, C_vir, tr0, tr_vir);
+
+        decltype(Xab) Xia;
+        Xia("X,i,a") = Xab("X,mu,nu") * Ci("nu,i") * Cv("mu,a");
+
+        utility::print_size_info(Xia, "Xia");
+
+        auto Xia_TA = TA::to_new_tile_type(Xia, to_ta);
+        TA::Array<double, 4, TA::Tensor<double>, TA::SparsePolicy> IAJB;
+        IAJB("i,a,j,b") = Xia_TA("X,i,a") * Xia_TA("X,j,b");
+        utility::print_size_info(IAJB, "IAJB");
+        auto vec_ptr = std::make_shared<Eig::VectorXd>(std::move(evals));
+        struct Mp2Red {
+            using result_type = double;
+            using argument_type = TA::Tensor<double>;
+
+            std::shared_ptr<Eig::VectorXd> vec_;
+            unsigned int n_occ_;
+
+            Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+                    : vec_(std::move(vec)), n_occ_(n_occ) {}
+            Mp2Red(Mp2Red const &) = default;
+
+            result_type operator()() const { return 0.0; }
+            result_type operator()(result_type const &t) const { return t; }
+            void operator()(result_type &me, result_type const &other) const {
+                me += other;
+            }
+
+            void operator()(result_type &me, argument_type const &tile) const {
+                auto const &range = tile.range();
+                auto const &vec = *vec_;
+                auto const st = range.lobound();
+                auto const fn = range.upbound();
+                auto tile_idx = 0;
+                for (auto i = st[0]; i < fn[0]; ++i) {
+                    const auto e_i = vec[i];
+                    for (auto a = st[1]; a < fn[1]; ++a) {
+                        const auto e_ia = e_i - vec[a + n_occ_];
+                        for (auto j = st[2]; j < fn[2]; ++j) {
+                            const auto e_iaj = e_ia + vec[j];
+                            for (auto b = st[3]; b < fn[3]; ++b, ++tile_idx) {
+                                const auto e_iajb = e_iaj - vec[b + n_occ_];
+                                me += 1 / (e_iajb)*tile.data()[tile_idx];
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        double energy_mp2
+              = (IAJB("i,a,j,b") * (2 * IAJB("i,a,j,b") - IAJB("i,b,j,a")))
+                      .reduce(Mp2Red(vec_ptr, occupation / 2));
+
+        utility::print_par(world, "MP2 energy = ", energy_mp2,
+                           " total energy = ",
+                           energy + energy_mp2 + repulsion_energy, "\n");
+    }
 
     world.gop.fence();
     libint2::cleanup();
@@ -482,25 +601,25 @@ int try_main(int argc, char *argv[]) {
     return 0;
 }
 
-int main(int argc, char** argv){
-    try{
+int main(int argc, char **argv) {
+    try {
         try_main(argc, argv);
-    } catch(const madness::MadnessException &e){
+    } catch (const madness::MadnessException &e) {
         std::cout << "Madness Exception Says " << e.what() << std::endl;
-    } catch(const TiledArray::Exception &e){
+    } catch (const TiledArray::Exception &e) {
         std::cout << "TA Exception Says " << e.what() << std::endl;
-    } catch(const std::exception &e){
+    } catch (const std::exception &e) {
         std::cout << "std Exception Says " << e.what() << std::endl;
-    } catch(...){
+    } catch (...) {
         std::cout << "Caught unknown exception" << std::endl;
     }
     return 0;
 }
 
 
-void
-main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-                    std::ostream &os) {
+void main_print_clusters(
+      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+      std::ostream &os) {
 
     // Collect atoms
     std::vector<molecule::Atom> atoms;

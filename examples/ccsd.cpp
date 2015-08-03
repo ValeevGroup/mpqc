@@ -142,6 +142,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::string mol_file = in["xyz file"].GetString();
         int bs_nclusters = in["number of bs clusters"].GetInt();
         int dfbs_nclusters = in["number of dfbs clusters"].GetInt();
+        int nocc_clusters = in["number of occupied clusters"].GetInt();
         std::size_t blocksize = in["mo block size"].GetInt();
 
 
@@ -203,9 +204,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
                            repulsion_energy,
                            "\n");
 
-        auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
-        auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol,
-                                                               dfbs_nclusters);
+        auto bs_clusters = molecule::kmeans(mol, bs_nclusters);
+        auto dfbs_clusters = molecule::kmeans(mol, dfbs_nclusters);
 
         world.gop.fence();
         if (world.rank() == 0) {
@@ -464,7 +464,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto n_occ = occupation / 2;
         auto tr_i = scf::tr_occupied(dfbs_nclusters, n_occ);
         utility::print_par(world, "Computing MO coeffs...\n");
-        auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+        auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, nocc_clusters);
         utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
         auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
 
@@ -531,7 +531,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             error = Ferror("i,j").norm().get() / volume;
             diis.extrapolate(F_TA, Ferror);
 
-            Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ);
+            Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, nocc_clusters);
             Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
             D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
 
@@ -644,8 +644,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::cc::CCSD<TA::Tensor < double>, TA::DensePolicy >
                                         ccsd(fock_mo_dense, ens, tre, intermidiate);
 
-//            ccsd.compute_cc2();
-    ccsd.compute_ccsd_dummy();
+//    ccsd.compute_ccsd_dummy();
     ccsd.compute_ccsd();
 
 

@@ -144,8 +144,10 @@ int try_main(int argc, char *argv[]) {
     utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy,
                        "\n");
 
-    auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
-    auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
+    /* auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters); */
+    /* auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters); */
+    auto bs_clusters = molecule::kmeans(mol, bs_nclusters);
+    auto dfbs_clusters = molecule::kmeans(mol, dfbs_nclusters);
 
     world.gop.fence();
     if (world.rank() == 0) {
@@ -471,21 +473,20 @@ int try_main(int argc, char *argv[]) {
 
         utility::print_par(world, "\tStarting W...  ");
         auto w0 = tcc_time::now();
-        W("X,a,i") = Xab("X,a,b") * Coeffs("b,i");
+        W("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
         auto w1 = tcc_time::now();
         auto wtime = tcc_time::duration_in_s(w0, w1);
         utility::print_par(world, wtime, " s\n");
 
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (W("X,a,k") * Coeffs("a,k"));
+        J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");
 
         utility::print_par(world, "\tStarting Exchange... ");
         auto k0 = tcc_time::now();
-        W("X,i,a") = W("X,a,i");
         K("a,b") = W("X,i,a") * W("X,i,b");
         auto k1 = tcc_time::now();
         ktime = tcc_time::duration_in_s(k0, k1);

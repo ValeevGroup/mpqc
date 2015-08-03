@@ -166,6 +166,34 @@ Molecule::attach_H_and_kmeans(unsigned long nclusters,
     return func(new_clusterables, nclusters);
 }
 
+std::vector<Cluster>
+Molecule::kmeans(unsigned long nclusters,
+                              unsigned long init_seed) const {
+    // Compute k-means with a new seed and if that seed give a better answer
+    // store the seed
+    std::vector<Cluster> clusters;
+    int best_seed = init_seed;
+    double smallest_dist = std::numeric_limits<double>::max();
+    const auto nguesses = 10;
+    for (auto i = 0; i < nguesses; ++i) {
+        clustering::kmeans func(init_seed);
+        clusters = func(elements_, nclusters);
+
+        if (clustering::none_zero(clusters)) {
+            double new_dist = clustering::sum_cluster_distances(clusters);
+            if (new_dist < smallest_dist) {
+                smallest_dist = new_dist;
+                best_seed = init_seed;
+            }
+        }
+        init_seed += 10 * (i + 1); // Vary the seed by a resonably large amount.
+    }
+
+    // Use the best seed to compute the clusters.
+    clustering::kmeans func(best_seed);
+    return func(elements_, nclusters);
+}
+
 Molecule read_xyz(std::string const &file_name) {
     std::ifstream xyz_file(file_name);
     if (xyz_file.fail()) {

@@ -63,6 +63,11 @@ class Molecule {
     attach_H_and_kmeans(unsigned long nclusters,
                         unsigned long init_seed = 42) const;
 
+    /// Kmeans without h-attach
+    std::vector<Cluster>
+    kmeans(unsigned long nclusters,
+                        unsigned long init_seed = 42) const;
+
   private:
     std::vector<Clusterable> elements_;
 

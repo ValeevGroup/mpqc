@@ -64,7 +64,6 @@ namespace tcc {
                 Xab_ = TArray3();
                 Xai_ = TArray3();
                 Xij_ = TArray3();
-                Xpa_ = TArray3();
                 cleaned_ = true;
             }
 

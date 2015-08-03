@@ -127,12 +127,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
 
     // declare variables needed for ccsd
-    std::shared_ptr<tcc::cc::CCSDIntermediate<
-            TA::Tensor < double>, TA::DensePolicy>>
-    g;
+    std::shared_ptr<tcc::cc::CCSDIntermediate<TA::Tensor < double>, TA::DensePolicy>> intermidiate;
+
     std::shared_ptr<tcc::TRange1Engine> tre;
+
     Eigen::MatrixXd ens;
+
     TA::Array <double, 2, TA::Tensor<double>, TA::DensePolicy> fock_mo_dense;
+
     TA::Array <double, 2, TA::Tensor<double>, TA::DensePolicy> fock_ai;
     {
 
@@ -196,7 +198,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto occupation = mol.occupation(charge);
         auto repulsion_energy = mol.nuclear_repulsion();
         auto core_electron = mol.core_electrons();
-        std::cout << core_electron << std::endl;
 
         utility::print_par(world, "Nuclear repulsion_energy = ",
                            repulsion_energy,
@@ -562,8 +563,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         int n_frozen_core = 0;
         if (frozen_core) {
             n_frozen_core = mol.core_electrons();
-            std::cout << "Frozen Core: " << n_frozen_core << "  electrons" <<
-            std::endl;
+            utility::print_par(world, "Frozen Core: ", n_frozen_core, " electrons", "\n");
             n_frozen_core = n_frozen_core / 2;
         }
 
@@ -599,25 +599,22 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto tr_i0 = tre->get_occ_tr1();
         auto tr_vir = tre->get_vir_tr1();
 
-        if (world.rank() == 0) {
-            std::cout << "TiledRange1 All   ";
-            std::cout << tr_all << std::endl;
-            std::cout << "TiledRange1 Vir   ";
-            std::cout << tr_vir << std::endl;
-        }
+        utility::print_par(world, "Block Size in MO     ", blocksize, "\n");
+        utility::print_par(world, "TiledRange1 Occupied ", tr_i0, "\n");
+        utility::print_par(world, "TiledRange1 Virtual  ", tr_vir, "\n");
 
-        auto Ci = array_ops::eigen_to_array < TA::Tensor <
-                  double >> (world, C_occ, tr_0, tr_i0);
-        auto Cv = array_ops::eigen_to_array < TA::Tensor <
-                  double >> (world, C_vir, tr_0, tr_vir);
-        auto Call = array_ops::eigen_to_array < TA::Tensor <
-                    double >> (world, C_all, tr_0, tr_all);
+        auto Ci = array_ops::eigen_to_array <TA::Tensor<double>> (world, C_occ, tr_0, tr_i0);
+
+        auto Cv = array_ops::eigen_to_array <TA::Tensor<double>> (world, C_vir, tr_0, tr_vir);
+
+        auto Call = array_ops::eigen_to_array <TA::Tensor<double>> (world, C_all, tr_0, tr_all);
 
         auto Ci_dense = TA::to_dense(Ci);
         auto Cv_dense = TA::to_dense(Cv);
 
         std::vector<TA::TiledRange1> tr_04(4, tr_0);
         TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
+
         auto lazy_two_electron_int = tcc::cc::make_lazy_two_electron_array(
                 world, basis, trange_4);
 
@@ -628,9 +625,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
 //    test("i,a,j,b") = test("i,j,a,b");
 //    std::cout << test << std::endl;
 
-        g = std::make_shared<tcc::cc::CCSDIntermediate<
-                TA::Tensor < double>, TA::DensePolicy>>
-        (X_ab_TA, Ci_dense, Cv_dense, lazy_two_electron_int);
+        intermidiate = std::make_shared<tcc::cc::CCSDIntermediate<TA::Tensor < double>, TA::DensePolicy>>
+            (X_ab_TA, Ci_dense, Cv_dense, lazy_two_electron_int);
 
         decltype(F_TA) fock_mo;
         fock_mo("p,q") = F_TA("mu,nu") * Call("mu,p") * Call("nu,q");
@@ -638,6 +634,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     }
 
+    // clean up all temporary from HF
     world.gop.fence();
 
     utility::print_par(world, "\nBegining CC\n");
@@ -645,10 +642,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
     tcc::cc::CCSD<TA::Tensor < double>, TA::DensePolicy >
-                                        ccsd(fock_mo_dense, ens, tre, g);
+                                        ccsd(fock_mo_dense, ens, tre, intermidiate);
 
 //            ccsd.compute_cc2();
-//    ccsd.compute_ccsd_dummy();
+    ccsd.compute_ccsd_dummy();
     ccsd.compute_ccsd();
 
 

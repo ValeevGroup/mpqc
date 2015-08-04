@@ -267,7 +267,6 @@ int try_main(int argc, char *argv[]) {
     };
     auto S_TA = TA::to_new_tile_type(S, to_ta);
 
-    std::cout << "Overlap finished :)" << std::endl;
     auto multipole_pool
           = ints::make_pool(ints::make_1body("emultipole2", basis));
     auto dipole_ints

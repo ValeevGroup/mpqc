@@ -51,9 +51,9 @@ target_link_libraries(matrix_plot
 )
 add_dependencies(examples matrix_plot)
 
-add_executable(eigen_value_estimator_bug_min_example EXCLUDE_FROM_ALL 
-    eigen_value_estimator_bug_min_example.cpp)
-target_link_libraries(eigen_value_estimator_bug_min_example
-  ${TileClusterChem_LIBRARIES}
+add_executable(memory_test EXCLUDE_FROM_ALL memory_usage.cpp)
+target_link_libraries(memory_test
+    ${TileClusterChem_LIBRARIES}
 )
-add_dependencies(bugs eigen_value_estimator_bug_min_example)
+add_dependencies(bugs memory_test)
+

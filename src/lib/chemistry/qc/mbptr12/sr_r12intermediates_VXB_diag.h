@@ -939,7 +939,6 @@ namespace sc {
     {
     ExEnv::out0() << indent
                   << "2nd term" << std::endl;
-    // Construct lazy-tile arrays
     TArray4 g_temp;
     {
     TArray4d gabp_mcp = ijxy("<a b'|g|m c'>");
@@ -3591,11 +3590,12 @@ namespace sc {
                                                                   TArray2& Dij, TArray2& Dab,
                                                                   TArray2& Dia, TArray2& Dai) {
 
+    TArray4 T2_temp;
+    T2_temp("a,b,i,j") = 2.0 *  T2("a,b,i,j") - T2("a,b,j,i");
+
     Dij("i,j") =  // - 1/4 P+(ij) t^cd_ik lambda^jk_cd
-                - 0.5 * (  (2.0 *  T2("c,d,i,k") - T2("c,d,k,i"))
-                           * L2("c,d,j,k")
-                         + (2.0 *  T2("c,d,j,k") - T2("c,d,k,j"))
-                           * L2("c,d,i,k")
+                - 0.5 * (  T2_temp("c,d,i,k") * L2("c,d,j,k")
+                         + T2_temp("c,d,j,k") * L2("c,d,i,k")
                         )
                   // - 1/2 P+(ij) t^c_i lambda^j_c
                 - 0.5 * (  T1("c,i") * L1("c,j")
@@ -3604,10 +3604,8 @@ namespace sc {
                 ;
 
     Dab("a,b") =  //   1/4 P+(ab) t^kl_ac lambda^bc_kl
-                  0.5 * (  (2.0 *  T2("a,c,k,l") - T2("c,a,k,l"))
-                           * L2("b,c,k,l")
-                         + (2.0 *  T2("b,c,k,l") - T2("c,b,k,l"))
-                           * L2("a,c,k,l")
+                  0.5 * (  T2_temp("a,c,k,l") * L2("b,c,k,l")
+                         + T2_temp("b,c,k,l") * L2("a,c,k,l")
                         )
                   // + 1/2 P+(ab) lambda^k_a t^b_k
                 + 0.5 * (  L1("a,k") * T1("b,k")
@@ -3618,9 +3616,7 @@ namespace sc {
     Dia("i,a") = //   t^a_i
                  T1("a,i")
                  // + (t^ac_ik - t^c_i t^a_k) \lambda^k_c
-               + (2.0 * T2("a,c,i,k") - T2("a,c,k,i")
-                  - T1("c,i") * T1("a,k")
-                 ) * L1("c,k")
+               + (T2_temp("a,c,i,k") - T1("c,i") * T1("a,k")) * L1("c,k")
                  // CCSD term
                  // - 1/2 lambda^kl_cd (t^cd_il t^a_k + t^c_i t^ad_kl)
                - (2.0 * L2("c,d,k,l") - L2("d,c,k,l"))
@@ -3630,7 +3626,7 @@ namespace sc {
                ;
 
     Dai("a,i") = // lambda^i_a
-                     L1("a,i");
+                 L1("a,i");
   }
 
   // compute CCSD Xam (the right-hand side of Z-vector equations)

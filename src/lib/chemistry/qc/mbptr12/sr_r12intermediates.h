@@ -313,7 +313,7 @@ namespace sc {
       void compute_Df12_XB(const double C_0, const double C_1,
                            TArray2& D_f12_ij, TArray2& D_f12_ab,
                            TArray2& D_f12_apbp, TArray2& D_f12_apb);
-
+      // compute X and B density contribution to Xam
       TArray2 Xam_Df12_XB(const double C_0, const double C_1,
                           const TArray2& Df12_ij, const TArray2& Df12_ab,
                           const TArray2& Df12_apbp, const TArray2& Df12_apb);

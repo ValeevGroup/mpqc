@@ -352,9 +352,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 dense = std::move(test);
             }
 
-            return tensor::Tile<tensor::DecomposedTensor<double>>(range,
-                                                                  std::move(
-                                                                          dense));
+            return tensor::Tile<tensor::DecomposedTensor<double>>(range, std::move(dense));
         };
         /* // Computing Eri2 */
         utility::print_par(world, "Starting 2 Center Integrals\n");
@@ -492,7 +490,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         decltype(Xab) W;
         double time;
         double ktime, jtime;
-        while ((error >= 1e-13 || std::abs(delta_e) >= 1e-12) && iter <= 35) {
+        while ((error >= 1e-8 || std::abs(delta_e) >= 1e-7) && iter <= 35) {
             utility::print_par(world, "Iteration: ", iter, "\n");
             auto t0 = tcc_time::now();
             D = to_new_tile_type(D_TA, to_decomp);
@@ -644,7 +642,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::cc::CCSD<TA::Tensor < double>, TA::DensePolicy >
                                         ccsd(fock_mo_dense, ens, tre, intermidiate);
 
-//    ccsd.compute_ccsd_dummy();
+    ccsd.compute_ccsd_dummy();
     ccsd.compute_ccsd();
 
 

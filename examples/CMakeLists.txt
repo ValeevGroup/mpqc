@@ -44,7 +44,6 @@ target_link_libraries(lr_hartree_fock_inv_oh
 )
 add_dependencies(examples lr_hartree_fock_inv_oh)
 
-
 add_executable(matrix_plot EXCLUDE_FROM_ALL matrix_plot.cpp) 
 target_link_libraries(matrix_plot
   ${TileClusterChem_LIBRARIES}

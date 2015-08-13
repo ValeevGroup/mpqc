@@ -204,8 +204,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
                            repulsion_energy,
                            "\n");
 
-        auto bs_clusters = molecule::kmeans(mol, bs_nclusters);
-        auto dfbs_clusters = molecule::kmeans(mol, dfbs_nclusters);
+        auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
+        auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
 
         world.gop.fence();
         if (world.rank() == 0) {

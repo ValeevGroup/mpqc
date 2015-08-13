@@ -144,10 +144,10 @@ int try_main(int argc, char *argv[]) {
     utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy,
                        "\n");
 
-    /* auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters); */
-    /* auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters); */
-    auto bs_clusters = molecule::kmeans(mol, bs_nclusters);
-    auto dfbs_clusters = molecule::kmeans(mol, dfbs_nclusters);
+    auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
+    auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
+    /* auto bs_clusters = molecule::kmeans(mol, bs_nclusters); */
+    /* auto dfbs_clusters = molecule::kmeans(mol, dfbs_nclusters); */
 
     world.gop.fence();
     if (world.rank() == 0) {
@@ -532,9 +532,57 @@ int try_main(int argc, char *argv[]) {
         ++iter;
     }
 
+
     utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                        energy + repulsion_energy, "\n");
 
+    struct TileSum {
+        using result_type = double;
+        using argument_type = TA::Tensor<double>;
+
+        TileSum(TileSum const &) = default;
+
+        result_type operator()() const { return 0.0; }
+
+        result_type operator()(result_type const &t) const { return t; }
+
+        void operator()(result_type &me, result_type const &other) const {
+            me += other;
+        }
+
+        void operator()(result_type &me, argument_type const &tile) const {
+            me += tile.sum();
+        }
+    };
+
+    double ex = -2 * (D_TA("i,j") * dipole_ints[1]("i,j")).reduce(TileSum{});
+    double ey = -2 * (D_TA("i,j") * dipole_ints[2]("i,j")).reduce(TileSum{});
+    double ez = -2 * (D_TA("i,j") * dipole_ints[3]("i,j")).reduce(TileSum{});
+
+    if (world.rank() == 0) {
+        std::cout << "Electronic Dipole = " << ex << " " << ey << " " << ez
+                  << std::endl;
+    }
+
+    double nx = 0;
+    double ny = 0;
+    double nz = 0;
+
+    for (auto const &clusterable : mol) {
+        for (auto atom : clusterable.atoms()) {
+            nx += atom.charge() * atom.center()[0];
+            ny += atom.charge() * atom.center()[1];
+            nz += atom.charge() * atom.center()[2];
+        }
+    }
+
+    double dip_mom = std::sqrt(std::pow((nx + ex), 2) + std::pow((ny + ey), 2)
+                               + std::pow((nz + ez), 2));
+
+    if (world.rank() == 0) {
+        std::cout << "Dipole = " << dip_mom << " au, " << dip_mom / 0.393430307
+                  << " Debeye" << std::endl;
+    }
 
     if (in.HasMember("do mp2") && in["do mp2"].GetBool()) { // Begin MP2
         utility::print_par(world, "\nMP2 Test\n");

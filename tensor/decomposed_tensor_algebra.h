@@ -168,7 +168,7 @@ inline std::size_t qr_rank(double const *data, std::size_t rows,
             squared_sum += M(i, j) * M(i, j);
         }
 
-        if (std::sqrt(squared_sum) >= thresh2) {
+        if (squared_sum >= thresh2) {
             return out_rank;
         }
 

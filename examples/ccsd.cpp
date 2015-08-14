@@ -642,7 +642,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::cc::CCSD<TA::Tensor < double>, TA::DensePolicy >
                                         ccsd(fock_mo_dense, ens, tre, intermidiate);
 
-    ccsd.compute_ccsd_dummy();
+    //ccsd.compute_ccsd_dummy();
     ccsd.compute_ccsd();
 
 

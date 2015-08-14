@@ -224,6 +224,20 @@ namespace tcc {
                 }
             }
 
+            // integral-direct computation of (ab|cd) ints contributions (U2 + U11)
+            const TArray4 compute_u2_plus_u11(const TArray4& t2, const TArray2& t1){
+                if (direct_){
+                    TArray2 tc;
+                    tc("q,i") = Ca_("q,c") * t1("c,i");
+                    TArray4 u2_plus_u11;
+                    u2_plus_u11("p, r, i, j") = ((t2("a,b,i,j")*Ca_("q,a"))*Ca_("s,b") +
+                                                 tc("q,i") * tc("s,j")) * direct_ao_("p,q,r,s");
+                    return u2_plus_u11;
+                }else{
+                    throw std::runtime_error("CCSDIntermediate no diret AO available");
+                }
+            }
+
             const TArray4 compute_u1a(const TArray2& t1){
                if(direct_){
                    TArray4 u1a;

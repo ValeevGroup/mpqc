@@ -34,8 +34,6 @@ namespace tcc {
             typedef tcc::TArrayBlock<double, 2, Tile, Policy, tcc::MOBlock> TArrayBlock2;
             typedef tcc::TArrayBlock<double, 4, Tile, Policy, tcc::MOBlock> TArrayBlock4;
 
-            typedef TA::Array <double, 4, LazyTwoElectronTile, Policy> DirectTwoElectronArray;
-
 
             CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
@@ -374,9 +372,7 @@ namespace tcc {
                     // compute half transformed intermediates
                     auto tu0 = tcc::tcc_time::now();
                     {
-                        TArray4 u2 = intermediate_->compute_u2(t2);
-                        TArray4 u11 = intermediate_->compute_u11(t1);
-                        u2_u11("p,r,i,j") = u2("p,r,i,j") + u11("p,r,i,j");
+                        TArray4 u2_u11 = intermediate_->compute_u2_u11(t2, t1);
                     }
                     auto tu1 = tcc_time::now();
                     auto duration_u = tcc_time::duration_in_s(tu0, tu1);

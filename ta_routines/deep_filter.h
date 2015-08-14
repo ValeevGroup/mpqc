@@ -71,7 +71,7 @@ deep_filter(TA::Array<T, DIM, Tile, TA::SparsePolicy> const &t,
             idx[i] += tile_starts[i];
         }
 
-        auto old_ord = t.trange().tiles().ord(idx);
+        auto old_ord = t.trange().tiles().ordinal(idx);
         if (!t.is_zero(old_ord)) {
             auto old_tile = t.find(old_ord).get();
             new_array.set(*it, Tile(range, old_tile.data()));

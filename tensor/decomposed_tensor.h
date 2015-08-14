@@ -84,8 +84,7 @@ class DecomposedTensor {
     }
 
     template <typename Archive>
-    typename std::
-          enable_if<madness::archive::is_input_archive<Archive>::value>::type
+    typename std::enable_if<madness::archive::is_input_archive<Archive>::value>::type
           serialize(Archive &ar) {
         ar &cut_;
         std::size_t ntensors = 0;

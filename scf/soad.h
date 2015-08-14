@@ -42,6 +42,7 @@ using Eri3ArrayType = TA::Array<double, 3, TileType, TA::SparsePolicy>;
  */
 TileType soad_tile(std::shared_ptr<molecule::Cluster> cluster, TA::Range range,
                    double cut) {
+    // make range for decomposed tensor
     // Grab the range extent since it will be reused several times.
     const auto extent = range.extent();
 

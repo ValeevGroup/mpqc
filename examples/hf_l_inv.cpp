@@ -628,6 +628,9 @@ int try_main(int argc, char *argv[]) {
         TA::Array<double, 4, TA::Tensor<double>, TA::SparsePolicy> IAJB;
         IAJB("i,a,j,b") = Xia_TA("X,i,a") * Xia_TA("X,j,b");
         utility::print_size_info(IAJB, "IAJB");
+
+        //std::cout << IAJB << std::endl;
+
         auto vec_ptr = std::make_shared<Eig::VectorXd>(std::move(evals));
         struct Mp2Red {
             using result_type = double;

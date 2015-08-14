@@ -6,10 +6,9 @@ from pprint import pprint
 def main(argv):
 
     try:
-        opts, args = getopt.getopt(argv,"h",["json=","xyz=","nobs=","ndfbs=","nocc=","obs=","dfbs=","sthresh=","lthresh="])
+        opts, args = getopt.getopt(argv,"h",["xyz=","nobs=","ndfbs=","nocc=","obs=","dfbs=","sthresh=","lthresh=","print_clusters=","mp2=","cholesky_vectors=","cluster_occ="])
     except getopt.GetoptError:
-        print 'random_scan.py'
-        print '--json <json template file>'
+        print 'Input Generator'
         print '--xyz <molecule>'
         print '--nobs <num obs clusters>'
         print '--ndfbs <num dfbs clusters>'
@@ -18,15 +17,17 @@ def main(argv):
         print '--dfbs <df basis>'
         print '--sthresh <block sparse threshold>'
         print '--lthresh <low rank threshold>'
+        print '--print_clusters <Prefix for cluster files>'
+        print '--mp2 <Do mp2>'
+        print '--cholesky_vectors <Use Cholesky Vectors>'
+        print '--cluster_occ <Cluster The occupied vectors>'
         sys.exit(2)
 
 
-    json_file=''
 
     for opt, arg in opts:
         if opt == '-h':
-            print 'random_scan.py'
-            print '--json <json template file>'
+            print 'Input Generator'
             print '--xyz <molecule>'
             print '--nobs <num obs clusters>'
             print '--ndfbs <num dfbs clusters>'
@@ -35,13 +36,28 @@ def main(argv):
             print '--dfbs <df basis>'
             print '--sthresh <block sparse threshold>'
             print '--lthresh <low rank threshold>'
+            print '--print_clusters <Prefix for cluster files>'
+            print '--mp2 <T/F>'
+            print '--cholesky_vectors <T/F>'
+            print '--cluster_occ <T/F>'
             sys.exit()
-        elif opt == '--json':
-            json_file=arg
 
-    with open(json_file) as input_json:
-        json_data = json.load(input_json)
-
+    json_data = json.loads('{}')
+    
+    # Define the defaults 
+    json_data['xyz file']='file.xyz'
+    json_data["number of bs clusters"]=5
+    json_data["number of dfbs clusters"]=2
+    json_data["number of occupied clusters"]=1
+    json_data["basis"]="cc-pvdz"
+    json_data["df basis"]="cc-pvdz-ri"
+    json_data["block sparse threshold"]=1e-13
+    json_data["low rank threshold"]=1e-8
+    json_data["print clusters"]=False
+    json_data["debug break"]=0
+    json_data["do mp2"]=False
+    json_data["use cholesky vectors"]=False
+    json_data["cluster orbitals"]=False
 
     for opt, arg in opts:
         if opt == "--xyz":
@@ -60,9 +76,21 @@ def main(argv):
             json_data["block sparse threshold"]=float(arg)
         elif opt == "--lthresh":
             json_data["low rank threshold"]=float(arg)
-    
-    print json.dumps(json_data)
+        elif opt == "--print_clusters":
+            json_data["print clusters"]=True
+            json_data["basis clusters file"]=str(arg)+"_obs.xyz"
+            json_data["df basis clusters file"]=str(arg)+"_dfbs.xyz"
+        elif opt == "--mp2":
+            json_data["do mp2"]=bool(arg)
+        elif opt == "--cholesky_vectors":
+            json_data["use cholesky vectors"]=bool(arg)
+        elif opt == "--cluster_occ":
+            json_data["cluster orbitals"]=bool(arg)
 
+
+    
+    print json.dumps(json_data, indent=4, 
+            separators=(',', ': '))
 
 if __name__ == "__main__":
     main(sys.argv[1:])

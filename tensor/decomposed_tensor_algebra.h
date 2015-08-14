@@ -155,19 +155,20 @@ inline size_t svd_rank(double const *s, size_t N, double thresh) {
 
 // calculate the qr_rank of a matrix.
 inline std::size_t qr_rank(double const *data, std::size_t rows,
-                           std::size_t cols, double threshhold) {
+                           std::size_t cols, double threshold) {
     const auto full_rank = std::min(cols, rows);
     auto out_rank = full_rank;
 
     auto M = Eig::Map<const Eig::MatrixXd>(data, rows, cols);
 
     auto squared_sum = 0.0;
+    auto thresh2 = threshold*threshold;
     for (int i = (full_rank - 1); i >= 0; --i) { // rows of R
         for (int j = (cols - 1); j >= i; --j) {  // cols of R
             squared_sum += M(i, j) * M(i, j);
         }
 
-        if (std::sqrt(squared_sum) >= threshhold) {
+        if (squared_sum >= thresh2) {
             return out_rank;
         }
 

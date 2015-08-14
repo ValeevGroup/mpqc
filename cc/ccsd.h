@@ -372,7 +372,7 @@ namespace tcc {
                     // compute half transformed intermediates
                     auto tu0 = tcc::tcc_time::now();
                     {
-                        TArray4 u2_u11 = intermediate_->compute_u2_u11(t2, t1);
+                        u2_u11 = intermediate_->compute_u2_u11(t2, t1);
                     }
                     auto tu1 = tcc_time::now();
                     auto duration_u = tcc_time::duration_in_s(tu0, tu1);

@@ -212,7 +212,7 @@ namespace tcc {
                                                  tc("i,q") * tc("j,s")) * direct_ao_("p,q,r,s");
                     return u2_u11;
                 }else{
-                    throw std::runtime_error("CCSDIntermediate no diret AO available");
+                    throw std::runtime_error("CCSDIntermediate: integral-direct implementation used, but not initialized");
                 }
             }
 

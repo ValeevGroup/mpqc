@@ -117,46 +117,29 @@ namespace tcc {
                     // external index i and a
                     TArray2 h_ac, h_ki, h_kc;
                     {
-                        h_ac("a,c") = //- f_ab("a,c")
-                                -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) *
-                                tau("a,d,k,l");
+                        h_ac("a,c") = -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
 
-                        h_ki("k,i") =   //f_ij("k,i") +
-                                (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) *
-                                tau("c,d,i,l");
+                        h_ki("k,i") = (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
 
-                        h_kc("k,c") = f_ai("c,k") + (2.0 * g_abij("c,d,k,l") -
-                                                     g_abij("d,c,k,l")) *
-                                                    t1("d,l");
+                        h_kc("k,c") = f_ai("c,k") + (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t1("d,l");
                     }
-//        g_abij.get_world().gop.fence();
 
                     // compute residual r1(n) = t1(n+1) - t1(n)
                     // external index i and a
                     {
                         r1("a,i") = -t1("a,i") + d1("a,i") * (
                                 //
-                                f_ai("a,i") -
-                                2.0 * f_ai("c,k") * t1("a,k") * t1("c,i")
+                                f_ai("a,i") - 2.0 * f_ai("c,k") * t1("a,k") * t1("c,i")
                                 //
-                                + h_ac("a,c") * t1("c,i") -
-                                t1("a,k") * h_ki("k,i")
+                                + h_ac("a,c") * t1("c,i") - t1("a,k") * h_ki("k,i")
                                 //
-                                + h_kc("k,c")
-                                  * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") +
-                                     t1("c,i") * t1("a,k"))
+                                + h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("c,i") * t1("a,k"))
                                 //
-                                +
-                                (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) *
-                                t1("c,k")
+                                + (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k")
                                 //
-                                +
-                                (2.0 * g_iabc("k,a,c,d") - g_iabc("k,a,d,c")) *
-                                tau("c,d,k,i")
+                                + (2.0 * g_iabc("k,a,c,d") - g_iabc("k,a,d,c")) * tau("c,d,k,i")
                                 //
-                                -
-                                (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) *
-                                tau("c,a,k,l")
+                                - (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l")
                         );
                     }
 

@@ -197,7 +197,7 @@ namespace tcc {
                 }
             }
 
-            /// integral-direct computation of (ab|cd) ints contributions to the doubles resudual
+            /// AO integral-direct computation of (ab|cd) ints contributions to the doubles resudual
 
             /// computes \f$ U^{ij}_{\rho\sigma} \equiv \left( t^{ij}_{\mu \nu} + t^{i}_{\mu} t^{j}_{\nu} \right) (\mu \rho| \nu \sigma) \f$
             /// @param t2 doubles amplitudes in MO basis

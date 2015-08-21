@@ -55,16 +55,46 @@ namespace tcc {
                     }
                     direct_ao_ = direct_ao;
                     cleaned_ = false;
+
+                    // two electron integral
+//                    TArray4 abij_;
+//                    TArray4 ijkl_ = TArray4();
+//                    TArray4 abcd_ = TArray4();
+//                    TArray4 iabc_ = TArray4();
+//                    TArray4 aibc_ = TArray4();
+//                    TArray4 ijak_ = TArray4();
+//                    TArray4 ijka_ = TArray4();
+//                    TArray4 iajb_ = TArray4();
+                    TArray4 abij_;
+                    TArray4 ijkl_;
+                    TArray4 abcd_;
+                    TArray4 iabc_;
+                    TArray4 aibc_;
+                    TArray4 ijak_;
+                    TArray4 ijka_;
+                    TArray4 iajb_;
                 }
                 TArray3::wait_for_lazy_cleanup(Xpq.get_world());
             }
 
             // clean the three center ingeral
-            void clean(){
+            void clean_three_center(){
                 Xab_ = TArray3();
                 Xai_ = TArray3();
                 Xij_ = TArray3();
                 cleaned_ = true;
+            }
+
+            // clean all the two electron integral computed
+            void clean_two_electron(){
+                abij_ = TArray4();
+                ijkl_ = TArray4();
+                abcd_ = TArray4();
+                iabc_ = TArray4();
+                aibc_ = TArray4();
+                ijak_ = TArray4();
+                ijka_ = TArray4();
+                iajb_ = TArray4();
             }
 
             // get mo coefficient
@@ -109,89 +139,113 @@ namespace tcc {
             // using physical notation <ab|ij>
 
             // <ab|ij>
-            const TArray4 get_abij() const {
+            const TArray4 get_abij(){
                 if(!cleaned_){
-                    TArray4 abij;
-                    abij("a,b,i,j") = Xai_("X,a,i") * Xai_("X,b,j");
-                    return abij;
+                    if (abij_.is_initialized()){
+                        return  abij_;
+                    }else{
+                        abij_("a,b,i,j") = Xai_("X,a,i") * Xai_("X,b,j");
+                        return abij_;
+                    }
                 }else{
                     throw std::runtime_error("CCSDIntermediate has been cleaned");
                 }
             }
 
             // <ij|kl>
-            const TArray4 get_ijkl() const {
+            const TArray4 get_ijkl() {
                 if(!cleaned_){
-                    TArray4 ijkl;
-                    ijkl("i,j,k,l") = Xij_("X,i,k") * Xij_("X,j,l");
-                    return ijkl;
+                    if (ijkl_.is_initialized()){
+                        return ijkl_;
+                    }else{
+                        ijkl_("i,j,k,l") = Xij_("X,i,k") * Xij_("X,j,l");
+                        return ijkl_;
+                    }
                 }else{
                     throw std::runtime_error("CCSDIntermediate has been cleaned");
                 }
             }
 
             // <ab|cd>
-            const TArray4 get_abcd() const {
+            const TArray4 get_abcd() {
                 if(!cleaned_){
-                    TArray4 abcd;
-                    abcd("a,b,c,d") = Xab_("X,a,c") * Xab_("X,b,d");
-                    //std::cout << abcd_ << std::endl;
-                    return abcd;
+                    if (abcd_.is_initialized()){
+                        return  abcd_;
+                    }else{
+                        abcd_("a,b,c,d") = Xab_("X,a,c") * Xab_("X,b,d");
+                        //std::cout << abcd_ << std::endl;
+                        return abcd_;
+                    }
                 }else{
                     throw std::runtime_error("CCSDIntermediate has been cleaned");
                 }
             }
 
             // <ia|bc>
-            const TArray4 get_iabc() const {
+            const TArray4 get_iabc() {
                 if(!cleaned_){
-                    TArray4 iabc;
-                    iabc("i,a,b,c") = Xab_("X,a,c") * Xai_("X,b,i");
-                    return iabc;
+                    if (iabc_.is_initialized()){
+                       return iabc_;
+                    }else{
+                        iabc_("i,a,b,c") = Xab_("X,a,c") * Xai_("X,b,i");
+                        return iabc_;
+                    }
                 }else{
                     throw std::runtime_error("CCSDIntermediate has been cleaned");
                 }
             }
 
             // <ai|bc>
-            const TArray4 get_aibc() const {
+            const TArray4 get_aibc() {
                 if(!cleaned_){
-                    TArray4 aibc;
-                    aibc("a,i,b,c") = Xai_("X,c,i") * Xab_("X,a,b");
-                    return aibc;
+                    if (aibc_.is_initialized()){
+                        return aibc_;
+                    }else{
+                        aibc_("a,i,b,c") = Xai_("X,c,i") * Xab_("X,a,b");
+                        return aibc_;
+                    }
                 }else{
                     throw std::runtime_error("CCSDIntermediate has been cleaned");
                 }
             }
 
             // <ij|ak>
-            const TArray4 get_ijak() const {
+            const TArray4 get_ijak() {
                 if(!cleaned_){
-                    TArray4 ijak;
-                    ijak("i,j,a,k") = Xai_("X,a,i") * Xij_("X,j,k");
-                    return ijak;
+                    if (ijak_.is_initialized()){
+                        return ijak_;
+                    }else{
+                        ijak_("i,j,a,k") = Xai_("X,a,i") * Xij_("X,j,k");
+                        return ijak_;
+                    }
                 }else{
                     throw std::runtime_error("CCSDIntermediate has been cleaned");
                 }
             }
 
             // <ij|ka>
-            const TArray4 get_ijka() const {
+            const TArray4 get_ijka() {
                 if(!cleaned_){
-                    TArray4 ijka;
-                    ijka("i,j,k,a") = Xai_("X,a,j") * Xij_("X,i,k");
-                    return ijka;
+                    if(ijka_.is_initialized()){
+                        return ijka_;
+                    }else{
+                        ijka_("i,j,k,a") = Xai_("X,a,j") * Xij_("X,i,k");
+                        return ijka_;
+                    }
                 } else{
                     throw std::runtime_error("CCSDIntermediate has been cleaned");
                 }
             }
 
             // <ia|jb>
-            const TArray4 get_iajb() const {
+            const TArray4 get_iajb() {
                 if(!cleaned_){
-                    TArray4 iajb;
-                    iajb("i,a,j,b") = Xab_("X,a,b") * Xij_("X,i,j");
-                    return iajb;
+                    if (iajb_.is_initialized()){
+                        return iajb_;
+                    }else{
+                        iajb_("i,a,j,b") = Xab_("X,a,b") * Xij_("X,i,j");
+                        return iajb_;
+                    }
                 } else{
                     throw std::runtime_error("CCSDIntermediate has been cleaned");
                 }
@@ -265,6 +319,16 @@ namespace tcc {
             TArray3 Xai_;
             TArray3 Xij_;
 
+            // two electron integral
+            TArray4 abij_;
+            TArray4 ijkl_;
+            TArray4 abcd_;
+            TArray4 iabc_;
+            TArray4 aibc_;
+            TArray4 ijak_;
+            TArray4 ijka_;
+            TArray4 iajb_;
+
             // mo coefficient
             TArray2 Ci_;
             TArray2 Ca_;
@@ -278,7 +342,6 @@ namespace tcc {
 
             // check if have direct AO array
             bool direct_;
-
 
         };
 

@@ -35,7 +35,7 @@
 
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
-#include "../cc/ccsd.h"
+#include "../cc/ccsd_t.h"
 #include "../cc/integral_generator.h"
 #include "../cc/lazy_integral.h"
 #include "../cc/ccsd_intermediates.h"
@@ -639,11 +639,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::utility::parallal_break_point(world, 0);
 
 
-    tcc::cc::CCSD<TA::Tensor < double>, TA::DensePolicy >
-                                        ccsd(fock_mo_dense, ens, tre, intermidiate);
+    tcc::cc::CCSD_T<TA::Tensor < double>, TA::DensePolicy >
+                                        ccsd_t(fock_mo_dense, ens, tre, intermidiate);
 
     //ccsd.compute_ccsd_dummy();
-    ccsd.compute_ccsd();
+    ccsd_t.compute();
 
 
     world.gop.fence();

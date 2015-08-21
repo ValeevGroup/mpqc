@@ -37,17 +37,30 @@ namespace tcc {
 
             CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
-                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &g) :
-                    ens_(ens), tre_(tre), intermediate_(g)
+                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter) :
+                    ens_(ens), tre_(tre), intermediate_(inter)
             {
                 auto mo_block = std::make_shared<tcc::MOBlock>(*tre_);
                 fock_ = TArrayBlock2(fock, mo_block);
             }
 
+            // compute function
+            virtual void compute(){
+
+                TArray2 t1;
+                TArray4 t2;
+
+                double ccsd_corr = compute_ccsd(t1, t2);
+
+                intermediate_->clean_two_electron();
+
+            }
+
+
             // dummy way of doing CCSD
             // store all the integrals in memory
             // used as reference for development
-            void compute_ccsd_dummy() {
+            double compute_ccsd_dummy(TArray2& t1, TArray4& t2) {
 
                 auto n_occ = tre_->get_actual_occ();
 
@@ -69,9 +82,6 @@ namespace tcc {
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
                 d_abij(d2, ens_, n_occ);
-
-                TArray2 t1;
-                TArray4 t2;
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -115,6 +125,8 @@ namespace tcc {
 
                     // intermediates for t1
                     // external index i and a
+                    // vir index a b c d
+                    // occ index i j k l
                     TArray2 h_ac, h_ki, h_kc;
                     {
                         h_ac("a,c") = -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
@@ -277,11 +289,12 @@ namespace tcc {
                 if (g_abij.get_world().rank() == 0) {
                     std::cout << "CCSD Energy  " << E1 << std::endl;
                 }
+                return E1;
             }
 
 
             // ccsd energy for performance calculation
-            void compute_ccsd() {
+            double compute_ccsd(TArray2& t1, TArray4& t2) {
 
                 auto n_occ = tre_->get_actual_occ();
 
@@ -301,9 +314,6 @@ namespace tcc {
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 d_abij(d2, ens_, n_occ);
-
-                TArray2 t1;
-                TArray4 t2;
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -544,6 +554,7 @@ namespace tcc {
                 if (g_abij.get_world().rank() == 0) {
                     std::cout << "CCSD Energy  " << E1 << std::endl;
                 }
+                return E1;
             }
 
         private:

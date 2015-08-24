@@ -34,6 +34,7 @@
 
 /* #include "../scf/purification/purification_devel.h" */
 #include "../ta_routines/sqrt_inv.h"
+#include "../ta_routines/inverse.h"
 #include <madness/world/array_addons.h>
 
 using namespace tcc;
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]) {
     std::string mol_file = "";
     std::string basis_name = "";
     int nclusters = 0;
-    double threshold = 1e-11;
+    double threshold = 1e-14;
     bool use_columb_metric = true;
     if (argc >= 4) {
         mol_file = argv[1];
@@ -124,7 +125,8 @@ int main(int argc, char *argv[]) {
     { // Compute low rank information for Eri2
         eri2.truncate();
         utility::print_par(world, "\nM Tensor volume = ", volume, "\n");
-        utility::print_par(world, "M row and col dim = ", std::sqrt(volume), "\n");
+        utility::print_par(world, "M row and col dim = ", std::sqrt(volume),
+                           "\n");
         print_size_info(eri2, "M");
         if (world.rank() == 0) {
             std::cout << "\tM sparsity percent = "
@@ -136,13 +138,10 @@ int main(int argc, char *argv[]) {
             tiles_file << "tile: (rows, cols) volume scaled_norm\n";
             auto volume = eri2.trange().tiles().volume();
             for (auto i = 0; i < volume; ++i) {
-                    auto range = eri2.trange().make_tile_range(i);
-                    tiles_file << i << ": ("
-                              << range.extent()[0] << " "
-                              << range.extent()[1] << ") "
-                              << range.volume() << " "
-                              << shape[i]
-                              << "\n";
+                auto range = eri2.trange().make_tile_range(i);
+                tiles_file << i << ": (" << range.extent()[0] << " "
+                           << range.extent()[1] << ") " << range.volume() << " "
+                           << shape[i] << "\n";
             }
         }
     }
@@ -180,6 +179,47 @@ int main(int argc, char *argv[]) {
         utility::print_par(world,
                            "Idenity-(M*M^{-1}) F norm difference / volume = ",
                            f_norm_diff / volume, "\n");
+    }
+
+    if (world.rank() == 0) {
+        std::cout << "\nStarting LR inverse sqrt." << std::endl;
+    }
+    {
+        auto to_decomp_with_decompose = [=](TA::Tensor<double> const &t) {
+            auto range = t.range();
+
+            auto const extent = range.extent();
+            const auto i = extent[0];
+            const auto j = extent[1];
+            auto local_range = TA::Range{i, j};
+
+            auto tensor = TA::Tensor<double>(local_range, t.data());
+            auto dense
+                  = tensor::DecomposedTensor<double>(1e-6, std::move(tensor));
+
+            auto test = tensor::algebra::two_way_decomposition(dense);
+            if (!test.empty()) {
+                dense = std::move(test);
+            }
+
+            return tensor::Tile<tensor::DecomposedTensor<double>>(
+                  range, std::move(dense));
+        };
+
+        auto eri2_lr = TA::to_new_tile_type(eri2, to_decomp_with_decompose);
+        print_size_info(eri2_lr, "M_lr");
+        auto inv_sqrt_timer = tcc_time::make_timer(
+              [&]() { return tcc::pure::inverse_sqrt(eri2_lr); });
+
+        auto sqrt_inv = inv_sqrt_timer.apply();
+
+        utility::print_par(world, "M^{-1/2} took in total ",
+                           inv_sqrt_timer.time(), " s\n");
+        print_size_info(sqrt_inv, "M^{-1/2}");
+        if (world.rank() == 0) {
+            std::cout << "\tM^{-1/2} sparsity percent = "
+                      << sqrt_inv.get_shape().sparsity() << "\n";
+        }
     }
 
     world.gop.fence();

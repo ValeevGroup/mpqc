@@ -536,28 +536,10 @@ int try_main(int argc, char *argv[]) {
     utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                        energy + repulsion_energy, "\n");
 
-    struct TileSum {
-        using result_type = double;
-        using argument_type = TA::Tensor<double>;
 
-        TileSum(TileSum const &) = default;
-
-        result_type operator()() const { return 0.0; }
-
-        result_type operator()(result_type const &t) const { return t; }
-
-        void operator()(result_type &me, result_type const &other) const {
-            me += other;
-        }
-
-        void operator()(result_type &me, argument_type const &tile) const {
-            me += tile.sum();
-        }
-    };
-
-    double ex = -2 * (D_TA("i,j") * dipole_ints[1]("i,j")).reduce(TileSum{});
-    double ey = -2 * (D_TA("i,j") * dipole_ints[2]("i,j")).reduce(TileSum{});
-    double ez = -2 * (D_TA("i,j") * dipole_ints[3]("i,j")).reduce(TileSum{});
+    double ex = -2 * (D_TA("i,j") * dipole_ints[1]("i,j")).sum();
+    double ey = -2 * (D_TA("i,j") * dipole_ints[2]("i,j")).sum();
+    double ez = -2 * (D_TA("i,j") * dipole_ints[3]("i,j")).sum();
 
     if (world.rank() == 0) {
         std::cout << "Electronic Dipole = " << ex << " " << ey << " " << ez

@@ -8,6 +8,7 @@
 #include "diagonal_array.h"
 
 #include "../utility/time.h"
+#include "../utility/array_storage.h"
 
 #include <limits>
 #include <type_traits>
@@ -38,8 +39,9 @@ std::array<TiledArray::Tensor<T, AT>, 2>
     auto reduce_op =
           [](T &restrict result, const T arg) { result += std::abs(arg); };
 
-    TiledArray::math::row_reduce(tile.range().extent()[0], tile.range().extent()[1],
-                                 tile.data(), result[0].data(), reduce_op);
+    TiledArray::math::row_reduce(tile.range().extent()[0],
+                                 tile.range().extent()[1], tile.data(),
+                                 result[0].data(), reduce_op);
 
 
     TA::Range range = tile.range();
@@ -137,10 +139,49 @@ void add_to_diag(Array &A, double val) {
     }
 }
 
+void add_to_diag_tile(double val, TA::Tensor<double> &tile) {
+    auto const extent = tile.range().extent();
+    auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
+    for (auto i = 0ul; i < extent[0]; ++i) {
+        map(i, i) += val;
+    }
+}
+
+void add_to_diag_tile(double val,
+                      tensor::Tile<tensor::DecomposedTensor<double>> &tile) {
+    auto const extent = tile.range().extent();
+    auto map
+          = TiledArray::eigen_map(tile.tile().tensor(0), extent[0], extent[1]);
+    for (auto i = 0ul; i < extent[0]; ++i) {
+        map(i, i) += val;
+    }
+}
+
+
+template <typename Tile>
+void add_to_diag(
+      TiledArray::Array<double, 2, Tile, TiledArray::SparsePolicy> &A,
+      double val) {
+    auto end = A.end();
+    for (auto it = A.begin(); it != end; ++it) {
+        auto idx = it.index();
+        auto diagonal_tile
+              = std::all_of(idx.begin(), idx.end(),
+                            [&](typename std::remove_reference<decltype(
+                                  A)>::type::size_type const &x) {
+                  return x == idx.front();
+              });
+
+        if (diagonal_tile) {
+            add_to_diag_tile(val, it->get());
+        }
+    }
+}
+
 template <typename Array>
 class pair_accumulator {
   public:
-    using result_type = std::array<typename Array::value_type, 2>;
+    using result_type = std::array<TA::Tensor<double>, 2>;
     using argument_type = typename Array::value_type;
     using value_type = argument_type;
 
@@ -152,13 +193,13 @@ class pair_accumulator {
     }
 
     result_type operator()() const {
-        return result_type{{value_type{}, value_type{}}};
+        return result_type{{TA::Tensor<double>{}, TA::Tensor<double>{}}};
     }
 
     result_type operator()(result_type result) {
         if (result[0].empty()) {
-            result[0] = value_type{range_, 0.0};
-            result[1] = value_type{range_, 0.0};
+            result[0] = TA::Tensor<double>{range_, 0.0};
+            result[1] = TA::Tensor<double>{range_, 0.0};
         }
 
         return result;
@@ -166,16 +207,22 @@ class pair_accumulator {
 
     void operator()(result_type &result, result_type const &arg) const {
         if (result[0].empty()) {
-            result[0] = value_type{range_, 0.0};
-            result[1] = value_type{range_, 0.0};
+            result[0] = TA::Tensor<double>{range_, 0.0};
+            result[1] = TA::Tensor<double>{range_, 0.0};
         }
-        assert(!result.empty() && !arg.empty());
-        result[0] += arg[0];
-        result[1] += arg[1];
+        result[0] += TA::shift(arg[0]);
+        result[1] += TA::shift(arg[1]);
     }
 
-    void operator()(result_type &result, argument_type const &arg) const {
+    void operator()(result_type &result, TA::Tensor<double> const &arg) const {
         eigen_estimator(result, arg);
+    }
+
+    void operator()(
+          result_type &result,
+          tensor::Tile<tensor::DecomposedTensor<double>> const &arg) const {
+        TiledArray::Tensor<double> full = tensor::algebra::combine(arg.tile());
+        eigen_estimator(result, full);
     }
 
   private:
@@ -279,11 +326,10 @@ eval_guess(Array const &A) {
 template <typename Array>
 void third_order_update(Array const &S, Array &Z) {
 
-    // Calculate the lambda parameter, since we are currently only
-    // trying to
-    // invert Posative defininate matrices, we will cap the smallest
-    // eigen value
+    // Calculate the lambda parameter, since we are currently only trying to
+    // invert Positive definite matrices, we will cap the smallest eigen value
     // guess at 0.
+
     auto evg0 = tcc_time::now();
     auto spectral_range = eval_guess(S);
     auto evg1 = tcc_time::now();
@@ -294,6 +340,8 @@ void third_order_update(Array const &S, Array &Z) {
 
     const auto max_eval = spectral_range[1];
     const auto min_eval = std::max(0.0, spectral_range[0]);
+    std::cout << "Min eval: " << min_eval << " Max eval: " << max_eval
+              << std::endl;
     auto S_scale = 2.0 / (max_eval + min_eval);
 
     Array Y = S;
@@ -338,7 +386,6 @@ void third_order_update(Array const &S, Array &Z) {
         auto x1 = tcc_time::now();
         X.truncate();
 
-
         // Third order update
         auto t0 = tcc_time::now();
         T("i,j") = -10 * X("i,j") + 3 * X("i,k") * X("k,j");
@@ -379,6 +426,11 @@ void third_order_update(Array const &S, Array &Z) {
             std::cout << "\t\t\tZ update time " << z_time << " s\n";
             std::cout << "\t\t\tY update time " << y_time << " s\n";
             std::cout << "\t\t\tTrun.    time " << trun_time << " s\n";
+            std::cout << "\n";
+        }
+        utility::print_size_info(Z, "Z current");
+        if(S.get_world().rank() == 0){
+            std::cout << "\n";
         }
         if (current_norm >= norm_diff) { // Once norm is increasing exit!
             if (S.get_world().rank() == 0) {

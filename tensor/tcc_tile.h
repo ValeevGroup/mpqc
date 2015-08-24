@@ -167,9 +167,10 @@ class Tile {
 
     template <typename Value>
     Tile(TA::Range r, Value v)
-            : range_{std::move(r)},
+            : range_{r},
               tile_{std::make_shared<detail::TileModel<T>>(
-                    detail::TileModel<T>{detail::TileModel<T>{T{r, v}}})} {}
+                    detail::TileModel<T>(detail::TileModel<T>(T(r, v))))} {
+              }
 
   public: // Member functions for general use
     T &tile() { return tile_->tile(); }

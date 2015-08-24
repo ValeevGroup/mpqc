@@ -19,7 +19,7 @@ target_link_libraries(hf_l_inv_trick
 )
 add_dependencies(fastK hf_l_inv_trick)
 
-add_executable(hf_low_mem EXCLUDE_FROM_ALL hf_low_mem_plus_trick.cpp)
+add_executable(hf_low_mem EXCLUDE_FROM_ALL hf_l_low_mem.cpp)
 target_link_libraries(hf_low_mem
   ${TileClusterChem_LIBRARIES}
 )

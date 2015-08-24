@@ -22,12 +22,15 @@ template <typename T>
 void make_diagonal_tile(tensor::Tile<tensor::DecomposedTensor<T>> &tile,
                         T val) {
     assert(tile.tile().ndecomp() == 1);
-    auto &tensor = tile.tile().tensor(0);
-    auto const extent = tensor.range().extent();
-    auto map = TiledArray::eigen_map(tensor, extent[0], extent[1]);
+    auto extent = tile.range().extent();
+    auto local_range = TA::Range(extent[0], extent[1]);
+    auto tensor = tensor::DecomposedTensor<T>(tile.tile().cut(),
+                                              TA::Tensor<T>(local_range, 0.0));
+    auto map = TiledArray::eigen_map(tensor.tensor(0), extent[0], extent[1]);
     for (auto i = 0ul; i < extent[0]; ++i) {
         map(i, i) = val;
     }
+    tile.tile() = std::move(tensor);
 }
 
 template <typename T, unsigned int N, typename Tile>
@@ -69,7 +72,7 @@ TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
 
         using TileType = typename Array::value_type;
         if (diagonal_tile && !diag.is_zero(ord)) {
-            auto tile = TileType(trange.make_tile_range(ord), 0.0);
+            TileType tile = TileType{trange.make_tile_range(ord), 0.0};
             make_diagonal_tile(tile, val);
             diag.set(ord, std::move(tile));
         }
@@ -99,13 +102,11 @@ diagonal_matrix(TiledArray::TiledRange const &trange, double val,
 
     using Array = TiledArray::Array<T, 2, Tile, TiledArray::SparsePolicy>;
 
-    // TODO initialize tile_norms
     TiledArray::Tensor<float> tile_norms(trange.tiles(), 0.0);
 
     TiledArray::SparseShape<float> shape(world, tile_norms, trange);
 
     Array diag(world, trange, shape);
-    // TODO assign to diagonal tiles.
 
     return diag;
 }

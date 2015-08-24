@@ -15,7 +15,7 @@ namespace tensor {
 /// will initially be written to only handle a two way decomposition.
 template <typename T>
 class DecomposedTensor {
-    double cut_ = 1e-7;
+    double cut_ = 1e-6;
     std::vector<TA::Tensor<T>> tensors_;
 
   public:
@@ -40,7 +40,7 @@ class DecomposedTensor {
     // Will default init cut, this is here to assist with set_all_local
     // functionality
     DecomposedTensor(TA::Range const &r, T value)
-            : tensors_{TA::Tensor<T>{r, value}} {}
+            : tensors_{TA::Tensor<T>(r, value)} {}
 
     double cut() const { return cut_; }
     std::size_t ndecomp() const { return tensors_.size(); }
@@ -56,7 +56,7 @@ class DecomposedTensor {
         std::vector<std::size_t> o;
         o.reserve(ndecomp());
         for (auto i = 0; i < ndecomp(); ++i) {
-            o.push_back(tensors_[i].range().dim());
+            o.push_back(tensors_[i].range().rank());
         }
         return o;
     }

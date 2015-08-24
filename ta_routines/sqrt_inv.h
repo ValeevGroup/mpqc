@@ -323,6 +323,31 @@ eval_guess(Array const &A) {
 /*     return std::make_pair(min, max); */
 /* } */
 
+
+struct compress {
+    double cut_;
+    compress(double thresh) : cut_{thresh} {}
+    using TileType = tensor::Tile<tensor::DecomposedTensor<double>>;
+    using DummyType = TA::Tensor<double>;
+    double operator()(TileType &result) {
+        if (result.tile().ndecomp() == 1) {
+            auto test
+                  = tensor::algebra::two_way_decomposition(result.tile());
+            if (!test.empty()) {
+                result.tile() = std::move(test);
+            }
+        } else {
+            tensor::algebra::recompress(result.tile());
+        }
+
+        return result.norm();
+    }
+
+    double operator()(DummyType &result) {
+        return result.norm();
+    }
+};
+
 template <typename Array>
 void third_order_update(Array const &S, Array &Z) {
 
@@ -385,6 +410,9 @@ void third_order_update(Array const &S, Array &Z) {
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
         auto x1 = tcc_time::now();
         X.truncate();
+        utility::print_size_info(X, "X current");
+        TA::foreach_inplace(X,compress(1e-6));
+        utility::print_size_info(X, "X recompressed");
 
         // Third order update
         auto t0 = tcc_time::now();
@@ -392,6 +420,9 @@ void third_order_update(Array const &S, Array &Z) {
         add_to_diag(T, 15);
         T("i,j") = Tscale * T("i,j");
         auto t1 = tcc_time::now();
+        utility::print_size_info(T, "T current");
+        TA::foreach_inplace(T,compress(1e-6));
+        utility::print_size_info(T, "T recompressed");
 
 
         // Updating Z and Y
@@ -400,6 +431,13 @@ void third_order_update(Array const &S, Array &Z) {
         auto z1 = tcc_time::now();
         Y("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
         auto y1 = tcc_time::now();
+        utility::print_size_info(Z, "Z current");
+        TA::foreach_inplace(Z,compress(1e-6));
+        utility::print_size_info(Z, "Z recompressed");
+
+        utility::print_size_info(Y, "Y current");
+        TA::foreach_inplace(Y,compress(1e-6));
+        utility::print_size_info(Y, "Y recompressed");
 
         auto zy_trn0 = tcc_time::now();
         Z.truncate();

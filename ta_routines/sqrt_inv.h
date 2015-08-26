@@ -473,19 +473,6 @@ void third_order_update(Array const &S, Array &Z) {
     decltype(X) Ytemp = Y;
     decltype(Z) Ztemp = Z;
 
-    print_ranks_to_file(Z, "Hi");
-
-    auto Y_sparsity = Y.get_shape().sparsity();
-    auto Z_sparsity = Z.get_shape().sparsity();
-    auto X_sparsity = X.get_shape().sparsity();
-    auto T_sparsity = T.get_shape().sparsity();
-    if (S.get_world().rank() == 0) {
-        std::cout << "\n\nZ input sparsity = " << Z_sparsity << "%"
-                  << std::endl;
-        std::cout << "Y input sparsity = " << Y_sparsity << "%" << std::endl;
-        std::cout << "X input sparsity = " << X_sparsity << "%" << std::endl;
-        std::cout << "T input sparsity = " << T_sparsity << "%" << std::endl;
-    }
     if (S.get_world().rank() == 0) {
         std::cout << "\nStarting repeats for iteration 4" << std::endl;
     }
@@ -501,11 +488,11 @@ void third_order_update(Array const &S, Array &Z) {
         if (S.get_world().rank() == 0) {
             std::cout << "repeat: " << i + 1 << std::endl;
         }
-        if (i >= 1) {
-            Y_sparsity = Ytemp.get_shape().sparsity();
-            Z_sparsity = Ztemp.get_shape().sparsity();
-            X_sparsity = X.get_shape().sparsity();
-            T_sparsity = T.get_shape().sparsity();
+        if (i == 0) {
+            auto Y_sparsity = Y.get_shape().sparsity();
+            auto Z_sparsity = Z.get_shape().sparsity();
+            auto X_sparsity = X.get_shape().sparsity();
+            auto T_sparsity = T.get_shape().sparsity();
             if (S.get_world().rank() == 0) {
                 std::cout << "\tZ iter sparsity = " << Z_sparsity << "%"
                           << std::endl;
@@ -555,16 +542,18 @@ void third_order_update(Array const &S, Array &Z) {
         const auto current_norm = approx_zero("i,j").norm().get();
 
         auto iter1 = tcc_time::now();
-        std::string s_repeat = std::to_string(i);
-        std::string prefixX = "X_" + s_repeat + "_job";
-        std::string prefixT = "T_" + s_repeat + "_job";
-        std::string prefixZ = "Z_" + s_repeat + "_job";
-        std::string prefixY = "Y_" + s_repeat + "_job";
 
-        print_ranks_to_file(X, prefixX);
-        print_ranks_to_file(T, prefixT);
-        print_ranks_to_file(Ztemp, prefixZ);
-        print_ranks_to_file(Ytemp, prefixY);
+        if(i == 0){
+            std::string prefixX = "X_ranks";
+            std::string prefixT = "T_ranks";
+            std::string prefixZ = "Z_ranks";
+            std::string prefixY = "Y_ranks";
+
+            print_ranks_to_file(X, prefixX);
+            print_ranks_to_file(T, prefixT);
+            print_ranks_to_file(Z, prefixZ);
+            print_ranks_to_file(Y, prefixY);
+        }
 
         Xtimes[i] = tcc_time::duration_in_s(x0, x1);
         Ttimes[i] = tcc_time::duration_in_s(t0, t1);

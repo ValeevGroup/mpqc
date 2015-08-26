@@ -157,28 +157,6 @@ int main(int argc, char *argv[]) {
 
         utility::print_par(world, "M^{-1/2} took in total ",
                            inv_sqrt_timer.time(), " s\n");
-        print_size_info(sqrt_inv, "M^{-1/2}");
-        if (world.rank() == 0) {
-            std::cout << "\tM^{-1/2} sparsity percent = "
-                      << sqrt_inv.get_shape().sparsity() << "\n";
-        }
-
-        // Check accuracy
-        decltype(sqrt_inv) inv;
-        inv("i,j") = sqrt_inv("i,k") * sqrt_inv("k,j");
-        inv.truncate();
-        // Reuse inv to compute approximate identity.
-        inv("i,j") = inv("i,k") * eri2("k,j");
-        inv.truncate();
-
-        auto ident = tcc::array::create_diagonal_matrix(inv, 1.0);
-
-        auto f_norm_diff = utility::array_fnorm_diff(inv, ident);
-        utility::print_par(world, "\nIdenity-(M*M^{-1}) F norm difference = ",
-                           f_norm_diff, "\n");
-        utility::print_par(world,
-                           "Idenity-(M*M^{-1}) F norm difference / volume = ",
-                           f_norm_diff / volume, "\n");
     }
 
     if (world.rank() == 0) {
@@ -215,11 +193,6 @@ int main(int argc, char *argv[]) {
 
         utility::print_par(world, "M^{-1/2} took in total ",
                            inv_sqrt_timer.time(), " s\n");
-        print_size_info(sqrt_inv, "M^{-1/2}");
-        if (world.rank() == 0) {
-            std::cout << "\tM^{-1/2} sparsity percent = "
-                      << sqrt_inv.get_shape().sparsity() << "\n";
-        }
     }
 
     world.gop.fence();

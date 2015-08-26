@@ -13,9 +13,45 @@
 #include <limits>
 #include <type_traits>
 #include <cmath>
+#include <iomanip>
+#include <fstream>
+#include <cstdlib>
 
 namespace tcc {
 namespace pure {
+
+void print_ranks_to_file(
+      TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
+                TA::SparsePolicy> const &a,
+      std::string file_name) {
+    std::vector<long long> tile_ranks(a.trange().tiles().volume(), 0);
+    auto end = a.end();
+    for (auto it = a.begin(); it != end; ++it) {
+        tile_ranks[it.ordinal()] = it->get().tile().rank();
+    }
+
+    a.get_world().gop.sum(tile_ranks.data(), tile_ranks.size());
+
+    if (a.get_world().rank() == 0) {
+        if(char *id = std::getenv("PBS_JOBID")){
+            std::string job_id(id);
+            file_name += "_" + job_id + ".txt";
+        } else {
+            file_name += ".txt";
+        }
+        std::ofstream outfile(file_name);
+        for (auto rank : tile_ranks) {
+            outfile << rank << std::endl;; 
+        }
+        outfile.close();
+    }
+}
+
+void print_ranks_to_file(
+      TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> const &a,
+      std::string file_name) {
+    // Do nothing
+}
 
 template <typename T, typename AT>
 std::array<TiledArray::Tensor<T, AT>, 2>
@@ -331,8 +367,7 @@ struct compress {
     using DummyType = TA::Tensor<double>;
     double operator()(TileType &result) {
         if (result.tile().ndecomp() == 1) {
-            auto test
-                  = tensor::algebra::two_way_decomposition(result.tile());
+            auto test = tensor::algebra::two_way_decomposition(result.tile());
             if (!test.empty()) {
                 result.tile() = std::move(test);
             }
@@ -343,9 +378,7 @@ struct compress {
         return result.norm();
     }
 
-    double operator()(DummyType &result) {
-        return result.norm();
-    }
+    double operator()(DummyType &result) { return result.norm(); }
 };
 
 template <typename Array>
@@ -365,8 +398,6 @@ void third_order_update(Array const &S, Array &Z) {
 
     const auto max_eval = spectral_range[1];
     const auto min_eval = std::max(0.0, spectral_range[0]);
-    std::cout << "Min eval: " << min_eval << " Max eval: " << max_eval
-              << std::endl;
     auto S_scale = 2.0 / (max_eval + min_eval);
 
     Array Y = S;
@@ -378,41 +409,14 @@ void third_order_update(Array const &S, Array &Z) {
     Array approx_zero;
     auto iter = 0;
     auto norm_diff = std::numeric_limits<double>::max();
-    while (norm_diff > 1.0e-13 && iter < 30) {
-        if (iter > 0) {
-            auto X_sparsity = X.get_shape().sparsity();
-            auto Y_sparsity = Y.get_shape().sparsity();
-            auto T_sparsity = T.get_shape().sparsity();
-            auto Z_sparsity = Z.get_shape().sparsity();
-            if (S.get_world().rank() == 0) {
-                std::cout << "\titer " << iter << "\n\t\tsparsity percents\n";
-                std::cout << "\t\t\tX sparsity = " << X_sparsity << "\n";
-                std::cout << "\t\t\tY sparsity = " << Y_sparsity << "\n";
-                std::cout << "\t\t\tT sparsity = " << T_sparsity << "\n";
-                std::cout << "\t\t\tZ sparsity = " << Z_sparsity << "\n";
-            }
-        } else {
-            auto Y_sparsity = Y.get_shape().sparsity();
-            auto Z_sparsity = Z.get_shape().sparsity();
-            if (S.get_world().rank() == 0) {
-                std::cout << "\titer " << iter << "\n\t\tsparsity percents\n";
-                std::cout << "\t\t\tX sparsity = N/A\n";
-                std::cout << "\t\t\tY sparsity = " << Y_sparsity << "\n";
-                std::cout << "\t\t\tT sparsity = N/A\n";
-                std::cout << "\t\t\tZ sparsity = " << Z_sparsity << "\n";
-            }
-        }
-
-
+    while (norm_diff > 1.0e-13 && iter < 4) {
         auto iter0 = tcc_time::now();
         // Xn = \lambda*Yn*Z
         auto x0 = tcc_time::now();
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
         auto x1 = tcc_time::now();
         X.truncate();
-        utility::print_size_info(X, "X current");
-        TA::foreach_inplace(X,compress(1e-6));
-        utility::print_size_info(X, "X recompressed");
+        TA::foreach_inplace(X, compress(1e-6));
 
         // Third order update
         auto t0 = tcc_time::now();
@@ -420,9 +424,7 @@ void third_order_update(Array const &S, Array &Z) {
         add_to_diag(T, 15);
         T("i,j") = Tscale * T("i,j");
         auto t1 = tcc_time::now();
-        utility::print_size_info(T, "T current");
-        TA::foreach_inplace(T,compress(1e-6));
-        utility::print_size_info(T, "T recompressed");
+        TA::foreach_inplace(T, compress(1e-6));
 
 
         // Updating Z and Y
@@ -431,13 +433,8 @@ void third_order_update(Array const &S, Array &Z) {
         auto z1 = tcc_time::now();
         Y("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
         auto y1 = tcc_time::now();
-        utility::print_size_info(Z, "Z current");
-        TA::foreach_inplace(Z,compress(1e-6));
-        utility::print_size_info(Z, "Z recompressed");
-
-        utility::print_size_info(Y, "Y current");
-        TA::foreach_inplace(Y,compress(1e-6));
-        utility::print_size_info(Y, "Y recompressed");
+        TA::foreach_inplace(Z, compress(1e-6));
+        TA::foreach_inplace(Y, compress(1e-6));
 
         auto zy_trn0 = tcc_time::now();
         Z.truncate();
@@ -458,17 +455,6 @@ void third_order_update(Array const &S, Array &Z) {
         if (S.get_world().rank() == 0) {
             std::cout << "\t\tCurrent difference norm = " << current_norm
                       << "\n";
-            std::cout << "\t\tIteration time in " << iter_time << "\n";
-            std::cout << "\t\t\tX update time " << x_time << " s\n";
-            std::cout << "\t\t\tT update time " << t_time << " s\n";
-            std::cout << "\t\t\tZ update time " << z_time << " s\n";
-            std::cout << "\t\t\tY update time " << y_time << " s\n";
-            std::cout << "\t\t\tTrun.    time " << trun_time << " s\n";
-            std::cout << "\n";
-        }
-        utility::print_size_info(Z, "Z current");
-        if(S.get_world().rank() == 0){
-            std::cout << "\n";
         }
         if (current_norm >= norm_diff) { // Once norm is increasing exit!
             if (S.get_world().rank() == 0) {
@@ -480,9 +466,192 @@ void third_order_update(Array const &S, Array &Z) {
         norm_diff = current_norm;
         ++iter;
     }
+
+
+    auto num_repeats = std::min(5 * X.get_world().size(), 15);
+
+    decltype(X) Ytemp = Y;
+    decltype(Z) Ztemp = Z;
+
+    print_ranks_to_file(Z, "Hi");
+
+    auto Y_sparsity = Y.get_shape().sparsity();
+    auto Z_sparsity = Z.get_shape().sparsity();
+    auto X_sparsity = X.get_shape().sparsity();
+    auto T_sparsity = T.get_shape().sparsity();
     if (S.get_world().rank() == 0) {
-        std::cout << "\n";
+        std::cout << "\n\nZ input sparsity = " << Z_sparsity << "%"
+                  << std::endl;
+        std::cout << "Y input sparsity = " << Y_sparsity << "%" << std::endl;
+        std::cout << "X input sparsity = " << X_sparsity << "%" << std::endl;
+        std::cout << "T input sparsity = " << T_sparsity << "%" << std::endl;
     }
+    if (S.get_world().rank() == 0) {
+        std::cout << "\nStarting repeats for iteration 4" << std::endl;
+    }
+
+    auto Xtimes = std::vector<double>(num_repeats);
+    auto Ttimes = std::vector<double>(num_repeats);
+    auto Ztimes = std::vector<double>(num_repeats);
+    auto Ytimes = std::vector<double>(num_repeats);
+    auto Truntimes = std::vector<double>(num_repeats);
+    auto Itertimes = std::vector<double>(num_repeats);
+    auto Rests = std::vector<double>(num_repeats);
+    for (auto i = 0; i < num_repeats; ++i) {
+        if (S.get_world().rank() == 0) {
+            std::cout << "repeat: " << i + 1 << std::endl;
+        }
+        if (i >= 1) {
+            Y_sparsity = Ytemp.get_shape().sparsity();
+            Z_sparsity = Ztemp.get_shape().sparsity();
+            X_sparsity = X.get_shape().sparsity();
+            T_sparsity = T.get_shape().sparsity();
+            if (S.get_world().rank() == 0) {
+                std::cout << "\tZ iter sparsity = " << Z_sparsity << "%"
+                          << std::endl;
+                std::cout << "\tY iter sparsity = " << Y_sparsity << "%"
+                          << std::endl;
+                std::cout << "\tX iter sparsity = " << X_sparsity << "%"
+                          << std::endl;
+                std::cout << "\tT iter sparsity = " << T_sparsity << "%"
+                          << std::endl;
+            }
+        }
+
+        auto iter0 = tcc_time::now();
+        // Xn = \lambda*Yn*Z
+        auto x0 = tcc_time::now();
+        X("i,j") = S_scale * Y("i,k") * Z("k,j");
+        X.truncate();
+        TA::foreach_inplace(X, compress(1e-6));
+        auto x1 = tcc_time::now();
+
+        // Third order update
+        auto t0 = tcc_time::now();
+        T("i,j") = -10 * X("i,j") + 3 * X("i,k") * X("k,j");
+        add_to_diag(T, 15);
+        T("i,j") = Tscale * T("i,j");
+        TA::foreach_inplace(T, compress(1e-6));
+        auto t1 = tcc_time::now();
+
+
+        // Updating Z and Y
+        auto z0 = tcc_time::now();
+        Ztemp("i,j") = Z("i,k") * T("k,j"); // Zn+1 = Zn*Tn
+        auto z1 = tcc_time::now();
+        Ytemp("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
+        auto y1 = tcc_time::now();
+
+
+        auto zy_trn0 = tcc_time::now();
+        Z.truncate();
+        Y.truncate();
+        TA::foreach_inplace(Ztemp, compress(1e-6));
+        TA::foreach_inplace(Ytemp, compress(1e-6));
+        auto zy_trn1 = tcc_time::now();
+
+        approx_zero("i,j") = X("i,j") - T("i,j");
+
+        const auto current_norm = approx_zero("i,j").norm().get();
+
+        auto iter1 = tcc_time::now();
+        std::string s_repeat = std::to_string(i);
+        std::string prefixX = "X_" + s_repeat + "_job";
+        std::string prefixT = "T_" + s_repeat + "_job";
+        std::string prefixZ = "Z_" + s_repeat + "_job";
+        std::string prefixY = "Y_" + s_repeat + "_job";
+
+        print_ranks_to_file(X, prefixX);
+        print_ranks_to_file(T, prefixT);
+        print_ranks_to_file(Ztemp, prefixZ);
+        print_ranks_to_file(Ytemp, prefixY);
+
+        Xtimes[i] = tcc_time::duration_in_s(x0, x1);
+        Ttimes[i] = tcc_time::duration_in_s(t0, t1);
+        Ztimes[i] = tcc_time::duration_in_s(z0, z1);
+        Ytimes[i] = tcc_time::duration_in_s(z1, y1);
+        Truntimes[i] = tcc_time::duration_in_s(zy_trn0, zy_trn1);
+        Itertimes[i] = tcc_time::duration_in_s(iter0, iter1);
+        Rests[i] = Itertimes[i] - Xtimes[i] - Ttimes[i] - Ztimes[i] - Ytimes[i]
+                   - Truntimes[i];
+    }
+
+    if (S.get_world().rank() == 0) {
+        std::cout << "\n" << std::endl;
+    }
+
+    auto maxX = *std::max_element(Xtimes.begin(), Xtimes.end());
+    auto maxT = *std::max_element(Ttimes.begin(), Ttimes.end());
+    auto maxZ = *std::max_element(Ztimes.begin(), Ztimes.end());
+    auto maxY = *std::max_element(Ytimes.begin(), Ytimes.end());
+    auto maxTrun = *std::max_element(Truntimes.begin(), Truntimes.end());
+    auto maxIter = *std::max_element(Itertimes.begin(), Itertimes.end());
+    auto maxRest = *std::max_element(Rests.begin(), Rests.end());
+
+    auto minX = *std::min_element(Xtimes.begin(), Xtimes.end());
+    auto minT = *std::min_element(Ttimes.begin(), Ttimes.end());
+    auto minZ = *std::min_element(Ztimes.begin(), Ztimes.end());
+    auto minY = *std::min_element(Ytimes.begin(), Ytimes.end());
+    auto minTrun = *std::min_element(Truntimes.begin(), Truntimes.end());
+    auto minIter = *std::min_element(Itertimes.begin(), Itertimes.end());
+    auto minRest = *std::min_element(Rests.begin(), Rests.end());
+
+    auto avg = [](std::vector<double> const &x) {
+        double avg_time = 0.0;
+        for (auto const &elem : x) {
+            avg_time += elem;
+        }
+        return avg_time / double(x.size());
+    };
+
+    auto avgX = avg(Xtimes);
+    auto avgT = avg(Ttimes);
+    auto avgZ = avg(Ztimes);
+    auto avgY = avg(Ytimes);
+    auto avgTrun = avg(Truntimes);
+    auto avgIter = avg(Itertimes);
+    auto avgRest = avg(Rests);
+
+    auto stddev = [](std::vector<double> const &x, double avg) {
+        auto sum = 0.0;
+        for (auto elem : x) {
+            auto diff = elem - avg;
+            sum += diff * diff;
+        }
+        sum /= double(x.size());
+        return std::sqrt(sum);
+    };
+
+    auto devX = stddev(Xtimes, avgX);
+    auto devT = stddev(Ttimes, avgT);
+    auto devZ = stddev(Ztimes, avgZ);
+    auto devY = stddev(Ytimes, avgY);
+    auto devTrun = stddev(Truntimes, avgTrun);
+    auto devIter = stddev(Itertimes, avgIter);
+    auto devRest = stddev(Rests, avgRest);
+
+    if (S.get_world().rank() == 0) {
+        std::cout << std::setprecision(5);
+        std::cout << "Iter avg         = " << avgIter << "\tMin: " << minIter
+                  << "\tMax: " << maxIter << "\tSTDDEV: " << devIter
+                  << std::endl;
+        std::cout << "\tX avg    = " << avgX << "\tMin: " << minX
+                  << "\tMax: " << maxX << "\tSTDDEV: " << devX << std::endl;
+        std::cout << "\tT avg    = " << avgT << "\tMin: " << minT
+                  << "\tMax: " << maxT << "\tSTDDEV: " << devT << std::endl;
+        std::cout << "\tZ avg    = " << avgZ << "\tMin: " << minZ
+                  << "\tMax: " << maxZ << "\tSTDDEV: " << devZ << std::endl;
+        std::cout << "\tY avg    = " << avgY << "\tMin: " << minY
+                  << "\tMax: " << maxY << "\tSTDDEV: " << devY << std::endl;
+        std::cout << "\tTrun avg = " << avgTrun << "\tMin: " << minTrun
+                  << "\tMax: " << maxTrun << "\tSTDDEV: " << devTrun
+                  << std::endl;
+        std::cout << "\tRest avg = " << avgRest << "\tMin: " << minRest
+                  << "\tMax: " << maxRest << "\tSTDDEV: " << devRest
+                  << std::endl;
+        std::cout << "\n\n" << std::endl;
+    }
+
 
     Z("i,j") = std::sqrt(S_scale) * Z("i,j");
 }

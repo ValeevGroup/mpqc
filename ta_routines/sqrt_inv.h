@@ -494,53 +494,45 @@ void third_order_update(Array const &S, Array &Z) {
             auto X_sparsity = X.get_shape().sparsity();
             auto T_sparsity = T.get_shape().sparsity();
             if (S.get_world().rank() == 0) {
-                std::cout << "\tZ iter sparsity = " << Z_sparsity << "%"
+                std::cout << "\tZ iter sparsity = " << 100 * Z_sparsity << "%"
                           << std::endl;
-                std::cout << "\tY iter sparsity = " << Y_sparsity << "%"
+                std::cout << "\tY iter sparsity = " << 100 * Y_sparsity << "%"
                           << std::endl;
-                std::cout << "\tX iter sparsity = " << X_sparsity << "%"
+                std::cout << "\tX iter sparsity = " << 100 * X_sparsity << "%"
                           << std::endl;
-                std::cout << "\tT iter sparsity = " << T_sparsity << "%"
+                std::cout << "\tT iter sparsity = " << 100 * T_sparsity << "%"
                           << std::endl;
             }
         }
 
+        Z.get_world().gop.fence();
         auto iter0 = tcc_time::now();
         // Xn = \lambda*Yn*Z
-        auto x0 = tcc_time::now();
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
         X.truncate();
-        TA::foreach_inplace(X, compress(1e-6));
-        auto x1 = tcc_time::now();
+        TA::foreach_inplace(X, compress(1e-6), false);
 
         // Third order update
-        auto t0 = tcc_time::now();
         T("i,j") = -10 * X("i,j") + 3 * X("i,k") * X("k,j");
         add_to_diag(T, 15);
         T("i,j") = Tscale * T("i,j");
-        TA::foreach_inplace(T, compress(1e-6));
-        auto t1 = tcc_time::now();
+        TA::foreach_inplace(T, compress(1e-6), false);
 
 
         // Updating Z and Y
-        auto z0 = tcc_time::now();
         Ztemp("i,j") = Z("i,k") * T("k,j"); // Zn+1 = Zn*Tn
-        auto z1 = tcc_time::now();
         Ytemp("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
-        auto y1 = tcc_time::now();
 
-
-        auto zy_trn0 = tcc_time::now();
-        Z.truncate();
-        Y.truncate();
-        TA::foreach_inplace(Ztemp, compress(1e-6));
-        TA::foreach_inplace(Ytemp, compress(1e-6));
-        auto zy_trn1 = tcc_time::now();
+        Ztemp.truncate();
+        Ytemp.truncate();
+        TA::foreach_inplace(Ztemp, compress(1e-6),false);
+        TA::foreach_inplace(Ytemp, compress(1e-6),false);
 
         approx_zero("i,j") = X("i,j") - T("i,j");
 
         const auto current_norm = approx_zero("i,j").norm().get();
 
+        Z.get_world().gop.fence();
         auto iter1 = tcc_time::now();
 
         if(i == 0){
@@ -555,35 +547,18 @@ void third_order_update(Array const &S, Array &Z) {
             print_ranks_to_file(Y, prefixY);
         }
 
-        Xtimes[i] = tcc_time::duration_in_s(x0, x1);
-        Ttimes[i] = tcc_time::duration_in_s(t0, t1);
-        Ztimes[i] = tcc_time::duration_in_s(z0, z1);
-        Ytimes[i] = tcc_time::duration_in_s(z1, y1);
-        Truntimes[i] = tcc_time::duration_in_s(zy_trn0, zy_trn1);
         Itertimes[i] = tcc_time::duration_in_s(iter0, iter1);
-        Rests[i] = Itertimes[i] - Xtimes[i] - Ttimes[i] - Ztimes[i] - Ytimes[i]
-                   - Truntimes[i];
+        if(S.get_world().rank() == 0){
+            std::cout << "\ttime = " << Itertimes[i] << std::endl;
+        }
     }
 
     if (S.get_world().rank() == 0) {
         std::cout << "\n" << std::endl;
     }
 
-    auto maxX = *std::max_element(Xtimes.begin(), Xtimes.end());
-    auto maxT = *std::max_element(Ttimes.begin(), Ttimes.end());
-    auto maxZ = *std::max_element(Ztimes.begin(), Ztimes.end());
-    auto maxY = *std::max_element(Ytimes.begin(), Ytimes.end());
-    auto maxTrun = *std::max_element(Truntimes.begin(), Truntimes.end());
     auto maxIter = *std::max_element(Itertimes.begin(), Itertimes.end());
-    auto maxRest = *std::max_element(Rests.begin(), Rests.end());
-
-    auto minX = *std::min_element(Xtimes.begin(), Xtimes.end());
-    auto minT = *std::min_element(Ttimes.begin(), Ttimes.end());
-    auto minZ = *std::min_element(Ztimes.begin(), Ztimes.end());
-    auto minY = *std::min_element(Ytimes.begin(), Ytimes.end());
-    auto minTrun = *std::min_element(Truntimes.begin(), Truntimes.end());
     auto minIter = *std::min_element(Itertimes.begin(), Itertimes.end());
-    auto minRest = *std::min_element(Rests.begin(), Rests.end());
 
     auto avg = [](std::vector<double> const &x) {
         double avg_time = 0.0;
@@ -592,14 +567,7 @@ void third_order_update(Array const &S, Array &Z) {
         }
         return avg_time / double(x.size());
     };
-
-    auto avgX = avg(Xtimes);
-    auto avgT = avg(Ttimes);
-    auto avgZ = avg(Ztimes);
-    auto avgY = avg(Ytimes);
-    auto avgTrun = avg(Truntimes);
     auto avgIter = avg(Itertimes);
-    auto avgRest = avg(Rests);
 
     auto stddev = [](std::vector<double> const &x, double avg) {
         auto sum = 0.0;
@@ -607,36 +575,15 @@ void third_order_update(Array const &S, Array &Z) {
             auto diff = elem - avg;
             sum += diff * diff;
         }
-        sum /= double(x.size());
+        sum /= double(x.size() - 1);
         return std::sqrt(sum);
     };
-
-    auto devX = stddev(Xtimes, avgX);
-    auto devT = stddev(Ttimes, avgT);
-    auto devZ = stddev(Ztimes, avgZ);
-    auto devY = stddev(Ytimes, avgY);
-    auto devTrun = stddev(Truntimes, avgTrun);
     auto devIter = stddev(Itertimes, avgIter);
-    auto devRest = stddev(Rests, avgRest);
 
     if (S.get_world().rank() == 0) {
         std::cout << std::setprecision(5);
         std::cout << "Iter avg         = " << avgIter << "\tMin: " << minIter
                   << "\tMax: " << maxIter << "\tSTDDEV: " << devIter
-                  << std::endl;
-        std::cout << "\tX avg    = " << avgX << "\tMin: " << minX
-                  << "\tMax: " << maxX << "\tSTDDEV: " << devX << std::endl;
-        std::cout << "\tT avg    = " << avgT << "\tMin: " << minT
-                  << "\tMax: " << maxT << "\tSTDDEV: " << devT << std::endl;
-        std::cout << "\tZ avg    = " << avgZ << "\tMin: " << minZ
-                  << "\tMax: " << maxZ << "\tSTDDEV: " << devZ << std::endl;
-        std::cout << "\tY avg    = " << avgY << "\tMin: " << minY
-                  << "\tMax: " << maxY << "\tSTDDEV: " << devY << std::endl;
-        std::cout << "\tTrun avg = " << avgTrun << "\tMin: " << minTrun
-                  << "\tMax: " << maxTrun << "\tSTDDEV: " << devTrun
-                  << std::endl;
-        std::cout << "\tRest avg = " << avgRest << "\tMin: " << minRest
-                  << "\tMax: " << maxRest << "\tSTDDEV: " << devRest
                   << std::endl;
         std::cout << "\n\n" << std::endl;
     }

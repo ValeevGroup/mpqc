@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
         auto sqrt_inv = inv_sqrt_timer.apply();
 
         utility::print_par(world, "M^{-1/2} took in total ",
-                           inv_sqrt_timer.time(), " s\n");
+                           inv_sqrt_timer.time(), " s\n\n");
     }
 
     if (world.rank() == 0) {
@@ -185,7 +185,6 @@ int main(int argc, char *argv[]) {
         };
 
         auto eri2_lr = TA::to_new_tile_type(eri2, to_decomp_with_decompose);
-        print_size_info(eri2_lr, "M_lr");
         auto inv_sqrt_timer = tcc_time::make_timer(
               [&]() { return tcc::pure::inverse_sqrt(eri2_lr); });
 

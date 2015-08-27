@@ -468,22 +468,16 @@ void third_order_update(Array const &S, Array &Z) {
     }
 
 
-    auto num_repeats = std::min(5 * X.get_world().size(), 15);
+    auto num_repeats = std::min(15 * X.get_world().size(), 30);
 
     decltype(X) Ytemp = Y;
     decltype(Z) Ztemp = Z;
 
     if (S.get_world().rank() == 0) {
-        std::cout << "\nStarting repeats for iteration 4" << std::endl;
+        std::cout << "\nStarting repeats for iteration 5" << std::endl;
     }
 
-    auto Xtimes = std::vector<double>(num_repeats);
-    auto Ttimes = std::vector<double>(num_repeats);
-    auto Ztimes = std::vector<double>(num_repeats);
-    auto Ytimes = std::vector<double>(num_repeats);
-    auto Truntimes = std::vector<double>(num_repeats);
     auto Itertimes = std::vector<double>(num_repeats);
-    auto Rests = std::vector<double>(num_repeats);
     for (auto i = 0; i < num_repeats; ++i) {
         if (S.get_world().rank() == 0) {
             std::cout << "repeat: " << i + 1 << std::endl;

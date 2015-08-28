@@ -1271,7 +1271,7 @@ Molecule::print_xyz(ostream& os, const char *title) const
   os << endl;
   for (int i=0; i < natom(); i++) {
     // more precision than used by OpenBabel
-    os << atom_symbol(i) << " " << scprintf("%15.9lf %15.9lf %15.9lf",
+    os << atom_symbol(i) << " " << scprintf("%15.10lf %15.10lf %15.10lf",
                                             bohr * r(i, 0),
                                             bohr * r(i, 1),
                                             bohr * r(i, 2)

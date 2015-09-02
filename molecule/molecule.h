@@ -46,6 +46,8 @@ class Molecule {
 
     unsigned long nelements() const;
     unsigned long occupation(unsigned long total_charge) const;
+    // auto compute core electrons
+    unsigned long core_electrons() const;
     double nuclear_repulsion() const;
 
     std::vector<Cluster>

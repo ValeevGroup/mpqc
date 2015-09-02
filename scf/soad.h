@@ -42,6 +42,7 @@ using Eri3ArrayType = TA::Array<double, 3, TileType, TA::SparsePolicy>;
  */
 TileType soad_tile(std::shared_ptr<molecule::Cluster> cluster, TA::Range range,
                    double cut) {
+    // make range for decomposed tensor
     // Grab the range extent since it will be reused several times.
     const auto extent = range.extent();
 
@@ -208,8 +209,6 @@ ArrayType fock_from_minimal_v_oh(
     {
         auto EriJ = BlockSparseIntegrals(
               world, eng_pool, utility::make_array(df_bs, min_bs, min_bs), op);
-        utility::print_par(EriJ.get_world(), "\n");
-        utility::print_size_info(EriJ, "SOAD EriJ");
         TA::Array<double, 1, typename decltype(EriJ)::value_type,
                   TA::SparsePolicy> trans;
         trans("P") = EriJ("P,a,b") * D_min("a,b");
@@ -220,7 +219,6 @@ ArrayType fock_from_minimal_v_oh(
     auto EriK
           = BlockSparseIntegrals(world, eng_pool,
                                  utility::make_array(df_bs, obs, min_bs), op);
-    utility::print_size_info(EriK, "SOAD EriK");
     // Reuse EriK so we don't have a temp Array laying around.
     EriK("X,i,a") = V_inv_oh("X,P") * (EriK("P,a,b") * L_d("b,i"));
     K("i,j") = EriK("X,k,i") * EriK("X,k,j");

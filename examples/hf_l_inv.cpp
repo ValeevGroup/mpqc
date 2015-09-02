@@ -42,41 +42,6 @@ using namespace tcc;
 namespace ints = integrals;
 
 
-namespace TiledArray {
-void
-array_to_eigen(const Array<double, 3,
-                           tcc::tensor::Tile<tensor::DecomposedTensor<double>>,
-                           SparsePolicy> &array) {
-    const auto *extent_ptr = array.trange().elements().extent_data();
-    Eigen::MatrixXd mat(extent_ptr[0], extent_ptr[1] * extent_ptr[2]);
-
-    for (auto it = array.begin(); it != array.end(); ++it) {
-        auto tile = it->get();
-        auto tensor = tensor::algebra::combine(tile.tile());
-        auto start = tile.range().lobound();
-        auto finish = tile.range().upbound();
-        auto extent = tensor.range().extent();
-
-        mat.block(start[0], start[1] * extent[2] + start[2], extent[0],
-                  extent[1] * extent[2])
-              = TA::eigen_map(tensor, extent[0], extent[1] * extent[2]);
-    }
-
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd(mat);
-    svd.setThreshold(1e-8);
-    std::cout << "Rank = " << svd.rank() << std::endl;
-
-    Eigen::MatrixXd Eri = mat.transpose() * mat;
-    Eigen::MatrixXd Athing(Eri.rows(), Eri.cols());
-    for(auto i = 0; i < Eri.rows(); ++i){
-        for(auto j = 0; j < Eri.cols(); ++j){
-            Athing(
-        }
-    }
-}
-
-} // namespace TiledArray
-
 void main_print_clusters(
       std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
       std::ostream &os);
@@ -449,9 +414,6 @@ int try_main(int argc, char *argv[]) {
     utility::print_size_info(Xab, "B Tensor");
     decltype(Xab)::wait_for_lazy_cleanup(world, 60);
 
-    // Test recompression of B
-    { TA::array_to_eigen(Xab); }
-
     decltype(H) F;
     utility::print_par(world, "\nStarting SOAD guess");
     auto soad0 = tcc_time::now();
@@ -574,10 +536,28 @@ int try_main(int argc, char *argv[]) {
     utility::print_par(world, "\nFinal energy = ", std::setprecision(17),
                        energy + repulsion_energy, "\n");
 
+    struct TileSum {
+        using result_type = double;
+        using argument_type = TA::Tensor<double>;
 
-    double ex = -2 * (D_TA("i,j") * dipole_ints[1]("i,j")).sum();
-    double ey = -2 * (D_TA("i,j") * dipole_ints[2]("i,j")).sum();
-    double ez = -2 * (D_TA("i,j") * dipole_ints[3]("i,j")).sum();
+        TileSum(TileSum const &) = default;
+
+        result_type operator()() const { return 0.0; }
+
+        result_type operator()(result_type const &t) const { return t; }
+
+        void operator()(result_type &me, result_type const &other) const {
+            me += other;
+        }
+
+        void operator()(result_type &me, argument_type const &tile) const {
+            me += tile.sum();
+        }
+    };
+
+    double ex = -2 * (D_TA("i,j") * dipole_ints[1]("i,j")).reduce(TileSum{});
+    double ey = -2 * (D_TA("i,j") * dipole_ints[2]("i,j")).reduce(TileSum{});
+    double ez = -2 * (D_TA("i,j") * dipole_ints[3]("i,j")).reduce(TileSum{});
 
     if (world.rank() == 0) {
         std::cout << "Electronic Dipole = " << ex << " " << ey << " " << ez
@@ -648,6 +628,9 @@ int try_main(int argc, char *argv[]) {
         TA::Array<double, 4, TA::Tensor<double>, TA::SparsePolicy> IAJB;
         IAJB("i,a,j,b") = Xia_TA("X,i,a") * Xia_TA("X,j,b");
         utility::print_size_info(IAJB, "IAJB");
+
+        //std::cout << IAJB << std::endl;
+
         auto vec_ptr = std::make_shared<Eig::VectorXd>(std::move(evals));
         struct Mp2Red {
             using result_type = double;

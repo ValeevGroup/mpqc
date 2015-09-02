@@ -3,7 +3,6 @@
 #include "clustering_functions.h"
 #include "cluster.h"
 #include "attach_hydrogens.h"
-#include "../include/tbb.h"
 #include "../include/libint.h"
 #include "common.h"
 #include "atom_masses.h"
@@ -20,27 +19,16 @@ namespace molecule_detail {
 
 inline double calculate_mass(const std::vector<Clusterable> &cs) {
     using iter_t = decltype(cs.begin());
-    return tbb::parallel_reduce(
-        tbb::blocked_range<iter_t>(cs.begin(), cs.end()), 0.0,
-        [](const tbb::blocked_range<iter_t> &r, double d) -> double {
-            return std::accumulate(
-                r.begin(), r.end(), d,
-                [](double x, const Clusterable &c) { return x + c.mass(); });
-        },
-        std::plus<double>());
+    return std::accumulate(cs.begin(), cs.end(), 0.0,
+                           [](double val,
+                              Clusterable const &c) { return val + c.mass(); });
 }
 
 inline int calculate_charge(std::vector<Clusterable> const &cs) {
 
-    using iter_t = decltype(cs.begin());
-    return tbb::parallel_reduce(
-        tbb::blocked_range<iter_t>(cs.begin(), cs.end()), 0,
-        [](const tbb::blocked_range<iter_t> &r, int d) -> int {
-            return std::accumulate(
-                r.begin(), r.end(), d,
-                [](int x, const Clusterable &c) { return x + c.charge(); });
-        },
-        std::plus<int>());
+    return std::accumulate(cs.begin(), cs.end(), 0.0,
+                           [](double val,
+                              Clusterable const &c) { return val + c.charge(); });
 }
 
 // Functor for sorting centers based on the distance from a point.
@@ -66,7 +54,7 @@ class sort_by_distance_from_point {
 };
 
 void sort_elements(std::vector<Clusterable> &elems, const position_t &point) {
-    tbb::parallel_sort(elems.begin(), elems.end(),
+    std::sort(elems.begin(), elems.end(),
                        sort_by_distance_from_point(point));
 }
 } // namespace moleucle detail
@@ -90,14 +78,14 @@ double Molecule::nuclear_repulsion() const {
 
     // Have to get the atoms from each cluster
     std::vector<Atom> atoms;
-    for(auto const &cluster : elements_){
+    for (auto const &cluster : elements_) {
         auto c_atoms = cluster.atoms();
         atoms.insert(atoms.end(), c_atoms.begin(), c_atoms.end());
     }
 
     double energy = 0.0;
-    for(auto i = 0ul; i < atoms.size(); ++i){
-        for(auto j = i + 1; j < atoms.size(); ++j){
+    for (auto i = 0ul; i < atoms.size(); ++i) {
+        for (auto j = i + 1; j < atoms.size(); ++j) {
             const auto diff = atoms[i].center() - atoms[j].center();
             const auto r = diff.norm();
             energy += atoms[i].charge() * atoms[j].charge() / r;
@@ -119,16 +107,16 @@ unsigned long Molecule::nelements() const { return elements_.size(); }
 
 unsigned long Molecule::core_electrons() const {
 
-    //get all the atoms
+    // get all the atoms
     std::vector<Atom> atoms;
-    for(auto const &cluster : elements_){
+    for (auto const &cluster : elements_) {
         auto c_atoms = cluster.atoms();
         atoms.insert(atoms.end(), c_atoms.begin(), c_atoms.end());
     }
 
-    //loop over all atoms to get the total core electron number
+    // loop over all atoms to get the total core electron number
     int i, n = 0;
-    for (i=0; i<atoms.size(); i++){
+    for (i = 0; i < atoms.size(); i++) {
         if (atoms[i].charge() == 0) continue;
         int z = atoms[i].charge();
         if (z > 2) n += 2;
@@ -139,7 +127,7 @@ unsigned long Molecule::core_electrons() const {
         if (z > 48) n += 10;
         if (z > 54) n += 8;
         if (z > 72) {
-            throw ("Molecule::core_electrons: atomic number too large");
+            throw("Molecule::core_electrons: atomic number too large");
         }
     }
     return n;
@@ -195,8 +183,7 @@ Molecule::attach_H_and_kmeans(unsigned long nclusters,
 }
 
 std::vector<Cluster>
-Molecule::kmeans(unsigned long nclusters,
-                              unsigned long init_seed) const {
+Molecule::kmeans(unsigned long nclusters, unsigned long init_seed) const {
     // Compute k-means with a new seed and if that seed give a better answer
     // store the seed
     std::vector<Cluster> clusters;
@@ -225,8 +212,9 @@ Molecule::kmeans(unsigned long nclusters,
 Molecule read_xyz(std::string const &file_name) {
     std::ifstream xyz_file(file_name);
     if (xyz_file.fail()) {
-      std::ostringstream oss; oss << "could not open file \"" << file_name << "\"";
-      throw std::invalid_argument(oss.str().c_str());
+        std::ostringstream oss;
+        oss << "could not open file \"" << file_name << "\"";
+        throw std::invalid_argument(oss.str().c_str());
     }
     auto libint_atoms = libint2::read_dotxyz(xyz_file);
     xyz_file.close();

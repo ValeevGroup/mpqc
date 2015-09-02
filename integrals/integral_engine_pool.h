@@ -10,8 +10,8 @@
 // Based on file integral_engine_pool.hpp from mpqc
 //
 
-#include "../include/tbb.h"
 #include "../include/libint.h"
+#include "../include/tbb.h"
 
 namespace tcc {
 namespace integrals {

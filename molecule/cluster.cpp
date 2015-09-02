@@ -1,4 +1,3 @@
-#include "../include/tbb.h"
 #include "cluster.h"
 #include "common.h"
 
@@ -16,13 +15,7 @@ double Cluster::sum_distances_from_center() const {
         return d + std::sqrt(diff_squaredNorm(c.center(), center_));
     };
 
-    using iter_t = decltype(elements_.begin());
-    return tbb::parallel_reduce(
-        tbb::blocked_range<iter_t>(elements_.begin(), elements_.end()), 0.0,
-        [&](const tbb::blocked_range<iter_t> &r, double d) {
-            return std::accumulate(r.begin(), r.end(), d, reduce_r);
-        },
-        std::plus<double>());
+    return std::accumulate(elements_.begin(), elements_.end(), 0.0, reduce_r);
 }
 
 std::ostream & operator<<(std::ostream &os, Cluster const &c){

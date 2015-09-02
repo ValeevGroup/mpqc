@@ -1,4 +1,3 @@
-#include "../include/tbb.h"
 #include "clustering_functions.h"
 #include "common.h"
 #include "cluster.h"
@@ -48,7 +47,7 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
         auto center_guess = clusterables[idx].center();
         it->set_center(center_guess);
 
-        tbb::parallel_for(0ul, clusterables.size(), [&](unsigned long i) {
+        for(auto i = 0ul; i < clusterables.size(); ++i){
             const auto clusterable_center = clusterables[i].center();
 
             // Find the closest cluster that has been initialized.
@@ -60,7 +59,7 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
 
             // Calculate weight = dist^2
             weights[i] = diff_squaredNorm(clusterable_center, cluster_center);
-        });
+        }
     }
 
     attach_clusterables(clusterables);
@@ -68,30 +67,19 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
 
 void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
     // Erase the ownership information for each cluster.
-    tbb::parallel_for_each(clusters_.begin(), clusters_.end(),
-                           [](Cluster &c) { c.clear(); });
+    for(auto &cluster : clusters_){
+        cluster.clear();
+    }
 
-    /* Gives non deterministic ordering, TODO find deterministic parallel way.
-    // For each clusterable find the closest cluster and attach too it.
-    tbb::spin_mutex cluster_mutex;
-    tbb::parallel_for_each(cs.begin(), cs.end(), [&](const Clusterable &c) {
-        auto iter
-            = closest_cluster(clusters_.begin(), clusters_.end(), c.center());
-
-        tbb::spin_mutex::scoped_lock lock(cluster_mutex);
-        iter->add_clusterable(c);
-    });
-    */ 
-    
-    // Serial version of above code.
     for (auto const &clusterable : cs) {
         auto closest = closest_cluster(clusters_.begin(), clusters_.end(),
                                        clusterable.center());
         closest->add_clusterable(clusterable);
     }
 
-    tbb::parallel_for_each(clusters_.begin(), clusters_.end(),
-                           [](Cluster &c) { c.compute_com(); });
+    for(auto &cluster : clusters_){
+        cluster.compute_com();
+    }
 }
 
 std::vector<Cluster>::iterator

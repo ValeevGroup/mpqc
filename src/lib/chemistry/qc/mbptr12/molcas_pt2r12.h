@@ -39,6 +39,7 @@ namespace sc{
 * prefix.pt2r12.rdm2.dat files for input to MPQC. Those two inputfiles are used
 * to create the object ExternPT2R12 in MolcasPT2R12.
 * Here is an example of Molcas input file. It should perform a CASPT2 calculation.
+* Please put the option and value in one single line
 <pre>
   *-------------------------------------------------------------------------------
   * Molecule: HF
@@ -49,36 +50,44 @@ namespace sc{
   &GATEWAY
     coord=prefix.xyz
     basis=cc-pVDZ-F12
+    Group=C1
   *-------------------------------------------------------------------------------
   &SEWARD
   *-------------------------------------------------------------------------------
   &SCF &END
-    Title
-    HF
   End of input
   *-------------------------------------------------------------------------------
   &RASSCF &END
-    Title
-    HF
-    nActEl
-    6 0 0
-    Symmetry
-    1
-    Spin
-    1
-    Inactive
-    2 0 0 0
-    Ras2
-    2 1 0 1
+    nActEl= 6 0 0
+    Symmetry= 1
+    Spin= 1
+    Inactive= 2 0 0 0
+    Ras2= 2 1 0 1
     LumOrb
   End of input
   *-------------------------------------------------------------------------------
   &CASPT2 &End
-    Convergence
-    1.0D-8
+    Convergence = 1.0D-8
   End of Input
   *-------------------------------------------------------------------------------
 </pre>
+ *
+ * the must have option in the input file is
+ *
+<pre>
+  &GATEWAY
+    coord=
+    basis=
+    Group=
+  &SEWARD
+  &SCF
+  &RASSCF
+    nActEl=
+    Inactive=
+    Ras2=
+  &CASPT2
+</pre>
+
 */
 
 
@@ -167,6 +176,13 @@ namespace sc{
       /// read molcas log file and get the energy needed
       void read_energy();
 
+      /// convert input to c1 symmetry when the symmetry from MPQC
+      /// is different than original symmetry
+      void convert_c1_symmetry();
+
+      /// restore the original input file after change of symmetry
+      void restore_molcas_input();
+
       /// purge
       void purge();
 
@@ -187,6 +203,12 @@ namespace sc{
       std::string molcas_input_;
       /// molcas command line options
       std::string molcas_options_;
+      /// inactive orbital input
+      std::vector<int> inactive_;
+      /// active orbital input
+      std::vector<int> active_;
+      /// sysmetry
+      std::string symmetry_;
 
       double rasscf_energy_;
       double caspt2_energy_;

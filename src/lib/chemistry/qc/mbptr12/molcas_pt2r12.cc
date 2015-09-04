@@ -28,6 +28,8 @@
 #include <spawn.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 #include <fstream>
@@ -156,6 +158,61 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
 #endif
     extern_pt2r12_akv_ = kva;
   }
+
+
+  // parse the input file for information
+  std::fstream finput(molcas_input_);
+  if (!finput.good()){
+    throw InputError("No Molcas Input File Found! Check Your Molcas Input",
+                     __FILE__, __LINE__, "molcas_input", molcas_input_.c_str(),
+                     this->class_desc());
+  }
+  std::string line;
+  while (std::getline(finput,line)){
+    std::string upper_line = line;
+    boost::to_upper(upper_line);
+    if(upper_line.find("INAC") != std::string::npos){
+
+      std::vector<std::string> split_line;
+      boost::split(split_line, line, boost::is_any_of(" ="), boost::token_compress_on);
+
+      for( auto num : split_line){
+        if (std::all_of(num.begin(), num.end(), ::isdigit)){
+          std::cout << num;
+          inactive_.push_back(std::stoi(num));
+        }
+      }
+    }
+    else if(upper_line.find("RAS2") != std::string::npos){
+      std::vector<std::string> split_line;
+      boost::split(split_line, line, boost::is_any_of(" ="), boost::token_compress_on);
+      for ( auto num : split_line){
+        if (std::all_of(num.begin(), num.end(), ::isdigit)){
+          std::cout << num;
+          active_.push_back(std::stoi(num));
+        }
+      }
+    }
+    else if(upper_line.find("GROUP") != std::string::npos){
+      std::vector<std::string> split_line;
+      boost::split(split_line, line, boost::is_any_of(" ="), boost::token_compress_on);
+      symmetry_ = split_line.back();
+    }
+  }
+
+  finput.close();
+
+  if(symmetry_.empty() || active_.empty() || inactive_.empty()){
+    throw InputError("Molcas Input Is Missing Important Keyword! Check Your Molcas Input",
+                     __FILE__, __LINE__, "molcas_input", molcas_input_.c_str(),
+                     this->class_desc());
+  }
+
+  // override symmetry with mpqc symmetry
+  if(!this->molecule()->point_group()->symbol().empty()){
+    symmetry_ = this->molecule()->point_group()->symbol();
+  }
+
   extern_pt2r12_ = 0;
   rasscf_energy_ = 0;
   caspt2_energy_ = 0;
@@ -332,6 +389,13 @@ void MolcasPT2R12::run_molcas()
   this->molecule()->print_xyz(new_xyz_file, xyz_file_.c_str());
   new_xyz_file.close();
 
+
+  // check symmetry
+  if (this->molecule()->point_group()->symbol() != symmetry_){
+    ExEnv::out0() << indent << "Change of Symmetry, modify MOLCAS input!" << std::endl;
+    convert_c1_symmetry();
+  }
+
   Timer tim("molcas");
 
   //excute molcas command
@@ -412,6 +476,13 @@ void MolcasPT2R12::run_molcas()
 #endif
 
   tim.exit();
+
+  // restore molcas original input
+  if (this->molecule()->point_group()->symbol() != symmetry_) {
+    restore_molcas_input();
+  }
+
+
   // check molcas status
   std::ifstream fstatus(prefix_ + ".status");
   if ( fstatus.good() ){
@@ -507,4 +578,63 @@ void MolcasPT2R12::obsolete(){
     extern_pt2r12_->obsolete();
   }
   MolecularEnergy::obsolete();
+}
+
+void MolcasPT2R12::convert_c1_symmetry() {
+
+  std::string input_backup = molcas_input_ + ".backup";
+  // make a copy of original file
+  std::ifstream finput(molcas_input_, std::ios::binary);
+  std::ofstream finput_backup(input_backup, std::ios::binary);
+  finput_backup << finput.rdbuf();
+  finput_backup.close();
+  finput.close();
+
+  // modify original input file
+  std::ifstream input(input_backup);
+  std::ofstream input_new(molcas_input_);
+
+  std::string line;
+  while(std::getline(input, line)){
+
+    std::string upper_line = line;
+    boost::to_upper(upper_line);
+
+    if( upper_line.find("INAC") != std::string::npos){
+      int n_inactive = std::accumulate(inactive_.begin(), inactive_.end(), 0);
+      std::string tmp = "INAC= " + std::to_string(n_inactive);
+      input_new << tmp << std::endl;
+    }
+    else if( upper_line.find("RAS2") != std::string::npos){
+      int n_active = std::accumulate(active_.begin(), active_.end(), 0);
+      std::string tmp = "RAS2= " + std::to_string(n_active);
+      input_new << tmp << std::endl;
+    }
+    else if( upper_line.find("GROUP") != std::string::npos){
+      std::string tmp = "Group= c1 ";
+      input_new << tmp << std::endl;
+    }else{
+      input_new << line << std::endl;
+    }
+
+  }
+
+  input.close();
+  input_new.close();
+}
+
+void MolcasPT2R12::restore_molcas_input() {
+  std::string input_backup = molcas_input_ + ".backup";
+
+  std::ifstream finput_backup(input_backup, std::ios::binary);
+  if (!finput_backup.good()){
+    throw InputError("No Molcas Input Backup File Found!",
+                     __FILE__, __LINE__, "molcas_input", molcas_input_.c_str(),
+                     this->class_desc());
+  }
+  std::ofstream finput(molcas_input_, std::ios::binary);
+  finput << finput_backup.rdbuf();
+  finput_backup.close();
+  finput.close();
+
 }

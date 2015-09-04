@@ -241,8 +241,8 @@ double CabsSingles::CabsSinglesDyall(const std::string &h0)
         }
       }
       preconditioner("y,A'") = Delta_iA("y,A'");
+      madness::World::get_default().gop.fence();
     }
-    madness::World::get_default().gop.fence();
 
     tim.enter("conjugate gradient solver"); // time conjugate solver
 
@@ -351,23 +351,24 @@ double CabsSingles::CabsSinglesFock() {
     {
       typedef DiagPrecond2<double> pceval_type; //!< evaluator of preconditioner
       typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
+
       TArray2d Delta_iA(b.get_world(), b.trange());
 
       pceval_type Delta_iA_gen(TA::array_to_eigen(F_ij), TA::array_to_eigen(F_AB));
-      // construct local tiles
-      for (auto t = Delta_iA.trange().tiles().begin();
-          t != Delta_iA.trange().tiles().end(); ++t) {
-        if (Delta_iA.is_local(*t)) {
-          std::array<std::size_t, 2> index;
-          std::copy(t->begin(), t->end(), index.begin());
-          madness::Future<typename TArray2d::value_type> tile(
-              (LazyTensor<double, 2, pceval_type>(&Delta_iA, index, &Delta_iA_gen)));
 
-          // Insert the tile into the array
-          Delta_iA.set(*t, tile);
+        TArray2d::iterator t = Delta_iA.begin();
+        TArray2d::iterator end = Delta_iA.end();
+      // construct local tiles
+        for (; t != end; ++t) {
+          std::array<std::size_t, 2> index;
+          auto t_index = t.index();
+          std::copy(t_index.begin(), t_index.end(), index.begin());
+
+           // Insert the tile into the array
+           Delta_iA.set(t.index(), LazyTensor<double, 2, pceval_type>(&Delta_iA, index, &Delta_iA_gen));
         }
-      }
-      preconditioner("y,A'") = Delta_iA("y,A'");
+        preconditioner("y,A'") = Delta_iA("y,A'");
+        madness::World::get_default().gop.fence();
     }
 
 

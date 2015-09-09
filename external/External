@@ -7,8 +7,8 @@ add_custom_target(External)
 include(external/PAPI)
 include(external/MPI)
 include(external/Lapack)
-include(external/Libint)
 include(external/Eigen)
+include(external/Libint)
 include(external/OpenBabel2)
 
 # Psi3 is not usable from MPQC without Libint2

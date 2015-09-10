@@ -251,35 +251,13 @@ namespace tcc {
                 }
             }
 
-            // compute half transformed amplitudes
-            // onlyu u2 is not using density fitting
-            // p q r s stands for AO indices
-            // a b c d stands for virtual MO indices
-            // i j k l stands for occupied MO indices
-            const TArray4 compute_u2(const TArray4& t2){
-                if (direct_){
-                    TArray4 u2;
-                    u2("p, r, i, j") = (t2("a,b,i,j")*Ca_("q,a")*Ca_("s,b"))*direct_ao_("p,q,r,s");
-                    return u2;
-                }else{
-                    throw std::runtime_error("CCSDIntermediate no diret AO available");
-                }
-            }
+            /// AO integral-direct computation of (ab|cd) ints contributions to the doubles resudual
 
-            const TArray4 compute_u11(const TArray2& t1){
-                if (direct_){
-                    TArray4 u11;
-                    TArray2 tc;
-                    tc("i,q") = t1("c,i")*Ca_("q,c");
-                    u11("p,r,i,j") = (tc("i,q") * tc("j,s"))*direct_ao_("p,q,r,s");
-                    return u11;
-                }else{
-                    throw std::runtime_error("CCSDIntermediate no diret AO available");
-                }
-            }
-
-            // integral-direct computation of (ab|cd) ints contributions (U2 + U11)
-            const TArray4 compute_u2_u11(const TArray4& t2, const TArray2& t1){
+            /// computes \f$ U^{ij}_{\rho\sigma} \equiv \left( t^{ij}_{\mu \nu} + t^{i}_{\mu} t^{j}_{\nu} \right) (\mu \rho| \nu \sigma) \f$
+            /// @param t2 doubles amplitudes in MO basis
+            /// @param t1 singles amplitudes in MO basis
+            /// @return U tensor
+            TArray4 compute_u2_u11(const TArray4& t2, const TArray2& t1){
                 if (direct_){
                     TArray2 tc;
                     TArray4 u2_u11;
@@ -288,27 +266,7 @@ namespace tcc {
                                                  tc("i,q") * tc("j,s")) * direct_ao_("p,q,r,s");
                     return u2_u11;
                 }else{
-                    throw std::runtime_error("CCSDIntermediate no diret AO available");
-                }
-            }
-
-            const TArray4 compute_u1a(const TArray2& t1){
-               if(direct_){
-                   TArray4 u1a;
-                   u1a("q,s,i,j") = (t1("a,i")*Ca_("p,a"))*Ci_("r,j")*direct_ao_("p,q,r,s");
-                   return u1a;
-               } else{
-                   throw std::runtime_error("CCSDIntermediate no diret AO available");
-               }
-            }
-
-            const TArray4 compute_u1b(const TArray2& t1){
-                if(direct_){
-                    TArray4 u1b;
-                    u1b("r,s,i,j") = (t1("a,i")*Ca_("p,a"))*Ci_("q,j")*direct_ao_("p,q,r,s");
-                    return u1b;
-                } else{
-                    throw std::runtime_error("CCSDIntermediate no diret AO available");
+                    throw std::runtime_error("CCSDIntermediate: integral-direct implementation used, but not initialized");
                 }
             }
 

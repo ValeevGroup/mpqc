@@ -4,7 +4,6 @@
 #include <iomanip>
 #include <chrono>
 
-#include "../include/tbb.h"
 #include "../include/libint.h"
 #include "../include/tiledarray.h"
 #include "../include/btas.h"
@@ -122,9 +121,13 @@ int try_main(int argc, char *argv[]) {
         }
         if (use_chol_vectors) {
             std::cout << "Using Cholesky based occupied vectors." << std::endl;
+        } else {
+            std::cout << "Using Canonical occupied vectors." << std::endl;
         }
         if (cluster_orbitals) {
             std::cout << "Clustering Occupied Orbitals" << std::endl;
+        } else {
+            std::cout << "Not Clustering Occupied Orbitals" << std::endl;
         }
     }
 
@@ -142,6 +145,8 @@ int try_main(int argc, char *argv[]) {
 
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
     auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
+    /* auto bs_clusters = molecule::kmeans(mol, bs_nclusters); */
+    /* auto dfbs_clusters = molecule::kmeans(mol, dfbs_nclusters); */
 
     world.gop.fence();
     if (world.rank() == 0) {
@@ -186,9 +191,37 @@ int try_main(int argc, char *argv[]) {
         std::cout << "Basis trange " << std::endl;
         TA::TiledRange1 bs_range = basis.create_flattend_trange1();
         std::cout << bs_range << std::endl;
+        auto max_obs = 0ul;
+        auto avg_obs = 0.0;
+        auto counter = 0;
+        for (auto &i : bs_range) {
+            auto tile_size = i.second - i.first;
+            max_obs = std::max(max_obs, tile_size);
+            avg_obs += tile_size;
+            ++counter;
+        }
+        avg_obs /= double(counter);
+        counter = 0;
+        std::cout << "Max obs dim = " << max_obs << std::endl;
+        std::cout << "Avg obs dim = " << avg_obs << std::endl;
+
         TA::TiledRange1 dfbs_range = df_basis.create_flattend_trange1();
         std::cout << "DF Basis trange " << std::endl;
         std::cout << dfbs_range << std::endl;
+        auto max_dfbs = 0ul;
+        auto avg_dfbs = 0.0;
+        for (auto &i : dfbs_range) {
+            auto tile_size = i.second - i.first;
+            max_dfbs = std::max(max_dfbs, tile_size);
+            avg_dfbs += tile_size;
+            ++counter;
+        }
+        avg_dfbs /= double(counter);
+        std::cout << "Max dfbs dim = " << max_dfbs << std::endl;
+        std::cout << "Avg dfbs dim = " << avg_dfbs << std::endl;
+        std::cout << "Largest tile storage = "
+                  << (max_obs * max_obs * max_dfbs * 8) / 1e6 << " MB\n"
+                  << std::endl;
     }
 
     libint2::init();
@@ -233,7 +266,6 @@ int try_main(int argc, char *argv[]) {
     };
     auto S_TA = TA::to_new_tile_type(S, to_ta);
 
-    std::cout << "Overlap finished :)" << std::endl;
     auto multipole_pool
           = ints::make_pool(ints::make_1body("emultipole2", basis));
     auto dipole_ints
@@ -297,17 +329,19 @@ int try_main(int argc, char *argv[]) {
         return tensor::Tile<tensor::DecomposedTensor<double>>(range,
                                                               std::move(dense));
     };
+
     /* // Computing Eri2 */
     utility::print_par(world, "Starting 2 Center Integrals\n");
     TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
-              TA::SparsePolicy> V_inv_oh, V_inv;
+              TA::SparsePolicy> V_inv_oh;
+    decltype(V_inv_oh) V_inv;
     {
         utility::print_par(world, "\tStarting V\n");
         auto eri2 = ints::BlockSparseIntegrals(
               world, eri_pool, utility::make_array(df_basis, df_basis),
               integrals::compute_functors::BtasToTaTensor{});
 
-        decltype(eri2) L_inv_TA, V_inv_TA;
+        decltype(eri2) L_inv_TA;
         {
             utility::print_par(world, "\tReplicating to Eigen\n");
             auto eig_E2 = array_ops::array_to_eigen(eri2);
@@ -318,16 +352,14 @@ int try_main(int argc, char *argv[]) {
             L_inv_TA = array_ops::eigen_to_array<TA::Tensor<double>>(
                   world, eig_L_inv, eri2.trange().data()[0],
                   eri2.trange().data()[1]);
-            V_inv_TA("i,j") = L_inv_TA("i,k") * L_inv_TA("j,k");
         }
 
         utility::print_par(world, "\tDecomposing Tiles\n");
         V_inv_oh = TA::to_new_tile_type(L_inv_TA, to_decomp_with_decompose);
         utility::print_size_info(V_inv_oh, "V^{-1/2}");
-        V_inv = TA::to_new_tile_type(V_inv_TA, to_decomp_with_decompose);
-        utility::print_size_info(V_inv, "V^{-1}");
     }
     decltype(V_inv_oh)::wait_for_lazy_cleanup(world, 2);
+    V_inv("i,j") = V_inv_oh("i,k") * V_inv_oh("j,k");
 
 
     struct convert_3d {
@@ -374,11 +406,23 @@ int try_main(int argc, char *argv[]) {
     utility::print_size_info(Xab, "E");
     decltype(Xab)::wait_for_lazy_cleanup(world, 60);
 
+    // Make B tensor
+    decltype(Xab) E;
+    E = Xab;
+    auto B0 = tcc_time::now();
+    Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
+    Xab.truncate();
+    auto B1 = tcc_time::now();
+    auto btime = tcc_time::duration_in_s(B0, B1);
+    utility::print_par(world, "\nTime to compute B ", btime, " s\n");
+    utility::print_size_info(Xab, "B Tensor");
+    decltype(Xab)::wait_for_lazy_cleanup(world, 60);
+
     decltype(H) F;
     utility::print_par(world, "\nStarting SOAD guess");
     auto soad0 = tcc_time::now();
-    F = ints::scf::fock_from_minimal_low_mem(world, basis, df_basis, eri_pool, H,
-                                          V_inv_oh, V_inv, Xab, bs_clusters,
+    F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool, H,
+                                          V_inv_oh, Xab, bs_clusters,
                                           low_rank_threshold * 100,
                                           convert_3d(low_rank_threshold));
     auto soad1 = tcc_time::now();
@@ -395,13 +439,13 @@ int try_main(int argc, char *argv[]) {
     utility::print_par(world, "Computing MO coeffs...\n");
     auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
                                            occ_nclusters, use_chol_vectors);
-    if(cluster_orbitals){
+    if (cluster_orbitals) {
         scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
     }
-    Coeffs_TA.truncate();
 
     utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
     auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
+    utility::print_size_info(Coeffs, "SOAD Coeffs");
 
     decltype(Coeffs_TA) D_TA;
     utility::print_par(world, "Forming Density...\n");
@@ -413,7 +457,7 @@ int try_main(int argc, char *argv[]) {
 
     auto D = to_new_tile_type(D_TA, to_decomp);
 
-    decltype(D) J, K, SC, Kocc;
+    decltype(D) J, K;
     utility::print_par(world, "\nStarting SCF iterations\n");
     auto diis = TiledArray::DIIS<decltype(D_TA)>(1);
     auto iter = 1;
@@ -422,6 +466,7 @@ int try_main(int argc, char *argv[]) {
     auto old_e = energy;
     auto delta_e = energy;
     const auto volume = double(F.trange().elements().volume());
+    decltype(Xab) Wp;
     decltype(Xab) W;
     double time;
     double ktime, jtime;
@@ -432,27 +477,25 @@ int try_main(int argc, char *argv[]) {
 
         utility::print_par(world, "\tStarting W...  ");
         auto w0 = tcc_time::now();
-        W("X,a,i") = Xab("X,a,b") * Coeffs("b,i");
-        W.truncate();
+        Wp("Q,a,i") = E("Q,a,b") * Coeffs("b,i");
+        W("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
         auto w1 = tcc_time::now();
         auto wtime = tcc_time::duration_in_s(w0, w1);
         utility::print_par(world, wtime, " s\n");
 
         utility::print_par(world, "\tStarting Coulomb...  ");
         auto j0 = tcc_time::now();
-        J("i,j") = Xab("X,i,j") * (V_inv("X,P") * (W("P,a,k") * Coeffs("a,k")));
+        /* J("i,j") = E("P,i,j") *(V_inv("P,Q") * (Wp("Q,a,i") * Coeffs("a,i"))); */
+        J("i,j") = Xab("X,i,j") * (Xab("X,a,b") * D("a,b"));
         auto j1 = tcc_time::now();
         jtime = tcc_time::duration_in_s(j0, j1);
         utility::print_par(world, jtime, " s\n");
 
         utility::print_par(world, "\tStarting Exchange... ");
         auto k0 = tcc_time::now();
-        W("X,i,a") = W("X,a,i");
-        K("a,j") = W("X,i,a") * (V_inv("X,P") * (W("P,i,b") * Coeffs("b,j")));
-        Kocc("i,j") = Coeffs("a,i") * K("a,j");
-        SC("a,i") = S("a,k") * Coeffs("k,i");
-        K("a,b") = SC("a,i") * K("b,i") + K("a,i") * SC("b,i") - 
-            SC("a,i") * Kocc("i,j") * SC("b,j");
+        Wp("Q,i,a") = Wp("Q,a,i");
+        K("a,b") = Wp("P,i,a") * (V_inv("P,Q") * Wp("Q,i,b"));
+        /* K("a,b") = W("X,i,a") * W("X,i,b"); */
         auto k1 = tcc_time::now();
         ktime = tcc_time::duration_in_s(k0, k1);
         utility::print_par(world, ktime, " s\n");
@@ -472,12 +515,13 @@ int try_main(int argc, char *argv[]) {
         Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
                                           occ_nclusters, use_chol_vectors);
 
-        if(cluster_orbitals){
+        if (cluster_orbitals) {
             scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
         }
 
         Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
         D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
+
 
         delta_e = energy - old_e;
         old_e = energy;
@@ -502,97 +546,33 @@ int try_main(int argc, char *argv[]) {
                        energy + repulsion_energy, "\n");
 
 
-    if (in.HasMember("do mp2") && in["do mp2"].GetBool()) { // Begin MP2
-        utility::print_par(world, "\nMP2 Test\n");
-        auto F_eig = array_ops::array_to_eigen(F);
-        auto S_eig = array_ops::array_to_eigen(S);
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
-                                                                   S_eig);
-        Eig::VectorXd evals = es.eigenvalues();
-        decltype(S_eig) C_occ = es.eigenvectors().leftCols(occupation / 2);
-        decltype(S_eig) C_vir
-              = es.eigenvectors().rightCols(S_eig.rows() - occupation / 2);
+    double ex = -2 * (D_TA("i,j") * dipole_ints[1]("i,j")).sum();
+    double ey = -2 * (D_TA("i,j") * dipole_ints[2]("i,j")).sum();
+    double ez = -2 * (D_TA("i,j") * dipole_ints[3]("i,j")).sum();
 
-        auto nblocks = (dfbs_nclusters < int(S_eig.rows() - occupation / 2))
-                             ? dfbs_nclusters
-                             : S_eig.rows() - occupation / 2;
-        auto block_size
-              = std::max(std::size_t((S_eig.rows() - occupation / 2) / nblocks),
-                         1ul);
-        std::vector<std::size_t> blocks;
-        blocks.reserve(nblocks + 1);
-        blocks.push_back(0);
-        for (auto i = block_size; i < S_eig.rows() - occupation / 2;
-             i += block_size) {
-            blocks.push_back(i);
+    if (world.rank() == 0) {
+        std::cout << "Electronic Dipole = " << ex << " " << ey << " " << ez
+                  << std::endl;
+    }
+
+    double nx = 0;
+    double ny = 0;
+    double nz = 0;
+
+    for (auto const &clusterable : mol) {
+        for (auto atom : clusterable.atoms()) {
+            nx += atom.charge() * atom.center()[0];
+            ny += atom.charge() * atom.center()[1];
+            nz += atom.charge() * atom.center()[2];
         }
-        blocks.push_back(S_eig.rows() - occupation / 2);
-        auto tr_vir = TA::TiledRange1(blocks.begin(), blocks.end());
+    }
 
-        TA::TiledRange1 tr0 = D.trange().data().front();
-        auto Ci = array_ops::
-              eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_occ, tr0, tr_i);
-        auto Cv = array_ops::
-              eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_vir, tr0, tr_vir);
+    double dip_mom = std::sqrt(std::pow((nx + ex), 2) + std::pow((ny + ey), 2)
+                               + std::pow((nz + ez), 2));
 
-        decltype(Xab) Xia;
-        Xia("X,i,a") = Xab("X,mu,nu") * Ci("nu,i") * Cv("mu,a");
-
-        utility::print_size_info(Xia, "Xia");
-
-        auto Xia_TA = TA::to_new_tile_type(Xia, to_ta);
-        TA::Array<double, 4, TA::Tensor<double>, TA::SparsePolicy> IAJB;
-        IAJB("i,a,j,b") = Xia_TA("X,i,a") * Xia_TA("X,j,b");
-        utility::print_size_info(IAJB, "IAJB");
-        auto vec_ptr = std::make_shared<Eig::VectorXd>(std::move(evals));
-        struct Mp2Red {
-            using result_type = double;
-            using argument_type = TA::Tensor<double>;
-
-            std::shared_ptr<Eig::VectorXd> vec_;
-            unsigned int n_occ_;
-
-            Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
-                    : vec_(std::move(vec)), n_occ_(n_occ) {}
-            Mp2Red(Mp2Red const &) = default;
-
-            result_type operator()() const { return 0.0; }
-            result_type operator()(result_type const &t) const { return t; }
-            void operator()(result_type &me, result_type const &other) const {
-                me += other;
-            }
-
-            void operator()(result_type &me, argument_type const &tile) const {
-                auto const &range = tile.range();
-                auto const &vec = *vec_;
-                auto const st = range.lobound();
-                auto const fn = range.upbound();
-                auto tile_idx = 0;
-                for (auto i = st[0]; i < fn[0]; ++i) {
-                    const auto e_i = vec[i];
-                    for (auto a = st[1]; a < fn[1]; ++a) {
-                        const auto e_ia = e_i - vec[a + n_occ_];
-                        for (auto j = st[2]; j < fn[2]; ++j) {
-                            const auto e_iaj = e_ia + vec[j];
-                            for (auto b = st[3]; b < fn[3]; ++b, ++tile_idx) {
-                                const auto e_iajb = e_iaj - vec[b + n_occ_];
-                                me += 1 / (e_iajb)*tile.data()[tile_idx];
-                            }
-                        }
-                    }
-                }
-            }
-        };
-
-        double energy_mp2
-              = (IAJB("i,a,j,b") * (2 * IAJB("i,a,j,b") - IAJB("i,b,j,a")))
-                      .reduce(Mp2Red(vec_ptr, occupation / 2));
-
-        utility::print_par(world, "MP2 energy = ", energy_mp2,
-                           " total energy = ",
-                           energy + energy_mp2 + repulsion_energy, "\n");
+    if (world.rank() == 0) {
+        std::cout << "Dipole = " << dip_mom << " au, " << dip_mom / 0.393430307
+                  << " Debeye" << std::endl;
     }
 
     world.gop.fence();
@@ -605,13 +585,16 @@ int main(int argc, char **argv) {
     try {
         try_main(argc, argv);
     } catch (const madness::MadnessException &e) {
-        std::cout << "Madness Exception Says " << e.what() << std::endl;
+        std::cout << "MADNESS exception: " << e.what() << std::endl;
     } catch (const TiledArray::Exception &e) {
-        std::cout << "TA Exception Says " << e.what() << std::endl;
+        std::cout << "TA exception: " << e.what() << std::endl;
+    } catch (const std::invalid_argument &e) {
+        std::cout << "std::invalid_argument: " << e.what() << std::endl;
+        return 1;
     } catch (const std::exception &e) {
-        std::cout << "std Exception Says " << e.what() << std::endl;
+        std::cout << "std::exception: " << e.what() << std::endl;
     } catch (...) {
-        std::cout << "Caught unknown exception" << std::endl;
+        std::cout << "unknown exception" << std::endl;
     }
     return 0;
 }

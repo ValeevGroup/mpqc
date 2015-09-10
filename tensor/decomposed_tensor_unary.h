@@ -53,10 +53,9 @@ template <typename T>
 DecomposedTensor<T> scale(DecomposedTensor<T> const &t, T factor) {
     auto left = t.tensor(0).scale(factor);
     if (t.ndecomp() == 2) {
-        assert(false);
-        //        right = t.tensor(1).clone();
-        //       return DecomposedTensor<T>(t.cut(), std::move(left),
-        //       std::move(right));
+        // assert(false);
+        auto right = t.tensor(1).clone();
+        return DecomposedTensor<T>(t.cut(), std::move(left), std::move(right));
     }
 
     return DecomposedTensor<T>(t.cut(), std::move(left));

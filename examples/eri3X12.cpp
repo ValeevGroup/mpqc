@@ -7,7 +7,6 @@
 #include <iomanip>
 #include <chrono>
 
-#include "../include/tbb.h"
 #include "../include/libint.h"
 #include "../include/tiledarray.h"
 #include "../include/btas.h"

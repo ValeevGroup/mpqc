@@ -8,13 +8,50 @@
 #include "diagonal_array.h"
 
 #include "../utility/time.h"
+#include "../utility/array_storage.h"
 
 #include <limits>
 #include <type_traits>
 #include <cmath>
+#include <iomanip>
+#include <fstream>
+#include <cstdlib>
 
 namespace tcc {
 namespace pure {
+
+void print_ranks_to_file(
+      TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
+                TA::SparsePolicy> const &a,
+      std::string file_name) {
+    std::vector<long long> tile_ranks(a.trange().tiles().volume(), 0);
+    auto end = a.end();
+    for (auto it = a.begin(); it != end; ++it) {
+        tile_ranks[it.ordinal()] = it->get().tile().rank();
+    }
+
+    a.get_world().gop.sum(tile_ranks.data(), tile_ranks.size());
+
+    if (a.get_world().rank() == 0) {
+        if(char *id = std::getenv("PBS_JOBID")){
+            std::string job_id(id);
+            file_name += "_" + job_id + ".txt";
+        } else {
+            file_name += ".txt";
+        }
+        std::ofstream outfile(file_name);
+        for (auto rank : tile_ranks) {
+            outfile << rank << std::endl;; 
+        }
+        outfile.close();
+    }
+}
+
+void print_ranks_to_file(
+      TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> const &a,
+      std::string file_name) {
+    // Do nothing
+}
 
 template <typename T, typename AT>
 std::array<TiledArray::Tensor<T, AT>, 2>
@@ -38,8 +75,9 @@ std::array<TiledArray::Tensor<T, AT>, 2>
     auto reduce_op =
           [](T &restrict result, const T arg) { result += std::abs(arg); };
 
-    TiledArray::math::row_reduce(tile.range().extent()[0], tile.range().extent()[1],
-                                 tile.data(), result[0].data(), reduce_op);
+    TiledArray::math::row_reduce(tile.range().extent()[0],
+                                 tile.range().extent()[1], tile.data(),
+                                 result[0].data(), reduce_op);
 
 
     TA::Range range = tile.range();
@@ -137,10 +175,49 @@ void add_to_diag(Array &A, double val) {
     }
 }
 
+void add_to_diag_tile(double val, TA::Tensor<double> &tile) {
+    auto const extent = tile.range().extent();
+    auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
+    for (auto i = 0ul; i < extent[0]; ++i) {
+        map(i, i) += val;
+    }
+}
+
+void add_to_diag_tile(double val,
+                      tensor::Tile<tensor::DecomposedTensor<double>> &tile) {
+    auto const extent = tile.range().extent();
+    auto map
+          = TiledArray::eigen_map(tile.tile().tensor(0), extent[0], extent[1]);
+    for (auto i = 0ul; i < extent[0]; ++i) {
+        map(i, i) += val;
+    }
+}
+
+
+template <typename Tile>
+void add_to_diag(
+      TiledArray::Array<double, 2, Tile, TiledArray::SparsePolicy> &A,
+      double val) {
+    auto end = A.end();
+    for (auto it = A.begin(); it != end; ++it) {
+        auto idx = it.index();
+        auto diagonal_tile
+              = std::all_of(idx.begin(), idx.end(),
+                            [&](typename std::remove_reference<decltype(
+                                  A)>::type::size_type const &x) {
+                  return x == idx.front();
+              });
+
+        if (diagonal_tile) {
+            add_to_diag_tile(val, it->get());
+        }
+    }
+}
+
 template <typename Array>
 class pair_accumulator {
   public:
-    using result_type = std::array<typename Array::value_type, 2>;
+    using result_type = std::array<TA::Tensor<double>, 2>;
     using argument_type = typename Array::value_type;
     using value_type = argument_type;
 
@@ -152,13 +229,13 @@ class pair_accumulator {
     }
 
     result_type operator()() const {
-        return result_type{{value_type{}, value_type{}}};
+        return result_type{{TA::Tensor<double>{}, TA::Tensor<double>{}}};
     }
 
     result_type operator()(result_type result) {
         if (result[0].empty()) {
-            result[0] = value_type{range_, 0.0};
-            result[1] = value_type{range_, 0.0};
+            result[0] = TA::Tensor<double>{range_, 0.0};
+            result[1] = TA::Tensor<double>{range_, 0.0};
         }
 
         return result;
@@ -166,16 +243,22 @@ class pair_accumulator {
 
     void operator()(result_type &result, result_type const &arg) const {
         if (result[0].empty()) {
-            result[0] = value_type{range_, 0.0};
-            result[1] = value_type{range_, 0.0};
+            result[0] = TA::Tensor<double>{range_, 0.0};
+            result[1] = TA::Tensor<double>{range_, 0.0};
         }
-        assert(!result.empty() && !arg.empty());
-        result[0] += arg[0];
-        result[1] += arg[1];
+        result[0] += TA::shift(arg[0]);
+        result[1] += TA::shift(arg[1]);
     }
 
-    void operator()(result_type &result, argument_type const &arg) const {
+    void operator()(result_type &result, TA::Tensor<double> const &arg) const {
         eigen_estimator(result, arg);
+    }
+
+    void operator()(
+          result_type &result,
+          tensor::Tile<tensor::DecomposedTensor<double>> const &arg) const {
+        TiledArray::Tensor<double> full = tensor::algebra::combine(arg.tile());
+        eigen_estimator(result, full);
     }
 
   private:
@@ -276,14 +359,35 @@ eval_guess(Array const &A) {
 /*     return std::make_pair(min, max); */
 /* } */
 
+
+struct compress {
+    double cut_;
+    compress(double thresh) : cut_{thresh} {}
+    using TileType = tensor::Tile<tensor::DecomposedTensor<double>>;
+    using DummyType = TA::Tensor<double>;
+    double operator()(TileType &result) {
+        if (result.tile().ndecomp() == 1) {
+            auto test = tensor::algebra::two_way_decomposition(result.tile());
+            if (!test.empty()) {
+                result.tile() = std::move(test);
+            }
+        } else {
+            tensor::algebra::recompress(result.tile());
+        }
+
+        return result.norm();
+    }
+
+    double operator()(DummyType &result) { return result.norm(); }
+};
+
 template <typename Array>
 void third_order_update(Array const &S, Array &Z) {
 
-    // Calculate the lambda parameter, since we are currently only
-    // trying to
-    // invert Posative defininate matrices, we will cap the smallest
-    // eigen value
+    // Calculate the lambda parameter, since we are currently only trying to
+    // invert Positive definite matrices, we will cap the smallest eigen value
     // guess at 0.
+
     auto evg0 = tcc_time::now();
     auto spectral_range = eval_guess(S);
     auto evg1 = tcc_time::now();
@@ -305,39 +409,14 @@ void third_order_update(Array const &S, Array &Z) {
     Array approx_zero;
     auto iter = 0;
     auto norm_diff = std::numeric_limits<double>::max();
-    while (norm_diff > 1.0e-13 && iter < 30) {
-        if (iter > 0) {
-            auto X_sparsity = X.get_shape().sparsity();
-            auto Y_sparsity = Y.get_shape().sparsity();
-            auto T_sparsity = T.get_shape().sparsity();
-            auto Z_sparsity = Z.get_shape().sparsity();
-            if (S.get_world().rank() == 0) {
-                std::cout << "\titer " << iter << "\n\t\tsparsity percents\n";
-                std::cout << "\t\t\tX sparsity = " << X_sparsity << "\n";
-                std::cout << "\t\t\tY sparsity = " << Y_sparsity << "\n";
-                std::cout << "\t\t\tT sparsity = " << T_sparsity << "\n";
-                std::cout << "\t\t\tZ sparsity = " << Z_sparsity << "\n";
-            }
-        } else {
-            auto Y_sparsity = Y.get_shape().sparsity();
-            auto Z_sparsity = Z.get_shape().sparsity();
-            if (S.get_world().rank() == 0) {
-                std::cout << "\titer " << iter << "\n\t\tsparsity percents\n";
-                std::cout << "\t\t\tX sparsity = N/A\n";
-                std::cout << "\t\t\tY sparsity = " << Y_sparsity << "\n";
-                std::cout << "\t\t\tT sparsity = N/A\n";
-                std::cout << "\t\t\tZ sparsity = " << Z_sparsity << "\n";
-            }
-        }
-
-
+    while (norm_diff > 1.0e-13 && iter < 4) {
         auto iter0 = tcc_time::now();
         // Xn = \lambda*Yn*Z
         auto x0 = tcc_time::now();
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
         auto x1 = tcc_time::now();
         X.truncate();
-
+        TA::foreach_inplace(X, compress(1e-6));
 
         // Third order update
         auto t0 = tcc_time::now();
@@ -345,6 +424,7 @@ void third_order_update(Array const &S, Array &Z) {
         add_to_diag(T, 15);
         T("i,j") = Tscale * T("i,j");
         auto t1 = tcc_time::now();
+        TA::foreach_inplace(T, compress(1e-6));
 
 
         // Updating Z and Y
@@ -353,6 +433,8 @@ void third_order_update(Array const &S, Array &Z) {
         auto z1 = tcc_time::now();
         Y("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
         auto y1 = tcc_time::now();
+        TA::foreach_inplace(Z, compress(1e-6));
+        TA::foreach_inplace(Y, compress(1e-6));
 
         auto zy_trn0 = tcc_time::now();
         Z.truncate();
@@ -373,12 +455,6 @@ void third_order_update(Array const &S, Array &Z) {
         if (S.get_world().rank() == 0) {
             std::cout << "\t\tCurrent difference norm = " << current_norm
                       << "\n";
-            std::cout << "\t\tIteration time in " << iter_time << "\n";
-            std::cout << "\t\t\tX update time " << x_time << " s\n";
-            std::cout << "\t\t\tT update time " << t_time << " s\n";
-            std::cout << "\t\t\tZ update time " << z_time << " s\n";
-            std::cout << "\t\t\tY update time " << y_time << " s\n";
-            std::cout << "\t\t\tTrun.    time " << trun_time << " s\n";
         }
         if (current_norm >= norm_diff) { // Once norm is increasing exit!
             if (S.get_world().rank() == 0) {
@@ -390,9 +466,122 @@ void third_order_update(Array const &S, Array &Z) {
         norm_diff = current_norm;
         ++iter;
     }
+
+
+    auto num_repeats = std::min(15 * X.get_world().size(), 30);
+
+    decltype(X) Ytemp = Y;
+    decltype(Z) Ztemp = Z;
+
     if (S.get_world().rank() == 0) {
-        std::cout << "\n";
+        std::cout << "\nStarting repeats for iteration 5" << std::endl;
     }
+
+    auto Itertimes = std::vector<double>(num_repeats);
+    for (auto i = 0; i < num_repeats; ++i) {
+        if (S.get_world().rank() == 0) {
+            std::cout << "repeat: " << i + 1 << std::endl;
+        }
+        if (i == 0) {
+            auto Y_sparsity = Y.get_shape().sparsity();
+            auto Z_sparsity = Z.get_shape().sparsity();
+            auto X_sparsity = X.get_shape().sparsity();
+            auto T_sparsity = T.get_shape().sparsity();
+            if (S.get_world().rank() == 0) {
+                std::cout << "\tZ iter sparsity = " << 100 * Z_sparsity << "%"
+                          << std::endl;
+                std::cout << "\tY iter sparsity = " << 100 * Y_sparsity << "%"
+                          << std::endl;
+                std::cout << "\tX iter sparsity = " << 100 * X_sparsity << "%"
+                          << std::endl;
+                std::cout << "\tT iter sparsity = " << 100 * T_sparsity << "%"
+                          << std::endl;
+            }
+        }
+
+        Z.get_world().gop.fence();
+        auto iter0 = tcc_time::now();
+        // Xn = \lambda*Yn*Z
+        X("i,j") = S_scale * Y("i,k") * Z("k,j");
+        X.truncate();
+        TA::foreach_inplace(X, compress(1e-6), false);
+
+        // Third order update
+        T("i,j") = -10 * X("i,j") + 3 * X("i,k") * X("k,j");
+        add_to_diag(T, 15);
+        T("i,j") = Tscale * T("i,j");
+        TA::foreach_inplace(T, compress(1e-6), false);
+
+
+        // Updating Z and Y
+        Ztemp("i,j") = Z("i,k") * T("k,j"); // Zn+1 = Zn*Tn
+        Ytemp("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
+
+        Ztemp.truncate();
+        Ytemp.truncate();
+        TA::foreach_inplace(Ztemp, compress(1e-6),false);
+        TA::foreach_inplace(Ytemp, compress(1e-6),false);
+
+        approx_zero("i,j") = X("i,j") - T("i,j");
+
+        const auto current_norm = approx_zero("i,j").norm().get();
+
+        Z.get_world().gop.fence();
+        auto iter1 = tcc_time::now();
+
+        if(i == 0){
+            std::string prefixX = "X_ranks";
+            std::string prefixT = "T_ranks";
+            std::string prefixZ = "Z_ranks";
+            std::string prefixY = "Y_ranks";
+
+            print_ranks_to_file(X, prefixX);
+            print_ranks_to_file(T, prefixT);
+            print_ranks_to_file(Z, prefixZ);
+            print_ranks_to_file(Y, prefixY);
+        }
+
+        Itertimes[i] = tcc_time::duration_in_s(iter0, iter1);
+        if(S.get_world().rank() == 0){
+            std::cout << "\ttime = " << Itertimes[i] << std::endl;
+        }
+    }
+
+    if (S.get_world().rank() == 0) {
+        std::cout << "\n" << std::endl;
+    }
+
+    auto maxIter = *std::max_element(Itertimes.begin(), Itertimes.end());
+    auto minIter = *std::min_element(Itertimes.begin(), Itertimes.end());
+
+    auto avg = [](std::vector<double> const &x) {
+        double avg_time = 0.0;
+        for (auto const &elem : x) {
+            avg_time += elem;
+        }
+        return avg_time / double(x.size());
+    };
+    auto avgIter = avg(Itertimes);
+
+    auto stddev = [](std::vector<double> const &x, double avg) {
+        auto sum = 0.0;
+        for (auto elem : x) {
+            auto diff = elem - avg;
+            sum += diff * diff;
+        }
+        sum /= double(x.size() - 1);
+        return std::sqrt(sum);
+    };
+    auto devIter = stddev(Itertimes, avgIter);
+
+    if (S.get_world().rank() == 0) {
+        std::cout << std::setprecision(5);
+        std::cout << "Iter avg         = " << avgIter << "\tMin: " << minIter
+                  << "\tMax: " << maxIter << "\tSTDDEV: " << devIter
+                  << std::endl;
+        std::cout << "\n\n" << std::endl;
+    }
+
 
     Z("i,j") = std::sqrt(S_scale) * Z("i,j");
 }

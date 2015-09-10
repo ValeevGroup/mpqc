@@ -168,7 +168,7 @@ inline std::size_t qr_rank(double const *data, std::size_t rows,
             squared_sum += M(i, j) * M(i, j);
         }
 
-        if (squared_sum >= thresh2) {
+        if (squared_sum>= thresh2) {
             return out_rank;
         }
 
@@ -534,7 +534,8 @@ inline void recompress(DecomposedTensor<double> &t) {
     ta_tensor_col_pivoted_qr(M, Lm, Rm, t.cut());
     auto newL = Ls.gemm(Lm, 1.0, gh);
 
-    const auto gh_r = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+    auto ord = t.orders();
+    const auto gh_r = TA::math::GemmHelper(NoT, NoT, ord[1], ord[0], ord[1]);
     auto newR = Rm.gemm(Rt, 1.0, gh_r);
     t = DecomposedTensor<double>(t.cut(), std::move(newL), std::move(newR));
 }

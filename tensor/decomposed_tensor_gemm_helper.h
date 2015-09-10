@@ -411,28 +411,46 @@ struct low_rank_gemm<2ul, 2ul, 2ul> {
                 return Dtensor<T>(a.cut(),
                                   a.tensor(0).gemm(b.tensor(0), f, gh));
             } else {
-                assert(false);
+                auto left = a.tensor(0).gemm(b.tensor(0), f, gh);
+                auto right = b.tensor(1).clone();
+                return Dtensor<T>(a.cut(), std::move(left), std::move(right));
             }
         } else {
-            assert(false);
+            if (b.ndecomp() == 1) {
+                auto left = a.tensor(0).clone();
+                auto right = a.tensor(1).gemm(b.tensor(0), f, gh);
+                return Dtensor<T>(a.cut(), std::move(left), std::move(right));
+            } else {
+                auto mid = a.tensor(1).gemm(b.tensor(0), 1, gh);
+                decltype(mid) left, right;
+                if (a.rank() > b.rank()) {
+                    left = a.tensor(0).gemm(mid, f, gh);
+                    right = b.tensor(1).clone();
+                } else {
+                    left = a.tensor(0).clone();
+                    right = mid.gemm(b.tensor(1), f, gh);
+                }
+                return Dtensor<T>(a.cut(), std::move(left), std::move(right));
+            }
         }
-
+        assert(false);
         return Dtensor<T>(a.cut());
     }
 
     template <typename T>
     Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a,
                            Dtensor<T> const &b, const T f, GHelper const &gh) {
-        // assume b and c are never decomposed.
-        if (c.ndecomp() == 1) {
-            if (a.ndecomp() == 1) {
-                if(b.ndecomp() == 1){
-                    c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
-                    return c;
-                }
-            }
-        }
-        assert(false);
+        /* if (c.ndecomp() == 1) { */
+        /*     if (a.ndecomp() == 1) { */
+        /*         if(b.ndecomp() == 1){ */
+        /*             c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh); */
+        /*             return c; */
+        /*         } */
+        /*     } */
+        /* } */
+        auto c_contrib = this->operator()(a, b, f, gh);
+        add_to(c, c_contrib);
+        return c;
     }
 };
 

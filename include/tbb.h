@@ -2,14 +2,8 @@
 #ifndef TCC_INCLUDE_TBB_H
 #define TCC_INCLUDE_TBB_H
 
-#include <tbb/parallel_do.h>
-#include <tbb/parallel_for.h>
-#include <tbb/parallel_for_each.h>
-#include <tbb/parallel_reduce.h>
-#include <tbb/parallel_sort.h>
-#include <tbb/spin_mutex.h>
-#include <tbb/tick_count.h>
-#include <tbb/task_scheduler_init.h>
+// Keep this as a way to deal with thread local integral engines. 
+// It is header only and doesn't depend on linking the library I think.
 #include <tbb/enumerable_thread_specific.h>
 
 #endif // TCC_INCLUDE_TBB_H

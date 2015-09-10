@@ -15,13 +15,13 @@ namespace tcc {
 
     public:
 
-        TRange1Engine() : occ_(0ul), all_(0ul), vir_(0ul), guess_(0ul),
+        TRange1Engine() : occ_(0ul), all_(0ul), vir_(0ul), block_size_(0ul),
                           nfrozen_(0ul),
                           tr_occupied_(), tr_virtual_(), tr_all_() { }
 
         TRange1Engine(const std::size_t occ, const std::size_t all,
-                      const std::size_t guess, const std::size_t nfrozen=0ul)
-                : occ_(occ), all_(all), vir_(all - occ), guess_(guess), nfrozen_(nfrozen)
+                      const std::size_t block_size, const std::size_t nfrozen=0ul)
+                : occ_(occ), all_(all), vir_(all - occ), block_size_(block_size), nfrozen_(nfrozen)
         {
             init();
         }
@@ -36,17 +36,19 @@ namespace tcc {
 
         std::size_t get_occ() const { return occ_; }
 
-        // get the actual occ that is used
+        // get the actual number of occ orbitals that is used (frozen core case)
         std::size_t get_actual_occ() const {return occ_ - nfrozen_;}
 
         std::size_t get_vir() const { return vir_; }
 
         std::size_t get_all() const { return all_; }
 
-        // get the actual all that is used
+        // get the actual number of all orbitals that is used (frozen core case)
         std::size_t get_actual_all() const {return all_ - nfrozen_;}
 
-        std::size_t get_nfrozen() const { return nfrozen_;};
+        std::size_t get_nfrozen() const { return nfrozen_;}
+
+        std::size_t get_block_size() const {return block_size_;}
 
         std::size_t get_occ_blocks() const { return occ_blocks_; }
 
@@ -64,24 +66,38 @@ namespace tcc {
 
 
     private:
+
+        // number of occupied orbitals
         std::size_t occ_;
+
+        // number of all orbitals
         std::size_t all_;
+
+        // number of virtual orbitals
         std::size_t vir_;
-        std::size_t guess_;
+
+        std::size_t block_size_;
+
+        // number of frozen orbitals
         std::size_t nfrozen_;
+
 
         TA::TiledRange1 tr_occupied_;
         TA::TiledRange1 tr_virtual_;
         TA::TiledRange1 tr_all_;
 
+
+        // number of occupied blocks
         std::size_t occ_blocks_;
+
+        // number of virtual blocks
         std::size_t vir_blocks_;
 
     };
 
 
     TA::TiledRange1 TRange1Engine::tr_occupied() {
-        std::size_t block_size = guess_;
+        std::size_t block_size = block_size_;
         std::size_t actual_occ = get_actual_occ();
         std::size_t nblocks = int((actual_occ + 1) / block_size);
         std::vector<std::size_t> blocks;
@@ -95,7 +111,7 @@ namespace tcc {
     }
 
     TA::TiledRange1 TRange1Engine::tr_virtual() {
-        std::size_t block_size = guess_;
+        std::size_t block_size = block_size_;
         std::size_t nblocks = int((vir_ + 1) / block_size);
         std::vector<std::size_t> blocks;
         blocks.reserve(nblocks + 1);
@@ -110,7 +126,7 @@ namespace tcc {
     TA::TiledRange1 TRange1Engine::tr_all() {
 
         // occ part
-        std::size_t block_size = guess_;
+        std::size_t block_size = block_size_;
         std::size_t actual_occ = get_actual_occ();
         std::size_t nblocks = int((actual_occ + 1) / block_size);
         std::vector<std::size_t> blocks;

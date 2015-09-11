@@ -552,7 +552,7 @@ namespace tcc {
 
                 }
                 if (g_abij.get_world().rank() == 0) {
-                    std::cout << "CCSD Energy  " << E1 << std::endl;
+                    std::cout << "CCSD Energy     " << E1 << std::endl;
                 }
                 return E1;
             }
@@ -648,7 +648,7 @@ namespace tcc {
 
             }
 
-        private:
+        protected:
             Eigen::VectorXd ens_;
             std::shared_ptr<tcc::TRange1Engine> tre_;
             std::shared_ptr<tcc::cc::CCSDIntermediate<Tile, Policy>> intermediate_;

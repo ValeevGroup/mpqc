@@ -134,6 +134,8 @@ namespace tcc {
     }
 
 
+    // this part of code is not used and tested!
+    // 2015 Septemper Chong Peng
     // IntegralGenerator for two electron AO integrals, use to work with LazyIntegral
     // it used three center integral for generation of integrals
     //

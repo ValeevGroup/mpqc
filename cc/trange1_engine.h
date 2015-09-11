@@ -50,10 +50,13 @@ namespace tcc {
 
         std::size_t get_block_size() const {return block_size_;}
 
+        // get the number of blocks in tr_occupied_
         std::size_t get_occ_blocks() const { return occ_blocks_; }
 
+        // get the number of blocks in tr_virtual_
         std::size_t get_vir_blocks() const { return vir_blocks_; }
 
+        // get the number of blocks in tr_all_
         std::size_t get_all_blocks() const { return vir_blocks_ + occ_blocks_; }
 
     private:

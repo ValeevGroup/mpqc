@@ -31,7 +31,7 @@ namespace tcc {
         MP2() { };
 
         MP2(const TArray2 &fock, const TArray2 &s_ab, const TArray3 &Xab,
-            const std::shared_ptr<TRange1Engine> tre) : tre_(tre) {
+            const std::shared_ptr<TRange1Engine> tre) : trange1_engine_(tre) {
 
             // initialize intergral g
             init(fock, s_ab, Xab);
@@ -40,7 +40,7 @@ namespace tcc {
         void compute() {
 
             // compute mp2 energy
-            double energy_mp2 = (g_("i,a,j,b") * (2 * g_("i,a,j,b") - g_("i,b,j,a"))).reduce(Mp2Red(en_mo_, tre_->get_actual_occ()));
+            double energy_mp2 = (g_("i,a,j,b") * (2 * g_("i,a,j,b") - g_("i,b,j,a"))).reduce(Mp2Red(orbital_energy_, trange1_engine_->get_actual_occ()));
 
             if (g_.get_world().rank() == 0) {
                 std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
@@ -52,7 +52,7 @@ namespace tcc {
         }
 
         const std::shared_ptr<Eigen::VectorXd> get_en() const {
-            return en_mo_;
+            return orbital_energy_;
         }
 
     private:
@@ -112,9 +112,9 @@ namespace tcc {
             Eigen::GeneralizedSelfAdjointEigenSolver<decltype(s_mn_eig)> es(
                     fock_eig, s_mn_eig);
 
-            std::size_t n_frozen_core = tre_->get_nfrozen();
-            std::size_t occupation = tre_->get_occ();
-            std::size_t block_size = tre_->get_block_size();
+            std::size_t n_frozen_core = trange1_engine_->get_nfrozen();
+            std::size_t occupation = trange1_engine_->get_occ();
+            std::size_t block_size = trange1_engine_->get_block_size();
 
             Eigen::VectorXd evals = es.eigenvalues().bottomRows(s_mn_eig.rows() - n_frozen_core);
             auto C_all = es.eigenvectors();
@@ -125,8 +125,8 @@ namespace tcc {
 
             // compute mo blocking
             auto tr_0 = Xmn.trange().data().back();
-            auto tr_occ = tre_->get_occ_tr1();
-            auto tr_vir = tre_->get_vir_tr1();
+            auto tr_occ = trange1_engine_->get_occ_tr1();
+            auto tr_vir = trange1_engine_->get_vir_tr1();
 
             utility::print_par(fock.get_world(), "Block Size in MO     ", block_size, "\n");
             utility::print_par(fock.get_world(), "TiledRange1 Occupied ", tr_occ, "\n");
@@ -143,15 +143,15 @@ namespace tcc {
             g_("i,a,j,b") = Xmn_mo("X,i,a") * Xmn_mo("X,j,b");
 
             // set energy
-            en_mo_ = std::make_shared<Eigen::VectorXd>(std::move(evals));
+            orbital_energy_ = std::make_shared<Eigen::VectorXd>(std::move(evals));
         };
 
 
     private:
         // two electron mo (ia|jb)
         TArray4 g_;
-        std::shared_ptr<Eigen::VectorXd> en_mo_;
-        std::shared_ptr<tcc::TRange1Engine> tre_;
+        std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+        std::shared_ptr<tcc::TRange1Engine> trange1_engine_;
     };
 
 }

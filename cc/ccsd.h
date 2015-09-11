@@ -38,9 +38,9 @@ namespace tcc {
             CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter) :
-                    ens_(ens), tre_(tre), intermediate_(inter)
+                    orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter)
             {
-                auto mo_block = std::make_shared<tcc::MOBlock>(*tre_);
+                auto mo_block = std::make_shared<tcc::MOBlock>(*trange1_engine_);
                 fock_ = TArrayBlock2(fock, mo_block);
             }
 
@@ -52,7 +52,7 @@ namespace tcc {
 
                 double ccsd_corr = compute_ccsd(t1, t2);
 
-                intermediate_->clean_two_electron();
+                ccsd_intermediate_->clean_two_electron();
 
             }
 
@@ -60,11 +60,11 @@ namespace tcc {
             // dummy way of doing CCSD
             // store all the integrals in memory
             // used as reference for development
-            double compute_ccsd_dummy(TArray2& t1, TArray4& t2) {
+            double compute_ccsd_straight(TArray2 &t1, TArray4 &t2) {
 
-                auto n_occ = tre_->get_actual_occ();
+                auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray4 g_abij = intermediate_->get_abij();
+                TArray4 g_abij = ccsd_intermediate_->get_abij();
 
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
@@ -76,12 +76,12 @@ namespace tcc {
                 TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
-                d_ai(d1, ens_, n_occ);
+                d_ai(d1, orbital_energy_, n_occ);
 
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
-                d_abij(d2, ens_, n_occ);
+                d_abij(d2, orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -95,19 +95,20 @@ namespace tcc {
                 double E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
                             TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"),
                                     tau("a,b,i,j"));
+                double mp2 = E1;
                 double dE = std::abs(E1 - E0);
 //      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
-                TArray4 g_ijkl = intermediate_->get_ijkl();
-                TArray4 g_abcd = intermediate_->get_abcd();
-                TArray4 g_iajb = intermediate_->get_iajb();
-                TArray4 g_iabc = intermediate_->get_iabc();
-                TArray4 g_aibc = intermediate_->get_aibc();
-                TArray4 g_ijak = intermediate_->get_ijak();
-                TArray4 g_ijka = intermediate_->get_ijka();
+                TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
+                TArray4 g_abcd = ccsd_intermediate_->get_abcd();
+                TArray4 g_iajb = ccsd_intermediate_->get_iajb();
+                TArray4 g_iabc = ccsd_intermediate_->get_iabc();
+                TArray4 g_aibc = ccsd_intermediate_->get_aibc();
+                TArray4 g_ijak = ccsd_intermediate_->get_ijak();
+                TArray4 g_ijka = ccsd_intermediate_->get_ijka();
 
-//                intermediate_->clean();
+//                ccsd_intermediate_->clean();
 
                 if (g_abij.get_world().rank() == 0) {
                     std::cout << "start iteration" << std::endl;
@@ -287,6 +288,7 @@ namespace tcc {
 
                 }
                 if (g_abij.get_world().rank() == 0) {
+                    std::cout << "MP2 Energy   " << mp2 << std::endl;
                     std::cout << "CCSD Energy  " << E1 << std::endl;
                 }
                 return E1;
@@ -296,9 +298,9 @@ namespace tcc {
             // ccsd energy for performance calculation
             double compute_ccsd(TArray2& t1, TArray4& t2) {
 
-                auto n_occ = tre_->get_actual_occ();
+                auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray4 g_abij = intermediate_->get_abij();
+                TArray4 g_abij = ccsd_intermediate_->get_abij();
 
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
@@ -309,11 +311,11 @@ namespace tcc {
 
                 TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
-                d_ai(d1, ens_, n_occ);
+                d_ai(d1, orbital_energy_, n_occ);
 
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
-                d_abij(d2, ens_, n_occ);
+                d_abij(d2, orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -328,22 +330,23 @@ namespace tcc {
                             TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"),
                                     tau("a,b,i,j"));
                 double dE = std::abs(E1 - E0);
+                double mp2 = E1;
 //      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
-                TArray4 g_ijkl = intermediate_->get_ijkl();
-                TArray4 g_iajb = intermediate_->get_iajb();
-                TArray4 g_ijak = intermediate_->get_ijak();
-                TArray4 g_ijka = intermediate_->get_ijka();
+                TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
+                TArray4 g_iajb = ccsd_intermediate_->get_iajb();
+                TArray4 g_ijak = ccsd_intermediate_->get_ijak();
+                TArray4 g_ijka = ccsd_intermediate_->get_ijka();
 
                 // get three center integrals
-                TArray3 Xab = intermediate_->get_Xab();
-                TArray3 Xij = intermediate_->get_Xij();
-                TArray3 Xai = intermediate_->get_Xai();
+                TArray3 Xab = ccsd_intermediate_->get_Xab();
+                TArray3 Xij = ccsd_intermediate_->get_Xij();
+                TArray3 Xai = ccsd_intermediate_->get_Xai();
 
                 // get mo coefficient
-                TArray2 ca = intermediate_->get_Ca();
-                TArray2 ci = intermediate_->get_Ci();
+                TArray2 ca = ccsd_intermediate_->get_Ca();
+                TArray2 ci = ccsd_intermediate_->get_Ci();
 
                 if (g_abij.get_world().rank() == 0) {
                     std::cout << "start iteration" << std::endl;
@@ -365,7 +368,7 @@ namespace tcc {
                     // compute half transformed intermediates
                     auto tu0 = tcc::tcc_time::now();
                     {
-                        u2_u11 = intermediate_->compute_u2_u11(t2, t1);
+                        u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
                     auto tu1 = tcc_time::now();
                     auto duration_u = tcc_time::duration_in_s(tu0, tu1);
@@ -552,6 +555,7 @@ namespace tcc {
 
                 }
                 if (g_abij.get_world().rank() == 0) {
+                    std::cout << "MP2 Energy      " << mp2 << std::endl;
                     std::cout << "CCSD Energy     " << E1 << std::endl;
                 }
                 return E1;
@@ -649,11 +653,11 @@ namespace tcc {
             }
 
         protected:
-            Eigen::VectorXd ens_;
-            std::shared_ptr<tcc::TRange1Engine> tre_;
-            std::shared_ptr<tcc::cc::CCSDIntermediate<Tile, Policy>> intermediate_;
+            Eigen::VectorXd orbital_energy_;
+            std::shared_ptr<tcc::TRange1Engine> trange1_engine_;
+            std::shared_ptr<tcc::cc::CCSDIntermediate<Tile, Policy>> ccsd_intermediate_;
             TArrayBlock2 fock_;
-        };
+        }; // class CCSD
 
     } //namespace cc
 } //namespace tcc

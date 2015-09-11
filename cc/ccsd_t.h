@@ -10,7 +10,7 @@
 namespace tcc{
     namespace cc{
 
-        // CCSD_T class that compute CCSD(T) (T) calculation
+        // CCSD_T class that compute CCSD(T) triple calculation
         template<typename Tile, typename Policy>
         class CCSD_T : public CCSD<Tile,Policy> {
 
@@ -22,9 +22,9 @@ namespace tcc{
 
             CCSD_T(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
-                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter): CCSD<Tile,Policy>(fock,ens,tre,inter)
+                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter):
+                    CCSD<Tile,Policy>(fock,ens,tre,inter)
             {}
-
 
             void compute(){
 
@@ -50,9 +50,9 @@ namespace tcc{
             double compute_ccsd_t_straight(const TArray2& t1, const TArray4& t2){
 
                 // get integral
-                TArray4 g_jklc = this->intermediate_->get_ijka();
-                TArray4 g_diba = this->intermediate_->get_aibc();
-                TArray4 g_abij = this->intermediate_->get_abij();
+                TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
+                TArray4 g_diba = this->ccsd_intermediate_->get_aibc();
+                TArray4 g_abij = this->ccsd_intermediate_->get_abij();
 
                 // compute t3
                 TArray6 t3;
@@ -76,10 +76,27 @@ namespace tcc{
                                   - t3("a,b,c,i,k,j")
                                    - t3("a,b,c,j,i,k"))
                         ).reduce(CCSD_TRed(
-                                std::make_shared<Eigen::VectorXd>(this->ens_),
-                                this->tre_->get_actual_occ()));
+                                std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                this->trange1_engine_->get_actual_occ()));
                 triple_energy = triple_energy/3.0;
                 return triple_energy;
+            }
+
+            double compute_ccsd_t_direct(const TArray2& t1, const TArray4& t2){
+
+                // get integral
+                TArray4 g_jklc = this->intermediate_->get_ijka();
+                TArray4 g_diba = this->intermediate_->get_aibc();
+                TArray4 g_abij = this->intermediate_->get_abij();
+
+                // get trange1
+                auto tr_occ = this->tre_->get_occ_tr1();
+                auto tr_vir = this->tre_->get_vir_tr1();
+
+                auto n_tr_occ = this->tre_->get_occ_blocks();
+                auto n_tr_vir = this->tre_->get_vir_blocks();
+
+
             }
 
 
@@ -151,6 +168,8 @@ namespace tcc{
                     }
                 }
             }; // structure CCSD_TRed
+
+
         }; // class CCSD_T
 
     } // namespace cc

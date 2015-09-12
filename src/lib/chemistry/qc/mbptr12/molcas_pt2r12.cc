@@ -29,12 +29,12 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <numeric>
 
 #include <mpqc_config.h>
 #include <chemistry/qc/mbptr12/molcas_pt2r12.h>
@@ -178,7 +178,6 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
 
       for( auto num : split_line){
         if (std::all_of(num.begin(), num.end(), ::isdigit)){
-          std::cout << num;
           inactive_.push_back(std::stoi(num));
         }
       }
@@ -188,7 +187,6 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
       boost::split(split_line, line, boost::is_any_of(" ="), boost::token_compress_on);
       for ( auto num : split_line){
         if (std::all_of(num.begin(), num.end(), ::isdigit)){
-          std::cout << num;
           active_.push_back(std::stoi(num));
         }
       }
@@ -285,9 +283,7 @@ void MolcasPT2R12::initialize()
   std::string obs_name_ = extern_pt2r12_akv_->stringvalue("obs", KeyValValuestring(std::string()));
   std::string dfbs_name_ = extern_pt2r12_akv_->stringvalue("dfbs", KeyValValuestring(std::string()));
 
-  Ref<ExternMOInfo> rdorbs = new ExternMOInfo(prefix_ + ".pt2r12.dat",
-          integral,
-          obs_name_); // all MO info is contained in rdorbs
+  Ref<ExternMOInfo> rdorbs = new ExternMOInfo(prefix_ + ".pt2r12.dat", integral, obs_name_); // all MO info is contained in rdorbs
   Ref<OrbitalSpace> orbs = rdorbs->orbs();
   Ref<GaussianBasisSet> basis = orbs->basis();
   RefSCMatrix C_ao = orbs->coefs();
@@ -392,7 +388,9 @@ void MolcasPT2R12::run_molcas()
 
   // check symmetry
   if (this->molecule()->point_group()->symbol() != symmetry_){
-    ExEnv::out0() << indent << "Change of Symmetry, modify MOLCAS input!" << std::endl;
+    ExEnv::out0() << std::endl;
+    ExEnv::out0() << indent << "Warning!! Change of Symmetry, modify MOLCAS input!" << std::endl;
+    ExEnv::out0() << std::endl;
     convert_c1_symmetry();
   }
 

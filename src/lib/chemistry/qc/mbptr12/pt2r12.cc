@@ -160,8 +160,8 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
       cabs_singles_engine_ = make_shared <CabsSingles> (single_r12intrmds, true);
 
     }
-  }
 #endif
+  }
 }
 
 PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {

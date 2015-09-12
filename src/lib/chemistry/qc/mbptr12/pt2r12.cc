@@ -440,13 +440,12 @@ RefSCMatrix PT2R12::V_genref_projector2() {
   V_genref.accumulate(V_intermed * tpdm);
 //  ExEnv::out0() << "\n\n" <<indent << "Exited PT2R12::V_genref_projector2\n\n";
 
-#if 1
-  ExEnv::out0() << __FILE__ << __LINE__ << "\n";
-  V_intermed.print(prepend_spincase(AlphaBeta, "V(in PT2R12::V_genref_projector2)").c_str());
-  tpdm.print(string("gamma(in PT2R12::V_genref_projector2)").c_str());
-  V_genref.print(prepend_spincase(AlphaBeta, "V.gamma(in PT2R12::V_genref_projector2)").c_str());
-#endif
-
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4) {
+    ExEnv::out0() << __FILE__ << __LINE__ << "\n";
+    V_intermed.print(prepend_spincase(AlphaBeta, "V(in PT2R12::V_genref_projector2)").c_str());
+    tpdm.print(string("gamma(in PT2R12::V_genref_projector2)").c_str());
+    V_genref.print(prepend_spincase(AlphaBeta, "V.gamma(in PT2R12::V_genref_projector2)").c_str());
+  }
   return(V_genref);
 }
 
@@ -614,8 +613,7 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
       }
     }
   }
-  const bool debug_pp = false;
-  if(debug_pp)
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 )
   {
     gg_space->basis()->print();
     gg_space->print_detail();
@@ -630,9 +628,8 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
 double PT2R12::energy_PT2R12_projector2() {
 
   // 2*V*T constribution
-  const bool print_all = true;
-  if(print_all)
-    ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2\n\n";
+  const bool print_all = false;
+  ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2\n\n";
 
   if(print_all)
     ExEnv::out0() << "\n" << indent << "Started V_genref\n";
@@ -660,8 +657,7 @@ double PT2R12::energy_PT2R12_projector2() {
     ExEnv::out0() << "\n\n" << indent << "Finished TGFT\n\n";
   TGFT.scale(-1.0);
   RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
-  const bool debug_pp = true;
-  if(debug_pp)
+  if(this->debug_ >=  DefaultPrintThresholds::mostO4)
   {
     TGFT.print("debug:TGFT");
     r12eval_->X().print("debug:r12eval X");
@@ -707,8 +703,7 @@ double PT2R12::energy_PT2R12_projector2() {
   if(print_all)
     ExEnv::out0() << std::endl << std::endl << indent << "Exited PT2R12::energy_PT2R12_projector2\n\n";
 
-  bool print_component = false;
-  if(print_component)
+  if(print_all)
   {
     const double E_V_t_T = V_t_T.trace();
     const double E_Xpart = Xpart.trace();
@@ -737,7 +732,7 @@ double PT2R12::energy_PT2R12_projector2() {
     ExEnv::out0() << indent << scprintf("deviation percentage:     %17.12lf", deviation) << std::endl << std::endl << std::endl;
   }
 
-  const double energy = compute_energy(HylleraasMatrix);
+  const double energy = compute_energy(HylleraasMatrix, false);
   return energy;
 }
 
@@ -1821,7 +1816,6 @@ PT2R12::energy_recomputed_from_densities() {
     twoparticle_energy /= 2.0; // 1/2 comes from the formula
   }
 
-#define ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS 1
 
 #if ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS
   ExEnv::out0() << "1-e energy: "

@@ -407,18 +407,19 @@ int try_main(int argc, char *argv[]) {
     auto B0 = tcc_time::now();
     Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
     Xab.truncate();
-    TA::foreach_inplace(Xab, [](tensor::Tile<tensor::DecomposedTensor<double>> &t_tile) {
-        auto &t = t_tile.tile();
-        if (t.ndecomp() == 1) {
-            auto test = tensor::algebra::two_way_decomposition(t);
-            if (!test.empty()) {
-                t = test;
-            }
-        } else {
-            tensor::algebra::recompress(t);
-        }
-        return norm(t);
-    });
+    TA::foreach_inplace(
+          Xab, [](tensor::Tile<tensor::DecomposedTensor<double>> &t_tile) {
+              auto &t = t_tile.tile();
+              if (t.ndecomp() == 1) {
+                  auto test = tensor::algebra::two_way_decomposition(t);
+                  if (!test.empty()) {
+                      t = test;
+                  }
+              } else {
+                  tensor::algebra::recompress(t);
+              }
+              return norm(t);
+          });
     auto B1 = tcc_time::now();
     auto btime = tcc_time::duration_in_s(B0, B1);
     utility::print_par(world, "\nTime to compute B ", btime, " s\n");
@@ -484,6 +485,20 @@ int try_main(int argc, char *argv[]) {
         utility::print_par(world, "\tStarting W...  ");
         auto w0 = tcc_time::now();
         W("X,i,a") = Xab("X,a,b") * Coeffs("b,i");
+        W.truncate();
+        TA::foreach_inplace(
+              W, [](tensor::Tile<tensor::DecomposedTensor<double>> &t_tile) {
+                  auto &t = t_tile.tile();
+                  if (t.ndecomp() == 1) {
+                      auto test = tensor::algebra::two_way_decomposition(t);
+                      if (!test.empty()) {
+                          t = test;
+                      }
+                  } else {
+                      tensor::algebra::recompress(t);
+                  }
+                  return norm(t);
+              });
         auto w1 = tcc_time::now();
         auto wtime = tcc_time::duration_in_s(w0, w1);
         utility::print_par(world, wtime, " s\n");

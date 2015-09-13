@@ -75,11 +75,11 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
                 auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
                 ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
                 c = DecomposedTensor<double>(c.cut(), std::move(ab_tensor));
-                auto decomp_test = algebra::two_way_decomposition(c);
+                // auto decomp_test = algebra::two_way_decomposition(c);
 
-                if (!decomp_test.empty()) {
-                    c = std::move(decomp_test);
-                }
+                // if (!decomp_test.empty()) {
+                //     c = std::move(decomp_test);
+                // }
 
                 return c;
             }
@@ -188,11 +188,6 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                         c.tensor(0).gemm(a.tensor(0), right_tensor, f, gh);
                     }
                 }
-                // // For V into Eri always recompress
-                // auto decomp_c = algebra::two_way_decomposition(c);
-                // if (!decomp_c.empty()) {
-                //     c = std::move(decomp_c);
-                // }
                 return c;
             }
         } else {                                        // Low * *

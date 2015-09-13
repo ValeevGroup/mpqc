@@ -33,7 +33,7 @@ struct low_rank_gemm {
     }
 };
 
-// Eri3("X,a,b") * D("b,k") = C("X, a, k")
+// Eri3("X,a,b") * C("b,k") = W("X, a, k")
 template <>
 struct low_rank_gemm<3ul, 3ul, 2ul> {
     template <typename T>
@@ -67,11 +67,6 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
                                                Rp.range().rank());
                 c.tensor(0).gemm(a.tensor(0), Rp, f, gh);
             }
-            // Doesn't seem to be necessary
-            /* auto decomp_c = algebra::two_way_decomposition(c); */
-            /* if (!decomp_c.empty()) { */
-            /*     c = std::move(decomp_c); */
-            /* } */
             return c;
         } else {
             if (a.ndecomp() == 1) {
@@ -79,7 +74,6 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
                 const auto NoT = gh.left_op();
                 auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
                 ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
-                // Test if this extra decomp is necessary
                 c = DecomposedTensor<double>(c.cut(), std::move(ab_tensor));
                 auto decomp_test = algebra::two_way_decomposition(c);
 
@@ -97,10 +91,8 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
             auto out_dim = c.rank();
             const auto full_rank = std::min(c_left_extent[0], long_dim);
 
-            if (out_dim >= full_rank / 6) {
-                algebra::recompress(c);
-                out_dim = c.rank();
-            }
+            algebra::recompress(c);
+            out_dim = c.rank();
 
             if (out_dim > full_rank / 2) {
                 c = DecomposedTensor<T>(c.cut(), algebra::combine(c));
@@ -113,7 +105,7 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
     }
 };
 
-// W("X,a,b") = V^{-1}("X,P") * X("P,a,b")
+// B("X,a,b") = V^{-1}("X,P") * X("P,a,b")
 template <>
 struct low_rank_gemm<3ul, 2ul, 3ul> {
     template <typename T>
@@ -196,11 +188,11 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                         c.tensor(0).gemm(a.tensor(0), right_tensor, f, gh);
                     }
                 }
-                // For V into Eri always recompress
-                auto decomp_c = algebra::two_way_decomposition(c);
-                if (!decomp_c.empty()) {
-                    c = std::move(decomp_c);
-                }
+                // // For V into Eri always recompress
+                // auto decomp_c = algebra::two_way_decomposition(c);
+                // if (!decomp_c.empty()) {
+                //     c = std::move(decomp_c);
+                // }
                 return c;
             }
         } else {                                        // Low * *
@@ -209,10 +201,10 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                 temp.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
 
                 c = Dtensor<T>{c.cut(), std::move(temp)};
-                auto decomp_c = algebra::two_way_decomposition(c);
-                if (!decomp_c.empty()) {
-                    c = std::move(decomp_c);
-                }
+                // auto decomp_c = algebra::two_way_decomposition(c);
+                // if (!decomp_c.empty()) {
+                //     c = std::move(decomp_c);
+                // }
             } else { // Other cases can be handled by the following LFL LLF and
                      // LLL
                 auto ab = this->operator()(a, b, f, gh);
@@ -231,7 +223,7 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
     }
 };
 
-// K("i,j") = W("X,k,i") * B("X,k,j")
+// K("i,j") = W("X,k,i") * W("X,k,j")
 template <>
 struct low_rank_gemm<2ul, 3ul, 3ul> {
     // just use the 3 way functions

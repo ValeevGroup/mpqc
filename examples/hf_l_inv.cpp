@@ -41,9 +41,9 @@ using namespace tcc;
 namespace ints = integrals;
 
 
-void main_print_clusters(
-      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-      std::ostream &os);
+void
+main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+                    std::ostream &os);
 
 int try_main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -407,6 +407,18 @@ int try_main(int argc, char *argv[]) {
     auto B0 = tcc_time::now();
     Xab("X,i,j") = V_inv_oh("X,P") * Xab("P,i,j");
     Xab.truncate();
+    TA::foreach_inplace(Xab, [](tensor::Tile<tensor::DecomposedTensor<double>> &t_tile) {
+        auto &t = t_tile.tile();
+        if (t.ndecomp() == 1) {
+            auto test = tensor::algebra::two_way_decomposition(t);
+            if (!test.empty()) {
+                t = test;
+            }
+        } else {
+            tensor::algebra::recompress(t);
+        }
+        return norm(t);
+    });
     auto B1 = tcc_time::now();
     auto btime = tcc_time::duration_in_s(B0, B1);
     utility::print_par(world, "\nTime to compute B ", btime, " s\n");
@@ -628,7 +640,7 @@ int try_main(int argc, char *argv[]) {
         IAJB("i,a,j,b") = Xia_TA("X,i,a") * Xia_TA("X,j,b");
         utility::print_size_info(IAJB, "IAJB");
 
-        //std::cout << IAJB << std::endl;
+        // std::cout << IAJB << std::endl;
 
         auto vec_ptr = std::make_shared<Eig::VectorXd>(std::move(evals));
         struct Mp2Red {
@@ -704,9 +716,9 @@ int main(int argc, char **argv) {
 }
 
 
-void main_print_clusters(
-      std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-      std::ostream &os) {
+void
+main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+                    std::ostream &os) {
 
     // Collect atoms
     std::vector<molecule::Atom> atoms;

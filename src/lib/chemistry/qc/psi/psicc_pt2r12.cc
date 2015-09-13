@@ -177,7 +177,7 @@ void PsiCC_PT2R12::compute_ept2r12() {
     if (r12eval()->dim_oo(spincase2).n() == 0)
       continue;
 
-    T2[s] = this->T2_distarray4(spincase2);
+    T2[s] = this->T2_distarray4(spincase2,"t");
 
     if (debug() >= DefaultPrintThresholds::mostO2N2) {
       _print(spincase2, T2[spincase2], prepend_spincase(spincase2,"CCSD T2 amplitudes:").c_str());

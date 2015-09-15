@@ -68,13 +68,13 @@ namespace tcc{
                 double triple_energy =
                         (
                                 (t3("a,b,c,i,j,k")
-                                 + v3("a,b,c,i,j,k"))
+                                 - t3("c,b,a,i,j,k")
+                                 + v3("a,b,c,i,j,k")
+                                 - v3("c,b,a,i,j,k")
+                                )
                                 * (4 * t3("a,b,c,i,j,k")
-                                   + t3("a,b,c,k,i,j")
-                                  + t3("a,b,c,j,k,i")
-                                   - 4 * t3("a,b,c,k,j,i")
-                                  - t3("a,b,c,i,k,j")
-                                   - t3("a,b,c,j,i,k"))
+                                   + t3("b,c,a,i,j,k")
+                                  + t3("c,a,b,i,j,k"))
                         ).reduce(CCSD_TRed(
                                 std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
                                 this->trange1_engine_->get_actual_occ()));
@@ -85,16 +85,39 @@ namespace tcc{
             double compute_ccsd_t_direct(const TArray2& t1, const TArray4& t2){
 
                 // get integral
-                TArray4 g_jklc = this->intermediate_->get_ijka();
-                TArray4 g_diba = this->intermediate_->get_aibc();
-                TArray4 g_abij = this->intermediate_->get_abij();
+                TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
+                TArray4 g_diba = this->ccsd_intermediate_->get_aibc();
+                TArray4 g_abij = this->ccsd_intermediate_->get_abij();
 
                 // get trange1
-                auto tr_occ = this->tre_->get_occ_tr1();
-                auto tr_vir = this->tre_->get_vir_tr1();
+                auto tr_occ = this->trange1_engine_->get_occ_tr1();
+                auto tr_vir = this->trange1_engine_->get_vir_tr1();
 
-                auto n_tr_occ = this->tre_->get_occ_blocks();
-                auto n_tr_vir = this->tre_->get_vir_blocks();
+                auto n_tr_occ = this->trange1_engine_->get_occ_blocks();
+                auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
+
+                // loop over virtual blocks
+                for (auto a = 0; a < n_tr_vir; a++){
+                    for(auto b = 0; b < n_tr_vir; b++){
+                        for(auto c = 0; c < n_tr_vir; c++){
+
+                            auto a_low = a;
+                            auto a_up = a + 1;
+                            auto b_low = b;
+                            auto b_up = b + 1;
+                            auto c_low = c;
+                            auto c_up = c + 1;
+
+                            // block for t2_cdkj
+                            auto t2_cdkj_low = {c_low,0,0,0};
+                            auto t2_cdki_up = {c_up,n_tr_vir,n_tr_occ,n_tr_occ};
+
+                            // block for g_iklc
+                        }
+
+                    }
+                }
+
 
 
             }
@@ -157,7 +180,7 @@ namespace tcc{
 
                                             const auto e_abcijk = e_i + e_j + e_k - e_a - e_b - e_c;
 
-                                            me += 1 / (e_abcijk)* tile[tile_idx];
+                                            me += (1/e_abcijk) * tile[tile_idx];
 
                                         }
                                     }

@@ -99,6 +99,7 @@ namespace tcc {
     };
 
 
+    //TODO Better blocking algorithm
     TA::TiledRange1 TRange1Engine::tr_occupied() {
         std::size_t block_size = block_size_;
         std::size_t actual_occ = get_actual_occ();

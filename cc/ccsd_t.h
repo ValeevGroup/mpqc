@@ -117,8 +117,8 @@ namespace tcc{
                 double triple_energy = 0.0;
                 // loop over virtual blocks
                 for (std::size_t a = 0; a < n_tr_vir; ++a){
-                    for(std::size_t b = 0; b < n_tr_vir; ++b){
-                        for(std::size_t c = 0; c < n_tr_vir; ++c){
+                    for(std::size_t b = 0; b <= a; ++b){
+                        for(std::size_t c = 0; c <= b; ++c){
 
 //                            std::cout << a << " " << b << " " << c << std::endl;
                             std::size_t a_low = a;
@@ -323,7 +323,6 @@ namespace tcc{
                                                      - block_g_jila("j,i,l,a")*block_t2_cbkl("c,b,k,l");
                             }
 
-
                             // compute v3
                             TArray6 v3;
                             // abcijk contribution
@@ -373,21 +372,42 @@ namespace tcc{
 //                            std::cout << a_offset << " " << b_offset << " " << c_offset << std::endl;
                             std::array<std::size_t,6> offset{a_offset,b_offset,c_offset,0,0,0};
 
-                            double tmp_energy =
-                                    (
-                                            (t3("a,b,c,i,j,k")
-                                             - t3("a,b,c,k,j,i")
-                                             + v3("a,b,c,i,j,k")
-                                             - v3("a,b,c,k,j,i")
-                                            )
-                                            * (4 * t3("a,b,c,i,j,k")
-                                               + t3("a,b,c,j,k,i")
-                                               + t3("a,b,c,k,i,j"))
-                                    ).reduce(CCSD_TRed(
-                                            std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                            this->trange1_engine_->get_actual_occ(), offset));
-                            tmp_energy = tmp_energy /3.0;
-//                            std::cout << tmp_energy << std::endl;
+                            double tmp_energy = 0.0;
+                            if ( b < a && c < b){
+
+                                tmp_energy =
+                                        (
+                                                (t3("a,b,c,i,j,k")
+                                                 + v3("a,b,c,i,j,k")
+                                                )
+                                                * (4.0 * t3("a,b,c,i,j,k")
+                                                   + t3("a,b,c,k,i,j")
+                                                   + t3("a,b,c,j,k,i")
+                                                        -2*(t3("a,b,c,k,j,i")+t3("a,b,c,i,k,j")+t3("a,b,c,j,i,k"))
+                                                                                                  )
+                                        ).reduce(CCSD_TRed(
+                                                std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                                this->trange1_engine_->get_actual_occ(), offset));
+
+                                tmp_energy *= 2;
+                            }else{
+                                tmp_energy =
+                                        (
+                                                (t3("a,b,c,i,j,k")
+                                                 + v3("a,b,c,i,j,k")
+                                                )
+                                                * (4.0 * t3("a,b,c,i,j,k")
+                                                   + t3("a,b,c,k,i,j")
+                                                   + t3("a,b,c,j,k,i")
+                                                   -2*(t3("a,b,c,k,j,i")
+                                                       +t3("a,b,c,i,k,j")
+                                                       +t3("a,b,c,j,i,k"))
+                                                )
+                                        ).reduce(CCSD_TRed_Symm(
+                                                std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                                this->trange1_engine_->get_actual_occ(), offset));
+                            }
+
                             triple_energy += tmp_energy;
                         }
                     }
@@ -401,6 +421,7 @@ namespace tcc{
         private:
 
             struct CCSD_TRed {
+            public:
                 using result_type = double;
                 using argument_type = Tile;
 
@@ -448,7 +469,6 @@ namespace tcc{
                     const auto k_offset = offset_[5];
 
                     auto tile_idx = 0;
-                    typename Tile::value_type tmp = 1.0;
                     for (auto a = a0; a < an; ++a) {
                         const auto e_a = ens[a + n_occ + a_offset];
                         for (auto b = b0; b < bn; ++b) {
@@ -476,6 +496,103 @@ namespace tcc{
                 }
             }; // structure CCSD_TRed
 
+
+            struct CCSD_TRed_Symm{
+
+                using result_type = double;
+                using argument_type = Tile;
+
+                std::shared_ptr<Eig::VectorXd> vec_;
+                unsigned int n_occ_;
+                std::array<std::size_t,6> offset_;
+
+                CCSD_TRed_Symm(std::shared_ptr<Eig::VectorXd> vec, int n_occ, std::array<std::size_t,6> offset)
+                : vec_(std::move(vec)), n_occ_(n_occ) , offset_(offset){ }
+
+                CCSD_TRed_Symm(CCSD_TRed_Symm const &) = default;
+
+                result_type operator()() const { return 0.0; }
+
+                result_type operator()(result_type const &t) const { return t; }
+
+                void operator()(result_type &me, result_type const &other) const {
+                    me += other;
+                }
+
+                void operator()(result_type &me, argument_type const &tile) const {
+
+                    auto const &ens = *this->vec_;
+                    std::size_t n_occ = this->n_occ_;
+
+                    // get the offset
+                    const auto a_offset = this->offset_[0];
+                    const auto b_offset = this->offset_[1];
+                    const auto c_offset = this->offset_[2];
+                    const auto i_offset = this->offset_[3];
+                    const auto j_offset = this->offset_[4];
+                    const auto k_offset = this->offset_[5];
+
+                    // compute index in the whole array
+                    const auto a0 = tile.range().lobound()[0] + a_offset;
+                    const auto an = tile.range().upbound()[0] + a_offset;
+                    const auto b0 = tile.range().lobound()[1] + b_offset;
+                    const auto bn = tile.range().upbound()[1] + b_offset;
+                    const auto c0 = tile.range().lobound()[2] + c_offset;
+                    const auto cn = tile.range().upbound()[2] + c_offset;
+                    const auto i0 = tile.range().lobound()[3] + i_offset;
+                    const auto in = tile.range().upbound()[3] + i_offset;
+                    const auto j0 = tile.range().lobound()[4] + j_offset;
+                    const auto jn = tile.range().upbound()[4] + j_offset;
+                    const auto k0 = tile.range().lobound()[5] + k_offset;
+                    const auto kn = tile.range().upbound()[5] + k_offset;
+
+
+                    auto tile_idx = 0;
+                    typename Tile::value_type tmp = 1.0;
+
+                    // use symmetry in loop, only sum result over c <= b <= a
+                    for (auto a = a0; a < an; ++a) {
+                        const auto e_a = ens[a + n_occ];
+                        for (auto b = b0; b < bn; ++b) {
+                            const auto e_b = ens[b + n_occ];
+                            for(auto c = c0; c < cn; ++c){
+                                const auto e_c = ens[c + n_occ];
+                                for (auto i = i0; i < in; ++i) {
+                                    const auto e_i = ens[i];
+                                    for (auto j = j0; j < jn; ++j) {
+                                        const auto e_j = ens[j];
+                                        for (auto k = k0; k < kn; ++k, ++tile_idx){
+                                            const auto e_k = ens[k];
+
+                                            if ( b <= a && c <= b ){
+
+                                                const auto e_abcijk = e_i + e_j + e_k - e_a - e_b - e_c;
+
+                                                tmp = (1/e_abcijk) * tile[tile_idx];
+                                                // 6 fold symmetry if none in a,b,c equal
+                                                if (a!=b && a!=c && b!=c) {
+                                                    tmp = 2.0 * tmp;
+                                                }
+                                                    // if diagonal, a==b==c no symmetry
+                                                else if(a==b && b==c){
+                                                    tmp = 0;
+                                                }
+                                                    // three fold symmetry if two in a,b,c equal
+                                                else{
+                                                    tmp = tmp;
+                                                }
+                                                me += tmp;
+                                            }
+
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }; // structure CCSD_TRed_Symm
 
         }; // class CCSD_T
 

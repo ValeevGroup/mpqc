@@ -484,84 +484,21 @@ namespace tcc{
                 auto n_tr_occ = this->trange1_engine_->get_occ_blocks();
                 auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
 
-//                std::cout << n_tr_occ << " " << n_tr_vir << std::endl;
-
-//                for (auto iter = g_diba.begin(); iter != g_diba.end(); ++iter){
-//                    auto range = iter->get().range();
-//                    std::cout << iter.index() << std::endl;
-//                    std::cout << range << std::endl;
-//                }
-//
-//                for (auto iter = t2.begin(); iter != t2.end(); ++iter){
-//                    auto range = iter->get().range();
-//                    std::cout << iter.index() << std::endl;
-//                    std::cout << range << std::endl;
-//                }
-
                 double triple_energy = 0.0;
-
-                std::size_t increase = 4;
-                if (increase > n_tr_vir){
-                    increase = n_tr_vir;
-                }
-                std::size_t a_increase = increase;
-                std::size_t b_increase = increase;
-                std::size_t c_increase = increase;
-
-                std::cout << "Increase" << increase << std::endl;
-
-                // index in virtual blocks
-                std::size_t a = 0;
-                std::size_t b = 0;
-                std::size_t c = 0;
-
                 // loop over virtual blocks
-                while (a < n_tr_vir){
-                    b = 0;
-                    if( a + increase >= n_tr_vir){
-                        a_increase = (n_tr_vir - a);
-                    }else{
-                        a_increase = increase;
-                    }
-
-                    std::size_t a_end = a + a_increase - 1;
-                    while(b <= a_end){
-                        c = 0;
-
-                        if(b + increase > a_end){
-                            if (b == a_end){
-                                b_increase = 1;
-                            }else{
-                                b_increase = (a_end - b);
-                            }
-                        }else{
-                            b_increase = increase;
-                        }
-
-                        std::size_t b_end = b + b_increase - 1;
-
-                        while(c <= b_end){
-
-                            if(c + increase > b_end){
-                                if ( c == b_end){
-                                    c_increase = 1;
-                                }else{
-                                    c_increase = (b_end - c);
-                                }
-                            }else{
-                                c_increase = increase;
-                            }
+                for (std::size_t a = 0; a < n_tr_vir; ++a){
+                    for(std::size_t b = 0; b <= a; ++b){
+                        for(std::size_t c = 0; c <= b; ++c){
 
 //                            std::cout << a << " " << b << " " << c << std::endl;
                             std::size_t a_low = a;
-                            std::size_t a_up = a + a_increase;
+                            std::size_t a_up = a + 1;
                             std::size_t b_low = b;
-                            std::size_t b_up = b + b_increase;
+                            std::size_t b_up = b + 1;
                             std::size_t c_low = c;
-                            std::size_t c_up = c + c_increase;
-
-                            std::cout << "{" << a_low << " " << b_low << " " << c_low << "}" << " ";
-                            std::cout << "{" << a_up << " " << b_up << " " << c_up << "}" << std::endl;
+                            std::size_t c_up = c + 1;
+//                            std::cout << a_up << " " << b_up << " " << c_up << std::endl;
+//                            std::cout << a << " " << b << " " << c << std::endl;
 
                             typedef std::vector<std::size_t> block;
 
@@ -628,7 +565,7 @@ namespace tcc{
                                 block_t2_bcjl("b,c,j,l") = t2("b,c,j,l").block(t2_bcjl_low,t2_bcjl_up);
 
                                 t3("a,b,c,i,j,k") += block_g_djcb("d,j,c,b")*block_t2_adik("a,d,i,k")
-                                        - block_g_kila("k,i,l,a")*block_t2_bcjl("b,c,j,l");
+                                                     - block_g_kila("k,i,l,a")*block_t2_bcjl("b,c,j,l");
                             }
 
                             // cabkij contribution
@@ -659,7 +596,7 @@ namespace tcc{
                                 block_t2_cakl("c,a,k,l") = t2("c,a,k,l").block(t2_cakl_low,t2_cakl_up);
 
                                 t3("a,b,c,i,j,k") += block_g_dkac("d,k,a,c")*block_t2_bdji("b,d,j,i")
-                                        - block_g_ijlb("i,j,l,b")*block_t2_cakl("c,a,k,l");
+                                                     - block_g_ijlb("i,j,l,b")*block_t2_cakl("c,a,k,l");
                             }
 
                             // bacjik contribution
@@ -691,7 +628,7 @@ namespace tcc{
 
 
                                 t3("a,b,c,i,j,k") += block_g_djab("d,j,a,b")*block_t2_cdki("c,d,k,i")
-                                                    - block_g_iklc("i,k,l,c")*block_t2_bajl("b,a,j,l");
+                                                     - block_g_iklc("i,k,l,c")*block_t2_bajl("b,a,j,l");
                             }
 
                             // acbikj contribution
@@ -723,7 +660,7 @@ namespace tcc{
 
 
                                 t3("a,b,c,i,j,k") += block_g_dica("d,i,c,a")*block_t2_bdjk("b,d,j,k")
-                                                    - block_g_kjlb("k,j,l,b")*block_t2_acil("a,c,i,l");
+                                                     - block_g_kjlb("k,j,l,b")*block_t2_acil("a,c,i,l");
                             }
 
                             // cbakji contribution
@@ -817,8 +754,8 @@ namespace tcc{
                                                 * (4.0 * t3("a,b,c,i,j,k")
                                                    + t3("a,b,c,k,i,j")
                                                    + t3("a,b,c,j,k,i")
-                                                        -2*(t3("a,b,c,k,j,i")+t3("a,b,c,i,k,j")+t3("a,b,c,j,i,k"))
-                                                                                                  )
+                                                   -2*(t3("a,b,c,k,j,i")+t3("a,b,c,i,k,j")+t3("a,b,c,j,i,k"))
+                                                )
                                         ).reduce(CCSD_TRed(
                                                 std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
                                                 this->trange1_engine_->get_actual_occ(), offset));
@@ -843,13 +780,8 @@ namespace tcc{
                             }
 
                             triple_energy += tmp_energy;
-
-                            c += c_increase;
                         }
-                        b += b_increase;
                     }
-
-                    a += a_increase;
                 }
 
                 return  triple_energy;

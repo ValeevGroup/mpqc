@@ -72,13 +72,15 @@ namespace tcc{
                 double triple_energy =
                         (
                                 (t3("a,b,c,i,j,k")
-                                 - t3("c,b,a,i,j,k")
                                  + v3("a,b,c,i,j,k")
-                                 - v3("c,b,a,i,j,k")
                                 )
-                                * (4 * t3("a,b,c,i,j,k")
-                                   + t3("b,c,a,i,j,k")
-                                  + t3("c,a,b,i,j,k"))
+                                * (4.0 * t3("a,b,c,i,j,k")
+                                   + t3("a,b,c,k,i,j")
+                                   + t3("a,b,c,j,k,i")
+                                   -2*(t3("a,b,c,k,j,i")
+                                       +t3("a,b,c,i,k,j")
+                                       +t3("a,b,c,j,i,k"))
+                                                                  )
                         ).reduce(CCSD_TRed(
                                 std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
                                 this->trange1_engine_->get_actual_occ(),offset));

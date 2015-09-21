@@ -116,20 +116,69 @@ namespace tcc{
 //                }
 
                 double triple_energy = 0.0;
+
+                std::size_t increase = 4;
+                if (increase > n_tr_vir){
+                    increase = n_tr_vir;
+                }
+                std::size_t a_increase = increase;
+                std::size_t b_increase = increase;
+                std::size_t c_increase = increase;
+
+                std::cout << "Increase" << increase << std::endl;
+
+                // index in virtual blocks
+                std::size_t a = 0;
+                std::size_t b = 0;
+                std::size_t c = 0;
+
                 // loop over virtual blocks
-                for (std::size_t a = 0; a < n_tr_vir; ++a){
-                    for(std::size_t b = 0; b <= a; ++b){
-                        for(std::size_t c = 0; c <= b; ++c){
+                while (a < n_tr_vir){
+                    b = 0;
+                    if( a + increase >= n_tr_vir){
+                        a_increase = (n_tr_vir - a);
+                    }else{
+                        a_increase = increase;
+                    }
+
+                    std::size_t a_end = a + a_increase - 1;
+                    while(b <= a_end){
+                        c = 0;
+
+                        if(b + increase > a_end){
+                            if (b == a_end){
+                                b_increase = 1;
+                            }else{
+                                b_increase = (a_end - b);
+                            }
+                        }else{
+                            b_increase = increase;
+                        }
+
+                        std::size_t b_end = b + b_increase - 1;
+
+                        while(c <= b_end){
+
+                            if(c + increase > b_end){
+                                if ( c == b_end){
+                                    c_increase = 1;
+                                }else{
+                                    c_increase = (b_end - c);
+                                }
+                            }else{
+                                c_increase = increase;
+                            }
 
 //                            std::cout << a << " " << b << " " << c << std::endl;
                             std::size_t a_low = a;
-                            std::size_t a_up = a + 1;
+                            std::size_t a_up = a + a_increase;
                             std::size_t b_low = b;
-                            std::size_t b_up = b + 1;
+                            std::size_t b_up = b + b_increase;
                             std::size_t c_low = c;
-                            std::size_t c_up = c + 1;
-//                            std::cout << a_up << " " << b_up << " " << c_up << std::endl;
-//                            std::cout << a << " " << b << " " << c << std::endl;
+                            std::size_t c_up = c + c_increase;
+
+                            std::cout << "{" << a_low << " " << b_low << " " << c_low << "}" << " ";
+                            std::cout << "{" << a_up << " " << b_up << " " << c_up << "}" << std::endl;
 
                             typedef std::vector<std::size_t> block;
 
@@ -411,8 +460,13 @@ namespace tcc{
                             }
 
                             triple_energy += tmp_energy;
+
+                            c += c_increase;
                         }
+                        b += b_increase;
                     }
+
+                    a += a_increase;
                 }
 
                 return  triple_energy;
@@ -560,6 +614,8 @@ namespace tcc{
                     const auto nbcijk = nb*ncijk;
 
                     typename Tile::value_type tmp = 0.0;
+
+
 
                     // use symmetry in loop, only sum result over c <= b <= a
                     for (auto a = a0; a < an; ++a) {

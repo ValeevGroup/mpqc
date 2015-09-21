@@ -90,6 +90,7 @@ namespace tcc{
 
                 // get integral
                 TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
+                // TODO use DF to avoid storing diba
                 TArray4 g_diba = this->ccsd_intermediate_->get_aibc();
                 TArray4 g_abij = this->ccsd_intermediate_->get_abij();
 
@@ -166,6 +167,7 @@ namespace tcc{
                                 t3("a,b,c,i,j,k") = block_g_diba("d,i,b,a")*block_t2_cdkj("c,d,k,j")
                                                     - block_g_jklc("l,k,j,c")*block_t2_abil("a,b,i,l");
                             }
+
                             // bcajki contribution
                             // g^{dj}_{cb}*t^{ad}_{ik} - g^{ki}_{la}*t^{bc}_{jl}
                             {
@@ -497,6 +499,7 @@ namespace tcc{
             }; // structure CCSD_TRed
 
 
+            // TODO inheritate from CCSD_TRed
             struct CCSD_TRed_Symm{
 
                 using result_type = double;
@@ -537,52 +540,59 @@ namespace tcc{
                     const auto an = tile.range().upbound()[0] + a_offset;
                     const auto b0 = tile.range().lobound()[1] + b_offset;
                     const auto bn = tile.range().upbound()[1] + b_offset;
+                    const auto nb = bn - b0;
                     const auto c0 = tile.range().lobound()[2] + c_offset;
                     const auto cn = tile.range().upbound()[2] + c_offset;
+                    const auto nc = cn - c0;
                     const auto i0 = tile.range().lobound()[3] + i_offset;
                     const auto in = tile.range().upbound()[3] + i_offset;
+                    const auto ni = in - i0;
                     const auto j0 = tile.range().lobound()[4] + j_offset;
                     const auto jn = tile.range().upbound()[4] + j_offset;
+                    const auto nj = jn - j0;
                     const auto k0 = tile.range().lobound()[5] + k_offset;
                     const auto kn = tile.range().upbound()[5] + k_offset;
+                    const auto nk = kn - k0;
 
+                    const auto njk = nj*nk;
+                    const auto nijk = ni*njk;
+                    const auto ncijk = nc*nijk;
+                    const auto nbcijk = nb*ncijk;
 
-                    auto tile_idx = 0;
-                    typename Tile::value_type tmp = 1.0;
+                    typename Tile::value_type tmp = 0.0;
 
                     // use symmetry in loop, only sum result over c <= b <= a
                     for (auto a = a0; a < an; ++a) {
                         const auto e_a = ens[a + n_occ];
-                        for (auto b = b0; b < bn; ++b) {
+                        for (auto b = b0; b < bn && b <= a; ++b) {
                             const auto e_b = ens[b + n_occ];
-                            for(auto c = c0; c < cn; ++c){
+                            for(auto c = c0; c < cn && c <= b; ++c){
                                 const auto e_c = ens[c + n_occ];
                                 for (auto i = i0; i < in; ++i) {
                                     const auto e_i = ens[i];
                                     for (auto j = j0; j < jn; ++j) {
                                         const auto e_j = ens[j];
-                                        for (auto k = k0; k < kn; ++k, ++tile_idx){
+                                        for (auto k = k0; k < kn; ++k){
                                             const auto e_k = ens[k];
 
-                                            if ( b <= a && c <= b ){
+                                            const auto tile_idx = (a-a0)*nbcijk + (b-b0)*ncijk + (c-c0)*nijk + (i-i0)*njk + (j-j0)*nk + (k-k0);
 
-                                                const auto e_abcijk = e_i + e_j + e_k - e_a - e_b - e_c;
+                                            const auto e_abcijk = e_i + e_j + e_k - e_a - e_b - e_c;
 
-                                                tmp = (1/e_abcijk) * tile[tile_idx];
-                                                // 6 fold symmetry if none in a,b,c equal
-                                                if (a!=b && a!=c && b!=c) {
-                                                    tmp = 2.0 * tmp;
-                                                }
-                                                    // if diagonal, a==b==c no symmetry
-                                                else if(a==b && b==c){
-                                                    tmp = 0;
-                                                }
-                                                    // three fold symmetry if two in a,b,c equal
-                                                else{
-                                                    tmp = tmp;
-                                                }
-                                                me += tmp;
+                                            tmp = (1/e_abcijk) * tile[tile_idx];
+                                            // 6 fold symmetry if none in a,b,c equal
+                                            if (a!=b && a!=c && b!=c) {
+                                                tmp = 2.0 * tmp;
                                             }
+                                                // if diagonal, a==b==c no symmetry
+                                            else if(a==b && b==c){
+                                                tmp = 0;
+                                            }
+                                                // three fold symmetry if two in a,b,c equal
+                                            else{
+                                                tmp = tmp;
+                                            }
+                                            me += tmp;
 
                                         }
                                     }

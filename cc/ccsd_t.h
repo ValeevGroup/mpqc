@@ -34,19 +34,25 @@ namespace tcc{
                 // compute ccsd first
                 double ccsd_corr = CCSD<Tile,Policy>::compute_ccsd(t1,t2);
 
+                auto time0 = tcc::tcc_time::now();
                 double ccsd_t = compute_ccsd_t(t1, t2);
+                auto time1 = tcc_time::now();
+                auto duration1 = tcc_time::duration_in_s(time0, time1);
+                time0 = tcc::tcc_time::now();
                 double ccsd_t_d = compute_ccsd_t_direct(t1, t2);
+                time1 = tcc::tcc_time::now();
+                auto duration2 = tcc_time::duration_in_s(time0, time1);
 
                 if (t1.get_world().rank() == 0) {
-                    std::cout << "(T) Energy      " << ccsd_t << std::endl;
-                    std::cout << "(T) Energy      " << ccsd_t_d << std::endl;
+                    std::cout << "(T) Energy      " << ccsd_t << " Time " << duration1 << std::endl;
+                    std::cout << "(T) Energy      " << ccsd_t_d << " Time " << duration2 << std::endl;
                     std::cout << "CCSD(T) Energy  " << ccsd_t + ccsd_corr << std::endl;
                     std::cout << "CCSD(T) Energy  " << ccsd_t_d + ccsd_corr << std::endl;
                 }
 
             }
 
-            double compute_ccsd_t(const TArray2& t1, const TArray4& t2){
+            double compute_ccsd_t(TArray2& t1, TArray4& t2){
                 // get integral
                 TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
                 // TODO use DF to avoid storing diba
@@ -76,7 +82,7 @@ namespace tcc{
 
                 double triple_energy = 0.0;
 
-                std::size_t increase = 4;
+                std::size_t increase = 2;
                 if (increase > n_tr_vir){
                     increase = n_tr_vir;
                 }
@@ -91,6 +97,9 @@ namespace tcc{
                 std::size_t b = 0;
                 std::size_t c = 0;
 
+                // number of blocks computed
+                std::size_t n_blocks_computed = 0;
+
                 // loop over virtual blocks
                 while (a < n_tr_vir){
                     b = 0;
@@ -104,7 +113,7 @@ namespace tcc{
                     while(b <= a_end){
                         c = 0;
 
-                        if(b + increase > a_end){
+                        if(b + increase - 1 > a_end){
                             if (b == a_end){
                                 b_increase = 1;
                             }else{
@@ -118,7 +127,7 @@ namespace tcc{
 
                         while(c <= b_end){
 
-                            if(c + increase > b_end){
+                            if(c + increase - 1> b_end){
                                 if ( c == b_end){
                                     c_increase = 1;
                                 }else{
@@ -128,6 +137,8 @@ namespace tcc{
                                 c_increase = increase;
                             }
 
+                            std::size_t c_end = c + c_increase - 1;
+
 //                            std::cout << a << " " << b << " " << c << std::endl;
                             std::size_t a_low = a;
                             std::size_t a_up = a + a_increase;
@@ -136,8 +147,10 @@ namespace tcc{
                             std::size_t c_low = c;
                             std::size_t c_up = c + c_increase;
 
+                            std::size_t blocks = (a_up-a_low)*(b_up-b_low)*(c_up-c_low);
                             std::cout << "{" << a_low << " " << b_low << " " << c_low << "}" << " ";
-                            std::cout << "{" << a_up << " " << b_up << " " << c_up << "}" << std::endl;
+                            std::cout << "{" << a_up << " " << b_up << " " << c_up << "} " << blocks << std::endl;
+                            n_blocks_computed += blocks;
 
                             typedef std::vector<std::size_t> block;
 
@@ -383,7 +396,7 @@ namespace tcc{
                             std::array<std::size_t,6> offset{a_offset,b_offset,c_offset,0,0,0};
 
                             double tmp_energy = 0.0;
-                            if ( b < a && c < b){
+                             if ( b_end < a && c_end < b){
 
                                 tmp_energy =
                                         (
@@ -428,6 +441,7 @@ namespace tcc{
                     a += a_increase;
                 }
 
+                std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
                 return  triple_energy;
             }
 
@@ -484,6 +498,9 @@ namespace tcc{
                 auto n_tr_occ = this->trange1_engine_->get_occ_blocks();
                 auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
 
+                // number of blocks computed
+                std::size_t n_blocks_computed = 0;
+
                 double triple_energy = 0.0;
                 // loop over virtual blocks
                 for (std::size_t a = 0; a < n_tr_vir; ++a){
@@ -497,8 +514,10 @@ namespace tcc{
                             std::size_t b_up = b + 1;
                             std::size_t c_low = c;
                             std::size_t c_up = c + 1;
+                            std::size_t blocks = (a_up-a_low)*(b_up-b_low)*(c_up-c_low);
 //                            std::cout << a_up << " " << b_up << " " << c_up << std::endl;
 //                            std::cout << a << " " << b << " " << c << std::endl;
+                            n_blocks_computed += blocks;
 
                             typedef std::vector<std::size_t> block;
 
@@ -784,6 +803,7 @@ namespace tcc{
                     }
                 }
 
+                std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
                 return  triple_energy;
 
             }

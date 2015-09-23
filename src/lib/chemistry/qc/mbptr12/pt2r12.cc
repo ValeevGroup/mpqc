@@ -1708,13 +1708,13 @@ void PT2R12::print(std::ostream & os) const
   os << indent << "nfzc = " << nfzc_ << std::endl;
   os << indent << "omit_uocc = " << (omit_uocc_ ? "true" : "false") << std::endl;
   r12world()->print(os);
-#if defined(HAVE_MPQC3_RUNTIME)
+#if defined(MPQC_NEW_FEATURES)
   os << indent << "cabs_singles = " << (cabs_singles_ ? "true" : "false") << endl;
   if (cabs_singles_){
     os << indent << "partition = " << cabs_singles_h0_ << endl;
+    os << endl;
     cabs_singles_engine_->print(os);
   }
-
 #endif
   Wavefunction::print(os);
   os << decindent;

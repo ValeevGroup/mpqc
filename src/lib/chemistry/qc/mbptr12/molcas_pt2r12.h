@@ -192,6 +192,9 @@ namespace sc{
     /// set value implemented
       int value_implemented() const { return 1; }
 
+    /// print function
+      void print(std::ostream& os=ExEnv::out0()) const;
+
     private:
       /// prefix of molcas input file
       std::string prefix_;

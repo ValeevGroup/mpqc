@@ -636,3 +636,25 @@ void MolcasPT2R12::restore_molcas_input() {
   finput.close();
 
 }
+
+
+void MolcasPT2R12::print(std::ostream & os) const
+{
+  os << indent << "MolcasPT2R12" << endl;
+  os << incindent;
+  os << indent << "Molcas Input = " << molcas_input_ << endl;
+  os << indent << "Molcas Options = " << molcas_options_ << endl;
+  os << indent << "Inactive Orbital = ";
+  for (auto num : inactive_){
+    os << num << " ";
+  }
+  os << endl;
+  os << indent << "Active Orbital = ";
+  for (auto num : active_){
+    os << num << " ";
+  }
+  os << endl;
+
+  extern_pt2r12_->print(os);
+
+}

@@ -210,6 +210,8 @@ namespace sc{
       std::vector<int> inactive_;
       /// active orbital input
       std::vector<int> active_;
+      /// number of active electron
+      std::vector<int> active_electron_;
       /// sysmetry
       std::string symmetry_;
 

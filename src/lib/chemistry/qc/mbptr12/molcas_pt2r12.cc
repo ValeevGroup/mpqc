@@ -191,6 +191,15 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
         }
       }
     }
+    else if(upper_line.find("NACT") != std::string::npos){
+      std::vector<std::string> split_line;
+      boost::split(split_line, line, boost::is_any_of(" ="), boost::token_compress_on);
+      for ( auto num : split_line){
+        if (std::all_of(num.begin(), num.end(), ::isdigit)){
+          active_electron_.push_back(std::stoi(num));
+        }
+      }
+    }
     else if(upper_line.find("GROUP") != std::string::npos){
       std::vector<std::string> split_line;
       boost::split(split_line, line, boost::is_any_of(" ="), boost::token_compress_on);
@@ -654,6 +663,12 @@ void MolcasPT2R12::print(std::ostream & os) const
     os << num << " ";
   }
   os << endl;
+  os << indent << "Active Electron = ";
+  for (auto num : active_electron_){
+    os << num << " ";
+  }
+  os << endl;
+  os << decindent << endl;
 
   extern_pt2r12_->print(os);
 

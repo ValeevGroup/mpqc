@@ -11,6 +11,9 @@ namespace TiledArray {
 class Range;
 class TiledRange;
 class TiledRange1;
+
+template<typename T>
+class SparseShape;
 } // namespace TiledArray
 
 namespace tcc {

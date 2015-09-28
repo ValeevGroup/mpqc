@@ -14,6 +14,8 @@ using DnPolicy = TA::DensePolicy;
 using TRange1 = TA::TiledRange1;
 using TRange = TA::TiledRange;
 
+using SpShapeF = TA::SparseShape<float>;
+
 template<unsigned int DIM, typename Policy>
 using TAArray = TA::Array<double, DIM, TA::TensorD, Policy>;
 

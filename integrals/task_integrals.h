@@ -12,64 +12,42 @@
 #ifndef MPQC_INTEGRALS_TASKINTEGRALS_H
 #define MPQC_INTEGRALS_TASKINTEGRALS_H
 
-#include "task_integrals_helper.h"
-
-#include "../common/typedefs.h"
-
-#include "../include/tiledarray.h"
-#include "../include/tbb.h"
-
-#include "../basis/basis.h"
-
-#include <memory>
-#include <array>
+#include "task_integrals_common.h"
 
 namespace mpqc {
 namespace integrals {
 
-template <typename E>
-using ShrPool = std::shared_ptr<Epool<E>>;
-
-template <unsigned long N>
-using Barray = std::array<tcc::basis::Basis, N>;
-
 namespace detail {
 
-template <unsigned long N>
-using ShrBases = std::shared_ptr<Barray<N>>;
-
-template <typename Op>
-using Ttype = decltype(std::declval<Op>()(std::declval<TA::TensorD>()));
-
-// Capture by value since tasks must capture by value
+// Task wrapper which computes a TA::Tensor<double> containing integrals and
+// passes it to Op. Takes the tile ordinal as a parameter.
 template <typename E, unsigned long N, typename Op>
-struct op_pass_through {
+struct op_invoke {
     const TRange *const trange_ptr_;
     ShrPool<E> engines_;
     ShrBases<N> bases_;
     Op op_;
 
-    op_pass_through() = delete;
-    op_pass_through(const TRange *const tp, ShrPool<E> const &es,
-                    ShrBases<N> const &bs, Op op)
+    op_invoke(const TRange *const tp, ShrPool<E> const &es,
+              ShrBases<N> const &bs, Op op)
             : trange_ptr_(tp), engines_(es), bases_(bs), op_(op) {}
 
-    op_pass_through(op_pass_through const &) = default;
-    op_pass_through(op_pass_through &&) = default;
+    TA::TensorD ta_integrals(int64_t ord) {
 
-    Ttype<Op> operator()(int64_t ord) {
-
-        // Get pointers to the shells that are needed for this tile.
         std::array<tcc::basis::ClusterShells const *, N> cluster_ptrs;
         auto const &idx = trange_ptr_->tiles().idx(ord);
         for (auto i = 0ul; i < N; ++i) {
             cluster_ptrs[i] = &(bases_->operator[](i).cluster_shells()[idx[i]]);
         }
 
-        return op_(integral_kernel(engines_->local(),
-                                   trange_ptr_->make_tile_range(ord),
-                                   cluster_ptrs));
+        return integral_kernel(engines_->local(),
+                               trange_ptr_->make_tile_range(ord), cluster_ptrs);
     }
+
+    Ttype<Op> operator()(int64_t ord) { return op_(ta_integrals(ord)); }
+
+    Ttype<Op> apply(TA::TensorD &&t) { return op_(std::move(t)); }
+
 };
 
 // Create TRange from bases
@@ -90,6 +68,7 @@ TRange create_trange(Barray<N> const &basis_array) {
 template <typename E, unsigned long N, typename Op, typename Policy>
 struct compute_integrals;
 
+// Dense array specialization
 template <typename E, unsigned long N, typename Op>
 struct compute_integrals<E, N, Op, DnPolicy> {
     DArray<N, Ttype<Op>, DnPolicy>
@@ -110,8 +89,7 @@ struct compute_integrals<E, N, Op, DnPolicy> {
         // Get reference to pmap
         auto const &pmap = *(out.get_pmap());
 
-        auto op_wrapper
-              = op_pass_through<E, N, Op>(t_ptr, engines, shared_bases, op);
+        auto op_wrapper = op_invoke<E, N, Op>(t_ptr, engines, shared_bases, op);
 
         // For each ordinal create a task
         for (auto const ord : pmap) {
@@ -124,8 +102,7 @@ struct compute_integrals<E, N, Op, DnPolicy> {
     }
 };
 
-static tbb::spin_mutex task_int_mutex;
-
+// Sparse Policy Specialization
 template <typename E, unsigned long N, typename Op>
 struct compute_integrals<E, N, Op, SpPolicy> {
     DArray<N, Ttype<Op>, SpPolicy>
@@ -139,26 +116,42 @@ struct compute_integrals<E, N, Op, SpPolicy> {
 
         // Shared ptr to bases
         auto shared_bases = std::make_shared<Barray<N>>(bases);
-        auto t_ptr = &trange;
 
         std::vector<std::pair<unsigned long, Tile>> tiles;
         TA::TensorF tile_norms(trange.tiles(), 0.0);
 
+        // Need to pass ptrs to the task function
+        auto t_ptr = &trange;
         auto tn_ptr = &tile_norms;
         auto tile_vec_ptr = &tiles;
         auto op_wrapper = [=](int64_t ord) {
-            auto tile = op_pass_through<E, N, Op>(t_ptr, engines, shared_bases,
-                                                  op)(ord);
 
-            const auto tile_volume = tile.range().volume();
-            const auto tile_norm = tile.norm();
+            // Compute Tile in TA::Tensor Form
+            auto op_invoker
+                  = op_invoke<E, N, Op>(t_ptr, engines, shared_bases, op);
 
-            if (tile_norm >= tile_volume
-                             * TA::SparseShape<float>::threshold()) {
-                tn_ptr->operator[](ord) = tile.norm();
-                // Lock the vector to push back, I don't expect much contention
+            // Doing it this way potentially saves us from computing Op, which
+            // could save a lot when Op is expensive. It also lets us get
+            // better norm estimates.
+            auto ta_tile = op_invoker.ta_integrals(ord);
+
+            // Get volume and norm
+            const auto tile_volume = ta_tile.range().volume();
+            const auto tile_norm = ta_tile.norm();
+
+            // If tile passes test
+            if (tile_norm >= tile_volume * SpShapeF::threshold()) {
+                tn_ptr->operator[](ord) = tile_norm;
+
+                // Only compute Op if norm was large. Also don't move this 
+                // inside of the lock since it may be expensive and take a long
+                // time.
+                auto tile = op_invoker.apply(std::move(ta_tile));
+
+                // Lock to save tile, I don't expect much contention
                 tbb::spin_mutex::scoped_lock lock(task_int_mutex);
-                tile_vec_ptr->emplace_back(std::make_pair(ord, tile));
+                tile_vec_ptr->emplace_back(
+                      std::make_pair(ord, std::move(tile)));
             }
         };
 
@@ -168,13 +161,13 @@ struct compute_integrals<E, N, Op, SpPolicy> {
         for (auto const ord : *pmap) {
             world.taskq.add(op_wrapper, ord);
         }
-        // Make sure all tiles are evaluated. 
-        world.gop.fence(); 
+        // Make sure all tiles are evaluated.
+        world.gop.fence();
 
         TA::SparseShape<float> shape(world, tile_norms, trange);
         DArray<N, Tile, SpPolicy> out(world, trange, shape, pmap);
-        
-        for(auto &&tile : tiles){
+
+        for (auto &&tile : tiles) {
             const auto ord = tile.first;
             out.set(ord, std::move(tile.second));
         }
@@ -191,9 +184,9 @@ struct compute_integrals<E, N, Op, SpPolicy> {
 template <typename Policy = SpPolicy, typename E, unsigned long N, typename Op>
 DArray<N, detail::Ttype<Op>, Policy>
 TaskInts(mad::World &world, ShrPool<E> const &engines, Barray<N> const &bases,
-         Op op, bool screening = false) {
-        return detail::compute_integrals<E, N, Op, Policy>()(
-              world, engines, bases, std::move(op));
+         Op op) {
+    return detail::compute_integrals<E, N, Op, Policy>()(world, engines, bases,
+                                                         op);
 }
 
 

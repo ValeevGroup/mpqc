@@ -365,6 +365,7 @@ namespace tcc {
                     {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
+                    g_abij.get_world().gop.fence();
                     auto tu1 = tcc_time::now();
                     auto duration_u = tcc_time::duration_in_s(tu0, tu1);
 

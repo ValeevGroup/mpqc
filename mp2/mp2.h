@@ -28,14 +28,14 @@ namespace tcc {
         typedef TA::Array<double, 3, Tile, Policy> TArray3;
         typedef TA::Array<double, 4, Tile, Policy> TArray4;
 
-        MP2() { };
-
         MP2(const TArray2 &fock, const TArray2 &s_ab, const TArray3 &Xab,
             const std::shared_ptr<TRange1Engine> tre) : trange1_engine_(tre) {
 
             // initialize intergral g
             init(fock, s_ab, Xab);
         };
+
+        MP2() = default;
 
         void compute() {
 

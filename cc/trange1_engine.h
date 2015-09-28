@@ -103,27 +103,43 @@ namespace tcc {
     TA::TiledRange1 TRange1Engine::tr_occupied() {
         std::size_t block_size = block_size_;
         std::size_t actual_occ = get_actual_occ();
-        std::size_t nblocks = int((actual_occ + 1) / block_size);
         std::vector<std::size_t> blocks;
-        blocks.reserve(nblocks + 1);
         blocks.push_back(0);
         for (std::size_t i = block_size; i < actual_occ; i += block_size) {
             blocks.push_back(i);
         }
-        blocks.push_back(actual_occ);
+
+        // if the boundary is less than 2/3 of the block size
+        // include it to previous block
+        if(3*(actual_occ - blocks.back()) <= 2*block_size && blocks.size() > 1){
+            blocks.back() = actual_occ;
+        }
+        // if not, add a new block
+        else{
+            blocks.push_back(actual_occ);
+        }
+
         return TA::TiledRange1(blocks.begin(), blocks.end());
     }
 
     TA::TiledRange1 TRange1Engine::tr_virtual() {
         std::size_t block_size = block_size_;
-        std::size_t nblocks = int((vir_ + 1) / block_size);
         std::vector<std::size_t> blocks;
-        blocks.reserve(nblocks + 1);
         blocks.push_back(0);
         for (std::size_t i = block_size; i < vir_; i += block_size) {
             blocks.push_back(i);
         }
-        blocks.push_back(vir_);
+
+        // if the boundary is less than 2/3 of the block size
+        // include it to previous block
+        if(3*(vir_ - blocks.back()) <= 2*block_size && blocks.size() > 1){
+            blocks.back() = vir_;
+        }
+        // if not, add a new block
+        else{
+            blocks.push_back(vir_);
+        }
+
         return TA::TiledRange1(blocks.begin(), blocks.end());
     }
 
@@ -132,21 +148,36 @@ namespace tcc {
         // occ part
         std::size_t block_size = block_size_;
         std::size_t actual_occ = get_actual_occ();
-        std::size_t nblocks = int((actual_occ + 1) / block_size);
         std::vector<std::size_t> blocks;
         blocks.push_back(0);
         for (std::size_t i = block_size; i < actual_occ; i += block_size) {
             blocks.push_back(i);
         }
-        blocks.push_back(actual_occ);
+
+        if(3*(actual_occ - blocks.back()) <= 2*block_size && blocks.size() > 1){
+            blocks.back() = actual_occ;
+        }
+        // if not, add a new block
+        else{
+            blocks.push_back(actual_occ);
+        }
 
         //vir part
-        nblocks = int((vir_ + 1) / block_size);
         std::size_t actual_all = get_actual_all();
         for (std::size_t i = actual_occ + block_size; i < actual_all; i += block_size) {
             blocks.push_back(i);
         }
-        blocks.push_back(actual_all);
+
+        // if the boundary is less than 2/3 of the block size
+        // include it to previous block
+        if(3*(actual_all - blocks.back()) <= 2*block_size){
+            blocks.back() = actual_all;
+        }
+        // if not, add a new block
+        else{
+            blocks.push_back(actual_all);
+        }
+
         return TA::TiledRange1(blocks.begin(), blocks.end());
     }
 

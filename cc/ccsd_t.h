@@ -66,20 +66,6 @@ namespace tcc{
                 auto n_tr_occ = this->trange1_engine_->get_occ_blocks();
                 auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
 
-//                std::cout << n_tr_occ << " " << n_tr_vir << std::endl;
-
-//                for (auto iter = g_diba.begin(); iter != g_diba.end(); ++iter){
-//                    auto range = iter->get().range();
-//                    std::cout << iter.index() << std::endl;
-//                    std::cout << range << std::endl;
-//                }
-//
-//                for (auto iter = t2.begin(); iter != t2.end(); ++iter){
-//                    auto range = iter->get().range();
-//                    std::cout << iter.index() << std::endl;
-//                    std::cout << range << std::endl;
-//                }
-
                 double triple_energy = 0.0;
 
                 std::size_t increase = 2;
@@ -177,7 +163,6 @@ namespace tcc{
 
 
                                 TArray4 block_g_diba, block_t2_cdkj, block_g_jklc, block_t2_abil;
-                                // TODO test blocking
                                 block_g_diba("d,i,b,a") = g_diba("d,i,b,a").block(g_diba_low,g_diba_up);
                                 block_t2_cdkj("c,d,k,j") = t2("c,d,k,j").block(t2_cdkj_low,t2_cdkj_up);
 
@@ -408,7 +393,7 @@ namespace tcc{
                                                    + t3("a,b,c,j,k,i")
                                                    -2*(t3("a,b,c,k,j,i")+t3("a,b,c,i,k,j")+t3("a,b,c,j,i,k"))
                                                 )
-                                        ).reduce(CCSD_TRed(
+                                        ).reduce(CCSD_T_Reduce(
                                                 std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
                                                 this->trange1_engine_->get_actual_occ(), offset));
 
@@ -426,7 +411,7 @@ namespace tcc{
                                                        +t3("a,b,c,i,k,j")
                                                        +t3("a,b,c,j,i,k"))
                                                 )
-                                        ).reduce(CCSD_TRed_Symm(
+                                        ).reduce(CCSD_T_ReduceSymm(
                                                 std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
                                                 this->trange1_engine_->get_actual_occ(), offset));
                             }
@@ -476,7 +461,7 @@ namespace tcc{
                                        +t3("a,b,c,i,k,j")
                                        +t3("a,b,c,j,i,k"))
                                                                   )
-                        ).reduce(CCSD_TRed(
+                        ).reduce(CCSD_T_Reduce(
                                 std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
                                 this->trange1_engine_->get_actual_occ(),offset));
                 triple_energy = triple_energy/3.0;
@@ -487,7 +472,6 @@ namespace tcc{
 
                 // get integral
                 TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
-                // TODO use DF to avoid storing diba
                 TArray4 g_diba = this->ccsd_intermediate_->get_aibc();
                 TArray4 g_abij = this->ccsd_intermediate_->get_abij();
 
@@ -544,7 +528,6 @@ namespace tcc{
 
 
                                 TArray4 block_g_diba, block_t2_cdkj, block_g_jklc, block_t2_abil;
-                                // TODO test blocking
                                 block_g_diba("d,i,b,a") = g_diba("d,i,b,a").block(g_diba_low,g_diba_up);
                                 block_t2_cdkj("c,d,k,j") = t2("c,d,k,j").block(t2_cdkj_low,t2_cdkj_up);
 
@@ -775,7 +758,7 @@ namespace tcc{
                                                    + t3("a,b,c,j,k,i")
                                                    -2*(t3("a,b,c,k,j,i")+t3("a,b,c,i,k,j")+t3("a,b,c,j,i,k"))
                                                 )
-                                        ).reduce(CCSD_TRed(
+                                        ).reduce(CCSD_T_Reduce(
                                                 std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
                                                 this->trange1_engine_->get_actual_occ(), offset));
 
@@ -793,7 +776,7 @@ namespace tcc{
                                                        +t3("a,b,c,i,k,j")
                                                        +t3("a,b,c,j,i,k"))
                                                 )
-                                        ).reduce(CCSD_TRed_Symm(
+                                        ).reduce(CCSD_T_ReduceSymm(
                                                 std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
                                                 this->trange1_engine_->get_actual_occ(), offset));
                             }
@@ -811,19 +794,18 @@ namespace tcc{
 
         private:
 
-            struct CCSD_TRed {
-            public:
-                using result_type = double;
-                using argument_type = Tile;
+            struct ReduceBase{
+                typedef double result_type;
+                typedef Tile argument_type;
 
                 std::shared_ptr<Eig::VectorXd> vec_;
                 unsigned int n_occ_;
                 std::array<std::size_t,6> offset_;
 
-                CCSD_TRed(std::shared_ptr<Eig::VectorXd> vec, int n_occ, std::array<std::size_t,6> offset)
-                        : vec_(std::move(vec)), n_occ_(n_occ) , offset_(offset){ }
+                ReduceBase(std::shared_ptr<Eig::VectorXd> vec, int n_occ, std::array<std::size_t,6> offset)
+                : vec_(std::move(vec)), n_occ_(n_occ) , offset_(offset){ }
 
-                CCSD_TRed(CCSD_TRed const &) = default;
+                ReduceBase(ReduceBase const &) = default;
 
                 result_type operator()() const { return 0.0; }
 
@@ -832,11 +814,24 @@ namespace tcc{
                 void operator()(result_type &me, result_type const &other) const {
                     me += other;
                 }
+            };
+
+            struct CCSD_T_Reduce : public ReduceBase{
+                typedef typename ReduceBase::result_type result_type;
+                typedef typename ReduceBase::argument_type argument_type ;
+
+                CCSD_T_Reduce(std::shared_ptr<Eig::VectorXd> vec, int n_occ, std::array<std::size_t,6> offset)
+                : ReduceBase(vec,n_occ,offset){ }
+
+                CCSD_T_Reduce(CCSD_T_Reduce const &) = default;
+
+                using ReduceBase::operator();
 
                 void operator()(result_type &me, argument_type const &tile) const {
 
-                    auto const &ens = *vec_;
-                    std::size_t n_occ = n_occ_;
+                    auto const &ens = *this->vec_;
+                    std::size_t n_occ = this->n_occ_;
+                    auto offset_ = this->offset_;
 
                     const auto a0 = tile.range().lobound()[0];
                     const auto an = tile.range().upbound()[0];
@@ -875,7 +870,7 @@ namespace tcc{
 
                                             const auto e_abcijk = e_i + e_j + e_k - e_a - e_b - e_c;
 
-                                            me += (1/e_abcijk) * tile[tile_idx];
+                                            me += (1.0/e_abcijk) * tile[tile_idx];
 
                                         }
                                     }
@@ -885,31 +880,19 @@ namespace tcc{
                         }
                     }
                 }
-            }; // structure CCSD_TRed
+            }; // structure CCSD_T_Reduce
 
 
-            // TODO inheritate from CCSD_TRed
-            struct CCSD_TRed_Symm{
+            struct CCSD_T_ReduceSymm : public ReduceBase {
+                typedef typename ReduceBase::result_type result_type;
+                typedef typename ReduceBase::argument_type argument_type ;
 
-                using result_type = double;
-                using argument_type = Tile;
+                CCSD_T_ReduceSymm(std::shared_ptr<Eig::VectorXd> vec, int n_occ, std::array<std::size_t,6> offset)
+                : ReduceBase(vec,n_occ,offset){ }
 
-                std::shared_ptr<Eig::VectorXd> vec_;
-                unsigned int n_occ_;
-                std::array<std::size_t,6> offset_;
+                CCSD_T_ReduceSymm(CCSD_T_ReduceSymm const &) = default;
 
-                CCSD_TRed_Symm(std::shared_ptr<Eig::VectorXd> vec, int n_occ, std::array<std::size_t,6> offset)
-                : vec_(std::move(vec)), n_occ_(n_occ) , offset_(offset){ }
-
-                CCSD_TRed_Symm(CCSD_TRed_Symm const &) = default;
-
-                result_type operator()() const { return 0.0; }
-
-                result_type operator()(result_type const &t) const { return t; }
-
-                void operator()(result_type &me, result_type const &other) const {
-                    me += other;
-                }
+                using ReduceBase::operator();
 
                 void operator()(result_type &me, argument_type const &tile) const {
 
@@ -950,8 +933,6 @@ namespace tcc{
 
                     typename Tile::value_type tmp = 0.0;
 
-
-
                     // use symmetry in loop, only sum result over c <= b <= a
                     for (auto a = a0; a < an; ++a) {
                         const auto e_a = ens[a + n_occ];
@@ -970,7 +951,7 @@ namespace tcc{
 
                                             const auto e_abcijk = e_i + e_j + e_k - e_a - e_b - e_c;
 
-                                            tmp = (1/e_abcijk) * tile[tile_idx];
+                                            tmp = (1.0/e_abcijk) * tile[tile_idx];
                                             // 6 fold symmetry if none in a,b,c equal
                                             if (a!=b && a!=c && b!=c) {
                                                 tmp = 2.0 * tmp;
@@ -993,7 +974,7 @@ namespace tcc{
                         }
                     }
                 }
-            }; // structure CCSD_TRed_Symm
+            }; // structure CCSD_T_ReduceSymm
 
         }; // class CCSD_T
 

@@ -75,23 +75,24 @@ struct compute_integrals;
 
 template <typename E, unsigned long N, typename Op>
 struct compute_integrals<E, N, Op, DnPolicy> {
-    Ttype<Op> operator()(mad::World &world, ShrPool<E> const &engines,
-                         Barray<N> const &bases, Op op) {
+    DArray<N, Ttype<Op>, DnPolicy>
+    operator()(mad::World &world, ShrPool<E> const &engines,
+               Barray<N> const &bases, Op op) {
 
         using Tile = Ttype<Op>;
-
         DArray<N, Tile, DnPolicy> out(world, create_trange(bases));
+
+        // Get Trange ptr for tasks will be used within tasks.  This assumes
+        // that the trange outlives all of the tasks, otherwise this should be
+        // a shared ptr.
+        auto t_ptr = &(out.trange());
 
         // Get reference to pmap
         auto const &pmap = *(out.get_pmap());
-
-        // Get Trange ptr for tasks
-        auto const t_ptr = &(out.get_trange());
-
         // For each ordinal create a task
         for (auto const ord : pmap) {
             mad::Future<Tile> tile = world.taskq.add(op_pass_through<E, N, Op>(
-                  t_ptr, engines, std::make_shared<Barray<N>>(bases), op));
+                  t_ptr, engines, std::make_shared<Barray<N>>(bases), op), ord);
             out.set(ord, tile);
         }
 

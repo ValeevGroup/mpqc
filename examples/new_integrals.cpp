@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     std::string basis_name = "";
     int nclusters = 0;
     double threshold = 1e-13;
-    if (argc != 4) {
+    if (argc == 4) {
         mol_file = argv[1];
         basis_name = argv[2];
         nclusters = std::stoi(argv[3]);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
 
     auto ta_pass_through = [](TA::TensorD &&ten){
-        return ten;
+        return TA::TensorD(std::move(ten));
     };
 
     auto eri2 = mpqc_ints::TaskInts<DnPolicy>(world, eri_pool, 

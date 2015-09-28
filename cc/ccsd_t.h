@@ -381,8 +381,11 @@ namespace tcc{
                             std::array<std::size_t,6> offset{a_offset,b_offset,c_offset,0,0,0};
 
                             double tmp_energy = 0.0;
-                             if ( b_end < a && c_end < b){
+                            if (b_end < a && c_end < b) {
 
+                                auto ccsd_t_reduce = CCSD_T_Reduce(
+                                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                        this->trange1_engine_->get_actual_occ(), offset);
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -391,14 +394,16 @@ namespace tcc{
                                                 * (4.0 * t3("a,b,c,i,j,k")
                                                    + t3("a,b,c,k,i,j")
                                                    + t3("a,b,c,j,k,i")
-                                                   -2*(t3("a,b,c,k,j,i")+t3("a,b,c,i,k,j")+t3("a,b,c,j,i,k"))
+                                                   - 2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") + t3("a,b,c,j,i,k"))
                                                 )
-                                        ).reduce(CCSD_T_Reduce(
-                                                std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                                this->trange1_engine_->get_actual_occ(), offset));
+                                        ).reduce(ccsd_t_reduce);
 
                                 tmp_energy *= 2;
-                            }else{
+                            } else {
+
+                                auto ccsd_t_reduce = CCSD_T_ReduceSymm(
+                                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                        this->trange1_engine_->get_actual_occ(), offset);
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -407,13 +412,11 @@ namespace tcc{
                                                 * (4.0 * t3("a,b,c,i,j,k")
                                                    + t3("a,b,c,k,i,j")
                                                    + t3("a,b,c,j,k,i")
-                                                   -2*(t3("a,b,c,k,j,i")
-                                                       +t3("a,b,c,i,k,j")
-                                                       +t3("a,b,c,j,i,k"))
+                                                   - 2 * (t3("a,b,c,k,j,i")
+                                                          + t3("a,b,c,i,k,j")
+                                                          + t3("a,b,c,j,i,k"))
                                                 )
-                                        ).reduce(CCSD_T_ReduceSymm(
-                                                std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                                this->trange1_engine_->get_actual_occ(), offset));
+                                        ).reduce(ccsd_t_reduce);
                             }
 
                             triple_energy += tmp_energy;
@@ -430,6 +433,7 @@ namespace tcc{
                 return  triple_energy;
             }
 
+            // compute and store all t3 amplitudes, not recommanded for performance computing
             double compute_ccsd_t_straight(const TArray2& t1, const TArray4& t2){
 
                 // get integral
@@ -449,6 +453,12 @@ namespace tcc{
                 v3("a,b,c,i,j,k") = v3("a,b,c,i,j,k") + v3("b,c,a,j,k,i") + v3("a,c,b,i,k,j");
 
                 std::array<std::size_t,6> offset {0,0,0,0,0,0};
+
+                auto ccsd_t_reduce = CCSD_T_Reduce(
+                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                        this->trange1_engine_->get_actual_occ(),
+                        offset);
+
                 double triple_energy =
                         (
                                 (t3("a,b,c,i,j,k")
@@ -459,11 +469,8 @@ namespace tcc{
                                    + t3("a,b,c,j,k,i")
                                    -2*(t3("a,b,c,k,j,i")
                                        +t3("a,b,c,i,k,j")
-                                       +t3("a,b,c,j,i,k"))
-                                                                  )
-                        ).reduce(CCSD_T_Reduce(
-                                std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                this->trange1_engine_->get_actual_occ(),offset));
+                                       +t3("a,b,c,j,i,k")))
+                        ).reduce(ccsd_t_reduce);
                 triple_energy = triple_energy/3.0;
                 return triple_energy;
             }
@@ -748,6 +755,9 @@ namespace tcc{
                             double tmp_energy = 0.0;
                             if ( b < a && c < b){
 
+                                auto ccsd_t_reduce = CCSD_T_Reduce(
+                                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                        this->trange1_engine_->get_actual_occ(), offset);
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -758,12 +768,15 @@ namespace tcc{
                                                    + t3("a,b,c,j,k,i")
                                                    -2*(t3("a,b,c,k,j,i")+t3("a,b,c,i,k,j")+t3("a,b,c,j,i,k"))
                                                 )
-                                        ).reduce(CCSD_T_Reduce(
-                                                std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                                this->trange1_engine_->get_actual_occ(), offset));
+                                        ).reduce(ccsd_t_reduce);
 
                                 tmp_energy *= 2;
                             }else{
+
+                                auto ccsd_t_reduce = CCSD_T_ReduceSymm(
+                                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                        this->trange1_engine_->get_actual_occ(), offset);
+
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -776,9 +789,7 @@ namespace tcc{
                                                        +t3("a,b,c,i,k,j")
                                                        +t3("a,b,c,j,i,k"))
                                                 )
-                                        ).reduce(CCSD_T_ReduceSymm(
-                                                std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                                this->trange1_engine_->get_actual_occ(), offset));
+                                        ).reduce(ccsd_t_reduce);
                             }
 
                             triple_energy += tmp_energy;

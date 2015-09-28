@@ -257,6 +257,7 @@ namespace tcc {
             /// @param t2 doubles amplitudes in MO basis
             /// @param t1 singles amplitudes in MO basis
             /// @return U tensor
+            // TODO test the performance stability of direct tile contraction
             TArray4 compute_u2_u11(const TArray4& t2, const TArray2& t1){
                 if (direct_){
                     TArray2 tc;

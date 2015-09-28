@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #ifndef TCC_COMMON_FWDDECL_H
 #define TCC_COMMON_FWDDECL_H
 
@@ -8,17 +8,30 @@
 #pragma GCC diagnostic pop
 
 namespace TiledArray {
-    class Range; 
+class Range;
+class TiledRange;
+class TiledRange1;
 } // namespace TiledArray
 
 namespace tcc {
-namespace tensor {
-    template <typename T> 
-    class TilePimpl;
 
-    template <typename T>
-    class Tile;
+namespace tensor {
+
+template <typename T>
+class TilePimpl;
+
+template <typename T>
+class Tile;
+
 } // namespace tensor
+
+namespace integrals {
+
+template <typename E>
+class EnginePool;
+
+} // namespace integrals
+
 } // namespace tcc
 
 #endif // TCC_COMMON_FWDDECL_H

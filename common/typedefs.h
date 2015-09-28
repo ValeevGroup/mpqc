@@ -7,12 +7,22 @@
 
 #include <type_traits>
 
-// Typedefs for my most commonly used arrays
-template<unsigned int DIM, typename Policy>
-using LRArray = TA::Array<double, DIM, tcc::tensor::TilePimpl<double>, Policy>;
+// TileArray typedefs
+using SpPolicy = TA::SparsePolicy;
+using DnPolicy = TA::DensePolicy;
+
+using TRange1 = TA::TiledRange1;
+using TRange = TA::TiledRange;
 
 template<unsigned int DIM, typename Policy>
 using TAArray = TA::Array<double, DIM, TA::TensorD, Policy>;
+
+template <unsigned int DIM, typename Tile, typename Policy>
+using DArray = TA::Array<double, DIM, Tile, Policy>;
+
+// MPQC typedefs
+template<typename E>
+using Epool=tints::EnginePool<E>;
 
 template<typename T>
 using Tile = tcc::tensor::Tile<T>;

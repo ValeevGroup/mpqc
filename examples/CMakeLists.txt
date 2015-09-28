@@ -1,7 +1,6 @@
 add_custom_target(examples)
 add_custom_target(sqrt_inverse)
 add_custom_target(paper)
-add_custom_target(bugs)
 add_custom_target(fastK)
 
 add_executable(mp2 EXCLUDE_FROM_ALL mp2.cpp)
@@ -29,30 +28,11 @@ target_link_libraries(hf_l_inv_trick
 )
 add_dependencies(fastK hf_l_inv_trick)
 
-add_executable(hf_low_mem EXCLUDE_FROM_ALL hf_l_low_mem.cpp)
-target_link_libraries(hf_low_mem
-  ${TileClusterChem_LIBRARIES}
-)
-add_dependencies(fastK hf_low_mem)
-
-
 add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 
 target_link_libraries(sqrt_inverse_example
   ${TileClusterChem_LIBRARIES}
 )
 add_dependencies(sqrt_inverse sqrt_inverse_example)
-
-add_executable(lr_hartree_fock EXCLUDE_FROM_ALL lr_hartree_fock.cpp) 
-target_link_libraries(lr_hartree_fock
-  ${TileClusterChem_LIBRARIES}
-)
-add_dependencies(examples lr_hartree_fock)
-
-add_executable(lr_hartree_fock_inv_oh EXCLUDE_FROM_ALL lr_hartree_fock_inv_oh.cpp) 
-target_link_libraries(lr_hartree_fock_inv_oh
-  ${TileClusterChem_LIBRARIES}
-)
-add_dependencies(examples lr_hartree_fock_inv_oh)
 
 add_executable(matrix_plot EXCLUDE_FROM_ALL matrix_plot.cpp) 
 target_link_libraries(matrix_plot
@@ -60,9 +40,18 @@ target_link_libraries(matrix_plot
 )
 add_dependencies(examples matrix_plot)
 
-add_executable(memory_test EXCLUDE_FROM_ALL memory_usage.cpp)
-target_link_libraries(memory_test
-    ${TileClusterChem_LIBRARIES}
+add_executable(just_world EXCLUDE_FROM_ALL empty_main.cpp) 
+target_link_libraries(just_world
+  ${TileClusterChem_LIBRARIES}
 )
-add_dependencies(bugs memory_test)
+
+add_executable(old_ints EXCLUDE_FROM_ALL old_integrals.cpp) 
+target_link_libraries(old_ints
+  ${TileClusterChem_LIBRARIES}
+)
+
+add_executable(new_ints EXCLUDE_FROM_ALL new_integrals.cpp) 
+target_link_libraries(new_ints
+  ${TileClusterChem_LIBRARIES}
+)
 

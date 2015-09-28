@@ -1,78 +1,121 @@
 //
 // task_integrals.h
 //
-// Copyright (C) 2014 Drew Lewis
+// Copyright (C) 2015 Drew Lewis
 // Maintainer Drew Lewis
 //
 // Based on file task_integrals.hpp from mpqc
 //
 
-#ifndef TCC_INTEGRALS_TASKINTEGRALS_H
-#define TCC_INTEGRALS_TASKINTEGRALS_H
+#pragma once
 
+#ifndef MPQC_INTEGRALS_TASKINTEGRALS_H
+#define MPQC_INTEGRALS_TASKINTEGRALS_H
+
+#include "../common/typedefs.h"
 #include "../include/tiledarray.h"
-#include "../include/btas.h"
-#include "../include/libint2.h"
-
-#include "../basis/cluster_shells.h"
-#include "integral_engine_pool.h"
-#include "btas_compute_functors.h"
-
 #include "../basis/basis.h"
 
-#include "../tensor/tile_pimpl_devel.h"
+#include <memory>
+#include <array>
 
-namespace tcc {
+
+namespace mpqc {
 namespace integrals {
 
-template <typename Array, typename SharedEnginePool, typename TileFunctor>
-void initialize_tiles(Array &a, SharedEnginePool engines,
-                      basis::Basis const &basis, TileFunctor tf) {
-    const auto end = a.end();
-    for (auto it = a.begin(); it != end; ++it) {
-        auto call_tf = [=](basis::Basis const *basis_) {
-            *it = (tf(it.make_range(), it.index(), basis_, engines));
-        };
-        a.get_world().taskq.add(call_tf, &basis);
+template <typename E>
+using ShrPool = std::shared_ptr<Epool<E>>;
+
+template <unsigned long N>
+using Barray = std::array<tcc::basis::Basis, N>;
+
+namespace detail {
+
+template <unsigned long N>
+using ShrBases = std::shared_ptr<Barray<N>>;
+
+template <typename Op>
+using Ttype = decltype(std::declval<Op>()(std::declval<TA::TensorD>()));
+
+// Capture by value since tasks must capture by value
+template <typename E, unsigned long N, typename Op>
+struct op_pass_through {
+    const TRange *const trange_ptr_;
+    ShrPool<E> engines_;
+    ShrBases<N> bases_;
+    Op op_;
+
+    op_pass_through() = delete;
+    op_pass_through(const TRange *const tp, ShrPool<E> const &es,
+                    ShrBases<N> const &bs, Op op)
+            : trange_ptr_{tp}, engines_{es}, bases_{bs}, op_{op} {}
+
+    Ttype<Op> operator()(int64_t ord) {
+        return op_(TA::TensorD(trange_ptr_->make_tile_range(ord), 0.0));
     }
-}
+};
 
-template <unsigned long order, typename TileType>
-TiledArray::Array<double, order, TileType>
-create_array(madness::World &world, basis::Basis const &basis) {
+// Create TRange from bases
+template <std::size_t N>
+TRange create_trange(Barray<N> const &basis_array) {
 
-    std::vector<TiledArray::TiledRange1> trange1_collector;
-    trange1_collector.reserve(order);
+    std::vector<TRange1> trange1s;
+    trange1s.reserve(N);
 
-    const auto trange1 = basis.create_flattend_trange1();
-    for (auto i = 0ul; i < order; ++i) {
-        trange1_collector.push_back(trange1);
+    for (auto i = 0ul; i < N; ++i) {
+        trange1s.emplace_back(basis_array[i].create_flattend_trange1());
     }
 
-    TiledArray::TiledRange trange(trange1_collector.begin(),
-                                  trange1_collector.end());
-
-    return TiledArray::Array<double, order, TileType>(world, trange);
+    return TRange(trange1s.begin(), trange1s.end());
 }
 
-template <typename SharedEnginePool,
-          typename TileFunctor = compute_functors::BtasTileFunctor<double>>
-TiledArray::Array<double, integrals::pool_order<SharedEnginePool>(),
-                  typename TileFunctor::TileType>
-Integrals(madness::World &world, SharedEnginePool engines,
-          basis::Basis const &basis, TileFunctor tf = TileFunctor{}) {
+// Specialize construction based on policy.
+template <typename E, unsigned long N, typename Op, typename Policy>
+struct compute_integrals;
 
-    constexpr auto tensor_order = integrals::pool_order<decltype(engines)>();
-    using TileType = typename TileFunctor::TileType;
+template <typename E, unsigned long N, typename Op>
+struct compute_integrals<E, N, Op, DnPolicy> {
+    Ttype<Op> operator()(mad::World &world, ShrPool<E> const &engines,
+                         Barray<N> const &bases, Op op) {
 
-    auto array = create_array<tensor_order, TileType>(world, basis);
+        using Tile = Ttype<Op>;
 
-    initialize_tiles(array, engines, basis, tf);
-    return array;
+        DArray<N, Tile, DnPolicy> out(world, create_trange(bases));
+
+        // Get reference to pmap
+        auto const &pmap = *(out.get_pmap());
+
+        // Get Trange ptr for tasks
+        auto const t_ptr = &(out.get_trange());
+
+        // For each ordinal create a task
+        for (auto const ord : pmap) {
+            mad::Future<Tile> tile = world.taskq.add(op_pass_through<E, N, Op>(
+                  t_ptr, engines, std::make_shared<Barray<N>>(bases), op));
+            out.set(ord, tile);
+        }
+
+
+        return out;
+    }
+};
+
+} // namespace detail
+
+/*! \brief Construct integral tensors in parallel.
+ *
+ */
+template <typename Policy = SpPolicy, typename E, unsigned long N, typename Op>
+DArray<N, detail::Ttype<Op>, Policy>
+TaskInts(mad::World &world, ShrPool<E> const &engines, Barray<N> const &bases,
+         Op op) {
+    return detail::compute_integrals<E, N, Op, Policy>()(world, engines, bases,
+                                                         op);
 }
+
 
 } // namespace integrals
-} // namespace tcc
+} // namespace mpqc
 
 
-#endif // TCC_INTEGRALS_TASKINTEGRALS_H
+#endif // MPQC_INTEGRALS_TASKINTEGRALS_H

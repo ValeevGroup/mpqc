@@ -47,22 +47,7 @@ struct op_invoke {
     Ttype<Op> operator()(int64_t ord) { return op_(ta_integrals(ord)); }
 
     Ttype<Op> apply(TA::TensorD &&t) { return op_(std::move(t)); }
-
 };
-
-// Create TRange from bases
-template <std::size_t N>
-TRange create_trange(Barray<N> const &basis_array) {
-
-    std::vector<TRange1> trange1s;
-    trange1s.reserve(N);
-
-    for (auto i = 0ul; i < N; ++i) {
-        trange1s.emplace_back(basis_array[i].create_flattend_trange1());
-    }
-
-    return TRange(trange1s.begin(), trange1s.end());
-}
 
 // Specialize construction based on policy.
 template <typename E, unsigned long N, typename Op, typename Policy>
@@ -117,7 +102,8 @@ struct compute_integrals<E, N, Op, SpPolicy> {
         // Shared ptr to bases
         auto shared_bases = std::make_shared<Barray<N>>(bases);
 
-        std::vector<std::pair<unsigned long, Tile>> tiles;
+        std::vector<std::pair<unsigned long, Tile>> tiles(tvolume);
+        tiles.reserve(tvolume);
         TA::TensorF tile_norms(trange.tiles(), 0.0);
 
         // Need to pass ptrs to the task function
@@ -138,20 +124,21 @@ struct compute_integrals<E, N, Op, SpPolicy> {
             // Get volume and norm
             const auto tile_volume = ta_tile.range().volume();
             const auto tile_norm = ta_tile.norm();
+            bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
 
-            // If tile passes test
-            if (tile_norm >= tile_volume * SpShapeF::threshold()) {
+            if (save_norm) {
                 tn_ptr->operator[](ord) = tile_norm;
 
-                // Only compute Op if norm was large. Also don't move this 
+                // Only compute Op if norm was large. Also don't move this
                 // inside of the lock since it may be expensive and take a long
                 // time.
                 auto tile = op_invoker.apply(std::move(ta_tile));
 
                 // Lock to save tile, I don't expect much contention
-                tbb::spin_mutex::scoped_lock lock(task_int_mutex);
-                tile_vec_ptr->emplace_back(
-                      std::make_pair(ord, std::move(tile)));
+                tile_vec_ptr->operator[](ord)
+                      = std::make_pair(ord, std::move(tile));
+            } else {
+                tile_vec_ptr->operator[](ord) = std::make_pair(ord, Tile());
             }
         };
 
@@ -169,7 +156,10 @@ struct compute_integrals<E, N, Op, SpPolicy> {
 
         for (auto &&tile : tiles) {
             const auto ord = tile.first;
-            out.set(ord, std::move(tile.second));
+            if(!out.is_zero(ord)){
+                assert(!tile.second.empty());
+                out.set(ord, std::move(tile.second));
+            }
         }
 
         return out;

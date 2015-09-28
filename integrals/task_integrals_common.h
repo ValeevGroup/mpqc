@@ -32,6 +32,20 @@ using ShrBases = std::shared_ptr<Barray<N>>;
 template <typename Op>
 using Ttype = decltype(std::declval<Op>()(std::declval<TA::TensorD>()));
 
+// Create TRange from bases
+template <unsigned long N>
+TRange create_trange(Barray<N> const &basis_array) {
+
+    std::vector<TRange1> trange1s;
+    trange1s.reserve(N);
+
+    for (auto i = 0ul; i < N; ++i) {
+        trange1s.emplace_back(basis_array[i].create_flattend_trange1());
+    }
+
+    return TRange(trange1s.begin(), trange1s.end());
+}
+
 } // namespace detail
 
 } // namespace integrals

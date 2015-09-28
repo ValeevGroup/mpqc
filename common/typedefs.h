@@ -4,6 +4,7 @@
 
 #include "namespaces.h"
 #include "foward_declerations.h"
+#include "../include/eigen.h"
 
 #include <type_traits>
 
@@ -28,6 +29,10 @@ using Epool=tints::EnginePool<E>;
 
 template<typename T>
 using Tile = tcc::tensor::Tile<T>;
+
+// Eig Typedefs
+using MatrixD = Eig::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
+using VectorD = Eig::VectorXd;
 
 // Useful typedefs for removing qualifiers from types.
 template<typename T>

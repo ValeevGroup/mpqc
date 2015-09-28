@@ -194,13 +194,13 @@ ArrayType fock_from_minimal_v_oh(
     auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
 
     decltype(D_min) L_d;
-    { // TESTING ONLY FOR NOW
+    { 
         auto Dm_eig = array_ops::array_to_eigen(D_min);
         Eig::LLT<decltype(Dm_eig)> llt(Dm_eig);
         decltype(Dm_eig) L_d_eig = llt.matrixL();
         L_d = array_ops::eigen_to_array<decltype(D_min)::value_type>(
                 D_min.get_world(), L_d_eig, 
-                D_min.trange().data()[0], D_min.trange().data()[1]); 
+                D_min.trange().data()[0], D_min.trange().data()[1], cut); 
     }
 
 
@@ -247,13 +247,13 @@ ArrayType fock_from_minimal_low_mem(
     auto D_min = minimal_density_guess(world, clusters, min_bs, cut);
 
     decltype(D_min) L_d;
-    { // TESTING ONLY FOR NOW
+    { 
         auto Dm_eig = array_ops::array_to_eigen(D_min);
         Eig::LLT<decltype(Dm_eig)> llt(Dm_eig);
         decltype(Dm_eig) L_d_eig = llt.matrixL();
         L_d = array_ops::eigen_to_array<decltype(D_min)::value_type>(
                 D_min.get_world(), L_d_eig, 
-                D_min.trange().data()[0], D_min.trange().data()[1]); 
+                D_min.trange().data()[0], D_min.trange().data()[1], cut); 
     }
 
 

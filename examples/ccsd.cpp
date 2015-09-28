@@ -46,26 +46,25 @@ using namespace tcc;
 namespace ints = integrals;
 
 
+// static auto direct_two_e_ao =
+// std::make_shared<tcc::cc::TwoBodyIntGenerator<libint2::Coulomb>>();
 
-//static auto direct_two_e_ao = std::make_shared<tcc::cc::TwoBodyIntGenerator<libint2::Coulomb>>();
-
-static std::map<int, std::string> atom_names = {{1,  "H"},
-                                                {2,  "He"},
-                                                {3,  "Li"},
-                                                {4,  "Be"},
-                                                {5,  "B"},
-                                                {6,  "C"},
-                                                {7,  "N"},
-                                                {8,  "O"},
-                                                {9,  "F"},
+static std::map<int, std::string> atom_names = {{1, "H"},
+                                                {2, "He"},
+                                                {3, "Li"},
+                                                {4, "Be"},
+                                                {5, "B"},
+                                                {6, "C"},
+                                                {7, "N"},
+                                                {8, "O"},
+                                                {9, "F"},
                                                 {10, "Ne"},
                                                 {11, "Na"},
-                                                {12, "Mg"}
-};
+                                                {12, "Mg"}};
 
-void main_print_clusters(
-        std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
-        std::ostream &os) {
+void
+main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
+                    std::ostream &os) {
     std::vector<std::vector<molecule::Atom>> clusters;
     auto total_atoms = 0ul;
     for (auto const &cluster : bs) {
@@ -83,9 +82,8 @@ void main_print_clusters(
     for (auto const &cluster : clusters) {
         for (auto const &atom : cluster) {
             auto center = 0.52917721092 * atom.center();
-            os << atom_names[atom.charge()] << " " << center[0] << " " <<
-            center[1] << " "
-            << center[2] << std::endl;
+            os << atom_names[atom.charge()] << " " << center[0] << " "
+               << center[1] << " " << center[2] << std::endl;
         }
     }
     os << std::endl;
@@ -95,9 +93,8 @@ void main_print_clusters(
         os << "Cluster " << counter++ << std::endl;
         for (auto const &atom : cluster) {
             auto center = 0.52917721092 * atom.center();
-            os << atom_names[atom.charge()] << " " << center[0] << " " <<
-            center[1] << " "
-            << center[2] << std::endl;
+            os << atom_names[atom.charge()] << " " << center[0] << " "
+               << center[1] << " " << center[2] << std::endl;
         }
         os << std::endl;
     }
@@ -111,30 +108,31 @@ int try_main(int argc, char *argv[], madness::World &world) {
     parse_input(argc, argv, in);
 
     if (!in.HasMember("xyz file") || !in.HasMember("number of bs clusters")
-        || !in.HasMember("number of dfbs clusters") ||
-        !in.HasMember("mo block size")) {
+        || !in.HasMember("number of dfbs clusters")
+        || !in.HasMember("mo block size")) {
         if (world.rank() == 0) {
             std::cout << "At a minimum your input file must provide\n";
             std::cout << "\"xyz file\", which is path to an xyz input\n";
             std::cout << "\"number of bs clusters\", which is the number of "
-                    "clusters in the obs\n";
+                         "clusters in the obs\n";
             std::cout << "\"number of dfbs clusters\", which is the number of "
-                    "clusters in the dfbs\n";
-            std::cout <<
-            "\"mo block size\", which is the block size for MO orbitals\n";
+                         "clusters in the dfbs\n";
+            std::cout << "\"mo block size\", which is the block size for MO "
+                         "orbitals\n";
         }
     }
 
     // declare variables needed for ccsd
-    std::shared_ptr<tcc::cc::CCSDIntermediate<TA::Tensor < double>, TA::DensePolicy>> intermidiate;
+    std::shared_ptr<tcc::cc::CCSDIntermediate<TA::Tensor<double>,
+                                              TA::DensePolicy>> intermidiate;
 
     std::shared_ptr<tcc::TRange1Engine> tre;
 
     Eigen::MatrixXd ens;
 
-    TA::Array <double, 2, TA::Tensor<double>, TA::DensePolicy> fock_mo_dense;
+    TA::Array<double, 2, TA::Tensor<double>, TA::DensePolicy> fock_mo_dense;
 
-    TA::Array <double, 2, TA::Tensor<double>, TA::DensePolicy> fock_ai;
+    TA::Array<double, 2, TA::Tensor<double>, TA::DensePolicy> fock_ai;
     {
 
         // Get necessary info
@@ -149,27 +147,29 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::string basis_name = in.HasMember("basis") ? in["basis"].GetString()
                                                        : "cc-pvdz";
         std::string df_basis_name = in.HasMember("df basis")
-                                    ? in["df basis"].GetString() : "cc-pvdz-ri";
+                                          ? in["df basis"].GetString()
+                                          : "cc-pvdz-ri";
 
         // Get thresh info
         auto threshold = in.HasMember("block sparse threshold")
-                         ? in["block sparse threshold"].GetDouble()
-                         : 1e-13;
+                               ? in["block sparse threshold"].GetDouble()
+                               : 1e-13;
         auto low_rank_threshold = in.HasMember("low rank threshold")
-                                  ? in["low rank threshold"].GetDouble()
-                                  : 1e-8;
+                                        ? in["low rank threshold"].GetDouble()
+                                        : 1e-8;
 
         // Get printing info
         bool print_clusters = in.HasMember("print clusters")
-                              ? in["print clusters"].GetBool()
-                              : false;
+                                    ? in["print clusters"].GetBool()
+                                    : false;
 
         // get other info
         bool frozen_core = in.HasMember("frozen core")
-                           ? in["frozen core"].GetBool() : false;
+                                 ? in["frozen core"].GetBool()
+                                 : false;
 
         volatile int debug
-                = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
+              = in.HasMember("debug break") ? in["debug break"].GetInt() : 0;
 
         utility::parallal_break_point(world, debug);
 
@@ -177,15 +177,15 @@ int try_main(int argc, char *argv[], madness::World &world) {
             std::cout << "Mol file is " << mol_file << std::endl;
             std::cout << "basis is " << basis_name << std::endl;
             std::cout << "df basis is " << df_basis_name << std::endl;
-            std::cout << "Using " << bs_nclusters << " bs clusters" <<
-            std::endl;
+            std::cout << "Using " << bs_nclusters << " bs clusters"
+                      << std::endl;
             std::cout << "Using " << dfbs_nclusters << " dfbs clusters"
-            << std::endl;
+                      << std::endl;
             std::cout << "low rank threshhold is " << low_rank_threshold
-            << std::endl;
+                      << std::endl;
             if (print_clusters) {
                 std::cout << "Printing clusters to clusters_bs.xyz and "
-                        "cluster_dfbs.xyz." << std::endl;
+                             "cluster_dfbs.xyz." << std::endl;
             }
         }
 
@@ -200,11 +200,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto core_electron = mol.core_electrons();
 
         utility::print_par(world, "Nuclear repulsion_energy = ",
-                           repulsion_energy,
-                           "\n");
+                           repulsion_energy, "\n");
 
         auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
-        auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
+        auto dfbs_clusters
+              = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
 
         world.gop.fence();
         if (world.rank() == 0) {
@@ -213,11 +213,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 std::string dfbs_file = "clusters_dfbs.xyz";
 
                 std::cout << "Printing clusters\n";
-                std::cout << "\tobs clusters to " << obs_file
-                << ": over ride with \"basis clusters file\" keyword\n";
                 std::cout
-                << "\tdfbs clusters to " << dfbs_file
-                << ": over ride with \"df basis clusters file\" keyword\n";
+                      << "\tobs clusters to " << obs_file
+                      << ": over ride with \"basis clusters file\" keyword\n";
+                std::cout << "\tdfbs clusters to " << dfbs_file
+                          << ": over ride with \"df basis clusters file\" "
+                             "keyword\n";
 
                 std::ofstream bs_cluster_file(obs_file);
                 main_print_clusters(bs_clusters, bs_cluster_file);
@@ -233,7 +234,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         basis::BasisSet df_bs{df_basis_name};
 
 
-        std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+        std::streambuf *cout_sbuf
+              = std::cout.rdbuf(); // Silence libint printing.
         std::ofstream fout("/dev/null");
         std::cout.rdbuf(fout.rdbuf());
         basis::Basis basis{bs.create_basis(bs_clusters)};
@@ -255,7 +257,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         struct convert_2d {
             double cut_;
 
-            convert_2d(double thresh) : cut_{thresh} { }
+            convert_2d(double thresh) : cut_{thresh} {}
 
             using TileType = tensor::Tile<tensor::DecomposedTensor<double>>;
 
@@ -273,11 +275,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 std::copy(b_data, b_data + size, tensor.data());
 
                 auto dense
-                        = tensor::DecomposedTensor<double>(cut_,
-                                                           std::move(tensor));
+                      = tensor::DecomposedTensor<double>(cut_,
+                                                         std::move(tensor));
 
                 return tensor::Tile<tensor::DecomposedTensor<double>>(
-                        range, std::move(dense));
+                      range, std::move(dense));
             }
         };
 
@@ -288,8 +290,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto S = BlockSparseIntegrals(world, overlap_pool, bs_basis_array,
                                       convert_2d(low_rank_threshold));
 
-        auto to_ta = [](
-                tensor::Tile<tensor::DecomposedTensor<double>> const &t) {
+        auto to_ta =
+              [](tensor::Tile<tensor::DecomposedTensor<double>> const &t) {
             auto tensor = tensor::algebra::combine(t.tile());
             auto range = t.range();
             return TA::Tensor<double>(range, tensor.data());
@@ -314,7 +316,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         auto H_TA = TA::to_new_tile_type(H, to_ta);
 
-        auto to_decomp = [=](TA::Tensor <double> const &t) {
+        auto to_decomp = [=](TA::Tensor<double> const &t) {
             auto range = t.range();
 
             auto const extent = range.extent();
@@ -326,15 +328,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
             auto dense = tensor::DecomposedTensor<double>(low_rank_threshold,
                                                           std::move(tensor));
 
-            return tensor::Tile<tensor::DecomposedTensor<double>>(range,
-                                                                  std::move(
-                                                                          dense));
+            return tensor::Tile<tensor::DecomposedTensor<double>>(
+                  range, std::move(dense));
         };
 
         /* // Begin Two electron integrals section. */
         auto eri_pool = ints::make_pool(ints::make_2body(basis, df_basis));
 
-        auto to_decomp_with_decompose = [=](TA::Tensor <double> const &t) {
+        auto to_decomp_with_decompose = [=](TA::Tensor<double> const &t) {
             auto range = t.range();
 
             auto const extent = range.extent();
@@ -351,17 +352,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 dense = std::move(test);
             }
 
-            return tensor::Tile<tensor::DecomposedTensor<double>>(range, std::move(dense));
+            return tensor::Tile<tensor::DecomposedTensor<double>>(
+                  range, std::move(dense));
         };
         /* // Computing Eri2 */
         utility::print_par(world, "Starting 2 Center Integrals\n");
-        TA::Array <double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
-        TA::SparsePolicy> V_inv_oh;
+        TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
+                  TA::SparsePolicy> V_inv_oh;
         {
             utility::print_par(world, "\tStarting V\n");
             auto eri2 = ints::BlockSparseIntegrals(
-                    world, eri_pool, utility::make_array(df_basis, df_basis),
-                    integrals::compute_functors::BtasToTaTensor{});
+                  world, eri_pool, utility::make_array(df_basis, df_basis),
+                  integrals::compute_functors::BtasToTaTensor{});
 
             decltype(eri2) L_inv_TA;
             {
@@ -371,9 +373,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 eig_E2 = llt.matrixL();
                 decltype(eig_E2) eig_L_inv = eig_E2.inverse();
                 utility::print_par(world, "\tConverting back to TA\n");
-                L_inv_TA = array_ops::eigen_to_array < TA::Tensor < double >> (
-                        world, eig_L_inv, eri2.trange().data()[0],
-                                eri2.trange().data()[1]);
+                L_inv_TA = array_ops::eigen_to_array<TA::Tensor<double>>(
+                      world, eig_L_inv, eri2.trange().data()[0],
+                      eri2.trange().data()[1]);
             }
 
             utility::print_par(world, "\tDecomposing Tiles\n");
@@ -386,7 +388,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         struct convert_3d {
             double cut_;
 
-            convert_3d(double thresh) : cut_{thresh} { }
+            convert_3d(double thresh) : cut_{thresh} {}
 
             using TileType = tensor::Tile<tensor::DecomposedTensor<double>>;
 
@@ -405,8 +407,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 std::copy(b_data, b_data + size, tensor.data());
 
                 auto dense
-                        = tensor::DecomposedTensor<double>(cut_,
-                                                           std::move(tensor));
+                      = tensor::DecomposedTensor<double>(cut_,
+                                                         std::move(tensor));
 
                 auto test = tensor::algebra::two_way_decomposition(dense);
                 if (!test.empty()) {
@@ -414,7 +416,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 }
 
                 return tensor::Tile<tensor::DecomposedTensor<double>>(
-                        range, std::move(dense));
+                      range, std::move(dense));
             }
         };
 
@@ -422,8 +424,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::print_par(world, "\nStarting 3 Center Integrals\n");
         auto E0 = tcc_time::now();
         auto Xab = ints::BlockSparseIntegrals(
-                world, eri_pool, utility::make_array(df_basis, basis, basis),
-                convert_3d(low_rank_threshold));
+              world, eri_pool, utility::make_array(df_basis, basis, basis),
+              convert_3d(low_rank_threshold));
         auto E1 = tcc_time::now();
         auto etime = tcc_time::duration_in_s(E0, E1);
         utility::print_par(world, "Time to compute 3 center integrals ", etime,
@@ -445,8 +447,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::print_par(world, "\nStarting SOAD guess");
         auto soad0 = tcc_time::now();
         F = ints::scf::fock_from_minimal_v_oh(world, basis, df_basis, eri_pool,
-                                              H,
-                                              V_inv_oh, Xab, bs_clusters,
+                                              H, V_inv_oh, Xab, bs_clusters,
                                               low_rank_threshold * 100,
                                               convert_3d(low_rank_threshold));
         auto soad1 = tcc_time::now();
@@ -461,7 +462,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto n_occ = occupation / 2;
         auto tr_i = scf::tr_occupied(dfbs_nclusters, n_occ);
         utility::print_par(world, "Computing MO coeffs...\n");
-        auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, nocc_clusters);
+        auto Coeffs_TA
+              = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, nocc_clusters);
         utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
         auto Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
 
@@ -472,8 +474,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::print_par(world, "Computing Initial energy...\n");
         auto energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
         utility::print_par(world, "Initial energy = ",
-                           energy + repulsion_energy,
-                           "\n");
+                           energy + repulsion_energy, "\n");
 
         auto D = to_new_tile_type(D_TA, to_decomp);
 
@@ -519,7 +520,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
             F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
             F_TA = TA::to_new_tile_type(F, to_ta);
-            // to make energy variational need to use same density for F and energy!
+            // to make energy variational need to use same density for F and
+            // energy!
             energy = D_TA("i,j").dot(F_TA("i,j") + H_TA("i,j"), world).get();
 
             Ferror("i,j") = F_TA("i,k") * D_TA("k,l") * S_TA("l,j")
@@ -528,7 +530,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
             error = Ferror("i,j").norm().get() / volume;
             diis.extrapolate(F_TA, Ferror);
 
-            Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ, nocc_clusters);
+            Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
+                                              nocc_clusters);
             Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
             D_TA("i,j") = Coeffs_TA("i,a") * Coeffs_TA("j,a");
 
@@ -560,7 +563,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         int n_frozen_core = 0;
         if (frozen_core) {
             n_frozen_core = mol.core_electrons();
-            utility::print_par(world, "Frozen Core: ", n_frozen_core, " electrons", "\n");
+            utility::print_par(world, "Frozen Core: ", n_frozen_core,
+                               " electrons", "\n");
             n_frozen_core = n_frozen_core / 2;
         }
 
@@ -586,10 +590,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                               n_frozen_core);
 
         // start mp2
-//            MP2<TA::Tensor<double>, TA::SparsePolicy> mp2(F_TA, S_TA, X_ab_TA, *tre);
-//
-//            auto two_e = mp2.get_g();
-//            mp2.compute();
+        //            MP2<TA::Tensor<double>, TA::SparsePolicy> mp2(F_TA, S_TA,
+        //            X_ab_TA, *tre);
+        //
+        //            auto two_e = mp2.get_g();
+        //            mp2.compute();
 
         auto tr_0 = Xab.trange().data().back();
         auto tr_all = tre->get_all_tr1();
@@ -600,11 +605,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::print_par(world, "TiledRange1 Occupied ", tr_i0, "\n");
         utility::print_par(world, "TiledRange1 Virtual  ", tr_vir, "\n");
 
-        auto Ci = array_ops::eigen_to_array <TA::Tensor<double>> (world, C_occ, tr_0, tr_i0);
+        auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ,
+                                                                tr_0, tr_i0);
 
-        auto Cv = array_ops::eigen_to_array <TA::Tensor<double>> (world, C_vir, tr_0, tr_vir);
+        auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir,
+                                                                tr_0, tr_vir);
 
-        auto Call = array_ops::eigen_to_array <TA::Tensor<double>> (world, C_all, tr_0, tr_all);
+        auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_all,
+                                                                  tr_0, tr_all);
 
         auto Ci_dense = TA::to_dense(Ci);
         auto Cv_dense = TA::to_dense(Cv);
@@ -612,23 +620,25 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::vector<TA::TiledRange1> tr_04(4, tr_0);
         TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
 
-        auto lazy_two_electron_int = tcc::cc::make_lazy_two_electron_array(
-                world, basis, trange_4);
+        auto lazy_two_electron_int
+              = tcc::cc::make_lazy_two_electron_array(world, basis, trange_4);
 
         // test contraction here
-//    TA::Array<double,4> test;
-//    test("i,j,a,b") = lazy_two_electron_int("p,q,r,s")*Ci_dense("p,i")*Ci_dense("q,j")*Cv_dense("r,a")*Cv_dense("s,b");
+        //    TA::Array<double,4> test;
+        //    test("i,j,a,b") =
+        //    lazy_two_electron_int("p,q,r,s")*Ci_dense("p,i")*Ci_dense("q,j")*Cv_dense("r,a")*Cv_dense("s,b");
 
-//    test("i,a,j,b") = test("i,j,a,b");
-//    std::cout << test << std::endl;
+        //    test("i,a,j,b") = test("i,j,a,b");
+        //    std::cout << test << std::endl;
 
-        intermidiate = std::make_shared<tcc::cc::CCSDIntermediate<TA::Tensor < double>, TA::DensePolicy>>
-            (X_ab_TA, Ci_dense, Cv_dense, lazy_two_electron_int);
+        intermidiate
+              = std::make_shared<tcc::cc::CCSDIntermediate<TA::Tensor<double>,
+                                                           TA::DensePolicy>>(
+                    X_ab_TA, Ci_dense, Cv_dense, lazy_two_electron_int);
 
         decltype(F_TA) fock_mo;
         fock_mo("p,q") = F_TA("mu,nu") * Call("mu,p") * Call("nu,q");
         fock_mo_dense = TA::to_dense(fock_mo);
-
     }
 
     // clean up all temporary from HF
@@ -638,10 +648,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::utility::parallal_break_point(world, 0);
 
 
-    tcc::cc::CCSD<TA::Tensor < double>, TA::DensePolicy >
-                                        ccsd(fock_mo_dense, ens, tre, intermidiate);
+    tcc::cc::CCSD<TA::Tensor<double>, TA::DensePolicy> ccsd(fock_mo_dense, ens,
+                                                            tre, intermidiate);
 
-    //ccsd.compute_ccsd_dummy();
+    // ccsd.compute_ccsd_dummy();
     ccsd.compute_ccsd();
 
 

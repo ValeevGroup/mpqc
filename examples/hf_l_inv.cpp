@@ -349,7 +349,7 @@ int try_main(int argc, char *argv[]) {
             utility::print_par(world, "\tConverting back to TA\n");
             L_inv_TA = array_ops::eigen_to_array<TA::Tensor<double>>(
                   world, eig_L_inv, eri2.trange().data()[0],
-                  eri2.trange().data()[1]);
+                  eri2.trange().data()[1], low_rank_threshold);
         }
 
         utility::print_par(world, "\tDecomposing Tiles\n");
@@ -448,7 +448,7 @@ int try_main(int argc, char *argv[]) {
     auto Coeffs_TA = scf::Coeffs_from_fock(F_TA, S_TA, tr_i, n_occ,
                                            occ_nclusters, use_chol_vectors);
     if (cluster_orbitals) {
-        scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
+        scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters, low_rank_threshold);
     }
 
     utility::print_par(world, "Converting Coeffs to Decomp Form...\n");
@@ -533,7 +533,7 @@ int try_main(int argc, char *argv[]) {
                                           occ_nclusters, use_chol_vectors);
 
         if (cluster_orbitals) {
-            scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters);
+            scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters, low_rank_threshold);
         }
 
         Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);
@@ -640,10 +640,10 @@ int try_main(int argc, char *argv[]) {
         TA::TiledRange1 tr0 = D.trange().data().front();
         auto Ci = array_ops::
               eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_occ, tr0, tr_i);
+                    world, C_occ, tr0, tr_i, low_rank_threshold);
         auto Cv = array_ops::
               eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_vir, tr0, tr_vir);
+                    world, C_vir, tr0, tr_vir, low_rank_threshold);
 
         decltype(Xab) Xia;
         Xia("X,i,a") = Xab("X,mu,nu") * Ci("nu,i") * Cv("mu,a");

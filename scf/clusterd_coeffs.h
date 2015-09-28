@@ -16,7 +16,7 @@ namespace scf {
 template <typename T, typename Tile>
 void clustered_coeffs(
       std::vector<TA::Array<T, 2, Tile, TA::SparsePolicy>> const &xyz,
-      TA::Array<T, 2, Tile, TA::SparsePolicy> &C, unsigned long occ_nclusters) {
+      TA::Array<T, 2, Tile, TA::SparsePolicy> &C, unsigned long occ_nclusters, double cut = 1e-7) {
 
     TA::Array<T, 2, Tile, TA::SparsePolicy> X, Y, Z;
     X("i,j") = C("mu,i") * xyz[1]("mu, nu") * C("nu,j");
@@ -38,7 +38,7 @@ void clustered_coeffs(
     auto tr_occ
           = tensor::localize_vectors_with_kmeans(oc_pos, C_eig, occ_nclusters);
     C = array_ops::eigen_to_array<Tile>(C.get_world(), C_eig,
-                                        C.trange().data()[0], tr_occ);
+                                        C.trange().data()[0], tr_occ, cut);
 }
 
 } // namespace scf

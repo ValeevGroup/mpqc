@@ -511,7 +511,7 @@ int main(int argc, char *argv[]) {
             L = array_ops::
                   eigen_to_array<tensor::
                                        Tile<tensor::DecomposedTensor<double>>>(
-                        world, L_eig, tr0, tr1);
+                        world, L_eig, tr0, tr1, low_rank_threshold);
         }
         auto tl1 = tcc_time::now();
         auto timel = tcc_time::duration_in_s(tl0, tl1);

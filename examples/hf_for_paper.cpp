@@ -487,10 +487,10 @@ int main(int argc, char *argv[]) {
         TA::TiledRange1 tr0 = D.trange().data().front();
         auto Ci = array_ops::
               eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_occ, tr0, tr_i);
+                    world, C_occ, tr0, tr_i, low_rank_threshold);
         auto Cv = array_ops::
               eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_vir, tr0, tr_vir);
+                    world, C_vir, tr0, tr_vir, low_rank_threshold);
 
         decltype(Xab) Xia;
         Xia("X,i,a") = V_inv_oh("X,P")

@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
             L = array_ops::
                   eigen_to_array<tensor::
                                        Tile<tensor::DecomposedTensor<double>>>(
-                        world, L_eig, tr0, tr1);
+                        world, L_eig, tr0, tr1, low_rank_threshold);
             L("i,j") = S_inv_sqrt_lr("i,k") * L("k,j");
         }
 
@@ -593,10 +593,10 @@ int main(int argc, char *argv[]) {
         TA::TiledRange1 tr0 = D.trange().data().front();
         auto Ci = array_ops::
               eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_occ, tr0, tr1);
+                    world, C_occ, tr0, tr1, low_rank_threshold);
         auto Cv = array_ops::
               eigen_to_array<tensor::Tile<tensor::DecomposedTensor<double>>>(
-                    world, C_vir, tr0, tr_vir);
+                    world, C_vir, tr0, tr_vir, low_rank_threshold);
 
         decltype(Xab) Xia;
         Xia("X,i,a") = Xab("X,mu,nu") * Ci("nu,i") * Cv("mu,a");

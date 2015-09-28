@@ -1,7 +1,3 @@
-#include <memory>
-// #include <fstream>
-// #include <algorithm>
-
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
 
@@ -10,10 +6,7 @@
 #include "../include/btas.h"
 
 #include "../utility/make_array.h"
-// #include "../utility/parallel_print.h"
-// #include "../utility/array_storage.h"
-// #include "../utility/ta_helpers.h"
-// #include "../utility/time.h"
+#include "../utility/time.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
@@ -35,6 +28,8 @@
 #include "../tensor/decomposed_tensor.h"
 #include "../tensor/decomposed_tensor_algebra.h"
 #include "../tensor/decomposed_tensor_unary.h"
+
+#include <memory>
 
 // #include "../ta_routines/sqrt_inv.h"
 // #include "../ta_routines/inverse.h"
@@ -70,46 +65,74 @@ int main(int argc, char *argv[]) {
 
     libint2::init();
 
-    auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
+    auto btas_to_ta = tints::compute_functors::BtasToTaTensor();
 
-    struct convert_2d {
-        double cut_;
-        convert_2d(double thresh) : cut_{thresh} {}
-        using TileType = tensor::Tile<tensor::DecomposedTensor<double>>;
-        TileType operator()(tensor::ShallowTensor<2> const &bt) {
-            auto range = bt.range();
-
-            auto const extent = range.extent();
-            const auto X = extent[0];
-            const auto i = extent[1];
-            auto local_range = TA::Range{X, i};
-
-            auto tensor = TA::Tensor<double>(local_range);
-            const auto b_data = bt.tensor().data();
-            const auto size = bt.tensor().size();
-            std::copy(b_data, b_data + size, tensor.data());
-
-            auto dense
-                  = tensor::DecomposedTensor<double>(cut_, std::move(tensor));
-
-            auto test = tensor::algebra::two_way_decomposition(dense);
-            if (!test.empty()) {
-                dense = std::move(test);
-            }
-
-            return tensor::Tile<tensor::DecomposedTensor<double>>(
-                  range, std::move(dense));
+    { // Over lap ints
+        if (world.rank() == 0) {
+            std::cout << "Overlap ints\n";
         }
-    };
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+        auto overlap_pool
+              = tints::make_pool(tints::make_1body("overlap", basis));
+        auto S = tints::BlockSparseIntegrals(world, overlap_pool,
+                                             utility::make_array(basis, basis),
+                                             btas_to_ta);
+        auto S_norm = S("i,j").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
 
-    auto eri2 = integrals::BlockSparseIntegrals(
-          world, eri_pool, utility::make_array(basis, basis),
-          convert_2d(1e-8));
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << S_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
+    }
 
-    auto eri2_norm = eri2("i,j").norm(world).get();
+    { // Two electron two center
+        if (world.rank() == 0) {
+            std::cout << "Two E two Center ints\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
 
-    if(world.rank() == 0){
-        std::cout << "All done norm of ints was " << eri2_norm << std::endl;
+        auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
+        auto eri2 = integrals::BlockSparseIntegrals(
+              world, eri_pool, utility::make_array(basis, basis),
+              tints::compute_functors::BtasToTaTensor());
+
+        auto eri2_norm = eri2("i,j").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
+
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << eri2_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
+    }
+
+    { // Two electron three center
+        if (world.rank() == 0) {
+            std::cout << "Two E three Center ints\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+
+        auto eri_pool = integrals::make_pool(integrals::make_2body(basis, basis));
+        auto eri3 = integrals::BlockSparseIntegrals(
+              world, eri_pool, utility::make_array(basis, basis, basis),
+              tints::compute_functors::BtasToTaTensor());
+
+        auto eri3_norm = eri3("x,i,j").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
+
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << eri3_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
     }
 
     libint2::cleanup();

@@ -32,9 +32,13 @@ namespace tcc{
                 TArray2 t1;
                 TArray4 t2;
 
-                // compute ccsd first
+                // compute CCSD first
                 double ccsd_corr = CCSD<Tile,Policy>::compute_ccsd(t1,t2);
 
+                // start CCSD(T)
+                if(t1.get_world().rank() == 0){
+                    std::cout << "Begining CCSD(T) " << std::endl;
+                }
                 auto time0 = tcc::tcc_time::now();
                 double ccsd_t = compute_ccsd_t(t1, t2);
                 auto time1 = tcc_time::now();
@@ -92,7 +96,9 @@ namespace tcc{
                 std::size_t b_increase = increase;
                 std::size_t c_increase = increase;
 
-                std::cout << "Increase" << increase << std::endl;
+                if(t1.get_world().rank() == 0){
+                    std::cout << "Increase " << increase << std::endl;
+                }
 
                 // index in virtual blocks
                 std::size_t a = 0;
@@ -150,8 +156,10 @@ namespace tcc{
                             std::size_t c_up = c + c_increase;
 
                             std::size_t blocks = (a_up-a_low)*(b_up-b_low)*(c_up-c_low);
-                            std::cout << "{" << a_low << " " << b_low << " " << c_low << "}" << " ";
-                            std::cout << "{" << a_up << " " << b_up << " " << c_up << "} " << blocks << std::endl;
+//                            if (t1.get_world().rank() == 0){
+//                                std::cout << "{" << a_low << " " << b_low << " " << c_low << "}" << " ";
+//                                std::cout << "{" << a_up << " " << b_up << " " << c_up << "} " << blocks << std::endl;
+//                            }
                             n_blocks_computed += blocks;
 
                             typedef std::vector<std::size_t> block;
@@ -534,7 +542,9 @@ namespace tcc{
                     a += a_increase;
                 }
 
-                std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
+                if (t1.get_world().rank() == 0){
+                    std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
+                }
                 return  triple_energy;
             }
 
@@ -902,7 +912,9 @@ namespace tcc{
                     }
                 }
 
-                std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
+                if(t1.get_world().rank() == 0){
+                    std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
+                }
                 return  triple_energy;
 
             }

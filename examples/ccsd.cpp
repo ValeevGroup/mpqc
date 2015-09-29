@@ -202,6 +202,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                            repulsion_energy,
                            "\n");
 
+        // TODO better basis TRange
         auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
         auto dfbs_clusters = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
 

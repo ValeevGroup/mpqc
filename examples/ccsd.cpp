@@ -34,12 +34,11 @@
 
 #include "../scf/soad.h"
 #include "../scf/diagonalize_for_coffs.hpp"
-#include "../cc/ccsd.h"
+#include "../cc/ccsd_t.h"
 #include "../cc/integral_generator.h"
 #include "../cc/lazy_integral.h"
 #include "../cc/ccsd_intermediates.h"
 #include "../cc/trange1_engine.h"
-#include "../mp2/mp2.h"
 #include "../ta_routines/array_to_eigen.h"
 
 using namespace tcc;
@@ -202,6 +201,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::print_par(world, "Nuclear repulsion_energy = ",
                            repulsion_energy, "\n");
 
+        // TODO better basis TRange
         auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
         auto dfbs_clusters
               = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);
@@ -575,19 +575,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto X_ab_TA = TA::to_dense(X_ab);
         auto F_eig = array_ops::array_to_eigen(F_TA);
         auto S_eig = array_ops::array_to_eigen(S_TA);
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
-                                                                   S_eig);
+        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
 
         ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
+
         auto C_all = es.eigenvectors();
-        decltype(S_eig) C_occ = C_all.block(0, n_frozen_core, S_eig.rows(),
-                                            occupation / 2 - n_frozen_core);
+        decltype(S_eig) C_occ = C_all.block(0, n_frozen_core, S_eig.rows(), occupation / 2 - n_frozen_core);
         decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occupation / 2);
         C_all = C_all.rightCols(S_eig.rows() - n_frozen_core);
 
         std::size_t all = S.trange().elements().extent()[0];
-        tre = std::make_shared<TRange1Engine>(occupation / 2, all, blocksize,
-                                              n_frozen_core);
+
+        tre = std::make_shared<TRange1Engine>(occupation / 2, all, blocksize, n_frozen_core);
 
         // start mp2
         //            MP2<TA::Tensor<double>, TA::SparsePolicy> mp2(F_TA, S_TA,
@@ -620,8 +619,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::vector<TA::TiledRange1> tr_04(4, tr_0);
         TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
 
-        auto lazy_two_electron_int
-              = tcc::cc::make_lazy_two_electron_array(world, basis, trange_4);
+        auto lazy_two_electron_int = tcc::cc::make_lazy_two_electron_array(world, basis, trange_4);
 
         // test contraction here
         //    TA::Array<double,4> test;
@@ -648,12 +646,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::utility::parallal_break_point(world, 0);
 
 
-    tcc::cc::CCSD<TA::Tensor<double>, TA::DensePolicy> ccsd(fock_mo_dense, ens,
-                                                            tre, intermidiate);
+    tcc::cc::CCSD_T<TA::Tensor < double>, TA::DensePolicy > ccsd_t(fock_mo_dense, ens, tre, intermidiate);
 
-    // ccsd.compute_ccsd_dummy();
-    ccsd.compute_ccsd();
-
+    ccsd_t.compute();
 
     world.gop.fence();
     libint2::cleanup();

@@ -65,3 +65,22 @@ ADD_DEPENDENCIES(${PROJECT_NAME} cereal)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
   ${TileClusterChem_LIBRARIES}
 )
+
+# let clion know the source file
+if(USING_CLION_AS_IDE)
+#    include_directories(cc)
+#    include_directories(integrals)
+#    include_directories(mp2)
+#    file(GLOB_RECURSE CLION_SRC "*.h" "*.cpp" "*.c" "*.cc" "*.hpp" "*.txt" ".in")
+#    add_library(clion_get_sources EXCLUDE_FROM_ALL ${CLION_SRC})
+#    set_target_properties(clion_get_sources PROPERTIES LINKER_LANGUAGE CXX)
+    FILE (GLOB_RECURSE clion_all_headers ${CMAKE_SOURCE_DIR}/*.h)
+#    message(WARNING "${clion_all_headers}")
+    ADD_CUSTOM_TARGET(all_clion
+        SOURCES ${clion_all_headers}
+    )
+    ADD_EXECUTABLE(clion_test "main.cpp" ${clion_all_headers})
+    ADD_DEPENDENCIES(clion_test cereal)
+    TARGET_LINK_LIBRARIES(clion_test ${TileClusterChem_LIBRARIES})
+    #add_executable(dummy_name EXCLUDE_FROM_ALL ${clion_all_headers})
+endif(USING_CLION_AS_IDE)

@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
                                     utility::make_array(basis, basis, basis),
                                     ta_pass_through);
 
-        auto eri3_norm = 0;//  eri3("x,i,j").norm(world).get();
+        auto eri3_norm = eri3("x,i,j").norm(world).get();
         world.gop.fence();
         auto t1 = tcc_time::now();
 

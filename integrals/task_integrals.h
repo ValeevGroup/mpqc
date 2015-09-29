@@ -103,7 +103,6 @@ struct compute_integrals<E, N, Op, SpPolicy> {
         auto shared_bases = std::make_shared<Barray<N>>(bases);
 
         std::vector<std::pair<unsigned long, Tile>> tiles(tvolume);
-        tiles.reserve(tvolume);
         TA::TensorF tile_norms(trange.tiles(), 0.0);
 
         // Need to pass ptrs to the task function

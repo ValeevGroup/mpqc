@@ -21,6 +21,8 @@
 #include "../integrals/task_integrals.h"
 #include "../integrals/make_engine.h"
 
+#include "../integrals/screened_task_integrals.h"
+
 #include "../utility/time.h"
 
 #include <memory>
@@ -119,6 +121,30 @@ int main(int argc, char *argv[]) {
                                     ta_pass_through);
 
         auto eri3_norm = eri3("x,i,j").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
+
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << eri3_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
+    }
+    {
+        if (world.rank() == 0) {
+            std::cout << "Two E three Center ints screened\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+
+        auto eri_pool
+              = integrals::make_pool(integrals::make_2body(basis, basis));
+        auto eri3
+              = mpqc_ints::ScreenedTaskInts(world, eri_pool,
+                                    utility::make_array(basis, basis, basis),
+                                    ta_pass_through);
+
+        auto eri3_norm = 0;//  eri3("x,i,j").norm(world).get();
         world.gop.fence();
         auto t1 = tcc_time::now();
 

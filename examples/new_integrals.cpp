@@ -21,6 +21,10 @@
 #include "../integrals/task_integrals.h"
 #include "../integrals/make_engine.h"
 
+#include "../integrals/screened_task_integrals.h"
+
+#include "../utility/time.h"
+
 #include <memory>
 
 using namespace tcc;
@@ -55,22 +59,103 @@ int main(int argc, char *argv[]) {
 
     auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
 
-    auto ta_pass_through = [](TA::TensorD &&ten){
-        return TA::TensorD(std::move(ten));
-    };
+    auto ta_pass_through =
+          [](TA::TensorD &&ten) { return TA::TensorD(std::move(ten)); };
+    { // Over lap ints
+        if (world.rank() == 0) {
+            std::cout << "Overlap ints\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+        auto overlap_pool
+              = tints::make_pool(tints::make_1body("overlap", basis));
+        auto S = mpqc_ints::TaskInts(world, overlap_pool,
+                                     utility::make_array(basis, basis),
+                                     ta_pass_through);
+        auto S_norm = S("i,j").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
 
-    auto eri2 = mpqc_ints::TaskInts<DnPolicy>(world, eri_pool, 
-            utility::make_array(basis, basis),
-            ta_pass_through);
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << S_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
+    }
 
-    auto eri2_norm = eri2("i,j").norm(world).get();
+    { // Two electron two center
+        if (world.rank() == 0) {
+            std::cout << "Two E two Center ints\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
 
-    if(world.rank() == 0){
-        std::cout << "All done norm of ints was " << eri2_norm << std::endl;
+        auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
+        auto eri2 = mpqc_ints::TaskInts(
+              world, eri_pool, utility::make_array(basis, basis),
+              ta_pass_through);
+
+        auto eri2_norm = eri2("i,j").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
+
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << eri2_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
+    }
+
+    { // Two electron three center
+        if (world.rank() == 0) {
+            std::cout << "Two E three Center ints\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+
+        auto eri_pool
+              = integrals::make_pool(integrals::make_2body(basis, basis));
+        auto eri3
+              = mpqc_ints::TaskInts(world, eri_pool,
+                                    utility::make_array(basis, basis, basis),
+                                    ta_pass_through);
+
+        auto eri3_norm = eri3("x,i,j").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
+
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << eri3_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
+    }
+    {
+        if (world.rank() == 0) {
+            std::cout << "Two E three Center ints screened\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+
+        auto eri_pool
+              = integrals::make_pool(integrals::make_2body(basis, basis));
+        auto eri3
+              = mpqc_ints::ScreenedTaskInts(world, eri_pool,
+                                    utility::make_array(basis, basis, basis),
+                                    ta_pass_through);
+
+        auto eri3_norm = eri3("x,i,j").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
+
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << eri3_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
     }
 
     libint2::cleanup();
     madness::finalize();
     return 0;
 }
-

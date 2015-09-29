@@ -12,67 +12,48 @@
 #ifndef MPQC_INTEGRALS_TASKINTEGRALS_H
 #define MPQC_INTEGRALS_TASKINTEGRALS_H
 
-#include "../common/typedefs.h"
-#include "../include/tiledarray.h"
-#include "../basis/basis.h"
-
-#include <memory>
-#include <array>
-
+#include "task_integrals_common.h"
 
 namespace mpqc {
 namespace integrals {
 
-template <typename E>
-using ShrPool = std::shared_ptr<Epool<E>>;
-
-template <unsigned long N>
-using Barray = std::array<tcc::basis::Basis, N>;
-
 namespace detail {
 
-template <unsigned long N>
-using ShrBases = std::shared_ptr<Barray<N>>;
-
-template <typename Op>
-using Ttype = decltype(std::declval<Op>()(std::declval<TA::TensorD>()));
-
-// Capture by value since tasks must capture by value
+// Task wrapper which computes a TA::Tensor<double> containing integrals and
+// passes it to Op. Takes the tile ordinal as a parameter.
 template <typename E, unsigned long N, typename Op>
-struct op_pass_through {
+struct op_invoke {
     const TRange *const trange_ptr_;
     ShrPool<E> engines_;
     ShrBases<N> bases_;
     Op op_;
 
-    op_pass_through() = delete;
-    op_pass_through(const TRange *const tp, ShrPool<E> const &es,
-                    ShrBases<N> const &bs, Op op)
-            : trange_ptr_{tp}, engines_{es}, bases_{bs}, op_{op} {}
+    op_invoke(const TRange *const tp, ShrPool<E> const &es,
+              ShrBases<N> const &bs, Op op)
+            : trange_ptr_(tp), engines_(es), bases_(bs), op_(op) {}
 
-    Ttype<Op> operator()(int64_t ord) {
-        return op_(TA::TensorD(trange_ptr_->make_tile_range(ord), 0.0));
+    TA::TensorD ta_integrals(int64_t ord) {
+
+        std::array<tcc::basis::ClusterShells const *, N> cluster_ptrs;
+        auto const &idx = trange_ptr_->tiles().idx(ord);
+        for (auto i = 0ul; i < N; ++i) {
+            cluster_ptrs[i] = &(bases_->operator[](i).cluster_shells()[idx[i]]);
+        }
+
+        return integral_kernel(engines_->local(),
+                               trange_ptr_->make_tile_range(ord), cluster_ptrs);
     }
+
+    Ttype<Op> operator()(int64_t ord) { return op_(ta_integrals(ord)); }
+
+    Ttype<Op> apply(TA::TensorD &&t) { return op_(std::move(t)); }
 };
-
-// Create TRange from bases
-template <std::size_t N>
-TRange create_trange(Barray<N> const &basis_array) {
-
-    std::vector<TRange1> trange1s;
-    trange1s.reserve(N);
-
-    for (auto i = 0ul; i < N; ++i) {
-        trange1s.emplace_back(basis_array[i].create_flattend_trange1());
-    }
-
-    return TRange(trange1s.begin(), trange1s.end());
-}
 
 // Specialize construction based on policy.
 template <typename E, unsigned long N, typename Op, typename Policy>
 struct compute_integrals;
 
+// Dense array specialization
 template <typename E, unsigned long N, typename Op>
 struct compute_integrals<E, N, Op, DnPolicy> {
     DArray<N, Ttype<Op>, DnPolicy>
@@ -87,15 +68,98 @@ struct compute_integrals<E, N, Op, DnPolicy> {
         // a shared ptr.
         auto t_ptr = &(out.trange());
 
+        // Shared ptr to bases
+        auto shared_bases = std::make_shared<Barray<N>>(bases);
+
         // Get reference to pmap
         auto const &pmap = *(out.get_pmap());
+
+        auto op_wrapper = op_invoke<E, N, Op>(t_ptr, engines, shared_bases, op);
+
         // For each ordinal create a task
         for (auto const ord : pmap) {
-            mad::Future<Tile> tile = world.taskq.add(op_pass_through<E, N, Op>(
-                  t_ptr, engines, std::make_shared<Barray<N>>(bases), op), ord);
+            mad::Future<Tile> tile = world.taskq.add(op_wrapper, ord);
             out.set(ord, tile);
         }
 
+
+        return out;
+    }
+};
+
+// Sparse Policy Specialization
+template <typename E, unsigned long N, typename Op>
+struct compute_integrals<E, N, Op, SpPolicy> {
+    DArray<N, Ttype<Op>, SpPolicy>
+    operator()(mad::World &world, ShrPool<E> const &engines,
+               Barray<N> const &bases, Op op) {
+
+        using Tile = Ttype<Op>;
+
+        auto trange = create_trange(bases);
+        const auto tvolume = trange.tiles().volume();
+
+        // Shared ptr to bases
+        auto shared_bases = std::make_shared<Barray<N>>(bases);
+
+        std::vector<std::pair<unsigned long, Tile>> tiles(tvolume);
+        TA::TensorF tile_norms(trange.tiles(), 0.0);
+
+        // Need to pass ptrs to the task function
+        auto t_ptr = &trange;
+        auto tn_ptr = &tile_norms;
+        auto tile_vec_ptr = &tiles;
+        auto op_wrapper = [=](int64_t ord) {
+
+            // Compute Tile in TA::Tensor Form
+            auto op_invoker
+                  = op_invoke<E, N, Op>(t_ptr, engines, shared_bases, op);
+
+            // Doing it this way potentially saves us from computing Op, which
+            // could save a lot when Op is expensive. It also lets us get
+            // better norm estimates.
+            auto ta_tile = op_invoker.ta_integrals(ord);
+
+            // Get volume and norm
+            const auto tile_volume = ta_tile.range().volume();
+            const auto tile_norm = ta_tile.norm();
+            bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
+
+            if (save_norm) {
+                tn_ptr->operator[](ord) = tile_norm;
+
+                // Only compute Op if norm was large. Also don't move this
+                // inside of the lock since it may be expensive and take a long
+                // time.
+                auto tile = op_invoker.apply(std::move(ta_tile));
+
+                // Lock to save tile, I don't expect much contention
+                tile_vec_ptr->operator[](ord)
+                      = std::make_pair(ord, std::move(tile));
+            } else {
+                tile_vec_ptr->operator[](ord) = std::make_pair(ord, Tile());
+            }
+        };
+
+        auto pmap = SpPolicy::default_pmap(world, tvolume);
+
+        // For each ordinal create a task
+        for (auto const ord : *pmap) {
+            world.taskq.add(op_wrapper, ord);
+        }
+        // Make sure all tiles are evaluated.
+        world.gop.fence();
+
+        TA::SparseShape<float> shape(world, tile_norms, trange);
+        DArray<N, Tile, SpPolicy> out(world, trange, shape, pmap);
+
+        for (auto &&tile : tiles) {
+            const auto ord = tile.first;
+            if(!out.is_zero(ord)){
+                assert(!tile.second.empty());
+                out.set(ord, std::move(tile.second));
+            }
+        }
 
         return out;
     }

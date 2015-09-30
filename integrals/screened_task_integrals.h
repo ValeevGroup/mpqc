@@ -66,10 +66,40 @@ struct op_invoke_sc<E, 3, Op> {
 };
 
 template <typename E, typename Op>
+struct screened_task3 {
+    op_invoke_sc<E, 3, Op> invoker;
+    OrdTileVec<Ttype<Op>> *tiles_;
+    float *tile_norms_;
+
+    screened_task3(const TRange *const tp, ShrPool<E> const &es,
+                   ShrBases<3> const &bs, const MatrixD *xshs,
+                   const MatrixD *abshs, OrdTileVec<Ttype<Op>> *tiles,
+                   float *norms, Op op)
+            : invoker(tp, es, bs, xshs, abshs, op),
+              tiles_(tiles),
+              tile_norms_(norms) {}
+
+    void operator()(int64_t ord) {
+        auto ta_tile = invoker.ta_integrals(ord);
+        const auto tile_volume = ta_tile.range().volume();
+        const auto tile_norm = ta_tile.norm();
+        bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
+
+        if (save_norm) {
+            tile_norms_[ord] = tile_norm;
+            auto tile = invoker.apply(std::move(ta_tile));
+            tiles_->operator[](ord) = std::make_pair(ord, std::move(tile));
+        } else {
+            tiles_->operator[](ord) = std::make_pair(ord, Ttype<Op>());
+        }
+    }
+};
+
+template <typename E, typename Op>
 DArray<3, Ttype<Op>, SpPolicy>
 compute_screened_integrals(mad::World &world, ShrPool<E> &engines,
                            Barray<3> const &bases, Op op) {
-    // Depends on auxilary basis being in position 0.
+    // Depends on auxiliary basis being in position 0.
     const auto Q_X = screening_matrix_X(engines, bases[0].cluster_shells());
     auto const &cls_X = Q_X.cluster_screening;
 
@@ -84,61 +114,37 @@ compute_screened_integrals(mad::World &world, ShrPool<E> &engines,
     // Shared ptr to bases
     auto shared_bases = std::make_shared<Barray<3>>(bases);
 
-    std::vector<std::pair<unsigned long, Tile>> tiles(tvolume);
-    TA::TensorF tile_norms(trange.tiles(), 0.0);
-
-    // Need to pass ptrs to the task function
-    auto t_ptr = &trange;
-    auto tn_ptr = &tile_norms;
-    auto tile_vec_ptr = &tiles;
-    auto const *sh_X = &(Q_X.shell_screening);
-    auto const *sh_ab = &(Q_ab.shell_screening);
-
-    auto op_wrapper = [=](int64_t ord) {
-
-        // Compute Tile in TA::Tensor Form
-        auto op_invoker = op_invoke_sc<E, 3, Op>(t_ptr, engines, shared_bases,
-                                                 sh_X, sh_ab, op);
-
-        // Doing it this way potentially saves us from computing Op, which
-        // could save a lot when Op is expensive. It also lets us get
-        // better norm estimates.
-        auto ta_tile = op_invoker.ta_integrals(ord);
-
-        // Get volume and norm
-        const auto tile_volume = ta_tile.range().volume();
-        const auto tile_norm = ta_tile.norm();
-        bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
-
-        if (save_norm) {
-            tn_ptr->operator[](ord) = tile_norm;
-
-            // Only compute Op if norm was large. Also don't move this
-            // inside of the lock since it may be expensive and take a long
-            // time.
-            auto tile = op_invoker.apply(std::move(ta_tile));
-
-            // Lock to save tile, I don't expect much contention
-            tile_vec_ptr->operator[](ord)
-                  = std::make_pair(ord, std::move(tile));
-        } else {
-            tile_vec_ptr->operator[](ord) = std::make_pair(ord, Tile());
-        }
-    };
-
     auto pmap = SpPolicy::default_pmap(world, tvolume);
 
-    // For each ordinal create a task
+    OrdTileVec<Tile> tiles(tvolume);
+    TA::TensorF tile_norms(trange.tiles(), 0.0);
+
+
+    const auto t_ptr = &trange;
+    auto const &sh_vecs_X = Q_X.shell_screenings;
+    auto const &sh_vecs_ab = Q_ab.shell_screenings;
+    auto tile_norms_ptr = tile_norms.data();
+    auto tile_vec_ptr = &tiles;
     for (auto const ord : *pmap) {
+        // Compute necessary info
         auto const &idx = trange.tiles().idx(ord);
-        const auto guess_norm = cls_X(idx[0]) * cls_ab(idx[1], idx[2]);
-        if (guess_norm > 1e-10) {
+        tile_norms[ord] = cls_X(idx[0]) * cls_ab(idx[1], idx[2]);
+        const auto tile_volume = trange.make_tile_range(ord).volume();
+
+        if (tile_norms[ord] >= tile_volume * SpShapeF::threshold()) {
+
+            auto sh_X_ptr = &(sh_vecs_X[idx[0]].back());
+            auto sh_ab_ptr = &(sh_vecs_ab[idx[1]][idx[2]]);
+            auto op_wrapper
+                  = screened_task3<E, Op>(t_ptr, engines, shared_bases,
+                                          sh_X_ptr, sh_ab_ptr, tile_vec_ptr,
+                                          tile_norms_ptr, op);
             world.taskq.add(op_wrapper, ord);
         } else {
+            tile_norms[ord] = 0.0;
             tiles[ord] = std::make_pair(ord, Tile());
         }
     }
-    // Make sure all tiles are evaluated.
     world.gop.fence();
 
     TA::SparseShape<float> shape(world, tile_norms, trange);
@@ -151,6 +157,8 @@ compute_screened_integrals(mad::World &world, ShrPool<E> &engines,
             out.set(ord, std::move(tile.second));
         }
     }
+    out.truncate();
+    world.gop.fence();
 
     return out;
 }

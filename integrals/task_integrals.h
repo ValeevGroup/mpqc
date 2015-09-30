@@ -127,13 +127,7 @@ struct compute_integrals<E, N, Op, SpPolicy> {
 
             if (save_norm) {
                 tn_ptr->operator[](ord) = tile_norm;
-
-                // Only compute Op if norm was large. Also don't move this
-                // inside of the lock since it may be expensive and take a long
-                // time.
                 auto tile = op_invoker.apply(std::move(ta_tile));
-
-                // Lock to save tile, I don't expect much contention
                 tile_vec_ptr->operator[](ord)
                       = std::make_pair(ord, std::move(tile));
             } else {

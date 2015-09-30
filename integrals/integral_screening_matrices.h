@@ -1,4 +1,4 @@
-// 
+//
 // Copyright (C) 2015 Drew Lewis
 // Maintainer Drew Lewis
 //
@@ -29,22 +29,23 @@ int64_t nshells_in_basis(std::vector<tcc::basis::ClusterShells> const &cs) {
     });
 }
 
-struct ScreeningMats {
+struct ScreeningMatrices {
+    std::vector<std::vector<MatrixD>> shell_screenings;
     MatrixD cluster_screening;
-    MatrixD shell_screening;
 };
 
 // Depends on the integrals being 1. DF, 2 obs, 3 obs
-ScreeningMats
+ScreeningMatrices
 screening_matrix_X(ShrPool<TwoE_Engine> &engines,
                    std::vector<tcc::basis::ClusterShells> const &cs) {
 
-    ScreeningMats sc_mats;
-    // value for clusters
-    sc_mats.cluster_screening = VectorD(cs.size());
+    const auto nclusters = cs.size();
+    ScreeningMatrices sc_mats;
+    sc_mats.cluster_screening = VectorD(nclusters);
 
-    // value for shells
-    sc_mats.shell_screening = VectorD(nshells_in_basis(cs));
+    auto &cl_mat = sc_mats.cluster_screening;
+    auto &sh_vec = sc_mats.shell_screenings;
+    sh_vec.reserve(nclusters);
 
     auto &eng = engines->local();
     eng.set_precision(0.);
@@ -52,82 +53,77 @@ screening_matrix_X(ShrPool<TwoE_Engine> &engines,
     const auto unit = Shell::unit();
 
     // Loop over clusters
-    auto shell_count = 0;
-    auto cl_count = 0;
-    for (auto const &cl : cs) {
-        auto cl_norm = 0.0;
+    for (auto c = 0ul; c < nclusters; ++c) {
+        auto const &cl_shells = cs[c].flattened_shells();
+        const auto cl_size = cl_shells.size();
 
-        // Loop over shells
-        for (auto const &sh : cl.flattened_shells()) {
+        sh_vec.emplace_back(std::vector<MatrixD>{VectorD(cl_size)});
+        auto &sh_mat = sh_vec.back().back();
+
+        for (auto s = 0ul; s < cl_size; ++s) {
+
+            auto const &sh = cl_shells[s];
             auto nsh = sh.size();
             const auto *buf = engines->local().compute(sh, unit, sh, unit);
 
-            const auto sh_norm = *std::max_element(buf, buf + nsh * nsh);
-            cl_norm = std::max(sh_norm, cl_norm);
-            sc_mats.shell_screening(shell_count++) = std::sqrt(sh_norm);
+            const auto bmap = Eig::Map<const MatrixD>(buf, nsh, nsh);
+            sh_mat(s) = std::sqrt(bmap.lpNorm<2>());
         }
-        sc_mats.cluster_screening(cl_count++) = std::sqrt(cl_norm);
+
+        cl_mat(c) = sh_mat.norm();
     }
 
     return sc_mats;
 }
 
-ScreeningMats
+ScreeningMatrices
 screening_matrix_ab(ShrPool<TwoE_Engine> &engines,
                     std::vector<tcc::basis::ClusterShells> const &cs) {
-    // value for clusters
-    ScreeningMats sc_mats;
-    sc_mats.cluster_screening = MatrixD(cs.size(), cs.size());
+
+    const auto nclusters = cs.size();
+
+    ScreeningMatrices sc_mats;
+    sc_mats.cluster_screening = MatrixD(nclusters, nclusters);
     auto &cl_mat = sc_mats.cluster_screening;
 
     // value for shells
-    const auto nshells = nshells_in_basis(cs);
-    sc_mats.shell_screening = MatrixD(nshells, nshells);
-    auto &shell_mat = sc_mats.shell_screening;
+    auto &sh_vecs = sc_mats.shell_screenings;
+    sh_vecs.reserve(nclusters);
 
     auto &eng = engines->local();
     eng.set_precision(0.);
 
-    // Shell ord goes outside cluster loop because it is keeping track of
-    // global shell index
+    for (auto c0 = 0ul; c0 < nclusters; ++c0) {
+        auto const &shells0 = cs[c0].flattened_shells();
+        const auto nshells0 = shells0.size();
 
-    auto s0_start = 0;
-    for (auto cl0 = 0ul; cl0 < cs.size(); ++cl0) {
-        auto const &shells0 = cs[cl0].flattened_shells();
+        sh_vecs.emplace_back(std::vector<MatrixD>{});
+        auto &current_vec = sh_vecs.back();
+        current_vec.reserve(nclusters);
 
-        auto cluster_norm = 0.0;
-        auto s1_start = 0;
-        for (auto cl1 = 0ul; cl1 <= cl0; ++cl1) {
-            auto const &shells1 = cs[cl1].flattened_shells();
+        for (auto c1 = 0ul; c1 < nclusters; ++c1) {
+            auto const &shells1 = cs[c1].flattened_shells();
+            const auto nshells1 = shells1.size();
+            current_vec.emplace_back(MatrixD(nshells0, nshells1));
+            auto &sh_mat = current_vec.back();
 
-            for (auto s0 = 0ul; s0 < shells0.size(); ++s0) {
+            for (auto s0 = 0ul; s0 < nshells0; ++s0) {
                 auto const &sh0 = shells0[s0];
                 const auto nsh0 = sh0.size();
-                const auto s0_pos = s0 + s0_start;
 
-                for (auto s1 = 0ul; s1 < shells1.size(); ++s1) {
+                for (auto s1 = 0ul; s1 < nshells1; ++s1) {
                     auto const &sh1 = shells1[s1];
                     const auto nsh1 = sh1.size();
-                    const auto s1_pos = s1 + s1_start;
-
 
                     const auto *buf = eng.compute(sh0, sh1, sh0, sh1);
-                    const auto bmap = Eig::Map<const MatrixD>(buf, nsh0, nsh1);
+                    const auto bmap = Eig::Map<const MatrixD>(buf, nsh0 * nsh1,
+                                                              nsh0 * nsh1);
 
-                    const auto norm = bmap.lpNorm<Eigen::Infinity>();
-                    cluster_norm = std::max(norm, cluster_norm);
-                    const auto sqrt_norm = std::sqrt(norm);
-                    shell_mat(s0_pos, s1_pos) = sqrt_norm;
-                    shell_mat(s1_pos, s0_pos) = sqrt_norm;
+                    sh_mat(s0, s1) = std::sqrt(bmap.lpNorm<2>());
                 }
             }
-            s1_start += shells1.size();
-
-            const auto sqrt_cl_norm = std::sqrt(cluster_norm);
-            cl_mat(cl0, cl1) = sqrt_cl_norm;
-            cl_mat(cl1, cl0) = sqrt_cl_norm;
+            cl_mat(c0, c1) = std::sqrt(sh_mat.lpNorm<2>());
         }
-        s0_start += shells0.size();
     }
 
     return sc_mats;
@@ -138,4 +134,3 @@ screening_matrix_ab(ShrPool<TwoE_Engine> &engines,
 } // namespace mpqc
 
 #endif //  MPQC_INTEGRALS_INTEGRALSCREENINGMATRICES_H
-

@@ -11,6 +11,8 @@
 
 #include <memory>
 #include <array>
+#include <vector>
+#include <utility>
 
 namespace mpqc {
 namespace integrals {
@@ -21,10 +23,10 @@ using ShrPool = std::shared_ptr<Epool<E>>;
 template <unsigned long N>
 using Barray = std::array<tcc::basis::Basis, N>;
 
-namespace detail {
+template <typename T>
+using OrdTileVec = std::vector<std::pair<unsigned long, T>>;
 
-// Mutex for writing tiles to some shared structure
-static tbb::spin_mutex task_int_mutex;
+namespace detail {
 
 template <unsigned long N>
 using ShrBases = std::shared_ptr<Barray<N>>;

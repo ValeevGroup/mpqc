@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TILECLUSTERCHEM_BASIS_BASISSET_H
-#define TILECLUSTERCHEM_BASIS_BASISSET_H
+#ifndef MPQC_BASIS_BASISSET_H
+#define MPQC_BASIS_BASISSET_H
 
 #include "../molecule/molecule_fwd.h"
 #include "basis_fwd.h"
@@ -15,7 +15,7 @@ namespace libint2 {
 struct Shell;
 }
 
-namespace tcc {
+namespace mpqc {
 namespace basis {
 
 class BasisSet {
@@ -41,6 +41,6 @@ class BasisSet {
 };
 
 } // namespace basis
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TILECLUSTERCHEM_BASIS_BASISSET_H
+#endif // MPQC_BASIS_BASISSET_H

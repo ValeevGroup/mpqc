@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_BASIS_CLUSTERSHELLS_H
-#define TCC_BASIS_CLUSTERSHELLS_H
+#ifndef MPQC_BASIS_CLUSTERSHELLS_H
+#define MPQC_BASIS_CLUSTERSHELLS_H
 
 #include "../molecule/molecule_fwd.h"
 
@@ -11,7 +11,7 @@ namespace libint2 {
 struct Shell;
 }
 
-namespace tcc {
+namespace mpqc {
 namespace basis {
 
 class ClusterShells {
@@ -49,6 +49,6 @@ class ClusterShells {
 }; // class ClusterShells
 
 } // namespace basis
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_BASIS_CLUSTERSHELLS_H
+#endif // MPQC_BASIS_CLUSTERSHELLS_H

@@ -2,21 +2,14 @@
 #include "../include/libint.h"
 #include "cluster_concept.h"
 
+#include "atom.h"
+
 #include <algorithm>
 #include <vector>
 
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
-
-position_t center_of_mass(const std::vector<Clusterable> cs, double mass) {
-
-    position_t com = {0,0,0};
-    for(auto const &c : cs){
-        com += c.center() * c.mass();
-    }
-    return com/mass;
-}
 
 std::vector<libint2::Atom> to_libint_atom(std::vector<Atom> const &atoms){
     std::vector<libint2::Atom> l_atoms; 
@@ -38,4 +31,4 @@ std::vector<libint2::Atom> to_libint_atom(std::vector<Atom> const &atoms){
 }
 
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <unordered_map>
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
 namespace clustering {
 
@@ -19,7 +19,8 @@ individual_clustering(std::vector<Clusterable> const &c_ables) {
         cs.push_back(std::move(c));
     }
     for(auto &c : cs){
-        c.compute_com();
+        throw;
+        // c.compute_com();
     }
     return cs;
 }
@@ -117,4 +118,4 @@ operator()(std::vector<Clusterable> clusterables) {
 
 } // namespace clustering
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc

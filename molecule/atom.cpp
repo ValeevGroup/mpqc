@@ -1,8 +1,10 @@
 #include "atom.h"
 
 #include <map>
+#include <string>
+#include <iostream>
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
 
 static std::map<int, std::string> atom_names = {{1, "H"},
@@ -21,12 +23,12 @@ static std::map<int, std::string> atom_names = {{1, "H"},
 // Taken from https://en.wikipedia.org/wiki/Atomic_units on 07/08/15
 double bohr_to_ang = 0.52917721092;
 
-std::string Atom::xyz_string(bool convert_to_ang) const {
+std::string Atom::xyz_string(bool convert_to_angstroms) const {
     std::string name = atom_names[atomic_number_];
     name += ' ';
 
-    position_t center = center_;
-    if(convert_to_ang){
+    Vec3D center = center_;
+    if (convert_to_angstroms) {
         center *= bohr_to_ang;
     }
 
@@ -37,6 +39,11 @@ std::string Atom::xyz_string(bool convert_to_ang) const {
     return name;
 }
 
+std::ostream &operator<<(std::ostream &os, Atom const &a) {
+    os << "Atom: {Z: " << a.charge() << ", mass: " << a.mass()
+       << ", pos: " << a.center().transpose() << "}";
+    return os;
+}
 
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc

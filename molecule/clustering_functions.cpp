@@ -7,7 +7,7 @@
 #include <iostream>
 #include <random>
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
 namespace clustering {
 
@@ -20,7 +20,7 @@ double sum_cluster_distances(const std::vector<Cluster> &clusters) {
 
 bool none_zero(std::vector<Cluster> const &clusters) {
     return std::all_of(clusters.begin(), clusters.end(),
-                       [](Cluster const &c) { return c.nelements() != 0; });
+                       [](Cluster const &c) { return c.size() != 0; });
 }
 
 kmeans::kmeans(unsigned long seed) : seed_{seed}, clusters_() {}
@@ -78,14 +78,15 @@ void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
     }
 
     for(auto &cluster : clusters_){
-        cluster.compute_com();
+        throw;
+        // cluster.compute_com();
     }
 }
 
 std::vector<Cluster>::iterator
 kmeans::closest_cluster(std::vector<Cluster>::iterator const begin,
                         std::vector<Cluster>::iterator const end,
-                        position_t const &center) {
+                        Vec3D const &center) {
     return std::min_element(begin, end,
                             [&](const Cluster &a, const Cluster &b) {
         return diff_squaredNorm(a.center(), center)
@@ -94,10 +95,10 @@ kmeans::closest_cluster(std::vector<Cluster>::iterator const begin,
 }
 
 
-std::vector<position_t>
+std::vector<Vec3D>
 kmeans::update_clusters(std::vector<Clusterable> const &clusterables) {
     // Vector to hold the previous iterations centers.
-    std::vector<position_t> old_centers;
+    std::vector<Vec3D> old_centers;
     old_centers.reserve(clusters_.size());
 
     // Copy the old centers
@@ -110,10 +111,10 @@ kmeans::update_clusters(std::vector<Clusterable> const &clusterables) {
     return old_centers;
 }
 
-bool kmeans::kmeans_converged(const std::vector<position_t> &old_centers) {
+bool kmeans::kmeans_converged(const std::vector<Vec3D> &old_centers) {
     return std::equal(
         old_centers.begin(), old_centers.end(), clusters_.begin(),
-        [](const position_t &old_center, const Cluster &new_cluster) {
+        [](const Vec3D &old_center, const Cluster &new_cluster) {
             return 1e-7 < (old_center - new_cluster.center()).squaredNorm();
         });
 }
@@ -134,4 +135,4 @@ output_t kmeans::cluster(const std::vector<Clusterable> &clusterables) {
 
 } // namespace clustering
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc

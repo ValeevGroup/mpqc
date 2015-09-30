@@ -1,11 +1,11 @@
 #pragma once
-#ifndef TCC_MOLECULE_ATTACHHYDROGENS_H
-#define TCC_MOLECULE_ATTACHHYDROGENS_H
+#ifndef MPQC_MOLECULE_ATTACHHYDROGENS_H
+#define MPQC_MOLECULE_ATTACHHYDROGENS_H
 
 #include "molecule_fwd.h"
 #include <vector>
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
 namespace clustering {
 
@@ -22,7 +22,7 @@ class attach_hydrogens {
 
 } // namespace clustering
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc
 
 
-#endif /* end of include guard: TCC_MOLECULE_ATTACHHYDROGENS_H */
+#endif /* end of include guard: MPQC_MOLECULE_ATTACHHYDROGENS_H */

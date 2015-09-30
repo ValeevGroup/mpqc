@@ -1,17 +1,17 @@
 #pragma once
-#ifndef TCC_MOLECULE_MOLECULE_FWD_H
-#define TCC_MOLECULE_MOLECULE_FWD_H
+#ifndef MPQC_MOLECULE_MOLECULE_FWD_H
+#define MPQC_MOLECULE_MOLECULE_FWD_H
 
+#include "../common/typedefs.h"
 #include "../include/eigen.h"
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
-
-using position_t = Eigen::Vector3d;
 
 class Atom;
 class Cluster;
 class Clusterable;
+class AtomBasedClusterable;
 class Molecule;
 
 namespace clustering {
@@ -19,7 +19,7 @@ class kmeans;
 }
 
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc
 
 
-#endif // TCC_MOLECULE_MOLECULE_FWD_H
+#endif // MPQC_MOLECULE_MOLECULE_FWD_H

@@ -2,7 +2,7 @@
 #include "../include/libint.h"
 #include "../molecule/cluster.h"
 
-namespace tcc {
+namespace mpqc {
 namespace basis {
 
 ClusterShells::ClusterShells() = default;
@@ -70,4 +70,4 @@ std::vector<libint2::Shell> ClusterShells::flattened_shells() const {
 molecule::Cluster const &ClusterShells::cluster() const { return *cluster_; }
 
 } // namespace basis
-} // namespace tcc
+} // namespace mpqc

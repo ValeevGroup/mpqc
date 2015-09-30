@@ -3,16 +3,19 @@ set(sources
   atom.cpp
   cluster_concept.h
   cluster.h
+  cluster.cpp
   cluster_collapse.h
+  atom_based_cluster_concept.h
+  atom_based_cluster.h
+  atom_based_cluster.cpp
   molecule.h
   molecule_fwd.h
-  clustering_functions.h
-  clustering_functions.cpp
-  attach_hydrogens.h
-  attach_hydrogens.cpp
-  make_clusters.h
-  make_clusters.cpp
-  cluster.cpp
+  # clustering_functions.h
+  # clustering_functions.cpp
+  # attach_hydrogens.h
+  # attach_hydrogens.cpp
+  # make_clusters.h
+  # make_clusters.cpp
   common.h
   common.cpp
   molecule.cpp

@@ -1,12 +1,12 @@
 #pragma once
-#ifndef TCC_MOLECULE_MAKECLUSTERS_H
-#define TCC_MOLECULE_MAKECLUSTERS_H
+#ifndef MPQC_MOLECULE_MAKECLUSTERS_H
+#define MPQC_MOLECULE_MAKECLUSTERS_H
 
 #include "molecule_fwd.h"
 #include <memory>
 #include <vector>
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
 
 std::vector<std::shared_ptr<Cluster>>
@@ -16,6 +16,6 @@ std::vector<std::shared_ptr<Cluster>>
 kmeans(Molecule const &, unsigned long);
 
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_MOLECULE_MAKECLUSTERS_H
+#endif // MPQC_MOLECULE_MAKECLUSTERS_H

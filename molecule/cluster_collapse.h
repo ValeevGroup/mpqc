@@ -1,12 +1,12 @@
 #pragma once
-#ifndef CLUSTER_COLLAPSE_H
-#define CLUSTER_COLLAPSE_H
+#ifndef MPQC_CLUSTER_COLLAPSE_H
+#define MPQC_CLUSTER_COLLAPSE_H
 
 #include "atom.h"
 
 #include <vector>
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
 
 /*! \brief collapse_to_atoms ends the recursive loop of the templated version of
@@ -28,7 +28,7 @@ inline std::vector<Atom> collapse_to_atoms(const Atom &a) {
  *  collapse_to_atoms is just an atom.
  */
 template <typename T>
-std::vector<Atom> collapse_to_atoms(const T &t) {
+std::vector<Atom> collapse_to_atoms(T const &t) {
     std::vector<Atom> atoms;
     for (const auto &element : t) {
         std::vector<Atom> temp_atoms = element.atoms();
@@ -38,6 +38,6 @@ std::vector<Atom> collapse_to_atoms(const T &t) {
 }
 
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc
 
-#endif // CLUSTER_COLLAPSE_H
+#endif // MPQC_CLUSTER_COLLAPSE_H

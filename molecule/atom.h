@@ -1,12 +1,13 @@
 #pragma once
-#ifndef TCC_MOLECULE_ATOM_H
-#define TCC_MOLECULE_ATOM_H
+#ifndef MPQC_MOLECULE_ATOM_H
+#define MPQC_MOLECULE_ATOM_H
 
 #include "molecule_fwd.h"
 
 #include <string>
+#include <iosfwd>
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
 
 /*!
@@ -22,6 +23,11 @@ namespace molecule {
  *  position is an Eigen::Vector3d.
  */
 class Atom {
+  private:
+    Vec3D center_ = {0, 0, 0};
+    int64_t atomic_number_ = 0;
+    double mass_ = 0;
+
   public:
     Atom() = default;
     Atom(const Atom &atom) = default;
@@ -29,13 +35,15 @@ class Atom {
     Atom(Atom &&atom) = default;
     Atom &operator=(Atom &&atom) = default;
 
-    Atom(position_t center, double mass, int Z)
-        : center_(std::move(center)), atomic_number_(Z), mass_(mass) {}
+    Atom(Vec3D const &center, double mass, int64_t Z)
+        : center_(center), atomic_number_(Z), mass_(mass) {}
 
     /*! Returns the location of the atom in Bohr. */
-    position_t center() const { return center_; }
+    Vec3D const& center() const { return center_; }
+
     /*! Returns the charge of the atom in atomic units. */
-    int charge() const { return atomic_number_; }
+    int64_t charge() const { return atomic_number_; }
+
     /*! Returns the mass of the atom in atomic units. */
     double mass() const { return mass_; }
 
@@ -45,16 +53,27 @@ class Atom {
      * convert to ang, but by passing false to the function it will 
      * not convert the position.
      */
-    std::string xyz_string(bool convert_to_ang = true) const;
-
-  private:
-    position_t center_ = {0, 0, 0};
-    int atomic_number_ = 0;
-    double mass_ = 0;
+    std::string xyz_string(bool convert_to_angstroms = true) const;
 };
+
+//
+// External interface functions
+//
+
+std::ostream &operator<<(std::ostream&, Atom const &);
+
+inline Vec3D const &center(Atom const &a){ return a.center(); }
+
+inline double mass(Atom const &a){
+    return a.mass();
+}
+
+inline int64_t charge(Atom const &a){
+    return a.charge();
+}
 /*! @} */
 
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_MOLECULE_ATOM_H
+#endif // MPQC_MOLECULE_ATOM_H

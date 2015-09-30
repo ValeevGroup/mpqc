@@ -1,19 +1,18 @@
 #pragma once
-#ifndef TCC_MOLECULE_CLUSTERCONCEPT_H
-#define TCC_MOLECULE_CLUSTERCONCEPT_H
+#ifndef MPQC_MOLECULE_CLUSTERCONCEPT_H
+#define MPQC_MOLECULE_CLUSTERCONCEPT_H
 
 #include "molecule_fwd.h"
-#include "cluster_collapse.h"
 
 #include <memory>
-#include <vector>
+#include <iostream>
 
-namespace tcc {
+namespace mpqc {
 namespace molecule {
 
 /*!
- * \addtogroup Molecule 
- * 
+ * \addtogroup Molecule
+ *
  * @{
  */
 
@@ -25,11 +24,9 @@ class ClusterConcept {
   public:
     virtual ~ClusterConcept() = default;
 
-    virtual ClusterConcept *clone() const = 0;
-    virtual position_t center() const = 0;
-    virtual double mass() const = 0;
-    virtual int charge() const = 0;
-    virtual std::vector<Atom> atoms() const = 0;
+    virtual ClusterConcept *clone_() const = 0;
+    virtual Vec3D const & center_() const = 0;
+    virtual std::ostream &print_(std::ostream &) const = 0;
 };
 
 /*
@@ -37,6 +34,9 @@ class ClusterConcept {
  */
 template <typename T>
 class ClusterModel : public ClusterConcept {
+  private:
+    T element_;
+
   public:
     ClusterModel(T t) : element_(std::move(t)) {}
     ClusterModel(const ClusterModel &c) = default;
@@ -44,52 +44,50 @@ class ClusterModel : public ClusterConcept {
         element_ = std::move(c.element_);
         return *this;
     }
+
     ClusterModel(ClusterModel &&c) = default;
     ClusterModel &operator=(ClusterModel &&c) = default;
 
-    ClusterConcept *clone() const override final {
+    ClusterConcept *clone_() const override final {
         return new ClusterModel(*this);
     }
 
-    position_t center() const override final { return element_.center(); }
-    double mass() const override final { return element_.mass(); }
-    int charge() const override final { return element_.charge(); }
-    std::vector<Atom> atoms() const override final {
-        return collapse_to_atoms(element_);
+    Vec3D const &center_() const override final { return center(element_); }
+    std::ostream &print_(std::ostream &os) const override final {
+        os << element_;
+        return os;
     }
-
-  private:
-    T element_;
 };
 
 /*!
  * \brief The Clusterable is a class that holds any clusterable type.
- * 
- * The any type which fits the Clusterable concept must provide the following 
+ *
+ * The any type which fits the Clusterable concept must provide the following
  * functions
  */
 class Clusterable {
+  private:
+    std::shared_ptr<const ClusterConcept> element_impl_;
+
   public:
-    template <typename T>
-    Clusterable(T t)
-        : element_impl_(std::make_shared<ClusterModel<T>>(std::move(t))) {}
+    template <typename C>
+    Clusterable(C c)
+            : element_impl_(std::make_shared<ClusterModel<C>>(std::move(c))) {}
     Clusterable(Clusterable const &c) = default;
     Clusterable &operator=(Clusterable const &c) = default;
     Clusterable(Clusterable &&c) = default;
     Clusterable &operator=(Clusterable &&c) = default;
 
-    position_t center() const { return element_impl_->center(); }
-    double mass() const { return element_impl_->mass(); }
-    int charge() const { return element_impl_->charge(); }
-    std::vector<Atom> atoms() const { return element_impl_->atoms(); }
+    Vec3D const &center() const { return element_impl_->center_(); }
 
-  private:
-    std::shared_ptr<const ClusterConcept> element_impl_;
+    std::ostream &print(std::ostream &os) const {
+        return element_impl_->print_(os);
+    }
 };
 
 /*! @} */
 
 } // namespace molecule
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_MOLECULE_CLUSTERCONCEPT_H
+#endif // MPQC_MOLECULE_CLUSTERCONCEPT_H

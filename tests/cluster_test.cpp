@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-using namespace tcc;
+using namespace mpqc;
 
 SCENARIO("Clusters can be printed", "[cluster]") {
     GIVEN("A cluster with 2 hydrogens") {
@@ -17,7 +17,6 @@ SCENARIO("Clusters can be printed", "[cluster]") {
 
         std::string s = "2\n\nH 0.529177 1.058354 1.587532\n";
         s+="H -0.529177 1.058354 1.587532\n";
-
 
         std::stringstream ss;
         ss << c;

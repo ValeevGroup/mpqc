@@ -37,21 +37,34 @@ namespace tcc {
 
             CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
-                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &g) :
-                    ens_(ens), tre_(tre), intermediate_(g)
+                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter) :
+                    orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter)
             {
-                auto mo_block = std::make_shared<tcc::MOBlock>(*tre_);
+                auto mo_block = std::make_shared<tcc::MOBlock>(*trange1_engine_);
                 fock_ = TArrayBlock2(fock, mo_block);
             }
+
+            // compute function
+            virtual void compute(){
+
+                TArray2 t1;
+                TArray4 t2;
+
+                double ccsd_corr = compute_ccsd(t1, t2);
+
+                ccsd_intermediate_->clean_two_electron();
+
+            }
+
 
             // dummy way of doing CCSD
             // store all the integrals in memory
             // used as reference for development
-            void compute_ccsd_dummy() {
+            double compute_ccsd_straight(TArray2 &t1, TArray4 &t2) {
 
-                auto n_occ = tre_->get_actual_occ();
+                auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray4 g_abij = intermediate_->get_abij();
+                TArray4 g_abij = ccsd_intermediate_->get_abij();
 
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
@@ -63,15 +76,12 @@ namespace tcc {
                 TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
-                d_ai(d1, ens_, n_occ);
+                d_ai(d1, orbital_energy_, n_occ);
 
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
-                d_abij(d2, ens_, n_occ);
-
-                TArray2 t1;
-                TArray4 t2;
+                d_abij(d2, orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -85,19 +95,20 @@ namespace tcc {
                 double E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
                             TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"),
                                     tau("a,b,i,j"));
+                double mp2 = E1;
                 double dE = std::abs(E1 - E0);
 //      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
-                TArray4 g_ijkl = intermediate_->get_ijkl();
-                TArray4 g_abcd = intermediate_->get_abcd();
-                TArray4 g_iajb = intermediate_->get_iajb();
-                TArray4 g_iabc = intermediate_->get_iabc();
-                TArray4 g_aibc = intermediate_->get_aibc();
-                TArray4 g_ijak = intermediate_->get_ijak();
-                TArray4 g_ijka = intermediate_->get_ijka();
+                TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
+                TArray4 g_abcd = ccsd_intermediate_->get_abcd();
+                TArray4 g_iajb = ccsd_intermediate_->get_iajb();
+                TArray4 g_iabc = ccsd_intermediate_->get_iabc();
+                TArray4 g_aibc = ccsd_intermediate_->get_aibc();
+                TArray4 g_ijak = ccsd_intermediate_->get_ijak();
+                TArray4 g_ijka = ccsd_intermediate_->get_ijka();
 
-//                intermediate_->clean();
+//                ccsd_intermediate_->clean();
 
                 if (g_abij.get_world().rank() == 0) {
                     std::cout << "start iteration" << std::endl;
@@ -111,10 +122,12 @@ namespace tcc {
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
-                    auto t0 = tcc::tcc_time::now();
+                    auto time0 = tcc::tcc_time::now();
 
                     // intermediates for t1
                     // external index i and a
+                    // vir index a b c d
+                    // occ index i j k l
                     TArray2 h_ac, h_ki, h_kc;
                     {
                         h_ac("a,c") = -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
@@ -129,7 +142,7 @@ namespace tcc {
                     {
                         r1("a,i") = -t1("a,i") + d1("a,i") * (
                                 //
-                                f_ai("a,i") - 2.0 * f_ai("c,k") * t1("a,k") * t1("c,i")
+                                f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k")
                                 //
                                 + h_ac("a,c") * t1("c,i") - t1("a,k") * h_ki("k,i")
                                 //
@@ -151,43 +164,47 @@ namespace tcc {
                     TArray2 g_ki, g_ac;
                     {
 
-                        T("d,b,i,l") =
-                                0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
+                        T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
 
                         a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
-                                            + g_ijka("k,l,i,c") * t1("c,j") +
-                                            g_ijak("k,l,c,j") * t1("c,i")
-                                            +
-                                            g_abij("c,d,k,l") * tau("c,d,i,j");
+
+                                            + g_ijka("k,l,i,c") * t1("c,j")
+
+                                            + g_ijak("k,l,c,j") * t1("c,i")
+
+                                            + g_abij("c,d,k,l") * tau("c,d,i,j");
 
                         b_abij("a,b,i,j") = g_abcd("a,b,c,d") * tau("c,d,i,j")
-                                            -
-                                            g_aibc("a,k,c,d") * tau("c,d,i,j") *
-                                            t1("b,k")
-                                            -
-                                            g_iabc("k,b,c,d") * tau("c,d,i,j") *
-                                            t1("a,k");
+
+                                            - g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k")
+
+                                            - g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
                         g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i")
-                                      + (2.0 * g_ijka("k,l,i,c") -
-                                         g_ijka("l,k,i,c")) * t1("c,l");
+
+                                      + (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
 
                         g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
-                                      + (2.0 * g_aibc("a,k,c,d") -
-                                         g_aibc("a,k,d,c")) * t1("d,k");
 
-                        j_akic("a,k,i,c") = g_abij("a,c,i,k") -
-                                            g_ijka("l,k,i,c") * t1("a,l")
-                                            + g_aibc("a,k,d,c") * t1("d,i") -
-                                            g_abij("c,d,k,l") * T("d,a,i,l")
-                                            + 0.5 * (2.0 * g_abij("c,d,k,l") -
-                                                     g_abij("d,c,k,l")) *
-                                              t2("a,d,i,l");
+                                      + (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
 
-                        k_kaic("k,a,i,c") = g_iajb("k,a,i,c") -
-                                            g_ijka("k,l,i,c") * t1("a,l") +
-                                            g_iabc("k,a,d,c") * t1("d,i") -
-                                            g_abij("d,c,k,l") * T("d,a,i,l");
+                        j_akic("a,k,i,c") = g_abij("a,c,i,k")
+
+                                            - g_ijka("l,k,i,c") * t1("a,l")
+
+                                            + g_aibc("a,k,d,c") * t1("d,i")
+
+                                            - g_abij("c,d,k,l") * T("d,a,i,l")
+
+                                            + 0.5 * (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t2("a,d,i,l");
+
+                        k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
+
+                                            - g_ijka("k,l,i,c") * t1("a,l")
+
+                                            + g_iabc("k,a,d,c") * t1("d,i")
+
+                                            - g_abij("d,c,k,l") * T("d,a,i,l");
 
                     }
 
@@ -204,36 +221,27 @@ namespace tcc {
 
                                 // permutation part
                                 //
-                                + (g_ac("a,c") * t2("c,b,i,j") -
-                                   g_ki("k,i") * t2("a,b,k,j"))
-                                + (g_ac("b,c") * t2("c,a,j,i") -
-                                   g_ki("k,j") * t2("b,a,k,i"))
+                                + (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"))
 
-                                + (g_iabc("i,c,a,b") -
-                                   g_iajb("k,b,i,c") * t1("a,k")) *
-                                  t1("c,j")
-                                + (g_iabc("j,c,b,a") -
-                                   g_iajb("k,a,j,c") * t1("b,k")) *
-                                  t1("c,i")
+                                + (g_ac("b,c") * t2("c,a,j,i") - g_ki("k,j") * t2("b,a,k,i"))
+
+                                + (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j")
+
+                                + (g_iabc("j,c,b,a") - g_iajb("k,a,j,c") * t1("b,k")) * t1("c,i")
                                 //
-                                - (g_ijak("i,j,a,k") +
-                                   g_abij("a,c,i,k") * t1("c,j")) *
-                                  t1("b,k")
-                                - (g_ijak("j,i,b,k") +
-                                   g_abij("b,c,j,k") * t1("c,i")) *
-                                  t1("a,k")
+                                - (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k")
 
-                                + 0.5 * (2.0 * j_akic("a,k,i,c") -
-                                         k_kaic("k,a,i,c")) *
+                                - (g_ijak("j,i,b,k") + g_abij("b,c,j,k") * t1("c,i")) * t1("a,k")
+
+                                + 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
                                   (2.0 * t2("c,b,k,j") - t2("b,c,k,j"))
-                                + 0.5 * (2.0 * j_akic("b,k,j,c") -
-                                         k_kaic("k,b,j,c")) *
+
+                                + 0.5 * (2.0 * j_akic("b,k,j,c") - k_kaic("k,b,j,c")) *
                                   (2.0 * t2("c,a,k,i") - t2("a,c,k,i"))
 
-                                - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
-                                k_kaic("k,b,i,c") * t2("a,c,k,j")
-                                - 0.5 * k_kaic("k,b,j,c") * t2("a,c,k,i") -
-                                k_kaic("k,a,j,c") * t2("b,c,k,i")
+                                - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j")
+
+                                - 0.5 * k_kaic("k,b,j,c") * t2("a,c,k,i") - k_kaic("k,a,j,c") * t2("b,c,k,i")
                         );
                     }
 //        g_abij.get_world().gop.fence();
@@ -261,8 +269,8 @@ namespace tcc {
                     dE = std::abs(E0 - E1);
                     iter += 1ul;
 
-                    auto t1 = tcc_time::now();
-                    auto duration = tcc_time::duration_in_s(t0, t1);
+                    auto time1 = tcc_time::now();
+                    auto duration = tcc_time::duration_in_s(time0, time1);
 
                     if (g_abij.get_world().rank() == 0) {
                         std::cout << iter << "  " << dE << "  " << error <<
@@ -275,17 +283,19 @@ namespace tcc {
 
                 }
                 if (g_abij.get_world().rank() == 0) {
+                    std::cout << "MP2 Energy   " << mp2 << std::endl;
                     std::cout << "CCSD Energy  " << E1 << std::endl;
                 }
+                return E1;
             }
 
 
             // ccsd energy for performance calculation
-            void compute_ccsd() {
+            double compute_ccsd(TArray2& t1, TArray4& t2) {
 
-                auto n_occ = tre_->get_actual_occ();
+                auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray4 g_abij = intermediate_->get_abij();
+                TArray4 g_abij = ccsd_intermediate_->get_abij();
 
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
@@ -296,14 +306,11 @@ namespace tcc {
 
                 TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
-                d_ai(d1, ens_, n_occ);
+                d_ai(d1, orbital_energy_, n_occ);
 
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
-                d_abij(d2, ens_, n_occ);
-
-                TArray2 t1;
-                TArray4 t2;
+                d_abij(d2, orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -318,22 +325,23 @@ namespace tcc {
                             TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"),
                                     tau("a,b,i,j"));
                 double dE = std::abs(E1 - E0);
+                double mp2 = E1;
 //      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
-                TArray4 g_ijkl = intermediate_->get_ijkl();
-                TArray4 g_iajb = intermediate_->get_iajb();
-                TArray4 g_ijak = intermediate_->get_ijak();
-                TArray4 g_ijka = intermediate_->get_ijka();
+                TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
+                TArray4 g_iajb = ccsd_intermediate_->get_iajb();
+                TArray4 g_ijak = ccsd_intermediate_->get_ijak();
+                TArray4 g_ijka = ccsd_intermediate_->get_ijka();
 
                 // get three center integrals
-                TArray3 Xab = intermediate_->get_Xab();
-                TArray3 Xij = intermediate_->get_Xij();
-                TArray3 Xai = intermediate_->get_Xai();
+                TArray3 Xab = ccsd_intermediate_->get_Xab();
+                TArray3 Xij = ccsd_intermediate_->get_Xij();
+                TArray3 Xai = ccsd_intermediate_->get_Xai();
 
                 // get mo coefficient
-                TArray2 ca = intermediate_->get_Ca();
-                TArray2 ci = intermediate_->get_Ci();
+                TArray2 ca = ccsd_intermediate_->get_Ca();
+                TArray2 ci = ccsd_intermediate_->get_Ci();
 
                 if (g_abij.get_world().rank() == 0) {
                     std::cout << "start iteration" << std::endl;
@@ -349,14 +357,15 @@ namespace tcc {
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
-                    auto t0 = tcc::tcc_time::now();
+                    auto time0 = tcc::tcc_time::now();
 
                     TArray4 u2_u11;
                     // compute half transformed intermediates
                     auto tu0 = tcc::tcc_time::now();
                     {
-                        u2_u11 = intermediate_->compute_u2_u11(t2, t1);
+                        u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
+                    g_abij.get_world().gop.fence();
                     auto tu1 = tcc_time::now();
                     auto duration_u = tcc_time::duration_in_s(tu0, tu1);
 
@@ -526,8 +535,8 @@ namespace tcc {
                     dE = std::abs(E0 - E1);
                     iter += 1ul;
 
-                    auto t1 = tcc_time::now();
-                    auto duration_t = tcc_time::duration_in_s(t0, t1);
+                    auto time1 = tcc_time::now();
+                    auto duration_t = tcc_time::duration_in_s(time0, time1);
 
                     if (g_abij.get_world().rank() == 0) {
                         std::cout.precision(15);
@@ -542,12 +551,15 @@ namespace tcc {
 
                 }
                 if (g_abij.get_world().rank() == 0) {
-                    std::cout << "CCSD Energy  " << E1 << std::endl;
+                    std::cout << "MP2 Energy      " << mp2 << std::endl;
+                    std::cout << "CCSD Energy     " << E1 << std::endl;
                 }
+                return E1;
             }
 
         private:
 
+            // TODO move to other file
             void d_abij(TArray4 &abij,
                         const Eigen::VectorXd &ens, std::size_t n_occ) {
                 typedef typename TArray4::range_type range_type;
@@ -637,12 +649,12 @@ namespace tcc {
 
             }
 
-        private:
-            Eigen::VectorXd ens_;
-            std::shared_ptr<tcc::TRange1Engine> tre_;
-            std::shared_ptr<tcc::cc::CCSDIntermediate<Tile, Policy>> intermediate_;
+        protected:
+            Eigen::VectorXd orbital_energy_;
+            std::shared_ptr<tcc::TRange1Engine> trange1_engine_;
+            std::shared_ptr<tcc::cc::CCSDIntermediate<Tile, Policy>> ccsd_intermediate_;
             TArrayBlock2 fock_;
-        };
+        }; // class CCSD
 
     } //namespace cc
 } //namespace tcc

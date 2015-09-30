@@ -19,169 +19,140 @@ using namespace tcc;
 namespace tcc {
 
 
-  template<typename Tile, typename Policy>
-  class MP2 {
+    template<typename Tile, typename Policy>
+    class MP2 {
 
-  public:
+    public:
 
-    typedef TA::Array <double, 2, Tile, Policy> TArray2;
-    typedef TA::Array <double, 3, Tile, Policy> TArray3;
-    typedef TA::Array <double, 4, Tile, Policy> TArray4;
+        typedef TA::Array<double, 2, Tile, Policy> TArray2;
+        typedef TA::Array<double, 3, Tile, Policy> TArray3;
+        typedef TA::Array<double, 4, Tile, Policy> TArray4;
 
-    typedef tcc::TArrayBlock<double, 2, Tile, Policy, tcc::MOBlock> TArrayBlock2;
-    typedef tcc::TArrayBlock<double, 4, Tile, Policy, tcc::MOBlock> TArrayBlock4;
+        MP2(const TArray2 &fock, const TArray2 &s_ab, const TArray3 &Xab,
+            const std::shared_ptr<TRange1Engine> tre) : trange1_engine_(tre) {
 
+            // initialize intergral g
+            init(fock, s_ab, Xab);
+        };
 
-    MP2() { };
+        MP2() = default;
 
-    //MP2(const TArray2 &fock, const TArray2 &s_ab, const TArray4 &abcd);
+        void compute() {
 
-    MP2(const TArray2 &fock, const TArray2 &s_ab, const TArray3 &Xab,
-        const TRange1Engine &tre) : tre_(tre) {
-      auto tr1 = tre.get_all_tr1();
-      init(fock, s_ab, Xab, tr1, tr1);
-    };
+            // compute mp2 energy
+            double energy_mp2 = (g_("i,a,j,b") * (2 * g_("i,a,j,b") - g_("i,b,j,a"))).reduce(Mp2Red(orbital_energy_, trange1_engine_->get_actual_occ()));
 
-    void compute() {
-
-      // use TiledArray block function
-      auto mo_block = std::make_shared<tcc::MOBlock>(tre_);
-      TArrayBlock4 two_e(g_, mo_block);
-
-      // compute mp2 energy
-      double energy_mp2 = (two_e("i,a,j,b") *
-                           (2 * two_e("i,a,j,b") - two_e("i,b,j,a")))
-              .reduce(Mp2Red(en_mo_, tre_.get_occ()));
-
-//      TArray4 g_print;
-//      g_print("a,c,i,d") = two_e("a,c,i,d");
-//
-//      g_print("a,i,c,d") = g_print("a,c,i,d");
-//
-//      std::ofstream f;
-//      f.open("mp2.int");
-//      f << g_print << std::endl;
-//      f.close();
-
-      // use deep_filter in TCC
-
-//    std::size_t occ_blocks = tre_.get_occ_blocks();
-//    std::size_t vir_blocks = tre_.get_vir_blocks();
-//    auto occ_range = std::make_pair(0ul,tre_.get_occ());
-//    auto vir_range = std::make_pair(tre_.get_occ(), tre_.get_all());
-//    std::array<decltype(occ_range), 4> iajb_range = {{occ_range,vir_range,occ_range,vir_range}};
-//
-//    auto two_e_iajb = tcc::array_ops::deep_filter(two_e_int_mo_, iajb_range);
-//    double energy_mp2 = (two_e_iajb("i,a,j,b")*(2*two_e_iajb("i,a,j,b")-two_e_iajb("i,b,j,a")))
-//            .reduce(Mp2Red(en_mo_, tre_.get_occ()));
-
-      std::cout << energy_mp2 << std::endl;
-    }
-
-//    TArray4 compute_amplitute(){
-//
-//    }
-
-
-    const TArray4& get_g() const {
-      return g_;
-    }
-
-    const std::shared_ptr<Eigen::VectorXd> get_en() const {
-      return en_mo_;
-    }
-
-  private:
-
-    struct Mp2Red {
-      using result_type = double;
-      using argument_type = Tile;
-
-      std::shared_ptr<Eig::VectorXd> vec_;
-      unsigned int n_occ_;
-
-      Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
-              : vec_(std::move(vec)), n_occ_(n_occ) { }
-
-      Mp2Red(Mp2Red const &) = default;
-
-      result_type operator()() const { return 0.0; }
-
-      result_type operator()(result_type const &t) const { return t; }
-
-      void operator()(result_type &me, result_type const &other) const {
-        me += other;
-      }
-
-      void operator()(result_type &me, argument_type const &tile) const {
-        auto const &range = tile.range();
-        auto const &vec = *vec_;
-        auto const st = range.lobound_data();
-        auto const fn = range.upbound_data();
-        auto tile_idx = 0;
-        for (auto i = st[0]; i < fn[0]; ++i) {
-          const auto e_i = vec[i];
-          for (auto a = st[1]; a < fn[1]; ++a) {
-            const auto e_ia = e_i - vec[a + n_occ_];
-            for (auto j = st[2]; j < fn[2]; ++j) {
-              const auto e_iaj = e_ia + vec[j];
-              for (auto b = st[3]; b < fn[3]; ++b, ++tile_idx) {
-                const auto e_iajb = e_iaj - vec[b + n_occ_];
-                me += 1 / (e_iajb) * tile.data()[tile_idx];
-              }
+            if (g_.get_world().rank() == 0) {
+                std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
             }
-          }
         }
-      }
+
+        const TArray4 &get_g() const {
+            return g_;
+        }
+
+        const std::shared_ptr<Eigen::VectorXd> get_en() const {
+            return orbital_energy_;
+        }
+
+    private:
+
+        struct Mp2Red {
+            using result_type = double;
+            using argument_type = Tile;
+
+            std::shared_ptr<Eig::VectorXd> vec_;
+            unsigned int n_occ_;
+
+            Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+                    : vec_(std::move(vec)), n_occ_(n_occ) { }
+
+            Mp2Red(Mp2Red const &) = default;
+
+            result_type operator()() const { return 0.0; }
+
+            result_type operator()(result_type const &t) const { return t; }
+
+            void operator()(result_type &me, result_type const &other) const {
+                me += other;
+            }
+
+            void operator()(result_type &me, argument_type const &tile) const {
+                auto const &range = tile.range();
+                auto const &vec = *vec_;
+                auto const st = range.lobound_data();
+                auto const fn = range.upbound_data();
+                auto tile_idx = 0;
+                for (auto i = st[0]; i < fn[0]; ++i) {
+                    const auto e_i = vec[i];
+                    for (auto a = st[1]; a < fn[1]; ++a) {
+                        const auto e_ia = e_i - vec[a + n_occ_];
+                        for (auto j = st[2]; j < fn[2]; ++j) {
+                            const auto e_iaj = e_ia + vec[j];
+                            for (auto b = st[3]; b < fn[3]; ++b, ++tile_idx) {
+                                const auto e_iajb = e_iaj - vec[b + n_occ_];
+                                me += 1 / (e_iajb) * tile.data()[tile_idx];
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        //template <typename Tile, typename Policy>
+        //void init(const TArray2& fock, const TArray2& s_mn, const TArray4& mnkl);
+
+        // template <typename Tile, typename Policy>
+        void init(const TArray2 &fock, const TArray2 &s_mn,
+                  const TArray3 &Xmn) {
+
+            auto fock_eig = tcc::array_ops::array_to_eigen(fock);
+            auto s_mn_eig = tcc::array_ops::array_to_eigen(s_mn);
+
+            Eigen::GeneralizedSelfAdjointEigenSolver<decltype(s_mn_eig)> es(
+                    fock_eig, s_mn_eig);
+
+            std::size_t n_frozen_core = trange1_engine_->get_nfrozen();
+            std::size_t occupation = trange1_engine_->get_occ();
+            std::size_t block_size = trange1_engine_->get_block_size();
+
+            Eigen::VectorXd evals = es.eigenvalues().bottomRows(s_mn_eig.rows() - n_frozen_core);
+            auto C_all = es.eigenvectors();
+
+            // compute mo coefficient
+            auto C_occ = C_all.block(0, n_frozen_core, s_mn_eig.rows(), occupation  - n_frozen_core);
+            auto C_vir = C_all.rightCols(s_mn_eig.rows() - occupation);
+
+            // compute mo blocking
+            auto tr_0 = Xmn.trange().data().back();
+            auto tr_occ = trange1_engine_->get_occ_tr1();
+            auto tr_vir = trange1_engine_->get_vir_tr1();
+
+            utility::print_par(fock.get_world(), "Block Size in MO     ", block_size, "\n");
+            utility::print_par(fock.get_world(), "TiledRange1 Occupied ", tr_occ, "\n");
+            utility::print_par(fock.get_world(), "TiledRange1 Virtual  ", tr_vir, "\n");
+
+            // convert mo coefficient to TiledArray
+            auto Ci = array_ops::eigen_to_array<TA::Tensor < double>> (fock.get_world(), C_occ, tr_0, tr_occ);
+
+            auto Cv = array_ops::eigen_to_array<TA::Tensor < double>> (fock.get_world(), C_vir, tr_0, tr_vir);
+
+            TArray3 Xmn_mo;
+            Xmn_mo("X,i,a") = Xmn("X,mu,nu") * Ci("mu,i") * Cv("nu,a");
+            // construct two electron mo (ia|jb)
+            g_("i,a,j,b") = Xmn_mo("X,i,a") * Xmn_mo("X,j,b");
+
+            // set energy
+            orbital_energy_ = std::make_shared<Eigen::VectorXd>(std::move(evals));
+        };
+
+
+    private:
+        // two electron mo (ia|jb)
+        TArray4 g_;
+        std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+        std::shared_ptr<tcc::TRange1Engine> trange1_engine_;
     };
-
-    //template <typename Tile, typename Policy>
-    //void init(const TArray2& fock, const TArray2& s_mn, const TArray4& mnkl);
-
-    // template <typename Tile, typename Policy>
-    void init(const TArray2 &fock, const TArray2 &s_mn, const TArray3 &Xmn,
-              const TA::TiledRange1 &tr1, const TA::TiledRange1 &tr2) {
-
-      auto fock_eig = tcc::array_ops::array_to_eigen(fock);
-      auto s_mn_eig = tcc::array_ops::array_to_eigen(s_mn);
-      Eigen::GeneralizedSelfAdjointEigenSolver<decltype(s_mn_eig)> es(fock_eig,
-                                                                      s_mn_eig);
-      Eigen::VectorXd evals = es.eigenvalues();
-      auto coeff_eig = es.eigenvectors();
-      auto tr0 = Xmn.trange().data().back();
-      coeff_mo_ = tcc::array_ops::eigen_to_array<Tile>(fock.get_world(),
-                                                       coeff_eig, tr0, tr1);
-
-      //std::size_t col = tr0.elements().second;
-      //std::size_t row = tr1.elements().second;
-      //auto I = Eigen::MatrixXd::Identity(col, row);
-
-      //auto I_TA = tcc::array_ops::eigen_to_array<Tile>(fock.get_world(), I, tr0, tr1);
-      //I_TA.truncate();
-
-      //reblocking Xmn
-      //std::cout << Xmn << std::endl;
-      //TArray3 Xmn_reblock;
-      //Xmn_reblock("X,n,m1") = Xmn("X,m1,n1")*I_TA("m1,m");
-      //std::cout << Xmn_reblock << std::endl;
-      //Xmn_reblock("X,m,n") = Xmn_reblock("X,n,m1")*I_TA("m1,m");
-
-      //std::cout << Xmn_reblock << std::endl;
-
-      // construct two electron mo
-      TArray3 Xmn_mo;
-      Xmn_mo("X,m,n") = Xmn("X,mu,nu") * coeff_mo_("mu,m") * coeff_mo_("nu,n");
-      g_("p,q,r,s") = Xmn_mo("X,p,q") * Xmn_mo("X,r,s");
-      en_mo_ = std::make_shared<Eigen::VectorXd>(std::move(evals));
-    };
-
-
-  private:
-    TArray4 g_;
-    TArray2 coeff_mo_;
-    std::shared_ptr<Eigen::VectorXd> en_mo_;
-    tcc::TRange1Engine tre_;
-  };
 
 }
 #endif //TILECLUSTERCHEM_MP2_H

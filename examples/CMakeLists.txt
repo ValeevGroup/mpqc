@@ -3,6 +3,13 @@ add_custom_target(sqrt_inverse)
 add_custom_target(paper)
 add_custom_target(fastK)
 
+
+
+add_executable(group_meeting EXCLUDE_FROM_ALL group_meeting_example.cpp)
+target_link_libraries(group_meeting
+  ${TileClusterChem_LIBRARIES}
+)
+
 add_executable(mp2 EXCLUDE_FROM_ALL mp2.cpp)
 target_link_libraries(mp2
   ${TileClusterChem_LIBRARIES}

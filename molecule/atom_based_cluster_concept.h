@@ -28,6 +28,7 @@ class AtomBasedClusterConcept : public ClusterConcept {
     virtual ~AtomBasedClusterConcept() = default;
     virtual int64_t charge_() const = 0;
     virtual double mass_() const = 0;
+    virtual Vec3D const& com_() const = 0;
     virtual std::vector<Atom> atoms_() const = 0;
 };
 
@@ -55,6 +56,9 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
     }
 
     Vec3D const &center_() const override final { return center(element_); }
+    Vec3D const &com_() const override final {
+        return center_of_mass(element_);
+    }
 
     int64_t charge_() const override final { return charge(element_); }
     double mass_() const override final { return mass(element_); }
@@ -84,13 +88,15 @@ class AtomBasedClusterable {
   public:
     template <typename C>
     AtomBasedClusterable(C c)
-            : element_impl_(std::make_shared<AtomBasedClusterModel<C>>(std::move(c))) {}
+            : element_impl_(
+                    std::make_shared<AtomBasedClusterModel<C>>(std::move(c))) {}
     AtomBasedClusterable(AtomBasedClusterable const &c) = default;
     AtomBasedClusterable &operator=(AtomBasedClusterable const &c) = default;
     AtomBasedClusterable(AtomBasedClusterable &&c) = default;
     AtomBasedClusterable &operator=(AtomBasedClusterable &&c) = default;
 
     Vec3D const &center() const { return element_impl_->center_(); }
+    Vec3D const &com() const { return element_impl_->com_(); }
 
     /// Vector of atoms that make up the clusterable
     std::vector<Atom> atoms() const { return element_impl_->atoms_(); }

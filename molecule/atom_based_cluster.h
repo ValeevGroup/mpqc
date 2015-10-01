@@ -28,6 +28,7 @@ class AtomBasedCluster {
   private:
     std::vector<AtomBasedClusterable> elements_;
     Vec3D center_ = {0, 0, 0};
+    Vec3D com_ = {0, 0, 0};
     double mass_ = 0.0;
     int64_t charge_ = 0.0;
 
@@ -76,6 +77,7 @@ class AtomBasedCluster {
     double sum_distances_from_center() const;
 
     inline Vec3D const& center() const { return center_; }
+    inline Vec3D const& com() const {return com_;}
 
     /**
      * @brief begin returns the begin iterator to the vector of clusterables.
@@ -110,6 +112,8 @@ inline double mass(AtomBasedCluster const &c){
 inline int64_t charge(AtomBasedCluster const &c){
     return c.charge();
 }
+
+Vec3D const& center_of_mass(AtomBasedCluster const&c);
 
 /*! @} */
 

@@ -21,9 +21,11 @@ namespace mpqc {
 namespace integrals {
 namespace detail {
 
+using Shell = libint2::Shell;
+static const auto unit_shell = Shell::unit();
+
 using OneE_Engine = libint2::OneBodyEngine;
 using TwoE_Engine = libint2::TwoBodyEngine<libint2::Coulomb>;
-using Shell = libint2::Shell;
 
 inline const double *shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1,
                                Shell const &s2, Shell const &s3) {
@@ -32,14 +34,12 @@ inline const double *shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1,
 
 inline const double *
 shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1) {
-    const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, unit);
+    return e.compute(s0, unit_shell, s1, unit_shell);
 }
 
 inline const double *
 shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
-    const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, s2);
+    return e.compute(s0, unit_shell, s1, s2);
 }
 
 inline const double *
@@ -55,27 +55,26 @@ integral_kernel(Engine &eng, TA::Range &&rng,
     auto const &sh0 = shell_ptrs[0]->flattened_shells();
     auto const &sh1 = shell_ptrs[1]->flattened_shells();
 
-    auto const &lowbound = rng.lobound();
-    const auto start0 = lowbound[0];
-    const auto start1 = lowbound[1];
+    auto const &lobound = rng.lobound();
+    std::array<unsigned long, 2> lb = {{lobound[0], lobound[1]}};
+    std::array<unsigned long, 2> ub = lb;
 
     auto tile = TA::TensorD(std::move(rng));
 
-    auto bf0 = start0;
     for (auto const &s0 : sh0) {
         const auto ns0 = s0.size();
+        ub[0] += ns0;
 
-        auto bf1 = start1;
+        lb[1] = ub[1] = lobound[1];
         for (auto const &s1 : sh1) {
             const auto ns1 = s1.size();
+            ub[1] += ns1;
 
-            const auto lb = {bf0, bf1};
-            const auto ub = {bf0 + ns0, bf1 + ns1};
             tile.block(lb, ub) = TA::make_map(shell_set(eng, s0, s1), lb, ub);
 
-            bf1 += ns1;
+            lb[1] = ub[1];
         }
-        bf0 += ns0;
+        lb[0] = ub[0];
     }
 
     return tile;
@@ -90,35 +89,39 @@ integral_kernel(Engine &eng, TA::Range &&rng,
     auto const &sh1 = shell_ptrs[1]->flattened_shells();
     auto const &sh2 = shell_ptrs[2]->flattened_shells();
 
-    auto const &lowbound = rng.lobound();
-    const auto start0 = lowbound[0];
-    const auto start1 = lowbound[1];
-    const auto start2 = lowbound[2];
+    auto const &lobound = rng.lobound();
+    std::array<unsigned long, 3> lb = {{lobound[0], lobound[1], lobound[2]}};
+    std::array<unsigned long, 3> ub = lb;
 
     auto tile = TA::TensorD(std::move(rng));
 
-    auto bf0 = start0;
+    // init map
+    const double dummy = 0.0;
+    auto map = TA::make_map(&dummy, {0,0,0}, {1,1,1});
+
     for (auto const &s0 : sh0) {
         const auto ns0 = s0.size();
+        ub[0] += ns0;
 
-        auto bf1 = start1;
+        lb[1] = ub[1] = lobound[1];
         for (auto const &s1 : sh1) {
             const auto ns1 = s1.size();
+            ub[1] += ns1;
 
-            auto bf2 = start2;
+            lb[2] = ub[2] = lobound[2];
             for (auto const &s2 : sh2) {
                 const auto ns2 = s2.size();
+                ub[2] += ns2;
 
-                const auto lb = {bf0, bf1, bf2};
-                const auto ub = {bf0 + ns0, bf1 + ns1, bf2 + ns2};
-                tile.block(lb, ub)
-                      = TA::make_map(shell_set(eng, s0, s1, s2), lb, ub);
+                map.range().resize(lb, ub);
+                map.reset_data(shell_set(eng, s0, s1, s2));
+                tile.block(lb, ub) = map;
 
-                bf2 += ns2;
+                lb[2] = ub[2];
             }
-            bf1 += ns1;
+            lb[1] = ub[1];
         }
-        bf0 += ns0;
+        lb[0] = ub[0];
     }
 
     return tile;
@@ -139,43 +142,44 @@ integral_kernel(Engine &eng, TA::Range &&rng,
     const auto nsh1 = sh1.size();
     const auto nsh2 = sh2.size();
 
-    auto const &lowbound = rng.lobound();
-    const auto start0 = lowbound[0];
-    const auto start1 = lowbound[1];
-    const auto start2 = lowbound[2];
+    auto const &lobound = rng.lobound();
+    std::array<unsigned long, 3> lb = {{lobound[0], lobound[1], lobound[2]}};
+    std::array<unsigned long, 3> ub = lb;
 
-    // Since screening it's important to zero this.
     auto tile = TA::TensorD(std::move(rng), 0.0);
 
-    auto bf0 = start0;
+    // init map
+    const double dummy = 0.0;
+    auto map = TA::make_map(&dummy, {0,0,0}, {1,1,1});
+
     for (auto idx0 = 0ul; idx0 < nsh0; ++idx0) {
         auto const &s0 = sh0[idx0];
-        const auto ns0 = s0.size();
-        const auto X_norm_est = X(idx0);
+        ub[0] += s0.size();
 
-        auto bf1 = start1;
+        const auto X_norm_est = X(idx0);
+        lb[1] = ub[1] = lobound[1];
         for (auto idx1 = 0ul; idx1 < nsh1; ++idx1) {
             auto const &s1 = sh1[idx1];
-            const auto ns1 = s1.size();
+            ub[1] += s1.size();
 
-            auto bf2 = start2;
+            lb[2] = ub[2] = lobound[2];
             for (auto idx2 = 0ul; idx2 < nsh2; ++idx2) {
                 auto const &s2 = sh2[idx2];
                 const auto ns2 = s2.size();
+                ub[2] += ns2;
 
-                // Screen that bad boy
+                // TODO make this configurable
                 if (X_norm_est * ab(idx1, idx2) > 1e-10) {
-                    const auto lb = {bf0, bf1, bf2};
-                    const auto ub = {bf0 + ns0, bf1 + ns1, bf2 + ns2};
-                    tile.block(lb, ub)
-                          = TA::make_map(shell_set(eng, s0, s1, s2), lb, ub);
+                    map.range().resize(lb, ub);
+                    map.reset_data(shell_set(eng, s0, s1, s2));
+                    tile.block(lb, ub) = map;
                 }
 
-                bf2 += ns2;
+                lb[2] = ub[2];
             }
-            bf1 += ns1;
+            lb[1] = ub[1];
         }
-        bf0 += ns0;
+        lb[0] = ub[0];
     }
 
     return tile;
@@ -191,50 +195,43 @@ integral_kernel(Engine &eng, TA::Range &&rng,
     auto const &sh2 = shell_ptrs[2]->flattened_shells();
     auto const &sh3 = shell_ptrs[3]->flattened_shells();
 
-    auto const &lowbound = rng.lobound();
-    const auto start0 = lowbound[0];
-    const auto start1 = lowbound[1];
-    const auto start2 = lowbound[2];
-    const auto start3 = lowbound[3];
+    auto const &lobound = rng.lobound();
+    std::array<unsigned long, 4> lb
+          = {{lobound[0], lobound[1], lobound[2], lobound[3]}};
+    std::array<unsigned long, 4> ub = lb;
 
     auto tile = TA::TensorD(std::move(rng));
 
-    auto bf0 = start0;
     for (auto const &s0 : sh0) {
-        const auto ns0 = s0.size();
+        ub[0] += s0.size();
 
-        auto bf1 = start1;
+        lb[1] = ub[1] = lobound[1];
         for (auto const &s1 : sh1) {
-            const auto ns1 = s1.size();
+            ub[1] += s1.size();
 
-            auto bf2 = start2;
+            lb[2] = ub[2] = lobound[2];
             for (auto const &s2 : sh2) {
-                const auto ns2 = s2.size();
+                ub[2] += s2.size();
 
-                auto bf3 = start3;
+                lb[3] = ub[3] = lobound[3];
                 for (auto const &s3 : sh3) {
-                    const auto ns3 = s3.size();
-
-                    const auto lb = {bf0, bf1, bf2, bf3};
-                    const auto ub
-                          = {bf0 + ns0, bf1 + ns1, bf2 + ns2, bf3 + ns3};
+                    ub[3] += s3.size();
 
                     tile.block(lb, ub)
                           = TA::make_map(shell_set(eng, s0, s1, s2, s3), lb,
                                          ub);
 
-                    bf3 += ns3;
+                    lb[3] = ub[3];
                 }
-                bf2 += ns2;
+                lb[2] = ub[2];
             }
-            bf1 += ns1;
+            lb[1] = ub[1];
         }
-        bf0 += ns0;
+        lb[0] = ub[0];
     }
 
     return tile;
 }
-
 
 } // namespace detail
 } // namespace integrals

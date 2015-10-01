@@ -5,6 +5,7 @@
 #ifndef TILECLUSTERCHEM_UTILITY_H_H
 #define TILECLUSTERCHEM_UTILITY_H_H
 
+#include <cmath>
 
 namespace tcc{
     namespace  cc{
@@ -98,6 +99,30 @@ namespace tcc{
                         f_ai.trange().make_tile_range(it.ordinal()));
 
                 *it = tile;
+            }
+
+        }
+
+        // print progress
+        void print_progress(int lowprogress, int upprogress, int total){
+            int divide = 10;
+            if(total < 10){
+                divide = total;
+                int percent = 100*double(upprogress)/divide;
+                std::cout << percent << "% done." << std::endl;
+            }else{
+                int increase = std::round(double(total)/divide);
+                std::vector<int> progress_points;
+                for(int i = 0; i < total; i += increase){
+                   progress_points.push_back(i);
+                }
+
+                for (int i = lowprogress; i < upprogress; i++){
+                    if (std::find(progress_points.begin(),progress_points.end(),i) != progress_points.end()){
+                        int percent = 100*double(i)/total;
+                        std::cout << percent << "% done." << std::endl;
+                    }
+                }
             }
 
         }

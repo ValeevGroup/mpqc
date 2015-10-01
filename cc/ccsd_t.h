@@ -43,16 +43,16 @@ namespace tcc{
                 double ccsd_t = compute_ccsd_t(t1, t2);
                 auto time1 = tcc_time::now();
                 auto duration1 = tcc_time::duration_in_s(time0, time1);
-                time0 = tcc::tcc_time::now();
-                double ccsd_t_d = compute_ccsd_t_direct(t1, t2);
-                time1 = tcc::tcc_time::now();
-                auto duration2 = tcc_time::duration_in_s(time0, time1);
+//                time0 = tcc::tcc_time::now();
+//                double ccsd_t_d = compute_ccsd_t_direct(t1, t2);
+//                time1 = tcc::tcc_time::now();
+//                auto duration2 = tcc_time::duration_in_s(time0, time1);
 
                 if (t1.get_world().rank() == 0) {
                     std::cout << "(T) Energy      " << ccsd_t << " Time " << duration1 << std::endl;
-                    std::cout << "(T) Energy      " << ccsd_t_d << " Time " << duration2 << std::endl;
+//                    std::cout << "(T) Energy      " << ccsd_t_d << " Time " << duration2 << std::endl;
                     std::cout << "CCSD(T) Energy  " << ccsd_t + ccsd_corr << std::endl;
-                    std::cout << "CCSD(T) Energy  " << ccsd_t_d + ccsd_corr << std::endl;
+//                    std::cout << "CCSD(T) Energy  " << ccsd_t_d + ccsd_corr << std::endl;
                 }
 
             }
@@ -115,6 +115,7 @@ namespace tcc{
                     }else{
                         a_increase = increase;
                     }
+
 
                     std::size_t a_end = a + a_increase - 1;
                     while(b <= a_end){
@@ -538,11 +539,15 @@ namespace tcc{
                         b += b_increase;
                     }
 
+                    if(t1.get_world().rank() == 0){
+                        print_progress(a, a+increase, n_tr_vir);
+                    }
                     a += a_increase;
                 }
 
                 if (t1.get_world().rank() == 0){
-                    std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
+                    std::cout << "Total Blocks Computed  " << n_blocks_computed;
+                    std::cout << " from " << std::pow(n_tr_occ,3)*std::pow(n_tr_vir,3) << std::endl;
                 }
                 return  triple_energy;
             }
@@ -909,10 +914,14 @@ namespace tcc{
                             triple_energy += tmp_energy;
                         }
                     }
+                    if(t1.get_world().rank() == 0){
+                        print_progress(a, a+1, n_tr_vir);
+                    }
                 }
 
                 if(t1.get_world().rank() == 0){
-                    std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
+                    std::cout << "Total Blocks Computed  " << n_blocks_computed;
+                    std::cout << " from " << std::pow(n_tr_occ,3)*std::pow(n_tr_vir,3) << std::endl;
                 }
                 return  triple_energy;
 

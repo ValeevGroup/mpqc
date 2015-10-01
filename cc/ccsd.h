@@ -13,10 +13,10 @@
 #include "../ta_routines/tarray_block.h"
 
 #include "ccsd_intermediates.h"
-#include "./diis_ccsd.h"
+#include "diis_ccsd.h"
 #include "integral_generator.h"
 #include "lazy_integral.h"
-
+#include "utility.h"
 
 namespace tcc {
     namespace cc {
@@ -76,12 +76,12 @@ namespace tcc {
                 TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
-                d_ai(d1, orbital_energy_, n_occ);
+                tcc::cc::create_d_ai(d1, orbital_energy_, n_occ);
 
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
-                d_abij(d2, orbital_energy_, n_occ);
+                tcc::cc::create_d_abij(d2, orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -306,11 +306,11 @@ namespace tcc {
 
                 TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
-                d_ai(d1, orbital_energy_, n_occ);
+                create_d_ai(d1, orbital_energy_, n_occ);
 
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
-                d_abij(d2, orbital_energy_, n_occ);
+                create_d_abij(d2, orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -555,98 +555,6 @@ namespace tcc {
                     std::cout << "CCSD Energy     " << E1 << std::endl;
                 }
                 return E1;
-            }
-
-        private:
-
-            // TODO move to other file
-            void d_abij(TArray4 &abij,
-                        const Eigen::VectorXd &ens, std::size_t n_occ) {
-                typedef typename TArray4::range_type range_type;
-                typedef typename TArray2::iterator iterator;
-
-                auto make_tile = [&ens, n_occ](range_type &range) {
-
-                    auto result_tile = Tile(range);
-
-                    // compute index
-                    const auto a0 = result_tile.range().lobound()[0];
-                    const auto an = result_tile.range().upbound()[0];
-                    const auto b0 = result_tile.range().lobound()[1];
-                    const auto bn = result_tile.range().upbound()[1];
-                    const auto i0 = result_tile.range().lobound()[2];
-                    const auto in = result_tile.range().upbound()[2];
-                    const auto j0 = result_tile.range().lobound()[3];
-                    const auto jn = result_tile.range().upbound()[3];
-
-                    auto tile_idx = 0;
-                    typename Tile::value_type tmp = 1.0;
-                    for (auto a = a0; a < an; ++a) {
-                        const auto e_a = ens[a + n_occ];
-                        for (auto b = b0; b < bn; ++b) {
-                            const auto e_b = ens[b + n_occ];
-                            for (auto i = i0; i < in; ++i) {
-                                const auto e_i = ens[i];
-                                for (auto j = j0; j < jn; ++j, ++tile_idx) {
-                                    const auto e_j = ens[j];
-                                    const auto e_iajb = e_i + e_j - e_a - e_b;
-                                    const auto result_abij = tmp / (e_iajb);
-                                    result_tile[tile_idx] = result_abij;
-                                }
-                            }
-                        }
-                    }
-                    return result_tile;
-                };
-
-                for (iterator it = abij.begin(); it != abij.end(); ++it) {
-
-                    madness::Future<Tile> tile = abij.get_world().taskq.add(
-                            make_tile,
-                            abij.trange().make_tile_range(it.ordinal()));
-
-                    *it = tile;
-                }
-
-            }
-
-            void d_ai(TArray2 &f_ai, const Eigen::VectorXd &ens, int n_occ) {
-                typedef typename TArray2::range_type range_type;
-                typedef typename TArray2::iterator iterator;
-
-                auto make_tile = [&ens, n_occ](range_type &range) {
-
-                    auto result_tile = Tile(range);
-                    const auto a0 = result_tile.range().lobound()[0];
-                    const auto an = result_tile.range().upbound()[0];
-                    const auto i0 = result_tile.range().lobound()[1];
-                    const auto in = result_tile.range().upbound()[1];
-
-                    auto ai = 0;
-                    typename Tile::value_type tmp = 1.0;
-                    for (auto a = a0; a < an; ++a) {
-                        const auto e_a = ens[a + n_occ];
-                        for (auto i = i0; i < in; ++i, ++ai) {
-                            const auto e_i = ens[i];
-                            const auto e_ia = e_i - e_a;
-                            const auto result_ai = tmp / (e_ia);
-                            result_tile[ai] = result_ai;
-                        }
-                    }
-                    return result_tile;
-                };
-
-                typename TArray2::pmap_interface::const_iterator it = f_ai.get_pmap()->begin();
-                typename TArray2::pmap_interface::const_iterator end = f_ai.get_pmap()->end();
-                for (; it != end; ++it) {
-
-                    madness::Future<Tile> tile = f_ai.get_world().taskq.add(
-                            make_tile,
-                            f_ai.trange().make_tile_range(*it));
-
-                    f_ai.set(*it, tile);
-                }
-
             }
 
         protected:

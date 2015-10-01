@@ -33,8 +33,11 @@ class ClusterShells {
     unsigned int nfunctions(unsigned int) const;
     /// gives number of shells in am provided
     unsigned int nshells(unsigned int) const;
-    /// Gives number of total shells
+
+    /// Gives total number of total shells in this ClusterShells
     unsigned int nshells() const;
+
+    /// total number of basis functions in this ClusterShells
     unsigned int flattened_nfunctions() const;
 
     unsigned int max_am() const;

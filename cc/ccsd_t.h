@@ -61,7 +61,6 @@ namespace tcc{
                 bool df = true;
                 // get integral
                 TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
-                // TODO use DF to avoid storing diba
                 TArray4 g_abij = this->ccsd_intermediate_->get_abij();
 
                 TArray4 g_diba;
@@ -97,7 +96,7 @@ namespace tcc{
                 std::size_t c_increase = increase;
 
                 if(t1.get_world().rank() == 0){
-                    std::cout << "Increase " << increase << std::endl;
+                    std::cout << "Increase in the loop " << increase << std::endl;
                 }
 
                 // index in virtual blocks

@@ -113,8 +113,9 @@ integral_kernel(Engine &eng, TA::Range &&rng,
                 const auto ns2 = s2.size();
                 ub[2] += ns2;
 
-                map.range().resize(lb, ub);
-                map.reset_data(shell_set(eng, s0, s1, s2));
+                TA::remap(map, shell_set(eng, s0, s1, s2), lb, ub);
+                // map.range().resize(lb, ub);
+                // map.reset_data(shell_set(eng, s0, s1, s2));
                 tile.block(lb, ub) = map;
 
                 lb[2] = ub[2];

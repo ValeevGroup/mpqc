@@ -162,7 +162,9 @@ TA::TensorD integral_kernel_better(coulomb_engine &eng, TA::Range &&rng,
                                    ShellVec const &sh0, ShellVec const &sh1,
                                    ShellVec const &sh2) {
 
-    auto const &lobound = rng.lobound();
+    auto tile = TA::TensorD(std::move(rng));
+
+    auto const &lobound = tile.range().lobound();
     unsigned long lb [] = {lobound[0], lobound[1], lobound[2]};
     unsigned long ub [3];
 
@@ -170,7 +172,6 @@ TA::TensorD integral_kernel_better(coulomb_engine &eng, TA::Range &&rng,
         ub[i] = lb[i];
     }
 
-    auto tile = TA::TensorD(std::move(rng));
 
     for (auto const &s0 : sh0) {
         const auto ns0 = s0.size();

@@ -11,7 +11,7 @@ namespace clustering {
 using output_t = std::vector<Cluster>;
 using input_t = std::vector<Clusterable>;
 
-double sum_cluster_distances(const std::vector<Cluster> &clusters);
+double objective_function(const std::vector<Cluster> &clusters);
 bool none_zero(std::vector<Cluster> const &clusters);
 
 class kmeans {

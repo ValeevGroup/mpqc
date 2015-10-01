@@ -61,13 +61,12 @@ class Cluster {
     void compute_com();
 
     /**
-     * @brief sum_distances_from_center calculates the sum of the disances of
-     * each
-     * clusterable to the center of the cluster.
-     * @return reduction over the distances to the cluster center of the
+     * @brief sum_squared_distances_from_center calculates the sum of the
+     * distances of each clusterable to the center of the cluster.  @return
+     * reduction over the distances to the cluster center of the
      * clusterables.
      */
-    double sum_distances_from_center() const;
+    double sum_squared_distances_from_center() const;
 
     inline position_t center() const { return center_; }
     inline double mass() const { return mass_; }

@@ -10,9 +10,9 @@ namespace molecule {
 
 void Cluster::compute_com() { center_ = center_of_mass(elements_, mass_); }
 
-double Cluster::sum_distances_from_center() const {
+double Cluster::sum_squared_distances_from_center() const {
     auto reduce_r = [&](double d, const Clusterable &c) {
-        return d + std::sqrt(diff_squaredNorm(c.center(), center_));
+        return d + diff_squaredNorm(c.center(), center_);
     };
 
     return std::accumulate(elements_.begin(), elements_.end(), 0.0, reduce_r);

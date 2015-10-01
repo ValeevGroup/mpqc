@@ -161,20 +161,21 @@ Molecule::attach_H_and_kmeans(unsigned long nclusters,
     // store the seed
     std::vector<Cluster> clusters;
     int best_seed = init_seed;
-    double smallest_dist = std::numeric_limits<double>::max();
+    double error = std::numeric_limits<double>::max();
     const auto nguesses = 10;
     for (auto i = 0; i < nguesses; ++i) {
         clustering::kmeans func(init_seed);
         clusters = func(new_clusterables, nclusters);
 
         if (clustering::none_zero(clusters)) {
-            double new_dist = clustering::sum_cluster_distances(clusters);
-            if (new_dist < smallest_dist) {
-                smallest_dist = new_dist;
+            double new_error = clustering::objective_function(clusters);
+            if (new_error < error) {
+                error = new_error;
                 best_seed = init_seed;
             }
         }
-        init_seed += 10 * (i + 1); // Vary the seed by a resonably large amount.
+        // Vary the seed by a reasonably large amount.
+        init_seed += 100 * (i + 1); 
     }
 
     // Use the best seed to compute the clusters.
@@ -195,7 +196,7 @@ Molecule::kmeans(unsigned long nclusters, unsigned long init_seed) const {
         clusters = func(elements_, nclusters);
 
         if (clustering::none_zero(clusters)) {
-            double new_dist = clustering::sum_cluster_distances(clusters);
+            double new_dist = clustering::objective_function(clusters);
             if (new_dist < smallest_dist) {
                 smallest_dist = new_dist;
                 best_seed = init_seed;

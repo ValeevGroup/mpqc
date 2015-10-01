@@ -11,10 +11,10 @@ namespace tcc {
 namespace molecule {
 namespace clustering {
 
-double sum_cluster_distances(const std::vector<Cluster> &clusters) {
+double objective_function(const std::vector<Cluster> &clusters) {
     return std::accumulate(clusters.begin(), clusters.end(), 0.0,
                            [](double d, const Cluster &c) {
-        return d + c.sum_distances_from_center();
+        return d + c.sum_squared_distances_from_center();
     });
 }
 
@@ -47,15 +47,15 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
         auto center_guess = clusterables[idx].center();
         it->set_center(center_guess);
 
-        for(auto i = 0ul; i < clusterables.size(); ++i){
+        for (auto i = 0ul; i < clusterables.size(); ++i) {
             const auto clusterable_center = clusterables[i].center();
 
             // Find the closest cluster that has been initialized.
             auto last = it;
             std::advance(last, 1);
             const auto cluster_center
-                = closest_cluster(clusters_.begin(), last, clusterable_center)
-                      ->center();
+                  = closest_cluster(clusters_.begin(), last, clusterable_center)
+                          ->center();
 
             // Calculate weight = dist^2
             weights[i] = diff_squaredNorm(clusterable_center, cluster_center);
@@ -67,7 +67,7 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
 
 void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
     // Erase the ownership information for each cluster.
-    for(auto &cluster : clusters_){
+    for (auto &cluster : clusters_) {
         cluster.clear();
     }
 
@@ -77,7 +77,7 @@ void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
         closest->add_clusterable(clusterable);
     }
 
-    for(auto &cluster : clusters_){
+    for (auto &cluster : clusters_) {
         cluster.compute_com();
     }
 }
@@ -111,15 +111,15 @@ kmeans::update_clusters(std::vector<Clusterable> const &clusterables) {
 }
 
 bool kmeans::kmeans_converged(const std::vector<position_t> &old_centers) {
-    return std::equal(
-        old_centers.begin(), old_centers.end(), clusters_.begin(),
-        [](const position_t &old_center, const Cluster &new_cluster) {
-            return 1e-7 < (old_center - new_cluster.center()).squaredNorm();
-        });
+    return std::equal(old_centers.begin(), old_centers.end(), clusters_.begin(),
+                      [](const position_t &old_center,
+                         const Cluster &new_cluster) {
+        return 1e-7 > (old_center - new_cluster.center()).squaredNorm();
+    });
 }
 
 output_t kmeans::cluster(const std::vector<Clusterable> &clusterables) {
-    unsigned int niter = 100, iter = 0;
+    unsigned int niter = 10, iter = 0;
 
     // initialize the old centers and update the clusters
     auto old_centers = update_clusters(clusterables);

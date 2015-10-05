@@ -96,7 +96,6 @@ namespace tcc {
                             std::size_t ns2 = shells2[s2].size();
                             bf3 = lo3;
 
-                            auto lowbound = {bf0, bf1, bf2, bf3};
                             for (auto s3 = 0l; s3 != nshells3; ++s3) {
 
                                 std::size_t ns3 = shells3[s3].size();
@@ -108,6 +107,7 @@ namespace tcc {
                                                                  shells2[s2],
                                                                  shells3[s3]);
 
+                                auto lowbound = {bf0, bf1, bf2, bf3};
                                 auto upbound = {bf0 + ns0, bf1 + ns1, bf2 + ns2,
                                                     bf3 + ns3};
                                 auto view = tile.block(lowbound, upbound);

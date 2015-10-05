@@ -23,6 +23,13 @@ namespace tcc {
 
         // CCSD class that computed CCSD energy
 
+
+        // Options
+        // BlockSize = int, control the block size in MO, default 16
+        // FrozenCore = bool, control if use frozen core, default False
+        // Direct = bool , control if use direct approach, default False
+
+
         template<typename Tile, typename Policy>
         class CCSD {
 
@@ -51,7 +58,13 @@ namespace tcc {
                 TArray2 t1;
                 TArray4 t2;
 
-                double ccsd_corr = compute_ccsd(t1, t2);
+                auto direct = options_.HasMember("Direct") ? options_["Direct"].GetBool(): false;
+                if(direct){
+                    double ccsd_corr = compute_ccsd(t1, t2);
+                }
+                else {
+                    double ccsd_corr = compute_ccsd_straight(t1, t2);
+                }
 
                 ccsd_intermediate_->clean_two_electron();
 

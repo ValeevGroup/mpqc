@@ -109,11 +109,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
     rapidjson::Document in;
     parse_input(argc, argv, in);
 
-    auto ccsd_in = get_nested(in,"CCSD");
+    Document cc_in;
+    if (in.HasMember("CCSD")){
+        cc_in = get_nested(in,"CCSD");
+    }
+    else if(in.HasMember("CCSD(T)")){
+        cc_in = get_nested(in, "CCSD(T)");
+    }
 
     if (!in.HasMember("xyz file") || !in.HasMember("number of bs clusters")
         || !in.HasMember("number of dfbs clusters")
-        || !ccsd_in.HasMember("mo block size")) {
+        || !cc_in.HasMember("BlockSize")) {
         if (world.rank() == 0) {
             std::cout << "At a minimum your input file must provide\n";
             std::cout << "\"xyz file\", which is path to an xyz input\n";
@@ -144,7 +150,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         int bs_nclusters = in["number of bs clusters"].GetInt();
         int dfbs_nclusters = in["number of dfbs clusters"].GetInt();
         int nocc_clusters = in["number of occupied clusters"].GetInt();
-        std::size_t blocksize = ccsd_in["mo block size"].GetInt();
+        std::size_t blocksize = cc_in["BlockSize"].GetInt();
 
 
         // Get basis info
@@ -168,8 +174,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                     : false;
 
         // get other info
-        bool frozen_core = ccsd_in.HasMember("frozen core")
-                                 ? ccsd_in["frozen core"].GetBool()
+        bool frozen_core = cc_in.HasMember("FrozenCore")
+                                 ? cc_in["FrozenCore"].GetBool()
                                  : false;
 
         volatile int debug
@@ -651,9 +657,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::utility::parallal_break_point(world, 0);
 
 
-    tcc::cc::CCSD_T<TA::Tensor < double>, TA::DensePolicy > ccsd_t(fock_mo_dense, ens, tre, intermidiate, ccsd_in);
-
-    ccsd_t.compute();
+    if(in.HasMember("CCSD(T)")){
+        tcc::cc::CCSD_T<TA::Tensor < double>, TA::DensePolicy > ccsd_t(fock_mo_dense, ens, tre, intermidiate, cc_in);
+        ccsd_t.compute();
+    }
+    else if(in.HasMember("CCSD")){
+        tcc::cc::CCSD<TA::Tensor < double>, TA::DensePolicy > ccsd(fock_mo_dense, ens, tre, intermidiate, cc_in);
+        ccsd.compute();
+    }
 
     world.gop.fence();
     libint2::cleanup();

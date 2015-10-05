@@ -569,7 +569,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         // end of SCF
         // prepare CC
-        utility::print_par(world, "\nCC Test\n");
+        utility::print_par(world, "\nCC Calculation\n");
 
         int n_frozen_core = 0;
         if (frozen_core) {
@@ -653,7 +653,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     // clean up all temporary from HF
     world.gop.fence();
 
-    utility::print_par(world, "\nBegining CC\n");
+    utility::print_par(world, "\nBegining CC Calculation\n");
     tcc::utility::parallal_break_point(world, 0);
 
 

@@ -80,6 +80,10 @@ namespace tcc {
 
                 TArray4 g_abij = ccsd_intermediate_->get_abij();
 
+                if(g_abij.get_world().rank() == 0){
+                    std::cout << "Use Straight CCSD Compute" <<std::endl;
+                }
+
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
 
@@ -312,6 +316,9 @@ namespace tcc {
 
                 TArray4 g_abij = ccsd_intermediate_->get_abij();
 
+                if(g_abij.get_world().rank() == 0){
+                    std::cout << "Use Direct CCSD Compute" <<std::endl;
+                }
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
 

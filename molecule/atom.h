@@ -71,6 +71,9 @@ inline double mass(Atom const &a){
 inline int64_t charge(Atom const &a){
     return a.charge();
 }
+
+// For atoms the center of mass is just the center
+inline Vec3D const &center_of_mass(Atom const &a) {return a.center();}
 /*! @} */
 
 } // namespace molecule

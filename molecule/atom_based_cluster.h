@@ -10,24 +10,24 @@
 
 namespace mpqc {
 namespace molecule {
-/*! 
+/*!
  * \ingroup Molecule
  *
  * @{
  */
 
 /*!
- * \brief is the unit that holds a collection of atom based clusterables that go together.
+ * \brief is the unit that holds a collection of atom based clusterables that go
+ *together.
  *
- * AtomBasedCluster will hold a vector of clusterables that all belong together.  
- * To update the center of the cluster compute_com must be called, this is 
- * to avoid computing a new center of mass (COM) every time a clusterable is 
- * added.  
+ * AtomBasedCluster will hold a vector of clusterables that all belong together.
+ * To update the center of the cluster compute_com must be called, this is
+ * to avoid computing a new center of mass (COM) every time a clusterable is
+ * added.
  */
 class AtomBasedCluster {
   private:
     std::vector<AtomBasedClusterable> elements_;
-    Vec3D center_ = {0, 0, 0};
     Vec3D com_ = {0, 0, 0};
     double mass_ = 0.0;
     int64_t charge_ = 0.0;
@@ -40,19 +40,27 @@ class AtomBasedCluster {
     AtomBasedCluster(AtomBasedCluster &&c) = default;
     AtomBasedCluster &operator=(AtomBasedCluster &&c) = default;
 
-    AtomBasedCluster(std::vector<AtomBasedClusterable> const &elems) : elements_(elems) {}
-    AtomBasedCluster(std::vector<AtomBasedClusterable> &&elems) : elements_(std::move(elems)) {}
+    AtomBasedCluster(std::vector<AtomBasedClusterable> const &elems)
+            : elements_(elems) {}
+    AtomBasedCluster(std::vector<AtomBasedClusterable> &&elems)
+            : elements_(std::move(elems)) {}
 
-    template<typename ...Cs>
-    AtomBasedCluster(Cs ...cs) : elements_{std::move(cs)...} {}
+    // When constructed from list update immediately
+    template <typename... Cs>
+    AtomBasedCluster(Cs... cs)
+            : elements_{std::move(cs)...} {
+        update_cluster();
+    }
 
     template <typename T>
-    void add_clusterable(T t) { elements_.emplace_back(std::move(t)); }
+    void add_clusterable(T t) {
+        elements_.emplace_back(std::move(t));
+    }
 
     int64_t size() const { return elements_.size(); }
 
-    int64_t charge() const {return charge_;}
-    double mass() const {return mass_;}
+    int64_t charge() const { return charge_; }
+    double mass() const { return mass_; }
 
     std::vector<Atom> atoms() const;
 
@@ -61,23 +69,17 @@ class AtomBasedCluster {
     /**
      * @brief sets the center equal to a point.
      */
-    void set_center(Vec3D point) { center_ = point; }
+    void set_com(Vec3D point) { com_ = point; }
 
     /**
      * @brief will update the center based on the current elements.
+     *
+     * This is done as a separate step because it would be inefficent to update
+     *after each addition of a AtomBasedClusterable
      */
-    virtual void update_center();
+    void update_cluster();
 
-    /**
-     * @brief sum_distances_from_center calculates the sum of the disances of
-     * each clusterable to the center of the cluster.
-     * @return reduction over the distances to the cluster center of the
-     * clusterables.
-     */
-    double sum_distances_from_center() const;
-
-    inline Vec3D const& center() const { return center_; }
-    inline Vec3D const& com() const {return com_;}
+    inline Vec3D const &com() const { return com_; }
 
     /**
      * @brief begin returns the begin iterator to the vector of clusterables.
@@ -94,26 +96,27 @@ class AtomBasedCluster {
     }
 };
 
-
 // External interface
 /*! \brief print the cluster by printing each of its elements
- * 
+ *
  */
-std::ostream & operator<<(std::ostream &, AtomBasedCluster const &);
+std::ostream &operator<<(std::ostream &, AtomBasedCluster const &);
 
-inline Vec3D const& center(AtomBasedCluster const &c){
-    return c.center();
+/*! \brief Returns the Center of mass of the cluster.
+ *
+ * This function exists to allow interfacing with generic clustering code.
+ * Overloading center to return the center of mass is in some sense specializing
+ * center for atoms.
+ */
+inline Vec3D const &center(AtomBasedCluster const &c) { return c.com(); }
+
+inline double mass(AtomBasedCluster const &c) { return c.mass(); }
+
+inline int64_t charge(AtomBasedCluster const &c) { return c.charge(); }
+
+inline Vec3D const &center_of_mass(AtomBasedCluster const &c) {
+    return c.com();
 }
-
-inline double mass(AtomBasedCluster const &c){
-    return c.mass();
-}
-
-inline int64_t charge(AtomBasedCluster const &c){
-    return c.charge();
-}
-
-Vec3D const& center_of_mass(AtomBasedCluster const&c);
 
 /*! @} */
 

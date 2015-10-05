@@ -95,7 +95,8 @@ class AtomBasedClusterable {
     AtomBasedClusterable(AtomBasedClusterable &&c) = default;
     AtomBasedClusterable &operator=(AtomBasedClusterable &&c) = default;
 
-    Vec3D const &center() const { return element_impl_->center_(); }
+    // Don't provide a way to access the center
+    // Vec3D const &center() const { return element_impl_->center_(); }
     Vec3D const &com() const { return element_impl_->com_(); }
 
     /// Vector of atoms that make up the clusterable
@@ -108,6 +109,24 @@ class AtomBasedClusterable {
         return element_impl_->print_(os);
     }
 };
+
+inline double mass(AtomBasedClusterable const &ac){
+    return ac.mass();
+}
+
+inline double charge(AtomBasedClusterable const &ac){
+    return ac.charge();
+}
+
+inline Vec3D const& center(AtomBasedClusterable const &ac){
+    return ac.com();
+}
+
+inline Vec3D const& center_of_mass(AtomBasedClusterable const &ac){
+    return ac.com();
+}
+
+
 
 /*! @} */
 

@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
     Atom a1({0, 0, 0}, 1, 1);
     Atom a2({0, 0, 1}, 1, 1);
     Atom a3({0, 0, 2}, 1, 1);
-    Atom a4({0, 0, 3}, 1, 1);
+    Atom a4({0, 0, 3}, 2, 1);
 
     std::cout << "Atom 1 = " << a1 << std::endl;
     std::cout << "Atom 2 = " << a2 << std::endl;
@@ -25,17 +25,18 @@ int main(int argc, char **argv) {
     // Varadic template construction
     AtomBasedCluster c34(std::move(a3), std::move(a4));
 
+    c12.update_cluster();
+    c34.update_cluster();
+
     // We can print clusters
     std::cout << "\nCluster 12 = " << c12 << std::endl;
     std::cout << "Cluster 34 = " << c34 << std::endl;
 
     // We can compute centers for clusters
-    c12.update_center();
-    c34.update_center();
 
-    std::cout << "\nCluster 12 center = " << c12.center().transpose()
+    std::cout << "\nCluster 12 center = " << c12.com().transpose()
               << std::endl;
-    std::cout << "Cluster 34 center = " << c34.center().transpose()
+    std::cout << "Cluster 34 center = " << c34.com().transpose()
               << std::endl;
 
     // Get masses
@@ -58,12 +59,12 @@ int main(int argc, char **argv) {
 
     // We can nest clusters
     AtomBasedCluster nc1234(std::move(c12), std::move(c34));
+    nc1234.update_cluster();
     std::cout << "\nNested Clusters 1 2 3 4 = " << nc1234 << std::endl;
 
     // Finally get its center
-    nc1234.update_center();
     std::cout << "\nNested Clusters 1 2 3 4 center = "
-              << nc1234.center().transpose() << std::endl;
+              << nc1234.com().transpose() << std::endl;
 
     // Get masses
     std::cout << "Nested Cluster 1 2 3 4 mass = " << nc1234.mass() << std::endl;

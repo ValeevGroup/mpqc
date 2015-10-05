@@ -15,10 +15,10 @@ namespace molecule {
  *molecules
  *
  *
- *  The molecule module contains all of the classes which are needed for 
- *  clustering.  Ulitimately everything in the molecule module should support 
+ *  The molecule module contains all of the classes which are needed for
+ *  clustering.  Ulitimately everything in the molecule module should support
  *  the AtomClusterable interface.
- *  
+ *
  * @{
  */
 
@@ -32,28 +32,37 @@ class Molecule {
   private:
     std::vector<AtomBasedClusterable> elements_;
 
-    Vec3D center_ = {0, 0, 0};
+    Vec3D com_ = {0, 0, 0};
     double mass_ = 0.0;
     int64_t charge_ = 0;
 
   public:
     Molecule(std::vector<AtomBasedClusterable> c);
 
-    Vec3D const &center() const;
-    int64_t charge() const;
-    double mass() const;
+    int64_t charge() const { return charge_; }
+    double mass() const { return mass_; }
 
-    std::vector<AtomBasedClusterable>::const_iterator begin() const;
-    std::vector<AtomBasedClusterable>::const_iterator end() const;
+    std::vector<AtomBasedClusterable>::const_iterator begin() const {
+        return elements_.begin();
+    }
 
-    int64_t nclusters() const;
+    std::vector<AtomBasedClusterable>::const_iterator end() const {
+        return elements_.end();
+    }
 
-    int64_t occupation(unsigned long total_charge) const;
+    int64_t nclusters() const { return elements_.size(); }
+
+    int64_t occupation(unsigned long total_charge) const {
+        return charge_ - total_charge;
+    }
 
     int64_t core_electrons() const;
 
     double nuclear_repulsion() const;
 
+    std::vector<Atom> atoms() const;
+
+    Vec3D const &com() const { return com_; }
 };
 
 Molecule read_xyz(std::string const &);

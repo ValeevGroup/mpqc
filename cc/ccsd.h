@@ -37,8 +37,9 @@ namespace tcc {
 
             CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
-                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter) :
-                    orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter)
+                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
+                 rapidjson::Document &options) :
+                    orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter), options_(std::move(options))
             {
                 auto mo_block = std::make_shared<tcc::MOBlock>(*trange1_engine_);
                 fock_ = TArrayBlock2(fock, mo_block);
@@ -559,9 +560,19 @@ namespace tcc {
 
         protected:
             Eigen::VectorXd orbital_energy_;
+
+            // TRange1 Engine class
             std::shared_ptr<tcc::TRange1Engine> trange1_engine_;
+
+            // CCSD intermediate
             std::shared_ptr<tcc::cc::CCSDIntermediate<Tile, Policy>> ccsd_intermediate_;
+
+            // fock matrix
             TArrayBlock2 fock_;
+
+            // option member
+            rapidjson::Document options_;
+
         }; // class CCSD
 
     } //namespace cc

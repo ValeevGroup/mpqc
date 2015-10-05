@@ -23,8 +23,9 @@ namespace tcc{
 
             CCSD_T(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
-                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter):
-                    CCSD<Tile,Policy>(fock,ens,tre,inter)
+                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
+                   rapidjson::Document &options):
+                    CCSD<Tile,Policy>(fock,ens,tre,inter,options)
             {}
 
             void compute(){

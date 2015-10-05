@@ -109,7 +109,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     rapidjson::Document in;
     parse_input(argc, argv, in);
 
-    auto ccsd_in = get_nested(in,"ccsd");
+    auto ccsd_in = get_nested(in,"CCSD");
 
     if (!in.HasMember("xyz file") || !in.HasMember("number of bs clusters")
         || !in.HasMember("number of dfbs clusters")
@@ -651,7 +651,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::utility::parallal_break_point(world, 0);
 
 
-    tcc::cc::CCSD_T<TA::Tensor < double>, TA::DensePolicy > ccsd_t(fock_mo_dense, ens, tre, intermidiate);
+    tcc::cc::CCSD_T<TA::Tensor < double>, TA::DensePolicy > ccsd_t(fock_mo_dense, ens, tre, intermidiate, ccsd_in);
 
     ccsd_t.compute();
 

@@ -15,6 +15,7 @@ namespace tcc{
         //Options:
         // All options in CCSD class
         // DFExpr = bool, control if use df in compute ccsd, default is True
+        // Increase = int, control the increasement in outer loop, default is 2
 
         template<typename Tile, typename Policy>
         class CCSD_T : public CCSD<Tile,Policy> {
@@ -42,7 +43,7 @@ namespace tcc{
                 // compute CCSD first
                 auto direct = this->options_.HasMember("Direct") ? this->options_["Direct"].GetBool(): false;
                 if(direct){
-                    ccsd_corr = CCSD<Tile,Policy>::compute_ccsd(t1, t2);
+                    ccsd_corr = CCSD<Tile, Policy>::compute_ccsd_direct(t1, t2);
                 }
                 else {
                     ccsd_corr = CCSD<Tile,Policy>::compute_ccsd_straight(t1, t2);
@@ -72,6 +73,9 @@ namespace tcc{
 
             double compute_ccsd_t(TArray2& t1, TArray4& t2){
                 bool df = this->options_.HasMember("DFExpr") ? this->options_["DFExpr"].GetBool() : true;
+                if(df && t1.get_world().rank() == 0){
+                    std::cout << "Use Density Fitting Expression to avoid storing G_vovv" << std::endl;
+                }
                 // get integral
                 TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
                 TArray4 g_abij = this->ccsd_intermediate_->get_abij();
@@ -100,7 +104,8 @@ namespace tcc{
 
                 double triple_energy = 0.0;
 
-                std::size_t increase = 2;
+
+                std::size_t increase = this->options_.HasMember("Increase") ? this->options_["Increase"].GetInt() : 2;
                 if (increase > n_tr_vir){
                     increase = n_tr_vir;
                 }

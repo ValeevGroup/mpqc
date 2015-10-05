@@ -5,15 +5,14 @@
 #include "../molecule/molecule_fwd.h"
 #include "basis_fwd.h"
 
+#include "../common/namespaces.h"
+#include "../common/typedefs.h"
+
 #include <string>
 #include <vector>
 #include <memory>
 #include <iosfwd>
 
-// FWD Decl
-namespace libint2 {
-struct Shell;
-}
 
 namespace mpqc {
 namespace basis {
@@ -30,11 +29,15 @@ class BasisSet {
     /// use.
     BasisSet(std::string const &s);
 
-    std::vector<ClusterShells> create_basis(
-        std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const;
+    /*! \brief Constructs a vector of ShellVecs
+     *
+     * Each ShellVec represents the shells for a cluster.
+     */
+    std::vector<ShellVec> get_cluster_shells(mol::Molecule const &) const;
 
-    std::vector<ClusterShells> create_soad_basis(
-        std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const;
+
+    /*! \brief returns a single vector of all shells in the molecule */
+    ShellVec get_flat_shells(mol::Molecule const &) const;
 
   private:
     std::string basis_set_name_;

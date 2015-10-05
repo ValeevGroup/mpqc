@@ -3,9 +3,10 @@
 #include "atom_basisset.h"
 #include "cluster_shells.h"
 
+#include "../molecule/molecule.h"
 #include "../molecule/cluster_collapse.h"
+#include "../molecule/atom_based_cluster.h"
 #include "../molecule/common.h"
-#include "../molecule/cluster.h"
 #include "../molecule/atom.h"
 
 #include "../include/libint.h"
@@ -16,65 +17,58 @@
 #include <sstream>
 #include <algorithm>
 
-namespace tcc {
+namespace mpqc {
 namespace basis {
 
 BasisSet::BasisSet(std::string const &s) : basis_set_name_{s} {}
 
-std::vector<ClusterShells> BasisSet::create_basis(
-    std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const {
+std::vector<ShellVec>
+BasisSet::get_cluster_shells(mol::Molecule const &mol) const {
 
-    using namespace molecule;
+    std::vector<ShellVec> cs;
+    for (auto const &cluster : mol) {
 
-    std::vector<ClusterShells> cs;
-    for (auto const &c : clusters) {
+        const auto libint_atoms = to_libint_atom(collapse_to_atoms(cluster));
 
-        const auto libint_atoms = to_libint_atom(collapse_to_atoms(*c));
+        std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+        std::ofstream fout("/dev/null");
+        std::cout.rdbuf(fout.rdbuf());
+        libint2::BasisSet libint_basis(basis_set_name_, libint_atoms);
+        std::cout.rdbuf(cout_sbuf);
 
-        // Sneaky Libint2::Basis inherits from std::vector<libint2::Shell> !
-        libint2::BasisSet libint_basis(basis_set_name_, libint_atoms); 
+        // Shells that go with this cluster
+        ShellVec cluster_shells;
+        cluster_shells.reserve(libint_basis.size());
 
-        // Create vector of shells binned by angular momentum need 1 because 
-        // s shells have number 0.
-        const auto n_am = libint_basis.max_l()+1; 
-        std::vector<std::vector<libint2::Shell>> binned_shells(n_am);
-
-        for (auto const &shell : libint_basis) {
-            const auto ang_mo = shell.contr[0].l;
-            binned_shells[ang_mo].push_back(shell);
+        for (auto &&shell : libint_basis) {
+            cluster_shells.emplace_back(std::move(shell));
         }
 
-        cs.emplace_back(std::move(binned_shells), c);
+        cs.emplace_back(std::move(cluster_shells));
     }
 
     return cs;
 }
 
-std::vector<ClusterShells> BasisSet::create_soad_basis(
-    std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const {
+ShellVec BasisSet::get_flat_shells(mol::Molecule const &mol) const {
 
-    using namespace molecule;
+    ShellVec cs;
+    for (auto const &cluster : mol) {
+        const auto libint_atoms = to_libint_atom(collapse_to_atoms(cluster));
 
-    std::vector<ClusterShells> cs;
-    for (auto const &c : clusters) {
+        std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+        std::ofstream fout("/dev/null");
+        std::cout.rdbuf(fout.rdbuf());
+        libint2::BasisSet libint_basis(basis_set_name_, libint_atoms);
+        std::cout.rdbuf(cout_sbuf);
 
-        const auto libint_atoms = to_libint_atom(collapse_to_atoms(*c));
-
-        // Sneaky Libint2::Basis inherits from std::vector<libint2::Shell> !
-        libint2::BasisSet libint_basis(basis_set_name_, libint_atoms); 
-
-        // For soad just wrap shells once
-        std::vector<std::vector<libint2::Shell>> binned_shells(1);
-
-        for (auto const &shell : libint_basis) {
-            binned_shells[0].push_back(shell);
+        for (auto &&shell : libint_basis) {
+            cs.emplace_back(std::move(shell));
         }
-
-        cs.emplace_back(std::move(binned_shells), c);
     }
 
     return cs;
 }
 
 } // namespace basis
-} // namespace tcc
+} // namespace mpqc

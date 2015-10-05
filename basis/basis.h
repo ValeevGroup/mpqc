@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_BASIS_BASIS_H
-#define TCC_BASIS_BASIS_H
+#ifndef MPQC_BASIS_BASIS_H
+#define MPQC_BASIS_BASIS_H
 
 #include "basis_fwd.h"
 #include "../molecule/molecule_fwd.h"
@@ -8,9 +8,10 @@
 #include <vector>
 #include <iosfwd>
 
-namespace TiledArray { class TiledRange1; }
+#include "../common/typedefs.h"
 
-namespace tcc {
+
+namespace mpqc {
 namespace basis {
 
 class Basis {
@@ -22,24 +23,22 @@ class Basis {
     Basis &operator=(Basis const &);
     Basis &operator=(Basis &&);
 
-    Basis(std::vector<ClusterShells> cs);
+    Basis(std::vector<ShellVec> cs);
 
-    std::vector<ClusterShells> const & cluster_shells() const;
+    std::vector<ShellVec> const & cluster_shells() const;
 
-    TiledArray::TiledRange1 create_flattend_trange1() const;
     TiledArray::TiledRange1 create_trange1() const;
-    unsigned long max_nprim() const;
-    unsigned long max_am() const;
+
+    int64_t max_nprim() const;
+    int64_t max_am() const;
+    int64_t nfunctions() const;
 
   private:
-    std::vector<ClusterShells> cluster_shells_;
-
-    std::vector<unsigned int> am_blocking_generator() const;
-    std::vector<unsigned int> flattened_blocking_generator() const;
+    std::vector<ShellVec> shells_;
 };
 
 std::ostream & operator<<(std::ostream &, Basis const &);
 
 } // namespace basis
-} // namespace tcc
-#endif /* end of include guard: TCC_BASIS_BASIS_H */
+} // namespace mpqc
+#endif /* end of include guard: MPQC_BASIS_BASIS_H */

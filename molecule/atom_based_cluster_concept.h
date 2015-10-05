@@ -126,6 +126,10 @@ inline Vec3D const& center_of_mass(AtomBasedClusterable const &ac){
     return ac.com();
 }
 
+inline std::vector<Atom> collapse_to_atoms(AtomBasedClusterable const &ac){
+    return ac.atoms();
+}
+
 
 
 /*! @} */

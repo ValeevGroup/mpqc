@@ -1,9 +1,14 @@
 #pragma once
-#ifndef TCC_BASIS_BASISFWD_H
-#define TCC_BASIS_BASISFWD_H
+#ifndef MPQC_BASIS_BASISFWD_H
+#define MPQC_BASIS_BASISFWD_H
 
-namespace tcc {
+#include "../common/typedefs.h"
+#include <vector>
+
+namespace mpqc {
 namespace basis {
+
+using ShellVec = std::vector<Shell>;
 
 class BasisSet;
 class AtomBasisSet;
@@ -12,4 +17,4 @@ class ClusterShells;
 } // namespace basis
 } // namespace tcc
 
-#endif // TCC_BASIS_BASISFWD_H
+#endif // MPQC_BASIS_BASISFWD_H

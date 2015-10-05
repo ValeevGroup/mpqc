@@ -2,6 +2,8 @@
 #include "../include/libint.h"
 #include "../molecule/cluster.h"
 
+#include <numeric>
+
 namespace mpqc {
 namespace basis {
 

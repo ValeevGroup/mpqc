@@ -118,6 +118,8 @@ inline Vec3D const &center_of_mass(AtomBasedCluster const &c) {
     return c.com();
 }
 
+std::vector<Atom> collapse_to_atoms(AtomBasedCluster const&);
+
 /*! @} */
 
 } // namespace molecule

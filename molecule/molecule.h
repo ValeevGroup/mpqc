@@ -3,7 +3,10 @@
 #define MPQC_MOLECULE_MOLECULE_H
 
 #include "molecule_fwd.h"
+#include "atom_based_cluster.h"
+
 #include <vector>
+
 
 namespace mpqc {
 namespace molecule {

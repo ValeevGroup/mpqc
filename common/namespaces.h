@@ -7,8 +7,10 @@ namespace Eigen {}
 namespace madness {}
 
 namespace tcc {
+
 namespace integrals {}
 namespace tensor {}
+
 }
 
 
@@ -22,6 +24,8 @@ namespace ttensor = tcc::tensor;
 // MPQC FWD DECS
 namespace mpqc {
     namespace integrals {}
+    namespace molecule {}
+    namespace mol = molecule;
 }
 
 namespace mpqc_ints = mpqc::integrals;

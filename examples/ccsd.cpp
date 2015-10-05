@@ -101,6 +101,7 @@ main_print_clusters(std::vector<std::shared_ptr<molecule::Cluster>> const &bs,
     }
 }
 
+// TODO test case that verify the result automatic
 int try_main(int argc, char *argv[], madness::World &world) {
 
 

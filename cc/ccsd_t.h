@@ -44,9 +44,14 @@ namespace tcc{
                 auto direct = this->options_.HasMember("Direct") ? this->options_["Direct"].GetBool(): false;
                 if(direct){
                     ccsd_corr = CCSD<Tile, Policy>::compute_ccsd_direct(t1, t2);
+                    // TODO smarter way to clean integrals not needed
+                    // clean integrals not needed
+                    this->ccsd_intermediate_->clean_two_electron();
+
                 }
                 else {
                     ccsd_corr = CCSD<Tile,Policy>::compute_ccsd_straight(t1, t2);
+                    this->ccsd_intermediate_->clean_two_electron();
                 }
 
                 // start CCSD(T)

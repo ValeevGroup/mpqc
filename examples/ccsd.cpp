@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <chrono>
 #include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include "../include/libint.h"
 #include "../include/tiledarray.h"
@@ -107,9 +109,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
     rapidjson::Document in;
     parse_input(argc, argv, in);
 
+    auto ccsd_in = get_nested(in,"ccsd");
+
     if (!in.HasMember("xyz file") || !in.HasMember("number of bs clusters")
         || !in.HasMember("number of dfbs clusters")
-        || !in.HasMember("mo block size")) {
+        || !ccsd_in.HasMember("mo block size")) {
         if (world.rank() == 0) {
             std::cout << "At a minimum your input file must provide\n";
             std::cout << "\"xyz file\", which is path to an xyz input\n";
@@ -140,7 +144,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         int bs_nclusters = in["number of bs clusters"].GetInt();
         int dfbs_nclusters = in["number of dfbs clusters"].GetInt();
         int nocc_clusters = in["number of occupied clusters"].GetInt();
-        std::size_t blocksize = in["mo block size"].GetInt();
+        std::size_t blocksize = ccsd_in["mo block size"].GetInt();
 
 
         // Get basis info
@@ -164,8 +168,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                     : false;
 
         // get other info
-        bool frozen_core = in.HasMember("frozen core")
-                                 ? in["frozen core"].GetBool()
+        bool frozen_core = ccsd_in.HasMember("frozen core")
+                                 ? ccsd_in["frozen core"].GetBool()
                                  : false;
 
         volatile int debug

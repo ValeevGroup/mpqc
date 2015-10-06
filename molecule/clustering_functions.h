@@ -13,6 +13,9 @@ namespace molecule {
 Molecule attach_hydrogens_and_kmeans(
       std::vector<AtomBasedClusterable> const &, int64_t);
 
+Molecule kmeans(
+      std::vector<AtomBasedClusterable> const &, int64_t);
+
 } // namespace molecule
 } // namespace tcc
 

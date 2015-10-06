@@ -6,15 +6,16 @@
 
 #include "../utility/make_array.h"
 
+#include "../clustering/kmeans.h"
+
 #include "../molecule/atom.h"
-#include "../molecule/cluster.h"
+#include "../molecule/atom_based_cluster.h"
 #include "../molecule/molecule.h"
 #include "../molecule/clustering_functions.h"
 #include "../molecule/make_clusters.h"
 
 #include "../basis/atom_basisset.h"
 #include "../basis/basis_set.h"
-#include "../basis/cluster_shells.h"
 #include "../basis/basis.h"
 
 #include "../integrals/integral_engine_pool.h"
@@ -27,7 +28,7 @@
 
 #include <memory>
 
-using namespace tcc;
+using namespace mpqc;
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -46,7 +47,8 @@ int main(int argc, char *argv[]) {
     TiledArray::SparseShape<float>::threshold(threshold);
 
     auto mol = molecule::read_xyz(mol_file);
-    auto clusters = molecule::attach_hydrogens_kmeans(mol, nclusters);
+    auto clusters = molecule::attach_hydrogens_and_kmeans(mol.clusterables(),
+                                                          nclusters);
 
     std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
     std::ofstream fout("/dev/null");
@@ -91,9 +93,9 @@ int main(int argc, char *argv[]) {
         auto t0 = tcc_time::now();
 
         auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
-        auto eri2 = mpqc_ints::TaskInts(
-              world, eri_pool, utility::make_array(basis, basis),
-              ta_pass_through);
+        auto eri2 = mpqc_ints::TaskInts(world, eri_pool,
+                                        utility::make_array(basis, basis),
+                                        ta_pass_through);
 
         auto eri2_norm = eri2("i,j").norm(world).get();
         world.gop.fence();
@@ -139,10 +141,9 @@ int main(int argc, char *argv[]) {
 
         auto eri_pool
               = integrals::make_pool(integrals::make_2body(basis, basis));
-        auto eri3
-              = mpqc_ints::ScreenedTaskInts(world, eri_pool,
-                                    utility::make_array(basis, basis, basis),
-                                    ta_pass_through);
+        auto eri3 = mpqc_ints::ScreenedTaskInts(
+              world, eri_pool, utility::make_array(basis, basis, basis),
+              ta_pass_through);
 
         auto eri3_norm = eri3("x,i,j").norm(world).get();
         world.gop.fence();

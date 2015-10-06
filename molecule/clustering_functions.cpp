@@ -76,14 +76,18 @@ ABCbls attach_hydrogens(ABCbls const &clusterables) {
 Molecule
 attach_hydrogens_and_kmeans(ABCbls const &clusterables, int64_t nclusters) {
     auto h_attached_clusterables = attach_hydrogens(clusterables);
+    return kmeans(h_attached_clusterables, nclusters);
+}
 
+Molecule 
+kmeans(ABCbls const &clusterables, int64_t nclusters) {
     auto objective_min = std::numeric_limits<double>::max();
     int64_t init_seed = 1000;
     int64_t best_seed = 1000;
     for (auto i = 0; i < 10; ++i) {
         clustering::Kmeans kmeans(init_seed);
         auto clusters
-              = kmeans.cluster<AtomBasedCluster>(h_attached_clusterables,
+              = kmeans.cluster<AtomBasedCluster>(clusterables,
                                                  nclusters);
         auto value = clustering::kmeans_objective(clusters);
         if (value < objective_min) {
@@ -95,7 +99,7 @@ attach_hydrogens_and_kmeans(ABCbls const &clusterables, int64_t nclusters) {
 
     return Molecule(convert_to_clusterable(
           clustering::Kmeans(best_seed).cluster<AtomBasedCluster>(
-                h_attached_clusterables, nclusters)));
+                clusterables, nclusters)));
 }
 
 } // namespace molecule

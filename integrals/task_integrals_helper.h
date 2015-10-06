@@ -14,8 +14,8 @@
 #include "../include/tiledarray.h"
 #include "../include/libint.h"
 
-#include "../basis/basis.h"
-#include "../basis/cluster_shells.h"
+//  #include "../basis/basis.h"
+#include "../basis/basis_fwd.h"
 
 namespace mpqc {
 namespace integrals {
@@ -23,7 +23,7 @@ namespace detail {
 
 using OneE_Engine = libint2::OneBodyEngine;
 using TwoE_Engine = libint2::TwoBodyEngine<libint2::Coulomb>;
-using Shell = libint2::Shell;
+using ShellVec = basis::ShellVec;
 
 inline const double *shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1,
                                Shell const &s2, Shell const &s3) {
@@ -50,10 +50,10 @@ shell_set(OneE_Engine &e, Shell const &s0, Shell const &s1) {
 template <typename Engine>
 TA::TensorD
 integral_kernel(Engine &eng, TA::Range &&rng,
-                std::array<tcc::basis::ClusterShells const *, 2> shell_ptrs) {
+                std::array<ShellVec const *, 2> shell_ptrs) {
 
-    auto const &sh0 = shell_ptrs[0]->flattened_shells();
-    auto const &sh1 = shell_ptrs[1]->flattened_shells();
+    auto const &sh0 = *shell_ptrs[0];
+    auto const &sh1 = *shell_ptrs[1];
 
     auto const &lowbound = rng.lobound();
     const auto start0 = lowbound[0];
@@ -84,11 +84,11 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 template <typename Engine>
 TA::TensorD
 integral_kernel(Engine &eng, TA::Range &&rng,
-                std::array<tcc::basis::ClusterShells const *, 3> shell_ptrs) {
+                std::array<ShellVec const *, 3> shell_ptrs) {
 
-    auto const &sh0 = shell_ptrs[0]->flattened_shells();
-    auto const &sh1 = shell_ptrs[1]->flattened_shells();
-    auto const &sh2 = shell_ptrs[2]->flattened_shells();
+    auto const &sh0 = *shell_ptrs[0];
+    auto const &sh1 = *shell_ptrs[1];
+    auto const &sh2 = *shell_ptrs[2];
 
     auto const &lowbound = rng.lobound();
     const auto start0 = lowbound[0];
@@ -128,12 +128,12 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 template <typename Engine>
 TA::TensorD
 integral_kernel(Engine &eng, TA::Range &&rng,
-                std::array<tcc::basis::ClusterShells const *, 3> shell_ptrs,
+                std::array<ShellVec const *, 3> shell_ptrs,
                 MatrixD const &X, MatrixD const &ab) {
 
-    auto const &sh0 = shell_ptrs[0]->flattened_shells();
-    auto const &sh1 = shell_ptrs[1]->flattened_shells();
-    auto const &sh2 = shell_ptrs[2]->flattened_shells();
+    auto const &sh0 = *shell_ptrs[0];
+    auto const &sh1 = *shell_ptrs[1];
+    auto const &sh2 = *shell_ptrs[2];
 
     const auto nsh0 = sh0.size();
     const auto nsh1 = sh1.size();
@@ -184,12 +184,12 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 template <typename Engine>
 TA::TensorD
 integral_kernel(Engine &eng, TA::Range &&rng,
-                std::array<tcc::basis::ClusterShells const *, 4> shell_ptrs) {
+                std::array<ShellVec const *, 4> shell_ptrs) {
 
-    auto const &sh0 = shell_ptrs[0]->flattened_shells();
-    auto const &sh1 = shell_ptrs[1]->flattened_shells();
-    auto const &sh2 = shell_ptrs[2]->flattened_shells();
-    auto const &sh3 = shell_ptrs[3]->flattened_shells();
+    auto const &sh0 = *shell_ptrs[0];
+    auto const &sh1 = *shell_ptrs[1];
+    auto const &sh2 = *shell_ptrs[2];
+    auto const &sh3 = *shell_ptrs[3];
 
     auto const &lowbound = rng.lobound();
     const auto start0 = lowbound[0];

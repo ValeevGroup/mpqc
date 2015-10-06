@@ -21,7 +21,7 @@ template <typename E>
 using ShrPool = std::shared_ptr<Epool<E>>;
 
 template <unsigned long N>
-using Barray = std::array<tcc::basis::Basis, N>;
+using Barray = std::array<basis::Basis, N>;
 
 template <typename T>
 using OrdTileVec = std::vector<std::pair<unsigned long, T>>;

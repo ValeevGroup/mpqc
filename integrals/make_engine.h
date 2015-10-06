@@ -19,7 +19,8 @@ libint2::TwoBodyEngine<libint2::Coulomb> make_2body(Bases &&... basis) {
 
 // Function to return the q_vector given a basis
 using q_vector = std::vector<std::pair<double, std::array<double, 3>>>;
-inline q_vector make_q(basis::Basis const &bs) {
+
+inline q_vector make_q(mpqc::basis::Basis const &bs) {
     q_vector q;
 
     // Get the groups of clustered shells

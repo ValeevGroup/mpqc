@@ -71,16 +71,31 @@ ABCbls attach_hydrogens(ABCbls const &clusterables) {
     return convert_to_clusterable(clusters);
 }
 
-} // anon namespace 
+} // anon namespace
 
 Molecule
 attach_hydrogens_and_kmeans(ABCbls const &clusterables, int64_t nclusters) {
     auto h_attached_clusterables = attach_hydrogens(clusterables);
 
-    // TODO finish tomorrow add seeds
-    clustering::Kmeans kmeans;
-    return Molecule(convert_to_clusterable(kmeans.cluster<AtomBasedCluster>(
-          h_attached_clusterables, nclusters)));
+    auto objective_min = std::numeric_limits<double>::max();
+    int64_t init_seed = 1000;
+    int64_t best_seed = 1000;
+    for (auto i = 0; i < 10; ++i) {
+        clustering::Kmeans kmeans(init_seed);
+        auto clusters
+              = kmeans.cluster<AtomBasedCluster>(h_attached_clusterables,
+                                                 nclusters);
+        auto value = clustering::kmeans_objective(clusters);
+        if (value < objective_min) {
+            best_seed = init_seed;
+            objective_min = value;
+        }
+        init_seed += 1000;
+    }
+
+    return Molecule(convert_to_clusterable(
+          clustering::Kmeans(best_seed).cluster<AtomBasedCluster>(
+                h_attached_clusterables, nclusters)));
 }
 
 } // namespace molecule

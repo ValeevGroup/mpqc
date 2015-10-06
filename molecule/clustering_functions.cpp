@@ -1,138 +1,87 @@
 #include "clustering_functions.h"
 #include "common.h"
-#include "cluster.h"
+#include "molecule.h"
+
+#include "atom_based_cluster.h"
+#include "atom_based_cluster_concept.h"
+
+#include "../clustering/kmeans.h"
+#include "../clustering/common.h"
 
 #include <cassert>
 #include <numeric>
 #include <iostream>
 #include <random>
 
+
 namespace mpqc {
 namespace molecule {
-namespace clustering {
 
-double sum_cluster_distances(const std::vector<Cluster> &clusters) {
-    return std::accumulate(clusters.begin(), clusters.end(), 0.0,
-                           [](double d, const Cluster &c) {
-        return d + c.sum_distances_from_center();
-    });
+namespace {
+using ABCbl = AtomBasedClusterable;
+using ABCbls = std::vector<ABCbl>;
+
+ABCbls convert_to_clusterable(std::vector<AtomBasedCluster> const &clusters) {
+    ABCbls clusterables;
+    clusterables.reserve(clusters.size());
+
+    for (auto const &cluster : clusters) {
+        clusterables.emplace_back(cluster);
+    }
+
+    return clusterables;
 }
 
-bool none_zero(std::vector<Cluster> const &clusters) {
-    return std::all_of(clusters.begin(), clusters.end(),
-                       [](Cluster const &c) { return c.size() != 0; });
-}
+ABCbls attach_hydrogens(ABCbls const &clusterables) {
+    assert(clusterables.size() != 0);
 
-kmeans::kmeans(unsigned long seed) : seed_{seed}, clusters_() {}
-
-output_t kmeans::
-operator()(input_t const &clusterables, unsigned long nclusters) {
-    assert(clusterables.size() >= nclusters);
-    clusters_.resize(nclusters);
-    initialize_clusters(clusterables);
-    return cluster(clusterables);
-}
-
-void kmeans::initialize_clusters(const input_t &clusterables) {
-
-    std::vector<double> weights(clusterables.size(), 1.0);
-    std::mt19937 engine(seed_);
-
-    auto end = clusters_.end();
-    for (auto it = clusters_.begin(); it != end; ++it) {
-        std::discrete_distribution<unsigned int> random_index(weights.begin(),
-                                                              weights.end());
-
-        auto idx = random_index(engine);
-        auto center_guess = clusterables[idx].center();
-        it->set_center(center_guess);
-
-        for(auto i = 0ul; i < clusterables.size(); ++i){
-            const auto clusterable_center = clusterables[i].center();
-
-            // Find the closest cluster that has been initialized.
-            auto last = it;
-            std::advance(last, 1);
-            const auto cluster_center
-                = closest_cluster(clusters_.begin(), last, clusterable_center)
-                      ->center();
-
-            // Calculate weight = dist^2
-            weights[i] = diff_squaredNorm(clusterable_center, cluster_center);
+    std::vector<AtomBasedCluster> clusters;
+    ABCbls hydrogens;
+    for (auto const &clusterable : clusterables) {
+        if (clusterable.charge() != 1) {
+            clusters.emplace_back(clusterable);
+        } else {
+            hydrogens.emplace_back(clusterable);
         }
     }
 
-    attach_clusterables(clusterables);
-}
-
-void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
-    // Erase the ownership information for each cluster.
-    for(auto &cluster : clusters_){
-        cluster.clear();
+    // Check that not all atoms where hydrogens, if so just return
+    // clusterables
+    if (clusters.size() == 0) {
+        return clusterables;
     }
 
-    for (auto const &clusterable : cs) {
-        auto closest = closest_cluster(clusters_.begin(), clusters_.end(),
-                                       clusterable.center());
-        closest->add_clusterable(clusterable);
+    for (auto cluster : clusters) {
+        update_center(cluster);
     }
 
-    for(auto &cluster : clusters_){
-        throw;
-        // cluster.compute_com();
-    }
-}
+    // Attach the hydrogens to the closest cluster
+    if (!hydrogens.empty()) {
+        for (auto &&hydrogen : hydrogens) {
+            auto closest = clustering::closest_cluster(
+                  clusters.begin(), clusters.end(), center(hydrogen));
+            attach_clusterable(*closest, std::move(hydrogen));
+        }
 
-std::vector<Cluster>::iterator
-kmeans::closest_cluster(std::vector<Cluster>::iterator const begin,
-                        std::vector<Cluster>::iterator const end,
-                        Vec3D const &center) {
-    return std::min_element(begin, end,
-                            [&](const Cluster &a, const Cluster &b) {
-        return diff_squaredNorm(a.center(), center)
-               < diff_squaredNorm(b.center(), center);
-    });
-}
-
-
-std::vector<Vec3D>
-kmeans::update_clusters(std::vector<Clusterable> const &clusterables) {
-    // Vector to hold the previous iterations centers.
-    std::vector<Vec3D> old_centers;
-    old_centers.reserve(clusters_.size());
-
-    // Copy the old centers
-    for (auto const &cluster : clusters_) {
-        old_centers.push_back(cluster.center());
+        for (auto cluster : clusters) {
+            update_center(cluster);
+        }
     }
 
-    // Update clusters
-    attach_clusterables(clusterables);
-    return old_centers;
+    return convert_to_clusterable(clusters);
 }
 
-bool kmeans::kmeans_converged(const std::vector<Vec3D> &old_centers) {
-    return std::equal(
-        old_centers.begin(), old_centers.end(), clusters_.begin(),
-        [](const Vec3D &old_center, const Cluster &new_cluster) {
-            return 1e-7 < (old_center - new_cluster.center()).squaredNorm();
-        });
+} // anon namespace 
+
+Molecule
+attach_hydrogens_and_kmeans(ABCbls const &clusterables, int64_t nclusters) {
+    auto h_attached_clusterables = attach_hydrogens(clusterables);
+
+    // TODO finish tomorrow add seeds
+    clustering::Kmeans kmeans;
+    return Molecule(convert_to_clusterable(kmeans.cluster<AtomBasedCluster>(
+          h_attached_clusterables, nclusters)));
 }
 
-output_t kmeans::cluster(const std::vector<Clusterable> &clusterables) {
-    unsigned int niter = 100, iter = 0;
-
-    // initialize the old centers and update the clusters
-    auto old_centers = update_clusters(clusterables);
-
-    // Compute new clusters and save the old centers for comparison.
-    while (!kmeans_converged(old_centers) && (niter > iter++)) {
-        old_centers = update_clusters(clusterables);
-    }
-
-    return clusters_;
-}
-
-} // namespace clustering
 } // namespace molecule
 } // namespace mpqc

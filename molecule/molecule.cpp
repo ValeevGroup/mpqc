@@ -131,5 +131,23 @@ Molecule read_xyz(std::string const &file_name) {
     return Molecule(std::move(atoms));
 }
 
+std::ostream & operator<<(std::ostream &os, Molecule const &mol){
+    os << "Molecule C.O.M: " << mol.com().transpose() << ", ";
+    os << "charge: " << mol.charge() << ", ";
+    os << "mass: " << mol.mass() << ", with Elements: {";
+
+    auto last = mol.end();
+    auto second_last = last - 1;
+    for(auto it = mol.begin(); it != last; ++it){
+        if(it != second_last) {
+            it->print(os) << ", ";
+        } else {
+            it->print(os) << "}";
+        }
+    }
+
+    return os;
+}
+
 } // namespace molecule
 } // namespace mpqc

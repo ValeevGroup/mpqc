@@ -12,11 +12,8 @@ class Atom;
 class Cluster;
 class Clusterable;
 class AtomBasedClusterable;
+class AtomBasedCluster;
 class Molecule;
-
-namespace clustering {
-class kmeans;
-}
 
 } // namespace molecule
 } // namespace mpqc

@@ -10,8 +10,8 @@ set(sources
   atom_based_cluster.cpp
   molecule.h
   molecule_fwd.h
-  # clustering_functions.h
-  # clustering_functions.cpp
+  clustering_functions.h
+  clustering_functions.cpp
   # attach_hydrogens.h
   # attach_hydrogens.cpp
   # make_clusters.h

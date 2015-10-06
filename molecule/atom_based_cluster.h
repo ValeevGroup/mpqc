@@ -120,6 +120,24 @@ inline Vec3D const &center_of_mass(AtomBasedCluster const &c) {
 
 std::vector<Atom> collapse_to_atoms(AtomBasedCluster const&);
 
+inline void set_center(AtomBasedCluster &c, Vec3D const &point){
+    c.set_com(point);
+}
+
+inline void clear(AtomBasedCluster &c){
+    c.clear();
+}
+
+template <typename T>
+inline void attach_clusterable(AtomBasedCluster &c, T t){
+    c.add_clusterable(std::move(t));
+}
+
+inline void update_center(AtomBasedCluster &c){
+    c.update_cluster();
+}
+
+
 /*! @} */
 
 } // namespace molecule

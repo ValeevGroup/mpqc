@@ -5,6 +5,7 @@
 #include "molecule_fwd.h"
 #include "atom_based_cluster.h"
 
+#include <iosfwd>
 #include <vector>
 
 
@@ -55,6 +56,10 @@ class Molecule {
 
     int64_t nclusters() const { return elements_.size(); }
 
+    std::vector<AtomBasedClusterable> const &clusterables() const {
+        return elements_;
+    }
+
     int64_t occupation(unsigned long total_charge) const {
         return charge_ - total_charge;
     }
@@ -69,6 +74,8 @@ class Molecule {
 };
 
 Molecule read_xyz(std::string const &);
+
+std::ostream &operator<<(std::ostream &, Molecule const &);
 
 /*!
  * @}

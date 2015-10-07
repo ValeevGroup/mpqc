@@ -43,12 +43,22 @@ struct compute_integrals<E, N, Op, DnPolicy> {
         auto shared_bases = std::make_shared<Barray<N>>(bases);
 
 
-        auto op_wrapper =
-               make_unscreened_op_invoke(t_ptr, engines, shared_bases, op);
-
         auto const &pmap = *(out.get_pmap());
+        auto const &trange = out.trange();
         for (auto const ord : pmap) {
-            mad::Future<Tile> tile = world.taskq.add(op_wrapper, ord);
+            IdxVec idx = trange.tiles().idx(ord);
+
+            auto shell_vecs = get_shells(idx, bases);
+            auto op_wrapper
+                  = make_unscreened_op_invoke(idx, engines,
+                                              std::move(shell_vecs), op);
+
+            auto range = trange.make_tile_range(ord);
+
+
+            mad::Future<Tile> tile
+                  = world.taskq.add(op_wrapper, std::move(range));
+
             out.set(ord, tile);
         }
 
@@ -80,9 +90,16 @@ struct compute_integrals<E, N, Op, SpPolicy> {
         auto tiles_ptr = &tiles;
         auto op_wrapper = [=](int64_t ord) { // copy ptrs by value
 
-            auto op_invoker = make_unscreened_op_invoke(trange_ptr, engines,
-                                                        shr_bases, op);
-            auto ta_tile = op_invoker.integrals(ord);
+            IdxVec idx = trange_ptr->tiles().idx(ord);
+            auto range = trange_ptr->make_tile_range(ord);
+
+            auto shell_vecs = get_shells(idx, shr_bases);
+
+            auto op_invoker = make_unscreened_op_invoke(std::move(idx),
+                                                        std::move(engines),
+                                                        std::move(shell_vecs),
+                                                        std::move(op));
+            auto ta_tile = op_invoker.integrals(std::move(range));
 
             const auto tile_volume = ta_tile.range().volume();
             const auto tile_norm = ta_tile.norm();

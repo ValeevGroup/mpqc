@@ -17,15 +17,17 @@ TA::TensorD no_screening(E &eng, TA::Range &&rng, VecArray<N> const &va) {
     return integral_kernel(eng, std::move(rng), va);
 }
 
-template<unsigned long N>
+template <unsigned long N>
 struct schwartz_screen;
 
-template<>
+template <>
 struct schwartz_screen<3> {
-    MatrixD const *Qx_;
-    MatrixD const *Qab_;
+    std::shared_ptr<const MatrixD> Qx_;
+    std::shared_ptr<const MatrixD> Qab_;
 
-    schwartz_screen(MatrixD const *x, MatrixD const *ab) : Qx_(x), Qab_(ab) {}
+    schwartz_screen(std::shared_ptr<MatrixD> x,
+                    std::shared_ptr<const MatrixD> ab)
+            : Qx_(std::move(x)), Qab_(std::move(ab)) {}
 
     template <typename E, unsigned long N>
     TA::TensorD
@@ -37,66 +39,75 @@ struct schwartz_screen<3> {
 template <typename E, unsigned long N, typename Op, typename Screener>
 class op_invoke {
   private:
-    const TRange *const trange_ptr_;
+    std::vector<std::size_t> idx_;
     ShrPool<E> engines_;
-    ShrBases<N> bases_;
+    ShrShellVecArray<N> shell_vecs_;
     Op op_;
     Screener screen_ints_;
 
   public:
-    op_invoke(const TRange *const tp, ShrPool<E> const &es,
-              ShrBases<N> const &bs, Op op, Screener si)
-            : trange_ptr_(tp),
-              engines_(es),
-              bases_(bs),
-              op_(op),
-              screen_ints_(si) {}
+    op_invoke(std::vector<std::size_t> idx, ShrPool<E> es,
+              ShrShellVecArray<N> sv, Op op, Screener si)
+            : idx_(std::move(idx)),
+              engines_(std::move(es)),
+              shell_vecs_(std::move(sv)),
+              op_(std::move(op)),
+              screen_ints_(std::move(si)) {}
 
-    Ttype<Op> operator()(int64_t tile_ord) const { return op_(integrals(tile_ord)); }
+    Ttype<Op> operator()(TA::Range rng) const {
+        return op_(integrals(std::move(rng)));
+    }
 
-    TA::TensorD integrals(int64_t tile_ord) const {
-        return screen_ints_(engines_->local(), make_range(tile_ord),
-                            shellvec_ptrs(tile_ord));
+    TA::TensorD integrals(TA::Range &&rng) const {
+        return screen_ints_(engines_->local(), std::move(rng), shellvec_ptrs());
     }
 
     Ttype<Op> apply(TA::TensorD &&t) const { return op_(std::move(t)); }
 
   private:
-    VecArray<N> shellvec_ptrs(int64_t tile_ord) const {
-        auto const &idx = trange_ptr_->tiles().idx(tile_ord);
+    VecArray<N> shellvec_ptrs() const {
 
         VecArray<N> shellvec_ptrs;
         for (auto i = 0ul; i < N; ++i) {
-            shellvec_ptrs[i]
-                  = &(bases_->operator[](i).cluster_shells()[idx[i]]);
+            shellvec_ptrs[i] = shell_vecs_[i].get();
         }
 
         return shellvec_ptrs;
     }
-
-    TA::Range make_range(int64_t tile_ord) const {
-        return trange_ptr_->make_tile_range(tile_ord);
-    }
 };
 
+template <typename E, unsigned long N, typename Op, typename Screener>
+op_invoke<E, N, Op, Screener>
+make_screened_op_invoke(std::vector<std::size_t> idx, ShrPool<E> es,
+                        ShrShellVecArray<N> sh_vecs, Op op, Screener screen) {
+    return op_invoke<E, N, Op, Screener>(std::move(idx), std::move(es),
+                                         std::move(sh_vecs), std::move(op),
+                                         std::move(screen));
+}
 
 template <typename E, unsigned long N, typename Op>
 op_invoke<E, N, Op, schwartz_screen<N>>
-make_schwartz_op_invoke(const TRange *const tp, ShrPool<E> const &es,
-                          ShrBases<N> const &bs, Op op, MatrixD const *Qx,
-                          MatrixD const *Qab) {
-    return op_invoke<E, N, Op, schwartz_screen<N>>(tp, es, bs, op,
-                                                schwartz_screen<N>(Qx, Qab));
+make_schwartz_op_invoke(std::vector<std::size_t> idx, ShrPool<E> es,
+                        ShrShellVecArray<N> sh_vecs, Op op,
+                        std::shared_ptr<MatrixD> Qx,
+                        std::shared_ptr<MatrixD> Qab) {
+    auto screen = schwartz_screen<N>(std::move(Qx), std::move(Qab));
+    return op_invoke<E, N, Op, schwartz_screen<N>>(
+          std::move(idx), std::move(es), std::move(sh_vecs), std::move(op),
+          std::move(screen));
 }
+
 
 template <typename E, unsigned long N>
 using no_screen_t = decltype(&no_screening<E, N>);
 
 template <typename E, unsigned long N, typename Op>
 op_invoke<E, N, Op, no_screen_t<E, N>>
-make_unscreened_op_invoke(const TRange *const tp, ShrPool<E> const &es,
-                        ShrBases<N> const &bs, Op op) {
-    return op_invoke<E, N, Op, no_screen_t<E, N>>(tp, es, bs, op,
+make_unscreened_op_invoke(std::vector<std::size_t> idx, ShrPool<E> es,
+                          ShrShellVecArray<N> sh_vecs, Op op) {
+    return op_invoke<E, N, Op, no_screen_t<E, N>>(std::move(idx), std::move(es),
+                                                  std::move(sh_vecs),
+                                                  std::move(op),
                                                   no_screening<E, N>);
 }
 

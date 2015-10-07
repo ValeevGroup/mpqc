@@ -33,6 +33,11 @@ namespace detail {
 template <unsigned long N>
 using ShrBases = std::shared_ptr<Barray<N>>;
 
+using IdxVec = std::vector<std::size_t>;
+
+template <unsigned long N>
+using ShrShellVecArray = std::array<std::shared_ptr<const ShellVec>, N>;
+
 template <typename Op>
 using Ttype = decltype(std::declval<Op>()(std::declval<TA::TensorD>()));
 
@@ -48,6 +53,19 @@ TRange create_trange(Barray<N> const &basis_array) {
     }
 
     return TRange(trange1s.begin(), trange1s.end());
+}
+
+template<unsigned long N>
+ShrShellVecArray<N> get_shells(IdxVec const &idx, ShrBases<N> const& bases){
+
+    ShrShellVecArray<N> shell_vecs;
+    for(auto i = 0ul; i < N; ++i){
+        auto const &basis = (*bases)[i];
+        auto *shell_vec = &(basis.cluster_shells()[idx[i]]);
+        shell_vecs[i] = std::shared_ptr<const ShellVec>(bases, shell_vec);
+    }
+
+    return shell_vecs;
 }
 
 template<typename Tile, typename Array>

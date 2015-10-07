@@ -73,8 +73,10 @@ compute_screened_integrals(mad::World &world, ShrPool<E> &engines,
 
     const auto estimate = compute_cluster<3>();
     const auto t_ptr = &trange;
-    auto const &sh_vecs_X = Q_X.shell_screenings;
-    auto const &sh_vecs_ab = Q_ab.shell_screenings;
+    auto sh_vecs_X = std::make_shared<decltype(Q_X.shell_screenings)>(
+          Q_X.shell_screenings);
+    auto sh_vecs_ab = std::make_shared<decltype(Q_ab.shell_screenings)>(
+          Q_ab.shell_screenings);
     auto norms_ptr = &tile_norms;
     auto tiles_ptr = &tiles;
 
@@ -82,16 +84,28 @@ compute_screened_integrals(mad::World &world, ShrPool<E> &engines,
         auto const &idx = trange.tiles().idx(ord);
         const auto tile_volume = trange.make_tile_range(ord).volume();
 
-        if (estimate(idx, ord, cls_X, cls_ab, tile_volume, tile_norms)){
+        if (estimate(idx, ord, cls_X, cls_ab, tile_volume, tile_norms)) {
 
-            auto sh_X_ptr = &(sh_vecs_X[idx[0]].back());
-            auto sh_ab_ptr = &(sh_vecs_ab[idx[1]][idx[2]]);
+            auto sh_vec_X_ptr = &(sh_vecs_X->operator[](idx[0]).back());
+            auto sh_X_ptr = std::shared_ptr<MatrixD>(sh_vecs_X, sh_vec_X_ptr);
+
+            auto sh_vec_ab_ptr = &(sh_vecs_ab->operator[](idx[0])[idx[1]]);
+            auto sh_ab_ptr
+                  = std::shared_ptr<MatrixD>(sh_vecs_ab, sh_vec_ab_ptr);
 
             auto op_wrapper = [=](int64_t tile_ord) {
-                const auto invoker
-                      = make_schwartz_op_invoke(t_ptr, engines, shared_bases,
-                                                op, sh_X_ptr, sh_ab_ptr);
-                auto tile = invoker.integrals(tile_ord);
+
+                IdxVec idx = t_ptr->tiles().idx(ord);
+
+                auto shell_vecs = get_shells(idx, shared_bases);
+
+                const auto invoker = make_schwartz_op_invoke(
+                      std::move(idx), engines, std::move(shell_vecs), op,
+                      std::move(sh_X_ptr), std::move(sh_ab_ptr));
+
+                auto range = t_ptr->make_tile_range(ord);
+
+                auto tile = invoker.integrals(std::move(range));
 
                 const auto vol = tile.range().volume();
                 const auto norm = tile.norm();

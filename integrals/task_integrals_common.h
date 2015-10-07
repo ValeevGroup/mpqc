@@ -6,7 +6,7 @@
 #include "task_integrals_helper.h"
 #include "../common/typedefs.h"
 #include "../include/tiledarray.h"
-#include "../include/tbb.h"
+// #include "../include/tbb.h"
 #include "../basis/basis.h"
 
 #include <memory>
@@ -48,6 +48,17 @@ TRange create_trange(Barray<N> const &basis_array) {
     }
 
     return TRange(trange1s.begin(), trange1s.end());
+}
+
+template<typename Tile, typename Array>
+void set_array(std::vector<std::pair<unsigned long, Tile>> &tiles, Array &a){
+    for (auto &&tile : tiles) {
+        const auto ord = tile.first;
+        if (!a.is_zero(ord)) {
+            assert(!tile.second.empty());
+            a.set(ord, std::move(tile.second));
+        }
+    }
 }
 
 } // namespace detail

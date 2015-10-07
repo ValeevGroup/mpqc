@@ -81,6 +81,10 @@ attach_hydrogens_and_kmeans(ABCbls const &clusterables, int64_t nclusters) {
 
 Molecule 
 kmeans(ABCbls const &clusterables, int64_t nclusters) {
+    if(clusterables.size() < std::size_t(nclusters)){
+        throw std::logic_error("User asked for more clusters than there were clusterables");
+    } 
+
     auto objective_min = std::numeric_limits<double>::max();
     int64_t init_seed = 1000;
     int64_t best_seed = 1000;

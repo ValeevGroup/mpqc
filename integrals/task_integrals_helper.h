@@ -46,10 +46,10 @@ shell_set(OneE_Engine &e, Shell const &s0, Shell const &s1) {
     return e.compute(s0, s1);
 }
 
+// TODO remove allocations from inside the loops.
 template <typename Engine>
-TA::TensorD
-integral_kernel(Engine &eng, TA::Range &&rng,
-                std::array<ShellVec const *, 2> shell_ptrs) {
+TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+                            std::array<ShellVec const *, 2> shell_ptrs) {
 
     auto const &sh0 = *shell_ptrs[0];
     auto const &sh1 = *shell_ptrs[1];
@@ -81,9 +81,8 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 }
 
 template <typename Engine>
-TA::TensorD
-integral_kernel(Engine &eng, TA::Range &&rng,
-                std::array<ShellVec const *, 3> shell_ptrs) {
+TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+                            std::array<ShellVec const *, 3> shell_ptrs) {
 
     auto const &sh0 = *shell_ptrs[0];
     auto const &sh1 = *shell_ptrs[1];
@@ -125,10 +124,9 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 
 // For screening
 template <typename Engine>
-TA::TensorD
-integral_kernel(Engine &eng, TA::Range &&rng,
-                std::array<ShellVec const *, 3> shell_ptrs,
-                MatrixD const &X, MatrixD const &ab) {
+TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+                            std::array<ShellVec const *, 3> shell_ptrs,
+                           MatrixD const &X, MatrixD const &ab) {
 
     auto const &sh0 = *shell_ptrs[0];
     auto const &sh1 = *shell_ptrs[1];
@@ -150,24 +148,29 @@ integral_kernel(Engine &eng, TA::Range &&rng,
     for (auto idx0 = 0ul; idx0 < nsh0; ++idx0) {
         auto const &s0 = sh0[idx0];
         const auto ns0 = s0.size();
+        auto set_vol = ns0;
         const auto X_norm_est = X(idx0);
 
         auto bf1 = start1;
         for (auto idx1 = 0ul; idx1 < nsh1; ++idx1) {
             auto const &s1 = sh1[idx1];
             const auto ns1 = s1.size();
+            set_vol *= ns1;
 
             auto bf2 = start2;
             for (auto idx2 = 0ul; idx2 < nsh2; ++idx2) {
                 auto const &s2 = sh2[idx2];
                 const auto ns2 = s2.size();
+                set_vol *= ns2;
 
-                // Screen that bad boy
-                if (X_norm_est * ab(idx1, idx2) > 1e-10) {
+                // Screen shells
+                const auto est = X_norm_est * ab(idx1, idx2); 
+                // TODO figure out if volume is needed here.
+                if (est >= SpShapeF::threshold()) {
                     const auto lb = {bf0, bf1, bf2};
                     const auto ub = {bf0 + ns0, bf1 + ns1, bf2 + ns2};
-                    tile.block(lb, ub)
-                          = TA::make_map(shell_set(eng, s0, s1, s2), lb, ub);
+                    auto map = TA::make_map(shell_set(eng, s0, s1, s2), lb, ub);
+                    tile.block(lb, ub) = map;
                 }
 
                 bf2 += ns2;
@@ -181,9 +184,8 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 }
 
 template <typename Engine>
-TA::TensorD
-integral_kernel(Engine &eng, TA::Range &&rng,
-                std::array<ShellVec const *, 4> shell_ptrs) {
+TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+                            std::array<ShellVec const *, 4> shell_ptrs) {
 
     auto const &sh0 = *shell_ptrs[0];
     auto const &sh1 = *shell_ptrs[1];

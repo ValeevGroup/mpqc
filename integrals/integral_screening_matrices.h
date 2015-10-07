@@ -12,6 +12,7 @@
 #include "task_integrals_common.h"
 
 #include "../integrals/integral_engine_pool.h"
+#include "../include/tiledarray.h"
 #include "../include/eigen.h"
 
 #include <memory>
@@ -29,78 +30,91 @@ struct ScreeningMatrices {
 
 // Depends on the integrals being 1. DF, 2 obs, 3 obs
 ScreeningMatrices
-screening_matrix_X(ShrPool<TwoE_Engine> &engines, basis::Basis const &basis) {
+screening_matrix_X(mad::World &world, ShrPool<TwoE_Engine> &engines,
+                   basis::Basis const &basis) {
 
+    // Number of clusters
     const auto nclusters = basis.nclusters();
-    ScreeningMatrices sc_mats;
-    sc_mats.cluster_screening = VectorD(nclusters);
 
-    auto &cl_mat = sc_mats.cluster_screening;
-    auto &sh_vec = sc_mats.shell_screenings;
-    sh_vec.reserve(nclusters);
+    VectorD cluster_screen_vec = VectorD(nclusters);
+    auto sh_screen_vectors = std::vector<std::vector<MatrixD>>(nclusters);
 
-    auto &eng = engines->local();
-    eng.set_precision(0.);
+    // Get ptrs to pass to task
+    auto const cluster_shells_ptr = &(basis.cluster_shells());
+    auto cluster_screen_ptr = &cluster_screen_vec;
 
-    auto const &shell_vecs = basis.cluster_shells();
+    // Capture ptrs by value
+    auto cluster_task =
+          [=](int64_t ord, std::vector<MatrixD> *shell_screen_ptr) {
 
-    // Loop over clusters
-    for (auto c = 0; c < nclusters; ++c) {
-        auto const &cl_shells = shell_vecs[c];
-        const auto cl_size = cl_shells.size();
+        auto const &cluster_shells = *cluster_shells_ptr;
+        auto const &cl_shells = cluster_shells[ord];
+        const auto nshells = cl_shells.size();
 
-        sh_vec.emplace_back(std::vector<MatrixD>{VectorD(cl_size)});
-        auto &sh_mat = sh_vec.back().back();
+        auto &cvec = *cluster_screen_ptr;
+        auto &svec = (*shell_screen_ptr)[0];
+        svec = VectorD(nshells);
 
-        for (auto s = 0ul; s < cl_size; ++s) {
+        auto &eng = engines->local();
+        eng.set_precision(0.0);
 
+        for (auto s = 0ul; s < nshells; ++s) {
             auto const &sh = cl_shells[s];
             auto nsh = sh.size();
             const auto *buf
                   = engines->local().compute(sh, unit_shell, sh, unit_shell);
 
             const auto bmap = Eig::Map<const MatrixD>(buf, nsh, nsh);
-            sh_mat(s) = std::sqrt(bmap.lpNorm<2>());
+            // For each shell get the sqrt of the F norm of the quartet
+            svec(s) = std::sqrt(bmap.lpNorm<2>());
         }
 
-        cl_mat(c) = sh_mat.norm();
+        // Q_X(cluster) = |shells|_F
+        cvec(ord) = svec.norm();
+    };
+
+    // Loop over clusters
+    for (auto c = 0; c < nclusters; ++c) {
+        sh_screen_vectors[c] = std::vector<MatrixD>(1);
+        world.taskq.add(cluster_task, c, &sh_screen_vectors[c]);
     }
+    world.gop.fence();
+
+    ScreeningMatrices sc_mats;
+    sc_mats.shell_screenings = std::move(sh_screen_vectors);
+    sc_mats.cluster_screening = std::move(cluster_screen_vec);
 
     return sc_mats;
 }
 
 ScreeningMatrices
-screening_matrix_ab(ShrPool<TwoE_Engine> &engines,
+screening_matrix_ab(mad::World &world, ShrPool<TwoE_Engine> &engines,
                     basis::Basis const &basis) {
 
     const auto nclusters = basis.nclusters();
 
-    ScreeningMatrices sc_mats;
-    sc_mats.cluster_screening = MatrixD(nclusters, nclusters);
-    auto &cl_mat = sc_mats.cluster_screening;
+    MatrixD cluster_screen_mat = MatrixD(nclusters, nclusters);
+    auto sh_screening_mats = std::vector<std::vector<MatrixD>>(nclusters);
 
-    // value for shells
-    auto &sh_vecs = sc_mats.shell_screenings;
-    sh_vecs.reserve(nclusters);
+    // Cluster task
+    auto const cluster_shells_ptr = &(basis.cluster_shells());
+    auto cl_screen_ptr = &cluster_screen_mat;
+    auto cluster_task = [=](int64_t c0, std::vector<MatrixD> *c0_sh_screen_mats_ptr) {
+        auto &eng = engines->local();
+        eng.set_precision(0.);
 
-    auto &eng = engines->local();
-    eng.set_precision(0.);
+        auto const &cluster_shells = *cluster_shells_ptr;
+        auto &cmat = *cl_screen_ptr;
+        auto &sh_mats = *c0_sh_screen_mats_ptr;
 
-    auto const &shell_vecs = basis.cluster_shells();
-
-    for (auto c0 = 0; c0 < nclusters; ++c0) {
-        auto const &shells0 = shell_vecs[c0];
-        const auto nshells0 = shells0.size();
-
-        sh_vecs.emplace_back(std::vector<MatrixD>{});
-        auto &current_vec = sh_vecs.back();
-        current_vec.reserve(nclusters);
-
+        auto const &shells0 = cluster_shells[c0];
+        auto const &nshells0 = shells0.size();
         for (auto c1 = 0; c1 < nclusters; ++c1) {
-            auto const &shells1 = shell_vecs[c1];
+            auto const &shells1 = cluster_shells[c1];
             const auto nshells1 = shells1.size();
-            current_vec.emplace_back(MatrixD(nshells0, nshells1));
-            auto &sh_mat = current_vec.back();
+
+            auto &sh_mat = sh_mats[c1];
+            sh_mat = MatrixD(nshells0, nshells1);
 
             for (auto s0 = 0ul; s0 < nshells0; ++s0) {
                 auto const &sh0 = shells0[s0];
@@ -117,15 +131,26 @@ screening_matrix_ab(ShrPool<TwoE_Engine> &engines,
                     sh_mat(s0, s1) = std::sqrt(bmap.lpNorm<2>());
                 }
             }
-            cl_mat(c0, c1) = std::sqrt(sh_mat.lpNorm<2>());
+            cmat(c0, c1) = sh_mat.lpNorm<2>();
         }
+    };
+
+    for (auto c0 = 0; c0 < nclusters; ++c0) {
+        sh_screening_mats[c0] = std::vector<MatrixD>(nclusters);
+        auto current_shell_screen_ptr = &sh_screening_mats[c0];
+        world.taskq.add(cluster_task, c0, current_shell_screen_ptr);
     }
+    world.gop.fence();
+
+    ScreeningMatrices sc_mats;
+    sc_mats.shell_screenings = std::move(sh_screening_mats);
+    sc_mats.cluster_screening = std::move(cluster_screen_mat);
 
     return sc_mats;
 }
 
 } // namespace detail
 } // namespace integrals
-} // namespace mpqc
+} // namespace mpqc 
 
 #endif //  MPQC_INTEGRALS_INTEGRALSCREENINGMATRICES_H

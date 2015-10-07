@@ -13,7 +13,7 @@ add_executable(atom_based_cluster_example EXCLUDE_FROM_ALL atom_based_cluster_ex
 target_link_libraries(atom_based_cluster_example
     molecule
 )
-add_dependencies(examples atom_base_cluster_example)
+add_dependencies(examples atom_based_cluster_example)
 
 add_executable(molecule_example EXCLUDE_FROM_ALL molecule_example.cpp)
 target_link_libraries(molecule_example

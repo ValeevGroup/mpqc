@@ -49,7 +49,7 @@ struct op_invoke_sc<E, 3, Op> {
 
     TA::TensorD ta_integrals(int64_t ord) {
 
-        std::array<tcc::basis::ClusterShells const *, 3> cluster_ptrs;
+        std::array<ShellVec const *, 3> cluster_ptrs;
         auto const &idx = trange_ptr_->tiles().idx(ord);
         for (auto i = 0ul; i < 3ul; ++i) {
             cluster_ptrs[i] = &(bases_->operator[](i).cluster_shells()[idx[i]]);

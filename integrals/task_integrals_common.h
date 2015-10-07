@@ -26,6 +26,8 @@ using Barray = std::array<basis::Basis, N>;
 template <typename T>
 using OrdTileVec = std::vector<std::pair<unsigned long, T>>;
 
+const static Shell unit_shell = Shell::unit();
+
 namespace detail {
 
 template <unsigned long N>
@@ -42,7 +44,7 @@ TRange create_trange(Barray<N> const &basis_array) {
     trange1s.reserve(N);
 
     for (auto i = 0ul; i < N; ++i) {
-        trange1s.emplace_back(basis_array[i].create_flattend_trange1());
+        trange1s.emplace_back(basis_array[i].create_trange1());
     }
 
     return TRange(trange1s.begin(), trange1s.end());

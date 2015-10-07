@@ -21,11 +21,11 @@ int64_t max_am(ShellVec const &shell_vec) {
 }
 
 int64_t max_nprim(ShellVec const &shell_vec) {
-    return int64_t(std::max_element(shell_vec.begin(), shell_vec.end(),
-                                    [](Shell const &a, Shell const &b) {
-                                        return std::max(int64_t(a.nprim()),
-                                                        int64_t(b.nprim()));
-                                    })->nprim());
+    std::size_t n = 0;
+    for(auto const& shell : shell_vec){
+        n = std::max(shell.nprim(), n);
+    }
+    return n;
 }
 
 int64_t nfunctions(ShellVec const &shell_vec) {

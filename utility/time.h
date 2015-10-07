@@ -68,9 +68,8 @@ time::FunctionTimer<Fn> make_timer(Fn &&fn) {
 
 
 } // namespace utility
-
-namespace tcc_time = utility::time;
-
 } // namespace tcc
+
+namespace tcc_time = tcc::utility::time;
 
 #endif // TCC_UTILITY_TIME_H

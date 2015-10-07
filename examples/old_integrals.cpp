@@ -35,7 +35,7 @@
 // #include "../ta_routines/inverse.h"
 // #include <madness/world/array_addons.h>
 
-using namespace tcc;
+using namespace mpqc;
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -54,14 +54,16 @@ int main(int argc, char *argv[]) {
     TiledArray::SparseShape<float>::threshold(threshold);
 
     auto mol = molecule::read_xyz(mol_file);
-    auto clusters = molecule::attach_hydrogens_kmeans(mol, nclusters);
+    auto mol2 = molecule::attach_hydrogens_and_kmeans(mol.clusterables(),
+                                                      nclusters);
 
-    std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
-    std::ofstream fout("/dev/null");
-    std::cout.rdbuf(fout.rdbuf());
-    basis::BasisSet bs{basis_name};
-    basis::Basis basis{bs.create_basis(clusters)};
-    std::cout.rdbuf(cout_sbuf);
+    // std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint
+    // printing.
+    // std::ofstream fout("/dev/null");
+    // std::cout.rdbuf(fout.rdbuf());
+    basis::BasisSet bs(basis_name);
+    basis::Basis basis(bs.get_cluster_shells(mol2));
+    // std::cout.rdbuf(cout_sbuf);
 
     libint2::init();
 
@@ -75,9 +77,9 @@ int main(int argc, char *argv[]) {
         auto t0 = tcc_time::now();
         auto overlap_pool
               = tints::make_pool(tints::make_1body("overlap", basis));
-        auto S = tints::BlockSparseIntegrals(world, overlap_pool,
-                                             utility::make_array(basis, basis),
-                                             btas_to_ta);
+        auto S = tints::BlockSparseIntegrals(
+              world, overlap_pool, tcc::utility::make_array(basis, basis),
+              btas_to_ta);
         auto S_norm = S("i,j").norm(world).get();
         world.gop.fence();
         auto t1 = tcc_time::now();
@@ -96,9 +98,10 @@ int main(int argc, char *argv[]) {
         world.gop.fence();
         auto t0 = tcc_time::now();
 
-        auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
-        auto eri2 = integrals::BlockSparseIntegrals(
-              world, eri_pool, utility::make_array(basis, basis),
+        auto eri_pool
+              = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
+        auto eri2 = tcc::integrals::BlockSparseIntegrals(
+              world, eri_pool, tcc::utility::make_array(basis, basis),
               tints::compute_functors::BtasToTaTensor());
 
         auto eri2_norm = eri2("i,j").norm(world).get();
@@ -119,9 +122,10 @@ int main(int argc, char *argv[]) {
         world.gop.fence();
         auto t0 = tcc_time::now();
 
-        auto eri_pool = integrals::make_pool(integrals::make_2body(basis, basis));
-        auto eri3 = integrals::BlockSparseIntegrals(
-              world, eri_pool, utility::make_array(basis, basis, basis),
+        auto eri_pool = tcc::integrals::make_pool(
+              tcc::integrals::make_2body(basis, basis));
+        auto eri3 = tcc::integrals::BlockSparseIntegrals(
+              world, eri_pool, tcc::utility::make_array(basis, basis, basis),
               tints::compute_functors::BtasToTaTensor());
 
         auto eri3_norm = eri3("x,i,j").norm(world).get();

@@ -25,6 +25,7 @@
 #include "../tensor/btas_shallow_copy_wrapper.h"
 
 #include "../common/namespaces.h"
+#include "../common/typedefs.h"
 
 
 namespace tcc {
@@ -32,15 +33,15 @@ namespace integrals {
 namespace sparse {
 
 template <std::size_t N>
-using CShellPtrs
-      = std::array<std::shared_ptr<std::vector<basis::ClusterShells>>, N>;
+using ShellPtrs
+      = std::array<std::shared_ptr<std::vector<ShellVec>>, N>;
 
 template <typename TileType, typename TF, typename SharedEnginePool,
           std::size_t N>
 void do_task(std::vector<std::pair<std::size_t, TileType>> *tile_vec,
              std::size_t ord, std::size_t tile_ord, TF func,
              TiledArray::TiledRange trange, SharedEnginePool engines,
-             CShellPtrs<N> shell_ptrs) {
+             ShellPtrs<N> shell_ptrs) {
     auto &vec = *tile_vec;
     const auto idx = trange.tiles().idx(tile_ord);
     auto range = trange.make_tile_range(tile_ord);
@@ -62,7 +63,7 @@ template <typename TileType, typename SharedEnginePool, std::size_t N>
 void do_multipole_task(
       std::vector<std::vector<std::pair<std::size_t, TileType>>> *tile_vec,
       std::size_t ord, std::size_t tile_ord, TiledArray::TiledRange trange,
-      SharedEnginePool engines, CShellPtrs<N> shell_ptrs,
+      SharedEnginePool engines, ShellPtrs<N> shell_ptrs,
       unsigned long number_of_arrays) {
 
     auto &vec = *tile_vec;
@@ -111,12 +112,12 @@ template <typename Pmap, typename SharedEnginePool, std::size_t N, typename TF>
 std::vector<std::pair<std::size_t, typename TF::TileType>>
 compute_tiles(madness::World &world, Pmap const &p,
               TiledArray::TiledRange const &trange, SharedEnginePool engines,
-              std::array<basis::Basis, N> const &bases, TF tf) {
+              std::array<mpqc::basis::Basis, N> const &bases, TF tf) {
 
-    CShellPtrs<N> shell_ptrs;
+    ShellPtrs<N> shell_ptrs;
 
     for (auto i = 0ul; i < N; ++i) {
-        shell_ptrs[i] = std::make_shared<std::vector<basis::ClusterShells>>(
+        shell_ptrs[i] = std::make_shared<std::vector<ShellVec>>(
               bases[i].cluster_shells());
     }
 
@@ -140,13 +141,13 @@ template <typename Pmap, typename SharedEnginePool, std::size_t N, typename TF>
 std::vector<std::vector<std::pair<std::size_t, typename TF::TileType>>>
 compute_tiles(madness::World &world, Pmap const &p,
               TiledArray::TiledRange const &trange, SharedEnginePool engines,
-              std::array<basis::Basis, N> const &bases, 
+              std::array<mpqc::basis::Basis, N> const &bases, 
               unsigned long number_of_arrays, TF const &tf) {
 
-    CShellPtrs<N> shell_ptrs;
+    ShellPtrs<N> shell_ptrs;
 
     for (auto i = 0ul; i < N; ++i) {
-        shell_ptrs[i] = std::make_shared<std::vector<basis::ClusterShells>>(
+        shell_ptrs[i] = std::make_shared<std::vector<ShellVec>>(
               bases[i].cluster_shells());
     }
 
@@ -176,13 +177,13 @@ compute_tiles(madness::World &world, Pmap const &p,
 /// Create a trange from the input bases.
 template <std::size_t N>
 TiledArray::TiledRange
-create_trange(std::array<basis::Basis, N> const &basis_array) {
+create_trange(std::array<mpqc::basis::Basis, N> const &basis_array) {
 
     std::vector<TiledArray::TiledRange1> trange1_collector;
     trange1_collector.reserve(N);
 
     for (auto i = 0ul; i < N; ++i) {
-        trange1_collector.push_back(basis_array[i].create_flattend_trange1());
+        trange1_collector.push_back(basis_array[i].create_trange1());
     }
 
     return TiledArray::TiledRange(trange1_collector.begin(),
@@ -235,7 +236,7 @@ template <typename SharedEnginePool, std::size_t N,
           typename TF = BtasTensorPassThrough<N>>
 TiledArray::Array<double, N, typename TF::TileType, TiledArray::SparsePolicy>
 BlockSparseIntegrals(madness::World &world, SharedEnginePool engines,
-                     std::array<basis::Basis, N> const &bases, TF tf = TF{}) {
+                     std::array<mpqc::basis::Basis, N> const &bases, TF tf = TF{}) {
 
     auto trange = sparse::create_trange(bases);
     auto pmap = sparse::create_pmap<N>(world, trange);
@@ -253,7 +254,7 @@ std::vector<TiledArray::Array<double, N, typename TF::TileType,
 BlockSparseIntegrals(
       madness::World &world,
       std::shared_ptr<EnginePool<libint2::OneBodyEngine>> &engines,
-      std::array<basis::Basis, N> const &bases, TF tf,
+      std::array<mpqc::basis::Basis, N> const &bases, TF tf,
       unsigned long number_of_arrays) {
 
     auto trange = sparse::create_trange(bases);

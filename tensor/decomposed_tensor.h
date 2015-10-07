@@ -55,7 +55,7 @@ class DecomposedTensor {
     std::vector<std::size_t> orders() const {
         std::vector<std::size_t> o;
         o.reserve(ndecomp());
-        for (auto i = 0; i < ndecomp(); ++i) {
+        for (auto i = 0ul; i < ndecomp(); ++i) {
             o.push_back(tensors_[i].range().rank());
         }
         return o;

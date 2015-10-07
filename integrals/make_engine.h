@@ -4,7 +4,9 @@
 
 #include "../include/libint.h"
 #include "../basis/basis.h"
-#include "../basis/cluster_shells.h"
+// #include "../basis/cluster_shells.h"
+
+#include "../molecule/molecule.h"
 #include "../molecule/cluster_collapse.h"
 
 namespace tcc {
@@ -13,21 +15,47 @@ namespace integrals {
 template <typename... Bases>
 libint2::TwoBodyEngine<libint2::Coulomb> make_2body(Bases &&... basis) {
     int max_am = std::max({basis.max_am()...});
-    auto max_nprim = std::max({basis.max_nprim()...});
+    std::size_t max_nprim = std::max({basis.max_nprim()...});
     return libint2::TwoBodyEngine<libint2::Coulomb>{max_nprim, max_am};
 }
 
 // Function to return the q_vector given a basis
 using q_vector = std::vector<std::pair<double, std::array<double, 3>>>;
 
+// Old basis code
+// inline q_vector make_q(mpqc::basis::Basis const &bs) {
+//     q_vector q;
+// 
+//     // Get the groups of clustered shells
+//     for (auto const &cluster_shell : bs.cluster_shells()) {
+//         // Each group has a reference to its cluster
+//         auto const &cluster = cluster_shell.cluster();
+//         for (auto const &atom : molecule::collapse_to_atoms(cluster)) {
+// 
+//             auto const &c = atom.center();
+//             std::array<double, 3> O = {{c[0], c[1], c[2]}};
+//             const double charge = atom.charge();
+// 
+//             q.emplace_back(charge, std::move(O));
+//         }
+//     }
+// 
+//     return q;
+// }
+
 inline q_vector make_q(mpqc::basis::Basis const &bs) {
     q_vector q;
 
-    // Get the groups of clustered shells
-    for (auto const &cluster_shell : bs.cluster_shells()) {
+    auto const& cs = bs.cluster_shells();
+    const auto nclusters = cs.size();
+
+    auto const& mol = bs.molecule();
+    auto const& clusters = mol.clusterables();
+
+    for (auto i = 0ul; i < nclusters; ++i) {
         // Each group has a reference to its cluster
-        auto const &cluster = cluster_shell.cluster();
-        for (auto const &atom : molecule::collapse_to_atoms(cluster)) {
+        auto const &cluster = clusters[i];
+        for (auto const &atom : mpqc::molecule::collapse_to_atoms(cluster)) {
 
             auto const &c = atom.center();
             std::array<double, 3> O = {{c[0], c[1], c[2]}};
@@ -42,7 +70,7 @@ inline q_vector make_q(mpqc::basis::Basis const &bs) {
 
 // q must be set a later time since I am not sure about the ordering aspect.
 inline libint2::OneBodyEngine
-make_1body(std::string const &type, basis::Basis const &bs) {
+make_1body(std::string const &type, mpqc::basis::Basis const &bs) {
 
     // Vector to hold q.
     q_vector q;

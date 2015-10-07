@@ -13,6 +13,7 @@ set(sources
 )
 
 add_library(basis ${sources})
+target_link_libraries(basis molecule)
 
 add_executable(libintshell_test EXCLUDE_FROM_ALL libintshell_test.cpp)
 target_link_libraries(libintshell_test ${LIBINT_LIBRARIES} basis)

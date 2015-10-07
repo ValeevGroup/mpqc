@@ -22,13 +22,6 @@ namespace integrals {
 
 namespace detail {
 
-int64_t nshells_in_basis(std::vector<tcc::basis::ClusterShells> const &cs) {
-    return std::accumulate(cs.begin(), cs.end(), 0,
-                           [](int nsh, tcc::basis::ClusterShells const &c) {
-        return nsh + c.nshells();
-    });
-}
-
 struct ScreeningMatrices {
     std::vector<std::vector<MatrixD>> shell_screenings;
     MatrixD cluster_screening;
@@ -36,10 +29,9 @@ struct ScreeningMatrices {
 
 // Depends on the integrals being 1. DF, 2 obs, 3 obs
 ScreeningMatrices
-screening_matrix_X(ShrPool<TwoE_Engine> &engines,
-                   std::vector<tcc::basis::ClusterShells> const &cs) {
+screening_matrix_X(ShrPool<TwoE_Engine> &engines, basis::Basis const &basis) {
 
-    const auto nclusters = cs.size();
+    const auto nclusters = basis.nclusters();
     ScreeningMatrices sc_mats;
     sc_mats.cluster_screening = VectorD(nclusters);
 
@@ -50,11 +42,11 @@ screening_matrix_X(ShrPool<TwoE_Engine> &engines,
     auto &eng = engines->local();
     eng.set_precision(0.);
 
-    const auto unit = Shell::unit();
+    auto const &shell_vecs = basis.cluster_shells();
 
     // Loop over clusters
-    for (auto c = 0ul; c < nclusters; ++c) {
-        auto const &cl_shells = cs[c].flattened_shells();
+    for (auto c = 0; c < nclusters; ++c) {
+        auto const &cl_shells = shell_vecs[c];
         const auto cl_size = cl_shells.size();
 
         sh_vec.emplace_back(std::vector<MatrixD>{VectorD(cl_size)});
@@ -64,7 +56,8 @@ screening_matrix_X(ShrPool<TwoE_Engine> &engines,
 
             auto const &sh = cl_shells[s];
             auto nsh = sh.size();
-            const auto *buf = engines->local().compute(sh, unit, sh, unit);
+            const auto *buf
+                  = engines->local().compute(sh, unit_shell, sh, unit_shell);
 
             const auto bmap = Eig::Map<const MatrixD>(buf, nsh, nsh);
             sh_mat(s) = std::sqrt(bmap.lpNorm<2>());
@@ -78,9 +71,9 @@ screening_matrix_X(ShrPool<TwoE_Engine> &engines,
 
 ScreeningMatrices
 screening_matrix_ab(ShrPool<TwoE_Engine> &engines,
-                    std::vector<tcc::basis::ClusterShells> const &cs) {
+                    basis::Basis const &basis) {
 
-    const auto nclusters = cs.size();
+    const auto nclusters = basis.nclusters();
 
     ScreeningMatrices sc_mats;
     sc_mats.cluster_screening = MatrixD(nclusters, nclusters);
@@ -93,16 +86,18 @@ screening_matrix_ab(ShrPool<TwoE_Engine> &engines,
     auto &eng = engines->local();
     eng.set_precision(0.);
 
-    for (auto c0 = 0ul; c0 < nclusters; ++c0) {
-        auto const &shells0 = cs[c0].flattened_shells();
+    auto const &shell_vecs = basis.cluster_shells();
+
+    for (auto c0 = 0; c0 < nclusters; ++c0) {
+        auto const &shells0 = shell_vecs[c0];
         const auto nshells0 = shells0.size();
 
         sh_vecs.emplace_back(std::vector<MatrixD>{});
         auto &current_vec = sh_vecs.back();
         current_vec.reserve(nclusters);
 
-        for (auto c1 = 0ul; c1 < nclusters; ++c1) {
-            auto const &shells1 = cs[c1].flattened_shells();
+        for (auto c1 = 0; c1 < nclusters; ++c1) {
+            auto const &shells1 = shell_vecs[c1];
             const auto nshells1 = shells1.size();
             current_vec.emplace_back(MatrixD(nshells0, nshells1));
             auto &sh_mat = current_vec.back();

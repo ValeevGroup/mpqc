@@ -7,6 +7,7 @@
 #include "../include/eigen.h"
 
 #include <type_traits>
+#include <vector>
 
 /////////////////////////////////////////////////////////
 // TileArray typedefs
@@ -45,6 +46,7 @@ using Vec3D = Eig::Vector3d;
 // Libint typedefs
 /////////////////////////////////////////////////////////
 using Shell = libint2::Shell;
+using ShellVec = std::vector<libint2::Shell>;
 
 /////////////////////////////////////////////////////////
 // typetraits typedefs

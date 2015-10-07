@@ -7,8 +7,10 @@
 
 #include "../utility/meta/gen_seq.h"
 
-#include "../basis/cluster_shells.h"
+// #include "../basis/cluster_shells.h"
+#include "../common/typedefs.h"
 #include "../basis/basis.h"
+#include "../basis/shell_vec_functions.h"
 
 #include "integral_engine_pool.h"
 
@@ -23,9 +25,6 @@ using RangeNd = btas::RangeNd<CblasRowMajor, std::array<long, N>>;
 
 template <std::size_t N>
 using TileType = btas::Tensor<double, RangeNd<N>>;
-
-using CShells = basis::ClusterShells;
-using Shell = libint2::Shell;
 
 template <std::size_t N>
 std::array<std::size_t, N>
@@ -102,10 +101,10 @@ void unpack_to_compute_kernel(Engine &engine, View &view,
 
 template <std::size_t N>
 std::array<std::vector<Shell>, N>
-flattened_shells(std::array<CShells, N> const &clustered_shells) {
+flattened_shells(std::array<ShellVec, N> const &clustered_shells) {
     std::array<std::vector<Shell>, N> shells;
     for (auto i = 0ul; i < N; ++i) {
-        shells[i] = clustered_shells[i].flattened_shells();
+        shells[i] = clustered_shells[i];
     }
     return shells;
 }
@@ -153,12 +152,12 @@ void update_bounds(std::array<std::size_t, N> const &idx,
 template <typename Engine, std::size_t N>
 TileType<N>
 compute_tile(Engine engine,
-             std::array<basis::ClusterShells, N> const &clusters) {
+             std::array<ShellVec, N> const &clusters) {
 
     // Compute number of functions in each dimension
     std::array<std::size_t, N> tensor_extent;
     for (auto i = 0ul; i < N; ++i) {
-        tensor_extent[i] = clusters[i].flattened_nfunctions();
+        tensor_extent[i] = mpqc::basis::nfunctions(clusters[i]);
     }
 
     // Flatten the shells, get the number of shells in each dim, and compute

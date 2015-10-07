@@ -13,6 +13,8 @@
 #include "integral_engine_pool.h"
 #include "tile_engine_helper.h"
 
+#include "../common/typedefs.h"
+
 namespace tcc {
 namespace integrals {
 
@@ -25,11 +27,9 @@ class TileEngine {
     template <std::size_t N>
     using TileType = detail::TileType<N>;
 
-    using CShells = detail::CShells;
-    using Shell = detail::Shell;
 
     template <std::size_t N>
-    using ShellPtrs = std::array<std::shared_ptr<std::vector<CShells>>, N>;
+    using ShellPtrs = std::array<std::shared_ptr<std::vector<ShellVec>>, N>;
 
 
     template <typename Index, typename SharedEnginePool, std::size_t N>
@@ -42,9 +42,9 @@ class TileEngine {
 
   private:
     template <typename Index, std::size_t N>
-    std::array<CShells, N>
+    std::array<ShellVec, N>
     get_shells(Index cluster_idx, ShellPtrs<N> const &shell_ptrs) const {
-        std::array<CShells, N> clusters;
+        std::array<ShellVec, N> clusters;
 
         for (auto i = 0ul; i < N; ++i) {
             const auto cluster_number = cluster_idx[i];

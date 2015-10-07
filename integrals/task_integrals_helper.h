@@ -15,7 +15,7 @@
 #include "../include/libint.h"
 
 //  #include "../basis/basis.h"
-#include "../basis/basis_fwd.h"
+// #include "../basis/basis_fwd.h"
 
 namespace mpqc {
 namespace integrals {
@@ -23,7 +23,6 @@ namespace detail {
 
 using OneE_Engine = libint2::OneBodyEngine;
 using TwoE_Engine = libint2::TwoBodyEngine<libint2::Coulomb>;
-using ShellVec = basis::ShellVec;
 
 inline const double *shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1,
                                Shell const &s2, Shell const &s3) {

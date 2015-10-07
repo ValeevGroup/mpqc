@@ -47,19 +47,19 @@ int main(int argc, char *argv[]) {
     TiledArray::SparseShape<float>::threshold(threshold);
 
     auto mol = molecule::read_xyz(mol_file);
-    auto clusters = molecule::attach_hydrogens_and_kmeans(mol.clusterables(),
+    auto mol2 = molecule::attach_hydrogens_and_kmeans(mol.clusterables(),
                                                           nclusters);
 
-    std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
-    std::ofstream fout("/dev/null");
-    std::cout.rdbuf(fout.rdbuf());
-    basis::BasisSet bs{basis_name};
-    basis::Basis basis{bs.create_basis(clusters)};
-    std::cout.rdbuf(cout_sbuf);
+    // std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+    // std::ofstream fout("/dev/null");
+    // std::cout.rdbuf(fout.rdbuf());
+    basis::BasisSet bs(basis_name);
+    basis::Basis basis(bs.get_cluster_shells(mol2));
+    // std::cout.rdbuf(cout_sbuf);
 
     libint2::init();
 
-    auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
+    auto eri_pool = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
 
     auto ta_pass_through =
           [](TA::TensorD &&ten) { return TA::TensorD(std::move(ten)); };
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
         auto overlap_pool
               = tints::make_pool(tints::make_1body("overlap", basis));
         auto S = mpqc_ints::TaskInts(world, overlap_pool,
-                                     utility::make_array(basis, basis),
+                                     tcc::utility::make_array(basis, basis),
                                      ta_pass_through);
         auto S_norm = S("i,j").norm(world).get();
         world.gop.fence();
@@ -92,9 +92,9 @@ int main(int argc, char *argv[]) {
         world.gop.fence();
         auto t0 = tcc_time::now();
 
-        auto eri_pool = integrals::make_pool(integrals::make_2body(basis));
+        auto eri_pool = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
         auto eri2 = mpqc_ints::TaskInts(world, eri_pool,
-                                        utility::make_array(basis, basis),
+                                        tcc::utility::make_array(basis, basis),
                                         ta_pass_through);
 
         auto eri2_norm = eri2("i,j").norm(world).get();
@@ -116,10 +116,10 @@ int main(int argc, char *argv[]) {
         auto t0 = tcc_time::now();
 
         auto eri_pool
-              = integrals::make_pool(integrals::make_2body(basis, basis));
+              = tcc::integrals::make_pool(tcc::integrals::make_2body(basis, basis));
         auto eri3
               = mpqc_ints::TaskInts(world, eri_pool,
-                                    utility::make_array(basis, basis, basis),
+                                    tcc::utility::make_array(basis, basis, basis),
                                     ta_pass_through);
 
         auto eri3_norm = eri3("x,i,j").norm(world).get();
@@ -140,9 +140,9 @@ int main(int argc, char *argv[]) {
         auto t0 = tcc_time::now();
 
         auto eri_pool
-              = integrals::make_pool(integrals::make_2body(basis, basis));
+              = tcc::integrals::make_pool(tcc::integrals::make_2body(basis, basis));
         auto eri3 = mpqc_ints::ScreenedTaskInts(
-              world, eri_pool, utility::make_array(basis, basis, basis),
+              world, eri_pool, tcc::utility::make_array(basis, basis, basis),
               ta_pass_through);
 
         auto eri3_norm = eri3("x,i,j").norm(world).get();

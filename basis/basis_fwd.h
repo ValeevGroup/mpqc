@@ -8,8 +8,6 @@
 namespace mpqc {
 namespace basis {
 
-using ShellVec = std::vector<Shell>;
-
 class BasisSet;
 class AtomBasisSet;
 class ClusterShells;

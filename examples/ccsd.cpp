@@ -106,7 +106,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
     // parse the input
-    // TODO better input for ccsd
     rapidjson::Document in;
     parse_input(argc, argv, in);
 

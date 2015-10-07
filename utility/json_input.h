@@ -48,7 +48,7 @@ Document get_nested(Document &d, std::string key){
     rapidjson::StringStream s(buffer.GetString());
     result.ParseStream(s);
 
-    return result;
+    return std::move(result);
 
 }
 

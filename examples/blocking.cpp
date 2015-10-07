@@ -98,7 +98,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
     // parse the input
-    // TODO better input for ccsd
     rapidjson::Document in;
     parse_input(argc, argv, in);
 
@@ -183,7 +182,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
     utility::print_par(world, "Nuclear repulsion_energy = ",
                        repulsion_energy, "\n");
 
-    // TODO better basis TRange
     auto bs_clusters = molecule::attach_hydrogens_kmeans(mol, bs_nclusters);
     auto dfbs_clusters
             = molecule::attach_hydrogens_kmeans(mol, dfbs_nclusters);

@@ -354,7 +354,8 @@ namespace sc {
       // CCSD (Gauss and Stanton formula)
       // compute Delta_ai = 1 / (- <a|F|a> + <i|F|i>)
       //       & Delta_ijab =  1 / (- <a|F|a> - <b|F|b> + <i|F|i> + <j|F|j>)
-      void compute_Delta_cc(const TArray2& fai, const TArray4d& g_abij,
+      void compute_Delta_cc(const TA::TiledRange& TR_ai,
+                            const TA::TiledRange& TR_abij,
                             TArray2& D_ai, TArray4& D_abij);
       // compute intermediates needed for T and lambda amplitudes
       void compute_intermediates_TFW_ccsd(
@@ -375,11 +376,11 @@ namespace sc {
              TArray4& CW_KlIc_ab, TArray4& CW_KliC_ab,
              TArray4& CW_AkCd_ab);
       // compute CCSD T amplitudes
-      void compute_T_ccsd(TArray2& t1, TArray4& t2);
+      void compute_T_ccsd(TArray2& t1, TArray4& t2, const std::string method);
       // compute CCSD lambda amplitudes
       void compute_lambda_ccsd(const TArray2& t1, const TArray4& t2,
                                TArray2& L1, TArray4& L2,
-                               const bool include_F12contri);
+                               const std::string method);
 
       // compute CC2 one-electron density from amplitudes
       void compute_cc2_1rdm_amp(const TArray2& T1_cc2, const TArray4& T2_cc2,
@@ -410,6 +411,37 @@ namespace sc {
       void compute_Xam_ccsd(const TArray2& T1, const TArray4& T2,
                             const TArray2& L1, const TArray4& L2,
                             TArray2& Xam_tot, TArray2& Xiip);
+
+      // compute multipole using F12b method
+      void compute_multipole_F12b();
+      // compute V^PQ_RS = 1/2 R^PQ_A'B' g^A'B'_RS
+      // P, Q, R, and S in same spin space (or for close-shell)
+      TArray4 VPQ_RS(const char* p, const char* q,
+                     const char* r, const char* s);
+      TArray2 Xam_CT2L2_f12b(const double C_0, const double C_1,
+                           const TArray4& T2, const TArray2& RT2_aPb,
+                           const TArray4& L2, const TArray2& RL2_aPb);
+      TArray2 Xam_VTL_f12b(const double C_0, const double C_1,
+                          const TArray2& T1, const TArray4& T2,
+                          const TArray2& L1, const TArray4& L2);
+
+      TArray2 Xam_VT1T1_f12b(const double C_0, const double C_1,
+                             const TArray2& T1);
+      // test function
+      TArray2 Xam_VT1T1_f12b_test(const double C_0, const double C_1,
+                                  const TArray4& tauT1_ab);
+
+      TArray2 Xam_VL2T1_f12b(const double C_0, const double C_1,
+                             const TArray2& T1, const TArray4& L2);
+      // test function
+      TArray2 Xam_VL2T1_f12b_test(const double C_0, const double C_1,
+                                  const TArray2& T1, const TArray4& L2);
+
+      TArray2 Xam_VL2T1T1_f12b(const double C_0, const double C_1,
+                               const TArray2& T1, const TArray4& L2);
+      // test function
+      TArray2 Xam_VL2T1T1_f12b_test(const double C_0, const double C_1,
+                                    const TArray2& T1, const TArray4& L2);
 
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively

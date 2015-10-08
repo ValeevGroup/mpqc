@@ -88,6 +88,8 @@ R12IntEval::compute_TA_mp2f12_1rdm() {
   MPQC_ASSERT(this->orbital_registry()->key_exists("A'"));
 
   srr12intrmds.compute_multipole();
+
+  //srr12intrmds.compute_multipole_F12b();
 }
 
 void

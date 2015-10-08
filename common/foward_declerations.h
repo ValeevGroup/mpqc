@@ -25,7 +25,7 @@ class SparseShape;
 namespace libint2 {
     struct Atom;
     struct Shell;
-};
+}
 
 
 /////////////////////////////////////////////////////////

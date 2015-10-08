@@ -89,7 +89,7 @@ compute_screened_integrals(mad::World &world, ShrPool<E> &engines,
             auto sh_vec_X_ptr = &(sh_vecs_X->operator[](idx[0]).back());
             auto sh_X_ptr = std::shared_ptr<MatrixD>(sh_vecs_X, sh_vec_X_ptr);
 
-            auto sh_vec_ab_ptr = &(sh_vecs_ab->operator[](idx[0])[idx[1]]);
+            auto sh_vec_ab_ptr = &(sh_vecs_ab->operator[](idx[1])[idx[2]]);
             auto sh_ab_ptr
                   = std::shared_ptr<MatrixD>(sh_vecs_ab, sh_vec_ab_ptr);
 

@@ -93,8 +93,8 @@ namespace tcc{
                     Xdb = this->ccsd_intermediate_->get_Xab();
                     Xai = this->ccsd_intermediate_->get_Xai();
                 }else{
+                    g_diba= this->ccsd_intermediate_->get_aibc();
                 }
-                g_diba= this->ccsd_intermediate_->get_aibc();
                 // get trange1
                 auto tr_occ = this->trange1_engine_->get_occ_tr1();
                 auto tr_vir = this->trange1_engine_->get_vir_tr1();

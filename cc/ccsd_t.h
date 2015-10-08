@@ -120,6 +120,7 @@ namespace tcc{
 
                 if(t1.get_world().rank() == 0){
                     std::cout << "Increase in the loop " << increase << std::endl;
+                    std::cout << "Number of blocks at each iteration" << increase*increase*increase*n_tr_occ*n_tr_occ*n_tr_occ << std::endl;
                 }
 
                 // index in virtual blocks
@@ -178,7 +179,7 @@ namespace tcc{
                             std::size_t c_low = c;
                             std::size_t c_up = c + c_increase;
 
-                            std::size_t blocks = (a_up-a_low)*(b_up-b_low)*(c_up-c_low);
+                            std::size_t blocks = (a_up-a_low)*(b_up-b_low)*(c_up-c_low)*n_tr_occ*n_tr_occ*n_tr_occ;
 //                            if (t1.get_world().rank() == 0){
 //                                std::cout << "{" << a_low << " " << b_low << " " << c_low << "}" << " ";
 //                                std::cout << "{" << a_up << " " << b_up << " " << c_up << "} " << blocks << std::endl;

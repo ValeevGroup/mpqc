@@ -56,7 +56,7 @@ namespace tcc{
 
                 // start CCSD(T)
                 if(t1.get_world().rank() == 0){
-                    std::cout << "Begining CCSD(T) " << std::endl;
+                    std::cout << "\nBegining CCSD(T) " << std::endl;
                 }
                 auto time0 = tcc::tcc_time::now();
                 double ccsd_t = compute_ccsd_t(t1, t2);
@@ -68,6 +68,7 @@ namespace tcc{
 //                auto duration2 = tcc_time::duration_in_s(time0, time1);
 
                 if (t1.get_world().rank() == 0) {
+                    std::cout << std::setprecision(15);
                     std::cout << "(T) Energy      " << ccsd_t << " Time " << duration1 << std::endl;
 //                    std::cout << "(T) Energy      " << ccsd_t_d << " Time " << duration2 << std::endl;
                     std::cout << "CCSD(T) Energy  " << ccsd_t + ccsd_corr << std::endl;
@@ -118,9 +119,15 @@ namespace tcc{
                 std::size_t b_increase = increase;
                 std::size_t c_increase = increase;
 
+                std::size_t block_size = this->trange1_engine_->get_block_size();
+                std::size_t n_blocks = increase*increase*increase*n_tr_occ*n_tr_occ*n_tr_occ;
+                double mem = (n_blocks*std::pow(block_size,6)*8)/(std::pow(1024.0,3));
+
                 if(t1.get_world().rank() == 0){
                     std::cout << "Increase in the loop " << increase << std::endl;
-                    std::cout << "Number of blocks at each iteration" << increase*increase*increase*n_tr_occ*n_tr_occ*n_tr_occ << std::endl;
+                    std::cout << "Number of blocks at each iteration " << n_blocks << std::endl;
+                    std::cout << std::setprecision(5);
+                    std::cout << "Size of T3 or V3 at each iteration " << mem << " GB" << std::endl;
                 }
 
                 // index in virtual blocks

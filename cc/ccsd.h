@@ -129,7 +129,7 @@ namespace tcc {
 //                ccsd_intermediate_->clean();
 
                 if (g_abij.get_world().rank() == 0) {
-                    std::cout << "start iteration" << std::endl;
+                    std::cout << "Start Iteration" << std::endl;
                 }
                 //optimize t1 and t2
                 std::size_t iter = 0ul;

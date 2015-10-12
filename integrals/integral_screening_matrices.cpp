@@ -38,6 +38,7 @@ screening_matrix_X(mad::World &world, ShrPool<TwoE_Engine> &engines,
         auto &eng = engines->local();
         eng.set_precision(0.0);
 
+        cvec(ord) = 0;
         for (auto s = 0ul; s < nshells; ++s) {
             auto const &sh = cl_shells[s];
             auto nsh = sh.size();
@@ -45,11 +46,9 @@ screening_matrix_X(mad::World &world, ShrPool<TwoE_Engine> &engines,
                   = engines->local().compute(sh, unit_shell, sh, unit_shell);
 
             const auto bmap = Eig::Map<const MatrixD>(buf, nsh, nsh);
-            // For each shell get the sqrt of the F norm of the quartet
-            svec(s) = std::sqrt(bmap.lpNorm<2>());
+            const auto norm = bmap.lpNorm<2>();
+            svec(s) = std::sqrt(norm);
         }
-
-        // Q_X(cluster) = |shells|_F
         cvec(ord) = svec.norm();
     };
 
@@ -110,9 +109,11 @@ screening_matrix_ab(mad::World &world, ShrPool<TwoE_Engine> &engines,
                                                               nsh0 * nsh1);
 
                     sh_mat(s0, s1) = std::sqrt(bmap.lpNorm<2>());
+                    auto fnorm = bmap.lpNorm<2>();
+                    sh_mat(s0, s1) = std::sqrt(fnorm);
                 }
             }
-            cmat(c0, c1) = sh_mat.lpNorm<2>();
+            cmat(c0,c1) = sh_mat.lpNorm<2>();
         }
     };
 

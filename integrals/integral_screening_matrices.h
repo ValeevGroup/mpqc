@@ -9,6 +9,7 @@
 #ifndef MPQC_INTEGRALS_INTEGRALSCREENINGMATRICES_H
 #define MPQC_INTEGRALS_INTEGRALSCREENINGMATRICES_H
 
+#if 0
 #include "task_integrals_common.h"
 
 #include "../integrals/integral_engine_pool.h"
@@ -38,5 +39,6 @@ screening_matrix_ab(mad::World &world, ShrPool<TwoE_Engine> &engines,
 } // namespace detail
 } // namespace integrals
 } // namespace mpqc 
+#endif
 
 #endif //  MPQC_INTEGRALS_INTEGRALSCREENINGMATRICES_H

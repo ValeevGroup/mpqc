@@ -22,8 +22,9 @@
 #include "../integrals/make_engine.h"
 
 #include "../integrals/task_integrals.h"
-#include "../integrals/screened_task_integrals.h"
-#include "../integrals/direct_task_integrals.h"
+#include "../integrals/schwarz_screen.h"
+// #include "../integrals/screened_task_integrals.h"
+// #include "../integrals/direct_task_integrals.h"
 
 #include "../tensor/tcc_tile.h"
 #include "../tensor/decomposed_tensor.h"
@@ -37,11 +38,12 @@
 using namespace mpqc;
 
 int main(int argc, char *argv[]) {
+
     auto &world = madness::initialize(argc, argv);
     std::string mol_file = "";
     std::string basis_name = "";
     int nclusters = 0;
-    double threshold = 1e-11;
+    double threshold = 1e-8;
     if (argc == 4) {
         mol_file = argv[1];
         basis_name = argv[2];
@@ -53,11 +55,12 @@ int main(int argc, char *argv[]) {
     TiledArray::SparseShape<float>::threshold(threshold);
 
     auto mol = molecule::read_xyz(mol_file);
-    auto mol2 = molecule::attach_hydrogens_and_kmeans(mol.clusterables(),
-                                                      nclusters);
+    auto clustered_mol
+          = molecule::attach_hydrogens_and_kmeans(mol.clusterables(),
+                                                  nclusters);
 
     basis::BasisSet bs(basis_name);
-    basis::Basis basis(bs.get_cluster_shells(mol2));
+    basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
     libint2::init();
 
@@ -67,69 +70,131 @@ int main(int argc, char *argv[]) {
     auto ta_pass_through =
           [](TA::TensorD &&ten) { return TA::TensorD(std::move(ten)); };
 
-    { // Over lap ints
-        try {
-            if (world.rank() == 0) {
-                std::cout << "Overlap ints\n";
-            }
-            world.gop.fence();
-            auto t0 = tcc_time::now();
-            auto overlap_pool
-                  = tints::make_pool(tints::make_1body("overlap", basis));
-            auto S = mpqc_ints::TaskInts(world, overlap_pool,
-                                         tcc::utility::make_array(basis, basis),
-                                         ta_pass_through);
-            auto S_norm = S("i,j").norm(world).get();
-            world.gop.fence();
-            auto t1 = tcc_time::now();
+    { // Overlap ints
+        if (world.rank() == 0) {
+            std::cout << "Overlap ints\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+        auto overlap_pool
+              = tints::make_pool(tints::make_1body("overlap", basis));
+        auto S = mpqc_ints::sparse_integrals(
+              world, overlap_pool, tcc::utility::make_array(basis, basis),
+              ta_pass_through);
+        auto S_norm = S("i,j").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
 
-            if (world.rank() == 0) {
-                std::cout << "\tnorm of ints was " << S_norm << std::endl;
-                std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
-                          << " seconds" << std::endl;
-            }
-        } catch (TA::Exception &e) {
-            std::cout << "Caught exception: " << e.what() << std::endl;
-            std::cout << "\nInput Molecule has " << mol.nclusters()
-                      << " atoms\n";
-            std::cout << "\nClustered Molecule has " << mol2.nclusters()
-                      << " clusters\n";
-            for (auto const &c : mol2) {
-                std::cout << c << std::endl;
-                for (auto const &a : c.atoms()) {
-                    std::cout << "\t" << a << std::endl;
-                }
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
-            std::terminate();
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << S_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
         }
     }
 
-    { // Two electron two center
+    { // Two electron Three center
         if (world.rank() == 0) {
-            std::cout << "Two E two Center ints\n";
+            std::cout << "\nTwo E Three Center unscreened ints\n";
         }
         world.gop.fence();
         auto t0 = tcc_time::now();
 
         auto eri_pool
               = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
-        auto eri2 = mpqc_ints::TaskInts(world, eri_pool,
-                                        tcc::utility::make_array(basis, basis),
-                                        ta_pass_through);
 
-        auto eri2_norm = eri2("i,j").norm(world).get();
+        auto eri3 = mpqc_ints::sparse_integrals(
+              world, eri_pool, tcc::utility::make_array(basis, basis, basis),
+              ta_pass_through);
+
+        auto eri3_norm = eri3("i,j,k").norm(world).get();
         world.gop.fence();
         auto t1 = tcc_time::now();
 
         if (world.rank() == 0) {
-            std::cout << "\tnorm of ints was " << eri2_norm << std::endl;
+            std::cout << "\tnorm of ints was " << eri3_norm << std::endl;
             std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
                       << " seconds" << std::endl;
         }
     }
 
+    { // Two electron Three center
+        if (world.rank() == 0) {
+            std::cout << "Two E four Center Schwarz Screened ints\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+
+        auto eri_pool
+              = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
+
+        auto eri3 = mpqc_ints::sparse_integrals<integrals::init_schwarz_screen>(
+              world, eri_pool, tcc::utility::make_array(basis, basis, basis),
+              ta_pass_through);
+
+        auto eri3_norm = eri3("i,j,k").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
+
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << eri3_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
+    }
+
+    { // Two electron Four center
+        if (world.rank() == 0) {
+            std::cout << "\nTwo E four Center Schwarz unscreened ints\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+
+        auto eri_pool
+              = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
+
+        auto eri4 = mpqc_ints::sparse_integrals(
+              world, eri_pool,
+              tcc::utility::make_array(basis, basis, basis, basis),
+              ta_pass_through);
+
+        auto eri4_norm = eri4("i,j,k,l").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
+
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << eri4_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
+    }
+
+    { // Two electron Four center
+        if (world.rank() == 0) {
+            std::cout << "Two E four Center Schwarz Screened ints\n";
+        }
+        world.gop.fence();
+        auto t0 = tcc_time::now();
+
+        auto eri_pool
+              = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
+
+        auto eri4 = mpqc_ints::sparse_integrals<integrals::init_schwarz_screen>(
+              world, eri_pool,
+              tcc::utility::make_array(basis, basis, basis, basis),
+              ta_pass_through);
+
+        auto eri4_norm = eri4("i,j,k,l").norm(world).get();
+        world.gop.fence();
+        auto t1 = tcc_time::now();
+
+        if (world.rank() == 0) {
+            std::cout << "\tnorm of ints was " << eri4_norm << std::endl;
+            std::cout << "\tin " << tcc_time::duration_in_s(t0, t1)
+                      << " seconds" << std::endl;
+        }
+    }
+
+#if 0
     { // Two electron three center
         if (world.rank() == 0) {
             std::cout << "\nTwo E three Center ints\n";
@@ -200,7 +265,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
     auto clr_tensor = [](TA::TensorD &&t) {
         auto range = t.range();
 
@@ -266,6 +330,7 @@ int main(int argc, char *argv[]) {
                       << " seconds" << std::endl;
         }
     }
+#endif
 
     libint2::cleanup();
     madness::finalize();

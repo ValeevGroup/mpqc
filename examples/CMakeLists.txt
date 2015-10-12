@@ -4,9 +4,7 @@ add_custom_target(paper)
 add_custom_target(fastK)
 
 add_executable(cluster_example EXCLUDE_FROM_ALL cluster_example.cpp)
-target_link_libraries(cluster_example
-    molecule
-)
+target_link_libraries(cluster_example molecule)
 add_dependencies(examples cluster_example)
 
 add_executable(atom_based_cluster_example EXCLUDE_FROM_ALL atom_based_cluster_example.cpp)
@@ -26,14 +24,10 @@ target_link_libraries(basis_example molecule;basis)
 add_dependencies(examples basis_example)
 
 add_executable(mp2 EXCLUDE_FROM_ALL mp2.cpp)
-target_link_libraries(mp2
-  ${TileClusterChem_LIBRARIES}
-)
+target_link_libraries(mp2 ${TileClusterChem_LIBRARIES})
 
 add_executable(ccsd EXCLUDE_FROM_ALL ccsd.cpp)
-target_link_libraries(ccsd
-  ${TileClusterChem_LIBRARIES}
-)
+target_link_libraries(ccsd ${TileClusterChem_LIBRARIES})
 
 file(COPY ${CMAKE_SOURCE_DIR}/examples/default_input.json DESTINATION ${CMAKE_BINARY_DIR}/examples)
 file(COPY ${CMAKE_SOURCE_DIR}/examples/generate_input.py DESTINATION ${CMAKE_BINARY_DIR}/examples)

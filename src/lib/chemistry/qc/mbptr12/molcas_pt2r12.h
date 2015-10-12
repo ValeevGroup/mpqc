@@ -50,7 +50,8 @@ namespace sc{
   &GATEWAY
     coord=prefix.xyz
     basis=cc-pVDZ-F12
-    Group=C1
+    SYMMetry=C1
+    NOMOVE
   *-------------------------------------------------------------------------------
   &SEWARD
   *-------------------------------------------------------------------------------
@@ -78,7 +79,8 @@ namespace sc{
   &GATEWAY
     coord=
     basis=
-    Group=
+    SYMMetry=  // can use symmetry here
+    NOMOVE  // only use MPQC to handle geometry
   &SEWARD
   &SCF
   &RASSCF

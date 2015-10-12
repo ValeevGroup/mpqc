@@ -16,7 +16,7 @@ SCENARIO("atoms can be intialized", "[atom]"){
         REQUIRE(a.charge() == 0);
 
         WHEN("the atom is assigned to a new atom"){
-            a = tcc::molecule::Atom({1.0, 2.0, 3.0}, 1.07, 1);
+            a = mpqc::molecule::Atom({1.0, 2.0, 3.0}, 1.07, 1);
             center = a.center();
             REQUIRE(center[0] == 1);
             REQUIRE(center[1] == 2);

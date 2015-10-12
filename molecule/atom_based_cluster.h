@@ -124,7 +124,7 @@ inline void set_center(AtomBasedCluster &c, Vec3D const &point){
     c.set_com(point);
 }
 
-inline void clear(AtomBasedCluster &c){
+inline void remove_clusterables(AtomBasedCluster &c){
     c.clear();
 }
 

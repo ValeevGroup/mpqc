@@ -25,7 +25,7 @@ add_dependencies(unit_tests catch)
 
 set(utests
     atom_test.cpp
-    cluster_test.cpp
+    clustering_test.cpp
     )
 
 add_executable(tests EXCLUDE_FROM_ALL test_main.cpp ${utests})

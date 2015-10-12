@@ -73,13 +73,15 @@ class Molecule {
     Vec3D const &com() const { return com_; }
 };
 
+/*! \brief Function to return a molecule from a xyz file.
+ *  
+ *  In this case the string should be the file handle. 
+ */
 Molecule read_xyz(std::string const &);
 
 std::ostream &operator<<(std::ostream &, Molecule const &);
 
-/*!
- * @}
- */
+/*! @} */
 
 } // namespace molecule
 } // namespace mpqc

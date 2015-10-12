@@ -10,14 +10,9 @@
 namespace mpqc {
 namespace molecule {
 
-/*!
-* \ingroup Molecule 
-*
-* @{
-*/
+/*! \ingroup Molecule @{ */
 
-/*! \class Atom
- *  \brief A class which holds the basic information for an atom
+/*! \brief A class which holds the basic information for an atom
  *
  *  Atom has a position in Bohr, an atomic number, and a mass.  By default the 
  *  position is an Eigen::Vector3d.

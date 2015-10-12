@@ -24,7 +24,7 @@
 #include "../integrals/task_integrals.h"
 #include "../integrals/schwarz_screen.h"
 // #include "../integrals/screened_task_integrals.h"
-// #include "../integrals/direct_task_integrals.h"
+#include "../integrals/direct_task_integrals.h"
 
 #include "../tensor/tcc_tile.h"
 #include "../tensor/decomposed_tensor.h"
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 
     { // Two electron Three center
         if (world.rank() == 0) {
-            std::cout << "\nTwo E Three Center unscreened ints\n";
+            std::cout << "\nTwo E Three Center direct unscreened ints\n";
         }
         world.gop.fence();
         auto t0 = tcc_time::now();
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
         auto eri_pool
               = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
 
-        auto eri3 = mpqc_ints::sparse_integrals(
+        auto eri3 = mpqc_ints::direct_sparse_integrals(
               world, eri_pool, tcc::utility::make_array(basis, basis, basis),
               ta_pass_through);
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 
     { // Two electron Three center
         if (world.rank() == 0) {
-            std::cout << "Two E four Center Schwarz Screened ints\n";
+            std::cout << "Two E Three Center Schwarz direct Screened ints\n";
         }
         world.gop.fence();
         auto t0 = tcc_time::now();
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
 
     { // Two electron Four center
         if (world.rank() == 0) {
-            std::cout << "\nTwo E four Center Schwarz unscreened ints\n";
+            std::cout << "\nTwo E four Center direct unscreened ints\n";
         }
         world.gop.fence();
         auto t0 = tcc_time::now();
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
         auto eri_pool
               = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
 
-        auto eri4 = mpqc_ints::sparse_integrals(
+        auto eri4 = mpqc_ints::direct_sparse_integrals(
               world, eri_pool,
               tcc::utility::make_array(basis, basis, basis, basis),
               ta_pass_through);
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
 
     { // Two electron Four center
         if (world.rank() == 0) {
-            std::cout << "Two E four Center Schwarz Screened ints\n";
+            std::cout << "Two E four Center Schwarz Screened direct ints\n";
         }
         world.gop.fence();
         auto t0 = tcc_time::now();
@@ -178,10 +178,11 @@ int main(int argc, char *argv[]) {
         auto eri_pool
               = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
 
-        auto eri4 = mpqc_ints::sparse_integrals<integrals::init_schwarz_screen>(
-              world, eri_pool,
-              tcc::utility::make_array(basis, basis, basis, basis),
-              ta_pass_through);
+        auto eri4 = mpqc_ints::
+              direct_sparse_integrals<integrals::init_schwarz_screen>(
+                    world, eri_pool,
+                    tcc::utility::make_array(basis, basis, basis, basis),
+                    ta_pass_through);
 
         auto eri4_norm = eri4("i,j,k,l").norm(world).get();
         world.gop.fence();

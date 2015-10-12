@@ -186,7 +186,7 @@ compute_Q(ShrPool<E> const &eng, int64_t index0, int64_t index1,
 
 struct init_schwarz_screen {
     template <typename E>
-    SchwarzScreen operator()(int64_t const &, detail::IdxVec const &,
+    SchwarzScreen operator()(detail::IdxVec const &,
                              detail::ShrBases<2> const &, ShrPool<E> const &) {
         throw std::logic_error("Cannot use SchwarzScreen class on Tensors with "
                                "only two dimensions.");
@@ -195,7 +195,7 @@ struct init_schwarz_screen {
 
     template <typename E>
     SchwarzScreen
-    operator()(int64_t const &, detail::IdxVec const &idx,
+    operator()(detail::IdxVec const &idx,
                detail::ShrBases<3> const &bases, ShrPool<E> const &engs) {
         auto Q_a = detail::compute_Q(engs, idx[0], bases->operator[](0));
         auto Q_cd
@@ -209,7 +209,7 @@ struct init_schwarz_screen {
 
     template <typename E>
     SchwarzScreen
-    operator()(int64_t const &, detail::IdxVec const &idx,
+    operator()(detail::IdxVec const &idx,
                detail::ShrBases<4> const &bases, ShrPool<E> const &engs) {
         auto Q_ab
               = detail::compute_Q(engs, idx[0], idx[1], bases->operator[](0),

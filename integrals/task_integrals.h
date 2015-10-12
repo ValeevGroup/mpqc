@@ -30,7 +30,7 @@ void sparse_integral_task_function(int64_t ord, IdxVec idx, ShrPool<E> engs,
     auto shell_vecs = get_shells(idx, shr_bases);
 
 
-    auto screen = ScreenOp()(ord, idx, shr_bases, engs);
+    auto screen = ScreenOp()(idx, shr_bases, engs);
 
     auto op_invoker = make_op_invoke(std::move(idx), std::move(engs),
                                      std::move(shell_vecs), std::move(op),

@@ -5,72 +5,73 @@
 #include "direct_tile.h"
 #include "task_integrals_op_invoker.h"
 #include "task_integrals_common.h"
+#include <limits>
 
 namespace mpqc {
 namespace integrals {
 
-namespace detail {} // namespace detail
+namespace detail {
 
-/*! \brief Construct direct integral tensors in parallel without screening.
- *
- */
-template <typename E, unsigned long N, typename Op>
-DArray<N, DirectTile<E, N, Op, detail::no_screen_t<E, N>>, DnPolicy>
-direct_task_ints_unscreeened(mad::World &world, ShrPool<E> &engines,
-                             Barray<N> const &bases, Op op) {
+template <typename E, unsigned long N, typename Op, typename ScreenOp>
+void direct_tile_task(
+      int64_t ord, TA::Range range, IdxVec idx, ShrPool<E> engines,
+      ShrBases<N> bases, Op op, TA::TensorF *norm_ptr,
+      std::vector<std::pair<int64_t, DirectTile<E, N, Op>>> *tiles) {
 
-    auto tile = DirectTile<E, N, Op, detail::no_screen_t<E,N>>();
+    const auto volume = range.volume();
+    auto tile = make_direct_tile(std::move(range), std::move(idx),
+                                 std::move(engines), std::move(bases),
+                                 std::move(op));
 
-    DArray<N, DirectTile<E, N, Op, detail::no_screen_t<E, N>>, DnPolicy> out(
-          world, detail::create_trange(bases));
+    const auto temp_tile = typename DirectTile<E, N, Op>::eval_type(tile);
+    const auto norm = temp_tile.norm();
+    (*norm_ptr)[ord] = norm;
 
-    auto shared_bases = std::make_shared<Barray<N>>(bases);
-
-    auto const &pmap = *(out.get_pmap());
-    auto const &trange = out.trange();
-    for (auto const &ord : pmap) {
-        detail::IdxVec idx = trange.tiles().idx(ord);
-        auto range = trange.make_tile_range(ord);
-        out.set(ord,
-                make_direct_tile(std::move(range), std::move(idx), engines,
-                                 shared_bases, op, detail::no_screening<E, N>));
+    if (norm >= volume * SpShapeF::threshold()) {
+        (*tiles)[ord] = std::make_pair(ord, std::move(tile));
+    } else {
+        (*tiles)[ord].first = ord;
     }
-
-    return out;
 }
 
-// TODO FINISH THIS TOMORROW 
+} // namespace detail
+
 /*! \brief Construct direct integral tensors in parallel with screening.
  *
  */
-template <typename E, unsigned long N, typename Op>
-DArray<N, DirectTile<E, N, Op, detail::no_screen_t<E, N>>, DnPolicy>
-direct_task_ints_screeened(mad::World &world, ShrPool<E> &engines,
-                             Barray<N> const &bases, Op op) {
+template <typename ScreenOp = init_base_screen, typename E, unsigned long N,
+          typename Op>
+DArray<N, DirectTile<E, N, Op>, SpPolicy>
+direct_sparse_integrals(mad::World &world, ShrPool<E> &engines,
+                        Barray<N> const &bases, Op op) {
 
-    auto tile = DirectTile<E, N, Op, detail::no_screen_t<E,N>>();
-    const auto Q_X
-          = screening_matrix_X(world, engines, bases[0].cluster_shells());
-    auto const &cls_X = Q_X.cluster_screening;
+    const auto trange = detail::create_trange(bases);
+    const auto tvolume = trange.tiles().volume();
+    TA::TensorF tile_norms(trange.tiles(), std::numeric_limits<double>::max());
 
-    const auto Q_ab
-          = screening_matrix_ab(world, engines, bases[1].cluster_shells());
-    auto const &cls_ab = Q_ab.cluster_screening;
-
-    DArray<N, DirectTile<E, N, Op, detail::no_screen_t<E, N>>, DnPolicy> out(
-          world, detail::create_trange(bases));
+    std::vector<std::pair<int64_t, DirectTile<E, N, Op>>> tiles(tvolume);
 
     auto shared_bases = std::make_shared<Barray<N>>(bases);
 
-    auto const &pmap = *(out.get_pmap());
-    auto const &trange = out.trange();
-    for (auto const &ord : pmap) {
+    auto pmap = SpPolicy::default_pmap(world, tvolume);
+    for (auto const &ord : *pmap) {
         detail::IdxVec idx = trange.tiles().idx(ord);
         auto range = trange.make_tile_range(ord);
-        out.set(ord,
-                make_direct_tile(std::move(range), std::move(idx), engines,
-                                 shared_bases, op, detail::no_screening<E, N>));
+        world.taskq.add(detail::direct_tile_task<E, N, Op, ScreenOp>, ord,
+                        range, idx, engines, shared_bases, op, &tile_norms,
+                        &tiles);
     }
+    world.gop.fence();
+
+    SpShapeF shape(world, tile_norms, trange);
+    DArray<N, DirectTile<E, N, Op>, SpPolicy> out(world, trange, shape, pmap);
+
+    for (auto &&tile : tiles) {
+        if (!out.is_zero(tile.first)) {
+            out.set(tile.first, std::move(tile.second));
+        }
+    }
+
 
     return out;
 }

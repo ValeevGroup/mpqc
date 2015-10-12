@@ -79,7 +79,7 @@ class Screener {
 
 struct init_base_screen {
     template <typename E, unsigned long N>
-    Screener operator()(int64_t const &, detail::IdxVec const &,
+    Screener operator()(detail::IdxVec const &,
                         detail::ShrBases<N> const &, ShrPool<E> const &) {
         return Screener();
     }

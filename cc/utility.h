@@ -10,6 +10,48 @@
 namespace tcc{
     namespace  cc{
 
+        // reblock based on blocksize
+        std::vector<std::vector<libint2::Shell>>
+                reblock_basis(std::vector<libint2::Shell> shells, std::size_t blocksize){
+
+            std::vector<std::vector<libint2::Shell>> result;
+
+            std::vector<libint2::Shell> tmp;
+            std::size_t tmp_size = 0;
+            for (auto& shell : shells){
+
+                std::size_t shell_size = shell.size();
+                tmp_size += shell_size;
+
+                // if current size is not greater than 2/3 of blocksize
+                if(3*shell_size < 5*blocksize){
+                    tmp.push_back(shell);
+                }else{
+                    result.push_back(tmp);
+                    tmp = std::vector<libint2::Shell>();
+                    tmp.push_back(shell);
+                    tmp_size = shell_size;
+                }
+            }
+            return result;
+        }
+
+        // compute the min and max block size in TiledRange1
+        std::pair<std::size_t, std::size_t>
+                minmax_blocksize(TiledArray::TiledRange1 tr1){
+
+            std::vector<std::size_t> block_sizes;
+            for (auto block = tr1.begin(); block != tr1.end(); ++block){
+                auto block_size = block->second - block->first;
+                block_sizes.push_back(block_size);
+            }
+            auto minmax_block_size = std::minmax_element(block_sizes.begin(),block_sizes.end());
+
+            std::size_t min_block_size = *(minmax_block_size.first);
+            std::size_t max_block_size = *(minmax_block_size.second);
+            auto result = std::make_pair(min_block_size,max_block_size);
+            return result;
+        };
 
         // create matrix d("a,b,i,j) = 1/(ei + ej - ea - eb)
         template<typename Tile, typename Policy>

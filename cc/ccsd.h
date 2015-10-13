@@ -365,11 +365,6 @@ namespace tcc {
                 TArray2 ca = ccsd_intermediate_->get_Ca();
                 TArray2 ci = ccsd_intermediate_->get_Ci();
 
-                if (g_abij.get_world().rank() == 0) {
-                    std::cout << "start iteration" << std::endl;
-                    std::cout << "iter " << "    deltaE    " << "            residual       "
-                    << "      energy     " << "    U/second  " << " total/second "<<std::endl;
-                }
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
                 double error = 1.0;
@@ -388,6 +383,17 @@ namespace tcc {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
                     g_abij.get_world().gop.fence();
+
+                    if(iter == 0){
+                        tcc::utility::print_size_info(u2_u11,"U_aaoo");
+                    }
+
+                    if (iter == 0 && g_abij.get_world().rank() == 0) {
+                        std::cout << "Start Iteration" << std::endl;
+                        std::cout << "iter " << "    deltaE    " << "            residual       "
+                        << "      energy     " << "    U/second  " << " total/second "<<std::endl;
+                    }
+
                     auto tu1 = tcc_time::now();
                     auto duration_u = tcc_time::duration_in_s(tu0, tu1);
 

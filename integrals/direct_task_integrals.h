@@ -19,7 +19,7 @@ void direct_tile_task(
       std::vector<std::pair<int64_t, DirectTile<E, N, Op>>> *tiles) {
 
     const auto volume = range.volume();
-    auto tile = make_direct_tile(std::move(range), std::move(idx),
+    auto tile = make_direct_tile<ScreenOp>(std::move(range), std::move(idx),
                                  std::move(engines), std::move(bases),
                                  std::move(op));
 

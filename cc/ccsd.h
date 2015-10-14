@@ -27,7 +27,7 @@ namespace tcc {
         // Options
         // BlockSize = int, control the block size in MO, default 16
         // FrozenCore = bool, control if use frozen core, default False
-        // Direct = bool , control if use direct approach, default False
+        // Direct = bool , control if use direct approach, default True
 
 
         template<typename Tile, typename Policy>
@@ -58,7 +58,7 @@ namespace tcc {
                 TArray2 t1;
                 TArray4 t2;
 
-                auto direct = options_.HasMember("Direct") ? options_["Direct"].GetBool(): false;
+                auto direct = options_.HasMember("Direct") ? options_["Direct"].GetBool(): true;
                 if(direct){
                     double ccsd_corr = compute_ccsd_direct(t1, t2);
                 }

@@ -43,20 +43,11 @@ using q_vector = std::vector<std::pair<double, std::array<double, 3>>>;
 //     return q;
 // }
 
-inline q_vector make_q(mpqc::basis::Basis const &bs) {
+inline q_vector make_q(mpqc::molecule::Molecule const&mol) {
     q_vector q;
 
-    auto const& cs = bs.cluster_shells();
-    const auto nclusters = cs.size();
-
-    auto const& mol = bs.molecule();
-    auto const& clusters = mol.clusterables();
-
-    for (auto i = 0ul; i < nclusters; ++i) {
-        // Each group has a reference to its cluster
-        auto const &cluster = clusters[i];
+    for (auto const &cluster : mol) {
         for (auto const &atom : mpqc::molecule::collapse_to_atoms(cluster)) {
-
             auto const &c = atom.center();
             std::array<double, 3> O = {{c[0], c[1], c[2]}};
             const double charge = atom.charge();
@@ -70,7 +61,7 @@ inline q_vector make_q(mpqc::basis::Basis const &bs) {
 
 // q must be set a later time since I am not sure about the ordering aspect.
 inline libint2::OneBodyEngine
-make_1body(std::string const &type, mpqc::basis::Basis const &bs) {
+make_1body(std::string const &type, mpqc::basis::Basis const &bs, mpqc::molecule::Molecule const &mol) {
 
     // Vector to hold q.
     q_vector q;
@@ -82,7 +73,7 @@ make_1body(std::string const &type, mpqc::basis::Basis const &bs) {
         itype = libint2::OneBodyEngine::kinetic;
     } else if (type == "nuclear") {
         itype = libint2::OneBodyEngine::nuclear;
-        q = make_q(bs);
+        q = make_q(mol);
     } else if (type == "emultipole2") {
         itype = libint2::OneBodyEngine::emultipole2;
     } else {

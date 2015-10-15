@@ -5,6 +5,7 @@
 #include "direct_tile.h"
 #include "task_integrals_op_invoker.h"
 #include "task_integrals_common.h"
+
 #include <limits>
 
 namespace mpqc {
@@ -16,14 +17,17 @@ template <typename E, unsigned long N, typename Op, typename ScreenOp>
 void direct_tile_task(
       int64_t ord, TA::Range range, IdxVec idx, ShrPool<E> engines,
       ShrBases<N> bases, Op op, TA::TensorF *norm_ptr,
-      std::vector<std::pair<int64_t, DirectTile<E, N, Op>>> *tiles) {
+      std::vector<std::pair<int64_t, DirectTile<E, N, op_invoke<E, N, Op>>>> *
+            tiles) {
 
     const auto volume = range.volume();
     auto tile = make_direct_tile<ScreenOp>(std::move(range), std::move(idx),
-                                 std::move(engines), std::move(bases),
-                                 std::move(op));
+                                           std::move(engines), std::move(bases),
+                                           std::move(op));
 
-    const auto temp_tile = typename DirectTile<E, N, Op>::eval_type(tile);
+    const auto temp_tile =
+          typename DirectTile<E, N, detail::op_invoke<E, N, Op>>::eval_type(
+                tile);
     const auto norm = temp_tile.norm();
     (*norm_ptr)[ord] = norm;
 
@@ -41,7 +45,7 @@ void direct_tile_task(
  */
 template <typename ScreenOp = init_base_screen, typename E, unsigned long N,
           typename Op>
-DArray<N, DirectTile<E, N, Op>, SpPolicy>
+DArray<N, DirectTile<E, N, detail::op_invoke<E, N, Op>>, SpPolicy>
 direct_sparse_integrals(mad::World &world, ShrPool<E> &engines,
                         Barray<N> const &bases, Op op) {
 
@@ -49,7 +53,9 @@ direct_sparse_integrals(mad::World &world, ShrPool<E> &engines,
     const auto tvolume = trange.tiles().volume();
     TA::TensorF tile_norms(trange.tiles(), std::numeric_limits<double>::max());
 
-    std::vector<std::pair<int64_t, DirectTile<E, N, Op>>> tiles(tvolume);
+    std::vector<std::pair<int64_t,
+                          DirectTile<E, N, detail::op_invoke<E, N, Op>>>>
+          tiles(tvolume);
 
     auto shared_bases = std::make_shared<Barray<N>>(bases);
 
@@ -64,14 +70,14 @@ direct_sparse_integrals(mad::World &world, ShrPool<E> &engines,
     world.gop.fence();
 
     SpShapeF shape(world, tile_norms, trange);
-    DArray<N, DirectTile<E, N, Op>, SpPolicy> out(world, trange, shape, pmap);
+    DArray<N, DirectTile<E, N, detail::op_invoke<E, N, Op>>, SpPolicy> out(
+          world, trange, shape, pmap);
 
     for (auto &&tile : tiles) {
         if (!out.is_zero(tile.first)) {
             out.set(tile.first, std::move(tile.second));
         }
     }
-
 
     return out;
 }

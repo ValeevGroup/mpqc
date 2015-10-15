@@ -14,7 +14,7 @@
 
 #include "task_integrals_common.h"
 #include "task_integrals_op_invoker.h"
-#include "integral_screeners.h"
+#include "screening/screen_base.h"
 
 namespace mpqc {
 namespace integrals {

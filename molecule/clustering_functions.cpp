@@ -63,7 +63,7 @@ ABCbls attach_hydrogens(ABCbls const &clusterables) {
             attach_clusterable(*closest, std::move(hydrogen));
         }
 
-        for (auto cluster : clusters) {
+        for (auto &cluster : clusters) {
             update_center(cluster);
         }
     }
@@ -79,11 +79,11 @@ attach_hydrogens_and_kmeans(ABCbls const &clusterables, int64_t nclusters) {
     return kmeans(h_attached_clusterables, nclusters);
 }
 
-Molecule 
-kmeans(ABCbls const &clusterables, int64_t nclusters) {
-    if(clusterables.size() < std::size_t(nclusters)){
-        throw std::logic_error("User asked for more clusters than there were clusterables");
-    } 
+Molecule kmeans(ABCbls const &clusterables, int64_t nclusters) {
+    if (clusterables.size() < std::size_t(nclusters)) {
+        throw std::logic_error(
+              "User asked for more clusters than there were clusterables");
+    }
 
     auto objective_min = std::numeric_limits<double>::max();
     int64_t init_seed = 1000;
@@ -91,8 +91,7 @@ kmeans(ABCbls const &clusterables, int64_t nclusters) {
     for (auto i = 0; i < 10; ++i) {
         clustering::Kmeans kmeans(init_seed);
         auto clusters
-              = kmeans.cluster<AtomBasedCluster>(clusterables,
-                                                 nclusters);
+              = kmeans.cluster<AtomBasedCluster>(clusterables, nclusters);
         auto value = clustering::kmeans_objective(clusters);
         if (value < objective_min) {
             best_seed = init_seed;
@@ -102,8 +101,8 @@ kmeans(ABCbls const &clusterables, int64_t nclusters) {
     }
 
     return Molecule(convert_to_clusterable(
-          clustering::Kmeans(best_seed).cluster<AtomBasedCluster>(
-                clusterables, nclusters)));
+          clustering::Kmeans(best_seed)
+                .cluster<AtomBasedCluster>(clusterables, nclusters)));
 }
 
 } // namespace molecule

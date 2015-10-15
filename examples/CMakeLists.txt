@@ -69,3 +69,6 @@ target_link_libraries(old_ints
 add_executable(new_ints EXCLUDE_FROM_ALL new_integrals.cpp) 
 target_link_libraries(new_ints ${TileClusterChem_LIBRARIES})
 
+add_executable(simple_direct_scf EXCLUDE_FROM_ALL simple_direct_scf.cpp) 
+target_link_libraries(simple_direct_scf ${TileClusterChem_LIBRARIES})
+

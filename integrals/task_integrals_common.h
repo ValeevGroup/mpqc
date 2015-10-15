@@ -3,11 +3,11 @@
 #ifndef MPQC_INTEGRALS_TASKINTEGRALSCOMMON_H
 #define MPQC_INTEGRALS_TASKINTEGRALSCOMMON_H
 
-// #include "task_integrals_helper.h"
 #include "../common/typedefs.h"
-#include "../include/tiledarray.h"
-// #include "../include/tbb.h"
 #include "../basis/basis.h"
+
+#include "../include/libint.h"
+#include "../include/tiledarray.h"
 
 #include <memory>
 #include <array>

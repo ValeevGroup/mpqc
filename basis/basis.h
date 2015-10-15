@@ -25,14 +25,8 @@ class Basis {
     Basis &operator=(Basis &&);
 
     Basis(std::vector<ShellVec> cs);
-    Basis(std::vector<ShellVec> cs, molecule::Molecule const&);
-    Basis(std::vector<ShellVec> cs, std::shared_ptr<molecule::Molecule> mol_ptr);
 
     std::vector<ShellVec> const & cluster_shells() const;
-
-    // Returns the molecule, potentially will throw if no Molecule is 
-    // avalible. 
-    molecule::Molecule const &molecule() const;
 
     TiledArray::TiledRange1 create_trange1() const;
 
@@ -44,10 +38,31 @@ class Basis {
 
   private:
     std::vector<ShellVec> shells_;
-    std::shared_ptr<molecule::Molecule> mol_;
 };
 
 std::ostream & operator<<(std::ostream &, Basis const &);
+
+/*! \brief reblock allows for reblocking a basis
+ *
+ * \warning If reblocking a basis with the intent to use it with tensors 
+ * computed with the old basis you must be careful not to reorder the shells. 
+ *
+ * \param op should be a function that takes a std::vector<Shell> and returns 
+ * a std::vector<std::vector<Shell>> for use in initializing a Basis.
+ */
+template<typename Op>
+Basis reblock(Basis const &basis, Op op){
+    std::vector<Shell> shells;
+    shells.reserve(basis.nshells());
+
+    for(auto const &cluster : basis.cluster_shells()){
+        for(auto const &shell : cluster){
+            shells.push_back(shell);
+        }
+    }
+
+    return Basis(op(std::move(shells)));
+}
 
 } // namespace basis
 } // namespace mpqc

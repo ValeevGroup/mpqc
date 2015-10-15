@@ -2,10 +2,11 @@
 #ifndef MPQC_INTEGRALS_TASKINTEGRALSOPINVOKER_H
 #define MPQC_INTEGRALS_TASKINTEGRALSOPINVOKER_H
 
-#include "task_integrals_common.h"
 #include "../common/typedefs.h"
-#include "integral_screeners.h"
-#include "task_integrals_helper.h"
+#include "task_integrals_common.h"
+
+#include "screening/screen_base.h"
+#include "task_integral_kernels.h"
 
 #include <array>
 #include <vector>
@@ -27,6 +28,7 @@ class op_invoke {
     std::shared_ptr<Screener> screener_;
 
   public:
+    op_invoke() = default;
     op_invoke(std::vector<std::size_t> idx, ShrPool<E> es,
               ShrShellVecArray<N> sv, Op op, std::shared_ptr<Screener> screen)
             : idx_(std::move(idx)),
@@ -35,11 +37,11 @@ class op_invoke {
               op_(std::move(op)),
               screener_(std::move(screen)) {}
 
-    Ttype<Op> operator()(TA::Range rng) {
+    Ttype<Op> operator()(TA::Range rng) const {
         return op_(integrals(std::move(rng)));
     }
 
-    TA::TensorD integrals(TA::Range &&rng) {
+    TA::TensorD integrals(TA::Range &&rng) const {
         return integral_kernel(engines_->local(), std::move(rng),
                                shellvec_ptrs(), *(screener_.get()));
     }

@@ -3,17 +3,17 @@
 #ifndef MPQC_INTEGRALS_SCHWARZSCREEN_H
 #define MPQC_INTEGRALS_SCHWARZSCREEN_H
 
-#include "task_integrals_common.h"
-#include "../common/typedefs.h"
-#include "integral_screeners.h"
-#include "../include/tiledarray.h"
+#include "../task_integrals_common.h"
+#include "../../common/typedefs.h"
+#include "screen_base.h"
+#include "../../include/tiledarray.h"
 
-#include "../include/libint.h"
 #include <stdexcept>
+#include "../../include/libint.h"
+
 
 namespace mpqc {
 namespace integrals {
-
 
 class Qmatrix {
   private:
@@ -27,19 +27,7 @@ class Qmatrix {
     Qmatrix(Qmatrix &&) = default;
     Qmatrix &operator=(Qmatrix const &) = default;
     Qmatrix &operator=(Qmatrix &&) = default;
-    Qmatrix(MatrixD Q)
-            : Q_(std::move(Q)),
-              max_elem_in_row_(VectorD(Q_.rows())),
-              max_elem_in_Q_(0.0)
-
-    {
-        const auto nrows = Q_.rows();
-        for (auto i = 0; i < nrows; ++i) {
-            const auto max_elem = Q_.row(i).cwiseAbs().maxCoeff();
-            max_elem_in_Q_ = std::max(max_elem, max_elem_in_Q_);
-            max_elem_in_row_(i) = max_elem;
-        }
-    }
+    Qmatrix(MatrixD Q);
 
     double const &Q(int64_t row, int64_t col) const { return Q_(row, col); }
 
@@ -72,6 +60,18 @@ class SchwarzScreen : public Screener {
               Qab_(std::move(Qab)),
               Qcd_(std::move(Qcd)),
               thresh_(thresh) {}
+
+    double
+    three_center_estimate(int64_t ordA, int64_t ordC, int64_t ordD) const {
+        return Qab_->Q(ordA, order3_col_index) * Qcd_->Q(ordC, ordD);
+    }
+
+    double four_center_estimate(int64_t ordA, int64_t ordB, int64_t ordC,
+                                int64_t ordD) const {
+        return Qab_->Q(ordA, ordB) * Qcd_->Q(ordC, ordD);
+    }
+
+    double skip_threshold() const { return thresh_; }
 
     // Not overriding the two index parts
 
@@ -195,8 +195,8 @@ struct init_schwarz_screen {
 
     template <typename E>
     SchwarzScreen
-    operator()(detail::IdxVec const &idx,
-               detail::ShrBases<3> const &bases, ShrPool<E> const &engs) {
+    operator()(detail::IdxVec const &idx, detail::ShrBases<3> const &bases,
+               ShrPool<E> const &engs) {
         auto Q_a = detail::compute_Q(engs, idx[0], bases->operator[](0));
         auto Q_cd
               = detail::compute_Q(engs, idx[1], idx[2], bases->operator[](1),
@@ -209,8 +209,8 @@ struct init_schwarz_screen {
 
     template <typename E>
     SchwarzScreen
-    operator()(detail::IdxVec const &idx,
-               detail::ShrBases<4> const &bases, ShrPool<E> const &engs) {
+    operator()(detail::IdxVec const &idx, detail::ShrBases<4> const &bases,
+               ShrPool<E> const &engs) {
         auto Q_ab
               = detail::compute_Q(engs, idx[0], idx[1], bases->operator[](0),
                                   bases->operator[](1));

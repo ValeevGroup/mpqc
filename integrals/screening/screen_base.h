@@ -3,9 +3,9 @@
 #ifndef MPQC_INTEGRALS_INTEGRALSCREENERS_H
 #define MPQC_INTEGRALS_INTEGRALSCREENERS_H
 
-#include "../common/typedefs.h"
-#include "task_integrals_common.h"
-#include "../basis/basis.h"
+#include "../../common/typedefs.h"
+#include "../task_integrals_common.h"
+#include "../../basis/basis.h"
 
 namespace mpqc {
 namespace integrals {

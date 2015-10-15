@@ -48,7 +48,7 @@ ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/basis)
 
-LIST(APPEND TileClusterChem_LIBRARIES molecule basis)
+LIST(APPEND TileClusterChem_LIBRARIES molecule basis integrals)
 
 MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")

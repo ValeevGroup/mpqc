@@ -789,8 +789,8 @@ R12IntEval::U_distarray4(
   const Ref<OrbitalSpace>& x2 = GGspace(spin2);
   const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
   const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
-  const Ref<OrbitalSpace>& occ1 = occ(spin1);
-  const Ref<OrbitalSpace>& occ2 = occ(spin2);
+  const Ref<OrbitalSpace>& occ1_act = occ_act(spin1);
+  const Ref<OrbitalSpace>& occ2_act = occ_act(spin2);
   const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
   const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
 
@@ -806,42 +806,42 @@ R12IntEval::U_distarray4(
 
   {
     R12TwoBodyIntKeyCreator
-        tformkey_creator(moints_runtime4(), x1, occ1, p1, cabs1,
+        tformkey_creator(moints_runtime4(), x1, occ1_act, p1, cabs1,
                          corrfactor(), true, false,
                          TwoBodyIntLayout::b1k1_b2k2);
     fill_container(tformkey_creator, tforms_x1i1_p1A1);
   }
   {
     R12TwoBodyIntKeyCreator
-        tformkey_creator(moints_runtime4(), x1, occ2, p1, cabs2,
+        tformkey_creator(moints_runtime4(), x1, occ2_act, p1, cabs2,
                          corrfactor(), true, false,
                          TwoBodyIntLayout::b1k1_b2k2);
     fill_container(tformkey_creator, tforms_x1i2_p1A2);
   }
   {
     R12TwoBodyIntKeyCreator
-        tformkey_creator(moints_runtime4(), x2, occ1, p2, cabs1,
+        tformkey_creator(moints_runtime4(), x2, occ1_act, p2, cabs1,
                          corrfactor(), true, false,
                          TwoBodyIntLayout::b1k1_b2k2);
     fill_container(tformkey_creator, tforms_x2i1_p2A1);
   }
   {
     R12TwoBodyIntKeyCreator
-        tformkey_creator(moints_runtime4(), x2, occ2, p2, cabs2,
+        tformkey_creator(moints_runtime4(), x2, occ2_act, p2, cabs2,
                          corrfactor(), true, false,
                          TwoBodyIntLayout::b1k1_b2k2);
     fill_container(tformkey_creator, tforms_x2i2_p2A2);
   }
   {
     R12TwoBodyIntKeyCreator
-        tformkey_creator(moints_runtime4(), x1, p1, occ1, cabs1,
+        tformkey_creator(moints_runtime4(), x1, p1, occ1_act, cabs1,
                          corrfactor(), true, false,
                          TwoBodyIntLayout::b1b2_k1k2);
     fill_container(tformkey_creator, tforms_x1p1_i1A1);
   }
   {
     R12TwoBodyIntKeyCreator
-        tformkey_creator(moints_runtime4(), x2, p2, occ2, cabs2,
+        tformkey_creator(moints_runtime4(), x2, p2, occ2_act, cabs2,
                          corrfactor(), true, false,
                          TwoBodyIntLayout::b1b2_k1k2);
     fill_container(tformkey_creator, tforms_x2p2_i2A2);
@@ -850,46 +850,46 @@ R12IntEval::U_distarray4(
   std::vector<Ref<DistArray4> > U_b1k1_b2k2;
   contract_tbint_tensor<true, false> (U_b1k1_b2k2, corrfactor()->tbint_type_f12(),
                                       corrfactor()->tbint_type_eri(), +1.0,
-                                      x1, p1, occ1, cabs1,
-                                      x2, p2, occ1, cabs1, false,
+                                      x1, p1, occ1_act, cabs1,
+                                      x2, p2, occ1_act, cabs1, false,
                                       tforms_x1i1_p1A1, tforms_x2i1_p2A1);
   contract_tbint_tensor<true, false> (U_b1k1_b2k2, corrfactor()->tbint_type_f12(),
                                       corrfactor()->tbint_type_eri(), -1.0,
-                                      x1, p1, occ1, cabs1,
-                                      x2, p2, occ1, cabs1, false,
+                                      x1, p1, occ1_act, cabs1,
+                                      x2, p2, occ1_act, cabs1, false,
                                       tforms_x1p1_i1A1, tforms_x2i1_p2A1);
   contract_tbint_tensor<true, false> (U_b1k1_b2k2, corrfactor()->tbint_type_f12(),
                                       corrfactor()->tbint_type_eri(), +1.0,
-                                      x1, p1, occ2, cabs2,
-                                      x2, p2, occ2, cabs2, false,
+                                      x1, p1, occ2_act, cabs2,
+                                      x2, p2, occ2_act, cabs2, false,
                                       tforms_x1i2_p1A2, tforms_x2i2_p2A2);
   contract_tbint_tensor<true, false> (U_b1k1_b2k2, corrfactor()->tbint_type_f12(),
                                       corrfactor()->tbint_type_eri(), -1.0,
-                                      x1, p1, occ2, cabs2,
-                                      x2, p2, occ2, cabs2, false,
+                                      x1, p1, occ2_act, cabs2,
+                                      x2, p2, occ2_act, cabs2, false,
                                       tforms_x1i2_p1A2, tforms_x2p2_i2A2);
 
   if (part1_equiv_part2 == false) {
     std::vector<Ref<DistArray4> > U_b2k2_b1k1;
     contract_tbint_tensor<true, false> (U_b2k2_b1k1, corrfactor()->tbint_type_f12(),
                                         corrfactor()->tbint_type_eri(), +1.0,
-                                        x2, p2, occ1, cabs1,
-                                        x1, p1, occ1, cabs1, false,
+                                        x2, p2, occ1_act, cabs1,
+                                        x1, p1, occ1_act, cabs1, false,
                                         tforms_x2i1_p2A1, tforms_x1i1_p1A1);
     contract_tbint_tensor<true, false> (U_b2k2_b1k1, corrfactor()->tbint_type_f12(),
                                         corrfactor()->tbint_type_eri(), -1.0,
-                                        x2, p2, occ1, cabs1,
-                                        x1, p1, occ1, cabs1, false,
+                                        x2, p2, occ1_act, cabs1,
+                                        x1, p1, occ1_act, cabs1, false,
                                         tforms_x2i1_p2A1, tforms_x1p1_i1A1);
     contract_tbint_tensor<true, false> (U_b2k2_b1k1, corrfactor()->tbint_type_f12(),
                                         corrfactor()->tbint_type_eri(), +1.0,
-                                        x2, p2, occ2, cabs2,
-                                        x1, p1, occ2, cabs2, false,
+                                        x2, p2, occ2_act, cabs2,
+                                        x1, p1, occ2_act, cabs2, false,
                                         tforms_x2i2_p2A2, tforms_x1i2_p1A2);
     contract_tbint_tensor<true, false> (U_b2k2_b1k1, corrfactor()->tbint_type_f12(),
                                         corrfactor()->tbint_type_eri(), -1.0,
-                                        x2, p2, occ2, cabs2,
-                                        x1, p1, occ2, cabs2, false,
+                                        x2, p2, occ2_act, cabs2,
+                                        x1, p1, occ2_act, cabs2, false,
                                         tforms_x2p2_i2A2, tforms_x1i2_p1A2);
     // add U_b2k2_b1k1 to U
     MPQC_ASSERT(false);
@@ -905,14 +905,14 @@ R12IntEval::U_distarray4(
   std::vector<std::string> tforms_p2x1_i2A1;
   {
     R12TwoBodyIntKeyCreator
-        tformkey_creator(moints_runtime4(), p2, occ2, x1, cabs1,
+        tformkey_creator(moints_runtime4(), p2, occ2_act, x1, cabs1,
                          corrfactor(), true, false,
                          TwoBodyIntLayout::b1b2_k1k2);
     fill_container(tformkey_creator, tforms_p2x1_i2A1);
   }
   {
     R12TwoBodyIntKeyCreator
-        tformkey_creator(moints_runtime4(), x2, occ2, p1, cabs1,
+        tformkey_creator(moints_runtime4(), x2, occ2_act, p1, cabs1,
                          corrfactor(), true, false,
                          TwoBodyIntLayout::b1b2_k1k2);
     fill_container(tformkey_creator, tforms_x2p1_i2A1);
@@ -921,8 +921,8 @@ R12IntEval::U_distarray4(
   std::vector<Ref<DistArray4> > U_k2b1_b2k1;
   contract_tbint_tensor<true, false> (U_k2b1_b2k1, corrfactor()->tbint_type_f12(),
                                       corrfactor()->tbint_type_eri(), -1.0,
-                                      p2, x1, occ2, cabs1,
-                                      x2, p1, occ2, cabs1, false,
+                                      p2, x1, occ2_act, cabs1,
+                                      x2, p1, occ2_act, cabs1, false,
                                       tforms_p2x1_i2A1, tforms_x2p1_i2A1);
 
   if (part1_equiv_part2 == false) {
@@ -930,14 +930,14 @@ R12IntEval::U_distarray4(
     std::vector<std::string> tforms_x1p2_i1A2;
     {
       R12TwoBodyIntKeyCreator
-          tformkey_creator(moints_runtime4(), x1, occ1, p2, cabs2,
+          tformkey_creator(moints_runtime4(), x1, occ1_act, p2, cabs2,
                            corrfactor(), true, false,
                            TwoBodyIntLayout::b1b2_k1k2);
       fill_container(tformkey_creator, tforms_x1p2_i1A2);
     }
     {
       R12TwoBodyIntKeyCreator
-          tformkey_creator(moints_runtime4(), p1, occ1, x2, cabs2,
+          tformkey_creator(moints_runtime4(), p1, occ1_act, x2, cabs2,
                            corrfactor(), true, false,
                            TwoBodyIntLayout::b1b2_k1k2);
       fill_container(tformkey_creator, tforms_p1x2_i1A2);
@@ -946,8 +946,8 @@ R12IntEval::U_distarray4(
     std::vector<Ref<DistArray4> > U_k1b2_b1k2;
     contract_tbint_tensor<true, false> (U_k1b2_b1k2, corrfactor()->tbint_type_f12(),
                                         corrfactor()->tbint_type_eri(), -1.0,
-                                        p1, x2, occ1, cabs2,
-                                        x1, p2, occ1, cabs2, false,
+                                        p1, x2, occ1_act, cabs2,
+                                        x1, p2, occ1_act, cabs2, false,
                                         tforms_p1x2_i1A2, tforms_x1p2_i1A2);
     // add U_k1b2_b1k2 to U
     MPQC_ASSERT(false);

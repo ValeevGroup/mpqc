@@ -702,7 +702,7 @@ public:
   std::vector<Ref<DistArray4> > V_distarray4(SpinCase2 spincase2,
                                const Ref<OrbitalSpace>& p,
                                const Ref<OrbitalSpace>& q);
-  /** Compute \f$ U_{pq}^{xy} = \frac{1}{2} \bar{R}_{p \alpha'}^{x l} \bar{g}_{q l}^{y \alpha'} \f$. */
+  /** Compute \f$ U_{pq}^{xi} = \frac{1}{2} \bar{R}_{p \alpha'}^{x y} \bar{g}_{q y}^{i \alpha'} \f$. */
   std::vector<Ref<DistArray4> > U_distarray4(SpinCase2 spincase2,
                                              const Ref<OrbitalSpace>& p,
                                              const Ref<OrbitalSpace>& q);

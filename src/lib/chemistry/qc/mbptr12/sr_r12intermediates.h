@@ -531,7 +531,7 @@ namespace sc {
         * with the second index transformed using Fock matrix between act_occ and cbs spaces.
         *
         * Note that the indices are used to create the resulting tensor expression, hence these keys can be used
-        * in composing expressions. For example, the full (non-diagonal) V intermediate without the CABS terms
+        * in composing expressions. For example, the full (non-diagonal) V intermediate of the R12 method without the CABS terms
         * can be computed as follows:
         * TArray4d V_ij_kl = _4("<i j|gr|k l>") - _4("<i j|g|p q>") * _4("<k l|r|p q>");
         *
@@ -543,8 +543,8 @@ namespace sc {
        *  The syntax of \c key is similar to that used by ParsedOneBodyInt,
        *  but with oe_type embedded into key.
         * The following oe_types are understood:
-        *   - mu_i : electric dipole integral \f$ \bf{r}_i \f$ (i = x,y,z)
-        *   - q_ij : electric quadrupole integral \f$ \bf{r}_i \bf{r}_j \f$ (ij = xx, xy, xz, yy, yz, zz)
+        *   - mu_i : electric dipole integral \f$ - \bf{r}_i \f$ (i = x,y,z)
+        *   - q_ij : electric quadrupole integral \f$ - \bf{r}_i \bf{r}_j \f$ (ij = xx, xy, xz, yy, yz, zz)
         *   - gamma : \f$ \Gamma \f$, 1-RDM of the reference wave function
         *   - T1 : 1-body excitation amplitudes, e.g. of the coupled-cluster method, provided by \c set_T1() and/or \c set_T1_cabs()
         *   - L1 : 1-body de-excitation amplitudes, e.g. of the coupled-cluster method, provided by \c set_L1()

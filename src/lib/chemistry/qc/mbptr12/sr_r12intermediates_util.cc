@@ -66,8 +66,10 @@ namespace sc {
     std::vector<size_t> i3i4_finish(2); i3i4_finish[0] = darray4_->nx(); i3i4_finish[1] = darray4_->ny();
     //std::vector<size_t> i3i4_finish = {darray4_->nx(), darray4_->ny()};
     TA::Range i3i4_range(i3i4_start, i3i4_finish);
-    eval_type::value_type temp(i3i4_range);
-    eval_type tile(owner_->trange().make_tile_range(index_), temp);
+
+    static_assert(TA::detail::is_tensor<eval_type::value_type>::value,"");
+    static_assert(TA::detail::is_contiguous_tensor<eval_type::value_type>::value,"");
+    eval_type tile(owner_->trange().make_tile_range(index_), eval_type::value_type(i3i4_range));
 
     darray4_->retrieve_pair_block(index_[0], index_[1], te_type_,
         tile.data()->data());

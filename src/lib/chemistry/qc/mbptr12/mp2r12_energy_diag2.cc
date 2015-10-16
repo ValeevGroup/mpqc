@@ -1605,7 +1605,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
 
       Pji_ij = NULL;
 
-      // Deactivateall the ints for Pji_ij
+      // Deactivate all the ints for Pji_ij
       for (std::vector<Ref<DistArray4> >::iterator it =
           Pjiji_f12_ints.begin(); it < Pjiji_f12_ints.end(); ++it) {
         (*it)->deactivate();

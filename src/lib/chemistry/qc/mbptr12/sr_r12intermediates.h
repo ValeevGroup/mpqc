@@ -71,6 +71,10 @@ namespace sc {
 
     operator TA::Tensor<T> () const;
 
+    range_type range() const {
+      return owner_->trange().make_tile_range(index_);
+    }
+
     /// \tparam Archive The serialization archive type
     /// \param ar The serialization archive
     template <typename Archive>

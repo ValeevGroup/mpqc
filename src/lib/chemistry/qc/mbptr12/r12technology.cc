@@ -1359,10 +1359,10 @@ R12Technology::print(ostream&o) const
   }
   switch(abs_method_) {
   case ABS_CABS :
-    o << indent << "RI method for many-elecron integrals: CABS" << endl;
+    o << indent << "RI method for many-electron integrals: CABS" << endl;
     break;
   case ABS_CABSPlus :
-    o << indent << "RI method for many-elecron integrals: CABS+ (CABS using the union of OBS and ABS for RI)" << endl;
+    o << indent << "RI method for many-electron integrals: CABS+ (CABS using the union of OBS and ABS for RI)" << endl;
     break;
   }
   if (!this->abs_eq_obs_) {

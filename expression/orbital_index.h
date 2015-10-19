@@ -5,7 +5,7 @@
 #ifndef TILECLUSTERCHEM_ORBITAL_INDEX_H
 #define TILECLUSTERCHEM_ORBITAL_INDEX_H
 
-#include <string>
+#include<string>
 
 namespace mpqc{
 
@@ -17,6 +17,9 @@ namespace mpqc{
     *     - P',Q',R',S' -> allany (complete basis, cbs)
     *     - a', b', c', d' -> othervirt (cabs = complete basis - orbital basis)
     *     - A', B', C', D' -> allvirt (complete virtuals = a + a')
+    *     one digit is allowed after letter
+    *     for example
+    *     i1, i2, a1, a2, P1', a1' ...
  */
 class OrbitalIndex{
 public:
@@ -37,22 +40,23 @@ public:
 
     OrbitalIndex(const char *letter);
 
-    OrbitalIndex(const std::string letter) : OrbitalIndex(letter.c_str()) {}
+    OrbitalIndex(std::string letter);
 
     bool operator==(OrbitalIndex const &);
+    bool operator==(const OrbitalIndex::Index );
+
+    const Index &index() const {
+        return index_;
+    }
 
 private:
+    void init(const char *letter);
 
+private:
     Index index_;
+    std::string name_;
 };
 
-    // set the range of key index to use
-    const char OrbitalIndex::occ_char[2] = {'i','l'};
-    const char OrbitalIndex::virt_char[2] = {'a','d'};
-    const char OrbitalIndex::any_char[2] = {'p','s'};
-    const char OrbitalIndex::othervirt_char[2] = {'a','d'};
-    const char OrbitalIndex::allvirt_char[2] = {'A','D'};
-    const char OrbitalIndex::allany_char[2] = {'P','S'};
 
 }
 

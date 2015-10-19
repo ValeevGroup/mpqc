@@ -43,12 +43,14 @@ LIST(APPEND TileClusterChem_LIBRARIES ${TBB_LIBRARIES})
 LIST(APPEND TileClusterChem_LIBRARIES ${LIBINT_LIBRARIES})
 
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/molecule)
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/expression)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/integrals)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/basis)
+LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/expression)
 
-LIST(APPEND TileClusterChem_LIBRARIES molecule basis integrals)
+LIST(APPEND TileClusterChem_LIBRARIES molecule basis integrals expression)
 
 MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")
@@ -76,9 +78,10 @@ if(USING_CLION_AS_IDE)
 #    add_library(clion_get_sources EXCLUDE_FROM_ALL ${CLION_SRC})
 #    set_target_properties(clion_get_sources PROPERTIES LINKER_LANGUAGE CXX)
     FILE (GLOB_RECURSE clion_all_headers ${CMAKE_SOURCE_DIR}/*.h)
+    FILE (GLOB_RECURSE clion_all_source ${CMAKE_SOURCE_DIR}/*.cpp)
 #    message(WARNING "${clion_all_headers}")
     ADD_CUSTOM_TARGET(all_clion
-        SOURCES ${clion_all_headers}
+        SOURCES ${clion_all_headers} ${clion_all_source}
     )
     ADD_EXECUTABLE(clion_test "main.cpp" ${clion_all_headers})
     ADD_DEPENDENCIES(clion_test cereal)

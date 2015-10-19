@@ -27,6 +27,7 @@ set(utests
     atom_test.cpp
     clustering_test.cpp
     orbital_index_test.cpp
+    formula_test.cpp
     )
 
 add_executable(tests EXCLUDE_FROM_ALL test_main.cpp ${utests})

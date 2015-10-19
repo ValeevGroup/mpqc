@@ -60,6 +60,8 @@ namespace mpqc{
             throw std::runtime_error("Empty Operation!. \n" + formula_);
         }
 
+        boost::trim(oper);
+
         auto iter = string_to_operation.find(oper);
 
         if(iter == string_to_operation.end()){

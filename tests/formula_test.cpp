@@ -10,10 +10,14 @@ using namespace mpqc;
 TEST_CASE("Formula Expression", "[formula]"){
 
     SECTION("operation test case"){
+
+        Formula overlap("<a|b>");
+        REQUIRE(overlap.operation() == Formula::Operation::Overlap);
+
         Formula kinetic("<p q|K|r s>");
         REQUIRE(kinetic.operation() == Formula::Operation::Kinetic);
 
-        Formula r2("<p q|R2|r s>");
+        Formula r2("<p q| R2 |r s>");
         REQUIRE(r2.operation() == Formula::Operation::cGTG2);
     }
 
@@ -21,8 +25,8 @@ TEST_CASE("Formula Expression", "[formula]"){
         Formula kinetic("<p q1|K|a' A1'>");
         REQUIRE(kinetic.left_index()[0].index() == OrbitalIndex::Index::any);
         REQUIRE(kinetic.left_index()[1].index() == OrbitalIndex::Index::any);
-        REQUIRE(kinetic.left_index()[2].index() == OrbitalIndex::Index::othervirt);
-        REQUIRE(kinetic.left_index()[3].index() == OrbitalIndex::Index::allvirt);
+        REQUIRE(kinetic.right_index()[0].index() == OrbitalIndex::Index::othervirt);
+        REQUIRE(kinetic.right_index()[1].index() == OrbitalIndex::Index::allvirt);
 
     }
 
@@ -32,6 +36,7 @@ TEST_CASE("Formula Expression", "[formula]"){
 
         // wrong format
         REQUIRE_THROWS(Formula kinetic("p q|K|r s>"));
+        REQUIRE_THROWS(Formula kinetic("<p |q|K|r s>"));
 
         REQUIRE_THROWS(Formula kinetic("<pq|K|r s>"));
         REQUIRE_THROWS(Formula kinetic("<p1q2|K|r s>"));

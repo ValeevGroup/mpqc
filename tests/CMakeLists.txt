@@ -25,6 +25,7 @@ add_dependencies(unit_tests catch)
 
 set(utests
     atom_test.cpp
+    atomic_integral_test.cpp
     clustering_test.cpp
     orbital_index_test.cpp
     formula_test.cpp

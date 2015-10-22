@@ -58,6 +58,7 @@ private:
 };
 
 
+    //TODO frirend function to determine space
 }
 
 

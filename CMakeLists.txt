@@ -44,6 +44,7 @@ LIST(APPEND TileClusterChem_LIBRARIES ${LIBINT_LIBRARIES})
 
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/molecule)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/expression)
+#ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/f12)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/integrals)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)

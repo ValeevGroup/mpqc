@@ -23,7 +23,7 @@ namespace mpqc{
     public:
         enum class Operation{Overlap, Kinetic, Nuclear, Coulomb, cGTG, cGTGCoulomb, cGTG2};
 
-        static const std::unordered_map<std::string, Operation> string_to_operation;
+        static const std::unordered_map<std::wstring, Operation> string_to_operation;
 
         Formula() = default;
         Formula(Formula const &) = default;
@@ -31,7 +31,7 @@ namespace mpqc{
         Formula& operator=(Formula const &) = default;
         Formula& operator=(Formula &&) = default;
 
-        const std::string &formula() const {
+        const std::wstring &formula() const {
             return formula_;
         }
 
@@ -47,16 +47,16 @@ namespace mpqc{
             return operation_;
         }
 
-        Formula(std::string formula);
+        Formula(std::wstring formula);
 
     private:
 
-        Operation check_operation(std::string oper);
-        std::vector<OrbitalIndex> check_orbital_index(std::string index_array);
+        Operation check_operation(std::wstring oper);
+        std::vector<OrbitalIndex> check_orbital_index(std::wstring index_array);
 
     private:
 
-        std::string formula_;
+        std::wstring formula_;
         Operation operation_;
         std::vector<OrbitalIndex> left_index_;
         std::vector<OrbitalIndex> right_index_;

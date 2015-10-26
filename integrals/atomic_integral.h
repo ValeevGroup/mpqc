@@ -33,8 +33,8 @@ namespace integrals{
 
     private:
 
-        TArray2 compute_one_electron(const std::string& formula);
-        TArray4 compute_two_electron(const std::string& formula);
+        TArray2 compute_one_electron(const std::wstring& formula);
+        TArray4 compute_two_electron(const std::wstring& formula);
 
         TArray2 compute_one_electron(const Formula& formula);
         TArray4 compute_two_electron(const Formula& formula);
@@ -48,7 +48,7 @@ namespace integrals{
     };
 
     template <typename Tile, typename Policy>
-    typename AtomicIntegral<Tile,Policy>::TArray2 AtomicIntegral<Tile,Policy>::compute_one_electron(const std::string &formula) {
+    typename AtomicIntegral<Tile,Policy>::TArray2 AtomicIntegral<Tile,Policy>::compute_one_electron(const std::wstring &formula) {
         Formula tmp(formula);
         return compute_one_electron(std::move(tmp));
     }
@@ -58,7 +58,7 @@ namespace integrals{
     }
 
     template <typename Tile, typename Policy>
-    typename AtomicIntegral<Tile,Policy>::TArray4 AtomicIntegral<Tile,Policy>::compute_two_electron(const std::string &formula) {
+    typename AtomicIntegral<Tile,Policy>::TArray4 AtomicIntegral<Tile,Policy>::compute_two_electron(const std::wstring &formula) {
         Formula tmp(formula);
         return compute_one_electron(std::move(tmp));
     }

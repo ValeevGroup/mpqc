@@ -25,12 +25,12 @@ class OrbitalIndex{
 public:
     enum class Index {occ = 1, virt = 2, any = 3, othervirt = 4 ,allvirt = 6, allany = 7};
 
-    static const char occ_char[2];
-    static const char virt_char[2];
-    static const char any_char[2];
-    static const char othervirt_char[2];
-    static const char allvirt_char[2];
-    static const char allany_char[2];
+    static const wchar_t occ_char[2];
+    static const wchar_t virt_char[2];
+    static const wchar_t any_char[2];
+    static const wchar_t othervirt_char[2];
+    static const wchar_t allvirt_char[2];
+    static const wchar_t allany_char[2];
 
     OrbitalIndex() = default;
     OrbitalIndex(OrbitalIndex const &) = default;
@@ -38,9 +38,9 @@ public:
     OrbitalIndex& operator=(OrbitalIndex const &) = default;
     OrbitalIndex& operator=(OrbitalIndex &&) = default;
 
-    OrbitalIndex(const char *letter);
+    OrbitalIndex(const wchar_t *letter);
 
-    OrbitalIndex(std::string letter);
+    OrbitalIndex(std::wstring letter);
 
     bool operator==(OrbitalIndex const &);
     bool operator==(const OrbitalIndex::Index );
@@ -50,11 +50,11 @@ public:
     }
 
 private:
-    void init(const char *letter);
+    void init(const wchar_t *letter);
 
 private:
     Index index_;
-    std::string name_;
+    std::wstring name_;
 };
 
 

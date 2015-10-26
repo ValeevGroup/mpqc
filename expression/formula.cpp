@@ -7,41 +7,41 @@
 
 namespace mpqc{
 
-    const std::unordered_map<std::string, Formula::Operation> Formula::string_to_operation = {
-            {"K", Operation::Kinetic},
-            {"V", Operation::Nuclear},
-            {"G", Operation::Coulomb},
-            {"R", Operation::cGTG },
-            {"GR", Operation::cGTGCoulomb },
-            {"R2", Operation::cGTG2 }
+    const std::unordered_map<std::wstring, Formula::Operation> Formula::string_to_operation = {
+            {L"T", Operation::Kinetic},
+            {L"V", Operation::Nuclear},
+            {L"G", Operation::Coulomb},
+            {L"R", Operation::cGTG },
+            {L"GR", Operation::cGTGCoulomb },
+            {L"R2", Operation::cGTG2 }
     };
 
-    Formula::Formula(std::string formula) {
+    Formula::Formula(std::wstring formula) {
         if(formula.empty()){
             throw std::runtime_error("Empty Formula!");
         }
         formula_ = formula;
         // detect the brackets <>
         if(!(formula.front() == '<' && formula.back() == '>')){
-            throw std::runtime_error("Formula should start with < and end with >. \n" + formula);
+            throw std::runtime_error("Formula should start with < and end with >. \n");
         }
         // remove brackets <>
         formula.pop_back();
         formula.erase(formula.begin());
 
         // split the string by |
-        std::vector<std::string> split_formula;
+        std::vector<std::wstring> split_formula;
         boost::split(split_formula,formula,boost::is_any_of("|"), boost::token_compress_on);
 
         if(split_formula.size() == 2){
-            std::string left_formula = std::move(split_formula[0]);
-            std::string right_formula = std::move(split_formula[1]);
+            std::wstring left_formula = std::move(split_formula[0]);
+            std::wstring right_formula = std::move(split_formula[1]);
             operation_ = Operation::Overlap;
         }
         else if(split_formula.size() == 3){
-            std::string left_formula = std::move(split_formula[0]);
-            std::string operation = std::move(split_formula[1]);
-            std::string right_formula = std::move(split_formula[2]);
+            std::wstring left_formula = std::move(split_formula[0]);
+            std::wstring operation = std::move(split_formula[1]);
+            std::wstring right_formula = std::move(split_formula[2]);
 
             operation_ = check_operation(operation);
             left_index_ = check_orbital_index(left_formula);
@@ -49,15 +49,15 @@ namespace mpqc{
 
         }
         else {
-            throw std::runtime_error("Formula in wrong length. \n" + formula_);
+            throw std::runtime_error("Formula in wrong length. \n");
         }
 
     }
 
-    Formula::Operation Formula::check_operation(std::string oper) {
+    Formula::Operation Formula::check_operation(std::wstring oper) {
 
         if(oper.empty()){
-            throw std::runtime_error("Empty Operation!. \n" + formula_);
+            throw std::runtime_error("Empty Operation!. \n");
         }
 
         boost::trim(oper);
@@ -65,7 +65,7 @@ namespace mpqc{
         auto iter = string_to_operation.find(oper);
 
         if(iter == string_to_operation.end()){
-            throw std::runtime_error(oper + " is invalid operation!  \n");
+            throw std::runtime_error("Operation is invalid operation!  \n");
         }
 
         auto operation = iter->second;
@@ -73,9 +73,9 @@ namespace mpqc{
         return operation;
     }
 
-    std::vector <OrbitalIndex> Formula::check_orbital_index(std::string index_array) {
+    std::vector <OrbitalIndex> Formula::check_orbital_index(std::wstring index_array) {
 
-        std::vector<std::string> split_index;
+        std::vector<std::wstring> split_index;
         boost::split(split_index,index_array,boost::is_any_of(" "),boost::token_compress_on);
 
         std::vector<OrbitalIndex> result;

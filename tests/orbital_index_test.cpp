@@ -9,11 +9,24 @@
 TEST_CASE("Orbital Index", "[orbital_index]"){
 
     SECTION("single letter case"){
-        mpqc::OrbitalIndex i(L"i");
-        REQUIRE( i.index() == mpqc::OrbitalIndex::Index::occ);
 
-        mpqc::OrbitalIndex l(L"i");
-        REQUIRE( l.index() == mpqc::OrbitalIndex::Index::occ);
+        mpqc::OrbitalIndex m(L"m");
+        REQUIRE( m.index() == mpqc::OrbitalIndex::Index::occ);
+
+        mpqc::OrbitalIndex n(L"n");
+        REQUIRE( n.index() == mpqc::OrbitalIndex::Index::occ);
+
+        mpqc::OrbitalIndex i(L"i");
+        REQUIRE( i.index() == mpqc::OrbitalIndex::Index::actocc);
+
+        mpqc::OrbitalIndex l(L"l");
+        REQUIRE( l.index() == mpqc::OrbitalIndex::Index::actocc);
+
+        mpqc::OrbitalIndex x(L"x");
+        REQUIRE( x.index() == mpqc::OrbitalIndex::Index::active);
+
+        mpqc::OrbitalIndex y(L"y");
+        REQUIRE( y.index() == mpqc::OrbitalIndex::Index::active);
 
         mpqc::OrbitalIndex a(L"a");
         REQUIRE( a.index() == mpqc::OrbitalIndex::Index::virt);
@@ -26,15 +39,45 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex s(L"p");
         REQUIRE( s.index() == mpqc::OrbitalIndex::Index::any);
+
+        mpqc::OrbitalIndex k1(L"κ");
+        REQUIRE( k1.index() == mpqc::OrbitalIndex::Index::obs);
+
+        mpqc::OrbitalIndex v1(L"ν");
+        REQUIRE( v1.index() == mpqc::OrbitalIndex::Index::obs);
+
+        mpqc::OrbitalIndex K1(L"Κ");
+        REQUIRE( K1.index() == mpqc::OrbitalIndex::Index::dfbs);
+
+        mpqc::OrbitalIndex V1(L"Ν");
+        REQUIRE( V1.index() == mpqc::OrbitalIndex::Index::dfbs);
+
+        mpqc::OrbitalIndex a1(L"α");
+        REQUIRE( a1.index() == mpqc::OrbitalIndex::Index::abs);
+
+        mpqc::OrbitalIndex d1(L"δ");
+        REQUIRE( d1.index() == mpqc::OrbitalIndex::Index::abs);
     }
 
     SECTION("letter with number"){
 
+        mpqc::OrbitalIndex m(L"m2");
+        REQUIRE( m.index() == mpqc::OrbitalIndex::Index::occ);
+
+        mpqc::OrbitalIndex n(L"n6");
+        REQUIRE( n.index() == mpqc::OrbitalIndex::Index::occ);
+
+        mpqc::OrbitalIndex x(L"x7");
+        REQUIRE( x.index() == mpqc::OrbitalIndex::Index::active);
+
+        mpqc::OrbitalIndex y(L"y9");
+        REQUIRE( y.index() == mpqc::OrbitalIndex::Index::active);
+
         mpqc::OrbitalIndex i(L"i1");
-        REQUIRE( i.index() == mpqc::OrbitalIndex::Index::occ);
+        REQUIRE( i.index() == mpqc::OrbitalIndex::Index::actocc);
 
         mpqc::OrbitalIndex l(L"l2");
-        REQUIRE( l.index() == mpqc::OrbitalIndex::Index::occ);
+        REQUIRE( l.index() == mpqc::OrbitalIndex::Index::actocc);
 
         mpqc::OrbitalIndex a(L"a4");
         REQUIRE( a.index() == mpqc::OrbitalIndex::Index::virt);
@@ -47,9 +90,34 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex s(L"s7");
         REQUIRE( s.index() == mpqc::OrbitalIndex::Index::any);
+
+        mpqc::OrbitalIndex k1(L"κ1");
+        REQUIRE( k1.index() == mpqc::OrbitalIndex::Index::obs);
+
+        mpqc::OrbitalIndex v1(L"ν2");
+        REQUIRE( v1.index() == mpqc::OrbitalIndex::Index::obs);
+
+        mpqc::OrbitalIndex a1(L"α4");
+        REQUIRE( a1.index() == mpqc::OrbitalIndex::Index::abs);
+
+        mpqc::OrbitalIndex d1(L"δ5");
+        REQUIRE( d1.index() == mpqc::OrbitalIndex::Index::abs);
+
+        mpqc::OrbitalIndex K1(L"Κ1");
+        REQUIRE( K1.index() == mpqc::OrbitalIndex::Index::dfbs);
+
+        mpqc::OrbitalIndex V1(L"Ν2");
+        REQUIRE( V1.index() == mpqc::OrbitalIndex::Index::dfbs);
     }
 
     SECTION("letter with prime"){
+
+        mpqc::OrbitalIndex m(L"m'");
+        REQUIRE( m.index() == mpqc::OrbitalIndex::Index::inactocc);
+
+        mpqc::OrbitalIndex n(L"n'");
+        REQUIRE( n.index() == mpqc::OrbitalIndex::Index::inactocc);
+
         mpqc::OrbitalIndex P(L"P'");
         REQUIRE( P.index() == mpqc::OrbitalIndex::Index::allany);
 
@@ -71,6 +139,13 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
 
     SECTION("letter with number and prime"){
+
+        mpqc::OrbitalIndex m(L"m3'");
+        REQUIRE( m.index() == mpqc::OrbitalIndex::Index::inactocc);
+
+        mpqc::OrbitalIndex n(L"n4'");
+        REQUIRE( n.index() == mpqc::OrbitalIndex::Index::inactocc);
+
         mpqc::OrbitalIndex P(L"P1'");
         REQUIRE( P.index() == mpqc::OrbitalIndex::Index::allany);
 
@@ -92,7 +167,8 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
     SECTION("error handling"){
         // key not allowed
-        REQUIRE_THROWS(mpqc::OrbitalIndex(L"m"));
+        REQUIRE_THROWS(mpqc::OrbitalIndex(L"e"));
+        REQUIRE_THROWS(mpqc::OrbitalIndex(L"ε"));
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"I"));
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"I'"));
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"I1"));

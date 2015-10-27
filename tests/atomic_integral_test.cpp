@@ -22,6 +22,10 @@ using namespace mpqc;
 
 TEST_CASE("Atomic Integral", "[atomic_integral]"){
 
+    int a = 0;
+    char** b;
+    auto &world = madness::initialize(a,b);
+
     std::string xyz_file = "h2o.xyz";
     std::string basis_name = "cc-pVDZ";
 
@@ -30,8 +34,15 @@ TEST_CASE("Atomic Integral", "[atomic_integral]"){
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
-    SECTION("Constructor"){
-        integrals::AtomicIntegral<TA::Tensor<double>,TA::DensePolicy> ai(std::make_shared<basis::Basis>(basis));
+//    SECTION("Atomic Integral Base"){
+        integrals::AtomicIntegralBase<TA::Tensor<double>,TA::DensePolicy> ao_int(world,
+            std::make_shared<molecule::Molecule>(clustered_mol),
+            std::make_shared<basis::Basis>(basis));
+//    }
+
+
+    SECTION("Integral"){
+//        auto overlap = ao_int.compute_one_electron(L"<κ|λ>");
     }
 
 

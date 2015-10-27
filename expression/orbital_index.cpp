@@ -32,6 +32,7 @@ OrbitalIndex::OrbitalIndex(std::wstring letter) {
     init(letter.c_str());
 }
 
+//TODO better error handling in throw
 void OrbitalIndex::init(const wchar_t* letter) {
 
     std::string error_message("Wrong Key Index!");
@@ -159,5 +160,16 @@ bool OrbitalIndex::operator==(const OrbitalIndex &other) {
 bool OrbitalIndex::operator==(const OrbitalIndex::Index i) {
     return this->index_ == i;
 }
+
+bool OrbitalIndex::is_ao() const {
+    int index = static_cast<int> (index_);
+    return index < 0;
+}
+
+bool OrbitalIndex::is_mo() const {
+    int index = static_cast<int> (index_);
+    return index > 0;
+}
+
 
 }

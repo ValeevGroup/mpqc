@@ -78,6 +78,9 @@ public:
         return index_;
     }
 
+    bool is_ao() const;
+    bool is_mo() const;
+
 private:
     void init(const wchar_t *letter);
 

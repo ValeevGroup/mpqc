@@ -12,6 +12,8 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex m(L"m");
         REQUIRE( m.index() == mpqc::OrbitalIndex::Index::occ);
+        REQUIRE( m.is_ao() == false);
+        REQUIRE( m.is_mo() == true);
 
         mpqc::OrbitalIndex n(L"n");
         REQUIRE( n.index() == mpqc::OrbitalIndex::Index::occ);
@@ -42,6 +44,8 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex k1(L"κ");
         REQUIRE( k1.index() == mpqc::OrbitalIndex::Index::obs);
+        REQUIRE( k1.is_mo() == false);
+        REQUIRE( k1.is_ao() == true);
 
         mpqc::OrbitalIndex v1(L"ν");
         REQUIRE( v1.index() == mpqc::OrbitalIndex::Index::obs);
@@ -173,7 +177,7 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"I'"));
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"I1"));
 
-        //wrong length
+        // wrong length
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"i123"));
 
         // wrong format

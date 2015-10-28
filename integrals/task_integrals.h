@@ -13,73 +13,60 @@
 #define MPQC_INTEGRALS_TASKINTEGRALS_H
 
 #include "task_integrals_common.h"
-#include "task_integrals_op_invoker.h"
+// #include "task_integrals_op_invoker.h"
 #include "screening/screen_base.h"
+#include "integral_builder.h"
 
 namespace mpqc {
 namespace integrals {
 
-namespace detail {
-
-template <typename E, typename Op, unsigned long N, typename ScreenOp>
-void sparse_integral_task_function(int64_t ord, IdxVec idx, ShrPool<E> engs,
-                                   TA::Range rng, ShrBases<N> shr_bases, Op op,
-                                   TA::TensorF *tile_norms_ptr,
-                                   detail::Ttype<Op> *out_tile) {
-
-    auto shell_vecs = get_shells(idx, shr_bases);
-
-
-    auto screen = ScreenOp()(idx, shr_bases, engs);
-
-    auto op_invoker = make_op_invoke(std::move(idx), std::move(engs),
-                                     std::move(shell_vecs), std::move(op),
-                                     std::move(screen));
-
-    auto ta_tile = op_invoker.integrals(std::move(rng));
-
-    const auto tile_volume = ta_tile.range().volume();
-    const auto tile_norm = ta_tile.norm();
-    bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
-
-    auto &norms = *tile_norms_ptr;
-    if (save_norm) {
-        auto tile = op_invoker.apply(std::move(ta_tile));
-        norms[ord] = tile_norm;
-        *out_tile = std::move(tile);
-    }
-}
-
-} // namespace detail
-
 /*! \brief Construct sparse integral tensors in parallel.
  *
+ * \param op needs to be a function or functor that takes a TA::TensorD && and 
+ * returns any valid tile type. 
+ *
+ * \param screen needs to be a type derived from Screener
  */
-template <typename ScreenOp = init_base_screen, typename E,
-          unsigned long N, typename Op>
+template <typename ScreenerType, typename E, unsigned long N, typename Op>
 DArray<N, detail::Ttype<Op>, SpPolicy>
-sparse_integrals(mad::World &world, ShrPool<E> const &engines,
-                 Barray<N> const &bases, Op op) {
+sparse_integrals(mad::World &world, E const &engine, Barray<N> const &bases,
+                 Op op, ScreenerType screen) {
 
     using Tile = detail::Ttype<Op>;
-
-    auto shr_bases = std::make_shared<Barray<N>>(bases);
 
     auto trange = detail::create_trange(bases);
     const auto tvolume = trange.tiles().volume();
     std::vector<std::pair<unsigned long, Tile>> tiles(tvolume);
     TA::TensorF tile_norms(trange.tiles(), 0.0);
 
+    auto builder_ptr = std::make_shared<IntegralBuilder<N, E, Op>>(
+          make_integral_builder(world, engine, bases, std::move(screen), op));
+
+    auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng,
+                      TA::TensorF *tile_norms_ptr, Tile *out_tile) {
+
+        auto &builder = *builder_ptr;
+        auto ta_tile = builder.integrals(idx, std::move(rng));
+
+        const auto tile_volume = ta_tile.range().volume();
+        const auto tile_norm = ta_tile.norm();
+
+        // Keep tile if it was significant.
+        bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
+        if (save_norm) {
+            *out_tile = builder.op(std::move(ta_tile));
+
+            auto &norms = *tile_norms_ptr;
+            norms[ord] = tile_norm;
+        }
+    };
+
     auto pmap = SpPolicy::default_pmap(world, tvolume);
     for (auto const ord : *pmap) {
-
         tiles[ord].first = ord;
         detail::IdxVec idx = trange.tiles().idx(ord);
-
-        world.taskq.add(
-              detail::sparse_integral_task_function<E, Op, N, ScreenOp>,
-              ord, idx, engines, trange.make_tile_range(ord), shr_bases, op,
-              &tile_norms, &tiles[ord].second);
+        world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord),
+                        &tile_norms, &tiles[ord].second);
     }
     world.gop.fence();
 
@@ -97,26 +84,28 @@ sparse_integrals(mad::World &world, ShrPool<E> const &engines,
  */
 template <typename E, unsigned long N, typename Op>
 DArray<N, detail::Ttype<Op>, DnPolicy>
-dense_integrals(mad::World &world, ShrPool<E> const &engines,
-                Barray<N> const &bases, Op op) {
+dense_integrals(mad::World &world, E const &engine, Barray<N> const &bases,
+                Op op) {
 
     using Tile = detail::Ttype<Op>;
     DArray<N, Tile, DnPolicy> out(world, detail::create_trange(bases));
 
-    // Shared ptr to bases
-    auto shared_bases = std::make_shared<Barray<N>>(bases);
+    auto builder = std::make_shared(
+          make_integral_builder(world, engine, bases, op, Screener()));
+
+    // builder is shared_ptr so just capture it by copy.
+    auto task_func = [=](detail::IdxVec const &idx, TA::Range &&rng) {
+        return builder->operator()(idx, std::move(rng));
+    };
 
     auto const &trange = out.trange();
     auto const &pmap = *(out.get_pmap());
     for (auto const ord : pmap) {
-
         detail::IdxVec idx = trange.tiles().idx(ord);
-        auto shell_vecs = detail::get_shells(idx, shared_bases);
-        auto op_wrapper
-              = detail::make_op_invoke(idx, engines, std::move(shell_vecs), op);
 
         auto range = trange.make_tile_range(ord);
-        mad::Future<Tile> tile = world.taskq.add(op_wrapper, std::move(range));
+        mad::Future<Tile> tile
+              = world.taskq.add(task_func, idx, std::move(range));
 
         out.set(ord, tile);
     }

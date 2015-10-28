@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_INTEGRALS_INTEGRALENGINEPOOL_H
-#define TCC_INTEGRALS_INTEGRALENGINEPOOL_H
+#ifndef MPQC_INTEGRALS_INTEGRALENGINEPOOL_H
+#define MPQC_INTEGRALS_INTEGRALENGINEPOOL_H
 //
 // integral_engine_pool.h
 //
@@ -13,7 +13,7 @@
 #include "../include/libint.h"
 #include "../include/tbb.h"
 
-namespace tcc {
+namespace mpqc {
 namespace integrals {
 
 template <typename E>
@@ -75,6 +75,6 @@ inline constexpr unsigned long pool_order<libint2::TwoBodyEngine<libint2::Coulom
 }
 
 } // namespace integrals
-} // namespac tcc
+} // namespac mpqc
 
-#endif /* end of include guard: TCC_INTEGRALS_INTEGRALENGINEPOOL_H */
+#endif /* end of include guard: MPQC_INTEGRALS_INTEGRALENGINEPOOL_H */

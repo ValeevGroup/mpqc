@@ -15,9 +15,6 @@ namespace mpqc {
 namespace integrals {
 namespace detail {
 
-template <unsigned long N>
-using VecArray = std::array<ShellVec const *, N>;
-
 template <typename E, unsigned long N, typename Op>
 class op_invoke {
   private:
@@ -47,6 +44,12 @@ class op_invoke {
     }
 
     Ttype<Op> apply(TA::TensorD &&t) { return op_(std::move(t)); }
+
+    template <typename Archive>
+    Archive &serialize(Archive &ar){
+        assert(false);
+        return ar;
+    }
 
   private:
     VecArray<N> shellvec_ptrs() const {

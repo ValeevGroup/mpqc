@@ -31,7 +31,7 @@ using DArray = TA::Array<double, DIM, Tile, Policy>;
 // MPQC typedefs
 /////////////////////////////////////////////////////////
 template <typename E>
-using Epool = tints::EnginePool<E>;
+using Epool = mpqc::integrals::EnginePool<E>;
 
 template <typename T>
 using Tile = tcc::tensor::Tile<T>;

@@ -31,6 +31,9 @@ const static Shell unit_shell = Shell::unit();
 namespace detail {
 
 template <unsigned long N>
+using VecArray = std::array<ShellVec const *, N>;
+
+template <unsigned long N>
 using ShrBases = std::shared_ptr<Barray<N>>;
 
 using IdxVec = std::vector<std::size_t>;

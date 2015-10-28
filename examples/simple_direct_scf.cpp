@@ -88,7 +88,6 @@ class FourCenterSCF {
 
         D_ = tcc::array_ops::eigen_to_array<TA::TensorD>(F_.get_world(), D_eig,
                                                          tr_ao, tr_ao);
-
     }
 
     template <typename Integral>
@@ -152,9 +151,7 @@ class FourCenterSCF {
     }
 };
 
-TA::TensorD ta_pass_through(TA::TensorD &&ten){
-    return std::move(ten);
-}
+TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -163,7 +160,7 @@ int main(int argc, char *argv[]) {
     int nclusters = 0;
     std::cout << std::setprecision(15);
     double threshold = 1e-12;
-    double well_sep_threshold = 0.2;
+    double well_sep_threshold = 0.1;
     integrals::QQR::well_sep_threshold(well_sep_threshold);
     if (argc == 4) {
         mol_file = argv[1];
@@ -189,30 +186,30 @@ int main(int argc, char *argv[]) {
 
     const auto bs_array = tcc::utility::make_array(basis, basis);
 
-    // Overlap ints
-    auto overlap_pool = tints::make_pool(
-          tints::make_1body("overlap", basis, clustered_mol));
-    auto S = mpqc_ints::sparse_integrals(world, overlap_pool, bs_array,
-                                         ta_pass_through);
+    auto screener = integrals::Screener();
 
     // Overlap ints
-    auto kinetic_pool = tints::make_pool(
-          tints::make_1body("kinetic", basis, clustered_mol));
-    auto T = mpqc_ints::sparse_integrals(world, kinetic_pool, bs_array,
-                                         ta_pass_through);
+    auto overlap_e = tints::make_1body("overlap", basis, clustered_mol);
+    auto S
+          = mpqc_ints::sparse_integrals(world, overlap_e, bs_array,
+                                        ta_pass_through, screener);
 
-    auto nuclear_pool = tints::make_pool(
-          tints::make_1body("nuclear", basis, clustered_mol));
-    auto V = mpqc_ints::sparse_integrals(world, nuclear_pool, bs_array,
-                                         ta_pass_through);
+    // Overlap ints
+    auto kinetic_e = tints::make_1body("kinetic", basis, clustered_mol);
+    auto T = mpqc_ints::sparse_integrals(world, kinetic_e, bs_array,
+                                         ta_pass_through, screener);
+
+    auto nuclear_e = tints::make_1body("nuclear", basis, clustered_mol);
+    auto V = mpqc_ints::sparse_integrals(world, nuclear_e, bs_array,
+                                         ta_pass_through, screener);
 
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
-    auto eri_pool
-          = tcc::integrals::make_pool(tcc::integrals::make_2body(basis));
+    auto eri_e = tcc::integrals::make_2body(basis);
     auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
 
+#if 0
     // Going to do several SCF's
 
     { // Do schwarz first
@@ -262,6 +259,7 @@ int main(int argc, char *argv[]) {
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
         scf.solve(50, 1e-8, eri4);
     }
+#endif
 
     libint2::cleanup();
     madness::finalize();

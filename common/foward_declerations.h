@@ -42,7 +42,9 @@ template <typename T>
 class Tile;
 
 } // namespace tensor
+} // namespace tcc
 
+namespace mpqc {
 namespace integrals {
 
 template <typename E>
@@ -50,6 +52,6 @@ class EnginePool;
 
 } // namespace integrals
 
-} // namespace tcc
+} // namespace mpqc
 
 #endif // TCC_COMMON_FWDDECL_H

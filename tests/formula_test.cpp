@@ -11,8 +11,12 @@ TEST_CASE("Formula Expression", "[formula]"){
 
     SECTION("operation test case"){
 
-        Formula overlap(L"<a|b>");
+        Formula overlap(L"<κ|λ>");
         REQUIRE(overlap.operation() == Formula::Operation::Overlap);
+        REQUIRE(overlap.left_index().size() == 1);
+        REQUIRE(overlap.right_index().size() == 1);
+        REQUIRE(overlap.right_index()[0].index() == OrbitalIndex::Index::obs);
+        REQUIRE(overlap.left_index()[0].index() == OrbitalIndex::Index::obs);
 
         Formula kinetic(L"<p q|T|r s>");
         REQUIRE(kinetic.operation() == Formula::Operation::Kinetic);

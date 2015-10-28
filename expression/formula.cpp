@@ -22,7 +22,7 @@ namespace mpqc{
         }
         formula_ = formula;
         // detect the brackets <>
-        if(!(formula.front() == '<' && formula.back() == '>')){
+        if(!(formula.front() == L'<' && formula.back() == L'>')){
             throw std::runtime_error("Formula should start with < and end with >. \n");
         }
         // remove brackets <>
@@ -31,12 +31,16 @@ namespace mpqc{
 
         // split the string by |
         std::vector<std::wstring> split_formula;
-        boost::split(split_formula,formula,boost::is_any_of("|"), boost::token_compress_on);
+        boost::split(split_formula,formula,boost::is_any_of(L"|"), boost::token_compress_on);
 
         if(split_formula.size() == 2){
             std::wstring left_formula = std::move(split_formula[0]);
             std::wstring right_formula = std::move(split_formula[1]);
+
             operation_ = Operation::Overlap;
+            left_index_ = check_orbital_index(left_formula);
+            right_index_ = check_orbital_index(right_formula);
+
         }
         else if(split_formula.size() == 3){
             std::wstring left_formula = std::move(split_formula[0]);
@@ -76,7 +80,7 @@ namespace mpqc{
     std::vector <OrbitalIndex> Formula::check_orbital_index(std::wstring index_array) {
 
         std::vector<std::wstring> split_index;
-        boost::split(split_index,index_array,boost::is_any_of(" "),boost::token_compress_on);
+        boost::split(split_index,index_array,boost::is_any_of(L" "),boost::token_compress_on);
 
         std::vector<OrbitalIndex> result;
 

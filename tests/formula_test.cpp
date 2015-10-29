@@ -9,7 +9,7 @@ using namespace mpqc;
 
 TEST_CASE("Formula Expression", "[formula]"){
 
-    SECTION("operation test case"){
+    SECTION("one body test case"){
 
         Formula overlap(L"<κ|λ>");
         REQUIRE(overlap.operation() == Formula::Operation::Overlap);
@@ -17,6 +17,7 @@ TEST_CASE("Formula Expression", "[formula]"){
         REQUIRE(overlap.right_index().size() == 1);
         REQUIRE(overlap.right_index()[0].index() == OrbitalIndex::Index::obs);
         REQUIRE(overlap.left_index()[0].index() == OrbitalIndex::Index::obs);
+        REQUIRE(overlap.is_onebody() == true);
 
         Formula kinetic(L"<p q|T|r s>");
         REQUIRE(kinetic.operation() == Formula::Operation::Kinetic);
@@ -25,12 +26,13 @@ TEST_CASE("Formula Expression", "[formula]"){
         REQUIRE(r2.operation() == Formula::Operation::cGTG2);
     }
 
-    SECTION("left right index case"){
-        Formula kinetic(L"<p q1|T|a' A1'>");
-        REQUIRE(kinetic.left_index()[0].index() == OrbitalIndex::Index::any);
-        REQUIRE(kinetic.left_index()[1].index() == OrbitalIndex::Index::any);
-        REQUIRE(kinetic.right_index()[0].index() == OrbitalIndex::Index::othervirt);
-        REQUIRE(kinetic.right_index()[1].index() == OrbitalIndex::Index::allvirt);
+    SECTION("two body test case"){
+        Formula couloumb(L"<p q1|R|a' A1'>");
+        REQUIRE(couloumb.left_index()[0].index() == OrbitalIndex::Index::any);
+        REQUIRE(couloumb.left_index()[1].index() == OrbitalIndex::Index::any);
+        REQUIRE(couloumb.right_index()[0].index() == OrbitalIndex::Index::othervirt);
+        REQUIRE(couloumb.right_index()[1].index() == OrbitalIndex::Index::allvirt);
+        REQUIRE(couloumb.is_twobody() == true);
 
     }
 

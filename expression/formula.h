@@ -23,13 +23,19 @@ namespace mpqc{
     public:
         enum class Operation{Overlap, Kinetic, Nuclear, Coulomb, cGTG, cGTGCoulomb, cGTG2};
 
-        static const std::unordered_map<std::wstring, Operation> string_to_operation;
+        static const std::unordered_map<std::wstring, Operation> one_body_operation;
+        static const std::unordered_map<std::wstring, Operation> two_body_operation;
 
         Formula() = default;
         Formula(Formula const &) = default;
         Formula(Formula &&) = default;
         Formula& operator=(Formula const &) = default;
         Formula& operator=(Formula &&) = default;
+
+        Formula(std::wstring formula);
+
+        bool is_onebody() const;
+        bool is_twobody() const;
 
         const std::wstring &formula() const {
             return formula_;
@@ -47,7 +53,6 @@ namespace mpqc{
             return operation_;
         }
 
-        Formula(std::wstring formula);
 
     private:
 

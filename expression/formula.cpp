@@ -7,9 +7,13 @@
 
 namespace mpqc{
 
-    const std::unordered_map<std::wstring, Formula::Operation> Formula::string_to_operation = {
+    const std::unordered_map<std::wstring, Formula::Operation> Formula::one_body_operation = {
+            {L"", Operation::Overlap},
             {L"T", Operation::Kinetic},
-            {L"V", Operation::Nuclear},
+            {L"V", Operation::Nuclear}
+    };
+
+    const std::unordered_map<std::wstring, Formula::Operation> Formula::two_body_operation = {
             {L"G", Operation::Coulomb},
             {L"R", Operation::cGTG },
             {L"GR", Operation::cGTGCoulomb },
@@ -60,24 +64,30 @@ namespace mpqc{
 
     Formula::Operation Formula::check_operation(std::wstring oper) {
 
-        if(oper.empty()){
+        if (oper.empty()) {
             throw std::runtime_error("Empty Operation!. \n");
         }
 
         boost::trim(oper);
 
-        auto iter = string_to_operation.find(oper);
+        auto iter1 = one_body_operation.find(oper);
 
-        if(iter == string_to_operation.end()){
-            throw std::runtime_error("Operation is invalid operation!  \n");
+        if (iter1 == one_body_operation.end()) {
+            auto iter2 = two_body_operation.find(oper);
+
+            if(iter2 != two_body_operation.end()){
+                return iter2->second;
+            }else{
+                throw std::runtime_error("Invalid Operation");
+            }
+        }
+        else{
+            return iter1->second;
         }
 
-        auto operation = iter->second;
-
-        return operation;
     }
 
-    std::vector <OrbitalIndex> Formula::check_orbital_index(std::wstring index_array) {
+    std::vector<OrbitalIndex> Formula::check_orbital_index(std::wstring index_array) {
 
         std::vector<std::wstring> split_index;
         boost::split(split_index,index_array,boost::is_any_of(L" "),boost::token_compress_on);
@@ -90,5 +100,25 @@ namespace mpqc{
 
         return result;
 
+    }
+
+    bool Formula::is_onebody() const {
+
+        for (auto it = one_body_operation.begin(); it != one_body_operation.end(); ++it ){
+            if (it->second == operation_){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool Formula::is_twobody() const {
+
+        for (auto it = two_body_operation.begin(); it != two_body_operation.end(); ++it ){
+            if (it->second == operation_){
+                return true;
+            }
+        }
+        return false;
     }
 }

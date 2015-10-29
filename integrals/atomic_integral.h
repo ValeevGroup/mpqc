@@ -22,6 +22,7 @@
 namespace mpqc{
 namespace integrals{
 
+
     //TODO Atomic Integral class
     template<typename Tile, typename Policy>
     class AtomicIntegralBase {
@@ -30,6 +31,7 @@ namespace integrals{
         using TArray3 = TA::Array <double, 3, Tile, Policy>;
         using TArray4 = TA::Array <double, 4, Tile, Policy>;
 
+        AtomicIntegralBase() = default;
 
         AtomicIntegralBase(madness::World& world,
                        std::shared_ptr<molecule::Molecule> mol,
@@ -37,6 +39,8 @@ namespace integrals{
                        std::shared_ptr<basis::Basis> dfbs = nullptr,
                        std::shared_ptr<basis::Basis> auxbs = nullptr) :
                world_(world), mol_(mol), obs_(obs), dfbs_(dfbs), abs_(auxbs)  { }
+
+        virtual ~AtomicIntegralBase() = default;
 
 
         madness::World& get_world() const {
@@ -63,19 +67,15 @@ namespace integrals{
             AtomicIntegralBase::abs_ = abs;
         }
 
-        TArray2 compute_one_electron(const std::wstring& formula){
-            Formula tmp(formula);
-            return compute_one_electron(std::move(tmp));
-        }
-        TArray4 compute_two_electron(const std::wstring& formula){
-            Formula tmp(formula);
-            return compute_one_electron(std::move(tmp));
-        }
+        // compute integrals that has two dimension
+        virtual TArray2 compute2(const std::wstring& formula_string) = 0;
+        // compute integrals that has three dimension
+        virtual TArray3 compute3(const std::wstring& formula_stirng) = 0;
+        // compute integrals that has four dimension
+        virtual TArray4 compute4(const std::wstring& formula_string) = 0;
 
-        virtual TArray2 compute_one_electron(const Formula& formula){}
-        virtual TArray4 compute_two_electron(const Formula& formula){}
 
-    private:
+    protected:
         std::shared_ptr<basis::Basis> index_to_basis(const OrbitalIndex& index){
             if(index.index() == OrbitalIndex::Index::obs){
                 return obs_;
@@ -91,7 +91,7 @@ namespace integrals{
             }
         }
 
-    private:
+    protected:
 
         madness::World& world_;
         std::shared_ptr<molecule::Molecule> mol_;
@@ -101,63 +101,217 @@ namespace integrals{
 
     };
 
+    /// Atomic Integral Class
+    //// Op is a function
+    /// Op will take TA::TensorD as argument and return Tile
 
-//    template <typename Tile, typename Policy>
-//    typename AtomicIntegralBase<Tile,Policy>::TArray2 AtomicIntegralBase<Tile,Policy>::compute_one_electron(const Formula& formula) {
-//        auto bra_indexs = formula.left_index();
-//        auto ket_indexs = formula.right_index();
-//
-//        TA_ASSERT(bra_indexs.size() == 1);
-//        TA_ASSERT(ket_indexs.size() == 1);
-//
-//        auto bra_index = bra_indexs[0];
-//        auto ket_index = ket_indexs[0];
-//
-//        TA_ASSERT(bra_index.is_ao());
-//        TA_ASSERT(ket_index.is_ao());
-//
-//        auto bra_basis = index_to_basis(bra_index);
-//        auto ket_basis = index_to_basis(ket_index);
-//
-//        TA_ASSERT(bra_basis != nullptr);
-//        TA_ASSERT(ket_basis != nullptr);
-//
-//        // convert operation to libint operator
-//        auto operation = formula.operation();
-//        libint2::OneBodyEngine::operator_type itype;
-//        tcc::integrals::q_vector q;
-//        if (operation == Formula::Operation::Overlap) {
-//            itype = libint2::OneBodyEngine::overlap;
-//        } else if (operation == Formula::Operation::Kinetic) {
-//            itype = libint2::OneBodyEngine::kinetic;
-//        } else if (operation == Formula::Operation::Nuclear) {
-//            itype = libint2::OneBodyEngine::nuclear;
-//            q = tcc::integrals::make_q(*mol_);
-//        } else {
-//            throw std::runtime_error("Invalid One Body Operation");
-//        }
-//
-//        auto max_nprim = std::max(bra_basis->max_nprim(), ket_basis->max_nprim());
-//        auto max_am = std::max(bra_basis->max_am(), ket_basis->max_am());
-//
-//        libint2::OneBodyEngine engine(itype, max_nprim, static_cast<int>(max_am),0);
-//
-//        if(itype == libint2::OneBodyEngine::nuclear){
-//            engine.set_params(std::move(q));
-//        }
-//
-//        auto engine_pool = tcc::integrals::make_pool(engine);
-//        const auto bs_array = tcc::utility::make_array(*bra_basis, *ket_basis);
-//
-//        auto ta_pass_through = [](TA::TensorD &&ten){
-//            return std::move(ten);
-//        };
-//
-//        TArray2 result = mpqc::integrals::dense_integrals(world_,engine_pool,bs_array,ta_pass_through);
-//
-//        return result;
-//    }
+    template<typename Tile, typename Policy>
+    class AtomicIntegral : public AtomicIntegralBase<Tile,Policy>{
 
+    public:
+        using TArray2 = typename AtomicIntegralBase<Tile,Policy>::TArray2;
+        using TArray3 = typename AtomicIntegralBase<Tile,Policy>::TArray3;
+        using TArray4 = typename AtomicIntegralBase<Tile,Policy>::TArray4;
+        typedef Tile (*Op)(TA::TensorD &&);
+
+        AtomicIntegral() = default;
+
+        AtomicIntegral(madness::World& world,
+                Op op,
+                std::shared_ptr<molecule::Molecule> mol,
+                std::shared_ptr<basis::Basis> obs,
+                std::shared_ptr<basis::Basis> dfbs = nullptr,
+                std::shared_ptr<basis::Basis> auxbs = nullptr
+        ) : AtomicIntegralBase<Tile,Policy>(world,mol,obs,dfbs,auxbs), op_(op){}
+
+
+        virtual ~AtomicIntegral() = default;
+
+
+        TArray2 compute2(const std::wstring& );
+        TArray3 compute3(const std::wstring& );
+        TArray4 compute4(const std::wstring& );
+
+    private:
+        // compute integral for sparse policy
+        template <typename E, unsigned long N, typename U = Policy>
+        TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::SparsePolicy>::value, TA::SparsePolicy>::type> compute_integrals(
+                madness::World& world, E const &engine, Barray<N> const &bases)
+        {
+            auto result = mpqc::integrals::sparse_integrals(world,engine,bases,op_,Screener{});
+            return result;
+        }
+
+        // compute integral for dense policy
+        template <typename E, unsigned long N, typename U = Policy>
+        TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::DensePolicy>::value, TA::DensePolicy>::type> compute_integrals(
+                madness::World& world, E const &engine, Barray<N> const &bases)
+        {
+            auto result = mpqc::integrals::dense_integrals(world,engine,bases,op_);
+            return result;
+        }
+
+    private:
+        Op op_;
+
+    };
+
+
+    template <typename Tile, typename Policy>
+    typename AtomicIntegral<Tile,Policy>::TArray2 AtomicIntegral<Tile,Policy>::compute2(const std::wstring& formula_string) {
+
+        Formula formula(formula_string);
+
+        auto bra_indexs = formula.left_index();
+        auto ket_indexs = formula.right_index();
+
+        TA_ASSERT(bra_indexs.size() == 1);
+        TA_ASSERT(ket_indexs.size() == 1);
+
+        auto bra_index = bra_indexs[0];
+        auto ket_index = ket_indexs[0];
+
+        TA_ASSERT(bra_index.is_ao());
+        TA_ASSERT(ket_index.is_ao());
+
+        auto bra_basis = this->index_to_basis(bra_index);
+        auto ket_basis = this->index_to_basis(ket_index);
+
+        TA_ASSERT(bra_basis != nullptr);
+        TA_ASSERT(ket_basis != nullptr);
+
+        auto max_nprim = std::max(bra_basis->max_nprim(), ket_basis->max_nprim());
+        auto max_am = std::max(bra_basis->max_am(), ket_basis->max_am());
+        auto bs_array = tcc::utility::make_array(*bra_basis, *ket_basis);
+
+        // use one body engine
+        if(formula.is_onebody()){
+
+            // convert operation to libint operator
+            auto operation = formula.operation();
+            libint2::OneBodyEngine::operator_type itype;
+            tcc::integrals::q_vector q;
+            if (operation == Formula::Operation::Overlap) {
+                itype = libint2::OneBodyEngine::overlap;
+            } else if (operation == Formula::Operation::Kinetic) {
+                itype = libint2::OneBodyEngine::kinetic;
+            } else if (operation == Formula::Operation::Nuclear) {
+                itype = libint2::OneBodyEngine::nuclear;
+                q = tcc::integrals::make_q(*(this->mol_));
+            } else {
+                throw std::runtime_error("Invalid One Body Operation");
+            }
+
+            libint2::OneBodyEngine engine(itype, max_nprim, static_cast<int>(max_am),0);
+
+            if(itype == libint2::OneBodyEngine::nuclear){
+                engine.set_params(std::move(q));
+            }
+
+
+            auto result = compute_integrals(this->world_,engine,bs_array);
+            return result;
+        }
+        // use two body engine
+        else if(formula.is_twobody()){
+
+            auto operation = formula.operation();
+            if (operation == Formula::Operation::Coulomb) {
+                libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
+                auto result = compute_integrals(this->world_,engine,bs_array);
+                return result;
+            } else {
+                throw std::runtime_error("Invalid Two Body Operation");
+            }
+
+        }
+
+    }
+
+    template <typename Tile, typename Policy>
+    typename AtomicIntegral<Tile,Policy>::TArray3 AtomicIntegral<Tile,Policy>::compute3(const std::wstring& formula_string) {
+        Formula formula(formula_string);
+
+        auto bra_indexs = formula.left_index();
+        auto ket_indexs = formula.right_index();
+
+        TA_ASSERT(bra_indexs.size() == 1);
+        TA_ASSERT(ket_indexs.size() == 2);
+
+
+        TA_ASSERT(bra_indexs[0].is_ao());
+        TA_ASSERT(bra_indexs[1].is_ao());
+        TA_ASSERT(ket_indexs[1].is_ao());
+
+        auto bra_basis0 = this->index_to_basis(bra_indexs[0]);
+        auto bra_basis1 = this->index_to_basis(bra_indexs[1]);
+        auto ket_basis1 = this->index_to_basis(ket_indexs[1]);
+
+        TA_ASSERT(bra_basis0 != nullptr);
+        TA_ASSERT(bra_basis1 != nullptr);
+        TA_ASSERT(ket_basis1 != nullptr);
+
+        auto max_nprim = std::max({bra_basis0->max_nprim(), bra_basis1->max_nprim()
+                                          ,ket_basis1->max_nprim()});
+        auto max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
+                                ket_basis1->max_am()});
+
+        auto bs_array = tcc::utility::make_array(*bra_basis0, *bra_basis1, *ket_basis1);
+
+        // convert operation to libint operator
+        auto operation = formula.operation();
+        if (operation == Formula::Operation::Coulomb) {
+            libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
+            auto result = compute_integrals(this->world_,engine,bs_array);
+            return result;
+        } else {
+            throw std::runtime_error("Invalid Two Body Operation");
+        }
+    }
+
+    template <typename Tile, typename Policy>
+    typename AtomicIntegral<Tile,Policy>::TArray4 AtomicIntegral<Tile,Policy>::compute4(const std::wstring& formula_string) {
+        Formula formula(formula_string);
+
+        auto bra_indexs = formula.left_index();
+        auto ket_indexs = formula.right_index();
+
+        TA_ASSERT(bra_indexs.size() == 2);
+        TA_ASSERT(ket_indexs.size() == 2);
+
+
+        TA_ASSERT(bra_indexs[0].is_ao());
+        TA_ASSERT(ket_indexs[0].is_ao());
+        TA_ASSERT(bra_indexs[1].is_ao());
+        TA_ASSERT(ket_indexs[1].is_ao());
+
+        auto bra_basis0 = this->index_to_basis(bra_indexs[0]);
+        auto ket_basis0 = this->index_to_basis(ket_indexs[0]);
+        auto bra_basis1 = this->index_to_basis(bra_indexs[1]);
+        auto ket_basis1 = this->index_to_basis(ket_indexs[1]);
+
+        TA_ASSERT(bra_basis0 != nullptr);
+        TA_ASSERT(ket_basis0 != nullptr);
+        TA_ASSERT(bra_basis1 != nullptr);
+        TA_ASSERT(ket_basis1 != nullptr);
+
+        auto max_nprim = std::max({bra_basis0->max_nprim(), bra_basis1->max_nprim()
+                                          ,ket_basis0->max_nprim(), ket_basis1->max_nprim()});
+        auto max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
+                                ket_basis0->max_am(),ket_basis1->max_am()});
+
+        auto bs_array = tcc::utility::make_array(*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1);
+
+        // convert operation to libint operator
+        auto operation = formula.operation();
+        if (operation == Formula::Operation::Coulomb) {
+            libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
+            auto result = compute_integrals(this->world_,engine,bs_array);
+            return result;
+        } else {
+            throw std::runtime_error("Invalid Two Body Operation");
+        }
+    }
     //TODO R12 Integral
     //TODO geminal parametors
 

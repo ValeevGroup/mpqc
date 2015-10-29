@@ -20,6 +20,12 @@
 
 using namespace mpqc;
 
+
+TA::TensorD op(TA::TensorD &&ten){
+    return std::move(ten);
+}
+
+
 TEST_CASE("Atomic Integral", "[atomic_integral]"){
 
     int a = 0;
@@ -34,16 +40,13 @@ TEST_CASE("Atomic Integral", "[atomic_integral]"){
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
-//    SECTION("Atomic Integral Base"){
-        integrals::AtomicIntegralBase<TA::Tensor<double>,TA::DensePolicy> ao_int(world,
-            std::make_shared<molecule::Molecule>(clustered_mol),
-            std::make_shared<basis::Basis>(basis));
-//    }
+// Atomic Integral
+    integrals::AtomicIntegral<TA::TensorD, TA::DensePolicy> ao_int(world,
+                                                                   op,
+        std::make_shared<molecule::Molecule>(clustered_mol),
+        std::make_shared<basis::Basis>(basis));
 
-
-    SECTION("Integral"){
 //        auto overlap = ao_int.compute_one_electron(L"<κ|λ>");
-    }
 
 
 }

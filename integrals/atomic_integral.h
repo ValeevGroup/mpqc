@@ -240,23 +240,23 @@ namespace integrals{
 
 
         TA_ASSERT(bra_indexs[0].is_ao());
-        TA_ASSERT(bra_indexs[1].is_ao());
+        TA_ASSERT(ket_indexs[0].is_ao());
         TA_ASSERT(ket_indexs[1].is_ao());
 
         auto bra_basis0 = this->index_to_basis(bra_indexs[0]);
-        auto bra_basis1 = this->index_to_basis(bra_indexs[1]);
+        auto ket_basis0 = this->index_to_basis(ket_indexs[0]);
         auto ket_basis1 = this->index_to_basis(ket_indexs[1]);
 
         TA_ASSERT(bra_basis0 != nullptr);
-        TA_ASSERT(bra_basis1 != nullptr);
+        TA_ASSERT(ket_basis0 != nullptr);
         TA_ASSERT(ket_basis1 != nullptr);
 
-        auto max_nprim = std::max({bra_basis0->max_nprim(), bra_basis1->max_nprim()
+        auto max_nprim = std::max({bra_basis0->max_nprim(), ket_basis0->max_nprim()
                                           ,ket_basis1->max_nprim()});
-        auto max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
+        auto max_am = std::max({bra_basis0->max_am(), ket_basis0->max_am(),
                                 ket_basis1->max_am()});
 
-        auto bs_array = tcc::utility::make_array(*bra_basis0, *bra_basis1, *ket_basis1);
+        auto bs_array = tcc::utility::make_array(*bra_basis0, *ket_basis0, *ket_basis1);
 
         // convert operation to libint operator
         auto operation = formula.operation();

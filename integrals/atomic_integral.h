@@ -185,17 +185,17 @@ namespace integrals{
         auto bs_array = tcc::utility::make_array(*bra_basis, *ket_basis);
 
         // use one body engine
-        if(formula.is_onebody()){
+        if(formula.operation().is_onebody()){
 
             // convert operation to libint operator
             auto operation = formula.operation();
             libint2::OneBodyEngine::operator_type itype;
             tcc::integrals::q_vector q;
-            if (operation == Formula::Operation::Overlap) {
+            if (operation.get_operation() == Operation::Operations::Overlap) {
                 itype = libint2::OneBodyEngine::overlap;
-            } else if (operation == Formula::Operation::Kinetic) {
+            } else if (operation.get_operation() == Operation::Operations::Kinetic) {
                 itype = libint2::OneBodyEngine::kinetic;
-            } else if (operation == Formula::Operation::Nuclear) {
+            } else if (operation.get_operation() == Operation::Operations::Nuclear) {
                 itype = libint2::OneBodyEngine::nuclear;
                 q = tcc::integrals::make_q(*(this->mol_));
             } else {
@@ -213,10 +213,10 @@ namespace integrals{
             return result;
         }
         // use two body engine
-        else if(formula.is_twobody()){
+        else if(formula.operation().is_twobody()){
 
             auto operation = formula.operation();
-            if (operation == Formula::Operation::Coulomb) {
+            if (operation.get_operation() == Operation::Operations::Coulomb) {
                 libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
                 auto result = compute_integrals(this->world_,engine,bs_array);
                 return result;
@@ -260,7 +260,7 @@ namespace integrals{
 
         // convert operation to libint operator
         auto operation = formula.operation();
-        if (operation == Formula::Operation::Coulomb) {
+        if (operation.get_operation() == Operation::Operations::Coulomb) {
             libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
             auto result = compute_integrals(this->world_,engine,bs_array);
             return result;
@@ -304,7 +304,7 @@ namespace integrals{
 
         // convert operation to libint operator
         auto operation = formula.operation();
-        if (operation == Formula::Operation::Coulomb) {
+        if (operation.get_operation() == Operation::Operations::Coulomb) {
             libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
             auto result = compute_integrals(this->world_,engine,bs_array);
             return result;

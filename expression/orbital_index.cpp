@@ -156,9 +156,12 @@ bool OrbitalIndex::operator==(const OrbitalIndex &other) {
     return this->index_ == other.index_;
 }
 
-
 bool OrbitalIndex::operator==(const OrbitalIndex::Index i) {
     return this->index_ == i;
+}
+
+bool OrbitalIndex::same(const OrbitalIndex &other) {
+    return (index_ == other.index()) && (name_ == other.name());
 }
 
 bool OrbitalIndex::is_ao() const {
@@ -170,6 +173,4 @@ bool OrbitalIndex::is_mo() const {
     int index = static_cast<int> (index_);
     return index > 0;
 }
-
-
 }

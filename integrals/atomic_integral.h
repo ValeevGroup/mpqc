@@ -214,7 +214,29 @@ namespace integrals{
         }
         // use two body engine
         else if(formula.operation().is_twobody()){
+            TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Two Body Two Center Integral Must Use Chemical Notation");
 
+            auto bra_indexs = formula.left_index();
+            auto ket_indexs = formula.right_index();
+
+            TA_ASSERT(bra_indexs.size() == 0);
+            TA_ASSERT(ket_indexs.size() == 2);
+
+            auto ket_index0 = ket_indexs[0];
+            auto ket_index1 = ket_indexs[1];
+
+            TA_ASSERT(ket_index0.is_ao());
+            TA_ASSERT(ket_index1.is_ao());
+
+            auto ket_basis0 = this->index_to_basis(ket_index0);
+            auto ket_basis1 = this->index_to_basis(ket_index1);
+
+            TA_ASSERT(ket_basis0 != nullptr);
+            TA_ASSERT(ket_basis1 != nullptr);
+
+            auto max_nprim = std::max(ket_basis0->max_nprim(), ket_basis1->max_nprim());
+            auto max_am = std::max(ket_basis0->max_am(), ket_basis1->max_am());
+            auto bs_array = tcc::utility::make_array(*ket_basis0, *ket_basis1);
             auto operation = formula.operation();
             if (operation.get_operation() == Operation::Operations::Coulomb) {
                 libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
@@ -231,6 +253,8 @@ namespace integrals{
     template <typename Tile, typename Policy>
     typename AtomicIntegral<Tile,Policy>::TArray3 AtomicIntegral<Tile,Policy>::compute3(const std::wstring& formula_string) {
         Formula formula(formula_string);
+
+        TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Three Center Integral Must Use Chemical Notation");
 
         auto bra_indexs = formula.left_index();
         auto ket_indexs = formula.right_index();
@@ -300,7 +324,13 @@ namespace integrals{
         auto max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
                                 ket_basis0->max_am(),ket_basis1->max_am()});
 
-        auto bs_array = tcc::utility::make_array(*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1);
+        std::array<basis::Basis,4> bs_array;
+        if (formula.notation() == Formula::Notation::Chemical){
+            bs_array = {*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1};
+        }
+        else if(formula.notation() == Formula::Notation::Physical){
+            bs_array = {*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1};
+        }
 
         // convert operation to libint operator
         auto operation = formula.operation();

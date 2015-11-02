@@ -82,13 +82,19 @@ namespace mpqc{
         std::vector<std::wstring> split_index;
         boost::split(split_index,index_array,boost::is_any_of(L" "),boost::token_compress_on);
 
-        std::vector<OrbitalIndex> result;
+        if(split_index.empty()){
+            return std::vector<OrbitalIndex>();
+        }else{
+            std::vector<OrbitalIndex> result;
 
-        for(auto index : split_index){
-            result.emplace_back(index);
+            for(auto index : split_index){
+                if(!index.empty()){
+                    result.emplace_back(index);
+                }
+            }
+            return result;
         }
 
-        return result;
 
     }
 

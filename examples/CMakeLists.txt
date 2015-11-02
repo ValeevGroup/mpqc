@@ -72,3 +72,6 @@ target_link_libraries(new_ints ${TileClusterChem_LIBRARIES})
 add_executable(simple_direct_scf EXCLUDE_FROM_ALL simple_direct_scf.cpp) 
 target_link_libraries(simple_direct_scf ${TileClusterChem_LIBRARIES})
 
+add_executable(simple_stored_scf EXCLUDE_FROM_ALL simple_stored_scf.cpp) 
+target_link_libraries(simple_stored_scf ${TileClusterChem_LIBRARIES})
+

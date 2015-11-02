@@ -44,14 +44,15 @@ LIST(APPEND TileClusterChem_LIBRARIES ${LIBINT_LIBRARIES})
 
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/molecule)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/expression)
-#ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/f12)
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/f12)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/integrals)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/expression)
+LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/f12)
 
-LIST(APPEND TileClusterChem_LIBRARIES molecule basis integrals expression)
+LIST(APPEND TileClusterChem_LIBRARIES molecule basis integrals expression f12)
 
 MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")

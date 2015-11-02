@@ -105,8 +105,6 @@ private:
     std::wstring name_;
 };
 
-
-    //TODO frirend function to determine space
 }
 
 

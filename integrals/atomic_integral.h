@@ -23,7 +23,6 @@ namespace mpqc{
 namespace integrals{
 
 
-    //TODO Atomic Integral class
     template<typename Tile, typename Policy>
     class AtomicIntegralBase {
     public:
@@ -157,6 +156,7 @@ namespace integrals{
     };
 
 
+    // TODO working with chemical and physical notation
     template <typename Tile, typename Policy>
     typename AtomicIntegral<Tile,Policy>::TArray2 AtomicIntegral<Tile,Policy>::compute2(const std::wstring& formula_string) {
 

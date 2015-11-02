@@ -90,11 +90,11 @@ dense_integrals(mad::World &world, E const &engine, Barray<N> const &bases,
     using Tile = detail::Ttype<Op>;
     DArray<N, Tile, DnPolicy> out(world, detail::create_trange(bases));
 
-    auto builder = std::make_shared(
-          make_integral_builder(world, engine, bases, op, Screener()));
+    auto builder = std::make_shared<IntegralBuilder<N, E, Op>>(
+          make_integral_builder(world, engine, bases, Screener(), op));
 
     // builder is shared_ptr so just capture it by copy.
-    auto task_func = [=](detail::IdxVec const &idx, TA::Range &&rng) {
+    auto task_func = [=](detail::IdxVec const &idx, TA::Range rng) {
         return builder->operator()(idx, std::move(rng));
     };
 
@@ -105,7 +105,7 @@ dense_integrals(mad::World &world, E const &engine, Barray<N> const &bases,
 
         auto range = trange.make_tile_range(ord);
         mad::Future<Tile> tile
-              = world.taskq.add(task_func, idx, std::move(range));
+              = world.taskq.add(task_func, idx, range);
 
         out.set(ord, tile);
     }

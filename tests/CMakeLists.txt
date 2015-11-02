@@ -6,7 +6,7 @@ ExternalProject_Add(
     catch
     PREFIX ${CMAKE_BINARY_DIR}/tests/catch
     GIT_REPOSITORY https://github.com/philsquared/Catch.git
-    TIMEOUT 10
+    TIMEOUT 100
     UPDATE_COMMAND ${GIT_EXECUTABLE} pull
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
@@ -25,8 +25,13 @@ add_dependencies(unit_tests catch)
 
 set(utests
     atom_test.cpp
+    atomic_integral_test.cpp
     clustering_test.cpp
+    orbital_index_test.cpp
+    formula_test.cpp
     )
+
+#TODO install xyz file to bin directory
 
 add_executable(tests EXCLUDE_FROM_ALL test_main.cpp ${utests})
 target_link_libraries(tests ${TileClusterChem_LIBRARIES})

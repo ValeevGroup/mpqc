@@ -23,6 +23,10 @@ namespace detail {
 
 using OneE_Engine = libint2::OneBodyEngine;
 using TwoE_Engine = libint2::TwoBodyEngine<libint2::Coulomb>;
+using cGTG_Engine = libint2::TwoBodyEngine<libint2::cGTG>;
+using cGTGCoulomb_Engine = libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>;
+using cGTG2_Engine = libint2::TwoBodyEngine<libint2::DelcGTG_square>;
+
 
 inline const double *shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1,
                                Shell const &s2, Shell const &s3) {
@@ -44,6 +48,54 @@ shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
 inline const double *
 shell_set(OneE_Engine &e, Shell const &s0, Shell const &s1) {
     return e.compute(s0, s1);
+}
+
+inline const double *shell_set(cGTG_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2, Shell const &s3) {
+    return e.compute(s0, s1, s2, s3);
+}
+
+inline const double *
+shell_set(cGTG_Engine &e, Shell const &s0, Shell const &s1) {
+    const auto unit = Shell::unit();
+    return e.compute(s0, unit, s1, unit);
+}
+
+inline const double *
+shell_set(cGTG_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
+    const auto unit = Shell::unit();
+    return e.compute(s0, unit, s1, s2);
+}
+
+inline const double *shell_set(cGTGCoulomb_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2, Shell const &s3) {
+    return e.compute(s0, s1, s2, s3);
+}
+
+inline const double *
+shell_set(cGTGCoulomb_Engine &e, Shell const &s0, Shell const &s1) {
+    const auto unit = Shell::unit();
+    return e.compute(s0, unit, s1, unit);
+}
+
+inline const double *
+shell_set(cGTGCoulomb_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
+    const auto unit = Shell::unit();
+    return e.compute(s0, unit, s1, s2);
+}
+
+inline const double *shell_set(cGTG2_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2, Shell const &s3) {
+    return e.compute(s0, s1, s2, s3);
+}
+
+inline const double *
+shell_set(cGTG2_Engine &e, Shell const &s0, Shell const &s1) {
+    const auto unit = Shell::unit();
+    return e.compute(s0, unit, s1, unit);
+}
+
+inline const double *
+shell_set(cGTG2_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
+    const auto unit = Shell::unit();
+    return e.compute(s0, unit, s1, s2);
 }
 
 template <typename Engine>

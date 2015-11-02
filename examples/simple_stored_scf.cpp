@@ -202,9 +202,6 @@ int main(int argc, char *argv[]) {
     auto V = mpqc_ints::sparse_integrals(world, nuclear_e, bs_array,
                                          ta_pass_through, screener);
 
-    auto Vd = mpqc_ints::dense_integrals(world, nuclear_e, bs_array,
-                                         ta_pass_through, screener);
-
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 

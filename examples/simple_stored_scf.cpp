@@ -26,6 +26,7 @@
 #include <memory>
 
 using namespace mpqc;
+namespace ints = mpqc::integrals;
 
 class FourCenterSCF {
   private:
@@ -151,7 +152,6 @@ class FourCenterSCF {
     }
 };
 
-TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -189,28 +189,34 @@ int main(int argc, char *argv[]) {
     auto screener = integrals::Screener();
 
     // Overlap ints
-    auto overlap_e = tints::make_1body("overlap", basis, clustered_mol);
-    auto S = mpqc_ints::sparse_integrals(world, overlap_e, bs_array,
-                                         ta_pass_through, screener);
+    auto overlap_e = ints::make_1body_shr_pool("overlap", basis, clustered_mol);
+    auto S = ints::sparse_integrals(world, overlap_e, bs_array);
+    { // Test Dense Integrals
+        auto Sdense = ints::dense_integrals(world, overlap_e, bs_array);
+        auto dense_norm = Sdense("i,j").norm().get();
+        auto sparse_norm = Sdense("i,j").norm().get();
+        if(std::abs(dense_norm - sparse_norm) >= 0.1){
+            std::cout << "S dense norm = " << dense_norm << std::endl;
+            std::cout << "S sparse norm = " << sparse_norm << std::endl;
+            std::cout << "Exiting Early!\n";
+            return 1;
+        }
+    }
 
     // Overlap ints
-    auto kinetic_e = tints::make_1body("kinetic", basis, clustered_mol);
-    auto T = mpqc_ints::sparse_integrals(world, kinetic_e, bs_array,
-                                         ta_pass_through, screener);
+    auto kinetic_e = ints::make_1body_shr_pool("kinetic", basis, clustered_mol);
+    auto T = ints::sparse_integrals(world, kinetic_e, bs_array);
 
-    auto nuclear_e = tints::make_1body("nuclear", basis, clustered_mol);
-    auto V = mpqc_ints::sparse_integrals(world, nuclear_e, bs_array,
-                                         ta_pass_through, screener);
+    auto nuclear_e = ints::make_1body_shr_pool("nuclear", basis, clustered_mol);
+    auto V = ints::sparse_integrals(world, nuclear_e, bs_array);
 
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
     { // Unscreened four center stored RHF.
-        auto eri_e = tcc::integrals::make_2body(basis);
         auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
-
-        auto eri4 = mpqc_ints::sparse_integrals(world, eri_e, bs4_array,
-                                               ta_pass_through, screener);
+        auto eri_e = ints::make_2body_shr_pool(basis);
+        auto eri4 = ints::sparse_integrals(world, eri_e, bs4_array);
         world.gop.fence();
 
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);

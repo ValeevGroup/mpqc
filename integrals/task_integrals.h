@@ -20,31 +20,52 @@
 namespace mpqc {
 namespace integrals {
 
+struct TensorPassThrough {
+    TA::TensorD operator()(TA::TensorD &&ten) const {
+        return std::move(ten);
+    }
+};
+
 /*! \brief Construct sparse integral tensors in parallel.
  *
- * \param op needs to be a function or functor that takes a TA::TensorD && and 
- * returns any valid tile type. 
+ * \param shr_pool should be a std::shared_ptr to an IntegralEnginePool
+ * \param bases should be a std::array of Basis, which will be copied.
+ * \param op needs to be a function or functor that takes a TA::TensorD && and
+ * returns any valid tile type. Op is copied so it can be moved.
+ * ```
+ * auto t = [](TA::TensorD &&ten){return std::move(ten);};
+ * ```
  *
- * \param screen needs to be a type derived from Screener
+ * \param screen should be a std::shared_ptr to a Screener.
  */
-template <typename ScreenerType, typename E, unsigned long N, typename Op>
+template <typename E, unsigned long N, typename Op = TensorPassThrough>
 DArray<N, detail::Ttype<Op>, SpPolicy>
-sparse_integrals(mad::World &world, E const &engine, Barray<N> const &bases,
-                 Op op, ScreenerType screen) {
+sparse_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
+                 Op op = Op{}, std::shared_ptr<Screener> screen
+                        = std::make_shared<Screener>(Screener{})) {
 
     using Tile = detail::Ttype<Op>;
 
+    // Build the Trange and Shape Tensor
     auto trange = detail::create_trange(bases);
     const auto tvolume = trange.tiles().volume();
     std::vector<std::pair<unsigned long, Tile>> tiles(tvolume);
     TA::TensorF tile_norms(trange.tiles(), 0.0);
 
+    // Copy the Bases for the Integral Builder
+    auto shr_bases = std::make_shared<Barray<N>>(bases);
+
+    // Make a pointer to an Integral builder.  Doing this because we want to use
+    // it in Tasks.
     auto builder_ptr = std::make_shared<IntegralBuilder<N, E, Op>>(
-          make_integral_builder(world, engine, bases, std::move(screen), op));
+          make_integral_builder(world, std::move(shr_pool),
+                                std::move(shr_bases), std::move(screen),
+                                std::move(op)));
 
     auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng,
                       TA::TensorF *tile_norms_ptr, Tile *out_tile) {
 
+        // This is why builder was made into a shared_ptr.
         auto &builder = *builder_ptr;
         auto ta_tile = builder.integrals(idx, std::move(rng));
 
@@ -82,20 +103,27 @@ sparse_integrals(mad::World &world, E const &engine, Barray<N> const &bases,
 /*! \brief Construct a dense integral tensor in parallel.
  *
  */
-template <typename E, unsigned long N, typename Op>
+template <typename E, unsigned long N, typename Op = TensorPassThrough>
 DArray<N, detail::Ttype<Op>, DnPolicy>
-dense_integrals(mad::World &world, E const &engine, Barray<N> const &bases,
-                Op op) {
+dense_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
+                Op op = Op{}, std::shared_ptr<Screener> screen
+                       = std::make_shared<Screener>(Screener{})) {
 
     using Tile = detail::Ttype<Op>;
     DArray<N, Tile, DnPolicy> out(world, detail::create_trange(bases));
 
-    auto builder = std::make_shared<IntegralBuilder<N, E, Op>>(
-          make_integral_builder(world, engine, bases, Screener(), op));
+    // Copy the Bases for the Integral Builder
+    auto shr_bases = std::make_shared<Barray<N>>(bases);
+
+    // Make a pointer to a builder which can be shared by different tasks.
+    auto builder_ptr = std::make_shared<IntegralBuilder<N, E, Op>>(
+          make_integral_builder(world, std::move(shr_pool),
+                                std::move(shr_bases), std::move(screen),
+                                std::move(op)));
 
     // builder is shared_ptr so just capture it by copy.
     auto task_func = [=](detail::IdxVec const &idx, TA::Range rng) {
-        return builder->operator()(idx, std::move(rng));
+        return builder_ptr->operator()(idx, std::move(rng));
     };
 
     auto const &trange = out.trange();
@@ -104,8 +132,7 @@ dense_integrals(mad::World &world, E const &engine, Barray<N> const &bases,
         detail::IdxVec idx = trange.tiles().idx(ord);
 
         auto range = trange.make_tile_range(ord);
-        mad::Future<Tile> tile
-              = world.taskq.add(task_func, idx, range);
+        mad::Future<Tile> tile = world.taskq.add(task_func, idx, range);
 
         out.set(ord, tile);
     }

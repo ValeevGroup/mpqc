@@ -140,7 +140,7 @@ namespace integrals{
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::SparsePolicy>::value, TA::SparsePolicy>::type> compute_integrals(
                 madness::World& world, E const &engine, Barray<N> const &bases)
         {
-            auto result = mpqc::integrals::sparse_integrals(world,engine,bases,op_,Screener{});
+            auto result = mpqc::integrals::sparse_integrals(world,engine,bases,op_);
             return result;
         }
 
@@ -194,26 +194,28 @@ namespace integrals{
             // convert operation to libint operator
             auto operation = formula.operation();
             libint2::OneBodyEngine::operator_type itype;
-            tcc::integrals::q_vector q;
+            std::vector<std::pair<double, std::array<double, 3>>> q;
             if (operation.get_operation() == Operation::Operations::Overlap) {
                 itype = libint2::OneBodyEngine::overlap;
             } else if (operation.get_operation() == Operation::Operations::Kinetic) {
                 itype = libint2::OneBodyEngine::kinetic;
             } else if (operation.get_operation() == Operation::Operations::Nuclear) {
                 itype = libint2::OneBodyEngine::nuclear;
-                q = tcc::integrals::make_q(*(this->mol_));
+                q = make_q(*(this->mol_));
             } else {
                 throw std::runtime_error("Invalid One Body Operation");
             }
 
             libint2::OneBodyEngine engine(itype, max_nprim, static_cast<int>(max_am),0);
 
+
             if(itype == libint2::OneBodyEngine::nuclear){
                 engine.set_params(std::move(q));
             }
 
+            auto engine_pool = make_pool(engine);
 
-            auto result = compute_integrals(this->world_,engine,bs_array);
+            auto result = compute_integrals(this->world_,engine_pool,bs_array);
             return result;
         }
         // use two body engine
@@ -244,7 +246,8 @@ namespace integrals{
             auto operation = formula.operation();
             if (operation.get_operation() == Operation::Operations::Coulomb) {
                 libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
-                auto result = compute_integrals(this->world_,engine,bs_array);
+                auto engine_pool = make_pool(engine);
+                auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 return result;
             }
             else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
@@ -254,7 +257,8 @@ namespace integrals{
                 }
 
                 libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-                auto result = compute_integrals(this->world_,engine,bs_array);
+                auto engine_pool = make_pool(engine);
+                auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 return result;
             }
             else if(operation.get_operation() == Operation::Operations::cGTG){
@@ -264,7 +268,8 @@ namespace integrals{
                 }
 
                 libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-                auto result = compute_integrals(this->world_,engine,bs_array);
+                auto engine_pool = make_pool(engine);
+                auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 return result;
             }
             else if(operation.get_operation() == Operation::Operations::cGTG2){
@@ -274,7 +279,8 @@ namespace integrals{
                 }
 
                 libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-                auto result = compute_integrals(this->world_,engine,bs_array);
+                auto engine_pool = make_pool(engine);
+                auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 return result;
             }
             else {
@@ -321,7 +327,8 @@ namespace integrals{
         auto operation = formula.operation();
         if (operation.get_operation() == Operation::Operations::Coulomb) {
             libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
-            auto result = compute_integrals(this->world_,engine,bs_array);
+            auto engine_pool = make_pool(engine);
+            auto result = compute_integrals(this->world_,engine_pool,bs_array);
             return result;
         }
         else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
@@ -331,7 +338,8 @@ namespace integrals{
             }
 
             libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-            auto result = compute_integrals(this->world_,engine,bs_array);
+            auto engine_pool = make_pool(engine);
+            auto result = compute_integrals(this->world_,engine_pool,bs_array);
             return result;
         }
         else if(operation.get_operation() == Operation::Operations::cGTG){
@@ -341,7 +349,8 @@ namespace integrals{
             }
 
             libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-            auto result = compute_integrals(this->world_,engine,bs_array);
+            auto engine_pool = make_pool(engine);
+            auto result = compute_integrals(this->world_,engine_pool,bs_array);
             return result;
         }
         else if(operation.get_operation() == Operation::Operations::cGTG2){
@@ -351,7 +360,8 @@ namespace integrals{
             }
 
             libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-            auto result = compute_integrals(this->world_,engine,bs_array);
+            auto engine_pool = make_pool(engine);
+            auto result = compute_integrals(this->world_,engine_pool,bs_array);
             return result;
         }
         else {
@@ -402,7 +412,8 @@ namespace integrals{
         auto operation = formula.operation();
         if (operation.get_operation() == Operation::Operations::Coulomb) {
             libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
-            auto result = compute_integrals(this->world_,engine,bs_array);
+            auto engine_pool = make_pool(engine);
+            auto result = compute_integrals(this->world_,engine_pool,bs_array);
             return result;
         }
         else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
@@ -412,7 +423,8 @@ namespace integrals{
             }
 
             libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-            auto result = compute_integrals(this->world_,engine,bs_array);
+            auto engine_pool = make_pool(engine);
+            auto result = compute_integrals(this->world_,engine_pool,bs_array);
             return result;
         }
         else if(operation.get_operation() == Operation::Operations::cGTG){
@@ -422,7 +434,8 @@ namespace integrals{
             }
 
             libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-            auto result = compute_integrals(this->world_,engine,bs_array);
+            auto engine_pool = make_pool(engine);
+            auto result = compute_integrals(this->world_,engine_pool,bs_array);
             return result;
         }
         else if(operation.get_operation() == Operation::Operations::cGTG2){
@@ -432,7 +445,8 @@ namespace integrals{
             }
 
             libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-            auto result = compute_integrals(this->world_,engine,bs_array);
+            auto engine_pool = make_pool(engine);
+            auto result = compute_integrals(this->world_,engine_pool,bs_array);
             return result;
         }
         else {
@@ -442,17 +456,6 @@ namespace integrals{
     //TODO R12 Integral
 
     // R12 Atomic Integral
-
-//    template<typename Tile, typename Policy>
-//    class R12AtomicIntegral : public AtomicIntegralBase<Tile,Policy>{
-//    public:
-//        typedef TA::Array <double, 2, Tile, Policy> TArray2;
-//        typedef TA::Array <double, 3, Tile, Policy> TArray3;
-//        typedef TA::Array <double, 4, Tile, Policy> TArray4;
-//
-//    private:
-//         geminal parametors
-//    };
 
     }
 }

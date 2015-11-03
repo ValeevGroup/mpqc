@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
         auto Sdense = ints::dense_integrals(world, overlap_e, bs_array);
         auto dense_norm = Sdense("i,j").norm().get();
         auto sparse_norm = Sdense("i,j").norm().get();
-        if(std::abs(dense_norm - sparse_norm) >= 0.1){
+        if (std::abs(dense_norm - sparse_norm) >= 0.1) {
             std::cout << "S dense norm = " << dense_norm << std::endl;
             std::cout << "S sparse norm = " << sparse_norm << std::endl;
             std::cout << "Exiting Early!\n";
@@ -213,10 +213,25 @@ int main(int argc, char *argv[]) {
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
+    auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
+    auto eri_e = ints::make_2body_shr_pool(basis);
     { // Unscreened four center stored RHF.
-        auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
-        auto eri_e = ints::make_2body_shr_pool(basis);
         auto eri4 = ints::sparse_integrals(world, eri_e, bs4_array);
+        world.gop.fence();
+
+        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
+        scf.solve(50, 1e-8, eri4);
+    }
+
+    { // Schwarz Screened four center stored RHF.
+        std::cout << "\n\nNow with screened integrals\n";
+        // Build Screener
+        auto screen_builder = ints::init_schwarz_screen(1e-10);
+        auto screen_type = ints::init_schwarz_screen::ScreenType::FourCenter;
+        auto shr_screen = std::make_shared<ints::Screener>(
+              screen_builder(world, eri_e, screen_type, basis));
+
+        auto eri4 = ints::sparse_integrals(world, eri_e, bs4_array, shr_screen);
         world.gop.fence();
 
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);

@@ -63,6 +63,19 @@ int64_t Basis::nshells() const {
 }
 
 
+std::vector<Shell> Basis::flattened_shells() const {
+    std::vector<Shell> shells;
+    shells.reserve(nshells());
+
+    for (auto const &cluster : cluster_shells()) {
+        for (auto const &shell : cluster) {
+            shells.push_back(shell);
+        }
+    }
+
+    return shells;
+}
+
 std::vector<ShellVec> const &Basis::cluster_shells() const { return shells_; }
 
 std::ostream &operator<<(std::ostream &os, Basis const &b) {

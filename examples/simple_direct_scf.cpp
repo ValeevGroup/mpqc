@@ -215,15 +215,24 @@ int main(int argc, char *argv[]) {
         scf.solve(50, 1e-12, eri4);
     }
 
-#if 0
-    { // Do schwarz 
-        std::cout << "Computing HF with Schwarz Screening" << std::endl;
+    { // Do schwarz
+        std::cout << "\n\nComputing HF with Schwarz Screening" << std::endl;
         world.gop.fence();
+        auto screen0 = tcc_time::now();
+
+        auto screen_builder = ints::init_schwarz_screen(1e-10);
+        auto screen_type = ints::init_schwarz_screen::ScreenType::FourCenter;
+        auto shr_screen = std::make_shared<ints::Screener>(
+              screen_builder(world, eri_e, screen_type, basis));
+
+        auto screen1 = tcc_time::now();
+        std::cout << "Took " << tcc_time::duration_in_s(screen0, screen1)
+                  << " s to form screening Matrix!" << std::endl;
+
         auto eri40 = tcc_time::now();
 
-        auto eri4 = mpqc_ints::
-              direct_sparse_integrals(
-                    world, eri_e, bs4_array, );
+        auto eri4 = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array,
+                                                       shr_screen);
         world.gop.fence();
         auto eri41 = tcc_time::now();
         std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
@@ -231,8 +240,9 @@ int main(int argc, char *argv[]) {
 
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
         scf.solve(20, 1e-8, eri4);
-        std::cout << "\n\n";
     }
+
+#if 0
     { // Do then QQR
         std::cout << "Computing HF with QQR Based Integrals" << std::endl;
         world.gop.fence();

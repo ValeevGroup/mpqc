@@ -77,14 +77,6 @@ class Screener {
     }
 };
 
-struct init_base_screen {
-    template <typename E, unsigned long N>
-    Screener operator()(detail::IdxVec const &,
-                        detail::ShrBases<N> const &, ShrPool<E> const &) {
-        return Screener();
-    }
-};
-
 } // namespace integrals
 } // namespace mpqc
 

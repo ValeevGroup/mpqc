@@ -35,6 +35,7 @@ class Basis {
     int64_t nfunctions() const;
     int64_t nshells() const;
     int64_t nclusters() const { return shells_.size(); };
+    std::vector<Shell> flattened_shells() const;
 
   private:
     std::vector<ShellVec> shells_;
@@ -52,16 +53,7 @@ std::ostream & operator<<(std::ostream &, Basis const &);
  */
 template<typename Op>
 Basis reblock(Basis const &basis, Op op){
-    std::vector<Shell> shells;
-    shells.reserve(basis.nshells());
-
-    for(auto const &cluster : basis.cluster_shells()){
-        for(auto const &shell : cluster){
-            shells.push_back(shell);
-        }
-    }
-
-    return Basis(op(std::move(shells)));
+    return Basis(op(basis.flattened_shells()));
 }
 
 } // namespace basis

@@ -7,7 +7,7 @@ bool QQR::skip(int64_t ordA, int64_t ordB, int64_t ordC, int64_t ordD,
                Shell const &, Shell const &, Shell const &,
                Shell const &) {
 
-    auto QabQcd = four_center_estimate(ordA, ordB, ordC, ordD);
+    auto QabQcd = Qab(ordA, ordB) * Qcd(ordC, ordD);
 
     // Don't bother with QQR if QQ is good enought
     if (QabQcd > skip_threshold()) {

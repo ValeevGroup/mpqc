@@ -1,3 +1,4 @@
+
 #include <catch.hpp>
 
 #include "../molecule/atom.h"

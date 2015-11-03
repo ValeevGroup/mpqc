@@ -6,25 +6,26 @@
 #define TILECLUSTERCHEM_FORMULA_H
 
 #include <vector>
-#include <unordered_map>
 
 #include "orbital_index.h"
+#include "operation.h"
 
 using mpqc::OrbitalIndex;
+using mpqc::Operation;
 
 namespace mpqc{
 
     /* format for formula
 
-        <index1 index2|operation|index3 index4>
+        <index1 index2|operation|index3 index4>[option]
+
+        (index1 index2|operation|index3 index4)[option]
 
      */
     class Formula{
     public:
-        enum class Operation{Overlap, Kinetic, Nuclear, Coulomb, cGTG, cGTGCoulomb, cGTG2};
+        enum class Notation {Chemical, Physical};
 
-        static const std::unordered_map<std::wstring, Operation> one_body_operation;
-        static const std::unordered_map<std::wstring, Operation> two_body_operation;
 
         Formula() = default;
         Formula(Formula const &) = default;
@@ -33,9 +34,6 @@ namespace mpqc{
         Formula& operator=(Formula &&) = default;
 
         Formula(std::wstring formula);
-
-        bool is_onebody() const;
-        bool is_twobody() const;
 
         const std::wstring &formula() const {
             return formula_;
@@ -53,16 +51,20 @@ namespace mpqc{
             return operation_;
         }
 
+        const Notation &notation() const {
+            return notation_;
+        }
 
     private:
 
-        Operation check_operation(std::wstring oper);
         std::vector<OrbitalIndex> check_orbital_index(std::wstring index_array);
 
     private:
 
         std::wstring formula_;
+
         Operation operation_;
+        Notation  notation_;
         std::vector<OrbitalIndex> left_index_;
         std::vector<OrbitalIndex> right_index_;
     };

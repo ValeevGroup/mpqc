@@ -33,6 +33,8 @@ namespace mpqc{
  */
 class OrbitalIndex{
 public:
+    // positive for molecular orbital index
+    // negative for atomic orbital index
     enum class Index {
         inactocc = 1,
         actocc = 2,
@@ -48,6 +50,7 @@ public:
         dfbs = -3
     };
 
+    // constant wchar_t used to map to Index
     static const wchar_t inactocc_wchar[2];
     static const wchar_t actocc_wchar[2];
     static const wchar_t occ_wchar[2];
@@ -71,14 +74,27 @@ public:
 
     OrbitalIndex(std::wstring letter);
 
+    // if the have the same index
     bool operator==(OrbitalIndex const &);
     bool operator==(const OrbitalIndex::Index );
 
+    // if the same index and name
+    bool same(const OrbitalIndex& other);
+
+    // get index
     const Index &index() const {
         return index_;
     }
 
+    // get index name
+    const std::wstring &name() const {
+        return name_;
+    }
+
+    // if atomic orbital index
     bool is_ao() const;
+
+    // if molecular orbital index
     bool is_mo() const;
 
 private:
@@ -89,8 +105,6 @@ private:
     std::wstring name_;
 };
 
-
-    //TODO frirend function to determine space
 }
 
 

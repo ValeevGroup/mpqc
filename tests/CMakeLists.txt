@@ -27,6 +27,7 @@ set(utests
     atom_test.cpp
     atomic_integral_test.cpp
     clustering_test.cpp
+    f12_utility_test.cpp
     orbital_index_test.cpp
     formula_test.cpp
     )

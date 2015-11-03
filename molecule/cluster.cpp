@@ -18,6 +18,7 @@ void Cluster::update_center(){
 
 double Cluster::sum_distances_from_center() const {
     assert(false); // I am not sure this is correct.
+    return 0.0;
     // auto reduce_r = [&](double d, const Clusterable &c) {
     //     return d + std::sqrt(diff_squaredNorm(c.center(), center_));
     // };

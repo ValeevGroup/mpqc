@@ -20,11 +20,6 @@
 namespace mpqc {
 namespace integrals {
 
-struct TensorPassThrough {
-    TA::TensorD operator()(TA::TensorD &&ten) const {
-        return std::move(ten);
-    }
-};
 
 /*! \brief Construct sparse integral tensors in parallel.
  *
@@ -41,8 +36,9 @@ struct TensorPassThrough {
 template <typename E, unsigned long N, typename Op = TensorPassThrough>
 DArray<N, detail::Ttype<Op>, SpPolicy>
 sparse_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
-                 Op op = Op{}, std::shared_ptr<Screener> screen
-                        = std::make_shared<Screener>(Screener{})) {
+                 std::shared_ptr<Screener> screen
+                 = std::make_shared<Screener>(Screener{}),
+                 Op op = Op{}) {
 
     using Tile = detail::Ttype<Op>;
 
@@ -106,8 +102,9 @@ sparse_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
 template <typename E, unsigned long N, typename Op = TensorPassThrough>
 DArray<N, detail::Ttype<Op>, DnPolicy>
 dense_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
-                Op op = Op{}, std::shared_ptr<Screener> screen
-                       = std::make_shared<Screener>(Screener{})) {
+                std::shared_ptr<Screener> screen
+                = std::make_shared<Screener>(Screener{}),
+                Op op = Op{}) {
 
     using Tile = detail::Ttype<Op>;
     DArray<N, Tile, DnPolicy> out(world, detail::create_trange(bases));

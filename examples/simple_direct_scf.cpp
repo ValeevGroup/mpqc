@@ -26,6 +26,7 @@
 #include <memory>
 
 using namespace mpqc;
+namespace ints = mpqc::integrals;
 
 class FourCenterSCF {
   private:
@@ -186,39 +187,43 @@ int main(int argc, char *argv[]) {
 
     const auto bs_array = tcc::utility::make_array(basis, basis);
 
-    auto screener = integrals::Screener();
+    auto overlap_e = ints::make_1body_shr_pool("overlap", basis, clustered_mol);
+    auto S = ints::sparse_integrals(world, overlap_e, bs_array);
 
-    // Overlap ints
-    auto overlap_e = tints::make_1body("overlap", basis, clustered_mol);
-    auto S
-          = mpqc_ints::sparse_integrals(world, overlap_e, bs_array,
-                                        ta_pass_through, screener);
+    auto kinetic_e = ints::make_1body_shr_pool("kinetic", basis, clustered_mol);
+    auto T = ints::sparse_integrals(world, kinetic_e, bs_array);
 
-    // Overlap ints
-    auto kinetic_e = tints::make_1body("kinetic", basis, clustered_mol);
-    auto T = mpqc_ints::sparse_integrals(world, kinetic_e, bs_array,
-                                         ta_pass_through, screener);
-
-    auto nuclear_e = tints::make_1body("nuclear", basis, clustered_mol);
-    auto V = mpqc_ints::sparse_integrals(world, nuclear_e, bs_array,
-                                         ta_pass_through, screener);
+    auto nuclear_e = ints::make_1body_shr_pool("nuclear", basis, clustered_mol);
+    auto V = ints::sparse_integrals(world, nuclear_e, bs_array);
 
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
-    auto eri_e = tcc::integrals::make_2body(basis);
     auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
-
-#if 0
-    // Going to do several SCF's
-
-    { // Do schwarz first
-        std::cout << "Computing HF with Schwarz Based Integrals" << std::endl;
+    auto eri_e = ints::make_2body_shr_pool(basis);
+    { // Unscreened SCF
+        std::cout << "Computing HF with No Screening" << std::endl;
         world.gop.fence();
         auto eri40 = tcc_time::now();
+        auto eri4 = ints::direct_sparse_integrals(world, eri_e, bs4_array);
+        world.gop.fence();
+        auto eri41 = tcc_time::now();
+        std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
+                  << " s to initialize integrals." << std::endl;
+
+        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
+        scf.solve(50, 1e-12, eri4);
+    }
+
+#if 0
+    { // Do schwarz 
+        std::cout << "Computing HF with Schwarz Screening" << std::endl;
+        world.gop.fence();
+        auto eri40 = tcc_time::now();
+
         auto eri4 = mpqc_ints::
-              direct_sparse_integrals<mpqc_ints::init_schwarz_screen>(
-                    world, eri_pool, bs4_array, ta_pass_through);
+              direct_sparse_integrals(
+                    world, eri_e, bs4_array, );
         world.gop.fence();
         auto eri41 = tcc_time::now();
         std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)

@@ -3,13 +3,10 @@
 #define MPQC_INTEGRALS_DIRECTTILE_H
 
 #include "task_integrals_common.h"
-#include "integral_engine_pool.h"
-
-#include "task_integrals_op_invoker.h"
-
-#include "screening/screen_base.h"
 
 #include "../tensor/tcc_tile.h"
+
+#include "../include/tiledarray.h"
 
 #include <memory>
 #include <vector>
@@ -28,21 +25,17 @@ using ShrTile = tcc::tensor::Tile<T>;
 /*! \brief A direct tile for integral construction
  *
  */
-template <typename E, unsigned long N, typename Invoker>
+template <typename Builder>
 class DirectTile {
   private:
-    // using TileType = detail::Ttype<Op>;
-    // using FnType = TileType(TA::Range const&);
-    using TileType = decltype(
-          std::declval<Invoker>()(std::declval<TA::Range>())
-          );
-
-    TA::Range range_;
     std::vector<std::size_t> idx_;
-    ShrPool<E> engines_;
-    detail::ShrShellVecArray<N> shell_vecs_;
-    Invoker op_invoker_;
-    // std::function<FnType> op_invoker_;
+    TA::Range range_;
+    std::shared_ptr<Builder> builder_;
+    madness::World *world_ptr_;
+    madness::uniqueidT builder_id_;
+
+    using TileType = decltype(std::declval<Builder>()(
+          std::declval<std::vector<std::size_t>>(), std::declval<TA::Range>()));
 
   public:
     using value_type = double;
@@ -55,16 +48,15 @@ class DirectTile {
     DirectTile &operator=(DirectTile const &) = default;
     DirectTile &operator=(DirectTile &&) = default;
 
-    DirectTile(TA::Range range, std::vector<std::size_t> index,
-               ShrPool<E> engines, detail::ShrShellVecArray<N> shells,
-               Invoker op_invoke)
+    DirectTile(std::vector<std::size_t> index, TA::Range range,
+               std::shared_ptr<Builder> builder)
             : range_(std::move(range)),
               idx_(std::move(index)),
-              engines_(std::move(engines)),
-              shell_vecs_(std::move(shells)),
-              op_invoker_(std::move(op_invoke)) {}
+              builder_(std::move(builder)),
+              world_ptr_(&builder_->get_world()),
+              builder_id_(builder_->id()) {}
 
-    operator eval_type() const { return op_invoker_(range_); }
+    operator eval_type() const { return builder_->operator()(idx_, range_); }
 
     template <typename Archive>
     Archive &serialize(Archive &ar) {
@@ -72,23 +64,6 @@ class DirectTile {
         return ar;
     }
 };
-
-template <typename ScreenOp = init_base_screen, typename E, unsigned long N,
-          typename Op>
-DirectTile<E, N, detail::op_invoke<E,N,Op>>
-make_direct_tile(TA::Range range, std::vector<std::size_t> index,
-                 ShrPool<E> engines, detail::ShrBases<N> bases, Op op) {
-
-    auto shell_vecs = detail::get_shells(index, bases);
-    auto screen = ScreenOp()(index, bases, engines);
-
-    auto op_invoke = detail::make_op_invoke(index, engines, shell_vecs,
-                                            std::move(op), std::move(screen));
-
-    return DirectTile<E, N, detail::op_invoke<E, N, Op>>(std::move(range), std::move(index),
-                                std::move(engines), shell_vecs,
-                                std::move(op_invoke));
-}
 
 } // namespace integrals
 } // namespace mpqc

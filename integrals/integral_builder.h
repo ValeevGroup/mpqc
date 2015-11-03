@@ -62,7 +62,7 @@ class IntegralBuilder : public madness::WorldObject<IntegralBuilder<N, E, Op>> {
 
 
     op_type operator()(std::vector<std::size_t> const &idx, TA::Range range) {
-        return op_(integrals(std::move(idx), std::move(range)));
+        return op_(integrals(idx, std::move(range)));
     }
 
     TA::TensorD

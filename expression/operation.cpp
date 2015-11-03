@@ -66,11 +66,7 @@ namespace mpqc{
     bool Operation::has_option(Options op) const {
 
         auto df = std::find(options_.cbegin(),options_.cend(),op);
-        if (df != options_.cend()){
-            return true;
-        }else{
-            return false;
-        }
+        return (df != options_.cend());
     }
     Operation::Operation(std::wstring oper, std::wstring opt) {
 

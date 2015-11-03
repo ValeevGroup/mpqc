@@ -21,10 +21,13 @@
 #include "../integrals/atomic_integral.h"
 
 #include "../utility/time.h"
+#include "../utility/wcout_utf8.h"
 #include "../utility/array_storage.h"
 #include "../ta_routines/array_to_eigen.h"
+#include "../f12/utility.h"
 
 #include <memory>
+#include <locale>
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;
@@ -184,16 +187,22 @@ int main(int argc, char *argv[]) {
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
-    libint2::init();
+    basis::BasisSet abs("aug-cc-pVTZ");
+    basis::Basis abs_basis(abs.get_cluster_shells(clustered_mol));
 
+    f12::GTGParams gtg_params(1.2,6);
+
+    libint2::init();
 
     integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int
             (world,
              ta_pass_through,
             std::make_shared<molecule::Molecule>(clustered_mol),
-            std::make_shared<basis::Basis>(basis)
+            std::make_shared<basis::Basis>(basis),
+             nullptr,
+            std::make_shared<basis::Basis> (abs_basis),
+             gtg_params.compute()
             );
-
 
     // Overlap ints
     auto S = ao_int.compute2(L"(κ|λ)");
@@ -213,7 +222,12 @@ int main(int argc, char *argv[]) {
         scf.solve(50, 1e-8, eri4);
     }
 
-    libint2::cleanup();
+    // compute r12 integral
+    auto r12 = ao_int.compute4(L"(α β |R| γ δ)");
+//    auto gr12 = ao_int.compute2(L"( |GR| γ δ)");
+//    auto r12_2 = ao_int.compute4(L"(α β |R2| γ δ)");
+
     madness::finalize();
+    libint2::cleanup();
     return 0;
 }

@@ -17,6 +17,8 @@
 #include <fstream>
 #include <cstdlib>
 
+#include <madness/world/array_addons.h>
+
 namespace tcc {
 namespace pure {
 

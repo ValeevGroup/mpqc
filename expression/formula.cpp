@@ -29,8 +29,11 @@ namespace mpqc{
             return letter == L'>' || letter == L')';
         };
 
+        // find formula between < > or ( )
         auto bra_symbol = std::find_if(formula_string.cbegin(), formula_string.cend(), left_mark);
         auto ket_symbol = std::find_if(formula_string.cbegin(), formula_string.cend(), right_mark);
+
+        TA_ASSERT(bra_symbol < ket_symbol);
 
         if (bra_symbol == formula_string.cend() || ket_symbol == formula_string.cend()) {
             throw std::runtime_error("Formula should start with < or ( and end with > or ). \n");
@@ -48,7 +51,20 @@ namespace mpqc{
 
 //        std::wcout << formula_string;
 
-        // split the string by |
+
+        // find option between [ and ]
+        auto option_left = std::find(formula_string.cbegin(), formula_string.cend(), L'[');
+        auto option_right = std::find(formula_string.cbegin(), formula_string.cend(), L']');
+
+        std::wstring option;
+
+        if( (option_left!=formula_string.end()) && (option_right!=formula_string.end())){
+            TA_ASSERT(option_left < option_right);
+            option = std::wstring(option_left+1,option_right);
+        }
+
+
+        // split the formula by |
         std::vector<std::wstring> split_formula;
         boost::split(split_formula, formula, boost::is_any_of(L"|"), boost::token_compress_on);
 
@@ -56,7 +72,7 @@ namespace mpqc{
             std::wstring left_formula = std::move(split_formula[0]);
             std::wstring right_formula = std::move(split_formula[1]);
 
-            operation_ = Operation(L" ");
+            operation_ = Operation(L" ",option);
             left_index_ = check_orbital_index(left_formula);
             right_index_ = check_orbital_index(right_formula);
 
@@ -66,13 +82,30 @@ namespace mpqc{
             std::wstring operation = std::move(split_formula[1]);
             std::wstring right_formula = std::move(split_formula[2]);
 
-            operation_ = Operation(operation);
+            operation_ = Operation(operation, option);
             left_index_ = check_orbital_index(left_formula);
             right_index_ = check_orbital_index(right_formula);
 
         }
         else {
             throw std::runtime_error("Formula in wrong length. \n");
+        }
+
+        // error detecting
+
+        // 1. density fitting only for four center code
+        if(operation_.has_option(Operation::Options::DensityFitting) && (left_index_.size()!=2) && (right_index_.size()!=2)){
+            throw std::runtime_error("Density Fitting is only available for Four Center Integral!");
+        }
+
+        // 2. one body operation
+        if(operation_.is_onebody() && (left_index_.size()!=1) && (right_index_.size()!=1)){
+            throw std::runtime_error("One body Operator with Wrong Index Size!");
+        }
+
+        // 3. more than three index
+        if( (left_index_.size()>=3) || (right_index_.size()>=3)){
+            throw std::runtime_error("Wrong Number of Index!");
         }
 
     }

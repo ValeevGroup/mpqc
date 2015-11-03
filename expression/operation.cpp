@@ -9,6 +9,7 @@
 
 namespace mpqc{
     using Operations = mpqc::Operation::Operations;
+    using Options = mpqc::Operation::Options;
 
     const std::unordered_map<std::wstring, Operations> Operation::one_body_operation = {
         {L"", Operations::Overlap},
@@ -21,6 +22,10 @@ namespace mpqc{
         {L"R", Operations::cGTG },
         {L"GR", Operations::cGTGCoulomb },
         {L"R2", Operations::cGTG2 }
+    };
+
+    const std::unordered_map<std::wstring, Options> Operation::option = {
+            {L"df", Options::DensityFitting},
     };
 
     bool Operation::is_onebody() const {
@@ -43,7 +48,33 @@ namespace mpqc{
         return false;
     }
 
-    Operation::Operation(std::wstring oper) {
+    bool Operation::is_r12() const {
+        if(operation_ == Operations::cGTG){
+            return true;
+        }
+        else if(operation_ == Operations::cGTG2){
+            return true;
+        }
+        else if(operation_ == Operations::cGTGCoulomb){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    bool Operation::has_option(Options op) const {
+
+        auto df = std::find(options_.cbegin(),options_.cend(),op);
+        if (df != options_.cend()){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    Operation::Operation(std::wstring oper, std::wstring opt) {
+
+        // parse operation
         if (oper.empty()) {
             throw std::runtime_error("Empty Operation!. \n");
         }
@@ -64,5 +95,27 @@ namespace mpqc{
         else{
             operation_ = iter1->second;
         }
+
+        // parse option
+
+        // split string by , and space
+        if(!opt.empty()){
+            std::vector<std::wstring> split_option;
+            boost::split(split_option,opt,boost::is_any_of(L", "), boost::token_compress_on);
+
+            std::vector<Options> result;
+
+            for(const auto& op : split_option){
+                auto iter = option.find(op);
+                if(iter == option.end()){
+                    throw std::runtime_error("Invalid Option");
+                }
+                else{
+                    result.push_back(iter->second);
+                }
+            }
+            options_ = result;
+        }
     }
+
 }

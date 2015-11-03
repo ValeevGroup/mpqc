@@ -17,7 +17,7 @@ namespace mpqc{
 
     /* format for formula
 
-        <index1 index2|operation|index3 index4>[option]
+        <index1 index2|operation|index3 index4>[option1,option2]
 
         (index1 index2|operation|index3 index4)[option]
 

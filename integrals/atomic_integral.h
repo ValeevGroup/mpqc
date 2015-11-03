@@ -218,7 +218,7 @@ namespace integrals{
 
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
-            std::cout << "Computed  ";
+            std::cout << "Computed One Body Integral: ";
             wcout_utf8(formula_string);
             std::cout << std::endl;
             return result;
@@ -230,30 +230,30 @@ namespace integrals{
             auto bra_indexs = formula.left_index();
             auto ket_indexs = formula.right_index();
 
-            TA_ASSERT(bra_indexs.size() == 0);
-            TA_ASSERT(ket_indexs.size() == 2);
+            TA_ASSERT(bra_indexs.size() == 1);
+            TA_ASSERT(ket_indexs.size() == 1);
 
+            auto bra_index0 = bra_indexs[0];
             auto ket_index0 = ket_indexs[0];
-            auto ket_index1 = ket_indexs[1];
 
             TA_ASSERT(ket_index0.is_ao());
-            TA_ASSERT(ket_index1.is_ao());
+            TA_ASSERT(bra_index0.is_ao());
 
+            auto bra_basis0 = this->index_to_basis(bra_index0);
             auto ket_basis0 = this->index_to_basis(ket_index0);
-            auto ket_basis1 = this->index_to_basis(ket_index1);
 
+            TA_ASSERT(bra_basis0 != nullptr);
             TA_ASSERT(ket_basis0 != nullptr);
-            TA_ASSERT(ket_basis1 != nullptr);
 
-            auto max_nprim = std::max(ket_basis0->max_nprim(), ket_basis1->max_nprim());
-            auto max_am = std::max(ket_basis0->max_am(), ket_basis1->max_am());
-            auto bs_array = tcc::utility::make_array(*ket_basis0, *ket_basis1);
+            auto max_nprim = std::max(bra_basis0->max_nprim(), ket_basis0->max_nprim());
+            auto max_am = std::max(bra_basis0->max_am(), ket_basis0->max_am());
+            auto bs_array = tcc::utility::make_array(*bra_basis0, *ket_basis0);
             auto operation = formula.operation();
             if (operation.get_operation() == Operation::Operations::Coulomb) {
                 libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
-                std::cout << "Computed  ";
+                std::cout << "Computed Twobody Two Center Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -267,7 +267,7 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
-                std::cout << "Computed  ";
+                std::cout << "Computed  Twobody Two Center Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -281,7 +281,7 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
-                std::cout << "Computed  ";
+                std::cout << "Computed  Twobody Two Center Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -295,7 +295,7 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
-                std::cout << "Computed  ";
+                std::cout << "Computed  Twobody Two Center Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -346,7 +346,7 @@ namespace integrals{
             libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
-            std::cout << "Computed  ";
+            std::cout << "Computed Two Body Three Center Integral: ";
             wcout_utf8(formula_string);
             std::cout << std::endl;
             return result;
@@ -360,7 +360,7 @@ namespace integrals{
             libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
-            std::cout << "Computed  ";
+            std::cout << "Computed Two Body Three Center Integral: ";
             wcout_utf8(formula_string);
             std::cout << std::endl;
             return result;
@@ -374,7 +374,7 @@ namespace integrals{
             libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
-            std::cout << "Computed  ";
+            std::cout << "Computed Two Body Three Center Integral: ";
             wcout_utf8(formula_string);
             std::cout << std::endl;
             return result;
@@ -388,7 +388,7 @@ namespace integrals{
             libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
-            std::cout << "Computed  ";
+            std::cout << "Computed Two Body Three Center Integral: ";
             wcout_utf8(formula_string);
             std::cout << std::endl;
             return result;
@@ -410,9 +410,8 @@ namespace integrals{
             auto operation = formula.operation();
             if (operation.get_operation() == Operation::Operations::Coulomb) {
 
-                std::wstring two_center_formula_string = L"( |G|Κ Λ )";
+                std::wstring two_center_formula_string = L"( Κ|G| Λ )";
                 typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
-                std::cout << two_center;
                 auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
 
                 std::wstring three_center_formula_string;
@@ -429,7 +428,7 @@ namespace integrals{
 
                 auto three_center = compute3(three_center_formula_string);
 
-                three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
+                three_center("X,i,j") = two_center_inverse_sqrt("K,X")*three_center("K,i,j");
 
                 typename AtomicIntegral<Tile,Policy>::TArray4 result;
 
@@ -439,7 +438,7 @@ namespace integrals{
                 else if(formula.notation() == Formula::Notation::Physical){
                     result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
                 }
-                std::cout << "Computed  ";
+                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -450,7 +449,7 @@ namespace integrals{
                     throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
                 }
 
-                std::wstring two_center_formula_string = L"( |GR|Κ Λ )";
+                std::wstring two_center_formula_string = L"( Κ|GR| Λ )";
                 typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
                 std::cout << two_center;
                 auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
@@ -479,7 +478,7 @@ namespace integrals{
                 else if(formula.notation() == Formula::Notation::Physical){
                     result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
                 }
-                std::cout << "Computed  ";
+                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -490,7 +489,7 @@ namespace integrals{
                 if(this->gtg_params_.empty()){
                     throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
                 }
-                std::wstring two_center_formula_string = L"( |R|Κ Λ )";
+                std::wstring two_center_formula_string = L"( Κ|R| Λ )";
                 typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
                 std::cout << two_center;
                 auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
@@ -519,7 +518,7 @@ namespace integrals{
                 else if(formula.notation() == Formula::Notation::Physical){
                     result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
                 }
-                std::cout << "Computed  ";
+                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -531,7 +530,7 @@ namespace integrals{
                     throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
                 }
 
-                std::wstring two_center_formula_string = L"( |R2|Κ Λ )";
+                std::wstring two_center_formula_string = L"( Κ|R2| Λ )";
                 typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
                 std::cout << two_center;
                 auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
@@ -560,7 +559,7 @@ namespace integrals{
                 else if(formula.notation() == Formula::Notation::Physical){
                     result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
                 }
-                std::cout << "Computed  ";
+                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -612,7 +611,7 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
-                std::cout << "Computed  ";
+                std::cout << "Computed Two Body Four Center Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -626,7 +625,7 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
-                std::cout << "Computed  ";
+                std::cout << "Computed Two Body Four Center Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -640,7 +639,7 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
-                std::cout << "Computed  ";
+                std::cout << "Computed Two Body Four Center Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;
@@ -654,7 +653,7 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
-                std::cout << "Computed  ";
+                std::cout << "Computed Two Body Four Center Integral: ";
                 wcout_utf8(formula_string);
                 std::cout << std::endl;
                 return result;

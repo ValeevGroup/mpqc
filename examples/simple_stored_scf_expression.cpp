@@ -187,6 +187,9 @@ int main(int argc, char *argv[]) {
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
+    basis::BasisSet dfbs("cc-pVTZ-RI");
+    basis::Basis df_basis(dfbs.get_cluster_shells(clustered_mol));
+
     basis::BasisSet abs("aug-cc-pVTZ");
     basis::Basis abs_basis(abs.get_cluster_shells(clustered_mol));
 
@@ -199,7 +202,7 @@ int main(int argc, char *argv[]) {
              ta_pass_through,
             std::make_shared<molecule::Molecule>(clustered_mol),
             std::make_shared<basis::Basis>(basis),
-             nullptr,
+             std::make_shared<basis::Basis>(df_basis),
             std::make_shared<basis::Basis> (abs_basis),
              gtg_params.compute()
             );
@@ -215,7 +218,7 @@ int main(int argc, char *argv[]) {
     H("i,j") = T("i,j") + V("i,j");
 
     { // Unscreened four center stored RHF.
-        auto eri4 = ao_int.compute4(L"(κ λ| G|κ1 λ1)");
+        auto eri4 = ao_int.compute4(L"(κ λ| G|κ1 λ1)[df]");
         world.gop.fence();
 
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);

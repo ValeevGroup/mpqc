@@ -169,8 +169,7 @@ class Tile {
     Tile(TA::Range r, Value v)
             : range_{r},
               tile_{std::make_shared<detail::TileModel<T>>(
-                    detail::TileModel<T>(detail::TileModel<T>(T(r, v))))} {
-              }
+                    detail::TileModel<T>(detail::TileModel<T>(T(r, v))))} {}
 
   public: // Member functions for general use
     T &tile() { return tile_->tile(); }
@@ -182,29 +181,32 @@ class Tile {
 
     bool empty() const { return (!tile_ || tile_->empty_()); }
 
-    auto norm() const -> decltype(tile_->norm_()) { return tile_->norm_(); }
+    auto norm() const -> decltype(tile_ -> norm_()) { return tile_->norm_(); }
 
-    auto squared_norm() const -> decltype(tile_->squared_norm_()) {
+    auto squared_norm() const -> decltype(tile_ -> squared_norm_()) {
         return tile_->squared_norm_();
     }
 
 
   private:
     template <typename... Args,
-              typename std::enable_if<std::is_same<
-                    typename utility::meta::last_type<Args...>::type,
-                    TA::Permutation const &>::value>::type * = nullptr>
+              typename std::
+                    enable_if<std::is_same<typename utility::meta::
+                                                 last_type<Args...>::type,
+                                           TA::Permutation const &>::value>::
+                          type * = nullptr>
     TA::Range create_new_range(TA::Range const &r, Args &&... args) const {
         auto const &perm = utility::meta::back(args...);
         return perm * r;
     }
-    template <
-          typename... Args,
-          typename std::enable_if<!std::is_same<typename utility::meta::
-                                                      last_type<Args...>::type,
-                                                TA::Permutation const &>::
-                                        value>::type * = nullptr>
-    TA::Range create_new_range(TA::Range const &r, Args &&... args) const {
+
+    template <typename... Args,
+              typename std::
+                    enable_if<!std::is_same<typename utility::meta::
+                                                  last_type<Args...>::type,
+                                            TA::Permutation const &>::value>::
+                          type * = nullptr>
+    TA::Range create_new_range(TA::Range const &r, Args &&...) const {
         return r;
     }
 
@@ -214,8 +216,9 @@ class Tile {
     }
 
     template <typename Archive>
-    typename std::enable_if<madness::archive::is_output_archive<Archive>::value>::type
-    serialize(Archive &ar) {
+    typename std::
+          enable_if<madness::archive::is_output_archive<Archive>::value>::type
+          serialize(Archive &ar) {
         ar &range_;
         bool empty = !static_cast<bool>(tile_);
         ar &empty;
@@ -225,8 +228,9 @@ class Tile {
     }
 
     template <typename Archive>
-    typename std::enable_if<madness::archive::is_input_archive<Archive>::value>::type
-    serialize(Archive &ar) {
+    typename std::
+          enable_if<madness::archive::is_input_archive<Archive>::value>::type
+          serialize(Archive &ar) {
 
         ar &range_;
         bool empty = false;
@@ -244,7 +248,7 @@ class Tile {
      */
     template <typename... Args>
     auto add(Args &&... args) const
-          -> Tile<decltype(tile_->add_(std::forward<Args>(args)...))> {
+          -> Tile<decltype(tile_ -> add_(std::forward<Args>(args)...))> {
         auto range = create_new_range(range_, args...);
         auto out = tile_->add_(std::forward<Args>(args)...);
         return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -252,9 +256,8 @@ class Tile {
 
     // Overload for tcc::Tile
     template <typename U, typename... Args>
-    auto add(Tile<U> const &u, Args &&... args) const
-          -> Tile<decltype(tile_->add_(u.tile(),
-                                       std::forward<Args>(args)...))> {
+    auto add(Tile<U> const &u, Args &&... args) const -> Tile<decltype(
+          tile_ -> add_(u.tile(), std::forward<Args>(args)...))> {
         auto range = create_new_range(range_, args...);
         auto out = tile_->add_(u.tile(), std::forward<Args>(args)...);
         return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -277,7 +280,7 @@ class Tile {
      */
     template <typename... Args>
     auto subt(Args &&... args) const
-          -> Tile<decltype(tile_->subt_(std::forward<Args>(args)...))> {
+          -> Tile<decltype(tile_ -> subt_(std::forward<Args>(args)...))> {
         auto range = create_new_range(range_, args...);
         auto out = tile_->subt_(std::forward<Args>(args)...);
         return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -285,9 +288,8 @@ class Tile {
 
     // Overload for tcc::Tile
     template <typename U, typename... Args>
-    auto subt(Tile<U> const &u, Args &&... args) const
-          -> Tile<decltype(tile_->subt_(u.tile(),
-                                        std::forward<Args>(args)...))> {
+    auto subt(Tile<U> const &u, Args &&... args) const -> Tile<decltype(
+          tile_ -> subt_(u.tile(), std::forward<Args>(args)...))> {
         auto range = create_new_range(range_, args...);
         auto out = tile_->subt_(u.tile(), std::forward<Args>(args)...);
         return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -310,7 +312,7 @@ class Tile {
      */
     template <typename... Args>
     auto mult(Args &&... args) const
-          -> Tile<decltype(tile_->mult_(std::forward<Args>(args)...))> {
+          -> Tile<decltype(tile_ -> mult_(std::forward<Args>(args)...))> {
         auto range = create_new_range(range_, args...);
         auto out = tile_->mult_(std::forward<Args>(args)...);
         return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -318,9 +320,8 @@ class Tile {
 
     // Overload for tcc::Tile
     template <typename U, typename... Args>
-    auto mult(Tile<U> const &u, Args &&... args) const
-          -> Tile<decltype(tile_->mult_(u.tile(),
-                                        std::forward<Args>(args)...))> {
+    auto mult(Tile<U> const &u, Args &&... args) const -> Tile<decltype(
+          tile_ -> mult_(u.tile(), std::forward<Args>(args)...))> {
         auto range = create_new_range(range_, args...);
         auto out = tile_->mult_(u.tile(), std::forward<Args>(args)...);
         return Tile<decltype(out)>{std::move(range), std::move(out)};
@@ -371,7 +372,7 @@ class Tile {
     template <typename Other>
     auto gemm(Other const &o, const numeric_type factor,
               TA::math::GemmHelper const &gemm_helper) const
-          -> Tile<decltype(tile_->gemm_(o, factor, gemm_helper))> {
+          -> Tile<decltype(tile_ -> gemm_(o, factor, gemm_helper))> {
 
         auto range
               = gemm_helper.make_result_range<TA::Range>(range_, o.range());
@@ -383,7 +384,7 @@ class Tile {
     template <typename U>
     auto gemm(Tile<U> const &u, const numeric_type factor,
               TA::math::GemmHelper const &gemm_helper) const
-          -> Tile<decltype(tile_->gemm_(u.tile(), factor, gemm_helper))> {
+          -> Tile<decltype(tile_ -> gemm_(u.tile(), factor, gemm_helper))> {
         auto range
               = gemm_helper.make_result_range<TA::Range>(range_, u.range());
         auto out = tile_->gemm_(u.tile(), factor, gemm_helper);

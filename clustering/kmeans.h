@@ -68,10 +68,10 @@ class Kmeans {
      *      does not make sense, i.e. is too small (<= 0) or
      *      too large (> # input Clusterables)
      *
-     *  \param cbls A vector of Clusterables to be clustered. Requirements are 
+     *  \param cbls A vector of Clusterables to be clustered. Requirements are
      *      listed below
      *
-     *  \param nclusters int64_t which specifies how many clusters are to be 
+     *  \param nclusters int64_t which specifies how many clusters are to be
      *      computed.
      *
      * Requirements on Clusterable:
@@ -81,7 +81,7 @@ class Kmeans {
      *  - non-intrusive center: returns a Vec3D.
      *
      *  - non-intrusive set_center: takes Vec3D allowing for the cluster's
-     *      center to be set manually, this is needed for initialization 
+     *      center to be set manually, this is needed for initialization
      *      of the clusters with a guess.
      *
      *  - non-intrusive remove_clusterables: removes the clusterables in the
@@ -96,14 +96,15 @@ class Kmeans {
      *      clusterables to update the center of the cluster, but should not
      *      remove any clusterables.
      *
-     *  - begin and end functions which allow iteration over the elements of the 
+     *  - begin and end functions which allow iteration over the elements of the
      *      cluster.
      */
     template <typename Cluster, typename Clusterable>
     std::vector<Cluster>
     cluster(std::vector<Clusterable> const &cbls, int64_t nclusters) {
 
-        if (nclusters <= 0 || nclusters > cbls.size()) {
+        if (nclusters <= 0
+            || static_cast<std::size_t>(nclusters) > cbls.size()) {
             throw std::invalid_argument("Number of clusters in Kmeans must be "
                                         "between 1 and the number of elements "
                                         "to be clustered.");
@@ -247,7 +248,7 @@ class Kmeans {
  * The k-means objective function is the sum of the squares of the distance of
  * the cluster's center to the center of each element in the cluster.
  *
- * \param cs a vector of clusters which must match the requirements for clusters 
+ * \param cs a vector of clusters which must match the requirements for clusters
  * in Kmeans
  *
  * \see Kmeans

@@ -5,6 +5,8 @@
 
 #include <cwchar>
 
+#include <stdexcept>
+
 #include "orbital_index.h"
 
 

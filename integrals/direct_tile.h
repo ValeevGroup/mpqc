@@ -50,8 +50,8 @@ class DirectTile {
 
     DirectTile(std::vector<std::size_t> index, TA::Range range,
                std::shared_ptr<Builder> builder)
-            : range_(std::move(range)),
-              idx_(std::move(index)),
+            : idx_(std::move(index)),
+              range_(std::move(range)),
               builder_(std::move(builder)),
               world_ptr_(&builder_->get_world()),
               builder_id_(builder_->id()) {}

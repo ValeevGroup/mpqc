@@ -62,17 +62,17 @@ namespace f12{
             const double x2 = x*x;
             const auto n = cc.size();
 
-            for (auto i = 0; i < n; ++i){
+            for (auto i = 0ul; i < n; ++i){
                 value += cc[i] * std::exp(-aa[i]*x2);
             }
 
             return value;
         }
 
-        const double norm(const std::vector<double>& vec){
+        double norm(const std::vector<double>& vec){
             double value = 0.0;
             const auto n = vec.size();
-            for (auto i = 0; i < n; ++i){
+            for (auto i = 0ul; i < n; ++i){
                 value += vec[i]*vec[i];
             }
             return value;
@@ -112,21 +112,21 @@ namespace f12{
         const std::size_t nparams = 2* n;
         std::vector<double> cc(n,1.0);
         std::vector<double> aa(n);
-        for(unsigned int i=0; i<n; ++i){
+        for(auto i=0; i<n; ++i){
             aa[i] = std::pow(3.0, (i + 2 - (n + 1)/2.0));
         }
 
         // first rescale cc for ff[x] to match the norm of f[x]
         double ffnormfac = 0.0;
-        for(unsigned int i=0; i<n; ++i){
-            for(unsigned int j=0; j<n; ++j){
+        for(auto i=0; i<n; ++i){
+            for(auto j=0; j<n; ++j){
                 ffnormfac += cc[i] * cc[j]/std::sqrt(aa[i] + aa[j]);
             }
         }
 
         const double Nf = std::sqrt(2.0 * zeta) * zeta;
         const double Nff = std::sqrt(2.0) / (std::sqrt(ffnormfac) * std::sqrt(std::sqrt(M_PI)));
-        for(unsigned int i=0; i<n; ++i) cc[i] *= -Nff/Nf;
+        for(auto i=0; i<n; ++i) cc[i] *= -Nff/Nf;
 
         const unsigned int npts = 1001;
         const double xmin = 0.0;
@@ -166,9 +166,9 @@ namespace f12{
             for(unsigned int i=0; i<npts; ++i) {
                 const double x2 = xi[i] * xi[i];
                 const double sqrt_ww_x = std::sqrt(detail::ww(xi[i]));
-                for(unsigned int j=0; j<n; ++j)
+                for(auto j=0; j<n; ++j)
                     J(i,j) = (std::exp(-aa[j] * x2)) * sqrt_ww_x;
-                for(unsigned int j=0; j<n; ++j)
+                for(auto j=0; j<n; ++j)
                     J(i,n+j) = -  sqrt_ww_x * x2 * cc[j] * std::exp(-aa[j] * x2);
             }
 
@@ -187,12 +187,12 @@ namespace f12{
             lambda0 /= nu;
             for(int l=-1; l<1000; ++l) {
                 detail::LinearSolveDamped(nparams, A, &(b[0]), lambda0, &(delta[0]) );
-                std::vector<double> cc_0(cc); for(unsigned int i=0; i<n; ++i) cc_0[i] += delta[i];
-                std::vector<double> aa_0(aa); for(unsigned int i=0; i<n; ++i) aa_0[i] += delta[i+n];
+                std::vector<double> cc_0(cc); for(auto i=0; i<n; ++i) cc_0[i] += delta[i];
+                std::vector<double> aa_0(aa); for(auto i=0; i<n; ++i) aa_0[i] += delta[i+n];
 
                 // if any of the exponents are negative the step is too large and need to increase damping
                 bool step_too_large = false;
-                for(unsigned int i=0; i<n; ++i)
+                for(auto i=0; i<n; ++i)
                     if (aa_0[i] < 0.0) {
                         step_too_large = true;
                         break;
@@ -223,7 +223,7 @@ namespace f12{
             throw std::runtime_error("after the max # of iterations Levenberg-Marquardt failed to converge to better than 1e-10");
 
         std::vector<std::pair<double,double>> result(n);
-        for(unsigned int i=0; i<n; ++i) {
+        for(auto i=0; i<n; ++i) {
             result[i].first = cc[i];
             result[i].second = aa[i];
         }

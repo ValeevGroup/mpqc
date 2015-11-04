@@ -71,7 +71,7 @@ class IntegralBuilder : public madness::WorldObject<IntegralBuilder<N, E, Op>> {
         // Get integral shells
         detail::VecArray<N> shellvec_ptrs;
         for (auto i = 0ul; i < N; ++i) {
-            auto const &basis_i = bases_->operator [](i);
+            auto const &basis_i = bases_->operator[](i);
             shellvec_ptrs[i] = &basis_i.cluster_shells()[idx[i]];
         }
 

@@ -26,7 +26,7 @@ direct_sparse_integrals(mad::World &world, ShrPool<E> shr_pool,
 
     const auto trange = detail::create_trange(bases);
     const auto tvolume = trange.tiles().volume();
-    TA::TensorF tile_norms(trange.tiles(), std::numeric_limits<double>::max());
+    TA::TensorF tile_norms(trange.tiles(), 0.0);
 
     // Copy the Bases for the Integral Builder
     auto shr_bases = std::make_shared<Barray<N>>(bases);

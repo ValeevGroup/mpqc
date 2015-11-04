@@ -94,7 +94,7 @@ class FourCenterSCF {
     template <typename Integral>
     void form_fock(Integral const &eri4) {
         F_("i,j") = H_("i,j") + 2 * compute_j(eri4)("i,j")
-                    - compute_k(eri4)("i,j");
+                     - compute_k(eri4)("i,j");
     }
 
 
@@ -201,19 +201,6 @@ int main(int argc, char *argv[]) {
 
     auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
     auto eri_e = ints::make_2body_shr_pool(basis);
-    { // Unscreened SCF
-        std::cout << "Computing HF with No Screening" << std::endl;
-        world.gop.fence();
-        auto eri40 = tcc_time::now();
-        auto eri4 = ints::direct_sparse_integrals(world, eri_e, bs4_array);
-        world.gop.fence();
-        auto eri41 = tcc_time::now();
-        std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
-                  << " s to initialize integrals." << std::endl;
-
-        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
-        scf.solve(50, 1e-12, eri4);
-    }
 
     { // Do schwarz
         std::cout << "\n\nComputing HF with Schwarz Screening" << std::endl;
@@ -222,7 +209,7 @@ int main(int argc, char *argv[]) {
 
         auto screen_builder = ints::init_schwarz_screen(1e-10);
         auto screen_type = ints::init_schwarz_screen::ScreenType::FourCenter;
-        auto shr_screen = std::make_shared<ints::Screener>(
+        auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               screen_builder(world, eri_e, screen_type, basis));
 
         auto screen1 = tcc_time::now();
@@ -239,8 +226,25 @@ int main(int argc, char *argv[]) {
                   << " s to initialize integrals." << std::endl;
 
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
-        scf.solve(20, 1e-8, eri4);
+        scf.solve(20, 1e-7, eri4);
+        world.gop.fence();
     }
+
+    { // Unscreened SCF
+        std::cout << "Computing HF with No Screening" << std::endl;
+        world.gop.fence();
+        auto eri40 = tcc_time::now();
+        auto eri4 = ints::direct_sparse_integrals(world, eri_e, bs4_array);
+        world.gop.fence();
+        auto eri41 = tcc_time::now();
+        std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
+                  << " s to initialize integrals." << std::endl;
+
+        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
+        scf.solve(20, 1e-7, eri4);
+        world.gop.fence();
+    }
+
 
 #if 0
     { // Do then QQR

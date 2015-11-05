@@ -23,12 +23,14 @@
 #include "../utility/array_storage.h"
 #include "../ta_routines/array_to_eigen.h"
 
+#include "../scf/diagonalize_for_coffs.hpp"
+
 #include <memory>
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 
-class FourCenterSCF {
+class ThreeCenterScf {
   private:
     using array_type = DArray<2, TA::TensorD, SpPolicy>;
     array_type H_;
@@ -36,44 +38,17 @@ class FourCenterSCF {
 
     array_type F_;
     array_type D_;
+    array_type C_;
+    array_type L_invV_;
     TiledArray::DIIS<array_type> diis_;
 
     std::vector<double> k_times_;
     std::vector<double> j_times_;
+    std::vector<double> w_times_;
     std::vector<double> scf_times_;
 
     int64_t occ_;
     double repulsion_;
-
-    template <typename Integral>
-    array_type compute_k(Integral const &eri4) {
-
-        array_type K;
-        auto &world = eri4.get_world();
-        world.gop.fence();
-        auto k0 = tcc_time::now();
-        K("i,j") = eri4("i,k,j,l") * D_("k,l");
-        world.gop.fence();
-        auto k1 = tcc_time::now();
-        k_times_.push_back(tcc_time::duration_in_s(k0, k1));
-
-        return K;
-    }
-
-    template <typename Integral>
-    array_type compute_j(Integral const &eri4) {
-
-        array_type J;
-        auto &world = eri4.get_world();
-        world.gop.fence();
-        auto j0 = tcc_time::now();
-        J("i,j") = eri4("i,j,k,l") * D_("k,l");
-        world.gop.fence();
-        auto j1 = tcc_time::now();
-        j_times_.push_back(tcc_time::duration_in_s(j0, j1));
-
-        return J;
-    }
 
 
     void compute_density(int64_t occ) {
@@ -83,31 +58,59 @@ class FourCenterSCF {
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         decltype(S_eig) C = es.eigenvectors().leftCols(occ);
-        MatrixD D_eig = C * C.transpose();
-
         auto tr_ao = S_.trange().data()[0];
 
-        D_ = tcc::array_ops::eigen_to_array<TA::TensorD>(F_.get_world(), D_eig,
-                                                         tr_ao, tr_ao);
+        auto occ_nclusters = (occ_ < 10) ? occ_ : 10;
+        auto tr_occ = tcc::scf::tr_occupied(occ_nclusters, occ_);
+
+        C_ = tcc::array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C, tr_ao, tr_occ);
+
+        D_("i,j") = C_("i,k") * C_("j,k");
     }
 
     template <typename Integral>
-    void form_fock(Integral const &eri4) {
-        F_("i,j") = H_("i,j") + 2 * compute_j(eri4)("i,j")
-                    - compute_k(eri4)("i,j");
+    void form_fock(Integral const &eri3) {
+        auto &world = F_.get_world();
+
+        world.gop.fence();
+        auto w0 = tcc::utility::time::now();
+        TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> W;
+        W("X, mu, i") = L_invV_("X,Y") * (eri3("Y, mu, nu") * C_("nu, i"));
+        world.gop.fence();
+        auto w1 = tcc::utility::time::now();
+        w_times_.push_back(tcc::utility::time::duration_in_s(w0,w1));
+
+        
+        array_type J;
+        J("mu, nu") = eri3("X, mu, nu")
+                      * (L_invV_("Y, X") * (W("Y, rho, i") * C_("rho, i")));
+        world.gop.fence();
+        auto j1 = tcc::utility::time::now();
+        j_times_.push_back(tcc::utility::time::duration_in_s(w1,j1));
+
+    
+        // Permute W
+        W("X,i,nu") = W("X,nu,i");
+        array_type K;
+        K("mu, nu") = W("X, i, mu") * W("X, i, nu");
+        world.gop.fence();
+        auto k1 = tcc::utility::time::now();
+        k_times_.push_back(tcc::utility::time::duration_in_s(j1,k1));
+
+        F_("i,j") = H_("i,j") + 2 * J("i,j") - K("i,j");
     }
 
 
   public:
-    FourCenterSCF(array_type const &H, array_type const &S, int64_t occ,
-                  double rep)
-            : H_(H), S_(S), occ_(occ), repulsion_(rep) {
+    ThreeCenterScf(array_type const &H, array_type const &S,
+                  array_type const &L_invV, int64_t occ, double rep)
+            : H_(H), S_(S), L_invV_(L_invV), occ_(occ), repulsion_(rep) {
         F_ = H_;
         compute_density(occ_);
     }
 
     template <typename Integral>
-    void solve(int64_t max_iters, double thresh, Integral const &eri4) {
+    void solve(int64_t max_iters, double thresh, Integral const &eri3) {
         auto iter = 0;
         auto error = std::numeric_limits<double>::max();
         auto old_energy = 0.0;
@@ -115,7 +118,7 @@ class FourCenterSCF {
         while (iter < max_iters && thresh < error) {
             auto s0 = tcc_time::now();
             F_.get_world().gop.fence();
-            form_fock(eri4);
+            form_fock(eri3);
 
             auto current_energy = energy();
             error = std::abs(old_energy - current_energy);
@@ -157,17 +160,20 @@ int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
     std::string mol_file = "";
     std::string basis_name = "";
+    std::string df_basis_name = "";
     int nclusters = 0;
     std::cout << std::setprecision(15);
     double threshold = 1e-12;
     double well_sep_threshold = 0.1;
     integrals::QQR::well_sep_threshold(well_sep_threshold);
-    if (argc == 4) {
+    if (argc == 5) {
         mol_file = argv[1];
         basis_name = argv[2];
-        nclusters = std::stoi(argv[3]);
+        df_basis_name = argv[3];
+        nclusters = std::stoi(argv[4]);
     } else {
-        std::cout << "input is $./program mol_file basis_file nclusters ";
+        std::cout << "input is $./program mol_file basis_file df_basis_file "
+                     "nclusters ";
         return 0;
     }
     TiledArray::SparseShape<float>::threshold(threshold);
@@ -182,26 +188,16 @@ int main(int argc, char *argv[]) {
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
+    basis::BasisSet dfbs(df_basis_name);
+    basis::Basis df_basis(dfbs.get_cluster_shells(clustered_mol));
+
     libint2::init();
 
     const auto bs_array = tcc::utility::make_array(basis, basis);
 
-    auto screener = integrals::Screener();
-
     // Overlap ints
     auto overlap_e = ints::make_1body_shr_pool("overlap", basis, clustered_mol);
     auto S = ints::sparse_integrals(world, overlap_e, bs_array);
-    { // Test Dense Integrals
-        auto Sdense = ints::dense_integrals(world, overlap_e, bs_array);
-        auto dense_norm = Sdense("i,j").norm().get();
-        auto sparse_norm = Sdense("i,j").norm().get();
-        if (std::abs(dense_norm - sparse_norm) >= 0.1) {
-            std::cout << "S dense norm = " << dense_norm << std::endl;
-            std::cout << "S sparse norm = " << sparse_norm << std::endl;
-            std::cout << "Exiting Early!\n";
-            return 1;
-        }
-    }
 
     // Overlap ints
     auto kinetic_e = ints::make_1body_shr_pool("kinetic", basis, clustered_mol);
@@ -213,32 +209,27 @@ int main(int argc, char *argv[]) {
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
-    auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
-    auto eri_e = ints::make_2body_shr_pool(basis);
-    { // Unscreened four center stored RHF.
-        auto eri4 = ints::sparse_integrals(world, eri_e, bs4_array);
-        world.gop.fence();
+    const auto dfbs_array = tcc::utility::make_array(df_basis, df_basis);
+    auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
 
-        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
-        scf.solve(50, 1e-8, eri4);
+    decltype(H) L_inv;
+    {
+        auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
+        auto V_eig = tcc::array_ops::array_to_eigen(Vmetric);
+        MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
+        MatrixD L_inv_eig = Leig.inverse();
+
+        auto tr_V = Vmetric.trange().data()[0];
+        L_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
+                                                            tr_V, tr_V);
     }
 
-    { // Schwarz Screened four center stored RHF.
-        std::cout << "\n\nNow with screened integrals\n";
-        // Build Screener
-        auto screen_builder = ints::init_schwarz_screen(1e-10);
-        auto screen_type = ints::init_schwarz_screen::ScreenType::FourCenter;
-        auto shr_screen = std::make_shared<ints::Screener>(
-              screen_builder(world, eri_e, screen_type, basis));
-
-        auto eri4 = ints::sparse_integrals(world, eri_e, bs4_array, shr_screen);
-        world.gop.fence();
-
-        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
-        scf.solve(20, 1e-7, eri4);
+    auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
+    { // Unscreened ints
+        auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array);
+        ThreeCenterScf scf(H, S, L_inv, occ / 2, repulsion_energy);
+        scf.solve(20, 1e-7, eri3);
     }
 
-    libint2::cleanup();
-    madness::finalize();
     return 0;
 }

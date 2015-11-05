@@ -75,5 +75,11 @@ target_link_libraries(simple_direct_scf ${TileClusterChem_LIBRARIES})
 add_executable(simple_stored_scf EXCLUDE_FROM_ALL simple_stored_scf.cpp) 
 target_link_libraries(simple_stored_scf ${TileClusterChem_LIBRARIES})
 
+add_executable(simple_stored_df_scf EXCLUDE_FROM_ALL simple_stored_df_scf.cpp) 
+target_link_libraries(simple_stored_df_scf ${TileClusterChem_LIBRARIES})
+
+add_executable(simple_direct_df_scf EXCLUDE_FROM_ALL simple_direct_df_scf.cpp) 
+target_link_libraries(simple_direct_df_scf ${TileClusterChem_LIBRARIES})
+
 add_executable(simple_stored_scf_expression EXCLUDE_FROM_ALL simple_stored_scf_expression.cpp)
 target_link_libraries(simple_stored_scf_expression ${TileClusterChem_LIBRARIES})

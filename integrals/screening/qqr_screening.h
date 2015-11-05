@@ -54,8 +54,8 @@ class QQR : public SchwarzScreen {
 
 struct init_qqr_screen {
     template <typename E>
-    QQR
-    operator()(madness::World &world, ShrPool<E> &engs, basis::Basis const &bs, double threshold = 1e-10) {
+    QQR operator()(madness::World &world, ShrPool<E> &engs,
+                   basis::Basis const &bs, double threshold = 1e-10) {
         auto schwarz_screen = init_schwarz_screen{threshold}(world, engs, bs);
         return QQR(std::move(schwarz_screen), bs.flattened_shells());
     }

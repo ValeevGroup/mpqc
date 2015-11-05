@@ -342,7 +342,7 @@ class init_schwarz_screen {
     SchwarzScreen
     compute_df(madness::World &world, ShrPool<E> &eng, basis::Basis const &dfbs,
                basis::Basis const &obs) const {
-        auto Q_a = detail::compute_Q(world, eng, dfbs);
+        auto Q_a = detail::compute_Q(world, eng, dfbs, true);
         auto Q_cd = detail::compute_Q(world, eng, obs);
 
         return SchwarzScreen(std::move(Q_a), std::move(Q_cd), threshold);

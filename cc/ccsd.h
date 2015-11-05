@@ -598,18 +598,25 @@ namespace tcc {
 
                         g_ac("a,c") += (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
 
-                        r2("a,b,i,j") += (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"));
+                        TArray4 tmp;
 
-                        r2("a,b,i,j") += (g_ac("b,c") * t2("c,a,j,i") - g_ki("k,j") * t2("b,a,k,i"));
+                        tmp("a,b,i,j") = (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"));
+
+                        r2("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
+
                     }
 
-                    r2("a,b,i,j") += (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
+                    {
+                        TArray4 tmp;
 
-                    r2("a,b,i,j") += (g_iabc("j,c,b,a") - g_iajb("k,a,j,c") * t1("b,k")) * t1("c,i");
-                    //
-                    r2("a,b,i,j") -= (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
+                        tmp("a,b,i,j") = (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
 
-                    r2("a,b,i,j") -= (g_ijak("j,i,b,k") + g_abij("b,c,j,k") * t1("c,i")) * t1("a,k");
+                        r2("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
+
+                        tmp("a,b,i,j") = -(g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
+
+                        r2("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
+                    }
 
                     {
                         TArray4 j_akic;
@@ -639,15 +646,17 @@ namespace tcc {
                                                 - g_abij("d,c,k,l") * T("d,a,i,l");
                         }
 
-                        r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
-                                         (2.0 * t2("c,b,k,j") - t2("b,c,k,j"))
 
-                                         + 0.5 * (2.0 * j_akic("b,k,j,c") - k_kaic("k,b,j,c")) *
-                                           (2.0 * t2("c,a,k,i") - t2("a,c,k,i"))
+                        TArray4 tmp;
 
-                                         - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j")
+                        tmp("a,b,i,j") = 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) * (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
 
-                                         - 0.5 * k_kaic("k,b,j,c") * t2("a,c,k,i") - k_kaic("k,a,j,c") * t2("b,c,k,i");
+                        r2("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
+
+                        tmp("a,b,i,j") = - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j");
+
+                        r2("a,b,i,j") += tmp("a,b,i,j") + tmp("b,a,j,i");
+
                     }
 
                     r2("a,b,i,j") *= d2("a,b,i,j");

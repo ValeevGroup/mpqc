@@ -223,9 +223,9 @@ namespace f12{
             throw std::runtime_error("after the max # of iterations Levenberg-Marquardt failed to converge to better than 1e-10");
 
         std::vector<std::pair<double,double>> result(n);
-        for(auto i=0; i<n; ++i) {
-            result[i].first = cc[i];
-            result[i].second = aa[i];
+        for(unsigned int i=0; i<n; ++i) {
+            result[i].second = cc[i];
+            result[i].first = aa[i];
         }
         return result;
 

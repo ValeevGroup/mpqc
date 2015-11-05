@@ -226,8 +226,8 @@ int main(int argc, char *argv[]) {
     }
 
     // compute r12 integral
-    auto r12 = ao_int.compute4(L"(α β |R| γ δ)");
-//    auto gr12 = ao_int.compute2(L"( |GR| γ δ)");
+//    auto r12 = ao_int.compute4(L"(α β |R| γ δ)");
+    auto gr12 = ao_int.compute2(L"( γ |GR|  δ)");
 //    auto r12_2 = ao_int.compute4(L"(α β |R2| γ δ)");
 
     madness::finalize();

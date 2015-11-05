@@ -5,20 +5,19 @@ namespace mpqc {
 namespace integrals {
 namespace detail {
 
-CachedShellInfo::CachedShellInfo(ShellVec const &shells0,
-                                 ShellVec const &shells1, double thresh)
-        : pair_extents_(MatrixD(shells0.size(), shells1.size())),
-          pair_centers_(shells0.size(), std::vector<Vec3D>(shells1.size())),
+CachedShellInfo::CachedShellInfo(ShellVec const &shells, double thresh)
+        : pair_extents_(MatrixD(shells.size(), shells.size())),
+          pair_centers_(shells.size(), std::vector<Vec3D>(shells.size())),
           erfinv_thr_(thresh) {
-    for (auto s0 = 0ul; s0 < shells0.size(); ++s0) {
-        auto const &sh0 = shells0[s0];
+    for (auto s0 = 0ul; s0 < shells.size(); ++s0) {
+        auto const &sh0 = shells[s0];
 
-        for (auto s1 = 0ul; s1 < shells1.size(); ++s1) {
-            auto const &sh1 = shells1[s1];
+        for (auto s1 = 0ul; s1 < shells.size(); ++s1) {
+            auto const &sh1 = shells[s1];
 
-            const auto r_01 = shell_weighted_center(sh0, sh1);
-            pair_extents_(s0, s1) = pair_extent(sh0, sh1, r_01);
-            pair_centers_[s0][s1] = r_01;
+            const auto r_ab = shell_weighted_center(sh0, sh1);
+            pair_extents_(s0, s1) = pair_extent(sh0, sh1, r_ab);
+            pair_centers_[s0][s1] = r_ab;
         }
     }
 }

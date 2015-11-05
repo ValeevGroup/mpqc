@@ -94,7 +94,7 @@ class FourCenterSCF {
     template <typename Integral>
     void form_fock(Integral const &eri4) {
         F_("i,j") = H_("i,j") + 2 * compute_j(eri4)("i,j")
-                     - compute_k(eri4)("i,j");
+                    - compute_k(eri4)("i,j");
     }
 
 
@@ -203,14 +203,13 @@ int main(int argc, char *argv[]) {
     auto eri_e = ints::make_2body_shr_pool(basis);
 
     { // Do schwarz
-        std::cout << "\n\nComputing HF with Schwarz Screening" << std::endl;
+        std::cout << "\nComputing HF with Schwarz Screening" << std::endl;
         world.gop.fence();
         auto screen0 = tcc_time::now();
 
         auto screen_builder = ints::init_schwarz_screen(1e-10);
-        auto screen_type = ints::init_schwarz_screen::ScreenType::FourCenter;
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
-              screen_builder(world, eri_e, screen_type, basis));
+              screen_builder(world, eri_e, basis));
 
         auto screen1 = tcc_time::now();
         std::cout << "Took " << tcc_time::duration_in_s(screen0, screen1)
@@ -230,8 +229,36 @@ int main(int argc, char *argv[]) {
         world.gop.fence();
     }
 
+    { // Do then QQR
+        std::cout << "\n\nComputing HF with QQR Based Integrals" << std::endl;
+        world.gop.fence();
+        auto screen0 = tcc_time::now();
+
+        auto screen_builder = ints::init_qqr_screen{};
+        auto shr_screen = std::make_shared<ints::QQR>(
+              screen_builder(world, eri_e, basis, 1e-10));
+
+        // Set well sep thresh.
+        ints::QQR::well_sep_threshold(0.1);
+
+        auto screen1 = tcc_time::now();
+        std::cout << "Took " << tcc_time::duration_in_s(screen0, screen1)
+                  << " s to form screening Matrix!" << std::endl;
+        world.gop.fence();
+        auto eri40 = tcc_time::now();
+        auto eri4 = ints::direct_sparse_integrals(world, eri_e, bs4_array,
+                                                  shr_screen);
+        world.gop.fence();
+        auto eri41 = tcc_time::now();
+        std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
+                  << " s to initialize integrals." << std::endl;
+
+        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
+        scf.solve(20, 1e-7, eri4);
+    }
+
     { // Unscreened SCF
-        std::cout << "Computing HF with No Screening" << std::endl;
+        std::cout << "\n\nComputing HF with No Screening" << std::endl;
         world.gop.fence();
         auto eri40 = tcc_time::now();
         auto eri4 = ints::direct_sparse_integrals(world, eri_e, bs4_array);
@@ -244,41 +271,6 @@ int main(int argc, char *argv[]) {
         scf.solve(20, 1e-7, eri4);
         world.gop.fence();
     }
-
-
-#if 0
-    { // Do then QQR
-        std::cout << "Computing HF with QQR Based Integrals" << std::endl;
-        world.gop.fence();
-        auto eri40 = tcc_time::now();
-        auto eri4
-              = mpqc_ints::direct_sparse_integrals<mpqc_ints::init_qqr_screen>(
-                    world, eri_pool, bs4_array, ta_pass_through);
-        world.gop.fence();
-        auto eri41 = tcc_time::now();
-        std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
-                  << " s to initialize integrals." << std::endl;
-
-        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
-        scf.solve(20, 1e-8, eri4);
-        std::cout << "\n\n";
-    }
-    { // Finally unscreened
-        std::cout << "Computing HF with Unscreened Integrals" << std::endl;
-        world.gop.fence();
-        auto eri40 = tcc_time::now();
-        auto eri4
-              = mpqc_ints::direct_sparse_integrals(world, eri_pool, bs4_array,
-                                                   ta_pass_through);
-        world.gop.fence();
-        auto eri41 = tcc_time::now();
-        std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
-                  << " s to initialize integrals." << std::endl;
-
-        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
-        scf.solve(50, 1e-8, eri4);
-    }
-#endif
 
     libint2::cleanup();
     madness::finalize();

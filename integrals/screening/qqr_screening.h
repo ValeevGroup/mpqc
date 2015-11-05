@@ -20,20 +20,19 @@ namespace integrals {
  *
  * Reverse Engineered from David Hollman's code in MPQC2/3
  *
+ * QQR currently doesn't support mixed basis integrals
+ *
  */
 class QQR : public SchwarzScreen {
   private:
     detail::CachedShellInfo shell_info_ab_;
-    detail::CachedShellInfo shell_info_cd_;
     static double well_seperated_thresh_;
 
   public:
     QQR() = default;
-    QQR(SchwarzScreen ss, ShellVec const &sh_a, ShellVec const &sh_b,
-        ShellVec const &sh_c, ShellVec const &sh_d)
+    QQR(SchwarzScreen ss, ShellVec const &shells)
             : SchwarzScreen(std::move(ss)),
-              shell_info_ab_(sh_a, sh_b, erfinv_ws_thresh()),
-              shell_info_cd_(sh_c, sh_d, erfinv_ws_thresh()) {}
+              shell_info_ab_(shells, erfinv_ws_thresh()) {}
 
     static double well_sep_threshold() { return well_seperated_thresh_; }
     static void well_sep_threshold(double new_val) {
@@ -45,32 +44,20 @@ class QQR : public SchwarzScreen {
         return boost::math::erfc_inv(well_seperated_thresh_);
     }
 
-
     /*! \brief Four loop Inner Screen.
      *
-     * For now only use QQR once all 4 shells are present. This means
+     * Only use QQR once all 4 shells are present. This means
      * for now only Schwarz is used for loop skipping.
      */
-    bool
-    skip(int64_t ordA, int64_t ordB, int64_t ordC, int64_t ordD, Shell const &,
-         Shell const &, Shell const &, Shell const &) override;
+    bool skip(int64_t, int64_t, int64_t, int64_t) override;
 };
 
 struct init_qqr_screen {
-
     template <typename E>
-    QQR operator()(detail::IdxVec const &idx, detail::ShrBases<4> const &bases,
-                   ShrPool<E> const &engs) {
-        auto schwarz_screen = init_schwarz_screen{}(idx, bases, engs);
-
-        auto const &bases_ref = *bases;
-
-        auto const &sh_a = bases_ref[0].cluster_shells()[idx[0]];
-        auto const &sh_b = bases_ref[1].cluster_shells()[idx[1]];
-        auto const &sh_c = bases_ref[2].cluster_shells()[idx[2]];
-        auto const &sh_d = bases_ref[3].cluster_shells()[idx[3]];
-
-        return QQR(std::move(schwarz_screen), sh_a, sh_b, sh_c, sh_d);
+    QQR
+    operator()(madness::World &world, ShrPool<E> &engs, basis::Basis const &bs, double threshold = 1e-10) {
+        auto schwarz_screen = init_schwarz_screen{threshold}(world, engs, bs);
+        return QQR(std::move(schwarz_screen), bs.flattened_shells());
     }
 };
 

@@ -3,8 +3,9 @@
 namespace mpqc {
 namespace integrals {
 
-Qmatrix::Qmatrix(MatrixD Q)
+Qmatrix::Qmatrix(MatrixD Q, std::unordered_map<int64_t, int64_t> map)
         : Q_(std::move(Q)),
+          func_to_shell_map_(std::move(map)),
           max_elem_in_row_(VectorD(Q_.rows())),
           max_elem_in_Q_(0.0)
 

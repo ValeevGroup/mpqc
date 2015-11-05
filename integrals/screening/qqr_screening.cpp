@@ -3,20 +3,26 @@
 namespace mpqc {
 namespace integrals {
 
-bool QQR::skip(int64_t ordA, int64_t ordB, int64_t ordC, int64_t ordD,
-               Shell const &, Shell const &, Shell const &,
-               Shell const &) {
+bool QQR::skip(int64_t a, int64_t b, int64_t c, int64_t d) {
 
-    auto QabQcd = Qab(ordA, ordB) * Qcd(ordC, ordD);
+
+    auto QabQcd = four_center_est(a,b,c,d);
+
+    // Get the shell indices of the function indices
+    auto a_sh = Qab_f2s(a);
+    auto b_sh = Qab_f2s(b);
+    auto c_sh = Qab_f2s(c);
+    auto d_sh = Qab_f2s(d);
 
     // Don't bother with QQR if QQ is good enought
     if (QabQcd > skip_threshold()) {
-        auto const &R_ab = shell_info_ab_.center(ordA, ordB);
-        auto const &R_cd = shell_info_cd_.center(ordC, ordD);
+        auto const &R_ab = shell_info_ab_.center(a_sh, b_sh);
+        auto const &R_cd = shell_info_ab_.center(c_sh, d_sh);
         const auto R = (R_ab - R_cd).norm();
+
         if (R > 1) {
-            const auto ext_ab = shell_info_ab_.extent(ordA, ordB);
-            const auto ext_cd = shell_info_cd_.extent(ordC, ordD);
+            const auto ext_ab = shell_info_ab_.extent(a_sh, b_sh);
+            const auto ext_cd = shell_info_ab_.extent(c_sh, d_sh);
 
             const auto ext_total = ext_cd + ext_ab;
             const auto r_minus_extents = R - ext_total;
@@ -25,6 +31,7 @@ bool QQR::skip(int64_t ordA, int64_t ordB, int64_t ordC, int64_t ordD,
                 QabQcd /= r_minus_extents;
             }
         }
+
     }
 
     return (QabQcd < skip_threshold()) ? true : false;

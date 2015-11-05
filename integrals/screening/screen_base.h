@@ -14,6 +14,7 @@ namespace integrals {
  *
  * Derived Classes should overload the skip functions which they intend to
  * change.
+ *
  */
 class Screener {
   public:
@@ -24,55 +25,28 @@ class Screener {
     Screener &operator=(Screener const &) = default;
     virtual ~Screener() = default;
 
-    /// Two loop Outer Screen.
-    virtual bool skip(int64_t, Shell const &, ShellVec const &) {
-        return false;
-    }
+    /*! \brief all skips take shell indices and return true or false.
+     *
+     * The index passed to skip should be the lower bound basis functions for 
+     * that shell set.  For example if we have shells a, b, c that are all of 
+     * size 3 then for the integral (a|c) we the indices pasted to skip should 
+     * be skip(0,5).  
+     *
+     * When deriving this class it is the developers responsiblity to convert 
+     * function indices into shell indices.  The motivation for this is to 
+     * simplify the integral kernel code. 
+     */
+    virtual bool skip(int64_t) { return false; }
+    virtual bool skip(int64_t) const { return false; }
 
-    /// Two loop inner screen.
-    virtual bool skip(int64_t, int64_t, Shell const &, Shell const &) {
-        return false;
-    }
+    virtual bool skip(int64_t, int64_t) { return false; }
+    virtual bool skip(int64_t, int64_t) const { return false; }
 
-    /// Three loop Outer Screen.
-    virtual bool
-    skip(int64_t, Shell const &, ShellVec const &, ShellVec const &) {
-        return false;
-    }
+    virtual bool skip(int64_t, int64_t, int64_t) { return false; }
+    virtual bool skip(int64_t, int64_t, int64_t) const { return false; }
 
-    /// Three loop Middle Screen
-    virtual bool skip(int64_t, int64_t, Shell const &, Shell const &,
-                      ShellVec const &) {
-        return false;
-    }
-
-    /// Three loop Inner Screen.
-    virtual bool skip(int64_t, int64_t, int64_t, Shell const &, Shell const &,
-                      Shell const &) {
-        return false;
-    }
-
-    /// Four loop Outer Screen.
-    virtual bool skip(int64_t, Shell const &, ShellVec const &,
-                      ShellVec const &, ShellVec const &) {
-        return false;
-    }
-
-    /// Four loop Second Screen.
-    virtual bool skip(int64_t, int64_t, Shell const &, Shell const &,
-                      ShellVec const &, ShellVec const &) {
-        return false;
-    }
-
-    /// Four loop Third Screen.
-    virtual bool skip(int64_t, int64_t, int64_t, Shell const &, Shell const &,
-                      Shell const &, ShellVec const &) {
-        return false;
-    }
-
-    /// Four loop Inner Screen.
-    virtual bool skip(int64_t, int64_t, int64_t, int64_t, Shell const &,
-                      Shell const &, Shell const &, Shell const &) {
+    virtual bool skip(int64_t, int64_t, int64_t, int64_t) { return false; }
+    virtual bool skip(int64_t, int64_t, int64_t, int64_t) const {
         return false;
     }
 };

@@ -50,7 +50,8 @@ shell_set(OneE_Engine &e, Shell const &s0, Shell const &s1) {
     return e.compute(s0, s1);
 }
 
-inline const double *shell_set(cGTG_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2, Shell const &s3) {
+inline const double *shell_set(cGTG_Engine &e, Shell const &s0, Shell const &s1,
+                               Shell const &s2, Shell const &s3) {
     return e.compute(s0, s1, s2, s3);
 }
 
@@ -66,7 +67,9 @@ shell_set(cGTG_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
     return e.compute(s0, unit, s1, s2);
 }
 
-inline const double *shell_set(cGTGCoulomb_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2, Shell const &s3) {
+inline const double *
+shell_set(cGTGCoulomb_Engine &e, Shell const &s0, Shell const &s1,
+          Shell const &s2, Shell const &s3) {
     return e.compute(s0, s1, s2, s3);
 }
 
@@ -76,13 +79,15 @@ shell_set(cGTGCoulomb_Engine &e, Shell const &s0, Shell const &s1) {
     return e.compute(s0, unit, s1, unit);
 }
 
-inline const double *
-shell_set(cGTGCoulomb_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
+inline const double *shell_set(cGTGCoulomb_Engine &e, Shell const &s0,
+                               Shell const &s1, Shell const &s2) {
     const auto unit = Shell::unit();
     return e.compute(s0, unit, s1, s2);
 }
 
-inline const double *shell_set(cGTG2_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2, Shell const &s3) {
+inline const double *
+shell_set(cGTG2_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2,
+          Shell const &s3) {
     return e.compute(s0, s1, s2, s3);
 }
 
@@ -123,20 +128,16 @@ integral_kernel(Engine &eng, TA::Range &&rng,
         const auto ns0 = s0.size();
         ub[0] += ns0;
 
-        if (!screen.skip(idx0, s0, sh1)) {
-            lb[1] = ub[1] = lobound[1];
-            for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
-                auto const &s1 = sh1[idx1];
-                const auto ns1 = s1.size();
-                ub[1] += ns1;
+        lb[1] = ub[1] = lobound[1];
+        for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
+            auto const &s1 = sh1[idx1];
+            const auto ns1 = s1.size();
+            ub[1] += ns1;
 
-                if (!screen.skip(idx0, idx1, s0, s1)) {
-                    TA::remap(map, shell_set(eng, s0, s1), lb, ub);
-                    tile.block(lb, ub) = map;
-                }
+            TA::remap(map, shell_set(eng, s0, s1), lb, ub);
+            tile.block(lb, ub) = map;
 
-                lb[1] = ub[1];
-            }
+            lb[1] = ub[1];
         }
         lb[0] = ub[0];
     }
@@ -169,23 +170,26 @@ integral_kernel(Engine &eng, TA::Range &&rng,
     for (auto idx0 = 0ul; idx0 < end0; ++idx0) {
         auto const &s0 = sh0[idx0];
         const auto ns0 = s0.size();
+        const auto lb0 = lb[0];
         ub[0] += ns0;
 
-        if (!screen.skip(idx0, s0, sh1, sh2)) {
+        if (!screen.skip(lb0)) {
             lb[1] = ub[1] = lobound[1];
             for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
                 auto const &s1 = sh1[idx1];
                 const auto ns1 = s1.size();
+                const auto lb1 = lb[1];
                 ub[1] += ns1;
 
-                if (!screen.skip(idx0, idx1, s0, s1, sh2)) {
+                if (!screen.skip(lb0, lb1)) {
                     lb[2] = ub[2] = lobound[2];
                     for (auto idx2 = 0ul; idx2 < end2; ++idx2) {
                         auto const &s2 = sh2[idx2];
                         const auto ns2 = s2.size();
+                        const auto lb2 = lb[2];
                         ub[2] += ns2;
 
-                        if (!screen.skip(idx0, idx1, idx2, s0, s1, s2)) {
+                        if (!screen.skip(lb0, lb1, lb2)) {
                             TA::remap(map, shell_set(eng, s0, s1, s2), lb, ub);
                             tile.block(lb, ub) = map;
                         }
@@ -232,33 +236,37 @@ integral_kernel(Engine &eng, TA::Range &&rng,
     for (auto idx0 = 0ul; idx0 < end0; ++idx0) {
         auto const &s0 = sh0[idx0];
         const auto ns0 = s0.size();
+        const auto lb0 = lb[0];
         ub[0] += ns0;
 
-        if (!screen.skip(idx0, s0, sh1, sh2, sh3)) {
+        if (!screen.skip(lb0)) {
 
             lb[1] = ub[1] = lobound[1];
             for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
                 auto const &s1 = sh1[idx1];
                 const auto ns1 = s1.size();
+                const auto lb1 = lb[1];
                 ub[1] += ns1;
 
-                if (!screen.skip(idx0, idx1, s0, s1, sh2, sh3)) {
+                if (!screen.skip(lb0, lb1)) {
 
                     lb[2] = ub[2] = lobound[2];
                     for (auto idx2 = 0ul; idx2 < end2; ++idx2) {
                         auto const &s2 = sh2[idx2];
                         const auto ns2 = s2.size();
+                        const auto lb2 = lb[2];
                         ub[2] += ns2;
 
-                        if (!screen.skip(idx0, idx1, idx2, s0, s1, s2, sh3)) {
+
+                        if (!screen.skip(lb0, lb1, lb2)) {
                             lb[3] = ub[3] = lobound[3];
                             for (auto idx3 = 0ul; idx3 < end3; ++idx3) {
                                 auto const &s3 = sh3[idx3];
                                 const auto ns3 = s3.size();
+                                const auto lb3 = lb[3];
                                 ub[3] += ns3;
 
-                                if (!screen.skip(idx0, idx1, idx2, idx3, s0, s1,
-                                                 s2, s3)) {
+                                if (!screen.skip(lb0, lb1, lb2, lb3)) {
                                     TA::remap(map,
                                               shell_set(eng, s0, s1, s2, s3),
                                               lb, ub);

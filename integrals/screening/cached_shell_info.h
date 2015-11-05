@@ -19,8 +19,7 @@ class CachedShellInfo {
 
   public:
     CachedShellInfo() = default;
-    CachedShellInfo(ShellVec const &shells0, ShellVec const &shells1,
-                    double thresh);
+    CachedShellInfo(ShellVec const &shells, double thresh);
 
     Vec3D center(int64_t i, int64_t j) const { return pair_centers_[i][j]; }
     double extent(int64_t i, int64_t j) const { return pair_extents_(i, j); }

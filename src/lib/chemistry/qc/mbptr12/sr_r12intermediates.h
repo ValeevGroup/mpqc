@@ -447,6 +447,15 @@ namespace sc {
       TArray2 Xam_VL2T1T1_f12b_test(const double C_0, const double C_1,
                                     const TArray2& T1, const TArray4& L2);
 
+      // frozen-core contribution: Xii' from CT2, VT2, and VT1 in F12b
+      TArray2 Xiip_CVT_f12b(const double C_0, const double C_1,
+                            const TArray2& T1, const TArray4& T2,
+                            const TArray2& L1, const TArray4& L2);
+      // frozen-core contribution: Xii' from VT1T1 in F12b
+      TArray2 Xiip_VT1T1_f12b(const double C_0, const double C_1,
+                              const TArray2& T1, const TArray4& T2,
+                              const TArray4& L2);
+
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively
       */

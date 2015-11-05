@@ -28,7 +28,7 @@ namespace tcc {
         // BlockSize = int, control the block size in MO, default 16
         // FrozenCore = bool, control if use frozen core, default False
         // Direct = bool , control if use direct approach, default True
-
+        // DIIS = int, control the number of data sets to retain, default is 5
 
         template<typename Tile, typename Policy>
         class CCSD {
@@ -126,17 +126,21 @@ namespace tcc {
                 TArray4 g_ijak = ccsd_intermediate_->get_ijak();
                 TArray4 g_ijka = ccsd_intermediate_->get_ijka();
 
-//                ccsd_intermediate_->clean();
+                // clean up three center integral after compute all two electron integrals
+                ccsd_intermediate_->clean_three_center();
 
-                if (g_abij.get_world().rank() == 0) {
-                    std::cout << "Start Iteration" << std::endl;
-                }
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
                 double error = 1.0;
                 TArray2 r1;
                 TArray4 r2;
-                TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1);
+
+                auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
+                TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
+                if (g_abij.get_world().rank() == 0) {
+                    std::cout << "Start Iteration" << std::endl;
+                    std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
+                }
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
@@ -370,7 +374,11 @@ namespace tcc {
                 double error = 1.0;
                 TArray2 r1;
                 TArray4 r2;
-                TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1);
+
+                auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
+                TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
+                if (g_abij.get_world().rank() == 0) {
+                };
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
@@ -390,6 +398,7 @@ namespace tcc {
 
                     if (iter == 0 && g_abij.get_world().rank() == 0) {
                         std::cout << "Start Iteration" << std::endl;
+                        std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                         std::cout << "iter " << "    deltaE    " << "            residual       "
                         << "      energy     " << "    U/second  " << " total/second "<<std::endl;
                     }

@@ -29,6 +29,7 @@ namespace tcc {
         // FrozenCore = bool, control if use frozen core, default False
         // Direct = bool , control if use direct approach, default True
         // DIIS = int, control the number of data sets to retain, default is 5
+        // LessMemory = bool, control if store large intermediate in straight approach, default is true
 
         template<typename Tile, typename Policy>
         class CCSD {
@@ -126,8 +127,8 @@ namespace tcc {
                 TArray4 g_ijak = ccsd_intermediate_->get_ijak();
                 TArray4 g_ijka = ccsd_intermediate_->get_ijka();
 
-                // clean up three center integral after compute all two electron integrals
-                ccsd_intermediate_->clean_three_center();
+//                 clean up three center integral after compute all two electron integrals
+//                ccsd_intermediate_->clean_three_center();
 
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
@@ -137,9 +138,17 @@ namespace tcc {
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
                 TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
+
+                bool less = options_.HasMember("LessMemory") ? options_["LessMemory"].GetBool() : true;
+
                 if (g_abij.get_world().rank() == 0) {
                     std::cout << "Start Iteration" << std::endl;
                     std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
+                    if(less){
+                        std::cout << "Less Memory Approach: Yes" << std::endl;
+                    }else{
+                        std::cout << "Less Memory Approach: No" << std::endl;
+                    }
                 }
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
@@ -178,94 +187,187 @@ namespace tcc {
                         );
                     }
 
-//        g_abij.get_world().gop.fence();
                     // intermediates for t2
                     // external index i j a b
 
-                    TArray4 a_klij, b_abij, j_akic, k_kaic, T;
+                    TArray4 a_klij, b_abij, b_abcd, j_akic, k_kaic, T;
                     TArray2 g_ki, g_ac;
-                    {
 
-                        T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
+                    // avoid store b_abcd
+                    if(less){
 
-                        a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
+                        // compute intermediates
+                        {
 
-                                            + g_ijka("k,l,i,c") * t1("c,j")
+                            T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
 
-                                            + g_ijak("k,l,c,j") * t1("c,i")
+                            a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
 
-                                            + g_abij("c,d,k,l") * tau("c,d,i,j");
+                                                + g_ijka("k,l,i,c") * t1("c,j")
 
-                        b_abij("a,b,i,j") = g_abcd("a,b,c,d") * tau("c,d,i,j")
+                                                + g_ijak("k,l,c,j") * t1("c,i")
 
-                                            - g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k")
+                                                + g_abij("c,d,k,l") * tau("c,d,i,j");
 
-                                            - g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
+                            b_abij("a,b,i,j") = g_abcd("a,b,c,d") * tau("c,d,i,j")
 
-                        g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i")
+                                                - g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k")
 
-                                      + (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
+                                                - g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
-                        g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
+                            g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i")
 
-                                      + (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
+                                          + (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
 
-                        j_akic("a,k,i,c") = g_abij("a,c,i,k")
+                            g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
 
-                                            - g_ijka("l,k,i,c") * t1("a,l")
+                                          + (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
 
-                                            + g_aibc("a,k,d,c") * t1("d,i")
+                            j_akic("a,k,i,c") = g_abij("a,c,i,k")
 
-                                            - g_abij("c,d,k,l") * T("d,a,i,l")
+                                                - g_ijka("l,k,i,c") * t1("a,l")
 
-                                            + 0.5 * (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t2("a,d,i,l");
+                                                + g_aibc("a,k,d,c") * t1("d,i")
 
-                        k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
+                                                - g_abij("c,d,k,l") * T("d,a,i,l")
 
-                                            - g_ijka("k,l,i,c") * t1("a,l")
+                                                + 0.5 * (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t2("a,d,i,l");
 
-                                            + g_iabc("k,a,d,c") * t1("d,i")
+                            k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
 
-                                            - g_abij("d,c,k,l") * T("d,a,i,l");
+                                                - g_ijka("k,l,i,c") * t1("a,l")
 
+                                                + g_iabc("k,a,d,c") * t1("d,i")
+
+                                                - g_abij("d,c,k,l") * T("d,a,i,l");
+
+                        }
+
+                        // compute residual r2(n) = t2(n+1) - t2(n)
+                        {
+
+                            r2("a,b,i,j") = -t2("a,b,i,j") + d2("a,b,i,j") * (
+                                    //
+                                    g_abij("a,b,i,j")
+                                    //
+                                    + a_klij("k,l,i,j") * tau("a,b,k,l")
+                                    //
+                                    + b_abij("a,b,i,j")
+
+                                    // permutation part
+                                    //
+                                    + (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"))
+
+                                    + (g_ac("b,c") * t2("c,a,j,i") - g_ki("k,j") * t2("b,a,k,i"))
+
+                                    + (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j")
+
+                                    + (g_iabc("j,c,b,a") - g_iajb("k,a,j,c") * t1("b,k")) * t1("c,i")
+                                    //
+                                    - (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k")
+
+                                    - (g_ijak("j,i,b,k") + g_abij("b,c,j,k") * t1("c,i")) * t1("a,k")
+
+                                    + 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
+                                      (2.0 * t2("c,b,k,j") - t2("b,c,k,j"))
+
+                                    + 0.5 * (2.0 * j_akic("b,k,j,c") - k_kaic("k,b,j,c")) *
+                                      (2.0 * t2("c,a,k,i") - t2("a,c,k,i"))
+
+                                    - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j")
+
+                                    - 0.5 * k_kaic("k,b,j,c") * t2("a,c,k,i") - k_kaic("k,a,j,c") * t2("b,c,k,i")
+                            );
+                        }
+                    }
+                    // store b_abcd to speed up calculation
+                    else{
+
+                        // compute intermediates
+                        {
+
+                            T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
+
+                            a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
+
+                                                + g_ijka("k,l,i,c") * t1("c,j")
+
+                                                + g_ijak("k,l,c,j") * t1("c,i")
+
+                                                + g_abij("c,d,k,l") * tau("c,d,i,j");
+
+                            b_abcd("a,b,c,d") = g_abcd("a,b,c,d")
+
+                                                - g_aibc("a,k,c,d") * t1("b,k")
+
+                                                - g_iabc("k,b,c,d") * t1("a,k");
+
+                            g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i")
+
+                                          + (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
+
+                            g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
+
+                                          + (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
+
+                            j_akic("a,k,i,c") = g_abij("a,c,i,k")
+
+                                                - g_ijka("l,k,i,c") * t1("a,l")
+
+                                                + g_aibc("a,k,d,c") * t1("d,i")
+
+                                                - g_abij("c,d,k,l") * T("d,a,i,l")
+
+                                                + 0.5 * (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t2("a,d,i,l");
+
+                            k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
+
+                                                - g_ijka("k,l,i,c") * t1("a,l")
+
+                                                + g_iabc("k,a,d,c") * t1("d,i")
+
+                                                - g_abij("d,c,k,l") * T("d,a,i,l");
+
+                        }
+
+                        // compute residual r2(n) = t2(n+1) - t2(n)
+                        {
+
+                            r2("a,b,i,j") = -t2("a,b,i,j") + d2("a,b,i,j") * (
+                                    //
+                                    g_abij("a,b,i,j")
+                                    //
+                                    + a_klij("k,l,i,j") * tau("a,b,k,l")
+                                    //
+                                    + b_abcd("a,b,c,d") * tau("c,d,i,j")
+
+                                    // permutation part
+                                    //
+                                    + (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"))
+
+                                    + (g_ac("b,c") * t2("c,a,j,i") - g_ki("k,j") * t2("b,a,k,i"))
+
+                                    + (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j")
+
+                                    + (g_iabc("j,c,b,a") - g_iajb("k,a,j,c") * t1("b,k")) * t1("c,i")
+                                    //
+                                    - (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k")
+
+                                    - (g_ijak("j,i,b,k") + g_abij("b,c,j,k") * t1("c,i")) * t1("a,k")
+
+                                    + 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
+                                      (2.0 * t2("c,b,k,j") - t2("b,c,k,j"))
+
+                                    + 0.5 * (2.0 * j_akic("b,k,j,c") - k_kaic("k,b,j,c")) *
+                                      (2.0 * t2("c,a,k,i") - t2("a,c,k,i"))
+
+                                    - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j")
+
+                                    - 0.5 * k_kaic("k,b,j,c") * t2("a,c,k,i") - k_kaic("k,a,j,c") * t2("b,c,k,i")
+                            );
+                        }
                     }
 
-//        g_abij.get_world().gop.fence();
-                    // compute residual r2(n) = t2(n+1) - t2(n)
-                    {
-                        r2("a,b,i,j") = -t2("a,b,i,j") + d2("a,b,i,j") * (
-                                //
-                                g_abij("a,b,i,j")
-                                //
-                                + a_klij("k,l,i,j") * tau("a,b,k,l")
-                                //
-                                + b_abij("a,b,i,j")
-
-                                // permutation part
-                                //
-                                + (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"))
-
-                                + (g_ac("b,c") * t2("c,a,j,i") - g_ki("k,j") * t2("b,a,k,i"))
-
-                                + (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j")
-
-                                + (g_iabc("j,c,b,a") - g_iajb("k,a,j,c") * t1("b,k")) * t1("c,i")
-                                //
-                                - (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k")
-
-                                - (g_ijak("j,i,b,k") + g_abij("b,c,j,k") * t1("c,i")) * t1("a,k")
-
-                                + 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
-                                  (2.0 * t2("c,b,k,j") - t2("b,c,k,j"))
-
-                                + 0.5 * (2.0 * j_akic("b,k,j,c") - k_kaic("k,b,j,c")) *
-                                  (2.0 * t2("c,a,k,i") - t2("a,c,k,i"))
-
-                                - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j")
-
-                                - 0.5 * k_kaic("k,b,j,c") * t2("a,c,k,i") - k_kaic("k,a,j,c") * t2("b,c,k,i")
-                        );
-                    }
 //        g_abij.get_world().gop.fence();
 
                     t1("a,i") = t1("a,i") + r1("a,i");

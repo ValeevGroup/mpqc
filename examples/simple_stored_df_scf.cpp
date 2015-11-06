@@ -141,6 +141,7 @@ class ThreeCenterScf {
             std::cout << "Iteration: " << (iter + 1)
                       << " energy: " << old_energy << " error: " << error
                       << std::endl;
+            std::cout << "\tW time: " << w_times_.back() << std::endl;
             std::cout << "\tJ time: " << j_times_.back()
                       << " s K time: " << k_times_.back()
                       << " s iter time: " << scf_times_.back() << std::endl;

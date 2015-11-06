@@ -6,7 +6,12 @@ set(integral_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/screening/cached_shell_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/screening/qqr_screening.h
     ${CMAKE_CURRENT_SOURCE_DIR}/screening/qqr_screening.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/screening/qvl_screening.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/screening/qvl_screening.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/screening/qvl_shell_info.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/screening/qvl_shell_info.cpp
 )
+
 add_library(integrals ${integral_sources})
 #set_target_properties(integrals PROPERTIES LINKER_LANGUAGE C++)
 

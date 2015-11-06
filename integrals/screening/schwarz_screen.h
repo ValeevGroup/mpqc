@@ -180,6 +180,11 @@ class SchwarzScreen : public Screener {
         return Qab_->func_to_shell(func_idx);
     }
 
+    /// Returns the shell index given the starting funciton index of that shell.
+    int64_t Qcd_f2s(int64_t func_idx) const {
+        return Qcd_->func_to_shell(func_idx);
+    }
+
 
     template <typename... IDX>
     double screen(IDX... idx) const {

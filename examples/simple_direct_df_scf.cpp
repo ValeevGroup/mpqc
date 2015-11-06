@@ -229,9 +229,23 @@ int main(int argc, char *argv[]) {
     auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
     { // Schwarz Screened
         std::cout << "Direct Schwarz DF" << std::endl;
-        auto sbuilder = ints::init_schwarz_screen(1e-10);
+        auto sbuilder = ints::init_schwarz_screen(1e-8);
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               sbuilder(world, eri_e, df_basis, basis));
+
+        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
+                                                  shr_screen);
+
+        ThreeCenterScf scf(H, S, L_inv, occ / 2, repulsion_energy);
+        scf.solve(20, 1e-7, eri3);
+    }
+
+    { // QVl Screened
+        std::cout << "\n\nDirect Schwarz QVl" << std::endl;
+        auto sbuilder = ints::init_qvl_screen{};
+        ints::QVl::well_sep_threshold(1e-12);
+        auto shr_screen = std::make_shared<ints::QVl>(
+              sbuilder(world, eri_e, df_basis, basis, 1e-8));
 
         auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
                                                   shr_screen);

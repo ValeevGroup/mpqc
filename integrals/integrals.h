@@ -8,6 +8,7 @@
 #include "screening/cached_shell_info.h"
 #include "screening/screen_base.h"
 #include "screening/qqr_screening.h"
+#include "screening/qvl_screening.h"
 #include "screening/schwarz_screen.h"
 
 #include "direct_tile.h"

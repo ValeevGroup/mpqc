@@ -215,14 +215,17 @@ int main(int argc, char *argv[]) {
         std::cout << "Took " << tcc_time::duration_in_s(screen0, screen1)
                   << " s to form screening Matrix!" << std::endl;
 
-        auto eri40 = tcc_time::now();
-
         auto eri4 = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array,
                                                        shr_screen);
+
+        world.gop.fence();
+        auto eri40 = tcc_time::now();
+        auto norm_diff = (eri4("i,j,k,l") + eri4("i,k,j,l")).norm().get();
+
         world.gop.fence();
         auto eri41 = tcc_time::now();
         std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
-                  << " s to initialize integrals." << std::endl;
+                  << " s compute norm of " << norm_diff << std::endl;
 
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
         scf.solve(20, 1e-7, eri4);

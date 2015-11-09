@@ -62,11 +62,9 @@ namespace tcc {
                 auto direct = options_.HasMember("Direct") ? options_["Direct"].GetBool(): true;
                 if(direct){
                     double ccsd_corr = compute_ccsd_direct(t1, t2);
-                    ccsd_corr = compute_ccsd_direct2(t1, t2);
                 }
                 else {
-                    double ccsd_corr = compute_ccsd_straight(t1, t2);
-                    double tmp = compute_ccsd_nondirect(t1,t2);
+                    double ccsd_corr = compute_ccsd_nondirect(t1,t2);
                 }
 
                 ccsd_intermediate_->clean_two_electron();
@@ -702,7 +700,7 @@ namespace tcc {
 
             //TODO need to update equation with different options
             // ccsd energy for performance calculation
-            double compute_ccsd_direct(TArray2 &t1, TArray4 &t2) {
+            double compute_ccsd_direct2(TArray2 &t1, TArray4 &t2) {
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
@@ -982,7 +980,7 @@ namespace tcc {
                 return E1;
             }
 
-            double compute_ccsd_direct2(TArray2 &t1, TArray4 &t2) {
+            double compute_ccsd_direct(TArray2 &t1, TArray4 &t2) {
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 

@@ -6566,7 +6566,6 @@ namespace sc {
 #endif
 
     // CC F12b coupling contribution to Xam
-    double muz_Cf12b = 0.0, muz_Cf12bor = 0.0;
     TArray2 mu_z_apb;
 #if 1
     // compute CCSD-F12b density from amplitudes
@@ -6697,20 +6696,20 @@ namespace sc {
                    + dot(mu_z_ijp("i,j'"), Diip_C("i,j'"));
       }
 
-      std::cout << std::endl << indent
-                << "muz_ccsd (F12b) = " << scprintf("%15.12f", - muz_f12b * 2.0)
-                << std::endl << indent
-                << "muz_ccsdor (F12b) = " << scprintf("%15.12f", - muz_f12bor * 2.0)
-                << std::endl;
-
-//      muz_Cf12b =  muz_f12b - muz_ccsd;
-//      muz_Cf12bor =  muz_f12bor - muz_ccsdor;
-//
 //      std::cout << std::endl << indent
-//                << "muz_Cf12b = " << scprintf("%15.12f", - muz_Cf12b * 2.0)
+//                << "muz_ccsd (F12b) = " << scprintf("%15.12f", - muz_f12b * 2.0)
 //                << std::endl << indent
-//                << "muz_Cf12bor = " << scprintf("%15.12f", - muz_Cf12bor * 2.0)
-//                << std::endl << std::endl;
+//                << "muz_ccsdor (F12b) = " << scprintf("%15.12f", - muz_f12bor * 2.0)
+//                << std::endl;
+
+      double muz_Cf12b =  muz_f12b - muz_ccsd;
+      double muz_Cf12bor =  muz_f12bor - muz_ccsdor;
+
+      std::cout << std::endl << indent
+                << "mu_z (F12b C) = " << scprintf("%15.12f", - muz_Cf12b * 2.0)
+                << std::endl << indent
+                << "mu_z (F12b C or) = " << scprintf("%15.12f", - muz_Cf12bor * 2.0)
+                << std::endl << std::endl;
     }
 
     if (compute_quadrupole) {

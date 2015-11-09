@@ -6245,7 +6245,7 @@ namespace sc {
   }
 
   template <typename T>
-  void SingleReference_R12Intermediates<T>::compute_multipole_F12b() {
+  void SingleReference_R12Intermediates<T>::compute_multipole_F12b_coupling() {
 
     bool compute_dipole = true;
     bool compute_quadrupole = true;
@@ -6413,7 +6413,7 @@ namespace sc {
     double muz_ccsd = 0.0, muz_ccsdor = 0.0;
     double q_xx_ccsd = 0.0, q_yy_ccsd = 0.0, q_zz_ccsd = 0.0;
     double q_xx_ccsdor = 0.0, q_yy_ccsdor = 0.0, q_zz_ccsdor = 0.0;
-#if 0 // CCSD
+#if 1 // CCSD
     ExEnv::out0() << indent << "Compute CCSD T amplitudes " << std::endl;
     TArray2 T1_ccsd;
     TArray4 T2_ccsd;
@@ -6504,13 +6504,13 @@ namespace sc {
       }
 
       std::cout << std::endl << indent
-                << "q_xx (CCSD) = " << scprintf("%12.10f", - q_xx_ccsd * 2.0)
-                << "  q_yy (CCSD) = " << scprintf("%12.10f", - q_yy_ccsd * 2.0)
-                << "  q_zz (CCSD) = " << scprintf("%12.10f", - q_zz_ccsd * 2.0)
+                << "qxx_ccsd = " << scprintf("%12.10f", - q_xx_ccsd * 2.0)
+                << "  qyy_ccsd = " << scprintf("%12.10f", - q_yy_ccsd * 2.0)
+                << "  qzz_ccsd = " << scprintf("%12.10f", - q_zz_ccsd * 2.0)
                 << std::endl << indent
-                << "q_xx (CCSD or) = " << scprintf("%12.10f", - q_xx_ccsdor * 2.0)
-                << "  q_yy (CCSD or) = " << scprintf("%12.10f", - q_yy_ccsdor * 2.0)
-                << "  q_zz (CCSD or) = " << scprintf("%12.10f", - q_zz_ccsdor * 2.0)
+                << "qxx_ccsdor = " << scprintf("%12.10f", - q_xx_ccsdor * 2.0)
+                << "  qyy_ccsdor = " << scprintf("%12.10f", - q_yy_ccsdor * 2.0)
+                << "  qzz_ccsdor = " << scprintf("%12.10f", - q_zz_ccsdor * 2.0)
                 << std::endl;
     }
 #endif
@@ -6528,6 +6528,7 @@ namespace sc {
     compute_lambda_ccsd(T1_f12b, T2_f12b, L1_f12b, L2_f12b, "F12b");
 
     // compute energy from coupling in F12b
+#if 1
     // CT2 energy
     // F^a'_a R^ij_a'b + F^a'_b R^ij_aa'
     TArray4 Cijab;
@@ -6562,6 +6563,7 @@ namespace sc {
     std::cout << indent << "E (Coupling in F12b) =  "
               << scprintf("%15.12f", (E_CT2+E_VT+E_VT1T1))
               << std::endl;
+#endif
 
     // CC F12b coupling contribution to Xam
     double muz_Cf12b = 0.0, muz_Cf12bor = 0.0;
@@ -6750,31 +6752,31 @@ namespace sc {
                       + dot(Qzz_ijp("i,j'"), Diip_C("i,j'"));
       }
 
-      std::cout << std::endl << indent
-                << "q_xx (F12b) = "   << scprintf("%12.10f", - q_xx_f12b * 2.0)
-                << "  q_yy (F12b) = " << scprintf("%12.10f", - q_yy_f12b * 2.0)
-                << "  q_zz (F12b) = " << scprintf("%12.10f", - q_zz_f12b * 2.0)
-                << std::endl << indent
-                << "q_xx (F12b or) = "   << scprintf("%12.10f", - q_xx_f12bor * 2.0)
-                << "  q_yy (F12b or) = " << scprintf("%12.10f", - q_yy_f12bor * 2.0)
-                << "  q_zz (F12b or) = " << scprintf("%12.10f", - q_zz_f12bor * 2.0)
-                << std::endl << std::endl;
-
-//      double q_xx_f12b_C = q_xx_f12b - q_xx_ccsd;
-//      double q_yy_f12b_C = q_yy_f12b - q_yy_ccsd;
-//      double q_zz_f12b_C = q_zz_f12b - q_zz_ccsd;
-//      double q_xx_f12bor_C = q_xx_f12bor - q_xx_ccsdor;
-//      double q_yy_f12bor_C = q_yy_f12bor - q_yy_ccsdor;
-//      double q_zz_f12bor_C = q_zz_f12bor - q_zz_ccsdor;
 //      std::cout << std::endl << indent
-//                << "q_xx (F12b C) = "   << scprintf("%12.10f", - q_xx_f12b_C * 2.0)
-//                << "  q_yy (F12b C) = " << scprintf("%12.10f", - q_yy_f12b_C * 2.0)
-//                << "  q_zz (F12b C) = " << scprintf("%12.10f", - q_zz_f12b_C * 2.0)
+//                << "q_xx (F12b) = "   << scprintf("%12.10f", - q_xx_f12b * 2.0)
+//                << "  q_yy (F12b) = " << scprintf("%12.10f", - q_yy_f12b * 2.0)
+//                << "  q_zz (F12b) = " << scprintf("%12.10f", - q_zz_f12b * 2.0)
 //                << std::endl << indent
-//                << "q_xx (F12b C or) = "   << scprintf("%12.10f", - q_xx_f12bor_C * 2.0)
-//                << "  q_yy (F12b C or) = " << scprintf("%12.10f", - q_yy_f12bor_C * 2.0)
-//                << "  q_zz (F12b C or) = " << scprintf("%12.10f", - q_zz_f12bor_C * 2.0)
+//                << "q_xx (F12b or) = "   << scprintf("%12.10f", - q_xx_f12bor * 2.0)
+//                << "  q_yy (F12b or) = " << scprintf("%12.10f", - q_yy_f12bor * 2.0)
+//                << "  q_zz (F12b or) = " << scprintf("%12.10f", - q_zz_f12bor * 2.0)
 //                << std::endl << std::endl;
+
+      double q_xx_f12b_C = q_xx_f12b - q_xx_ccsd;
+      double q_yy_f12b_C = q_yy_f12b - q_yy_ccsd;
+      double q_zz_f12b_C = q_zz_f12b - q_zz_ccsd;
+      double q_xx_f12bor_C = q_xx_f12bor - q_xx_ccsdor;
+      double q_yy_f12bor_C = q_yy_f12bor - q_yy_ccsdor;
+      double q_zz_f12bor_C = q_zz_f12bor - q_zz_ccsdor;
+      std::cout << std::endl << indent
+                << "q_xx (F12b C) = "   << scprintf("%12.10f", - q_xx_f12b_C * 2.0)
+                << "  q_yy (F12b C) = " << scprintf("%12.10f", - q_yy_f12b_C * 2.0)
+                << "  q_zz (F12b C) = " << scprintf("%12.10f", - q_zz_f12b_C * 2.0)
+                << std::endl << indent
+                << "q_xx (F12b C or) = "   << scprintf("%12.10f", - q_xx_f12bor_C * 2.0)
+                << "  q_yy (F12b C or) = " << scprintf("%12.10f", - q_yy_f12bor_C * 2.0)
+                << "  q_zz (F12b C or) = " << scprintf("%12.10f", - q_zz_f12bor_C * 2.0)
+                << std::endl << std::endl;
     }
 #endif
 

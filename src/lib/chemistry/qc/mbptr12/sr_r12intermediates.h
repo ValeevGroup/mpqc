@@ -417,7 +417,7 @@ namespace sc {
                             TArray2& Xam_tot, TArray2& Xiip);
 
       // compute multipole using F12b method
-      void compute_multipole_F12b();
+      void compute_multipole_F12b_coupling();
       // compute V^PQ_RS = 1/2 R^PQ_A'B' g^A'B'_RS
       // P, Q, R, and S in same spin space (or for close-shell)
       TArray4 VPQ_RS(const char* p, const char* q,

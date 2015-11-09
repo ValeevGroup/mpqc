@@ -89,6 +89,7 @@ R12IntEval::compute_TA_mp2f12_1rdm() {
 
   srr12intrmds.compute_multipole();
 
+  // compute dipole and quadrupole moments using CCSD-F12b method
   //srr12intrmds.compute_multipole_F12b();
 }
 

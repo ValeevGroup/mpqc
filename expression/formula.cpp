@@ -58,7 +58,7 @@ namespace mpqc{
 
         std::wstring option;
 
-        if( (option_left!=formula_string.end()) && (option_right!=formula_string.end())){
+        if( (option_left!=formula_string.cend()) && (option_right!=formula_string.cend())){
             TA_ASSERT(option_left < option_right);
             option = std::wstring(option_left+1,option_right);
         }

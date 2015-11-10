@@ -143,7 +143,8 @@ namespace integrals{
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::SparsePolicy>::value, TA::SparsePolicy>::type> compute_integrals(
                 madness::World& world, E const &engine, Barray<N> const &bases)
         {
-            auto result = mpqc::integrals::sparse_integrals(world,engine,bases,op_);
+            auto sreener = std::make_shared<Screener>(Screener{});
+            auto result = mpqc::integrals::sparse_integrals(world,engine,bases,sreener,op_);
             return result;
         }
 
@@ -152,7 +153,8 @@ namespace integrals{
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::DensePolicy>::value, TA::DensePolicy>::type> compute_integrals(
                 madness::World& world, E const &engine, Barray<N> const &bases)
         {
-            auto result = mpqc::integrals::dense_integrals(world,engine,bases,op_);
+            auto sreener = std::make_shared<Screener>(Screener{});
+            auto result = mpqc::integrals::dense_integrals(world,engine,bases,sreener,op_);
             return result;
         }
 

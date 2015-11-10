@@ -25,7 +25,9 @@
 namespace mpqc{
 namespace integrals{
 
-
+  
+    //TODO return expression instead of array?
+    //TODO registry to avoid recompute integral
     template<typename Tile, typename Policy>
     class AtomicIntegralBase {
     public:
@@ -165,7 +167,6 @@ namespace integrals{
     };
 
 
-    // TODO working with chemical and physical notation
     template <typename Tile, typename Policy>
     typename AtomicIntegral<Tile,Policy>::TArray2 AtomicIntegral<Tile,Policy>::compute2(const std::wstring& formula_string) {
 

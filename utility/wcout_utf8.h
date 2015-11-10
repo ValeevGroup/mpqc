@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 
+//TODO wcout on linux system
 void wcout_utf8(const std::wstring& s){
 
     std::wcout.imbue(std::locale("en_US.UTF-8"));

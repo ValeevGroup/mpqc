@@ -41,7 +41,7 @@ TEST_CASE("Atomic Integral", "[atomic_integral]"){
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
 // Atomic Integral
-    integrals::AtomicIntegral<TA::TensorD, TA::DensePolicy> ao_int(world,
+    integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(world,
                                                                    op,
         std::make_shared<molecule::Molecule>(clustered_mol),
         std::make_shared<basis::Basis>(basis));

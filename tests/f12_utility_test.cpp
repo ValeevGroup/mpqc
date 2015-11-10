@@ -28,13 +28,13 @@ TEST_CASE("F12 Utility", "[f12_utility]"){
         auto result = f12::stg_ng_fit(6,0.9);
         auto result00 = std::to_string(result[0].first);
         auto result01 = std::to_string(result[0].second);
-        REQUIRE(result00 == "-0.383776");
-        REQUIRE(result01 == "0.194846");
+        REQUIRE(result01 == "-0.383776");
+        REQUIRE(result00 == "0.194846");
 
         auto result50 = std::to_string(result[5].first);
         auto result51 = std::to_string(result[5].second);
-        REQUIRE(result50 == "-0.037943");
-        REQUIRE(result51 == "245.372177");
+        REQUIRE(result51 == "-0.037943");
+        REQUIRE(result50 == "245.372177");
 
     }
 

@@ -138,6 +138,7 @@ namespace integrals{
         TArray4 compute4(const std::wstring& );
 
     private:
+        //TODO Screener for different type of integral
         // compute integral for sparse policy
         template <typename E, unsigned long N, typename U = Policy>
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::SparsePolicy>::value, TA::SparsePolicy>::type> compute_integrals(
@@ -667,9 +668,6 @@ namespace integrals{
 
     }
     //TODO R12 Integral
-
-    // R12 Atomic Integral
-
     }
 }
 

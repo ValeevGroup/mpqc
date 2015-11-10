@@ -6,6 +6,7 @@
 #include <cwchar>
 
 #include <stdexcept>
+#include <TiledArray/error.h>
 
 #include "orbital_index.h"
 
@@ -39,30 +40,34 @@ void OrbitalIndex::init(const wchar_t* letter) {
 
     std::string error_message("Wrong Key Index!");
 
+    auto length = wcslen(letter);   
+        
     // single letter case, for example i, a , p
-    if(wcslen(letter) == 1) {
-        if (letter[0] >= occ_wchar[0] && letter[0] <= occ_wchar[1]) {
+
+    const auto first = letter[0];
+    if(length == 1) {
+        if (first >= occ_wchar[0] && first <= occ_wchar[1]) {
             index_ = Index::occ;
         }
-        else if (letter[0] >= actocc_wchar[0] && letter[0] <= actocc_wchar[1]){
+        else if (first >= actocc_wchar[0] && first <= actocc_wchar[1]){
             index_ = Index::actocc;
         }
-        else if ( letter[0] >= active_wchar[0] && letter[0] <= active_wchar[1]){
+        else if ( first >= active_wchar[0] && first <= active_wchar[1]){
             index_ = Index::active;
         }
-        else if (letter[0] >= virt_wchar[0] && letter[0] <= virt_wchar[1]) {
+        else if (first >= virt_wchar[0] && first <= virt_wchar[1]) {
             index_ = Index::virt;
         }
-        else if (letter[0] >= any_wchar[0] && letter[0] <= any_wchar[1]) {
+        else if (first >= any_wchar[0] && first <= any_wchar[1]) {
             index_ = Index::any;
         }
-        else if (letter[0] >= obs_wchar[0] && letter[0] <= obs_wchar[1]) {
+        else if (first >= obs_wchar[0] && first <= obs_wchar[1]) {
             index_ = Index::obs;
         }
-        else if (letter[0] >= abs_wchar[0] && letter[0] <= abs_wchar[1]){
+        else if (first >= abs_wchar[0] && first <= abs_wchar[1]){
             index_ = Index::abs;
         }
-        else if (letter[0] >= dfbs_wchar[0] && letter[0] <= dfbs_wchar[1]){
+        else if (first >= dfbs_wchar[0] && first <= dfbs_wchar[1]){
             index_ = Index::dfbs;
         }
         else{
@@ -72,18 +77,18 @@ void OrbitalIndex::init(const wchar_t* letter) {
     }
     // letter with ' or letter with number, number is ignored
     // i1, a2, or A', a', P'
-    else if(wcslen(letter) == 2){
-        if(letter[1]=='\'') {
-            if (letter[0] >= othervirt_wchar[0] && letter[0] <= othervirt_wchar[1]) {
+    else if(length == 2){
+        if(letter[1]==L'\'') {
+            if (first >= othervirt_wchar[0] && first <= othervirt_wchar[1]) {
                 index_ = Index::othervirt;
             }
-            else if (letter[0] >= inactocc_wchar[0] && letter[0] <= inactocc_wchar[1]){
+            else if (first >= inactocc_wchar[0] && first <= inactocc_wchar[1]){
                 index_ = Index::inactocc;
             }
-            else if (letter[0] >= allvirt_wchar[0] && letter[0] <= allvirt_wchar[1]) {
+            else if (first >= allvirt_wchar[0] && first <= allvirt_wchar[1]) {
                 index_ = Index::allvirt;
             }
-            else if (letter[0] >= allany_wchar[0] && letter[0] <= allany_wchar[1]) {
+            else if (first >= allany_wchar[0] && first <= allany_wchar[1]) {
                 index_ = Index::allany;
             }
             else{
@@ -91,28 +96,28 @@ void OrbitalIndex::init(const wchar_t* letter) {
             }
         }
         else if(isdigit(letter[1])){
-            if (letter[0] >= occ_wchar[0] && letter[0] <= occ_wchar[1]) {
+            if (first >= occ_wchar[0] && first <= occ_wchar[1]) {
                 index_ = Index::occ;
             }
-            else if (letter[0] >= actocc_wchar[0] && letter[0] <= actocc_wchar[1]){
+            else if (first >= actocc_wchar[0] && first <= actocc_wchar[1]){
                 index_ = Index::actocc;
             }
-            else if ( letter[0] >= active_wchar[0] && letter[0] <= active_wchar[1]){
+            else if ( first >= active_wchar[0] && first <= active_wchar[1]){
                 index_ = Index::active;
             }
-            else if (letter[0] >= virt_wchar[0] && letter[0] <= virt_wchar[1]) {
+            else if (first >= virt_wchar[0] && first <= virt_wchar[1]) {
                 index_ = Index::virt;
             }
-            else if (letter[0] >= any_wchar[0] && letter[0] <= any_wchar[1]) {
+            else if (first >= any_wchar[0] && first <= any_wchar[1]) {
                 index_ = Index::any;
             }
-            else if (letter[0] >= obs_wchar[0] && letter[0] <= obs_wchar[1]) {
+            else if (first >= obs_wchar[0] && first <= obs_wchar[1]) {
                 index_ = Index::obs;
             }
-            else if (letter[0] >= abs_wchar[0] && letter[0] <= abs_wchar[1]){
+            else if (first >= abs_wchar[0] && first <= abs_wchar[1]){
                 index_ = Index::abs;
             }
-            else if (letter[0] >= dfbs_wchar[0] && letter[0] <= dfbs_wchar[1]){
+            else if (first >= dfbs_wchar[0] && first <= dfbs_wchar[1]){
                 index_ = Index::dfbs;
             }
             else{
@@ -124,31 +129,70 @@ void OrbitalIndex::init(const wchar_t* letter) {
         }
     }
     // letter with number and prime
-    // A1', a2', P3'
-    else if(wcslen(letter) == 3){
-        if(letter[2]=='\'' && isdigit(letter[1])) {
-            if (letter[0] >= othervirt_wchar[0] && letter[0] <= othervirt_wchar[1]) {
+    // A'1, a'1, P'12, i12
+    else if(wcslen(letter) >= 3){
+        // with prime
+        if(letter[1]==L'\'') {
+            
+            // check number
+            for(auto i = 2; i < length; i++ ){
+                TA_ASSERT(isdigit(letter[i]));
+            }
+            
+            if (first >= othervirt_wchar[0] && first <= othervirt_wchar[1]) {
                 index_ = Index::othervirt;
             }
-            else if (letter[0] >= inactocc_wchar[0] && letter[0] <= inactocc_wchar[1]){
+            else if (first >= inactocc_wchar[0] && first <= inactocc_wchar[1]){
                 index_ = Index::inactocc;
             }
-            else if (letter[0] >= allvirt_wchar[0] && letter[0] <= allvirt_wchar[1]) {
+            else if (first >= allvirt_wchar[0] && first <= allvirt_wchar[1]) {
                 index_ = Index::allvirt;
             }
-            else if (letter[0] >= allany_wchar[0] && letter[0] <= allany_wchar[1]) {
+            else if (first >= allany_wchar[0] && first <= allany_wchar[1]) {
                 index_ = Index::allany;
             }
             else{
                 throw std::runtime_error(error_message);
             }
         }
+        //without prime
+        else if(isdigit(letter[1])) {
+            // check number
+            for (auto i = 1; i < length; i++) {
+                TA_ASSERT(isdigit(letter[i]));
+            }
+
+            if (first >= occ_wchar[0] && first <= occ_wchar[1]) {
+                index_ = Index::occ;
+            }
+            else if (first >= actocc_wchar[0] && first <= actocc_wchar[1]) {
+                index_ = Index::actocc;
+            }
+            else if (first >= active_wchar[0] && first <= active_wchar[1]) {
+                index_ = Index::active;
+            }
+            else if (first >= virt_wchar[0] && first <= virt_wchar[1]) {
+                index_ = Index::virt;
+            }
+            else if (first >= any_wchar[0] && first <= any_wchar[1]) {
+                index_ = Index::any;
+            }
+            else if (first >= obs_wchar[0] && first <= obs_wchar[1]) {
+                index_ = Index::obs;
+            }
+            else if (first >= abs_wchar[0] && first <= abs_wchar[1]) {
+                index_ = Index::abs;
+            }
+            else if (first >= dfbs_wchar[0] && first <= dfbs_wchar[1]) {
+                index_ = Index::dfbs;
+            }
+            else {
+                throw std::runtime_error(error_message);
+            }
+        }
         else{
             throw std::runtime_error(error_message);
         }
-    }
-    else{
-        throw std::runtime_error(error_message);
     }
     std::wstring tmp(letter);
     name_ = tmp;

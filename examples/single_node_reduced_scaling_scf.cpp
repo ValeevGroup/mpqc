@@ -5,6 +5,7 @@
 #include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
+#include "../utility/time.h"
 #include "../clustering/kmeans.h"
 
 #include "../molecule/atom.h"
@@ -21,6 +22,8 @@
 
 #include "../ta_routines/array_to_eigen.h"
 
+#include <Eigen/Sparse>
+#include <Eigen/SparseCholesky>
 #include <tbb.h>
 #include <libint2/diis.h>
 #include <iostream>
@@ -34,6 +37,8 @@ namespace ints = mpqc::integrals;
 namespace L2 = libint2;
 
 using Matrix = Eig::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
+
+using SMatrix = Eig::SparseMatrix<double, Eig::RowMajor>;
 
 Matrix compute_soad(molecule::Molecule const &);
 
@@ -51,26 +56,114 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
                 Matrix const &D,
                 double precision = std::numeric_limits<double>::epsilon());
 
-Matrix update_density(Matrix const &F, Matrix const &S, int64_t occ) {
+// Matrix update_density(Matrix const &F, Matrix const &S, int64_t occ) {
+//     Eig::GeneralizedSelfAdjointEigenSolver<Matrix> es(F, S);
+//     Matrix C = es.eigenvectors().leftCols(occ);
+//     return C * C.transpose();
+// }
+
+static SMatrix L_invS = SMatrix();
+
+SMatrix
+update_density(Matrix const &F, Matrix const &S, int64_t occ,
+               double precision = std::numeric_limits<double>::epsilon()) {
+    //  if (L_invS.size() == 0) {
+    //      Eig::LLT<Matrix> chol(S);
+    //      Matrix L = chol.matrixL();
+    //      Matrix Li = L.inverse();
+    //      L_invS = Li.sparseView(precision);
+    //      L_invS.makeCompressed();
+    //      std::cout << "L_invS fill % = "
+    //                << 100 * double(L_invS.nonZeros())
+    //                   / double((L_invS.rows() * L_invS.cols())) << std::endl;
+    //  }
+
+    //  auto p0 = tcc_time::now();
+
+    //  Matrix Ftran = L_invS * F * L_invS.transpose();
+
+    //  // Get eval estimation
+    //  auto max_eval = 0.0;
+    //  auto min_eval = 0.0;
+    //  for (auto i = 0; i < Ftran.rows(); ++i) {
+    //      auto row_sum = Ftran(i, i);
+    //      auto min_row_sum = row_sum;
+    //      for (auto j = 0; j < Ftran.cols(); ++j) {
+    //          if (j != i) {
+    //              row_sum += 2 * Ftran(i, j);
+    //              min_row_sum += -2 * Ftran(i, j);
+    //          }
+    //      }
+
+    //      max_eval = std::max(max_eval, row_sum);
+    //      min_eval = std::min(min_eval, min_row_sum);
+    //  }
+
+    //  SMatrix D = ((max_eval * Matrix::Identity(Ftran.rows(), Ftran.cols())
+    //                - Ftran) / (max_eval - min_eval)).sparseView(precision);
+
+    //  std::cout << "\tPure D fill % = "
+    //            << 100 * double(D.nonZeros()) / double((D.rows() * D.cols()))
+    //            << std::endl;
+
+    //  auto trace = [](SMatrix const &M) {
+    //      auto tr = 0.0;
+    //      for (int k = 0; k < M.outerSize(); ++k) {
+    //          for (SMatrix::InnerIterator it(M, k); it; ++it) {
+    //              if (it.col() == it.row()) {
+    //                  tr += it.value();
+    //              }
+    //          }
+    //      }
+    //      return tr;
+    //  };
+
+    //  auto tr = trace(D);
+
+    //  auto iter = 1;
+    //  SMatrix D2;
+    //  auto error = std::abs(tr - occ);
+    //  while (error >= 1e-13 && iter <= 100) {
+    //      D2 = (D * D).pruned(precision);
+    //      if (tr > occ) {
+    //          D = D2;
+    //      } else {
+    //          D = 2 * D - D2;
+    //      }
+
+    //      tr = trace(D);
+    //      error = std::abs(tr - occ);
+    //      ++iter;
+    //  }
+
+    //  D = (L_invS.transpose() * D * L_invS).pruned(precision);
+    //  auto p1 = tcc_time::now();
+    //  std::cout << "\tPurification took " << tcc_time::duration_in_s(p0, p1)
+    //            << " s" << std::endl;
+
+    //  return D;
+
     Eig::GeneralizedSelfAdjointEigenSolver<Matrix> es(F, S);
     Matrix C = es.eigenvectors().leftCols(occ);
-    return C * C.transpose();
+    return (C * C.transpose()).sparseView(precision);
 }
 
 int main(int argc, char *argv[]) {
+    tbb::task_scheduler_init init(4);
     auto &world = madness::initialize(argc, argv);
     std::string mol_file = "";
     std::string basis_name = "";
     int nclusters = 1;
     std::cout << std::setprecision(15);
     double threshold = 1e-10;
-    if (argc == 3) {
+    if (argc >= 3) {
         mol_file = argv[1];
         basis_name = argv[2];
-    } else {
-        std::cout << "input is $./program mol_file basis_file";
-        return 0;
     }
+    if (argc == 4) {
+        threshold = std::stod(argv[3]);
+    }
+
     TiledArray::SparseShape<float>::threshold(threshold);
 
     auto clustered_mol = molecule::attach_hydrogens_and_kmeans(
@@ -109,7 +202,8 @@ int main(int argc, char *argv[]) {
     }
 
     auto eri_e = ints::make_2body_shr_pool(basis);
-    Matrix D, F;
+    Matrix F;
+    SMatrix D;
     {
         auto D_min = compute_soad(clustered_mol);
         F = compute_2body_fock_from_soad(eri_e, clustered_mol, basis, H, D_min);
@@ -119,8 +213,9 @@ int main(int argc, char *argv[]) {
     Matrix Q
           = ints::detail::four_center_Q(world, eri_e, basis.flattened_shells());
 
+    // std::cout << "Q = \n" << Q << std::endl;
     const auto maxiter = 100;
-    const auto conv = 1e-12;
+    const auto conv = 1e-10;
     auto iter = 0;
     auto rms_error = 1.0;
     auto ediff_rel = 0.0;
@@ -128,11 +223,10 @@ int main(int argc, char *argv[]) {
     auto n2 = D.cols() * D.rows();
     libint2::DIIS<Matrix> diis(2); // start DIIS on second iteration
 
-    std::cout << "Initial D = \n" << D << std::endl;
 
-#if 0
+#if 1
     // prepare for incremental Fock build ...
-    Matrix D_diff = D;
+    SMatrix D_diff = D;
     F = H;
     bool reset_incremental_fock_formation = false;
     bool incremental_Fbuild_started = false;
@@ -146,7 +240,7 @@ int main(int argc, char *argv[]) {
 
         // Last iteration's energy and density
         auto ehf_last = ehf;
-        Matrix D_last = D;
+        SMatrix D_last = D;
 
         if (not incremental_Fbuild_started
             && rms_error < start_incremental_F_threshold) {
@@ -168,7 +262,7 @@ int main(int argc, char *argv[]) {
             std::cout << "== reset incremental fock build" << std::endl;
         }
 
-        F += compute_2body_G(eri_e, basis, Q, D_diff);
+        F += compute_2body_G(eri_e, basis, Q, D_diff, threshold);
 
         // compute HF energy with the non-extrapolated Fock matrix
         ehf = D.cwiseProduct(H + F).sum();
@@ -185,8 +279,9 @@ int main(int argc, char *argv[]) {
         Matrix F_diis = F;
         diis.extrapolate(F_diis, FD_comm);
 
-        D = update_density(F_diis, S, occ / 2);
+        D = update_density(F_diis, S, occ / 2, threshold);
         D_diff = D - D_last;
+
 
         const auto tstop = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<double> time_elapsed = tstop - tstart;
@@ -194,15 +289,16 @@ int main(int argc, char *argv[]) {
         if (iter == 1)
             std::cout << "\n\nIter         E(HF)                 D(E)/E        "
                          " RMS([F,D])/nn       Time(s)\n";
-        printf(" %02d %20.12f %20.12e %20.12e %10.5lf\n", iter, ehf + repulsion_energy,
-               ediff_rel, rms_error, time_elapsed.count());
+        printf(" %02d %20.12f %20.12e %20.12e %10.5lf\n", iter,
+               ehf + repulsion_energy, ediff_rel, rms_error,
+               time_elapsed.count());
 
     } while (((ediff_rel > conv) || (rms_error > conv)) && (iter < maxiter));
 
     printf("** Hartree-Fock energy = %20.12f\n", ehf + repulsion_energy);
+#endif
 
     return 0;
-#endif 
 }
 
 
@@ -371,21 +467,44 @@ compute_2body_fock_from_soad(ShrPool &engs, molecule::Molecule const &mol,
     return H + 0.5 * (F + F.transpose());
 }
 
-template <typename ShrPool>
 Matrix
-compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
-                Matrix const &D,
-                double precision) {
+compute_shellblock_norm(std::vector<Shell> const &obs_shells,
+                        std::vector<int64_t> const &shell2f, Matrix const &A) {
+    const auto nsh = obs_shells.size();
+    Matrix Ash(nsh, nsh);
 
+    for (size_t s1 = 0; s1 != nsh; ++s1) {
+        const auto &s1_first = shell2f[s1];
+        const auto &s1_size = obs_shells[s1].size();
+        for (size_t s2 = 0; s2 != nsh; ++s2) {
+            const auto &s2_first = shell2f[s2];
+            const auto &s2_size = obs_shells[s2].size();
+
+            Ash(s1, s2) = A.block(s1_first, s2_first, s1_size, s2_size)
+                                .lpNorm<Eigen::Infinity>();
+        }
+    }
+
+    return Ash;
+}
+
+template <typename ShrPool>
+Matrix compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
+                       Matrix const &D, double precision) {
     auto obs_shells = obs.flattened_shells();
     auto shell2bf = shell_to_func(obs_shells);
 
     Matrix F = Matrix::Zero(obs.nfunctions(), obs.nfunctions());
     tbb::enumerable_thread_specific<Matrix> F_pool(F);
 
+    Matrix D_shblk_norm = compute_shellblock_norm(obs_shells, shell2bf, D);
+
     auto task_j = [&](tbb::blocked_range<std::size_t> const &range) {
-        engs->local().set_precision(precision);
-        for (auto s1 = range.begin(); s1 != range.end(); ++s1) {
+        // engs->local().set_precision(precision);
+        auto &eng = engs->local();
+        auto &g = F_pool.local();
+        const auto end = range.end();
+        for (auto s1 = range.begin(); s1 != end; ++s1) {
             auto const &sh1 = obs_shells[s1];
             auto bf1_first = shell2bf[s1];
             auto n1 = sh1.size();
@@ -395,16 +514,26 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
                 auto bf2_first = shell2bf[s2];
                 auto n2 = sh2.size();
 
-                for (auto s3 = 0; s3 < s1; ++s3) {
+                const auto Dnorm12 = D_shblk_norm(s1, s2);
+
+                for (auto s3 = 0; s3 <= s1; ++s3) {
                     auto const &sh3 = obs_shells[s3];
                     auto bf3_first = shell2bf[s3];
                     auto n3 = sh3.size();
+
 
                     const auto s4_max = (s1 == s3) ? s2 : s3;
                     for (auto s4 = 0; s4 <= s4_max; ++s4) {
                         auto sh4 = obs_shells[s4];
                         auto bf4_first = shell2bf[s4];
                         auto n4 = sh4.size();
+
+                        const auto Dnorm1234
+                              = std::max(Dnorm12, D_shblk_norm(s3, s4));
+
+                        if (Dnorm1234 * Q(s1, s2) * Q(s3, s4) < precision) {
+                            continue;
+                        }
 
                         // compute the permutational degeneracy (i.e. # of
                         // equivalents) of the given shell set
@@ -414,16 +543,12 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
                                                      : 2.0;
                         auto s1234_deg = s12_deg * s34_deg * s12_34_deg;
 
-                        const auto *buf = engs->local().compute(sh1, sh2, sh3, sh4);
+                        const auto *buf = eng.compute(sh1, sh2, sh3, sh4);
 
                         // 1) each shell set of integrals contributes up to 6
                         // shell sets of the Fock matrix:
                         //    F(a,b) += (ab|cd) * D(c,d)
                         //    F(c,d) += (ab|cd) * D(a,b)
-                        //    F(b,d) -= 1/4 * (ab|cd) * D(a,c)
-                        //    F(b,c) -= 1/4 * (ab|cd) * D(a,d)
-                        //    F(a,c) -= 1/4 * (ab|cd) * D(b,d)
-                        //    F(a,d) -= 1/4 * (ab|cd) * D(b,c)
                         // 2) each permutationally-unique integral (shell set)
                         // must be scaled by its degeneracy,
                         //    i.e. the number of the integrals/sets equivalent
@@ -442,8 +567,6 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
 
                                         const auto value_scal_by_deg
                                               = value * s1234_deg;
-
-                                        auto &g = F_pool.local();
 
                                         g(bf1, bf2) += D(bf3, bf4)
                                                        * value_scal_by_deg;
@@ -460,7 +583,10 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
     };
 
     auto task_k = [&](tbb::blocked_range<std::size_t> const &range) {
-        engs->local().set_precision(precision);
+        // engs->local().set_precision(precision);
+        auto &eng = engs->local();
+        auto &g = F_pool.local();
+
         for (auto s1 = range.begin(); s1 != range.end(); ++s1) {
             auto const &sh1 = obs_shells[s1];
             auto bf1_first = shell2bf[s1];
@@ -471,10 +597,14 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
                 auto bf2_first = shell2bf[s2];
                 auto n2 = sh2.size();
 
-                for (auto s3 = 0; s3 < s1; ++s3) {
+                for (auto s3 = 0; s3 <= s1; ++s3) {
                     auto const &sh3 = obs_shells[s3];
                     auto bf3_first = shell2bf[s3];
                     auto n3 = sh3.size();
+
+                    const auto Dnorm123 = std::max(D_shblk_norm(s1, s3),
+                                                   D_shblk_norm(s2, s3));
+
 
                     const auto s4_max = (s1 == s3) ? s2 : s3;
                     for (auto s4 = 0; s4 <= s4_max; ++s4) {
@@ -482,6 +612,13 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
                         auto bf4_first = shell2bf[s4];
                         auto n4 = sh4.size();
 
+                        const auto Dnorm1234 = std::max(
+                              D_shblk_norm(s1, s4),
+                              std::max(D_shblk_norm(s2, s4), Dnorm123));
+
+                        if (Dnorm1234 * Q(s1, s2) * Q(s3, s4) < precision) {
+                            continue;
+                        }
                         // compute the permutational degeneracy (i.e. # of
                         // equivalents) of the given shell set
                         auto s12_deg = (s1 == s2) ? 1.0 : 2.0;
@@ -490,12 +627,11 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
                                                      : 2.0;
                         auto s1234_deg = s12_deg * s34_deg * s12_34_deg;
 
-                        const auto *buf = engs->local().compute(sh1, sh2, sh3, sh4);
+                        const auto *buf
+                              = engs->local().compute(sh1, sh2, sh3, sh4);
 
                         // 1) each shell set of integrals contributes up to 6
                         // shell sets of the Fock matrix:
-                        //    F(a,b) += (ab|cd) * D(c,d)
-                        //    F(c,d) += (ab|cd) * D(a,b)
                         //    F(b,d) -= 1/4 * (ab|cd) * D(a,c)
                         //    F(b,c) -= 1/4 * (ab|cd) * D(a,d)
                         //    F(a,c) -= 1/4 * (ab|cd) * D(b,d)
@@ -518,8 +654,6 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
 
                                         const auto value_scal_by_deg
                                               = value * s1234_deg;
-
-                                        auto &g = F_pool.local();
 
                                         g(bf1, bf3) -= 0.25 * D(bf2, bf4)
                                                        * value_scal_by_deg;
@@ -539,21 +673,24 @@ compute_2body_G(ShrPool &engs, basis::Basis const &obs, Matrix const &Q,
         }
     };
 
+    auto rng = tbb::blocked_range<std::size_t>(0, obs_shells.size());
     auto j0 = tcc::utility::time::now();
+    // task_j(rng);
     tbb::parallel_for(tbb::blocked_range<std::size_t>(0, obs_shells.size()),
                       task_j);
     auto j1 = tcc::utility::time::now();
 
     auto k0 = tcc::utility::time::now();
+    // task_k(rng);
     tbb::parallel_for(tbb::blocked_range<std::size_t>(0, obs_shells.size()),
                       task_k);
     auto k1 = tcc::utility::time::now();
 
-    std::cout << "\tJ time = " << tcc_time::duration_in_s(j0, j1) << std::endl;
-    std::cout << "\tK time = " << tcc_time::duration_in_s(k0, k1) << std::endl;
+    std::cout << "\tJ time = " << tcc_time::duration_in_s(j0, j1) << "\n";
+    std::cout << "\tK time = " << tcc_time::duration_in_s(k0, k1) << "\n";
 
     F = F_pool.combine(
           [](Matrix const &F1, Matrix const &F2) { return Matrix(F1 + F2); });
 
-    return F;
+    return 0.5 * (F + F.transpose());
 }

@@ -108,6 +108,7 @@ int64_t Molecule::core_electrons() const {
     return n;
 }
 
+
 Molecule read_xyz(std::string const &file_name) {
 
     std::ifstream xyz_file(file_name);

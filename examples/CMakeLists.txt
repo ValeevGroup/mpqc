@@ -23,6 +23,15 @@ add_executable(basis_example EXCLUDE_FROM_ALL basis_example.cpp)
 target_link_libraries(basis_example molecule;basis)
 add_dependencies(examples basis_example)
 
+add_executable(group_meeting EXCLUDE_FROM_ALL group_meeting_example.cpp)
+target_link_libraries(group_meeting
+  ${TileClusterChem_LIBRARIES}
+)
+
+add_executable(blocking EXCLUDE_FROM_ALL blocking.cpp)
+target_link_libraries(blocking ${TileClusterChem_LIBRARIES})
+
+
 add_executable(mp2 EXCLUDE_FROM_ALL mp2.cpp)
 target_link_libraries(mp2 ${TileClusterChem_LIBRARIES})
 

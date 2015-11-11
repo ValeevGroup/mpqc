@@ -21,6 +21,7 @@ namespace {
 using ABCbl = AtomBasedClusterable;
 using ABCbls = std::vector<ABCbl>;
 
+
 ABCbls convert_to_clusterable(std::vector<AtomBasedCluster> const &clusters) {
     ABCbls clusterables;
     clusterables.reserve(clusters.size());
@@ -42,6 +43,7 @@ ABCbls attach_hydrogens(ABCbls const &clusterables) {
             clusters.emplace_back(clusterable);
         } else {
             hydrogens.emplace_back(clusterable);
+
         }
     }
 

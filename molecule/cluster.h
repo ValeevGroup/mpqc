@@ -67,7 +67,7 @@ class Cluster {
      * @return reduction over the distances to the cluster center of the
      * clusterables.
      */
-    double sum_distances_from_center() const;
+    double sum_squared_distances_from_center() const;
 
     inline Vec3D const& center() const { return center_; }
 

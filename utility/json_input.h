@@ -4,9 +4,14 @@
 #define TCC_UTILITY_JSONINPUT_H
 
 #include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+
+
+using namespace rapidjson;
 
 /*! \brief looks for input json file and parses it to a document
  *
@@ -28,6 +33,23 @@ void parse_input(int argc, char *argv[], rapidjson::Document &d) {
 
     const char *json = contents.c_str();
     d.Parse(json);
+}
+
+Document get_nested(Document &d, std::string key){
+    rapidjson::StringBuffer buffer;
+    const char *key_ctr = key.c_str();
+
+    assert(d[key_ctr].IsObject());
+
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    d[key_ctr].Accept(writer);
+
+    rapidjson::Document result;
+    rapidjson::StringStream s(buffer.GetString());
+    result.ParseStream(s);
+
+    return std::move(result);
+
 }
 
 #endif // TCC_UTILITY_JSONINPUT_H

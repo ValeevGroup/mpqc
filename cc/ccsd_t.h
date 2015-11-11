@@ -11,6 +11,12 @@ namespace tcc{
     namespace cc{
 
         // CCSD_T class that compute CCSD(T) triple calculation
+
+        //Options:
+        // All options in CCSD class
+        // DFExpr = bool, control if use df in compute ccsd, default is True
+        // Increase = int, control the increasement in outer loop, default is 2
+
         template<typename Tile, typename Policy>
         class CCSD_T : public CCSD<Tile,Policy> {
 
@@ -23,8 +29,9 @@ namespace tcc{
 
             CCSD_T(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
-                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter):
-                    CCSD<Tile,Policy>(fock,ens,tre,inter)
+                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
+                   rapidjson::Document &options):
+                    CCSD<Tile,Policy>(fock,ens,tre,inter,options)
             {}
 
             void compute(){
@@ -32,36 +39,51 @@ namespace tcc{
                 TArray2 t1;
                 TArray4 t2;
 
+                double ccsd_corr = 0.0;
                 // compute CCSD first
-                double ccsd_corr = CCSD<Tile,Policy>::compute_ccsd(t1,t2);
+                auto direct = this->options_.HasMember("Direct") ? this->options_["Direct"].GetBool(): false;
+                if(direct){
+                    ccsd_corr = CCSD<Tile, Policy>::compute_ccsd_direct(t1, t2);
+                    // TODO smarter way to clean integrals not needed
+                    // clean integrals not needed
+                    this->ccsd_intermediate_->clean_two_electron();
+
+                }
+                else {
+                    ccsd_corr = CCSD<Tile,Policy>::compute_ccsd_straight(t1, t2);
+                    this->ccsd_intermediate_->clean_two_electron();
+                }
 
                 // start CCSD(T)
                 if(t1.get_world().rank() == 0){
-                    std::cout << "Begining CCSD(T) " << std::endl;
+                    std::cout << "\nBegining CCSD(T) " << std::endl;
                 }
                 auto time0 = tcc::tcc_time::now();
                 double ccsd_t = compute_ccsd_t(t1, t2);
                 auto time1 = tcc_time::now();
                 auto duration1 = tcc_time::duration_in_s(time0, time1);
-                time0 = tcc::tcc_time::now();
-                double ccsd_t_d = compute_ccsd_t_direct(t1, t2);
-                time1 = tcc::tcc_time::now();
-                auto duration2 = tcc_time::duration_in_s(time0, time1);
+//                time0 = tcc::tcc_time::now();
+//                double ccsd_t_d = compute_ccsd_t_direct(t1, t2);
+//                time1 = tcc::tcc_time::now();
+//                auto duration2 = tcc_time::duration_in_s(time0, time1);
 
                 if (t1.get_world().rank() == 0) {
+                    std::cout << std::setprecision(15);
                     std::cout << "(T) Energy      " << ccsd_t << " Time " << duration1 << std::endl;
-                    std::cout << "(T) Energy      " << ccsd_t_d << " Time " << duration2 << std::endl;
+//                    std::cout << "(T) Energy      " << ccsd_t_d << " Time " << duration2 << std::endl;
                     std::cout << "CCSD(T) Energy  " << ccsd_t + ccsd_corr << std::endl;
-                    std::cout << "CCSD(T) Energy  " << ccsd_t_d + ccsd_corr << std::endl;
+//                    std::cout << "CCSD(T) Energy  " << ccsd_t_d + ccsd_corr << std::endl;
                 }
 
             }
 
             double compute_ccsd_t(TArray2& t1, TArray4& t2){
-                bool df = true;
+                bool df = this->options_.HasMember("DFExpr") ? this->options_["DFExpr"].GetBool() : true;
+                if(df && t1.get_world().rank() == 0){
+                    std::cout << "Use Density Fitting Expression to avoid storing G_vovv" << std::endl;
+                }
                 // get integral
                 TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
-                // TODO use DF to avoid storing diba
                 TArray4 g_abij = this->ccsd_intermediate_->get_abij();
 
                 TArray4 g_diba;
@@ -72,8 +94,8 @@ namespace tcc{
                     Xdb = this->ccsd_intermediate_->get_Xab();
                     Xai = this->ccsd_intermediate_->get_Xai();
                 }else{
+                    g_diba= this->ccsd_intermediate_->get_aibc();
                 }
-                g_diba= this->ccsd_intermediate_->get_aibc();
                 // get trange1
                 auto tr_occ = this->trange1_engine_->get_occ_tr1();
                 auto tr_vir = this->trange1_engine_->get_vir_tr1();
@@ -88,7 +110,8 @@ namespace tcc{
 
                 double triple_energy = 0.0;
 
-                std::size_t increase = 2;
+
+                std::size_t increase = this->options_.HasMember("Increase") ? this->options_["Increase"].GetInt() : 2;
                 if (increase > n_tr_vir){
                     increase = n_tr_vir;
                 }
@@ -96,8 +119,15 @@ namespace tcc{
                 std::size_t b_increase = increase;
                 std::size_t c_increase = increase;
 
+                std::size_t block_size = this->trange1_engine_->get_block_size();
+                std::size_t n_blocks = increase*increase*increase*n_tr_occ*n_tr_occ*n_tr_occ;
+                double mem = (n_blocks*std::pow(block_size,6)*8)/(std::pow(1024.0,3));
+
                 if(t1.get_world().rank() == 0){
-                    std::cout << "Increase " << increase << std::endl;
+                    std::cout << "Increase in the loop " << increase << std::endl;
+                    std::cout << "Number of blocks at each iteration " << n_blocks << std::endl;
+                    std::cout << std::setprecision(5);
+                    std::cout << "Size of T3 or V3 at each iteration " << mem << " GB" << std::endl;
                 }
 
                 // index in virtual blocks
@@ -116,6 +146,7 @@ namespace tcc{
                     }else{
                         a_increase = increase;
                     }
+
 
                     std::size_t a_end = a + a_increase - 1;
                     while(b <= a_end){
@@ -155,7 +186,7 @@ namespace tcc{
                             std::size_t c_low = c;
                             std::size_t c_up = c + c_increase;
 
-                            std::size_t blocks = (a_up-a_low)*(b_up-b_low)*(c_up-c_low);
+                            std::size_t blocks = (a_up-a_low)*(b_up-b_low)*(c_up-c_low)*n_tr_occ*n_tr_occ*n_tr_occ;
 //                            if (t1.get_world().rank() == 0){
 //                                std::cout << "{" << a_low << " " << b_low << " " << c_low << "}" << " ";
 //                                std::cout << "{" << a_up << " " << b_up << " " << c_up << "} " << blocks << std::endl;
@@ -539,11 +570,15 @@ namespace tcc{
                         b += b_increase;
                     }
 
+                    if(t1.get_world().rank() == 0){
+                        print_progress(a, a+increase, n_tr_vir);
+                    }
                     a += a_increase;
                 }
 
                 if (t1.get_world().rank() == 0){
-                    std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
+                    std::cout << "Total Blocks Computed  " << n_blocks_computed;
+                    std::cout << " from " << std::pow(n_tr_occ,3)*std::pow(n_tr_vir,3) << std::endl;
                 }
                 return  triple_energy;
             }
@@ -910,10 +945,14 @@ namespace tcc{
                             triple_energy += tmp_energy;
                         }
                     }
+                    if(t1.get_world().rank() == 0){
+                        print_progress(a, a+1, n_tr_vir);
+                    }
                 }
 
                 if(t1.get_world().rank() == 0){
-                    std::cout << "Total Blocks Computed  " << n_blocks_computed << std::endl;
+                    std::cout << "Total Blocks Computed  " << n_blocks_computed;
+                    std::cout << " from " << std::pow(n_tr_occ,3)*std::pow(n_tr_vir,3) << std::endl;
                 }
                 return  triple_energy;
 

@@ -110,6 +110,10 @@ namespace mpqc{
 
     }
 
+    std::size_t Formula::rank() const {
+        return (left_index_.size() + right_index_.size());
+    }
+
     std::vector<OrbitalIndex> Formula::check_orbital_index(std::wstring index_array) {
 
         std::vector<std::wstring> split_index;
@@ -127,8 +131,6 @@ namespace mpqc{
             }
             return result;
         }
-
-
     }
 
 }

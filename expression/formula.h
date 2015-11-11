@@ -35,6 +35,8 @@ namespace mpqc{
 
         Formula(std::wstring formula);
 
+        std::size_t rank() const;
+
         const std::wstring &formula() const {
             return formula_;
         }

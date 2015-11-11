@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
     H("i,j") = T("i,j") + V("i,j");
 
     { // Unscreened four center stored RHF.
-        auto eri4 = ao_int.compute4(L"(κ λ| G|κ1 λ1)[df]");
+        auto eri4 = ao_int.compute4(L"(κ λ| G|κ1 λ1)");
         world.gop.fence();
 
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);

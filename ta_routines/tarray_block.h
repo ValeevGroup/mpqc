@@ -8,7 +8,7 @@
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 
-namespace tcc {
+namespace mpqc {
 
     // an easier interface to use TA's block expression to block by MO
     // provide your own expression to block TA::Array by define BlockEngine

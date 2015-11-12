@@ -7,10 +7,9 @@
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
-#include "integral_generator.h"
-#include "lazy_integral.h"
+#include "../integrals/direct_task_integrals.h"
 
-namespace tcc {
+namespace mpqc {
 
     namespace cc {
 
@@ -26,16 +25,19 @@ namespace tcc {
         // three center uses chemical notation (X|pq)
         // MO integrals used physical noation <ij|ab>
         template<typename Tile, typename Policy,
-                typename IntegralGenerator=tcc::cc::TwoBodyIntGenerator<libint2::Coulomb> >
+                typename DirectTwoElectronArray=
+                DArray<
+                        4,
+                        integrals::DirectTile<integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>>,
+                        TA::SparsePolicy
+                    >
+                >
         class CCSDIntermediate {
         public:
 
             typedef TA::Array <double, 2, Tile, Policy> TArray2;
             typedef TA::Array <double, 3, Tile, Policy> TArray3;
             typedef TA::Array <double, 4, Tile, Policy> TArray4;
-
-            typedef tcc::cc::LazyIntegral<4, IntegralGenerator> LazyTwoElectronTile;
-            typedef TA::Array <double, 4, LazyTwoElectronTile, Policy> DirectTwoElectronArray;
 
             CCSDIntermediate(const TArray3 &Xpq, const TArray2 &Ci, const TArray2 &Ca,
                              const DirectTwoElectronArray& direct_ao=DirectTwoElectronArray()) {

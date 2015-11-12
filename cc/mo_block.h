@@ -10,7 +10,7 @@
 #include <vector>
 #include "trange1_engine.h"
 
-namespace tcc {
+namespace mpqc {
 
     // an easier interface to use TA's block expression to block by MO
     // use this class to initialize TArrayBlock class to block at occ or vir
@@ -33,7 +33,7 @@ namespace tcc {
 
     /// constructor
 
-    MOBlock(const tcc::TRange1Engine &tre) : occ_range_(0ul, tre.get_occ_blocks()),
+    MOBlock(const mpqc::TRange1Engine &tre) : occ_range_(0ul, tre.get_occ_blocks()),
                                              vir_range_(tre.get_occ_blocks(),
                                                         tre.get_all_blocks()),
                                              all_range_(0ul, tre.get_all_blocks())

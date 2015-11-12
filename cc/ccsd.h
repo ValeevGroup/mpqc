@@ -14,11 +14,9 @@
 
 #include "ccsd_intermediates.h"
 #include "diis_ccsd.h"
-#include "integral_generator.h"
-#include "lazy_integral.h"
 #include "utility.h"
 
-namespace tcc {
+namespace mpqc {
     namespace cc {
 
         // CCSD class that computed CCSD energy
@@ -39,18 +37,18 @@ namespace tcc {
             typedef TA::Array <double, 3, Tile, Policy> TArray3;
             typedef TA::Array <double, 4, Tile, Policy> TArray4;
 
-            typedef tcc::TArrayBlock<double, 2, Tile, Policy, tcc::MOBlock> TArrayBlock2;
-            typedef tcc::TArrayBlock<double, 4, Tile, Policy, tcc::MOBlock> TArrayBlock4;
+            typedef mpqc::TArrayBlock<double, 2, Tile, Policy, mpqc::MOBlock> TArrayBlock2;
+            typedef mpqc::TArrayBlock<double, 4, Tile, Policy, mpqc::MOBlock> TArrayBlock4;
 
 
             CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
                  rapidjson::Document &options) :
-                    orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter), options_(std::move(options))
+                    fock_(fock), orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter), options_(std::move(options))
             {
-                auto mo_block = std::make_shared<tcc::MOBlock>(*trange1_engine_);
-                fock_ = TArrayBlock2(fock, mo_block);
+//                auto mo_block = std::make_shared<mpqc::MOBlock>(*trange1_engine_);
+//                fock_ = TArrayBlock2(fock, mo_block);
             }
 
             // compute function
@@ -95,12 +93,12 @@ namespace tcc {
                 TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
-                tcc::cc::create_d_ai(d1, orbital_energy_, n_occ);
+                mpqc::cc::create_d_ai(d1, orbital_energy_, n_occ);
 
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
-                tcc::cc::create_d_abij(d2, orbital_energy_, n_occ);
+                mpqc::cc::create_d_abij(d2, orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -137,7 +135,7 @@ namespace tcc {
                 TArray4 r2;
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
-                TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
+                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
 
                 bool less = options_.HasMember("LessMemory") ? options_["LessMemory"].GetBool() : true;
 
@@ -153,7 +151,7 @@ namespace tcc {
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
-                    auto time0 = tcc::tcc_time::now();
+                    auto time0 = tcc_time::now();
 
                     // intermediates for t1
                     // external index i and a
@@ -373,8 +371,8 @@ namespace tcc {
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
 
-                    tcc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-                    tcc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+                    mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
+                    mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
                     error = r.norm() / size(t);
                     diis.extrapolate(t, r);
 
@@ -437,12 +435,12 @@ namespace tcc {
                 TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
-                tcc::cc::create_d_ai(d1, orbital_energy_, n_occ);
+                mpqc::cc::create_d_ai(d1, orbital_energy_, n_occ);
 
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
-                tcc::cc::create_d_abij(d2, orbital_energy_, n_occ);
+                mpqc::cc::create_d_abij(d2, orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -479,7 +477,7 @@ namespace tcc {
                 TArray4 r2;
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
-                TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
+                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
 
                 bool less = options_.HasMember("LessMemory") ? options_["LessMemory"].GetBool() : true;
 
@@ -495,7 +493,7 @@ namespace tcc {
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
-                    auto time0 = tcc::tcc_time::now();
+                    auto time0 = tcc_time::now();
 
 
                     TArray2 h_ki, h_ac;
@@ -657,8 +655,8 @@ namespace tcc {
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
 
-                    tcc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-                    tcc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+                    mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
+                    mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
                     error = r.norm() / size(t);
                     diis.extrapolate(t, r);
 
@@ -762,17 +760,17 @@ namespace tcc {
                 TArray4 r2;
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
-                TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
+                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
                 if (g_abij.get_world().rank() == 0) {
                 };
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
-                    auto time0 = tcc::tcc_time::now();
+                    auto time0 = tcc_time::now();
 
                     TArray4 u2_u11;
                     // compute half transformed intermediates
-                    auto tu0 = tcc::tcc_time::now();
+                    auto tu0 = tcc_time::now();
                     {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
@@ -938,8 +936,8 @@ namespace tcc {
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
 
-                    tcc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-                    tcc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+                    mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
+                    mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
                     error = r.norm() / size(t);
                     diis.extrapolate(t, r);
 
@@ -1042,17 +1040,17 @@ namespace tcc {
                 TArray4 r2;
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
-                TA::DIIS <tcc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
+                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
                 if (g_abij.get_world().rank() == 0) {
                 };
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
-                    auto time0 = tcc::tcc_time::now();
+                    auto time0 = tcc_time::now();
 
                     TArray4 u2_u11;
                     // compute half transformed intermediates
-                    auto tu0 = tcc::tcc_time::now();
+                    auto tu0 = tcc_time::now();
                     {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
@@ -1216,8 +1214,8 @@ namespace tcc {
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
 
-                    tcc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-                    tcc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+                    mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
+                    mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
                     error = r.norm() / size(t);
                     diis.extrapolate(t, r);
 
@@ -1262,13 +1260,13 @@ namespace tcc {
             Eigen::VectorXd orbital_energy_;
 
             // TRange1 Engine class
-            std::shared_ptr<tcc::TRange1Engine> trange1_engine_;
+            std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
 
             // CCSD intermediate
-            std::shared_ptr<tcc::cc::CCSDIntermediate<Tile, Policy>> ccsd_intermediate_;
+            std::shared_ptr<mpqc::cc::CCSDIntermediate<Tile, Policy>> ccsd_intermediate_;
 
             // fock matrix
-            TArrayBlock2 fock_;
+            TArray2 fock_;
 
             // option member
             rapidjson::Document options_;
@@ -1276,7 +1274,7 @@ namespace tcc {
         }; // class CCSD
 
     } //namespace cc
-} //namespace tcc
+} //namespace mpqc
 
 
 #endif //TILECLUSTERCHEM_CCSD_H

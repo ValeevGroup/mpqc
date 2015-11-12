@@ -18,7 +18,7 @@
 #include "lazy_integral.h"
 #include "utility.h"
 
-namespace tcc {
+namespace mpqc {
     namespace cc {
 
 
@@ -30,8 +30,8 @@ namespace tcc {
             typedef TA::Array <double, 3, Tile, Policy> TArray3;
             typedef TA::Array <double, 4, Tile, Policy> TArray4;
 
-            typedef tcc::TArrayBlock<double, 2, Tile, Policy, tcc::MOBlock> TArrayBlock2;
-            typedef tcc::TArrayBlock<double, 4, Tile, Policy, tcc::MOBlock> TArrayBlock4;
+            typedef mpqc::TArrayBlock<double, 2, Tile, Policy, mpqc::MOBlock> TArrayBlock2;
+            typedef mpqc::TArrayBlock<double, 4, Tile, Policy, mpqc::MOBlock> TArrayBlock4;
 
             typedef TA::Array <double, 4, LazyTwoElectronTile, Policy> DirectTwoElectronArray;
 
@@ -40,7 +40,7 @@ namespace tcc {
                  const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &g) :
                     ens_(ens), tre_(tre), intermediate_(g) {
-                auto mo_block = std::make_shared<tcc::MOBlock>(*tre_);
+                auto mo_block = std::make_shared<mpqc::MOBlock>(*tre_);
                 fock_ = TArrayBlock2(fock, mo_block);
             }
 
@@ -213,13 +213,13 @@ namespace tcc {
 
         private:
             Eigen::VectorXd ens_;
-            std::shared_ptr<tcc::TRange1Engine> tre_;
-            std::shared_ptr<tcc::cc::CCSDIntermediate<Tile, Policy>> intermediate_;
+            std::shared_ptr<mpqc::TRange1Engine> tre_;
+            std::shared_ptr<mpqc::cc::CCSDIntermediate<Tile, Policy>> intermediate_;
             TArrayBlock2 fock_;
         };
 
     } //namespace cc
-} //namespace tcc
+} //namespace mpqc
 
 
 

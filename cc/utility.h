@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-namespace tcc{
+namespace mpqc{
     namespace  cc{
 
         // reblock based on blocksize

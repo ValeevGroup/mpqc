@@ -12,7 +12,7 @@
 
 // interface to use DIIS class for ccsd
 
-namespace tcc {
+namespace mpqc {
 
     namespace cc {
 

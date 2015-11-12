@@ -7,7 +7,7 @@
 
 #include "ccsd.h"
 
-namespace tcc{
+namespace mpqc{
     namespace cc{
 
         // CCSD_T class that compute CCSD(T) triple calculation
@@ -58,14 +58,10 @@ namespace tcc{
                 if(t1.get_world().rank() == 0){
                     std::cout << "\nBegining CCSD(T) " << std::endl;
                 }
-                auto time0 = tcc::tcc_time::now();
+                auto time0 = tcc_time::now();
                 double ccsd_t = compute_ccsd_t(t1, t2);
                 auto time1 = tcc_time::now();
                 auto duration1 = tcc_time::duration_in_s(time0, time1);
-//                time0 = tcc::tcc_time::now();
-//                double ccsd_t_d = compute_ccsd_t_direct(t1, t2);
-//                time1 = tcc::tcc_time::now();
-//                auto duration2 = tcc_time::duration_in_s(time0, time1);
 
                 if (t1.get_world().rank() == 0) {
                     std::cout << std::setprecision(15);
@@ -1146,6 +1142,6 @@ namespace tcc{
         }; // class CCSD_T
 
     } // namespace cc
-}  // namespace tcc
+}  // namespace mpqc
 
 #endif //TILECLUSTERCHEM_CCSD_T_H_H

@@ -84,6 +84,11 @@ if ("${PSI3}" AND NOT HAVE_PSI3)
 
       message("** Will build Psi3 from ${PSI3_URL}")
 
+      # transform library list into compiler args
+      include(ConvertLibrariesListToCompilerArgs)
+      convert_libs_to_compargs(LAPACK_LIBRARIES_LIST "${LAPACK_LIBRARIES}")
+      convert_libs_to_compargs(BLAS_LIBRARIES_LIST "${BLAS_LIBRARIES}")
+
       ExternalProject_Add(
         psi3
         PREFIX ${EXTERNAL_BUILD_DIR}/psi3
@@ -98,7 +103,7 @@ if ("${PSI3}" AND NOT HAVE_PSI3)
         "CXXFLAGS=${CMAKE_CXX_FLAGS}"
         "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS}"
         "--with-fc=${CMAKE_Fortran_COMPILER}"
-        "--with-blas=${LAPACK_LIBRARIES} ${BLAS_LIBRARIES}"
+        "--with-blas=${LAPACK_LINKER_FLAGS} ${LAPACK_LIBRARIES_LIST} ${BLAS_LIBRARIES_LIST}"
         BUILD_COMMAND make SHELL=/bin/bash
         INSTALL_COMMAND make install SHELL=/bin/bash
         )

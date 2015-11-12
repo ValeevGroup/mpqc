@@ -144,11 +144,39 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+    {
+        using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                     Eigen::RowMajor>;
+        int64_t dim = std::sqrt(eri2.trange().elements().volume());
+        Matrix Print_mat = Matrix::Zero(dim, dim);
+        for (auto it : eri2) {
+            auto tile = it.get();
+            auto const &range = tile.range();
+
+            auto const &extent = range.extent();
+            auto const &lb = range.lobound();
+            auto const &ub = range.upbound();
+
+            Matrix block(extent[0], extent[1]);
+
+            for (auto i = 0; i < block.size(); ++i) {
+                *(block.data() + i) = *(tile.data() + i);
+            }
+
+            Print_mat.block(lb[0], lb[1], extent[0], extent[1]) = block;
+        }
+
+        std::ofstream mat_file("dense_matrix_file.dat", std::ios::binary);
+        auto rows = Print_mat.rows();
+        auto cols = Print_mat.cols();
+        mat_file.write((char*) Print_mat.data(), rows * cols * sizeof(typename Matrix::Scalar));
+        mat_file.close();
+    }
 
     if (world.rank() == 0) {
         std::cout << "\nStarting inverse sqrt." << std::endl;
     }
-    {
+    if (false) {
         auto inv_sqrt_timer = tcc_time::make_timer(
               [&]() { return tcc::pure::inverse_sqrt(eri2); });
 
@@ -184,13 +212,54 @@ int main(int argc, char *argv[]) {
         };
 
         auto eri2_lr = TA::to_new_tile_type(eri2, to_decomp_with_decompose);
-        auto inv_sqrt_timer = tcc_time::make_timer(
-              [&]() { return tcc::pure::inverse_sqrt(eri2_lr); });
+        {
+            using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                         Eigen::RowMajor>;
+            int64_t dim = std::sqrt(eri2_lr.trange().elements().volume());
+            Matrix Print_mat = Matrix::Zero(dim, dim);
+            for (auto it : eri2_lr) {
+                auto tile_wrapper = it.get();
+                auto const &range = tile_wrapper.range();
+                auto tile = tile_wrapper.tile();
 
-        auto sqrt_inv = inv_sqrt_timer.apply();
+                auto const &extent = range.extent();
+                auto const &lb = range.lobound();
+                auto const &ub = range.upbound();
 
-        utility::print_par(world, "M^{-1/2} took in total ",
-                           inv_sqrt_timer.time(), " s\n");
+                Matrix block = Matrix::Zero(extent[0], extent[1]);
+
+                if (tile.ndecomp() == 1) {
+                    for (auto i = 0; i < block.size(); ++i) {
+                        *(block.data() + i) = *(tile.tensors()[0].data() + i);
+                    }
+                } else {
+                    auto const &t1 = tile.tensors()[0];
+                    auto e1 = t1.range().extent();
+                    Eigen::Map<const Matrix> map(t1.data(), e1[0], e1[1]);
+                    block.block(0, 0, e1[0], e1[1]) = map;
+
+                    auto const &t2 = tile.tensors()[1];
+                    auto e2 = t2.range().extent();
+                    Eigen::Map<const Matrix> map2(t2.data(), e2[0], e2[1]);
+                    block.block(0, 0, e2[0], e2[1]) = map2;
+                }
+
+                Print_mat.block(lb[0], lb[1], extent[0], extent[1]) = block;
+            }
+
+            std::ofstream mat_file("lr_matrix_file.dat", std::ios::binary);
+            auto rows = Print_mat.rows();
+            auto cols = Print_mat.cols();
+            mat_file.write((char*) Print_mat.data(), rows * cols * sizeof(typename Matrix::Scalar));
+            mat_file.close();
+        }
+        //   auto inv_sqrt_timer = tcc_time::make_timer(
+        //         [&]() { return tcc::pure::inverse_sqrt(eri2_lr); });
+
+        //   auto sqrt_inv = inv_sqrt_timer.apply();
+
+        //   utility::print_par(world, "M^{-1/2} took in total ",
+        //                      inv_sqrt_timer.time(), " s\n");
     }
 
     world.gop.fence();

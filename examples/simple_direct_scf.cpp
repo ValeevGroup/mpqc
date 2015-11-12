@@ -23,10 +23,66 @@
 #include "../utility/array_storage.h"
 #include "../ta_routines/array_to_eigen.h"
 
+#include "../scf/diagonalize_for_coffs.hpp"
+
 #include <memory>
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;
+
+template <typename Array>
+void print_storage_for_array(Array const &a, double cut = 1e-8) {
+    std::atomic<long> full_a(0.0);
+    std::atomic<long> sparse_a(0.0);
+    std::atomic<long> clr_a(0.0);
+    std::atomic<long> clr_lr_only_a(0.0);
+
+    auto task_f = [&](int ord) {
+        auto const &trange = a.trange();
+        auto size = trange.make_tile_range(ord).volume();
+        full_a += size;
+
+        if (!a.is_zero(ord)) {
+            sparse_a += size;
+
+            TA::TensorD tile = a.find(ord).get();
+            tcc::tensor::DecomposedTensor<double> dc_tile(cut,
+                                                          std::move(tile));
+            auto lr_tile = tcc::tensor::algebra::two_way_decomposition(dc_tile);
+
+            if (!lr_tile.empty()) {
+                dc_tile = std::move(lr_tile);
+            }
+
+            if (dc_tile.ndecomp() == 1) {
+                clr_a += dc_tile.tensors()[0].range().volume();
+            } else {
+                auto l_size = dc_tile.tensors()[0].range().volume();
+                auto r_size = dc_tile.tensors()[1].range().volume();
+
+                clr_a += l_size + r_size;
+                clr_lr_only_a += l_size + r_size;
+            }
+        }
+    };
+
+    auto &pmap = *a.get_pmap();
+    for (auto it : pmap) {
+        a.get_world().taskq.add(task_f, it);
+    }
+    a.get_world().gop.fence();
+
+    double full = full_a * 1e-9 * 8;
+    double sparse = sparse_a * 1e-9 * 8;
+    double clr = clr_a * 1e-9 * 8;
+    double clr_lr_only = clr_lr_only_a * 1e-9 * 8;
+
+    std::cout << "Eri3 Full Storage = " << full << " GB" << std::endl;
+    std::cout << "Eri3 Sparse Storage = " << sparse << " GB" << std::endl;
+    std::cout << "Eri3 CLR Storage = " << clr << " GB" << std::endl;
+    std::cout << "Eri3 Low Rank Only Storage = " << clr_lr_only << " GB"
+              << std::endl;
+}
 
 class FourCenterSCF {
   private:
@@ -146,6 +202,10 @@ class FourCenterSCF {
         }
     }
 
+    array_type density() const { return D_; }
+
+    array_type fock() const { return F_; }
+
     double energy() {
         return repulsion_
                + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
@@ -202,6 +262,7 @@ int main(int argc, char *argv[]) {
     auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
     auto eri_e = ints::make_2body_shr_pool(basis);
 
+    decltype(H) Dao, Fao;
     { // Do schwarz
         std::cout << "\nComputing HF with Schwarz Screening" << std::endl;
         world.gop.fence();
@@ -230,37 +291,88 @@ int main(int argc, char *argv[]) {
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
         scf.solve(20, 1e-7, eri4);
         world.gop.fence();
+
+        Fao = scf.fock();
     }
 
-    { // Do then QQR
-        std::cout << "\n\nComputing HF with QQR Based Integrals" << std::endl;
-        world.gop.fence();
-        auto screen0 = tcc_time::now();
+    {
+        auto F_eig = tcc::array_ops::array_to_eigen(Fao);
+        auto S_eig = tcc::array_ops::array_to_eigen(S);
 
-        auto screen_builder = ints::init_qqr_screen{};
-        auto shr_screen = std::make_shared<ints::QQR>(
-              screen_builder(world, eri_e, basis, 1e-10));
+        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+                                                                   S_eig);
+        const auto vir = F_eig.rows() - occ / 2;
+        auto nocc = occ / 2;
+        decltype(S_eig) Ceigi = es.eigenvectors().leftCols(nocc);
+        decltype(S_eig) Ceigv = es.eigenvectors().rightCols(vir);
+        auto tr_ao = S.trange().data()[0];
 
-        // Set well sep thresh.
-        ints::QQR::well_sep_threshold(0.1);
+        auto occ_nclusters = (nocc < 10) ? nocc : 10;
+        auto tr_occ = tcc::scf::tr_occupied(occ_nclusters, nocc);
 
-        auto screen1 = tcc_time::now();
-        std::cout << "Took " << tcc_time::duration_in_s(screen0, screen1)
-                  << " s to form screening Matrix!" << std::endl;
-        world.gop.fence();
-        auto eri40 = tcc_time::now();
-        auto eri4 = ints::direct_sparse_integrals(world, eri_e, bs4_array,
+        auto vir_nclusters = (nocc < 10) ? vir : 10;
+        auto tr_vir = tcc::scf::tr_occupied(vir_nclusters, vir);
+
+        auto Ci = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigi,
+                                                              tr_ao, tr_occ);
+
+        auto Cv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigv,
+                                                              tr_ao, tr_vir);
+
+
+        basis::BasisSet dfbs("cc-pvdz-ri");
+        basis::Basis df_basis(dfbs.get_cluster_shells(clustered_mol));
+        const auto dfbs_array = tcc::utility::make_array(df_basis, df_basis);
+        auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
+
+        decltype(H) L_inv;
+        {
+            auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
+            auto V_eig = tcc::array_ops::array_to_eigen(Vmetric);
+            MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
+            MatrixD L_inv_eig = Leig.inverse();
+
+            auto tr_V = Vmetric.trange().data()[0];
+            L_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(
+                  world, L_inv_eig, tr_V, tr_V);
+        }
+
+        auto sbuilder = ints::init_schwarz_screen(1e-10);
+        auto shr_screen = std::make_shared<ints::SchwarzScreen>(
+              sbuilder(world, eri_e, df_basis, basis));
+
+        auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
+        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
                                                   shr_screen);
-        world.gop.fence();
-        auto eri41 = tcc_time::now();
-        std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
-                  << " s to initialize integrals." << std::endl;
 
-        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
-        scf.solve(20, 1e-7, eri4);
+        std::cout << "Size for Eri3 if stored" << std::endl;
+        print_storage_for_array(eri3);
+        std::cout << std::endl;
+
+        DArray<3, TA::TensorD, TA::SparsePolicy> W;
+        W("Y, mu, i") = eri3("Y, mu, nu") * Ci("nu, i");
+        world.gop.fence();
+
+        std::cout << "Size for W(Y,mu, i) if stored" << std::endl;
+        print_storage_for_array(W);
+        std::cout << std::endl;
+
+        W("Y, i, a") = W("Y, mu, i") * Cv("mu, a");
+        world.gop.fence();
+
+        std::cout << "Size for W(Y, i, a) if stored" << std::endl;
+        print_storage_for_array(W);
+        std::cout << std::endl;
+
+        W("X, i, a") = L_inv("X,Y") * W("Y,i,a");
+        world.gop.fence();
+
+        std::cout << "Size for W(X, i, a) if stored" << std::endl;
+        print_storage_for_array(W);
+        std::cout << std::endl;
     }
 
-    { // Unscreened SCF
+    if (false) { // Unscreened SCF
         std::cout << "\n\nComputing HF with No Screening" << std::endl;
         world.gop.fence();
         auto eri40 = tcc_time::now();

@@ -3,7 +3,6 @@
 #define MPQC_INTEGRALS_DIRECTTASKINTEGRALS_H
 
 #include "direct_tile.h"
-#include "task_integrals_op_invoker.h"
 #include "task_integrals_common.h"
 #include "integral_builder.h"
 

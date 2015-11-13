@@ -23,15 +23,19 @@ namespace mpqc{
                 std::size_t shell_size = shell.size();
                 tmp_size += shell_size;
 
-                // if current size is not greater than 2/3 of blocksize
-                if(3*shell_size < 5*blocksize){
+                // if current size is not greater than 1/3 of blocksize
+                if(2*tmp_size < 3*blocksize){
                     tmp.push_back(shell);
-                }else{
+                }
+                else{
                     result.push_back(tmp);
                     tmp = std::vector<libint2::Shell>();
                     tmp.push_back(shell);
                     tmp_size = shell_size;
                 }
+            }
+            if(2*tmp_size < 3*blocksize){
+                result.push_back(tmp);
             }
             return result;
         }
@@ -55,8 +59,8 @@ namespace mpqc{
 
         // reduce matrix 1/(ei + ej - ea - eb)
         template <typename Tile, typename Policy>
-        void d_abij(TA::Array<double, 4, Tile, Policy> &abij,
-                    const Eigen::VectorXd& ens, std::size_t n_occ)
+        void d_abij_inplace(TA::Array<double, 4, Tile, Policy> &abij,
+                            const Eigen::VectorXd &ens, std::size_t n_occ)
         {
             auto convert = [&ens, n_occ](Tile &result_tile) {
 
@@ -93,6 +97,49 @@ namespace mpqc{
             };
 
             TA::foreach_inplace(abij, convert);
+        }
+
+        template <typename Tile, typename Policy>
+        TA::Array<double, 4, Tile, Policy> d_abij(TA::Array<double, 4, Tile, Policy> &abij,
+                            const Eigen::VectorXd &ens, std::size_t n_occ)
+        {
+            auto convert = [&ens, n_occ](Tile &result_tile, const Tile &arg_tile) {
+
+                result_tile = Tile(arg_tile.range());
+
+                // compute index
+                const auto a0 = result_tile.range().lobound()[0];
+                const auto an = result_tile.range().upbound()[0];
+                const auto b0 = result_tile.range().lobound()[1];
+                const auto bn = result_tile.range().upbound()[1];
+                const auto i0 = result_tile.range().lobound()[2];
+                const auto in = result_tile.range().upbound()[2];
+                const auto j0 = result_tile.range().lobound()[3];
+                const auto jn = result_tile.range().upbound()[3];
+
+                auto tile_idx = 0;
+                typename Tile::value_type norm = 0.0;
+                for (auto a = a0; a < an; ++a) {
+                    const auto e_a = ens[a + n_occ];
+                    for (auto b = b0; b < bn; ++b) {
+                        const auto e_b = ens[b + n_occ];
+                        for (auto i = i0; i < in; ++i) {
+                            const auto e_i = ens[i];
+                            for (auto j = j0; j < jn; ++j, ++tile_idx) {
+                                const auto e_j = ens[j];
+                                const auto e_iajb = e_i + e_j - e_a - e_b;
+                                const auto old = arg_tile[tile_idx];
+                                const auto result_abij = old/(e_iajb);
+                                norm += result_abij*result_abij;
+                                result_tile[tile_idx] = result_abij;
+                            }
+                        }
+                    }
+                }
+                return std::sqrt(norm);
+            };
+
+            return TA::foreach(abij, convert);
         }
 
         // create matrix d("a,b,i,j) = 1/(ei + ej - ea - eb)

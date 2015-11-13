@@ -212,16 +212,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
         cc_in = get_nested(in, "CCSD(T)");
     }
 
-    if (!in.HasMember("xyz file") || !in.HasMember("number of bs clusters")
-        || !in.HasMember("number of dfbs clusters")
+    if (!in.HasMember("xyz file") || !in.HasMember("number of clusters")
         || !cc_in.HasMember("BlockSize")) {
         if (world.rank() == 0) {
             std::cout << "At a minimum your input file must provide\n";
             std::cout << "\"xyz file\", which is path to an xyz input\n";
-            std::cout << "\"number of bs clusters\", which is the number of "
+            std::cout << "\"number of clusters\", which is the number of "
                          "clusters in the obs\n";
-            std::cout << "\"number of dfbs clusters\", which is the number of "
-                         "clusters in the dfbs\n";
             std::cout << "\"mo block size\", which is the block size for MO "
                          "orbitals\n";
         }

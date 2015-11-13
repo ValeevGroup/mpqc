@@ -62,7 +62,7 @@ namespace mpqc {
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
-                d_abij(d2, ens_, n_occ);
+                d_abij_inplace(d2, ens_, n_occ);
 
                 TArray2 t1;
                 TArray4 t2;

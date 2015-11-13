@@ -443,13 +443,7 @@ namespace mpqc {
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
 
-                {
-                    TArray4 d2(world, g_abij.trange(),
-                               g_abij.get_shape(), g_abij.get_pmap());
-                    create_d_abij(d2, orbital_energy_, n_occ);
-
-                    t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
-                }
+                t2= d_abij(g_abij,orbital_energy_,n_occ);
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
@@ -653,7 +647,7 @@ namespace mpqc {
 
                     }
 
-                    d_abij(r2,orbital_energy_,n_occ);
+                    d_abij_inplace(r2, orbital_energy_, n_occ);
 
                     r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -1013,13 +1007,7 @@ namespace mpqc {
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
 
-                {
-                    TArray4 d2(world, g_abij.trange(),
-                               g_abij.get_shape(), g_abij.get_pmap());
-                    create_d_abij(d2, orbital_energy_, n_occ);
-
-                    t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
-                }
+                t2 = d_abij(g_abij,orbital_energy_,n_occ);
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
@@ -1032,7 +1020,7 @@ namespace mpqc {
                                     tau("a,b,i,j"));
                 double dE = std::abs(E1 - E0);
                 double mp2 = E1;
-      std::cout << E1 << std::endl;
+//      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
                 TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
@@ -1224,7 +1212,7 @@ namespace mpqc {
 
                         }
 
-                        d_abij(r2,orbital_energy_,n_occ);
+                        d_abij_inplace(r2, orbital_energy_, n_occ);
 
                         r2("a,b,i,j") -= t2("a,b,i,j");
 

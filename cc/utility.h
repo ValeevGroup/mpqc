@@ -53,6 +53,48 @@ namespace mpqc{
             return result;
         };
 
+        // reduce matrix 1/(ei + ej - ea - eb)
+        template <typename Tile, typename Policy>
+        void d_abij(TA::Array<double, 4, Tile, Policy> &abij,
+                    const Eigen::VectorXd& ens, std::size_t n_occ)
+        {
+            auto convert = [&ens, n_occ](Tile &result_tile) {
+
+                // compute index
+                const auto a0 = result_tile.range().lobound()[0];
+                const auto an = result_tile.range().upbound()[0];
+                const auto b0 = result_tile.range().lobound()[1];
+                const auto bn = result_tile.range().upbound()[1];
+                const auto i0 = result_tile.range().lobound()[2];
+                const auto in = result_tile.range().upbound()[2];
+                const auto j0 = result_tile.range().lobound()[3];
+                const auto jn = result_tile.range().upbound()[3];
+
+                auto tile_idx = 0;
+                typename Tile::value_type norm = 0.0;
+                for (auto a = a0; a < an; ++a) {
+                    const auto e_a = ens[a + n_occ];
+                    for (auto b = b0; b < bn; ++b) {
+                        const auto e_b = ens[b + n_occ];
+                        for (auto i = i0; i < in; ++i) {
+                            const auto e_i = ens[i];
+                            for (auto j = j0; j < jn; ++j, ++tile_idx) {
+                                const auto e_j = ens[j];
+                                const auto e_iajb = e_i + e_j - e_a - e_b;
+                                const auto old = result_tile[tile_idx];
+                                const auto result_abij = old/(e_iajb);
+                                norm += result_abij*result_abij;
+                                result_tile[tile_idx] = result_abij;
+                            }
+                        }
+                    }
+                }
+                return std::sqrt(norm);
+            };
+
+            TA::foreach_inplace(abij, convert);
+        }
+
         // create matrix d("a,b,i,j) = 1/(ei + ej - ea - eb)
         template<typename Tile, typename Policy>
         void create_d_abij(TA::Array<double, 4, Tile, Policy> &abij,

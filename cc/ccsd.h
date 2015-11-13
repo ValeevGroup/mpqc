@@ -79,14 +79,16 @@ namespace mpqc {
 
                 TArray4 g_abij = ccsd_intermediate_->get_abij();
 
-                if(g_abij.get_world().rank() == 0){
+                auto& world = g_abij.get_world();
+
+                if(world.rank() == 0){
                     std::cout << "Use Straight CCSD Compute" <<std::endl;
                 }
 
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
 
-                g_abij.get_world().gop.fence();
+                world.gop.fence();
 
 //      std::cout << g_abij << std::endl;
 
@@ -95,7 +97,7 @@ namespace mpqc {
                 // store d1 to local
                 mpqc::cc::create_d_ai(d1, orbital_energy_, n_occ);
 
-                TArray4 d2(g_abij.get_world(), g_abij.trange(),
+                TArray4 d2(world, g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
                 mpqc::cc::create_d_abij(d2, orbital_energy_, n_occ);
@@ -139,7 +141,7 @@ namespace mpqc {
 
                 bool less = options_.HasMember("LessMemory") ? options_["LessMemory"].GetBool() : true;
 
-                if (g_abij.get_world().rank() == 0) {
+                if (world.rank() == 0) {
                     std::cout << "Start Iteration" << std::endl;
                     std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                     if(less){
@@ -394,17 +396,17 @@ namespace mpqc {
                     auto time1 = tcc_time::now();
                     auto duration = tcc_time::duration_in_s(time0, time1);
 
-                    if (g_abij.get_world().rank() == 0) {
+                    if (world.rank() == 0) {
                         std::cout << iter << "  " << dE << "  " << error <<
                         "  " << E1 << "  " << duration << std::endl;
                     }
 
-                    g_abij.get_world().gop.fence();
+                    world.gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
 
                 }
-                if (g_abij.get_world().rank() == 0) {
+                if (world.rank() == 0) {
                     std::cout << "MP2 Energy   " << mp2 << std::endl;
                     std::cout << "CCSD Energy  " << E1 << std::endl;
                 }
@@ -421,14 +423,16 @@ namespace mpqc {
 
                 TArray4 g_abij = ccsd_intermediate_->get_abij();
 
-                if(g_abij.get_world().rank() == 0){
+                auto& world = g_abij.get_world();
+
+                if(world.rank() == 0){
                     std::cout << "Use Straight CCSD Compute" <<std::endl;
                 }
 
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
 
-                g_abij.get_world().gop.fence();
+                world.gop.fence();
 
 //      std::cout << g_abij << std::endl;
 
@@ -437,13 +441,15 @@ namespace mpqc {
                 // store d1 to local
                 mpqc::cc::create_d_ai(d1, orbital_energy_, n_occ);
 
-                TArray4 d2(g_abij.get_world(), g_abij.trange(),
-                           g_abij.get_shape(), g_abij.get_pmap());
-                // store d2 distributed
-                mpqc::cc::create_d_abij(d2, orbital_energy_, n_occ);
-
                 t1("a,i") = f_ai("a,i") * d1("a,i");
-                t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
+
+                {
+                    TArray4 d2(world, g_abij.trange(),
+                               g_abij.get_shape(), g_abij.get_pmap());
+                    create_d_abij(d2, orbital_energy_, n_occ);
+
+                    t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
+                }
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
@@ -481,7 +487,7 @@ namespace mpqc {
 
                 bool less = options_.HasMember("LessMemory") ? options_["LessMemory"].GetBool() : true;
 
-                if (g_abij.get_world().rank() == 0) {
+                if (world.rank() == 0) {
                     std::cout << "Start Iteration" << std::endl;
                     std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                     if(less){
@@ -494,6 +500,9 @@ namespace mpqc {
 
                     //start timer
                     auto time0 = tcc_time::now();
+
+                    TArray2::wait_for_lazy_cleanup(world);
+                    TArray4::wait_for_lazy_cleanup(world);
 
 
                     TArray2 h_ki, h_ac;
@@ -644,7 +653,7 @@ namespace mpqc {
 
                     }
 
-                    r2("a,b,i,j") *= d2("a,b,i,j");
+                    d_abij(r2,orbital_energy_,n_occ);
 
                     r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -678,17 +687,17 @@ namespace mpqc {
                     auto time1 = tcc_time::now();
                     auto duration = tcc_time::duration_in_s(time0, time1);
 
-                    if (g_abij.get_world().rank() == 0) {
+                    if (world.rank() == 0) {
                         std::cout << iter << "  " << dE << "  " << error <<
                         "  " << E1 << "  " << duration << std::endl;
                     }
 
-                    g_abij.get_world().gop.fence();
+                    world.gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
 
                 }
-                if (g_abij.get_world().rank() == 0) {
+                if (world.rank() == 0) {
                     std::cout << "MP2 Energy   " << mp2 << std::endl;
                     std::cout << "CCSD Energy  " << E1 << std::endl;
                 }
@@ -704,13 +713,15 @@ namespace mpqc {
 
                 TArray4 g_abij = ccsd_intermediate_->get_abij();
 
-                if(g_abij.get_world().rank() == 0){
+                auto& world = g_abij.get_world();
+
+                if(world.rank() == 0){
                     std::cout << "Use Direct CCSD Compute" <<std::endl;
                 }
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
 
-                g_abij.get_world().gop.fence();
+                world.gop.fence();
 
 //      std::cout << g_abij << std::endl;
 
@@ -718,7 +729,7 @@ namespace mpqc {
                            f_ai.get_pmap());
                 create_d_ai(d1, orbital_energy_, n_occ);
 
-                TArray4 d2(g_abij.get_world(), g_abij.trange(),
+                TArray4 d2(world, g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 create_d_abij(d2, orbital_energy_, n_occ);
 
@@ -761,7 +772,7 @@ namespace mpqc {
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
                 TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
-                if (g_abij.get_world().rank() == 0) {
+                if (world.rank() == 0) {
                 };
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
@@ -774,13 +785,13 @@ namespace mpqc {
                     {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
-                    g_abij.get_world().gop.fence();
+                    world.gop.fence();
 
                     if(iter == 0){
                         tcc::utility::print_size_info(u2_u11,"U_aaoo");
                     }
 
-                    if (iter == 0 && g_abij.get_world().rank() == 0) {
+                    if (iter == 0 && world.rank() == 0) {
                         std::cout << "Start Iteration" << std::endl;
                         std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                         std::cout << "iter " << "    deltaE    " << "            residual       "
@@ -959,19 +970,19 @@ namespace mpqc {
                     auto time1 = tcc_time::now();
                     auto duration_t = tcc_time::duration_in_s(time0, time1);
 
-                    if (g_abij.get_world().rank() == 0) {
+                    if (world.rank() == 0) {
                         std::cout.precision(15);
                         std::cout<< iter << "  " << dE << "  " << error <<
                         "  " << E1 << "  " << duration_u << " " << duration_t
                         <<std::endl;
                     }
 
-                    g_abij.get_world().gop.fence();
+                    world.gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
 
                 }
-                if (g_abij.get_world().rank() == 0) {
+                if (world.rank() == 0) {
                     std::cout << "MP2 Energy      " << mp2 << std::endl;
                     std::cout << "CCSD Energy     " << E1 << std::endl;
                 }
@@ -984,13 +995,15 @@ namespace mpqc {
 
                 TArray4 g_abij = ccsd_intermediate_->get_abij();
 
-                if(g_abij.get_world().rank() == 0){
+                auto& world = g_abij.get_world();
+
+                if(world.rank() == 0){
                     std::cout << "Use Direct CCSD Compute" <<std::endl;
                 }
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
 
-                g_abij.get_world().gop.fence();
+                world.gop.fence();
 
 //      std::cout << g_abij << std::endl;
 
@@ -998,12 +1011,15 @@ namespace mpqc {
                            f_ai.get_pmap());
                 create_d_ai(d1, orbital_energy_, n_occ);
 
-                TArray4 d2(g_abij.get_world(), g_abij.trange(),
-                           g_abij.get_shape(), g_abij.get_pmap());
-                create_d_abij(d2, orbital_energy_, n_occ);
-
                 t1("a,i") = f_ai("a,i") * d1("a,i");
-                t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
+
+                {
+                    TArray4 d2(world, g_abij.trange(),
+                               g_abij.get_shape(), g_abij.get_pmap());
+                    create_d_abij(d2, orbital_energy_, n_occ);
+
+                    t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
+                }
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
@@ -1016,7 +1032,7 @@ namespace mpqc {
                                     tau("a,b,i,j"));
                 double dE = std::abs(E1 - E0);
                 double mp2 = E1;
-//      std::cout << E1 << std::endl;
+      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
                 TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
@@ -1041,12 +1057,15 @@ namespace mpqc {
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
                 TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
-                if (g_abij.get_world().rank() == 0) {
+                if (world.rank() == 0) {
                 };
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
                     auto time0 = tcc_time::now();
+
+                    TArray2::wait_for_lazy_cleanup(world);
+                    TArray4::wait_for_lazy_cleanup(world);
 
                     TArray4 u2_u11;
                     // compute half transformed intermediates
@@ -1054,13 +1073,13 @@ namespace mpqc {
                     {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
-                    g_abij.get_world().gop.fence();
+                    world.gop.fence();
 
                     if(iter == 0){
                         tcc::utility::print_size_info(u2_u11,"U_aaoo");
                     }
 
-                    if (iter == 0 && g_abij.get_world().rank() == 0) {
+                    if (iter == 0 && world.rank() == 0) {
                         std::cout << "Start Iteration" << std::endl;
                         std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                         std::cout << "iter " << "    deltaE    " << "            residual       "
@@ -1205,7 +1224,7 @@ namespace mpqc {
 
                         }
 
-                        r2("a,b,i,j") *= d2("a,b,i,j");
+                        d_abij(r2,orbital_energy_,n_occ);
 
                         r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -1237,19 +1256,19 @@ namespace mpqc {
                     auto time1 = tcc_time::now();
                     auto duration_t = tcc_time::duration_in_s(time0, time1);
 
-                    if (g_abij.get_world().rank() == 0) {
+                    if (world.rank() == 0) {
                         std::cout.precision(15);
                         std::cout<< iter << "  " << dE << "  " << error <<
                         "  " << E1 << "  " << duration_u << " " << duration_t
                         <<std::endl;
                     }
 
-                    g_abij.get_world().gop.fence();
+                    world.gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
 
                 }
-                if (g_abij.get_world().rank() == 0) {
+                if (world.rank() == 0) {
                     std::cout << "MP2 Energy      " << mp2 << std::endl;
                     std::cout << "CCSD Energy     " << E1 << std::endl;
                 }

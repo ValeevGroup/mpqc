@@ -288,7 +288,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         world.gop.fence();
 
-        auto clustered_mol = mpqc::molecule::attach_hydrogens_and_kmeans(mpqc::molecule::read_xyz(mol_file).clusterables(), nclusters);
+        auto clustered_mol = mpqc::molecule::kmeans(mpqc::molecule::read_xyz(mol_file).clusterables(), nclusters);
 
         mpqc::basis::BasisSet bs{basis_name};
         mpqc::basis::BasisSet df_bs{df_basis_name};
@@ -410,11 +410,19 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::vector<TA::TiledRange1> tr_04(4, tr_0);
         TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
 
-        auto screen_builder = ints::init_schwarz_screen(1e-10);
-        auto shr_screen = std::make_shared<ints::SchwarzScreen>(screen_builder(world, eri_e, basis));
+        auto do_screen = cc_in.HasMember("Screen") ? cc_in["DIIS"].GetBool() : true;
 
-        const auto bs4_array = tcc::utility::make_array(basis, basis,basis,basis);
-        lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array, shr_screen);
+        if(do_screen){
+            auto screen_builder = ints::init_schwarz_screen(1e-10);
+            auto shr_screen = std::make_shared<ints::SchwarzScreen>(screen_builder(world, eri_e, basis));
+
+            const auto bs4_array = tcc::utility::make_array(basis, basis,basis,basis);
+            lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array, shr_screen);
+        }else{
+
+            const auto bs4_array = tcc::utility::make_array(basis, basis,basis,basis);
+            lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
+        }
 
         world.gop.fence();
 
@@ -437,7 +445,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
         ccsd_t.compute();
     }
     else if(in.HasMember("CCSD")){
-        std::cout << fock_mo << std::endl;
         mpqc::cc::CCSD<TA::Tensor < double>, TA::SparsePolicy > ccsd(fock_mo, ens, tre, intermidiate, cc_in);
         ccsd.compute();
     }

@@ -233,9 +233,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     TA::Array<double, 2, TA::TensorD, TA::SparsePolicy> fock_mo;
 
-    DArray<4,
-            integrals::DirectTile<integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>>,
-            TA::SparsePolicy> lazy_two_electron_int;
+//    mpqc::integrals::DirArray<4, integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>> lazy_two_electron_int;
     {
 
         // Get necessary info
@@ -424,25 +422,28 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         auto do_screen = cc_in.HasMember("Screen") ? cc_in["DIIS"].GetBool() : true;
 
-        if(do_screen){
-            auto screen_builder = ints::init_schwarz_screen(1e-10);
-            auto shr_screen = std::make_shared<ints::SchwarzScreen>(screen_builder(world, eri_e, basis));
 
-            const auto bs4_array = tcc::utility::make_array(basis, basis,basis,basis);
-            lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array, shr_screen);
-        }else{
-
-            const auto bs4_array = tcc::utility::make_array(basis, basis,basis,basis);
-            lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
-        }
 
         world.gop.fence();
 
-        intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy>>
-            (Xab, Ci, Cv, lazy_two_electron_int);
-
 
         fock_mo("p,q") = F("mu,nu") * Cv("mu,p") * Ci("nu,q");
+
+        if (do_screen) {
+            auto screen_builder = ints::init_schwarz_screen(1e-10);
+            auto shr_screen = std::make_shared<ints::SchwarzScreen>(screen_builder(world, eri_e, basis));
+
+            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
+            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array, shr_screen);
+            intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy>>
+                    (Xab, Ci, Cv, lazy_two_electron_int);
+        } else {
+
+            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
+            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
+            intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy>>
+                    (Xab, Ci, Cv, lazy_two_electron_int);
+        }
     }
 
     // clean up all temporary from HF

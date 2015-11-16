@@ -25,12 +25,7 @@ namespace mpqc {
         // three center uses chemical notation (X|pq)
         // MO integrals used physical noation <ij|ab>
         template<typename Tile, typename Policy,
-                typename DirectTwoElectronArray=
-                DArray<
-                        4,
-                        integrals::DirectTile<integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>>,
-                        TA::SparsePolicy
-                    >
+                typename DirectTwoElectronArray= mpqc::integrals::DirArray<4, integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>>
                 >
         class CCSDIntermediate {
         public:
@@ -40,7 +35,7 @@ namespace mpqc {
             typedef TA::Array <double, 4, Tile, Policy> TArray4;
 
             CCSDIntermediate(const TArray3 &Xpq, const TArray2 &Ci, const TArray2 &Ca,
-                             const DirectTwoElectronArray& direct_ao=DirectTwoElectronArray()) {
+                             DirectTwoElectronArray& direct_ao) : direct_ao_(direct_ao) {
                 {
                     // convert to MO, store this temporary,
                     // call clean() to clean Xab_ Xij_ Xai_
@@ -53,12 +48,11 @@ namespace mpqc {
                     Ci_= Ci;
                     Ca_ = Ca;
 
-                    if(direct_ao.is_initialized()){
+                    if(direct_ao.array().is_initialized()){
                         direct_ = true;
                     }else{
                         direct_ = false;
                     }
-                    direct_ao_ = direct_ao;
                     cleaned_ = false;
 
                     // two electron integral
@@ -306,7 +300,7 @@ namespace mpqc {
 
             // direct ao
             // in chemical notation (pq|rs)
-            DirectTwoElectronArray direct_ao_;
+            DirectTwoElectronArray& direct_ao_;
 
             // check if Xab, Xai, Xij has been cleaned
             bool cleaned_;

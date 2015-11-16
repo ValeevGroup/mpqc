@@ -52,7 +52,7 @@ class FourCenterSCF {
     array_type compute_k(Integral const &eri4) {
 
         array_type K;
-        auto &world = eri4.get_world();
+        auto &world = eri4.array().get_world();
         world.gop.fence();
         auto k0 = tcc_time::now();
         K("i,j") = eri4("i,k,j,l") * D_("k,l");
@@ -67,7 +67,7 @@ class FourCenterSCF {
     array_type compute_j(Integral const &eri4) {
 
         array_type J;
-        auto &world = eri4.get_world();
+        auto &world = eri4.array().get_world();
         world.gop.fence();
         auto j0 = tcc_time::now();
         J("i,j") = eri4("i,j,k,l") * D_("k,l");

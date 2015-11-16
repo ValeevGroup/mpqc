@@ -8,6 +8,7 @@
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 #include "../integrals/direct_task_integrals.h"
+#include "lazy_integral.h"
 
 namespace mpqc {
 
@@ -25,8 +26,7 @@ namespace mpqc {
         // three center uses chemical notation (X|pq)
         // MO integrals used physical noation <ij|ab>
         template<typename Tile, typename Policy,
-                typename DirectTwoElectronArray= mpqc::integrals::DirArray<4, integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>>
-                >
+                typename DirectTwoElectronArray=cc::DirectTwoElectronDenseArray>
         class CCSDIntermediate {
         public:
 
@@ -48,7 +48,7 @@ namespace mpqc {
                     Ci_= Ci;
                     Ca_ = Ca;
 
-                    if(direct_ao.array().is_initialized()){
+                    if(direct_ao.is_initialized()){
                         direct_ = true;
                     }else{
                         direct_ = false;
@@ -300,7 +300,7 @@ namespace mpqc {
 
             // direct ao
             // in chemical notation (pq|rs)
-            DirectTwoElectronArray& direct_ao_;
+            DirectTwoElectronArray direct_ao_;
 
             // check if Xab, Xai, Xij has been cleaned
             bool cleaned_;

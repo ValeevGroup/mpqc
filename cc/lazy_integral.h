@@ -7,11 +7,11 @@
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
-#include "lazy_integral.h"
+#include "integral_generator.h"
 
-static auto DIRECTAOTWOELECTONINTEGRAL = std::make_shared<tcc::cc::TwoBodyIntGenerator<libint2::Coulomb>>();
+static auto DIRECTAOTWOELECTONINTEGRAL = std::make_shared<mpqc::cc::TwoBodyIntGenerator<libint2::Coulomb>>();
 
-namespace tcc {
+namespace mpqc {
     namespace cc {
 
         // lazy integral interface
@@ -82,20 +82,21 @@ namespace tcc {
         };
 
         // direct two electron integral
-        typedef tcc::cc::LazyIntegral<4, TwoBodyIntGenerator < libint2::Coulomb>> LazyTwoElectronTile;
+        typedef mpqc::cc::LazyIntegral<4, TwoBodyIntGenerator < libint2::Coulomb>> LazyTwoElectronTile;
         typedef TA::Array<double, 4, LazyTwoElectronTile, TA::DensePolicy> DirectTwoElectronDenseArray;
+        typedef TA::Array<double, 4, LazyTwoElectronTile, TA::SparsePolicy> DirectTwoElectronSparseArray;
 
         // function to make direct two electron dense TArray
-        DirectTwoElectronDenseArray make_lazy_two_electron_array(
-                madness::World &world, const tcc::basis::Basis &basis,
+        DirectTwoElectronDenseArray make_lazy_two_electron_dense_array(
+                madness::World &world, const mpqc::basis::Basis &basis,
                 const TA::TiledRange &trange) {
 
-            auto p_cluster_shells = std::make_shared<std::vector<tcc::basis::ClusterShells>>(
-                    basis.cluster_shells());
+            auto cluster_shells = basis.cluster_shells();
+            auto p_cluster_shells = std::make_shared<std::vector<ShellVec>>(cluster_shells);
 
-            auto two_body_coulomb_engine = tcc::integrals::make_2body(basis);
+            auto two_body_coulomb_engine = mpqc::integrals::make_2body(basis);
 
-            auto p_engine_pool = std::make_shared<tcc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(
+            auto p_engine_pool = std::make_shared<mpqc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(
                     two_body_coulomb_engine);
 
             DIRECTAOTWOELECTONINTEGRAL->set_pool(p_engine_pool);
@@ -117,11 +118,56 @@ namespace tcc {
             return lazy_two_electron;
         }
 
+
+        // TODO update sparse direct array
+        // function to make direct two electron Sparse TArray
+        DirectTwoElectronSparseArray make_lazy_two_electron_sparse_array(
+                madness::World &world, const mpqc::basis::Basis &basis,
+                const TA::TiledRange &trange) {
+
+            auto p_cluster_shells = std::make_shared<std::vector<ShellVec>>(basis.cluster_shells());
+
+            auto two_body_coulomb_engine = mpqc::integrals::make_2body(basis);
+
+            auto p_engine_pool = std::make_shared<mpqc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(
+                    two_body_coulomb_engine);
+
+            DIRECTAOTWOELECTONINTEGRAL->set_pool(p_engine_pool);
+            DIRECTAOTWOELECTONINTEGRAL->set_shell(p_cluster_shells);
+
+            // make shape
+            TA::TensorF tile_norms(trange.tiles());
+            auto t_volume = trange.tiles().volume();
+            auto pmap = TA::SparsePolicy::default_pmap(world,t_volume);
+
+            // need to work with this later
+            for(auto const &ord: *pmap){
+                tile_norms[ord] = 100000;
+            }
+
+            TA::SparseShape<float> shape(world, tile_norms,trange);
+
+            DirectTwoElectronSparseArray lazy_two_electron(world, trange, shape, pmap);
+
+            // set the functor of tile
+            DirectTwoElectronSparseArray::iterator it = lazy_two_electron.begin();
+            DirectTwoElectronSparseArray::iterator end = lazy_two_electron.end();
+            for (; it != end; ++it) {
+                TA::Range range = lazy_two_electron.trange().make_tile_range(
+                        it.ordinal());
+                auto index = it.index();
+                lazy_two_electron.set(index, LazyTwoElectronTile(range, index,
+                                                                 DIRECTAOTWOELECTONINTEGRAL));
+
+            }
+            return lazy_two_electron;
+        }
+
         // direct ao integral using DF three center integral
-        typedef tcc::cc::LazyIntegral<4, TwoElectronIntDFGenerator < TA::DensePolicy>> LazyTwoElectronDFDenseTile;
+        typedef mpqc::cc::LazyIntegral<4, TwoElectronIntDFGenerator < TA::DensePolicy>> LazyTwoElectronDFDenseTile;
         typedef TA::Array<double, 4, LazyTwoElectronDFDenseTile, TA::DensePolicy> DirectTwoElectronDFDenseArray;
     } // namespace cc
-} // namespace tcc
+} // namespace mpqc
 
 
 

@@ -34,7 +34,7 @@
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../cc/ccsd_t.h"
 //#include "../cc/integral_generator.h"
-//#include "../cc/lazy_integral.h"
+#include "../cc/lazy_integral.h"
 #include "../cc/ccsd_intermediates.h"
 #include "../cc/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
@@ -225,13 +225,16 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
 
     // declare variables needed for ccsd
-    std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD,TA::SparsePolicy>> intermidiate;
+//    std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD,TA::SparsePolicy>> intermidiate;
+    std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD,TA::DensePolicy,cc::DirectTwoElectronDenseArray>> intermidiate;
 
     std::shared_ptr<mpqc::TRange1Engine> tre;
 
     Eigen::MatrixXd ens;
 
     TA::Array<double, 2, TA::TensorD, TA::SparsePolicy> fock_mo;
+
+    cc::DirectTwoElectronDenseArray lazy_two_electron_int;
 
 //    mpqc::integrals::DirArray<4, integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>> lazy_two_electron_int;
     {
@@ -408,16 +411,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
         tcc::utility::print_par(world, "TiledRange1 Occupied ", tr_i0, "\n");
         tcc::utility::print_par(world, "TiledRange1 Virtual  ", tr_vir, "\n");
 
-        auto Ci = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ,
-                                                                tr_0, tr_i0);
+        auto Ci = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ, tr_0, tr_i0);
 
-        auto Cv = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir,
-                                                                tr_0, tr_vir);
+        auto Cv = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir, tr_0, tr_vir);
 
-        auto Call = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_all,
-                                                                  tr_0, tr_all);
+        auto Call = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_all, tr_0, tr_all);
 
-        std::vector<TA::TiledRange1> tr_04(4, tr_0);
+        std::vector<TA::TiledRange1> tr_04(4, basis.create_trange1());
         TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
 
         auto do_screen = cc_in.HasMember("Screen") ? cc_in["DIIS"].GetBool() : true;
@@ -429,21 +429,25 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         fock_mo("p,q") = F("mu,nu") * Cv("mu,p") * Ci("nu,q");
 
-        if (do_screen) {
-            auto screen_builder = ints::init_schwarz_screen(1e-10);
-            auto shr_screen = std::make_shared<ints::SchwarzScreen>(screen_builder(world, eri_e, basis));
+//        if (do_screen) {
+//            auto screen_builder = ints::init_schwarz_screen(1e-10);
+//            auto shr_screen = std::make_shared<ints::SchwarzScreen>(screen_builder(world, eri_e, basis));
+//
+//            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
+//            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array, shr_screen);
+//            intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy>>
+//                    (Xab, Ci, Cv, lazy_two_electron_int);
+//        } else {
 
-            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
-            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array, shr_screen);
-            intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy>>
-                    (Xab, Ci, Cv, lazy_two_electron_int);
-        } else {
-
-            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
-            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
-            intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy>>
-                    (Xab, Ci, Cv, lazy_two_electron_int);
-        }
+//            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
+//            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
+        lazy_two_electron_int = cc::make_lazy_two_electron_dense_array(world, basis, trange_4);
+        auto Xab_dense = TA::to_dense(Xab);
+        auto Ci_dense = TA::to_dense(Ci);
+        auto Cv_dense = TA::to_dense(Cv);
+        intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::DensePolicy, cc::DirectTwoElectronDenseArray>>
+                (Xab_dense, Ci_dense, Cv_dense, lazy_two_electron_int);
+//        }
     }
 
     // clean up all temporary from HF
@@ -453,12 +457,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::utility::parallal_break_point(world, 0);
 
 
+    auto fock_mo_dense = TA::to_dense(fock_mo);
     if(in.HasMember("CCSD(T)")){
-        mpqc::cc::CCSD_T<TA::Tensor < double>, TA::SparsePolicy > ccsd_t(fock_mo, ens, tre, intermidiate, cc_in);
+        mpqc::cc::CCSD_T<TA::Tensor < double>, TA::DensePolicy > ccsd_t(fock_mo_dense, ens, tre, intermidiate, cc_in);
         ccsd_t.compute();
     }
     else if(in.HasMember("CCSD")){
-        mpqc::cc::CCSD<TA::Tensor < double>, TA::SparsePolicy > ccsd(fock_mo, ens, tre, intermidiate, cc_in);
+        mpqc::cc::CCSD<TA::Tensor < double>, TA::DensePolicy > ccsd(fock_mo_dense, ens, tre, intermidiate, cc_in);
         ccsd.compute();
     }
 

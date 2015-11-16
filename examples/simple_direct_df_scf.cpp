@@ -294,48 +294,47 @@ int main(int argc, char *argv[]) {
 
         auto Fao = scf.fock();
 
-            auto F_eig = tcc::array_ops::array_to_eigen(Fao);
-            auto S_eig = tcc::array_ops::array_to_eigen(S);
+        auto F_eig = tcc::array_ops::array_to_eigen(Fao);
+        auto S_eig = tcc::array_ops::array_to_eigen(S);
 
-            Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
-                                                                       S_eig);
-            const auto vir = F_eig.rows() - occ / 2;
-            auto nocc = occ / 2;
-            decltype(S_eig) Ceigi = es.eigenvectors().leftCols(nocc);
-            decltype(S_eig) Ceigv = es.eigenvectors().rightCols(vir);
-            auto tr_ao = S.trange().data()[0];
+        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+                                                                   S_eig);
+        const auto vir = F_eig.rows() - occ / 2;
+        auto nocc = occ / 2;
+        decltype(S_eig) Ceigi = es.eigenvectors().leftCols(nocc);
+        decltype(S_eig) Ceigv = es.eigenvectors().rightCols(vir);
+        auto tr_ao = S.trange().data()[0];
 
-            // decltype(S_eig) D = Ceigi * Ceigi.transpose();
-            // unsigned int rank = tcc::tensor::algebra::piv_cholesky(D);
-            // Ceigi = D;
+        // decltype(S_eig) D = Ceigi * Ceigi.transpose();
+        // unsigned int rank = tcc::tensor::algebra::piv_cholesky(D);
+        // Ceigi = D;
 
-            auto occ_nclusters = (nocc < 10) ? nocc : 10;
-            auto tr_occ = tcc::scf::tr_occupied(occ_nclusters, nocc);
+        auto occ_nclusters = (nocc < 10) ? nocc : 10;
+        auto tr_occ = tcc::scf::tr_occupied(occ_nclusters, nocc);
 
-            auto vir_nclusters = (nocc < 10) ? vir : 10;
-            auto tr_vir = tcc::scf::tr_occupied(vir_nclusters, vir);
+        auto vir_nclusters = (nocc < 10) ? vir : 10;
+        auto tr_vir = tcc::scf::tr_occupied(vir_nclusters, vir);
 
-            auto Ci
-                  = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigi,
-                                                                tr_ao, tr_occ);
+        auto Ci = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigi,
+                                                              tr_ao, tr_occ);
 
-            decltype(Ci) D_org, D_diff;
-            D_org("mu,nu") = Ci("mu, i") * Ci("nu,i");
+        decltype(Ci) D_org, D_diff;
+        D_org("mu,nu") = Ci("mu, i") * Ci("nu,i");
 
-            auto Cv
-                  = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigv,
-                                                                tr_ao, tr_vir);
+        auto Cv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigv,
+                                                              tr_ao, tr_vir);
 
-            
-            auto multi_pool
-                  = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
-            auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
 
-            Ci = scf::BoysLocalization{}(Ci, r_xyz);
-            D_org("mu,nu") = D_org("mu, nu") - Ci("mu, i") * Ci("nu,i");
-            auto norm_diff = D_org("i,j").norm().get();
-            std::cout << "Norm of density diff after localization = " << norm_diff << std::endl;
-            // Cv = scf::BoysLocalization{}(Cv, r_xyz);
+        auto multi_pool
+              = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+        auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+
+        Ci = scf::BoysLocalization{}(Ci, r_xyz);
+        D_org("mu,nu") = D_org("mu, nu") - Ci("mu, i") * Ci("nu,i");
+        auto norm_diff = D_org("i,j").norm().get();
+        std::cout << "Norm of density diff after localization = " << norm_diff
+                  << std::endl;
+        // Cv = scf::BoysLocalization{}(Cv, r_xyz);
 
         {
             std::cout << "\n\nSize for Eri3 if stored" << std::endl;
@@ -380,7 +379,7 @@ int main(int argc, char *argv[]) {
         scf.solve(20, 1e-7, eri3);
     }
 
-    if(false){ // Unscreened ints
+    if (false) { // Unscreened ints
         std::cout << "\n\nDirect Unscreened DF" << std::endl;
         auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array);
         ThreeCenterScf scf(H, S, L_inv, occ / 2, repulsion_energy);

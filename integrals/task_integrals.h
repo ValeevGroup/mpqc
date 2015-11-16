@@ -86,9 +86,9 @@ sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
                 const auto n1n2 = n0 * n1;
                 const auto *buf = eng.compute(s0, s1);
 
-                for (auto i = 0; i < 3; ++i) {
+                for (auto i = 1; i < 4; ++i) {
                     TA::remap(map, buf + i * n1n2, lb, ub);
-                    t_xyz[i].block(lb, ub) = map;
+                    t_xyz[i-1].block(lb, ub) = map;
                 }
 
                 lb[1] = ub[1];

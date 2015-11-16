@@ -99,10 +99,9 @@ class FourCenterSCF {
 
 
   public:
-    FourCenterSCF(array_type const &H, array_type const &S, int64_t occ,
+    FourCenterSCF(array_type const &H, array_type const &S, array_type const &Fi, int64_t occ,
                   double rep)
-            : H_(H), S_(S), occ_(occ), repulsion_(rep) {
-        F_ = H_;
+            : H_(H), S_(S), F_(Fi), occ_(occ), repulsion_(rep) {
         compute_density(occ_);
     }
 
@@ -138,13 +137,29 @@ class FourCenterSCF {
             std::cout << "Iteration: " << (iter + 1)
                       << " energy: " << old_energy << " error: " << error
                       << std::endl;
-            std::cout << "\tJ time: " << j_times_.back()
-                      << " s K time: " << k_times_.back()
-                      << " s iter time: " << scf_times_.back() << std::endl;
+            // std::cout << "\tJ time: " << j_times_.back()
+            //           << " s K time: " << k_times_.back()
+            //           << " s iter time: " << scf_times_.back() << std::endl;
 
             ++iter;
         }
+        auto avg_J = 0.0;
+        for(auto t : j_times_){
+            avg_J += t;
+        }
+        avg_J /= j_times_.size();
+
+        auto avg_K = 0.0;
+        for(auto t : k_times_){
+            avg_K += t;
+        }
+        avg_K /= k_times_.size();
+
+        std::cout << "Average J time = " << avg_J << std::endl;
+        std::cout << "Average K time = " << avg_K << std::endl;
+
     }
+
 
     double energy() {
         return repulsion_
@@ -163,14 +178,15 @@ int main(int argc, char *argv[]) {
     double threshold = 1e-12;
     double well_sep_threshold = 0.1;
     integrals::QQR::well_sep_threshold(well_sep_threshold);
-    if (argc == 4) {
+    if (argc >= 4) {
         mol_file = argv[1];
         basis_name = argv[2];
         nclusters = std::stoi(argv[3]);
-    } else {
-        std::cout << "input is $./program mol_file basis_file nclusters ";
-        return 0;
-    }
+    } 
+    if (argc == 5) {
+        threshold = std::stod(argv[4]);
+    } 
+
     TiledArray::SparseShape<float>::threshold(threshold);
 
     auto clustered_mol = molecule::attach_hydrogens_and_kmeans(
@@ -182,6 +198,9 @@ int main(int argc, char *argv[]) {
 
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
+
+    std::cout << "\nNumber of basis functions = " << basis.nfunctions() << std::endl;
+    std::cout << "Threshold = " << TA::SparseShape<float>::threshold() << std::endl;
 
     libint2::init();
 
@@ -201,6 +220,54 @@ int main(int argc, char *argv[]) {
 
     auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
     auto eri_e = ints::make_2body_shr_pool(basis);
+
+    decltype(H) F_soad;
+    {
+        auto min_bs = basis::Basis(
+              basis::BasisSet("sto-3g").get_cluster_shells(clustered_mol));
+        MatrixD D_min = MatrixD::Zero(min_bs.nfunctions(), min_bs.nfunctions());
+
+        auto atoms = clustered_mol.atoms();
+        auto ao_offset = 0;
+        for (auto const &atom : atoms) {
+            const auto Z = atom.charge();
+
+            if (Z == 1 || Z == 2) {
+                D_min(ao_offset, ao_offset) = Z;
+                ++ao_offset;
+            } else if (Z <= 10) {
+                D_min(ao_offset, ao_offset) = 2; // 2 electrons go to the 1s
+                D_min(ao_offset + 1, ao_offset + 1) = (Z == 3) ? 1 : 2;
+                // smear the remaining electrons in 2p orbitals
+                const double num_electrons_per_2p
+                      = (Z > 4) ? (double)(Z - 4) / 3 : 0;
+                for (auto xyz = 0; xyz != 3; ++xyz)
+                    D_min(ao_offset + 2 + xyz, ao_offset + 2 + xyz)
+                          = num_electrons_per_2p;
+                ao_offset += 5;
+            }
+        }
+        D_min *= 0.5;
+
+        // std::cout << "D_min =\n" << D_min << std::endl;
+        world.gop.fence();
+
+        auto bsj = tcc::utility::make_array(basis, basis, min_bs, min_bs);
+        auto bsk = tcc::utility::make_array(basis, min_bs, basis, min_bs);
+
+        auto eri4_j = ints::direct_sparse_integrals(world, eri_e, bsj);
+        auto eri4_k = ints::direct_sparse_integrals(world, eri_e, bsk);
+
+        auto min_trange = eri4_j.trange().data()[3];
+        auto D = tcc::array_ops::eigen_to_array<TA::TensorD>(
+              world, D_min, min_trange, min_trange);
+
+        decltype(H) J, K; 
+        J("i,j") = eri4_j("i,j,k,l") * D("k,l");
+        K("i,j") = eri4_k("i,k,j,l") * D("k,l");
+
+        F_soad("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+    }
 
     { // Do schwarz
         std::cout << "\nComputing HF with Schwarz Screening" << std::endl;
@@ -224,11 +291,12 @@ int main(int argc, char *argv[]) {
         std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
                   << " s to initialize integrals." << std::endl;
 
-        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
+        FourCenterSCF scf(H, S, F_soad, occ / 2, repulsion_energy);
         scf.solve(20, 1e-7, eri4);
         world.gop.fence();
     }
 
+#if 0
     { // Do then QQR
         std::cout << "\n\nComputing HF with QQR Based Integrals" << std::endl;
         world.gop.fence();
@@ -253,7 +321,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
                   << " s to initialize integrals." << std::endl;
 
-        FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
+        FourCenterSCF scf(H, S, F_soad, occ / 2, repulsion_energy);
         scf.solve(20, 1e-7, eri4);
     }
 
@@ -271,6 +339,7 @@ int main(int argc, char *argv[]) {
         scf.solve(20, 1e-7, eri4);
         world.gop.fence();
     }
+#endif
 
     libint2::cleanup();
     madness::finalize();

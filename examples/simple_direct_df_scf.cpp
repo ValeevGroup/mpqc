@@ -26,6 +26,7 @@
 #include "../scf/diagonalize_for_coffs.hpp"
 
 #include <memory>
+#include <atomic>
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;
@@ -165,9 +166,7 @@ int main(int argc, char *argv[]) {
     std::string df_basis_name = "";
     int nclusters = 0;
     std::cout << std::setprecision(15);
-    double threshold = 1e-12;
-    double well_sep_threshold = 0.1;
-    integrals::QQR::well_sep_threshold(well_sep_threshold);
+    double threshold = 1e-10;
     if (argc == 5) {
         mol_file = argv[1];
         basis_name = argv[2];
@@ -227,6 +226,65 @@ int main(int argc, char *argv[]) {
     }
 
     auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
+    { // Fancy tile storage
+        std::cout << "Psuedo Direct CLR Storage" << std::endl;
+        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array);
+        auto sbuilder = ints::init_schwarz_screen(1e-10);
+        auto shr_screen = std::make_shared<ints::SchwarzScreen>(
+              sbuilder(world, eri_e, df_basis, basis));
+
+        std::atomic<long> full_a(0.0);
+        std::atomic<long> sparse_a(0.0);
+        std::atomic<long> clr_a(0.0);
+        std::atomic<long> clr_lr_only_a(0.0);
+        auto task_f = [&](int ord){
+            auto const &trange = eri3.trange();
+            auto size = trange.make_tile_range(ord).volume();
+            full_a += size;
+
+            if (!eri3.is_zero(ord)) {
+                sparse_a += size;
+
+                TA::TensorD tile = eri3.find(ord).get();
+                tcc::tensor::DecomposedTensor<double> dc_tile(1e-8,
+                                                              std::move(tile));
+                auto lr_tile
+                      = tcc::tensor::algebra::two_way_decomposition(dc_tile);
+
+                if (!lr_tile.empty()) {
+                    dc_tile = std::move(lr_tile);
+                }
+
+                if (dc_tile.ndecomp() == 1) {
+                    clr_a += dc_tile.tensors()[0].range().volume();
+                } else {
+                    auto l_size = dc_tile.tensors()[0].range().volume();
+                    auto r_size = dc_tile.tensors()[1].range().volume();
+
+                    clr_a += l_size + r_size;
+                    clr_lr_only_a += l_size + r_size;
+                }
+            }
+        };
+
+        auto &pmap = *eri3.get_pmap();
+        for (auto it : pmap) {
+            world.taskq.add(task_f, it);
+        }
+        world.gop.fence();
+
+        double full = full_a * 1e-9 * 8;
+        double sparse = sparse_a * 1e-9 * 8;
+        double clr = clr_a * 1e-9 * 8;
+        double clr_lr_only = clr_lr_only_a * 1e-9 * 8;
+
+        std::cout << "Eri3 Full Storage = " << full << " GB" << std::endl;
+        std::cout << "Eri3 Sparse Storage = " << sparse << " GB" << std::endl;
+        std::cout << "Eri3 CLR Storage = " << clr << " GB" << std::endl;
+        std::cout << "Eri3 Low Rank Only Storage = " << clr_lr_only << " GB"
+                  << std::endl;
+    }
+
     { // Schwarz Screened
         std::cout << "Direct Schwarz DF" << std::endl;
         auto sbuilder = ints::init_schwarz_screen(1e-8);

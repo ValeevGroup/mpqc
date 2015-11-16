@@ -62,6 +62,17 @@ int64_t Basis::nshells() const {
     });
 }
 
+int64_t Basis::nfunctions() const {
+    int64_t nfunctions = 0.0;
+    for(auto const &shell_vec : shells_){
+        for(auto const &shell : shell_vec){
+            nfunctions += shell.size();
+        }
+    }
+
+    return nfunctions;
+}
+
 
 std::vector<Shell> Basis::flattened_shells() const {
     std::vector<Shell> shells;

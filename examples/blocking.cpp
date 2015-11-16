@@ -138,17 +138,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         mpqc::basis::Basis df_basis{df_bs.get_cluster_shells(clustered_mol)};
         std::cout.rdbuf(cout_sbuf);
 
-        // TODO better basis TRange
         if (world.rank() == 0) {
-            std::cout << "Basis trange " << std::endl;
-            TA::TiledRange1 bs_range = basis.create_trange1();
-            std::cout << bs_range << std::endl;
-            TA::TiledRange1 dfbs_range = df_basis.create_trange1();
-            std::cout << "DF Basis trange " << std::endl;
-            std::cout << dfbs_range << std::endl;
-        }
-
-        if (world.rank() == 0) {
+            std::cout << "Initial Blocking" << std::endl;
             std::cout << "Basis trange " << std::endl;
             TA::TiledRange1 bs_range = basis.create_trange1();
             std::cout << bs_range << std::endl;
@@ -158,6 +149,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
             }
             std::cout << iter->first << " ";
             std::cout << iter->second << std::endl;
+            auto minmax_block = cc::minmax_blocksize(bs_range);
+            std::cout << minmax_block.first << " " << minmax_block.second << std::endl;
+            auto average_block = cc::average_blocksize(bs_range);
+            std::cout << "Average: " << average_block << std::endl;
             TA::TiledRange1 dfbs_range = df_basis.create_trange1();
             std::cout << "DF Basis trange " << std::endl;
             std::cout << dfbs_range << std::endl;
@@ -167,20 +162,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
             }
             std::cout << iter->first << " ";
             std::cout << iter->second << std::endl;
+            minmax_block = cc::minmax_blocksize(dfbs_range);
+            std::cout << minmax_block.first << " " << minmax_block.second << std::endl;
+            average_block = cc::average_blocksize(dfbs_range);
+            std::cout << "Average: " << average_block << std::endl;
         }
 
-        auto new_basis = reblock(basis,cc::reblock_basis,16);
-        auto new_cluster_shells = cc::reblock_basis(basis.flattened_shells(),16);
+        std::cout << "Reblock basis, block size set to " << blocksize << std::endl;
 
-        std::cout << new_cluster_shells.size() << std::endl;
-        auto blocking = std::vector<int64_t>{0};
-        for (auto const &shell_vec : new_cluster_shells) {
-            auto next = blocking.back() + basis::nfunctions(shell_vec);
-            blocking.emplace_back(next);
-        }
-
-//        auto new_range = TiledArray::TiledRange1(blocking.begin(), blocking.end());
+        auto new_basis = reblock(basis,cc::reblock_basis,blocksize);
         auto new_range = new_basis.create_trange1();
+        std::cout << "Basis trange" << std::endl;
         std::cout << new_range << std::endl;
         auto iter = new_range.begin();
         for (; iter != new_range.end() - 1; ++iter){
@@ -188,10 +180,25 @@ int try_main(int argc, char *argv[], madness::World &world) {
         }
         std::cout << iter->first << " ";
         std::cout << iter->second << std::endl;
-
         auto minmax_block = cc::minmax_blocksize(new_range);
         std::cout << minmax_block.first << " " << minmax_block.second << std::endl;
+        auto average_block = cc::average_blocksize(new_range);
+        std::cout << "Average: " << average_block << std::endl;
 
+        auto new_dfbasis = reblock(df_basis,cc::reblock_basis,blocksize);
+        auto new_dfrange = new_dfbasis.create_trange1();
+        std::cout << "DF Basis trange" << std::endl;
+        std::cout << new_dfrange << std::endl;
+        iter = new_dfrange.begin();
+        for (; iter != new_dfrange.end() - 1; ++iter){
+            std::cout << iter->first << " ";
+        }
+        std::cout << iter->first << " ";
+        std::cout << iter->second << std::endl;
+        minmax_block = cc::minmax_blocksize(new_dfrange);
+        std::cout << minmax_block.first << " " << minmax_block.second << std::endl;
+        average_block = cc::average_blocksize(new_dfrange);
+        std::cout << "Average: " << average_block << std::endl;
 //        // start SCF
 //        libint2::init();
 //

@@ -23,8 +23,7 @@ namespace mpqc{
                 std::size_t shell_size = shell.size();
                 tmp_size += shell_size;
 
-                // if current size is not greater than 1/3 of blocksize
-                if(2*tmp_size < 3*blocksize){
+                if(4*tmp_size < 5*blocksize){
                     tmp.push_back(shell);
                 }
                 else{
@@ -34,10 +33,24 @@ namespace mpqc{
                     tmp_size = shell_size;
                 }
             }
-            if(2*tmp_size < 3*blocksize){
+            if(4*tmp_size < 5*blocksize){
                 result.push_back(tmp);
             }
             return result;
+        }
+
+        // average block size
+        std::size_t average_blocksize(TA::TiledRange1 tr1){
+            std::vector<std::size_t> block_sizes;
+            for (auto block = tr1.begin(); block != tr1.end(); ++block){
+                auto block_size = block->second - block->first;
+                block_sizes.push_back(block_size);
+            }
+            std::size_t n = block_sizes.size();
+            std::size_t total = std::accumulate(block_sizes.cbegin(),block_sizes.cend(),0);
+
+            std::size_t average = total / n;
+            return average;
         }
 
         // compute the min and max block size in TiledRange1

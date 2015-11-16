@@ -37,6 +37,7 @@ void clustered_coeffs(
     auto C_eig = array_ops::array_to_eigen(C);
     auto tr_occ
           = tensor::localize_vectors_with_kmeans(oc_pos, C_eig, occ_nclusters);
+
     C = array_ops::eigen_to_array<Tile>(C.get_world(), C_eig,
                                         C.trange().data()[0], tr_occ, cut);
 }

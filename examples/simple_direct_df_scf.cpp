@@ -24,12 +24,61 @@
 #include "../ta_routines/array_to_eigen.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
+#include "../scf/orbital_localization.h"
 
 #include <memory>
 #include <atomic>
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;
+
+template <typename Array>
+void print_storage_for_array(Array const &a, double cut = 1e-8) {
+    std::atomic<long> full_a(0.0);
+    std::atomic<long> sparse_a(0.0);
+    std::atomic<long> clr_a(0.0);
+
+    auto task_f = [&](int ord) {
+        auto const &trange = a.trange();
+        auto size = trange.make_tile_range(ord).volume();
+        full_a += size;
+
+        if (!a.is_zero(ord)) {
+            sparse_a += size;
+
+            TA::TensorD tile = a.find(ord).get();
+            tcc::tensor::DecomposedTensor<double> dc_tile(cut, std::move(tile));
+            auto lr_tile = tcc::tensor::algebra::two_way_decomposition(dc_tile);
+
+            if (!lr_tile.empty()) {
+                dc_tile = std::move(lr_tile);
+            }
+
+            if (dc_tile.ndecomp() == 1) {
+                clr_a += dc_tile.tensors()[0].range().volume();
+            } else {
+                auto l_size = dc_tile.tensors()[0].range().volume();
+                auto r_size = dc_tile.tensors()[1].range().volume();
+
+                clr_a += l_size + r_size;
+            }
+        }
+    };
+
+    auto &pmap = *a.get_pmap();
+    for (auto it : pmap) {
+        a.get_world().taskq.add(task_f, it);
+    }
+    a.get_world().gop.fence();
+
+    double full = full_a * 1e-9 * 8;
+    double sparse = sparse_a * 1e-9 * 8;
+    double clr = clr_a * 1e-9 * 8;
+
+    std::cout << "Eri3 Full Storage = " << full << " GB" << std::endl;
+    std::cout << "Eri3 Sparse Storage = " << sparse << " GB" << std::endl;
+    std::cout << "Eri3 CLR Storage = " << clr << " GB" << std::endl;
+}
 
 class ThreeCenterScf {
   private:
@@ -78,7 +127,6 @@ class ThreeCenterScf {
         auto w0 = tcc::utility::time::now();
         TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> W;
         W("X, mu, i") = L_invV_("X,Y") * (eri3("Y, mu, nu") * C_("nu, i"));
-        world.gop.fence();
         auto w1 = tcc::utility::time::now();
         w_times_.push_back(tcc::utility::time::duration_in_s(w0, w1));
 
@@ -92,9 +140,13 @@ class ThreeCenterScf {
 
 
         // Permute W
-        W("X,i,nu") = W("X,nu,i");
-        array_type K;
-        K("mu, nu") = W("X, i, mu") * W("X, i, nu");
+        W("Y,i,nu") = W("Y,nu,i");
+        array_type K, Kij, Sc;
+        K("mu, j") = W("X, i, mu") * (W("X, i, nu") * C_("nu, j"));
+        Kij("i,j") = C_("mu, i") * K("mu, j");
+        Sc("mu, j") = S_("mu, lam") * C_("lam, j");
+        K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
+                      - (Sc("mu,i") * Kij("i,j")) * Sc("nu,j");
         world.gop.fence();
         auto k1 = tcc::utility::time::now();
         k_times_.push_back(tcc::utility::time::duration_in_s(j1, k1));
@@ -110,6 +162,8 @@ class ThreeCenterScf {
         F_ = H_;
         compute_density(occ_);
     }
+
+    array_type fock() const { return F_; }
 
     template <typename Integral>
     void solve(int64_t max_iters, double thresh, Integral const &eri3) {
@@ -166,7 +220,7 @@ int main(int argc, char *argv[]) {
     std::string df_basis_name = "";
     int nclusters = 0;
     std::cout << std::setprecision(15);
-    double threshold = 1e-10;
+    double threshold = 1e-11;
     if (argc == 5) {
         mol_file = argv[1];
         basis_name = argv[2];
@@ -226,65 +280,6 @@ int main(int argc, char *argv[]) {
     }
 
     auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
-    { // Fancy tile storage
-        std::cout << "Psuedo Direct CLR Storage" << std::endl;
-        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array);
-        auto sbuilder = ints::init_schwarz_screen(1e-10);
-        auto shr_screen = std::make_shared<ints::SchwarzScreen>(
-              sbuilder(world, eri_e, df_basis, basis));
-
-        std::atomic<long> full_a(0.0);
-        std::atomic<long> sparse_a(0.0);
-        std::atomic<long> clr_a(0.0);
-        std::atomic<long> clr_lr_only_a(0.0);
-        auto task_f = [&](int ord){
-            auto const &trange = eri3.trange();
-            auto size = trange.make_tile_range(ord).volume();
-            full_a += size;
-
-            if (!eri3.is_zero(ord)) {
-                sparse_a += size;
-
-                TA::TensorD tile = eri3.find(ord).get();
-                tcc::tensor::DecomposedTensor<double> dc_tile(1e-8,
-                                                              std::move(tile));
-                auto lr_tile
-                      = tcc::tensor::algebra::two_way_decomposition(dc_tile);
-
-                if (!lr_tile.empty()) {
-                    dc_tile = std::move(lr_tile);
-                }
-
-                if (dc_tile.ndecomp() == 1) {
-                    clr_a += dc_tile.tensors()[0].range().volume();
-                } else {
-                    auto l_size = dc_tile.tensors()[0].range().volume();
-                    auto r_size = dc_tile.tensors()[1].range().volume();
-
-                    clr_a += l_size + r_size;
-                    clr_lr_only_a += l_size + r_size;
-                }
-            }
-        };
-
-        auto &pmap = *eri3.get_pmap();
-        for (auto it : pmap) {
-            world.taskq.add(task_f, it);
-        }
-        world.gop.fence();
-
-        double full = full_a * 1e-9 * 8;
-        double sparse = sparse_a * 1e-9 * 8;
-        double clr = clr_a * 1e-9 * 8;
-        double clr_lr_only = clr_lr_only_a * 1e-9 * 8;
-
-        std::cout << "Eri3 Full Storage = " << full << " GB" << std::endl;
-        std::cout << "Eri3 Sparse Storage = " << sparse << " GB" << std::endl;
-        std::cout << "Eri3 CLR Storage = " << clr << " GB" << std::endl;
-        std::cout << "Eri3 Low Rank Only Storage = " << clr_lr_only << " GB"
-                  << std::endl;
-    }
-
     { // Schwarz Screened
         std::cout << "Direct Schwarz DF" << std::endl;
         auto sbuilder = ints::init_schwarz_screen(1e-8);
@@ -296,6 +291,79 @@ int main(int argc, char *argv[]) {
 
         ThreeCenterScf scf(H, S, L_inv, occ / 2, repulsion_energy);
         scf.solve(20, 1e-7, eri3);
+
+        auto Fao = scf.fock();
+
+            auto F_eig = tcc::array_ops::array_to_eigen(Fao);
+            auto S_eig = tcc::array_ops::array_to_eigen(S);
+
+            Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+                                                                       S_eig);
+            const auto vir = F_eig.rows() - occ / 2;
+            auto nocc = occ / 2;
+            decltype(S_eig) Ceigi = es.eigenvectors().leftCols(nocc);
+            decltype(S_eig) Ceigv = es.eigenvectors().rightCols(vir);
+            auto tr_ao = S.trange().data()[0];
+
+            // decltype(S_eig) D = Ceigi * Ceigi.transpose();
+            // unsigned int rank = tcc::tensor::algebra::piv_cholesky(D);
+            // Ceigi = D;
+
+            auto occ_nclusters = (nocc < 10) ? nocc : 10;
+            auto tr_occ = tcc::scf::tr_occupied(occ_nclusters, nocc);
+
+            auto vir_nclusters = (nocc < 10) ? vir : 10;
+            auto tr_vir = tcc::scf::tr_occupied(vir_nclusters, vir);
+
+            auto Ci
+                  = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigi,
+                                                                tr_ao, tr_occ);
+
+            decltype(Ci) D_org, D_diff;
+            D_org("mu,nu") = Ci("mu, i") * Ci("nu,i");
+
+            auto Cv
+                  = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigv,
+                                                                tr_ao, tr_vir);
+
+            
+            auto multi_pool
+                  = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+            auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+
+            Ci = scf::BoysLocalization{}(Ci, r_xyz);
+            D_org("mu,nu") = D_org("mu, nu") - Ci("mu, i") * Ci("nu,i");
+            auto norm_diff = D_org("i,j").norm().get();
+            std::cout << "Norm of density diff after localization = " << norm_diff << std::endl;
+            // Cv = scf::BoysLocalization{}(Cv, r_xyz);
+
+        {
+            std::cout << "\n\nSize for Eri3 if stored" << std::endl;
+            print_storage_for_array(eri3.array());
+            std::cout << std::endl;
+
+            DArray<3, TA::TensorD, TA::SparsePolicy> W;
+            W("Y, mu, i") = eri3("Y, mu, nu") * Ci("nu, i");
+            world.gop.fence();
+
+            std::cout << "Size for W(Y,mu, i) if stored" << std::endl;
+            print_storage_for_array(W);
+            std::cout << std::endl;
+
+            W("Y, i, a") = W("Y, mu, i") * Cv("mu, a");
+            world.gop.fence();
+
+            std::cout << "Size for W(Y, i, a) if stored" << std::endl;
+            print_storage_for_array(W);
+            std::cout << std::endl;
+
+            W("X, i, a") = L_inv("X,Y") * W("Y,i,a");
+            world.gop.fence();
+
+            std::cout << "Size for W(X, i, a) if stored" << std::endl;
+            print_storage_for_array(W);
+            std::cout << std::endl;
+        }
     }
 
     { // QVl Screened
@@ -312,7 +380,7 @@ int main(int argc, char *argv[]) {
         scf.solve(20, 1e-7, eri3);
     }
 
-    { // Unscreened ints
+    if(false){ // Unscreened ints
         std::cout << "\n\nDirect Unscreened DF" << std::endl;
         auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array);
         ThreeCenterScf scf(H, S, L_inv, occ / 2, repulsion_energy);

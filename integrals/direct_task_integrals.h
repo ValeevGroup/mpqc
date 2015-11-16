@@ -159,6 +159,43 @@ direct_sparse_integrals(mad::World &world, ShrPool<E> shr_pool,
     return dir_array;
 }
 
+/*! \brief Construct direct dense integral tensors in parallel with screening.
+ * 
+ * Same requirements on Op as those in Integral Builder
+ */
+template <typename E, unsigned long N, typename Op = TensorPassThrough>
+DArray<N, DirectTile<IntegralBuilder<N, E, Op>>, SpPolicy>
+direct_dense_integrals(mad::World &world, ShrPool<E> shr_pool,
+                        Barray<N> const &bases,
+                        std::shared_ptr<Screener> screen
+                        = std::make_shared<Screener>(Screener{}),
+                        Op op = Op{}) {
+
+    const auto trange = detail::create_trange(bases);
+
+    // Copy the Bases for the Integral Builder
+    auto shr_bases = std::make_shared<Barray<N>>(bases);
+
+    // Make a pointer to an Integral builder.  
+    auto builder_ptr = std::make_shared<IntegralBuilder<N, E, Op>>(
+          make_integral_builder(world, std::move(shr_pool),
+                                std::move(shr_bases), std::move(screen),
+                                std::move(op)));
+
+    using TileType = DirectTile<IntegralBuilder<N, E, Op>>;
+    DArray<N, TileType, TA::DensePolicy> out(world, trange);
+
+    auto pmap = out.get_pmap();
+    for (auto const &ord : *pmap) {
+        detail::IdxVec idx = trange.tiles().idx(ord);
+        auto range = trange.make_tile_range(ord);
+        out.set(ord, TileType(idx, std::move(range), builder_ptr));
+    }
+    world.gop.fence();
+
+    return out;
+}
+
 } // namespace integrals
 } // namespace mpqc
 

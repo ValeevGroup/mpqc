@@ -79,18 +79,14 @@ ShrShellVecArray<N> get_shells(IdxVec const &idx, ShrBases<N> const& bases){
 
 template<typename Tile, typename Array>
 void set_array(std::vector<std::pair<unsigned long, Tile>> &tiles, Array &a){
-    for(auto it : *a.get_pmap()){
-        if(a.is_local(it) && !a.is_zero(it)){
-             a.set(it, std::move(tiles[it].second));
+    auto const &pmap = a.get_pmap();
+    for(auto ord : *pmap){
+        if(a.is_local(ord) && !a.is_zero(ord)){
+            auto &tile = tiles[ord];
+            assert(!tile.second.empty());
+            a.set(ord, std::move(tile.second));
         }
     }
-    // for (auto &&tile : tiles) {
-    //     const auto ord = tile.first;
-    //     if (!a.is_zero(ord)) {
-    //         assert(!tile.second.empty());
-    //         a.set(ord, std::move(tile.second));
-    //     }
-    // }
 }
 
 } // namespace detail

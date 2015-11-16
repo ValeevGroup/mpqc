@@ -13,13 +13,121 @@
 #define MPQC_INTEGRALS_TASKINTEGRALS_H
 
 #include "task_integrals_common.h"
-// #include "task_integrals_op_invoker.h"
 #include "screening/screen_base.h"
 #include "integral_builder.h"
 
 namespace mpqc {
 namespace integrals {
 
+/*! \brief Construct sparse integral tensors from sets in parallel.
+ *
+ * This is needed for integrals such as the dipole integrals that come as a
+ * set.
+ *
+ * \param shr_pool should be a std::shared_ptr to an IntegralEnginePool
+ * \param bases should be a std::array of Basis, which will be copied.
+ * \param op needs to be a function or functor that takes a TA::TensorD && and
+ * returns any valid tile type. Op is copied so it can be moved.
+ * ```
+ * auto t = [](TA::TensorD &&ten){return std::move(ten);};
+ * ```
+ *
+ * \param screen should be a std::shared_ptr to a Screener.
+ */
+template <typename E, typename Op = TensorPassThrough>
+std::vector<DArray<2, detail::Ttype<Op>, SpPolicy>>
+sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
+                     Barray<2> const &bases, Op op = Op{}) {
+
+    using Tile = detail::Ttype<Op>;
+
+    // Build the Trange and Shape Tensor
+    auto trange = detail::create_trange(bases);
+    const auto tvolume = trange.tiles().volume();
+
+    using TileVec = std::vector<std::pair<unsigned long, Tile>>;
+    std::vector<TileVec> tiles(3, TileVec(tvolume));
+
+    using NormVec = std::vector<TA::TensorF>;
+    NormVec tile_norms(3, TA::TensorF(trange.tiles(), 0.0));
+
+    // Capture by ref since we are going to fence after loops.
+    auto task_f = [&](int64_t ord, detail::IdxVec idx, TA::Range rng) {
+        auto &eng = shr_pool->local();
+
+        const auto idx0 = idx[0];
+        const auto idx1 = idx[1];
+
+        const auto t_volume = rng.volume();
+
+        auto const &lobound = rng.lobound();
+        std::array<std::size_t, 2> lb = {{lobound[0], lobound[1]}};
+        std::array<std::size_t, 2> ub = {{lobound[0], lobound[1]}};
+
+        std::vector<TA::TensorD> t_xyz
+              = {TA::TensorD(rng, 0.0), TA::TensorD(rng, 0.0),
+                 TA::TensorD(std::move(rng), 0.0)};
+
+        const double dummy = 0.0;
+        auto map = TA::make_map(&dummy, {0, 0}, {1, 1});
+
+        auto const &shells0 = bases[0].cluster_shells()[idx0];
+        auto const &shells1 = bases[1].cluster_shells()[idx1];
+
+        for (auto const &s0 : shells0) {
+            const auto n0 = s0.size();
+            ub[0] += n0;
+
+            lb[1] = ub[1] = lobound[1];
+            for (auto const &s1 : shells1) {
+                const auto n1 = s1.size();
+                ub[1] += n1;
+
+                const auto n1n2 = n0 * n1;
+                const auto *buf = eng.compute(s0, s1);
+
+                for (auto i = 0; i < 3; ++i) {
+                    TA::remap(map, buf + i * n1n2, lb, ub);
+                    t_xyz[i].block(lb, ub) = map;
+                }
+
+                lb[1] = ub[1];
+            }
+            lb[0] = ub[0];
+        }
+
+        std::array<double, 3> norm
+              = {{t_xyz[0].norm(), t_xyz[1].norm(), t_xyz[2].norm()}};
+
+        for (auto i = 0; i < 3; ++i) {
+            tile_norms[i][ord] = norm[i];
+            if (TA::SparseShape<float>::threshold() < t_volume * norm[i]) {
+                tiles[i][ord].second = op(std::move(t_xyz[i]));
+            }
+        }
+    };
+
+    auto pmap = SpPolicy::default_pmap(world, tvolume);
+    for (auto const ord : *pmap) {
+        tiles[0][ord].first = ord;
+        tiles[1][ord].first = ord;
+        tiles[2][ord].first = ord;
+        detail::IdxVec idx = trange.tiles().idx(ord);
+        world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord));
+    }
+    world.gop.fence();
+
+    std::vector<DArray<2, Tile, SpPolicy>> arrays(3);
+
+    for (auto i = 0; i < 3; ++i) {
+        TA::SparseShape<float> shape(world, tile_norms[i], trange);
+        arrays[i] = DArray<2, Tile, SpPolicy>(world, trange, shape, pmap);
+        detail::set_array(tiles[i], arrays[i]);
+    }
+    world.gop.fence();
+
+    return arrays;
+}
 
 /*! \brief Construct sparse integral tensors in parallel.
  *

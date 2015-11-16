@@ -96,8 +96,8 @@ class FourCenterSCF {
 
     template <typename Integral>
     void form_fock(Integral const &eri4) {
-        F_("i,j")
-              = H_("i,j") + 2 * compute_j(eri4)("i,j") - compute_k(eri4)("i,j");
+        F_("i,j") = H_("i,j") + 2 * compute_j(eri4)("i,j")
+                    - compute_k(eri4)("i,j");
     }
 
 
@@ -257,10 +257,56 @@ int main(int argc, char *argv[]) {
         scf.solve(20, 1e-7, eri4);
         world.gop.fence();
 
-        Fao = scf.fock();
+        auto D = scf.density();
+
+        auto multi_pool
+              = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+        auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+
+        struct TileSum {
+            using result_type = double;
+            using argument_type = TA::Tensor<double>;
+
+            TileSum(TileSum const &) = default;
+
+            result_type operator()() const { return 0.0; }
+
+            result_type operator()(result_type const &t) const { return t; }
+
+            void operator()(result_type &me, result_type const &other) const {
+                me += other;
+            }
+
+            void operator()(result_type &me, argument_type const &tile) const {
+                me += tile.sum();
+            }
+        };
+
+        Vec3D e_xyz = {0, 0, 0};
+        for (auto i = 0; i < 3; ++i) {
+            e_xyz[i] = -2 * (D("i,j") * r_xyz[i]("i,j")).reduce(TileSum{});
+        }
+
+        if (world.rank() == 0) {
+            std::cout << "Electronic Dipole = " << e_xyz.transpose()
+                      << std::endl;
+        }
+
+        Vec3D n_xyz = {0, 0, 0};
+        for (auto const &atom : clustered_mol.atoms()) {
+            n_xyz += atom.charge() * atom.center();
+        }
+
+        Vec3D dp_vec = e_xyz + n_xyz;
+        auto dp_mon = dp_vec.norm();
+
+        if (world.rank() == 0) {
+            std::cout << "Dipole = " << dp_vec.transpose()
+                      << "\nNorm = " << dp_mon << std::endl;
+        }
     }
 
-    if (false) { // Unscreened SCF
+    { // Unscreened SCF
         std::cout << "\n\nComputing HF with No Screening" << std::endl;
         world.gop.fence();
         auto eri40 = tcc_time::now();

@@ -13,12 +13,12 @@
 #include "../ta_routines/tarray_block.h"
 
 #include "ccsd_intermediates.h"
-#include "./diis_ccsd.h"
+#include "diis_ccsd.h"
 #include "integral_generator.h"
 #include "lazy_integral.h"
+#include "utility.h"
 
-
-namespace tcc {
+namespace mpqc {
     namespace cc {
 
 
@@ -30,8 +30,8 @@ namespace tcc {
             typedef TA::Array <double, 3, Tile, Policy> TArray3;
             typedef TA::Array <double, 4, Tile, Policy> TArray4;
 
-            typedef tcc::TArrayBlock<double, 2, Tile, Policy, tcc::MOBlock> TArrayBlock2;
-            typedef tcc::TArrayBlock<double, 4, Tile, Policy, tcc::MOBlock> TArrayBlock4;
+            typedef mpqc::TArrayBlock<double, 2, Tile, Policy, mpqc::MOBlock> TArrayBlock2;
+            typedef mpqc::TArrayBlock<double, 4, Tile, Policy, mpqc::MOBlock> TArrayBlock4;
 
             typedef TA::Array <double, 4, LazyTwoElectronTile, Policy> DirectTwoElectronArray;
 
@@ -40,7 +40,7 @@ namespace tcc {
                  const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &g) :
                     ens_(ens), tre_(tre), intermediate_(g) {
-                auto mo_block = std::make_shared<tcc::MOBlock>(*tre_);
+                auto mo_block = std::make_shared<mpqc::MOBlock>(*tre_);
                 fock_ = TArrayBlock2(fock, mo_block);
             }
 
@@ -62,7 +62,7 @@ namespace tcc {
                 TArray4 d2(g_abij.get_world(), g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
-                d_abij(d2, ens_, n_occ);
+                d_abij_inplace(d2, ens_, n_occ);
 
                 TArray2 t1;
                 TArray4 t2;
@@ -211,105 +211,15 @@ namespace tcc {
                 std::cout << E1 << std::endl;
             }
 
-
-            void d_abij(TArray4 &abij,
-                        const Eigen::VectorXd &ens, std::size_t n_occ) {
-                typedef typename TArray4::range_type range_type;
-                typedef typename TArray2::iterator iterator;
-
-                auto make_tile = [&ens, n_occ](range_type &range) {
-
-                    auto result_tile = Tile(range);
-
-                    // compute index
-                    const auto a0 = result_tile.range().lobound()[0];
-                    const auto an = result_tile.range().upbound()[0];
-                    const auto b0 = result_tile.range().lobound()[1];
-                    const auto bn = result_tile.range().upbound()[1];
-                    const auto i0 = result_tile.range().lobound()[2];
-                    const auto in = result_tile.range().upbound()[2];
-                    const auto j0 = result_tile.range().lobound()[3];
-                    const auto jn = result_tile.range().upbound()[3];
-
-                    auto tile_idx = 0;
-                    typename Tile::value_type tmp = 1.0;
-                    for (auto a = a0; a < an; ++a) {
-                        const auto e_a = ens[a + n_occ];
-                        for (auto b = b0; b < bn; ++b) {
-                            const auto e_b = ens[b + n_occ];
-                            for (auto i = i0; i < in; ++i) {
-                                const auto e_i = ens[i];
-                                for (auto j = j0; j < jn; ++j, ++tile_idx) {
-                                    const auto e_j = ens[j];
-                                    const auto e_iajb = e_i + e_j - e_a - e_b;
-                                    const auto result_abij = tmp / (e_iajb);
-                                    result_tile[tile_idx] = result_abij;
-                                }
-                            }
-                        }
-                    }
-                    return result_tile;
-                };
-
-                for (iterator it = abij.begin(); it != abij.end(); ++it) {
-
-                    madness::Future<Tile> tile = abij.get_world().taskq.add(
-                            make_tile,
-                            abij.trange().make_tile_range(it.ordinal()));
-
-                    *it = tile;
-                }
-
-            }
-
-            void d_ai(TArray2 &f_ai, const Eigen::VectorXd &ens, int n_occ) {
-                typedef typename TArray2::range_type range_type;
-                typedef typename TArray2::iterator iterator;
-
-                auto make_tile = [&ens, n_occ](range_type &range) {
-
-                    auto result_tile = Tile(range);
-                    const auto a0 = result_tile.range().lobound()[0];
-                    const auto an = result_tile.range().upbound()[0];
-                    const auto i0 = result_tile.range().lobound()[1];
-                    const auto in = result_tile.range().upbound()[1];
-
-                    auto ai = 0;
-                    typename Tile::value_type tmp = 1.0;
-                    for (auto a = a0; a < an; ++a) {
-                        const auto e_a = ens[a + n_occ];
-                        for (auto i = i0; i < in; ++i, ++ai) {
-                            const auto e_i = ens[i];
-                            const auto e_ia = e_i - e_a;
-                            const auto result_ai = tmp / (e_ia);
-                            result_tile[ai] = result_ai;
-                        }
-                    }
-                    return result_tile;
-                };
-
-                typename TArray2::pmap_interface::const_iterator it = f_ai.get_pmap()->begin();
-                typename TArray2::pmap_interface::const_iterator end = f_ai.get_pmap()->end();
-                for (; it != end; ++it) {
-
-                    madness::Future<Tile> tile = f_ai.get_world().taskq.add(
-                            make_tile,
-                            f_ai.trange().make_tile_range(*it));
-
-                    f_ai.set(*it, tile);
-                }
-
-            }
-
         private:
             Eigen::VectorXd ens_;
-            std::shared_ptr<tcc::TRange1Engine> tre_;
-            std::shared_ptr<tcc::cc::CCSDIntermediate<Tile, Policy>> intermediate_;
+            std::shared_ptr<mpqc::TRange1Engine> tre_;
+            std::shared_ptr<mpqc::cc::CCSDIntermediate<Tile, Policy>> intermediate_;
             TArrayBlock2 fock_;
         };
 
     } //namespace cc
-} //namespace tcc
+} //namespace mpqc
 
 
 

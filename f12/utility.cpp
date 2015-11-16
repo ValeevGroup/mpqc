@@ -224,8 +224,8 @@ namespace f12{
 
         std::vector<std::pair<double,double>> result(n);
         for(auto i=0; i<n; ++i) {
-            result[i].first = cc[i];
-            result[i].second = aa[i];
+            result[i].second = cc[i];
+            result[i].first = aa[i];
         }
         return result;
 

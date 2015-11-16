@@ -23,6 +23,10 @@ add_executable(basis_example EXCLUDE_FROM_ALL basis_example.cpp)
 target_link_libraries(basis_example molecule;basis)
 add_dependencies(examples basis_example)
 
+add_executable(blocking EXCLUDE_FROM_ALL blocking.cpp)
+target_link_libraries(blocking ${TileClusterChem_LIBRARIES})
+
+
 add_executable(mp2 EXCLUDE_FROM_ALL mp2.cpp)
 target_link_libraries(mp2 ${TileClusterChem_LIBRARIES})
 
@@ -38,12 +42,6 @@ target_link_libraries(hf_l_inv
 )
 add_dependencies(paper hf_l_inv)
 
-add_executable(hf_l_inv_trick EXCLUDE_FROM_ALL hf_l_inv_head_gordon_trick.cpp)
-target_link_libraries(hf_l_inv_trick
-  ${TileClusterChem_LIBRARIES}
-)
-add_dependencies(fastK hf_l_inv_trick)
-
 add_executable(sqrt_inverse_example EXCLUDE_FROM_ALL sqrt_inverse_example.cpp) 
 target_link_libraries(sqrt_inverse_example
   ${TileClusterChem_LIBRARIES}
@@ -58,11 +56,6 @@ add_dependencies(examples matrix_plot)
 
 add_executable(just_world EXCLUDE_FROM_ALL empty_main.cpp) 
 target_link_libraries(just_world
-  ${TileClusterChem_LIBRARIES}
-)
-
-add_executable(old_ints EXCLUDE_FROM_ALL old_integrals.cpp) 
-target_link_libraries(old_ints
   ${TileClusterChem_LIBRARIES}
 )
 

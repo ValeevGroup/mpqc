@@ -49,6 +49,7 @@ class Screener {
     virtual bool skip(int64_t, int64_t, int64_t, int64_t) const {
         return false;
     }
+
 };
 
 } // namespace integrals

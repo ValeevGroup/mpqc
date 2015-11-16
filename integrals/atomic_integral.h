@@ -7,22 +7,28 @@
 
 #include <string>
 #include <vector>
-
+#include <iostream>
+#include <cwchar>
 
 #include"../common/namespaces.h"
+#include "../ta_routines/sqrt_inv.h"
 #include "../include/tiledarray.h"
 #include "../basis/basis.h"
 #include "../expression/formula.h"
-#include "../utility/make_array.h"
 #include "integral_engine_pool.h"
 #include "task_integrals.h"
 #include "../molecule/molecule.h"
 #include "make_engine.h"
+#include "../utility/make_array.h"
+#include "../utility/wcout_utf8.h"
 
 namespace mpqc{
 namespace integrals{
 
 
+    //TODO support new TiledArray interface
+    //TODO return expression instead of array?
+    //TODO registry to avoid recompute integral
     template<typename Tile, typename Policy>
     class AtomicIntegralBase {
     public:
@@ -135,12 +141,14 @@ namespace integrals{
         TArray4 compute4(const std::wstring& );
 
     private:
+        //TODO Screener for different type of integral
         // compute integral for sparse policy
         template <typename E, unsigned long N, typename U = Policy>
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::SparsePolicy>::value, TA::SparsePolicy>::type> compute_integrals(
                 madness::World& world, E const &engine, Barray<N> const &bases)
         {
-            auto result = mpqc::integrals::sparse_integrals(world,engine,bases,op_);
+            auto sreener = std::make_shared<Screener>(Screener{});
+            auto result = mpqc::integrals::sparse_integrals(world,engine,bases,sreener,op_);
             return result;
         }
 
@@ -149,7 +157,8 @@ namespace integrals{
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::DensePolicy>::value, TA::DensePolicy>::type> compute_integrals(
                 madness::World& world, E const &engine, Barray<N> const &bases)
         {
-            auto result = mpqc::integrals::dense_integrals(world,engine,bases,op_);
+            auto sreener = std::make_shared<Screener>(Screener{});
+            auto result = mpqc::integrals::dense_integrals(world,engine,bases,sreener,op_);
             return result;
         }
 
@@ -159,7 +168,6 @@ namespace integrals{
     };
 
 
-    // TODO working with chemical and physical notation
     template <typename Tile, typename Policy>
     typename AtomicIntegral<Tile,Policy>::TArray2 AtomicIntegral<Tile,Policy>::compute2(const std::wstring& formula_string) {
 
@@ -214,8 +222,10 @@ namespace integrals{
             }
 
             auto engine_pool = make_pool(engine);
-
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
+            std::cout << "Computed One Body Integral: ";
+            wcout_utf8(formula_string);
+            std::cout << std::endl;
             return result;
         }
         // use two body engine
@@ -225,29 +235,32 @@ namespace integrals{
             auto bra_indexs = formula.left_index();
             auto ket_indexs = formula.right_index();
 
-            TA_ASSERT(bra_indexs.size() == 0);
-            TA_ASSERT(ket_indexs.size() == 2);
+            TA_ASSERT(bra_indexs.size() == 1);
+            TA_ASSERT(ket_indexs.size() == 1);
 
+            auto bra_index0 = bra_indexs[0];
             auto ket_index0 = ket_indexs[0];
-            auto ket_index1 = ket_indexs[1];
 
             TA_ASSERT(ket_index0.is_ao());
-            TA_ASSERT(ket_index1.is_ao());
+            TA_ASSERT(bra_index0.is_ao());
 
+            auto bra_basis0 = this->index_to_basis(bra_index0);
             auto ket_basis0 = this->index_to_basis(ket_index0);
-            auto ket_basis1 = this->index_to_basis(ket_index1);
 
+            TA_ASSERT(bra_basis0 != nullptr);
             TA_ASSERT(ket_basis0 != nullptr);
-            TA_ASSERT(ket_basis1 != nullptr);
 
-            auto max_nprim = std::max(ket_basis0->max_nprim(), ket_basis1->max_nprim());
-            auto max_am = std::max(ket_basis0->max_am(), ket_basis1->max_am());
-            auto bs_array = tcc::utility::make_array(*ket_basis0, *ket_basis1);
+            auto max_nprim = std::max(bra_basis0->max_nprim(), ket_basis0->max_nprim());
+            auto max_am = std::max(bra_basis0->max_am(), ket_basis0->max_am());
+            auto bs_array = tcc::utility::make_array(*bra_basis0, *ket_basis0);
             auto operation = formula.operation();
             if (operation.get_operation() == Operation::Operations::Coulomb) {
                 libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
+                std::cout << "Computed Twobody Two Center Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
                 return result;
             }
             else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
@@ -259,6 +272,9 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
+                std::cout << "Computed  Twobody Two Center Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
                 return result;
             }
             else if(operation.get_operation() == Operation::Operations::cGTG){
@@ -270,6 +286,9 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
+                std::cout << "Computed  Twobody Two Center Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
                 return result;
             }
             else if(operation.get_operation() == Operation::Operations::cGTG2){
@@ -281,6 +300,9 @@ namespace integrals{
                 libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
+                std::cout << "Computed  Twobody Two Center Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
                 return result;
             }
             else {
@@ -329,6 +351,9 @@ namespace integrals{
             libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
+            std::cout << "Computed Two Body Three Center Integral: ";
+            wcout_utf8(formula_string);
+            std::cout << std::endl;
             return result;
         }
         else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
@@ -340,6 +365,9 @@ namespace integrals{
             libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
+            std::cout << "Computed Two Body Three Center Integral: ";
+            wcout_utf8(formula_string);
+            std::cout << std::endl;
             return result;
         }
         else if(operation.get_operation() == Operation::Operations::cGTG){
@@ -351,6 +379,9 @@ namespace integrals{
             libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
+            std::cout << "Computed Two Body Three Center Integral: ";
+            wcout_utf8(formula_string);
+            std::cout << std::endl;
             return result;
         }
         else if(operation.get_operation() == Operation::Operations::cGTG2){
@@ -362,6 +393,9 @@ namespace integrals{
             libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
+            std::cout << "Computed Two Body Three Center Integral: ";
+            wcout_utf8(formula_string);
+            std::cout << std::endl;
             return result;
         }
         else {
@@ -373,90 +407,269 @@ namespace integrals{
     typename AtomicIntegral<Tile,Policy>::TArray4 AtomicIntegral<Tile,Policy>::compute4(const std::wstring& formula_string) {
         Formula formula(formula_string);
 
-        auto bra_indexs = formula.left_index();
-        auto ket_indexs = formula.right_index();
-
-        TA_ASSERT(bra_indexs.size() == 2);
-        TA_ASSERT(ket_indexs.size() == 2);
+        if(formula.operation().has_option(Operation::Options::DensityFitting)){
+            TA_ASSERT(this->dfbs_!= nullptr);
 
 
-        TA_ASSERT(bra_indexs[0].is_ao());
-        TA_ASSERT(ket_indexs[0].is_ao());
-        TA_ASSERT(bra_indexs[1].is_ao());
-        TA_ASSERT(ket_indexs[1].is_ao());
+            // convert operation to libint operator
+            auto operation = formula.operation();
+            if (operation.get_operation() == Operation::Operations::Coulomb) {
 
-        auto bra_basis0 = this->index_to_basis(bra_indexs[0]);
-        auto ket_basis0 = this->index_to_basis(ket_indexs[0]);
-        auto bra_basis1 = this->index_to_basis(bra_indexs[1]);
-        auto ket_basis1 = this->index_to_basis(ket_indexs[1]);
+                std::wstring two_center_formula_string = L"( Κ|G| Λ )";
+                typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
+                auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
 
-        TA_ASSERT(bra_basis0 != nullptr);
-        TA_ASSERT(ket_basis0 != nullptr);
-        TA_ASSERT(bra_basis1 != nullptr);
-        TA_ASSERT(ket_basis1 != nullptr);
+                std::wstring three_center_formula_string;
+                if (formula.notation() == Formula::Notation::Chemical){
+                    auto ket0 = formula.right_index()[0].name();
+                    auto ket1 = formula.right_index()[1].name();
+                    three_center_formula_string = L"( Κ|G| " + ket0 + L" " + ket1 + L")";
+                }
+                else if(formula.notation() == Formula::Notation::Physical){
+                    auto ket0 = formula.left_index()[0].name();
+                    auto ket1 = formula.right_index()[0].name();
+                    three_center_formula_string = L"( Κ|G| " + ket0 + L" " + ket1 + L")";
+                }
 
-        auto max_nprim = std::max({bra_basis0->max_nprim(), bra_basis1->max_nprim()
-                                          ,ket_basis0->max_nprim(), ket_basis1->max_nprim()});
-        auto max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
-                                ket_basis0->max_am(),ket_basis1->max_am()});
+                auto three_center = compute3(three_center_formula_string);
 
-        std::array<basis::Basis,4> bs_array;
-        if (formula.notation() == Formula::Notation::Chemical){
-            bs_array = {*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1};
+                three_center("X,i,j") = two_center_inverse_sqrt("K,X")*three_center("K,i,j");
+
+                typename AtomicIntegral<Tile,Policy>::TArray4 result;
+
+                if (formula.notation() == Formula::Notation::Chemical){
+                    result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
+                }
+                else if(formula.notation() == Formula::Notation::Physical){
+                    result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
+                }
+                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
+                return result;
+            }
+            else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
+
+                if(this->gtg_params_.empty()){
+                    throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+                }
+
+                std::wstring two_center_formula_string = L"( Κ|GR| Λ )";
+                typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
+                std::cout << two_center;
+                auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
+
+                std::wstring three_center_formula_string;
+                if (formula.notation() == Formula::Notation::Chemical){
+                    auto ket0 = formula.right_index()[0].name();
+                    auto ket1 = formula.right_index()[1].name();
+                    three_center_formula_string = L"( Κ|GR| " + ket0 + L" " + ket1 + L")";
+                }
+                else if(formula.notation() == Formula::Notation::Physical){
+                    auto ket0 = formula.left_index()[0].name();
+                    auto ket1 = formula.right_index()[0].name();
+                    three_center_formula_string = L"( Κ|GR| " + ket0 + L" " + ket1 + L")";
+                }
+
+                auto three_center = compute3(three_center_formula_string);
+
+                three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
+
+                typename AtomicIntegral<Tile,Policy>::TArray4 result;
+
+                if (formula.notation() == Formula::Notation::Chemical){
+                    result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
+                }
+                else if(formula.notation() == Formula::Notation::Physical){
+                    result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
+                }
+                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
+                return result;
+
+            }
+            else if(operation.get_operation() == Operation::Operations::cGTG){
+
+                if(this->gtg_params_.empty()){
+                    throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+                }
+                std::wstring two_center_formula_string = L"( Κ|R| Λ )";
+                typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
+                std::cout << two_center;
+                auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
+
+                std::wstring three_center_formula_string;
+                if (formula.notation() == Formula::Notation::Chemical){
+                    auto ket0 = formula.right_index()[0].name();
+                    auto ket1 = formula.right_index()[1].name();
+                    three_center_formula_string = L"( Κ|R| " + ket0 + L" " + ket1 + L")";
+                }
+                else if(formula.notation() == Formula::Notation::Physical){
+                    auto ket0 = formula.left_index()[0].name();
+                    auto ket1 = formula.right_index()[0].name();
+                    three_center_formula_string = L"( Κ|R| " + ket0 + L" " + ket1 + L")";
+                }
+
+                auto three_center = compute3(three_center_formula_string);
+
+                three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
+
+                typename AtomicIntegral<Tile,Policy>::TArray4 result;
+
+                if (formula.notation() == Formula::Notation::Chemical){
+                    result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
+                }
+                else if(formula.notation() == Formula::Notation::Physical){
+                    result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
+                }
+                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
+                return result;
+
+            }
+            else if(operation.get_operation() == Operation::Operations::cGTG2){
+
+                if(this->gtg_params_.empty()){
+                    throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+                }
+
+                std::wstring two_center_formula_string = L"( Κ|R2| Λ )";
+                typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
+                std::cout << two_center;
+                auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
+
+                std::wstring three_center_formula_string;
+                if (formula.notation() == Formula::Notation::Chemical){
+                    auto ket0 = formula.right_index()[0].name();
+                    auto ket1 = formula.right_index()[1].name();
+                    three_center_formula_string = L"( Κ|R2| " + ket0 + L" " + ket1 + L")";
+                }
+                else if(formula.notation() == Formula::Notation::Physical){
+                    auto ket0 = formula.left_index()[0].name();
+                    auto ket1 = formula.right_index()[0].name();
+                    three_center_formula_string = L"( Κ|R2| " + ket0 + L" " + ket1 + L")";
+                }
+
+                auto three_center = compute3(three_center_formula_string);
+
+                three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
+
+                typename AtomicIntegral<Tile,Policy>::TArray4 result;
+
+                if (formula.notation() == Formula::Notation::Chemical){
+                    result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
+                }
+                else if(formula.notation() == Formula::Notation::Physical){
+                    result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
+                }
+                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
+                return result;
+            }
+            else {
+                throw std::runtime_error("Invalid Two Body Operation");
+            }
         }
-        else if(formula.notation() == Formula::Notation::Physical){
-            bs_array = {*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1};
-        }
+        else{
 
-        // convert operation to libint operator
-        auto operation = formula.operation();
-        if (operation.get_operation() == Operation::Operations::Coulomb) {
-            libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
-            auto engine_pool = make_pool(engine);
-            auto result = compute_integrals(this->world_,engine_pool,bs_array);
-            return result;
-        }
-        else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
+            auto bra_indexs = formula.left_index();
+            auto ket_indexs = formula.right_index();
 
-            if(this->gtg_params_.empty()){
-                throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+            TA_ASSERT(bra_indexs.size() == 2);
+            TA_ASSERT(ket_indexs.size() == 2);
+
+
+            TA_ASSERT(bra_indexs[0].is_ao());
+            TA_ASSERT(ket_indexs[0].is_ao());
+            TA_ASSERT(bra_indexs[1].is_ao());
+            TA_ASSERT(ket_indexs[1].is_ao());
+
+            auto bra_basis0 = this->index_to_basis(bra_indexs[0]);
+            auto ket_basis0 = this->index_to_basis(ket_indexs[0]);
+            auto bra_basis1 = this->index_to_basis(bra_indexs[1]);
+            auto ket_basis1 = this->index_to_basis(ket_indexs[1]);
+
+            TA_ASSERT(bra_basis0 != nullptr);
+            TA_ASSERT(ket_basis0 != nullptr);
+            TA_ASSERT(bra_basis1 != nullptr);
+            TA_ASSERT(ket_basis1 != nullptr);
+
+            auto max_nprim = std::max({bra_basis0->max_nprim(), bra_basis1->max_nprim()
+                                              ,ket_basis0->max_nprim(), ket_basis1->max_nprim()});
+            auto max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
+                                    ket_basis0->max_am(),ket_basis1->max_am()});
+
+            std::array<basis::Basis,4> bs_array;
+            if (formula.notation() == Formula::Notation::Chemical){
+                bs_array = {*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1};
+            }
+            else if(formula.notation() == Formula::Notation::Physical){
+                bs_array = {*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1};
             }
 
-            libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-            auto engine_pool = make_pool(engine);
-            auto result = compute_integrals(this->world_,engine_pool,bs_array);
-            return result;
-        }
-        else if(operation.get_operation() == Operation::Operations::cGTG){
-
-            if(this->gtg_params_.empty()){
-                throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+            // convert operation to libint operator
+            auto operation = formula.operation();
+            if (operation.get_operation() == Operation::Operations::Coulomb) {
+                libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim, static_cast<int>(max_am));
+                auto engine_pool = make_pool(engine);
+                auto result = compute_integrals(this->world_,engine_pool,bs_array);
+                std::cout << "Computed Two Body Four Center Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
+                return result;
             }
+            else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
 
-            libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-            auto engine_pool = make_pool(engine);
-            auto result = compute_integrals(this->world_,engine_pool,bs_array);
-            return result;
-        }
-        else if(operation.get_operation() == Operation::Operations::cGTG2){
+                if(this->gtg_params_.empty()){
+                    throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+                }
 
-            if(this->gtg_params_.empty()){
-                throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+                libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
+                auto engine_pool = make_pool(engine);
+                auto result = compute_integrals(this->world_,engine_pool,bs_array);
+                std::cout << "Computed Two Body Four Center Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
+                return result;
             }
+            else if(operation.get_operation() == Operation::Operations::cGTG){
 
-            libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-            auto engine_pool = make_pool(engine);
-            auto result = compute_integrals(this->world_,engine_pool,bs_array);
-            return result;
+                if(this->gtg_params_.empty()){
+                    throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+                }
+
+                libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
+                auto engine_pool = make_pool(engine);
+                auto result = compute_integrals(this->world_,engine_pool,bs_array);
+                std::cout << "Computed Two Body Four Center Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
+                return result;
+            }
+            else if(operation.get_operation() == Operation::Operations::cGTG2){
+
+                if(this->gtg_params_.empty()){
+                    throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+                }
+
+                libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
+                auto engine_pool = make_pool(engine);
+                auto result = compute_integrals(this->world_,engine_pool,bs_array);
+                std::cout << "Computed Two Body Four Center Integral: ";
+                wcout_utf8(formula_string);
+                std::cout << std::endl;
+                return result;
+            }
+            else {
+                throw std::runtime_error("Invalid Two Body Operation");
+            }
         }
-        else {
-            throw std::runtime_error("Invalid Two Body Operation");
-        }
+
     }
     //TODO R12 Integral
-
-    // R12 Atomic Integral
-
     }
 }
 

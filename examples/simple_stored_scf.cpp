@@ -227,9 +227,9 @@ int main(int argc, char *argv[]) {
         std::cout << "\n\nNow with screened integrals\n";
         // Build Screener
         auto screen_builder = ints::init_schwarz_screen(1e-10);
-        auto screen_type = ints::init_schwarz_screen::ScreenType::FourCenter;
+
         auto shr_screen = std::make_shared<ints::Screener>(
-              screen_builder(world, eri_e, screen_type, basis));
+              screen_builder(world, eri_e, basis));
 
         auto eri4 = ints::sparse_integrals(world, eri_e, bs4_array, shr_screen);
         world.gop.fence();

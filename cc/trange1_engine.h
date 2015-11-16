@@ -10,7 +10,7 @@
 
 #include <algorithm>
 
-namespace tcc {
+namespace mpqc {
     class TRange1Engine {
 
     public:

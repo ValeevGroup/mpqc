@@ -106,7 +106,7 @@ shell_set(cGTG2_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
 template <typename Engine>
 TA::TensorD
 integral_kernel(Engine &eng, TA::Range &&rng,
-                std::array<ShellVec const *, 2> shell_ptrs, Screener &screen) {
+                std::array<ShellVec const *, 2> shell_ptrs, Screener &) {
 
     auto const &lobound = rng.lobound();
     std::array<std::size_t, 2> lb = {{lobound[0], lobound[1]}};

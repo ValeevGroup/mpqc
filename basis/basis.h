@@ -51,9 +51,9 @@ std::ostream & operator<<(std::ostream &, Basis const &);
  * \param op should be a function that takes a std::vector<Shell> and returns 
  * a std::vector<std::vector<Shell>> for use in initializing a Basis.
  */
-template<typename Op>
-Basis reblock(Basis const &basis, Op op){
-    return Basis(op(basis.flattened_shells()));
+template<typename Op, typename... Args>
+Basis reblock(Basis const &basis, Op op, Args... args){
+    return Basis(op(basis.flattened_shells(),args...));
 }
 
 } // namespace basis

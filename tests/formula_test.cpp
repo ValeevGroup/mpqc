@@ -20,8 +20,8 @@ TEST_CASE("Formula Expression", "[formula]"){
         REQUIRE(overlap.operation().is_onebody() == true);
         REQUIRE(overlap.notation() == Formula::Notation::Physical);
 
-        Formula kinetic(L"(p q|T|r s)");
-        REQUIRE(kinetic.operation().get_operation() == Operation::Operations::Kinetic);
+        Formula kinetic(L"(p q|G|r s)");
+        REQUIRE(kinetic.operation().get_operation() == Operation::Operations::Coulomb);
         REQUIRE(kinetic.notation() == Formula::Notation::Chemical);
 
         Formula r2(L"<p q| R2 |r s>");
@@ -29,19 +29,24 @@ TEST_CASE("Formula Expression", "[formula]"){
     }
 
     SECTION("two body test case"){
-        Formula couloumb(L"<p q1|R|a' A1'>");
+        Formula couloumb(L"<p q1|R|a' A'1>");
         REQUIRE(couloumb.left_index()[0].index() == OrbitalIndex::Index::any);
         REQUIRE(couloumb.left_index()[1].index() == OrbitalIndex::Index::any);
         REQUIRE(couloumb.right_index()[0].index() == OrbitalIndex::Index::othervirt);
         REQUIRE(couloumb.right_index()[1].index() == OrbitalIndex::Index::allvirt);
         REQUIRE(couloumb.operation().is_twobody() == true);
 
-        Formula two_center(L"(  |R|a' A1')");
-        REQUIRE(two_center.left_index().size() == 0);
+        Formula two_center(L"( a' |R|A'1)");
+        REQUIRE(two_center.left_index().size() == 1);
 
         Formula three_center(L"( Κ|R|κ λ1)");
         REQUIRE(three_center.left_index().size() == 1);
         REQUIRE(three_center.right_index().size() == 2);
+    }
+
+    SECTION("option test case"){
+        Formula couloumb(L"<p q1|R|a' A'1> [df]");
+        REQUIRE(couloumb.operation().has_option(Operation::Options::DensityFitting) == true);
     }
 
     SECTION("error handling"){

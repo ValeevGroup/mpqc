@@ -27,6 +27,16 @@ Basis &Basis::operator=(Basis &&) = default;
 
 Basis::Basis(std::vector<ShellVec> shells) : shells_(std::move(shells)) {}
 
+int64_t Basis::nfunctions() const {
+    int64_t nfuncs = 0;
+    for(auto const &shellvec : shells_){
+        for(auto const &sh : shellvec){
+            nfuncs += sh.size();
+        }
+    }
+     return nfuncs;
+}
+
 TiledArray::TiledRange1 Basis::create_trange1() const {
     auto blocking = std::vector<int64_t>{0};
     for (auto const &shell_vec : shells_) {
@@ -61,18 +71,6 @@ int64_t Basis::nshells() const {
         return x + int64_t(a.size());
     });
 }
-
-int64_t Basis::nfunctions() const {
-    int64_t nfunctions = 0.0;
-    for(auto const &shell_vec : shells_){
-        for(auto const &shell : shell_vec){
-            nfunctions += shell.size();
-        }
-    }
-
-    return nfunctions;
-}
-
 
 std::vector<Shell> Basis::flattened_shells() const {
     std::vector<Shell> shells;

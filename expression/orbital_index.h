@@ -27,9 +27,9 @@ namespace mpqc{
     *     - Κ Λ Μ Ν -> dfbs(density fitting basis)
     *     - α β γ δ -> abs(auxilary basis)
     *
-    *     one digit is allowed after letter
+    *     digit is allowed after letter
     *     for example
-    *     i1, i2, a1, a2, P1', a1' ...
+    *     i1, i2, a1, a2, P'1, a'1, i12, a'14 ...
  */
 class OrbitalIndex{
 public:

@@ -6,7 +6,7 @@
 #define TILECLUSTERCHEM_UTILITY_H
 
 #include <string>
-#include <Eigen/Dense>
+#include "../include/eigen.h"
 #include <vector>
 
 namespace mpqc{

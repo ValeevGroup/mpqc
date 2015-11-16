@@ -7,10 +7,9 @@
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
-#include "integral_generator.h"
-#include "lazy_integral.h"
+#include "../integrals/direct_task_integrals.h"
 
-namespace tcc {
+namespace mpqc {
 
     namespace cc {
 
@@ -26,7 +25,13 @@ namespace tcc {
         // three center uses chemical notation (X|pq)
         // MO integrals used physical noation <ij|ab>
         template<typename Tile, typename Policy,
-                typename IntegralGenerator=tcc::cc::TwoBodyIntGenerator<libint2::Coulomb> >
+                typename DirectTwoElectronArray=
+                DArray<
+                        4,
+                        integrals::DirectTile<integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>>,
+                        TA::SparsePolicy
+                    >
+                >
         class CCSDIntermediate {
         public:
 
@@ -34,17 +39,17 @@ namespace tcc {
             typedef TA::Array <double, 3, Tile, Policy> TArray3;
             typedef TA::Array <double, 4, Tile, Policy> TArray4;
 
-            typedef tcc::cc::LazyIntegral<4, IntegralGenerator> LazyTwoElectronTile;
-            typedef TA::Array <double, 4, LazyTwoElectronTile, Policy> DirectTwoElectronArray;
-
             CCSDIntermediate(const TArray3 &Xpq, const TArray2 &Ci, const TArray2 &Ca,
                              const DirectTwoElectronArray& direct_ao=DirectTwoElectronArray()) {
                 {
                     // convert to MO, store this temporary,
                     // call clean() to clean Xab_ Xij_ Xai_
                     Xab_("X,a,b") = Xpq("X,p,q") * Ca("q,a") * Ca("p,b");
+                    tcc::utility::print_size_info(Xab_,"X_xvv");
                     Xij_("X,i,j") = Xpq("X,p,q") * Ci("q,i") * Ci("p,j");
+                    tcc::utility::print_size_info(Xij_,"X_xoo");
                     Xai_("X,a,i") = Xpq("X,p,q") * Ca("q,a") * Ci("p,i");
+                    tcc::utility::print_size_info(Xai_,"X_xvo");
                     Ci_= Ci;
                     Ca_ = Ca;
 
@@ -145,6 +150,7 @@ namespace tcc {
                         return  abij_;
                     }else{
                         abij_("a,b,i,j") = Xai_("X,a,i") * Xai_("X,b,j");
+                        tcc::utility::print_size_info(abij_,"G_vvoo");
                         return abij_;
                     }
                 }else{
@@ -159,6 +165,7 @@ namespace tcc {
                         return ijkl_;
                     }else{
                         ijkl_("i,j,k,l") = Xij_("X,i,k") * Xij_("X,j,l");
+                        tcc::utility::print_size_info(ijkl_,"G_oooo");
                         return ijkl_;
                     }
                 }else{
@@ -173,7 +180,7 @@ namespace tcc {
                         return  abcd_;
                     }else{
                         abcd_("a,b,c,d") = Xab_("X,a,c") * Xab_("X,b,d");
-                        //std::cout << abcd_ << std::endl;
+                        tcc::utility::print_size_info(abcd_,"G_vvvv");
                         return abcd_;
                     }
                 }else{
@@ -188,6 +195,7 @@ namespace tcc {
                        return iabc_;
                     }else{
                         iabc_("i,a,b,c") = Xab_("X,a,c") * Xai_("X,b,i");
+                        tcc::utility::print_size_info(iabc_,"G_ovvv");
                         return iabc_;
                     }
                 }else{
@@ -202,6 +210,7 @@ namespace tcc {
                         return aibc_;
                     }else{
                         aibc_("a,i,b,c") = Xai_("X,c,i") * Xab_("X,a,b");
+                        tcc::utility::print_size_info(aibc_,"G_vovv");
                         return aibc_;
                     }
                 }else{
@@ -216,6 +225,7 @@ namespace tcc {
                         return ijak_;
                     }else{
                         ijak_("i,j,a,k") = Xai_("X,a,i") * Xij_("X,j,k");
+                        tcc::utility::print_size_info(ijak_,"G_oovo");
                         return ijak_;
                     }
                 }else{
@@ -230,6 +240,7 @@ namespace tcc {
                         return ijka_;
                     }else{
                         ijka_("i,j,k,a") = Xai_("X,a,j") * Xij_("X,i,k");
+                        tcc::utility::print_size_info(ijka_,"G_ooov");
                         return ijka_;
                     }
                 } else{
@@ -244,6 +255,7 @@ namespace tcc {
                         return iajb_;
                     }else{
                         iajb_("i,a,j,b") = Xab_("X,a,b") * Xij_("X,i,j");
+                        tcc::utility::print_size_info(iajb_,"G_ovov");
                         return iajb_;
                     }
                 } else{

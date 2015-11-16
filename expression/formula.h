@@ -17,7 +17,7 @@ namespace mpqc{
 
     /* format for formula
 
-        <index1 index2|operation|index3 index4>[option]
+        <index1 index2|operation|index3 index4>[option1,option2]
 
         (index1 index2|operation|index3 index4)[option]
 
@@ -34,6 +34,8 @@ namespace mpqc{
         Formula& operator=(Formula &&) = default;
 
         Formula(std::wstring formula);
+
+        std::size_t rank() const;
 
         const std::wstring &formula() const {
             return formula_;

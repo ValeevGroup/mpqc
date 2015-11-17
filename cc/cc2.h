@@ -15,7 +15,7 @@
 #include "ccsd_intermediates.h"
 #include "diis_ccsd.h"
 #include "integral_generator.h"
-#include "lazy_integral.h"
+#include "lazy_tile.h"
 #include "utility.h"
 
 namespace mpqc {

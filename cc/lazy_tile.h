@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/27/15.
 //
 
-#ifndef TILECLUSTERCHEM_LAZY_INTEGRAL_H
-#define TILECLUSTERCHEM_LAZY_INTEGRAL_H
+#ifndef TILECLUSTERCHEM_LAZY_TILE_H
+#define TILECLUSTERCHEM_LAZY_TILE_H
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
@@ -20,7 +20,7 @@ namespace mpqc {
         // check integral_generator.h TwoBodyIntGenerator class for an example of IntegralGenerator template
 
         template<unsigned int DIM, typename IntegralGenerator>
-        class LazyIntegral {
+        class LazyTile {
 
         public:
             typedef double value_type;
@@ -28,14 +28,14 @@ namespace mpqc {
             typedef TA::Range range_type;
 
             /// Default constructor
-            LazyIntegral() = default;
+            LazyTile() = default;
 
             /// Copy constructor
-            LazyIntegral(const LazyIntegral &other) :
+            LazyTile(const LazyTile &other) :
                     range_(other.range_), index_(other.index_), integral_generator_(other.integral_generator_) { }
 
             /// Assignment operator
-            LazyIntegral &operator=(const LazyIntegral &other) {
+            LazyTile &operator=(const LazyTile &other) {
                 if (this == &other){
                     return *this;
                 }
@@ -46,9 +46,9 @@ namespace mpqc {
             }
 
             /// Constructor
-            LazyIntegral(range_type range,
-                         const std::vector<std::size_t> &index,
-                         std::shared_ptr<IntegralGenerator> integral_generator) :
+            LazyTile(range_type range,
+                     const std::vector<std::size_t> &index,
+                     std::shared_ptr<IntegralGenerator> integral_generator) :
                     range_(range), index_(index), integral_generator_(integral_generator)
             {
                 assert(index.size() == DIM);
@@ -82,7 +82,7 @@ namespace mpqc {
         };
 
         // direct two electron integral
-        typedef mpqc::cc::LazyIntegral<4, TwoBodyIntGenerator < libint2::Coulomb>> LazyTwoElectronTile;
+        typedef mpqc::cc::LazyTile<4, TwoBodyIntGenerator < libint2::Coulomb>> LazyTwoElectronTile;
         typedef TA::Array<double, 4, LazyTwoElectronTile, TA::DensePolicy> DirectTwoElectronDenseArray;
         typedef TA::Array<double, 4, LazyTwoElectronTile, TA::SparsePolicy> DirectTwoElectronSparseArray;
 
@@ -136,14 +136,28 @@ namespace mpqc {
             DIRECTAOTWOELECTONINTEGRAL->set_shell(p_cluster_shells);
 
             // make shape
-            TA::TensorF tile_norms(trange.tiles());
+            TA::TensorF tile_norms(trange.tiles(),0.0);
             auto t_volume = trange.tiles().volume();
             auto pmap = TA::SparsePolicy::default_pmap(world,t_volume);
 
+            auto compute_tile = [=](int64_t ord, TA::Range range, TA::TensorF* ptr_tile_norm){
+                auto index = trange.tiles().idx(ord);
+                auto ta_tile = DIRECTAOTWOELECTONINTEGRAL->compute(range,index);
+
+                const auto tile_volume = ta_tile.range().volume();
+                const auto tile_norm = ta_tile.norm();
+
+                if(tile_norm >= tile_volume*TA::SparseShape<float>::threshold()){
+                    (*ptr_tile_norm)[ord] = tile_norm;
+                }
+
+            };
             // need to work with this later
             for(auto const &ord: *pmap){
-                tile_norms[ord] = 100000;
+                auto range = trange.make_tile_range(ord);
+                world.taskq.add(compute_tile,ord,range,&tile_norms);
             }
+            world.gop.fence();
 
             TA::SparseShape<float> shape(world, tile_norms,trange);
 
@@ -164,7 +178,7 @@ namespace mpqc {
         }
 
         // direct ao integral using DF three center integral
-        typedef mpqc::cc::LazyIntegral<4, TwoElectronIntDFGenerator < TA::DensePolicy>> LazyTwoElectronDFDenseTile;
+        typedef mpqc::cc::LazyTile<4, TwoElectronIntDFGenerator < TA::DensePolicy>> LazyTwoElectronDFDenseTile;
         typedef TA::Array<double, 4, LazyTwoElectronDFDenseTile, TA::DensePolicy> DirectTwoElectronDFDenseArray;
     } // namespace cc
 } // namespace mpqc

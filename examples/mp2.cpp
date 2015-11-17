@@ -36,7 +36,7 @@
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../cc/ccsd_t.h"
 #include "../cc/integral_generator.h"
-#include "../cc/lazy_integral.h"
+#include "lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
 #include "../cc/trange1_engine.h"
 #include "../mp2/mp2.h"

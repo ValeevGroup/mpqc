@@ -34,7 +34,7 @@
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../cc/ccsd_t.h"
 //#include "../cc/integral_generator.h"
-#include "../cc/lazy_integral.h"
+#include "../cc/lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
 #include "../cc/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
@@ -159,15 +159,15 @@ public:
             auto s1 = tcc_time::now();
             scf_times_.push_back(tcc_time::duration_in_s(s0, s1));
 
-
-            std::cout << "Iteration: " << (iter + 1)
-            << " energy: " << old_energy << " error: " << error
-            << std::endl;
-            std::cout << "\tW time: " << w_times_.back() << std::endl;
-            std::cout << "\tJ time: " << j_times_.back()
-            << " s K time: " << k_times_.back()
-            << " s iter time: " << scf_times_.back() << std::endl;
-
+            if(F_.get_world().rank() == 0){
+                std::cout << "Iteration: " << (iter + 1)
+                << " energy: " << old_energy << " error: " << error
+                << std::endl;
+                std::cout << "\tW time: " << w_times_.back() << std::endl;
+                std::cout << "\tJ time: " << j_times_.back()
+                << " s K time: " << k_times_.back()
+                << " s iter time: " << scf_times_.back() << std::endl;
+            }
             ++iter;
         }
     }
@@ -177,23 +177,6 @@ public:
                + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
     }
 };
-
-// static auto direct_two_e_ao =
-// std::make_shared<tcc::cc::TwoBodyIntGenerator<libint2::Coulomb>>();
-
-static std::map<int, std::string> atom_names = {{1, "H"},
-                                                {2, "He"},
-                                                {3, "Li"},
-                                                {4, "Be"},
-                                                {5, "B"},
-                                                {6, "C"},
-                                                {7, "N"},
-                                                {8, "O"},
-                                                {9, "F"},
-                                                {10, "Ne"},
-                                                {11, "Na"},
-                                                {12, "Mg"}};
-
 
 // TODO test case that verify the result automatic
 int try_main(int argc, char *argv[], madness::World &world) {
@@ -226,7 +209,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     // declare variables needed for ccsd
 //    std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD,TA::SparsePolicy>> intermidiate;
-    std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD,TA::DensePolicy,cc::DirectTwoElectronDenseArray>> intermidiate;
+    std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD,TA::SparsePolicy,cc::DirectTwoElectronSparseArray>> intermidiate;
 
     std::shared_ptr<mpqc::TRange1Engine> tre;
 
@@ -234,7 +217,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     TA::Array<double, 2, TA::TensorD, TA::SparsePolicy> fock_mo;
 
-    cc::DirectTwoElectronDenseArray lazy_two_electron_int;
+    cc::DirectTwoElectronSparseArray lazy_two_electron_int;
 
 //    mpqc::integrals::DirArray<4, integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>> lazy_two_electron_int;
     {
@@ -441,12 +424,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 //            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
 //            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
-        lazy_two_electron_int = cc::make_lazy_two_electron_dense_array(world, basis, trange_4);
-        auto Xab_dense = TA::to_dense(Xab);
-        auto Ci_dense = TA::to_dense(Ci);
-        auto Cv_dense = TA::to_dense(Cv);
-        intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::DensePolicy, cc::DirectTwoElectronDenseArray>>
-                (Xab_dense, Ci_dense, Cv_dense, lazy_two_electron_int);
+        lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4);
+        intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>>
+                (Xab, Ci, Cv, lazy_two_electron_int);
 //        }
     }
 
@@ -457,13 +437,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
     tcc::utility::parallal_break_point(world, 0);
 
 
-    auto fock_mo_dense = TA::to_dense(fock_mo);
     if(in.HasMember("CCSD(T)")){
-        mpqc::cc::CCSD_T<TA::Tensor < double>, TA::DensePolicy > ccsd_t(fock_mo_dense, ens, tre, intermidiate, cc_in);
+        mpqc::cc::CCSD_T<TA::Tensor < double>, TA::SparsePolicy > ccsd_t(fock_mo, ens, tre, intermidiate, cc_in);
         ccsd_t.compute();
     }
     else if(in.HasMember("CCSD")){
-        mpqc::cc::CCSD<TA::Tensor < double>, TA::DensePolicy > ccsd(fock_mo_dense, ens, tre, intermidiate, cc_in);
+        mpqc::cc::CCSD<TA::Tensor < double>, TA::SparsePolicy > ccsd(fock_mo, ens, tre, intermidiate, cc_in);
         ccsd.compute();
     }
 

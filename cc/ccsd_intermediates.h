@@ -8,7 +8,7 @@
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 #include "../integrals/direct_task_integrals.h"
-#include "lazy_integral.h"
+#include "lazy_tile.h"
 
 namespace mpqc {
 
@@ -26,7 +26,7 @@ namespace mpqc {
         // three center uses chemical notation (X|pq)
         // MO integrals used physical noation <ij|ab>
         template<typename Tile, typename Policy,
-                typename DirectTwoElectronArray=cc::DirectTwoElectronDenseArray>
+                typename DirectTwoElectronArray=cc::DirectTwoElectronSparseArray>
         class CCSDIntermediate {
         public:
 

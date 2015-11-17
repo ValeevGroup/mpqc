@@ -392,7 +392,15 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         tcc::utility::print_par(world, "Block Size in MO     ", blocksize, "\n");
         tcc::utility::print_par(world, "TiledRange1 Occupied ", tr_i0, "\n");
+        tcc::utility::print_par(world, "Average: ", cc::average_blocksize(tr_i0), "\n");
+        auto min_max = cc::minmax_blocksize(tr_i0);
+        tcc::utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
+
+
         tcc::utility::print_par(world, "TiledRange1 Virtual  ", tr_vir, "\n");
+        tcc::utility::print_par(world, "Average: ", cc::average_blocksize(tr_vir), "\n");
+        min_max = cc::minmax_blocksize(tr_vir);
+        tcc::utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
 
         auto Ci = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ, tr_0, tr_i0);
 

@@ -34,8 +34,18 @@ namespace mpqc{
                     tmp_size = shell_size;
                 }
             }
+
+            // handle the boundary condition
             if(4*tmp_size < 5*blocksize){
-                result.push_back(tmp);
+
+                // if boundary is less than 2/3 of the block size
+                // include it to previous block
+                if(3*tmp_size < 2*blocksize){
+                    result.back().insert(result.back().end(),tmp.begin(),tmp.end());
+                }
+                else{
+                    result.push_back(tmp);
+                }
             }
             return result;
         }

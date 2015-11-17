@@ -28,6 +28,8 @@ namespace mpqc {
         // Direct = bool , control if use direct approach, default True
         // DIIS = int, control the number of data sets to retain, default is 5
         // LessMemory = bool, control if store large intermediate in straight approach, default is true
+        // PrintDetail = bool, if do detail printing, default is false
+        // Converge = double, convergence of CCSD energy, default is 1.0e-07
 
         template<typename Tile, typename Policy>
         class CCSD {
@@ -419,6 +421,8 @@ namespace mpqc {
             // used as reference for development
             double compute_ccsd_nondirect(TArray2 &t1, TArray4 &t2) {
 
+                bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
+
                 auto n_occ = trange1_engine_->get_actual_occ();
 
                 TArray4 g_abij = ccsd_intermediate_->get_abij();
@@ -481,8 +485,11 @@ namespace mpqc {
 
                 bool less = options_.HasMember("LessMemory") ? options_["LessMemory"].GetBool() : true;
 
+                double converge = options_.HasMember("Converge") ? options_["Converge"].GetDouble() : 1.0e-7;
+
                 if (world.rank() == 0) {
                     std::cout << "Start Iteration" << std::endl;
+                    std::cout << "Convergence " << converge << std::endl;
                     std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                     if(less){
                         std::cout << "Less Memory Approach: Yes" << std::endl;
@@ -490,7 +497,7 @@ namespace mpqc {
                         std::cout << "Less Memory Approach: No" << std::endl;
                     }
                 }
-                while ((dE >= 1.0e-7 || error >= 1e-7)) {
+                while ((dE >= converge || error >= converge)) {
 
                     //start timer
                     auto time0 = tcc_time::now();
@@ -595,6 +602,11 @@ namespace mpqc {
                                                 + g_iabc("k,a,d,c") * t1("d,i")
 
                                                 - g_abij("d,c,k,l") * T("d,a,i,l");
+                            if(print_detail){
+                                tcc::utility::print_size_info(T,"T");
+                                tcc::utility::print_size_info(j_akic,"J_akic");
+                                tcc::utility::print_size_info(k_kaic,"K_kaic");
+                            }
                         }
 
 
@@ -635,12 +647,20 @@ namespace mpqc {
 
                             b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
+                            if(print_detail){
+                                tcc::utility::print_size_info(b_abij,"B_abij");
+                            }
+
                             r2("a,b,i,j") += b_abij("a,b,i,j");
                         } else {
 
                             TArray4 b_abcd;
 
                             b_abcd("a,b,c,d") = g_abcd("a,b,c,d") - g_aibc("a,k,c,d") * t1("b,k") - g_iabc("k,b,c,d") * t1("a,k");
+
+                            if(print_detail){
+                                tcc::utility::print_size_info(b_abcd,"B_abcd");
+                            }
 
                             r2("a,b,i,j") += b_abcd("a,b,c,d") * tau("c,d,i,j");
                         }
@@ -667,6 +687,11 @@ namespace mpqc {
                     t1("a,i") = t.first("a,i");
                     t2("a,b,i,j") = t.second("a,b,i,j");
 
+                    if(print_detail){
+                        tcc::utility::print_size_info(r2,"R2");
+                        tcc::utility::print_size_info(t2,"T2");
+                    }
+
                     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
                     // recompute energy
@@ -676,16 +701,21 @@ namespace mpqc {
                          TA::dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")),
                                  tau("a,b,i,j"));
                     dE = std::abs(E0 - E1);
-                    iter += 1ul;
 
                     auto time1 = tcc_time::now();
                     auto duration = tcc_time::duration_in_s(time0, time1);
+
+                    if (iter == 0 && world.rank() == 0) {
+                        std::cout << "iter " << "    deltaE    " << "            residual       "
+                        << "      energy     " << " total/second " <<std::endl;
+                    }
 
                     if (world.rank() == 0) {
                         std::cout << iter << "  " << dE << "  " << error <<
                         "  " << E1 << "  " << duration << std::endl;
                     }
 
+                    iter += 1ul;
                     world.gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
@@ -985,6 +1015,8 @@ namespace mpqc {
 
             double compute_ccsd_direct(TArray2 &t1, TArray4 &t2) {
 
+                bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
+
                 auto n_occ = trange1_engine_->get_actual_occ();
 
                 TArray4 g_abij = ccsd_intermediate_->get_abij();
@@ -994,6 +1026,7 @@ namespace mpqc {
                 if(world.rank() == 0){
                     std::cout << "Use Direct CCSD Compute" <<std::endl;
                 }
+
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");
 
@@ -1001,8 +1034,8 @@ namespace mpqc {
 
 //      std::cout << g_abij << std::endl;
 
-                TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
-                           f_ai.get_pmap());
+                TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
+
                 create_d_ai(d1, orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
@@ -1045,9 +1078,15 @@ namespace mpqc {
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
                 TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
+
+                double converge = options_.HasMember("Converge") ? options_["Converge"].GetDouble() : 1.0e-7;
+
                 if (world.rank() == 0) {
+                    std::cout << "Start Iteration" << std::endl;
+                    std::cout << "Convergence " << converge << std::endl;
+                    std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                 };
-                while ((dE >= 1.0e-7 || error >= 1e-7)) {
+                while ((dE >= converge || error >= converge)) {
 
                     //start timer
                     auto time0 = tcc_time::now();
@@ -1063,16 +1102,13 @@ namespace mpqc {
                     }
                     world.gop.fence();
 
-                    if(iter == 0){
+                    if(print_detail){
+                        tcc::utility::print_size_info(u2_u11,"U_aaoo");
+                    }
+                    else if(iter == 0){
                         tcc::utility::print_size_info(u2_u11,"U_aaoo");
                     }
 
-                    if (iter == 0 && world.rank() == 0) {
-                        std::cout << "Start Iteration" << std::endl;
-                        std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
-                        std::cout << "iter " << "    deltaE    " << "            residual       "
-                        << "      energy     " << "    U/second  " << " total/second "<<std::endl;
-                    }
 
                     auto tu1 = tcc_time::now();
                     auto duration_u = tcc_time::duration_in_s(tu0, tu1);
@@ -1172,6 +1208,12 @@ namespace mpqc {
                                                     + (Xai("X,d,k")*t1("d,i"))*Xab("X,a,c")
 
                                                     - g_abij("d,c,k,l") * T("d,a,i,l");
+
+                                if(print_detail){
+                                    tcc::utility::print_size_info(T,"T");
+                                    tcc::utility::print_size_info(j_akic,"J_akic");
+                                    tcc::utility::print_size_info(k_kaic,"K_kaic");
+                                }
                             }
 
                             r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) * (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
@@ -1210,6 +1252,9 @@ namespace mpqc {
 
                             r2("a,b,i,j") += b_abij("a,b,i,j");
 
+                            if(print_detail){
+                                tcc::utility::print_size_info(b_abij,"B_abij");
+                            }
                         }
 
                         d_abij_inplace(r2, orbital_energy_, n_occ);
@@ -1230,6 +1275,11 @@ namespace mpqc {
                     t1("a,i") = t.first("a,i");
                     t2("a,b,i,j") = t.second("a,b,i,j");
 
+                    if(print_detail){
+                        tcc::utility::print_size_info(r2,"R2");
+                        tcc::utility::print_size_info(t2,"T2");
+                    }
+
                     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
                     // recompute energy
@@ -1239,10 +1289,14 @@ namespace mpqc {
                          TA::dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")),
                                  tau("a,b,i,j"));
                     dE = std::abs(E0 - E1);
-                    iter += 1ul;
 
                     auto time1 = tcc_time::now();
                     auto duration_t = tcc_time::duration_in_s(time0, time1);
+
+                    if (iter == 0 && world.rank() == 0) {
+                        std::cout << "iter " << "    deltaE    " << "            residual       "
+                        << "      energy     " << "    U/second  " << " total/second "<<std::endl;
+                    }
 
                     if (world.rank() == 0) {
                         std::cout.precision(15);
@@ -1250,6 +1304,8 @@ namespace mpqc {
                         "  " << E1 << "  " << duration_u << " " << duration_t
                         <<std::endl;
                     }
+
+                    iter += 1ul;
 
                     world.gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)

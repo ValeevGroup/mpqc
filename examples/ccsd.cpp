@@ -405,10 +405,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         auto do_screen = cc_in.HasMember("Screen") ? cc_in["DIIS"].GetBool() : true;
 
-
-
         world.gop.fence();
-
 
         fock_mo("p,q") = F("mu,nu") * Cv("mu,p") * Ci("nu,q");
 
@@ -424,7 +421,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 //            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
 //            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
+        auto time0 = tcc_time::now();
         lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4);
+        auto time1 = tcc_time::now();
+        auto duration = tcc_time::duration_in_s(time0,time1);
+        if(world.rank() == 0){
+            std::cout << "Time to initialize direct two electron sparse integral: " << duration << std::endl;
+
+        }
         intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>>
                 (Xab, Ci, Cv, lazy_two_electron_int);
 //        }

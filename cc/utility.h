@@ -10,6 +10,7 @@
 namespace mpqc{
     namespace  cc{
 
+        //TODO handle boundary condition better
         // reblock based on blocksize
         std::vector<std::vector<libint2::Shell>>
                 reblock_basis(std::vector<libint2::Shell> shells, std::size_t blocksize){

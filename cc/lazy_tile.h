@@ -88,19 +88,25 @@ namespace mpqc {
 
         // function to make direct two electron dense TArray
         DirectTwoElectronDenseArray make_lazy_two_electron_dense_array(
-                madness::World &world, const mpqc::basis::Basis &basis,
+                madness::World &world, mpqc::basis::Basis &basis,
                 const TA::TiledRange &trange) {
 
+            // compute cluster shell
             auto cluster_shells = basis.cluster_shells();
             auto p_cluster_shells = std::make_shared<std::vector<ShellVec>>(cluster_shells);
 
+            // compute engine pull
             auto two_body_coulomb_engine = mpqc::integrals::make_2body(basis);
-
             auto p_engine_pool = std::make_shared<mpqc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(
                     two_body_coulomb_engine);
 
+            // compute screener
+            auto screen_builder = integrals::init_schwarz_screen(1e-10);
+            auto p_shr_screen = std::make_shared<integrals::Screener>(screen_builder(world, p_engine_pool, basis));
+
             DIRECTAOTWOELECTONINTEGRAL->set_pool(p_engine_pool);
             DIRECTAOTWOELECTONINTEGRAL->set_shell(p_cluster_shells);
+            DIRECTAOTWOELECTONINTEGRAL->set_screener(p_shr_screen);
 
             DirectTwoElectronDenseArray lazy_two_electron(world, trange);
 
@@ -125,15 +131,22 @@ namespace mpqc {
                 madness::World &world, const mpqc::basis::Basis &basis,
                 const TA::TiledRange &trange) {
 
-            auto p_cluster_shells = std::make_shared<std::vector<ShellVec>>(basis.cluster_shells());
+            // compute cluster shell
+            auto cluster_shells = basis.cluster_shells();
+            auto p_cluster_shells = std::make_shared<std::vector<ShellVec>>(cluster_shells);
 
+            // compute engine pull
             auto two_body_coulomb_engine = mpqc::integrals::make_2body(basis);
-
             auto p_engine_pool = std::make_shared<mpqc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(
                     two_body_coulomb_engine);
 
+            // compute screener
+            auto screen_builder = integrals::init_schwarz_screen(1e-10);
+            auto p_shr_screen = std::make_shared<integrals::Screener>(screen_builder(world, p_engine_pool, basis));
+
             DIRECTAOTWOELECTONINTEGRAL->set_pool(p_engine_pool);
             DIRECTAOTWOELECTONINTEGRAL->set_shell(p_cluster_shells);
+            DIRECTAOTWOELECTONINTEGRAL->set_screener(p_shr_screen);
 
             // make shape
             TA::TensorF tile_norms(trange.tiles(),0.0);

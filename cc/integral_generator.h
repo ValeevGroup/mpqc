@@ -36,8 +36,9 @@ namespace mpqc {
 
 
             TwoBodyIntGenerator(const std::shared_ptr<EnginePool> &pool,
-                                const std::shared_ptr<std::vector<ShellVec>> &cluster_shells)
-                    : pool_(pool), shells_(cluster_shells) { }
+                                const std::shared_ptr<std::vector<ShellVec>> &cluster_shells,
+                                const std::shared_ptr<integrals::Screener> screen)
+                    : pool_(pool), shells_(cluster_shells), screener_(screen) { }
 
             void set_pool(const std::shared_ptr<EnginePool> &pool){
                 pool_ = pool;
@@ -47,7 +48,11 @@ namespace mpqc {
                 shells_ = cluster_shells;
             }
 
-            // return a tile of integral in chemical notation
+            void set_screener(const std::shared_ptr<integrals::Screener> & screen) {
+                screener_ = screen;
+            }
+
+// return a tile of integral in chemical notation
             // (block1 block2| block3 block4)
             TA::Tensor <double> compute(const TA::Range &r,
                                         const std::vector<std::size_t> &index) {
@@ -67,9 +72,7 @@ namespace mpqc {
                 array_shells[2] = &(*shells_)[index[2]];
                 array_shells[3] = &(*shells_)[index[3]];
 
-                auto sreen = integrals::Screener();
-
-                auto tile = integrals::detail::integral_kernel(engine,std::move(range),array_shells, sreen);
+                auto tile = integrals::detail::integral_kernel(engine,std::move(range),array_shells, *screener_);
 
                 return tile;
             }
@@ -77,6 +80,7 @@ namespace mpqc {
         private:
             std::shared_ptr<EnginePool> pool_;
             std::shared_ptr<std::vector<ShellVec>> shells_;
+            std::shared_ptr<integrals::Screener> screener_;
         };
 
     }

@@ -46,35 +46,40 @@ void jacobi_sweeps(Mat &Cm, std::vector<Mat> const &ao_xyz) {
     mo_xyz[1] = Cm.transpose() * ao_xyz[1] * Cm;
     mo_xyz[2] = Cm.transpose() * ao_xyz[2] * Cm;
 
+    auto &mx = mo_xyz[0];
+    auto &my = mo_xyz[1];
+    auto &mz = mo_xyz[2];
+
     auto crit = boys_object(mo_xyz);
     auto iter = 1;
     auto error = crit - 0;
-    while (error > 1e-6 && (iter <= 150 || iter < 5)) {
+    while (error > 1e-6 && iter <= 150 ) {
         for (auto i = 0; i < Cm.cols(); ++i) {
             for (auto j = i + 1; j < Cm.cols(); ++j) {
 
-                double Aij = 0.0;
-                double Bij = 0.0;
-                for (auto z = 0; z < 3; ++z) {
-                    auto nij = mo_xyz[z](i, j);
-                    auto diff = mo_xyz[z](i, i) - mo_xyz[z](j, j);
-                    Aij += nij * nij - 0.25 * diff * diff;
-                    Bij += nij * diff;
-                }
+                // double Aij = 0.0;
+                // double Bij = 0.0;
+                // for (auto z = 0; z < 3; ++z) {
+                //     auto nij = mo_xyz[z](i, j);
+                //     auto diff = mo_xyz[z](i, i) - mo_xyz[z](j, j);
+                //     Aij += nij * nij - 0.25 * diff * diff;
+                //     Bij += nij * diff;
+                // }
 
-            /* Copied from PSI doesn't work for me. 
                 double Aij = mx(i, j) * mx(i, j) 
                            + my(i, j) * my(i, j)
                            + mz(i, j) * mz(i, j)
                            - 0.25 * (
                                    (mx(i, i) - mx(j, j)) 
+                                 * (mx(i, i) - mx(j, j)) 
+                                 + (my(i, i) - my(j, j))
                                  * (my(i, i) - my(j, j))
+                                 + (mz(i, i) - mz(j, j))
                                  * (mz(i, i) - mz(j, j))
                               );
                 double Bij = (mx(i,i) - mx(j,j)) * mx(i,j) 
                            + (my(i,i) - my(j,j)) * my(i,j) 
                            + (mz(i,i) - mz(j,j)) * mz(i,j);
-            */
 
                 auto g = gamma(Aij, Bij);
                 auto cg = std::cos(g);
@@ -167,7 +172,7 @@ class StuffFromFactorAna {
         auto max_old = 0.0;
         auto error = max - max_old;
         auto iter = 0;
-        while (iter < 20 && error > 1e-2) {
+        while (iter < 30 && error > 1e-2) {
             ++iter;
             L = L.array() * L.array() * L.array();
             Mat G = A.transpose() * (L);

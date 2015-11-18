@@ -144,7 +144,8 @@ class ThreeCenterScf {
         // Permute W
         W("Y,i,nu") = W("Y,nu,i");
         array_type K, Kij, Sc;
-        K("mu, j") = W("X, i, mu") * (V_inv_("X,Y") * (W("Y, i, nu") * C_("nu, j")));
+        K("mu, j") = W("X, i, mu")
+                     * (V_inv_("X,Y") * (W("Y, i, nu") * C_("nu, j")));
         Kij("i,j") = C_("mu, i") * K("mu, j");
         Sc("mu, j") = S_("mu, lam") * C_("lam, j");
         K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
@@ -235,8 +236,8 @@ int main(int argc, char *argv[]) {
         df_basis_name = argv[3];
         obs_nclusters = std::stoi(argv[4]);
         dfbs_nclusters = std::stoi(argv[5]);
-    } else if (argc >= 7){
-       threshold = std::stod(argv[6]); 
+    } else if (argc >= 7) {
+        threshold = std::stod(argv[6]);
     } else {
         std::cout << "input is $./program mol_file basis_file df_basis_file "
                      "nclusters ";
@@ -288,8 +289,8 @@ int main(int argc, char *argv[]) {
         MatrixD Vinv = V_eig.inverse();
 
         auto tr_V = Vmetric.trange().data()[0];
-        V_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Vinv,
-                                                            tr_V, tr_V);
+        V_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Vinv, tr_V,
+                                                            tr_V);
     }
 
     auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
@@ -312,20 +313,27 @@ int main(int argc, char *argv[]) {
         auto F_eig = tcc::array_ops::array_to_eigen(Fao);
         auto S_eig = tcc::array_ops::array_to_eigen(S);
         std::cout << std::setprecision(5);
-//        std::cout << "S = \n" << S_eig << std::endl;
+        //        std::cout << "S = \n" << S_eig << std::endl;
         std::cout << std::setprecision(15);
 
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         auto nocc = occ / 2;
         decltype(S_eig) Ceigi = es.eigenvectors().leftCols(nocc);
-        decltype(S_eig) Ceigv = es.eigenvectors().rightCols(F_eig.cols() - nocc);
+        decltype(S_eig) Ceigv
+              = es.eigenvectors().rightCols(F_eig.cols() - nocc);
+
+        Eig::SelfAdjointEigenSolver<MatrixD> esS(S_eig);
+        MatrixD S_ohe = esS.operatorSqrt();
+        MatrixD S_oh_inve = esS.operatorInverseSqrt();
 
         decltype(S_eig) D = Ceigi * Ceigi.transpose();
+        D = S_ohe * D * S_ohe;
         tcc::tensor::algebra::piv_cholesky(D);
         Ceigi = D;
 
         decltype(S_eig) Q = Ceigv * Ceigv.transpose();
+        Q = S_ohe * Q * S_ohe;
         tcc::tensor::algebra::piv_cholesky(Q);
         Ceigv = Q;
 
@@ -341,6 +349,11 @@ int main(int argc, char *argv[]) {
               world, Ceigi, S.trange().data()[0], tr_occ);
         auto Cv = tcc::array_ops::eigen_to_array<TA::TensorD>(
               world, Ceigv, S.trange().data()[0], tr_vir);
+
+        auto S_oh = tcc::array_ops::eigen_to_array<TA::TensorD>(
+              world, S_ohe, S.trange().data()[0], S.trange().data()[1]);
+        auto S_oh_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(
+              world, S_oh_inve, S.trange().data()[0], S.trange().data()[1]);
         {
             auto Cl = Ci;
             auto Clv = Cv;
@@ -351,7 +364,8 @@ int main(int argc, char *argv[]) {
             std::cout << std::endl;
 
             DArray<3, TA::TensorD, TA::SparsePolicy> W;
-            W("Y, mu, i") = eri3("Y, mu, nu") * Cl("nu, i");
+            W("Y, mu, i") = eri3("Y, mu, nu") * S_oh_inv("nu, rho")
+                            * Cl("rho, i");
             world.gop.fence();
 
             std::cout << "Size for W(Y,mu, i) CMO " << std::endl;
@@ -359,7 +373,8 @@ int main(int argc, char *argv[]) {
             std::cout << std::endl;
 
             DArray<3, TA::TensorD, TA::SparsePolicy> Wv;
-            Wv("Y, mu, i") = eri3("Y, mu, nu") * Clv("nu, i");
+            Wv("Y, mu, i") = eri3("Y, mu, nu") * S_oh_inv("nu, rho")
+                             * Clv("rho, i");
             world.gop.fence();
 
             std::cout << "Size for Wv(Y,mu, a) CMO " << std::endl;
@@ -372,7 +387,8 @@ int main(int argc, char *argv[]) {
             tcc::scf::clustered_coeffs(r_xyz, Cl, obs_nclusters);
             tcc::scf::clustered_coeffs(r_xyz, Clv, obs_nclusters);
             DArray<3, TA::TensorD, TA::SparsePolicy> W;
-            W("Y, mu, i") = eri3("Y, mu, nu") * Cl("nu, i");
+            W("Y, mu, i") = eri3("Y, mu, nu") * S_oh_inv("nu, rho")
+                            * Cl("rho, i");
             world.gop.fence();
 
             std::cout << "Size for W(Y,mu, i) SVD " << std::endl;
@@ -380,15 +396,17 @@ int main(int argc, char *argv[]) {
             std::cout << std::endl;
 
             DArray<3, TA::TensorD, TA::SparsePolicy> Wv;
-            Wv("Y, mu, i") = eri3("Y, mu, nu") * Clv("nu, i");
+            Wv("Y, mu, i") = eri3("Y, mu, nu") * S_oh_inv("nu, rho")
+                             * Clv("rho, i");
             world.gop.fence();
 
             std::cout << "Size for Wv(Y,mu, a) SVD " << std::endl;
             print_storage_for_array(Wv);
             std::cout << std::endl;
 
-            auto Clv = scf::BoysLocalization{}(Cv, r_xyz);
-            Wv("Y, mu, i") = eri3("Y, mu, nu") * Clv("nu, i");
+            Clv = scf::BoysLocalization{}(Clv, r_xyz);
+            Wv("Y, mu, i") = eri3("Y, mu, nu") * S_oh_inv("nu, rho")
+                             * Clv("rho, i");
             world.gop.fence();
 
             std::cout << "Size for Wv(Y,mu, a) SVD + Boys " << std::endl;
@@ -410,7 +428,8 @@ int main(int argc, char *argv[]) {
 
         {
             DArray<3, TA::TensorD, TA::SparsePolicy> W;
-            W("Y, mu, i") = eri3("Y, mu, nu") * Ci("nu, i");
+            W("Y, mu, i") = eri3("Y, mu, nu") * S_oh_inv("nu, rho")
+                            * Ci("rho, i");
             world.gop.fence();
 
             std::cout << "Size for W(Y,mu, i) if stored" << std::endl;

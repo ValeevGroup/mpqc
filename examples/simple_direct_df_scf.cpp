@@ -25,6 +25,8 @@
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/orbital_localization.h"
+#include "../scf/soad.h"
+#include "../scf/clusterd_coeffs.h"
 
 #include <memory>
 #include <atomic>
@@ -89,7 +91,7 @@ class ThreeCenterScf {
     array_type F_;
     array_type D_;
     array_type C_;
-    array_type L_invV_;
+    array_type V_inv_;
     TiledArray::DIIS<array_type> diis_;
 
     std::vector<double> k_times_;
@@ -126,14 +128,14 @@ class ThreeCenterScf {
         world.gop.fence();
         auto w0 = tcc::utility::time::now();
         TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> W;
-        W("X, mu, i") = L_invV_("X,Y") * (eri3("Y, mu, nu") * C_("nu, i"));
+        W("Y, mu, i") = eri3("Y, mu, nu") * C_("nu, i");
         auto w1 = tcc::utility::time::now();
         w_times_.push_back(tcc::utility::time::duration_in_s(w0, w1));
 
 
         array_type J;
         J("mu, nu") = eri3("X, mu, nu")
-                      * (L_invV_("Y, X") * (W("Y, rho, i") * C_("rho, i")));
+                      * (V_inv_("X, Y") * (W("Y, rho, i") * C_("rho, i")));
         world.gop.fence();
         auto j1 = tcc::utility::time::now();
         j_times_.push_back(tcc::utility::time::duration_in_s(w1, j1));
@@ -142,7 +144,7 @@ class ThreeCenterScf {
         // Permute W
         W("Y,i,nu") = W("Y,nu,i");
         array_type K, Kij, Sc;
-        K("mu, j") = W("X, i, mu") * (W("X, i, nu") * C_("nu, j"));
+        K("mu, j") = W("X, i, mu") * (V_inv_("X,Y") * (W("Y, i, nu") * C_("nu, j")));
         Kij("i,j") = C_("mu, i") * K("mu, j");
         Sc("mu, j") = S_("mu, lam") * C_("lam, j");
         K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
@@ -157,9 +159,14 @@ class ThreeCenterScf {
 
   public:
     ThreeCenterScf(array_type const &H, array_type const &S,
-                   array_type const &L_invV, int64_t occ, double rep)
-            : H_(H), S_(S), L_invV_(L_invV), occ_(occ), repulsion_(rep) {
-        F_ = H_;
+                   array_type const &F_guess, array_type const &V_inv,
+                   int64_t occ, double rep)
+            : H_(H),
+              S_(S),
+              F_(F_guess),
+              V_inv_(V_inv),
+              occ_(occ),
+              repulsion_(rep) {
         compute_density(occ_);
     }
 
@@ -218,14 +225,18 @@ int main(int argc, char *argv[]) {
     std::string mol_file = "";
     std::string basis_name = "";
     std::string df_basis_name = "";
-    int nclusters = 0;
-    std::cout << std::setprecision(15);
+    int obs_nclusters = 0;
+    int dfbs_nclusters = 0;
     double threshold = 1e-11;
-    if (argc == 5) {
+    std::cout << std::setprecision(15);
+    if (argc >= 6) {
         mol_file = argv[1];
         basis_name = argv[2];
         df_basis_name = argv[3];
-        nclusters = std::stoi(argv[4]);
+        obs_nclusters = std::stoi(argv[4]);
+        dfbs_nclusters = std::stoi(argv[5]);
+    } else if (argc >= 7){
+       threshold = std::stod(argv[6]); 
     } else {
         std::cout << "input is $./program mol_file basis_file df_basis_file "
                      "nclusters ";
@@ -234,7 +245,10 @@ int main(int argc, char *argv[]) {
     TiledArray::SparseShape<float>::threshold(threshold);
 
     auto clustered_mol = molecule::attach_hydrogens_and_kmeans(
-          molecule::read_xyz(mol_file).clusterables(), nclusters);
+          molecule::read_xyz(mol_file).clusterables(), obs_nclusters);
+
+    auto df_clustered_mol = molecule::attach_hydrogens_and_kmeans(
+          molecule::read_xyz(mol_file).clusterables(), dfbs_nclusters);
 
     auto repulsion_energy = clustered_mol.nuclear_repulsion();
     std::cout << "Nuclear Repulsion Energy: " << repulsion_energy << std::endl;
@@ -244,7 +258,7 @@ int main(int argc, char *argv[]) {
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
     basis::BasisSet dfbs(df_basis_name);
-    basis::Basis df_basis(dfbs.get_cluster_shells(clustered_mol));
+    basis::Basis df_basis(dfbs.get_cluster_shells(df_clustered_mol));
 
     libint2::init();
 
@@ -267,15 +281,14 @@ int main(int argc, char *argv[]) {
     const auto dfbs_array = tcc::utility::make_array(df_basis, df_basis);
     auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
 
-    decltype(H) L_inv;
+    decltype(H) V_inv;
     {
         auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
         auto V_eig = tcc::array_ops::array_to_eigen(Vmetric);
-        MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
-        MatrixD L_inv_eig = Leig.inverse();
+        MatrixD Vinv = V_eig.inverse();
 
         auto tr_V = Vmetric.trange().data()[0];
-        L_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
+        V_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Vinv,
                                                             tr_V, tr_V);
     }
 
@@ -289,58 +302,113 @@ int main(int argc, char *argv[]) {
         auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
                                                   shr_screen);
 
-        ThreeCenterScf scf(H, S, L_inv, occ / 2, repulsion_energy);
-        scf.solve(20, 1e-7, eri3);
+        auto F_soad
+              = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
+        ThreeCenterScf scf(H, S, F_soad, V_inv, occ / 2, repulsion_energy);
+        scf.solve(20, 1e-8, eri3);
 
         auto Fao = scf.fock();
 
         auto F_eig = tcc::array_ops::array_to_eigen(Fao);
         auto S_eig = tcc::array_ops::array_to_eigen(S);
+        std::cout << std::setprecision(5);
+//        std::cout << "S = \n" << S_eig << std::endl;
+        std::cout << std::setprecision(15);
 
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
-        const auto vir = F_eig.rows() - occ / 2;
         auto nocc = occ / 2;
         decltype(S_eig) Ceigi = es.eigenvectors().leftCols(nocc);
-        decltype(S_eig) Ceigv = es.eigenvectors().rightCols(vir);
-        auto tr_ao = S.trange().data()[0];
+        decltype(S_eig) Ceigv = es.eigenvectors().rightCols(F_eig.cols() - nocc);
 
-        // decltype(S_eig) D = Ceigi * Ceigi.transpose();
-        // unsigned int rank = tcc::tensor::algebra::piv_cholesky(D);
-        // Ceigi = D;
+        decltype(S_eig) D = Ceigi * Ceigi.transpose();
+        tcc::tensor::algebra::piv_cholesky(D);
+        Ceigi = D;
 
-        auto occ_nclusters = (nocc < 10) ? nocc : 10;
+        decltype(S_eig) Q = Ceigv * Ceigv.transpose();
+        tcc::tensor::algebra::piv_cholesky(Q);
+        Ceigv = Q;
+
+        auto occ_nclusters = obs_nclusters;
         auto tr_occ = tcc::scf::tr_occupied(occ_nclusters, nocc);
-
-        auto vir_nclusters = (nocc < 10) ? vir : 10;
-        auto tr_vir = tcc::scf::tr_occupied(vir_nclusters, vir);
-
-        auto Ci = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigi,
-                                                              tr_ao, tr_occ);
-
-        decltype(Ci) D_org, D_diff;
-        D_org("mu,nu") = Ci("mu, i") * Ci("nu,i");
-
-        auto Cv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Ceigv,
-                                                              tr_ao, tr_vir);
-
+        auto tr_vir = tcc::scf::tr_occupied(occ_nclusters, F_eig.cols() - nocc);
 
         auto multi_pool
               = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
         auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
 
-        Ci = scf::BoysLocalization{}(Ci, r_xyz);
-        D_org("mu,nu") = D_org("mu, nu") - Ci("mu, i") * Ci("nu,i");
-        auto norm_diff = D_org("i,j").norm().get();
-        std::cout << "Norm of density diff after localization = " << norm_diff
-                  << std::endl;
-        // Cv = scf::BoysLocalization{}(Cv, r_xyz);
-
+        auto Ci = tcc::array_ops::eigen_to_array<TA::TensorD>(
+              world, Ceigi, S.trange().data()[0], tr_occ);
+        auto Cv = tcc::array_ops::eigen_to_array<TA::TensorD>(
+              world, Ceigv, S.trange().data()[0], tr_vir);
         {
+            auto Cl = Ci;
+            auto Clv = Cv;
+            tcc::scf::clustered_coeffs(r_xyz, Cl, obs_nclusters);
+            tcc::scf::clustered_coeffs(r_xyz, Clv, obs_nclusters);
             std::cout << "\n\nSize for Eri3 if stored" << std::endl;
             print_storage_for_array(eri3.array());
             std::cout << std::endl;
 
+            DArray<3, TA::TensorD, TA::SparsePolicy> W;
+            W("Y, mu, i") = eri3("Y, mu, nu") * Cl("nu, i");
+            world.gop.fence();
+
+            std::cout << "Size for W(Y,mu, i) CMO " << std::endl;
+            print_storage_for_array(W);
+            std::cout << std::endl;
+
+            DArray<3, TA::TensorD, TA::SparsePolicy> Wv;
+            Wv("Y, mu, i") = eri3("Y, mu, nu") * Clv("nu, i");
+            world.gop.fence();
+
+            std::cout << "Size for Wv(Y,mu, a) CMO " << std::endl;
+            print_storage_for_array(Wv);
+            std::cout << std::endl;
+        }
+        {
+            auto Cl = scf::StuffFromFactorAna{}(Ci);
+            auto Clv = scf::StuffFromFactorAna{}(Cv);
+            tcc::scf::clustered_coeffs(r_xyz, Cl, obs_nclusters);
+            tcc::scf::clustered_coeffs(r_xyz, Clv, obs_nclusters);
+            DArray<3, TA::TensorD, TA::SparsePolicy> W;
+            W("Y, mu, i") = eri3("Y, mu, nu") * Cl("nu, i");
+            world.gop.fence();
+
+            std::cout << "Size for W(Y,mu, i) SVD " << std::endl;
+            print_storage_for_array(W);
+            std::cout << std::endl;
+
+            DArray<3, TA::TensorD, TA::SparsePolicy> Wv;
+            Wv("Y, mu, i") = eri3("Y, mu, nu") * Clv("nu, i");
+            world.gop.fence();
+
+            std::cout << "Size for Wv(Y,mu, a) SVD " << std::endl;
+            print_storage_for_array(Wv);
+            std::cout << std::endl;
+
+            auto Clv = scf::BoysLocalization{}(Cv, r_xyz);
+            Wv("Y, mu, i") = eri3("Y, mu, nu") * Clv("nu, i");
+            world.gop.fence();
+
+            std::cout << "Size for Wv(Y,mu, a) SVD + Boys " << std::endl;
+            print_storage_for_array(Wv);
+            std::cout << std::endl;
+        }
+
+        decltype(Ci) D_orth;
+        D_orth("mu,nu") = Ci("mu, i") * Ci("nu,i");
+
+        Ci = scf::BoysLocalization{}(Ci, r_xyz);
+
+        D_orth("mu,nu") = D_orth("mu, nu") - Ci("mu, i") * Ci("nu,i");
+        auto norm_diff = D_orth("i,j").norm().get();
+        std::cout << "Norm of density diff after localization = " << norm_diff
+                  << std::endl;
+
+        tcc::scf::clustered_coeffs(r_xyz, Ci, obs_nclusters);
+
+        {
             DArray<3, TA::TensorD, TA::SparsePolicy> W;
             W("Y, mu, i") = eri3("Y, mu, nu") * Ci("nu, i");
             world.gop.fence();
@@ -348,24 +416,10 @@ int main(int argc, char *argv[]) {
             std::cout << "Size for W(Y,mu, i) if stored" << std::endl;
             print_storage_for_array(W);
             std::cout << std::endl;
-
-            W("Y, i, a") = W("Y, mu, i") * Cv("mu, a");
-            world.gop.fence();
-
-            std::cout << "Size for W(Y, i, a) if stored" << std::endl;
-            print_storage_for_array(W);
-            std::cout << std::endl;
-
-            W("X, i, a") = L_inv("X,Y") * W("Y,i,a");
-            world.gop.fence();
-
-            std::cout << "Size for W(X, i, a) if stored" << std::endl;
-            print_storage_for_array(W);
-            std::cout << std::endl;
         }
     }
-
-    { // QVl Screened
+#if 0
+    if(false){ // QVl Screened
         std::cout << "\n\nDirect Schwarz QVl" << std::endl;
         auto sbuilder = ints::init_qvl_screen{};
         ints::QVl::well_sep_threshold(1e-12);
@@ -385,6 +439,7 @@ int main(int argc, char *argv[]) {
         ThreeCenterScf scf(H, S, L_inv, occ / 2, repulsion_energy);
         scf.solve(20, 1e-7, eri3);
     }
+#endif
 
 
     return 0;

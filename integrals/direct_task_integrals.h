@@ -75,9 +75,9 @@ soad_direct_integrals(mad::World &world, ShrPool<E> shr_pool,
     SpShapeF shape(world, tile_norms, trange);
     DArray<N, TileType, SpPolicy> out(world, trange, shape, pmap);
 
-    for (auto &&tile : tiles) {
-        if (out.is_local(tile.first) && !out.is_zero(tile.first)) {
-            out.set(tile.first, std::move(tile.second));
+    for (auto it : *out.get_pmap()) {
+        if (!out.is_zero(it)) {
+            out.set(it, std::move(tiles[it].second));
         }
     }
 
@@ -149,9 +149,9 @@ direct_sparse_integrals(mad::World &world, ShrPool<E> shr_pool,
     SpShapeF shape(world, tile_norms, trange);
     DArray<N, TileType, SpPolicy> out(world, trange, shape, pmap);
 
-    for (auto &&tile : tiles) {
-        if (out.is_local(tile.first) && !out.is_zero(tile.first)) {
-            out.set(tile.first, std::move(tile.second));
+    for (auto it : *out.get_pmap()) {
+        if (!out.is_zero(it)) {
+            out.set(it, std::move(tiles[it].second));
         }
     }
 

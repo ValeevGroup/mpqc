@@ -1320,6 +1320,10 @@ namespace mpqc {
             }
 
         protected:
+            // fock matrix
+            TArray2 fock_;
+
+            // orbital energy
             Eigen::VectorXd orbital_energy_;
 
             // TRange1 Engine class
@@ -1327,9 +1331,6 @@ namespace mpqc {
 
             // CCSD intermediate
             std::shared_ptr<mpqc::cc::CCSDIntermediate<Tile, Policy>> ccsd_intermediate_;
-
-            // fock matrix
-            TArray2 fock_;
 
             // option member
             rapidjson::Document options_;

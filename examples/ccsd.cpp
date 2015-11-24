@@ -33,7 +33,6 @@
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../cc/ccsd_t.h"
-//#include "../cc/integral_generator.h"
 #include "../cc/lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
 #include "../cc/trange1_engine.h"
@@ -261,7 +260,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto charge = 0;
         auto occ = mol.occupation(charge);
         auto repulsion_energy = mol.nuclear_repulsion();
-        auto core_electron = mol.core_electrons();
 
         tcc::utility::print_par(world, "Nuclear repulsion_energy = ",
                            repulsion_energy, "\n");
@@ -350,7 +348,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
         // start ccsd prepration
-        auto n_occ = occ / 2;
 
         tcc::utility::print_par(world, "\nCC Calculation\n");
 
@@ -411,7 +408,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::vector<TA::TiledRange1> tr_04(4, basis.create_trange1());
         TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
 
-        auto do_screen = cc_in.HasMember("Screen") ? cc_in["DIIS"].GetBool() : true;
 
         world.gop.fence();
 
@@ -429,8 +425,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 //            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
 //            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
+
+        std::string screen = cc_in.HasMember("Screen") ? cc_in["Screen"].GetString() : "";
+        int screen_option = 0;
+        if(screen == "schwarz"){
+            screen_option = 1;
+        }
+        else if(screen =="qqr"){
+            screen_option = 2;
+        }
+
         auto time0 = tcc_time::now();
-        lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4);
+        lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4,screen_option);
         auto time1 = tcc_time::now();
         auto duration = tcc_time::duration_in_s(time0,time1);
         if(world.rank() == 0){

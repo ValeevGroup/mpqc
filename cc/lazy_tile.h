@@ -89,7 +89,7 @@ namespace mpqc {
         // function to make direct two electron dense TArray
         DirectTwoElectronDenseArray make_lazy_two_electron_dense_array(
                 madness::World &world, mpqc::basis::Basis &basis,
-                const TA::TiledRange &trange) {
+                const TA::TiledRange &trange, const int screen_option) {
 
             // compute cluster shell
             auto cluster_shells = basis.cluster_shells();
@@ -101,12 +101,32 @@ namespace mpqc {
                     two_body_coulomb_engine);
 
             // compute screener
-            auto screen_builder = integrals::init_schwarz_screen(1e-10);
-            auto p_shr_screen = std::make_shared<integrals::Screener>(screen_builder(world, p_engine_pool, basis));
+            std::shared_ptr<integrals::Screener> p_screen;
+            if(screen_option == 1){
+                auto screen_builder = integrals::init_schwarz_screen(1e-10);
+                p_screen = std::make_shared<integrals::Screener>(screen_builder(world, p_engine_pool, basis));
+
+                if(world.rank() == 0){
+                    std::cout << "schwarz screen" << std::endl;
+                }
+            }
+            else if(screen_option == 2){
+                auto screen_builder = integrals::init_qqr_screen{};
+                p_screen = std::make_shared<integrals::Screener>(screen_builder(world, p_engine_pool, basis));
+                if(world.rank() == 0){
+                    std::cout << "qqr screen" << std::endl;
+                }
+            }
+            else{
+                p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+                if(world.rank() == 0){
+                    std::cout << "no screen" << std::endl;
+                }
+            }
 
             DIRECTAOTWOELECTONINTEGRAL->set_pool(p_engine_pool);
             DIRECTAOTWOELECTONINTEGRAL->set_shell(p_cluster_shells);
-            DIRECTAOTWOELECTONINTEGRAL->set_screener(p_shr_screen);
+            DIRECTAOTWOELECTONINTEGRAL->set_screener(p_screen);
 
             DirectTwoElectronDenseArray lazy_two_electron(world, trange);
 
@@ -129,7 +149,7 @@ namespace mpqc {
         // function to make direct two electron Sparse TArray
         DirectTwoElectronSparseArray make_lazy_two_electron_sparse_array(
                 madness::World &world, const mpqc::basis::Basis &basis,
-                const TA::TiledRange &trange) {
+                const TA::TiledRange &trange, const int screen_option) {
 
             // compute cluster shell
             auto cluster_shells = basis.cluster_shells();
@@ -141,12 +161,31 @@ namespace mpqc {
                     two_body_coulomb_engine);
 
             // compute screener
-            auto screen_builder = integrals::init_schwarz_screen(1e-10);
-            auto p_shr_screen = std::make_shared<integrals::Screener>(screen_builder(world, p_engine_pool, basis));
+            std::shared_ptr<integrals::Screener> p_screen;
+            if(screen_option == 1){
+                auto screen_builder = integrals::init_schwarz_screen(1e-10);
+                p_screen = std::make_shared<integrals::Screener>(screen_builder(world, p_engine_pool, basis));
 
+                if(world.rank() == 0){
+                    std::cout << "schwarz screen" << std::endl;
+                }
+            }
+            else if(screen_option == 2){
+                auto screen_builder = integrals::init_qqr_screen{};
+                p_screen = std::make_shared<integrals::Screener>(screen_builder(world, p_engine_pool, basis));
+                if(world.rank() == 0){
+                    std::cout << "qqr screen" << std::endl;
+                }
+            }
+            else{
+                p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+                if(world.rank() == 0){
+                    std::cout << "no screen" << std::endl;
+                }
+            }
             DIRECTAOTWOELECTONINTEGRAL->set_pool(p_engine_pool);
             DIRECTAOTWOELECTONINTEGRAL->set_shell(p_cluster_shells);
-            DIRECTAOTWOELECTONINTEGRAL->set_screener(p_shr_screen);
+            DIRECTAOTWOELECTONINTEGRAL->set_screener(p_screen);
 
             // make shape
             TA::TensorF tile_norms(trange.tiles(),0.0);

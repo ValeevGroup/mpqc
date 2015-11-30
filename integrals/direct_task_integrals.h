@@ -43,10 +43,9 @@ soad_direct_integrals(mad::World &world, ShrPool<E> shr_pool,
                                          std::move(shr_bases),
                                          std::move(screen), std::move(op));
 
-    auto dir_array = DirArray<N, decltype(builder)>(std::move(builder));
-
-
-    auto builder_ptr = &dir_array.builder();
+    using b_type = remove_ref_t<decltype(*builder)>;
+    auto dir_array = DirArray<N, b_type>(std::move(builder));
+    auto builder_ptr = dir_array.builder();
 
     using TileType = DirectTile<IntegralBuilder<N, E, Op>>;
     std::vector<std::pair<int64_t, TileType>> tiles(tvolume);
@@ -109,10 +108,9 @@ direct_sparse_integrals(mad::World &world, ShrPool<E> shr_pool,
                                          std::move(shr_bases),
                                          std::move(screen), std::move(op));
 
-    auto dir_array = DirArray<N, decltype(builder)>(std::move(builder));
-
-
-    auto builder_ptr = &dir_array.builder();
+    using b_type = remove_ref_t<decltype(*builder)>;
+    auto dir_array = DirArray<N, b_type>(std::move(builder));
+    auto builder_ptr = dir_array.builder();
 
     using TileType = DirectTile<IntegralBuilder<N, E, Op>>;
     std::vector<std::pair<int64_t, TileType>> tiles(tvolume);
@@ -160,27 +158,27 @@ direct_sparse_integrals(mad::World &world, ShrPool<E> shr_pool,
 }
 
 /*! \brief Construct direct dense integral tensors in parallel with screening.
- * 
+ *
  * Same requirements on Op as those in Integral Builder
  */
 template <typename E, unsigned long N, typename Op = TensorPassThrough>
 DArray<N, DirectTile<IntegralBuilder<N, E, Op>>, SpPolicy>
 direct_dense_integrals(mad::World &world, ShrPool<E> shr_pool,
-                        Barray<N> const &bases,
-                        std::shared_ptr<Screener> screen
-                        = std::make_shared<Screener>(Screener{}),
-                        Op op = Op{}) {
+                       Barray<N> const &bases,
+                       std::shared_ptr<Screener> screen
+                       = std::make_shared<Screener>(Screener{}),
+                       Op op = Op{}) {
 
     const auto trange = detail::create_trange(bases);
 
     // Copy the Bases for the Integral Builder
     auto shr_bases = std::make_shared<Barray<N>>(bases);
 
-    // Make a pointer to an Integral builder.  
-    auto builder_ptr = std::make_shared<IntegralBuilder<N, E, Op>>(
+    // Make a pointer to an Integral builder.
+    auto builder_ptr = 
           make_integral_builder(world, std::move(shr_pool),
                                 std::move(shr_bases), std::move(screen),
-                                std::move(op)));
+                                std::move(op));
 
     using TileType = DirectTile<IntegralBuilder<N, E, Op>>;
     DArray<N, TileType, TA::DensePolicy> out(world, trange);

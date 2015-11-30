@@ -209,14 +209,6 @@ int main(int argc, char *argv[]) {
               << std::endl;
 
     libint2::init();
-    world.gop.fence();
-    volatile int i = 0;
-    char hostname[256];
-    gethostname(hostname, sizeof(hostname));
-    printf("PID %d on %s ready for attach\n", getpid(), hostname);
-    fflush(stdout);
-    while (0 == i) sleep(5);
-
     const auto bs_array = tcc::utility::make_array(basis, basis);
 
     auto overlap_e = ints::make_1body_shr_pool("overlap", basis, clustered_mol);
@@ -252,6 +244,7 @@ int main(int argc, char *argv[]) {
 
         auto eri4 = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array,
                                                        shr_screen);
+
 
         world.gop.fence();
         auto eri40 = tcc_time::now();

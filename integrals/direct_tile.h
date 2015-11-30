@@ -25,9 +25,7 @@ class DirectTile {
   private:
     std::vector<std::size_t> idx_;
     TA::Range range_;
-    Builder *builder_;
-    madness::detail::WorldPtr<madness::World> world_ptr_;
-    madness::uniqueidT builder_id_;
+    std::shared_ptr<Builder> builder_;
 
     using TileType = decltype(std::declval<Builder>()(
           std::declval<std::vector<std::size_t>>(), std::declval<TA::Range>()));
@@ -44,12 +42,11 @@ class DirectTile {
     DirectTile &operator=(DirectTile &&) = default;
 
     DirectTile(std::vector<std::size_t> index, TA::Range range,
-               Builder *builder)
+               std::shared_ptr<Builder> builder)
             : idx_(std::move(index)),
               range_(std::move(range)),
-              builder_(std::move(builder)),
-              world_ptr_(builder_->get_world(), &builder_->get_world()),
-              builder_id_(builder_->id()) {}
+              builder_(std::move(builder))
+    {}
 
     operator eval_type() const { return builder_->operator()(idx_, range_); }
 
@@ -66,8 +63,8 @@ class DirectTile {
     serialize(Archive &ar) {
         ar &idx_;
         ar &range_;
-        ar &world_ptr_;
-        ar &builder_id_;
+        assert(builder_ != nullptr);
+        ar & builder_->id();
     }
 
     template <typename Archive>
@@ -75,12 +72,14 @@ class DirectTile {
     serialize(Archive &ar) {
         ar &idx_;
         ar &range_;
-        ar &world_ptr_;
-        ar &builder_id_;
+        madness::uniqueidT id;
+        ar &id;
 
         assert(builder_ == nullptr);
-        builder_ = world_ptr_.get_world().template ptr_from_id<Builder>(
-              builder_id_);
+        madness::World *world
+              = madness::World::world_from_id(id.get_world_id());
+        builder_ = world->template shared_ptr_from_id<Builder>(id);
+        assert(builder_ != nullptr);
     }
 #endif
 };
@@ -90,16 +89,15 @@ class DirectTile {
 template <typename Builder, typename Array>
 class DirectArray {
   private:
-    Builder builder_;
+    std::shared_ptr<Builder> builder_;
     Array array_;
 
   public:
     DirectArray() = default;
-    DirectArray(Builder b, Array a)
+    DirectArray(std::shared_ptr<Builder> b, Array a)
             : builder_(std::move(b)), array_(std::move(a)) {}
 
-    DirectArray(Builder b)
-            : builder_(std::move(b)), array_() {}
+    DirectArray(std::shared_ptr<Builder> b) : builder_(std::move(b)), array_() {}
 
     template <typename... Args>
     auto operator()(Args &&... args)
@@ -113,25 +111,15 @@ class DirectArray {
         return array_(std::forward<Args>(args)...);
     }
 
-    void set_array(Array a){
-        array_ = std::move(a);
-    }
+    void set_array(Array a) { array_ = std::move(a); }
 
-    Array & array() {
-        return array_;
-    }
+    Array &array() { return array_; }
 
-    Array const & array() const {
-        return array_;
-    }
+    Array const &array() const { return array_; }
 
-    Builder & builder() {
-        return builder_;
-    }
+    std::shared_ptr<Builder> builder() { return builder_; }
 
-    Builder const & builder() const {
-        return builder_;
-    }
+    const std::shared_ptr<Builder> builder() const { return builder_; }
 };
 
 } // namespace integrals

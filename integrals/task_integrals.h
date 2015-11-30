@@ -161,10 +161,10 @@ sparse_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
 
     // Make a pointer to an Integral builder.  Doing this because we want to use
     // it in Tasks.
-    auto builder_ptr = std::make_shared<IntegralBuilder<N, E, Op>>(
+    auto builder_ptr = 
           make_integral_builder(world, std::move(shr_pool),
                                 std::move(shr_bases), std::move(screen),
-                                std::move(op)));
+                                std::move(op));
 
     auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng,
                       TA::TensorF *tile_norms_ptr, Tile *out_tile) {

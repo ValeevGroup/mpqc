@@ -14,6 +14,7 @@
 #include "../include/tiledarray.h"
 
 #include <array>
+#include <memory>
 
 namespace mpqc {
 namespace integrals {
@@ -28,12 +29,14 @@ namespace integrals {
  * ```
  */
 template <unsigned long N, typename E, typename Op>
-class IntegralBuilder : public madness::WorldObject<IntegralBuilder<N, E, Op>> {
+class IntegralBuilder
+      : public std::enable_shared_from_this<IntegralBuilder<N, E, Op>> {
   private:
     detail::ShrBases<N> bases_;
     ShrPool<E> engines_;
     std::shared_ptr<Screener> screen_;
     Op op_;
+    madness::uniqueidT id_;
 
   public:
     using op_type = detail::Ttype<Op>;
@@ -51,15 +54,21 @@ class IntegralBuilder : public madness::WorldObject<IntegralBuilder<N, E, Op>> {
     IntegralBuilder(madness::World &world, ShrPool<E> shr_epool,
                     detail::ShrBases<N> shr_bases,
                     std::shared_ptr<Screener> screen, Op op)
-            : madness::WorldObject<IntegralBuilder<N, E, Op>>(world),
-              bases_(std::move(shr_bases)),
+            : bases_(std::move(shr_bases)),
               engines_(std::move(shr_epool)),
               screen_(std::move(screen)),
-              op_(std::move(op)) {
-        // Must call for WorldObject Interface to be satisfied
-        this->process_pending();
+              op_(std::move(op)),
+              id_(world.register_ptr(this)) {}
+
+    ~IntegralBuilder() {
+        if (madness::initialized()) {
+            madness::World *world
+                  = madness::World::world_from_id(id_.get_world_id());
+            world->unregister_ptr(this);
+        }
     }
 
+    madness::uniqueidT id() const { return id_; }
 
     op_type operator()(std::vector<std::size_t> const &idx, TA::Range range) {
         return op_(integrals(idx, std::move(range)));
@@ -88,13 +97,13 @@ class IntegralBuilder : public madness::WorldObject<IntegralBuilder<N, E, Op>> {
  * IntegralBuilder for details.
  */
 template <typename E, typename Op, unsigned long N>
-IntegralBuilder<N, E, Op>
+std::shared_ptr<IntegralBuilder<N, E, Op>>
 make_integral_builder(madness::World &world, ShrPool<E> shr_epool,
                       detail::ShrBases<N> shr_bases,
                       std::shared_ptr<Screener> shr_screen, Op op) {
-    return IntegralBuilder<N, E, Op>(world, std::move(shr_epool),
-                                     std::move(shr_bases),
-                                     std::move(shr_screen), std::move(op));
+    return std::make_shared<IntegralBuilder<N, E, Op>>(
+          world, std::move(shr_epool), std::move(shr_bases),
+          std::move(shr_screen), std::move(op));
 }
 
 } // namespace integrals

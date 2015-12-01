@@ -35,26 +35,30 @@ namespace mpqc {
             typedef TA::Array <double, 3, Tile, Policy> TArray3;
             typedef TA::Array <double, 4, Tile, Policy> TArray4;
 
-            CCSDIntermediate(const TArray3 &Xpq, const TArray2 &Ci, const TArray2 &Ca,
+            CCSDIntermediate(const TArray2 &Ci, const TArray2 &Ca, const TArray3 &Xpq,
                              DirectTwoElectronArray& direct_ao) : direct_ao_(direct_ao) {
                 {
                     // convert to MO, store this temporary,
                     // call clean() to clean Xab_ Xij_ Xai_
-                    Xab_("X,a,b") = Xpq("X,p,q") * Ca("q,a") * Ca("p,b");
-                    tcc::utility::print_size_info(Xab_,"X_xvv");
-                    Xij_("X,i,j") = Xpq("X,p,q") * Ci("q,i") * Ci("p,j");
-                    tcc::utility::print_size_info(Xij_,"X_xoo");
-                    Xai_("X,a,i") = Xpq("X,p,q") * Ca("q,a") * Ci("p,i");
-                    tcc::utility::print_size_info(Xai_,"X_xvo");
+                    if(Xpq.is_initialized()){
+                        Xab_("X,a,b") = Xpq("X,p,q") * Ca("q,a") * Ca("p,b");
+                        tcc::utility::print_size_info(Xab_,"X_xvv");
+                        Xij_("X,i,j") = Xpq("X,p,q") * Ci("q,i") * Ci("p,j");
+                        tcc::utility::print_size_info(Xij_,"X_xoo");
+                        Xai_("X,a,i") = Xpq("X,p,q") * Ca("q,a") * Ci("p,i");
+                        tcc::utility::print_size_info(Xai_,"X_xvo");
+                        have_three_center_ = true;
+                    }else{
+                        have_three_center_ = false;
+                    }
                     Ci_= Ci;
                     Ca_ = Ca;
 
                     if(direct_ao.is_initialized()){
-                        direct_ = true;
+                        have_four_center_ = true;
                     }else{
-                        direct_ = false;
+                        have_four_center_ = false;
                     }
-                    cleaned_ = false;
 
                     // two electron integral
 //                    TArray4 abij_;
@@ -82,7 +86,7 @@ namespace mpqc {
                 Xab_ = TArray3();
                 Xai_ = TArray3();
                 Xij_ = TArray3();
-                cleaned_ = true;
+                have_three_center_ = false;
             }
 
             // clean all the two electron integral computed
@@ -110,28 +114,28 @@ namespace mpqc {
 
             // get three center integral (X|ab)
             const TArray3 get_Xab() const{
-                if(!cleaned_){
+                if(have_three_center_){
                     return Xab_;
                 }else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
             // get three center integral (X|ij)
             const TArray3 get_Xij() const{
-                if(!cleaned_){
+                if(have_three_center_){
                     return Xij_;
                 }else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
             // get three center integral (X|ai)
             const TArray3 get_Xai() const{
-                if(!cleaned_){
+                if(have_three_center_){
                     return Xai_;
                 }else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
@@ -140,7 +144,7 @@ namespace mpqc {
 
             // <ab|ij>
             const TArray4 get_abij(){
-                if(!cleaned_){
+                if(have_three_center_){
                     if (abij_.is_initialized()){
                         return  abij_;
                     }else{
@@ -148,14 +152,18 @@ namespace mpqc {
                         tcc::utility::print_size_info(abij_,"G_vvoo");
                         return abij_;
                     }
-                }else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                }
+                else if(have_four_center_) {
+
+                }
+                else{
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
             // <ij|kl>
             const TArray4 get_ijkl() {
-                if(!cleaned_){
+                if(have_three_center_){
                     if (ijkl_.is_initialized()){
                         return ijkl_;
                     }else{
@@ -164,13 +172,13 @@ namespace mpqc {
                         return ijkl_;
                     }
                 }else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
             // <ab|cd>
             const TArray4 get_abcd() {
-                if(!cleaned_){
+                if(have_three_center_){
                     if (abcd_.is_initialized()){
                         return  abcd_;
                     }else{
@@ -179,13 +187,13 @@ namespace mpqc {
                         return abcd_;
                     }
                 }else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
             // <ia|bc>
             const TArray4 get_iabc() {
-                if(!cleaned_){
+                if(have_three_center_){
                     if (iabc_.is_initialized()){
                        return iabc_;
                     }else{
@@ -194,13 +202,13 @@ namespace mpqc {
                         return iabc_;
                     }
                 }else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
             // <ai|bc>
             const TArray4 get_aibc() {
-                if(!cleaned_){
+                if(have_three_center_){
                     if (aibc_.is_initialized()){
                         return aibc_;
                     }else{
@@ -209,13 +217,13 @@ namespace mpqc {
                         return aibc_;
                     }
                 }else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
             // <ij|ak>
             const TArray4 get_ijak() {
-                if(!cleaned_){
+                if(have_three_center_){
                     if (ijak_.is_initialized()){
                         return ijak_;
                     }else{
@@ -224,13 +232,13 @@ namespace mpqc {
                         return ijak_;
                     }
                 }else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
             // <ij|ka>
             const TArray4 get_ijka() {
-                if(!cleaned_){
+                if(have_three_center_){
                     if(ijka_.is_initialized()){
                         return ijka_;
                     }else{
@@ -239,13 +247,13 @@ namespace mpqc {
                         return ijka_;
                     }
                 } else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
             // <ia|jb>
             const TArray4 get_iajb() {
-                if(!cleaned_){
+                if(have_three_center_){
                     if (iajb_.is_initialized()){
                         return iajb_;
                     }else{
@@ -254,7 +262,7 @@ namespace mpqc {
                         return iajb_;
                     }
                 } else{
-                    throw std::runtime_error("CCSDIntermediate has been cleaned");
+                    throw std::runtime_error("CCSDIntermediate does not have three center");
                 }
             }
 
@@ -266,7 +274,7 @@ namespace mpqc {
             /// @return U tensor
             // TODO test the performance stability of direct tile contraction
             TArray4 compute_u2_u11(const TArray4& t2, const TArray2& t1){
-                if (direct_){
+                if (have_four_center_){
                     TArray2 tc;
                     TArray4 u2_u11;
                     tc("i,q") = Ca_("q,c") * t1("c,i");
@@ -304,10 +312,10 @@ namespace mpqc {
             DirectTwoElectronArray direct_ao_;
 
             // check if Xab, Xai, Xij has been cleaned
-            bool cleaned_;
+            bool have_three_center_;
 
             // check if have direct AO array
-            bool direct_;
+            bool have_four_center_;
 
         };
 

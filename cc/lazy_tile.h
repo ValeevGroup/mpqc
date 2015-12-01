@@ -145,7 +145,6 @@ namespace mpqc {
         }
 
 
-        // TODO update and test sparse direct array
         // function to make direct two electron Sparse TArray
         DirectTwoElectronSparseArray make_lazy_two_electron_sparse_array(
                 madness::World &world, const mpqc::basis::Basis &basis,

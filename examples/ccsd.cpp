@@ -444,7 +444,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         }
         intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>>
-                (Xab, Ci, Cv, lazy_two_electron_int);
+                (Ci, Cv, Xab, lazy_two_electron_int);
 //        }
     }
 

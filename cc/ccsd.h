@@ -1307,11 +1307,6 @@ namespace mpqc {
 
                     iter += 1ul;
 
-                    world.gop.fence();
-                    double vm_usage = 0.0;
-                    double resident_set = 0.0;
-                    tcc::utility::process_linux_mem_usage(vm_usage,resident_set);
-                    std::cout << "rank" << world.rank() << " VM " << vm_usage << " ResidentSet " <<resident_set <<std::endl;
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
 

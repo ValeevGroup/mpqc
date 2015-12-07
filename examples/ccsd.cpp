@@ -366,11 +366,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
         Xab("X,a,b") = L_inv("X,Y")*eri3("Y,a,b");
 
 
-
         auto F_eig = tcc::array_ops::array_to_eigen(F);
         auto S_eig = tcc::array_ops::array_to_eigen(S);
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
 
+        // check the condition number in Overlap
+        Eig::SelfAdjointEigenSolver<decltype(S_eig)> S_es(S_eig);
+        // eigen value in increasing order
+        auto cond = S_es.eigenvalues()(S_es.eigenvalues().size()-1)/S_es.eigenvalues()(0);
+        tcc::utility::print_par(world,"Condition Number in Overlap: ", cond, "\n");
+
+        // solve C
+        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
         ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
 
         auto C_all = es.eigenvectors();

@@ -119,7 +119,7 @@ MolcasPT2R12::MolcasPT2R12 (const Ref<KeyVal>& kv) :
 #if defined(MPQC_NEW_FEATURES)
   std::string cabs_singles = kv->stringvalue("cabs_singles", KeyValValuestring("true") );
   std::string cabs_singles_basis = kv->stringvalue("singles_basis", KeyValValuestring(std::string()) );
-  std::string partition = kv->stringvalue("patitionH", KeyValValuestring("fock") );
+  std::string partition = kv->stringvalue("partitionH", KeyValValuestring("fock") );
 
   if (!partition.empty()){
     if (partition!= "fock"

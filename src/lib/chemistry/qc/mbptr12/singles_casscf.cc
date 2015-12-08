@@ -37,17 +37,13 @@ using namespace sc;
 using namespace std;
 
 
-CabsSingles::CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds, bool extra_basis) {
-  singles_r12intrmds_ = srr12intrmds;
-  extra_basis_ = extra_basis;
-}
-
 double CabsSingles::compute(const std::string &h0) {
 
   ExEnv::out0() << std::endl << std::endl << indent
     << "Enter CabsSingles::compute \n";
   // if use extra_basis for singles calculation, remove the original orbital regitstry and reinitialize
   if (extra_basis_){
+      ExEnv::out0() << indent << "Use Different Aux Basis. Cleanning... " << std::endl << std::endl;
     singles_r12intrmds_->r12world()->refwfn()->world()->fockbuild_runtime()->obsolete();
     singles_r12intrmds_->r12world()->refwfn()->world()->tfactory()->orbital_registry()->remove("p'");
     singles_r12intrmds_->r12world()->refwfn()->world()->tfactory()->orbital_registry()->remove("mu'");
@@ -73,7 +69,7 @@ double CabsSingles::compute(const std::string &h0) {
 void CabsSingles::print(std::ostream &os) const{
   os << indent << "CabsSingles:" << endl;
   os << incindent;
-  os << indent << "extra_basis = " << (extra_basis_ ? "true" : "false" )<< endl;
+  os << indent << "extra_basis = " << extra_basis_ << endl;
   if (extra_basis_){
     os << indent << "CabsSingles Auxiliary Basis Set (ABS):" << endl;
     os << incindent;

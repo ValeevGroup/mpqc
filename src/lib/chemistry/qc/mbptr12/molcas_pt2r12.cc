@@ -670,6 +670,8 @@ void MolcasPT2R12::print(std::ostream & os) const
   os << endl;
   os << decindent << endl;
 
-  extern_pt2r12_->print(os);
+  if(extern_pt2r12_){
+    extern_pt2r12_->print(os);
+  }
 
 }

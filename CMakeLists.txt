@@ -164,6 +164,8 @@ if(USE_STATIC_LIBS)
   set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
 ENDIF()
 
+include(CheckIncludeFiles)
+
 find_package(Threads)
 if (Threads_FOUND)
   set(Threads_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})

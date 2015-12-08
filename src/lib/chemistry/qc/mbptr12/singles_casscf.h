@@ -38,7 +38,11 @@ namespace sc {
 
     public:
 
-    CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds, bool extra_basis);
+    CabsSingles() = default;
+
+    CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds, bool extra_basis) : singles_r12intrmds_(srr12intrmds), extra_basis_(extra_basis){}
+
+    ~CabsSingles() = default;
 
     double compute(const std::string &h0);
     void obsolete() { singles_r12intrmds_ = NULL; }

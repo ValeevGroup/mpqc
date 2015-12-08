@@ -65,7 +65,7 @@ namespace sc {
       double magnetic_moment() const;
       int value_implemented() const { return 1; }
       void set_desired_value_accuracy(double acc);
-      void print(std::ostream& os=ExEnv::out0());
+      void print(std::ostream& os=ExEnv::out0()) const;
       void initialize();
 
       void obsolete();

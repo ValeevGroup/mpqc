@@ -236,8 +236,12 @@ void ExternPT2R12::set_desired_value_accuracy(double acc) {
   pt2r12_->set_desired_value_accuracy(acc);
 }
 
-void ExternPT2R12::print(std::ostream& os) {
-  pt2r12_->print(os);
+void ExternPT2R12::print(std::ostream& os) const{
+
+  os << indent << "ExternPT2R12" << std::endl;
+  if(pt2r12_){
+    pt2r12_->print(os);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

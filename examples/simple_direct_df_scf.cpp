@@ -28,6 +28,8 @@
 #include "../scf/soad.h"
 #include "../scf/clusterd_coeffs.h"
 
+#include "../ta_routines/diagonal_array.h"
+
 #include <memory>
 #include <atomic>
 
@@ -143,7 +145,7 @@ class ThreeCenterScf {
     array_type F_;
     array_type D_;
     array_type C_;
-    array_type V_inv_;
+    array_type L_inv_;
     TiledArray::DIIS<array_type> diis_;
 
     std::vector<double> k_times_;
@@ -165,7 +167,7 @@ class ThreeCenterScf {
         auto tr_ao = S_.trange().data()[0];
 
         auto occ_nclusters = (occ_ < 10) ? occ_ : 10;
-        auto tr_occ = tcc::scf::tr_occupied(occ_nclusters, occ_);
+        auto tr_occ = tcc::scf::tr_occupied(1, occ_);
 
         C_ = tcc::array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C,
                                                          tr_ao, tr_occ);
@@ -180,14 +182,13 @@ class ThreeCenterScf {
         world.gop.fence();
         auto w0 = tcc::utility::time::now();
         TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> W;
-        W("Y, mu, i") = eri3("Y, mu, nu") * C_("nu, i");
+        W("X, mu, i") = L_inv_("X,Y") * (eri3("Y, mu, nu") * C_("nu, i"));
         auto w1 = tcc::utility::time::now();
         w_times_.push_back(tcc::utility::time::duration_in_s(w0, w1));
 
-
         array_type J;
         J("mu, nu") = eri3("X, mu, nu")
-                      * (V_inv_("X, Y") * (W("Y, rho, i") * C_("rho, i")));
+                      * (L_inv_("Y, X") * (W("Y, rho, i") * C_("rho, i")));
         world.gop.fence();
         auto j1 = tcc::utility::time::now();
         j_times_.push_back(tcc::utility::time::duration_in_s(w1, j1));
@@ -196,12 +197,13 @@ class ThreeCenterScf {
         // Permute W
         W("Y,i,nu") = W("Y,nu,i");
         array_type K, Kij, Sc;
-        K("mu, j") = W("X, i, mu")
-                     * (V_inv_("X,Y") * (W("Y, i, nu") * C_("nu, j")));
-        Kij("i,j") = C_("mu, i") * K("mu, j");
-        Sc("mu, j") = S_("mu, lam") * C_("lam, j");
-        K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
-                      - (Sc("mu,i") * Kij("i,j")) * Sc("nu,j");
+        K("mu,nu") = W("X,i,mu") * W("X, i, nu");
+        // K("mu, j") = W("X, i, mu")
+        //              * (V_inv_("X,Y") * (W("Y, i, nu") * C_("nu, j")));
+        // Kij("i,j") = C_("mu, i") * K("mu, j");
+        // Sc("mu, j") = S_("mu, lam") * C_("lam, j");
+        // K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
+        //               - (Sc("mu,i") * Kij("i,j")) * Sc("nu,j");
         world.gop.fence();
         auto k1 = tcc::utility::time::now();
         k_times_.push_back(tcc::utility::time::duration_in_s(j1, k1));
@@ -212,12 +214,12 @@ class ThreeCenterScf {
 
   public:
     ThreeCenterScf(array_type const &H, array_type const &S,
-                   array_type const &F_guess, array_type const &V_inv,
+                   array_type const &F_guess, array_type const &L_inv,
                    int64_t occ, double rep)
             : H_(H),
               S_(S),
               F_(F_guess),
-              V_inv_(V_inv),
+              L_inv_(L_inv),
               occ_(occ),
               repulsion_(rep) {
         compute_density(occ_);
@@ -244,6 +246,8 @@ class ThreeCenterScf {
             Grad("i,j") = F_("i,k") * D_("k,l") * S_("l,j")
                           - S_("i,k") * D_("k,l") * F_("l,j");
 
+            auto norm_error = Grad("i,j").norm().get();
+
             diis_.extrapolate(F_, Grad);
 
             // Lastly update density
@@ -255,7 +259,8 @@ class ThreeCenterScf {
 
 
             std::cout << "Iteration: " << (iter + 1)
-                      << " energy: " << old_energy << " error: " << error
+                      << " energy: " << old_energy + repulsion_
+                      << " error: " << error << " norm error = " << norm_error
                       << std::endl;
             std::cout << "\tW time: " << w_times_.back() << std::endl;
             std::cout << "\tJ time: " << j_times_.back()
@@ -267,8 +272,7 @@ class ThreeCenterScf {
     }
 
     double energy() {
-        return repulsion_
-               + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
+        return D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
     }
 };
 
@@ -341,241 +345,246 @@ int main(int argc, char *argv[]) {
     const auto dfbs_array = tcc::utility::make_array(df_basis, df_basis);
     auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
 
-    decltype(H) V_inv;
+    decltype(H) L_inv;
     {
         auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
         auto V_eig = tcc::array_ops::array_to_eigen(Vmetric);
-        { // Silly Drew Test not meaningful
-            Eig::JacobiSVD<MatrixD> svdS(V_eig, Eig::ComputeThinU | Eig::ComputeThinV);
-            std::cout << std::setprecision(4);
-            std::cout << "S vals of V = " << svdS.singularValues().transpose() << std::endl;
-            std::cout << "S vects U of  V = \n" << svdS.matrixU() << std::endl;
-            std::cout << "S PCA T  = \n" << (svdS.matrixU() * svdS.singularValues().asDiagonal()).transpose() << std::endl;
-
-            MatrixD Qs = V_eig.transpose() * V_eig;
-            Qs = Qs.inverse();
-            MatrixD Rs = V_eig * V_eig.transpose();
-            Rs = Rs.inverse();
-
-            Eig::SelfAdjointEigenSolver<MatrixD> QRes(Qs);
-            Qs = QRes.operatorSqrt();
-            QRes.compute(Rs);
-            Rs = QRes.operatorSqrt();
-
-            MatrixD sph_S = Qs.transpose() * V_eig * Rs;
-            svdS.compute(sph_S);
-            std::cout << "\nS vals of Q * V * R = " << svdS.singularValues().transpose() << std::endl;
-            std::cout << "S vects U of Trans V = \n" << Qs.inverse() * svdS.matrixU() << std::endl;
-            std::cout << "S PCA T  = \n" << (Qs.inverse() * svdS.matrixU() * svdS.singularValues().asDiagonal()).transpose() << std::endl;
-            std::cout << std::setprecision(15);
-        }
-        MatrixD Vinv = V_eig.inverse();
+        MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
+        MatrixD L_inv_eig = Leig.inverse();
 
         auto tr_V = Vmetric.trange().data()[0];
-        V_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, Vinv, tr_V,
-                                                            tr_V);
+        L_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
+                                                            tr_V, tr_V);
     }
 
     auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
-    { // Schwarz Screened
-        std::cout << "Direct Schwarz DF" << std::endl;
-        auto sbuilder = ints::init_schwarz_screen(1e-8);
-        auto shr_screen = std::make_shared<ints::SchwarzScreen>(
-              sbuilder(world, eri_e, df_basis, basis));
+    std::cout << "Direct DF Schwarz screening" << std::endl;
+    auto sbuilder = ints::init_schwarz_screen(1e-12);
+    auto shr_screen = std::make_shared<ints::SchwarzScreen>(
+          sbuilder(world, eri_e, df_basis, basis));
 
-        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
-                                                  shr_screen);
+    auto truncator = [=](TA::TensorD &&t) {
+        TA::TensorD S, Tt;
+        TA::TensorD t_copy = t.clone();
+        if(!tcc::tensor::algebra::full_rank_decompose(t_copy, S, Tt,
+                                                       rank_thresh)){
+            return std::move(t);
+        }
 
-        auto F_soad
-              = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-        ThreeCenterScf scf(H, S, F_soad, V_inv, occ / 2, repulsion_energy);
-        scf.solve(20, 1e-8, eri3);
-        auto hf_energy = scf.energy();
-        std::cout << "Final HF energy = " << hf_energy << std::endl;
+        tcc::tensor::DecomposedTensor<double> dt(rank_thresh, std::move(S),
+                                                 std::move(Tt));
 
-        auto Fao = scf.fock();
+        t_copy = tcc::tensor::algebra::combine(dt);
 
-        auto F_eig = tcc::array_ops::array_to_eigen(Fao);
-        auto S_eig = tcc::array_ops::array_to_eigen(S);
+        for (auto i = 0; i < t.range().volume(); ++i) {
+            *(t.data() + i) = *(t_copy.data() + i);
+        }
 
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
-                                                                   S_eig);
-        auto nf = basis.nfunctions();
-        auto nocc = occ / 2;
-        auto nvir = nf - nocc;
+        return std::move(t);
+    };
 
-        decltype(S_eig) Ceigi = es.eigenvectors().leftCols(nocc);
-        decltype(S_eig) Ceigv = es.eigenvectors().rightCols(nvir);
+    auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
+                                              shr_screen, truncator);
+    
+    std::cout << "\n\nSize for Eri3 if stored" << std::endl;
+    print_storage_for_array(eri3.array(), rank_thresh);
+    std::cout << std::endl;
 
+    auto F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
+    ThreeCenterScf scf(H, S, F_soad, L_inv, occ / 2, repulsion_energy);
+    scf.solve(20, 1e-10, eri3);
 
-        auto occ_nclusters = obs_nclusters;
-        auto tr_occ = tcc::scf::tr_occupied(occ_nclusters, nocc);
-        auto tr_vir = tcc::scf::tr_occupied(occ_nclusters, F_eig.cols() - nocc);
+    auto hf_energy = repulsion_energy + scf.energy();
+    std::cout << "Final HF energy = " << hf_energy << std::endl;
 
+    auto Fao = scf.fock();
 
-        auto Ci = tcc::array_ops::eigen_to_array<TA::TensorD>(
-              world, Ceigi, S.trange().data()[0], tr_occ);
+    auto F_eig = tcc::array_ops::array_to_eigen(Fao);
+    auto S_eig = tcc::array_ops::array_to_eigen(S);
 
-        auto multi_pool
-              = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
-        auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+    Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
+    auto nf = basis.nfunctions();
+    auto nocc = occ / 2;
+    auto nvir = nf - nocc;
+    std::cout << "# occupied = " << nocc << std::endl;
+    std::cout << "# virtuals = " << nvir << std::endl;
 
-
-        std::cout << "\n\nSize for Eri3 if stored" << std::endl;
-        print_storage_for_array(eri3.array());
-        std::cout << std::endl;
-
-
-        auto Cil = scf::BoysLocalization{}(Ci, r_xyz);
-
-        tcc::scf::clustered_coeffs(r_xyz, Cil, obs_nclusters);
-        std::cout << "Sparsity in Ci local = \n" << Cil.get_shape().sparsity()
-                  << std::endl;
-
-
-        DArray<3, TA::TensorD, TA::SparsePolicy> W;
-        W("Y, mu, i") = eri3("Y, mu, nu") * Cil("nu, i");
-        world.gop.fence();
-
-        std::cout << "Size for W(Y,mu, i) CMO " << std::endl;
-        print_storage_for_array(W);
-        std::cout << std::endl;
+    decltype(S_eig) Ceigi = es.eigenvectors().leftCols(nocc);
+    decltype(S_eig) Ceigv = es.eigenvectors().rightCols(nvir);
 
 
-        auto Cv = tcc::array_ops::eigen_to_array<TA::TensorD>(
-              world, Ceigv, S.trange().data()[0], tr_vir);
-        tcc::scf::clustered_coeffs(r_xyz, Cv, obs_nclusters);
+    auto occ_nclusters = obs_nclusters;
+    auto tr_occ = tcc::scf::tr_occupied(1, nocc);
+    auto tr_vir = tcc::scf::tr_occupied(1, nvir);
 
-        DArray<3, TA::TensorD, TA::SparsePolicy> Wiv;
-        Wiv("Y, i, a") = W("Y, mu, i") * Cv("mu, a");
-        world.gop.fence();
+    auto Ci = tcc::array_ops::eigen_to_array<TA::TensorD>(
+          world, Ceigi, S.trange().data()[0], tr_occ);
 
-        std::cout << "Size for Wiv(Y, i, a) CMO " << std::endl;
-        print_storage_for_array(Wiv);
-        std::cout << std::endl;
+    auto Cv = tcc::array_ops::eigen_to_array<TA::TensorD>(
+          world, Ceigv, S.trange().data()[0], tr_vir);
 
-        DArray<2, TA::TensorD, TA::SparsePolicy> Q;
-        Q("mu, v") = S("mu, nu") * Cv("nu,v");
-        tcc::scf::clustered_coeffs(r_xyz, Q, obs_nclusters);
+    auto multi_pool
+          = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+    auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
 
-        Wiv("Y, i, a") = W("Y, mu, i") * Q("mu, a");
 
-        std::cout << "Size for Wiv(Y, i, a) PAO " << std::endl;
-        print_storage_for_array(Wiv);
-        std::cout << std::endl;
+    auto U = scf::BoysLocalization{}(Ci, r_xyz);
+    decltype(Ci) Cil;
+    Cil("mu,i") = Ci("mu,k") * U("k,i");
+    tcc::scf::clustered_coeffs(r_xyz, Cil, obs_nclusters);
 
-        auto eval_guess = false;
-        auto Cvl = scf::BoysLocalization{}(Cv, r_xyz, eval_guess);
-        tcc::scf::clustered_coeffs(r_xyz, Cvl, obs_nclusters);
+    DArray<3, TA::TensorD, TA::SparsePolicy> W;
+    W("Y, mu, i") = eri3("Y, mu, nu") * Cil("nu, i");
+    world.gop.fence();
 
-        Wiv("Y, i, a") = W("Y, mu, i") * Cvl("mu, a");
-        world.gop.fence();
+    std::cout << "Size for W(Y,mu, i) LMO " << std::endl;
+    print_storage_for_array(W);
+    std::cout << std::endl;
 
-        std::cout << "Size for Wiv(Y, i, a) Localized Vir " << std::endl;
-        print_storage_for_array(Wiv);
-        std::cout << std::endl;
+    DArray<2, TA::TensorD, TA::SparsePolicy> Q;
+    auto I = tcc::array::create_diagonal_matrix(S, 1.0);
+    Q("mu, nu") = I("mu, nu") - Ci("mu,i") * Ci("rho,i") * S("rho, nu");
+    // tcc::scf::clustered_coeffs(r_xyz, Q, obs_nclusters);
 
-        eval_guess = true;
-        Cvl = scf::BoysLocalization{}(Cv, r_xyz, eval_guess);
-        tcc::scf::clustered_coeffs(r_xyz, Cvl, obs_nclusters);
-        Wiv("Y, i, a") = W("Y, mu, i") * Cvl("mu, a");
-        world.gop.fence();
+    DArray<3, TA::TensorD, TA::SparsePolicy> Wiv;
+    Wiv("Y, i, a") = W("Y, mu, i") * Q("mu, a");
 
-        std::cout << "Size for Wiv(Y, i, a) Localized Vir Eval guess "
-                  << std::endl;
-        print_storage_for_array(Wiv);
-        std::cout << std::endl;
-    }
+    std::cout << "Size for Wiv(Y, i, a) PAO " << std::endl;
+    print_storage_for_array(Wiv);
+    std::cout << std::endl;
 
 #if 0
-        std::cout << "Testing G\n";
-        if (basis.nfunctions() <= 200) {
-            DArray<4, TA::TensorD, TA::SparsePolicy> G;
-            G("i, a, j, b") = Wiv("X,i,a") * (V_inv("X,Y") * Wiv("Y,j,b"));
-            world.gop.fence();
+    std::cout << "Testing TT MP2\n";
+    if (nocc * nvir <= 10000) {
+        // Reset to Canonical MO's
+        Wiv("X, i, a") = L_inv("X,Y")
+                         * (eri3("Y, mu, nu") * Ci("nu, i") * Cv("mu,a"));
 
-            std::cout << "Size for G" << std::endl;
-            print_storage_for_array_4(G);
-            std::cout << std::endl;
+        DArray<4, TA::TensorD, TA::SparsePolicy> G;
+        G("i, a, j, b") = Wiv("X,i,a") * Wiv("X,j,b");
+        std::cout << "Size for G Canonical" << std::endl;
+        print_storage_for_array_4(G);
+        std::cout << std::endl;
 
+        // Makeing 1/e tensor
+        auto vec_ptr
+              = std::make_shared<Eig::VectorXd>(std::move(es.eigenvalues()));
+        MatrixD meiajb(nocc * nvir, nocc * nvir);
+        auto &eval_vec = *vec_ptr;
+        auto ia = 0;
+        for (auto i = 0; i < nocc; ++i) {
+            const auto ei = eval_vec[i];
 
-            // Makeing 1/e tensor
-            auto vec_ptr = std::make_shared<Eig::VectorXd>(
-                  std::move(es.eigenvalues()));
-            MatrixD meiajb(nocc * nvir, nocc * nvir);
-            auto &eval_vec = *vec_ptr;
-            auto ia = 0;
-            for (auto i = 0; i < nocc; ++i) {
-                const auto ei = eval_vec[i];
+            for (auto a = 0; a < nvir; ++a, ++ia) {
+                const auto eia = ei - eval_vec[a + nocc];
 
-                for (auto a = 0; a < nvir; ++a, ++ia) {
-                    const auto eia = ei - eval_vec[a + nocc];
+                auto jb = 0;
+                for (auto j = 0; j < nocc; ++j) {
+                    auto eiaj = eia + eval_vec[j];
 
-                    auto jb = 0;
-                    for (auto j = 0; j < nocc; ++j) {
-                        auto eiaj = eia + eval_vec[j];
-
-                        for (auto b = 0; b < nvir; ++b, ++jb) {
-                            auto eiajb = eiaj - eval_vec[b + nocc];
-                            meiajb(ia, jb) = 1.0 / eiajb;
-                        }
+                    for (auto b = 0; b < nvir; ++b, ++jb) {
+                        auto eiajb = eiaj - eval_vec[b + nocc];
+                        meiajb(ia, jb) = 1.0 / eiajb;
                     }
                 }
             }
+        }
 
-            struct Mp2Mat {
-                using result_type = double;
-                using argument_type = TA::TensorD;
+        struct Mp2Mat {
+            using result_type = double;
+            using argument_type = TA::TensorD;
 
-                std::shared_ptr<MatrixD> mat_;
-                unsigned int n_occ_;
-                unsigned int n_vir_;
+            std::shared_ptr<MatrixD> mat_;
+            unsigned int n_occ_;
+            unsigned int n_vir_;
 
-                Mp2Mat(std::shared_ptr<MatrixD> mat, int n_occ, int n_vir)
-                        : mat_(std::move(mat)), n_occ_(n_occ), n_vir_(n_vir) {}
-                Mp2Mat(Mp2Mat const &) = default;
+            Mp2Mat(std::shared_ptr<MatrixD> mat, int n_occ, int n_vir)
+                    : mat_(std::move(mat)), n_occ_(n_occ), n_vir_(n_vir) {}
+            Mp2Mat(Mp2Mat const &) = default;
 
-                result_type operator()() const { return 0.0; }
-                result_type operator()(result_type const &t) const { return t; }
-                void
-                operator()(result_type &me, result_type const &other) const {
-                    me += other;
-                }
+            result_type operator()() const { return 0.0; }
+            result_type operator()(result_type const &t) const { return t; }
+            void operator()(result_type &me, result_type const &other) const {
+                me += other;
+            }
 
-                void
-                operator()(result_type &me, argument_type const &tile) const {
-                    auto const &range = tile.range();
-                    auto const &mat = *mat_;
-                    auto const st = range.lobound();
-                    auto const fn = range.upbound();
-                    auto tidx = 0;
-                    for (auto i = st[0]; i < fn[0]; ++i) {
-                        for (auto a = st[1]; a < fn[1]; ++a) {
-                            auto idx_ia = a + i * n_vir_;
+            void operator()(result_type &me, argument_type const &tile) const {
+                auto const &range = tile.range();
+                auto const &mat = *mat_;
+                auto const st = range.lobound();
+                auto const fn = range.upbound();
+                auto tidx = 0;
+                for (auto i = st[0]; i < fn[0]; ++i) {
+                    for (auto a = st[1]; a < fn[1]; ++a) {
+                        auto ia = i * n_vir_ + a;
 
-                            for (auto j = st[2]; j < fn[2]; ++j) {
-                                for (auto b = st[3]; b < fn[3]; ++b, ++tidx) {
+                        for (auto j = st[2]; j < fn[2]; ++j) {
+                            for (auto b = st[3]; b < fn[3]; ++b, ++tidx) {
 
-                                    auto idx_jb = b + j * n_vir_;
-                                    me += mat(idx_ia, idx_jb)
-                                          * tile.data()[tidx];
-                                }
+                                auto jb = j * n_vir_ + b;
+                                me += mat(ia, jb) * tile.data()[tidx];
                             }
                         }
                     }
                 }
-            };
+            }
+        };
 
-            auto mat_ptr = std::make_shared<MatrixD>(std::move(meiajb));
-            auto energy_mp2 = (G("i,a,j,b") * (2 * G("i,a,j,b") - G("i,b,j,a")))
-                                    .reduce(Mp2Mat(mat_ptr, nocc, nvir))
-                                    .get();
+        struct Mp2Red {
+            using result_type = double;
+            using argument_type = TA::Tensor<double>;
 
-            std::cout << "MP2 energy = " << energy_mp2
-                      << " total energy = " << hf_energy + energy_mp2
-                      << std::endl;
+            std::shared_ptr<Eig::VectorXd> vec_;
+            unsigned int n_occ_;
 
-            std::cout << "Rank threshold = " << rank_thresh << std::endl;
+            Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+                    : vec_(std::move(vec)), n_occ_(n_occ) {}
+            Mp2Red(Mp2Red const &) = default;
+
+            result_type operator()() const { return 0.0; }
+            result_type operator()(result_type const &t) const { return t; }
+            void operator()(result_type &me, result_type const &other) const {
+                me += other;
+            }
+
+            void operator()(result_type &me, argument_type const &tile) const {
+                auto const &range = tile.range();
+                auto const &vec = *vec_;
+                auto const st = range.lobound();
+                auto const fn = range.upbound();
+                auto tile_idx = 0;
+                for (auto i = st[0]; i < fn[0]; ++i) {
+                    const auto e_i = vec[i];
+                    for (auto a = st[1]; a < fn[1]; ++a) {
+                        const auto e_ia = e_i - vec[a + n_occ_];
+                        for (auto j = st[2]; j < fn[2]; ++j) {
+                            const auto e_iaj = e_ia + vec[j];
+                            for (auto b = st[3]; b < fn[3]; ++b, ++tile_idx) {
+                                const auto e_iajb = e_iaj - vec[b + n_occ_];
+                                me += 1 / (e_iajb)*tile.data()[tile_idx];
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        auto mat_ptr = std::make_shared<MatrixD>(std::move(meiajb));
+        auto energy_mp2 = (G("i,a,j,b") * (2 * G("i,a,j,b") - G("i,b,j,a")))
+                                .reduce(Mp2Mat(mat_ptr, nocc, nvir))
+                                .get();
+
+        energy_mp2 = (G("i,a,j,b") * (2 * G("i,a,j,b") - G("i,b,j,a")))
+                           .reduce(Mp2Red(vec_ptr, nocc))
+                           .get();
+
+        std::cout << "MP2 energy = " << energy_mp2
+                  << " total energy = " << hf_energy + energy_mp2 << std::endl;
+
+        {
+            // TT 1/e
+            std::cout << "Starting TT of Delta\nRank threshold = "
+                      << rank_thresh << std::endl;
             (*mat_ptr).resize(nocc, nvir * nocc * nvir);
             Eig::JacobiSVD<MatrixD> svd(*mat_ptr,
                                         Eig::ComputeThinU | Eig::ComputeThinV);
@@ -631,7 +640,7 @@ int main(int argc, char *argv[]) {
             mat_ptr->resize(nocc * nvir, nocc * nvir);
 
             auto diff = (AppD - *mat_ptr).lpNorm<2>();
-            std::cout << "||.||_2 diff after reconstruction = " << diff
+            std::cout << "||.||_2 diff after reconstruction = " << diff << "\n"
                       << std::endl;
 
             std::cout << "Energy with reconstructed values\n";
@@ -645,13 +654,138 @@ int main(int argc, char *argv[]) {
                       << " total energy = " << hf_energy + app_energy_mp2
                       << std::endl;
             auto app_mp2_diff = std::abs(app_energy_mp2 - energy_mp2);
-            std::cout
-                  << "MP2 error = " << app_mp2_diff << " percent of energy = "
-                  << 100.0 * (1.0 - app_energy_mp2 / energy_mp2) << std::endl;
+            std::cout << "MP2 error = " << app_mp2_diff
+                      << " percent of energy = "
+                      << 100.0 * (app_energy_mp2 / energy_mp2) << std::endl;
+
+            if (Wiv.trange().tiles().volume() == 1) {
+                TA::TensorD Wiv_tile = Wiv.find(0).get();
+                const auto ndfbs = df_basis.nfunctions();
+                MatrixD Wiv_e = TA::eigen_map(Wiv_tile, ndfbs, nocc * nvir);
+                MatrixD G_e = Wiv_e.transpose() * Wiv_e;
+
+                MatrixD T_e(G_e.rows(), G_e.cols());
+                T_e.setZero();
+                for (auto i = 0; i < nocc; ++i) {
+                    for (auto a = 0; a < nvir; ++a) {
+                        for (auto j = 0; j < nocc; ++j) {
+                            for (auto b = 0; b < nvir; ++b) {
+
+                                // compute indices
+                                const auto ia = i * nvir + a;
+                                const auto jb = j * nvir + b;
+
+                                T_e(ia, jb) = meiajb(ia, jb) * G_e(ia, jb);
+                            }
+                        }
+                    }
+                }
+
+                // std::cout << "Size of virtual space is " << nvir <<
+                // std::endl;
+                auto U_eig = TA::array_to_eigen(U);
+
+                // // G(i, ajb)
+                G_e.resize(nocc, nvir * nocc * nvir);
+                T_e.resize(nocc, nvir * nocc * nvir);
+
+                G_e = U_eig * G_e;
+                T_e = U_eig * T_e;
+
+                // // G(i'a, jb)
+                G_e.resize(nocc * nvir, nocc * nvir);
+                T_e.resize(nocc * nvir, nocc * nvir);
+
+                // // G(j b, i'a)
+                G_e.transposeInPlace();
+                T_e.transposeInPlace();
+
+                // // G(j, b i' a)
+                G_e.resize(nocc, nvir * nocc * nvir);
+                T_e.resize(nocc, nvir * nocc * nvir);
+
+                // // G(j' b, i'a)
+                G_e = U_eig * G_e;
+                T_e = U_eig * T_e;
+
+                // // G(j' b, i' a)
+                G_e.resize(nocc * nvir, nocc * nvir);
+                T_e.resize(nocc * nvir, nocc * nvir);
+
+                // // G(i' a, j' b)
+                G_e.transposeInPlace();
+                T_e.transposeInPlace();
+
+                std::cout << "Localizied occupied transform\n";
+                for (auto i = 0; i < nocc; ++i) {
+                    for (auto j = i; j < nocc; ++j) {
+                        MatrixD Tij(nvir, nvir);
+                        Tij.setZero();
+
+                        for (auto a = 0; a < nvir; ++a) {
+                            auto ia = i * nvir + a;
+
+                            for (auto b = 0; b < nvir; ++b) {
+                                auto jb = j * nvir + b;
+                                Tij(a, b) = T_e(ia, jb);
+                            }
+                        }
+
+                        MatrixD tTij = 2 * Tij - Tij.transpose();
+
+                        auto scale = (i == j) ? 2 : 1;
+                        MatrixD Dij = scale * (tTij.transpose() * Tij
+                                               + tTij * Tij.transpose());
+
+                        std::vector<double> threshs = {1e-3, 1e-6, 1e-7, 1e-8};
+
+                        std::cout << "\nPair " << i << " " << j << std::endl;
+                        for (auto thresh : threshs) {
+                            Eig::SelfAdjointEigenSolver<MatrixD> es(Dij);
+                            auto eval_rank = 0;
+                            for (auto i = 0; i < nvir; ++i) {
+                                if (es.eigenvalues()(i) >= thresh) {
+                                    ++eval_rank;
+                                }
+                            }
+                            std::cout << "\tDij eval rank(" << thresh
+                                      << ") = " << eval_rank << std::endl;
+                        }
+                    }
+                }
+
+                auto mp2_energy_eigen = 0.0;
+                for (auto i = 0; i < nocc; ++i) {
+                    for (auto a = 0; a < nvir; ++a) {
+                        for (auto j = 0; j < nocc; ++j) {
+                            for (auto b = 0; b < nvir; ++b) {
+
+                                // compute indices
+                                const auto ia = i * nvir + a;
+                                const auto jb = j * nvir + b;
+                                const auto ja = j * nvir + a;
+                                const auto ib = i * nvir + b;
+
+                                mp2_energy_eigen
+                                      += T_e(ia, jb)
+                                         * (2 * G_e(ia, jb) - G_e(ib, ja));
+                            }
+                        }
+                    }
+                }
+
+                auto eigen_diff = std::abs(energy_mp2 - mp2_energy_eigen);
+                auto percent_eigen_diff = mp2_energy_eigen / energy_mp2 * 100.0;
+                std::cout << "Eigen computed MP2 energy = " << mp2_energy_eigen
+                          << " has diff " << eigen_diff << " with TA"
+                          << "\nPercent recovered = " << percent_eigen_diff
+                          << std::endl;
+            }
         }
     }
 #endif
 #if 0
+    {
         {
             auto Cl = scf::StuffFromFactorAna{}(Ci);
             auto Clv = scf::StuffFromFactorAna{}(Cv);

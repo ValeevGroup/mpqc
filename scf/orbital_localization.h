@@ -36,7 +36,7 @@ double gamma(double Aij, double Bij) {
     return (std::abs(ang) < 1e-7) ? 0 : ang;
 };
 
-void jacobi_sweeps(Mat &Cm, std::vector<Mat> const &ao_xyz) {
+void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz) {
     std::array<Mat, 3> mo_xyz;
     mo_xyz[0] = Cm.transpose() * ao_xyz[0] * Cm;
     mo_xyz[1] = Cm.transpose() * ao_xyz[1] * Cm;
@@ -49,7 +49,7 @@ void jacobi_sweeps(Mat &Cm, std::vector<Mat> const &ao_xyz) {
     auto crit = boys_object(mo_xyz);
     auto iter = 1;
     auto error = crit - 0;
-    while (error > 1e-6 && iter <= 150) {
+    while (error > 1e-8 && iter <= 150) {
         for (auto i = 0; i < Cm.cols(); ++i) {
             for (auto j = i + 1; j < Cm.cols(); ++j) {
 
@@ -65,11 +65,11 @@ void jacobi_sweeps(Mat &Cm, std::vector<Mat> const &ao_xyz) {
                 auto cg = std::cos(g);
                 auto sg = std::sin(g);
 
-                Eig::VectorXd col_i = Cm.col(i);
-                Eig::VectorXd col_j = Cm.col(j);
+                Eig::VectorXd col_Ui = U.col(i);
+                Eig::VectorXd col_Uj = U.col(j);
 
-                Cm.col(i) = cg * col_i + sg * col_j;
-                Cm.col(j) = -sg * col_i + cg * col_j;
+                U.col(i) = cg * col_Ui + sg * col_Uj;
+                U.col(j) = -sg * col_Ui + cg * col_Uj;
 
                 for (auto z = 0; z < 3; ++z) {
                     auto &m = mo_xyz[z];
@@ -90,8 +90,7 @@ void jacobi_sweeps(Mat &Cm, std::vector<Mat> const &ao_xyz) {
         auto old_crit = crit;
         crit = boys_object(mo_xyz);
         error = std::abs(old_crit - crit);
-        std::cout << "Iteration: " << iter++ << " cost: " << crit << " error "
-                  << error << std::endl;
+        ++iter;
     }
 }
 
@@ -99,25 +98,20 @@ void jacobi_sweeps(Mat &Cm, std::vector<Mat> const &ao_xyz) {
 class BoysLocalization {
   public:
     template <typename Array>
-    Array operator()(Array const &C, std::vector<Array> const &r_ao,
-                     bool esolve_guess = false) const {
+    Array operator()(Array const &C, std::vector<Array> const &r_ao) const {
         auto ao_x = tcc::array_ops::array_to_eigen(r_ao[0]);
         auto ao_y = tcc::array_ops::array_to_eigen(r_ao[1]);
         auto ao_z = tcc::array_ops::array_to_eigen(r_ao[2]);
         auto c_eig = tcc::array_ops::array_to_eigen(C);
 
-        if (esolve_guess) {
-            Mat mo_x = c_eig.transpose() * ao_x * c_eig;
-            Eig::SelfAdjointEigenSolver<Mat> es(mo_x);
-            c_eig = c_eig * es.eigenvectors();
-        }
+        // Try an approximate initial guess
+        MatrixD U = MatrixD::Identity(c_eig.cols(), c_eig.cols());
 
-        std::cout << "\nStarting Boys" << std::endl;
-        jacobi_sweeps(c_eig, {ao_x, ao_y, ao_z});
+        jacobi_sweeps(c_eig, U, {ao_x, ao_y, ao_z});
 
         auto trange = C.trange();
         return tcc::array_ops::eigen_to_array<typename Array::value_type>(
-              C.get_world(), c_eig, trange.data()[0], trange.data()[1]);
+              C.get_world(), U, trange.data()[1], trange.data()[1]);
     }
 };
 

@@ -134,8 +134,22 @@ integral_kernel(Engine &eng, TA::Range &&rng,
             const auto ns1 = s1.size();
             ub[1] += ns1;
 
+
             TA::remap(map, shell_set(eng, s0, s1), lb, ub);
             tile.block(lb, ub) = map;
+
+            //BUG cc-pv5z-ri doesn't work :(. 
+            auto tile_norm = tile.norm();
+            if(tile_norm != tile_norm){
+                std::cout << "Tile norm = " << tile_norm << std::endl;
+                std::cout << "s0 = \n" << s0 << "\ns1 = \n" << s1 << std::endl;
+                auto ptr = shell_set(eng, s0, s1);
+                for(auto i = 0; i < ns1 * ns0; ++i){
+                    std::cout << *(ptr + i) << " ";
+                }
+                std::cout << std::endl;
+                throw;
+            }
 
             lb[1] = ub[1];
         }

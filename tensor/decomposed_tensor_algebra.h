@@ -260,7 +260,6 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
     return true;
 }
 
-// Returns true if input is low rank.
 void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
                               TA::Tensor<double> &R, double thresh) {
     auto const extent = in.range().extent();

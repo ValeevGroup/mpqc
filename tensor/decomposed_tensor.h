@@ -35,7 +35,7 @@ class DecomposedTensor {
 
     template <typename... Tensors>
     DecomposedTensor(double c, Tensors &&... ts)
-            : cut_(c), tensors_{std::forward<Tensors>(ts)...} {}
+            : cut_(c), tensors_({std::forward<Tensors>(ts)...}) {}
 
     // Will default init cut, this is here to assist with set_all_local
     // functionality

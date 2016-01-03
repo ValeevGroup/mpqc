@@ -147,9 +147,16 @@ Array fock_from_soad(madness::World &world, molecule::Molecule clustered_mol,
     auto D_min = soad_density_guess(world, clustered_mol, min_bs, op);
 
     Array F, J, K;
-    J("i,j") = eri_j("i,j,k,l") * D_min("k,l");
-    K("i,j") = eri_k("i,k,j,l") * D_min("k,l");
+    {
+        J("i,j") = eri_j("i,j,k,l") * D_min("k,l");
+        world.gop.fence();
+    }
+    {
+        K("i,j") = eri_k("i,k,j,l") * D_min("k,l");
+        world.gop.fence();
+    }
     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+    world.gop.fence();
 
     return F;
 }

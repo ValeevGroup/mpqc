@@ -533,7 +533,8 @@ int try_main(int argc, char *argv[]) {
                                           occ_nclusters, use_chol_vectors);
 
         if (cluster_orbitals) {
-            scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters, low_rank_threshold);
+            scf::clustered_coeffs(dipole_ints, Coeffs_TA, occ_nclusters,
+                                  low_rank_threshold);
         }
 
         Coeffs = TA::to_new_tile_type(Coeffs_TA, to_decomp);

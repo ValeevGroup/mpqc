@@ -90,7 +90,8 @@ R12IntEval::compute_TA_mp2f12_1rdm() {
   srr12intrmds.compute_multipole();
 
   // compute coupling contributions in CCSD-F12b method
-  //srr12intrmds.compute_multipole_F12b_coupling();
+  if (this->coupling_1rdm_f12b())
+    srr12intrmds.compute_multipole_F12b_coupling();
 }
 
 void

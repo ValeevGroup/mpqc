@@ -628,6 +628,7 @@ public:
   bool ebc() const { return r12world()->r12tech()->ebc(); }
   bool coupling() const { return r12world()->r12tech()->coupling(); }
   bool compute_1rdm() const { return r12world()->r12tech()->compute_1rdm(); }
+  bool coupling_1rdm_f12b() const { return r12world()->r12tech()->coupling_1rdm_f12b(); }
   R12Technology::StandardApproximation stdapprox() const { return r12world()->r12tech()->stdapprox(); }
   bool omit_P() const { return r12world()->r12tech()->omit_P(); }
   const Ref<MOIntsTransformFactory>& tfactory() const { return r12world()->world()->tfactory(); };

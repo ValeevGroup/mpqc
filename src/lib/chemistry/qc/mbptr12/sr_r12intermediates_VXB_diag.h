@@ -32,13 +32,7 @@
 #include <cmath>
 
 namespace sc {
-  inline double get_element(const TA::Array<double, 4 >& array, const std::vector<std::size_t>& ele_idx)
-  {
-    const std::vector<std::size_t> tile_idx = array.trange().element_to_tile(ele_idx);
-    return (array.find(tile_idx).get()[ele_idx]);
-  }
-
-  inline double get_element(const TA::Array<double, 2 >& array, const std::vector<std::size_t>& ele_idx)
+  inline double get_element(const TA::TArrayD& array, const std::vector<std::size_t>& ele_idx)
   {
     const std::vector<std::size_t> tile_idx = array.trange().element_to_tile(ele_idx);
     return (array.find(tile_idx).get()[ele_idx]);
@@ -6247,6 +6241,9 @@ namespace sc {
   template <typename T>
   void SingleReference_R12Intermediates<T>::compute_multipole_F12b_coupling() {
 
+    ExEnv::out0() << std::endl << indent
+                  << "Compute CCSD-F12b coupling contri. to dipole and quadrupole moments" << std::endl;
+
     bool compute_dipole = true;
     bool compute_quadrupole = true;
 
@@ -6469,11 +6466,11 @@ namespace sc {
         muz_ccsdor += dot(mu_z_ijp("i,i'"), Diip_or_ccsd("i,i'"));
       }
 
-      std::cout << std::endl << indent
-                << "muz_CCSD = " << scprintf("%15.12f", - muz_ccsd * 2.0)
-                << std::endl << indent
-                << "muz_CCSDor = " << scprintf("%15.12f", - muz_ccsdor * 2.0)
-                << std::endl;
+//      std::cout << std::endl << indent
+//                << "muz_CCSD = " << scprintf("%15.12f", - muz_ccsd * 2.0)
+//                << std::endl << indent
+//                << "muz_CCSDor = " << scprintf("%15.12f", - muz_ccsdor * 2.0)
+//                << std::endl;
     }
 
     if (compute_quadrupole) {
@@ -6503,15 +6500,15 @@ namespace sc {
         q_zz_ccsdor += dot(Qzz_ijp("i,j'"), Diip_or_ccsd("i,j'"));
       }
 
-      std::cout << std::endl << indent
-                << "qxx_ccsd = " << scprintf("%12.10f", - q_xx_ccsd * 2.0)
-                << "  qyy_ccsd = " << scprintf("%12.10f", - q_yy_ccsd * 2.0)
-                << "  qzz_ccsd = " << scprintf("%12.10f", - q_zz_ccsd * 2.0)
-                << std::endl << indent
-                << "qxx_ccsdor = " << scprintf("%12.10f", - q_xx_ccsdor * 2.0)
-                << "  qyy_ccsdor = " << scprintf("%12.10f", - q_yy_ccsdor * 2.0)
-                << "  qzz_ccsdor = " << scprintf("%12.10f", - q_zz_ccsdor * 2.0)
-                << std::endl;
+//      std::cout << std::endl << indent
+//                << "qxx_ccsd = " << scprintf("%12.10f", - q_xx_ccsd * 2.0)
+//                << "  qyy_ccsd = " << scprintf("%12.10f", - q_yy_ccsd * 2.0)
+//                << "  qzz_ccsd = " << scprintf("%12.10f", - q_zz_ccsd * 2.0)
+//                << std::endl << indent
+//                << "qxx_ccsdor = " << scprintf("%12.10f", - q_xx_ccsdor * 2.0)
+//                << "  qyy_ccsdor = " << scprintf("%12.10f", - q_yy_ccsdor * 2.0)
+//                << "  qzz_ccsdor = " << scprintf("%12.10f", - q_zz_ccsdor * 2.0)
+//                << std::endl;
     }
 #endif
 
@@ -6528,7 +6525,7 @@ namespace sc {
     compute_lambda_ccsd(T1_f12b, T2_f12b, L1_f12b, L2_f12b, "F12b");
 
     // compute energy from coupling in F12b
-#if 1
+#if 0
     // CT2 energy
     // F^a'_a R^ij_a'b + F^a'_b R^ij_aa'
     TArray4 Cijab;

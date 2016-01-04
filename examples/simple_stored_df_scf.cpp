@@ -62,6 +62,112 @@ std::array<double, 3> storage_for_array(Array const &a) {
     return {full, sparse, clr};
 }
 
+struct JobSummary {
+    // Times
+    double avg_w_time = 0;
+    double avg_occ_ri_k_time = 0;
+    double avg_k_time = 0;
+
+    // Storages
+    double w_fully_dense_storage = 0;
+    double avg_w_sparse_only_storage = 0;
+    double avg_w_sparse_clr_storage = 0;
+
+    double eri3_fully_dense_storage = 0;
+    double eri3_sparse_only_storage = 0;
+    double eri3_sparse_clr_storage = 0;
+
+    // Thresholds
+    double ta_sparse_threshold = 0;
+    double clr_threshold = 0;
+    double schwarz_threshold = 0;
+
+    // Computables
+    double hf_energy = 0;
+    double hf_energy_diff_error = 0;
+    double hf_grad_div_volume = 0;
+
+    double dipole_vector = 0;
+    double dipole_x = 0;
+    double dipole_y = 0;
+    double dipole_z = 0;
+
+    double mp2_energy = 0;
+
+    // Bools
+    bool did_mp2 = false;
+    bool used_direct_eri3 = false;
+    bool computed_dipole = false;
+
+    void print_report() const {
+        std::cout << "Job Summary:\n";
+
+        std::cout << "ta sparse threshold, ";
+        std::cout << "schwarz threshold, ";
+        std::cout << "clr threshold, ";
+
+        std::cout << "used direct eri3, ";
+
+        std::cout << "avg w time, ";
+        std::cout << "avg k time, ";
+        std::cout << "avg occ-ri k time, ";
+
+        std::cout << "eri3 fully dense storage, ";
+        std::cout << "eri3 sparse only, ";
+        std::cout << "eri3 sparse + clr storage, ";
+
+        std::cout << "w fully dense storage, ";
+        std::cout << "w sparse only, ";
+        std::cout << "w sparse + clr storage, ";
+
+        std::cout << "hf energy, ";
+        std::cout << "error change in energy, ";
+        std::cout << "error rms div volume, ";
+
+        std::cout << "computed dipole, ";
+
+        std::cout << "dipole x, ";
+        std::cout << "dipole y, ";
+        std::cout << "dipole z, ";
+        std::cout << "dipole vec, ";
+
+        std::cout << "computed mp2, ";
+        std::cout << "mp2 energy\n";
+
+        std::cout << ta_sparse_threshold << ", ";
+        std::cout << schwarz_threshold << ", ";
+        std::cout << clr_threshold << ", ";
+
+        std::cout << used_direct_eri3 << ", ";
+
+        std::cout << avg_w_time << ", ";
+        std::cout << avg_k_time << ", ";
+        std::cout << avg_occ_ri_k_time << ", ";
+
+        std::cout << eri3_fully_dense_storage << ", ";
+        std::cout << eri3_sparse_only_storage << ", ";
+        std::cout << eri3_sparse_clr_storage << ", ";
+
+        std::cout << w_fully_dense_storage << ", ";
+        std::cout << avg_w_sparse_only_storage << ", ";
+        std::cout << avg_w_sparse_clr_storage << ", ";
+
+        std::cout << hf_energy << ", ";
+        std::cout << hf_energy_diff_error << ", ";
+        std::cout << hf_grad_div_volume << ", ";
+
+        std::cout << computed_dipole << ", ";
+        std::cout << dipole_x << ", ";
+        std::cout << dipole_y << ", ";
+        std::cout << dipole_z << ", ";
+        std::cout << dipole_vector << ", ";
+
+        std::cout << did_mp2 << ", ";
+        std::cout << mp2_energy << "\n";
+    }
+};
+
+
 class ThreeCenterScf {
   private:
     using array_type = DArray<2, TA::TensorD, SpPolicy>;
@@ -240,7 +346,9 @@ class ThreeCenterScf {
                + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
     }
 
-    void print_summary() {
+    array_type fock_matrix() const { return F_; }
+
+    JobSummary init_summary() {
         auto avg = [](std::vector<double> const &v) {
             auto sum = 0.0;
             for (auto const &e : v) {
@@ -249,21 +357,26 @@ class ThreeCenterScf {
             return sum / v.size();
         };
 
-        auto avg_w = avg(w_times_);
-        auto avg_occ_ri_k = avg(occ_k_times_);
-        auto avg_k = avg(k_times_);
-        auto avg_ws = avg(w_sparse_store_);
-        auto avg_cs = avg(c_sparse_store_);
-        std::cout << "Summary:\n";
-        std::cout
-              << "energy, energy diff, (rms error)/volume, avg w time, avg "
-                 "occ-ri k time, avg k time, all dense w storage, all dense c "
-                 "stroage, avg w storage, avg c storage\n";
-        std::cout << final_energy_ << ", " << final_ediff_error_ << ", "
-                  << final_rms_error_ << ", " << avg_w << ", " << avg_occ_ri_k
-                  << ", " << avg_k << ", " << w_full_storage_ << ", "
-                  << c_full_storage_ << ", " << avg_ws << ", " << avg_cs
-                  << "\n";
+        JobSummary js;
+
+        // Times
+        js.avg_w_time = avg(w_times_);
+        js.avg_k_time = avg(k_times_);
+        js.avg_occ_ri_k_time = avg(occ_k_times_);
+
+        // Storages
+        js.avg_w_sparse_only_storage = avg(w_sparse_store_);
+        js.w_fully_dense_storage = w_full_storage_;
+
+        // Thresholds
+        js.ta_sparse_threshold = TA::SparseShape<float>::threshold();
+
+        // Energies
+        js.hf_energy = final_energy_;
+        js.hf_energy_diff_error = final_ediff_error_;
+        js.hf_grad_div_volume = final_rms_error_;
+
+        return js;
     }
 };
 
@@ -276,6 +389,7 @@ int main(int argc, char *argv[]) {
     int nclusters = 0;
     std::cout << std::setprecision(15);
     double threshold = 1e-12;
+    int use_direct_ints = 0;
     if (argc == 6) {
         mol_file = argv[1];
         basis_name = argv[2];
@@ -284,7 +398,7 @@ int main(int argc, char *argv[]) {
         threshold = std::stod(argv[5]);
     } else {
         std::cout << "input is $./program mol_file basis_file df_basis_file "
-                     "nclusters ";
+                     "nclusters sparse_thresh";
         return 0;
     }
     TiledArray::SparseShape<float>::threshold(threshold);
@@ -340,9 +454,9 @@ int main(int argc, char *argv[]) {
     auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
     { // Schwarz Screened ints
         auto int0 = tcc::utility::time::now();
-        const auto thresh = 1e-12;
-        std::cout << "Schwarz Threshold: " << thresh << std::endl;
-        auto sbuilder = ints::init_schwarz_screen(thresh);
+        const auto schwarz_thresh = 1e-12;
+        std::cout << "Schwarz Threshold: " << schwarz_thresh << std::endl;
+        auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               sbuilder(world, eri_e, df_basis, basis));
 
@@ -358,7 +472,6 @@ int main(int argc, char *argv[]) {
         std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
         std::cout << "\tCLR: " << eri3_storage[2] << "\n";
 
-
         auto F_soad
               = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
 
@@ -373,7 +486,156 @@ int main(int argc, char *argv[]) {
         ThreeCenterScf scf(H, F_soad, S, L_inv, r_xyz, occ / 2,
                            repulsion_energy);
         scf.solve(30, 1e-12, eri3);
-        scf.print_summary();
+
+        auto job_summary = scf.init_summary();
+
+        // Add eri3 info
+        job_summary.eri3_fully_dense_storage = eri3_storage[0];
+        job_summary.eri3_sparse_only_storage = eri3_storage[1];
+        job_summary.schwarz_threshold = schwarz_thresh;
+
+        auto mp2_occ = occ / 2;
+        auto mp2_vir = basis.nfunctions() - mp2_occ;
+
+        // Prepare for Dipole and MP2
+        auto Fao = scf.fock_matrix();
+
+        auto F_eig = tcc::array_ops::array_to_eigen(Fao);
+        auto S_eig = tcc::array_ops::array_to_eigen(S);
+
+        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+                                                                   S_eig);
+
+        auto vec_ptr = std::make_shared<Eig::VectorXd>(es.eigenvalues());
+
+        decltype(S_eig) Ceigi = es.eigenvectors().leftCols(mp2_occ);
+        decltype(S_eig) Ceigv = es.eigenvectors().rightCols(mp2_vir);
+
+        auto tr_occ = tcc::scf::tr_occupied(clustered_mol.nclusters(), mp2_occ);
+        auto tr_vir = tcc::scf::tr_occupied(clustered_mol.nclusters(), mp2_vir);
+
+        auto Ci = tcc::array_ops::eigen_to_array<TA::TensorD>(
+              world, Ceigi, S.trange().data()[0], tr_occ);
+
+        auto Cv = tcc::array_ops::eigen_to_array<TA::TensorD>(
+              world, Ceigv, S.trange().data()[0], tr_vir);
+
+        // Compute Dipole Moment
+        try {
+            decltype(S) D;
+            D("mu,nu") = Ci("mu, i") * Ci("nu,i");
+
+            double ex = -2 * (D("i,j") * r_xyz[0]("i,j")).sum();
+            double ey = -2 * (D("i,j") * r_xyz[1]("i,j")).sum();
+            double ez = -2 * (D("i,j") * r_xyz[2]("i,j")).sum();
+
+            double nx = 0;
+            double ny = 0;
+            double nz = 0;
+            for (auto const &atom : clustered_mol.atoms()) {
+                nx += atom.charge() * atom.center()[0];
+                ny += atom.charge() * atom.center()[1];
+                nz += atom.charge() * atom.center()[2];
+            }
+
+            const auto au_to_debye = 1.0 / 0.393430307;
+            auto dx = (nx + ex) * au_to_debye;
+            auto dy = (ny + ey) * au_to_debye;
+            auto dz = (nz + ez) * au_to_debye;
+
+            double dip_mom = std::sqrt(std::pow(dx, 2) + std::pow(dy, 2)
+                                       + std::pow(dz, 2));
+
+            std::cout << "Dipole Moment:"
+                      << "\n\tx: " << (nx + ex) << "\n\ty: " << (ny + ey)
+                      << "\n\tz: " << (nz + ez) << "\n\tvec: " << dip_mom
+                      << std::endl;
+
+            job_summary.computed_dipole = true;
+            job_summary.dipole_x = dx;
+            job_summary.dipole_y = dy;
+            job_summary.dipole_z = dz;
+            job_summary.dipole_vector = dip_mom;
+        } catch (...) {
+            job_summary.print_report();
+        }
+
+        // Do MP2
+        auto approx_t_elems = mp2_occ * mp2_occ * mp2_vir * mp2_vir;
+        auto approx_t_storage = approx_t_elems * 8 * 1e-9;
+
+        // Only Do MP2 if we can stay below 90 GB
+        try {
+            if (approx_t_storage < 90) {
+                DArray<3, TA::TensorD, TA::SparsePolicy> Wiv;
+                Wiv("Y,i,a") = eri3("Y,nu,mu") * Ci("mu,i") * Cv("nu,a");
+                Wiv("X,i,a") = L_inv("X,Y") * Wiv("Y,i,a");
+
+                // struct to perform the MP2 Reduction
+                struct Mp2Red {
+                    using result_type = double;
+                    using argument_type = TA::Tensor<double>;
+
+                    std::shared_ptr<Eig::VectorXd> vec_;
+                    unsigned int n_occ_;
+
+                    Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+                            : vec_(std::move(vec)), n_occ_(n_occ) {}
+                    Mp2Red(Mp2Red const &) = default;
+
+                    result_type operator()() const { return 0.0; }
+                    result_type operator()(result_type const &t) const {
+                        return t;
+                    }
+                    void operator()(result_type &me,
+                                    result_type const &other) const {
+                        me += other;
+                    }
+
+                    void operator()(result_type &me,
+                                    argument_type const &tile) const {
+                        auto const &range = tile.range();
+                        auto const &vec = *vec_;
+                        auto const st = range.lobound();
+                        auto const fn = range.upbound();
+                        auto tile_idx = 0;
+                        for (auto i = st[0]; i < fn[0]; ++i) {
+                            const auto e_i = vec[i];
+                            for (auto a = st[1]; a < fn[1]; ++a) {
+                                const auto e_ia = e_i - vec[a + n_occ_];
+                                for (auto j = st[2]; j < fn[2]; ++j) {
+                                    const auto e_iaj = e_ia + vec[j];
+                                    for (auto b = st[3]; b < fn[3];
+                                         ++b, ++tile_idx) {
+                                        const auto e_iajb = e_iaj
+                                                            - vec[b + n_occ_];
+                                        me += 1
+                                              / (e_iajb)*tile.data()[tile_idx];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+
+
+                DArray<4, TA::TensorD, TA::SparsePolicy> G;
+                G("i,a,j,b") = Wiv("X,i,a") * Wiv("X,j,b");
+
+                double energy_mp2
+                      = (G("i,a,j,b") * (2 * G("i,a,j,b") - G("i,b,j,a")))
+                              .reduce(Mp2Red(vec_ptr, mp2_occ))
+                              .get();
+
+                std::cout << "Energy from MP2: " << energy_mp2 << std::endl;
+
+                job_summary.did_mp2 = true;
+                job_summary.mp2_energy = energy_mp2;
+                job_summary.print_report();
+            }
+        } catch (...) {
+            job_summary.print_report();
+        }
     }
 
     return 0;

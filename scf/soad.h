@@ -141,6 +141,12 @@ Array fock_from_soad(madness::World &world, molecule::Molecule clustered_mol,
     auto bs_j = tcc::utility::make_array(obs, obs, min_bs, min_bs);
     auto bs_k = tcc::utility::make_array(obs, min_bs, obs, min_bs);
 
+    world.gop.fence();
+    auto old_thresh = TA::SparseShape<float>::threshold();
+
+    const auto soad_thresh = 1e-7;
+    TiledArray::SparseShape<float>::threshold(soad_thresh);
+
     auto eri_j = integrals::soad_direct_integrals(world, engs, bs_j);
     auto eri_k = integrals::soad_direct_integrals(world, engs, bs_k);
 
@@ -156,6 +162,8 @@ Array fock_from_soad(madness::World &world, molecule::Molecule clustered_mol,
         world.gop.fence();
     }
     F("i,j") = H("i,j") + 2 * J("i,j") - K("i,j");
+    world.gop.fence();
+    TiledArray::SparseShape<float>::threshold(old_thresh);
     world.gop.fence();
 
     return F;

@@ -322,6 +322,9 @@ class ThreeCenterScf {
     double final_energy_;
     double w_full_storage_;
 
+    double recompress_w_time_;
+    double clr_w_no_recompress_;
+
     double clr_thresh_;
 
     void compute_density(int64_t occ) {
@@ -359,6 +362,15 @@ class ThreeCenterScf {
         DArray<3, dtile, SpPolicy> W;
         W("Y, mu, i") = eri3("Y, mu, nu") * dC_("nu, i");
 
+        world.gop.fence();
+        auto w1 = tcc::utility::time::now();
+        w_times_.push_back(tcc::utility::time::duration_in_s(w0, w1));
+
+        auto w_store_no_recomp = storage_for_array(W);
+        clr_w_no_recompress_ = w_store_no_recomp[2];
+
+        world.gop.fence();
+        auto r0 = tcc::utility::time::now();
         if (clr_thresh_ != 0) {
             TA::foreach_inplace(
                   W,
@@ -386,11 +398,9 @@ class ThreeCenterScf {
                       return std::min(input_norm, compressed_norm);
                   });
         }
-
-
         world.gop.fence();
-        auto w1 = tcc::utility::time::now();
-        w_times_.push_back(tcc::utility::time::duration_in_s(w0, w1));
+        auto r1 = tcc::utility::time::now();
+        recompress_w_time_ = tcc::utility::time::duration_in_s(r0, r1);
 
         auto w_store = storage_for_array(W);
         w_sparse_store_.push_back(w_store[1]);
@@ -549,13 +559,15 @@ class ThreeCenterScf {
             std::cout << "Iteration: " << (iter + 1)
                       << " energy: " << old_energy << " error: " << error
                       << " RMS error: " << rms_error;
-            std::cout << "\n\tW time: " << w_times_.back();
-            std::cout << "\n\tJ time: " << j_times_.back()
+            std::cout << "\n\tW time: " << w_times_.back()
+                      << "\n\tW recompress time: " << recompress_w_time_
+                      << "\n\tJ time: " << j_times_.back()
                       << "\n\tocc-RI K time: " << occ_k_times_.back()
                       << "\n\tK time: " << k_times_.back()
                       << "\n\titer time: " << scf_times_.back()
                       << "\n\tW sparse only storage: " << w_sparse_store_.back()
-                      << "\n\tW sparse clr storage: "
+                      << "\n\tW sparse clr storage no recompress: "
+                      << clr_w_no_recompress_ << "\n\tW sparse clr storage: "
                       << w_sparse_clr_store_.back() << std::endl;
 
             ++iter;
@@ -616,19 +628,33 @@ int main(int argc, char *argv[]) {
     std::cout << std::setprecision(15);
     double threshold = 1e-12;
     double clr_threshold = 1e-8;
-    int use_direct_ints = 0;
-    if (argc == 7) {
+    std::string eri3_storage_method;
+    if (argc == 8) {
         mol_file = argv[1];
         basis_name = argv[2];
         df_basis_name = argv[3];
         nclusters = std::stoi(argv[4]);
         threshold = std::stod(argv[5]);
         clr_threshold = std::stod(argv[6]);
+        eri3_storage_method = argv[7];
     } else {
         std::cout << "input is $./program mol_file basis_file df_basis_file "
-                     "nclusters sparse_thresh";
+                     "nclusters sparse_thresh clr_thresh eri3_method(direct, stored)";
         return 0;
     }
+
+    bool use_direct_ints;
+    if(eri3_storage_method == "direct"){
+        use_direct_ints = true;
+        std::cout << "Using direct 3 center integrals" << std::endl;
+    }else if (eri3_storage_method == "stored"){
+        use_direct_ints = false;
+        std::cout << "Using stored 3 center integrals" << std::endl;
+    }else {
+        std::cout << "Integral storage method must be either direct or stored" << std::endl;
+        return 0;
+    }
+
     TiledArray::SparseShape<float>::threshold(threshold);
     std::cout << "TA::Sparse Threshold: " << threshold << std::endl;
 
@@ -682,18 +708,28 @@ int main(int argc, char *argv[]) {
     auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
 
     { // Schwarz Screened ints
-        auto int0 = tcc::utility::time::now();
         const auto schwarz_thresh = 1e-12;
         std::cout << "Schwarz Threshold: " << schwarz_thresh << std::endl;
         auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               sbuilder(world, eri_e, df_basis, basis));
 
+        world.gop.fence();
+        auto soad0 = tcc::utility::time::now();
+        auto F_soad
+              = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
 
-        // Regular TA Sparse
-        //  auto eri3
-        //        = ints::sparse_integrals(world, eri_e, three_c_array,
-        //        shr_screen);
+        auto soad1 = tcc::utility::time::now();
+        auto soad_time = tcc::utility::time::duration_in_s(soad0, soad1);
+        std::cout << "Soad Time: " << soad_time << std::endl;
+
+        auto multi_pool
+              = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+        auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+
+        JobSummary job_summary;
+
+        DArray<2, TA::TensorD, SpPolicy> Fao;
 
         auto decomp_3d = [&](TA::TensorD &&t) {
             auto range = t.range();
@@ -721,50 +757,77 @@ int main(int argc, char *argv[]) {
             return tcc::tensor::Tile<decltype(dc_tile)>(range,
                                                         std::move(dc_tile));
         };
+        if (!use_direct_ints) {
+            world.gop.fence();
+            auto int0 = tcc::utility::time::now();
+            auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array,
+                                               shr_screen, decomp_3d);
 
-        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
+            world.gop.fence();
+            auto int1 = tcc::utility::time::now();
+            auto eri3_time = tcc::utility::time::duration_in_s(int0, int1);
+            std::cout << "Eri3 Integral time: " << eri3_time << std::endl;
+            auto eri3_storage = storage_for_array(eri3);
+            std::cout << "Eri3 Integral Storage:\n";
+            std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
+            std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
+            std::cout << "\tCLR: " << eri3_storage[2] << "\n";
+
+            ThreeCenterScf scf(H, F_soad, S, L_inv, r_xyz, occ / 2,
+                               repulsion_energy, clr_threshold);
+
+            scf.solve(30, 1e-11, eri3);
+
+            auto job_summary = scf.init_summary();
+
+            // Prepare for Dipole and MP2
+            auto Fao = scf.fock_matrix();
+
+            // Add eri3 info
+            job_summary.eri3_fully_dense_storage = eri3_storage[0];
+            job_summary.eri3_sparse_only_storage = eri3_storage[1];
+            job_summary.eri3_sparse_clr_storage = eri3_storage[2];
+            job_summary.schwarz_threshold = schwarz_thresh;
+            job_summary.clr_threshold = clr_threshold;
+        }
+        if (use_direct_ints) {
+            world.gop.fence();
+            auto int0 = tcc::utility::time::now();
+            auto eri3
+                  = ints::direct_sparse_integrals(world, eri_e, three_c_array,
                                                   shr_screen, decomp_3d);
 
-        world.gop.fence();
-        auto int1 = tcc::utility::time::now();
-        auto eri3_time = tcc::utility::time::duration_in_s(int0, int1);
-        std::cout << "Eri3 Integral time: " << eri3_time << std::endl;
-        auto eri3_storage = storage_for_array(eri3.array());
-        std::cout << "Eri3 Integral Storage:\n";
-        std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
-        std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
-        std::cout << "\tCLR: " << eri3_storage[2] << "\n";
+            world.gop.fence();
+            auto int1 = tcc::utility::time::now();
+            auto eri3_time = tcc::utility::time::duration_in_s(int0, int1);
+            std::cout << "Eri3 Integral time: " << eri3_time << std::endl;
+            auto eri3_storage = storage_for_array(eri3.array());
+            std::cout << "Eri3 Integral Storage:\n";
+            std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
+            std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
+            std::cout << "\tCLR: " << eri3_storage[2] << "\n";
 
-        auto F_soad
-              = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
+            ThreeCenterScf scf(H, F_soad, S, L_inv, r_xyz, occ / 2,
+                               repulsion_energy, clr_threshold);
 
-        auto soad1 = tcc::utility::time::now();
-        auto soad_time = tcc::utility::time::duration_in_s(int1, soad1);
-        std::cout << "Soad Time: " << soad_time << std::endl;
+            scf.solve(30, 1e-11, eri3);
 
-        auto multi_pool
-              = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
-        auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+            auto job_summary = scf.init_summary();
 
-        ThreeCenterScf scf(H, F_soad, S, L_inv, r_xyz, occ / 2,
-                           repulsion_energy, clr_threshold);
+            // Prepare for Dipole and MP2
+            auto Fao = scf.fock_matrix();
 
-        scf.solve(30, 1e-11, eri3);
-
-        auto job_summary = scf.init_summary();
-
-        // Add eri3 info
-        job_summary.eri3_fully_dense_storage = eri3_storage[0];
-        job_summary.eri3_sparse_only_storage = eri3_storage[1];
-        job_summary.eri3_sparse_clr_storage = eri3_storage[2];
-        job_summary.schwarz_threshold = schwarz_thresh;
-        job_summary.clr_threshold = clr_threshold;
+            // Add eri3 info
+            job_summary.eri3_fully_dense_storage = eri3_storage[0];
+            job_summary.eri3_sparse_only_storage = eri3_storage[1];
+            job_summary.eri3_sparse_clr_storage = eri3_storage[2];
+            job_summary.schwarz_threshold = schwarz_thresh;
+            job_summary.clr_threshold = clr_threshold;
+        }
 
         auto mp2_occ = occ / 2;
         auto mp2_vir = basis.nfunctions() - mp2_occ;
 
-        // Prepare for Dipole and MP2
-        auto Fao = scf.fock_matrix();
 
         auto F_eig = tcc::array_ops::array_to_eigen(Fao);
         auto S_eig = tcc::array_ops::array_to_eigen(S);

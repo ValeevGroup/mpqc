@@ -265,9 +265,11 @@ class to_dtile_compress {
               = tcc::tensor::DecomposedTensor<double>(clr_thresh_,
                                                       std::move(tensor));
 
-        auto test = tcc::tensor::algebra::two_way_decomposition(new_tile);
-        if (!test.empty()) {
-            new_tile = std::move(test);
+        if (clr_thresh_ != 0.0) {
+            auto test = tcc::tensor::algebra::two_way_decomposition(new_tile);
+            if (!test.empty()) {
+                new_tile = std::move(test);
+            }
         }
 
         return dtile(range, std::move(new_tile));
@@ -364,18 +366,24 @@ class ThreeCenterScf {
                            t_tile) {
                       auto &t = t_tile.tile();
                       auto input_norm = norm(t);
-                      if (t.ndecomp() == 1) {
-                          auto test
-                                = tcc::tensor::algebra::two_way_decomposition(
-                                      t);
-                          if (!test.empty()) {
-                              t = test;
+
+                      auto compressed_norm = input_norm;
+                      if (t.cut() != 0.0) {
+                          if (t.ndecomp() == 1) {
+                              auto test = tcc::tensor::algebra::
+                                    two_way_decomposition(t);
+                              if (!test.empty()) {
+                                  t = test;
+                                  compressed_norm = norm(t);
+                              }
+                          } else {
+                              tcc::tensor::algebra::recompress(t);
+                              compressed_norm = norm(t);
                           }
-                      } else {
-                          tcc::tensor::algebra::recompress(t);
                       }
+
                       // Both are always larger than or equal to the real norm.
-                      return std::min(input_norm, norm(t));
+                      return std::min(input_norm, compressed_norm);
                   });
         }
 
@@ -701,10 +709,13 @@ int main(int argc, char *argv[]) {
             tcc::tensor::DecomposedTensor<double> dc_tile(clr_threshold,
                                                           std::move(tensor));
 
-            auto lr_tile = tcc::tensor::algebra::two_way_decomposition(dc_tile);
+            if (clr_threshold != 0.0) {
+                auto lr_tile
+                      = tcc::tensor::algebra::two_way_decomposition(dc_tile);
 
-            if (!lr_tile.empty()) {
-                dc_tile = std::move(lr_tile);
+                if (!lr_tile.empty()) {
+                    dc_tile = std::move(lr_tile);
+                }
             }
 
             return tcc::tensor::Tile<decltype(dc_tile)>(range,

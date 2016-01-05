@@ -22,12 +22,9 @@ namespace mpqc{
 
         public:
 
-            typedef TA::Array <double, 2, Tile, Policy> TArray2;
-            typedef TA::Array <double, 3, Tile, Policy> TArray3;
-            typedef TA::Array <double, 4, Tile, Policy> TArray4;
-            typedef TA::Array <double, 6, Tile, Policy> TArray6;
+            using TArray = TA::DistArray<Tile,Policy>;
 
-            CCSD_T(const TArray2 &fock, const Eigen::VectorXd &ens,
+            CCSD_T(const TArray &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
                    rapidjson::Document &options):
@@ -36,8 +33,8 @@ namespace mpqc{
 
             void compute(){
 
-                TArray2 t1;
-                TArray4 t2;
+                TArray t1;
+                TArray t2;
 
                 double ccsd_corr = 0.0;
                 // compute CCSD first
@@ -73,18 +70,18 @@ namespace mpqc{
 
             }
 
-            double compute_ccsd_t(TArray2& t1, TArray4& t2){
+            double compute_ccsd_t(TArray& t1, TArray& t2){
                 bool df = this->options_.HasMember("DFExpr") ? this->options_["DFExpr"].GetBool() : true;
                 if(df && t1.get_world().rank() == 0){
                     std::cout << "Use Density Fitting Expression to avoid storing G_vovv" << std::endl;
                 }
                 // get integral
-                TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
-                TArray4 g_abij = this->ccsd_intermediate_->get_abij();
+                TArray g_jklc = this->ccsd_intermediate_->get_ijka();
+                TArray g_abij = this->ccsd_intermediate_->get_abij();
 
-                TArray4 g_diba;
-                TArray3 Xdb;
-                TArray3 Xai;
+                TArray g_diba;
+                TArray Xdb;
+                TArray Xai;
 
                 if (df){
                     Xdb = this->ccsd_intermediate_->get_Xab();
@@ -192,12 +189,12 @@ namespace mpqc{
                             typedef std::vector<std::size_t> block;
 
                             // compute t3
-                            TArray6 t3;
+                            TArray t3;
                             // abcijk contribution
                             // g^{di}_{ba}*t^{cd}_{kj} - g^{jk}_{lc}*t^{ab}_{il}
                             {
 
-                                TArray4 block_g_diba, block_t2_cdkj, block_g_jklc, block_t2_abil;
+                                TArray block_g_diba, block_t2_cdkj, block_g_jklc, block_t2_abil;
                                 if(df){
                                     // block for Xdb
                                     block Xdb_low {0, 0, b_low};
@@ -241,7 +238,7 @@ namespace mpqc{
                             // bcajki contribution
                             // g^{dj}_{cb}*t^{ad}_{ik} - g^{ki}_{la}*t^{bc}_{jl}
                             {
-                                TArray4 block_g_djcb, block_g_kila, block_t2_adik, block_t2_bcjl;
+                                TArray block_g_djcb, block_g_kila, block_t2_adik, block_t2_bcjl;
 
                                 if(df){
                                    // block for Xdc
@@ -284,7 +281,7 @@ namespace mpqc{
                             // cabkij contribution
                             // g^{dk}_{ac}*t^{bd}_{ji} - g^{ij}_{lb}*t^{ca}_{kl}
                             {
-                                TArray4 block_g_dkac, block_g_ijlb, block_t2_bdji, block_t2_cakl;
+                                TArray block_g_dkac, block_g_ijlb, block_t2_bdji, block_t2_cakl;
 
                                 if(df){
                                     // block for Xda
@@ -330,7 +327,7 @@ namespace mpqc{
                             // g^{dj}_{ab}*t^{cd}_{ki} - g^{ik}_{lc}*t^{ba}_{jl}
                             {
 
-                                TArray4 block_g_djab, block_t2_cdki, block_g_iklc, block_t2_bajl;
+                                TArray block_g_djab, block_t2_cdki, block_g_iklc, block_t2_bajl;
 
                                 if (df){
 
@@ -379,7 +376,7 @@ namespace mpqc{
                             // g^{di}_{ca}*t^{bd}_{jk} - g^{kj}_{lb}*t^{ac}_{il}
                             {
 
-                                TArray4 block_g_dica, block_t2_bdjk, block_g_kjlb, block_t2_acil;
+                                TArray block_g_dica, block_t2_bdjk, block_g_kjlb, block_t2_acil;
 
 
                                 if(df){
@@ -428,7 +425,7 @@ namespace mpqc{
                             // g^{dk}_{bc}*t^{ad}_{ij} - g^{ji}_{la}*t^{cb}_{kl}
                             {
 
-                                TArray4 block_g_dkbc, block_g_jila, block_t2_adij, block_t2_cbkl;
+                                TArray block_g_dkbc, block_g_jila, block_t2_adij, block_t2_cbkl;
 
                                 if(df){
                                     // block for Xdb
@@ -472,7 +469,7 @@ namespace mpqc{
                             }
 
                             // compute v3
-                            TArray6 v3;
+                            TArray v3;
                             // abcijk contribution
                             // g^{ab}_{ij}*t^{c}_{k}
                             {
@@ -580,21 +577,21 @@ namespace mpqc{
             }
 
             // compute and store all t3 amplitudes, not recommanded for performance computing
-            double compute_ccsd_t_straight(const TArray2& t1, const TArray4& t2){
+            double compute_ccsd_t_straight(const TArray& t1, const TArray& t2){
 
                 // get integral
-                TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
-                TArray4 g_diba = this->ccsd_intermediate_->get_aibc();
-                TArray4 g_abij = this->ccsd_intermediate_->get_abij();
+                TArray g_jklc = this->ccsd_intermediate_->get_ijka();
+                TArray g_diba = this->ccsd_intermediate_->get_aibc();
+                TArray g_abij = this->ccsd_intermediate_->get_abij();
 
                 // compute t3
-                TArray6 t3;
+                TArray t3;
                 t3("a,b,c,i,j,k") = g_diba("d,i,b,a")*t2("c,d,k,j") - g_jklc("l,k,j,c")*t2("a,b,i,l");
                 t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") + t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i")
                         + t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
 
                 // compute v3
-                TArray6 v3;
+                TArray v3;
                 v3("a,b,c,i,j,k") = g_abij("a,b,i,j")*t1("c,k");
                 v3("a,b,c,i,j,k") = v3("a,b,c,i,j,k") + v3("b,c,a,j,k,i") + v3("a,c,b,i,k,j");
 
@@ -621,12 +618,12 @@ namespace mpqc{
                 return triple_energy;
             }
 
-            double compute_ccsd_t_direct(TArray2& t1,TArray4& t2){
+            double compute_ccsd_t_direct(TArray& t1,TArray& t2){
 
                 // get integral
-                TArray4 g_jklc = this->ccsd_intermediate_->get_ijka();
-                TArray4 g_diba = this->ccsd_intermediate_->get_aibc();
-                TArray4 g_abij = this->ccsd_intermediate_->get_abij();
+                TArray g_jklc = this->ccsd_intermediate_->get_ijka();
+                TArray g_diba = this->ccsd_intermediate_->get_aibc();
+                TArray g_abij = this->ccsd_intermediate_->get_abij();
 
                 // get trange1
                 auto tr_occ = this->trange1_engine_->get_occ_tr1();
@@ -659,7 +656,7 @@ namespace mpqc{
                             typedef std::vector<std::size_t> block;
 
                             // compute t3
-                            TArray6 t3;
+                            TArray t3;
                             // abcijk contribution
                             // g^{di}_{ba}*t^{cd}_{kj} - g^{jk}_{lc}*t^{ab}_{il}
                             {
@@ -680,7 +677,7 @@ namespace mpqc{
                                 block g_jklc_up {n_tr_occ,n_tr_occ,n_tr_occ,c_up};
 
 
-                                TArray4 block_g_diba, block_t2_cdkj, block_g_jklc, block_t2_abil;
+                                TArray block_g_diba, block_t2_cdkj, block_g_jklc, block_t2_abil;
                                 block_g_diba("d,i,b,a") = g_diba("d,i,b,a").block(g_diba_low,g_diba_up);
                                 block_t2_cdkj("c,d,k,j") = t2("c,d,k,j").block(t2_cdkj_low,t2_cdkj_up);
 
@@ -711,7 +708,7 @@ namespace mpqc{
                                 block g_kila_low {0, 0, 0, a_low};
                                 block g_kila_up {n_tr_occ, n_tr_occ, n_tr_occ, a_up};
 
-                                TArray4 block_g_djcb, block_g_kila, block_t2_adik, block_t2_bcjl;
+                                TArray block_g_djcb, block_g_kila, block_t2_adik, block_t2_bcjl;
 
                                 block_g_djcb("d,j,c,b") = g_diba("d,j,c,b").block(g_djcb_low,g_djcb_up);
                                 block_t2_adik("a,d,i,k") = t2("a,d,i,k").block(t2_adik_low,t2_adik_up);
@@ -742,7 +739,7 @@ namespace mpqc{
                                 block g_ijlb_low {0,0,0, b_low};
                                 block g_ijlb_up {n_tr_occ, n_tr_occ, n_tr_occ, b_up};
 
-                                TArray4 block_g_dkac, block_g_ijlb, block_t2_bdji, block_t2_cakl;
+                                TArray block_g_dkac, block_g_ijlb, block_t2_bdji, block_t2_cakl;
 
                                 block_g_dkac("d,k,a,c") = g_diba("d,k,a,c").block(g_dkac_low, g_dkac_up);
                                 block_t2_bdji("b,d,j,i") = t2("b,d,j,i").block(t2_bdji_low,t2_bdji_up);
@@ -774,7 +771,7 @@ namespace mpqc{
                                 block g_iklc_up {n_tr_occ,n_tr_occ,n_tr_occ,c_up};
 
 
-                                TArray4 block_g_djab, block_t2_cdki, block_g_iklc, block_t2_bajl;
+                                TArray block_g_djab, block_t2_cdki, block_g_iklc, block_t2_bajl;
                                 block_g_djab("d,j,a,b") = g_diba("d,j,a,b").block(g_djab_low,g_djab_up);
                                 block_t2_cdki("c,d,k,i") = t2("c,d,k,i").block(t2_cdki_low,t2_cdki_up);
 
@@ -806,7 +803,7 @@ namespace mpqc{
                                 block g_kjlb_up {n_tr_occ,n_tr_occ,n_tr_occ,b_up};
 
 
-                                TArray4 block_g_dica, block_t2_bdjk, block_g_kjlb, block_t2_acil;
+                                TArray block_g_dica, block_t2_bdjk, block_g_kjlb, block_t2_acil;
                                 block_g_dica("d,i,c,a") = g_diba("d,i,c,a").block(g_dica_low,g_dica_up);
                                 block_t2_bdjk("b,d,j,k") = t2("b,d,j,k").block(t2_bdjk_low,t2_bdjk_up);
 
@@ -837,7 +834,7 @@ namespace mpqc{
                                 block g_jila_low {0, 0, 0, a_low};
                                 block g_jila_up {n_tr_occ, n_tr_occ, n_tr_occ, a_up};
 
-                                TArray4 block_g_dkbc, block_g_jila, block_t2_adij, block_t2_cbkl;
+                                TArray block_g_dkbc, block_g_jila, block_t2_adij, block_t2_cbkl;
 
                                 block_g_dkbc("d,k,b,c") = g_diba("d,k,b,c").block(g_dkbc_low,g_dkbc_up);
                                 block_t2_adij("a,d,i,j") = t2("a,d,i,j").block(t2_adij_low,t2_adij_up);
@@ -850,7 +847,7 @@ namespace mpqc{
                             }
 
                             // compute v3
-                            TArray6 v3;
+                            TArray v3;
                             // abcijk contribution
                             // g^{ab}_{ij}*t^{c}_{k}
                             {

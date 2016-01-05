@@ -35,29 +35,27 @@ namespace mpqc {
         class CCSD {
 
         public:
-            typedef TA::Array <double, 2, Tile, Policy> TArray2;
-            typedef TA::Array <double, 3, Tile, Policy> TArray3;
-            typedef TA::Array <double, 4, Tile, Policy> TArray4;
 
-            typedef mpqc::TArrayBlock<double, 2, Tile, Policy, mpqc::MOBlock> TArrayBlock2;
-            typedef mpqc::TArrayBlock<double, 4, Tile, Policy, mpqc::MOBlock> TArrayBlock4;
+            using TArray = TA::DistArray<Tile,Policy>;
+
+            typedef mpqc::TArrayBlock<Tile, Policy, mpqc::MOBlock> TArrayBlock;
 
 
-            CCSD(const TArray2 &fock, const Eigen::VectorXd &ens,
+            CCSD(const TArray &fock, const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
                  rapidjson::Document &options) :
                     fock_(fock), orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter), options_(std::move(options))
             {
 //                auto mo_block = std::make_shared<mpqc::MOBlock>(*trange1_engine_);
-//                fock_ = TArrayBlock2(fock, mo_block);
+//                fock_ = TArrayBlock(fock, mo_block);
             }
 
             // compute function
             virtual void compute(){
 
-                TArray2 t1;
-                TArray4 t2;
+                TArray t1;
+                TArray t2;
 
                 auto direct = options_.HasMember("Direct") ? options_["Direct"].GetBool(): true;
                 if(direct){
@@ -75,11 +73,11 @@ namespace mpqc {
             // dummy way of doing CCSD
             // store all the integrals in memory
             // used as reference for development
-            double compute_ccsd_straight(TArray2 &t1, TArray4 &t2) {
+            double compute_ccsd_straight(TArray &t1, TArray &t2) {
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray4 g_abij = ccsd_intermediate_->get_abij();
+                TArray g_abij = ccsd_intermediate_->get_abij();
 
                 auto& world = g_abij.get_world();
 
@@ -87,19 +85,19 @@ namespace mpqc {
                     std::cout << "Use Straight CCSD Compute" <<std::endl;
                 }
 
-                TArray2 f_ai;
+                TArray f_ai;
                 f_ai("a,i") = fock_("a,i");
 
                 world.gop.fence();
 
 //      std::cout << g_abij << std::endl;
 
-                TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
+                TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
                 mpqc::cc::create_d_ai(d1, orbital_energy_, n_occ);
 
-                TArray4 d2(world, g_abij.trange(),
+                TArray d2(world, g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
                 mpqc::cc::create_d_abij(d2, orbital_energy_, n_occ);
@@ -109,7 +107,7 @@ namespace mpqc {
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
-                TArray4 tau;
+                TArray tau;
                 tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
                 double E0 = 0.0;
@@ -121,13 +119,13 @@ namespace mpqc {
 //      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
-                TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
-                TArray4 g_abcd = ccsd_intermediate_->get_abcd();
-                TArray4 g_iajb = ccsd_intermediate_->get_iajb();
-                TArray4 g_iabc = ccsd_intermediate_->get_iabc();
-                TArray4 g_aibc = ccsd_intermediate_->get_aibc();
-                TArray4 g_ijak = ccsd_intermediate_->get_ijak();
-                TArray4 g_ijka = ccsd_intermediate_->get_ijka();
+                TArray g_ijkl = ccsd_intermediate_->get_ijkl();
+                TArray g_abcd = ccsd_intermediate_->get_abcd();
+                TArray g_iajb = ccsd_intermediate_->get_iajb();
+                TArray g_iabc = ccsd_intermediate_->get_iabc();
+                TArray g_aibc = ccsd_intermediate_->get_aibc();
+                TArray g_ijak = ccsd_intermediate_->get_ijak();
+                TArray g_ijka = ccsd_intermediate_->get_ijka();
 
 //                 clean up three center integral after compute all two electron integrals
 //                ccsd_intermediate_->clean_three_center();
@@ -135,8 +133,8 @@ namespace mpqc {
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
                 double error = 1.0;
-                TArray2 r1;
-                TArray4 r2;
+                TArray r1;
+                TArray r2;
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
                 TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
@@ -161,7 +159,7 @@ namespace mpqc {
                     // external index i and a
                     // vir index a b c d
                     // occ index i j k l
-                    TArray2 h_ac, h_ki, h_kc;
+                    TArray h_ac, h_ki, h_kc;
                     {
                         h_ac("a,c") = -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
 
@@ -192,8 +190,8 @@ namespace mpqc {
                     // intermediates for t2
                     // external index i j a b
 
-                    TArray4 a_klij, b_abij, b_abcd, j_akic, k_kaic, T;
-                    TArray2 g_ki, g_ac;
+                    TArray a_klij, b_abij, b_abcd, j_akic, k_kaic, T;
+                    TArray g_ki, g_ac;
 
                     // avoid store b_abcd
                     if(less){
@@ -419,13 +417,13 @@ namespace mpqc {
             // dummy way of doing CCSD
             // store all the integrals in memory
             // used as reference for development
-            double compute_ccsd_nondirect(TArray2 &t1, TArray4 &t2) {
+            double compute_ccsd_nondirect(TArray &t1, TArray &t2) {
 
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray4 g_abij = ccsd_intermediate_->get_abij();
+                TArray g_abij = ccsd_intermediate_->get_abij();
 
                 auto& world = g_abij.get_world();
 
@@ -433,14 +431,14 @@ namespace mpqc {
                     std::cout << "Use Straight CCSD Compute" <<std::endl;
                 }
 
-                TArray2 f_ai;
+                TArray f_ai;
                 f_ai("a,i") = fock_("a,i");
 
                 world.gop.fence();
 
 //      std::cout << g_abij << std::endl;
 
-                TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
+                TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
                 mpqc::cc::create_d_ai(d1, orbital_energy_, n_occ);
@@ -451,7 +449,7 @@ namespace mpqc {
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
-                TArray4 tau;
+                TArray tau;
                 tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
                 double E0 = 0.0;
@@ -463,13 +461,13 @@ namespace mpqc {
 //      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
-                TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
-                TArray4 g_abcd = ccsd_intermediate_->get_abcd();
-                TArray4 g_iajb = ccsd_intermediate_->get_iajb();
-                TArray4 g_iabc = ccsd_intermediate_->get_iabc();
-                TArray4 g_aibc = ccsd_intermediate_->get_aibc();
-                TArray4 g_ijak = ccsd_intermediate_->get_ijak();
-                TArray4 g_ijka = ccsd_intermediate_->get_ijka();
+                TArray g_ijkl = ccsd_intermediate_->get_ijkl();
+                TArray g_abcd = ccsd_intermediate_->get_abcd();
+                TArray g_iajb = ccsd_intermediate_->get_iajb();
+                TArray g_iabc = ccsd_intermediate_->get_iabc();
+                TArray g_aibc = ccsd_intermediate_->get_aibc();
+                TArray g_ijak = ccsd_intermediate_->get_ijak();
+                TArray g_ijka = ccsd_intermediate_->get_ijka();
 
 //                 clean up three center integral after compute all two electron integrals
 //                ccsd_intermediate_->clean_three_center();
@@ -477,8 +475,8 @@ namespace mpqc {
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
                 double error = 1.0;
-                TArray2 r1;
-                TArray4 r2;
+                TArray r1;
+                TArray r2;
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
                 TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
@@ -502,17 +500,17 @@ namespace mpqc {
                     //start timer
                     auto time0 = tcc_time::now();
 
-                    TArray2::wait_for_lazy_cleanup(world);
-                    TArray4::wait_for_lazy_cleanup(world);
+                    TArray::wait_for_lazy_cleanup(world);
+                    TArray::wait_for_lazy_cleanup(world);
 
 
-                    TArray2 h_ki, h_ac;
+                    TArray h_ki, h_ac;
                     {
                         // intermediates for t1
                         // external index i and a
                         // vir index a b c d
                         // occ index i j k l
-                        TArray2 h_kc;
+                        TArray h_kc;
 
 
                         // compute residual r1(n) = t1(n+1) - t1(n)
@@ -564,7 +562,7 @@ namespace mpqc {
 
                     {
                         // compute g intermediate
-                        TArray2 g_ki, g_ac;
+                        TArray g_ki, g_ac;
 
                         g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i") + (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
 
@@ -577,11 +575,11 @@ namespace mpqc {
 
 
                     {
-                        TArray4 j_akic;
-                        TArray4 k_kaic;
+                        TArray j_akic;
+                        TArray k_kaic;
                         // compute j and k intermediate
                         {
-                            TArray4 T;
+                            TArray T;
 
                             T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
 
@@ -623,7 +621,7 @@ namespace mpqc {
 
 
                     {
-                        TArray4 a_klij;
+                        TArray a_klij;
                         // compute a intermediate
                         a_klij("k,l,i,j") = g_ijkl("k,l,i,j");
 
@@ -640,7 +638,7 @@ namespace mpqc {
                         // compute b intermediate
                         if (less) {
                             // avoid store b_abcd
-                            TArray4 b_abij;
+                            TArray b_abij;
                             b_abij("a,b,i,j") = g_abcd("a,b,c,d") * tau("c,d,i,j");
 
                             b_abij("a,b,i,j") -= g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k");
@@ -654,7 +652,7 @@ namespace mpqc {
                             r2("a,b,i,j") += b_abij("a,b,i,j");
                         } else {
 
-                            TArray4 b_abcd;
+                            TArray b_abcd;
 
                             b_abcd("a,b,c,d") = g_abcd("a,b,c,d") - g_aibc("a,k,c,d") * t1("b,k") - g_iabc("k,b,c,d") * t1("a,k");
 
@@ -731,29 +729,29 @@ namespace mpqc {
 
             //TODO need to update equation with different options
             // ccsd energy for performance calculation
-            double compute_ccsd_direct2(TArray2 &t1, TArray4 &t2) {
+            double compute_ccsd_direct2(TArray &t1, TArray &t2) {
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray4 g_abij = ccsd_intermediate_->get_abij();
+                TArray g_abij = ccsd_intermediate_->get_abij();
 
                 auto& world = g_abij.get_world();
 
                 if(world.rank() == 0){
                     std::cout << "Use Direct CCSD Compute" <<std::endl;
                 }
-                TArray2 f_ai;
+                TArray f_ai;
                 f_ai("a,i") = fock_("a,i");
 
                 world.gop.fence();
 
 //      std::cout << g_abij << std::endl;
 
-                TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
+                TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 create_d_ai(d1, orbital_energy_, n_occ);
 
-                TArray4 d2(world, g_abij.trange(),
+                TArray d2(world, g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 create_d_abij(d2, orbital_energy_, n_occ);
 
@@ -762,7 +760,7 @@ namespace mpqc {
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
-                TArray4 tau;
+                TArray tau;
                 tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
                 double E0 = 0.0;
@@ -774,25 +772,25 @@ namespace mpqc {
 //      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
-                TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
-                TArray4 g_iajb = ccsd_intermediate_->get_iajb();
-                TArray4 g_ijak = ccsd_intermediate_->get_ijak();
-                TArray4 g_ijka = ccsd_intermediate_->get_ijka();
+                TArray g_ijkl = ccsd_intermediate_->get_ijkl();
+                TArray g_iajb = ccsd_intermediate_->get_iajb();
+                TArray g_ijak = ccsd_intermediate_->get_ijak();
+                TArray g_ijka = ccsd_intermediate_->get_ijka();
 
                 // get three center integrals
-                TArray3 Xab = ccsd_intermediate_->get_Xab();
-                TArray3 Xij = ccsd_intermediate_->get_Xij();
-                TArray3 Xai = ccsd_intermediate_->get_Xai();
+                TArray Xab = ccsd_intermediate_->get_Xab();
+                TArray Xij = ccsd_intermediate_->get_Xij();
+                TArray Xai = ccsd_intermediate_->get_Xai();
 
                 // get mo coefficient
-                TArray2 ca = ccsd_intermediate_->get_Ca();
-                TArray2 ci = ccsd_intermediate_->get_Ci();
+                TArray ca = ccsd_intermediate_->get_Ca();
+                TArray ci = ccsd_intermediate_->get_Ci();
 
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
                 double error = 1.0;
-                TArray2 r1;
-                TArray4 r2;
+                TArray r1;
+                TArray r2;
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
                 TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
@@ -803,7 +801,7 @@ namespace mpqc {
                     //start timer
                     auto time0 = tcc_time::now();
 
-                    TArray4 u2_u11;
+                    TArray u2_u11;
                     // compute half transformed intermediates
                     auto tu0 = tcc_time::now();
                     {
@@ -832,7 +830,7 @@ namespace mpqc {
 
                     // intermediates for t1
                     // external index i and a
-                    TArray2 h_ac, h_ki, h_kc;
+                    TArray h_ac, h_ki, h_kc;
                     {
                         h_ac("a,c") = -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
 
@@ -868,8 +866,8 @@ namespace mpqc {
                     // intermediates for t2
                     // external index i j a b
 
-                    TArray4 a_klij, b_abij, j_akic, k_kaic, T;
-                    TArray2 g_ki, g_ac;
+                    TArray a_klij, b_abij, j_akic, k_kaic, T;
+                    TArray g_ki, g_ac;
                     {
 
 
@@ -1013,13 +1011,13 @@ namespace mpqc {
                 return E1;
             }
 
-            double compute_ccsd_direct(TArray2 &t1, TArray4 &t2) {
+            double compute_ccsd_direct(TArray &t1, TArray &t2) {
 
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray4 g_abij = ccsd_intermediate_->get_abij();
+                TArray g_abij = ccsd_intermediate_->get_abij();
 
                 auto& world = g_abij.get_world();
 
@@ -1027,14 +1025,14 @@ namespace mpqc {
                     std::cout << "Use Direct CCSD Compute" <<std::endl;
                 }
 
-                TArray2 f_ai;
+                TArray f_ai;
                 f_ai("a,i") = fock_("a,i");
 
                 world.gop.fence();
 
 //      std::cout << g_abij << std::endl;
 
-                TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
+                TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
 
                 create_d_ai(d1, orbital_energy_, n_occ);
 
@@ -1044,7 +1042,7 @@ namespace mpqc {
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
-                TArray4 tau;
+                TArray tau;
                 tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
                 double E0 = 0.0;
@@ -1056,25 +1054,25 @@ namespace mpqc {
 //      std::cout << E1 << std::endl;
 
                 // get all two electron integrals
-                TArray4 g_ijkl = ccsd_intermediate_->get_ijkl();
-                TArray4 g_iajb = ccsd_intermediate_->get_iajb();
-                TArray4 g_ijak = ccsd_intermediate_->get_ijak();
-                TArray4 g_ijka = ccsd_intermediate_->get_ijka();
+                TArray g_ijkl = ccsd_intermediate_->get_ijkl();
+                TArray g_iajb = ccsd_intermediate_->get_iajb();
+                TArray g_ijak = ccsd_intermediate_->get_ijak();
+                TArray g_ijka = ccsd_intermediate_->get_ijka();
 
                 // get three center integrals
-                TArray3 Xab = ccsd_intermediate_->get_Xab();
-                TArray3 Xij = ccsd_intermediate_->get_Xij();
-                TArray3 Xai = ccsd_intermediate_->get_Xai();
+                TArray Xab = ccsd_intermediate_->get_Xab();
+                TArray Xij = ccsd_intermediate_->get_Xij();
+                TArray Xai = ccsd_intermediate_->get_Xai();
 
                 // get mo coefficient
-                TArray2 ca = ccsd_intermediate_->get_Ca();
-                TArray2 ci = ccsd_intermediate_->get_Ci();
+                TArray ca = ccsd_intermediate_->get_Ca();
+                TArray ci = ccsd_intermediate_->get_Ci();
 
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
                 double error = 1.0;
-                TArray2 r1;
-                TArray4 r2;
+                TArray r1;
+                TArray r2;
 
                 auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
                 TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
@@ -1091,10 +1089,10 @@ namespace mpqc {
                     //start timer
                     auto time0 = tcc_time::now();
 
-                    TArray2::wait_for_lazy_cleanup(world);
-                    TArray4::wait_for_lazy_cleanup(world);
+                    TArray::wait_for_lazy_cleanup(world);
+                    TArray::wait_for_lazy_cleanup(world);
 
-                    TArray4 u2_u11;
+                    TArray u2_u11;
                     // compute half transformed intermediates
                     auto tu0 = tcc_time::now();
                     {
@@ -1118,7 +1116,7 @@ namespace mpqc {
 //                    }
 
 
-                    TArray2 h_ac, h_ki;
+                    TArray h_ac, h_ki;
                     {
                         // intermediates for t1
                         // external index i and a
@@ -1136,7 +1134,7 @@ namespace mpqc {
                         r1("a,i") += h_ac("a,c") * t1("c,i") - t1("a,k") * h_ki("k,i");
 
                         {
-                            TArray2 h_kc;
+                            TArray h_kc;
                             h_kc("k,c") = f_ai("c,k") + (-g_abij("d,c,k,l")+ 2.0 * g_abij("c,d,k,l")) * t1("d,l");
 
                             r1("a,i") += h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("a,k") * t1("c,i") );
@@ -1169,7 +1167,7 @@ namespace mpqc {
 
                         {
                             // intermediates g
-                            TArray2 g_ki, g_ac;
+                            TArray g_ki, g_ac;
 
                             g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i") + (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
 
@@ -1183,11 +1181,11 @@ namespace mpqc {
                         }
 
                         {
-                            TArray4 j_akic;
-                            TArray4 k_kaic;
+                            TArray j_akic;
+                            TArray k_kaic;
                             // compute j and k intermediate
                             {
-                                TArray4 T;
+                                TArray T;
 
                                 T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
 
@@ -1229,7 +1227,7 @@ namespace mpqc {
 
                         {
                             // intermediate a
-                            TArray4 a_klij;
+                            TArray a_klij;
                             a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
 
                                                 + g_ijka("k,l,i,c") * t1("c,j")
@@ -1244,7 +1242,7 @@ namespace mpqc {
 
 
                         {
-                            TArray4 b_abij;
+                            TArray b_abij;
 
                             b_abij("a,b,i,j") = (u2_u11("p,r,i,j")*ca("r,b") - ci("r,k")*t1("b,k")*u2_u11("p,r,i,j")) * ca("p,a")
 
@@ -1320,7 +1318,7 @@ namespace mpqc {
 
         protected:
             // fock matrix
-            TArray2 fock_;
+            TArray fock_;
 
             // orbital energy
             Eigen::VectorXd orbital_energy_;

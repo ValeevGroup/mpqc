@@ -13,12 +13,12 @@
 namespace tcc {
 namespace scf {
 
-template <typename T, typename Tile>
+template <typename Tile>
 void clustered_coeffs(
-      std::vector<TA::Array<T, 2, Tile, TA::SparsePolicy>> const &xyz,
-      TA::Array<T, 2, Tile, TA::SparsePolicy> &C, unsigned long occ_nclusters) {
+      std::vector<TA::DistArray<Tile, TA::SparsePolicy>> const &xyz,
+      TA::DistArray<Tile, TA::SparsePolicy> &C, unsigned long occ_nclusters) {
 
-    TA::Array<T, 2, Tile, TA::SparsePolicy> X, Y, Z;
+    TA::DistArray<Tile, TA::SparsePolicy> X, Y, Z;
     X("i,j") = C("mu,i") * xyz[0]("mu, nu") * C("nu,j");
     Y("i,j") = C("mu,i") * xyz[1]("mu, nu") * C("nu,j");
     Z("i,j") = C("mu,i") * xyz[2]("mu, nu") * C("nu,j");

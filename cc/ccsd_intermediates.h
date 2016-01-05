@@ -31,11 +31,9 @@ namespace mpqc {
         class CCSDIntermediate {
         public:
 
-            typedef TA::Array <double, 2, Tile, Policy> TArray2;
-            typedef TA::Array <double, 3, Tile, Policy> TArray3;
-            typedef TA::Array <double, 4, Tile, Policy> TArray4;
+            using TArray = TA::DistArray<Tile,Policy>;
 
-            CCSDIntermediate(const TArray2 &Ci, const TArray2 &Ca, const TArray3 &Xpq,
+            CCSDIntermediate(const TArray &Ci, const TArray &Ca, const TArray &Xpq,
                              DirectTwoElectronArray& direct_ao) : direct_ao_(direct_ao) {
                 {
                     // convert to MO, store this temporary,
@@ -61,59 +59,59 @@ namespace mpqc {
                     }
 
                     // two electron integral
-//                    TArray4 abij_;
-//                    TArray4 ijkl_ = TArray4();
-//                    TArray4 abcd_ = TArray4();
-//                    TArray4 iabc_ = TArray4();
-//                    TArray4 aibc_ = TArray4();
-//                    TArray4 ijak_ = TArray4();
-//                    TArray4 ijka_ = TArray4();
-//                    TArray4 iajb_ = TArray4();
-                    TArray4 abij_;
-                    TArray4 ijkl_;
-                    TArray4 abcd_;
-                    TArray4 iabc_;
-                    TArray4 aibc_;
-                    TArray4 ijak_;
-                    TArray4 ijka_;
-                    TArray4 iajb_;
+//                    TArray abij_;
+//                    TArray ijkl_ = TArray();
+//                    TArray abcd_ = TArray();
+//                    TArray iabc_ = TArray();
+//                    TArray aibc_ = TArray();
+//                    TArray ijak_ = TArray();
+//                    TArray ijka_ = TArray();
+//                    TArray iajb_ = TArray();
+                    TArray abij_;
+                    TArray ijkl_;
+                    TArray abcd_;
+                    TArray iabc_;
+                    TArray aibc_;
+                    TArray ijak_;
+                    TArray ijka_;
+                    TArray iajb_;
                 }
-                TArray3::wait_for_lazy_cleanup(Xpq.get_world());
+                TArray::wait_for_lazy_cleanup(Xpq.get_world());
             }
 
             // clean the three center ingeral
             void clean_three_center(){
-                Xab_ = TArray3();
-                Xai_ = TArray3();
-                Xij_ = TArray3();
+                Xab_ = TArray();
+                Xai_ = TArray();
+                Xij_ = TArray();
                 have_three_center_ = false;
             }
 
             // clean all the two electron integral computed
             void clean_two_electron(){
-                abij_ = TArray4();
-                ijkl_ = TArray4();
-                abcd_ = TArray4();
-                iabc_ = TArray4();
-                aibc_ = TArray4();
-                ijak_ = TArray4();
-                ijka_ = TArray4();
-                iajb_ = TArray4();
+                abij_ = TArray();
+                ijkl_ = TArray();
+                abcd_ = TArray();
+                iabc_ = TArray();
+                aibc_ = TArray();
+                ijak_ = TArray();
+                ijka_ = TArray();
+                iajb_ = TArray();
             }
 
             // get mo coefficient
             // occ part
-            const TArray2 get_Ci() const{
+            const TArray get_Ci() const{
                 return Ci_;
             }
 
             // vir part
-            const TArray2 get_Ca() const{
+            const TArray get_Ca() const{
                 return Ca_;
             }
 
             // get three center integral (X|ab)
-            const TArray3 get_Xab() const{
+            const TArray get_Xab() const{
                 if(have_three_center_){
                     return Xab_;
                 }else{
@@ -122,7 +120,7 @@ namespace mpqc {
             }
 
             // get three center integral (X|ij)
-            const TArray3 get_Xij() const{
+            const TArray get_Xij() const{
                 if(have_three_center_){
                     return Xij_;
                 }else{
@@ -131,7 +129,7 @@ namespace mpqc {
             }
 
             // get three center integral (X|ai)
-            const TArray3 get_Xai() const{
+            const TArray get_Xai() const{
                 if(have_three_center_){
                     return Xai_;
                 }else{
@@ -143,7 +141,7 @@ namespace mpqc {
             // using physical notation <ab|ij>
 
             // <ab|ij>
-            const TArray4 get_abij(){
+            const TArray get_abij(){
                 if(have_three_center_){
                     if (abij_.is_initialized()){
                         return  abij_;
@@ -162,7 +160,7 @@ namespace mpqc {
             }
 
             // <ij|kl>
-            const TArray4 get_ijkl() {
+            const TArray get_ijkl() {
                 if(have_three_center_){
                     if (ijkl_.is_initialized()){
                         return ijkl_;
@@ -177,7 +175,7 @@ namespace mpqc {
             }
 
             // <ab|cd>
-            const TArray4 get_abcd() {
+            const TArray get_abcd() {
                 if(have_three_center_){
                     if (abcd_.is_initialized()){
                         return  abcd_;
@@ -192,7 +190,7 @@ namespace mpqc {
             }
 
             // <ia|bc>
-            const TArray4 get_iabc() {
+            const TArray get_iabc() {
                 if(have_three_center_){
                     if (iabc_.is_initialized()){
                        return iabc_;
@@ -207,7 +205,7 @@ namespace mpqc {
             }
 
             // <ai|bc>
-            const TArray4 get_aibc() {
+            const TArray get_aibc() {
                 if(have_three_center_){
                     if (aibc_.is_initialized()){
                         return aibc_;
@@ -222,7 +220,7 @@ namespace mpqc {
             }
 
             // <ij|ak>
-            const TArray4 get_ijak() {
+            const TArray get_ijak() {
                 if(have_three_center_){
                     if (ijak_.is_initialized()){
                         return ijak_;
@@ -237,7 +235,7 @@ namespace mpqc {
             }
 
             // <ij|ka>
-            const TArray4 get_ijka() {
+            const TArray get_ijka() {
                 if(have_three_center_){
                     if(ijka_.is_initialized()){
                         return ijka_;
@@ -252,7 +250,7 @@ namespace mpqc {
             }
 
             // <ia|jb>
-            const TArray4 get_iajb() {
+            const TArray get_iajb() {
                 if(have_three_center_){
                     if (iajb_.is_initialized()){
                         return iajb_;
@@ -273,10 +271,10 @@ namespace mpqc {
             /// @param t1 singles amplitudes in MO basis
             /// @return U tensor
             // TODO test the performance stability of direct tile contraction
-            TArray4 compute_u2_u11(const TArray4& t2, const TArray2& t1){
+            TArray compute_u2_u11(const TArray& t2, const TArray& t1){
                 if (have_four_center_){
-                    TArray2 tc;
-                    TArray4 u2_u11;
+                    TArray tc;
+                    TArray u2_u11;
                     tc("i,q") = Ca_("q,c") * t1("c,i");
                     u2_u11("p, r, i, j") = ((t2("a,b,i,j")*Ca_("q,a"))*Ca_("s,b") +
                                                  tc("i,q") * tc("j,s")) * direct_ao_("p,q,r,s");
@@ -289,23 +287,23 @@ namespace mpqc {
         private:
 
             // three center integral, need to be cleaned when not needed
-            TArray3 Xab_;
-            TArray3 Xai_;
-            TArray3 Xij_;
+            TArray Xab_;
+            TArray Xai_;
+            TArray Xij_;
 
             // two electron integral
-            TArray4 abij_;
-            TArray4 ijkl_;
-            TArray4 abcd_;
-            TArray4 iabc_;
-            TArray4 aibc_;
-            TArray4 ijak_;
-            TArray4 ijka_;
-            TArray4 iajb_;
+            TArray abij_;
+            TArray ijkl_;
+            TArray abcd_;
+            TArray iabc_;
+            TArray aibc_;
+            TArray ijak_;
+            TArray ijka_;
+            TArray iajb_;
 
             // mo coefficient
-            TArray2 Ci_;
-            TArray2 Ca_;
+            TArray Ci_;
+            TArray Ca_;
 
             // direct ao
             // in chemical notation (pq|rs)

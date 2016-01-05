@@ -36,7 +36,8 @@ inline const double *shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1,
 inline const double *
 shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1) {
     const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, unit);
+    auto result = e.compute(s0, unit, s1, unit);
+    return result;
 }
 
 inline const double *
@@ -134,8 +135,8 @@ integral_kernel(Engine &eng, TA::Range &&rng,
             const auto ns1 = s1.size();
             ub[1] += ns1;
 
-
             TA::remap(map, shell_set(eng, s0, s1), lb, ub);
+
             tile.block(lb, ub) = map;
 
             //BUG cc-pv5z-ri doesn't work :(. 

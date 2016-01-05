@@ -43,7 +43,7 @@ namespace ints = integrals;
 
 class ThreeCenterScf {
 private:
-    using array_type = DArray<2, TA::TensorD, SpPolicy>;
+    using array_type = TA::TSpArrayD;
     array_type H_;
     array_type S_;
 

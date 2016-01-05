@@ -43,29 +43,32 @@ void write_to_eigen_task(Tile t, Matrix<double> *mat) {
  * The function needs to know the tile type and policy type to work.
  *
  */
-template <typename T, typename Tile, typename Policy>
-Matrix<T> array_to_eigen(TA::Array<T, 2, Tile, Policy> const &A) {
 
-    auto const &mat_extent = A.trange().elements().extent();
-    Matrix<T> out_mat = Matrix<T>::Zero(mat_extent[0], mat_extent[1]);
+    template <typename T, typename Policy>
+    Matrix<T> array_to_eigen(TA::DistArray<TA::Tensor<T>, Policy> const &A) {
 
-    // Copy A and make it replicated.  Making A replicated is a mutating op.
-    auto repl_A = A;
-    repl_A.make_replicated();
+        TA_ASSERT(A.range().rank() == 2);
 
-    // Loop over the array and assign the tiles to blocks of the Eigen Mat.
-    auto pmap = repl_A.get_pmap();
-    const auto end = pmap->end();
-    for (auto it = pmap->begin(); it != end; ++it) {
-        if (!repl_A.is_zero(*it)) {
-            auto tile = repl_A.find(*it).get();
-            A.get_world().taskq.add(write_to_eigen_task<Tile>, tile, &out_mat);
+        auto const &mat_extent = A.trange().elements().extent();
+        Matrix<T> out_mat = Matrix<T>::Zero(mat_extent[0], mat_extent[1]);
+
+        // Copy A and make it replicated.  Making A replicated is a mutating op.
+        auto repl_A = A;
+        repl_A.make_replicated();
+
+        // Loop over the array and assign the tiles to blocks of the Eigen Mat.
+        auto pmap = repl_A.get_pmap();
+        const auto end = pmap->end();
+        for (auto it = pmap->begin(); it != end; ++it) {
+            if (!repl_A.is_zero(*it)) {
+                auto tile = repl_A.find(*it).get();
+                A.get_world().taskq.add(write_to_eigen_task<TA::Tensor<T>>, tile, &out_mat);
+            }
         }
-    }
-    A.get_world().gop.fence(); // Can't let M go out of scope
+        A.get_world().gop.fence(); // Can't let M go out of scope
 
-    return out_mat;
-}
+        return out_mat;
+    }
 
 /*! \brief takes an Eigen matrix and converts it to the type of the template.
  *

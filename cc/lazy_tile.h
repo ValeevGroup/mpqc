@@ -24,6 +24,7 @@ namespace mpqc {
 
         public:
             typedef double value_type;
+            typedef double type;
             typedef TA::Tensor<double> eval_type;
             typedef TA::Range range_type;
 
@@ -83,8 +84,8 @@ namespace mpqc {
 
         // direct two electron integral
         typedef mpqc::cc::LazyTile<4, TwoBodyIntGenerator < libint2::Coulomb>> LazyTwoElectronTile;
-        typedef TA::Array<double, 4, LazyTwoElectronTile, TA::DensePolicy> DirectTwoElectronDenseArray;
-        typedef TA::Array<double, 4, LazyTwoElectronTile, TA::SparsePolicy> DirectTwoElectronSparseArray;
+        typedef TA::DistArray<LazyTwoElectronTile, TA::DensePolicy> DirectTwoElectronDenseArray;
+        typedef TA::DistArray<LazyTwoElectronTile, TA::SparsePolicy> DirectTwoElectronSparseArray;
 
         // function to make direct two electron dense TArray
         DirectTwoElectronDenseArray make_lazy_two_electron_dense_array(

@@ -14,12 +14,11 @@ namespace mpqc {
     // provide your own expression to block TA::Array by define BlockEngine
     // BlockEngine should have get function that return range based on string
     // argument
-    template<typename T, unsigned int DIM,
-            typename Tile, typename Policy, typename BlockEngine>
+    template<typename Tile, typename Policy, typename BlockEngine>
     class TArrayBlock {
 
     public:
-        typedef TA::Array <T, DIM, Tile, Policy> TArray;
+        typedef TA::DistArray <Tile, Policy> TArray;
 
         /// Default constructor
         TArrayBlock() : array_(), block_engine_() { }
@@ -49,7 +48,7 @@ namespace mpqc {
 
         /// \param vars A string with a comma-separated list of variables
         /// \return A non-const tensor block expression object
-        TA::expressions::BlkTsrExpr <TArray>
+        TA::expressions::BlkTsrExpr <TArray, true>
         operator()(const std::string &vars) {
 
             auto range = block_engine_->get(vars);

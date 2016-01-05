@@ -30,55 +30,54 @@ tile_size(tensor::Tile<tensor::DecomposedTensor<double>> const &tile) {
 
 inline double tile_size(TiledArray::Tensor<double> const &tile) { return 0.0; }
 
-template <typename T, unsigned int DIM, typename TileType, typename Policy>
-std::array<double, 3>
-array_storage(TA::Array<T, DIM, TileType, Policy> const &A) {
+    template <typename TileType, typename Policy>
+    std::array<double, 3>
+    array_storage(TA::DistArray<TileType, Policy> const &A) {
 
-    std::array<double, 3> out = {{0.0, 0.0, 0.0}};
-    double &full_size = out[0];
-    double &sparse_size = out[1];
-    double &low_size = out[2];
+        std::array<double, 3> out = {{0.0, 0.0, 0.0}};
+        double &full_size = out[0];
+        double &sparse_size = out[1];
+        double &low_size = out[2];
 
-    auto const &pmap = A.get_pmap();
-    TA::TiledRange const &trange = A.trange();
-    const auto end = pmap->end();
-    for (auto it = pmap->begin(); it != end; ++it) {
-        const TA::Range range = trange.make_tile_range(*it);
-        auto const size_array = range.extent();
-        auto const size = std::accumulate(size_array.begin(), size_array.end(),
-                                          1, std::multiplies<unsigned long>{});
-        full_size += size;
+        auto const &pmap = A.get_pmap();
+        TA::TiledRange const &trange = A.trange();
+        const auto end = pmap->end();
+        for (auto it = pmap->begin(); it != end; ++it) {
+            const TA::Range range = trange.make_tile_range(*it);
+            auto const size_array = range.extent();
+            auto const size = std::accumulate(size_array.begin(), size_array.end(),
+                                              1, std::multiplies<unsigned long>{});
+            full_size += size;
 
-        if (!A.is_zero(*it)) {
-            sparse_size += size;
-            low_size += tile_size(A.find(*it).get());
+            if (!A.is_zero(*it)) {
+                sparse_size += size;
+                low_size += tile_size(A.find(*it).get());
+            }
         }
+
+        A.get_world().gop.sum(&out[0], 3);
+
+        out[0] *= 8 * 1e-9;
+        out[1] *= 8 * 1e-9;
+        out[2] *= 8 * 1e-9;
+
+        return out;
     }
 
-    A.get_world().gop.sum(&out[0], 3);
+template <typename Tile, typename Policy>
+void print_size_info(TA::DistArray<Tile, Policy> const &a, std::string name) {
+        print_par(a.get_world(), "Printing size information for ", name, "\n");
 
-    out[0] *= 8 * 1e-9;
-    out[1] *= 8 * 1e-9;
-    out[2] *= 8 * 1e-9;
+        auto data = array_storage(a);
 
-    return out;
+        print_par(a.get_world(), "\tFull     = ", data[0], " GB\n", "\tSparse   = ",
+                  data[1], " GB\n", "\tLow Rank = ", data[2], " GB\n", "\n");
 }
 
-template <typename T, unsigned int DIM, typename TileType, typename Policy>
-void print_size_info(TA::Array<T, DIM, TileType, Policy> const &a,
-                     std::string name) {
-    print_par(a.get_world(), "Printing size information for ", name, "\n");
-
-    auto data = array_storage(a);
-
-    print_par(a.get_world(), "\tFull     = ", data[0], " GB\n", "\tSparse   = ",
-              data[1], " GB\n", "\tLow Rank = ", data[2], " GB\n", "\n");
-}
-
-template <typename T, unsigned int DIM, typename TileTypeL, typename TileTypeR,
+template <typename TileTypeL, typename TileTypeR,
           typename PolicyL, typename PolicyR>
-void print_array_difference(TA::Array<T, DIM, TileTypeL, PolicyL> const &left,
-                            TA::Array<T, DIM, TileTypeR, PolicyR> const &right,
+void print_array_difference(TA::DistArray<TileTypeL, PolicyL> const &left,
+                            TA::DistArray<TileTypeR, PolicyR> const &right,
                             std::string const &left_name,
                             std::string const &right_name) {
     // This really needs to check that both pmaps are the same size.

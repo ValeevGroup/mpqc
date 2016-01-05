@@ -75,11 +75,11 @@ public:
     OrbitalIndex(std::wstring letter);
 
     // if the have the same index
-    bool operator==(OrbitalIndex const &);
-    bool operator==(const OrbitalIndex::Index );
+    bool operator==(OrbitalIndex const &) const;
+    bool operator==(const OrbitalIndex::Index ) const;
 
     // if the same index and name
-    bool same(const OrbitalIndex& other);
+    bool same(const OrbitalIndex& other) const;
 
     // get index
     const Index &index() const {

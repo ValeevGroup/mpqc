@@ -6,7 +6,7 @@ set(sources
         orbital_index.cpp
         formula.h
         formula.cpp
-        formula_map.h
+        formula_registry.h
     )
 
 add_library(expression ${sources})

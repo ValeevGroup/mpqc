@@ -198,15 +198,15 @@ void OrbitalIndex::init(const wchar_t* letter) {
     name_ = tmp;
 }
 
-bool OrbitalIndex::operator==(const OrbitalIndex &other) {
+bool OrbitalIndex::operator==(const OrbitalIndex &other) const{
     return this->index_ == other.index_;
 }
 
-bool OrbitalIndex::operator==(const OrbitalIndex::Index i) {
+bool OrbitalIndex::operator==(const OrbitalIndex::Index i) const{
     return this->index_ == i;
 }
 
-bool OrbitalIndex::same(const OrbitalIndex &other) {
+bool OrbitalIndex::same(const OrbitalIndex &other) const{
     return (index_ == other.index()) && (name_ == other.name());
 }
 

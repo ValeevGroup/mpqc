@@ -114,4 +114,16 @@ namespace mpqc{
         }
     }
 
+    bool Operation::operator==(const Operation &other) const {
+
+        bool same_operation = (this->operation_ == other.operation_);
+
+        bool same_option = false;
+
+        if(options_.size() == other.options_.size()){
+            same_option = std::equal(options_.begin(), options_.end(), other.options_.begin());
+        }
+
+        return same_operation && same_option;
+    }
 }

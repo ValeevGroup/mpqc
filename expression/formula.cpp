@@ -133,4 +133,7 @@ namespace mpqc{
         }
     }
 
+    bool Formula::operator==(const Formula &other) const{
+        return (operation_== other.operation_) && (left_index_ == other.left_index_) && (right_index_ == other.right_index_);
+    }
 }

@@ -230,6 +230,9 @@ int main(int argc, char *argv[]) {
     auto gr12 = ao_int.compute(L"( γ |GR|  δ)");
 //    auto r12_2 = ao_int.compute4(L"(α β |R2| γ δ)");
 
+    S = ao_int.compute(L"(κ|λ)");
+    T = ao_int.compute(L"(κ| T|λ)");
+    V = ao_int.compute(L"(κ| V|λ)");
     madness::finalize();
     libint2::cleanup();
     return 0;

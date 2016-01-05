@@ -15,6 +15,7 @@
 #include "../include/tiledarray.h"
 #include "../basis/basis.h"
 #include "../expression/formula.h"
+#include "../expression/formula_registry.h"
 #include "integral_engine_pool.h"
 #include "task_integrals.h"
 #include "../molecule/molecule.h"
@@ -124,8 +125,7 @@ namespace integrals{
                 std::shared_ptr<basis::Basis> dfbs = nullptr,
                 std::shared_ptr<basis::Basis> auxbs = nullptr,
                 std::vector<std::pair<double,double>> gtg_params = std::vector<std::pair<double,double>>()
-        ) : AtomicIntegralBase<Tile,Policy>(world,mol,obs,dfbs,auxbs,gtg_params), op_(op){}
-
+        ) : AtomicIntegralBase<Tile,Policy>(world,mol,obs,dfbs,auxbs,gtg_params), op_(op), formula_registry_(){}
 
         virtual ~AtomicIntegral() = default;
 
@@ -163,6 +163,7 @@ namespace integrals{
         }
 
     private:
+        FormulaRegistry<TArray> formula_registry_;
         Op op_;
 
     };
@@ -172,18 +173,28 @@ namespace integrals{
 
         Formula formula(formula_string);
 
+        auto iter = formula_registry_.find(formula);
+
+        if(iter != formula_registry_.end()){
+            return iter->second;
+        }else{
+
             if(formula.rank() == 2){
                 auto result =  compute2(formula);
+                formula_registry_.insert(formula, result);
                 return result;
             }
             else if(formula.rank() == 3){
                 auto result =  compute3(formula);
+                formula_registry_.insert(formula, result);
                 return result;
             }
             else if(formula.rank() == 4){
                 auto result =  compute4(formula);
+                formula_registry_.insert(formula, result);
                 return result;
             }
+        }
 
     }
 

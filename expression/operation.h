@@ -43,6 +43,7 @@ namespace mpqc{
         bool is_twobody() const;
         bool is_r12() const;
 
+        bool operator==(Operation const & other) const;
 
     private:
 

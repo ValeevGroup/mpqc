@@ -35,9 +35,7 @@ namespace mpqc{
 
         Formula(std::wstring formula);
 
-        std::size_t rank() const;
-
-        const std::wstring &formula() const {
+        const std::wstring &formula_string() const {
             return formula_;
         }
 
@@ -56,6 +54,15 @@ namespace mpqc{
         const Notation &notation() const {
             return notation_;
         }
+
+        std::size_t rank() const;
+
+        bool operator<(const Formula& other) const{
+            return formula_ < other.formula_;
+        }
+
+        bool operator==(const Formula& other) const;
+
 
     private:
 

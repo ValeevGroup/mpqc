@@ -21,6 +21,7 @@
 #include "make_engine.h"
 #include "../utility/make_array.h"
 #include "../utility/wcout_utf8.h"
+#include "../ta_routines/array_to_eigen.h"
 
 namespace mpqc{
 namespace integrals{
@@ -32,9 +33,7 @@ namespace integrals{
     template<typename Tile, typename Policy>
     class AtomicIntegralBase {
     public:
-        using TArray2 = TA::Array <double, 2, Tile, Policy>;
-        using TArray3 = TA::Array <double, 3, Tile, Policy>;
-        using TArray4 = TA::Array <double, 4, Tile, Policy>;
+        using TArray = TA::DistArray<Tile, Policy>;
 
         AtomicIntegralBase() = default;
 
@@ -73,15 +72,11 @@ namespace integrals{
             AtomicIntegralBase::abs_ = abs;
         }
 
-        // compute integrals that has two dimension
-        virtual TArray2 compute2(const std::wstring& formula_string) = 0;
-        // compute integrals that has three dimension
-        virtual TArray3 compute3(const std::wstring& formula_stirng) = 0;
-        // compute integrals that has four dimension
-        virtual TArray4 compute4(const std::wstring& formula_string) = 0;
-
+        // compute integrals
+        virtual TArray compute(const std::wstring& formula_string) = 0;
 
     protected:
+
         std::shared_ptr<basis::Basis> index_to_basis(const OrbitalIndex& index){
             if(index.index() == OrbitalIndex::Index::obs){
                 return obs_;
@@ -116,9 +111,8 @@ namespace integrals{
     class AtomicIntegral : public AtomicIntegralBase<Tile,Policy>{
 
     public:
-        using TArray2 = typename AtomicIntegralBase<Tile,Policy>::TArray2;
-        using TArray3 = typename AtomicIntegralBase<Tile,Policy>::TArray3;
-        using TArray4 = typename AtomicIntegralBase<Tile,Policy>::TArray4;
+        using TArray = typename AtomicIntegralBase<Tile,Policy>::TArray;
+
         typedef Tile (*Op)(TA::TensorD &&);
 
         AtomicIntegral() = default;
@@ -135,10 +129,16 @@ namespace integrals{
 
         virtual ~AtomicIntegral() = default;
 
+        TArray compute(const std::wstring& );
 
-        TArray2 compute2(const std::wstring& );
-        TArray3 compute3(const std::wstring& );
-        TArray4 compute4(const std::wstring& );
+    protected:
+
+        // compute integrals that has two dimension
+        TArray compute2(const Formula& formula_string);
+        // compute integrals that has three dimension
+        TArray compute3(const Formula& formula_stirng);
+        // compute integrals that has four dimension
+        TArray compute4(const Formula& formula_string);
 
     private:
         //TODO Screener for different type of integral
@@ -167,12 +167,28 @@ namespace integrals{
 
     };
 
-
     template <typename Tile, typename Policy>
-    typename AtomicIntegral<Tile,Policy>::TArray2 AtomicIntegral<Tile,Policy>::compute2(const std::wstring& formula_string) {
+    typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute(const std::wstring& formula_string) {
 
         Formula formula(formula_string);
 
+            if(formula.rank() == 2){
+                auto result =  compute2(formula);
+                return result;
+            }
+            else if(formula.rank() == 3){
+                auto result =  compute3(formula);
+                return result;
+            }
+            else if(formula.rank() == 4){
+                auto result =  compute4(formula);
+                return result;
+            }
+
+    }
+
+    template <typename Tile, typename Policy>
+    typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute2(const Formula& formula) {
 
         // use one body engine
         if(formula.operation().is_onebody()){
@@ -224,7 +240,7 @@ namespace integrals{
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
             std::cout << "Computed One Body Integral: ";
-            wcout_utf8(formula_string);
+            wcout_utf8(formula.formula_string());
             std::cout << std::endl;
             return result;
         }
@@ -259,7 +275,7 @@ namespace integrals{
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 std::cout << "Computed Twobody Two Center Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }
@@ -273,7 +289,7 @@ namespace integrals{
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 std::cout << "Computed  Twobody Two Center Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }
@@ -287,7 +303,7 @@ namespace integrals{
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 std::cout << "Computed  Twobody Two Center Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }
@@ -301,7 +317,7 @@ namespace integrals{
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 std::cout << "Computed  Twobody Two Center Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }
@@ -314,8 +330,7 @@ namespace integrals{
     }
 
     template <typename Tile, typename Policy>
-    typename AtomicIntegral<Tile,Policy>::TArray3 AtomicIntegral<Tile,Policy>::compute3(const std::wstring& formula_string) {
-        Formula formula(formula_string);
+    typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute3(const Formula& formula) {
 
         TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Three Center Integral Must Use Chemical Notation");
 
@@ -352,7 +367,7 @@ namespace integrals{
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
             std::cout << "Computed Two Body Three Center Integral: ";
-            wcout_utf8(formula_string);
+            wcout_utf8(formula.formula_string());
             std::cout << std::endl;
             return result;
         }
@@ -366,7 +381,7 @@ namespace integrals{
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
             std::cout << "Computed Two Body Three Center Integral: ";
-            wcout_utf8(formula_string);
+            wcout_utf8(formula.formula_string());
             std::cout << std::endl;
             return result;
         }
@@ -380,7 +395,7 @@ namespace integrals{
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
             std::cout << "Computed Two Body Three Center Integral: ";
-            wcout_utf8(formula_string);
+            wcout_utf8(formula.formula_string());
             std::cout << std::endl;
             return result;
         }
@@ -394,7 +409,7 @@ namespace integrals{
             auto engine_pool = make_pool(engine);
             auto result = compute_integrals(this->world_,engine_pool,bs_array);
             std::cout << "Computed Two Body Three Center Integral: ";
-            wcout_utf8(formula_string);
+            wcout_utf8(formula.formula_string());
             std::cout << std::endl;
             return result;
         }
@@ -404,8 +419,7 @@ namespace integrals{
     }
 
     template <typename Tile, typename Policy>
-    typename AtomicIntegral<Tile,Policy>::TArray4 AtomicIntegral<Tile,Policy>::compute4(const std::wstring& formula_string) {
-        Formula formula(formula_string);
+    typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute4(const Formula& formula) {
 
         if(formula.operation().has_option(Operation::Options::DensityFitting)){
             TA_ASSERT(this->dfbs_!= nullptr);
@@ -416,8 +430,15 @@ namespace integrals{
             if (operation.get_operation() == Operation::Operations::Coulomb) {
 
                 std::wstring two_center_formula_string = L"( Κ|G| Λ )";
-                typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
-                auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
+                typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
+                auto two_center_eigen = tcc::array_ops::array_to_eigen(two_center);
+
+                MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
+                MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
+
+                auto tr_V = two_center.trange().data()[0];
+                auto two_center_inverse_sqrt = tcc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
+
 
                 std::wstring three_center_formula_string;
                 if (formula.notation() == Formula::Notation::Chemical){
@@ -435,7 +456,7 @@ namespace integrals{
 
                 three_center("X,i,j") = two_center_inverse_sqrt("K,X")*three_center("K,i,j");
 
-                typename AtomicIntegral<Tile,Policy>::TArray4 result;
+                typename AtomicIntegral<Tile,Policy>::TArray result;
 
                 if (formula.notation() == Formula::Notation::Chemical){
                     result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
@@ -444,7 +465,7 @@ namespace integrals{
                     result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
                 }
                 std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }
@@ -455,9 +476,15 @@ namespace integrals{
                 }
 
                 std::wstring two_center_formula_string = L"( Κ|GR| Λ )";
-                typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
-                std::cout << two_center;
-                auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
+                typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
+//                std::cout << two_center;
+                auto two_center_eigen = tcc::array_ops::array_to_eigen(two_center);
+
+                MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
+                MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
+
+                auto tr_V = two_center.trange().data()[0];
+                auto two_center_inverse_sqrt = tcc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
 
                 std::wstring three_center_formula_string;
                 if (formula.notation() == Formula::Notation::Chemical){
@@ -475,7 +502,7 @@ namespace integrals{
 
                 three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
 
-                typename AtomicIntegral<Tile,Policy>::TArray4 result;
+                typename AtomicIntegral<Tile,Policy>::TArray result;
 
                 if (formula.notation() == Formula::Notation::Chemical){
                     result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
@@ -484,7 +511,7 @@ namespace integrals{
                     result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
                 }
                 std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
 
@@ -495,9 +522,15 @@ namespace integrals{
                     throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
                 }
                 std::wstring two_center_formula_string = L"( Κ|R| Λ )";
-                typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
-                std::cout << two_center;
-                auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
+                typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
+//                std::cout << two_center;
+                auto two_center_eigen = tcc::array_ops::array_to_eigen(two_center);
+
+                MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
+                MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
+
+                auto tr_V = two_center.trange().data()[0];
+                auto two_center_inverse_sqrt = tcc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
 
                 std::wstring three_center_formula_string;
                 if (formula.notation() == Formula::Notation::Chemical){
@@ -515,7 +548,7 @@ namespace integrals{
 
                 three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
 
-                typename AtomicIntegral<Tile,Policy>::TArray4 result;
+                typename AtomicIntegral<Tile,Policy>::TArray result;
 
                 if (formula.notation() == Formula::Notation::Chemical){
                     result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
@@ -524,7 +557,7 @@ namespace integrals{
                     result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
                 }
                 std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
 
@@ -536,9 +569,15 @@ namespace integrals{
                 }
 
                 std::wstring two_center_formula_string = L"( Κ|R2| Λ )";
-                typename AtomicIntegral<Tile,Policy>::TArray2 two_center = this->compute2(two_center_formula_string);
-                std::cout << two_center;
-                auto two_center_inverse_sqrt = tcc::pure::inverse_sqrt(two_center);
+                typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
+//                std::cout << two_center;
+                auto two_center_eigen = tcc::array_ops::array_to_eigen(two_center);
+
+                MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
+                MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
+
+                auto tr_V = two_center.trange().data()[0];
+                auto two_center_inverse_sqrt = tcc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
 
                 std::wstring three_center_formula_string;
                 if (formula.notation() == Formula::Notation::Chemical){
@@ -556,7 +595,7 @@ namespace integrals{
 
                 three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
 
-                typename AtomicIntegral<Tile,Policy>::TArray4 result;
+                typename AtomicIntegral<Tile,Policy>::TArray result;
 
                 if (formula.notation() == Formula::Notation::Chemical){
                     result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
@@ -565,7 +604,7 @@ namespace integrals{
                     result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
                 }
                 std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }
@@ -617,7 +656,7 @@ namespace integrals{
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 std::cout << "Computed Two Body Four Center Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }
@@ -631,7 +670,7 @@ namespace integrals{
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 std::cout << "Computed Two Body Four Center Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }
@@ -645,7 +684,7 @@ namespace integrals{
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 std::cout << "Computed Two Body Four Center Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }
@@ -659,7 +698,7 @@ namespace integrals{
                 auto engine_pool = make_pool(engine);
                 auto result = compute_integrals(this->world_,engine_pool,bs_array);
                 std::cout << "Computed Two Body Four Center Integral: ";
-                wcout_utf8(formula_string);
+                wcout_utf8(formula.formula_string());
                 std::cout << std::endl;
                 return result;
             }

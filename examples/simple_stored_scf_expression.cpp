@@ -208,17 +208,17 @@ int main(int argc, char *argv[]) {
             );
 
     // Overlap ints
-    auto S = ao_int.compute2(L"(κ|λ)");
+    auto S = ao_int.compute(L"(κ|λ)");
 
-    auto T = ao_int.compute2(L"(κ| T|λ)");
+    auto T = ao_int.compute(L"(κ| T|λ)");
 
-    auto V = ao_int.compute2(L"(κ| V|λ)");
+    auto V = ao_int.compute(L"(κ| V|λ)");
 
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
     { // Unscreened four center stored RHF.
-        auto eri4 = ao_int.compute4(L"(κ λ| G|κ1 λ1)");
+        auto eri4 = ao_int.compute(L"(κ λ| G|κ1 λ1)");
         world.gop.fence();
 
         FourCenterSCF scf(H, S, occ / 2, repulsion_energy);
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
 
     // compute r12 integral
 //    auto r12 = ao_int.compute4(L"(α β |R| γ δ)");
-    auto gr12 = ao_int.compute2(L"( γ |GR|  δ)");
+    auto gr12 = ao_int.compute(L"( γ |GR|  δ)");
 //    auto r12_2 = ao_int.compute4(L"(α β |R2| γ δ)");
 
     madness::finalize();

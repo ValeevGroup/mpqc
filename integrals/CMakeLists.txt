@@ -13,5 +13,5 @@ set(integral_sources
 )
 
 add_library(integrals ${integral_sources})
-#set_target_properties(integrals PROPERTIES LINKER_LANGUAGE C++)
+target_link_libraries(integrals ${TA_LIBRARIES})
 

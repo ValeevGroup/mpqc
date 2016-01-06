@@ -22,7 +22,7 @@ set(sources
 )
 
 add_library(molecule ${sources})
-target_link_libraries(molecule ${TBB_LIBRARIES})
+target_link_libraries(molecule ${TBB_LIBRARIES} ${TA_LIBRARIES})
 
 add_executable(molecule_test EXCLUDE_FROM_ALL examples/molecule_test.cpp)
 target_link_libraries(molecule_test molecule)

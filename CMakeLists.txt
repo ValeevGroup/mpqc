@@ -1,20 +1,35 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.0.0)
 project(TileClusterChem)
 
 set(TileClusterChem_VERSION_MAJOR 0)
 set(TileClusterChem_VERSION_MINOR 1)
 SET(CMAKE_COLOR_MAKEFILE ON)
 
+if(BUILD_SHARED_LIBS)
+  set(BLA_STATIC FALSE)
+  set(CMAKE_MACOSX_RPATH TRUE)
+else()
+  set(BLA_STATIC TRUE)
+  set(CMAKE_MACOSX_RPATH FALSE)
+endif()
+
+set(CMAKE_SKIP_RPATH FALSE)
+set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  set(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG "-Wl,-rpath,")
+  # look for frameworks and appbundles last
+  set(CMAKE_FIND_FRAMEWORK LAST)
+  set(CMAKE_FIND_APPBUNDLE LAST)
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
                       "${PROJECT_SOURCE_DIR}/cmake/modules/")
 
 # search for TA first, other packages can be found with it
-FIND_PACKAGE(TiledArray CONFIG HINTS ${TiledArray_CONFIG_DIR} REQUIRED)
-INCLUDE_DIRECTORIES(${TiledArray_INCLUDE_DIRS})
-LIST(APPEND TileClusterChem_LIBRARIES 
-    "${TiledArray_LINKER_FLAGS};${TiledArray_LIBRARIES}")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TiledArray_COMPILE_FLAGS}")
+FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
+set(TA_LIBRARIES tiledarray)
+LIST(APPEND TileClusterChem_LIBRARIES ${TA_LIBRARIES})
 
 FIND_PACKAGE(TBB REQUIRED)
 FIND_PACKAGE(Boost REQUIRED)

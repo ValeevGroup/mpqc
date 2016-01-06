@@ -10,3 +10,4 @@ set(sources
     )
 
 add_library(expression ${sources})
+target_link_libraries(expression ${TA_LIBRARIES})

@@ -11,7 +11,7 @@
 #include "forward_declarations.h"
 
 /////////////////////////////////////////////////////////
-// TileArray typedefs
+// TiledArray typedefs
 /////////////////////////////////////////////////////////
 using SpPolicy = TA::SparsePolicy;
 using DnPolicy = TA::DensePolicy;

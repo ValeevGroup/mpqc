@@ -11,6 +11,8 @@ namespace tcc {
 namespace tensor {
 namespace detail {
 
+extern bool recompress;
+
 template <typename U>
 using Dtensor = DecomposedTensor<U>;
 
@@ -91,8 +93,10 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
             auto out_dim = c.rank();
             const auto full_rank = std::min(c_left_extent[0], long_dim);
 
-            algebra::recompress(c);
-            out_dim = c.rank();
+            if (recompress) {
+                algebra::recompress(c);
+                out_dim = c.rank();
+            }
 
             if (out_dim > full_rank / 2) {
                 c = DecomposedTensor<T>(c.cut(), algebra::combine(c));
@@ -204,8 +208,13 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                      // LLL
                 auto ab = this->operator()(a, b, f, gh);
                 c = add(c, ab);
-                algebra::recompress(c);
                 auto out_dim = c.rank();
+
+                if (recompress) {
+                    algebra::recompress(c);
+                    out_dim = c.rank();
+                }
+
                 auto left_dim = c.tensor(0).range().extent()[0];
                 auto const &right_extent = c.tensor(1).range().extent();
                 auto right_dim = right_extent[1] * right_extent[2];

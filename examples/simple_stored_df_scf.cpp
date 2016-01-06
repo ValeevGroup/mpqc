@@ -42,6 +42,8 @@
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 
+bool tcc::tensor::detail::recompress = true;
+
 template <unsigned int N>
 std::array<double, 3>
 storage_for_array(DArray<N, TA::TensorD, TA::SparsePolicy> const &a) {
@@ -301,6 +303,7 @@ class ThreeCenterScf {
     array_type C_;
     array_type L_invV_;
 
+    darray_type dL_invV_;
     darray_type dV_inv_;
     darray_type dH_;
 
@@ -371,7 +374,7 @@ class ThreeCenterScf {
 
         world.gop.fence();
         auto r0 = tcc::utility::time::now();
-        if (clr_thresh_ != 0) {
+        if (tcc::tensor::detail::recompress && clr_thresh_ != 0) {
             TA::foreach_inplace(
                   W,
                   [](tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>> &
@@ -408,8 +411,12 @@ class ThreeCenterScf {
         w_full_storage_ = w_store[0];
 
         darray_type J;
-        J("mu, nu") = eri3("X, mu, nu")
-                      * (dV_inv_("X, Y") * (W("Y, rho, i") * dC_("rho, i")));
+        // J("mu, nu") = eri3("X, mu, nu")
+        //             * (dV_inv_("X, Y") * (W("Y, rho, i") * dC_("rho, i")));
+        J("mu, nu")
+              = eri3("X, mu, nu")
+                * (dL_invV_("Z,X")
+                   * (dL_invV_("Z, Y") * (W("Y, rho, i") * dC_("rho, i"))));
         world.gop.fence();
         auto j1 = tcc::utility::time::now();
         j_times_.push_back(tcc::utility::time::duration_in_s(w1, j1));
@@ -433,6 +440,8 @@ class ThreeCenterScf {
         occ_k_times_.push_back(tcc::utility::time::duration_in_s(occk0, occk1));
 
         K("mu, nu") = W("X, i, mu") * (dV_inv_("X,Y") * W("Y, i, nu"));
+        // W("X,i,mu") = dL_invV_("X,Y") * W("Y,i,mu");
+        // K("mu, nu") = W("X,i,mu") * W("X,i,nu");
         world.gop.fence();
         auto k1 = tcc::utility::time::now();
         k_times_.push_back(tcc::utility::time::duration_in_s(occk1, k1));
@@ -444,59 +453,6 @@ class ThreeCenterScf {
 
         F_ = TA::to_new_tile_type(dF_, to_ta_tile{});
     }
-
-    // Actually used for TA::Tensor Builds
-    //     template <typename Integral>
-    //     void form_fock(Integral const &eri3) {
-    //         auto &world = F_.get_world();
-    //
-    //         world.gop.fence();
-    //         auto w0 = tcc::utility::time::now();
-    //         TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> W;
-    //         W("X, mu, i") = L_invV_("X,Y") * (eri3("Y, mu, nu") * C_("nu,
-    //         i"));
-    //         W.truncate();
-    //         world.gop.fence();
-    //         auto w1 = tcc::utility::time::now();
-    //         w_times_.push_back(tcc::utility::time::duration_in_s(w0, w1));
-    //
-    //         auto w_store = storage_for_array(W);
-    //         w_sparse_store_.push_back(w_store[1]);
-    //         w_full_storage_ = w_store[0];
-    //
-    //
-    //         array_type J;
-    //         J("mu, nu") = eri3("X, mu, nu")
-    //                       * (L_invV_("Y, X") * (W("Y, rho, i") * C_("rho,
-    //                       i")));
-    //         world.gop.fence();
-    //         auto j1 = tcc::utility::time::now();
-    //         j_times_.push_back(tcc::utility::time::duration_in_s(w1, j1));
-    //
-    //         // Permute W
-    //         W("X,i,nu") = W("X,nu,i");
-    //         world.gop.fence();
-    //         auto occk0 = tcc::utility::time::now();
-    //
-    //         array_type K, Kij, Sc;
-    //         K("mu, j") = W("X, i, mu") * (W("X, i, nu") * C_("nu, j"));
-    //         Kij("i,j") = C_("mu, i") * K("mu, j");
-    //         Sc("mu, j") = S_("mu, lam") * C_("lam, j");
-    //         K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
-    //                       - (Sc("mu,i") * Kij("i,j")) * Sc("nu,j");
-    //         world.gop.fence();
-    //         auto occk1 = tcc::utility::time::now();
-    //         occ_k_times_.push_back(tcc::utility::time::duration_in_s(occk0,
-    //         occk1));
-    //
-    //         K("mu, nu") = W("X, i, mu") * W("X, i, nu");
-    //         world.gop.fence();
-    //         auto k1 = tcc::utility::time::now();
-    //         k_times_.push_back(tcc::utility::time::duration_in_s(occk1, k1));
-    //
-    //         F_("i,j") = H_("i,j") + 2 * J("i,j") - K("i,j");
-    //     }
-
 
   public:
     ThreeCenterScf(array_type const &H, array_type const &F_guess,
@@ -511,6 +467,14 @@ class ThreeCenterScf {
               occ_(occ),
               repulsion_(rep),
               clr_thresh_(clr_thresh) {
+        dL_invV_
+              = TA::to_new_tile_type(L_invV_, to_dtile_compress(clr_thresh_));
+        auto ll_sizes = storage_for_array(dL_invV_);
+        std::cout << "L_inv storage:"
+                  << "\n\tFull: " << ll_sizes[0]
+                  << "\n\tSparse Only: " << ll_sizes[1]
+                  << "\n\tSparse + CLR: " << ll_sizes[2] << std::endl;
+
         decltype(L_invV_) V_inv;
         V_inv("X,Z") = L_invV_("Y,X") * L_invV_("Y,Z");
         dV_inv_ = TA::to_new_tile_type(V_inv, to_dtile_compress(clr_thresh_));
@@ -520,6 +484,7 @@ class ThreeCenterScf {
                   << "\n\tFull: " << dl_sizes[0]
                   << "\n\tSparse Only: " << dl_sizes[1]
                   << "\n\tSparse + CLR: " << dl_sizes[2] << std::endl;
+
         compute_density(occ_);
     }
 
@@ -531,7 +496,8 @@ class ThreeCenterScf {
         auto old_energy = 0.0;
         const double volume = F_.trange().elements().volume();
 
-        while (iter < max_iters && (thresh < error || thresh < rms_error)) {
+        while (iter < max_iters && (thresh < error || thresh < rms_error)
+               && (thresh / 100.0 < error && thresh / 100.0 < rms_error)) {
             auto s0 = tcc_time::now();
             F_.get_world().gop.fence();
             form_fock(eri3);
@@ -629,7 +595,9 @@ int main(int argc, char *argv[]) {
     double threshold = 1e-12;
     double clr_threshold = 1e-8;
     std::string eri3_storage_method;
-    if (argc == 8) {
+    std::string recompression_method;
+    double mp2_mem_thresh = 60;
+    if (argc >= 9) {
         mol_file = argv[1];
         basis_name = argv[2];
         df_basis_name = argv[3];
@@ -637,21 +605,36 @@ int main(int argc, char *argv[]) {
         threshold = std::stod(argv[5]);
         clr_threshold = std::stod(argv[6]);
         eri3_storage_method = argv[7];
-    } else {
+        recompression_method = argv[8];
+    }
+    if (argc == 10) {
+        mp2_mem_thresh = std::stod(argv[9]);
+    }
+    if (argc >= 11 || argc < 9) {
         std::cout << "input is $./program mol_file basis_file df_basis_file "
-                     "nclusters sparse_thresh clr_thresh eri3_method(direct, stored)";
+                     "nclusters sparse_thresh clr_thresh eri3_method(direct, "
+                     "stored) recompression_method(compress, nocompress)";
         return 0;
     }
 
+    if (recompression_method == "nocompress") {
+        std::cout << "Not using rounded addition." << std::endl;
+        tcc::tensor::detail::recompress = false;
+    } else {
+        std::cout << "Using rounded addition." << std::endl;
+    }
+    world.gop.fence();
+
     bool use_direct_ints;
-    if(eri3_storage_method == "direct"){
+    if (eri3_storage_method == "direct") {
         use_direct_ints = true;
         std::cout << "Using direct 3 center integrals" << std::endl;
-    }else if (eri3_storage_method == "stored"){
+    } else if (eri3_storage_method == "stored") {
         use_direct_ints = false;
         std::cout << "Using stored 3 center integrals" << std::endl;
-    }else {
-        std::cout << "Integral storage method must be either direct or stored" << std::endl;
+    } else {
+        std::cout << "Integral storage method must be either direct or stored"
+                  << std::endl;
         return 0;
     }
 
@@ -667,9 +650,11 @@ int main(int argc, char *argv[]) {
 
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
+    std::cout << "Basis has " << basis.nfunctions() << " functions\n";
 
     basis::BasisSet dfbs(df_basis_name);
     basis::Basis df_basis(dfbs.get_cluster_shells(clustered_mol));
+    std::cout << "DF Basis has " << df_basis.nfunctions() << " functions\n";
 
     libint2::init();
 
@@ -697,8 +682,10 @@ int main(int argc, char *argv[]) {
         auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
         auto V_eig = tcc::array_ops::array_to_eigen(Vmetric);
 
-        MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
-        MatrixD L_inv_eig = Leig.inverse();
+        // MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
+        // MatrixD L_inv_eig = Leig.inverse();
+        Eig::SelfAdjointEigenSolver<MatrixD> es(V_eig);
+        MatrixD L_inv_eig = es.operatorInverseSqrt();
 
         auto tr_V = Vmetric.trange().data()[0];
         L_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
@@ -778,10 +765,10 @@ int main(int argc, char *argv[]) {
 
             scf.solve(30, 1e-11, eri3);
 
-            auto job_summary = scf.init_summary();
+            job_summary = scf.init_summary();
 
             // Prepare for Dipole and MP2
-            auto Fao = scf.fock_matrix();
+            Fao = scf.fock_matrix();
 
             // Add eri3 info
             job_summary.eri3_fully_dense_storage = eri3_storage[0];
@@ -812,10 +799,10 @@ int main(int argc, char *argv[]) {
 
             scf.solve(30, 1e-11, eri3);
 
-            auto job_summary = scf.init_summary();
+            job_summary = scf.init_summary();
 
             // Prepare for Dipole and MP2
-            auto Fao = scf.fock_matrix();
+            Fao = scf.fock_matrix();
 
             // Add eri3 info
             job_summary.eri3_fully_dense_storage = eri3_storage[0];
@@ -898,7 +885,9 @@ int main(int argc, char *argv[]) {
         try {
             std::cout << "Approximate T storage = " << approx_t_storage << " GB"
                       << std::endl;
-            if (approx_t_storage < 60) {
+            std::cout << "Max allowed MP2 storage = " << mp2_mem_thresh << " GB"
+                      << std::endl;
+            if (approx_t_storage < mp2_mem_thresh) {
                 // For MP2 don't worry about direct integrals or CLR
                 auto eri3_mp2
                       = ints::sparse_integrals(world, eri_e, three_c_array,

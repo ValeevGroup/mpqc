@@ -400,6 +400,8 @@ class ThreeCenterScf {
                       // Both are always larger than or equal to the real norm.
                       return std::min(input_norm, compressed_norm);
                   });
+        } else {
+            W.truncate();
         }
         world.gop.fence();
         auto r1 = tcc::utility::time::now();

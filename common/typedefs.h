@@ -3,12 +3,12 @@
 #define MPQC_COMMON_TYPEDEFS_H
 
 #include "namespaces.h"
-#include "foward_declerations.h"
 #include "../include/eigen.h"
 
 #include <type_traits>
 #include <vector>
 #include <memory>
+#include "forward_declarations.h"
 
 /////////////////////////////////////////////////////////
 // TileArray typedefs

@@ -14,6 +14,9 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
         REQUIRE( m.index() == mpqc::OrbitalIndex::Index::occ);
         REQUIRE( m.is_ao() == false);
         REQUIRE( m.is_mo() == true);
+        REQUIRE( m.is_mo_in_obs()  == true);
+        REQUIRE( m.is_mo_in_abs()  == false);
+        REQUIRE( m.is_mo_in_ribs()  == false);
 
         mpqc::OrbitalIndex n(L"n");
         REQUIRE( n.index() == mpqc::OrbitalIndex::Index::occ);
@@ -61,6 +64,12 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex d1(L"δ");
         REQUIRE( d1.index() == mpqc::OrbitalIndex::Index::abs);
+
+        mpqc::OrbitalIndex p1(L"ρ");
+        REQUIRE( p1.index() == mpqc::OrbitalIndex::Index::ribs);
+
+        mpqc::OrbitalIndex v2(L"υ");
+        REQUIRE( v2.index() == mpqc::OrbitalIndex::Index::ribs);
     }
 
     SECTION("letter with number"){
@@ -112,6 +121,12 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex V1(L"Ν2");
         REQUIRE( V1.index() == mpqc::OrbitalIndex::Index::dfbs);
+
+        mpqc::OrbitalIndex p1(L"ρ123");
+        REQUIRE( p1.index() == mpqc::OrbitalIndex::Index::ribs);
+
+        mpqc::OrbitalIndex v2(L"υ45");
+        REQUIRE( v2.index() == mpqc::OrbitalIndex::Index::ribs);
     }
 
     SECTION("letter with prime"){
@@ -130,12 +145,18 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex a(L"a'");
         REQUIRE( a.index() == mpqc::OrbitalIndex::Index::othervirt);
+        REQUIRE( a.is_mo_in_ribs() == false);
+        REQUIRE( a.is_mo_in_abs() == true);
+        REQUIRE( a.is_mo_in_obs() == false);
 
         mpqc::OrbitalIndex d(L"d'");
         REQUIRE( d.index() == mpqc::OrbitalIndex::Index::othervirt);
 
         mpqc::OrbitalIndex A(L"A'");
         REQUIRE( A.index() == mpqc::OrbitalIndex::Index::allvirt);
+        REQUIRE( A.is_mo_in_ribs() == true);
+        REQUIRE( A.is_mo_in_abs() == false);
+        REQUIRE( A.is_mo_in_obs() == false);
 
         mpqc::OrbitalIndex D(L"D'");
         REQUIRE( D.index() == mpqc::OrbitalIndex::Index::allvirt);

@@ -26,6 +26,7 @@ namespace mpqc{
     *     - κ λ  μ ν -> obs(orbital basis)
     *     - Κ Λ Μ Ν -> dfbs(density fitting basis)
     *     - α β γ δ -> abs(auxilary basis)
+    *     - ρ σ τ υ -> ribs(obs + abs)
     *
     *     digit is allowed after letter
     *     for example
@@ -37,17 +38,18 @@ public:
     // negative for atomic orbital index
     enum class Index {
         inactocc = 1,
-        actocc = 2,
-        occ = 3,
-        active = 5,
-        virt = 4,
-        any = 7,
-        othervirt = 6 ,
-        allvirt = 10,
-        allany = 13,
+        active = 2,
+        actocc = 3,
+        occ = 4,
+        virt = 5,
+        any = 9,
+        othervirt = 10 ,
+        allvirt = 15,
+        allany = 19,
         obs = -1,
         abs = -2,
-        dfbs = -3
+        dfbs = -4,
+        ribs = -3
     };
 
     // constant wchar_t used to map to Index
@@ -60,9 +62,10 @@ public:
     static const wchar_t othervirt_wchar[2];
     static const wchar_t allvirt_wchar[2];
     static const wchar_t allany_wchar[2];
-    static const wchar_t obs_wchar[2];
-    static const wchar_t dfbs_wchar[2];
-    static const wchar_t abs_wchar[2];
+    static const wchar_t obs_wchar[4];
+    static const wchar_t dfbs_wchar[4];
+    static const wchar_t abs_wchar[4];
+    static const wchar_t ribs_wchar[4];
 
     OrbitalIndex() = default;
     OrbitalIndex(OrbitalIndex const &) = default;
@@ -97,8 +100,22 @@ public:
     // if molecular orbital index
     bool is_mo() const;
 
+    // if obs
+    bool is_mo_in_obs() const;
+
+    // if abs
+    bool is_mo_in_abs() const;
+
+    // if ribs
+    bool is_mo_in_ribs() const;
+
+    OrbitalIndex mo_to_ao();
+
 private:
     void init(const wchar_t *letter);
+
+    Index wchar_to_index(const wchar_t);
+    Index wchar_with_prime_to_index(const wchar_t);
 
 private:
     Index index_;

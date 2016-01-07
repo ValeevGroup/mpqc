@@ -28,9 +28,7 @@ namespace mpqc{
 namespace integrals{
 
 
-    //TODO support new TiledArray interface
     //TODO return expression instead of array?
-    //TODO registry to avoid recompute integral
     template<typename Tile, typename Policy>
     class AtomicIntegralBase {
     public:
@@ -141,6 +139,8 @@ namespace integrals{
         TArray compute4(const Formula& formula_string);
 
     private:
+        //TODO direct integral
+        //TODO return expression
         //TODO Screener for different type of integral
         // compute integral for sparse policy
         template <typename E, unsigned long N, typename U = Policy>

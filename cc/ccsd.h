@@ -495,7 +495,7 @@ namespace mpqc {
                         std::cout << "Less Memory Approach: No" << std::endl;
                     }
                 }
-                while ((dE >= converge || error >= converge)) {
+                while (true) {
 
                     //start timer
                     auto time0 = tcc_time::now();
@@ -670,27 +670,8 @@ namespace mpqc {
                     r2("a,b,i,j") -= t2("a,b,i,j");
 
 
-
-//        g_abij.get_world().gop.fence();
-
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
-
-                    mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-                    mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
-                    error = r.norm() / size(t);
-                    diis.extrapolate(t, r);
-
-                    //update t1 and t2
-                    t1("a,i") = t.first("a,i");
-                    t2("a,b,i,j") = t.second("a,b,i,j");
-
-                    if(print_detail){
-                        tcc::utility::print_size_info(r2,"R2");
-                        tcc::utility::print_size_info(t2,"T2");
-                    }
-
-                    tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
                     // recompute energy
                     E0 = E1;
@@ -700,20 +681,53 @@ namespace mpqc {
                                  tau("a,b,i,j"));
                     dE = std::abs(E0 - E1);
 
-                    auto time1 = tcc_time::now();
-                    auto duration = tcc_time::duration_in_s(time0, time1);
-
                     if (iter == 0 && world.rank() == 0) {
                         std::cout << "iter " << "    deltaE    " << "            residual       "
-                        << "      energy     " << " total/second " <<std::endl;
+                        << "      energy     " << " total/second "<<std::endl;
                     }
 
-                    if (world.rank() == 0) {
-                        std::cout << iter << "  " << dE << "  " << error <<
-                        "  " << E1 << "  " << duration << std::endl;
-                    }
 
-                    iter += 1ul;
+                    if(dE >= converge || error >= converge){
+
+                        mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
+                        mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+                        error = r.norm() / size(t);
+                        diis.extrapolate(t, r);
+
+                        //update t1 and t2
+                        t1("a,i") = t.first("a,i");
+                        t2("a,b,i,j") = t.second("a,b,i,j");
+
+                        if(print_detail){
+                            tcc::utility::print_size_info(r2,"R2");
+                            tcc::utility::print_size_info(t2,"T2");
+                        }
+
+                        tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+
+                        auto time1 = tcc_time::now();
+                        auto duration = tcc_time::duration_in_s(time0, time1);
+
+                        if (world.rank() == 0) {
+                            std::cout << iter << "  " << dE << "  " << error <<
+                            "  " << E1 << "  " << duration << std::endl;
+                        }
+
+                        iter += 1ul;
+                    }
+                    else{
+
+                        auto time1 = tcc_time::now();
+                        auto duration = tcc_time::duration_in_s(time0, time1);
+
+                        if (world.rank() == 0) {
+                            std::cout << iter << "  " << dE << "  " << error <<
+                            "  " << E1 << "  " << duration << std::endl;
+                        }
+
+
+                        break;
+                    }
                     world.gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
@@ -1084,7 +1098,7 @@ namespace mpqc {
                     std::cout << "Convergence " << converge << std::endl;
                     std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                 };
-                while ((dE >= converge || error >= converge)) {
+                while (true){
 
                     //start timer
                     auto time0 = tcc_time::now();
@@ -1264,22 +1278,6 @@ namespace mpqc {
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
 
-                    mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-                    mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
-                    error = r.norm() / size(t);
-                    diis.extrapolate(t, r);
-
-                    //update t1 and t2
-                    t1("a,i") = t.first("a,i");
-                    t2("a,b,i,j") = t.second("a,b,i,j");
-
-                    if(print_detail){
-                        tcc::utility::print_size_info(r2,"R2");
-                        tcc::utility::print_size_info(t2,"T2");
-                    }
-
-                    tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-
                     // recompute energy
                     E0 = E1;
                     E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i"))
@@ -1288,25 +1286,59 @@ namespace mpqc {
                                  tau("a,b,i,j"));
                     dE = std::abs(E0 - E1);
 
-                    auto time1 = tcc_time::now();
-                    auto duration_t = tcc_time::duration_in_s(time0, time1);
-
                     if (iter == 0 && world.rank() == 0) {
                         std::cout << "iter " << "    deltaE    " << "            residual       "
                         << "      energy     " << "    U/second  " << " total/second "<<std::endl;
                     }
 
-                    if (world.rank() == 0) {
-                        std::cout.precision(15);
-                        std::cout<< iter << "  " << dE << "  " << error <<
-                        "  " << E1 << "  " << duration_u << " " << duration_t
-                        <<std::endl;
+
+
+                    if(dE >= converge || error >= converge){
+
+                        mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
+                        mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+                        error = r.norm() / size(t);
+                        diis.extrapolate(t, r);
+
+                        //update t1 and t2
+                        t1("a,i") = t.first("a,i");
+                        t2("a,b,i,j") = t.second("a,b,i,j");
+
+                        if(print_detail){
+                            tcc::utility::print_size_info(r2,"R2");
+                            tcc::utility::print_size_info(t2,"T2");
+                        }
+
+                        tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+
+                        auto time1 = tcc_time::now();
+                        auto duration_t = tcc_time::duration_in_s(time0, time1);
+
+                        if (world.rank() == 0) {
+                            std::cout.precision(15);
+//                            std::cout.width(20);
+                            std::cout << iter << "  " << dE << "  " << error <<
+                            "  " << E1 << "  " << duration_u << " " << duration_t
+                            <<std::endl;
+                        }
+
+                        iter += 1ul;
                     }
+                    else{
 
-                    iter += 1ul;
+                        auto time1 = tcc_time::now();
+                        auto duration_t = tcc_time::duration_in_s(time0, time1);
 
-//        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
-//        << scprintf("%-15.10f", E_1) << std::endl;
+                        if (world.rank() == 0) {
+                            std::cout.precision(15);
+//                            std::cout.width(20);
+                            std::cout << iter << "  " << dE << "  " << error <<
+                            "  " << E1 << "  " << duration_u << " " << duration_t
+                            <<std::endl;
+                        }
+
+                        break;
+                    }
 
                 }
                 if (world.rank() == 0) {

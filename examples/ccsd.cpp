@@ -37,6 +37,7 @@
 #include "../cc/ccsd_intermediates.h"
 #include "../cc/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
+#include "../scf/soad.h"
 
 using namespace mpqc;
 namespace ints = integrals;
@@ -114,10 +115,9 @@ private:
 
 public:
 
-    ThreeCenterScf(array_type const &H, array_type const &S,
+    ThreeCenterScf(array_type const &H, array_type const &F_guess, array_type const &S,
                    array_type const &L_invV, int64_t occ, double rep)
-            : H_(H), S_(S), L_invV_(L_invV), occ_(occ), repulsion_(rep) {
-        F_ = H_;
+            : H_(H), F_(F_guess), S_(S), L_invV_(L_invV), occ_(occ), repulsion_(rep) {
         compute_density(occ_);
     }
 
@@ -132,6 +132,13 @@ public:
 
     template <typename Integral>
     void solve(int64_t max_iters, double thresh, Integral const &eri3) {
+
+        if(F_.get_world().rank() == 0){
+            std::cout << "Start SCF" << std::endl;
+            std::cout << "Convergence : " << thresh << std::endl;
+            std::cout << "Max Iteration : " << max_iters << std::endl;
+        }
+
         auto iter = 0;
         auto error = std::numeric_limits<double>::max();
         auto old_energy = 0.0;
@@ -239,6 +246,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                ? in["block sparse threshold"].GetDouble()
                                : 1e-13;
 
+        // get SCF converge
+        double scf_converge = in.HasMember("SCFConverge") ? in["SCFConverge"].GetDouble() : 1.0e-7;
+
+
+        // get SCF max iteration
+        int scf_max_iter = in.HasMember("SCFMaxIter") ? in["SCFMaxIter"].GetInt() : 30;
+
         // get other info
         bool frozen_core = cc_in.HasMember("FrozenCore")
                                  ? cc_in["FrozenCore"].GetBool()
@@ -341,8 +355,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
         auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array);
-        ThreeCenterScf scf(H, S, L_inv, occ / 2, repulsion_energy);
-        scf.solve(20, 1e-7, eri3);
+
+
+        auto soad0 = tcc::utility::time::now();
+        auto F_soad
+                = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
+
+        auto soad1 = tcc::utility::time::now();
+        auto soad_time = tcc::utility::time::duration_in_s(soad0, soad1);
+        std::cout << "Soad Time: " << soad_time << std::endl;
+
+        ThreeCenterScf scf(H, F_soad, S, L_inv, occ / 2, repulsion_energy);
+        scf.solve(scf_max_iter, scf_converge, eri3);
 
         // end SCF
 

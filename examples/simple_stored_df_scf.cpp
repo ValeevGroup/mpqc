@@ -663,7 +663,7 @@ int main(int argc, char *argv[]) {
     for(auto const &c : df_clustered_mol.clusterables()){
         std::cout << "Cluster " << cluster_num++ << ":\n";
         auto atoms = c.atoms();
-        std::cout << "\t" << atoms.size() << "\n";
+        std::cout << "\t" << atoms.size() << "\n\n";
         for(auto const &atom : c.atoms()){
             std::cout << "\t" << atom.xyz_string(true) << "\n";
         }

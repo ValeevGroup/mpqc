@@ -414,8 +414,10 @@ class ThreeCenterScf {
         //             * (dV_inv_("X, Y") * (W("Y, rho, i") * dC_("rho, i")));
         J("mu, nu")
               = eri3("X, mu, nu")
-                * (dL_invV_("Z,X")
-                   * (dL_invV_("Z, Y") * (W("Y, rho, i") * dC_("rho, i"))));
+                * (dL_invV_("X,Z")
+                   * (
+                      dL_invV_("Z, Y") * (
+                          W("Y, rho, i") * dC_("rho, i"))));
         world.gop.fence();
         auto j1 = tcc::utility::time::now();
         j_times_.push_back(tcc::utility::time::duration_in_s(w1, j1));
@@ -652,7 +654,7 @@ int main(int argc, char *argv[]) {
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
     std::cout << "Basis has " << basis.nfunctions() << " functions\n";
 
-    auto df_nclusters = std::min(nclusters/2, 1);
+    auto df_nclusters = std::max(nclusters/2, 1);
     auto df_clustered_mol = molecule::attach_hydrogens_and_kmeans(
           molecule::read_xyz(mol_file).clusterables(), df_nclusters);
 
@@ -660,8 +662,10 @@ int main(int argc, char *argv[]) {
     std::cout <<"\nDF clustering:\n";
     for(auto const &c : df_clustered_mol.clusterables()){
         std::cout << "Cluster " << cluster_num++ << ":\n";
+        auto atoms = c.atoms();
+        std::cout << "\t" << atoms.size() << "\n";
         for(auto const &atom : c.atoms()){
-            std::cout << "\t" << atom << "\n";
+            std::cout << "\t" << atom.xyz_string(true) << "\n";
         }
     }
     std::cout << "\n";

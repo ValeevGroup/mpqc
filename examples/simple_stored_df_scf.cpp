@@ -44,12 +44,10 @@ namespace ints = mpqc::integrals;
 
 bool tcc::tensor::detail::recompress = true;
 
-template <unsigned int N>
 std::array<double, 3>
-storage_for_array(DArray<N, TA::TensorD, TA::SparsePolicy> const &a) {
+storage_for_array(TA::DistArray<TA::TensorD, SpPolicy> const &a) {
     std::atomic<long> full_a(0.0);
     std::atomic<long> sparse_a(0.0);
-    std::atomic<long> clr_a(0.0);
 
     auto task_f = [&](int ord) {
         auto const &trange = a.trange();
@@ -69,14 +67,13 @@ storage_for_array(DArray<N, TA::TensorD, TA::SparsePolicy> const &a) {
 
     double full = full_a * 1e-9 * 8;
     double sparse = sparse_a * 1e-9 * 8;
-    double clr = clr_a * 1e-9 * 8;
 
-    return {full, sparse, clr};
+    return {full, sparse, 0.0};
 }
 
-template <typename Tile, unsigned int N>
+template <typename Tile>
 std::array<double, 3>
-storage_for_array(DArray<N, Tile, TA::SparsePolicy> const &a) {
+storage_for_array(TA::DistArray<Tile, SpPolicy> const &a) {
     std::atomic<long> full_a(0.0);
     std::atomic<long> sparse_a(0.0);
     std::atomic<long> clr_a(0.0);
@@ -646,6 +643,7 @@ int main(int argc, char *argv[]) {
     auto clustered_mol = molecule::attach_hydrogens_and_kmeans(
           molecule::read_xyz(mol_file).clusterables(), nclusters);
 
+
     auto repulsion_energy = clustered_mol.nuclear_repulsion();
     std::cout << "Nuclear Repulsion Energy: " << repulsion_energy << std::endl;
     auto occ = clustered_mol.occupation(0);
@@ -654,9 +652,22 @@ int main(int argc, char *argv[]) {
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
     std::cout << "Basis has " << basis.nfunctions() << " functions\n";
 
+    auto df_nclusters = std::min(nclusters/2, 1);
+    auto df_clustered_mol = molecule::attach_hydrogens_and_kmeans(
+          molecule::read_xyz(mol_file).clusterables(), df_nclusters);
+
+    auto cluster_num = 1;
+    std::cout <<"\nDF clustering:\n";
+    for(auto const &c : df_clustered_mol.clusterables()){
+        std::cout << "Cluster " << cluster_num++ << ":\n";
+        for(auto const &atom : c.atoms()){
+            std::cout << "\t" << atom << "\n";
+        }
+    }
+    std::cout << "\n";
+
     basis::BasisSet dfbs(df_basis_name);
-    basis::Basis df_basis(dfbs.get_cluster_shells(clustered_mol));
-    std::cout << "DF Basis has " << df_basis.nfunctions() << " functions\n";
+    basis::Basis df_basis(dfbs.get_cluster_shells(df_clustered_mol));
 
     libint2::init();
 

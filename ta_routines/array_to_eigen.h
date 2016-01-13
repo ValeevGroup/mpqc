@@ -70,6 +70,39 @@ void write_to_eigen_task(Tile t, Matrix<double> *mat) {
         return out_mat;
     }
 
+/*! \brief converts a New TiledArray::Array to an Eigen Matrix
+ *
+ * The interface for TiledArray::Arrays changed so we need a new function.
+ *
+ */
+template <typename Tile, typename Policy>
+MatrixD array_to_eigen(TA::DistArray<Tile, Policy> const &A) {
+
+    auto trange = A.trange();
+    assert(trange.tiles().rank() == 2);
+
+    auto const &mat_extent = trange.elements().extent();
+    MatrixD out_mat(mat_extent[0], mat_extent[1]);
+    out_mat.setZero();
+
+    // Copy A and make it replicated.  Making A replicated is a mutating op.
+    auto repl_A = A;
+    repl_A.make_replicated();
+
+    // Loop over the array and assign the tiles to blocks of the Eigen Mat.
+    auto pmap = repl_A.get_pmap();
+    const auto end = pmap->end();
+    for (auto it = pmap->begin(); it != end; ++it) {
+        if (!repl_A.is_zero(*it)) {
+            auto tile = repl_A.find(*it).get();
+            A.get_world().taskq.add(write_to_eigen_task<Tile>, tile, &out_mat);
+        }
+    }
+    A.get_world().gop.fence(); // Can't let M go out of scope
+
+    return out_mat;
+}
+
 /*! \brief takes an Eigen matrix and converts it to the type of the template.
  *
  * The idea is that users will provide a specialization which converts to the

@@ -20,7 +20,7 @@
 #include "../integrals/integrals.h"
 
 #include "../utility/time.h"
-#include "../utility/array_storage.h"
+// #include "../utility/array_storage.h"
 #include "../ta_routines/array_to_eigen.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
@@ -354,6 +354,7 @@ class ThreeCenterScf {
     void form_fock(Integral const &eri3) {
         auto &world = F_.get_world();
 
+#if 1
         world.gop.fence();
         auto w0 = tcc::utility::time::now();
 
@@ -441,8 +442,6 @@ class ThreeCenterScf {
         occ_k_times_.push_back(tcc::utility::time::duration_in_s(occk0, occk1));
 
         K("mu, nu") = W("X, i, mu") * (dV_inv_("X,Y") * W("Y, i, nu"));
-        // W("X,i,mu") = dL_invV_("X,Y") * W("Y,i,mu");
-        // K("mu, nu") = W("X,i,mu") * W("X,i,nu");
         world.gop.fence();
         auto k1 = tcc::utility::time::now();
         k_times_.push_back(tcc::utility::time::duration_in_s(occk1, k1));
@@ -453,6 +452,30 @@ class ThreeCenterScf {
         dF_("i,j") = dH_("i,j") + 2 * J("i,j") - K("i,j");
 
         F_ = TA::to_new_tile_type(dF_, to_ta_tile{});
+#endif
+
+#if 0
+        darray_type dH_ = TA::to_new_tile_type(H_, to_dtile(clr_thresh_));
+        darray_type dS_ = TA::to_new_tile_type(S_, to_dtile(clr_thresh_));
+        darray_type dC_ = TA::to_new_tile_type(C_, to_dtile(clr_thresh_));
+        darray_type dD_ = TA::to_new_tile_type(D_, to_dtile(clr_thresh_));
+
+        DArray<3, dtile, SpPolicy> W;
+        W("X, mu, nu") = dL_invV_("X,Y") * eri3("Y, mu, nu");
+
+        darray_type J;
+        J("mu, nu") = W("X,mu,nu") * (W("X,a,b") * dD_("a,b"));
+
+        W("X,mu,i") = W("X,mu, nu") * dC_("nu, i");
+        W("X,i,mu") = W("X,mu,i");
+        darray_type K;
+        K("mu, nu") = W("X,i,mu") * W("X,i,nu");
+
+        darray_type dF_;
+        dF_("i,j") = dH_("i,j") + 2 * J("i,j") - K("i,j");
+
+        F_ = TA::to_new_tile_type(dF_, to_ta_tile{});
+#endif
     }
 
   public:
@@ -527,15 +550,15 @@ class ThreeCenterScf {
                       << " energy: " << old_energy << " error: " << error
                       << " RMS error: " << rms_error;
             std::cout << "\n\tW time: " << w_times_.back()
-                      << "\n\tW recompress time: " << recompress_w_time_
-                      << "\n\tJ time: " << j_times_.back()
-                      << "\n\tocc-RI K time: " << occ_k_times_.back()
-                      << "\n\tK time: " << k_times_.back()
-                      << "\n\titer time: " << scf_times_.back()
-                      << "\n\tW sparse only storage: " << w_sparse_store_.back()
-                      << "\n\tW sparse clr storage no recompress: "
-                      << clr_w_no_recompress_ << "\n\tW sparse clr storage: "
-                      << w_sparse_clr_store_.back() << std::endl;
+                     << "\n\tW recompress time: " << recompress_w_time_
+                     << "\n\tJ time: " << j_times_.back()
+                     << "\n\tocc-RI K time: " << occ_k_times_.back()
+                     << "\n\tK time: " << k_times_.back()
+                     << "\n\titer time: " << scf_times_.back()
+                     << "\n\tW sparse only storage: " << w_sparse_store_.back()
+                     << "\n\tW sparse clr storage no recompress: "
+                     << clr_w_no_recompress_ << "\n\tW sparse clr storage: "
+                     << w_sparse_clr_store_.back() << std::endl;
 
             ++iter;
         }
@@ -661,12 +684,12 @@ int main(int argc, char *argv[]) {
     auto cluster_num = 1;
     std::cout <<"\nDF clustering:\n";
     for(auto const &c : df_clustered_mol.clusterables()){
-        std::cout << "Cluster " << cluster_num++ << ":\n";
         auto atoms = c.atoms();
-        std::cout << "\t" << atoms.size() << "\n\n";
+        std::cout <<  atoms.size() << "\n\n";
         for(auto const &atom : c.atoms()){
-            std::cout << "\t" << atom.xyz_string(true) << "\n";
+            std::cout << atom.xyz_string(true) << "\n";
         }
+        std::cout << "\n";
     }
     std::cout << "\n";
 
@@ -693,6 +716,7 @@ int main(int argc, char *argv[]) {
 
     const auto dfbs_array = tcc::utility::make_array(df_basis, df_basis);
     auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
+    eri_e->set_precision(0.);
 
     decltype(H) L_inv;
     {
@@ -765,7 +789,7 @@ int main(int argc, char *argv[]) {
             world.gop.fence();
             auto int0 = tcc::utility::time::now();
             auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array,
-                                               shr_screen, decomp_3d);
+                                                shr_screen, decomp_3d);
 
             world.gop.fence();
             auto int1 = tcc::utility::time::now();

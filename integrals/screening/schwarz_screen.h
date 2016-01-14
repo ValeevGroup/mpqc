@@ -62,9 +62,7 @@ class Qmatrix {
 
     double max_in_Q() const { return max_elem_in_Q_; }
 
-    int64_t func_to_shell(int64_t func_idx) const {
-        return f2s(func_idx);
-    }
+    int64_t func_to_shell(int64_t func_idx) const { return f2s(func_idx); }
 };
 
 /*! \brief Class for Schwarz based screening.
@@ -244,6 +242,7 @@ class SchwarzScreen : public Screener {
     bool skip(int64_t a, int64_t b, int64_t c, int64_t d) override {
         return (screen(a, b, c, d) < thresh_) ? true : false;
     }
+
 };
 
 namespace detail {
@@ -295,11 +294,15 @@ template <typename E>
 inline MatrixD four_center_Q(madness::World &world, ShrPool<E> const &eng,
                              std::vector<Shell> const &shells) {
 
-    auto task_func = [=](Shell const *sh0, Shell const *sh1, double *Q_val) {
+    auto task_func =
+          [=](Shell const *sh0, Shell const *sh1, double *Q_val) {
+        eng->local().set_precision(0.);
         const auto *buf = eng->local().compute(*sh0, *sh1, *sh0, *sh1);
 
         const auto n2 = sh0->size() * sh1->size();
         const auto bmap = Eig::Map<const MatrixD>(buf, n2, n2);
+
+        // eng->local().set_precision(std::numeric_limits<double>::epsilon());
 
         *Q_val = std::sqrt(bmap.lpNorm<2>());
     };
@@ -340,7 +343,7 @@ compute_Q(madness::World &world, ShrPool<E> const &eng, basis::Basis const &bs,
 /*! \brief struct which builds SchwarzScreen screeners */
 class init_schwarz_screen {
   private:
-    double threshold = 1e-10;
+    double threshold = 1e-12;
 
     // Add more overloads as desired, can have alternate ways of passing bases.
     template <typename E>
@@ -363,9 +366,8 @@ class init_schwarz_screen {
     // TODO finish this guy mixed basis four center
     template <typename E>
     SchwarzScreen compute_4c(madness::World &, ShrPool<E> &,
-                             basis::Basis const &,
-                             basis::Basis const &) const {
-        assert(false); // Feature not implemented yet. 
+                             basis::Basis const &, basis::Basis const &) const {
+        assert(false); // Feature not implemented yet.
         return SchwarzScreen();
     }
 
@@ -383,10 +385,10 @@ class init_schwarz_screen {
     SchwarzScreen operator()(madness::World &world, ShrPool<E> &eng,
                              basis::Basis const &bs0, basis::Basis const &bs1,
                              bool mixed_basis_four_center = false) const {
-        if(mixed_basis_four_center){
-            assert(false); // This is not yet supported by helper machinary 
-            return compute_4c(world,eng, bs0, bs1);
-        } else { 
+        if (mixed_basis_four_center) {
+            assert(false); // This is not yet supported by helper machinary
+            return compute_4c(world, eng, bs0, bs1);
+        } else {
             return compute_df(world, eng, bs0, bs1);
         }
     }

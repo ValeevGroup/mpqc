@@ -788,10 +788,10 @@ int main(int argc, char *argv[]) {
         auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
         auto V_eig = tcc::array_ops::array_to_eigen(Vmetric);
 
-        // MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
-        // MatrixD L_inv_eig = Leig.inverse();
-        Eig::SelfAdjointEigenSolver<MatrixD> es(V_eig);
-        MatrixD L_inv_eig = es.operatorInverseSqrt();
+        MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
+        MatrixD L_inv_eig = Leig.inverse();
+        // Eig::SelfAdjointEigenSolver<MatrixD> es(V_eig);
+        // MatrixD L_inv_eig = es.operatorInverseSqrt();
 
         auto tr_V = Vmetric.trange().data()[0];
         L_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
@@ -868,7 +868,18 @@ int main(int argc, char *argv[]) {
 
             auto dL_inv = TA::to_new_tile_type(L_inv, to_dtile(clr_threshold));
 
+            world.gop.fence();
+            auto B0 = tcc::utility::time::now();
             eri3("X,mu,nu") = dL_inv("X,Y") * eri3("Y,mu,nu");
+            world.gop.fence();
+            auto B1 = tcc::utility::time::now();
+            auto Btime = tcc::utility::time::duration_in_s(B0, B1);
+            std::cout << "B time = " << Btime << std::endl;
+            eri3_storage = storage_for_array(eri3);
+            std::cout << "B Storage:\n";
+            std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
+            std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
+            std::cout << "\tCLR: " << eri3_storage[2] << "\n";
 
             ThreeCenterScf scf(H, F_soad, S, L_inv, r_xyz, occ / 2,
                                repulsion_energy, clr_threshold);

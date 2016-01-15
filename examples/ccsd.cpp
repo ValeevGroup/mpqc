@@ -363,7 +363,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         auto soad1 = tcc::utility::time::now();
         auto soad_time = tcc::utility::time::duration_in_s(soad0, soad1);
-        std::cout << "Soad Time: " << soad_time << std::endl;
+        tcc::utility::print_par(world, "Soad Time: " , soad_time, "\n");
 
         ThreeCenterScf scf(H, F_soad, S, L_inv, occ / 2, repulsion_energy);
         scf.solve(scf_max_iter, scf_converge, eri3);

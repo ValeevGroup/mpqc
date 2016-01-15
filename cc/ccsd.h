@@ -372,6 +372,8 @@ namespace mpqc {
 
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
+                    t1.truncate();
+                    t2.truncate();
 
                     mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
                     mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
@@ -672,6 +674,8 @@ namespace mpqc {
 
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
+                    t1.truncate();
+                    t2.truncate();
 
                     // recompute energy
                     E0 = E1;
@@ -982,6 +986,8 @@ namespace mpqc {
 
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
+                    t1.truncate();
+                    t2.truncate();
 
                     mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
                     mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
@@ -1277,6 +1283,8 @@ namespace mpqc {
 
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
+                    t1.truncate();
+                    t2.truncate();
 
                     // recompute energy
                     E0 = E1;

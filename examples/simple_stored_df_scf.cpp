@@ -354,7 +354,7 @@ class ThreeCenterScf {
     void form_fock(Integral const &eri3) {
         auto &world = F_.get_world();
 
-#if 1
+#if 0 // Not precontracted with L_invV
         world.gop.fence();
         auto w0 = tcc::utility::time::now();
 
@@ -454,22 +454,88 @@ class ThreeCenterScf {
         F_ = TA::to_new_tile_type(dF_, to_ta_tile{});
 #endif
 
-#if 0
+#if 1 // Precontracted with L_invV 
         darray_type dH_ = TA::to_new_tile_type(H_, to_dtile(clr_thresh_));
         darray_type dS_ = TA::to_new_tile_type(S_, to_dtile(clr_thresh_));
         darray_type dC_ = TA::to_new_tile_type(C_, to_dtile(clr_thresh_));
-        darray_type dD_ = TA::to_new_tile_type(D_, to_dtile(clr_thresh_));
 
+        auto get_time = [&](){
+            world.gop.fence();
+            return tcc::utility::time::now();
+        };
+
+        using tp = decltype(get_time());
+
+        auto calc_time = [](tp const& a, tp const &b){
+            return tcc::utility::time::duration_in_s(a,b);
+        };
+
+        auto w0 = get_time();
         DArray<3, dtile, SpPolicy> W;
-        W("X, mu, nu") = dL_invV_("X,Y") * eri3("Y, mu, nu");
+        W("X, mu, i") = eri3("X, mu, nu") * dC_("nu, i");
+        auto w1 = get_time();
+        w_times_.push_back(calc_time(w0,w1));
+
+        auto wr0 = get_time();
+        if (tcc::tensor::detail::recompress && clr_thresh_ != 0) {
+            TA::foreach_inplace(
+                  W,
+                  [](tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>> &
+                           t_tile) {
+                      auto &t = t_tile.tile();
+                      auto input_norm = norm(t);
+
+                      auto compressed_norm = input_norm;
+                      if (t.cut() != 0.0) {
+                          if (t.ndecomp() == 1) {
+                              auto test = tcc::tensor::algebra::
+                                    two_way_decomposition(t);
+                              if (!test.empty()) {
+                                  t = test;
+                                  compressed_norm = norm(t);
+                              }
+                          } else {
+                              tcc::tensor::algebra::recompress(t);
+                              compressed_norm = norm(t);
+                          }
+                      }
+
+                      // Both are always larger than or equal to the real norm.
+                      return std::min(input_norm, compressed_norm);
+                  });
+        } else {
+            W.truncate();
+        }
+        auto wr1 = get_time();
+        recompress_w_time_ = calc_time(wr0, wr1);
+
+        auto w_store = storage_for_array(W);
+        w_sparse_store_.push_back(w_store[1]);
+        w_sparse_clr_store_.push_back(w_store[2]);
+        w_full_storage_ = w_store[0];
 
         darray_type J;
-        J("mu, nu") = W("X,mu,nu") * (W("X,a,b") * dD_("a,b"));
+        auto j0 = get_time();
+        J("mu, nu") = eri3("X,mu,nu") * (W("X,rho,i") * dC_("rho,i"));
+        auto j1 = get_time();
+        j_times_.push_back(calc_time(j0,j1));
 
-        W("X,mu,i") = W("X,mu, nu") * dC_("nu, i");
         W("X,i,mu") = W("X,mu,i");
-        darray_type K;
+
+        auto occk0 = get_time();
+        darray_type K, Kij, Sc;
+        K("mu, j") = W("X, i, mu") * ((W("X, i, nu") * dC_("nu, j")));
+        Kij("i,j") = dC_("mu, i") * K("mu, j");
+        Sc("mu, j") = dS_("mu, lam") * dC_("lam, j");
+        K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
+                      - (Sc("mu,i") * Kij("i,j")) * Sc("nu,j");
+        auto occk1 = get_time();
+        occ_k_times_.push_back(calc_time(occk0,occk1));
+
+        auto k0 = get_time();
         K("mu, nu") = W("X,i,mu") * W("X,i,nu");
+        auto k1 = get_time();
+        k_times_.push_back(calc_time(k0,k1));
 
         darray_type dF_;
         dF_("i,j") = dH_("i,j") + 2 * J("i,j") - K("i,j");
@@ -556,8 +622,7 @@ class ThreeCenterScf {
                      << "\n\tK time: " << k_times_.back()
                      << "\n\titer time: " << scf_times_.back()
                      << "\n\tW sparse only storage: " << w_sparse_store_.back()
-                     << "\n\tW sparse clr storage no recompress: "
-                     << clr_w_no_recompress_ << "\n\tW sparse clr storage: "
+                     << "\n\tW sparse clr storage: "
                      << w_sparse_clr_store_.back() << std::endl;
 
             ++iter;
@@ -800,6 +865,10 @@ int main(int argc, char *argv[]) {
             std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
             std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
             std::cout << "\tCLR: " << eri3_storage[2] << "\n";
+
+            auto dL_inv = TA::to_new_tile_type(L_inv, to_dtile(clr_threshold));
+
+            eri3("X,mu,nu") = dL_inv("X,Y") * eri3("Y,mu,nu");
 
             ThreeCenterScf scf(H, F_soad, S, L_inv, r_xyz, occ / 2,
                                repulsion_energy, clr_threshold);

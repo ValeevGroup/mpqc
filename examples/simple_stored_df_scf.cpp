@@ -454,30 +454,30 @@ class ThreeCenterScf {
         F_ = TA::to_new_tile_type(dF_, to_ta_tile{});
 #endif
 
-#if 1 // Precontracted with L_invV 
+#if 1 // Precontracted with L_invV
         darray_type dH_ = TA::to_new_tile_type(H_, to_dtile(clr_thresh_));
         darray_type dS_ = TA::to_new_tile_type(S_, to_dtile(clr_thresh_));
         darray_type dC_ = TA::to_new_tile_type(C_, to_dtile(clr_thresh_));
 
-        auto get_time = [&](){
+        auto get_time = [&]() {
             world.gop.fence();
             return tcc::utility::time::now();
         };
 
         using tp = decltype(get_time());
 
-        auto calc_time = [](tp const& a, tp const &b){
-            return tcc::utility::time::duration_in_s(a,b);
+        auto calc_time = [](tp const &a, tp const &b) {
+            return tcc::utility::time::duration_in_s(a, b);
         };
 
         auto w0 = get_time();
         DArray<3, dtile, SpPolicy> W;
         W("X, mu, i") = eri3("X, mu, nu") * dC_("nu, i");
         auto w1 = get_time();
-        w_times_.push_back(calc_time(w0,w1));
+        w_times_.push_back(calc_time(w0, w1));
 
         auto wr0 = get_time();
-        if (tcc::tensor::detail::recompress && clr_thresh_ != 0) {
+        if (clr_thresh_ != 0) {
             TA::foreach_inplace(
                   W,
                   [](tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>> &
@@ -518,7 +518,7 @@ class ThreeCenterScf {
         auto j0 = get_time();
         J("mu, nu") = eri3("X,mu,nu") * (W("X,rho,i") * dC_("rho,i"));
         auto j1 = get_time();
-        j_times_.push_back(calc_time(j0,j1));
+        j_times_.push_back(calc_time(j0, j1));
 
         W("X,i,mu") = W("X,mu,i");
 
@@ -530,12 +530,12 @@ class ThreeCenterScf {
         K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
                       - (Sc("mu,i") * Kij("i,j")) * Sc("nu,j");
         auto occk1 = get_time();
-        occ_k_times_.push_back(calc_time(occk0,occk1));
+        occ_k_times_.push_back(calc_time(occk0, occk1));
 
         auto k0 = get_time();
         K("mu, nu") = W("X,i,mu") * W("X,i,nu");
         auto k1 = get_time();
-        k_times_.push_back(calc_time(k0,k1));
+        k_times_.push_back(calc_time(k0, k1));
 
         darray_type dF_;
         dF_("i,j") = dH_("i,j") + 2 * J("i,j") - K("i,j");
@@ -616,14 +616,14 @@ class ThreeCenterScf {
                       << " energy: " << old_energy << " error: " << error
                       << " RMS error: " << rms_error;
             std::cout << "\n\tW time: " << w_times_.back()
-                     << "\n\tW recompress time: " << recompress_w_time_
-                     << "\n\tJ time: " << j_times_.back()
-                     << "\n\tocc-RI K time: " << occ_k_times_.back()
-                     << "\n\tK time: " << k_times_.back()
-                     << "\n\titer time: " << scf_times_.back()
-                     << "\n\tW sparse only storage: " << w_sparse_store_.back()
-                     << "\n\tW sparse clr storage: "
-                     << w_sparse_clr_store_.back() << std::endl;
+                      << "\n\tW recompress time: " << recompress_w_time_
+                      << "\n\tJ time: " << j_times_.back()
+                      << "\n\tocc-RI K time: " << occ_k_times_.back()
+                      << "\n\tK time: " << k_times_.back()
+                      << "\n\titer time: " << scf_times_.back()
+                      << "\n\tW sparse only storage: " << w_sparse_store_.back()
+                      << "\n\tW sparse clr storage: "
+                      << w_sparse_clr_store_.back() << std::endl;
 
             ++iter;
         }
@@ -742,16 +742,16 @@ int main(int argc, char *argv[]) {
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
     std::cout << "Basis has " << basis.nfunctions() << " functions\n";
 
-    auto df_nclusters = std::max(nclusters/2, 1);
+    auto df_nclusters = std::max(nclusters / 2, 1);
     auto df_clustered_mol = molecule::attach_hydrogens_and_kmeans(
           molecule::read_xyz(mol_file).clusterables(), df_nclusters);
 
     auto cluster_num = 1;
-    std::cout <<"\nDF clustering:\n";
-    for(auto const &c : df_clustered_mol.clusterables()){
+    std::cout << "\nDF clustering:\n";
+    for (auto const &c : df_clustered_mol.clusterables()) {
         auto atoms = c.atoms();
-        std::cout <<  atoms.size() << "\n\n";
-        for(auto const &atom : c.atoms()){
+        std::cout << atoms.size() << "\n\n";
+        for (auto const &atom : c.atoms()) {
             std::cout << atom.xyz_string(true) << "\n";
         }
         std::cout << "\n";
@@ -854,7 +854,7 @@ int main(int argc, char *argv[]) {
             world.gop.fence();
             auto int0 = tcc::utility::time::now();
             auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array,
-                                                shr_screen, decomp_3d);
+                                               shr_screen, decomp_3d);
 
             world.gop.fence();
             auto int1 = tcc::utility::time::now();
@@ -871,6 +871,37 @@ int main(int argc, char *argv[]) {
             world.gop.fence();
             auto B0 = tcc::utility::time::now();
             eri3("X,mu,nu") = dL_inv("X,Y") * eri3("Y,mu,nu");
+            if (clr_threshold != 0) {
+                TA::foreach_inplace(
+                      eri3,
+                      [](tcc::tensor::
+                               Tile<tcc::tensor::DecomposedTensor<double>> &
+                                     t_tile) {
+                          auto &t = t_tile.tile();
+                          auto input_norm = norm(t);
+
+                          auto compressed_norm = input_norm;
+                          if (t.cut() != 0.0) {
+                              if (t.ndecomp() == 1) {
+                                  auto test = tcc::tensor::algebra::
+                                        two_way_decomposition(t);
+                                  if (!test.empty()) {
+                                      t = test;
+                                      compressed_norm = norm(t);
+                                  }
+                              } else {
+                                  tcc::tensor::algebra::recompress(t);
+                                  compressed_norm = norm(t);
+                              }
+                          }
+
+                          // Both are always larger than or equal to the real
+                          // norm.
+                          return std::min(input_norm, compressed_norm);
+                      });
+            } else {
+                eri3.truncate();
+            }
             world.gop.fence();
             auto B1 = tcc::utility::time::now();
             auto Btime = tcc::utility::time::duration_in_s(B0, B1);

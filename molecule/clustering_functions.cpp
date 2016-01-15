@@ -90,7 +90,7 @@ Molecule kmeans(ABCbls const &clusterables, int64_t nclusters) {
     auto objective_min = std::numeric_limits<double>::max();
     int64_t init_seed = 1000;
     int64_t best_seed = 1000;
-    for (auto i = 0; i < 10; ++i) {
+    for (auto i = 0; i < 50; ++i) {
         clustering::Kmeans kmeans(init_seed);
         auto clusters
               = kmeans.cluster<AtomBasedCluster>(clusterables, nclusters);

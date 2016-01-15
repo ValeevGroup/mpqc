@@ -132,6 +132,10 @@ struct JobSummary {
     double eri3_sparse_only_storage = 0;
     double eri3_sparse_clr_storage = 0;
 
+    double B_fully_dense_storage = 0;
+    double B_sparse_only_storage = 0;
+    double B_sparse_clr_storage = 0;
+
     // Thresholds
     double ta_sparse_threshold = 0;
     double clr_threshold = 0;
@@ -168,6 +172,10 @@ struct JobSummary {
         std::cout << "eri3 sparse only, ";
         std::cout << "eri3 sparse + clr storage, ";
 
+        std::cout << "B fully dense storage, ";
+        std::cout << "B sparse only, ";
+        std::cout << "B sparse + clr storage, ";
+
         std::cout << "w fully dense storage, ";
         std::cout << "w sparse only, ";
         std::cout << "w sparse + clr storage, ";
@@ -198,6 +206,10 @@ struct JobSummary {
         std::cout << eri3_fully_dense_storage << ", ";
         std::cout << eri3_sparse_only_storage << ", ";
         std::cout << eri3_sparse_clr_storage << ", ";
+
+        std::cout << B_fully_dense_storage << ", ";
+        std::cout << B_sparse_only_storage << ", ";
+        std::cout << B_sparse_clr_storage << ", ";
 
         std::cout << w_fully_dense_storage << ", ";
         std::cout << avg_w_sparse_only_storage << ", ";
@@ -476,6 +488,9 @@ class ThreeCenterScf {
         auto w1 = get_time();
         w_times_.push_back(calc_time(w0, w1));
 
+        auto w_store = storage_for_array(W);
+        clr_w_no_recompress_ = w_store[2];
+
         auto wr0 = get_time();
         if (clr_thresh_ != 0) {
             TA::foreach_inplace(
@@ -509,7 +524,7 @@ class ThreeCenterScf {
         auto wr1 = get_time();
         recompress_w_time_ = calc_time(wr0, wr1);
 
-        auto w_store = storage_for_array(W);
+        w_store = storage_for_array(W);
         w_sparse_store_.push_back(w_store[1]);
         w_sparse_clr_store_.push_back(w_store[2]);
         w_full_storage_ = w_store[0];
@@ -615,15 +630,17 @@ class ThreeCenterScf {
             std::cout << "Iteration: " << (iter + 1)
                       << " energy: " << old_energy << " error: " << error
                       << " RMS error: " << rms_error;
-            std::cout << "\n\tW time: " << w_times_.back()
-                      << "\n\tW recompress time: " << recompress_w_time_
-                      << "\n\tJ time: " << j_times_.back()
-                      << "\n\tocc-RI K time: " << occ_k_times_.back()
-                      << "\n\tK time: " << k_times_.back()
-                      << "\n\titer time: " << scf_times_.back()
-                      << "\n\tW sparse only storage: " << w_sparse_store_.back()
-                      << "\n\tW sparse clr storage: "
-                      << w_sparse_clr_store_.back() << std::endl;
+            std::cout
+                  << "\n\tW time: " << w_times_.back()
+                  << "\n\tW recompress time: " << recompress_w_time_
+                  << "\n\tJ time: " << j_times_.back()
+                  << "\n\tocc-RI K time: " << occ_k_times_.back()
+                  << "\n\tK time: " << k_times_.back()
+                  << "\n\titer time: " << scf_times_.back()
+                  << "\n\tW sparse only storage: " << w_sparse_store_.back()
+                  << "\n\tW sparse clr(no recompress): " << clr_w_no_recompress_
+                  << "\n\tW sparse clr storage: " << w_sparse_clr_store_.back()
+                  << std::endl;
 
             ++iter;
         }
@@ -906,11 +923,11 @@ int main(int argc, char *argv[]) {
             auto B1 = tcc::utility::time::now();
             auto Btime = tcc::utility::time::duration_in_s(B0, B1);
             std::cout << "B time = " << Btime << std::endl;
-            eri3_storage = storage_for_array(eri3);
+            auto b_storage = storage_for_array(eri3);
             std::cout << "B Storage:\n";
-            std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
-            std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
-            std::cout << "\tCLR: " << eri3_storage[2] << "\n";
+            std::cout << "\tAll Full: " << b_storage[0] << "\n";
+            std::cout << "\tBlock Sparse Only: " << b_storage[1] << "\n";
+            std::cout << "\tCLR: " << b_storage[2] << "\n";
 
             ThreeCenterScf scf(H, F_soad, S, L_inv, r_xyz, occ / 2,
                                repulsion_energy, clr_threshold);
@@ -926,6 +943,11 @@ int main(int argc, char *argv[]) {
             job_summary.eri3_fully_dense_storage = eri3_storage[0];
             job_summary.eri3_sparse_only_storage = eri3_storage[1];
             job_summary.eri3_sparse_clr_storage = eri3_storage[2];
+
+            job_summary.B_fully_dense_storage = b_storage[0];
+            job_summary.B_sparse_only_storage = b_storage[1];
+            job_summary.B_sparse_clr_storage = b_storage[2];
+
             job_summary.schwarz_threshold = schwarz_thresh;
             job_summary.clr_threshold = clr_threshold;
         }

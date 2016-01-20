@@ -26,7 +26,12 @@ namespace mpqc {
         // BlockSize = int, control the block size in MO, default 16
         // FrozenCore = bool, control if use frozen core, default False
         // Direct = bool , control if use direct approach, default True
-        // DIIS = int, control the number of data sets to retain, default is 5
+        // DIIS_ndi = int, control the number of data sets to retain, default is 5
+        // DIIS_dmp = float, see DIIS in TA
+        // DIIS_strt = int, see DIIS in TA
+        // DIIS_ngr = int, see DIIS in TA
+        // DIIS_ngrdiis = int, see DIIS in TA
+        // DIIS_mf = float, see DIIS in TA
         // LessMemory = bool, control if store large intermediate in straight approach, default is true
         // PrintDetail = bool, if do detail printing, default is false
         // Converge = double, convergence of CCSD energy, default is 1.0e-07
@@ -50,6 +55,33 @@ namespace mpqc {
 //                auto mo_block = std::make_shared<mpqc::MOBlock>(*trange1_engine_);
 //                fock_ = TArrayBlock(fock, mo_block);
             }
+
+
+            TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> get_diis(const madness::World & world){
+
+                int n_diis, strt, ngr, ngrdiis;
+                double dmp, mf;
+
+                strt = options_.HasMember("DIIS_strt") ? options_["DIIS_strt"].GetInt() : 5;
+                n_diis = options_.HasMember("DIIS_ndi") ? options_["DIIS_ndi"].GetInt() : 8;
+                ngr = options_.HasMember("DIIS_ngr") ? options_["DIIS_ngr"].GetInt() : 2;
+                ngrdiis = options_.HasMember("DIIS_ngrdiis") ? options_["DIIS_ngrdiis"].GetInt() : 1;
+                dmp = options_.HasMember("DIIS_dmp") ? options_["DIIS_dmp"].GetDouble() : 0.0;
+                mf = options_.HasMember("DIIS_mf") ? options_["DIIS_mf"].GetDouble() : 0.0;
+
+                if(world.rank() == 0){
+                    std::cout << "DIIS Starting Iteration:  " << strt << std::endl;
+                    std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
+                    std::cout << "DIIS ngr:  " << ngr << std::endl;
+                    std::cout << "DIIS ngrdiis:  " << ngrdiis << std::endl;
+                    std::cout << "DIIS dmp:  " << dmp << std::endl;
+                    std::cout << "DIIS mf:  " << mf << std::endl;
+                }
+                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(strt,n_diis,0.0,ngr,ngrdiis);
+
+                return diis;
+
+            };
 
             // compute function
             virtual void compute(){
@@ -136,14 +168,12 @@ namespace mpqc {
                 TArray r1;
                 TArray r2;
 
-                auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
-                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
+                auto diis = get_diis(world);
 
                 bool less = options_.HasMember("LessMemory") ? options_["LessMemory"].GetBool() : true;
 
                 if (world.rank() == 0) {
                     std::cout << "Start Iteration" << std::endl;
-                    std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                     if(less){
                         std::cout << "Less Memory Approach: Yes" << std::endl;
                     }else{
@@ -480,8 +510,6 @@ namespace mpqc {
                 TArray r1;
                 TArray r2;
 
-                auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
-                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
 
                 bool less = options_.HasMember("LessMemory") ? options_["LessMemory"].GetBool() : true;
 
@@ -490,13 +518,15 @@ namespace mpqc {
                 if (world.rank() == 0) {
                     std::cout << "Start Iteration" << std::endl;
                     std::cout << "Convergence " << converge << std::endl;
-                    std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                     if(less){
                         std::cout << "Less Memory Approach: Yes" << std::endl;
                     }else{
                         std::cout << "Less Memory Approach: No" << std::endl;
                     }
                 }
+
+                auto diis = get_diis(world);
+
                 while (true) {
 
                     //start timer
@@ -810,10 +840,11 @@ namespace mpqc {
                 TArray r1;
                 TArray r2;
 
-                auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
-                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
                 if (world.rank() == 0) {
+                    std::cout << "Start Iteration" << std::endl;
                 };
+                auto diis = get_diis(world);
+
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
@@ -832,8 +863,6 @@ namespace mpqc {
                     }
 
                     if (iter == 0 && world.rank() == 0) {
-                        std::cout << "Start Iteration" << std::endl;
-                        std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                         std::cout << "iter " << "    deltaE    " << "            residual       "
                         << "      energy     " << "    U/second  " << " total/second "<<std::endl;
                     }
@@ -1094,16 +1123,16 @@ namespace mpqc {
                 TArray r1;
                 TArray r2;
 
-                auto n_diis = options_.HasMember("DIIS") ? options_["DIIS"].GetInt() : 5;
-                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(1,n_diis);
 
                 double converge = options_.HasMember("Converge") ? options_["Converge"].GetDouble() : 1.0e-7;
 
                 if (world.rank() == 0) {
                     std::cout << "Start Iteration" << std::endl;
                     std::cout << "Convergence " << converge << std::endl;
-                    std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
                 };
+
+                auto diis = get_diis(world);
+
                 while (true){
 
                     //start timer

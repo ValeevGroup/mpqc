@@ -204,6 +204,7 @@ struct JobSummary {
         std::cout << "hf energy, ";
         std::cout << "error change in energy, ";
         std::cout << "error rms div volume, ";
+        std::cout << "exchange energy(iter 0), ";
 
         std::cout << "computed dipole, ";
 
@@ -248,6 +249,7 @@ struct JobSummary {
         std::cout << hf_energy << ", ";
         std::cout << hf_energy_diff_error << ", ";
         std::cout << hf_grad_div_volume << ", ";
+        std::cout << exchange_energy << ", ";
 
         std::cout << computed_dipole << ", ";
         std::cout << dipole_x << ", ";

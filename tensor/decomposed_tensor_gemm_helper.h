@@ -46,67 +46,68 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
             return Dtensor<T>{a.cut(), a.tensor(0).gemm(b.tensor(0), f, gh)};
         } else if (a.ndecomp() == 2) { // LR gemm
             auto Rp = a.tensor(1).gemm(b.tensor(0), f, gh);
-            return Dtensor<T>{a.cut(), a.tensor(0).clone(), std::move(Rp)};
-        }
-        assert(false);
-        return Dtensor<T>{};
-    }
+            auto tensor = Dtensor<T>{a.cut(), a.tensor(0).clone(), std::move(Rp)};
 
-    template <typename T>
-    Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a,
-                           Dtensor<T> const &b, const T f, GHelper const &gh) {
-        // assume b is never decomposed.
-        if (c.ndecomp() == 1) {
-            if (a.ndecomp() == 1) {
-                c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
+            if(recompress){
+                return tensor;
             } else {
-
-                auto Rp = a.tensor(1).gemm(b.tensor(0), f, gh);
-                auto NoT = gh.left_op();
-                auto gh = TA::math::GemmHelper(NoT, NoT,
-                                               c.tensor(0).range().rank(),
-                                               a.tensor(0).range().rank(),
-                                               Rp.range().rank());
-                c.tensor(0).gemm(a.tensor(0), Rp, f, gh);
+                return Dtensor<T>{a.cut(), algebra::combine(tensor)};
             }
-            return c;
+            
+    }
+    assert(false);
+    return Dtensor<T>{};
+}
+
+template <typename T>
+Dtensor<T> &operator()(Dtensor<T> &c, Dtensor<T> const &a, Dtensor<T> const &b,
+                       const T f, GHelper const &gh) {
+    // assume b is never decomposed.
+    if (c.ndecomp() == 1) {
+        if (a.ndecomp() == 1) {
+            c.tensor(0).gemm(a.tensor(0), b.tensor(0), f, gh);
         } else {
-            if (a.ndecomp() == 1) {
-                auto ab_tensor = a.tensor(0).gemm(b.tensor(0), 1.0, gh);
-                const auto NoT = gh.left_op();
-                auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
-                ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
-                c = DecomposedTensor<double>(c.cut(), std::move(ab_tensor));
-                // auto decomp_test = algebra::two_way_decomposition(c);
 
-                // if (!decomp_test.empty()) {
-                //     c = std::move(decomp_test);
-                // }
-
-                return c;
-            }
-
-            c = add(c, this->operator()(a, b, f, gh));
-            auto const &c_left_extent = c.tensor(0).range().extent();
-            auto const &c_right_extent = c.tensor(1).range().extent();
-            const auto long_dim = c_right_extent[1] * c_right_extent[2];
-            auto out_dim = c.rank();
-            const auto full_rank = std::min(c_left_extent[0], long_dim);
-
-            if (recompress) {
-                algebra::recompress(c);
-                out_dim = c.rank();
-            }
-
-            if (out_dim > full_rank / 2) {
-                c = DecomposedTensor<T>(c.cut(), algebra::combine(c));
-            }
+            auto Rp = a.tensor(1).gemm(b.tensor(0), f, gh);
+            auto NoT = gh.left_op();
+            auto gh = TA::math::GemmHelper(NoT, NoT, c.tensor(0).range().rank(),
+                                           a.tensor(0).range().rank(),
+                                           Rp.range().rank());
+            c.tensor(0).gemm(a.tensor(0), Rp, f, gh);
+        }
+        return c;
+    } else {
+        if (a.ndecomp() == 1) {
+            auto ab_tensor = a.tensor(0).gemm(b.tensor(0), 1.0, gh);
+            const auto NoT = gh.left_op();
+            auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
+            ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
+            c = DecomposedTensor<double>(c.cut(), std::move(ab_tensor));
 
             return c;
         }
 
-        assert(false);
+        c = add(c, this->operator()(a, b, f, gh));
+        auto const &c_left_extent = c.tensor(0).range().extent();
+        auto const &c_right_extent = c.tensor(1).range().extent();
+        const auto long_dim = c_right_extent[1] * c_right_extent[2];
+        auto out_dim = c.rank();
+        const auto full_rank = std::min(c_left_extent[0], long_dim);
+
+        if (recompress) {
+            algebra::recompress(c);
+            out_dim = c.rank();
+        }
+
+        if (out_dim > full_rank / 2) {
+            c = DecomposedTensor<T>(c.cut(), algebra::combine(c));
+        }
+
+        return c;
     }
+
+    assert(false);
+}
 };
 
 // B("X,a,b") = V^{-1}("X,P") * X("P,a,b")

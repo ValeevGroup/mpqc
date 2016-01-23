@@ -56,7 +56,7 @@ namespace mpqc {
             }
 
             // Convert lazy tile to data tile
-            operator TA::Tensor<double>() const {
+            explicit operator TA::Tensor<double>() const {
                 return integral_generator_->compute(range_, index_);
             }
 

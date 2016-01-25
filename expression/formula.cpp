@@ -10,6 +10,8 @@
 
 #include <boost/algorithm/string.hpp>
 #include <TiledArray/error.h>
+#include <string>
+#include <memory>
 
 namespace mpqc{
 
@@ -135,5 +137,40 @@ namespace mpqc{
 
     bool Formula::operator==(const Formula &other) const{
         return (operation_== other.operation_) && (left_index_ == other.left_index_) && (right_index_ == other.right_index_);
+    }
+
+    std::string Formula::to_ta_expression() const {
+
+        std::string ta_expression;
+        std::size_t rank = this->rank();
+        std::size_t count = 0;
+
+        // start
+        ta_expression.push_back('(');
+
+        // add left index
+        for (const auto & index : left_index_){
+            std::string index_expression = index.to_ta_expression();
+            ta_expression.append(index_expression.begin(),index_expression.end());
+            ++count;
+            ta_expression.append(", ");
+        }
+
+
+        // add right index
+
+        for (const auto & index : right_index_){
+            std::string index_expression = index.to_ta_expression();
+            ta_expression.append(index_expression.begin(),index_expression.end());
+            ++count;
+            if(count < rank){
+                ta_expression.append(", ");
+            }
+        }
+
+        //end
+        ta_expression.push_back(')');
+
+        return ta_expression;
     }
 }

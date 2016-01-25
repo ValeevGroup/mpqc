@@ -4,11 +4,14 @@
 
 
 #include <cwchar>
-
+#include <cstdlib>
 #include <stdexcept>
-#include <TiledArray/error.h>
+#include <string>
+#include <memory>
 
+#include <TiledArray/error.h>
 #include "orbital_index.h"
+#include "greek_to_english_name.h"
 
 
 namespace mpqc{
@@ -204,4 +207,32 @@ OrbitalIndex OrbitalIndex::mo_to_ao() {
 
     return OrbitalIndex(new_string);
 }
+
+    std::string OrbitalIndex::to_ta_expression() const {
+
+        std::string ta_expression;
+        int length;
+        const wchar_t* pt;
+        pt = name_.c_str();
+        char buffer[MB_CUR_MAX];
+
+        while(*pt){
+            length = std::wctomb(buffer,*pt);
+            // multiple byte, convert to english name
+            if(length == -1){
+                auto pos = greek_to_english_name.find(*pt);
+                if (pos == greek_to_english_name.end()){
+                    throw std::runtime_error("Couldn't Find The English Name of Greek Letter");
+                }
+                std::string convert_name = pos->second;
+                ta_expression.append(convert_name.begin(),convert_name.end());
+            }
+            // single byte, do nothing
+            else if(length == 1){
+                ta_expression.push_back(*buffer);
+            }
+            ++pt;
+        }
+        return ta_expression;
+    }
 }

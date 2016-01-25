@@ -20,6 +20,7 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex n(L"n");
         REQUIRE( n.index() == mpqc::OrbitalIndex::Index::occ);
+        REQUIRE( n.to_ta_expression() == "n");
 
         mpqc::OrbitalIndex i(L"i");
         REQUIRE( i.index() == mpqc::OrbitalIndex::Index::actocc);
@@ -49,33 +50,42 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
         REQUIRE( k1.index() == mpqc::OrbitalIndex::Index::obs);
         REQUIRE( k1.is_mo() == false);
         REQUIRE( k1.is_ao() == true);
+        REQUIRE( k1.to_ta_expression() == "kappa");
 
         mpqc::OrbitalIndex v1(L"ν");
         REQUIRE( v1.index() == mpqc::OrbitalIndex::Index::obs);
+        REQUIRE( v1.to_ta_expression() == "nu");
 
         mpqc::OrbitalIndex K1(L"Κ");
         REQUIRE( K1.index() == mpqc::OrbitalIndex::Index::dfbs);
+        REQUIRE( K1.to_ta_expression() == "KAPPA");
 
         mpqc::OrbitalIndex V1(L"Ν");
         REQUIRE( V1.index() == mpqc::OrbitalIndex::Index::dfbs);
+        REQUIRE( V1.to_ta_expression() == "NU");
 
         mpqc::OrbitalIndex a1(L"α");
         REQUIRE( a1.index() == mpqc::OrbitalIndex::Index::abs);
+        REQUIRE( a1.to_ta_expression() == "alpha");
 
         mpqc::OrbitalIndex d1(L"δ");
         REQUIRE( d1.index() == mpqc::OrbitalIndex::Index::abs);
+        REQUIRE( d1.to_ta_expression() == "delta");
 
         mpqc::OrbitalIndex p1(L"ρ");
         REQUIRE( p1.index() == mpqc::OrbitalIndex::Index::ribs);
+        REQUIRE( p1.to_ta_expression() == "rho");
 
         mpqc::OrbitalIndex v2(L"υ");
         REQUIRE( v2.index() == mpqc::OrbitalIndex::Index::ribs);
+        REQUIRE( v2.to_ta_expression() == "upsilon");
     }
 
     SECTION("letter with number"){
 
         mpqc::OrbitalIndex m(L"m2");
         REQUIRE( m.index() == mpqc::OrbitalIndex::Index::occ);
+        REQUIRE( m.to_ta_expression() == "m2");
 
         mpqc::OrbitalIndex n(L"n6");
         REQUIRE( n.index() == mpqc::OrbitalIndex::Index::occ);
@@ -100,6 +110,7 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex p(L"p36");
         REQUIRE( p.index() == mpqc::OrbitalIndex::Index::any);
+        REQUIRE( p.to_ta_expression() == "p36");
 
         mpqc::OrbitalIndex s(L"s7");
         REQUIRE( s.index() == mpqc::OrbitalIndex::Index::any);
@@ -112,12 +123,15 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex a1(L"α14");
         REQUIRE( a1.index() == mpqc::OrbitalIndex::Index::abs);
+        REQUIRE( a1.to_ta_expression() == "alpha14");
 
         mpqc::OrbitalIndex d1(L"δ5");
         REQUIRE( d1.index() == mpqc::OrbitalIndex::Index::abs);
+        REQUIRE( d1.to_ta_expression() == "delta5");
 
         mpqc::OrbitalIndex K1(L"Κ1");
         REQUIRE( K1.index() == mpqc::OrbitalIndex::Index::dfbs);
+        REQUIRE( K1.to_ta_expression() == "KAPPA1");
 
         mpqc::OrbitalIndex V1(L"Ν2");
         REQUIRE( V1.index() == mpqc::OrbitalIndex::Index::dfbs);
@@ -133,6 +147,7 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex m(L"m'");
         REQUIRE( m.index() == mpqc::OrbitalIndex::Index::inactocc);
+        REQUIRE( m.to_ta_expression() == "m'");
 
         mpqc::OrbitalIndex n(L"n'");
         REQUIRE( n.index() == mpqc::OrbitalIndex::Index::inactocc);
@@ -167,6 +182,7 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
         mpqc::OrbitalIndex m(L"m'3");
         REQUIRE( m.index() == mpqc::OrbitalIndex::Index::inactocc);
+        REQUIRE( m.to_ta_expression() == "m'3");
 
         mpqc::OrbitalIndex n(L"n'4");
         REQUIRE( n.index() == mpqc::OrbitalIndex::Index::inactocc);

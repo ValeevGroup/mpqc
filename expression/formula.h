@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "greek_to_english_name.h"
 #include "orbital_index.h"
 #include "operation.h"
 
@@ -39,6 +40,7 @@ namespace mpqc{
             return formula_;
         }
 
+
         const std::vector<OrbitalIndex> &left_index() const {
             return left_index_;
         }
@@ -63,6 +65,8 @@ namespace mpqc{
 
         bool operator==(const Formula& other) const;
 
+        // convert to TA expression string format
+        std::string to_ta_expression() const;
 
     private:
 

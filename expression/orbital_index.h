@@ -111,6 +111,8 @@ public:
 
     OrbitalIndex mo_to_ao();
 
+    std::string to_ta_expression() const;
+
 private:
     void init(const wchar_t *letter);
 

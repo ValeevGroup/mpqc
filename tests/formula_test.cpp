@@ -54,6 +54,16 @@ TEST_CASE("Formula Expression", "[formula]"){
         REQUIRE(couloumb.operation().has_option(Operation::Options::DensityFitting) == true);
     }
 
+    SECTION("equality test case"){
+        Formula formula1(L"<p q1|R|a' A'1>");
+        Formula formula1df(L"<p q1|R|a' A'1>[df]");
+        Formula formula2(L"<r s12|R|d' B'12>");
+        Formula formula3(L"(r s12|R|d' B'12)");
+        REQUIRE(formula1 == formula2);
+        REQUIRE(formula2 != formula1df);
+        REQUIRE(formula1 != formula3);
+    }
+
     SECTION("error handling"){
         // wrong operation
         REQUIRE_THROWS(Formula kinetic(L"<p q|t|r s>"));

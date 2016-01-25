@@ -65,6 +65,10 @@ namespace mpqc{
 
         bool operator==(const Formula& other) const;
 
+        bool operator!=(const Formula& other) const {
+            return !(*this==other);
+        }
+
         // convert to TA expression string format
         std::string to_ta_expression() const;
 

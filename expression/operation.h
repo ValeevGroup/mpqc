@@ -45,6 +45,10 @@ namespace mpqc{
 
         bool operator==(Operation const & other) const;
 
+        bool operator!=(Operation const & other) const{
+            return !(*this==other);
+        }
+
     private:
 
         Operations operation_;

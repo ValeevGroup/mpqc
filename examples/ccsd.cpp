@@ -231,8 +231,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         // Get necessary info
         std::string mol_file = in["xyz file"].GetString();
         int nclusters = in["number of clusters"].GetInt();
-        std::size_t blocksize = cc_in["BlockSize"].GetInt();
-
+        std::size_t mo_blocksize = cc_in["BlockSize"].GetInt();
+        std::size_t ao_blocksize = in.HasMember("AOBlockSize") ? in["AOBlockSize"].GetInt(): mo_blocksize;
 
         // Get basis info
         std::string basis_name = in.HasMember("basis") ? in["basis"].GetString()
@@ -298,8 +298,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
         bool if_reblock = in.HasMember("Reblock") ? in["Reblock"].GetBool() : false;
         if(if_reblock){
 
-            basis = reblock(basis,cc::reblock_basis,blocksize);
-            df_basis = reblock(df_basis,cc::reblock_basis,blocksize);
+            tcc::utility::print_par(world,"AOBlockSize:  ",ao_blocksize, "\n");
+            basis = reblock(basis,cc::reblock_basis,ao_blocksize);
+            df_basis = reblock(df_basis,cc::reblock_basis,ao_blocksize);
 
         }
         if (world.rank() == 0) {
@@ -410,14 +411,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         std::size_t all = S.trange().elements().extent()[0];
 
-        tre = std::make_shared<TRange1Engine>(occ / 2, all, blocksize, n_frozen_core);
+        tre = std::make_shared<TRange1Engine>(occ / 2, all, mo_blocksize, n_frozen_core);
 
         auto tr_0 = Xab.trange().data().back();
         auto tr_all = tre->get_all_tr1();
         auto tr_i0 = tre->get_occ_tr1();
         auto tr_vir = tre->get_vir_tr1();
 
-        tcc::utility::print_par(world, "Block Size in MO     ", blocksize, "\n");
+        tcc::utility::print_par(world, "Block Size in MO     ", mo_blocksize, "\n");
         tcc::utility::print_par(world, "TiledRange1 Occupied ", tr_i0, "\n");
         tcc::utility::print_par(world, "Average: ", cc::average_blocksize(tr_i0), "\n");
         auto min_max = cc::minmax_blocksize(tr_i0);

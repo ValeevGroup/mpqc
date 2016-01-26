@@ -162,7 +162,7 @@ direct_sparse_integrals(mad::World &world, ShrPool<E> shr_pool,
  * Same requirements on Op as those in Integral Builder
  */
 template <typename E, unsigned long N, typename Op = TensorPassThrough>
-DArray<N, DirectTile<IntegralBuilder<N, E, Op>>, SpPolicy>
+DirArray<N, IntegralBuilder<N, E, Op>>
 direct_dense_integrals(mad::World &world, ShrPool<E> shr_pool,
                        Barray<N> const &bases,
                        std::shared_ptr<Screener> screen
@@ -175,10 +175,14 @@ direct_dense_integrals(mad::World &world, ShrPool<E> shr_pool,
     auto shr_bases = std::make_shared<Barray<N>>(bases);
 
     // Make a pointer to an Integral builder.
-    auto builder_ptr = 
+    auto builder =
           make_integral_builder(world, std::move(shr_pool),
                                 std::move(shr_bases), std::move(screen),
                                 std::move(op));
+
+    using b_type = remove_ref_t<decltype(*builder)>;
+    auto dir_array = DirArray<N, b_type>(std::move(builder));
+    auto builder_ptr = dir_array.builder();
 
     using TileType = DirectTile<IntegralBuilder<N, E, Op>>;
     DArray<N, TileType, TA::DensePolicy> out(world, trange);
@@ -191,7 +195,9 @@ direct_dense_integrals(mad::World &world, ShrPool<E> shr_pool,
     }
     world.gop.fence();
 
-    return out;
+    dir_array.set_array(std::move(out));
+
+    return dir_array;
 }
 
 } // namespace integrals

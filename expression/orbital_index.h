@@ -52,6 +52,12 @@ public:
         ribs = -3
     };
 
+    enum class Spin{
+        Alpha = 1,
+        Beta = -1,
+        None = 0
+    };
+
     // constant wchar_t used to map to Index
     static const wchar_t inactocc_wchar[2];
     static const wchar_t actocc_wchar[2];
@@ -73,7 +79,6 @@ public:
     OrbitalIndex& operator=(OrbitalIndex const &) = default;
     OrbitalIndex& operator=(OrbitalIndex &&) = default;
 
-    OrbitalIndex(const wchar_t *letter);
 
     OrbitalIndex(std::wstring letter);
 
@@ -87,6 +92,11 @@ public:
     // get index
     const Index &index() const {
         return index_;
+    }
+
+    // get spin
+    const Spin spin() const {
+        return spin_;
     }
 
     // get index name
@@ -121,6 +131,7 @@ private:
 
 private:
     Index index_;
+    Spin spin_;
     std::wstring name_;
 };
 

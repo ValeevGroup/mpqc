@@ -375,27 +375,6 @@ namespace integrals{
             return result;
         }
 
-        // compute direct integral for sparse policy
-        template <typename E, unsigned long N, typename U = Policy>
-        typename std::enable_if<std::is_same<U,TA::SparsePolicy>::value, integrals::DirArray<N,IntegralBuilder<N,E>> >::type
-        compute_direct_integrals(madness::World& world, E const &engine, Barray<N> const &bases)
-        {
-            auto sreener = std::make_shared<Screener>(Screener{});
-            auto result = mpqc::integrals::direct_sparse_integrals(world,engine,bases,sreener,op_);
-            return result;
-        }
-
-        // compute direct integral for dense policy
-        template <typename E, unsigned long N, typename U = Policy>
-        typename std::enable_if<std::is_same<U,TA::DensePolicy>::value, integrals::DirArray<N,IntegralBuilder<N,E>> >::type
-        compute_direct_integrals(
-                madness::World& world, E const &engine, Barray<N> const &bases)
-        {
-            auto sreener = std::make_shared<Screener>(Screener{});
-            auto result = mpqc::integrals::direct_dense_integrals(world,engine,bases,sreener,op_);
-            return result;
-        }
-
     private:
         FormulaRegistry<TArray> formula_registry_;
         Op op_;

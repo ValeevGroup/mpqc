@@ -206,6 +206,24 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
         REQUIRE( D.index() == mpqc::OrbitalIndex::Index::allvirt);
     }
 
+
+    SECTION("spin case"){
+        mpqc::OrbitalIndex a(L"a'4_α");
+        REQUIRE( a.spin() == mpqc::OrbitalIndex::Spin::Alpha);
+
+        mpqc::OrbitalIndex m(L"λ");
+        REQUIRE( m.spin() == mpqc::OrbitalIndex::Spin::None);
+        REQUIRE( m.index() == mpqc::OrbitalIndex::Index::obs);
+
+        mpqc::OrbitalIndex p(L"p_α");
+        REQUIRE( p.spin() == mpqc::OrbitalIndex::Spin::Alpha);
+        REQUIRE( p.index() == mpqc::OrbitalIndex::Index::any);
+
+        mpqc::OrbitalIndex d1(L"δ5_β");
+        REQUIRE( d1.spin() == mpqc::OrbitalIndex::Spin::Beta);
+
+    }
+
     SECTION("error handling"){
         // key not allowed
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"e"));
@@ -217,6 +235,11 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
         // wrong format
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"1a3"));
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"a4'"));
+
+        // wrong spin
+        REQUIRE_THROWS(mpqc::OrbitalIndex d1(L"δ5_a"));
+        REQUIRE_THROWS(mpqc::OrbitalIndex d1(L"i_α  "));
+
     }
 
 }

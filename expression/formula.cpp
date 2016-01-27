@@ -27,13 +27,19 @@ namespace mpqc{
             return letter == L'<' || letter == L'(';
         };
 
-        auto right_mark = [](const wchar_t letter) {
-            return letter == L'>' || letter == L')';
-        };
-
         // find formula between < > or ( )
         auto bra_symbol = std::find_if(formula_string.cbegin(), formula_string.cend(), left_mark);
-        auto ket_symbol = std::find_if(formula_string.cbegin(), formula_string.cend(), right_mark);
+
+        auto ket_symbol = formula_string.cbegin();
+
+        if(*bra_symbol==L'<'){
+            auto pos = formula_string.find_last_of(L'>');
+            ket_symbol += pos;
+        }
+        else{
+            auto pos = formula_string.find_last_of(L')');
+            ket_symbol += pos;
+        }
 
         TA_ASSERT(bra_symbol < ket_symbol);
 

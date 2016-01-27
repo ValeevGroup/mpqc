@@ -31,12 +31,37 @@ const wchar_t OrbitalIndex::dfbs_wchar[4] = {L'Κ',L'Λ',L'Μ', L'Ν'};
 const wchar_t OrbitalIndex::abs_wchar[4] = {L'α', L'β',L'γ',L'δ'};
 const wchar_t OrbitalIndex::ribs_wchar[4] = {L'ρ',L'σ',L'τ',L'υ'};
 
-OrbitalIndex::OrbitalIndex(const wchar_t *letter) {
-    init(letter);
-}
-
 OrbitalIndex::OrbitalIndex(std::wstring letter) {
-    init(letter.c_str());
+
+    name_ = letter;
+
+    if(letter.find_first_of(L'_') == std::string::npos){
+        init(letter.c_str());
+        spin_ = Spin::None;
+    }
+    else{
+        auto left = letter.find_first_of(L'_');
+
+        TA_ASSERT(left!=std::string::npos);
+        TA_ASSERT( letter.size() - left == 2);
+        std::wstring sub_letter = letter.substr(0,left);
+
+        init(sub_letter.c_str());
+
+        wchar_t spin = letter[left+1];
+
+        if(spin == L'α'){
+            spin_ = Spin::Alpha;
+        }
+        else if(spin == L'β'){
+            spin_ = Spin::Beta;
+        }
+        else{
+            throw std::runtime_error("Wrong Spin Label");
+        }
+    }
+
+
 }
 
 //TODO better error handling in throw
@@ -91,12 +116,10 @@ void OrbitalIndex::init(const wchar_t* letter) {
             throw std::runtime_error(error_message);
         }
     }
-    std::wstring tmp(letter);
-    name_ = tmp;
 }
 
 bool OrbitalIndex::operator==(const OrbitalIndex &other) const{
-    return this->index_ == other.index_;
+    return (this->index_ == other.index_) && (this->spin_ == other.spin_);
 }
 
 bool OrbitalIndex::operator==(const OrbitalIndex::Index i) const{
@@ -104,7 +127,7 @@ bool OrbitalIndex::operator==(const OrbitalIndex::Index i) const{
 }
 
 bool OrbitalIndex::same(const OrbitalIndex &other) const{
-    return (index_ == other.index()) && (name_ == other.name());
+    return (index_ == other.index()) && (this->spin_ == other.spin_) && (name_ == other.name());
 }
 
 bool OrbitalIndex::is_ao() const {

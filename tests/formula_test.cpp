@@ -31,17 +31,18 @@ TEST_CASE("Formula Expression", "[formula]"){
     }
 
     SECTION("two body test case"){
-        Formula couloumb(L"<p q1|R|a' A'1>");
+        Formula couloumb(L"<p_α q1|R|a' A'1>");
         REQUIRE(couloumb.left_index()[0].index() == OrbitalIndex::Index::any);
+        REQUIRE(couloumb.left_index()[0].spin() == OrbitalIndex::Spin::Alpha);
         REQUIRE(couloumb.left_index()[1].index() == OrbitalIndex::Index::any);
         REQUIRE(couloumb.right_index()[0].index() == OrbitalIndex::Index::othervirt);
         REQUIRE(couloumb.right_index()[1].index() == OrbitalIndex::Index::allvirt);
         REQUIRE(couloumb.operation().is_twobody() == true);
-        REQUIRE(couloumb.to_ta_expression() == "(p, q1, a', A'1)");
+        REQUIRE(couloumb.to_ta_expression() == "(p_alpha, q1, a', A'1)");
 
-        Formula two_center(L"( a' |R|A'1)");
+        Formula two_center(L"( a'_β |R|A'1)");
         REQUIRE(two_center.left_index().size() == 1);
-        REQUIRE(two_center.to_ta_expression() == "(a', A'1)");
+        REQUIRE(two_center.to_ta_expression() == "(a'_beta, A'1)");
 
         Formula three_center(L"( Κ|R|κ λ1)");
         REQUIRE(three_center.left_index().size() == 1);

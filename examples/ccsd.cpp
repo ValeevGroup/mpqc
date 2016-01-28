@@ -411,20 +411,26 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         std::size_t all = S.trange().elements().extent()[0];
 
-        tre = std::make_shared<TRange1Engine>(occ / 2, all, mo_blocksize, n_frozen_core);
+
+        // check block size
+        std::size_t occ_blocksize = cc_in.HasMember("OccBlockSize") ? cc_in["OccBlockSize"].GetInt() : mo_blocksize;
+        std::size_t vir_blocksize = cc_in.HasMember("VirBlockSize") ? cc_in["VirBlockSize"].GetInt() : mo_blocksize;
+
+        tre = std::make_shared<TRange1Engine>(occ / 2, all, occ_blocksize, vir_blocksize, n_frozen_core);
 
         auto tr_0 = Xab.trange().data().back();
         auto tr_all = tre->get_all_tr1();
         auto tr_i0 = tre->get_occ_tr1();
         auto tr_vir = tre->get_vir_tr1();
 
-        tcc::utility::print_par(world, "Block Size in MO     ", mo_blocksize, "\n");
+        tcc::utility::print_par(world, "Block Size in Occupied     ", occ_blocksize, "\n");
         tcc::utility::print_par(world, "TiledRange1 Occupied ", tr_i0, "\n");
         tcc::utility::print_par(world, "Average: ", cc::average_blocksize(tr_i0), "\n");
         auto min_max = cc::minmax_blocksize(tr_i0);
         tcc::utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
 
 
+        tcc::utility::print_par(world, "Block Size in Virtual     ", occ_blocksize, "\n");
         tcc::utility::print_par(world, "TiledRange1 Virtual  ", tr_vir, "\n");
         tcc::utility::print_par(world, "Average: ", cc::average_blocksize(tr_vir), "\n");
         min_max = cc::minmax_blocksize(tr_vir);

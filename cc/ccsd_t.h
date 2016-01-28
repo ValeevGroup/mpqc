@@ -112,7 +112,7 @@ namespace mpqc{
                 std::size_t b_increase = increase;
                 std::size_t c_increase = increase;
 
-                std::size_t block_size = this->trange1_engine_->get_block_size();
+                std::size_t block_size = this->trange1_engine_->get_occ_block_size();
                 std::size_t n_blocks = increase*increase*increase*n_tr_occ*n_tr_occ*n_tr_occ;
                 double mem = (n_blocks*std::pow(block_size,6)*8)/(std::pow(1024.0,3));
 

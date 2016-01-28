@@ -15,13 +15,13 @@ namespace mpqc {
 
     public:
 
-        TRange1Engine() : occ_(0ul), all_(0ul), vir_(0ul), block_size_(0ul),
+        TRange1Engine() : occ_(0ul), all_(0ul), vir_(0ul), occ_block_size_(0ul), vir_block_size_(0ul),
                           nfrozen_(0ul),
                           tr_occupied_(), tr_virtual_(), tr_all_() { }
 
         TRange1Engine(const std::size_t occ, const std::size_t all,
-                      const std::size_t block_size, const std::size_t nfrozen=0ul)
-                : occ_(occ), all_(all), vir_(all - occ), block_size_(block_size), nfrozen_(nfrozen)
+                      const std::size_t occ_block_size, const std::size_t vir_block_size, const std::size_t nfrozen=0ul)
+                : occ_(occ), all_(all), vir_(all - occ), occ_block_size_(occ_block_size), vir_block_size_(vir_block_size), nfrozen_(nfrozen)
         {
             init();
         }
@@ -48,7 +48,9 @@ namespace mpqc {
 
         std::size_t get_nfrozen() const { return nfrozen_;}
 
-        std::size_t get_block_size() const {return block_size_;}
+        std::size_t get_occ_block_size() const {return occ_block_size_;}
+
+        std::size_t get_vir_block_size() const {return vir_block_size_;}
 
         // get the number of blocks in tr_occupied_
         std::size_t get_occ_blocks() const { return occ_blocks_; }
@@ -79,7 +81,8 @@ namespace mpqc {
         // number of virtual orbitals
         std::size_t vir_;
 
-        std::size_t block_size_;
+        std::size_t occ_block_size_;
+        std::size_t vir_block_size_;
 
         // number of frozen orbitals
         std::size_t nfrozen_;
@@ -100,7 +103,7 @@ namespace mpqc {
 
 
     TA::TiledRange1 TRange1Engine::tr_occupied() {
-        std::size_t block_size = block_size_;
+        std::size_t block_size = occ_block_size_;
         std::size_t actual_occ = get_actual_occ();
         std::vector<std::size_t> blocks;
         blocks.push_back(0);
@@ -122,7 +125,7 @@ namespace mpqc {
     }
 
     TA::TiledRange1 TRange1Engine::tr_virtual() {
-        std::size_t block_size = block_size_;
+        std::size_t block_size = vir_block_size_;
         std::vector<std::size_t> blocks;
         blocks.push_back(0);
         for (std::size_t i = block_size; i < vir_; i += block_size) {
@@ -145,7 +148,7 @@ namespace mpqc {
     TA::TiledRange1 TRange1Engine::tr_all() {
 
         // occ part
-        std::size_t block_size = block_size_;
+        std::size_t block_size = occ_block_size_;
         std::size_t actual_occ = get_actual_occ();
         std::vector<std::size_t> blocks;
         blocks.push_back(0);
@@ -162,6 +165,7 @@ namespace mpqc {
         }
 
         //vir part
+        block_size = vir_block_size_;
         std::size_t actual_all = get_actual_all();
         for (std::size_t i = actual_occ + block_size; i < actual_all; i += block_size) {
             blocks.push_back(i);

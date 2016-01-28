@@ -24,6 +24,8 @@ namespace mpqc {
 
         // Options
         // BlockSize = int, control the block size in MO, default 16
+        // OccBlockSize = int, control the block size in Occ, overide BlockSize
+        // VirBlockSize = int, control the block size in Vir, overide BlockSize
         // FrozenCore = bool, control if use frozen core, default False
         // Direct = bool , control if use direct approach, default True
         // DIIS_ndi = int, control the number of data sets to retain, default is 5

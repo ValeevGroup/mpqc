@@ -201,15 +201,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
         cc_in = get_nested(in, "CCSD(T)");
     }
 
-    if (!in.HasMember("xyz file") || !in.HasMember("number of clusters")
-        || !cc_in.HasMember("BlockSize")) {
+    if (!in.HasMember("xyz file") || !in.HasMember("number of clusters")) {
         if (world.rank() == 0) {
             std::cout << "At a minimum your input file must provide\n";
             std::cout << "\"xyz file\", which is path to an xyz input\n";
             std::cout << "\"number of clusters\", which is the number of "
                          "clusters in the obs\n";
-            std::cout << "\"mo block size\", which is the block size for MO "
-                         "orbitals\n";
         }
     }
 
@@ -472,14 +469,21 @@ int try_main(int argc, char *argv[], madness::World &world) {
             screen_option = 2;
         }
 
-        auto time0 = tcc_time::now();
-        lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4,screen_option);
-        auto time1 = tcc_time::now();
-        auto duration = tcc_time::duration_in_s(time0,time1);
-        if(world.rank() == 0){
-            std::cout << "Time to initialize direct two electron sparse integral: " << duration << std::endl;
 
+        auto direct = cc_in.HasMember("Direct") ? cc_in["Direct"].GetBool(): true;
+
+        if(direct){
+
+            auto time0 = tcc_time::now();
+            lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4,screen_option);
+            auto time1 = tcc_time::now();
+            auto duration = tcc_time::duration_in_s(time0,time1);
+            if(world.rank() == 0){
+                std::cout << "Time to initialize direct two electron sparse integral: " << duration << std::endl;
+
+            }
         }
+
         intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>>
                 (Ci, Cv, Xab, lazy_two_electron_int);
 //        }

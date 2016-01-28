@@ -430,7 +430,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         tcc::utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
 
 
-        tcc::utility::print_par(world, "Block Size in Virtual     ", occ_blocksize, "\n");
+        tcc::utility::print_par(world, "Block Size in Virtual     ", vir_blocksize, "\n");
         tcc::utility::print_par(world, "TiledRange1 Virtual  ", tr_vir, "\n");
         tcc::utility::print_par(world, "Average: ", cc::average_blocksize(tr_vir), "\n");
         min_max = cc::minmax_blocksize(tr_vir);

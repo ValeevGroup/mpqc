@@ -40,22 +40,22 @@ namespace mpqc {
                                 const std::shared_ptr<integrals::Screener> screen)
                     : pool_(pool), shells_(cluster_shells), screener_(screen) { }
 
-            void set_pool(const std::shared_ptr<EnginePool> &pool){
+            void set_pool(const std::shared_ptr<EnginePool> &pool) {
                 pool_ = pool;
             }
 
-            void set_shell(const std::shared_ptr<std::vector<ShellVec>> &cluster_shells){
+            void set_shell(const std::shared_ptr<std::vector<ShellVec>> &cluster_shells) {
                 shells_ = cluster_shells;
             }
 
-            void set_screener(const std::shared_ptr<integrals::Screener> & screen) {
+            void set_screener(const std::shared_ptr<integrals::Screener> &screen) {
                 screener_ = screen;
             }
 
 // return a tile of integral in chemical notation
             // (block1 block2| block3 block4)
-            TA::Tensor <double> compute(const TA::Range &r,
-                                        const std::vector<std::size_t> &index) {
+            TA::Tensor<double> compute(const TA::Range &r,
+                                       const std::vector<std::size_t> &index) {
 
                 // assert size of index is 4
                 assert(index.size() == 4);
@@ -72,7 +72,7 @@ namespace mpqc {
                 array_shells[2] = &(*shells_)[index[2]];
                 array_shells[3] = &(*shells_)[index[3]];
 
-                auto tile = integrals::detail::integral_kernel(engine,std::move(range),array_shells, *screener_);
+                auto tile = integrals::detail::integral_kernel(engine, std::move(range), array_shells, *screener_);
 
                 return tile;
             }
@@ -83,91 +83,98 @@ namespace mpqc {
             std::shared_ptr<integrals::Screener> screener_;
         };
 
-    }
 
+        // IntegralGenerator for two electron AO integrals, use to work with LazyIntegral
+        // it used three center integral for generation of integrals
+        // Very slow when using multiple mpi process
+        template<typename Policy>
+        class TwoElectronIntDFGenerator {
 
-    // this part of code is not used and tested!
-    // 2015 Septemper Chong Peng
-    // IntegralGenerator for two electron AO integrals, use to work with LazyIntegral
-    // it used three center integral for generation of integrals
-    //
-    template <typename Policy>
-    class TwoElectronIntDFGenerator{
+        public:
 
-    public:
+            typedef TA::DistArray <TA::TensorD, Policy> TArray;
 
-        typedef TA::Array <double, 3, TA::Tensor<double>, Policy> TArray3;
-        typedef TA::Array <double, 4, TA::Tensor<double>, Policy> TArray4;
+            TwoElectronIntDFGenerator() = default;
 
-        TwoElectronIntDFGenerator() = default;
+            TwoElectronIntDFGenerator(TwoElectronIntDFGenerator const &) = default;
 
-        TwoElectronIntDFGenerator(TwoElectronIntDFGenerator const &) = default;
-
-        TwoElectronIntDFGenerator(const TArray3& Xpq): Xpq_(Xpq)
-        {
-            Xlobound_ = Xpq.trange().data().front().tiles().first;
-            Xupbound_ = Xpq.trange().data().front().tiles().second;
-        }
-
-
-        TwoElectronIntDFGenerator &operator=(
-                TwoElectronIntDFGenerator const &) = default;
-
-
-        // use chemical notation
-        // (pq|rs)
-        TA::Tensor<double> compute(const TA::Range &r,
-                                   const std::vector<std::size_t> &index){
-            // assert size of index is 4
-            assert(index.size() == 4);
-            // create the tile
-            TA::Tensor <double> tile(r);
-
-            //construct lowbound and upbound
-            std::vector<std::size_t> bralow;
-            std::vector<std::size_t> braup;
-            std::vector<std::size_t> ketlow;
-            std::vector<std::size_t> ketup;
-
-            bralow.reserve(3);
-            ketlow.reserve(3);
-            braup.reserve(3);
-            ketup.reserve(3);
-
-            // X dimension is all tiles
-            bralow[0] = Xlobound_;
-            ketlow[0] = Xlobound_;
-            braup[0] = Xupbound_;
-            ketup[0] = Xupbound_;
-
-            for(auto i = 1; i < 3; ++i){
-                bralow[i] = index[i-1];
-                ketlow[i] = index[i+1];
-                braup[i] = bralow[i] + 1;
-                ketlow[i] = ketlow[i] + 1;
+            TwoElectronIntDFGenerator(const TArray &Xpq) : Xpq_(Xpq) {
+                Xlobound_ = Xpq.trange().data().front().tiles().first;
+                Xupbound_ = Xpq.trange().data().front().tiles().second;
             }
 
-            // do the block contraction
-            TArray4 ao_block;
-            ao_block("p,q,r,s") = Xpq_("X,p,q").block(bralow,braup)*Xpq_("X,r,s").block(ketlow,ketup);
 
-            // get the tile
-            auto future_tile = ao_block.find({0,0,0,0});
-            tile = future_tile.get();
-            return tile;
+            TwoElectronIntDFGenerator &operator=(
+                    TwoElectronIntDFGenerator const &) = default;
 
-        }
 
-    private:
-        // three center integral
-        TArray3 Xpq_;
+            void set(const TArray &Xpq) {
+                Xpq_ = Xpq;
+                Xlobound_ = Xpq.trange().data().front().tiles().first;
+                Xupbound_ = Xpq.trange().data().front().tiles().second;
+            }
 
-        // lowbound for X, should be 0
-        std::size_t Xlobound_;
-        // upbound for X, should be the max
-        std::size_t Xupbound_;
-    };
+            // use chemical notation
+            // (pq|rs)
+            TA::Tensor<double> compute(const TA::Range &r,
+                                       const std::vector<std::size_t> &index) {
+                // assert size of index is 4
+                assert(index.size() == 4);
+                // create the tile
+                TA::Tensor<double> tile(r);
 
+                //construct lowbound and upbound
+                std::array<std::size_t,3> bralow;
+                std::array<std::size_t,3> braup;
+                std::array<std::size_t,3> ketlow;
+                std::array<std::size_t,3> ketup;
+
+                // X dimension is all tiles
+                bralow[0] = Xlobound_;
+                ketlow[0] = Xlobound_;
+                braup[0] = Xupbound_;
+                ketup[0] = Xupbound_;
+
+
+                bralow[1] = index[0];
+                bralow[2] = index[1];
+                ketlow[1] = index[2];
+                ketlow[2] = index[3];
+
+                braup[1] = index[0] +1;
+                braup[2] = index[1] +1;
+                ketup[1] = index[2] +1;
+                ketup[2] = index[3] +1;
+
+//                for (auto i = 1; i < 3; ++i) {
+//                    bralow[i] = index[i - 1];
+//                    ketlow[i] = index[i + 1];
+//                    braup[i] = bralow[i] + 1;
+//                    ketlow[i] = ketlow[i] + 1;
+//                }
+
+                // do the block contraction
+                TArray ao_block;
+                ao_block("p,q,r,s") = Xpq_("X,p,q").block(bralow, braup) * Xpq_("X,r,s").block(ketlow, ketup);
+
+                // get the tile
+                std::vector<std::size_t> first {0, 0, 0, 0};
+                auto future_tile = ao_block.find(first);
+                tile = future_tile.get();
+                return tile;
+
+            }
+
+        private:
+            // three center integral
+            TArray Xpq_;
+
+            // lowbound for X, should be 0
+            std::size_t Xlobound_;
+            // upbound for X, should be the max
+            std::size_t Xupbound_;
+        };
+    }
 }
 
 #endif //TILECLUSTERCHEM_INTEGRAL_GENERATOR_H

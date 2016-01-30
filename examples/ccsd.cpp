@@ -227,6 +227,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         // Get necessary info
         std::string mol_file = in["xyz file"].GetString();
+
+        std::string ghost_atoms = in.HasMember("GhostAtoms") ? in["GhostAtoms"].GetString() : "";
+
+
         int nclusters = in["number of clusters"].GetInt();
         std::size_t mo_blocksize = cc_in["BlockSize"].GetInt();
         std::size_t ao_blocksize = in.HasMember("AOBlockSize") ? in["AOBlockSize"].GetInt(): mo_blocksize;
@@ -255,22 +259,25 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                  ? cc_in["FrozenCore"].GetBool()
                                  : false;
 
+        TiledArray::SparseShape<float>::threshold(threshold);
+
+        auto mol = mpqc::molecule::read_xyz(mol_file);
+        auto charge = 0;
+        auto occ = mol.occupation(charge);
+        auto repulsion_energy = mol.nuclear_repulsion();
+
+
         if (world.rank() == 0) {
             std::cout << "Mol file is " << mol_file << std::endl;
+            tcc::utility::print_file(world, mol_file);
             std::cout << "basis is " << basis_name << std::endl;
             std::cout << "df basis is " << df_basis_name << std::endl;
             std::cout << "Using " << nclusters << " clusters"
                       << std::endl;
         }
 
-        TiledArray::SparseShape<float>::threshold(threshold);
         tcc::utility::print_par(world, "Sparse threshold is ",
                            TiledArray::SparseShape<float>::threshold(), "\n");
-
-        auto mol = mpqc::molecule::read_xyz(mol_file);
-        auto charge = 0;
-        auto occ = mol.occupation(charge);
-        auto repulsion_energy = mol.nuclear_repulsion();
 
         tcc::utility::print_par(world, "Nuclear repulsion_energy = ",
                            repulsion_energy, "\n");
@@ -278,7 +285,34 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         world.gop.fence();
 
-        auto clustered_mol = mpqc::molecule::kmeans(mpqc::molecule::read_xyz(mol_file).clusterables(), nclusters);
+        // use clustered_mol to generate basis
+        molecule::Molecule clustered_mol{};
+        if(!ghost_atoms.empty()){
+            auto ghost_molecue = mpqc::molecule::read_xyz(ghost_atoms);
+            auto ghost_elements = ghost_molecue.clusterables();
+
+            if (world.rank() == 0){
+                std::cout << "Ghost Atom file: " << ghost_atoms << std::endl;
+                tcc::utility::print_file(world,ghost_atoms);
+            }
+
+            auto mol_elements = mol.clusterables();
+
+            mol_elements.insert(mol_elements.end(),ghost_elements.begin(), ghost_elements.end());
+
+            clustered_mol = mpqc::molecule::kmeans(mol_elements, nclusters);
+
+            clustered_mol.set_charge(mol.charge());
+            clustered_mol.set_mass(mol.mass());
+
+        }
+        else{
+
+            if (world.rank() == 0){
+                std::cout << "Ghost Atom file: None" << std::endl;
+            }
+            clustered_mol = mpqc::molecule::kmeans(mol.clusterables(), nclusters);
+        }
 
         mpqc::basis::BasisSet bs{basis_name};
         mpqc::basis::BasisSet df_bs{df_basis_name};
@@ -323,14 +357,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
         const auto bs_array = tcc::utility::make_array(basis, basis);
 
         // Overlap ints
-        auto overlap_e = ints::make_1body_shr_pool("overlap", basis, clustered_mol);
+        auto overlap_e = ints::make_1body_shr_pool("overlap", basis, mol);
         auto S = ints::sparse_integrals(world, overlap_e, bs_array);
 
         // Overlap ints
-        auto kinetic_e = ints::make_1body_shr_pool("kinetic", basis, clustered_mol);
+        auto kinetic_e = ints::make_1body_shr_pool("kinetic", basis, mol);
         auto T = ints::sparse_integrals(world, kinetic_e, bs_array);
 
-        auto nuclear_e = ints::make_1body_shr_pool("nuclear", basis, clustered_mol);
+        auto nuclear_e = ints::make_1body_shr_pool("nuclear", basis, mol);
         auto V = ints::sparse_integrals(world, nuclear_e, bs_array);
 
         decltype(T) H;
@@ -357,7 +391,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         auto soad0 = tcc::utility::time::now();
         auto F_soad
-                = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
+                = scf::fock_from_soad(world, mol, basis, eri_e, H);
 
         auto soad1 = tcc::utility::time::now();
         auto soad_time = tcc::utility::time::duration_in_s(soad0, soad1);

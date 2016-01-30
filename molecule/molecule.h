@@ -43,6 +43,16 @@ class Molecule {
   public:
     Molecule(std::vector<AtomBasedClusterable> c);
 
+    Molecule() = default;
+
+    void set_mass(double mass) {
+        Molecule::mass_ = mass;
+    }
+
+    void set_charge(int64_t charge) {
+        Molecule::charge_ = charge;
+    }
+
     int64_t charge() const { return charge_; }
     double mass() const { return mass_; }
 

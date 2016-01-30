@@ -3,7 +3,9 @@
 #define TCC_UTLITY_PARALLELPRINT_H
 
 #include <tuple>
+#include <string>
 #include <iostream>
+#include <fstream>
 #include "../include/tiledarray.h"
 
 namespace tcc {
@@ -43,6 +45,21 @@ void print_par(madness::World &world, Args&&... args) {
     if (world.rank() == 0) {
         std::cout << t << std::flush;
     }
+}
+
+void print_file(madness::World &world, const std::string& file){
+
+    if (world.rank() == 0){
+        std::ifstream file_stream(file);
+
+        std::string line;
+        while(getline(file_stream,line)){
+            std::cout << '\t' << line << std::endl;
+        }
+
+        file_stream.close();
+    }
+
 }
 
 } // namespace utility

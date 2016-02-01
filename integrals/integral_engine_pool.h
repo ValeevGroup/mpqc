@@ -36,9 +36,6 @@ class EnginePool {
     /// Get reference to thread local engine.
     E &local() { return engines_.local(); }
 
-    /// set precision of the template engine
-    void set_precision(double x){engine_.set_precision(x);}
-
   private:
     E engine_;
     tbb::enumerable_thread_specific<E> engines_;

@@ -302,7 +302,7 @@ inline MatrixD four_center_Q(madness::World &world, ShrPool<E> const &eng,
         const auto n2 = sh0->size() * sh1->size();
         const auto bmap = Eig::Map<const MatrixD>(buf, n2, n2);
 
-        // eng->local().set_precision(std::numeric_limits<double>::epsilon());
+        eng->local().set_precision(std::numeric_limits<double>::epsilon());
 
         *Q_val = std::sqrt(bmap.lpNorm<2>());
     };

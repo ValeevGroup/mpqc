@@ -133,6 +133,7 @@ struct JobSummary {
     double avg_occ_ri_k_time = 0;
     double avg_k_time = 0;
     double avg_loc_time = 0;
+    double avg_cluster_time = 0;
 
     // Storages
     double w_fully_dense_storage = 0;
@@ -189,6 +190,9 @@ struct JobSummary {
         std::cout << "avg k time, ";
         std::cout << "avg occ-ri k time, ";
 
+        std::cout << "avg localization time, ";
+        std::cout << "avg clustering time, ";
+
         std::cout << "eri3 fully dense storage, ";
         std::cout << "eri3 sparse only, ";
         std::cout << "eri3 sparse + clr storage, ";
@@ -233,6 +237,9 @@ struct JobSummary {
         std::cout << avg_w_time << ", ";
         std::cout << avg_k_time << ", ";
         std::cout << avg_occ_ri_k_time << ", ";
+
+        std::cout << avg_loc_time << ", ";
+        std::cout << avg_cluster_time << ", ";
 
         std::cout << eri3_fully_dense_storage << ", ";
         std::cout << eri3_sparse_only_storage << ", ";
@@ -343,10 +350,8 @@ class ThreeCenterScf {
     array_type K_;
     array_type D_;
     array_type C_;
-    array_type L_invV_;
 
-    darray_type dL_invV_;
-    darray_type dV_inv_;
+    darray_type dV_inv_oh_;
     darray_type dH_;
 
     std::vector<array_type> r_xyz_ints_;
@@ -359,6 +364,7 @@ class ThreeCenterScf {
     std::vector<double> scf_times_;
     std::vector<double> w_sparse_store_;
     std::vector<double> w_sparse_clr_store_;
+    std::vector<double> clustering_times_;
     std::vector<double> localization_times_;
 
     int64_t occ_;
@@ -367,9 +373,6 @@ class ThreeCenterScf {
     double final_ediff_error_;
     double final_energy_;
     double w_full_storage_;
-
-    double recompress_w_time_;
-    double clr_w_no_recompress_;
 
     double clr_thresh_;
     double exchange_energy_;
@@ -391,23 +394,30 @@ class ThreeCenterScf {
         auto loc0 = tcc::utility::time::now();
         auto U = mpqc::scf::BoysLocalization{}(C_, r_xyz_ints_);
         C_("mu,i") = C_("mu,k") * U("k,i");
-        auto obs_ntiles = C_.trange().tiles().extent()[0];
-        tcc::scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
         F_.get_world().gop.fence();
         auto loc1 = tcc::utility::time::now();
         auto loc_time = tcc::utility::time::duration_in_s(loc0, loc1);
         localization_times_.push_back(loc_time);
 
+        auto cluster0 = tcc::utility::time::now();
+        auto obs_ntiles = C_.trange().tiles().extent()[0];
+        tcc::scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
+        F_.get_world().gop.fence();
+        auto cluster1 = tcc::utility::time::now();
+        auto clut_time = tcc::utility::time::duration_in_s(cluster0, cluster1);
+        clustering_times_.push_back(clut_time);
+
         D_("i,j") = C_("i,k") * C_("j,k");
     }
 
-    template <typename Integral>
-    void form_fock(Integral const &eri3) {
+    template <typename Integral, typename Array>
+    void form_fock(Integral const &eri3, Array const &B) {
         auto &world = F_.get_world();
 
         darray_type dH_ = TA::to_new_tile_type(H_, to_dtile(clr_thresh_));
         darray_type dS_ = TA::to_new_tile_type(S_, to_dtile(clr_thresh_));
         darray_type dC_ = TA::to_new_tile_type(C_, to_dtile(clr_thresh_));
+        darray_type dD_ = TA::to_new_tile_type(D_, to_dtile(clr_thresh_));
 
         auto get_time = [&]() {
             world.gop.fence();
@@ -422,16 +432,8 @@ class ThreeCenterScf {
 
         auto w0 = get_time();
         DArray<3, dtile, SpPolicy> W;
-        W("X, mu, i") = eri3("X, mu, nu") * dC_("nu, i");
-        auto w1 = get_time();
-        w_times_.push_back(calc_time(w0, w1));
+        W("X, mu, i") = B("X, mu, nu") * dC_("nu, i");
 
-        auto w_store = storage_for_array(W);
-        clr_w_no_recompress_ = w_store[2];
-
-        TA::Range range;
-
-        auto wr0 = get_time();
         if (clr_thresh_ != 0 && tcc::tensor::detail::recompress) {
             TA::foreach_inplace(
                   W,
@@ -461,17 +463,20 @@ class ThreeCenterScf {
         } else {
             W.truncate();
         }
-        auto wr1 = get_time();
-        recompress_w_time_ = calc_time(wr0, wr1);
 
-        w_store = storage_for_array(W);
+        auto w1 = get_time();
+        w_times_.push_back(calc_time(w0, w1));
+
+        auto w_store = storage_for_array(W);
         w_sparse_store_.push_back(w_store[1]);
         w_sparse_clr_store_.push_back(w_store[2]);
         w_full_storage_ = w_store[0];
 
         darray_type J;
         auto j0 = get_time();
-        J("mu, nu") = eri3("X,mu,nu") * (W("X,rho,i") * dC_("rho,i"));
+        J("mu, nu") = eri3("Y,mu,nu")
+                      * (dV_inv_oh_("Y,Z")
+                         * (dV_inv_oh_("Z,X") * (eri3("X,r,s") * dD_("r,s"))));
         auto j1 = get_time();
         j_times_.push_back(calc_time(j0, j1));
 
@@ -501,30 +506,19 @@ class ThreeCenterScf {
 
   public:
     ThreeCenterScf(array_type const &H, array_type const &F_guess,
-                   array_type const &S, array_type const &L_invV,
+                   array_type const &S, array_type const &V_inv_oh,
                    std::vector<array_type> const &rxyz, int64_t occ, double rep,
                    double clr_thresh)
             : H_(H),
               F_(F_guess),
               S_(S),
-              L_invV_(L_invV),
               r_xyz_ints_(rxyz),
               occ_(occ),
               repulsion_(rep),
               clr_thresh_(clr_thresh) {
-        dL_invV_
-              = TA::to_new_tile_type(L_invV_, to_dtile_compress(clr_thresh_));
-        auto ll_sizes = storage_for_array(dL_invV_);
-        std::cout << "L_inv storage:"
-                  << "\n\tFull: " << ll_sizes[0]
-                  << "\n\tSparse Only: " << ll_sizes[1]
-                  << "\n\tSparse + CLR: " << ll_sizes[2] << std::endl;
 
-        decltype(L_invV_) V_inv;
-        V_inv("X,Z") = L_invV_("Y,X") * L_invV_("Y,Z");
-        dV_inv_ = TA::to_new_tile_type(V_inv, to_dtile_compress(clr_thresh_));
-
-        auto dl_sizes = storage_for_array(dV_inv_);
+        dV_inv_oh_ = TA::to_new_tile_type(V_inv_oh, to_dtile(clr_thresh_));
+        auto dl_sizes = storage_for_array(dV_inv_oh_);
         std::cout << "V_inv storage:"
                   << "\n\tFull: " << dl_sizes[0]
                   << "\n\tSparse Only: " << dl_sizes[1]
@@ -533,8 +527,9 @@ class ThreeCenterScf {
         compute_density(occ_);
     }
 
-    template <typename Integral>
-    void solve(int64_t max_iters, double thresh, Integral const &eri3) {
+    template <typename Integral, typename Array>
+    void solve(int64_t max_iters, double thresh, Integral const &eri3,
+               Array const &B) {
         auto iter = 0;
         auto error = std::numeric_limits<double>::max();
         auto rms_error = std::numeric_limits<double>::max();
@@ -545,7 +540,7 @@ class ThreeCenterScf {
                && (thresh / 100.0 < error && thresh / 100.0 < rms_error)) {
             auto s0 = tcc_time::now();
             F_.get_world().gop.fence();
-            form_fock(eri3);
+            form_fock(eri3, B);
 
             auto current_energy = energy();
             error = std::abs(old_energy - current_energy);
@@ -577,14 +572,13 @@ class ThreeCenterScf {
                       << " RMS error: " << rms_error;
             std::cout
                   << "\n\tW time: " << w_times_.back()
-                  << "\n\tW recompress time: " << recompress_w_time_
                   << "\n\tJ time: " << j_times_.back()
                   << "\n\tocc-RI K time: " << occ_k_times_.back()
                   << "\n\tK time: " << k_times_.back()
                   << "\n\titer time: " << scf_times_.back()
                   << "\n\tW sparse only storage: " << w_sparse_store_.back()
-                  << "\n\tW sparse clr(no recompress): " << clr_w_no_recompress_
                   << "\n\tW sparse clr storage: " << w_sparse_clr_store_.back()
+                  << "\n\tClustering time: " << clustering_times_.back()
                   << "\n\tLocalization time: " << localization_times_.back()
                   << std::endl;
             if (iter == 0) {
@@ -624,6 +618,7 @@ class ThreeCenterScf {
         js.avg_k_time = avg(k_times_);
         js.avg_occ_ri_k_time = avg(occ_k_times_);
         js.avg_loc_time = avg(localization_times_);
+        js.avg_cluster_time = avg(clustering_times_);
 
         // Storages
         js.avg_w_sparse_only_storage = avg(w_sparse_store_);
@@ -751,20 +746,23 @@ int main(int argc, char *argv[]) {
 
     const auto dfbs_array = tcc::utility::make_array(df_basis, df_basis);
     auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
-    eri_e->set_precision(0.);
 
-    decltype(H) L_inv;
+    decltype(H) L_inv, V_inv_oh;
     {
         auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
         auto V_eig = tcc::array_ops::array_to_eigen(Vmetric);
 
         MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
         MatrixD L_inv_eig = Leig.inverse();
-        // Eig::SelfAdjointEigenSolver<MatrixD> es(V_eig);
-        // MatrixD L_inv_eig = es.operatorInverseSqrt();
+
+        Eig::SelfAdjointEigenSolver<MatrixD> es(V_eig);
+        MatrixD V_inv_oh_eig = es.operatorInverseSqrt();
 
         auto tr_V = Vmetric.trange().data()[0];
         L_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
+                                                            tr_V, tr_V);
+        V_inv_oh
+              = tcc::array_ops::eigen_to_array<TA::TensorD>(world, V_inv_oh_eig,
                                                             tr_V, tr_V);
     }
 
@@ -820,120 +818,31 @@ int main(int argc, char *argv[]) {
             return tcc::tensor::Tile<decltype(dc_tile)>(range,
                                                         std::move(dc_tile));
         };
+
+        auto decomp_3d_no_compress = [&](TA::TensorD &&t) {
+            auto range = t.range();
+
+            auto const extent = range.extent();
+            const auto i = extent[0];
+            const auto j = extent[1];
+            const auto k = extent[2];
+            auto local_range = TA::Range{i, j, k};
+
+            auto tensor = TA::TensorD(local_range, t.data());
+
+            tcc::tensor::DecomposedTensor<double> dc_tile(0.0,
+                                                          std::move(tensor));
+
+            return tcc::tensor::Tile<decltype(dc_tile)>(range,
+                                                        std::move(dc_tile));
+        };
+
         if (!use_direct_ints) {
-            world.gop.fence();
-            auto int0 = tcc::utility::time::now();
-            auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array,
-                                               shr_screen, decomp_3d);
-
-            world.gop.fence();
-            auto int1 = tcc::utility::time::now();
-            auto eri3_time = tcc::utility::time::duration_in_s(int0, int1);
-            std::cout << "Eri3 Integral time: " << eri3_time << std::endl;
-            auto eri3_storage = storage_for_array(eri3);
-            std::cout << "Eri3 Integral Storage:\n";
-            std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
-            std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
-            std::cout << "\tCLR: " << eri3_storage[2] << "\n";
-
-            auto dL_inv = TA::to_new_tile_type(L_inv, to_dtile(clr_threshold));
-
-            // Set recompression on for this 
-            world.gop.fence();
-
-            auto old_compress = tcc::tensor::detail::recompress;
-            tcc::tensor::detail::recompress = true;
-
-            world.gop.fence();
-
-            auto B0 = tcc::utility::time::now();
-
-            eri3("X,mu,nu") = dL_inv("X,Y") * eri3("Y,mu,nu");
-            if (clr_threshold != 0) {
-                TA::foreach_inplace(
-                      eri3,
-                      [](tcc::tensor::
-                               Tile<tcc::tensor::DecomposedTensor<double>> &
-                                     t_tile) {
-                          auto &t = t_tile.tile();
-                          auto input_norm = norm(t);
-
-                          auto compressed_norm = input_norm;
-                          if (t.cut() != 0.0) {
-                              if (t.ndecomp() == 1) {
-                                  auto test = tcc::tensor::algebra::
-                                        two_way_decomposition(t);
-                                  if (!test.empty()) {
-                                      t = test;
-                                      compressed_norm = norm(t);
-                                  }
-                              } else {
-                                  tcc::tensor::algebra::recompress(t);
-                                  compressed_norm = norm(t);
-                              }
-                          }
-
-                          // Both are always larger than or equal to the real
-                          // norm.
-                          return std::min(input_norm, compressed_norm);
-                      });
-            } else {
-                eri3.truncate();
-            }
-            world.gop.fence();
-            auto B1 = tcc::utility::time::now();
-            auto Btime = tcc::utility::time::duration_in_s(B0, B1);
-            std::cout << "B time = " << Btime << std::endl;
-            auto b_storage = storage_for_array(eri3);
-            std::cout << "B Storage:\n";
-            std::cout << "\tAll Full: " << b_storage[0] << "\n";
-            std::cout << "\tBlock Sparse Only: " << b_storage[1] << "\n";
-            std::cout << "\tCLR: " << b_storage[2] << "\n";
-
-            world.gop.fence();
-
-            // Reset recompression
-            tcc::tensor::detail::recompress = old_compress;
-
-            world.gop.fence();
-
-            ThreeCenterScf scf(H, F_soad, S, L_inv, r_xyz, occ / 2,
-                               repulsion_energy, clr_threshold);
-
-            scf.solve(30, 1e-11, eri3);
-
-            job_summary = scf.init_summary();
-
-            // Prepare for Dipole and MP2
-            Fao = scf.fock_matrix();
-
-            // Add eri3 info
-            job_summary.eri3_fully_dense_storage = eri3_storage[0];
-            job_summary.eri3_sparse_only_storage = eri3_storage[1];
-            job_summary.eri3_sparse_clr_storage = eri3_storage[2];
-
-            job_summary.B_fully_dense_storage = b_storage[0];
-            job_summary.B_sparse_only_storage = b_storage[1];
-            job_summary.B_sparse_clr_storage = b_storage[2];
-
-            job_summary.schwarz_threshold = schwarz_thresh;
-            job_summary.clr_threshold = clr_threshold;
-
-            job_summary.obs = basis_name;
-            job_summary.dfbs = df_basis_name;
-
-            job_summary.num_obs = nclusters;
-            job_summary.num_dfbs = df_nclusters;
-
-            job_summary.obs_nfuncs = basis.nfunctions();
-            job_summary.dfbs_nfuncs = df_basis.nfunctions();
+            std::cout << "Always use direct eri3 for now!\n";
+            return 0;
         }
         if (use_direct_ints) {
-            world.gop.fence();
-            auto int0 = tcc::utility::time::now();
-            auto eri3
-                  = ints::direct_sparse_integrals(world, eri_e, three_c_array,
-                                                  shr_screen, decomp_3d);
+
 
             using BTile
                   = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
@@ -942,8 +851,13 @@ int main(int argc, char *argv[]) {
             std::array<double, 3> b_storage;
             {
                 world.gop.fence();
+                auto int0 = tcc::utility::time::now();
+                auto eri3 = ints::direct_sparse_integrals(
+                      world, eri_e, three_c_array, shr_screen, decomp_3d);
+                world.gop.fence();
                 auto int1 = tcc::utility::time::now();
                 auto eri3_time = tcc::utility::time::duration_in_s(int0, int1);
+
                 std::cout << "Eri3 Integral time: " << eri3_time << std::endl;
                 eri3_storage = storage_for_array(eri3.array());
                 std::cout << "Eri3 Integral Storage:\n";
@@ -955,6 +869,9 @@ int main(int argc, char *argv[]) {
                       = TA::to_new_tile_type(L_inv, to_dtile(clr_threshold));
 
                 world.gop.fence();
+                auto old_compress = tcc::tensor::detail::recompress;
+                tcc::tensor::detail::recompress = true;
+
                 auto B0 = tcc::utility::time::now();
                 B("X,mu,nu") = dL_inv("X,Y") * eri3("Y,mu,nu");
                 if (clr_threshold != 0) {
@@ -990,6 +907,8 @@ int main(int argc, char *argv[]) {
                     B.truncate();
                 }
                 world.gop.fence();
+                tcc::tensor::detail::recompress = old_compress;
+
                 auto B1 = tcc::utility::time::now();
                 auto Btime = tcc::utility::time::duration_in_s(B0, B1);
                 std::cout << "B time = " << Btime << std::endl;
@@ -1001,10 +920,17 @@ int main(int argc, char *argv[]) {
             }
 
 
-            ThreeCenterScf scf(H, F_soad, S, L_inv, r_xyz, occ / 2,
+            ThreeCenterScf scf(H, F_soad, S, V_inv_oh, r_xyz, occ / 2,
                                repulsion_energy, clr_threshold);
 
-            scf.solve(30, 1e-11, B);
+
+            auto eri3 = ints::direct_sparse_integrals(world, eri_e,
+                                                      three_c_array, shr_screen,
+                                                      decomp_3d_no_compress);
+
+            world.gop.fence();
+
+            scf.solve(30, 1e-11, eri3, B);
 
             job_summary = scf.init_summary();
 

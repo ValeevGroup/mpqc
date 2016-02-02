@@ -430,6 +430,15 @@ class ThreeCenterScf {
             return tcc::utility::time::duration_in_s(a, b);
         };
 
+
+        darray_type J;
+        auto j0 = get_time();
+        J("mu, nu") = eri3("Y,mu,nu")
+                      * (dV_inv_oh_("Y,Z")
+                         * (dV_inv_oh_("Z,X") * (eri3("X,r,s") * dD_("r,s"))));
+        auto j1 = get_time();
+        j_times_.push_back(calc_time(j0, j1));
+
         auto w0 = get_time();
         DArray<3, dtile, SpPolicy> W;
         W("X, mu, i") = B("X, mu, nu") * dC_("nu, i");
@@ -464,6 +473,8 @@ class ThreeCenterScf {
             W.truncate();
         }
 
+        W("X,i,mu") = W("X,mu,i");
+
         auto w1 = get_time();
         w_times_.push_back(calc_time(w0, w1));
 
@@ -472,15 +483,6 @@ class ThreeCenterScf {
         w_sparse_clr_store_.push_back(w_store[2]);
         w_full_storage_ = w_store[0];
 
-        darray_type J;
-        auto j0 = get_time();
-        J("mu, nu") = eri3("Y,mu,nu")
-                      * (dV_inv_oh_("Y,Z")
-                         * (dV_inv_oh_("Z,X") * (eri3("X,r,s") * dD_("r,s"))));
-        auto j1 = get_time();
-        j_times_.push_back(calc_time(j0, j1));
-
-        W("X,i,mu") = W("X,mu,i");
 
         auto occk0 = get_time();
         darray_type K, Kij, Sc;

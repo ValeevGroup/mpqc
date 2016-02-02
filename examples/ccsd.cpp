@@ -9,7 +9,6 @@
 
 #include "../include/libint.h"
 #include "../include/tiledarray.h"
-#include "../include/btas.h"
 
 #include "../utility/make_array.h"
 #include "../utility/parallel_print.h"

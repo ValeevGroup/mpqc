@@ -8,6 +8,13 @@
 #pragma GCC diagnostic pop
 
 /////////////////////////////////////////////////////////
+// Madness FWD
+/////////////////////////////////////////////////////////
+namespace Madness {
+    class World;
+}
+
+/////////////////////////////////////////////////////////
 // TiledArray FWD
 /////////////////////////////////////////////////////////
 namespace TiledArray {
@@ -27,31 +34,26 @@ namespace libint2 {
     struct Shell;
 }
 
-
 /////////////////////////////////////////////////////////
 // mpqc FWD
 /////////////////////////////////////////////////////////
-namespace tcc {
-
+namespace mpqc {
 namespace tensor {
-
-template <typename T>
-class TilePimpl;
 
 template <typename T>
 class Tile;
 
-} // namespace tensor
-} // namespace tcc
+template <typename T>
+class DecomposedTensor;
 
-namespace mpqc {
+} // namespace tensor
+
 namespace integrals {
 
 template <typename E>
 class EnginePool;
 
 } // namespace integrals
-
 } // namespace mpqc
 
 #endif // TCC_COMMON_FWDDECL_H

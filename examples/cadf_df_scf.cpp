@@ -29,20 +29,15 @@
 #include "../scf/clusterd_coeffs.h"
 
 #include "../tensor/decomposed_tensor.h"
-#include "../tensor/decomposed_tensor_unary.h"
-#include "../tensor/decomposed_tensor_algebra.h"
-#include "../tensor/decomposed_tensor_gemm.h"
-#include "../tensor/decomposed_tensor_addition.h"
-#include "../tensor/decomposed_tensor_subtraction.h"
-#include "../tensor/decomposed_tensor_multiplication.h"
-#include "../tensor/tcc_tile.h"
+#include "../tensor/decomposed_tensor_nonintrusive_interface.h"
+#include "../tensor/mpqc_tile.h"
 
 #include <memory>
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 
-bool tcc::tensor::detail::recompress = true;
+bool tensor::detail::recompress = true;
 
 std::array<double, 3>
 storage_for_array(TA::DistArray<TA::TensorD, SpPolicy> const &a) {
@@ -86,7 +81,7 @@ storage_for_array(TA::DistArray<Tile, SpPolicy> const &a) {
         if (!a.is_zero(ord)) {
             sparse_a += size;
 
-            tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>
+            tensor::Tile<tensor::DecomposedTensor<double>>
                   wrapper_tile = a.find(ord).get();
 
             auto const &tile = wrapper_tile.tile();
@@ -266,7 +261,7 @@ class to_dtile {
     double clr_thresh_;
 
   public:
-    using dtile = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
     to_dtile(double clr_thresh) : clr_thresh_(clr_thresh) {}
 
     dtile operator()(TA::TensorD const &tile) {
@@ -280,7 +275,7 @@ class to_dtile {
         auto tensor = TA::TensorD(local_range, tile.data());
 
         auto new_tile
-              = tcc::tensor::DecomposedTensor<double>(clr_thresh_,
+              = tensor::DecomposedTensor<double>(clr_thresh_,
                                                       std::move(tensor));
 
         return dtile(range, std::move(new_tile));
@@ -291,7 +286,7 @@ class to_dtile_compress {
     double clr_thresh_;
 
   public:
-    using dtile = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
     to_dtile_compress(double clr_thresh) : clr_thresh_(clr_thresh) {}
 
     dtile operator()(TA::TensorD const &tile) {
@@ -305,11 +300,11 @@ class to_dtile_compress {
         auto tensor = TA::TensorD(local_range, tile.data());
 
         auto new_tile
-              = tcc::tensor::DecomposedTensor<double>(clr_thresh_,
+              = tensor::DecomposedTensor<double>(clr_thresh_,
                                                       std::move(tensor));
 
         if (clr_thresh_ != 0.0) {
-            auto test = tcc::tensor::algebra::two_way_decomposition(new_tile);
+            auto test = tensor::algebra::two_way_decomposition(new_tile);
             if (!test.empty()) {
                 new_tile = std::move(test);
             }
@@ -320,11 +315,11 @@ class to_dtile_compress {
 };
 
 class to_ta_tile {
-    using dtile = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
 
   public:
     TA::TensorD operator()(dtile const &t) const {
-        auto tensor = tcc::tensor::algebra::combine(t.tile());
+        auto tensor = tensor::algebra::combine(t.tile());
         auto range = t.range();
         return TA::Tensor<double>(range, tensor.data());
     }
@@ -333,7 +328,7 @@ class to_ta_tile {
 class ThreeCenterScf {
   private:
     using array_type = DArray<2, TA::TensorD, SpPolicy>;
-    using dtile = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
     using darray_type = DArray<2, dtile, SpPolicy>;
 
     array_type H_;
@@ -374,22 +369,22 @@ class ThreeCenterScf {
     double exchange_energy_;
 
     void compute_density(int64_t occ) {
-        auto F_eig = tcc::array_ops::array_to_eigen(F_);
-        auto S_eig = tcc::array_ops::array_to_eigen(S_);
+        auto F_eig = array_ops::array_to_eigen(F_);
+        auto S_eig = array_ops::array_to_eigen(S_);
 
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         decltype(S_eig) C = es.eigenvectors().leftCols(occ);
         auto tr_ao = S_.trange().data()[0];
 
-        auto tr_occ = tcc::scf::tr_occupied(1, occ);
-        dC_ = TA::to_new_tile_type(tcc::array_ops::eigen_to_array<TA::TensorD>(
+        auto tr_occ = scf::tr_occupied(1, occ);
+        dC_ = TA::to_new_tile_type(array_ops::eigen_to_array<TA::TensorD>(
                                          H_.get_world(), C, tr_ao, tr_occ),
                                    to_dtile(clr_thresh_));
 
         decltype(S_eig) D = C * C.transpose();
 
-        D_ = tcc::array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), D,
+        D_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), D,
                                                          tr_ao, tr_ao);
     }
 
@@ -399,13 +394,13 @@ class ThreeCenterScf {
 
         auto get_time = [&]() {
             world.gop.fence();
-            return tcc::utility::time::now();
+            return utility::time::now();
         };
 
         using tp = decltype(get_time());
 
         auto calc_time = [](tp const &a, tp const &b) {
-            return tcc::utility::time::duration_in_s(a, b);
+            return utility::time::duration_in_s(a, b);
         };
 
         array_type J;
@@ -418,7 +413,7 @@ class ThreeCenterScf {
 
         darray_type dD_ = TA::to_new_tile_type(D_, to_dtile(clr_thresh_));
 
-        using GTile = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+        using GTile = tensor::Tile<tensor::DecomposedTensor<double>>;
         DArray<3, GTile, SpPolicy> D_df;
         DArray<3, GTile, SpPolicy> F_df;
 
@@ -432,11 +427,11 @@ class ThreeCenterScf {
             std::cout << "D_df Sparse = " << storage[1] << std::endl;
             std::cout << "D_df CLR = " << storage[2] << std::endl;
 
-            if (clr_thresh_ != 0 && tcc::tensor::detail::recompress) {
+            if (clr_thresh_ != 0 && tensor::detail::recompress) {
                 TA::foreach_inplace(
                       D_df,
-                      [](tcc::tensor::
-                               Tile<tcc::tensor::DecomposedTensor<double>> &
+                      [](tensor::
+                               Tile<tensor::DecomposedTensor<double>> &
                                      t_tile) {
                           auto &t = t_tile.tile();
                           auto input_norm = norm(t);
@@ -444,14 +439,14 @@ class ThreeCenterScf {
                           auto compressed_norm = input_norm;
                           if (t.cut() != 0.0) {
                               if (t.ndecomp() == 1) {
-                                  auto test = tcc::tensor::algebra::
+                                  auto test = tensor::algebra::
                                         two_way_decomposition(t);
                                   if (!test.empty()) {
                                       t = test;
                                       compressed_norm = norm(t);
                                   }
                               } else {
-                                  tcc::tensor::algebra::recompress(t);
+                                  tensor::algebra::recompress(t);
                                   compressed_norm = norm(t);
                               }
                           }
@@ -500,11 +495,11 @@ class ThreeCenterScf {
             std::cout << "D_df Sparse = " << storage[1] << std::endl;
             std::cout << "D_df CLR = " << storage[2] << std::endl;
 
-            if (clr_thresh_ != 0 && tcc::tensor::detail::recompress) {
+            if (clr_thresh_ != 0 && tensor::detail::recompress) {
                 TA::foreach_inplace(
                       D_df,
-                      [](tcc::tensor::
-                               Tile<tcc::tensor::DecomposedTensor<double>> &
+                      [](tensor::
+                               Tile<tensor::DecomposedTensor<double>> &
                                      t_tile) {
                           auto &t = t_tile.tile();
                           auto input_norm = norm(t);
@@ -512,14 +507,14 @@ class ThreeCenterScf {
                           auto compressed_norm = input_norm;
                           if (t.cut() != 0.0) {
                               if (t.ndecomp() == 1) {
-                                  auto test = tcc::tensor::algebra::
+                                  auto test = tensor::algebra::
                                         two_way_decomposition(t);
                                   if (!test.empty()) {
                                       t = test;
                                       compressed_norm = norm(t);
                                   }
                               } else {
-                                  tcc::tensor::algebra::recompress(t);
+                                  tensor::algebra::recompress(t);
                                   compressed_norm = norm(t);
                               }
                           }
@@ -594,7 +589,7 @@ class ThreeCenterScf {
 
         while (iter < max_iters && (thresh < error || thresh < rms_error)
                && (thresh / 100.0 < error && thresh / 100.0 < rms_error)) {
-            auto s0 = tcc_time::now();
+            auto s0 = mpqc_time::now();
             F_.get_world().gop.fence();
             form_fock(eri3, C_df, G_df);
 
@@ -619,8 +614,8 @@ class ThreeCenterScf {
             compute_density(occ_);
 
             F_.get_world().gop.fence();
-            auto s1 = tcc_time::now();
-            scf_times_.push_back(tcc_time::duration_in_s(s0, s1));
+            auto s1 = mpqc_time::now();
+            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
 
 
             std::cout << "Iteration: " << (iter + 1)
@@ -730,7 +725,7 @@ int main(int argc, char *argv[]) {
 
     if (recompression_method == "nocompress") {
         std::cout << "Not using rounded addition." << std::endl;
-        tcc::tensor::detail::recompress = false;
+        tensor::detail::recompress = false;
     } else {
         std::cout << "Using rounded addition." << std::endl;
     }
@@ -784,7 +779,7 @@ int main(int argc, char *argv[]) {
 
     libint2::init();
 
-    const auto bs_array = tcc::utility::make_array(basis, basis);
+    const auto bs_array = utility::make_array(basis, basis);
 
     // Overlap ints
     auto overlap_e = ints::make_1body_shr_pool("overlap", basis, clustered_mol);
@@ -800,10 +795,10 @@ int main(int argc, char *argv[]) {
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
-    const auto dfbs_array = tcc::utility::make_array(df_basis, df_basis);
+    const auto dfbs_array = utility::make_array(df_basis, df_basis);
     auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
 
-    auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
+    auto three_c_array = utility::make_array(df_basis, basis, basis);
 
     auto decomp_3d = [&](TA::TensorD &&t) {
         auto range = t.range();
@@ -816,18 +811,18 @@ int main(int argc, char *argv[]) {
 
         auto tensor = TA::TensorD(local_range, t.data());
 
-        tcc::tensor::DecomposedTensor<double> dc_tile(clr_threshold,
+        tensor::DecomposedTensor<double> dc_tile(clr_threshold,
                                                       std::move(tensor));
 
         if (clr_threshold != 0.0) {
-            auto lr_tile = tcc::tensor::algebra::two_way_decomposition(dc_tile);
+            auto lr_tile = tensor::algebra::two_way_decomposition(dc_tile);
 
             if (!lr_tile.empty()) {
                 dc_tile = std::move(lr_tile);
             }
         }
 
-        return tcc::tensor::Tile<decltype(dc_tile)>(range, std::move(dc_tile));
+        return tensor::Tile<decltype(dc_tile)>(range, std::move(dc_tile));
     };
 
     auto decomp_3d_no_compress = [&](TA::TensorD &&t) {
@@ -841,9 +836,9 @@ int main(int argc, char *argv[]) {
 
         auto tensor = TA::TensorD(local_range, t.data());
 
-        tcc::tensor::DecomposedTensor<double> dc_tile(0.0, std::move(tensor));
+        tensor::DecomposedTensor<double> dc_tile(0.0, std::move(tensor));
 
-        return tcc::tensor::Tile<decltype(dc_tile)>(range, std::move(dc_tile));
+        return tensor::Tile<decltype(dc_tile)>(range, std::move(dc_tile));
     };
 
     decltype(H) M = ints::sparse_integrals(world, eri_e, dfbs_array);
@@ -1054,7 +1049,7 @@ int main(int argc, char *argv[]) {
         Eig::SelfAdjointEigenSolver<MatrixD> es(M_eig);
         auto M_eig_inv_oh = es.operatorInverseSqrt();
 
-        M_inv_oh = tcc::array_ops::eigen_to_array<TA::TensorD>(
+        M_inv_oh = array_ops::eigen_to_array<TA::TensorD>(
               world, M_eig_inv_oh, M.trange().data()[0], M.trange().data()[1]);
 
         auto deri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
@@ -1067,16 +1062,16 @@ int main(int argc, char *argv[]) {
         auto dM = TA::to_new_tile_type(M, to_dtile{clr_threshold});
 
         world.gop.fence();
-        auto old_compress = tcc::tensor::detail::recompress;
-        tcc::tensor::detail::recompress = true;
+        auto old_compress = tensor::detail::recompress;
+        tensor::detail::recompress = true;
 
         // This is broken at the moment.
         decltype(dC_df) dG_df;
         dG_df("X,i,j") = deri3("X,i,j") - 0.5 * dM("X,Y") * dC_df("Y,i,j");
-        if (clr_threshold != 0 && tcc::tensor::detail::recompress) {
+        if (clr_threshold != 0 && tensor::detail::recompress) {
             TA::foreach_inplace(
                   dG_df,
-                  [](tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>> &
+                  [](tensor::Tile<tensor::DecomposedTensor<double>> &
                            t_tile) {
                       auto &t = t_tile.tile();
                       auto input_norm = norm(t);
@@ -1084,14 +1079,14 @@ int main(int argc, char *argv[]) {
                       auto compressed_norm = input_norm;
                       if (t.cut() != 0.0) {
                           if (t.ndecomp() == 1) {
-                              auto test = tcc::tensor::algebra::
+                              auto test = tensor::algebra::
                                     two_way_decomposition(t);
                               if (!test.empty()) {
                                   t = test;
                                   compressed_norm = norm(t);
                               }
                           } else {
-                              tcc::tensor::algebra::recompress(t);
+                              tensor::algebra::recompress(t);
                               compressed_norm = norm(t);
                           }
                       }
@@ -1105,7 +1100,7 @@ int main(int argc, char *argv[]) {
         }
 
         world.gop.fence();
-        tcc::tensor::detail::recompress = old_compress;
+        tensor::detail::recompress = old_compress;
 
         auto storage = storage_for_array(dC_df);
         std::cout << "Dense C_df " << storage[0] << "\n"

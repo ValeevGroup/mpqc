@@ -1,11 +1,11 @@
 #pragma once
-#ifndef TCC_UTILITY_MAKEARRAY_H
-#define TCC_UTILITY_MAKEARRAY_H
+#ifndef MPQC_UTILITY_MAKEARRAY_H
+#define MPQC_UTILITY_MAKEARRAY_H
 
 #include <array>
 #include "meta/get_type.h"
 
-namespace tcc {
+namespace mpqc {
 namespace utility {
 
 template <typename... Args>
@@ -14,6 +14,6 @@ std::array<meta::first_type_t<Args...>, sizeof...(Args)> make_array(Args... args
 }
 
 } // namespace utility
-} // namespace tcc
+} // namespace mpqc
 
-#endif /* end of include guard: TCC_UTILITY_MAKEARRAY_H */
+#endif /* end of include guard: MPQC_UTILITY_MAKEARRAY_H */

@@ -1,11 +1,11 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORADDITION_H
-#define TCC_TENSOR_DECOMPOSEDTENSORADDITION_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORADDITION_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORADDITION_H
 
 #include "decomposed_tensor.h"
 #include "decomposed_tensor_algebra.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
 template <typename T>
@@ -255,6 +255,6 @@ DecomposedTensor<T> &add_to(DecomposedTensor<T> &l, const T factor) {
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_TENSOR_DECOMPOSEDTENSORADDITION_H
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORADDITION_H

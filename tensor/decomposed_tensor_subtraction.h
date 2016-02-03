@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
-#define TCC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
 
 #include "decomposed_tensor.h"
 #include "decomposed_tensor_unary.h"
@@ -8,7 +8,7 @@
 #include "decomposed_tensor_nonintrusive_interface.h"
 #include "../include/tiledarray.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
 template <typename T>
@@ -81,5 +81,5 @@ DecomposedTensor<T> &subt_to(DecomposedTensor<T> &l, const T factor) {
 }
 
 } // namespace tensor
-} // namespace tcc
-#endif // TCC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
+} // namespace mpqc
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H

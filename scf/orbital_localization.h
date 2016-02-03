@@ -100,16 +100,16 @@ class BoysLocalization {
   public:
     template <typename Array>
     Array operator()(Array const &C, std::vector<Array> const &r_ao) const {
-        auto ao_x = tcc::array_ops::array_to_eigen(r_ao[0]);
-        auto ao_y = tcc::array_ops::array_to_eigen(r_ao[1]);
-        auto ao_z = tcc::array_ops::array_to_eigen(r_ao[2]);
-        auto c_eig = tcc::array_ops::array_to_eigen(C);
+        auto ao_x = array_ops::array_to_eigen(r_ao[0]);
+        auto ao_y = array_ops::array_to_eigen(r_ao[1]);
+        auto ao_z = array_ops::array_to_eigen(r_ao[2]);
+        auto c_eig = array_ops::array_to_eigen(C);
 
         MatrixD U = MatrixD::Identity(c_eig.cols(), c_eig.cols());
         jacobi_sweeps(c_eig, U, {ao_x, ao_y, ao_z});
 
         auto trange = C.trange();
-        return tcc::array_ops::eigen_to_array<typename Array::value_type>(
+        return array_ops::eigen_to_array<typename Array::value_type>(
               C.get_world(), U, trange.data()[1], trange.data()[1]);
     }
 };

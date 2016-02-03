@@ -1,4 +1,6 @@
 #pragma once
+#ifndef MPQC_SCF_CLUSTERED_COEFFS_H
+#define MPQC_SCF_CLUSTERED_COEFFS_H
 
 #include "../include/tiledarray.h"
 #include "../include/eigen.h"
@@ -10,7 +12,7 @@
 
 #include "../tensor/vector_localization.h"
 
-namespace tcc {
+namespace mpqc {
 namespace scf {
 
 template <typename Tile>
@@ -43,4 +45,5 @@ void clustered_coeffs(
 }
 
 } // namespace scf
-} // namespace tcc
+} // namespace mpqc
+#endif // MPQC_SCF_CLUSTERED_COEFFS_H

@@ -20,7 +20,7 @@
 #include "../integrals/integrals.h"
 
 #include "../utility/time.h"
-#include "../utility/array_storage.h"
+#include "../utility/array_info.h"
 #include "../ta_routines/array_to_eigen.h"
 
 #include <memory>

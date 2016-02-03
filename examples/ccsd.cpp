@@ -13,7 +13,10 @@
 #include "../utility/make_array.h"
 #include "../utility/parallel_print.h"
 #include "../utility/parallel_break_point.h"
-#include "../utility/array_storage.h"
+
+#include "../utility/array_info.h"
+#include "../utility/print_size_info.h"
+
 #include "../utility/time.h"
 #include "../utility/json_input.h"
 
@@ -63,8 +66,8 @@ private:
 
 
     void compute_density(int64_t occ) {
-        auto F_eig = tcc::array_ops::array_to_eigen(F_);
-        auto S_eig = tcc::array_ops::array_to_eigen(S_);
+        auto F_eig = array_ops::array_to_eigen(F_);
+        auto S_eig = array_ops::array_to_eigen(S_);
 
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
@@ -72,9 +75,9 @@ private:
         auto tr_ao = S_.trange().data()[0];
 
         auto occ_nclusters = (occ_ < 10) ? occ_ : 10;
-        auto tr_occ = tcc::scf::tr_occupied(occ_nclusters, occ_);
+        auto tr_occ = scf::tr_occupied(occ_nclusters, occ_);
 
-        C_ = tcc::array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C, tr_ao, tr_occ);
+        C_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C, tr_ao, tr_occ);
 
         D_("i,j") = C_("i,k") * C_("j,k");
     }
@@ -84,20 +87,20 @@ private:
         auto &world = F_.get_world();
 
         world.gop.fence();
-        auto w0 = tcc::utility::time::now();
+        auto w0 = mpqc_time::now();
         TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> W;
         W("X, mu, i") = L_invV_("X,Y") * (eri3("Y, mu, nu") * C_("nu, i"));
         world.gop.fence();
-        auto w1 = tcc::utility::time::now();
-        w_times_.push_back(tcc::utility::time::duration_in_s(w0,w1));
+        auto w1 = mpqc_time::now();
+        w_times_.push_back(mpqc_time::duration_in_s(w0,w1));
 
 
         array_type J;
         J("mu, nu") = eri3("X, mu, nu")
                       * (L_invV_("Y, X") * (W("Y, rho, i") * C_("rho, i")));
         world.gop.fence();
-        auto j1 = tcc::utility::time::now();
-        j_times_.push_back(tcc::utility::time::duration_in_s(w1,j1));
+        auto j1 = mpqc_time::now();
+        j_times_.push_back(mpqc_time::duration_in_s(w1,j1));
 
 
         // Permute W
@@ -105,8 +108,8 @@ private:
         array_type K;
         K("mu, nu") = W("X, i, mu") * W("X, i, nu");
         world.gop.fence();
-        auto k1 = tcc::utility::time::now();
-        k_times_.push_back(tcc::utility::time::duration_in_s(j1,k1));
+        auto k1 = mpqc_time::now();
+        k_times_.push_back(mpqc_time::duration_in_s(j1,k1));
 
         F_("i,j") = H_("i,j") + 2 * J("i,j") - K("i,j");
     }
@@ -143,7 +146,7 @@ public:
         auto old_energy = 0.0;
 
         while (iter < max_iters && thresh < error) {
-            auto s0 = tcc_time::now();
+            auto s0 = mpqc_time::now();
             F_.get_world().gop.fence();
             form_fock(eri3);
 
@@ -161,8 +164,8 @@ public:
             compute_density(occ_);
 
             F_.get_world().gop.fence();
-            auto s1 = tcc_time::now();
-            scf_times_.push_back(tcc_time::duration_in_s(s0, s1));
+            auto s1 = mpqc_time::now();
+            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
 
             if(F_.get_world().rank() == 0){
                 std::cout << "Iteration: " << (iter + 1)
@@ -268,17 +271,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         if (world.rank() == 0) {
             std::cout << "Mol file is " << mol_file << std::endl;
-            tcc::utility::print_file(world, mol_file);
+            utility::print_file(world, mol_file);
             std::cout << "basis is " << basis_name << std::endl;
             std::cout << "df basis is " << df_basis_name << std::endl;
             std::cout << "Using " << nclusters << " clusters"
                       << std::endl;
         }
 
-        tcc::utility::print_par(world, "Sparse threshold is ",
+        utility::print_par(world, "Sparse threshold is ",
                            TiledArray::SparseShape<float>::threshold(), "\n");
 
-        tcc::utility::print_par(world, "Nuclear repulsion_energy = ",
+        utility::print_par(world, "Nuclear repulsion_energy = ",
                            repulsion_energy, "\n");
 
 
@@ -292,7 +295,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
             if (world.rank() == 0){
                 std::cout << "Ghost Atom file: " << ghost_atoms << std::endl;
-                tcc::utility::print_file(world,ghost_atoms);
+                utility::print_file(world,ghost_atoms);
             }
 
             auto mol_elements = mol.clusterables();
@@ -328,7 +331,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         bool if_reblock = in.HasMember("Reblock") ? in["Reblock"].GetBool() : false;
         if(if_reblock){
 
-            tcc::utility::print_par(world,"AOBlockSize:  ",ao_blocksize, "\n");
+            utility::print_par(world,"AOBlockSize:  ",ao_blocksize, "\n");
             basis = reblock(basis,cc::reblock_basis,ao_blocksize);
             df_basis = reblock(df_basis,cc::reblock_basis,ao_blocksize);
 
@@ -353,7 +356,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         // start SCF
         libint2::init();
 
-        const auto bs_array = tcc::utility::make_array(basis, basis);
+        const auto bs_array = utility::make_array(basis, basis);
 
         // Overlap ints
         auto overlap_e = ints::make_1body_shr_pool("overlap", basis, mol);
@@ -369,32 +372,32 @@ int try_main(int argc, char *argv[], madness::World &world) {
         decltype(T) H;
         H("i,j") = T("i,j") + V("i,j");
 
-        const auto dfbs_array = tcc::utility::make_array(df_basis, df_basis);
+        const auto dfbs_array = utility::make_array(df_basis, df_basis);
         auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
 
         decltype(H) L_inv;
         {
             auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
-            auto V_eig = tcc::array_ops::array_to_eigen(Vmetric);
+            auto V_eig = array_ops::array_to_eigen(Vmetric);
             MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
             MatrixD L_inv_eig = Leig.inverse();
 
             auto tr_V = Vmetric.trange().data()[0];
-            L_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
+            L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
                                                                 tr_V, tr_V);
         }
 
-        auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
+        auto three_c_array = utility::make_array(df_basis, basis, basis);
         auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array);
 
 
-        auto soad0 = tcc::utility::time::now();
+        auto soad0 = mpqc_time::now();
         auto F_soad
                 = scf::fock_from_soad(world, mol, basis, eri_e, H);
 
-        auto soad1 = tcc::utility::time::now();
-        auto soad_time = tcc::utility::time::duration_in_s(soad0, soad1);
-        tcc::utility::print_par(world, "Soad Time: " , soad_time, "\n");
+        auto soad1 = mpqc_time::now();
+        auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
+        utility::print_par(world, "Soad Time: " , soad_time, "\n");
 
         ThreeCenterScf scf(H, F_soad, S, L_inv, occ / 2, repulsion_energy);
         scf.solve(scf_max_iter, scf_converge, eri3);
@@ -404,12 +407,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         // start ccsd prepration
 
-        tcc::utility::print_par(world, "\nCC Calculation\n");
+        utility::print_par(world, "\nCC Calculation\n");
 
         int n_frozen_core = 0;
         if (frozen_core) {
             n_frozen_core = mol.core_electrons();
-            tcc::utility::print_par(world, "Frozen Core: ", n_frozen_core,
+            utility::print_par(world, "Frozen Core: ", n_frozen_core,
                                " electrons", "\n");
             n_frozen_core = n_frozen_core / 2;
         }
@@ -421,14 +424,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
         Xab("X,a,b") = L_inv("X,Y")*eri3("Y,a,b");
 
 
-        auto F_eig = tcc::array_ops::array_to_eigen(F);
-        auto S_eig = tcc::array_ops::array_to_eigen(S);
+        auto F_eig = array_ops::array_to_eigen(F);
+        auto S_eig = array_ops::array_to_eigen(S);
 
         // check the condition number in Overlap
         Eig::SelfAdjointEigenSolver<decltype(S_eig)> S_es(S_eig);
         // eigen value in increasing order
         auto cond = S_es.eigenvalues()(S_es.eigenvalues().size()-1)/S_es.eigenvalues()(0);
-        tcc::utility::print_par(world,"Condition Number in Overlap: ", cond, "\n");
+        utility::print_par(world,"Condition Number in Overlap: ", cond, "\n");
 
         // solve C
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
@@ -453,24 +456,24 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto tr_i0 = tre->get_occ_tr1();
         auto tr_vir = tre->get_vir_tr1();
 
-        tcc::utility::print_par(world, "Block Size in Occupied     ", occ_blocksize, "\n");
-        tcc::utility::print_par(world, "TiledRange1 Occupied ", tr_i0, "\n");
-        tcc::utility::print_par(world, "Average: ", cc::average_blocksize(tr_i0), "\n");
+        utility::print_par(world, "Block Size in Occupied     ", occ_blocksize, "\n");
+        utility::print_par(world, "TiledRange1 Occupied ", tr_i0, "\n");
+        utility::print_par(world, "Average: ", cc::average_blocksize(tr_i0), "\n");
         auto min_max = cc::minmax_blocksize(tr_i0);
-        tcc::utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
+        utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
 
 
-        tcc::utility::print_par(world, "Block Size in Virtual     ", vir_blocksize, "\n");
-        tcc::utility::print_par(world, "TiledRange1 Virtual  ", tr_vir, "\n");
-        tcc::utility::print_par(world, "Average: ", cc::average_blocksize(tr_vir), "\n");
+        utility::print_par(world, "Block Size in Virtual     ", vir_blocksize, "\n");
+        utility::print_par(world, "TiledRange1 Virtual  ", tr_vir, "\n");
+        utility::print_par(world, "Average: ", cc::average_blocksize(tr_vir), "\n");
         min_max = cc::minmax_blocksize(tr_vir);
-        tcc::utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
+        utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
 
-        auto Ci = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ, tr_0, tr_i0);
+        auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ, tr_0, tr_i0);
 
-        auto Cv = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir, tr_0, tr_vir);
+        auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir, tr_0, tr_vir);
 
-        auto Call = tcc::array_ops::eigen_to_array<TA::Tensor<double>>(world, C_all, tr_0, tr_all);
+        auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_all, tr_0, tr_all);
 
         std::vector<TA::TiledRange1> tr_04(4, basis.create_trange1());
         TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
@@ -484,13 +487,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
 //            auto screen_builder = ints::init_schwarz_screen(1e-10);
 //            auto shr_screen = std::make_shared<ints::SchwarzScreen>(screen_builder(world, eri_e, basis));
 //
-//            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
+//            const auto bs4_array = utility::make_array(basis, basis, basis, basis);
 //            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array, shr_screen);
 //            intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy>>
 //                    (Xab, Ci, Cv, lazy_two_electron_int);
 //        } else {
 
-//            const auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
+//            const auto bs4_array = utility::make_array(basis, basis, basis, basis);
 //            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
 
         std::string screen = cc_in.HasMember("Screen") ? cc_in["Screen"].GetString() : "";
@@ -507,10 +510,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         if(direct){
 
-            auto time0 = tcc_time::now();
+            auto time0 = mpqc_time::now();
             lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4,screen_option);
-            auto time1 = tcc_time::now();
-            auto duration = tcc_time::duration_in_s(time0,time1);
+            auto time1 = mpqc_time::now();
+            auto duration = mpqc_time::duration_in_s(time0,time1);
             if(world.rank() == 0){
                 std::cout << "Time to initialize direct two electron sparse integral: " << duration << std::endl;
 
@@ -525,8 +528,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
     // clean up all temporary from HF
     world.gop.fence();
 
-    tcc::utility::print_par(world, "\nBegining CC Calculation\n");
-    tcc::utility::parallal_break_point(world, 0);
+    utility::print_par(world, "\nBegining CC Calculation\n");
+    utility::parallal_break_point(world, 0);
 
 
     if(in.HasMember("CCSD(T)")){

@@ -1,13 +1,13 @@
 #pragma once
 
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
-#define TCC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
 
 #include "decomposed_tensor.h"
 #include "decomposed_tensor_algebra.h"
 #include "decomposed_tensor_addition.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 namespace detail {
 
@@ -454,7 +454,7 @@ struct low_rank_gemm<2ul, 2ul, 2ul> {
 
 } // namespace detail
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
 
-#endif // TCC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H

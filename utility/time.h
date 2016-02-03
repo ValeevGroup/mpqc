@@ -1,12 +1,12 @@
 #pragma once
-#ifndef TCC_UTILITY_TIME_H
-#define TCC_UTILITY_TIME_H
+#ifndef MPQC_UTILITY_TIME_H
+#define MPQC_UTILITY_TIME_H
 
 #include "../common/typedefs.h"
 
 #include <chrono>
 
-namespace tcc {
+namespace mpqc {
 namespace utility {
 namespace time {
 
@@ -19,57 +19,17 @@ double duration_in_s(t_point const &t0, t_point const &t1) {
         .count();
 }
 
-
-// Class to time a function or function object.  Call apply to run and time
-// the function.
-template <typename Fn>
-class FunctionTimer {
-  public:
-    FunctionTimer(Fn fn) : fn_{fn} {}
-
-    template <typename... Args>
-    enable_if_t<!std::is_same<result_of_t<Fn(Args...)>, void>::value,
-                result_of_t<Fn(Args...)>>
-    apply(Args &&... args)  {
-
-        auto t0 = now();
-        auto result = fn_(std::forward<Args>(args)...);
-        auto t1 = now();
-
-        time_ = duration_in_s(t0, t1);
-
-        return result;
-    }
-
-    template <typename... Args>
-    enable_if_t<std::is_same<result_of_t<Fn(Args...)>, void>::value, void>
-    apply(Args &&... args) {
-
-        auto t0 = now();
-        fn_(std::forward<Args>(args)...);
-        auto t1 = now();
-
-        time_ = duration_in_s(t0, t1);
-    }
-
-    double time() const { return time_; }
-
-  private:
-    Fn fn_;
-    double time_ = 0.0;
-}; // FunctionTimer
-
-template <typename Fn>
-time::FunctionTimer<Fn> make_timer(Fn &&fn) {
-    return time::FunctionTimer<Fn>{std::forward<Fn>(fn)};
+t_point fenced_now(madness::World &world){
+    world.gop.fence();
+    return now();
 }
 
 } // namespace time
 
 
 } // namespace utility
-} // namespace tcc
+} // namespace mpqc
 
-namespace tcc_time = tcc::utility::time;
+namespace mpqc_time = mpqc::utility::time;
 
-#endif // TCC_UTILITY_TIME_H
+#endif // MPQC_UTILITY_TIME_H

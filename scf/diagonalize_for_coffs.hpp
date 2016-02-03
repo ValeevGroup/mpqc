@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_SCF_DIAGONALIZEFORCOFFS_H
-#define TCC_SCF_DIAGONALIZEFORCOFFS_H
+#ifndef MPQC_SCF_DIAGONALIZEFORCOFFS_H
+#define MPQC_SCF_DIAGONALIZEFORCOFFS_H
 
 #include "../common/namespaces.h"
 
@@ -14,7 +14,7 @@
 
 #include "../tensor/vector_localization.h"
 
-namespace tcc {
+namespace mpqc {
 namespace scf {
 
 using Array2 = TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy>;
@@ -61,7 +61,7 @@ Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1 tr_i,
 }
 
 } // namespace scf
-} // namespace tcc
+} // namespace mpqc
 
 
-#endif // TCC_SCF_DIAGONALIZEFORCOFFS_H
+#endif // MPQC_SCF_DIAGONALIZEFORCOFFS_H

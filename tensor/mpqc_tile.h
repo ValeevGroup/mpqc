@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_TENSOR_TCCTILE_H
-#define TCC_TENSOR_TCCTILE_H
+#ifndef MPQC_TENSOR_MPQCTILE_H
+#define MPQC_TENSOR_MPQCTILE_H
 
 #include "../common/typedefs.h"
 #include "../include/tiledarray.h"
@@ -8,7 +8,7 @@
 
 #include <memory>
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
 namespace detail {
@@ -441,6 +441,6 @@ inline std::ostream &operator<<(std::ostream &os, Tile<T> const &tile) {
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_TENSOR_TCCTILE_H
+#endif // MPQC_TENSOR_MPQCTILE_H

@@ -9,7 +9,7 @@
 #include <utility>
 #include <random>
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 template <typename T>
 using Matrix = Eig::Matrix<T, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
@@ -61,6 +61,8 @@ class VectorCluster {
     }
 
     std::vector<VecIdx> const &elems() const { return elems_; }
+
+    bool empty() const { return elems_.empty(); }
 
     void update() {
         update_center();
@@ -211,4 +213,4 @@ TA::TiledRange1 localize_vectors_with_kmeans(Matrix<T> const &xyz, Matrix<T> &D,
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc

@@ -185,7 +185,7 @@ namespace mpqc {
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
-                    auto time0 = tcc_time::now();
+                    auto time0 = mpqc_time::now();
 
                     // intermediates for t1
                     // external index i and a
@@ -427,8 +427,8 @@ namespace mpqc {
                     dE = std::abs(E0 - E1);
                     iter += 1ul;
 
-                    auto time1 = tcc_time::now();
-                    auto duration = tcc_time::duration_in_s(time0, time1);
+                    auto time1 = mpqc_time::now();
+                    auto duration = mpqc_time::duration_in_s(time0, time1);
 
                     if (world.rank() == 0) {
                         std::cout << iter << "  " << dE << "  " << error <<
@@ -532,7 +532,7 @@ namespace mpqc {
                 while (true) {
 
                     //start timer
-                    auto time0 = tcc_time::now();
+                    auto time0 = mpqc_time::now();
 
                     TArray::wait_for_lazy_cleanup(world);
                     TArray::wait_for_lazy_cleanup(world);
@@ -635,9 +635,9 @@ namespace mpqc {
 
                                                 - g_abij("d,c,k,l") * T("d,a,i,l");
                             if(print_detail){
-                                tcc::utility::print_size_info(T,"T");
-                                tcc::utility::print_size_info(j_akic,"J_akic");
-                                tcc::utility::print_size_info(k_kaic,"K_kaic");
+                                utility::print_size_info(T,"T");
+                                utility::print_size_info(j_akic,"J_akic");
+                                utility::print_size_info(k_kaic,"K_kaic");
                             }
                         }
 
@@ -680,7 +680,7 @@ namespace mpqc {
                             b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
                             if(print_detail){
-                                tcc::utility::print_size_info(b_abij,"B_abij");
+                                utility::print_size_info(b_abij,"B_abij");
                             }
 
                             r2("a,b,i,j") += b_abij("a,b,i,j");
@@ -691,7 +691,7 @@ namespace mpqc {
                             b_abcd("a,b,c,d") = g_abcd("a,b,c,d") - g_aibc("a,k,c,d") * t1("b,k") - g_iabc("k,b,c,d") * t1("a,k");
 
                             if(print_detail){
-                                tcc::utility::print_size_info(b_abcd,"B_abcd");
+                                utility::print_size_info(b_abcd,"B_abcd");
                             }
 
                             r2("a,b,i,j") += b_abcd("a,b,c,d") * tau("c,d,i,j");
@@ -735,14 +735,14 @@ namespace mpqc {
                         t2("a,b,i,j") = t.second("a,b,i,j");
 
                         if(print_detail){
-                            tcc::utility::print_size_info(r2,"R2");
-                            tcc::utility::print_size_info(t2,"T2");
+                            utility::print_size_info(r2,"R2");
+                            utility::print_size_info(t2,"T2");
                         }
 
                         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
-                        auto time1 = tcc_time::now();
-                        auto duration = tcc_time::duration_in_s(time0, time1);
+                        auto time1 = mpqc_time::now();
+                        auto duration = mpqc_time::duration_in_s(time0, time1);
 
                         if (world.rank() == 0) {
                             std::cout << iter << "  " << dE << "  " << error <<
@@ -753,8 +753,8 @@ namespace mpqc {
                     }
                     else{
 
-                        auto time1 = tcc_time::now();
-                        auto duration = tcc_time::duration_in_s(time0, time1);
+                        auto time1 = mpqc_time::now();
+                        auto duration = mpqc_time::duration_in_s(time0, time1);
 
                         if (world.rank() == 0) {
                             std::cout << iter << "  " << dE << "  " << error <<
@@ -850,18 +850,18 @@ namespace mpqc {
                 while ((dE >= 1.0e-7 || error >= 1e-7)) {
 
                     //start timer
-                    auto time0 = tcc_time::now();
+                    auto time0 = mpqc_time::now();
 
                     TArray u2_u11;
                     // compute half transformed intermediates
-                    auto tu0 = tcc_time::now();
+                    auto tu0 = mpqc_time::now();
                     {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
                     world.gop.fence();
 
                     if(iter == 0){
-                        tcc::utility::print_size_info(u2_u11,"U_aaoo");
+                        utility::print_size_info(u2_u11,"U_aaoo");
                     }
 
                     if (iter == 0 && world.rank() == 0) {
@@ -869,8 +869,8 @@ namespace mpqc {
                         << "      energy     " << "    U/second  " << " total/second "<<std::endl;
                     }
 
-                    auto tu1 = tcc_time::now();
-                    auto duration_u = tcc_time::duration_in_s(tu0, tu1);
+                    auto tu1 = mpqc_time::now();
+                    auto duration_u = mpqc_time::duration_in_s(tu0, tu1);
 
 //                    if (g_abij.get_world().rank() == 0) {
 //                        std::cout << "Time to compute U intermediates   " << duration << std::endl;
@@ -1040,8 +1040,8 @@ namespace mpqc {
                     dE = std::abs(E0 - E1);
                     iter += 1ul;
 
-                    auto time1 = tcc_time::now();
-                    auto duration_t = tcc_time::duration_in_s(time0, time1);
+                    auto time1 = mpqc_time::now();
+                    auto duration_t = mpqc_time::duration_in_s(time0, time1);
 
                     if (world.rank() == 0) {
                         std::cout.precision(15);
@@ -1138,29 +1138,29 @@ namespace mpqc {
                 while (true){
 
                     //start timer
-                    auto time0 = tcc_time::now();
+                    auto time0 = mpqc_time::now();
 
                     TArray::wait_for_lazy_cleanup(world);
                     TArray::wait_for_lazy_cleanup(world);
 
                     TArray u2_u11;
                     // compute half transformed intermediates
-                    auto tu0 = tcc_time::now();
+                    auto tu0 = mpqc_time::now();
                     {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
                     world.gop.fence();
 
                     if(print_detail){
-                        tcc::utility::print_size_info(u2_u11,"U_aaoo");
+                        utility::print_size_info(u2_u11,"U_aaoo");
                     }
                     else if(iter == 0){
-                        tcc::utility::print_size_info(u2_u11,"U_aaoo");
+                        utility::print_size_info(u2_u11,"U_aaoo");
                     }
 
 
-                    auto tu1 = tcc_time::now();
-                    auto duration_u = tcc_time::duration_in_s(tu0, tu1);
+                    auto tu1 = mpqc_time::now();
+                    auto duration_u = mpqc_time::duration_in_s(tu0, tu1);
 
 //                    if (g_abij.get_world().rank() == 0) {
 //                        std::cout << "Time to compute U intermediates   " << duration << std::endl;
@@ -1259,9 +1259,9 @@ namespace mpqc {
                                                     - g_abij("d,c,k,l") * T("d,a,i,l");
 
                                 if(print_detail){
-                                    tcc::utility::print_size_info(T,"T");
-                                    tcc::utility::print_size_info(j_akic,"J_akic");
-                                    tcc::utility::print_size_info(k_kaic,"K_kaic");
+                                    utility::print_size_info(T,"T");
+                                    utility::print_size_info(j_akic,"J_akic");
+                                    utility::print_size_info(k_kaic,"K_kaic");
                                 }
                             }
 
@@ -1302,7 +1302,7 @@ namespace mpqc {
                             r2("a,b,i,j") += b_abij("a,b,i,j");
 
                             if(print_detail){
-                                tcc::utility::print_size_info(b_abij,"B_abij");
+                                utility::print_size_info(b_abij,"B_abij");
                             }
                         }
 
@@ -1344,14 +1344,14 @@ namespace mpqc {
                         t2("a,b,i,j") = t.second("a,b,i,j");
 
                         if(print_detail){
-                            tcc::utility::print_size_info(r2,"R2");
-                            tcc::utility::print_size_info(t2,"T2");
+                            utility::print_size_info(r2,"R2");
+                            utility::print_size_info(t2,"T2");
                         }
 
                         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
-                        auto time1 = tcc_time::now();
-                        auto duration_t = tcc_time::duration_in_s(time0, time1);
+                        auto time1 = mpqc_time::now();
+                        auto duration_t = mpqc_time::duration_in_s(time0, time1);
 
                         if (world.rank() == 0) {
                             std::cout.precision(15);
@@ -1365,8 +1365,8 @@ namespace mpqc {
                     }
                     else{
 
-                        auto time1 = tcc_time::now();
-                        auto duration_t = tcc_time::duration_in_s(time0, time1);
+                        auto time1 = mpqc_time::now();
+                        auto duration_t = mpqc_time::duration_in_s(time0, time1);
 
                         if (world.rank() == 0) {
                             std::cout.precision(15);

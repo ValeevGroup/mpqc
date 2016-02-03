@@ -55,10 +55,10 @@ namespace mpqc{
                 if(t1.get_world().rank() == 0){
                     std::cout << "\nBegining CCSD(T) " << std::endl;
                 }
-                auto time0 = tcc_time::now();
+                auto time0 = mpqc_time::now();
                 double ccsd_t = compute_ccsd_t(t1, t2);
-                auto time1 = tcc_time::now();
-                auto duration1 = tcc_time::duration_in_s(time0, time1);
+                auto time1 = mpqc_time::now();
+                auto duration1 = mpqc_time::duration_in_s(time0, time1);
 
                 if (t1.get_world().rank() == 0) {
                     std::cout << std::setprecision(15);

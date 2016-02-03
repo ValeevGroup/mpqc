@@ -20,7 +20,6 @@
 #include "../integrals/integrals.h"
 
 #include "../utility/time.h"
-// #include "../utility/array_storage.h"
 #include "../ta_routines/array_to_eigen.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
@@ -29,20 +28,15 @@
 #include "../scf/clusterd_coeffs.h"
 
 #include "../tensor/decomposed_tensor.h"
-#include "../tensor/decomposed_tensor_unary.h"
-#include "../tensor/decomposed_tensor_algebra.h"
-#include "../tensor/decomposed_tensor_gemm.h"
-#include "../tensor/decomposed_tensor_addition.h"
-#include "../tensor/decomposed_tensor_subtraction.h"
-#include "../tensor/decomposed_tensor_multiplication.h"
-#include "../tensor/tcc_tile.h"
+#include "../tensor/decomposed_tensor_nonintrusive_interface.h"
+#include "../tensor/mpqc_tile.h"
 
 #include <memory>
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 
-bool tcc::tensor::detail::recompress = true;
+bool tensor::detail::recompress = true;
 
 std::array<double, 3>
 storage_for_array(TA::DistArray<TA::TensorD, SpPolicy> const &a) {
@@ -86,7 +80,7 @@ storage_for_array(TA::DistArray<Tile, SpPolicy> const &a) {
         if (!a.is_zero(ord)) {
             sparse_a += size;
 
-            tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>
+            tensor::Tile<tensor::DecomposedTensor<double>>
                   wrapper_tile = a.find(ord).get();
 
             auto const &tile = wrapper_tile.tile();
@@ -273,7 +267,7 @@ class to_dtile {
     double clr_thresh_;
 
   public:
-    using dtile = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
     to_dtile(double clr_thresh) : clr_thresh_(clr_thresh) {}
 
     dtile operator()(TA::TensorD const &tile) {
@@ -287,7 +281,7 @@ class to_dtile {
         auto tensor = TA::TensorD(local_range, tile.data());
 
         auto new_tile
-              = tcc::tensor::DecomposedTensor<double>(clr_thresh_,
+              = tensor::DecomposedTensor<double>(clr_thresh_,
                                                       std::move(tensor));
 
         return dtile(range, std::move(new_tile));
@@ -298,7 +292,7 @@ class to_dtile_compress {
     double clr_thresh_;
 
   public:
-    using dtile = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
     to_dtile_compress(double clr_thresh) : clr_thresh_(clr_thresh) {}
 
     dtile operator()(TA::TensorD const &tile) {
@@ -312,11 +306,11 @@ class to_dtile_compress {
         auto tensor = TA::TensorD(local_range, tile.data());
 
         auto new_tile
-              = tcc::tensor::DecomposedTensor<double>(clr_thresh_,
+              = tensor::DecomposedTensor<double>(clr_thresh_,
                                                       std::move(tensor));
 
         if (clr_thresh_ != 0.0) {
-            auto test = tcc::tensor::algebra::two_way_decomposition(new_tile);
+            auto test = tensor::algebra::two_way_decomposition(new_tile);
             if (!test.empty()) {
                 new_tile = std::move(test);
             }
@@ -327,11 +321,11 @@ class to_dtile_compress {
 };
 
 class to_ta_tile {
-    using dtile = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
 
   public:
     TA::TensorD operator()(dtile const &t) const {
-        auto tensor = tcc::tensor::algebra::combine(t.tile());
+        auto tensor = tensor::algebra::combine(t.tile());
         auto range = t.range();
         return TA::Tensor<double>(range, tensor.data());
     }
@@ -340,7 +334,7 @@ class to_ta_tile {
 class ThreeCenterScf {
   private:
     using array_type = DArray<2, TA::TensorD, SpPolicy>;
-    using dtile = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
     using darray_type = DArray<2, dtile, SpPolicy>;
 
     array_type H_;
@@ -378,34 +372,35 @@ class ThreeCenterScf {
     double exchange_energy_;
 
     void compute_density(int64_t occ) {
-        auto F_eig = tcc::array_ops::array_to_eigen(F_);
-        auto S_eig = tcc::array_ops::array_to_eigen(S_);
+        auto& world = F_.get_world();
+
+        auto F_eig = array_ops::array_to_eigen(F_);
+        auto S_eig = array_ops::array_to_eigen(S_);
 
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         decltype(S_eig) C = es.eigenvectors().leftCols(occ);
         auto tr_ao = S_.trange().data()[0];
 
-        auto tr_occ = tcc::scf::tr_occupied(occ_, occ_);
-        C_ = tcc::array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C,
+        auto tr_occ = scf::tr_occupied(occ_, occ_);
+        C_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C,
                                                          tr_ao, tr_occ);
 
-        F_.get_world().gop.fence();
-        auto loc0 = tcc::utility::time::now();
+        auto loc0 = mpqc_time::fenced_now(world);
+
         auto U = mpqc::scf::BoysLocalization{}(C_, r_xyz_ints_);
         C_("mu,i") = C_("mu,k") * U("k,i");
-        F_.get_world().gop.fence();
-        auto loc1 = tcc::utility::time::now();
-        auto loc_time = tcc::utility::time::duration_in_s(loc0, loc1);
-        localization_times_.push_back(loc_time);
 
-        auto cluster0 = tcc::utility::time::now();
+        auto loc1 = mpqc_time::fenced_now(world);
+        localization_times_.push_back(mpqc_time::duration_in_s(loc0,loc1));
+
+        auto cluster0 = mpqc_time::fenced_now(world);
+
         auto obs_ntiles = C_.trange().tiles().extent()[0];
-        tcc::scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
-        F_.get_world().gop.fence();
-        auto cluster1 = tcc::utility::time::now();
-        auto clut_time = tcc::utility::time::duration_in_s(cluster0, cluster1);
-        clustering_times_.push_back(clut_time);
+        scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
+
+        auto cluster1 = mpqc_time::fenced_now(world);
+        clustering_times_.push_back(mpqc_time::duration_in_s(cluster0, cluster1));
 
         D_("i,j") = C_("i,k") * C_("j,k");
     }
@@ -419,34 +414,25 @@ class ThreeCenterScf {
         darray_type dC_ = TA::to_new_tile_type(C_, to_dtile(clr_thresh_));
         darray_type dD_ = TA::to_new_tile_type(D_, to_dtile(clr_thresh_));
 
-        auto get_time = [&]() {
-            world.gop.fence();
-            return tcc::utility::time::now();
-        };
-
-        using tp = decltype(get_time());
-
-        auto calc_time = [](tp const &a, tp const &b) {
-            return tcc::utility::time::duration_in_s(a, b);
-        };
-
-
         darray_type J;
-        auto j0 = get_time();
+        auto j0 = mpqc_time::fenced_now(world);
+
         J("mu, nu") = eri3("Y,mu,nu")
                       * (dV_inv_oh_("Y,Z")
                          * (dV_inv_oh_("Z,X") * (eri3("X,r,s") * dD_("r,s"))));
-        auto j1 = get_time();
-        j_times_.push_back(calc_time(j0, j1));
+        
+        auto j1 = mpqc_time::fenced_now(world);
+        j_times_.push_back(mpqc_time::duration_in_s(j0,j1));
 
-        auto w0 = get_time();
+        auto w0 = mpqc_time::fenced_now(world);
+
         DArray<3, dtile, SpPolicy> W;
         W("X, mu, i") = B("X, mu, nu") * dC_("nu, i");
 
-        if (clr_thresh_ != 0 && tcc::tensor::detail::recompress) {
+        if (clr_thresh_ != 0 && tensor::detail::recompress) {
             TA::foreach_inplace(
                   W,
-                  [](tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>> &
+                  [](tensor::Tile<tensor::DecomposedTensor<double>> &
                            t_tile) {
                       auto &t = t_tile.tile();
                       auto input_norm = norm(t);
@@ -454,14 +440,14 @@ class ThreeCenterScf {
                       auto compressed_norm = input_norm;
                       if (t.cut() != 0.0) {
                           if (t.ndecomp() == 1) {
-                              auto test = tcc::tensor::algebra::
+                              auto test = tensor::algebra::
                                     two_way_decomposition(t);
                               if (!test.empty()) {
                                   t = test;
                                   compressed_norm = norm(t);
                               }
                           } else {
-                              tcc::tensor::algebra::recompress(t);
+                              tensor::algebra::recompress(t);
                               compressed_norm = norm(t);
                           }
                       }
@@ -475,8 +461,8 @@ class ThreeCenterScf {
 
         W("X,i,mu") = W("X,mu,i");
 
-        auto w1 = get_time();
-        w_times_.push_back(calc_time(w0, w1));
+        auto w1 = mpqc_time::fenced_now(world);
+        w_times_.push_back(mpqc_time::duration_in_s(w0,w1));
 
         auto w_store = storage_for_array(W);
         w_sparse_store_.push_back(w_store[1]);
@@ -484,20 +470,25 @@ class ThreeCenterScf {
         w_full_storage_ = w_store[0];
 
 
-        auto occk0 = get_time();
+        auto occk0 = mpqc_time::fenced_now(world);
+
+        // OCC RI
         darray_type K, Kij, Sc;
         K("mu, j") = W("X, i, mu") * ((W("X, i, nu") * dC_("nu, j")));
         Kij("i,j") = dC_("mu, i") * K("mu, j");
         Sc("mu, j") = dS_("mu, lam") * dC_("lam, j");
         K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
                       - (Sc("mu,i") * Kij("i,j")) * Sc("nu,j");
-        auto occk1 = get_time();
-        occ_k_times_.push_back(calc_time(occk0, occk1));
 
-        auto k0 = get_time();
+        auto occk1 = mpqc_time::fenced_now(world);
+        occ_k_times_.push_back(mpqc_time::duration_in_s(occk0, occk1));
+
+        auto k0 = mpqc_time::fenced_now(world);
+
         K("mu, nu") = W("X,i,mu") * W("X,i,nu");
-        auto k1 = get_time();
-        k_times_.push_back(calc_time(k0, k1));
+
+        auto k1 = mpqc_time::fenced_now(world);
+        k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
 
         darray_type dF_;
         dF_("i,j") = dH_("i,j") + 2 * J("i,j") - K("i,j");
@@ -538,10 +529,11 @@ class ThreeCenterScf {
         auto old_energy = 0.0;
         const double volume = F_.trange().elements().volume();
 
+        auto &world = F_.get_world();
+
         while (iter < max_iters && (thresh < error || thresh < rms_error)
                && (thresh / 100.0 < error && thresh / 100.0 < rms_error)) {
-            auto s0 = tcc_time::now();
-            F_.get_world().gop.fence();
+            auto s0 = mpqc_time::fenced_now(world);
             form_fock(eri3, B);
 
             auto current_energy = energy();
@@ -564,9 +556,8 @@ class ThreeCenterScf {
             // Lastly update density
             compute_density(occ_);
 
-            F_.get_world().gop.fence();
-            auto s1 = tcc_time::now();
-            scf_times_.push_back(tcc_time::duration_in_s(s0, s1));
+            auto s1 = mpqc_time::fenced_now(world);
+            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
 
 
             std::cout << "Iteration: " << (iter + 1)
@@ -675,7 +666,7 @@ int main(int argc, char *argv[]) {
 
     if (recompression_method == "nocompress") {
         std::cout << "Not using rounded addition." << std::endl;
-        tcc::tensor::detail::recompress = false;
+        tensor::detail::recompress = false;
     } else {
         std::cout << "Using rounded addition." << std::endl;
     }
@@ -730,7 +721,7 @@ int main(int argc, char *argv[]) {
 
     libint2::init();
 
-    const auto bs_array = tcc::utility::make_array(basis, basis);
+    const auto bs_array = utility::make_array(basis, basis);
 
     // Overlap ints
     auto overlap_e = ints::make_1body_shr_pool("overlap", basis, clustered_mol);
@@ -746,13 +737,13 @@ int main(int argc, char *argv[]) {
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
-    const auto dfbs_array = tcc::utility::make_array(df_basis, df_basis);
+    const auto dfbs_array = utility::make_array(df_basis, df_basis);
     auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
 
     decltype(H) L_inv, V_inv_oh;
     {
         auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
-        auto V_eig = tcc::array_ops::array_to_eigen(Vmetric);
+        auto V_eig = array_ops::array_to_eigen(Vmetric);
 
         MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
         MatrixD L_inv_eig = Leig.inverse();
@@ -761,14 +752,14 @@ int main(int argc, char *argv[]) {
         MatrixD V_inv_oh_eig = es.operatorInverseSqrt();
 
         auto tr_V = Vmetric.trange().data()[0];
-        L_inv = tcc::array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
+        L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
                                                             tr_V, tr_V);
         V_inv_oh
-              = tcc::array_ops::eigen_to_array<TA::TensorD>(world, V_inv_oh_eig,
+              = array_ops::eigen_to_array<TA::TensorD>(world, V_inv_oh_eig,
                                                             tr_V, tr_V);
     }
 
-    auto three_c_array = tcc::utility::make_array(df_basis, basis, basis);
+    auto three_c_array = utility::make_array(df_basis, basis, basis);
 
     { // Schwarz Screened ints
         const auto schwarz_thresh = 1e-12;
@@ -777,13 +768,12 @@ int main(int argc, char *argv[]) {
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               sbuilder(world, eri_e, df_basis, basis));
 
-        world.gop.fence();
-        auto soad0 = tcc::utility::time::now();
+        auto soad0 = mpqc_time::fenced_now(world);
         auto F_soad
               = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
 
-        auto soad1 = tcc::utility::time::now();
-        auto soad_time = tcc::utility::time::duration_in_s(soad0, soad1);
+        auto soad1 = mpqc_time::fenced_now(world);
+        auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
         std::cout << "Soad Time: " << soad_time << std::endl;
 
         auto multi_pool
@@ -805,19 +795,19 @@ int main(int argc, char *argv[]) {
 
             auto tensor = TA::TensorD(local_range, t.data());
 
-            tcc::tensor::DecomposedTensor<double> dc_tile(clr_threshold,
+            tensor::DecomposedTensor<double> dc_tile(clr_threshold,
                                                           std::move(tensor));
 
             if (clr_threshold != 0.0) {
                 auto lr_tile
-                      = tcc::tensor::algebra::two_way_decomposition(dc_tile);
+                      = tensor::algebra::two_way_decomposition(dc_tile);
 
                 if (!lr_tile.empty()) {
                     dc_tile = std::move(lr_tile);
                 }
             }
 
-            return tcc::tensor::Tile<decltype(dc_tile)>(range,
+            return tensor::Tile<decltype(dc_tile)>(range,
                                                         std::move(dc_tile));
         };
 
@@ -832,10 +822,10 @@ int main(int argc, char *argv[]) {
 
             auto tensor = TA::TensorD(local_range, t.data());
 
-            tcc::tensor::DecomposedTensor<double> dc_tile(0.0,
+            tensor::DecomposedTensor<double> dc_tile(0.0,
                                                           std::move(tensor));
 
-            return tcc::tensor::Tile<decltype(dc_tile)>(range,
+            return tensor::Tile<decltype(dc_tile)>(range,
                                                         std::move(dc_tile));
         };
 
@@ -847,18 +837,19 @@ int main(int argc, char *argv[]) {
 
 
             using BTile
-                  = tcc::tensor::Tile<tcc::tensor::DecomposedTensor<double>>;
+                  = tensor::Tile<tensor::DecomposedTensor<double>>;
             DArray<3, BTile, SpPolicy> B;
             std::array<double, 3> eri3_storage;
             std::array<double, 3> b_storage;
             {
                 world.gop.fence();
-                auto int0 = tcc::utility::time::now();
+                auto int0 = mpqc_time::fenced_now(world);
+
                 auto eri3 = ints::direct_sparse_integrals(
                       world, eri_e, three_c_array, shr_screen, decomp_3d);
-                world.gop.fence();
-                auto int1 = tcc::utility::time::now();
-                auto eri3_time = tcc::utility::time::duration_in_s(int0, int1);
+                
+                auto int1 = mpqc_time::fenced_now(world);
+                auto eri3_time = mpqc_time::duration_in_s(int0, int1);
 
                 std::cout << "Eri3 Integral time: " << eri3_time << std::endl;
                 eri3_storage = storage_for_array(eri3.array());
@@ -871,16 +862,16 @@ int main(int argc, char *argv[]) {
                       = TA::to_new_tile_type(L_inv, to_dtile(clr_threshold));
 
                 world.gop.fence();
-                auto old_compress = tcc::tensor::detail::recompress;
-                tcc::tensor::detail::recompress = true;
+                auto old_compress = tensor::detail::recompress;
+                tensor::detail::recompress = true;
 
-                auto B0 = tcc::utility::time::now();
+                auto B0 = mpqc_time::fenced_now(world);
                 B("X,mu,nu") = dL_inv("X,Y") * eri3("Y,mu,nu");
                 if (clr_threshold != 0) {
                     TA::foreach_inplace(
                           B,
-                          [](tcc::tensor::
-                                   Tile<tcc::tensor::DecomposedTensor<double>> &
+                          [](tensor::
+                                   Tile<tensor::DecomposedTensor<double>> &
                                          t_tile) {
                               auto &t = t_tile.tile();
                               auto input_norm = norm(t);
@@ -888,14 +879,14 @@ int main(int argc, char *argv[]) {
                               auto compressed_norm = input_norm;
                               if (t.cut() != 0.0) {
                                   if (t.ndecomp() == 1) {
-                                      auto test = tcc::tensor::algebra::
+                                      auto test = tensor::algebra::
                                             two_way_decomposition(t);
                                       if (!test.empty()) {
                                           t = test;
                                           compressed_norm = norm(t);
                                       }
                                   } else {
-                                      tcc::tensor::algebra::recompress(t);
+                                      tensor::algebra::recompress(t);
                                       compressed_norm = norm(t);
                                   }
                               }
@@ -908,17 +899,18 @@ int main(int argc, char *argv[]) {
                 } else {
                     B.truncate();
                 }
-                world.gop.fence();
-                tcc::tensor::detail::recompress = old_compress;
+                auto B1 = mpqc_time::fenced_now(world);
+                auto Btime = mpqc_time::duration_in_s(B0, B1);
 
-                auto B1 = tcc::utility::time::now();
-                auto Btime = tcc::utility::time::duration_in_s(B0, B1);
                 std::cout << "B time = " << Btime << std::endl;
                 b_storage = storage_for_array(B);
                 std::cout << "B Storage:\n";
                 std::cout << "\tAll Full: " << b_storage[0] << "\n";
                 std::cout << "\tBlock Sparse Only: " << b_storage[1] << "\n";
                 std::cout << "\tCLR: " << b_storage[2] << "\n";
+
+                // Reset the compression flag
+                tensor::detail::recompress = old_compress;
             }
 
 
@@ -965,8 +957,8 @@ int main(int argc, char *argv[]) {
         auto mp2_vir = basis.nfunctions() - mp2_occ;
 
 
-        auto F_eig = tcc::array_ops::array_to_eigen(Fao);
-        auto S_eig = tcc::array_ops::array_to_eigen(S);
+        auto F_eig = array_ops::array_to_eigen(Fao);
+        auto S_eig = array_ops::array_to_eigen(S);
 
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
@@ -976,13 +968,13 @@ int main(int argc, char *argv[]) {
         decltype(S_eig) Ceigi = es.eigenvectors().leftCols(mp2_occ);
         decltype(S_eig) Ceigv = es.eigenvectors().rightCols(mp2_vir);
 
-        auto tr_occ = tcc::scf::tr_occupied(clustered_mol.nclusters(), mp2_occ);
-        auto tr_vir = tcc::scf::tr_occupied(clustered_mol.nclusters(), mp2_vir);
+        auto tr_occ = scf::tr_occupied(clustered_mol.nclusters(), mp2_occ);
+        auto tr_vir = scf::tr_occupied(clustered_mol.nclusters(), mp2_vir);
 
-        auto Ci = tcc::array_ops::eigen_to_array<TA::TensorD>(
+        auto Ci = array_ops::eigen_to_array<TA::TensorD>(
               world, Ceigi, S.trange().data()[0], tr_occ);
 
-        auto Cv = tcc::array_ops::eigen_to_array<TA::TensorD>(
+        auto Cv = array_ops::eigen_to_array<TA::TensorD>(
               world, Ceigv, S.trange().data()[0], tr_vir);
 
         // Compute Dipole Moment

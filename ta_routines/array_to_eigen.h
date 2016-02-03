@@ -1,16 +1,16 @@
 #pragma once
-#ifndef TCC_ARRAYOPS_ARRAYTOEIGEN_H
-#define TCC_ARRAYOPS_ARRAYTOEIGEN_H
+#ifndef MPQC_ARRAYOPS_ARRAYTOEIGEN_H
+#define MPQC_ARRAYOPS_ARRAYTOEIGEN_H
 
 #include "../include/tiledarray.h"
-#include "../tensor/tcc_tile.h"
+#include "../tensor/mpqc_tile.h"
 #include "../tensor/decomposed_tensor.h"
 #include "../tensor/decomposed_tensor_nonintrusive_interface.h"
 #include "../include/eigen.h"
 #include "../common/typedefs.h"
 #include "../common/namespaces.h"
 
-namespace tcc {
+namespace mpqc {
 namespace array_ops {
 
 template <typename T>
@@ -169,7 +169,7 @@ eigen_to_array(madness::World &world, Matrix<double> const &M,
 }
 
 } // namespace array_ops
-} // namespace tcc
+} // namespace mpqc
 
 
-#endif // TCC_ARRAYOPS_ARRAYTOEIGEN_H
+#endif // mpqc_ARRAYOPS_ARRAYTOEIGEN_H

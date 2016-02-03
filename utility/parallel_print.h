@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_UTLITY_PARALLELPRINT_H
-#define TCC_UTLITY_PARALLELPRINT_H
+#ifndef MPQC_UTLITY_PARALLELPRINT_H
+#define MPQC_UTLITY_PARALLELPRINT_H
 
 #include <tuple>
 #include <string>
@@ -8,7 +8,7 @@
 #include <fstream>
 #include "../include/tiledarray.h"
 
-namespace tcc {
+namespace mpqc {
 namespace utility {
 namespace aux {
 
@@ -63,6 +63,6 @@ void print_file(madness::World &world, const std::string& file){
 }
 
 } // namespace utility
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_UTLITY_PARALLELPRINT_H
+#endif // MPQC_UTLITY_PARALLELPRINT_H

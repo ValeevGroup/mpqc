@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORGEMM_H
-#define TCC_TENSOR_DECOMPOSEDTENSORGEMM_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H
 
 #include "../include/tiledarray.h"
 #include "../common/typedefs.h"
@@ -10,7 +10,7 @@
 #include "decomposed_tensor_addition.h"
 #include "decomposed_tensor_gemm_helper.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
 template <typename T>
@@ -120,6 +120,6 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_TENSOR_DECOMPOSEDTENSORGEMM_H
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H

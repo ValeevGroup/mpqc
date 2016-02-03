@@ -1,13 +1,13 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSOR_H
-#define TCC_TENSOR_DECOMPOSEDTENSOR_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSOR_H
+#define MPQC_TENSOR_DECOMPOSEDTENSOR_H
 
 #include "../common/namespaces.h"
 #include "../include/tiledarray.h"
 #include <vector>
 #include <iostream>
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
 /// Class to hold decomposition of a tensor.  The class can hold an arbitrary
@@ -108,6 +108,6 @@ std::ostream &operator<<(std::ostream &os, DecomposedTensor<T> const &t) {
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
-#endif //  TCC_TENSOR_DECOMPOSEDTENSOR_H
+#endif //  MPQC_TENSOR_DECOMPOSEDTENSOR_H

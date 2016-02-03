@@ -1,10 +1,10 @@
 #pragma once
-#ifndef TCC_UTILITY_GETTYPE_H
-#define TCC_UTILITY_GETTYPE_H
+#ifndef MPQC_UTILITY_GETTYPE_H
+#define MPQC_UTILITY_GETTYPE_H
 
 #include <type_traits>
 
-namespace tcc {
+namespace mpqc {
 namespace utility {
 namespace meta {
 
@@ -69,7 +69,7 @@ auto back(T &&t, Ts &&... ts) -> decltype(detail::select_impl<Ts...>::select(
 
 } // namespace meta
 } // namespace utility
-} // namespace tcc
+} // namespace MPQC
 
 
-#endif /* end of include guard: TCC_UTILITY_GETTYPE_H */
+#endif /* end of include guard: MPQC_UTILITY_GETTYPE_H */

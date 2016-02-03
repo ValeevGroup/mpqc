@@ -9,7 +9,7 @@
 #include "../include/tiledarray.h"
 #include "../common/typedefs.h"
 #include "../utility/make_array.h"
-#include "../utility/array_storage.h"
+#include "../utility/array_info.h"
 
 #include "../common/namespaces.h"
 
@@ -138,8 +138,8 @@ Array fock_from_soad(madness::World &world, molecule::Molecule clustered_mol,
     auto trange_k
           = TRange({obs_trange1, minbs_trange1, obs_trange1, minbs_trange1});
 
-    auto bs_j = tcc::utility::make_array(obs, obs, min_bs, min_bs);
-    auto bs_k = tcc::utility::make_array(obs, min_bs, obs, min_bs);
+    auto bs_j = utility::make_array(obs, obs, min_bs, min_bs);
+    auto bs_k = utility::make_array(obs, min_bs, obs, min_bs);
 
     world.gop.fence();
     auto old_thresh = TA::SparseShape<float>::threshold();

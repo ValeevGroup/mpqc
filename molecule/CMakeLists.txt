@@ -12,10 +12,6 @@ set(sources
   molecule_fwd.h
   clustering_functions.h
   clustering_functions.cpp
-  # attach_hydrogens.h
-  # attach_hydrogens.cpp
-  # make_clusters.h
-  # make_clusters.cpp
   common.h
   common.cpp
   molecule.cpp

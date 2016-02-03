@@ -1,11 +1,11 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORUNARY_H
-#define TCC_TENSOR_DECOMPOSEDTENSORUNARY_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
 
 #include "decomposed_tensor.h"
 #include "decomposed_tensor_algebra.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
 
@@ -176,6 +176,6 @@ bool empty(DecomposedTensor<T> const &t) {
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_TENSOR_DECOMPOSEDTENSORUNARY_H
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H

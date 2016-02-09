@@ -112,7 +112,7 @@ template <typename TileType>
 TileType mat_to_tile(TA::Range range, Matrix<double> const *M, double cut);
 
 template <>
-tensor::Tile<tensor::DecomposedTensor<double>>
+inline tensor::Tile<tensor::DecomposedTensor<double>>
 mat_to_tile<tensor::Tile<tensor::DecomposedTensor<double>>>(
       TA::Range range, Matrix<double> const *M, double cut) {
     auto const extent = range.extent();
@@ -128,7 +128,7 @@ mat_to_tile<tensor::Tile<tensor::DecomposedTensor<double>>>(
 }
 
 template <>
-TA::Tensor<double>
+inline TA::Tensor<double>
 mat_to_tile<TA::Tensor<double>>(TA::Range range, Matrix<double> const *M,
                                 double) {
     const auto extent = range.extent();

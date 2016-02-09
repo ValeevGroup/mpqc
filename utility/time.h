@@ -12,14 +12,14 @@ namespace time {
 
 using t_point = std::chrono::high_resolution_clock::time_point;
 
-t_point now() { return std::chrono::high_resolution_clock::now(); }
+inline t_point now() { return std::chrono::high_resolution_clock::now(); }
 
-double duration_in_s(t_point const &t0, t_point const &t1) {
+inline double duration_in_s(t_point const &t0, t_point const &t1) {
     return std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0)
         .count();
 }
 
-t_point fenced_now(madness::World &world){
+inline t_point fenced_now(madness::World &world){
     world.gop.fence();
     return now();
 }

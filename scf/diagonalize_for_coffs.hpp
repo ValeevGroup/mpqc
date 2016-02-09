@@ -19,7 +19,7 @@ namespace scf {
 
 using Array2 = TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy>;
 
-TA::TiledRange1 tr_occupied(int guess, int occ) {
+inline TA::TiledRange1 tr_occupied(int guess, int occ) {
     auto nblocks = (guess < occ) ? guess : occ;
     auto block_size = std::max(occ / nblocks, 1);
     std::vector<std::size_t> blocks;
@@ -32,7 +32,7 @@ TA::TiledRange1 tr_occupied(int guess, int occ) {
     return TA::TiledRange1(blocks.begin(), blocks.end());
 }
 
-Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1 tr_i,
+inline Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1 tr_i,
                         unsigned int occ, unsigned int nocc_clusters, 
                         bool use_chol_vectors = false) {
     auto F_eig = array_ops::array_to_eigen(F);

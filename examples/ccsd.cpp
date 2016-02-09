@@ -31,9 +31,8 @@
 #include "../basis/cluster_shells.h"
 #include "../basis/basis.h"
 
-#include "../integrals/integrals.h"
-
 #include "../scf/diagonalize_for_coffs.hpp"
+#include "../scf/scf.h"
 #include "../cc/ccsd_t.h"
 #include "../cc/lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
@@ -44,147 +43,6 @@
 using namespace mpqc;
 namespace ints = integrals;
 
-class ThreeCenterScf {
-private:
-    using array_type = TA::TSpArrayD;
-    array_type H_;
-    array_type S_;
-
-    array_type F_;
-    array_type D_;
-    array_type C_;
-    array_type L_invV_;
-    TiledArray::DIIS<array_type> diis_;
-
-    std::vector<double> k_times_;
-    std::vector<double> j_times_;
-    std::vector<double> w_times_;
-    std::vector<double> scf_times_;
-
-    int64_t occ_;
-    double repulsion_;
-
-
-    void compute_density(int64_t occ) {
-        auto F_eig = array_ops::array_to_eigen(F_);
-        auto S_eig = array_ops::array_to_eigen(S_);
-
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
-                                                                   S_eig);
-        decltype(S_eig) C = es.eigenvectors().leftCols(occ);
-        auto tr_ao = S_.trange().data()[0];
-
-        auto occ_nclusters = (occ_ < 10) ? occ_ : 10;
-        auto tr_occ = scf::tr_occupied(occ_nclusters, occ_);
-
-        C_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C, tr_ao, tr_occ);
-
-        D_("i,j") = C_("i,k") * C_("j,k");
-    }
-
-    template <typename Integral>
-    void form_fock(Integral const &eri3) {
-        auto &world = F_.get_world();
-
-        world.gop.fence();
-        auto w0 = mpqc_time::now();
-        TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> W;
-        W("X, mu, i") = L_invV_("X,Y") * (eri3("Y, mu, nu") * C_("nu, i"));
-        world.gop.fence();
-        auto w1 = mpqc_time::now();
-        w_times_.push_back(mpqc_time::duration_in_s(w0,w1));
-
-
-        array_type J;
-        J("mu, nu") = eri3("X, mu, nu")
-                      * (L_invV_("Y, X") * (W("Y, rho, i") * C_("rho, i")));
-        world.gop.fence();
-        auto j1 = mpqc_time::now();
-        j_times_.push_back(mpqc_time::duration_in_s(w1,j1));
-
-
-        // Permute W
-        W("X,i,nu") = W("X,nu,i");
-        array_type K;
-        K("mu, nu") = W("X, i, mu") * W("X, i, nu");
-        world.gop.fence();
-        auto k1 = mpqc_time::now();
-        k_times_.push_back(mpqc_time::duration_in_s(j1,k1));
-
-        F_("i,j") = H_("i,j") + 2 * J("i,j") - K("i,j");
-    }
-
-
-public:
-
-    ThreeCenterScf(array_type const &H, array_type const &F_guess, array_type const &S,
-                   array_type const &L_invV, int64_t occ, double rep)
-            : H_(H), F_(F_guess), S_(S), L_invV_(L_invV), occ_(occ), repulsion_(rep) {
-        compute_density(occ_);
-    }
-
-
-    const array_type get_overlap() const {
-        return S_;
-    }
-
-    const array_type get_fock() const {
-        return F_;
-    }
-
-    template <typename Integral>
-    void solve(int64_t max_iters, double thresh, Integral const &eri3) {
-
-        if(F_.get_world().rank() == 0){
-            std::cout << "Start SCF" << std::endl;
-            std::cout << "Convergence : " << thresh << std::endl;
-            std::cout << "Max Iteration : " << max_iters << std::endl;
-        }
-
-        auto iter = 0;
-        auto error = std::numeric_limits<double>::max();
-        auto old_energy = 0.0;
-
-        while (iter < max_iters && thresh < error) {
-            auto s0 = mpqc_time::now();
-            F_.get_world().gop.fence();
-            form_fock(eri3);
-
-            auto current_energy = energy();
-            error = std::abs(old_energy - current_energy);
-            old_energy = current_energy;
-
-            array_type Grad;
-            Grad("i,j") = F_("i,k") * D_("k,l") * S_("l,j")
-                          - S_("i,k") * D_("k,l") * F_("l,j");
-
-            diis_.extrapolate(F_, Grad);
-
-            // Lastly update density
-            compute_density(occ_);
-
-            F_.get_world().gop.fence();
-            auto s1 = mpqc_time::now();
-            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
-
-            if(F_.get_world().rank() == 0){
-                std::cout << "Iteration: " << (iter + 1)
-                << " energy: " << old_energy << " error: " << error
-                << std::endl;
-                std::cout << "\tW time: " << w_times_.back() << std::endl;
-                std::cout << "\tJ time: " << j_times_.back()
-                << " s K time: " << k_times_.back()
-                << " s iter time: " << scf_times_.back() << std::endl;
-            }
-            ++iter;
-        }
-    }
-
-    double energy() {
-        return repulsion_
-               + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
-    }
-};
 
 // TODO test case that verify the result automatic
 int try_main(int argc, char *argv[], madness::World &world) {
@@ -399,7 +257,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
         utility::print_par(world, "Soad Time: " , soad_time, "\n");
 
-        ThreeCenterScf scf(H, F_soad, S, L_inv, occ / 2, repulsion_energy);
+        DFRHF scf(H, F_soad, S, L_inv, occ / 2, repulsion_energy);
         scf.solve(scf_max_iter, scf_converge, eri3);
 
         // end SCF

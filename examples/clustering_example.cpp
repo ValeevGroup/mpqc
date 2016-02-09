@@ -1,18 +1,12 @@
 #include "../molecule/atom_based_cluster_concept.h"
 #include "../molecule/atom_based_cluster.h"
-#include "../molecule/atom.h"
 
 #include "../molecule/molecule.h"
 #include "../molecule/clustering_functions.h"
 
 #include "../clustering/kmeans.h"
 
-#include "../common/typedefs.h"
-#include "../common/namespaces.h"
-
 #include "../include/libint.h"
-
-#include <iostream>
 
 using namespace mpqc;
 

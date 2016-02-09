@@ -10,13 +10,9 @@
 
 #include "../integrals/atomic_integral.h"
 
-#include "../basis/atom_basisset.h"
 #include "../basis/basis_set.h"
-#include "../basis/basis.h"
 
-#include "../common/namespaces.h"
 #include "../molecule/clustering_functions.h"
-#include "../molecule/molecule.h"
 
 using namespace mpqc;
 

@@ -1,5 +1,4 @@
 #include "cached_shell_info.h"
-#include "../../include/libint.h"
 
 namespace mpqc {
 namespace integrals {

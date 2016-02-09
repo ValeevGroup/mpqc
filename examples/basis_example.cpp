@@ -1,17 +1,11 @@
 #include "../molecule/atom_based_cluster.h"
-#include "../molecule/atom.h"
 
 #include "../molecule/molecule.h"
 
 #include "../basis/basis_set.h"
 #include "../basis/basis.h"
 
-#include "../common/typedefs.h"
-#include "../common/namespaces.h"
-
 #include "../include/libint.h"
-
-#include <iostream>
 
 using namespace mpqc;
 

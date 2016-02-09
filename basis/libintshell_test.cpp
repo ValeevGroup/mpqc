@@ -1,9 +1,6 @@
 #include "../include/libint.h"
 #include "basis_set.h"
 
-#include <iostream>
-#include <vector>
-
 using namespace tcc;
 using namespace tcc::basis;
 

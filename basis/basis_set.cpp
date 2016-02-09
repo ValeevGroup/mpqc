@@ -5,17 +5,9 @@
 
 #include "../molecule/molecule.h"
 #include "../molecule/cluster_collapse.h"
-#include "../molecule/atom_based_cluster.h"
 #include "../molecule/common.h"
-#include "../molecule/atom.h"
 
 #include "../include/libint.h"
-
-#include <iostream>
-#include <memory>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
 
 namespace mpqc {
 namespace basis {

@@ -1,7 +1,4 @@
 #include "cluster.h"
-#include "common.h"
-
-#include <iostream>
 
 namespace mpqc {
 namespace molecule {

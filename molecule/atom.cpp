@@ -1,7 +1,6 @@
 #include "atom.h"
 
 #include <map>
-#include <string>
 #include <iostream>
 
 namespace mpqc {

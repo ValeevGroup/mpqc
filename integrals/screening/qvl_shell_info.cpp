@@ -1,6 +1,4 @@
 #include "qvl_shell_info.h"
-#include  <algorithm>
-#include <array>
 
 namespace mpqc {
 namespace integrals {

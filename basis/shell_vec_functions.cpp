@@ -2,7 +2,6 @@
 
 #include "../include/libint.h"
 
-#include <algorithm>
 #include <numeric>
 
 namespace mpqc {

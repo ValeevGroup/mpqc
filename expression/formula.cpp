@@ -10,8 +10,6 @@
 
 #include <boost/algorithm/string.hpp>
 #include <TiledArray/error.h>
-#include <string>
-#include <memory>
 
 namespace mpqc{
 

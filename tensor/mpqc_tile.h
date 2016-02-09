@@ -5,6 +5,7 @@
 #include "../common/typedefs.h"
 #include "../include/tiledarray.h"
 #include "../utility/meta/get_type.h"
+#include "decomposed_tensor_unary.h"
 
 #include <memory>
 

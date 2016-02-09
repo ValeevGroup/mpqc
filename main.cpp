@@ -3,8 +3,6 @@
 
 #include "utility/json_input.h"
 
-#include <iostream>
-
 using namespace tcc;
 int main(int argc, char *argv[]) {
     rapidjson::Document dom;

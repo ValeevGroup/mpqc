@@ -5,8 +5,6 @@
 
 #include "../clustering/kmeans.h"
 
-#include <iostream>
-
 using namespace mpqc;
 
 namespace clustering_test {

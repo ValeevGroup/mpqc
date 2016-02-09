@@ -2,16 +2,9 @@
 #include "common.h"
 #include "molecule.h"
 
-#include "atom_based_cluster.h"
-#include "atom_based_cluster_concept.h"
-
 #include "../clustering/kmeans.h"
-#include "../clustering/common.h"
 
 #include <cassert>
-#include <numeric>
-#include <iostream>
-#include <random>
 
 
 namespace mpqc {

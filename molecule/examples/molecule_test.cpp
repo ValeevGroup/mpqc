@@ -1,21 +1,13 @@
 #include <iostream>
 #include <vector>
-#include <chrono>
 
 #include "../Atom.h"
 #include "../../include/tbb.h"
-#include "../cluster_concept.h"
-#include "../molecule.h"
-#include "../cluster_collapse.h"
-
-#include "../cluster.h"
-#include "../clustering_functions.h"
 
 #include "../../include/libint.h"
-#include <fstream>
 
-using namespace tcc;
-using namespace tcc::molecule;
+using namespace mpqc;
+using namespace mpqc::molecule;
 
 molecule::Molecule read_xyz(std::ifstream &f) {
     // Get number of atoms.

@@ -9,8 +9,6 @@
 #include "../include/libint.h"
 #include "../include/tiledarray.h"
 
-#include <vector>
-
 namespace mpqc {
 
 namespace mol = molecule;

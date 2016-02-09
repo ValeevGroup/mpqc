@@ -1,9 +1,6 @@
 #include "atom_based_cluster.h"
-#include "atom.h"
 
 #include "common.h"
-
-#include <iostream>
 
 namespace mpqc {
 namespace molecule {

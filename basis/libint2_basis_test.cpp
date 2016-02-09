@@ -2,7 +2,6 @@
  * Example test to ensure that I can compile with libint basis headers
  */
 #include "../include/libint.h"
-#include <iostream>
 
 int main(int argc, char *argv[]) {
     libint2::init();

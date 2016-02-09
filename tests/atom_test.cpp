@@ -3,8 +3,6 @@
 
 #include "../molecule/atom.h"
 
-#include <string>
-
 SCENARIO("atoms can be intialized", "[atom]"){
     GIVEN("a default initalized atom"){
         mpqc::molecule::Atom a;

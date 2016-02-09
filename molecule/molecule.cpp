@@ -1,17 +1,9 @@
 #include "molecule.h"
-#include "atom_based_cluster_concept.h"
-#include "atom_based_cluster.h"
 
 #include "common.h"
 #include "atom_masses.h"
-#include "atom.h"
-
-#include "cluster_collapse.h"
 
 #include "../include/libint.h"
-
-#include <iostream>
-#include <fstream>
 
 namespace mpqc {
 namespace molecule {

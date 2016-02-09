@@ -1,8 +1,6 @@
 #include "array_info.h"
 
-#include "../include/eigen.h"
 #include "../tensor/decomposed_tensor.h"
-#include "../tensor/decomposed_tensor_unary.h"
 #include "../tensor/mpqc_tile.h"
 
 namespace mpqc {

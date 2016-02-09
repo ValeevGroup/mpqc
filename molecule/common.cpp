@@ -1,11 +1,7 @@
 #include "common.h"
 #include "../include/libint.h"
-#include "cluster_concept.h"
 
 #include "atom.h"
-
-#include <algorithm>
-#include <vector>
 
 
 namespace mpqc {

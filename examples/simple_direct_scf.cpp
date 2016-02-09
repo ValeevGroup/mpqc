@@ -20,7 +20,7 @@
 #include "../integrals/integrals.h"
 
 #include "../utility/time.h"
-#include "../utility/array_storage.h"
+#include "../utility/array_info.h"
 #include "../ta_routines/array_to_eigen.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
@@ -54,11 +54,11 @@ class FourCenterSCF {
         array_type K;
         auto &world = eri4.array().get_world();
         world.gop.fence();
-        auto k0 = tcc_time::now();
+        auto k0 = mpqc_time::now();
         K("i,j") = eri4("i,k,j,l") * D_("k,l");
         world.gop.fence();
-        auto k1 = tcc_time::now();
-        k_times_.push_back(tcc_time::duration_in_s(k0, k1));
+        auto k1 = mpqc_time::now();
+        k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
 
         return K;
     }
@@ -69,19 +69,19 @@ class FourCenterSCF {
         array_type J;
         auto &world = eri4.array().get_world();
         world.gop.fence();
-        auto j0 = tcc_time::now();
+        auto j0 = mpqc_time::now();
         J("i,j") = eri4("i,j,k,l") * D_("k,l");
         world.gop.fence();
-        auto j1 = tcc_time::now();
-        j_times_.push_back(tcc_time::duration_in_s(j0, j1));
+        auto j1 = mpqc_time::now();
+        j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
 
         return J;
     }
 
 
     void compute_density(int64_t occ) {
-        auto F_eig = tcc::array_ops::array_to_eigen(F_);
-        auto S_eig = tcc::array_ops::array_to_eigen(S_);
+        auto F_eig = array_ops::array_to_eigen(F_);
+        auto S_eig = array_ops::array_to_eigen(S_);
 
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
@@ -90,7 +90,7 @@ class FourCenterSCF {
 
         auto tr_ao = S_.trange().data()[0];
 
-        D_ = tcc::array_ops::eigen_to_array<TA::TensorD>(F_.get_world(), D_eig,
+        D_ = array_ops::eigen_to_array<TA::TensorD>(F_.get_world(), D_eig,
                                                          tr_ao, tr_ao);
     }
 
@@ -115,7 +115,7 @@ class FourCenterSCF {
         auto old_energy = 0.0;
 
         while (iter < max_iters && thresh < error) {
-            auto s0 = tcc_time::now();
+            auto s0 = mpqc_time::now();
             F_.get_world().gop.fence();
             form_fock(eri4);
 
@@ -133,8 +133,8 @@ class FourCenterSCF {
             compute_density(occ_);
 
             F_.get_world().gop.fence();
-            auto s1 = tcc_time::now();
-            scf_times_.push_back(tcc_time::duration_in_s(s0, s1));
+            auto s1 = mpqc_time::now();
+            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
 
 
             std::cout << "Iteration: " << (iter + 1)
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
               << std::endl;
 
     libint2::init();
-    const auto bs_array = tcc::utility::make_array(basis, basis);
+    const auto bs_array = utility::make_array(basis, basis);
 
     auto overlap_e = ints::make_1body_shr_pool("overlap", basis, clustered_mol);
     auto S = ints::sparse_integrals(world, overlap_e, bs_array);
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
-    auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
+    auto bs4_array = utility::make_array(basis, basis, basis, basis);
     auto eri_e = ints::make_2body_shr_pool(basis);
 
     auto F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
@@ -232,14 +232,14 @@ int main(int argc, char *argv[]) {
     { // Do schwarz
         std::cout << "\nComputing HF with Schwarz Screening" << std::endl;
         world.gop.fence();
-        auto screen0 = tcc_time::now();
+        auto screen0 = mpqc_time::now();
 
         auto screen_builder = ints::init_schwarz_screen(1e-10);
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               screen_builder(world, eri_e, basis));
 
-        auto screen1 = tcc_time::now();
-        std::cout << "Took " << tcc_time::duration_in_s(screen0, screen1)
+        auto screen1 = mpqc_time::now();
+        std::cout << "Took " << mpqc_time::duration_in_s(screen0, screen1)
                   << " s to form screening Matrix!" << std::endl;
 
         auto eri4 = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array,
@@ -247,10 +247,10 @@ int main(int argc, char *argv[]) {
 
 
         world.gop.fence();
-        auto eri40 = tcc_time::now();
+        auto eri40 = mpqc_time::now();
         world.gop.fence();
-        auto eri41 = tcc_time::now();
-        std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
+        auto eri41 = mpqc_time::now();
+        std::cout << "Took " << mpqc_time::duration_in_s(eri40, eri41)
                   << " to compute direct integrals " << std::endl;
 
         FourCenterSCF scf(H, S, F_soad, occ / 2, repulsion_energy);
@@ -309,11 +309,11 @@ int main(int argc, char *argv[]) {
     { // Unscreened SCF
         std::cout << "\n\nComputing HF with No Screening" << std::endl;
         world.gop.fence();
-        auto eri40 = tcc_time::now();
+        auto eri40 = mpqc_time::now();
         auto eri4 = ints::direct_sparse_integrals(world, eri_e, bs4_array);
         world.gop.fence();
-        auto eri41 = tcc_time::now();
-        std::cout << "Took " << tcc_time::duration_in_s(eri40, eri41)
+        auto eri41 = mpqc_time::now();
+        std::cout << "Took " << mpqc_time::duration_in_s(eri40, eri41)
                   << " s to initialize integrals." << std::endl;
 
         FourCenterSCF scf(H, S, F_soad, occ / 2, repulsion_energy);

@@ -51,11 +51,11 @@ class FourCenterSCF {
         array_type K;
         auto &world = eri4.get_world();
         world.gop.fence();
-        auto k0 = tcc_time::now();
+        auto k0 = mpqc_time::now();
         K("i,j") = eri4("i,k,j,l") * D_("k,l");
         world.gop.fence();
-        auto k1 = tcc_time::now();
-        k_times_.push_back(tcc_time::duration_in_s(k0, k1));
+        auto k1 = mpqc_time::now();
+        k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
 
         return K;
     }
@@ -66,19 +66,19 @@ class FourCenterSCF {
         array_type J;
         auto &world = eri4.get_world();
         world.gop.fence();
-        auto j0 = tcc_time::now();
+        auto j0 = mpqc_time::now();
         J("i,j") = eri4("i,j,k,l") * D_("k,l");
         world.gop.fence();
-        auto j1 = tcc_time::now();
-        j_times_.push_back(tcc_time::duration_in_s(j0, j1));
+        auto j1 = mpqc_time::now();
+        j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
 
         return J;
     }
 
 
     void compute_density(int64_t occ) {
-        auto F_eig = tcc::array_ops::array_to_eigen(F_);
-        auto S_eig = tcc::array_ops::array_to_eigen(S_);
+        auto F_eig = array_ops::array_to_eigen(F_);
+        auto S_eig = array_ops::array_to_eigen(S_);
 
         Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
@@ -87,7 +87,7 @@ class FourCenterSCF {
 
         auto tr_ao = S_.trange().data()[0];
 
-        D_ = tcc::array_ops::eigen_to_array<TA::TensorD>(F_.get_world(), D_eig,
+        D_ = array_ops::eigen_to_array<TA::TensorD>(F_.get_world(), D_eig,
                                                          tr_ao, tr_ao);
     }
 
@@ -113,7 +113,7 @@ class FourCenterSCF {
         auto old_energy = 0.0;
 
         while (iter < max_iters && thresh < error) {
-            auto s0 = tcc_time::now();
+            auto s0 = mpqc_time::now();
             F_.get_world().gop.fence();
             form_fock(eri4);
 
@@ -131,8 +131,8 @@ class FourCenterSCF {
             compute_density(occ_);
 
             F_.get_world().gop.fence();
-            auto s1 = tcc_time::now();
-            scf_times_.push_back(tcc_time::duration_in_s(s0, s1));
+            auto s1 = mpqc_time::now();
+            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
 
 
             std::cout << "Iteration: " << (iter + 1)
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
 
     libint2::init();
 
-    const auto bs_array = tcc::utility::make_array(basis, basis);
+    const auto bs_array = utility::make_array(basis, basis);
 
     auto screener = integrals::Screener();
 
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
-    auto bs4_array = tcc::utility::make_array(basis, basis, basis, basis);
+    auto bs4_array = utility::make_array(basis, basis, basis, basis);
     auto eri_e = ints::make_2body_shr_pool(basis);
     { // Unscreened four center stored RHF.
         auto eri4 = ints::sparse_integrals(world, eri_e, bs4_array);

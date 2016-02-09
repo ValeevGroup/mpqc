@@ -8,7 +8,7 @@
 #include "diagonal_array.h"
 
 #include "../utility/time.h"
-#include "../utility/array_storage.h"
+#include "../utility/array_info.h"
 
 #include <limits>
 #include <type_traits>

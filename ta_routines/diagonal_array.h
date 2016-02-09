@@ -3,7 +3,7 @@
 #define TCC_PUREIFICATION_DIAGONALARRAY_H
 
 #include "../include/tiledarray.h"
-#include "../tensor/tcc_tile.h"
+#include "../tensor/mpqc_tile.h"
 #include "../tensor/decomposed_tensor.h"
 
 namespace tcc {

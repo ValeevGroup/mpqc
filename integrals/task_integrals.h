@@ -228,10 +228,9 @@ dense_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
     auto shr_bases = std::make_shared<Barray<N>>(bases);
 
     // Make a pointer to a builder which can be shared by different tasks.
-    auto builder_ptr = std::make_shared<IntegralBuilder<N, E, Op>>(
-          make_integral_builder(world, std::move(shr_pool),
+    auto builder_ptr = make_integral_builder(world, std::move(shr_pool),
                                 std::move(shr_bases), std::move(screen),
-                                std::move(op)));
+                                std::move(op));
 
     // builder is shared_ptr so just capture it by copy.
     auto task_func = [=](detail::IdxVec const &idx, TA::Range rng) {

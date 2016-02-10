@@ -33,6 +33,7 @@
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/scf.h"
+#include "../scf/traditional_df_fock_builder.h"
 #include "../cc/ccsd_t.h"
 #include "../cc/lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
@@ -54,10 +55,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     std::cout << std::setprecision(15);
     Document cc_in;
-    if (in.HasMember("CCSD")){
-        cc_in = get_nested(in,"CCSD");
-    }
-    else if(in.HasMember("CCSD(T)")){
+    if (in.HasMember("CCSD")) {
+        cc_in = get_nested(in, "CCSD");
+    } else if (in.HasMember("CCSD(T)")) {
         cc_in = get_nested(in, "CCSD(T)");
     }
 
@@ -71,8 +71,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
 
     // declare variables needed for ccsd
-//    std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD,TA::SparsePolicy>> intermidiate;
-    std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD,TA::SparsePolicy,cc::DirectTwoElectronSparseArray>> intermidiate;
+    //    std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD,TA::SparsePolicy>>
+    //    intermidiate;
+    std::shared_ptr<mpqc::cc::
+                          CCSDIntermediate<TA::TensorD, TA::SparsePolicy,
+                                           cc::DirectTwoElectronSparseArray>>
+          intermidiate;
 
     std::shared_ptr<mpqc::TRange1Engine> tre;
 
@@ -82,18 +86,23 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     cc::DirectTwoElectronSparseArray lazy_two_electron_int;
 
-//    mpqc::integrals::DirArray<4, integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>> lazy_two_electron_int;
+    //    mpqc::integrals::DirArray<4,
+    //    integrals::IntegralBuilder<4,libint2::TwoBodyEngine<libint2::Coulomb>,integrals::TensorPassThrough>>
+    //    lazy_two_electron_int;
     {
 
         // Get necessary info
         std::string mol_file = in["xyz file"].GetString();
 
-        std::string ghost_atoms = in.HasMember("GhostAtoms") ? in["GhostAtoms"].GetString() : "";
+        std::string ghost_atoms
+              = in.HasMember("GhostAtoms") ? in["GhostAtoms"].GetString() : "";
 
 
         int nclusters = in["number of clusters"].GetInt();
         std::size_t mo_blocksize = cc_in["BlockSize"].GetInt();
-        std::size_t ao_blocksize = in.HasMember("AOBlockSize") ? in["AOBlockSize"].GetInt(): mo_blocksize;
+        std::size_t ao_blocksize = in.HasMember("AOBlockSize")
+                                         ? in["AOBlockSize"].GetInt()
+                                         : mo_blocksize;
 
         // Get basis info
         std::string basis_name = in.HasMember("basis") ? in["basis"].GetString()
@@ -108,11 +117,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                : 1e-13;
 
         // get SCF converge
-        double scf_converge = in.HasMember("SCFConverge") ? in["SCFConverge"].GetDouble() : 1.0e-7;
+        double scf_converge = in.HasMember("SCFConverge")
+                                    ? in["SCFConverge"].GetDouble()
+                                    : 1.0e-7;
 
 
         // get SCF max iteration
-        int scf_max_iter = in.HasMember("SCFMaxIter") ? in["SCFMaxIter"].GetInt() : 30;
+        int scf_max_iter
+              = in.HasMember("SCFMaxIter") ? in["SCFMaxIter"].GetInt() : 30;
 
         // get other info
         bool frozen_core = cc_in.HasMember("FrozenCore")
@@ -132,8 +144,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             utility::print_file(world, mol_file);
             std::cout << "basis is " << basis_name << std::endl;
             std::cout << "df basis is " << df_basis_name << std::endl;
-            std::cout << "Using " << nclusters << " clusters"
-                      << std::endl;
+            std::cout << "Using " << nclusters << " clusters" << std::endl;
         }
 
         utility::print_par(world, "Sparse threshold is ",
@@ -147,31 +158,32 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         // use clustered_mol to generate basis
         molecule::Molecule clustered_mol{};
-        if(!ghost_atoms.empty()){
+        if (!ghost_atoms.empty()) {
             auto ghost_molecue = mpqc::molecule::read_xyz(ghost_atoms);
             auto ghost_elements = ghost_molecue.clusterables();
 
-            if (world.rank() == 0){
+            if (world.rank() == 0) {
                 std::cout << "Ghost Atom file: " << ghost_atoms << std::endl;
-                utility::print_file(world,ghost_atoms);
+                utility::print_file(world, ghost_atoms);
             }
 
             auto mol_elements = mol.clusterables();
 
-            mol_elements.insert(mol_elements.end(),ghost_elements.begin(), ghost_elements.end());
+            mol_elements.insert(mol_elements.end(), ghost_elements.begin(),
+                                ghost_elements.end());
 
             clustered_mol = mpqc::molecule::kmeans(mol_elements, nclusters);
 
             clustered_mol.set_charge(mol.charge());
             clustered_mol.set_mass(mol.mass());
 
-        }
-        else{
+        } else {
 
-            if (world.rank() == 0){
+            if (world.rank() == 0) {
                 std::cout << "Ghost Atom file: None" << std::endl;
             }
-            clustered_mol = mpqc::molecule::kmeans(mol.clusterables(), nclusters);
+            clustered_mol
+                  = mpqc::molecule::kmeans(mol.clusterables(), nclusters);
         }
 
         mpqc::basis::BasisSet bs{basis_name};
@@ -186,13 +198,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::cout.rdbuf(cout_sbuf);
 
         // reblock basis
-        bool if_reblock = in.HasMember("Reblock") ? in["Reblock"].GetBool() : false;
-        if(if_reblock){
+        bool if_reblock = in.HasMember("Reblock") ? in["Reblock"].GetBool()
+                                                  : false;
+        if (if_reblock) {
 
-            utility::print_par(world,"AOBlockSize:  ",ao_blocksize, "\n");
-            basis = reblock(basis,cc::reblock_basis,ao_blocksize);
-            df_basis = reblock(df_basis,cc::reblock_basis,ao_blocksize);
-
+            utility::print_par(world, "AOBlockSize:  ", ao_blocksize, "\n");
+            basis = reblock(basis, cc::reblock_basis, ao_blocksize);
+            df_basis = reblock(df_basis, cc::reblock_basis, ao_blocksize);
         }
         if (world.rank() == 0) {
             TA::TiledRange1 bs_range = basis.create_trange1();
@@ -200,14 +212,16 @@ int try_main(int argc, char *argv[], madness::World &world) {
             auto average_block = cc::average_blocksize(bs_range);
             std::cout << "Basis trange " << std::endl;
             std::cout << bs_range << std::endl;
-            std::cout << "Min and Max block size: " << minmax_block.first << " " << minmax_block.second << std::endl;
+            std::cout << "Min and Max block size: " << minmax_block.first << " "
+                      << minmax_block.second << std::endl;
             std::cout << "Average: " << average_block << std::endl;
             TA::TiledRange1 dfbs_range = df_basis.create_trange1();
             minmax_block = cc::minmax_blocksize(dfbs_range);
             average_block = cc::average_blocksize(dfbs_range);
             std::cout << "DF Basis trange " << std::endl;
             std::cout << dfbs_range << std::endl;
-            std::cout << "Min and Max block size: " << minmax_block.first << " " << minmax_block.second << std::endl;
+            std::cout << "Min and Max block size: " << minmax_block.first << " "
+                      << minmax_block.second << std::endl;
             std::cout << "Average: " << average_block << std::endl;
         }
 
@@ -230,36 +244,26 @@ int try_main(int argc, char *argv[], madness::World &world) {
         decltype(T) H;
         H("i,j") = T("i,j") + V("i,j");
 
-        const auto dfbs_array = utility::make_array(df_basis, df_basis);
         auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
 
-        decltype(H) L_inv;
-        {
-            auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
-            auto V_eig = array_ops::array_to_eigen(Vmetric);
-            MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
-            MatrixD L_inv_eig = Leig.inverse();
+        auto soad0 = mpqc_time::fenced_now(world);
+        auto F_soad
+              = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
+        auto soad1 = mpqc_time::fenced_now(world);
+        auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
+        std::cout << "Soad Time: " << soad_time << std::endl;
 
-            auto tr_V = Vmetric.trange().data()[0];
-            L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
-                                                                tr_V, tr_V);
-        }
+        const auto dfbs_array = utility::make_array(df_basis, df_basis);
+        auto Metric = ints::sparse_integrals(world, eri_e, dfbs_array);
+        scf::DFFockBuilder builder(Metric);
 
         auto three_c_array = utility::make_array(df_basis, basis, basis);
         auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array);
 
+        scf::ClosedShellSCF<decltype(builder)> scf(
+              H, S, occ / 2, repulsion_energy, std::move(builder), F_soad);
 
-        auto soad0 = mpqc_time::now();
-        auto F_soad
-                = scf::fock_from_soad(world, mol, basis, eri_e, H);
-
-        auto soad1 = mpqc_time::now();
-        auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
-        utility::print_par(world, "Soad Time: " , soad_time, "\n");
-
-        DFRHF scf(H, F_soad, S, L_inv, occ / 2, repulsion_energy);
         scf.solve(scf_max_iter, scf_converge, eri3);
-
         // end SCF
 
 
@@ -275,11 +279,21 @@ int try_main(int argc, char *argv[], madness::World &world) {
             n_frozen_core = n_frozen_core / 2;
         }
 
-        TA::Array<double,2,TA::TensorD,TA::SparsePolicy> F;
-        F = scf.get_fock();
+        TA::Array<double, 2, TA::TensorD, TA::SparsePolicy> F;
+        F = scf.fock();
 
-        TA::Array<double,3,TA::TensorD, TA::SparsePolicy> Xab;
-        Xab("X,a,b") = L_inv("X,Y")*eri3("Y,a,b");
+        decltype(Metric) L_inv;
+        {
+            auto M_eig = array_ops::array_to_eigen(Metric);
+            MatrixD L_inv_eig
+                  = MatrixD(Eig::LLT<MatrixD>(M_eig).matrixL()).inverse();
+            auto tr_M = Metric.trange().data()[0];
+            L_inv = array_ops::eigen_to_array<TA::TensorD>(
+                  world, L_inv_eig, tr_M, tr_M);
+        }
+
+        TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> Xab;
+        Xab("X,a,b") = L_inv("X,Y") * eri3("Y,a,b");
 
 
         auto F_eig = array_ops::array_to_eigen(F);
@@ -288,15 +302,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
         // check the condition number in Overlap
         Eig::SelfAdjointEigenSolver<decltype(S_eig)> S_es(S_eig);
         // eigen value in increasing order
-        auto cond = S_es.eigenvalues()(S_es.eigenvalues().size()-1)/S_es.eigenvalues()(0);
-        utility::print_par(world,"Condition Number in Overlap: ", cond, "\n");
+        auto cond = S_es.eigenvalues()(S_es.eigenvalues().size() - 1)
+                    / S_es.eigenvalues()(0);
+        utility::print_par(world, "Condition Number in Overlap: ", cond, "\n");
 
         // solve C
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
+        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+                                                                   S_eig);
         ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
 
         auto C_all = es.eigenvectors();
-        decltype(S_eig) C_occ = C_all.block(0, n_frozen_core, S_eig.rows(), occ / 2 - n_frozen_core);
+        decltype(S_eig) C_occ = C_all.block(0, n_frozen_core, S_eig.rows(),
+                                            occ / 2 - n_frozen_core);
         decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occ / 2);
         C_all = C_all.rightCols(S_eig.rows() - n_frozen_core);
 
@@ -304,34 +321,48 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
         // check block size
-        std::size_t occ_blocksize = cc_in.HasMember("OccBlockSize") ? cc_in["OccBlockSize"].GetInt() : mo_blocksize;
-        std::size_t vir_blocksize = cc_in.HasMember("VirBlockSize") ? cc_in["VirBlockSize"].GetInt() : mo_blocksize;
+        std::size_t occ_blocksize = cc_in.HasMember("OccBlockSize")
+                                          ? cc_in["OccBlockSize"].GetInt()
+                                          : mo_blocksize;
+        std::size_t vir_blocksize = cc_in.HasMember("VirBlockSize")
+                                          ? cc_in["VirBlockSize"].GetInt()
+                                          : mo_blocksize;
 
-        tre = std::make_shared<TRange1Engine>(occ / 2, all, occ_blocksize, vir_blocksize, n_frozen_core);
+        tre = std::make_shared<TRange1Engine>(occ / 2, all, occ_blocksize,
+                                              vir_blocksize, n_frozen_core);
 
         auto tr_0 = Xab.trange().data().back();
         auto tr_all = tre->get_all_tr1();
         auto tr_i0 = tre->get_occ_tr1();
         auto tr_vir = tre->get_vir_tr1();
 
-        utility::print_par(world, "Block Size in Occupied     ", occ_blocksize, "\n");
+        utility::print_par(world, "Block Size in Occupied     ", occ_blocksize,
+                           "\n");
         utility::print_par(world, "TiledRange1 Occupied ", tr_i0, "\n");
-        utility::print_par(world, "Average: ", cc::average_blocksize(tr_i0), "\n");
+        utility::print_par(world, "Average: ", cc::average_blocksize(tr_i0),
+                           "\n");
         auto min_max = cc::minmax_blocksize(tr_i0);
-        utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
+        utility::print_par(world, "Min and Max block size: ", min_max.first,
+                           " ", min_max.second, "\n");
 
 
-        utility::print_par(world, "Block Size in Virtual     ", vir_blocksize, "\n");
+        utility::print_par(world, "Block Size in Virtual     ", vir_blocksize,
+                           "\n");
         utility::print_par(world, "TiledRange1 Virtual  ", tr_vir, "\n");
-        utility::print_par(world, "Average: ", cc::average_blocksize(tr_vir), "\n");
+        utility::print_par(world, "Average: ", cc::average_blocksize(tr_vir),
+                           "\n");
         min_max = cc::minmax_blocksize(tr_vir);
-        utility::print_par(world, "Min and Max block size: ",min_max.first, " ", min_max.second, "\n");
+        utility::print_par(world, "Min and Max block size: ", min_max.first,
+                           " ", min_max.second, "\n");
 
-        auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ, tr_0, tr_i0);
+        auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ,
+                                                                tr_0, tr_i0);
 
-        auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir, tr_0, tr_vir);
+        auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir,
+                                                                tr_0, tr_vir);
 
-        auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_all, tr_0, tr_all);
+        auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_all,
+                                                                  tr_0, tr_all);
 
         std::vector<TA::TiledRange1> tr_04(4, basis.create_trange1());
         TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
@@ -341,46 +372,61 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         fock_mo("p,q") = F("mu,nu") * Cv("mu,p") * Ci("nu,q");
 
-//        if (do_screen) {
-//            auto screen_builder = ints::init_schwarz_screen(1e-10);
-//            auto shr_screen = std::make_shared<ints::SchwarzScreen>(screen_builder(world, eri_e, basis));
-//
-//            const auto bs4_array = utility::make_array(basis, basis, basis, basis);
-//            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array, shr_screen);
-//            intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy>>
-//                    (Xab, Ci, Cv, lazy_two_electron_int);
-//        } else {
+        //        if (do_screen) {
+        //            auto screen_builder = ints::init_schwarz_screen(1e-10);
+        //            auto shr_screen =
+        //            std::make_shared<ints::SchwarzScreen>(screen_builder(world,
+        //            eri_e, basis));
+        //
+        //            const auto bs4_array = utility::make_array(basis, basis,
+        //            basis, basis);
+        //            auto lazy_two_electron_int =
+        //            mpqc_ints::direct_sparse_integrals(world, eri_e,
+        //            bs4_array, shr_screen);
+        //            intermidiate =
+        //            std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD,
+        //            TA::SparsePolicy>>
+        //                    (Xab, Ci, Cv, lazy_two_electron_int);
+        //        } else {
 
-//            const auto bs4_array = utility::make_array(basis, basis, basis, basis);
-//            auto lazy_two_electron_int = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array);
+        //            const auto bs4_array = utility::make_array(basis, basis,
+        //            basis, basis);
+        //            auto lazy_two_electron_int =
+        //            mpqc_ints::direct_sparse_integrals(world, eri_e,
+        //            bs4_array);
 
-        std::string screen = cc_in.HasMember("Screen") ? cc_in["Screen"].GetString() : "";
+        std::string screen
+              = cc_in.HasMember("Screen") ? cc_in["Screen"].GetString() : "";
         int screen_option = 0;
-        if(screen == "schwarz"){
+        if (screen == "schwarz") {
             screen_option = 1;
-        }
-        else if(screen =="qqr"){
+        } else if (screen == "qqr") {
             screen_option = 2;
         }
 
 
-        auto direct = cc_in.HasMember("Direct") ? cc_in["Direct"].GetBool(): true;
+        auto direct = cc_in.HasMember("Direct") ? cc_in["Direct"].GetBool()
+                                                : true;
 
-        if(direct){
+        if (direct) {
 
             auto time0 = mpqc_time::now();
-            lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4,screen_option);
+            lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(
+                  world, basis, trange_4, screen_option);
             auto time1 = mpqc_time::now();
-            auto duration = mpqc_time::duration_in_s(time0,time1);
-            if(world.rank() == 0){
-                std::cout << "Time to initialize direct two electron sparse integral: " << duration << std::endl;
-
+            auto duration = mpqc_time::duration_in_s(time0, time1);
+            if (world.rank() == 0) {
+                std::cout << "Time to initialize direct two electron sparse "
+                             "integral: " << duration << std::endl;
             }
         }
 
-        intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>>
-                (Ci, Cv, Xab, lazy_two_electron_int);
-//        }
+        intermidiate = std::
+              make_shared<mpqc::cc::
+                                CCSDIntermediate<TA::TensorD, TA::SparsePolicy,
+                                                 cc::DirectTwoElectronSparseArray>>(
+                    Ci, Cv, Xab, lazy_two_electron_int);
+        //        }
     }
 
     // clean up all temporary from HF
@@ -390,12 +436,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
     utility::parallal_break_point(world, 0);
 
 
-    if(in.HasMember("CCSD(T)")){
-        mpqc::cc::CCSD_T<TA::Tensor < double>, TA::SparsePolicy > ccsd_t(fock_mo, ens, tre, intermidiate, cc_in);
+    if (in.HasMember("CCSD(T)")) {
+        mpqc::cc::CCSD_T<TA::Tensor<double>, TA::SparsePolicy> ccsd_t(
+              fock_mo, ens, tre, intermidiate, cc_in);
         ccsd_t.compute();
-    }
-    else if(in.HasMember("CCSD")){
-        mpqc::cc::CCSD<TA::Tensor < double>, TA::SparsePolicy > ccsd(fock_mo, ens, tre, intermidiate, cc_in);
+    } else if (in.HasMember("CCSD")) {
+        mpqc::cc::CCSD<TA::Tensor<double>, TA::SparsePolicy> ccsd(
+              fock_mo, ens, tre, intermidiate, cc_in);
         ccsd.compute();
     }
 

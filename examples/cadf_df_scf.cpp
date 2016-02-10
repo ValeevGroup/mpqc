@@ -27,10 +27,12 @@
 #include "../scf/soad.h"
 #include "../scf/orbital_localization.h"
 #include "../scf/clusterd_coeffs.h"
+#include "../scf/cadf_helper_functions.h"
 
 #include "../tensor/decomposed_tensor.h"
 #include "../tensor/decomposed_tensor_nonintrusive_interface.h"
 #include "../tensor/mpqc_tile.h"
+#include "../tensor/tensor_transforms.h"
 
 #include <memory>
 
@@ -81,8 +83,8 @@ storage_for_array(TA::DistArray<Tile, SpPolicy> const &a) {
         if (!a.is_zero(ord)) {
             sparse_a += size;
 
-            tensor::Tile<tensor::DecomposedTensor<double>>
-                  wrapper_tile = a.find(ord).get();
+            tensor::Tile<tensor::DecomposedTensor<double>> wrapper_tile
+                  = a.find(ord).get();
 
             auto const &tile = wrapper_tile.tile();
 
@@ -257,74 +259,6 @@ struct JobSummary {
     }
 };
 
-class to_dtile {
-    double clr_thresh_;
-
-  public:
-    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
-    to_dtile(double clr_thresh) : clr_thresh_(clr_thresh) {}
-
-    dtile operator()(TA::TensorD const &tile) {
-        auto range = tile.range();
-
-        const auto extent = range.extent();
-        const auto i = extent[0];
-        const auto j = extent[1];
-
-        auto local_range = TA::Range{i, j};
-        auto tensor = TA::TensorD(local_range, tile.data());
-
-        auto new_tile
-              = tensor::DecomposedTensor<double>(clr_thresh_,
-                                                      std::move(tensor));
-
-        return dtile(range, std::move(new_tile));
-    }
-};
-
-class to_dtile_compress {
-    double clr_thresh_;
-
-  public:
-    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
-    to_dtile_compress(double clr_thresh) : clr_thresh_(clr_thresh) {}
-
-    dtile operator()(TA::TensorD const &tile) {
-        auto range = tile.range();
-
-        const auto extent = range.extent();
-        const auto i = extent[0];
-        const auto j = extent[1];
-
-        auto local_range = TA::Range{i, j};
-        auto tensor = TA::TensorD(local_range, tile.data());
-
-        auto new_tile
-              = tensor::DecomposedTensor<double>(clr_thresh_,
-                                                      std::move(tensor));
-
-        if (clr_thresh_ != 0.0) {
-            auto test = tensor::algebra::two_way_decomposition(new_tile);
-            if (!test.empty()) {
-                new_tile = std::move(test);
-            }
-        }
-
-        return dtile(range, std::move(new_tile));
-    }
-};
-
-class to_ta_tile {
-    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
-
-  public:
-    TA::TensorD operator()(dtile const &t) const {
-        auto tensor = tensor::algebra::combine(t.tile());
-        auto range = t.range();
-        return TA::Tensor<double>(range, tensor.data());
-    }
-};
-
 class ThreeCenterScf {
   private:
     using array_type = DArray<2, TA::TensorD, SpPolicy>;
@@ -378,14 +312,16 @@ class ThreeCenterScf {
         auto tr_ao = S_.trange().data()[0];
 
         auto tr_occ = scf::tr_occupied(1, occ);
-        dC_ = TA::to_new_tile_type(array_ops::eigen_to_array<TA::TensorD>(
-                                         H_.get_world(), C, tr_ao, tr_occ),
-                                   to_dtile(clr_thresh_));
+        auto C_TA = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C,
+                                                           tr_ao, tr_occ);
+
+        dC_ = TA::to_new_tile_type(C_TA, tensor::TaToDecompTensor(clr_thresh_,
+                                                                  false));
 
         decltype(S_eig) D = C * C.transpose();
 
-        D_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), D,
-                                                         tr_ao, tr_ao);
+        D_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), D, tr_ao,
+                                                    tr_ao);
     }
 
     template <typename Integral, typename Array>
@@ -411,7 +347,8 @@ class ThreeCenterScf {
         auto j1 = get_time();
         j_times_.push_back(calc_time(j0, j1));
 
-        darray_type dD_ = TA::to_new_tile_type(D_, to_dtile(clr_thresh_));
+        darray_type dD_ = TA::to_new_tile_type(
+              D_, tensor::TaToDecompTensor(clr_thresh_, false));
 
         using GTile = tensor::Tile<tensor::DecomposedTensor<double>>;
         DArray<3, GTile, SpPolicy> D_df;
@@ -429,9 +366,7 @@ class ThreeCenterScf {
 
             if (clr_thresh_ != 0 && tensor::detail::recompress) {
                 TA::foreach_inplace(
-                      D_df,
-                      [](tensor::
-                               Tile<tensor::DecomposedTensor<double>> &
+                      D_df, [](tensor::Tile<tensor::DecomposedTensor<double>> &
                                      t_tile) {
                           auto &t = t_tile.tile();
                           auto input_norm = norm(t);
@@ -476,7 +411,7 @@ class ThreeCenterScf {
             dL("mu, nu") = D_df("X, i, mu") * F_df("X, i, nu");
 
 
-            auto L = TA::to_new_tile_type(dL, to_ta_tile{});
+            auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
 
             K_("mu, nu") = L("mu, nu") + L("nu, mu");
             auto k1 = get_time();
@@ -497,9 +432,7 @@ class ThreeCenterScf {
 
             if (clr_thresh_ != 0 && tensor::detail::recompress) {
                 TA::foreach_inplace(
-                      D_df,
-                      [](tensor::
-                               Tile<tensor::DecomposedTensor<double>> &
+                      D_df, [](tensor::Tile<tensor::DecomposedTensor<double>> &
                                      t_tile) {
                           auto &t = t_tile.tile();
                           auto input_norm = norm(t);
@@ -544,14 +477,15 @@ class ThreeCenterScf {
             dL("j, nu") = D_df("X, i, j") * F_df("X, i, nu");
             dL("nu,j") = dL("j,nu");
 
-            auto dS = TA::to_new_tile_type(S_, to_dtile(clr_thresh_));
+            auto dS = TA::to_new_tile_type(
+                  S_, tensor::TaToDecompTensor(clr_thresh_, false));
             decltype(dL) dLij, Sc;
             dLij("i,j") = dC_("mu, i") * dL("mu, j");
             Sc("mu, j") = dS("mu, lam") * dC_("lam, j");
             dL("mu, nu") = Sc("mu, j") * dL("nu, j") + dL("mu, j") * Sc("nu,j")
                            - (Sc("mu,i") * dLij("i,j")) * Sc("nu,j");
 
-            auto L = TA::to_new_tile_type(dL, to_ta_tile{});
+            auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
 
             K_("mu, nu") = L("mu, nu") + L("nu, mu");
             auto k1 = get_time();
@@ -758,11 +692,12 @@ int main(int argc, char *argv[]) {
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
     std::cout << "Basis has " << basis.nfunctions() << " functions\n";
 
-    auto df_nclusters = nclusters;
-    auto df_clustered_mol = molecule::attach_hydrogens_and_kmeans(
-          molecule::read_xyz(mol_file).clusterables(), df_nclusters);
+    // auto df_nclusters = std::max(nclusters / 2, 1);
+    // auto df_clustered_mol = molecule::attach_hydrogens_and_kmeans(
+    //       molecule::read_xyz(mol_file).clusterables(), df_nclusters);
+    auto df_clustered_mol = clustered_mol;
 
-    auto cluster_num = 1;
+
     std::cout << "\nDF clustering:\n";
     for (auto const &c : df_clustered_mol.clusterables()) {
         auto atoms = c.atoms();
@@ -795,68 +730,52 @@ int main(int argc, char *argv[]) {
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
-    const auto dfbs_array = utility::make_array(df_basis, df_basis);
-    auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
+    // Trying my hand at making C for CADF.
+    std::unordered_map<int, TA::TensorD> tiles;
+    DArray<3, TA::TensorD, SpPolicy> C_df;
+    {
+        // OBS by atom
+        auto sort_atoms_in_mol = false;
+        std::vector<molecule::AtomBasedClusterable> atoms;
+        std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
+        auto cluster_ind = 0;
+        auto atom_ind = 0;
+        for (auto const &cluster : clustered_mol.clusterables()) {
+            for (auto atom : cluster.atoms()) {
+                atoms.push_back(std::move(atom));
+                obs_atom_to_cluster_map[atom_ind] = cluster_ind;
+                ++atom_ind;
+            }
+            ++cluster_ind;
+        }
+        basis::Basis obs_by_atom(bs.get_cluster_shells(
+              molecule::Molecule(std::move(atoms), sort_atoms_in_mol)));
 
-    auto three_c_array = utility::make_array(df_basis, basis, basis);
-
-    auto decomp_3d = [&](TA::TensorD &&t) {
-        auto range = t.range();
-
-        auto const extent = range.extent();
-        const auto i = extent[0];
-        const auto j = extent[1];
-        const auto k = extent[2];
-        auto local_range = TA::Range{i, j, k};
-
-        auto tensor = TA::TensorD(local_range, t.data());
-
-        tensor::DecomposedTensor<double> dc_tile(clr_threshold,
-                                                      std::move(tensor));
-
-        if (clr_threshold != 0.0) {
-            auto lr_tile = tensor::algebra::two_way_decomposition(dc_tile);
-
-            if (!lr_tile.empty()) {
-                dc_tile = std::move(lr_tile);
+        // DFBS by atom
+        atoms.clear(); // just in case the move didn't clear it
+        for (auto const &cluster : df_clustered_mol.clusterables()) {
+            for (auto atom : cluster.atoms()) {
+                atoms.push_back(std::move(atom));
             }
         }
+        basis::Basis df_by_atom(dfbs.get_cluster_shells(
+              molecule::Molecule(std::move(atoms), sort_atoms_in_mol)));
 
-        return tensor::Tile<decltype(dc_tile)>(range, std::move(dc_tile));
-    };
+        const auto dfbs_array = utility::make_array(df_by_atom, df_by_atom);
+        auto eri_e = ints::make_2body_shr_pool(df_by_atom, obs_by_atom);
 
-    auto decomp_3d_no_compress = [&](TA::TensorD &&t) {
-        auto range = t.range();
+        auto three_c_array
+              = utility::make_array(df_by_atom, obs_by_atom, obs_by_atom);
+        decltype(H) M = ints::sparse_integrals(world, eri_e, dfbs_array);
 
-        auto const extent = range.extent();
-        const auto i = extent[0];
-        const auto j = extent[1];
-        const auto k = extent[2];
-        auto local_range = TA::Range{i, j, k};
+        const auto schwarz_thresh = 1e-12;
+        auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
+        auto shr_screen = std::make_shared<ints::SchwarzScreen>(
+              sbuilder(world, eri_e, df_by_atom, obs_by_atom));
 
-        auto tensor = TA::TensorD(local_range, t.data());
+        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
+                                                  shr_screen);
 
-        tensor::DecomposedTensor<double> dc_tile(0.0, std::move(tensor));
-
-        return tensor::Tile<decltype(dc_tile)>(range, std::move(dc_tile));
-    };
-
-    decltype(H) M = ints::sparse_integrals(world, eri_e, dfbs_array);
-
-    const auto schwarz_thresh = 1e-12;
-    std::cout << "Schwarz Threshold: " << schwarz_thresh << std::endl;
-    auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
-    auto shr_screen = std::make_shared<ints::SchwarzScreen>(
-          sbuilder(world, eri_e, df_basis, basis));
-
-    auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
-                                              shr_screen);
-
-    // Trying my hand at making C for CADF.
-    // Initially doing this by cluster instead of by atom, but that will have to
-    // change eventually
-    std::unordered_map<int, TA::TensorD> tiles;
-    {
         auto const &eri3_tiles = eri3.array().trange().tiles();
         auto const &M_tiles = M.trange().tiles();
 
@@ -886,14 +805,14 @@ int main(int argc, char *argv[]) {
         };
 
         // Loop over number of tiles
-        for (auto i = 0; i < nclusters; ++i) {
+        for (auto i = 0; i < obs_by_atom.nclusters(); ++i) {
 
             // Deal with same tile mu nu.
             auto ord_tile_pair = same_center_tile(i);
             tiles[ord_tile_pair.first] = ord_tile_pair.second;
 
 
-            for (auto j = 0; j < nclusters; ++j) {
+            for (auto j = 0; j < obs_by_atom.nclusters(); ++j) {
                 if (j == i) continue;
 
                 unsigned long il = i;
@@ -1031,17 +950,48 @@ int main(int argc, char *argv[]) {
         }
 
         TA::SparseShape<float> shape(C_shape, eri3.array().trange());
-        DArray<3, TA::TensorD, SpPolicy> C_df(world, eri3.array().trange(),
-                                              shape);
+        DArray<3, TA::TensorD, SpPolicy> C_df_(world, eri3.array().trange(),
+                                               shape);
 
         for (auto &pair : tiles) {
-            C_df.set(pair.first, pair.second);
+            C_df_.set(pair.first, pair.second);
         }
         world.gop.fence();
-        C_df.truncate();
+        C_df_.truncate();
 
-        std::cout << "C df sparsity = " << C_df.get_shape().sparsity()
+        std::cout << "C df sparsity (by atom) = " << C_df_.get_shape().sparsity()
                   << std::endl;
+
+        auto by_atom_trange = integrals::detail::create_trange(three_c_array);
+        auto by_cluster_trange = integrals::detail::create_trange(
+              utility::make_array(df_basis, basis, basis));
+        std::cout << "Trange by atom: " << by_atom_trange << std::endl;
+        std::cout << "Trange by cluster: " << by_cluster_trange << std::endl;
+
+        C_df = scf::reblock_from_atoms(C_df_, obs_atom_to_cluster_map,
+                                obs_atom_to_cluster_map, by_cluster_trange);
+
+        std::cout << "C df sparsity (by cluster) = " << C_df.get_shape().sparsity()
+                  << std::endl;
+    }
+
+#if 1
+    // Continue with scf
+    {
+        const auto dfbs_array = utility::make_array(df_basis, df_basis);
+        auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
+
+        auto three_c_array = utility::make_array(df_basis, basis, basis);
+        decltype(H) M = ints::sparse_integrals(world, eri_e, dfbs_array);
+
+        const auto schwarz_thresh = 1e-14;
+        std::cout << "Schwarz Threshold: " << schwarz_thresh << std::endl;
+        auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
+        auto shr_screen = std::make_shared<ints::SchwarzScreen>(
+              sbuilder(world, eri_e, df_basis, basis));
+
+        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
+                                                  shr_screen);
 
         // Make M_inv
         decltype(M) M_inv_oh;
@@ -1052,35 +1002,35 @@ int main(int argc, char *argv[]) {
         M_inv_oh = array_ops::eigen_to_array<TA::TensorD>(
               world, M_eig_inv_oh, M.trange().data()[0], M.trange().data()[1]);
 
-        auto deri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
-                                                   shr_screen, decomp_3d);
+        auto deri3 = ints::direct_sparse_integrals(
+              world, eri_e, three_c_array, shr_screen,
+              tensor::TaToDecompTensor(clr_threshold));
 
-        auto decomp_3d_wrapper =
-              [&](TA::TensorD t) { return decomp_3d(std::move(t)); };
+        auto dC_df = TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(
+                                                      clr_threshold));
 
-        auto dC_df = TA::to_new_tile_type(C_df, decomp_3d_wrapper);
-        auto dM = TA::to_new_tile_type(M, to_dtile{clr_threshold});
+        // Don't CLR compress M
+        auto dM = TA::to_new_tile_type(
+              M, tensor::TaToDecompTensor(clr_threshold, false));
 
         world.gop.fence();
         auto old_compress = tensor::detail::recompress;
         tensor::detail::recompress = true;
 
-        // This is broken at the moment.
         decltype(dC_df) dG_df;
         dG_df("X,i,j") = deri3("X,i,j") - 0.5 * dM("X,Y") * dC_df("Y,i,j");
         if (clr_threshold != 0 && tensor::detail::recompress) {
             TA::foreach_inplace(
                   dG_df,
-                  [](tensor::Tile<tensor::DecomposedTensor<double>> &
-                           t_tile) {
+                  [](tensor::Tile<tensor::DecomposedTensor<double>> &t_tile) {
                       auto &t = t_tile.tile();
                       auto input_norm = norm(t);
 
                       auto compressed_norm = input_norm;
                       if (t.cut() != 0.0) {
                           if (t.ndecomp() == 1) {
-                              auto test = tensor::algebra::
-                                    two_way_decomposition(t);
+                              auto test
+                                    = tensor::algebra::two_way_decomposition(t);
                               if (!test.empty()) {
                                   t = test;
                                   compressed_norm = norm(t);
@@ -1117,6 +1067,7 @@ int main(int argc, char *argv[]) {
 
         auto multi_pool
               = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+
         auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
 
         ThreeCenterScf scf(H, F_soad, S, M_inv_oh, r_xyz, occ / 2,
@@ -1124,6 +1075,7 @@ int main(int argc, char *argv[]) {
 
         scf.solve(20, 1e-11, eri3, dC_df, dG_df);
     }
+#endif
 
     return 0;
 }

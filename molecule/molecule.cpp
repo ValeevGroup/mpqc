@@ -53,12 +53,14 @@ void sort_elements(std::vector<ABCbl> &elems, const Vec3D &point) {
 } // namespace anonymous
 
 
-Molecule::Molecule(std::vector<ABCbl> c)
+Molecule::Molecule(std::vector<ABCbl> c, bool sort_input)
         : elements_(std::move(c)),
           com_(center_of_mass(elements_)),
           mass_(sum_mass(elements_)),
           charge_(sum_charge(elements_)) {
-    sort_elements(elements_, com_);
+    if (sort_input) {
+        sort_elements(elements_, com_);
+    }
 }
 
 std::vector<Atom> Molecule::atoms() const {
@@ -124,15 +126,15 @@ Molecule read_xyz(std::string const &file_name) {
     return Molecule(std::move(atoms));
 }
 
-std::ostream & operator<<(std::ostream &os, Molecule const &mol){
+std::ostream &operator<<(std::ostream &os, Molecule const &mol) {
     os << "Molecule C.O.M: " << mol.com().transpose() << ", ";
     os << "charge: " << mol.charge() << ", ";
     os << "mass: " << mol.mass() << ", with Elements: {";
 
     auto last = mol.end();
     auto second_last = last - 1;
-    for(auto it = mol.begin(); it != last; ++it){
-        if(it != second_last) {
+    for (auto it = mol.begin(); it != last; ++it) {
+        if (it != second_last) {
             it->print(os) << ", ";
         } else {
             it->print(os) << "}";

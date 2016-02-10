@@ -41,7 +41,7 @@ class Molecule {
     int64_t charge_ = 0;
 
   public:
-    Molecule(std::vector<AtomBasedClusterable> c);
+    Molecule(std::vector<AtomBasedClusterable> c, bool sort_input = true);
 
     Molecule() = default;
 

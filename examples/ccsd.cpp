@@ -251,7 +251,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
               = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
         auto soad1 = mpqc_time::fenced_now(world);
         auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
-        std::cout << "Soad Time: " << soad_time << std::endl;
+        if(world.rank() == 0){
+            std::cout << "Soad Time: " << soad_time << std::endl;
+        }
 
         const auto dfbs_array = utility::make_array(df_basis, df_basis);
         auto Metric = ints::sparse_integrals(world, eri_e, dfbs_array);

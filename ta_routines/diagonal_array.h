@@ -1,13 +1,13 @@
 #pragma once
-#ifndef TCC_PUREIFICATION_DIAGONALARRAY_H
-#define TCC_PUREIFICATION_DIAGONALARRAY_H
+#ifndef MPQC_TAROUTINES_DIAGONALARRAY_H
+#define MPQC_TAROUTINES_DIAGONALARRAY_H
 
 #include "../include/tiledarray.h"
 #include "../tensor/mpqc_tile.h"
 #include "../tensor/decomposed_tensor.h"
 
-namespace tcc {
-namespace array {
+namespace mpqc {
+namespace ta_routines {
 
 template <typename T>
 void make_diagonal_tile(TiledArray::Tensor<T> &tile, T val) {
@@ -33,12 +33,12 @@ void make_diagonal_tile(tensor::Tile<tensor::DecomposedTensor<T>> &tile,
     tile.tile() = std::move(tensor);
 }
 
-template <typename T, unsigned int N, typename Tile>
-TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
-      TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy> const &model,
+template <typename Tile>
+TiledArray::DistArray<Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
+      TiledArray::DistArray<Tile, TiledArray::SparsePolicy> const &model,
       double val) {
 
-    using Array = TiledArray::Array<T, N, Tile, TiledArray::SparsePolicy>;
+    using Array = TiledArray::DistArray<Tile, TiledArray::SparsePolicy>;
 
     TiledArray::Tensor<float> tile_shape(model.trange().tiles(), 0.0);
 
@@ -154,7 +154,7 @@ TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> create_diagonal_matrix(
     return diag;
 }
 
-} // namespace pure
-} // namespace tcc
+} // namespace ta_routines
+} // namespace mpqc
 
-#endif // TCC_PUREIFICATION_DIAGONALARRAY_H
+#endif // MPQC_TAROUTINES_DIAGONALARRAY_H

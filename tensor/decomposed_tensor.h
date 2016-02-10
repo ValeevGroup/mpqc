@@ -22,12 +22,12 @@ class DecomposedTensor {
     using numeric_type = T;
     using value_type = TA::Tensor<T>;
 
-    DecomposedTensor() = default;
-    ~DecomposedTensor() = default;
-    DecomposedTensor(DecomposedTensor const &) = default;
-    DecomposedTensor(DecomposedTensor &&) = default;
-    DecomposedTensor &operator=(DecomposedTensor const &) = default;
-    DecomposedTensor &operator=(DecomposedTensor &&) = default;
+    DecomposedTensor(): tensors_() {};
+    // ~DecomposedTensor() = default;
+    // DecomposedTensor(DecomposedTensor const &) = default;
+    // DecomposedTensor(DecomposedTensor &&) = default;
+    // DecomposedTensor &operator=(DecomposedTensor const &) = default;
+    // DecomposedTensor &operator=(DecomposedTensor &&) = default;
 
     DecomposedTensor(double c) : cut_(c) {}
     DecomposedTensor(double c, std::vector<TA::Tensor<T>> ts)
@@ -67,7 +67,6 @@ class DecomposedTensor {
     TA::Tensor<T> &tensor(std::size_t i) { return tensors_[i]; }
     TA::Tensor<T> const &tensor(std::size_t i) const { return tensors_[i]; }
 
-    TA::Range &range(std::size_t i) { return tensors_[i].range(); }
     TA::Range const &range(std::size_t i) const { return tensors_[i].range(); }
 
     template <typename Archive>
@@ -96,6 +95,9 @@ class DecomposedTensor {
         }
     }
 };
+
+extern template class DecomposedTensor<double>;
+extern template DecomposedTensor<double>::DecomposedTensor();
 
 template <typename T>
 std::ostream &operator<<(std::ostream &os, DecomposedTensor<T> const &t) {

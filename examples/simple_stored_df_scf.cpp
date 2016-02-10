@@ -4,7 +4,6 @@
 #include "../include/libint.h"
 #include "../include/tiledarray.h"
 
-#include "../utility/make_array.h"
 #include "../clustering/kmeans.h"
 
 #include "../molecule/atom.h"
@@ -20,6 +19,8 @@
 #include "../integrals/integrals.h"
 
 #include "../utility/time.h"
+#include "../utility/make_array.h"
+#include "../utility/array_info.h"
 #include "../ta_routines/array_to_eigen.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
@@ -31,85 +32,14 @@
 #include "../tensor/decomposed_tensor_nonintrusive_interface.h"
 #include "../tensor/mpqc_tile.h"
 
+#include "../ta_routines/diagonal_array.h"
+
 #include <memory>
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 
 bool tensor::detail::recompress = true;
-
-std::array<double, 3>
-storage_for_array(TA::DistArray<TA::TensorD, SpPolicy> const &a) {
-    std::atomic<long> full_a(0.0);
-    std::atomic<long> sparse_a(0.0);
-
-    auto task_f = [&](int ord) {
-        auto const &trange = a.trange();
-        auto size = trange.make_tile_range(ord).volume();
-        full_a += size;
-
-        if (!a.is_zero(ord)) {
-            sparse_a += size;
-        }
-    };
-
-    auto &pmap = *a.get_pmap();
-    for (auto it : pmap) {
-        a.get_world().taskq.add(task_f, it);
-    }
-    a.get_world().gop.fence();
-
-    double full = full_a * 1e-9 * 8;
-    double sparse = sparse_a * 1e-9 * 8;
-
-    return {full, sparse, 0.0};
-}
-
-template <typename Tile>
-std::array<double, 3>
-storage_for_array(TA::DistArray<Tile, SpPolicy> const &a) {
-    std::atomic<long> full_a(0.0);
-    std::atomic<long> sparse_a(0.0);
-    std::atomic<long> clr_a(0.0);
-
-    auto task_f = [&](int ord) {
-        auto const &trange = a.trange();
-        auto size = trange.make_tile_range(ord).volume();
-        full_a += size;
-
-        if (!a.is_zero(ord)) {
-            sparse_a += size;
-
-            tensor::Tile<tensor::DecomposedTensor<double>>
-                  wrapper_tile = a.find(ord).get();
-
-            auto const &tile = wrapper_tile.tile();
-
-            if (tile.ndecomp() == 1) {
-                clr_a += size;
-            } else {
-                auto nelems = 0;
-                for (auto const &t : tile.tensors()) {
-                    nelems += t.range().volume();
-                }
-
-                clr_a += nelems;
-            }
-        }
-    };
-
-    auto &pmap = *a.get_pmap();
-    for (auto it : pmap) {
-        a.get_world().taskq.add(task_f, it);
-    }
-    a.get_world().gop.fence();
-
-    double full = full_a * 1e-9 * 8;
-    double sparse = sparse_a * 1e-9 * 8;
-    double clr = clr_a * 1e-9 * 8;
-
-    return {full, sparse, clr};
-}
 
 struct JobSummary {
     // Basis and cluster info
@@ -280,9 +210,8 @@ class to_dtile {
         auto local_range = TA::Range{i, j};
         auto tensor = TA::TensorD(local_range, tile.data());
 
-        auto new_tile
-              = tensor::DecomposedTensor<double>(clr_thresh_,
-                                                      std::move(tensor));
+        auto new_tile = tensor::DecomposedTensor<double>(clr_thresh_,
+                                                         std::move(tensor));
 
         return dtile(range, std::move(new_tile));
     }
@@ -305,9 +234,8 @@ class to_dtile_compress {
         auto local_range = TA::Range{i, j};
         auto tensor = TA::TensorD(local_range, tile.data());
 
-        auto new_tile
-              = tensor::DecomposedTensor<double>(clr_thresh_,
-                                                      std::move(tensor));
+        auto new_tile = tensor::DecomposedTensor<double>(clr_thresh_,
+                                                         std::move(tensor));
 
         if (clr_thresh_ != 0.0) {
             auto test = tensor::algebra::two_way_decomposition(new_tile);
@@ -372,7 +300,7 @@ class ThreeCenterScf {
     double exchange_energy_;
 
     void compute_density(int64_t occ) {
-        auto& world = F_.get_world();
+        auto &world = F_.get_world();
 
         auto F_eig = array_ops::array_to_eigen(F_);
         auto S_eig = array_ops::array_to_eigen(S_);
@@ -383,8 +311,8 @@ class ThreeCenterScf {
         auto tr_ao = S_.trange().data()[0];
 
         auto tr_occ = scf::tr_occupied(occ_, occ_);
-        C_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C,
-                                                         tr_ao, tr_occ);
+        C_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C, tr_ao,
+                                                    tr_occ);
 
         auto loc0 = mpqc_time::fenced_now(world);
 
@@ -392,7 +320,7 @@ class ThreeCenterScf {
         C_("mu,i") = C_("mu,k") * U("k,i");
 
         auto loc1 = mpqc_time::fenced_now(world);
-        localization_times_.push_back(mpqc_time::duration_in_s(loc0,loc1));
+        localization_times_.push_back(mpqc_time::duration_in_s(loc0, loc1));
 
         auto cluster0 = mpqc_time::fenced_now(world);
 
@@ -400,7 +328,8 @@ class ThreeCenterScf {
         scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
 
         auto cluster1 = mpqc_time::fenced_now(world);
-        clustering_times_.push_back(mpqc_time::duration_in_s(cluster0, cluster1));
+        clustering_times_.push_back(
+              mpqc_time::duration_in_s(cluster0, cluster1));
 
         D_("i,j") = C_("i,k") * C_("j,k");
     }
@@ -420,9 +349,9 @@ class ThreeCenterScf {
         J("mu, nu") = eri3("Y,mu,nu")
                       * (dV_inv_oh_("Y,Z")
                          * (dV_inv_oh_("Z,X") * (eri3("X,r,s") * dD_("r,s"))));
-        
+
         auto j1 = mpqc_time::fenced_now(world);
-        j_times_.push_back(mpqc_time::duration_in_s(j0,j1));
+        j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
 
         auto w0 = mpqc_time::fenced_now(world);
 
@@ -432,16 +361,15 @@ class ThreeCenterScf {
         if (clr_thresh_ != 0 && tensor::detail::recompress) {
             TA::foreach_inplace(
                   W,
-                  [](tensor::Tile<tensor::DecomposedTensor<double>> &
-                           t_tile) {
+                  [](tensor::Tile<tensor::DecomposedTensor<double>> &t_tile) {
                       auto &t = t_tile.tile();
                       auto input_norm = norm(t);
 
                       auto compressed_norm = input_norm;
                       if (t.cut() != 0.0) {
                           if (t.ndecomp() == 1) {
-                              auto test = tensor::algebra::
-                                    two_way_decomposition(t);
+                              auto test
+                                    = tensor::algebra::two_way_decomposition(t);
                               if (!test.empty()) {
                                   t = test;
                                   compressed_norm = norm(t);
@@ -462,9 +390,9 @@ class ThreeCenterScf {
         W("X,i,mu") = W("X,mu,i");
 
         auto w1 = mpqc_time::fenced_now(world);
-        w_times_.push_back(mpqc_time::duration_in_s(w0,w1));
+        w_times_.push_back(mpqc_time::duration_in_s(w0, w1));
 
-        auto w_store = storage_for_array(W);
+        auto w_store = utility::array_storage(W);
         w_sparse_store_.push_back(w_store[1]);
         w_sparse_clr_store_.push_back(w_store[2]);
         w_full_storage_ = w_store[0];
@@ -511,7 +439,7 @@ class ThreeCenterScf {
               clr_thresh_(clr_thresh) {
 
         dV_inv_oh_ = TA::to_new_tile_type(V_inv_oh, to_dtile(clr_thresh_));
-        auto dl_sizes = storage_for_array(dV_inv_oh_);
+        auto dl_sizes = utility::array_storage(dV_inv_oh_);
         std::cout << "V_inv storage:"
                   << "\n\tFull: " << dl_sizes[0]
                   << "\n\tSparse Only: " << dl_sizes[1]
@@ -752,11 +680,10 @@ int main(int argc, char *argv[]) {
         MatrixD V_inv_oh_eig = es.operatorInverseSqrt();
 
         auto tr_V = Vmetric.trange().data()[0];
-        L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
-                                                            tr_V, tr_V);
-        V_inv_oh
-              = array_ops::eigen_to_array<TA::TensorD>(world, V_inv_oh_eig,
-                                                            tr_V, tr_V);
+        L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig, tr_V,
+                                                       tr_V);
+        V_inv_oh = array_ops::eigen_to_array<TA::TensorD>(world, V_inv_oh_eig,
+                                                          tr_V, tr_V);
     }
 
     auto three_c_array = utility::make_array(df_basis, basis, basis);
@@ -796,19 +723,17 @@ int main(int argc, char *argv[]) {
             auto tensor = TA::TensorD(local_range, t.data());
 
             tensor::DecomposedTensor<double> dc_tile(clr_threshold,
-                                                          std::move(tensor));
+                                                     std::move(tensor));
 
             if (clr_threshold != 0.0) {
-                auto lr_tile
-                      = tensor::algebra::two_way_decomposition(dc_tile);
+                auto lr_tile = tensor::algebra::two_way_decomposition(dc_tile);
 
                 if (!lr_tile.empty()) {
                     dc_tile = std::move(lr_tile);
                 }
             }
 
-            return tensor::Tile<decltype(dc_tile)>(range,
-                                                        std::move(dc_tile));
+            return tensor::Tile<decltype(dc_tile)>(range, std::move(dc_tile));
         };
 
         auto decomp_3d_no_compress = [&](TA::TensorD &&t) {
@@ -822,11 +747,9 @@ int main(int argc, char *argv[]) {
 
             auto tensor = TA::TensorD(local_range, t.data());
 
-            tensor::DecomposedTensor<double> dc_tile(0.0,
-                                                          std::move(tensor));
+            tensor::DecomposedTensor<double> dc_tile(0.0, std::move(tensor));
 
-            return tensor::Tile<decltype(dc_tile)>(range,
-                                                        std::move(dc_tile));
+            return tensor::Tile<decltype(dc_tile)>(range, std::move(dc_tile));
         };
 
         if (!use_direct_ints) {
@@ -836,8 +759,7 @@ int main(int argc, char *argv[]) {
         if (use_direct_ints) {
 
 
-            using BTile
-                  = tensor::Tile<tensor::DecomposedTensor<double>>;
+            using BTile = tensor::Tile<tensor::DecomposedTensor<double>>;
             DArray<3, BTile, SpPolicy> B;
             std::array<double, 3> eri3_storage;
             std::array<double, 3> b_storage;
@@ -847,12 +769,12 @@ int main(int argc, char *argv[]) {
 
                 auto eri3 = ints::direct_sparse_integrals(
                       world, eri_e, three_c_array, shr_screen, decomp_3d);
-                
+
                 auto int1 = mpqc_time::fenced_now(world);
                 auto eri3_time = mpqc_time::duration_in_s(int0, int1);
 
                 std::cout << "Eri3 Integral time: " << eri3_time << std::endl;
-                eri3_storage = storage_for_array(eri3.array());
+                eri3_storage = utility::array_storage(eri3.array());
                 std::cout << "Eri3 Integral Storage:\n";
                 std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
                 std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
@@ -869,10 +791,8 @@ int main(int argc, char *argv[]) {
                 B("X,mu,nu") = dL_inv("X,Y") * eri3("Y,mu,nu");
                 if (clr_threshold != 0) {
                     TA::foreach_inplace(
-                          B,
-                          [](tensor::
-                                   Tile<tensor::DecomposedTensor<double>> &
-                                         t_tile) {
+                          B, [](tensor::Tile<tensor::DecomposedTensor<double>> &
+                                      t_tile) {
                               auto &t = t_tile.tile();
                               auto input_norm = norm(t);
 
@@ -903,7 +823,7 @@ int main(int argc, char *argv[]) {
                 auto Btime = mpqc_time::duration_in_s(B0, B1);
 
                 std::cout << "B time = " << Btime << std::endl;
-                b_storage = storage_for_array(B);
+                b_storage = utility::array_storage(B);
                 std::cout << "B Storage:\n";
                 std::cout << "\tAll Full: " << b_storage[0] << "\n";
                 std::cout << "\tBlock Sparse Only: " << b_storage[1] << "\n";
@@ -968,7 +888,7 @@ int main(int argc, char *argv[]) {
         decltype(S_eig) Ceigi = es.eigenvectors().leftCols(mp2_occ);
         decltype(S_eig) Ceigv = es.eigenvectors().rightCols(mp2_vir);
 
-        auto tr_occ = scf::tr_occupied(clustered_mol.nclusters(), mp2_occ);
+        auto tr_occ = scf::tr_occupied(mp2_occ, mp2_occ);
         auto tr_vir = scf::tr_occupied(clustered_mol.nclusters(), mp2_vir);
 
         auto Ci = array_ops::eigen_to_array<TA::TensorD>(

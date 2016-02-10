@@ -27,6 +27,7 @@
 #include "../utility/array_info.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../f12/utility.h"
+#include "../scf/traditional_df_fock_builder.h"
 
 #include <memory>
 #include <locale>
@@ -97,11 +98,13 @@ int main(int argc, char *argv[]) {
     H("i,j") = T("i,j") + V("i,j");
 
     // Unscreened four center stored RHF.
-    auto eri4 = ao_int.compute(L"(κ λ| G|κ1 λ1)");
+    auto metric = ao_int.compute(L"(Κ|G|Λ)");
+    scf::DFFockBuilder builder(metric);
     world.gop.fence();
 
-    RHF scf(H, S, occ / 2, repulsion_energy);
-    scf.solve(50, 1e-8, eri4);
+    auto eri3 = ao_int.compute(L"( Κ| G|κ1 λ1)");
+    scf::ClosedShellSCF<scf::DFFockBuilder>  scf(H, S, occ / 2, repulsion_energy, std::move(builder));
+    scf.solve(50, 1e-8, eri3);
 
 
     // CABS fock build
@@ -111,7 +114,7 @@ int main(int argc, char *argv[]) {
     auto S_cabs = ao_int.compute(L"(α|β)");
     auto S_ribs = ao_int.compute(L"(ρ|σ)");
     auto S_obs_ribs = ao_int.compute(L"(μ|σ)");
-    auto S_obs = scf.get_overlap();
+    auto S_obs = scf.overlap();
 
 
     // construct cabs

@@ -9,7 +9,8 @@
 #include "../integrals/integrals.h"
 #include "../include/tiledarray.h"
 #include "../utility/time.h"
-// #include "../ta_routines/array_to_eigen.h"
+#include "../ta_routines/array_to_eigen.h"
+#include "diagonalize_for_coffs.hpp"
 
 namespace mpqc {
 namespace scf {
@@ -128,6 +129,11 @@ class ClosedShellSCF {
 
         if (iter < max_iters && thresh > (error / old_energy)
             && thresh > (rms_error / volume)) {
+
+            if(world.rank() == 0){
+                std::cout << "HF Energy:  " << old_energy << std::endl;
+            }
+
             return true;
         } else {
             return false;

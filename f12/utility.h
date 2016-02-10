@@ -14,7 +14,7 @@ namespace f12{
 
     double basis_to_f12exponent(const std::string& basis_name);
 
-    std::vector<std::pair<double,double>> stg_ng_fit(int n, double zeta);
+    std::vector<std::pair<double,double>> stg_ng_fit(std::size_t n, double zeta);
 
     // Gaussian Type Geminal parameters
     struct GTGParams{

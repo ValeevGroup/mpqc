@@ -63,7 +63,7 @@ make_1body(std::string const &type, basis::Basis const &bs,
     }
 
     libint2::OneBodyEngine engine(itype, bs.max_nprim(),
-                                  static_cast<int>(bs.max_am()), 0);
+                                  static_cast<int>(bs.max_am()), 0ul);
 
     if (itype == libint2::OneBodyEngine::nuclear) {
         engine.set_params(std::move(q));

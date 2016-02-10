@@ -58,7 +58,7 @@ namespace mpqc{
                 block_sizes.push_back(block_size);
             }
             std::size_t n = block_sizes.size();
-            std::size_t total = std::accumulate(block_sizes.cbegin(),block_sizes.cend(),0);
+            std::size_t total = std::accumulate(block_sizes.cbegin(),block_sizes.cend(),0ul);
 
             std::size_t average = total / n;
             return average;

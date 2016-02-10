@@ -99,5 +99,13 @@ std::ostream &operator<<(std::ostream &os, Basis const &b) {
     return os;
 }
 
+Basis Basis::join(const Basis &basis) {
+
+    auto self_shells = this->cluster_shells();
+    auto other_shells = basis.cluster_shells();
+    self_shells.insert(self_shells.begin(),other_shells.begin(),other_shells.end());
+
+    return basis::Basis(self_shells);
+}
 } // namespace basis
 } // namespace basis

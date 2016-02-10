@@ -16,7 +16,7 @@ namespace f12{
         boost::trim(basis);
         boost::to_lower(basis);
 
-        double f12_gamma = 0.0;
+        double f12_gamma;
 
         if(basis == "cc-pvdz-f12") {
             f12_gamma = 0.9;
@@ -106,7 +106,7 @@ namespace f12{
 
     }
 
-    std::vector<std::pair<double,double>> stg_ng_fit(int n, double zeta) {
+    std::vector<std::pair<double,double>> stg_ng_fit(std::size_t n, double zeta) {
         const std::size_t nparams = 2* n;
         std::vector<double> cc(n,1.0);
         std::vector<double> aa(n);
@@ -229,5 +229,6 @@ namespace f12{
 
     }
 
-}
-}
+
+}// end of f12 namespace
+}// end of mpqc namespace

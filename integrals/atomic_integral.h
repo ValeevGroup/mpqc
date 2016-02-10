@@ -11,7 +11,6 @@
 #include <cwchar>
 
 #include "../common/namespaces.h"
-#include "../ta_routines/sqrt_inv.h"
 #include "../include/tiledarray.h"
 #include "../basis/basis.h"
 #include "../expression/formula.h"
@@ -40,7 +39,15 @@ namespace integrals{
                        std::shared_ptr<basis::Basis> dfbs = nullptr,
                        std::shared_ptr<basis::Basis> auxbs = nullptr,
                        std::vector<std::pair<double,double>> gtg_params = std::vector<std::pair<double,double>>() ) :
-               world_(world), mol_(mol), obs_(obs), dfbs_(dfbs), abs_(auxbs), gtg_params_(gtg_params)  { }
+               world_(world), mol_(mol), obs_(obs), dfbs_(dfbs), abs_(auxbs), gtg_params_(gtg_params)
+        {
+            if(auxbs!= nullptr){
+                ribs_ = std::make_shared<basis::Basis>(std::move(obs->join(*auxbs)));
+            }
+            else{
+                ribs_ = nullptr;
+            }
+        }
 
         virtual ~AtomicIntegralBase() = default;
 
@@ -102,6 +109,9 @@ namespace integrals{
             else if(index.index() == OrbitalIndex::Index::dfbs){
                 return  dfbs_;
             }
+            else if(index.index() == OrbitalIndex::Index::ribs){
+                return ribs_;
+            }
             else{
                 throw std::runtime_error("Wrong Index!");
             }
@@ -114,6 +124,7 @@ namespace integrals{
         std::shared_ptr<basis::Basis> obs_;
         std::shared_ptr<basis::Basis> dfbs_;
         std::shared_ptr<basis::Basis> abs_;
+        std::shared_ptr<basis::Basis> ribs_;
         std::vector<std::pair<double,double>> gtg_params_;
 
     };
@@ -189,7 +200,7 @@ namespace integrals{
 
         auto max_nprim = std::max(bra_basis->max_nprim(), ket_basis->max_nprim());
         auto max_am = std::max(bra_basis->max_am(), ket_basis->max_am());
-        bases = tcc::utility::make_array(*bra_basis, *ket_basis);
+        bases = mpqc::utility::make_array(*bra_basis, *ket_basis);
 
         // convert operation to libint operator
         auto operation = formula.operation();
@@ -220,7 +231,7 @@ namespace integrals{
 
         max_nprim = std::max(bra_basis0->max_nprim(), ket_basis0->max_nprim());
         max_am = std::max(bra_basis0->max_am(), ket_basis0->max_am());
-        bases = tcc::utility::make_array(*bra_basis0, *ket_basis0);
+        bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0);
 
         auto operation = formula.operation();
         kernel = get_two_body_engine_kernel(operation);
@@ -255,7 +266,7 @@ namespace integrals{
         max_am = std::max({bra_basis0->max_am(), ket_basis0->max_am(),
                            ket_basis1->max_am()});
 
-        bases = tcc::utility::make_array(*bra_basis0, *ket_basis0, *ket_basis1);
+        bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0, *ket_basis1);
 
         // convert operation to libint operator
         auto operation = formula.operation();
@@ -514,13 +525,13 @@ namespace integrals{
 
                 std::wstring two_center_formula_string = L"( Κ|G| Λ )";
                 typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
-                auto two_center_eigen = tcc::array_ops::array_to_eigen(two_center);
+                auto two_center_eigen = mpqc::array_ops::array_to_eigen(two_center);
 
                 MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
                 MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
 
                 auto tr_V = two_center.trange().data()[0];
-                auto two_center_inverse_sqrt = tcc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
+                auto two_center_inverse_sqrt = mpqc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
 
 
                 std::wstring three_center_formula_string;
@@ -561,13 +572,13 @@ namespace integrals{
                 std::wstring two_center_formula_string = L"( Κ|GR| Λ )";
                 typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
 //                std::cout << two_center;
-                auto two_center_eigen = tcc::array_ops::array_to_eigen(two_center);
+                auto two_center_eigen = mpqc::array_ops::array_to_eigen(two_center);
 
                 MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
                 MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
 
                 auto tr_V = two_center.trange().data()[0];
-                auto two_center_inverse_sqrt = tcc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
+                auto two_center_inverse_sqrt = mpqc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
 
                 std::wstring three_center_formula_string;
                 if (formula.notation() == Formula::Notation::Chemical){
@@ -607,13 +618,13 @@ namespace integrals{
                 std::wstring two_center_formula_string = L"( Κ|R| Λ )";
                 typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
 //                std::cout << two_center;
-                auto two_center_eigen = tcc::array_ops::array_to_eigen(two_center);
+                auto two_center_eigen = mpqc::array_ops::array_to_eigen(two_center);
 
                 MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
                 MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
 
                 auto tr_V = two_center.trange().data()[0];
-                auto two_center_inverse_sqrt = tcc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
+                auto two_center_inverse_sqrt = mpqc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
 
                 std::wstring three_center_formula_string;
                 if (formula.notation() == Formula::Notation::Chemical){
@@ -654,13 +665,13 @@ namespace integrals{
                 std::wstring two_center_formula_string = L"( Κ|R2| Λ )";
                 typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
 //                std::cout << two_center;
-                auto two_center_eigen = tcc::array_ops::array_to_eigen(two_center);
+                auto two_center_eigen = mpqc::array_ops::array_to_eigen(two_center);
 
                 MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
                 MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
 
                 auto tr_V = two_center.trange().data()[0];
-                auto two_center_inverse_sqrt = tcc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
+                auto two_center_inverse_sqrt = mpqc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
 
                 std::wstring three_center_formula_string;
                 if (formula.notation() == Formula::Notation::Chemical){

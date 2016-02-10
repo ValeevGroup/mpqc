@@ -26,6 +26,8 @@ class Basis {
 
     Basis(std::vector<ShellVec> cs);
 
+    Basis join(const Basis & basis);
+
     std::vector<ShellVec> const & cluster_shells() const;
 
     TiledArray::TiledRange1 create_trange1() const;

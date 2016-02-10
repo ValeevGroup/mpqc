@@ -1,6 +1,7 @@
 #include "memory_usage.h"
 
 #include <string>
+#include <unistd.h>
 #include <fstream>
 
 namespace mpqc {

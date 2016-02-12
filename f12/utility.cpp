@@ -230,5 +230,30 @@ namespace f12{
     }
 
 
+std::vector<std::pair<double, double>> gtg_params_squared(const std::vector<std::pair<double, double>> &pragmas) {
+    std::vector<std::pair<double,double>> square;
+
+    auto m = pragmas.size();
+    square.reserve(m*(m+1)/2);
+
+    for (int i = 0; i < m; i++) {
+        auto iexp = pragmas[i].first;
+        auto icoeff = pragmas[i].second;
+        square.push_back(std::make_pair(2*iexp, icoeff*icoeff)); //square term
+
+        //cross terms
+        for (int j = i + 1; j < m; j++) {
+            auto jexp = pragmas[j].first;
+            auto jcoeff = pragmas[j].second;
+
+            square.push_back(std::make_pair(iexp + jexp, 2*icoeff*jcoeff));
+            //multinomial coeff = n!/(k1!*k2!*...*km!). In this case, n = 2, so for cross terms,
+            //two of the k's = 1 and the rest = 0. So the denominator is always 1. The
+            //numerator is 2! = 2.
+        }
+    }
+
+    return square;
+}
 }// end of f12 namespace
 }// end of mpqc namespace

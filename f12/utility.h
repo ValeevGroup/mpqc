@@ -16,6 +16,8 @@ namespace f12{
 
     std::vector<std::pair<double,double>> stg_ng_fit(std::size_t n, double zeta);
 
+    std::vector<std::pair<double,double>> gtg_params_squared(const std::vector<std::pair<double,double>>& pragmas);
+
     // Gaussian Type Geminal parameters
     struct GTGParams{
 

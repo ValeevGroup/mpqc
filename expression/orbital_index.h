@@ -95,7 +95,7 @@ public:
     }
 
     // get spin
-    const Spin spin() const {
+    const Spin &spin() const {
         return spin_;
     }
 

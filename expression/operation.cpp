@@ -21,7 +21,8 @@ namespace mpqc{
         {L"G", Operations::Coulomb},
         {L"R", Operations::cGTG },
         {L"GR", Operations::cGTGCoulomb },
-        {L"R2", Operations::cGTG2 }
+        {L"R2", Operations::cGTG2 },
+        {L"dR2", Operations::DelcGTG2}
     };
 
     const std::unordered_map<std::wstring, Options> Operation::option = {

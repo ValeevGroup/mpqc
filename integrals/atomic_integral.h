@@ -10,6 +10,7 @@
 #include <iostream>
 #include <cwchar>
 
+#include "../f12/utility.h"
 #include "../common/namespaces.h"
 #include "../include/tiledarray.h"
 #include "../basis/basis.h"
@@ -169,6 +170,9 @@ namespace integrals{
             kernel = libint2::cGTG;
         }
         else if(operation.get_operation() == Operation::Operations::cGTG2){
+            kernel = libint2::cGTG;
+        }
+        else if(operation.get_operation() == Operation::Operations::DelcGTG2){
             kernel = libint2::DelcGTG_square;
         }
         else {
@@ -351,7 +355,7 @@ namespace integrals{
 
         // compute two body integral
         template <typename Basis>
-        TArray compute_two_body_integral(const libint2::MultiplicativeSphericalTwoBodyKernel& kernel, const Basis& basis, int64_t max_nprim, int64_t max_am);
+        TArray compute_two_body_integral(const libint2::MultiplicativeSphericalTwoBodyKernel& kernel, const Basis& basis, int64_t max_nprim, int64_t max_am, const Operation& operation);
 
         // compute integrals that has two dimension
         TArray compute2(const Formula& formula_string);
@@ -397,7 +401,7 @@ namespace integrals{
     template<typename Basis>
     typename AtomicIntegral<Tile, Policy>::TArray AtomicIntegral<Tile, Policy>::compute_two_body_integral(
             const libint2::MultiplicativeSphericalTwoBodyKernel& kernel, const Basis& bs_array, int64_t max_nprim,
-            int64_t max_am) {
+            int64_t max_am, const Operation& operation) {
 
         typename AtomicIntegral<Tile,Policy>::TArray result;
 
@@ -412,9 +416,18 @@ namespace integrals{
             }
 
             if(kernel == libint2::cGTG){
-                libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
-                auto engine_pool = make_pool(engine);
-                result = compute_integrals(this->world_,engine_pool,bs_array);
+                if(operation.get_operation() == Operation::Operations::cGTG2){
+
+                    auto squared_pragmas = f12::gtg_params_squared(this->gtg_params_);
+                    libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),squared_pragmas);
+                    auto engine_pool = make_pool(engine);
+                    result = compute_integrals(this->world_,engine_pool,bs_array);
+
+                }else{
+                    libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
+                    auto engine_pool = make_pool(engine);
+                    result = compute_integrals(this->world_,engine_pool,bs_array);
+                }
             }
             else if(kernel == libint2::cGTG_times_Coulomb){
                 libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),this->gtg_params_);
@@ -485,7 +498,7 @@ namespace integrals{
             libint2::MultiplicativeSphericalTwoBodyKernel kernel;
 
             parse_two_body_two_center(formula,kernel,bs_array,max_nprim,max_am);
-            TA::DistArray<Tile,Policy> result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am);
+            TA::DistArray<Tile,Policy> result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
 
             std::cout << "Computed Twobody Two Center Integral: ";
             wcout_utf8(formula.formula_string());
@@ -504,7 +517,7 @@ namespace integrals{
         int64_t max_nprim, max_am;
         parse_two_body_three_center(formula,kernel,bs_array,max_nprim,max_am);
 
-        TA::DistArray<Tile,Policy> result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am);
+        TA::DistArray<Tile,Policy> result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
 
         std::cout << "Computed Twobody Three Center Integral: ";
         wcout_utf8(formula.formula_string());
@@ -714,7 +727,7 @@ namespace integrals{
 
             parse_two_body_four_center(formula,kernel,bs_array,max_nprim,max_am);
 
-            TA::DistArray<Tile,Policy> result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am);
+            TA::DistArray<Tile,Policy> result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
 
             std::cout << "Computed Twobody Four Center Integral: ";
             wcout_utf8(formula.formula_string());

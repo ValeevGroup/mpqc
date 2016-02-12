@@ -72,7 +72,7 @@ LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/expression)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/f12)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/scf)
 
-LIST(APPEND TileClusterChem_LIBRARIES molecule basis tensor utility integrals expression f12 scf)
+LIST(APPEND TileClusterChem_LIBRARIES molecule basis tensor utility f12 integrals expression scf)
 
 MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")

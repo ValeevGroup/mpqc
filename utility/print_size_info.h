@@ -15,11 +15,11 @@ namespace utility {
 template<typename Array>
 void print_size_info(Array const &A, std::string const &name){
    auto &world = A.get_world(); 
+   auto sizes = array_storage(A);
 
    if(world.rank() == 0){
        std::cout << "Printing size information for " << name << "\n";
 
-       auto sizes = array_storage(A);
 
        std::cout << "\tFull     = " << sizes[0] << " GB\n" 
                  << "\tSparse   = " << sizes[1] << " GB\n"

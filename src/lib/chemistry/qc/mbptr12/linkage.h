@@ -41,7 +41,9 @@ namespace sc {
 ForceLink<MBPT2_R12> mbptr12_force_link_a_;
 ForceLink<PT2R12> mbptr12_force_link_b_;
 ForceLink<SpinOrbitalPT2R12> mbptr12_force_link_c_;
-ForceLink<MolcasPT2R12> mbptr12_force_link_d_;
+#if defined(MPQC_NEW_FEATURES)
+  ForceLink<MolcasPT2R12> mbptr12_force_link_d_;
+#endif
 
 }
 

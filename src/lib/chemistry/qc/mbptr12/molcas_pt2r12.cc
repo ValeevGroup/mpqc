@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#if defined(MPQC_NEW_FEATURES)
+
 #include <spawn.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -675,3 +677,6 @@ void MolcasPT2R12::print(std::ostream & os) const
   }
 
 }
+
+#endif // defined(MPQC_NEW_FEATURES)
+

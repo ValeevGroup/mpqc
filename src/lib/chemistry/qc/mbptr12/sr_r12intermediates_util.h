@@ -575,7 +575,7 @@ namespace sc {
   }
 
   template <typename T>
-  TA::expressions::TsrExpr<const typename SingleReference_R12Intermediates<T>::TArray4d>
+  TA::expressions::TsrExpr<const typename SingleReference_R12Intermediates<T>::TArray4d, true>
   SingleReference_R12Intermediates<T>::_4(const std::string& key) {
     const TArray4d& tarray4 = ijxy(key);
     ParsedTwoBodyFourCenterIntKey pkey(key);
@@ -593,7 +593,7 @@ namespace sc {
   }
 
   template <typename T>
-  TA::expressions::TsrExpr<const typename SingleReference_R12Intermediates<T>::TArray2>
+  TA::expressions::TsrExpr<const typename SingleReference_R12Intermediates<T>::TArray2, true>
   SingleReference_R12Intermediates<T>::_2(const std::string& key) {
     const TArray2& tarray2 = xy(key);
     ParsedOneBodyIntKey pkey(key);
@@ -616,7 +616,7 @@ namespace sc {
   expressions::TGeminalGenerator<T> SingleReference_R12Intermediates<T>::tg_s1_gen(1);
 
   template <typename T>
-  TA::expressions::TsrExpr<const typename SingleReference_R12Intermediates<T>::TArray4Tg>
+  TA::expressions::TsrExpr<const typename SingleReference_R12Intermediates<T>::TArray4Tg, true>
   SingleReference_R12Intermediates<T>::_Tg(const std::string& key) {
 
     ParsedTwoBodyFourCenterIntKey pkey(key);

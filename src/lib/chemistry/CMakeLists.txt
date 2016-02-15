@@ -24,5 +24,6 @@ target_link_libraries(chemistry ${PYTHON_LIBRARIES})
 target_link_libraries(chemistry ${HDF5_LIBRARIES})
 target_link_libraries(chemistry ${ARMCI_LIBRARIES})
 target_link_libraries(chemistry ${MPI_LIBRARIES})
+target_link_libraries(chemistry ${TILEDARRAY_LIBRARIES})
 
 install(TARGETS chemistry DESTINATION lib)

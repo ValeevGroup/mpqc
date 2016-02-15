@@ -1,92 +1,22 @@
 # -*- mode: cmake -*-
 
 ###################
-# Find MADNESS
-###################
-
-
-find_package(Madness)
-
-if(MADNESS_FOUND)
-  set(MADNESS_LIBRARIES "")
-  foreach (_lib MADworld MADtensor MADlinalg MADmisc)
-    set(_libpath _libpath-NOTFOUND)
-    find_library(_libpath ${_lib} HINT 
-      "${MADNESS_DIR}/lib" 
-      "${TILEDARRAY_DIR}/lib"
-    )
-    message(STATUS "Found ${_lib}: ${_libpath}")
-    if (_libpath)
-      list(APPEND MADNESS_LIBRARIES ${_libpath})
-    endif()
-  endforeach()
-
-  if (MADNESS_LIBRARIES)
-  
-    # sanity check: try compiling a simple program
-    list(APPEND CMAKE_REQUIRED_INCLUDES ${MADNESS_INCLUDE_DIRS} ${MPI_INCLUDE_PATH}) 
-    list(APPEND CMAKE_REQUIRED_LIBRARIES ${MADNESS_LIBRARIES} ${MPI_LIBRARIES} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} ${CMAKE_EXE_LINKER_FLAGS})
-    if(MPQC_HAS_ELEMENTAL)
-      list(APPEND CMAKE_REQUIRED_INCLUDES ${ELEMENTAL_INCLUDE_DIRS})
-      list(APPEND CMAKE_REQUIRED_LIBRARIES ${ELEMENTAL_LIBRARIES})
-    endif(MPQC_HAS_ELEMENTAL)
-
-    CHECK_CXX_SOURCE_COMPILES(
-      "
-      #include <madness/world/MADworld.h>
-      
-      int main(int argc, char** argv) {
-        madness::World& world = madness::initialize(argc, argv);
-        return 0;
-      }
-      "  MADNESS_COMPILES)
-    if (NOT MADNESS_COMPILES)
-      message(FATAL_ERROR "Could not compile MADNESS test program")
-    endif()
-    
-    # check that MADNESS BLAS/LAPACK interface width agrees with what MPQC assumed
-    set(CMAKE_REQUIRED_DEFINITIONS "-DF77_INTEGER_WIDTH=${F77_INTEGER_WIDTH}")
-    CHECK_CXX_SOURCE_COMPILES(
-      "
-      #include <madness/madness_config.h>
-      #if MADNESS_FORTRAN_DEFAULT_INTEGER_SIZE != F77_INTEGER_WIDTH
-      # error \"MADNESS FORTRAN integer width differs from that of MPQC\"
-      #endif
-      int main(int argc, char** argv) {
-        return 0;
-      }
-      "  MADNESS_FORTRAN_INTEGER_WIDTH_COMPATIBLE)
-    if (NOT MADNESS_FORTRAN_INTEGER_WIDTH_COMPATIBLE)
-      if (${F77_INTEGER_WIDTH} STREQUAL 8)
-        message(FATAL_ERROR "MADNESS default FORTRAN integer width does not match that of MPQC. You need to omit --integer8 configure flag.")
-      else()
-        message(FATAL_ERROR "MADNESS default FORTRAN integer width does not match that of MPQC. You need to add --integer8 configure flag.")
-      endif()
-    endif()
-      
-    set(HAVE_MADNESS TRUE)
-    message(STATUS "Found MADNESS:")
-    message(STATUS "\tMADNESS_LIBRARIES=${MADNESS_LIBRARIES}")
-    message(STATUS "\tMADNESS_INCLUDE_DIR=${MADNESS_INCLUDE_DIRS}")
-    include_directories(${MADNESS_INCLUDE_DIRS})
-  else(MADNESS_LIBRARIES)
-    message(FATAL_ERROR " Could not find MADNESS Libraries. "
-      "MADNESS_LIBRARY_DIRS = ${MADNESS_LIBRARY_DIRS}")
-  endif(MADNESS_LIBRARIES)
-
-else(MADNESS_FOUND)
-  message(FATAL_ERROR "Could not find madness_config.h")
-endif(MADNESS_FOUND)
-
-###################
 # Find TiledArray
 ###################
 
-find_package(TiledArray)
+find_package(TiledArray 0.5.0 CONFIG COMPONENTS tiledarray)
 
 if (TILEDARRAY_FOUND)
+
+  set(MPQC_HAS_TILEDARRAY TRUE)
+  message(STATUS "Found TiledArray:")
+  message(STATUS "\tTiledArray_INCLUDE_DIR=${TILEDARRAY_INCLUDE_DIRS}")
+  message(STATUS "\tTiledArray_LIBRARIES=${TILEDARRAY_LIBRARIES}")
+  include_directories(${TILEDARRAY_INCLUDE_DIRS})
+  
   # sanity check: try compiling a simple program
   list(APPEND CMAKE_REQUIRED_INCLUDES ${TILEDARRAY_INCLUDE_DIRS})
+  list(APPEND CMAKE_REQUIRED_LIBRARIES ${TILEDARRAY_LIBRARIES})
   CHECK_CXX_SOURCE_COMPILES(
     "
     #include <tiledarray.h>
@@ -109,35 +39,30 @@ if (TILEDARRAY_FOUND)
     message(FATAL_ERROR "Could not compile TiledArray test program")
   endif()
 
-  if(MPQC_HAS_ELEMENTAL)
-    # sanity check try to compile a TiledArray+Elemental program
-    list(APPEND CMAKE_REQUIRED_INCLUDES ${ELEMENTAL_INCLUDE_DIR})
-    list(APPEND CMAKE_REQUIRED_LIBRARIES ${ELEMENTAL_LIBRARIES})
-    CHECK_CXX_SOURCE_COMPILES(
-      "
-      #include <tiledarray.h>
-      
-      #ifndef TILEDARRAY_HAS_ELEMENTAL
-      # error \"TiledArray was not compiled with Elemental support\"
-      #endif
-      
-      int main(int argc, char** argv){
-        madness::World& world = madness::initialize(argc, argv);
-        elem::DistMatrix<double> matrix(elem::DefaultGrid());
-        return 0;
-      }
-      " TILEDARRAY_ELEM_COMPILES)
-      
-      IF(NOT TILEDARRAY_ELEM_COMPILES)
-        message(FATAL_ERROR  "Could not compile TiledArray with Elemental")
-      ENDIF(NOT TILEDARRAY_ELEM_COMPILES)
-   ENDIF(MPQC_HAS_ELEMENTAL)
-      
-
-  set(MPQC_HAS_TILEDARRAY TRUE)
-  message(STATUS "Found TiledArray:")
-  message(STATUS "\tTiledArray_INCLUDE_DIR=${TILEDARRAY_INCLUDE_DIRS}")
-  include_directories(${TILEDARRAY_INCLUDE_DIRS})
+  if(MADNESS_HAS_ELEMENTAL)
+    set(MPQC_HAS_ELEMENTAL ON CACHE INTERNAL "Have Elemental via MADNESS")
+  endif(MADNESS_HAS_ELEMENTAL)
+  
+  # check that MADNESS BLAS/LAPACK interface width agrees with what MPQC assumed
+  set(CMAKE_REQUIRED_DEFINITIONS "-DF77_INTEGER_WIDTH=${F77_INTEGER_WIDTH}")
+  CHECK_CXX_SOURCE_COMPILES(
+    "
+    #include <madness/madness_config.h>
+    #if MADNESS_FORTRAN_DEFAULT_INTEGER_SIZE != F77_INTEGER_WIDTH
+    # error \"MADNESS FORTRAN integer width differs from that of MPQC\"
+    #endif
+    int main(int argc, char** argv) {
+      return 0;
+    }
+    "  MADNESS_FORTRAN_INTEGER_WIDTH_COMPATIBLE)
+  if (NOT MADNESS_FORTRAN_INTEGER_WIDTH_COMPATIBLE)
+    if (${F77_INTEGER_WIDTH} STREQUAL 8)
+     message(FATAL_ERROR "MADNESS default FORTRAN integer width does not match that of MPQC. You need to omit --integer8 configure flag.")
+    else()
+      message(FATAL_ERROR "MADNESS default FORTRAN integer width does not match that of MPQC. You need to add --integer8 configure flag.")
+    endif()
+  endif()
+  
 else(TILEDARRAY_FOUND)
   message(FATAL_ERROR " Could not find tiledarray")
 endif(TILEDARRAY_FOUND)

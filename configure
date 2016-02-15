@@ -120,7 +120,7 @@ while test $# != 0; do
   --openmp)        args="$args -DMPQC_OPENMP=TRUE" ;;
   --python)        args="$args -DPYTHON=TRUE" ;;
   --ci=*)          args="$args -DMPQC_CI=`arg \"$1\"`" ;;
-  -D*) args="$args $1" ;; # raw  cmake arg
+  -D*) args="$args \"$1\"" ;; # raw  cmake arg
   CC=*) CC="`arg \"$1\"`" ;;
   CXX=*) CXX="`arg \"$1\"`" ;;
   F77=*) F77="`arg \"$1\"`" ;;

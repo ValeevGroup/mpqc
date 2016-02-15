@@ -115,6 +115,9 @@ SCF::SCF(StateIn& s) :
 
   scf_grp_ = basis()->matrixkit()->messagegrp();
   threadgrp_ = ThreadGrp::get_default_threadgrp();
+
+  fake_scf_convergence_after_fock_build_ = false;
+  fake_scf_convergence_after_n_iter_ = -1;
 }
 
 SCF::SCF(const Ref<KeyVal>& keyval) :

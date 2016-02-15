@@ -75,7 +75,7 @@ class SCF: public OneBodyWavefunction {
     // Super expert stuff.  Don't mess with this unless you know what you're doing
     // A subclass can set this to true to make compute_vector() set delta to 0.0 and break after the fock build
     bool fake_scf_convergence_after_fock_build_;
-    // A subclass can set this to make compute_vector() set delta to 0.0 and break after some numner of iterations no matter what
+    // A subclass can set this to make compute_vector() set delta to 0.0 and break after some number of iterations no matter what
     int fake_scf_convergence_after_n_iter_;
 
     double level_shift_;

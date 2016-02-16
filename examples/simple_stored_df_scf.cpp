@@ -95,101 +95,101 @@ struct JobSummary {
     bool computed_dipole = false;
 
     void print_report() const {
-        std::cout << "Job Summary:\n";
+            std::cout << "Job Summary:\n";
 
-        std::cout << "number obs clusters, ";
-        std::cout << "number dfbs clusters, ";
+            std::cout << "number obs clusters, ";
+            std::cout << "number dfbs clusters, ";
 
-        std::cout << "obs basis, ";
-        std::cout << "dfbs basis, ";
+            std::cout << "obs basis, ";
+            std::cout << "dfbs basis, ";
 
-        std::cout << "obs nfuctions, ";
-        std::cout << "dfbs nfuctions, ";
+            std::cout << "obs nfuctions, ";
+            std::cout << "dfbs nfuctions, ";
 
-        std::cout << "ta sparse threshold, ";
-        std::cout << "schwarz threshold, ";
-        std::cout << "clr threshold, ";
+            std::cout << "ta sparse threshold, ";
+            std::cout << "schwarz threshold, ";
+            std::cout << "clr threshold, ";
 
-        std::cout << "avg w time, ";
-        std::cout << "avg k time, ";
-        std::cout << "avg occ-ri k time, ";
+            std::cout << "avg w time, ";
+            std::cout << "avg k time, ";
+            std::cout << "avg occ-ri k time, ";
 
-        std::cout << "avg localization time, ";
-        std::cout << "avg clustering time, ";
+            std::cout << "avg localization time, ";
+            std::cout << "avg clustering time, ";
 
-        std::cout << "eri3 fully dense storage, ";
-        std::cout << "eri3 sparse only, ";
-        std::cout << "eri3 sparse + clr storage, ";
+            std::cout << "eri3 fully dense storage, ";
+            std::cout << "eri3 sparse only, ";
+            std::cout << "eri3 sparse + clr storage, ";
 
-        std::cout << "B fully dense storage, ";
-        std::cout << "B sparse only, ";
-        std::cout << "B sparse + clr storage, ";
+            std::cout << "B fully dense storage, ";
+            std::cout << "B sparse only, ";
+            std::cout << "B sparse + clr storage, ";
 
-        std::cout << "w fully dense storage, ";
-        std::cout << "w sparse only, ";
-        std::cout << "w sparse + clr storage, ";
+            std::cout << "w fully dense storage, ";
+            std::cout << "w sparse only, ";
+            std::cout << "w sparse + clr storage, ";
 
-        std::cout << "hf energy, ";
-        std::cout << "error change in energy, ";
-        std::cout << "error rms div volume, ";
-        std::cout << "exchange energy(iter 0), ";
+            std::cout << "hf energy, ";
+            std::cout << "error change in energy, ";
+            std::cout << "error rms div volume, ";
+            std::cout << "exchange energy(iter 0), ";
 
-        std::cout << "computed dipole, ";
+            std::cout << "computed dipole, ";
 
-        std::cout << "dipole x, ";
-        std::cout << "dipole y, ";
-        std::cout << "dipole z, ";
-        std::cout << "dipole vec, ";
+            std::cout << "dipole x, ";
+            std::cout << "dipole y, ";
+            std::cout << "dipole z, ";
+            std::cout << "dipole vec, ";
 
-        std::cout << "computed mp2, ";
-        std::cout << "mp2 energy\n";
+            std::cout << "computed mp2, ";
+            std::cout << "mp2 energy\n";
 
-        std::cout << num_obs << ", ";
-        std::cout << num_dfbs << ", ";
+            std::cout << num_obs << ", ";
+            std::cout << num_dfbs << ", ";
 
-        std::cout << obs << ", ";
-        std::cout << dfbs << ", ";
+            std::cout << obs << ", ";
+            std::cout << dfbs << ", ";
 
-        std::cout << obs_nfuncs << ", ";
-        std::cout << dfbs_nfuncs << ", ";
+            std::cout << obs_nfuncs << ", ";
+            std::cout << dfbs_nfuncs << ", ";
 
-        std::cout << ta_sparse_threshold << ", ";
-        std::cout << schwarz_threshold << ", ";
-        std::cout << clr_threshold << ", ";
+            std::cout << ta_sparse_threshold << ", ";
+            std::cout << schwarz_threshold << ", ";
+            std::cout << clr_threshold << ", ";
 
 
-        std::cout << avg_w_time << ", ";
-        std::cout << avg_k_time << ", ";
-        std::cout << avg_occ_ri_k_time << ", ";
+            std::cout << avg_w_time << ", ";
+            std::cout << avg_k_time << ", ";
+            std::cout << avg_occ_ri_k_time << ", ";
 
-        std::cout << avg_loc_time << ", ";
-        std::cout << avg_cluster_time << ", ";
+            std::cout << avg_loc_time << ", ";
+            std::cout << avg_cluster_time << ", ";
 
-        std::cout << eri3_fully_dense_storage << ", ";
-        std::cout << eri3_sparse_only_storage << ", ";
-        std::cout << eri3_sparse_clr_storage << ", ";
+            std::cout << eri3_fully_dense_storage << ", ";
+            std::cout << eri3_sparse_only_storage << ", ";
+            std::cout << eri3_sparse_clr_storage << ", ";
 
-        std::cout << B_fully_dense_storage << ", ";
-        std::cout << B_sparse_only_storage << ", ";
-        std::cout << B_sparse_clr_storage << ", ";
+            std::cout << B_fully_dense_storage << ", ";
+            std::cout << B_sparse_only_storage << ", ";
+            std::cout << B_sparse_clr_storage << ", ";
 
-        std::cout << w_fully_dense_storage << ", ";
-        std::cout << avg_w_sparse_only_storage << ", ";
-        std::cout << avg_w_sparse_clr_storage << ", ";
+            std::cout << w_fully_dense_storage << ", ";
+            std::cout << avg_w_sparse_only_storage << ", ";
+            std::cout << avg_w_sparse_clr_storage << ", ";
 
-        std::cout << hf_energy << ", ";
-        std::cout << hf_energy_diff_error << ", ";
-        std::cout << hf_grad_div_volume << ", ";
-        std::cout << exchange_energy << ", ";
+            std::cout << hf_energy << ", ";
+            std::cout << hf_energy_diff_error << ", ";
+            std::cout << hf_grad_div_volume << ", ";
+            std::cout << exchange_energy << ", ";
 
-        std::cout << computed_dipole << ", ";
-        std::cout << dipole_x << ", ";
-        std::cout << dipole_y << ", ";
-        std::cout << dipole_z << ", ";
-        std::cout << dipole_vector << ", ";
+            std::cout << computed_dipole << ", ";
+            std::cout << dipole_x << ", ";
+            std::cout << dipole_y << ", ";
+            std::cout << dipole_z << ", ";
+            std::cout << dipole_vector << ", ";
 
-        std::cout << did_mp2 << ", ";
-        std::cout << mp2_energy << "\n";
+            std::cout << did_mp2 << ", ";
+            std::cout << mp2_energy << "\n";
     }
 };
 
@@ -440,10 +440,13 @@ class ThreeCenterScf {
 
         dV_inv_oh_ = TA::to_new_tile_type(V_inv_oh, to_dtile(clr_thresh_));
         auto dl_sizes = utility::array_storage(dV_inv_oh_);
-        std::cout << "V_inv storage:"
-                  << "\n\tFull: " << dl_sizes[0]
-                  << "\n\tSparse Only: " << dl_sizes[1]
-                  << "\n\tSparse + CLR: " << dl_sizes[2] << std::endl;
+
+        if (dV_inv_oh_.get_world().rank() == 0) {
+            std::cout << "V_inv storage:"
+                      << "\n\tFull: " << dl_sizes[0]
+                      << "\n\tSparse Only: " << dl_sizes[1]
+                      << "\n\tSparse + CLR: " << dl_sizes[2] << std::endl;
+        }
 
         compute_density(occ_);
     }
@@ -488,23 +491,26 @@ class ThreeCenterScf {
             scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
 
 
-            std::cout << "Iteration: " << (iter + 1)
-                      << " energy: " << old_energy << " error: " << error
-                      << " RMS error: " << rms_error;
-            std::cout
-                  << "\n\tW time: " << w_times_.back()
-                  << "\n\tJ time: " << j_times_.back()
-                  << "\n\tocc-RI K time: " << occ_k_times_.back()
-                  << "\n\tK time: " << k_times_.back()
-                  << "\n\titer time: " << scf_times_.back()
-                  << "\n\tW sparse only storage: " << w_sparse_store_.back()
-                  << "\n\tW sparse clr storage: " << w_sparse_clr_store_.back()
-                  << "\n\tClustering time: " << clustering_times_.back()
-                  << "\n\tLocalization time: " << localization_times_.back()
-                  << std::endl;
-            if (iter == 0) {
-                std::cout << "\tExchange energy = " << exchange_energy_
-                          << std::endl;
+            if (world.rank() == 0) {
+                std::cout << "Iteration: " << (iter + 1)
+                          << " energy: " << old_energy << " error: " << error
+                          << " RMS error: " << rms_error;
+                std::cout
+                      << "\n\tW time: " << w_times_.back()
+                      << "\n\tJ time: " << j_times_.back()
+                      << "\n\tocc-RI K time: " << occ_k_times_.back()
+                      << "\n\tK time: " << k_times_.back()
+                      << "\n\titer time: " << scf_times_.back()
+                      << "\n\tW sparse only storage: " << w_sparse_store_.back()
+                      << "\n\tW sparse clr storage: "
+                      << w_sparse_clr_store_.back()
+                      << "\n\tClustering time: " << clustering_times_.back()
+                      << "\n\tLocalization time: " << localization_times_.back()
+                      << std::endl;
+                if (iter == 0) {
+                    std::cout << "\tExchange energy = " << exchange_energy_
+                              << std::endl;
+                }
             }
 
 
@@ -593,56 +599,74 @@ int main(int argc, char *argv[]) {
     }
 
     if (recompression_method == "nocompress") {
-        std::cout << "Not using rounded addition." << std::endl;
+        if (world.rank() == 0) {
+            std::cout << "Not using rounded addition." << std::endl;
+        }
         tensor::detail::recompress = false;
     } else {
-        std::cout << "Using rounded addition." << std::endl;
+        if (world.rank() == 0) {
+            std::cout << "Using rounded addition." << std::endl;
+        }
     }
     world.gop.fence();
 
     bool use_direct_ints;
     if (eri3_storage_method == "direct") {
         use_direct_ints = true;
-        std::cout << "Using direct 3 center integrals" << std::endl;
+        if (world.rank() == 0)
+            std::cout << "Using direct 3 center integrals" << std::endl;
     } else if (eri3_storage_method == "stored") {
         use_direct_ints = false;
-        std::cout << "Using stored 3 center integrals" << std::endl;
+        if (world.rank() == 0)
+            std::cout << "Using stored 3 center integrals" << std::endl;
     } else {
-        std::cout << "Integral storage method must be either direct or stored"
+        if (world.rank() == 0) {
+            std::cout
+                  << "Integral storage method must be either direct or stored"
                   << std::endl;
+        }
         return 0;
     }
 
     TiledArray::SparseShape<float>::threshold(threshold);
-    std::cout << "TA::Sparse Threshold: " << threshold << std::endl;
+
+    if (world.rank() == 0)
+        std::cout << "TA::Sparse Threshold: " << threshold << std::endl;
 
     auto clustered_mol = molecule::attach_hydrogens_and_kmeans(
           molecule::read_xyz(mol_file).clusterables(), nclusters);
 
 
     auto repulsion_energy = clustered_mol.nuclear_repulsion();
-    std::cout << "Nuclear Repulsion Energy: " << repulsion_energy << std::endl;
+    if (world.rank() == 0) {
+        std::cout << "Nuclear Repulsion Energy: " << repulsion_energy
+                  << std::endl;
+    }
     auto occ = clustered_mol.occupation(0);
 
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
-    std::cout << "Basis has " << basis.nfunctions() << " functions\n";
+    if(world.rank() == 0){
+        std::cout << "Basis has " << basis.nfunctions() << " functions\n";
+    }
 
     auto df_nclusters = std::max(nclusters / 2, 1);
     auto df_clustered_mol = molecule::attach_hydrogens_and_kmeans(
           molecule::read_xyz(mol_file).clusterables(), df_nclusters);
 
-    auto cluster_num = 1;
-    std::cout << "\nDF clustering:\n";
-    for (auto const &c : df_clustered_mol.clusterables()) {
-        auto atoms = c.atoms();
-        std::cout << atoms.size() << "\n\n";
-        for (auto const &atom : c.atoms()) {
-            std::cout << atom.xyz_string(true) << "\n";
+    if (world.rank() == 0) {
+        auto cluster_num = 1;
+        std::cout << "\nDF clustering:\n";
+        for (auto const &c : df_clustered_mol.clusterables()) {
+            auto atoms = c.atoms();
+            std::cout << atoms.size() << "\n\n";
+            for (auto const &atom : c.atoms()) {
+                std::cout << atom.xyz_string(true) << "\n";
+            }
+            std::cout << "\n";
         }
         std::cout << "\n";
     }
-    std::cout << "\n";
 
     basis::BasisSet dfbs(df_basis_name);
     basis::Basis df_basis(dfbs.get_cluster_shells(df_clustered_mol));
@@ -690,7 +714,9 @@ int main(int argc, char *argv[]) {
 
     { // Schwarz Screened ints
         const auto schwarz_thresh = 1e-12;
-        std::cout << "Schwarz Threshold: " << schwarz_thresh << std::endl;
+        if (world.rank() == 0){
+            std::cout << "Schwarz Threshold: " << schwarz_thresh << std::endl;
+        }
         auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               sbuilder(world, eri_e, df_basis, basis));
@@ -701,7 +727,9 @@ int main(int argc, char *argv[]) {
 
         auto soad1 = mpqc_time::fenced_now(world);
         auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
-        std::cout << "Soad Time: " << soad_time << std::endl;
+        if (world.rank() == 0){
+            std::cout << "Soad Time: " << soad_time << std::endl;
+        }
 
         auto multi_pool
               = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
@@ -773,12 +801,19 @@ int main(int argc, char *argv[]) {
                 auto int1 = mpqc_time::fenced_now(world);
                 auto eri3_time = mpqc_time::duration_in_s(int0, int1);
 
-                std::cout << "Eri3 Integral time: " << eri3_time << std::endl;
+
+                if (world.rank() == 0) {
+                    std::cout << "Eri3 Integral time: " << eri3_time
+                              << std::endl;
+                }
                 eri3_storage = utility::array_storage(eri3.array());
-                std::cout << "Eri3 Integral Storage:\n";
-                std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
-                std::cout << "\tBlock Sparse Only: " << eri3_storage[1] << "\n";
-                std::cout << "\tCLR: " << eri3_storage[2] << "\n";
+                if (world.rank() == 0) {
+                    std::cout << "Eri3 Integral Storage:\n";
+                    std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
+                    std::cout << "\tBlock Sparse Only: " << eri3_storage[1]
+                              << "\n";
+                    std::cout << "\tCLR: " << eri3_storage[2] << "\n";
+                }
 
                 auto dL_inv
                       = TA::to_new_tile_type(L_inv, to_dtile(clr_threshold));
@@ -822,12 +857,17 @@ int main(int argc, char *argv[]) {
                 auto B1 = mpqc_time::fenced_now(world);
                 auto Btime = mpqc_time::duration_in_s(B0, B1);
 
-                std::cout << "B time = " << Btime << std::endl;
+                if (world.rank() == 0) {
+                    std::cout << "B time = " << Btime << std::endl;
+                }
                 b_storage = utility::array_storage(B);
-                std::cout << "B Storage:\n";
-                std::cout << "\tAll Full: " << b_storage[0] << "\n";
-                std::cout << "\tBlock Sparse Only: " << b_storage[1] << "\n";
-                std::cout << "\tCLR: " << b_storage[2] << "\n";
+                if (world.rank() == 0) {
+                    std::cout << "B Storage:\n";
+                    std::cout << "\tAll Full: " << b_storage[0] << "\n";
+                    std::cout << "\tBlock Sparse Only: " << b_storage[1]
+                              << "\n";
+                    std::cout << "\tCLR: " << b_storage[2] << "\n";
+                }
 
                 // Reset the compression flag
                 tensor::detail::recompress = old_compress;
@@ -923,10 +963,12 @@ int main(int argc, char *argv[]) {
             double dip_mom = std::sqrt(std::pow(dx, 2) + std::pow(dy, 2)
                                        + std::pow(dz, 2));
 
-            std::cout << "Dipole Moment:"
-                      << "\n\tx: " << (nx + ex) << "\n\ty: " << (ny + ey)
-                      << "\n\tz: " << (nz + ez) << "\n\tvec: " << dip_mom
-                      << std::endl;
+            if (world.rank() == 0) {
+                std::cout << "Dipole Moment:"
+                          << "\n\tx: " << (nx + ex) << "\n\ty: " << (ny + ey)
+                          << "\n\tz: " << (nz + ez) << "\n\tvec: " << dip_mom
+                          << std::endl;
+            }
 
             job_summary.computed_dipole = true;
             job_summary.dipole_x = dx;
@@ -944,10 +986,12 @@ int main(int argc, char *argv[]) {
 // Only Do MP2 if we can stay below 60 GB
 #if 1
         try {
-            std::cout << "Approximate T storage = " << approx_t_storage << " GB"
-                      << std::endl;
-            std::cout << "Max allowed MP2 storage = " << mp2_mem_thresh << " GB"
-                      << std::endl;
+            if (world.rank() == 0) {
+                std::cout << "Approximate T storage = " << approx_t_storage
+                          << " GB" << std::endl;
+                std::cout << "Max allowed MP2 storage = " << mp2_mem_thresh
+                          << " GB" << std::endl;
+            }
             if (approx_t_storage < mp2_mem_thresh) {
                 // For MP2 don't worry about direct integrals or CLR
                 auto eri3_mp2
@@ -1014,13 +1058,21 @@ int main(int argc, char *argv[]) {
                               .reduce(Mp2Red(vec_ptr, mp2_occ))
                               .get();
 
-                std::cout << "Energy from MP2: " << energy_mp2 << std::endl;
+                if (world.rank() == 0) {
+                    std::cout << "Energy from MP2: " << energy_mp2 << std::endl;
+                }
 
                 job_summary.did_mp2 = true;
                 job_summary.mp2_energy = energy_mp2;
-                job_summary.print_report();
+                if(world.rank() == 0){
+                    job_summary.print_report();
+                }
+                world.gop.fence();
             } else {
-                job_summary.print_report();
+                if(world.rank() == 0){
+                    job_summary.print_report();
+                }
+                world.gop.fence();
             }
         } catch (...) {
             job_summary.print_report();

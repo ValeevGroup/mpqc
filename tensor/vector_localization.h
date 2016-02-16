@@ -134,7 +134,6 @@ init_rows(Matrix<T> const &D, unsigned long num_clusters) {
         //     weights[j] = smallest_norm * smallest_norm;
         // }
     }
-    std::cout << std::endl;
     bool initial_clustering = true;
     attach_to_closest(D, clusters, initial_clustering);
     return clusters;

@@ -345,12 +345,16 @@ class ThreeCenterScf {
 
         darray_type J;
         auto j0 = mpqc_time::fenced_now(world);
+        auto old_thresh = TA::SparseShape<float>::threshold();
+        TA::SparseShape<float>::threshold(std::min(1e-16f, old_thresh));
 
         J("mu, nu") = eri3("Y,mu,nu")
                       * (dV_inv_oh_("Y,Z")
                          * (dV_inv_oh_("Z,X") * (eri3("X,r,s") * dD_("r,s"))));
 
         auto j1 = mpqc_time::fenced_now(world);
+        TA::SparseShape<float>::threshold(old_thresh);
+
         j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
 
         auto w0 = mpqc_time::fenced_now(world);
@@ -878,11 +882,16 @@ int main(int argc, char *argv[]) {
                                repulsion_energy, clr_threshold);
 
 
+            world.gop.fence();
+            auto old_thresh = TA::SparseShape<float>::threshold();
+            TA::SparseShape<float>::threshold(std::min(1e-16f, old_thresh));
+
             auto eri3 = ints::direct_sparse_integrals(world, eri_e,
                                                       three_c_array, shr_screen,
                                                       decomp_3d_no_compress);
 
             world.gop.fence();
+            TA::SparseShape<float>::threshold(old_thresh);
 
             scf.solve(30, 1e-11, eri3, B);
 

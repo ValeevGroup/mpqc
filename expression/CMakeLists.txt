@@ -7,7 +7,10 @@ set(sources
         formula.h
         formula.cpp
         formula_registry.h
-        greek_to_english_name.h )
+        greek_to_english_name.h
+        orbital_space.h
+        orbital_space_registry.h
+        )
 
 add_library(expression ${sources})
 target_link_libraries(expression ${TA_LIBRARIES})

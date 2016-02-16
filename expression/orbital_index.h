@@ -85,6 +85,7 @@ public:
     // if the have the same index
     bool operator==(OrbitalIndex const &) const;
     bool operator==(const OrbitalIndex::Index ) const;
+    bool operator<(const OrbitalIndex&)const;
 
     // if the same index and name
     bool same(const OrbitalIndex& other) const;

@@ -10,82 +10,101 @@
 
 namespace mpqc{
 
-    // map formula to template object
     // a wrapper of std::map, not thread_safe for writing
-    template<typename Value>
-    class FormulaRegistry {
+    template<typename Key, typename Value>
+    class Registry {
     public:
 
-        using value_type = std::pair<Formula,Value>;
-        using element_type = std::map<Formula,Value>;
+        using value_type = std::pair<Key,Value>;
+        using element_type = std::map<Key,Value>;
         using iterator = typename element_type::iterator;
         using const_iterator = typename element_type::const_iterator;
 
-        FormulaRegistry() = default;
+        Registry() = default;
 
-        FormulaRegistry(const std::map<Formula, Value> &formula_map) : formula_registry_(formula_map) { }
+        Registry(const element_type &map) : registry_(map) { }
 
-        const std::map<Formula, Value>& map() const {
-            return formula_registry_;
+
+        virtual ~Registry()= default;
+
+        const element_type & map() const {
+            return registry_;
         }
 
         void insert(const value_type& val){
-            formula_registry_.insert(val);
+            registry_.insert(val);
         }
 
         void insert(const Formula& formula, const Value& val){
-            formula_registry_[formula] = val;
+            registry_[formula] = val;
         }
 
         void remove(const Formula& formula){
-            formula_registry_.erase(formula);
+            registry_.erase(formula);
         }
 
         void clear(){
-            formula_registry_.clear();
+            registry_.clear();
         }
 
         iterator find(const Formula& formula){
-            return formula_registry_.find(formula);
+            return registry_.find(formula);
         }
 
         const_iterator find(const Formula& formula) const{
-            return formula_registry_.find(formula);
+            return registry_.find(formula);
         }
 
         iterator begin() {
-            return formula_registry_.begin();
+            return registry_.begin();
         }
 
         iterator end()  {
-            return formula_registry_.end();
+            return registry_.end();
         }
 
         const_iterator cbegin() const {
-            return formula_registry_.cbegin();
+            return registry_.cbegin();
         }
 
         const_iterator cend() const {
-            return formula_registry_.cend();
+            return registry_.cend();
         }
-
-    private:
 
         /// removes all objects if p(key) == true
         template<typename Pred>
         void remove_if(const Pred& p){
-            auto i = formula_registry_.begin();
-            for(; i != formula_registry_.end(); ){
+            auto i = registry_.begin();
+            for(; i != registry_.end(); ){
                 if (p(*i)){
-                    formula_registry_.erase(i++);
+                    registry_.erase(i++);
                 }else{
                     ++i;
                 }
             }
         }
-        std::map<Formula, Value> formula_registry_;
+
+    protected:
+        element_type registry_;
     };
-}
+
+    // map formula to template object
+    template<typename Value>
+    class FormulaRegistry : public Registry<Formula,Value>{
+
+    public:
+
+        using Key = Formula;
+        using value_type = typename Registry<Key,Value>::value_type;
+        using element_type = typename Registry<Key,Value>::element_type;
+        using iterator = typename Registry<Key,Value>::iterator;
+        using const_iterator = typename Registry<Key,Value>::const_iterator;
+
+        FormulaRegistry()= default;
+        FormulaRegistry(const element_type& map) : Registry<Key,Value>(map){}
+
+    };
+} // end of namespace mpqc
 
 
 

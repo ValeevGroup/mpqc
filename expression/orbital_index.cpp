@@ -126,6 +126,10 @@ bool OrbitalIndex::operator==(const OrbitalIndex::Index i) const{
     return this->index_ == i;
 }
 
+bool OrbitalIndex::operator<(const OrbitalIndex &other) const {
+    return other.index()==this->index() ? this->spin() < other.spin() : this->index() < other.index();
+}
+
 bool OrbitalIndex::same(const OrbitalIndex &other) const{
     return (index_ == other.index()) && (this->spin_ == other.spin_) && (name_ == other.name());
 }
@@ -258,4 +262,5 @@ OrbitalIndex OrbitalIndex::mo_to_ao() {
         }
         return ta_expression;
     }
+
 }

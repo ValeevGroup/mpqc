@@ -343,7 +343,7 @@ namespace integrals{
                 std::shared_ptr<basis::Basis> dfbs = nullptr,
                 std::shared_ptr<basis::Basis> auxbs = nullptr,
                 std::vector<std::pair<double,double>> gtg_params = std::vector<std::pair<double,double>>()
-        ) : AtomicIntegralBase(world,mol,obs,dfbs,auxbs,gtg_params), op_(op), formula_registry_(){}
+        ) : AtomicIntegralBase(world,mol,obs,dfbs,auxbs,gtg_params), op_(op), ao_formula_registry_(){}
 
         virtual ~AtomicIntegral() = default;
 
@@ -391,7 +391,7 @@ namespace integrals{
         }
 
     private:
-        FormulaRegistry<TArray> formula_registry_;
+        FormulaRegistry<TArray> ao_formula_registry_;
         Op op_;
 
     };
@@ -449,25 +449,25 @@ namespace integrals{
 
         Formula formula(formula_string);
 
-        auto iter = formula_registry_.find(formula);
+        auto iter = ao_formula_registry_.find(formula);
 
-        if(iter != formula_registry_.end()){
+        if(iter != ao_formula_registry_.end()){
             return iter->second;
         }else{
 
             if(formula.rank() == 2){
                 auto result =  compute2(formula);
-                formula_registry_.insert(formula, result);
+                ao_formula_registry_.insert(formula, result);
                 return result;
             }
             else if(formula.rank() == 3){
                 auto result =  compute3(formula);
-                formula_registry_.insert(formula, result);
+                ao_formula_registry_.insert(formula, result);
                 return result;
             }
             else if(formula.rank() == 4){
                 auto result =  compute4(formula);
-                formula_registry_.insert(formula, result);
+                ao_formula_registry_.insert(formula, result);
                 return result;
             }
         }

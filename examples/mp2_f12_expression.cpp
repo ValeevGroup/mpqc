@@ -22,6 +22,7 @@
 #include "../f12/utility.h"
 #include "../integrals/integrals.h"
 #include "../integrals/atomic_integral.h"
+#include "../expression/orbital_space_registry.h"
 
 #include "../utility/time.h"
 #include "../utility/wcout_utf8.h"

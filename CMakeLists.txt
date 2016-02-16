@@ -1,7 +1,7 @@
 #; -*-CMake-*-
 
-project (MPQC C CXX)
 cmake_minimum_required(VERSION 3.0.0)
+project (MPQC CXX C Fortran)
 
 # extra cmake files are shipped with MPQC
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")

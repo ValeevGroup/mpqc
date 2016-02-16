@@ -16,19 +16,35 @@ CONFIGURE_FILE(
   @ONLY
 )
 
+# make.sh runs tests for every integral factory
+set(MPQC_INTEGRAL_FACTORY_LIST "intv3")
+if (HAVE_LIBINT1)
+  list(APPEND MPQC_INTEGRAL_FACTORY_LIST "cints")
+endif (HAVE_LIBINT1)
+if (HAVE_LIBINT2)
+  list(APPEND MPQC_INTEGRAL_FACTORY_LIST "libint2")
+endif (HAVE_LIBINT2)
+string(REPLACE ";" " " MPQC_INTEGRAL_FACTORY_STRLIST "${MPQC_INTEGRAL_FACTORY_LIST}")
+message (STATUS "MPQC_INTEGRAL_FACTORY_STRLIST=${MPQC_INTEGRAL_FACTORY_STRLIST}")
+CONFIGURE_FILE(
+  ${CMAKE_CURRENT_SOURCE_DIR}/make.sh.in
+  ${CMAKE_CURRENT_BINARY_DIR}/make.sh
+  @ONLY
+)
+
 add_custom_target(
   check0
-  COMMAND make -f check.mk check0
+  COMMAND ./make.sh check0
 )
 
 add_custom_target(
   check1
-  COMMAND make -f check.mk check1
+  COMMAND ./make.sh check1
 )
 
 add_custom_target(
   check2
-  COMMAND make -f check.mk check2
+  COMMAND ./make.sh check2
 )
 
 add_custom_target(

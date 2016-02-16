@@ -45,7 +45,7 @@ that all of them are compiled with the same version of the C++ compiler as used 
   * Libint is bundled in ./external/libint*.tgz and will be built if requested. **NOTE** you may require custom version
   of Libint for some functionaility, such as interfacing with GAMESS.
 * [TiledArray](https://github.com/ValeevGroup/tiledarray)
-  * TiledArray must be compiled manually, with support for [Elemental](http://libelemental.org/)
+  * TiledArray must be compiled manually, with support for [Elemental](http://libelemental.org/) (provide cmake option -DENABLE_ELEMENTAL=ON)
 * [Eigen](http://eigen.tuxfamily.org/)
   * A recent version is bundled in ./external/eigen.tar.gz; it will be unpacked if needed (this library is headers-only
   and does not need to be compiled).

@@ -80,14 +80,7 @@ if [ ! -x "$CMAKE" ]; then
     fi
 fi
 
-# if no local/system cmake exist, build!
-#if [ -z "$CMAKE" ]; then
-#    make -C cmake
-#    CMAKE=$TOPDIR/cmake/bin/cmake
-#fi
-
 srcdir=`dirname $0`
-#echo $srcdir
 args=""
 prefix=$PWD
 build="Release"

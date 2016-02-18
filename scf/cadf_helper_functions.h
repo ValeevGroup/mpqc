@@ -22,7 +22,9 @@ array_from_tile_map(madness::World &world, TA::TiledRange const &trange,
     TA::DistArray<TA::TensorD, SpPolicy> array(world, trange, shape);
 
     for (auto &pair : tiles) {
-        array.set(pair.first, pair.second);
+        if(!array.is_zero(pair.first)){
+            array.set(pair.first, pair.second);
+        }
     }
 
     array.truncate();

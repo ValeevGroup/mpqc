@@ -856,6 +856,8 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
+    madness::finalize();
+
 
     return 0;
 }

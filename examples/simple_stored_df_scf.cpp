@@ -727,7 +727,7 @@ int main(int argc, char *argv[]) {
 
         auto soad0 = mpqc_time::fenced_now(world);
         auto F_soad
-              = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
+              = scf::fock_from_soad_low_mem(world, clustered_mol, basis, eri_e, H);
 
         auto soad1 = mpqc_time::fenced_now(world);
         auto soad_time = mpqc_time::duration_in_s(soad0, soad1);

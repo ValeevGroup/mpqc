@@ -10,6 +10,7 @@ set(integral_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/screening/qvl_screening.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/screening/qvl_shell_info.h
     ${CMAKE_CURRENT_SOURCE_DIR}/screening/qvl_shell_info.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/task_integral_kernels.cpp
 )
 
 add_library(integrals ${integral_sources})

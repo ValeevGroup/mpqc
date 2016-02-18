@@ -15,11 +15,13 @@
 #include "../include/libint.h"
 #include "task_integrals_common.h"
 
-// #include "integral_screeners.h"
+#include "screening/screen_base.h"
 
 namespace mpqc {
 namespace integrals {
 namespace detail {
+
+extern double integral_engine_precision;
 
 using OneE_Engine = libint2::OneBodyEngine;
 using TwoE_Engine = libint2::TwoBodyEngine<libint2::Coulomb>;
@@ -27,6 +29,13 @@ using cGTG_Engine = libint2::TwoBodyEngine<libint2::cGTG>;
 using cGTGCoulomb_Engine = libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>;
 using cGTG2_Engine = libint2::TwoBodyEngine<libint2::DelcGTG_square>;
 
+template <typename E>
+void set_eng_precision(E &eng){
+    eng.set_precision(integral_engine_precision);
+}
+
+// Do nothing for OneBodyEngine
+inline void set_eng_precision(libint2::OneBodyEngine &){}
 
 inline const double *shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1,
                                Shell const &s2, Shell const &s3) {
@@ -109,6 +118,8 @@ TA::TensorD
 integral_kernel(Engine &eng, TA::Range &&rng,
                 std::array<ShellVec const *, 2> shell_ptrs, Screener &) {
 
+    set_eng_precision(eng); 
+
     auto const &lobound = rng.lobound();
     std::array<std::size_t, 2> lb = {{lobound[0], lobound[1]}};
     std::array<std::size_t, 2> ub = lb;
@@ -151,6 +162,8 @@ template <typename Engine>
 TA::TensorD
 integral_kernel(Engine &eng, TA::Range &&rng,
                 std::array<ShellVec const *, 3> shell_ptrs, Screener &screen) {
+
+    eng.set_precision(integral_engine_precision);
 
     auto const &lobound = rng.lobound();
     std::array<std::size_t, 3> lb = {{lobound[0], lobound[1], lobound[2]}};
@@ -214,6 +227,8 @@ template <typename Engine>
 TA::TensorD
 integral_kernel(Engine &eng, TA::Range &&rng,
                 std::array<ShellVec const *, 4> shell_ptrs, Screener &screen) {
+
+    eng.set_precision(integral_engine_precision);
 
     auto const &lobound = rng.lobound();
     std::array<std::size_t, 4> lb

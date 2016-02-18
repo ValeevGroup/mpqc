@@ -22,8 +22,7 @@ if (MPQC_UNITTEST)
   set_property(SOURCE dfttest.cc PROPERTY COMPILE_DEFINITIONS
               SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(dfttest dfttest.cc $<TARGET_OBJECTS:dft>)
- add_test(dfttest dfttest)
- target_link_libraries( dfttest chemistry )
- 
-endif()
+  add_test(dfttest dfttest)
+  target_link_libraries( dfttest chemistry )
+endif (MPQC_UNITTEST)
 

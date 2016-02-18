@@ -1004,7 +1004,48 @@ int main(int argc, char *argv[]) {
             decltype(dC_df) dG_df;
             dG_df("X, mu, nu")
                   = (deri3("X, mu, nu") - 0.5 * dM("X,Y") * dC_df("Y,mu,nu"));
-            dG_df.truncate();
+            
+            world.gop.fence();
+            auto old_compress = tensor::detail::recompress;
+            tensor::detail::recompress = true;
+            if (clr_threshold != 0) {
+                TA::foreach_inplace(
+                      dG_df, [](tensor::Tile<tensor::DecomposedTensor<double>> &
+                                  t_tile) {
+                          auto &t = t_tile.tile();
+                          auto input_norm = norm(t);
+
+                          auto compressed_norm = input_norm;
+                          if (t.cut() != 0.0) {
+                              if (t.ndecomp() == 1) {
+                                  auto test = tensor::algebra::
+                                        two_way_decomposition(t);
+                                  if (!test.empty()) {
+                                      t = test;
+                                      compressed_norm = norm(t);
+                                  }
+                              } else {
+                                  tensor::algebra::recompress(t);
+                                  compressed_norm = norm(t);
+                              }
+                          }
+
+                          // Both are always larger than or equal to the
+                          // real
+                          // norm.
+                          return std::min(input_norm, compressed_norm);
+                      });
+            } else {
+                dG_df.truncate();
+            }
+            world.gop.fence();
+            tensor::detail::recompress = old_compress;
+
+            auto g_store = utility::array_storage(dG_df);
+            std::cout << "G_df storage = \n" 
+                << "\tFull    " << g_store[0] << "\n"
+                << "\tSparse  " << g_store[1] << "\n"
+                << "\tCLR     " << g_store[2] << "\n" << std::flush;
             world.gop.fence();
 
             scf.solve(20, 1e-11, eri3, dC_df, dG_df);

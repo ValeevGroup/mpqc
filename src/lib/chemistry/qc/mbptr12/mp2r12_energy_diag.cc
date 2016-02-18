@@ -383,6 +383,116 @@ void MP2R12Energy_Diag::compute_FxT(const int b1b2_k1k2, const unsigned int f12_
   }
 }
 
+// Compute U=FxG intermediate needed for CC Vbar
+// (U)^ij_ab = (r\bar\tilde)^ik_aa' (g\bar)^ba'_jk
+void MP2R12Energy_Diag::compute_U(Ref<DistArray4> (&U)[NSpinCases2])
+{
+  assert(false); // debugged sometime ago, need extra test ... compute U2.T2 and compare against
+                 // the value from TA-based code
+
+  // preliminaries
+  Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  Ref<RefWavefunction> refwfn = r12world->refwfn();
+  Ref<TwoBodyFourCenterMOIntsRuntime> moints4_rtime =
+      r12world->world()->moints_runtime4();
+  Ref<R12Technology::CorrelationFactor> corrfac = r12world->r12tech()->corrfactor();
+  Ref<TwoBodyIntDescr> descr_f12 = corrfac->tbintdescr(r12world->integral(), 0);
+  const std::string descr_f12_key = moints4_rtime->descr_key(descr_f12);
+
+  MPQC_ASSERT(refwfn->spin_polarized() == false);
+  const SpinCase1 spin1 = Alpha;
+  const SpinCase1 spin2 = Beta;
+
+  // orbital spaces
+  Ref<OrbitalSpace> occ1_act = refwfn->occ_act(spin1);
+  Ref<OrbitalSpace> occ2_act = refwfn->occ_act(spin2);
+  Ref<OrbitalSpace> uocc1_act = refwfn->uocc_act(spin1);
+  Ref<OrbitalSpace> uocc2_act = refwfn->uocc_act(spin2);
+  Ref<OrbitalSpace> cabs1 = r12world->cabs_space(spin1);
+  Ref<OrbitalSpace> cabs2 = r12world->cabs_space(spin2);
+
+  // geminal coefficients
+  const double C_0 = 1.0 / 2.0;
+  const double C_1 = 1.0 / 4.0;
+
+  const unsigned int eri_intset_index = descr_f12->intset(corrfac->tbint_type_eri());
+  const unsigned int f12_intset_index = descr_f12->intset(corrfac->tbint_type_f12());
+
+  // compute rJ = r_{ik}^{aA} = r_{iA}^{ak} (A = CABS) stored as ia by Ak (i.e. as Coulomb)
+  const std::string rJ_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(), cabs2->id(),
+                                                                uocc1_act->id(), occ2_act->id(),
+                                                                descr_f12_key,
+                                                                TwoBodyIntLayout::b1k1_b2k2);
+  Ref<TwoBodyMOIntsTransform> J_tform = moints4_rtime->get(rJ_key);
+  J_tform->compute();
+  Ref<DistArray4> rJ = extract(J_tform->ints_distarray4(), f12_intset_index);
+
+  // compute rK = r_{ik}^{Aa} = r_{ia}^{Ak} (A = CABS) stored as ia by Ak (i.e. as exchange)
+  const std::string rK_key = ParsedTwoBodyFourCenterIntKey::key(occ1_act->id(), uocc2_act->id(),
+                                                                cabs1->id(), occ2_act->id(),
+                                                                descr_f12_key,
+                                                                TwoBodyIntLayout::b1b2_k1k2);
+  Ref<TwoBodyMOIntsTransform> K_tform = moints4_rtime->get(rK_key);
+  K_tform->compute();
+  Ref<DistArray4> rK = extract(K_tform->ints_distarray4(), f12_intset_index);
+
+  // compute r_aa = C1 (rJ - rK)
+  Ref<DistArray4> r_aa = extract(rJ, 0); // = deep copy
+  axpy(rK, -1.0, r_aa, C_1);
+
+  // compute r_ab = (C0+C1)/2 rJ + (C0-C1)/2 rK = (C0+C1)/2 ( rJ + (C0-C1)/(C0+C1) rK)
+  Ref<DistArray4> r_ab = extract(rJ, 0); // = deep copy
+  axpy(rK, (C_0-C_1)/(C_0+C_1), r_ab, (C_0+C_1)/2);
+
+  // get gJ = g_{iA}^{ak} (A = CABS) stored as ia by Ak (i.e. as Coulomb)
+  Ref<DistArray4> gJ = extract(J_tform->ints_distarray4(), eri_intset_index);
+
+  // get gK = g_{iA}^{ka} = g_{ai}^{Ak} (A = CABS) stored as ia (hence, permute12) by Ak (i.e. as exchange)
+  const std::string gK_key = ParsedTwoBodyFourCenterIntKey::key(uocc2_act->id(), occ1_act->id(),
+                                                                cabs1->id(), occ2_act->id(),
+                                                                "ERI",
+                                                                TwoBodyIntLayout::b1b2_k1k2);
+  Ref<TwoBodyMOIntsTransform> gK_tform = moints4_rtime->get(gK_key);
+  gK_tform->compute();
+  Ref<DistArray4> gK = permute12(gK_tform->ints_distarray4());
+
+  // compute g_aa = gJ - gK
+  Ref<DistArray4> g_aa = extract(gJ, 0); // = deep copy
+  axpy(gK, -1.0, g_aa);
+
+  // compute g_ab = gJ
+  Ref<DistArray4> g_ab = gJ;
+
+  Ref<DistArray4> U_ab_term1;
+  contract34(U_ab_term1,
+             1.0,
+             r_aa, 0,
+             g_ab, 0);
+  contract34(U[AlphaBeta],
+             1.0,
+             r_ab, 0,
+             g_aa, 0);
+  axpy(U_ab_term1, +1.0, U[AlphaBeta]);
+  U_ab_term1 = 0;
+  U[AlphaBeta] = permute23(U[AlphaBeta]);
+
+  Ref<DistArray4> U_aa_term1;
+  contract34(U_aa_term1,
+             1.0,
+             r_aa, 0,
+             g_aa, 0);
+  contract34(U[AlphaAlpha],
+             1.0,
+             r_ab, 0,
+             g_ab, 0);
+  axpy(U_aa_term1, +1.0, U[AlphaAlpha]);
+  U_aa_term1 = 0;
+  U[AlphaAlpha] = permute23(U[AlphaAlpha]);
+
+  U[BetaBeta] = U[AlphaAlpha];
+
+}
+
 void MP2R12Energy_Diag::compute_VX(const int b1b2_k1k2, std::vector<std::string>& VX_output,
                                    const unsigned int oper12_idx, Ref<DistArray4>& Y12_ints,
                                    const unsigned int oper1_idx, const unsigned int oper2_idx,

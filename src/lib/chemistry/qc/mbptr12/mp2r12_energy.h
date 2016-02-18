@@ -241,6 +241,8 @@ class MP2R12Energy_Diag : public MP2R12Energy
                           std::vector<Ref<DistArray4> >& Y_ints,
                           std::vector<Ref<DistArray4> >& F_ints,
                           double* P);
+    /// Compute U=FxG intermediate needed for CC V bar
+    void compute_U(Ref<DistArray4> (&U)[NSpinCases2]);
     void contract_VT1(const Ref<DistArray4>& V,
                          const int b1b2_k1k2,  const bool swap_e12_V,
                          const double* const T1_array,

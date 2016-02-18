@@ -53,8 +53,4 @@ ForceLink<PsiRDMTwo> psi_force_link_j_;
 
 }
 
-extern "C" {
-  FILE* outfile;
-}
-
 #endif

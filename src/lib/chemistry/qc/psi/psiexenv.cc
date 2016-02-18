@@ -50,6 +50,10 @@
 
 extern char **environ;
 
+extern "C" {
+  FILE* outfile;
+}
+
 using namespace std;
 using namespace sc;
 

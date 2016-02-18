@@ -416,9 +416,9 @@ void PsiCC_PT2R12::compute_ept2r12() {
         if (debug() >= DefaultPrintThresholds::allO4)
           _print(spincase2, HT, prepend_spincase(spincase2,"<R|(H*T2)|0>").c_str());
 
-        // the next term is T1.Vai. It's third-order if BC hold, second-order otherwise
-        if ( completeness_order_for_intermediates_ >= 3 ||
-            (completeness_order_for_intermediates_ >= 2 && !r12eval()->bc()) ) {
+        // the next term is T1.Vai. It's fourth-order if BC hold, third-order otherwise
+        if ( completeness_order_ >= 4 ||
+            (completeness_order_ >= 3 && !r12eval()->bc()) ) {
 
           // Via . T1
           Ref<DistArray4> VT1 = HT->clone();

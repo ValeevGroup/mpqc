@@ -49,15 +49,15 @@ namespace sc {
     protected:
       /// set to true to use Ts instead of Lambdas
       static const bool replace_Lambda_with_T_ = true;
-      /** default was to include up to 3rd-order terms in the energy.
+      /// EXPERTS-ONLY: if you want to enable TA-based evaluation of higher-order terms
+      /// turn this on
+      static const bool need_lambda_ = false;
+      /** default was to include up to 3rd-order terms in the energy (V.T2)
           current default is to include higher-order terms in the energy also -- this means that
-          t1 contributions are included even in closed-shell calculations, in contrast
-          to the original formulation */
-      static const unsigned int completeness_order_for_energy_ = 11;
-      /// the max order for the intermediates is one less
-      static const unsigned int
-          completeness_order_for_intermediates_ = completeness_order_for_energy_
-              - 1;
+          V.T1 terms are included even in closed-shell calculations,
+          in contrast to the original formulation ... the max order for the intermediates
+          is thus 4 (V is second order, T1 is 1st(ROHF)/2nd(RHF,UHF) */
+      static const unsigned int completeness_order_ = 4;
 
       void write_basic_input(int conv);
 

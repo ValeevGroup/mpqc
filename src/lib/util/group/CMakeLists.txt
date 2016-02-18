@@ -97,6 +97,6 @@ if (MPQC_UNITTEST)
   target_link_libraries(thrtest
     util
   )
-  add_test(thrtest thrtest)
+  add_test(NAME thrtest COMMAND thrtest -threadgrp "<PthreadThreadGrp>:(num_threads=2)")
 
 endif()

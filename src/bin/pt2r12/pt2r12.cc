@@ -25,7 +25,7 @@
 #include <util/misc/consumableresources.h>
 #include "../mpqc/mpqcinit.h"
 
-#ifdef HAVE_MADNESS
+#ifdef MPQC_HAS_MADNESS
 # include <util/madness/init.h>
 #endif
 
@@ -175,7 +175,7 @@ int try_main(int argc, char **argv)
   init.init_io(grp);
   init.init_timer(grp,0);
 
-#ifdef HAVE_MADNESS
+#ifdef MPQC_HAS_MADNESS
   mpqc::MADNESSRuntime::initialize();
 #endif
 
@@ -443,7 +443,7 @@ int try_main(int argc, char **argv)
   ExEnv::out0() << std::endl
                 << indent << scprintf("End Time: %s", tstr) << std::endl;
 
-#ifdef HAVE_MADNESS
+#ifdef MPQC_HAS_MADNESS
   mpqc::MADNESSRuntime::finalize();
 #endif
 

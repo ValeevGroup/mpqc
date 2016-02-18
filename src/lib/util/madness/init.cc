@@ -31,7 +31,7 @@
 
 #include <mpqc_config.h>
 
-#ifdef HAVE_MADNESS
+#ifdef MPQC_HAS_MADNESS
 # ifndef WORLD_INSTANTIATE_STATIC_TEMPLATES
 # define WORLD_INSTANTIATE_STATIC_TEMPLATES
 # endif

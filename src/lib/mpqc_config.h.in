@@ -253,7 +253,7 @@
 #endif
 
 /* Define if MADNESS is available.  */
-#cmakedefine HAVE_MADNESS
+#cmakedefine MPQC_HAS_MADNESS
 
 /* Define if TiledArray is available.  */
 #cmakedefine MPQC_HAS_TILEDARRAY

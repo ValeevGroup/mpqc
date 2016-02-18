@@ -9,6 +9,7 @@ find_package(TiledArray 0.5.0 CONFIG COMPONENTS tiledarray)
 if (TILEDARRAY_FOUND)
 
   set(MPQC_HAS_TILEDARRAY TRUE)
+  set(MPQC_HAS_MADNESS TRUE)
   message(STATUS "Found TiledArray:")
   message(STATUS "\tTiledArray_INCLUDE_DIR=${TILEDARRAY_INCLUDE_DIRS}")
   message(STATUS "\tTiledArray_LIBRARIES=${TILEDARRAY_LIBRARIES}")

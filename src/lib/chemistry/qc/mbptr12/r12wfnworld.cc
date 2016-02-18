@@ -42,7 +42,7 @@
 #include <chemistry/qc/nbody/ref.h>
 #include "r12wfnworld.h"
 
-#ifdef HAVE_MADNESS
+#ifdef MPQC_HAS_MADNESS
 # include <util/madness/init.h>
 #endif
 
@@ -86,7 +86,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   r12tech_->check_integral_factory(integral());
 
   // boot up madness
-#ifdef HAVE_MADNESS
+#ifdef MPQC_HAS_MADNESS
   mpqc::MADNESSRuntime::initialize();
 #endif
 }
@@ -104,7 +104,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
   ribs_space_ << SavableState::restore_state(si);
 
   // boot up madness
-#ifdef HAVE_MADNESS
+#ifdef MPQC_HAS_MADNESS
   mpqc::MADNESSRuntime::initialize();
 #endif
 }
@@ -112,7 +112,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
 R12WavefunctionWorld::~R12WavefunctionWorld()
 {
   // boot up madness
-#ifdef HAVE_MADNESS
+#ifdef MPQC_HAS_MADNESS
   //mpqc::MADNESSRuntime::finalize();
 #endif
 }

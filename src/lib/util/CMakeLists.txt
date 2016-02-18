@@ -18,7 +18,7 @@ set(utilobjects
   state
 )
 
-if (HAVE_MADNESS)
+if (MPQC_HAS_MADNESS)
   list(APPEND utilobjects madness)
 endif()
 

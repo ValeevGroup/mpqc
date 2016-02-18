@@ -493,6 +493,411 @@ void MP2R12Energy_Diag::compute_U(Ref<DistArray4> (&U)[NSpinCases2])
 
 }
 
+#ifdef MPQC_NEW_FEATURES
+double MP2R12Energy_Diag::U2T2_ta() {
+  Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  SingleReference_R12Intermediates<double> _(madness::World::get_default(),
+                                             r12world);
+  typedef SingleReference_R12Intermediates<double>::TArray4d Array4d;
+  typedef TA::Array<double, 4 > Array4;
+
+  // geminal coefficients
+  const double C_0 = 1.0 / 2.0;
+  const double C_1 = 1.0 / 4.0;
+
+  Array4 U_aa;
+  U_aa("i,j,a,b") = C_1 * (_._4("<i k|r|a a'>") - _._4("<i k|r|a' a>")) * (_._4("<j a'|g|b k>") - _._4("<j a'|g|k b>"))
+                  + (_._4("<i k|r|a a'>") * ((C_0+C_1)/2) + _._4("<i k|r|a' a>") * ((C_0-C_1)/2)) * _._4("<j a'|g|b k>");
+
+  Array4 U_abab;
+  U_abab("i,j,a,b") = C_1 * (_._4("<i k|r|a a'>") - _._4("<i k|r|a' a>")) * _._4("<j a'|g|b k>")
+                      + (_._4("<i k|r|a a'>") * ((C_0+C_1)/2) + _._4("<i k|r|a' a>") * ((C_0-C_1)/2)) * (_._4("<j a'|g|b k>") - _._4("<j a'|g|k b>"));
+
+  Array4 U_abba;
+  U_abba("i,j,a,b") = (_._4("<i k|r|a a'>") * ((C_0-C_1)/2) + _._4("<i k|r|a' a>") * ((C_0+C_1)/2)) * _._4("<j a'|g|k b>");
+
+//  std::cout << "U_aa_ref:\n" << U_aa << std::endl;
+//  std::cout << "U_abab_ref:\n" << U_abab << std::endl;
+
+  double U2T2_aa = 0.0,
+         U2T2_ab = 0.0;
+
+  {
+    Ref<DistArray4> T2[NSpinCases2];
+    T2[AlphaBeta] = r12intermediates_->get_T2_cc(AlphaBeta);
+    T2[AlphaBeta]->activate();
+    _.set_T2(T2);
+
+    // 2 = (abab-abba) + (baba-baab)
+    U2T2_ab = 2 * (U_abab("i,j,a,b") - U_abba("i,j,b,a")).dot(_._4("<i j|T2|a b>"));
+    // 2 = alpha-alpha + beta-beta
+    U2T2_aa = 2 * U_aa("i,j,a,b") .dot(_._4("<i j|T2|a b>") - _._4("<i j|T2|b a>"));
+
+//    Array4 UT_ab; UT_ab("i,j,k,l") = U_ab("i,j,a,b") * _._4("<k l|T2|a b>");
+//    std::cout << "UT_ab_ref:\n" << UT_ab << std::endl;
+//    Array4 UT_aa; UT_aa("i,j,k,l") = U_aa("i,j,a,b") * (_._4("<k l|T2|a b>") - _._4("<k l|T2|b a>"));
+//    std::cout << "UT_aa_ref:\n" << UT_aa << std::endl;
+  }
+
+  return U2T2_aa + U2T2_ab;
+}
+
+double MP2R12Energy_Diag::U1T1_plus_C1T1_ta() {
+  Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  SingleReference_R12Intermediates<double> _(madness::World::get_default(),
+                                             r12world);
+  typedef SingleReference_R12Intermediates<double>::TArray4d Array4d;
+  typedef TA::Array<double, 2> Array2;
+  typedef TA::Array<double, 4> Array4;
+
+  // closed-shell only for now
+  Ref<RefWavefunction> refwfn = r12world->refwfn();
+  MPQC_ASSERT(refwfn->spin_polarized() == false);
+
+  // geminal coefficients
+  const double C_0 = 1.0 / 2.0;
+  const double C_1 = 1.0 / 4.0;
+
+  // get T1's
+  RefSCMatrix T1_a;
+  T1_a = r12intermediates_->get_T1_cc(Alpha);
+  _.set_T1(T1_a);
+
+  // t^a_i C^i_a , where
+  // C^i_a = \bar{\tilde{R}^{ij}_{aA}} F^A_j, where A=a'
+  Array2 C1;
+  // alpha-alpha + alpha-beta can be folded together
+  C1("i,a") = (((C_0+C_1)/2 + C_1) * _._4("<i j|r|a a'>") + ((C_0-C_1)/2 - C_1) * _._4("<i j|r|a' a>")) * _._2("<j|F|a'>");
+  const double C1T1 = 2 * C1("i,a").dot(_._2("<i|T1|a>")); // 2 = alpha + beta
+  ExEnv::out0() << scprintf("C1T1 = %20.15lf\n", C1T1);
+
+  // U^i_a = - 1/2 \bar{\tilde{R}^{jk}_{aa'}} \bar{g}^{ia'}_{jk}
+  Array2 U1;
+  U1("i,a") = C_1 * (_._4("<j k|r|a a'>") - _._4("<j k|r|a' a>")) * (_._4("<i a'|g|j k>") - _._4("<i a'|g|k j>"))
+            + (((C_0+C_1)/2) * _._4("<j k|r|a a'>") + ((C_0-C_1)/2) * _._4("<j k|r|a' a>")) * _._4("<i a'|g|j k>")
+            + (((C_0-C_1)/2) * _._4("<j k|r|a a'>") + ((C_0+C_1)/2) * _._4("<j k|r|a' a>")) * _._4("<i a'|g|k j>");
+  const double U1T1 = 2 * (-0.5) * U1("i,a").dot(_._2("<i|T1|a>"));   // 2 = alpha + beta, -0.5 from definition of U1
+  ExEnv::out0() << scprintf("U1T1 = %20.15lf\n", U1T1);
+
+  return C1T1 + U1T1;
+}
+
+double MP2R12Energy_Diag::VTT_ta() {
+  Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  SingleReference_R12Intermediates<double> _(madness::World::get_default(),
+                                             r12world);
+  typedef SingleReference_R12Intermediates<double>::TArray4d Array4d;
+  typedef TA::Array<double, 4> Array4;
+  typedef TA::Array<double, 2> Array2;
+
+  // closed-shell only for now
+  Ref<RefWavefunction> refwfn = r12world->refwfn();
+  MPQC_ASSERT(refwfn->spin_polarized() == false);
+
+  // geminal coefficients
+  const double C_0 = 1.0 / 2.0;
+  const double C_1 = 1.0 / 4.0;
+
+  RefSCMatrix T1_a;
+  T1_a = r12intermediates_->get_T1_cc(Alpha);
+  _.set_T1(T1_a);
+  Ref<DistArray4> T2[NSpinCases2];
+  T2[AlphaBeta] = r12intermediates_->get_T2_cc(AlphaBeta);
+  T2[AlphaBeta]->activate();
+  _.set_T2(T2);
+  RefSCMatrix L1_a;
+  L1_a = r12intermediates_->get_L1_cc(Alpha);
+  _.set_L1(L1_a);
+  Ref<DistArray4> L2[NSpinCases2];
+  L2[AlphaBeta] = r12intermediates_->get_L2_cc(AlphaBeta);
+  L2[AlphaBeta]->activate();
+  _.set_L2(L2);
+
+  Array4 T2_ab; T2_ab("i,j,a,b") = _._4("<i j|T2|a b>");
+  Array4 T2_aa; T2_aa("i,j,a,b") = (_._4("<i j|T2|a b>") - _._4("<i j|T2|b a>"));
+  Array4 Tau2_ab; Tau2_ab("i,j,a,b") = _._4("<i j|T2|a b>") + _._2("<i|T1|a>") * _._2("<j|T1|b>");
+  Array4 Tau2_aa; Tau2_aa("i,j,a,b") = Tau2_ab("i,j,a,b") - Tau2_ab("i,j,b,a");
+
+  // V2TT_ijkl = 1/8 V^ij_kl t^kl_ab tau^ab_ij = 1/4 V^ij_kl TTau^kl_ij,
+  // where V^ij_kl = \bar{\tilde{gr}^{ij}_{kl}}
+  //               - 1/2 \bar{\tilde{R}^{ij}_{pq}} \bar{g}^{pq}_{kl}
+  //               - \bar{\tilde{R}^{ij}_{mA}} \bar{g}^{mA}_{kl}, where A=a'
+  //       TTau^kl_ij = 1/2 t^kl_ab tau^ab_ij
+  // and   tau^ab_ij  = t^ab_ij + t^a_i t^b_j - t^b_i t^a_j
+  //
+  // V1TT_ij = -V^ik_jk (1/2 t^jl_ab t^ab_il + t^j_a t^a_i) = - V^i_j tt^j_i,
+  // where V^i_j = \sum_k V^ik_jk and tt^j_i = 1/2 t^jl_ab t^ab_il + t^j_a t^a_i
+  double V2TTau_ijkl = 0.0;
+  double V1TT_ij = 0.0;
+  Array2 V1;
+  {
+    Array4 V2_aa;
+    V2_aa("i,j,k,l") = C_1 * ( (_._4("<i j|gr|k l>") - _._4("<i j|gr|l k>"))
+                              - 0.5 * (_._4("<i j|r|p q>") - _._4("<i j|r|q p>")) * (_._4("<k l|g|p q>") - _._4("<k l|g|q p>"))
+                              - (_._4("<i j|r|m a'>") - _._4("<j i|r|m a'>")) * (_._4("<k l|g|m a'>") - _._4("<l k|g|m a'>"))
+                             );
+    Array4 V2_abab; // not particle-symmetric
+    V2_abab("i,j,k,l") = ((C_0+C_1)/2) * _._4("<i j|gr|k l>") + ((C_0-C_1)/2) * _._4("<i j|gr|l k>")
+                          - 0.5 * ( (((C_0+C_1)/2) * _._4("<i j|r|p q>") + ((C_0-C_1)/2) * _._4("<i j|r|q p>")) * _._4("<k l|g|p q>")
+                                   +(((C_0-C_1)/2) * _._4("<i j|r|p q>") + ((C_0+C_1)/2) * _._4("<i j|r|q p>")) * _._4("<k l|g|q p>")
+                                  )
+                          - ( ( ((C_0+C_1)/2) * _._4("<i j|r|m a'>") + ((C_0-C_1)/2) * _._4("<j i|r|m a'>") ) * _._4("<k l|g|m a'>")
+                             +( ((C_0-C_1)/2) * _._4("<i j|r|m a'>") + ((C_0+C_1)/2) * _._4("<j i|r|m a'>") ) * _._4("<l k|g|m a'>")
+                            );
+
+    Array4 T2Tau2_aa;
+    T2Tau2_aa("i,j,k,l") = 0.5 * T2_aa("i,j,a,b") * Tau2_aa("k,l,a,b"); // 1/2 = a <-> b
+    Array4 T2Tau2_abab; // particle-symmetric
+    T2Tau2_abab("i,j,k,l") = 2 * 0.5 * T2_ab("i,j,a,b") * Tau2_ab("k,l,a,b"); // 2 = ab + ba
+
+    V2TTau_ijkl = 0.25 * ( 2 * V2_aa("i,j,k,l").dot(T2Tau2_aa("i,j,k,l")) // 2 = aa + bb
+                          +4 * V2_abab("i,j,k,l").dot(T2Tau2_abab("i,j,k,l")) // 4 = abab + baba + abba + baab
+                         );
+
+    V1("i,j") =  (V2_aa("i,k,j,l") + V2_abab("i,k,j,l")) * _._2("<k|I|l>");
+    Array2 tt;
+    tt("i,j") = 0.5 * (T2_aa("i,k,a,b") * T2_aa("j,k,a,b") // aaaa
+                       + 2*_._4("<i k|T2|a b>") * _._4("<j k|T2|a b>") // 2 = abab + abba
+                      )
+              + _._2("<i|T1|a>") * _._2("<j|T1|a>");
+    V1TT_ij = -2 * V1("i,j").dot( tt("i,j") ); // 2 = alpha + beta, - from definition
+  }
+  ExEnv::out0() << scprintf("V2TTau_ijkl = %20.15lf\n", V2TTau_ijkl);
+  ExEnv::out0() << scprintf("V1TT_ij = %20.15lf\n", V1TT_ij);
+
+  // V2TT_ijka = 1/2 V^ij_ka t^k_b t^ab_ij = - 1/2 V^ij_ak t^k_b t^ab_ij
+  double V2TT_ijka = 0.0;
+  {
+    Array4 V2_aa;
+    V2_aa("i,j,k,a") = C_1 * ( (_._4("<i j|gr|k a>") - _._4("<i j|gr|a k>"))
+                              - 0.5 * (_._4("<i j|r|p q>") - _._4("<i j|r|q p>")) * (_._4("<k a|g|p q>") - _._4("<k a|g|q p>"))
+                              - (_._4("<i j|r|m a'>") - _._4("<j i|r|m a'>")) * (_._4("<k a|g|m a'>") - _._4("<a k|g|m a'>"))
+                             );
+    Array4 V2_abab;
+    V2_abab("i,j,k,a") = ((C_0+C_1)/2) * _._4("<i j|gr|k a>") + ((C_0-C_1)/2) * _._4("<i j|gr|a k>")
+                          - 0.5 * ( (((C_0+C_1)/2) * _._4("<i j|r|p q>") + ((C_0-C_1)/2) * _._4("<i j|r|q p>")) * _._4("<k a|g|p q>")
+                                   +(((C_0-C_1)/2) * _._4("<i j|r|p q>") + ((C_0+C_1)/2) * _._4("<i j|r|q p>")) * _._4("<k a|g|q p>")
+                                  )
+                          - ( ( ((C_0+C_1)/2) * _._4("<i j|r|m a'>") + ((C_0-C_1)/2) * _._4("<j i|r|m a'>") ) * _._4("<k a|g|m a'>")
+                             +( ((C_0-C_1)/2) * _._4("<i j|r|m a'>") + ((C_0+C_1)/2) * _._4("<j i|r|m a'>") ) * _._4("<a k|g|m a'>")
+                            );
+
+    Array4 T1T2_ijka_aa;
+    T1T2_ijka_aa("i,j,k,a") = T2_aa("i,j,b,a") * _._2("<k|T1|b>");
+    Array4 T1T2_ijka_ab;
+    T1T2_ijka_ab("i,j,k,a") = _._4("<i j|T2|b a>") * _._2("<k|T1|b>");
+
+    V2TT_ijka = -0.5 * ( 2 * V2_aa("i,j,k,a").dot(T1T2_ijka_aa("i,j,k,a")) // 2 = aa + bb
+                        +4 * V2_abab("i,j,k,a").dot(T1T2_ijka_ab("i,j,k,a")) // 4 = abab + baba + abba + baab
+                       );
+  }
+  ExEnv::out0() << scprintf("V2TT_ijka = %20.15lf\n", V2TT_ijka);
+
+  // V2TT_ijab = 1/2 V^ij_ab t^i_a t^j_b = 1/4 V^ij_ab (t^i_a t^j_b - t^i_b t^j_a)
+  double V2T1T1_ijab = 0.0;
+  double V2LmT = 0.0;
+  double C2LmT = 0.0;
+  double V2dT = 0.0;
+  double C2dT = 0.0;
+  double V1T2dT2 = 0.0;
+  {
+    Array4 V2_aa;
+    V2_aa("i,j,a,b") = C_1 * ( (_._4("<i j|gr|a b>") - _._4("<i j|gr|b a>"))
+                              - 0.5 * (_._4("<i j|r|p q>") - _._4("<i j|r|q p>")) * (_._4("<a b|g|p q>") - _._4("<a b|g|q p>"))
+                              - (_._4("<i j|r|m a'>") - _._4("<j i|r|m a'>")) * (_._4("<a b|g|m a'>") - _._4("<b a|g|m a'>"))
+                             );
+    Array4 V2_abab;
+    V2_abab("i,j,a,b") = ((C_0+C_1)/2) * _._4("<i j|gr|a b>") + ((C_0-C_1)/2) * _._4("<i j|gr|b a>")
+                          - 0.5 * ( (((C_0+C_1)/2) * _._4("<i j|r|p q>") + ((C_0-C_1)/2) * _._4("<i j|r|q p>")) * _._4("<a b|g|p q>")
+                                   +(((C_0-C_1)/2) * _._4("<i j|r|p q>") + ((C_0+C_1)/2) * _._4("<i j|r|q p>")) * _._4("<a b|g|q p>")
+                                  )
+                          - ( ( ((C_0+C_1)/2) * _._4("<i j|r|m a'>") + ((C_0-C_1)/2) * _._4("<j i|r|m a'>") ) * _._4("<a b|g|m a'>")
+                             +( ((C_0-C_1)/2) * _._4("<i j|r|m a'>") + ((C_0+C_1)/2) * _._4("<j i|r|m a'>") ) * _._4("<b a|g|m a'>")
+                            );
+
+    Array4 T1T1_ijab_aa;
+    T1T1_ijab_aa("i,j,a,b") = _._2("<i|T1|a>") * _._2("<j|T1|b>") - _._2("<i|T1|b>") * _._2("<j|T1|a>");
+    Array4 T1T1_ijab_ab;
+    T1T1_ijab_ab("i,j,a,b") = _._2("<i|T1|a>") * _._2("<j|T1|b>");
+
+    V2T1T1_ijab = 0.25* ( 2 * V2_aa("i,j,a,b").dot(T1T1_ijab_aa("i,j,a,b")) // 2 = aa + bb
+                         +4 * V2_abab("i,j,a,b").dot(T1T1_ijab_ab("i,j,a,b")) // 4 = abab + baba + abba + baab
+                        );
+
+    // TEST: compute contributions from R12-induced changes to the T/Lambda amps
+    // dT^ij_ab = (C^ij_ab + V^ij_ab + ...) / Delta_ijab
+    // where Delta_ijab =  1 / (- <a|F|a> - <b|F|b> + <i|F|i> + <j|F|j>)
+    Array2 fij = _.xy("<j|F|j>");
+    Array2 fab = _.xy("<a|F|b>");
+    typedef detail::diag_precond4<double> pc4eval_type;
+    pc4eval_type Delta_ijab_gen(TA::array_to_eigen(fij), TA::array_to_eigen(fij),
+                                TA::array_to_eigen(fab),TA::array_to_eigen(fab));
+
+    typedef TA::Array<double, 4, LazyTensor<double, 4, pc4eval_type > > TArray4dLazy;
+    TArray4dLazy Delta_ijab(V2_abab.get_world(), V2_abab.trange());
+
+    // construct local tiles
+    for(auto t = Delta_ijab.trange().tiles().begin();
+        t != Delta_ijab.trange().tiles().end(); ++t)
+      if (Delta_ijab.is_local(*t)) {
+        std::array<std::size_t, 4> index;
+        std::copy(t->begin(), t->end(), index.begin());
+        madness::Future < typename TArray4dLazy::value_type >
+          tile((LazyTensor<double, 4, pc4eval_type >(&Delta_ijab, index, &Delta_ijab_gen)
+              ));
+
+        // Insert the tile into the array
+        Delta_ijab.set(*t, tile);
+      }
+
+    Array4 C2_aa, C2_ab;
+    C2_aa("i,j,a,b") = C_1 * ( (_._4("<i j|r|a a'>") - _._4("<i j|r|a' a>")) * _._2("<b|F|a'>") +
+                               (_._4("<i j|r|a' b>") - _._4("<i j|r|b a'>")) * _._2("<a|F|a'>") );
+    C2_ab("i,j,a,b") = (((C_0+C_1)/2) * _._4("<i j|r|a a'>") + ((C_0-C_1)/2) * _._4("<i j|r|a' a>")) * _._2("<b|F|a'>")
+                     + (((C_0+C_1)/2) * _._4("<i j|r|a' b>") + ((C_0-C_1)/2) * _._4("<i j|r|b a'>")) * _._2("<a|F|a'>");
+
+    Array4 U_aa;
+    U_aa("i,j,a,b") = C_1 * (_._4("<i k|r|a a'>") - _._4("<i k|r|a' a>")) * (_._4("<j a'|g|b k>") - _._4("<j a'|g|k b>"))
+                    + (_._4("<i k|r|a a'>") * ((C_0+C_1)/2) + _._4("<i k|r|a' a>") * ((C_0-C_1)/2)) * _._4("<j a'|g|b k>");
+
+    Array4 U_abab;
+    U_abab("i,j,a,b") = C_1 * (_._4("<i k|r|a a'>") - _._4("<i k|r|a' a>")) * _._4("<j a'|g|b k>")
+                        + (_._4("<i k|r|a a'>") * ((C_0+C_1)/2) + _._4("<i k|r|a' a>") * ((C_0-C_1)/2)) * (_._4("<j a'|g|b k>") - _._4("<j a'|g|k b>"));
+
+    Array4 U_abba;
+    U_abba("i,j,a,b") = (_._4("<i k|r|a a'>") * ((C_0-C_1)/2) + _._4("<i k|r|a' a>") * ((C_0+C_1)/2)) * _._4("<j a'|g|k b>");
+
+    Array4 U_ab;
+    U_ab("i,j,a,b") = 0.5 * (U_abab("i,j,a,b") - U_abba("i,j,b,a"));
+
+//    Array4 dT_aa; dT_aa("i,j,a,b") = - Delta_ijab("i,j,a,b") * (C2_aa("i,j,a,b"));
+//    Array4 dT_ab; dT_ab("i,j,a,b") = - Delta_ijab("i,j,a,b") * (C2_ab("i,j,a,b"));
+    Array4 dT_aa; dT_aa("i,j,a,b") = - Delta_ijab("i,j,a,b") * (V2_aa("i,j,a,b") + C2_aa("i,j,a,b") + U_aa("i,j,a,b"));
+    Array4 dT_ab; dT_ab("i,j,a,b") = - Delta_ijab("i,j,a,b") * (V2_abab("i,j,a,b") + C2_ab("i,j,a,b") + U_ab("i,j,a,b"));
+
+    // V2dT = 1/4 V^ij_ab dT^ij_ab
+    // C2dT = 1/4 C^ij_ab dT^ij_ab
+    V2dT = 0.25 * ( 2 * (V2_aa("i,j,a,b")).dot(dT_aa("i,j,a,b")) // 2 = aa + bb
+                   +4 * (V2_abab("i,j,a,b")).dot(dT_ab("i,j,a,b")) // 4 = abab + baba + abba + baab
+                  );
+    C2dT = 0.25 * ( 2 * (C2_aa("i,j,a,b")).dot(dT_aa("i,j,a,b")) // 2 = aa + bb
+                   +4 * (C2_ab("i,j,a,b")).dot(dT_ab("i,j,a,b")) // 4 = abab + baba + abba + baab
+                  );
+    Array2 tdt;
+    tdt("i,j") = 0.5 * (T2_aa("i,k,a,b") * dT_aa("j,k,a,b") // aaaa
+                       + 2*_._4("<i k|T2|a b>") * dT_ab("j,k,a,b") // 2 = abab + abba
+                       )
+              + _._2("<i|T1|a>") * _._2("<j|T1|a>");
+    V1T2dT2 = - 2 * 2 * V1("i,j").dot( tdt("i,j") ); // 2 = alpha + beta, - from definition, another 2 since the term is quadratic in T2
+
+    // V2LmT = 1/4 V^ij_ab (lambda^ij_ab - t^ij_ab)
+    V2LmT = 0.25 * ( 2 * (V2_aa("i,j,a,b")).dot(_._4("<i j|L2|a b>") - _._4("<i j|L2|b a>") - T2_aa("i,j,a,b")) // 2 = aa + bb
+                    +4 * (V2_abab("i,j,a,b")).dot(_._4("<i j|L2|a b>") - _._4("<i j|T2|a b>")) // 4 = abab + baba + abba + baab
+                   );
+    C2LmT = 0.25 * ( 2 * (C2_aa("i,j,a,b")).dot(_._4("<i j|L2|a b>") - _._4("<i j|L2|b a>") - T2_aa("i,j,a,b")) // 2 = aa + bb
+                    +4 * (C2_ab("i,j,a,b")).dot(_._4("<i j|L2|a b>") - _._4("<i j|T2|a b>")) // 4 = abab + baba + abba + baab
+                   );
+  }
+  ExEnv::out0() << scprintf("V2T1T1_ijab = %20.15lf\n", V2T1T1_ijab);
+  ExEnv::out0() << scprintf("V2LmT = %20.15lf\n", V2LmT);
+  ExEnv::out0() << scprintf("C2LmT = %20.15lf\n", C2LmT);
+  ExEnv::out0() << scprintf("V2dT = %20.15lf\n", V2dT);
+  ExEnv::out0() << scprintf("C2dT = %20.15lf\n", C2dT);
+  ExEnv::out0() << scprintf("V1T2dT2 = %20.15lf\n", V1T2dT2);
+
+  return V2TTau_ijkl + V1TT_ij + V2TT_ijka + V2T1T1_ijab + V2LmT + C2LmT + (V2dT + C2dT);
+}
+
+double MP2R12Energy_Diag::PT2R12_ta() {
+  Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
+  SingleReference_R12Intermediates<double> _(madness::World::get_default(),
+                                             r12world);
+  typedef SingleReference_R12Intermediates<double>::TArray4d Array4d;
+  typedef TA::Array<double, 4> Array4;
+  typedef TA::Array<double, 2> Array2;
+
+  // closed-shell only for now
+  Ref<RefWavefunction> refwfn = r12world->refwfn();
+  MPQC_ASSERT(refwfn->spin_polarized() == false);
+
+  // geminal coefficients
+  const double C_0 = 1.0 / 2.0;
+  const double C_1 = 1.0 / 4.0;
+
+  RefSCMatrix T1_a;
+  T1_a = r12intermediates_->get_T1_cc(Alpha);
+  _.set_T1(T1_a);
+  Ref<DistArray4> T2[NSpinCases2];
+  T2[AlphaBeta] = r12intermediates_->get_T2_cc(AlphaBeta);
+  T2[AlphaBeta]->activate();
+  _.set_T2(T2);
+
+  Array4 T2_ab; T2_ab("i,j,a,b") = _._4("<i j|T2|a b>");
+  Array4 T2_aa; T2_aa("i,j,a,b") = (_._4("<i j|T2|a b>") - _._4("<i j|T2|b a>"));
+
+  // t^a_i V^ij_aj ,
+  // where V^ij_aj = \bar{\tilde{gr}^{ij}_{aj}}
+  //               - 1/2 \bar{\tilde{R}^{ij}_{pq}} \bar{g}^{pq}_{aj}
+  //               - \bar{\tilde{R}^{ij}_{mA}} \bar{g}^{mA}_{aj}, where A=a'
+  const double V1T1 = 2 * (
+                            //
+                            // \bar{\tilde{gr}^{ij}_{aj}}
+                            (((C_0+C_1)/2 + C_1) * _._4("<i j|gr|a k>") + ((C_0-C_1)/2 - C_1) *  _._4("<i j|gr|k a>")) * _._2("<j|I|k>")
+                            //
+                            // \bar{\tilde{R}^{ij}_{pq}} \bar{g}^{pq}_{aj}
+                            - 0.5 * (C_1 * (_._4("<i j|r|p q>") - _._4("<j i|r|p q>")) * (_._4("<a j|g|p q>") - _._4("<j a|g|p q>"))
+                                     + (((C_0+C_1)/2) * _._4("<i j|r|p q>") + ((C_0-C_1)/2) * _._4("<j i|r|p q>")) * _._4("<a j|g|p q>")
+                                     + (((C_0-C_1)/2) * _._4("<i j|r|p q>") + ((C_0+C_1)/2) * _._4("<j i|r|p q>")) * _._4("<j a|g|p q>")
+                                    )
+                            //
+                            // - \bar{\tilde{R}^{ij}_{mA}} \bar{g}^{mA}_{aj}
+                            - (C_1 * (_._4("<i j|r|m a'>") - _._4("<j i|r|m a'>")) * (_._4("<a j|g|m a'>") - _._4("<j a|g|m a'>"))
+                            + (((C_0+C_1)/2) * _._4("<i j|r|m a'>") + ((C_0-C_1)/2) * _._4("<j i|r|m a'>")) * _._4("<a j|g|m a'>")
+                            + (((C_0-C_1)/2) * _._4("<i j|r|m a'>") + ((C_0+C_1)/2) * _._4("<j i|r|m a'>")) * _._4("<j a|g|m a'>")
+                            )
+                          ).dot(_._2("<i|T1|a>"));
+  ExEnv::out0() << scprintf("V1T1 = %20.15lf\n", V1T1);
+
+  // VC2T2_ijab = 1/4 (V^ij_ab + C^ij_ab) t_ij^ab
+  double V2T2_ijab = 0.0, C2T2_ijab = 0.0;
+  {
+    Array4 V2_aa;
+    V2_aa("i,j,a,b") = C_1 * ( (_._4("<i j|gr|a b>") - _._4("<i j|gr|b a>"))
+                              - 0.5 * (_._4("<i j|r|p q>") - _._4("<i j|r|q p>")) * (_._4("<a b|g|p q>") - _._4("<a b|g|q p>"))
+                              - (_._4("<i j|r|m a'>") - _._4("<j i|r|m a'>")) * (_._4("<a b|g|m a'>") - _._4("<b a|g|m a'>"))
+                             );
+    Array4 V2_abab;
+    V2_abab("i,j,a,b") = ((C_0+C_1)/2) * _._4("<i j|gr|a b>") + ((C_0-C_1)/2) * _._4("<i j|gr|b a>")
+                          - 0.5 * ( (((C_0+C_1)/2) * _._4("<i j|r|p q>") + ((C_0-C_1)/2) * _._4("<i j|r|q p>")) * _._4("<a b|g|p q>")
+                                   +(((C_0-C_1)/2) * _._4("<i j|r|p q>") + ((C_0+C_1)/2) * _._4("<i j|r|q p>")) * _._4("<a b|g|q p>")
+                                  )
+                          - ( ( ((C_0+C_1)/2) * _._4("<i j|r|m a'>") + ((C_0-C_1)/2) * _._4("<j i|r|m a'>") ) * _._4("<a b|g|m a'>")
+                             +( ((C_0-C_1)/2) * _._4("<i j|r|m a'>") + ((C_0+C_1)/2) * _._4("<j i|r|m a'>") ) * _._4("<b a|g|m a'>")
+                            );
+
+    Array4 C2_aa, C2_ab;
+    C2_aa("i,j,a,b") = C_1 * ( (_._4("<i j|r|a a'>") - _._4("<i j|r|a' a>")) * _._2("<b|F|a'>") +
+                               (_._4("<i j|r|a' b>") - _._4("<i j|r|b a'>")) * _._2("<a|F|a'>") );
+    C2_ab("i,j,a,b") = (((C_0+C_1)/2) * _._4("<i j|r|a a'>") + ((C_0-C_1)/2) * _._4("<i j|r|a' a>")) * _._2("<b|F|a'>")
+                     + (((C_0+C_1)/2) * _._4("<i j|r|a' b>") + ((C_0-C_1)/2) * _._4("<i j|r|b a'>")) * _._2("<a|F|a'>");
+
+
+    V2T2_ijab = 0.25 * ( 2 * V2_aa("i,j,a,b").dot(T2_aa("i,j,a,b")) // 2 = aa + bb
+                         +4 * V2_abab("i,j,a,b").dot(T2_ab("i,j,a,b")) // 4 = abab + baba + abba + baab
+                        );
+
+    C2T2_ijab = 0.25 * ( 2 * C2_aa("i,j,a,b").dot(T2_aa("i,j,a,b")) // 2 = aa + bb
+                         +4 * C2_ab("i,j,a,b").dot(T2_ab("i,j,a,b")) // 4 = abab + baba + abba + baab
+                       );
+  }
+  ExEnv::out0() << scprintf("C2T2_ijab = %20.15lf\n", C2T2_ijab);
+  ExEnv::out0() << scprintf("V2T2_ijab = %20.15lf\n", V2T2_ijab);
+
+  return V1T1 + V2T2_ijab + C2T2_ijab;
+}
+
+#endif
+
 void MP2R12Energy_Diag::compute_VX(const int b1b2_k1k2, std::vector<std::string>& VX_output,
                                    const unsigned int oper12_idx, Ref<DistArray4>& Y12_ints,
                                    const unsigned int oper1_idx, const unsigned int oper2_idx,

@@ -152,6 +152,7 @@ void PsiCC_PT2R12::compute_ept2r12() {
   //
   RefSCMatrix T1[NSpinCases1];
   Ref<DistArray4> T2[NSpinCases2];
+  Ref<DistArray4> L2[NSpinCases2];
   // T1
   const int nspincases1 = r12eval()->nspincases1();
   const int nspincases2 = (r12eval()->spin_polarized() ? 3 : 2);
@@ -183,6 +184,23 @@ void PsiCC_PT2R12::compute_ept2r12() {
       _print(spincase2, T2[spincase2], prepend_spincase(spincase2,"CCSD T2 amplitudes:").c_str());
     }
   }
+  // L2
+  if (need_lambda_) {
+  for(int s=0; s<nspincases2; ++s) {
+    const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+    const SpinCase1 spin1 = case1(spincase2);
+    const SpinCase1 spin2 = case2(spincase2);
+
+    if (r12eval()->dim_oo(spincase2).n() == 0)
+      continue;
+
+    L2[s] = this->Lambda2_da4(spincase2);
+
+    if (debug() >= DefaultPrintThresholds::mostO2N2) {
+      _print(spincase2, L2[spincase2], prepend_spincase(spincase2,"CCSD L2 amplitudes:").c_str());
+    }
+  }
+  }
 
   // compute (2)_R12 energy as MP2-R12 energy with dressed V intermediate
 
@@ -208,6 +226,15 @@ void PsiCC_PT2R12::compute_ept2r12() {
       if (r12eval()->dim_oo(spincase2).n() == 0)
         continue;
       r12intermediates->assign_T2_cc(spincase2,T2[s]);
+    }
+    // Pass L2 to r12intermediates, if needed
+    if (need_lambda_) {
+    for(int s=0; s<nspincases2; ++s) {
+      const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
+      if (r12eval()->dim_oo(spincase2).n() == 0)
+        continue;
+      r12intermediates->assign_L2_cc(spincase2,L2[s]);
+    }
     }
 
   // Import the Psi CCSD one-particle density
@@ -862,6 +889,7 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
   input->open();
   PsiCorrWavefunction::write_input(convergence);
   input->write_keyword("psi:wfn", "ccsd");
+  if (need_lambda_) input->write_keyword("psi:jobtype", "oeprop");
   // make sure Psi uses semicanonical orbitals for ROHF-CCSD (normally it would use spin-restricted orbitals)
   const bool openshell_ref = this->reference()->spin_polarized();
   if (openshell_ref)

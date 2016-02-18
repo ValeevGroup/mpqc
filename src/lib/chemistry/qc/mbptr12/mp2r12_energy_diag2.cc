@@ -2439,6 +2439,27 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
       ExEnv::out0() << endl << indent << "Coupled-cluster V contribution"
           << endl;
     // Alpha-alpha, beta-beta, or close-shell case:
+
+    // uncomment, if need to compute ALL terms linear in amplitudes + V . T2^2
+//#define CCSD_2_R12_COMPLETE_TO_FIRST_ORDER
+#ifdef CCSD_2_R12_COMPLETE_TO_FIRST_ORDER
+      assert(num_unique_spincases2 == 2); // closed-shell only for now
+
+      const double U2T2_contrib = U2T2_ta();
+      ExEnv::out0() << "U2T2_contrib = " << scprintf("%20.15lf\n", U2T2_contrib);
+      const double U1T1_plus_C1T1_contrib = U1T1_plus_C1T1_ta();
+      ExEnv::out0() << "U1T1_plus_C1T1_contrib = " << scprintf("%20.15lf\n", U1T1_plus_C1T1_contrib);
+      const double VTT_contrib = VTT_ta();
+      ExEnv::out0() << "VTT_contrib = " << scprintf("%20.15lf\n", VTT_contrib);
+      const double PT2R12_contrib = PT2R12_ta();
+      ExEnv::out0() << "PT2R12_contrib = " << scprintf("%20.15lf\n", PT2R12_contrib);
+
+      ef12_[0](0) = ef12_[0](0)
+          + 2 * (U2T2_contrib + U1T1_plus_C1T1_contrib) // 2 = hermitian terms in CC lagrangian a la Hylleraas functional
+          + VTT_contrib // only comes from Lambda [[H,T],R], not from R [[H,T],T]
+      ;
+#endif
+
     //  V^ij_ij(cc) = 1/2*C1 * V^ab_ij*T^ij_ab + C1 * V^ia_ij*T^j_a
     //                                         + C1 * V^aj_ij*T^i_a
     // Alpha-beta case:

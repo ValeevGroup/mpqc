@@ -248,6 +248,18 @@ class MP2R12Energy_Diag : public MP2R12Energy
                          const double* const T1_array,
                          const int nv, const bool VT1_offset,
                          double* const VT1);
+
+#ifdef MPQC_NEW_FEATURES
+    /// compute U2*T2 contribution to the (2)_R12 energy
+    double U2T2_ta();
+    /// compute (U1+C1)*T1 contribution to the (2)_R12 energy
+    double U1T1_plus_C1T1_ta();
+    /// compute V*T*T contribution to the (2)_R12 energy
+    double VTT_ta();
+    /// compute amplitude-dependents contribution to the (2)_R12 energy
+    double PT2R12_ta();
+#endif
+
     //
     // compute the one electron density matrix for the diagonal ansatz
     //RefSCMatrix D_ccsdf12_[NSpinCases1];

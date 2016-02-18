@@ -19,9 +19,7 @@ if (MPQC_UNITTEST)
   set_property(SOURCE pointgrouptest.cc PROPERTY COMPILE_DEFINITIONS
       SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(pointgrouptest pointgrouptest.cc $<TARGET_OBJECTS:symmetry>)
-  target_link_libraries(pointgrouptest
-    math
-  )
-  add_test(pointgrouptest pointgrouptest)
+  target_link_libraries(pointgrouptest math)
+  add_test(NAME pointgrouptest COMMAND pointgrouptest d3h c3)
 endif()
 

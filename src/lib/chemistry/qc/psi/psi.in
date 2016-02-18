@@ -26,6 +26,7 @@ mole: [
     basis<GaussianBasisSet>: (
         molecule = $..:molecule
         name = "cc-pVDZ"
+        puream = true
       )
 
     reference<PsiCLHF>: (

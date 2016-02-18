@@ -2668,7 +2668,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             ef12_[s].accumulate_element(i21, Hij_pair_energy);
           }
         }
-        ef12_[s].print("f12 pair energies");
       } else {
         // Alpha_beta case
         for (int i1 = 0; i1 < no1; ++i1) {
@@ -2686,11 +2685,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             ef12_[s].accumulate_element(ij, Hij_pair_energy);
             ef12_VT[s][ij] += Hij_pair_energy;
           }
-        }
-        ef12_[s].print("f12 pair energies");
-        for(int i12=0; i12<ef12_VT[s].size(); ++i12) {
-          ExEnv::out0() << indent << scprintf("%20.15lf",ef12_VT[s][i12]) << endl;
-          ExEnv::out0() << indent << scprintf("%20.15lf",ef12_TBT[s][i12]) << endl;
         }
       }
 

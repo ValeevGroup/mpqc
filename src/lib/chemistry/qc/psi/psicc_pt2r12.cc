@@ -250,7 +250,7 @@ void PsiCC_PT2R12::compute_ept2r12() {
       D[spin]->convert(D_psicc);
 
       if (debug() >= DefaultPrintThresholds::mostN2) {
-      D[spin].print(prepend_spincase(spin,"CCSD one-particle density:").c_str());
+        D[spin].print(prepend_spincase(spin,"CCSD one-particle density:").c_str());
       }
     }
 

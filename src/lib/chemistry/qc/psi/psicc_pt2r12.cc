@@ -207,8 +207,8 @@ void PsiCC_PT2R12::compute_ept2r12() {
   // include cabs singles energy?
   cabs_singles_energy_ = 0.0;
   if (cabs_singles_) {
-    cabs_singles_energy_ = r12eval()->emp2_cabs_singles(T1[Alpha],T1[Beta]);
-    //cabs_singles_energy_ = r12eval()->emp2_cabs_singles(); // test: use MP2 CABS Singles
+    //cabs_singles_energy_ = r12eval()->emp2_cabs_singles(T1[Alpha],T1[Beta]);
+    cabs_singles_energy_ = r12eval()->emp2_cabs_singles(); // test: use MP2 CABS Singles
   }
 
   const bool diag = r12eval()->r12world()->r12tech()->ansatz()->diag();

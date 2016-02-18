@@ -179,6 +179,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   exact_diagonal_J_ = keyval->booleanvalue("exact_diagonal_J", KeyValValueboolean(exact_diagonal_J_));
   exact_diagonal_K_ = keyval->booleanvalue("exact_diagonal_K", KeyValValueboolean(exact_diagonal_K_));
+  cadf_K_only_ = keyval->booleanvalue("cadf_K_only", KeyValValueboolean(cadf_K_only_));
   //----------------------------------------------------------------------------//
   debug_coulomb_energy_ = keyval->booleanvalue("debug_coulomb_energy", KeyValValueboolean(debug_coulomb_energy_));
   debug_exchange_energy_ = keyval->booleanvalue("debug_exchange_energy", KeyValValueboolean(debug_exchange_energy_));
@@ -249,6 +250,18 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   }
   initialize();
   //----------------------------------------------------------------------------//
+  // need WavefunctionWorld to compute J using "exact" DF
+  if (cadf_K_only_) {
+    // if world not given, make this the center of a new World
+    world_ << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
+    if (world_.null())
+      world_ = new WavefunctionWorld(keyval);
+    if (world_.null())
+      throw InputError("CADFCLHF requires a WavefunctionWorld if cadf_K_only=true; input did not specify it, neither could it be constructed",
+                       __FILE__, __LINE__, "world");
+    if (world_->wfn() == 0) world_->set_wfn(this);
+  }
+  //----------------------------------------------------------------------------//
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -308,6 +321,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "do_linK = " << bool_str(do_linK_) << endl;
   o << indent << "exact_diagonal_J = " << bool_str(exact_diagonal_J_) << endl;
   o << indent << "exact_diagonal_K = " << bool_str(exact_diagonal_K_) << endl;
+  o << indent << "cadf_K_only = " << bool_str(cadf_K_only_) << endl;
   o << indent << "full_screening_expon = " << double_str(full_screening_expon_) << endl;
   o << indent << "full_screening_thresh = " << double_str(full_screening_thresh_) << endl;
   o << indent << "full_screening_thresh_min = " << double_str(full_screening_thresh_min_) << endl;

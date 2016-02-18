@@ -46,6 +46,7 @@
 
 // MPQC includes
 #include <chemistry/qc/scf/clhf.h>
+#include <chemistry/qc/lcao/wfnworld.h>
 #include <util/container/conc_cache_fwd.h>
 #include <util/container/thread_wrap.h>
 #include <util/misc/hash.h>
@@ -449,6 +450,11 @@ class CADFCLHF: public CLHF {
      *  not heavily optimized.
      */
     bool exact_diagonal_K_ = false;
+    /**
+     * Use the CADF approximation for exchange only; if true, will use standard density fitting
+     * for the Coulomb part of the Fock matrix.
+     */
+    bool cadf_K_only_ = false;
     /** Use a buffer to minimize the number of small contractions when computing the B intermediate
      *  in the exchange matrix.  Setting this to true is not compatible with screen_B = true and/or
      *  distribute_coefficients = true and/or linK_block_rho = true, and thus this option is deprecated.
@@ -616,6 +622,10 @@ class CADFCLHF: public CLHF {
     //int max_fxn_obs_assigned_ = 0;
     //int max_fxn_atom_dfbs_assigned_ = 0;
 
+    // for computing J using standard DF
+    // only used if cadf_K_only == true
+    Ref<WavefunctionWorld> world_;
+
     TwoCenterIntContainerPtr g2_full_ptr_;
 
     RefDiagSCMatrix core_evals_;
@@ -662,6 +672,8 @@ class CADFCLHF: public CLHF {
     bool get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset = AllPairs);
 
     RefSCMatrix compute_J();
+    RefSCMatrix compute_J_cadf();
+    RefSCMatrix compute_J_df();
 
     RefSCMatrix compute_K();
 

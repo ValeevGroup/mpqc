@@ -40,6 +40,50 @@ typedef unsigned long int uli;
 RefSCMatrix
 CADFCLHF::compute_J()
 {
+  auto result = (cadf_K_only_) ? compute_J_df() : compute_J_cadf();
+  return result;
+}
+
+RefSCMatrix
+CADFCLHF::compute_J_df()
+{
+  Timer timer("compute J(DF)"); timer.enter("build");
+  // transform the density difference to the AO basis
+  RefSymmSCMatrix dd = cl_dens_diff_;
+  Ref<PetiteList> pl = integral()->petite_list();
+  cl_dens_diff_ = pl->to_AO_basis(dd);
+
+  double gmat_accuracy = 1e-15;
+  if (min_orthog_res() < 1.0) { gmat_accuracy *= min_orthog_res(); }
+
+  Ref<OrbitalSpaceRegistry> oreg = world_->moints_runtime()->factory()->orbital_registry();
+  Ref<AOSpaceRegistry> aoreg = world_->moints_runtime()->factory()->ao_registry();
+  std::string aospace_id = new_unique_key(oreg);
+  if (aoreg->key_exists(basis()) == false) {
+    Ref<OrbitalSpace> aospace = new AtomicOrbitalSpace(aospace_id, "CADFCLHF AO basis set", basis(), integral());
+    aoreg->add(basis(), aospace);
+    MPQC_ASSERT(oreg->key_exists(aospace_id) == false); // should be ensured by using new_unique_key
+    oreg->add(make_keyspace_pair(aospace));
+  }
+  // feed the spin densities to the builder, cl_dens_diff_ includes total density right now, so halve it
+  RefSymmSCMatrix Pa = cl_dens_diff_.copy(); Pa.scale(0.5);
+  RefSymmSCMatrix Pb = Pa;
+
+  Ref<FockBuildRuntime> fb_rtime = world_->fockbuild_runtime();
+  fb_rtime->set_densities(Pa, Pb);
+
+  Ref<OrbitalSpace> aospace = aoreg->value(basis());
+  RefSCMatrix G;
+
+  const std::string jkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("J"));
+  RefSCMatrix J = fb_rtime->get(jkey);
+  timer.exit("build");
+  return J.copy();
+}
+
+RefSCMatrix
+CADFCLHF::compute_J_cadf()
+{
   /*=======================================================================================*/
   /* Setup                                                 		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//

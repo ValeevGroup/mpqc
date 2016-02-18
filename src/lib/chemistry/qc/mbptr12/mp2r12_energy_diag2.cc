@@ -2438,7 +2438,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
     if (debug_ >= DefaultPrintThresholds::N2)
       ExEnv::out0() << endl << indent << "Coupled-cluster V contribution"
           << endl;
-    // Alpha-alpha, beta-beta, or close-shell case:
 
     // uncomment, if need to compute ALL terms linear in amplitudes + V . T2^2
 //#define CCSD_2_R12_COMPLETE_TO_FIRST_ORDER
@@ -2460,6 +2459,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
       ;
 #endif
 
+    // Alpha-alpha, beta-beta, or closed-shell case:
     //  V^ij_ij(cc) = 1/2*C1 * V^ab_ij*T^ij_ab + C1 * V^ia_ij*T^j_a
     //                                         + C1 * V^aj_ij*T^i_a
     // Alpha-beta case:

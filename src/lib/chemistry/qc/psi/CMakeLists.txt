@@ -17,9 +17,12 @@ IF(HAVE_PSI3)
     add_mpqc_object_library(psi ${ccfiles})
 
     # tests
-    set_property(SOURCE psitest.cc PROPERTY COMPILE_DEFINITIONS
-                 SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-    add_executable(psitest EXCLUDE_FROM_ALL psitest.cc $<TARGET_OBJECTS:psi>)
-    add_test(psitest psitest)
-
+    if (MPQC_UNITTEST)
+      set_property(SOURCE psitest.cc PROPERTY COMPILE_DEFINITIONS
+                   SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+      add_executable(psitest EXCLUDE_FROM_ALL psitest.cc $<TARGET_OBJECTS:psi>)
+      add_test(psitest psitest)
+      target_link_libraries(psitest chemistry)
+    endif (MPQC_UNITTEST)
+    
 ENDIF(HAVE_PSI3)

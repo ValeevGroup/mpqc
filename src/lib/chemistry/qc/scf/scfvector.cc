@@ -190,7 +190,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     if (base_accuracy < desired_value_accuracy())
       base_accuracy = desired_value_accuracy();
     double new_accuracy = 0.01 * base_accuracy;
-    if (new_accuracy > 0.001) new_accuracy = 0.001;
+    if (new_accuracy > 0.0001) new_accuracy = 0.0001;
     if (iter == 0) accuracy = new_accuracy;
     else if (new_accuracy < accuracy) {
       accuracy = new_accuracy/10.0;

@@ -106,8 +106,8 @@ namespace mpqc {
 
         // Get the global indices of the first and last function in a tile
         // This corresponds to basis functions.
-        const std::size_t first_func = tile.range().start()[i];
-        const std::size_t last_func = tile.range().finish()[i] - 1;
+        const std::size_t first_func = tile.range().lobound()[i];
+        const std::size_t last_func = tile.range().upbound()[i] - 1;
 
         // Compute the first and  last shell for a given dimension of a tile
         const std::size_t first_shell = engine->basis(i)->function_to_shell(
@@ -123,7 +123,7 @@ namespace mpqc {
 
       // passes the TiledArray size into a fixed c-style array for Tensor class
       const std::size_t (&dim)[rank] =
-              *reinterpret_cast<const std::size_t (*)[rank]>(tile.range().size());
+              *reinterpret_cast<const std::size_t (*)[rank]>(tile.range().extent_data());
 
       TensorRef<double, rank, TensorRowMajor> tile_map(tile.data(), dim);
 

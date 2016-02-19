@@ -140,10 +140,10 @@ ifeq ($(RUN_MBPTF12),yes)
     pt2f12_scfc10ccpvdzaugccpvdzc2v.in \
     pt2f12_scfc11ccpvdzaugccpvdzc2v.in 
   ifeq (@MAKE_ASSUME_NEW_FEATURES@,yes)
-     PT2F12INPUTS += pt2f12sf_scfc00ccpvdzaugccpvdzc2v.in \
-       pt2f12sf_scfc01ccpvdzaugccpvdzc2v.in \
-       pt2f12sf_scfc10ccpvdzaugccpvdzc2v.in \
-       pt2f12sf_scfc11ccpvdzaugccpvdzc2v.in
+#     PT2F12INPUTS += pt2f12sf_scfc00ccpvdzaugccpvdzc2v.in \
+#       pt2f12sf_scfc01ccpvdzaugccpvdzc2v.in \
+#       pt2f12sf_scfc10ccpvdzaugccpvdzc2v.in \
+#       pt2f12sf_scfc11ccpvdzaugccpvdzc2v.in
   endif
   PT2F12INPUTS := $(PT2F12INPUTS:%=$(INP)/%)
 endif

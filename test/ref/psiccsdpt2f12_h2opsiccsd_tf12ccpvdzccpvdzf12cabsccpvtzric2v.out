@@ -2,19 +2,19 @@
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 3.0.0-alpha
 
-  Machine:    x86_64-apple-darwin12.2.0
+  Machine:    Darwin-x86_64
   User:       evaleev@EdBookPro.local
-  Start Time: Wed Jan 23 07:53:16 2013
+  Start Time: Thu Feb 18 09:44:49 2016
 
-  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using MPIMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
-  Using ProcMemoryGrp for distributed shared memory.
+  Using MTMPIMemoryGrp for distributed shared memory.
   Total number of processors = 1
 
   Using IntegralLibint2 by default for molecular integrals evaluation
-  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
+  Given resources: ConsumableResources: ( memory = 1.07GB disk = [./ unlimited] )
 
-  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang-opt/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang/share/mpqc/3.0.0-alpha/atominfo.kv.
 
   IntCoorGen: generated 3 coordinates.
   Forming optimization coordinates:
@@ -22,14 +22,20 @@
       expected 3 coordinates
       found 2 variable coordinates
       found 0 constant coordinates
-  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang-opt/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
-  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang-opt/share/mpqc/3.0.0-alpha/basis/cc-pvtz-ri.kv.
-  ints_file = ./psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v.moints
-  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang-opt/share/mpqc/3.0.0-alpha/basis/cc-pvdz-f12-cabs.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang/share/mpqc/3.0.0-alpha/basis/cc-pvtz-ri.kv.
+  Desired Function Parameters:
+    value_accuracy    = 1.0000000e-08
+
+  Using symmetric orthogonalization.
+  n(basis):            11     2     7     4
+  Maximum orthogonalization residual = 3.66509
+  Minimum orthogonalization residual = 0.0352018
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang/share/mpqc/3.0.0-alpha/basis/cc-pvdz-f12-cabs.kv.
 
   Molecular formula H2O
 
-  The following keywords in "/Users/evaleev/Development/workspace/mpqc/src/bin/mpqc/validate/ref/psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v.in" were ignored:
+  The following keywords in "/Users/evaleev/Development/workspace/mpqc/test/ref/psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v.in" were ignored:
     mpqc:mole:reference:multiplicity
     mpqc:integrals
 
@@ -44,18 +50,13 @@
     do_gradient     = no
     do_freq         = no
     optimize        = no
-    write_pdb       = no
+    write_xyz       = yes
     print_mole      = yes
     print_timings   = yes
     print_resources = yes
 
     Desired Function Parameters:
-    value_accuracy    = 1.0000000e-08
 
-  Using symmetric orthogonalization.
-  n(basis):            11     2     7     4
-  Maximum orthogonalization residual = 3.66509
-  Minimum orthogonalization residual = 0.0352018
   Desired Function Parameters:
     value_accuracy    = 1.0000000e-06
 
@@ -80,194 +81,109 @@
       n(basis):            40    16    31    23
       Maximum singular value = 1
       Minimum singular value = 1
-    E(MP2 CABS singles = (2)_S) =        -0.016869886439655
+    E(MP2 OBS+CABS singles = (2)_S) =        -0.017845349546104
   Exited (2)_S energy evaluator
-  Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|ERI|mu >
-  Built DensityFitting: name = (i(sym) mu|DF|Mu)
-  Built TransformedDensityFitting: name = (i(sym) p(sym)|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0]|mu >
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p(sym) >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym) p(sym)>(b1 b2|k1 k2)
+  Built TwoBodyMOIntsTransform_ijR: name = <mu Mu|ERI|mu >
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <mu Mu|ERI|i >
+  Built DensityFitting: name = (mu i|DF(ERI)|Mu)
+  Built PermutedDensityFitting: name = (i mu|DF(ERI)|Mu)
+  Built TransformedDensityFitting: name = (i p|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR: name = <i Mu|G12'[0]|mu >
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|p >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|p p>
 
   Entered alpha-beta MP2 pair energies evaluator
   Exited alpha-beta MP2 pair energies evaluator
 
   Entered alpha-alpha MP2 pair energies evaluator
   Exited alpha-alpha MP2 pair energies evaluator
-  Built TransformedDensityFitting: name = (i(sym) i(sym)|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|i(sym) >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) m(sym)|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|ERI|mu' >
-  Built DensityFitting: name = (i(sym) mu'|DF|Mu)
-  Built TransformedDensityFitting: name = (i(sym) a'|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0]|mu' >
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|a' >
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|m(sym) >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|m(sym) a'>(b1 b2|k1 k2)
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|a' m(sym)>(b1 b2|k1 k2)
-  Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0,0]|mu >
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0,0]|i(sym) >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) p'|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p' >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p' p'>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) p'_K(p')[A]|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p'_K(p')[A] >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2)
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p' m(sym)>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) p'_F(p')[A]|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p'_F(p')[A] >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p'_F(p')[A] m(sym)>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) e(sym)|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|e(sym) >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym) e(sym)>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) p(sym)_F(p(sym))[A]|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p(sym)_F(p(sym))[A] >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym)_F(p(sym))[A] e(sym)>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) m(sym)_F(p')[A]|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|m(sym)_F(p')[A] >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|m(sym)_F(p')[A] a'>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) p(sym)_F(a')[A]|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p(sym)_F(a')[A] >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym)_F(a')[A] e(sym)>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) m(sym)_F(m(sym))[A]|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|m(sym)_F(m(sym))[A] >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|m(sym)_F(m(sym))[A] a'>(b1 b2|k1 k2)
-  Built TransformedDensityFitting: name = (i(sym) i(sym)_hJ(p')[A]|DF|Mu)
-  Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0,0]|mu' >
-  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0,0]|i(sym)_hJ(p')[A] >
-  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0,0]|i(sym)_hJ(p')[A] i(sym)>(b1 b2|k1 k2)
+  Built TransformedDensityFitting: name = (i i|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|i >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|i i>
+  Built TransformedDensityFitting: name = (i m|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR: name = <mu' Mu|ERI|mu >
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <mu' Mu|ERI|i >
+  Built DensityFitting: name = (mu' i|DF(ERI)|Mu)
+  Built PermutedDensityFitting: name = (i mu'|DF(ERI)|Mu)
+  Built TransformedDensityFitting: name = (i a'|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR: name = <i Mu|G12'[0]|mu' >
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|a' >
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|m >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|m a'>
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|a' m>
+  Built TwoBodyMOIntsTransform_ijR: name = <i Mu|G12'[0,0]|mu >
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0,0]|i >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0,0]|i i>
+  Built TransformedDensityFitting: name = (i p'|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|p' >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|p' p'>
+  Built TransformedDensityFitting: name = (i p'_K(p')[A]|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|p'_K(p')[A] >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|p'_K(p')[A] p'>
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|p' m>
+  Built TransformedDensityFitting: name = (i p'_F(p')[A]|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|p'_F(p')[A] >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|p'_F(p')[A] m>
+  Built TransformedDensityFitting: name = (i e|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|e >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|p e>
+  Built TransformedDensityFitting: name = (i p_F(p)[A]|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|p_F(p)[A] >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|p_F(p)[A] e>
+  Built TransformedDensityFitting: name = (i m_F(p')[A]|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|m_F(p')[A] >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|m_F(p')[A] a'>
+  Built TransformedDensityFitting: name = (i p_F(a')[A]|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|p_F(a')[A] >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|p_F(a')[A] e>
+  Built TransformedDensityFitting: name = (i m_F(m)[A]|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0]|m_F(m)[A] >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0]|m_F(m)[A] a'>
+  Built TransformedDensityFitting: name = (i i_hJ(p')[A]|DF(ERI)|Mu)
+  Built TwoBodyMOIntsTransform_ijR: name = <i Mu|G12'[0,0]|mu' >
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i Mu|G12'[0,0]|i_hJ(p')[A] >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i i|G12'[0,0]|i_hJ(p')[A] i>
 
-  Entered generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <p(sym) p(sym)|p(sym) p(sym)>^T)
-    Built TwoBodyMOIntsTransform_ijR: name = <p(sym) Mu|ERI|mu >
-    Built DensityFitting: name = (p(sym) mu|DF|Mu)
-    Built TransformedDensityFitting: name = (p(sym) p(sym)|DF|Mu)
-    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <p(sym) Mu|ERI|p(sym) >
-    Built TwoBodyMOIntsTransform_ixjy_df: name = <p(sym) p(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2)
-  Exited generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <p(sym) p(sym)|p(sym) p(sym)>^T)
+  Entered generic contraction (<i i|p p> = <i i|p p> . <p p|p p>^T)
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <mu Mu|ERI|p >
+    Built DensityFitting: name = (mu p|DF(ERI)|Mu)
+    Built PermutedDensityFitting: name = (p mu|DF(ERI)|Mu)
+    Built TransformedDensityFitting: name = (p p|DF(ERI)|Mu)
+    Built TwoBodyMOIntsTransform_ijR: name = <p Mu|ERI|mu >
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <p Mu|ERI|p >
+    Built TwoBodyMOIntsTransform_ixjy_df: name = <p p|ERI|p p>
+  Exited generic contraction (<i i|p p> = <i i|p p> . <p p|p p>^T)
 
-  Entered generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|m(sym) a'> . <p(sym) p(sym)|m(sym) a'>^T)
-    Built TransformedDensityFitting: name = (p(sym) m(sym)|DF|Mu)
-    Built TwoBodyMOIntsTransform_ijR: name = <p(sym) Mu|ERI|mu' >
-    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <p(sym) Mu|ERI|a' >
-    Built TwoBodyMOIntsTransform_ixjy_df: name = <p(sym) p(sym)|ERI|m(sym) a'>(b1 b2|k1 k2)
-  Exited generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|m(sym) a'> . <p(sym) p(sym)|m(sym) a'>^T)
+  Entered generic contraction (<i i|p p> = <i i|m a'> . <p p|m a'>^T)
+    Built TransformedDensityFitting: name = (p m|DF(ERI)|Mu)
+    Built TwoBodyMOIntsTransform_ijR: name = <p Mu|ERI|mu' >
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <p Mu|ERI|a' >
+    Built TwoBodyMOIntsTransform_ixjy_df: name = <p p|ERI|m a'>
+  Exited generic contraction (<i i|p p> = <i i|m a'> . <p p|m a'>^T)
 
-  f12 pair energies
-      1    -0.0303633382
-      2    -0.0005381886
-      3    -0.0004329849
-      4    -0.0002205607
-      5    -0.0005656291
-      6    -0.0005381886
-      7    -0.0030880579
-      8    -0.0037343577
-      9    -0.0038423309
-     10    -0.0044845491
-     11    -0.0004329849
-     12    -0.0037343577
-     13    -0.0055830760
-     14    -0.0021362948
-     15    -0.0030582410
-     16    -0.0002205607
-     17    -0.0038423309
-     18    -0.0021362948
-     19    -0.0039620577
-     20    -0.0023376472
-     21    -0.0005656291
-     22    -0.0044845491
-     23    -0.0030582410
-     24    -0.0023376472
-     25    -0.0064135187
+  Entered generic contraction (<i i|p p> = <i i|p p> . <p p|p p>^T)
+  Exited generic contraction (<i i|p p> = <i i|p p> . <p p|p p>^T)
 
-     0.000050461486852
-     0.000000000000000
-     0.000001169259020
-     0.000000000000000
-     0.000007835638484
-     0.000000000000000
-    -0.000029323934080
-     0.000000000000000
-     0.000031363009762
-     0.000000000000000
-     0.000001169259020
-     0.000000000000000
-     0.000781470086748
-     0.000000000000000
-     0.000504161613974
-     0.000000000000000
-     0.000603304872588
-     0.000000000000000
-     0.000498333698867
-     0.000000000000000
-     0.000007835638484
-     0.000000000000000
-     0.000504161613974
-     0.000000000000000
-     0.001538089243571
-     0.000000000000000
-     0.000493447846778
-     0.000000000000000
-     0.000506745736492
-     0.000000000000000
-    -0.000029323934080
-     0.000000000000000
-     0.000603304872588
-     0.000000000000000
-     0.000493447846778
-     0.000000000000000
-     0.001477686341163
-     0.000000000000000
-     0.000401020586750
-     0.000000000000000
-     0.000031363009762
-     0.000000000000000
-     0.000498333698867
-     0.000000000000000
-     0.000506745736492
-     0.000000000000000
-     0.000401020586750
-     0.000000000000000
-     0.001702029349780
-     0.000000000000000
-
-  Entered generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <p(sym) p(sym)|p(sym) p(sym)>^T)
-  Exited generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <p(sym) p(sym)|p(sym) p(sym)>^T)
-
-  Entered generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|m(sym) a'> . <p(sym) p(sym)|m(sym) a'>^T)
-  Exited generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|m(sym) a'> . <p(sym) p(sym)|m(sym) a'>^T)
-
-  f12 pair energies
-      1    -0.0002406043
-      2    -0.0007340367
-      3    -0.0006688481
-      4    -0.0005581589
-      5    -0.0005102105
-      6    -0.0008073471
-      7    -0.0009307067
-      8    -0.0008513316
-      9    -0.0011483808
-     10    -0.0009676654
-
-  E2(AB)        =   -0.092111615954798
-  E2(AA)        =   -0.014834580193251
-  E2(s)         =   -0.084694325858173
-  E2(t)         =   -0.022251870289876
-  E2(CABS)      =   -0.016869886439655
-  E2            =   -0.123816082587703
+  Entered generic contraction (<i i|p p> = <i i|m a'> . <p p|m a'>^T)
+  Exited generic contraction (<i i|p p> = <i i|m a'> . <p p|m a'>^T)
+  E2(AB)        =   -0.092111615924690
+  E2(AA)        =   -0.014834580187245
+  E2(s)         =   -0.084694325831067
+  E2(t)         =   -0.022251870280867
+  E2(CABS)      =   -0.017845349546104
+  E2            =   -0.124791545658038
   ECCSD         =   -0.213082172608975
-  ECCSD_PT2R12  =   -0.336898255196684
+  ECCSD_PT2R12  =   -0.337873718267016
   E(T)          =   -0.003021822303882
-  ECCSD_PT2R12T =   -0.339920077500566
-  ECCSD_PT2R12T+REF =  -76.365808317758464
-Value of the MolecularEnergy:  -76.3658083178
+  ECCSD_PT2R12T =   -0.340895540570898
+  ECCSD_PT2R12T+REF =  -76.366783780828811
+Value of the MolecularEnergy:  -76.3667837808
 
   PsiCCSD_PT2R12T:
     PsiCC_PT2R12:
       Spin-adapted algorithm: true
       Include CABS singles? : true
-        E(CABS singles) =        -0.016869886439655
+        E(CABS singles) =        -0.017845349546104
       R12WavefunctionWorld:
         WavefunctionWorld:
           Density-Fitting Parameters:
@@ -277,12 +193,55 @@ Value of the MolecularEnergy:  -76.3658083178
                 nshell = 43
                 nprim  = 43
                 name = "cc-pVTZ-RI"
-            kernel = coulomb
-            solver = Bunch-Kaufman (refine)
+            kernel = ERI
+            solver = Cholesky (inverse)
           How to Store Transformed Integrals: posix
           Transformed Integrals file suffix: ./psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v.moints
 
-        Object of type PsiSCF_RefWavefunction
+        PsiSCF_RefWavefunction:
+          spin_restricted = true
+          # frozen core   = 0
+          # frozen virt   = 0
+          PsiCLHF:
+            total_charge = 0
+            docc = [ 3 0 1 1 ]
+            Function Parameters:
+              value_accuracy    = 1.000000e-08 (1.000000e-08) (computed)
+              gradient_accuracy = 0.000000e+00 (1.000000e-06)
+              hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+            Molecule:
+              Molecular formula: H2O
+              molecule<Molecule>: (
+                symmetry = c2v
+                unit = "angstrom"
+                {  n atoms                        geometry                     }={
+                   1     O [    0.0000000000     0.0000000000     0.3693729440]
+                   2     H [    0.7839758990     0.0000000000    -0.1846864720]
+                   3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
+                }
+              )
+              Atomic Masses:
+                 15.99491    1.00783    1.00783
+              Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+            Electronic basis:
+              GaussianBasisSet:
+                nbasis = 24
+                nshell = 11
+                nprim  = 24
+                name = "cc-pVDZ"
+            Integral factory = IntegralLibint2
+            magnetic moment = 0
+
+            PsiExEnv:
+              Location of Psi: /Users/evaleev/Development/workspace/build/mpqc-clang-opt/external/build/psi3/include/../bin
+              Current Psi Working Directory: .
+              Current Psi File Prefix: psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v.psi
+              Number of Scratch Groups: 1
+              Scratch Group 0: ./
+
+
         Auxiliary Basis Set (ABS):
           GaussianBasisSet:
             nbasis = 110
@@ -292,14 +251,14 @@ Value of the MolecularEnergy:  -76.3658083178
 
         R12Technology:
           CorrelationFactor: STG-3G[1.5]
-            [ Exponent Coefficient] = [ [     0.549916471839    -0.240062724636 ] [     3.131856766669    -0.231321126358 ] [    20.611027560377    -0.132656191218 ]  ]
+            [ Exponent Coefficient] = [ [     0.549916470288    -0.240062723910 ] [     3.131856748698    -0.231321126375 ] [    20.611027373229    -0.132656191582 ]  ]
 
           Coupling included: false
           GBC assumed: true
           EBC assumed: true
           EBC-free method: Valeev
           Enforce positive definiteness of B, but not ~B(ij)
-          RI method for many-elecron integrals: CABS+ (CABS using the union of OBS and ABS for RI)
+          RI method for many-electron integrals: CABS+ (CABS using the union of OBS and ABS for RI)
           ABS linear depenendence tolerance = 1e-08
           Standard Approximation: C
           R12Ansatz:
@@ -364,9 +323,11 @@ Value of the MolecularEnergy:  -76.3658083178
             nshell = 11
             nprim  = 24
             name = "cc-pVDZ"
+        Integral factory = IntegralLibint2
+        magnetic moment = 0
 
         PsiExEnv:
-          Location of Psi: /Users/evaleev/Development/workspace/install/psi3-gcc/bin
+          Location of Psi: /Users/evaleev/Development/workspace/build/mpqc-clang-opt/external/build/psi3/include/../bin
           Current Psi Working Directory: .
           Current Psi File Prefix: psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v.psi
           Number of Scratch Groups: 1
@@ -401,9 +362,11 @@ Value of the MolecularEnergy:  -76.3658083178
               nshell = 11
               nprim  = 24
               name = "cc-pVDZ"
+          Integral factory = IntegralLibint2
+          magnetic moment = 0
 
           PsiExEnv:
-            Location of Psi: /Users/evaleev/Development/workspace/install/psi3-gcc/bin
+            Location of Psi: /Users/evaleev/Development/workspace/build/mpqc-clang-opt/external/build/psi3/include/../bin
             Current Psi Working Directory: .
             Current Psi File Prefix: psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v.psi
             Number of Scratch Groups: 1
@@ -414,80 +377,86 @@ Value of the MolecularEnergy:  -76.3658083178
         frozen_uocc = [0 0 0 0 ]
 
   ConsumableResources: (
-    memory = unlimited ( max used: 29.3MB )
-    disk = [./ unlimited] ( max used: 0B )
+    memory = 1.07GB
+    disk = [./ unlimited]
   )
-                                                                                           CPU Wall
-mpqc:                                                                                     5.32 5.72
-  calc:                                                                                   5.24 5.64
-    (2)_S energy:                                                                         2.33 2.34
-      build_only:                                                                         1.35 1.36
-        FockBuildThreads:                                                                 1.99 2.00
-    MP2 pair energies:                                                                    0.00 0.00
-      MO ints retrieve:                                                                   0.00 0.00
-    R12 intermeds (tensor contract): Vpqxy:                                               0.61 0.61
-      Generic tensor contract:                                                            0.61 0.60
-        MO ints retrieve:                                                                 0.01 0.02
-        tbint_tform_ixjy_df <p(sym) p(sym)|ERI|m(sym) a'>(b1 b2|k1 k2):                   0.20 0.19
-          TransformedDensityFitting (p(sym) m(sym)|DF|Mu):                                0.00 0.00
-          tbint_tform_ijR_using_iqR <p(sym) Mu|ERI|a' >:                                  0.15 0.14
-            tbint_tform_ijR <p(sym) Mu|ERI|mu' >:                                         0.12 0.12
-        tbint_tform_ixjy_df <p(sym) p(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2):               0.28 0.29
-          DensityFitting (p(sym) mu|DF|Mu):                                               0.26 0.26
-            tbint_tform_ijR <p(sym) Mu|ERI|mu >:                                          0.06 0.06
-          TransformedDensityFitting (p(sym) p(sym)|DF|Mu):                                0.00 0.00
-          tbint_tform_ijR_using_iqR <p(sym) Mu|ERI|p(sym) >:                              0.00 0.00
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)>(b1 b2|k1 k2):             0.12 0.12
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0,0]|i(sym) >:                            0.10 0.10
-        tbint_tform_ijR <i(sym) Mu|G12'[0,0]|mu >:                                        0.10 0.10
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0,0]|i(sym)_hJ(p')[A] i(sym)>(b1 b2|k1 k2):   0.25 0.26
-      TransformedDensityFitting (i(sym) i(sym)_hJ(p')[A]|DF|Mu):                          0.00 0.00
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0,0]|i(sym)_hJ(p')[A] >:                  0.24 0.24
-        tbint_tform_ijR <i(sym) Mu|G12'[0,0]|mu' >:                                       0.23 0.23
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|a' m(sym)>(b1 b2|k1 k2):                   0.04 0.03
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2):               0.02 0.02
-      TransformedDensityFitting (i(sym) i(sym)|DF|Mu):                                    0.00 0.00
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|i(sym) >:                              0.00 0.00
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym) a'>(b1 b2|k1 k2):                   0.61 0.60
-      DensityFitting (i(sym) mu'|DF|Mu):                                                  0.35 0.35
-        tbint_tform_ijR <i(sym) Mu|ERI|mu' >:                                             0.11 0.11
-      TransformedDensityFitting (i(sym) a'|DF|Mu):                                        0.01 0.01
-      TransformedDensityFitting (i(sym) m(sym)|DF|Mu):                                    0.00 0.00
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|a' >:                                  0.22 0.22
-        tbint_tform_ijR <i(sym) Mu|G12'[0]|mu' >:                                         0.21 0.20
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|m(sym) >:                              0.00 0.00
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym)_F(m(sym))[A] a'>(b1 b2|k1 k2):      0.04 0.03
-      TransformedDensityFitting (i(sym) m(sym)_F(m(sym))[A]|DF|Mu):                       0.00 0.00
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|m(sym)_F(m(sym))[A] >:                 0.00 0.00
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym)_F(p')[A] a'>(b1 b2|k1 k2):          0.04 0.03
-      TransformedDensityFitting (i(sym) m(sym)_F(p')[A]|DF|Mu):                           0.00 0.00
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|m(sym)_F(p')[A] >:                     0.00 0.00
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p' m(sym)>(b1 b2|k1 k2):                   0.06 0.05
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p' p'>(b1 b2|k1 k2):                       0.22 0.14
-      TransformedDensityFitting (i(sym) p'|DF|Mu):                                        0.01 0.01
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p' >:                                  0.02 0.01
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p'_F(p')[A] m(sym)>(b1 b2|k1 k2):          0.10 0.07
-      TransformedDensityFitting (i(sym) p'_F(p')[A]|DF|Mu):                               0.01 0.01
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p'_F(p')[A] >:                         0.02 0.02
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2):              0.21 0.12
-      TransformedDensityFitting (i(sym) p'_K(p')[A]|DF|Mu):                               0.01 0.01
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p'_K(p')[A] >:                         0.02 0.01
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) e(sym)>(b1 b2|k1 k2):               0.02 0.02
-      TransformedDensityFitting (i(sym) e(sym)|DF|Mu):                                    0.00 0.00
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|e(sym) >:                              0.00 0.00
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) p(sym)>(b1 b2|k1 k2):               0.24 0.24
-      DensityFitting (i(sym) mu|DF|Mu):                                                   0.13 0.13
-        tbint_tform_ijR <i(sym) Mu|ERI|mu >:                                              0.06 0.06
-      TransformedDensityFitting (i(sym) p(sym)|DF|Mu):                                    0.00 0.00
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym) >:                              0.08 0.08
-        tbint_tform_ijR <i(sym) Mu|G12'[0]|mu >:                                          0.08 0.08
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym)_F(a')[A] e(sym)>(b1 b2|k1 k2):      0.03 0.03
-      TransformedDensityFitting (i(sym) p(sym)_F(a')[A]|DF|Mu):                           0.00 0.00
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_F(a')[A] >:                     0.01 0.00
-    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym)_F(p(sym))[A] e(sym)>(b1 b2|k1 k2):  0.03 0.02
-      TransformedDensityFitting (i(sym) p(sym)_F(p(sym))[A]|DF|Mu):                       0.00 0.00
-      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_F(p(sym))[A] >:                 0.00 0.00
-  input:                                                                                  0.07 0.07
+                                                                  CPU  Wall
+mpqc:                                                           98.90 13.23
+  calc:                                                         98.83 13.06
+    (2)_S energy:                                               21.14  2.77
+      build_only:                                                9.30  1.21
+        FockBuildThreads:                                       18.15  2.37
+    MP2 pair energies:                                           0.00  0.00
+      MO ints retrieve:                                          0.00  0.00
+    R12 intermeds (tensor contract): Vpqxy:                     17.39  2.29
+      Generic tensor contract:                                  16.18  2.13
+        MO ints retrieve:                                        0.06  0.01
+        tbint_tform_ixjy_df <p p|ERI|m a'>:                      5.01  0.66
+          TransformedDensityFitting (p m|DF(ERI)|Mu):            0.94  0.13
+          tbint_tform_ijR_using_iqR <p Mu|ERI|a' >:              2.88  0.37
+            tbint_tform_ijR <p Mu|ERI|mu' >:                     1.66  0.21
+        tbint_tform_ixjy_df <p p|ERI|p p>:                       7.27  0.96
+          DensityFitting (mu p|DF(ERI)|Mu):                      1.65  0.22
+            tbint_tform_ijR_using_iqR <mu Mu|ERI|p >:            0.59  0.08
+          PermutedDensityFitting (p mu|DF(ERI)|Mu):              1.09  0.14
+          TransformedDensityFitting (p p|DF(ERI)|Mu):            1.07  0.14
+          tbint_tform_ijR_using_iqR <p Mu|ERI|p >:               2.23  0.29
+            tbint_tform_ijR <p Mu|ERI|mu >:                      1.17  0.15
+    tbint_tform_ixjy_df <i i|G12'[0,0]|i i>:                     3.74  0.48
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0,0]|i >:             2.57  0.33
+        tbint_tform_ijR <i Mu|G12'[0,0]|mu >:                    1.48  0.19
+    tbint_tform_ixjy_df <i i|G12'[0,0]|i_hJ(p')[A] i>:           3.93  0.51
+      TransformedDensityFitting (i i_hJ(p')[A]|DF(ERI)|Mu):      0.02  0.00
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0,0]|i_hJ(p')[A] >:   3.27  0.43
+        tbint_tform_ijR <i Mu|G12'[0,0]|mu' >:                   2.70  0.35
+    tbint_tform_ixjy_df <i i|G12'[0]|a' m>:                      1.44  0.19
+    tbint_tform_ixjy_df <i i|G12'[0]|i i>:                       1.10  0.14
+      TransformedDensityFitting (i i|DF(ERI)|Mu):                0.01  0.00
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|i >:               0.84  0.11
+    tbint_tform_ixjy_df <i i|G12'[0]|m a'>:                      9.07  1.19
+      DensityFitting (mu' i|DF(ERI)|Mu):                         2.47  0.33
+        tbint_tform_ijR_using_iqR <mu' Mu|ERI|i >:               1.47  0.19
+          tbint_tform_ijR <mu' Mu|ERI|mu >:                      0.89  0.12
+      PermutedDensityFitting (i mu'|DF(ERI)|Mu):                 0.74  0.09
+      TransformedDensityFitting (i a'|DF(ERI)|Mu):               0.69  0.09
+      TransformedDensityFitting (i m|DF(ERI)|Mu):                0.00  0.00
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|a' >:              3.33  0.44
+        tbint_tform_ijR <i Mu|G12'[0]|mu' >:                     2.55  0.34
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|m >:               0.51  0.07
+    tbint_tform_ixjy_df <i i|G12'[0]|m_F(m)[A] a'>:              1.86  0.24
+      TransformedDensityFitting (i m_F(m)[A]|DF(ERI)|Mu):        0.02  0.00
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|m_F(m)[A] >:       0.55  0.07
+    tbint_tform_ixjy_df <i i|G12'[0]|m_F(p')[A] a'>:             1.98  0.26
+      TransformedDensityFitting (i m_F(p')[A]|DF(ERI)|Mu):       0.00  0.00
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|m_F(p')[A] >:      0.62  0.08
+    tbint_tform_ixjy_df <i i|G12'[0]|p e>:                       2.91  0.39
+      TransformedDensityFitting (i e|DF(ERI)|Mu):                0.02  0.00
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|e >:               0.78  0.11
+    tbint_tform_ixjy_df <i i|G12'[0]|p p>:                       4.58  0.58
+      DensityFitting (mu i|DF(ERI)|Mu):                          0.86  0.10
+        tbint_tform_ijR_using_iqR <mu Mu|ERI|i >:                0.79  0.09
+          tbint_tform_ijR <mu Mu|ERI|mu >:                       0.76  0.09
+      PermutedDensityFitting (i mu|DF(ERI)|Mu):                  0.01  0.00
+      TransformedDensityFitting (i p|DF(ERI)|Mu):                0.04  0.01
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|p >:               2.02  0.26
+        tbint_tform_ijR <i Mu|G12'[0]|mu >:                      1.50  0.19
+    tbint_tform_ixjy_df <i i|G12'[0]|p' m>:                      1.88  0.24
+    tbint_tform_ixjy_df <i i|G12'[0]|p' p'>:                     5.52  0.72
+      TransformedDensityFitting (i p'|DF(ERI)|Mu):               0.65  0.08
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|p' >:              1.24  0.17
+    tbint_tform_ixjy_df <i i|G12'[0]|p'_F(p')[A] m>:             3.14  0.41
+      TransformedDensityFitting (i p'_F(p')[A]|DF(ERI)|Mu):      0.71  0.09
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|p'_F(p')[A] >:     0.69  0.09
+    tbint_tform_ixjy_df <i i|G12'[0]|p'_K(p')[A] p'>:            5.57  0.72
+      TransformedDensityFitting (i p'_K(p')[A]|DF(ERI)|Mu):      1.02  0.13
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|p'_K(p')[A] >:     1.07  0.14
+    tbint_tform_ixjy_df <i i|G12'[0]|p_F(a')[A] e>:              2.30  0.31
+      TransformedDensityFitting (i p_F(a')[A]|DF(ERI)|Mu):       0.46  0.07
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|p_F(a')[A] >:      0.61  0.08
+    tbint_tform_ixjy_df <i i|G12'[0]|p_F(p)[A] e>:               2.84  0.36
+      TransformedDensityFitting (i p_F(p)[A]|DF(ERI)|Mu):        0.69  0.09
+      tbint_tform_ijR_using_iqR <i Mu|G12'[0]|p_F(p)[A] >:       0.68  0.09
+  input:                                                         0.07  0.17
 
-  End Time: Wed Jan 23 07:53:22 2013
+  End Time: Thu Feb 18 09:45:03 2016
 

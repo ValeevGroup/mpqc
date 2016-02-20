@@ -1,9 +1,0 @@
-#!/bin/sh
-
-set -e
-
-intf_list="@MPQC_INTEGRAL_FACTORY_STRLIST@"
-
-for intf in $intf_list; do
-    make -f check.mk $1 MPQCRUN_ARGS="--integral=$intf"
-done

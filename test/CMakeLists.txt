@@ -24,26 +24,25 @@ endif (HAVE_LIBINT1)
 if (HAVE_LIBINT2)
   list(APPEND MPQC_INTEGRAL_FACTORY_LIST "libint2")
 endif (HAVE_LIBINT2)
-string(REPLACE ";" " " MPQC_INTEGRAL_FACTORY_STRLIST "${MPQC_INTEGRAL_FACTORY_LIST}")
-CONFIGURE_FILE(
-  ${CMAKE_CURRENT_SOURCE_DIR}/make.sh.in
-  ${CMAKE_CURRENT_BINARY_DIR}/make.sh
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/check.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/check.cmake
   @ONLY
 )
 
 add_custom_target(
   check0
-  COMMAND ./make.sh check0
+  COMMAND ${CMAKE_COMMAND} -DCHECKLEVEL=check0 -P ${CMAKE_CURRENT_BINARY_DIR}/check.cmake
 )
 
 add_custom_target(
   check1
-  COMMAND ./make.sh check1
+  COMMAND ${CMAKE_COMMAND} -DCHECKLEVEL=check1 -P ${CMAKE_CURRENT_BINARY_DIR}/check.cmake
 )
 
 add_custom_target(
   check2
-  COMMAND ./make.sh check2
+  COMMAND ${CMAKE_COMMAND} -DCHECKLEVEL=check2 -P ${CMAKE_CURRENT_BINARY_DIR}/check.cmake
 )
 
 add_custom_target(

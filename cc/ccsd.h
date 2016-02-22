@@ -474,24 +474,37 @@ namespace mpqc {
             // used as reference for development
             double compute_ccsd_nondirect(TArray &t1, TArray &t2) {
 
+                auto& world = ccsd_intermediate_->get_Ca().get_world();
+
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray g_abij = ccsd_intermediate_->get_abij();
-
-                auto& world = g_abij.get_world();
 
                 if(world.rank() == 0){
                     std::cout << "Use Straight CCSD Compute" <<std::endl;
                 }
 
+                auto tmp_time0 = mpqc_time::fenced_now(world);
+                // get all two electron integrals
+                TArray g_abij = ccsd_intermediate_->get_abij();
+                TArray g_ijkl = ccsd_intermediate_->get_ijkl();
+                TArray g_abcd = ccsd_intermediate_->get_abcd();
+                TArray g_iajb = ccsd_intermediate_->get_iajb();
+                TArray g_iabc = ccsd_intermediate_->get_iabc();
+                TArray g_aibc = ccsd_intermediate_->get_aibc();
+                TArray g_ijak = ccsd_intermediate_->get_ijak();
+                TArray g_ijka = ccsd_intermediate_->get_ijka();
+                auto tmp_time1 = mpqc_time::fenced_now(world);
+                auto tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                if(print_detail){
+                    mpqc::utility::print_par(world,"Integral Prepare Time: ", tmp_time, "\n");
+                }
+
                 TArray f_ai;
                 f_ai("a,i") = fock_("a,i");
-
                 world.gop.fence();
 
-//      std::cout << g_abij << std::endl;
 
                 TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
@@ -502,8 +515,6 @@ namespace mpqc {
 
                 t2= d_abij(g_abij,orbital_energy_,n_occ);
 
-//      std::cout << t1 << std::endl;
-//      std::cout << t2 << std::endl;
                 TArray tau;
                 tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
@@ -513,19 +524,9 @@ namespace mpqc {
                                     tau("a,b,i,j"));
                 double mp2 = E1;
                 double dE = std::abs(E1 - E0);
-//      std::cout << E1 << std::endl;
 
-                // get all two electron integrals
-                TArray g_ijkl = ccsd_intermediate_->get_ijkl();
-                TArray g_abcd = ccsd_intermediate_->get_abcd();
-                TArray g_iajb = ccsd_intermediate_->get_iajb();
-                TArray g_iabc = ccsd_intermediate_->get_iabc();
-                TArray g_aibc = ccsd_intermediate_->get_aibc();
-                TArray g_ijak = ccsd_intermediate_->get_ijak();
-                TArray g_ijka = ccsd_intermediate_->get_ijka();
+                mpqc::utility::print_par(world, "MP2 Energy      ", mp2, "\n");
 
-//                 clean up three center integral after compute all two electron integrals
-//                ccsd_intermediate_->clean_three_center();
 
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
@@ -534,12 +535,14 @@ namespace mpqc {
                 TArray r2;
 
 
+                std::size_t max_iter = options_.HasMember("MaxIter") ? options_["MaxIter"].GetInt() : 30;
                 bool less = options_.HasMember("LessMemory") ? options_["LessMemory"].GetBool() : true;
 
                 double converge = options_.HasMember("Converge") ? options_["Converge"].GetDouble() : 1.0e-7;
 
                 if (world.rank() == 0) {
                     std::cout << "Start Iteration" << std::endl;
+                    std::cout << "Max Iteration" << max_iter << std::endl;
                     std::cout << "Convergence " << converge << std::endl;
                     if(less){
                         std::cout << "Less Memory Approach: Yes" << std::endl;
@@ -550,7 +553,7 @@ namespace mpqc {
 
                 auto diis = get_diis(world);
 
-                while (true) {
+                while (iter<max_iter) {
 
                     //start timer
                     auto time0 = mpqc_time::now();
@@ -559,6 +562,7 @@ namespace mpqc {
                     TArray::wait_for_lazy_cleanup(world);
 
 
+                    auto t1_time0 = mpqc_time::fenced_now(world);
                     TArray h_ki, h_ac;
                     {
                         // intermediates for t1
@@ -570,6 +574,7 @@ namespace mpqc {
 
                         // compute residual r1(n) = t1(n+1) - t1(n)
                         // external index i and a
+                        tmp_time0 = mpqc_time::fenced_now(world);
                         r1("a,i") = f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
 
                         {
@@ -586,8 +591,14 @@ namespace mpqc {
                             h_kc("k,c") = f_ai("c,k") + (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t1("d,l");
                             r1("a,i") +=  h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("c,i") * t1("a,k"));
                         }
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"t1 h term time: ", tmp_time, "\n");
+                        }
 
 
+                        tmp_time0 = mpqc_time::fenced_now(world);
                         r1("a,i") += (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k");
 
                         r1("a,i") += (2.0 * g_iabc("k,a,c,d") - g_iabc("k,a,d,c")) * tau("c,d,k,i");
@@ -597,24 +608,42 @@ namespace mpqc {
                         r1("a,i") *= d1("a,i");
 
                         r1("a,i") -= t1("a,i");
-                    }
 
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"t1 other time: ", tmp_time, "\n");
+                        }
+                    }
+                    auto t1_time1 = mpqc_time::fenced_now(world);
+                    auto t1_time = mpqc_time::duration_in_s(t1_time0,t1_time1);
+                    if(print_detail){
+                        mpqc::utility::print_par(world,"t1 total time: ", t1_time, "\n");
+                    }
 
 
                     // intermediates for t2
                     // external index i j a b
 
+                    auto t2_time0 = mpqc_time::fenced_now(world);
 
                     // compute residual r2(n) = t2(n+1) - t2(n)
 
                     //permutation part
+                    tmp_time0 = mpqc_time::fenced_now(world);
 
                     {
                         r2("a,b,i,j") = (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
 
                         r2("a,b,i,j") -= (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
                     }
+                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                    if(print_detail){
+                        mpqc::utility::print_par(world,"t2 other time: ", tmp_time, "\n");
+                    }
 
+                    tmp_time0 = mpqc_time::fenced_now(world);
                     {
                         // compute g intermediate
                         TArray g_ki, g_ac;
@@ -626,9 +655,14 @@ namespace mpqc {
                         r2("a,b,i,j") += g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
 
                     }
+                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                    if(print_detail){
+                        mpqc::utility::print_par(world,"t2 g term time: ", tmp_time, "\n");
+                    }
 
 
-
+                    tmp_time0 = mpqc_time::fenced_now(world);
                     {
                         TArray j_akic;
                         TArray k_kaic;
@@ -668,6 +702,11 @@ namespace mpqc {
                         r2("a,b,i,j") += - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j");
 
                     }
+                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                    if(print_detail){
+                        mpqc::utility::print_par(world,"t2 j,k term time: ", tmp_time, "\n");
+                    }
 
                     // perform the permutation
                     r2("a,b,i,j") = r2("a,b,i,j") + r2("b,a,j,i");
@@ -675,6 +714,7 @@ namespace mpqc {
                     r2("a,b,i,j") += g_abij("a,b,i,j");
 
 
+                    tmp_time0 = mpqc_time::fenced_now(world);
                     {
                         TArray a_klij;
                         // compute a intermediate
@@ -687,8 +727,18 @@ namespace mpqc {
                         a_klij("k,l,i,j") += g_abij("c,d,k,l") * tau("c,d,i,j");
 
                         r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
+
+                        if(print_detail){
+                            utility::print_size_info(a_klij,"A_klij");
+                        }
+                    }
+                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                    if(print_detail){
+                        mpqc::utility::print_par(world,"t2 a term time: ", tmp_time, "\n");
                     }
 
+                    tmp_time0 = mpqc_time::fenced_now(world);
                     {
                         // compute b intermediate
                         if (less) {
@@ -719,6 +769,11 @@ namespace mpqc {
                         }
 
                     }
+                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                    if(print_detail){
+                        mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
+                    }
 
                     d_abij_inplace(r2, orbital_energy_, n_occ);
 
@@ -730,6 +785,11 @@ namespace mpqc {
                     t1.truncate();
                     t2.truncate();
 
+                    auto t2_time1 = mpqc_time::fenced_now(world);
+                    auto t2_time = mpqc_time::duration_in_s(t2_time0,t2_time1);
+                    if(print_detail){
+                        mpqc::utility::print_par(world,"t2 total time: ", t2_time, "\n");
+                    }
                     // recompute energy
                     E0 = E1;
                     E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i"))
@@ -746,6 +806,7 @@ namespace mpqc {
 
                     if(dE >= converge || error >= converge){
 
+                        tmp_time0 = mpqc_time::fenced_now(world);
                         mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
                         mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
                         error = r.norm() / size(t);
@@ -761,6 +822,11 @@ namespace mpqc {
                         }
 
                         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"diis time: ", tmp_time, "\n");
+                        }
 
                         auto time1 = mpqc_time::now();
                         auto duration = mpqc_time::duration_in_s(time0, time1);
@@ -790,8 +856,10 @@ namespace mpqc {
 //        << scprintf("%-15.10f", E_1) << std::endl;
 
                 }
+                if (iter>=max_iter){
+                    throw std::runtime_error("Exceed Max Iteration!");
+                }
                 if (world.rank() == 0) {
-                    std::cout << "MP2 Energy   " << mp2 << std::endl;
                     std::cout << "CCSD Energy  " << E1 << std::endl;
                 }
                 return E1;
@@ -1481,8 +1549,10 @@ namespace mpqc {
                     }
 
                 }
+                if (iter>=max_iter){
+                    throw std::runtime_error("Exceed Max Iteration!");
+                }
                 if (world.rank() == 0) {
-                    std::cout << "MP2 Energy      " << mp2 << std::endl;
                     std::cout << "CCSD Energy     " << E1 << std::endl;
                 }
                 return E1;

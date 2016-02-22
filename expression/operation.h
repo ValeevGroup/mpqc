@@ -13,7 +13,7 @@ namespace mpqc{
 
     class Operation{
     public:
-        enum class Operations{Overlap, Kinetic, Nuclear, Coulomb, cGTG, cGTGCoulomb, cGTG2};
+        enum class Operations{Overlap, Kinetic, Nuclear, Coulomb, cGTG, cGTGCoulomb, cGTG2, DelcGTG2};
 
         enum class Options{DensityFitting};
 

@@ -215,6 +215,7 @@ namespace mpqc{
 
                 *it = tile;
             }
+            abij.get_world().gop.fence();
 
         }
 
@@ -255,6 +256,7 @@ namespace mpqc{
 
                 *it = tile;
             }
+            f_ai.get_world().gop.fence();
 
         }
 

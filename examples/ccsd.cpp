@@ -231,36 +231,57 @@ int try_main(int argc, char *argv[], madness::World &world) {
         const auto bs_array = utility::make_array(basis, basis);
 
         // Overlap ints
+        auto time0 = mpqc_time::fenced_now(world);
         auto overlap_e = ints::make_1body_shr_pool("overlap", basis, mol);
         auto S = ints::sparse_integrals(world, overlap_e, bs_array);
+        auto time1 = mpqc_time::fenced_now(world);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        mpqc::utility::print_par(world,"Overlap Time:  ", time, "\n");
 
-        // Overlap ints
+        // Kinetic ints
+        time0 = mpqc_time::fenced_now(world);
         auto kinetic_e = ints::make_1body_shr_pool("kinetic", basis, mol);
         auto T = ints::sparse_integrals(world, kinetic_e, bs_array);
+        time1 = mpqc_time::fenced_now(world);
+        time = mpqc_time::duration_in_s(time0,time1);
+        mpqc::utility::print_par(world,"Kinetic Time:  ", time, "\n");
 
+        time0 = mpqc_time::fenced_now(world);
         auto nuclear_e = ints::make_1body_shr_pool("nuclear", basis, mol);
         auto V = ints::sparse_integrals(world, nuclear_e, bs_array);
+        time1 = mpqc_time::fenced_now(world);
+        time = mpqc_time::duration_in_s(time0,time1);
+        mpqc::utility::print_par(world,"Nuclear Time:  ", time, "\n");
 
+        time0 = mpqc_time::fenced_now(world);
         decltype(T) H;
         H("i,j") = T("i,j") + V("i,j");
+        time1 = mpqc_time::fenced_now(world);
+        time = mpqc_time::duration_in_s(time0,time1);
+        mpqc::utility::print_par(world,"Core Time:  ", time, "\n");
 
+        time0 = mpqc_time::fenced_now(world);
         auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
-
-        auto soad0 = mpqc_time::fenced_now(world);
         auto F_soad
               = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-        auto soad1 = mpqc_time::fenced_now(world);
-        auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
-        if(world.rank() == 0){
-            std::cout << "Soad Time: " << soad_time << std::endl;
-        }
+        time1 = mpqc_time::fenced_now(world);
+        time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::utility::print_par(world,"Soad Time:  ", time, "\n");
 
+        time0 = mpqc_time::fenced_now(world);
         const auto dfbs_array = utility::make_array(df_basis, df_basis);
         auto Metric = ints::sparse_integrals(world, eri_e, dfbs_array);
         scf::DFFockBuilder builder(Metric);
+        time1 = mpqc_time::fenced_now(world);
+        time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::utility::print_par(world,"Two Center Time:  ", time, "\n");
 
+        time0 = mpqc_time::fenced_now(world);
         auto three_c_array = utility::make_array(df_basis, basis, basis);
         auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array);
+        time1 = mpqc_time::fenced_now(world);
+        time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::utility::print_par(world,"Three Center Time:  ", time, "\n");
 
         scf::ClosedShellSCF<decltype(builder)> scf(
               H, S, occ / 2, repulsion_energy, std::move(builder), F_soad);
@@ -459,6 +480,7 @@ int main(int argc, char *argv[]) {
     int rc = 0;
 
     auto &world = madness::initialize(argc, argv);
+    mpqc::utility::print_par(world, "MADNESS process total size: ", world.size(), "\n");
 
     try {
 

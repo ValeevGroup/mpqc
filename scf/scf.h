@@ -25,6 +25,7 @@ class ClosedShellSCF {
     array_type F_;
     array_type D_;
     array_type C_;
+    std::vector<array_type> r_xyz_ints_;
     TiledArray::DIIS<array_type> diis_;
 
     std::unique_ptr<FockBuilder> builder_;
@@ -41,10 +42,12 @@ class ClosedShellSCF {
 
     template <typename Builder>
     ClosedShellSCF(array_type const &H, array_type const &S, int64_t occ,
-                   double rep, Builder builder,
-                   array_type const &F_guess = array_type{}, double TcutC = 0)
+                   double rep, std::vector<array_type> const &r_xyz,
+                   Builder builder, array_type const &F_guess = array_type{},
+                   double TcutC = 0)
             : H_(H),
               S_(S),
+              r_xyz_ints_(r_xyz),
               builder_(make_unique<Builder>(std::move(builder))),
               occ_(occ),
               repulsion_(rep),

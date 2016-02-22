@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               sbuilder(world, eri_e, df_basis, basis));
 
-        auto eri3 = ints::direct_dense_integrals(world, eri_e, three_c_array,
+        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
                                                   shr_screen);
 
         auto const &eri3_tiles = eri3.array().trange().tiles();
@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
             }
 
             hf = scf::ClosedShellSCF(H, S, occ / 2, repulsion_energy,
-                                     std::move(cadf_builder), F_soad, TcutC);
+                                     r_xyz, std::move(cadf_builder), F_soad, TcutC);
         } else {
             scf::CADFFockBuilder<decltype(eri3)> cadf_builder(
                   M, eri3, dC_df, dG_df, clr_threshold);
@@ -502,7 +502,7 @@ int main(int argc, char *argv[]) {
             }
 
             hf = scf::ClosedShellSCF(H, S, occ / 2, repulsion_energy,
-                                     std::move(cadf_builder), F_soad, TcutC);
+                                     r_xyz, std::move(cadf_builder), F_soad, TcutC);
         }
 
         world.gop.fence();

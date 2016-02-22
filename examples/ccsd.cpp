@@ -285,9 +285,16 @@ int try_main(int argc, char *argv[], madness::World &world) {
         time = mpqc_time::duration_in_s(time0, time1);
         mpqc::utility::print_par(world,"Two Center Time:  ", time, "\n");
 
+        time0 = mpqc_time::fenced_now(world);
+        auto multi_pool
+              = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+        auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+        time1 = mpqc_time::fenced_now(world);
+        time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::utility::print_par(world,"Multipole Integral Time:  ", time, "\n");
 
         scf::ClosedShellSCF scf(
-              H, S, occ / 2, repulsion_energy, std::move(builder), F_soad);
+              H, S, occ / 2, repulsion_energy, r_xyz, std::move(builder), F_soad);
 
         scf.solve(scf_max_iter, scf_converge);
         // end SCF

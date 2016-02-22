@@ -5,6 +5,9 @@
 #include "../ta_routines/array_to_eigen.h"
 #include "../ta_routines/minimize_storage.h"
 
+#include "../scf/orbital_localization.h"
+#include "../scf/clusterd_coeffs.h"
+
 namespace mpqc {
 namespace scf {
 
@@ -85,6 +88,12 @@ void ClosedShellSCF::compute_density(int64_t occ) {
 
     C_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C, tr_ao,
                                                 tr_occ);
+
+    auto U = mpqc::scf::BoysLocalization{}(C_, r_xyz_ints_);
+    C_("mu,i") = C_("mu,k") * U("k,i");
+
+    auto obs_ntiles = C_.trange().tiles().extent()[0];
+    scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
 
     if (TcutC_ != 0) {
         ta_routines::minimize_storage(C_, TcutC_);

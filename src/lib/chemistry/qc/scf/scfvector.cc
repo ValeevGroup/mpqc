@@ -182,6 +182,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     if (iter_since_reset && !(iter_since_reset%dens_reset_freq_)) {
       reset_density();
       iter_since_reset = 0;
+      ExEnv::out0() << indent << "restarted incremental Fock build" << std::endl;
     }
 
     // form the AO basis fock matrix & add density dependant H

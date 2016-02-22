@@ -30,38 +30,23 @@
 /* Define if you have <stdint.h>.  */
 #cmakedefine HAVE_STDINT_H @HAVE_STDINT_H@
 
-/* Define if you have <sys/stat.h>.  */
-#cmakedefine HAVE_SYS_STAT_H
-
 /* Define if you have <sys/types.h>.  */
-#cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TIMES_H@
+#cmakedefine HAVE_SYS_TYPES_H
 
 /* Define if you have <pwd.h>.  */
 #cmakedefine HAVE_PWD_H
 
-/* Define if you have <termios.h>.  */
-#cmakedefine HAVE_TERMIOS_H
+/* Define if you have <sys/times.h>.  */
+#cmakedefine HAVE_SYS_TIME_H
 
 /* Define if you have <sys/times.h>.  */
-#cmakedefine HAVE_SYS_TIMES_H @HAVE_SYS_TIMES_H@
+#cmakedefine HAVE_SYS_TIMES_H
 
 /* Define if you have <time.h>.  */
 #cmakedefine HAVE_TIME_H
 
-/* Define if you have <machine/fpu.h>.  */
-#cmakedefine HAVE_MACHINE_FPU_H
-
-/* Define if you have <asm/fpu.h>.  */
-#cmakedefine HAVE_ASM_FPU_H
-
 /* Define if you have <sys/resource.h>.  */
-#cmakedefine HAVE_SYS_RESOURCE_H @HAVE_SYS_RESOURCE_H@
-
-/* Define if you have the vprintf function.  */
-#cmakedefine HAVE_VPRINTF
-
-/* Define if you have the ios::fmtflags.  */
-#cmakedefine HAVE_IOS_FMTFLAGS
+#cmakedefine HAVE_SYS_RESOURCE_H
 
 /* Define if you have the long long type extension.  */
 #ifndef HAVE_LONG_LONG
@@ -70,9 +55,6 @@
 
 /* Define if you have streambuf::pubseekoff (you should).  */
 #cmakedefine HAVE_PUBSEEKOFF
-
-/* Define if you have streambuf::sgetn (you should).  */
-#cmakedefine HAVE_SGETN
 
 /* Define if you have a public streambuf::seekoff.  */
 #cmakedefine HAVE_SEEKOFF
@@ -86,31 +68,14 @@
 /* Define if signal handlers have an ellipsis argument in C++.  */
 #cmakedefine SIGHASELLIP
 
-/* Define if you have the ANSI C header files.  */
-#cmakedefine STDC_HEADERS
-
-/* Define if your <sys/time.h> declares struct tm.  */
-#cmakedefine TM_IN_SYS_TIME
-
-/* Define if you have the strerror function.  */
-#cmakedefine HAVE_STRERROR
-
 /* Define if you have the setenv function.  */
 #cmakedefine HAVE_SETENV
 
 /* Define if isnan is available from C++.  */
-#ifndef HAVE_ISNAN
 #cmakedefine HAVE_ISNAN
-#endif
-
-/* Define if you have the sigfillset function (and company).  */
-#cmakedefine HAVE_SIGFILLSET
 
 /* Define if you have the signal function.  */
 #cmakedefine HAVE_SIGNAL
-
-/* Define if you have the sigaction function.  */
-#cmakedefine HAVE_SIGACTION
 
 /* Define if you have the system function.  */
 #cmakedefine HAVE_SYSTEM
@@ -151,9 +116,6 @@
 /* Define if you have the setrlimit function.  */
 #cmakedefine HAVE_SETRLIMIT
 
-/* Define if you have functioning SYSV IPC.  */
-#cmakedefine HAVE_SYSV_IPC
-
 /* Define if semctl must have a semun as the fourth argument.  */
 #cmakedefine SEMCTL_REQUIRES_SEMUN
 
@@ -164,20 +126,11 @@
 #define SHMTYPE char*
 #endif
 
-/* Define if you have the <fcntl.h> header file.  */
-#cmakedefine HAVE_FCNTL_H
-
-/* Define if you have the <limits.h> header file.  */
-#cmakedefine HAVE_LIMITS_H
-
-/* Define if you have the <sys/ioctl.h> header file.  */
-#cmakedefine HAVE_SYS_IOCTL_H
-
 /* Define if you have the <sys/time.h> header file.  */
-#cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
+#cmakedefine HAVE_SYS_TIME_H
 
 /* Define if you have the <unistd.h> header file.  */
-#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
+#cmakedefine HAVE_UNISTD_H
 
 /* Define if you have the <pthread.h> header file and the pthread library.  */
 #cmakedefine HAVE_PTHREAD @HAVE_PTHREAD@
@@ -217,9 +170,6 @@
 
 /* Define if you can have the sched_get_priority_min function.  */
 #cmakedefine HAVE_SCHED_GET_PRIORITY_MIN
-
-/* Define if you have the NIAMA library.  */
-#cmakedefine HAVE_NIAMA
 
 /* Define if you have the <mpi.h> header file and library.  */
 #cmakedefine HAVE_MPI
@@ -308,7 +258,7 @@
 #cmakedefine HAVE_LIBDL
 
 /* Define if you have the <dlfcn.h> header file.  */
-#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
+#cmakedefine HAVE_DLFCN_H
 
 /* Defines the sizeof(int64_t) */
 #cmakedefine C_TYPE_INT64_T @C_TYPE_INT64_T@

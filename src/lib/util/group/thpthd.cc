@@ -132,7 +132,7 @@ PthreadThreadGrp::init_attr()
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
     size_t minstacksize = 2097152;
     if (defstacksize < minstacksize) {
-      pthread_attr_setstacksize(attr_[i], minstacksize);
+      pthread_attr_setstacksize(&attr_[i], minstacksize);
     }
 #endif
   }
@@ -153,7 +153,7 @@ void PthreadThreadGrp::add_thread(int ithread, Thread* t, int priority)
 }
 
 #if defined(HAVE_SCHED_GET_PRIORITY_MAX) \
-   && defined(HAVE_SCHED_GET_PRIORITY_MAX) \
+   && defined(HAVE_SCHED_GET_PRIORITY_MIN) \
    && defined(HAVE_PTHREAD_ATTR_SETSCOPE) \
    && defined(HAVE_PTHREAD_ATTR_SETSCHEDPARAM) \
    && defined(HAVE_PTHREAD_ATTR_SETINHERITSCHED) \

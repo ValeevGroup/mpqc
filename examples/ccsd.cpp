@@ -34,6 +34,7 @@
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/scf.h"
 #include "../scf/traditional_df_fock_builder.h"
+
 #include "../cc/ccsd_t.h"
 #include "../cc/lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
@@ -257,17 +258,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         const auto dfbs_array = utility::make_array(df_basis, df_basis);
         auto Metric = ints::sparse_integrals(world, eri_e, dfbs_array);
-        scf::DFFockBuilder builder(Metric);
 
         auto three_c_array = utility::make_array(df_basis, basis, basis);
         auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array);
 
-        scf::ClosedShellSCF<decltype(builder)> scf(
+        scf::DFFockBuilder<decltype(eri3)> builder(Metric, eri3);
+
+        scf::ClosedShellSCF scf(
               H, S, occ / 2, repulsion_energy, std::move(builder), F_soad);
 
-        scf.solve(scf_max_iter, scf_converge, eri3);
+        scf.solve(scf_max_iter, scf_converge);
         // end SCF
-
 
         // start ccsd prepration
 

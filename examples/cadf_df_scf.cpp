@@ -13,6 +13,12 @@
 #include "../molecule/clustering_functions.h"
 #include "../molecule/make_clusters.h"
 
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
+#include "../utility/json_input.h"
+
 #include "../basis/atom_basisset.h"
 #include "../basis/basis_set.h"
 #include "../basis/basis.h"
@@ -22,12 +28,18 @@
 #include "../utility/time.h"
 #include "../utility/array_info.h"
 #include "../ta_routines/array_to_eigen.h"
+#include "../ta_routines/minimize_storage.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/soad.h"
 #include "../scf/orbital_localization.h"
 #include "../scf/clusterd_coeffs.h"
 #include "../scf/cadf_helper_functions.h"
+#include "../scf/scf.h"
+
+#include "../scf/cadf_builder.h"
+#include "../scf/cadf_builder_forced_shape.h"
+
 
 #include "../tensor/decomposed_tensor.h"
 #include "../tensor/decomposed_tensor_nonintrusive_interface.h"
@@ -41,652 +53,71 @@ namespace ints = mpqc::integrals;
 
 bool tensor::detail::recompress = true;
 
-struct JobSummary {
-    // Basis and cluster info
-    std::string obs;
-    std::string dfbs;
-
-    int num_obs = 0;
-    int num_dfbs = 0;
-
-    int obs_nfuncs = 0;
-    int dfbs_nfuncs = 0;
-
-    // Times
-    double avg_w_time = 0;
-    double avg_occ_ri_k_time = 0;
-    double avg_k_time = 0;
-    double avg_loc_time = 0;
-
-    // Storages
-    double w_fully_dense_storage = 0;
-    double avg_w_sparse_only_storage = 0;
-    double avg_w_sparse_clr_storage = 0;
-
-    double eri3_fully_dense_storage = 0;
-    double eri3_sparse_only_storage = 0;
-    double eri3_sparse_clr_storage = 0;
-
-    double B_fully_dense_storage = 0;
-    double B_sparse_only_storage = 0;
-    double B_sparse_clr_storage = 0;
-
-    // Thresholds
-    double ta_sparse_threshold = 0;
-    double clr_threshold = 0;
-    double schwarz_threshold = 0;
-
-    // Computables
-    double hf_energy = 0;
-    double hf_energy_diff_error = 0;
-    double hf_grad_div_volume = 0;
-    double exchange_energy = 0;
-
-    double dipole_vector = 0;
-    double dipole_x = 0;
-    double dipole_y = 0;
-    double dipole_z = 0;
-
-    double mp2_energy = 0;
-
-    // Bools
-    bool did_mp2 = false;
-    bool computed_dipole = false;
-
-    void print_report() const {
-        std::cout << "Job Summary:\n";
-
-        std::cout << "number obs clusters, ";
-        std::cout << "number dfbs clusters, ";
-
-        std::cout << "obs basis, ";
-        std::cout << "dfbs basis, ";
-
-        std::cout << "obs nfuctions, ";
-        std::cout << "dfbs nfuctions, ";
-
-        std::cout << "ta sparse threshold, ";
-        std::cout << "schwarz threshold, ";
-        std::cout << "clr threshold, ";
-
-        std::cout << "avg w time, ";
-        std::cout << "avg k time, ";
-        std::cout << "avg occ-ri k time, ";
-
-        std::cout << "eri3 fully dense storage, ";
-        std::cout << "eri3 sparse only, ";
-        std::cout << "eri3 sparse + clr storage, ";
-
-        std::cout << "B fully dense storage, ";
-        std::cout << "B sparse only, ";
-        std::cout << "B sparse + clr storage, ";
-
-        std::cout << "w fully dense storage, ";
-        std::cout << "w sparse only, ";
-        std::cout << "w sparse + clr storage, ";
-
-        std::cout << "hf energy, ";
-        std::cout << "error change in energy, ";
-        std::cout << "error rms div volume, ";
-        std::cout << "exchange energy(iter 0), ";
-
-        std::cout << "computed dipole, ";
-
-        std::cout << "dipole x, ";
-        std::cout << "dipole y, ";
-        std::cout << "dipole z, ";
-        std::cout << "dipole vec, ";
-
-        std::cout << "computed mp2, ";
-        std::cout << "mp2 energy\n";
-
-        std::cout << num_obs << ", ";
-        std::cout << num_dfbs << ", ";
-
-        std::cout << obs << ", ";
-        std::cout << dfbs << ", ";
-
-        std::cout << obs_nfuncs << ", ";
-        std::cout << dfbs_nfuncs << ", ";
-
-        std::cout << ta_sparse_threshold << ", ";
-        std::cout << schwarz_threshold << ", ";
-        std::cout << clr_threshold << ", ";
-
-
-        std::cout << avg_w_time << ", ";
-        std::cout << avg_k_time << ", ";
-        std::cout << avg_occ_ri_k_time << ", ";
-
-        std::cout << eri3_fully_dense_storage << ", ";
-        std::cout << eri3_sparse_only_storage << ", ";
-        std::cout << eri3_sparse_clr_storage << ", ";
-
-        std::cout << B_fully_dense_storage << ", ";
-        std::cout << B_sparse_only_storage << ", ";
-        std::cout << B_sparse_clr_storage << ", ";
-
-        std::cout << w_fully_dense_storage << ", ";
-        std::cout << avg_w_sparse_only_storage << ", ";
-        std::cout << avg_w_sparse_clr_storage << ", ";
-
-        std::cout << hf_energy << ", ";
-        std::cout << hf_energy_diff_error << ", ";
-        std::cout << hf_grad_div_volume << ", ";
-        std::cout << exchange_energy << ", ";
-
-        std::cout << computed_dipole << ", ";
-        std::cout << dipole_x << ", ";
-        std::cout << dipole_y << ", ";
-        std::cout << dipole_z << ", ";
-        std::cout << dipole_vector << ", ";
-
-        std::cout << did_mp2 << ", ";
-        std::cout << mp2_energy << "\n";
-    }
-};
-
-class ThreeCenterScf {
-  private:
-    using array_type = DArray<2, TA::TensorD, SpPolicy>;
-    using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
-    using darray_type = DArray<2, dtile, SpPolicy>;
-
-    array_type H_;
-    array_type S_;
-
-    array_type F_;
-    array_type K_;
-    array_type D_;
-
-    array_type V_inv_oh_;
-
-    darray_type dH_;
-    darray_type dC_;
-
-    std::vector<array_type> r_xyz_ints_;
-    TiledArray::DIIS<array_type> diis_;
-
-    std::vector<double> k_times_;
-    std::vector<double> occ_k_times_;
-    std::vector<double> j_times_;
-    std::vector<double> w_times_;
-    std::vector<double> scf_times_;
-    std::vector<double> w_sparse_store_;
-    std::vector<double> w_sparse_clr_store_;
-    std::vector<double> localization_times_;
-
-    int64_t occ_;
-    double repulsion_;
-    double final_rms_error_;
-    double final_ediff_error_;
-    double final_energy_;
-    double w_full_storage_;
-
-    double recompress_w_time_;
-    double clr_w_no_recompress_;
-
-    double clr_thresh_;
-    double exchange_energy_;
-
-    bool use_c_shape_ = false;
-
-    void compute_density(int64_t occ) {
-        auto F_eig = array_ops::array_to_eigen(F_);
-        auto S_eig = array_ops::array_to_eigen(S_);
-
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
-                                                                   S_eig);
-        decltype(S_eig) C = es.eigenvectors().leftCols(occ);
-        auto tr_ao = S_.trange().data()[0];
-
-        auto tr_occ = scf::tr_occupied(occ, occ);
-        auto C_TA = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C,
-                                                           tr_ao, tr_occ);
-
-        auto U = mpqc::scf::BoysLocalization{}(C_TA, r_xyz_ints_);
-        C_TA("mu,i") = C_TA("mu,k") * U("k,i");
-
-        auto obs_ntiles = C_TA.trange().tiles().extent()[0];
-        scf::clustered_coeffs(r_xyz_ints_, C_TA, obs_ntiles);
-
-        dC_ = TA::to_new_tile_type(C_TA, tensor::TaToDecompTensor(clr_thresh_,
-                                                                  false));
-
-        decltype(S_eig) D = C * C.transpose();
-
-        D_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), D, tr_ao,
-                                                    tr_ao);
-    }
-
-    template <typename Integral>
-    array_type compute_J(Integral const &eri3) {
-        auto &world = eri3.array().get_world();
-        auto get_time = [&]() {
-            world.gop.fence();
-            return utility::time::now();
-        };
-
-        using tp = decltype(get_time());
-
-        auto calc_time = [](tp const &a, tp const &b) {
-            return utility::time::duration_in_s(a, b);
-        };
-
-        array_type J;
-        auto j0 = get_time();
-        J("mu, nu") = eri3("Y,mu,nu")
-                      * (V_inv_oh_("Y,Z")
-                         * (V_inv_oh_("Z,X") * (eri3("X,r,s") * D_("r,s"))));
-        auto j1 = get_time();
-        j_times_.push_back(calc_time(j0, j1));
-
-        return J;
-    }
-
-    template <typename Integral, typename Array>
-    void form_fock(Integral const &eri3, Array const &C_df, Array const &G_df) {
-        auto &world = F_.get_world();
-
-        auto get_time = [&]() {
-            world.gop.fence();
-            return utility::time::now();
-        };
-
-        using tp = decltype(get_time());
-
-        auto calc_time = [](tp const &a, tp const &b) {
-            return utility::time::duration_in_s(a, b);
-        };
-
-        auto J = compute_J(eri3);
-
-        auto k0 = get_time();
-        using GTile = tensor::Tile<tensor::DecomposedTensor<double>>;
-        DArray<3, GTile, SpPolicy> C_mo;
-        DArray<2, GTile, SpPolicy> dL;
-
-        C_mo("X, i, mu") = C_df("X, mu, nu") * dC_("nu, i");
-        C_mo.truncate();
-        auto storage = utility::array_storage(C_mo);
-        std::cout << "\tC_mo sparsity = " << C_mo.get_shape().sparsity()
-                  << std::endl;
-        std::cout << "\t\tC_mo Full   = " << storage[0] << "\n"
-                  << "\t\tC_mo Sparse = " << storage[1] << "\n"
-                  << "\t\tC_mo CLR    = " << storage[2] << "\n";
-
-
-        DArray<3, GTile, SpPolicy> F_df;
-        if (use_c_shape_) {
-            F_df("X, i, mu") = (G_df("X,mu, nu") * dC_("nu,i"))
-                                     .set_shape(C_mo.get_shape());
-        } else {
-            F_df("X, i, mu") = G_df("X,mu, nu") * dC_("nu,i");
-        }
-
-        dL("mu, nu") = C_mo("X, i, mu") * F_df("X, i, nu");
-
-        auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
-
-        K_("mu, nu") = L("mu, nu") + L("nu, mu");
-        auto k1 = get_time();
-        k_times_.push_back(calc_time(k0, k1));
-
-        F_("i,j") = H_("i,j") + 2 * J("i,j") - K_("i,j");
-    }
-
-    template <typename Integral, typename Array, typename DecompInt>
-    void form_fock_linear(Integral const &eri3, Array const &C_df,
-                          Array const &M, DecompInt deri3) {
-        auto &world = F_.get_world();
-
-        auto get_time = [&]() {
-            world.gop.fence();
-            return utility::time::now();
-        };
-
-        using tp = decltype(get_time());
-
-        auto calc_time = [](tp const &a, tp const &b) {
-            return utility::time::duration_in_s(a, b);
-        };
-
-        auto J = compute_J(eri3);
-
-        auto k0 = get_time();
-        using GTile = tensor::Tile<tensor::DecomposedTensor<double>>;
-        DArray<3, GTile, SpPolicy> C_mo;
-        DArray<3, GTile, SpPolicy> R_df;
-        DArray<3, GTile, SpPolicy> F_df;
-        DArray<3, GTile, SpPolicy> D_df;
-        DArray<2, GTile, SpPolicy> dL;
-
-
-        C_mo("X, i, mu") = C_df("X, mu, nu") * dC_("nu, i");
-        C_mo.truncate();
-
-        auto storage = utility::array_storage(C_mo);
-        std::cout << "\tC_mo sparsity = " << C_mo.get_shape().sparsity()
-                  << std::endl;
-        std::cout << "\t\tC_mo Full   = " << storage[0] << "\n"
-                  << "\t\tC_mo Sparse = " << storage[1] << "\n"
-                  << "\t\tC_mo CLR    = " << storage[2] << "\n";
-
-        R_df("X, i, mu")
-              = (M("X,Y") * C_mo("Y,i,mu")).set_shape(C_mo.get_shape());
-        R_df.truncate();
-
-        F_df("X, i, mu")
-              = (deri3("X, mu, nu") * dC_("nu, i")).set_shape(C_mo.get_shape());
-        F_df.truncate();
-
-        D_df("X, i, mu") = (F_df("X, i, mu") - 0.5 * R_df("X, i, mu"))
-                                 .set_shape(C_mo.get_shape());
-        D_df.truncate();
-
-        dL("mu, nu") = C_mo("X, i, mu") * D_df("X, i, nu");
-
-        auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
-
-        K_("mu, nu") = L("mu, nu") + L("nu, mu");
-        auto k1 = get_time();
-        k_times_.push_back(calc_time(k0, k1));
-
-        F_("i,j") = H_("i,j") + 2 * J("i,j") - K_("i,j");
-    }
-
-  public:
-    ThreeCenterScf(array_type const &H, array_type const &F_guess,
-                   array_type const &S, array_type const &V_inv_oh,
-                   std::vector<array_type> const &rxyz, int64_t occ, double rep,
-                   double clr_thresh)
-            : H_(H),
-              F_(F_guess),
-              S_(S),
-              V_inv_oh_(V_inv_oh),
-              r_xyz_ints_(rxyz),
-              occ_(occ),
-              repulsion_(rep),
-              clr_thresh_(clr_thresh) {
-
-        compute_density(occ_);
-    }
-
-    ThreeCenterScf(array_type const &H, array_type const &F_guess,
-                   array_type const &S, array_type const &V_inv_oh,
-                   std::vector<array_type> const &rxyz, int64_t occ, double rep,
-                   double clr_thresh, bool use_c_shape)
-            : H_(H),
-              F_(F_guess),
-              S_(S),
-              V_inv_oh_(V_inv_oh),
-              r_xyz_ints_(rxyz),
-              occ_(occ),
-              repulsion_(rep),
-              clr_thresh_(clr_thresh),
-              use_c_shape_(use_c_shape) {
-
-        compute_density(occ_);
-    }
-
-    template <typename Integral, typename Array>
-    void solve(int64_t max_iters, double thresh, Integral const &eri3,
-               Array const &C_df, Array const &G_df) {
-        auto iter = 0;
-        auto error = std::numeric_limits<double>::max();
-        auto rms_error = std::numeric_limits<double>::max();
-        auto old_energy = 0.0;
-        const double volume = F_.trange().elements().volume();
-
-        while (iter < max_iters && (thresh < error || thresh < rms_error)
-               && (thresh / 100.0 < error && thresh / 100.0 < rms_error)) {
-            auto s0 = mpqc_time::now();
-            F_.get_world().gop.fence();
-            form_fock(eri3, C_df, G_df);
-
-            auto current_energy = energy();
-            error = std::abs(old_energy - current_energy);
-            old_energy = current_energy;
-
-            if (iter == 0) {
-                exchange_energy_
-                      = D_("i,j").dot(K_("i,j"), F_.get_world()).get();
-            }
-
-            array_type Grad;
-            Grad("i,j") = F_("i,k") * D_("k,l") * S_("l,j")
-                          - S_("i,k") * D_("k,l") * F_("l,j");
-
-            rms_error = Grad("i,j").norm().get() / volume;
-
-            diis_.extrapolate(F_, Grad);
-
-            // Lastly update density
-            compute_density(occ_);
-
-            F_.get_world().gop.fence();
-            auto s1 = mpqc_time::now();
-            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
-
-
-            std::cout << "Iteration: " << (iter + 1)
-                      << " energy: " << old_energy << " error: " << error
-                      << " RMS error: " << rms_error;
-            std::cout
-                  // << "\n\tD df time: " << w_times_.back()
-                  // << "\n\tW recompress time: " << recompress_w_time_
-                  << "\n\tJ time: " << j_times_.back()
-                  << "\n\tK time: " << k_times_.back() << "\n\titer time: "
-                  << scf_times_.back()
-                  // << "\n\tW sparse only storage: " << w_sparse_store_.back()
-                  // << "\n\tW sparse clr(no recompress): " <<
-                  // clr_w_no_recompress_
-                  // << "\n\tW sparse clr storage: " <<
-                  // w_sparse_clr_store_.back()
-                  // << "\n\tLocalization time: " << localization_times_.back()
-                  << std::endl;
-            // if (iter == 0) {
-            //     std::cout << "\tExchange energy = " << exchange_energy_
-            //               << std::endl;
-            // }
-
-
-            ++iter;
-        }
-
-        final_rms_error_ = rms_error;
-        final_ediff_error_ = error;
-        final_energy_ = old_energy;
-    }
-
-    template <typename Integral, typename DecompInt, typename Array>
-    void
-    linear_solve(int64_t max_iters, double thresh, Integral const &eri3,
-                 Array const &C_df, Array const &M, DecompInt const &deri3) {
-        auto iter = 0;
-        auto error = std::numeric_limits<double>::max();
-        auto rms_error = std::numeric_limits<double>::max();
-        auto old_energy = 0.0;
-        const double volume = F_.trange().elements().volume();
-
-        while (iter < max_iters && (thresh < error || thresh < rms_error)
-               && (thresh / 100.0 < error && thresh / 100.0 < rms_error)) {
-            auto s0 = mpqc_time::now();
-            F_.get_world().gop.fence();
-            form_fock_linear(eri3, C_df, M, deri3);
-
-            auto current_energy = energy();
-            error = std::abs(old_energy - current_energy);
-            old_energy = current_energy;
-
-            if (iter == 0) {
-                exchange_energy_
-                      = D_("i,j").dot(K_("i,j"), F_.get_world()).get();
-            }
-
-            array_type Grad;
-            Grad("i,j") = F_("i,k") * D_("k,l") * S_("l,j")
-                          - S_("i,k") * D_("k,l") * F_("l,j");
-
-            rms_error = Grad("i,j").norm().get() / volume;
-
-            diis_.extrapolate(F_, Grad);
-
-            // Lastly update density
-            compute_density(occ_);
-
-            F_.get_world().gop.fence();
-            auto s1 = mpqc_time::now();
-            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
-
-
-            std::cout << "Iteration: " << (iter + 1)
-                      << " energy: " << old_energy << " error: " << error
-                      << " RMS error: " << rms_error;
-            std::cout
-                  // << "\n\tD df time: " << w_times_.back()
-                  // << "\n\tW recompress time: " << recompress_w_time_
-                  << "\n\tJ time: " << j_times_.back()
-                  << "\n\tK time: " << k_times_.back() << "\n\titer time: "
-                  << scf_times_.back()
-                  // << "\n\tW sparse only storage: " << w_sparse_store_.back()
-                  // << "\n\tW sparse clr(no recompress): " <<
-                  // clr_w_no_recompress_
-                  // << "\n\tW sparse clr storage: " <<
-                  // w_sparse_clr_store_.back()
-                  // << "\n\tLocalization time: " << localization_times_.back()
-                  << std::endl;
-            // if (iter == 0) {
-            //     std::cout << "\tExchange energy = " << exchange_energy_
-            //               << std::endl;
-            // }
-
-
-            ++iter;
-        }
-
-        final_rms_error_ = rms_error;
-        final_ediff_error_ = error;
-        final_energy_ = old_energy;
-    }
-
-    double energy() {
-        return repulsion_
-               + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
-    }
-
-    array_type fock_matrix() const { return F_; }
-
-    JobSummary init_summary() {
-        auto avg = [](std::vector<double> const &v) {
-            auto sum = 0.0;
-            for (auto const &e : v) {
-                sum += e;
-            }
-            return sum / v.size();
-        };
-
-        JobSummary js;
-
-        // Times
-        js.avg_w_time = avg(w_times_);
-        js.avg_k_time = avg(k_times_);
-        js.avg_occ_ri_k_time = avg(occ_k_times_);
-        js.avg_loc_time = avg(localization_times_);
-
-        // Storages
-        js.avg_w_sparse_only_storage = avg(w_sparse_store_);
-        js.avg_w_sparse_clr_storage = avg(w_sparse_clr_store_);
-        js.w_fully_dense_storage = w_full_storage_;
-
-        // Thresholds
-        js.ta_sparse_threshold = TA::SparseShape<float>::threshold();
-
-        // Energies
-        js.hf_energy = final_energy_;
-        js.hf_energy_diff_error = final_ediff_error_;
-        js.hf_grad_div_volume = final_rms_error_;
-        js.exchange_energy = exchange_energy_;
-
-        return js;
-    }
-};
-
-
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
-    std::string mol_file = "";
-    std::string basis_name = "";
-    std::string df_basis_name = "";
-    int nclusters = 0;
     std::cout << std::setprecision(15);
-    double threshold = 1e-12;
-    double clr_threshold = 1e-8;
-    std::string eri3_storage_method;
-    std::string recompression_method;
-    int64_t scf_method = 0;
-    if (argc >= 9) {
-        mol_file = argv[1];
-        basis_name = argv[2];
-        df_basis_name = argv[3];
-        nclusters = std::stoi(argv[4]);
-        threshold = std::stod(argv[5]);
-        clr_threshold = std::stod(argv[6]);
-        eri3_storage_method = argv[7];
-        recompression_method = argv[8];
+
+    rapidjson::Document in;
+    parse_input(argc, argv, in);
+
+    double ta_threshold = in.HasMember("sparse threshold")
+                                ? in["sparse threshold"].GetDouble()
+                                : 1e-11;
+
+    TiledArray::SparseShape<float>::threshold(ta_threshold);
+    std::cout << "TA::Sparse Threshold: " << ta_threshold << std::endl;
+
+    if (in.HasMember("engine precision")) {
+        integrals::detail::integral_engine_precision
+              = in["engine precision"].GetDouble();
     }
-    if (argc == 10) {
-        scf_method = std::stoi(argv[9]);
+
+    std::string mol_file;
+    if (!in.HasMember("xyz file")) {
+        if (world.rank() == 0) {
+            std::cout << "Did not detect xyz file in input.\n";
+        }
+        madness::finalize();
+        return 0;
+    } else {
+        mol_file = in["xyz file"].GetString();
     }
-    if (argc >= 11 || argc < 9) {
-        std::cout << "input is $./program mol_file basis_file df_basis_file "
-                     "nclusters sparse_thresh clr_thresh eri3_method(direct, "
-                     "stored) recompression_method(compress, nocompress)";
+
+    auto atom_mol = molecule::read_xyz(mol_file);
+
+    molecule::Molecule clustered_mol;
+    if (in.HasMember("cluster by atom") && in["cluster by atom"].GetBool()) {
+        clustered_mol = std::move(atom_mol);
+    } else if (in.HasMember("number of clusters")) {
+        auto nclusters = in["number of clusters"].GetInt();
+        clustered_mol
+              = molecule::attach_hydrogens_and_kmeans(atom_mol.clusterables(),
+                                                      nclusters);
+    } else {
+        if (world.rank() == 0) {
+            std::cout << "Did not specify the number of clusters\n";
+        }
+        madness::finalize();
         return 0;
     }
-
-    if (recompression_method == "nocompress") {
-        std::cout << "Not using rounded addition." << std::endl;
-        tensor::detail::recompress = false;
-    } else {
-        std::cout << "Using rounded addition." << std::endl;
-    }
-    world.gop.fence();
-
-    bool use_direct_ints;
-    if (eri3_storage_method == "direct") {
-        use_direct_ints = true;
-        std::cout << "Using direct 3 center integrals" << std::endl;
-    } else if (eri3_storage_method == "stored") {
-        use_direct_ints = false;
-        std::cout << "Using stored 3 center integrals" << std::endl;
-    } else {
-        std::cout << "Integral storage method must be either direct or stored"
-                  << std::endl;
-        return 0;
-    }
-
-    TiledArray::SparseShape<float>::threshold(threshold);
-    std::cout << "TA::Sparse Threshold: " << threshold << std::endl;
-
-    auto clustered_mol = molecule::attach_hydrogens_and_kmeans(
-          molecule::read_xyz(mol_file).clusterables(), nclusters);
 
     auto repulsion_energy = clustered_mol.nuclear_repulsion();
     std::cout << "Nuclear Repulsion Energy: " << repulsion_energy << std::endl;
     auto occ = clustered_mol.occupation(0);
 
+
+    std::string basis_name = in["obs name"].GetString();
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
     std::cout << "Basis has " << basis.nfunctions() << " functions\n";
 
     auto df_clustered_mol = clustered_mol;
 
+    std::string df_basis_name = in["df name"].GetString();
     basis::BasisSet dfbs(df_basis_name);
     basis::Basis df_basis(dfbs.get_cluster_shells(df_clustered_mol));
 
     libint2::init();
-
     const auto bs_array = utility::make_array(basis, basis);
 
     // Overlap ints
@@ -702,6 +133,25 @@ int main(int argc, char *argv[]) {
 
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
+
+    const auto dfbs_array = utility::make_array(df_basis, df_basis);
+    auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
+
+    auto three_c_array = utility::make_array(df_basis, basis, basis);
+    decltype(H) M = ints::sparse_integrals(world, eri_e, dfbs_array);
+
+    const auto schwarz_thresh = in.HasMember("schwarz threshold")
+                                      ? in["schwarz threshold"].GetDouble()
+                                      : 1e-12;
+    if (world.rank() == 0) {
+        std::cout << "Schwarz Threshold: " << schwarz_thresh << std::endl;
+    }
+    auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
+    auto shr_screen = std::make_shared<ints::SchwarzScreen>(
+          sbuilder(world, eri_e, df_basis, basis));
+
+    auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
+                                              shr_screen);
 
     // Trying my hand at making C for CADF.
     std::unordered_map<int, TA::TensorD> tiles;
@@ -741,12 +191,14 @@ int main(int argc, char *argv[]) {
               = utility::make_array(df_by_atom, obs_by_atom, obs_by_atom);
         decltype(H) M = ints::sparse_integrals(world, eri_e, dfbs_array);
 
-        const auto schwarz_thresh = 1e-12;
+        const auto schwarz_thresh = in.HasMember("schwarz threshold")
+                                          ? in["schwarz threshold"].GetDouble()
+                                          : 1e-12;
         auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
-              sbuilder(world, eri_e, df_by_atom, obs_by_atom));
+              sbuilder(world, eri_e, df_basis, basis));
 
-        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
+        auto eri3 = ints::direct_dense_integrals(world, eri_e, three_c_array,
                                                   shr_screen);
 
         auto const &eri3_tiles = eri3.array().trange().tiles();
@@ -949,25 +401,7 @@ int main(int argc, char *argv[]) {
                   << C_df.get_shape().sparsity() << std::endl;
     }
 
-#if 1
-    // Continue with scf
     {
-        const auto dfbs_array = utility::make_array(df_basis, df_basis);
-        auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
-
-        auto three_c_array = utility::make_array(df_basis, basis, basis);
-        decltype(H) M = ints::sparse_integrals(world, eri_e, dfbs_array);
-
-        const auto schwarz_thresh = 1e-14;
-        std::cout << "Schwarz Threshold: " << schwarz_thresh << std::endl;
-        auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
-        auto shr_screen = std::make_shared<ints::SchwarzScreen>(
-              sbuilder(world, eri_e, df_basis, basis));
-
-        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
-                                                  shr_screen);
-
-        // Make M_inv
         decltype(M) M_inv_oh;
         auto M_eig = TA::array_to_eigen(M);
         Eig::SelfAdjointEigenSolver<MatrixD> es(M_eig);
@@ -976,7 +410,6 @@ int main(int argc, char *argv[]) {
         M_inv_oh = array_ops::eigen_to_array<TA::TensorD>(
               world, M_eig_inv_oh, M.trange().data()[0], M.trange().data()[1]);
 
-
         auto F_soad = scf::fock_from_soad_low_mem(world, clustered_mol, basis,
                                                   eri_e, H);
 
@@ -984,6 +417,13 @@ int main(int argc, char *argv[]) {
               = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
 
         auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+
+        const auto clr_threshold = in.HasMember("clr threshold")
+                                         ? in["clr threshold"].GetDouble()
+                                         : 1e-6;
+        if (world.rank() == 0) {
+            std::cout << "CLR threshold = " << clr_threshold << std::endl;
+        }
 
         auto deri3 = ints::direct_sparse_integrals(
               world, eri_e, three_c_array, shr_screen,
@@ -996,64 +436,80 @@ int main(int argc, char *argv[]) {
         auto dM = TA::to_new_tile_type(
               M, tensor::TaToDecompTensor(clr_threshold, false));
 
-        bool force_c_shape = (scf_method == 0) ? false : true;
-        ThreeCenterScf scf(H, F_soad, S, M_inv_oh, r_xyz, occ / 2,
-                           repulsion_energy, clr_threshold, force_c_shape);
+        decltype(dC_df) dG_df;
+        world.gop.fence();
+        auto old_compress = tensor::detail::recompress;
+        tensor::detail::recompress = true;
+        dG_df("X, mu, nu")
+              = (deri3("X, mu, nu") - 0.5 * dM("X,Y") * dC_df("Y,mu,nu"));
+        ta_routines::minimize_storage(dG_df, clr_threshold);
+        world.gop.fence();
+        tensor::detail::recompress = old_compress;
 
-        if (scf_method == 0 || scf_method == 1) {
-            decltype(dC_df) dG_df;
-            dG_df("X, mu, nu")
-                  = (deri3("X, mu, nu") - 0.5 * dM("X,Y") * dC_df("Y,mu,nu"));
-            
-            world.gop.fence();
-            auto old_compress = tensor::detail::recompress;
-            tensor::detail::recompress = true;
-            if (clr_threshold != 0) {
-                TA::foreach_inplace(
-                      dG_df, [](tensor::Tile<tensor::DecomposedTensor<double>> &
-                                  t_tile) {
-                          auto &t = t_tile.tile();
-                          auto input_norm = norm(t);
-
-                          auto compressed_norm = input_norm;
-                          if (t.cut() != 0.0) {
-                              if (t.ndecomp() == 1) {
-                                  auto test = tensor::algebra::
-                                        two_way_decomposition(t);
-                                  if (!test.empty()) {
-                                      t = test;
-                                      compressed_norm = norm(t);
-                                  }
-                              } else {
-                                  tensor::algebra::recompress(t);
-                                  compressed_norm = norm(t);
-                              }
-                          }
-
-                          // Both are always larger than or equal to the
-                          // real
-                          // norm.
-                          return std::min(input_norm, compressed_norm);
-                      });
-            } else {
-                dG_df.truncate();
-            }
-            world.gop.fence();
-            tensor::detail::recompress = old_compress;
-
-            auto g_store = utility::array_storage(dG_df);
-            std::cout << "G_df storage = \n" 
-                << "\tFull    " << g_store[0] << "\n"
-                << "\tSparse  " << g_store[1] << "\n"
-                << "\tCLR     " << g_store[2] << "\n" << std::flush;
-            world.gop.fence();
-
-            scf.solve(20, 1e-11, eri3, dC_df, dG_df);
-        } else if (scf_method == 2) {
-            scf.linear_solve(20, 1e-11, eri3, dC_df, dM, deri3);
+        auto g_store = utility::array_storage(dG_df);
+        if (world.rank() == 0) {
+            std::cout << "G_df storage = \n"
+                      << "\tFull    " << g_store[0] << "\n"
+                      << "\tSparse  " << g_store[1] << "\n"
+                      << "\tCLR     " << g_store[2] << "\n" << std::flush;
         }
+        world.gop.fence();
+
+
+        scf::ClosedShellSCF hf;
+
+        double TcutC = 0.0;
+        if (in.HasMember("TcutC")) {
+            TcutC = in["TcutC"].GetDouble();
+        }
+
+        if (in.HasMember("use forced shape")
+            && in["use forced shape"].GetBool()) {
+
+            if (world.rank() == 0) {
+                std::cout << "Using forced shape build\n";
+            }
+
+            scf::CADFForcedShapeFockBuilder<decltype(eri3)> cadf_builder(
+                  M, eri3, dC_df, dG_df, clr_threshold);
+
+            if (in.HasMember("coulomb sparse threshold")) {
+                cadf_builder.set_J_sparse_thresh(
+                      in["coulomb sparse threshold"].GetDouble());
+
+                if (world.rank() == 0) {
+                    std::cout << "Changing J threshold to "
+                              << in["coulomb sparse threshold"].GetDouble()
+                              << std::endl;
+                }
+            }
+
+            hf = scf::ClosedShellSCF(H, S, occ / 2, repulsion_energy,
+                                     std::move(cadf_builder), F_soad, TcutC);
+        } else {
+            scf::CADFFockBuilder<decltype(eri3)> cadf_builder(
+                  M, eri3, dC_df, dG_df, clr_threshold);
+
+            if (in.HasMember("coulomb sparse threshold")) {
+                cadf_builder.set_J_sparse_thresh(
+                      in["coulomb sparse threshold"].GetDouble());
+
+                if (world.rank() == 0) {
+                    std::cout << "Changing J threshold to "
+                              << in["coulomb sparse threshold"].GetDouble()
+                              << std::endl;
+                }
+            }
+
+            hf = scf::ClosedShellSCF(H, S, occ / 2, repulsion_energy,
+                                     std::move(cadf_builder), F_soad, TcutC);
+        }
+
+        world.gop.fence();
+
+        hf.solve(in["scf max iter"].GetInt(),
+                 in["scf convergence threshold"].GetDouble());
     }
-#endif
 
     madness::finalize();
     return 0;

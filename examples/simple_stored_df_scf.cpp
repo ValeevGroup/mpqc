@@ -346,7 +346,7 @@ class ThreeCenterScf {
         darray_type J;
         auto j0 = mpqc_time::fenced_now(world);
         auto old_thresh = TA::SparseShape<float>::threshold();
-        TA::SparseShape<float>::threshold(std::min(1e-16f, old_thresh));
+        TA::SparseShape<float>::threshold(std::min(1e-18f, old_thresh));
 
         J("mu, nu") = eri3("Y,mu,nu")
                       * (dV_inv_oh_("Y,Z")
@@ -400,7 +400,6 @@ class ThreeCenterScf {
         w_sparse_store_.push_back(w_store[1]);
         w_sparse_clr_store_.push_back(w_store[2]);
         w_full_storage_ = w_store[0];
-
 
         auto occk0 = mpqc_time::fenced_now(world);
 
@@ -582,6 +581,8 @@ int main(int argc, char *argv[]) {
     std::string eri3_storage_method;
     std::string recompression_method;
     double mp2_mem_thresh = 60;
+    auto schwarz_thresh = 1e-12;
+
     if (argc >= 9) {
         mol_file = argv[1];
         basis_name = argv[2];
@@ -595,7 +596,10 @@ int main(int argc, char *argv[]) {
     if (argc == 10) {
         mp2_mem_thresh = std::stod(argv[9]);
     }
-    if (argc >= 11 || argc < 9) {
+    if(argc == 11){
+        schwarz_thresh = std::stod(argv[10]);
+    }
+    if (argc > 11 || argc < 9) {
         std::cout << "input is $./program mol_file basis_file df_basis_file "
                      "nclusters sparse_thresh clr_thresh eri3_method(direct, "
                      "stored) recompression_method(compress, nocompress)";
@@ -717,7 +721,6 @@ int main(int argc, char *argv[]) {
     auto three_c_array = utility::make_array(df_basis, basis, basis);
 
     { // Schwarz Screened ints
-        const auto schwarz_thresh = 1e-12;
         if (world.rank() == 0){
             std::cout << "Schwarz Threshold: " << schwarz_thresh << std::endl;
         }
@@ -884,7 +887,7 @@ int main(int argc, char *argv[]) {
 
             world.gop.fence();
             auto old_thresh = TA::SparseShape<float>::threshold();
-            TA::SparseShape<float>::threshold(std::min(1e-16f, old_thresh));
+            TA::SparseShape<float>::threshold(std::min(1e-18f, old_thresh));
 
             auto eri3 = ints::direct_sparse_integrals(world, eri_e,
                                                       three_c_array, shr_screen,

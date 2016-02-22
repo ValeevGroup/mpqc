@@ -5,15 +5,18 @@
 #include "../common/namespaces.h"
 #include "../include/tiledarray.h"
 
+#include "../ta_routines/array_to_eigen.h"
+
+#include "builder.h"
+
 namespace mpqc {
 namespace scf {
 
-class DFFockBuilder {
-  public:
-    using array_type = TA::TSpArrayD;
-
+template <typename Integral>
+class DFFockBuilder : public FockBuilder {
   private:
     array_type L_inv_; // Metric Cholesky inverse
+    Integral eri3_;
 
   public:
     /*! \brief DFFockBuilder constructor takes a metric matrix
@@ -23,25 +26,35 @@ class DFFockBuilder {
      * metric and to allow the behavior of the FockBuilder
      * to change without requiring user code to change.
      */
-    DFFockBuilder(array_type const &M);
+    DFFockBuilder(array_type const &M, Integral const &eri3) : eri3_(eri3) {
+        auto M_eig = array_ops::array_to_eigen(M);
+
+        MatrixD L_inv_eig
+              = MatrixD(Eig::LLT<MatrixD>(M_eig).matrixL()).inverse();
+
+        auto tr_M = M.trange().data()[0];
+
+        L_inv_ = array_ops::eigen_to_array<TA::TensorD>(M.get_world(),
+                                                        L_inv_eig, tr_M, tr_M);
+    }
+
 
     /*! \brief This builder requires the user to compute coefficients
      *
      * Integral is a type that can be used in a TiledArray expression, the
      * template is to allow for Direct Integral wrappers or other options.
      */
-    template <typename Integral>
-    array_type operator()(Integral const &eri3, array_type const &C_mo) {
+    array_type operator()(array_type const &D, array_type const &C) override {
         array_type W;
-        W("X, rho, i") = L_inv_("X,Y") * (eri3("Y, rho, sig") * C_mo("sig, i"));
+        W("X, rho, i") = L_inv_("X,Y") * (eri3_("Y, rho, sig") * C("sig, i"));
 
         // Make J
         array_type J;
-        J("mu, nu") = eri3("Z, mu, nu")
-                      * (L_inv_("X, Z") * (W("X, rho, i") * C_mo("rho, i")));
-        
+        J("mu, nu") = eri3_("Z, mu, nu")
+                      * (L_inv_("X, Z") * (W("X, rho, i") * C("rho, i")));
+
         // Make K
-        
+
         // Permute W
         W("X, i, rho") = W("X, rho, i");
 
@@ -54,6 +67,8 @@ class DFFockBuilder {
 
         return G;
     }
+
+    void print_iter(std::string const &) override {}
 };
 
 } // namespace scf

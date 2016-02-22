@@ -1,7 +1,6 @@
-set(sources
-        scf.h
-        traditional_df_fock_builder.h
-        traditional_df_fock_builder.cpp
+set(sources 
+    scf.h
+    scf.cpp
         )
 
 add_library(scf ${sources})

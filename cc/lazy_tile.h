@@ -8,6 +8,7 @@
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 #include "integral_generator.h"
+#include "../integrals/integrals.h"
 
 static auto DIRECTAOTWOELECTONINTEGRAL = std::make_shared<mpqc::cc::TwoBodyIntGenerator<libint2::Coulomb>>();
 

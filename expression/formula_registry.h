@@ -35,24 +35,44 @@ namespace mpqc{
             registry_.insert(val);
         }
 
-        void insert(const Formula& formula, const Value& val){
-            registry_[formula] = val;
+        void insert(const Key& key, const Value& val){
+            registry_[key] = val;
         }
 
-        void remove(const Formula& formula){
-            registry_.erase(formula);
+        void remove(const Key& key){
+            registry_.erase(key);
         }
 
         void clear(){
             registry_.clear();
         }
 
-        iterator find(const Formula& formula){
-            return registry_.find(formula);
+        // find item, return iterator
+        iterator find(const Key& key) {
+            return registry_.find(key);
         }
 
-        const_iterator find(const Formula& formula) const{
-            return registry_.find(formula);
+        // find item, return const iterator
+        const_iterator find(const Key& key) const{
+            return registry_.find(key);
+        }
+
+        // find item, return iterator, if not found, throw
+        iterator retrieve(const Key& key){
+            auto iter = registry_.find(key);
+            if(iter==registry_.end()){
+                throw std::runtime_error("Key not found!");
+            }
+            return iter;
+        }
+
+        // return item, return const iterator, if not found, throw
+        const_iterator retrieve(const Key& key) const{
+            auto iter = registry_.find(key);
+            if(iter==registry_.cend()){
+                throw std::runtime_error("Key not found!");
+            }
+            return iter;
         }
 
         iterator begin() {

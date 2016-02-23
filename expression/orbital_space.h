@@ -19,18 +19,18 @@ public:
 
     OrbitalSpace() = default;
     OrbitalSpace(const OrbitalIndex& index, const basis::Basis& basis_set, const Array& tarray)
-            : mo_index_(index), basis_set_(std::make_shared<basis::Basis>(basis_set)), coefs_(tarray)
+            : index_(index), basis_set_(std::make_shared<basis::Basis>(basis_set)), coefs_(tarray)
     {}
 
     ~OrbitalSpace()= default;
 
     OrbitalIndex key(){
-        return mo_index_;
+        return index_;
     }
 
 private:
 
-    OrbitalIndex mo_index_;
+    OrbitalIndex index_;
     std::shared_ptr<basis::Basis> basis_set_;
     Array coefs_;
 

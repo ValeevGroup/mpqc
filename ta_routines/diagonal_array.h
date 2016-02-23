@@ -7,7 +7,7 @@
 #include "../tensor/decomposed_tensor.h"
 
 namespace mpqc {
-namespace ta_routines {
+namespace array_ops {
 
 template <typename T>
 void make_diagonal_tile(TiledArray::Tensor<T> &tile, T val) {
@@ -154,7 +154,7 @@ TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> create_diagonal_matrix(
     return diag;
 }
 
-} // namespace ta_routines
+} // namespace array_ops
 } // namespace mpqc
 
 #endif // MPQC_TAROUTINES_DIAGONALARRAY_H

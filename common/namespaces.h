@@ -6,20 +6,10 @@ namespace TiledArray {}
 namespace Eigen {}
 namespace madness {}
 
-namespace tcc {
-
-namespace integrals {}
-namespace tensor {}
-
-}
-
 
 namespace TA = TiledArray;
 namespace Eig = Eigen;
 namespace mad = madness;
-
-namespace tints = tcc::integrals;
-namespace ttensor = tcc::tensor;
 
 // MPQC FWD DECS
 namespace mpqc {

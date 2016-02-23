@@ -63,6 +63,7 @@ ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/basis)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/tensor)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/utility)
 ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/scf)
+ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/ta_routines)
 
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/tensor)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
@@ -71,8 +72,9 @@ LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/expression)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/f12)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/scf)
+LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/ta_routines)
 
-LIST(APPEND TileClusterChem_LIBRARIES molecule basis tensor utility f12 integrals expression scf)
+LIST(APPEND TileClusterChem_LIBRARIES molecule basis tensor utility f12 integrals expression ta_routines scf)
 
 MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")

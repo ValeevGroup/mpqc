@@ -13,7 +13,7 @@ namespace scf {
 class FockBuilder {
   public:
     using array_type = TA::TSpArrayD;
-    virtual ~FockBuilder(){};
+    virtual ~FockBuilder() = default;
 
     virtual array_type operator()(array_type const&, array_type const&) = 0;
 

@@ -9,6 +9,7 @@
 #include "../common/typedefs.h"
 #include "../include/tiledarray.h"
 #include "builder.h"
+#include "density_builder.h"
 
 #include <memory>
 
@@ -25,33 +26,29 @@ class ClosedShellSCF {
     array_type F_;
     array_type D_;
     array_type C_;
-    std::vector<array_type> r_xyz_ints_;
     TiledArray::DIIS<array_type> diis_;
 
-    std::unique_ptr<FockBuilder> builder_;
+    std::unique_ptr<FockBuilder> f_builder_;
+    std::unique_ptr<DensityBuilder> d_builder_;
 
     std::vector<double> scf_times_;
+    std::vector<double> d_times_;
+    std::vector<double> build_times_;
 
-    int64_t occ_;
     double repulsion_;
-
-    double TcutC_ = 0;
 
   public:
     ClosedShellSCF() = default;
 
-    template <typename Builder>
-    ClosedShellSCF(array_type const &H, array_type const &S, int64_t occ,
-                   double rep, std::vector<array_type> const &r_xyz,
-                   Builder builder, array_type const &F_guess = array_type{},
-                   double TcutC = 0)
+    template <typename FBuilder, typename DBuilder>
+    ClosedShellSCF(array_type const &H, array_type const &S, double rep,
+                   FBuilder f_builder, DBuilder d_builder,
+                   array_type const &F_guess = array_type{})
             : H_(H),
               S_(S),
-              r_xyz_ints_(r_xyz),
-              builder_(make_unique<Builder>(std::move(builder))),
-              occ_(occ),
-              repulsion_(rep),
-              TcutC_(TcutC) {
+              f_builder_(make_unique<FBuilder>(std::move(f_builder))),
+              d_builder_(make_unique<DBuilder>(std::move(d_builder))),
+              repulsion_(rep) {
 
         if (F_guess.is_initialized()) {
             F_ = F_guess;
@@ -59,7 +56,7 @@ class ClosedShellSCF {
             F_ = H_;
         }
 
-        compute_density(occ_);
+        compute_density();
     }
 
     inline array_type const &overlap() const { return S_; }
@@ -80,7 +77,7 @@ class ClosedShellSCF {
     bool solve(int64_t max_iters, double thresh);
 
   private:
-    void compute_density(int64_t occ);
+    void compute_density();
     void build_F();
 };
 

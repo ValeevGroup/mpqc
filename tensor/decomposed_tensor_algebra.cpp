@@ -565,7 +565,7 @@ integer piv_cholesky(
     const char uplo = 'U';
     std::unique_ptr<double[]> work{new double[2 * dim]};
 
-    Eigen::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor> D = a;
+    // Eigen::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor> D = a;
     dpstrf_(&uplo, &dim, a.data(), &dim, piv.data(), &rank, &tol, work.get(),
             &info);
 
@@ -577,7 +577,7 @@ integer piv_cholesky(
     Eig::PermutationWrapper<decltype(piv)> P(piv);
     a = a.triangularView<Eig::Lower>();
     // Eigen doesn't like you to assign to a with this expression directly
-    decltype(D) L = P * a.leftCols(rank);
+    typename std::remove_reference<decltype(a)>::type L = P * a.leftCols(rank);
     a = L;
 
     return rank;

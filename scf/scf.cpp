@@ -37,6 +37,7 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
         auto s0 = mpqc_time::fenced_now(world);
 
         build_F();
+        auto b1 = mpqc_time::fenced_now(world);
 
         auto current_energy = energy();
         error = std::abs(old_energy - current_energy);
@@ -49,20 +50,26 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
         rms_error = Grad("i,j").norm().get();
         diis_.extrapolate(F_, Grad);
 
-        compute_density(occ_);
+        auto d0 = mpqc_time::fenced_now(world);
+        compute_density();
         auto s1 = mpqc_time::fenced_now(world);
 
         scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
+        d_times_.push_back(mpqc_time::duration_in_s(d0, s1));
+        build_times_.push_back(mpqc_time::duration_in_s(s0, b1));
 
         if (world.rank() == 0) {
-            std::cout << "\titeration: " << iter << "\n"
-                      << "\t\tEnergy: " << old_energy << "\n"
-                      << "\t\tabs(Energy Change)/energy: "
+            std::cout << "iteration: " << iter << "\n"
+                      << "\tEnergy: " << old_energy << "\n"
+                      << "\tabs(Energy Change)/energy: "
                       << (error / std::abs(old_energy)) << "\n"
-                      << "\t\t(Gradient Norm)/n^2: " << (rms_error / volume)
-                      << "\n";
+                      << "\t(Gradient Norm)/n^2: " << (rms_error / volume) << "\n"
+                      << "\tScf Time: " << scf_times_.back() << "\n" 
+                      << "\t\tDensity Time: " << d_times_.back() << "\n" 
+                      << "\t\tFock Build Time: " << build_times_.back() << "\n";
         }
-        builder_->print_iter("\t\t");
+        f_builder_->print_iter("\t\t");
+        d_builder_->print_iter("\t\t");
         ++iter;
     }
 
@@ -75,35 +82,14 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
 
 }
 
-void ClosedShellSCF::compute_density(int64_t occ) {
-    auto F_eig = array_ops::array_to_eigen(F_);
-    auto S_eig = array_ops::array_to_eigen(S_);
-
-    Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
-    decltype(S_eig) C = es.eigenvectors().leftCols(occ);
-    auto tr_ao = S_.trange().data()[0];
-
-    auto occ_nclusters = (occ_ < 10) ? occ_ : 10;
-    auto tr_occ = scf::tr_occupied(occ_nclusters, occ_);
-
-    C_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C, tr_ao,
-                                                tr_occ);
-
-    auto U = mpqc::scf::BoysLocalization{}(C_, r_xyz_ints_);
-    C_("mu,i") = C_("mu,k") * U("k,i");
-
-    auto obs_ntiles = C_.trange().tiles().extent()[0];
-    scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
-
-    if (TcutC_ != 0) {
-        ta_routines::minimize_storage(C_, TcutC_);
-    }
-
-    D_("i,j") = C_("i,k") * C_("j,k");
+void ClosedShellSCF::compute_density() {
+    auto dc_pair = d_builder_->operator()(F_);
+    D_ = dc_pair.first;
+    C_ = dc_pair.second;
 }
 
 void ClosedShellSCF::build_F() {
-    F_("i,j") = H_("i,j") + builder_->operator()(D_, C_)("i,j");
+    F_("i,j") = H_("i,j") + f_builder_->operator()(D_, C_)("i,j");
 }
 
 

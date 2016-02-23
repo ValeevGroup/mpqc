@@ -37,6 +37,9 @@
 #include "../scf/cadf_helper_functions.h"
 #include "../scf/scf.h"
 
+#include "../scf/eigen_solve_density_builder.h"
+#include "../scf/purification_density_build.h"
+
 #include "../scf/cadf_builder.h"
 #include "../scf/cadf_builder_forced_shape.h"
 
@@ -85,11 +88,12 @@ int main(int argc, char *argv[]) {
 
     auto atom_mol = molecule::read_xyz(mol_file);
 
+    auto nclusters = 0;
     molecule::Molecule clustered_mol;
     if (in.HasMember("cluster by atom") && in["cluster by atom"].GetBool()) {
         clustered_mol = std::move(atom_mol);
     } else if (in.HasMember("number of clusters")) {
-        auto nclusters = in["number of clusters"].GetInt();
+        nclusters = in["number of clusters"].GetInt();
         clustered_mol
               = molecule::attach_hydrogens_and_kmeans(atom_mol.clusterables(),
                                                       nclusters);
@@ -399,6 +403,14 @@ int main(int argc, char *argv[]) {
 
         std::cout << "C df sparsity (by cluster) = "
                   << C_df.get_shape().sparsity() << std::endl;
+
+        auto array_storage_Cdf = utility::array_storage(C_df);
+        if (world.rank() == 0) {
+            std::cout << "C_df storage = \n"
+                      << "\tFull   " << array_storage_Cdf[0] << "\n"
+                      << "\tSparse " << array_storage_Cdf[1] << "\n"
+                      << "\tCLR    " << array_storage_Cdf[2] << "\n";
+        }
     }
 
     {
@@ -455,13 +467,19 @@ int main(int argc, char *argv[]) {
         }
         world.gop.fence();
 
-
         scf::ClosedShellSCF hf;
 
         double TcutC = 0.0;
         if (in.HasMember("TcutC")) {
             TcutC = in["TcutC"].GetDouble();
         }
+
+        // auto d_builder = scf::ESolveDensityBuilder(S, r_xyz, occ / 2,
+        // nclusters,
+        //                                            TcutC, "inverse sqrt");
+        auto d_builder
+              = scf::PurificationDensityBuilder(S, r_xyz, occ / 2, nclusters,
+                                                TcutC);
 
         if (in.HasMember("use forced shape")
             && in["use forced shape"].GetBool()) {
@@ -484,8 +502,9 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            hf = scf::ClosedShellSCF(H, S, occ / 2, repulsion_energy,
-                                     r_xyz, std::move(cadf_builder), F_soad, TcutC);
+            hf = scf::ClosedShellSCF(H, S, repulsion_energy,
+                                     std::move(cadf_builder),
+                                     std::move(d_builder), F_soad);
         } else {
             scf::CADFFockBuilder<decltype(eri3)> cadf_builder(
                   M, eri3, dC_df, dG_df, clr_threshold);
@@ -501,8 +520,9 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            hf = scf::ClosedShellSCF(H, S, occ / 2, repulsion_energy,
-                                     r_xyz, std::move(cadf_builder), F_soad, TcutC);
+            hf = scf::ClosedShellSCF(H, S, repulsion_energy,
+                                     std::move(cadf_builder),
+                                     std::move(d_builder), F_soad);
         }
 
         world.gop.fence();

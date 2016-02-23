@@ -34,6 +34,8 @@
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/scf.h"
 #include "../scf/traditional_df_fock_builder.h"
+#include "../scf/purification_density_build.h"
+#include "../scf/eigen_solve_density_builder.h"
 
 #include "../cc/ccsd_t.h"
 #include "../cc/lazy_tile.h"
@@ -236,30 +238,30 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto overlap_e = ints::make_1body_shr_pool("overlap", basis, mol);
         auto S = ints::sparse_integrals(world, overlap_e, bs_array);
         auto time1 = mpqc_time::fenced_now(world);
-        auto time = mpqc_time::duration_in_s(time0,time1);
-        mpqc::utility::print_par(world,"Overlap Time:  ", time, "\n");
+        auto time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::utility::print_par(world, "Overlap Time:  ", time, "\n");
 
         // Kinetic ints
         time0 = mpqc_time::fenced_now(world);
         auto kinetic_e = ints::make_1body_shr_pool("kinetic", basis, mol);
         auto T = ints::sparse_integrals(world, kinetic_e, bs_array);
         time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0,time1);
-        mpqc::utility::print_par(world,"Kinetic Time:  ", time, "\n");
+        time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::utility::print_par(world, "Kinetic Time:  ", time, "\n");
 
         time0 = mpqc_time::fenced_now(world);
         auto nuclear_e = ints::make_1body_shr_pool("nuclear", basis, mol);
         auto V = ints::sparse_integrals(world, nuclear_e, bs_array);
         time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0,time1);
-        mpqc::utility::print_par(world,"Nuclear Time:  ", time, "\n");
+        time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::utility::print_par(world, "Nuclear Time:  ", time, "\n");
 
         time0 = mpqc_time::fenced_now(world);
         decltype(T) H;
         H("i,j") = T("i,j") + V("i,j");
         time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0,time1);
-        mpqc::utility::print_par(world,"Core Time:  ", time, "\n");
+        time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::utility::print_par(world, "Core Time:  ", time, "\n");
 
         time0 = mpqc_time::fenced_now(world);
         auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
@@ -267,7 +269,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
               = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
         time1 = mpqc_time::fenced_now(world);
         time = mpqc_time::duration_in_s(time0, time1);
-        mpqc::utility::print_par(world,"Soad Time:  ", time, "\n");
+        mpqc::utility::print_par(world, "Soad Time:  ", time, "\n");
 
 
         time0 = mpqc_time::fenced_now(world);
@@ -275,7 +277,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array);
         time1 = mpqc_time::fenced_now(world);
         time = mpqc_time::duration_in_s(time0, time1);
-        mpqc::utility::print_par(world,"Three Center Time:  ", time, "\n");
+        mpqc::utility::print_par(world, "Three Center Time:  ", time, "\n");
 
         time0 = mpqc_time::fenced_now(world);
         const auto dfbs_array = utility::make_array(df_basis, df_basis);
@@ -283,7 +285,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         scf::DFFockBuilder<decltype(eri3)> builder(Metric, eri3);
         time1 = mpqc_time::fenced_now(world);
         time = mpqc_time::duration_in_s(time0, time1);
-        mpqc::utility::print_par(world,"Two Center Time:  ", time, "\n");
+        mpqc::utility::print_par(world, "Two Center Time:  ", time, "\n");
 
         time0 = mpqc_time::fenced_now(world);
         auto multi_pool
@@ -291,10 +293,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
         time1 = mpqc_time::fenced_now(world);
         time = mpqc_time::duration_in_s(time0, time1);
-        mpqc::utility::print_par(world,"Multipole Integral Time:  ", time, "\n");
+        mpqc::utility::print_par(world, "Multipole Integral Time:  ", time,
+                                 "\n");
 
-        scf::ClosedShellSCF scf(
-              H, S, occ / 2, repulsion_energy, r_xyz, std::move(builder), F_soad);
+        auto d_builder = scf::PurificationDensityBuilder(S, r_xyz, occ / 2,
+                                                         nclusters, 0.0, false);
+
+        // auto d_builder
+        //       = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters, 0.0,
+        //       "cholesky inverse", false);
+
+        scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(builder),
+                                std::move(d_builder), F_soad);
 
         scf.solve(scf_max_iter, scf_converge);
         // end SCF
@@ -320,13 +330,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
             MatrixD L_inv_eig
                   = MatrixD(Eig::LLT<MatrixD>(M_eig).matrixL()).inverse();
             auto tr_M = Metric.trange().data()[0];
-            L_inv = array_ops::eigen_to_array<TA::TensorD>(
-                  world, L_inv_eig, tr_M, tr_M);
+            L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
+                                                           tr_M, tr_M);
         }
 
         TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> Xab;
         Xab("X,a,b") = L_inv("X,Y") * eri3("Y,a,b");
-
 
         auto F_eig = array_ops::array_to_eigen(F);
         auto S_eig = array_ops::array_to_eigen(S);
@@ -489,7 +498,8 @@ int main(int argc, char *argv[]) {
     int rc = 0;
 
     auto &world = madness::initialize(argc, argv);
-    mpqc::utility::print_par(world, "MADNESS process total size: ", world.size(), "\n");
+    mpqc::utility::print_par(world, "MADNESS process total size: ",
+                             world.size(), "\n");
 
     try {
 

@@ -1,0 +1,84 @@
+#include "../integrals/integrals.h"
+#include "../common/typedefs.h"
+#include "eigen_solve_density_builder.h"
+
+#include "../ta_routines/array_to_eigen.h"
+#include "../ta_routines/cholesky_inverse.h"
+#include "../ta_routines/sqrt_inv.h"
+#include "../ta_routines/minimize_storage.h"
+
+#include "diagonalize_for_coffs.hpp"
+#include "orbital_localization.h"
+#include "clusterd_coeffs.h"
+
+#include <iostream>
+
+namespace mpqc {
+namespace scf {
+
+using array_type = ESolveDensityBuilder::array_type;
+
+ESolveDensityBuilder::ESolveDensityBuilder(
+      array_type const &S, std::vector<array_type> r_xyz, int64_t occ,
+      int64_t nclusters, double TcutC, std::string const &metric_decomp_type,
+      bool localize)
+        : S_(S),
+          r_xyz_ints_(r_xyz),
+          occ_(occ),
+          n_coeff_clusters_(nclusters),
+          TcutC_(TcutC),
+          metric_decomp_type_(metric_decomp_type),
+          localize_(localize) {
+    if (metric_decomp_type_ == "cholesky inverse") {
+        M_inv_ = array_ops::cholesky_inverse(S_);
+    } else if (metric_decomp_type_ == "inverse sqrt") {
+        M_inv_ = array_ops::inverse_sqrt(S_);
+    } else if (metric_decomp_type_ == "conditioned inverse sqrt") {
+        // M_inv_ = cond_inv_sqrt(S_);
+        throw "Error conditioned inverse sqrt is not yet implemented "
+              "for "
+              "EsolveDensityBuilder\n";
+    } else {
+        throw "Error did not recognize overlap decomposition in "
+              "EsolveDensityBuilder";
+    }
+}
+
+std::pair<array_type, array_type> ESolveDensityBuilder::
+operator()(array_type const &F) {
+    array_type Fp, C, Cao, D;
+    Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
+
+    auto Fp_eig = array_ops::array_to_eigen(Fp);
+    Eig::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
+
+    decltype(Fp_eig) C_eig = es.eigenvectors().leftCols(occ_);
+    auto tr_ao = Fp.trange().data()[0];
+
+    auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
+    C = array_ops::eigen_to_array<TA::TensorD>(Fp.get_world(), C_eig, tr_ao,
+                                               tr_occ);
+
+    // Get back to AO land
+    Cao("i,j") = M_inv_("k,i") * C("k,j");
+
+    if (localize_) {
+        auto U = mpqc::scf::BoysLocalization{}(Cao, r_xyz_ints_);
+        Cao("mu,i") = Cao("mu,k") * U("k,i");
+
+        auto obs_ntiles = Cao.trange().tiles().extent()[0];
+        scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
+    }
+
+    if (TcutC_ != 0) {
+        ta_routines::minimize_storage(Cao, TcutC_);
+    }
+
+    D("i,j") = Cao("i,k") * Cao("j,k");
+
+    return std::make_pair(D, Cao);
+}
+
+
+} // namespace scf
+} // namespace mpqc

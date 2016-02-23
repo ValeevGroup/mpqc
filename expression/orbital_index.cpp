@@ -211,7 +211,11 @@ bool OrbitalIndex::is_mo_in_ribs() const {
     return index >= 15;
 }
 
-OrbitalIndex OrbitalIndex::mo_to_ao() {
+OrbitalIndex OrbitalIndex::mo_to_ao() const{
+
+    if(this->is_ao()){
+        return OrbitalIndex(*this);
+    }
 
     std::wstring new_string;
 

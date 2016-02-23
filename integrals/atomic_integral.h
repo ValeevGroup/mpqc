@@ -319,6 +319,7 @@ namespace integrals{
         kernel = get_two_body_engine_kernel(operation);
     }
 
+    //TODO better printing with parallel
     /// Atomic Integral Class
     //// Op is a function
     /// Op will take TA::TensorD as argument and return Tile
@@ -348,6 +349,11 @@ namespace integrals{
         virtual ~AtomicIntegral() = default;
 
         TArray compute(const std::wstring& );
+        TArray compute(const Formula& );
+
+        const FormulaRegistry<TArray> &registry() const {
+            return ao_formula_registry_;
+        }
 
         TArray compute_direct(const std::wstring& );
 
@@ -446,8 +452,12 @@ namespace integrals{
 
     template <typename Tile, typename Policy>
     typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute(const std::wstring& formula_string) {
+        auto formula = Formula(formula_string);
+        return compute(formula);
+    }
 
-        Formula formula(formula_string);
+    template <typename Tile, typename Policy>
+    typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute(const Formula& formula) {
 
         auto iter = ao_formula_registry_.find(formula);
 

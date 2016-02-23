@@ -12,28 +12,30 @@
 #include "../ta_routines/tarray_block.h"
 #include "../cc/trange1_engine.h"
 #include "../cc/mo_block.h"
+#include "../utility/parallel_print.h"
 
 
-using namespace tcc;
+using namespace mpqc;
 
-namespace tcc {
+namespace mpqc{
 
 
     template<typename Tile, typename Policy>
     class MP2 {
-
+        using array_type = TA::DistArray<Tile,Policy>;
     public:
 
-        typedef TA::Array<double, 2, Tile, Policy> TArray2;
-        typedef TA::Array<double, 3, Tile, Policy> TArray3;
-        typedef TA::Array<double, 4, Tile, Policy> TArray4;
 
-        MP2(const TArray2 &fock, const TArray2 &s_ab, const TArray3 &Xab,
+        MP2(const array_type &fock, const array_type &s_ab, const array_type &Xab,
             const std::shared_ptr<TRange1Engine> tre) : trange1_engine_(tre) {
 
             // initialize intergral g
             init(fock, s_ab, Xab);
         };
+
+        MP2(const array_type& g, const Eigen::VectorXd orbital_energy, const std::shared_ptr<TRange1Engine> tre)
+                : g_(g), orbital_energy_(std::make_shared<Eigen::VectorXd>(orbital_energy)), trange1_engine_(tre){}
+
 
         MP2() = default;
 
@@ -47,7 +49,7 @@ namespace tcc {
             }
         }
 
-        const TArray4 &get_g() const {
+        const array_type &get_g() const {
             return g_;
         }
 
@@ -103,18 +105,17 @@ namespace tcc {
         //void init(const TArray2& fock, const TArray2& s_mn, const TArray4& mnkl);
 
         // template <typename Tile, typename Policy>
-        void init(const TArray2 &fock, const TArray2 &s_mn,
-                  const TArray3 &Xmn) {
+        void init(const array_type &fock, const array_type &s_mn,
+                  const array_type &Xmn) {
 
-            auto fock_eig = tcc::array_ops::array_to_eigen(fock);
-            auto s_mn_eig = tcc::array_ops::array_to_eigen(s_mn);
+            auto fock_eig = mpqc::array_ops::array_to_eigen(fock);
+            auto s_mn_eig = mpqc::array_ops::array_to_eigen(s_mn);
 
             Eigen::GeneralizedSelfAdjointEigenSolver<decltype(s_mn_eig)> es(
                     fock_eig, s_mn_eig);
 
             std::size_t n_frozen_core = trange1_engine_->get_nfrozen();
             std::size_t occupation = trange1_engine_->get_occ();
-            std::size_t block_size = trange1_engine_->get_block_size();
 
             Eigen::VectorXd evals = es.eigenvalues().bottomRows(s_mn_eig.rows() - n_frozen_core);
             auto C_all = es.eigenvectors();
@@ -128,7 +129,6 @@ namespace tcc {
             auto tr_occ = trange1_engine_->get_occ_tr1();
             auto tr_vir = trange1_engine_->get_vir_tr1();
 
-            utility::print_par(fock.get_world(), "Block Size in MO     ", block_size, "\n");
             utility::print_par(fock.get_world(), "TiledRange1 Occupied ", tr_occ, "\n");
             utility::print_par(fock.get_world(), "TiledRange1 Virtual  ", tr_vir, "\n");
 
@@ -137,7 +137,7 @@ namespace tcc {
 
             auto Cv = array_ops::eigen_to_array<TA::Tensor < double>> (fock.get_world(), C_vir, tr_0, tr_vir);
 
-            TArray3 Xmn_mo;
+            array_type Xmn_mo;
             Xmn_mo("X,i,a") = Xmn("X,mu,nu") * Ci("mu,i") * Cv("nu,a");
             // construct two electron mo (ia|jb)
             g_("i,a,j,b") = Xmn_mo("X,i,a") * Xmn_mo("X,j,b");
@@ -149,9 +149,9 @@ namespace tcc {
 
     private:
         // two electron mo (ia|jb)
-        TArray4 g_;
+        array_type g_;
         std::shared_ptr<Eigen::VectorXd> orbital_energy_;
-        std::shared_ptr<tcc::TRange1Engine> trange1_engine_;
+        std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
     };
 
 }

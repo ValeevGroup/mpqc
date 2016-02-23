@@ -18,26 +18,38 @@ class OrbitalSpace{
 public:
 
     OrbitalSpace() = default;
-    OrbitalSpace(const OrbitalIndex& index, const basis::Basis& basis_set, const Array& tarray)
-            : index_(index), basis_set_(std::make_shared<basis::Basis>(basis_set)), coefs_(tarray)
+    OrbitalSpace(const OrbitalIndex& index, const Array& tarray)
+            : index_(index), coefs_(tarray)
     {}
 
     ~OrbitalSpace()= default;
 
-    OrbitalIndex key(){
+    OrbitalIndex &key(){
         return index_;
     }
+
+    const OrbitalIndex &key() const {
+        return index_;
+    }
+
+    // interface to TA::Array () function
+    TA::expressions::TsrExpr<Array,true>
+            operator()(const std::string& vars){
+        return coefs_(vars);
+    };
+
+    // interface to TA::Array () function
+    TA::expressions::TsrExpr<const Array,true>
+    operator()(const std::string& vars) const {
+        return coefs_(vars);
+    };
 
 private:
 
     OrbitalIndex index_;
-    std::shared_ptr<basis::Basis> basis_set_;
     Array coefs_;
 
 };
-
-
-
 
 }
 

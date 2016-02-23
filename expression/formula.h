@@ -40,12 +40,31 @@ namespace mpqc{
             return formula_;
         }
 
-
         const std::vector<OrbitalIndex> &left_index() const {
             return left_index_;
         }
 
+        std::vector<OrbitalIndex> &left_index() {
+            return left_index_;
+        }
+
         const std::vector<OrbitalIndex> &right_index() const {
+            return right_index_;
+        }
+
+        void set_formula(const std::wstring &formula) {
+            Formula::formula_ = formula;
+        }
+
+        void set_right_index(const std::vector<OrbitalIndex> &right_index) {
+            Formula::right_index_ = right_index;
+        }
+
+        void set_left_index(const std::vector<OrbitalIndex> &left_index) {
+            Formula::left_index_ = left_index;
+        }
+
+        std::vector<OrbitalIndex> &right_index() {
             return right_index_;
         }
 

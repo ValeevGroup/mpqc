@@ -24,8 +24,14 @@ public:
 
     OrbitalSpaceRegistry()= default;
     OrbitalSpaceRegistry(const element_type& map) : Registry<Key,Value>(map){}
+
+    void add(const Value& val);
 };
 
+template <typename Array>
+void OrbitalSpaceRegistry<Array>::add(const OrbitalSpaceRegistry::Value &val) {
+    this->insert(val.key(),val);
+}
 } // end of namespace mpqc
 
 

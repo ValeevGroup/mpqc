@@ -22,6 +22,7 @@
 #include "../f12/utility.h"
 #include "../integrals/integrals.h"
 #include "../integrals/atomic_integral.h"
+#include "../integrals/molecular_integral.h"
 #include "../expression/orbital_space_registry.h"
 
 #include "../utility/time.h"
@@ -29,6 +30,8 @@
 #include "../utility/array_info.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../scf/traditional_df_fock_builder.h"
+
+#include "../mp2/mp2.h"
 
 #include <memory>
 #include <locale>
@@ -105,6 +108,64 @@ int main(int argc, char *argv[]) {
     scf::ClosedShellSCF<scf::DFFockBuilder> scf(H, S, occ / 2, repulsion_energy, std::move(builder));
     scf.solve(50, 1e-8, eri3);
 
+    // obs fock build
+    std::size_t all = S.trange().elements().extent()[0];
+    auto tre = TRange1Engine(occ / 2, all, 12, 12, 0);
+
+    auto F = scf.fock();
+    auto L_inv = builder.inv();
+
+    {
+        TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> Xab;
+        Xab("X,a,b") = L_inv("X,Y") * eri3("Y,a,b");
+
+        //ri-mp2
+        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(F, S, Xab, std::make_shared<TRange1Engine>(tre));
+        mp2.compute();
+    }
+
+    //mp2
+    // solve Coefficient
+    std::size_t n_frozen_core = 0;
+    auto F_eig = array_ops::array_to_eigen(F);
+    auto S_eig = array_ops::array_to_eigen(S);
+    Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
+    auto ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
+
+    auto C_all = es.eigenvectors();
+    decltype(S_eig) C_occ = C_all.block(0, 0, S_eig.rows(),occ / 2);
+    decltype(S_eig) C_occ_corr = C_all.block(0, n_frozen_core, S_eig.rows(),occ / 2 - n_frozen_core);
+    decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occ / 2);
+
+    auto tr_0 = eri3.trange().data().back();
+    auto tr_all = tre.get_all_tr1();
+    auto tr_i0 = tre.get_occ_tr1();
+    auto tr_vir = tre.get_vir_tr1();
+
+
+    auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ_corr, tr_0, tr_i0);
+    auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir, tr_0, tr_vir);
+    auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_all, tr_0, tr_all);
+
+    auto orbital_registry = OrbitalSpaceRegistry<decltype(Ci)>();
+    using OrbitalSpace = OrbitalSpace<decltype(Ci)>;
+    auto occ_space = OrbitalSpace(OrbitalIndex(L"i"),Ci);
+    orbital_registry.add(occ_space);
+
+    auto vir_space = OrbitalSpace(OrbitalIndex(L"a"),Cv);
+    orbital_registry.add(vir_space);
+
+    auto obs_space = OrbitalSpace(OrbitalIndex(L"p"),Call);
+    orbital_registry.add(obs_space);
+
+    auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,orbital_registry);
+
+    // mp2
+    {
+        auto g_iajb = mo_integral.compute(L"(i a|G|j b)");
+        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_iajb,ens,std::make_shared<TRange1Engine>(tre));
+        mp2.compute();
+    }
 
     // CABS fock build
 

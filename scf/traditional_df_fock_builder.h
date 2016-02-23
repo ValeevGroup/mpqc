@@ -47,7 +47,11 @@ class DFFockBuilder : public FockBuilder {
     }
 
 
-    /*! \brief This builder requires the user to compute coefficients
+    const array_type &inv() const {
+        return L_inv_;
+    }
+
+/*! \brief This builder requires the user to compute coefficients
      *
      * Integral is a type that can be used in a TiledArray expression, the
      * template is to allow for Direct Integral wrappers or other options.

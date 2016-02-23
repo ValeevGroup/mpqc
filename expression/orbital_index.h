@@ -81,6 +81,7 @@ public:
 
 
     OrbitalIndex(std::wstring letter);
+    OrbitalIndex(OrbitalIndex::Index index, OrbitalIndex::Spin spin);
 
     // if the have the same index
     bool operator==(OrbitalIndex const &) const;
@@ -120,7 +121,7 @@ public:
     // if ribs
     bool is_mo_in_ribs() const;
 
-    OrbitalIndex mo_to_ao();
+    OrbitalIndex mo_to_ao () const;
 
     std::string to_ta_expression() const;
 

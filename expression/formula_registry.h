@@ -24,10 +24,9 @@ namespace mpqc{
 
         Registry(const element_type &map) : registry_(map) { }
 
-
         virtual ~Registry()= default;
 
-        const element_type & map() const {
+        const element_type &registry() const {
             return registry_;
         }
 

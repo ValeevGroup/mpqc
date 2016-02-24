@@ -65,6 +65,24 @@ TEST_CASE("Formula Expression", "[formula]"){
         REQUIRE(formula1 != formula3);
     }
 
+    SECTION("comparision test case"){
+        Formula formula1(L"<p q1|R|a' A'1>");
+        Formula formula1df(L"<p q1|R|a' A'1>[df]");
+        REQUIRE(formula1 < formula1df);
+
+        Formula formula2(L"<r s12|G|d' B'12>");
+        REQUIRE(formula2 < formula1);
+
+
+        Formula formula3(L"<a b12|G|A' B'12>");
+        REQUIRE(formula3 < formula2);
+
+        Formula formula4(L"<p b12|G|d' B'12>[df]");
+        REQUIRE(formula3 < formula4);
+
+    }
+
+
     SECTION("error handling"){
         // wrong operation
         REQUIRE_THROWS(Formula kinetic(L"<p q|t|r s>"));

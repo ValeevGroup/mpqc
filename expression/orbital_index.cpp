@@ -130,6 +130,9 @@ bool OrbitalIndex::operator<(const OrbitalIndex &other) const {
     return other.index()==this->index() ? this->spin() < other.spin() : this->index() < other.index();
 }
 
+bool OrbitalIndex::operator>(const OrbitalIndex &other) const {
+    return !(*this < other) && !(*this == other);
+}
 bool OrbitalIndex::same(const OrbitalIndex &other) const{
     return (index_ == other.index()) && (this->spin_ == other.spin_) && (name_ == other.name());
 }

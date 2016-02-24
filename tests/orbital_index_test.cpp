@@ -224,6 +224,26 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
     }
 
+
+    SECTION("comparison"){
+
+        // spin
+        mpqc::OrbitalIndex p(L"p_α");
+        mpqc::OrbitalIndex q1(L"q23_β");
+        mpqc::OrbitalIndex q2(L"r1");
+        REQUIRE(p > q1);
+        REQUIRE(p > q2);
+
+        // index
+        mpqc::OrbitalIndex A(L"A'16_β");
+        mpqc::OrbitalIndex m(L"m'3");
+        mpqc::OrbitalIndex k1(L"κ1_α");
+        REQUIRE(m < A);
+        REQUIRE(k1 < A);
+        REQUIRE(k1 < m);
+
+    }
+
     SECTION("error handling"){
         // key not allowed
         REQUIRE_THROWS(mpqc::OrbitalIndex(L"e"));

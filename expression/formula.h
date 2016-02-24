@@ -78,9 +78,7 @@ namespace mpqc{
 
         std::size_t rank() const;
 
-        bool operator<(const Formula& other) const{
-            return formula_ < other.formula_;
-        }
+        bool operator<(const Formula& other) const;
 
         bool operator==(const Formula& other) const;
 

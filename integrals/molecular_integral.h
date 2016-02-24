@@ -39,6 +39,10 @@ namespace integrals{
                   mo_formula_registry_() { }
 
 
+        AtomicIntegral atomic_integral() const {
+            return atomic_integral_;
+        }
+
         TArray compute(const std::wstring& );
 
     private:

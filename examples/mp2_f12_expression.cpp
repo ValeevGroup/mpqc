@@ -158,14 +158,23 @@ int main(int argc, char *argv[]) {
     auto obs_space = OrbitalSpace(OrbitalIndex(L"p"),Call);
     orbital_registry.add(obs_space);
 
-    auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,orbital_registry);
-
+    auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(std::move(ao_int),orbital_registry);
+    mo_integral.atomic_integral().registry().print_formula();
     // mp2
     {
         auto g_iajb = mo_integral.compute(L"(i a|G|j b)");
         auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_iajb,ens,std::make_shared<TRange1Engine>(tre));
         mp2.compute();
     }
+
+    // df-mp2
+    {
+        auto g_iajb = mo_integral.compute(L"(i a|G|j b)[df]");
+        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_iajb,ens,std::make_shared<TRange1Engine>(tre));
+        mp2.compute();
+        mo_integral.atomic_integral().registry().print_formula();
+    }
+
 
     // CABS fock build
 

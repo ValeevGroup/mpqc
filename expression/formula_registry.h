@@ -90,6 +90,13 @@ namespace mpqc{
             return registry_.cend();
         }
 
+        void print_formula() const {
+
+            for(const auto& item : registry_){
+                std::wcout << item.first.formula_string() << ", ";
+            }
+            std::cout << std::endl;
+        }
         /// removes all objects if p(key) == true
         template<typename Pred>
         void remove_if(const Pred& p){

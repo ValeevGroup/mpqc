@@ -8,17 +8,30 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <map>
 
 namespace mpqc{
 
     class Operation{
     public:
-        enum class Operations{Overlap, Kinetic, Nuclear, Coulomb, cGTG, cGTGCoulomb, cGTG2, DelcGTG2};
+        enum class Operations{
+            Overlap = 0,
+            Kinetic = 1,
+            Nuclear = 2,
+            Coulomb = 3,
+            cGTG = 4,
+            cGTG2 = 5,
+            cGTGCoulomb = 6,
+            DelcGTG2 = 7
+        };
 
-        enum class Options{DensityFitting};
+        enum class Options{
+            DensityFitting = 0
+        };
 
         static const std::unordered_map<std::wstring, Operations> one_body_operation;
         static const std::unordered_map<std::wstring, Operations> two_body_operation;
+        static const std::map<Operations,std::wstring> operation_to_string;
         static const std::unordered_map<std::wstring, Options> option;
 
         Operation() = default;
@@ -37,6 +50,11 @@ namespace mpqc{
             return operation_;
         }
 
+        const std::wstring string() const{
+            const auto result = operation_to_string.find(operation_);
+            return result->second;
+        }
+
         bool has_option(Options op) const;
 
         bool is_onebody() const;
@@ -48,6 +66,8 @@ namespace mpqc{
         bool operator!=(Operation const & other) const{
             return !(*this==other);
         }
+
+        bool operator<(const Operation& other) const;
 
     private:
 

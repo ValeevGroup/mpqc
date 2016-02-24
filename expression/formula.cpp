@@ -139,6 +139,19 @@ namespace mpqc{
         }
     }
 
+    bool Formula::operator<(const Formula &other) const {
+
+        if(operation()!=other.operation()){
+            return operation() < other.operation();
+        }
+        else if(left_index() != other.left_index()){
+            return left_index() < other.left_index();
+        }
+        else{
+            return right_index() < other.right_index();
+        }
+    }
+
     bool Formula::operator==(const Formula &other) const{
         return (operation_== other.operation_) && (left_index_ == other.left_index_) && (right_index_ == other.right_index_) && (notation_ == other.notation_);
     }
@@ -160,7 +173,6 @@ namespace mpqc{
             ta_expression.append(", ");
         }
 
-
         // add right index
 
         for (const auto & index : right_index_){
@@ -177,4 +189,5 @@ namespace mpqc{
 
         return ta_expression;
     }
+
 }

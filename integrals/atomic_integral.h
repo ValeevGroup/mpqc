@@ -99,6 +99,33 @@ namespace integrals{
         void parse_two_body_four_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<4>& bases, int64_t& max_nprim, int64_t& max_am);
 
 
+        std::array<std::wstring,3> get_df_formula(const Formula& formula){
+
+            std::array<std::wstring,3> result;
+
+            //chemical notation
+            if(formula.notation() == Formula::Notation::Chemical){
+
+                std::wstring left = L"( Κ |" + formula.operation().string() + L"| " + formula.left_index()[1].name() + L" " + formula.left_index()[0].name() + L" )";
+                std::wstring right = L"( Κ |" + formula.operation().string() + L"| " + formula.right_index()[0].name() + L" " + formula.right_index()[1].name() + L" )";
+                std::wstring center = L"( Κ |" + formula.operation().string() +  L"| Λ)";
+                result[0] = left;
+                result[1] = center;
+                result[2] = right;
+            }
+                //physical notation
+            else{
+                std::wstring left = L"( Κ |" + formula.operation().string() + L"| " + formula.right_index()[0].name() + L" " + formula.left_index()[0].name() + L" )";
+                std::wstring right = L"( Κ |" + formula.operation().string() + L"| " + formula.left_index()[1].name() + L" " + formula.right_index()[1].name() + L" )";
+                std::wstring center = L"( Κ |" + formula.operation().string() +  L"| Λ)";
+                result[0] = left;
+                result[1] = center;
+                result[2] = right;
+            }
+
+            return result;
+        }
+
 
         std::shared_ptr<basis::Basis> index_to_basis(const OrbitalIndex& index){
             if(index.index() == OrbitalIndex::Index::obs){
@@ -541,193 +568,35 @@ namespace integrals{
         if(formula.operation().has_option(Operation::Options::DensityFitting)){
             TA_ASSERT(this->dfbs_!= nullptr);
 
+            // convert formula to df formula
+            auto formula_strings = get_df_formula(formula);
 
-            // convert operation to libint operator
-            auto operation = formula.operation();
-            if (operation.get_operation() == Operation::Operations::Coulomb) {
+            // compute integral
+            auto left = compute(formula_strings[0]);
+            auto center = compute(formula_strings[1]);
+            auto right = compute(formula_strings[2]);
 
-                std::wstring two_center_formula_string = L"( Κ|G| Λ )";
-                typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
-                auto two_center_eigen = mpqc::array_ops::array_to_eigen(two_center);
-
-                MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
-                MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
-
-                auto tr_V = two_center.trange().data()[0];
-                auto two_center_inverse_sqrt = mpqc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
+            //inverse two center integral
+            auto center_eig = array_ops::array_to_eigen(center);
+            MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(center_eig).matrixL()).inverse();
+            center_eig = L_inv_eig.transpose() * L_inv_eig;
+            auto tr_center = center.trange().data()[0];
+            center = array_ops::eigen_to_array<TA::TensorD>(center.get_world(), center_eig, tr_center, tr_center);
 
 
-                std::wstring three_center_formula_string;
-                if (formula.notation() == Formula::Notation::Chemical){
-                    auto ket0 = formula.right_index()[0].name();
-                    auto ket1 = formula.right_index()[1].name();
-                    three_center_formula_string = L"( Κ|G| " + ket0 + L" " + ket1 + L")";
-                }
-                else if(formula.notation() == Formula::Notation::Physical){
-                    auto ket0 = formula.left_index()[0].name();
-                    auto ket1 = formula.right_index()[0].name();
-                    three_center_formula_string = L"( Κ|G| " + ket0 + L" " + ket1 + L")";
-                }
+            TA::DistArray<Tile,Policy> result;
 
-                auto three_center = compute3(three_center_formula_string);
-
-                three_center("X,i,j") = two_center_inverse_sqrt("K,X")*three_center("K,i,j");
-
-                typename AtomicIntegral<Tile,Policy>::TArray result;
-
-                if (formula.notation() == Formula::Notation::Chemical){
-                    result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
-                }
-                else if(formula.notation() == Formula::Notation::Physical){
-                    result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
-                }
-                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
-                wcout_utf8(formula.formula_string());
-                std::cout << std::endl;
-                return result;
+            if(formula.notation() == Formula::Notation::Chemical){
+                result("i,j,k,l") = left("q,j,i")*center("q,p")*right("p,k,l");
+            }else{
+                result("i,j,k,l") = left("q,k,i")*center("q,p")*right("p,j,l");
             }
-            else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
 
-                if(this->gtg_params_.empty()){
-                    throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
-                }
+            std::cout << "Computed Twobody Four Center Density-Fitting Integral: ";
+            wcout_utf8(formula.formula_string());
+            std::cout << std::endl;
+            return result;
 
-                std::wstring two_center_formula_string = L"( Κ|GR| Λ )";
-                typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
-//                std::cout << two_center;
-                auto two_center_eigen = mpqc::array_ops::array_to_eigen(two_center);
-
-                MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
-                MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
-
-                auto tr_V = two_center.trange().data()[0];
-                auto two_center_inverse_sqrt = mpqc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
-
-                std::wstring three_center_formula_string;
-                if (formula.notation() == Formula::Notation::Chemical){
-                    auto ket0 = formula.right_index()[0].name();
-                    auto ket1 = formula.right_index()[1].name();
-                    three_center_formula_string = L"( Κ|GR| " + ket0 + L" " + ket1 + L")";
-                }
-                else if(formula.notation() == Formula::Notation::Physical){
-                    auto ket0 = formula.left_index()[0].name();
-                    auto ket1 = formula.right_index()[0].name();
-                    three_center_formula_string = L"( Κ|GR| " + ket0 + L" " + ket1 + L")";
-                }
-
-                auto three_center = compute3(three_center_formula_string);
-
-                three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
-
-                typename AtomicIntegral<Tile,Policy>::TArray result;
-
-                if (formula.notation() == Formula::Notation::Chemical){
-                    result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
-                }
-                else if(formula.notation() == Formula::Notation::Physical){
-                    result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
-                }
-                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
-                wcout_utf8(formula.formula_string());
-                std::cout << std::endl;
-                return result;
-
-            }
-            else if(operation.get_operation() == Operation::Operations::cGTG){
-
-                if(this->gtg_params_.empty()){
-                    throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
-                }
-                std::wstring two_center_formula_string = L"( Κ|R| Λ )";
-                typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
-//                std::cout << two_center;
-                auto two_center_eigen = mpqc::array_ops::array_to_eigen(two_center);
-
-                MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
-                MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
-
-                auto tr_V = two_center.trange().data()[0];
-                auto two_center_inverse_sqrt = mpqc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
-
-                std::wstring three_center_formula_string;
-                if (formula.notation() == Formula::Notation::Chemical){
-                    auto ket0 = formula.right_index()[0].name();
-                    auto ket1 = formula.right_index()[1].name();
-                    three_center_formula_string = L"( Κ|R| " + ket0 + L" " + ket1 + L")";
-                }
-                else if(formula.notation() == Formula::Notation::Physical){
-                    auto ket0 = formula.left_index()[0].name();
-                    auto ket1 = formula.right_index()[0].name();
-                    three_center_formula_string = L"( Κ|R| " + ket0 + L" " + ket1 + L")";
-                }
-
-                auto three_center = compute3(three_center_formula_string);
-
-                three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
-
-                typename AtomicIntegral<Tile,Policy>::TArray result;
-
-                if (formula.notation() == Formula::Notation::Chemical){
-                    result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
-                }
-                else if(formula.notation() == Formula::Notation::Physical){
-                    result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
-                }
-                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
-                wcout_utf8(formula.formula_string());
-                std::cout << std::endl;
-                return result;
-
-            }
-            else if(operation.get_operation() == Operation::Operations::cGTG2){
-
-                if(this->gtg_params_.empty()){
-                    throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
-                }
-
-                std::wstring two_center_formula_string = L"( Κ|R2| Λ )";
-                typename AtomicIntegral<Tile,Policy>::TArray two_center = this->compute2(two_center_formula_string);
-//                std::cout << two_center;
-                auto two_center_eigen = mpqc::array_ops::array_to_eigen(two_center);
-
-                MatrixD Leig = Eig::LLT<MatrixD>(two_center_eigen).matrixL();
-                MatrixD two_center_inverse_sqrt_eigen = Leig.inverse();
-
-                auto tr_V = two_center.trange().data()[0];
-                auto two_center_inverse_sqrt = mpqc::array_ops::eigen_to_array<Tile>(two_center.get_world(), two_center_inverse_sqrt_eigen, tr_V, tr_V);
-
-                std::wstring three_center_formula_string;
-                if (formula.notation() == Formula::Notation::Chemical){
-                    auto ket0 = formula.right_index()[0].name();
-                    auto ket1 = formula.right_index()[1].name();
-                    three_center_formula_string = L"( Κ|R2| " + ket0 + L" " + ket1 + L")";
-                }
-                else if(formula.notation() == Formula::Notation::Physical){
-                    auto ket0 = formula.left_index()[0].name();
-                    auto ket1 = formula.right_index()[0].name();
-                    three_center_formula_string = L"( Κ|R2| " + ket0 + L" " + ket1 + L")";
-                }
-
-                auto three_center = compute3(three_center_formula_string);
-
-                three_center("X,i,j") = two_center_inverse_sqrt("X,K")*three_center("K,i,j");
-
-                typename AtomicIntegral<Tile,Policy>::TArray result;
-
-                if (formula.notation() == Formula::Notation::Chemical){
-                    result("i,j,k,l") = three_center("K,i,j")*three_center("K,k,l");
-                }
-                else if(formula.notation() == Formula::Notation::Physical){
-                    result("i,k,j,l") = three_center("K,i,j")*three_center("K,k,l");
-                }
-                std::cout << "Computed Two Body Four Center Density-Fitting Integral: ";
-                wcout_utf8(formula.formula_string());
-                std::cout << std::endl;
-                return result;
-            }
-            else {
-                throw std::runtime_error("Invalid Two Body Operation");
-            }
         }
         else{
 
@@ -746,7 +615,6 @@ namespace integrals{
         }
 
     }
-    //TODO R12 Integral
 
 }
 }

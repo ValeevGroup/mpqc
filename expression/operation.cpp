@@ -25,6 +25,17 @@ namespace mpqc{
         {L"dR2", Operations::DelcGTG2}
     };
 
+    const std::map<Operations, std::wstring> Operation::operation_to_string = {
+            {Operations::Overlap, L""},
+            {Operations::Kinetic, L"T"},
+            {Operations::Nuclear, L"V"},
+            {Operations::Coulomb, L"G"},
+            {Operations::cGTG, L"R"},
+            {Operations::cGTG2, L"R2"},
+            {Operations::cGTGCoulomb, L"GR" },
+            {Operations::DelcGTG2, L"dR2"}
+    };
+
     const std::unordered_map<std::wstring, Options> Operation::option = {
             {L"df", Options::DensityFitting},
     };
@@ -57,6 +68,9 @@ namespace mpqc{
             return true;
         }
         else if(operation_ == Operations::cGTGCoulomb){
+            return true;
+        }
+        else if(operation_ == Operations::DelcGTG2){
             return true;
         }
         else{
@@ -127,4 +141,8 @@ namespace mpqc{
 
         return same_operation && same_option;
     }
+
+bool Operation::operator<(const Operation &other) const {
+    return other.get_operation() == this->get_operation() ? this->get_options() < other.get_options() : this->get_operation() < other.get_operation();
+}
 }

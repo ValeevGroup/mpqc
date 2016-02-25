@@ -22,11 +22,19 @@ namespace mpqc{
             cGTG = 4,
             cGTG2 = 5,
             cGTGCoulomb = 6,
-            DelcGTG2 = 7
+            DelcGTG2 = 7,
+            J = 8,
+            K = 9,
+            KAlpha = 10,
+            KBeta = 11,
+            F = 12,
+            FAlpha = 13,
+            FBeta = 14
         };
 
         enum class Options{
-            DensityFitting = 0
+            DensityFitting = 0,
+            InverseSquareRoot = 1
         };
 
         static const std::unordered_map<std::wstring, Operations> one_body_operation;

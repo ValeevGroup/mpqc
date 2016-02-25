@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     }
     TiledArray::SparseShape<float>::threshold(threshold);
 
-    auto clustered_mol = molecule::attach_hydrogens_and_kmeans(
+    auto clustered_mol = molecule::kmeans(
             molecule::read_xyz(mol_file).clusterables(), nclusters);
 
     auto repulsion_energy = clustered_mol.nuclear_repulsion();
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
 
     // obs fock build
     std::size_t all = S.trange().elements().extent()[0];
-    auto tre = TRange1Engine(occ / 2, all, 12, 12, 0);
+    auto tre = TRange1Engine(occ / 2, all, 4, 8, 0);
 
     auto F = scf.fock();
     auto L_inv = builder.inv();
@@ -158,7 +158,9 @@ int main(int argc, char *argv[]) {
     auto obs_space = OrbitalSpace(OrbitalIndex(L"p"),Call);
     orbital_registry.add(obs_space);
 
-    auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(std::move(ao_int),orbital_registry);
+    auto sp_orbital_registry = std::make_shared<decltype(orbital_registry)>(orbital_registry);
+
+    auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,sp_orbital_registry);
     mo_integral.atomic_integral().registry().print_formula();
     // mp2
     {
@@ -172,7 +174,6 @@ int main(int argc, char *argv[]) {
         auto g_iajb = mo_integral.compute(L"(i a|G|j b)[df]");
         auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_iajb,ens,std::make_shared<TRange1Engine>(tre));
         mp2.compute();
-        mo_integral.atomic_integral().registry().print_formula();
     }
 
     {
@@ -180,9 +181,8 @@ int main(int argc, char *argv[]) {
         g_ijab("i,a,j,b") = g_ijab("i,j,a,b");
         auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_ijab,ens,std::make_shared<TRange1Engine>(tre));
         mp2.compute();
-        mo_integral.atomic_integral().registry().print_formula();
     }
-
+    mo_integral.atomic_integral().registry().print_formula();
     // CABS fock build
 
     // integral
@@ -253,12 +253,12 @@ int main(int argc, char *argv[]) {
 
 
     // compute r12 integral
-    auto JK_ribs = ao_int.compute(L"(ρ1 σ1|G|ρ2 σ2)[df]");
+//    auto JK_ribs = ao_int.compute(L"(ρ1 σ1|G|ρ2 σ2)[df]");
 //    auto F12_ribs = ao_int.compute(L"(ρ1 σ1|R|ρ2 σ2)");
 //    auto F12_sq_ribs = ao_int.compute(L"(ρ1 σ1|R2|ρ2 σ2)");
 
 
-//    auto JKF12_obs = ao_int.compute(L"(κ1 λ1 |GR|μ1 ν1)");
+    auto JKF12_obs = ao_int.compute(L"(κ1 λ1 |GR|μ1 ν1)");
 //    auto Comm_obs = ao_int.compute(L"( κ2 λ2 | dR2 |μ2 ν2)");
 
 
@@ -267,6 +267,8 @@ int main(int argc, char *argv[]) {
     // AO to MO transform
 
 
+    ao_int.registry().print_formula();
+    mo_integral.registry().print_formula();
 
     madness::finalize();
     libint2::cleanup();

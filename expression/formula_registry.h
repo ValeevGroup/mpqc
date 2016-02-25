@@ -7,6 +7,7 @@
 
 #include <map>
 #include "formula.h"
+#include "../utility/print_size_info.h"
 
 namespace mpqc{
 
@@ -23,6 +24,12 @@ namespace mpqc{
         Registry() = default;
 
         Registry(const element_type &map) : registry_(map) { }
+
+        Registry(Registry const &) = default;
+        Registry& operator=(Registry const &) = default;
+
+        Registry(Registry&&) = default;
+        Registry& operator=(Registry &&) = default;
 
         virtual ~Registry()= default;
 
@@ -90,13 +97,6 @@ namespace mpqc{
             return registry_.cend();
         }
 
-        void print_formula() const {
-
-            for(const auto& item : registry_){
-                std::wcout << item.first.formula_string() << ", ";
-            }
-            std::cout << std::endl;
-        }
         /// removes all objects if p(key) == true
         template<typename Pred>
         void remove_if(const Pred& p){
@@ -129,6 +129,19 @@ namespace mpqc{
         FormulaRegistry()= default;
         FormulaRegistry(const element_type& map) : Registry<Key,Value>(map){}
 
+        FormulaRegistry(FormulaRegistry const &) = delete;
+        FormulaRegistry& operator=(FormulaRegistry const &) = delete;
+
+        FormulaRegistry(FormulaRegistry&&) = default;
+        FormulaRegistry& operator=(FormulaRegistry &&) = default;
+
+        void print_formula() const {
+
+            for(const auto& item : this->registry_){
+                utility::wprint_size_info(item.second, item.first.formula_string());
+            }
+            std::cout << std::endl;
+        }
     };
 } // end of namespace mpqc
 

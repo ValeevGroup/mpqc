@@ -16,6 +16,7 @@
 #include "../basis/basis.h"
 #include "../expression/formula.h"
 #include "../expression/formula_registry.h"
+#include "../expression/orbital_space_registry.h"
 #include "integral_engine_pool.h"
 #include "task_integrals.h"
 #include "../molecule/molecule.h"
@@ -371,15 +372,24 @@ namespace integrals{
                 std::shared_ptr<basis::Basis> dfbs = nullptr,
                 std::shared_ptr<basis::Basis> auxbs = nullptr,
                 std::vector<std::pair<double,double>> gtg_params = std::vector<std::pair<double,double>>()
-        ) : AtomicIntegralBase(world,mol,obs,dfbs,auxbs,gtg_params), op_(op), ao_formula_registry_(){}
+        ) : AtomicIntegralBase(world,mol,obs,dfbs,auxbs,gtg_params), op_(op), ao_formula_registry_(), orbital_space_registry_()
+        {}
+
+        AtomicIntegral(AtomicIntegral&& ) = default;
+        AtomicIntegral& operator=(AtomicIntegral&& ) = default;
 
         virtual ~AtomicIntegral() = default;
+
 
         TArray compute(const std::wstring& );
         TArray compute(const Formula& );
 
         const FormulaRegistry<TArray> &registry() const {
             return ao_formula_registry_;
+        }
+
+        void set_orbital_space_registry(const std::shared_ptr<OrbitalSpaceRegistry<TArray>> regitsry) {
+            orbital_space_registry_ = regitsry;
         }
 
         TArray compute_direct(const std::wstring& );
@@ -425,6 +435,7 @@ namespace integrals{
 
     private:
         FormulaRegistry<TArray> ao_formula_registry_;
+        std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
         Op op_;
 
     };

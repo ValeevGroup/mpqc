@@ -25,28 +25,39 @@ namespace integrals{
         using TArray = TA::DistArray<Tile, Policy>;
         using AtomicIntegral = AtomicIntegral<Tile,Policy>;
 
-        MolecularIntegral(const AtomicIntegral &atomic_integral,
-                          const OrbitalSpaceRegistry<TArray> &orbital_space_registry,
+        MolecularIntegral(AtomicIntegral &atomic_integral,
+                          const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry,
                           const FormulaRegistry<TArray> &formula_registry)
                 : atomic_integral_(atomic_integral),
                   orbital_space_registry_(orbital_space_registry),
-                  mo_formula_registry_(formula_registry) { }
+                  mo_formula_registry_(formula_registry)
+        {
+            atomic_integral_.set_orbital_space_registry(orbital_space_registry);
+        }
 
-        MolecularIntegral(const AtomicIntegral &atomic_integral,
-                          const OrbitalSpaceRegistry<TArray> &orbital_space_registry)
+        MolecularIntegral(AtomicIntegral &atomic_integral,
+                          const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry)
                 : atomic_integral_(atomic_integral),
                   orbital_space_registry_(orbital_space_registry),
-                  mo_formula_registry_() { }
+                  mo_formula_registry_()
+        {
+            atomic_integral_.set_orbital_space_registry(orbital_space_registry);
+        }
 
 
-        AtomicIntegral atomic_integral() const {
+        AtomicIntegral& atomic_integral() const {
             return atomic_integral_;
+        }
+
+        const FormulaRegistry<TArray> &registry() const {
+            return mo_formula_registry_;
         }
 
         TArray compute(const std::wstring& );
 
     private:
 
+        //TODO more operation F, J, K...
         // compute integrals that has two dimension
         TArray compute2(const Formula& formula_string);
         // compute integrals that has four dimension
@@ -60,8 +71,8 @@ namespace integrals{
 
     private:
 
-        AtomicIntegral atomic_integral_;
-        OrbitalSpaceRegistry<TArray> orbital_space_registry_;
+        AtomicIntegral& atomic_integral_;
+        std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
         FormulaRegistry<TArray> mo_formula_registry_;
     };
 
@@ -77,12 +88,12 @@ namespace integrals{
         // get coefficient
         auto left_index1 = formula_string.left_index()[0];
         if(left_index1.is_mo()){
-            auto left1 = orbital_space_registry_.retrieve(left_index1);
+            auto left1 = orbital_space_registry_->retrieve(left_index1);
             result("i,r") = result("p,r")*left1("p,i");
         }
         auto right_index1 = formula_string.right_index()[0];
         if(right_index1.is_mo()){
-            auto right1 = orbital_space_registry_.retrieve(right_index1);
+            auto right1 = orbital_space_registry_->retrieve(right_index1);
             result("p,k") = result("p,r")*right1("r,k");
         }
 
@@ -115,13 +126,13 @@ namespace integrals{
                     left_index1 = formula_string.right_index()[0];
                 }
                 if (left_index1.is_mo()) {
-                    auto left1 = orbital_space_registry_.retrieve(left_index1);
+                    auto left1 = orbital_space_registry_->retrieve(left_index1);
                     left("p,i,r") = left("p,q,r") * left1("q,i");
                 }
 
                 auto left_index2 = formula_string.left_index()[0];
                 if (left_index2.is_mo()) {
-                    auto left2 = orbital_space_registry_.retrieve(left_index2);
+                    auto left2 = orbital_space_registry_->retrieve(left_index2);
                     left("p,q,i") = left("p,q,r") * left2("r,i");
                 }
             }
@@ -141,13 +152,13 @@ namespace integrals{
                 }
 
                 if (right_index1.is_mo()) {
-                    auto right1 = orbital_space_registry_.retrieve(right_index1);
+                    auto right1 = orbital_space_registry_->retrieve(right_index1);
                     right("p,i,r") = right("p,q,r") * right1("q,i");
                 }
 
                 auto right_index2 = formula_string.right_index()[1];
                 if (right_index2.is_mo()) {
-                    auto right2 = orbital_space_registry_.retrieve(right_index2);
+                    auto right2 = orbital_space_registry_->retrieve(right_index2);
                     right("p,q,i") = right("p,q,r") * right2("r,i");
                 }
             }
@@ -182,24 +193,24 @@ namespace integrals{
             // get coefficient
             auto left_index1 = formula_string.left_index()[0];
             if (left_index1.is_mo()) {
-                auto left1 = orbital_space_registry_.retrieve(left_index1);
+                auto left1 = orbital_space_registry_->retrieve(left_index1);
                 result("i,q,r,s") = result("p,q,r,s") * left1("p,i");
             }
 
             auto left_index2 = formula_string.left_index()[1];
             if (left_index2.is_mo()) {
-                auto left2 = orbital_space_registry_.retrieve(left_index2);
+                auto left2 = orbital_space_registry_->retrieve(left_index2);
                 result("p,i,r,s") = result("p,q,r,s") * left2("q,i");
             }
 
             auto right_index1 = formula_string.right_index()[0];
             if (right_index1.is_mo()) {
-                auto right1 = orbital_space_registry_.retrieve(right_index1);
+                auto right1 = orbital_space_registry_->retrieve(right_index1);
                 result("p,q,i,s") = result("p,q,r,s") * right1("r,i");
             }
             auto right_index2 = formula_string.right_index()[1];
             if (right_index2.is_mo()) {
-                auto right2 = orbital_space_registry_.retrieve(right_index2);
+                auto right2 = orbital_space_registry_->retrieve(right_index2);
                 result("p,q,r,i") = result("p,q,r,s") * right2("s,i");
             }
 
@@ -226,6 +237,8 @@ Formula MolecularIntegral<Tile,Policy>::mo_to_ao(const Formula &formula) {
     auto ao_formula = formula;
     ao_formula.set_left_index(ao_left_index);
     ao_formula.set_right_index(ao_right_index);
+
+
 
     return ao_formula;
 }

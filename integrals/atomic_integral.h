@@ -77,28 +77,6 @@ namespace integrals{
             AtomicIntegralBase::abs_ = abs;
         }
 
-    protected:
-
-        // get one body engine
-        libint2::OneBodyEngine get_one_body_engine(const Operation& operation, int64_t max_nprim, int64_t max_am);
-
-        // get two body engine kernel
-        libint2::MultiplicativeSphericalTwoBodyKernel get_two_body_engine_kernel(const Operation &operation);
-
-
-        // parse one body formula and set engine_pool and basis array
-        void parse_one_body(const Formula& formula, std::shared_ptr<EnginePool<libint2::OneBodyEngine>>& engine_pool, Barray<2>& bases);
-
-        // parse two body two center formula and set two body kernel and basis array
-        void parse_two_body_two_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<2>& bases, int64_t& max_nprim, int64_t& max_am);
-
-        // parse two body three center formula and set two body kernel and basis array
-        void parse_two_body_three_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<3>& bases, int64_t& max_nprim, int64_t& max_am);
-
-        // parse two body four center formula and set two body kernel and basis array
-        void parse_two_body_four_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<4>& bases, int64_t& max_nprim, int64_t& max_am);
-
-
         std::array<std::wstring,3> get_df_formula(const Formula& formula){
 
             std::array<std::wstring,3> result;
@@ -125,6 +103,28 @@ namespace integrals{
 
             return result;
         }
+    protected:
+
+        // get one body engine
+        libint2::OneBodyEngine get_one_body_engine(const Operation& operation, int64_t max_nprim, int64_t max_am);
+
+        // get two body engine kernel
+        libint2::MultiplicativeSphericalTwoBodyKernel get_two_body_engine_kernel(const Operation &operation);
+
+
+        // parse one body formula and set engine_pool and basis array
+        void parse_one_body(const Formula& formula, std::shared_ptr<EnginePool<libint2::OneBodyEngine>>& engine_pool, Barray<2>& bases);
+
+        // parse two body two center formula and set two body kernel and basis array
+        void parse_two_body_two_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<2>& bases, int64_t& max_nprim, int64_t& max_am);
+
+        // parse two body three center formula and set two body kernel and basis array
+        void parse_two_body_three_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<3>& bases, int64_t& max_nprim, int64_t& max_am);
+
+        // parse two body four center formula and set two body kernel and basis array
+        void parse_two_body_four_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<4>& bases, int64_t& max_nprim, int64_t& max_am);
+
+
 
 
         std::shared_ptr<basis::Basis> index_to_basis(const OrbitalIndex& index){

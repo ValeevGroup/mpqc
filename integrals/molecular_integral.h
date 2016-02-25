@@ -77,53 +77,134 @@ namespace integrals{
         // get coefficient
         auto left_index1 = formula_string.left_index()[0];
         if(left_index1.is_mo()){
-            auto left1 = orbital_space_registry_.retrieve(left_index1)->second;
+            auto left1 = orbital_space_registry_.retrieve(left_index1);
             result("i,r") = result("p,r")*left1("p,i");
         }
         auto right_index1 = formula_string.right_index()[0];
         if(right_index1.is_mo()){
-            auto right1 = orbital_space_registry_.retrieve(right_index1)->second;
+            auto right1 = orbital_space_registry_.retrieve(right_index1);
             result("p,k") = result("p,r")*right1("r,k");
         }
 
         return result;
     }
 
+//TODO better inverse of two center
     template <typename Tile, typename Policy>
     typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute4(const Formula &formula_string) {
 
-        // get AO
-        auto ao_formula = mo_to_ao(formula_string);
-        auto ao_integral = atomic_integral_.compute(ao_formula);
+        if(formula_string.operation().has_option(Operation::Options::DensityFitting)){
+            // get AO
+            auto ao_formula = mo_to_ao(formula_string);
 
-        // convert to MO
-        TArray result = ao_integral;
+            // get df formula
+            auto df_formulas = atomic_integral_.get_df_formula(ao_formula);
 
-        // get coefficient
-        auto left_index1 = formula_string.left_index()[0];
-        if(left_index1.is_mo()){
-            auto left1 = orbital_space_registry_.retrieve(left_index1)->second;
-            result("i,q,r,s") = result("p,q,r,s")*left1("p,i");
+            auto notation = formula_string.notation();
+            // compute integral
+            TArray left;
+            {
+                auto left_ao = atomic_integral_.compute(df_formulas[0]);
+                left("i,j,k") = left_ao("i,j,k");
+
+                OrbitalIndex left_index1;
+                if(notation == Formula::Notation::Chemical){
+                    left_index1 = formula_string.left_index()[1];
+                }
+                else{
+                    left_index1 = formula_string.right_index()[0];
+                }
+                if (left_index1.is_mo()) {
+                    auto left1 = orbital_space_registry_.retrieve(left_index1);
+                    left("p,i,r") = left("p,q,r") * left1("q,i");
+                }
+
+                auto left_index2 = formula_string.left_index()[0];
+                if (left_index2.is_mo()) {
+                    auto left2 = orbital_space_registry_.retrieve(left_index2);
+                    left("p,q,i") = left("p,q,r") * left2("r,i");
+                }
+            }
+
+            TArray right;
+            {
+                auto right_ao = atomic_integral_.compute(df_formulas[2]);
+                right("i,j,k") = right_ao("i,j,k");
+
+                OrbitalIndex right_index1;
+
+                if(notation==Formula::Notation::Chemical){
+                    right_index1 = formula_string.right_index()[0];
+                }
+                else{
+                    right_index1 = formula_string.left_index()[1];
+                }
+
+                if (right_index1.is_mo()) {
+                    auto right1 = orbital_space_registry_.retrieve(right_index1);
+                    right("p,i,r") = right("p,q,r") * right1("q,i");
+                }
+
+                auto right_index2 = formula_string.right_index()[1];
+                if (right_index2.is_mo()) {
+                    auto right2 = orbital_space_registry_.retrieve(right_index2);
+                    right("p,q,i") = right("p,q,r") * right2("r,i");
+                }
+            }
+
+            auto center = compute(df_formulas[1]);
+            //inverse two center integral
+            auto center_eig = array_ops::array_to_eigen(center);
+            MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(center_eig).matrixL()).inverse();
+            center_eig = L_inv_eig.transpose() * L_inv_eig;
+            auto tr_center = center.trange().data()[0];
+            center = array_ops::eigen_to_array<TA::TensorD>(center.get_world(), center_eig, tr_center, tr_center);
+
+
+            TArray result;
+            if(notation==Formula::Notation::Chemical){
+                result("i,j,k,l") = left("q,j,i")*center("q,p")*right("p,k,l");
+            }
+            else{
+                result("i,k,j,l") = left("q,j,i")*center("q,p")*right("p,k,l");
+            }
+            return result;
+
+
+        }else {
+            // get AO
+            auto ao_formula = mo_to_ao(formula_string);
+            auto ao_integral = atomic_integral_.compute(ao_formula);
+
+            // convert to MO
+            TArray result = ao_integral;
+
+            // get coefficient
+            auto left_index1 = formula_string.left_index()[0];
+            if (left_index1.is_mo()) {
+                auto left1 = orbital_space_registry_.retrieve(left_index1);
+                result("i,q,r,s") = result("p,q,r,s") * left1("p,i");
+            }
+
+            auto left_index2 = formula_string.left_index()[1];
+            if (left_index2.is_mo()) {
+                auto left2 = orbital_space_registry_.retrieve(left_index2);
+                result("p,i,r,s") = result("p,q,r,s") * left2("q,i");
+            }
+
+            auto right_index1 = formula_string.right_index()[0];
+            if (right_index1.is_mo()) {
+                auto right1 = orbital_space_registry_.retrieve(right_index1);
+                result("p,q,i,s") = result("p,q,r,s") * right1("r,i");
+            }
+            auto right_index2 = formula_string.right_index()[1];
+            if (right_index2.is_mo()) {
+                auto right2 = orbital_space_registry_.retrieve(right_index2);
+                result("p,q,r,i") = result("p,q,r,s") * right2("s,i");
+            }
+
+            return result;
         }
-
-        auto left_index2 = formula_string.left_index()[1];
-        if(left_index2.is_mo()){
-            auto left2 = orbital_space_registry_.retrieve(left_index2)->second;
-            result("p,i,r,s") = result("p,q,r,s")*left2("q,i");
-        }
-
-        auto right_index1 = formula_string.right_index()[0];
-        if(right_index1.is_mo()){
-            auto right1 = orbital_space_registry_.retrieve(right_index1)->second;
-            result("p,q,i,s") = result("p,q,r,s")*right1("r,i");
-        }
-        auto right_index2 = formula_string.right_index()[1];
-        if(right_index2.is_mo()){
-            auto right2 = orbital_space_registry_.retrieve(right_index2)->second;
-            result("p,q,r,i") = result("p,q,r,s")*right2("s,i");
-        }
-
-        return result;
     }
 
 //TODO fix the string name

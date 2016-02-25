@@ -73,7 +73,6 @@ TEST_CASE("Formula Expression", "[formula]"){
         Formula formula2(L"<r s12|G|d' B'12>");
         REQUIRE(formula2 < formula1);
 
-
         Formula formula3(L"<a b12|G|A' B'12>");
         REQUIRE(formula3 < formula2);
 

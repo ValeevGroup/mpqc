@@ -175,6 +175,13 @@ int main(int argc, char *argv[]) {
         mo_integral.atomic_integral().registry().print_formula();
     }
 
+    {
+        auto g_ijab = mo_integral.compute(L"<i j|G|a b>[df]");
+        g_ijab("i,a,j,b") = g_ijab("i,j,a,b");
+        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_ijab,ens,std::make_shared<TRange1Engine>(tre));
+        mp2.compute();
+        mo_integral.atomic_integral().registry().print_formula();
+    }
 
     // CABS fock build
 
@@ -230,8 +237,8 @@ int main(int argc, char *argv[]) {
         auto T_ribs = ao_int.compute(L"(ρ|T|σ)");
         auto V_ribs = ao_int.compute(L"(ρ|V|σ)");
 
-        auto J_ribs_obs = ao_int.compute(L"(ρ σ|G| μ ν)");
-        auto K_ribs_obs = ao_int.compute(L"(ρ μ|G| σ ν)");
+        auto J_ribs_obs = ao_int.compute(L"(ρ σ|G| μ ν)[df]");
+        auto K_ribs_obs = ao_int.compute(L"(ρ μ|G| σ ν)[df]");
 
         auto D = scf.density();
 
@@ -246,13 +253,13 @@ int main(int argc, char *argv[]) {
 
 
     // compute r12 integral
-    auto JK_ribs = ao_int.compute(L"(ρ1 σ1|G|ρ2 σ2)");
-    auto F12_ribs = ao_int.compute(L"(ρ1 σ1|R|ρ2 σ2)");
-    auto F12_sq_ribs = ao_int.compute(L"(ρ1 σ1|R2|ρ2 σ2)");
+    auto JK_ribs = ao_int.compute(L"(ρ1 σ1|G|ρ2 σ2)[df]");
+//    auto F12_ribs = ao_int.compute(L"(ρ1 σ1|R|ρ2 σ2)");
+//    auto F12_sq_ribs = ao_int.compute(L"(ρ1 σ1|R2|ρ2 σ2)");
 
 
-    auto JKF12_obs = ao_int.compute(L"(κ1 λ1 |GR|μ1 ν1)");
-    auto Comm_obs = ao_int.compute(L"( κ2 λ2 | dR2 |μ2 ν2)");
+//    auto JKF12_obs = ao_int.compute(L"(κ1 λ1 |GR|μ1 ν1)");
+//    auto Comm_obs = ao_int.compute(L"( κ2 λ2 | dR2 |μ2 ν2)");
 
 
     // Coefficients

@@ -10,6 +10,7 @@
 #include "../include/tiledarray.h"
 #include "builder.h"
 #include "density_builder.h"
+#include "../utility/json_handling.h"
 
 #include <memory>
 
@@ -59,12 +60,31 @@ class ClosedShellSCF {
         compute_density();
     }
 
+    ClosedShellSCF(array_type const &H, array_type const &S, double rep,
+                   std::unique_ptr<FockBuilder> &&f_builder,
+                   std::unique_ptr<DensityBuilder> &&d_builder,
+                   array_type const &F_guess = array_type{})
+            : H_(H),
+              S_(S),
+              f_builder_(std::move(f_builder)),
+              d_builder_(std::move(d_builder)),
+              repulsion_(rep) {
+
+        if (F_guess.is_initialized()) {
+            F_ = F_guess;
+        } else {
+            F_ = H_;
+        }
+
+        compute_density();
+    }
+
     inline array_type const &overlap() const { return S_; }
     inline array_type const &fock() const { return F_; }
     inline array_type const &density() const { return D_; }
     inline array_type const &coefficents() const { return C_; }
 
-    double energy();
+    double energy() const;
 
     /*! Function to compute the density to the desired accuracy.
      *
@@ -75,6 +95,8 @@ class ClosedShellSCF {
      *fewer than max_iters
      */
     bool solve(int64_t max_iters, double thresh);
+
+    virtual rapidjson::Value results(rapidjson::Document &) const;
 
   private:
     void compute_density();

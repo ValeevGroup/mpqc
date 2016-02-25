@@ -157,6 +157,70 @@ direct_sparse_integrals(mad::World &world, ShrPool<E> shr_pool,
     return dir_array;
 }
 
+/*! \brief Construct direct integral tensors in parallel with screening.
+ *
+ * Same requirements on Op as those in Integral Builder.
+ *
+ * I only plan to use this for CADF, no point in truncating tiles.
+ */
+template <typename E, unsigned long N, typename Op = TensorPassThrough>
+DirArray<N, IntegralBuilder<N, E, Op>>
+untruncated_direct_sparse_integrals(mad::World &world, ShrPool<E> shr_pool,
+                                    Barray<N> const &bases,
+                                    std::shared_ptr<Screener> screen
+                                    = std::make_shared<Screener>(Screener{}),
+                                    Op op = Op{}) {
+
+    const auto trange = detail::create_trange(bases);
+    const auto tvolume = trange.tiles().volume();
+    TA::TensorF tile_norms(trange.tiles(), 0.0);
+
+    // Copy the Bases for the Integral Builder
+    auto shr_bases = std::make_shared<Barray<N>>(bases);
+
+    auto builder = make_integral_builder(world, std::move(shr_pool),
+                                         std::move(shr_bases),
+                                         std::move(screen), std::move(op));
+
+    using b_type = remove_ref_t<decltype(*builder)>;
+    auto dir_array = DirArray<N, b_type>(std::move(builder));
+    auto builder_ptr = dir_array.builder();
+
+    using TileType = DirectTile<IntegralBuilder<N, E, Op>>;
+    std::vector<std::pair<int64_t, TileType>> tiles(tvolume);
+
+    auto task_f = [=](int64_t ord, detail::IdxVec const &idx, TA::Range rng,
+                      TA::TensorF *tile_norms_ptr, TileType *out_tile) {
+        *out_tile = TileType(idx, std::move(rng), std::move(builder_ptr));
+
+        auto &norms = *tile_norms_ptr;
+        norms[ord] = std::numeric_limits<double>::max();
+
+    };
+
+    auto pmap = SpPolicy::default_pmap(world, tvolume);
+    for (auto const &ord : *pmap) {
+        detail::IdxVec idx = trange.tiles().idx(ord);
+        tiles[ord].first = ord;
+        auto range = trange.make_tile_range(ord);
+        world.taskq.add(task_f, ord, idx, range, &tile_norms,
+                        &tiles[ord].second);
+    }
+    world.gop.fence();
+
+    SpShapeF shape(world, tile_norms, trange);
+    DArray<N, TileType, SpPolicy> out(world, trange, shape, pmap);
+
+    for (auto it : *out.get_pmap()) {
+        if (!out.is_zero(it)) {
+            out.set(it, std::move(tiles[it].second));
+        }
+    }
+
+    dir_array.set_array(std::move(out));
+    return dir_array;
+}
+
 /*! \brief Construct direct dense integral tensors in parallel with screening.
  *
  * Same requirements on Op as those in Integral Builder
@@ -175,10 +239,9 @@ direct_dense_integrals(mad::World &world, ShrPool<E> shr_pool,
     auto shr_bases = std::make_shared<Barray<N>>(bases);
 
     // Make a pointer to an Integral builder.
-    auto builder =
-          make_integral_builder(world, std::move(shr_pool),
-                                std::move(shr_bases), std::move(screen),
-                                std::move(op));
+    auto builder = make_integral_builder(world, std::move(shr_pool),
+                                         std::move(shr_bases),
+                                         std::move(screen), std::move(op));
 
     using b_type = remove_ref_t<decltype(*builder)>;
     auto dir_array = DirArray<N, b_type>(std::move(builder));

@@ -415,7 +415,7 @@ void third_order_update(Array const &S, Array &Z) {
     Array approx_zero;
     auto iter = 0;
     auto norm_diff = std::numeric_limits<double>::max();
-    while (norm_diff > 1.0e-13 && iter < 30) {
+    while (norm_diff > 1.0e-13 && iter < 50) {
         auto iter0 = mpqc_time::fenced_now(world);
         // Xn = \lambda*Yn*Z
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
@@ -445,7 +445,7 @@ void third_order_update(Array const &S, Array &Z) {
         }
         if (current_norm >= norm_diff) { // Once norm is increasing exit!
             if (S.get_world().rank() == 0) {
-                std::cout << "\n";
+                std::cout << "Error in sqrt inverse increased. Exiting\n";
             }
             Z("i,j") = std::sqrt(S_scale) * Z("i,j");
             return;

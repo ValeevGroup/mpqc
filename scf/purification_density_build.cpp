@@ -104,5 +104,7 @@ operator()(array_type const &F) {
     return std::make_pair(D, C);
 }
 
+rapidjson::Value PurificationDensityBuilder::results(rapidjson::Document &d) {}
+
 } // namespace scf
 } // namespace mpqc

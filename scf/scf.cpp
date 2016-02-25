@@ -11,7 +11,7 @@
 namespace mpqc {
 namespace scf {
 
-double ClosedShellSCF::energy() {
+double ClosedShellSCF::energy() const {
     return repulsion_
            + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
 }
@@ -63,9 +63,10 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
                       << "\tEnergy: " << old_energy << "\n"
                       << "\tabs(Energy Change)/energy: "
                       << (error / std::abs(old_energy)) << "\n"
-                      << "\t(Gradient Norm)/n^2: " << (rms_error / volume) << "\n"
-                      << "\tScf Time: " << scf_times_.back() << "\n" 
-                      << "\t\tDensity Time: " << d_times_.back() << "\n" 
+                      << "\t(Gradient Norm)/n^2: " << (rms_error / volume)
+                      << "\n"
+                      << "\tScf Time: " << scf_times_.back() << "\n"
+                      << "\t\tDensity Time: " << d_times_.back() << "\n"
                       << "\t\tFock Build Time: " << build_times_.back() << "\n";
         }
         f_builder_->print_iter("\t\t");
@@ -73,13 +74,12 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
         ++iter;
     }
 
-    if(iter > max_iters || (thresh > (error / old_energy)
-                                || thresh > (rms_error / volume))) {
+    if (iter > max_iters
+        || (thresh > (error / old_energy) || thresh > (rms_error / volume))) {
         return false;
     } else {
         return true;
     }
-
 }
 
 void ClosedShellSCF::compute_density() {
@@ -92,6 +92,31 @@ void ClosedShellSCF::build_F() {
     F_("i,j") = H_("i,j") + f_builder_->operator()(D_, C_)("i,j");
 }
 
+rapidjson::Value ClosedShellSCF::results(rapidjson::Document &d) const {
+    rapidjson::Value scf_object(rapidjson::kObjectType);
+    scf_object.AddMember("Type", "ClosedShellSCF", d.GetAllocator());
+    scf_object.AddMember("Energy", energy(), d.GetAllocator());
+
+    auto avg = [](std::vector<double> const &v) {
+        auto sum = 0.0;
+        for (auto d : v) {
+            sum += d;
+        }
+        return sum / double(v.size());
+    };
+
+    scf_object.AddMember("Avg Scf Time", avg(scf_times_), d.GetAllocator());
+    scf_object.AddMember("Avg Density Build Time", avg(d_times_),
+                         d.GetAllocator());
+    scf_object.AddMember("Density Builder", d_builder_->results(d),
+                         d.GetAllocator());
+    scf_object.AddMember("Avg Fock Build Time", avg(build_times_),
+                         d.GetAllocator());
+    scf_object.AddMember("Fock Builder", f_builder_->results(d),
+                         d.GetAllocator());
+
+    return scf_object;
+}
 
 } // namespace scf
 } // namespace mpqc

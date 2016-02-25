@@ -5,6 +5,8 @@
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 
+#include "../utility/json_handling.h"
+
 #include <string>
 
 namespace mpqc {
@@ -18,6 +20,8 @@ class FockBuilder {
     virtual array_type operator()(array_type const&, array_type const&) = 0;
 
     virtual void print_iter(std::string const &) = 0;
+
+    virtual rapidjson::Value results(rapidjson::Document &) = 0;
 };
 
 } // namespace scf

@@ -6,6 +6,7 @@
 #include "../include/tiledarray.h"
 #include "../utility/time.h"
 #include "../utility/array_info.h"
+#include "../utility/vector_functions.h"
 
 #include "../tensor/decomposed_tensor.h"
 #include "../tensor/mpqc_tile.h"
@@ -101,6 +102,51 @@ class CADFFockBuilder : public FockBuilder {
                                 + dl_times_.back() + dl_to_k_times_.back();
             std::cout << leader << "\ttotal K time: " << total_k_time << "\n";
         }
+    }
+
+    rapidjson::Value results(rapidjson::Document &d) override {
+        rapidjson::Value fock_builder(rapidjson::kObjectType);
+        fock_builder.AddMember("Type", "CADFFockBuilder", d.GetAllocator());
+        auto j_build = utility::vec_avg(j_times_);
+        auto c_mo_build = utility::vec_avg(c_mo_times_);
+        auto f_df_build = utility::vec_avg(f_df_times_);
+        auto dl_build = utility::vec_avg(dl_times_);
+        auto k_build = utility::vec_avg(dl_to_k_times_);
+
+        fock_builder.AddMember("Avg J Build Time", j_build, d.GetAllocator());
+        fock_builder.AddMember("Avg C_mo Build Time", c_mo_build,
+                               d.GetAllocator());
+        fock_builder.AddMember("Avg F_df Build Time", f_df_build,
+                               d.GetAllocator());
+        fock_builder.AddMember("Avg L Build Time", dl_build, d.GetAllocator());
+        fock_builder.AddMember("Avg K from L Build Time", k_build,
+                               d.GetAllocator());
+        fock_builder.AddMember("Avg Total K Build Time",
+                               k_build + dl_build + f_df_build + c_mo_build,
+                               d.GetAllocator());
+
+        auto c_mo_storage = utility::vec_avg(c_mo_storages_);
+        fock_builder.AddMember("C_mo Dense Storage",
+                               c_mo_storage[0],
+                               d.GetAllocator());
+        fock_builder.AddMember("C_mo Avg Sparse Storage",
+                               c_mo_storage[1],
+                               d.GetAllocator());
+        fock_builder.AddMember("C_mo Avg CLR Storage",
+                               c_mo_storage[2],
+                               d.GetAllocator());
+        auto f_df_storage = utility::vec_avg(f_df_storages_);
+        fock_builder.AddMember("F_df Dense Storage",
+                               f_df_storage[0],
+                               d.GetAllocator());
+        fock_builder.AddMember("F_df Avg Sparse Storage",
+                               f_df_storage[1],
+                               d.GetAllocator());
+        fock_builder.AddMember("F_df Avg CLR Storage",
+                               f_df_storage[2],
+                               d.GetAllocator());
+
+        return fock_builder;
     }
 
   private:

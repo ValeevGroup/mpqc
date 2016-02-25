@@ -7,6 +7,10 @@
 #include "../ta_routines/sqrt_inv.h"
 #include "../ta_routines/minimize_storage.h"
 
+#include "../utility/array_info.h"
+#include "../utility/vector_functions.h"
+#include "../utility/time.h"
+
 #include "diagonalize_for_coffs.hpp"
 #include "orbital_localization.h"
 #include "clusterd_coeffs.h"
@@ -29,6 +33,7 @@ ESolveDensityBuilder::ESolveDensityBuilder(
           TcutC_(TcutC),
           metric_decomp_type_(metric_decomp_type),
           localize_(localize) {
+    auto inv0 = mpqc_time::fenced_now(S_.get_world());
     if (metric_decomp_type_ == "cholesky inverse") {
         M_inv_ = array_ops::cholesky_inverse(S_);
     } else if (metric_decomp_type_ == "inverse sqrt") {
@@ -42,11 +47,16 @@ ESolveDensityBuilder::ESolveDensityBuilder(
         throw "Error did not recognize overlap decomposition in "
               "EsolveDensityBuilder";
     }
+    auto inv1 = mpqc_time::fenced_now(S_.get_world());
+    inverse_time_ = mpqc_time::duration_in_s(inv0, inv1);
 }
 
 std::pair<array_type, array_type> ESolveDensityBuilder::
 operator()(array_type const &F) {
     array_type Fp, C, Cao, D;
+    auto &world = F.get_world();
+
+    auto e0 = mpqc_time::fenced_now(world);
     Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
 
     auto Fp_eig = array_ops::array_to_eigen(Fp);
@@ -61,22 +71,69 @@ operator()(array_type const &F) {
 
     // Get back to AO land
     Cao("i,j") = M_inv_("k,i") * C("k,j");
+    Cao.truncate();
+    auto e1 = mpqc_time::fenced_now(world);
+
+    // Compute D to full accuracy
+    D("i,j") = Cao("i,k") * Cao("j,k");
+    D.truncate();
+    density_storages_.push_back(utility::array_storage(D));
 
     if (localize_) {
+        auto l0 = mpqc_time::fenced_now(world);
         auto U = mpqc::scf::BoysLocalization{}(Cao, r_xyz_ints_);
         Cao("mu,i") = Cao("mu,k") * U("k,i");
+        auto l1 = mpqc_time::fenced_now(world);
 
         auto obs_ntiles = Cao.trange().tiles().extent()[0];
         scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
+        auto c1 = mpqc_time::fenced_now(world);
+        localization_times_.push_back(mpqc_time::duration_in_s(l0, l1));
+        clustering_times_.push_back(mpqc_time::duration_in_s(l1, c1));
     }
 
     if (TcutC_ != 0) {
         ta_routines::minimize_storage(Cao, TcutC_);
+        auto shape_c = Cao.get_shape();
+        auto &norms = shape_c.data();
+        auto norm_mat = TA::eigen_map(norms, norms.range().extent_data()[0],
+                                      norms.range().extent_data()[1]);
     }
 
-    D("i,j") = Cao("i,k") * Cao("j,k");
+    esolve_times_.push_back(mpqc_time::duration_in_s(e0, e1));
+    coeff_storages_.push_back(utility::array_storage(Cao));
 
     return std::make_pair(D, Cao);
+}
+
+rapidjson::Value ESolveDensityBuilder::results(rapidjson::Document &d) {
+    rapidjson::Value builder(rapidjson::kObjectType);
+    builder.AddMember("Name", "ESolveDensityBuilder", d.GetAllocator());
+    builder.AddMember("Metric Decomp Time", inverse_time_, d.GetAllocator());
+    builder.AddMember("Avg Eigensolve Time", utility::vec_avg(esolve_times_),
+                      d.GetAllocator());
+    builder.AddMember("Localization", localize_, d.GetAllocator());
+    if (localize_) {
+        builder.AddMember("Avg Localization Time",
+                          utility::vec_avg(localization_times_),
+                          d.GetAllocator());
+        builder.AddMember("Avg Clustering Time",
+                          utility::vec_avg(clustering_times_),
+                          d.GetAllocator());
+    }
+
+    auto c_avg = utility::vec_avg(coeff_storages_);
+    auto d_avg = utility::vec_avg(density_storages_);
+
+    builder.AddMember("Coeff Dense Storage", c_avg[0], d.GetAllocator());
+
+    builder.AddMember("Density Dense Storage", d_avg[0], d.GetAllocator());
+
+    builder.AddMember("Avg Coeff Sparse Storage", c_avg[1], d.GetAllocator());
+
+    builder.AddMember("Avg Density Sparse Storage", d_avg[1], d.GetAllocator());
+
+    return builder;
 }
 
 

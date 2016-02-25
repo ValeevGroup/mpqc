@@ -19,16 +19,16 @@ inline void minimize_storage(TA::DistArray<TA::TensorD, SpPolicy> &A) {
 
 inline void minimize_storage(TA::DistArray<TA::TensorD, SpPolicy> &A,
                              double truncate_threshold) {
-    if (truncate_threshold < TA::SparseShape<float>::threshold()) {
+    if (truncate_threshold > TA::SparseShape<float>::threshold()) {
         TA::foreach_inplace(A, [=](TA::TensorD &t) {
             const auto norm = t.norm();
             const auto volume = t.range().volume();
             const auto val = norm / double(volume);
-            return (val >= truncate_threshold) ? norm : 0.0;
+            return (val < truncate_threshold) ? 0.0 : norm;
         });
+    } else {
+        A.truncate();
     }
-
-    A.truncate();
 }
 
 inline void

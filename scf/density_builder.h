@@ -4,6 +4,7 @@
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
+#include "../utility/json_handling.h"
 
 #include <string>
 #include <utility>
@@ -27,6 +28,8 @@ class DensityBuilder {
           = 0;
 
     virtual void print_iter(std::string const &) = 0;
+
+    virtual rapidjson::Value results(rapidjson::Document &d) = 0;
 };
 
 } // namespace scf

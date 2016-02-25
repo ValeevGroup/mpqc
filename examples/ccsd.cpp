@@ -18,7 +18,7 @@
 #include "../utility/print_size_info.h"
 
 #include "../utility/time.h"
-#include "../utility/json_input.h"
+#include "../utility/json_handling.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
@@ -54,14 +54,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     // parse the input
     rapidjson::Document in;
-    parse_input(argc, argv, in);
+    json::parse_input(argc, argv, in);
 
     std::cout << std::setprecision(15);
-    Document cc_in;
+    rapidjson::Document cc_in;
     if (in.HasMember("CCSD")) {
-        cc_in = get_nested(in, "CCSD");
+        cc_in = json::get_nested(in, "CCSD");
     } else if (in.HasMember("CCSD(T)")) {
-        cc_in = get_nested(in, "CCSD(T)");
+        cc_in = json::get_nested(in, "CCSD(T)");
     }
 
     if (!in.HasMember("xyz file") || !in.HasMember("number of clusters")) {

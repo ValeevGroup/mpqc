@@ -22,7 +22,7 @@ array_from_tile_map(madness::World &world, TA::TiledRange const &trange,
     TA::DistArray<TA::TensorD, SpPolicy> array(world, trange, shape);
 
     for (auto &pair : tiles) {
-        if(!array.is_zero(pair.first)){
+        if(!array.is_zero(pair.first) && array.is_local(pair.first)){
             array.set(pair.first, pair.second);
         }
     }
@@ -37,13 +37,14 @@ inline TA::DistArray<TA::TensorD, SpPolicy> reblock_from_atoms(
       std::unordered_map<std::size_t, std::size_t> const &output_cluster_df,
       TA::TiledRange by_cluster_trange) {
 
-    auto const &pmap = *(A.get_pmap());
+    // auto const &pmap = *(A.get_pmap());
     std::unordered_map<std::size_t, TA::TensorD> tiles;
-    for (auto ord = pmap.begin(); ord != pmap.end(); ++ord) {
-        if (!A.is_zero(*ord)) {
-            auto idx_in = A.trange().tiles().idx(*ord);
+    // for (auto ord = pmap.begin(); ord != pmap.end(); ++ord) {
+    for (auto ord = 0ul; ord != A.trange().tiles().volume(); ++ord) {
+        if (!A.is_zero(ord)) {
+            auto idx_in = A.trange().tiles().idx(ord);
             auto idx_out = idx_in;
-            for (auto i = 0; i < A.range().rank(); ++i) {
+            for (auto i = 0ul; i < A.range().rank(); ++i) {
                 if (i == 0) {
                     idx_out[i] = output_cluster_df.find(idx_in[i])->second;
                 } else {
@@ -51,8 +52,7 @@ inline TA::DistArray<TA::TensorD, SpPolicy> reblock_from_atoms(
                 }
             }
 
-
-            auto in_tile = A.find(*ord).get();
+            auto in_tile = A.find(ord).get();
             auto in_range = in_tile.range();
 
             auto by_cluster_ord = by_cluster_trange.tiles().ordinal(idx_out);

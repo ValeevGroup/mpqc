@@ -4,6 +4,7 @@
 
 #include "density_builder.h"
 #include <vector>
+#include <array>
 
 namespace mpqc {
 namespace scf {
@@ -22,6 +23,14 @@ class ESolveDensityBuilder : public DensityBuilder {
 
     double condition_num_thresh_ = 1e-10;
 
+    double inverse_time_;
+    std::vector<double> esolve_times_;
+    std::vector<double> localization_times_;
+    std::vector<double> clustering_times_;
+
+    std::vector<std::array<double,3>> coeff_storages_;
+    std::vector<std::array<double,3>> density_storages_;
+
   public:
     ESolveDensityBuilder() = default;
     ESolveDensityBuilder(ESolveDensityBuilder const &) = default;
@@ -39,6 +48,8 @@ class ESolveDensityBuilder : public DensityBuilder {
     std::pair<array_type, array_type> operator()(array_type const &F) override;
 
     inline void print_iter(std::string const &) override {}
+
+    virtual rapidjson::Value results(rapidjson::Document &d) override;
 
     inline double condition_num_threshold() const {
         return condition_num_thresh_;

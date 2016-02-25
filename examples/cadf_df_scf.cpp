@@ -60,8 +60,6 @@ bool tensor::detail::recompress = true;
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
     std::cout << std::setprecision(15);
-    
-    try {
 
     rapidjson::Document in;
     json::parse_input(argc, argv, in);
@@ -236,7 +234,8 @@ int main(int argc, char *argv[]) {
     //         if (world.rank() == i) {
     //             char hostname[256];
     //             gethostname(hostname, sizeof(hostname));
-    //             printf("PID %d on %s ready for attach\n", getpid(), hostname);
+    //             printf("PID %d on %s ready for attach\n", getpid(),
+    //             hostname);
     //             fflush(stdout);
     //         }
     //         world.gop.fence();
@@ -247,7 +246,6 @@ int main(int argc, char *argv[]) {
     //     }
     //     world.gop.fence();
     // }
-
 
 
     auto cdf0 = mpqc_time::fenced_now(world);
@@ -471,9 +469,7 @@ int main(int argc, char *argv[]) {
             owriter->finalize_and_print(std::cout);
         }
     }
-    } catch(madness::MadnessException &e){
-        std::cout << e.what() << std::endl;
-    }
+
     madness::finalize();
     return 0;
 }

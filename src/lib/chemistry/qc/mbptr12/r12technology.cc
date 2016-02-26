@@ -1111,7 +1111,7 @@ R12Technology::init_from_kv(const Ref<KeyVal>& keyval,
     if (!keyval->exists("corr_param"))
 	throw InputError("keyword corr_param must be given when corrfactor=stg",__FILE__,__LINE__);
     
-    const double corr_param_scale = keyval->doublevalue("corr_param_scale", KeyValValuedouble(1.0));
+    const double corr_factor_scale = keyval->doublevalue("corr_factor_scale", KeyValValuedouble(1.0));
 
     std::vector<double> stg_exponents;
     typedef G12CorrelationFactor::CorrelationParameters CorrParams;
@@ -1164,7 +1164,7 @@ R12Technology::init_from_kv(const Ref<KeyVal>& keyval,
       const int k = 0;
       MPQC_ASSERT(k < 2 && k >= 0);
       const double gamma = stg_exponents[f];
-      double scale = corr_param_scale;
+      double scale = corr_factor_scale;
       if (k == 0) // fit - e^{-\gamma r12} / \gamma
         scale *= -1.0/gamma;
       if (k == 1) // fit r12 e^{-\gamma r12}

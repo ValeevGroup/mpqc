@@ -25,13 +25,13 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <cmath>
 #include <util/misc/math.h>
 
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/dft/functional.h>
 
-using namespace std;
 using namespace sc;
 
 #ifndef HAVE_ISNAN
@@ -184,13 +184,13 @@ DenFunctional::gradient(const PointInputData& id, PointOutputData& od,
   memset(grad_f, 0, sizeof(double)*basis->ncenter()*3);
 #if 0
   ExEnv::outn() << scprintf("gradient: rho_a= %12.8f rho_b= %12.8f need_gamma = %d",
-                   id.a.rho, id.b.rho, need_gamma_terms) << endl;
+                   id.a.rho, id.b.rho, need_gamma_terms) << std::endl;
   ExEnv::outn() << scprintf("  gamma_aa= %12.8f gamma_bb= %12.8f gamma_ab= % 12.8f",
-                   id.a.gamma, id.b.gamma, id.gamma_ab) << endl;
+                   id.a.gamma, id.b.gamma, id.gamma_ab) << std::endl;
   ExEnv::outn() << scprintf("  df_drho_a= % 12.8f df_drho_b= % 12.8f",
-                   od.df_drho_a, od.df_drho_b) << endl;
+                   od.df_drho_a, od.df_drho_b) << std::endl;
   ExEnv::outn() << scprintf("  df_dg_aa= % 12.8f df_dg_bb= % 12.8f df_dg_ab= % 12.8f",
-                   od.df_dgamma_aa,od.df_dgamma_bb,od.df_dgamma_ab) << endl;
+                   od.df_dgamma_aa,od.df_dgamma_bb,od.df_dgamma_ab) << std::endl;
 #endif
 
   if (need_gamma_terms) {
@@ -421,7 +421,7 @@ DenFunctional::fd_point(const PointInputData&id, PointOutputData&od)
 
   ExEnv::out0() << scprintf("ra=%7.5f rb=%7.5f gaa=%9.7f gbb=%9.7f gab= % 9.7f",
                    id.a.rho, id.b.rho, id.a.gamma, id.b.gamma, id.gamma_ab)
-       << endl;
+       << std::endl;
 
   if (spin_polarized_) {
       double ga = tid.a.gamma;
@@ -514,7 +514,7 @@ check(const char *name, double fd, double an, const char *class_name)
   if (fd == -135711.) {
       ExEnv::out0() << scprintf("%20s: fd = %12s an = % 12.8f",
                                 name, "undefined", an)
-                    << endl;
+                    << std::endl;
     }
   else if ((fabs(an) > threshold && err/fabs(an) > tolerance)
       || ((fabs(an) <= threshold) && err > tolerance)
@@ -524,12 +524,12 @@ check(const char *name, double fd, double an, const char *class_name)
       ) {
       ExEnv::out0() << scprintf("\033[31mERROR: %13s: fd = % 12.8f an = % 12.8f (%s)\033[30m",
                        name, fd, an, class_name)
-           << endl;
+           << std::endl;
       return 1;
     }
   else {
       ExEnv::out0() << scprintf("%20s: fd = % 12.8f an = % 12.8f", name, fd, an)
-                    << endl;
+                    << std::endl;
     }
   return 0;
 }
@@ -588,7 +588,7 @@ DenFunctional::test()
 
   int ret = 0;
 
-  ExEnv::out0() << "Testing with rho_a == rho_b" << endl;
+  ExEnv::out0() << "Testing with rho_a == rho_b" << std::endl;
   set_spin_polarized(0);
   for (i=0; i < testrho.size(); i++) {
       if (testrho[i] == 0.0) continue;
@@ -611,7 +611,7 @@ DenFunctional::test()
 
   try {
       set_spin_polarized(1);
-      ExEnv::out0() << "Testing with rho_a != rho_b" << endl;
+      ExEnv::out0() << "Testing with rho_a != rho_b" << std::endl;
       for (i=0; i<testrho.size(); i++) {
           id.a.rho=testrho[i];
           for (j=0; j<testrho.size(); j++) {
@@ -636,13 +636,13 @@ DenFunctional::test()
   catch(std::exception&e) {
       ExEnv::out0() << indent
                     << "Caught an exception when testing with rho_a != rho_b"
-                    << endl
+                    << std::endl
                     << indent
                     << e.what()
-                    << endl
+                    << std::endl
                     << indent
                     << "skipping test"
-                    << endl;
+                    << std::endl;
 
     }
   return ret;
@@ -723,7 +723,7 @@ SumDenFunctional::SumDenFunctional(const Ref<KeyVal>& keyval):
   int ncoef = keyval->count("coefs");
   int nfunc = keyval->count("funcs");
   if (ncoef != nfunc && ncoef != 0) {
-      ExEnv::out0() << "SumDenFunctional: number of coefs and funcs differ" << endl;
+      ExEnv::out0() << "SumDenFunctional: number of coefs and funcs differ" << std::endl;
       abort();
     }
   
@@ -820,14 +820,14 @@ SumDenFunctional::point(const PointInputData &id,
 }
 
 void
-SumDenFunctional::print(ostream& o) const
+SumDenFunctional::print(std::ostream& o) const
 {
   o
-    << indent << "Sum of Functionals:" << endl;
+    << indent << "Sum of Functionals:" << std::endl;
   o << incindent;
-  o << indent << scprintf("%+18.16f Hartree-Fock Exchange",a0_) << endl;
+  o << indent << scprintf("%+18.16f Hartree-Fock Exchange",a0_) << std::endl;
   for (int i=0; i<n_; i++) {
-      o << indent << scprintf("%+18.16f",coefs_[i]) << endl;
+      o << indent << scprintf("%+18.16f",coefs_[i]) << std::endl;
       o << incindent;
       funcs_[i]->print(o);
       o << decindent;
@@ -1026,7 +1026,7 @@ StdDenFunctional::StdDenFunctional(const Ref<KeyVal>& keyval)
           funcs_[1] = new PW91CFunctional;
         }
       else {
-          ExEnv::out0() << "StdDenFunctional: bad name: " << name_ << endl;
+          ExEnv::out0() << "StdDenFunctional: bad name: " << name_ << std::endl;
           abort();
         }
     }
@@ -1044,10 +1044,10 @@ StdDenFunctional::save_data_state(StateOut& s)
 }
 
 void
-StdDenFunctional::print(ostream& o) const
+StdDenFunctional::print(std::ostream& o) const
 {
   o
-    << indent << "Standard Density Functional: " << name_ << endl;
+    << indent << "Standard Density Functional: " << name_ << std::endl;
   SumDenFunctional::print(o);
 }
 
@@ -2284,10 +2284,10 @@ XalphaFunctional::point(const PointInputData &id,
 }
 
 void
-XalphaFunctional::print(ostream& o) const
+XalphaFunctional::print(std::ostream& o) const
 {
   o
-    << indent << scprintf("XalphaFunctional: alpha = %12.8f", alpha_) << endl;
+    << indent << scprintf("XalphaFunctional: alpha = %12.8f", alpha_) << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3234,17 +3234,17 @@ PBECFunctional::point(const PointInputData &id,
 
 //   cout << scprintf("id.a.del_rho = %12.8f %12.8f %12.8f", id.a.del_rho[0],
 //                    id.a.del_rho[1], id.a.del_rho[2])
-//        << endl;
+//        << std::endl;
 //   cout << scprintf("id.b.del_rho = %12.8f %12.8f %12.8f", id.b.del_rho[0],
 //                    id.b.del_rho[1], id.b.del_rho[2])
-//        << endl;
-//   cout << "id.a.gamma = " << id.a.gamma << endl;
-//   cout << "id.b.gamma = " << id.b.gamma << endl;
-//   cout << "od.df_drho_a = " << od.df_drho_a << endl;
-//   cout << "od.df_drho_b = " << od.df_drho_b << endl;
-//   cout << "od.df_dgamma_aa = " << od.df_dgamma_aa << endl;
-//   cout << "od.df_dgamma_ab = " << od.df_dgamma_ab << endl;
-//   cout << "od.df_dgamma_bb = " << od.df_dgamma_bb << endl;
+//        << std::endl;
+//   cout << "id.a.gamma = " << id.a.gamma << std::endl;
+//   cout << "id.b.gamma = " << id.b.gamma << std::endl;
+//   cout << "od.df_drho_a = " << od.df_drho_a << std::endl;
+//   cout << "od.df_drho_b = " << od.df_drho_b << std::endl;
+//   cout << "od.df_dgamma_aa = " << od.df_dgamma_aa << std::endl;
+//   cout << "od.df_dgamma_ab = " << od.df_dgamma_ab << std::endl;
+//   cout << "od.df_dgamma_bb = " << od.df_dgamma_bb << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -4135,7 +4135,7 @@ mPW91XFunctional::mPW91XFunctional(const Ref<KeyVal>& keyval):
           init_constants(mPW91);
         }
       else {
-          ExEnv::outn() << "mPW91XFunctional: bad \"constants\": " << t << endl;
+          ExEnv::outn() << "mPW91XFunctional: bad \"constants\": " << t << std::endl;
           abort();
         }
     }

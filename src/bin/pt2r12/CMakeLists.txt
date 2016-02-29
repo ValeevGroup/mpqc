@@ -1,10 +1,4 @@
 
-if (GAMESS)
-
-  set(CMAKE_CXX_FLAGS "-DPT2R12GAMESS ${CMAKE_CXX_FLAGS}")
-  
-endif()
-
 set(executable pt2r12)
 add_executable(
     ${executable}

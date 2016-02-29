@@ -374,7 +374,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   // read coefficients
   RefSCMatrix coefs_extern = basis->so_matrixkit()->matrix(aodim, modim);
   // some wicked programs ... cough GAMESS cough ... report MO coefficients in *cartesian* basis always
-#ifdef PT2R12GAMESS
+#ifdef MOINFOGAMESS
   Ref<GaussianBasisSet> cbasis;
   if (basis->has_pure()) {
     // construct CartesianBasisSet and its AO dimension
@@ -400,7 +400,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   }
 
   // some wicked programs ... cough GAMESS cough ... report MO coefficients in *cartesian* basis always
-#ifdef PT2R12GAMESS
+#ifdef MOINFOGAMESS
   // if yes, may need to transform to the "real" basis?
   if (basis->has_pure()) {
     // now compute overlap between spherical and cartesian basis
@@ -436,7 +436,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   ////////////////////////////////////////////
   // read the orbital info
   ////////////////////////////////////////////
-#if PT2R12GAMESS // GAMESS reports orbitals in energy order
+#if MOINFOGAMESS // GAMESS reports orbitals in energy order
 
   skipeol(in);
   std::string token = readline(in);

@@ -45,6 +45,11 @@
 #ifdef HAVE_LIBINT2
 #  include <chemistry/qc/libint2/linkage.h>
 #  include <chemistry/qc/mbptr12/linkage.h>
+#  if defined(PT2R12GAMESS)
+#    if LIBINT2_CGSHELL_ORDERING != LIBINT2_CGSHELL_ORDERING_GAMESS
+#      error "compiling pt2r12 for GAMESS but libint2 is not GAMESS-compatible"
+#    endif
+#  endif
 #else
 #  error "this copy of MPQC does not include the Libint2 library (see libint.valeyev.net) -- cannot use F12 methods"
 #endif

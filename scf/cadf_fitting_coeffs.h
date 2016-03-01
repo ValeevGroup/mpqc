@@ -249,7 +249,6 @@ inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
     auto eri_e = integrals::make_2body_shr_pool(by_atom_dfbs, by_atom_obs);
 
     auto M = integrals::dense_integrals(world, eri_e, dfbs_array);
-    M.make_replicated();
 
     auto three_c_array
           = utility::make_array(by_atom_dfbs, by_atom_obs, by_atom_obs);

@@ -12,8 +12,7 @@ cholesky_inverse(TA::DistArray<TA::TensorD, SpPolicy> const &A) {
     auto A_eig = array_to_eigen(A);
     Eig::LLT<decltype(A_eig)> llt(A_eig);
 
-    auto L_inv_eig = decltype(A_eig)(llt.matrixL()).inverse();
-
+    decltype(A_eig) L_inv_eig = decltype(A_eig)(llt.matrixL()).inverse();
     
     auto tr_A0 = A.trange().data()[0];
     auto tr_A1 = A.trange().data()[1];

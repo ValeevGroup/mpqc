@@ -286,11 +286,11 @@ int main(int argc, char *argv[]) {
 
     decltype(C_df_) C_df;
     if (in.HasMember("cluster by atom") && in["cluster by atom"].GetBool()) {
+        C_df = C_df_;
+    } else {
         C_df = scf::reblock_from_atoms(C_df_, obs_atom_to_cluster_map,
                                        dfbs_atom_to_cluster_map,
                                        by_cluster_trange);
-    } else {
-        C_df = C_df_;
     }
 
     array_storage_Cdf = utility::array_storage(C_df);

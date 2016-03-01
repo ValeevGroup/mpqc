@@ -37,6 +37,8 @@
 #include "../scf/purification_density_build.h"
 #include "../scf/eigen_solve_density_builder.h"
 
+#include "../scf/traditional_four_center_fock_builder.h"
+
 #include "../cc/ccsd_t.h"
 #include "../cc/lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
@@ -271,7 +273,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
         time = mpqc_time::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Soad Time:  ", time, "\n");
 
-
         time0 = mpqc_time::fenced_now(world);
         auto three_c_array = utility::make_array(df_basis, basis, basis);
         auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array);
@@ -287,6 +288,27 @@ int try_main(int argc, char *argv[], madness::World &world) {
         time = mpqc_time::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Two Center Time:  ", time, "\n");
 
+        std::unique_ptr<scf::FockBuilder> f_builder;
+        if (in.HasMember("Fock Builder")
+            && in["Fock Builder"].GetString() == std::string("four center")) {
+            auto four_c_array = utility::make_array(basis, basis, basis, basis);
+
+            time0 = mpqc_time::fenced_now(world);
+            auto eri4 = ints::sparse_integrals(world, eri_e, four_c_array);
+            time1 = mpqc_time::fenced_now(world);
+            time = mpqc_time::duration_in_s(time0, time1);
+            mpqc::utility::print_par(world, "Four Center Time: ", time, "\n");
+
+            auto builder
+                  = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
+
+            f_builder = make_unique<decltype(builder)>(std::move(builder));
+        } else {
+
+
+            f_builder = make_unique<decltype(builder)>(std::move(builder));
+        }
+
         time0 = mpqc_time::fenced_now(world);
         auto multi_pool
               = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
@@ -296,14 +318,22 @@ int try_main(int argc, char *argv[], madness::World &world) {
         mpqc::utility::print_par(world, "Multipole Integral Time:  ", time,
                                  "\n");
 
-        auto d_builder = scf::PurificationDensityBuilder(S, r_xyz, occ / 2,
-                                                         nclusters, 0.0, false);
+        std::unique_ptr<scf::DensityBuilder> d_builder;
+        if (in.HasMember("Density Builder")
+            && in["DensityBuilder"].GetString()
+               == std::string("purification")) {
+            auto db = scf::PurificationDensityBuilder(S, r_xyz, occ / 2,
+                                                      nclusters, 0.0, false);
 
-        // auto d_builder
-        //       = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters, 0.0,
-        //       "cholesky inverse", false);
+            d_builder
+                  = make_unique<scf::PurificationDensityBuilder>(std::move(db));
+        } else {
+            auto db = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters,
+                                                0.0, "cholesky inverse", false);
+            d_builder = make_unique<scf::ESolveDensityBuilder>(std::move(db));
+        }
 
-        scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(builder),
+        scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(f_builder),
                                 std::move(d_builder), F_soad);
 
         scf.solve(scf_max_iter, scf_converge);
@@ -414,12 +444,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
         fock_mo("p,q") = F("mu,nu") * Cv("mu,p") * Ci("nu,q");
 
         //        if (do_screen) {
-        //            auto screen_builder = ints::init_schwarz_screen(1e-10);
+        //            auto screen_builder =
+        //            ints::init_schwarz_screen(1e-10);
         //            auto shr_screen =
         //            std::make_shared<ints::SchwarzScreen>(screen_builder(world,
         //            eri_e, basis));
         //
-        //            const auto bs4_array = utility::make_array(basis, basis,
+        //            const auto bs4_array = utility::make_array(basis,
+        //            basis,
         //            basis, basis);
         //            auto lazy_two_electron_int =
         //            mpqc_ints::direct_sparse_integrals(world, eri_e,
@@ -430,7 +462,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         //                    (Xab, Ci, Cv, lazy_two_electron_int);
         //        } else {
 
-        //            const auto bs4_array = utility::make_array(basis, basis,
+        //            const auto bs4_array = utility::make_array(basis,
+        //            basis,
         //            basis, basis);
         //            auto lazy_two_electron_int =
         //            mpqc_ints::direct_sparse_integrals(world, eri_e,

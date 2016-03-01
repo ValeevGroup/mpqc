@@ -22,7 +22,7 @@
 namespace mpqc {
 namespace array_ops {
 
-void print_ranks_to_file(
+inline void print_ranks_to_file(
       TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
                 TA::SparsePolicy> const &a,
       std::string file_name) {
@@ -49,7 +49,7 @@ void print_ranks_to_file(
     }
 }
 
-void print_ranks_to_file(
+inline void print_ranks_to_file(
       TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> const &a,
       std::string file_name) {
     // Do nothing
@@ -177,7 +177,7 @@ void add_to_diag(Array &A, double val) {
     }
 }
 
-void add_to_diag_tile(double val, TA::Tensor<double> &tile) {
+inline void add_to_diag_tile(double val, TA::Tensor<double> &tile) {
     auto const extent = tile.range().extent();
     auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
     for (auto i = 0ul; i < extent[0]; ++i) {
@@ -185,7 +185,7 @@ void add_to_diag_tile(double val, TA::Tensor<double> &tile) {
     }
 }
 
-void add_to_diag_tile(double val,
+inline void add_to_diag_tile(double val,
                       tensor::Tile<tensor::DecomposedTensor<double>> &tile) {
     auto const extent = tile.range().extent();
     auto map

@@ -25,6 +25,9 @@ add_dependencies(examples basis_example)
 add_executable(ccsd EXCLUDE_FROM_ALL ccsd.cpp)
 target_link_libraries(ccsd ${TileClusterChem_LIBRARIES})
 
+add_executable(eomcc EXCLUDE_FROM_ALL eom_cc.cpp)
+target_link_libraries(eomcc ${TileClusterChem_LIBRARIES})
+
 file(COPY ${CMAKE_SOURCE_DIR}/examples/default_input.json DESTINATION ${CMAKE_BINARY_DIR}/examples)
 file(COPY ${CMAKE_SOURCE_DIR}/examples/generate_input.py DESTINATION ${CMAKE_BINARY_DIR}/examples)
 

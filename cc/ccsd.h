@@ -99,10 +99,31 @@ namespace mpqc {
                     double ccsd_corr = compute_ccsd_nondirect(t1,t2);
                 }
 
+                T1_ = t1;
+                T2_ = t2;
+
                 ccsd_intermediate_->clean_two_electron();
 
             }
 
+            // get T1 amplitudes
+            TArray get_t1() const {
+                if (T1_.is_initialized()) {
+                  return T1_;
+                } else {
+                    throw std::runtime_error(
+                          "CCSD T1 amplitudes have not been computed");
+                }
+            }
+            // get T2 amplitudes
+            TArray get_t2() const {
+                if (T2_.is_initialized()) {
+                  return T2_;
+                } else {
+                    throw std::runtime_error(
+                          "CCSD T2 amplitudes have not been computed");
+                }
+            }
 
             // dummy way of doing CCSD
             // store all the integrals in memory
@@ -1483,6 +1504,9 @@ namespace mpqc {
             // option member
             rapidjson::Document options_;
 
+        private:
+            TArray T1_;
+            TArray T2_;
         }; // class CCSD
 
     } //namespace cc

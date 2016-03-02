@@ -1399,7 +1399,7 @@ Extern_RefWavefunction::init(const RefSCMatrix& coefs,
     world()->fockbuild_runtime()->dfinfo(dfinfo());
 
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
-    if(force_average_AB_rdm1_ == false) // the densites are in AO basis
+    if(force_average_AB_rdm1_ == false) // the densities are in AO basis
         world()->fockbuild_runtime()->set_densities(ordm(Alpha), ordm(Beta));//here computes ordm
     else
     {

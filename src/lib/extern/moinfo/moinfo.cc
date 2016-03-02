@@ -384,6 +384,8 @@ ExternMOInfo::ExternMOInfo(std::string filename,
     RefSCDimension aodim_cart = localints->petite_list()->AO_basisdim();
     coefs_extern = basis->so_matrixkit()->matrix(aodim_cart, modim);
   }
+  else
+    cbasis = basis;
 #endif
   coefs_extern.assign(0.0);
   bool have_coefs = true;

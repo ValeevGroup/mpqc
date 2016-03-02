@@ -24,6 +24,7 @@ set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 option(MPQC_EXPERT "MPQC Expert mode: disables automatically downloading or building dependencies" OFF)
 option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
 option(MPQC_OPENMP "Use OpenMP" OFF)
+option(GAMESS "MPQC-GAMESS interface: checks for GAMESS-compatible libint2, adjusts normalization, etc." OFF)
 # non-boolean
 if (NOT DEFINED MPQC_MEMORY_CHECK)
   set(MPQC_MEMORY_CHECK -1) # How to check memory use (see mpqc_config.h for details)
@@ -32,6 +33,11 @@ else()
 endif()
 if (NOT DEFINED MPQC_ASSERT_MODE)
   set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
+endif()
+
+# MPQC-GAMESS interface requires exact normalization convention
+if (GAMESS AND NOT DEFINED INTEGRALLIBINT2_NORMCONV)
+  set (INTEGRALLIBINT2_NORMCONV 2)
 endif()
 
 include(cotire)

@@ -36,9 +36,7 @@ namespace mpqc{
 
         Formula(std::wstring formula);
 
-        const std::wstring &formula_string() const {
-            return formula_;
-        }
+        std::wstring formula_string() const;
 
         const std::vector<OrbitalIndex> &left_index() const {
             return left_index_;
@@ -50,10 +48,6 @@ namespace mpqc{
 
         const std::vector<OrbitalIndex> &right_index() const {
             return right_index_;
-        }
-
-        void set_formula(const std::wstring &formula) {
-            Formula::formula_ = formula;
         }
 
         void set_right_index(const std::vector<OrbitalIndex> &right_index) {
@@ -94,8 +88,6 @@ namespace mpqc{
         std::vector<OrbitalIndex> check_orbital_index(std::wstring index_array);
 
     private:
-
-        std::wstring formula_;
 
         Operation operation_;
         Notation  notation_;

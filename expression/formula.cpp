@@ -18,7 +18,6 @@ namespace mpqc{
         if (formula_string.empty()) {
             throw std::runtime_error("Empty Formula!");
         }
-        formula_ = formula_string;
 
         // detect the brackets <> or ()
         auto left_mark = [](const wchar_t letter) {
@@ -156,6 +155,39 @@ namespace mpqc{
         return (operation_== other.operation_) && (left_index_ == other.left_index_) && (right_index_ == other.right_index_) && (notation_ == other.notation_);
     }
 
+    std::wstring Formula::formula_string() const {
+
+        std::wstring left, right, result;
+        for (const auto& index : left_index_){
+            left += index.name() + L" ";
+        }
+
+        for (const auto& index : right_index_){
+            right += L" " + index.name();
+        }
+
+        // add operation
+        auto oper_str = operation_.oper_string();
+        if(!oper_str.empty()){
+            result = left + L"|" + operation_.oper_string() + L"|" + right;
+        }
+        else{
+            result = left + L"|" + right;
+        }
+
+        if(notation_==Notation::Chemical){
+            result = L"( " + result + L" )";
+        }
+        else{
+            result = L"< " + result + L" >";
+        }
+        // add option
+        result = result + operation_.option_string();
+
+        return result;
+
+    }
+
     std::string Formula::to_ta_expression() const {
 
         std::string ta_expression;
@@ -174,7 +206,6 @@ namespace mpqc{
         }
 
         // add right index
-
         for (const auto & index : right_index_){
             std::string index_expression = index.to_ta_expression();
             ta_expression.append(index_expression.begin(),index_expression.end());

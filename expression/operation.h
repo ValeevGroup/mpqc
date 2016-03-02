@@ -42,6 +42,7 @@ namespace mpqc{
         static const std::unordered_map<std::wstring, Operations> two_body_operation;
         static const std::unordered_map<std::wstring, Operations> fock_operation;
         static const std::map<Operations,std::wstring> operation_to_string;
+        static const std::map<Options,std::wstring> option_to_string;
         static const std::unordered_map<std::wstring, Options> option;
 
         Operation() = default;
@@ -60,10 +61,8 @@ namespace mpqc{
             return operation_;
         }
 
-        const std::wstring string() const{
-            const auto result = operation_to_string.find(operation_);
-            return result->second;
-        }
+        const std::wstring oper_string() const;
+        const std::wstring option_string() const;
 
         bool has_option(Options op) const;
 

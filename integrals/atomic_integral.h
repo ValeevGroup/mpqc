@@ -85,18 +85,18 @@ namespace integrals{
             //chemical notation
             if(formula.notation() == Formula::Notation::Chemical){
 
-                std::wstring left = L"( Κ |" + formula.operation().string() + L"| " + formula.left_index()[1].name() + L" " + formula.left_index()[0].name() + L" )";
-                std::wstring right = L"( Κ |" + formula.operation().string() + L"| " + formula.right_index()[0].name() + L" " + formula.right_index()[1].name() + L" )";
-                std::wstring center = L"( Κ |" + formula.operation().string() +  L"| Λ)[inv]";
+                std::wstring left = L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[1].name() + L" " + formula.left_index()[0].name() + L" )";
+                std::wstring right = L"( Κ |" + formula.operation().oper_string() + L"| " + formula.right_index()[0].name() + L" " + formula.right_index()[1].name() + L" )";
+                std::wstring center = L"( Κ |" + formula.operation().oper_string() + L"| Λ)[inv]";
                 result[0] = left;
                 result[1] = center;
                 result[2] = right;
             }
                 //physical notation
             else{
-                std::wstring left = L"( Κ |" + formula.operation().string() + L"| " + formula.right_index()[0].name() + L" " + formula.left_index()[0].name() + L" )";
-                std::wstring right = L"( Κ |" + formula.operation().string() + L"| " + formula.left_index()[1].name() + L" " + formula.right_index()[1].name() + L" )";
-                std::wstring center = L"( Κ |" + formula.operation().string() +  L"| Λ)[inv]";
+                std::wstring left = L"( Κ |" + formula.operation().oper_string() + L"| " + formula.right_index()[0].name() + L" " + formula.left_index()[0].name() + L" )";
+                std::wstring right = L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[1].name() + L" " + formula.right_index()[1].name() + L" )";
+                std::wstring center = L"( Κ |" + formula.operation().oper_string() + L"| Λ)[inv]";
                 result[0] = left;
                 result[1] = center;
                 result[2] = right;
@@ -558,6 +558,32 @@ namespace integrals{
             wcout_utf8(formula.formula_string());
             std::cout << std::endl;
         }
+            //compute JK, requires orbital space registry
+//        else if(formula.operation().is_jk()){
+//
+//            // density fitting case
+//            if(formula.operation().has_option(Operation::Options::DensityFitting)){
+//                auto three_center_formula = get_jk_df_formula(formula);
+//
+//            }
+//            else{
+//                // convert to ao formula
+//                auto four_center_formula = get_jk_formula(formula);
+//                auto four_center = this->compute(four_center_formula);
+//
+//                // find the density
+//                auto space_index = get_jk_orbital_space(formula.operation());
+//                auto space = orbital_space_registry_->retrieve(space_index);
+//
+//                result("i,j") = four_center("i,j,k,l")*space("k,a")*space("a,l");
+//            }
+//
+//        }
+//
+//            //compute JK, requires orbital space registry
+//        else if(formula.operation().is_fock()){
+//
+//        }
 
         if(formula.operation().has_option(Operation::Options::Inverse)){
 

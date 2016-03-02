@@ -5,6 +5,8 @@
 #include "operation.h"
 
 #include <boost/algorithm/string.hpp>
+#include <string>
+#include <memory>
 
 
 namespace mpqc{
@@ -44,6 +46,12 @@ namespace mpqc{
             {Operations::cGTG2, L"R2"},
             {Operations::cGTGCoulomb, L"GR" },
             {Operations::DelcGTG2, L"dR2"}
+    };
+
+    const std::map<Options, std::wstring> Operation::option_to_string = {
+            {Options::DensityFitting, L"df" },
+            {Options::Inverse, L"inv"},
+            {Options::InverseSquareRoot, L"inv_sq"}
     };
 
     const std::unordered_map<std::wstring, Options> Operation::option = {
@@ -164,4 +172,21 @@ namespace mpqc{
                                                                                   other.oper();
     }
 
+    const std::wstring Operation::oper_string() const {
+        const auto result = operation_to_string.find(operation_);
+        return result->second;
+    }
+
+    const std::wstring Operation::option_string() const {
+        std::wstring result;
+        if(options_.empty()){
+            return  result;
+        }
+        for(const auto& option : options_){
+            result += option_to_string.find(option)->second + L",";
+        }
+        result = L"[" + result;
+        result.back() = L']';
+        return result;
+    }
 }

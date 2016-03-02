@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <extern/moinfo/moinfo.h>
+#include <chemistry/qc/extern/moinfo.h>
 #include <iostream>
 #include <numeric>
 #include <cassert>

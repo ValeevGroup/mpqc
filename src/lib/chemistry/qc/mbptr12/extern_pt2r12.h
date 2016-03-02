@@ -29,7 +29,7 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_externpt2r12_h
 
 #include <chemistry/qc/mbptr12/pt2r12.h>
-#include <extern/moinfo/moinfo.h>
+#include <chemistry/qc/extern/moinfo.h>
 
 namespace sc {
 

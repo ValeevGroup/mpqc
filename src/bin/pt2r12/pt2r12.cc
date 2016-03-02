@@ -29,7 +29,7 @@
 # include <util/madness/init.h>
 #endif
 
-#include <extern/moinfo/moinfo.h>
+#include <chemistry/qc/extern/moinfo.h>
 #include <chemistry/qc/mbptr12/extern_pt2r12.h>
 
 // Force linkages:

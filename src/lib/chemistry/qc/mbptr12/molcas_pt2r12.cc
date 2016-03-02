@@ -44,7 +44,7 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/lcao/wfnworld.h>
 #include <chemistry/qc/basis/union.h>
-#include <extern/moinfo/moinfo.h>
+#include <chemistry/qc/extern/moinfo.h>
 
 
 extern char **environ;

@@ -8,6 +8,7 @@ set(subobjects
   basis
   dft
   etrain
+  extern
   intv3
   lcao
   lmp2

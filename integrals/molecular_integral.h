@@ -55,6 +55,12 @@ namespace integrals{
 
         TArray compute(const std::wstring& );
 
+        TA::expressions::TsrExpr<TArray,true> operator() (const std::wstring& str){
+            auto formula = Formula(str);
+            auto array = compute(formula);
+            return array(formula.to_ta_expression());
+        };
+
     private:
 
         //TODO more operation F, J, K...
@@ -164,13 +170,6 @@ namespace integrals{
             }
 
             auto center = compute(df_formulas[1]);
-            //inverse two center integral
-            auto center_eig = array_ops::array_to_eigen(center);
-            MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(center_eig).matrixL()).inverse();
-            center_eig = L_inv_eig.transpose() * L_inv_eig;
-            auto tr_center = center.trange().data()[0];
-            center = array_ops::eigen_to_array<TA::TensorD>(center.get_world(), center_eig, tr_center, tr_center);
-
 
             TArray result;
             if(notation==Formula::Notation::Chemical){

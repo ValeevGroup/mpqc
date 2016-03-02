@@ -27,18 +27,20 @@ namespace mpqc{
             K = 9,
             KAlpha = 10,
             KBeta = 11,
-            F = 12,
-            FAlpha = 13,
-            FBeta = 14
+            Fock = 12,
+            FockAlpha = 13,
+            FockBeta = 14
         };
 
         enum class Options{
             DensityFitting = 0,
-            InverseSquareRoot = 1
+            Inverse = 1,
+            InverseSquareRoot = 2
         };
 
         static const std::unordered_map<std::wstring, Operations> one_body_operation;
         static const std::unordered_map<std::wstring, Operations> two_body_operation;
+        static const std::unordered_map<std::wstring, Operations> fock_operation;
         static const std::map<Operations,std::wstring> operation_to_string;
         static const std::unordered_map<std::wstring, Options> option;
 
@@ -50,11 +52,11 @@ namespace mpqc{
 
         Operation(std::wstring operation, std::wstring option = L"");
 
-        const std::vector<Options> get_options() const {
+        const std::vector<Options> options() const {
             return options_;
         }
 
-        const Operations &get_operation() const {
+        const Operations &oper() const {
             return operation_;
         }
 
@@ -67,6 +69,8 @@ namespace mpqc{
 
         bool is_onebody() const;
         bool is_twobody() const;
+        bool is_fock() const;
+        bool is_jk() const;
         bool is_r12() const;
 
         bool operator==(Operation const & other) const;

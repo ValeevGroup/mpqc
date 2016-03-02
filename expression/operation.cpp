@@ -25,6 +25,16 @@ namespace mpqc{
         {L"dR2", Operations::DelcGTG2}
     };
 
+    const std::unordered_map<std::wstring, Operations> Operation::fock_operation = {
+        {L"J", Operations::J},
+        {L"K", Operations::K },
+        {L"K(α)", Operations::KAlpha },
+        {L"K(β)", Operations::KBeta },
+        {L"F", Operations::Fock},
+        {L"F(α)", Operations::FockAlpha},
+        {L"F(β)", Operations::FockBeta},
+    };
+
     const std::map<Operations, std::wstring> Operation::operation_to_string = {
             {Operations::Overlap, L""},
             {Operations::Kinetic, L"T"},
@@ -38,6 +48,8 @@ namespace mpqc{
 
     const std::unordered_map<std::wstring, Options> Operation::option = {
             {L"df", Options::DensityFitting},
+            {L"inv", Options::Inverse },
+            {L"inv_sq", Options::InverseSquareRoot }
     };
 
     bool Operation::is_onebody() const {
@@ -60,31 +72,26 @@ namespace mpqc{
         return false;
     }
 
+    bool Operation::is_fock() const {
+        return (operation_==Operations::Fock || operation_==Operations::FockAlpha || operation_==Operations::FockBeta);
+    }
+
+    bool Operation::is_jk() const {
+        return (operation_== Operations::J || operation_==Operations::K || operation_==Operations::KAlpha ||
+                operation_==Operations::KBeta);
+    }
+
     bool Operation::is_r12() const {
-        if(operation_ == Operations::cGTG){
-            return true;
-        }
-        else if(operation_ == Operations::cGTG2){
-            return true;
-        }
-        else if(operation_ == Operations::cGTGCoulomb){
-            return true;
-        }
-        else if(operation_ == Operations::DelcGTG2){
-            return true;
-        }
-        else{
-            return false;
-        }
+        return (operation_==Operations::cGTG2 || operation_ == Operations::cGTG2 || operation_==Operations::cGTGCoulomb
+                || operation_==Operations::DelcGTG2);
     }
 
     bool Operation::has_option(Options op) const {
-
         auto df = std::find(options_.cbegin(),options_.cend(),op);
         return (df != options_.cend());
     }
-    Operation::Operation(std::wstring oper, std::wstring opt) {
 
+    Operation::Operation(std::wstring oper, std::wstring opt) {
         // parse operation
         if (oper.empty()) {
             throw std::runtime_error("Empty Operation!. \n");
@@ -100,8 +107,16 @@ namespace mpqc{
             if(iter2 != two_body_operation.end()){
                 operation_ = iter2->second;
             }else{
-                throw std::runtime_error("Invalid Operation");
+
+                auto iter3 = fock_operation.find(oper);
+                if(iter3 != fock_operation.end()){
+                    operation_ = iter3->second;
+                }
+                else{
+                    throw std::runtime_error("Invalid Operation");
+                }
             }
+
         }
         else{
             operation_ = iter1->second;
@@ -125,6 +140,8 @@ namespace mpqc{
                     result.push_back(iter->second);
                 }
             }
+
+            std::sort(result.begin(),result.end());
             options_ = result;
         }
     }
@@ -142,7 +159,9 @@ namespace mpqc{
         return same_operation && same_option;
     }
 
-bool Operation::operator<(const Operation &other) const {
-    return other.get_operation() == this->get_operation() ? this->get_options() < other.get_options() : this->get_operation() < other.get_operation();
-}
+    bool Operation::operator<(const Operation &other) const {
+        return other.oper() == this->oper() ? this->options() < other.options() : this->oper() <
+                                                                                  other.oper();
+    }
+
 }

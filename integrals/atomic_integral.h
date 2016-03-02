@@ -87,7 +87,7 @@ namespace integrals{
 
                 std::wstring left = L"( Κ |" + formula.operation().string() + L"| " + formula.left_index()[1].name() + L" " + formula.left_index()[0].name() + L" )";
                 std::wstring right = L"( Κ |" + formula.operation().string() + L"| " + formula.right_index()[0].name() + L" " + formula.right_index()[1].name() + L" )";
-                std::wstring center = L"( Κ |" + formula.operation().string() +  L"| Λ)";
+                std::wstring center = L"( Κ |" + formula.operation().string() +  L"| Λ)[inv]";
                 result[0] = left;
                 result[1] = center;
                 result[2] = right;
@@ -96,7 +96,7 @@ namespace integrals{
             else{
                 std::wstring left = L"( Κ |" + formula.operation().string() + L"| " + formula.right_index()[0].name() + L" " + formula.left_index()[0].name() + L" )";
                 std::wstring right = L"( Κ |" + formula.operation().string() + L"| " + formula.left_index()[1].name() + L" " + formula.right_index()[1].name() + L" )";
-                std::wstring center = L"( Κ |" + formula.operation().string() +  L"| Λ)";
+                std::wstring center = L"( Κ |" + formula.operation().string() +  L"| Λ)[inv]";
                 result[0] = left;
                 result[1] = center;
                 result[2] = right;
@@ -163,11 +163,11 @@ namespace integrals{
 
         libint2::OneBodyEngine::operator_type itype;
         std::vector<std::pair<double, std::array<double, 3>>> q;
-        if (operation.get_operation() == Operation::Operations::Overlap) {
+        if (operation.oper() == Operation::Operations::Overlap) {
             itype = libint2::OneBodyEngine::overlap;
-        } else if (operation.get_operation() == Operation::Operations::Kinetic) {
+        } else if (operation.oper() == Operation::Operations::Kinetic) {
             itype = libint2::OneBodyEngine::kinetic;
-        } else if (operation.get_operation() == Operation::Operations::Nuclear) {
+        } else if (operation.oper() == Operation::Operations::Nuclear) {
             itype = libint2::OneBodyEngine::nuclear;
             q = make_q(*(this->mol_));
         } else {
@@ -188,19 +188,19 @@ namespace integrals{
             const Operation &operation)
     {
         libint2::MultiplicativeSphericalTwoBodyKernel kernel;
-        if (operation.get_operation() == Operation::Operations::Coulomb) {
+        if (operation.oper() == Operation::Operations::Coulomb) {
             kernel = libint2::Coulomb;
         }
-        else if(operation.get_operation()== Operation::Operations::cGTGCoulomb) {
+        else if(operation.oper() == Operation::Operations::cGTGCoulomb) {
             kernel = libint2::cGTG_times_Coulomb;
         }
-        else if(operation.get_operation() == Operation::Operations::cGTG){
+        else if(operation.oper() == Operation::Operations::cGTG){
             kernel = libint2::cGTG;
         }
-        else if(operation.get_operation() == Operation::Operations::cGTG2){
+        else if(operation.oper() == Operation::Operations::cGTG2){
             kernel = libint2::cGTG;
         }
-        else if(operation.get_operation() == Operation::Operations::DelcGTG2){
+        else if(operation.oper() == Operation::Operations::DelcGTG2){
             kernel = libint2::DelcGTG_square;
         }
         else {
@@ -384,6 +384,12 @@ namespace integrals{
         TArray compute(const std::wstring& );
         TArray compute(const Formula& );
 
+        TA::expressions::TsrExpr<TArray,true> operator() (const std::wstring& str){
+            auto formula = Formula(str);
+            auto array = compute(formula);
+            return array(formula.to_ta_expression());
+        };
+
         const FormulaRegistry<TArray> &registry() const {
             return ao_formula_registry_;
         }
@@ -392,7 +398,6 @@ namespace integrals{
             orbital_space_registry_ = regitsry;
         }
 
-        TArray compute_direct(const std::wstring& );
 
     protected:
 
@@ -460,7 +465,7 @@ namespace integrals{
             }
 
             if(kernel == libint2::cGTG){
-                if(operation.get_operation() == Operation::Operations::cGTG2){
+                if(operation.oper() == Operation::Operations::cGTG2){
 
                     auto squared_pragmas = f12::gtg_params_squared(this->gtg_params_);
                     libint2::TwoBodyEngine<libint2::cGTG> engine(max_nprim, static_cast<int>(max_am),0,std::numeric_limits<double>::epsilon(),squared_pragmas);
@@ -527,17 +532,18 @@ namespace integrals{
 
         Barray<2> bs_array;
 
+        TArray result;
+
         // use one body engine
         if(formula.operation().is_onebody()){
 
             std::shared_ptr<EnginePool<libint2::OneBodyEngine>> engine_pool;
             parse_one_body(formula,engine_pool,bs_array);
-            auto result = compute_integrals(this->world_,engine_pool,bs_array);
+            result = compute_integrals(this->world_,engine_pool,bs_array);
 
             std::cout << "Computed One Body Integral: ";
             wcout_utf8(formula.formula_string());
             std::cout << std::endl;
-            return result;
         }
         // use two body engine
         else if(formula.operation().is_twobody()){
@@ -546,13 +552,31 @@ namespace integrals{
             libint2::MultiplicativeSphericalTwoBodyKernel kernel;
 
             parse_two_body_two_center(formula,kernel,bs_array,max_nprim,max_am);
-            TA::DistArray<Tile,Policy> result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
+            result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
 
             std::cout << "Computed Twobody Two Center Integral: ";
             wcout_utf8(formula.formula_string());
             std::cout << std::endl;
-            return result;
         }
+
+        if(formula.operation().has_option(Operation::Options::Inverse)){
+
+            auto result_eig = array_ops::array_to_eigen(result);
+            MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
+            result_eig = L_inv_eig.transpose() * L_inv_eig;
+            auto tr_result = result.trange().data()[0];
+            result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), result_eig, tr_result, tr_result);
+
+        }
+
+        if(formula.operation().has_option(Operation::Options::InverseSquareRoot)){
+            auto result_eig = array_ops::array_to_eigen(result);
+            MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
+            auto tr_result = result.trange().data()[0];
+            result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), L_inv_eig, tr_result, tr_result);
+        }
+
+        return result;
 
     }
 

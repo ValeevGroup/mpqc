@@ -135,12 +135,14 @@ namespace mpqc{
         FormulaRegistry(FormulaRegistry&&) = default;
         FormulaRegistry& operator=(FormulaRegistry &&) = default;
 
-        void print_formula() const {
+        void print_formula(madness::World& world) const {
 
-            for(const auto& item : this->registry_){
-                utility::wprint_size_info(item.second, item.first.formula_string());
+            if(world.rank()==0){
+                for(const auto& item : this->registry_){
+                    utility::wprint_size_info(item.second, item.first.formula_string());
+                }
+                std::cout << std::endl;
             }
-            std::cout << std::endl;
         }
     };
 } // end of namespace mpqc

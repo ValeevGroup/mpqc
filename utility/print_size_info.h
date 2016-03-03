@@ -30,13 +30,13 @@ void print_size_info(Array const &A, std::string const &name){
 }
 
 template<typename Array>
-void wprint_size_info(Array const &A, std::wstring const &name){
+void wprint_size_info(Array const &A, const std::wstring &name){
     auto &world = A.get_world();
     auto sizes = array_storage(A);
 
     if(world.rank() == 0){
         std::cout << "Printing size information for ";
-        std::wcout << name << "\n";
+        std::wcout << name << L"\n";
 
 
         std::cout << "\tFull     = " << sizes[0] << " GB\n"

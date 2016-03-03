@@ -12,6 +12,7 @@
 #include "atomic_integral_base.h"
 #include "../utility/wcout_utf8.h"
 #include "../ta_routines/array_to_eigen.h"
+#include "../utility/parallel_print.h"
 
 namespace mpqc{
 namespace integrals{
@@ -200,22 +201,29 @@ namespace integrals{
     typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute2(const Formula& formula) {
 
         Barray<2> bs_array;
-
+        double time = 0.0;
         TArray result;
 
         // use one body engine
         if(formula.operation().is_onebody()){
 
+
+            auto time0 = mpqc_time::fenced_now(world_);
+
             std::shared_ptr<EnginePool<libint2::OneBodyEngine>> engine_pool;
             parse_one_body(formula,engine_pool,bs_array);
             result = compute_integrals(this->world_,engine_pool,bs_array);
 
-            std::cout << "Computed One Body Integral: ";
-            wcout_utf8(formula.formula_string());
-            std::cout << std::endl;
+            auto time1 = mpqc_time::fenced_now(world_);
+            time+= mpqc_time::duration_in_s(time0,time1);
+
+            utility::print_par(world_,"Computed One Body Integral: ");
+            utility::wprint_par(world_,formula.formula_string());
+            utility::print_par(world_," Time: ", time, " s");
         }
         // use two body engine
         else if(formula.operation().is_twobody()){
+            auto time0 = mpqc_time::fenced_now(world_);
 
             int64_t max_nprim, max_am;
             libint2::MultiplicativeSphericalTwoBodyKernel kernel;
@@ -223,9 +231,29 @@ namespace integrals{
             parse_two_body_two_center(formula,kernel,bs_array,max_nprim,max_am);
             result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
 
-            std::cout << "Computed Twobody Two Center Integral: ";
-            wcout_utf8(formula.formula_string());
-            std::cout << std::endl;
+            if(formula.operation().has_option(Operation::Options::Inverse)){
+
+                auto result_eig = array_ops::array_to_eigen(result);
+                MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
+                result_eig = L_inv_eig.transpose() * L_inv_eig;
+                auto tr_result = result.trange().data()[0];
+                result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), result_eig, tr_result, tr_result);
+
+            }
+
+            if(formula.operation().has_option(Operation::Options::InverseSquareRoot)){
+                auto result_eig = array_ops::array_to_eigen(result);
+                MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
+                auto tr_result = result.trange().data()[0];
+                result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), L_inv_eig, tr_result, tr_result);
+            }
+
+            auto time1 = mpqc_time::fenced_now(world_);
+            time+= mpqc_time::duration_in_s(time0,time1);
+
+            utility::print_par(world_,"Computed Twobody Two Center Integral: ");
+            utility::wprint_par(world_, formula.formula_string());
+            utility::print_par(world_," Time: ", time, " s");
         }
             //compute JK, requires orbital space registry
         else if(formula.operation().is_jk()){
@@ -238,6 +266,7 @@ namespace integrals{
                 auto center = compute(three_center_formula[1]);
                 auto right = compute(three_center_formula[2]);
 
+                auto time0 = mpqc_time::fenced_now(world_);
                 // find the density
                 auto space_index = get_jk_orbital_space(formula.operation());
                 auto space = orbital_space_registry_->retrieve(space_index);
@@ -248,12 +277,15 @@ namespace integrals{
                 else{
                     result("i,j") = (left("K,k,i")*space("k,a"))*center("K,Q")*(right("Q,j,l")*space("l,a"));
                 }
+                auto time1 = mpqc_time::fenced_now(world_);
+                time+= mpqc_time::duration_in_s(time0,time1);
             }
             else{
                 // convert to ao formula
                 auto four_center_formula = get_jk_formula(formula);
                 auto four_center = this->compute(four_center_formula);
 
+                auto time0 = mpqc_time::fenced_now(world_);
                 // find the density
                 auto space_index = get_jk_orbital_space(formula.operation());
                 auto space = orbital_space_registry_->retrieve(space_index);
@@ -264,8 +296,13 @@ namespace integrals{
                 else{
                     result("rho,sigma") = four_center("rho,mu,sigma,nu")*(space("mu,i")*space("nu,i"));
                 }
+                auto time1 = mpqc_time::fenced_now(world_);
+                time+= mpqc_time::duration_in_s(time0,time1);
 
             }
+            utility::print_par(world_,"Computed Coulumb/Exchange Integral: ");
+            utility::wprint_par(world_, formula.formula_string());
+            utility::print_par(world_," Time: ", time, " s");
 
         }
             //compute JK, requires orbital space registry
@@ -278,31 +315,23 @@ namespace integrals{
             auto j = compute(formulas[2]);
             auto k = compute(formulas[3]);
 
+            auto time0 = mpqc_time::fenced_now(world_);
             if(formula.operation().oper() == Operation::Operations::Fock){
                 result("rho,sigma") = t("rho,sigma") + v("rho,sigma") + 2*j("rho,sigma") - k("rho,sigma");
             }
             else{
                 result("rho,sigma") = t("rho,sigma") + v("rho,sigma") + j("rho,sigma") - k("rho,sigma");
             }
+            auto time1 = mpqc_time::fenced_now(world_);
+            time+= mpqc_time::duration_in_s(time0,time1);
 
+            utility::print_par(world_,"Computed Fock Integral: ");
+            utility::wprint_par(world_, formula.formula_string());
+            utility::print_par(world_," Time: ", time, " s");
         }
 
-        if(formula.operation().has_option(Operation::Options::Inverse)){
-
-            auto result_eig = array_ops::array_to_eigen(result);
-            MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
-            result_eig = L_inv_eig.transpose() * L_inv_eig;
-            auto tr_result = result.trange().data()[0];
-            result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), result_eig, tr_result, tr_result);
-
-        }
-
-        if(formula.operation().has_option(Operation::Options::InverseSquareRoot)){
-            auto result_eig = array_ops::array_to_eigen(result);
-            MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
-            auto tr_result = result.trange().data()[0];
-            result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), L_inv_eig, tr_result, tr_result);
-        }
+        double size = utility::array_size(result);
+        utility::print_par(world_," Size: ", size, " GB\n");
 
         return result;
 
@@ -311,22 +340,34 @@ namespace integrals{
     template <typename Tile, typename Policy>
     typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute3(const Formula& formula) {
 
+        double time;
+        TArray result;
+
         libint2::MultiplicativeSphericalTwoBodyKernel kernel;
         Barray<3> bs_array;
 
+        auto time0 = mpqc_time::fenced_now(world_);
         int64_t max_nprim, max_am;
         parse_two_body_three_center(formula,kernel,bs_array,max_nprim,max_am);
 
-        TA::DistArray<Tile,Policy> result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
+        result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
 
-        std::cout << "Computed Twobody Three Center Integral: ";
-        wcout_utf8(formula.formula_string());
-        std::cout << std::endl;
+        auto time1 = mpqc_time::fenced_now(world_);
+        time+= mpqc_time::duration_in_s(time0,time1);
+
+        utility::print_par(world_,"Computed Twobody Three Center Integral: ");
+        utility::wprint_par(world_, formula.formula_string());
+        utility::print_par(world_," Time: ", time, " s");
+        double size = utility::array_size(result);
+        utility::print_par(world_," Size: ", size, " GB\n");
+
         return result;
     }
 
     template <typename Tile, typename Policy>
     typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute4(const Formula& formula) {
+        double time = 0.0;
+        TArray result;
 
         if(formula.operation().has_option(Operation::Options::DensityFitting)){
             TA_ASSERT(this->dfbs_!= nullptr);
@@ -339,29 +380,24 @@ namespace integrals{
             auto center = compute(formula_strings[1]);
             auto right = compute(formula_strings[2]);
 
-            //inverse two center integral
-            auto center_eig = array_ops::array_to_eigen(center);
-            MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(center_eig).matrixL()).inverse();
-            center_eig = L_inv_eig.transpose() * L_inv_eig;
-            auto tr_center = center.trange().data()[0];
-            center = array_ops::eigen_to_array<TA::TensorD>(center.get_world(), center_eig, tr_center, tr_center);
-
-
-            TA::DistArray<Tile,Policy> result;
+            auto time0 = mpqc_time::fenced_now(world_);
 
             if(formula.notation() == Formula::Notation::Chemical){
                 result("i,j,k,l") = left("q,j,i")*center("q,p")*right("p,k,l");
             }else{
                 result("i,j,k,l") = left("q,k,i")*center("q,p")*right("p,j,l");
             }
+            auto time1 = mpqc_time::fenced_now(world_);
+            time+= mpqc_time::duration_in_s(time0,time1);
 
-            std::cout << "Computed Twobody Four Center Density-Fitting Integral: ";
-            wcout_utf8(formula.formula_string());
-            std::cout << std::endl;
-            return result;
+            utility::print_par(world_,"Computed Twobody Four Center Density-Fitting Integral: ");
+            utility::wprint_par(world_, formula.formula_string());
+            utility::print_par(world_," Time: ", time, " s");
+
 
         }
         else{
+            auto time0 = mpqc_time::fenced_now(world_);
 
             int64_t max_nprim, max_am;
             libint2::MultiplicativeSphericalTwoBodyKernel kernel;
@@ -369,13 +405,18 @@ namespace integrals{
 
             parse_two_body_four_center(formula,kernel,bs_array,max_nprim,max_am);
 
-            TA::DistArray<Tile,Policy> result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
+            result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
 
-            std::cout << "Computed Twobody Four Center Integral: ";
-            wcout_utf8(formula.formula_string());
-            std::cout << std::endl;
-            return result;
+            auto time1 = mpqc_time::fenced_now(world_);
+            time+= mpqc_time::duration_in_s(time0,time1);
+
+            utility::print_par(world_,"Computed Twobody Four Center Integral: ");
+            utility::wprint_par(world_, formula.formula_string());
+            utility::print_par(world_," Time: ", time, " s");
         }
+        double size = utility::array_size(result);
+        utility::print_par(world_," Size: ", size, " GB\n");
+        return result;
 
     }
 

@@ -45,6 +45,44 @@ std::array<double, 3> array_storage(TA::DistArray<TileType, Policy> const &A) {
     return out;
 }
 
+template <typename Tile>
+double array_size(const TA::DistArray<Tile,TA::DensePolicy>& A){
+    double size = 0.0;
+
+    auto const &pmap = A.get_pmap();
+    TA::TiledRange const &trange = A.trange();
+    const auto end = pmap->end();
+
+    for (auto it = pmap->begin(); it != end; ++it) {
+
+        const TA::Range range = trange.make_tile_range(*it);
+        size += range.volume();
+
+    }
+    size*= 8* 1e-9;
+    return size;
+}
+
+template <typename Tile>
+double array_size(const TA::DistArray<Tile,TA::SparsePolicy>& A){
+    double size = 0.0;
+
+    auto const &pmap = A.get_pmap();
+    TA::TiledRange const &trange = A.trange();
+    const auto end = pmap->end();
+
+    for (auto it = pmap->begin(); it != end; ++it) {
+        if (!A.is_zero(*it)) {
+
+            const TA::Range range = trange.make_tile_range(*it);
+            size += range.volume();
+
+        }
+    }
+    size*= 8* 1e-9;
+    return size;
+}
+
 } // namespace utility
 } // namespace mpqc
 

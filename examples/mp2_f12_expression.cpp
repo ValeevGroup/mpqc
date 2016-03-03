@@ -44,6 +44,7 @@ TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
+    std::wcout.imbue(std::locale("en_US.UTF-8"));
     std::string mol_file = "";
     std::string basis_name = "";
     int nclusters = 0;
@@ -294,8 +295,8 @@ int main(int argc, char *argv[]) {
     // AO to MO transform
 
 
-    ao_int.registry().print_formula();
-    mo_integral.registry().print_formula();
+//    ao_int.registry().print_formula(world);
+//    mo_integral.registry().print_formula(world);
 
     madness::finalize();
     libint2::cleanup();

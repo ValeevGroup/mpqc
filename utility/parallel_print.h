@@ -47,6 +47,14 @@ void print_par(madness::World &world, Args&&... args) {
     }
 }
 
+template <typename... Args>
+void wprint_par(madness::World &world, Args&&... args) {
+    auto t = std::make_tuple<Args...>(std::forward<Args>(args)...);
+    if (world.rank() == 0) {
+        std::wcout << t << std::flush;
+    }
+}
+
 void print_file(madness::World &world, const std::string& file){
 
     if (world.rank() == 0){

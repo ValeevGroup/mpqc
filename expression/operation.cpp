@@ -45,7 +45,14 @@ namespace mpqc{
             {Operations::cGTG, L"R"},
             {Operations::cGTG2, L"R2"},
             {Operations::cGTGCoulomb, L"GR" },
-            {Operations::DelcGTG2, L"dR2"}
+            {Operations::DelcGTG2, L"dR2"},
+            {Operations::J, L"J"},
+            {Operations::K, L"K"},
+            {Operations::KAlpha, L"K(α)"},
+            {Operations::KBeta, L"K(β)"},
+            {Operations::Fock, L"F"},
+            {Operations::FockAlpha, L"F(α)"},
+            {Operations::FockBeta, L"F(β)" }
     };
 
     const std::map<Options, std::wstring> Operation::option_to_string = {

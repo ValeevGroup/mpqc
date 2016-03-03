@@ -13,7 +13,7 @@ namespace mpqc{
     *   Here's the key index dictionary that can be used (\sa to_space):
     *   MO Orbitals
     *     - m, n -> occ(occupied)
-    *     - i,j,k,l -> actocc (actual occupied)
+    *     - i,j,k,l -> actocc (corr occupied)
     *     - m', n' -> inactocc (inactive/core occupied)
     *     - x, y -> active (active orbital used in MR)
     *     - a,b,c,d -> virt (virtual)

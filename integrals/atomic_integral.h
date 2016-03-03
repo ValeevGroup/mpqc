@@ -5,347 +5,16 @@
 #ifndef TILECLUSTERCHEM_ATOMIC_INTEGRAL_H
 #define TILECLUSTERCHEM_ATOMIC_INTEGRAL_H
 
-#include <string>
-#include <vector>
-#include <iostream>
-#include <cwchar>
 
 #include "../f12/utility.h"
-#include "../common/namespaces.h"
-#include "../include/tiledarray.h"
-#include "../basis/basis.h"
-#include "../expression/formula.h"
 #include "../expression/formula_registry.h"
 #include "../expression/orbital_space_registry.h"
-#include "integral_engine_pool.h"
-#include "task_integrals.h"
-#include "../molecule/molecule.h"
-#include "make_engine.h"
-#include "../utility/make_array.h"
+#include "atomic_integral_base.h"
 #include "../utility/wcout_utf8.h"
 #include "../ta_routines/array_to_eigen.h"
 
 namespace mpqc{
 namespace integrals{
-
-
-    //TODO return expression instead of array?
-    class AtomicIntegralBase {
-    public:
-
-        AtomicIntegralBase() = default;
-
-        AtomicIntegralBase(madness::World& world,
-                       std::shared_ptr<molecule::Molecule> mol,
-                       std::shared_ptr<basis::Basis> obs,
-                       std::shared_ptr<basis::Basis> dfbs = nullptr,
-                       std::shared_ptr<basis::Basis> auxbs = nullptr,
-                       std::vector<std::pair<double,double>> gtg_params = std::vector<std::pair<double,double>>() ) :
-               world_(world), mol_(mol), obs_(obs), dfbs_(dfbs), abs_(auxbs), gtg_params_(gtg_params)
-        {
-            if(auxbs!= nullptr){
-                ribs_ = std::make_shared<basis::Basis>(std::move(obs->join(*auxbs)));
-            }
-            else{
-                ribs_ = nullptr;
-            }
-        }
-
-        virtual ~AtomicIntegralBase() = default;
-
-
-        madness::World& get_world() const {
-            return world_;
-        }
-
-        const std::shared_ptr<basis::Basis> get_obs() const {
-            return obs_;
-        }
-
-        const std::shared_ptr<basis::Basis> get_dfbs() const {
-            return dfbs_;
-        }
-
-        const std::shared_ptr<basis::Basis> get_abs() const {
-            return abs_;
-        }
-
-        void set_dfbs(const std::shared_ptr<basis::Basis> &dfbs) {
-            AtomicIntegralBase::dfbs_ = dfbs;
-        }
-
-        void set_abs(const std::shared_ptr<basis::Basis> &abs) {
-            AtomicIntegralBase::abs_ = abs;
-        }
-
-        std::array<std::wstring,3> get_df_formula(const Formula& formula){
-
-            std::array<std::wstring,3> result;
-
-            //chemical notation
-            if(formula.notation() == Formula::Notation::Chemical){
-
-                std::wstring left = L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[1].name() + L" " + formula.left_index()[0].name() + L" )";
-                std::wstring right = L"( Κ |" + formula.operation().oper_string() + L"| " + formula.right_index()[0].name() + L" " + formula.right_index()[1].name() + L" )";
-                std::wstring center = L"( Κ |" + formula.operation().oper_string() + L"| Λ)[inv]";
-                result[0] = left;
-                result[1] = center;
-                result[2] = right;
-            }
-                //physical notation
-            else{
-                std::wstring left = L"( Κ |" + formula.operation().oper_string() + L"| " + formula.right_index()[0].name() + L" " + formula.left_index()[0].name() + L" )";
-                std::wstring right = L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[1].name() + L" " + formula.right_index()[1].name() + L" )";
-                std::wstring center = L"( Κ |" + formula.operation().oper_string() + L"| Λ)[inv]";
-                result[0] = left;
-                result[1] = center;
-                result[2] = right;
-            }
-
-            return result;
-        }
-    protected:
-
-        // get one body engine
-        libint2::OneBodyEngine get_one_body_engine(const Operation& operation, int64_t max_nprim, int64_t max_am);
-
-        // get two body engine kernel
-        libint2::MultiplicativeSphericalTwoBodyKernel get_two_body_engine_kernel(const Operation &operation);
-
-
-        // parse one body formula and set engine_pool and basis array
-        void parse_one_body(const Formula& formula, std::shared_ptr<EnginePool<libint2::OneBodyEngine>>& engine_pool, Barray<2>& bases);
-
-        // parse two body two center formula and set two body kernel and basis array
-        void parse_two_body_two_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<2>& bases, int64_t& max_nprim, int64_t& max_am);
-
-        // parse two body three center formula and set two body kernel and basis array
-        void parse_two_body_three_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<3>& bases, int64_t& max_nprim, int64_t& max_am);
-
-        // parse two body four center formula and set two body kernel and basis array
-        void parse_two_body_four_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<4>& bases, int64_t& max_nprim, int64_t& max_am);
-
-
-
-
-        std::shared_ptr<basis::Basis> index_to_basis(const OrbitalIndex& index){
-            if(index.index() == OrbitalIndex::Index::obs){
-                return obs_;
-            }
-            else if(index.index() == OrbitalIndex::Index::abs){
-                return abs_;
-            }
-            else if(index.index() == OrbitalIndex::Index::dfbs){
-                return  dfbs_;
-            }
-            else if(index.index() == OrbitalIndex::Index::ribs){
-                return ribs_;
-            }
-            else{
-                throw std::runtime_error("Wrong Index!");
-            }
-        }
-
-    protected:
-
-        madness::World& world_;
-        std::shared_ptr<molecule::Molecule> mol_;
-        std::shared_ptr<basis::Basis> obs_;
-        std::shared_ptr<basis::Basis> dfbs_;
-        std::shared_ptr<basis::Basis> abs_;
-        std::shared_ptr<basis::Basis> ribs_;
-        std::vector<std::pair<double,double>> gtg_params_;
-
-    };
-
-
-    libint2::OneBodyEngine  AtomicIntegralBase::get_one_body_engine(const Operation &operation, int64_t max_nprim, int64_t max_am){
-
-        libint2::OneBodyEngine::operator_type itype;
-        std::vector<std::pair<double, std::array<double, 3>>> q;
-        if (operation.oper() == Operation::Operations::Overlap) {
-            itype = libint2::OneBodyEngine::overlap;
-        } else if (operation.oper() == Operation::Operations::Kinetic) {
-            itype = libint2::OneBodyEngine::kinetic;
-        } else if (operation.oper() == Operation::Operations::Nuclear) {
-            itype = libint2::OneBodyEngine::nuclear;
-            q = make_q(*(this->mol_));
-        } else {
-            throw std::runtime_error("Invalid One Body Operation");
-        }
-
-        libint2::OneBodyEngine engine(itype, max_nprim, static_cast<int>(max_am),0);
-
-
-        if(itype == libint2::OneBodyEngine::nuclear){
-            engine.set_params(std::move(q));
-        }
-
-        return engine;
-    }
-
-    libint2::MultiplicativeSphericalTwoBodyKernel AtomicIntegralBase::get_two_body_engine_kernel(
-            const Operation &operation)
-    {
-        libint2::MultiplicativeSphericalTwoBodyKernel kernel;
-        if (operation.oper() == Operation::Operations::Coulomb) {
-            kernel = libint2::Coulomb;
-        }
-        else if(operation.oper() == Operation::Operations::cGTGCoulomb) {
-            kernel = libint2::cGTG_times_Coulomb;
-        }
-        else if(operation.oper() == Operation::Operations::cGTG){
-            kernel = libint2::cGTG;
-        }
-        else if(operation.oper() == Operation::Operations::cGTG2){
-            kernel = libint2::cGTG;
-        }
-        else if(operation.oper() == Operation::Operations::DelcGTG2){
-            kernel = libint2::DelcGTG_square;
-        }
-        else {
-            throw std::runtime_error("Invalid Two Body Operation");
-        }
-        return kernel;
-    }
-
-
-    void AtomicIntegralBase::parse_one_body(const Formula& formula, std::shared_ptr<EnginePool<libint2::OneBodyEngine>>& engine_pool, Barray<2>& bases){
-
-        auto bra_indexs = formula.left_index();
-        auto ket_indexs = formula.right_index();
-
-        TA_ASSERT(bra_indexs.size() == 1);
-        TA_ASSERT(ket_indexs.size() == 1);
-
-        auto bra_index = bra_indexs[0];
-        auto ket_index = ket_indexs[0];
-
-        TA_ASSERT(bra_index.is_ao());
-        TA_ASSERT(ket_index.is_ao());
-
-        auto bra_basis = this->index_to_basis(bra_index);
-        auto ket_basis = this->index_to_basis(ket_index);
-
-        TA_ASSERT(bra_basis != nullptr);
-        TA_ASSERT(ket_basis != nullptr);
-
-        auto max_nprim = std::max(bra_basis->max_nprim(), ket_basis->max_nprim());
-        auto max_am = std::max(bra_basis->max_am(), ket_basis->max_am());
-        bases = mpqc::utility::make_array(*bra_basis, *ket_basis);
-
-        // convert operation to libint operator
-        auto operation = formula.operation();
-        engine_pool = make_pool(get_one_body_engine(operation,max_nprim,max_am));
-    }
-
-    void AtomicIntegralBase::parse_two_body_two_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<2>& bases, int64_t& max_nprim, int64_t& max_am){
-
-        TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Two Body Two Center Integral Must Use Chemical Notation");
-
-        auto bra_indexs = formula.left_index();
-        auto ket_indexs = formula.right_index();
-
-        TA_ASSERT(bra_indexs.size() == 1);
-        TA_ASSERT(ket_indexs.size() == 1);
-
-        auto bra_index0 = bra_indexs[0];
-        auto ket_index0 = ket_indexs[0];
-
-        TA_ASSERT(ket_index0.is_ao());
-        TA_ASSERT(bra_index0.is_ao());
-
-        auto bra_basis0 = this->index_to_basis(bra_index0);
-        auto ket_basis0 = this->index_to_basis(ket_index0);
-
-        TA_ASSERT(bra_basis0 != nullptr);
-        TA_ASSERT(ket_basis0 != nullptr);
-
-        max_nprim = std::max(bra_basis0->max_nprim(), ket_basis0->max_nprim());
-        max_am = std::max(bra_basis0->max_am(), ket_basis0->max_am());
-        bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0);
-
-        auto operation = formula.operation();
-        kernel = get_two_body_engine_kernel(operation);
-
-    }
-
-    void AtomicIntegralBase::parse_two_body_three_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<3>& bases, int64_t& max_nprim, int64_t& max_am){
-
-        TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Three Center Integral Must Use Chemical Notation");
-
-        auto bra_indexs = formula.left_index();
-        auto ket_indexs = formula.right_index();
-
-        TA_ASSERT(bra_indexs.size() == 1);
-        TA_ASSERT(ket_indexs.size() == 2);
-
-
-        TA_ASSERT(bra_indexs[0].is_ao());
-        TA_ASSERT(ket_indexs[0].is_ao());
-        TA_ASSERT(ket_indexs[1].is_ao());
-
-        auto bra_basis0 = this->index_to_basis(bra_indexs[0]);
-        auto ket_basis0 = this->index_to_basis(ket_indexs[0]);
-        auto ket_basis1 = this->index_to_basis(ket_indexs[1]);
-
-        TA_ASSERT(bra_basis0 != nullptr);
-        TA_ASSERT(ket_basis0 != nullptr);
-        TA_ASSERT(ket_basis1 != nullptr);
-
-        max_nprim = std::max({bra_basis0->max_nprim(), ket_basis0->max_nprim()
-                                     ,ket_basis1->max_nprim()});
-        max_am = std::max({bra_basis0->max_am(), ket_basis0->max_am(),
-                           ket_basis1->max_am()});
-
-        bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0, *ket_basis1);
-
-        // convert operation to libint operator
-        auto operation = formula.operation();
-        kernel = get_two_body_engine_kernel(operation);
-
-    }
-
-    void AtomicIntegralBase::parse_two_body_four_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<4>& bases, int64_t& max_nprim, int64_t& max_am){
-        auto bra_indexs = formula.left_index();
-        auto ket_indexs = formula.right_index();
-
-        TA_ASSERT(bra_indexs.size() == 2);
-        TA_ASSERT(ket_indexs.size() == 2);
-
-
-        TA_ASSERT(bra_indexs[0].is_ao());
-        TA_ASSERT(ket_indexs[0].is_ao());
-        TA_ASSERT(bra_indexs[1].is_ao());
-        TA_ASSERT(ket_indexs[1].is_ao());
-
-        auto bra_basis0 = this->index_to_basis(bra_indexs[0]);
-        auto ket_basis0 = this->index_to_basis(ket_indexs[0]);
-        auto bra_basis1 = this->index_to_basis(bra_indexs[1]);
-        auto ket_basis1 = this->index_to_basis(ket_indexs[1]);
-
-        TA_ASSERT(bra_basis0 != nullptr);
-        TA_ASSERT(ket_basis0 != nullptr);
-        TA_ASSERT(bra_basis1 != nullptr);
-        TA_ASSERT(ket_basis1 != nullptr);
-
-        max_nprim = std::max({bra_basis0->max_nprim(), bra_basis1->max_nprim()
-                                     ,ket_basis0->max_nprim(), ket_basis1->max_nprim()});
-        max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
-                           ket_basis0->max_am(),ket_basis1->max_am()});
-
-        if (formula.notation() == Formula::Notation::Chemical){
-            bases = {*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1};
-        }
-        else if(formula.notation() == Formula::Notation::Physical){
-            bases = {*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1};
-        }
-
-        // convert operation to libint operator
-        auto operation = formula.operation();
-
-        kernel = get_two_body_engine_kernel(operation);
-    }
 
     //TODO better printing with parallel
     /// Atomic Integral Class
@@ -559,31 +228,64 @@ namespace integrals{
             std::cout << std::endl;
         }
             //compute JK, requires orbital space registry
-//        else if(formula.operation().is_jk()){
-//
-//            // density fitting case
-//            if(formula.operation().has_option(Operation::Options::DensityFitting)){
-//                auto three_center_formula = get_jk_df_formula(formula);
-//
-//            }
-//            else{
-//                // convert to ao formula
-//                auto four_center_formula = get_jk_formula(formula);
-//                auto four_center = this->compute(four_center_formula);
-//
-//                // find the density
-//                auto space_index = get_jk_orbital_space(formula.operation());
-//                auto space = orbital_space_registry_->retrieve(space_index);
-//
-//                result("i,j") = four_center("i,j,k,l")*space("k,a")*space("a,l");
-//            }
-//
-//        }
-//
-//            //compute JK, requires orbital space registry
-//        else if(formula.operation().is_fock()){
-//
-//        }
+        else if(formula.operation().is_jk()){
+
+            // density fitting case
+            if(formula.operation().has_option(Operation::Options::DensityFitting)){
+                auto three_center_formula = get_jk_df_formula(formula);
+
+                auto left = compute(three_center_formula[0]);
+                auto center = compute(three_center_formula[1]);
+                auto right = compute(three_center_formula[2]);
+
+                // find the density
+                auto space_index = get_jk_orbital_space(formula.operation());
+                auto space = orbital_space_registry_->retrieve(space_index);
+
+                if(formula.operation().oper() == Operation::Operations::J){
+                    result("i,j") = center("K,Q")*right("Q,k,l")*space("k,a")*space("l,a")*left("K,i,j");
+                }
+                else{
+                    result("i,j") = (left("K,k,i")*space("k,a"))*center("K,Q")*(right("Q,j,l")*space("l,a"));
+                }
+            }
+            else{
+                // convert to ao formula
+                auto four_center_formula = get_jk_formula(formula);
+                auto four_center = this->compute(four_center_formula);
+
+                // find the density
+                auto space_index = get_jk_orbital_space(formula.operation());
+                auto space = orbital_space_registry_->retrieve(space_index);
+
+                if(formula.operation().oper() == Operation::Operations::J){
+                    result("rho,sigma") = four_center("rho,sigma,mu,nu")*(space("mu,i")*space("nu,i"));
+                }
+                else{
+                    result("rho,sigma") = four_center("rho,mu,sigma,nu")*(space("mu,i")*space("nu,i"));
+                }
+
+            }
+
+        }
+            //compute JK, requires orbital space registry
+        else if(formula.operation().is_fock()){
+
+            auto formulas = get_fock_formula(formula);
+
+            auto t = compute(formulas[0]);
+            auto v = compute(formulas[1]);
+            auto j = compute(formulas[2]);
+            auto k = compute(formulas[3]);
+
+            if(formula.operation().oper() == Operation::Operations::Fock){
+                result("rho,sigma") = t("rho,sigma") + v("rho,sigma") + 2*j("rho,sigma") - k("rho,sigma");
+            }
+            else{
+                result("rho,sigma") = t("rho,sigma") + v("rho,sigma") + j("rho,sigma") - k("rho,sigma");
+            }
+
+        }
 
         if(formula.operation().has_option(Operation::Options::Inverse)){
 

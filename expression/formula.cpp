@@ -98,17 +98,13 @@ namespace mpqc{
 
         // error detecting
 
-        // 1. density fitting only for four center code
-        if(operation_.has_option(Operation::Options::DensityFitting) && (left_index_.size()!=2) && (right_index_.size()!=2)){
-            throw std::runtime_error("Density Fitting is only available for Four Center Integral!");
-        }
 
-        // 2. one body operation
+        // one body operation
         if(operation_.is_onebody() && (left_index_.size()!=1) && (right_index_.size()!=1)){
             throw std::runtime_error("One body Operator with Wrong Index Size!");
         }
 
-        // 3. more than three index
+        // more than three index
         if( (left_index_.size()>=3) || (right_index_.size()>=3)){
             throw std::runtime_error("Wrong Number of Index!");
         }

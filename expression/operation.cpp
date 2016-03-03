@@ -37,7 +37,7 @@ namespace mpqc{
         {L"F(β)", Operations::FockBeta},
     };
 
-    const std::map<Operations, std::wstring> Operation::operation_to_string = {
+    const std::map<Operations, std::wstring> Operation::oper_to_string = {
             {Operations::Overlap, L""},
             {Operations::Kinetic, L"T"},
             {Operations::Nuclear, L"V"},
@@ -63,7 +63,7 @@ namespace mpqc{
     bool Operation::is_onebody() const {
 
         for (auto it = one_body_operation.begin(); it != one_body_operation.end(); ++it ){
-            if (it->second == operation_){
+            if (it->second == oper_){
                 return true;
             }
         }
@@ -73,7 +73,7 @@ namespace mpqc{
     bool Operation::is_twobody() const {
 
         for (auto it = two_body_operation.begin(); it != two_body_operation.end(); ++it ){
-            if (it->second == operation_){
+            if (it->second == oper_){
                 return true;
             }
         }
@@ -81,17 +81,17 @@ namespace mpqc{
     }
 
     bool Operation::is_fock() const {
-        return (operation_==Operations::Fock || operation_==Operations::FockAlpha || operation_==Operations::FockBeta);
+        return (oper_==Operations::Fock || oper_==Operations::FockAlpha || oper_==Operations::FockBeta);
     }
 
     bool Operation::is_jk() const {
-        return (operation_== Operations::J || operation_==Operations::K || operation_==Operations::KAlpha ||
-                operation_==Operations::KBeta);
+        return (oper_== Operations::J || oper_==Operations::K || oper_==Operations::KAlpha ||
+                oper_==Operations::KBeta);
     }
 
     bool Operation::is_r12() const {
-        return (operation_==Operations::cGTG2 || operation_ == Operations::cGTG2 || operation_==Operations::cGTGCoulomb
-                || operation_==Operations::DelcGTG2);
+        return (oper_==Operations::cGTG2 || oper_ == Operations::cGTG2 || oper_==Operations::cGTGCoulomb
+                || oper_==Operations::DelcGTG2);
     }
 
     bool Operation::has_option(Options op) const {
@@ -113,12 +113,12 @@ namespace mpqc{
             auto iter2 = two_body_operation.find(oper);
 
             if(iter2 != two_body_operation.end()){
-                operation_ = iter2->second;
+                oper_ = iter2->second;
             }else{
 
                 auto iter3 = fock_operation.find(oper);
                 if(iter3 != fock_operation.end()){
-                    operation_ = iter3->second;
+                    oper_ = iter3->second;
                 }
                 else{
                     throw std::runtime_error("Invalid Operation");
@@ -127,7 +127,7 @@ namespace mpqc{
 
         }
         else{
-            operation_ = iter1->second;
+            oper_ = iter1->second;
         }
 
         // parse option
@@ -156,7 +156,7 @@ namespace mpqc{
 
     bool Operation::operator==(const Operation &other) const {
 
-        bool same_operation = (this->operation_ == other.operation_);
+        bool same_operation = (this->oper_ == other.oper_);
 
         bool same_option = false;
 
@@ -173,7 +173,7 @@ namespace mpqc{
     }
 
     const std::wstring Operation::oper_string() const {
-        const auto result = operation_to_string.find(operation_);
+        const auto result = oper_to_string.find(oper_);
         return result->second;
     }
 

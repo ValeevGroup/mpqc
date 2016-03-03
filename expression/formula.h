@@ -50,6 +50,10 @@ namespace mpqc{
             return right_index_;
         }
 
+        std::vector<OrbitalIndex> &right_index() {
+            return right_index_;
+        }
+
         void set_right_index(const std::vector<OrbitalIndex> &right_index) {
             Formula::right_index_ = right_index;
         }
@@ -58,11 +62,19 @@ namespace mpqc{
             Formula::left_index_ = left_index;
         }
 
-        std::vector<OrbitalIndex> &right_index() {
-            return right_index_;
+        void set_operation(const Operation &operation) {
+            Formula::operation_ = operation;
+        }
+
+        void set_notation(const Notation &notation) {
+            Formula::notation_ = notation;
         }
 
         const Operation &operation() const {
+            return operation_;
+        }
+
+        Operation &operation(){
             return operation_;
         }
 

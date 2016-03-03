@@ -41,7 +41,7 @@ namespace mpqc{
         static const std::unordered_map<std::wstring, Operations> one_body_operation;
         static const std::unordered_map<std::wstring, Operations> two_body_operation;
         static const std::unordered_map<std::wstring, Operations> fock_operation;
-        static const std::map<Operations,std::wstring> operation_to_string;
+        static const std::map<Operations,std::wstring> oper_to_string;
         static const std::map<Options,std::wstring> option_to_string;
         static const std::unordered_map<std::wstring, Options> option;
 
@@ -58,7 +58,15 @@ namespace mpqc{
         }
 
         const Operations &oper() const {
-            return operation_;
+            return oper_;
+        }
+
+        Operations &oper() {
+            return oper_;
+        }
+
+        void set_oper(const Operations &oper) {
+            Operation::oper_ = oper;
         }
 
         const std::wstring oper_string() const;
@@ -82,7 +90,7 @@ namespace mpqc{
 
     private:
 
-        Operations operation_;
+        Operations oper_;
         std::vector<Options> options_;
 
     };

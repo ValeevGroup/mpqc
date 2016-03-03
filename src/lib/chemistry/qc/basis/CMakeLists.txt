@@ -87,6 +87,6 @@ IF(MPQC_UNITTEST)
         SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(integral_scaling_test integral_scaling_test.cpp $<TARGET_OBJECTS:basis>)
   
-  target_link_libraries(integral_scaling_test chemistry extern_moinfo)
+  target_link_libraries(integral_scaling_test chemistry)
   
 endif()

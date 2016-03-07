@@ -49,16 +49,22 @@ namespace integrals{
             return atomic_integral_;
         }
 
+        const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() const {
+            return orbital_space_registry_;
+        }
+
         const FormulaRegistry<TArray> &registry() const {
             return mo_formula_registry_;
         }
 
         TArray compute(const std::wstring& );
+        TArray compute(const Formula&);
 
         TA::expressions::TsrExpr<TArray,true> operator() (const std::wstring& str){
             auto formula = Formula(str);
-            auto array = compute(formula);
-            return array(formula.to_ta_expression());
+            TArray array = compute(formula);
+            auto& result = mo_formula_registry_.retrieve(formula);
+            return result(formula.to_ta_expression());
         };
 
     private:
@@ -291,28 +297,36 @@ void MolecularIntegral<Tile,Policy>::assert_all_mo(const Formula &formula) {
     }
 
 }
-
 template <typename Tile, typename Policy>
 typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute(const std::wstring &formula_string) {
     Formula formula(formula_string);
+    return compute(formula);
+}
+
+template <typename Tile, typename Policy>
+typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute(const Formula& formula) {
 
     auto iter = mo_formula_registry_.find(formula);
+
+    TArray result;
 
     if(iter != mo_formula_registry_.end()){
         return iter->second;
     }else{
 
         if(formula.rank() == 2){
-            auto result =  compute2(formula);
+            result =  compute2(formula);
             mo_formula_registry_.insert(formula, result);
             return result;
         }
         else if(formula.rank() == 4){
-            auto result =  compute4(formula);
+            result =  compute4(formula);
             mo_formula_registry_.insert(formula, result);
             return result;
         }
     }
+
+    return result;
 }
 } // namespace integral
 } // namespace mpqc

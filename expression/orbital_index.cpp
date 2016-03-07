@@ -223,7 +223,7 @@ OrbitalIndex OrbitalIndex::mo_to_ao() const{
     std::wstring new_string;
 
     if(this->is_mo_in_abs()){
-        new_string.push_back(abs_wchar[0]);
+        new_string.push_back(ribs_wchar[0]);
     }
     else if(this->is_mo_in_obs()){
         new_string.push_back(obs_wchar[0]);

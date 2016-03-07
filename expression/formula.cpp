@@ -190,9 +190,6 @@ namespace mpqc{
         std::size_t rank = this->rank();
         std::size_t count = 0;
 
-        // start
-        ta_expression.push_back('(');
-
         // add left index
         for (const auto & index : left_index_){
             std::string index_expression = index.to_ta_expression();
@@ -210,9 +207,6 @@ namespace mpqc{
                 ta_expression.append(", ");
             }
         }
-
-        //end
-        ta_expression.push_back(')');
 
         return ta_expression;
     }

@@ -57,10 +57,15 @@ namespace integrals{
         TA::expressions::TsrExpr<TArray,true> operator() (const std::wstring& str){
             auto formula = Formula(str);
             auto array = compute(formula);
-            return array(formula.to_ta_expression());
+            auto& result = ao_formula_registry_.retrieve(formula);
+            return result(formula.to_ta_expression());
         };
 
         const FormulaRegistry<TArray> &registry() const {
+            return ao_formula_registry_;
+        }
+
+        FormulaRegistry<TArray> &registry(){
             return ao_formula_registry_;
         }
 
@@ -272,7 +277,7 @@ namespace integrals{
                 auto space = orbital_space_registry_->retrieve(space_index);
 
                 if(formula.operation().oper() == Operation::Operations::J){
-                    result("i,j") = center("K,Q")*right("Q,k,l")*space("k,a")*space("l,a")*left("K,i,j");
+                    result("i,j") = center("K,Q")*right("Q,k,l")*(space("k,a")*space("l,a"))*left("K,j,i");
                 }
                 else{
                     result("i,j") = (left("K,k,i")*space("k,a"))*center("K,Q")*(right("Q,j,l")*space("l,a"));
@@ -305,7 +310,7 @@ namespace integrals{
             utility::print_par(world_," Time: ", time, " s");
 
         }
-            //compute JK, requires orbital space registry
+            //compute Fock, requires orbital space registry
         else if(formula.operation().is_fock()){
 
             auto formulas = get_fock_formula(formula);

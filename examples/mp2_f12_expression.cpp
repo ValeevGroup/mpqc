@@ -164,6 +164,9 @@ int main(int argc, char *argv[]) {
 
     auto sp_orbital_registry = std::make_shared<decltype(orbital_registry)>(orbital_registry);
 
+    // clean atomic integral
+    ao_int.registry().clear();
+
     auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,sp_orbital_registry);
 //    mo_integral.atomic_integral().registry().print_formula();
 
@@ -217,7 +220,7 @@ int main(int argc, char *argv[]) {
 
 
     // construct cabs
-    decltype(S_obs) C_cabs;
+    decltype(S_obs) C_cabs, C_ri;
     {
         auto S_obs_eigen = array_ops::array_to_eigen(S_obs);
         MatrixD X_obs_eigen = Eigen::LLT<MatrixD>(S_obs_eigen).matrixL();
@@ -250,32 +253,37 @@ int main(int argc, char *argv[]) {
         auto tr_ribs = S_ribs.trange().data()[0];
 
         C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen, tr_ribs, tr_cabs);
+        C_ri = array_ops::eigen_to_array<TA::TensorD>(world,X_ribs_eigen_inv, tr_ribs, tr_ribs);
+
+
+        auto C_cabs_space = OrbitalSpace(OrbitalIndex(L"a'"), C_cabs);
+        auto C_ribs_space = OrbitalSpace(OrbitalIndex(L"P'"), C_ri);
+        mo_integral.orbital_space()->add(C_cabs_space);
+        mo_integral.orbital_space()->add(C_ribs_space);
+
 //    std::cout << "C_cabs" << std::endl;
 //    std::cout << C_cabs << std::endl;
     }
 
-    // compute fock
+    // compute fock mo
     decltype(S_obs) F_ribs;
     {
-        auto T_ribs = ao_int.compute(L"(ρ|T|σ)");
-        auto V_ribs = ao_int.compute(L"(ρ|V|σ)");
+        auto F_ribs_ribs = mo_integral.compute(L"(P'|F|Q')[df]");
+        auto F_cabs_ribs = mo_integral.compute(L"(a'|F|P')[df]");
+        auto F_pq = mo_integral.compute(L"(p|F|q)[df]");
+        auto F_ij = mo_integral.compute(L"(i|F|j)[df]");
+        auto F_mn = mo_integral.compute(L"(m|F|n)[df]");
+        auto F_ri_m = mo_integral.compute(L"(P'|F|m)[df]");
+        auto F_cabs_p = mo_integral.compute(L"(a'|F|p)[df]");
+    }
 
-//        auto J_ribs_obs = ao_int.compute(L"(ρ σ|G| μ ν)[df]");
-//        auto K_ribs_obs = ao_int.compute(L"(ρ μ|G| σ ν)[df]");
-
-//        auto D = scf.density();
-
-        decltype(S_obs) J_ribs, K_ribs;
-
-        auto Fock_ribs= ao_int.compute(L"(ρ |F| σ)[df]");
-        J_ribs = ao_int.compute(L"(ρ |J| σ)[df]");
-//        K_ribs = ao_int.compute(L"(ρ |K| σ)");
-        K_ribs = ao_int.compute(L"(ρ |K| σ)[df]");
-
-//        J_ribs("rho,sigma") = J_ribs_obs("rho,sigma,mu,nu") * D("mu,nu");
-//        K_ribs("rho,sigma") = K_ribs_obs("rho,mu,sigma,nu") * D("mu,nu");
-
-//        F_ribs("rho,sigma") = T_ribs("rho,sigma") + V_ribs("rho,sigma") + J_ribs("rho,sigma") + K_ribs("rho,sigma");
+    // V term
+    decltype(S_obs) V_ijij;
+    {
+        V_ijij("i1,j1,i2,j2") = mo_integral(L"(i1 i2|R|j1 j2)[df]");
+        V_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 p|G|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]");
+        V_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]");
+        V_ijij("i1,j1,i2,j2") -= mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(i2 m|R|j2 a')[df]");
     }
 
 
@@ -286,7 +294,7 @@ int main(int argc, char *argv[]) {
 //    auto F12_sq_ribs = ao_int.compute(L"(ρ1 σ1|R2|ρ2 σ2)");
 
 
-    auto JKF12_obs = ao_int.compute(L"(κ1 λ1 |GR|μ1 ν1)");
+//    auto JKF12_obs = ao_int.compute(L"(κ1 λ1 |GR|μ1 ν1)");
 //    auto Comm_obs = ao_int.compute(L"( κ2 λ2 | dR2 |μ2 ν2)");
 
 
@@ -296,7 +304,7 @@ int main(int argc, char *argv[]) {
 
 
 //    ao_int.registry().print_formula(world);
-//    mo_integral.registry().print_formula(world);
+    mo_integral.registry().print_formula(world);
 
     madness::finalize();
     libint2::cleanup();

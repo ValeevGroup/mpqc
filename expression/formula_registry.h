@@ -64,7 +64,7 @@ namespace mpqc{
         }
 
         // find item, return iterator, if not found, throw
-        Value retrieve(const Key& key){
+        Value& retrieve(const Key& key){
             auto iter = registry_.find(key);
             if(iter==registry_.end()){
                 throw std::runtime_error("Key not found!");
@@ -73,7 +73,7 @@ namespace mpqc{
         }
 
         // return item, return const iterator, if not found, throw
-        const Value retrieve(const Key& key) const{
+        const Value& retrieve(const Key& key) const{
             auto iter = registry_.find(key);
             if(iter==registry_.cend()){
                 throw std::runtime_error("Key not found!");

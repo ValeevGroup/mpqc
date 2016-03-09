@@ -29,7 +29,8 @@ namespace mpqc{
             KBeta = 11,
             Fock = 12,
             FockAlpha = 13,
-            FockBeta = 14
+            FockBeta = 14,
+            Identity = 15
         };
 
         enum class Options{

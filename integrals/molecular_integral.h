@@ -14,6 +14,7 @@
 #include "../expression/formula_registry.h"
 #include "atomic_integral.h"
 #include "../expression/orbital_space_registry.h"
+#include "../ta_routines/diagonal_array.h"
 
 
 namespace mpqc{
@@ -93,13 +94,42 @@ namespace integrals{
     typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute2(const Formula &formula_string) {
 
         double time = 0.0;
+
+        TArray result;
+        // Identity matrix
+        if(formula_string.operation().oper() == Operation::Operations::Identity){
+
+            auto time0 = mpqc_time::fenced_now(world_);
+            auto left_index1 = formula_string.left_index()[0];
+            auto right_index1 = formula_string.right_index()[0];
+            auto left1 = orbital_space_registry_->retrieve(left_index1);
+            auto right1 = orbital_space_registry_->retrieve(right_index1);
+
+            //TODO better way to make model for diagonal matrix
+            TArray tmp;
+            tmp("i,j") = left1("k,i")*right1("k,j");
+
+            // create diagonal array
+            result = ta_routines::create_diagonal_matrix(tmp,1.0);
+
+            auto time1 = mpqc_time::fenced_now(world_);
+            time+= mpqc_time::duration_in_s(time0,time1);
+            utility::print_par(world_, "Computed Identity: ");
+            utility::wprint_par(world_, formula_string.formula_string());
+            utility::print_par(world_," Time: ", time, " s");
+            double size = utility::array_size(result);
+            utility::print_par(world_," Size: ", size, " GB\n");
+            return result;
+        }
+
+
         // get AO
         auto ao_formula = mo_to_ao(formula_string);
         auto ao_integral = atomic_integral_.compute(ao_formula);
 
         auto time0 = mpqc_time::fenced_now(world_);
         // convert to MO
-        TArray result = ao_integral;
+        result = ao_integral;
         // get coefficient
         auto left_index1 = formula_string.left_index()[0];
         if(left_index1.is_mo()){

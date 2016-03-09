@@ -16,7 +16,8 @@ namespace mpqc{
     const std::unordered_map<std::wstring, Operations> Operation::one_body_operation = {
         {L"", Operations::Overlap},
         {L"T", Operations::Kinetic},
-        {L"V", Operations::Nuclear}
+        {L"V", Operations::Nuclear},
+        {L"I", Operations::Identity }
     };
 
     const std::unordered_map<std::wstring, Operations> Operation::two_body_operation = {
@@ -52,7 +53,8 @@ namespace mpqc{
             {Operations::KBeta, L"K(β)"},
             {Operations::Fock, L"F"},
             {Operations::FockAlpha, L"F(α)"},
-            {Operations::FockBeta, L"F(β)" }
+            {Operations::FockBeta, L"F(β)" },
+            {Operations::Identity, L"I"}
     };
 
     const std::map<Options, std::wstring> Operation::option_to_string = {

@@ -32,7 +32,15 @@ public:
         return index_;
     }
 
-    // interface to TA::Array () function
+    Array& array() {
+        return coefs_;
+    }
+
+    const Array& array() const {
+        return coefs_;
+    }
+
+// interface to TA::Array () function
     TA::expressions::TsrExpr<Array,true>
             operator()(const std::string& vars){
         return coefs_(vars);

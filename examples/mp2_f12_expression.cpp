@@ -20,6 +20,7 @@
 #include "../basis/basis.h"
 
 #include "../f12/utility.h"
+#include "../cc/utility.h"
 #include "../integrals/integrals.h"
 #include "../integrals/atomic_integral.h"
 #include "../integrals/molecular_integral.h"
@@ -266,10 +267,8 @@ int main(int argc, char *argv[]) {
     }
 
     // compute fock mo
-    decltype(S_obs) F_ribs;
     {
         auto F_ribs_ribs = mo_integral.compute(L"(P'|F|Q')[df]");
-        auto F_cabs_ribs = mo_integral.compute(L"(a'|F|P')[df]");
         auto F_pq = mo_integral.compute(L"(p|F|q)[df]");
         auto F_ij = mo_integral.compute(L"(i|F|j)[df]");
         auto F_mn = mo_integral.compute(L"(m|F|n)[df]");
@@ -280,12 +279,42 @@ int main(int argc, char *argv[]) {
     // V term
     decltype(S_obs) V_ijij;
     {
-        V_ijij("i1,j1,i2,j2") = mo_integral(L"(i1 i2|R|j1 j2)[df]");
+        V_ijij("i1,j1,i2,j2") = mo_integral(L"(i1 i2|GR|j1 j2)[df]");
         V_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 p|G|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]");
         V_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]");
         V_ijij("i1,j1,i2,j2") -= mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(i2 m|R|j2 a')[df]");
     }
 
+    decltype(S_obs) V_jiij;
+    V_jiij("j1,i1,i2,j2") = V_ijij("i1,j1,i2,j2");
+
+    decltype(S_obs) C_iajb;
+    {
+        C_iajb("i,a,j,b") = mo_integral(L"(i a|R|j a')[df]")*mo_integral(L"(b|F|a')[df]");
+        C_iajb("i,a,j,b") = mo_integral(L"(i b|R|j a')[df]")*mo_integral(L"(a|F|a')[df]");
+    }
+
+    decltype(S_obs) t2;
+    {
+        decltype(S_obs) g_iajb;
+        g_iajb = mo_integral.compute(L"(i a|G|j b)[df]");
+        g_iajb("a,b,i,j") = g_iajb("i,a,j,b");
+        t2 = mpqc::cc::d_abij(g_iajb,ens,occ/2);
+    }
+
+    decltype(S_obs) V_bar_ijij;
+    {
+        V_bar_ijij("i1,j1,i2,j2") = V_ijij("i1,j1,i2,j2") + C_iajb("i1,a,j1,b")*t2("a,b,i2,j2");
+    }
+
+    decltype(S_obs) V_bar_jiij;
+    {
+        V_bar_jiij("j1,i1,i2,j2") = V_bar_ijij("i1,j1,i2,j2");
+    }
+
+    {
+        auto iden = mo_integral.compute(L"(i|I|j)");
+    }
 
 
     // compute r12 integral

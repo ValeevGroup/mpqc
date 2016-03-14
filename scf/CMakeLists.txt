@@ -10,4 +10,4 @@ set(sources
         )
 
 add_library(scf ${sources})
-target_link_libraries(scf ${TA_LIBRARIES})
+target_link_libraries(scf ${TA_LIBRARIES} tensor ta_routines)

@@ -6,4 +6,4 @@ set(sources
 )
 
 add_library(tensor ${sources})
-target_link_libraries(tensor ${TA_LIBRARIES})
+target_link_libraries(tensor ${TA_LIBRARIES} utility)

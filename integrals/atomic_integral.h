@@ -165,6 +165,7 @@ namespace integrals{
             }
 
         }
+        TA_ASSERT(result.is_initialized());
         return result;
     }
 
@@ -177,28 +178,32 @@ namespace integrals{
     template <typename Tile, typename Policy>
     typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute(const Formula& formula) {
 
+        TArray result;
+
         auto iter = ao_formula_registry_.find(formula);
 
         if(iter != ao_formula_registry_.end()){
-            return iter->second;
+            result = iter->second;
+            utility::print_par(world_,"Retrived AO Integral: ");
+            utility::wprint_par(world_, formula.formula_string());
+            double size = utility::array_size(result);
+            utility::print_par(world_," Size: ", size, " GB\n");
         }else{
 
             if(formula.rank() == 2){
-                auto result =  compute2(formula);
+                result =  compute2(formula);
                 ao_formula_registry_.insert(formula, result);
-                return result;
             }
             else if(formula.rank() == 3){
-                auto result =  compute3(formula);
+                result =  compute3(formula);
                 ao_formula_registry_.insert(formula, result);
-                return result;
             }
             else if(formula.rank() == 4){
-                auto result =  compute4(formula);
+                result =  compute4(formula);
                 ao_formula_registry_.insert(formula, result);
-                return result;
             }
         }
+        return result;
 
     }
 
@@ -238,19 +243,67 @@ namespace integrals{
 
             if(formula.operation().has_option(Operation::Options::Inverse)){
 
-                auto result_eig = array_ops::array_to_eigen(result);
-                MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
-                result_eig = L_inv_eig.transpose() * L_inv_eig;
+                if(formula.operation().oper() == Operation::Operations::cGTG
+                    ||formula.operation().oper() == Operation::Operations::cGTGCoulomb){
+                    result("i,j") = -result("i,j");
+                }
+
+                MatrixD result_eig = array_ops::array_to_eigen(result);
+
+                // compute cholesky decomposition
+                auto llt_solver = Eig::LLT<MatrixD>(result_eig);
+
+                // check success
+                Eigen::ComputationInfo info = llt_solver.info();
+                if(info == Eigen::ComputationInfo::NumericalIssue){
+                    std::cout << "NumericalIssue" << std::endl;
+                }
+                else if(info == Eigen::ComputationInfo::NoConvergence){
+                    std::cout << "NoConvergence" << std::endl;
+                }
+                else if (info == Eigen::ComputationInfo::InvalidInput){
+                    std::cout << "InvalidInput" << std::endl;
+                }
+
+
+                if(info != Eigen::ComputationInfo::Success) {
+                    Eigen::SelfAdjointEigenSolver<MatrixD> ei_solver(result_eig);
+                    std::cout << ei_solver.eigenvalues() << std::endl;
+                }
+                TA_ASSERT( info == Eigen::ComputationInfo::Success);
+
+                    MatrixD L = MatrixD(llt_solver.matrixL());
+                    MatrixD L_inv_eig = L.inverse();
+                    result_eig = L_inv_eig.transpose() * L_inv_eig;
+
+//                }else{
+//                    result_eig = result_eig.inverse();
+//                }
                 auto tr_result = result.trange().data()[0];
                 result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), result_eig, tr_result, tr_result);
+
+                if(formula.operation().oper() == Operation::Operations::cGTG
+                    ||formula.operation().oper() == Operation::Operations::cGTGCoulomb){
+                    result("i,j") = -result("i,j");
+                }
 
             }
 
             if(formula.operation().has_option(Operation::Options::InverseSquareRoot)){
+                if(formula.operation().oper() == Operation::Operations::cGTG ||
+                        formula.operation().oper() == Operation::Operations::cGTGCoulomb){
+                    result("i,j") = -result("i,j");
+                }
+
                 auto result_eig = array_ops::array_to_eigen(result);
                 MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
                 auto tr_result = result.trange().data()[0];
                 result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), L_inv_eig, tr_result, tr_result);
+
+                if(formula.operation().oper() == Operation::Operations::cGTG ||
+                        formula.operation().oper() == Operation::Operations::cGTGCoulomb){
+                    result("i,j") = -result("i,j");
+                }
             }
 
             auto time1 = mpqc_time::fenced_now(world_);
@@ -411,6 +464,12 @@ namespace integrals{
             parse_two_body_four_center(formula,kernel,bs_array,max_nprim,max_am);
 
             result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
+
+            //TODO handle permutation better
+
+            if(formula.notation() == Formula::Notation::Physical){
+                result("i,j,k,l") = result("i,k,j,l");
+            }
 
             auto time1 = mpqc_time::fenced_now(world_);
             time+= mpqc_time::duration_in_s(time0,time1);

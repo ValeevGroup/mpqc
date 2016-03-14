@@ -139,6 +139,9 @@ namespace mpqc{
         if(operation()!=other.operation()){
             return operation() < other.operation();
         }
+        else if(notation_ != other.notation()){
+            return notation_ < other.notation();
+        }
         else if(left_index() != other.left_index()){
             return left_index() < other.left_index();
         }

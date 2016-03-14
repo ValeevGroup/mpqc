@@ -27,7 +27,8 @@ using OneE_Engine = libint2::OneBodyEngine;
 using TwoE_Engine = libint2::TwoBodyEngine<libint2::Coulomb>;
 using cGTG_Engine = libint2::TwoBodyEngine<libint2::cGTG>;
 using cGTGCoulomb_Engine = libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>;
-using cGTG2_Engine = libint2::TwoBodyEngine<libint2::DelcGTG_square>;
+using DelcGTG2 = libint2::TwoBodyEngine<libint2::DelcGTG_square>;
+
 
 template <typename E>
 void set_eng_precision(E &eng){
@@ -96,19 +97,19 @@ inline const double *shell_set(cGTGCoulomb_Engine &e, Shell const &s0,
 }
 
 inline const double *
-shell_set(cGTG2_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2,
+shell_set(DelcGTG2 &e, Shell const &s0, Shell const &s1, Shell const &s2,
           Shell const &s3) {
     return e.compute(s0, s1, s2, s3);
 }
 
 inline const double *
-shell_set(cGTG2_Engine &e, Shell const &s0, Shell const &s1) {
+shell_set(DelcGTG2 &e, Shell const &s0, Shell const &s1) {
     const auto unit = Shell::unit();
     return e.compute(s0, unit, s1, unit);
 }
 
 inline const double *
-shell_set(cGTG2_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
+shell_set(DelcGTG2 &e, Shell const &s0, Shell const &s1, Shell const &s2) {
     const auto unit = Shell::unit();
     return e.compute(s0, unit, s1, s2);
 }

@@ -99,7 +99,7 @@ namespace mpqc{
     }
 
     bool Operation::is_r12() const {
-        return (oper_==Operations::cGTG2 || oper_ == Operations::cGTG2 || oper_==Operations::cGTGCoulomb
+        return (oper_==Operations::cGTG2 || oper_ == Operations::cGTG || oper_==Operations::cGTGCoulomb
                 || oper_==Operations::DelcGTG2);
     }
 

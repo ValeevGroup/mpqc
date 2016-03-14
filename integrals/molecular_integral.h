@@ -341,18 +341,20 @@ typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::
     TArray result;
 
     if(iter != mo_formula_registry_.end()){
-        return iter->second;
+        result = iter->second;
+        utility::print_par(world_,"Retrived MO Integral: ");
+        utility::wprint_par(world_, formula.formula_string());
+        double size = utility::array_size(result);
+        utility::print_par(world_," Size: ", size, " GB\n");
     }else{
 
         if(formula.rank() == 2){
             result =  compute2(formula);
             mo_formula_registry_.insert(formula, result);
-            return result;
         }
         else if(formula.rank() == 4){
             result =  compute4(formula);
             mo_formula_registry_.insert(formula, result);
-            return result;
         }
     }
 

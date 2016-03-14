@@ -184,7 +184,7 @@ void AtomicIntegralBase::parse_two_body_four_center(const Formula& formula, libi
     if (formula.notation() == Formula::Notation::Chemical){
         bases = {*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1};
     }
-    else if(formula.notation() == Formula::Notation::Physical){
+    else{
         bases = {*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1};
     }
 

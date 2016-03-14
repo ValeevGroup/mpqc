@@ -25,7 +25,7 @@ namespace mpqc{
      */
     class Formula{
     public:
-        enum class Notation {Chemical, Physical};
+        enum class Notation {Chemical=0, Physical=1};
 
 
         Formula() = default;

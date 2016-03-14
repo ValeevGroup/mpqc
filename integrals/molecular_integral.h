@@ -110,7 +110,7 @@ namespace integrals{
             tmp("i,j") = left1("k,i")*right1("k,j");
 
             // create diagonal array
-            result = ta_routines::create_diagonal_matrix(tmp,1.0);
+            result = array_ops::create_diagonal_matrix(tmp,1.0);
 
             auto time1 = mpqc_time::fenced_now(world_);
             time+= mpqc_time::duration_in_s(time0,time1);

@@ -4,7 +4,7 @@
 namespace mpqc {
 namespace integrals {
 
-double detail::integral_engine_precision = 0;
+double detail::integral_engine_precision = 0.0;
 
 } // namespace integrals
 } // namespace mpqc

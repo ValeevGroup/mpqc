@@ -31,6 +31,7 @@
 #include "../utility/array_info.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../scf/traditional_df_fock_builder.h"
+#include "../scf/eigen_solve_density_builder.h"
 
 #include "../mp2/mp2.h"
 
@@ -48,17 +49,21 @@ int main(int argc, char *argv[]) {
     std::wcout.imbue(std::locale("en_US.UTF-8"));
     std::string mol_file = "";
     std::string basis_name = "";
+    std::string aux_basis_name = "";
+    std::string df_basis_name = "";
     int nclusters = 0;
     std::cout << std::setprecision(15);
     double threshold = 1e-12;
     double well_sep_threshold = 0.1;
     integrals::QQR::well_sep_threshold(well_sep_threshold);
-    if (argc == 4) {
+    if (argc == 6) {
         mol_file = argv[1];
         basis_name = argv[2];
-        nclusters = std::stoi(argv[3]);
+        aux_basis_name = argv[3];
+        df_basis_name = argv[4];
+        nclusters = std::stoi(argv[5]);
     } else {
-        std::cout << "input is $./program mol_file basis_file nclusters ";
+        std::cout << "input is $./program mol_file basis_file aux_basis df_basis nclusters ";
         return 0;
     }
     TiledArray::SparseShape<float>::threshold(threshold);
@@ -73,13 +78,20 @@ int main(int argc, char *argv[]) {
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
-    basis::BasisSet dfbs("cc-pVDZ-RI");
+    basis::BasisSet dfbs(df_basis_name);
     basis::Basis df_basis(dfbs.get_cluster_shells(clustered_mol));
 
-    basis::BasisSet abs("cc-pVDZ-F12-CABS");
+    basis::BasisSet abs(aux_basis_name);
     basis::Basis abs_basis(abs.get_cluster_shells(clustered_mol));
 
     f12::GTGParams gtg_params(1.0, 6);
+
+
+    auto param = gtg_params.compute();
+
+    for(auto& pair : param){
+        std::cout << pair.first << " " << pair.second << std::endl;
+    }
 
     libint2::init();
 
@@ -101,14 +113,19 @@ int main(int argc, char *argv[]) {
     decltype(T) H;
     H("i,j") = T("i,j") + V("i,j");
 
-    // Unscreened four center stored RHF.
+    auto eri3 = ao_int.compute(L"( Κ| G|κ1 λ1)");
     auto metric = ao_int.compute(L"(Κ|G|Λ)");
-    scf::DFFockBuilder builder(metric);
+    scf::DFFockBuilder<decltype(eri3)> builder(metric, eri3);
     world.gop.fence();
 
-    auto eri3 = ao_int.compute(L"( Κ| G|κ1 λ1)");
-    scf::ClosedShellSCF<scf::DFFockBuilder> scf(H, S, occ / 2, repulsion_energy, std::move(builder));
-    scf.solve(50, 1e-8, eri3);
+    const auto bs_array = utility::make_array(basis, basis);
+    auto multi_pool = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+    auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+
+    auto db = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters, 0.0, "cholesky inverse", false);
+
+    scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(builder), std::move(db));
+    scf.solve(50, 1e-8);
 
     // obs fock build
     std::size_t all = S.trange().elements().extent()[0];
@@ -293,17 +310,25 @@ int main(int argc, char *argv[]) {
 //        auto tmp = mo_integral.atomic_integral().compute(L"(Κ|GR|Λ)[inv]");
 //        std::cout << tmp << std::endl;
 
-        auto tmp = mo_integral.atomic_integral().compute(L"(κ λ |GR|μ ν)");
-//        std::cout << tmp << std::endl;
+        auto tmp = mo_integral.atomic_integral().compute(L"(κ λ |R|μ ν)");
+        std::cout << tmp << std::endl;
 
-//        tmp = mo_integral.atomic_integral().compute(L"(κ λ |GR|μ ν)");
-//        std::cout << tmp << std::endl;
+        tmp = mo_integral.atomic_integral().compute(L"(κ λ |GR|μ ν)");
+        std::cout << tmp << std::endl;
+
+        tmp = mo_integral.atomic_integral().compute(L"(κ λ |R2|μ ν)");
+        std::cout << tmp << std::endl;
+
+        tmp = mo_integral.atomic_integral().compute(L"(κ λ |dR2|μ ν)");
+        std::cout << tmp << std::endl;
 
         V_ijij("i1,j1,i2,j2") = mo_integral(L"(i1 i2|GR|j1 j2)");
 
         std::cout << V_ijij << std::endl;
 
         V_ijij("i1,j1,i2,j2") = mo_integral(L"(i1 p|G|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]");
+        std::cout << V_ijij << std::endl;
+        V_ijij("i1,j1,i2,j2") = mo_integral(L"(i1 p|G|j1 q)")*mo_integral(L"(i2 p|R|j2 q)");
         std::cout << V_ijij << std::endl;
         V_ijij("i1,j1,i2,j2") = mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(m i2|R|a' j2)[df]");
         std::cout << V_ijij << std::endl;
@@ -317,56 +342,56 @@ int main(int argc, char *argv[]) {
         V_ijij("i1,j1,i2,j2") = tmp1("i1,j1,i2,j2");
         std::cout << V_ijij << std::endl;
     }
-
-    decltype(S_obs) V_jiij;
-    {
-        V_jiij("j1,i1,i2,j2") = V_ijij("i1,j1,i2,j2");
-//        std::cout << V_jiij << std::endl;
-    }
-
-    {
-        V_jiij("j1,i1,i2,j2") = mo_integral(L"(i1 i2|GR|j1 j2)");
-        V_jiij("j1,i1,i2,j2") -= mo_integral(L"(i1 p|G|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]");
-        V_jiij("j1,i1,i2,j2") -= mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]");
-        V_jiij("j1,i1,i2,j2") -= mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(i2 m|R|j2 a')[df]");
-//        std::cout << V_jiij << std::endl;
-    }
-
-    decltype(S_obs) C_iajb;
-    {
-        C_iajb("i,a,j,b") = mo_integral(L"(i a|R|j a')[df]")*mo_integral(L"(b|F|a')[df]");
-        C_iajb("i,a,j,b") = mo_integral(L"(i b|R|j a')[df]")*mo_integral(L"(a|F|a')[df]");
-    }
-
-    decltype(S_obs) t2;
-    {
-        decltype(S_obs) g_iajb;
-        g_iajb = mo_integral.compute(L"(i a|G|j b)[df]");
-        g_iajb("a,b,i,j") = g_iajb("i,a,j,b");
-        t2 = mpqc::cc::d_abij(g_iajb,ens,occ/2);
-    }
-
-    decltype(S_obs) V_bar_ijij;
-    {
-        V_bar_ijij("i1,j1,i2,j2") = V_ijij("i1,j1,i2,j2") + C_iajb("i1,a,j1,b")*t2("a,b,i2,j2");
-    }
-
-    decltype(S_obs) V_bar_jiij;
-    {
-        V_bar_jiij("j1,i1,i2,j2") = V_bar_ijij("i1,j1,i2,j2");
-    }
-
-    decltype(S_obs) V_bar_ij, V_bar_ji;
-    {
-        auto iden = mo_integral.compute(L"(i2|I|j2)");
-        V_bar_ij("i1,j1") = V_bar_ijij("i1,j1,i2,j2")*iden("i2,j2");
-        V_bar_ji("j1,i1") = V_bar_ijij("j1,i1,i2,j2")*iden("i2,j2");
-
-        double E21 = -TA::dot(V_bar_ij("i,j"), iden("i,j"));
-        E21 -= 0.25*TA::dot(5*V_bar_ij("i,j")-V_bar_ji("j,i"), iden("i,j"));
-
-        std::cout << E21 << std::endl;
-    }
+//
+//    decltype(S_obs) V_jiij;
+//    {
+//        V_jiij("j1,i1,i2,j2") = V_ijij("i1,j1,i2,j2");
+////        std::cout << V_jiij << std::endl;
+//    }
+//
+//    {
+//        V_jiij("j1,i1,i2,j2") = mo_integral(L"(i1 i2|GR|j1 j2)");
+//        V_jiij("j1,i1,i2,j2") -= mo_integral(L"(i1 p|G|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]");
+//        V_jiij("j1,i1,i2,j2") -= mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]");
+//        V_jiij("j1,i1,i2,j2") -= mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(i2 m|R|j2 a')[df]");
+////        std::cout << V_jiij << std::endl;
+//    }
+//
+//    decltype(S_obs) C_iajb;
+//    {
+//        C_iajb("i,a,j,b") = mo_integral(L"(i a|R|j a')[df]")*mo_integral(L"(b|F|a')[df]");
+//        C_iajb("i,a,j,b") = mo_integral(L"(i b|R|j a')[df]")*mo_integral(L"(a|F|a')[df]");
+//    }
+//
+//    decltype(S_obs) t2;
+//    {
+//        decltype(S_obs) g_iajb;
+//        g_iajb = mo_integral.compute(L"(i a|G|j b)[df]");
+//        g_iajb("a,b,i,j") = g_iajb("i,a,j,b");
+//        t2 = mpqc::cc::d_abij(g_iajb,ens,occ/2);
+//    }
+//
+//    decltype(S_obs) V_bar_ijij;
+//    {
+//        V_bar_ijij("i1,j1,i2,j2") = V_ijij("i1,j1,i2,j2") + C_iajb("i1,a,j1,b")*t2("a,b,i2,j2");
+//    }
+//
+//    decltype(S_obs) V_bar_jiij;
+//    {
+//        V_bar_jiij("j1,i1,i2,j2") = V_bar_ijij("i1,j1,i2,j2");
+//    }
+//
+//    decltype(S_obs) V_bar_ij, V_bar_ji;
+//    {
+//        auto iden = mo_integral.compute(L"(i2|I|j2)");
+//        V_bar_ij("i1,j1") = V_bar_ijij("i1,j1,i2,j2")*iden("i2,j2");
+//        V_bar_ji("j1,i1") = V_bar_ijij("j1,i1,i2,j2")*iden("i2,j2");
+//
+//        double E21 = -TA::dot(V_bar_ij("i,j"), iden("i,j"));
+//        E21 -= 0.25*TA::dot(5*V_bar_ij("i,j")-V_bar_ji("j,i"), iden("i,j"));
+//
+//        std::cout << E21 << std::endl;
+//    }
 
 
     // compute r12 integral

@@ -103,6 +103,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
               = in.HasMember("GhostAtoms") ? in["GhostAtoms"].GetString() : "";
 
 
+        bool cluster = in.HasMember("cluster") ? in["cluster"].GetBool() : true;
         int nclusters = in["number of clusters"].GetInt();
         std::size_t mo_blocksize = cc_in["BlockSize"].GetInt();
         std::size_t ao_blocksize = in.HasMember("AOBlockSize")
@@ -138,11 +139,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         TiledArray::SparseShape<float>::threshold(threshold);
 
-        auto mol = mpqc::molecule::read_xyz(mol_file);
+        auto mol = mpqc::molecule::read_xyz(mol_file, false);
         auto charge = 0;
         auto occ = mol.occupation(charge);
         auto repulsion_energy = mol.nuclear_repulsion();
-
 
         if (world.rank() == 0) {
             std::cout << "Mol file is " << mol_file << std::endl;
@@ -150,6 +150,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             std::cout << "basis is " << basis_name << std::endl;
             std::cout << "df basis is " << df_basis_name << std::endl;
             std::cout << "Using " << nclusters << " clusters" << std::endl;
+            std::cout << "Cluster: " << cluster << std::endl;
         }
 
         utility::print_par(world, "Sparse threshold is ",
@@ -158,13 +159,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::print_par(world, "Nuclear repulsion_energy = ",
                            repulsion_energy, "\n");
 
-
         world.gop.fence();
+
 
         // use clustered_mol to generate basis
         molecule::Molecule clustered_mol{};
         if (!ghost_atoms.empty()) {
-            auto ghost_molecue = mpqc::molecule::read_xyz(ghost_atoms);
+            auto ghost_molecue = mpqc::molecule::read_xyz(ghost_atoms, false);
             auto ghost_elements = ghost_molecue.clusterables();
 
             if (world.rank() == 0) {
@@ -177,7 +178,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
             mol_elements.insert(mol_elements.end(), ghost_elements.begin(),
                                 ghost_elements.end());
 
-            clustered_mol = mpqc::molecule::kmeans(mol_elements, nclusters);
+            if(cluster){
+                clustered_mol = mpqc::molecule::Molecule(mol_elements, false);
+            }
+            else{
+                clustered_mol = mpqc::molecule::kmeans(mol_elements, nclusters);
+            }
 
             clustered_mol.set_charge(mol.charge());
             clustered_mol.set_mass(mol.mass());
@@ -187,8 +193,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
             if (world.rank() == 0) {
                 std::cout << "Ghost Atom file: None" << std::endl;
             }
-            clustered_mol
-                  = mpqc::molecule::kmeans(mol.clusterables(), nclusters);
+
+            if (cluster){
+                clustered_mol = mpqc::molecule::kmeans(mol.clusterables(), nclusters);
+            }
+            else{
+                clustered_mol = mol;
+                clustered_mol.set_charge(charge);
+            }
         }
 
         mpqc::basis::BasisSet bs{basis_name};

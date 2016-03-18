@@ -103,7 +103,7 @@ int64_t Molecule::core_electrons() const {
 }
 
 
-Molecule read_xyz(std::string const &file_name) {
+Molecule read_xyz(std::string const &file_name, bool sort_input) {
 
     std::ifstream xyz_file(file_name);
 
@@ -123,7 +123,7 @@ Molecule read_xyz(std::string const &file_name) {
         atoms.emplace_back(std::move(atom));
     }
 
-    return Molecule(std::move(atoms));
+    return Molecule(std::move(atoms), sort_input);
 }
 
 std::ostream &operator<<(std::ostream &os, Molecule const &mol) {

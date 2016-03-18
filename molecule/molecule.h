@@ -87,7 +87,7 @@ class Molecule {
  *  
  *  In this case the string should be the file handle. 
  */
-Molecule read_xyz(std::string const &);
+Molecule read_xyz(std::string const &, bool sort_input=true);
 
 std::ostream &operator<<(std::ostream &, Molecule const &);
 

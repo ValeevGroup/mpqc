@@ -479,12 +479,16 @@ void ta_tensor_svd(TA::Tensor<double> &in, TA::Tensor<double> &L,
 void recompress(DecomposedTensor<double> &t) {
     assert(t.ndecomp() >= 2);
 
-    // Where matrix M = ST;
+    // Given W = S * T;
+    // we want S = Ls * Rs and T = Lt * Rt
+    // W = Ls * Rs * Lt * Rt
     TA::Tensor<double> Ls, Rs, Lt, Rt;
-    ta_tensor_lq(t.tensor(0), Ls, Rs); // LQ Left to end up with QR;
-    ta_tensor_qr(t.tensor(1), Lt, Rt); // QR right to end up with LQ;
+    ta_tensor_lq(t.tensor(0), Ls, Rs); // LQ Left to end up with QR since Row
+                                       // Major
+    ta_tensor_qr(t.tensor(1), Lt, Rt); // QR right to end up with LQ since Row
+                                       // Major
 
-    // Form a M matrix
+    // Form an M matrix where M = Rs * Lt
     constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
     const auto gh = TA::math::GemmHelper(NoT, NoT, 2, 2, 2);
     auto M = Rs.gemm(Lt, 1.0, gh);
@@ -492,13 +496,19 @@ void recompress(DecomposedTensor<double> &t) {
     // want to always do the full decomp so make input
     // max rank larger than rank of M.
     TA::Tensor<double> Lm, Rm;
-    // ta_tensor_svd(M, Lm, Rm, t.cut());
+
+    // Form M = Lm * Rm
     ta_tensor_col_pivoted_qr(M, Lm, Rm, t.cut());
+
+    // Form new Left side Snew = Ls * Lm
     auto newL = Ls.gemm(Lm, 1.0, gh);
 
+    // Form new Right side Tnew = Rm * Rt 
     auto ord = t.orders();
     const auto gh_r = TA::math::GemmHelper(NoT, NoT, ord[1], ord[0], ord[1]);
     auto newR = Rm.gemm(Rt, 1.0, gh_r);
+
+    // W = Snew * Rnew
     t = DecomposedTensor<double>(t.cut(), std::move(newL), std::move(newR));
 }
 

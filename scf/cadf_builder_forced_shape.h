@@ -174,9 +174,32 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
 
         darray_type C_mo, dL, F_df;
 
+        // TA::SparseShape<float> cshape = dC.get_shape();
+
+        // world.gop.fence();
+        // auto &tensor = cshape.data();
+        // const auto size = tensor.range().volume();
+        // for(auto i = 0; i < size; ++i){
+        //     auto data = tensor.data() + i;
+        //     if(*data < 1e-4){
+        //         *(tensor.data() + i) = 0;
+        //     }
+        // }
+        // world.gop.fence();
+
+        // TA::SparseShape<float> const &Cdf_shape = C_df_.get_shape();
+
+        // TA::math::GemmHelper g(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+        //                        madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+        //                        3, 3, 2);
+        // TA::SparseShape<float> out = Cdf_shape.gemm(cshape, 1.0, g);
+        // world.gop.fence();
+
         auto cmo0 = mpqc_time::fenced_now(world);
         C_mo("X, i, mu") = C_df_("X, mu, nu") * dC("nu, i");
+ // C_mo("X, mu, i") = (C_df_("X, mu, nu") * dC("nu, i")).set_shape(out);
         C_mo.truncate();
+   //      C_mo("X, i, mu") = C_mo("X, mu, i");
         auto cmo1 = mpqc_time::fenced_now(world);
         c_mo_storages_.push_back(utility::array_storage(C_mo));
 

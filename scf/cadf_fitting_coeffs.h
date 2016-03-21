@@ -78,10 +78,11 @@ cadf_shape(madness::World &world, basis::Basis const &obs,
 }
 
 template <typename Integral>
-void create_tiles(madness::World &world,
-                  TA::DistArray<TA::TensorD, SpPolicy> &C_df, Integral &eri3,
-                  TA::DistArray<TA::TensorD, TA::DensePolicy> const &M,
-                  unsigned long natoms) {
+void create_tiles_prime(madness::World &world,
+                        TA::DistArray<TA::TensorD, SpPolicy> &C_df,
+                        Integral &eri3,
+                        TA::DistArray<TA::TensorD, TA::DensePolicy> const &M,
+                        unsigned long natoms) {
 
     auto task = [&](unsigned long i, unsigned long j) {
         auto &trange = C_df.trange();
@@ -226,6 +227,173 @@ void create_tiles(madness::World &world,
             world.taskq.add(task, i, j);
         }
     }
+    world.gop.fence();
+}
+
+template <typename Integral>
+void create_tiles(madness::World &world,
+                  TA::DistArray<TA::TensorD, SpPolicy> &C_df, Integral &eri3,
+                  TA::DistArray<TA::TensorD, TA::DensePolicy> const &M,
+                  unsigned long natoms) {
+
+    using integral_tile_type = typename Integral::tile_type;
+
+    auto same_ind_task = [&](integral_tile_type eri3_direct_tile,
+                             TA::TensorD M_tile, unsigned long ord) {
+        TA::TensorD eri3_tile = eri3_direct_tile;
+        auto eri3_extent = eri3_tile.range().extent();
+        MatrixD eri3_eig = TA::eigen_map(eri3_tile, eri3_extent[0],
+                                         eri3_extent[1] * eri3_extent[2]);
+
+        auto M_extent = M_tile.range().extent();
+        MatrixD M_eig = TA::eigen_map(M_tile, M_extent[0], M_extent[1]);
+
+        TA::TensorD out_tile(eri3_tile.range());
+
+        MatrixD out_eig = M_eig.inverse() * eri3_eig;
+        TA::eigen_map(out_tile, eri3_extent[0], eri3_extent[1] * eri3_extent[2])
+              = out_eig;
+
+        C_df.set(ord, out_tile);
+    };
+
+    auto two_ind_task =
+          [&](integral_tile_type eri3_direct_tile0,
+              integral_tile_type eri3_direct_tile1, TA::TensorD M_tile00,
+              TA::TensorD M_tile01, TA::TensorD M_tile10, TA::TensorD M_tile11,
+              unsigned long ord0, unsigned long ord1) {
+
+        TA::TensorD eri3_tile0 = eri3_direct_tile0;
+        TA::TensorD eri3_tile1 = eri3_direct_tile1;
+
+        auto eri3_extent0 = eri3_tile0.range().extent();
+        auto eri3_extent1 = eri3_tile1.range().extent();
+
+        MatrixD eri3_eig0 = TA::eigen_map(eri3_tile0, eri3_extent0[0],
+                                          eri3_extent0[1] * eri3_extent0[2]);
+
+        MatrixD eri3_eig1 = TA::eigen_map(eri3_tile1, eri3_extent1[0],
+                                          eri3_extent1[1] * eri3_extent1[2]);
+
+        auto M_extent00 = M_tile00.range().extent();
+        auto M_extent01 = M_tile01.range().extent();
+        auto M_extent10 = M_tile10.range().extent();
+        auto M_extent11 = M_tile11.range().extent();
+
+        auto rows = M_extent00[0] + M_extent10[0];
+        auto cols = M_extent00[1] + M_extent01[1];
+
+        MatrixD M_combo(rows, cols);
+
+        // Write M00
+        M_combo.block(0, 0, M_extent00[0], M_extent00[1])
+              = TA::eigen_map(M_tile00, M_extent00[0], M_extent00[1]);
+
+        // Write M01
+        M_combo.block(0, M_extent00[1], M_extent01[0], M_extent01[1])
+              = TA::eigen_map(M_tile01, M_extent01[0], M_extent01[1]);
+
+        // Write M10
+        M_combo.block(M_extent00[0], 0, M_extent10[0], M_extent10[1])
+              = TA::eigen_map(M_tile10, M_extent10[0], M_extent10[1]);
+
+        // Write M11
+        M_combo.block(M_extent00[0], M_extent00[1], M_extent11[0],
+                      M_extent11[1])
+              = TA::eigen_map(M_tile11, M_extent11[0], M_extent11[1]);
+
+        MatrixD M_combo_inv = M_combo.inverse();
+
+        // Doing the block wise GEMM by hand for now.
+        auto block00 = M_combo_inv.block(0, 0, M_extent00[0], M_extent00[1]);
+
+        auto block01 = M_combo_inv.block(0, M_extent00[1], M_extent01[0],
+                                         M_extent01[1]);
+
+        auto block10 = M_combo_inv.block(M_extent00[0], 0, M_extent10[0],
+                                         M_extent10[1]);
+
+        auto block11 = M_combo_inv.block(M_extent00[0], M_extent00[1],
+                                         M_extent11[0], M_extent11[1]);
+
+        if (C_df.is_local(ord0)) {
+
+            MatrixD C0 = block00 * eri3_eig0 + block01 * eri3_eig1;
+            TA::TensorD out_tile0(eri3_tile0.range());
+
+            TA::eigen_map(out_tile0, eri3_extent0[0],
+                          eri3_extent0[1] * eri3_extent0[2]) = C0;
+
+            C_df.set(ord0, out_tile0);
+        }
+        if (C_df.is_local(ord1)) {
+            MatrixD C1 = block10 * eri3_eig0 + block11 * eri3_eig1;
+
+            TA::TensorD out_tile1(eri3_tile1.range());
+
+            TA::eigen_map(out_tile1, eri3_extent1[0],
+                          eri3_extent1[1] * eri3_extent1[2]) = C1;
+
+            C_df.set(ord1, out_tile1);
+        }
+    };
+
+
+    auto const &eri3_tiles = eri3.array().trange().tiles();
+    auto const &M_tiles = M.trange().tiles();
+
+    for (auto i = 0ul; i < natoms; ++i) {
+        std::array<unsigned long, 3> eri3_idx = {{i, i, i}};
+        std::array<unsigned long, 2> M_idx = {{i, i}};
+
+        auto eri3_ord = eri3_tiles.ordinal(eri3_idx);
+        auto M_ord = M_tiles.ordinal(M_idx);
+
+        if (C_df.is_local(eri3_ord)) {
+            // auto captures future
+            auto eri3_tile = eri3.array().find(eri3_ord);
+            auto M_tile = M.find(M_ord);
+
+            world.taskq.add(same_ind_task, eri3_tile, M_tile, eri3_ord);
+        }
+
+        for (auto j = 0ul; j < natoms; ++j) {
+            if (i == j) {
+                continue;
+            }
+
+            std::array<unsigned long, 3> eri3_idx0 = {{i, i, j}};
+            std::array<unsigned long, 3> eri3_idx1 = {{j, i, j}};
+            auto eri3_ord0 = eri3_tiles.ordinal(eri3_idx0);
+            auto eri3_ord1 = eri3_tiles.ordinal(eri3_idx1);
+
+            std::array<unsigned long, 2> M_idx00 = {{i, i}};
+            std::array<unsigned long, 2> M_idx01 = {{i, j}};
+            std::array<unsigned long, 2> M_idx10 = {{j, i}};
+            std::array<unsigned long, 2> M_idx11 = {{j, j}};
+
+            auto M_ord00 = M_tiles.ordinal(M_idx00);
+            auto M_ord01 = M_tiles.ordinal(M_idx01);
+            auto M_ord10 = M_tiles.ordinal(M_idx10);
+            auto M_ord11 = M_tiles.ordinal(M_idx11);
+
+            if (C_df.is_local(eri3_ord0) || C_df.is_local(eri3_ord1)) {
+                // auto captures futures
+                auto eri3_tile0 = eri3.array().find(eri3_ord0);
+                auto eri3_tile1 = eri3.array().find(eri3_ord1);
+
+                auto M_tile00 = M.find(M_ord00);
+                auto M_tile01 = M.find(M_ord01);
+                auto M_tile10 = M.find(M_ord10);
+                auto M_tile11 = M.find(M_ord11);
+
+                world.taskq.add(two_ind_task, eri3_tile0, eri3_tile1, M_tile00,
+                                M_tile01, M_tile10, M_tile11, eri3_ord0,
+                                eri3_ord1);
+            }
+        }
+    }
+
     world.gop.fence();
 }
 

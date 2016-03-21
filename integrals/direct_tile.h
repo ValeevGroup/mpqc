@@ -93,6 +93,9 @@ class DirectArray {
     Array array_;
 
   public:
+    using tile_type = typename Array::value_type;
+
+  public:
     DirectArray() = default;
     DirectArray(std::shared_ptr<Builder> b, Array a)
             : builder_(std::move(b)), array_(std::move(a)) {}

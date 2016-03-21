@@ -28,8 +28,11 @@
 
 #include "../utility/time.h"
 #include "../utility/array_info.h"
+
 #include "../ta_routines/array_to_eigen.h"
 #include "../ta_routines/minimize_storage.h"
+#include "../ta_routines/diagonal_array.h"
+#include "../ta_routines/cholesky_inverse.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/soad.h"
@@ -229,25 +232,6 @@ int main(int argc, char *argv[]) {
         std::cout << "Screener time: " << sstime << std::endl;
     }
 
-    // if (in.HasMember("debug")) {
-    //     for (auto i = 0; i < world.size(); ++i) {
-    //         if (world.rank() == i) {
-    //             char hostname[256];
-    //             gethostname(hostname, sizeof(hostname));
-    //             printf("PID %d on %s ready for attach\n", getpid(),
-    //             hostname);
-    //             fflush(stdout);
-    //         }
-    //         world.gop.fence();
-    //     }
-    //     if (world.rank() == 1) {
-    //         volatile int i = 0;
-    //         while (0 == i) sleep(5);
-    //     }
-    //     world.gop.fence();
-    // }
-
-
     auto cdf0 = mpqc_time::fenced_now(world);
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
@@ -288,9 +272,19 @@ int main(int argc, char *argv[]) {
     if (in.HasMember("cluster by atom") && in["cluster by atom"].GetBool()) {
         C_df = C_df_;
     } else {
+        auto reblock0 = mpqc_time::fenced_now(world);
         C_df = scf::reblock_from_atoms(C_df_, obs_atom_to_cluster_map,
                                        dfbs_atom_to_cluster_map,
                                        by_cluster_trange);
+
+        auto reblock1 = mpqc_time::fenced_now(world);
+        auto reblock_time = mpqc_time::duration_in_s(reblock0, reblock1);
+        if (world.rank() == 0) {
+            std::cout << "Reblock C_df time " << reblock_time << std::endl;
+        }
+
+        out_doc.AddMember("Cdf reblock time", reblock_time,
+                          out_doc.GetAllocator());
     }
 
     array_storage_Cdf = utility::array_storage(C_df);
@@ -310,154 +304,285 @@ int main(int argc, char *argv[]) {
                       out_doc.GetAllocator());
 
     // Begin scf
-    {
-        auto soad0 = mpqc_time::fenced_now(world);
-        decltype(S) F_soad;
-        if (in.HasMember("Soad Method")
-            && std::string(in["Soad Method"].GetString()) == "low memory") {
-            F_soad = scf::fock_from_soad_low_mem(world, clustered_mol, basis,
-                                                 eri_e, H);
-            out_doc.AddMember("Soad Method", "Low memory",
-                              out_doc.GetAllocator());
-        } else {
-            F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-            out_doc.AddMember("Soad Method", "High memory",
-                              out_doc.GetAllocator());
-        }
-        auto soad1 = mpqc_time::fenced_now(world);
-        auto soadtime = mpqc_time::duration_in_s(soad0, soad1);
+    auto soad0 = mpqc_time::fenced_now(world);
+    decltype(S) F_soad;
+    if (in.HasMember("Soad Method")
+        && std::string(in["Soad Method"].GetString()) == "low memory") {
+        F_soad = scf::fock_from_soad_low_mem(world, clustered_mol, basis, eri_e,
+                                             H);
+        out_doc.AddMember("Soad Method", "Low memory", out_doc.GetAllocator());
+    } else {
+        F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
+        out_doc.AddMember("Soad Method", "High memory", out_doc.GetAllocator());
+    }
+    auto soad1 = mpqc_time::fenced_now(world);
+    auto soadtime = mpqc_time::duration_in_s(soad0, soad1);
+    if (world.rank() == 0) {
+        std::cout << "SOAD time: " << soadtime << std::endl;
+    }
+    out_doc.AddMember("Soad Time", soadtime, out_doc.GetAllocator());
+
+    auto rxyz0 = mpqc_time::fenced_now(world);
+    auto multi_pool
+          = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+
+    auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+    auto rxyz1 = mpqc_time::fenced_now(world);
+    auto rxyztime = mpqc_time::duration_in_s(rxyz0, rxyz1);
+    if (world.rank() == 0) {
+        std::cout << "dipole integrals time: " << rxyztime << std::endl;
+    }
+
+    const auto clr_threshold = in.HasMember("clr threshold")
+                                     ? in["clr threshold"].GetDouble()
+                                     : 1e-6;
+    if (world.rank() == 0) {
+        std::cout << "CLR threshold = " << clr_threshold << std::endl;
+    }
+
+    out_doc.AddMember("CLR threshold", clr_threshold, out_doc.GetAllocator());
+
+    auto deri3 = ints::direct_sparse_integrals(
+          world, eri_e, three_c_array, shr_screen,
+          tensor::TaToDecompTensor(clr_threshold));
+
+    auto dC_df
+          = TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(clr_threshold));
+
+    // Don't CLR compress M
+    auto dM = TA::to_new_tile_type(M, tensor::TaToDecompTensor(clr_threshold,
+                                                               false));
+
+    decltype(dC_df) dG_df;
+    auto G_df0 = mpqc_time::fenced_now(world);
+    auto old_compress = tensor::detail::recompress;
+    tensor::detail::recompress = true;
+    dG_df("X, mu, nu")
+          = (deri3("X, mu, nu") - 0.5 * dM("X,Y") * dC_df("Y,mu,nu"));
+    ta_routines::minimize_storage(dG_df, clr_threshold);
+    auto G_df1 = mpqc_time::fenced_now(world);
+    tensor::detail::recompress = old_compress;
+    auto G_df_time = mpqc_time::duration_in_s(rxyz0, rxyz1);
+    if (world.rank() == 0) {
+        std::cout << "G_df time: " << G_df_time << std::endl;
+    }
+    out_doc.AddMember("G_df time", G_df_time, out_doc.GetAllocator());
+
+    auto g_store = utility::array_storage(dG_df);
+    if (world.rank() == 0) {
+        std::cout << "G_df storage = \n"
+                  << "\tFull    " << g_store[0] << "\n"
+                  << "\tSparse  " << g_store[1] << "\n"
+                  << "\tCLR     " << g_store[2] << "\n" << std::flush;
+    }
+    world.gop.fence();
+    out_doc.AddMember("G_df Full Storage", g_store[0], out_doc.GetAllocator());
+
+    out_doc.AddMember("G_df Sparse Storage", g_store[1],
+                      out_doc.GetAllocator());
+
+    out_doc.AddMember("G_df CLR Storage", g_store[2], out_doc.GetAllocator());
+
+    double TcutC = 0.0;
+    if (in.HasMember("TcutC")) {
+        TcutC = in["TcutC"].GetDouble();
+    }
+
+    out_doc.AddMember("TcutC", TcutC, out_doc.GetAllocator());
+
+    auto localize = true;
+    auto ebuilder = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters,
+                                              TcutC, "inverse sqrt", localize);
+
+    std::unique_ptr<scf::DensityBuilder> d_builder
+          = make_unique<decltype(ebuilder)>(std::move(ebuilder));
+
+    auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
+                                              shr_screen);
+
+    std::unique_ptr<scf::FockBuilder> f_builder;
+    if (in.HasMember("use forced shape") && in["use forced shape"].GetBool()) {
+
         if (world.rank() == 0) {
-            std::cout << "SOAD time: " << soadtime << std::endl;
+            std::cout << "Using forced shape build\n";
         }
-        out_doc.AddMember("Soad Time", soadtime, out_doc.GetAllocator());
 
-        auto rxyz0 = mpqc_time::fenced_now(world);
-        auto multi_pool
-              = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+        scf::CADFForcedShapeFockBuilder<decltype(eri3)> forced_shape(
+              M, eri3, dC_df, dG_df, clr_threshold);
 
-        auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
-        auto rxyz1 = mpqc_time::fenced_now(world);
-        auto rxyztime = mpqc_time::duration_in_s(rxyz0, rxyz1);
+        if (in.HasMember("coulomb sparse threshold")) {
+            forced_shape.set_J_sparse_thresh(
+                  in["coulomb sparse threshold"].GetDouble());
+        }
+        f_builder = std::unique_ptr<scf::FockBuilder>(
+              make_unique<decltype(forced_shape)>(std::move(forced_shape)));
+
+        out_doc.AddMember("Using forced shape", true, out_doc.GetAllocator());
+
+    } else {
+        scf::CADFFockBuilder<decltype(eri3)> cadf_builder(M, eri3, dC_df, dG_df,
+                                                          clr_threshold);
+
+        if (in.HasMember("coulomb sparse threshold")) {
+            cadf_builder.set_J_sparse_thresh(
+                  in["coulomb sparse threshold"].GetDouble());
+        }
+        f_builder = std::unique_ptr<scf::FockBuilder>(
+              make_unique<decltype(cadf_builder)>(std::move(cadf_builder)));
+
+        out_doc.AddMember("Using forced shape", false, out_doc.GetAllocator());
+    }
+
+    auto hf = scf::ClosedShellSCF(H, S, repulsion_energy, std::move(f_builder),
+                                  std::move(d_builder), F_soad);
+
+    world.gop.fence();
+
+    auto converged = hf.solve(in["scf max iter"].GetInt(),
+                              in["scf convergence threshold"].GetDouble());
+
+    out_doc.AddMember("SCF Converged", converged, out_doc.GetAllocator());
+    out_doc.AddMember("SCF", hf.results(out_doc), out_doc.GetAllocator());
+
+    if (in.HasMember("compute mp2") && in["compute mp2"].GetBool()) {
+        decltype(S) D = hf.density();
+        decltype(S) Ci = hf.coefficents();
+        decltype(S) F = hf.fock();
+        decltype(S) Cv;
+        {
+            auto F_eig = array_ops::array_to_eigen(F);
+            auto S_eig = array_ops::array_to_eigen(S);
+
+            auto mp2_vir = basis.nfunctions() - occ / 2;
+            Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+                                                                       S_eig);
+            decltype(S_eig) Ceigv = es.eigenvectors().rightCols(mp2_vir);
+            auto tr_vir = scf::tr_occupied(clustered_mol.nclusters(), mp2_vir);
+
+            Cv = array_ops::eigen_to_array<TA::TensorD>(
+                  world, Ceigv, S.trange().data()[0], tr_vir);
+        }
+
+        auto I = array_ops::create_diagonal_matrix(S, 1.0);
+        decltype(S) Q;
+        Q("i,j") = I("i,j") - D("i,k") * S("k,j");
+        Q.truncate();
+        Q = Cv;
+
+        decltype(S) Focc, Fbar, Sbar;
+        Fbar("i,j") = Q("k,i") * F("k,l") * Q("l,j");
+        Sbar("i,j") = Q("k,i") * S("k,l") * Q("l,j");
+        Focc("i,j") = Ci("mu, i") * F("mu, nu") * Ci("nu, j");
+        Fbar.truncate();
+        Sbar.truncate();
+        Focc.truncate();
+
+        decltype(C_df) W;
+        W("Y, i, sig") = ((C_df("Y, mu, nu") * Ci("nu, i")) * Q("mu, sig"));
+        W.truncate();
+
+        auto W_store = utility::array_storage(W);
         if (world.rank() == 0) {
-            std::cout << "dipole integrals time: " << rxyztime << std::endl;
+            std::cout << "W sizes:\n"
+                      << "\tFull   = " << W_store[0] << "\n"
+                      << "\tSparse = " << W_store[1] << "\n"
+                      << "\tCLR    = " << W_store[2] << "\n";
         }
 
-        const auto clr_threshold = in.HasMember("clr threshold")
-                                         ? in["clr threshold"].GetDouble()
-                                         : 1e-6;
+        decltype(C_df) G;
+        G("i, s, j, r") = W("X,i,s") * (M("X,Y") * W("Y, j, r"));
+        G.truncate();
+
+        auto G_store = utility::array_storage(G);
         if (world.rank() == 0) {
-            std::cout << "CLR threshold = " << clr_threshold << std::endl;
+            std::cout << "G sizes:\n"
+                      << "\tFull   = " << G_store[0] << "\n"
+                      << "\tSparse = " << G_store[1] << "\n"
+                      << "\tCLR    = " << G_store[2] << "\n";
         }
 
-        out_doc.AddMember("CLR threshold", clr_threshold,
-                          out_doc.GetAllocator());
+        // Begin MP2
+        Eig::VectorXd F_occ_diag, F_pao_diag;
+        {
+            auto F_occ_eig = TA::array_to_eigen(Focc);
+            auto F_pao_eig = TA::array_to_eigen(Fbar);
+            F_occ_diag = F_occ_eig.diagonal();
+            F_pao_diag = F_pao_eig.diagonal();
+        }
 
-        auto deri3 = ints::direct_sparse_integrals(
-              world, eri_e, three_c_array, shr_screen,
-              tensor::TaToDecompTensor(clr_threshold));
+        auto r_to_T = [&](TA::TensorD &t) {
+            const auto start = t.range().lobound();
+            const auto end = t.range().upbound();
+            const auto extent = t.range().extent();
 
-        auto dC_df = TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(
-                                                      clr_threshold));
+            for (auto i = 0; i < extent[0]; ++i) {
+                const auto f_ii = F_occ_diag[i + start[0]];
+                const auto i_ind = i * extent[1] * extent[2] * extent[3];
 
-        // Don't CLR compress M
-        auto dM = TA::to_new_tile_type(
-              M, tensor::TaToDecompTensor(clr_threshold, false));
+                for (auto r = 0; r < extent[1]; ++r) {
+                    const auto f_rr = -F_pao_diag[r + start[1]];
+                    const auto ir_ind = i_ind + r * extent[2] * extent[3];
 
-        decltype(dC_df) dG_df;
-        auto G_df0 = mpqc_time::fenced_now(world);
-        auto old_compress = tensor::detail::recompress;
-        tensor::detail::recompress = true;
-        dG_df("X, mu, nu")
-              = (deri3("X, mu, nu") - 0.5 * dM("X,Y") * dC_df("Y,mu,nu"));
-        ta_routines::minimize_storage(dG_df, clr_threshold);
-        auto G_df1 = mpqc_time::fenced_now(world);
-        tensor::detail::recompress = old_compress;
-        auto G_df_time = mpqc_time::duration_in_s(rxyz0, rxyz1);
+                    for (auto j = 0; j < extent[2]; ++j) {
+                        const auto f_jj = F_occ_diag[j + start[2]];
+                        const auto irj_ind = ir_ind + j * extent[3];
+
+                        for (auto s = 0; s < extent[3]; ++s) {
+                            const auto f_ss = -F_pao_diag[s + start[3]];
+                            const auto ind = irj_ind + s;
+
+                            auto ptr = t.data() + ind;
+                            auto val = *ptr;
+                            *ptr = val / (f_ii + f_jj + f_ss + f_rr);
+                        }
+                    }
+                }
+            }
+
+            return t.norm();
+        };
+
+        decltype(G) T, R;
+        R("i, p, j, q") = G("i,p,j,q");
+        R.truncate();
+
+        double norm = R("i,p,j,q").norm();
+
+        TA::foreach_inplace(R, r_to_T);
+        T("i,p,j,q") = R("i,p,j,q");
+        T.truncate();
+
+        double energy
+              = TA::dot(2 * G("i,p,j,q") - G("i, q, j, p"), T("i,p,j,q"));
+
         if (world.rank() == 0) {
-            std::cout << "G_df time: " << G_df_time << std::endl;
-        }
-        out_doc.AddMember("G_df time", G_df_time, out_doc.GetAllocator());
-
-        auto g_store = utility::array_storage(dG_df);
-        if (world.rank() == 0) {
-            std::cout << "G_df storage = \n"
-                      << "\tFull    " << g_store[0] << "\n"
-                      << "\tSparse  " << g_store[1] << "\n"
-                      << "\tCLR     " << g_store[2] << "\n" << std::flush;
-        }
-        world.gop.fence();
-        out_doc.AddMember("G_df Full Storage", g_store[0],
-                          out_doc.GetAllocator());
-
-        out_doc.AddMember("G_df Sparse Storage", g_store[1],
-                          out_doc.GetAllocator());
-
-        out_doc.AddMember("G_df CLR Storage", g_store[2],
-                          out_doc.GetAllocator());
-
-        double TcutC = 0.0;
-        if (in.HasMember("TcutC")) {
-            TcutC = in["TcutC"].GetDouble();
+            std::cout << "Energy after initialization: " << energy << std::endl;
+            std::cout << "R norm after initialization: " << norm << std::endl;
         }
 
-        out_doc.AddMember("TcutC", TcutC, out_doc.GetAllocator());
+        for (auto i = 1; i <= 30 && norm > 1e-7; ++i) {
+            R("i, p, j, q") = G("i, p, j, q")
+                              + Fbar("p, r") * T("i, r, j, s") * Sbar("s, q")
+                              + Sbar("p, r") * T("i, r, j, s") * Fbar("s, q")
+                              - Sbar("p, r")
+                                * (Focc("i, k") * T("k, r, j, s")
+                                   + T("i, r, k, s") * Focc("k, j"))
+                                * Sbar("s, q");
+            R.truncate();
 
-        auto ebuilder = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters,
-                                                  TcutC, "inverse sqrt");
+            norm = R("i,p,j,q").norm();
 
-        std::unique_ptr<scf::DensityBuilder> d_builder
-              = make_unique<decltype(ebuilder)>(std::move(ebuilder));
+            TA::foreach_inplace(R, r_to_T);
+            T("i, p, j, q") = T("i, p, j, q") + R("i, p, j, q");
+            T.truncate();
 
-        auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
-                                                  shr_screen);
-
-        std::unique_ptr<scf::FockBuilder> f_builder;
-        if (in.HasMember("use forced shape")
-            && in["use forced shape"].GetBool()) {
+            energy = TA::dot(2 * G("i,p,j,q") - G("i, q, j, p"), T("i,p,j,q"));
 
             if (world.rank() == 0) {
-                std::cout << "Using forced shape build\n";
+                std::cout << i << " Energy: " << energy << std::endl;
+                std::cout << i << " R norm: " << norm << std::endl;
             }
-
-            scf::CADFForcedShapeFockBuilder<decltype(eri3)> forced_shape(
-                  M, eri3, dC_df, dG_df, clr_threshold);
-
-            if (in.HasMember("coulomb sparse threshold")) {
-                forced_shape.set_J_sparse_thresh(
-                      in["coulomb sparse threshold"].GetDouble());
-            }
-            f_builder = std::unique_ptr<scf::FockBuilder>(
-                  make_unique<decltype(forced_shape)>(std::move(forced_shape)));
-
-            out_doc.AddMember("Using forced shape", true,
-                              out_doc.GetAllocator());
-
-        } else {
-            scf::CADFFockBuilder<decltype(eri3)> cadf_builder(
-                  M, eri3, dC_df, dG_df, clr_threshold);
-
-            if (in.HasMember("coulomb sparse threshold")) {
-                cadf_builder.set_J_sparse_thresh(
-                      in["coulomb sparse threshold"].GetDouble());
-            }
-            f_builder = std::unique_ptr<scf::FockBuilder>(
-                  make_unique<decltype(cadf_builder)>(std::move(cadf_builder)));
-
-            out_doc.AddMember("Using forced shape", false,
-                              out_doc.GetAllocator());
         }
-
-        auto hf = scf::ClosedShellSCF(H, S, repulsion_energy,
-                                      std::move(f_builder),
-                                      std::move(d_builder), F_soad);
-
-        world.gop.fence();
-
-        auto converged = hf.solve(in["scf max iter"].GetInt(),
-                                  in["scf convergence threshold"].GetDouble());
-
-        out_doc.AddMember("SCF Converged", converged, out_doc.GetAllocator());
-        out_doc.AddMember("SCF", hf.results(out_doc), out_doc.GetAllocator());
     }
 
     if (world.rank() == 0) {

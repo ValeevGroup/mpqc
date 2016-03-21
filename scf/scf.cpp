@@ -74,8 +74,7 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
         ++iter;
     }
 
-    if (iter > max_iters
-        || (thresh > (error / old_energy) || thresh > (rms_error / volume))) {
+    if (iter == max_iters) {
         return false;
     } else {
         return true;

@@ -6,16 +6,16 @@
 namespace mpqc {
 namespace utility {
 
-double
+unsigned long
 tile_clr_storage(Tile<DecompTensorD> const &tile) {
-    auto size = 0.0;
+    auto size = 0ul;
     for (auto const &t : tile.tile().tensors()) {
         size += t.range().volume();
     }
     return size;
 }
 
-double tile_clr_storage(TA::TensorD const &tile) { return 0.0; }
+unsigned long tile_clr_storage(TA::TensorD const &) { return 0ul; }
 
 } // namespace utility
 } // namespace mpqc

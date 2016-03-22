@@ -6,35 +6,55 @@
 #include "../include/tiledarray.h"
 
 #include <array>
+#include <atomic>
 
 namespace mpqc {
 namespace utility {
 
-double tile_clr_storage(Tile<DecompTensorD> const &tile);
-double tile_clr_storage(TA::TensorD const &tile);
+unsigned long tile_clr_storage(Tile<DecompTensorD> const &tile);
+unsigned long tile_clr_storage(TA::TensorD const &);
 
 template <typename TileType, typename Policy>
 std::array<double, 3> array_storage(TA::DistArray<TileType, Policy> const &A) {
-    std::array<double, 3> out = {{0.0, 0.0, 0.0}};
-    double &full_size = out[0];
-    double &sparse_size = out[1];
-    double &low_size = out[2];
+    std::atomic_ulong full_size(0);
+    std::atomic_ulong sparse_size(0);
+    std::atomic_ulong low_size(0);
+
+    TA::TiledRange const &trange = A.trange();
+
+    auto task_is_zero = [&](unsigned long ord){
+        full_size += trange.make_tile_range(ord).volume(); 
+    };
+
+    auto task_is_not_zero = [&](unsigned long ord, TileType const &t){
+        const TA::Range range = trange.make_tile_range(ord);
+        const auto size = range.volume();
+
+        full_size += size;
+        sparse_size += size;
+        low_size += tile_clr_storage(t);
+    };
 
     auto const &pmap = A.get_pmap();
-    TA::TiledRange const &trange = A.trange();
     const auto end = pmap->end();
 
     for (auto it = pmap->begin(); it != end; ++it) {
-        const TA::Range range = trange.make_tile_range(*it);
-        auto const size = range.volume();
-
-        full_size += size;
-
-        if (!A.is_zero(*it)) {
-            sparse_size += size;
-            low_size += tile_clr_storage(A.find(*it).get());
+        const auto ord = *it;
+        if(A.is_local(ord)){
+            if(!A.is_zero(ord)){
+                A.get_world().taskq.add(task_is_not_zero, ord, A.find(ord));
+            } else {
+                A.get_world().taskq.add(task_is_zero, ord);
+            }
         }
     }
+
+    A.get_world().gop.fence();
+
+    std::array<double, 3> out;
+    out[0] = double(full_size);
+    out[1] = double(sparse_size);
+    out[2] = double(low_size);
 
     A.get_world().gop.sum(&out[0], 3);
 

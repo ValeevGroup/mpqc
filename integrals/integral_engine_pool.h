@@ -71,6 +71,38 @@ inline constexpr unsigned long pool_order<libint2::TwoBodyEngine<libint2::Coulom
     return 4ul;
 }
 
+template <>
+constexpr unsigned long
+inline pool_order<std::shared_ptr<EnginePool<libint2::TwoBodyEngine<libint2::cGTG>>>>() {
+    return 4ul;
+}
+
+template <>
+inline constexpr unsigned long pool_order<libint2::TwoBodyEngine<libint2::cGTG>>() {
+    return 4ul;
+}
+
+template <>
+constexpr unsigned long
+inline pool_order<std::shared_ptr<EnginePool<libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>>>>() {
+    return 4ul;
+}
+
+template <>
+inline constexpr unsigned long pool_order<libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>>() {
+    return 4ul;
+}
+
+template <>
+constexpr unsigned long
+inline pool_order<std::shared_ptr<EnginePool<libint2::TwoBodyEngine<libint2::DelcGTG_square>>>>() {
+    return 4ul;
+}
+
+template <>
+inline constexpr unsigned long pool_order<libint2::TwoBodyEngine<libint2::DelcGTG_square>>() {
+    return 4ul;
+}
 } // namespace integrals
 } // namespac mpqc
 

@@ -73,6 +73,8 @@ namespace integrals{
         //TODO more operation F, J, K...
         // compute integrals that has two dimension
         TArray compute2(const Formula& formula_string);
+        // compute integrals that has three dimension
+        TArray compute3(const Formula& formula_string);
         // compute integrals that has four dimension
         TArray compute4(const Formula& formula_string);
 
@@ -152,6 +154,44 @@ namespace integrals{
 
         return result;
     }
+
+    template <typename Tile, typename Policy>
+    typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute3(const Formula &formula_string) {
+
+        double time = 0.0;
+
+        TArray result;
+        // get AO
+        auto ao_formula = mo_to_ao(formula_string);
+        auto ao_integral = atomic_integral_.compute(ao_formula);
+
+        // convert to MO, only convert the right side
+        auto time0 = mpqc_time::fenced_now(world_);
+        result = ao_integral;
+
+        // get coefficient
+        auto right_index1 = formula_string.right_index()[0];
+        if (right_index1.is_mo()) {
+            auto right1 = orbital_space_registry_->retrieve(right_index1);
+            result("K,i,q") = result("K,p,q") * right1("p,i");
+        }
+        auto right_index2 = formula_string.right_index()[1];
+        if (right_index2.is_mo()) {
+            auto right2 = orbital_space_registry_->retrieve(right_index2);
+            result("K,p,j") = result("K,p,q") * right2("q,j");
+        }
+
+        auto time1 = mpqc_time::fenced_now(world_);
+        time+= mpqc_time::duration_in_s(time0,time1);
+
+        utility::print_par(world_, "Transformed MO Integral: ");
+        utility::wprint_par(world_, formula_string.formula_string());
+        utility::print_par(world_," Time: ", time, " s");
+        double size = utility::array_size(result);
+        utility::print_par(world_," Size: ", size, " GB\n");
+
+        return result;
+    };
 
 //TODO better inverse of two center
     template <typename Tile, typename Policy>
@@ -350,6 +390,10 @@ typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::
 
         if(formula.rank() == 2){
             result =  compute2(formula);
+            mo_formula_registry_.insert(formula, result);
+        }
+        else if(formula.rank() == 3){
+            result =  compute3(formula);
             mo_formula_registry_.insert(formula, result);
         }
         else if(formula.rank() == 4){

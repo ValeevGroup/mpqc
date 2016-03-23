@@ -202,8 +202,8 @@ std::array<std::wstring, 3> AtomicIntegralBase::get_df_formula(const Formula &fo
     if (formula.notation() == Formula::Notation::Chemical) {
 
         std::wstring left =
-                L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[1].name() + L" " +
-                formula.left_index()[0].name() + L" )";
+                L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[0].name() + L" " +
+                formula.left_index()[1].name() + L" )";
         std::wstring right =
                 L"( Κ |" + formula.operation().oper_string() + L"| " + formula.right_index()[0].name() + L" " +
                 formula.right_index()[1].name() + L" )";
@@ -215,8 +215,8 @@ std::array<std::wstring, 3> AtomicIntegralBase::get_df_formula(const Formula &fo
     //physical notation
     else {
         std::wstring left =
-                L"( Κ |" + formula.operation().oper_string() + L"| " + formula.right_index()[0].name() + L" " +
-                formula.left_index()[0].name() + L" )";
+                L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[0].name() + L" " +
+                formula.right_index()[0].name() + L" )";
         std::wstring right =
                 L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[1].name() + L" " +
                 formula.right_index()[1].name() + L" )";
@@ -260,14 +260,14 @@ std::array<Formula,3> AtomicIntegralBase::get_jk_df_formula(const Formula &formu
     std::array<Formula,3> result;
 
     if(formula.operation().oper() == Operation::Operations::J){
-        std::wstring left =  L"( Κ |G| " + formula.right_index()[0].name() + L" " + formula.left_index()[0].name() + L" )";
+        std::wstring left =  L"( Κ |G| " + formula.left_index()[0].name() + L" " + formula.right_index()[0].name() + L" )";
         std::wstring right = L"( Κ |G| μ ν  )";
 
         result[0] = Formula(left);
         result[2] = Formula(right);
     }
     else{
-        std::wstring left =  L"( Κ |G|μ " + formula.left_index()[0].name() + L" )";
+        std::wstring left =  L"( Κ |G| " + formula.left_index()[0].name() + L" μ )";
         std::wstring right = L"( Κ |G| " + formula.right_index()[0].name() + L" ν )";
 
         result[0] = Formula(left);

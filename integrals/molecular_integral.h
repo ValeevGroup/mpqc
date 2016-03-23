@@ -216,19 +216,19 @@ namespace integrals{
 
                 left("i,j,k") = left_ao("i,j,k");
 
-                OrbitalIndex left_index1;
-                if(notation == Formula::Notation::Chemical){
-                    left_index1 = formula_string.left_index()[1];
-                }
-                else{
-                    left_index1 = formula_string.right_index()[0];
-                }
+                auto left_index1 = formula_string.left_index()[0];
                 if (left_index1.is_mo()) {
                     auto left1 = orbital_space_registry_->retrieve(left_index1);
                     left("p,i,r") = left("p,q,r") * left1("q,i");
                 }
 
-                auto left_index2 = formula_string.left_index()[0];
+                OrbitalIndex left_index2;
+                if(notation == Formula::Notation::Chemical){
+                    left_index2 = formula_string.left_index()[1];
+                }
+                else{
+                    left_index2 = formula_string.right_index()[0];
+                }
                 if (left_index2.is_mo()) {
                     auto left2 = orbital_space_registry_->retrieve(left_index2);
                     left("p,q,i") = left("p,q,r") * left2("r,i");
@@ -273,10 +273,10 @@ namespace integrals{
             auto time0 = mpqc_time::fenced_now(world_);
 
             if(notation==Formula::Notation::Chemical){
-                result("i,j,k,l") = left("q,j,i")*center("q,p")*right("p,k,l");
+                result("i,j,k,l") = left("q,i,j")*center("q,p")*right("p,k,l");
             }
             else{
-                result("i,k,j,l") = left("q,j,i")*center("q,p")*right("p,k,l");
+                result("i,k,j,l") = left("q,i,j")*center("q,p")*right("p,k,l");
             }
 
             auto time1 = mpqc_time::fenced_now(world_);

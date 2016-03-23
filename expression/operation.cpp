@@ -17,6 +17,7 @@ namespace mpqc{
         {L"", Operations::Overlap},
         {L"T", Operations::Kinetic},
         {L"V", Operations::Nuclear},
+        {L"H", Operations::Core},
         {L"I", Operations::Identity }
     };
 
@@ -30,24 +31,27 @@ namespace mpqc{
 
     const std::unordered_map<std::wstring, Operations> Operation::fock_operation = {
         {L"J", Operations::J},
+        {L"hJ", Operations::hJ},
         {L"K", Operations::K },
         {L"K(α)", Operations::KAlpha },
         {L"K(β)", Operations::KBeta },
         {L"F", Operations::Fock},
         {L"F(α)", Operations::FockAlpha},
-        {L"F(β)", Operations::FockBeta},
+        {L"F(β)", Operations::FockBeta}
     };
 
     const std::map<Operations, std::wstring> Operation::oper_to_string = {
             {Operations::Overlap, L""},
             {Operations::Kinetic, L"T"},
             {Operations::Nuclear, L"V"},
+            {Operations::Core, L"H"},
             {Operations::Coulomb, L"G"},
             {Operations::cGTG, L"R"},
             {Operations::cGTG2, L"R2"},
             {Operations::cGTGCoulomb, L"GR" },
             {Operations::DelcGTG2, L"dR2"},
             {Operations::J, L"J"},
+            {Operations::hJ, L"hJ"},
             {Operations::K, L"K"},
             {Operations::KAlpha, L"K(α)"},
             {Operations::KBeta, L"K(β)"},

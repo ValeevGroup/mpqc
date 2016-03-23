@@ -218,16 +218,36 @@ namespace integrals{
         // use one body engine
         if(formula.operation().is_onebody()){
 
+            // H = V + T
+            if(formula.operation().oper() == Operation::Operations::Core){
 
-            auto time0 = mpqc_time::fenced_now(world_);
 
-            std::shared_ptr<EnginePool<libint2::OneBodyEngine>> engine_pool;
-            parse_one_body(formula,engine_pool,bs_array);
-            result = compute_integrals(this->world_,engine_pool,bs_array);
+                auto v_formula = formula;
+                v_formula.operation().set_oper(Operation::Operations::Nuclear);
 
-            auto time1 = mpqc_time::fenced_now(world_);
-            time+= mpqc_time::duration_in_s(time0,time1);
+                auto t_formula = formula;
+                t_formula.operation().set_oper(Operation::Operations::Kinetic);
 
+                auto v = this->compute(v_formula);
+                auto t = this->compute(t_formula);
+
+                auto time0 = mpqc_time::fenced_now(world_);
+
+                result("i,j") = v("i,j") + t("i,j");
+
+                auto time1 = mpqc_time::fenced_now(world_);
+                time+= mpqc_time::duration_in_s(time0,time1);
+            }
+            else {
+                auto time0 = mpqc_time::fenced_now(world_);
+
+                std::shared_ptr<EnginePool<libint2::OneBodyEngine>> engine_pool;
+                parse_one_body(formula,engine_pool,bs_array);
+                result = compute_integrals(this->world_,engine_pool,bs_array);
+
+                auto time1 = mpqc_time::fenced_now(world_);
+                time+= mpqc_time::duration_in_s(time0,time1);
+            }
             utility::print_par(world_,"Computed One Body Integral: ");
             utility::wprint_par(world_,formula.formula_string());
             utility::print_par(world_," Time: ", time, " s");
@@ -363,6 +383,29 @@ namespace integrals{
             utility::wprint_par(world_, formula.formula_string());
             utility::print_par(world_," Time: ", time, " s");
 
+        }
+            // hJ = H + J
+        else if(formula.operation().oper() == Operation::Operations::hJ){
+            auto h_formula = formula;
+            h_formula.set_operation(Operation(L"H"));
+
+
+            auto j_formula = formula;
+            j_formula.operation().set_oper(Operation::Operations::J);
+
+            auto h = this->compute(h_formula);
+            auto j = this->compute(j_formula);
+
+            auto time0 = mpqc_time::fenced_now(world_);
+
+            result("i,j") = h("i,j") + 2*j("i,j");
+
+            auto time1 = mpqc_time::fenced_now(world_);
+            time+= mpqc_time::duration_in_s(time0,time1);
+
+            utility::print_par(world_,"Computed Coulumb/Exchange Integral: ");
+            utility::wprint_par(world_, formula.formula_string());
+            utility::print_par(world_," Time: ", time, " s");
         }
             //compute Fock, requires orbital space registry
         else if(formula.operation().is_fock()){

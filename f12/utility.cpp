@@ -256,14 +256,11 @@ std::vector<std::pair<double, double>> gtg_params_squared(const std::vector<std:
     return square;
 }
 
-TiledArray::SparseShape<float> make_ijij_shape(const TiledArray::TiledRange1& occ){
+TiledArray::SparseShape<float> make_ijij_shape(const TiledArray::TiledRange& trange){
 
 
     // number of occ tiles
-    auto n_occ = occ.tiles().second;
-
-    // make range {occ, occ, occ, occ}
-    TiledArray::TiledRange trange({occ,occ,occ,occ});
+    auto n_occ =  trange.data()[0].tiles().second;
 
     TiledArray::Tensor<float> tile_norms(trange.tiles());
 
@@ -287,14 +284,11 @@ TiledArray::SparseShape<float> make_ijij_shape(const TiledArray::TiledRange1& oc
     return shape;
 }
 
-TiledArray::SparseShape<float> make_ijji_shape(const TiledArray::TiledRange1& occ){
+TiledArray::SparseShape<float> make_ijji_shape(const TiledArray::TiledRange& trange){
 
 
     // number of occ tiles
-    auto n_occ = occ.tiles().second;
-
-    // make range {occ, occ, occ, occ}
-    TiledArray::TiledRange trange({occ,occ,occ,occ});
+    auto n_occ =  trange.data()[0].tiles().second;
 
     TiledArray::Tensor<float> tile_norms(trange.tiles());
 

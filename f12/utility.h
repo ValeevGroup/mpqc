@@ -38,8 +38,8 @@ namespace f12{
     };
 
     // make sure the occ is blocked by 1!
-    TiledArray::SparseShape<float> make_ijij_shape(const TiledArray::TiledRange1& occ);
-    TiledArray::SparseShape<float> make_ijji_shape(const TiledArray::TiledRange1& occ);
+    TiledArray::SparseShape<float> make_ijij_shape(const TiledArray::TiledRange& );
+    TiledArray::SparseShape<float> make_ijji_shape(const TiledArray::TiledRange& );
 
     template <typename Tile>
     struct DiagonalSum {

@@ -64,8 +64,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
     rapidjson::Document cc_in;
     if (in.HasMember("CCSD")) {
         cc_in = json::get_nested(in, "CCSD");
-    } else if (in.HasMember("CCSD(T)")) {
-        cc_in = json::get_nested(in, "CCSD(T)");
     }
 
     if (!in.HasMember("xyz file") || !in.HasMember("number of clusters")) {
@@ -512,18 +510,27 @@ int try_main(int argc, char *argv[], madness::World &world) {
     utility::parallal_break_point(world, 0);
 
 
-    if (in.HasMember("CCSD(T)")) {
-        mpqc::cc::CCSD_T<TA::Tensor<double>, TA::SparsePolicy> ccsd_t(
-              fock_mo, ens, tre, intermidiate, cc_in);
-        ccsd_t.compute();
-    } else if (in.HasMember("CCSD")) {
-        mpqc::cc::CCSD<TA::Tensor<double>, TA::SparsePolicy> ccsd(
-              fock_mo, ens, tre, intermidiate, cc_in);
-        ccsd.compute();
+    if (in.HasMember("EOM-CCSD")) {
+      // call ccsd
+      mpqc::cc::CCSD<TA::Tensor<double>, TA::SparsePolicy> ccsd(
+            fock_mo, ens, tre, intermidiate, cc_in);
+      ccsd.compute();
 
-        // call eom-cc
-        mpqc::EOM_CCSD eomcc(ccsd, intermidiate, fock_mo);
-        eomcc.compute_energy();
+      // call eom-cc
+      rapidjson::Document eomcc_in;
+      eomcc_in = json::get_nested(in, "EOM-CCSD");
+
+      mpqc::EOM_CCSD eomcc(ccsd, intermidiate);
+      eomcc.read_guess_vectors(eomcc_in);
+//        eomcc.compute_energy();
+//
+//        if (world.rank() == 0) {
+//          //TArray Fij;
+//          //Fij("i,j") = F_("i,j");
+//          std::cout << "test F: " << fock_mo << std::endl;
+//          std::cout << "test ens: " << ens << std::endl;
+//        }
+
     }
 
     world.gop.fence();

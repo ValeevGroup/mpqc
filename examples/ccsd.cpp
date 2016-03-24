@@ -85,7 +85,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     rapidjson::Document in;
     in.Parse(json);
 
-    delete json;
+    delete[] json;
 
     std::cout << std::setprecision(15);
     rapidjson::Document cc_in;
@@ -569,7 +569,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 fock_mo, ens, tre, intermidiate, cc_in);
         ccsd.compute();
         // call eom-cc
-        mpqc::EOM_CCSD eomcc(ccsd, intermidiate, fock_mo);
+        mpqc::EOM_CCSD eomcc(ccsd, intermidiate);
         eomcc.compute_energy();
     }
 

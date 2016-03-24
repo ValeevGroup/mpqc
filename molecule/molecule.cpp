@@ -126,6 +126,22 @@ Molecule read_xyz(std::string const &file_name, bool sort_input) {
     return Molecule(std::move(atoms), sort_input);
 }
 
+
+Molecule read_xyz_stringstream(std::stringstream &file_stream, bool sort_input) {
+
+    auto libint_atoms = libint2::read_dotxyz(file_stream);
+
+    std::vector<ABCbl> atoms;
+    for (auto const &l_atom : libint_atoms) {
+        Atom atom({l_atom.x, l_atom.y, l_atom.z},
+                  masses::masses[l_atom.atomic_number], l_atom.atomic_number);
+        atoms.emplace_back(std::move(atom));
+    }
+
+    return Molecule(std::move(atoms), sort_input);
+}
+
+
 std::ostream &operator<<(std::ostream &os, Molecule const &mol) {
     os << "Molecule C.O.M: " << mol.com().transpose() << ", ";
     os << "charge: " << mol.charge() << ", ";

@@ -19,6 +19,7 @@
 
 #include "../utility/time.h"
 #include "../utility/json_handling.h"
+#include "../utility/parallel_file.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
@@ -60,32 +61,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
 
 
-    std::string contents;
-    int json_size;
-    if(world.rank() == 0){
-        std::string input_file_name = argv[1];
-        std::ifstream input_file(input_file_name, std::ifstream::in);
-
-        contents = std::string((std::istreambuf_iterator<char>(input_file)),
-                             std::istreambuf_iterator<char>());
-
-        input_file.close();
-        json_size = contents.size();
-    }
-    world.gop.broadcast(json_size,0);
-    char* json = new char[json_size];
-
-    if(world.rank() == 0){
-        strcpy(json, contents.c_str());
-    }
-
-    world.gop.broadcast(json,json_size,0);
+    char* json;
+    utility::parallel_read_file(world, argv[1], json);
 
     // parse the input
     rapidjson::Document in;
     in.Parse(json);
 
-    delete[] json;
+//    delete[] json;
 
     std::cout << std::setprecision(15);
     rapidjson::Document cc_in;
@@ -170,7 +153,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         TiledArray::SparseShape<float>::threshold(threshold);
 
-        auto mol = mpqc::molecule::read_xyz(mol_file, false);
+        char* xyz_file_buffer;
+        utility::parallel_read_file(world,mol_file,xyz_file_buffer);
+        std::stringstream xyz_file_stream;
+        xyz_file_stream << xyz_file_buffer;
+
+        auto mol = mpqc::molecule::read_xyz_stringstream(xyz_file_stream, false);
         auto charge = 0;
         auto occ = mol.occupation(charge);
         auto repulsion_energy = mol.nuclear_repulsion();
@@ -196,7 +184,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
         // use clustered_mol to generate basis
         molecule::Molecule clustered_mol{};
         if (!ghost_atoms.empty()) {
-            auto ghost_molecue = mpqc::molecule::read_xyz(ghost_atoms, false);
+
+            char* ghost_xyz_buffer;
+            utility::parallel_read_file(world,ghost_atoms,ghost_xyz_buffer);
+            std::stringstream ghost_xyz_stream;
+            ghost_xyz_stream << ghost_xyz_buffer;
+            auto ghost_molecue = mpqc::molecule::read_xyz_stringstream(ghost_xyz_stream, false);
             auto ghost_elements = ghost_molecue.clusterables();
 
             if (world.rank() == 0) {

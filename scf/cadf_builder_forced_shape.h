@@ -21,22 +21,22 @@
 namespace mpqc {
 namespace scf {
 
-template <typename Integral>
 class CADFForcedShapeFockBuilder : public FockBuilder {
   public:
     using dtile_type = tensor::Tile<tensor::DecomposedTensor<double>>;
     using darray_type = TA::DistArray<dtile_type, SpPolicy>;
 
   private:
-    array_type L_inv_; // Metric Cholesky inverse
-    Integral eri3_;    // Integrals for exact RI-J build
+    darray_type B_;    // CADF fitting coeffs
     darray_type C_df_; // CADF fitting coeffs
     darray_type G_df_; // Exchange Temp
 
     double clr_thresh_;
-    double j_sparse_thresh_;
 
     double l_inv_time_ = 0;
+    double B_time_ = 0;
+    std::array<double, 3> B_storages_;
+
     std::vector<double> j_times_;
     std::vector<double> c_mo_times_;
     std::vector<double> f_df_times_;
@@ -47,15 +47,11 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     std::vector<std::array<double, 3>> f_df_storages_;
 
   public:
+    template <typename Integral>
     CADFForcedShapeFockBuilder(array_type const &M, Integral const &eri3,
                                darray_type const &C_df, darray_type const &G_df,
-                               double clr_thresh)
-            : FockBuilder(),
-              eri3_(eri3),
-              C_df_(C_df),
-              G_df_(G_df),
-              clr_thresh_(clr_thresh),
-              j_sparse_thresh_(TA::SparseShape<float>::threshold()) {
+                               double clr_thresh, double j_clr_thresh)
+            : FockBuilder(), C_df_(C_df), G_df_(G_df), clr_thresh_(clr_thresh) {
         auto &world = C_df_.get_world();
 
         auto l0 = mpqc_time::fenced_now(world);
@@ -66,17 +62,43 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
 
         auto tr_M = M.trange().data()[0];
 
-        L_inv_ = array_ops::eigen_to_array<TA::TensorD>(M.get_world(),
-                                                        L_inv_eig, tr_M, tr_M);
+        auto L_inv
+              = array_ops::eigen_to_array<TA::TensorD>(M.get_world(), L_inv_eig,
+                                                       tr_M, tr_M);
+
+        constexpr auto compress_L = false;
+        auto dL_inv = TA::to_new_tile_type(
+              L_inv, tensor::TaToDecompTensor(j_clr_thresh, compress_L));
+
         auto l1 = mpqc_time::fenced_now(world);
         l_inv_time_ = mpqc_time::duration_in_s(l0, l1);
+
+        if (world.rank() == 0) {
+            std::cout << "L_inv of Metric time: " << l_inv_time_ << std::endl;
+        }
+
+        auto B0 = mpqc_time::fenced_now(world);
+        const auto old_compress = tensor::detail::recompress;
+        tensor::detail::recompress = true;
+
+        B_("X, mu, nu") = dL_inv("X, Y") * eri3("Y, mu, nu");
+        ta_routines::minimize_storage(B_, j_clr_thresh);
+
+        auto B1 = mpqc_time::fenced_now(world);
+        tensor::detail::recompress = old_compress;
+        B_time_ = mpqc_time::duration_in_s(B0, B1);
+
+        B_storages_ = utility::array_storage(B_);
+        if (world.rank() == 0) {
+            std::cout << "B time: " << B_time_ << std::endl;
+            std::cout << "B storage:\n"
+                      << "Full    = " << B_storages_[0] << "\n"
+                      << "Sparse  = " << B_storages_[1] << "\n"
+                      << "CLR     = " << B_storages_[2] << std::endl;
+        }
     }
 
     ~CADFForcedShapeFockBuilder() = default;
-
-    void set_J_sparse_thresh(double new_thresh) {
-        j_sparse_thresh_ = new_thresh;
-    }
 
     array_type operator()(array_type const &D, array_type const &C) override {
         array_type G;
@@ -87,13 +109,17 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     void print_iter(std::string const &leader) override {
         auto &world = C_df_.get_world();
         if (world.rank() == 0) {
-            std::cout << leader << "CADF Builder:\n" << leader
+            std::cout << leader << "CADF Forced Shape Builder:\n" << leader
                       << "\tJ time: " << j_times_.back() << "\n" << leader
                       << "\tC mo time: " << c_mo_times_.back() << "\n" << leader
-                      << "\tC mo storage: " << c_mo_storages_.back()[1]
+                      << "\tC mo sparse storage: " << c_mo_storages_.back()[1]
+                      << " GB\n" << leader
+                      << "\tC mo clr storage: " << c_mo_storages_.back()[2]
                       << " GB\n" << leader
                       << "\tF df time: " << f_df_times_.back() << "\n" << leader
                       << "\tF df storage: " << f_df_storages_.back()[1]
+                      << " GB\n" << leader
+                      << "\tF df clr storage: " << f_df_storages_.back()[2]
                       << " GB\n" << leader << "\tdL time: " << dl_times_.back()
                       << "\n" << leader
                       << "\tdL to K time: " << dl_to_k_times_.back() << "\n";
@@ -147,20 +173,19 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     array_type compute_J(array_type const &D) {
         auto &world = C_df_.get_world();
 
-        array_type J;
+        constexpr bool compress_D = false;
+        auto dD = TA::to_new_tile_type(D, tensor::TaToDecompTensor(clr_thresh_,
+                                                                   compress_D));
+
+        darray_type dJ;
         auto j0 = mpqc_time::fenced_now(world);
 
-        const auto old_thresh = TA::SparseShape<float>::threshold();
-        TA::SparseShape<float>::threshold(j_sparse_thresh_);
-
-        J("mu, nu") = eri3_("Y,mu,nu")
-                      * (L_inv_("Z,Y")
-                         * (L_inv_("Z,X") * (eri3_("X,r,s") * D("r,s"))));
+        dJ("mu, nu") = B_("X,mu,nu") * (B_("X,r,s") * dD("r,s"));
 
         auto j1 = mpqc_time::fenced_now(world);
-        TA::SparseShape<float>::threshold(old_thresh);
-
         j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
+
+        auto J = TA::to_new_tile_type(dJ, tensor::DecompToTaTensor{});
 
         return J;
     }
@@ -173,33 +198,8 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
                                                                    compress_C));
 
         darray_type C_mo, dL, F_df;
-
-        // TA::SparseShape<float> cshape = dC.get_shape();
-
-        // world.gop.fence();
-        // auto &tensor = cshape.data();
-        // const auto size = tensor.range().volume();
-        // for(auto i = 0; i < size; ++i){
-        //     auto data = tensor.data() + i;
-        //     if(*data < 1e-4){
-        //         *(tensor.data() + i) = 0;
-        //     }
-        // }
-        // world.gop.fence();
-
-        // TA::SparseShape<float> const &Cdf_shape = C_df_.get_shape();
-
-        // TA::math::GemmHelper g(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-        //                        madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-        //                        3, 3, 2);
-        // TA::SparseShape<float> out = Cdf_shape.gemm(cshape, 1.0, g);
-        // world.gop.fence();
-
         auto cmo0 = mpqc_time::fenced_now(world);
-        C_mo("X, i, mu") = C_df_("X, mu, nu") * dC("nu, i");
- // C_mo("X, mu, i") = (C_df_("X, mu, nu") * dC("nu, i")).set_shape(out);
-        C_mo.truncate();
-   //      C_mo("X, i, mu") = C_mo("X, mu, i");
+        C_mo("X,  i, mu") = C_df_("X, mu, nu") * dC("nu, i");
         auto cmo1 = mpqc_time::fenced_now(world);
         c_mo_storages_.push_back(utility::array_storage(C_mo));
 

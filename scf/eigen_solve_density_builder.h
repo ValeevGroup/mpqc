@@ -28,8 +28,8 @@ class ESolveDensityBuilder : public DensityBuilder {
     std::vector<double> localization_times_;
     std::vector<double> clustering_times_;
 
-    std::vector<std::array<double,3>> coeff_storages_;
-    std::vector<std::array<double,3>> density_storages_;
+    std::vector<std::array<double, 3>> coeff_storages_;
+    std::vector<std::array<double, 3>> density_storages_;
 
   public:
     ESolveDensityBuilder() = default;
@@ -57,6 +57,8 @@ class ESolveDensityBuilder : public DensityBuilder {
     inline void condition_num_threshold(double thresh) {
         condition_num_thresh_ = thresh;
     }
+
+    inline double TcutC() const { return TcutC_; }
 };
 
 } // namespace scf

@@ -289,6 +289,9 @@ OrbitalIndex AtomicIntegralBase::get_jk_orbital_space(const Operation &operation
     }
     else if(operation.oper() == Operation::Operations::KBeta){
         return OrbitalIndex(L"m_β");
+    } else {
+        assert(false);
+        return OrbitalIndex{};
     }
 }
 

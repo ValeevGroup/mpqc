@@ -58,7 +58,7 @@
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 
-bool tensor::detail::recompress = true;
+bool tensor::detail::recompress = false;
 
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
@@ -73,6 +73,9 @@ int main(int argc, char *argv[]) {
     double ta_threshold = in.HasMember("sparse threshold")
                                 ? in["sparse threshold"].GetDouble()
                                 : 1e-11;
+
+    tensor::detail::recompress
+          = in.HasMember("recompress") ? in["recompress"].GetBool() : false;
 
     out_doc.AddMember("ta sparse threshold", ta_threshold,
                       out_doc.GetAllocator());
@@ -267,7 +270,6 @@ int main(int argc, char *argv[]) {
     auto by_cluster_trange = integrals::detail::create_trange(
           utility::make_array(df_basis, basis, basis));
 
-
     decltype(C_df_) C_df;
     if (in.HasMember("cluster by atom") && in["cluster by atom"].GetBool()) {
         C_df = C_df_;
@@ -287,21 +289,6 @@ int main(int argc, char *argv[]) {
                           out_doc.GetAllocator());
     }
 
-    array_storage_Cdf = utility::array_storage(C_df);
-    if (world.rank() == 0) {
-        std::cout << "C_df storage = \n"
-                  << "\tFull   " << array_storage_Cdf[0] << "\n"
-                  << "\tSparse " << array_storage_Cdf[1] << "\n"
-                  << "\tCLR    " << array_storage_Cdf[2] << "\n";
-    }
-    out_doc.AddMember("Cdf Full Storage", array_storage_Cdf[0],
-                      out_doc.GetAllocator());
-
-    out_doc.AddMember("Cdf Sparse Storage", array_storage_Cdf[1],
-                      out_doc.GetAllocator());
-
-    out_doc.AddMember("Cdf CLR Storage", array_storage_Cdf[2],
-                      out_doc.GetAllocator());
 
     // Begin scf
     auto soad0 = mpqc_time::fenced_now(world);
@@ -348,6 +335,22 @@ int main(int argc, char *argv[]) {
 
     auto dC_df
           = TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(clr_threshold));
+
+    array_storage_Cdf = utility::array_storage(dC_df);
+    if (world.rank() == 0) {
+        std::cout << "C_df storage = \n"
+                  << "\tFull   " << array_storage_Cdf[0] << "\n"
+                  << "\tSparse " << array_storage_Cdf[1] << "\n"
+                  << "\tCLR    " << array_storage_Cdf[2] << "\n";
+    }
+    out_doc.AddMember("Cdf Full Storage", array_storage_Cdf[0],
+                      out_doc.GetAllocator());
+
+    out_doc.AddMember("Cdf Sparse Storage", array_storage_Cdf[1],
+                      out_doc.GetAllocator());
+
+    out_doc.AddMember("Cdf CLR Storage", array_storage_Cdf[2],
+                      out_doc.GetAllocator());
 
     // Don't CLR compress M
     auto dM = TA::to_new_tile_type(M, tensor::TaToDecompTensor(clr_threshold,
@@ -397,8 +400,40 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<scf::DensityBuilder> d_builder
           = make_unique<decltype(ebuilder)>(std::move(ebuilder));
 
-    auto eri3 = ints::direct_sparse_integrals(world, eri_e, three_c_array,
-                                              shr_screen);
+    const auto j_clr_thresh = in.HasMember("coulomb CLR thresh")
+                                    ? in["coulomb CLR thresh"].GetDouble()
+                                    : clr_threshold;
+
+    if (j_clr_thresh != clr_threshold) {
+
+        if (world.rank() == 0) {
+            std::cout << "Recalulating Eri3 with CLR thresh " << j_clr_thresh
+                      << "\n";
+        }
+
+        auto j0 = mpqc_time::fenced_now(world);
+
+        deri3 = ints::direct_sparse_integrals(
+              world, eri_e, three_c_array, shr_screen,
+              tensor::TaToDecompTensor(j_clr_thresh));
+
+        auto j1 = mpqc_time::fenced_now(world);
+
+        auto eri3_recal_time = mpqc_time::duration_in_s(rxyz0, rxyz1);
+        if (world.rank() == 0) {
+            std::cout << "Eri3 for J time: " << eri3_recal_time << std::endl;
+        }
+        out_doc.AddMember("Eri3 J time", eri3_recal_time,
+                          out_doc.GetAllocator());
+
+        auto eri3_j_storage = utility::array_storage(deri3.array());
+        if (world.rank() == 0) {
+            std::cout << "Eri3 for J storage:" << std::endl;
+            std::cout << "\tFull    = " << eri3_j_storage[0] << "\n"
+                      << "\tSparse  = " << eri3_j_storage[1] << "\n"
+                      << "\tCLR     = " << eri3_j_storage[2] << std::endl;
+        }
+    }
 
     std::unique_ptr<scf::FockBuilder> f_builder;
     if (in.HasMember("use forced shape") && in["use forced shape"].GetBool()) {
@@ -407,26 +442,18 @@ int main(int argc, char *argv[]) {
             std::cout << "Using forced shape build\n";
         }
 
-        scf::CADFForcedShapeFockBuilder<decltype(eri3)> forced_shape(
-              M, eri3, dC_df, dG_df, clr_threshold);
+        scf::CADFForcedShapeFockBuilder forced_shape(
+              M, deri3, dC_df, dG_df, clr_threshold, j_clr_thresh);
 
-        if (in.HasMember("coulomb sparse threshold")) {
-            forced_shape.set_J_sparse_thresh(
-                  in["coulomb sparse threshold"].GetDouble());
-        }
         f_builder = std::unique_ptr<scf::FockBuilder>(
               make_unique<decltype(forced_shape)>(std::move(forced_shape)));
 
         out_doc.AddMember("Using forced shape", true, out_doc.GetAllocator());
 
     } else {
-        scf::CADFFockBuilder<decltype(eri3)> cadf_builder(M, eri3, dC_df, dG_df,
-                                                          clr_threshold);
+        scf::CADFFockBuilder cadf_builder(M, deri3, dC_df, dG_df, clr_threshold,
+                                          j_clr_thresh);
 
-        if (in.HasMember("coulomb sparse threshold")) {
-            cadf_builder.set_J_sparse_thresh(
-                  in["coulomb sparse threshold"].GetDouble());
-        }
         f_builder = std::unique_ptr<scf::FockBuilder>(
               make_unique<decltype(cadf_builder)>(std::move(cadf_builder)));
 

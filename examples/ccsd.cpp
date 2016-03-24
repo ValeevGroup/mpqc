@@ -54,10 +54,38 @@ namespace ints = integrals;
 // TODO test case that verify the result automatic
 int try_main(int argc, char *argv[], madness::World &world) {
 
+    if (argc != 2) {
+        std::cout << "usage: " << argv[0] << " <input_file.json>" << std::endl;
+        throw std::invalid_argument("no input file given");
+    }
+
+
+    std::string contents;
+    int json_size;
+    if(world.rank() == 0){
+        std::string input_file_name = argv[1];
+        std::ifstream input_file(input_file_name, std::ifstream::in);
+
+        contents = std::string((std::istreambuf_iterator<char>(input_file)),
+                             std::istreambuf_iterator<char>());
+
+        input_file.close();
+        json_size = contents.size();
+    }
+    world.gop.broadcast(json_size,0);
+    char* json = new char[json_size];
+
+    if(world.rank() == 0){
+        strcpy(json, contents.c_str());
+    }
+
+    world.gop.broadcast(json,json_size,0);
 
     // parse the input
     rapidjson::Document in;
-    json::parse_input(argc, argv, in);
+    in.Parse(json);
+
+    delete json;
 
     std::cout << std::setprecision(15);
     rapidjson::Document cc_in;

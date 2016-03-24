@@ -393,8 +393,12 @@ int main(int argc, char *argv[]) {
 
     out_doc.AddMember("TcutC", TcutC, out_doc.GetAllocator());
 
+    const auto occ_nclusters = in.HasMember("occ nclusters")
+                                     ? in["occ nclusters"].GetInt()
+                                     : nclusters;
+
     auto localize = true;
-    auto ebuilder = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters,
+    auto ebuilder = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, occ_nclusters,
                                               TcutC, "inverse sqrt", localize);
 
     std::unique_ptr<scf::DensityBuilder> d_builder

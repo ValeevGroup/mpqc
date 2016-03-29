@@ -34,6 +34,7 @@
 #include "../scf/eigen_solve_density_builder.h"
 
 #include "../mp2/mp2.h"
+#include "../scf/traditional_four_center_fock_builder.h"
 
 #include <memory>
 #include <locale>
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]) {
     std::string df_basis_name = "";
     int nclusters = 0;
     std::cout << std::setprecision(15);
-    double threshold = 1e-12;
+    double threshold = 1e-15;
     double well_sep_threshold = 0.1;
     integrals::QQR::well_sep_threshold(well_sep_threshold);
     if (argc == 6) {
@@ -70,6 +71,16 @@ int main(int argc, char *argv[]) {
 
     auto clustered_mol = molecule::kmeans(
             molecule::read_xyz(mol_file).clusterables(), nclusters);
+
+    std::cout << "Molecule " << std::endl;
+
+    auto atoms = clustered_mol.atoms();
+
+    for (auto& atom: atoms){
+        std::cout << atom << std::endl;
+    }
+
+    std::cout << std::endl;
 
     auto repulsion_energy = clustered_mol.nuclear_repulsion();
     std::cout << "Nuclear Repulsion Energy: " << repulsion_energy << std::endl;
@@ -109,9 +120,8 @@ int main(int argc, char *argv[]) {
     auto S = ao_int.compute(L"(κ|λ)");
     auto H = ao_int.compute(L"(κ|H|λ)");
 
-    auto eri3 = ao_int.compute(L"( Κ| G|κ1 λ1)");
-    auto metric = ao_int.compute(L"(Κ|G|Λ)");
-    scf::DFFockBuilder<decltype(eri3)> builder(metric, eri3);
+    auto eri4 = ao_int.compute(L"( κ1 λ1 | G|κ1 λ1)");
+    scf::FourCenterBuilder<decltype(eri4)> builder(eri4);
     world.gop.fence();
 
     const auto bs_array = utility::make_array(basis, basis);
@@ -121,23 +131,14 @@ int main(int argc, char *argv[]) {
     auto db = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters, 0.0, "cholesky inverse", false);
 
     scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(builder), std::move(db));
-    scf.solve(50, 1e-8);
+    scf.solve(50, 1e-12);
 
     // obs fock build
     std::size_t all = S.trange().elements().extent()[0];
     auto tre = TRange1Engine(occ / 2, all, 1, 4, 0);
 
     auto F = scf.fock();
-    auto L_inv = builder.inv();
 
-    {
-        TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> Xab;
-        Xab("X,a,b") = L_inv("X,Y") * eri3("Y,a,b");
-
-        //ri-mp2
-        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(F, S, Xab, std::make_shared<TRange1Engine>(tre));
-        mp2.compute();
-    }
 
     //mp2
     // solve Coefficient
@@ -152,7 +153,7 @@ int main(int argc, char *argv[]) {
     decltype(S_eig) C_occ_corr = C_all.block(0, n_frozen_core, S_eig.rows(),occ / 2 - n_frozen_core);
     decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occ / 2);
 
-    auto tr_0 = eri3.trange().data().back();
+    auto tr_0 = eri4.trange().data().back();
     auto tr_all = tre.get_all_tr1();
     auto tr_i0 = tre.get_occ_tr1();
     auto tr_vir = tre.get_vir_tr1();
@@ -183,20 +184,6 @@ int main(int argc, char *argv[]) {
 
     auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,sp_orbital_registry);
 //    mo_integral.atomic_integral().registry().print_formula();
-
-
-    // test fock build
-    {
-        auto fock = ao_int.compute(L"(μ |F| ν)[df]");
-        {
-            TA::Array<double, 3, TA::TensorD, TA::SparsePolicy> Xab;
-            Xab("X,a,b") = L_inv("X,Y") * eri3("Y,a,b");
-
-            //ri-mp2
-            auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(fock, S, Xab, std::make_shared<TRange1Engine>(tre));
-            mp2.compute();
-        }
-    }
 
 
     // test mp2
@@ -299,13 +286,12 @@ int main(int argc, char *argv[]) {
     // V term
 //    decltype(S_obs) V_ijij;
 //    {
-//        V_ijij("i1,j1,i2,j2") = mo_integral(L"(Κ |GR|i2 i1)")*mo_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j1 j2)");
-//
+//        V_ijij("i1,j1,i2,j2") = mo_integral(L"(Κ |GR|i1 i2)")*mo_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j1 j2)");
 //        V_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 p|G|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]");
-//
 //        V_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(m i2|R|a' j2)[df]");
 //        V_ijij("i1,j1,i2,j2") -= mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(m j2|R|a' i2)[df]");
 //
+//        std::cout << "V_ijij_full" << std::endl;
 //        std::cout << V_ijij << std::endl;
 //    }
 
@@ -317,21 +303,48 @@ int main(int argc, char *argv[]) {
     auto ijji_shape = f12::make_ijji_shape(occ4_trange);
 
 //    std::cout << ijij_shape << std::endl;
+    {
+        auto F_mn = mo_integral.compute(L"(m|F|n)");
+        std::cout << "F_mn" << std::endl;
+        std::cout << F_mn << std::endl;
+
+        auto F_pm = mo_integral.compute(L"(P'|F|n)");
+        std::cout << "F_P'm" << std::endl;
+        std::cout << F_pm << std::endl;
+
+        auto F_Ap = mo_integral.compute(L"(a'|F|p)");
+        std::cout << "F_a'p" << std::endl;
+        std::cout << F_Ap << std::endl;
+    }
 
     decltype(S_obs) V_ijij_shape(world,occ4_trange,ijij_shape);
     {
-        decltype(S_obs) tmp;
 
+        std::cout << "V_ijij_shape" << std::endl;
         V_ijij_shape("i1,j1,i2,j2") = (mo_integral(L"(Κ |GR|i2 i1)")*mo_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j1 j2)")).set_shape(ijij_shape);
-        std::cout << "V_ijij_shape" << std::endl;
         std::cout << V_ijij_shape << std::endl;
-
         V_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|G|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]")).set_shape(ijij_shape);
-        V_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(m i2|R|a' j2)[df]")).set_shape(ijij_shape);
-        V_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(m j2|R|a' i2)[df]")).set_shape(ijij_shape);
-
-        std::cout << "V_ijij_shape" << std::endl;
         std::cout << V_ijij_shape << std::endl;
+        V_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(m i2|R|a' j2)[df]")).set_shape(ijij_shape);
+        std::cout << V_ijij_shape << std::endl;
+        V_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(m j2|R|a' i2)[df]")).set_shape(ijij_shape);
+        std::cout << V_ijij_shape << std::endl;
+
+    }
+
+    decltype(S_obs) V_ijij_nodf_shape(world,occ4_trange,ijij_shape);
+    {
+
+        std::cout << "V_ijij_nodf_shape" << std::endl;
+        V_ijij_nodf_shape("i1,j1,i2,j2") = mo_integral(L"(i1 i2|GR|j1 j2)").set_shape(ijij_shape);
+        std::cout << V_ijij_nodf_shape << std::endl;
+        V_ijij_nodf_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|G|j1 q)")*mo_integral(L"(i2 p|R|j2 q)")).set_shape(ijij_shape);
+        std::cout << V_ijij_nodf_shape << std::endl;
+        V_ijij_nodf_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 m|G|j1 a')")*mo_integral(L"(m i2|R|a' j2)")).set_shape(ijij_shape);
+        std::cout << V_ijij_nodf_shape << std::endl;
+        V_ijij_nodf_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')")*mo_integral(L"(m j2|R|a' i2)")).set_shape(ijij_shape);
+        std::cout << V_ijij_nodf_shape << std::endl;
+
     }
 
     decltype(S_obs) V_ijji_shape(world,occ4_trange,ijji_shape);
@@ -339,9 +352,6 @@ int main(int argc, char *argv[]) {
         decltype(S_obs) tmp;
 
         V_ijji_shape("i1,j1,i2,j2") = (mo_integral(L"(Κ |GR|i2 i1)")*mo_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j1 j2)")).set_shape(ijji_shape);
-        std::cout << "V_ijij_shape" << std::endl;
-        std::cout << V_ijij_shape << std::endl;
-
         V_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|G|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]")).set_shape(ijji_shape);
         V_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(m i2|R|a' j2)[df]")).set_shape(ijji_shape);
         V_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(m j2|R|a' i2)[df]")).set_shape(ijji_shape);
@@ -363,11 +373,11 @@ int main(int argc, char *argv[]) {
         g_iajb("a,b,i,j") = g_iajb("i,a,j,b");
         t2 = mpqc::cc::d_abij(g_iajb,ens,occ/2);
     }
-
+//
 //    decltype(S_obs) V_bar_ijij;
 //    {
 //        V_bar_ijij("i1,j1,i2,j2") = V_ijij("i1,j1,i2,j2") + C_iajb("i1,a,j1,b")*t2("a,b,i2,j2");
-//
+
 //        std::cout << "V_bar_term" << std::endl;
 //        std::cout << V_bar_ijij << std::endl;
 //    }
@@ -385,11 +395,11 @@ int main(int argc, char *argv[]) {
 
     double E21 = 0.0;
     {
-        // diagonal sum
+//        // diagonal sum
 //        E21 = V_bar_ijij("i1,j1,i2,j2").reduce(f12::DiagonalSum<TA::TensorD>());
 //        std::cout << E21 << std::endl;
-
-        // off diagonal sum
+//
+//        //off diagonal sum
 //        E21 += 0.5*(5*V_bar_ijij("i1,j1,i2,j2")-V_bar_ijij("j1,i1,i2,j2")).reduce(f12::OffDiagonalSum<TA::TensorD>());
 //        std::cout << "E21: " << E21 << std::endl;
 
@@ -413,18 +423,35 @@ int main(int argc, char *argv[]) {
 //        X_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 p|R|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]");
 //        X_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 m|R|j1 a')[df]")*mo_integral(L"(m i2|R|a' j2)[df]");
 //        X_ijij("i1,j1,i2,j2") -= mo_integral(L"(j1 m|R|i1 a')[df]")*mo_integral(L"(m j2|R|a' i2)[df]");
+//
+//
 //    }
 
 
     decltype(V_ijij_shape) X_ijij_shape;
     {
-        X_ijij_shape("i1,j1,i2,j2") = (mo_integral(L"(Κ |R2|i1 i2)")*mo_integral(L"(Κ|R2|Λ)[inv]")*mo_integral(L"(Λ |R2|j1 j2)")).set_shape(ijij_shape);
-        X_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|R|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]")).set_shape(ijij_shape);
-        X_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 m|R|j1 a')[df]")*mo_integral(L"(m i2|R|a' j2)[df]")).set_shape(ijij_shape);
-        X_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|R|i1 a')[df]")*mo_integral(L"(m j2|R|a' i2)[df]")).set_shape(ijij_shape);
-
         std::cout << "X_ijij_shape" << std::endl;
+        X_ijij_shape("i1,j1,i2,j2") = (mo_integral(L"(Κ |R2|i1 i2)")*mo_integral(L"(Κ|R2|Λ)[inv]")*mo_integral(L"(Λ |R2|j1 j2)")).set_shape(ijij_shape);
         std::cout << X_ijij_shape << std::endl;
+        X_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|R|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]")).set_shape(ijij_shape);
+        std::cout << X_ijij_shape << std::endl;
+        X_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 m|R|j1 a')[df]")*mo_integral(L"(m i2|R|a' j2)[df]")).set_shape(ijij_shape);
+        std::cout << X_ijij_shape << std::endl;
+        X_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|R|i1 a')[df]")*mo_integral(L"(m j2|R|a' i2)[df]")).set_shape(ijij_shape);
+        std::cout << X_ijij_shape << std::endl;
+    }
+
+    decltype(V_ijij_shape) X_ijij_nodf_shape;
+    {
+        std::cout << "X_ijij_nodf_shape" << std::endl;
+        X_ijij_nodf_shape("i1,j1,i2,j2") = mo_integral(L"(i1 i2 |R2|j1 j2)").set_shape(ijij_shape);
+        std::cout << X_ijij_nodf_shape << std::endl;
+        X_ijij_nodf_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|R|j1 q)")*mo_integral(L"(i2 p|R|j2 q)")).set_shape(ijij_shape);
+        std::cout << X_ijij_nodf_shape << std::endl;
+        X_ijij_nodf_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 m|R|j1 a')")*mo_integral(L"(m i2|R|a' j2)")).set_shape(ijij_shape);
+        std::cout << X_ijij_shape << std::endl;
+        X_ijij_nodf_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|R|i1 a')")*mo_integral(L"(m j2|R|a' i2)")).set_shape(ijij_shape);
+        std::cout << X_ijij_nodf_shape << std::endl;
     }
 
     decltype(V_ijij_shape) X_ijji_shape;
@@ -446,33 +473,45 @@ int main(int argc, char *argv[]) {
 ////        hJ = mo_integral(L"(i|V|P')") + mo_integral(L"(i|T|P')") + mo_integral(L"(i|J|P')[df]");
 //        auto hJ = mo_integral.compute(L"(P' | hJ | i)[df]");
 //
-//        B_ijij("i1,j1,i2,j2") = mo_integral(L"(i1 j1|dR2|i2 j2)[df]");
+//        B_ijij("i1,j1,i2,j2") = mo_integral(L"(i1 i2|dR2|j1 j2)[df]");
 //
-//        B_ijij("i1,j1,i2,j2") += mo_integral(L"(i1 P'|R2|i2 j1)[df]")*hJ("P',j2");
-//        B_ijij("i1,j1,i2,j2") += mo_integral(L"(i2 P'|R2|i1 j2)[df]")*hJ("P',j1");
+////        std::cout << B_ijij << std::endl;
 //
+//        B_ijij("i1,j1,i2,j2") += mo_integral(L"(i1 P'|R2|j1 j2)[df]")*hJ("P',i2");
+//        B_ijij("i1,j1,i2,j2") += mo_integral(L"(j1 P'|R2|i1 i2)[df]")*hJ("P',j2");
 //
-//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 P'|R|i2 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' j1|R|Q' j2)[df]");
-//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(i2 P'|R|i1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' j2|R|Q' j1)[df]");
+////        std::cout << B_ijij << std::endl;
 //
-//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 P'|R|i2 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' j1|R|m j2)[df]");
-//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(i2 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' j2|R|m j1)[df]");
+//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 P'|R|j1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' i2|R|Q' j2)[df]");
+//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(j1 P'|R|i1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' j2|R|Q' i2)[df]");
 //
+////        std::cout << B_ijij << std::endl;
 //
-//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 p|R|i2 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j1 r|R|j2 a)[df]");
-//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(i2 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|j1 a)[df]");
+//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 P'|R|j1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' i2|R|m j2)[df]");
+//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(j1 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' j2|R|m i2)[df]");
 //
+////        std::cout << B_ijij << std::endl;
 //
-//        B_ijij("i1,j1,i2,j2") += mo_integral(L"(i1 m|R|i2 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n j1|R|b' j2)[df]");
-//        B_ijij("i1,j1,i2,j2") += mo_integral(L"(i2 m|R|i1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n j2|R|b' j1)[df]");
+//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(i1 p|R|j1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(i2 r|R|j2 a)[df]");
+//        B_ijij("i1,j1,i2,j2") -= mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|i2 a)[df]");
 //
+////        std::cout << B_ijij << std::endl;
 //
-//        B_ijij("i1,j1,i2,j2") -= 2.0*(mo_integral(L"(i1 m|R|i2 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' j1|R|b' j2)[df]"));
-//        B_ijij("i1,j1,i2,j2") -= 2.0*(mo_integral(L"(i2 m|R|i1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' j2|R|b' j1)[df]"));
+//        B_ijij("i1,j1,i2,j2") += mo_integral(L"(i1 m|R|j1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n i2|R|b' j2)[df]");
+//        B_ijij("i1,j1,i2,j2") += mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n j2|R|b' i2)[df]");
 //
+////        std::cout << B_ijij << std::endl;
 //
-//        B_ijij("i1,j1,i2,j2") -= 2.0*(mo_integral(L"(i1 p|R|i2 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j1 a'|R|j2 a)[df]"));
-//        B_ijij("i1,j1,i2,j2") -= 2.0*(mo_integral(L"(i2 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j2 a'|R|j1 a)[df]"));
+//        B_ijij("i1,j1,i2,j2") -= 2.0*(mo_integral(L"(i1 m|R|j1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' i2|R|b' j2)[df]"));
+//        B_ijij("i1,j1,i2,j2") -= 2.0*(mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' j2|R|b' i2)[df]"));
+//
+////        std::cout << B_ijij << std::endl;
+//
+//        B_ijij("i1,j1,i2,j2") -= 2.0*(mo_integral(L"(i1 p|R|j1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(i2 a'|R|j2 a)[df]"));
+//        B_ijij("i1,j1,i2,j2") -= 2.0*(mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j2 a'|R|i2 a)[df]"));
+//
+//        std::cout << "B_ijij full " << std::endl;
+//        std::cout << B_ijij << std::endl;
 //
 //    }
 
@@ -482,76 +521,83 @@ int main(int argc, char *argv[]) {
 //        hJ = mo_integral(L"(i|V|P')") + mo_integral(L"(i|T|P')") + mo_integral(L"(i|J|P')[df]");
         auto hJ = mo_integral.compute(L"(P' | hJ | i)[df]");
 
-        B_ijij_shape("i1,j1,i2,j2") = (mo_integral(L"(Κ |dR2|i1 j1)")*mo_integral(L"(Κ|dR2|Λ)[inv]")*mo_integral(L"(Λ |dR2|i2 j2)")).set_shape(ijij_shape);
-
-        B_ijij_shape("i1,j1,i2,j2") += (mo_integral(L"(i1 P'|R2|i2 j1)[df]")*hJ("P',j2")).set_shape(ijij_shape);
-        B_ijij_shape("i1,j1,i2,j2") += (mo_integral(L"(i2 P'|R2|i1 j2)[df]")*hJ("P',j1")).set_shape(ijij_shape);
-
-
-        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|i2 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' j1|R|Q' j2)[df]")).set_shape(ijij_shape);
-        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i2 P'|R|i1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' j2|R|Q' j1)[df]")).set_shape(ijij_shape);
-
-        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|i2 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' j1|R|m j2)[df]")).set_shape(ijij_shape);
-        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i2 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' j2|R|m j1)[df]")).set_shape(ijij_shape);
-
-
-        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|R|i2 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j1 r|R|j2 a)[df]")).set_shape(ijij_shape);
-        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i2 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|j1 a)[df]")).set_shape(ijij_shape);
-
-
-        B_ijij_shape("i1,j1,i2,j2") += (mo_integral(L"(i1 m|R|i2 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n j1|R|b' j2)[df]")).set_shape(ijij_shape);
-        B_ijij_shape("i1,j1,i2,j2") += (mo_integral(L"(i2 m|R|i1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n j2|R|b' j1)[df]")).set_shape(ijij_shape);
-
-
-        B_ijij_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i1 m|R|i2 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' j1|R|b' j2)[df]")).set_shape(ijij_shape);
-        B_ijij_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i2 m|R|i1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' j2|R|b' j1)[df]")).set_shape(ijij_shape);
-
-
-        B_ijij_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i1 p|R|i2 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j1 a'|R|j2 a)[df]")).set_shape(ijij_shape);
-        B_ijij_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i2 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j2 a'|R|j1 a)[df]")).set_shape(ijij_shape);
-
         std::cout << "B_ijij_shape" << std::endl;
+        B_ijij_shape("i1,j1,i2,j2") = (mo_integral(L"(Κ |dR2|i1 i2)")*mo_integral(L"(Κ|dR2|Λ)[inv]")*mo_integral(L"(Λ |dR2|j1 j2)")).set_shape(ijij_shape);
+
+        std::cout << B_ijij_shape << std::endl;
+        B_ijij_shape("i1,j1,i2,j2") += (mo_integral(L"(i1 P'|R2|j1 j2)[df]")*hJ("P',i2")).set_shape(ijij_shape);
+        B_ijij_shape("i1,j1,i2,j2") += (mo_integral(L"(j1 P'|R2|i1 i2)[df]")*hJ("P',j2")).set_shape(ijij_shape);
+
+        std::cout << B_ijij_shape << std::endl;
+
+        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|j1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' i2|R|Q' j2)[df]")).set_shape(ijij_shape);
+        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' j2|R|Q' i2)[df]")).set_shape(ijij_shape);
+
+        std::cout << B_ijij_shape << std::endl;
+        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|j1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' i2|R|m j2)[df]")).set_shape(ijij_shape);
+        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' j2|R|m i2)[df]")).set_shape(ijij_shape);
+
+
+        std::cout << B_ijij_shape << std::endl;
+        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|R|j1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(i2 r|R|j2 a)[df]")).set_shape(ijij_shape);
+        B_ijij_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|i2 a)[df]")).set_shape(ijij_shape);
+
+
+        std::cout << B_ijij_shape << std::endl;
+        B_ijij_shape("i1,j1,i2,j2") += (mo_integral(L"(i1 m|R|j1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n i2|R|b' j2)[df]")).set_shape(ijij_shape);
+        B_ijij_shape("i1,j1,i2,j2") += (mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n j2|R|b' i2)[df]")).set_shape(ijij_shape);
+
+        std::cout << B_ijij_shape << std::endl;
+
+        B_ijij_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i1 m|R|j1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' i2|R|b' j2)[df]")).set_shape(ijij_shape);
+        B_ijij_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' j2|R|b' i2)[df]")).set_shape(ijij_shape);
+
+        std::cout << B_ijij_shape << std::endl;
+
+        B_ijij_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i1 p|R|j1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(i2 a'|R|j2 a)[df]")).set_shape(ijij_shape);
+        B_ijij_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j2 a'|R|i2 a)[df]")).set_shape(ijij_shape);
+
         std::cout << B_ijij_shape << std::endl;
     }
-//
+
     decltype(S_obs) B_ijji_shape;
     {
 
 //        hJ = mo_integral(L"(i|V|P')") + mo_integral(L"(i|T|P')") + mo_integral(L"(i|J|P')[df]");
         auto hJ = mo_integral.compute(L"(P' | hJ | i)[df]");
 
-        B_ijji_shape("i1,j1,i2,j2") = (mo_integral(L"(Κ |dR2|i1 j1)")*mo_integral(L"(Κ|dR2|Λ)[inv]")*mo_integral(L"(Λ |dR2|i2 j2)")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") = (mo_integral(L"(Κ |dR2|i1 i2)")*mo_integral(L"(Κ|dR2|Λ)[inv]")*mo_integral(L"(Λ |dR2|j1 j2)")).set_shape(ijji_shape);
 
-        B_ijji_shape("i1,j1,i2,j2") += (mo_integral(L"(i1 P'|R2|i2 j1)[df]")*hJ("P',j2")).set_shape(ijji_shape);
-        B_ijji_shape("i1,j1,i2,j2") += (mo_integral(L"(i2 P'|R2|i1 j2)[df]")*hJ("P',j1")).set_shape(ijji_shape);
-
-
-        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|i2 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' j1|R|Q' j2)[df]")).set_shape(ijji_shape);
-        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i2 P'|R|i1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' j2|R|Q' j1)[df]")).set_shape(ijji_shape);
-
-        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|i2 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' j1|R|m j2)[df]")).set_shape(ijji_shape);
-        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i2 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' j2|R|m j1)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") += (mo_integral(L"(i1 P'|R2|j1 j2)[df]")*hJ("P',i2")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") += (mo_integral(L"(j1 P'|R2|i1 i2)[df]")*hJ("P',j2")).set_shape(ijji_shape);
 
 
-        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|R|i2 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j1 r|R|j2 a)[df]")).set_shape(ijji_shape);
-        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i2 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|j1 a)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|j1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' i2|R|Q' j2)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(R' j2|R|Q' i2)[df]")).set_shape(ijji_shape);
+
+        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|j1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' i2|R|m j2)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(R' j2|R|m i2)[df]")).set_shape(ijji_shape);
 
 
-        B_ijji_shape("i1,j1,i2,j2") += (mo_integral(L"(i1 m|R|i2 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n j1|R|b' j2)[df]")).set_shape(ijji_shape);
-        B_ijji_shape("i1,j1,i2,j2") += (mo_integral(L"(i2 m|R|i1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n j2|R|b' j1)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|R|j1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(i2 r|R|j2 a)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") -= (mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|i2 a)[df]")).set_shape(ijji_shape);
 
 
-        B_ijji_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i1 m|R|i2 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' j1|R|b' j2)[df]")).set_shape(ijji_shape);
-        B_ijji_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i2 m|R|i1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' j2|R|b' j1)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") += (mo_integral(L"(i1 m|R|j1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n i2|R|b' j2)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") += (mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(n j2|R|b' i2)[df]")).set_shape(ijji_shape);
 
 
-        B_ijji_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i1 p|R|i2 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j1 a'|R|j2 a)[df]")).set_shape(ijji_shape);
-        B_ijji_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i2 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j2 a'|R|j1 a)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i1 m|R|j1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' i2|R|b' j2)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(P' j2|R|b' i2)[df]")).set_shape(ijji_shape);
+
+
+        B_ijji_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i1 p|R|j1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(i2 a'|R|j2 a)[df]")).set_shape(ijji_shape);
+        B_ijji_shape("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j2 a'|R|i2 a)[df]")).set_shape(ijji_shape);
 
         std::cout << "B_ijji_shape" << std::endl;
         std::cout << B_ijji_shape << std::endl;
     }
-
+//
 //    decltype(B_ijij) B_bar_ijij;
 //    {
 //

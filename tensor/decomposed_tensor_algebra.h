@@ -5,6 +5,8 @@
 #include "../include/eigen.h"
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
+
+#include "../include/tiledarray.h"
 #include <madness/tensor/clapack.h>
 
 extern "C" void
@@ -31,6 +33,10 @@ dpstrf_(const char *uplo, integer *n, real8 *a, integer *lda, integer *piv,
 
 namespace mpqc {
 namespace tensor {
+
+static constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
+static constexpr auto Tr = madness::cblas::CBLAS_TRANSPOSE::Trans;
+
 namespace algebra {
 
 // Compute the column pivoted qr decomposition into data, will modify input

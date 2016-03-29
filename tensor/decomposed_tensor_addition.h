@@ -8,6 +8,7 @@
 namespace mpqc {
 namespace tensor {
 
+
 template <typename T>
 DecomposedTensor<T> add_order2(DecomposedTensor<T> const &l,
                                DecomposedTensor<T> const &r, T factor) {
@@ -85,8 +86,8 @@ DecomposedTensor<T> add(DecomposedTensor<T> const &l,
     if (l.orders().back() == 2) {
         return add_order2(l, r, factor);
     }
-    if (l.ndecomp() >= 2) {
-        if (r.ndecomp() >= 2) {
+    if (l.ndecomp() >= 2) { // Low *
+        if (r.ndecomp() >= 2) { // Low Low
             auto const &l_extent = l.tensor(0).range().extent();
             auto const &r_extent = r.tensor(1).range().extent();
             const auto l_rank = l.rank();
@@ -125,10 +126,26 @@ DecomposedTensor<T> add(DecomposedTensor<T> const &l,
             std::copy(lr_data, lr_data + old_l_vol, data);
             std::copy(rr_data, rr_data + old_r_vol, data + old_l_vol);
             return DecomposedTensor<T>(l.cut(), std::move(L), std::move(R));
+        } else { // Low Full
+            // Contraction is (X, r) * (r, mu nu) = (X, mu, nu)
+            TA::math::GemmHelper gh(NoT, NoT, 3, 2, 3);
+
+            auto out = r.tensor(0).clone();
+
+            out.gemm(l.tensor(0), l.tensor(1), 1.0, gh);
+            return DecomposedTensor<T>(l.cut(), std::move(out));
         }
-    } else if (l.ndecomp() == 1) {
-        if (r.ndecomp() == 1) {
+    } else if (l.ndecomp() == 1) { // Full * 
+        if (r.ndecomp() == 1) { // Full Full
             auto out = l.tensor(0).add(r.tensor(0), factor);
+            return DecomposedTensor<T>(l.cut(), std::move(out));
+        } else { // Full Low
+            // Contraction is (X, r) * (r, mu nu) = (X, mu, nu)
+            TA::math::GemmHelper gh(NoT, NoT, 3, 2, 3);
+
+            auto out = l.tensor(0).clone();
+
+            out.gemm(r.tensor(0), r.tensor(1), 1.0, gh);
             return DecomposedTensor<T>(l.cut(), std::move(out));
         }
     }

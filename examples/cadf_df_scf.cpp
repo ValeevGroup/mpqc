@@ -58,6 +58,7 @@
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 
+// Causes general recompression in clr based tensor expressions
 bool tensor::detail::recompress = false;
 
 int main(int argc, char *argv[]) {
@@ -360,16 +361,28 @@ int main(int argc, char *argv[]) {
     auto G_df0 = mpqc_time::fenced_now(world);
     auto old_compress = tensor::detail::recompress;
     tensor::detail::recompress = true;
-    dG_df("X, mu, nu")
-          = (deri3("X, mu, nu") - 0.5 * dM("X,Y") * dC_df("Y,mu,nu"));
+
+    dG_df("X, mu, nu") = -0.5 * dM("X, Y") * dC_df("Y, mu, nu");
+    dG_df.truncate();
+    auto g_store_temp = utility::array_storage(dG_df);
+
+    dG_df("X, mu, nu") += deri3("X, mu, nu");
     ta_routines::minimize_storage(dG_df, clr_threshold);
+
     auto G_df1 = mpqc_time::fenced_now(world);
     tensor::detail::recompress = old_compress;
-    auto G_df_time = mpqc_time::duration_in_s(rxyz0, rxyz1);
+    auto G_df_time = mpqc_time::duration_in_s(G_df0, G_df1);
     if (world.rank() == 0) {
         std::cout << "G_df time: " << G_df_time << std::endl;
     }
     out_doc.AddMember("G_df time", G_df_time, out_doc.GetAllocator());
+
+    if (world.rank() == 0) {
+        std::cout << "M * C_df storage = \n"
+                  << "\tFull    " << g_store_temp[0] << "\n"
+                  << "\tSparse  " << g_store_temp[1] << "\n"
+                  << "\tCLR     " << g_store_temp[2] << "\n" << std::flush;
+    }
 
     auto g_store = utility::array_storage(dG_df);
     if (world.rank() == 0) {
@@ -396,6 +409,8 @@ int main(int argc, char *argv[]) {
     const auto occ_nclusters = in.HasMember("occ nclusters")
                                      ? in["occ nclusters"].GetInt()
                                      : nclusters;
+
+    out_doc.AddMember("number occupied clusters", occ_nclusters, out_doc.GetAllocator());
 
     auto localize = true;
     auto ebuilder = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, occ_nclusters,

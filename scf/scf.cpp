@@ -48,7 +48,9 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
                       - S_("i,k") * D_("k,l") * F_("l,j");
 
         rms_error = Grad("i,j").norm().get();
-        diis_.extrapolate(F_, Grad);
+
+        F_diis_ = F_;
+        diis_.extrapolate(F_diis_, Grad);
 
         auto d0 = mpqc_time::fenced_now(world);
         compute_density();
@@ -82,7 +84,7 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
 }
 
 void ClosedShellSCF::compute_density() {
-    auto dc_pair = d_builder_->operator()(F_);
+    auto dc_pair = d_builder_->operator()(F_diis_);
     D_ = dc_pair.first;
     C_ = dc_pair.second;
 }

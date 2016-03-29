@@ -25,6 +25,7 @@ class ClosedShellSCF {
     array_type H_;
     array_type S_;
     array_type F_;
+    array_type F_diis_;
     array_type D_;
     array_type C_;
     TiledArray::DIIS<array_type> diis_;
@@ -57,6 +58,7 @@ class ClosedShellSCF {
             F_ = H_;
         }
 
+        F_diis_ = F_;
         compute_density();
     }
 
@@ -76,6 +78,7 @@ class ClosedShellSCF {
             F_ = H_;
         }
 
+        F_diis_ = F_;
         compute_density();
     }
 

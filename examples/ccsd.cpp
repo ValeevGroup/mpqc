@@ -117,7 +117,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
               = in.HasMember("GhostAtoms") ? in["GhostAtoms"].GetString() : "";
 
 
-        bool cluster = in.HasMember("cluster") ? in["cluster"].GetBool() : true;
+        bool do_cluster = in.HasMember("cluster") ? in["cluster"].GetBool() : true;
         int nclusters = in["number of clusters"].GetInt();
         std::size_t mo_blocksize = cc_in["BlockSize"].GetInt();
         std::size_t ao_blocksize = in.HasMember("AOBlockSize")
@@ -158,7 +158,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::stringstream xyz_file_stream;
         xyz_file_stream << xyz_file_buffer;
 
-        auto mol = mpqc::molecule::read_xyz_stringstream(xyz_file_stream, false);
+        auto mol = mpqc::molecule::read_xyz_stringstream(xyz_file_stream, do_cluster);
         auto charge = 0;
         auto occ = mol.occupation(charge);
         auto repulsion_energy = mol.nuclear_repulsion();
@@ -169,7 +169,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             std::cout << "basis is " << basis_name << std::endl;
             std::cout << "df basis is " << df_basis_name << std::endl;
             std::cout << "Using " << nclusters << " clusters" << std::endl;
-            std::cout << "Cluster: " << cluster << std::endl;
+            std::cout << "Cluster: " << do_cluster << std::endl;
         }
 
         utility::print_par(world, "Sparse threshold is ",
@@ -202,7 +202,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             mol_elements.insert(mol_elements.end(), ghost_elements.begin(),
                                 ghost_elements.end());
 
-            if(cluster){
+            if(do_cluster){
                 clustered_mol = mpqc::molecule::Molecule(mol_elements, false);
             }
             else{
@@ -218,7 +218,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 std::cout << "Ghost Atom file: None" << std::endl;
             }
 
-            if (cluster){
+            if (do_cluster){
                 clustered_mol = mpqc::molecule::kmeans(mol.clusterables(), nclusters);
             }
             else{
@@ -230,13 +230,25 @@ int try_main(int argc, char *argv[], madness::World &world) {
         mpqc::basis::BasisSet bs{basis_name};
         mpqc::basis::BasisSet df_bs{df_basis_name};
 
-        std::streambuf *cout_sbuf
-              = std::cout.rdbuf(); // Silence libint printing.
-        std::ofstream fout("/dev/null");
-        std::cout.rdbuf(fout.rdbuf());
-        mpqc::basis::Basis basis{bs.get_cluster_shells(clustered_mol)};
-        mpqc::basis::Basis df_basis{df_bs.get_cluster_shells(clustered_mol)};
-        std::cout.rdbuf(cout_sbuf);
+//        std::streambuf *cout_sbuf = std::cout.rdbuf(); // Silence libint printing.
+//        std::ofstream fout("/dev/null");
+//        std::cout.rdbuf(fout.rdbuf());
+
+
+        mpqc::basis::Basis basis = mpqc::basis::parallel_construct_basis(world,bs,clustered_mol);
+        mpqc::basis::Basis df_basis = mpqc::basis::parallel_construct_basis(world,df_bs,clustered_mol);
+
+//        if(world.rank() == 0){
+//            basis = mpqc::basis::Basis{bs.get_cluster_shells(clustered_mol)};
+//            df_basis = mpqc::basis::Basis{df_bs.get_cluster_shells(clustered_mol)};
+//        }
+
+//        world.gop.broadcast_serializable(basis,0);
+//        world.gop.fence();
+//        world.gop.broadcast_serializable(df_basis,0);
+//        world.gop.fence();
+
+//        std::cout.rdbuf(cout_sbuf);
 
         // reblock basis
         bool if_reblock = in.HasMember("Reblock") ? in["Reblock"].GetBool()

@@ -9,10 +9,13 @@
 #include <iosfwd>
 #include <memory>
 
+#include <madness/world/array_addons.h>
+
 #include "../common/typedefs.h"
 
 #include "../include/tiledarray.h"
 #include "../include/libint.h"
+#include "basis_set.h"
 
 
 namespace mpqc {
@@ -43,21 +46,19 @@ class Basis {
     std::vector<Shell> flattened_shells() const;
 
     template <typename Archive>
-    typename std::
-          enable_if<madness::archive::is_output_archive<Archive>::value>::type
-          serialize(Archive &ar) {
-        auto nvecs = shells_.size();
-        ar &nvecs;
+    typename std::enable_if<madness::archive::is_output_archive<Archive>::value>::type
+          serialize(const Archive &ar) {
+        std::size_t nvecs = shells_.size();
+        ar & nvecs;
         for(auto const &v : shells_){
             ar &v;
         }
     }
 
     template <typename Archive>
-    typename std::
-          enable_if<madness::archive::is_input_archive<Archive>::value>::type
-          serialize(Archive &ar) {
-        auto nvecs = 0;
+    typename std::enable_if<madness::archive::is_input_archive<Archive>::value>::type
+        serialize(const Archive &ar) {
+        std::size_t nvecs = 0;
         ar & nvecs;
 
         for(auto i = 0; i < nvecs; ++i){
@@ -73,20 +74,6 @@ class Basis {
 
 std::ostream &operator<<(std::ostream &, Basis const &);
 
-template <typename Archive>
-void serialize(Archive &ar, libint2::Shell const &s){
-    ar & s.alpha;
-    ar & s.contr;
-    ar & s.O;
-    ar & s.max_ln_coeff;
-}
-
-template <typename Archive>
-void serialize(Archive &ar, libint2::Shell::Contraction const &c){
-    ar & c.l;
-    ar & c.pure;
-    ar & c.coeff;
-}
 
 /*! \brief reblock allows for reblocking a basis
  *
@@ -101,6 +88,39 @@ Basis reblock(Basis const &basis, Op op, Args... args) {
     return Basis(op(basis.flattened_shells(), args...));
 }
 
+Basis parallel_construct_basis(madness::World& world, const BasisSet& basis_set, const mpqc::molecule::Molecule& mol);
+
+
 } // namespace basis
 } // namespace mpqc
+
+namespace madness{
+namespace archive{
+
+// serialize libint2::Shell object
+
+template <typename Archive>
+struct ArchiveSerializeImpl<Archive, libint2::Shell::Contraction>{
+
+    static inline void serialize(const Archive &ar, libint2::Shell::Contraction const &c){
+        ar & c.l;
+        ar & c.pure;
+        ar & c.coeff;
+    }
+};
+
+template <typename Archive>
+struct ArchiveSerializeImpl<Archive, libint2::Shell>{
+
+    static inline void serialize(const Archive &ar, libint2::Shell const &s){
+        ar & s.alpha;
+        ar & s.contr;
+        ar & s.O;
+        ar & s.max_ln_coeff;
+    };
+};
+
+
+} // end of namespace madness
+} // end of namespace archive
 #endif /* end of include guard: MPQC_BASIS_BASIS_H */

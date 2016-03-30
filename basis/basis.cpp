@@ -99,6 +99,20 @@ std::ostream &operator<<(std::ostream &os, Basis const &b) {
     return os;
 }
 
+Basis parallel_construct_basis(madness::World& world, const BasisSet& basis_set, const mpqc::molecule::Molecule& mol)
+{
+    Basis basis;
+
+    if(world.rank() == 0){
+        basis = Basis(basis_set.get_cluster_shells(mol));
+    }
+
+    world.gop.broadcast_serializable(basis,0);
+
+    return std::move(basis);
+}
+
+
 Basis Basis::join(const Basis &basis) {
 
     auto self_shells = this->cluster_shells();

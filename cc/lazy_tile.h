@@ -63,14 +63,14 @@ namespace mpqc {
 
             template<typename Archive>
             typename std::enable_if<madness::archive::is_output_archive<Archive>::value>::type
-            serialize(Archive &ar) {
+            serialize(const Archive &ar) {
                 ar & range_;
                 ar & index_;
             }
 
             template<typename Archive>
             typename std::enable_if<madness::archive::is_input_archive<Archive>::value>::type
-            serialize(Archive &ar) {
+            serialize(const Archive &ar) {
                 ar & range_;
                 ar & index_;
                 integral_generator_ = DIRECTAOTWOELECTONINTEGRAL;

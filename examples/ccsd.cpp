@@ -68,7 +68,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     rapidjson::Document in;
     in.Parse(json);
 
-//    delete[] json;
+    delete[] json;
 
     std::cout << std::setprecision(15);
     rapidjson::Document cc_in;
@@ -157,6 +157,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::parallel_read_file(world,mol_file,xyz_file_buffer);
         std::stringstream xyz_file_stream;
         xyz_file_stream << xyz_file_buffer;
+        delete[] xyz_file_buffer;
 
         auto mol = mpqc::molecule::read_xyz_stringstream(xyz_file_stream, do_cluster);
         auto charge = 0;
@@ -178,9 +179,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::print_par(world, "Nuclear repulsion_energy = ",
                            repulsion_energy, "\n");
 
-        world.gop.fence();
-
-
         // use clustered_mol to generate basis
         molecule::Molecule clustered_mol{};
         if (!ghost_atoms.empty()) {
@@ -189,6 +187,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             utility::parallel_read_file(world,ghost_atoms,ghost_xyz_buffer);
             std::stringstream ghost_xyz_stream;
             ghost_xyz_stream << ghost_xyz_buffer;
+            delete[] ghost_xyz_buffer;
             auto ghost_molecue = mpqc::molecule::read_xyz_stringstream(ghost_xyz_stream, false);
             auto ghost_elements = ghost_molecue.clusterables();
 

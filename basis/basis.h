@@ -102,7 +102,7 @@ namespace archive{
 template <typename Archive>
 struct ArchiveSerializeImpl<Archive, libint2::Shell::Contraction>{
 
-    static inline void serialize(const Archive &ar, libint2::Shell::Contraction const &c){
+    static inline void serialize(const Archive &ar, libint2::Shell::Contraction &c){
         ar & c.l;
         ar & c.pure;
         ar & c.coeff;
@@ -112,7 +112,7 @@ struct ArchiveSerializeImpl<Archive, libint2::Shell::Contraction>{
 template <typename Archive>
 struct ArchiveSerializeImpl<Archive, libint2::Shell>{
 
-    static inline void serialize(const Archive &ar, libint2::Shell const &s){
+    static inline void serialize(const Archive &ar, libint2::Shell &s){
         ar & s.alpha;
         ar & s.contr;
         ar & s.O;

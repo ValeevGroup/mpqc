@@ -293,16 +293,8 @@ int main(int argc, char *argv[]) {
 
     // Begin scf
     auto soad0 = mpqc_time::fenced_now(world);
-    decltype(S) F_soad;
-    if (in.HasMember("Soad Method")
-        && std::string(in["Soad Method"].GetString()) == "low memory") {
-        F_soad = scf::fock_from_soad_low_mem(world, clustered_mol, basis, eri_e,
+    decltype(S) F_soad= scf::fock_from_soad(world, clustered_mol, basis, eri_e,
                                              H);
-        out_doc.AddMember("Soad Method", "Low memory", out_doc.GetAllocator());
-    } else {
-        F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-        out_doc.AddMember("Soad Method", "High memory", out_doc.GetAllocator());
-    }
     auto soad1 = mpqc_time::fenced_now(world);
     auto soadtime = mpqc_time::duration_in_s(soad0, soad1);
     if (world.rank() == 0) {
@@ -410,7 +402,8 @@ int main(int argc, char *argv[]) {
                                      ? in["occ nclusters"].GetInt()
                                      : nclusters;
 
-    out_doc.AddMember("number occupied clusters", occ_nclusters, out_doc.GetAllocator());
+    out_doc.AddMember("number occupied clusters", occ_nclusters,
+                      out_doc.GetAllocator());
 
     auto localize = true;
     auto ebuilder = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, occ_nclusters,

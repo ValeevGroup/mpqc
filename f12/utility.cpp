@@ -256,7 +256,7 @@ std::vector<std::pair<double, double>> gtg_params_squared(const std::vector<std:
     return square;
 }
 
-TiledArray::SparseShape<float> make_ijij_shape(const TiledArray::TiledRange& trange){
+TiledArray::SparseShape<float> make_ijij_ijji_shape(const TiledArray::TiledRange& trange){
 
 
     // number of occ tiles
@@ -272,7 +272,11 @@ TiledArray::SparseShape<float> make_ijij_shape(const TiledArray::TiledRange& tra
                 for(auto l=0; l < n_occ; l++, total++){
                     if(i==k && j==l){
                         tile_norms[total] = 1.0;
-                    }else{
+                    }
+                    else if(i==l && j==k){
+                        tile_norms[total] = 1.0;
+                    }
+                    else{
                         tile_norms[total] = 0.0;
                     }
                 }

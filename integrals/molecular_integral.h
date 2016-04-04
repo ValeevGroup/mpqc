@@ -58,6 +58,10 @@ namespace integrals{
             return mo_formula_registry_;
         }
 
+        FormulaRegistry<TArray> &registry() {
+            return mo_formula_registry_;
+        }
+
         TArray compute(const std::wstring& );
         TArray compute(const Formula&);
 

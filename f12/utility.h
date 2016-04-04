@@ -38,7 +38,7 @@ namespace f12{
     };
 
     // make sure the occ is blocked by 1!
-    TiledArray::SparseShape<float> make_ijij_shape(const TiledArray::TiledRange& );
+    TiledArray::SparseShape<float> make_ijij_ijji_shape(const TiledArray::TiledRange& );
     TiledArray::SparseShape<float> make_ijji_shape(const TiledArray::TiledRange& );
 
     template <typename Tile>
@@ -157,6 +157,48 @@ void convert_X_ijkl(TiledArray::Array<double, 4, Tile, Policy> &ijkl,
    TiledArray::foreach_inplace(ijkl, convert);
 }
 
+template <typename Tile, typename Policy>
+TiledArray::Array<double, 4, Tile, Policy> convert_C_iajb(TiledArray::Array<double, 4, Tile, Policy> &iajb,
+                    const std::size_t n_occ, const Eigen::VectorXd &ens)
+{
+    auto convert = [&ens, n_occ](Tile &result_tile, const Tile& arg_tile) {
+
+        result_tile = Tile(arg_tile.range());
+
+        // compute index
+        const auto i0 = result_tile.range().lobound()[0];
+        const auto in = result_tile.range().upbound()[0];
+        const auto a0 = result_tile.range().lobound()[1];
+        const auto an = result_tile.range().upbound()[1];
+        const auto j0 = result_tile.range().lobound()[2];
+        const auto jn = result_tile.range().upbound()[2];
+        const auto b0 = result_tile.range().lobound()[3];
+        const auto bn = result_tile.range().upbound()[3];
+
+        auto tile_idx = 0;
+        typename Tile::value_type norm = 0.0;
+        for (auto i = i0; i < in; ++i) {
+            auto en_i = ens[i];
+            for (auto a = a0; a < an; ++a) {
+                auto en_a = ens[a+n_occ];
+                for (auto j = j0; j < jn; ++j) {
+                    auto en_j = ens[j];
+                    for (auto b = b0; b < bn; ++b, ++tile_idx) {
+                        auto en_b = ens[b+n_occ];
+                        const auto old = arg_tile[tile_idx];
+                        const auto divde = 1/(en_i + en_j - en_a - en_b);
+                        const auto result_abij = old*divde;
+                        norm += result_abij*result_abij;
+                        result_tile[tile_idx] = result_abij;
+                    }
+                }
+            }
+        }
+        return std::sqrt(norm);
+    };
+
+    return TiledArray::foreach(iajb, convert);
+}
 
 }
 }

@@ -422,7 +422,7 @@ int main(int argc, char *argv[]) {
 
         auto C_bar_iajb = f12::convert_C_iajb(C_iajb, occ/2, ens);
 
-        B_ijij_shape("i1,j1,i2,j2") = B_ijij_shape("i1,j1,i2,j2") - X_ijij_shape("i1,j1,i2,j2") - (C_iajb("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
+        B_ijij_shape("i1,j1,i2,j2") = B_ijij_shape("i1,j1,i2,j2") - X_ijij_shape("i1,j1,i2,j2") + (C_iajb("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
         std::cout << "B bar ijij_ijji Shape" << std::endl;
         std::cout << B_ijij_shape << std::endl;
     }
@@ -432,7 +432,7 @@ int main(int argc, char *argv[]) {
         // diagonal sum
         E22 = 0.25*B_ijij_shape("i1,j1,i2,j2").reduce(f12::DiagonalSum<TA::TensorD>());
         // off diagonal sum
-        E22 += 0.0625 * (7 * B_ijij_shape("i1,j1,i2,j2") - B_ijij_shape("i1,j1,j2,i2")).reduce(f12::OffDiagonalSum<TA::TensorD>());
+        E22 += 0.0625 * (7 * B_ijij_shape("i1,j1,i2,j2") + B_ijij_shape("i1,j1,j2,i2")).reduce(f12::OffDiagonalSum<TA::TensorD>());
         std::cout << "E22: " << E22 << std::endl;
     }
     std::cout << "E_F12: " << E22+E21 << std::endl;
@@ -560,7 +560,7 @@ int main(int argc, char *argv[]) {
 
         auto C_bar_iajb = f12::convert_C_iajb(C_iajb_nodf, occ/2, ens);
 
-        B_ijij_shape_nodf("i1,j1,i2,j2") = B_ijij_shape_nodf("i1,j1,i2,j2") - X_ijij_nodf_shape("i1,j1,i2,j2") - (C_iajb_nodf("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
+        B_ijij_shape_nodf("i1,j1,i2,j2") = B_ijij_shape_nodf("i1,j1,i2,j2") - X_ijij_nodf_shape("i1,j1,i2,j2") + (C_iajb_nodf("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
         std::cout << "B bar ijij_ijji Shape" << std::endl;
         std::cout << B_ijij_shape_nodf << std::endl;
     }
@@ -570,7 +570,7 @@ int main(int argc, char *argv[]) {
         // diagonal sum
         E22 = 0.25*B_ijij_shape_nodf("i1,j1,i2,j2").reduce(f12::DiagonalSum<TA::TensorD>());
         // off diagonal sum
-        E22 += 0.0625 * (7 * B_ijij_shape_nodf("i1,j1,i2,j2") - B_ijij_shape_nodf("i1,j1,j2,i2")).reduce(f12::OffDiagonalSum<TA::TensorD>());
+        E22 += 0.0625 * (7 * B_ijij_shape_nodf("i1,j1,i2,j2") + B_ijij_shape_nodf("i1,j1,j2,i2")).reduce(f12::OffDiagonalSum<TA::TensorD>());
         std::cout << "E22: " << E22 << std::endl;
     }
     std::cout << "E_F12: " << E22+E21 << std::endl;

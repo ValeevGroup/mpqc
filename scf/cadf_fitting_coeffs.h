@@ -69,8 +69,8 @@ cadf_shape(madness::World &world, basis::Basis const &obs,
             auto ord0 = tiles.ordinal(idx0);
             auto ord1 = tiles.ordinal(idx1);
 
-            *(norms.data() + ord0) = std::numeric_limits<double>::max();
-            *(norms.data() + ord1) = std::numeric_limits<double>::max();
+            *(norms.data() + ord0) = std::numeric_limits<float>::max();
+            *(norms.data() + ord1) = std::numeric_limits<float>::max();
         }
     }
 

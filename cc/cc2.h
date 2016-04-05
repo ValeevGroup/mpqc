@@ -8,7 +8,7 @@
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 
-#include "trange1_engine.h"
+#include "../utility/trange1_engine.h"
 #include "mo_block.h"
 #include "../ta_routines/tarray_block.h"
 
@@ -16,7 +16,7 @@
 #include "diis_ccsd.h"
 #include "integral_generator.h"
 #include "lazy_tile.h"
-#include "utility.h"
+#include "../utility/cc_utility.h"
 
 namespace mpqc {
     namespace cc {

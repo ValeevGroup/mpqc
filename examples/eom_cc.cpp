@@ -42,7 +42,7 @@
 #include "../cc/ccsd_t.h"
 #include "../cc/lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
-#include "../cc/trange1_engine.h"
+#include "../utility/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../scf/soad.h"
 

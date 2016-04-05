@@ -55,7 +55,7 @@ void wprint_par(madness::World &world, Args&&... args) {
     }
 }
 
-void print_file(madness::World &world, const std::string& file){
+inline void print_file(madness::World &world, const std::string& file){
 
     if (world.rank() == 0){
         std::ifstream file_stream(file);

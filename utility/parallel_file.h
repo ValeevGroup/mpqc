@@ -8,7 +8,7 @@
 namespace mpqc{
 namespace utility{
 
-void parallel_read_file(madness::World& world, const std::string& filename, char*& buffer){
+inline void parallel_read_file(madness::World& world, const std::string& filename, char*& buffer){
 
     int size;
     std::string contents;

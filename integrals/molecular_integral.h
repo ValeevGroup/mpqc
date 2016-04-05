@@ -45,6 +45,9 @@ namespace integrals{
             atomic_integral_.set_orbital_space_registry(orbital_space_registry);
         }
 
+        madness::World &get_world() const {
+            return world_;
+        }
 
         AtomicIntegral& atomic_integral() const {
             return atomic_integral_;

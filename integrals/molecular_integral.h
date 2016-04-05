@@ -54,7 +54,7 @@ namespace integrals{
         }
 
         TA::expressions::TsrExpr<TArray,true> atomic_integral (const std::wstring& str){
-            return atomic_integral_(str);
+            return std::move(atomic_integral_(str));
         };
 
         const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() const {
@@ -79,13 +79,13 @@ namespace integrals{
             return result(formula.to_ta_expression());
         };
 
-        void remove_operation_all(const std::wstring& oper_str){
+        void remove_operation_all(madness::World& world, const std::wstring& oper_str){
 
             Operation operation(oper_str);
             Operation::Operations oper = operation.oper();
 
-            mo_formula_registry_.remove_operation(oper);
-            atomic_integral().registry().remove_operation(oper);
+            mo_formula_registry_.remove_operation(world, oper);
+            atomic_integral().registry().remove_operation(world, oper);
         }
 
     private:

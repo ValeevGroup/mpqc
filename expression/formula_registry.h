@@ -8,6 +8,7 @@
 #include <map>
 #include "formula.h"
 #include "../utility/print_size_info.h"
+#include "../utility/parallel_print.h"
 
 namespace mpqc{
 
@@ -99,18 +100,20 @@ namespace mpqc{
 
         /// removes all objects if p(key) == true
         template<typename Pred>
-        void remove_if(const Pred& p){
+        void remove_if(madness::World& world, const Pred& p){
             auto i = registry_.begin();
             for(; i != registry_.end(); ){
                 if (p(*i)){
-                    std::cout << "Removed from Registry: ";
-                    std::wcout << i->first.formula_string();
-                    std::cout << std::endl;
+                    utility::print_par(world, "Removed from Registry: ");
+                    utility::wprint_par(world, i->first.formula_string());
+                    utility::print_par(world, "\n");
                     registry_.erase(i++);
                 }else{
                     ++i;
                 }
             }
+            // wait for all process remove item
+            world.gop.fence();
         }
 
     protected:
@@ -149,55 +152,55 @@ namespace mpqc{
         }
 
         /// remove all formula that has operation oper
-        void remove_operation(const Operation::Operations & oper){
+        void remove_operation(madness::World& world, const Operation::Operations & oper){
 
             auto pred = [& oper](const value_type& item){
                 return item.first.operation().oper() == oper;
             };
 
-            this->remove_if(pred);
+            this->remove_if(world, pred);
         }
 
         /// remove all formula that has operation oper
-        void remove_operation(const std::wstring& oper_str){
+        void remove_operation(madness::World& world, const std::wstring& oper_str){
 
             Operation operation(oper_str);
             Operation::Operations oper = operation.oper();
-            remove_operation(oper);
+            remove_operation(world, oper);
         }
 
         /// remove this formula
-        void remove_formula(const Formula& formula){
+        void remove_formula(madness::World& world, const Formula& formula){
 
             auto pred = [& formula](const value_type& item){
                 return item.first == formula;
             };
 
-            this->remove_if(pred);
+            this->remove_if(world, pred);
         }
 
         /// remove this formula
-        void remove_formula(const std::wstring& formula_string){
+        void remove_formula(madness::World& world, const std::wstring& formula_string){
 
             Formula formula(formula_string);
-            remove_formula(formula);
+            remove_formula(world, formula);
         }
 
         /// remove all formula that have index
-        void remove_orbital(const OrbitalIndex& orbital_index){
+        void remove_orbital(madness::World& world, const OrbitalIndex& orbital_index){
 
             auto pred = [&orbital_index](const value_type& item){
                 return item.first.has_index(orbital_index);
             };
 
-            this->remove_if(pred);
+            this->remove_if(world, pred);
 
         }
 
         /// remove all formula that have index
-        void remove_orbital(const std::wstring& orbital){
+        void remove_orbital(madness::World& world, const std::wstring& orbital){
             OrbitalIndex orbital_index(orbital);
-            remove_orbital(orbital_index);
+            remove_orbital(world, orbital_index);
         }
     };
 } // end of namespace mpqc

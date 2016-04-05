@@ -35,7 +35,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
         V_ijij_ijji("i1,j1,i2,j2") = (mo_integral(L"(Κ |GR|i2 i1)")*mo_int_.atomic_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j1 j2)")).set_shape(ijij_ijji_shape);
 
         // all types of GR integral not needed
-        mo_int_.remove_operation_all(L"GR");
+        mo_int_.remove_operation_all(world, L"GR");
 
 //        std::cout << V_ijij_ijji << std::endl;
         V_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|G|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]")).set_shape(ijij_ijji_shape);
@@ -46,7 +46,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
 //        std::cout << V_ijij_ijji << std::endl;
 
         // G integral in MO not needed, still need G integral in AO to compute F, K, hJ
-        mo_int_.registry().remove_operation(L"G");
+        mo_int_.registry().remove_operation(world, L"G");
     }
 
     // compute C term
@@ -95,7 +95,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
 //        std::cout << X_ijij_ijji << std::endl;
 
         // R_ipjq not needed
-        mo_int_.registry().remove_formula(L"(i1 p|R|j1 q)[df]");
+        mo_int_.registry().remove_formula(world, L"(i1 p|R|j1 q)[df]");
     }
 
     // compute B term
@@ -106,21 +106,21 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
 
         B_ijij_ijji("i1,j1,i2,j2") = (mo_integral(L"(Κ |dR2|i1 i2)")*mo_integral(L"(Κ|dR2|Λ)[inv]")*mo_integral(L"(Λ |dR2|j1 j2)")).set_shape(ijij_ijji_shape);
 
-        mo_int_.remove_operation_all(L"dR2");
+        mo_int_.remove_operation_all(world, L"dR2");
 //        std::cout << B_ijij_ijji << std::endl;
         auto hJ = mo_int_.compute(L"(P' | hJ | i)[df]");
         B_ijij_ijji("i1,j1,i2,j2") += (mo_integral(L"(i1 P'|R2|j1 j2)[df]")*hJ("P',i2")).set_shape(ijij_ijji_shape);
         B_ijij_ijji("i1,j1,i2,j2") += (mo_integral(L"(j1 P'|R2|i1 i2)[df]")*hJ("P',j2")).set_shape(ijij_ijji_shape);
 
-        mo_int_.remove_operation_all(L"R2");
-        mo_int_.remove_operation_all(L"hJ");
+        mo_int_.remove_operation_all(world, L"R2");
+        mo_int_.remove_operation_all(world, L"hJ");
 //        std::cout << B_ijij_ijji << std::endl;
 
         B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|j1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(i2 R'|R|j2 Q')[df]")).set_shape(ijij_ijji_shape);
         B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(j2 R'|R|i2 Q')[df]")).set_shape(ijij_ijji_shape);
 
         // AO R integral not needed
-        mo_int_.atomic_integral().registry().remove_operation(L"R");
+        mo_int_.atomic_integral().registry().remove_operation(world, L"R");
 
 //        std::cout << B_ijij_ijji << std::endl;
         B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(i1 P'|R|j1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(i2 R'|R|j2 m)[df]")).set_shape(ijij_ijji_shape);
@@ -133,7 +133,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
 
 //        std::cout << B_ijij_ijji << std::endl;
         // P' doesn't appear later
-        mo_int_.registry().remove_orbital(L"P'");
+        mo_int_.registry().remove_orbital(world, L"P'");
 
         B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(i1 p|R|j1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(i2 r|R|j2 a)[df]")).set_shape(ijij_ijji_shape);
         B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|i2 a)[df]")).set_shape(ijij_ijji_shape);

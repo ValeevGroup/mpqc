@@ -32,7 +32,7 @@ public:
     void compute_mp2_f12_c();
 
     TA::expressions::TsrExpr<TArray,true> mo_integral(const std::wstring& str){
-        return mo_int_(str);
+        return std::move(mo_int_(str));
     };
 
 private:

@@ -82,6 +82,8 @@ namespace mpqc{
             return notation_;
         }
 
+        bool has_index(const OrbitalIndex& index) const;
+
         std::size_t rank() const;
 
         bool operator<(const Formula& other) const;

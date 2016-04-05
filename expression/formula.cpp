@@ -214,4 +214,22 @@ namespace mpqc{
         return ta_expression;
     }
 
+bool Formula::has_index(const OrbitalIndex &ind) const {
+
+    for(auto& index : left_index_){
+        if(ind == index){
+            return true;
+        }
+    }
+
+    for(auto& index : right_index_){
+        if(ind == index){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 }

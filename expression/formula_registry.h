@@ -103,6 +103,9 @@ namespace mpqc{
             auto i = registry_.begin();
             for(; i != registry_.end(); ){
                 if (p(*i)){
+                    std::cout << "Removed from Registry: ";
+                    std::wcout << i->first.formula_string();
+                    std::cout << std::endl;
                     registry_.erase(i++);
                 }else{
                     ++i;
@@ -143,6 +146,58 @@ namespace mpqc{
                 }
                 std::cout << std::endl;
             }
+        }
+
+        /// remove all formula that has operation oper
+        void remove_operation(const Operation::Operations & oper){
+
+            auto pred = [& oper](const value_type& item){
+                return item.first.operation().oper() == oper;
+            };
+
+            this->remove_if(pred);
+        }
+
+        /// remove all formula that has operation oper
+        void remove_operation(const std::wstring& oper_str){
+
+            Operation operation(oper_str);
+            Operation::Operations oper = operation.oper();
+            remove_operation(oper);
+        }
+
+        /// remove this formula
+        void remove_formula(const Formula& formula){
+
+            auto pred = [& formula](const value_type& item){
+                return item.first == formula;
+            };
+
+            this->remove_if(pred);
+        }
+
+        /// remove this formula
+        void remove_formula(const std::wstring& formula_string){
+
+            Formula formula(formula_string);
+            remove_formula(formula);
+        }
+
+        /// remove all formula that have index
+        void remove_orbital(const OrbitalIndex& orbital_index){
+
+            auto pred = [&orbital_index](const value_type& item){
+                return item.first.has_index(orbital_index);
+            };
+
+            this->remove_if(pred);
+
+        }
+
+        /// remove all formula that have index
+        void remove_orbital(const std::wstring& orbital){
+            OrbitalIndex orbital_index(orbital);
+            remove_orbital(orbital_index);
         }
     };
 } // end of namespace mpqc

@@ -6,7 +6,7 @@
 #define TILECLUSTERCHEM_ATOMIC_INTEGRAL_H
 
 
-#include "../f12/utility.h"
+#include "../f12/f12_utility.h"
 #include "../expression/formula_registry.h"
 #include "../expression/orbital_space_registry.h"
 #include "atomic_integral_base.h"

@@ -4,7 +4,7 @@
 
 #include <catch.hpp>
 
-#include "../f12/utility.h"
+#include "../f12/f12_utility.h"
 
 using namespace mpqc;
 

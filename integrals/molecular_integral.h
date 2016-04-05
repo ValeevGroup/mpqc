@@ -53,6 +53,10 @@ namespace integrals{
             return atomic_integral_;
         }
 
+        TA::expressions::TsrExpr<TArray,true> atomic_integral (const std::wstring& str){
+            return atomic_integral_(str);
+        };
+
         const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() const {
             return orbital_space_registry_;
         }
@@ -74,6 +78,15 @@ namespace integrals{
             auto& result = mo_formula_registry_.retrieve(formula);
             return result(formula.to_ta_expression());
         };
+
+        void remove_operation_all(const std::wstring& oper_str){
+
+            Operation operation(oper_str);
+            Operation::Operations oper = operation.oper();
+
+            mo_formula_registry_.remove_operation(oper);
+            atomic_integral().registry().remove_operation(oper);
+        }
 
     private:
 
@@ -207,73 +220,15 @@ namespace integrals{
         double time = 0.0;
         TArray result;
         if(formula_string.operation().has_option(Operation::Options::DensityFitting)){
-            // get AO
-            auto ao_formula = mo_to_ao(formula_string);
 
             // get df formula
-            auto df_formulas = atomic_integral_.get_df_formula(ao_formula);
+            auto df_formulas = atomic_integral_.get_df_formula(formula_string);
 
             auto notation = formula_string.notation();
             // compute integral
-            TArray left;
-            {
-                auto left_ao = atomic_integral_.compute(df_formulas[0]);
+            TArray left = compute(df_formulas[0]);
 
-                auto time0 = mpqc_time::fenced_now(world_);
-
-                left("i,j,k") = left_ao("i,j,k");
-
-                auto left_index1 = formula_string.left_index()[0];
-                if (left_index1.is_mo()) {
-                    auto left1 = orbital_space_registry_->retrieve(left_index1);
-                    left("p,i,r") = left("p,q,r") * left1("q,i");
-                }
-
-                OrbitalIndex left_index2;
-                if(notation == Formula::Notation::Chemical){
-                    left_index2 = formula_string.left_index()[1];
-                }
-                else{
-                    left_index2 = formula_string.right_index()[0];
-                }
-                if (left_index2.is_mo()) {
-                    auto left2 = orbital_space_registry_->retrieve(left_index2);
-                    left("p,q,i") = left("p,q,r") * left2("r,i");
-                }
-
-                auto time1 = mpqc_time::fenced_now(world_);
-                time+= mpqc_time::duration_in_s(time0,time1);
-            }
-
-            TArray right;
-            {
-                auto right_ao = atomic_integral_.compute(df_formulas[2]);
-
-                auto time0 = mpqc_time::fenced_now(world_);
-                right("i,j,k") = right_ao("i,j,k");
-
-                OrbitalIndex right_index1;
-
-                if(notation==Formula::Notation::Chemical){
-                    right_index1 = formula_string.right_index()[0];
-                }
-                else{
-                    right_index1 = formula_string.left_index()[1];
-                }
-
-                if (right_index1.is_mo()) {
-                    auto right1 = orbital_space_registry_->retrieve(right_index1);
-                    right("p,i,r") = right("p,q,r") * right1("q,i");
-                }
-
-                auto right_index2 = formula_string.right_index()[1];
-                if (right_index2.is_mo()) {
-                    auto right2 = orbital_space_registry_->retrieve(right_index2);
-                    right("p,q,i") = right("p,q,r") * right2("r,i");
-                }
-                auto time1 = mpqc_time::fenced_now(world_);
-                time+= mpqc_time::duration_in_s(time0,time1);
-            }
+            TArray right = compute(df_formulas[2]);
 
             auto center = atomic_integral_.compute(df_formulas[1]);
 

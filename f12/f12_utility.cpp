@@ -264,6 +264,8 @@ TiledArray::SparseShape<float> make_ijij_ijji_shape(const TiledArray::TiledRange
 
     TiledArray::Tensor<float> tile_norms(trange.tiles());
 
+    auto max = std::numeric_limits<float>::max();
+
     // set sparse tile
     auto total = 0;
     for(auto i = 0; i < n_occ; i++){
@@ -271,10 +273,10 @@ TiledArray::SparseShape<float> make_ijij_ijji_shape(const TiledArray::TiledRange
             for(auto k=0; k < n_occ; k++){
                 for(auto l=0; l < n_occ; l++, total++){
                     if(i==k && j==l){
-                        tile_norms[total] = 1.0;
+                        tile_norms[total] = max;
                     }
                     else if(i==l && j==k){
-                        tile_norms[total] = 1.0;
+                        tile_norms[total] = max;
                     }
                     else{
                         tile_norms[total] = 0.0;

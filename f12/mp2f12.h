@@ -29,7 +29,10 @@ public:
     MP2F12(MolecularIntegral& mo_int, std::shared_ptr<TRange1Engine> tre, const Eigen::VectorXd& ens)
             : mo_int_(mo_int), tre_(tre), orbital_energy_(ens) {}
 
+    void compute_mp2_f12_c_df();
+
     void compute_mp2_f12_c();
+
 
 private:
 
@@ -70,7 +73,7 @@ private:
                                 me += iiii*tile.data()[tile_idx];
                             }
                             // ijij
-                            else if(i > j && k==i && l==j){
+                            else if( j > i && k==i && l==j){
                                 me += ijij*tile.data()[tile_idx];
                             }
                             // ijji

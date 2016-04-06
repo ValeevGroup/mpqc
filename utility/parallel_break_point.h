@@ -7,7 +7,7 @@
 namespace mpqc {
 namespace utility {
 
-void parallal_break_point(madness::World &world, volatile int debug) {
+inline void parallel_break_point(madness::World &world, volatile int debug) {
     if (0 != debug) {
         char hostname[256];
         gethostname(hostname, sizeof(hostname));

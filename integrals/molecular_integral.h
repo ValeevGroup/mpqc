@@ -53,6 +53,10 @@ namespace integrals{
             return atomic_integral_;
         }
 
+        AtomicIntegral& atomic_integral() {
+            return atomic_integral_;
+        }
+
         TA::expressions::TsrExpr<TArray,true> atomic_integral (const std::wstring& str){
             return std::move(atomic_integral_(str));
         };
@@ -187,13 +191,12 @@ namespace integrals{
 
         // convert to MO, only convert the right side
         auto time0 = mpqc_time::fenced_now(world_);
-        result = ao_integral;
 
         // get coefficient
         auto right_index1 = formula_string.right_index()[0];
         if (right_index1.is_mo()) {
             auto right1 = orbital_space_registry_->retrieve(right_index1);
-            result("K,i,q") = result("K,p,q") * right1("p,i");
+            result("K,i,q") = ao_integral("K,p,q") * right1("p,i");
         }
         auto right_index2 = formula_string.right_index()[1];
         if (right_index2.is_mo()) {
@@ -230,7 +233,7 @@ namespace integrals{
 
             TArray right = compute(df_formulas[2]);
 
-            auto center = atomic_integral_.compute(df_formulas[1]);
+            TArray center = atomic_integral_.compute(df_formulas[1]);
 
             auto time0 = mpqc_time::fenced_now(world_);
 
@@ -251,13 +254,12 @@ namespace integrals{
 
             // convert to MO
             auto time0 = mpqc_time::fenced_now(world_);
-            result = ao_integral;
 
             // get coefficient
             auto left_index1 = formula_string.left_index()[0];
             if (left_index1.is_mo()) {
                 auto left1 = orbital_space_registry_->retrieve(left_index1);
-                result("i,q,r,s") = result("p,q,r,s") * left1("p,i");
+                result("i,q,r,s") = ao_integral("p,q,r,s") * left1("p,i");
             }
 
             auto left_index2 = formula_string.left_index()[1];
@@ -363,6 +365,9 @@ typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::
             mo_formula_registry_.insert(formula, result);
         }
     }
+
+    // make sure all processes obtained result and insert formula
+    world_.gop.fence();
 
     return result;
 }

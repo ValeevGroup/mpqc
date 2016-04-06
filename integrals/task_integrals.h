@@ -247,6 +247,7 @@ dense_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
 
         out.set(ord, tile);
     }
+    world.gop.fence();
 
     return out;
 }

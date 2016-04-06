@@ -291,15 +291,16 @@ int main(int argc, char *argv[]) {
 //    ao_int.registry().print_formula(world);
 //    mo_integral.registry().print_formula(world);
 
-    mo_integral.registry().clear();
-    ao_int.registry().clear();
+//    mo_integral.registry().clear();
+//    ao_int.registry().clear();
 
     // without df
-//
-//    auto occ_tr1 = tre.get_occ_tr1();
+
+//    auto occ_tr1 = tre.get_occ_tr1()
 //    TiledArray::TiledRange occ4_trange({occ_tr1,occ_tr1,occ_tr1,occ_tr1});
 //    auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
-//
+//    auto ijij_shape = ijij_ijji_shape;
+
 //    decltype(S_obs) V_ijij_nodf_shape(world,occ4_trange,ijij_ijji_shape);
 //    {
 //

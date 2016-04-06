@@ -13,6 +13,7 @@
 #include "../utility/wcout_utf8.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../utility/parallel_print.h"
+#include "../utility/parallel_break_point.h"
 #include "../utility/time.h"
 
 namespace mpqc{
@@ -204,6 +205,9 @@ namespace integrals{
                 ao_formula_registry_.insert(formula, result);
             }
         }
+
+        // wait all process to obtain and insert result
+        world_.gop.fence();
         return result;
 
     }
@@ -252,6 +256,7 @@ namespace integrals{
             utility::wprint_par(world_,formula.formula_string());
             utility::print_par(world_," Time: ", time, " s");
         }
+            //TODO nicer error handling
         // use two body engine
         else if(formula.operation().is_twobody()){
             auto time0 = mpqc_time::fenced_now(world_);
@@ -269,6 +274,9 @@ namespace integrals{
                     result("i,j") = -result("i,j");
                 }
 
+//                utility::parallel_break_point(world_,0);
+//                std::cout << "Before Array To Eigen" << std::endl;
+//                std::cout << result << std::endl;
                 MatrixD result_eig = array_ops::array_to_eigen(result);
 
                 // compute cholesky decomposition

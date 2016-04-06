@@ -31,8 +31,57 @@ public:
 
     void compute_mp2_f12_c();
 
-    TA::expressions::TsrExpr<TArray,true> mo_integral(const std::wstring& str){
-        return std::move(mo_int_(str));
+private:
+
+    struct MP2F12Energy {
+        using result_type =  double;
+        using argument_type =  Tile;
+
+        double iiii;
+        double ijij;
+        double ijji;
+
+        MP2F12Energy() = default;
+        MP2F12Energy(MP2F12Energy const &) = default;
+        MP2F12Energy(double c1, double c2, double c3) : iiii(c1), ijij(c2), ijji(c3) {}
+
+        result_type operator()() const { return 0.0; }
+
+        result_type operator()(result_type const &t) const { return t; }
+
+        void operator()(result_type &me, result_type const &other) const {
+            me += other;
+        }
+
+        void operator()(result_type &me, argument_type const &tile) const {
+            auto const &range = tile.range();
+
+            TA_ASSERT(range.rank() == 4);
+
+            auto const st = range.lobound_data();
+            auto const fn = range.upbound_data();
+            auto tile_idx = 0;
+            for (auto i = st[0]; i < fn[0]; ++i) {
+                for (auto j = st[1]; j < fn[1]; ++j) {
+                    for (auto k = st[2]; k < fn[2]; ++k) {
+                        for (auto l = st[3]; l < fn[3]; ++l, ++tile_idx) {
+                            // iiii
+                            if( (i==j) && (i==k) && (k==l)){
+                                me += iiii*tile.data()[tile_idx];
+                            }
+                            // ijij
+                            else if(i > j && k==i && l==j){
+                                me += ijij*tile.data()[tile_idx];
+                            }
+                            // ijji
+                            else if( j > i && l==i && k==j){
+                                me += ijji*tile.data()[tile_idx];
+                            }
+                        }
+                    }
+                }
+            }
+        }
     };
 
 private:

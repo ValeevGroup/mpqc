@@ -10,6 +10,11 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
 
     auto& world = mo_int_.get_world();
 
+    double E = 0.0;
+
+    auto& mo_integral = mo_int_;
+    auto& ao_integral = mo_int_.atomic_integral();
+
     auto occ = tre_->get_occ();
 
     TArray t2;
@@ -32,7 +37,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
     TArray V_ijij_ijji;
     {
         utility::print_par(world, "Compute V_ijij_ijji \n" );
-        V_ijij_ijji("i1,j1,i2,j2") = (mo_integral(L"(Κ |GR|i2 i1)")*mo_int_.atomic_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j1 j2)")).set_shape(ijij_ijji_shape);
+        V_ijij_ijji("i1,j1,i2,j2") = (mo_integral(L"(Κ |GR|i2 i1)")*mo_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j1 j2)")).set_shape(ijij_ijji_shape);
 
         // all types of GR integral not needed
         mo_int_.remove_operation_all(world, L"GR");
@@ -43,10 +48,16 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
         V_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(i1 m|G|j1 a')[df]")*mo_integral(L"(i2 m|R|j2 a')[df]")).set_shape(ijij_ijji_shape);
 //        std::cout << V_ijij_ijji << std::endl;
         V_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]")).set_shape(ijij_ijji_shape);
-//        std::cout << V_ijij_ijji << std::endl;
+        std::cout << V_ijij_ijji << std::endl;
 
         // G integral in MO not needed, still need G integral in AO to compute F, K, hJ
         mo_int_.registry().remove_operation(world, L"G");
+
+
+        //contribution from V_ijij_ijji
+        double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
+        utility::print_par(world, "E_V: ", E_v, "\n");
+        E += E_v;
     }
 
     // compute C term
@@ -59,31 +70,33 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
 
 
     {
-        utility::print_par(world, "Compute V_bar_ijij_ijji\n" );
-        V_ijij_ijji("i1,j1,i2,j2") = (V_ijij_ijji("i1,j1,i2,j2") + C_iajb("i1,a,j1,b")*t2("a,b,i2,j2")).set_shape(ijij_ijji_shape);
-//        std::cout << "V_bar_ijij_ijji" << std::endl;
-//        std::cout << V_ijij_ijji << std::endl;
+        utility::print_par(world, "Compute CT\n" );
+        V_ijij_ijji("i1,j1,i2,j2") = (C_iajb("i1,a,j1,b")*t2("a,b,i2,j2")).set_shape(ijij_ijji_shape);
 
+        double E_ct = V_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
+        utility::print_par(world, "E_CT: ", E_ct, "\n");
+//        std::cout << V_ijij_ijji << std::endl;
+//        E += E_ct;
     }
 
 
     // compute energy E21
-    double E21 = 0.0;
-    {
-        // diagonal sum
-        E21 = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::DiagonalSum<TA::TensorD>());
-
-        // off diagonal sum
-        E21 += 0.5*(5*V_ijij_ijji("i1,j1,i2,j2")-V_ijij_ijji("i1,j1,j2,i2")).reduce(f12::OffDiagonalSum<TA::TensorD>());
-        utility::print_par(world, "E21: ", E21, "\n");
-
-    }
+//    double E21 = 0.0;
+//    {
+//        // diagonal sum
+//        E21 = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::DiagonalSum<TA::TensorD>());
+//
+//        // off diagonal sum
+//        E21 += 0.5*(5*V_ijij_ijji("i1,j1,i2,j2")-V_ijij_ijji("i1,j1,j2,i2")).reduce(f12::OffDiagonalSum<TA::TensorD>());
+//        utility::print_par(world, "E21: ", E21, "\n");
+//
+//    }
 
     // compute X term
     TArray X_ijij_ijji;
     {
         utility::print_par(world, "X_ijij_ijji \n" );
-        X_ijij_ijji("i1,j1,i2,j2") = (mo_integral(L"(Κ |R2|i1 i2)")*mo_integral(L"(Κ|R2|Λ)[inv]")*mo_integral(L"(Λ |R2|j1 j2)")).set_shape(ijij_ijji_shape);
+        X_ijij_ijji("i1,j1,i2,j2") = (mo_integral(L"(Κ |R2|i1 i2)")*ao_integral(L"(Κ|R2|Λ)[inv]")*mo_integral(L"(Λ |R2|j1 j2)")).set_shape(ijij_ijji_shape);
 
 
 //        std::cout << X_ijij_ijji << std::endl;
@@ -92,10 +105,19 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
         X_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(i1 m|R|j1 a')[df]")*mo_integral(L"(i2 m|R|j2 a')[df]")).set_shape(ijij_ijji_shape);
 //        std::cout << X_ijij_ijji << std::endl;
         X_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|R|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]")).set_shape(ijij_ijji_shape);
-//        std::cout << X_ijij_ijji << std::endl;
+        std::cout << X_ijij_ijji << std::endl;
 
         // R_ipjq not needed
         mo_int_.registry().remove_formula(world, L"(i1 p|R|j1 q)[df]");
+
+        auto Fij = mo_int_.compute(L"(i|F|j)[df]");
+        auto Fij_eigen = array_ops::array_to_eigen(Fij);
+        f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
+
+        double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
+        utility::print_par(world, "E_X: ", E_x, "\n");
+        E += E_x;
+
     }
 
     // compute B term
@@ -104,7 +126,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
 
         utility::print_par(world, "Compute B_ijij_ijji \n");
 
-        B_ijij_ijji("i1,j1,i2,j2") = (mo_integral(L"(Κ |dR2|i1 i2)")*mo_integral(L"(Κ|dR2|Λ)[inv]")*mo_integral(L"(Λ |dR2|j1 j2)")).set_shape(ijij_ijji_shape);
+        B_ijij_ijji("i1,j1,i2,j2") = (mo_integral(L"(Κ |dR2|i1 i2)")*ao_integral(L"(Κ|dR2|Λ)[inv]")*mo_integral(L"(Λ |dR2|j1 j2)")).set_shape(ijij_ijji_shape);
 
         mo_int_.remove_operation_all(world, L"dR2");
 //        std::cout << B_ijij_ijji << std::endl;
@@ -149,33 +171,33 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c() {
         B_ijij_ijji("i1,j1,i2,j2") -= (2.0*mo_integral(L"(i1 p|R|j1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(j2 a|R|i2 a')[df]")).set_shape(ijij_ijji_shape);
         B_ijij_ijji("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(i2 a|R|j2 a')[df]")).set_shape(ijij_ijji_shape);
 
-//        std::cout << B_ijij_ijji << std::endl;
+        std::cout << B_ijij_ijji << std::endl;
+
+        double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
+        utility::print_par(world, "E_B: ", E_b, "\n");
+        E += E_b;
     }
 
     // compute B bar tem
     {
 
-        utility::print_par(world, "Compute B_bar_ijij_ijji \n");
-
-        auto Fij = mo_int_.compute(L"(i|F|j)[df]");
-        auto Fij_eigen = array_ops::array_to_eigen(Fij);
-        f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
-
+        utility::print_par(world, "Compute CC Term\n");
         auto C_bar_iajb = f12::convert_C_iajb(C_iajb, occ, orbital_energy_);
+        B_ijij_ijji("i1,j1,i2,j2") = (C_iajb("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
 
-        B_ijij_ijji("i1,j1,i2,j2") = B_ijij_ijji("i1,j1,i2,j2") - X_ijij_ijji("i1,j1,i2,j2") + (C_iajb("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
-//        B_ijij_ijji("i1,j1,i2,j2") = B_ijij_ijji("i1,j1,i2,j2") - X_ijij_ijji("i1,j1,i2,j2");
-//        std::cout << "B bar ijij_ijji Shape" << std::endl;
-//        std::cout << B_ijij_ijji << std::endl;
+        double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
+        utility::print_par(world, "E_CC: ", E_cc, "\n");
+//        E += E_cc;
     }
 
-    double E22 = 0.0;
-    {
-        // diagonal sum
-        E22 = 0.25*B_ijij_ijji("i1,j1,i2,j2").reduce(f12::DiagonalSum<TA::TensorD>());
-        // off diagonal sum
-        E22 += 0.0625 * (7 * B_ijij_ijji("i1,j1,i2,j2") + B_ijij_ijji("i1,j1,j2,i2")).reduce(f12::OffDiagonalSum<TA::TensorD>());
-        utility::print_par(world, "E22: ", E22, "\n");
-    }
-    utility::print_par(world, "E_F12: ", E21+E22, "\n");
+//    double E22 = 0.0;
+//    {
+//        // diagonal sum
+//        E22 = 0.25*B_ijij_ijji("i1,j1,i2,j2").reduce(f12::DiagonalSum<TA::TensorD>());
+//        // off diagonal sum
+//        E22 += 0.0625 * (7 * B_ijij_ijji("i1,j1,i2,j2") + B_ijij_ijji("i1,j1,j2,i2")).reduce(f12::OffDiagonalSum<TA::TensorD>());
+//        utility::print_par(world, "E22: ", E22, "\n");
+//    }
+    utility::print_par(world, "E_F12: ", E, "\n");
 }
+

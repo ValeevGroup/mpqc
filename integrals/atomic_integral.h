@@ -252,7 +252,9 @@ namespace integrals{
             }
             utility::print_par(world_,"Computed One Body Integral: ");
             utility::wprint_par(world_,formula.formula_string());
-            utility::print_par(world_," Time: ", time, " s");
+            double size = utility::array_size(result);
+            utility::print_par(world_," Size: ", size, " GB");
+            utility::print_par(world_," Time: ", time, " s\n");
         }
             //TODO nicer error handling
         // use two body engine
@@ -338,7 +340,9 @@ namespace integrals{
 
             utility::print_par(world_,"Computed Twobody Two Center Integral: ");
             utility::wprint_par(world_, formula.formula_string());
-            utility::print_par(world_," Time: ", time, " s");
+            double size = utility::array_size(result);
+            utility::print_par(world_," Size: ", size, " GB");
+            utility::print_par(world_," Time: ", time, " s\n");
         }
             //compute JK, requires orbital space registry
         else if(formula.operation().is_jk()){
@@ -387,7 +391,9 @@ namespace integrals{
             }
             utility::print_par(world_,"Computed Coulumb/Exchange Integral: ");
             utility::wprint_par(world_, formula.formula_string());
-            utility::print_par(world_," Time: ", time, " s");
+            double size = utility::array_size(result);
+            utility::print_par(world_," Size: ", size, " GB");
+            utility::print_par(world_," Time: ", time, " s\n");
 
         }
             // hJ = H + J
@@ -411,9 +417,12 @@ namespace integrals{
 
             utility::print_par(world_,"Computed Coulumb/Exchange Integral: ");
             utility::wprint_par(world_, formula.formula_string());
-            utility::print_par(world_," Time: ", time, " s");
+            double size = utility::array_size(result);
+            utility::print_par(world_," Size: ", size, " GB");
+            utility::print_par(world_," Time: ", time, " s\n");
         }
             //compute Fock, requires orbital space registry
+            // TODO use H instead of v and t
         else if(formula.operation().is_fock()){
 
             auto formulas = get_fock_formula(formula);
@@ -435,11 +444,11 @@ namespace integrals{
 
             utility::print_par(world_,"Computed Fock Integral: ");
             utility::wprint_par(world_, formula.formula_string());
-            utility::print_par(world_," Time: ", time, " s");
+            double size = utility::array_size(result);
+            utility::print_par(world_," Size: ", size, " GB");
+            utility::print_par(world_," Time: ", time, " s\n");
         }
 
-        double size = utility::array_size(result);
-        utility::print_par(world_," Size: ", size, " GB\n");
 
         return result;
 
@@ -465,9 +474,9 @@ namespace integrals{
 
         utility::print_par(world_,"Computed Twobody Three Center Integral: ");
         utility::wprint_par(world_, formula.formula_string());
-        utility::print_par(world_," Time: ", time, " s");
         double size = utility::array_size(result);
-        utility::print_par(world_," Size: ", size, " GB\n");
+        utility::print_par(world_," Size: ", size, " GB");
+        utility::print_par(world_," Time: ", time, " s\n");
 
         return result;
     }
@@ -499,7 +508,9 @@ namespace integrals{
 
             utility::print_par(world_,"Computed Twobody Four Center Density-Fitting Integral: ");
             utility::wprint_par(world_, formula.formula_string());
-            utility::print_par(world_," Time: ", time, " s");
+            double size = utility::array_size(result);
+            utility::print_par(world_," Size: ", size, " GB");
+            utility::print_par(world_," Time: ", time, " s\n");
 
 
         }
@@ -525,10 +536,10 @@ namespace integrals{
 
             utility::print_par(world_,"Computed Twobody Four Center Integral: ");
             utility::wprint_par(world_, formula.formula_string());
-            utility::print_par(world_," Time: ", time, " s");
+            double size = utility::array_size(result);
+            utility::print_par(world_," Size: ", size, " GB");
+            utility::print_par(world_," Time: ", time, " s\n");
         }
-        double size = utility::array_size(result);
-        utility::print_par(world_," Size: ", size, " GB\n");
         return result;
 
     }

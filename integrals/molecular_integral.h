@@ -143,9 +143,9 @@ namespace integrals{
             time+= mpqc_time::duration_in_s(time0,time1);
             utility::print_par(world_, "Computed Identity: ");
             utility::wprint_par(world_, formula_string.formula_string());
-            utility::print_par(world_," Time: ", time, " s");
             double size = utility::array_size(result);
-            utility::print_par(world_," Size: ", size, " GB\n");
+            utility::print_par(world_," Size: ", size, " GB");
+            utility::print_par(world_," Time: ", time, " s\n");
             return result;
         }
 
@@ -173,9 +173,9 @@ namespace integrals{
         time+= mpqc_time::duration_in_s(time0,time1);
         utility::print_par(world_, "Transformed MO Integral: ");
         utility::wprint_par(world_, formula_string.formula_string());
-        utility::print_par(world_," Time: ", time, " s");
         double size = utility::array_size(result);
-        utility::print_par(world_," Size: ", size, " GB\n");
+        utility::print_par(world_," Size: ", size, " GB");
+        utility::print_par(world_," Time: ", time, " s\n");
 
         return result;
     }
@@ -210,9 +210,9 @@ namespace integrals{
 
         utility::print_par(world_, "Transformed MO Integral: ");
         utility::wprint_par(world_, formula_string.formula_string());
-        utility::print_par(world_," Time: ", time, " s");
         double size = utility::array_size(result);
-        utility::print_par(world_," Size: ", size, " GB\n");
+        utility::print_par(world_," Size: ", size, " GB");
+        utility::print_par(world_," Time: ", time, " s\n");
 
         return result;
     };
@@ -286,9 +286,9 @@ namespace integrals{
 
         utility::print_par(world_, "Transformed MO Integral: ");
         utility::wprint_par(world_, formula_string.formula_string());
-        utility::print_par(world_," Time: ", time, " s");
         double size = utility::array_size(result);
-        utility::print_par(world_," Size: ", size, " GB\n");
+        utility::print_par(world_," Size: ", size, " GB");
+        utility::print_par(world_," Time: ", time, " s\n");
 
         return result;
     }

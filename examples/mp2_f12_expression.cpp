@@ -103,6 +103,12 @@ int main(int argc, char *argv[]) {
 
     basis::Basis ri_basis = basis.join(abs_basis);
 
+    utility::parallel_print_range_info(world, basis.create_trange1(), "OBS Basis");
+    utility::parallel_print_range_info(world, df_basis.create_trange1(), "DF Basis");
+    utility::parallel_print_range_info(world, abs_basis.create_trange1(), "AUX Basis");
+    utility::parallel_print_range_info(world, ri_basis.create_trange1(), "RI Basis");
+
+
     auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
     bs_registry->add(OrbitalIndex(L"κ"),std::make_shared<basis::Basis>(basis));
     bs_registry->add(OrbitalIndex(L"Κ"),std::make_shared<basis::Basis>(df_basis));
@@ -183,6 +189,10 @@ int main(int argc, char *argv[]) {
     auto tr_i0 = tre.get_occ_tr1();
     auto tr_vir = tre.get_vir_tr1();
 
+    utility::parallel_print_range_info(world, tr_i0, "Occ");
+    utility::parallel_print_range_info(world, tr_vir, "Vir");
+    utility::parallel_print_range_info(world, tr_all, "Obs");
+
     auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ_corr, tr_0, tr_i0);
     auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir, tr_0, tr_vir);
     auto Call = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_all, tr_0, tr_all);
@@ -258,6 +268,9 @@ int main(int argc, char *argv[]) {
 
         auto tr_cabs = S_cabs.trange().data()[0];
         auto tr_ribs = S_ribs.trange().data()[0];
+
+        utility::parallel_print_range_info(world, tr_cabs, "CABS");
+        utility::parallel_print_range_info(world, tr_ribs, "RIBS");
 
         C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen, tr_ribs, tr_cabs);
         C_ri = array_ops::eigen_to_array<TA::TensorD>(world, X_ribs_eigen_inv, tr_ribs, tr_ribs);

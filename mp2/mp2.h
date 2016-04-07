@@ -33,7 +33,7 @@ namespace mpqc{
 
             auto g_iajb = mo_int_.compute(L"(i a|G|j b)[df]");
             // compute mp2 energy
-            double energy_mp2 = (g_iajb("i,a,j,b") * (2 * g_iajb("i,a,j,b") - g_iajb("i,b,j,a"))).reduce(Mp2Red(orbital_energy_, trange1_engine_->get_actual_occ()));
+            double energy_mp2 = (g_iajb("i,a,j,b") * (2 * g_iajb("i,a,j,b") - g_iajb("i,b,j,a"))).reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_actual_occ()));
 
             if (g_iajb.get_world().rank() == 0) {
                 std::cout << "MP2 Energy With DF: " << energy_mp2 << std::endl;
@@ -44,7 +44,7 @@ namespace mpqc{
 
             auto g_iajb = mo_int_.compute(L"(i a|G|j b)");
             // compute mp2 energy
-            double energy_mp2 = (g_iajb("i,a,j,b") * (2 * g_iajb("i,a,j,b") - g_iajb("i,b,j,a"))).reduce(Mp2Red(orbital_energy_, trange1_engine_->get_actual_occ()));
+            double energy_mp2 = (g_iajb("i,a,j,b") * (2 * g_iajb("i,a,j,b") - g_iajb("i,b,j,a"))).reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_actual_occ()));
 
             if (g_iajb.get_world().rank() == 0) {
                 std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
@@ -57,17 +57,17 @@ namespace mpqc{
 
     private:
 
-        struct Mp2Red {
+        struct Mp2Energy {
             using result_type = double;
             using argument_type = Tile;
 
             std::shared_ptr<Eig::VectorXd> vec_;
             unsigned int n_occ_;
 
-            Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+            Mp2Energy(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
                     : vec_(std::move(vec)), n_occ_(n_occ) { }
 
-            Mp2Red(Mp2Red const &) = default;
+            Mp2Energy(Mp2Energy const &) = default;
 
             result_type operator()() const { return 0.0; }
 

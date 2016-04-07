@@ -19,6 +19,7 @@
 #include "../utility/make_array.h"
 #include "task_integrals.h"
 #include "make_engine.h"
+#include "../expression/orbital_registry.h"
 
 namespace mpqc {
 namespace integrals {
@@ -31,47 +32,21 @@ public:
 
 
     AtomicIntegralBase(madness::World &world,
-                       std::shared_ptr <molecule::Molecule> mol,
-                       std::shared_ptr <basis::Basis> obs,
-                       std::shared_ptr <basis::Basis> dfbs = nullptr,
-                       std::shared_ptr <basis::Basis> auxbs = nullptr,
-                       std::vector <std::pair<double, double>> gtg_params = std::vector<std::pair<double,double>>()
+                       const std::shared_ptr <molecule::Molecule>& mol,
+                       const std::shared_ptr <OrbitalBasisRegistry>& obs,
+                       const std::vector <std::pair<double, double>>& gtg_params = std::vector<std::pair<double,double>>()
                         )
-    : world_(world), mol_(mol), obs_(obs), dfbs_(dfbs), abs_(auxbs), gtg_params_(gtg_params)
-    {
-        if (auxbs != nullptr) {
-            ribs_ = std::make_shared<basis::Basis>(std::move(obs->join(*auxbs)));
-        }
-        else {
-            ribs_ = nullptr;
-        }
-    }
+    : world_(world), mol_(mol), orbital_basis_registry_(obs), gtg_params_(gtg_params)
+    { }
 
     virtual ~AtomicIntegralBase() = default;
-
 
     madness::World &get_world() const {
         return world_;
     }
 
-    const std::shared_ptr <basis::Basis> get_obs() const {
-        return obs_;
-    }
-
-    const std::shared_ptr <basis::Basis> get_dfbs() const {
-        return dfbs_;
-    }
-
-    const std::shared_ptr <basis::Basis> get_abs() const {
-        return abs_;
-    }
-
-    void set_dfbs(const std::shared_ptr <basis::Basis> &dfbs) {
-        AtomicIntegralBase::dfbs_ = dfbs;
-    }
-
-    void set_abs(const std::shared_ptr <basis::Basis> &abs) {
-        AtomicIntegralBase::abs_ = abs;
+    void set_orbital_basis_registry(const std::shared_ptr<OrbitalBasisRegistry>& obs){
+        orbital_basis_registry_ = obs;
     }
 
     std::array<std::wstring, 3> get_df_formula(const Formula &formula);
@@ -111,31 +86,14 @@ protected:
     OrbitalIndex get_jk_orbital_space(const Operation& operation);
 
     std::shared_ptr <basis::Basis> index_to_basis(const OrbitalIndex &index) {
-        if (index.index() == OrbitalIndex::Index::obs) {
-            return obs_;
-        }
-        else if (index.index() == OrbitalIndex::Index::abs) {
-            return abs_;
-        }
-        else if (index.index() == OrbitalIndex::Index::dfbs) {
-            return dfbs_;
-        }
-        else if (index.index() == OrbitalIndex::Index::ribs) {
-            return ribs_;
-        }
-        else {
-            throw std::runtime_error("Wrong Index!");
-        }
+        return orbital_basis_registry_->retrieve(index);
     }
 
 protected:
 
     madness::World &world_;
     std::shared_ptr <molecule::Molecule> mol_;
-    std::shared_ptr <basis::Basis> obs_;
-    std::shared_ptr <basis::Basis> dfbs_;
-    std::shared_ptr <basis::Basis> abs_;
-    std::shared_ptr <basis::Basis> ribs_;
+    std::shared_ptr<OrbitalBasisRegistry> orbital_basis_registry_;
     std::vector <std::pair<double, double>> gtg_params_;
 
 };

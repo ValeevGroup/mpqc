@@ -25,7 +25,7 @@ public:
     OrbitalRegistry(const element_type& map) : Registry<Key,Value>(map){}
 
     void add(const Value& val){
-        this->insert(val.key(),val);
+        this->insert(val.mo_key(),val);
     }
 
     void add(const Key& key, const Value& val){
@@ -36,6 +36,9 @@ public:
 
 template <typename Array>
 using OrbitalSpaceRegistry = OrbitalRegistry<OrbitalSpace<Array>>;
+
+using OrbitalBasisRegistry = OrbitalRegistry<std::shared_ptr<mpqc::basis::Basis>>;
+
 } // end of namespace mpqc
 
 

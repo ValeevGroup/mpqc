@@ -94,6 +94,15 @@ int main(int argc, char *argv[]) {
     basis::BasisSet abs(aux_basis_name);
     basis::Basis abs_basis(abs.get_cluster_shells(clustered_mol));
 
+    basis::Basis ri_basis = basis.join(abs_basis);
+
+    auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
+    bs_registry->add(OrbitalIndex(L"κ"),std::make_shared<basis::Basis>(basis));
+    bs_registry->add(OrbitalIndex(L"Κ"),std::make_shared<basis::Basis>(df_basis));
+    bs_registry->add(OrbitalIndex(L"α"), std::make_shared<basis::Basis>(abs_basis));
+    bs_registry->add(OrbitalIndex(L"ρ"), std::make_shared<basis::Basis>(ri_basis));
+
+
     f12::GTGParams gtg_params(1.0, 6);
 
 
@@ -109,9 +118,7 @@ int main(int argc, char *argv[]) {
             (world,
              ta_pass_through,
              std::make_shared<molecule::Molecule>(clustered_mol),
-             std::make_shared<basis::Basis>(basis),
-             std::make_shared<basis::Basis>(df_basis),
-             std::make_shared<basis::Basis>(abs_basis),
+             bs_registry,
              gtg_params.compute()
             );
 
@@ -165,16 +172,16 @@ int main(int argc, char *argv[]) {
 
     auto orbital_registry = OrbitalSpaceRegistry<decltype(Ci)>();
     using OrbitalSpace = OrbitalSpace<decltype(Ci)>;
-    auto occ_space = OrbitalSpace(OrbitalIndex(L"m"),Ci);
+    auto occ_space = OrbitalSpace(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), Ci);
     orbital_registry.add(occ_space);
 
-    auto corr_occ_space = OrbitalSpace(OrbitalIndex(L"i"),Ci);
+    auto corr_occ_space = OrbitalSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), Ci);
     orbital_registry.add(corr_occ_space);
 
-    auto vir_space = OrbitalSpace(OrbitalIndex(L"a"),Cv);
+    auto vir_space = OrbitalSpace(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), Cv);
     orbital_registry.add(vir_space);
 
-    auto obs_space = OrbitalSpace(OrbitalIndex(L"p"),Call);
+    auto obs_space = OrbitalSpace(OrbitalIndex(L"p"),OrbitalIndex(L"κ"), Call);
     orbital_registry.add(obs_space);
 
     auto sp_orbital_registry = std::make_shared<decltype(orbital_registry)>(orbital_registry);
@@ -274,8 +281,8 @@ int main(int argc, char *argv[]) {
         C_ri = array_ops::eigen_to_array<TA::TensorD>(world, X_ribs_eigen_inv, tr_ribs, tr_ribs);
 
 
-        auto C_cabs_space = OrbitalSpace(OrbitalIndex(L"a'"), C_cabs);
-        auto C_ribs_space = OrbitalSpace(OrbitalIndex(L"P'"), C_ri);
+        auto C_cabs_space = OrbitalSpace(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
+        auto C_ribs_space = OrbitalSpace(OrbitalIndex(L"P'"), OrbitalIndex(L"ρ"), C_ri);
         mo_integral.orbital_space()->add(C_cabs_space);
         mo_integral.orbital_space()->add(C_ribs_space);
 

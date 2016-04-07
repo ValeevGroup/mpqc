@@ -18,18 +18,26 @@ class OrbitalSpace{
 public:
 
     OrbitalSpace() = default;
-    OrbitalSpace(const OrbitalIndex& index, const Array& tarray)
-            : index_(index), coefs_(tarray)
+    OrbitalSpace(const OrbitalIndex& mo_index, const OrbitalIndex& ao_index, const Array& tarray)
+            : mo_index_(mo_index), ao_index_(ao_index), coefs_(tarray)
     {}
 
     ~OrbitalSpace()= default;
 
-    OrbitalIndex &key(){
-        return index_;
+    OrbitalIndex &mo_key(){
+        return mo_index_;
     }
 
-    const OrbitalIndex &key() const {
-        return index_;
+    const OrbitalIndex &mo_key() const {
+        return mo_index_;
+    }
+
+    OrbitalIndex &ao_key(){
+        return ao_index_;
+    }
+
+    const OrbitalIndex &ao_key() const {
+        return ao_index_;
     }
 
     Array& array() {
@@ -40,13 +48,13 @@ public:
         return coefs_;
     }
 
-// interface to TA::Array () function
-    TA::expressions::TsrExpr<Array,true>
+    /// interface to TA::Array () function
+    TA::expressions::TsrExpr<Array, true>
             operator()(const std::string& vars){
         return coefs_(vars);
     };
 
-    // interface to TA::Array () function
+    /// interface to TA::Array () function
     TA::expressions::TsrExpr<const Array,true>
     operator()(const std::string& vars) const {
         return coefs_(vars);
@@ -54,7 +62,8 @@ public:
 
 private:
 
-    OrbitalIndex index_;
+    OrbitalIndex mo_index_;
+    OrbitalIndex ao_index_;
     Array coefs_;
 
 };

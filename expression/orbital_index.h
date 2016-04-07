@@ -23,7 +23,8 @@ namespace mpqc{
     *     - P',Q',R',S' -> allany (complete basis, cbs)
     *
     *   AO Orbitals(greek letter)
-    *     - κ λ  μ ν -> obs(orbital basis)
+    *     - κ λ  μ ν -> obs(primary orbital basis)
+    *     - Α Β Γ Δ -> obs(sencodary orbital basis)
     *     - Κ Λ Μ Ν -> dfbs(density fitting basis)
     *     - α β γ δ -> abs(auxilary basis)
     *     - ρ σ τ υ -> ribs(obs + abs)
@@ -47,9 +48,10 @@ public:
         allvirt = 15,
         allany = 19,
         obs = -1,
-        abs = -2,
-        dfbs = -4,
-        ribs = -3
+        vbs = -2,
+        abs = -3,
+        ribs = -4,
+        dfbs = -5
     };
 
     enum class Spin{
@@ -69,6 +71,7 @@ public:
     static const wchar_t allvirt_wchar[2];
     static const wchar_t allany_wchar[2];
     static const wchar_t obs_wchar[4];
+    static const wchar_t vbs_wchar[4];
     static const wchar_t dfbs_wchar[4];
     static const wchar_t abs_wchar[4];
     static const wchar_t ribs_wchar[4];
@@ -122,6 +125,8 @@ public:
     // if ribs
     bool is_mo_in_ribs() const;
 
+    /// Default MO to AO mapping
+    /// othervir, allvir, allany -> ribs
     OrbitalIndex mo_to_ao () const;
 
     std::string to_ta_expression() const;

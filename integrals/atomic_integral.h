@@ -39,12 +39,10 @@ namespace integrals{
 
         AtomicIntegral(madness::World& world,
                 Op op,
-                std::shared_ptr<molecule::Molecule> mol,
-                std::shared_ptr<basis::Basis> obs,
-                std::shared_ptr<basis::Basis> dfbs = nullptr,
-                std::shared_ptr<basis::Basis> auxbs = nullptr,
-                std::vector<std::pair<double,double>> gtg_params = std::vector<std::pair<double,double>>()
-        ) : AtomicIntegralBase(world,mol,obs,dfbs,auxbs,gtg_params), op_(op), ao_formula_registry_(), orbital_space_registry_()
+                const std::shared_ptr<molecule::Molecule>& mol,
+                const std::shared_ptr <OrbitalBasisRegistry>& obs,
+                const std::vector<std::pair<double,double>>& gtg_params = std::vector<std::pair<double,double>>()
+        ) : AtomicIntegralBase(world,mol,obs,gtg_params), op_(op), ao_formula_registry_(), orbital_space_registry_()
         {}
 
         AtomicIntegral(AtomicIntegral&& ) = default;
@@ -480,7 +478,6 @@ namespace integrals{
         TArray result;
 
         if(formula.operation().has_option(Operation::Options::DensityFitting)){
-            TA_ASSERT(this->dfbs_!= nullptr);
 
             // convert formula to df formula
             auto formula_strings = get_df_formula(formula);

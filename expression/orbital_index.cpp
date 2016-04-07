@@ -27,6 +27,7 @@ const wchar_t OrbitalIndex::othervirt_wchar[2] = {L'a',L'd'};
 const wchar_t OrbitalIndex::allvirt_wchar[2] = {L'A',L'D'};
 const wchar_t OrbitalIndex::allany_wchar[2] = {L'P',L'S'};
 const wchar_t OrbitalIndex::obs_wchar[4] = {L'κ',L'λ',L'μ',L'ν'};
+const wchar_t OrbitalIndex::vbs_wchar[4] = {L'Α',L'Β',L'Γ',L'Δ'};
 const wchar_t OrbitalIndex::dfbs_wchar[4] = {L'Κ',L'Λ',L'Μ', L'Ν'};
 const wchar_t OrbitalIndex::abs_wchar[4] = {L'α', L'β',L'γ',L'δ'};
 const wchar_t OrbitalIndex::ribs_wchar[4] = {L'ρ',L'σ',L'τ',L'υ'};
@@ -165,6 +166,9 @@ OrbitalIndex::Index OrbitalIndex::wchar_to_index(const wchar_t first) {
     }
     else if (first >= obs_wchar[0] && first <= obs_wchar[3]) {
         return Index::obs;
+    }
+    else if (first >= vbs_wchar[0] && first <= vbs_wchar[3]) {
+        return Index::vbs;
     }
     else if (first >= abs_wchar[0] && first <= abs_wchar[3]){
         return Index::abs;

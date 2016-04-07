@@ -300,19 +300,35 @@ Formula MolecularIntegral<Tile,Policy>::mo_to_ao(const Formula &formula) {
 
     auto left_index = formula.left_index();
     for(const auto& index : left_index){
-        ao_left_index.push_back(index.mo_to_ao());
+
+        // find the correspoding ao index
+        if(index.is_mo()){
+            auto ao_index = orbital_space_registry_->retrieve(index).ao_key();
+            ao_left_index.push_back(ao_index);
+        }
+        // if already ao, do nothing
+        else{
+            ao_left_index.push_back(index);
+        }
     }
 
     auto right_index = formula.right_index();
     for(const auto& index : right_index){
-        ao_right_index.push_back(index.mo_to_ao());
+        // find the correspoding ao index
+        if(index.is_mo()){
+            auto ao_index = orbital_space_registry_->retrieve(index).ao_key();
+            ao_right_index.push_back(ao_index);
+        }
+        // if already ao, do nothing
+        else{
+            ao_right_index.push_back(index);
+        }
     }
 
+    // set formula with ao index
     auto ao_formula = formula;
     ao_formula.set_left_index(ao_left_index);
     ao_formula.set_right_index(ao_right_index);
-
-
 
     return ao_formula;
 }

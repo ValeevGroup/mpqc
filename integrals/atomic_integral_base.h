@@ -29,6 +29,7 @@ public:
 
     AtomicIntegralBase() = default;
 
+
     AtomicIntegralBase(madness::World &world,
                        std::shared_ptr <molecule::Molecule> mol,
                        std::shared_ptr <basis::Basis> obs,

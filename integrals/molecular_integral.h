@@ -13,7 +13,7 @@
 #include "../expression/formula.h"
 #include "../expression/formula_registry.h"
 #include "atomic_integral.h"
-#include "../expression/orbital_space_registry.h"
+#include "../expression/orbital_registry.h"
 #include "../ta_routines/diagonal_array.h"
 
 

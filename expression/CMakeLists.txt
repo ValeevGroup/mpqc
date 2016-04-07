@@ -9,7 +9,7 @@ set(sources
         formula_registry.h
         greek_to_english_name.h
         orbital_space.h
-        orbital_space_registry.h
+        orbital_registry.h
         )
 
 add_library(expression ${sources})

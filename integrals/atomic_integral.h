@@ -8,7 +8,7 @@
 
 #include "../f12/f12_utility.h"
 #include "../expression/formula_registry.h"
-#include "../expression/orbital_space_registry.h"
+#include "../expression/orbital_registry.h"
 #include "atomic_integral_base.h"
 #include "../utility/wcout_utf8.h"
 #include "../ta_routines/array_to_eigen.h"

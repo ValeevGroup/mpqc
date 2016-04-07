@@ -23,7 +23,7 @@
 #include "../utility/cc_utility.h"
 #include "../integrals/integrals.h"
 #include "../integrals/atomic_integral.h"
-#include "../expression/orbital_space_registry.h"
+#include "../expression/orbital_registry.h"
 
 #include "../utility/time.h"
 #include "../utility/wcout_utf8.h"
@@ -286,9 +286,9 @@ int main(int argc, char *argv[]) {
 
     f12::MP2F12 mp2f12(mo_integral, std::make_shared<TRange1Engine>(tre), ens);
 
-    mp2f12.compute_mp2_f12_c();
-    mo_integral.registry().clear();
-    ao_int.registry().clear();
+//    mp2f12.compute_mp2_f12_c();
+//    mo_integral.registry().clear();
+//    ao_int.registry().clear();
     mp2f12.compute_mp2_f12_c_df();
 
 //    ao_int.registry().print_formula(world);

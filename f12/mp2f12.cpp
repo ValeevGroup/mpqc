@@ -75,7 +75,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
 
         double E_ct = V_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
         utility::print_par(world, "E_CT: ", E_ct, "\n");
-//        E += E_ct;
+        E += E_ct;
     }
 
 
@@ -173,7 +173,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
 
         double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
         utility::print_par(world, "E_CC: ", E_cc, "\n");
-//        E += E_cc;
+        E += E_cc;
     }
 
     utility::print_par(world, "E_F12: ", E, "\n");
@@ -236,6 +236,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c(){
 
         double E_ct = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
         utility::print_par(world, "E_CT: ", E_ct, "\n");
+        E += E_ct;
     }
 
     TArray X_ijij_ijji_nodf;
@@ -306,7 +307,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c(){
 
         double E_cc = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
         utility::print_par(world, "E_CC: ", E_cc, "\n");
-//        E += E_cc;
+        E += E_cc;
     }
 
     utility::print_par(world, "E_F12: ", E, "\n");

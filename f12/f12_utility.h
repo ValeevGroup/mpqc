@@ -59,13 +59,13 @@ void convert_X_ijkl(TiledArray::Array<double, 4, Tile, Policy> &ijkl,
         auto tile_idx = 0;
         typename Tile::value_type norm = 0.0;
         for (auto i = i0; i < in; ++i) {
+            const auto f_ii = F(i,i);
             for (auto j = j0; j < jn; ++j) {
+                const auto f_jj = F(j,j);
                 for (auto k = k0; k < kn; ++k) {
                     for (auto l = l0; l < ln; ++l, ++tile_idx) {
                         const auto old = result_tile[tile_idx];
-                        const auto f_ik = F(i,k);
-                        const auto f_jl = F(j,l);
-                        const auto result_abij = old*(f_ik+f_jl);
+                        const auto result_abij = old*(f_ii+f_jj);
                         norm += result_abij*result_abij;
                         result_tile[tile_idx] = result_abij;
                     }

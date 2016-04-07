@@ -1,6 +1,6 @@
 set(sources 
-    eom_cc.h
-    eom_cc.cpp
+    eom_ccsd.h
+    eom_ccsd.cpp
         )
 
 add_library(libeomcc ${sources})

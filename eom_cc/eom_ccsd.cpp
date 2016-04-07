@@ -4,9 +4,11 @@
  *  Created on: Feb 26, 2016
  *      Author: jinmei
  */
-#include "eom_cc.h"
+#include <math.h>
 #include <rapidjson/document.h>
 #include <tiledarray.h>
+#include <Eigen/Eigenvalues>
+#include "eom_ccsd.h"
 
 namespace mpqc{
 
@@ -199,28 +201,29 @@ namespace mpqc{
   // compute [HSS C]^A_I
   TArray EOM_CCSD::compute_HSSC(TArray Cai) {
     TArray HSSC;
-    HSSC("a,i") =  //   Fae C^e_i
+    HSSC("a,i") =  //   Fac C^c_i
                    FAB_("a,c") * Cai("c,i")
-                   // - Fmi C^a_m
+                   // - Fki C^a_k
                  - FIJ_("k,i") * Cai("a,k")
-                   // + Wamie C^e_m
-                 + (2.0 * WIbAj_("i,c,a,k") + WIbaJ_("i,c,a,k"))
+                   // + Wakic C^c_k
+                 + (2.0 * WIbAj_("k,a,c,i") + WIbaJ_("k,a,c,i"))
                    * Cai("c,k")
                  ;
     return HSSC;
   }
+
   // compute [HSD C]^A_I
   TArray EOM_CCSD::compute_HSDC(TArray Cabij) {
     TArray HSDC;
-    HSDC("a,i") =  //   Fme C^ae_im
+    HSDC("a,i") =  //   Fkc C^ac_ik
                    FIA_("k,c")
                    * (2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k"))
-                   // + 1/2 Wamef C^ef_im
+                   // + 1/2 Wakcd C^cd_ik
                  + WAkCd_("a,k,c,d")
                    * (2.0 * Cabij("c,d,i,k") - Cabij("d,c,i,k"))
-                   // - 1/2 Wmnie C^ae_mn
+                   // - 1/2 Wklic C^ac_kl
                  - WKlIc_("k,l,i,c")
-                   * (2.0 * Cabij("a,c,k,l") - Cabij("d,c,i,k"))
+                   * (2.0 * Cabij("a,c,k,l") - Cabij("a,c,l,k"))
                  ;
     return HSDC;
   }
@@ -228,24 +231,24 @@ namespace mpqc{
   // compute [HDS C]^Ab_Ij
   TArray EOM_CCSD::compute_HDSC(TArray Cai) {
     TArray HDSC;
-    HDSC("a,b,i,j") =  //   P(ab) Wmaij C^b_m
-                       // - WmAjI C^b_m - WMbIj C^A_M
+    HDSC("a,b,i,j") =  //   P(ab) Wkaij C^b_k
+                       // - WkAjI C^b_k - WKbIj C^A_K
                      - WKaIj_("k,a,j,i") * Cai("b,k")
                      - WKaIj_("k,b,i,j") * Cai("a,k")
-                       // + P(ij) Wabej C^e_i
-                       // + WAbEj C^E_I + WbAeI C^e_j
+                       // + P(ij) Wabcj C^c_i
+                       // + WAbCj C^C_I + WbAcI C^c_j
                      + WAbCi_("a,b,c,j") * Cai("c,i")
                      + WAbCi_("b,a,c,i") * Cai("c,j")
-                       // + P(ab) Wbmfe C^e_m T^af_ij
-                       // + WbMfE C^E_M T^Af_Ij + Wbmfe C^e_m T^Af_Ij
-                       // - WAMFE C^E_M T^bF_Ij - WAmFe C^e_m T^bF_Ij
+                       // + P(ab) Wbkdc C^c_k T^ad_ij
+                       // + WbKdC C^C_K T^Ad_Ij + Wbkdc C^c_k T^Ad_Ij
+                       // - WAKDC C^C_K T^bD_Ij - WAkDc C^c_k T^bD_Ij
                      + (2.0 * WAkCd_("b,k,d,c") - WAkCd_("b,k,c,d") )
                        * Cai("c,k") * T2_("a,d,i,j")
                      + (2.0 * WAkCd_("a,k,d,c") - WAkCd_("a,k,c,d") )
                        * Cai("c,k") * T2_("d,b,i,j")
-                       // - P(ij) Wnmje C^e_m t^ab_in
-                       // - WnMjE C^E_M T^Ab_In - Wnmje C^e_m T^Af_Ij
-                       // + WNMIE C^E_M T^Ab_jN + WNmIe C^e_m T^Ab_jN
+                       // - P(ij) Wlkjc C^c_k t^ab_il
+                       // - WlKjC C^C_K T^Ab_Il - Wlkjc C^c_k T^Ad_Ij
+                       // + WLKIC C^C_K T^Ab_jL + WLkIc C^c_k T^Ab_jL
                      - (2.0 * WKlIc_("l,k,j,c") - WKlIc_("k,l,j,c") )
                        * Cai("c,k") * T2_("a,b,i,l")
                      - (2.0 * WKlIc_("l,k,i,c") - WKlIc_("k,l,i,c") )
@@ -256,49 +259,53 @@ namespace mpqc{
 
   // compute [HDD C]^Ab_Ij
   TArray EOM_CCSD::compute_HDDC(TArray Cabij) {
+
     TArray GC_ab, GC_ij, HDDC;
     GC_ab("a,b") = Gabij_("a,c,k,l")
                 * (2.0 * Cabij("b,c,k,l") - Cabij("c,b,k,l"));
     GC_ij("i,j") = Gabij_("c,d,i,k")
                    * (2.0 * Cabij("c,d,j,k") - Cabij("d,c,j,k"));
 
-    HDDC("a,b,i,j") =  //   P(ab) Fbe C^ae_ij
-                       //   Fbe C^ae_ij + Fae C^eb_ij
+    HDDC("a,b,i,j") =  //   P(ab) Fbc C^ac_ij
+                       //   Fbc C^ac_ij + Fac C^cb_ij
                        FAB_("b,c") * Cabij("a,c,i,j")
                      + FAB_("a,c") * Cabij("c,b,i,j")
-                       // - P(ij) Fmj C^ab_im
-                       // - Fmj C^ab_im - Fmi C^ab_mj
+                       // - P(ij) Fkj C^ab_ik
+                       // - Fkj C^ab_ik - Fki C^ab_kj
                      - FIJ_("k,j") * Cabij("a,b,i,k")
-                     + FIJ_("k,i") * Cabij("a,b,k,j")
-                       // + 1/2 Wabef C^ef_ij
+                     - FIJ_("k,i") * Cabij("a,b,k,j")
+                       // + 1/2 Wabcd C^cd_ij
                      + WAbCd_("a,b,c,d") * Cabij("c,d,i,j")
-                       // + 1/2 Wmnij C^ab_mn
+                       // + 1/2 Wklij C^ab_kl
                      + WKlIj_("k,l,i,j") * Cabij("a,b,k,l")
-                       // + P(ab) P(ij) Wbmje C^ae_im
-                       // + Wbmje C^ae_im - Wbmie C^ae_jm
-                       // - Wamje C^be_im + Wamie C^be_jm
+                       // + P(ab) P(ij) Wbkjc C^ac_ik
+                       // + Wbkjc C^ac_ik - Wbkic C^ac_jk
+                       // - Wakjc C^bc_ik + Wakic C^bc_jk
                      + WIbAj_("k,b,c,j")
                        * (2.0 * Cabij("a,c,i,k") - Cabij("c,a,i,k"))
-                     + WIbaJ_("k,b,c,j") * Cabij("a,c,i,k") //
-                     + WIbaJ_("k,b,c,i") * Cabij("a,c,k,j") //
-                     + WIbaJ_("k,a,c,i") * Cabij("b,c,k,i") //
+                     + WIbaJ_("k,b,c,j") * Cabij("a,c,i,k")
+                       //
+                     + WIbaJ_("k,b,c,i") * Cabij("a,c,k,j")
+                       //
+                     + WIbaJ_("k,a,c,j") * Cabij("b,c,k,i")
+                       //
                      + WIbAj_("k,a,c,i")
                        * (2.0 * Cabij("b,c,j,k") - Cabij("c,b,j,k"))
                      + WIbaJ_("k,a,c,i") * Cabij("b,c,j,k")
-                       // - 1/2 P(ab) Wnmfe C^ea_mn t^fb_ij
-                       // - 1/2 Wmnfe C^ae_mn t^fb_ij
-                       // - 1/2 Wmnef C^eb_mn t^af_ij
+                       // - 1/2 P(ab) g^lk_dc C^ca_kl t^db_ij
+                       // - 1/2 g^kl_dc C^ac_kl t^db_ij
+                       // - 1/2 g^kl_cd C^cb_kl t^ad_ij
                      - GC_ab("d,a") //Gabij_("d,c,k,l")*(2.0*Cabij_("a,c,k,l")-Cabij_("c,a,k,l"))
                        * T2_("d,b,i,j")
                      - GC_ab("d,b") //Gabij_("c,d,k,l")*(2.0*Cabij_("c,b,k,l")-Cabij_("b,c,k,l"))
                        * T2_("a,d,i,j")
-                       // + 1/2 P(ij) Wnmfe C^fe_im t^ab_jn
-                       // - 1/2 Wnmef C^ef_im t^ab_nj
-                       // - 1/2 Wnmef C^ef_jm t^ab_in
+                       // + 1/2 P(ij) Wlkdc C^dc_ik t^ab_jl
+                       // - 1/2 Wlkcd C^cd_ik t^ab_lj
+                       // - 1/2 Wlkcd C^cd_jk t^ab_il
                      - GC_ij("l,i") //Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,i,k")-Cabij_("d,c,i,k"))
                        * T2_("a,b,l,j")
                      - GC_ij("l,j") //Gabij_("c,d,l,k")*(2.0*Cabij_("c,d,j,k")-Cabij_("d,c,j,k"))
-                       * T2_("a,n,i,l")
+                       * T2_("a,b,i,l")
                      ;
     return HDDC;
 
@@ -412,78 +419,207 @@ namespace mpqc{
 
   }
 
-  double EOM_CCSD::compute_energy() {
+  void EOM_CCSD::davidson_solver(std::size_t max_iter, double convergence) {
+
+    madness::World& world = C_[0].Cai.is_initialized()? C_[0].Cai.get_world()
+                                                      : C_[0].Cabij.get_world();
+    std::size_t iter = 0;
+    double norm_r = 1.0;
+
+    std::size_t dim;
+    while (iter < max_iter && norm_r > convergence) {
+      dim = C_.size();
+      Eigen::MatrixXd CHC(dim, dim);
+      if (world.rank() == 0)
+         std::cout << "CHC dimension: " << dim << std::endl;
+
+      std::vector<guess_vector> HC(dim);
+      for (std::size_t i = 0; i < dim; ++i) {
+
+        if (C_[i].Cai.is_initialized()
+            && C_[i].Cabij.is_initialized()) {
+          TArray HSSC_ai = compute_HSSC(C_[i].Cai);
+          TArray HDSC_abij = compute_HDSC(C_[i].Cai);
+          TArray HSDC_ai = compute_HSDC(C_[i].Cabij);
+          TArray HDDC_abij = compute_HDDC(C_[i].Cabij);
+
+          HC[i].Cai("a,i") = HSSC_ai("a,i") + HSDC_ai("a,i");
+          HC[i].Cabij("a,b,i,j") = HDSC_abij("a,b,i,j") + HDDC_abij("a,b,i,j");
+
+        } else if (C_[i].Cai.is_initialized()) {
+            HC[i].Cai = compute_HSSC(C_[i].Cai);
+            HC[i].Cabij = compute_HDSC(C_[i].Cai);
+
+        } else if (C_[i].Cabij.is_initialized()) {
+            HC[i].Cai = compute_HSDC(C_[i].Cabij);
+            HC[i].Cabij = compute_HDDC(C_[i].Cabij);
+        }
+
+        double CHC_ai = 0.0;
+        double CHC_abij = 0.0;
+        for (std::size_t j = 0; j < dim; ++j) {
+          if (C_[j].Cai.is_initialized())
+            CHC_ai =  C_[j].Cai("a,i") * HC[i].Cai("a,i");
+
+          if (C_[j].Cabij.is_initialized())
+            CHC_abij = C_[j].Cabij("a,b,i,j") * HC[i].Cabij("a,b,i,j");
+
+          CHC(i,j) = CHC_ai + CHC_abij;
+        }
+      }
+
+      // compute CHC a^k = \lambda^k a^k
+      Eigen::EigenSolver<Eigen::MatrixXd> es(CHC);
+      Eigen::VectorXd es_values = es.eigenvalues().real();
+      Eigen::MatrixXd es_vectors = es.eigenvectors().real();
+
+      if (world.rank() == 0) {
+        std::cout << "CHC:" << std::endl
+                  << CHC << std::endl;
+        std::cout << "The eigenvalues of CHC are:" << std::endl
+                  << es.eigenvalues() << std::endl;
+        std::cout << "The matrix of eigenvectors, V, is:" << std::endl
+                  << es.eigenvectors() << std::endl;
+        std::cout << "real eigenvalues is:" << std::endl
+                  << es_values << std::endl;
+        std::cout << "real eigenvectors is:" << std::endl
+                   << es_vectors << std::endl;
+      }
+
+      // compute residual r^k = a^k_i (HC_i - \lambda^k C_i)
+      std::vector<guess_vector> r(dim);
+      for (std::size_t k = 0; k < dim; ++k) {
+        const double e_k = es_values(k);
+
+        for (std::size_t i = 0; i < dim; ++i) {
+          if (C_[i].Cai.is_initialized()) {
+              if (!r[k].Cai.is_initialized()) {
+                TiledArray::TensorF tile_norms(C_[i].Cai.trange().tiles(), 0.0f);
+                TArray::shape_type shape(tile_norms, C_[i].Cai.trange());
+                r[k].Cai = TArray(C_[i].Cai.get_world(), C_[i].Cai.trange(),
+                                  shape, C_[i].Cai.get_pmap());
+              }
+              r[k].Cai("a,i") += es_vectors(i,k)
+                                * (HC[i].Cai("a,i") - C_[i].Cai("a,i") * e_k);
+          }
+          if (C_[i].Cabij.is_initialized()) {
+              if (!r[k].Cabij.is_initialized()) {
+                TiledArray::TensorF tile_norms(C_[i].Cabij.trange().tiles(), 0.0f);
+                TArray::shape_type shape(tile_norms, C_[i].Cabij.trange());
+                r[k].Cabij = TArray(C_[i].Cabij.get_world(), C_[i].Cabij.trange(),
+                                  shape, C_[i].Cabij.get_pmap());
+              }
+              r[k].Cabij("a,b,i,j") += es_vectors(i,k)
+                                      * (HC[i].Cabij("a,b,i,j") - C_[i].Cabij("a,b,i,j") * e_k);
+          }
+        }
+      }
+
+      // compute norm of r
+      double norm_square_r = 0.0;
+      for (std::size_t i = 0; i < dim; ++i) {
+        if (r[i].Cai.is_initialized())
+          norm_square_r += r[i].Cai("a,i").squared_norm();
+
+        if (r[i].Cabij.is_initialized())
+          norm_square_r += r[i].Cabij("a,b,i,j").squared_norm();
+      }
+      norm_r = sqrt(norm_square_r);
+
+      // compute preconditioned residual vector:
+      // \gamma^k = r^k / (D - \lambda^k I)
+      std::vector<guess_vector> gamma(dim);
+
+      // Schmidt orthonormalize \gamma^k against C^k
+
+      // append \gamma^k to C
+      C_.resize(dim*2);
+      for (std::size_t i = 0; i < dim; ++i) {
+        if (gamma[i].Cai.is_initialized())
+          C_[i+dim].Cai = gamma[i].Cai;
+
+        if (gamma[i].Cabij.is_initialized())
+          C_[i+dim].Cabij = gamma[i].Cabij;
+
+      }
+   } // end of while loop
+
+  }
+
+  double EOM_CCSD::compute_energy(std::size_t max_iter, double convergence) {
     // check if intermediates are computed
     compute_FWintermediates();
 
     // test intermediates
-    if (T1_.get_world().rank() == 0) {
-      std::cout << "T1_ " << T1_ << std::endl;
-    }
+//    if (T1_.get_world().rank() == 0) {
+//      std::cout << "T1_ " << T1_ << std::endl;
+//    }
+//
+//    TArray L1_test, L2_test, CGac, CGki;
+//    TArray gabij_temp, t2_temp;
+//    gabij_temp("a,b,i,j") = 2.0 * Gabij_("a,b,i,j") - Gabij_("a,b,j,i");
+//    t2_temp("a,b,i,j") = 2.0 * T2_("a,b,i,j") - T2_("b,a,i,j");
+//
+//    CGac("a,c") =  // - 1/2 t^cd_kl lambda^kl_ad
+//                 - T2_("c,d,k,l") * t2_temp("a,d,k,l");
+//    CGki("k,i") =  // 1/2 t^cd_kl lambda^il_cd
+//                   T2_("c,d,k,l") * t2_temp("c,d,i,l");
+//
+//    L1_test("a,i") =  FIA_("i,a")
+//                    + T1_("c,i") * FAB_("c,a")
+//                    - T1_("a,k") * FIJ_("i,k")
+//                    + T1_("c,k") * (2.0 * WIbAj_("i,c,a,k") + WIbaJ_("i,c,a,k"))
+//                    + t2_temp("c,d,i,k") * WAbCi_("c,d,a,k")
+//                    - t2_temp("a,c,k,l") * WKaIj_("i,c,k,l")
+//                    - CGac("c,d") * (2.0 * WAkCd_("c,i,d,a") - WAkCd_("c,i,a,d"))
+//                    - CGki("k,l") * (2.0 * WKlIc_("k,i,l,a") - WKlIc_("i,k,l,a"))//+ WKliC_("k,i,l,a"))
+//                    ;
+//    if (T1_.get_world().rank() == 0) {
+//      std::cout << "L1_test " << L1_test << std::endl;
+//    }
+//
+//    L2_test("a,b,i,j") =  Gabij_("a,b,i,j")
+//
+//                        + L1_test("c,i") * WAkCd_("c,j,a,b")
+//                        + L1_test("c,j") * WAkCd_("c,i,b,a")
+//
+//                        - L1_test("a,k") * WKlIc_("i,j,k,b")
+//                        + L1_test("b,k") * - WKlIc_("j,i,k,a")//WKliC_("i,j,k,a")
+//
+//                        + L1_test("a,i") * FIA_("j,b")
+//                        + L1_test("b,j") * FIA_("i,a")
+//
+//                        + T2_("a,c,i,j") * FAB_("c,b")
+//                        + T2_("c,b,i,j") * FAB_("c,a")
+//
+//                        - T2_("a,b,i,k") * FIJ_("j,k")
+//                        - T2_("a,b,k,j") * FIJ_("i,k")
+//
+//                        + T2_("a,b,k,l") * WKlIj_("i,j,k,l")
+//
+//                        + T2_("c,d,i,j") * WAbCd_("c,d,a,b")
+//
+//                        + (  t2_temp("a,c,i,k") * WIbAj_("j,c,b,k")
+//                           + T2_("a,c,i,k") * WIbaJ_("j,c,b,k"))
+//                        + T2_("c,b,i,k") * WIbaJ_("j,c,a,k")
+//                        + T2_("a,c,k,j") * WIbaJ_("i,c,b,k")
+//                        + (  t2_temp("b,c,j,k") * WIbAj_("i,c,a,k")
+//                           + T2_("b,c,j,k") * WIbaJ_("i,c,a,k"))
+//
+//                        + Gabij_("a,c,i,j") * CGac("b,c")
+//                        + Gabij_("c,b,i,j") * CGac("a,c")
+//
+//                        - Gabij_("a,b,i,k") * CGki("k,j")
+//                        - Gabij_("a,b,k,j") * CGki("k,i")
+//                        ;
+//    double E_L = dot(gabij_temp("a,b,i,j"), L2_test("a,b,i,j") );
+//    if (T1_.get_world().rank() == 0) {
+//      std::cout << "CCSD test E_L: " << E_L << std::endl;
+//
+//      //std::cout << "Gijkl_: " << Gijkl_ << std::endl;
+//    }
 
-    TArray L1_test, L2_test, CGac, CGki;
-    TArray gabij_temp, t2_temp;
-    gabij_temp("a,b,i,j") = 2.0 * Gabij_("a,b,i,j") - Gabij_("a,b,j,i");
-    t2_temp("a,b,i,j") = 2.0 * T2_("a,b,i,j") - T2_("b,a,i,j");
-
-    CGac("a,c") =  // - 1/2 t^cd_kl lambda^kl_ad
-                 - T2_("c,d,k,l") * t2_temp("a,d,k,l");
-    CGki("k,i") =  // 1/2 t^cd_kl lambda^il_cd
-                   T2_("c,d,k,l") * t2_temp("c,d,i,l");
-
-    L1_test("a,i") =  FIA_("i,a")
-                    + T1_("c,i") * FAB_("c,a")
-                    - T1_("a,k") * FIJ_("i,k")
-                    + T1_("c,k") * (2.0 * WIbAj_("i,c,a,k") + WIbaJ_("i,c,a,k"))
-                    + t2_temp("c,d,i,k") * WAbCi_("c,d,a,k")
-                    - t2_temp("a,c,k,l") * WKaIj_("i,c,k,l")
-                    - CGac("c,d") * (2.0 * WAkCd_("c,i,d,a") - WAkCd_("c,i,a,d"))
-                    - CGki("k,l") * (2.0 * WKlIc_("k,i,l,a") - WKlIc_("i,k,l,a"))//+ WKliC_("k,i,l,a"))
-                    ;
-    if (T1_.get_world().rank() == 0) {
-      std::cout << "L1_test " << L1_test << std::endl;
-    }
-
-    L2_test("a,b,i,j") =  Gabij_("a,b,i,j")
-
-                        + L1_test("c,i") * WAkCd_("c,j,a,b")
-                        + L1_test("c,j") * WAkCd_("c,i,b,a")
-
-                        - L1_test("a,k") * WKlIc_("i,j,k,b")
-                        + L1_test("b,k") * - WKlIc_("j,i,k,a")//WKliC_("i,j,k,a")
-
-                        + L1_test("a,i") * FIA_("j,b")
-                        + L1_test("b,j") * FIA_("i,a")
-
-                        + T2_("a,c,i,j") * FAB_("c,b")
-                        + T2_("c,b,i,j") * FAB_("c,a")
-
-                        - T2_("a,b,i,k") * FIJ_("j,k")
-                        - T2_("a,b,k,j") * FIJ_("i,k")
-
-                        + T2_("a,b,k,l") * WKlIj_("i,j,k,l")
-
-                        + T2_("c,d,i,j") * WAbCd_("c,d,a,b")
-
-                        + (  t2_temp("a,c,i,k") * WIbAj_("j,c,b,k")
-                           + T2_("a,c,i,k") * WIbaJ_("j,c,b,k"))
-                        + T2_("c,b,i,k") * WIbaJ_("j,c,a,k")
-                        + T2_("a,c,k,j") * WIbaJ_("i,c,b,k")
-                        + (  t2_temp("b,c,j,k") * WIbAj_("i,c,a,k")
-                           + T2_("b,c,j,k") * WIbaJ_("i,c,a,k"))
-
-                        + Gabij_("a,c,i,j") * CGac("b,c")
-                        + Gabij_("c,b,i,j") * CGac("a,c")
-
-                        - Gabij_("a,b,i,k") * CGki("k,j")
-                        - Gabij_("a,b,k,j") * CGki("k,i")
-                        ;
-    double E_L = dot(gabij_temp("a,b,i,j"), L2_test("a,b,i,j") );
-    if (T1_.get_world().rank() == 0) {
-      std::cout << "CCSD test E_L: " << E_L << std::endl;
-
-      //std::cout << "Gijkl_: " << Gijkl_ << std::endl;
-    }
+    davidson_solver(max_iter, convergence);
     return 1.0;
   }
 }

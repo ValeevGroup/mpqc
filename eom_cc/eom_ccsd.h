@@ -52,8 +52,10 @@ namespace mpqc{
 
     // compute F and W intermediates
     void compute_FWintermediates();
+
     // compute contractions of HSS, HSD, HDS, and HDD
     //                         with guess vector Ci
+    // reference: CPL, 248 (1996), 189
     TArray compute_HSSC(TArray Cai);
     TArray compute_HSDC(TArray Cabij);
     TArray compute_HDSC(TArray Cai);
@@ -78,8 +80,11 @@ namespace mpqc{
     // read guess vectors from input
     void read_guess_vectors(rapidjson::Document& in);
 
+    // not complete
+    void davidson_solver(std::size_t max_iter, double convergence);
+
     // compute energies (not complete, now just test intermediates)
-    double compute_energy();
+    double compute_energy(std::size_t max_iter, double convergence);
 
   };
 }

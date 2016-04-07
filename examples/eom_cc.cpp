@@ -45,8 +45,7 @@
 #include "../utility/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../scf/soad.h"
-
-#include "../eom_cc/eom_cc.h"
+#include "../eom_cc/eom_ccsd.h"
 
 using namespace mpqc;
 namespace ints = integrals;
@@ -517,19 +516,28 @@ int try_main(int argc, char *argv[], madness::World &world) {
       ccsd.compute();
 
       // call eom-cc
-      rapidjson::Document eomcc_in;
-      eomcc_in = json::get_nested(in, "EOM-CCSD");
+      rapidjson::Document eomccsd_in;
+      eomccsd_in = json::get_nested(in, "EOM-CCSD");
 
-      mpqc::EOM_CCSD eomcc(ccsd, intermidiate);
-      eomcc.read_guess_vectors(eomcc_in);
-//        eomcc.compute_energy();
-//
-//        if (world.rank() == 0) {
-//          //TArray Fij;
-//          //Fij("i,j") = F_("i,j");
-//          std::cout << "test F: " << fock_mo << std::endl;
-//          std::cout << "test ens: " << ens << std::endl;
-//        }
+      mpqc::EOM_CCSD eomccsd(ccsd, intermidiate);
+      eomccsd.read_guess_vectors(eomccsd_in);
+
+      std:size_t MaxIter = eomccsd_in.HasMember("MaxIter")
+                          ? eomccsd_in["MaxIter"].GetInt()
+                          : 50;
+      if (world.rank() == 0) {
+        std::cout << "MaxIter: " << MaxIter << std::endl;
+      }
+      double Convergence = eomccsd_in.HasMember("Convergence")
+                                  ? eomccsd_in["Convergence"].GetDouble()
+                                  : 1.0e-6;
+
+      if (world.rank() == 0) {
+        std::cout << "Convergence: " << Convergence << std::endl;
+      }
+      //eomccsd.compute_energy(MaxIter, Convergence);
+
+
 
     }
 

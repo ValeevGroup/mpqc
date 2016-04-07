@@ -46,7 +46,6 @@
 #include "../utility/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../scf/soad.h"
-#include "../eom_cc/eom_cc.h"
 
 using namespace mpqc;
 namespace ints = integrals;
@@ -567,14 +566,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
         ccsd.compute();
 
 
-    }
-    else if (in.HasMember("EOM_CCSD")){
-        mpqc::cc::CCSD<TA::Tensor<double>, TA::SparsePolicy> ccsd(
-                fock_mo, ens, tre, intermidiate, cc_in);
-        ccsd.compute();
-        // call eom-cc
-        mpqc::EOM_CCSD eomcc(ccsd, intermidiate);
-        eomcc.compute_energy();
     }
 
     world.gop.fence();

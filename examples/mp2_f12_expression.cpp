@@ -26,7 +26,7 @@
 #include "../expression/orbital_registry.h"
 
 #include "../utility/time.h"
-#include "../utility/wcout_utf8.h"
+#include "../utility/parallel_file.h"
 #include "../utility/array_info.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../scf/traditional_df_fock_builder.h"
@@ -51,48 +51,55 @@ int main(int argc, char *argv[]) {
     std::string basis_name = "";
     std::string aux_basis_name = "";
     std::string df_basis_name = "";
+    std::size_t vir_block_size = 0;
     int nclusters = 0;
     std::cout << std::setprecision(15);
     double threshold = 1e-30;
     double well_sep_threshold = 0.1;
     integrals::QQR::well_sep_threshold(well_sep_threshold);
-    if (argc == 6) {
+    if (argc == 7) {
         mol_file = argv[1];
         basis_name = argv[2];
         aux_basis_name = argv[3];
         df_basis_name = argv[4];
         nclusters = std::stoi(argv[5]);
+        vir_block_size = std::stoi(argv[6]);
     } else {
-        std::cout << "input is $./program mol_file basis_file aux_basis df_basis nclusters ";
+        std::cout << "input is $./program mol_file basis_file aux_basis df_basis nclusters vir_block_size";
         return 0;
     }
     TiledArray::SparseShape<float>::threshold(threshold);
 
-    auto clustered_mol = molecule::kmeans(
-            molecule::read_xyz(mol_file).clusterables(), nclusters);
 
-    std::cout << "Molecule " << std::endl;
-
-    auto atoms = clustered_mol.atoms();
-
-    for (auto& atom: atoms){
-        std::cout << atom << std::endl;
+    if(world.rank() == 0){
+        std::cout << "Molecule: " << mol_file << std::endl;
+        std::cout << "N Cluster: " << nclusters << std::endl;
+        std::cout << "OBS: " << basis_name << std::endl;
+        std::cout << "DFBS: " << df_basis_name << std::endl;
+        std::cout << "AUXBS: " << aux_basis_name << std::endl;
+        std::cout << "Vir Block Size: " << vir_block_size << std::endl;
     }
 
-    std::cout << std::endl;
+    char* xyz_file_buffer;
+    utility::parallel_read_file(world,mol_file,xyz_file_buffer);
+    std::stringstream xyz_file_stream;
+    xyz_file_stream << xyz_file_buffer;
+    delete[] xyz_file_buffer;
+
+    auto mol = mpqc::molecule::read_xyz_stringstream(xyz_file_stream);
+    auto clustered_mol = molecule::kmeans(mol.clusterables(), nclusters);
 
     auto repulsion_energy = clustered_mol.nuclear_repulsion();
-    std::cout << "Nuclear Repulsion Energy: " << repulsion_energy << std::endl;
     auto occ = clustered_mol.occupation(0);
 
     basis::BasisSet bs(basis_name);
-    basis::Basis basis(bs.get_cluster_shells(clustered_mol));
+    basis::Basis basis = basis::parallel_construct_basis(world,bs,clustered_mol);
 
     basis::BasisSet dfbs(df_basis_name);
-    basis::Basis df_basis(dfbs.get_cluster_shells(clustered_mol));
+    basis::Basis df_basis = basis::parallel_construct_basis(world,dfbs,clustered_mol);
 
     basis::BasisSet abs(aux_basis_name);
-    basis::Basis abs_basis(abs.get_cluster_shells(clustered_mol));
+    basis::Basis abs_basis = basis::parallel_construct_basis(world,abs,clustered_mol);
 
     basis::Basis ri_basis = basis.join(abs_basis);
 
@@ -105,11 +112,12 @@ int main(int argc, char *argv[]) {
 
     f12::GTGParams gtg_params(1.0, 6);
 
-
     auto param = gtg_params.compute();
 
-    for(auto& pair : param){
-        std::cout << pair.first << " " << pair.second << std::endl;
+    if(world.rank() == 0){
+        for(auto& pair : param){
+            std::cout << pair.first << " " << pair.second << std::endl;
+        }
     }
 
     libint2::init();
@@ -119,7 +127,7 @@ int main(int argc, char *argv[]) {
              ta_pass_through,
              std::make_shared<molecule::Molecule>(clustered_mol),
              bs_registry,
-             gtg_params.compute()
+             param
             );
 
     // Overlap ints
@@ -134,14 +142,16 @@ int main(int argc, char *argv[]) {
     auto multi_pool = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
     auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
 
+    // doing four center HF
     auto db = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters, 0.0, "cholesky inverse", false);
-
     scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(builder), std::move(db));
     scf.solve(50, 1e-12);
 
     // obs fock build
     std::size_t all = S.trange().elements().extent()[0];
-    auto tre = TRange1Engine(occ / 2, all, 1, 4, 0);
+
+    // attention!! occ has to be blocked by 1!!
+    auto tre = TRange1Engine(occ / 2, all, 1, vir_block_size, 0);
 
     auto F = scf.fock();
     ao_int.registry().insert(Formula(L"(μ|F|ν)"),F);
@@ -164,7 +174,6 @@ int main(int argc, char *argv[]) {
     auto tr_all = tre.get_all_tr1();
     auto tr_i0 = tre.get_occ_tr1();
     auto tr_vir = tre.get_vir_tr1();
-
 
     auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ_corr, tr_0, tr_i0);
     auto Cv = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_vir, tr_0, tr_vir);
@@ -194,38 +203,12 @@ int main(int argc, char *argv[]) {
 
 
     // test mp2
-
-
-    // mp2
-    {
-        auto g_iajb = mo_integral.compute(L"(i a|G|j b)");
-        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_iajb,ens,std::make_shared<TRange1Engine>(tre));
-        mp2.compute();
-    }
-
     // df-mp2
 
     {
         auto g_iajb = mo_integral.compute(L"(i a|G|j b)[df]");
         auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_iajb,ens,std::make_shared<TRange1Engine>(tre));
         mp2.compute();
-    }
-
-    // physics notation
-    {
-        auto g_ijab = mo_integral.compute(L"<i j|G|a b>[df]");
-        g_ijab("i,a,j,b") = g_ijab("i,j,a,b");
-        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_ijab,ens,std::make_shared<TRange1Engine>(tre));
-        mp2.compute();
-    }
-
-
-    {
-        auto g_ijab = mo_integral.compute(L"<i j|G|a b>");
-        g_ijab("i,a,j,b") = g_ijab("i,j,a,b");
-        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_ijab,ens,std::make_shared<TRange1Engine>(tre));
-        mp2.compute();
-
     }
 
 //    mo_integral.atomic_integral().registry().print_formula();
@@ -253,33 +236,21 @@ int main(int argc, char *argv[]) {
 //        MatrixD X_ribs_eigen_inv = MatrixD(Eigen::LLT<MatrixD>(S_ribs_eigen).matrixL()).inverse();
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es2(S_ribs_eigen);
         MatrixD X_ribs_eigen_inv = es2.operatorInverseSqrt();
-
         MatrixD S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
-
         MatrixD S_obs_ribs_ortho_eigen = X_obs_eigen_inv.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
-
         Eigen::JacobiSVD<MatrixD> svd(S_obs_ribs_ortho_eigen, Eigen::ComputeFullV);
         MatrixD V_eigen = svd.matrixV();
-        // but there could be more!! (homework!)
         size_t nbf_ribs = S_obs_ribs_ortho_eigen.cols();
-        //size_t nbf_obs = S_obs_ribs_ortho.rows();
         auto nbf_cabs = nbf_ribs - svd.nonzeroSingularValues();
         MatrixD Vnull(nbf_ribs, nbf_cabs);
-
-        //Populate Vnull with vectors of V that are orthogonal to AO space
         Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_ribs, nbf_cabs);
-
-        //Un-orthogonalize coefficients
         MatrixD C_cabs_eigen = X_ribs_eigen_inv * Vnull;
 
         auto tr_cabs = S_cabs.trange().data()[0];
         auto tr_ribs = S_ribs.trange().data()[0];
 
-//        std::cout << C_cabs_eigen << std::endl;
-
         C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen, tr_ribs, tr_cabs);
         C_ri = array_ops::eigen_to_array<TA::TensorD>(world, X_ribs_eigen_inv, tr_ribs, tr_ribs);
-
 
         auto C_cabs_space = OrbitalSpace(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
         auto C_ribs_space = OrbitalSpace(OrbitalIndex(L"P'"), OrbitalIndex(L"ρ"), C_ri);
@@ -293,16 +264,14 @@ int main(int argc, char *argv[]) {
 
     f12::MP2F12 mp2f12(mo_integral, std::make_shared<TRange1Engine>(tre), ens);
 
-//    mp2f12.compute_mp2_f12_c();
-//    mo_integral.registry().clear();
-//    ao_int.registry().clear();
+    mp2f12.compute_mp2_f12_c();
+    mo_integral.registry().clear();
+    ao_int.registry().clear();
     mp2f12.compute_mp2_f12_c_df();
 
 //    ao_int.registry().print_formula(world);
 //    mo_integral.registry().print_formula(world);
 
-//    mo_integral.registry().clear();
-//    ao_int.registry().clear();
 
 
     madness::finalize();

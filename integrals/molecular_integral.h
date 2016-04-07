@@ -20,6 +20,7 @@
 namespace mpqc{
 namespace integrals{
 
+// TODO MO transform that minimize operations by permutation
     template <typename Tile, typename Policy>
     class MolecularIntegral{
     public:
@@ -292,7 +293,6 @@ namespace integrals{
         return result;
     }
 
-//TODO fix the string name
 template <typename Tile, typename Policy>
 Formula MolecularIntegral<Tile,Policy>::mo_to_ao(const Formula &formula) {
 

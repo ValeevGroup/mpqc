@@ -283,29 +283,29 @@ namespace integrals{
                 // check success
                 Eigen::ComputationInfo info = llt_solver.info();
                 if(info == Eigen::ComputationInfo::NumericalIssue){
-                    std::cout << "NumericalIssue" << std::endl;
+                    utility::print_par(world_,"NumericalIssue","\n");
                 }
                 else if(info == Eigen::ComputationInfo::NoConvergence){
-                    std::cout << "NoConvergence" << std::endl;
+                    utility::print_par(world_,"NoConvergence","\n");
                 }
                 else if (info == Eigen::ComputationInfo::InvalidInput){
-                    std::cout << "InvalidInput" << std::endl;
+                    utility::print_par(world_,"InvalidInput","\n");
                 }
 
 
+                // print the eigen value if LLT failed
                 if(info != Eigen::ComputationInfo::Success) {
-                    Eigen::SelfAdjointEigenSolver<MatrixD> ei_solver(result_eig);
-                    std::cout << ei_solver.eigenvalues() << std::endl;
+                    if(world_.rank() == 0){
+                        Eigen::SelfAdjointEigenSolver<MatrixD> ei_solver(result_eig);
+                        std::cout << ei_solver.eigenvalues() << std::endl;
+                    }
                 }
                 TA_ASSERT( info == Eigen::ComputationInfo::Success);
 
-                    MatrixD L = MatrixD(llt_solver.matrixL());
-                    MatrixD L_inv_eig = L.inverse();
-                    result_eig = L_inv_eig.transpose() * L_inv_eig;
+                MatrixD L = MatrixD(llt_solver.matrixL());
+                MatrixD L_inv_eig = L.inverse();
+                result_eig = L_inv_eig.transpose() * L_inv_eig;
 
-//                }else{
-//                    result_eig = result_eig.inverse();
-//                }
                 auto tr_result = result.trange().data()[0];
                 result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), result_eig, tr_result, tr_result);
 

@@ -24,7 +24,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
         TArray g_iajb;
         g_iajb = mo_int_.compute(L"(i a|G|j b)[df]");
         g_iajb("a,b,i,j") = g_iajb("i,a,j,b");
-        t2 = mpqc::cc::d_abij(g_iajb,orbital_energy_,occ);
+        t2 = mpqc::cc::d_abij(g_iajb,*orbital_energy_,occ);
 
     }
 
@@ -168,7 +168,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
     {
 
         utility::print_par(world, "Compute CC Term With DF \n");
-        auto C_bar_iajb = f12::convert_C_iajb(C_iajb, occ, orbital_energy_);
+        auto C_bar_iajb = f12::convert_C_iajb(C_iajb, occ, *orbital_energy_);
         B_ijij_ijji("i1,j1,i2,j2") = (C_iajb("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
 
         double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
@@ -197,7 +197,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c(){
         TArray g_iajb;
         g_iajb = mo_integral.compute(L"(i a|G|j b)");
         g_iajb("a,b,i,j") = g_iajb("i,a,j,b");
-        t2_nodf = mpqc::cc::d_abij(g_iajb,orbital_energy_,occ);
+        t2_nodf = mpqc::cc::d_abij(g_iajb,*orbital_energy_,occ);
     }
 
     // create shape
@@ -302,7 +302,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c(){
 
     {
         utility::print_par(world, "Compute CC Term Without DF \n");
-        auto C_bar_iajb = f12::convert_C_iajb(C_iajb_nodf, occ, orbital_energy_);
+        auto C_bar_iajb = f12::convert_C_iajb(C_iajb_nodf, occ, *orbital_energy_);
         B_ijij_ijji_nodf("i1,j1,i2,j2") = (C_iajb_nodf("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
 
         double E_cc = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));

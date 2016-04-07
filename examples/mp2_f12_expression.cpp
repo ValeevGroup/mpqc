@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
              param
             );
 
+    auto time0 = mpqc_time::fenced_now(world);
     // Overlap ints
     auto S = ao_int.compute(L"(κ|λ)");
     auto H = ao_int.compute(L"(κ|H|λ)");
@@ -147,6 +148,11 @@ int main(int argc, char *argv[]) {
     scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(builder), std::move(db));
     scf.solve(50, 1e-12);
 
+
+    auto time1 = mpqc_time::fenced_now(world);
+    auto hf_time = mpqc_time::duration_in_s(time0,time1);
+
+
     // obs fock build
     std::size_t all = S.trange().elements().extent()[0];
 
@@ -158,6 +164,8 @@ int main(int argc, char *argv[]) {
 
 
     //mp2
+    time0 = mpqc_time::fenced_now(world);
+
     // solve Coefficient
     std::size_t n_frozen_core = 0;
     auto F_eig = array_ops::array_to_eigen(F);
@@ -196,22 +204,24 @@ int main(int argc, char *argv[]) {
     auto sp_orbital_registry = std::make_shared<decltype(orbital_registry)>(orbital_registry);
 
     // clean atomic integral
-//    ao_int.registry().clear();
+    ao_int.registry().clear();
 
     auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,sp_orbital_registry);
 //    mo_integral.atomic_integral().registry().print_formula();
 
-
     // test mp2
     // df-mp2
 
+
     {
-        auto g_iajb = mo_integral.compute(L"(i a|G|j b)[df]");
-        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(g_iajb,ens,std::make_shared<TRange1Engine>(tre));
-        mp2.compute();
+        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,std::make_shared<TRange1Engine>(tre));
+        mp2.compute_df();
     }
+    time1 = mpqc_time::fenced_now(world);
+    auto mp2_time = mpqc_time::duration_in_s(time0,time1);
 
 //    mo_integral.atomic_integral().registry().print_formula();
+    time0 = mpqc_time::fenced_now(world);
     // CABS fock build
 
     // integral
@@ -264,15 +274,20 @@ int main(int argc, char *argv[]) {
 
     f12::MP2F12 mp2f12(mo_integral, std::make_shared<TRange1Engine>(tre), ens);
 
-    mp2f12.compute_mp2_f12_c();
-    mo_integral.registry().clear();
-    ao_int.registry().clear();
+//    mp2f12.compute_mp2_f12_c();
+//    mo_integral.registry().clear();
+//    ao_int.registry().clear();
     mp2f12.compute_mp2_f12_c_df();
+    time1 = mpqc_time::fenced_now(world);
+    auto mp2f12_time = mpqc_time::duration_in_s(time0,time1);
 
 //    ao_int.registry().print_formula(world);
 //    mo_integral.registry().print_formula(world);
 
 
+    utility::print_par(world, "HF Time: ", hf_time, " S\n");
+    utility::print_par(world, "MP2 Time: ", mp2_time, " S\n");
+    utility::print_par(world, "MP2F12 Time: ", mp2f12_time, " S\n");
 
     madness::finalize();
     libint2::cleanup();

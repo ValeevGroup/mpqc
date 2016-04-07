@@ -27,7 +27,7 @@ public:
     MP2F12() = default;
 
     MP2F12(MolecularIntegral& mo_int, std::shared_ptr<TRange1Engine> tre, const Eigen::VectorXd& ens)
-            : mo_int_(mo_int), tre_(tre), orbital_energy_(ens) {}
+            : mo_int_(mo_int), tre_(tre), orbital_energy_(std::make_shared<Eigen::VectorXd>(ens)) {}
 
     void compute_mp2_f12_c_df();
 
@@ -64,10 +64,20 @@ private:
             auto const st = range.lobound_data();
             auto const fn = range.upbound_data();
             auto tile_idx = 0;
-            for (auto i = st[0]; i < fn[0]; ++i) {
-                for (auto j = st[1]; j < fn[1]; ++j) {
-                    for (auto k = st[2]; k < fn[2]; ++k) {
-                        for (auto l = st[3]; l < fn[3]; ++l, ++tile_idx) {
+
+            auto sti = st[0];
+            auto fni = fn[0];
+            auto stj = st[1];
+            auto fnj = fn[1];
+            auto stk = st[2];
+            auto fnk = fn[2];
+            auto stl = st[3];
+            auto fnl = fn[3];
+
+            for (auto i = sti; i < fni; ++i) {
+                for (auto j = stj; j < fnj; ++j) {
+                    for (auto k = stk; k < fnk; ++k) {
+                        for (auto l = stl; l < fnl; ++l, ++tile_idx) {
                             // iiii
                             if( (i==j) && (i==k) && (k==l)){
                                 me += iiii*tile.data()[tile_idx];
@@ -91,7 +101,7 @@ private:
 
     MolecularIntegral& mo_int_;
     std::shared_ptr<TRange1Engine> tre_;
-    Eigen::VectorXd orbital_energy_;
+    std::shared_ptr<Eigen::VectorXd> orbital_energy_;
 };
 
 }// end of namespce f12

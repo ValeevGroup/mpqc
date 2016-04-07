@@ -7,6 +7,8 @@
 #include <iostream>
 #include <fstream>
 #include "../include/tiledarray.h"
+#include "../basis/basis.h"
+#include "cc_utility.h"
 
 namespace mpqc {
 namespace utility {
@@ -69,6 +71,20 @@ inline void print_file(madness::World &world, const std::string& file){
     }
 
 }
+
+inline void parallel_print_range_info(madness::World &world, const TA::TiledRange1 &bs_range, const std::string &name){
+
+    if(world.rank() == 0){
+        auto minmax_block = cc::minmax_blocksize(bs_range);
+        auto average_block = cc::average_blocksize(bs_range);
+        std::cout <<  name << " Trange " << std::endl;
+        std::cout << bs_range << std::endl;
+        std::cout << "Min and Max block size: " << minmax_block.first << " " << minmax_block.second << std::endl;
+        std::cout << "Average: " << average_block << std::endl;
+        std::cout << std::endl;
+    }
+}
+
 
 } // namespace utility
 } // namespace mpqc

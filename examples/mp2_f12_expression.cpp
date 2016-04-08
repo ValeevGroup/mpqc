@@ -51,21 +51,23 @@ int main(int argc, char *argv[]) {
     std::string basis_name = "";
     std::string aux_basis_name = "";
     std::string df_basis_name = "";
-    std::size_t vir_block_size = 0;
+    std::size_t mo_block_size = 0;
+    std::size_t ao_block_size = 0;
     int nclusters = 0;
     std::cout << std::setprecision(15);
     double threshold = 1e-30;
     double well_sep_threshold = 0.1;
     integrals::QQR::well_sep_threshold(well_sep_threshold);
-    if (argc == 7) {
+    if (argc == 8) {
         mol_file = argv[1];
         basis_name = argv[2];
         aux_basis_name = argv[3];
         df_basis_name = argv[4];
         nclusters = std::stoi(argv[5]);
-        vir_block_size = std::stoi(argv[6]);
+        mo_block_size = std::stoi(argv[6]);
+        ao_block_size = std::stoi(argv[7]);
     } else {
-        std::cout << "input is $./program mol_file basis_file aux_basis df_basis nclusters vir_block_size";
+        std::cout << "input is $./program mol_file basis_file aux_basis df_basis nclusters mo_block_size ao_block_size";
         return 0;
     }
     TiledArray::SparseShape<float>::threshold(threshold);
@@ -77,7 +79,8 @@ int main(int argc, char *argv[]) {
         std::cout << "OBS: " << basis_name << std::endl;
         std::cout << "DFBS: " << df_basis_name << std::endl;
         std::cout << "AUXBS: " << aux_basis_name << std::endl;
-        std::cout << "Vir Block Size: " << vir_block_size << std::endl;
+        std::cout << "MO Block Size: " << mo_block_size << std::endl;
+        std::cout << "AO Block Size: " << ao_block_size << std::endl;
     }
 
     char* xyz_file_buffer;
@@ -94,14 +97,18 @@ int main(int argc, char *argv[]) {
 
     basis::BasisSet bs(basis_name);
     basis::Basis basis = basis::parallel_construct_basis(world,bs,clustered_mol);
+    basis = reblock(basis, cc::reblock_basis, ao_block_size);
 
     basis::BasisSet dfbs(df_basis_name);
     basis::Basis df_basis = basis::parallel_construct_basis(world,dfbs,clustered_mol);
+    df_basis = reblock(df_basis, cc::reblock_basis, ao_block_size);
 
     basis::BasisSet abs(aux_basis_name);
     basis::Basis abs_basis = basis::parallel_construct_basis(world,abs,clustered_mol);
+    abs_basis = reblock(abs_basis, cc::reblock_basis, ao_block_size);
 
     basis::Basis ri_basis = basis.join(abs_basis);
+    ri_basis = reblock(ri_basis, cc::reblock_basis, ao_block_size);
 
     utility::parallel_print_range_info(world, basis.create_trange1(), "OBS Basis");
     utility::parallel_print_range_info(world, df_basis.create_trange1(), "DF Basis");
@@ -141,9 +148,9 @@ int main(int argc, char *argv[]) {
     auto S = ao_int.compute(L"(κ|λ)");
     auto H = ao_int.compute(L"(κ|H|λ)");
 
-    auto eri4 = ao_int.compute(L"( κ1 λ1 | G|κ1 λ1)");
-    scf::FourCenterBuilder<decltype(eri4)> builder(eri4);
-    world.gop.fence();
+    auto inv = ao_int.compute(L"( Κ | G| Λ )");
+    auto eri3 = ao_int.compute(L"( Κ | G|κ1 λ1)");
+    scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
 
     const auto bs_array = utility::make_array(basis, basis);
     auto multi_pool = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
@@ -152,7 +159,7 @@ int main(int argc, char *argv[]) {
     // doing four center HF
     auto db = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters, 0.0, "cholesky inverse", false);
     scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(builder), std::move(db));
-    scf.solve(50, 1e-12);
+    scf.solve(50, 1e-10);
 
 
     auto time1 = mpqc_time::fenced_now(world);
@@ -163,7 +170,7 @@ int main(int argc, char *argv[]) {
     std::size_t all = S.trange().elements().extent()[0];
 
     // attention!! occ has to be blocked by 1!!
-    auto tre = TRange1Engine(occ / 2, all, 1, vir_block_size, 0);
+    auto tre = TRange1Engine(occ / 2, all, 1, mo_block_size, 0);
 
     auto F = scf.fock();
     ao_int.registry().insert(Formula(L"(μ|F|ν)"),F);
@@ -184,7 +191,7 @@ int main(int argc, char *argv[]) {
     decltype(S_eig) C_occ_corr = C_all.block(0, n_frozen_core, S_eig.rows(),occ / 2 - n_frozen_core);
     decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occ / 2);
 
-    auto tr_0 = eri4.trange().data().back();
+    auto tr_0 = eri3.trange().data().back();
     auto tr_all = tre.get_all_tr1();
     auto tr_i0 = tre.get_occ_tr1();
     auto tr_vir = tre.get_vir_tr1();
@@ -268,12 +275,15 @@ int main(int argc, char *argv[]) {
 
         auto tr_cabs = S_cabs.trange().data()[0];
         auto tr_ribs = S_ribs.trange().data()[0];
+        auto tr_cabs_mo = tre.compute_range(tr_cabs.elements().second, mo_block_size);
+        auto tr_ribs_mo = tre.compute_range(tr_ribs.elements().second, mo_block_size);
 
-        utility::parallel_print_range_info(world, tr_cabs, "CABS");
-        utility::parallel_print_range_info(world, tr_ribs, "RIBS");
 
-        C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen, tr_ribs, tr_cabs);
-        C_ri = array_ops::eigen_to_array<TA::TensorD>(world, X_ribs_eigen_inv, tr_ribs, tr_ribs);
+        utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+        utility::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
+
+        C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen, tr_ribs, tr_cabs_mo);
+        C_ri = array_ops::eigen_to_array<TA::TensorD>(world, X_ribs_eigen_inv, tr_ribs, tr_ribs_mo);
 
         auto C_cabs_space = OrbitalSpace(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
         auto C_ribs_space = OrbitalSpace(OrbitalIndex(L"P'"), OrbitalIndex(L"ρ"), C_ri);

@@ -6,86 +6,42 @@
 
 namespace mpqc{
 
-TA::TiledRange1 TRange1Engine::tr_occupied() {
-    std::size_t block_size = occ_block_size_;
-    std::size_t actual_occ = get_actual_occ();
+
+TA::TiledRange1 TRange1Engine::compute_range(std::size_t range, std::size_t block_size) {
+
     std::vector<std::size_t> blocks;
     blocks.push_back(0);
-    for (std::size_t i = block_size; i < actual_occ; i += block_size) {
+    for (std::size_t i = block_size; i < range; i += block_size) {
         blocks.push_back(i);
     }
 
     // if the boundary is less than 2/3 of the block size
     // include it to previous block
-    if(3*(actual_occ - blocks.back()) <= 2*block_size && blocks.size() > 1){
-        blocks.back() = actual_occ;
+    if(3*(range - blocks.back()) <= 2*block_size && blocks.size() > 1){
+        blocks.back() = range;
     }
         // if not, add a new block
     else{
-        blocks.push_back(actual_occ);
+        blocks.push_back(range);
     }
 
     return TA::TiledRange1(blocks.begin(), blocks.end());
+
+}
+
+
+TA::TiledRange1 TRange1Engine::tr_occupied() {
+    std::size_t actual_occ = get_actual_occ();
+
+    return compute_range(actual_occ, occ_block_size_);
 }
 
 TA::TiledRange1 TRange1Engine::tr_virtual() {
-    std::size_t block_size = vir_block_size_;
-    std::vector<std::size_t> blocks;
-    blocks.push_back(0);
-    for (std::size_t i = block_size; i < vir_; i += block_size) {
-        blocks.push_back(i);
-    }
-
-    // if the boundary is less than 2/3 of the block size
-    // include it to previous block
-    if(3*(vir_ - blocks.back()) <= 2*block_size && blocks.size() > 1){
-        blocks.back() = vir_;
-    }
-        // if not, add a new block
-    else{
-        blocks.push_back(vir_);
-    }
-
-    return TA::TiledRange1(blocks.begin(), blocks.end());
+    return compute_range(vir_, vir_block_size_);
 }
 
 TA::TiledRange1 TRange1Engine::tr_all() {
-
-    // occ part
-    std::size_t block_size = occ_block_size_;
-    std::size_t actual_occ = get_actual_occ();
-    std::vector<std::size_t> blocks;
-    blocks.push_back(0);
-    for (std::size_t i = block_size; i < actual_occ; i += block_size) {
-        blocks.push_back(i);
-    }
-
-    if(3*(actual_occ - blocks.back()) <= 2*block_size && blocks.size() > 1){
-        blocks.back() = actual_occ;
-    }
-        // if not, add a new block
-    else{
-        blocks.push_back(actual_occ);
-    }
-
-    //vir part
-    block_size = vir_block_size_;
-    std::size_t actual_all = get_actual_all();
-    for (std::size_t i = actual_occ + block_size; i < actual_all; i += block_size) {
-        blocks.push_back(i);
-    }
-
-    // if the boundary is less than 2/3 of the block size
-    // include it to previous block
-    if(3*(actual_all - blocks.back()) <= 2*block_size){
-        blocks.back() = actual_all;
-    }
-        // if not, add a new block
-    else{
-        blocks.push_back(actual_all);
-    }
-
-    return TA::TiledRange1(blocks.begin(), blocks.end());
+    return compute_range(all_, vir_block_size_);
 }
 
 void TRange1Engine::init() {

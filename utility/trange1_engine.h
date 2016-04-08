@@ -28,6 +28,9 @@ namespace mpqc {
 
         void init();
 
+        TA::TiledRange1 compute_range(std::size_t range, std::size_t block_size);
+
+
         TA::TiledRange1 get_occ_tr1() const { return tr_occupied_; }
 
         TA::TiledRange1 get_vir_tr1() const { return tr_virtual_; }

@@ -23,10 +23,10 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
         REQUIRE( n.to_ta_expression() == "n");
 
         mpqc::OrbitalIndex i(L"i");
-        REQUIRE( i.index() == mpqc::OrbitalIndex::Index::actocc);
+        REQUIRE( i.index() == mpqc::OrbitalIndex::Index::corr_occ);
 
         mpqc::OrbitalIndex l(L"l");
-        REQUIRE( l.index() == mpqc::OrbitalIndex::Index::actocc);
+        REQUIRE( l.index() == mpqc::OrbitalIndex::Index::corr_occ);
 
         mpqc::OrbitalIndex x(L"x");
         REQUIRE( x.index() == mpqc::OrbitalIndex::Index::active);
@@ -97,10 +97,10 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
         REQUIRE( y.index() == mpqc::OrbitalIndex::Index::active);
 
         mpqc::OrbitalIndex i(L"i1");
-        REQUIRE( i.index() == mpqc::OrbitalIndex::Index::actocc);
+        REQUIRE( i.index() == mpqc::OrbitalIndex::Index::corr_occ);
 
         mpqc::OrbitalIndex l(L"l2");
-        REQUIRE( l.index() == mpqc::OrbitalIndex::Index::actocc);
+        REQUIRE( l.index() == mpqc::OrbitalIndex::Index::corr_occ);
 
         mpqc::OrbitalIndex a(L"a14");
         REQUIRE( a.index() == mpqc::OrbitalIndex::Index::virt);
@@ -146,11 +146,11 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
     SECTION("letter with prime"){
 
         mpqc::OrbitalIndex m(L"m'");
-        REQUIRE( m.index() == mpqc::OrbitalIndex::Index::inactocc);
+        REQUIRE( m.index() == mpqc::OrbitalIndex::Index::frozen_occ);
         REQUIRE( m.to_ta_expression() == "m'");
 
         mpqc::OrbitalIndex n(L"n'");
-        REQUIRE( n.index() == mpqc::OrbitalIndex::Index::inactocc);
+        REQUIRE( n.index() == mpqc::OrbitalIndex::Index::frozen_occ);
 
         mpqc::OrbitalIndex P(L"P'");
         REQUIRE( P.index() == mpqc::OrbitalIndex::Index::allany);
@@ -181,11 +181,11 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
     SECTION("letter with number and prime"){
 
         mpqc::OrbitalIndex m(L"m'3");
-        REQUIRE( m.index() == mpqc::OrbitalIndex::Index::inactocc);
+        REQUIRE( m.index() == mpqc::OrbitalIndex::Index::frozen_occ);
         REQUIRE( m.to_ta_expression() == "m'3");
 
         mpqc::OrbitalIndex n(L"n'4");
-        REQUIRE( n.index() == mpqc::OrbitalIndex::Index::inactocc);
+        REQUIRE( n.index() == mpqc::OrbitalIndex::Index::frozen_occ);
 
         mpqc::OrbitalIndex P(L"P'1");
         REQUIRE( P.index() == mpqc::OrbitalIndex::Index::allany);

@@ -9,12 +9,15 @@
 
 namespace mpqc{
 
-/* Class to represent Orbital using Char Index
-    *   Here's the key index dictionary that can be used (\sa to_space):
-    *   MO Orbitals
+/**
+    \brief Class to represent Orbital using WChar Index
+    *
+    *   Here's the key index dictionary that can be used
+    *
+    *  MO Orbitals
     *     - m, n -> occ(occupied)
-    *     - i,j,k,l -> actocc (corr occupied)
-    *     - m', n' -> inactocc (inactive/core occupied)
+    *     - i,j,k,l -> corr_occ (correlated occupied)
+    *     - m', n' -> frozen_occ (inactive/core occupied)
     *     - x, y -> active (active orbital used in MR)
     *     - a,b,c,d -> virt (virtual)
     *     - p,q,r,s -> any (orbital basis, obs)
@@ -24,7 +27,7 @@ namespace mpqc{
     *
     *   AO Orbitals(greek letter)
     *     - κ λ  μ ν -> obs(primary orbital basis)
-    *     - Α Β Γ Δ -> obs(sencodary orbital basis)
+    *     - Α Β Γ Δ -> vbs(sencodary orbital basis)
     *     - Κ Λ Μ Ν -> dfbs(density fitting basis)
     *     - α β γ δ -> abs(auxilary basis)
     *     - ρ σ τ υ -> ribs(obs + abs)
@@ -35,12 +38,15 @@ namespace mpqc{
  */
 class OrbitalIndex{
 public:
-    // positive for molecular orbital index
-    // negative for atomic orbital index
+    ///
+    /// Index types
+    /// positive for molecular orbital index
+    /// negative for atomic orbital index
+    ///
     enum class Index {
-        inactocc = 1,
+        frozen_occ = 1,
         active = 2,
-        actocc = 3,
+        corr_occ = 3,
         occ = 4,
         virt = 5,
         any = 9,
@@ -54,15 +60,20 @@ public:
         dfbs = -5
     };
 
+    ///
+    /// Spin types
+    ///
     enum class Spin{
         Alpha = 1,
         Beta = -1,
         None = 0
     };
 
-    // constant wchar_t used to map to Index
-    static const wchar_t inactocc_wchar[2];
-    static const wchar_t actocc_wchar[2];
+    ///
+    /// constant wchar_t used to map to Index
+    ///
+    static const wchar_t frozen_occ_wchar[2];
+    static const wchar_t corr_occ_wchar[2];
     static const wchar_t occ_wchar[2];
     static const wchar_t active_wchar[2];
     static const wchar_t virt_wchar[2];
@@ -82,64 +93,83 @@ public:
     OrbitalIndex& operator=(OrbitalIndex const &) = default;
     OrbitalIndex& operator=(OrbitalIndex &&) = default;
 
+    /**
+     * Constructor
+     * Construct OrbitalIndex wstring
+     * @param letter
+     * check description of class for mappings
+     */
 
     OrbitalIndex(std::wstring letter);
-    OrbitalIndex(OrbitalIndex::Index index, OrbitalIndex::Spin spin);
 
-    // if the have the same index
+    /// check equality by comparing index and spin
     bool operator==(OrbitalIndex const &) const;
-    bool operator==(const OrbitalIndex::Index ) const;
+
+    /// check equality by index and spin
+    bool operator==(const OrbitalIndex::Index, const OrbitalIndex::Spin ) const;
+
+    /// comparison by index and spin
     bool operator<(const OrbitalIndex&)const;
+
+    /// comparison by index and spin
     bool operator>(const OrbitalIndex&)const;
 
-    // if the same index and name
+    /// if the same index and name
     bool same(const OrbitalIndex& other) const;
 
-    // get index
+    /// return index
     const Index &index() const {
         return index_;
     }
 
-    // get spin
+    /// return spin
     const Spin &spin() const {
         return spin_;
     }
 
-    // get index name
+    /// return index name
     const std::wstring &name() const {
         return name_;
     }
 
-    // if atomic orbital index
+    /// if atomic orbital index
     bool is_ao() const;
 
-    // if molecular orbital index
+    /// if molecular orbital index
     bool is_mo() const;
 
-    // if obs
+    /// return true if is mo in obs
     bool is_mo_in_obs() const;
 
-    // if abs
+    /// return true if is mo in abs
     bool is_mo_in_abs() const;
 
-    // if ribs
+    /// return true if is mo in ribs
     bool is_mo_in_ribs() const;
 
     /// Default MO to AO mapping
     /// othervir, allvir, allany -> ribs
+    /// everything else -> obs
     OrbitalIndex mo_to_ao () const;
 
+    /// convert name to TiledArray accepted expression
+    /// basicly it converts greek letter to english names
     std::string to_ta_expression() const;
 
 private:
     void init(const wchar_t *letter);
 
+    /// convert wchar to index
     Index wchar_to_index(const wchar_t);
+
+    /// convet wchar with prime, for example a', to index
     Index wchar_with_prime_to_index(const wchar_t);
 
 private:
     Index index_;
     Spin spin_;
+
+    /// the name that user passed in from the constructor
     std::wstring name_;
 };
 

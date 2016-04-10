@@ -17,9 +17,9 @@
 namespace mpqc{
 
 // set the range of key index to use
-const wchar_t OrbitalIndex::inactocc_wchar[2] = {L'm',L'n'};
+const wchar_t OrbitalIndex::frozen_occ_wchar[2] = {L'm',L'n'};
 const wchar_t OrbitalIndex::occ_wchar[2] = {L'm',L'n'};
-const wchar_t OrbitalIndex::actocc_wchar[2] = {L'i',L'l'};
+const wchar_t OrbitalIndex::corr_occ_wchar[2] = {L'i',L'l'};
 const wchar_t OrbitalIndex::virt_wchar[2] = {L'a',L'd'};
 const wchar_t OrbitalIndex::active_wchar[2] = {L'x',L'y'};
 const wchar_t OrbitalIndex::any_wchar[2] = {L'p',L's'};
@@ -123,8 +123,8 @@ bool OrbitalIndex::operator==(const OrbitalIndex &other) const{
     return (this->index_ == other.index_) && (this->spin_ == other.spin_);
 }
 
-bool OrbitalIndex::operator==(const OrbitalIndex::Index i) const{
-    return this->index_ == i;
+bool OrbitalIndex::operator==(const OrbitalIndex::Index i, const OrbitalIndex::Spin s) const{
+    return (this->index_) == i && (this->spin_ == s);
 }
 
 bool OrbitalIndex::operator<(const OrbitalIndex &other) const {
@@ -152,8 +152,8 @@ OrbitalIndex::Index OrbitalIndex::wchar_to_index(const wchar_t first) {
     if (first >= occ_wchar[0] && first <= occ_wchar[1]) {
         return Index::occ;
     }
-    else if (first >= actocc_wchar[0] && first <= actocc_wchar[1]){
-        return Index::actocc;
+    else if (first >= corr_occ_wchar[0] && first <= corr_occ_wchar[1]){
+        return Index::corr_occ;
     }
     else if ( first >= active_wchar[0] && first <= active_wchar[1]){
         return Index::active;
@@ -189,8 +189,8 @@ OrbitalIndex::Index OrbitalIndex::wchar_with_prime_to_index(const wchar_t first)
     if (first >= othervirt_wchar[0] && first <= othervirt_wchar[1]) {
         return Index::othervirt;
     }
-    else if (first >= inactocc_wchar[0] && first <= inactocc_wchar[1]){
-        return Index::inactocc;
+    else if (first >= frozen_occ_wchar[0] && first <= frozen_occ_wchar[1]){
+        return Index::frozen_occ;
     }
     else if (first >= allvirt_wchar[0] && first <= allvirt_wchar[1]) {
         return Index::allvirt;

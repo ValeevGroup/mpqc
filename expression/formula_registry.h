@@ -12,7 +12,13 @@
 
 namespace mpqc{
 
-    // a wrapper of std::map, not thread_safe for writing
+    /**
+     *
+     * \brief a wrapper of std::map, not thread_safe for writing
+     *
+     *
+     *
+     */
     template<typename Key, typename Value>
     class Registry {
     public:
@@ -34,37 +40,42 @@ namespace mpqc{
 
         virtual ~Registry()= default;
 
+        /// return the registry
         const element_type &registry() const {
             return registry_;
         }
 
+        /// insert to registry by std::pair<Key, Value>
         void insert(const value_type& val){
             registry_.insert(val);
         }
 
+        /// insert to registry by Key and Value
         void insert(const Key& key, const Value& val){
             registry_[key] = val;
         }
 
+        /// remove Value by Key
         void remove(const Key& key){
             registry_.erase(key);
         }
 
+        /// clear the registry
         void clear(){
             registry_.clear();
         }
 
-        // find item, return iterator
+        /// find item, return iterator
         iterator find(const Key& key) {
             return registry_.find(key);
         }
 
-        // find item, return const iterator
+        /// find item, return const iterator
         const_iterator find(const Key& key) const{
             return registry_.find(key);
         }
 
-        // find item, return iterator, if not found, throw
+        /// find item, return iterator, if not found, throw
         Value& retrieve(const Key& key){
             auto iter = registry_.find(key);
             if(iter==registry_.end()){
@@ -73,7 +84,7 @@ namespace mpqc{
             return iter->second;
         }
 
-        // return item, return const iterator, if not found, throw
+        /// find item, return const iterator, if not found, throw
         const Value& retrieve(const Key& key) const{
             auto iter = registry_.find(key);
             if(iter==registry_.cend()){
@@ -82,18 +93,22 @@ namespace mpqc{
             return iter->second;
         }
 
+        /// return begin of iterator
         iterator begin() {
             return registry_.begin();
         }
 
+        /// return end of iterator
         iterator end()  {
             return registry_.end();
         }
 
+        /// return begin of const_iterator
         const_iterator cbegin() const {
             return registry_.cbegin();
         }
 
+        /// reutrn end of const_iterator
         const_iterator cend() const {
             return registry_.cend();
         }
@@ -120,7 +135,11 @@ namespace mpqc{
         element_type registry_;
     };
 
-    // map formula to template object
+    /**
+     *
+     *  \brief map Formula to Value object
+     *
+     */
     template<typename Value>
     class FormulaRegistry : public Registry<Formula,Value>{
 
@@ -135,12 +154,14 @@ namespace mpqc{
         FormulaRegistry()= default;
         FormulaRegistry(const element_type& map) : Registry<Key,Value>(map){}
 
+        /// prevent from copy and assign of FormulaRegistry
         FormulaRegistry(FormulaRegistry const &) = delete;
         FormulaRegistry& operator=(FormulaRegistry const &) = delete;
 
         FormulaRegistry(FormulaRegistry&&) = default;
         FormulaRegistry& operator=(FormulaRegistry &&) = default;
 
+        /// print out formula that stored in registry
         void print_formula(madness::World& world) const {
 
             if(world.rank()==0){

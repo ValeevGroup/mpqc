@@ -11,6 +11,9 @@
 
 namespace mpqc{
 
+/**
+ *  \brief map OrbitalIndex to Value object
+ */
 template <typename Value>
 class OrbitalRegistry : public Registry<OrbitalIndex,Value>{
 public:
@@ -24,19 +27,28 @@ public:
     OrbitalRegistry()= default;
     OrbitalRegistry(const element_type& map) : Registry<Key,Value>(map){}
 
+    /// add Value that has mo_key() function as key type
     void add(const Value& val){
         this->insert(val.mo_key(),val);
     }
 
+    /// add by Key and Value
     void add(const Key& key, const Value& val){
         this->insert(key, val);
     }
 };
 
-
+/**
+ * Typedef of OrbitalSpaceRegistry
+ * A Registry that map OrbitalIndex to OrbitalSpace class
+ */
 template <typename Array>
 using OrbitalSpaceRegistry = OrbitalRegistry<OrbitalSpace<Array>>;
 
+/**
+ * Typedef of OrbitalBasisRegistry
+ * A Registry that map OrbitalIndex to Basis
+ */
 using OrbitalBasisRegistry = OrbitalRegistry<std::shared_ptr<mpqc::basis::Basis>>;
 
 } // end of namespace mpqc

@@ -123,10 +123,6 @@ bool OrbitalIndex::operator==(const OrbitalIndex &other) const{
     return (this->index_ == other.index_) && (this->spin_ == other.spin_);
 }
 
-bool OrbitalIndex::operator==(const OrbitalIndex::Index i, const OrbitalIndex::Spin s) const{
-    return (this->index_) == i && (this->spin_ == s);
-}
-
 bool OrbitalIndex::operator<(const OrbitalIndex &other) const {
     return other.index()==this->index() ? this->spin() < other.spin() : this->index() < other.index();
 }

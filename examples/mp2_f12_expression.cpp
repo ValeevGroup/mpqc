@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     auto tre = TRange1Engine(occ / 2, all, 1, mo_block_size, 0);
 
     auto F = scf.fock();
-    ao_int.registry().insert(Formula(L"(μ|F|ν)"),F);
+    ao_int.registry().insert(Formula(L"(μ|F|ν)[df]"),F);
 
 
     //mp2

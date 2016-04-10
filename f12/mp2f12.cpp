@@ -53,6 +53,9 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
         // G integral in MO not needed, still need G integral in AO to compute F, K, hJ
         mo_int_.registry().remove_operation(world, L"G");
 
+        auto V_map = V_ijij_ijji.get_pmap();
+        auto local = V_map->local_size();
+        std::cout << "V PMap Local Size, Rank " << world.rank() << " Size " << local << std::endl;
 
         //contribution from V_ijij_ijji
         double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));

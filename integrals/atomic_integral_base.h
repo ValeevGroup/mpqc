@@ -81,7 +81,7 @@ protected:
 
     std::array<Formula,3> get_jk_df_formula(const Formula& formula);
 
-    std::array<Formula,4> get_fock_formula(const Formula& formula);
+    std::array<Formula,3> get_fock_formula(const Formula& formula);
 
     OrbitalIndex get_jk_orbital_space(const Operation& operation);
 

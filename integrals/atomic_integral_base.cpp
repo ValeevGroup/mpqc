@@ -295,13 +295,11 @@ OrbitalIndex AtomicIntegralBase::get_jk_orbital_space(const Operation &operation
     }
 }
 
-std::array<Formula, 4> AtomicIntegralBase::get_fock_formula(const Formula &formula) {
+std::array<Formula, 3> AtomicIntegralBase::get_fock_formula(const Formula &formula) {
 
-    std::array<Formula, 4> result;
-    auto v = formula;
-    v.set_operation(Operation(L"V"));
-    auto t = formula;
-    t.set_operation(Operation(L"T"));
+    std::array<Formula, 3> result;
+    auto h = formula;
+    h.set_operation(Operation(L"H"));
     auto j = formula;
     j.operation().set_oper(Operation::Operations::J);
     auto k = formula;
@@ -315,10 +313,9 @@ std::array<Formula, 4> AtomicIntegralBase::get_fock_formula(const Formula &formu
         k.operation().set_oper( Operation::Operations::KBeta);
     }
 
-    result[0] = v;
-    result[1] = t;
-    result[2] = j;
-    result[3] = k;
+    result[0] = h;
+    result[1] = j;
+    result[2] = k;
     return result;
 }
 }// end of namespace integral

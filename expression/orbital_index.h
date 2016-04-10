@@ -105,9 +105,6 @@ public:
     /// check equality by comparing index and spin
     bool operator==(OrbitalIndex const &) const;
 
-    /// check equality by index and spin
-    bool operator==(const OrbitalIndex::Index, const OrbitalIndex::Spin ) const;
-
     /// comparison by index and spin
     bool operator<(const OrbitalIndex&)const;
 

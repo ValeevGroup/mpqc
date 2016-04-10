@@ -95,7 +95,6 @@ namespace integrals{
 
     private:
 
-        //TODO more operation F, J, K...
         // compute integrals that has two dimension
         TArray compute2(const Formula& formula_string);
         // compute integrals that has three dimension
@@ -217,7 +216,6 @@ namespace integrals{
         return result;
     };
 
-//TODO better inverse of two center
     template <typename Tile, typename Policy>
     typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute4(const Formula &formula_string) {
 
@@ -383,7 +381,7 @@ typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::
     }
 
     // make sure all processes obtained result and insert formula
-    world_.gop.fence();
+//    world_.gop.fence();
 
     return result;
 }

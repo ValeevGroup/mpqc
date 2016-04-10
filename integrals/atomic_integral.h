@@ -19,7 +19,6 @@
 namespace mpqc{
 namespace integrals{
 
-    //TODO better printing with parallel
     /// Atomic Integral Class
     //// Op is a function
     /// Op will take TA::TensorD as argument and return Tile
@@ -90,8 +89,8 @@ namespace integrals{
 
     private:
 
+        //TODO better inverse of two center
         //TODO direct integral
-        //TODO return expression
         //TODO Screener for different type of integral
         // compute integral for sparse policy
         template <typename E, unsigned long N, typename U = Policy>
@@ -205,7 +204,7 @@ namespace integrals{
         }
 
         // wait all process to obtain and insert result
-        world_.gop.fence();
+//        world_.gop.fence();
         return result;
 
     }
@@ -256,7 +255,6 @@ namespace integrals{
             utility::print_par(world_," Size: ", size, " GB");
             utility::print_par(world_," Time: ", time, " s\n");
         }
-            //TODO nicer error handling
         // use two body engine
         else if(formula.operation().is_twobody()){
             auto time0 = mpqc_time::fenced_now(world_);
@@ -360,15 +358,18 @@ namespace integrals{
                 auto space_index = get_jk_orbital_space(formula.operation());
                 auto space = orbital_space_registry_->retrieve(space_index);
 
+                // J case
                 if(formula.operation().oper() == Operation::Operations::J){
                     result("i,j") = center("K,Q")*right("Q,k,l")*(space("k,a")*space("l,a"))*left("K,i,j");
                 }
+                // K case
                 else{
                     result("i,j") = (left("K,i,k")*space("k,a"))*center("K,Q")*(right("Q,j,l")*space("l,a"));
                 }
                 auto time1 = mpqc_time::fenced_now(world_);
                 time+= mpqc_time::duration_in_s(time0,time1);
             }
+                // four center case
             else{
                 // convert to ao formula
                 auto four_center_formula = get_jk_formula(formula);
@@ -421,23 +422,23 @@ namespace integrals{
             utility::print_par(world_," Size: ", size, " GB");
             utility::print_par(world_," Time: ", time, " s\n");
         }
-            //compute Fock, requires orbital space registry
-            // TODO use H instead of v and t
+        //compute Fock, requires orbital space registry
         else if(formula.operation().is_fock()){
 
             auto formulas = get_fock_formula(formula);
 
-            auto t = compute(formulas[0]);
-            auto v = compute(formulas[1]);
-            auto j = compute(formulas[2]);
-            auto k = compute(formulas[3]);
+            auto h = compute(formulas[0]);
+            auto j = compute(formulas[1]);
+            auto k = compute(formulas[2]);
 
             auto time0 = mpqc_time::fenced_now(world_);
+            // if closed shell
             if(formula.operation().oper() == Operation::Operations::Fock){
-                result("rho,sigma") = t("rho,sigma") + v("rho,sigma") + 2*j("rho,sigma") - k("rho,sigma");
+                result("rho,sigma") = h("rho,sigma") + 2*j("rho,sigma") - k("rho,sigma");
             }
+            // else if spin orbital
             else{
-                result("rho,sigma") = t("rho,sigma") + v("rho,sigma") + j("rho,sigma") - k("rho,sigma");
+                result("rho,sigma") = h("rho,sigma") + j("rho,sigma") - k("rho,sigma");
             }
             auto time1 = mpqc_time::fenced_now(world_);
             time+= mpqc_time::duration_in_s(time0,time1);

@@ -115,20 +115,15 @@ namespace mpqc{
 
         /// removes all objects if p(key) == true
         template<typename Pred>
-        void remove_if(madness::World& world, const Pred& p){
+        void remove_if(const Pred& p){
             auto i = registry_.begin();
             for(; i != registry_.end(); ){
                 if (p(*i)){
-                    utility::print_par(world, "Removed from Registry: ");
-                    utility::wprint_par(world, i->first.formula_string());
-                    utility::print_par(world, "\n");
                     registry_.erase(i++);
                 }else{
                     ++i;
                 }
             }
-            // wait for all process remove item
-            world.gop.fence();
         }
 
     protected:
@@ -169,6 +164,22 @@ namespace mpqc{
                     utility::wprint_size_info(item.second, item.first.formula_string());
                 }
                 std::cout << std::endl;
+            }
+        }
+
+        /// removes all objects if p(key) == true
+        template<typename Pred>
+        void remove_if(madness::World& world, const Pred& p){
+            auto i = this->registry_.begin();
+            for(; i != this->registry_.end(); ){
+                if (p(*i)){
+                    utility::print_par(world, "Removed from Registry: ");
+                    utility::wprint_par(world, i->first.formula_string());
+                    utility::print_par(world, "\n");
+                    this->registry_.erase(i++);
+                }else{
+                    ++i;
+                }
             }
         }
 

@@ -19,9 +19,15 @@
 namespace mpqc{
 namespace integrals{
 
-    /// Atomic Integral Class
-    //// Op is a function
-    /// Op will take TA::TensorD as argument and return Tile
+    /**
+     * \brief Atomic Integral Class
+     *
+     *  This class computes atomic integral using  Formula
+     *
+     *  compute(formula) return TArray object
+     *  (formula) return TArray expression
+     *
+     */
 
     template<typename Tile, typename Policy>
     class AtomicIntegral : public AtomicIntegralBase{
@@ -35,6 +41,15 @@ namespace integrals{
         using IntegralBuilder = integrals::IntegralBuilder<N,E,Op>;
 
         AtomicIntegral() = default;
+
+        /**
+         *  Constructor
+         *  @param world madness::World object
+         *  @param op op is a function that will take TA::TensorD as argument and return Tile
+         *  @param mol shared pointer to Molecule
+         *  @param obs shared pointer to OrbitalBasisRegistry
+         *  @param gtg_params  parameters used in computing f12 integrals
+         */
 
         AtomicIntegral(madness::World& world,
                 Op op,
@@ -50,9 +65,18 @@ namespace integrals{
         virtual ~AtomicIntegral() = default;
 
 
+        /// wrapper to compute function
         TArray compute(const std::wstring& );
+
+        /**
+         *  compute integral by Formula
+         *  this function will look into registry first
+         *  if Formula computed, it will return it from registry
+         *  if not, it will compute it
+         */
         TArray compute(const Formula& );
 
+        /// compute with str and return expression
         TA::expressions::TsrExpr<TArray,true> operator() (const std::wstring& str){
             auto formula = Formula(str);
             auto array = compute(formula);
@@ -60,14 +84,17 @@ namespace integrals{
             return result(formula.to_ta_expression());
         };
 
+        /// return ao formula registry
         const FormulaRegistry<TArray> &registry() const {
             return ao_formula_registry_;
         }
 
+        /// return ao formula registry
         FormulaRegistry<TArray> &registry(){
             return ao_formula_registry_;
         }
 
+        /// set orbital space registry
         void set_orbital_space_registry(const std::shared_ptr<OrbitalSpaceRegistry<TArray>> regitsry) {
             orbital_space_registry_ = regitsry;
         }
@@ -75,15 +102,17 @@ namespace integrals{
 
     protected:
 
-        // compute two body integral
+        /// compute two body integral
         template <typename Basis>
         TArray compute_two_body_integral(const libint2::MultiplicativeSphericalTwoBodyKernel& kernel, const Basis& basis, int64_t max_nprim, int64_t max_am, const Operation& operation);
 
-        // compute integrals that has two dimension
+        /// compute integrals that has two dimension
         TArray compute2(const Formula& formula_string);
-        // compute integrals that has three dimension
+
+        /// compute integrals that has three dimension
         TArray compute3(const Formula& formula_stirng);
-        // compute integrals that has four dimension
+
+        /// compute integrals that has four dimension
         TArray compute4(const Formula& formula_string);
 
 
@@ -92,7 +121,7 @@ namespace integrals{
         //TODO better inverse of two center
         //TODO direct integral
         //TODO Screener for different type of integral
-        // compute integral for sparse policy
+        /// compute integral for sparse policy
         template <typename E, unsigned long N, typename U = Policy>
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::SparsePolicy>::value, TA::SparsePolicy>::type> compute_integrals(
                 madness::World& world, E const &engine, Barray<N> const &bases)
@@ -102,7 +131,7 @@ namespace integrals{
             return result;
         }
 
-        // compute integral for dense policy
+        /// compute integral for dense policy
         template <typename E, unsigned long N, typename U = Policy>
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::DensePolicy>::value, TA::DensePolicy>::type> compute_integrals(
                 madness::World& world, E const &engine, Barray<N> const &bases)
@@ -239,6 +268,7 @@ namespace integrals{
                 auto time1 = mpqc_time::fenced_now(world_);
                 time+= mpqc_time::duration_in_s(time0,time1);
             }
+                // one body integral S, V, T...
             else {
                 auto time0 = mpqc_time::fenced_now(world_);
 

@@ -21,12 +21,27 @@ namespace mpqc{
 namespace integrals{
 
 // TODO MO transform that minimize operations by permutation
+    /**
+     * \brief Molecule Integral computation class
+     *  This class computes molecular integral using  Formula
+     *
+     *  compute(formula) return TArray object
+     *  (formula) return TArray expression
+     *
+     */
     template <typename Tile, typename Policy>
     class MolecularIntegral{
     public:
         using TArray = TA::DistArray<Tile, Policy>;
         using AtomicIntegral = AtomicIntegral<Tile,Policy>;
 
+        /**
+         *  Constructor
+         *  @param atomic_integral  reference to AtomicIntegral class
+         *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry, which contain AO to MO coefficients
+         *  @param formula_registry  FormulaRegistry used to store computed integral
+         *
+         */
         MolecularIntegral(AtomicIntegral &atomic_integral,
                           const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry,
                           const FormulaRegistry<TArray> &formula_registry)
@@ -37,6 +52,12 @@ namespace integrals{
             atomic_integral_.set_orbital_space_registry(orbital_space_registry);
         }
 
+        /**
+         *  Constructor
+         *  @param atomic_integral  reference to AtomicIntegral class
+         *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry, which contain AO to MO coefficients
+         *
+         */
         MolecularIntegral(AtomicIntegral &atomic_integral,
                           const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry)
                 : world_(atomic_integral.get_world()), atomic_integral_(atomic_integral),
@@ -46,37 +67,54 @@ namespace integrals{
             atomic_integral_.set_orbital_space_registry(orbital_space_registry);
         }
 
+        /// return reference to madness::World
         madness::World &get_world() const {
             return world_;
         }
 
+        /// return reference to AtomicIntegral object
         AtomicIntegral& atomic_integral() const {
             return atomic_integral_;
         }
 
+        /// return reference to AtomicIntegral object
         AtomicIntegral& atomic_integral() {
             return atomic_integral_;
         }
 
+        /// wrapper to operator() function in AtomicIntegral
         TA::expressions::TsrExpr<TArray,true> atomic_integral (const std::wstring& str){
             return std::move(atomic_integral_(str));
         };
 
+        /// reutrn shared pointer to OrbitalSpaceRegistry
         const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() const {
             return orbital_space_registry_;
         }
 
+        /// return reference to FormulaRegistry
         const FormulaRegistry<TArray> &registry() const {
             return mo_formula_registry_;
         }
 
+        /// return reference to FormulaRegistry
         FormulaRegistry<TArray> &registry() {
             return mo_formula_registry_;
         }
 
+        /// wrapper to compute function
         TArray compute(const std::wstring& );
+
+
+        /**
+         *  compute integral by Formula
+         *  this function will look into registry first
+         *  if Formula computed, it will return it from registry
+         *  if not, it will compute it
+         */
         TArray compute(const Formula&);
 
+        /// compute with str and return expression
         TA::expressions::TsrExpr<TArray,true> operator() (const std::wstring& str){
             auto formula = Formula(str);
             TArray array = compute(formula);
@@ -84,6 +122,7 @@ namespace integrals{
             return result(formula.to_ta_expression());
         };
 
+        /// remove all formula that has operation oper_str in mo_registry and ao_registry
         void remove_operation_all(madness::World& world, const std::wstring& oper_str){
 
             Operation operation(oper_str);
@@ -95,17 +134,21 @@ namespace integrals{
 
     private:
 
-        // compute integrals that has two dimension
+        /// compute integrals that has two dimension
         TArray compute2(const Formula& formula_string);
-        // compute integrals that has three dimension
+
+        /// compute integrals that has three dimension
         TArray compute3(const Formula& formula_string);
-        // compute integrals that has four dimension
+
+        /// compute integrals that has four dimension
         TArray compute4(const Formula& formula_string);
 
     private:
 
+        /// find the corresponding AO formula, if index is already AO, it will be ignored
         Formula mo_to_ao(const Formula& formula);
 
+        /// assert all index in formula are in MO
         void assert_all_mo(const Formula &formula);
 
     private:

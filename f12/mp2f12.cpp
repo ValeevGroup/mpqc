@@ -52,17 +52,11 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
     }
 
     // compute C term
-    TArray C_iajb;
-    {
-        utility::print_par(world, "Compute C_iajb With DF \n" );
-        C_iajb("i,a,j,b") = mo_integral(L"(i a|R|j a')[df]")*mo_integral(L"(b|F|a')[df]");
-        C_iajb("i,a,j,b") += mo_integral(L"(j b|R|i a')[df]")*mo_integral(L"(a|F|a')[df]");
-    }
-
+    TArray C_ijab = compute_C_ijab(mo_integral);
 
     {
         utility::print_par(world, "Compute CT With DF \n" );
-        V_ijij_ijji("i1,j1,i2,j2") = (C_iajb("i1,a,j1,b")*t2("a,b,i2,j2")).set_shape(ijij_ijji_shape);
+        V_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*t2("a,b,i2,j2")).set_shape(ijij_ijji_shape);
 
         double E_ct = V_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
         utility::print_par(world, "E_CT: ", E_ct, "\n");
@@ -98,8 +92,8 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
     {
 
         utility::print_par(world, "Compute CC Term With DF \n");
-        auto C_bar_iajb = f12::convert_C_iajb(C_iajb, occ, *orbital_energy_);
-        B_ijij_ijji("i1,j1,i2,j2") = (C_iajb("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
+        auto C_bar_ijab = f12::convert_C_ijab(C_ijab, occ, *orbital_energy_);
+        B_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
 
         double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
         utility::print_par(world, "E_CC: ", E_cc, "\n");
@@ -153,16 +147,16 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c(){
         E += E_v;
     }
 
-    TArray C_iajb_nodf;
+    TArray C_ijab_nodf;
     {
         utility::print_par(world, "Compute C_iajb Without DF \n" );
-        C_iajb_nodf("i,a,j,b") = mo_integral(L"(i a|R|j a')")*mo_integral(L"(b|F|a')");
-        C_iajb_nodf("i,a,j,b") += mo_integral(L"(j b|R|i a')")*mo_integral(L"(a|F|a')");
+        C_ijab_nodf("i,j,a,b") = mo_integral(L"(i a|R|j a')")*mo_integral(L"(b|F|a')");
+        C_ijab_nodf("i,j,a,b") += mo_integral(L"(j b|R|i a')")*mo_integral(L"(a|F|a')");
     }
 
     {
         utility::print_par(world, "Compute CT Without DF \n" );
-        V_ijij_ijji_nodf("i1,j1,i2,j2") = (C_iajb_nodf("i1,a,j1,b")*t2_nodf("a,b,i2,j2")).set_shape(ijij_ijji_shape);
+        V_ijij_ijji_nodf("i1,j1,i2,j2") = (C_ijab_nodf("i1,j1,a,b")*t2_nodf("a,b,i2,j2")).set_shape(ijij_ijji_shape);
 
         double E_ct = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
         utility::print_par(world, "E_CT: ", E_ct, "\n");
@@ -232,8 +226,8 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c(){
 
     {
         utility::print_par(world, "Compute CC Term Without DF \n");
-        auto C_bar_iajb = f12::convert_C_iajb(C_iajb_nodf, occ, *orbital_energy_);
-        B_ijij_ijji_nodf("i1,j1,i2,j2") = (C_iajb_nodf("i1,a,j1,b")*C_bar_iajb("i2,a,j2,b")).set_shape(ijij_ijji_shape);
+        auto C_bar_ijab = f12::convert_C_ijab(C_ijab_nodf, occ, *orbital_energy_);
+        B_ijij_ijji_nodf("i1,j1,i2,j2") = (C_ijab_nodf("i1,a,j1,b")*C_bar_ijab("i2,a,j2,b")).set_shape(ijij_ijji_shape);
 
         double E_cc = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
         utility::print_par(world, "E_CC: ", E_cc, "\n");

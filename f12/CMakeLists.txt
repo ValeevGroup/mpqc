@@ -1,4 +1,6 @@
 set(sources
+    ccsdf12.h
+    ccsdf12.cpp
     f12_intermediates.h
     f12_utility.cpp
     f12_utility.h

@@ -201,20 +201,49 @@ TA::DistArray<Tile,Policy> compute_V_ijxy(integrals::MolecularIntegral<Tile, Pol
     auto& world = mo_integral.get_world();
 
     TA::DistArray<Tile,Policy> V_ijxy;
+    TA::DistArray<Tile,Policy> tmp;
 
     utility::print_par(world, "Compute V_ijxy With DF \n" );
     V_ijxy("i,j,k,l") = mo_integral(L"(Κ |GR|i k)")*mo_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j l)");
 
-    // all types of GR integral not needed
-    mo_integral.remove_operation_all(world, L"GR");
-
     V_ijxy("i,j,k,l") -= mo_integral(L"(i p|G|j q)[df]")*mo_integral(L"(k p|R|l q)[df]");
-    V_ijxy("i,j,k,l") -= mo_integral(L"(i m|G|j a')[df]")*mo_integral(L"(k m|R|l a')[df]");
-    V_ijxy("i,j,k,l") -= mo_integral(L"(j m|G|i a')[df]")*mo_integral(L"(k m|R|l a')[df]");
+    tmp("i,j,k,l") = mo_integral(L"(i m|G|j a')[df]")*mo_integral(L"(k m|R|l a')[df]");
+//    V_ijxy("i,j,k,l") -= mo_integral(L"(j m|G|i a')[df]")*mo_integral(L"(k m|R|l a')[df]");
+    V_ijxy("i,j,k,l") -= tmp("i,j,k,l");
+    V_ijxy("i,j,k,l") -= tmp("j,i,l,k");
 
     return V_ijxy;
 
 };
+
+/**
+ * CC-F12 C approach V term
+ * $V_{ia}^{xy}
+ * @param mo_integral reference to MolecularIntegral
+ * @return V("i,j,x,y")
+ */
+template<typename Tile, typename Policy>
+TA::DistArray<Tile,Policy> compute_V_iaxy(integrals::MolecularIntegral<Tile, Policy>& mo_integral)
+{
+
+    auto& world = mo_integral.get_world();
+
+    TA::DistArray<Tile,Policy> V_iaxy;
+    TA::DistArray<Tile,Policy> tmp;
+
+    utility::print_par(world, "Compute V_iaxy With DF \n" );
+    V_iaxy("i,a,k,l") = mo_integral(L"(Κ |GR|i k)")*mo_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|a l)");
+
+    V_iaxy("i,a,k,l") -= mo_integral(L"(i p|G|a q)[df]")*mo_integral(L"(k p|R|l q)[df]");
+    tmp("i,a,k,l") = mo_integral(L"(i m|G|a a')[df]")*mo_integral(L"(k m|R|l a')[df]");
+//    V_iaxy("i,j,k,l") -= mo_integral(L"(j m|G|i a')[df]")*mo_integral(L"(k m|R|l a')[df]");
+    V_iaxy("i,a,k,l") -= tmp("i,a,k,l");
+    V_iaxy("i,a,k,l") -= tmp("a,i,l,k");
+
+    return V_iaxy;
+
+};
+
 
 /**
  * CC-F12 C approach V term
@@ -230,16 +259,16 @@ TA::DistArray<Tile,Policy> compute_V_xyab(integrals::MolecularIntegral<Tile, Pol
     auto& ao_integral = mo_integral.atomic_integral();
 
     TA::DistArray<Tile,Policy> V_xyab;
+    TA::DistArray<Tile,Policy> tmp;
 
     utility::print_par(world, "Compute V_xyab With DF \n" );
     V_xyab("i,j,a,b") = mo_integral(L"(Κ |GR|i a)")*ao_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j b)");
 
-    // all types of GR integral not needed
-    mo_integral.remove_operation_all(world, L"GR");
-
     V_xyab("i,j,a,b") -= mo_integral(L"(i p|G|j q)[df]")*mo_integral(L"(a p|R|b q)[df]");
-    V_xyab("i,j,a,b") -= mo_integral(L"(i m|G|j a')[df]")*mo_integral(L"(a m|R|b a')[df]");
-    V_xyab("i,j,a,b") -= mo_integral(L"(j m|G|i a')[df]")*mo_integral(L"(b m|R|a a')[df]");
+    tmp("i,j,a,b") = mo_integral(L"(i m|G|j a')[df]")*mo_integral(L"(a m|R|b a')[df]");
+//    V_xyab("i,j,a,b") -= mo_integral(L"(j m|G|i a')[df]")*mo_integral(L"(b m|R|a a')[df]");
+    V_xyab("i,j,a,b") -= tmp("i,j,a,b");
+    V_xyab("i,j,a,b") -= tmp("j,i,b,a");
 
     return V_xyab;
 };
@@ -256,16 +285,39 @@ TA::DistArray<Tile,Policy> compute_X_xywz(integrals::MolecularIntegral<Tile, Pol
     auto& world = mo_integral.get_world();
     auto& ao_integral = mo_integral.atomic_integral();
     TA::DistArray<Tile,Policy> X_xywz;
+    TA::DistArray<Tile,Policy> tmp;
 
     utility::print_par(world, "Compute X_xywz With DF \n" );
 
     X_xywz("i1,j1,i2,j2") = mo_integral(L"(Κ |R2|i1 i2)")*ao_integral(L"(Κ|R2|Λ)[inv]")*mo_integral(L"(Λ |R2|j1 j2)");
     X_xywz("i1,j1,i2,j2") -= mo_integral(L"(i1 p|R|j1 q)[df]")*mo_integral(L"(i2 p|R|j2 q)[df]");
-    X_xywz("i1,j1,i2,j2") -= mo_integral(L"(i1 m|R|j1 a')[df]")*mo_integral(L"(i2 m|R|j2 a')[df]");
-    X_xywz("i1,j1,i2,j2") -= mo_integral(L"(j1 m|R|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]");
+    tmp("i1,j1,i2,j2") = mo_integral(L"(i1 m|R|j1 a')[df]")*mo_integral(L"(i2 m|R|j2 a')[df]");
+//    X_xywz("i1,j1,i2,j2") -= mo_integral(L"(j1 m|R|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]");
+    X_xywz("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    X_xywz("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
 
     return X_xywz;
 
+};
+
+
+/**
+ * MP2-F12, CC-F12 C approach C term
+ * $C_{ij}^{ab}
+ * @param mo_integral reference to MolecularIntegral
+ * @return C("i,j,a,b")
+ */
+template<typename Tile, typename Policy>
+TA::DistArray<Tile,Policy> compute_C_ijab(integrals::MolecularIntegral<Tile, Policy>& mo_integral)
+{
+    auto& world = mo_integral.get_world();
+    TA::DistArray<Tile,Policy> C_ijab;
+
+    utility::print_par(world, "Compute C_ijab With DF \n" );
+    C_ijab("i,j,a,b") = mo_integral(L"(i a|R|j a')[df]")*mo_integral(L"(b|F|a')[df]");
+    C_ijab("i,j,a,b") += C_ijab("j,i,b,a");
+
+    return C_ijab;
 };
 
 /**

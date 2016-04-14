@@ -51,7 +51,7 @@ void CCSDF12<Tile,Policy>::compute_c() {
     TArray V_xyab = compute_V_xyab(mo_integral);
 
     // compute V_ijxy
-    TArray  V_ijxy = compute_V_ijxy(mo_integral);
+    TArray V_ijxy = compute_V_ijxy(mo_integral);
 
     // compute V_iaxy
     TArray V_iaxy = compute_V_iaxy(mo_integral);
@@ -61,7 +61,6 @@ void CCSDF12<Tile,Policy>::compute_c() {
     V_bar_ijxy("i,j,x,y") += 0.5*(V_xyab("x,y,a,b")+C_xyab("x,y,a,b"))*t2_("a,b,i,j");
     V_bar_ijxy("i,j,x,y") += V_iaxy("i,a,x,y")*t1_("j,a");
     V_bar_ijxy("i,j,x,y") += V_iaxy("j,a,x,y")*t1_("i,a");
-
 
 }
 

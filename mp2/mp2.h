@@ -40,7 +40,7 @@ namespace mpqc{
             }
         }
 
-        void compute() {
+        void compute_four_center() {
 
             auto g_iajb = mo_int_.compute(L"(i a|G|j b)");
             // compute mp2 energy
@@ -48,6 +48,21 @@ namespace mpqc{
 
             if (g_iajb.get_world().rank() == 0) {
                 std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
+            }
+        }
+
+        void compute(const rapidjson::Document& in){
+
+            std::string method = in.HasMember("Method") ? in["Method"].GetString() : "df";
+
+            if(method == "four center"){
+                compute_four_center();
+            }
+            else if(method == "df"){
+                compute_df();
+            }
+            else{
+                throw std::runtime_error("Wrong MP2 Method");
             }
         }
 

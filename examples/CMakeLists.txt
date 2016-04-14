@@ -25,6 +25,9 @@ add_dependencies(examples basis_example)
 add_executable(ccsd EXCLUDE_FROM_ALL ccsd.cpp)
 target_link_libraries(ccsd ${TileClusterChem_LIBRARIES})
 
+add_executable(mpqc EXCLUDE_FROM_ALL mpqc.cpp)
+target_link_libraries(mpqc ${TileClusterChem_LIBRARIES})
+
 add_executable(eomcc EXCLUDE_FROM_ALL eom_cc.cpp)
 target_link_libraries(eomcc ${TileClusterChem_LIBRARIES})
 

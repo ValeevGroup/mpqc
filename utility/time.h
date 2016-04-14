@@ -28,6 +28,15 @@ inline t_point fenced_now(madness::World &world) {
     world.gop.fence();
     return now();
 }
+/**
+ *  return fence() time based on bool fence
+ */
+inline t_point now(madness::World& world, bool fence){
+    if(fence){
+        world.gop.fence();
+    }
+    return now();
+}
 
 } // namespace time
 

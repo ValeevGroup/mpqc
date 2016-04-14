@@ -65,6 +65,7 @@ namespace integrals{
                   mo_formula_registry_()
         {
             atomic_integral_.set_orbital_space_registry(orbital_space_registry);
+            accurate_time_ = false;
         }
 
         /// return reference to madness::World
@@ -157,18 +158,22 @@ namespace integrals{
         AtomicIntegral& atomic_integral_;
         std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
         FormulaRegistry<TArray> mo_formula_registry_;
+        bool accurate_time_;
     };
 
     template <typename Tile, typename Policy>
     typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute2(const Formula &formula_string) {
 
         double time = 0.0;
+        mpqc_time::t_point time0;
+        mpqc_time::t_point time1;
 
         TArray result;
         // Identity matrix
         if(formula_string.operation().oper() == Operation::Operations::Identity){
 
-            auto time0 = mpqc_time::fenced_now(world_);
+            time0 = mpqc_time::now(world_,accurate_time_);
+
             auto left_index1 = formula_string.left_index()[0];
             auto right_index1 = formula_string.right_index()[0];
             auto left1 = orbital_space_registry_->retrieve(left_index1);
@@ -181,8 +186,9 @@ namespace integrals{
             // create diagonal array
             result = array_ops::create_diagonal_matrix(tmp,1.0);
 
-            auto time1 = mpqc_time::fenced_now(world_);
+            time1 = mpqc_time::now(world_,accurate_time_);
             time+= mpqc_time::duration_in_s(time0,time1);
+
             utility::print_par(world_, "Computed Identity: ");
             utility::wprint_par(world_, formula_string.formula_string());
             double size = utility::array_size(result);
@@ -196,7 +202,7 @@ namespace integrals{
         auto ao_formula = mo_to_ao(formula_string);
         auto ao_integral = atomic_integral_.compute(ao_formula);
 
-        auto time0 = mpqc_time::fenced_now(world_);
+        time0 = mpqc_time::now(world_,accurate_time_);
         // convert to MO
         result = ao_integral;
         // get coefficient
@@ -211,7 +217,7 @@ namespace integrals{
             result("p,k") = result("p,r")*right1("r,k");
         }
 
-        auto time1 = mpqc_time::fenced_now(world_);
+        time1 = mpqc_time::now(world_,accurate_time_);
         time+= mpqc_time::duration_in_s(time0,time1);
         utility::print_par(world_, "Transformed MO Integral: ");
         utility::wprint_par(world_, formula_string.formula_string());
@@ -226,6 +232,8 @@ namespace integrals{
     typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute3(const Formula &formula_string) {
 
         double time = 0.0;
+        mpqc_time::t_point time0;
+        mpqc_time::t_point time1;
 
         TArray result;
         // get AO
@@ -233,7 +241,7 @@ namespace integrals{
         auto ao_integral = atomic_integral_.compute(ao_formula);
 
         // convert to MO, only convert the right side
-        auto time0 = mpqc_time::fenced_now(world_);
+        time0 = mpqc_time::now(world_,accurate_time_);
 
         // get coefficient
         auto right_index1 = formula_string.right_index()[0];
@@ -247,7 +255,7 @@ namespace integrals{
             result("K,p,j") = result("K,p,q") * right2("q,j");
         }
 
-        auto time1 = mpqc_time::fenced_now(world_);
+        time1 = mpqc_time::now(world_,accurate_time_);
         time+= mpqc_time::duration_in_s(time0,time1);
 
         utility::print_par(world_, "Transformed MO Integral: ");
@@ -263,6 +271,8 @@ namespace integrals{
     typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute4(const Formula &formula_string) {
 
         double time = 0.0;
+        mpqc_time::t_point time0;
+        mpqc_time::t_point time1;
         TArray result;
         if(formula_string.operation().has_option(Operation::Options::DensityFitting)){
 
@@ -277,7 +287,7 @@ namespace integrals{
 
             TArray center = atomic_integral_.compute(df_formulas[1]);
 
-            auto time0 = mpqc_time::fenced_now(world_);
+            time0 = mpqc_time::now(world_,accurate_time_);
 
             if(notation==Formula::Notation::Chemical){
                 result("i,j,k,l") = left("q,i,j")*center("q,p")*right("p,k,l");
@@ -286,7 +296,7 @@ namespace integrals{
                 result("i,k,j,l") = left("q,i,j")*center("q,p")*right("p,k,l");
             }
 
-            auto time1 = mpqc_time::fenced_now(world_);
+            time1 = mpqc_time::now(world_,accurate_time_);
             time+= mpqc_time::duration_in_s(time0,time1);
 
         }else {
@@ -295,7 +305,7 @@ namespace integrals{
             auto ao_integral = atomic_integral_.compute(ao_formula);
 
             // convert to MO
-            auto time0 = mpqc_time::fenced_now(world_);
+            time0 = mpqc_time::now(world_,accurate_time_);
 
             // get coefficient
             auto left_index1 = formula_string.left_index()[0];
@@ -321,7 +331,7 @@ namespace integrals{
                 result("p,q,r,i") = result("p,q,r,s") * right2("s,i");
             }
 
-            auto time1 = mpqc_time::fenced_now(world_);
+            time1 = mpqc_time::now(world_,accurate_time_);
             time+= mpqc_time::duration_in_s(time0,time1);
         }
 

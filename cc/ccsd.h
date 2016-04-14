@@ -449,6 +449,7 @@ namespace mpqc {
                     dE = std::abs(E0 - E1);
                     iter += 1ul;
 
+                    world.gop.fence();
                     auto time1 = mpqc_time::now();
                     auto duration = mpqc_time::duration_in_s(time0, time1);
 
@@ -457,7 +458,6 @@ namespace mpqc {
                         "  " << E1 << "  " << duration << std::endl;
                     }
 
-                    world.gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
 
@@ -478,6 +478,7 @@ namespace mpqc {
                 auto& world = ccsd_intermediate_->get_Ca().get_world();
 
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
+                bool accurate_time = options_.HasMember("AccurateTime") ? options_["AccurateTime"].GetBool() : false;
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
@@ -486,7 +487,7 @@ namespace mpqc {
                     std::cout << "Use Straight CCSD Compute" <<std::endl;
                 }
 
-                auto tmp_time0 = mpqc_time::fenced_now(world);
+                auto tmp_time0 = mpqc_time::now(world,accurate_time);
                 // get all two electron integrals
                 TArray g_abij = ccsd_intermediate_->get_abij();
                 TArray g_ijkl = ccsd_intermediate_->get_ijkl();
@@ -496,7 +497,7 @@ namespace mpqc {
                 TArray g_aibc = ccsd_intermediate_->get_aibc();
                 TArray g_ijak = ccsd_intermediate_->get_ijak();
                 TArray g_ijka = ccsd_intermediate_->get_ijka();
-                auto tmp_time1 = mpqc_time::fenced_now(world);
+                auto tmp_time1 = mpqc_time::now(world,accurate_time);
                 auto tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                 if(print_detail){
                     mpqc::utility::print_par(world,"Integral Prepare Time: ", tmp_time, "\n");
@@ -545,6 +546,8 @@ namespace mpqc {
                     std::cout << "Start Iteration" << std::endl;
                     std::cout << "Max Iteration" << max_iter << std::endl;
                     std::cout << "Convergence " << converge << std::endl;
+                    std::cout << "AccurateTime" << accurate_time << std::endl;
+                    std::cout << "PrintDetail" << print_detail << std::endl;
                     if(less){
                         std::cout << "Less Memory Approach: Yes" << std::endl;
                     }else{
@@ -563,7 +566,7 @@ namespace mpqc {
                     TArray::wait_for_lazy_cleanup(world);
 
 
-                    auto t1_time0 = mpqc_time::fenced_now(world);
+                    auto t1_time0 = mpqc_time::now(world,accurate_time);
                     TArray h_ki, h_ac;
                     {
                         // intermediates for t1
@@ -575,7 +578,7 @@ namespace mpqc {
 
                         // compute residual r1(n) = t1(n+1) - t1(n)
                         // external index i and a
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         r1("a,i") = f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
 
                         {
@@ -594,14 +597,14 @@ namespace mpqc {
                             r1("a,i") +=  h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("c,i") * t1("a,k"));
                         }
 
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t1 h term time: ", tmp_time, "\n");
                         }
 
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         r1("a,i") += (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k");
 
                         r1("a,i") += (2.0 * g_iabc("k,a,c,d") - g_iabc("k,a,d,c")) * tau("c,d,k,i");
@@ -612,13 +615,13 @@ namespace mpqc {
 
                         r1("a,i") -= t1("a,i");
 
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t1 other time: ", tmp_time, "\n");
                         }
                     }
-                    auto t1_time1 = mpqc_time::fenced_now(world);
+                    auto t1_time1 = mpqc_time::now(world,accurate_time);
                     auto t1_time = mpqc_time::duration_in_s(t1_time0,t1_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t1 total time: ", t1_time, "\n");
@@ -628,25 +631,25 @@ namespace mpqc {
                     // intermediates for t2
                     // external index i j a b
 
-                    auto t2_time0 = mpqc_time::fenced_now(world);
+                    auto t2_time0 = mpqc_time::now(world,accurate_time);
 
                     // compute residual r2(n) = t2(n+1) - t2(n)
 
                     //permutation part
-                    tmp_time0 = mpqc_time::fenced_now(world);
+                    tmp_time0 = mpqc_time::now(world,accurate_time);
 
                     {
                         r2("a,b,i,j") = (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
 
                         r2("a,b,i,j") -= (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
                     }
-                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time1 = mpqc_time::now(world,accurate_time);
                     tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t2 other time: ", tmp_time, "\n");
                     }
 
-                    tmp_time0 = mpqc_time::fenced_now(world);
+                    tmp_time0 = mpqc_time::now(world,accurate_time);
                     {
                         // compute g intermediate
                         TArray g_ki, g_ac;
@@ -658,14 +661,14 @@ namespace mpqc {
                         r2("a,b,i,j") += g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
 
                     }
-                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time1 = mpqc_time::now(world,accurate_time);
                     tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t2 g term time: ", tmp_time, "\n");
                     }
 
 
-                    tmp_time0 = mpqc_time::fenced_now(world);
+                    tmp_time0 = mpqc_time::now(world,accurate_time);
                     {
                         TArray j_akic;
                         TArray k_kaic;
@@ -705,7 +708,7 @@ namespace mpqc {
                         r2("a,b,i,j") += - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j");
 
                     }
-                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time1 = mpqc_time::now(world,accurate_time);
                     tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t2 j,k term time: ", tmp_time, "\n");
@@ -717,7 +720,7 @@ namespace mpqc {
                     r2("a,b,i,j") += g_abij("a,b,i,j");
 
 
-                    tmp_time0 = mpqc_time::fenced_now(world);
+                    tmp_time0 = mpqc_time::now(world,accurate_time);
                     {
                         TArray a_klij;
                         // compute a intermediate
@@ -735,13 +738,13 @@ namespace mpqc {
                             utility::print_size_info(a_klij,"A_klij");
                         }
                     }
-                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time1 = mpqc_time::now(world,accurate_time);
                     tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t2 a term time: ", tmp_time, "\n");
                     }
 
-                    tmp_time0 = mpqc_time::fenced_now(world);
+                    tmp_time0 = mpqc_time::now(world,accurate_time);
                     {
                         // compute b intermediate
                         if (less) {
@@ -772,7 +775,7 @@ namespace mpqc {
                         }
 
                     }
-                    tmp_time1 = mpqc_time::fenced_now(world);
+                    tmp_time1 = mpqc_time::now(world,accurate_time);
                     tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
@@ -788,7 +791,7 @@ namespace mpqc {
                     t1.truncate();
                     t2.truncate();
 
-                    auto t2_time1 = mpqc_time::fenced_now(world);
+                    auto t2_time1 = mpqc_time::now(world,accurate_time);
                     auto t2_time = mpqc_time::duration_in_s(t2_time0,t2_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t2 total time: ", t2_time, "\n");
@@ -809,7 +812,7 @@ namespace mpqc {
 
                     if(dE >= converge || error >= converge){
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
                         mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
                         error = r.norm() / size(t);
@@ -825,12 +828,13 @@ namespace mpqc {
                         }
 
                         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"diis time: ", tmp_time, "\n");
                         }
 
+                        world.gop.fence();
                         auto time1 = mpqc_time::now();
                         auto duration = mpqc_time::duration_in_s(time0, time1);
 
@@ -843,6 +847,7 @@ namespace mpqc {
                     }
                     else{
 
+                        world.gop.fence();
                         auto time1 = mpqc_time::now();
                         auto duration = mpqc_time::duration_in_s(time0, time1);
 
@@ -854,7 +859,6 @@ namespace mpqc {
 
                         break;
                     }
-                    world.gop.fence();
 //        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
 //        << scprintf("%-15.10f", E_1) << std::endl;
 
@@ -882,10 +886,11 @@ namespace mpqc {
                 mpqc::utility::print_par(world, "Use Direct All AO CCSD Compute \n");
 
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
+                bool accurate_time = options_.HasMember("AccurateTime") ? options_["AccurateTime"].GetBool() : false;
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
-                auto tmp_time0 = mpqc_time::fenced_now(world);
+                auto tmp_time0 = mpqc_time::now(world,accurate_time);
 
 
                 // get all two electron integrals
@@ -906,7 +911,7 @@ namespace mpqc {
 
                 }
 
-                auto tmp_time1 = mpqc_time::fenced_now(world);
+                auto tmp_time1 = mpqc_time::now(world,accurate_time);
                 auto tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                 if(print_detail){
                     mpqc::utility::print_par(world,"Integral Prepare Time: ", tmp_time, "\n");
@@ -952,6 +957,8 @@ namespace mpqc {
                     std::cout << "Start Iteration" << std::endl;
                     std::cout << "Max Iteration" << max_iter << std::endl;
                     std::cout << "Convergence " << converge << std::endl;
+                    std::cout << "AccurateTime" << accurate_time << std::endl;
+                    std::cout << "PrintDetail" << print_detail << std::endl;
                 };
 
                 auto diis = get_diis(world);
@@ -990,13 +997,13 @@ namespace mpqc {
 //                    }
 
 
-                    auto t1_time0 = mpqc_time::fenced_now(world);
+                    auto t1_time0 = mpqc_time::now(world,accurate_time);
                     TArray h_ac, h_ki;
                     {
                         // intermediates for t1
                         // external index i and a
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         h_ac("a,c") = -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
 
                         h_ki("k,i") = (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
@@ -1016,14 +1023,14 @@ namespace mpqc {
                             r1("a,i") += h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("a,k") * t1("c,i") );
                         }
 
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t1 h term time: ", tmp_time, "\n");
                         }
 
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
 
                         r1("a,i") += (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k");
 
@@ -1035,13 +1042,13 @@ namespace mpqc {
 
                         r1("a,i") -= t1("a,i");
 
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t1 other time: ", tmp_time, "\n");
                         }
                     }
-                    auto t1_time1 = mpqc_time::fenced_now(world);
+                    auto t1_time1 = mpqc_time::now(world,accurate_time);
                     auto t1_time = mpqc_time::duration_in_s(t1_time0,t1_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t1 total time: ", t1_time, "\n");
@@ -1049,10 +1056,10 @@ namespace mpqc {
 
                     // intermediates for t2
                     // external index i j a b
-                    auto t2_time0 = mpqc_time::fenced_now(world);
+                    auto t2_time0 = mpqc_time::now(world,accurate_time);
                     {
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         // permutation term
                         {
                             r2("a,b,i,j") = u1a("p,r,j,i")*ca("p,b")*ca("r,a");
@@ -1061,13 +1068,13 @@ namespace mpqc {
 
                             r2("a,b,i,j") -= (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 other time: ", tmp_time, "\n");
                         }
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         {
                             // intermediates g
                             TArray g_ki, g_ac;
@@ -1085,13 +1092,13 @@ namespace mpqc {
 
                             r2("a,b,i,j") += (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"));
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 g term time: ", tmp_time, "\n");
                         }
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         {
                             TArray j_akic;
                             TArray k_kaic;
@@ -1130,7 +1137,7 @@ namespace mpqc {
 
                             r2("a,b,i,j") += - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j");
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 j,k term time: ", tmp_time, "\n");
@@ -1142,7 +1149,7 @@ namespace mpqc {
 
                         r2("a,b,i,j") += g_abij("a,b,i,j");
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         {
                             // intermediate a
                             TArray a_klij;
@@ -1161,14 +1168,14 @@ namespace mpqc {
                                 utility::print_size_info(a_klij,"A_klij");
                             }
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 a term time: ", tmp_time, "\n");
                         }
 
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         {
                             TArray b_abij;
 
@@ -1182,7 +1189,7 @@ namespace mpqc {
                                 utility::print_size_info(b_abij,"B_abij");
                             }
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
@@ -1200,7 +1207,7 @@ namespace mpqc {
                     t2.truncate();
 
 
-                    auto t2_time1 = mpqc_time::fenced_now(world);
+                    auto t2_time1 = mpqc_time::now(world,accurate_time);
                     auto t2_time = mpqc_time::duration_in_s(t2_time0,t2_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t2 total time: ", t2_time, "\n");
@@ -1224,7 +1231,7 @@ namespace mpqc {
 
                     if(dE >= converge || error >= converge){
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
                         mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
                         error = r.norm() / size(t);
@@ -1240,12 +1247,13 @@ namespace mpqc {
                         }
 
                         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"diis time: ", tmp_time, "\n");
                         }
 
+                        world.gop.fence();
                         auto time1 = mpqc_time::now();
                         auto duration_t = mpqc_time::duration_in_s(time0, time1);
 
@@ -1261,6 +1269,7 @@ namespace mpqc {
                     }
                     else{
 
+                        world.gop.fence();
                         auto time1 = mpqc_time::now();
                         auto duration_t = mpqc_time::duration_in_s(time0, time1);
 
@@ -1301,10 +1310,11 @@ namespace mpqc {
                 mpqc::utility::print_par(world,"Use Direct CCSD Compute \n");
 
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
+                bool accurate_time = options_.HasMember("AccurateTime") ? options_["AccurateTime"].GetBool() : false;
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
-                auto tmp_time0 = mpqc_time::fenced_now(world);
+                auto tmp_time0 = mpqc_time::now(world,accurate_time);
 
                 TArray g_abij = ccsd_intermediate_->get_abij();
 
@@ -1333,7 +1343,7 @@ namespace mpqc {
                 TArray g_ijak = ccsd_intermediate_->get_ijak();
                 TArray g_ijka = ccsd_intermediate_->get_ijka();
 
-                auto tmp_time1 = mpqc_time::fenced_now(world);
+                auto tmp_time1 = mpqc_time::now(world,accurate_time);
                 auto tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                 if(print_detail){
                     mpqc::utility::print_par(world,"Integral Prepare Time: ", tmp_time, "\n");
@@ -1364,6 +1374,8 @@ namespace mpqc {
                     std::cout << "Start Iteration" << std::endl;
                     std::cout << "Max Iteration" << max_iter << std::endl;
                     std::cout << "Convergence " << converge << std::endl;
+                    std::cout << "AccurateTime" << accurate_time << std::endl;
+                    std::cout << "PrintDetail" << print_detail << std::endl;
                 };
 
                 auto diis = get_diis(world);
@@ -1383,7 +1395,6 @@ namespace mpqc {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
                     }
                     world.gop.fence();
-
                     auto tu1 = mpqc_time::now();
                     auto duration_u = mpqc_time::duration_in_s(tu0, tu1);
 
@@ -1400,13 +1411,13 @@ namespace mpqc {
 //                    }
 
 
-                    auto t1_time0 = mpqc_time::fenced_now(world);
+                    auto t1_time0 = mpqc_time::now(world,accurate_time);
                     TArray h_ac, h_ki;
                     {
                         // intermediates for t1
                         // external index i and a
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         h_ac("a,c") = -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
 
                         h_ki("k,i") = (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
@@ -1426,14 +1437,14 @@ namespace mpqc {
                             r1("a,i") += h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("a,k") * t1("c,i") );
                         }
 
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t1 h term time: ", tmp_time, "\n");
                         }
 
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
 
                         r1("a,i") += (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k");
 
@@ -1445,13 +1456,13 @@ namespace mpqc {
 
                         r1("a,i") -= t1("a,i");
 
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t1 other time: ", tmp_time, "\n");
                         }
                     }
-                    auto t1_time1 = mpqc_time::fenced_now(world);
+                    auto t1_time1 = mpqc_time::now(world,accurate_time);
                     auto t1_time = mpqc_time::duration_in_s(t1_time0,t1_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t1 total time: ", t1_time, "\n");
@@ -1459,10 +1470,10 @@ namespace mpqc {
 
                     // intermediates for t2
                     // external index i j a b
-                    auto t2_time0 = mpqc_time::fenced_now(world);
+                    auto t2_time0 = mpqc_time::now(world,accurate_time);
                     {
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         // permutation term
                         {
                             r2("a,b,i,j") = Xab("X,b,c")*t1("c,j")*Xai("X,a,i");
@@ -1471,13 +1482,13 @@ namespace mpqc {
 
                             r2("a,b,i,j") -= (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 other time: ", tmp_time, "\n");
                         }
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         {
                             // intermediates g
                             TArray g_ki, g_ac;
@@ -1492,13 +1503,13 @@ namespace mpqc {
 
                             r2("a,b,i,j") += (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"));
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 g term time: ", tmp_time, "\n");
                         }
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         {
                             TArray j_akic;
                             TArray k_kaic;
@@ -1537,7 +1548,7 @@ namespace mpqc {
 
                             r2("a,b,i,j") += - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j");
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 j,k term time: ", tmp_time, "\n");
@@ -1549,7 +1560,7 @@ namespace mpqc {
 
                         r2("a,b,i,j") += g_abij("a,b,i,j");
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         {
                             // intermediate a
                             TArray a_klij;
@@ -1568,14 +1579,14 @@ namespace mpqc {
                                 utility::print_size_info(a_klij,"A_klij");
                             }
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 a term time: ", tmp_time, "\n");
                         }
 
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         {
                             TArray b_abij;
 
@@ -1589,7 +1600,7 @@ namespace mpqc {
                                 utility::print_size_info(b_abij,"B_abij");
                             }
                         }
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
@@ -1607,7 +1618,7 @@ namespace mpqc {
                     t2.truncate();
 
 
-                    auto t2_time1 = mpqc_time::fenced_now(world);
+                    auto t2_time1 = mpqc_time::now(world,accurate_time);
                     auto t2_time = mpqc_time::duration_in_s(t2_time0,t2_time1);
                     if(print_detail){
                         mpqc::utility::print_par(world,"t2 total time: ", t2_time, "\n");
@@ -1631,7 +1642,7 @@ namespace mpqc {
 
                     if(dE >= converge || error >= converge){
 
-                        tmp_time0 = mpqc_time::fenced_now(world);
+                        tmp_time0 = mpqc_time::now(world,accurate_time);
                         mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
                         mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
                         error = r.norm() / size(t);
@@ -1647,12 +1658,13 @@ namespace mpqc {
                         }
 
                         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
-                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time1 = mpqc_time::now(world,accurate_time);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
                             mpqc::utility::print_par(world,"diis time: ", tmp_time, "\n");
                         }
 
+                        world.gop.fence();
                         auto time1 = mpqc_time::now();
                         auto duration_t = mpqc_time::duration_in_s(time0, time1);
 
@@ -1668,6 +1680,7 @@ namespace mpqc {
                     }
                     else{
 
+                        world.gop.fence();
                         auto time1 = mpqc_time::now();
                         auto duration_t = mpqc_time::duration_in_s(time0, time1);
 

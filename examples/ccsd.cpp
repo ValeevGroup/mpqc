@@ -553,8 +553,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
     world.gop.fence();
 
     utility::print_par(world, "\nBegining CC Calculation\n");
-    utility::parallal_break_point(world, 0);
-
 
     if (in.HasMember("CCSD(T)")) {
         mpqc::cc::CCSD_T<TA::Tensor<double>, TA::SparsePolicy> ccsd_t(

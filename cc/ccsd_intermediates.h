@@ -285,7 +285,6 @@ class CCSDIntermediate {
     /// @param t2 doubles amplitudes in MO basis
     /// @param t1 singles amplitudes in MO basis
     /// @return U tensor
-    // TODO test the performance stability of direct tile contraction
     TArray compute_u2_u11(const TArray &t2, const TArray &t1) {
         if (have_four_center_) {
             TArray tc;
@@ -302,6 +301,54 @@ class CCSDIntermediate {
         }
     }
 
+    TArray compute_u1a(const TArray &t1) {
+        if (have_four_center_) {
+            TArray u1a;
+            u1a("p,r,i,j") = (Ca_("q,a")*t1("a,i")*Ci_("s,j")) *direct_ao_("p,q,r,s");
+            return u1a;
+        } else {
+            throw std::runtime_error("CCSDIntermediate: integral-direct "
+                                             "implementation used, but not "
+                                             "initialized");
+        }
+    }
+
+    TArray compute_u1b(const TArray &t1) {
+        if (have_four_center_) {
+            TArray u1b;
+            u1b("i,r,j,s") = (Ca_("p,a")*t1("a,i")*Ci_("q,j")) *direct_ao_("p,q,r,s");
+            return  u1b;
+
+        } else {
+            throw std::runtime_error("CCSDIntermediate: integral-direct "
+                                             "implementation used, but not "
+                                             "initialized");
+        }
+    }
+
+    TArray compute_u_irjs() {
+        if (have_four_center_) {
+            TArray u_ipjr;
+            u_ipjr("i,r,j,s") = (Ci_("p,i")*Ci_("q,j"))*direct_ao_("p,q,r,s");
+            return u_ipjr;
+        } else {
+            throw std::runtime_error("CCSDIntermediate: integral-direct "
+                                             "implementation used, but not "
+                                             "initialized");
+        }
+    }
+
+    TArray compute_u_ijqs() {
+        if (have_four_center_) {
+            TArray u_ijqs;
+            u_ijqs("i,j,q,s") = (Ci_("p,i")*Ci_("r,j")) *direct_ao_("p,q,r,s");
+            return u_ijqs;
+        } else {
+            throw std::runtime_error("CCSDIntermediate: integral-direct "
+                                             "implementation used, but not "
+                                             "initialized");
+        }
+    }
   private:
     // three center integral, need to be cleaned when not needed
     TArray Xab_;

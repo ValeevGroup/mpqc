@@ -93,6 +93,7 @@ namespace mpqc {
 
                 auto direct = options_.HasMember("Direct") ? options_["Direct"].GetBool(): true;
                 if(direct){
+//                    double ccsd_corr = compute_ccsd_direct_ao(t1, t2);
                     double ccsd_corr = compute_ccsd_direct(t1, t2);
                 }
                 else {
@@ -586,11 +587,13 @@ namespace mpqc {
                             h_ki("k,i") = (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
                             r1("a,i") -= t1("a,k") * h_ki("k,i");
                         }
+
                         {
 
                             h_kc("k,c") = f_ai("c,k") + (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t1("d,l");
                             r1("a,i") +=  h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("c,i") * t1("a,k"));
                         }
+
                         tmp_time1 = mpqc_time::fenced_now(world);
                         tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
                         if(print_detail){
@@ -868,37 +871,62 @@ namespace mpqc {
 
             //TODO need to update equation with different options
             // ccsd energy for performance calculation
-            double compute_ccsd_direct2(TArray &t1, TArray &t2) {
+            double compute_ccsd_direct_ao(TArray &t1, TArray &t2) {
+
+                // get mo coefficient
+                TArray ca = ccsd_intermediate_->get_Ca();
+                TArray ci = ccsd_intermediate_->get_Ci();
+
+                auto &world = ca.get_world();
+
+                mpqc::utility::print_par(world, "Use Direct All AO CCSD Compute \n");
+
+                bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
 
                 auto n_occ = trange1_engine_->get_actual_occ();
 
-                TArray g_abij = ccsd_intermediate_->get_abij();
+                auto tmp_time0 = mpqc_time::fenced_now(world);
 
-                auto& world = g_abij.get_world();
 
-                if(world.rank() == 0){
-                    std::cout << "Use Direct CCSD Compute" <<std::endl;
+                // get all two electron integrals
+                TArray g_abij, g_ijkl, g_iajb, g_ijak, g_ijka;
+
+                {
+                    auto u_irjs = ccsd_intermediate_->compute_u_irjs();
+
+                    g_ijkl("i,j,k,l") = ci("r,j")* (ci("s,l")*u_irjs("i,r,k,s"));
+                    g_iajb("i,a,j,b") = ca("r,a")* (ca("s,b")*u_irjs("i,r,j,s"));
+                    g_ijka("i,j,k,a") = ci("r,j")* (ca("s,a")*u_irjs("i,r,k,s"));
                 }
+
+                {
+                    auto u_ijqs = ccsd_intermediate_->compute_u_ijqs();
+                    g_ijak("i,j,a,k") = ca("q,a")* (ci("s,k")*u_ijqs("i,j,q,s"));
+                    g_abij("a,b,i,j") = ca("q,a")* (ca("s,b")*u_ijqs("i,j,q,s"));
+
+                }
+
+                auto tmp_time1 = mpqc_time::fenced_now(world);
+                auto tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                if(print_detail){
+                    mpqc::utility::print_par(world,"Integral Prepare Time: ", tmp_time, "\n");
+                }
+
+
                 TArray f_ai;
                 f_ai("a,i") = fock_("a,i");
 
                 world.gop.fence();
 
-//      std::cout << g_abij << std::endl;
+                TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
 
-                TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
-                           f_ai.get_pmap());
                 create_d_ai(d1, orbital_energy_, n_occ);
 
-                TArray d2(world, g_abij.trange(),
-                           g_abij.get_shape(), g_abij.get_pmap());
-                create_d_abij(d2, orbital_energy_, n_occ);
-
                 t1("a,i") = f_ai("a,i") * d1("a,i");
-                t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
 
-//      std::cout << t1 << std::endl;
-//      std::cout << t2 << std::endl;
+                t2 = d_abij(g_abij, orbital_energy_, n_occ);
+
+
                 TArray tau;
                 tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
@@ -908,22 +936,8 @@ namespace mpqc {
                                     tau("a,b,i,j"));
                 double dE = std::abs(E1 - E0);
                 double mp2 = E1;
-//      std::cout << E1 << std::endl;
 
-                // get all two electron integrals
-                TArray g_ijkl = ccsd_intermediate_->get_ijkl();
-                TArray g_iajb = ccsd_intermediate_->get_iajb();
-                TArray g_ijak = ccsd_intermediate_->get_ijak();
-                TArray g_ijka = ccsd_intermediate_->get_ijka();
-
-                // get three center integrals
-                TArray Xab = ccsd_intermediate_->get_Xab();
-                TArray Xij = ccsd_intermediate_->get_Xij();
-                TArray Xai = ccsd_intermediate_->get_Xai();
-
-                // get mo coefficient
-                TArray ca = ccsd_intermediate_->get_Ca();
-                TArray ci = ccsd_intermediate_->get_Ci();
+                mpqc::utility::print_par(world, "MP2 Energy      ", mp2, "\n");
 
                 //optimize t1 and t2
                 std::size_t iter = 0ul;
@@ -931,194 +945,267 @@ namespace mpqc {
                 TArray r1;
                 TArray r2;
 
+                std::size_t max_iter = options_.HasMember("MaxIter") ? options_["MaxIter"].GetInt() : 30;
+                double converge = options_.HasMember("Converge") ? options_["Converge"].GetDouble() : 1.0e-7;
+
                 if (world.rank() == 0) {
                     std::cout << "Start Iteration" << std::endl;
+                    std::cout << "Max Iteration" << max_iter << std::endl;
+                    std::cout << "Convergence " << converge << std::endl;
                 };
+
                 auto diis = get_diis(world);
 
-                while ((dE >= 1.0e-7 || error >= 1e-7)) {
+                while (iter<max_iter){
 
                     //start timer
                     auto time0 = mpqc_time::now();
 
-                    TArray u2_u11;
+                    TArray::wait_for_lazy_cleanup(world);
+                    TArray::wait_for_lazy_cleanup(world);
+
+                    TArray u2_u11, u1a, u1b;
                     // compute half transformed intermediates
                     auto tu0 = mpqc_time::now();
                     {
                         u2_u11 = ccsd_intermediate_->compute_u2_u11(t2, t1);
+                        u1a = ccsd_intermediate_->compute_u1a(t1);
+                        u1b = ccsd_intermediate_->compute_u1b(t1);
                     }
                     world.gop.fence();
 
-                    if(iter == 0){
-                        utility::print_size_info(u2_u11,"U_aaoo");
-                    }
-
-                    if (iter == 0 && world.rank() == 0) {
-                        std::cout << "iter " << "    deltaE    " << "            residual       "
-                        << "      energy     " << "    U/second  " << " total/second "<<std::endl;
-                    }
-
                     auto tu1 = mpqc_time::now();
                     auto duration_u = mpqc_time::duration_in_s(tu0, tu1);
+
+                    if(print_detail){
+                        utility::print_size_info(u2_u11,"U_aaoo");
+                        mpqc::utility::print_par(world,"u term time: ", duration_u, "\n");
+                    }
+                    else if(iter == 0){
+                        utility::print_size_info(u2_u11,"U_aaoo");
+                    }
 
 //                    if (g_abij.get_world().rank() == 0) {
 //                        std::cout << "Time to compute U intermediates   " << duration << std::endl;
 //                    }
 
 
-                    // intermediates for t1
-                    // external index i and a
-                    TArray h_ac, h_ki, h_kc;
+                    auto t1_time0 = mpqc_time::fenced_now(world);
+                    TArray h_ac, h_ki;
                     {
+                        // intermediates for t1
+                        // external index i and a
+
+                        tmp_time0 = mpqc_time::fenced_now(world);
                         h_ac("a,c") = -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
 
                         h_ki("k,i") = (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
 
-                        h_kc("k,c") = f_ai("c,k")
-                                      + (-g_abij("d,c,k,l")+ 2.0 * g_abij("c,d,k,l")) * t1("d,l");
-                    }
-//        g_abij.get_world().gop.fence();
 
-                    // compute residual r1(n) = t1(n+1) - t1(n)
-                    // external index i and a
-                    {
-                        r1("a,i") = -t1("a,i") + d1("a,i") * (
-                                //
-                                f_ai("a,i")
-                                - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k")
-                                //
-                                + h_ac("a,c") * t1("c,i") - t1("a,k") * h_ki("k,i")
-                                //
-                                + h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k")
-                                                 + t1("a,k") * t1("c,i") )
-                                //
-                                + (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k")
-                                //
-                                + (2.0 * u2_u11("p,r,k,i")- u2_u11("p,r,i,k")) * ci("p,k") * ca("r,a")
-                                //
-                                - (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l")
-                        );
+                        // compute residual r1(n) = t1(n+1) - t1(n)
+                        // external index i and a
+
+                        r1("a,i") =  f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
+
+                        r1("a,i") += h_ac("a,c") * t1("c,i") - t1("a,k") * h_ki("k,i");
+
+                        {
+                            TArray h_kc;
+                            h_kc("k,c") = f_ai("c,k") + (-g_abij("d,c,k,l")+ 2.0 * g_abij("c,d,k,l")) * t1("d,l");
+
+                            r1("a,i") += h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("a,k") * t1("c,i") );
+                        }
+
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"t1 h term time: ", tmp_time, "\n");
+                        }
+
+
+                        tmp_time0 = mpqc_time::fenced_now(world);
+
+                        r1("a,i") += (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k");
+
+                        r1("a,i") += (2.0 * u2_u11("p,r,k,i")- u2_u11("p,r,i,k")) * ci("p,k") * ca("r,a");
+
+                        r1("a,i") -= (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l");
+
+                        r1("a,i") *= d1("a,i");
+
+                        r1("a,i") -= t1("a,i");
+
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"t1 other time: ", tmp_time, "\n");
+                        }
+                    }
+                    auto t1_time1 = mpqc_time::fenced_now(world);
+                    auto t1_time = mpqc_time::duration_in_s(t1_time0,t1_time1);
+                    if(print_detail){
+                        mpqc::utility::print_par(world,"t1 total time: ", t1_time, "\n");
                     }
 
-//        g_abij.get_world().gop.fence();
                     // intermediates for t2
                     // external index i j a b
-
-                    TArray a_klij, b_abij, j_akic, k_kaic, T;
-                    TArray g_ki, g_ac;
+                    auto t2_time0 = mpqc_time::fenced_now(world);
                     {
 
+                        tmp_time0 = mpqc_time::fenced_now(world);
+                        // permutation term
+                        {
+                            r2("a,b,i,j") = u1a("p,r,j,i")*ca("p,b")*ca("r,a");
+
+                            r2("a,b,i,j") -= g_iajb("k,b,i,c") * t1("c,j") * t1("a,k");
+
+                            r2("a,b,i,j") -= (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
+                        }
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"t2 other time: ", tmp_time, "\n");
+                        }
+
+                        tmp_time0 = mpqc_time::fenced_now(world);
+                        {
+                            // intermediates g
+                            TArray g_ki, g_ac;
+
+                            TArray u1a_s;
+                            u1a_s("p,r") = u1a("p,r,i,i");
+
+                            g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i") + (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
+
+                            g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
+
+                                          + 2.0*u1b("i,r,i,s")*ca("r,a")*ca("s,c")
+
+                                          - u1a_s("p,r")*ca("r,a")*ca("s,c");
+
+                            r2("a,b,i,j") += (g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j"));
+                        }
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"t2 g term time: ", tmp_time, "\n");
+                        }
+
+                        tmp_time0 = mpqc_time::fenced_now(world);
+                        {
+                            TArray j_akic;
+                            TArray k_kaic;
+                            // compute j and k intermediate
+                            {
+                                TArray T;
+
+                                T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
+
+                                j_akic("a,k,i,c") = g_abij("a,c,i,k")
+
+                                                    - g_ijka("l,k,i,c") * t1("a,l")
+
+                                                    + u1a("p,r,i,k")*ca("p,a")*ca("r,c");
+
+                                                    - g_abij("c,d,k,l") * T("d,a,i,l")
+
+                                                    + (g_abij("c,d,k,l") - 0.5*g_abij("d,c,k,l")) * t2("a,d,i,l");
+
+                                k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
+
+                                                    - g_ijka("k,l,i,c") * t1("a,l")
+
+                                                    + u1b("i,r,k,s")*ca("r,a")*ca("s,c")
+
+                                                    - g_abij("d,c,k,l") * T("d,a,i,l");
+
+                                if(print_detail){
+                                    utility::print_size_info(T,"T");
+                                    utility::print_size_info(j_akic,"J_akic");
+                                    utility::print_size_info(k_kaic,"K_kaic");
+                                }
+                            }
+
+                            r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) * (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
+
+                            r2("a,b,i,j") += - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") - k_kaic("k,b,i,c") * t2("a,c,k,j");
+                        }
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"t2 j,k term time: ", tmp_time, "\n");
+                        }
 
 
-                        T("d,b,i,l") =
-                                0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
+                        // perform permutation
+                        r2("a,b,i,j") = r2("a,b,i,j") + r2("b,a,j,i");
 
-                        a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
+                        r2("a,b,i,j") += g_abij("a,b,i,j");
 
-                                            + g_ijka("k,l,i,c") * t1("c,j")
+                        tmp_time0 = mpqc_time::fenced_now(world);
+                        {
+                            // intermediate a
+                            TArray a_klij;
+                            a_klij("k,l,i,j") = g_ijkl("k,l,i,j")
 
-                                            + g_ijak("k,l,c,j") * t1("c,i")
+                                                + g_ijka("k,l,i,c") * t1("c,j")
 
-                                            + g_abij("c,d,k,l") * tau("c,d,i,j");
+                                                + g_ijak("k,l,c,j") * t1("c,i")
 
-                        b_abij("a,b,i,j") = (u2_u11("p,r,i,j")*ca("r,b") - ci("r,k")*t1("b,k")*u2_u11("p,r,i,j")) * ca("p,a")
+                                                + g_abij("c,d,k,l") * tau("c,d,i,j");
 
-                                            - u2_u11("p,r,i,j") * ci("p,k") * ca("r,b") * t1("a,k");
 
-                        g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i")
+                            r2("a,b,i,j") +=  a_klij("k,l,i,j") * tau("a,b,k,l");
 
-                                      + (2.0 * g_ijka("k,l,i,c")
+                            if(print_detail){
+                                utility::print_size_info(a_klij,"A_klij");
+                            }
+                        }
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"t2 a term time: ", tmp_time, "\n");
+                        }
 
-                                      - g_ijka("l,k,i,c")) * t1("c,l");
 
-                        g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k")
+                        tmp_time0 = mpqc_time::fenced_now(world);
+                        {
+                            TArray b_abij;
 
-                                      + (2.0*Xai("X,d,k")*t1("d,k"))*Xab("X,a,c")
+                            b_abij("a,b,i,j") = (u2_u11("p,r,i,j")*ca("r,b") - ci("r,k")*t1("b,k")*u2_u11("p,r,i,j")) * ca("p,a")
 
-                                      - (Xab("X,a,d")*t1("d,k"))*Xai("X,c,k");
+                                                - u2_u11("p,r,i,j") * ci("p,k") * ca("r,b") * t1("a,k");
 
-                        j_akic("a,k,i,c") = g_abij("a,c,i,k")
+                            r2("a,b,i,j") += b_abij("a,b,i,j");
 
-                                            - g_ijka("l,k,i,c") * t1("a,l")
+                            if(print_detail){
+                                utility::print_size_info(b_abij,"B_abij");
+                            }
+                        }
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
+                        }
 
-                                            + (Xab("X,a,d")*t1("d,i"))*Xai("X,c,k")
+                        d_abij_inplace(r2, orbital_energy_, n_occ);
 
-                                            - g_abij("c,d,k,l") * T("d,a,i,l")
-
-                                            + (g_abij("c,d,k,l") - 0.5*g_abij("d,c,k,l")) * t2("a,d,i,l");
-
-                        k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
-
-                                            - g_ijka("k,l,i,c") * t1("a,l")
-
-                                            + (Xai("X,d,k")*t1("d,i"))*Xab("X,a,c")
-
-                                            - g_abij("d,c,k,l") * T("d,a,i,l");
+                        r2("a,b,i,j") -= t2("a,b,i,j");
 
                     }
-
-//        g_abij.get_world().gop.fence();
-                    // compute residual r2(n) = t2(n+1) - t2(n)
-                    {
-                        r2("a,b,i,j") = -t2("a,b,i,j") + d2("a,b,i,j") * (
-                                //
-                                g_abij("a,b,i,j")
-                                //
-                                + a_klij("k,l,i,j") * tau("a,b,k,l")
-
-                                //
-                                + b_abij("a,b,i,j")
-
-                                // permutation part
-                                //
-                                + (g_ac("a,c") * t2("c,b,i,j")
-                                   - g_ki("k,i") * t2("a,b,k,j"))
-
-                                + (g_ac("b,c") * t2("c,a,j,i")
-                                   - g_ki("k,j") * t2("b,a,k,i"))
-
-                                + Xab("X,b,c")*t1("c,j")*Xai("X,a,i")
-
-                                + Xab("X,a,c")*t1("c,i")*Xai("X,b,j")
-
-                                - g_iajb("k,b,i,c") * t1("c,j") * t1("a,k")
-
-                                - g_iajb("k,a,j,c") * t1("c,i") * t1("b,k")
-                                //
-                                - (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k")
-
-                                - (g_ijak("j,i,b,k") + g_abij("b,c,j,k") * t1("c,i")) * t1("a,k")
-
-                                + (j_akic("a,k,i,c") - 0.5*k_kaic("k,a,i,c")) *
-                                  (2.0 * t2("c,b,k,j") - t2("b,c,k,j"))
-
-                                + (j_akic("b,k,j,c") - 0.5*k_kaic("k,b,j,c")) *
-                                  (2.0 * t2("c,a,k,i") - t2("a,c,k,i"))
-
-                                - 0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j")
-                                    - k_kaic("k,b,i,c") * t2("a,c,k,j")
-
-                                - 0.5 * k_kaic("k,b,j,c") * t2("a,c,k,i")
-                                    - k_kaic("k,a,j,c") * t2("b,c,k,i")
-                        );
-                    }
-//        g_abij.get_world().gop.fence();
 
                     t1("a,i") = t1("a,i") + r1("a,i");
                     t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
                     t1.truncate();
                     t2.truncate();
 
-                    mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-                    mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
-                    error = r.norm() / size(t);
-                    diis.extrapolate(t, r);
 
-                    //update t1 and t2
-                    t1("a,i") = t.first("a,i");
-                    t2("a,b,i,j") = t.second("a,b,i,j");
+                    auto t2_time1 = mpqc_time::fenced_now(world);
+                    auto t2_time = mpqc_time::duration_in_s(t2_time0,t2_time1);
+                    if(print_detail){
+                        mpqc::utility::print_par(world,"t2 total time: ", t2_time, "\n");
+                    }
 
-                    tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
                     // recompute energy
                     E0 = E1;
@@ -1127,25 +1214,72 @@ namespace mpqc {
                          TA::dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")),
                                  tau("a,b,i,j"));
                     dE = std::abs(E0 - E1);
-                    iter += 1ul;
 
-                    auto time1 = mpqc_time::now();
-                    auto duration_t = mpqc_time::duration_in_s(time0, time1);
-
-                    if (world.rank() == 0) {
-                        std::cout.precision(15);
-                        std::cout<< iter << "  " << dE << "  " << error <<
-                        "  " << E1 << "  " << duration_u << " " << duration_t
-                        <<std::endl;
+                    if (iter == 0 && world.rank() == 0) {
+                        std::cout << "iter " << "    deltaE    " << "            residual       "
+                        << "      energy     " << "    U/second  " << " total/second "<<std::endl;
                     }
 
-                    world.gop.fence();
-//        std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
-//        << scprintf("%-15.10f", E_1) << std::endl;
+
+
+                    if(dE >= converge || error >= converge){
+
+                        tmp_time0 = mpqc_time::fenced_now(world);
+                        mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
+                        mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+                        error = r.norm() / size(t);
+                        diis.extrapolate(t, r);
+
+                        //update t1 and t2
+                        t1("a,i") = t.first("a,i");
+                        t2("a,b,i,j") = t.second("a,b,i,j");
+
+                        if(print_detail){
+                            utility::print_size_info(r2,"R2");
+                            utility::print_size_info(t2,"T2");
+                        }
+
+                        tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+                        tmp_time1 = mpqc_time::fenced_now(world);
+                        tmp_time = mpqc_time::duration_in_s(tmp_time0,tmp_time1);
+                        if(print_detail){
+                            mpqc::utility::print_par(world,"diis time: ", tmp_time, "\n");
+                        }
+
+                        auto time1 = mpqc_time::now();
+                        auto duration_t = mpqc_time::duration_in_s(time0, time1);
+
+                        if (world.rank() == 0) {
+                            std::cout.precision(15);
+//                            std::cout.width(20);
+                            std::cout << iter << "  " << dE << "  " << error <<
+                            "  " << E1 << "  " << duration_u << " " << duration_t
+                            <<std::endl;
+                        }
+
+                        iter += 1ul;
+                    }
+                    else{
+
+                        auto time1 = mpqc_time::now();
+                        auto duration_t = mpqc_time::duration_in_s(time0, time1);
+
+                        if (world.rank() == 0) {
+                            std::cout.precision(15);
+//                            std::cout.width(20);
+                            std::cout << iter << "  " << dE << "  " << error <<
+                            "  " << E1 << "  " << duration_u << " " << duration_t
+                            <<std::endl;
+                        }
+
+                        break;
+                    }
 
                 }
+                if (iter>=max_iter){
+                    throw std::runtime_error("Exceed Max Iteration!");
+                }
                 if (world.rank() == 0) {
-                    std::cout << "MP2 Energy      " << mp2 << std::endl;
                     std::cout << "CCSD Energy     " << E1 << std::endl;
                 }
                 return E1;

@@ -77,19 +77,31 @@ std::unique_ptr<OutputWriter> init_json_writer(Document &input) {
 }
 
 Document get_nested(Document &d, std::string key) {
-    rapidjson::StringBuffer buffer;
     const char *key_ctr = key.c_str();
 
-    assert(d[key_ctr].IsObject());
+    // if key find
+    if(d.HasMember(key_ctr)){
 
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    d[key_ctr].Accept(writer);
+        // if key is object
+        if(d[key_ctr].IsObject()){
+            rapidjson::StringBuffer buffer;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+            d[key_ctr].Accept(writer);
 
-    rapidjson::Document result;
-    rapidjson::StringStream s(buffer.GetString());
-    result.ParseStream(s);
+            rapidjson::Document result;
+            rapidjson::StringStream s(buffer.GetString());
+            result.ParseStream(s);
 
-    return std::move(result);
+            return std::move(result);
+        }
+        else{
+            return rapidjson::Document();
+        }
+    }
+    // if key not find, return empty object
+    else{
+        return rapidjson::Document();
+    }
 }
 } //  namespace json
 } //  namespace mpqc

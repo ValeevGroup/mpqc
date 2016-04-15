@@ -72,6 +72,8 @@ TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
  *  @param CorrelationFactor, double, f12 correlation factor, default by basis name
  *  @param CorrelationFunction, int, number of f12 correlation fuction, defualt 6
  *  @param CLSCF, object, CLSCF class
+ *  @param AOIntegral, object, AtomicIntegral class
+ *  @param MOIntegral, object, MolecularIntegral class
  *
  */
 int try_main(int argc, char *argv[], madness::World &world) {
@@ -253,10 +255,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     f12::GTGParams gtg_params;
     int n_functions = in.HasMember("CorrelationFunction") ? in["CorrelationFunction"].GetInt() : 6;
+    double f12_factor;
     // if user provide factor, use that
     if(in.HasMember("CorrelationFactor")){
-        double factor = in["CorrelationFactor"].GetDouble();
-        gtg_params = f12::GTGParams(factor, n_functions);
+        f12_factor = in["CorrelationFactor"].GetDouble();
+        gtg_params = f12::GTGParams(f12_factor, n_functions);
     }
     // if not use basis name to get factor
     else{
@@ -268,10 +271,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
     if(!aux_basis_name.empty()){
         param = gtg_params.compute();
         if(world.rank() == 0){
+            std::cout << "F12 Correlation Factor: " << gtg_params.exponent << std::endl;
+            std::cout << "NFunction: " << gtg_params.n_fit << std::endl;
             std::cout << "F12 Exponent Coefficient" << std::endl;
             for(auto& pair : param){
                 std::cout << pair.first << " " << pair.second << std::endl;
             }
+            std::cout << std::endl;
         }
     }
     /**
@@ -281,12 +287,16 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     /// initialize AO integral
     libint2::init();
+
+    auto ao_in = json::get_nested(in, "AOIntegral");
+
     integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int
                 (world,
                 ta_pass_through,
                 std::make_shared<molecule::Molecule>(clustered_mol),
                 bs_registry,
-                param);
+                param,
+                ao_in);
 
 
     /**
@@ -367,8 +377,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     // Correlation Methods
 
+    auto mo_in = json::get_nested(in, "MOIntegral");
+
     auto orbital_registry = std::make_shared<OrbitalSpaceRegistry<TA::DistArray<TA::TensorD, TA::SparsePolicy>>>();
-    auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,orbital_registry);
+    auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,orbital_registry,mo_in);
     Eigen::VectorXd ens;
     std::shared_ptr<TRange1Engine> tre;
     rapidjson::Document corr_in;
@@ -404,10 +416,15 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
     else if(in.HasMember("CCSD")) {
         corr_in = json::get_nested(in, "CCSD");
-    } else if (in.HasMember("CCSD(T)")) {
+    }
+    else if (in.HasMember("CCSD(T)")) {
         corr_in = json::get_nested(in, "CCSD(T)");
-    } else if(in.HasMember("EOM_CCSD")){
+    }
+    else if(in.HasMember("EOM_CCSD")){
         corr_in = json::get_nested(in, "EOM_CCSD");
+    }
+    else if(in.HasMember("CCSDF12")){
+        corr_in = json::get_nested(in, "CCSDF12");
     }
 
 

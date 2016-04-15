@@ -15,6 +15,7 @@
 #include "atomic_integral.h"
 #include "../expression/orbital_registry.h"
 #include "../ta_routines/diagonal_array.h"
+#include "../scf/mo_build.h"
 
 
 namespace mpqc{
@@ -40,17 +41,25 @@ namespace integrals{
          *  @param atomic_integral  reference to AtomicIntegral class
          *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry, which contain AO to MO coefficients
          *  @param formula_registry  FormulaRegistry used to store computed integral
+         *  @param in rapidjson Document object
          *
+         *
+         *  Options in Input
+         *  @param AccurateTime, bool, control if use fence in timing, default false
          */
         MolecularIntegral(AtomicIntegral &atomic_integral,
                           const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry,
-                          const FormulaRegistry<TArray> &formula_registry)
+                          const FormulaRegistry<TArray> &formula_registry,
+                          const rapidjson::Document& in = rapidjson::Document()
+                        )
                 : world_(atomic_integral.get_world()), atomic_integral_(atomic_integral),
                   orbital_space_registry_(orbital_space_registry),
                   mo_formula_registry_(formula_registry)
         {
             atomic_integral_.set_orbital_space_registry(orbital_space_registry);
+            parse_input(in);
         }
+
 
         /**
          *  Constructor
@@ -59,13 +68,15 @@ namespace integrals{
          *
          */
         MolecularIntegral(AtomicIntegral &atomic_integral,
-                          const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry)
+                          const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry,
+                          const rapidjson::Document& in = rapidjson::Document()
+                        )
                 : world_(atomic_integral.get_world()), atomic_integral_(atomic_integral),
                   orbital_space_registry_(orbital_space_registry),
                   mo_formula_registry_()
         {
             atomic_integral_.set_orbital_space_registry(orbital_space_registry);
-            accurate_time_ = false;
+            parse_input(in);
         }
 
         /// return reference to madness::World
@@ -135,6 +146,19 @@ namespace integrals{
 
     private:
 
+        /// function to parse input
+        void parse_input(const rapidjson::Document &in) {
+            if(in.IsObject()){
+                accurate_time_ = in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
+            }
+            else{
+                accurate_time_ = false;
+            }
+
+            utility::print_par(world_, "\nConstructing Molecular Integral Class \n");
+            utility::print_par(world_, "AccurateTime: " , accurate_time_, "\n");
+            std::cout << std::endl;
+        }
         /// compute integrals that has two dimension
         TArray compute2(const Formula& formula_string);
 

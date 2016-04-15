@@ -6,7 +6,9 @@
 #define TILECLUSTERCHEM_ATOMIC_INTEGRAL_H
 
 
+#include <rapidjson/document.h>
 #include "../f12/f12_utility.h"
+#include "../integrals/integrals.h"
 #include "../expression/formula_registry.h"
 #include "../expression/orbital_registry.h"
 #include "atomic_integral_base.h"
@@ -49,16 +51,43 @@ namespace integrals{
          *  @param mol shared pointer to Molecule
          *  @param obs shared pointer to OrbitalBasisRegistry
          *  @param gtg_params  parameters used in computing f12 integrals
+         *  @param in rapidjson Document object
+         *
+         *
+         *
+         *
+         *  Options in Input
+         *  @param AccurateTime, bool, control if use fence in timing, default false
+         *  @param Screen, string, name of screen method to use, default none
+         *  @param Threshold, double, screen threshold, qqr or schwarz, default 1.0e-10
          */
 
         AtomicIntegral(madness::World& world,
                 Op op,
                 const std::shared_ptr<molecule::Molecule>& mol,
                 const std::shared_ptr <OrbitalBasisRegistry>& obs,
-                const std::vector<std::pair<double,double>>& gtg_params = std::vector<std::pair<double,double>>()
+                const std::vector<std::pair<double,double>>& gtg_params = std::vector<std::pair<double,double>>(),
+                const rapidjson::Document& in = rapidjson::Document()
         ) : AtomicIntegralBase(world,mol,obs,gtg_params), op_(op), ao_formula_registry_(), orbital_space_registry_()
         {
-            accurate_time_ = false;
+            if(in.IsObject()){
+                accurate_time_ = in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
+                screen_ = in.HasMember("Screen") ? in["Screen"].GetString() : "";
+                screen_threshold_ = in.HasMember("Threshold") ? in["Threshold"].GetDouble() : 1.0e-10;
+            }
+            else{
+                accurate_time_ = false;
+                screen_ = "";
+                screen_threshold_ = 1.0e-10;
+            }
+
+            utility::print_par(world, "\nConstructing Atomic Integral Class \n");
+            utility::print_par(world, "AccurateTime: " , accurate_time_, "\n");
+            utility::print_par(world, "Screen: ", screen_, "\n");
+            if(!screen_.empty()){
+                utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
+            }
+            std::cout << std::endl;
         }
 
         AtomicIntegral(AtomicIntegral&& ) = default;
@@ -128,8 +157,20 @@ namespace integrals{
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::SparsePolicy>::value, TA::SparsePolicy>::type> compute_integrals(
                 madness::World& world, E const &engine, Barray<N> const &bases)
         {
-            auto sreener = std::make_shared<Screener>(Screener{});
-            auto result = mpqc::integrals::sparse_integrals(world,engine,bases,sreener,op_);
+            std::shared_ptr<Screener> p_screen;
+//            if(screen_.empty()){
+                p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+//            }
+//            else if(screen_ == "qqr"){
+//                auto screen_builder = integrals::init_qqr_screen{};
+//                p_screen = std::make_shared<integrals::Screener>(screen_builder(world, engine, bases, screen_threshold_));
+//            }
+//            else if(screen_ == "schwarz"){
+//                auto screen_builder = integrals::init_schwarz_screen(screen_threshold_);
+//                p_screen = std::make_shared<integrals::Screener>(screen_builder(world, engine, bases));
+//            }
+
+            auto result = mpqc::integrals::sparse_integrals(world,engine,bases,p_screen,op_);
             return result;
         }
 
@@ -138,8 +179,20 @@ namespace integrals{
         TA::Array<double, N,Tile,typename std::enable_if<std::is_same<U,TA::DensePolicy>::value, TA::DensePolicy>::type> compute_integrals(
                 madness::World& world, E const &engine, Barray<N> const &bases)
         {
-            auto sreener = std::make_shared<Screener>(Screener{});
-            auto result = mpqc::integrals::dense_integrals(world,engine,bases,sreener,op_);
+            std::shared_ptr<Screener> p_screen;
+//            if(screen_.empty()){
+                p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+//            }
+//            else if(screen_ == "qqr"){
+//                auto screen_builder = integrals::init_qqr_screen{};
+//                p_screen = std::make_shared<integrals::Screener>(screen_builder(world, engine, bases, screen_threshold_));
+//            }
+//            else if(screen_ == "schwarz"){
+//                auto screen_builder = integrals::init_schwarz_screen(screen_threshold_);
+//                p_screen = std::make_shared<integrals::Screener>(screen_builder(world, engine, bases));
+//            }
+
+            auto result = mpqc::integrals::dense_integrals(world,engine,bases,p_screen,op_);
             return result;
         }
 
@@ -148,6 +201,8 @@ namespace integrals{
         std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
         Op op_;
         bool accurate_time_;
+        std::string screen_;
+        double screen_threshold_;
 
     };
 

@@ -1712,7 +1712,6 @@ namespace mpqc {
             // option member
             rapidjson::Document options_;
 
-        private:
             TArray T1_;
             TArray T2_;
         }; // class CCSD

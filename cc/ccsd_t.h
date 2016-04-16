@@ -51,6 +51,9 @@ namespace mpqc{
                     this->ccsd_intermediate_->clean_two_electron();
                 }
 
+                this->T1_ = t1;
+                this->T2_ = t2;
+
                 // start CCSD(T)
                 if(t1.get_world().rank() == 0){
                     std::cout << "\nBegining CCSD(T) " << std::endl;

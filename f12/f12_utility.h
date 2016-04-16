@@ -127,6 +127,68 @@ TiledArray::Array<double, 4, Tile, Policy> convert_C_ijab(TiledArray::Array<doub
     return TiledArray::foreach(ijab, convert);
 }
 
+template <typename Tile>
+struct CLF12Energy {
+    using result_type =  double;
+    using argument_type =  Tile;
+
+    double iiii;
+    double ijij;
+    double ijji;
+
+    CLF12Energy() = default;
+    CLF12Energy(CLF12Energy const &) = default;
+    CLF12Energy(double c1, double c2, double c3) : iiii(c1), ijij(c2), ijji(c3) {}
+
+    result_type operator()() const { return 0.0; }
+
+    result_type operator()(result_type const &t) const { return t; }
+
+    void operator()(result_type &me, result_type const &other) const {
+        me += other;
+    }
+
+    void operator()(result_type &me, argument_type const &tile) const {
+        auto const &range = tile.range();
+
+        TA_ASSERT(range.rank() == 4);
+
+        auto const st = range.lobound_data();
+        auto const fn = range.upbound_data();
+        auto tile_idx = 0;
+
+        auto sti = st[0];
+        auto fni = fn[0];
+        auto stj = st[1];
+        auto fnj = fn[1];
+        auto stk = st[2];
+        auto fnk = fn[2];
+        auto stl = st[3];
+        auto fnl = fn[3];
+
+        for (auto i = sti; i < fni; ++i) {
+            for (auto j = stj; j < fnj; ++j) {
+                for (auto k = stk; k < fnk; ++k) {
+                    for (auto l = stl; l < fnl; ++l, ++tile_idx) {
+                        // iiii
+                        if( (i==j) && (i==k) && (k==l)){
+                            me += iiii*tile.data()[tile_idx];
+                        }
+                            // ijij
+                        else if( j > i && k==i && l==j){
+                            me += ijij*tile.data()[tile_idx];
+                        }
+                            // ijji
+                        else if( j > i && l==i && k==j){
+                            me += ijji*tile.data()[tile_idx];
+                        }
+                    }
+                }
+            }
+        }
+    }
+};
+
 }
 }
 #endif //TILECLUSTERCHEM_UTILITY_H

@@ -52,6 +52,7 @@
 #include "../integrals/molecular_integral.h"
 #include "../mp2/mp2.h"
 #include "../f12/mp2f12.h"
+#include "../f12/ccsdf12.h"
 
 using namespace mpqc;
 namespace ints = integrals;
@@ -414,6 +415,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         mp2f12.compute_mp2_f12_c_df();
 
     }
+        // all of these require CCSD
     else if(in.HasMember("CCSD") || in.HasMember("CCSD(T)") || in.HasMember("CCSD(F12)") || in.HasMember("EOM_CCSD")) {
 
         if (in.HasMember("CCSD")) {
@@ -426,7 +428,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
             corr_in = json::get_nested(in, "CCSD(F12)");
         }
 
-        /// all of above require CCSD, do CCSD
 
         cc::DirectTwoElectronSparseArray lazy_two_electron_int;
         std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>> intermidiate;
@@ -463,15 +464,37 @@ int try_main(int argc, char *argv[], madness::World &world) {
         intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>>
                 (mo_integral, lazy_two_electron_int);
 
+        TA::DistArray<TA::TensorD, TA::SparsePolicy> t1;
+        TA::DistArray<TA::TensorD, TA::SparsePolicy> t2;
+
         if(in.HasMember("CCSD")){
             utility::print_par(world, "\nBegining CCSD Calculation\n");
             mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(ens, tre, intermidiate, corr_in);
             ccsd.compute();
+            t1 = ccsd.get_t1();
+            t2 = ccsd.get_t2();
         }
         else if(in.HasMember("CCSD(T)")){
             utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
             mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(ens, tre, intermidiate, corr_in);
             ccsd_t.compute();
+            t1 = ccsd_t.get_t1();
+            t2 = ccsd_t.get_t2();
+        }
+
+        if(in.HasMember("CCSD(F12)")){
+            utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
+
+            corr_in = json::get_nested(in, "CCSD(F12)");
+            std::size_t mo_blocksize = corr_in.HasMember("MoBlockSize") ? corr_in["MoBlockSize"].GetInt() : 24;
+            std::size_t occ_blocksize = corr_in.HasMember("OccBlockSize") ? corr_in["OccBlockSize"].GetInt() : mo_blocksize;
+            if(occ_blocksize != 1){
+                throw std::runtime_error("OccBlockSize has to be 1 in current MP2F12 implementation!!");
+            }
+
+            closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
+            f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral,tre,std::make_shared<Eigen::VectorXd>(ens),t1,t2);
+            ccsd_f12.compute_c(lazy_two_electron_int);
         }
     }
 

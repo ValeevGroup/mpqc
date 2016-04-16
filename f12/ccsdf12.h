@@ -15,10 +15,11 @@
 namespace mpqc{
 namespace f12{
 
-template <typename Tile, typename Policy>
+template <typename Tile>
 class CCSDF12 {
 public:
 
+    using Policy = TA::SparsePolicy;
     using TArray = TA::DistArray<Tile,Policy>;
 
     CCSDF12(integrals::MolecularIntegral<Tile, Policy> &mo_int_, const std::shared_ptr<TRange1Engine> &tre_,
@@ -26,7 +27,9 @@ public:
             : mo_int_(mo_int_), tre_(tre_), orbital_energy_(orbital_energy_), t1_(t1_), t2_(t2_)
     { }
 
-    void compute_c();
+    /// standard approach, no approximation
+    template<typename DirectArray>
+    void compute_c(const DirectArray& darray);
 
 private:
 
@@ -39,29 +42,54 @@ private:
 
 };
 
-template <typename Tile, typename Policy>
-void CCSDF12<Tile,Policy>::compute_c() {
+
+template <typename Tile>
+template <typename DirectArray>
+void CCSDF12<Tile>::compute_c(const DirectArray& darray) {
 
     auto& mo_integral = mo_int_;
+    auto& world = mo_integral.get_world();
+    double E = 0.0;
 
-    // compute C_ijab
-    TArray C_xyab = compute_C_ijab(mo_integral);
+    // create shape
+    auto occ_tr1 = tre_->get_occ_tr1();
+    TiledArray::TiledRange occ4_trange({occ_tr1,occ_tr1,occ_tr1,occ_tr1});
+    auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
+
+    // compute V_ijij_ijji
+    TArray V_ijij_ijji = compute_V_ijij_ijji(mo_integral,ijij_ijji_shape);
 
     // compute V_ijab
-    TArray V_xyab = compute_V_xyab(mo_integral);
+    TArray V_ijab = compute_V_xyab(mo_integral);
 
-    // compute V_ijxy
-    TArray V_ijxy = compute_V_ijxy(mo_integral);
+    V_ijij_ijji("i1,j1,i2,j2") += (V_ijab("i2,j2,a,b")*t2_("a,b,i1,j1")).set_shape(ijij_ijji_shape);
 
-    // compute V_iaxy
-    TArray V_iaxy = compute_V_iaxy(mo_integral);
+    // V contribution to energy
+    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(1.0,2.5,-0.5));
+    utility::print_par(world, "E_V: ", E_v, "\n");
+    E += E_v;
 
-    TArray V_bar_ijxy;
-    V_bar_ijxy = V_ijxy;
-    V_bar_ijxy("i,j,x,y") += 0.5*(V_xyab("x,y,a,b")+C_xyab("x,y,a,b"))*t2_("a,b,i,j");
-    V_bar_ijxy("i,j,x,y") += V_iaxy("i,a,x,y")*t1_("j,a");
-    V_bar_ijxy("i,j,x,y") += V_iaxy("j,a,x,y")*t1_("i,a");
+    // compute X term
+    TArray X_ijij_ijji = compute_X_ijij_ijji(mo_integral, ijij_ijji_shape);
+    // R_ipjq not needed
+    mo_int_.registry().remove_formula(world, L"(i1 p|R|j1 q)[df]");
 
+    auto Fij = mo_int_.compute(L"(i|F|j)[df]");
+    auto Fij_eigen = array_ops::array_to_eigen(Fij);
+    f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
+
+    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(0.25,0.4375,0.0625));
+
+    utility::print_par(world, "E_X: ", E_x, "\n");
+    E += E_x;
+
+    // compute B term
+    TArray B_ijij_ijji = compute_B_ijij_ijji(mo_integral, ijij_ijji_shape);
+    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    utility::print_par(world, "E_B: ", E_b, "\n");
+    E += E_b;
+
+    utility::print_par(world, "E_F12: ", E, "\n");
 }
 
 }//end of namespace f12

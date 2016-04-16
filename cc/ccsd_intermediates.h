@@ -8,6 +8,7 @@
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 #include "../integrals/direct_task_integrals.h"
+#include "../integrals/molecular_integral.h"
 #include "lazy_tile.h"
 
 namespace mpqc {
@@ -32,250 +33,107 @@ class CCSDIntermediate {
   public:
     using TArray = TA::DistArray<Tile, Policy>;
 
-    CCSDIntermediate(const TArray &Ci, const TArray &Ca, const TArray &Xpq,
+    CCSDIntermediate(integrals::MolecularIntegral<Tile,Policy>& mo_int,
                      DirectTwoElectronArray &direct_ao)
-            : direct_ao_(direct_ao) {
-        {
-            // convert to MO, store this temporary,
-            // call clean() to clean Xab_ Xij_ Xai_
-            if (Xpq.is_initialized()) {
-                Xab_("X,a,b") = Xpq("X,p,q") * Ca("q,a") * Ca("p,b");
-                utility::print_size_info(Xab_, "X_xvv");
-                Xij_("X,i,j") = Xpq("X,p,q") * Ci("q,i") * Ci("p,j");
-                utility::print_size_info(Xij_, "X_xoo");
-                Xai_("X,a,i") = Xpq("X,p,q") * Ca("q,a") * Ci("p,i");
-                utility::print_size_info(Xai_, "X_xvo");
-                have_three_center_ = true;
-            } else {
-                have_three_center_ = false;
-            }
-            Ci_ = Ci;
-            Ca_ = Ca;
-
-            if (direct_ao.is_initialized()) {
-                have_four_center_ = true;
-            } else {
-                have_four_center_ = false;
-            }
-
-            // two electron integral
-            //                    TArray abij_;
-            //                    TArray ijkl_ = TArray();
-            //                    TArray abcd_ = TArray();
-            //                    TArray iabc_ = TArray();
-            //                    TArray aibc_ = TArray();
-            //                    TArray ijak_ = TArray();
-            //                    TArray ijka_ = TArray();
-            //                    TArray iajb_ = TArray();
-            TArray abij_;
-            TArray ijkl_;
-            TArray abcd_;
-            TArray iabc_;
-            TArray aibc_;
-            TArray ijak_;
-            TArray ijka_;
-            TArray iajb_;
-        }
-        TArray::wait_for_lazy_cleanup(Xpq.get_world());
+            : mo_int_(mo_int), direct_ao_(direct_ao)
+    {
+            have_four_center_ = direct_ao.is_initialized();
     }
 
-    // clean the three center ingeral
+    /// clean the three center ingeral
     void clean_three_center() {
-        Xab_ = TArray();
-        Xai_ = TArray();
-        Xij_ = TArray();
-        have_three_center_ = false;
     }
 
-    // clean all the two electron integral computed
+    /// clean all the two electron integral computed
     void clean_two_electron() {
-        abij_ = TArray();
-        ijkl_ = TArray();
-        abcd_ = TArray();
-        iabc_ = TArray();
-        aibc_ = TArray();
-        ijak_ = TArray();
-        ijka_ = TArray();
-        iajb_ = TArray();
     }
 
-    // get mo coefficient
-    // occ part
-    const TArray get_Ci() const { return Ci_; }
+    /// get mo coefficient
+    /// occ part
+    const TArray get_Ci() const {
+        return mo_int_.orbital_space()->retrieve(OrbitalIndex(L"i")).array();
+    }
 
-    // vir part
-    const TArray get_Ca() const { return Ca_; }
+    /// vir part
+    const TArray get_Ca() const {
+        return mo_int_.orbital_space()->retrieve(OrbitalIndex(L"a")).array();
+    }
 
-    // get three center integral (X|ab)
+    /// get three center integral (X|ab)
     const TArray get_Xab() const {
-        if (have_three_center_) {
-            return Xab_;
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-        }
+        TArray result;
+        TArray sqrt = mo_int_.atomic_integral().compute(L"(Κ|G| Λ)[inv_sqr]");
+        TArray three_center = mo_int_.compute(L"(Κ|G|a b)");
+        result("K,a,b") = sqrt("K,Q")*three_center("Q,a,b");
+        return result;
     }
 
-    // get three center integral (X|ij)
+    /// get three center integral (X|ij)
     const TArray get_Xij() const {
-        if (have_three_center_) {
-            return Xij_;
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-        }
+        TArray result;
+        TArray sqrt = mo_int_.atomic_integral().compute(L"(Κ|G| Λ)[inv_sqr]");
+        TArray three_center = mo_int_.compute(L"(Κ|G|i j)");
+        result("K,i,j") = sqrt("K,Q")*three_center("Q,i,j");
+        return result;
     }
 
-    // get three center integral (X|ai)
+    /// get three center integral (X|ai)
     const TArray get_Xai() const {
-        if (have_three_center_) {
-            return Xai_;
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-        }
+        TArray result;
+        TArray sqrt = mo_int_.atomic_integral().compute(L"(Κ|G| Λ)[inv_sqr]");
+        TArray three_center = mo_int_.compute(L"(Κ|G|a i)");
+        result("K,a,i") = sqrt("K,Q")*three_center("Q,a,i");
+        return result;
     }
 
     // get two electron integrals
     // using physical notation <ab|ij>
 
-    // <ab|ij>
+    /// <ab|ij>
     const TArray get_abij() {
-        if (have_three_center_) {
-            if (abij_.is_initialized()) {
-                return abij_;
-            } else {
-                abij_("a,b,i,j") = Xai_("X,a,i") * Xai_("X,b,j");
-                utility::print_size_info(abij_, "G_vvoo");
-                return abij_;
-            }
-        }  else {
-            throw std::runtime_error(
-                   "CCSDIntermediate does not have three center");
-            return abij_;
-        }
-        
-        // Removing until warning is fixed. 
-        // else if (have_four_center_) {
-
-        // } else {
-        //     throw std::runtime_error(
-        //           "CCSDIntermediate does not have three center");
-        // }
+        return mo_int_.compute(L"<a b|G|i j>[df]");
     }
 
-    // <ij|kl>
+    /// <ij|kl>
     const TArray get_ijkl() {
-        if (have_three_center_) {
-            if (ijkl_.is_initialized()) {
-                return ijkl_;
-            } else {
-                ijkl_("i,j,k,l") = Xij_("X,i,k") * Xij_("X,j,l");
-                utility::print_size_info(ijkl_, "G_oooo");
-                return ijkl_;
-            }
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-            return ijkl_;
-        }
+        return mo_int_.compute(L"<i j|G|k l>[df]");
     }
 
-    // <ab|cd>
+    /// <ab|cd>
     const TArray get_abcd() {
-        if (have_three_center_) {
-            if (abcd_.is_initialized()) {
-                return abcd_;
-            } else {
-                abcd_("a,b,c,d") = Xab_("X,a,c") * Xab_("X,b,d");
-                utility::print_size_info(abcd_, "G_vvvv");
-                return abcd_;
-            }
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-        }
+        return  mo_int_.compute(L"<a b|G|c d>[df]");
     }
 
-    // <ia|bc>
+    /// <ia|bc>
     const TArray get_iabc() {
-        if (have_three_center_) {
-            if (iabc_.is_initialized()) {
-                return iabc_;
-            } else {
-                iabc_("i,a,b,c") = Xab_("X,a,c") * Xai_("X,b,i");
-                utility::print_size_info(iabc_, "G_ovvv");
-                return iabc_;
-            }
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-        }
+        return  mo_int_.compute(L"<i a|G|b c>[df]");
     }
 
-    // <ai|bc>
+    /// <ai|bc>
     const TArray get_aibc() {
-        if (have_three_center_) {
-            if (aibc_.is_initialized()) {
-                return aibc_;
-            } else {
-                aibc_("a,i,b,c") = Xai_("X,c,i") * Xab_("X,a,b");
-                utility::print_size_info(aibc_, "G_vovv");
-                return aibc_;
-            }
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-        }
+        return mo_int_.compute(L"<a i|G|b c>[df]");
     }
 
-    // <ij|ak>
+    /// <ij|ak>
     const TArray get_ijak() {
-        if (have_three_center_) {
-            if (ijak_.is_initialized()) {
-                return ijak_;
-            } else {
-                ijak_("i,j,a,k") = Xai_("X,a,i") * Xij_("X,j,k");
-                utility::print_size_info(ijak_, "G_oovo");
-                return ijak_;
-            }
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-        }
+        return mo_int_.compute(L"<i j|G|a k>[df]");
     }
 
-    // <ij|ka>
+    /// <ij|ka>
     const TArray get_ijka() {
-        if (have_three_center_) {
-            if (ijka_.is_initialized()) {
-                return ijka_;
-            } else {
-                ijka_("i,j,k,a") = Xai_("X,a,j") * Xij_("X,i,k");
-                utility::print_size_info(ijka_, "G_ooov");
-                return ijka_;
-            }
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-        }
+        return mo_int_.compute(L"<i j|G|k a>[df]");
     }
 
-    // <ia|jb>
+    /// <ia|jb>
     const TArray get_iajb() {
-        if (have_three_center_) {
-            if (iajb_.is_initialized()) {
-                return iajb_;
-            } else {
-                iajb_("i,a,j,b") = Xab_("X,a,b") * Xij_("X,i,j");
-                utility::print_size_info(iajb_, "G_ovov");
-                return iajb_;
-            }
-        } else {
-            throw std::runtime_error(
-                  "CCSDIntermediate does not have three center");
-        }
+        return mo_int_.compute(L"<i a|G|j b>[df]");
     }
+
+    /// <a|f|i>
+    const TArray get_fock_ai(){
+        return mo_int_.compute(L"(a|F|i)[df]");
+    }
+
 
     /// AO integral-direct computation of (ab|cd) ints contributions to the
     /// doubles resudual
@@ -287,10 +145,11 @@ class CCSDIntermediate {
     /// @return U tensor
     TArray compute_u2_u11(const TArray &t2, const TArray &t1) {
         if (have_four_center_) {
+            TArray Ca = get_Ca();
             TArray tc;
             TArray u2_u11;
-            tc("i,q") = Ca_("q,c") * t1("c,i");
-            u2_u11("p, r, i, j") = ((t2("a,b,i,j") * Ca_("q,a")) * Ca_("s,b")
+            tc("i,q") = Ca("q,c") * t1("c,i");
+            u2_u11("p, r, i, j") = ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b")
                                     + tc("i,q") * tc("j,s"))
                                    * direct_ao_("p,q,r,s");
             return u2_u11;
@@ -302,9 +161,11 @@ class CCSDIntermediate {
     }
 
     TArray compute_u1a(const TArray &t1) {
+        TArray Ci = get_Ci();
+        TArray Ca = get_Ca();
         if (have_four_center_) {
             TArray u1a;
-            u1a("p,r,i,j") = (Ca_("q,a")*t1("a,i")*Ci_("s,j")) *direct_ao_("p,q,r,s");
+            u1a("p,r,i,j") = (Ca("q,a")*t1("a,i")*Ci("s,j")) *direct_ao_("p,q,r,s");
             return u1a;
         } else {
             throw std::runtime_error("CCSDIntermediate: integral-direct "
@@ -314,9 +175,11 @@ class CCSDIntermediate {
     }
 
     TArray compute_u1b(const TArray &t1) {
+        TArray Ci = get_Ci();
+        TArray Ca = get_Ca();
         if (have_four_center_) {
             TArray u1b;
-            u1b("i,r,j,s") = (Ca_("p,a")*t1("a,i")*Ci_("q,j")) *direct_ao_("p,q,r,s");
+            u1b("i,r,j,s") = (Ca("p,a")*t1("a,i")*Ci("q,j")) *direct_ao_("p,q,r,s");
             return  u1b;
 
         } else {
@@ -327,9 +190,10 @@ class CCSDIntermediate {
     }
 
     TArray compute_u_irjs() {
+        TArray Ci = get_Ci();
         if (have_four_center_) {
             TArray u_ipjr;
-            u_ipjr("i,r,j,s") = (Ci_("p,i")*Ci_("q,j"))*direct_ao_("p,q,r,s");
+            u_ipjr("i,r,j,s") = (Ci("p,i")*Ci("q,j"))*direct_ao_("p,q,r,s");
             return u_ipjr;
         } else {
             throw std::runtime_error("CCSDIntermediate: integral-direct "
@@ -339,9 +203,10 @@ class CCSDIntermediate {
     }
 
     TArray compute_u_ijqs() {
+        TArray Ci = get_Ci();
         if (have_four_center_) {
             TArray u_ijqs;
-            u_ijqs("i,j,q,s") = (Ci_("p,i")*Ci_("r,j")) *direct_ao_("p,q,r,s");
+            u_ijqs("i,j,q,s") = (Ci("p,i")*Ci("r,j")) *direct_ao_("p,q,r,s");
             return u_ijqs;
         } else {
             throw std::runtime_error("CCSDIntermediate: integral-direct "
@@ -350,31 +215,12 @@ class CCSDIntermediate {
         }
     }
   private:
-    // three center integral, need to be cleaned when not needed
-    TArray Xab_;
-    TArray Xai_;
-    TArray Xij_;
 
-    // two electron integral
-    TArray abij_;
-    TArray ijkl_;
-    TArray abcd_;
-    TArray iabc_;
-    TArray aibc_;
-    TArray ijak_;
-    TArray ijka_;
-    TArray iajb_;
+    /// MO Integral Object
+    integrals::MolecularIntegral<Tile,Policy>& mo_int_;
 
-    // mo coefficient
-    TArray Ci_;
-    TArray Ca_;
-
-    // direct ao
-    // in chemical notation (pq|rs)
+    // direct ao in chemical notation (pq|rs)
     DirectTwoElectronArray direct_ao_;
-
-    // check if Xab, Xai, Xij has been cleaned
-    bool have_three_center_;
 
     // check if have direct AO array
     bool have_four_center_;

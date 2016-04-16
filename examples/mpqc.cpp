@@ -61,19 +61,19 @@ TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
  *
  *  Example of Main MPQC file
  *
- *  @param Molecule, string, path to xyz file, default none
- *  @param GhostMolecule, string, path to ghost molecule xyz file, default none
- *  @param NCluster, int, number of cluster to use, default 0
- *  @param Charge, int, charge of molecule, default 0
- *  @param Basis, string, name of basis function, default cc-pvdz
- *  @param DfBasis, string, name of density fitting basis function, default none
- *  @param AuxBasis, string, name of auxilary basis function, default, none
- *  @param Sparse, double,  sparse threashhold, default 1e-13
- *  @param CorrelationFactor, double, f12 correlation factor, default by basis name
- *  @param CorrelationFunction, int, number of f12 correlation fuction, defualt 6
- *  @param CLSCF, object, CLSCF class
- *  @param AOIntegral, object, AtomicIntegral class
- *  @param MOIntegral, object, MolecularIntegral class
+ *  @param Molecule string, path to xyz file, default none
+ *  @param GhostMolecule string, path to ghost molecule xyz file, default none
+ *  @param NCluster int, number of cluster to use, default 0
+ *  @param Charge int, charge of molecule, default 0
+ *  @param Basis string, name of basis function, default cc-pvdz
+ *  @param DfBasis string, name of density fitting basis function, default none
+ *  @param AuxBasis string, name of auxilary basis function, default, none
+ *  @param Sparse double,  sparse threashhold, default 1e-13
+ *  @param CorrelationFactor double, f12 correlation factor, default by basis name
+ *  @param CorrelationFunction int, number of f12 correlation fuction, defualt 6
+ *  @param CLSCF object, ClosedShellSCF class
+ *  @param AOIntegral object, AtomicIntegral class
+ *  @param MOIntegral object, MolecularIntegral class
  *
  */
 int try_main(int argc, char *argv[], madness::World &world) {
@@ -363,7 +363,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         auto scf_time1 = mpqc_time::fenced_now(world);
         auto scf_time = mpqc_time::duration_in_s(scf_time0, scf_time1);
-        mpqc::utility::print_par(world, "Total SCF Time:  ", time, "\n");
+        mpqc::utility::print_par(world, "Total SCF Time:  ", scf_time, "\n");
 
         auto F = scf.fock();
         if(fock_method == "df"){
@@ -414,18 +414,67 @@ int try_main(int argc, char *argv[], madness::World &world) {
         mp2f12.compute_mp2_f12_c_df();
 
     }
-    else if(in.HasMember("CCSD")) {
-        corr_in = json::get_nested(in, "CCSD");
+    else if(in.HasMember("CCSD") || in.HasMember("CCSD(T)") || in.HasMember("CCSD(F12)") || in.HasMember("EOM_CCSD")) {
+
+        if (in.HasMember("CCSD")) {
+            corr_in = json::get_nested(in, "CCSD");
+        } else if (in.HasMember("CCSD(T)")) {
+            corr_in = json::get_nested(in, "CCSD(T)");
+        } else if(in.HasMember("EOM_CCSD")){
+            corr_in = json::get_nested(in, "EOM_CCSD");
+        } else if(in.HasMember("CCSD(F12)")){
+            corr_in = json::get_nested(in, "CCSD(F12)");
+        }
+
+        /// all of above require CCSD, do CCSD
+
+        cc::DirectTwoElectronSparseArray lazy_two_electron_int;
+        std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>> intermidiate;
+
+        // mo build
+        tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
+
+        std::string screen = corr_in.HasMember("Screen") ? corr_in["Screen"].GetString() : "";
+        int screen_option = 0;
+        if (screen == "schwarz") {
+            screen_option = 1;
+        } else if (screen == "qqr") {
+            screen_option = 2;
+        }
+        auto direct = corr_in.HasMember("Direct") ? corr_in["Direct"].GetBool() : true;
+
+        if (direct) {
+
+            std::vector<TA::TiledRange1> tr_04(4, basis.create_trange1());
+            TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
+            auto time0 = mpqc_time::fenced_now(world);
+
+            lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4, screen_option);
+
+            auto time1 = mpqc_time::fenced_now(world);
+            auto duration = mpqc_time::duration_in_s(time0, time1);
+
+            if (world.rank() == 0) {
+                std::cout << "Time to initialize direct two electron sparse "
+                        "integral: " << duration << std::endl;
+            }
+        }
+
+        intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>>
+                (mo_integral, lazy_two_electron_int);
+
+        if(in.HasMember("CCSD")){
+            utility::print_par(world, "\nBegining CCSD Calculation\n");
+            mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(ens, tre, intermidiate, corr_in);
+            ccsd.compute();
+        }
+        else if(in.HasMember("CCSD(T)")){
+            utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
+            mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(ens, tre, intermidiate, corr_in);
+            ccsd_t.compute();
+        }
     }
-    else if (in.HasMember("CCSD(T)")) {
-        corr_in = json::get_nested(in, "CCSD(T)");
-    }
-    else if(in.HasMember("EOM_CCSD")){
-        corr_in = json::get_nested(in, "EOM_CCSD");
-    }
-    else if(in.HasMember("CCSDF12")){
-        corr_in = json::get_nested(in, "CCSDF12");
-    }
+
 
 
     world.gop.fence();

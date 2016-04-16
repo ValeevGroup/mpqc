@@ -38,7 +38,7 @@ namespace mpqc{
      *  Dictionary of wstring to options
      *  - df -> DensityFitting
      *  - inv -> Inverse
-     *  - inv_sq -> InverseSquareRoot
+     *  - inv_sqr -> InverseSquareRoot
      */
 
     class Operation{

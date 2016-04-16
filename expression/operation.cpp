@@ -64,13 +64,13 @@ namespace mpqc{
     const std::map<Options, std::wstring> Operation::option_to_string = {
             {Options::DensityFitting, L"df" },
             {Options::Inverse, L"inv"},
-            {Options::InverseSquareRoot, L"inv_sq"}
+            {Options::InverseSquareRoot, L"inv_sqr"}
     };
 
     const std::unordered_map<std::wstring, Options> Operation::option = {
             {L"df", Options::DensityFitting},
             {L"inv", Options::Inverse },
-            {L"inv_sq", Options::InverseSquareRoot }
+            {L"inv_sqr", Options::InverseSquareRoot }
     };
 
     bool Operation::is_onebody() const {

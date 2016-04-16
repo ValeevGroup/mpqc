@@ -48,14 +48,12 @@ namespace mpqc {
             typedef mpqc::TArrayBlock<Tile, Policy, mpqc::MOBlock> TArrayBlock;
 
 
-            CCSD(const TArray &fock, const Eigen::VectorXd &ens,
+            CCSD(const Eigen::VectorXd &ens,
                  const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
                  rapidjson::Document &options) :
-                    fock_(fock), orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter), options_(std::move(options))
+                    orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter), options_(std::move(options))
             {
-//                auto mo_block = std::make_shared<mpqc::MOBlock>(*trange1_engine_);
-//                fock_ = TArrayBlock(fock, mo_block);
             }
 
 
@@ -141,8 +139,7 @@ namespace mpqc {
                     std::cout << "Use Straight CCSD Compute" <<std::endl;
                 }
 
-                TArray f_ai;
-                f_ai("a,i") = fock_("a,i");
+                TArray f_ai = ccsd_intermediate_->get_fock_ai();
 
                 world.gop.fence();
 
@@ -503,8 +500,7 @@ namespace mpqc {
                     mpqc::utility::print_par(world,"Integral Prepare Time: ", tmp_time, "\n");
                 }
 
-                TArray f_ai;
-                f_ai("a,i") = fock_("a,i");
+                TArray f_ai = ccsd_intermediate_->get_fock_ai();
                 world.gop.fence();
 
 
@@ -918,8 +914,7 @@ namespace mpqc {
                 }
 
 
-                TArray f_ai;
-                f_ai("a,i") = fock_("a,i");
+                TArray f_ai = ccsd_intermediate_->get_fock_ai();
 
                 world.gop.fence();
 
@@ -1319,8 +1314,7 @@ namespace mpqc {
                 TArray g_abij = ccsd_intermediate_->get_abij();
 
 
-                TArray f_ai;
-                f_ai("a,i") = fock_("a,i");
+                TArray f_ai =  ccsd_intermediate_->get_fock_ai();
 
                 world.gop.fence();
 
@@ -1385,7 +1379,6 @@ namespace mpqc {
                     //start timer
                     auto time0 = mpqc_time::now();
 
-                    TArray::wait_for_lazy_cleanup(world);
                     TArray::wait_for_lazy_cleanup(world);
 
                     TArray u2_u11;
@@ -1706,8 +1699,6 @@ namespace mpqc {
             }
 
         protected:
-            // fock matrix
-            TArray fock_;
 
             // orbital energy
             Eigen::VectorXd orbital_energy_;

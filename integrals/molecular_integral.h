@@ -156,8 +156,7 @@ namespace integrals{
             }
 
             utility::print_par(world_, "\nConstructing Molecular Integral Class \n");
-            utility::print_par(world_, "AccurateTime: " , accurate_time_, "\n");
-            std::cout << std::endl;
+            utility::print_par(world_, "AccurateTime: " , accurate_time_, "\n\n");
         }
         /// compute integrals that has two dimension
         TArray compute2(const Formula& formula_string);

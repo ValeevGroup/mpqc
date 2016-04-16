@@ -87,7 +87,7 @@ namespace integrals{
             if(!screen_.empty()){
                 utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
             }
-            std::cout << std::endl;
+            utility::print_par(world,"\n");
         }
 
         AtomicIntegral(AtomicIntegral&& ) = default;

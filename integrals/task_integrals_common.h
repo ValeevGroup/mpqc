@@ -6,7 +6,6 @@
 #include "../common/typedefs.h"
 #include "../basis/basis.h"
 
-#include "../include/libint.h"
 #include "../include/tiledarray.h"
 
 #include <memory>

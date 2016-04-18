@@ -6,7 +6,6 @@
 #include "basis_set.h"
 #include "shell_vec_functions.h"
 
-#include "../include/libint.h"
 #include "../include/tiledarray.h"
 
 namespace mpqc {

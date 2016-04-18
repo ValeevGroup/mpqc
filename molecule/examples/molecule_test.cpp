@@ -3,8 +3,10 @@
 
 #include "../Atom.h"
 #include "../../include/tbb.h"
+#include "../molecule.h"
+#include "../cluster_concept.h"
 
-#include "../../include/libint.h"
+#include <fstream>
 
 using namespace mpqc;
 using namespace mpqc::molecule;

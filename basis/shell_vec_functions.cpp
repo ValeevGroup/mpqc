@@ -1,7 +1,5 @@
 #include "shell_vec_functions.h"
 
-#include "../include/libint.h"
-
 #include <numeric>
 
 namespace mpqc {

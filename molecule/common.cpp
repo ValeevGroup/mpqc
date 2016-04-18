@@ -1,5 +1,5 @@
 #include "common.h"
-#include "../include/libint.h"
+#include <libint2/atom.h>
 
 #include "atom.h"
 

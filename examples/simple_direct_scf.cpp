@@ -1,7 +1,6 @@
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
 
-#include "../include/libint.h"
 #include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
@@ -208,7 +207,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Threshold = " << TA::SparseShape<float>::threshold()
               << std::endl;
 
-    libint2::init();
+    libint2::initialize();
     const auto bs_array = utility::make_array(basis, basis);
 
     auto overlap_e = ints::make_1body_shr_pool("overlap", basis, clustered_mol);
@@ -321,7 +320,7 @@ int main(int argc, char *argv[]) {
         world.gop.fence();
     }
 
-    libint2::cleanup();
+    libint2::finalize();
     madness::finalize();
     return 0;
 }

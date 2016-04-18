@@ -1,7 +1,6 @@
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
 
-#include "../include/libint.h"
 #include "../include/tiledarray.h"
 
 #include "../clustering/kmeans.h"
@@ -681,7 +680,7 @@ int main(int argc, char *argv[]) {
     basis::BasisSet dfbs(df_basis_name);
     basis::Basis df_basis(dfbs.get_cluster_shells(df_clustered_mol));
 
-    libint2::init();
+    libint2::initialize();
 
     const auto bs_array = utility::make_array(basis, basis);
 
@@ -731,8 +730,8 @@ int main(int argc, char *argv[]) {
               sbuilder(world, eri_e, df_basis, basis));
 
         auto soad0 = mpqc_time::fenced_now(world);
-        auto F_soad = scf::fock_from_soad_low_mem(world, clustered_mol, basis,
-                                                  eri_e, H);
+        auto F_soad = scf::fock_from_soad(world, clustered_mol, basis,
+                                          eri_e, H);
 
         auto soad1 = mpqc_time::fenced_now(world);
         auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
@@ -1179,6 +1178,9 @@ int main(int argc, char *argv[]) {
         }
 #endif
     }
+
+    madness::finalize();
+    libint2::initialize();
 
     return 0;
 }

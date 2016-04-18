@@ -5,8 +5,6 @@
 #include "../basis/basis_set.h"
 #include "../basis/basis.h"
 
-#include "../include/libint.h"
-
 using namespace mpqc;
 
 int main(int argc, char **argv) {

@@ -1,6 +1,5 @@
 set(sources
     ccsdf12.h
-    ccsdf12.cpp
     f12_intermediates.h
     f12_utility.cpp
     f12_utility.h
@@ -9,4 +8,4 @@ set(sources
 )
 
 add_library(f12 ${sources})
-target_link_libraries(f12 ${TA_LIBRARIES})
+target_link_libraries(f12 ${TA_LIBRARIES} integrals)

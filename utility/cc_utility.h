@@ -5,7 +5,7 @@
 #ifndef TILECLUSTERCHEM_UTILITY_H_H
 #define TILECLUSTERCHEM_UTILITY_H_H
 
-#include "../include/libint.h"
+#include <libint2/shell.h>
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 

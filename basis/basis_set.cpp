@@ -7,7 +7,7 @@
 #include "../molecule/cluster_collapse.h"
 #include "../molecule/common.h"
 
-#include "../include/libint.h"
+#include <libint2/basis.h>
 
 namespace mpqc {
 namespace basis {

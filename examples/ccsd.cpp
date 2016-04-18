@@ -7,7 +7,6 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-#include "../include/libint.h"
 #include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
@@ -31,6 +30,8 @@
 #include "../basis/basis_set.h"
 #include "../basis/cluster_shells.h"
 #include "../basis/basis.h"
+
+#include "../integrals/integrals.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/scf.h"
@@ -277,7 +278,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         }
 
         // start SCF
-        libint2::init();
+        libint2::initialize();
 
         const auto bs_array = utility::make_array(basis, basis);
 
@@ -567,7 +568,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
 
     world.gop.fence();
-    libint2::cleanup();
+    libint2::finalize();
     return 0;
 }
 

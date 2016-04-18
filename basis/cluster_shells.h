@@ -4,12 +4,10 @@
 
 #include "../molecule/molecule_fwd.h"
 
+#include <libint2/shell.h>
+
 #include <memory>
 #include <vector>
-
-namespace libint2 {
-struct Shell;
-}
 
 namespace mpqc {
 namespace basis {

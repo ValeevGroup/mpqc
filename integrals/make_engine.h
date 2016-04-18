@@ -2,7 +2,6 @@
 #ifndef MPQC_INTEGRAL_MAKEENGINE_H
 #define MPQC_INTEGRAL_MAKEENGINE_H
 
-#include "../include/libint.h"
 #include "../basis/basis.h"
 // #include "../basis/cluster_shells.h"
 
@@ -10,6 +9,8 @@
 
 #include "../molecule/molecule.h"
 #include "../molecule/cluster_collapse.h"
+
+#include <libint2/engine.h>
 
 namespace mpqc {
 namespace integrals {

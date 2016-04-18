@@ -34,14 +34,6 @@ target_link_libraries(eomcc ${TileClusterChem_LIBRARIES})
 file(COPY ${CMAKE_SOURCE_DIR}/examples/default_input.json DESTINATION ${CMAKE_BINARY_DIR}/examples)
 file(COPY ${CMAKE_SOURCE_DIR}/examples/generate_input.py DESTINATION ${CMAKE_BINARY_DIR}/examples)
 
-add_executable(just_world EXCLUDE_FROM_ALL empty_main.cpp) 
-target_link_libraries(just_world
-  ${TileClusterChem_LIBRARIES}
-)
-
-add_executable(new_ints EXCLUDE_FROM_ALL new_integrals.cpp) 
-target_link_libraries(new_ints ${TileClusterChem_LIBRARIES})
-
 add_executable(simple_direct_scf EXCLUDE_FROM_ALL simple_direct_scf.cpp) 
 target_link_libraries(simple_direct_scf ${TileClusterChem_LIBRARIES})
 
@@ -53,9 +45,6 @@ target_link_libraries(cadf_df_scf ${TileClusterChem_LIBRARIES})
 
 add_executable(simple_stored_df_scf EXCLUDE_FROM_ALL simple_stored_df_scf.cpp) 
 target_link_libraries(simple_stored_df_scf ${TileClusterChem_LIBRARIES})
-
-add_executable(simple_direct_df_scf EXCLUDE_FROM_ALL simple_direct_df_scf.cpp) 
-target_link_libraries(simple_direct_df_scf ${TileClusterChem_LIBRARIES})
 
 add_executable(mp2_f12_expression EXCLUDE_FROM_ALL mp2_f12_expression.cpp)
 target_link_libraries(mp2_f12_expression ${TileClusterChem_LIBRARIES})

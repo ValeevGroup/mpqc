@@ -12,10 +12,11 @@
 
 #include "../common/typedefs.h"
 #include "../include/tiledarray.h"
-#include "../include/libint.h"
 #include "task_integrals_common.h"
 
 #include "screening/screen_base.h"
+
+#include <libint2/engine.h>
 
 namespace mpqc {
 namespace integrals {

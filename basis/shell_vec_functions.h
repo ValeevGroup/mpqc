@@ -6,6 +6,8 @@
 #include "../common/typedefs.h"
 #include "basis_fwd.h"
 
+#include <libint2/shell.h>
+
 namespace mpqc {
 namespace basis {
 

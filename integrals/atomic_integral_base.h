@@ -21,6 +21,8 @@
 #include "make_engine.h"
 #include "../expression/orbital_registry.h"
 
+#include <libint2/engine.h>
+
 namespace mpqc {
 namespace integrals {
 

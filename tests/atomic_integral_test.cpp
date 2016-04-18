@@ -5,8 +5,6 @@
 #include <catch.hpp>
 
 #include "../include/tiledarray.h"
-#include "../include/libint.h"
-
 
 #include "../integrals/atomic_integral.h"
 

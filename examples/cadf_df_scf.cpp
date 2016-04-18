@@ -1,7 +1,6 @@
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
 
-#include "../include/libint.h"
 #include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
@@ -293,8 +292,7 @@ int main(int argc, char *argv[]) {
 
     // Begin scf
     auto soad0 = mpqc_time::fenced_now(world);
-    decltype(S) F_soad= scf::fock_from_soad(world, clustered_mol, basis, eri_e,
-                                             H);
+    decltype(S) F_soad= scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
     auto soad1 = mpqc_time::fenced_now(world);
     auto soadtime = mpqc_time::duration_in_s(soad0, soad1);
     if (world.rank() == 0) {

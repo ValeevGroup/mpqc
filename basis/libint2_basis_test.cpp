@@ -1,10 +1,11 @@
 /*
  * Example test to ensure that I can compile with libint basis headers
  */
-#include "../include/libint.h"
+
+#include <libint2.hpp>
 
 int main(int argc, char *argv[]) {
-    libint2::init();
+    libint2::initialize();
 
     libint2::Atom h1{1, 0.0, 0.0, 0.0};
     libint2::Atom h2{1, 0.0, 0.0, 1.0};
@@ -17,5 +18,7 @@ int main(int argc, char *argv[]) {
         std::cout << "\t" << shell << std::endl;
     }
         
+    libint2::finalize();
+
     return 0;
 }

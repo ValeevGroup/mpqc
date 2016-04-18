@@ -6,8 +6,8 @@
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <libint2.hpp>
 
-#include "../include/libint.h"
 #include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
@@ -287,7 +287,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
     /// initialize AO integral
-    libint2::init();
+    libint2::initialize();
 
     auto ao_in = json::get_nested(in, "AOIntegral");
 
@@ -501,7 +501,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
     world.gop.fence();
-    libint2::cleanup();
+    libint2::finalize();
     return 0;
 }
 

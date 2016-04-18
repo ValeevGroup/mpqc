@@ -1,7 +1,6 @@
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
 
-#include "../include/libint.h"
 #include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
@@ -182,7 +181,7 @@ int main(int argc, char *argv[]) {
     basis::BasisSet bs(basis_name);
     basis::Basis basis(bs.get_cluster_shells(clustered_mol));
 
-    libint2::init();
+    libint2::initialize();
 
     const auto bs_array = utility::make_array(basis, basis);
 
@@ -238,7 +237,7 @@ int main(int argc, char *argv[]) {
         scf.solve(20, 1e-7, eri4);
     }
 
-    libint2::cleanup();
+    libint2::finalize();
     madness::finalize();
     return 0;
 }

@@ -14,8 +14,9 @@
 #include "../common/typedefs.h"
 
 #include "../include/tiledarray.h"
-#include "../include/libint.h"
 #include "basis_set.h"
+
+#include <libint2/shell.h>
 
 
 namespace mpqc {

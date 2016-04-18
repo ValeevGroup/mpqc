@@ -1,7 +1,6 @@
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
 
-#include "../include/libint.h"
 #include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
@@ -133,7 +132,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    libint2::init();
+    libint2::initialize();
 
     integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int
             (world,
@@ -313,6 +312,6 @@ int main(int argc, char *argv[]) {
     utility::print_par(world, "MP2F12 Time: ", mp2f12_time, " S\n");
 
     madness::finalize();
-    libint2::cleanup();
+    libint2::finalize();
     return 0;
 }

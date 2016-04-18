@@ -1,5 +1,4 @@
 #include "cluster_shells.h"
-#include "../include/libint.h"
 #include "../molecule/cluster.h"
 
 #include <numeric>

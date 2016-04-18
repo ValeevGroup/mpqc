@@ -3,7 +3,9 @@
 #include "common.h"
 #include "atom_masses.h"
 
-#include "../include/libint.h"
+#include <libint2/atom.h>
+
+#include <fstream>
 
 namespace mpqc {
 namespace molecule {

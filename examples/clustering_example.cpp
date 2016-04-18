@@ -6,8 +6,6 @@
 
 #include "../clustering/kmeans.h"
 
-#include "../include/libint.h"
-
 using namespace mpqc;
 
 int main(int argc, char **argv) {

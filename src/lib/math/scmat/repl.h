@@ -116,7 +116,7 @@ class ReplSCMatrix: public SCMatrix {
     double** rows;
   protected:
     // utility functions
-    int compute_offset(int,int) const;
+    size_t compute_offset(int,int) const;
     void init_blocklist();
 
     void before_elemop();
@@ -190,7 +190,7 @@ class ReplSymmSCMatrix: public SymmSCMatrix {
     double** rows;
   protected:
     // utility functions
-    int compute_offset(int,int) const;
+    size_t compute_offset(int,int) const;
     void init_blocklist();
 
     void before_elemop();

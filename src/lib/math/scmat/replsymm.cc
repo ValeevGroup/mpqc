@@ -55,7 +55,8 @@ static double **
 init_symm_rows(double *data, int n)
 {
   double** r = new double*[n];
-  for (int i=0; i<n; i++) r[i] = &data[(i*(i+1))/2];
+  const size_t n_long = static_cast<size_t>(n);
+  for (size_t i=0; i<n_long; i++) r[i] = &data[(i*(i+1))/2];
   return r;
 }
 
@@ -75,14 +76,15 @@ void
 ReplSymmSCMatrix::before_elemop()
 {
   // zero out the blocks not in my block list
-  int i, j, index;
+  int i, j;
+  size_t index = 0;
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
-  for (i=0, index=0; i<d->blocks()->nblock(); i++) {
+  for (i=0; i<d->blocks()->nblock(); i++) {
       for (j=0; j<=i; j++, index++) {
           if (index%nproc == me) continue;
-          for (int ii=d->blocks()->start(i); ii<d->blocks()->fence(i); ii++) {
-              for (int jj=d->blocks()->start(j);
+          for (size_t ii=d->blocks()->start(i); ii<d->blocks()->fence(i); ii++) {
+              for (size_t jj=d->blocks()->start(j);
                    jj < d->blocks()->fence(j) && jj <= ii;
                    jj++) {
                   matrix[(ii*(ii+1)>>1) + jj] = 0.0;
@@ -95,17 +97,18 @@ ReplSymmSCMatrix::before_elemop()
 void
 ReplSymmSCMatrix::after_elemop()
 {
-  messagegrp()->sum(matrix, d->n()*(d->n()+1)>>1);
+  messagegrp()->sum(matrix, static_cast<size_t>(d->n())*(d->n()+1)>>1);
 }
 
 void
 ReplSymmSCMatrix::init_blocklist()
 {
-  int i, j, index;
+  int i, j;
+  size_t index = 0;
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
   blocklist = new SCMatrixBlockList;
-  for (i=0, index=0; i<d->blocks()->nblock(); i++) {
+  for (i=0; i<d->blocks()->nblock(); i++) {
       for (j=0; j<=i; j++, index++) {
           if (index%nproc != me) continue;
           blocklist->insert(
@@ -124,14 +127,14 @@ ReplSymmSCMatrix::~ReplSymmSCMatrix()
   if (rows) delete[] rows;
 }
 
-int
+size_t
 ReplSymmSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d->n() || j>=d->n()) {
       ExEnv::errn() << indent << "ReplSymmSCMatrix: index out of bounds\n";
       abort();
     }
-  return ij_offset(i,j);
+  return ij_offset(static_cast<size_t>(i),static_cast<size_t>(j));
 }
 
 double
@@ -366,8 +369,8 @@ ReplSymmSCMatrix::accumulate_row(SCVector *v, int i)
 void
 ReplSymmSCMatrix::assign_val(double val)
 {
-  int n = (d->n()*(d->n()+1))/2;
-  for (int i=0; i<n; i++) matrix[i] = val;
+  size_t n = (static_cast<size_t>(d->n())*(d->n()+1))/2;
+  for (size_t i=0; i<n; i++) matrix[i] = val;
 }
 
 void
@@ -375,7 +378,7 @@ ReplSymmSCMatrix::assign_s(SymmSCMatrix*m)
 {
   ReplSymmSCMatrix* lm = dynamic_cast<ReplSymmSCMatrix*>(m);
   if (lm && dim()->equiv(lm->dim())) {
-      int d = i_offset(n());
+      size_t d = i_offset(static_cast<size_t>(n()));
       memcpy(matrix, lm->matrix, sizeof(double)*d);
     }
   else
@@ -385,7 +388,7 @@ ReplSymmSCMatrix::assign_s(SymmSCMatrix*m)
 void
 ReplSymmSCMatrix::assign_p(const double*m)
 {
-  int d = i_offset(n());
+  size_t d = i_offset(static_cast<size_t>(n()));
   memcpy(matrix, m, sizeof(double)*d);
 }
 
@@ -400,7 +403,7 @@ ReplSymmSCMatrix::assign_pp(const double**m)
 void
 ReplSymmSCMatrix::convert_p(double*m) const
 {
-  int d = i_offset(n());
+  size_t d = i_offset(static_cast<size_t>(n()));
   memcpy(m, matrix, sizeof(double)*d);
 }
 
@@ -415,8 +418,8 @@ ReplSymmSCMatrix::convert_pp(double**m) const
 void
 ReplSymmSCMatrix::scale(double s)
 {
-  int nelem = i_offset(n());
-  for (int i=0; i < nelem; i++) matrix[i] *= s;
+  size_t nelem = i_offset(static_cast<size_t>(n()));
+  for (size_t i=0; i < nelem; i++) matrix[i] *= s;
 }
 
 void
@@ -433,8 +436,8 @@ ReplSymmSCMatrix::accumulate(const SymmSCMatrix*a)
       abort();
     }
 
-  int nelem = (this->n() * (this->n() + 1))/2;
-  for (int i=0; i<nelem; i++) matrix[i] += la->matrix[i];
+  size_t nelem = i_offset(static_cast<size_t>(n()));
+  for (size_t i=0; i<nelem; i++) matrix[i] += la->matrix[i];
 }
 
 double

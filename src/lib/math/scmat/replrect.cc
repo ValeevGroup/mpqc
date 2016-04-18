@@ -59,7 +59,8 @@ init_rect_rows(double *data, int ni,int nj)
 {
   double** r = new double*[ni];
   int i;
-  for (i=0; i<ni; i++) r[i] = &data[i*nj];
+  size_t row_begin_index = 0;
+  for (i=0; i<ni; i++, row_begin_index+=nj) r[i] = &data[row_begin_index];
   return r;
 }
 
@@ -134,34 +135,34 @@ ReplSCMatrix::~ReplSCMatrix()
   if (rows) delete[] rows;
 }
 
-int
+size_t
 ReplSCMatrix::compute_offset(int i,int j) const
 {
   if (i<0 || j<0 || i>=d1->n() || j>=d2->n()) {
       ExEnv::errn() << indent << "ReplSCMatrix: index out of bounds" << endl;
       abort();
     }
-  return i*(d2->n()) + j;
+  return i*static_cast<size_t>(d2->n()) + j;
 }
 
 double
 ReplSCMatrix::get_element(int i,int j) const
 {
-  int off = compute_offset(i,j);
+  size_t off = compute_offset(i,j);
   return matrix[off];
 }
 
 void
 ReplSCMatrix::set_element(int i,int j,double a)
 {
-  int off = compute_offset(i,j);
+  size_t off = compute_offset(i,j);
   matrix[off] = a;
 }
 
 void
 ReplSCMatrix::accumulate_element(int i,int j,double a)
 {
-  int off = compute_offset(i,j);
+  size_t off = compute_offset(i,j);
   matrix[off] += a;
 }
 
@@ -376,14 +377,14 @@ ReplSCMatrix::accumulate_column(SCVector *v, int i)
 void
 ReplSCMatrix::assign_val(double a)
 {
-  int n = d1->n() * d2->n();
-  for (int i=0; i<n; i++) matrix[i] = a;
+  size_t n = static_cast<size_t>(d1->n()) * d2->n();
+  for (size_t i=0; i<n; i++) matrix[i] = a;
 }
 
 void
 ReplSCMatrix::assign_p(const double*m)
 {
-  int n = d1->n() * d2->n();
+  size_t n = static_cast<size_t>(d1->n()) * d2->n();
   memcpy(matrix, m, sizeof(double)*n);
 }
 
@@ -400,7 +401,7 @@ ReplSCMatrix::assign_pp(const double**m)
 void
 ReplSCMatrix::convert_p(double*m) const
 {
-  int n = d1->n() * d2->n();
+  size_t n = static_cast<size_t>(d1->n()) * d2->n();
   memcpy(m, matrix, sizeof(double)*n);
 }
 
@@ -625,8 +626,8 @@ ReplSCMatrix::accumulate(const SCMatrix*a)
       abort();
     }
 
-  int nelem = this->ncol() * this->nrow();
-  int i;
+  size_t nelem = static_cast<size_t>(this->ncol()) * this->nrow();
+  size_t i;
   for (i=0; i<nelem; i++) matrix[i] += la->matrix[i];
 }
 
@@ -644,7 +645,7 @@ ReplSCMatrix::accumulate(const SymmSCMatrix*a)
       abort();
     }
 
-  int n = this->ncol();
+  size_t n = this->ncol();
   double *dat = la->matrix;
   int i, j;
   for (i=0; i<n; i++) {
@@ -672,7 +673,7 @@ ReplSCMatrix::accumulate(const DiagSCMatrix*a)
       abort();
     }
 
-  int n = this->ncol();
+  size_t n = this->ncol();
   double *dat = la->matrix;
   int i;
   for (i=0; i<n; i++) {
@@ -695,7 +696,7 @@ ReplSCMatrix::accumulate(const SCVector*a)
       abort();
     }
 
-  int n = this->ncol();
+  size_t n = this->ncol();
   int i;
   double *dat = la->vector;
   for (i=0; i<n; i++) {
@@ -785,16 +786,16 @@ ReplSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
     }
 
   // form a fortran style matrix for the SVD routines
-  double *dA = allocate<double>(m*n);
-  double *dU = allocate<double>(m*m);
-  double *dV = allocate<double>(n*n);
+  double *dA = allocate<double>(static_cast<size_t>(m)*n);
+  double *dU = allocate<double>(static_cast<size_t>(m)*m);
+  double *dV = allocate<double>(static_cast<size_t>(n)*n);
   double *dsigma = new double[n];
   double *w = new double[(3*p-1>m)?(3*p-1):m];
 
   int i,j;
   for (i=0; i<m; i++) {
       for (j=0; j<n; j++) {
-          dA[i + j*m] = this->rows[i][j];
+          dA[i + j*static_cast<size_t>(m)] = this->rows[i][j];
         }
     }
 
@@ -804,13 +805,13 @@ ReplSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
 
   for (i=0; i<m; i++) {
       for (j=0; j<m; j++) {
-          lU->rows[i][j] = dU[i + j*m];
+          lU->rows[i][j] = dU[i + j*static_cast<size_t>(m)];
         }
     }
 
   for (i=0; i<n; i++) {
       for (j=0; j<n; j++) {
-          lV->rows[i][j] = dV[i + j*n];
+          lV->rows[i][j] = dV[i + j*static_cast<size_t>(n)];
         }
     }
 
@@ -896,7 +897,8 @@ ReplSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
     
     memset(v, 0, sizeof(double)*nr);
     
-    for (i=ij=0; i < nr; i += D1) {
+    size_t ij = 0;
+    for (i=0; i < nr; i += D1) {
       int ni = nr-i;
       if (ni > D1) ni = D1;
       

@@ -141,7 +141,7 @@ class SCDimension: public SavableState {
     const char* name() const { return name_.c_str(); }
 
     /// Return the blocking information for this dimension.
-    Ref<SCBlockInfo> blocks() { return blocks_; }
+    const Ref<SCBlockInfo>& blocks() const { return blocks_; }
 
     /// Print information about this dimension to o.
     void print(std::ostream&o=ExEnv::out0()) const;

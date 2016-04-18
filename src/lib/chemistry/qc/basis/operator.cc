@@ -474,6 +474,7 @@ TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::G12_T1_G12>::value[] 
 TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::DeltaFunction>::value[] = {TwoBodyOper::delta};
 
 std::string TwoBodyOperSetProperties<TwoBodyOperSet::ERI>::key("ERI");
+std::string TwoBodyOperSetProperties<TwoBodyOperSet::R12>::key("R12");
 std::string TwoBodyOperSetProperties<TwoBodyOperSet::G12>::key("G12");
 std::string TwoBodyOperSetProperties<TwoBodyOperSet::G12NC>::key("G12'");
 std::string TwoBodyOperSetProperties<TwoBodyOperSet::G12DKH>::key("G12DKH");
@@ -498,9 +499,9 @@ TwoBodyOperSetDescr::instance(TwoBodyOperSet::type oset)
                                      TwoBodyOperSetProperties<TwoBodyOperSet::ERI>::key);
       break;
     case TwoBodyOperSet::R12:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::G12>::size,
-                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12>::value,
-                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::R12>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::R12>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::R12>::key);
       break;
     case TwoBodyOperSet::G12:
       return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::G12>::size,

@@ -7,16 +7,15 @@
 #include "f12_intermediates.h"
 #include "../utility/cc_utility.h"
 
-void mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
+double mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
 
     auto& world = mo_int_.get_world();
 
     double E = 0.0;
 
     auto& mo_integral = mo_int_;
-    auto& ao_integral = mo_int_.atomic_integral();
 
-    auto occ = tre_->get_occ();
+    auto occ = tre_->get_actual_occ();
 
     TArray t2;
     {
@@ -101,19 +100,19 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
     }
 
     utility::print_par(world, "E_F12: ", E, "\n");
+    return E;
 }
 
 
-void mpqc::f12::MP2F12::compute_mp2_f12_c(){
+double mpqc::f12::MP2F12::compute_mp2_f12_c(){
 
     auto& world = mo_int_.get_world();
 
     double E = 0.0;
 
     auto& mo_integral = mo_int_;
-    auto& ao_integral = mo_int_.atomic_integral();
 
-    auto occ = tre_->get_occ();
+    auto occ = tre_->get_actual_occ();
 
     TArray t2_nodf;
     {
@@ -227,7 +226,7 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c(){
     {
         utility::print_par(world, "Compute CC Term Without DF \n");
         auto C_bar_ijab = f12::convert_C_ijab(C_ijab_nodf, occ, *orbital_energy_);
-        B_ijij_ijji_nodf("i1,j1,i2,j2") = (C_ijab_nodf("i1,a,j1,b")*C_bar_ijab("i2,a,j2,b")).set_shape(ijij_ijji_shape);
+        B_ijij_ijji_nodf("i1,j1,i2,j2") = (C_ijab_nodf("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
 
         double E_cc = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
         utility::print_par(world, "E_CC: ", E_cc, "\n");
@@ -235,5 +234,5 @@ void mpqc::f12::MP2F12::compute_mp2_f12_c(){
     }
 
     utility::print_par(world, "E_F12: ", E, "\n");
-
+    return E;
 }

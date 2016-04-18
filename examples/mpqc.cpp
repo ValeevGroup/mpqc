@@ -304,11 +304,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
      * CLSCF
      */
     if(in.HasMember("CLSCF")){
+        auto scf_time0 = mpqc_time::fenced_now(world);
+
         auto scf_in = json::get_nested(in, "CLSCF");
         double scf_converge = scf_in.HasMember("SCFConverge") ? scf_in["SCFConverge"].GetDouble() : 1.0e-7;
         int scf_max_iter = scf_in.HasMember("SCFMaxIter") ? scf_in["SCFMaxIter"].GetInt() : 30;
 
-        auto scf_time0 = mpqc_time::fenced_now(world);
 
         // Overlap ints
         auto S = ao_int.compute(L"(κ|λ)");
@@ -379,7 +380,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     // Correlation Methods
 
     auto mo_in = json::get_nested(in, "MOIntegral");
-
+    double corr_e = 0.0;
     auto orbital_registry = std::make_shared<OrbitalSpaceRegistry<TA::DistArray<TA::TensorD, TA::SparsePolicy>>>();
     auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,orbital_registry,mo_in);
     Eigen::VectorXd ens;
@@ -387,13 +388,20 @@ int try_main(int argc, char *argv[], madness::World &world) {
     rapidjson::Document corr_in;
 
     if(in.HasMember("MP2")){
+
+        auto mp2_time0 = mpqc_time::fenced_now(world);
+
         corr_in = json::get_nested(in, "MP2");
         tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
         auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
-        mp2.compute(corr_in);
+        corr_e += mp2.compute(corr_in);
 
+        auto mp2_time1 = mpqc_time::fenced_now(world);
+        auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
+        mpqc::utility::print_par(world, "Total MP2 Time:  ", mp2_time, "\n");
     }
     else if(in.HasMember("MP2F12")){
+        auto mp2_time0 = mpqc_time::fenced_now(world);
         corr_in = json::get_nested(in, "MP2F12");
 
         std::size_t mo_blocksize = corr_in.HasMember("MoBlockSize") ? corr_in["MoBlockSize"].GetInt() : 24;
@@ -407,17 +415,28 @@ int try_main(int argc, char *argv[], madness::World &world) {
         tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
         // mp2 compute
         auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
-        mp2.compute(corr_in);
+        corr_e += mp2.compute(corr_in);
 
+        auto mp2_time1 = mpqc_time::fenced_now(world);
+        auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
+        mpqc::utility::print_par(world, "Total MP2 Time:  ", mp2_time, "\n");
+
+        // start mp2f12
+
+        auto mp2f12_time0 = mpqc_time::fenced_now(world);
         //cabs mo build
         closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
         f12::MP2F12 mp2f12(mo_integral, tre, ens);
-        mp2f12.compute_mp2_f12_c_df();
+        corr_e += mp2f12.compute(corr_in);
 
+        auto mp2f12_time1 = mpqc_time::fenced_now(world);
+        auto mp2f12_time = mpqc_time::duration_in_s(mp2f12_time0, mp2f12_time1);
+        mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
     }
         // all of these require CCSD
     else if(in.HasMember("CCSD") || in.HasMember("CCSD(T)") || in.HasMember("CCSD(F12)") || in.HasMember("EOM_CCSD")) {
 
+        auto time0 = mpqc_time::fenced_now(world);
         if (in.HasMember("CCSD")) {
             corr_in = json::get_nested(in, "CCSD");
         } else if (in.HasMember("CCSD(T)")) {
@@ -470,19 +489,28 @@ int try_main(int argc, char *argv[], madness::World &world) {
         if(in.HasMember("CCSD")){
             utility::print_par(world, "\nBegining CCSD Calculation\n");
             mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(ens, tre, intermidiate, corr_in);
-            ccsd.compute();
+            corr_e += ccsd.compute();
             t1 = ccsd.get_t1();
             t2 = ccsd.get_t2();
+            auto time1 = mpqc_time::fenced_now(world);
+            auto time = mpqc_time::duration_in_s(time0, time1);
+            mpqc::utility::print_par(world, "Total CCSD Time:  ", time, "\n");
         }
         else if(in.HasMember("CCSD(T)")){
             utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
             mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(ens, tre, intermidiate, corr_in);
-            ccsd_t.compute();
+            corr_e += ccsd_t.compute();
             t1 = ccsd_t.get_t1();
             t2 = ccsd_t.get_t2();
+            auto time1 = mpqc_time::fenced_now(world);
+            auto time = mpqc_time::duration_in_s(time0, time1);
+            mpqc::utility::print_par(world, "Total CCSD(T) Time:  ", time, "\n");
         }
 
         if(in.HasMember("CCSD(F12)")){
+
+            time0 = mpqc_time::fenced_now(world);
+
             utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
 
             corr_in = json::get_nested(in, "CCSD(F12)");
@@ -494,9 +522,16 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
             closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
             f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral,tre,std::make_shared<Eigen::VectorXd>(ens),t1,t2);
-            ccsd_f12.compute_c(lazy_two_electron_int);
+            corr_e += ccsd_f12.compute_c(lazy_two_electron_int);
+
+            auto time1 = mpqc_time::fenced_now(world);
+            auto time = mpqc_time::duration_in_s(time0, time1);
+            mpqc::utility::print_par(world, "Total F12 Time:  ", time, "\n");
+
         }
     }
+
+    utility::print_par(world, "Total Correlation Energy: ", corr_e, "\n");
 
 
 

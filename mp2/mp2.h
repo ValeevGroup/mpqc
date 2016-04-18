@@ -29,7 +29,7 @@ namespace mpqc{
 
         MP2() = default;
 
-        void compute_df() {
+        double compute_df() {
 
             auto g_iajb = mo_int_.compute(L"(i a|G|j b)[df]");
             // compute mp2 energy
@@ -38,9 +38,11 @@ namespace mpqc{
             if (g_iajb.get_world().rank() == 0) {
                 std::cout << "MP2 Energy With DF: " << energy_mp2 << std::endl;
             }
+
+            return energy_mp2;
         }
 
-        void compute_four_center() {
+        double compute_four_center() {
 
             auto g_iajb = mo_int_.compute(L"(i a|G|j b)");
             // compute mp2 energy
@@ -49,21 +51,27 @@ namespace mpqc{
             if (g_iajb.get_world().rank() == 0) {
                 std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
             }
+
+            return energy_mp2;
         }
 
-        void compute(const rapidjson::Document& in){
+        double compute(const rapidjson::Document& in){
 
             std::string method = in.HasMember("Method") ? in["Method"].GetString() : "df";
 
+            double mp2_energy = 0.0;
+
             if(method == "four center"){
-                compute_four_center();
+                mp2_energy = compute_four_center();
             }
             else if(method == "df"){
-                compute_df();
+                mp2_energy = compute_df();
             }
             else{
                 throw std::runtime_error("Wrong MP2 Method");
             }
+
+            return mp2_energy;
         }
 
         const std::shared_ptr<Eigen::VectorXd> get_en() const {

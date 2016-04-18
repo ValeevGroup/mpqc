@@ -29,10 +29,28 @@ public:
     MP2F12(MolecularIntegral& mo_int, std::shared_ptr<TRange1Engine> tre, const Eigen::VectorXd& ens)
             : mo_int_(mo_int), tre_(tre), orbital_energy_(std::make_shared<Eigen::VectorXd>(ens)) {}
 
-    void compute_mp2_f12_c_df();
+    double compute_mp2_f12_c_df();
 
-    void compute_mp2_f12_c();
+    double compute_mp2_f12_c();
 
+    double compute(const rapidjson::Document& in){
+
+        std::string method = in.HasMember("Method") ? in["Method"].GetString() : "df";
+
+        double mp2_f12_energy = 0.0;
+
+        if(method == "four center"){
+            mp2_f12_energy = compute_mp2_f12_c();
+        }
+        else if(method == "df"){
+            mp2_f12_energy = compute_mp2_f12_c_df();
+        }
+        else{
+            throw std::runtime_error("Wrong MP2F12 Method");
+        }
+
+        return mp2_f12_energy;
+    }
 
 private:
 

@@ -84,24 +84,27 @@ namespace mpqc {
             };
 
             // compute function
-            virtual void compute(){
+            virtual double compute(){
 
                 TArray t1;
                 TArray t2;
 
                 auto direct = options_.HasMember("Direct") ? options_["Direct"].GetBool(): true;
+                double ccsd_corr = 0.0;
                 if(direct){
 //                    double ccsd_corr = compute_ccsd_direct_ao(t1, t2);
-                    double ccsd_corr = compute_ccsd_direct(t1, t2);
+                    ccsd_corr = compute_ccsd_direct(t1, t2);
                 }
                 else {
-                    double ccsd_corr = compute_ccsd_nondirect(t1,t2);
+                    ccsd_corr = compute_ccsd_nondirect(t1,t2);
                 }
 
                 T1_ = t1;
                 T2_ = t2;
 
                 ccsd_intermediate_->clean_two_electron();
+
+                return ccsd_corr;
 
             }
 

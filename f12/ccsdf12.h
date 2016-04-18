@@ -29,7 +29,7 @@ public:
 
     /// standard approach, no approximation
     template<typename DirectArray>
-    void compute_c(const DirectArray& darray);
+    double compute_c(const DirectArray& darray);
 
 private:
 
@@ -45,7 +45,7 @@ private:
 
 template <typename Tile>
 template <typename DirectArray>
-void CCSDF12<Tile>::compute_c(const DirectArray& darray) {
+double CCSDF12<Tile>::compute_c(const DirectArray& darray) {
 
     auto& mo_integral = mo_int_;
     auto& world = mo_integral.get_world();
@@ -59,10 +59,22 @@ void CCSDF12<Tile>::compute_c(const DirectArray& darray) {
     // compute V_ijij_ijji
     TArray V_ijij_ijji = compute_V_ijij_ijji(mo_integral,ijij_ijji_shape);
 
-    // compute V_ijab
-    TArray V_ijab = compute_V_xyab(mo_integral);
+    // VT2 contribution
+    if(darray.is_initialized()){
+        TArray tmp = compute_VT2_ijij_ijji(mo_integral,t2_,ijij_ijji_shape,darray);
+        V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
+    }else{
+        // compute C_ijab
+        TArray C_ijab = compute_C_ijab(mo_integral);
+        // compute V_ijab
+        TArray V_ijab = compute_V_xyab(mo_integral);
+        V_ijij_ijji("i1,j1,i2,j2") += ((V_ijab("i2,j2,a,b")+C_ijab("i2,j2,a,b"))*t2_("a,b,i1,j1")).set_shape(ijij_ijji_shape);
+    }
 
-    V_ijij_ijji("i1,j1,i2,j2") += (V_ijab("i2,j2,a,b")*t2_("a,b,i1,j1")).set_shape(ijij_ijji_shape);
+    // compuate V_ijia
+    TArray V_iaij = compute_V_iaxy(mo_integral);
+    V_ijij_ijji("i1,j1,i2,j2") += V_iaij("i1,a,i2,j2")*t1_("a,j1");
+    V_ijij_ijji("i1,j1,i2,j2") += V_iaij("j1,a,i2,j2")*t1_("a,i1");
 
     // V contribution to energy
     double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(1.0,2.5,-0.5));
@@ -90,6 +102,8 @@ void CCSDF12<Tile>::compute_c(const DirectArray& darray) {
     E += E_b;
 
     utility::print_par(world, "E_F12: ", E, "\n");
+
+    return E;
 }
 
 }//end of namespace f12

@@ -31,7 +31,7 @@ namespace mpqc{
                     CCSD<Tile,Policy>(ens,tre,inter,options)
             {}
 
-            void compute(){
+            double compute(){
 
                 TArray t1;
                 TArray t2;
@@ -70,6 +70,8 @@ namespace mpqc{
                     std::cout << "CCSD(T) Energy  " << ccsd_t + ccsd_corr << std::endl;
 //                    std::cout << "CCSD(T) Energy  " << ccsd_t_d + ccsd_corr << std::endl;
                 }
+
+                return ccsd_corr + ccsd_t;
 
             }
 

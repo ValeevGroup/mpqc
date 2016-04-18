@@ -192,7 +192,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji(integrals::MolecularInt
  * CC-F12 C approach V term
  * $V_{ia}^{xy}
  * @param mo_integral reference to MolecularIntegral
- * @return V("i,j,x,y")
+ * @return V("i,a,x,y")
  */
 template<typename Tile, typename Policy>
 TA::DistArray<Tile,Policy> compute_V_iaxy(integrals::MolecularIntegral<Tile, Policy>& mo_integral)
@@ -201,16 +201,16 @@ TA::DistArray<Tile,Policy> compute_V_iaxy(integrals::MolecularIntegral<Tile, Pol
     auto& world = mo_integral.get_world();
 
     TA::DistArray<Tile,Policy> V_iaxy;
-    TA::DistArray<Tile,Policy> tmp;
+//    TA::DistArray<Tile,Policy> tmp;
 
     utility::print_par(world, "Compute V_iaxy With DF \n" );
     V_iaxy("i,a,k,l") = mo_integral(L"(Κ |GR|i k)")*mo_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|a l)");
 
     V_iaxy("i,a,k,l") -= mo_integral(L"(i p|G|a q)[df]")*mo_integral(L"(k p|R|l q)[df]");
-    tmp("i,a,k,l") = mo_integral(L"(i m|G|a a')[df]")*mo_integral(L"(k m|R|l a')[df]");
-//    V_iaxy("i,j,k,l") -= mo_integral(L"(j m|G|i a')[df]")*mo_integral(L"(k m|R|l a')[df]");
-    V_iaxy("i,a,k,l") -= tmp("i,a,k,l");
-    V_iaxy("i,a,k,l") -= tmp("a,i,l,k");
+    V_iaxy("i,a,k,l") -= mo_integral(L"(i m|G|a a')[df]")*mo_integral(L"(k m|R|l a')[df]");
+    V_iaxy("i,a,k,l") -= mo_integral(L"(a m|G|i a')[df]")*mo_integral(L"(l m|R|k a')[df]");
+//    V_iaxy("i,a,k,l") -= tmp("i,a,k,l");
+//    V_iaxy("i,a,k,l") -= tmp("a,i,l,k");
 
     return V_iaxy;
 
@@ -219,7 +219,7 @@ TA::DistArray<Tile,Policy> compute_V_iaxy(integrals::MolecularIntegral<Tile, Pol
 
 /**
  * CC-F12 C approach V term
- * $V_{xy}^{ab}
+ * $V_{xy}^{ab}$
  * @param mo_integral reference to MolecularIntegral
  * @return V("x,y,a,b")
  */
@@ -237,13 +237,12 @@ TA::DistArray<Tile,Policy> compute_V_xyab(integrals::MolecularIntegral<Tile, Pol
     V_xyab("i,j,a,b") = mo_integral(L"(Κ |GR|i a)")*ao_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j b)");
 
     V_xyab("i,j,a,b") -= mo_integral(L"(a p|G|b q)[df]")*mo_integral(L"(i p|R|j q)[df]");
-    tmp("i,j,a,b") = mo_integral(L"(a m|G|b a')[df]")*mo_integral(L"(i m|R|j a')[df]");
-    V_xyab("i,j,a,b") -= tmp("i,j,a,b");
-    V_xyab("i,j,a,b") -= tmp("j,i,b,a");
+//    tmp("i,j,a,b") = mo_integral(L"(a m|G|b a')[df]")*mo_integral(L"(i m|R|j a')[df]");
+//    V_xyab("i,j,a,b") -= tmp("i,j,a,b");
+//    V_xyab("i,j,a,b") -= tmp("j,i,b,a");
 
     return V_xyab;
 };
-
 
 /**
  * MP2-F12, CC-F12 C approach C term
@@ -263,6 +262,57 @@ TA::DistArray<Tile,Policy> compute_C_ijab(integrals::MolecularIntegral<Tile, Pol
 
     return C_ijab;
 };
+
+
+/**
+ * CC-F12 C approach VT term
+ * $T_{ab}^{ij}$ * $V_{xy}^{ab}$
+ * @param mo_integral reference to MolecularIntegral
+ * @return V("i,j,j,i")
+ */
+template<typename Tile, typename Policy, typename DirectArray>
+TA::DistArray<Tile,Policy> compute_VT2_ijij_ijji(integrals::MolecularIntegral<Tile, Policy>& mo_integral,
+                                          const TA::DistArray<Tile,Policy>& t2,
+                                          const TA::SparseShape<float>& ijij_ijji_shape,
+                                        DirectArray direct_array)
+{
+
+    auto& world = mo_integral.get_world();
+    auto& ao_integral = mo_integral.atomic_integral();
+
+    TA::DistArray<Tile,Policy> V_ijji_ijji;
+    TA::DistArray<Tile,Policy> tmp;
+
+    utility::print_par(world, "Compute VT2_ijij_ijji With DF \n" );
+
+    //C Term
+    auto V_xyab = compute_C_ijab(mo_integral);
+
+    V_xyab("i,j,a,b") += mo_integral(L"(Κ |GR|i a)")*ao_integral(L"(Κ|GR|Λ)[inv]")*mo_integral(L"(Λ |GR|j b)");
+    mo_integral.registry().remove_operation(world,L"GR");
+
+    V_ijji_ijji("i1,j1,i2,j2") = (t2("a,b,i1,j1")*V_xyab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
+
+    // clean V_xyab
+    V_xyab = TA::DistArray<Tile,Policy>();
+
+    auto Ca = mo_integral.orbital_space()->retrieve(OrbitalIndex(L"a")).array();
+//    auto Cm = mo_integral.orbital_space()->retrieve(OrbitalIndex(L"m")).array();
+    auto Cp = mo_integral.orbital_space()->retrieve(OrbitalIndex(L"p")).array();
+//    auto Ca_prime = mo_integral.orbital_space()->retrieve(OrbitalIndex(L"a'")).array();
+    // compuate intermediate U
+    TA::DistArray<Tile,Policy> U;
+    U("i,j,rho,mu") = (t2("a,b,i,j")*Ca("sigma,a")*Ca("nu,b"))*direct_array("rho, sigma, mu, nu");
+
+
+    V_ijji_ijji("i1,j1,i2,j2") -= ((mo_integral(L"(i2 p|R|j2 q)[df]")*Cp("rho,p")*Cp("mu,q"))*U("i1,j1,rho,mu")).set_shape(ijij_ijji_shape);
+//    tmp("i1,j1,i2,j2") = ((mo_integral(L"(i2 m|R|j2 a')[df]")*Cm("mu,m")*Ca_prime("nu,a'"))*U("i1,j1,mu,nu")).set_shape(ijij_ijji_shape);
+//    V_ijji_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+//    V_ijji_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+
+    return V_ijji_ijji;
+};
+
 
 
 } // end of namespace f12

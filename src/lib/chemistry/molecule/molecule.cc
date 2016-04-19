@@ -1133,6 +1133,7 @@ Molecule::n_core_electrons()
   for (i=0; i<natom(); i++) {
       if (charge(i) == 0.0) continue;
       int z = atoms_[i].Z();
+      if (z == q_Z_) continue;
       if (z > 2) n += 2;
       if (z > 10) n += 8;
       if (z > 18) n += 8;

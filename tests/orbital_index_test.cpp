@@ -10,6 +10,7 @@ TEST_CASE("Orbital Index", "[orbital_index]"){
 
     SECTION("single letter case"){
 
+
         mpqc::OrbitalIndex m(L"m");
         REQUIRE( m.index() == mpqc::OrbitalIndex::Index::occ);
         REQUIRE( m.is_ao() == false);

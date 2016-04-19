@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <string>
+#include <iostream>
 #include <memory>
 
 #include <TiledArray/error.h>

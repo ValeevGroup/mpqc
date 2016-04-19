@@ -19,7 +19,7 @@ TEST_CASE("Formula Expression", "[formula]"){
         REQUIRE(overlap.left_index()[0].index() == OrbitalIndex::Index::obs);
         REQUIRE(overlap.operation().is_onebody() == true);
         REQUIRE(overlap.notation() == Formula::Notation::Physical);
-        REQUIRE(overlap.to_ta_expression() == "(kappa, lamda)");
+        REQUIRE(overlap.to_ta_expression() == "kappa, lamda");
 
         Formula J(L"<κ|J|λ>");
         REQUIRE( J.operation().oper() == Operation::Operations::J);
@@ -35,7 +35,7 @@ TEST_CASE("Formula Expression", "[formula]"){
         Formula kinetic(L"(p q|G|r s)");
         REQUIRE(kinetic.operation().oper() == Operation::Operations::Coulomb);
         REQUIRE(kinetic.notation() == Formula::Notation::Chemical);
-        REQUIRE(kinetic.to_ta_expression() == "(p, q, r, s)");
+        REQUIRE(kinetic.to_ta_expression() == "p, q, r, s");
 
         Formula r2(L"<p q| R2 |r s>");
         REQUIRE(r2.operation().oper() == Operation::Operations::cGTG2);
@@ -47,24 +47,24 @@ TEST_CASE("Formula Expression", "[formula]"){
         REQUIRE(couloumb.right_index()[0].index() == OrbitalIndex::Index::othervirt);
         REQUIRE(couloumb.right_index()[1].index() == OrbitalIndex::Index::allvirt);
         REQUIRE(couloumb.operation().is_twobody() == true);
-        REQUIRE(couloumb.to_ta_expression() == "(p_alpha, q1, a', A'1)");
+        REQUIRE(couloumb.to_ta_expression() == "p_alpha, q1, a', A'1");
 
         Formula two_center(L"( a'_β |R|A'1)");
         REQUIRE(two_center.left_index().size() == 1);
-        REQUIRE(two_center.to_ta_expression() == "(a'_beta, A'1)");
+        REQUIRE(two_center.to_ta_expression() == "a'_beta, A'1");
 
         Formula three_center(L"( Κ|R|κ λ1)");
         REQUIRE(three_center.left_index().size() == 1);
         REQUIRE(three_center.right_index().size() == 2);
-        REQUIRE(three_center.to_ta_expression() == "(KAPPA, kappa, lamda1)");
+        REQUIRE(three_center.to_ta_expression() == "KAPPA, kappa, lamda1");
     }
 
     SECTION("option test case"){
         Formula couloumb(L"<p q1|R|a' A'1> [df]");
         REQUIRE(couloumb.operation().has_option(Operation::Options::DensityFitting) == true);
 
-        Formula couloumb1(L"<p q1|R|a' A'1> [df, inv_sq]");
-        Formula couloumb2(L"<p q1|R|a' A'1> [inv_sq, df]");
+        Formula couloumb1(L"<p q1|R|a' A'1> [df, inv_sqr]");
+        Formula couloumb2(L"<p q1|R|a' A'1> [inv_sqr, df]");
         REQUIRE(couloumb1.operation().options() == couloumb2.operation().options());
     }
 

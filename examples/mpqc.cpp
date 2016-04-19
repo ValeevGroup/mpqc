@@ -287,7 +287,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
     /// initialize AO integral
-    libint2::init();
+    libint2::initialize();
 
     auto ao_in = json::get_nested(in, "AOIntegral");
 
@@ -532,8 +532,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
 
     utility::print_par(world, "Total Correlation Energy: ", corr_e, "\n");
-
-
 
     world.gop.fence();
     libint2::finalize();

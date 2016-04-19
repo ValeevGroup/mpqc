@@ -33,7 +33,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
 
         auto left = mo_integral(L"(Κ |GR|i2 i1)");
         auto middle = ao_integral(L"(Κ|GR|Λ)[inv]");
-        auto right = mo_integral(L"(Λ |GR|j1 j2)");
+        auto right = mo_integral(L"(Λ |GR|1j j2)");
 
         auto time0 = mpqc_time::now(world,accurate_time);
 
@@ -474,7 +474,7 @@ TA::DistArray<Tile,Policy> compute_C_ijab_df(integrals::MolecularIntegral <Tile,
  * @param mo_integral reference to MolecularIntegral
  * @param t2 t2 amplitude
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
- * @direct_array direct two electron integral \f$V_{\rho \sigma}^{\mu \nu}\f$
+ * @param direct_array direct two electron integral \f$V_{\rho \sigma}^{\mu \nu}\f$
  * @return V("i1,j1,i2,j2")
  */
 template<typename Tile, typename DirectArray>

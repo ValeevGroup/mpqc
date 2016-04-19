@@ -194,7 +194,7 @@ untruncated_direct_sparse_integrals(mad::World &world, ShrPool<E> shr_pool,
         *out_tile = TileType(idx, std::move(rng), std::move(builder_ptr));
 
         auto &norms = *tile_norms_ptr;
-        norms[ord] = std::numeric_limits<double>::max();
+        norms[ord] = std::numeric_limits<float>::max();
 
     };
 

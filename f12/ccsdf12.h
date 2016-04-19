@@ -61,20 +61,18 @@ double CCSDF12<Tile>::compute_c(const DirectArray& darray) {
 
     // VT2 contribution
     if(darray.is_initialized()){
-        TArray tmp = compute_VT2_ijij_ijji_df(mo_integral, t2_, ijij_ijji_shape, darray);
+        TArray tmp = compute_VT2_ijij_ijji_df_direct(mo_integral, t2_, ijij_ijji_shape, darray);
         V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     }else{
-        // compute C_ijab
-        TArray C_ijab = compute_C_ijab_df(mo_integral);
-        // compute V_ijab
-        TArray V_ijab = compute_V_xyab_df(mo_integral);
-        V_ijij_ijji("i1,j1,i2,j2") += ((V_ijab("i2,j2,a,b")+C_ijab("i2,j2,a,b"))*t2_("a,b,i1,j1")).set_shape(ijij_ijji_shape);
+        TArray tmp = compute_VT2_ijij_ijji_df(mo_integral,t2_,ijij_ijji_shape);
+        V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     }
 
-    // compuate V_ijia
-    TArray V_iaij = compute_V_iaxy_df(mo_integral);
-    V_ijij_ijji("i1,j1,i2,j2") += V_iaij("i1,a,i2,j2")*t1_("a,j1");
-    V_ijij_ijji("i1,j1,i2,j2") += V_iaij("j1,a,i2,j2")*t1_("a,i1");
+    // VT1 contribution
+    {
+        TArray tmp = compute_VT1_ijij_ijji_df(mo_integral,t1_,ijij_ijji_shape);
+        V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
+    }
 
     // V contribution to energy
     double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(1.0,2.5,-0.5));

@@ -287,7 +287,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
     /// initialize AO integral
-    libint2::initialize();
+    libint2::init();
 
     auto ao_in = json::get_nested(in, "AOIntegral");
 

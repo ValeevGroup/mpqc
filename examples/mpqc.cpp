@@ -404,12 +404,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto mp2_time0 = mpqc_time::fenced_now(world);
         corr_in = json::get_nested(in, "MP2F12");
 
-        std::size_t mo_blocksize = corr_in.HasMember("MoBlockSize") ? corr_in["MoBlockSize"].GetInt() : 24;
-        std::size_t occ_blocksize = corr_in.HasMember("OccBlockSize") ? corr_in["OccBlockSize"].GetInt() : mo_blocksize;
-
-        if(occ_blocksize != 1){
-            throw std::runtime_error("OccBlockSize has to be 1 in current MP2F12 implementation!!");
-        }
+//        std::size_t mo_blocksize = corr_in.HasMember("MoBlockSize") ? corr_in["MoBlockSize"].GetInt() : 24;
+//        std::size_t occ_blocksize = corr_in.HasMember("OccBlockSize") ? corr_in["OccBlockSize"].GetInt() : mo_blocksize;
+//
+//        if(occ_blocksize != 1){
+//            throw std::runtime_error("OccBlockSize has to be 1 in current MP2F12 implementation!!");
+//        }
 
         // mo build
         tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
@@ -514,11 +514,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
             utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
 
             corr_in = json::get_nested(in, "CCSD(F12)");
-            std::size_t mo_blocksize = corr_in.HasMember("MoBlockSize") ? corr_in["MoBlockSize"].GetInt() : 24;
-            std::size_t occ_blocksize = corr_in.HasMember("OccBlockSize") ? corr_in["OccBlockSize"].GetInt() : mo_blocksize;
-            if(occ_blocksize != 1){
-                throw std::runtime_error("OccBlockSize has to be 1 in current MP2F12 implementation!!");
-            }
+//            std::size_t mo_blocksize = corr_in.HasMember("MoBlockSize") ? corr_in["MoBlockSize"].GetInt() : 24;
+//            std::size_t occ_blocksize = corr_in.HasMember("OccBlockSize") ? corr_in["OccBlockSize"].GetInt() : mo_blocksize;
+//            if(occ_blocksize != 1){
+//                throw std::runtime_error("OccBlockSize has to be 1 in current MP2F12 implementation!!");
+//            }
 
             closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
             f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral,tre,std::make_shared<Eigen::VectorXd>(ens),t1,t2);

@@ -34,7 +34,7 @@ double mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
     auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
     //compute V term
-    TArray V_ijij_ijji = compute_V_ijij_ijji(mo_integral, ijij_ijji_shape);
+    TArray V_ijij_ijji = compute_V_ijij_ijji_df(mo_integral, ijij_ijji_shape);
     {
 
         // G integral in MO not needed, still need G integral in AO to compute F, K, hJ
@@ -51,7 +51,7 @@ double mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
     }
 
     // compute C term
-    TArray C_ijab = compute_C_ijab(mo_integral);
+    TArray C_ijab = compute_C_ijab_df(mo_integral);
 
     {
         utility::print_par(world, "Compute CT With DF \n" );
@@ -64,7 +64,7 @@ double mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
 
 
     // compute X term
-    TArray X_ijij_ijji = compute_X_ijij_ijji(mo_integral, ijij_ijji_shape);
+    TArray X_ijij_ijji = compute_X_ijij_ijji_df(mo_integral, ijij_ijji_shape);
     {
 
         // R_ipjq not needed
@@ -81,7 +81,7 @@ double mpqc::f12::MP2F12::compute_mp2_f12_c_df() {
     }
 
     // compute B term
-    TArray B_ijij_ijji = compute_B_ijij_ijji(mo_integral, ijij_ijji_shape);
+    TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral, ijij_ijji_shape);
     {
         double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
         utility::print_par(world, "E_B: ", E_b, "\n");

@@ -57,22 +57,22 @@ double CCSDF12<Tile>::compute_c(const DirectArray& darray) {
     auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
     // compute V_ijij_ijji
-    TArray V_ijij_ijji = compute_V_ijij_ijji(mo_integral,ijij_ijji_shape);
+    TArray V_ijij_ijji = compute_V_ijij_ijji_df(mo_integral, ijij_ijji_shape);
 
     // VT2 contribution
     if(darray.is_initialized()){
-        TArray tmp = compute_VT2_ijij_ijji(mo_integral,t2_,ijij_ijji_shape,darray);
+        TArray tmp = compute_VT2_ijij_ijji_df(mo_integral, t2_, ijij_ijji_shape, darray);
         V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     }else{
         // compute C_ijab
-        TArray C_ijab = compute_C_ijab(mo_integral);
+        TArray C_ijab = compute_C_ijab_df(mo_integral);
         // compute V_ijab
-        TArray V_ijab = compute_V_xyab(mo_integral);
+        TArray V_ijab = compute_V_xyab_df(mo_integral);
         V_ijij_ijji("i1,j1,i2,j2") += ((V_ijab("i2,j2,a,b")+C_ijab("i2,j2,a,b"))*t2_("a,b,i1,j1")).set_shape(ijij_ijji_shape);
     }
 
     // compuate V_ijia
-    TArray V_iaij = compute_V_iaxy(mo_integral);
+    TArray V_iaij = compute_V_iaxy_df(mo_integral);
     V_ijij_ijji("i1,j1,i2,j2") += V_iaij("i1,a,i2,j2")*t1_("a,j1");
     V_ijij_ijji("i1,j1,i2,j2") += V_iaij("j1,a,i2,j2")*t1_("a,i1");
 
@@ -82,7 +82,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray& darray) {
     E += E_v;
 
     // compute X term
-    TArray X_ijij_ijji = compute_X_ijij_ijji(mo_integral, ijij_ijji_shape);
+    TArray X_ijij_ijji = compute_X_ijij_ijji_df(mo_integral, ijij_ijji_shape);
     // R_ipjq not needed
     mo_int_.registry().remove_formula(world, L"(i1 p|R|j1 q)[df]");
 
@@ -96,7 +96,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray& darray) {
     E += E_x;
 
     // compute B term
-    TArray B_ijij_ijji = compute_B_ijij_ijji(mo_integral, ijij_ijji_shape);
+    TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral, ijij_ijji_shape);
     double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(0.25,0.4375,0.0625));
     utility::print_par(world, "E_B: ", E_b, "\n");
     E += E_b;

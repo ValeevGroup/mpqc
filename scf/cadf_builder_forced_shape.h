@@ -200,6 +200,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
         darray_type C_mo, dL, F_df;
         auto cmo0 = mpqc_time::fenced_now(world);
         C_mo("X,  i, mu") = C_df_("X, mu, nu") * dC("nu, i");
+        C_mo.truncate();
         auto cmo1 = mpqc_time::fenced_now(world);
         c_mo_storages_.push_back(utility::array_storage(C_mo));
 

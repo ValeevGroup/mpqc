@@ -33,7 +33,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
 
         auto left = mo_integral(L"(Κ |GR|i2 i1)");
         auto middle = ao_integral(L"(Κ|GR|Λ)[inv]");
-        auto right = mo_integral(L"(Λ |GR|1j j2)");
+        auto right = mo_integral(L"(Λ |GR|j1 j2)");
 
         auto time0 = mpqc_time::now(world,accurate_time);
 

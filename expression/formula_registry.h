@@ -75,6 +75,12 @@ namespace mpqc{
             return registry_.find(key);
         }
 
+        /// check if have key in registry
+        bool have(const Key& key) const{
+            auto iter = registry_.find(key);
+            return iter != registry_.end();
+        }
+
         /// find item, return iterator, if not found, throw
         Value& retrieve(const Key& key){
             auto iter = registry_.find(key);

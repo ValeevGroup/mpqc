@@ -28,12 +28,15 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 {
     auto& world = ao_int.get_world();
     using TArray = TA::DistArray<Tile, Policy>;
-    // find fock matrix
 
+
+    auto mo_time0 = mpqc_time::fenced_now(world);
+    utility::print_par(world, "\nBuilding ClosedShell OBS MO Orbital\n");
+
+    // find fock matrix
     TArray F;
-    auto iter = ao_int.registry().find(Formula(L"(μ|F|ν)"));
-    if(iter != ao_int.registry().end()){
-        F = iter->second;
+    if(ao_int.registry().have(Formula(L"(μ|F|ν)"))){
+        F = ao_int.registry().retrieve(Formula(L"(μ|F|ν)"));
     }
     else{
         F = ao_int.registry().retrieve(Formula(L"(μ|F|ν)[df]"));
@@ -74,6 +77,10 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     std::size_t occ_blocksize = in.HasMember("OccBlockSize") ? in["OccBlockSize"].GetInt() : mo_blocksize;
     std::size_t vir_blocksize = in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
 
+    utility::print_par(world,"OccBlockSize: ", occ_blocksize, "\n");
+    utility::print_par(world,"VirBlockSize: ", vir_blocksize, "\n");
+
+
     std::size_t all = S.trange().elements().extent()[0];
     auto tre = std::make_shared<TRange1Engine>(occ, all, occ_blocksize, vir_blocksize, n_frozen_core);
 
@@ -109,6 +116,10 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     auto obs_space = OrbitalSpace(OrbitalIndex(L"p"),OrbitalIndex(L"κ"), C_all_ta);
     orbital_registry.add(obs_space);
 
+    auto mo_time1 = mpqc_time::fenced_now(world);
+    auto mo_time = mpqc_time::duration_in_s(mo_time0,mo_time1);
+    utility::print_par(world,"ClosedShell OBS MO Build Time: ", mo_time, " S\n");
+
     return tre;
 };
 
@@ -122,6 +133,8 @@ void closed_shell_cabs_mo_build_eigen_solve(
 {
     auto& world = ao_int.get_world();
     // CABS fock build
+    auto mo_time0 = mpqc_time::fenced_now(world);
+    utility::print_par(world, "\nBuilding ClosedShell CABS MO Orbital\n");
 
     // integral
     auto S_cabs = ao_int.compute(L"(α|β)");
@@ -155,6 +168,7 @@ void closed_shell_cabs_mo_build_eigen_solve(
 
         // get mo block size
         std::size_t mo_blocksize = in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
+        utility::print_par(world,"MoBlockSize: ", mo_blocksize, "\n");
 
         auto tr_ribs = S_ribs.trange().data()[0];
         auto tr_cabs = S_cabs.trange().data()[0];
@@ -176,6 +190,9 @@ void closed_shell_cabs_mo_build_eigen_solve(
         orbital_registry.add(C_cabs_space);
         orbital_registry.add(C_ribs_space);
 
+        auto mo_time1 = mpqc_time::fenced_now(world);
+        auto mo_time = mpqc_time::duration_in_s(mo_time0,mo_time1);
+        utility::print_par(world,"ClosedShell CABS MO Build Time: ", mo_time, " S\n");
     }
 
 };

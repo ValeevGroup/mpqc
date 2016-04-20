@@ -51,6 +51,9 @@ double CCSDF12<Tile>::compute_c(const DirectArray& darray) {
     auto& world = mo_integral.get_world();
     double E = 0.0;
 
+    // clean MO integrals
+    mo_integral.registry().clear();
+
     // create shape
     auto occ_tr1 = tre_->get_occ_tr1();
     TiledArray::TiledRange occ4_trange({occ_tr1,occ_tr1,occ_tr1,occ_tr1});

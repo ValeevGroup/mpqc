@@ -28,21 +28,47 @@ namespace mpqc {
 
   class KeyVal;
 
+  /// This class helps construction of (smart pointers to) C++ objects from , e.g., text input
+
+  /// To construct a class you want to be able to construct from KeyVal objects do this:
+  /// 1. make DescribedClass a public base for this class, and 2. create a registrar object
+  /// for the class as a class static member or any other object type with static storge duration,
+  /// e.g. a variable declared in global namespace.
   class DescribedClass {
     public:
       DescribedClass() = default;
       virtual ~DescribedClass() {}
 
       typedef std::shared_ptr<DescribedClass> (*keyval_ctor_wrapper_type)(const KeyVal&);
-      static keyval_ctor_wrapper_type type_to_keyval_ctor(const std::string& derived_class_name) {
-        return keyval_ctor_registry_[derived_class_name];
+      static keyval_ctor_wrapper_type type_to_keyval_ctor(const std::string& type_name) {
+        auto& registry = keyval_ctor_registry();
+        if (registry.find(type_name) == registry.end())
+          throw std::runtime_error("DescribedClass::type_to_keyval_ctor -- type not registered");
+        return registry[type_name];
       }
       template <typename T> static void register_keyval_ctor(const std::string& type_name) {
-        keyval_ctor_registry_[type_name] = keyval_ctor_wrapper<T>;
+        auto& registry = keyval_ctor_registry();
+        assert(registry.find(type_name) == registry.end());
+        registry[type_name] = keyval_ctor_wrapper<T>;
       }
+
+      /// make a single instance of this to register the KeyVal ctor of type \c T
+      template <typename T> struct registrar {
+          registrar(const std::string& type_name) {
+            DescribedClass::register_keyval_ctor<T>(type_name);
+          }
+      };
+
     private:
-      static std::map<std::string,keyval_ctor_wrapper_type> keyval_ctor_registry_;
-      template <typename T> static std::shared_ptr<DescribedClass> keyval_ctor_wrapper(const KeyVal& kv);
+      using keyval_ctor_registry_type = std::map<std::string,keyval_ctor_wrapper_type>;
+      // this is needed to force registry initialization BEFORE its use
+      static keyval_ctor_registry_type& keyval_ctor_registry() {
+        static keyval_ctor_registry_type keyval_ctor_registry_;
+        return keyval_ctor_registry_;
+      }
+      template <typename T> static std::shared_ptr<DescribedClass> keyval_ctor_wrapper(const KeyVal& kv) {
+        return std::make_shared<T>(kv);
+      }
   };
 
   /**
@@ -225,16 +251,26 @@ namespace mpqc {
         return std::dynamic_pointer_cast<T>(result);
       }
 
-      /// write to file in XML form
+      /// write to stream in XML form
       void
-      write_xml(const std::string& filename) const {
-        boost::property_tree::xml_parser::write_xml(filename, *(tree()));
+      write_xml(std::basic_ostream< typename key_type::value_type > & os) const {
+        boost::property_tree::xml_parser::write_xml(os, *(tree()));
+      }
+      /// write from stream in XML form
+      void
+      read_xml(std::basic_istream< typename key_type::value_type > & is) const {
+        boost::property_tree::xml_parser::read_xml(is, *(tree()));
       }
 
-      /// write to file in JSON form
+      /// write to stream in JSON form
       void
-      write_json(const std::string& filename) const {
-        boost::property_tree::json_parser::write_json(filename, *(tree()));
+      write_json(std::basic_ostream< typename key_type::value_type > & os) const {
+        boost::property_tree::json_parser::write_json(os, *(tree()));
+      }
+      /// read from stream in JSON form
+      void
+      read_json(std::basic_istream< typename key_type::value_type > & is) const {
+        boost::property_tree::json_parser::read_json(is, *(tree()));
       }
 
     private:
@@ -452,11 +488,6 @@ namespace mpqc {
   /// @note obsoletes sc::AggregateKeyVal
   KeyVal operator+(const KeyVal& first, const KeyVal& second);
 
-
-  template <typename T>
-  std::shared_ptr<DescribedClass> DescribedClass::keyval_ctor_wrapper(const KeyVal& kv) {
-    return std::dynamic_pointer_cast<DescribedClass>(std::make_shared<T>(kv));
-  }
 
 }
 

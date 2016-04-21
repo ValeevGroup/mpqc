@@ -1,9 +1,25 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(TileClusterChem)
 
-set(TileClusterChem_VERSION_MAJOR 0)
-set(TileClusterChem_VERSION_MINOR 1)
-SET(CMAKE_COLOR_MAKEFILE ON)
+###############################################################################
+# Announce ourselves
+###############################################################################
+project(MPQC)
+
+set(MPQC_VERSION_MAJOR 4)
+set (MPQC_MINOR_VERSION 0)
+set (MPQC_PATCH_VERSION 0)
+set(MPQC_BUILDID alpha)
+
+set(MPQC_VERSION "${MPQC_MAJOR_VERSION}.${MPQC_MINOR_VERSION}.${MPQC_PATCH_VERSION}")
+if (MPQC_BUILDID)
+  set(MPQC_VERSION "${MPQC_VERSION}-${MPQC_BUILDID}")
+endif(MPQC_BUILDID)
+
+set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
+###############################################################################
+# How to compile
+###############################################################################
 
 if(BUILD_SHARED_LIBS)
   set(BLA_STATIC FALSE)
@@ -26,24 +42,6 @@ endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
                       "${PROJECT_SOURCE_DIR}/cmake/modules/")
 
-# search for TA first, other packages can be found with it
-FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
-set(TA_LIBRARIES tiledarray)
-LIST(APPEND TileClusterChem_LIBRARIES ${TA_LIBRARIES})
-
-FIND_PACKAGE(TBB REQUIRED)
-FIND_PACKAGE(Boost REQUIRED)
-FIND_PACKAGE(LIBINT REQUIRED)
-FIND_PACKAGE(RapidJSON REQUIRED)
-
-INCLUDE_DIRECTORIES(${TBB_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${LIBINT_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${RAPIDJSON_INCLUDE_DIRS})
-
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/include)
-INCLUDE_DIRECTORIES(${CEREAL_INCLUDE_DIR})
-
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'RelWithDebInfo' as none was specified.")
@@ -52,48 +50,98 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "MinSizeRel" "RelWithDebInfo")
 endif()
 
-LIST(APPEND TileClusterChem_LIBRARIES ${TBB_LIBRARIES})
-LIST(APPEND TileClusterChem_LIBRARIES ${LIBINT_LIBRARIES})
+###############################################################################
+# Dependencies
+###############################################################################
 
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/molecule)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/expression)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/f12)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/integrals)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/basis)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/tensor)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/utility)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/scf)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/ta_routines)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/eom_cc)
+# grand list of all MPQC libraries and dependencies goes here; may go away
+set(MPQC_LIBRARIES "" CACHE INTERNAL "MPQC libs and dependencies")
 
-LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/tensor)
-LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
-LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/utility)
-LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/basis)
-LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/expression)
-LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/f12)
-LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/scf)
-LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/ta_routines)
-LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/eom_cc)
+# search for TA first, other packages can be found with it
+FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
+set(TA_LIBRARIES tiledarray)
+set(MPQC_LIBRARIES "${TA_LIBRARIES}")
 
-LIST(APPEND TileClusterChem_LIBRARIES molecule basis tensor utility f12 integrals expression ta_routines scf libeomcc)
+FIND_PACKAGE(TBB REQUIRED)
+FIND_PACKAGE(Boost REQUIRED COMPONENTS python)
+FIND_PACKAGE(LIBINT REQUIRED)
+FIND_PACKAGE(RapidJSON REQUIRED)
+
+INCLUDE_DIRECTORIES(${TBB_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${LIBINT_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${RAPIDJSON_INCLUDE_DIRS})
+
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CEREAL_INCLUDE_DIR})
+
+set(MPQC_LIBRARIES
+    "${MPQC_LIBRARIES};${TBB_LIBRARIES};${LIBINT_LIBRARIES};${BOOST_PYTHON_LIBRARIES}")
+
+###############################################################################
+# Declare LibMPQC
+###############################################################################
+
+INCLUDE_DIRECTORIES(${MPQC_SOURCE_DIR}/src)
+INCLUDE_DIRECTORIES(${MPQC_BINARY_DIR}/src)
+
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
+
+# these will be moved eventually into src/mpqc
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/molecule)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/expression)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/f12)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/integrals)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/basis)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tensor)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/utility)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/scf)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/ta_routines)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/eom_cc)
+
+LINK_DIRECTORIES(${MPQC_BINARY_DIR}/tensor)
+LINK_DIRECTORIES(${MPQC_BINARY_DIR}/molecule)
+LINK_DIRECTORIES(${MPQC_BINARY_DIR}/utility)
+LINK_DIRECTORIES(${MPQC_BINARY_DIR}/basis)
+LINK_DIRECTORIES(${MPQC_BINARY_DIR}/expression)
+LINK_DIRECTORIES(${MPQC_BINARY_DIR}/f12)
+LINK_DIRECTORIES(${MPQC_BINARY_DIR}/scf)
+LINK_DIRECTORIES(${MPQC_BINARY_DIR}/ta_routines)
+LINK_DIRECTORIES(${MPQC_BINARY_DIR}/eom_cc)
+
+LIST(APPEND MPQC_LIBRARIES molecule basis tensor utility f12 integrals expression ta_routines scf libeomcc MPQCkeyval)
+
+message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
 
 MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
-MESSAGE(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")
+MESSAGE(STATUS "Using libraries ${MPQC_LIBRARIES}")
 
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/doc)
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/tests)
-enable_testing(true)
+###############################################################################
+# Declare MPQC program
+###############################################################################
 
-SET(TileClusterChem_Sources "main.cpp")
+SET(MPQC_Sources "main.cpp")
 
-ADD_SUBDIRECTORY(${TileClusterChem_SOURCE_DIR}/examples)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/examples)
 
-ADD_EXECUTABLE(${PROJECT_NAME} ${TileClusterChem_Sources}) 
+ADD_EXECUTABLE(${PROJECT_NAME} ${MPQC_Sources}) 
 ADD_DEPENDENCIES(${PROJECT_NAME} cereal)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-  ${TileClusterChem_LIBRARIES}
+  ${MPQC_LIBRARIES}
 )
+
+###############################################################################
+# Declare MPQC tests and doc
+###############################################################################
+
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/doc)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tests)
+enable_testing(true)
+
+###############################################################################
+# appendix: misc details
+###############################################################################
+SET(CMAKE_COLOR_MAKEFILE ON)
 
 # let clion know the source file
 if(USING_CLION_AS_IDE)
@@ -111,6 +159,6 @@ if(USING_CLION_AS_IDE)
     )
     ADD_EXECUTABLE(clion_test "main.cpp" ${clion_all_headers})
     ADD_DEPENDENCIES(clion_test cereal)
-    TARGET_LINK_LIBRARIES(clion_test ${TileClusterChem_LIBRARIES})
+    TARGET_LINK_LIBRARIES(clion_test ${MPQC_LIBRARIES})
     #add_executable(dummy_name EXCLUDE_FROM_ALL ${clion_all_headers})
 endif(USING_CLION_AS_IDE)

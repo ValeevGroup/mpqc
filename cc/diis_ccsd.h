@@ -93,6 +93,6 @@ namespace mpqc {
         };
 
     } // namespace cc
-} //namespace tcc
+} //namespace mpqc
 
 #endif //TILECLUSTERCHEM_DIIS_CCSD_H

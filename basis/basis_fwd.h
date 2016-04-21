@@ -12,6 +12,6 @@ class AtomBasisSet;
 class Basis;
 
 } // namespace basis
-} // namespace tcc
+} // namespace mpqc
 
 #endif // MPQC_BASIS_BASISFWD_H

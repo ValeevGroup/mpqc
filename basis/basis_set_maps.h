@@ -8,7 +8,7 @@
 #include <map>
 #include <string>
 
-namespace tcc {
+namespace mpqc {
 namespace basis {
 static std::map<std::string, unsigned int> elements{
     {"H", 1},
@@ -53,4 +53,4 @@ static std::map<std::string, unsigned int> ang_mo_map{
     {"S", 0}, {"P", 1}, {"D", 2}, {"F", 3}, {"G", 4}, {"H", 5}, {"I", 6}};
 
 } // namespace basis
-} // namespace tcc
+} // namespace mpqc

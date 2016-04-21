@@ -2,7 +2,7 @@
 
 #include "sqrt_inv.h"
 
-namespace tcc {
+namespace mpqc {
 namespace ta_routines {
 
 
@@ -43,4 +43,4 @@ Array invert(Array const &S) {
 }
 
 } // namespace ta_routines
-} // namespace tcc
+} // namespace mpqc

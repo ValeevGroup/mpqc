@@ -1,7 +1,7 @@
 #include "atom_basisset.h"
 #include <iostream>
 
-namespace tcc {
+namespace mpqc {
 namespace basis {
 
 std::ostream &operator<<(std::ostream &os, AtomBasisShell const &abs) {
@@ -45,4 +45,4 @@ std::ostream &operator<<(std::ostream &os, AtomBasisSet const &abs) {
 }
 
 } // namespace basis
-} // namespace tcc
+} // namespace mpqc

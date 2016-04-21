@@ -6,7 +6,7 @@
 #include <iosfwd>
 #include <algorithm>
 
-namespace tcc {
+namespace mpqc {
 namespace basis {
 
 class AtomBasisShell {
@@ -86,6 +86,6 @@ class AtomBasisSet {
 std::ostream &operator<<(std::ostream &os, AtomBasisSet const &abs);
 
 } // namespace basis
-} // namespace tcc
+} // namespace mpqc
 
 #endif // TILECLUSTERCHEM_BASIS_ATOM_BASIS_H

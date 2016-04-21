@@ -1,6 +1,5 @@
-/*! \mainpage Welcome to TileClusterChem
+/*! \mainpage Welcome to MPQC
     
-    TCC is a chemistry library that attempts to exploit localility in a low rank
-    manor in order to reduce both storage and computaion time of various 
-    electronic structure methods.
+The Massively Parallel Quantum Chemistry (MPQC) program is a research package for first-principles simulation of electronic structure of molecules.
+
 */

@@ -10,7 +10,7 @@
 #include "eigen_value_estimation.h"
 #include "diagonal_array.h"
 
-namespace tcc {
+namespace mpqc {
 namespace pure {
 
 template <typename T, typename TileType, typename Policy>
@@ -90,6 +90,6 @@ OrthTraceResettingPurifier<T, TileType, Policy> make_orthogonal_tr_reset_pure(
 }
 
 } // namespace pure
-} // namespace tcc
+} // namespace mpqc
 
 #endif /* end of include guard: TCC_PURIFICATION_PURIFICATIONDEVEL_H */

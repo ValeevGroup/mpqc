@@ -4,7 +4,7 @@
 
 #include <tuple>
 
-namespace tcc {
+namespace mpqc {
 namespace utility {
 namespace meta {
 
@@ -54,7 +54,7 @@ struct last_type<> {
 
 } // namespace meta
 } // namespace utility
-} // namespace tcc
+} // namespace mpqc
 
 
 #endif // TCC_UTILITY_META_STOREVARIADICPACK_H

@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace tcc {
+namespace mpqc {
 namespace utility {
 
 namespace detail {
@@ -28,7 +28,7 @@ std::string make_indices<1u>() {
 }
 }
 
-// Function which will compute the Frobienus norm of the difference of 
+// Function which will compute the Frobenius norm of the difference of
 // two tensors which share a tile type and a policy.
 template <typename T, unsigned int DIM, typename TileType, typename Policy>
 double array_fnorm_diff(TA::Array<T, DIM, TileType, Policy> const &A,
@@ -44,6 +44,6 @@ double array_fnorm_diff(TA::Array<T, DIM, TileType, Policy> const &A,
 }
 
 } // namespace utility
-} // namespace tcc
+} // namespace mpqc
 
 #endif // TCC_UTLITY_TAHELPERS_H

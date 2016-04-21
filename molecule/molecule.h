@@ -20,7 +20,7 @@ namespace molecule {
  *
  *
  *  The molecule module contains all of the classes which are needed for
- *  clustering.  Ulitimately everything in the molecule module should support
+ *  clustering.  Ultimately, everything in the molecule module should support
  *  the AtomClusterable interface.
  *
  * @{

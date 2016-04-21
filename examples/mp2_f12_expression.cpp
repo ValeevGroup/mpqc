@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
         mo_block_size = std::stoi(argv[6]);
         ao_block_size = std::stoi(argv[7]);
     } else {
-        std::cout << "input is $./program mol_file basis_file aux_basis df_basis nclusters mo_block_size ao_block_size";
+        std::cout << "input is $./program mol_file basis_file aux_basis df_basis nclusters mo_block_size ao_block_size\n";
         return 0;
     }
     TiledArray::SparseShape<float>::threshold(threshold);

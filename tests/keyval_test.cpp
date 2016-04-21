@@ -1,8 +1,6 @@
 #include <vector>
 #include <sstream>
 
-#include <boost/serialization/export.hpp>
-
 #include <mpqc/util/keyval/keyval.hpp>
 #include <catch.hpp>
 
@@ -18,34 +16,24 @@ struct Base : public DescribedClass {
     Base(const KeyVal& kv) : DescribedClass(), value_(kv.value<int>("value")) {}
     virtual ~Base() {}
 
-    int value_;
     int value() const { return value_; }
-
   private:
-    static DescribedClass::registrar<Base> reg_;
+    int value_;
 };
-DescribedClass::registrar<Base> Base::reg_("Base");
+MPQC_CLASS_EXPORT_KEY(Base);
 
 template <size_t tag>
 struct Derived : public Base {
     Derived(const KeyVal& kv) : Base(kv), value_(kv.value<double>("dvalue")) {}
-    ~Derived() {
-      // force initialization of reg_
-      bool x = (&reg_ == 0);
-    }
+    ~Derived() {}
 
-    double value_;
     double value() const { return value_; }
 
   private:
-    static DescribedClass::registrar<Derived> reg_;
+    double value_;
 };
-template <size_t tag>
-DescribedClass::registrar<Derived<tag>> Derived<tag>::reg_(std::string("Derived<") + std::to_string(tag) + std::string(">"));
-
-// this forces instantiation of Derived<0>, only needed because Derived<0> does not appear
-// anywhere else
-BOOST_CLASS_EXPORT_IMPLEMENT(Derived<0>)
+MPQC_CLASS_EXPORT_KEY(Derived<0>); // even though you could in principle register Derived generically
+                                   // not recommended due to complications with the static data initialization, etc.
 
 TEST_CASE("KeyVal", "[keyval]"){
 

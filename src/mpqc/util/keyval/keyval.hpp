@@ -17,6 +17,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+#include <boost/serialization/export.hpp>
+
 namespace mpqc {
 
   namespace exception {
@@ -46,7 +48,8 @@ namespace mpqc {
           throw std::runtime_error("DescribedClass::type_to_keyval_ctor -- type not registered");
         return registry[type_name];
       }
-      template <typename T> static void register_keyval_ctor(const std::string& type_name) {
+      template <typename T> static void register_keyval_ctor() {
+        const std::string type_name = boost::serialization::guid< T >();
         auto& registry = keyval_ctor_registry();
         assert(registry.find(type_name) == registry.end());
         registry[type_name] = keyval_ctor_wrapper<T>;
@@ -54,8 +57,8 @@ namespace mpqc {
 
       /// make a single instance of this to register the KeyVal ctor of type \c T
       template <typename T> struct registrar {
-          registrar(const std::string& type_name) {
-            DescribedClass::register_keyval_ctor<T>(type_name);
+          registrar() {
+            DescribedClass::register_keyval_ctor<T>();
           }
       };
 
@@ -70,7 +73,38 @@ namespace mpqc {
         return std::make_shared<T>(kv);
       }
   };
+} // namespace mpqc
 
+namespace mpqc {
+  namespace detail {
+    template <typename T> struct register_keyval_ctor;
+  }
+}
+
+#define MPQC_CLASS_EXPORT_KEY2(T, K)                      \
+  BOOST_CLASS_EXPORT_KEY2(T, K)                           \
+  namespace mpqc {                                        \
+    namespace detail {                                    \
+    template<>                                            \
+    struct register_keyval_ctor< T > {                    \
+        static DescribedClass::registrar< T > const & r;  \
+    };                                                    \
+    DescribedClass::registrar< T > const & register_keyval_ctor< T >::r =        \
+        ::boost::serialization::singleton<                \
+           DescribedClass::registrar< T >                 \
+        >::get_mutable_instance();                        \
+    }}                                                    \
+/**/
+
+#define MPQC_CLASS_EXPORT_KEY(T)                                      \
+    MPQC_CLASS_EXPORT_KEY2(T, BOOST_PP_STRINGIZE(T))                                                                  \
+/**/
+
+#define MPQC_CLASS_EXPORT_IMPLEMENT(T)                       \
+    BOOST_CLASS_EXPORT_IMPLEMENT(T)                          \
+/**/
+
+namespace mpqc {
   /**
    * @ingroup CoreKeyVal
    The KeyVal class is designed to simplify the process of allowing

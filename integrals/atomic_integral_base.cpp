@@ -182,10 +182,10 @@ void AtomicIntegralBase::parse_two_body_four_center(const Formula& formula, libi
                        ket_basis0->max_am(),ket_basis1->max_am()});
 
     if (formula.notation() == Formula::Notation::Chemical){
-        bases = {*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1};
+        bases = {{*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1}};
     }
     else{
-        bases = {*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1};
+        bases = {{*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1}};
     }
 
     // convert operation to libint operator

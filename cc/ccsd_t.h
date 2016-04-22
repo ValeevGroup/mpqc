@@ -520,7 +520,7 @@ namespace mpqc{
                             std::size_t b_offset = tr_vir.tile(b).first;
                             std::size_t c_offset = tr_vir.tile(c).first;
 //                            std::cout << a_offset << " " << b_offset << " " << c_offset << std::endl;
-                            std::array<std::size_t,6> offset{a_offset,b_offset,c_offset,0,0,0};
+                            std::array<std::size_t,6> offset{{a_offset,b_offset,c_offset,0,0,0}};
 
                             double tmp_energy = 0.0;
                             if (b_end < a && c_end < b) {

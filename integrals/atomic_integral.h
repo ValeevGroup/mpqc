@@ -629,7 +629,6 @@ namespace integrals{
             result = compute_two_body_integral( kernel, bs_array, max_nprim, max_am, formula.operation());
 
             //TODO handle permutation better
-
             if(formula.notation() == Formula::Notation::Physical){
                 result("i,j,k,l") = result("i,k,j,l");
             }

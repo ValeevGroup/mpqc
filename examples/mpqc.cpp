@@ -94,6 +94,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     delete[] json;
 
     std::cout << std::setprecision(15);
+//    std::locale::global (std::locale (""));
     std::wcout.imbue(std::locale("en_US.UTF-8"));
 
     /**

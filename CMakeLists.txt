@@ -109,7 +109,7 @@ LINK_DIRECTORIES(${MPQC_BINARY_DIR}/scf)
 LINK_DIRECTORIES(${MPQC_BINARY_DIR}/ta_routines)
 LINK_DIRECTORIES(${MPQC_BINARY_DIR}/eom_cc)
 
-LIST(APPEND MPQC_LIBRARIES molecule basis tensor utility f12 integrals expression ta_routines scf libeomcc MPQCkeyval)
+LIST(APPEND MPQC_LIBRARIES molecule basis tensor utility f12 integrals expression ta_routines scf libeomcc MPQCkeyval MPQCmisc)
 
 message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
 

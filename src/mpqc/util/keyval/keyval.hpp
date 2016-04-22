@@ -16,17 +16,11 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-
 #include <boost/serialization/export.hpp>
 
-namespace mpqc {
+#include <mpqc/util/misc/exception.hpp>
 
-  namespace exception {
-    struct bad_input : public std::runtime_error {
-        bad_input(const char* _what) : std::runtime_error(_what) {}
-        bad_input(const std::string& _what) : std::runtime_error(_what) {}
-    };
-  }
+namespace mpqc {
 
   class KeyVal;
 
@@ -39,15 +33,13 @@ namespace mpqc {
   class DescribedClass {
     public:
       DescribedClass() = default;
-      virtual ~DescribedClass() {}
+      virtual ~DescribedClass();
 
+      ///
       typedef std::shared_ptr<DescribedClass> (*keyval_ctor_wrapper_type)(const KeyVal&);
-      static keyval_ctor_wrapper_type type_to_keyval_ctor(const std::string& type_name) {
-        auto& registry = keyval_ctor_registry();
-        if (registry.find(type_name) == registry.end())
-          throw std::runtime_error("DescribedClass::type_to_keyval_ctor -- type not registered");
-        return registry[type_name];
-      }
+
+      static keyval_ctor_wrapper_type type_to_keyval_ctor(const std::string& type_name);
+
       template <typename T> static void register_keyval_ctor() {
         const std::string type_name = boost::serialization::guid< T >();
         auto& registry = keyval_ctor_registry();
@@ -81,6 +73,9 @@ namespace mpqc {
   }
 }
 
+/// Use this macro to associate a key (character string) with a class using Boost.Serialization
+/// and register the class's KeyVal constructor with DescribedClass's registry. Use BOOST_CLASS_EXPORT_KEY2
+/// to skip the KeyVal constructor registration.
 #define MPQC_CLASS_EXPORT_KEY2(T, K)                      \
   BOOST_CLASS_EXPORT_KEY2(T, K)                           \
   namespace mpqc {                                        \
@@ -96,45 +91,30 @@ namespace mpqc {
     }}                                                    \
 /**/
 
+/// Just like MPQC_CLASS_EXPORT_KEY2, but uses class name for the class key.
+/// Use BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
 #define MPQC_CLASS_EXPORT_KEY(T)                                      \
     MPQC_CLASS_EXPORT_KEY2(T, BOOST_PP_STRINGIZE(T))                                                                  \
 /**/
 
+/// Forces the class instantiation so that it can be deserialized with Boost.Serialization and/or
+/// constructed from a KeyVal.
 #define MPQC_CLASS_EXPORT_IMPLEMENT(T)                       \
     BOOST_CLASS_EXPORT_IMPLEMENT(T)                          \
 /**/
 
 namespace mpqc {
   /**
-   * @ingroup CoreKeyVal
-   The KeyVal class is designed to simplify the process of allowing
-   a user to specify keyword/value associations to a C++ program.  A
-   flexible input style and ease of use for the programmer is achieved with
-   this method.  Keywords are represented by null terminated character arrays.
-   The keywords are organized hierarchically, in a manner similar to the way
-   that many file systems are organized.  One character is special,
-   ":", which is used to separate the various hierarchical labels,
-   which are referred to as "segments", in the keyword.
+     @ingroup CoreKeyVal
 
-   A convention for specifying arrays is provided by KeyVal.  Each
-   index of the array is given by appending a segment containing the
-   character representation of the index.  Thus, "array:3:4" would be
-   a the keyword corresponding to fourth row and fifth column of
-   "array", since indexing starts at zero.
+      KeyVal is a (sub)tree of Key=Value pairs implemented as a Boost PropertyTree.
 
-   To allow the KeyVal class to have associations that can represent
-   data for classes, the keyword can be associated with a class as well as
-   a value.  This permits polymorphic data to be unambiguously represented
-   by keyword/value associations.  Most use of KeyVal need not be
-   concerned with this.
-  */
-
-  ///  a (sub)tree of Key=Value pairs implemented as a Boost PropertyTree.
-
-  /// KeyVal is (a subtree of) a tree of key-value pairs.
-  ///
-  /// @note Since this is default-constructible and directly mutable,
-  ///       this obsoletes sc::AssignedKeyVal
+      @note Since KeyVal is default-constructible and directly mutable,
+            this obsoletes sc::AssignedKeyVal. Its behavior resembles PrefixKeyVal by combining
+            prefix with a const tree. Hence this version of KeyVal roughly can be viewed as an
+            assignable PrefixKeyVal of old MPQC, but supporting input from more modern
+            formats like XML and JSON.
+   */
   class KeyVal {
     public:
       /// data type for representing a property tree
@@ -143,22 +123,15 @@ namespace mpqc {
       constexpr static char separator = ':';
 
       /// creates empty KeyVal
-      KeyVal() : top_tree_(std::make_shared<ptree>()),
-          class_registry_(std::make_shared<class_registry_type>()),
-          path_("") {}
-
-      /// constructs from a JSON file
-      /// @note obsoletes sc::ParsedKeyVal
-      KeyVal(std::string filename);
+      KeyVal();
 
       /// (mostly shallow) copy ctor (to clone top-level tree use top_tree())
       KeyVal(const KeyVal& other) = default;
       /// copy assignment
       KeyVal& operator=(const KeyVal& other) = default;
 
-      /// extract a subtree KeyVal located at \c path
+      /// extract a subtree KeyVal located at a given path
       /// @note obsoletes PrefixKeyVal
-      /// @note the sub-tree should not contain references
       /// @param path the path to the subtree; absolute (within the top_tree) and
       ///        relative (with respect to this subtree) paths are allowed.
       /// @return the KeyVal object corresponding to \c path ;
@@ -327,67 +300,6 @@ namespace mpqc {
         top_tree_(std::make_shared<ptree>(std::move(pt))),
         class_registry_(),
         path_("") {}
-
-//      /// This replaces values that are references with the actual values
-//      /// thus converting a DAG into a tree
-//      /// @note repeatedly recurses, hence can be expensive
-//      /// @note circular references are not detected, thus to prevent infinite recursion possible
-//      ///       will throw if too many iterations are needed
-//      /// @param niter_max max number of iterations
-//      /// @throws \c mpqc::exception::bad_input if max number of iterations exceeded
-//      void resolve_refs(size_t niter_max = 10) {
-//        size_t niter = 0;
-//        while(niter<niter_max) {
-//          bool done = not has_refs();
-//          if (done)
-//            return;
-//          resolve_refs_once();
-//          ++niter;
-//        }
-//        // too many iterations if still here
-//        throw mpqc::exception::bad_input(std::string("KeyVal: excessive or circular references"));
-//      }
-//
-//      bool has_refs_helper(size_t depth, const ptree& pt) {
-//        if (pt.size() > 0) { // non-leaf
-//          for(auto& kv_pair: pt) {
-//            ptree subtree = kv_pair.second;
-//            auto result = has_refs_helper(depth+1, subtree);
-//            if (result) return true;
-//          }
-//        }
-//        else // leaf
-//          return pt.data().size() != 0 && pt.data()[0] == '$';
-//        return false;
-//      }
-//      /// @return true if any value is a ref, i.e. starts with a "$"
-//      bool has_refs() {
-//        return has_refs_helper(0, pt_);
-//      }
-//
-//      void resolve_refs_once_helper(size_t depth, ptree& top_pt, ptree& pt) {
-//        if (pt.size() > 0) { // non-leaf
-//          for(auto& kv_pair: pt) {
-//            ptree& subtree = kv_pair.second;
-//            resolve_refs_once_helper(depth+1, top_pt, subtree);
-//          }
-//        }
-//        else { // leaf
-//          auto value_str = pt.data();
-//          auto is_a_ref = value_str.size() != 0 && value_str[0] == '$';
-//          if (is_a_ref) {
-//            // only can handle absolute references that start with "$:"
-//            assert(value_str[1] == separator);
-//            // assuming no ".."
-//            auto abs_ref_key = value_str.substr(2); //drop the leading "$:"
-//            ptree& ref_pt = top_pt.get_child(ptree::path_type{abs_ref_key, separator});
-//            pt = ref_pt;
-//          }
-//        }
-//      }
-//      void resolve_refs_once() {
-//        resolve_refs_once_helper(0, pt_, pt_);
-//      }
 
       /// given a path that contains ".." elements, returns the equivalent path without such elements
       /// @example realpath("tmp:..:x") returns "x"

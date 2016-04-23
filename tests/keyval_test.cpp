@@ -48,13 +48,16 @@ TEST_CASE("KeyVal", "[keyval]"){
   REQUIRE(kv.value<string>(":x") == "0");
   REQUIRE(kv.value<int>(":x") == 0);
 
-  kv.assign (":z:0", true).assign (":z:1", -1.75);
+  kv.assign(":z:0", true).assign(":z:1", -1.75); // chained assignments
 
   REQUIRE(kv.value<string>(":z:0") == "true");
   REQUIRE_THROWS(kv.value<int>(":z:0")); // cannot obtain bool as int
   REQUIRE(kv.value<bool>(":z:0") == true);
   REQUIRE(kv.value<float>(":z:1") == -1.75);
   REQUIRE(kv.value<double>(":z:1") == -1.75);
+
+  kv.assign(":z:1", +2.35); // overwrite?
+  REQUIRE(kv.value<double>(":z:1") == +2.35);
 
   kv.assign (":z:a:0", vector<int> ( {0, 1, 2}));
   //REQUIRE_THROWS(kv.value<vector<int>>(":z:a:0")); // not yet implemented

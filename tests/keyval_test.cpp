@@ -14,6 +14,7 @@ using mpqc::DescribedClass;
 
 struct Base : public DescribedClass {
     Base(const KeyVal& kv) : DescribedClass(), value_(kv.value<int>("value")) {}
+    Base(int v) : value_(v) {}
     virtual ~Base() {}
 
     int value() const { return value_; }
@@ -56,7 +57,7 @@ TEST_CASE("KeyVal", "[keyval]"){
   REQUIRE(kv.value<float>(":z:1") == -1.75);
   REQUIRE(kv.value<double>(":z:1") == -1.75);
 
-  kv.assign(":z:1", +2.35); // overwrite?
+  kv.assign(":z:0", false).assign(":z:1", +2.35); // overwrite?
   REQUIRE(kv.value<double>(":z:1") == +2.35);
 
   kv.assign (":z:a:0", vector<int> ( {0, 1, 2}));
@@ -75,14 +76,14 @@ TEST_CASE("KeyVal", "[keyval]"){
   }
 
   SECTION("making subtree KeyVal"){
-    auto kv_z = kv.keyval (":z");
-    REQUIRE(kv_z.value<bool> ("0") == true);
-    REQUIRE(kv_z.value<double> ("1") == -1.75);
+    auto kv_z = kv.keyval(":z");
+    REQUIRE(kv_z.value<bool>("0") == false);
+    REQUIRE(kv_z.value<double>("1") == +2.35);
   }
 
   SECTION("make classes"){
 
-    {
+    { // construct Base
       KeyVal kv;
       kv.assign("value", 1).assign("type", "Base");
       auto x1 = kv.class_ptr<Base>();
@@ -90,7 +91,7 @@ TEST_CASE("KeyVal", "[keyval]"){
       auto x2 = kv.class_ptr<Base>(); // this returns the cached ptr
       REQUIRE(x1 == x2);
     }
-    {
+    { // construct Derived<0>
       KeyVal kv;
       kv.assign("value", 2).assign("dvalue", 2.0).assign("type", "Derived<0>");
       auto x1 = kv.class_ptr<Derived<0>>();
@@ -99,6 +100,13 @@ TEST_CASE("KeyVal", "[keyval]"){
       REQUIRE(x1 == x2);
       auto x3 = kv.class_ptr<Base>(); // this returns the cached ptr, cast to Base
       REQUIRE(std::dynamic_pointer_cast<Base>(x1) == x3);
+    }
+    { // programmatically add DescribedClasses to KeyVal
+      std::shared_ptr<DescribedClass> bptr = std::make_shared<Base>(2);
+      KeyVal kv;
+      kv.assign("base", bptr);
+      auto bptr1 = kv.class_ptr<Base>("base");
+      REQUIRE(bptr == bptr1);
     }
   }
 
@@ -115,9 +123,9 @@ TEST_CASE("KeyVal", "[keyval]"){
     kv.assign("c1:type", "Base").assign("c1:value", 1);
     kv.assign ("i2:c2", "$:c1");
 
-//    stringstream oss;
-//    REQUIRE_NOTHROW(kv.write_json(oss));
-//    cout << oss.str();
+    stringstream oss;
+    REQUIRE_NOTHROW(kv.write_json(oss));
+    cout << oss.str();
 
     REQUIRE(kv.value<int>("i4") == 1);
     REQUIRE(kv.value<int>("i5") == 2);
@@ -126,9 +134,10 @@ TEST_CASE("KeyVal", "[keyval]"){
     auto kv_c1 = kv.keyval("c1");
     auto c1 = kv_c1.class_ptr<Base>();
     REQUIRE(c1->value() == 1);
-    auto kv_c2 = kv.keyval("i2:c2");
-    auto c2 = kv_c2.class_ptr<Base>(); // returns cached ptr
-    REQUIRE(c1 == c2);
+    auto c2 = kv.class_ptr<Base>("c1"); // another way, without making keyval for the object
+    REQUIRE(c2 == c1);
+    auto c3 = kv.class_ptr<Base>("i2:c2"); // returns cached ptr
+    REQUIRE(c3 == c1);
   }
 
   SECTION("read complex JSON"){
@@ -157,9 +166,9 @@ TEST_CASE("KeyVal", "[keyval]"){
     stringstream iss(input);
     REQUIRE_NOTHROW(kv.read_json(iss));
 
-//    stringstream oss;
-//    REQUIRE_NOTHROW(kv.write_json(oss));
-//    cout << oss.str();
+    stringstream oss;
+    REQUIRE_NOTHROW(kv.write_json(oss));
+    cout << oss.str();
 
     auto b1 = kv.keyval("mpqc:base").class_ptr<Base>();
     auto b2 = kv.keyval("base").class_ptr<Base>();

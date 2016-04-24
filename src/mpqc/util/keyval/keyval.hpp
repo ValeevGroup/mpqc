@@ -26,14 +26,25 @@ namespace mpqc {
 
   /// This class helps construction of (smart pointers to) C++ objects from , e.g., text input
 
-  /// To construct a class you want to be able to construct from KeyVal objects do this:
-  /// 1. make DescribedClass a public base for this class, and 2. create a registrar object
-  /// for the class as a class static member or any other object type with static storge duration,
-  /// e.g. a variable declared in global namespace.
+  /// To be able to construct class \c T from KeyVal objects do this:
+  /// <ol>
+  ///   <li> make DescribedClass a public base of \c T, and </li>
+  ///   <li> register \c T with DescribedClass . </li>
+  /// </ol>
+  /// The latter can be achieved in a number of ways, but the easiest is to add any of the following statements
+  /// to a source file in a global namespace scope (i.e. outside namespace scopes):
+  /// <ol>
+  ///   <li>if you want to use class name \c T as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY(T) </li>
+  ///   <li>if you want to use any other key \c Key as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY2(T, Key) </li>
+  /// </ol>
+  /// It is the easiest to add these statements in the .cpp file that defines \c T , but any other .cpp
+  /// file will work.
+  /// @note If \c T is a template class, you must register each instance of this class you want to construct
+  /// from KeyVal.
   class DescribedClass {
     public:
       DescribedClass() = default;
-      virtual ~DescribedClass();
+      virtual ~DescribedClass() = default;
 
       ///
       typedef std::shared_ptr<DescribedClass> (*keyval_ctor_wrapper_type)(const KeyVal&);
@@ -47,8 +58,13 @@ namespace mpqc {
         registry[type_name] = keyval_ctor_wrapper<T>;
       }
 
-      /// make a single instance of this to register the KeyVal ctor of type \c T
-      template <typename T> struct registrar {
+      /// This class helps with registering DescribedClass with DescribedClass's static registry.
+      /// To register the KeyVal ctor of type \c T create a single instance of this class
+      /// @tparam T a class derived from DescribedClass
+      /// @sa MPQC_CLASS_EXPORT_KEY2
+      template <typename T,
+                typename = typename std::enable_if<std::is_base_of<DescribedClass,T>::value>::type>
+      struct registrar {
           registrar() {
             DescribedClass::register_keyval_ctor<T>();
           }
@@ -107,6 +123,9 @@ namespace mpqc {
   /**
      @ingroup CoreKeyVal
 
+    */
+
+  /**
       KeyVal is a (sub)tree of Key=Value pairs implemented as a Boost PropertyTree.
 
       @note Since KeyVal is default-constructible and directly mutable,
@@ -130,10 +149,10 @@ namespace mpqc {
       /// copy assignment
       KeyVal& operator=(const KeyVal& other) = default;
 
-      /// extract a subtree KeyVal located at a given path
-      /// @note obsoletes PrefixKeyVal
+      /// construct a KeyVal representing a subtree located at the given path
+      /// @note corresponds to the old MPQC's PrefixKeyVal
       /// @param path the path to the subtree; absolute (within the top_tree) and
-      ///        relative (with respect to this subtree) paths are allowed.
+      ///        relative (with respect to this KeyVal's subtree) paths are allowed.
       /// @return the KeyVal object corresponding to \c path ;
       ///         if \c path does not exist, return an empty KeyVal
       KeyVal keyval(const key_type& path) const {
@@ -141,20 +160,16 @@ namespace mpqc {
         return KeyVal(top_tree_, class_registry_, abs_path);
       }
 
-      /// returns a shared_ptr to the top tree
-      std::shared_ptr<ptree> top_tree() const {
-        return top_tree_;
-      }
+      /// returns a shared_ptr to the (top) tree
+      std::shared_ptr<ptree> top_tree() const { return top_tree_; }
       /// returns a shared_ptr to this (sub)tree
       /// @param path the path to the subtree
       /// @note the result is aliased against the top tree
-      std::shared_ptr<ptree> tree() const {
-        std::shared_ptr<ptree> result(top_tree_, &top_tree_->get_child(ptree::path_type{path_, separator}));
-        return result;
-      }
+      std::shared_ptr<ptree> tree() const;
 
-      /// assign simple \c value to key with path \c path ; \c value is simple if it can be converted to
-      /// a \c std::string using a std::ostream
+      /// assign simple \c value at the given path (overwrite, if necessary)
+      /// @param value a "simple" value, i.e. it can be converted to
+      /// a KeyVal::key_type using a std::basic_ostream<KeyVal::key_type::value_type>
       template <typename T>
       KeyVal& assign(const key_type& path, const T& value) {
         auto abs_path = to_absolute_path(path);
@@ -162,7 +177,7 @@ namespace mpqc {
         return *this;
       }
 
-      /// assign a \c std::vector to key with path \c path
+      /// assign a \c std::vector<T> at the given path (overwrite, if necessary)
       template <typename T>
       KeyVal& assign(const std::string& path, const std::vector<T>& value) {
         auto abs_path = to_absolute_path(path);
@@ -176,15 +191,19 @@ namespace mpqc {
         return *this;
       }
 
-      /// assign a ptr to a DescribedClass to key with path \c path
+      /// assign the given pointer to a DescribedClass at the given path (overwrite, if necessary)
+      /// @warning these key/value pairs are not part of ptree, hence cannot be written to JSON/XML
       KeyVal& assign(const std::string& path, const std::shared_ptr<DescribedClass>& value) {
-        assert(false); // not yet implemented
+        auto abs_path = to_absolute_path(path);
+        (*class_registry_)[abs_path] = value;
+        return *this;
       }
 
-      /// return value corresponding to a path and convert to the desired type.
-      /// @tparam T the desired value type
-      /// @param path the key
-      /// @return value of type \c T
+      /// return the result of converting the value at the given path to the desired type.
+
+      /// @tparam T the desired value type, must be a "simple" type that can be accepted by KeyVal::assign()
+      /// @param path the path to the value
+      /// @return value stored at \c path converted to type \c T
       /// @throws mpqc::exception::bad_input if path not found or cannot convert value representation to the desired type
       template <typename T>
       T value(const key_type& path) const {
@@ -217,24 +236,30 @@ namespace mpqc {
         return result;
       }
 
-      /// return a pointer to an object specified by this KeyVal
+      /// return a pointer to an object at the given path
 
       /// Constructs an object of the type given by the value of
       /// keyword "type" in this KeyVal object. In order to be constructible
-      /// using this method a type must be derived from DescribedClass and
-      /// it must be registered by calling
-      /// DescribedClass::register_keyval_ctor() with the type name
-      /// given as the string argument.
-      /// @tparam T the class corresponding to the "type" keyword
+      /// using this method a type must be derived from DescribedClass <i>and</i> registered.
+      /// @tparam T a class derived from DescribedClass corresponding to the value of path:"type"
       ///           or its base
       /// @param path the path
-      /// @return value of type \c T
+      /// @return std::shared_Ptr \c T
       /// @throws mpqc::exception::bad_input if key not found or cannot convert value representation to the desired type
       template <typename T,
                 typename = typename std::enable_if<std::is_base_of<DescribedClass,T>::value>::type>
-      std::shared_ptr<T> class_ptr() const {
+      std::shared_ptr<T> class_ptr(const key_type& path = key_type()) const {
 
-        key_type abs_path = path_;
+        // if this class already exists in the registry under path
+        // (e.g. if the ptr was assigned programmatically), return immediately
+        {
+          auto cptr = class_registry_->find(path);
+          if (cptr != class_registry_->end())
+            return std::dynamic_pointer_cast<T>(cptr->second);
+        }
+
+        // otherwise, resolve the path and build the class (or pick up the cached copy)
+        auto abs_path = resolve_path(path);
 
         // if this class already exists, return the ptr
         auto cptr = class_registry_->find(abs_path);
@@ -271,12 +296,12 @@ namespace mpqc {
 
       /// write to stream in JSON form
       void
-      write_json(std::basic_ostream< typename key_type::value_type > & os) const {
+      write_json(std::basic_ostream< key_type::value_type > & os) const {
         boost::property_tree::json_parser::write_json(os, *(tree()));
       }
       /// read from stream in JSON form
       void
-      read_json(std::basic_istream< typename key_type::value_type > & is) const {
+      read_json(std::basic_istream< key_type::value_type > & is) const {
         boost::property_tree::json_parser::read_json(is, *(tree()));
       }
 
@@ -359,7 +384,7 @@ namespace mpqc {
       /// @return a path obtained by concatenating \c prefix and \c postfix ;
       static key_type concat_path(const key_type& prefix, const key_type& postfix) {
         //if (postfix.size() > 0) assert(postfix[0] != separator);
-        auto result = (prefix == "") ? postfix : prefix + separator + postfix;
+        auto result = (postfix == "") ? prefix : ((prefix == "") ? postfix : prefix + separator + postfix);
         return result;
       }
 

@@ -11,6 +11,9 @@
 #include <map>
 #include <string>
 #include <memory>
+#include <vector>
+#include <array>
+#include <list>
 #include <type_traits>
 
 #include <boost/property_tree/ptree.hpp>
@@ -135,6 +138,18 @@ namespace mpqc {
             formats like XML and JSON.
    */
   class KeyVal {
+    private:
+      template <typename Class> struct is_sequence : std::false_type {};
+      template <typename T, typename A> struct is_sequence<std::vector<T,A>> : std::true_type {};
+      template <typename T, std::size_t N> struct is_sequence<std::array<T,N>> : std::true_type {};
+      template <typename T, typename A> struct is_sequence<std::list<T,A>> : std::true_type {};
+      template <typename T, std::size_t N> static void resize(std::array<T,N>& container, std::size_t size) {
+        assert(size <= N);
+      }
+      template <typename T> static void resize(T& container, std::size_t size) {
+        container.resize(size);
+      }
+
     public:
       /// data type for representing a property tree
       using ptree = boost::property_tree::iptree;
@@ -167,25 +182,45 @@ namespace mpqc {
       /// @note the result is aliased against the top tree
       std::shared_ptr<ptree> tree() const;
 
+      /// checks whether the given path exists
+      /// @param path the path
+      /// @return true if \c path exists
+      bool exists(const key_type& path) const {
+        return exists_(resolve_path(path));
+      }
+
       /// assign simple \c value at the given path (overwrite, if necessary)
       /// @param value a "simple" value, i.e. it can be converted to
       /// a KeyVal::key_type using a std::basic_ostream<KeyVal::key_type::value_type>
-      template <typename T>
+      template <typename T,
+                typename = typename std::enable_if<not KeyVal::is_sequence<T>::value>::type>
       KeyVal& assign(const key_type& path, const T& value) {
         auto abs_path = to_absolute_path(path);
         top_tree_->put(ptree::path_type{abs_path, separator}, value);
         return *this;
       }
 
-      /// assign a \c std::vector<T> at the given path (overwrite, if necessary)
-      template <typename T>
-      KeyVal& assign(const std::string& path, const std::vector<T>& value) {
+      /// assign a sequence container at the given path (overwrite, if necessary)
+      /// @tparam SequenceContainer any container for which KeyVal::is_sequence<SequenceContainer> is a \c std::true_type,
+      ///         currently any of the following is allowed: \c std::array, \c std::vector, \c std::list .
+      /// @param path the target path
+      /// @param value a sequence container to put at the path
+      /// @param json_style if true, use empty keys so that JSON arrays are produced by KeyVal::write_json,
+      ///                   else use 0-based integer keys, e.g. the first element will have key \c path:0,
+      ///                   the second -- \c path:1, etc. (this is similar to how array elements were addressed in MPQC3)
+      template <typename SequenceContainer>
+      KeyVal& assign(const key_type& path, const SequenceContainer& value,
+                     bool json_style = true,
+                     typename std::enable_if<KeyVal::is_sequence<SequenceContainer>::value>::type* = nullptr) {
         auto abs_path = to_absolute_path(path);
         ptree obj;
+        size_t count = 0;
         for(const auto& v: value) {
           ptree pt;
+          auto key = json_style ? key_type("") : std::to_string(count); // assumes key_type == std::string
           pt.put("", v);
-          obj.push_back(std::make_pair("", pt));
+          obj.push_back(std::make_pair(key, pt));
+          ++count;
         }
         top_tree_->add_child(ptree::path_type{abs_path, separator}, obj);
         return *this;
@@ -193,7 +228,7 @@ namespace mpqc {
 
       /// assign the given pointer to a DescribedClass at the given path (overwrite, if necessary)
       /// @warning these key/value pairs are not part of ptree, hence cannot be written to JSON/XML
-      KeyVal& assign(const std::string& path, const std::shared_ptr<DescribedClass>& value) {
+      KeyVal& assign(const key_type& path, const std::shared_ptr<DescribedClass>& value) {
         auto abs_path = to_absolute_path(path);
         (*class_registry_)[abs_path] = value;
         return *this;
@@ -205,7 +240,8 @@ namespace mpqc {
       /// @param path the path to the value
       /// @return value stored at \c path converted to type \c T
       /// @throws mpqc::exception::bad_input if path not found or cannot convert value representation to the desired type
-      template <typename T>
+      template <typename T,
+                typename = typename std::enable_if<not KeyVal::is_sequence<T>::value>::type>
       T value(const key_type& path) const {
         auto abs_path = resolve_path(path);
         T result;
@@ -218,21 +254,49 @@ namespace mpqc {
         return result;
       }
 
+      /// return value corresponding to a path and convert to a std::vector.
+      /// @tparam T the desired value type
+      /// @param path the path
+      /// @return value of type \c T
+      template <typename SequenceContainer>
+      SequenceContainer value(const key_type& path, typename std::enable_if<KeyVal::is_sequence<SequenceContainer>::value>::type* = nullptr) const {
+        auto abs_path = resolve_path(path);
+        using value_type = typename SequenceContainer::value_type;
+        SequenceContainer result;
+        try {
+          auto vec_ptree = top_tree_->get_child(ptree::path_type{abs_path, separator});
+          KeyVal::resize(result, vec_ptree.size());
+          auto iter = result.begin();
+          size_t count = 0;
+          for(const auto& elem_ptree: vec_ptree) {
+            assert(elem_ptree.first == "" // JSON array spec
+                   ||
+                   elem_ptree.first == std::to_string(count) // 0-based array keys, a la ipv2, usable with XML
+                  );
+            *iter = elem_ptree.second.get_value<value_type>();
+            ++iter;  ++count;
+          }
+          return result;
+        }
+        catch(boost::property_tree::ptree_bad_data&) {
+          throw mpqc::exception::bad_input(abs_path);
+        }
+      }
+
       /// return value corresponding to a path and convert to the desired type.
       /// @tparam T the desired value type
       /// @param path the path
       /// @param default_value
       /// @return value of type \c T
-      template <typename T>
+      template <typename T,
+                typename = typename std::enable_if<not KeyVal::is_sequence<T>::value>::type>
       T value(const key_type& path, const T& default_value) const {
         auto abs_path = resolve_path(path);
         T result;
-        try {
-          result = top_tree_->get<T>(ptree::path_type{abs_path, separator});
-        }
-        catch(boost::property_tree::ptree_bad_data&) {
+        if (not exists_(abs_path))
           result = default_value;
-        }
+        else
+          result = top_tree_->get<T>(ptree::path_type{abs_path, separator});
         return result;
       }
 
@@ -451,6 +515,13 @@ namespace mpqc {
         if (last_separator_location == key_type::npos) last_separator_location = 0;
         result.erase(last_separator_location);
         return result;
+      }
+
+      /// checks whether the given path exists; does not resolve path unlike KeyVal::exists()
+      /// @param path the path
+      /// @return true if \c path exists
+      bool exists_(const key_type& path) const {
+        return top_tree_->get_child_optional(ptree::path_type{path, separator}) != boost::optional<ptree&>();
       }
 
   }; // KeyVal

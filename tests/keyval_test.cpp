@@ -7,6 +7,7 @@
 using std::cout;
 using std::endl;
 using std::vector;
+using std::array;
 using std::string;
 using std::stringstream;
 using mpqc::KeyVal;
@@ -38,7 +39,7 @@ MPQC_CLASS_EXPORT_KEY(Derived<0>); // even though you could in principle registe
 
 TEST_CASE("KeyVal", "[keyval]"){
 
-  // setup tests programmatic construction
+  // first, test basic programmatic construction
 
   KeyVal kv;
 
@@ -60,13 +61,21 @@ TEST_CASE("KeyVal", "[keyval]"){
   kv.assign(":z:0", false).assign(":z:1", +2.35); // overwrite?
   REQUIRE(kv.value<double>(":z:1") == +2.35);
 
-  kv.assign (":z:a:0", vector<int> ( {0, 1, 2}));
-  //REQUIRE_THROWS(kv.value<vector<int>>(":z:a:0")); // not yet implemented
+  // sequences are written as Arrays, types are lost, hence can write a vector and read as an array
+  kv.assign(":z:a:0", vector<int>({0, 1, 2}));
+  kv.assign(":z:a:1", array<int,3>{{1, 2, 3}});
+  REQUIRE(kv.value<vector<int>>(":z:a:1") == vector<int>({1, 2, 3}));
+  // for some reason this fails to compile inside REQUIRE
+  bool x = kv.value<array<int,3> >(":z:a:0") == array<int,3>{{0, 1, 2}};
+  REQUIRE( x );
+
+  kv.assign(":z:a:2", vector<int>({7,6,5}), false);
+  REQUIRE(kv.value<vector<int>>(":z:a:2") == vector<int>({7,6,5}));
 
   SECTION("JSON read/write"){
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-    //cout << oss.str();
+    cout << oss.str();
   }
 
   SECTION("JSON read/write"){
@@ -125,7 +134,7 @@ TEST_CASE("KeyVal", "[keyval]"){
 
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-    cout << oss.str();
+//    cout << oss.str();
 
     REQUIRE(kv.value<int>("i4") == 1);
     REQUIRE(kv.value<int>("i5") == 2);
@@ -168,7 +177,7 @@ TEST_CASE("KeyVal", "[keyval]"){
 
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-    cout << oss.str();
+//    cout << oss.str();
 
     auto b1 = kv.keyval("mpqc:base").class_ptr<Base>();
     auto b2 = kv.keyval("base").class_ptr<Base>();

@@ -1,5 +1,33 @@
-/*! \mainpage Welcome to MPQC
-    
-The Massively Parallel Quantum Chemistry (MPQC) program is a research package for first-principles simulation of electronic structure of molecules.
+
+/** \mainpage The Massively Parallel Quantum Chemistry Program (MPQC)
+
+The Massively Parallel Quantum Chemistry program (MPQC) computes
+the properties of molecules using first-principles quantum mechanics on a wide variety
+of parallel computer architectures. MPQC implements basic electronic structure methods:
+Hartree-Fock, second-order Moller-Plesset theory,
+and some advanced electron correlation methods (in particular, explicitly correlated coupled-cluster
+methods).
+
+MPQC is an ongoing research project intended to bring the advanced electronic structure theory
+to massively parallel machines of today and tomorrow.
+
+MPQC is distributed under the terms of the General Public License (GPL), version 2.
+
+<ul>
+  <li> \ref overview
+  <li> \ref compile
+</ul>
+
+\section userref Command Reference
+<ul>
+  <li> \ref mpqc
+</ul>
+
+\section develref Developer's Reference
+<ul>
+  <li> \ref develop
+  <li> \ref srctree
+  <li> \ref keyval
+</ul>
 
 */

@@ -1,0 +1,347 @@
+
+/** \page keyval The KeyVal Library
+
+The KeyVal class provides a means for users to associate keywords with
+values.  ParsedKeyVal is a specialization of KeyVal that permits
+keyword/value associations in text such as an input file or a command line
+string.
+
+The package is flexible enough to allow complex structures and arrays as
+well as objects to be read from an input file.
+
+<ul>
+  <li> \ref keyvalass
+  <li> \ref keyvalgroup
+  <li> \ref keyvalarray
+  <li> \ref keyvaltab
+  <li> \ref keyvalexp
+  <li> \ref keyvalobj
+  <li> \ref keyvaldescribedclass
+</ul>
+
+\section keyvalass Assignment
+
+As an example of the use of ParsedKeyVal, consider the following
+input:
+<pre>
+x_coordinate = 1.0
+y_coordinate = 2.0
+x_coordinate = 3.0
+</pre>
+Two assignements will be made.  The keyword <tt>x_coordinate</tt> will be
+associated with the value <tt>1.0</tt> and the keyword <tt>y_coordinate</tt>
+will be assigned to <tt>2.0</tt>.  The third line in the above input
+will have no effect since <tt>x_coordinate</tt> was assigned previously.
+
+\section keyvalgroup Keyword Grouping
+
+Lets imagine that we have a program which needs to read in the
+characteristics of animals.  There are lots of animals so it might be
+nice to catagorize them by their family.  Here is a sample format for
+such an input file:
+<pre>
+reptile: (
+  alligator: (
+    legs = 4
+    extinct = no
+    )
+  python: (
+    legs = 0
+    extinct = no
+    )
+  )
+bird: (
+  owl: (
+    flys = yes
+    extinct = no
+    )
+  )
+</pre>
+
+This sample illustrates the use of keyword <tt>=</tt> value
+assignments and the keyword grouping operators <tt>(</tt> and <tt>)</tt>.
+The keywords in this example are
+<pre>
+reptile:alligator:legs
+reptile:alligator:extinct
+reptile:alligator:legs
+reptile:python:size
+reptile:python:extinct
+bird:owl:flys
+bird:owl:extinct
+</pre>
+
+The <tt>:</tt>'s occuring in these keywords break the keywords into
+smaller logical units called keyword segments.  The sole purpose of this
+is to allow persons writing input files to group the input into easy to
+read sections.  In the above example there are two main sections, the
+reptile section and the bird section.  The reptile section takes the
+form <tt>reptile</tt> <tt>:</tt> <tt>(</tt> keyword <tt>=</tt> value
+assignments <tt>)</tt>.  Each of the keywords found between the
+parentheses has the <tt>reptile:</tt> prefix attached to it.  Within each
+of these sections further keyword groupings can be used, as many and as
+deeply nested as the user wants.
+
+Keyword grouping is also useful when you need many different programs to
+read from the same input file.  Each program can be assigned its own
+unique section.
+
+\section keyvalarray Array Construction
+
+Input for an array is specified in the input by forming a keyword
+group.  The name of the group is the name of the array and the
+grouped keywords are the integers \f$i\f$, such that \f$0 \leq i < n\f$, where \f$n\f$
+is the number of elements in the array.  For example, an array, called
+<tt>array</tt>, of length 3 could be given as follows:
+<pre>
+array: (
+  0 = 5.4
+  1 = 8.9
+  2 = 3.7
+  )
+</pre>
+The numbers <tt>0</tt>, <tt>1</tt>, and <tt>2</tt> in this example are keyword
+segments which serve as indices of <tt>array</tt>.  However, this syntax
+is somewhat awkward and array construction operators have been provided
+to simplify the input for this case.  The following input is equivalent
+to the above input:
+<pre>
+array = [ 5.4 8.9 3.7 ]
+</pre>
+
+More complex arrays than this can be imagined.  Suppose an array of
+complex numbers is needed.  For example the input
+<pre>
+carray: (
+  0: ( r = 1.0  i = 0.0 )
+  1: ( r = 0.0  i = 1.0 )
+  )
+</pre>
+could be written as
+<pre>
+carray: [
+  (r = 1.0 i = 0.0)
+  (r = 0.0 i = 1.0)
+  ]
+</pre>
+which looks a bit nicer than the example without array construction
+operators.
+
+Furthermore, the array construction operators can be nested in about
+every imaginable way.  This allows multidimensional arrays of
+complicated data to be represented.  Here is an example of
+input for a lower triangular array:
+<pre>
+ltriarray = [ [ 5.4  ]
+              [ 0.0 2.8 ]
+              [ 0.1 0.0 3.7 ] ]
+</pre>
+
+\section keyvaltab Table Construction
+
+Although the array construction operators will suit
+most requirements for enumerated lists of data, in some cases the input can
+still look ugly.  This can, in some cases, be fixed with the table
+construction operators, <tt>{</tt> and <tt>}</tt>.
+
+Suppose a few long vectors of the same length are needed and the data in
+the <tt>i</tt>th element of each array is related or somehow belong
+together.  If the arrays are so long that the width of a page is
+exceeded, then data that should be seen next to each other are no longer
+adjacent.  The way this problem can be fixed is to arrange the data
+vertically side by side rather than horizontally.  The table
+construction operators allows the user to achieve this in a very simple
+manner.
+<pre>
+balls: (
+  color    = [  red      blue     red   ]
+  diameter = [   12       14       11   ]
+  material = [  rubber  vinyl   plastic ]
+  bounces  = [  yes      no       no    ]
+  coordinate = [[ 0.0  0.0  0.0]
+                [ 1.0  2.0 -1.0]
+                [ 1.0 -1.0  1.0]]
+  )
+</pre>
+can be written
+<pre>
+balls: (
+  { color diameter material bounces     coordinate} =
+  {  red     12    rubber    yes     [ 0.0  0.0  0.0]
+     blue    14    vinyl     no      [ 1.0  2.0 -1.0]
+     red     11    plastic   no      [ 1.0 -1.0  1.0] }
+  )
+</pre>
+The length and width of the table can be anything the user desires.
+
+<pre>Value Substitution</pre>
+
+Occasionally, a user may need to repeat some value several times in an
+input file.  If the value must be changed, it would be nice to only
+change the value in one place.  The value substitution feature of
+ParsedKeyVal allows the user to do this.  Any place a value can
+occur the user can place a <tt>$</tt>.  Following this a keyword must be
+given.  This keyword must have been assigned before the attempt is made
+to use its value in a value substitution.
+
+Here is an example illustrating most of the variable substition
+features:
+<pre>
+default:linewidth = 130
+testsub: (
+  ke: (
+    ke_1 = 1
+    ke_2 = 2
+    ke_3: (
+      ke_31 = 31
+      ke_32 = 32
+      )
+    )
+  kx = $ke
+  r1 = 3.0
+  r2 = $r1
+  linewidth = $:default:linewidth
+  )
+</pre>
+is the same as specifying
+<pre>
+testsub: (
+  ke: (
+    ke_1 = 1
+    ke_3: (
+      ke_31 = 31
+      ke_32 = 32
+      )
+    ke_2 = 2
+    )
+  linewidth = 130
+  r2 = 3.0
+  r1 = 3.0
+  kx: (
+    ke_1 = 1
+    ke_2 = 2
+    ke_3: (
+      ke_31 = 31
+      ke_32 = 32
+      )
+    )
+  )
+</pre>
+It can be seen from this that value substitution can result in entire
+keyword segment hierarchies being copied, as well as simple
+substitutions.
+
+\section keyvalexp Expression Evaluation
+
+Suppose your program requires several parameters <tt>x1</tt>, <tt>x2</tt>,
+and <tt>x3</tt>.  Furthermore, suppose that their ratios remain fixed for
+all the runs of the program that you desire.  It would be best to
+specify some scale factor in the input that would be the only thing that
+has to be changed from run to run.  If you don't want to or cannot
+modify the program, then this can be done directly with
+ParsedKeyVal as follows
+<pre>
+scale = 1.234
+x1 = ( $:scale *  1.2 )
+x2 = ( $:scale *  9.2 )
+x3 = ( $:scale * -2.0 )
+</pre>
+So we see that to the right of the ``<tt>=</tt>'' the characters
+``<tt>(</tt>'' and ``<tt>)</tt>'' are the expression construction operators.
+This is in contrast to their function when they are to the left of the
+``<tt>=</tt>'', where they are the keyword grouping operators.
+
+The expression must be binary and the data is all converted
+to double.  If you use the expression construction operators to produce
+data that the program expects to be integer, you will certainly get the
+wrong answers (unless the desired value happens to be zero).
+
+\section keyvalobj Objects
+
+An instance of an object can be specified by surrounding it's
+classname with the ``<tt><</tt>'' and ``<tt>></tt>'' operators immediately
+after the keyword naming the data.
+
+A pointer to a single object can be associated with multiple keywords by
+using value substitution.
+This is accomplished by holding references to all objects once they are
+read in.
+
+Consider a linked list class, A, which reads from the keyword
+<tt>next</tt> a reference to an object of class A.  Input for such an
+object, read from keyword <tt>a1</tt>, follows:
+<pre>
+a1\<A\>: (
+    next\<A\>: (
+        next\<B\>: (
+            bdata = 4
+            next\<A\>:()
+            )
+        )
+    )
+a2 = $:a1
+</pre>
+
+The <tt>a1</tt> list would contain two <tt>A</tt> objects followed by a
+<tt>B</tt> object followed by another <tt>A</tt> object.  The <tt>a2</tt> list
+refers to exactly the same object as <tt>a1</tt> (not a copy of
+<tt>a1</tt>).
+
+\section keyvaldescribedclass The DescribedClass 
+
+The class library provides the DescribedClass base class which provides
+mechanisms that allows programmers to retrieve information about a
+DescribedClass descendant's name; parents; and default, StateIn, and KeyVal
+constructors.
+
+The special nature of described classes requires that the base class,
+DescribedClass, cannot provide everything needed.  To assist the user in
+setting up described classes a helper class, ClassDesc, is provided.
+Foreach descendent of DescribedClass an object of type ClassDesc must be
+created.  These objects should be static so they are initialized before
+main is entered.
+
+The ClassDesc constructor takes the following arguments:
+
+<dl>
+<dt><b>const std::type_info& typeinfo</b>
+    <dd>The type_info for this class, as returned by the C++ typeid operator.
+<dt><b>const char *name</b>
+    <dd>The name of this class.
+<dt><b>int version</b>
+    <dd>The version of this class.  This is used to enable restoration
+        of objects that were saved with older versions of a class.
+        Version numbers must be 1 or greater.
+<dt><b>const char *parents</b>
+    <dd>The parents of this class.  This must be given exactly
+        as it is given in the class declaration, including all
+        qualifiers.
+<dt><b>DescribedClass* (*ctor)()</b>
+    <dd>A function that creates an object of this type using the
+        default constructor.  The default is 0 (meaning that no
+        constructor is available.
+<dt><b>DescribedClass* (*keyval_ctor)(const Ref<KeyVal>&)</b>
+    <dd>A function that creates an object of this type using the
+        KeyVal constructor. The default is 0.
+<dt><b>DescribedClass* (*statein_ctor)(StateIn&)</b>
+    <dd>A function that creates an object of this type using the
+        StateIn constructor. The default is 0.
+</dl>
+
+For example, consider the class, D:
+
+<pre>
+class D: public B, public C {
+  public:
+    D();    
+};
+</pre>
+
+The file implementing D would contain the following line:
+
+<pre>
+static ClassDesc D_cd(typeid(D),"D",1,"public B, public C",create\<D\>);
+</pre>
+
+*/
+*/

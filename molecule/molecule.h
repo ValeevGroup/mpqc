@@ -4,6 +4,7 @@
 
 #include "molecule_fwd.h"
 #include "atom_based_cluster.h"
+#include "mpqc/util/keyval/keyval.hpp"
 
 #include <iosfwd>
 #include <vector>
@@ -32,7 +33,7 @@ namespace molecule {
  * to atoms.  Its main job is allow for clustering of its clusterables.
  *
  */
-class Molecule {
+class Molecule : public DescribedClass {
   private:
     std::vector<AtomBasedClusterable> elements_;
 
@@ -40,10 +41,17 @@ class Molecule {
     double mass_ = 0.0;
     int64_t charge_ = 0;
 
+    void init(std::istream& file, bool sort_input);
+
   public:
-    Molecule(std::vector<AtomBasedClusterable> c, bool sort_input = true);
 
     Molecule() = default;
+
+    Molecule(const KeyVal& kv);
+
+    Molecule(std::istream &file_stream, bool sort_input);
+
+    Molecule(std::vector<AtomBasedClusterable> c, bool sort_input = true);
 
     void set_mass(double mass) {
         Molecule::mass_ = mass;
@@ -82,13 +90,6 @@ class Molecule {
 
     Vec3D const &com() const { return com_; }
 };
-
-/*! \brief Function to return a molecule from a xyz file.
- *  
- *  In this case the string should be the file handle. 
- */
-Molecule read_xyz(std::string const &, bool sort_input=true);
-Molecule read_xyz_stringstream(std::stringstream&, bool sort_input=true);
 
 std::ostream &operator<<(std::ostream &, Molecule const &);
 

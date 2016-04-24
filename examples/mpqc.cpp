@@ -151,12 +151,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
     xyz_file_stream << xyz_file_buffer;
     delete[] xyz_file_buffer;
 
-    molecule::Molecule mol;
+    using molecule::Molecule;
+    Molecule mol;
     // construct molecule
     if(nclusters==1){
-        mol = mpqc::molecule::read_xyz_stringstream(xyz_file_stream, false);
+        mol = Molecule(xyz_file_stream, false);
     }else{
-        mol = mpqc::molecule::read_xyz_stringstream(xyz_file_stream, true);
+        mol = Molecule(xyz_file_stream, true);
     }
     auto occ = mol.occupation(charge);
     auto repulsion_energy = mol.nuclear_repulsion();
@@ -187,7 +188,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::print_par(world, "Ghost Atom file: ", ghost_atoms, "\n");
         utility::print_file(world,ghost_atoms);
 
-        auto ghost_molecue = mpqc::molecule::read_xyz_stringstream(ghost_xyz_stream, false);
+        auto ghost_molecue = Molecule(ghost_xyz_stream, false);
         auto ghost_elements = ghost_molecue.clusterables();
 
         // combine both molecule

@@ -1,11 +1,12 @@
 #include "molecule.h"
-
 #include "common.h"
 #include "atom_masses.h"
 
 #include <libint2/atom.h>
 
 #include <fstream>
+
+MPQC_CLASS_EXPORT_KEY2(mpqc::molecule::Molecule, "Molecule");
 
 namespace mpqc {
 namespace molecule {
@@ -65,6 +66,47 @@ Molecule::Molecule(std::vector<ABCbl> c, bool sort_input)
     }
 }
 
+Molecule::Molecule(const KeyVal& kv) {
+  auto file_name = kv.value<std::string>("file_name", "");
+  std::ifstream file(file_name);
+
+  if (file.fail()) {
+      std::ostringstream oss;
+      oss << "could not open file \"" << file_name << "\"";
+      throw std::invalid_argument(oss.str().c_str());
+  }
+
+  auto sort_input = kv.value<bool>("sort_input", true);
+
+  init(file, sort_input);
+}
+
+Molecule::Molecule(std::istream &file_stream, bool sort_input) {
+  init(file_stream, sort_input);
+}
+
+void
+Molecule::init(std::istream& file, bool sort_input) {
+  auto libint_atoms = libint2::read_dotxyz(file);
+
+  using ABCbl = AtomBasedClusterable;
+  std::vector<ABCbl> atoms;
+  for (auto const &l_atom : libint_atoms) {
+      Atom atom({l_atom.x, l_atom.y, l_atom.z},
+                masses::masses[l_atom.atomic_number], l_atom.atomic_number);
+      atoms.emplace_back(std::move(atom));
+  }
+
+  elements_ = std::move(atoms);
+  com_ = center_of_mass(elements_);
+  mass_ = sum_mass(elements_);
+  charge_ = sum_charge(elements_);
+
+  if (sort_input) {
+    sort_elements(elements_, com_);
+  }
+}
+
 std::vector<Atom> Molecule::atoms() const {
     return collapse_to_atoms(elements_);
 }
@@ -103,46 +145,6 @@ int64_t Molecule::core_electrons() const {
     }
     return n;
 }
-
-
-Molecule read_xyz(std::string const &file_name, bool sort_input) {
-
-    std::ifstream xyz_file(file_name);
-
-    if (xyz_file.fail()) {
-        std::ostringstream oss;
-        oss << "could not open file \"" << file_name << "\"";
-        throw std::invalid_argument(oss.str().c_str());
-    }
-
-    auto libint_atoms = libint2::read_dotxyz(xyz_file);
-    xyz_file.close();
-
-    std::vector<ABCbl> atoms;
-    for (auto const &l_atom : libint_atoms) {
-        Atom atom({l_atom.x, l_atom.y, l_atom.z},
-                  masses::masses[l_atom.atomic_number], l_atom.atomic_number);
-        atoms.emplace_back(std::move(atom));
-    }
-
-    return Molecule(std::move(atoms), sort_input);
-}
-
-
-Molecule read_xyz_stringstream(std::stringstream &file_stream, bool sort_input) {
-
-    auto libint_atoms = libint2::read_dotxyz(file_stream);
-
-    std::vector<ABCbl> atoms;
-    for (auto const &l_atom : libint_atoms) {
-        Atom atom({l_atom.x, l_atom.y, l_atom.z},
-                  masses::masses[l_atom.atomic_number], l_atom.atomic_number);
-        atoms.emplace_back(std::move(atom));
-    }
-
-    return Molecule(std::move(atoms), sort_input);
-}
-
 
 std::ostream &operator<<(std::ostream &os, Molecule const &mol) {
     os << "Molecule C.O.M: " << mol.com().transpose() << ", ";

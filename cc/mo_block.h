@@ -2,8 +2,8 @@
 // Created by Chong Peng on 6/30/15.
 //
 
-#ifndef TILECLUSTERCHEM_MO_BLOCK_H
-#define TILECLUSTERCHEM_MO_BLOCK_H
+#ifndef MPQC_MO_BLOCK_H
+#define MPQC_MO_BLOCK_H
 
 #include <memory>
 #include <utility>
@@ -101,4 +101,4 @@ namespace mpqc {
   const char MOBlock::vir_char[2] = {'a', 'd'};
   const char MOBlock::all_char[2] = {'p', 's'};
 }
-#endif //TILECLUSTERCHEM_MO_BLOCK_H
+#endif //MPQC_MO_BLOCK_H

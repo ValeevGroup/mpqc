@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.0.0)
 ###############################################################################
 project(MPQC)
 
-set(MPQC_VERSION_MAJOR 4)
+set (MPQC_MAJOR_VERSION 4)
 set (MPQC_MINOR_VERSION 0)
 set (MPQC_PATCH_VERSION 0)
 set(MPQC_BUILDID alpha)

@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/15/15.
 //
 
-#ifndef TILECLUSTERCHEM_FORMULA_H
-#define TILECLUSTERCHEM_FORMULA_H
+#ifndef MPQC_FORMULA_H
+#define MPQC_FORMULA_H
 
 #include <vector>
 
@@ -142,4 +142,4 @@ namespace mpqc{
 }
 
 
-#endif //TILECLUSTERCHEM_FORMULA_H
+#endif //MPQC_FORMULA_H

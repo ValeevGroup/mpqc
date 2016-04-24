@@ -2,8 +2,8 @@
 // Created by pchong on 11/10/15.
 //
 
-#ifndef TILECLUSTERCHEM_FORMULA_MAP_H
-#define TILECLUSTERCHEM_FORMULA_MAP_H
+#ifndef MPQC_FORMULA_MAP_H
+#define MPQC_FORMULA_MAP_H
 
 #include <map>
 #include "formula.h"
@@ -245,4 +245,4 @@ namespace mpqc{
 
 
 
-#endif //TILECLUSTERCHEM_FORMULA_MAP_H
+#endif //MPQC_FORMULA_MAP_H

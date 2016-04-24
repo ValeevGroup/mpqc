@@ -2,8 +2,8 @@
 // Created by Chong Peng on 2/16/16.
 //
 
-#ifndef TILECLUSTERCHEM_ORBITAL_REGISTRY_H
-#define TILECLUSTERCHEM_ORBITAL_REGISTRY_H
+#ifndef MPQC_ORBITAL_REGISTRY_H
+#define MPQC_ORBITAL_REGISTRY_H
 
 #include "formula_registry.h"
 #include "orbital_space.h"
@@ -54,4 +54,4 @@ using OrbitalBasisRegistry = OrbitalRegistry<std::shared_ptr<mpqc::basis::Basis>
 } // end of namespace mpqc
 
 
-#endif //TILECLUSTERCHEM_ORBITAL_REGISTRY_H
+#endif //MPQC_ORBITAL_REGISTRY_H

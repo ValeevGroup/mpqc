@@ -2,8 +2,8 @@
 // Created by Chong Peng on 6/30/15.
 //
 
-#ifndef TILECLUSTERCHEM_TARRAY_BLOCK_H
-#define TILECLUSTERCHEM_TARRAY_BLOCK_H
+#ifndef MPQC_TARRAY_BLOCK_H
+#define MPQC_TARRAY_BLOCK_H
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
@@ -68,4 +68,4 @@ namespace mpqc {
     };
 
 }
-#endif //TILECLUSTERCHEM_TARRAY_BLOCK_H
+#endif //MPQC_TARRAY_BLOCK_H

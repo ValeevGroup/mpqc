@@ -2,8 +2,8 @@
 // Created by Chong Peng on 6/25/15.
 //
 
-#ifndef TILECLUSTERCHEM_BLOCK_SIZE_ENGINE_H
-#define TILECLUSTERCHEM_BLOCK_SIZE_ENGINE_H
+#ifndef MPQC_BLOCK_SIZE_ENGINE_H
+#define MPQC_BLOCK_SIZE_ENGINE_H
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
@@ -106,4 +106,4 @@ namespace mpqc {
 
 }
 
-#endif //TILECLUSTERCHEM_BLOCK_SIZE_ENGINE_H
+#endif //MPQC_BLOCK_SIZE_ENGINE_H

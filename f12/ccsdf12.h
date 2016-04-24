@@ -2,8 +2,8 @@
 // Created by Chong Peng on 4/12/16.
 //
 
-#ifndef TILECLUSTERCHEM_CCSDF12_H
-#define TILECLUSTERCHEM_CCSDF12_H
+#ifndef MPQC_CCSDF12_H
+#define MPQC_CCSDF12_H
 
 
 #include "../include/tiledarray.h"
@@ -111,4 +111,4 @@ double CCSDF12<Tile>::compute_c(const DirectArray& darray) {
 }//end of namespace mpqc
 
 
-#endif //TILECLUSTERCHEM_CCSDF12_H
+#endif //MPQC_CCSDF12_H

@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/1/15.
 //
 
-#ifndef TILECLUSTERCHEM_CCSD_H
-#define TILECLUSTERCHEM_CCSD_H
+#ifndef MPQC_CCSD_H
+#define MPQC_CCSD_H
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
@@ -1723,4 +1723,4 @@ namespace mpqc {
 } //namespace mpqc
 
 
-#endif //TILECLUSTERCHEM_CCSD_H
+#endif //MPQC_CCSD_H

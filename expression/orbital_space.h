@@ -2,8 +2,8 @@
 // Created by Chong Peng on 2/16/16.
 //
 
-#ifndef TILECLUSTERCHEM_ORBITAL_SPACE_H
-#define TILECLUSTERCHEM_ORBITAL_SPACE_H
+#ifndef MPQC_ORBITAL_SPACE_H
+#define MPQC_ORBITAL_SPACE_H
 
 #include <memory>
 
@@ -90,4 +90,4 @@ private:
 
 }
 
-#endif //TILECLUSTERCHEM_ORBITAL_SPACE_H
+#endif //MPQC_ORBITAL_SPACE_H

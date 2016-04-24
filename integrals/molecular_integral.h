@@ -2,8 +2,8 @@
 // Created by Chong Peng on 1/7/16.
 //
 
-#ifndef TILECLUSTERCHEM_MOLECULAR_INTEGRAL_H
-#define TILECLUSTERCHEM_MOLECULAR_INTEGRAL_H
+#ifndef MPQC_MOLECULAR_INTEGRAL_H
+#define MPQC_MOLECULAR_INTEGRAL_H
 
 #include <string>
 #include <vector>
@@ -464,4 +464,4 @@ typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::
 } // namespace integral
 } // namespace mpqc
 
-#endif //TILECLUSTERCHEM_MOLECULAR_INTEGRAL_H
+#endif //MPQC_MOLECULAR_INTEGRAL_H

@@ -2,8 +2,8 @@
 // Created by Chong Peng on 3/24/16.
 //
 
-#ifndef TILECLUSTERCHEM_PARALLEL_FILE_H
-#define TILECLUSTERCHEM_PARALLEL_FILE_H
+#ifndef MPQC_PARALLEL_FILE_H
+#define MPQC_PARALLEL_FILE_H
 
 namespace mpqc{
 namespace utility{
@@ -38,4 +38,4 @@ inline void parallel_read_file(madness::World& world, const std::string& filenam
 
 
 
-#endif //TILECLUSTERCHEM_PARALLEL_FILE_H
+#endif //MPQC_PARALLEL_FILE_H

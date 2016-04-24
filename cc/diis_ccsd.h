@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/7/15.
 //
 
-#ifndef TILECLUSTERCHEM_DIIS_CCSD_H
-#define TILECLUSTERCHEM_DIIS_CCSD_H
+#ifndef MPQC_DIIS_CCSD_H
+#define MPQC_DIIS_CCSD_H
 
 #include <cmath>
 
@@ -95,4 +95,4 @@ namespace mpqc {
     } // namespace cc
 } //namespace mpqc
 
-#endif //TILECLUSTERCHEM_DIIS_CCSD_H
+#endif //MPQC_DIIS_CCSD_H

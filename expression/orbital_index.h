@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/14/15.
 //
 
-#ifndef TILECLUSTERCHEM_ORBITAL_INDEX_H
-#define TILECLUSTERCHEM_ORBITAL_INDEX_H
+#ifndef MPQC_ORBITAL_INDEX_H
+#define MPQC_ORBITAL_INDEX_H
 
 #include<string>
 
@@ -173,4 +173,4 @@ private:
 }
 
 
-#endif //TILECLUSTERCHEM_ORBITAL_INDEX_H
+#endif //MPQC_ORBITAL_INDEX_H

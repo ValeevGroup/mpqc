@@ -2,8 +2,8 @@
 // Created by Chong Peng on 4/14/16.
 //
 
-#ifndef TILECLUSTERCHEM_MO_BUILD_H
-#define TILECLUSTERCHEM_MO_BUILD_H
+#ifndef MPQC_MO_BUILD_H
+#define MPQC_MO_BUILD_H
 
 
 #include <rapidjson/document.h>
@@ -200,4 +200,4 @@ void closed_shell_cabs_mo_build_eigen_solve(
 } // end of namespace mpqc
 
 
-#endif //TILECLUSTERCHEM_MO_BUILD_H
+#endif //MPQC_MO_BUILD_H

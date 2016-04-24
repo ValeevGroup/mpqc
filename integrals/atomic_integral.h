@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/14/15.
 //
 
-#ifndef TILECLUSTERCHEM_ATOMIC_INTEGRAL_H
-#define TILECLUSTERCHEM_ATOMIC_INTEGRAL_H
+#ifndef MPQC_ATOMIC_INTEGRAL_H
+#define MPQC_ATOMIC_INTEGRAL_H
 
 
 #include <rapidjson/document.h>
@@ -650,4 +650,4 @@ namespace integrals{
 }
 
 
-#endif //TILECLUSTERCHEM_ATOMIC_INTEGRAL_H
+#endif //MPQC_ATOMIC_INTEGRAL_H

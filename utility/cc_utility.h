@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/1/15.
 //
 
-#ifndef TILECLUSTERCHEM_UTILITY_H_H
-#define TILECLUSTERCHEM_UTILITY_H_H
+#ifndef MPQC_UTILITY_H_H
+#define MPQC_UTILITY_H_H
 
 #include <libint2/shell.h>
 #include "../include/tiledarray.h"
@@ -214,4 +214,4 @@ namespace mpqc{
 }
 
 
-#endif //TILECLUSTERCHEM_UTILITY_H_H
+#endif //MPQC_UTILITY_H_H

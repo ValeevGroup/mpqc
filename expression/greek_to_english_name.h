@@ -2,8 +2,8 @@
 // Created by Chong Peng on 1/25/16.
 //
 
-#ifndef TILECLUSTERCHEM_GREEK_TO_ENGLISH_NAME_H
-#define TILECLUSTERCHEM_GREEK_TO_ENGLISH_NAME_H
+#ifndef MPQC_GREEK_TO_ENGLISH_NAME_H
+#define MPQC_GREEK_TO_ENGLISH_NAME_H
 
 #include <string>
 #include <unordered_map>
@@ -61,4 +61,4 @@ namespace mpqc{
     };
 }
 
-#endif //TILECLUSTERCHEM_GREEK_TO_ENGLISH_NAME_H
+#endif //MPQC_GREEK_TO_ENGLISH_NAME_H

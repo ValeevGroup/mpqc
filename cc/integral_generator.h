@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/27/15.
 //
 
-#ifndef TILECLUSTERCHEM_INTEGRAL_GENERATOR_H
-#define TILECLUSTERCHEM_INTEGRAL_GENERATOR_H
+#ifndef MPQC_INTEGRAL_GENERATOR_H
+#define MPQC_INTEGRAL_GENERATOR_H
 
 #include <libint2/engine.h>
 #include "../include/tiledarray.h"
@@ -177,4 +177,4 @@ namespace mpqc {
     }
 }
 
-#endif //TILECLUSTERCHEM_INTEGRAL_GENERATOR_H
+#endif //MPQC_INTEGRAL_GENERATOR_H

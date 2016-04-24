@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TILECLUSTERCHEM_BASIS_ATOM_BASIS_H
-#define TILECLUSTERCHEM_BASIS_ATOM_BASIS_H
+#ifndef MPQC_BASIS_ATOM_BASIS_H
+#define MPQC_BASIS_ATOM_BASIS_H
 
 #include <vector>
 #include <iosfwd>
@@ -88,4 +88,4 @@ std::ostream &operator<<(std::ostream &os, AtomBasisSet const &abs);
 } // namespace basis
 } // namespace mpqc
 
-#endif // TILECLUSTERCHEM_BASIS_ATOM_BASIS_H
+#endif // MPQC_BASIS_ATOM_BASIS_H

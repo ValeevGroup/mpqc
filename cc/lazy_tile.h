@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/27/15.
 //
 
-#ifndef TILECLUSTERCHEM_LAZY_TILE_H
-#define TILECLUSTERCHEM_LAZY_TILE_H
+#ifndef MPQC_LAZY_TILE_H
+#define MPQC_LAZY_TILE_H
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
@@ -238,4 +238,4 @@ namespace mpqc {
 
 
 
-#endif //TILECLUSTERCHEM_LAZY_INTEGRAL_H
+#endif //MPQC_LAZY_INTEGRAL_H

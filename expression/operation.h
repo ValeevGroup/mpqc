@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/31/15.
 //
 
-#ifndef TILECLUSTERCHEM_OPERATION_H
-#define TILECLUSTERCHEM_OPERATION_H
+#ifndef MPQC_OPERATION_H
+#define MPQC_OPERATION_H
 
 #include <unordered_map>
 #include <vector>
@@ -169,4 +169,4 @@ namespace mpqc{
 
 
 
-#endif //TILECLUSTERCHEM_OPERATION_H
+#endif //MPQC_OPERATION_H

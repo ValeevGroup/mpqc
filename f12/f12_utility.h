@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/21/15.
 //
 
-#ifndef TILECLUSTERCHEM_UTILITY_H
-#define TILECLUSTERCHEM_UTILITY_H
+#ifndef MPQC_UTILITY_H
+#define MPQC_UTILITY_H
 
 #include <string>
 #include "../include/eigen.h"
@@ -191,4 +191,4 @@ struct CLF12Energy {
 
 }
 }
-#endif //TILECLUSTERCHEM_UTILITY_H
+#endif //MPQC_UTILITY_H

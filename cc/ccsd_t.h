@@ -2,8 +2,8 @@
 // Created by Chong Peng on 8/21/15.
 //
 
-#ifndef TILECLUSTERCHEM_CCSD_T_H_H
-#define TILECLUSTERCHEM_CCSD_T_H_H
+#ifndef MPQC_CCSD_T_H_H
+#define MPQC_CCSD_T_H_H
 
 #include "ccsd.h"
 
@@ -1146,4 +1146,4 @@ namespace mpqc{
     } // namespace cc
 }  // namespace mpqc
 
-#endif //TILECLUSTERCHEM_CCSD_T_H_H
+#endif //MPQC_CCSD_T_H_H

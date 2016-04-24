@@ -2,8 +2,8 @@
 // Created by Chong Peng on 3/31/16.
 //
 
-#ifndef TILECLUSTERCHEM_MP2F12_H
-#define TILECLUSTERCHEM_MP2F12_H
+#ifndef MPQC_MP2F12_H
+#define MPQC_MP2F12_H
 
 #include <string>
 
@@ -127,4 +127,4 @@ private:
 
 
 
-#endif //TILECLUSTERCHEM_MP2F12_H
+#endif //MPQC_MP2F12_H

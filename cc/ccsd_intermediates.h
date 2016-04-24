@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/6/15.
 //
 
-#ifndef TILECLUSTERCHEM_CCSD_INTERMEDIATES_H
-#define TILECLUSTERCHEM_CCSD_INTERMEDIATES_H
+#ifndef MPQC_CCSD_INTERMEDIATES_H
+#define MPQC_CCSD_INTERMEDIATES_H
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
@@ -227,4 +227,4 @@ class CCSDIntermediate {
 };
 }
 }
-#endif // TILECLUSTERCHEM_CCSD_INTERMEDIATES_H
+#endif // MPQC_CCSD_INTERMEDIATES_H

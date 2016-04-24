@@ -2,8 +2,8 @@
 // Created by Chong Peng on 3/2/16.
 //
 
-#ifndef TILECLUSTERCHEM_ATOMIC_INTEGRAL_BASE_H
-#define TILECLUSTERCHEM_ATOMIC_INTEGRAL_BASE_H
+#ifndef MPQC_ATOMIC_INTEGRAL_BASE_H
+#define MPQC_ATOMIC_INTEGRAL_BASE_H
 
 #include <string>
 #include <vector>
@@ -163,4 +163,4 @@ protected:
 } // end of namespace mpqc
 
 
-#endif //TILECLUSTERCHEM_ATOMIC_INTEGRAL_BASE_H
+#endif //MPQC_ATOMIC_INTEGRAL_BASE_H

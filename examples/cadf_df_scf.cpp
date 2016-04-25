@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
                       integrals::detail::integral_engine_precision,
                       out_doc.GetAllocator());
 
-    std::string mol_file;
+    std::string mol_file_name;
     if (!in.HasMember("xyz file")) {
         if (world.rank() == 0) {
             std::cout << "Did not detect xyz file in input.\n";
@@ -103,10 +103,12 @@ int main(int argc, char *argv[]) {
         madness::finalize();
         return 0;
     } else {
-        mol_file = in["xyz file"].GetString();
+        mol_file_name = in["xyz file"].GetString();
     }
 
-    auto atom_mol = molecule::read_xyz(mol_file);
+    std::fstream mol_file(mol_file_name);
+    auto atom_mol = molecule::Molecule(mol_file, false);
+    mol_file.close();
 
     out_doc.AddMember("number of atoms", int(atom_mol.atoms().size()),
                       out_doc.GetAllocator());

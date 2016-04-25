@@ -43,27 +43,29 @@ class ONCADFFockBuilder : public FockBuilder {
     std::vector<double> c_mo_times_;
     std::vector<double> e_df_times_;
     std::vector<double> r_df_times_;
-    std::vector<double> f_df_times_;
 
     std::vector<double> dl_times_;
     std::vector<double> dl_to_k_times_;
 
     std::vector<std::array<double, 3>> c_mo_storages_;
     std::vector<std::array<double, 3>> e_df_storages_;
-    std::vector<std::array<double, 3>> r_df_storages_;
     std::vector<std::array<double, 3>> f_df_storages_;
 
-    ShapeTracker shape_tracker_;
-    std::vector<ShapeTracker> shape_tracker_iters_;
+    bool force_shape_;
+
+    //  ShapeTracker shape_tracker_;
+    //  std::vector<ShapeTracker> shape_tracker_iters_;
 
   public:
     ONCADFFockBuilder(darray_type const &M, Integral const &eri3,
-                      darray_type const &C_df, double clr_thresh)
+                      darray_type const &C_df, double clr_thresh,
+                      bool force_shape)
             : FockBuilder(),
               E_(eri3),
               M_(M),
               C_df_(C_df),
-              clr_thresh_(clr_thresh) {
+              clr_thresh_(clr_thresh),
+              force_shape_(force_shape) {
         auto &world = C_df_.get_world();
         bool compress_M = false;
 
@@ -101,10 +103,6 @@ class ONCADFFockBuilder : public FockBuilder {
                       << " GB\n" << leader
                       << "\t\tE df clr storage: " << e_df_storages_.back()[2]
                       << " GB\n" << leader
-                      << "\t\tR df storage: " << r_df_storages_.back()[1]
-                      << " GB\n" << leader
-                      << "\t\tR df clr storage: " << r_df_storages_.back()[2]
-                      << " GB\n" << leader
                       << "\t\tF df storage: " << f_df_storages_.back()[1]
                       << " GB\n" << leader
                       << "\t\tF df clr storage: " << f_df_storages_.back()[2]
@@ -112,17 +110,67 @@ class ONCADFFockBuilder : public FockBuilder {
                       << "\n" << leader << "\tC mo time: " << c_mo_times_.back()
                       << "\n" << leader << "\tE df time: " << e_df_times_.back()
                       << "\n" << leader << "\tR df time: " << r_df_times_.back()
-                      << "\n" << leader << "\tF df time: " << f_df_times_.back()
                       << "\n" << leader << "\tdL time: " << dl_times_.back()
                       << "\n" << leader
                       << "\tdL to K time: " << dl_to_k_times_.back() << "\n";
-            auto total_k_time = c_mo_times_.back() + f_df_times_.back()
-                                + dl_times_.back() + dl_to_k_times_.back();
+            auto total_k_time = c_mo_times_.back() + e_df_times_.back()
+                                + r_df_times_.back() + dl_times_.back()
+                                + dl_to_k_times_.back();
             std::cout << leader << "\ttotal K time: " << total_k_time << "\n";
         }
     }
 
-    rapidjson::Value results(rapidjson::Document &d) override {}
+    rapidjson::Value results(rapidjson::Document &d) override {
+        rapidjson::Value fock_builder(rapidjson::kObjectType);
+        fock_builder.AddMember("Type", "ONCADFFockBuilder", d.GetAllocator());
+        fock_builder.AddMember("Force shape", force_shape_, d.GetAllocator());
+
+        auto j_build = utility::vec_avg(j_times_);
+        auto c_mo_build = utility::vec_avg(c_mo_times_);
+        auto e_df_build = utility::vec_avg(e_df_times_);
+        auto r_df_build = utility::vec_avg(r_df_times_);
+        auto dl_build = utility::vec_avg(dl_times_);
+        auto k_build = utility::vec_avg(dl_to_k_times_);
+
+        fock_builder.AddMember("Avg J Build Time", j_build, d.GetAllocator());
+        fock_builder.AddMember("Avg C_mo Build Time", c_mo_build,
+                               d.GetAllocator());
+        fock_builder.AddMember("Avg E_df Build Time", e_df_build,
+                               d.GetAllocator());
+        fock_builder.AddMember("Avg R_df Build Time", r_df_build,
+                               d.GetAllocator());
+        fock_builder.AddMember("Avg L Build Time", dl_build, d.GetAllocator());
+        fock_builder.AddMember("Avg K from L Build Time", k_build,
+                               d.GetAllocator());
+        fock_builder.AddMember("Avg Total K Build Time",
+                               k_build + dl_build + e_df_build + r_df_build
+                               + c_mo_build,
+                               d.GetAllocator());
+
+        auto c_mo_storage = utility::vec_avg(c_mo_storages_);
+        fock_builder.AddMember("C_mo Dense Storage", c_mo_storage[0],
+                               d.GetAllocator());
+        fock_builder.AddMember("C_mo Avg Sparse Storage", c_mo_storage[1],
+                               d.GetAllocator());
+        fock_builder.AddMember("C_mo Avg CLR Storage", c_mo_storage[2],
+                               d.GetAllocator());
+        auto e_df_storage = utility::vec_avg(e_df_storages_);
+        fock_builder.AddMember("E_df Dense Storage", e_df_storage[0],
+                               d.GetAllocator());
+        fock_builder.AddMember("E_df Avg Sparse Storage", e_df_storage[1],
+                               d.GetAllocator());
+        fock_builder.AddMember("E_df Avg CLR Storage", e_df_storage[2],
+                               d.GetAllocator());
+        auto f_df_storage = utility::vec_avg(f_df_storages_);
+        fock_builder.AddMember("F_df Dense Storage", f_df_storage[0],
+                               d.GetAllocator());
+        fock_builder.AddMember("F_df Avg Sparse Storage", f_df_storage[1],
+                               d.GetAllocator());
+        fock_builder.AddMember("F_df Avg CLR Storage", f_df_storage[2],
+                               d.GetAllocator());
+
+        return fock_builder;
+    }
 
   private:
     array_type compute_J(array_type const &D) {
@@ -147,6 +195,36 @@ class ONCADFFockBuilder : public FockBuilder {
         return J;
     }
 
+    struct Rdf_shape {
+        TA::Tensor<float> operator()(TA::Tensor<float> const &norms) {
+            auto t = norms.clone();
+            auto &range = t.range();
+            auto lo = range.lobound_data();
+            auto up = range.upbound_data();
+
+            for (auto X = lo[0]; X != up[0]; ++X) {
+                for (auto i = lo[1]; i != up[1]; ++i) {
+
+                    bool any_elem = false;
+                    for (auto n = lo[2]; n != up[2]; ++n) {
+                        if (t(X, i, n) != 0.0) {
+                            any_elem = true;
+                            break;
+                        }
+                    }
+
+                    if (any_elem) {
+                        for (auto n = lo[2]; n != up[2]; ++n) {
+                            t(X, i, n) = std::numeric_limits<float>::max();
+                        }
+                    }
+                }
+            }
+
+            return t;
+        }
+    };
+
     array_type compute_K(array_type const &C) {
         auto &world = C_df_.get_world();
 
@@ -154,7 +232,7 @@ class ONCADFFockBuilder : public FockBuilder {
         auto dC = TA::to_new_tile_type(C, tensor::TaToDecompTensor(clr_thresh_,
                                                                    compress_C));
 
-        darray_type C_mo, dL, E_df, R_df, F_df;
+        darray_type C_mo, dL, E_df, E_dfp, R_df, R_dfp, F_df;
 
         auto cmo0 = mpqc_time::fenced_now(world);
         C_mo("X, i, mu") = C_df_("X, mu, nu") * dC("nu, i");
@@ -163,36 +241,37 @@ class ONCADFFockBuilder : public FockBuilder {
         c_mo_storages_.push_back(utility::array_storage(C_mo));
 
         auto edf0 = mpqc_time::fenced_now(world);
-        E_df("X, i, mu")
-              = (E_("X, mu, nu") * dC("nu,i")).set_shape(C_mo.get_shape());
-        E_df.truncate();
+        if (force_shape_) {
+            F_df("X, i, mu")
+                  = (E_("X, mu, nu") * dC("nu,i"))
+                          .set_shape(C_mo.get_shape().transform(Rdf_shape{}));
+        } else {
+            F_df("X, i, mu") = E_("X, mu, nu") * dC("nu,i");
+        }
+        F_df.truncate();
         auto edf1 = mpqc_time::fenced_now(world);
-        e_df_storages_.push_back(utility::array_storage(E_df));
+        e_df_storages_.push_back(utility::array_storage(F_df));
 
         auto rdf0 = mpqc_time::fenced_now(world);
-        R_df("X, i, mu") = M_("X,Y") * C_mo("Y, i, mu");
-        R_df.truncate();
-        auto rdf1 = mpqc_time::fenced_now(world);
-        r_df_storages_.push_back(utility::array_storage(R_df));
-
-        auto fdf0 = mpqc_time::fenced_now(world);
-        F_df("X, i, mu") = E_df("X, i, mu") - 0.5 * R_df("X, i, mu");
+        if (force_shape_) {
+            F_df("X, i, mu")
+                  = F_df("X, i, mu")
+                    - (0.5 * M_("X,Y") * C_mo("Y, i, mu"))
+                            .set_shape(C_mo.get_shape().transform(Rdf_shape{}));
+        } else {
+            F_df("X, i, mu") = F_df("X, i , mu")
+                               - 0.5 * M_("X,Y") * C_mo("Y, i, mu");
+        }
         F_df.truncate();
-        auto fdf1 = mpqc_time::fenced_now(world);
+        auto rdf1 = mpqc_time::fenced_now(world);
         f_df_storages_.push_back(utility::array_storage(F_df));
-
-        // shape_tracker_.update(C_mo.get_shape().data(),
-        // F_df.get_shape().data());
-        // ShapeTracker this_iter;
-        // this_iter.update(C_mo.get_shape().data(), F_df.get_shape().data());
-        // shape_tracker_iters_.emplace_back(std::move(this_iter));
 
         auto l0 = mpqc_time::fenced_now(world);
         dL("mu, nu") = C_mo("X, i, mu") * F_df("X, i, nu");
         dL.truncate();
         auto l1 = mpqc_time::fenced_now(world);
 
-        array_type K;
+        array_type K, Kfast, Diff;
         auto k0 = mpqc_time::fenced_now(world);
         auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
         K("mu, nu") = L("mu, nu") + L("nu, mu");
@@ -201,7 +280,6 @@ class ONCADFFockBuilder : public FockBuilder {
         c_mo_times_.push_back(mpqc_time::duration_in_s(cmo0, cmo1));
         e_df_times_.push_back(mpqc_time::duration_in_s(edf0, edf1));
         r_df_times_.push_back(mpqc_time::duration_in_s(rdf0, rdf1));
-        f_df_times_.push_back(mpqc_time::duration_in_s(fdf0, fdf1));
         dl_times_.push_back(mpqc_time::duration_in_s(l0, l1));
         dl_to_k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
 

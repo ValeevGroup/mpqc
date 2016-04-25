@@ -349,57 +349,6 @@ int main(int argc, char *argv[]) {
     auto dM = TA::to_new_tile_type(M, tensor::TaToDecompTensor(clr_threshold,
                                                                false));
 
-    // decltype(dC_df) dG_df;
-    // auto G_df0 = mpqc_time::fenced_now(world);
-    // auto old_compress = tensor::detail::recompress;
-    // tensor::detail::recompress = true;
-
-    // dG_df("X, mu, nu") = -0.5 * dM("X, Y") * dC_df("Y, mu, nu");
-    // dG_df.truncate();
-    // auto g_store_temp = utility::array_storage(dG_df);
-
-    // dG_df("X, mu, nu") += deri3("X, mu, nu");
-    // ta_routines::minimize_storage(dG_df, clr_threshold);
-
-    // auto G_df1 = mpqc_time::fenced_now(world);
-    // tensor::detail::recompress = old_compress;
-    // auto G_df_time = mpqc_time::duration_in_s(G_df0, G_df1);
-    // if (world.rank() == 0) {
-    //     std::cout << "G_df time: " << G_df_time << std::endl;
-    // }
-    // out_doc.AddMember("G_df time", G_df_time, out_doc.GetAllocator());
-
-    // if (world.rank() == 0) {
-    //     std::cout << "M * C_df storage = \n"
-    //               << "\tFull    " << g_store_temp[0] << "\n"
-    //               << "\tSparse  " << g_store_temp[1] << "\n"
-    //               << "\tCLR     " << g_store_temp[2] << "\n" << std::flush;
-    // }
-
-    // auto g_store = utility::array_storage(dG_df);
-    // if (world.rank() == 0) {
-    //     std::cout << "G_df storage = \n"
-    //               << "\tFull    " << g_store[0] << "\n"
-    //               << "\tSparse  " << g_store[1] << "\n"
-    //               << "\tCLR     " << g_store[2] << "\n" << std::flush;
-    // }
-    // world.gop.fence();
-    // out_doc.AddMember("G_df Full Storage", g_store[0],
-    // out_doc.GetAllocator());
-
-    // out_doc.AddMember("G_df Sparse Storage", g_store[1],
-    //                   out_doc.GetAllocator());
-
-    // out_doc.AddMember("G_df CLR Storage", g_store[2],
-    // out_doc.GetAllocator());
-
-    double TcutC = 0.0;
-    if (in.HasMember("TcutC")) {
-        TcutC = in["TcutC"].GetDouble();
-    }
-
-    out_doc.AddMember("TcutC", TcutC, out_doc.GetAllocator());
-
     const auto occ_nclusters = in.HasMember("occ nclusters")
                                      ? in["occ nclusters"].GetInt()
                                      : nclusters;
@@ -408,48 +357,18 @@ int main(int argc, char *argv[]) {
                       out_doc.GetAllocator());
 
     auto localize = true;
+    auto TcutC = 0;
     auto ebuilder = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, occ_nclusters,
                                               TcutC, "inverse sqrt", localize);
 
     std::unique_ptr<scf::DensityBuilder> d_builder
           = make_unique<decltype(ebuilder)>(std::move(ebuilder));
 
-    // const auto j_clr_thresh = in.HasMember("coulomb CLR thresh")
-    //                                 ? in["coulomb CLR thresh"].GetDouble()
-    //                                 : clr_threshold;
-
-    // if (j_clr_thresh != clr_threshold) {
-
-    //     if (world.rank() == 0) {
-    //         std::cout << "Recalulating Eri3 with CLR thresh " << j_clr_thresh
-    //                   << "\n";
-    //     }
-
-    //     auto j0 = mpqc_time::fenced_now(world);
-
-    //     deri3 = ints::direct_sparse_integrals(
-    //           world, eri_e, three_c_array, shr_screen,
-    //           tensor::TaToDecompTensor(j_clr_thresh));
-
-    //     auto j1 = mpqc_time::fenced_now(world);
-
-    //     auto eri3_recal_time = mpqc_time::duration_in_s(rxyz0, rxyz1);
-    //     if (world.rank() == 0) {
-    //         std::cout << "Eri3 for J time: " << eri3_recal_time << std::endl;
-    //     }
-    //     out_doc.AddMember("Eri3 J time", eri3_recal_time,
-    //                       out_doc.GetAllocator());
-
-    //     auto eri3_j_storage = utility::array_storage(deri3.array());
-    //     if (world.rank() == 0) {
-    //         std::cout << "Eri3 for J storage:" << std::endl;
-    //         std::cout << "\tFull    = " << eri3_j_storage[0] << "\n"
-    //                   << "\tSparse  = " << eri3_j_storage[1] << "\n"
-    //                   << "\tCLR     = " << eri3_j_storage[2] << std::endl;
-    //     }
-    // }
-
     std::unique_ptr<scf::FockBuilder> f_builder;
+
+    bool force_shape = in.HasMember("force shape") ? in["force shape"].GetBool()
+                                                   : false;
+
     if (in.HasMember("stored integrals")
         && in["stored integrals"].GetBool() == true) {
 
@@ -459,52 +378,35 @@ int main(int argc, char *argv[]) {
                                        tensor::TaToDecompTensor(clr_threshold));
         auto e1 = mpqc_time::fenced_now(world);
         auto etime = mpqc_time::duration_in_s(e0, e1);
-        if(world.rank() == 0){
+        if (world.rank() == 0) {
             std::cout << "3 center time: " << etime << std::endl;
         }
         auto e_store = utility::array_storage(deri3s);
-        if(world.rank() == 0){
-            std::cout << "E storage:" 
-                << "\n\tFull     = " << e_store[0] 
-                << "\n\tSparse   = " << e_store[1] 
-                << "\n\tCLR      = " << e_store[2] << std::endl;
+        if (world.rank() == 0) {
+            std::cout << "E storage:"
+                      << "\n\tFull     = " << e_store[0]
+                      << "\n\tSparse   = " << e_store[1]
+                      << "\n\tCLR      = " << e_store[2] << std::endl;
         }
+        out_doc.AddMember("E time", etime, out_doc.GetAllocator());
+        out_doc.AddMember("E Full Storage", e_store[0], out_doc.GetAllocator());
 
-        scf::ONCADFFockBuilder<decltype(deri3s)> test_scf(dM, deri3s, dC_df,
-                                                          clr_threshold);
+        out_doc.AddMember("E Sparse Storage", e_store[1],
+                          out_doc.GetAllocator());
+
+        out_doc.AddMember("E CLR Storage", e_store[2], out_doc.GetAllocator());
+
+        scf::ONCADFFockBuilder<decltype(deri3s)> test_scf(
+              dM, deri3s, dC_df, clr_threshold, force_shape);
         f_builder = make_unique<decltype(test_scf)>(std::move(test_scf));
+
+        out_doc.AddMember("Stored integrals", true, out_doc.GetAllocator());
     } else {
-        scf::ONCADFFockBuilder<decltype(deri3)> test_scf(dM, deri3, dC_df,
-                                                         clr_threshold);
+        scf::ONCADFFockBuilder<decltype(deri3)> test_scf(
+              dM, deri3, dC_df, clr_threshold, force_shape);
         f_builder = make_unique<decltype(test_scf)>(std::move(test_scf));
+        out_doc.AddMember("Stored integrals", false, out_doc.GetAllocator());
     }
-    // if (in.HasMember("use forced shape") && in["use forced shape"].GetBool())
-    // {
-
-    //     if (world.rank() == 0) {
-    //         std::cout << "Using forced shape build\n";
-    //     }
-
-    //     scf::CADFForcedShapeFockBuilder forced_shape(
-    //           M, deri3, dC_df, dG_df, clr_threshold, j_clr_thresh);
-
-    //     f_builder = std::unique_ptr<scf::FockBuilder>(
-    //           make_unique<decltype(forced_shape)>(std::move(forced_shape)));
-
-    //     out_doc.AddMember("Using forced shape", true,
-    //     out_doc.GetAllocator());
-
-    // } else {
-    //     scf::CADFFockBuilder cadf_builder(M, deri3, dC_df, dG_df,
-    //     clr_threshold,
-    //                                       j_clr_thresh);
-
-    //     f_builder = std::unique_ptr<scf::FockBuilder>(
-    //           make_unique<decltype(cadf_builder)>(std::move(cadf_builder)));
-
-    //     out_doc.AddMember("Using forced shape", false,
-    //     out_doc.GetAllocator());
-    // }
 
     auto hf = scf::ClosedShellSCF(H, S, repulsion_energy, std::move(f_builder),
                                   std::move(d_builder), F_soad);

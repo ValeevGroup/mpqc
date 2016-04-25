@@ -14,7 +14,7 @@ namespace molecule {
 
 /*! \brief A class which holds the basic information for an atom
  *
- *  Atom has a position in Bohr, an atomic number, and a mass.  By default the 
+ *  Atom has a position in Bohr, an atomic number, and a mass.  By default the
  *  position is an Eigen::Vector3d.
  */
 class Atom {
@@ -30,11 +30,13 @@ class Atom {
     Atom(Atom &&atom) = default;
     Atom &operator=(Atom &&atom) = default;
 
+    /*! \brief Constructs the atom with the center, mass and charge provided.
+     */
     Atom(Vec3D const &center, double mass, int64_t Z)
-        : center_(center), atomic_number_(Z), mass_(mass) {}
+            : center_(center), atomic_number_(Z), mass_(mass) {}
 
     /*! Returns the location of the atom in Bohr. */
-    Vec3D const& center() const { return center_; }
+    Vec3D const &center() const { return center_; }
 
     /*! Returns the charge of the atom in atomic units. */
     int64_t charge() const { return atomic_number_; }
@@ -43,9 +45,9 @@ class Atom {
     double mass() const { return mass_; }
 
     /*! \brief Returns the atom in xyz format.
-     * 
-     * By default the function assumes the units are in Bohr, so it will 
-     * convert to ang, but by passing false to the function it will 
+     *
+     * By default the function assumes the units are in Bohr, so it will
+     * convert to ang, but by passing false to the function it will
      * not convert the position.
      */
     std::string xyz_string(bool convert_to_angstroms = true) const;
@@ -55,20 +57,23 @@ class Atom {
 // External interface functions
 //
 
-std::ostream &operator<<(std::ostream&, Atom const &);
+std::ostream &operator<<(std::ostream &, Atom const &);
 
-inline Vec3D const &center(Atom const &a){ return a.center(); }
+/// Returns the center of the atom
+inline Vec3D const &center(Atom const &a) { return a.center(); }
 
-inline double mass(Atom const &a){
-    return a.mass();
-}
+/// Returns the mass of the atom
+inline double mass(Atom const &a) { return a.mass(); }
 
-inline int64_t charge(Atom const &a){
-    return a.charge();
-}
+/// Returns the nuclear charge of the atom.
+inline int64_t charge(Atom const &a) { return a.charge(); }
 
-// For atoms the center of mass is just the center
-inline Vec3D const &center_of_mass(Atom const &a) {return a.center();}
+/*! \brief Returns the center of the atom.
+ *
+ * Center of mass is part of the clustering interface.
+ */
+inline Vec3D const &center_of_mass(Atom const &a) { return a.center(); }
+
 /*! @} */
 
 } // namespace molecule

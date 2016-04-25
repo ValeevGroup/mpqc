@@ -98,6 +98,12 @@ class Molecule : public DescribedClass {
         return elements_;
     }
 
+    /*! \brief Returns the difference between the Molecule's charge and the
+     * charge passed into the function.
+     *
+     * \note this interface is a bit weird and will likely change with updates
+     * to KeyVal construction.
+     */
     int64_t occupation(unsigned long total_charge) const {
         return charge_ - total_charge;
     }

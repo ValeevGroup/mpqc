@@ -15,13 +15,12 @@
 #include <array>
 #include <list>
 #include <type_traits>
+#include <stdexcept>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/serialization/export.hpp>
-
-#include <mpqc/util/misc/exception.hpp>
 
 namespace mpqc {
 
@@ -35,7 +34,7 @@ namespace mpqc {
   ///   <li> register \c T with DescribedClass . </li>
   /// </ol>
   /// The latter can be achieved in a number of ways, but the easiest is to add any of the following statements
-  /// to a source file in a global namespace scope (i.e. outside namespace scopes):
+  /// to a source file in the global scope:
   /// <ol>
   ///   <li>if you want to use class name \c T as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY(T) </li>
   ///   <li>if you want to use any other key \c Key as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY2(T, Key) </li>
@@ -154,6 +153,7 @@ namespace mpqc {
       /// data type for representing a property tree
       using ptree = boost::property_tree::iptree;
       using key_type = ptree::key_type; // = std::string
+      using value_type = ptree::data_type; // = std::string
       constexpr static char separator = ':';
 
       /// creates empty KeyVal
@@ -239,7 +239,7 @@ namespace mpqc {
       /// @tparam T the desired value type, must be a "simple" type that can be accepted by KeyVal::assign()
       /// @param path the path to the value
       /// @return value stored at \c path converted to type \c T
-      /// @throws mpqc::exception::bad_input if path not found or cannot convert value representation to the desired type
+      /// @throws KeyVal::bad_input if path not found or cannot convert value representation to the desired type
       template <typename T,
                 typename = typename std::enable_if<not KeyVal::is_sequence<T>::value>::type>
       T value(const key_type& path) const {
@@ -248,8 +248,10 @@ namespace mpqc {
         try {
           result = top_tree_->get<T>(ptree::path_type{abs_path, separator});
         }
-        catch(boost::property_tree::ptree_bad_data&) {
-          throw mpqc::exception::bad_input(abs_path);
+        catch(boost::property_tree::ptree_bad_data& x) {
+          throw KeyVal::bad_input(std::string("value ") + x.data<KeyVal::value_type>() +
+                                  " could not be converted to the desired datatype",
+                                  abs_path);
         }
         return result;
       }
@@ -278,8 +280,14 @@ namespace mpqc {
           }
           return result;
         }
-        catch(boost::property_tree::ptree_bad_data&) {
-          throw mpqc::exception::bad_input(abs_path);
+        catch(boost::property_tree::ptree_bad_data& x) {
+          throw KeyVal::bad_input(std::string("value ") + x.data<KeyVal::value_type>() +
+                                  " could not be converted to the desired datatype",
+                                  abs_path);
+        }
+        catch(boost::property_tree::ptree_bad_path& x) {
+          throw KeyVal::bad_input(std::string("path ") + x.path<key_type>() + " not found",
+                                  abs_path);
         }
       }
 
@@ -309,7 +317,7 @@ namespace mpqc {
       ///           or its base
       /// @param path the path
       /// @return std::shared_Ptr \c T
-      /// @throws mpqc::exception::bad_input if key not found or cannot convert value representation to the desired type
+      /// @throws KeyVal::bad_input if key not found or cannot convert value representation to the desired type
       template <typename T,
                 typename = typename std::enable_if<std::is_base_of<DescribedClass,T>::value>::type>
       std::shared_ptr<T> class_ptr(const key_type& path = key_type()) const {
@@ -332,13 +340,10 @@ namespace mpqc {
 
         // get class name
         std::string derived_class_name;
-        try {
-          auto type_path = concat_path(abs_path,"type");
-          derived_class_name = top_tree_->get<std::string>(ptree::path_type{type_path, separator});
-        }
-        catch(boost::property_tree::ptree_bad_data&) {
-          throw mpqc::exception::bad_input(std::string("KeyVal: missing \"type\" in object at "));
-        }
+        auto type_path = concat_path(abs_path,"type");
+        if (not exists_(type_path))
+          throw KeyVal::bad_input(std::string("missing \"type\" in object at path ") + path, abs_path);
+        derived_class_name = top_tree_->get<std::string>(ptree::path_type{type_path, separator});
 
         // map class type to its ctor
         auto ctor = DescribedClass::type_to_keyval_ctor(derived_class_name);
@@ -392,16 +397,18 @@ namespace mpqc {
 
       /// given a path that contains ".." elements, returns the equivalent path without such elements
       /// @example realpath("tmp:..:x") returns "x"
-      /// @throw mpqc::exception::bad_input if path is invalid; an example is ".." .
+      /// @throw KeyVal::bad_input if path is invalid; an example is ".." .
       static key_type realpath(const key_type& path) {
         key_type result = path;
         const key_type parent_token("..");
         auto parent_token_location = result.find(parent_token);
         while (parent_token_location != key_type::npos) {
           // make sure .. is preceeded by :
-          if (parent_token_location == 0 || path[parent_token_location-1] != separator) {
-            throw mpqc::exception::bad_input("KeyVal::realpath() -- bad path");
-          }
+          if (parent_token_location == 0)
+            throw KeyVal::bad_input("KeyVal: reference path cannot begin with \"..\"", path);
+          if (path[parent_token_location-1] != separator)
+            throw KeyVal::bad_input(std::string("KeyVal: \"..\" in reference path must be preceeded by \"") +
+                                    separator + "\"", path);
           // did we find '..:' or '..\0'?
           auto parent_token_length = (result.find(separator,parent_token_location+1) == parent_token_location+2) ? 3 : 2;
           // find the beginning of the preceding path element
@@ -465,7 +472,7 @@ namespace mpqc {
       /// @note circular references are not detected, thus to prevent infinite recursion possible
       ///       will throw if too many iterations are needed
       /// @param niter_max max number of iterations
-      /// @throws \c mpqc::exception::bad_input if max number of iterations exceeded
+      /// @throws \c KeyVal::bad_input if max number of iterations exceeded
       key_type
       resolve_refs (const key_type& path, size_t niter_max = 10) const {
         key_type result = path;
@@ -476,8 +483,7 @@ namespace mpqc {
           ++niter;
         }
         // too many iterations if still here
-        throw mpqc::exception::bad_input (
-            std::string ("KeyVal: excessive or circular references"));
+        throw KeyVal::bad_input("excessive or circular references in path", path);
       }
 
       /// @returns true if \c path did not include a reference
@@ -523,6 +529,13 @@ namespace mpqc {
       bool exists_(const key_type& path) const {
         return top_tree_->get_child_optional(ptree::path_type{path, separator}) != boost::optional<ptree&>();
       }
+
+    public:
+
+      struct bad_input : public std::runtime_error {
+          bad_input(const std::string& _what, const key_type& path) : std::runtime_error(_what + "(path=" + path + ")") {}
+          virtual ~bad_input() {}
+      };
 
   }; // KeyVal
 

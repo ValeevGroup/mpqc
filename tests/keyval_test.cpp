@@ -43,39 +43,46 @@ TEST_CASE("KeyVal", "[keyval]"){
 
   KeyVal kv;
 
-  kv.assign ("x", 0);
+  kv.assign ("x", 0);   // equiv JSON: "x":"0"
   REQUIRE(kv.value<int>("x") == 0);
 
-  kv.assign (":x", "0");
+  kv.assign (":x", "0");    // equiv JSON: "": { "x":"0" }
   REQUIRE(kv.value<string>(":x") == "0");
   REQUIRE(kv.value<int>(":x") == 0);
 
-  kv.assign(":z:0", true).assign(":z:1", -1.75); // chained assignments
+  // can chain multiple assign calls
+  kv.assign(":z:0", true).assign(":z:1", -1.75);
 
   REQUIRE(kv.value<string>(":z:0") == "true");
   REQUIRE_THROWS(kv.value<int>(":z:0")); // cannot obtain bool as int
   REQUIRE(kv.value<bool>(":z:0") == true);
+  // reals can be read in any format, but use the one with enough precision
   REQUIRE(kv.value<float>(":z:1") == -1.75);
   REQUIRE(kv.value<double>(":z:1") == -1.75);
 
+  // can overwrite
   kv.assign(":z:0", false).assign(":z:1", +2.35); // overwrite?
+  REQUIRE(kv.value<bool>(":z:0") == false);
   REQUIRE(kv.value<double>(":z:1") == +2.35);
 
   // sequences are written as Arrays, types are lost, hence can write a vector and read as an array
   kv.assign(":z:a:0", vector<int>({0, 1, 2}));
-  kv.assign(":z:a:1", array<int,3>{{1, 2, 3}});
+  typedef array<int,3> iarray3;
+  kv.assign(":z:a:1", iarray3{{1, 2, 3}});
   REQUIRE(kv.value<vector<int>>(":z:a:1") == vector<int>({1, 2, 3}));
-  // for some reason this fails to compile inside REQUIRE
-  bool x = kv.value<array<int,3> >(":z:a:0") == array<int,3>{{0, 1, 2}};
-  REQUIRE( x );
+  {
+    auto ref_array = iarray3{{0, 1, 2}};
+    REQUIRE(kv.value<iarray3>(":z:a:0") == ref_array);
+  }
 
+  // can write arrays using 0-based keys instead of empty keys in JSON case
   kv.assign(":z:a:2", vector<int>({7,6,5}), false);
   REQUIRE(kv.value<vector<int>>(":z:a:2") == vector<int>({7,6,5}));
 
   SECTION("JSON read/write"){
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-    cout << oss.str();
+    //cout << oss.str();
   }
 
   SECTION("JSON read/write"){

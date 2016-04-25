@@ -1,13 +1,37 @@
 
 /** \page keyval The KeyVal Library
 
-The KeyVal class provides a means for users to associate keywords with
-values.  ParsedKeyVal is a specialization of KeyVal that permits
-keyword/value associations in text such as an input file or a command line
-string.
+The most powerful way to use MPQC is to provide input in an object-oriented text format
+that can be understood by the KeyVal class. MPQC version 3 and older use a custom text format
+for input data. MPQC4 abandoned the old format in favor of these popular industry-standard formats
+used for data exchange:
+  - <a href="http://json.org/">JSON</a>,
+  - <a href="http://www.w3.org/XML/">XML</a>.
 
-The package is flexible enough to allow complex structures and arrays as
-well as objects to be read from an input file.
+The KeyVal class is a means in a C++ program to convert such JSON or XML input to
+C++ primitive data (booleans, integers, reals, string) and
+user-defined objects. For example, the following JSON,
+@code
+{
+  "type" : "Atom"
+  "element" : "C",
+  "r" : [0.0 1.0 -2.0],
+  "isotope" : "13"
+}
+@endcode
+can be used to construct an object of the following C++ class representing an atom:
+@code
+struct Atom {
+  int Z;
+  std::array<double, 3> r;
+  int isotope;
+};
+@endcode
+
+KeyVal is a general-purpose component and can be used in any C++ program that
+calls for representing "keyword=value" associations in a flexible structured form.
+KeyVal objects can be created from JSON- or XML-formatted text, or purely programmatically.
+For brevity, only the programmatic and JSON-based methods will be illustrated here.
 
 <ul>
   <li> \ref keyvalass
@@ -21,13 +45,15 @@ well as objects to be read from an input file.
 
 \section keyvalass Assignment
 
-As an example of the use of ParsedKeyVal, consider the following
-input:
-<pre>
-x_coordinate = 1.0
-y_coordinate = 2.0
-x_coordinate = 3.0
-</pre>
+As an example of the use of KeyVal, consider the following
+JSON input:
+@code
+{
+  "x_coordinate" : "1.0",
+  "y_coordinate" : "2.0"
+  "x_coordinate" : "3.0",
+}
+@endcode
 Two assignements will be made.  The keyword <tt>x_coordinate</tt> will be
 associated with the value <tt>1.0</tt> and the keyword <tt>y_coordinate</tt>
 will be assigned to <tt>2.0</tt>.  The third line in the above input

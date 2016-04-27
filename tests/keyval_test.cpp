@@ -66,7 +66,7 @@ TEST_CASE("KeyVal", "[keyval]"){
   REQUIRE(kv.value<double>(":z:1") == +2.35);
 
   // sequences are written as Arrays, types are lost, hence can write a vector and read as an array
-  kv.assign(":z:a:0", vector<int>({0, 1, 2}));
+  kv.assign(":z:a:0", vector<int>{{0, 1, 2}});
   typedef array<int,3> iarray3;
   kv.assign(":z:a:1", iarray3{{1, 2, 3}});
   REQUIRE(kv.value<vector<int>>(":z:a:1") == vector<int>({1, 2, 3}));
@@ -76,7 +76,7 @@ TEST_CASE("KeyVal", "[keyval]"){
   }
 
   // can write arrays using 0-based keys instead of empty keys in JSON case
-  kv.assign(":z:a:2", vector<int>({7,6,5}), false);
+  kv.assign(":z:a:2", vector<int>{{7,6,5}}, false);
   REQUIRE(kv.value<vector<int>>(":z:a:2") == vector<int>({7,6,5}));
 
   SECTION("JSON read/write"){
@@ -135,6 +135,7 @@ TEST_CASE("KeyVal", "[keyval]"){
     kv.assign ("i4", "$:i2:..:i1");
     kv.assign ("i5", "$i2:b");
     kv.assign ("i2:c", "$..:i3");
+    kv.assign ("i 6", 1.33); // spaces in keys are allowed
 
     kv.assign("c1:type", "Base").assign("c1:value", 1);
     kv.assign ("i2:c2", "$:c1");
@@ -146,6 +147,7 @@ TEST_CASE("KeyVal", "[keyval]"){
     REQUIRE(kv.value<int>("i4") == 1);
     REQUIRE(kv.value<int>("i5") == 2);
     REQUIRE(kv.value<bool>("i2:c") == true);
+    REQUIRE(kv.value<double>("i 6") == 1.33);
 
     auto kv_c1 = kv.keyval("c1");
     auto c1 = kv_c1.class_ptr<Base>();
@@ -162,8 +164,8 @@ TEST_CASE("KeyVal", "[keyval]"){
 
     const char input[] =       \
 "{                             \
-  \"a\":\"0\",                 \
-  \"b\":\"1.25\",              \
+  \"a\": 0,                    \
+  \"b\": 1.25,                 \
   \"base\": {                  \
      \"type\":\"Base\",        \
      \"value\":\"$:a\"         \
@@ -176,7 +178,8 @@ TEST_CASE("KeyVal", "[keyval]"){
   \"mpqc\": {                  \
      \"base\":\"$..:base\",    \
      \"deriv\":\"$:deriv0\"    \
-  }                            \
+  },                           \
+  \"a\": 1                     \
 }";
 
     stringstream iss(input);
@@ -184,7 +187,9 @@ TEST_CASE("KeyVal", "[keyval]"){
 
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-//    cout << oss.str();
+    //cout << oss.str();
+
+    REQUIRE(kv.value<int>("a") == 0); // "a" specified twice, make sure KeyVal::value gets the first specification
 
     auto b1 = kv.keyval("mpqc:base").class_ptr<Base>();
     auto b2 = kv.keyval("base").class_ptr<Base>();

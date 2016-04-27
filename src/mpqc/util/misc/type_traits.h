@@ -20,6 +20,19 @@ namespace mpqc {
 template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
-}
+/*! \brief void_t typedef
+ *
+ * This is a standard C++ 17 feature, but we don't want to require C++ 17
+ * compilers yet
+ */
+template <typename... Ts>
+struct make_void {
+  using type = void;
+};
+
+template <typename... Ts>
+using void_t = typename make_void<Ts...>::type;
+
+}  // namespace mpqc
 
 #endif  // MPQC_UTIL_MISC_TYPETRAITS_H_

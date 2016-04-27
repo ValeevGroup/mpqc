@@ -43,6 +43,7 @@ namespace mpqc {
   /// file will work.
   /// @note If \c T is a template class, you must register each instance of this class you want to construct
   /// from KeyVal.
+  /// @ingroup CoreKeyVal
   class DescribedClass {
     public:
       DescribedClass() = default;
@@ -61,6 +62,7 @@ namespace mpqc {
       }
 
       /// This class helps with registering DescribedClass with DescribedClass's static registry.
+
       /// To register the KeyVal ctor of type \c T create a single instance of this class
       /// @tparam T a class derived from DescribedClass
       /// @sa MPQC_CLASS_EXPORT_KEY2
@@ -91,9 +93,13 @@ namespace mpqc {
   }
 }
 
-/// Use this macro to associate a key (character string) with a class using Boost.Serialization
-/// and register the class's KeyVal constructor with DescribedClass's registry. Use BOOST_CLASS_EXPORT_KEY2
-/// to skip the KeyVal constructor registration.
+/// @addtogroup CoreKeyVal
+/// @{
+
+/// \brief Associates a key (character string) with a class using Boost.Serialization
+/// and register the class's KeyVal constructor with DescribedClass's registry.
+///
+/// Use BOOST_CLASS_EXPORT_KEY2 to skip the KeyVal constructor registration.
 #define MPQC_CLASS_EXPORT_KEY2(T, K)                      \
   BOOST_CLASS_EXPORT_KEY2(T, K)                           \
   namespace mpqc {                                        \
@@ -109,32 +115,43 @@ namespace mpqc {
     }}                                                    \
 /**/
 
-/// Just like MPQC_CLASS_EXPORT_KEY2, but uses class name for the class key.
+/// \brief Associates a key (character string) with a class using Boost.Serialization
+/// and register the class's KeyVal constructor with DescribedClass's registry.
+///
+/// Identical to MPQC_CLASS_EXPORT_KEY2, but uses class name for the class key.
 /// Use BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
+/// @sa MPQC_CLASS_EXPORT_KEY2
 #define MPQC_CLASS_EXPORT_KEY(T)                                      \
     MPQC_CLASS_EXPORT_KEY2(T, BOOST_PP_STRINGIZE(T))                                                                  \
 /**/
 
-/// Forces the class instantiation so that it can be deserialized with Boost.Serialization and/or
-/// constructed from a KeyVal.
+/// \brief Forces the class instantiation so that it can be deserialized with
+/// Boost.Serialization and/or constructed from a KeyVal.
 #define MPQC_CLASS_EXPORT_IMPLEMENT(T)                       \
     BOOST_CLASS_EXPORT_IMPLEMENT(T)                          \
 /**/
 
+/// @}
+
 namespace mpqc {
   /**
-     @ingroup CoreKeyVal
+      \brief KeyVal specifies C++ primitive data
+      (booleans, integers, reals, string) and user-defined objects
+      obtained from JSON/XML input or by programmatic construction.
 
-    */
-
-  /**
-      KeyVal is a (sub)tree of Key=Value pairs implemented as a Boost PropertyTree.
+      KeyVal is a (sub)tree of Key=Value pairs implemented with
+      <a href="http://theboostcpplibraries.com/boost.propertytree">Boost.PropertyTree</a>.
+      KeyVal extends the standard JSON/XML syntax to allow references as well as
+      specification of registered C++ objects. See \ref keyval for the rationale, examples,
+      and other details.
 
       @note Since KeyVal is default-constructible and directly mutable,
             this obsoletes sc::AssignedKeyVal. Its behavior resembles PrefixKeyVal by combining
             prefix with a const tree. Hence this version of KeyVal roughly can be viewed as an
             assignable PrefixKeyVal of old MPQC, but supporting input from more modern
             formats like XML and JSON.
+
+      @ingroup CoreKeyVal
    */
   class KeyVal {
     private:
@@ -175,9 +192,9 @@ namespace mpqc {
         return KeyVal(top_tree_, class_registry_, abs_path);
       }
 
-      /// returns a shared_ptr to the (top) tree
+      /// \brief returns a shared_ptr to the (top) tree
       std::shared_ptr<ptree> top_tree() const { return top_tree_; }
-      /// returns a shared_ptr to this (sub)tree
+      /// \brief returns a shared_ptr to this (sub)tree
       /// @param path the path to the subtree
       /// @note the result is aliased against the top tree
       std::shared_ptr<ptree> tree() const;
@@ -532,6 +549,7 @@ namespace mpqc {
 
     public:
 
+      /// \brief KeyVal exception
       struct bad_input : public std::runtime_error {
           bad_input(const std::string& _what, const key_type& path) : std::runtime_error(_what + "(path=" + path + ")") {}
           virtual ~bad_input() {}
@@ -541,9 +559,11 @@ namespace mpqc {
 
   /// union of two KeyVal objects
   /// @note obsoletes sc::AggregateKeyVal
+  /// @ingroup KeyValCore
   KeyVal operator+(const KeyVal& first, const KeyVal& second);
 
-
 }
+
+/// @}
 
 #endif /* SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_ */

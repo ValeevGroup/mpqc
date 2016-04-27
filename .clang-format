@@ -1,46 +1,63 @@
 ---
-# BasedOnStyle:  LLVM
-AccessModifierOffset: -2
-ConstructorInitializerIndentWidth: 8
-AlignEscapedNewlinesLeft: false
+Language:        Cpp
+# BasedOnStyle:  Google
+AccessModifierOffset: -1
+AlignAfterOpenBracket: true
+AlignEscapedNewlinesLeft: true
 AlignTrailingComments: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AlwaysBreakAfterDefinitionReturnType: false
 AlwaysBreakTemplateDeclarations: true
-AlwaysBreakBeforeMultilineStrings: false
-BreakBeforeBinaryOperators: true
+AlwaysBreakBeforeMultilineStrings: true
+BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
 BinPackParameters: true
+BinPackArguments: true
 ColumnLimit:     80
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
-DerivePointerBinding: false
+ConstructorInitializerIndentWidth: 4
+DerivePointerAlignment: true
 ExperimentalAutoDetectBinPacking: false
-IndentCaseLabels: false
-MaxEmptyLinesToKeep: 2
+IndentCaseLabels: true
+IndentWrappedFunctionNames: false
+IndentFunctionDeclarationAfterType: false
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
 NamespaceIndentation: None
+ObjCBlockIndentWidth: 2
+ObjCSpaceAfterProperty: false
 ObjCSpaceBeforeProtocolList: false
-PenaltyBreakBeforeFirstCallParameter: 40
-PenaltyBreakComment: 20
-PenaltyBreakString: 100
-PenaltyBreakFirstLessLess: 20
+PenaltyBreakBeforeFirstCallParameter: 1
+PenaltyBreakComment: 300
+PenaltyBreakString: 1000
+PenaltyBreakFirstLessLess: 120
 PenaltyExcessCharacter: 1000000
-PenaltyReturnTypeOnItsOwnLine: 5
-PointerBindsToType: false
-SpacesBeforeTrailingComments: 1
+PenaltyReturnTypeOnItsOwnLine: 200
+PointerAlignment: Left
+SpacesBeforeTrailingComments: 2
 Cpp11BracedListStyle: true
-Standard:        Cpp11
-IndentWidth:     4
-TabWidth:        2
+Standard:        Auto
+IndentWidth:     2
+TabWidth:        8
 UseTab:          Never
 BreakBeforeBraces: Attach
-IndentFunctionDeclarationAfterType: false
 SpacesInParentheses: false
+SpacesInSquareBrackets: false
 SpacesInAngles:  false
 SpaceInEmptyParentheses: false
 SpacesInCStyleCastParentheses: false
-SpaceAfterControlStatementKeyword: true
+SpaceAfterCStyleCast: false
+SpacesInContainerLiterals: true
 SpaceBeforeAssignmentOperators: true
-ContinuationIndentWidth: 6
+ContinuationIndentWidth: 4
+CommentPragmas:  '^ IWYU pragma:'
+ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
+SpaceBeforeParens: ControlStatements
+DisableFormat:   false
 ...
-

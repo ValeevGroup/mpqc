@@ -11,14 +11,16 @@
 #include <map>
 #include <string>
 #include <memory>
+#include <vector>
+#include <array>
+#include <list>
 #include <type_traits>
+#include <stdexcept>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/serialization/export.hpp>
-
-#include <mpqc/util/misc/exception.hpp>
 
 namespace mpqc {
 
@@ -32,7 +34,7 @@ namespace mpqc {
   ///   <li> register \c T with DescribedClass . </li>
   /// </ol>
   /// The latter can be achieved in a number of ways, but the easiest is to add any of the following statements
-  /// to a source file in a global namespace scope (i.e. outside namespace scopes):
+  /// to a source file in the global scope:
   /// <ol>
   ///   <li>if you want to use class name \c T as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY(T) </li>
   ///   <li>if you want to use any other key \c Key as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY2(T, Key) </li>
@@ -41,6 +43,7 @@ namespace mpqc {
   /// file will work.
   /// @note If \c T is a template class, you must register each instance of this class you want to construct
   /// from KeyVal.
+  /// @ingroup CoreKeyVal
   class DescribedClass {
     public:
       DescribedClass() = default;
@@ -59,6 +62,7 @@ namespace mpqc {
       }
 
       /// This class helps with registering DescribedClass with DescribedClass's static registry.
+
       /// To register the KeyVal ctor of type \c T create a single instance of this class
       /// @tparam T a class derived from DescribedClass
       /// @sa MPQC_CLASS_EXPORT_KEY2
@@ -89,9 +93,13 @@ namespace mpqc {
   }
 }
 
-/// Use this macro to associate a key (character string) with a class using Boost.Serialization
-/// and register the class's KeyVal constructor with DescribedClass's registry. Use BOOST_CLASS_EXPORT_KEY2
-/// to skip the KeyVal constructor registration.
+/// @addtogroup CoreKeyVal
+/// @{
+
+/// \brief Associates a key (character string) with a class using Boost.Serialization
+/// and register the class's KeyVal constructor with DescribedClass's registry.
+///
+/// Use BOOST_CLASS_EXPORT_KEY2 to skip the KeyVal constructor registration.
 #define MPQC_CLASS_EXPORT_KEY2(T, K)                      \
   BOOST_CLASS_EXPORT_KEY2(T, K)                           \
   namespace mpqc {                                        \
@@ -107,38 +115,62 @@ namespace mpqc {
     }}                                                    \
 /**/
 
-/// Just like MPQC_CLASS_EXPORT_KEY2, but uses class name for the class key.
+/// \brief Associates a key (character string) with a class using Boost.Serialization
+/// and register the class's KeyVal constructor with DescribedClass's registry.
+///
+/// Identical to MPQC_CLASS_EXPORT_KEY2, but uses class name for the class key.
 /// Use BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
+/// @sa MPQC_CLASS_EXPORT_KEY2
 #define MPQC_CLASS_EXPORT_KEY(T)                                      \
     MPQC_CLASS_EXPORT_KEY2(T, BOOST_PP_STRINGIZE(T))                                                                  \
 /**/
 
-/// Forces the class instantiation so that it can be deserialized with Boost.Serialization and/or
-/// constructed from a KeyVal.
+/// \brief Forces the class instantiation so that it can be deserialized with
+/// Boost.Serialization and/or constructed from a KeyVal.
 #define MPQC_CLASS_EXPORT_IMPLEMENT(T)                       \
     BOOST_CLASS_EXPORT_IMPLEMENT(T)                          \
 /**/
 
+/// @}
+
 namespace mpqc {
   /**
-     @ingroup CoreKeyVal
+      \brief KeyVal specifies C++ primitive data
+      (booleans, integers, reals, string) and user-defined objects
+      obtained from JSON/XML input or by programmatic construction.
 
-    */
-
-  /**
-      KeyVal is a (sub)tree of Key=Value pairs implemented as a Boost PropertyTree.
+      KeyVal is a (sub)tree of Key=Value pairs implemented with
+      <a href="http://theboostcpplibraries.com/boost.propertytree">Boost.PropertyTree</a>.
+      KeyVal extends the standard JSON/XML syntax to allow references as well as
+      specification of registered C++ objects. See \ref keyval for the rationale, examples,
+      and other details.
 
       @note Since KeyVal is default-constructible and directly mutable,
             this obsoletes sc::AssignedKeyVal. Its behavior resembles PrefixKeyVal by combining
             prefix with a const tree. Hence this version of KeyVal roughly can be viewed as an
             assignable PrefixKeyVal of old MPQC, but supporting input from more modern
             formats like XML and JSON.
+
+      @ingroup CoreKeyVal
    */
   class KeyVal {
+    private:
+      template <typename Class> struct is_sequence : std::false_type {};
+      template <typename T, typename A> struct is_sequence<std::vector<T,A>> : std::true_type {};
+      template <typename T, std::size_t N> struct is_sequence<std::array<T,N>> : std::true_type {};
+      template <typename T, typename A> struct is_sequence<std::list<T,A>> : std::true_type {};
+      template <typename T, std::size_t N> static void resize(std::array<T,N>& container, std::size_t size) {
+        assert(size <= N);
+      }
+      template <typename T> static void resize(T& container, std::size_t size) {
+        container.resize(size);
+      }
+
     public:
       /// data type for representing a property tree
       using ptree = boost::property_tree::iptree;
       using key_type = ptree::key_type; // = std::string
+      using value_type = ptree::data_type; // = std::string
       constexpr static char separator = ':';
 
       /// creates empty KeyVal
@@ -160,32 +192,52 @@ namespace mpqc {
         return KeyVal(top_tree_, class_registry_, abs_path);
       }
 
-      /// returns a shared_ptr to the (top) tree
+      /// \brief returns a shared_ptr to the (top) tree
       std::shared_ptr<ptree> top_tree() const { return top_tree_; }
-      /// returns a shared_ptr to this (sub)tree
+      /// \brief returns a shared_ptr to this (sub)tree
       /// @param path the path to the subtree
       /// @note the result is aliased against the top tree
       std::shared_ptr<ptree> tree() const;
 
+      /// checks whether the given path exists
+      /// @param path the path
+      /// @return true if \c path exists
+      bool exists(const key_type& path) const {
+        return exists_(resolve_path(path));
+      }
+
       /// assign simple \c value at the given path (overwrite, if necessary)
       /// @param value a "simple" value, i.e. it can be converted to
       /// a KeyVal::key_type using a std::basic_ostream<KeyVal::key_type::value_type>
-      template <typename T>
+      template <typename T,
+                typename = typename std::enable_if<not KeyVal::is_sequence<T>::value>::type>
       KeyVal& assign(const key_type& path, const T& value) {
         auto abs_path = to_absolute_path(path);
         top_tree_->put(ptree::path_type{abs_path, separator}, value);
         return *this;
       }
 
-      /// assign a \c std::vector<T> at the given path (overwrite, if necessary)
-      template <typename T>
-      KeyVal& assign(const std::string& path, const std::vector<T>& value) {
+      /// assign a sequence container at the given path (overwrite, if necessary)
+      /// @tparam SequenceContainer any container for which KeyVal::is_sequence<SequenceContainer> is a \c std::true_type,
+      ///         currently any of the following is allowed: \c std::array, \c std::vector, \c std::list .
+      /// @param path the target path
+      /// @param value a sequence container to put at the path
+      /// @param json_style if true, use empty keys so that JSON arrays are produced by KeyVal::write_json,
+      ///                   else use 0-based integer keys, e.g. the first element will have key \c path:0,
+      ///                   the second -- \c path:1, etc. (this is similar to how array elements were addressed in MPQC3)
+      template <typename SequenceContainer>
+      KeyVal& assign(const key_type& path, const SequenceContainer& value,
+                     bool json_style = true,
+                     typename std::enable_if<KeyVal::is_sequence<SequenceContainer>::value>::type* = nullptr) {
         auto abs_path = to_absolute_path(path);
         ptree obj;
+        size_t count = 0;
         for(const auto& v: value) {
           ptree pt;
+          auto key = json_style ? key_type("") : std::to_string(count); // assumes key_type == std::string
           pt.put("", v);
-          obj.push_back(std::make_pair("", pt));
+          obj.push_back(std::make_pair(key, pt));
+          ++count;
         }
         top_tree_->add_child(ptree::path_type{abs_path, separator}, obj);
         return *this;
@@ -193,7 +245,7 @@ namespace mpqc {
 
       /// assign the given pointer to a DescribedClass at the given path (overwrite, if necessary)
       /// @warning these key/value pairs are not part of ptree, hence cannot be written to JSON/XML
-      KeyVal& assign(const std::string& path, const std::shared_ptr<DescribedClass>& value) {
+      KeyVal& assign(const key_type& path, const std::shared_ptr<DescribedClass>& value) {
         auto abs_path = to_absolute_path(path);
         (*class_registry_)[abs_path] = value;
         return *this;
@@ -204,18 +256,56 @@ namespace mpqc {
       /// @tparam T the desired value type, must be a "simple" type that can be accepted by KeyVal::assign()
       /// @param path the path to the value
       /// @return value stored at \c path converted to type \c T
-      /// @throws mpqc::exception::bad_input if path not found or cannot convert value representation to the desired type
-      template <typename T>
+      /// @throws KeyVal::bad_input if path not found or cannot convert value representation to the desired type
+      template <typename T,
+                typename = typename std::enable_if<not KeyVal::is_sequence<T>::value>::type>
       T value(const key_type& path) const {
         auto abs_path = resolve_path(path);
         T result;
         try {
           result = top_tree_->get<T>(ptree::path_type{abs_path, separator});
         }
-        catch(boost::property_tree::ptree_bad_data&) {
-          throw mpqc::exception::bad_input(abs_path);
+        catch(boost::property_tree::ptree_bad_data& x) {
+          throw KeyVal::bad_input(std::string("value ") + x.data<KeyVal::value_type>() +
+                                  " could not be converted to the desired datatype",
+                                  abs_path);
         }
         return result;
+      }
+
+      /// return value corresponding to a path and convert to a std::vector.
+      /// @tparam T the desired value type
+      /// @param path the path
+      /// @return value of type \c T
+      template <typename SequenceContainer>
+      SequenceContainer value(const key_type& path, typename std::enable_if<KeyVal::is_sequence<SequenceContainer>::value>::type* = nullptr) const {
+        auto abs_path = resolve_path(path);
+        using value_type = typename SequenceContainer::value_type;
+        SequenceContainer result;
+        try {
+          auto vec_ptree = top_tree_->get_child(ptree::path_type{abs_path, separator});
+          KeyVal::resize(result, vec_ptree.size());
+          auto iter = result.begin();
+          size_t count = 0;
+          for(const auto& elem_ptree: vec_ptree) {
+            assert(elem_ptree.first == "" // JSON array spec
+                   ||
+                   elem_ptree.first == std::to_string(count) // 0-based array keys, a la ipv2, usable with XML
+                  );
+            *iter = elem_ptree.second.get_value<value_type>();
+            ++iter;  ++count;
+          }
+          return result;
+        }
+        catch(boost::property_tree::ptree_bad_data& x) {
+          throw KeyVal::bad_input(std::string("value ") + x.data<KeyVal::value_type>() +
+                                  " could not be converted to the desired datatype",
+                                  abs_path);
+        }
+        catch(boost::property_tree::ptree_bad_path& x) {
+          throw KeyVal::bad_input(std::string("path ") + x.path<key_type>() + " not found",
+                                  abs_path);
+        }
       }
 
       /// return value corresponding to a path and convert to the desired type.
@@ -223,16 +313,15 @@ namespace mpqc {
       /// @param path the path
       /// @param default_value
       /// @return value of type \c T
-      template <typename T>
+      template <typename T,
+                typename = typename std::enable_if<not KeyVal::is_sequence<T>::value>::type>
       T value(const key_type& path, const T& default_value) const {
         auto abs_path = resolve_path(path);
         T result;
-        try {
-          result = top_tree_->get<T>(ptree::path_type{abs_path, separator});
-        }
-        catch(boost::property_tree::ptree_bad_data&) {
+        if (not exists_(abs_path))
           result = default_value;
-        }
+        else
+          result = top_tree_->get<T>(ptree::path_type{abs_path, separator});
         return result;
       }
 
@@ -245,7 +334,7 @@ namespace mpqc {
       ///           or its base
       /// @param path the path
       /// @return std::shared_Ptr \c T
-      /// @throws mpqc::exception::bad_input if key not found or cannot convert value representation to the desired type
+      /// @throws KeyVal::bad_input if key not found or cannot convert value representation to the desired type
       template <typename T,
                 typename = typename std::enable_if<std::is_base_of<DescribedClass,T>::value>::type>
       std::shared_ptr<T> class_ptr(const key_type& path = key_type()) const {
@@ -268,13 +357,10 @@ namespace mpqc {
 
         // get class name
         std::string derived_class_name;
-        try {
-          auto type_path = concat_path(abs_path,"type");
-          derived_class_name = top_tree_->get<std::string>(ptree::path_type{type_path, separator});
-        }
-        catch(boost::property_tree::ptree_bad_data&) {
-          throw mpqc::exception::bad_input(std::string("KeyVal: missing \"type\" in object at "));
-        }
+        auto type_path = concat_path(abs_path,"type");
+        if (not exists_(type_path))
+          throw KeyVal::bad_input(std::string("missing \"type\" in object at path ") + path, abs_path);
+        derived_class_name = top_tree_->get<std::string>(ptree::path_type{type_path, separator});
 
         // map class type to its ctor
         auto ctor = DescribedClass::type_to_keyval_ctor(derived_class_name);
@@ -328,16 +414,18 @@ namespace mpqc {
 
       /// given a path that contains ".." elements, returns the equivalent path without such elements
       /// @example realpath("tmp:..:x") returns "x"
-      /// @throw mpqc::exception::bad_input if path is invalid; an example is ".." .
+      /// @throw KeyVal::bad_input if path is invalid; an example is ".." .
       static key_type realpath(const key_type& path) {
         key_type result = path;
         const key_type parent_token("..");
         auto parent_token_location = result.find(parent_token);
         while (parent_token_location != key_type::npos) {
           // make sure .. is preceeded by :
-          if (parent_token_location == 0 || path[parent_token_location-1] != separator) {
-            throw mpqc::exception::bad_input("KeyVal::realpath() -- bad path");
-          }
+          if (parent_token_location == 0)
+            throw KeyVal::bad_input("KeyVal: reference path cannot begin with \"..\"", path);
+          if (path[parent_token_location-1] != separator)
+            throw KeyVal::bad_input(std::string("KeyVal: \"..\" in reference path must be preceeded by \"") +
+                                    separator + "\"", path);
           // did we find '..:' or '..\0'?
           auto parent_token_length = (result.find(separator,parent_token_location+1) == parent_token_location+2) ? 3 : 2;
           // find the beginning of the preceding path element
@@ -401,7 +489,7 @@ namespace mpqc {
       /// @note circular references are not detected, thus to prevent infinite recursion possible
       ///       will throw if too many iterations are needed
       /// @param niter_max max number of iterations
-      /// @throws \c mpqc::exception::bad_input if max number of iterations exceeded
+      /// @throws \c KeyVal::bad_input if max number of iterations exceeded
       key_type
       resolve_refs (const key_type& path, size_t niter_max = 10) const {
         key_type result = path;
@@ -412,8 +500,7 @@ namespace mpqc {
           ++niter;
         }
         // too many iterations if still here
-        throw mpqc::exception::bad_input (
-            std::string ("KeyVal: excessive or circular references"));
+        throw KeyVal::bad_input("excessive or circular references in path", path);
       }
 
       /// @returns true if \c path did not include a reference
@@ -453,13 +540,30 @@ namespace mpqc {
         return result;
       }
 
+      /// checks whether the given path exists; does not resolve path unlike KeyVal::exists()
+      /// @param path the path
+      /// @return true if \c path exists
+      bool exists_(const key_type& path) const {
+        return top_tree_->get_child_optional(ptree::path_type{path, separator}) != boost::optional<ptree&>();
+      }
+
+    public:
+
+      /// \brief KeyVal exception
+      struct bad_input : public std::runtime_error {
+          bad_input(const std::string& _what, const key_type& path) : std::runtime_error(_what + "(path=" + path + ")") {}
+          virtual ~bad_input() {}
+      };
+
   }; // KeyVal
 
   /// union of two KeyVal objects
   /// @note obsoletes sc::AggregateKeyVal
+  /// @ingroup KeyValCore
   KeyVal operator+(const KeyVal& first, const KeyVal& second);
 
-
 }
+
+/// @}
 
 #endif /* SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_ */

@@ -7,6 +7,7 @@
 using std::cout;
 using std::endl;
 using std::vector;
+using std::array;
 using std::string;
 using std::stringstream;
 using mpqc::KeyVal;
@@ -38,30 +39,45 @@ MPQC_CLASS_EXPORT_KEY(Derived<0>); // even though you could in principle registe
 
 TEST_CASE("KeyVal", "[keyval]"){
 
-  // setup tests programmatic construction
+  // first, test basic programmatic construction
 
   KeyVal kv;
 
-  kv.assign ("x", 0);
+  kv.assign ("x", 0);   // equiv JSON: "x":"0"
   REQUIRE(kv.value<int>("x") == 0);
 
-  kv.assign (":x", "0");
+  kv.assign (":x", "0");    // equiv JSON: "": { "x":"0" }
   REQUIRE(kv.value<string>(":x") == "0");
   REQUIRE(kv.value<int>(":x") == 0);
 
-  kv.assign(":z:0", true).assign(":z:1", -1.75); // chained assignments
+  // can chain multiple assign calls
+  kv.assign(":z:0", true).assign(":z:1", -1.75);
 
   REQUIRE(kv.value<string>(":z:0") == "true");
   REQUIRE_THROWS(kv.value<int>(":z:0")); // cannot obtain bool as int
   REQUIRE(kv.value<bool>(":z:0") == true);
+  // reals can be read in any format, but use the one with enough precision
   REQUIRE(kv.value<float>(":z:1") == -1.75);
   REQUIRE(kv.value<double>(":z:1") == -1.75);
 
+  // can overwrite
   kv.assign(":z:0", false).assign(":z:1", +2.35); // overwrite?
+  REQUIRE(kv.value<bool>(":z:0") == false);
   REQUIRE(kv.value<double>(":z:1") == +2.35);
 
-  kv.assign (":z:a:0", vector<int> ( {0, 1, 2}));
-  //REQUIRE_THROWS(kv.value<vector<int>>(":z:a:0")); // not yet implemented
+  // sequences are written as Arrays, types are lost, hence can write a vector and read as an array
+  kv.assign(":z:a:0", vector<int>{{0, 1, 2}});
+  typedef array<int,3> iarray3;
+  kv.assign(":z:a:1", iarray3{{1, 2, 3}});
+  REQUIRE(kv.value<vector<int>>(":z:a:1") == vector<int>({1, 2, 3}));
+  {
+    auto ref_array = iarray3{{0, 1, 2}};
+    REQUIRE(kv.value<iarray3>(":z:a:0") == ref_array);
+  }
+
+  // can write arrays using 0-based keys instead of empty keys in JSON case
+  kv.assign(":z:a:2", vector<int>{{7,6,5}}, false);
+  REQUIRE(kv.value<vector<int>>(":z:a:2") == vector<int>({7,6,5}));
 
   SECTION("JSON read/write"){
     stringstream oss;
@@ -119,17 +135,19 @@ TEST_CASE("KeyVal", "[keyval]"){
     kv.assign ("i4", "$:i2:..:i1");
     kv.assign ("i5", "$i2:b");
     kv.assign ("i2:c", "$..:i3");
+    kv.assign ("i 6", 1.33); // spaces in keys are allowed
 
     kv.assign("c1:type", "Base").assign("c1:value", 1);
     kv.assign ("i2:c2", "$:c1");
 
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-    cout << oss.str();
+//    cout << oss.str();
 
     REQUIRE(kv.value<int>("i4") == 1);
     REQUIRE(kv.value<int>("i5") == 2);
     REQUIRE(kv.value<bool>("i2:c") == true);
+    REQUIRE(kv.value<double>("i 6") == 1.33);
 
     auto kv_c1 = kv.keyval("c1");
     auto c1 = kv_c1.class_ptr<Base>();
@@ -146,8 +164,8 @@ TEST_CASE("KeyVal", "[keyval]"){
 
     const char input[] =       \
 "{                             \
-  \"a\":\"0\",                 \
-  \"b\":\"1.25\",              \
+  \"a\": 0,                    \
+  \"b\": 1.25,                 \
   \"base\": {                  \
      \"type\":\"Base\",        \
      \"value\":\"$:a\"         \
@@ -160,7 +178,8 @@ TEST_CASE("KeyVal", "[keyval]"){
   \"mpqc\": {                  \
      \"base\":\"$..:base\",    \
      \"deriv\":\"$:deriv0\"    \
-  }                            \
+  },                           \
+  \"a\": 1                     \
 }";
 
     stringstream iss(input);
@@ -168,7 +187,9 @@ TEST_CASE("KeyVal", "[keyval]"){
 
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-    cout << oss.str();
+    //cout << oss.str();
+
+    REQUIRE(kv.value<int>("a") == 0); // "a" specified twice, make sure KeyVal::value gets the first specification
 
     auto b1 = kv.keyval("mpqc:base").class_ptr<Base>();
     auto b2 = kv.keyval("base").class_ptr<Base>();

@@ -109,7 +109,7 @@ LINK_DIRECTORIES(${MPQC_BINARY_DIR}/scf)
 LINK_DIRECTORIES(${MPQC_BINARY_DIR}/ta_routines)
 LINK_DIRECTORIES(${MPQC_BINARY_DIR}/eom_cc)
 
-LIST(APPEND MPQC_LIBRARIES molecule basis tensor utility f12 integrals expression ta_routines scf libeomcc MPQCkeyval MPQCmisc)
+LIST(APPEND MPQC_LIBRARIES molecule basis tensor utility f12 integrals expression ta_routines scf libeomcc MPQCkeyval)
 
 message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
 
@@ -120,15 +120,8 @@ MESSAGE(STATUS "Using libraries ${MPQC_LIBRARIES}")
 # Declare MPQC program
 ###############################################################################
 
-SET(MPQC_Sources "main.cpp")
-
-ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/examples)
-
-ADD_EXECUTABLE(${PROJECT_NAME} ${MPQC_Sources}) 
-ADD_DEPENDENCIES(${PROJECT_NAME} cereal)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-  ${MPQC_LIBRARIES}
-)
+# none yet
+add_subdirectory(examples)
 
 ###############################################################################
 # Declare MPQC tests and doc

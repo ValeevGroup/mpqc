@@ -25,16 +25,15 @@ struct has_function_collapse_to_base<
 
 template <typename Base>
 struct collapse_to_base {
-  template <typename T, typename std::enable_if<
-                            std::is_same<T, Base>::value>::type * = nullptr>
+  template <typename T, enable_if_t<std::is_same<T, Base>::value> * = nullptr>
   std::vector<Base> operator()(Base const &b) {
     return {b};
   }
 
-  template <typename T,
-            typename std::enable_if<
-                not std::is_same<T, Base>::value &&
-                not has_function_collapse_to_base<T>::value>::type * = nullptr>
+  template <
+      typename T,
+      enable_if_t<not std::is_same<T, Base>::value &&
+                  not has_function_collapse_to_base<T>::value> * = nullptr>
   std::vector<Base> operator()(T const &t) {
     std::vector<Base> elems;
     for (auto const &elem : t) {
@@ -48,9 +47,8 @@ struct collapse_to_base {
   }
 
   template <typename T,
-            typename std::enable_if<
-                not std::is_same<T, Base>::value &&
-                has_function_collapse_to_base<T>::value>::type * = nullptr>
+            enable_if_t<not std::is_same<T, Base>::value &&
+                        has_function_collapse_to_base<T>::value> * = nullptr>
   std::vector<Base> operator()(T const &t) {
     return t.collapse_to_base();
   }

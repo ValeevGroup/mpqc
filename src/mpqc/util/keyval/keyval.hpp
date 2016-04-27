@@ -187,7 +187,6 @@ class KeyVal {
   template <typename T, typename A>
   struct is_sequence<std::list<T, A>> : std::true_type {};
 
-  // TODO this function doesn't do anything? 
   template <typename T, std::size_t N>
   static void resize(std::array<T, N>& container, std::size_t size) {
     assert(size <= N);

@@ -62,7 +62,7 @@ class DescribedClass {
   virtual ~DescribedClass() = default;
 
   ///
-  typedef std::shared_ptr<DescribedClass>(*keyval_ctor_wrapper_type)(
+  typedef std::shared_ptr<DescribedClass> (*keyval_ctor_wrapper_type)(
       const KeyVal&);
 
   static keyval_ctor_wrapper_type type_to_keyval_ctor(

@@ -1,5 +1,6 @@
 set(sources
   exception.hpp
+  type_traits.h
   exception.cpp
 )
 

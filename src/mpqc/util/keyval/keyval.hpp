@@ -8,6 +8,7 @@
 #ifndef SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_
 #define SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_
 
+#include <cassert>
 #include <map>
 #include <string>
 #include <memory>

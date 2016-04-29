@@ -431,7 +431,7 @@ class KeyVal {
     boost::property_tree::xml_parser::write_xml(os, *(tree()));
   }
   /// write from stream in XML form
-  void read_xml(std::basic_istream<typename key_type::value_type>& is) const {
+  void read_xml(std::basic_istream<typename key_type::value_type>& is) {
     boost::property_tree::xml_parser::read_xml(is, *(tree()));
   }
 
@@ -440,7 +440,7 @@ class KeyVal {
     boost::property_tree::json_parser::write_json(os, *(tree()));
   }
   /// read from stream in JSON form
-  void read_json(std::basic_istream<key_type::value_type>& is) const {
+  void read_json(std::basic_istream<key_type::value_type>& is) {
     boost::property_tree::json_parser::read_json(is, *(tree()));
   }
 

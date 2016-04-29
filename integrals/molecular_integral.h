@@ -47,18 +47,18 @@ namespace integrals{
          *  Options in Input
          *  @param AccurateTime, bool, control if use fence in timing, default false
          */
-        MolecularIntegral(AtomicIntegral &atomic_integral,
-                          const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry,
-                          const FormulaRegistry<TArray> &formula_registry,
-                          const rapidjson::Document& in = rapidjson::Document()
-                        )
-                : world_(atomic_integral.get_world()), atomic_integral_(atomic_integral),
-                  orbital_space_registry_(orbital_space_registry),
-                  mo_formula_registry_(formula_registry)
-        {
-            atomic_integral_.set_orbital_space_registry(orbital_space_registry);
-            parse_input(in);
-        }
+//        MolecularIntegral(AtomicIntegral &atomic_integral,
+//                          const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry,
+//                          const FormulaRegistry<TArray> &formula_registry,
+//                          const rapidjson::Document& in = rapidjson::Document()
+//                        )
+//                : world_(atomic_integral.get_world()), atomic_integral_(atomic_integral),
+//                  orbital_space_registry_(orbital_space_registry),
+//                  mo_formula_registry_(std::move(formula_registry))
+//        {
+//            atomic_integral_.set_orbital_space_registry(orbital_space_registry);
+//            parse_input(in);
+//        }
 
 
         /**

@@ -2,6 +2,9 @@
 // Created by Chong Peng on 04/11/16.
 //
 
+#ifndef MPQC_F12_INTERMEDIATES_H
+#define MPQC_F12_INTERMEDIATES_H
+
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 #include "../integrals/molecular_integral.h"
@@ -82,7 +85,76 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
 
 
 /**
- * MP2-F12 C approach X term, only ijij ijji part is computed
+ * MP2-F12 C approach V term, only ijij ijji part is computed
+ * \f$V_{ij}^{ij}\f$  \f$V_{ij}^{ji}\f$
+ * @param mo_integral reference to MolecularIntegral, has to use SparsePolicy
+ * @param shape SparseShape that has ijij ijji shape
+ * @return V(i1,j1,i2,j2)
+ */
+template<typename Tile>
+TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji(
+        integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &shape)
+{
+    bool accurate_time = true;
+    auto& world = mo_integral.get_world();
+    auto& ao_integral = mo_integral.atomic_integral();
+    auto v_time0 = mpqc_time::now(world,accurate_time);
+
+    TA::DistArray<Tile,TA::SparsePolicy> V_ijij_ijji;
+
+    utility::print_par(world, "\nCompute V_ijij_ijji Without DF \n" );
+    {
+
+        auto left = mo_integral(L"<i1 j1|GR|i2 j2>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+
+        V_ijij_ijji("i1,j1,i2,j2") = (left).set_shape(shape);
+        // all types of GR integral not needed
+        mo_integral.remove_operation_all(world, L"GR");
+
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"V Term1 Time: ", time, " S\n");
+    }
+
+
+    {
+        auto left = mo_integral(L"<i1 j1|G|p q>");
+        auto right = mo_integral(L"<i2 j2|R|p q>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        V_ijij_ijji("i1,j1,i2,j2") -= (left*right).set_shape(shape);
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"V Term2 Time: ", time, " S\n");
+    }
+
+    {
+        auto left = mo_integral(L"<i1 j1|G|m a'>");
+        auto right = mo_integral(L"<i2 j2|R|m a'>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        TA::DistArray<Tile,TA::SparsePolicy> tmp;
+        tmp("i1,j1,i2,j2") = (left*right).set_shape(shape);
+//    V_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]")).set_shape(shape);
+        V_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+        V_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"V Term3 Time: ", time, " S\n");
+    }
+
+
+    auto v_time1 = mpqc_time::now(world,accurate_time);
+    auto v_time = mpqc_time::duration_in_s(v_time0,v_time1);
+    utility::print_par(world,"V Term Total Time: ", v_time, " S\n");
+    return V_ijij_ijji;
+};
+
+
+/**
+ * MP2-F12 C approach X term with DF, only ijij ijji part is computed
  * \f$X_{ij}^{ij}\f$  \f$X_{ij}^{ji}\f$
  * @param mo_integral reference to MolecularIntegral, has to use SparsePolicy
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
@@ -129,6 +201,72 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_X_ijij_ijji_df(
     {
         auto left = mo_integral(L"<i1 j1|R|m a'>[df]");
         auto right = mo_integral(L"<i2 j2|R|m a'>[df]");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        TA::DistArray<Tile,TA::SparsePolicy> tmp;
+        tmp("i1,j1,i2,j2") = (left*right).set_shape(ijij_ijji_shape);
+//    X_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|R|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]")).set_shape(ijij_ijji_shape);
+        X_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+        X_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"X Term3 Time: ", time, " S\n");
+    }
+
+
+    auto x_time1 = mpqc_time::now(world,accurate_time);
+    auto x_time = mpqc_time::duration_in_s(x_time0,x_time1);
+    utility::print_par(world,"X Term Total Time: ", x_time, " S\n");
+    return X_ijij_ijji;
+};
+
+
+/**
+ * MP2-F12 C approach X term without DF, only ijij ijji part is computed
+ * \f$X_{ij}^{ij}\f$  \f$X_{ij}^{ji}\f$
+ * @param mo_integral reference to MolecularIntegral, has to use SparsePolicy
+ * @param ijij_ijji_shape SparseShape that has ijij ijji shape
+ * @return X(i1,j1,i2,j2)
+ */
+template <typename Tile>
+TA::DistArray<Tile,TA::SparsePolicy> compute_X_ijij_ijji(
+        integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &ijij_ijji_shape)
+{
+
+    bool accurate_time = true;
+    auto& world = mo_integral.get_world();
+    auto& ao_integral = mo_integral.atomic_integral();
+    auto x_time0 = mpqc_time::now(world,accurate_time);
+
+    TA::DistArray<Tile,TA::SparsePolicy> X_ijij_ijji;
+
+    utility::print_par(world, "\nCompute X_ijij_ijji Without DF \n" );
+    {
+        auto left = mo_integral(L"<i1 j1 |R2|i2 j2>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        X_ijij_ijji("i1,j1,i2,j2") = (left).set_shape(ijij_ijji_shape);
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"X Term1 Time: ", time, " S\n");
+    }
+
+
+    {
+        auto left = mo_integral(L"<i1 j1|R|p q>");
+        auto right = mo_integral(L"<i2 j2|R|p q>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        X_ijij_ijji("i1,j1,i2,j2") -= (left*right).set_shape(ijij_ijji_shape);
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"X Term2 Time: ", time, " S\n");
+    }
+
+
+    {
+        auto left = mo_integral(L"<i1 j1|R|m a'>");
+        auto right = mo_integral(L"<i2 j2|R|m a'>");
 
         auto time0 = mpqc_time::now(world,accurate_time);
         TA::DistArray<Tile,TA::SparsePolicy> tmp;
@@ -307,6 +445,165 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_df(
     return B_ijij_ijji;
 };
 
+
+
+/**
+ * MP2-F12 C approach B term without DF, only ijij ijji part is computed
+ * \f$B_{ij}^{ij}\f$  \f$B_{ij}^{ji}\f$
+ * @param mo_integral reference to MolecularIntegral, has to use SparsePolicy
+ * @param ijij_ijji_shape SparseShape that has ijij ijji shape
+ * @return B(i1,j1,i2,j2)
+ */
+template <typename Tile>
+TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji(
+        integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &ijij_ijji_shape)
+{
+    bool accurate_time = true;
+    auto& world = mo_integral.get_world();
+    auto& ao_integral = mo_integral.atomic_integral();
+    auto b_time0 = mpqc_time::now(world,accurate_time);
+
+    TA::DistArray<Tile,TA::SparsePolicy> B_ijij_ijji;
+    TA::DistArray<Tile,TA::SparsePolicy> tmp;
+
+    utility::print_par(world, "\nCompute B_ijij_ijji Without DF \n");
+
+    {
+        auto left = mo_integral(L"<i1 j1 |dR2|i2 j2>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        B_ijij_ijji("i1,j1,i2,j2") = (left).set_shape(ijij_ijji_shape);
+        mo_integral.remove_operation_all(world, L"dR2");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"B Term1 Time: ", time, " S\n");
+    }
+
+    {
+        auto hJ = mo_integral(L"<P' | hJ | i2>");
+        auto left = mo_integral(L"<i1 j1|R2|P' j2>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        tmp("i1,j1,i2,j2") = (left*hJ).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") += (mo_integral(L"(j1 P'|R2|i1 i2)[df]")*hJ("P',j2")).set_shape(ijij_ijji_shape);
+        B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
+        B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
+
+        mo_integral.remove_operation_all(world, L"R2");
+        mo_integral.remove_operation_all(world, L"hJ");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"B Term2 Time: ", time, " S\n");
+    }
+
+    {
+        auto left = mo_integral(L"<i1 j1|R|P' Q'>");
+        auto middle = mo_integral(L"<P'|K|R'>");
+        auto right = mo_integral(L"<i2 j2|R|R' Q'>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        tmp("i1,j1,i2,j2") = (left*middle*right).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 Q')[df]")*mo_integral(L"(P'|K|R')[df]")*mo_integral(L"(j2 R'|R|i2 Q')[df]")).set_shape(ijij_ijji_shape);
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+        // AO R integral not needed
+        mo_integral.atomic_integral().registry().remove_operation(world, L"R");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"B Term3 Time: ", time, " S\n");
+    }
+
+    {
+        auto left = mo_integral(L"<i1 j1|R|P' m>");
+        auto middle = mo_integral(L"<P'|F|R'>");
+        auto right = mo_integral(L"<i2 j2|R|R' m>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        tmp("i1,j1,i2,j2") = (left*middle*right).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(j2 R'|R|i2 m)[df]")).set_shape(ijij_ijji_shape);
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"B Term4 Time: ", time, " S\n");
+    }
+
+
+
+    {
+        auto left = mo_integral(L"<i1 j1|R|m b'>");
+        auto middle = mo_integral(L"<m|F|P'>");
+        auto right = mo_integral(L"<i2 j2|R|P' b'>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        tmp("i1,j1,i2,j2") = (2.0*left*middle*right).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(j2 P'|R|i2 b')[df]")).set_shape(ijij_ijji_shape);
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+
+        // P' doesn't appear later
+        mo_integral.registry().remove_orbital(world, L"P'");
+
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"B Term5 Time: ", time, " S\n");
+    }
+
+
+    {
+        auto left = mo_integral(L"<i1 j1|R|p a>");
+        auto middle = mo_integral(L"<p|F|r>");
+        auto right = mo_integral(L"<i2 j2|R|r a>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        tmp("i1,j1,i2,j2") = (left*middle*right).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|i2 a)[df]")).set_shape(ijij_ijji_shape);
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"B Term6 Time: ", time, " S\n");
+    }
+
+
+    {
+        auto left = mo_integral(L"<i1 j1|R|m b'>");
+        auto middle = mo_integral(L"<m|F|n>");
+        auto right = mo_integral(L"<i2 j2|R|n b'>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        tmp("i1,j1,i2,j2") = (left*middle*right).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") += (mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(j2 n|R|i2 b')[df]")).set_shape(ijij_ijji_shape);
+        B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
+        B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"B Term7 Time: ", time, " S\n");
+    }
+
+    {
+        auto left = mo_integral(L"<i1 j1|R|p a>");
+        auto middle = mo_integral(L"<p|F|a'>");
+        auto right = mo_integral(L"<i2 j2|R|a' a>");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
+        tmp("i1,j1,i2,j2") = (2.0*left*middle*right).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(i2 a|R|j2 a')[df]")).set_shape(ijij_ijji_shape);
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+        B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"B Term8 Time: ", time, " S\n");
+    }
+
+
+    auto b_time1 = mpqc_time::now(world,accurate_time);
+    auto b_time = mpqc_time::duration_in_s(b_time0,b_time1);
+    utility::print_par(world,"B Term Total Time: ", b_time, " S\n");
+    return B_ijij_ijji;
+};
+
+
 /**
  * CC-F12 C approach V term
  * \f$V_{ia}^{xy}\f$
@@ -437,7 +734,7 @@ TA::DistArray<Tile,Policy> compute_V_xyab_df(integrals::MolecularIntegral <Tile,
 };
 
 /**
- * MP2-F12, CC-F12 C approach C term \f$C_{ij}^{ab} \f$
+ * MP2-F12, CC-F12 C approach C term \f$C_{ij}^{ab} \f$ with DF
  * @param mo_integral reference to MolecularIntegral
  * @return C("i,j,a,b")
  */
@@ -453,6 +750,37 @@ TA::DistArray<Tile,Policy> compute_C_ijab_df(integrals::MolecularIntegral <Tile,
 
     auto left = mo_integral(L"<i j|R|a a'>[df]");
     auto right = mo_integral(L"<a'|F|b>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    C_ijab("i,j,a,b") = left*right;
+    C_ijab("i,j,a,b") += C_ijab("j,i,b,a");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"C Term Time: ", time, " S\n");
+
+    auto c_time = mpqc_time::duration_in_s(c_time0,time1);
+    utility::print_par(world,"C Term Total Time: ", c_time, " S\n");
+    return C_ijab;
+};
+
+
+/**
+ * MP2-F12, CC-F12 C approach C term \f$C_{ij}^{ab} \f$ without DF
+ * @param mo_integral reference to MolecularIntegral
+ * @return C("i,j,a,b")
+ */
+template<typename Tile, typename Policy>
+TA::DistArray<Tile,Policy> compute_C_ijab(integrals::MolecularIntegral <Tile, Policy> &mo_integral)
+{
+    auto& world = mo_integral.get_world();
+    bool accurate_time = true;
+    auto c_time0 = mpqc_time::now(world,accurate_time);
+    TA::DistArray<Tile,Policy> C_ijab;
+
+    utility::print_par(world, "\nCompute C_ijab Without DF \n" );
+
+    auto left = mo_integral(L"<i j|R|a a'>");
+    auto right = mo_integral(L"<a'|F|b>");
 
     auto time0 = mpqc_time::now(world,accurate_time);
     C_ijab("i,j,a,b") = left*right;
@@ -633,3 +961,5 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT1_ijij_ijji_df(
 
 } // end of namespace f12
 } // end of namespace mpqc
+
+#endif //MPQC_F12_INTERMEDIATES_H

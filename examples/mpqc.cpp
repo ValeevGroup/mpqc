@@ -428,7 +428,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto mp2f12_time0 = mpqc_time::fenced_now(world);
         //cabs mo build
         closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
-        f12::MP2F12 mp2f12(mo_integral, tre, ens);
+        f12::MP2F12<TA::TensorD> mp2f12(mo_integral, tre, ens);
         corr_e += mp2f12.compute(corr_in);
 
         auto mp2f12_time1 = mpqc_time::fenced_now(world);

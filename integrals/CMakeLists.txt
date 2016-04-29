@@ -13,6 +13,7 @@ set(integral_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/task_integral_kernels.cpp
         ./atomic_integral_base.h
         ./atomic_integral_base.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/integral.cpp
 )
 
 add_library(integrals ${integral_sources})

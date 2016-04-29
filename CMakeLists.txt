@@ -150,8 +150,8 @@ if(USING_CLION_AS_IDE)
     ADD_CUSTOM_TARGET(all_clion
         SOURCES ${clion_all_headers} ${clion_all_source}
     )
-    ADD_EXECUTABLE(clion_test "main.cpp" ${clion_all_headers})
-    ADD_DEPENDENCIES(clion_test cereal)
-    TARGET_LINK_LIBRARIES(clion_test ${MPQC_LIBRARIES})
+    #ADD_EXECUTABLE(clion_test "main.cpp" ${clion_all_headers})
+    #ADD_DEPENDENCIES(clion_test cereal)
+    #TARGET_LINK_LIBRARIES(clion_test ${MPQC_LIBRARIES})
     #add_executable(dummy_name EXCLUDE_FROM_ALL ${clion_all_headers})
 endif(USING_CLION_AS_IDE)

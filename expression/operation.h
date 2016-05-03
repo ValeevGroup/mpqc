@@ -20,7 +20,7 @@ namespace mpqc{
      *  - T -> Kinetic
      *  - V -> Nuclear
      *  - H -> Hcore
-     *  - I -> Indentity
+     *  - I -> Identity
      *  - G -> Coulomb(libint::Coulomb)
      *  - R -> cGTG(libint::cGTG)
      *  - GR -> cGTGCoulomb(libint::cGTG_times_Coulomb)

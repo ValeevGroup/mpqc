@@ -238,6 +238,20 @@ class KeyVal {
     return exists_(resolve_path(path));
   }
 
+  /// counts the number of children of the node at this path
+  /// @param path the path
+  /// @return 0 if \c path does not exist or it points to a simple keyword,
+  ///         the number of elements (>=0) if \c path points to an array or
+  ///         a keyword group
+  size_t count(const key_type& path) const {
+    auto resolved_path = resolve_path(path);
+    auto child_opt = top_tree_->get_child_optional(ptree::path_type{path, separator});
+    if (child_opt == boost::optional<ptree&>())
+      return 0;
+    else
+      return child_opt->size();
+  }
+
   /// assign simple \c value at the given path (overwrite, if necessary)
   /// @param value a "simple" value, i.e. it can be converted to
   /// a KeyVal::key_type using a

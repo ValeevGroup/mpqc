@@ -78,8 +78,17 @@ TEST_CASE("KeyVal", "[keyval]") {
   }
 
   // can write arrays using 0-based keys instead of empty keys in JSON case
-  kv.assign(":z:a:2", vector<int>{{7, 6, 5}}, false);
-  REQUIRE(kv.value<vector<int>>(":z:a:2") == vector<int>({7, 6, 5}));
+  kv.assign(":z:a:2", vector<int>{{7, 6, 5, 4}}, false);
+  REQUIRE(kv.value<vector<int>>(":z:a:2") == vector<int>({7, 6, 5, 4}));
+
+  // can count children
+  REQUIRE(kv.count(":z") == 3);
+  REQUIRE(kv.count(":z:0") == 0);
+  REQUIRE(kv.count(":z:1") == 0);
+  REQUIRE(kv.count(":z:a") == 3);
+  REQUIRE(kv.count(":z:a:0") == 3);
+  REQUIRE(kv.count(":z:a:1") == 3);
+  REQUIRE(kv.count(":z:a:2") == 4);
 
   SECTION("JSON read/write") {
     stringstream oss;

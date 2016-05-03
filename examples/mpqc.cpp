@@ -124,7 +124,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     std::string aux_basis_name = in.HasMember("AuxBasis") ? in["AuxBasis"].GetString() : "";
 
     // Get thresh info
-    auto threshold = in.HasMember("Sparse") ? in["Sparse"].GetDouble() : 1e-13;
+    auto threshold = in.HasMember("Sparse") ? in["Sparse"].GetDouble() : 1e-15;
     TiledArray::SparseShape<float>::threshold(threshold);
     // print out basis options
     if(world.rank() == 0){
@@ -154,7 +154,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     using molecule::Molecule;
     Molecule mol;
     // construct molecule
-    if(nclusters==1){
+    if(nclusters==0){
         mol = Molecule(xyz_file_stream, false);
     }else{
         mol = Molecule(xyz_file_stream, true);
@@ -171,7 +171,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     // if no ghost molecule
     if(ghost_atoms.empty()){
         utility::print_par(world, "Ghost Atom file: None", "\n");
-        if(nclusters==1){
+        if(nclusters==0){
             clustered_mol = mol;
         }else{
             clustered_mol = molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
@@ -196,7 +196,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         mol_elements.insert(mol_elements.end(), ghost_elements.begin(), ghost_elements.end());
 
 
-        if(nclusters==1){
+        if(nclusters==0){
             clustered_mol = mpqc::molecule::Molecule(mol_elements, false);
         }
         else{
@@ -449,6 +449,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
             corr_in = json::get_nested(in, "CCSD(F12)");
         }
 
+        bool df;
+        std::string method = corr_in.HasMember("Method") ? corr_in["Method"].GetString() : "df";
+        if(method == "four center"){
+            df = false;
+        }
+        else if(method == "df"){
+            df = true;
+        }
+        else{
+            throw std::runtime_error("Wrong CCSD Method");
+        }
 
         cc::DirectTwoElectronSparseArray lazy_two_electron_int;
         std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>> intermidiate;
@@ -483,7 +494,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         }
 
         intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>>
-                (mo_integral, lazy_two_electron_int);
+                (mo_integral, lazy_two_electron_int, df);
 
         TA::DistArray<TA::TensorD, TA::SparsePolicy> t1;
         TA::DistArray<TA::TensorD, TA::SparsePolicy> t2;
@@ -524,7 +535,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
             closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
             f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral,tre,std::make_shared<Eigen::VectorXd>(ens),t1,t2);
-            corr_e += ccsd_f12.compute_c(lazy_two_electron_int);
+
+            bool df;
+            std::string method = corr_in.HasMember("Method") ? corr_in["Method"].GetString() : "df";
+            if(method == "four center"){
+                corr_e += ccsd_f12.compute_c(lazy_two_electron_int);
+            }
+            else if(method == "df"){
+                corr_e += ccsd_f12.compute_c_df(lazy_two_electron_int);
+            }
+            else{
+                throw std::runtime_error("Wrong CCSDF12 Method");
+            }
 
             auto time1 = mpqc_time::fenced_now(world);
             auto time = mpqc_time::duration_in_s(time0, time1);

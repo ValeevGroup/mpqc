@@ -34,10 +34,11 @@ class CCSDIntermediate {
     using TArray = TA::DistArray<Tile, Policy>;
 
     CCSDIntermediate(integrals::MolecularIntegral<Tile,Policy>& mo_int,
-                     DirectTwoElectronArray &direct_ao)
-            : mo_int_(mo_int), direct_ao_(direct_ao)
+                     DirectTwoElectronArray &direct_ao,
+                    bool df=true)
+            : mo_int_(mo_int), direct_ao_(direct_ao), df_(df)
     {
-            have_four_center_ = direct_ao.is_initialized();
+        have_four_center_ = direct_ao.is_initialized();
     }
 
     /// clean the three center ingeral
@@ -91,47 +92,84 @@ class CCSDIntermediate {
 
     /// <ab|ij>
     const TArray get_abij() {
-        return mo_int_.compute(L"<a b|G|i j>[df]");
+        if(df_){
+            return mo_int_.compute(L"<a b|G|i j>[df]");
+        }else{
+            return mo_int_.compute(L"<a b|G|i j>");
+        }
     }
 
     /// <ij|kl>
     const TArray get_ijkl() {
-        return mo_int_.compute(L"<i j|G|k l>[df]");
+        if(df_){
+            return mo_int_.compute(L"<i j|G|k l>[df]");
+        } else{
+            return mo_int_.compute(L"<i j|G|k l>");
+        }
     }
 
     /// <ab|cd>
     const TArray get_abcd() {
-        return  mo_int_.compute(L"<a b|G|c d>[df]");
+        if(df_){
+            return  mo_int_.compute(L"<a b|G|c d>[df]");
+        }else{
+            return  mo_int_.compute(L"<a b|G|c d>");
+        }
     }
 
     /// <ia|bc>
     const TArray get_iabc() {
-        return  mo_int_.compute(L"<i a|G|b c>[df]");
+        if(df_){
+            return  mo_int_.compute(L"<i a|G|b c>[df]");
+        }else{
+            return  mo_int_.compute(L"<i a|G|b c>");
+        }
     }
 
     /// <ai|bc>
     const TArray get_aibc() {
-        return mo_int_.compute(L"<a i|G|b c>[df]");
+        if(df_){
+            return mo_int_.compute(L"<a i|G|b c>[df]");
+        }
+        else{
+            return mo_int_.compute(L"<a i|G|b c>");
+        }
     }
 
     /// <ij|ak>
     const TArray get_ijak() {
-        return mo_int_.compute(L"<i j|G|a k>[df]");
+        if(df_){
+            return mo_int_.compute(L"<i j|G|a k>[df]");
+        }else{
+            return mo_int_.compute(L"<i j|G|a k>");
+        }
     }
 
     /// <ij|ka>
     const TArray get_ijka() {
-        return mo_int_.compute(L"<i j|G|k a>[df]");
+        if(df_){
+            return mo_int_.compute(L"<i j|G|k a>[df]");
+        }else{
+            return mo_int_.compute(L"<i j|G|k a>");
+        }
     }
 
     /// <ia|jb>
     const TArray get_iajb() {
-        return mo_int_.compute(L"<i a|G|j b>[df]");
+        if(df_){
+            return mo_int_.compute(L"<i a|G|j b>[df]");
+        }else{
+            return mo_int_.compute(L"<i a|G|j b>");
+        }
     }
 
     /// <a|f|i>
     const TArray get_fock_ai(){
-        return mo_int_.compute(L"(a|F|i)[df]");
+        if(df_){
+            return mo_int_.compute(L"(a|F|i)[df]");
+        }else{
+            return mo_int_.compute(L"(a|F|i)");
+        }
     }
 
 
@@ -224,6 +262,9 @@ class CCSDIntermediate {
 
     // check if have direct AO array
     bool have_four_center_;
+
+    // determine if use df
+    bool df_;
 };
 }
 }

@@ -31,8 +31,6 @@ namespace integrals {
  * ```
  * auto t = [](TA::TensorD &&ten){return std::move(ten);};
  * ```
- *
- * \param screen should be a std::shared_ptr to a Screener.
  */
 template <typename E, typename Op = TensorPassThrough>
 std::vector<DArray<2, detail::Ttype<Op>, SpPolicy>>

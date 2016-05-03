@@ -324,6 +324,7 @@ class KeyVal {
   /// return value corresponding to a path and convert to a std::vector.
   /// @tparam T the desired value type
   /// @param path the path
+  /// @throw KeyVal::bad_input if \c path is bad
   /// @return value of type \c T
   template <typename SequenceContainer>
   SequenceContainer value(

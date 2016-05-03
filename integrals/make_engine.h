@@ -57,8 +57,8 @@ make_1body(std::string const &type, basis::Basis const &bs,
     } else if (type == "nuclear") {
         itype = libint2::OneBodyEngine::nuclear;
         q = make_q(mol);
-    } else if (type == "emultipole2") {
-        itype = libint2::OneBodyEngine::emultipole2;
+    } else if (type == "emultipole1") {
+        itype = libint2::OneBodyEngine::emultipole1;
     } else {
         std::terminate();
     }

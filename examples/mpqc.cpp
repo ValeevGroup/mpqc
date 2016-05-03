@@ -320,7 +320,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         // emultipole integral
         const auto bs_array = utility::make_array(basis, basis);
-        auto multi_pool = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+        auto multi_pool = ints::make_1body_shr_pool("emultipole1", basis, clustered_mol);
         auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
 
         /// deal with fock builder

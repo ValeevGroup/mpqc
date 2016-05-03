@@ -374,29 +374,48 @@ namespace integrals{
 
                 // check success
                 Eigen::ComputationInfo info = llt_solver.info();
-                if(info == Eigen::ComputationInfo::NumericalIssue){
-                    utility::print_par(world_,"NumericalIssue","\n");
+                if (info == Eigen::ComputationInfo::Success){
+                    MatrixD L = MatrixD(llt_solver.matrixL());
+                    MatrixD L_inv_eig = L.inverse();
+                    result_eig = L_inv_eig.transpose() * L_inv_eig;
+                }
+                else if(info == Eigen::ComputationInfo::NumericalIssue){
+                    utility::print_par(world_,"Warning!! NumericalIssue in Cholesky Decomposition","\n");
                 }
                 else if(info == Eigen::ComputationInfo::NoConvergence){
-                    utility::print_par(world_,"NoConvergence","\n");
+                    utility::print_par(world_,"Warning!! NoConvergence in Cholesky Decomposition","\n");
                 }
                 else if (info == Eigen::ComputationInfo::InvalidInput){
-                    utility::print_par(world_,"InvalidInput","\n");
+                    utility::print_par(world_,"Warning!! InvalidInput in Cholesky Decomposition","\n");
                 }
 
 
                 // print the eigen value if LLT failed
                 if(info != Eigen::ComputationInfo::Success) {
-                    if(world_.rank() == 0){
-                        Eigen::SelfAdjointEigenSolver<MatrixD> ei_solver(result_eig);
-                        std::cout << ei_solver.eigenvalues() << std::endl;
-                    }
-                }
-                TA_ASSERT( info == Eigen::ComputationInfo::Success);
+                    utility::print_par(world_,"Using Eigen Direct Inverse!\n");
+//                    Eigen::SelfAdjointEigenSolver<MatrixD> ei_solver(result_eig);
 
-                MatrixD L = MatrixD(llt_solver.matrixL());
-                MatrixD L_inv_eig = L.inverse();
-                result_eig = L_inv_eig.transpose() * L_inv_eig;
+//                    MatrixD V = ei_solver.eigenvectors();
+//                    Eigen::VectorXd E = ei_solver.eigenvalues();
+//                    std::cout << E << std::endl;
+
+//                    std::cout << V.inverse() << std::endl;
+
+//                    auto info = ei_solver.info();
+
+//                    TA_ASSERT(info == Eigen::ComputationInfo::Success);
+
+
+//                    MatrixD E_sqrt_inv = MatrixD(result_eig.cols(), result_eig.rows() );
+
+//                    for(int i =0; i < result_eig.cols(); i++){
+//                        E_sqrt_inv(i,i) = 1/std::sqrt(std::abs(E(i)));
+//                    }
+
+                    result_eig = result_eig.inverse();
+
+                }
+
 
                 auto tr_result = result.trange().data()[0];
                 result = array_ops::eigen_to_array<TA::TensorD>(result.get_world(), result_eig, tr_result, tr_result);

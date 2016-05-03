@@ -101,7 +101,7 @@ sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
 
         for (auto i = 0; i < 3; ++i) {
             tile_norms[i][ord] = norm[i];
-            if (TA::SparseShape<float>::threshold() < t_volume * norm[i]) {
+            if (TA::SparseShape<float>::threshold() <= t_volume * norm[i]) {
                 tiles[i][ord].second = op(std::move(t_xyz[i]));
             }
         }

@@ -69,8 +69,8 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
         TA::DistArray<Tile,TA::SparsePolicy> tmp;
         tmp("i1,j1,i2,j2") = (left*right).set_shape(shape);
 //    V_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]")).set_shape(shape);
-        V_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
-        V_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+        V_ijij_ijji("i1,j1,i2,j2") -= (tmp("i1,j1,i2,j2")).set_shape(shape);
+        V_ijij_ijji("i1,j1,i2,j2") -= (tmp("j1,i1,j2,i2")).set_shape(shape);
         auto time1 = mpqc_time::now(world,accurate_time);
         auto time = mpqc_time::duration_in_s(time0,time1);
         utility::print_par(world,"V Term3 Time: ", time, " S\n");
@@ -80,6 +80,8 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
     auto v_time1 = mpqc_time::now(world,accurate_time);
     auto v_time = mpqc_time::duration_in_s(v_time0,v_time1);
     utility::print_par(world,"V Term Total Time: ", v_time, " S\n");
+
+    std::cout << V_ijij_ijji << std::endl;
     return V_ijij_ijji;
 };
 
@@ -138,8 +140,8 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji(
         TA::DistArray<Tile,TA::SparsePolicy> tmp;
         tmp("i1,j1,i2,j2") = (left*right).set_shape(shape);
 //    V_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]")).set_shape(shape);
-        V_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
-        V_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+        V_ijij_ijji("i1,j1,i2,j2") -= (tmp("i1,j1,i2,j2")).set_shape(shape);
+        V_ijij_ijji("i1,j1,i2,j2") -= (tmp("j1,i1,j2,i2")).set_shape(shape);
         auto time1 = mpqc_time::now(world,accurate_time);
         auto time = mpqc_time::duration_in_s(time0,time1);
         utility::print_par(world,"V Term3 Time: ", time, " S\n");
@@ -217,6 +219,8 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_X_ijij_ijji_df(
     auto x_time1 = mpqc_time::now(world,accurate_time);
     auto x_time = mpqc_time::duration_in_s(x_time0,x_time1);
     utility::print_par(world,"X Term Total Time: ", x_time, " S\n");
+
+    std::cout << X_ijij_ijji << std::endl;
     return X_ijij_ijji;
 };
 
@@ -442,6 +446,9 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_df(
     auto b_time1 = mpqc_time::now(world,accurate_time);
     auto b_time = mpqc_time::duration_in_s(b_time0,b_time1);
     utility::print_par(world,"B Term Total Time: ", b_time, " S\n");
+
+    std::cout << B_ijij_ijji << std::endl;
+
     return B_ijij_ijji;
 };
 

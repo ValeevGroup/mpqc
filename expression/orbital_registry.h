@@ -49,7 +49,7 @@ using OrbitalSpaceRegistry = OrbitalRegistry<OrbitalSpace<Array>>;
  * Typedef of OrbitalBasisRegistry
  * A Registry that map OrbitalIndex to Basis
  */
-using OrbitalBasisRegistry = OrbitalRegistry<std::shared_ptr<mpqc::basis::Basis>>;
+using OrbitalBasisRegistry = OrbitalRegistry<mpqc::basis::Basis>;
 
 } // end of namespace mpqc
 

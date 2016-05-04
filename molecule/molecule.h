@@ -58,7 +58,7 @@ class Molecule : public DescribedClass {
      *
      * This constructor has same parameters as the KeyVal constructor.
      */
-    Molecule(std::istream &file_stream, bool sort_input);
+    Molecule(std::istream &file_stream, bool sort_input = true);
 
     /*! \brief Constructor to build Molecule from a vector of clusterables
      *

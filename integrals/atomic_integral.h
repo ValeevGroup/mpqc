@@ -97,7 +97,7 @@ namespace integrals{
 
 
         /// wrapper to compute function
-        TArray compute(const std::wstring& );
+        TArray& compute(const std::wstring& );
 
         /**
          *  compute integral by Formula
@@ -105,7 +105,7 @@ namespace integrals{
          *  if Formula computed, it will return it from registry
          *  if not, it will compute it
          */
-        TArray compute(const Formula& );
+        TArray& compute(const Formula& );
 
         /// compute with str and return expression
         TA::expressions::TsrExpr<TArray,true> operator() (const std::wstring& str){
@@ -256,20 +256,20 @@ namespace integrals{
     }
 
     template <typename Tile, typename Policy>
-    typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute(const std::wstring& formula_string) {
+    typename AtomicIntegral<Tile,Policy>::TArray& AtomicIntegral<Tile,Policy>::compute(const std::wstring& formula_string) {
         auto formula = Formula(formula_string);
         return compute(formula);
     }
 
     template <typename Tile, typename Policy>
-    typename AtomicIntegral<Tile,Policy>::TArray AtomicIntegral<Tile,Policy>::compute(const Formula& formula) {
+    typename AtomicIntegral<Tile,Policy>::TArray& AtomicIntegral<Tile,Policy>::compute(const Formula& formula) {
 
         TArray result;
 
         auto iter = ao_formula_registry_.find(formula);
 
         if(iter != ao_formula_registry_.end()){
-            result = iter->second;
+            result = *(iter->second);
             utility::print_par(world_,"Retrived AO Integral: ");
             utility::wprint_par(world_, formula.formula_string());
             double size = utility::array_size(result);
@@ -292,7 +292,7 @@ namespace integrals{
 
         // wait all process to obtain and insert result
 //        world_.gop.fence();
-        return result;
+        return ao_formula_registry_.retrieve(formula);
 
     }
 
@@ -380,39 +380,24 @@ namespace integrals{
                     result_eig = L_inv_eig.transpose() * L_inv_eig;
                 }
                 else if(info == Eigen::ComputationInfo::NumericalIssue){
-                    utility::print_par(world_,"Warning!! NumericalIssue in Cholesky Decomposition","\n");
+                    utility::print_par(world_,"!!!\nWarning!! NumericalIssue in Cholesky Decomposition\n!!!\n");
                 }
                 else if(info == Eigen::ComputationInfo::NoConvergence){
-                    utility::print_par(world_,"Warning!! NoConvergence in Cholesky Decomposition","\n");
+                    utility::print_par(world_,"!!!\nWarning!! NoConvergence in Cholesky Decomposition\n!!!\n");
                 }
                 else if (info == Eigen::ComputationInfo::InvalidInput){
-                    utility::print_par(world_,"Warning!! InvalidInput in Cholesky Decomposition","\n");
+                    utility::print_par(world_,"!!!\nWarning!! InvalidInput in Cholesky Decomposition\n!!!\n");
                 }
 
 
-                // print the eigen value if LLT failed
                 if(info != Eigen::ComputationInfo::Success) {
-                    utility::print_par(world_,"Using Eigen Direct Inverse!\n");
-//                    Eigen::SelfAdjointEigenSolver<MatrixD> ei_solver(result_eig);
+                    utility::print_par(world_,"Using Eigen LU Decomposition Inverse!\n");
 
-//                    MatrixD V = ei_solver.eigenvectors();
-//                    Eigen::VectorXd E = ei_solver.eigenvalues();
-//                    std::cout << E << std::endl;
+                    Eigen::FullPivLU<MatrixD> lu(result_eig);
 
-//                    std::cout << V.inverse() << std::endl;
+                    TA_ASSERT(lu.isInvertible());
 
-//                    auto info = ei_solver.info();
-
-//                    TA_ASSERT(info == Eigen::ComputationInfo::Success);
-
-
-//                    MatrixD E_sqrt_inv = MatrixD(result_eig.cols(), result_eig.rows() );
-
-//                    for(int i =0; i < result_eig.cols(); i++){
-//                        E_sqrt_inv(i,i) = 1/std::sqrt(std::abs(E(i)));
-//                    }
-
-                    result_eig = result_eig.inverse();
+                    result_eig = lu.inverse();
 
                 }
 
@@ -467,7 +452,7 @@ namespace integrals{
                 time0 = mpqc_time::now(world_,accurate_time_);
                 // find the density
                 auto space_index = get_jk_orbital_space(formula.operation());
-                auto space = orbital_space_registry_->retrieve(space_index);
+                auto& space = orbital_space_registry_->retrieve(space_index);
 
                 // J case
                 if(formula.operation().oper() == Operation::Operations::J){
@@ -490,7 +475,7 @@ namespace integrals{
                 time0 = mpqc_time::now(world_,accurate_time_);
                 // find the density
                 auto space_index = get_jk_orbital_space(formula.operation());
-                auto space = orbital_space_registry_->retrieve(space_index);
+                auto& space = orbital_space_registry_->retrieve(space_index);
 
                 if(formula.operation().oper() == Operation::Operations::J){
                     result("rho,sigma") = four_center("rho,sigma,mu,nu")*(space("mu,i")*space("nu,i"));

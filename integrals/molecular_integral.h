@@ -115,7 +115,7 @@ namespace integrals{
         }
 
         /// wrapper to compute function
-        TArray compute(const std::wstring& );
+        TArray& compute(const std::wstring& );
 
 
         /**
@@ -124,7 +124,7 @@ namespace integrals{
          *  if Formula computed, it will return it from registry
          *  if not, it will compute it
          */
-        TArray compute(const Formula&);
+        TArray& compute(const Formula&);
 
         /// compute with str and return expression
         TA::expressions::TsrExpr<TArray,true> operator() (const std::wstring& str){
@@ -199,8 +199,8 @@ namespace integrals{
 
             auto left_index1 = formula_string.left_index()[0];
             auto right_index1 = formula_string.right_index()[0];
-            auto left1 = orbital_space_registry_->retrieve(left_index1);
-            auto right1 = orbital_space_registry_->retrieve(right_index1);
+            auto& left1 = orbital_space_registry_->retrieve(left_index1);
+            auto& right1 = orbital_space_registry_->retrieve(right_index1);
 
             //TODO better way to make model for diagonal matrix
             TArray tmp;
@@ -231,13 +231,15 @@ namespace integrals{
         // get coefficient
         auto left_index1 = formula_string.left_index()[0];
         if(left_index1.is_mo()){
-            auto left1 = orbital_space_registry_->retrieve(left_index1);
+            auto& left1 = orbital_space_registry_->retrieve(left_index1);
             result("i,r") = result("p,r")*left1("p,i");
+            world_.gop.fence();
         }
         auto right_index1 = formula_string.right_index()[0];
         if(right_index1.is_mo()){
-            auto right1 = orbital_space_registry_->retrieve(right_index1);
+            auto& right1 = orbital_space_registry_->retrieve(right_index1);
             result("p,k") = result("p,r")*right1("r,k");
+            world_.gop.fence();
         }
 
         time1 = mpqc_time::now(world_,accurate_time_);
@@ -269,13 +271,15 @@ namespace integrals{
         // get coefficient
         auto right_index1 = formula_string.right_index()[0];
         if (right_index1.is_mo()) {
-            auto right1 = orbital_space_registry_->retrieve(right_index1);
+            auto& right1 = orbital_space_registry_->retrieve(right_index1);
             result("K,i,q") = ao_integral("K,p,q") * right1("p,i");
+            world_.gop.fence();
         }
         auto right_index2 = formula_string.right_index()[1];
         if (right_index2.is_mo()) {
-            auto right2 = orbital_space_registry_->retrieve(right_index2);
+            auto& right2 = orbital_space_registry_->retrieve(right_index2);
             result("K,p,j") = result("K,p,q") * right2("q,j");
+            world_.gop.fence();
         }
 
         time1 = mpqc_time::now(world_,accurate_time_);
@@ -333,25 +337,29 @@ namespace integrals{
             // get coefficient
             auto left_index1 = formula_string.left_index()[0];
             if (left_index1.is_mo()) {
-                auto left1 = orbital_space_registry_->retrieve(left_index1);
+                auto& left1 = orbital_space_registry_->retrieve(left_index1);
                 result("i,q,r,s") = ao_integral("p,q,r,s") * left1("p,i");
+                world_.gop.fence();
             }
 
             auto left_index2 = formula_string.left_index()[1];
             if (left_index2.is_mo()) {
-                auto left2 = orbital_space_registry_->retrieve(left_index2);
+                auto& left2 = orbital_space_registry_->retrieve(left_index2);
                 result("p,i,r,s") = result("p,q,r,s") * left2("q,i");
+                world_.gop.fence();
             }
 
             auto right_index1 = formula_string.right_index()[0];
             if (right_index1.is_mo()) {
-                auto right1 = orbital_space_registry_->retrieve(right_index1);
+                auto& right1 = orbital_space_registry_->retrieve(right_index1);
                 result("p,q,i,s") = result("p,q,r,s") * right1("r,i");
+                world_.gop.fence();
             }
             auto right_index2 = formula_string.right_index()[1];
             if (right_index2.is_mo()) {
-                auto right2 = orbital_space_registry_->retrieve(right_index2);
+                auto& right2 = orbital_space_registry_->retrieve(right_index2);
                 result("p,q,r,i") = result("p,q,r,s") * right2("s,i");
+                world_.gop.fence();
             }
 
             time1 = mpqc_time::now(world_,accurate_time_);
@@ -422,20 +430,20 @@ void MolecularIntegral<Tile,Policy>::assert_all_mo(const Formula &formula) {
 
 }
 template <typename Tile, typename Policy>
-typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute(const std::wstring &formula_string) {
+typename MolecularIntegral<Tile,Policy>::TArray& MolecularIntegral<Tile,Policy>::compute(const std::wstring &formula_string) {
     Formula formula(formula_string);
     return compute(formula);
 }
 
 template <typename Tile, typename Policy>
-typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute(const Formula& formula) {
+typename MolecularIntegral<Tile,Policy>::TArray& MolecularIntegral<Tile,Policy>::compute(const Formula& formula) {
 
     auto iter = mo_formula_registry_.find(formula);
 
     TArray result;
 
     if(iter != mo_formula_registry_.end()){
-        result = iter->second;
+        result = *(iter->second);
         utility::print_par(world_,"Retrived MO Integral: ");
         utility::wprint_par(world_, formula.formula_string());
         double size = utility::array_size(result);
@@ -459,7 +467,7 @@ typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::
     // make sure all processes obtained result and insert formula
 //    world_.gop.fence();
 
-    return result;
+    return mo_formula_registry_.retrieve(formula);
 }
 } // namespace integral
 } // namespace mpqc

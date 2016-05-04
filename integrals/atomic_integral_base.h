@@ -148,7 +148,13 @@ protected:
 
     /// given OrbitalIndex, find the correspoding basis
     std::shared_ptr <basis::Basis> index_to_basis(const OrbitalIndex &index) {
-        return orbital_basis_registry_->retrieve(index);
+
+        auto iter = orbital_basis_registry_->find(index);
+        if(iter == orbital_basis_registry_->end()){
+            throw std::runtime_error("Basis Set Not Found!!");
+        }else{
+            return iter->second;
+        }
     }
 
 protected:

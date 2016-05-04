@@ -23,8 +23,8 @@ namespace mpqc{
     class Registry {
     public:
 
-        using value_type = std::pair<Key,Value>;
-        using element_type = std::map<Key,Value>;
+        using value_type = std::pair<Key,std::shared_ptr<Value>>;
+        using element_type = std::map<Key,std::shared_ptr<Value>>;
         using iterator = typename element_type::iterator;
         using const_iterator = typename element_type::const_iterator;
 
@@ -52,7 +52,7 @@ namespace mpqc{
 
         /// insert to registry by Key and Value
         void insert(const Key& key, const Value& val){
-            registry_[key] = val;
+            registry_[key] = std::make_shared<Value>(val);
         }
 
         /// remove Value by Key
@@ -87,7 +87,7 @@ namespace mpqc{
             if(iter==registry_.end()){
                 throw std::runtime_error("Key not found!");
             }
-            return iter->second;
+            return *(iter->second);
         }
 
         /// find item, return const iterator, if not found, throw
@@ -96,7 +96,7 @@ namespace mpqc{
             if(iter==registry_.cend()){
                 throw std::runtime_error("Key not found!");
             }
-            return iter->second;
+            return *(iter->second);
         }
 
         /// return begin of iterator

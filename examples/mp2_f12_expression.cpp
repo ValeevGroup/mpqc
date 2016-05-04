@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     xyz_file_stream << xyz_file_buffer;
     delete[] xyz_file_buffer;
 
-    auto mol = mpqc::molecule::read_xyz_stringstream(xyz_file_stream);
+    auto mol = mpqc::molecule::Molecule(xyz_file_stream);
     auto clustered_mol = molecule::kmeans(mol.clusterables(), nclusters);
 
     auto repulsion_energy = clustered_mol.nuclear_repulsion();
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    f12::MP2F12 mp2f12(mo_integral, std::make_shared<TRange1Engine>(tre), ens);
+    f12::MP2F12<TA::TensorD> mp2f12(mo_integral, std::make_shared<TRange1Engine>(tre), ens);
 
 //    mp2f12.compute_mp2_f12_c();
 //    mo_integral.registry().clear();

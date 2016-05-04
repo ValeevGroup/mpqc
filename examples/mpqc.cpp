@@ -218,7 +218,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         basis = reblock(basis, cc::reblock_basis, ao_blocksize);
     }
     utility::parallel_print_range_info(world, basis.create_trange1(), "OBS Basis");
-    bs_registry->add(OrbitalIndex(L"κ"),std::make_shared<basis::Basis>(basis));
+    bs_registry->add(OrbitalIndex(L"κ"),basis);
 
     basis::Basis df_basis;
     if(!df_basis_name.empty()){
@@ -228,7 +228,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             df_basis = reblock(df_basis, cc::reblock_basis, ao_blocksize);
         }
         utility::parallel_print_range_info(world, df_basis.create_trange1(), "DF Basis");
-        bs_registry->add(OrbitalIndex(L"Κ"),std::make_shared<basis::Basis>(df_basis));
+        bs_registry->add(OrbitalIndex(L"Κ"),df_basis);
     }
 
     basis::Basis abs_basis;
@@ -240,7 +240,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             abs_basis = reblock(abs_basis, cc::reblock_basis, ao_blocksize);
         }
         utility::parallel_print_range_info(world, abs_basis.create_trange1(), "AUX Basis");
-        bs_registry->add(OrbitalIndex(L"α"), std::make_shared<basis::Basis>(abs_basis));
+        bs_registry->add(OrbitalIndex(L"α"), abs_basis);
 
 
         ri_basis = basis.join(abs_basis);
@@ -248,7 +248,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             ri_basis = reblock(ri_basis, cc::reblock_basis, ao_blocksize);
         }
         utility::parallel_print_range_info(world, ri_basis.create_trange1(), "RI Basis");
-        bs_registry->add(OrbitalIndex(L"ρ"), std::make_shared<basis::Basis>(ri_basis));
+        bs_registry->add(OrbitalIndex(L"ρ"), ri_basis);
     }
 
     /**

@@ -44,18 +44,18 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 
     auto S = ao_int.compute(L"(κ|λ)");
 
-    auto F_eig = array_ops::array_to_eigen(F);
-    auto S_eig = array_ops::array_to_eigen(S);
+    MatrixD F_eig = array_ops::array_to_eigen(F);
+    MatrixD S_eig = array_ops::array_to_eigen(S);
 
     // check the condition number in Overlap
-    Eig::SelfAdjointEigenSolver<decltype(S_eig)> S_es(S_eig);
+    Eig::SelfAdjointEigenSolver<MatrixD> S_es(S_eig);
     // eigen value in increasing order
     auto cond = S_es.eigenvalues()(S_es.eigenvalues().size() - 1) / S_es.eigenvalues()(0);
     utility::print_par(world, "Condition Number in Overlap: ", cond, "\n");
 
 
     // solve mo coefficients
-    Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
+    Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
 
     // start to solve coefficient
     bool frozen_core = in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
@@ -67,10 +67,10 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     }
 
     ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
-    Eig::MatrixXd C_all = es.eigenvectors();
-    Eig::MatrixXd C_occ = C_all.block(0, 0, S_eig.rows(),occ);
-    Eig::MatrixXd C_corr_occ = C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
-    Eig::MatrixXd C_vir = C_all.rightCols(S_eig.rows() - occ);
+    MatrixD C_all = es.eigenvectors();
+    MatrixD C_occ = C_all.block(0, 0, S_eig.rows(),occ);
+    MatrixD C_corr_occ = C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
+    MatrixD C_vir = C_all.rightCols(S_eig.rows() - occ);
 
     // get all the sizes
     std::size_t mo_blocksize = in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
@@ -103,17 +103,17 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     auto C_all_ta = array_ops::eigen_to_array<Tile>(world, C_all, tr_obs, tr_all);
 
     // insert to registry
-    using OrbitalSpace = OrbitalSpace<decltype(C_occ_ta)>;
-    auto occ_space = OrbitalSpace(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
+    using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile,Policy>>;
+    auto occ_space = OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
     orbital_registry.add(occ_space);
 
-    auto corr_occ_space = OrbitalSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
+    auto corr_occ_space = OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
     orbital_registry.add(corr_occ_space);
 
-    auto vir_space = OrbitalSpace(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_vir_ta);
+    auto vir_space = OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_vir_ta);
     orbital_registry.add(vir_space);
 
-    auto obs_space = OrbitalSpace(OrbitalIndex(L"p"),OrbitalIndex(L"κ"), C_all_ta);
+    auto obs_space = OrbitalSpaceTArray(OrbitalIndex(L"p"),OrbitalIndex(L"κ"), C_all_ta);
     orbital_registry.add(obs_space);
 
     auto mo_time1 = mpqc_time::fenced_now(world);
@@ -143,13 +143,13 @@ void closed_shell_cabs_mo_build_eigen_solve(
     auto S_obs = ao_int.compute(L"(κ|λ)");
 
     // construct cabs
-    decltype(S_obs) C_cabs, C_ri;
+    TA::DistArray<Tile,Policy> C_cabs, C_ri;
     {
-        auto S_obs_eigen = array_ops::array_to_eigen(S_obs);
+        MatrixD S_obs_eigen = array_ops::array_to_eigen(S_obs);
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_obs_eigen);
         MatrixD X_obs_eigen_inv = es.operatorInverseSqrt();
 
-        auto S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
+        MatrixD S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es2(S_ribs_eigen);
         MatrixD X_ribs_eigen_inv = es2.operatorInverseSqrt();
 
@@ -183,9 +183,9 @@ void closed_shell_cabs_mo_build_eigen_solve(
         C_ri = array_ops::eigen_to_array<TA::TensorD>(world, X_ribs_eigen_inv, tr_ribs, tr_ribs_mo);
 
         // insert to orbital space
-        using OrbitalSpace = OrbitalSpace<decltype(C_cabs)>;
-        auto C_cabs_space = OrbitalSpace(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
-        auto C_ribs_space = OrbitalSpace(OrbitalIndex(L"P'"), OrbitalIndex(L"ρ"), C_ri);
+        using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile,Policy>>;
+        auto C_cabs_space = OrbitalSpaceTArray(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
+        auto C_ribs_space = OrbitalSpaceTArray(OrbitalIndex(L"P'"), OrbitalIndex(L"ρ"), C_ri);
 
         orbital_registry.add(C_cabs_space);
         orbital_registry.add(C_ribs_space);

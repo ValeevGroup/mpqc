@@ -42,41 +42,41 @@ inline q_vector make_q(molecule::Molecule const &mol) {
 }
 
 // q must be set a later time since I am not sure about the ordering aspect.
-inline libint2::OneBodyEngine
+inline libint2::Engine
 make_1body(std::string const &type, basis::Basis const &bs,
            molecule::Molecule const &mol) {
 
     // Vector to hold q.
     q_vector q;
 
-    libint2::OneBodyEngine::operator_type itype;
+    libint2::Operator itype;
     if (type == "overlap") {
-        itype = libint2::OneBodyEngine::overlap;
+        itype = libint2::Operator::overlap;
     } else if (type == "kinetic") {
-        itype = libint2::OneBodyEngine::kinetic;
+        itype = libint2::Operator::kinetic;
     } else if (type == "nuclear") {
-        itype = libint2::OneBodyEngine::nuclear;
+        itype = libint2::Operator::nuclear;
         q = make_q(mol);
     } else if (type == "emultipole1") {
-        itype = libint2::OneBodyEngine::emultipole1;
+        itype = libint2::Operator::emultipole1;
     } else {
         std::terminate();
     }
 
-    libint2::OneBodyEngine engine(itype, bs.max_nprim(),
+    libint2::Engine engine(itype, bs.max_nprim(),
                                   static_cast<int>(bs.max_am()), 0ul);
 
-    if (itype == libint2::OneBodyEngine::nuclear) {
+    if (itype == libint2::Operator::nuclear) {
         engine.set_params(std::move(q));
     }
 
     return engine;
 }
 
-inline ShrPool<libint2::OneBodyEngine>
+inline ShrPool<libint2::Engine>
 make_1body_shr_pool(std::string const &type, basis::Basis const &bs,
                     molecule::Molecule const &mol) {
-    return std::make_shared<Epool<libint2::OneBodyEngine>>(
+    return std::make_shared<Epool<libint2::Engine>>(
           make_1body(type, bs, mol));
 }
 

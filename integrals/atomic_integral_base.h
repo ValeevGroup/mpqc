@@ -82,14 +82,14 @@ public:
 protected:
 
     /// parse operation and return one body engine
-    libint2::OneBodyEngine get_one_body_engine(const Operation &operation, int64_t max_nprim, int64_t max_am);
+    libint2::Engine get_one_body_engine(const Operation &operation, int64_t max_nprim, int64_t max_am);
 
     /// parse operation and  return two body engine kernel
     libint2::MultiplicativeSphericalTwoBodyKernel get_two_body_engine_kernel(const Operation &operation);
 
 
     /// parse one body formula and set engine_pool and basis array
-    void parse_one_body(const Formula &formula, std::shared_ptr <EnginePool<libint2::OneBodyEngine>> &engine_pool,
+    void parse_one_body(const Formula &formula, std::shared_ptr <EnginePool<libint2::Engine>> &engine_pool,
                         Barray<2> &bases);
 
     /// parse two body two center formula and set two body kernel, basis array, max_nprim and max_am

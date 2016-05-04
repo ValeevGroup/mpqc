@@ -6,25 +6,25 @@
 namespace mpqc{
 namespace integrals{
 
-libint2::OneBodyEngine  AtomicIntegralBase::get_one_body_engine(const Operation &operation, int64_t max_nprim, int64_t max_am){
+libint2::Engine  AtomicIntegralBase::get_one_body_engine(const Operation &operation, int64_t max_nprim, int64_t max_am){
 
-    libint2::OneBodyEngine::operator_type itype;
+    libint2::Operator itype;
     std::vector<std::pair<double, std::array<double, 3>>> q;
     if (operation.oper() == Operation::Operations::Overlap) {
-        itype = libint2::OneBodyEngine::overlap;
+        itype = libint2::Operator::overlap;
     } else if (operation.oper() == Operation::Operations::Kinetic) {
-        itype = libint2::OneBodyEngine::kinetic;
+        itype = libint2::Operator::kinetic;
     } else if (operation.oper() == Operation::Operations::Nuclear) {
-        itype = libint2::OneBodyEngine::nuclear;
+        itype = libint2::Operator::nuclear;
         q = make_q(*(this->mol_));
     } else {
         throw std::runtime_error("Invalid One Body Operation");
     }
 
-    libint2::OneBodyEngine engine(itype, max_nprim, static_cast<int>(max_am),0);
+    libint2::Engine engine(itype, max_nprim, static_cast<int>(max_am),0);
 
 
-    if(itype == libint2::OneBodyEngine::nuclear){
+    if(itype == libint2::Operator::nuclear){
         engine.set_params(std::move(q));
     }
 
@@ -57,7 +57,7 @@ libint2::MultiplicativeSphericalTwoBodyKernel AtomicIntegralBase::get_two_body_e
 }
 
 
-void AtomicIntegralBase::parse_one_body(const Formula& formula, std::shared_ptr<EnginePool<libint2::OneBodyEngine>>& engine_pool, Barray<2>& bases){
+void AtomicIntegralBase::parse_one_body(const Formula& formula, std::shared_ptr<EnginePool<libint2::Engine>>& engine_pool, Barray<2>& bases){
 
     auto bra_indexs = formula.left_index();
     auto ket_indexs = formula.right_index();

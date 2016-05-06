@@ -22,6 +22,8 @@
 #include <vector>
 #include <iostream>
 #include <unordered_set>
+#include <iomanip>
+#include <cmath>
 
 namespace mpqc {
 namespace scf {
@@ -53,6 +55,7 @@ class ONCADFFockBuilder : public FockBuilder {
   std::vector<std::array<double, 3>> f_df_storages_;
 
   bool force_shape_;
+  double cut_thresh_;
 
   //  ShapeTracker shape_tracker_;
   //  std::vector<ShapeTracker> shape_tracker_iters_;
@@ -60,12 +63,13 @@ class ONCADFFockBuilder : public FockBuilder {
  public:
   ONCADFFockBuilder(darray_type const &M, Integral const &eri3,
                     darray_type const &C_df, double clr_thresh,
-                    bool force_shape)
+                    double cut_thresh, bool force_shape)
       : FockBuilder(),
         E_(eri3),
         M_(M),
         C_df_(C_df),
         clr_thresh_(clr_thresh),
+        cut_thresh_(cut_thresh),
         force_shape_(force_shape) {
     auto &world = C_df_.get_world();
     bool compress_M = false;
@@ -191,6 +195,10 @@ class ONCADFFockBuilder : public FockBuilder {
   }
 
   struct Rdf_shape {
+    double th_;
+    Rdf_shape(double th) : th_(th) {
+      std::cout << "Thresh = " << th_ << std::endl;
+    }
     TA::Tensor<float> operator()(TA::Tensor<float> const &norms) {
       auto &range = norms.range();
       auto lo = range.lobound_data();
@@ -203,7 +211,7 @@ class ONCADFFockBuilder : public FockBuilder {
       for (auto X = lo[0]; X != up[0]; ++X) {
         for (auto i = lo[1]; i != up[1]; ++i) {
           for (auto n = lo[2]; n != up[2]; ++n) {
-            if (norms(X, i, n) != 0.0) {
+            if (norms(X, i, n) > th_) {
               Y[i].insert(X);
               mu[i].insert(n);
             }
@@ -242,7 +250,7 @@ class ONCADFFockBuilder : public FockBuilder {
 
     TA::SparseShape<float> forced_shape;
     if (force_shape_) {
-      forced_shape = C_mo.get_shape().transform(Rdf_shape{});
+      forced_shape = C_mo.get_shape().transform(Rdf_shape{cut_thresh_});
     }
     auto edf0 = mpqc_time::fenced_now(world);
     if (force_shape_) {
@@ -271,7 +279,7 @@ class ONCADFFockBuilder : public FockBuilder {
     dL.truncate();
     auto l1 = mpqc_time::fenced_now(world);
 
-    array_type K, Kfast, Diff;
+    array_type K;
     auto k0 = mpqc_time::fenced_now(world);
     auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
     K("mu, nu") = L("mu, nu") + L("nu, mu");

@@ -24,8 +24,8 @@ template<typename Tile>
 TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
         integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &shape)
 {
-    bool accurate_time = true;
     auto& world = mo_integral.get_world();
+    bool accurate_time = mo_integral.accurate_time();
     auto& ao_integral = mo_integral.atomic_integral();
     auto v_time0 = mpqc_time::now(world,accurate_time);
 
@@ -81,7 +81,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
     auto v_time = mpqc_time::duration_in_s(v_time0,v_time1);
     utility::print_par(world,"V Term Total Time: ", v_time, " S\n");
 
-    std::cout << V_ijij_ijji << std::endl;
+//    std::cout << V_ijij_ijji << std::endl;
     return V_ijij_ijji;
 };
 
@@ -97,7 +97,7 @@ template<typename Tile>
 TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji(
         integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &shape)
 {
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     auto& world = mo_integral.get_world();
     auto& ao_integral = mo_integral.atomic_integral();
     auto v_time0 = mpqc_time::now(world,accurate_time);
@@ -167,7 +167,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_X_ijij_ijji_df(
         integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &ijij_ijji_shape)
 {
 
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     auto& world = mo_integral.get_world();
     auto& ao_integral = mo_integral.atomic_integral();
     auto x_time0 = mpqc_time::now(world,accurate_time);
@@ -220,7 +220,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_X_ijij_ijji_df(
     auto x_time = mpqc_time::duration_in_s(x_time0,x_time1);
     utility::print_par(world,"X Term Total Time: ", x_time, " S\n");
 
-    std::cout << X_ijij_ijji << std::endl;
+//    std::cout << X_ijij_ijji << std::endl;
     return X_ijij_ijji;
 };
 
@@ -237,7 +237,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_X_ijij_ijji(
         integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &ijij_ijji_shape)
 {
 
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     auto& world = mo_integral.get_world();
     auto& ao_integral = mo_integral.atomic_integral();
     auto x_time0 = mpqc_time::now(world,accurate_time);
@@ -302,7 +302,7 @@ template <typename Tile>
 TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_df(
         integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &ijij_ijji_shape)
 {
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     auto& world = mo_integral.get_world();
     auto& ao_integral = mo_integral.atomic_integral();
     auto b_time0 = mpqc_time::now(world,accurate_time);
@@ -447,7 +447,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_df(
     auto b_time = mpqc_time::duration_in_s(b_time0,b_time1);
     utility::print_par(world,"B Term Total Time: ", b_time, " S\n");
 
-    std::cout << B_ijij_ijji << std::endl;
+//    std::cout << B_ijij_ijji << std::endl;
 
     return B_ijij_ijji;
 };
@@ -465,7 +465,7 @@ template <typename Tile>
 TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji(
         integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &ijij_ijji_shape)
 {
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     auto& world = mo_integral.get_world();
     auto& ao_integral = mo_integral.atomic_integral();
     auto b_time0 = mpqc_time::now(world,accurate_time);
@@ -622,7 +622,7 @@ TA::DistArray<Tile,Policy> compute_V_iaxy_df(integrals::MolecularIntegral <Tile,
 {
 
     auto& world = mo_integral.get_world();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     TA::DistArray<Tile,Policy> V_iaxy;
 
     auto v_time0 = mpqc_time::now(world,accurate_time);
@@ -693,7 +693,7 @@ TA::DistArray<Tile,Policy> compute_V_iaxy(integrals::MolecularIntegral <Tile, Po
 {
 
     auto& world = mo_integral.get_world();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     TA::DistArray<Tile,Policy> V_iaxy;
 
     auto v_time0 = mpqc_time::now(world,accurate_time);
@@ -763,7 +763,7 @@ TA::DistArray<Tile,Policy> compute_V_xyab_df(integrals::MolecularIntegral <Tile,
 
     auto& world = mo_integral.get_world();
     auto& ao_integral = mo_integral.atomic_integral();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
 
     auto v_time0 = mpqc_time::now(world,accurate_time);
 
@@ -826,7 +826,7 @@ TA::DistArray<Tile,Policy> compute_V_xyab(integrals::MolecularIntegral <Tile, Po
 
     auto& world = mo_integral.get_world();
     auto& ao_integral = mo_integral.atomic_integral();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
 
     auto v_time0 = mpqc_time::now(world,accurate_time);
 
@@ -885,7 +885,7 @@ template<typename Tile, typename Policy>
 TA::DistArray<Tile,Policy> compute_C_ijab_df(integrals::MolecularIntegral <Tile, Policy> &mo_integral)
 {
     auto& world = mo_integral.get_world();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     auto c_time0 = mpqc_time::now(world,accurate_time);
     TA::DistArray<Tile,Policy> C_ijab;
 
@@ -916,7 +916,7 @@ template<typename Tile, typename Policy>
 TA::DistArray<Tile,Policy> compute_C_ijab(integrals::MolecularIntegral <Tile, Policy> &mo_integral)
 {
     auto& world = mo_integral.get_world();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     auto c_time0 = mpqc_time::now(world,accurate_time);
     TA::DistArray<Tile,Policy> C_ijab;
 
@@ -956,7 +956,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(integrals::
 
     auto& world = mo_integral.get_world();
     auto& ao_integral = mo_integral.atomic_integral();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
 
     TA::DistArray<Tile,TA::SparsePolicy> V_ijji_ijji;
 
@@ -1045,7 +1045,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT2_ijij_ijji_df(
         const TA::SparseShape<float> &ijij_ijji_shape)
 {
     auto& world = mo_integral.get_world();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
 
     TA::DistArray<Tile,TA::SparsePolicy> V_ijij_ijji;
 
@@ -1083,7 +1083,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT2_ijij_ijji(
         const TA::SparseShape<float> &ijij_ijji_shape)
 {
     auto& world = mo_integral.get_world();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
 
     TA::DistArray<Tile,TA::SparsePolicy> V_ijij_ijji;
 //    TA::DistArray<Tile,TA::SparsePolicy> tmp;
@@ -1134,7 +1134,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT1_ijij_ijji_df(
         const TA::SparseShape<float> &ijij_ijji_shape)
 {
     auto& world = mo_integral.get_world();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     TA::DistArray<Tile,TA::SparsePolicy> V_ijij_ijji;
     TA::DistArray<Tile,TA::SparsePolicy> V_iaij = compute_V_iaxy_df(mo_integral);
 
@@ -1166,7 +1166,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT1_ijij_ijji(
         const TA::SparseShape<float> &ijij_ijji_shape)
 {
     auto& world = mo_integral.get_world();
-    bool accurate_time = true;
+    bool accurate_time = mo_integral.accurate_time();
     TA::DistArray<Tile,TA::SparsePolicy> V_ijij_ijji;
     TA::DistArray<Tile,TA::SparsePolicy> V_iaij = compute_V_iaxy(mo_integral);
 

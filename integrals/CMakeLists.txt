@@ -17,5 +17,5 @@ set(integral_sources
 )
 
 add_library(integrals ${integral_sources})
-target_link_libraries(integrals ${TA_LIBRARIES} ${LIBINT_LIBRARIES} ${TBB_LIBRARIES} expression basis)
+target_link_libraries(integrals ${TA_LIBRARIES} ${LIBINT2_LIBRARIES} ${TBB_LIBRARIES} expression basis)
 

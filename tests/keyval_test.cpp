@@ -62,7 +62,7 @@ TEST_CASE("KeyVal", "[keyval]") {
   REQUIRE(kv.value<double>(":z:1") == -1.75);
 
   // can overwrite
-  kv.assign(":z:0", false).assign(":z:1", +2.35);  // overwrite?
+  kv.assign(":z:0", false).assign(":z:1", +2.35);  // overwrite old values
   REQUIRE(kv.value<bool>(":z:0") == false);
   REQUIRE(kv.value<double>(":z:1") == +2.35);
 

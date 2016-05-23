@@ -400,10 +400,12 @@ void create_tiles(madness::World &world,
 } // namespace cadf
 
 
+template<typename MetricEngine>
 inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
       madness::World &world, molecule::Molecule const &obs_molecule,
       molecule::Molecule const &dfbs_molecule, basis::BasisSet const &obs_set,
       basis::BasisSet const &dfbs_set,
+      MetricEngine const &eng,
       std::unordered_map<std::size_t, std::size_t> &obs_atom_to_cluster_map,
       std::unordered_map<std::size_t, std::size_t> &dfbs_atom_to_cluster_map) {
 
@@ -416,7 +418,7 @@ inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
     const auto dfbs_array = utility::make_array(by_atom_dfbs, by_atom_dfbs);
     auto eri_e = integrals::make_2body_shr_pool(by_atom_dfbs, by_atom_obs);
 
-    auto M = integrals::dense_integrals(world, eri_e, dfbs_array);
+    auto M = integrals::dense_integrals(world, eng, dfbs_array);
 
     auto three_c_array
           = utility::make_array(by_atom_dfbs, by_atom_obs, by_atom_obs);

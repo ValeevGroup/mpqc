@@ -36,8 +36,8 @@ class ONCADFFockBuilder : public FockBuilder {
 
  private:
   Integral E_;              // Direct three center integrals
-  darray_type M_;           // Fitting Metric
-  darray_type M_sqrt_inv_;  // Fitting Metric
+  darray_type M_;           // Fitting Metric for K
+  darray_type M_sqrt_inv_;  // Sqrt inverse of M
   darray_type C_df_;        // CADF fitting coeffs
 
   double clr_thresh_;
@@ -50,32 +50,36 @@ class ONCADFFockBuilder : public FockBuilder {
   std::vector<double> dl_times_;
   std::vector<double> dl_to_k_times_;
 
+  std::vector<std::array<double, 3>> u_mo_storages_;
   std::vector<std::array<double, 3>> c_mo_storages_;
   std::vector<std::array<double, 3>> e_df_storages_;
   std::vector<std::array<double, 3>> f_df_storages_;
 
   bool force_shape_;
-  double cut_thresh_;
+  double force_cut_thresh_;
+  double mo_cut_thresh_;
 
   //  ShapeTracker shape_tracker_;
   //  std::vector<ShapeTracker> shape_tracker_iters_;
 
  public:
-  ONCADFFockBuilder(darray_type const &M, Integral const &eri3,
-                    darray_type const &C_df, double clr_thresh,
-                    double cut_thresh, bool force_shape)
+  ONCADFFockBuilder(darray_type const &Mj, darray_type const &Mk,
+                    Integral const &eri3, darray_type const &C_df,
+                    double clr_thresh, double force_cut_thresh,
+                    double mo_cut_thresh, bool force_shape)
       : FockBuilder(),
         E_(eri3),
-        M_(M),
+        M_(Mk),
         C_df_(C_df),
         clr_thresh_(clr_thresh),
-        cut_thresh_(cut_thresh),
+        force_cut_thresh_(force_cut_thresh),
+        mo_cut_thresh_(mo_cut_thresh),
         force_shape_(force_shape) {
     auto &world = C_df_.get_world();
     bool compress_M = false;
 
     auto l0 = mpqc_time::fenced_now(world);
-    M_sqrt_inv_ = array_ops::inverse_sqrt(M_);
+    M_sqrt_inv_ = array_ops::inverse_sqrt(Mj);
     auto l1 = mpqc_time::fenced_now(world);
     auto l_inv_time_ = mpqc_time::duration_in_s(l0, l1);
 
@@ -88,7 +92,7 @@ class ONCADFFockBuilder : public FockBuilder {
 
   array_type operator()(array_type const &D, array_type const &C) override {
     array_type G;
-    G("mu, nu") = 2 * compute_J(D)("mu, nu") - compute_K(C)("mu, nu");
+    G("mu, nu") = 2 * compute_J(D)("mu, nu") - compute_K(D, C)("mu, nu");
     return G;
   }
 
@@ -97,6 +101,10 @@ class ONCADFFockBuilder : public FockBuilder {
     if (world.rank() == 0) {
       std::cout << leader << "CADF Builder:\n" << leader << "\tStorages:\n"
                 << leader << "\t\tFully Dense: " << c_mo_storages_.back()[0]
+                << " GB\n" << leader
+                << "\t\tU mo dense storage: " << u_mo_storages_.back()[0]
+                << " GB\n" << leader
+                << "\t\tU mo sparse storage: " << u_mo_storages_.back()[1]
                 << " GB\n" << leader
                 << "\t\tC mo sparse storage: " << c_mo_storages_.back()[1]
                 << " GB\n" << leader
@@ -208,8 +216,8 @@ class ONCADFFockBuilder : public FockBuilder {
       std::vector<std::unordered_set<int32_t>> mu(range.extent_data()[1]);
       std::vector<std::unordered_set<int32_t>> Y(range.extent_data()[1]);
 
-      for (auto X = lo[0]; X != up[0]; ++X) {
-        for (auto i = lo[1]; i != up[1]; ++i) {
+      for (auto i = lo[1]; i != up[1]; ++i) {
+        for (auto X = lo[0]; X != up[0]; ++X) {
           for (auto n = lo[2]; n != up[2]; ++n) {
             if (norms(X, i, n) > th_) {
               Y[i].insert(X);
@@ -233,14 +241,38 @@ class ONCADFFockBuilder : public FockBuilder {
     }
   };
 
-  array_type compute_K(array_type const &C) {
+  array_type compute_K(array_type const &D, array_type const &C) {
     auto &world = C_df_.get_world();
 
     constexpr bool compress_C = false;
     auto dC = TA::to_new_tile_type(
         C, tensor::TaToDecompTensor(clr_thresh_, compress_C));
+    dC.truncate();
+    TA::foreach_inplace(dC,
+                        [&](typename decltype(dC)::value_type &tile_t) {
 
-    darray_type C_mo, dL, E_df, E_dfp, R_df, R_dfp, F_df;
+      auto &t = tile_t.tile().tensor(0);
+      auto range = t.range();
+      auto lo = range.lobound_data();
+      auto up = range.upbound_data();
+
+      if (t.norm() < 1e-3) {
+        for (auto mu = lo[0]; mu < up[0]; ++mu) {
+          for (auto i = lo[1]; i < up[1]; ++i) {
+            if (t(mu, i) < mo_cut_thresh_) {
+              t(mu, i) = 0;
+            }
+          }
+        }
+      }
+
+      return t.norm();
+    });
+    
+    auto Umo_storage = utility::array_storage(dC);
+    u_mo_storages_.push_back(utility::array_storage(dC));
+
+    darray_type C_mo, dL, F_df;
 
     auto cmo0 = mpqc_time::fenced_now(world);
     C_mo("X, i, mu") = C_df_("X, mu, nu") * dC("nu, i");
@@ -250,8 +282,9 @@ class ONCADFFockBuilder : public FockBuilder {
 
     TA::SparseShape<float> forced_shape;
     if (force_shape_) {
-      forced_shape = C_mo.get_shape().transform(Rdf_shape{cut_thresh_});
+      forced_shape = C_mo.get_shape().transform(Rdf_shape{force_cut_thresh_});
     }
+
     auto edf0 = mpqc_time::fenced_now(world);
     if (force_shape_) {
       F_df("X, i, mu") = (E_("X, mu, nu") * dC("nu,i")).set_shape(forced_shape);

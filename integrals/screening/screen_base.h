@@ -23,7 +23,7 @@ class Screener {
     Screener(Screener &&) = default;
     Screener &operator=(Screener &&) = default;
     Screener &operator=(Screener const &) = default;
-    virtual ~Screener() = default;
+    virtual ~Screener() noexcept = default;
 
     /*! \brief all skips take shell indices and return true or false.
      *

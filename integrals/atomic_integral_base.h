@@ -35,7 +35,7 @@ namespace integrals {
 class AtomicIntegralBase {
 public:
 
-    AtomicIntegralBase() = default;
+    AtomicIntegralBase() noexcept = default;
 
     /**
      * Constructor

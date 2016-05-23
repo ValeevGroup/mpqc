@@ -268,22 +268,23 @@ int main(int argc, char *argv[]) {
       C_df_ = scf::compute_atomic_fitting_coeffs(
           world, clustered_mol, df_clustered_mol, bs, dfbs, overlap_eM,
           obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
-    } else if (in["Metric"].GetInt() == 2) {
-      auto cgtg_e = ints::make_2body_cGTG_shr_pool(df_basis);
+// Needs to be fixed to work with new engine. 
+   //  } else if (in["Metric"].GetInt() == 2) {
+   //    auto cgtg_e = ints::make_2body_cGTG_shr_pool(df_basis);
 
-      Mk = ints::sparse_integrals(world, cgtg_e, dfbs_array);
+   //    Mk = ints::sparse_integrals(world, cgtg_e, dfbs_array);
 
-      C_df_ = scf::compute_atomic_fitting_coeffs(
-          world, clustered_mol, df_clustered_mol, bs, dfbs, cgtg_e,
-          obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
-    } else if (in["Metric"].GetInt() == 3) {
-      auto cgtgC_e = ints::make_2body_cGTG_C_shr_pool(df_basis);
+   //    C_df_ = scf::compute_atomic_fitting_coeffs(
+   //        world, clustered_mol, df_clustered_mol, bs, dfbs, cgtg_e,
+   //        obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
+   //  } else if (in["Metric"].GetInt() == 3) {
+   //    auto cgtgC_e = ints::make_2body_cGTG_C_shr_pool(df_basis);
 
-      Mk = ints::sparse_integrals(world, cgtgC_e, dfbs_array);
+   //    Mk = ints::sparse_integrals(world, cgtgC_e, dfbs_array);
 
-      C_df_ = scf::compute_atomic_fitting_coeffs(
-          world, clustered_mol, df_clustered_mol, bs, dfbs, cgtgC_e,
-          obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
+   //    C_df_ = scf::compute_atomic_fitting_coeffs(
+   //        world, clustered_mol, df_clustered_mol, bs, dfbs, cgtgC_e,
+   //        obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
     } else {
       Mk = Mj;
       C_df_ = scf::compute_atomic_fitting_coeffs(

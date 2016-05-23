@@ -24,7 +24,7 @@ namespace detail {
 
 extern double integral_engine_precision;
 
-using OneE_Engine = libint2::OneBodyEngine;
+using OneE_Engine = libint2::Engine;
 using TwoE_Engine = libint2::TwoBodyEngine<libint2::Coulomb>;
 using cGTG_Engine = libint2::TwoBodyEngine<libint2::cGTG>;
 using cGTGCoulomb_Engine = libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>;
@@ -35,9 +35,6 @@ template <typename E>
 void set_eng_precision(E &eng){
     eng.set_precision(integral_engine_precision);
 }
-
-// Do nothing for OneBodyEngine
-inline void set_eng_precision(libint2::OneBodyEngine &){}
 
 inline const double *shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1,
                                Shell const &s2, Shell const &s3) {

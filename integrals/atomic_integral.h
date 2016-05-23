@@ -333,7 +333,7 @@ namespace integrals{
 
                 time0 = mpqc_time::now(world_,accurate_time_);
 
-                std::shared_ptr<EnginePool<libint2::OneBodyEngine>> engine_pool;
+                std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
                 parse_one_body(formula,engine_pool,bs_array);
                 result = compute_integrals(this->world_,engine_pool,bs_array);
 

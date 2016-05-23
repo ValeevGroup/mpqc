@@ -114,6 +114,11 @@ namespace integrals{
             return mo_formula_registry_;
         }
 
+        /// return accurate time
+        bool accurate_time(){
+            return accurate_time_;
+        }
+
         /// wrapper to compute function
         TArray& compute(const std::wstring& );
 

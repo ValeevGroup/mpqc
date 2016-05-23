@@ -47,63 +47,6 @@ std::shared_ptr<EnginePool<E>> make_pool(E e) {
     return std::make_shared<EnginePool<E>>(std::move(e));
 }
 
-// Constexpr function to return the order of the integral pools.
-template <typename Pool>
-constexpr unsigned long pool_order();
-
-template <>
-inline constexpr unsigned long pool_order<std::shared_ptr<EnginePool<libint2::OneBodyEngine>>>() {
-    return 2ul;
-}
-
-template <>
-inline constexpr unsigned long pool_order<libint2::OneBodyEngine>() {
-    return 2ul;
-}
-
-template <>
-constexpr unsigned long
-inline pool_order<std::shared_ptr<EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>>() {
-    return 4ul;
-}
-
-template <>
-inline constexpr unsigned long pool_order<libint2::TwoBodyEngine<libint2::Coulomb>>() {
-    return 4ul;
-}
-
-template <>
-constexpr unsigned long
-inline pool_order<std::shared_ptr<EnginePool<libint2::TwoBodyEngine<libint2::cGTG>>>>() {
-    return 4ul;
-}
-
-template <>
-inline constexpr unsigned long pool_order<libint2::TwoBodyEngine<libint2::cGTG>>() {
-    return 4ul;
-}
-
-template <>
-constexpr unsigned long
-inline pool_order<std::shared_ptr<EnginePool<libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>>>>() {
-    return 4ul;
-}
-
-template <>
-inline constexpr unsigned long pool_order<libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>>() {
-    return 4ul;
-}
-
-template <>
-constexpr unsigned long
-inline pool_order<std::shared_ptr<EnginePool<libint2::TwoBodyEngine<libint2::DelcGTG_square>>>>() {
-    return 4ul;
-}
-
-template <>
-inline constexpr unsigned long pool_order<libint2::TwoBodyEngine<libint2::DelcGTG_square>>() {
-    return 4ul;
-}
 } // namespace integrals
 } // namespac mpqc
 

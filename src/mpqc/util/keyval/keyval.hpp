@@ -22,6 +22,40 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/serialization/export.hpp>
 
+// serialize all pointers as void*
+// NB XCode 7.3.1 (7D1014) libc++ char stream does not properly deserialize
+// void*, use size_t instead
+namespace boost { namespace property_tree
+{
+    template <typename Ch, typename Traits, typename E>
+    struct customize_stream<Ch,Traits,E*,void>
+    {
+        using stored_t  = size_t; // TODO convert to void* when it works
+        static_assert(sizeof(stored_t) == sizeof(E*), "expected ptr width");
+
+        static void insert(std::basic_ostream<Ch, Traits>& s, const E* e) {
+            auto flags = s.flags();
+            std::hex(s); // write as hexadecimal
+            std::showbase(s);
+            s << reinterpret_cast<stored_t>(e);
+            s.setf(flags); // restore flags
+        }
+        static void extract(std::basic_istream<Ch, Traits>& s, E*& e) {
+            auto flags = s.flags();
+            std::hex(s); // read as hexadecimal
+            std::showbase(s);
+            stored_t e_stored;
+            s >> e_stored;
+            s.setf(flags); // restore flags
+            e = reinterpret_cast<E*>(e_stored);
+            if(!s.eof()) {
+                s >> std::ws;
+            }
+        }
+    };
+}} // namespace boost::property_tree
+
+
 #include "mpqc/util/misc/type_traits.h"
 
 namespace mpqc {

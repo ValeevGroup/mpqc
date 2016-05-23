@@ -90,6 +90,15 @@ TEST_CASE("KeyVal", "[keyval]") {
   REQUIRE(kv.count(":z:a:1") == 3);
   REQUIRE(kv.count(":z:a:2") == 4);
 
+  // can write pointers
+  {
+    std::unique_ptr<double> x(new double);
+    kv.assign("double*", x.get());
+    *x = 0.0;
+    auto x_copy = kv.value<double*>("double*");
+    REQUIRE(x_copy == x.get());
+  }
+
   SECTION("JSON read/write") {
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));

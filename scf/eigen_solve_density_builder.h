@@ -37,7 +37,7 @@ class ESolveDensityBuilder : public DensityBuilder {
     ESolveDensityBuilder(ESolveDensityBuilder &&) = default;
     ESolveDensityBuilder &operator=(ESolveDensityBuilder const &) = default;
     ESolveDensityBuilder &operator=(ESolveDensityBuilder &&) = default;
-    ~ESolveDensityBuilder() = default;
+    ~ESolveDensityBuilder() noexcept = default;
 
     ESolveDensityBuilder(array_type const &S, std::vector<array_type> r_xyz,
                          int64_t occ, int64_t nclusters, double TcutC = 0.0,

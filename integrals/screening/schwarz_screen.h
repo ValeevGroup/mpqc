@@ -202,7 +202,7 @@ class SchwarzScreen : public Screener {
     SchwarzScreen &operator=(SchwarzScreen const &) = default;
     SchwarzScreen &operator=(SchwarzScreen &&) = default;
 
-    virtual ~SchwarzScreen() = default;
+    virtual ~SchwarzScreen() noexcept = default;
 
     /*! \brief Constructor which requires a Q matrix.
      *

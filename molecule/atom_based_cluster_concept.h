@@ -25,7 +25,7 @@ namespace molecule {
  */
 class AtomBasedClusterConcept : public ClusterConcept {
   public:
-    virtual ~AtomBasedClusterConcept() = default;
+    virtual ~AtomBasedClusterConcept() noexcept = default;
     virtual int64_t charge_() const = 0;
     virtual double mass_() const = 0;
     virtual Vec3D const& com_() const = 0;

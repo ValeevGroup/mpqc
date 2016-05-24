@@ -28,6 +28,9 @@ target_link_libraries(ccsd ${MPQC_LIBRARIES})
 add_executable(mpqc EXCLUDE_FROM_ALL mpqc.cpp)
 target_link_libraries(mpqc ${MPQC_LIBRARIES})
 
+add_executable(mpqc_new EXCLUDE_FROM_ALL mpqc_new.cpp)
+target_link_libraries(mpqc_new ${MPQC_LIBRARIES})
+
 add_executable(eomcc EXCLUDE_FROM_ALL eom_cc.cpp)
 target_link_libraries(eomcc ${MPQC_LIBRARIES})
 

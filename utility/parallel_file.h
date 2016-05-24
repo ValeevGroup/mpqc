@@ -5,37 +5,53 @@
 #ifndef MPQC_PARALLEL_FILE_H
 #define MPQC_PARALLEL_FILE_H
 
-namespace mpqc{
-namespace utility{
+#include <madness/world/world.h>
+#include <madness/world/worldgop.h>
 
-inline void parallel_read_file(madness::World& world, const std::string& filename, char*& buffer){
+namespace mpqc {
+namespace utility {
 
-    int size;
-    std::string contents;
-    if(world.rank() == 0){
-        std::ifstream input_file(filename, std::ifstream::in);
+inline void parallel_read_file(madness::World &world,
+                               const std::string &filename, char *&buffer) {
+  int size;
+  std::string contents;
+  if (world.rank() == 0) {
+    std::ifstream input_file(filename, std::ifstream::in);
 
-        contents = std::string((std::istreambuf_iterator<char>(input_file)),
-                                           std::istreambuf_iterator<char>());
-
-        input_file.close();
-        size = contents.size()+1;
+    if (input_file.fail()) {
+      std::ostringstream oss;
+      oss << "could not open file \"" << filename << "\"";
+      throw std::invalid_argument(oss.str().c_str());
     }
 
-    world.gop.broadcast(size,0);
-    buffer = new char[size];
+    contents = std::string((std::istreambuf_iterator<char>(input_file)),
+                           std::istreambuf_iterator<char>());
 
-    if(world.rank() == 0){
-        strcpy(buffer, contents.c_str());
-    }
+    input_file.close();
+    size = contents.size() + 1;
+  }
 
-    world.gop.broadcast(buffer,size,0);
+  world.gop.broadcast(size, 0);
+  buffer = new char[size];
 
+  if (world.rank() == 0) {
+    strcpy(buffer, contents.c_str());
+  }
+
+  world.gop.broadcast(buffer, size, 0);
 }
 
-} // end of namespace utility
-} // end of namespace mpqc
+inline std::stringstream parallel_read_file(madness::World &world,
+                                            const std::string &filename) {
+  char *buffer;
+  parallel_read_file(world, filename, buffer);
+  std::stringstream output;
+  output << buffer;
+  delete[] buffer;
+  return output;
+}
 
+}  // end of namespace utility
+}  // end of namespace mpqc
 
-
-#endif //MPQC_PARALLEL_FILE_H
+#endif  // MPQC_PARALLEL_FILE_H

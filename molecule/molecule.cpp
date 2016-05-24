@@ -1,10 +1,13 @@
 #include "molecule.h"
+#include <fstream>
+//#include <madness/world/world.h>
+
 #include "common.h"
 #include "atom_masses.h"
+#include "../utility/parallel_file.h"
 
 #include <libint2/atom.h>
 
-#include <fstream>
 
 MPQC_CLASS_EXPORT_KEY2(mpqc::molecule::Molecule, "Molecule");
 
@@ -67,16 +70,16 @@ Molecule::Molecule(std::vector<ABCbl> c, bool sort_input)
 }
 
 Molecule::Molecule(const KeyVal& kv) {
+//  std::cout << "Construct Molecule" << std::endl;
   auto file_name = kv.value<std::string>("file_name", "");
-  std::ifstream file(file_name);
 
-  if (file.fail()) {
-      std::ostringstream oss;
-      oss << "could not open file \"" << file_name << "\"";
-      throw std::invalid_argument(oss.str().c_str());
-  }
+  // find world one level higher
+  madness::World* world = kv.value<madness::World*>("..:world");
+
+  std::stringstream file = utility::parallel_read_file(*world,file_name);
 
   auto sort_input = kv.value<bool>("sort_input", true);
+
 
   init(file, sort_input);
 }

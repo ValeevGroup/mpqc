@@ -8,4 +8,4 @@ set(sources
 )
 
 add_library(MPQCf12 ${sources})
-target_link_libraries(MPQCf12 ${TA_LIBRARIES} integrals)
+target_link_libraries(MPQCf12 ${TA_LIBRARIES} MPQCintegrals)

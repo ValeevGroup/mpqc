@@ -7,8 +7,7 @@
 
 #include "../../../../../include/tiledarray.h"
 #include "../../../../../common/namespaces.h"
-#include "../../../../../integrals/direct_task_integrals.h"
-#include "../../../../../integrals/molecular_integral.h"
+#include <mpqc/chemistry/qc/integrals/molecular_integral.h>
 #include <mpqc/chemistry/qc/cc/lazy_tile.h>
 
 namespace mpqc {

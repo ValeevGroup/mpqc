@@ -21,24 +21,24 @@
 #include "../utility/json_handling.h"
 #include "../utility/parallel_file.h"
 
-#include "../molecule/atom.h"
-#include "../molecule/cluster.h"
-#include "../molecule/molecule.h"
-#include "../molecule/clustering_functions.h"
-#include "../molecule/make_clusters.h"
+#include <mpqc/chemistry/molecule/atom.h>
+#include <mpqc/chemistry/molecule/cluster.h>
+#include <mpqc/chemistry/molecule/molecule.h>
+#include <mpqc/chemistry/molecule/clustering_functions.h>
+#include <mpqc/chemistry/molecule/make_clusters.h>
 
-#include "../basis/atom_basisset.h"
-#include "../basis/basis_set.h"
-#include "../basis/cluster_shells.h"
-#include "../basis/basis.h"
+#include <mpqc/chemistry/qc/basis/atom_basisset.h>
+#include <mpqc/chemistry/qc/basis/basis_set.h>
+#include <mpqc/chemistry/qc/basis/cluster_shells.h>
+#include <mpqc/chemistry/qc/basis/basis.h>
 
-#include "../scf/diagonalize_for_coffs.hpp"
-#include "../scf/scf.h"
-#include "../scf/traditional_df_fock_builder.h"
-#include "../scf/purification_density_build.h"
-#include "../scf/eigen_solve_density_builder.h"
-#include "../scf/traditional_four_center_fock_builder.h"
-#include "../scf/mo_build.h"
+#include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
+#include <mpqc/chemistry/qc/scf/scf.h>
+#include <mpqc/chemistry/qc/scf/traditional_df_fock_builder.h>
+#include <mpqc/chemistry/qc/scf/purification_density_build.h>
+#include <mpqc/chemistry/qc/scf/eigen_solve_density_builder.h>
+#include <mpqc/chemistry/qc/scf/traditional_four_center_fock_builder.h>
+#include <mpqc/chemistry/qc/scf/mo_build.h>
 
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
 #include <mpqc/chemistry/qc/cc/lazy_tile.h>
@@ -49,9 +49,9 @@
 #include <mpqc/chemistry/qc/f12/ccsdf12.h>
 #include "../utility/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
-#include "../scf/soad.h"
-#include "../integrals/atomic_integral.h"
-#include "../integrals/molecular_integral.h"
+#include <mpqc/chemistry/qc/scf/soad.h>
+#include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+#include <mpqc/chemistry/qc/integrals/molecular_integral.h>
 
 using namespace mpqc;
 namespace ints = integrals;

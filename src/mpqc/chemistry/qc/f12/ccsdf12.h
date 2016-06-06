@@ -8,7 +8,7 @@
 
 #include "../../../../../include/tiledarray.h"
 #include "../../../../../common/namespaces.h"
-#include "../../../../../integrals/molecular_integral.h"
+#include <mpqc/chemistry/qc/integrals/molecular_integral.h>
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/f12/f12_intermediates.h>
 

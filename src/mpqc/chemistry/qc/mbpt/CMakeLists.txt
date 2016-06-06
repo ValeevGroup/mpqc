@@ -4,4 +4,4 @@ set(sources
         )
 
 add_library(MPQCmbpt ${sources})
-target_link_libraries(MPQCmbpt ${TA_LIBRARIES} integrals)
+target_link_libraries(MPQCmbpt ${TA_LIBRARIES} MPQCintegrals)

@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include "../include/tiledarray.h"
-#include "../basis/basis.h"
+#include <mpqc/chemistry/qc/basis/basis.h>
 #include "cc_utility.h"
 
 namespace mpqc {

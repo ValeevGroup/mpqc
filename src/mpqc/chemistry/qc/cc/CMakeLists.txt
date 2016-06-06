@@ -10,4 +10,4 @@ set(sources
         )
 
 add_library(MPQCcc ${sources})
-target_link_libraries(MPQCcc ${TA_LIBRARIES} integrals)
+target_link_libraries(MPQCcc ${TA_LIBRARIES} MPQCintegrals)

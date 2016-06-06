@@ -7,7 +7,7 @@
 
 #include "../../../../../include/tiledarray.h"
 #include "../../../../../common/namespaces.h"
-#include "../../../../../integrals/molecular_integral.h"
+#include <mpqc/chemistry/qc/integrals/molecular_integral.h>
 
 namespace mpqc{
 namespace f12{

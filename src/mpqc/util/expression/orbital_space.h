@@ -9,7 +9,7 @@
 
 #include <mpqc/util/expression/orbital_index.h>
 #include <mpqc/util/expression/operation.h>
-#include "../../../../basis/basis.h"
+#include <mpqc/chemistry/qc/basis/basis.h>
 
 namespace mpqc{
 

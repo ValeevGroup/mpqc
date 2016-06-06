@@ -10,10 +10,8 @@
 
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
-#include "../expression/formula.h"
-#include "../expression/formula_registry.h"
 #include "atomic_integral.h"
-#include "../expression/orbital_registry.h"
+#include <mpqc/util/expression/orbital_registry.h>
 #include "../ta_routines/diagonal_array.h"
 #include "../scf/mo_build.h"
 

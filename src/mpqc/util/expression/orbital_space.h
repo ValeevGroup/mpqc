@@ -7,9 +7,9 @@
 
 #include <memory>
 
-#include "orbital_index.h"
-#include "operation.h"
-#include "../basis/basis.h"
+#include <mpqc/util/expression/orbital_index.h>
+#include <mpqc/util/expression/operation.h>
+#include "../../../../basis/basis.h"
 
 namespace mpqc{
 

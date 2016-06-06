@@ -5,9 +5,9 @@
 #ifndef MPQC_F12_INTERMEDIATES_H
 #define MPQC_F12_INTERMEDIATES_H
 
-#include "../include/tiledarray.h"
-#include "../common/namespaces.h"
-#include "../integrals/molecular_integral.h"
+#include "../../../../../include/tiledarray.h"
+#include "../../../../../common/namespaces.h"
+#include "../../../../../integrals/molecular_integral.h"
 
 namespace mpqc{
 namespace f12{

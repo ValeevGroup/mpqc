@@ -6,12 +6,12 @@
 #define MPQC_INTEGRAL_GENERATOR_H
 
 #include <libint2/engine.h>
-#include "../include/tiledarray.h"
+#include "../../../../../include/tiledarray.h"
 #include <TiledArray/tensor/tensor_map.h>
-#include "../common/namespaces.h"
-#include "../basis/cluster_shells.h"
-#include "../integrals/task_integral_kernels.h"
-#include "../integrals/integral_engine_pool.h"
+#include "../../../../../common/namespaces.h"
+#include "../../../../../basis/cluster_shells.h"
+#include "../../../../../integrals/task_integral_kernels.h"
+#include "../../../../../integrals/integral_engine_pool.h"
 
 namespace mpqc {
     namespace  cc {

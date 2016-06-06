@@ -6,11 +6,11 @@
 #define MPQC_CCSDF12_H
 
 
-#include "../include/tiledarray.h"
-#include "../common/namespaces.h"
-#include "../integrals/molecular_integral.h"
-#include "../utility/trange1_engine.h"
-#include "f12_intermediates.h"
+#include "../../../../../include/tiledarray.h"
+#include "../../../../../common/namespaces.h"
+#include "../../../../../integrals/molecular_integral.h"
+#include "../../../../../utility/trange1_engine.h"
+#include <mpqc/chemistry/qc/f12/f12_intermediates.h>
 
 namespace mpqc{
 namespace f12{

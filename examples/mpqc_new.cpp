@@ -25,8 +25,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   /// construct Molecule
 
-  std::shared_ptr<molecule::Molecule> mol =
-      std::make_shared<molecule::Molecule>(kv.keyval("molecule"));
+//  std::shared_ptr<molecule::Molecule> mol =
+//      std::make_shared<molecule::Molecule>(kv.keyval("molecule"));
 
   std::shared_ptr<basis::Basis> bs =
       std::make_shared<basis::Basis>(kv.keyval("obs"));

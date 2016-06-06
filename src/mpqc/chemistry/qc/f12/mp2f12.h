@@ -7,13 +7,10 @@
 
 #include <string>
 
-#include "f12_utility.h"
-#include "f12_intermediates.h"
-#include "../utility/cc_utility.h"
-#include "../include/tiledarray.h"
-#include "../common/namespaces.h"
-#include "../integrals/molecular_integral.h"
-#include "../utility/trange1_engine.h"
+#include <mpqc/chemistry/qc/f12/f12_utility.h>
+#include <mpqc/chemistry/qc/f12/f12_intermediates.h>
+#include "../../../../../utility/cc_utility.h"
+#include "../../../../../utility/trange1_engine.h"
 
 namespace mpqc{
 namespace f12{

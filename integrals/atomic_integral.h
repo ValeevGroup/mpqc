@@ -6,10 +6,8 @@
 #define MPQC_ATOMIC_INTEGRAL_H
 
 #include <rapidjson/document.h>
-#include "../f12/f12_utility.h"
+#include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include "../integrals/integrals.h"
-#include "../expression/formula_registry.h"
-#include "../expression/orbital_registry.h"
 #include "atomic_integral_base.h"
 #include "../utility/wcout_utf8.h"
 #include "../ta_routines/array_to_eigen.h"

@@ -2,12 +2,12 @@
 // Created by Chong Peng on 10/31/15.
 //
 
-#include "operation.h"
 
 #include <boost/algorithm/string.hpp>
 #include <string>
 #include <memory>
 
+#include <mpqc/util/expression/operation.h>
 
 namespace mpqc{
     using Operations = mpqc::Operation::Operations;

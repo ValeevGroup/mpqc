@@ -18,11 +18,11 @@
 #include "../basis/basis_set.h"
 #include "../basis/basis.h"
 
-#include "../f12/mp2f12.h"
+#include <mpqc/chemistry/qc/f12/mp2f12.h>
 #include "../utility/cc_utility.h"
 #include "../integrals/integrals.h"
 #include "../integrals/atomic_integral.h"
-#include "../expression/orbital_registry.h"
+#include <mpqc/util/expression/orbital_registry.h>
 
 #include "../utility/time.h"
 #include "../utility/parallel_file.h"
@@ -31,7 +31,7 @@
 #include "../scf/traditional_df_fock_builder.h"
 #include "../scf/eigen_solve_density_builder.h"
 
-#include "../mp2/mp2.h"
+#include <mpqc/chemistry/qc/mbpt/mp2.h>
 #include "../scf/traditional_four_center_fock_builder.h"
 
 #include <memory>
@@ -116,10 +116,10 @@ int main(int argc, char *argv[]) {
 
 
     auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
-    bs_registry->add(OrbitalIndex(L"κ"),std::make_shared<basis::Basis>(basis));
-    bs_registry->add(OrbitalIndex(L"Κ"),std::make_shared<basis::Basis>(df_basis));
-    bs_registry->add(OrbitalIndex(L"α"), std::make_shared<basis::Basis>(abs_basis));
-    bs_registry->add(OrbitalIndex(L"ρ"), std::make_shared<basis::Basis>(ri_basis));
+    bs_registry->add(OrbitalIndex(L"κ"),basis);
+    bs_registry->add(OrbitalIndex(L"Κ"),df_basis);
+    bs_registry->add(OrbitalIndex(L"α"),abs_basis);
+    bs_registry->add(OrbitalIndex(L"ρ"),ri_basis);
 
 
     f12::GTGParams gtg_params(1.0, 6);
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
 
     const auto bs_array = utility::make_array(basis, basis);
-    auto multi_pool = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
+    auto multi_pool = ints::make_1body_shr_pool("emultipole1", basis, clustered_mol);
     auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
 
     // doing four center HF
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
 
 
     {
-        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,std::make_shared<TRange1Engine>(tre));
+        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,std::make_shared<TRange1Engine>(tre));
         mp2.compute_df();
     }
     time1 = mpqc_time::fenced_now(world);

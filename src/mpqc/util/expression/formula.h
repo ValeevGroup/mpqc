@@ -7,9 +7,9 @@
 
 #include <vector>
 
-#include "greek_to_english_name.h"
-#include "orbital_index.h"
-#include "operation.h"
+#include <mpqc/util/expression/greek_to_english_name.h>
+#include <mpqc/util/expression/orbital_index.h>
+#include <mpqc/util/expression/operation.h>
 
 using mpqc::OrbitalIndex;
 using mpqc::Operation;

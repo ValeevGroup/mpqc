@@ -41,9 +41,9 @@
 
 #include "../scf/traditional_four_center_fock_builder.h"
 
-#include "../cc/ccsd_t.h"
-#include "../cc/lazy_tile.h"
-#include "../cc/ccsd_intermediates.h"
+#include <mpqc/chemistry/qc/cc/ccsd_t.h>
+#include <mpqc/chemistry/qc/cc/lazy_tile.h>
+#include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>
 #include "../utility/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../scf/soad.h"
@@ -159,7 +159,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         xyz_file_stream << xyz_file_buffer;
         delete[] xyz_file_buffer;
 
-        auto mol = mpqc::molecule::read_xyz_stringstream(xyz_file_stream, do_cluster);
+        auto mol = mpqc::molecule::Molecule(xyz_file_stream, do_cluster);
         auto charge = 0;
         auto occ = mol.occupation(charge);
         auto repulsion_energy = mol.nuclear_repulsion();
@@ -188,7 +188,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             std::stringstream ghost_xyz_stream;
             ghost_xyz_stream << ghost_xyz_buffer;
             delete[] ghost_xyz_buffer;
-            auto ghost_molecue = mpqc::molecule::read_xyz_stringstream(ghost_xyz_stream, false);
+            auto ghost_molecue = mpqc::molecule::Molecule(ghost_xyz_stream, false);
             auto ghost_elements = ghost_molecue.clusterables();
 
             if (world.rank() == 0) {
@@ -557,11 +557,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     if (in.HasMember("CCSD(T)")) {
         mpqc::cc::CCSD_T<TA::Tensor<double>, TA::SparsePolicy> ccsd_t(
-              fock_mo, ens, tre, intermidiate, cc_in);
+              ens, tre, intermidiate, cc_in);
         ccsd_t.compute();
     } else if (in.HasMember("CCSD")) {
         mpqc::cc::CCSD<TA::Tensor<double>, TA::SparsePolicy> ccsd(
-              fock_mo, ens, tre, intermidiate, cc_in);
+              ens, tre, intermidiate, cc_in);
         ccsd.compute();
 
 

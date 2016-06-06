@@ -6,9 +6,9 @@
 #define MPQC_FORMULA_MAP_H
 
 #include <map>
-#include "formula.h"
-#include "../utility/print_size_info.h"
-#include "../utility/parallel_print.h"
+#include <mpqc/util/expression/formula.h>
+#include "../../../../utility/print_size_info.h"
+#include "../../../../utility/parallel_print.h"
 
 namespace mpqc{
 

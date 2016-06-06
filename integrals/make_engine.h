@@ -10,7 +10,7 @@
 #include "../molecule/molecule.h"
 #include "../molecule/cluster_collapse.h"
 
-#include "../f12/f12_utility.h"
+#include <mpqc/chemistry/qc/f12/f12_utility.h>
 
 #include <libint2/engine.h>
 #include <iostream>

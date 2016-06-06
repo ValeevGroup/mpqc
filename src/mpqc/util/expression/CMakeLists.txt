@@ -12,5 +12,5 @@ set(sources
         orbital_registry.h
         )
 
-add_library(expression ${sources})
-target_link_libraries(expression ${TA_LIBRARIES})
+add_library(MPQCexpression ${sources})
+target_link_libraries(MPQCexpression ${TA_LIBRARIES})

@@ -10,16 +10,16 @@
 #include <iostream>
 #include <cwchar>
 
+#include <mpqc/util/expression/formula.h>
+#include <mpqc/util/expression/orbital_registry.h>
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 #include "../molecule/molecule.h"
 #include "../basis/basis.h"
-#include "../expression/formula.h"
 #include "integral_engine_pool.h"
 #include "../utility/make_array.h"
 #include "task_integrals.h"
 #include "make_engine.h"
-#include "../expression/orbital_registry.h"
 
 #include <libint2/engine.h>
 
@@ -66,7 +66,12 @@ public:
         orbital_basis_registry_ = obs;
     }
 
-    /**
+
+  const std::shared_ptr<OrbitalBasisRegistry> &orbital_basis_registry() const {
+      return orbital_basis_registry_;
+  }
+
+/**
      * Given Formula with rank = 4, return DensityFitting formula
      *
      * This function is also used in MolecularIntegral density fitting formula parsing

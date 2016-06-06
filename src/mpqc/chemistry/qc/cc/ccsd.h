@@ -5,16 +5,15 @@
 #ifndef MPQC_CCSD_H
 #define MPQC_CCSD_H
 
-#include "../include/tiledarray.h"
-#include "../common/namespaces.h"
+#include "../../../../../include/tiledarray.h"
+#include "../../../../../common/namespaces.h"
 
-#include "../utility/trange1_engine.h"
-#include "mo_block.h"
-#include "../ta_routines/tarray_block.h"
-
-#include "ccsd_intermediates.h"
-#include "diis_ccsd.h"
-#include "../utility/cc_utility.h"
+#include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>
+#include <mpqc/chemistry/qc/cc/diis_ccsd.h>
+#include <mpqc/chemistry/qc/cc/mo_block.h>
+#include "../../../../../utility/trange1_engine.h"
+#include "../../../../../ta_routines/tarray_block.h"
+#include "../../../../../utility/cc_utility.h"
 
 namespace mpqc {
     namespace cc {

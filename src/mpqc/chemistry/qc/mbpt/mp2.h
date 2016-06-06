@@ -5,16 +5,18 @@
 #ifndef MPQC_MP2_H
 #define MPQC_MP2_H
 
-#include "../include/tiledarray.h"
-#include "../common/namespaces.h"
-#include "../integrals/molecular_integral.h"
-#include "../utility/trange1_engine.h"
-#include "../utility/parallel_print.h"
+#include "../../../../../include/tiledarray.h"
+#include "../../../../../common/namespaces.h"
+#include "../../../../../integrals/molecular_integral.h"
+#include "../../../../../utility/trange1_engine.h"
+#include "../../../../../utility/parallel_print.h"
 
 
 using namespace mpqc;
 
 namespace mpqc{
+namespace mbpt{
+
 
 
     template<typename Tile, typename Policy>
@@ -138,5 +140,6 @@ namespace mpqc{
         std::shared_ptr<Eigen::VectorXd> orbital_energy_;
     };
 
-}
+} // end of namespace mbpt
+}//end of namespace mpqc
 #endif //MPQC_MP2_H

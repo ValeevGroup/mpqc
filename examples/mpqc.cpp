@@ -40,19 +40,18 @@
 #include "../scf/traditional_four_center_fock_builder.h"
 #include "../scf/mo_build.h"
 
-#include "../cc/ccsd_t.h"
-#include "../cc/lazy_tile.h"
-#include "../cc/ccsd_intermediates.h"
+#include <mpqc/chemistry/qc/cc/ccsd_t.h>
+#include <mpqc/chemistry/qc/cc/lazy_tile.h>
+#include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>
+#include <mpqc/chemistry/qc/mbpt/mp2.h>
+#include <mpqc/chemistry/qc/f12/f12_utility.h>
+#include <mpqc/chemistry/qc/f12/mp2f12.h>
+#include <mpqc/chemistry/qc/f12/ccsdf12.h>
 #include "../utility/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
 #include "../scf/soad.h"
-#include "../expression/orbital_registry.h"
-#include "../f12/f12_utility.h"
 #include "../integrals/atomic_integral.h"
 #include "../integrals/molecular_integral.h"
-#include "../mp2/mp2.h"
-#include "../f12/mp2f12.h"
-#include "../f12/ccsdf12.h"
 
 using namespace mpqc;
 namespace ints = integrals;
@@ -122,6 +121,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     std::string basis_name = in.HasMember("Basis") ? in["Basis"].GetString() : "cc-pvdz";
     std::string df_basis_name = in.HasMember("DfBasis") ? in["DfBasis"].GetString() : "";
     std::string aux_basis_name = in.HasMember("AuxBasis") ? in["AuxBasis"].GetString() : "";
+    std::string vir_basis_name = in.HasMember("VirtualBasis") ? in["VirtualBasis"].GetString() : "";
 
     // Get thresh info
     auto threshold = in.HasMember("Sparse") ? in["Sparse"].GetDouble() : 1e-15;
@@ -229,6 +229,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
         }
         utility::parallel_print_range_info(world, df_basis.create_trange1(), "DF Basis");
         bs_registry->add(OrbitalIndex(L"Κ"),df_basis);
+    }
+
+    basis::Basis vir_basis;
+    if(!vir_basis_name.empty()){
+        basis::BasisSet vbs(vir_basis_name);
+        vir_basis = basis::parallel_construct_basis(world,vbs,clustered_mol);
+        if(ao_blocksize!=0){
+            vir_basis = reblock(vir_basis, cc::reblock_basis, ao_blocksize);
+        }
+        utility::parallel_print_range_info(world, vir_basis.create_trange1(), "Virtual Basis");
+        bs_registry->add(OrbitalIndex(L"Α"),vir_basis);
     }
 
     basis::Basis abs_basis;
@@ -395,7 +406,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         corr_in = json::get_nested(in, "MP2");
         tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
-        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
+        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
         corr_e += mp2.compute(corr_in);
 
         auto mp2_time1 = mpqc_time::fenced_now(world);
@@ -416,7 +427,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         // mo build
         tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
         // mp2 compute
-        auto mp2 = MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
+        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
         corr_e += mp2.compute(corr_in);
 
         auto mp2_time1 = mpqc_time::fenced_now(world);

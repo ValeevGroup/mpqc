@@ -5,11 +5,11 @@
 #ifndef MPQC_CCSD_INTERMEDIATES_H
 #define MPQC_CCSD_INTERMEDIATES_H
 
-#include "../include/tiledarray.h"
-#include "../common/namespaces.h"
-#include "../integrals/direct_task_integrals.h"
-#include "../integrals/molecular_integral.h"
-#include "lazy_tile.h"
+#include "../../../../../include/tiledarray.h"
+#include "../../../../../common/namespaces.h"
+#include "../../../../../integrals/direct_task_integrals.h"
+#include "../../../../../integrals/molecular_integral.h"
+#include <mpqc/chemistry/qc/cc/lazy_tile.h>
 
 namespace mpqc {
 

@@ -6,8 +6,8 @@
 #define MPQC_UTILITY_H
 
 #include <string>
-#include "../include/eigen.h"
-#include "../include/tiledarray.h"
+#include "../../../../../include/eigen.h"
+#include "../../../../../include/tiledarray.h"
 #include <vector>
 #include <TiledArray/error.h>
 #include <TiledArray/sparse_shape.h>

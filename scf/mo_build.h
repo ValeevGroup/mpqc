@@ -11,7 +11,7 @@
 #include "../include/tiledarray.h"
 #include "../common/namespaces.h"
 #include "../integrals/atomic_integral.h"
-#include "../expression/orbital_registry.h"
+#include <mpqc/util/expression/orbital_registry.h>
 #include "../utility/trange1_engine.h"
 
 namespace mpqc {
@@ -122,6 +122,115 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 
     return tre;
 };
+
+
+//template <typename Tile, typename Policy>
+//std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_eigen_solve(
+//        integrals::AtomicIntegral<Tile, Policy> &ao_int,
+//        OrbitalSpaceRegistry<TA::DistArray < Tile, Policy>>& orbital_registry,
+//        Eigen::VectorXd& ens,
+//        const rapidjson::Document& in,
+//        const molecule::Molecule& mols,
+//        int occ)
+//{
+//    auto& world = ao_int.get_world();
+//    using TArray = TA::DistArray<Tile, Policy>;
+//
+//
+//    auto mo_time0 = mpqc_time::fenced_now(world);
+//    utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO Orbital\n");
+//
+//    // solving occupied orbitals
+//    TArray F;
+//    if(ao_int.registry().have(Formula(L"(μ|F|ν)"))){
+//        F = ao_int.registry().retrieve(Formula(L"(μ|F|ν)"));
+//    }
+//    else{
+//        F = ao_int.registry().retrieve(Formula(L"(μ|F|ν)[df]"));
+//    }
+//
+//    auto S = ao_int.compute(L"(κ|λ)");
+//
+//    MatrixD F_eig = array_ops::array_to_eigen(F);
+//    MatrixD S_eig = array_ops::array_to_eigen(S);
+//
+//    // solve mo coefficients
+//    Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+//
+//    bool frozen_core = in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
+//    std::size_t n_frozen_core = 0;
+//    if (frozen_core) {
+//        n_frozen_core = mols.core_electrons();
+//        utility::print_par(world, "Frozen Core: ", n_frozen_core," electrons", "\n");
+//        n_frozen_core = n_frozen_core / 2;
+//    }
+//
+//    ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
+//    MatrixD C_all = es.eigenvectors();
+//    MatrixD C_occ = C_all.block(0, 0, S_eig.rows(),occ);
+//    MatrixD C_corr_occ = C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
+//
+//    std::size_t mo_blocksize = in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
+//    std::size_t occ_blocksize = in.HasMember("OccBlockSize") ? in["OccBlockSize"].GetInt() : mo_blocksize;
+//    std::size_t all = S.trange().elements().extent()[0];
+//    auto tre = std::make_shared<TRange1Engine>(occ, all, occ_blocksize, vir_blocksize, n_frozen_core);
+//    auto tr_occ = tre->compute_range(occ, occ_blocksize);
+//    auto tr_corr_occ = tre->get_occ_tr1();
+//    utility::parallel_print_range_info(world, tr_occ, "Occ");
+//    utility::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
+//
+//    // convert to TA
+//    auto C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_obs, tr_occ);
+//    auto C_corr_occ_ta = array_ops::eigen_to_array<Tile>(world, C_corr_occ, tr_obs, tr_corr_occ);
+//
+//    // insert to registry
+//    using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile,Policy>>;
+//    auto occ_space = OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
+//    orbital_registry.add(occ_space);
+//
+//    auto corr_occ_space = OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
+//    orbital_registry.add(corr_occ_space);
+//    // finished solving occupied orbitals
+//
+//
+//    // solving the virtual orbitals
+//    // find fock matrix
+//    TArray F_vir;
+//    // if use density fitting
+//    if(ao_int.orbital_basis_registry()->have(OrbitalIndex(L"Κ"))){
+//        F_vir = ao_int.compute(Formula(L"(Α|F|Β)[df]"));
+//    }
+//    else{
+//        F_vir = ao_int.compute(Formula(L"(Α|F|Β)"));
+//    }
+//
+//    auto S_vir = ao_int.compute(L"(Α|Β)");
+//    // get all the sizes
+//    std::size_t vir_blocksize = in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
+//
+//    utility::print_par(world,"OccBlockSize: ", occ_blocksize, "\n");
+//    utility::print_par(world,"VirBlockSize: ", vir_blocksize, "\n");
+//
+//
+//
+//    // get all the trange1s
+//    auto tr_vir = tre->get_vir_tr1();
+//    auto tr_all = tre->get_all_tr1();
+//
+//    utility::parallel_print_range_info(world, tr_vir, "Vir");
+//    utility::parallel_print_range_info(world, tr_all, "Obs");
+//
+//
+//
+//
+//
+//
+//    auto mo_time1 = mpqc_time::fenced_now(world);
+//    auto mo_time = mpqc_time::duration_in_s(mo_time0,mo_time1);
+//    utility::print_par(world,"ClosedShell OBS MO Build Time: ", mo_time, " S\n");
+//
+//    return tre;
+//};
 
 
 template <typename Tile, typename Policy>

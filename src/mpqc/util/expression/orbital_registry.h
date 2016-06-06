@@ -5,8 +5,8 @@
 #ifndef MPQC_ORBITAL_REGISTRY_H
 #define MPQC_ORBITAL_REGISTRY_H
 
-#include "formula_registry.h"
-#include "orbital_space.h"
+#include <mpqc/util/expression/formula_registry.h>
+#include <mpqc/util/expression/orbital_space.h>
 
 
 namespace mpqc{

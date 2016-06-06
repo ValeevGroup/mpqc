@@ -5,18 +5,18 @@
 #ifndef MPQC_CC2_H
 #define MPQC_CC2_H
 
-#include "../include/tiledarray.h"
-#include "../common/namespaces.h"
+#include "../../../../../include/tiledarray.h"
+#include "../../../../../common/namespaces.h"
 
-#include "../utility/trange1_engine.h"
+#include "../../../../../utility/trange1_engine.h"
 #include "mo_block.h"
-#include "../ta_routines/tarray_block.h"
+#include "../../../../../ta_routines/tarray_block.h"
 
 #include "ccsd_intermediates.h"
 #include "diis_ccsd.h"
 #include "integral_generator.h"
 #include "lazy_tile.h"
-#include "../utility/cc_utility.h"
+#include "../../../../../utility/cc_utility.h"
 
 namespace mpqc {
     namespace cc {

@@ -3,8 +3,8 @@
 //
 
 
-#include "ccsdf12.h"
-#include "mp2f12.h"
+#include <mpqc/chemistry/qc/f12/ccsdf12.h>
+#include <mpqc/chemistry/qc/f12/mp2f12.h>
 
 namespace mpqc{
 namespace f12{

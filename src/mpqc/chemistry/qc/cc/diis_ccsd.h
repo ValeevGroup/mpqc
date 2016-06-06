@@ -7,8 +7,8 @@
 
 #include <cmath>
 
-#include "../include/tiledarray.h"
-#include "../common/namespaces.h"
+#include "../../../../../include/tiledarray.h"
+#include "../../../../../common/namespaces.h"
 
 // interface to use DIIS class for ccsd
 

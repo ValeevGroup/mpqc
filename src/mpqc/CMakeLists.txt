@@ -1,1 +1,2 @@
 ADD_SUBDIRECTORY(util)
+ADD_SUBDIRECTORY(chemistry)

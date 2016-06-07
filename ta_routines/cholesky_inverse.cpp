@@ -1,5 +1,4 @@
 #include "cholesky_inverse.h"
-#include "../include/eigen.h"
 #include "array_to_eigen.h"
 
 namespace mpqc {

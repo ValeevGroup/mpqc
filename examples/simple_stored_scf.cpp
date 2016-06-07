@@ -22,8 +22,6 @@
 #include "../utility/array_info.h"
 #include "../ta_routines/array_to_eigen.h"
 
-#include <memory>
-
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 

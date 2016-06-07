@@ -3,10 +3,7 @@
 #include <mpqc/chemistry/molecule/molecule.h>
 
 #include <mpqc/chemistry/qc/basis/basis.h>
-#include <mpqc/chemistry/qc/basis/basis_set.h>
 #include <mpqc/chemistry/qc/basis/shell_vec_functions.h>
-
-#include "../../../../../include/tiledarray.h"
 
 MPQC_CLASS_EXPORT_KEY2(mpqc::basis::Basis, "Basis");
 namespace mpqc {

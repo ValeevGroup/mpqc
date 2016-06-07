@@ -3,7 +3,6 @@
 //
 
 #include "cc_utility.h"
-#include <cmath>
 
 namespace mpqc{
 namespace cc{

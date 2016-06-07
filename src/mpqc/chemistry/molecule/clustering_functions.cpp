@@ -4,8 +4,6 @@
 
 #include "../../../../clustering/kmeans.h"
 
-#include <cassert>
-
 
 namespace mpqc {
 namespace molecule {

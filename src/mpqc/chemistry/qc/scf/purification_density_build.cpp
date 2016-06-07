@@ -1,13 +1,10 @@
 #include <mpqc/chemistry/qc/integrals/integrals.h>
-#include "../../../../../common/typedefs.h"
 
 #include <mpqc/chemistry/qc/scf/purification_density_build.h>
 #include "../../../../../ta_routines/array_to_eigen.h"
 #include "../../../../../ta_routines/cholesky_inverse.h"
 #include "../../../../../ta_routines/sqrt_inv.h"
 #include "../../../../../ta_routines/minimize_storage.h"
-
-#include "../../../../../tensor/decomposed_tensor_algebra.h"
 
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 #include <mpqc/chemistry/qc/scf/orbital_localization.h>

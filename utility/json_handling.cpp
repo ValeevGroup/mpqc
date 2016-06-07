@@ -3,11 +3,8 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <stdexcept>
 
 #include "time.h"
-#include <ctime>
-#include <sstream>
 
 namespace mpqc {
 namespace json {

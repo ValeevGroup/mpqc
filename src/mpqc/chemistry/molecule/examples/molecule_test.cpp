@@ -4,9 +4,6 @@
 #include <mpqc/chemistry/molecule/atom.h>
 #include "../../../../../include/tbb.h"
 #include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/chemistry/molecule/cluster_concept.h>
-
-#include <fstream>
 
 using namespace mpqc;
 using namespace mpqc::molecule;

@@ -1,5 +1,4 @@
 #include <mpqc/chemistry/qc/integrals/integrals.h>
-#include "../../../../../common/typedefs.h"
 #include <mpqc/chemistry/qc/scf/eigen_solve_density_builder.h>
 
 #include "../../../../../ta_routines/array_to_eigen.h"
@@ -7,15 +6,11 @@
 #include "../../../../../ta_routines/sqrt_inv.h"
 #include "../../../../../ta_routines/minimize_storage.h"
 
-#include "../../../../../utility/array_info.h"
 #include "../../../../../utility/vector_functions.h"
-#include "../../../../../utility/time.h"
 
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 #include <mpqc/chemistry/qc/scf/orbital_localization.h>
 #include <mpqc/chemistry/qc/scf/clusterd_coeffs.h>
-
-#include <iostream>
 
 namespace mpqc {
 namespace scf {

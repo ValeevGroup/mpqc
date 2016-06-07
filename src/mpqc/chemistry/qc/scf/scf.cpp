@@ -2,11 +2,6 @@
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include "../../../../../utility/time.h"
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
-#include "../../../../../ta_routines/array_to_eigen.h"
-#include "../../../../../ta_routines/minimize_storage.h"
-
-#include <mpqc/chemistry/qc/scf/orbital_localization.h>
-#include <mpqc/chemistry/qc/scf/clusterd_coeffs.h>
 
 namespace mpqc {
 namespace scf {

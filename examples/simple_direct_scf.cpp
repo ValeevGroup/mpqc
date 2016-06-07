@@ -25,8 +25,6 @@
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/soad.h"
 
-#include <memory>
-
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 

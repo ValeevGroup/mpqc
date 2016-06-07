@@ -49,14 +49,9 @@
 #include "../scf/cadf_builder_forced_shape.h"
 #include "../scf/linear_cadf_builder.h"
 
-#include "../tensor/decomposed_tensor.h"
-#include "../tensor/decomposed_tensor_nonintrusive_interface.h"
-#include "../tensor/mpqc_tile.h"
 #include "../tensor/tensor_transforms.h"
 
 #include "../f12/f12_utility.h"
-
-#include <memory>
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;

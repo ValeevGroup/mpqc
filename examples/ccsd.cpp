@@ -1,8 +1,6 @@
 #include <memory>
 #include <fstream>
-#include <algorithm>
 #include <iomanip>
-#include <chrono>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
@@ -42,10 +40,6 @@
 #include "../scf/traditional_four_center_fock_builder.h"
 
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
-#include <mpqc/chemistry/qc/cc/lazy_tile.h>
-#include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>
-#include "../utility/trange1_engine.h"
-#include "../ta_routines/array_to_eigen.h"
 #include "../scf/soad.h"
 
 using namespace mpqc;

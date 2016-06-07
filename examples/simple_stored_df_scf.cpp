@@ -35,8 +35,6 @@
 #include "../ta_routines/array_to_eigen.h"
 #include "../ta_routines/minimize_storage.h"
 
-#include <memory>
-
 using namespace mpqc;
 namespace ints = mpqc::integrals;
 

@@ -190,7 +190,7 @@ namespace mpqc{
         }
 
         /// remove all formula that has operation oper
-        void remove_operation(madness::World& world, const Operation::Operations & oper){
+        void remove_operation(madness::World& world, const Operation::Operators & oper){
 
             auto pred = [& oper](const value_type& item){
                 return item.first.operation().oper() == oper;
@@ -203,7 +203,7 @@ namespace mpqc{
         void remove_operation(madness::World& world, const std::wstring& oper_str){
 
             Operation operation(oper_str);
-            Operation::Operations oper = operation.oper();
+            Operation::Operators oper = operation.oper();
             remove_operation(world, oper);
         }
 

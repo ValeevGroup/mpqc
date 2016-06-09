@@ -141,7 +141,7 @@ namespace integrals{
         void remove_operation_all(madness::World& world, const std::wstring& oper_str){
 
             Operation operation(oper_str);
-            Operation::Operations oper = operation.oper();
+            Operation::Operators oper = operation.oper();
 
             mo_formula_registry_.remove_operation(world, oper);
             atomic_integral().registry().remove_operation(world, oper);
@@ -196,7 +196,7 @@ namespace integrals{
 
         TArray result;
         // Identity matrix
-        if(formula_string.operation().oper() == Operation::Operations::Identity){
+        if(formula_string.operation().oper() == Operation::Operators::Identity){
 
             time0 = mpqc_time::now(world_,accurate_time_);
 

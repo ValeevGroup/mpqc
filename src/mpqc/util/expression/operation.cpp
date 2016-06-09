@@ -10,55 +10,55 @@
 #include <mpqc/util/expression/operation.h>
 
 namespace mpqc{
-    using Operations = mpqc::Operation::Operations;
+    using Operations = mpqc::Operation::Operators;
     using Options = mpqc::Operation::Options;
 
     const std::unordered_map<std::wstring, Operations> Operation::one_body_operation = {
-        {L"", Operations::Overlap},
-        {L"T", Operations::Kinetic},
-        {L"V", Operations::Nuclear},
-        {L"H", Operations::Core},
-        {L"I", Operations::Identity }
+        {L"", Operators::Overlap},
+        {L"T", Operators::Kinetic},
+        {L"V", Operators::Nuclear},
+        {L"H", Operators::Core},
+        {L"I", Operators::Identity }
     };
 
     const std::unordered_map<std::wstring, Operations> Operation::two_body_operation = {
-        {L"G", Operations::Coulomb},
-        {L"R", Operations::cGTG },
-        {L"GR", Operations::cGTGCoulomb },
-        {L"R2", Operations::cGTG2 },
-        {L"dR2", Operations::DelcGTG2}
+        {L"G", Operators::Coulomb},
+        {L"R", Operators::cGTG },
+        {L"GR", Operators::cGTGCoulomb },
+        {L"R2", Operators::cGTG2 },
+        {L"dR2", Operators::DelcGTG2}
     };
 
     const std::unordered_map<std::wstring, Operations> Operation::fock_operation = {
-        {L"J", Operations::J},
-        {L"hJ", Operations::hJ},
-        {L"K", Operations::K },
-        {L"K(α)", Operations::KAlpha },
-        {L"K(β)", Operations::KBeta },
-        {L"F", Operations::Fock},
-        {L"F(α)", Operations::FockAlpha},
-        {L"F(β)", Operations::FockBeta}
+        {L"J", Operators::J},
+        {L"hJ", Operators::hJ},
+        {L"K", Operators::K },
+        {L"K(α)", Operators::KAlpha },
+        {L"K(β)", Operators::KBeta },
+        {L"F", Operators::Fock},
+        {L"F(α)", Operators::FockAlpha},
+        {L"F(β)", Operators::FockBeta}
     };
 
     const std::map<Operations, std::wstring> Operation::oper_to_string = {
-            {Operations::Overlap, L""},
-            {Operations::Kinetic, L"T"},
-            {Operations::Nuclear, L"V"},
-            {Operations::Core, L"H"},
-            {Operations::Coulomb, L"G"},
-            {Operations::cGTG, L"R"},
-            {Operations::cGTG2, L"R2"},
-            {Operations::cGTGCoulomb, L"GR" },
-            {Operations::DelcGTG2, L"dR2"},
-            {Operations::J, L"J"},
-            {Operations::hJ, L"hJ"},
-            {Operations::K, L"K"},
-            {Operations::KAlpha, L"K(α)"},
-            {Operations::KBeta, L"K(β)"},
-            {Operations::Fock, L"F"},
-            {Operations::FockAlpha, L"F(α)"},
-            {Operations::FockBeta, L"F(β)" },
-            {Operations::Identity, L"I"}
+            {Operators::Overlap, L""},
+            {Operators::Kinetic, L"T"},
+            {Operators::Nuclear, L"V"},
+            {Operators::Core, L"H"},
+            {Operators::Coulomb, L"G"},
+            {Operators::cGTG, L"R"},
+            {Operators::cGTG2, L"R2"},
+            {Operators::cGTGCoulomb, L"GR" },
+            {Operators::DelcGTG2, L"dR2"},
+            {Operators::J, L"J"},
+            {Operators::hJ, L"hJ"},
+            {Operators::K, L"K"},
+            {Operators::KAlpha, L"K(α)"},
+            {Operators::KBeta, L"K(β)"},
+            {Operators::Fock, L"F"},
+            {Operators::FockAlpha, L"F(α)"},
+            {Operators::FockBeta, L"F(β)" },
+            {Operators::Identity, L"I"}
     };
 
     const std::map<Options, std::wstring> Operation::option_to_string = {
@@ -94,17 +94,17 @@ namespace mpqc{
     }
 
     bool Operation::is_fock() const {
-        return (oper_==Operations::Fock || oper_==Operations::FockAlpha || oper_==Operations::FockBeta);
+        return (oper_==Operators::Fock || oper_==Operators::FockAlpha || oper_==Operators::FockBeta);
     }
 
     bool Operation::is_jk() const {
-        return (oper_== Operations::J || oper_==Operations::K || oper_==Operations::KAlpha ||
-                oper_==Operations::KBeta);
+        return (oper_== Operators::J || oper_==Operators::K || oper_==Operators::KAlpha ||
+                oper_==Operators::KBeta);
     }
 
     bool Operation::is_r12() const {
-        return (oper_==Operations::cGTG2 || oper_ == Operations::cGTG || oper_==Operations::cGTGCoulomb
-                || oper_==Operations::DelcGTG2);
+        return (oper_==Operators::cGTG2 || oper_ == Operators::cGTG || oper_==Operators::cGTGCoulomb
+                || oper_==Operators::DelcGTG2);
     }
 
     bool Operation::has_option(Options op) const {

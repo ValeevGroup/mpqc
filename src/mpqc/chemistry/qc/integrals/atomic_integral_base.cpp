@@ -10,11 +10,11 @@ libint2::Engine  AtomicIntegralBase::get_one_body_engine(const Operation &operat
 
     libint2::Operator itype;
     std::vector<std::pair<double, std::array<double, 3>>> q;
-    if (operation.oper() == Operation::Operations::Overlap) {
+    if (operation.oper() == Operation::Operators::Overlap) {
         itype = libint2::Operator::overlap;
-    } else if (operation.oper() == Operation::Operations::Kinetic) {
+    } else if (operation.oper() == Operation::Operators::Kinetic) {
         itype = libint2::Operator::kinetic;
-    } else if (operation.oper() == Operation::Operations::Nuclear) {
+    } else if (operation.oper() == Operation::Operators::Nuclear) {
         itype = libint2::Operator::nuclear;
         q = make_q(*(this->mol_));
     } else {
@@ -35,19 +35,19 @@ libint2::MultiplicativeSphericalTwoBodyKernel AtomicIntegralBase::get_two_body_e
         const Operation &operation)
 {
     libint2::MultiplicativeSphericalTwoBodyKernel kernel;
-    if (operation.oper() == Operation::Operations::Coulomb) {
+    if (operation.oper() == Operation::Operators::Coulomb) {
         kernel = libint2::Coulomb;
     }
-    else if(operation.oper() == Operation::Operations::cGTGCoulomb) {
+    else if(operation.oper() == Operation::Operators::cGTGCoulomb) {
         kernel = libint2::cGTG_times_Coulomb;
     }
-    else if(operation.oper() == Operation::Operations::cGTG){
+    else if(operation.oper() == Operation::Operators::cGTG){
         kernel = libint2::cGTG;
     }
-    else if(operation.oper() == Operation::Operations::cGTG2){
+    else if(operation.oper() == Operation::Operators::cGTG2){
         kernel = libint2::cGTG;
     }
-    else if(operation.oper() == Operation::Operations::DelcGTG2){
+    else if(operation.oper() == Operation::Operators::DelcGTG2){
         kernel = libint2::DelcGTG_square;
     }
     else {
@@ -237,7 +237,7 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula) {
     result.set_notation(Formula::Notation::Chemical);
     Operation oper(L"G");
     result.set_operation(oper);
-    if(formula.operation().oper() == Operation::Operations::J){
+    if(formula.operation().oper() == Operation::Operators::J){
 
         result.left_index().push_back(formula.left_index()[0]);
         result.left_index().push_back(formula.right_index()[0]);
@@ -259,7 +259,7 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula) {
 std::array<Formula,3> AtomicIntegralBase::get_jk_df_formula(const Formula &formula) {
     std::array<Formula,3> result;
 
-    if(formula.operation().oper() == Operation::Operations::J){
+    if(formula.operation().oper() == Operation::Operators::J){
         std::wstring left =  L"( Κ |G| " + formula.left_index()[0].name() + L" " + formula.right_index()[0].name() + L" )";
         std::wstring right = L"( Κ |G| μ ν  )";
 
@@ -281,13 +281,13 @@ std::array<Formula,3> AtomicIntegralBase::get_jk_df_formula(const Formula &formu
 
 OrbitalIndex AtomicIntegralBase::get_jk_orbital_space(const Operation &operation) {
 
-    if(operation.oper() == Operation::Operations::J || operation.oper() == Operation::Operations::K){
+    if(operation.oper() == Operation::Operators::J || operation.oper() == Operation::Operators::K){
         return OrbitalIndex(L"m");
     }
-    else if(operation.oper() == Operation::Operations::KAlpha){
+    else if(operation.oper() == Operation::Operators::KAlpha){
         return OrbitalIndex(L"m_α");
     }
-    else if(operation.oper() == Operation::Operations::KBeta){
+    else if(operation.oper() == Operation::Operators::KBeta){
         return OrbitalIndex(L"m_β");
     } else {
         assert(false);
@@ -301,16 +301,16 @@ std::array<Formula, 3> AtomicIntegralBase::get_fock_formula(const Formula &formu
     auto h = formula;
     h.set_operation(Operation(L"H"));
     auto j = formula;
-    j.operation().set_oper(Operation::Operations::J);
+    j.operation().set_oper(Operation::Operators::J);
     auto k = formula;
-    if(formula.operation().oper() == Operation::Operations::Fock){
-        k.operation().set_oper(Operation::Operations::K);
+    if(formula.operation().oper() == Operation::Operators::Fock){
+        k.operation().set_oper(Operation::Operators::K);
     }
-    else if(formula.operation().oper() == Operation::Operations::FockAlpha){
-        k.operation().set_oper(Operation::Operations::KAlpha);
+    else if(formula.operation().oper() == Operation::Operators::FockAlpha){
+        k.operation().set_oper(Operation::Operators::KAlpha);
     }
-    else if(formula.operation().oper() == Operation::Operations::FockBeta){
-        k.operation().set_oper( Operation::Operations::KBeta);
+    else if(formula.operation().oper() == Operation::Operators::FockBeta){
+        k.operation().set_oper( Operation::Operators::KBeta);
     }
 
     result[0] = h;

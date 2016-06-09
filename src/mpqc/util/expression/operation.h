@@ -44,9 +44,9 @@ namespace mpqc{
     class Operation{
     public:
         /**
-         *  Operations types
+         *  Operators types
          */
-        enum class Operations{
+        enum class Operators{
             Overlap = 0,
             Kinetic = 1,
             Nuclear = 2,
@@ -80,10 +80,10 @@ namespace mpqc{
          * maps of string to operations and option
          * vice versa
          */
-        static const std::unordered_map<std::wstring, Operations> one_body_operation;
-        static const std::unordered_map<std::wstring, Operations> two_body_operation;
-        static const std::unordered_map<std::wstring, Operations> fock_operation;
-        static const std::map<Operations,std::wstring> oper_to_string;
+        static const std::unordered_map<std::wstring, Operators> one_body_operation;
+        static const std::unordered_map<std::wstring, Operators> two_body_operation;
+        static const std::unordered_map<std::wstring, Operators> fock_operation;
+        static const std::map<Operators,std::wstring> oper_to_string;
         static const std::map<Options,std::wstring> option_to_string;
         static const std::unordered_map<std::wstring, Options> option;
 
@@ -108,17 +108,17 @@ namespace mpqc{
         }
 
         /// return operation oper_
-        const Operations &oper() const {
+        const Operators &oper() const {
             return oper_;
         }
 
         /// return operation oper_
-        Operations &oper() {
+        Operators &oper() {
             return oper_;
         }
 
         /// set operation oper_
-        void set_oper(const Operations &oper) {
+        void set_oper(const Operators &oper) {
             Operation::oper_ = oper;
         }
 
@@ -159,7 +159,7 @@ namespace mpqc{
 
     private:
 
-        Operations oper_;
+        Operators oper_;
         std::vector<Options> options_;
 
     };

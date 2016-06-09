@@ -239,7 +239,7 @@ AtomicIntegral<Tile, Policy>::compute_two_body_integral(
     }
 
     if (kernel == libint2::cGTG) {
-      if (operation.oper() == Operation::Operations::cGTG2) {
+      if (operation.oper() == Operation::Operators::cGTG2) {
         auto squared_pragmas = f12::gtg_params_squared(this->gtg_params_);
         libint2::TwoBodyEngine<libint2::cGTG> engine(
             max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
@@ -322,12 +322,12 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
   // use one body engine
   if (formula.operation().is_onebody()) {
     // H = V + T
-    if (formula.operation().oper() == Operation::Operations::Core) {
+    if (formula.operation().oper() == Operation::Operators::Core) {
       auto v_formula = formula;
-      v_formula.operation().set_oper(Operation::Operations::Nuclear);
+      v_formula.operation().set_oper(Operation::Operators::Nuclear);
 
       auto t_formula = formula;
-      t_formula.operation().set_oper(Operation::Operations::Kinetic);
+      t_formula.operation().set_oper(Operation::Operators::Kinetic);
 
       auto v = this->compute(v_formula);
       auto t = this->compute(t_formula);
@@ -368,8 +368,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
                                        formula.operation());
 
     if (formula.operation().has_option(Operation::Options::Inverse)) {
-      if (formula.operation().oper() == Operation::Operations::cGTG ||
-          formula.operation().oper() == Operation::Operations::cGTGCoulomb) {
+      if (formula.operation().oper() == Operation::Operators::cGTG ||
+          formula.operation().oper() == Operation::Operators::cGTGCoulomb) {
         result("i,j") = -result("i,j");
       }
 
@@ -415,15 +415,15 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       result = array_ops::eigen_to_array<TA::TensorD>(
           result.get_world(), result_eig, tr_result, tr_result);
 
-      if (formula.operation().oper() == Operation::Operations::cGTG ||
-          formula.operation().oper() == Operation::Operations::cGTGCoulomb) {
+      if (formula.operation().oper() == Operation::Operators::cGTG ||
+          formula.operation().oper() == Operation::Operators::cGTGCoulomb) {
         result("i,j") = -result("i,j");
       }
     }
 
     if (formula.operation().has_option(Operation::Options::InverseSquareRoot)) {
-      if (formula.operation().oper() == Operation::Operations::cGTG ||
-          formula.operation().oper() == Operation::Operations::cGTGCoulomb) {
+      if (formula.operation().oper() == Operation::Operators::cGTG ||
+          formula.operation().oper() == Operation::Operators::cGTGCoulomb) {
         result("i,j") = -result("i,j");
       }
 
@@ -434,8 +434,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       result = array_ops::eigen_to_array<TA::TensorD>(
           result.get_world(), L_inv_eig, tr_result, tr_result);
 
-      if (formula.operation().oper() == Operation::Operations::cGTG ||
-          formula.operation().oper() == Operation::Operations::cGTGCoulomb) {
+      if (formula.operation().oper() == Operation::Operators::cGTG ||
+          formula.operation().oper() == Operation::Operators::cGTGCoulomb) {
         result("i,j") = -result("i,j");
       }
     }
@@ -465,7 +465,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       auto& space = orbital_space_registry_->retrieve(space_index);
 
       // J case
-      if (formula.operation().oper() == Operation::Operations::J) {
+      if (formula.operation().oper() == Operation::Operators::J) {
         result("i,j") = center("K,Q") * right("Q,k,l") *
                         (space("k,a") * space("l,a")) * left("K,i,j");
       }
@@ -489,7 +489,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       auto space_index = get_jk_orbital_space(formula.operation());
       auto& space = orbital_space_registry_->retrieve(space_index);
 
-      if (formula.operation().oper() == Operation::Operations::J) {
+      if (formula.operation().oper() == Operation::Operators::J) {
         result("rho,sigma") =
             four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
       } else {
@@ -508,12 +508,12 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
   }
   // hJ = H + J
-  else if (formula.operation().oper() == Operation::Operations::hJ) {
+  else if (formula.operation().oper() == Operation::Operators::hJ) {
     auto h_formula = formula;
     h_formula.set_operation(Operation(L"H"));
 
     auto j_formula = formula;
-    j_formula.operation().set_oper(Operation::Operations::J);
+    j_formula.operation().set_oper(Operation::Operators::J);
 
     auto h = this->compute(h_formula);
     auto j = this->compute(j_formula);
@@ -541,7 +541,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
     time0 = mpqc_time::now(world_, accurate_time_);
     // if closed shell
-    if (formula.operation().oper() == Operation::Operations::Fock) {
+    if (formula.operation().oper() == Operation::Operators::Fock) {
       result("rho,sigma") =
           h("rho,sigma") + 2 * j("rho,sigma") - k("rho,sigma");
     }

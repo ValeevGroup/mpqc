@@ -74,6 +74,7 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
     if (iter == max_iters) {
         return false;
     } else {
+        scf_energy_ = old_energy;
         return true;
     }
 }

@@ -44,6 +44,7 @@
 #include <mpqc/chemistry/qc/cc/lazy_tile.h>
 #include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>
 #include <mpqc/chemistry/qc/mbpt/mp2.h>
+#include <mpqc/chemistry/qc/mbpt/dbmp2.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include <mpqc/chemistry/qc/f12/mp2f12.h>
 #include <mpqc/chemistry/qc/f12/ccsdf12.h>
@@ -316,6 +317,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     /**
      * CLSCF
      */
+    double scf_energy;
     if(in.HasMember("CLSCF")){
         auto scf_time0 = mpqc_time::fenced_now(world);
 
@@ -325,9 +327,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
         // Overlap ints
-        auto S = ao_int.compute(L"(κ|λ)");
+        auto S = ao_int.compute(L"<κ|λ>");
         // H core int
-        auto H = ao_int.compute(L"(κ|H|λ)");
+        auto H = ao_int.compute(L"<κ|H|λ>");
 
         // emultipole integral
         const auto bs_array = utility::make_array(basis, basis);
@@ -345,7 +347,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         }
         else if(fock_method=="four center"){
 
-            auto eri4 = ao_int.compute(L"( μ ν| G|κ λ)");
+            auto eri4 = ao_int.compute(L"<μ ν| G|κ λ>");
+            eri4("mu,nu,kappa, lambda") = eri4("mu,kappa,nu,lambda");
             auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
             f_builder = make_unique<decltype(builder)>(std::move(builder));
         }
@@ -376,16 +379,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
         scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(f_builder), std::move(d_builder), F_soad);
         scf.solve(scf_max_iter, scf_converge);
 
+        scf_energy = scf.scf_energy();
         auto scf_time1 = mpqc_time::fenced_now(world);
         auto scf_time = mpqc_time::duration_in_s(scf_time0, scf_time1);
+        mpqc::utility::print_par(world, "SCF Energy:  ", scf_energy, "\n");
         mpqc::utility::print_par(world, "Total SCF Time:  ", scf_time, "\n");
 
         auto F = scf.fock();
         if(fock_method == "df"){
-            ao_int.registry().insert(Formula(L"(μ|F|ν)[df]"),F);
+            ao_int.registry().insert(Formula(L"<μ|F|ν>[df]"),F);
         }
         else if(fock_method == "four center"){
-            ao_int.registry().insert(Formula(L"(μ|F|ν)"),F);
+            ao_int.registry().insert(Formula(L"<μ|F|ν>"),F);
         }
     }
 
@@ -405,13 +410,28 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto mp2_time0 = mpqc_time::fenced_now(world);
 
         corr_in = json::get_nested(in, "MP2");
-        tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
-        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
+//        tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
+//        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
+        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,corr_in);
         corr_e += mp2.compute(corr_in);
 
         auto mp2_time1 = mpqc_time::fenced_now(world);
         auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
         mpqc::utility::print_par(world, "Total MP2 Time:  ", mp2_time, "\n");
+    }
+    else if(in.HasMember("DBMP2")){
+        auto dbmp2_time0 = mpqc_time::fenced_now(world);
+
+        corr_in = json::get_nested(in, "DBMP2");
+//        tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
+//        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
+        auto dbmp2 = mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(mo_integral,corr_in);
+        corr_e += dbmp2.compute(corr_in);
+
+        auto dbmp2_time1 = mpqc_time::fenced_now(world);
+        auto dbmp2_time = mpqc_time::duration_in_s(dbmp2_time0, dbmp2_time1);
+        mpqc::utility::print_par(world, "Total DBMP2 Time:  ", dbmp2_time, "\n");
+
     }
     else if(in.HasMember("MP2F12")){
         auto mp2_time0 = mpqc_time::fenced_now(world);
@@ -567,6 +587,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
 
     utility::print_par(world, "Total Correlation Energy: ", corr_e, "\n");
+    utility::print_par(world, "Total Energy: ", corr_e + scf_energy, "\n");
 
     world.gop.fence();
     libint2::finalize();

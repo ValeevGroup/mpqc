@@ -47,12 +47,15 @@ namespace mpqc{
 
         /// insert to registry by std::pair<Key, Value>
         void insert(const value_type& val){
-            registry_.insert(val);
+            auto insert_result = registry_.insert(val);
+            if(insert_result.second == false){
+                throw std::runtime_error("Key Already Exist!!!");
+            }
         }
 
         /// insert to registry by Key and Value
         void insert(const Key& key, const Value& val){
-            registry_[key] = std::make_shared<Value>(val);
+            insert(std::make_pair(key,std::make_shared<Value>(val)));
         }
 
         /// remove Value by Key

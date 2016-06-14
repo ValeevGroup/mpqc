@@ -132,22 +132,22 @@ protected:
     /**
      *  Given formula with rank = 2 and J or K operation, return the G integral
      *
-     *  @param Formula that has string format ( in1 | oper | in2 ), where oper is J or K operation
+     *  @param Formula that has string format ( in1 | oper | in2 ) or < in1 | oper | in2 > where oper is J or K operation
      *  @return Formula
-     *          - Formula that has string format ( in1 in2 | G | obs obs ) for J
-     *          - Formula that has string format ( in1 obs | G | in2 obs ) for K, KAlpha, KBeta
+     *          - Formula that has string format ( in1 in2 | G | obs obs ) or <in1 obs| G | in2 obs > for J
+     *          - Formula that has string format ( in1 obs | G | in2 obs ) or <in1 in2| G | obs obs > for K, KAlpha, KBeta
      */
-    Formula get_jk_formula(const Formula& formula);
+    Formula get_jk_formula(const Formula& formula, const std::wstring& obs);
 
     /**
      * Given formula with rank = 2 and J or K operation, return the G integral with DensityFitting
      *
-     * @param Formula that has string format ( in1 | oper | in2 ), where oper is J or K operation
+     * @param Formula that has string format ( in1 | oper | in2 ) or < in1 | oper | in2 >, where oper is J or K operation
      * @return result array of Formula with size 3
      *         - 3 Formula that has string format ( dfbs | G | in1 in2 ) ( dfbs | G | dfbs )[inv] ( dfbs | G | obs obs ) for J
      *         - 3 Formula that has string format ( dfbs | G | in1 obs ) ( dfbs | G | dfbs )[inv] ( dfbs | G | in2 obs ) for K, KAlpha, KBeta
      */
-    std::array<Formula,3> get_jk_df_formula(const Formula& formula);
+    std::array<Formula,3> get_jk_df_formula(const Formula& formula, const std::wstring& obs);
 
     /**
      * Given formula with rank = 2 and Fock operation, return 3 formula to compute it

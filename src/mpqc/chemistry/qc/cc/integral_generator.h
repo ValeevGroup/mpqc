@@ -19,11 +19,10 @@ namespace mpqc {
 
         //IntegralGenerator for two body integrals, use to work with LazyIntegral
         // it used libint2 for generation of integrals
-        template<libint2::MultiplicativeSphericalTwoBodyKernel Kernel>
         class TwoBodyIntGenerator {
 
         public:
-            typedef libint2::TwoBodyEngine<Kernel> Engine;
+            typedef libint2::Engine Engine;
             typedef mpqc::integrals::EnginePool<Engine> EnginePool;
 
 

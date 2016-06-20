@@ -81,14 +81,13 @@ else (LIBINT2_INCLUDE_DIRS)
           # error \"Libint2 library is too old\"
           #endif
           int main(int argc, char** argv) {
-            // need libint2::Engine and libint2::TwoBodyEngine
+            // need libint2::Engine
             libint2::Engine e0;
-            libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> e1;
             return 0;
           }
       "  LIBINT2_IS_UP_TO_DATE)    
     if (NOT LIBINT2_IS_UP_TO_DATE)
-      message(FATAL_ERROR "Libint2 library is too old: 2.2.0 (alpha or later) is required")
+      message(FATAL_ERROR "Libint2 library is too old: 2.2.0 (beta) is required")
     endif()
     
     cmake_pop_check_state()

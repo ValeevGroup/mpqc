@@ -24,92 +24,17 @@ namespace detail {
 
 extern double integral_engine_precision;
 
-using OneE_Engine = libint2::Engine;
-using TwoE_Engine = libint2::TwoBodyEngine<libint2::Coulomb>;
-using cGTG_Engine = libint2::TwoBodyEngine<libint2::cGTG>;
-using cGTGCoulomb_Engine = libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>;
-using DelcGTG2 = libint2::TwoBodyEngine<libint2::DelcGTG_square>;
-
+using Engine = libint2::Engine;
 
 template <typename E>
 void set_eng_precision(E &eng){
     eng.set_precision(integral_engine_precision);
 }
 
-inline const double *shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1,
-                               Shell const &s2, Shell const &s3) {
-    return e.compute(s0, s1, s2, s3);
-}
-
-inline const double *
-shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1) {
-    const auto unit = Shell::unit();
-    auto result = e.compute(s0, unit, s1, unit);
-    return result;
-}
-
-inline const double *
-shell_set(TwoE_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
-    const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, s2);
-}
-
-inline const double *
-shell_set(OneE_Engine &e, Shell const &s0, Shell const &s1) {
-    return e.compute(s0, s1);
-}
-
-inline const double *shell_set(cGTG_Engine &e, Shell const &s0, Shell const &s1,
-                               Shell const &s2, Shell const &s3) {
-    return e.compute(s0, s1, s2, s3);
-}
-
-inline const double *
-shell_set(cGTG_Engine &e, Shell const &s0, Shell const &s1) {
-    const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, unit);
-}
-
-inline const double *
-shell_set(cGTG_Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) {
-    const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, s2);
-}
-
-inline const double *
-shell_set(cGTGCoulomb_Engine &e, Shell const &s0, Shell const &s1,
-          Shell const &s2, Shell const &s3) {
-    return e.compute(s0, s1, s2, s3);
-}
-
-inline const double *
-shell_set(cGTGCoulomb_Engine &e, Shell const &s0, Shell const &s1) {
-    const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, unit);
-}
-
-inline const double *shell_set(cGTGCoulomb_Engine &e, Shell const &s0,
-                               Shell const &s1, Shell const &s2) {
-    const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, s2);
-}
-
-inline const double *
-shell_set(DelcGTG2 &e, Shell const &s0, Shell const &s1, Shell const &s2,
-          Shell const &s3) {
-    return e.compute(s0, s1, s2, s3);
-}
-
-inline const double *
-shell_set(DelcGTG2 &e, Shell const &s0, Shell const &s1) {
-    const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, unit);
-}
-
-inline const double *
-shell_set(DelcGTG2 &e, Shell const &s0, Shell const &s1, Shell const &s2) {
-    const auto unit = Shell::unit();
-    return e.compute(s0, unit, s1, s2);
+template <typename... Shells>
+inline auto shell_set(Engine &e, Shells && ... shells)
+    -> decltype(e.compute(std::forward<Shells>(shells)...)) {
+  return e.compute(std::forward<Shells>(shells)...);
 }
 
 template <typename Engine>
@@ -125,9 +50,11 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 
     auto tile = TA::TensorD(std::move(rng), 0.0);
 
-    // init map this makes a map we can resize later.
+    // this makes a map we can resize later.
     const double dummy = 0.0;
-    auto map = TA::make_map(&dummy, {0, 0}, {1, 1});
+    auto map = TA::make_const_map(&dummy, {0, 0}, {1, 1});
+
+    const auto& ints_shell_sets = eng.results();
 
     auto const &sh0 = *shell_ptrs[0];
     auto const &sh1 = *shell_ptrs[1];
@@ -145,7 +72,10 @@ integral_kernel(Engine &eng, TA::Range &&rng,
             const auto ns1 = s1.size();
             ub[1] += ns1;
 
-            TA::remap(map, shell_set(eng, s0, s1), lb, ub);
+            shell_set(eng, s0, s1);
+            assert(ints_shell_sets.size() == 1 &&
+                   "integral_kernel can't handle multi-shell-set engines");
+            TA::remap(map, ints_shell_sets[0], lb, ub);
 
             tile.block(lb, ub) = map;
 
@@ -170,9 +100,11 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 
     auto tile = TA::TensorD(std::move(rng), 0.0);
 
-    // init map this makes a map we can resize later.
+    // this makes a map we can resize later.
     const double dummy = 0.0;
-    auto map = TA::make_map(&dummy, {0, 0, 0}, {1, 1, 1});
+    auto map = TA::make_const_map(&dummy, {0, 0, 0}, {1, 1, 1});
+
+    const auto& ints_shell_sets = eng.results();
 
     auto const &sh0 = *shell_ptrs[0];
     auto const &sh1 = *shell_ptrs[1];
@@ -204,8 +136,11 @@ integral_kernel(Engine &eng, TA::Range &&rng,
                         ub[2] += ns2;
 
                         if (!screen.skip(lb0, lb1, lb2)) {
-                            TA::remap(map, shell_set(eng, s0, s1, s2), lb, ub);
-                            tile.block(lb, ub) = map;
+                          shell_set(eng, s0, s1, s2);
+                          assert(ints_shell_sets.size() == 1 &&
+                                 "integral_kernel can't handle multi-shell-set engines");
+                          TA::remap(map, ints_shell_sets[0], lb, ub);
+                          tile.block(lb, ub) = map;
                         } 
 
                         lb[2] = ub[2];
@@ -236,9 +171,11 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 
     auto tile = TA::TensorD(std::move(rng), 0.0);
 
-    // init map this makes a map we can resize later.
+    // this makes a map we can resize later.
     const double dummy = 0.0;
-    auto map = TA::make_map(&dummy, {0, 0, 0, 0}, {1, 1, 1, 1});
+    auto map = TA::make_const_map(&dummy, {0, 0, 0, 0}, {1, 1, 1, 1});
+
+    const auto& ints_shell_sets = eng.results();
 
     auto const &sh0 = *shell_ptrs[0];
     auto const &sh1 = *shell_ptrs[1];
@@ -283,10 +220,11 @@ integral_kernel(Engine &eng, TA::Range &&rng,
                                 ub[3] += ns3;
 
                                 if (!screen.skip(lb0, lb1, lb2, lb3)) {
-                                    TA::remap(map,
-                                              shell_set(eng, s0, s1, s2, s3),
-                                              lb, ub);
-                                    tile.block(lb, ub) = map;
+                                  shell_set(eng, s0, s1, s2, s3);
+                                  assert(ints_shell_sets.size() == 1 &&
+                                         "integral_kernel can't handle multi-shell-set engines");
+                                  TA::remap(map, ints_shell_sets[0], lb, ub);
+                                  tile.block(lb, ub) = map;
                                 } // screen all
 
                                 lb[3] = ub[3];

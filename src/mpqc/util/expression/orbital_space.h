@@ -8,8 +8,8 @@
 #include <memory>
 
 #include <mpqc/util/expression/orbital_index.h>
-#include <mpqc/util/expression/operation.h>
 #include <mpqc/chemistry/qc/basis/basis.h>
+#include "operator.h"
 
 namespace mpqc{
 

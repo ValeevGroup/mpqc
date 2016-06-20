@@ -77,7 +77,7 @@ namespace mpqc{
             std::wstring left_formula = std::move(split_formula[0]);
             std::wstring right_formula = std::move(split_formula[1]);
 
-            operation_ = Operation(L" ",option);
+            oper_ = Operator(L" ",option);
             left_index_ = check_orbital_index(left_formula);
             right_index_ = check_orbital_index(right_formula);
 
@@ -87,7 +87,7 @@ namespace mpqc{
             std::wstring operation = std::move(split_formula[1]);
             std::wstring right_formula = std::move(split_formula[2]);
 
-            operation_ = Operation(operation, option);
+            oper_ = Operator(operation, option);
             left_index_ = check_orbital_index(left_formula);
             right_index_ = check_orbital_index(right_formula);
 
@@ -100,7 +100,7 @@ namespace mpqc{
 
 
         // one body operation
-        if(operation_.is_onebody() && (left_index_.size()!=1) && (right_index_.size()!=1)){
+        if(oper_.is_onebody() && (left_index_.size()!=1) && (right_index_.size()!=1)){
             throw std::runtime_error("One body Operator with Wrong Index Size!");
         }
 
@@ -136,8 +136,8 @@ namespace mpqc{
 
     bool Formula::operator<(const Formula &other) const {
 
-        if(operation()!=other.operation()){
-            return operation() < other.operation();
+        if(oper()!=other.oper()){
+            return oper() < other.oper();
         }
         else if(notation_ != other.notation()){
             return notation_ < other.notation();
@@ -151,7 +151,7 @@ namespace mpqc{
     }
 
     bool Formula::operator==(const Formula &other) const{
-        return (operation_== other.operation_) && (left_index_ == other.left_index_) && (right_index_ == other.right_index_) && (notation_ == other.notation_);
+        return (oper_== other.oper_) && (left_index_ == other.left_index_) && (right_index_ == other.right_index_) && (notation_ == other.notation_);
     }
 
     std::wstring Formula::formula_string() const {
@@ -166,9 +166,9 @@ namespace mpqc{
         }
 
         // add operation
-        auto oper_str = operation_.oper_string();
+        auto oper_str = oper_.oper_string();
         if(!oper_str.empty()){
-            result = left + L"|" + operation_.oper_string() + L"|" + right;
+            result = left + L"|" + oper_.oper_string() + L"|" + right;
         }
         else{
             result = left + L"|" + right;
@@ -181,7 +181,7 @@ namespace mpqc{
             result = L"< " + result + L" >";
         }
         // add option
-        result = result + operation_.option_string();
+        result = result + oper_.option_string();
 
         return result;
 

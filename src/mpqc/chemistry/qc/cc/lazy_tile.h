@@ -7,10 +7,11 @@
 
 #include "../../../../../include/tiledarray.h"
 #include "../../../../../common/namespaces.h"
+#include <mpqc/chemistry/qc/integrals/make_engine.h>
 #include <mpqc/chemistry/qc/cc/integral_generator.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 
-static auto DIRECTAOTWOELECTONINTEGRAL = std::make_shared<mpqc::cc::TwoBodyIntGenerator<libint2::Coulomb>>();
+static auto DIRECTAOTWOELECTONINTEGRAL = std::make_shared<mpqc::cc::TwoBodyIntGenerator>();
 
 namespace mpqc {
     namespace cc {
@@ -84,7 +85,7 @@ namespace mpqc {
         };
 
         // direct two electron integral
-        typedef mpqc::cc::LazyTile<4, TwoBodyIntGenerator < libint2::Coulomb>> LazyTwoElectronTile;
+        typedef mpqc::cc::LazyTile<4, TwoBodyIntGenerator> LazyTwoElectronTile;
         typedef TA::DistArray<LazyTwoElectronTile, TA::DensePolicy> DirectTwoElectronDenseArray;
         typedef TA::DistArray<LazyTwoElectronTile, TA::SparsePolicy> DirectTwoElectronSparseArray;
 
@@ -97,10 +98,9 @@ namespace mpqc {
             auto cluster_shells = basis.cluster_shells();
             auto p_cluster_shells = std::make_shared<std::vector<ShellVec>>(cluster_shells);
 
-            // compute engine pull
-            auto two_body_coulomb_engine = mpqc::integrals::make_2body(basis);
-            auto p_engine_pool = std::make_shared<mpqc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(
-                    two_body_coulomb_engine);
+            // make engine pool
+            auto p_engine_pool = mpqc::integrals::make_engine_pool(
+                libint2::Operator::coulomb, {basis});
 
             // compute screener
             std::shared_ptr<integrals::Screener> p_screen;
@@ -156,10 +156,9 @@ namespace mpqc {
             auto cluster_shells = basis.cluster_shells();
             auto p_cluster_shells = std::make_shared<std::vector<ShellVec>>(cluster_shells);
 
-            // compute engine pull
-            auto two_body_coulomb_engine = mpqc::integrals::make_2body(basis);
-            auto p_engine_pool = std::make_shared<mpqc::integrals::EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>(
-                    two_body_coulomb_engine);
+            // make engine pool
+            auto p_engine_pool = mpqc::integrals::make_engine_pool(
+                libint2::Operator::coulomb, {basis});
 
             // compute screener
             std::shared_ptr<integrals::Screener> p_screen;

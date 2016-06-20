@@ -168,11 +168,13 @@ void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
                 auto min_rng = std::make_pair(min_start, min_start + min_size);
                 min_start += min_size;
 
-                const auto J_buf = eng.compute(sh0, sh1, sh_min, sh_min);
-                J(J_buf, sh0_rng, sh1_rng, min_rng);
+                const auto& J_bufs = eng.compute(sh0, sh1, sh_min, sh_min);
+                TA_USER_ASSERT(J_bufs.size() == 1, "unexpected result from Engine::compute()");
+                J(J_bufs[0], sh0_rng, sh1_rng, min_rng);
 
-                const auto K_buf = eng.compute(sh0, sh_min, sh1, sh_min);
-                K(K_buf, sh0_rng, sh1_rng, min_rng);
+                const auto& K_bufs = eng.compute(sh0, sh_min, sh1, sh_min);
+                TA_USER_ASSERT(K_bufs.size() == 1, "unexpected result from Engine::compute()");
+                K(K_bufs[0], sh0_rng, sh1_rng, min_rng);
             }
         }
     }

@@ -82,10 +82,12 @@ sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
                 ub[1] += n1;
 
                 const auto n1n2 = n0 * n1;
-                const auto *buf = eng.compute(s0, s1);
+                const auto& bufs = eng.compute(s0, s1);
+                TA_USER_ASSERT(bufs.size() >= 4,
+                               "unexpected result from Engine::compute()");
 
                 for (auto i = 1; i < 4; ++i) {
-                    TA::remap(map, buf + i * n1n2, lb, ub);
+                    TA::remap(map, bufs[i], lb, ub);
                     t_xyz[i-1].block(lb, ub) = map;
                 }
 

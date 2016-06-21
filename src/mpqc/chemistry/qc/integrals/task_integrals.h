@@ -7,10 +7,10 @@
 // Based on file task_integrals.hpp from mpqc
 //
 
-#pragma once
-
 #ifndef MPQC_INTEGRALS_TASKINTEGRALS_H
 #define MPQC_INTEGRALS_TASKINTEGRALS_H
+
+#include <TiledArray/tensor/tensor_map.h>
 
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 #include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
@@ -66,8 +66,8 @@ sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
               = {TA::TensorD(rng, 0.0), TA::TensorD(rng, 0.0),
                  TA::TensorD(std::move(rng), 0.0)};
 
-        const double dummy = 0.0;
-        auto map = TA::make_map(&dummy, {0, 0}, {1, 1});
+        double dummy = 0.0;
+        auto map = TA::make_const_map(&dummy, {0, 0}, {1, 1});
 
         auto const &shells0 = bases[0].cluster_shells()[idx0];
         auto const &shells1 = bases[1].cluster_shells()[idx1];

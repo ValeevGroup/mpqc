@@ -2,6 +2,8 @@
 #ifndef MPQC_SCF_TRADITIONALFOURCENTERFOCKBUILDER_H
 #define MPQC_SCF_TRADITIONALFOURCENTERFOCKBUILDER_H
 
+#include <cassert>
+
 #include "../../../../../common/namespaces.h"
 #include "../../../../../include/tiledarray.h"
 
@@ -36,7 +38,7 @@ class FourCenterBuilder : public FockBuilder {
     }
 
     inline void print_iter(std::string const &leader) override {}
-    inline rapidjson::Value results(rapidjson::Document &d) override {}
+    inline rapidjson::Value results(rapidjson::Document &d) override { assert(false && "not implemented"); }
 };
 
 } // namespace scf

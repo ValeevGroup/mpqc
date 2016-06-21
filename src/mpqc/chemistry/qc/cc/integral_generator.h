@@ -7,7 +7,6 @@
 
 #include <libint2/engine.h>
 #include "../../../../../include/tiledarray.h"
-#include <TiledArray/tensor/tensor_map.h>
 #include "../../../../../common/namespaces.h"
 #include <mpqc/chemistry/qc/basis/cluster_shells.h>
 #include <mpqc/chemistry/qc/integrals/task_integral_kernels.h>

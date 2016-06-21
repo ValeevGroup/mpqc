@@ -125,7 +125,7 @@ Basis parallel_construct_basis(madness::World &world, const BasisSet &basis_set,
 
   world.gop.broadcast_serializable(basis, 0);
 
-  return std::move(basis);
+  return basis;
 }
 
 Basis Basis::join(const Basis &basis) {

@@ -21,10 +21,10 @@ PurificationDensityBuilder::PurificationDensityBuilder(
       int64_t nclusters, double TcutC, bool localize)
         : S_(S),
           r_xyz_ints_(r_xyz),
-          occ_(occ),
-          n_coeff_clusters_(nclusters),
           TcutC_(TcutC),
-          localize_(localize) {
+          localize_(localize),
+          n_coeff_clusters_(nclusters),
+          occ_(occ) {
     M_inv_ = array_ops::inverse_sqrt(S_);
     I_ = array_ops::create_diagonal_matrix(S_, 1.0);
 }

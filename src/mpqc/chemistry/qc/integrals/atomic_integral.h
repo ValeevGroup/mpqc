@@ -67,9 +67,9 @@ class AtomicIntegral : public AtomicIntegralBase {
                      std::vector<std::pair<double, double>>(),
                  const rapidjson::Document& in = rapidjson::Document())
       : AtomicIntegralBase(world, mol, obs, gtg_params),
-        op_(op),
         ao_formula_registry_(),
-        orbital_space_registry_() {
+        orbital_space_registry_(),
+        op_(op) {
     if (in.IsObject()) {
       accurate_time_ =
           in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;

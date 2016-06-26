@@ -3,70 +3,113 @@
 //
 
 #include <mpqc/chemistry/qc/integrals/atomic_integral_base.h>
+
 namespace mpqc{
 namespace integrals{
 
-libint2::Engine  AtomicIntegralBase::get_one_body_engine(const Operation &operation, int64_t max_nprim, int64_t max_am){
+libint2::Operator to_libint2_operator(Operator::Type mpqc_oper) {
+  TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
+                  mpqc_oper <= Operator::Type::__last_1body_operator) ||
+                 (Operator::Type::__first_2body_operator <= mpqc_oper &&
+                  mpqc_oper <= Operator::Type::__last_2body_operator),
+                  "invalid Operator::Type");
 
-    libint2::Operator itype;
-    std::vector<std::pair<double, std::array<double, 3>>> q;
-    if (operation.oper() == Operation::Operators::Overlap) {
-        itype = libint2::Operator::overlap;
-    } else if (operation.oper() == Operation::Operators::Kinetic) {
-        itype = libint2::Operator::kinetic;
-    } else if (operation.oper() == Operation::Operators::Nuclear) {
-        itype = libint2::Operator::nuclear;
-        q = make_q(*(this->mol_));
-    } else {
-        throw std::runtime_error("Invalid One Body Operation");
+  libint2::Operator result;
+  switch (mpqc_oper) {
+    case Operator::Type::Overlap: {
+      result = libint2::Operator::overlap;
+    } break;
+    case Operator::Type::Kinetic: {
+      result = libint2::Operator::kinetic;
+    } break;
+    case Operator::Type::Nuclear: {
+      result = libint2::Operator::nuclear;
+    } break;
+    case Operator::Type::Coulomb: {
+      result = libint2::Operator::coulomb;
+    } break;
+    case Operator::Type::cGTG: {
+      result = libint2::Operator::cgtg;
+    } break;
+    case Operator::Type::cGTG2: {
+      result = libint2::Operator::cgtg;
+    } break;
+    case Operator::Type::cGTGCoulomb: {
+      result = libint2::Operator::cgtg_x_coulomb;
+    } break;
+    case Operator::Type::DelcGTG2: {
+      result = libint2::Operator::delcgtg2;
+    } break;
+    default: {
+      TA_USER_ASSERT(
+          false, "mpqc::Operator::Type not convertible to libint2::Operator");
     }
-
-    libint2::Engine engine(itype, max_nprim, static_cast<int>(max_am),0);
-
-
-    if(itype == libint2::Operator::nuclear){
-        engine.set_params(std::move(q));
-    }
-
-    return engine;
+  }
+  return result;
 }
 
-libint2::MultiplicativeSphericalTwoBodyKernel AtomicIntegralBase::get_two_body_engine_kernel(
-        const Operation &operation)
-{
-    libint2::MultiplicativeSphericalTwoBodyKernel kernel;
-    if (operation.oper() == Operation::Operators::Coulomb) {
-        kernel = libint2::Coulomb;
-    }
-    else if(operation.oper() == Operation::Operators::cGTGCoulomb) {
-        kernel = libint2::cGTG_times_Coulomb;
-    }
-    else if(operation.oper() == Operation::Operators::cGTG){
-        kernel = libint2::cGTG;
-    }
-    else if(operation.oper() == Operation::Operators::cGTG2){
-        kernel = libint2::cGTG;
-    }
-    else if(operation.oper() == Operation::Operators::DelcGTG2){
-        kernel = libint2::DelcGTG_square;
-    }
-    else {
-        throw std::runtime_error("Invalid Two Body Operation");
-    }
-    return kernel;
+libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
+                                        const AtomicIntegralBase& base) {
+  TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
+                  mpqc_oper <= Operator::Type::__last_1body_operator) ||
+                 (Operator::Type::__first_2body_operator <= mpqc_oper &&
+                  mpqc_oper <= Operator::Type::__last_2body_operator),
+                  "invalid Operator::Type");
+
+  libint2::any result;
+  switch (mpqc_oper) {
+    case Operator::Type::Nuclear: {
+      result = make_q(base.molecule());
+    } break;
+    case Operator::Type::cGTG:
+    case Operator::Type::cGTGCoulomb:
+    case Operator::Type::DelcGTG2:
+    {
+      result = base.gtg_params();
+    } break;
+    case Operator::Type::cGTG2: {
+      const auto& cgtg_params = base.gtg_params();
+      const auto ng = cgtg_params.size();
+      std::decay<decltype(cgtg_params)>::type cgtg2_params;
+      cgtg2_params.reserve(ng * (ng + 1) / 2);
+      for (auto b = 0; b < ng; ++b) {
+        for (auto k = 0; k <= b; ++k) {
+          const auto gexp = cgtg_params[b].first + cgtg_params[k].first;
+          const auto gcoeff = cgtg_params[b].second * cgtg_params[k].second *
+                              (b == k ? 1 : 2);  // if a != b include ab and ba
+          cgtg2_params.push_back(std::make_pair(gexp, gcoeff));
+        }
+      }
+      result = cgtg2_params;
+    } break;
+    default: ;  // nothing to do
+  }
+  return result;
 }
 
+libint2::Engine AtomicIntegralBase::make_engine(const Operator& oper,
+                                                int64_t max_nprim,
+                                                int64_t max_am) {
+  auto op = to_libint2_operator(oper.type());
+  auto params = to_libint2_operator_params(oper.type(), *this);
+  libint2::Engine engine(op, max_nprim, static_cast<int>(max_am), 0);
+  engine.set_params(std::move(params));
 
-void AtomicIntegralBase::parse_one_body(const Formula& formula, std::shared_ptr<EnginePool<libint2::Engine>>& engine_pool, Barray<2>& bases){
+  return engine;
+}
 
-    auto bra_indexs = formula.left_index();
-    auto ket_indexs = formula.right_index();
+void AtomicIntegralBase::parse_one_body(const Formula& formula,
+                                        std::shared_ptr<EnginePool<libint2::Engine>>& engine_pool,
+                                        Barray<2>& bases){
 
-    TA_ASSERT(bra_indexs.size() == 1);
-    TA_ASSERT(ket_indexs.size() == 1);
+    auto bra_indices = formula.left_index();
+    auto ket_indices = formula.right_index();
 
-    auto bra_index = bra_indexs[0];
-    auto ket_index = ket_indexs[0];
+    TA_ASSERT(bra_indices.size() == 1);
+    TA_ASSERT(ket_indices.size() == 1);
+
+    auto bra_index = bra_indices[0];
+    auto ket_index = ket_indices[0];
 
     TA_ASSERT(bra_index.is_ao());
     TA_ASSERT(ket_index.is_ao());
@@ -81,12 +124,13 @@ void AtomicIntegralBase::parse_one_body(const Formula& formula, std::shared_ptr<
     auto max_am = std::max(bra_basis->max_am(), ket_basis->max_am());
     bases = mpqc::utility::make_array(*bra_basis, *ket_basis);
 
-    // convert operation to libint operator
-    auto operation = formula.operation();
-    engine_pool = make_pool(get_one_body_engine(operation,max_nprim,max_am));
+    engine_pool = make_pool(make_engine(formula.oper(),max_nprim,max_am));
 }
 
-void AtomicIntegralBase::parse_two_body_two_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<2>& bases, int64_t& max_nprim, int64_t& max_am){
+void AtomicIntegralBase::parse_two_body_two_center(
+    const Formula &formula,
+    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
+    Barray<2> &bases) {
 
     TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Two Body Two Center Integral Must Use Chemical Notation");
 
@@ -108,16 +152,17 @@ void AtomicIntegralBase::parse_two_body_two_center(const Formula& formula, libin
     TA_ASSERT(bra_basis0 != nullptr);
     TA_ASSERT(ket_basis0 != nullptr);
 
-    max_nprim = std::max(bra_basis0->max_nprim(), ket_basis0->max_nprim());
-    max_am = std::max(bra_basis0->max_am(), ket_basis0->max_am());
+    auto max_nprim = std::max(bra_basis0->max_nprim(), ket_basis0->max_nprim());
+    auto max_am = std::max(bra_basis0->max_am(), ket_basis0->max_am());
     bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0);
 
-    auto operation = formula.operation();
-    kernel = get_two_body_engine_kernel(operation);
-
+    engine_pool = make_pool(make_engine(formula.oper(),max_nprim,max_am));
 }
 
-void AtomicIntegralBase::parse_two_body_three_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<3>& bases, int64_t& max_nprim, int64_t& max_am){
+void AtomicIntegralBase::parse_two_body_three_center(
+    const Formula &formula,
+    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
+    Barray<3> &bases) {
 
     TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Three Center Integral Must Use Chemical Notation");
 
@@ -140,20 +185,21 @@ void AtomicIntegralBase::parse_two_body_three_center(const Formula& formula, lib
     TA_ASSERT(ket_basis0 != nullptr);
     TA_ASSERT(ket_basis1 != nullptr);
 
-    max_nprim = std::max({bra_basis0->max_nprim(), ket_basis0->max_nprim()
+    auto max_nprim = std::max({bra_basis0->max_nprim(), ket_basis0->max_nprim()
                                  ,ket_basis1->max_nprim()});
-    max_am = std::max({bra_basis0->max_am(), ket_basis0->max_am(),
+    auto max_am = std::max({bra_basis0->max_am(), ket_basis0->max_am(),
                        ket_basis1->max_am()});
 
     bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0, *ket_basis1);
 
-    // convert operation to libint operator
-    auto operation = formula.operation();
-    kernel = get_two_body_engine_kernel(operation);
-
+    engine_pool = make_pool(make_engine(formula.oper(),max_nprim,max_am));
 }
 
-void AtomicIntegralBase::parse_two_body_four_center(const Formula& formula, libint2::MultiplicativeSphericalTwoBodyKernel& kernel, Barray<4>& bases, int64_t& max_nprim, int64_t& max_am){
+void AtomicIntegralBase::parse_two_body_four_center(
+    const Formula &formula,
+    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
+    Barray<4> &bases) {
+
     auto bra_indexs = formula.left_index();
     auto ket_indexs = formula.right_index();
 
@@ -176,9 +222,9 @@ void AtomicIntegralBase::parse_two_body_four_center(const Formula& formula, libi
     TA_ASSERT(bra_basis1 != nullptr);
     TA_ASSERT(ket_basis1 != nullptr);
 
-    max_nprim = std::max({bra_basis0->max_nprim(), bra_basis1->max_nprim()
+    auto max_nprim = std::max({bra_basis0->max_nprim(), bra_basis1->max_nprim()
                                  ,ket_basis0->max_nprim(), ket_basis1->max_nprim()});
-    max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
+    auto max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
                        ket_basis0->max_am(),ket_basis1->max_am()});
 
     if (formula.notation() == Formula::Notation::Chemical){
@@ -188,10 +234,7 @@ void AtomicIntegralBase::parse_two_body_four_center(const Formula& formula, libi
         bases = {{*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1}};
     }
 
-    // convert operation to libint operator
-    auto operation = formula.operation();
-
-    kernel = get_two_body_engine_kernel(operation);
+    engine_pool = make_pool(make_engine(formula.oper(),max_nprim,max_am));
 }
 
 
@@ -202,12 +245,12 @@ std::array<std::wstring, 3> AtomicIntegralBase::get_df_formula(const Formula &fo
     if (formula.notation() == Formula::Notation::Chemical) {
 
         std::wstring left =
-                L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[0].name() + L" " +
+                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.left_index()[0].name() + L" " +
                 formula.left_index()[1].name() + L" )";
         std::wstring right =
-                L"( Κ |" + formula.operation().oper_string() + L"| " + formula.right_index()[0].name() + L" " +
+                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.right_index()[0].name() + L" " +
                 formula.right_index()[1].name() + L" )";
-        std::wstring center = L"( Κ |" + formula.operation().oper_string() + L"| Λ)[inv]";
+        std::wstring center = L"( Κ |" + formula.oper().oper_string() + L"| Λ)[inv]";
         result[0] = left;
         result[1] = center;
         result[2] = right;
@@ -215,12 +258,12 @@ std::array<std::wstring, 3> AtomicIntegralBase::get_df_formula(const Formula &fo
     //physical notation
     else {
         std::wstring left =
-                L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[0].name() + L" " +
+                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.left_index()[0].name() + L" " +
                 formula.right_index()[0].name() + L" )";
         std::wstring right =
-                L"( Κ |" + formula.operation().oper_string() + L"| " + formula.left_index()[1].name() + L" " +
+                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.left_index()[1].name() + L" " +
                 formula.right_index()[1].name() + L" )";
-        std::wstring center = L"( Κ |" + formula.operation().oper_string() + L"| Λ)[inv]";
+        std::wstring center = L"( Κ |" + formula.oper().oper_string() + L"| Λ)[inv]";
         result[0] = left;
         result[1] = center;
         result[2] = right;
@@ -235,9 +278,9 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula) {
     Formula result;
 
     result.set_notation(Formula::Notation::Chemical);
-    Operation oper(L"G");
-    result.set_operation(oper);
-    if(formula.operation().oper() == Operation::Operators::J){
+    Operator oper(L"G");
+    result.set_operator(oper);
+    if(formula.oper().type() == Operator::Type::J){
 
         result.left_index().push_back(formula.left_index()[0]);
         result.left_index().push_back(formula.right_index()[0]);
@@ -259,7 +302,7 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula) {
 std::array<Formula,3> AtomicIntegralBase::get_jk_df_formula(const Formula &formula) {
     std::array<Formula,3> result;
 
-    if(formula.operation().oper() == Operation::Operators::J){
+    if(formula.oper().type() == Operator::Type::J){
         std::wstring left =  L"( Κ |G| " + formula.left_index()[0].name() + L" " + formula.right_index()[0].name() + L" )";
         std::wstring right = L"( Κ |G| μ ν  )";
 
@@ -279,15 +322,15 @@ std::array<Formula,3> AtomicIntegralBase::get_jk_df_formula(const Formula &formu
     return result;
 }
 
-OrbitalIndex AtomicIntegralBase::get_jk_orbital_space(const Operation &operation) {
+OrbitalIndex AtomicIntegralBase::get_jk_orbital_space(const Operator &operation) {
 
-    if(operation.oper() == Operation::Operators::J || operation.oper() == Operation::Operators::K){
+    if(operation.type() == Operator::Type::J || operation.type() == Operator::Type::K){
         return OrbitalIndex(L"m");
     }
-    else if(operation.oper() == Operation::Operators::KAlpha){
+    else if(operation.type() == Operator::Type::KAlpha){
         return OrbitalIndex(L"m_α");
     }
-    else if(operation.oper() == Operation::Operators::KBeta){
+    else if(operation.type() == Operator::Type::KBeta){
         return OrbitalIndex(L"m_β");
     } else {
         assert(false);
@@ -298,19 +341,19 @@ OrbitalIndex AtomicIntegralBase::get_jk_orbital_space(const Operation &operation
 std::array<Formula, 3> AtomicIntegralBase::get_fock_formula(const Formula &formula) {
 
     std::array<Formula, 3> result;
-    auto h = formula;
-    h.set_operation(Operation(L"H"));
-    auto j = formula;
-    j.operation().set_oper(Operation::Operators::J);
-    auto k = formula;
-    if(formula.operation().oper() == Operation::Operators::Fock){
-        k.operation().set_oper(Operation::Operators::K);
+    Formula h(formula);
+    h.set_operator(Operator(L"H"));
+    decltype(h) j(formula);
+    j.set_operator_type(Operator::Type::J);
+    decltype(h) k(formula);
+    if(formula.oper().type() == Operator::Type::Fock){
+      k.set_operator_type(Operator::Type::K);
     }
-    else if(formula.operation().oper() == Operation::Operators::FockAlpha){
-        k.operation().set_oper(Operation::Operators::KAlpha);
+    else if(formula.oper().type() == Operator::Type::FockAlpha){
+      k.set_operator_type(Operator::Type::KAlpha);
     }
-    else if(formula.operation().oper() == Operation::Operators::FockBeta){
-        k.operation().set_oper( Operation::Operators::KBeta);
+    else if(formula.oper().type() == Operator::Type::FockBeta){
+      k.set_operator_type(Operator::Type::KBeta);
     }
 
     result[0] = h;

@@ -1,7 +1,7 @@
 
 set(sources
-        operation.h
-        operation.cpp
+        operator.h
+        operator.cpp
         orbital_index.h
         orbital_index.cpp
         formula.h

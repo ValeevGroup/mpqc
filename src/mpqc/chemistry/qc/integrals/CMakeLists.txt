@@ -14,6 +14,7 @@ set(integral_sources
         atomic_integral_base.h
         atomic_integral_base.cpp
         integral.cpp
+        libint2_engine.cpp
 )
 
 add_library(MPQCintegrals ${integral_sources})

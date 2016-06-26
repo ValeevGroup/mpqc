@@ -1,48 +1,42 @@
-#pragma once
-#ifndef MPQC_INTEGRAL_MAKEENGINE_H
-#define MPQC_INTEGRAL_MAKEENGINE_H
+#ifndef MPQC_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_
+#define MPQC_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_
 
 #include <mpqc/chemistry/qc/basis/basis.h>
-// #include "../basis/cluster_shells.h"
-
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
-
-#include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/molecule/cluster_collapse.h>
-
+#include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 
-#include <libint2/engine.h>
 #include <iostream>
+#include <initializer_list>
+
+#include <libint2/engine.h>
 
 namespace mpqc {
 namespace integrals {
 
-template <typename... Bases>
-libint2::TwoBodyEngine<libint2::Coulomb> make_2body(Bases &&... basis) {
-  int max_am = std::max({basis.max_am()...});
-  std::size_t max_nprim = std::max({basis.max_nprim()...});
-  return libint2::TwoBodyEngine<libint2::Coulomb>{max_nprim, max_am};
-}
+/// makes an engine for computing integrals of operator \c oper over bases \c
+/// bases
 
-template <typename... Bases>
-libint2::TwoBodyEngine<libint2::cGTG> make_2body_cGTG(
-    std::vector<std::pair<double, double>> const &params, Bases &&... basis) {
-  int max_am = std::max({basis.max_am()...});
-  std::size_t max_nprim = std::max({basis.max_nprim()...});
-  return libint2::TwoBodyEngine<libint2::cGTG>{
-      max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
-      f12::gtg_params_squared(params)};
-}
-
-template <typename... Bases>
-libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> make_2body_cGTG_C(
-    std::vector<std::pair<double, double>> const &params, Bases &&... basis) {
-  int max_am = std::max({basis.max_am()...});
-  std::size_t max_nprim = std::max({basis.max_nprim()...});
-  return libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>{
-      max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
-      f12::gtg_params_squared(params)};
+///
+template <typename Basis>
+libint2::Engine make_engine(const libint2::Operator &oper,
+                            std::initializer_list<Basis> bases,
+                            libint2::BraKet braket = libint2::BraKet::invalid,
+                            libint2::any oper_params = libint2::any()) {
+  if (braket == libint2::BraKet::invalid)
+    braket = libint2::default_braket(oper);
+  int max_am = 0;
+  size_t max_nprim = 0;
+  for(const auto& bs: bases) {
+    max_am = std::max(max_am, static_cast<int>(bs.max_am()));
+    max_nprim = std::max(max_nprim, static_cast<size_t>(bs.max_nprim()));
+  }
+  const auto deriv_order = 0;
+  libint2::Engine result{oper, max_nprim, max_am, deriv_order};
+  result.set_braket(braket);
+  result.set_params(oper_params);
+  return result;
 }
 
 // Function to return the q_vector given a basis
@@ -64,109 +58,19 @@ inline q_vector make_q(molecule::Molecule const &mol) {
   return q;
 }
 
-inline libint2::Engine
-make_1body(std::string const &type, basis::Basis const &bs,
-           molecule::Molecule const &mol) {
-
-    // Vector to hold q.
-    q_vector q;
-
-    libint2::Operator itype;
-    if (type == "overlap") {
-        itype = libint2::Operator::overlap;
-    } else if (type == "kinetic") {
-        itype = libint2::Operator::kinetic;
-    } else if (type == "nuclear") {
-        itype = libint2::Operator::nuclear;
-        q = make_q(mol);
-    } else if (type == "emultipole1") {
-        itype = libint2::Operator::emultipole1;
-    } else {
-        std::terminate();
-    }
-
-    libint2::Engine engine(itype, bs.max_nprim(),
-                                  static_cast<int>(bs.max_am()), 0ul);
-
-    if (itype == libint2::Operator::nuclear) {
-        engine.set_params(std::move(q));
-    }
-
-    return engine;
+template <typename Basis>
+inline ShrPool<libint2::Engine> make_engine_pool(
+    const libint2::Operator &oper,
+    std::initializer_list<Basis> bases,
+    libint2::BraKet braket = libint2::BraKet::invalid,
+    libint2::any oper_params = libint2::any()) {
+  if (braket == libint2::BraKet::invalid)
+    braket = libint2::default_braket(oper);
+  return std::make_shared<Epool<libint2::Engine>>(
+      make_engine(oper, bases, braket, oper_params));
 }
-
-template <typename... Bases>
-inline ShrPool<libint2::TwoBodyEngine<libint2::Coulomb>> make_2body_shr_pool(
-    Bases &&... bases) {
-  return std::make_shared<Epool<libint2::TwoBodyEngine<libint2::Coulomb>>>(
-      make_2body(std::forward<Bases>(bases)...));
-}
-
-// template <typename... Bases>
-// inline ShrPool<libint2::TwoBodyEngine<libint2::cGTG>> make_2body_cGTG_shr_pool(
-//     Bases &&... bases) {
-//   // 6 gaussian fit to e^{-0.2 * x} determined in Mathematica
-//   std::vector<double> coeffs = {
-//       0.68676713614272009761934351651599429330911561677890,
-//       0.17924629219445404021936462220200583501183244721279,
-//       0.064220682110261371716883231597854661479450500089063,
-//       0.033621547173808474311407293716847834106535970827386,
-//       0.019592661683693461238951072644210502828610282529384,
-//       0.016551662481340943325955850911964947165735196578362};
-//   std::vector<double> exps = {
-//       0.027451281897186570143120446205078791294303205557980,
-//       0.29694066103890138937362272703869530541284211241605,
-//       1.3223782109312611325083149412088475466887201014102,
-//       4.8167483836252699864760932100830708335301688919489,
-//       19.524436889090393389012571590744100348875323294129,
-//       159.14994927540994111839660755978500418600010098139};
-//   std::vector<std::pair<double, double>> params;
-// 
-//   for (auto i = 0; i < coeffs.size(); ++i) {
-//     params.push_back(std::make_pair(exps[i], coeffs[i]));
-//   }
-// 
-//   return std::make_shared<Epool<libint2::TwoBodyEngine<libint2::cGTG>>>(
-//       make_2body_cGTG(std::move(params), std::forward<Bases>(bases)...));
-// }
-
-inline ShrPool<libint2::Engine>
-make_1body_shr_pool(std::string const &type, basis::Basis const &bs,
-                    molecule::Molecule const &mol) {
-    return std::make_shared<Epool<libint2::Engine>>(
-          make_1body(type, bs, mol));
-}
-
-// template <typename... Bases>
-// inline ShrPool<libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>>
-// make_2body_cGTG_C_shr_pool(Bases &&... bases) {
-//   // 6 gaussian fit to e^{-0.2 * x} determined in Mathematica
-//   std::vector<double> coeffs = {
-//       0.68676713614272009761934351651599429330911561677890,
-//       0.17924629219445404021936462220200583501183244721279,
-//       0.064220682110261371716883231597854661479450500089063,
-//       0.033621547173808474311407293716847834106535970827386,
-//       0.019592661683693461238951072644210502828610282529384,
-//       0.016551662481340943325955850911964947165735196578362};
-//   std::vector<double> exps = {
-//       0.027451281897186570143120446205078791294303205557980,
-//       0.29694066103890138937362272703869530541284211241605,
-//       1.3223782109312611325083149412088475466887201014102,
-//       4.8167483836252699864760932100830708335301688919489,
-//       19.524436889090393389012571590744100348875323294129,
-//       159.14994927540994111839660755978500418600010098139};
-//   std::vector<std::pair<double, double>> params;
-// 
-//   for (auto i = 0; i < coeffs.size(); ++i) {
-//     params.push_back(std::make_pair(exps[i], coeffs[i]));
-//   }
-// 
-//   return std::make_shared<
-//       Epool<libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb>>>(
-//       make_2body_cGTG_C(std::move(params), std::forward<Bases>(bases)...));
-// }
 
 }  // namespace integrals
 }  // namespace mpqc
 
-#endif  // MPQC_INTEGRAL_MAKEENGINE_H
+#endif  // MPQC_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_

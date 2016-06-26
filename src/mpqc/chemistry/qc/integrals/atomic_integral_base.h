@@ -34,6 +34,7 @@ namespace integrals {
 
 class AtomicIntegralBase {
 public:
+  using gtg_params_t = std::vector <std::pair<double, double>>;
 
     AtomicIntegralBase() noexcept = default;
 
@@ -51,14 +52,27 @@ public:
                        const std::shared_ptr <OrbitalBasisRegistry>& obs,
                        const std::vector <std::pair<double, double>>& gtg_params = std::vector<std::pair<double,double>>()
                         )
-    : world_(world), mol_(mol), orbital_basis_registry_(obs), gtg_params_(gtg_params)
+    : world_(world), orbital_basis_registry_(obs), mol_(mol), gtg_params_(gtg_params)
     { }
 
     virtual ~AtomicIntegralBase() = default;
 
-    /// return madness world
-    madness::World &get_world() const {
+    /// @return MADNESS world
+    madness::World& world() {
         return world_;
+    }
+
+    /// @brief Molecule accessor
+    /// @return molecule object
+    const molecule::Molecule& molecule() const {
+        return *mol_;
+    }
+
+    /// @brief (contracted) Gaussian-types geminal parameters accessor
+    /// @return Gaussian-type geminal parameters
+    const gtg_params_t& gtg_params() const {
+      TA_USER_ASSERT(not gtg_params_.empty(), "Gaussian-type geminal not initialized");
+      return gtg_params_;
     }
 
     /// set OrbitalBasisRegistry
@@ -67,11 +81,12 @@ public:
     }
 
 
-  const std::shared_ptr<OrbitalBasisRegistry> &orbital_basis_registry() const {
+    /// @return the OrbitalBasisRegistry object
+    const std::shared_ptr<OrbitalBasisRegistry>& orbital_basis_registry() const {
       return orbital_basis_registry_;
-  }
+    }
 
-/**
+   /**
      * Given Formula with rank = 4, return DensityFitting formula
      *
      * This function is also used in MolecularIntegral density fitting formula parsing
@@ -87,27 +102,32 @@ public:
 protected:
 
     /// parse operation and return one body engine
-    libint2::Engine get_one_body_engine(const Operation &operation, int64_t max_nprim, int64_t max_am);
-
-    /// parse operation and  return two body engine kernel
-    libint2::MultiplicativeSphericalTwoBodyKernel get_two_body_engine_kernel(const Operation &operation);
-
+    libint2::Engine make_engine(const Operator &oper, int64_t max_nprim, int64_t max_am);
 
     /// parse one body formula and set engine_pool and basis array
-    void parse_one_body(const Formula &formula, std::shared_ptr <EnginePool<libint2::Engine>> &engine_pool,
-                        Barray<2> &bases);
+    void parse_one_body(
+        const Formula &formula,
+        std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
+        Barray<2> &bases);
 
     /// parse two body two center formula and set two body kernel, basis array, max_nprim and max_am
-    void parse_two_body_two_center(const Formula &formula, libint2::MultiplicativeSphericalTwoBodyKernel &kernel,
-                                   Barray<2> &bases, int64_t &max_nprim, int64_t &max_am);
+    void parse_two_body_two_center(
+        const Formula &formula,
+        std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
+        Barray<2> &bases);
+
 
     /// parse two body three center formula and set two body kernel, basis array, max_nprim and max_am
-    void parse_two_body_three_center(const Formula &formula, libint2::MultiplicativeSphericalTwoBodyKernel &kernel,
-                                     Barray<3> &bases, int64_t &max_nprim, int64_t &max_am);
+    void parse_two_body_three_center(
+        const Formula &formula,
+        std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
+        Barray<3> &bases);
 
     /// parse two body four center formula and set two body kernel, basis array, max_nprim and max_am
-    void parse_two_body_four_center(const Formula &formula, libint2::MultiplicativeSphericalTwoBodyKernel &kernel,
-                                    Barray<4> &bases, int64_t &max_nprim, int64_t &max_am);
+    void parse_two_body_four_center(
+        const Formula &formula,
+        std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
+        Barray<4> &bases);
 
     /**
      *  Given formula with rank = 2 and J or K operation, return the G integral
@@ -149,7 +169,7 @@ protected:
      *         - m_α for KAlpha
      *         - m_β for KBeta
      */
-    OrbitalIndex get_jk_orbital_space(const Operation& operation);
+    OrbitalIndex get_jk_orbital_space(const Operator& operation);
 
     /// given OrbitalIndex, find the correspoding basis
     std::shared_ptr <basis::Basis> index_to_basis(const OrbitalIndex &index) {
@@ -165,9 +185,11 @@ protected:
 protected:
 
     madness::World &world_;
-    std::shared_ptr <molecule::Molecule> mol_;
     std::shared_ptr<OrbitalBasisRegistry> orbital_basis_registry_;
-    std::vector <std::pair<double, double>> gtg_params_;
+
+    // TODO these specify operator params, need to abstract out better
+    std::shared_ptr<molecule::Molecule> mol_;
+    gtg_params_t gtg_params_;
 
 };
 } // end of namespace integral

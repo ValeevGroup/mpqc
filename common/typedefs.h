@@ -21,11 +21,8 @@ using TRange = TA::TiledRange;
 
 using SpShapeF = TA::SparseShape<float>;
 
-template <unsigned int DIM, typename Policy>
-using TAArray = TA::Array<double, DIM, TA::TensorD, Policy>;
-
-template <unsigned int DIM, typename Tile, typename Policy>
-using DArray = TA::Array<double, DIM, Tile, Policy>;
+template <unsigned int, typename Tile, typename Policy>
+using DArray = TA::DistArray<Tile, Policy>;
 
 /////////////////////////////////////////////////////////
 // MPQC typedefs

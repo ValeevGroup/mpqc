@@ -268,9 +268,10 @@ inline MatrixD auxiliary_Q(madness::World &world, ShrPool<E> const &eng,
 
     // pass by pointers since tasks copy params
     auto task_func = [=](Shell const *sh, Shell const *ush, double *Q_val) {
-        const auto *buf = eng->local().compute(*sh, *ush, *sh, *ush);
+        const auto& bufs = eng->local().compute(*sh, *ush, *sh, *ush);
+        TA_USER_ASSERT(bufs.size() == 1, "unexpected result from Engine::compute");
         const auto nsh = sh->size();
-        const auto bmap = Eig::Map<const MatrixD>(buf, nsh, nsh);
+        const auto bmap = Eig::Map<const MatrixD>(bufs[0], nsh, nsh);
 
         *Q_val = std::sqrt(bmap.lpNorm<2>());
     };
@@ -296,10 +297,12 @@ inline MatrixD four_center_Q(madness::World &world, ShrPool<E> const &eng,
     auto task_func =
           [=](Shell const *sh0, Shell const *sh1, double *Q_val) {
         eng->local().set_precision(0.);
-        const auto *buf = eng->local().compute(*sh0, *sh1, *sh0, *sh1);
+        const auto& bufs = eng->local().compute(*sh0, *sh1, *sh0, *sh1);
+        TA_USER_ASSERT(bufs.size() == 1,
+                       "unexpected result from Engine::compute");
 
         const auto n2 = sh0->size() * sh1->size();
-        const auto bmap = Eig::Map<const MatrixD>(buf, n2, n2);
+        const auto bmap = Eig::Map<const MatrixD>(bufs[0], n2, n2);
 
         eng->local().set_precision(std::numeric_limits<double>::epsilon());
 

@@ -600,7 +600,7 @@ namespace mpqc{
                 v3("a,b,c,i,j,k") = g_abij("a,b,i,j")*t1("c,k");
                 v3("a,b,c,i,j,k") = v3("a,b,c,i,j,k") + v3("b,c,a,j,k,i") + v3("a,c,b,i,k,j");
 
-                std::array<std::size_t,6> offset {0,0,0,0,0,0};
+                std::array<std::size_t,6> offset{{0,0,0,0,0,0}};
 
                 auto ccsd_t_reduce = CCSD_T_Reduce(
                         std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
@@ -898,7 +898,7 @@ namespace mpqc{
                             std::size_t b_offset = tr_vir.tile(b).first;
                             std::size_t c_offset = tr_vir.tile(c).first;
 //                            std::cout << a_offset << " " << b_offset << " " << c_offset << std::endl;
-                            std::array<std::size_t,6> offset{a_offset,b_offset,c_offset,0,0,0};
+                            std::array<std::size_t,6> offset{{a_offset,b_offset,c_offset,0,0,0}};
 
                             double tmp_energy = 0.0;
                             if ( b < a && c < b){

@@ -26,7 +26,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
         const molecule::Molecule& mols,
         int occ)
 {
-    auto& world = ao_int.get_world();
+    auto& world = ao_int.world();
     using TArray = TA::DistArray<Tile, Policy>;
 
 
@@ -240,7 +240,7 @@ void closed_shell_cabs_mo_build_eigen_solve(
         const rapidjson::Document& in,
         const std::shared_ptr<TRange1Engine> tre)
 {
-    auto& world = ao_int.get_world();
+    auto& world = ao_int.world();
     // CABS fock build
     auto mo_time0 = mpqc_time::fenced_now(world);
     utility::print_par(world, "\nBuilding ClosedShell CABS MO Orbital\n");

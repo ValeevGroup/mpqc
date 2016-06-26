@@ -67,9 +67,9 @@ class AtomicIntegral : public AtomicIntegralBase {
                      std::vector<std::pair<double, double>>(),
                  const rapidjson::Document& in = rapidjson::Document())
       : AtomicIntegralBase(world, mol, obs, gtg_params),
-        op_(op),
         ao_formula_registry_(),
-        orbital_space_registry_() {
+        orbital_space_registry_(),
+        op_(op) {
     if (in.IsObject()) {
       accurate_time_ =
           in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
@@ -130,13 +130,6 @@ class AtomicIntegral : public AtomicIntegralBase {
   }
 
  protected:
-  /// compute two body integral
-  template <typename Basis>
-  TArray compute_two_body_integral(
-      const libint2::MultiplicativeSphericalTwoBodyKernel& kernel,
-      const Basis& basis, int64_t max_nprim, int64_t max_am,
-      const Operation& operation);
-
   /// compute integrals that has two dimension
   TArray compute2(const Formula& formula_string);
 
@@ -147,10 +140,12 @@ class AtomicIntegral : public AtomicIntegralBase {
   TArray compute4(const Formula& formula_string);
 
  private:
-  // TODO better inverse of two center
-  // TODO direct integral
-  // TODO Screener for different type of integral
-  /// compute integral for sparse policy
+
+  /// compute sparse array
+
+  /// TODO better inverse of two center
+  /// TODO direct integral
+  /// TODO Screener for different type of integral
   template <typename E, unsigned long N, typename U = Policy>
   TA::Array<double, N, Tile,
             typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
@@ -180,7 +175,7 @@ class AtomicIntegral : public AtomicIntegralBase {
     return result;
   }
 
-  /// compute integral for dense policy
+  /// compute dense array
   template <typename E, unsigned long N, typename U = Policy>
   TA::Array<double, N, Tile,
             typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
@@ -219,13 +214,14 @@ class AtomicIntegral : public AtomicIntegralBase {
   double screen_threshold_;
 };
 
+#if 0
 template <typename Tile, typename Policy>
 template <typename Basis>
 typename AtomicIntegral<Tile, Policy>::TArray
 AtomicIntegral<Tile, Policy>::compute_two_body_integral(
     const libint2::MultiplicativeSphericalTwoBodyKernel& kernel,
     const Basis& bs_array, int64_t max_nprim, int64_t max_am,
-    const Operation& operation) {
+    const Operator& operation) {
   typename AtomicIntegral<Tile, Policy>::TArray result;
 
   if (kernel == libint2::Coulomb) {
@@ -235,11 +231,11 @@ AtomicIntegral<Tile, Policy>::compute_two_body_integral(
     result = compute_integrals(this->world_, engine_pool, bs_array);
   } else {
     if (this->gtg_params_.empty()) {
-      throw std::runtime_error("Gaussian Type Genminal Parameters are empty!");
+      throw std::runtime_error("Gaussian Type Geminal Parameters are empty!");
     }
 
     if (kernel == libint2::cGTG) {
-      if (operation.oper() == Operation::Operators::cGTG2) {
+      if (operation.type() == Operator::Type::cGTG2) {
         auto squared_pragmas = f12::gtg_params_squared(this->gtg_params_);
         libint2::TwoBodyEngine<libint2::cGTG> engine(
             max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
@@ -271,6 +267,7 @@ AtomicIntegral<Tile, Policy>::compute_two_body_integral(
   TA_ASSERT(result.is_initialized());
   return result;
 }
+#endif
 
 template <typename Tile, typename Policy>
 typename AtomicIntegral<Tile, Policy>::TArray&
@@ -320,14 +317,14 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
   TArray result;
 
   // use one body engine
-  if (formula.operation().is_onebody()) {
+  if (formula.oper().is_onebody()) {
     // H = V + T
-    if (formula.operation().oper() == Operation::Operators::Core) {
+    if (formula.oper().type() == Operator::Type::Core) {
       auto v_formula = formula;
-      v_formula.operation().set_oper(Operation::Operators::Nuclear);
+      v_formula.set_operator_type(Operator::Type::Nuclear);
 
       auto t_formula = formula;
-      t_formula.operation().set_oper(Operation::Operators::Kinetic);
+      t_formula.set_operator_type(Operator::Type::Kinetic);
 
       auto v = this->compute(v_formula);
       auto t = this->compute(t_formula);
@@ -357,19 +354,16 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     utility::print_par(world_, " Time: ", time, " s\n");
   }
   // use two body engine
-  else if (formula.operation().is_twobody()) {
+  else if (formula.oper().is_twobody()) {
     time0 = mpqc_time::now(world_, accurate_time_);
 
-    int64_t max_nprim, max_am;
-    libint2::MultiplicativeSphericalTwoBodyKernel kernel;
+    std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+    parse_two_body_two_center(formula, engine_pool, bs_array);
+    result = compute_integrals(this->world_, engine_pool, bs_array);
 
-    parse_two_body_two_center(formula, kernel, bs_array, max_nprim, max_am);
-    result = compute_two_body_integral(kernel, bs_array, max_nprim, max_am,
-                                       formula.operation());
-
-    if (formula.operation().has_option(Operation::Options::Inverse)) {
-      if (formula.operation().oper() == Operation::Operators::cGTG ||
-          formula.operation().oper() == Operation::Operators::cGTGCoulomb) {
+    if (formula.oper().has_option(Operator::Option::Inverse)) {
+      if (formula.oper().type() == Operator::Type::cGTG ||
+          formula.oper().type() == Operator::Type::cGTGCoulomb) {
         result("i,j") = -result("i,j");
       }
 
@@ -415,15 +409,15 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       result = array_ops::eigen_to_array<TA::TensorD>(
           result.get_world(), result_eig, tr_result, tr_result);
 
-      if (formula.operation().oper() == Operation::Operators::cGTG ||
-          formula.operation().oper() == Operation::Operators::cGTGCoulomb) {
+      if (formula.oper().type() == Operator::Type::cGTG ||
+          formula.oper().type() == Operator::Type::cGTGCoulomb) {
         result("i,j") = -result("i,j");
       }
     }
 
-    if (formula.operation().has_option(Operation::Options::InverseSquareRoot)) {
-      if (formula.operation().oper() == Operation::Operators::cGTG ||
-          formula.operation().oper() == Operation::Operators::cGTGCoulomb) {
+    if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
+      if (formula.oper().type() == Operator::Type::cGTG ||
+          formula.oper().type() == Operator::Type::cGTGCoulomb) {
         result("i,j") = -result("i,j");
       }
 
@@ -434,8 +428,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       result = array_ops::eigen_to_array<TA::TensorD>(
           result.get_world(), L_inv_eig, tr_result, tr_result);
 
-      if (formula.operation().oper() == Operation::Operators::cGTG ||
-          formula.operation().oper() == Operation::Operators::cGTGCoulomb) {
+      if (formula.oper().type() == Operator::Type::cGTG ||
+          formula.oper().type() == Operator::Type::cGTGCoulomb) {
         result("i,j") = -result("i,j");
       }
     }
@@ -450,9 +444,9 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     utility::print_par(world_, " Time: ", time, " s\n");
   }
   // compute JK, requires orbital space registry
-  else if (formula.operation().is_jk()) {
+  else if (formula.oper().is_jk()) {
     // density fitting case
-    if (formula.operation().has_option(Operation::Options::DensityFitting)) {
+    if (formula.oper().has_option(Operator::Option::DensityFitting)) {
       auto three_center_formula = get_jk_df_formula(formula);
 
       auto left = compute(three_center_formula[0]);
@@ -461,11 +455,11 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
       time0 = mpqc_time::now(world_, accurate_time_);
       // find the density
-      auto space_index = get_jk_orbital_space(formula.operation());
+      auto space_index = get_jk_orbital_space(formula.oper());
       auto& space = orbital_space_registry_->retrieve(space_index);
 
       // J case
-      if (formula.operation().oper() == Operation::Operators::J) {
+      if (formula.oper().type() == Operator::Type::J) {
         result("i,j") = center("K,Q") * right("Q,k,l") *
                         (space("k,a") * space("l,a")) * left("K,i,j");
       }
@@ -486,10 +480,10 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
       time0 = mpqc_time::now(world_, accurate_time_);
       // find the density
-      auto space_index = get_jk_orbital_space(formula.operation());
+      auto space_index = get_jk_orbital_space(formula.oper());
       auto& space = orbital_space_registry_->retrieve(space_index);
 
-      if (formula.operation().oper() == Operation::Operators::J) {
+      if (formula.oper().type() == Operator::Type::J) {
         result("rho,sigma") =
             four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
       } else {
@@ -508,12 +502,12 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
   }
   // hJ = H + J
-  else if (formula.operation().oper() == Operation::Operators::hJ) {
+  else if (formula.oper().type() == Operator::Type::hJ) {
     auto h_formula = formula;
-    h_formula.set_operation(Operation(L"H"));
+    h_formula.set_operator(Operator(L"H"));
 
     auto j_formula = formula;
-    j_formula.operation().set_oper(Operation::Operators::J);
+    j_formula.set_operator_type(Operator::Type::J);
 
     auto h = this->compute(h_formula);
     auto j = this->compute(j_formula);
@@ -532,7 +526,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     utility::print_par(world_, " Time: ", time, " s\n");
   }
   // compute Fock, requires orbital space registry
-  else if (formula.operation().is_fock()) {
+  else if (formula.oper().is_fock()) {
     auto formulas = get_fock_formula(formula);
 
     auto h = compute(formulas[0]);
@@ -541,7 +535,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
     time0 = mpqc_time::now(world_, accurate_time_);
     // if closed shell
-    if (formula.operation().oper() == Operation::Operators::Fock) {
+    if (formula.oper().type() == Operator::Type::Fock) {
       result("rho,sigma") =
           h("rho,sigma") + 2 * j("rho,sigma") - k("rho,sigma");
     }
@@ -572,15 +566,13 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   mpqc_time::t_point time1;
   TArray result;
 
-  libint2::MultiplicativeSphericalTwoBodyKernel kernel;
   Barray<3> bs_array;
 
   time0 = mpqc_time::now(world_, accurate_time_);
-  int64_t max_nprim, max_am;
-  parse_two_body_three_center(formula, kernel, bs_array, max_nprim, max_am);
 
-  result = compute_two_body_integral(kernel, bs_array, max_nprim, max_am,
-                                     formula.operation());
+  std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+  parse_two_body_three_center(formula, engine_pool, bs_array);
+  result = compute_integrals(this->world_, engine_pool, bs_array);
 
   time1 = mpqc_time::now(world_, accurate_time_);
   time += mpqc_time::duration_in_s(time0, time1);
@@ -602,7 +594,7 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
   mpqc_time::t_point time1;
   TArray result;
 
-  if (formula.operation().has_option(Operation::Options::DensityFitting)) {
+  if (formula.oper().has_option(Operator::Option::DensityFitting)) {
     // convert formula to df formula
     auto formula_strings = get_df_formula(formula);
 
@@ -632,14 +624,11 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
   } else {
     time0 = mpqc_time::now(world_, accurate_time_);
 
-    int64_t max_nprim, max_am;
-    libint2::MultiplicativeSphericalTwoBodyKernel kernel;
     Barray<4> bs_array;
 
-    parse_two_body_four_center(formula, kernel, bs_array, max_nprim, max_am);
-
-    result = compute_two_body_integral(kernel, bs_array, max_nprim, max_am,
-                                       formula.operation());
+    std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+    parse_two_body_four_center(formula, engine_pool, bs_array);
+    result = compute_integrals(this->world_, engine_pool, bs_array);
 
     // TODO handle permutation better
     if (formula.notation() == Formula::Notation::Physical) {

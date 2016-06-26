@@ -27,7 +27,7 @@ namespace mbpt{
 
 
         MP2(MolecularIntegral& mo_int, const Eigen::VectorXd& orbital_energy, const std::shared_ptr<TRange1Engine> tre)
-                : mo_int_(mo_int), orbital_energy_(std::make_shared<Eigen::VectorXd>(orbital_energy)), trange1_engine_(tre){}
+                : mo_int_(mo_int), trange1_engine_(tre), orbital_energy_(std::make_shared<Eigen::VectorXd>(orbital_energy)) {}
 
         MP2() = default;
 

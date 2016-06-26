@@ -69,7 +69,7 @@ namespace integrals{
                           const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry,
                           const rapidjson::Document& in = rapidjson::Document()
                         )
-                : world_(atomic_integral.get_world()), atomic_integral_(atomic_integral),
+                : world_(atomic_integral.world()), atomic_integral_(atomic_integral),
                   orbital_space_registry_(orbital_space_registry),
                   mo_formula_registry_()
         {
@@ -140,11 +140,11 @@ namespace integrals{
         /// remove all formula that has operation oper_str in mo_registry and ao_registry
         void remove_operation_all(madness::World& world, const std::wstring& oper_str){
 
-            Operation operation(oper_str);
-            Operation::Operators oper = operation.oper();
+            Operator oper(oper_str);
+            Operator::Type oper_type = oper.type();
 
-            mo_formula_registry_.remove_operation(world, oper);
-            atomic_integral().registry().remove_operation(world, oper);
+            mo_formula_registry_.remove_operation(world, oper_type);
+            atomic_integral().registry().remove_operation(world, oper_type);
         }
 
     private:
@@ -196,7 +196,7 @@ namespace integrals{
 
         TArray result;
         // Identity matrix
-        if(formula_string.operation().oper() == Operation::Operators::Identity){
+        if(formula_string.oper().type() == Operator::Type::Identity){
 
             time0 = mpqc_time::now(world_,accurate_time_);
 
@@ -304,7 +304,7 @@ namespace integrals{
         mpqc_time::t_point time0;
         mpqc_time::t_point time1;
         TArray result;
-        if(formula_string.operation().has_option(Operation::Options::DensityFitting)){
+        if(formula_string.oper().has_option(Operator::Option::DensityFitting)){
 
             // get df formula
             auto df_formulas = atomic_integral_.get_df_formula(formula_string);

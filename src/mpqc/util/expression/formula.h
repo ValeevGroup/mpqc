@@ -7,139 +7,119 @@
 
 #include <vector>
 
-#include <mpqc/util/expression/greek_to_english_name.h>
-#include <mpqc/util/expression/orbital_index.h>
-#include <mpqc/util/expression/operation.h>
+#include "greek_to_english_name.h"
+#include "operator.h"
+#include "orbital_index.h"
 
 using mpqc::OrbitalIndex;
-using mpqc::Operation;
+using mpqc::Operator;
 
-namespace mpqc{
+namespace mpqc {
 
-    /**
-     * \brief Formula class that represent quantum chemistry equations
-     *
-     * format for formula
+/**
+ * \brief Formula class that represent quantum chemistry equations
+ *
+ * format for formula
+ *
+ *  - Physical Notation
+ *  <index1 index2|operation|index3 index4>[option1,option2]
+ *
+ *  - Chemical Notation
+ *  (index1 index2|operation|index3 index4)[option]
+ *
+ *  @sa OrbitalIndex for description of index
+ *  @sa Operation for description of operation and option
+ */
+class Formula {
+ public:
+  /// Types of Notation
+  enum class Notation { Chemical = 0, Physical = 1 };
 
-        - Physical Notation
-        <index1 index2|operation|index3 index4>[option1,option2]
+  Formula() = default;
+  Formula(Formula const &) = default;
+  Formula(Formula &&) = default;
+  Formula &operator=(Formula const &) = default;
+  Formula &operator=(Formula &&) = default;
 
-        - Chemical Notation
-        (index1 index2|operation|index3 index4)[option]
+  /**
+   *  Constructor
+   *  @param formula a string that has formula format
+   */
+  Formula(std::wstring formula);
 
-        see OrbitalIndex for description of index
-        see Operation for description of operation and option
+  /// reconstruct the formula in string formula format
+  std::wstring formula_string() const;
 
-     */
-    class Formula{
-    public:
+  /// return left_index
+  const std::vector<OrbitalIndex> &left_index() const { return left_index_; }
 
-        /// Types of Notation
-        enum class Notation {Chemical=0, Physical=1};
+  /// return left_index
+  std::vector<OrbitalIndex> &left_index() { return left_index_; }
 
-        Formula() = default;
-        Formula(Formula const &) = default;
-        Formula(Formula &&) = default;
-        Formula& operator=(Formula const &) = default;
-        Formula& operator=(Formula &&) = default;
+  /// return right_index
+  const std::vector<OrbitalIndex> &right_index() const { return right_index_; }
 
-        /**
-         *  Constructor
-         *  @param formula a string that has formula format
-         */
-        Formula(std::wstring formula);
+  /// return right_index
+  std::vector<OrbitalIndex> &right_index() { return right_index_; }
 
-        /// reconstruct the formula in string formula format
-        std::wstring formula_string() const;
+  /// set right_index
+  void set_right_index(const std::vector<OrbitalIndex> &right_index) {
+    right_index_ = right_index;
+  }
 
-        /// return left_index
-        const std::vector<OrbitalIndex> &left_index() const {
-            return left_index_;
-        }
+  /// set left_index
+  void set_left_index(const std::vector<OrbitalIndex> &left_index) {
+    left_index_ = left_index;
+  }
 
-        /// return left_index
-        std::vector<OrbitalIndex> &left_index() {
-            return left_index_;
-        }
+  /// set Operator
+  void set_operator(const Operator &oper) { oper_ = oper; }
 
-        /// return right_index
-        const std::vector<OrbitalIndex> &right_index() const {
-            return right_index_;
-        }
+  /// set Notation
+  void set_notation(const Notation &notation) { notation_ = notation; }
 
-        /// return right_index
-        std::vector<OrbitalIndex> &right_index() {
-            return right_index_;
-        }
+  /// set Operator type @sa Operator::Type
+  void set_operator_type(const Operator::Type &oper_type) {
+    oper_.set_type(oper_type);
+  }
 
-        /// set right_index
-        void set_right_index(const std::vector<OrbitalIndex> &right_index) {
-            Formula::right_index_ = right_index;
-        }
+  /// Operator accessor
+  const Operator &oper() const { return oper_; }
 
-        /// set left_index
-        void set_left_index(const std::vector<OrbitalIndex> &left_index) {
-            Formula::left_index_ = left_index;
-        }
+  /// Notation accessor
+  const Notation &notation() const { return notation_; }
 
-        /// set operation
-        void set_operation(const Operation &operation) {
-            Formula::operation_ = operation;
-        }
+  /// check if formula has index in left_index and right_index
+  bool has_index(const OrbitalIndex &index) const;
 
-        /// set notation
-        void set_notation(const Notation &notation) {
-            Formula::notation_ = notation;
-        }
+  /// dimension of formula(2, 3 or 4)
+  std::size_t rank() const;
 
-        /// return operation
-        const Operation &operation() const {
-            return operation_;
-        }
+  /// comparison by comparing operation, notation, left_index and right_index
+  bool operator<(const Formula &other) const;
 
-        /// return operation
-        Operation &operation(){
-            return operation_;
-        }
+  /// check equality by comparing operation, left_index, right_index and
+  /// notation
+  bool operator==(const Formula &other) const;
 
-        /// return notation
-        const Notation &notation() const {
-            return notation_;
-        }
+  /// check equality by comparing operation, left_index, right_index and
+  /// notation
+  bool operator!=(const Formula &other) const { return !(*this == other); }
 
-        /// check if formula has index in left_index and right_index
-        bool has_index(const OrbitalIndex& index) const;
+  /// convert to TA expression string format
+  std::string to_ta_expression() const;
 
-        /// dimension of formula(2, 3 or 4)
-        std::size_t rank() const;
+ private:
+  /// parse the index on one side
+  std::vector<OrbitalIndex> check_orbital_index(std::wstring index_array);
 
-        /// comparison by comparing operation, notation, left_index and right_index
-        bool operator<(const Formula& other) const;
+ private:
+  Operator oper_;
+  Notation notation_;
+  std::vector<OrbitalIndex> left_index_;
+  std::vector<OrbitalIndex> right_index_;
+};
 
-        /// check equality by comparing operation, left_index, right_index and notation
-        bool operator==(const Formula& other) const;
-
-        /// check equality by comparing operation, left_index, right_index and notation
-        bool operator!=(const Formula& other) const {
-            return !(*this==other);
-        }
-
-        /// convert to TA expression string format
-        std::string to_ta_expression() const;
-
-    private:
-
-        /// parse the index on one side
-        std::vector<OrbitalIndex> check_orbital_index(std::wstring index_array);
-
-    private:
-
-        Operation operation_;
-        Notation  notation_;
-        std::vector<OrbitalIndex> left_index_;
-        std::vector<OrbitalIndex> right_index_;
-    };
 }
 
-
-#endif //MPQC_FORMULA_H
+#endif  // MPQC_FORMULA_H

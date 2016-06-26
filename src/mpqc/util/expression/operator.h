@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/31/15.
 //
 
-#ifndef MPQC_OPERATION_H
-#define MPQC_OPERATION_H
+#ifndef SRC_MPQC_UTIL_EXPRESSION_OPERATOR_H_
+#define SRC_MPQC_UTIL_EXPRESSION_OPERATOR_H_
 
 #include <unordered_map>
 #include <vector>
@@ -41,36 +41,42 @@ namespace mpqc{
      *  - inv_sqr -> InverseSquareRoot
      */
 
-    class Operation{
+    class Operator {
     public:
         /**
-         *  Operators types
+         *  Operator types
          */
-        enum class Operators{
-            Overlap = 0,
-            Kinetic = 1,
-            Nuclear = 2,
-            Core = 3,
-            Coulomb = 4,
-            cGTG = 5,
-            cGTG2 = 6,
-            cGTGCoulomb = 7,
-            DelcGTG2 = 8,
-            J = 9,
-            K = 10,
-            KAlpha = 11,
-            KBeta = 12,
-            Fock = 13,
-            FockAlpha = 14,
-            FockBeta = 15,
-            hJ = 16,
-            Identity = 17
+        enum class Type {
+            __first_1body_operator = 0,
+            Identity = 0,
+            Overlap = 1,
+            Kinetic = 2,
+            Nuclear = 3,
+            Core = 4,
+            __last_1body_operator = 4,
+            __first_fock_operator = 32,
+            J = 32,
+            K = 33,
+            KAlpha = 34,
+            KBeta = 35,
+            Fock = 36,
+            FockAlpha = 37,
+            FockBeta = 38,
+            hJ = 39,
+            __last_fock_operator = 39,
+            __first_2body_operator = 128,
+            Coulomb = 128,
+            cGTG = 129,
+            cGTG2 = 130,
+            cGTGCoulomb = 131,
+            DelcGTG2 = 132,
+            __last_2body_operator = 132
         };
 
         /**
-         * Options types
+         * Option types
          */
-        enum class Options{
+        enum class Option {
             DensityFitting = 0,
             Inverse = 1,
             InverseSquareRoot = 2
@@ -80,18 +86,18 @@ namespace mpqc{
          * maps of string to operations and option
          * vice versa
          */
-        static const std::unordered_map<std::wstring, Operators> one_body_operation;
-        static const std::unordered_map<std::wstring, Operators> two_body_operation;
-        static const std::unordered_map<std::wstring, Operators> fock_operation;
-        static const std::map<Operators,std::wstring> oper_to_string;
-        static const std::map<Options,std::wstring> option_to_string;
-        static const std::unordered_map<std::wstring, Options> option;
+        static const std::unordered_map<std::wstring, Type> one_body_operation;
+        static const std::unordered_map<std::wstring, Type> two_body_operation;
+        static const std::unordered_map<std::wstring, Type> fock_operation;
+        static const std::map<Type,std::wstring> oper_to_string;
+        static const std::map<Option,std::wstring> option_to_string;
+        static const std::unordered_map<std::wstring, Option> string_to_option;
 
-        Operation() = default;
-        Operation(Operation const &) = default;
-        Operation(Operation &&) = default;
-        Operation& operator=(Operation const &) = default;
-        Operation& operator=(Operation &&) = default;
+        Operator() = default;
+        Operator(Operator const &) = default;
+        Operator(Operator &&) = default;
+        Operator& operator=(Operator const &) = default;
+        Operator& operator=(Operator &&) = default;
 
         /**
          * Constructor
@@ -100,26 +106,21 @@ namespace mpqc{
          * @param option string of a list of option separated by ",", it will sort options so that they
          * always come in the same order
          */
-        Operation(std::wstring operation, std::wstring option = L"");
+        Operator(std::wstring operation, std::wstring option = L"");
 
         /// return options options_
-        const std::vector<Options> options() const {
-            return options_;
+        const std::vector<Option> option() const {
+            return option_;
         }
 
         /// return operation oper_
-        const Operators &oper() const {
-            return oper_;
-        }
-
-        /// return operation oper_
-        Operators &oper() {
-            return oper_;
+        const Type &type() const {
+            return type_;
         }
 
         /// set operation oper_
-        void set_oper(const Operators &oper) {
-            Operation::oper_ = oper;
+        void set_type(const Type &oper) {
+            Operator::type_ = oper;
         }
 
         /// return string that correspond to oper_
@@ -128,8 +129,8 @@ namespace mpqc{
         /// return string that correspond to options_ wraped in []
         const std::wstring option_string() const;
 
-        /// return true if have Options op
-        bool has_option(Options op) const;
+        /// return true if have Option op
+        bool has_option(Option op) const;
 
         /// check if oper_ is one body operation
         bool is_onebody() const;
@@ -147,26 +148,23 @@ namespace mpqc{
         bool is_r12() const;
 
         /// equality check by comparing oper_ and options_
-        bool operator==(Operation const & other) const;
+        bool operator==(Operator const & other) const;
 
         /// equality check by comparing oper_ and options_
-        bool operator!=(Operation const & other) const{
+        bool operator!=(Operator const & other) const{
             return !(*this==other);
         }
 
         /// comparison by comparing oper_ and options_
-        bool operator<(const Operation& other) const;
+        bool operator<(const Operator& other) const;
 
     private:
 
-        Operators oper_;
-        std::vector<Options> options_;
+        Type type_;
+        std::vector<Option> option_;
 
     };
 
-
 }
 
-
-
-#endif //MPQC_OPERATION_H
+#endif  // SRC_MPQC_UTIL_EXPRESSION_OPERATOR_H_

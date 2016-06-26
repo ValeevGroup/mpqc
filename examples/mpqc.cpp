@@ -331,7 +331,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         // emultipole integral
         const auto bs_array = utility::make_array(basis, basis);
-        auto multi_pool = ints::make_1body_shr_pool("emultipole1", basis, clustered_mol);
+        auto multi_pool = ints::make_engine_pool(libint2::Operator::emultipole1, {basis});
         auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
 
         /// deal with fock builder
@@ -366,7 +366,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
         auto time0 = mpqc_time::fenced_now(world);
-        auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
+        auto eri_e = ints::make_engine_pool(libint2::Operator::coulomb, {df_basis, basis});
         auto F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
         auto time1 = mpqc_time::fenced_now(world);
         auto time = mpqc_time::duration_in_s(time0, time1);

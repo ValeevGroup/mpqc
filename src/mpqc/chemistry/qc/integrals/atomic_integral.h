@@ -446,17 +446,20 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
   // compute JK, requires orbital space registry
   else if (formula.oper().is_jk()) {
     // density fitting case
+
+    // find the density
+    auto space_index = get_jk_orbital_space(formula.oper());
+    auto& space = orbital_space_registry_->retrieve(space_index);
+
+    auto obs = space.ao_key().name();
     if (formula.oper().has_option(Operator::Option::DensityFitting)) {
-      auto three_center_formula = get_jk_df_formula(formula);
+      auto three_center_formula = get_jk_df_formula(formula,obs);
 
       auto left = compute(three_center_formula[0]);
       auto center = compute(three_center_formula[1]);
       auto right = compute(three_center_formula[2]);
 
       time0 = mpqc_time::now(world_, accurate_time_);
-      // find the density
-      auto space_index = get_jk_orbital_space(formula.oper());
-      auto& space = orbital_space_registry_->retrieve(space_index);
 
       // J case
       if (formula.oper().type() == Operator::Type::J) {
@@ -474,14 +477,15 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     }
     // four center case
     else {
-      // convert to ao formula
-      auto four_center_formula = get_jk_formula(formula);
-      auto four_center = this->compute(four_center_formula);
-
-      time0 = mpqc_time::now(world_, accurate_time_);
       // find the density
       auto space_index = get_jk_orbital_space(formula.oper());
       auto& space = orbital_space_registry_->retrieve(space_index);
+      auto obs = space.ao_key().name();
+      // convert to ao formula
+      auto four_center_formula = get_jk_formula(formula,obs);
+      auto four_center = this->compute(four_center_formula);
+
+      time0 = mpqc_time::now(world_, accurate_time_);
 
       if (formula.oper().type() == Operator::Type::J) {
         result("rho,sigma") =

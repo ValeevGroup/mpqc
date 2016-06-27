@@ -38,6 +38,7 @@ class ClosedShellSCF {
     std::vector<double> build_times_;
 
     double repulsion_;
+    double scf_energy_;
 
   public:
     ClosedShellSCF() = default;
@@ -87,7 +88,11 @@ class ClosedShellSCF {
     inline array_type const &density() const { return D_; }
     inline array_type const &coefficents() const { return C_; }
 
-    double energy() const;
+    double scf_energy() const {
+      return scf_energy_;
+    }
+
+  double energy() const;
 
     /*! Function to compute the density to the desired accuracy.
      *

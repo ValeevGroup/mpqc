@@ -13,7 +13,6 @@
 #include <mpqc/chemistry/qc/integrals/atomic_integral.h>
 #include <mpqc/util/expression/orbital_registry.h>
 #include "../../../../../ta_routines/diagonal_array.h"
-#include <mpqc/chemistry/qc/scf/mo_build.h>
 
 
 namespace mpqc{

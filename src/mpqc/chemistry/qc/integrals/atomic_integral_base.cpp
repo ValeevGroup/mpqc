@@ -273,7 +273,7 @@ std::array<std::wstring, 3> AtomicIntegralBase::get_df_formula(const Formula &fo
 }
 
 
-Formula AtomicIntegralBase::get_jk_formula(const Formula &formula) {
+Formula AtomicIntegralBase::get_jk_formula(const Formula &formula, const std::wstring& obs) {
 
     Formula result;
 
@@ -284,34 +284,34 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula) {
 
         result.left_index().push_back(formula.left_index()[0]);
         result.left_index().push_back(formula.right_index()[0]);
-        result.right_index().push_back(OrbitalIndex(L"μ"));
-        result.right_index().push_back(OrbitalIndex(L"ν"));
+        result.right_index().push_back(obs);
+        result.right_index().push_back(obs);
 
     }
     else{
 
         result.left_index().push_back(formula.left_index()[0]);
-        result.left_index().push_back(OrbitalIndex(L"μ"));
+        result.left_index().push_back(obs);
         result.right_index().push_back(formula.right_index()[0]);
-        result.right_index().push_back(OrbitalIndex(L"ν"));
+        result.right_index().push_back(obs);
 
     }
     return result;
 }
 
-std::array<Formula,3> AtomicIntegralBase::get_jk_df_formula(const Formula &formula) {
+std::array<Formula,3> AtomicIntegralBase::get_jk_df_formula(const Formula &formula, const std::wstring& obs) {
     std::array<Formula,3> result;
 
     if(formula.oper().type() == Operator::Type::J){
         std::wstring left =  L"( Κ |G| " + formula.left_index()[0].name() + L" " + formula.right_index()[0].name() + L" )";
-        std::wstring right = L"( Κ |G| μ ν  )";
+        std::wstring right = L"( Κ |G| " + obs + L" " + obs + L" )";
 
         result[0] = Formula(left);
         result[2] = Formula(right);
     }
     else{
-        std::wstring left =  L"( Κ |G| " + formula.left_index()[0].name() + L" μ )";
-        std::wstring right = L"( Κ |G| " + formula.right_index()[0].name() + L" ν )";
+        std::wstring left =  L"( Κ |G| " + formula.left_index()[0].name() + L" " + obs  + L" )";
+        std::wstring right = L"( Κ |G| " + formula.right_index()[0].name() +L" " + obs + L" )";
 
         result[0] = Formula(left);
         result[2] = Formula(right);

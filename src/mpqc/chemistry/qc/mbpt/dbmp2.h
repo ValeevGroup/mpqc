@@ -20,10 +20,10 @@ class DBMP2 {
     auto &ao_int = mo_int.atomic_integral();
     auto orbital_registry = mo_int.orbital_space();
     auto mol = mo_int.atomic_integral().molecule();
-    int occ = mol->occupation(0) / 2;
+    int occ = mol.occupation(0) / 2;
     Eigen::VectorXd orbital_energy;
     auto trange1_engine =
-        steele_build(ao_int, *orbital_registry, orbital_energy, in, *mol, occ);
+        steele_build(ao_int, *orbital_registry, orbital_energy, in, mol, occ);
 
     mp2_ = std::make_shared<MP2<Tile, Policy>>(
         MP2<Tile, Policy>(mo_int, orbital_energy, trange1_engine));
@@ -37,7 +37,7 @@ class DBMP2 {
       OrbitalSpaceRegistry<TArray>& orbital_registry,
       Eigen::VectorXd &ens, const rapidjson::Document &in,
       const molecule::Molecule &mols, int occ) {
-    auto &world = ao_int.get_world();
+    auto &world = ao_int.world();
     using TArray = TA::DistArray<Tile, Policy>;
 
     auto mo_time0 = mpqc_time::fenced_now(world);
@@ -193,7 +193,7 @@ class DBMP2 {
       OrbitalSpaceRegistry<TArray>& orbital_registry,
       Eigen::VectorXd &ens, const rapidjson::Document &in,
       const molecule::Molecule &mols, int occ) {
-    auto &world = ao_int.get_world();
+    auto &world = ao_int.world();
     using TArray = TA::DistArray<Tile, Policy>;
 
     auto mo_time0 = mpqc_time::fenced_now(world);
@@ -341,7 +341,7 @@ class DBMP2 {
           OrbitalSpaceRegistry<TArray>& orbital_registry,
           Eigen::VectorXd &ens, const rapidjson::Document &in,
           const molecule::Molecule &mols, int occ) {
-    auto &world = ao_int.get_world();
+    auto &world = ao_int.world();
     using TArray = TA::DistArray<Tile, Policy>;
 
     auto mo_time0 = mpqc_time::fenced_now(world);

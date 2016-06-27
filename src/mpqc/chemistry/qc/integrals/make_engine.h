@@ -35,7 +35,7 @@ libint2::Engine make_engine(const libint2::Operator &oper,
   const auto deriv_order = 0;
   libint2::Engine result{oper, max_nprim, max_am, deriv_order};
   result.set_braket(braket);
-  result.set_params(oper_params);
+  if (!oper_params.empty()) result.set_params(oper_params);
   return result;
 }
 
@@ -64,8 +64,14 @@ inline ShrPool<libint2::Engine> make_engine_pool(
     std::initializer_list<Basis> bases,
     libint2::BraKet braket = libint2::BraKet::invalid,
     libint2::any oper_params = libint2::any()) {
-  if (braket == libint2::BraKet::invalid)
+  // assign default braket, if needed
+  if (braket == libint2::BraKet::invalid) {
     braket = libint2::default_braket(oper);
+  }
+  // assign default params, if needed
+  if (oper_params.empty()) {
+    oper_params = libint2::default_params(oper);
+  }
   return std::make_shared<Epool<libint2::Engine>>(
       make_engine(oper, bases, braket, oper_params));
 }

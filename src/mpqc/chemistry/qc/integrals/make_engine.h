@@ -24,8 +24,12 @@ libint2::Engine make_engine(const libint2::Operator &oper,
                             std::array<std::reference_wrapper<Basis>,N> bases,
                             libint2::BraKet braket = libint2::BraKet::invalid,
                             libint2::any oper_params = libint2::any()) {
+  // assign default params and braket, if needed
   if (braket == libint2::BraKet::invalid)
     braket = libint2::default_braket(oper);
+  if (oper_params.empty())
+    oper_params = libint2::default_params(oper);
+
   int max_am = 0;
   size_t max_nprim = 0;
   for(const auto& bs: bases) {
@@ -33,9 +37,14 @@ libint2::Engine make_engine(const libint2::Operator &oper,
     max_nprim = std::max(max_nprim, static_cast<size_t>(bs.get().max_nprim()));
   }
   const auto deriv_order = 0;
-  libint2::Engine result{oper, max_nprim, max_am, deriv_order};
-  result.set_braket(braket);
-  if (!oper_params.empty()) result.set_params(oper_params);
+  libint2::Engine result{
+      oper,
+      max_nprim,
+      max_am,
+      deriv_order,
+      std::numeric_limits<libint2::real_t>::epsilon(),
+      oper_params,
+      braket};
   return result;
 }
 

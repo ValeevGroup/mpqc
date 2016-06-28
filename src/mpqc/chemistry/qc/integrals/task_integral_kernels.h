@@ -28,11 +28,34 @@ inline void set_eng_precision(Engine &eng) {
   eng.set_precision(integral_engine_precision);
 }
 
-template <typename... Shells>
-inline auto shell_set(Engine &e, Shells &&... shells)
-    -> decltype(e.compute(std::forward<Shells>(shells)...)) {
-  return e.compute(std::forward<Shells>(shells)...);
+inline auto shell_set(Engine &e, Shell const &s0, Shell const &s1,
+                               Shell const &s2, Shell const &s3) -> decltype(e.compute(s0, s1, s2, s3)){
+  return e.compute(s0, s1, s2, s3);
 }
+
+inline auto
+shell_set(Engine &e, Shell const &s0, Shell const &s1) -> decltype(e.compute(s0, s1)){
+  if(e.operator_rank()==1){
+    return e.compute(s0,s1);
+  }
+  else{
+    const auto unit = Shell::unit();
+    return e.compute(s0, unit, s1, unit);
+  }
+}
+
+inline auto
+shell_set(Engine &e, Shell const &s0, Shell const &s1, Shell const &s2) -> decltype(e.compute(s0, Shell::unit(),s1,s2)){
+  const auto unit = Shell::unit();
+  return e.compute(s0, unit, s1, s2);
+}
+
+
+//template <typename... Shells>
+//inline auto shell_set(Engine &e, Shells &&... shells)
+//    -> decltype(e.compute(std::forward<Shells>(shells)...)) {
+//  return e.compute(std::forward<Shells>(shells)...);
+//}
 
 TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 2> shell_ptrs,

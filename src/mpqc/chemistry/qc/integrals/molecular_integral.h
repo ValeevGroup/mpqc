@@ -31,7 +31,7 @@ namespace integrals{
     class MolecularIntegral{
     public:
         using TArray = TA::DistArray<Tile, Policy>;
-        using AtomicIntegral = AtomicIntegral<Tile,Policy>;
+        using AtomicIntegralType = AtomicIntegral<Tile,Policy>;
 
         /**
          *  Constructor
@@ -64,7 +64,7 @@ namespace integrals{
          *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry, which contain AO to MO coefficients
          *
          */
-        MolecularIntegral(AtomicIntegral &atomic_integral,
+        MolecularIntegral(AtomicIntegralType &atomic_integral,
                           const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry,
                           const rapidjson::Document& in = rapidjson::Document()
                         )
@@ -82,12 +82,12 @@ namespace integrals{
         }
 
         /// return reference to AtomicIntegral object
-        AtomicIntegral& atomic_integral() const {
+        AtomicIntegralType& atomic_integral() const {
             return atomic_integral_;
         }
 
         /// return reference to AtomicIntegral object
-        AtomicIntegral& atomic_integral() {
+        AtomicIntegralType& atomic_integral() {
             return atomic_integral_;
         }
 
@@ -180,7 +180,7 @@ namespace integrals{
     private:
 
         madness::World& world_;
-        AtomicIntegral& atomic_integral_;
+        AtomicIntegralType& atomic_integral_;
         std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
         FormulaRegistry<TArray> mo_formula_registry_;
         bool accurate_time_;

@@ -19,9 +19,9 @@ namespace integrals {
 /// bases
 
 ///
-template <typename Basis>
+template <typename Basis, size_t N>
 libint2::Engine make_engine(const libint2::Operator &oper,
-                            std::initializer_list<Basis> bases,
+                            std::array<std::reference_wrapper<Basis>,N> bases,
                             libint2::BraKet braket = libint2::BraKet::invalid,
                             libint2::any oper_params = libint2::any()) {
   if (braket == libint2::BraKet::invalid)
@@ -29,8 +29,8 @@ libint2::Engine make_engine(const libint2::Operator &oper,
   int max_am = 0;
   size_t max_nprim = 0;
   for(const auto& bs: bases) {
-    max_am = std::max(max_am, static_cast<int>(bs.max_am()));
-    max_nprim = std::max(max_nprim, static_cast<size_t>(bs.max_nprim()));
+    max_am = std::max(max_am, static_cast<int>(bs.get().max_am()));
+    max_nprim = std::max(max_nprim, static_cast<size_t>(bs.get().max_nprim()));
   }
   const auto deriv_order = 0;
   libint2::Engine result{oper, max_nprim, max_am, deriv_order};
@@ -58,10 +58,10 @@ inline q_vector make_q(molecule::Molecule const &mol) {
   return q;
 }
 
-template <typename Basis>
+template <typename Basis, size_t N>
 inline ShrPool<libint2::Engine> make_engine_pool(
     const libint2::Operator &oper,
-    std::initializer_list<Basis> bases,
+    std::array<std::reference_wrapper<Basis>,N> bases,
     libint2::BraKet braket = libint2::BraKet::invalid,
     libint2::any oper_params = libint2::any()) {
   // assign default braket, if needed

@@ -120,11 +120,12 @@ void AtomicIntegralBase::parse_one_body(const Formula& formula,
     TA_ASSERT(bra_basis != nullptr);
     TA_ASSERT(ket_basis != nullptr);
 
-    auto max_nprim = std::max(bra_basis->max_nprim(), ket_basis->max_nprim());
-    auto max_am = std::max(bra_basis->max_am(), ket_basis->max_am());
     bases = mpqc::utility::make_array(*bra_basis, *ket_basis);
 
-    engine_pool = make_pool(make_engine(formula.oper(),max_nprim,max_am));
+    auto oper_type = formula.oper().type();
+    engine_pool = integrals::make_engine_pool(
+        to_libint2_operator(oper_type), utility::make_array_of_refs(*bra_basis, *ket_basis),
+        libint2::BraKet::x_x, to_libint2_operator_params(oper_type, *this));
 }
 
 void AtomicIntegralBase::parse_two_body_two_center(
@@ -152,11 +153,12 @@ void AtomicIntegralBase::parse_two_body_two_center(
     TA_ASSERT(bra_basis0 != nullptr);
     TA_ASSERT(ket_basis0 != nullptr);
 
-    auto max_nprim = std::max(bra_basis0->max_nprim(), ket_basis0->max_nprim());
-    auto max_am = std::max(bra_basis0->max_am(), ket_basis0->max_am());
     bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0);
 
-    engine_pool = make_pool(make_engine(formula.oper(),max_nprim,max_am));
+    auto oper_type = formula.oper().type();
+    engine_pool = integrals::make_engine_pool(
+        to_libint2_operator(oper_type), utility::make_array_of_refs(*bra_basis0, *ket_basis0),
+        libint2::BraKet::xs_xs, to_libint2_operator_params(oper_type, *this));
 }
 
 void AtomicIntegralBase::parse_two_body_three_center(
@@ -185,14 +187,12 @@ void AtomicIntegralBase::parse_two_body_three_center(
     TA_ASSERT(ket_basis0 != nullptr);
     TA_ASSERT(ket_basis1 != nullptr);
 
-    auto max_nprim = std::max({bra_basis0->max_nprim(), ket_basis0->max_nprim()
-                                 ,ket_basis1->max_nprim()});
-    auto max_am = std::max({bra_basis0->max_am(), ket_basis0->max_am(),
-                       ket_basis1->max_am()});
-
     bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0, *ket_basis1);
 
-    engine_pool = make_pool(make_engine(formula.oper(),max_nprim,max_am));
+    auto oper_type = formula.oper().type();
+    engine_pool = integrals::make_engine_pool(
+        to_libint2_operator(oper_type), utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
+        libint2::BraKet::xs_xx, to_libint2_operator_params(oper_type, *this));
 }
 
 void AtomicIntegralBase::parse_two_body_four_center(
@@ -222,11 +222,6 @@ void AtomicIntegralBase::parse_two_body_four_center(
     TA_ASSERT(bra_basis1 != nullptr);
     TA_ASSERT(ket_basis1 != nullptr);
 
-    auto max_nprim = std::max({bra_basis0->max_nprim(), bra_basis1->max_nprim()
-                                 ,ket_basis0->max_nprim(), ket_basis1->max_nprim()});
-    auto max_am = std::max({bra_basis0->max_am(), bra_basis1->max_am(),
-                       ket_basis0->max_am(),ket_basis1->max_am()});
-
     if (formula.notation() == Formula::Notation::Chemical){
         bases = {{*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1}};
     }
@@ -234,7 +229,10 @@ void AtomicIntegralBase::parse_two_body_four_center(
         bases = {{*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1}};
     }
 
-    engine_pool = make_pool(make_engine(formula.oper(),max_nprim,max_am));
+    auto oper_type = formula.oper().type();
+    engine_pool = integrals::make_engine_pool(
+        to_libint2_operator(oper_type), utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
+        libint2::BraKet::xx_xx, to_libint2_operator_params(oper_type, *this));
 }
 
 

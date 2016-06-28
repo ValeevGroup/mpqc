@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
   // Overlap ints
   auto s0 = mpqc_time::fenced_now(world);
   auto overlap_e = ints::make_engine_pool(libint2::Operator::overlap,
-                                          {basis});
+                                          utility::make_array_of_refs(basis));
   auto S = ints::sparse_integrals(world, overlap_e, bs_array);
   auto s1 = mpqc_time::fenced_now(world);
   auto stime = mpqc_time::duration_in_s(s0, s1);
@@ -188,11 +188,11 @@ int main(int argc, char *argv[]) {
   out_doc.AddMember("overlap time", stime, out_doc.GetAllocator());
 
   auto h0 = mpqc_time::fenced_now(world);
-  auto kinetic_e = ints::make_engine_pool(libint2::Operator::kinetic, {basis});
+  auto kinetic_e = ints::make_engine_pool(libint2::Operator::kinetic, utility::make_array_of_refs(basis));
   auto T = ints::sparse_integrals(world, kinetic_e, bs_array);
 
   auto nuclear_e =
-      ints::make_engine_pool(libint2::Operator::nuclear, {basis},
+      ints::make_engine_pool(libint2::Operator::nuclear, utility::make_array_of_refs(basis),
                              libint2::BraKet::x_x, make_q(clustered_molecule));
   auto V = ints::sparse_integrals(world, nuclear_e, bs_array);
 
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
 
   const auto dfbs_array = utility::make_array(df_basis, df_basis);
   auto eri_e = ints::make_engine_pool(libint2::Operator::coulomb,
-                                      {df_basis, basis});
+                                      utility::make_array_of_refs(df_basis, basis));
 
   auto three_c_array = utility::make_array(df_basis, basis, basis);
   auto m0 = mpqc_time::fenced_now(world);

@@ -100,7 +100,7 @@ namespace mpqc {
 
             // make engine pool
             auto p_engine_pool = mpqc::integrals::make_engine_pool(
-                libint2::Operator::coulomb, {basis});
+                libint2::Operator::coulomb, utility::make_array_of_refs(basis));
 
             // compute screener
             std::shared_ptr<integrals::Screener> p_screen;
@@ -158,7 +158,7 @@ namespace mpqc {
 
             // make engine pool
             auto p_engine_pool = mpqc::integrals::make_engine_pool(
-                libint2::Operator::coulomb, {basis});
+                libint2::Operator::coulomb, utility::make_array_of_refs(basis));
 
             // compute screener
             std::shared_ptr<integrals::Screener> p_screen;

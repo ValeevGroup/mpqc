@@ -136,9 +136,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::cout << "OBS: " << basis_name << std::endl;
         std::cout << "DFBS: " << df_basis_name << std::endl;
         std::cout << "AUXBS: " << aux_basis_name << std::endl;
-        if(ao_blocksize != 0){
-            std::cout << "AO Block Size: " << ao_blocksize << std::endl;
-        }
+        std::cout << "AO Block Size: " << ao_blocksize << std::endl;
         std::cout << "Sparse Threshold: " << threshold << std::endl;
     }
 
@@ -215,6 +213,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
     basis::BasisSet bs(basis_name);
     basis::Basis basis = basis::parallel_construct_basis(world,bs,clustered_mol);
+//    std::cout << basis << std::endl;
     if(ao_blocksize!=0){
         basis = reblock(basis, cc::reblock_basis, ao_blocksize);
     }
@@ -241,6 +240,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         }
         utility::parallel_print_range_info(world, vir_basis.create_trange1(), "Virtual Basis");
         bs_registry->add(OrbitalIndex(L"Α"),vir_basis);
+//        std::cout << vir_basis << std::endl;
     }
 
     basis::Basis abs_basis;
@@ -359,11 +359,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::unique_ptr<scf::DensityBuilder> d_builder;
         if(density_method == "purification"){
 
-            auto db = scf::PurificationDensityBuilder(S, r_xyz, occ/2, nclusters, 0.0, false);
+            auto db = scf::PurificationDensityBuilder(S, r_xyz, occ/2, std::max(nclusters,1), 0.0, false);
             d_builder = make_unique<scf::PurificationDensityBuilder>(std::move(db));
         }
         else if(density_method == "cholesky"){
-            auto db = scf::ESolveDensityBuilder(S, r_xyz, occ/2, nclusters, 0.0, "cholesky inverse", false);
+            auto db = scf::ESolveDensityBuilder(S, r_xyz, occ/2, std::max(nclusters,1), 0.0, "cholesky inverse", false);
             d_builder = make_unique<scf::ESolveDensityBuilder>(std::move(db));
         }
 

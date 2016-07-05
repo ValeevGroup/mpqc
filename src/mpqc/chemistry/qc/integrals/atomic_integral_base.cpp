@@ -275,24 +275,45 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula, const std::ws
 
     Formula result;
 
-    result.set_notation(Formula::Notation::Chemical);
     Operator oper(L"G");
     result.set_operator(oper);
-    if(formula.oper().type() == Operator::Type::J){
+    if (formula.notation() == Formula::Notation::Chemical){
+      result.set_notation(Formula::Notation::Chemical);
+      if(formula.oper().type() == Operator::Type::J){
 
         result.left_index().push_back(formula.left_index()[0]);
         result.left_index().push_back(formula.right_index()[0]);
         result.right_index().push_back(obs);
         result.right_index().push_back(obs);
 
-    }
-    else{
+      }
+      else{
 
         result.left_index().push_back(formula.left_index()[0]);
         result.left_index().push_back(obs);
         result.right_index().push_back(formula.right_index()[0]);
         result.right_index().push_back(obs);
 
+      }
+    }
+    else{
+      result.set_notation(Formula::Notation::Physical);
+      if(formula.oper().type() == Operator::Type::K){
+
+        result.left_index().push_back(formula.left_index()[0]);
+        result.left_index().push_back(formula.right_index()[0]);
+        result.right_index().push_back(obs);
+        result.right_index().push_back(obs);
+
+      }
+      else{
+
+        result.left_index().push_back(formula.left_index()[0]);
+        result.left_index().push_back(obs);
+        result.right_index().push_back(formula.right_index()[0]);
+        result.right_index().push_back(obs);
+
+      }
     }
     return result;
 }

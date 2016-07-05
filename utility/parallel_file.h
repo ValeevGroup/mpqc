@@ -41,14 +41,12 @@ inline void parallel_read_file(madness::World &world,
   world.gop.broadcast(buffer, size, 0);
 }
 
-inline std::stringstream parallel_read_file(madness::World &world,
-                                            const std::string &filename) {
+inline void parallel_read_file(madness::World &world,
+                                            const std::string &filename, std::stringstream& output) {
   char *buffer;
   parallel_read_file(world, filename, buffer);
-  std::stringstream output;
   output << buffer;
   delete[] buffer;
-  return output;
 }
 
 }  // end of namespace utility

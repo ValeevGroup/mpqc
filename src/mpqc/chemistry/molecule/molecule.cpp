@@ -75,7 +75,8 @@ Molecule::Molecule(const KeyVal& kv) {
   // find world one level higher
   madness::World* world = kv.value<madness::World*>("..:world");
 
-  std::stringstream file = utility::parallel_read_file(*world,file_name);
+  std::stringstream file;
+  utility::parallel_read_file(*world,file_name, file);
 
   auto sort_input = kv.value<bool>("sort_input", true);
 

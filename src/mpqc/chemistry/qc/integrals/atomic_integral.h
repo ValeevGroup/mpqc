@@ -461,16 +461,16 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
       time0 = mpqc_time::now(world_, accurate_time_);
 
-      // J case
-      if (formula.oper().type() == Operator::Type::J) {
-        result("i,j") = center("K,Q") * right("Q,k,l") *
-                        (space("k,a") * space("l,a")) * left("K,i,j");
-      }
-      // K case
-      else {
-        result("i,j") = (left("K,i,k") * space("k,a")) * center("K,Q") *
-                        (right("Q,j,l") * space("l,a"));
-      }
+        // J case
+        if (formula.oper().type() == Operator::Type::J) {
+          result("i,j") = center("K,Q") * right("Q,k,l") *
+                          (space("k,a") * space("l,a")) * left("K,i,j");
+        }
+          // K case
+        else {
+          result("i,j") = (left("K,i,k") * space("k,a")) * center("K,Q") *
+                          (right("Q,j,l") * space("l,a"));
+        }
 
       time1 = mpqc_time::now(world_, accurate_time_);
       time += mpqc_time::duration_in_s(time0, time1);
@@ -487,12 +487,24 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
       time0 = mpqc_time::now(world_, accurate_time_);
 
-      if (formula.oper().type() == Operator::Type::J) {
-        result("rho,sigma") =
-            four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
-      } else {
-        result("rho,sigma") =
-            four_center("rho,mu,sigma,nu") * (space("mu,i") * space("nu,i"));
+      if(formula.notation() == Formula::Notation::Chemical){
+        if (formula.oper().type() == Operator::Type::J) {
+          result("rho,sigma") =
+                  four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
+        } else {
+          result("rho,sigma") =
+                  four_center("rho,mu,sigma,nu") * (space("mu,i") * space("nu,i"));
+        }
+      }
+      else{
+        if (formula.oper().type() == Operator::Type::K) {
+          result("rho,sigma") =
+                  four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
+        } else {
+          result("rho,sigma") =
+                  four_center("rho,mu,sigma,nu") * (space("mu,i") * space("nu,i"));
+        }
+
       }
 
       time1 = mpqc_time::now(world_, accurate_time_);

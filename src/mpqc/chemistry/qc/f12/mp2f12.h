@@ -139,8 +139,8 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
         utility::print_par(world, "Compute T_abij With DF \n" );
 
         TArray g_iajb;
-        g_iajb = mo_int_.compute(L"(i a|G|j b)[df]");
-        g_iajb("a,b,i,j") = g_iajb("i,a,j,b");
+        g_iajb = mo_int_.compute(L"<i j|G|a b>[df]");
+        g_iajb("a,b,i,j") = g_iajb("i,j,a,b");
         t2 = mpqc::cc::d_abij(g_iajb,*orbital_energy_,occ);
 
     }
@@ -185,9 +185,9 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
     {
 
         // R_ipjq not needed
-        mo_int_.registry().remove_formula(world, L"(i1 p|R|j1 q)[df]");
+        mo_int_.registry().remove_formula(world, L"<i1 j1|R|p q>[df]");
 
-        auto Fij = mo_int_.compute(L"(i|F|j)[df]");
+        auto Fij = mo_int_.compute(L"<i|F|j>[df]");
         auto Fij_eigen = array_ops::array_to_eigen(Fij);
         f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
 
@@ -236,8 +236,8 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
     {
         utility::print_par(world, "Compute T_abij Without DF \n" );
         TArray g_iajb;
-        g_iajb = mo_integral.compute(L"(i a|G|j b)");
-        g_iajb("a,b,i,j") = g_iajb("i,a,j,b");
+        g_iajb = mo_integral.compute(L"<i j|G|a b>");
+        g_iajb("a,b,i,j") = g_iajb("i,j,a,b");
         t2_nodf = mpqc::cc::d_abij(g_iajb,*orbital_energy_,occ);
     }
 
@@ -268,7 +268,7 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
     {
 
         // compute energy contribution
-        auto Fij = mo_integral.compute(L"(i|F|j)");
+        auto Fij = mo_integral.compute(L"<i|F|j>");
         auto Fij_eigen = array_ops::array_to_eigen(Fij);
         f12::convert_X_ijkl(X_ijij_ijji_nodf, Fij_eigen);
 

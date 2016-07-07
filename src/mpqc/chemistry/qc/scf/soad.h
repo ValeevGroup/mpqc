@@ -170,11 +170,15 @@ void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
 
                 const auto& J_bufs = eng.compute(sh0, sh1, sh_min, sh_min);
                 TA_USER_ASSERT(J_bufs.size() == 1, "unexpected result from Engine::compute()");
-                J(J_bufs[0], sh0_rng, sh1_rng, min_rng);
+		if(J_bufs[0] != nullptr){
+                  J(J_bufs[0], sh0_rng, sh1_rng, min_rng);
+		}
 
                 const auto& K_bufs = eng.compute(sh0, sh_min, sh1, sh_min);
                 TA_USER_ASSERT(K_bufs.size() == 1, "unexpected result from Engine::compute()");
-                K(K_bufs[0], sh0_rng, sh1_rng, min_rng);
+		if(K_bufs[0] != nullptr){
+                  K(K_bufs[0], sh0_rng, sh1_rng, min_rng);
+		}
             }
         }
     }

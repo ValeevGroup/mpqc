@@ -29,9 +29,8 @@ inline void set_eng_precision(Engine &eng) {
 }
 
 template <typename... Shells>
-inline const auto& shell_set(Engine &e, Shells &&... shells)
-    -> decltype(e.compute(std::forward<Shells>(shells)...)) {
-  return e.compute(std::forward<Shells>(shells)...);
+inline void shell_set(Engine &e, Shells &&... shells) {
+  e.compute(std::forward<Shells>(shells)...);
 }
 
 TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,

@@ -86,9 +86,11 @@ sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
                 TA_USER_ASSERT(bufs.size() >= 4,
                                "unexpected result from Engine::compute()");
 
-                for (auto i = 1; i < 4; ++i) {
+                if (bufs[0] != nullptr) {
+                  for (auto i = 1; i < 4; ++i) {
                     TA::remap(map, bufs[i], lb, ub);
                     t_xyz[i-1].block(lb, ub) = map;
+                  }
                 }
 
                 lb[1] = ub[1];

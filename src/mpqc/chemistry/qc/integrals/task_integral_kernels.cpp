@@ -47,9 +47,10 @@ integral_kernel(Engine &eng, TA::Range &&rng,
             shell_set(eng, s0, s1);
             assert(ints_shell_sets.size() == 1 &&
                    "integral_kernel can't handle multi-shell-set engines");
-            TA::remap(map, ints_shell_sets[0], lb, ub);
-
-            tile.block(lb, ub) = map;
+            if (ints_shell_sets[0] != nullptr) {
+              TA::remap(map, ints_shell_sets[0], lb, ub);
+              tile.block(lb, ub) = map;
+            }
 
             lb[1] = ub[1];
         }
@@ -110,8 +111,10 @@ integral_kernel(Engine &eng, TA::Range &&rng,
                           shell_set(eng, s0, s1, s2);
                           assert(ints_shell_sets.size() == 1 &&
                                  "integral_kernel can't handle multi-shell-set engines");
-                          TA::remap(map, ints_shell_sets[0], lb, ub);
-                          tile.block(lb, ub) = map;
+                          if (ints_shell_sets[0] != nullptr) {
+                            TA::remap(map, ints_shell_sets[0], lb, ub);
+                            tile.block(lb, ub) = map;
+                          }
                         }
 
                         lb[2] = ub[2];
@@ -193,8 +196,10 @@ integral_kernel(Engine &eng, TA::Range &&rng,
                                   shell_set(eng, s0, s1, s2, s3);
                                   assert(ints_shell_sets.size() == 1 &&
                                          "integral_kernel can't handle multi-shell-set engines");
-                                  TA::remap(map, ints_shell_sets[0], lb, ub);
-                                  tile.block(lb, ub) = map;
+                                  if (ints_shell_sets[0] != nullptr) {
+                                    TA::remap(map, ints_shell_sets[0], lb, ub);
+                                    tile.block(lb, ub) = map;
+                                  }
                                 } // screen all
 
                                 lb[3] = ub[3];

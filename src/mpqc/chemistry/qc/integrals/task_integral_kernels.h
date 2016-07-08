@@ -29,7 +29,7 @@ inline void set_eng_precision(Engine &eng) {
 }
 
 template <typename... Shells>
-inline auto shell_set(Engine &e, Shells &&... shells)
+inline const auto& shell_set(Engine &e, Shells &&... shells)
     -> decltype(e.compute(std::forward<Shells>(shells)...)) {
   return e.compute(std::forward<Shells>(shells)...);
 }

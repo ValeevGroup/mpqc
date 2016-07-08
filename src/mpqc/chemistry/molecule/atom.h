@@ -2,10 +2,10 @@
 #ifndef MPQC_MOLECULE_ATOM_H
 #define MPQC_MOLECULE_ATOM_H
 
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
-
 #include <string>
 #include <iosfwd>
+
+#include "./molecule_fwd.h"
 
 namespace mpqc {
 namespace molecule {

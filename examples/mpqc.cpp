@@ -23,6 +23,7 @@
 
 #include <mpqc/chemistry/molecule/atom.h>
 #include <mpqc/chemistry/molecule/cluster.h>
+#include <mpqc/chemistry/molecule/formula.h>
 #include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/molecule/clustering_functions.h>
 #include <mpqc/chemistry/molecule/make_clusters.h>
@@ -158,6 +159,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }else{
         mol = Molecule(xyz_file_stream, true);
     }
+    auto formula = molecule::MolecularFormula(mol);
+    utility::print_par(world, "Molecular Formula: ", formula.string(), "\n");
     auto occ = mol.occupation(charge);
     auto repulsion_energy = mol.nuclear_repulsion();
     utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy, "\n");

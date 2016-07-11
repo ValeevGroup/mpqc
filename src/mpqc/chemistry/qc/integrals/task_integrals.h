@@ -81,7 +81,6 @@ sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
                 const auto n1 = s1.size();
                 ub[1] += n1;
 
-                const auto n1n2 = n0 * n1;
                 const auto& bufs = eng.compute(s0, s1);
                 TA_USER_ASSERT(bufs.size() >= 4,
                                "unexpected result from Engine::compute()");

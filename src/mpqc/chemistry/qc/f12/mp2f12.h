@@ -28,30 +28,31 @@ public:
     MP2F12(MolecularIntegralClass& mo_int, std::shared_ptr<TRange1Engine> tre, const Eigen::VectorXd& ens)
             : mo_int_(mo_int), tre_(tre), orbital_energy_(std::make_shared<Eigen::VectorXd>(ens)) {}
 
-    double compute_mp2_f12_c_df();
+    std::tuple<double, double> compute_mp2_f12_c_df();
 
-    double compute_mp2_f12_c();
+    std::tuple<double, double> compute_mp2_f12_c();
 
     double compute(const rapidjson::Document& in){
 
         std::string method = in.HasMember("Method") ? in["Method"].GetString() : "df";
 
-        double mp2_f12_energy = 0.0;
+        double mp2_energy, f12_energy;
 
         if(method == "four center"){
-            mp2_f12_energy = compute_mp2_f12_c();
+          std::tie(mp2_energy, f12_energy) = compute_mp2_f12_c();
         }
         else if(method == "df"){
-            mp2_f12_energy = compute_mp2_f12_c_df();
+          std::tie(mp2_energy, f12_energy) = compute_mp2_f12_c_df();
         }
         else{
             throw std::runtime_error("Wrong MP2F12 Method");
         }
 
-        return mp2_f12_energy;
-    }
+        utility::print_par(mo_int_.get_world(), "E_MP2: ", mp2_energy, "\n");
+        utility::print_par(mo_int_.get_world(), "E_F12: ", f12_energy, "\n");
 
-private:
+        return mp2_energy + f12_energy;
+    }
 
 private:
 
@@ -61,31 +62,36 @@ private:
 };
 
 template <typename Tile>
-double MP2F12<Tile>::compute_mp2_f12_c_df() {
+std::tuple<double,double> MP2F12<Tile>::compute_mp2_f12_c_df() {
 
     auto& world = mo_int_.get_world();
 
-    double E = 0.0;
+    double E_MP2, E_F12 = 0.0;
 
     auto& mo_integral = mo_int_;
 
     auto occ = tre_->get_actual_occ();
 
-    TArray t2;
-    {
-        utility::print_par(world, "Compute T_abij With DF \n" );
-
-        TArray g_iajb;
-        g_iajb = mo_int_.compute(L"<i j|G|a b>[df]");
-        g_iajb("a,b,i,j") = g_iajb("i,j,a,b");
-        t2 = mpqc::cc::d_abij(g_iajb,*orbital_energy_,occ);
-
-    }
-
     // create shape
     auto occ_tr1 = tre_->get_occ_tr1();
     TiledArray::TiledRange occ4_trange({occ_tr1,occ_tr1,occ_tr1,occ_tr1});
     auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
+
+    TArray t2;
+    {
+        utility::print_par(world, "Compute T_abij With DF \n" );
+
+        TArray g_abij;
+        g_abij("a,b,i,j") = mo_int_.compute(L"<i j|G|a b>[df]")("i,j,a,b");
+        t2 = mpqc::cc::d_abij(g_abij,*orbital_energy_,occ);
+
+        // compute MP2 energy and pair energies
+        TArray TG_ijij_ijji;
+        TG_ijij_ijji("i1,j1,i2,j2") =
+            (t2("a,b,i1,j1") * g_abij("a,b,i2,j2"))
+                .set_shape(ijij_ijji_shape);
+        E_MP2 = TG_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(2, -1));
+    }
 
     //compute V term
     TArray V_ijij_ijji = compute_V_ijij_ijji_df(mo_integral, ijij_ijji_shape);
@@ -100,9 +106,9 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
 
         //contribution from V_ijij_ijji
         // NB factor of 2 from the Hylleraas functional
-        double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(2 * C_ijij_bar,2 * C_ijji_bar));
+        double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(2 * C_ijij_bar,2 * C_ijji_bar));
         utility::print_par(world, "E_V: ", E_v, "\n");
-        E += E_v;
+        E_F12 += E_v;
     }
 
     // compute C term
@@ -113,9 +119,9 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
         V_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*t2("a,b,i2,j2")).set_shape(ijij_ijji_shape);
 
         // NB factor of 2 from the Hylleraas functional
-        double E_ct = V_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(2 * C_ijij_bar,2 * C_ijji_bar));
+        double E_ct = V_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(2 * C_ijij_bar,2 * C_ijji_bar));
         utility::print_par(world, "E_CT: ", E_ct, "\n");
-        E += E_ct;
+        E_F12 += E_ct;
     }
 
 
@@ -130,18 +136,18 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
         auto Fij_eigen = array_ops::array_to_eigen(Fij);
         f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
 
-        double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+        double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_X: ", E_x, "\n");
-        E += E_x;
+        E_F12 += E_x;
 
     }
 
     // compute B term
     TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral, ijij_ijji_shape);
     {
-        double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+        double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_B: ", E_b, "\n");
-        E += E_b;
+        E_F12 += E_b;
     }
 
     {
@@ -150,46 +156,49 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
         auto C_bar_ijab = f12::convert_C_ijab(C_ijab, occ, *orbital_energy_);
         B_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
 
-        double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+        double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_CC: ", E_cc, "\n");
-        E += E_cc;
+        E_F12 += E_cc;
     }
 
-    utility::print_par(world, "E_F12: ", E, "\n");
-    return E;
+    return std::make_tuple(E_MP2, E_F12);
 }
 
 
 template <typename Tile>
-double MP2F12<Tile>::compute_mp2_f12_c(){
+std::tuple<double,double> MP2F12<Tile>::compute_mp2_f12_c(){
 
     auto& world = mo_int_.get_world();
 
-    double E = 0.0;
+    double E_MP2 = 0.0, E_F12 = 0.0;
 
     auto& mo_integral = mo_int_;
 
     auto occ = tre_->get_actual_occ();
-
-    TArray t2_nodf;
-    {
-        utility::print_par(world, "Compute T_abij Without DF \n" );
-        TArray g_iajb;
-        g_iajb = mo_integral.compute(L"<i j|G|a b>");
-        g_iajb("a,b,i,j") = g_iajb("i,j,a,b");
-        t2_nodf = mpqc::cc::d_abij(g_iajb,*orbital_energy_,occ);
-    }
 
     // create shape
     auto occ_tr1 = tre_->get_occ_tr1();
     TiledArray::TiledRange occ4_trange({occ_tr1,occ_tr1,occ_tr1,occ_tr1});
     auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
+    TArray t2_nodf;  // t2_abij
+    {
+        utility::print_par(world, "Compute T_abij Without DF \n" );
+        TArray g_abij;
+        g_abij("a,b,i,j") = mo_integral.compute(L"<i j|G|a b>")("i,j,a,b");
+        t2_nodf = mpqc::cc::d_abij(g_abij,*orbital_energy_,occ);
+        TArray TG_ijij_ijji_nodf;
+        TG_ijij_ijji_nodf("i1,j1,i2,j2") =
+            (t2_nodf("a,b,i1,j1") * g_abij("a,b,i2,j2"))
+                .set_shape(ijij_ijji_shape);
+        E_MP2 = TG_ijij_ijji_nodf("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(2, -1));
+    }
+
     TArray V_ijij_ijji_nodf = compute_V_ijij_ijji(mo_integral, ijij_ijji_shape);
     {
-        double E_v = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
+        double E_v = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
         utility::print_par(world, "E_V: ", E_v, "\n");
-        E += E_v;
+        E_F12 += E_v;
     }
 
     TArray C_ijab_nodf = compute_C_ijab(mo_integral);
@@ -198,9 +207,9 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
         utility::print_par(world, "Compute CT Without DF \n" );
         V_ijij_ijji_nodf("i1,j1,i2,j2") = (C_ijab_nodf("i1,j1,a,b")*t2_nodf("a,b,i2,j2")).set_shape(ijij_ijji_shape);
 
-        double E_ct = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
+        double E_ct = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
         utility::print_par(world, "E_CT: ", E_ct, "\n");
-        E += E_ct;
+        E_F12 += E_ct;
     }
 
     TArray X_ijij_ijji_nodf = compute_X_ijij_ijji(mo_integral, ijij_ijji_shape);
@@ -211,17 +220,17 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
         auto Fij_eigen = array_ops::array_to_eigen(Fij);
         f12::convert_X_ijkl(X_ijij_ijji_nodf, Fij_eigen);
 
-        double E_x = -X_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+        double E_x = -X_ijij_ijji_nodf("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_X: ", E_x, "\n");
-        E += E_x;
+        E_F12 += E_x;
     }
 
     TArray B_ijij_ijji_nodf = compute_B_ijij_ijji(mo_integral,ijij_ijji_shape);
     {
 
-        double E_b = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+        double E_b = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_B: ", E_b, "\n");
-        E += E_b;
+        E_F12 += E_b;
     }
 
     {
@@ -229,16 +238,15 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
         auto C_bar_ijab = f12::convert_C_ijab(C_ijab_nodf, occ, *orbital_energy_);
         B_ijij_ijji_nodf("i1,j1,i2,j2") = (C_ijab_nodf("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
 
-        double E_cc = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+        double E_cc = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_CC: ", E_cc, "\n");
-        E += E_cc;
+        E_F12 += E_cc;
     }
 
-    utility::print_par(world, "E_F12: ", E, "\n");
-    return E;
+    return std::make_tuple(E_MP2, E_F12);
 }
 
-}// end of namespce f12
+}// end of namespace f12
 } // end of namespace mpqc
 
 

@@ -80,7 +80,7 @@ double CCSDF12<Tile>::compute_c_df(const DirectArray &darray) {
     }
 
     // V contribution to energy
-    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
+    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::F12EnergyReductor<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
     utility::print_par(world, "E_V: ", E_v, "\n");
     E += E_v;
 
@@ -93,14 +93,14 @@ double CCSDF12<Tile>::compute_c_df(const DirectArray &darray) {
     auto Fij_eigen = array_ops::array_to_eigen(Fij);
     f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
 
-    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(f12::F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
 
     utility::print_par(world, "E_X: ", E_x, "\n");
     E += E_x;
 
     // compute B term
     TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral, ijij_ijji_shape);
-    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
     utility::print_par(world, "E_B: ", E_b, "\n");
     E += E_b;
 
@@ -150,7 +150,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
     }
 
     // V contribution to energy
-    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
+    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::F12EnergyReductor<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
     utility::print_par(world, "E_V: ", E_v, "\n");
     E += E_v;
 
@@ -177,7 +177,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
     auto Fij_eigen = array_ops::array_to_eigen(Fij);
     f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
 
-    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(f12::F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
 
     utility::print_par(world, "E_X: ", E_x, "\n");
     E += E_x;
@@ -187,7 +187,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
 //    std::cout << "B_ijij_ijji" << std::endl;
 //    std::cout << B_ijij_ijji << std::endl;
 
-    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
+    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
     utility::print_par(world, "E_B: ", E_b, "\n");
     E += E_b;
 

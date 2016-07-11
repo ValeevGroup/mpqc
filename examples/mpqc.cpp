@@ -449,15 +449,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         // mo build
         tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
-        // mp2 compute
-        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
-        corr_e += mp2.compute(corr_in);
 
-        auto mp2_time1 = mpqc_time::fenced_now(world);
-        auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
-        mpqc::utility::print_par(world, "Total MP2 Time:  ", mp2_time, "\n");
-
-        // start mp2f12
+        // start mp2f12 (mp2 computed as part of mp2-f12)
 
         auto mp2f12_time0 = mpqc_time::fenced_now(world);
         //cabs mo build

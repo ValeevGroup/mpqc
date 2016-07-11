@@ -141,24 +141,27 @@ TiledArray::Array<double, 4, Tile, Policy> convert_C_ijab(TiledArray::Array<doub
     return TiledArray::foreach(ijab, convert);
 }
 
-/// tile functor that computes contribution to the F12 energy
+/// tile reductor that computes the total F12 energy
 
-/// Give (a tile of) an F12 theory intermediate (V, B, X, and C)
-/// computes the energy in the diagonal approximation to the F12 energy.
+/// Given (a tile of) an F12 theory intermediate (V, B, X, and C)
+/// computes its contribution to the pair energies in the diagonal F12 approximation.
 /// The energy contribution from intermediate element \f$ I^{ij}_{kl} \f$ is proportional
-/// to \f$ c^{ij}_{ij} I^{ij}_{ij} + c^{ji}_{ij} I^{ij}_{ji} \f$.
-/// NB for \f$ i=j \f$ both terms contribute.
+/// to \f$ c^{ij}_{ij} I^{ij}_{ij} + c^{ji}_{ij} I^{ij}_{ji} \f$, (NB for \f$ i=j \f$ both
+/// terms contribute). The coefficients will
+/// depend on the definition of the geminal, will differ between intermediates linear and
+/// quadratic in the geminal; they will also vary with the reference case, e.g. closed-shell
+/// spin-restricted case, open-shell, or spin-unrestricted cases.
 template <typename Tile>
-struct CLF12Energy {
+struct F12EnergyReductor {
     using result_type =  double;
     using argument_type =  Tile;
 
     double c_ijij;
     double c_ijji;
 
-    CLF12Energy() = default;
-    CLF12Energy(CLF12Energy const &) = default;
-    CLF12Energy(double cijij, double cijji) : c_ijij(cijij), c_ijji(cijji) {}
+    F12EnergyReductor() = default;
+    F12EnergyReductor(F12EnergyReductor const &) = default;
+    F12EnergyReductor(double cijij, double cijji) : c_ijij(cijij), c_ijji(cijji) {}
 
     result_type operator()() const { return 0.0; }
 
@@ -197,6 +200,118 @@ struct CLF12Energy {
                 // ijji
                 if (l == i && k == j) {
                   me += c_ijji * (*value_ptr);
+                }
+              }
+            }
+          }
+        }
+    }
+};
+
+/// tile reductor that computes pair contributions to the F12 energy
+
+/// Given (a tile of) an F12 theory intermediate (V, B, X, and C)
+/// computes its contribution to the pair energies in the diagonal F12 approximation.
+/// The energy contribution from intermediate element \f$ I^{ij}_{kl} \f$ is proportional
+/// to \f$ c^{ij}_{ij} I^{ij}_{ij} + c^{ji}_{ij} I^{ij}_{ji} \f$, (NB for \f$ i=j \f$ both
+/// terms contribute). The coefficients will
+/// depend on the definition of the geminal, will differ between intermediates linear and
+/// quadratic in the geminal; they will also vary with the reference case, e.g. closed-shell
+/// spin-restricted case, open-shell, or spin-unrestricted cases.
+template <typename Tile>
+struct F12PairEnergyReductor {
+    using result_type = std::vector<double>;
+    using argument_type = Tile;
+
+    enum class PairSpin {
+      none,  // closed-shell only
+      aa,  // alpha-alpha
+      bb,  // beta-beta
+      ab,  // alpha-beta
+      s0,  // S=0 (singlet pair)
+      s1   // S=1 (triplet pair)
+    };
+    PairSpin spincase;  //!< spin case
+    int n1;   //!< # of geminal orbitals for electron 1
+    int n2;   //!< # of geminal orbitals for electron 2
+    double c_ijij;
+    double c_ijji;
+
+    F12PairEnergyReductor() = default;
+    F12PairEnergyReductor(F12PairEnergyReductor const &) = default;
+    F12PairEnergyReductor(PairSpin sc, int _n1, int _n2, double cijij, double cijji)
+        : spincase(sc), n1(_n1), n2(_n2), c_ijij(cijij), c_ijji(cijji) {
+      TA_USER_ASSERT(spincase != PairSpin::s0 && spincase != PairSpin::s1,
+                     "spin-adapted F12PairEnergyReductor not implemented yet");
+      TA_USER_ASSERT(spincase != PairSpin::aa && spincase != PairSpin::bb && spincase != PairSpin::ab,
+                     "spin-orbital F12PairEnergyReductor not implemented yet");
+      if (spincase != PairSpin::ab)
+        TA_USER_ASSERT(n1 == n2,
+                       "same-spin case but #s of orbitals for "
+                       "electrons 1 and 2 differ");
+    }
+
+    int npairs() const {
+      if (spincase == PairSpin::aa || spincase == PairSpin::bb ||
+          spincase == PairSpin::s1)
+        return n1 * (n1 - 1) / 2;
+      if (spincase == PairSpin::ab)
+        return n1 * n2;
+      if (spincase == PairSpin::s0 || spincase == PairSpin::none)
+        return n1 * (n1 + 1) / 2;
+      assert(false);  // unreachable
+    }
+
+    int pair_index(int i, int j) const {
+      TA_USER_ASSERT(spincase == PairSpin::none,
+                     "only total closed-shell pair energies are supported");
+      return i > j ? i * (i + 1) / 2 + j : j * (j + 1) / 2 + i;
+    }
+
+    result_type operator()() const { return result_type(npairs(), 0.0); }
+
+    result_type operator()(result_type const &t) const { return t; }
+
+    void operator()(result_type &me, result_type const &other) const {
+      TA_USER_ASSERT(me.size() == other.size(), "result vector size mismatch");
+      // std::transform is not guaranteed to be safe here
+      size_t idx=0;
+      for(auto& e: me) {
+        e += other[idx];
+        ++idx;
+      }
+    }
+
+    void operator()(result_type &me, argument_type const &tile) const {
+        auto const &range = tile.range();
+
+        TA_ASSERT(range.rank() == 4);
+
+        auto const st = range.lobound_data();
+        auto const fn = range.upbound_data();
+
+        auto sti = st[0];
+        auto fni = fn[0];
+        auto stj = st[1];
+        auto fnj = fn[1];
+        auto stk = st[2];
+        auto fnk = fn[2];
+        auto stl = st[3];
+        auto fnl = fn[3];
+
+        const auto* value_ptr = tile.data();
+        for (auto i = sti; i < fni; ++i) {
+          for (auto j = stj; j < fnj; ++j) {
+            const auto ij = pair_index(i, j);
+            for (auto k = stk; k < fnk; ++k) {
+              for (auto l = stl; l < fnl; ++l, ++value_ptr) {
+                // ijij
+                if (k == i && l == j) {
+                  me[ij] += c_ijij * (*value_ptr);
+                }
+                // ijji
+                if (l == i && k == j) {
+                  me[ij] += c_ijji * (*value_ptr);
                 }
               }
             }

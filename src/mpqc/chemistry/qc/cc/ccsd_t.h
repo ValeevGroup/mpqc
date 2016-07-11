@@ -527,7 +527,7 @@ namespace mpqc{
 
                                 auto ccsd_t_reduce = CCSD_T_Reduce(
                                         std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                        this->trange1_engine_->get_actual_occ(), offset);
+                                        this->trange1_engine_->get_active_occ(), offset);
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -545,7 +545,7 @@ namespace mpqc{
 
                                 auto ccsd_t_reduce = CCSD_T_ReduceSymm(
                                         std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                        this->trange1_engine_->get_actual_occ(), offset);
+                                        this->trange1_engine_->get_active_occ(), offset);
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -604,7 +604,7 @@ namespace mpqc{
 
                 auto ccsd_t_reduce = CCSD_T_Reduce(
                         std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                        this->trange1_engine_->get_actual_occ(),
+                        this->trange1_engine_->get_active_occ(),
                         offset);
 
                 double triple_energy =
@@ -905,7 +905,7 @@ namespace mpqc{
 
                                 auto ccsd_t_reduce = CCSD_T_Reduce(
                                         std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                        this->trange1_engine_->get_actual_occ(), offset);
+                                        this->trange1_engine_->get_active_occ(), offset);
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -923,7 +923,7 @@ namespace mpqc{
 
                                 auto ccsd_t_reduce = CCSD_T_ReduceSymm(
                                         std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
-                                        this->trange1_engine_->get_actual_occ(), offset);
+                                        this->trange1_engine_->get_active_occ(), offset);
 
                                 tmp_energy =
                                         (

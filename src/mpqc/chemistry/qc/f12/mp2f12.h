@@ -70,7 +70,7 @@ std::tuple<double,double> MP2F12<Tile>::compute_mp2_f12_c_df() {
 
     auto& mo_integral = mo_int_;
 
-    auto occ = tre_->get_actual_occ();
+    auto occ = tre_->get_active_occ();
 
     // create shape
     auto occ_tr1 = tre_->get_occ_tr1();

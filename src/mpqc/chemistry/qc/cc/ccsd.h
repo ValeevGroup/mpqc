@@ -131,7 +131,7 @@ namespace mpqc {
             // used as reference for development
             double compute_ccsd_straight(TArray &t1, TArray &t2) {
 
-                auto n_occ = trange1_engine_->get_actual_occ();
+                auto n_occ = trange1_engine_->get_active_occ();
 
                 TArray g_abij = ccsd_intermediate_->get_abij();
 
@@ -479,7 +479,7 @@ namespace mpqc {
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
                 bool accurate_time = options_.HasMember("AccurateTime") ? options_["AccurateTime"].GetBool() : false;
 
-                auto n_occ = trange1_engine_->get_actual_occ();
+                auto n_occ = trange1_engine_->get_active_occ();
 
 
                 if(world.rank() == 0){
@@ -886,7 +886,7 @@ namespace mpqc {
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
                 bool accurate_time = options_.HasMember("AccurateTime") ? options_["AccurateTime"].GetBool() : false;
 
-                auto n_occ = trange1_engine_->get_actual_occ();
+                auto n_occ = trange1_engine_->get_active_occ();
 
                 auto tmp_time0 = mpqc_time::now(world,accurate_time);
 
@@ -1309,7 +1309,7 @@ namespace mpqc {
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
                 bool accurate_time = options_.HasMember("AccurateTime") ? options_["AccurateTime"].GetBool() : false;
 
-                auto n_occ = trange1_engine_->get_actual_occ();
+                auto n_occ = trange1_engine_->get_active_occ();
 
                 auto tmp_time0 = mpqc_time::now(world,accurate_time);
 

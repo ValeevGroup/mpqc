@@ -39,15 +39,15 @@ namespace mpqc {
 
         std::size_t get_occ() const { return occ_; }
 
-        // get the actual number of occ orbitals that is used (frozen core case)
-        std::size_t get_actual_occ() const {return occ_ - nfrozen_;}
+        /// get the number of active occ orbitals
+        std::size_t get_active_occ() const {return occ_ - nfrozen_;}
 
         std::size_t get_vir() const { return vir_; }
 
         std::size_t get_all() const { return all_; }
 
-        // get the actual number of all orbitals that is used (frozen core case)
-        std::size_t get_actual_all() const {return all_ - nfrozen_;}
+        /// get the number of active orbitals
+        std::size_t get_active_all() const {return all_ - nfrozen_;}
 
         std::size_t get_nfrozen() const { return nfrozen_;}
 
@@ -55,13 +55,13 @@ namespace mpqc {
 
         std::size_t get_vir_block_size() const {return vir_block_size_;}
 
-        // get the number of blocks in tr_occupied_
+        /// get the number of blocks in tr_occupied_
         std::size_t get_occ_blocks() const { return occ_blocks_; }
 
         // get the number of blocks in tr_virtual_
         std::size_t get_vir_blocks() const { return vir_blocks_; }
 
-        // get the number of blocks in tr_all_
+        /// get the number of blocks in tr_all_
         std::size_t get_all_blocks() const { return vir_blocks_ + occ_blocks_; }
 
     private:
@@ -75,19 +75,19 @@ namespace mpqc {
 
     private:
 
-        // number of occupied orbitals
+        /// number of occupied orbitals
         std::size_t occ_;
 
-        // number of all orbitals
+        /// number of all orbitals
         std::size_t all_;
 
-        // number of virtual orbitals
+        /// number of virtual orbitals
         std::size_t vir_;
 
         std::size_t occ_block_size_;
         std::size_t vir_block_size_;
 
-        // number of frozen orbitals
+        /// number of frozen orbitals
         std::size_t nfrozen_;
 
 

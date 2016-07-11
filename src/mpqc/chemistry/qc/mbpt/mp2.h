@@ -48,7 +48,7 @@ namespace mbpt{
 
             auto g_ijab = mo_int_.compute(L"<i j|G|a b>[df]");
             // compute mp2 energy
-            double energy_mp2 = (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a"))).reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_actual_occ()));
+            double energy_mp2 = (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a"))).reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_active_occ()));
 
             if (g_ijab.get_world().rank() == 0) {
                 std::cout << "MP2 Energy With DF: " << energy_mp2 << std::endl;
@@ -61,7 +61,7 @@ namespace mbpt{
 
             auto g_ijab = mo_int_.compute(L"<i j|G|a b>");
             // compute mp2 energy
-            double energy_mp2 = (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a"))).reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_actual_occ()));
+            double energy_mp2 = (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a"))).reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_active_occ()));
 
             if (g_ijab.get_world().rank() == 0) {
                 std::cout << "MP2 Energy  " << energy_mp2 << std::endl;

@@ -31,9 +31,9 @@ TA::TiledRange1 TRange1Engine::compute_range(std::size_t range, std::size_t bloc
 
 
 TA::TiledRange1 TRange1Engine::tr_occupied() {
-    std::size_t actual_occ = get_actual_occ();
+    std::size_t active_occ = get_active_occ();
 
-    return compute_range(actual_occ, occ_block_size_);
+    return compute_range(active_occ, occ_block_size_);
 }
 
 TA::TiledRange1 TRange1Engine::tr_virtual() {

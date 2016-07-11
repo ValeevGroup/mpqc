@@ -46,7 +46,7 @@ namespace mpqc {
 
             void compute_cc2() {
 
-                auto n_occ = tre_->get_actual_occ();
+                auto n_occ = tre_->get_active_occ();
 
                 TArray2 f_ai;
                 f_ai("a,i") = fock_("a,i");

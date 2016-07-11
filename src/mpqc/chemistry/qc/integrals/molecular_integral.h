@@ -101,6 +101,10 @@ namespace integrals{
             return orbital_space_registry_;
         }
 
+        std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() {
+          return orbital_space_registry_;
+        }
+
         /// return reference to FormulaRegistry
         const FormulaRegistry<TArray> &registry() const {
             return mo_formula_registry_;

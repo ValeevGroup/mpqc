@@ -24,15 +24,15 @@ namespace mbpt{
     class MP2 {
     public:
         using TArray = TA::DistArray<Tile,Policy>;
-        using MolecularIntegral = integrals::MolecularIntegral<Tile,Policy>;
+        using MolecularIntegralType = integrals::MolecularIntegral<Tile,Policy>;
 
 
       /// constructor using MO Integral with orbitals computed
-        MP2(MolecularIntegral& mo_int, const Eigen::VectorXd& orbital_energy, const std::shared_ptr<TRange1Engine> tre)
+        MP2(MolecularIntegralType& mo_int, const Eigen::VectorXd& orbital_energy, const std::shared_ptr<TRange1Engine> tre)
                 : mo_int_(mo_int), trange1_engine_(tre), orbital_energy_(std::make_shared<Eigen::VectorXd>(orbital_energy)) {}
 
       /// constructfor using MO Integral without orbitals computed
-        MP2(MolecularIntegral& mo_int, const rapidjson::Document& in) : mo_int_(mo_int) {
+        MP2(MolecularIntegralType& mo_int, const rapidjson::Document& in) : mo_int_(mo_int) {
             auto& ao_int = mo_int.atomic_integral();
             auto orbital_registry = mo_int.orbital_space();
             auto mol = mo_int.atomic_integral().molecule();
@@ -42,7 +42,15 @@ namespace mbpt{
             orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
         }
 
-        MP2() = default;
+      MolecularIntegralType& mo_integral() const {
+          return mo_int_;
+      }
+
+      const std::shared_ptr<TRange1Engine> trange1_engine() const {
+          return trange1_engine_;
+      }
+
+      MP2() = default;
 
         double compute_df() {
 
@@ -89,7 +97,7 @@ namespace mbpt{
             return mp2_energy;
         }
 
-        const std::shared_ptr<Eigen::VectorXd> get_en() const {
+        const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
             return orbital_energy_;
         }
 
@@ -139,7 +147,7 @@ namespace mbpt{
                             const auto e_ija = e_ij - vec[a + n_occ_];
                             for (auto b = stb; b < fnb; ++b, ++tile_idx) {
                                 const auto e_iajb = e_ija - vec[b + n_occ_];
-                                me += 1 / (e_iajb) * tile.data()[tile_idx];
+                                me += 1.0 / (e_iajb) * tile.data()[tile_idx];
                             }
                         }
                     }
@@ -148,7 +156,7 @@ namespace mbpt{
         };
 
     private:
-        MolecularIntegral& mo_int_;
+        MolecularIntegralType& mo_int_;
         std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
         std::shared_ptr<Eigen::VectorXd> orbital_energy_;
     };

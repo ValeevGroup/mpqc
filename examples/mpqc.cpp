@@ -570,7 +570,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
             closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
             f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral,tre,std::make_shared<Eigen::VectorXd>(ens),t1,t2);
 
-            bool df;
             std::string method = corr_in.HasMember("Method") ? corr_in["Method"].GetString() : "df";
             if(method == "four center"){
                 corr_e += ccsd_f12.compute_c(lazy_two_electron_int);

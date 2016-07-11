@@ -175,7 +175,6 @@ struct CLF12Energy {
 
         auto const st = range.lobound_data();
         auto const fn = range.upbound_data();
-        auto tile_idx = 0;
 
         auto sti = st[0];
         auto fni = fn[0];

@@ -3,7 +3,7 @@
 //
 
 #include <catch.hpp>
-#include <mpqc/util/expression/formula.h>
+#include <mpqc/chemistry/qc/expression/formula.h>
 
 using namespace mpqc;
 

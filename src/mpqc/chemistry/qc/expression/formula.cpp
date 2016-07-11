@@ -6,7 +6,7 @@
 #include <iostream>
 
 
-#include <mpqc/util/expression/formula.h>
+#include <mpqc/chemistry/qc/expression/formula.h>
 
 #include <boost/algorithm/string.hpp>
 #include <TiledArray/error.h>

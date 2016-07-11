@@ -11,7 +11,7 @@
 #include "../../../../../include/tiledarray.h"
 #include "../../../../../common/namespaces.h"
 #include <mpqc/chemistry/qc/integrals/atomic_integral.h>
-#include <mpqc/util/expression/orbital_registry.h>
+#include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include "../../../../../ta_routines/diagonal_array.h"
 
 

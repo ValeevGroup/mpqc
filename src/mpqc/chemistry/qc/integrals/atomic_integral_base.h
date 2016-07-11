@@ -10,8 +10,8 @@
 #include <iostream>
 #include <cwchar>
 
-#include <mpqc/util/expression/formula.h>
-#include <mpqc/util/expression/orbital_registry.h>
+#include <mpqc/chemistry/qc/expression/formula.h>
+#include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include "../../../../../include/tiledarray.h"
 #include "../../../../../common/namespaces.h"
 #include <mpqc/chemistry/molecule/molecule.h>

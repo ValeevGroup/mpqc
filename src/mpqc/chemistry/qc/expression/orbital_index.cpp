@@ -11,8 +11,8 @@
 #include <memory>
 
 #include <TiledArray/error.h>
-#include <mpqc/util/expression/orbital_index.h>
-#include <mpqc/util/expression/greek_to_english_name.h>
+#include <mpqc/chemistry/qc/expression/orbital_index.h>
+#include <mpqc/chemistry/qc/expression/greek_to_english_name.h>
 
 
 namespace mpqc{

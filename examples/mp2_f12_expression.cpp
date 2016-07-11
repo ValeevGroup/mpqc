@@ -22,7 +22,7 @@
 #include "../utility/cc_utility.h"
 #include "../integrals/integrals.h"
 #include "../integrals/atomic_integral.h"
-#include <mpqc/util/expression/orbital_registry.h>
+#include <mpqc/chemistry/qc/expression/orbital_registry.h>
 
 #include "../utility/time.h"
 #include "../utility/parallel_file.h"

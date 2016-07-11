@@ -23,7 +23,6 @@
 
 #include <mpqc/chemistry/molecule/atom.h>
 #include <mpqc/chemistry/molecule/cluster.h>
-#include <mpqc/chemistry/molecule/formula.h>
 #include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/molecule/clustering_functions.h>
 #include <mpqc/chemistry/molecule/make_clusters.h>
@@ -48,6 +47,7 @@
 #include <mpqc/chemistry/qc/mbpt/dbmp2.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include <mpqc/chemistry/qc/f12/mp2f12.h>
+#include <mpqc/chemistry/qc/f12/dbmp2f12.h>
 #include <mpqc/chemistry/qc/f12/ccsdf12.h>
 #include "../utility/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
@@ -159,8 +159,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }else{
         mol = Molecule(xyz_file_stream, true);
     }
-    auto formula = molecule::MolecularFormula(mol);
-    utility::print_par(world, "Molecular Formula: ", formula.string(), "\n");
     auto occ = mol.occupation(charge);
     auto repulsion_energy = mol.nuclear_repulsion();
     utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy, "\n");
@@ -413,9 +411,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto mp2_time0 = mpqc_time::fenced_now(world);
 
         corr_in = json::get_nested(in, "MP2");
-//        tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
-//        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
-        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,corr_in);
+        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral);
         corr_e += mp2.compute(corr_in);
 
         auto mp2_time1 = mpqc_time::fenced_now(world);
@@ -426,9 +422,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto dbmp2_time0 = mpqc_time::fenced_now(world);
 
         corr_in = json::get_nested(in, "DBMP2");
-//        tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
-//        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral,ens,tre);
-        auto dbmp2 = mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(mo_integral,corr_in);
+        auto dbmp2 = mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(mo_integral);
         corr_e += dbmp2.compute(corr_in);
 
         auto dbmp2_time1 = mpqc_time::fenced_now(world);
@@ -439,20 +433,27 @@ int try_main(int argc, char *argv[], madness::World &world) {
     else if(in.HasMember("MP2F12")){
         corr_in = json::get_nested(in, "MP2F12");
 
-        // mo build
-        tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
-
-        // start mp2f12 (mp2 computed as part of mp2-f12)
-
+        // start mp2f12
         auto mp2f12_time0 = mpqc_time::fenced_now(world);
-        //cabs mo build
-        closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
-        f12::MP2F12<TA::TensorD> mp2f12(mo_integral, tre, ens);
+        f12::MP2F12<TA::TensorD> mp2f12(mo_integral);
         corr_e += mp2f12.compute(corr_in);
 
         auto mp2f12_time1 = mpqc_time::fenced_now(world);
         auto mp2f12_time = mpqc_time::duration_in_s(mp2f12_time0, mp2f12_time1);
         mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
+    }
+    else if(in.HasMember("DBMP2F12")){
+        corr_in = json::get_nested(in, "DBMP2F12");
+
+        // start mp2f12
+        auto mp2f12_time0 = mpqc_time::fenced_now(world);
+        f12::DBMP2F12<TA::TensorD> dbmp2f12(mo_integral);
+        corr_e += dbmp2f12.compute(corr_in);
+
+        auto mp2f12_time1 = mpqc_time::fenced_now(world);
+        auto mp2f12_time = mpqc_time::duration_in_s(mp2f12_time0, mp2f12_time1);
+        mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
+
     }
         // all of these require CCSD
     else if(in.HasMember("CCSD") || in.HasMember("CCSD(T)") || in.HasMember("CCSD(F12)") || in.HasMember("EOM_CCSD")) {
@@ -555,6 +556,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
             f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral,tre,std::make_shared<Eigen::VectorXd>(ens),t1,t2);
 
+            bool df;
             std::string method = corr_in.HasMember("Method") ? corr_in["Method"].GetString() : "df";
             if(method == "four center"){
                 corr_e += ccsd_f12.compute_c(lazy_two_electron_int);

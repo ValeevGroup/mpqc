@@ -16,6 +16,20 @@
 namespace mpqc{
 namespace f12{
 
+// coeffs of intermediates linear in the geminal, i.e. V and C
+constexpr double C_ijij = (1./2 + 1./4)/2;  // 3/8
+constexpr double C_ijji = (1./2 - 1./4)/2;  // 1/8
+// coeffs of intermediates quadratic in the geminal, i.e. X and B
+constexpr double CC_ijij = C_ijij * C_ijij + C_ijji * C_ijji;  // 10/64
+constexpr double CC_ijji = 2 * C_ijij * C_ijji;  // C_ijij * C_ijji + C_ijji * C_ijij;
+                                             // 6/64
+// closed-shell-antisymmetrized versions of above
+constexpr double C_ijij_bar = 2 * C_ijij - C_ijji;  // 5/8
+constexpr double C_ijji_bar = 2 * C_ijji - C_ijij;  // -1/8
+constexpr double CC_ijij_bar = 2 * CC_ijij - CC_ijji;  // 14/64
+constexpr double CC_ijji_bar = 2 * CC_ijji - CC_ijij;  // 2/64
+
+
     double basis_to_f12exponent(const std::string& basis_name);
 
     std::vector<std::pair<double,double>> stg_ng_fit(std::size_t n, double zeta);
@@ -127,18 +141,24 @@ TiledArray::Array<double, 4, Tile, Policy> convert_C_ijab(TiledArray::Array<doub
     return TiledArray::foreach(ijab, convert);
 }
 
+/// tile functor that computes contribution to the F12 energy
+
+/// Give (a tile of) an F12 theory intermediate (V, B, X, and C)
+/// computes the energy in the diagonal approximation to the F12 energy.
+/// The energy contribution from intermediate element \f$ I^{ij}_{kl} \f$ is proportional
+/// to \f$ c^{ij}_{ij} I^{ij}_{ij} + c^{ji}_{ij} I^{ij}_{ji} \f$.
+/// NB for \f$ i=j \f$ both terms contribute.
 template <typename Tile>
 struct CLF12Energy {
     using result_type =  double;
     using argument_type =  Tile;
 
-    double iiii;
-    double ijij;
-    double ijji;
+    double c_ijij;
+    double c_ijji;
 
     CLF12Energy() = default;
     CLF12Energy(CLF12Energy const &) = default;
-    CLF12Energy(double c1, double c2, double c3) : iiii(c1), ijij(c2), ijji(c3) {}
+    CLF12Energy(double cijij, double cijji) : c_ijij(cijij), c_ijji(cijji) {}
 
     result_type operator()() const { return 0.0; }
 
@@ -166,25 +186,22 @@ struct CLF12Energy {
         auto stl = st[3];
         auto fnl = fn[3];
 
+        const auto* value_ptr = tile.data();
         for (auto i = sti; i < fni; ++i) {
-            for (auto j = stj; j < fnj; ++j) {
-                for (auto k = stk; k < fnk; ++k) {
-                    for (auto l = stl; l < fnl; ++l, ++tile_idx) {
-                        // iiii
-                        if( (i==j) && (i==k) && (k==l)){
-                            me += iiii*tile.data()[tile_idx];
-                        }
-                            // ijij
-                        else if( j > i && k==i && l==j){
-                            me += ijij*tile.data()[tile_idx];
-                        }
-                            // ijji
-                        else if( j > i && l==i && k==j){
-                            me += ijji*tile.data()[tile_idx];
-                        }
-                    }
+          for (auto j = stj; j < fnj; ++j) {
+            for (auto k = stk; k < fnk; ++k) {
+              for (auto l = stl; l < fnl; ++l, ++value_ptr) {
+                // ijij
+                if (k == i && l == j) {
+                  me += c_ijij * (*value_ptr);
                 }
+                // ijji
+                if (l == i && k == j) {
+                  me += c_ijji * (*value_ptr);
+                }
+              }
             }
+          }
         }
     }
 };

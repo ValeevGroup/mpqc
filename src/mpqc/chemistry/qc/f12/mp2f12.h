@@ -53,75 +53,12 @@ public:
 
 private:
 
-    struct MP2F12Energy {
-        using result_type =  double;
-        using argument_type =  Tile;
-
-        double iiii;
-        double ijij;
-        double ijji;
-
-        MP2F12Energy() = default;
-        MP2F12Energy(MP2F12Energy const &) = default;
-        MP2F12Energy(double c1, double c2, double c3) : iiii(c1), ijij(c2), ijji(c3) {}
-
-        result_type operator()() const { return 0.0; }
-
-        result_type operator()(result_type const &t) const { return t; }
-
-        void operator()(result_type &me, result_type const &other) const {
-            me += other;
-        }
-
-        void operator()(result_type &me, argument_type const &tile) const {
-            auto const &range = tile.range();
-
-            TA_ASSERT(range.rank() == 4);
-
-            auto const st = range.lobound_data();
-            auto const fn = range.upbound_data();
-            auto tile_idx = 0;
-
-            auto sti = st[0];
-            auto fni = fn[0];
-            auto stj = st[1];
-            auto fnj = fn[1];
-            auto stk = st[2];
-            auto fnk = fn[2];
-            auto stl = st[3];
-            auto fnl = fn[3];
-
-            for (auto i = sti; i < fni; ++i) {
-                for (auto j = stj; j < fnj; ++j) {
-                    for (auto k = stk; k < fnk; ++k) {
-                        for (auto l = stl; l < fnl; ++l, ++tile_idx) {
-                            // iiii
-                            if( (i==j) && (i==k) && (k==l)){
-                                me += iiii*tile.data()[tile_idx];
-                            }
-                            // ijij
-                            else if( j > i && k==i && l==j){
-                                me += ijij*tile.data()[tile_idx];
-                            }
-                            // ijji
-                            else if( j > i && l==i && k==j){
-                                me += ijji*tile.data()[tile_idx];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    };
-
 private:
 
     MolecularIntegralClass& mo_int_;
     std::shared_ptr<TRange1Engine> tre_;
     std::shared_ptr<Eigen::VectorXd> orbital_energy_;
 };
-
-
 
 template <typename Tile>
 double MP2F12<Tile>::compute_mp2_f12_c_df() {
@@ -162,7 +99,8 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
         std::cout << "V PMap Local Size, Rank " << world.rank() << " Size " << local << std::endl;
 
         //contribution from V_ijij_ijji
-        double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
+        // NB factor of 2 from the Hylleraas functional
+        double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(2 * C_ijij_bar,2 * C_ijji_bar));
         utility::print_par(world, "E_V: ", E_v, "\n");
         E += E_v;
     }
@@ -174,7 +112,8 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
         utility::print_par(world, "Compute CT With DF \n" );
         V_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*t2("a,b,i2,j2")).set_shape(ijij_ijji_shape);
 
-        double E_ct = V_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
+        // NB factor of 2 from the Hylleraas functional
+        double E_ct = V_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(2 * C_ijij_bar,2 * C_ijji_bar));
         utility::print_par(world, "E_CT: ", E_ct, "\n");
         E += E_ct;
     }
@@ -191,7 +130,7 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
         auto Fij_eigen = array_ops::array_to_eigen(Fij);
         f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
 
-        double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
+        double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_X: ", E_x, "\n");
         E += E_x;
 
@@ -200,7 +139,7 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
     // compute B term
     TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral, ijij_ijji_shape);
     {
-        double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
+        double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_B: ", E_b, "\n");
         E += E_b;
     }
@@ -211,7 +150,7 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
         auto C_bar_ijab = f12::convert_C_ijab(C_ijab, occ, *orbital_energy_);
         B_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
 
-        double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
+        double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_CC: ", E_cc, "\n");
         E += E_cc;
     }
@@ -248,7 +187,7 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
 
     TArray V_ijij_ijji_nodf = compute_V_ijij_ijji(mo_integral, ijij_ijji_shape);
     {
-        double E_v = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
+        double E_v = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
         utility::print_par(world, "E_V: ", E_v, "\n");
         E += E_v;
     }
@@ -259,7 +198,7 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
         utility::print_par(world, "Compute CT Without DF \n" );
         V_ijij_ijji_nodf("i1,j1,i2,j2") = (C_ijab_nodf("i1,j1,a,b")*t2_nodf("a,b,i2,j2")).set_shape(ijij_ijji_shape);
 
-        double E_ct = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));
+        double E_ct = V_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
         utility::print_par(world, "E_CT: ", E_ct, "\n");
         E += E_ct;
     }
@@ -272,7 +211,7 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
         auto Fij_eigen = array_ops::array_to_eigen(Fij);
         f12::convert_X_ijkl(X_ijij_ijji_nodf, Fij_eigen);
 
-        double E_x = -X_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
+        double E_x = -X_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_X: ", E_x, "\n");
         E += E_x;
     }
@@ -280,7 +219,7 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
     TArray B_ijij_ijji_nodf = compute_B_ijij_ijji(mo_integral,ijij_ijji_shape);
     {
 
-        double E_b = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
+        double E_b = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_B: ", E_b, "\n");
         E += E_b;
     }
@@ -290,7 +229,7 @@ double MP2F12<Tile>::compute_mp2_f12_c(){
         auto C_bar_ijab = f12::convert_C_ijab(C_ijab_nodf, occ, *orbital_energy_);
         B_ijij_ijji_nodf("i1,j1,i2,j2") = (C_ijab_nodf("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
 
-        double E_cc = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(MP2F12Energy(0.25,0.4375,0.0625));
+        double E_cc = B_ijij_ijji_nodf("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
         utility::print_par(world, "E_CC: ", E_cc, "\n");
         E += E_cc;
     }

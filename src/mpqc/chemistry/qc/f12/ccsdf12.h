@@ -80,7 +80,7 @@ double CCSDF12<Tile>::compute_c_df(const DirectArray &darray) {
     }
 
     // V contribution to energy
-    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(1.0,2.5,-0.5));
+    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
     utility::print_par(world, "E_V: ", E_v, "\n");
     E += E_v;
 
@@ -93,14 +93,14 @@ double CCSDF12<Tile>::compute_c_df(const DirectArray &darray) {
     auto Fij_eigen = array_ops::array_to_eigen(Fij);
     f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
 
-    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
 
     utility::print_par(world, "E_X: ", E_x, "\n");
     E += E_x;
 
     // compute B term
     TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral, ijij_ijji_shape);
-    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
     utility::print_par(world, "E_B: ", E_b, "\n");
     E += E_b;
 
@@ -122,7 +122,6 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
     mo_integral.registry().clear();
 
     // create shape
-    auto occ = tre_->get_actual_occ();
     auto occ_tr1 = tre_->get_occ_tr1();
     TiledArray::TiledRange occ4_trange({occ_tr1,occ_tr1,occ_tr1,occ_tr1});
     auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
@@ -151,7 +150,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
     }
 
     // V contribution to energy
-    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(1.0,2.5,-0.5));
+    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(2 * C_ijij_bar, 2 * C_ijji_bar));
     utility::print_par(world, "E_V: ", E_v, "\n");
     E += E_v;
 
@@ -161,7 +160,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
 //        auto C_bar_ijab = f12::convert_C_ijab(C_ijab, occ, *orbital_energy_);
 //        V_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
 //
-//        double E_cc = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(0.25,0.4375,0.0625));
+//        double E_cc = V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
 //        utility::print_par(world, "E_CC: ", E_cc, "\n");
 //        E += E_cc;
 //    }
@@ -178,7 +177,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
     auto Fij_eigen = array_ops::array_to_eigen(Fij);
     f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
 
-    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
 
     utility::print_par(world, "E_X: ", E_x, "\n");
     E += E_x;
@@ -188,7 +187,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
 //    std::cout << "B_ijij_ijji" << std::endl;
 //    std::cout << B_ijij_ijji << std::endl;
 
-    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
     utility::print_par(world, "E_B: ", E_b, "\n");
     E += E_b;
 

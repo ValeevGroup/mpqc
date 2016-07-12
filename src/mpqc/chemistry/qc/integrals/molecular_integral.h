@@ -446,7 +446,7 @@ typename MolecularIntegral<Tile,Policy>::TArray& MolecularIntegral<Tile,Policy>:
 
     if(iter != mo_formula_registry_.end()){
         result = *(iter->second);
-        utility::print_par(world_,"Retrived MO Integral: ");
+        utility::print_par(world_,"Retrieved MO Integral: ");
         utility::wprint_par(world_, formula.formula_string());
         double size = utility::array_size(result);
         utility::print_par(world_," Size: ", size, " GB\n");

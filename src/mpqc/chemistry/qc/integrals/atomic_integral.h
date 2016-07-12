@@ -285,7 +285,7 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
 
   if (iter != ao_formula_registry_.end()) {
     result = *(iter->second);
-    utility::print_par(world_, "Retrived AO Integral: ");
+    utility::print_par(world_, "Retrieved AO Integral: ");
     utility::wprint_par(world_, formula.formula_string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");

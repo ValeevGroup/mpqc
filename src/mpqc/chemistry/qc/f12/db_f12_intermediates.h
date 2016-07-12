@@ -46,8 +46,8 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_db_df(
 
 
   {
-    auto left = mo_integral(L"<i1 j1|G|i3 j3>[df]");
-    auto right = mo_integral(L"<i2 j2|R|i3 j3>[df]");
+    auto left = mo_integral(L"<i1 j1|G|m n>[df]");
+    auto right = mo_integral(L"<i2 j2|R|m n>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
     V_ijij_ijji("i1,j1,i2,j2") -= (left*right).set_shape(shape);
@@ -57,8 +57,8 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_db_df(
   }
 
   {
-    auto left = mo_integral(L"<i1 j1|G|i3 a>[df]");
-    auto right = mo_integral(L"<i2 j2|R|i3 a>[df]");
+    auto left = mo_integral(L"<i1 j1|G|m a>[df]");
+    auto right = mo_integral(L"<i2 j2|R|m a>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
     TA::DistArray<Tile,TA::SparsePolicy> tmp;
@@ -135,8 +135,8 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_X_ijij_ijji_db_df(
   }
 
   {
-    auto left = mo_integral(L"<i1 j1|R|i3 j3>[df]");
-    auto right = mo_integral(L"<i2 j2|R|i3 j3>[df]");
+    auto left = mo_integral(L"<i1 j1|R|m n>[df]");
+    auto right = mo_integral(L"<i2 j2|R|m n>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
     X_ijij_ijji("i1,j1,i2,j2") -= (left*right).set_shape(ijij_ijji_shape);
@@ -146,8 +146,8 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_X_ijij_ijji_db_df(
   }
 
   {
-    auto left = mo_integral(L"<i1 j1|R|i3 a>[df]");
-    auto right = mo_integral(L"<i2 j2|R|i3 a>[df]");
+    auto left = mo_integral(L"<i1 j1|R|m a>[df]");
+    auto right = mo_integral(L"<i2 j2|R|m a>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
     TA::DistArray<Tile,TA::SparsePolicy> tmp;

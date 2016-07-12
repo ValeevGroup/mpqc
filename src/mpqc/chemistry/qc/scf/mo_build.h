@@ -383,7 +383,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
     MatrixD S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
 
     // C_mu^i
-    TA::DistArray<Tile,Policy> Ci = orbital_registry->retrieve(OrbitalIndex(L"i")).array();
+    TA::DistArray<Tile,Policy> Ci = orbital_registry->retrieve(OrbitalIndex(L"m")).array();
     MatrixD Ci_eigen = array_ops::array_to_eigen(Ci);
 
     MatrixD X1 = Ci_eigen.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;

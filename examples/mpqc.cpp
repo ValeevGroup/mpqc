@@ -437,7 +437,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     }
     else if(in.HasMember("MP2F12")){
-        auto mp2_time0 = mpqc_time::fenced_now(world);
         corr_in = json::get_nested(in, "MP2F12");
 
 //        std::size_t mo_blocksize = corr_in.HasMember("MoBlockSize") ? corr_in["MoBlockSize"].GetInt() : 24;

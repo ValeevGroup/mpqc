@@ -103,7 +103,6 @@ init_rows(Matrix<T> const &D, unsigned long num_clusters) {
 
     std::vector<VectorCluster<T>> clusters(num_clusters);
 
-    auto size = D.rows();
     for (auto i = 0ul; i < num_clusters; ++i) {
 
         std::discrete_distribution<unsigned int> random_index(weights.begin(),

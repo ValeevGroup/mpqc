@@ -344,7 +344,6 @@ class DBMP2 {
     auto &world = ao_int.world();
     using TArray = TA::DistArray<Tile, Policy>;
 
-    auto mo_time0 = mpqc_time::fenced_now(world);
     utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO Orbital\n");
 
     // solving occupied orbitals

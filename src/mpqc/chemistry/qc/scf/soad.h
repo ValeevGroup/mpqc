@@ -70,7 +70,6 @@ void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
                const MatrixD *D, Array *F, Op op) {
 
     auto range = F->trange().make_tile_range(ord);
-    const auto f_extent = range.extent();
     const auto lb = range.lobound();
     TA::TensorD tile(range, 0.0);
 

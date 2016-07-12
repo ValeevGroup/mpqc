@@ -438,7 +438,6 @@ void third_order_update(Array const &S, Array &Z) {
         const auto current_norm = approx_zero("i,j").norm().get();
 
         auto iter1 = mpqc_time::fenced_now(world);
-        auto iter_time = mpqc_time::duration_in_s(iter0, iter1);
         if (S.get_world().rank() == 0) {
             std::cout << "\tCurrent difference norm = " << current_norm
                       << "\n";

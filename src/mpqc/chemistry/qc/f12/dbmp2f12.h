@@ -32,7 +32,7 @@ public:
     // dbmp2 time
     auto mp2_time0 = mpqc_time::fenced_now(world);
 
-    double mp2_e = this->mp2_->compute(in);
+    result += this->mp2_->compute(in);
 
     auto mp2_time1 = mpqc_time::fenced_now(world);
     auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
@@ -142,6 +142,25 @@ double DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
 
   }
 
+  // compute B term
+  TArray B_ijij_ijji = compute_B_ijij_ijji_db_df(mo_integral, ijij_ijji_shape);
+  {
+    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    utility::print_par(world, "E_B: ", E_b, "\n");
+    E += E_b;
+  }
+
+  {
+    utility::print_par(world, "Compute CC Term With DF \n");
+    auto C_bar_ijab = f12::convert_C_ijab(C_ijab, occ, *(this->mp2_->orbital_energy()));
+    B_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
+
+    double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    utility::print_par(world, "E_CC: ", E_cc, "\n");
+    E += E_cc;
+  }
+
+  utility::print_par(world, "E_F12: ", E, "\n");
   return E;
 }
 

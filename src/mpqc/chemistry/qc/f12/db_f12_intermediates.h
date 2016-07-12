@@ -194,6 +194,207 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_X_ijij_ijji_db_df(
   return X_ijij_ijji;
 };
 
+
+template <typename Tile>
+TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
+        integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral, TA::SparseShape<float> &ijij_ijji_shape)
+{
+  bool accurate_time = mo_integral.accurate_time();
+  auto& world = mo_integral.get_world();
+  auto& ao_integral = mo_integral.atomic_integral();
+  auto b_time0 = mpqc_time::now(world,accurate_time);
+
+  TA::DistArray<Tile,TA::SparsePolicy> B_ijij_ijji;
+  TA::DistArray<Tile,TA::SparsePolicy> tmp;
+
+  utility::print_par(world, "\nCompute B_ijij_ijji With DF \n");
+
+  {
+    auto left = mo_integral(L"(Κ |dR2|i1 i2)");
+    auto middle = ao_integral(L"(Κ|dR2|Λ)[inv]");
+    auto right = mo_integral(L"(Λ |dR2|j1 j2)");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    B_ijij_ijji("i1,j1,i2,j2") = (left*middle*right).set_shape(ijij_ijji_shape);
+    mo_integral.remove_operation_all(world, L"dR2");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"B Term1 Time: ", time, " S\n");
+  }
+
+  {
+    auto left1 = mo_integral(L"<i1 j1|R2|m j2>[df]");
+    auto hJ1 = mo_integral(L"<m | hJ | i2>[df]");
+
+    auto left2 = mo_integral(L"<i1 j1|R2|A' j2>[df]");
+    auto hJ2 = mo_integral(L"<A' | hJ | i2>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    tmp("i1,j1,i2,j2") = (left1*hJ1 + left2*hJ2).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") += (mo_integral(L"(j1 P'|R2|i1 i2)[df]")*hJ("P',j2")).set_shape(ijij_ijji_shape);
+    B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
+
+    mo_integral.remove_operation_all(world, L"R2");
+    mo_integral.remove_operation_all(world, L"hJ");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"B Term2 Time: ", time, " S\n");
+  }
+
+  {
+    auto left1 = mo_integral(L"<i1 j1|R|m1 m2>[df]");
+    auto middle1 = mo_integral(L"<m1|K|m3>[df]");
+    auto right1 = mo_integral(L"<i2 j2|R|m3 m2>[df]");
+
+    auto left2 = mo_integral(L"<i1 j1|R|m1 m2>[df]");
+    auto middle2 = mo_integral(L"<m1|K|A'>[df]");
+    auto right2 = mo_integral(L"<i2 j2|R|A' m2>[df]");
+
+    auto left3 = mo_integral(L"<i1 j1|R|m1 A'>[df]");
+    auto middle3 = mo_integral(L"<m1 |K| m2>[df]");
+    auto right3 = mo_integral(L"<i2 j2|R|m2 A'>[df]");
+
+    auto left4 = mo_integral(L"<i1 j1|R|m1 A'>[df]");
+    auto middle4 = mo_integral(L"<m1 |K| B'>[df]");
+    auto right4 = mo_integral(L"<i2 j2|R|B' A'>[df]");
+
+    auto left5 = mo_integral(L"<i1 j1|R|A' m1>[df]");
+    auto middle5 = mo_integral(L"<A' |K| B'>[df]");
+    auto right5 = mo_integral(L"<i2 j2|R|B' m1>[df]");
+
+    auto left6 = mo_integral(L"<i1 j1|R|A' B'>[df]");
+    auto middle6 = mo_integral(L"<A' |K| C'>[df]");
+    auto right6 = mo_integral(L"<i2 j2|R|C' B'>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    tmp("i1,j1,i2,j2") = (left1*middle1*right1 + 2.0*left2*middle2*right2 + left3*middle3*right3 + 2.0*left4*middle4*right4 + left5*middle5*right5 + left6*middle6*right6).set_shape(ijij_ijji_shape);
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+    // AO R integral not needed
+    mo_integral.atomic_integral().registry().remove_operation(world, L"R");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"B Term3 Time: ", time, " S\n");
+  }
+
+  {
+    auto left1 = mo_integral(L"<i1 j1|R|m1 m2>[df]");
+    auto middle1 = mo_integral(L"<m1|F|m3>[df]");
+    auto right1 = mo_integral(L"<i2 j2|R|m3 m2>[df]");
+
+    auto left2 = mo_integral(L"<i1 j1|R|m1 A'>[df]");
+    auto middle2 = mo_integral(L"<A'|F|m2>[df]");
+    auto right2 = mo_integral(L"<i2 j2|R|m1 m2>[df]");
+
+    auto left3 = mo_integral(L"<i1 j1|R|m A'>[df]");
+    auto middle3 = mo_integral(L"<A'|F|B'>[df]");
+    auto right3 = mo_integral(L"<i2 j2|R|m B'>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    tmp("i1,j1,i2,j2") = (left1*middle1*right1 + 2.0*left2*middle2*right2 + left3*middle3*right3).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(j2 R'|R|i2 m)[df]")).set_shape(ijij_ijji_shape);
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"B Term4 Time: ", time, " S\n");
+  }
+
+
+
+  {
+    auto left1 = mo_integral(L"<i1 j1|R|m b'>[df]");
+    auto middle1 = mo_integral(L"<m|F|n>[df]");
+    auto right1 = mo_integral(L"<i2 j2|R|n b'>[df]");
+
+    auto left2 = mo_integral(L"<i1 j1|R|m b'>[df]");
+    auto middle2 = mo_integral(L"<m|F|A'>[df]");
+    auto right2 = mo_integral(L"<i2 j2|R|A' b'>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    tmp("i1,j1,i2,j2") = (2.0*left1*middle1*right1 + 2.0*left2*middle2*right2).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(j2 P'|R|i2 b')[df]")).set_shape(ijij_ijji_shape);
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+
+    // P' doesn't appear later
+    mo_integral.registry().remove_orbital(world, L"P'");
+
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"B Term5 Time: ", time, " S\n");
+  }
+
+
+  {
+    auto left1 = mo_integral(L"<i1 j1|R|m a>[df]");
+    auto middle1 = mo_integral(L"<m|F|n>[df]");
+    auto right1 = mo_integral(L"<i2 j2|R|n a>[df]");
+
+    auto left2 = mo_integral(L"<i1 j1|R|m a>[df]");
+    auto middle2 = mo_integral(L"<m|F|b>[df]");
+    auto right2 = mo_integral(L"<i2 j2|R|b a>[df]");
+
+    auto left3 = mo_integral(L"<i1 j1|R|b a>[df]");
+    auto middle3 = mo_integral(L"<b|F|c>[df]");
+    auto right3 = mo_integral(L"<i2 j2|R|c a>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    tmp("i1,j1,i2,j2") = (left1*middle1*right1 + 2*left2*middle2*right2 + left3*middle3*right3).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|i2 a)[df]")).set_shape(ijij_ijji_shape);
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"B Term6 Time: ", time, " S\n");
+  }
+
+
+  {
+    auto left = mo_integral(L"<i1 j1|R|m b'>[df]");
+    auto middle = mo_integral(L"<m|F|n>[df]");
+    auto right = mo_integral(L"<i2 j2|R|n b'>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    tmp("i1,j1,i2,j2") = (left*middle*right).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") += (mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|n)[df]")*mo_integral(L"(j2 n|R|i2 b')[df]")).set_shape(ijij_ijji_shape);
+    B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"B Term7 Time: ", time, " S\n");
+  }
+
+  {
+    auto left1 = mo_integral(L"<i1 j1|R|m a>[df]");
+    auto middle1 = mo_integral(L"<m|F|a'>[df]");
+    auto right1 = mo_integral(L"<i2 j2|R|a' a>[df]");
+
+    auto left2 = mo_integral(L"<i1 j1|R|b a>[df]");
+    auto middle2 = mo_integral(L"<b|F|a'>[df]");
+    auto right2 = mo_integral(L"<i2 j2|R|a' a>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    tmp("i1,j1,i2,j2") = (2.0*left1*middle1*right1 + 2.0*left2*middle2*right2).set_shape(ijij_ijji_shape);
+//    B_ijij_ijji("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(i2 a|R|j2 a')[df]")).set_shape(ijij_ijji_shape);
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"B Term8 Time: ", time, " S\n");
+  }
+
+
+  auto b_time1 = mpqc_time::now(world,accurate_time);
+  auto b_time = mpqc_time::duration_in_s(b_time0,b_time1);
+  utility::print_par(world,"B Term Total Time: ", b_time, " S\n");
+
+//    std::cout << B_ijij_ijji << std::endl;
+
+  return B_ijij_ijji;
+};
+
 }
 }
 

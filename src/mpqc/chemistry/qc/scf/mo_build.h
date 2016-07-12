@@ -375,6 +375,8 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
 
   // construct cabs
   MatrixD C_cabs_eigen;
+  MatrixD C_allvir_eigen;
+  std::size_t nbf_ribs_minus_occ;
   {
     MatrixD S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_ribs_eigen);
@@ -392,24 +394,24 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
     Eigen::JacobiSVD<MatrixD> svd1(X1, Eigen::ComputeFullV);
     MatrixD V_eigen = svd1.matrixV();
     size_t nbf_ribs = S_ribs_eigen.cols();
-    auto nbf_ribs_minus_occ = nbf_ribs - svd1.nonzeroSingularValues();
+    nbf_ribs_minus_occ = nbf_ribs - svd1.nonzeroSingularValues();
     MatrixD Vnull1(nbf_ribs, nbf_ribs_minus_occ);
     Vnull1 = V_eigen.block(0, svd1.nonzeroSingularValues(), nbf_ribs, nbf_ribs_minus_occ);
-    MatrixD C_project_out_occ = X_ribs_eigen_inv * Vnull1;
+    C_allvir_eigen = X_ribs_eigen_inv * Vnull1;
 
 
     MatrixD S_vbs_ribs_eigen = array_ops::array_to_eigen(S_vbs_ribs);
     // C_a
     TA::DistArray<Tile,Policy> Ca = orbital_registry->retrieve(OrbitalIndex(L"a")).array();
     MatrixD Ca_eigen = array_ops::array_to_eigen(Ca);
-    MatrixD X2 = Ca_eigen.transpose() * S_vbs_ribs_eigen * C_project_out_occ;
+    MatrixD X2 = Ca_eigen.transpose() * S_vbs_ribs_eigen * C_allvir_eigen;
 
     Eigen::JacobiSVD<MatrixD> svd2(X2, Eigen::ComputeFullV);
     MatrixD V_eigen2 = svd2.matrixV();
     auto nbf_cabs = nbf_ribs_minus_occ - svd2.nonzeroSingularValues();
     MatrixD Vnull2(nbf_ribs_minus_occ, nbf_cabs);
     Vnull2 = V_eigen2.block(0, svd2.nonzeroSingularValues(), nbf_ribs_minus_occ, nbf_cabs);
-    C_cabs_eigen = C_project_out_occ*Vnull2;
+    C_cabs_eigen = C_allvir_eigen*Vnull2;
   }
 
  // get mo block size
@@ -417,9 +419,10 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
  utility::print_par(world, "MoBlockSize: ", mo_blocksize, "\n");
 
   // get cabs trange
- auto tr_cabs = mo_int.atomic_integral().orbital_basis_registry()->retrieve(OrbitalIndex(L"α")).create_trange1();
+  auto tr_cabs = mo_int.atomic_integral().orbital_basis_registry()->retrieve(OrbitalIndex(L"α")).create_trange1();
   auto tr_ribs = S_ribs.trange().data().back();
- auto tr_cabs_mo = tre->compute_range(tr_cabs.elements().second, mo_blocksize);
+  auto tr_cabs_mo = tre->compute_range(tr_cabs.elements().second, mo_blocksize);
+  auto tr_allvir_mo = tre->compute_range(nbf_ribs_minus_occ, mo_blocksize);
 
 
  utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
@@ -428,8 +431,14 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
     // insert to orbital space
  using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray < Tile, Policy>>;
  auto C_cabs_space = OrbitalSpaceTArray(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
-
  orbital_registry->add(C_cabs_space);
+
+  utility::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
+  TA::DistArray<Tile,Policy>  C_allvir = array_ops::eigen_to_array<TA::TensorD>(world, C_allvir_eigen, tr_ribs, tr_allvir_mo);
+
+  // insert to orbital space
+  auto C_allvir_space = OrbitalSpaceTArray(OrbitalIndex(L"A'"), OrbitalIndex(L"ρ"), C_allvir);
+  orbital_registry->add(C_allvir_space);
 
  auto mo_time1 = mpqc_time::fenced_now(world);
  auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);

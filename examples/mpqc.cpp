@@ -439,13 +439,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
     else if(in.HasMember("MP2F12")){
         corr_in = json::get_nested(in, "MP2F12");
 
-//        std::size_t mo_blocksize = corr_in.HasMember("MoBlockSize") ? corr_in["MoBlockSize"].GetInt() : 24;
-//        std::size_t occ_blocksize = corr_in.HasMember("OccBlockSize") ? corr_in["OccBlockSize"].GetInt() : mo_blocksize;
-//
-//        if(occ_blocksize != 1){
-//            throw std::runtime_error("OccBlockSize has to be 1 in current MP2F12 implementation!!");
-//        }
-
         // mo build
         tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
 

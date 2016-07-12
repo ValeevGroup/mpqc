@@ -67,7 +67,7 @@ class DBMP2 : public MP2<Tile,Policy> {
     auto mol = mo_int.atomic_integral().molecule();
     int occ = mol.occupation(0) / 2;
     Eigen::VectorXd orbital_energy;
-    this->trange1_engine_ = closed_shell_dualbasis_mo_build_svd(mo_int, orbital_energy, in, mol, occ);
+    this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(mo_int, orbital_energy, in, mol, occ);
     this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
   }
 

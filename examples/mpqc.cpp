@@ -255,8 +255,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
         utility::parallel_print_range_info(world, abs_basis.create_trange1(), "AUX Basis");
         bs_registry->add(OrbitalIndex(L"α"), abs_basis);
 
+        // WARNING, RIBS will differ for different approach
+        if(vir_basis_name.empty()){
+            ri_basis = basis.join(abs_basis);
+        }
+        else{
+            ri_basis = vir_basis.join(abs_basis);
+        }
 
-        ri_basis = basis.join(abs_basis);
         if(ao_blocksize != 0){
             ri_basis = reblock(ri_basis, cc::reblock_basis, ao_blocksize);
         }
@@ -422,8 +428,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto dbmp2_time0 = mpqc_time::fenced_now(world);
 
         corr_in = json::get_nested(in, "DBMP2");
-        auto dbmp2 = mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(mo_integral);
-        corr_e += dbmp2.compute(corr_in);
+        std::shared_ptr<mbpt::MP2<TA::TensorD, TA::SparsePolicy>> mp2 = std::make_shared<mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>>(mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(mo_integral));
+        corr_e += mp2->compute(corr_in);
 
         auto dbmp2_time1 = mpqc_time::fenced_now(world);
         auto dbmp2_time = mpqc_time::duration_in_s(dbmp2_time0, dbmp2_time1);
@@ -455,7 +461,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
 
     }
-        // all of these require CCSD
+    // all of these require CCSD
     else if(in.HasMember("CCSD") || in.HasMember("CCSD(T)") || in.HasMember("CCSD(F12)") || in.HasMember("EOM_CCSD")) {
 
         auto time0 = mpqc_time::fenced_now(world);
@@ -553,7 +559,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 //                throw std::runtime_error("OccBlockSize has to be 1 in current MP2F12 implementation!!");
 //            }
 
-            closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,corr_in, tre);
+            closed_shell_cabs_mo_build_svd(ao_int, *orbital_registry, corr_in, tre);
             f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral,tre,std::make_shared<Eigen::VectorXd>(ens),t1,t2);
 
             bool df;

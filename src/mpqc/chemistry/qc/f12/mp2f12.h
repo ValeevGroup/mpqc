@@ -27,7 +27,10 @@ public:
     MP2F12() = default;
 
     /// constructor using MO Integral with orbitals computed
-    MP2F12(const mbpt::MP2<Tile,Policy>& mp2) : mo_int_(mp2.mo_integral()), mp2_(std::make_shared<mbpt::MP2<Tile,Policy>>(mp2))
+    MP2F12(std::shared_ptr<mbpt::MP2<Tile,Policy>>& mp2) : mo_int_(mp2->mo_integral()), mp2_(mp2)
+    { }
+
+    MP2F12(std::shared_ptr<mbpt::MP2<Tile,Policy>>&& mp2) : mo_int_(mp2->mo_integral()), mp2_(mp2)
     { }
 
     /// constructfor using MO Integral without orbitals computed
@@ -54,7 +57,7 @@ public:
         // solve cabs orbitals
         auto& ao_int = mo_int_.atomic_integral();
         auto orbital_registry = mo_int_.orbital_space();
-        closed_shell_cabs_mo_build_eigen_solve(ao_int,*orbital_registry,in, mp2_->trange1_engine());
+        closed_shell_cabs_mo_build_svd(ao_int, *orbital_registry, in, mp2_->trange1_engine());
 
         std::string method = in.HasMember("Method") ? in["Method"].GetString() : "df";
 
@@ -149,8 +152,6 @@ protected:
 protected:
 
     MolecularIntegralClass& mo_int_;
-//    std::shared_ptr<TRange1Engine> mp2_->trange1_engine();
-//    std::shared_ptr<Eigen::VectorXd> (mp2_->orbital_energy());
     std::shared_ptr<mbpt::MP2<Tile,Policy>> mp2_;
 };
 
@@ -189,10 +190,6 @@ double MP2F12<Tile>::compute_mp2_f12_c_df() {
 
         // G integral in MO not needed, still need G integral in AO to compute F, K, hJ
         mo_int_.registry().remove_operation(world, L"G");
-
-        auto V_map = V_ijij_ijji.get_pmap();
-        auto local = V_map->local_size();
-        std::cout << "V PMap Local Size, Rank " << world.rank() << " Size " << local << std::endl;
 
         //contribution from V_ijij_ijji
         double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(MP2F12Energy(1.0,2.5,-0.5));

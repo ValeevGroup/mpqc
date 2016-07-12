@@ -4,6 +4,7 @@ set(sources
         f12_utility.h
         mp2f12.h
         ccsdf12.h
+        db_f12_intermediates.h
         dbmp2f12.h
         f12.cpp
 )

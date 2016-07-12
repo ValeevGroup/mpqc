@@ -124,10 +124,10 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 };
 
 template <typename Tile, typename Policy>
-void closed_shell_cabs_mo_build_eigen_solve(
-        integrals::AtomicIntegral<Tile, Policy> &ao_int,
-        OrbitalSpaceRegistry<TiledArray::DistArray < Tile, Policy>>& orbital_registry,
-        const rapidjson::Document& in,
+void closed_shell_cabs_mo_build_svd(
+        integrals::AtomicIntegral <Tile, Policy> &ao_int,
+        OrbitalSpaceRegistry <TiledArray::DistArray<Tile, Policy>> &orbital_registry,
+        const rapidjson::Document &in,
         const std::shared_ptr<TRange1Engine> tre) {
     auto &world = ao_int.world();
     // CABS fock build
@@ -164,6 +164,7 @@ void closed_shell_cabs_mo_build_eigen_solve(
         Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_ribs, nbf_cabs);
         MatrixD C_cabs_eigen = X_ribs_eigen_inv * Vnull;
 
+
         // get mo block size
         std::size_t mo_blocksize = in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
         utility::print_par(world, "MoBlockSize: ", mo_blocksize, "\n");
@@ -196,10 +197,10 @@ void closed_shell_cabs_mo_build_eigen_solve(
 };
 
 template <typename Tile, typename Policy>
-std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_svd(
-            integrals::MolecularIntegral<Tile, Policy> &mo_int,
-            Eigen::VectorXd &ens, const rapidjson::Document &in,
-            const molecule::Molecule &mols, int occ) {
+std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
+        integrals::MolecularIntegral <Tile, Policy> &mo_int,
+        Eigen::VectorXd &ens, const rapidjson::Document &in,
+        const molecule::Molecule &mols, int occ) {
         auto &ao_int = mo_int.atomic_integral();
         auto &world = ao_int.world();
         using TArray = TA::DistArray<Tile, Policy>;
@@ -334,8 +335,8 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_svd(
         ens = Eigen::VectorXd(nbf_vbs - n_frozen_core);
         ens << ens_occ, ens_vir;
 
-        std::cout << "Energy of Orbitals " << std::endl;
-        std::cout << ens << std::endl;
+//        std::cout << "Energy of Orbitals " << std::endl;
+//        std::cout << ens << std::endl;
 
         // resolve the virtual orbitals
         MatrixD C_vir_rotate = es3.eigenvectors();
@@ -353,6 +354,89 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_svd(
         return tre;
     }
 
+
+template <typename Tile, typename Policy>
+void closed_shell_dualbasis_cabs_mo_build_svd(
+        integrals::MolecularIntegral <Tile, Policy> &mo_int,
+        const rapidjson::Document &in,
+        const std::shared_ptr<TRange1Engine> tre)
+{
+  auto& ao_int = mo_int.atomic_integral();
+  auto orbital_registry = mo_int.orbital_space();
+  auto &world = ao_int.world();
+  // CABS fock build
+  auto mo_time0 = mpqc_time::fenced_now(world);
+  utility::print_par(world, "\nBuilding ClosedShell Dual Basis CABS MO Orbital\n");
+
+  // integral
+  auto S_ribs = ao_int.compute(L"<ρ|σ>");
+  auto S_obs_ribs = ao_int.compute(L"<μ|σ>");
+  auto S_vbs_ribs = ao_int.compute(L"<Α|σ>");
+
+  // construct cabs
+  MatrixD C_cabs_eigen;
+  {
+    MatrixD S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_ribs_eigen);
+    MatrixD X_ribs_eigen_inv = es.operatorInverseSqrt();
+
+    MatrixD S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
+
+    // C_mu^i
+    TA::DistArray<Tile,Policy> Ci = orbital_registry->retrieve(OrbitalIndex(L"i")).array();
+    MatrixD Ci_eigen = array_ops::array_to_eigen(Ci);
+
+    MatrixD X1 = Ci_eigen.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
+
+    // SVD solve to project out occupied
+    Eigen::JacobiSVD<MatrixD> svd1(X1, Eigen::ComputeFullV);
+    MatrixD V_eigen = svd1.matrixV();
+    size_t nbf_ribs = S_ribs_eigen.cols();
+    auto nbf_ribs_minus_occ = nbf_ribs - svd1.nonzeroSingularValues();
+    MatrixD Vnull1(nbf_ribs, nbf_ribs_minus_occ);
+    Vnull1 = V_eigen.block(0, svd1.nonzeroSingularValues(), nbf_ribs, nbf_ribs_minus_occ);
+    MatrixD C_project_out_occ = X_ribs_eigen_inv * Vnull1;
+
+
+    MatrixD S_vbs_ribs_eigen = array_ops::array_to_eigen(S_vbs_ribs);
+    // C_a
+    TA::DistArray<Tile,Policy> Ca = orbital_registry->retrieve(OrbitalIndex(L"a")).array();
+    MatrixD Ca_eigen = array_ops::array_to_eigen(Ca);
+    MatrixD X2 = Ca_eigen.transpose() * S_vbs_ribs_eigen * C_project_out_occ;
+
+    Eigen::JacobiSVD<MatrixD> svd2(X2, Eigen::ComputeFullV);
+    MatrixD V_eigen2 = svd2.matrixV();
+    auto nbf_cabs = nbf_ribs_minus_occ - svd2.nonzeroSingularValues();
+    MatrixD Vnull2(nbf_ribs_minus_occ, nbf_cabs);
+    Vnull2 = V_eigen2.block(0, svd2.nonzeroSingularValues(), nbf_ribs_minus_occ, nbf_cabs);
+    C_cabs_eigen = C_project_out_occ*Vnull2;
+  }
+
+ // get mo block size
+ std::size_t mo_blocksize = in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
+ utility::print_par(world, "MoBlockSize: ", mo_blocksize, "\n");
+
+  // get cabs trange
+ auto tr_cabs = mo_int.atomic_integral().orbital_basis_registry()->retrieve(OrbitalIndex(L"α")).create_trange1();
+  auto tr_ribs = S_ribs.trange().data().back();
+ auto tr_cabs_mo = tre->compute_range(tr_cabs.elements().second, mo_blocksize);
+
+
+ utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+  TA::DistArray<Tile,Policy>  C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen, tr_ribs, tr_cabs_mo);
+
+    // insert to orbital space
+ using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray < Tile, Policy>>;
+ auto C_cabs_space = OrbitalSpaceTArray(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
+
+ orbital_registry->add(C_cabs_space);
+
+ auto mo_time1 = mpqc_time::fenced_now(world);
+ auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
+ utility::print_par(world, "ClosedShell Dual Basis CABS MO Build Time: ", mo_time, " S\n");
+
+
+};
 
 } // end of namespace mpqc
 

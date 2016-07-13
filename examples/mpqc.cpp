@@ -475,72 +475,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
             corr_in = json::get_nested(in, "CCSD(F12)");
         }
 
-        bool df;
-        std::string method = corr_in.HasMember("Method") ? corr_in["Method"].GetString() : "df";
-        if(method == "four center"){
-            df = false;
-        }
-        else if(method == "df"){
-            df = true;
-        }
-        else{
-            throw std::runtime_error("Wrong CCSD Method");
-        }
-
-        cc::DirectTwoElectronSparseArray lazy_two_electron_int;
-        std::shared_ptr<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>> intermidiate;
-
-        // mo build
-        tre = closed_shell_obs_mo_build_eigen_solve(ao_int, *orbital_registry, ens, corr_in, mol, occ / 2);
-
-        std::string screen = corr_in.HasMember("Screen") ? corr_in["Screen"].GetString() : "";
-        int screen_option = 0;
-        if (screen == "schwarz") {
-            screen_option = 1;
-        } else if (screen == "qqr") {
-            screen_option = 2;
-        }
-        auto direct = corr_in.HasMember("Direct") ? corr_in["Direct"].GetBool() : true;
-
-        if (direct) {
-
-            std::vector<TA::TiledRange1> tr_04(4, basis.create_trange1());
-            TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
-            auto time0 = mpqc_time::fenced_now(world);
-
-            lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4, screen_option);
-
-            auto time1 = mpqc_time::fenced_now(world);
-            auto duration = mpqc_time::duration_in_s(time0, time1);
-
-            if (world.rank() == 0) {
-                std::cout << "Time to initialize direct two electron sparse "
-                        "integral: " << duration << std::endl;
-            }
-        }
-
-        intermidiate = std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD, TA::SparsePolicy, cc::DirectTwoElectronSparseArray>>
-                (mo_integral, lazy_two_electron_int, df);
-
-        TA::DistArray<TA::TensorD, TA::SparsePolicy> t1;
-        TA::DistArray<TA::TensorD, TA::SparsePolicy> t2;
-
         if(in.HasMember("CCSD")){
             utility::print_par(world, "\nBegining CCSD Calculation\n");
-            mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(ens, tre, intermidiate, corr_in);
+            mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(mo_integral, corr_in);
             corr_e += ccsd.compute();
-            t1 = ccsd.get_t1();
-            t2 = ccsd.get_t2();
             auto time1 = mpqc_time::fenced_now(world);
             auto time = mpqc_time::duration_in_s(time0, time1);
             mpqc::utility::print_par(world, "Total CCSD Time:  ", time, "\n");
         }
         else if(in.HasMember("CCSD(T)")){
             utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
-            mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(ens, tre, intermidiate, corr_in);
+            mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(mo_integral, corr_in);
             corr_e += ccsd_t.compute();
-            t1 = ccsd_t.get_t1();
-            t2 = ccsd_t.get_t2();
             auto time1 = mpqc_time::fenced_now(world);
             auto time = mpqc_time::duration_in_s(time0, time1);
             mpqc::utility::print_par(world, "Total CCSD(T) Time:  ", time, "\n");
@@ -553,26 +499,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
             utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
 
             corr_in = json::get_nested(in, "CCSD(F12)");
-//            std::size_t mo_blocksize = corr_in.HasMember("MoBlockSize") ? corr_in["MoBlockSize"].GetInt() : 24;
-//            std::size_t occ_blocksize = corr_in.HasMember("OccBlockSize") ? corr_in["OccBlockSize"].GetInt() : mo_blocksize;
-//            if(occ_blocksize != 1){
-//                throw std::runtime_error("OccBlockSize has to be 1 in current MP2F12 implementation!!");
-//            }
 
-            closed_shell_cabs_mo_build_svd(mo_integral, corr_in, tre);
-            f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral,tre,std::make_shared<Eigen::VectorXd>(ens),t1,t2);
+            f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral, corr_in);
+            corr_e += ccsd_f12.compute();
 
-            bool df;
-            std::string method = corr_in.HasMember("Method") ? corr_in["Method"].GetString() : "df";
-            if(method == "four center"){
-                corr_e += ccsd_f12.compute_c(lazy_two_electron_int);
-            }
-            else if(method == "df"){
-                corr_e += ccsd_f12.compute_c_df(lazy_two_electron_int);
-            }
-            else{
-                throw std::runtime_error("Wrong CCSDF12 Method");
-            }
 
             auto time1 = mpqc_time::fenced_now(world);
             auto time = mpqc_time::duration_in_s(time0, time1);

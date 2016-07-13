@@ -11,6 +11,7 @@
 #include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>
 #include <mpqc/chemistry/qc/cc/diis_ccsd.h>
 #include <mpqc/chemistry/qc/cc/mo_block.h>
+#include <mpqc/chemistry/qc/scf/mo_build.h>
 #include "../../../../../utility/trange1_engine.h"
 #include "../../../../../ta_routines/tarray_block.h"
 #include "../../../../../utility/cc_utility.h"
@@ -44,46 +45,82 @@ namespace mpqc {
 
             using TArray = TA::DistArray<Tile,Policy>;
 
-            typedef mpqc::TArrayBlock<Tile, Policy, mpqc::MOBlock> TArrayBlock;
-
-
-            CCSD(const Eigen::VectorXd &ens,
+            CCSD(const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
                  const std::shared_ptr<TRange1Engine> &tre,
-                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
+                 const std::shared_ptr<Eigen::VectorXd> &ens,
                  rapidjson::Document &options) :
-                    orbital_energy_(ens), trange1_engine_(tre), ccsd_intermediate_(inter), options_(std::move(options))
+                    ccsd_intermediate_(inter), trange1_engine_(tre), orbital_energy_(ens), options_(std::move(options))
             {
             }
 
+            CCSD(integrals::MolecularIntegral<Tile,Policy>& mo_int, rapidjson::Document &options)
+            : options_(std::move(options))
+            {
+                auto& world = mo_int.get_world();
 
-            TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> get_diis(const madness::World & world){
 
-                int n_diis, strt, ngr, ngrdiis;
-                double dmp, mf;
-
-                strt = options_.HasMember("DIIS_strt") ? options_["DIIS_strt"].GetInt() : 5;
-                n_diis = options_.HasMember("DIIS_ndi") ? options_["DIIS_ndi"].GetInt() : 8;
-                ngr = options_.HasMember("DIIS_ngr") ? options_["DIIS_ngr"].GetInt() : 2;
-                ngrdiis = options_.HasMember("DIIS_ngrdiis") ? options_["DIIS_ngrdiis"].GetInt() : 1;
-                dmp = options_.HasMember("DIIS_dmp") ? options_["DIIS_dmp"].GetDouble() : 0.0;
-                mf = options_.HasMember("DIIS_mf") ? options_["DIIS_mf"].GetDouble() : 0.0;
-
-                if(world.rank() == 0){
-                    std::cout << "DIIS Starting Iteration:  " << strt << std::endl;
-                    std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
-                    std::cout << "DIIS ngr:  " << ngr << std::endl;
-                    std::cout << "DIIS ngrdiis:  " << ngrdiis << std::endl;
-                    std::cout << "DIIS dmp:  " << dmp << std::endl;
-                    std::cout << "DIIS mf:  " << mf << std::endl;
+                bool df;
+                std::string method = options_.HasMember("Method") ? options_["Method"].GetString() : "df";
+                if(method == "four center"){
+                    df = false;
                 }
-                TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(strt,n_diis,0.0,ngr,ngrdiis);
+                else if(method == "df"){
+                    df = true;
+                }
+                else{
+                    throw std::runtime_error("Wrong CCSD Method");
+                }
 
-                return diis;
+                std::string screen = options_.HasMember("Screen") ? options_["Screen"].GetString() : "";
+                int screen_option = 0;
+                if (screen == "schwarz") {
+                    screen_option = 1;
+                } else if (screen == "qqr") {
+                    screen_option = 2;
+                }
 
-            };
+                cc::DirectTwoElectronSparseArray lazy_two_electron_int;
+                auto direct = options_.HasMember("Direct") ? options_["Direct"].GetBool() : true;
+                if (direct) {
+
+                    // find the basis
+                    basis::Basis basis;
+                    // if VBS
+                    if(mo_int.atomic_integral().orbital_basis_registry()->have(OrbitalIndex(L"Α"))){
+                        basis = mo_int.atomic_integral().orbital_basis_registry()->retrieve(OrbitalIndex(L"Α"));
+                    }
+                    else{
+                        basis = mo_int.atomic_integral().orbital_basis_registry()->retrieve(OrbitalIndex(L"μ"));
+                    }
+
+                    std::vector<TA::TiledRange1> tr_04(4, basis.create_trange1());
+                    TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
+                    auto time0 = mpqc_time::fenced_now(world);
+
+                    lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(world, basis, trange_4, screen_option);
+
+                    auto time1 = mpqc_time::fenced_now(world);
+                    auto duration = mpqc_time::duration_in_s(time0, time1);
+
+                    if (world.rank() == 0) {
+                        std::cout << "Time to initialize direct two electron sparse "
+                                "integral: " << duration << std::endl;
+                    }
+                }
+
+                ccsd_intermediate_= std::make_shared<mpqc::cc::CCSDIntermediate<Tile, Policy>>
+                        (mo_int, lazy_two_electron_int, df);
+
+
+            }
+
+
 
             // compute function
             virtual double compute(){
+
+                // initialize
+                init(options_);
 
                 TArray t1;
                 TArray t2;
@@ -101,14 +138,30 @@ namespace mpqc {
                 T1_ = t1;
                 T2_ = t2;
 
-                ccsd_intermediate_->clean_two_electron();
+//                ccsd_intermediate_->clean_two_electron();
 
                 return ccsd_corr;
 
             }
 
-            // get T1 amplitudes
-            TArray get_t1() const {
+          const std::shared_ptr<TRange1Engine> &trange1_engine() const {
+              return trange1_engine_;
+          }
+
+          const rapidjson::Document &options() const {
+              return options_;
+          }
+
+          const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &intermediate() const {
+              return ccsd_intermediate_;
+          }
+
+          const std::shared_ptr<Eigen::VectorXd> &orbital_energy() const {
+              return orbital_energy_;
+          }
+
+// get T1 amplitudes
+            TArray t1() const {
                 if (T1_.is_initialized()) {
                   return T1_;
                 } else {
@@ -117,7 +170,7 @@ namespace mpqc {
                 }
             }
             // get T2 amplitudes
-            TArray get_t2() const {
+            TArray t2() const {
                 if (T2_.is_initialized()) {
                   return T2_;
                 } else {
@@ -150,12 +203,12 @@ namespace mpqc {
                 TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
-                mpqc::cc::create_d_ai(d1, orbital_energy_, n_occ);
+                mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ);
 
                 TArray d2(world, g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
-                mpqc::cc::create_d_abij(d2, orbital_energy_, n_occ);
+                mpqc::cc::create_d_abij(d2, *orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -509,11 +562,11 @@ namespace mpqc {
                 TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
-                mpqc::cc::create_d_ai(d1, orbital_energy_, n_occ);
+                mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
 
-                t2= d_abij(g_abij,orbital_energy_,n_occ);
+                t2= d_abij(g_abij,*orbital_energy_,n_occ);
 
                 TArray tau;
                 tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -779,7 +832,7 @@ namespace mpqc {
                         mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
                     }
 
-                    d_abij_inplace(r2, orbital_energy_, n_occ);
+                    d_abij_inplace(r2, *orbital_energy_, n_occ);
 
                     r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -922,11 +975,11 @@ namespace mpqc {
 
                 TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
 
-                create_d_ai(d1, orbital_energy_, n_occ);
+                create_d_ai(d1, *orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
 
-                t2 = d_abij(g_abij, orbital_energy_, n_occ);
+                t2 = d_abij(g_abij, *orbital_energy_, n_occ);
 
 
                 TArray tau;
@@ -1192,7 +1245,7 @@ namespace mpqc {
                             mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
                         }
 
-                        d_abij_inplace(r2, orbital_energy_, n_occ);
+                        d_abij_inplace(r2, *orbital_energy_, n_occ);
 
                         r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -1324,11 +1377,11 @@ namespace mpqc {
 
                 TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
 
-                create_d_ai(d1, orbital_energy_, n_occ);
+                create_d_ai(d1, *orbital_energy_, n_occ);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
 
-                t2 = d_abij(g_abij,orbital_energy_,n_occ);
+                t2 = d_abij(g_abij,*orbital_energy_,n_occ);
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
@@ -1601,7 +1654,7 @@ namespace mpqc {
                             mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
                         }
 
-                        d_abij_inplace(r2, orbital_energy_, n_occ);
+                        d_abij_inplace(r2, *orbital_energy_, n_occ);
 
                         r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -1700,16 +1753,54 @@ namespace mpqc {
                 return E1;
             }
 
+        private:
+          void init(const rapidjson::Document &in) {
+              if(orbital_energy_== nullptr || trange1_engine_ == nullptr) {
+                  auto &mo_int = ccsd_intermediate_->mo_integral();
+                  auto orbital_registry = mo_int.orbital_space();
+                  auto mol = mo_int.atomic_integral().molecule();
+                  int occ = mol.occupation(0) / 2;
+                  Eigen::VectorXd orbital_energy;
+                  trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(mo_int, orbital_energy, in, mol, occ);
+                  orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+              }
+          }
+
+          TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> get_diis(const madness::World & world){
+
+              int n_diis, strt, ngr, ngrdiis;
+              double dmp, mf;
+
+              strt = options_.HasMember("DIIS_strt") ? options_["DIIS_strt"].GetInt() : 5;
+              n_diis = options_.HasMember("DIIS_ndi") ? options_["DIIS_ndi"].GetInt() : 8;
+              ngr = options_.HasMember("DIIS_ngr") ? options_["DIIS_ngr"].GetInt() : 2;
+              ngrdiis = options_.HasMember("DIIS_ngrdiis") ? options_["DIIS_ngrdiis"].GetInt() : 1;
+              dmp = options_.HasMember("DIIS_dmp") ? options_["DIIS_dmp"].GetDouble() : 0.0;
+              mf = options_.HasMember("DIIS_mf") ? options_["DIIS_mf"].GetDouble() : 0.0;
+
+              if(world.rank() == 0){
+                  std::cout << "DIIS Starting Iteration:  " << strt << std::endl;
+                  std::cout << "DIIS Storing Size:  " << n_diis << std::endl;
+                  std::cout << "DIIS ngr:  " << ngr << std::endl;
+                  std::cout << "DIIS ngrdiis:  " << ngrdiis << std::endl;
+                  std::cout << "DIIS dmp:  " << dmp << std::endl;
+                  std::cout << "DIIS mf:  " << mf << std::endl;
+              }
+              TA::DIIS <mpqc::cc::T1T2<double, Tile, Policy>> diis(strt,n_diis,0.0,ngr,ngrdiis);
+
+              return diis;
+
+          };
+
         protected:
+            // CCSD intermediate
+            std::shared_ptr<mpqc::cc::CCSDIntermediate<Tile, Policy>> ccsd_intermediate_;
 
             // orbital energy
-            Eigen::VectorXd orbital_energy_;
+            std::shared_ptr<Eigen::VectorXd> orbital_energy_;
 
             // TRange1 Engine class
             std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
-
-            // CCSD intermediate
-            std::shared_ptr<mpqc::cc::CCSDIntermediate<Tile, Policy>> ccsd_intermediate_;
 
             // option member
             rapidjson::Document options_;

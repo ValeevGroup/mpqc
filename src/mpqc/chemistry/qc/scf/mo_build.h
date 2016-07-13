@@ -19,13 +19,14 @@ namespace mpqc {
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
-        integrals::AtomicIntegral<Tile, Policy> &ao_int,
-        OrbitalSpaceRegistry<TiledArray::DistArray < Tile, Policy>>& orbital_registry,
+        integrals::MolecularIntegral<Tile, Policy> &mo_int,
         Eigen::VectorXd& ens,
         const rapidjson::Document& in,
         const molecule::Molecule& mols,
         int occ)
 {
+    auto& ao_int = mo_int.atomic_integral();
+    auto orbital_registry = mo_int.orbital_space();
     auto& world = ao_int.world();
     using TArray = TA::DistArray<Tile, Policy>;
 
@@ -105,16 +106,16 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     // insert to registry
     using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile,Policy>>;
     auto occ_space = OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
-    orbital_registry.add(occ_space);
+    orbital_registry->add(occ_space);
 
     auto corr_occ_space = OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
-    orbital_registry.add(corr_occ_space);
+    orbital_registry->add(corr_occ_space);
 
     auto vir_space = OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_vir_ta);
-    orbital_registry.add(vir_space);
+    orbital_registry->add(vir_space);
 
     auto obs_space = OrbitalSpaceTArray(OrbitalIndex(L"p"),OrbitalIndex(L"κ"), C_all_ta);
-    orbital_registry.add(obs_space);
+    orbital_registry->add(obs_space);
 
     auto mo_time1 = mpqc_time::fenced_now(world);
     auto mo_time = mpqc_time::duration_in_s(mo_time0,mo_time1);

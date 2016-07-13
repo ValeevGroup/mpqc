@@ -10,6 +10,7 @@
 #include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/integrals/molecular_integral.h>
+//#include <mpqc/chemistry/qc/f12/mp2f12.h>
 #include <mpqc/chemistry/qc/scf/mo_build.h>
 
 using namespace mpqc;
@@ -17,8 +18,11 @@ using namespace mpqc;
 namespace mpqc {
 namespace mbpt {
 
+
 template <typename Tile, typename Policy>
 class MP2 {
+
+//  friend class f12::MP2F12<Tile>;
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using MolecularIntegralType = integrals::MolecularIntegral<Tile, Policy>;
@@ -68,17 +72,20 @@ class MP2 {
     return mp2_energy;
   }
 
+  /// initialize orbitals
   void init(const rapidjson::Document &in) {
-    auto &ao_int = mo_int_.atomic_integral();
-    auto orbital_registry = mo_int_.orbital_space();
-    auto mol = mo_int_.atomic_integral().molecule();
-    int occ = mol.occupation(0) / 2;
-    Eigen::VectorXd orbital_energy;
-    trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-            ao_int, *orbital_registry, orbital_energy, in, mol, occ);
-    orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+    if(orbital_energy_== nullptr || trange1_engine_ == nullptr) {
+      auto mol = mo_int_.atomic_integral().molecule();
+      int occ = mol.occupation(0) / 2;
+      Eigen::VectorXd orbital_energy;
+      trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(mo_int_, orbital_energy, in, mol, occ);
+      orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+    }
   }
+
  protected:
+
+
   double compute_df() {
     auto g_ijab = mo_int_.compute(L"<i j|G|a b>[df]");
     // compute mp2 energy
@@ -110,6 +117,7 @@ class MP2 {
   }
 
  private:
+
 
   struct Mp2Energy {
     using result_type = double;

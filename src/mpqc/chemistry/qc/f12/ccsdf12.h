@@ -11,6 +11,7 @@
 #include <mpqc/chemistry/qc/integrals/molecular_integral.h>
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/f12/f12_intermediates.h>
+#include <mpqc/chemistry/qc/cc/ccsd.h>
 
 namespace mpqc{
 namespace f12{
@@ -21,26 +22,58 @@ public:
 
     using Policy = TA::SparsePolicy;
     using TArray = TA::DistArray<Tile,Policy>;
+    using MolecularIntegralClass = integrals::MolecularIntegral<Tile,Policy>;
 
-    CCSDF12(integrals::MolecularIntegral<Tile, Policy> &mo_int_, const std::shared_ptr<TRange1Engine> &tre_,
-            const std::shared_ptr<Eigen::VectorXd> &orbital_energy_, const TArray &t1_, const TArray &t2_)
-            : mo_int_(mo_int_), tre_(tre_), orbital_energy_(orbital_energy_), t1_(t1_), t2_(t2_)
-    { }
 
-    /// standard approach, no approximation
+    CCSDF12(integrals::MolecularIntegral<Tile, Policy> &mo_int, rapidjson::Document& options) : mo_int_(mo_int)
+    {
+        ccsd_ = std::make_shared<cc::CCSD<Tile, Policy>>(mo_int,options);
+    }
+
+    double compute(){
+        // compute ccsd
+        double ccsd = ccsd_->compute();
+
+        auto& option = ccsd_->options();
+        // initialize CABS orbitals
+        auto& ao_int = this->mo_int_.atomic_integral();
+        auto orbital_registry = this->mo_int_.orbital_space();
+        closed_shell_cabs_mo_build_svd(this->mo_int_,option,this->ccsd_->trange1_engine());
+
+
+        auto lazy_two_electron_int = ccsd_->intermediate()->direct_ao();
+        double f12;
+
+        bool df;
+        std::string method = option.HasMember("Method") ? option["Method"].GetString() : "df";
+        if(method == "four center"){
+                f12 = compute_c(lazy_two_electron_int);
+        }
+        else if(method == "df"){
+                f12 = compute_c_df(lazy_two_electron_int);
+        }
+        else{
+            throw std::runtime_error("Wrong CCSDF12 Method");
+        }
+
+        return ccsd + f12;
+    }
+
+private:
+    /// standard approach
     template<typename DirectArray>
     double compute_c_df(const DirectArray &darray);
 
     template<typename DirectArray>
     double compute_c(const DirectArray &darray);
+
 private:
 
-    integrals::MolecularIntegral<Tile, Policy>& mo_int_;
-    std::shared_ptr<TRange1Engine> tre_;
-    std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+    MolecularIntegralClass& mo_int_;
+    std::shared_ptr<cc::CCSD<Tile,Policy>> ccsd_;
 
-    TArray t1_; /// t1 amplitude
-    TArray t2_; /// t2 amplitude
+//    TArray ccsd_->t1(); /// t1 amplitude
+//    TArray ccsd_->t2(); /// t2 amplitude
 
 };
 
@@ -57,7 +90,7 @@ double CCSDF12<Tile>::compute_c_df(const DirectArray &darray) {
     mo_integral.registry().clear();
 
     // create shape
-    auto occ_tr1 = tre_->get_occ_tr1();
+    auto occ_tr1 = ccsd_->trange1_engine()->get_occ_tr1();
     TiledArray::TiledRange occ4_trange({occ_tr1,occ_tr1,occ_tr1,occ_tr1});
     auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
@@ -66,16 +99,16 @@ double CCSDF12<Tile>::compute_c_df(const DirectArray &darray) {
 
     // VT2 contribution
     if(darray.is_initialized()){
-        TArray tmp = compute_VT2_ijij_ijji_df_direct(mo_integral, t2_, ijij_ijji_shape, darray);
+        TArray tmp = compute_VT2_ijij_ijji_df_direct(mo_integral, ccsd_->t2(), ijij_ijji_shape, darray);
         V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     }else{
-        TArray tmp = compute_VT2_ijij_ijji_df(mo_integral,t2_,ijij_ijji_shape);
+        TArray tmp = compute_VT2_ijij_ijji_df(mo_integral,ccsd_->t2(),ijij_ijji_shape);
         V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     }
 
     // VT1 contribution
     {
-        TArray tmp = compute_VT1_ijij_ijji_df(mo_integral,t1_,ijij_ijji_shape);
+        TArray tmp = compute_VT1_ijij_ijji_df(mo_integral,ccsd_->t1(),ijij_ijji_shape);
         V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     }
 
@@ -122,7 +155,7 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
     mo_integral.registry().clear();
 
     // create shape
-    auto occ_tr1 = tre_->get_occ_tr1();
+    auto occ_tr1 = ccsd_->trange1_engine()->get_occ_tr1();
     TiledArray::TiledRange occ4_trange({occ_tr1,occ_tr1,occ_tr1,occ_tr1});
     auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
@@ -134,18 +167,18 @@ double CCSDF12<Tile>::compute_c(const DirectArray &darray) {
 
     // VT2 contribution
 //    if(darray.is_initialized()){
-//        TArray tmp = compute_VT2_ijij_ijji_df_direct(mo_integral, t2_, ijij_ijji_shape, darray);
+//        TArray tmp = compute_VT2_ijij_ijji_df_direct(mo_integral, ccsd_->t2(), ijij_ijji_shape, darray);
 //        V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
 //    }else
     {
-        TArray tmp = compute_VT2_ijij_ijji(mo_integral,t2_,ijij_ijji_shape);
+        TArray tmp = compute_VT2_ijij_ijji(mo_integral,ccsd_->t2(),ijij_ijji_shape);
         V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
 
     }
 
     // VT1 contribution
     {
-        TArray tmp = compute_VT1_ijij_ijji(mo_integral,t1_,ijij_ijji_shape);
+        TArray tmp = compute_VT1_ijij_ijji(mo_integral,ccsd_->t1(),ijij_ijji_shape);
         V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     }
 

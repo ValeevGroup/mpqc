@@ -14,23 +14,18 @@ namespace mpqc {
 
 namespace cc {
 
-// TODO support four center AO integral
 // class to compute the two electron integrals and intermediate needed for ccsd
-// to construct this object needs:
-//   three center integral Xpq
-//   mo coefficient Cpi Cqa
-//   direct ao integral array (optional for compute_dummy())
 // p q r s stands for AO indices
 // a b c d stands for virtual MO indices
 // i j k l stands for occupied MO indices
 // AO integrals uses chemical notation (pq|rs)
 // three center uses chemical notation (X|pq)
 // MO integrals used physical noation <ij|ab>
-template <typename Tile, typename Policy,
-          typename DirectTwoElectronArray = cc::DirectTwoElectronSparseArray>
+template <typename Tile, typename Policy>
 class CCSDIntermediate {
   public:
     using TArray = TA::DistArray<Tile, Policy>;
+    using DirectTwoElectronArray = cc::DirectTwoElectronSparseArray;
 
     CCSDIntermediate(integrals::MolecularIntegral<Tile,Policy>& mo_int,
                      DirectTwoElectronArray &direct_ao,
@@ -40,7 +35,15 @@ class CCSDIntermediate {
         have_four_center_ = direct_ao.is_initialized();
     }
 
-    /// clean the three center ingeral
+  integrals::MolecularIntegral<Tile, Policy> &mo_integral() const {
+      return mo_int_;
+  }
+
+  const DirectTwoElectronArray &direct_ao() const {
+    return direct_ao_;
+  }
+
+/// clean the three center ingeral
     void clean_three_center() {
     }
 

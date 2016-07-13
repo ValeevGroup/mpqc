@@ -41,6 +41,7 @@ public:
 
         auto& world = this->mo_int_.get_world();
         auto f12_time0 = mpqc_time::fenced_now(world);
+        // solve mo orbitals
         mp2_->init(in);
 
         // solve cabs orbitals

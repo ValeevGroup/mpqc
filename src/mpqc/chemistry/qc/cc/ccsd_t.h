@@ -24,46 +24,47 @@ namespace mpqc{
 
             using TArray = TA::DistArray<Tile,Policy>;
 
-            CCSD_T(const Eigen::VectorXd &ens,
-                 const std::shared_ptr<TRange1Engine> &tre,
-                 const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
-                   rapidjson::Document &options):
-                    CCSD<Tile,Policy>(ens,tre,inter,options)
+            CCSD_T(const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
+                const std::shared_ptr<TRange1Engine> &tre,
+                const std::shared_ptr<Eigen::VectorXd> &ens,
+                rapidjson::Document &options) : CCSD<Tile,Policy>(inter,tre,ens,options)
             {}
+
+            CCSD_T(integrals::MolecularIntegral<Tile,Policy>& mo_int, rapidjson::Document &options)
+                    : CCSD<Tile,Policy>(mo_int,options){}
 
             double compute(){
 
-                TArray t1;
-                TArray t2;
+                auto& world = this->ccsd_intermediate_->mo_integral().get_world();
 
                 double ccsd_corr = 0.0;
+                ccsd_corr = CCSD<Tile, Policy>::compute();
                 // compute CCSD first
-                auto direct = this->options_.HasMember("Direct") ? this->options_["Direct"].GetBool(): false;
-                if(direct){
-                    ccsd_corr = CCSD<Tile, Policy>::compute_ccsd_direct(t1, t2);
-                    // TODO smarter way to clean integrals not needed
-                    // clean integrals not needed
-                    this->ccsd_intermediate_->clean_two_electron();
-
-                }
-                else {
-                    ccsd_corr = CCSD<Tile,Policy>::compute_ccsd_straight(t1, t2);
-                    this->ccsd_intermediate_->clean_two_electron();
-                }
-
-                this->T1_ = t1;
-                this->T2_ = t2;
+//                auto direct = this->options_.HasMember("Direct") ? this->options_["Direct"].GetBool(): false;
+//                if(direct){
+//                    ccsd_corr = CCSD<Tile, Policy>::compute_ccsd_direct(t1, t2);
+//                     TODO smarter way to clean integrals not needed
+//                     clean integrals not needed
+//                    this->ccsd_intermediate_->clean_two_electron();
+//
+//                }
+//                else {
+//                    ccsd_corr = CCSD<Tile,Policy>::compute_ccsd_straight(t1, t2);
+//                    this->ccsd_intermediate_->clean_two_electron();
+//                }
 
                 // start CCSD(T)
-                if(t1.get_world().rank() == 0){
+                if(world.rank() == 0){
                     std::cout << "\nBegining CCSD(T) " << std::endl;
                 }
                 auto time0 = mpqc_time::now();
-                double ccsd_t = compute_ccsd_t(t1, t2);
+                TArray t1 = this->t1();
+                TArray t2 = this->t2();
+                double ccsd_t = compute_ccsd_t(t1,t2);
                 auto time1 = mpqc_time::now();
                 auto duration1 = mpqc_time::duration_in_s(time0, time1);
 
-                if (t1.get_world().rank() == 0) {
+                if (world.rank() == 0) {
                     std::cout << std::setprecision(15);
                     std::cout << "(T) Energy      " << ccsd_t << " Time " << duration1 << std::endl;
 //                    std::cout << "(T) Energy      " << ccsd_t_d << " Time " << duration2 << std::endl;
@@ -526,7 +527,7 @@ namespace mpqc{
                             if (b_end < a && c_end < b) {
 
                                 auto ccsd_t_reduce = CCSD_T_Reduce(
-                                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                        this->orbital_energy_,
                                         this->trange1_engine_->get_active_occ(), offset);
                                 tmp_energy =
                                         (
@@ -544,7 +545,7 @@ namespace mpqc{
                             } else {
 
                                 auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                        this->orbital_energy_,
                                         this->trange1_engine_->get_active_occ(), offset);
                                 tmp_energy =
                                         (
@@ -603,7 +604,7 @@ namespace mpqc{
                 std::array<std::size_t,6> offset{{0,0,0,0,0,0}};
 
                 auto ccsd_t_reduce = CCSD_T_Reduce(
-                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                        this->orbital_energy_,
                         this->trange1_engine_->get_active_occ(),
                         offset);
 
@@ -904,7 +905,7 @@ namespace mpqc{
                             if ( b < a && c < b){
 
                                 auto ccsd_t_reduce = CCSD_T_Reduce(
-                                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                        this->orbital_energy_,
                                         this->trange1_engine_->get_active_occ(), offset);
                                 tmp_energy =
                                         (
@@ -922,7 +923,7 @@ namespace mpqc{
                             }else{
 
                                 auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                                        std::make_shared<Eigen::VectorXd>(this->orbital_energy_),
+                                        this->orbital_energy_,
                                         this->trange1_engine_->get_active_occ(), offset);
 
                                 tmp_energy =

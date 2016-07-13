@@ -68,8 +68,6 @@ array_type PurificationDensityBuilder::purify(array_type const &F) {
 }
 
 array_type PurificationDensityBuilder::orbitals(array_type const &D) {
-    auto &world = D.get_world();
-
     auto D_eig = array_ops::array_to_eigen(D);
     tensor::algebra::piv_cholesky(D_eig);
 

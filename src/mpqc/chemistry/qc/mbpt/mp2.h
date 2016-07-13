@@ -68,6 +68,16 @@ class MP2 {
     return mp2_energy;
   }
 
+  void init(const rapidjson::Document &in) {
+    auto &ao_int = mo_int_.atomic_integral();
+    auto orbital_registry = mo_int_.orbital_space();
+    auto mol = mo_int_.atomic_integral().molecule();
+    int occ = mol.occupation(0) / 2;
+    Eigen::VectorXd orbital_energy;
+    trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
+            ao_int, *orbital_registry, orbital_energy, in, mol, occ);
+    orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+  }
  protected:
   double compute_df() {
     auto g_ijab = mo_int_.compute(L"<i j|G|a b>[df]");
@@ -75,7 +85,7 @@ class MP2 {
     double energy_mp2 =
         (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
             .reduce(
-                Mp2Energy(orbital_energy_, trange1_engine_->get_actual_occ()));
+                Mp2Energy(orbital_energy_, trange1_engine_->get_active_occ()));
 
     if (g_ijab.get_world().rank() == 0) {
       std::cout << "MP2 Energy With DF: " << energy_mp2 << std::endl;
@@ -90,7 +100,7 @@ class MP2 {
     double energy_mp2 =
         (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
             .reduce(
-                Mp2Energy(orbital_energy_, trange1_engine_->get_actual_occ()));
+                Mp2Energy(orbital_energy_, trange1_engine_->get_active_occ()));
 
     if (g_ijab.get_world().rank() == 0) {
       std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
@@ -100,16 +110,6 @@ class MP2 {
   }
 
  private:
-  void init(const rapidjson::Document &in) {
-    auto &ao_int = mo_int_.atomic_integral();
-    auto orbital_registry = mo_int_.orbital_space();
-    auto mol = mo_int_.atomic_integral().molecule();
-    int occ = mol.occupation(0) / 2;
-    Eigen::VectorXd orbital_energy;
-    trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-        ao_int, *orbital_registry, orbital_energy, in, mol, occ);
-    orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
-  }
 
   struct Mp2Energy {
     using result_type = double;

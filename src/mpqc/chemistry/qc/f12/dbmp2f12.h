@@ -85,7 +85,7 @@ double DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
 
   auto& mo_integral = this->mo_int_;
 
-  auto occ = this->mp2_->trange1_engine()->get_actual_occ();
+  auto occ = this->mp2_->trange1_engine()->get_active_occ();
 
   // create shape
   auto occ_tr1 = this->mp2_->trange1_engine()->get_occ_tr1();
@@ -99,7 +99,7 @@ double DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
     this->mo_int_.registry().remove_operation(world, L"G");
 
     //contribution from V_ijij_ijji
-    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(1.0,2.5,-0.5));
+    double E_v = V_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(2 * C_ijij_bar,2 * C_ijji_bar));
     utility::print_par(world, "E_V: ", E_v, "\n");
     E += E_v;
   }
@@ -123,7 +123,7 @@ double DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
     utility::print_par(world, "Compute CT With DF \n" );
     V_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*t2("a,b,i2,j2")).set_shape(ijij_ijji_shape);
 
-    double E_ct = V_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(1.0,2.5,-0.5));
+    double E_ct = V_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(2 * C_ijij_bar,2 * C_ijji_bar));
     utility::print_par(world, "E_CT: ", E_ct, "\n");
     E += E_ct;
   }
@@ -136,7 +136,7 @@ double DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
     auto Fij_eigen = array_ops::array_to_eigen(Fij);
     f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
 
-    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    double E_x = -X_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
     utility::print_par(world, "E_X: ", E_x, "\n");
     E += E_x;
 
@@ -145,7 +145,7 @@ double DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
   // compute B term
   TArray B_ijij_ijji = compute_B_ijij_ijji_db_df(mo_integral, ijij_ijji_shape);
   {
-    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    double E_b = B_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
     utility::print_par(world, "E_B: ", E_b, "\n");
     E += E_b;
   }
@@ -155,7 +155,7 @@ double DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
     auto C_bar_ijab = f12::convert_C_ijab(C_ijab, occ, *(this->mp2_->orbital_energy()));
     B_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
 
-    double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(CLF12Energy<Tile>(0.25,0.4375,0.0625));
+    double E_cc = B_ijij_ijji("i1,j1,i2,j2").reduce(F12EnergyReductor<Tile>(CC_ijij_bar,CC_ijji_bar));
     utility::print_par(world, "E_CC: ", E_cc, "\n");
     E += E_cc;
   }

@@ -559,7 +559,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 //                throw std::runtime_error("OccBlockSize has to be 1 in current MP2F12 implementation!!");
 //            }
 
-            closed_shell_cabs_mo_build_svd(ao_int, *orbital_registry, corr_in, tre);
+            closed_shell_cabs_mo_build_svd(mo_integral, corr_in, tre);
             f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral,tre,std::make_shared<Eigen::VectorXd>(ens),t1,t2);
 
             bool df;

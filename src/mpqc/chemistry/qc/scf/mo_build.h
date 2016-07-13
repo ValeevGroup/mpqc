@@ -12,7 +12,7 @@
 #include "../../../../../common/namespaces.h"
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/integrals/molecular_integral.h>
-#include <mpqc/util/expression/orbital_registry.h>
+#include <mpqc/chemistry/qc/expression/orbital_registry.h>
 
 namespace mpqc {
 
@@ -125,10 +125,11 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
-        integrals::AtomicIntegral <Tile, Policy> &ao_int,
-        OrbitalSpaceRegistry <TiledArray::DistArray<Tile, Policy>> &orbital_registry,
+        integrals::MolecularIntegral <Tile, Policy> &mo_int,
         const rapidjson::Document &in,
         const std::shared_ptr<TRange1Engine> tre) {
+    auto& ao_int = mo_int.atomic_integral();
+    auto orbital_registry = mo_int.orbital_space();
     auto &world = ao_int.world();
     // CABS fock build
     auto mo_time0 = mpqc_time::fenced_now(world);
@@ -186,8 +187,8 @@ void closed_shell_cabs_mo_build_svd(
         auto C_cabs_space = OrbitalSpaceTArray(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
         auto C_ribs_space = OrbitalSpaceTArray(OrbitalIndex(L"P'"), OrbitalIndex(L"ρ"), C_ri);
 
-        orbital_registry.add(C_cabs_space);
-        orbital_registry.add(C_ribs_space);
+        orbital_registry->add(C_cabs_space);
+        orbital_registry->add(C_ribs_space);
 
         auto mo_time1 = mpqc_time::fenced_now(world);
         auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);

@@ -416,7 +416,6 @@ void third_order_update(Array const &S, Array &Z) {
     auto iter = 0;
     auto norm_diff = std::numeric_limits<double>::max();
     while (norm_diff > 1.0e-13 && iter < 50) {
-        auto iter0 = mpqc_time::fenced_now(world);
         // Xn = \lambda*Yn*Z
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
         X.truncate();

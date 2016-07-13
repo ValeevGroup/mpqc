@@ -230,39 +230,5 @@ namespace f12{
     }
 
 
-TiledArray::SparseShape<float> make_ijij_ijji_shape(const TiledArray::TiledRange& trange){
-
-
-    // number of occ tiles
-    auto n_occ =  trange.data()[0].tiles().second;
-
-    TiledArray::Tensor<float> tile_norms(trange.tiles());
-
-    auto max = std::numeric_limits<float>::max();
-
-    // set sparse tile
-    auto total = 0;
-    for(auto i = 0; i < n_occ; i++){
-        for(auto j=0; j < n_occ; j++){
-            for(auto k=0; k < n_occ; k++){
-                for(auto l=0; l < n_occ; l++, total++){
-                    if(i==k && j==l){
-                        tile_norms[total] = max;
-                    }
-                    else if(i==l && j==k){
-                        tile_norms[total] = max;
-                    }
-                    else{
-                        tile_norms[total] = 0.0;
-                    }
-                }
-            }
-        }
-    }
-
-    TiledArray::SparseShape<float> shape(tile_norms,trange);
-    return shape;
-}
-
 }// end of f12 namespace
 }// end of mpqc namespace

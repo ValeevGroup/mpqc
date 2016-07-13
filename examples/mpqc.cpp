@@ -503,7 +503,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
             f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral, corr_in);
             corr_e += ccsd_f12.compute();
 
-
             auto time1 = mpqc_time::fenced_now(world);
             auto time = mpqc_time::duration_in_s(time0, time1);
             mpqc::utility::print_par(world, "Total F12 Time:  ", time, "\n");

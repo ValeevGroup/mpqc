@@ -2,6 +2,7 @@ set(sources
         ccsd.h
         ccsd_intermediates.h
         ccsd_t.h
+        dbccsd.h
         diis_ccsd.h
         integral_generator.h
         lazy_tile.h

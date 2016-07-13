@@ -6,7 +6,6 @@
 #define MPQC_DBMP2_H
 
 #include <mpqc/chemistry/qc/mbpt/mp2.h>
-#include <mpqc/chemistry/qc/scf/mo_build.h>
 
 namespace mpqc {
 namespace mbpt {
@@ -15,11 +14,11 @@ template <typename Tile, typename Policy>
 class DBMP2 : public MP2<Tile,Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using MolecularIntegral = integrals::MolecularIntegral<Tile, Policy>;
+  using MolecularIntegralType = integrals::MolecularIntegral<Tile, Policy>;
 
   DBMP2() = default;
 
-  DBMP2(MolecularIntegral &mo_int) : MP2<Tile,Policy>(mo_int) { }
+  DBMP2(MolecularIntegralType &mo_int) : MP2<Tile,Policy>(mo_int) { }
 
 
   virtual double compute(const rapidjson::Document &in) {

@@ -351,6 +351,10 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
         vir_space = OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"Α"), C_vir_ta_new);
         mo_int.orbital_space()->add(vir_space);
 
+      auto mo_time1 = mpqc_time::fenced_now(world);
+      auto mo_time = mpqc_time::duration_in_s(mo_time0,mo_time1);
+      utility::print_par(world,"ClosedShell Dual Basis MO Build Time: ", mo_time, " S\n");
+
         return tre;
     }
 

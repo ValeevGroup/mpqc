@@ -44,7 +44,9 @@ namespace mpqc {
         public:
 
             using TArray = TA::DistArray<Tile,Policy>;
+          CCSD() = default;
 
+          /// constructor with already computed components
             CCSD(const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
                  const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<Eigen::VectorXd> &ens,
@@ -116,7 +118,7 @@ namespace mpqc {
 
 
 
-            // compute function
+            /// compute function
             virtual double compute(){
 
                 // initialize
@@ -179,6 +181,7 @@ namespace mpqc {
                 }
             }
 
+        protected:
             // dummy way of doing CCSD
             // store all the integrals in memory
             // used as reference for development
@@ -1757,7 +1760,6 @@ namespace mpqc {
           void init(const rapidjson::Document &in) {
               if(orbital_energy_== nullptr || trange1_engine_ == nullptr) {
                   auto &mo_int = ccsd_intermediate_->mo_integral();
-                  auto orbital_registry = mo_int.orbital_space();
                   auto mol = mo_int.atomic_integral().molecule();
                   int occ = mol.occupation(0) / 2;
                   Eigen::VectorXd orbital_energy;

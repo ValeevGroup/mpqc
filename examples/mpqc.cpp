@@ -41,8 +41,7 @@
 #include <mpqc/chemistry/qc/scf/mo_build.h>
 
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
-#include <mpqc/chemistry/qc/cc/lazy_tile.h>
-#include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>
+#include <mpqc/chemistry/qc/cc/dbccsd.h>
 #include <mpqc/chemistry/qc/mbpt/mp2.h>
 #include <mpqc/chemistry/qc/mbpt/dbmp2.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
@@ -464,29 +463,31 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     }
     // all of these require CCSD
-    else if(in.HasMember("CCSD") || in.HasMember("CCSD(T)") || in.HasMember("CCSD(F12)") || in.HasMember("EOM_CCSD")) {
+    else if(in.HasMember("CCSD") || in.HasMember("CCSD(T)") || in.HasMember("CCSD(F12)") || in.HasMember("DBCCSD")) {
 
         auto time0 = mpqc_time::fenced_now(world);
-        if (in.HasMember("CCSD")) {
-            corr_in = json::get_nested(in, "CCSD");
-        } else if (in.HasMember("CCSD(T)")) {
-            corr_in = json::get_nested(in, "CCSD(T)");
-        } else if(in.HasMember("EOM_CCSD")){
-            corr_in = json::get_nested(in, "EOM_CCSD");
-        } else if(in.HasMember("CCSD(F12)")){
-            corr_in = json::get_nested(in, "CCSD(F12)");
-        }
 
         if(in.HasMember("CCSD")){
             utility::print_par(world, "\nBegining CCSD Calculation\n");
+            corr_in = json::get_nested(in, "CCSD");
             mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(mo_integral, corr_in);
             corr_e += ccsd.compute();
             auto time1 = mpqc_time::fenced_now(world);
             auto time = mpqc_time::duration_in_s(time0, time1);
             mpqc::utility::print_par(world, "Total CCSD Time:  ", time, "\n");
         }
+        else if(in.HasMember("DBCCSD")){
+            utility::print_par(world, "\nBegining Dual Basis CCSD Calculation\n");
+            corr_in = json::get_nested(in, "DBCCSD");
+            mpqc::cc::DBCCSD<TA::TensorD, TA::SparsePolicy> dbccsd(mo_integral, corr_in);
+            corr_e += dbccsd.compute();
+            auto time1 = mpqc_time::fenced_now(world);
+            auto time = mpqc_time::duration_in_s(time0, time1);
+            mpqc::utility::print_par(world, "Total Dual Basis CCSD Time:  ", time, "\n");
+        }
         else if(in.HasMember("CCSD(T)")){
             utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
+            corr_in = json::get_nested(in, "CCSD(T)");
             mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(mo_integral, corr_in);
             corr_e += ccsd_t.compute();
             auto time1 = mpqc_time::fenced_now(world);
@@ -499,6 +500,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             time0 = mpqc_time::fenced_now(world);
 
             utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
+            corr_in = json::get_nested(in, "CCSD(F12)");
 
             corr_in = json::get_nested(in, "CCSD(F12)");
 

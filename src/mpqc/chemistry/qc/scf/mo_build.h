@@ -207,7 +207,6 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
         auto &world = ao_int.world();
         using TArray = TA::DistArray<Tile, Policy>;
 
-        auto mo_time0 = mpqc_time::fenced_now(world);
         utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO Orbital\n");
 
         // solving occupied orbitals
@@ -280,7 +279,6 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
 
         // get all the sizes
-        auto n_obs = S.trange().elements().extent()[0];
         std::size_t mo_blocksize = in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
         std::size_t vir_blocksize = in.HasMember("VirBlockSize")
                                     ? in["VirBlockSize"].GetInt()

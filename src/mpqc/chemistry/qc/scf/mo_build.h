@@ -208,6 +208,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
         using TArray = TA::DistArray<Tile, Policy>;
 
         utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO Orbital\n");
+        auto mo_time0 = mpqc_time::fenced_now(world);
 
         // solving occupied orbitals
         TArray F;

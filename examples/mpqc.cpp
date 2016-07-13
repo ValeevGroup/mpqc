@@ -94,6 +94,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
     in.Parse(json);
     delete[] json;
 
+    std::cout.sync_with_stdio(true);
+    std::cerr.sync_with_stdio(true);
     std::cout << std::setprecision(15);
     std::wcout.sync_with_stdio(false);
     std::wcout.imbue(std::locale("en_US.UTF-8"));

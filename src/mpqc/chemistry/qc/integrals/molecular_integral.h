@@ -18,6 +18,7 @@
 namespace mpqc{
 namespace integrals{
 
+// TODO rename MolecularIntegral -> OperatorLCAOFactory
 // TODO MO transform that minimize operations by permutation
     /**
      * \brief Molecule Integral computation class

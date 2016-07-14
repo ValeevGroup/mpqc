@@ -18,6 +18,7 @@
 namespace mpqc {
 namespace integrals {
 
+// TODO rename AtomicIntegral -> OperatorAOFactory
 /**
  * \brief Atomic Integral Class
  *

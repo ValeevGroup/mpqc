@@ -401,6 +401,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
             ao_int.registry().insert(Formula(L"<μ|F|ν>"),F);
         }
     }
+    else {
+      throw std::runtime_error("CLSCF object not found in the input file");
+    }
 
 
     // Correlation Methods

@@ -141,7 +141,7 @@ DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
     //contribution from V_ijij_ijji
     Matrix eij = V_ijij_ijji("i1,j1,i2,j2").reduce(F12PairEnergyReductor<Tile>(2 * C_ijij_bar,2 * C_ijji_bar,nocc));
     if (debug()) utility::print_par(world, "E_V: ", eij.sum(), "\n");
-    Eij_F12 += eij;
+    Eij_F12 = eij;
   }
 
   // compute C term

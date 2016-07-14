@@ -8,7 +8,12 @@
 
 #include "../../../../../include/tiledarray.h"
 #include "../../../../../common/namespaces.h"
+#include <mpqc/chemistry/qc/f12/f12_intermediates.h>
 #include <mpqc/chemistry/qc/integrals/molecular_integral.h>
+
+/**
+ * Dual Basis F12 Intermediates
+ */
 
 namespace mpqc{
 namespace f12{
@@ -107,6 +112,95 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_db_df(
   std::cout << V_ijij_ijji << std::endl;
   return V_ijij_ijji;
 };
+
+
+template<typename Tile, typename Policy>
+TA::DistArray<Tile,Policy> compute_V_xyab_db_df(integrals::MolecularIntegral <Tile, Policy> &mo_integral)
+{
+
+  auto& world = mo_integral.get_world();
+  auto& ao_integral = mo_integral.atomic_integral();
+  bool accurate_time = mo_integral.accurate_time();
+
+  auto v_time0 = mpqc_time::now(world,accurate_time);
+
+  TA::DistArray<Tile,Policy> V_xyab;
+  TA::DistArray<Tile,Policy> tmp;
+
+  utility::print_par(world, "\nCompute V_xyab With DF \n" );
+
+  {
+    auto left = mo_integral(L"(Κ |GR|i a)");
+    auto middle = ao_integral(L"(Κ|GR|Λ)[inv]");
+    auto right = mo_integral(L"(Λ |GR|j b)");
+
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_xyab("i,j,a,b") = left*middle*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term1 Time: ", time, " S\n");
+
+  }
+
+  {
+    auto left = mo_integral(L"<a b|G|c d>[df]");
+    auto right = mo_integral(L"<i j|R|c d>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_xyab("i,j,a,b") -= left*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term2 Time: ", time, " S\n");
+
+  }
+
+  {
+    auto left = mo_integral(L"<m1 m2|G|a b>[df]");
+    auto right = mo_integral(L"<i j|R|m1 m2>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_xyab("i,j,a,b") -= left*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term3 Time: ", time, " S\n");
+
+  }
+
+  {
+    auto left = mo_integral(L"<a b|G|m c>[df]");
+    auto right = mo_integral(L"<i j|R|m c>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    tmp("i,j,a,b") = left*right;
+    V_xyab("i,j,a,b") -= tmp("i,j,a,b");
+    V_xyab("i,j,a,b") -= tmp("j,i,b,a");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term4 Time: ", time, " S\n");
+
+  }
+
+  {
+    auto right = mo_integral(L"<a b|G|m a'>[df]");
+    auto left = mo_integral(L"<i j|R|m a'>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    tmp("i,j,a,b") = left*right;
+    V_xyab("i,j,a,b") -= tmp("i,j,a,b");
+    V_xyab("i,j,a,b") -= tmp("j,i,b,a");
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term5 Time: ", time, " S\n");
+  }
+
+  auto v_time1 = mpqc_time::now(world,accurate_time);
+  auto v_time = mpqc_time::duration_in_s(v_time0,v_time1);
+  utility::print_par(world,"V Term Total Time: ", v_time, " S\n");
+
+  return V_xyab;
+};
+
 
 
 template <typename Tile>
@@ -394,6 +488,37 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
 
   return B_ijij_ijji;
 };
+
+
+
+template<typename Tile>
+TA::DistArray<Tile,TA::SparsePolicy> compute_VT2_ijij_ijji_db_df(
+        integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral,
+        const TA::DistArray <Tile, TA::SparsePolicy> &t2,
+        const TA::SparseShape<float> &ijij_ijji_shape)
+{
+  auto& world = mo_integral.get_world();
+  bool accurate_time = mo_integral.accurate_time();
+
+  TA::DistArray<Tile,TA::SparsePolicy> V_ijij_ijji;
+
+  // compute C_ijab
+  TA::DistArray<Tile,TA::SparsePolicy> C_ijab = compute_C_ijab_df(mo_integral);
+
+  // compute V_ijab
+  TA::DistArray<Tile,TA::SparsePolicy> V_ijab = compute_V_xyab_db_df(mo_integral);
+
+  auto vt2_time0 = mpqc_time::now(world,accurate_time);
+  utility::print_par(world, "\nCompute VT2_ijij_ijji With DF\n" );
+  V_ijij_ijji("i1,j1,i2,j2") = ((V_ijab("i2,j2,a,b")+C_ijab("i2,j2,a,b"))*t2("a,b,i1,j1")).set_shape(ijij_ijji_shape);
+
+  auto vt2_time1 = mpqc_time::now(world,accurate_time);
+  auto vt2_time = mpqc_time::duration_in_s(vt2_time0,vt2_time1);
+  utility::print_par(world,"VT2 Term Total Time: ", vt2_time, " S\n");
+
+  return V_ijij_ijji;
+};
+
 
 }
 }

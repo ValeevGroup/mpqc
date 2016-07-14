@@ -802,9 +802,14 @@ TA::DistArray<Tile,Policy> compute_V_xyab_df(integrals::MolecularIntegral <Tile,
     {
         auto right = mo_integral(L"<a b|G|m a'>[df]");
         auto left = mo_integral(L"<i j|R|m a'>[df]");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
         tmp("i,j,a,b") = left*right;
         V_xyab("i,j,a,b") -= tmp("i,j,a,b");
         V_xyab("i,j,a,b") -= tmp("j,i,b,a");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"V Term3 Time: ", time, " S\n");
     }
 
     auto v_time1 = mpqc_time::now(world,accurate_time);

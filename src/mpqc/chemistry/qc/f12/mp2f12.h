@@ -308,6 +308,185 @@ MP2F12<Tile>::compute_mp2_f12_c() {
 }
 
 }  // end of namespace f12
-}  // end of namespace mpqc
+
+
+namespace dyson {
+
+enum class Denominator {
+  pqrE,  // ( e(p) + e(q) - e(r) - E)
+  rEpq   // (-e(p) - e(q) + e(r) + E)
+};
+
+template <Denominator Denom, typename Tile, typename Policy>
+TA::Array<double, 4, Tile, Policy> d_pqrE(
+    TA::Array<double, 4, Tile, Policy>& pqrs,
+    const Eigen::VectorXd& evals_p,
+    const Eigen::VectorXd& evals_q,
+    const Eigen::VectorXd& evals_r,
+    typename Tile::scalar_type E) {
+  auto convert = [evals_p, evals_q, evals_r, E](Tile& result_tile, const Tile& arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // compute index
+    const auto p0 = result_tile.range().lobound()[0];
+    const auto p1 = result_tile.range().upbound()[0];
+    const auto q0 = result_tile.range().lobound()[1];
+    const auto q1 = result_tile.range().upbound()[1];
+    const auto r0 = result_tile.range().lobound()[2];
+    const auto r1 = result_tile.range().upbound()[2];
+    const auto s0 = result_tile.range().lobound()[3];
+    const auto s1 = result_tile.range().upbound()[3];
+
+    auto tile_idx = 0;
+    typename Tile::value_type norm2 = 0.0;
+    for (auto p = p0; p != p1; ++p) {
+      const auto e_p = evals_p[p];
+      for (auto q = q0; q != q1; ++q) {
+        const auto e_q = evals_q[q];
+        for (auto r = r0; r < r1; ++r) {
+          const auto e_r = evals_r[r];
+          const auto denom =
+              1 / ((Denom == Denominator::pqrE) ? -e_r - E + e_p + e_q
+                                                : e_r + E - e_p - e_q);
+          for (auto s = s0; s < s1; ++s, ++tile_idx) {
+            const auto v_pqrs = arg_tile[tile_idx];
+            const auto vv_pqrs = v_pqrs * denom;
+            norm2 += vv_pqrs * vv_pqrs;
+            result_tile[tile_idx] = vv_pqrs;
+          }
+        }
+      }
+    }
+    return std::sqrt(norm2);
+  };
+
+  return TA::foreach (pqrs, convert);
+}
+
+}  // namespace dyson
+
+namespace f12 {
+
+template <typename Tile>
+class GF2F12 {
+public:
+
+  using Policy = TA::SparsePolicy;
+  using TArray = TA::DistArray<Tile, Policy>;
+  using MolecularIntegralClass = integrals::MolecularIntegral<Tile,Policy>;
+
+  using real_t = typename MP2F12<Tile>::real_t;
+  using Matrix = typename MP2F12<Tile>::Matrix;
+
+  GF2F12() = default;
+
+  GF2F12(MolecularIntegralClass& mo_int) : mp2f12_(std::make_shared<MP2F12<Tile>>(mo_int)) {}
+
+  MolecularIntegralClass &mo_integral() const { return mp2f12_->mo_integral(); }
+
+  const std::shared_ptr<TRange1Engine> trange1_engine() const {
+    return mp2f12_->trange1_engine_;
+  }
+
+  const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
+    return mp2f12_->orbital_energy();
+  }
+
+  virtual real_t compute(const rapidjson::Document& in){
+    auto& world = this->mo_integral().get_world();
+
+    this->mp2f12_->compute(in);
+
+    auto time0 = mpqc_time::fenced_now(world);
+
+    orbital_ = in.HasMember("Orbital") ? in["Orbital"].GetInt() : -1;
+    if (orbital_ == 0)
+      throw std::runtime_error("GF2F12::Orbital must be positive (for particles) or negative (for holes)");
+
+    std::string method = in.HasMember("DysonMethod") ? in["DysonMethod"].GetString() : "diagonal-fixed";
+    TA_USER_ASSERT(method == "diagonal-fixed" || method == "diagonal-iterative",
+                   "GF2F12: unknown value for keyword \"method\"");
+
+    std::cout << "orbital = " << orbital_ << " method = " << method << std::endl;
+
+    compute_diagonal(method == "diagonal-fixed" ? 0 : 100);
+
+    auto time1 = mpqc_time::fenced_now(world);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+
+    mpqc::utility::print_par(world, "Total GF2F12 Time:  ", time, "\n");
+
+    return 0.0;
+  }
+
+private:
+
+  std::shared_ptr<MP2F12<Tile>> mp2f12_;
+  int orbital_;
+
+  /// use self-energy in diagonal representation
+  void compute_diagonal(int max_niter = 0);
+};
+
+template <typename Tile>
+void GF2F12<Tile>::compute_diagonal(int max_niter) {
+
+  auto nocc = this->mp2f12_->trange1_engine()->get_active_occ();
+  auto nuocc = this->mp2f12_->trange1_engine()->get_vir();
+  const auto abs_orbital = nocc + orbital_;
+  auto SE = orbital_energy()->operator()(abs_orbital);
+
+  Eigen::VectorXd occ_evals = orbital_energy()->segment(0,nocc);
+  Eigen::VectorXd uocc_evals = orbital_energy()->segment(nocc, nuocc);
+
+  printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+  printf("==== =========== =========== ===========\n");
+
+  size_t iter = 0;
+  decltype(SE) SE_diff;
+  do {
+
+    TArray Sigma_pph;
+    {
+      TArray g_vvog = mo_integral().compute(L"<a b|G|i p>[df]");
+      TArray dg_vvog = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
+          g_vvog, uocc_evals, uocc_evals, occ_evals, SE);
+      Sigma_pph("p,q") = 0.5 * (4*g_vvog("a,b,i,p") - 2*g_vvog("b,a,i,p")) * dg_vvog("a,b,i,q");
+    }
+    //std::cout << "Sigma_pph:\n" << Sigma_pph << std::endl;
+
+    TArray Sigma_hhp;
+    {
+      TArray g_oovg = mo_integral().compute(L"<i j|G|a p>[df]");
+      TArray dg_oovg = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
+          g_oovg, occ_evals, occ_evals, uocc_evals, SE);
+      Sigma_hhp("p,q") = 0.5 * (4*g_oovg("i,j,a,p") - 2*g_oovg("j,i,a,p")) * dg_oovg("i,j,a,q");
+    }
+    //std::cout << "Sigma_hhp:\n" << Sigma_hhp << std::endl;
+
+    RowMatrixXd Sigma;
+    {
+      TArray Sigma_ta;
+      Sigma_ta("p,q") = Sigma_pph("p,q") + Sigma_hhp("p,q");
+      Sigma = array_ops::array_to_eigen(Sigma_ta);
+    }
+
+    //std::cout << "Sigma = " << Sigma << std::endl;
+
+    auto SE_updated = Sigma(abs_orbital, abs_orbital) + orbital_energy()->operator()(abs_orbital);
+    SE_diff = SE_updated - SE;
+
+    printf(" %3ld %11.3lf %11.3lf %11.3lf", iter, SE, SE_updated, SE_diff);
+
+    SE = SE_updated;
+    ++iter;
+
+  } while ((fabs(SE_diff) > 1e-6) && (iter <= max_niter));
+}
+
+}  // namespace f12
+
+}  // mpqc
 
 #endif  // MPQC_MP2F12_H

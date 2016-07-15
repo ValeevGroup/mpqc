@@ -29,25 +29,35 @@ class MP2F12 {
 
   MP2F12() = default;
 
-  MP2F12(MolecularIntegralClass& mo_int) : mo_int_(mo_int) {
+  MP2F12(MolecularIntegralClass& mo_int) {
     mp2_ = std::make_shared<mbpt::MP2<Tile, Policy>>(mo_int);
   }
 
   MP2F12(std::shared_ptr<mbpt::MP2<Tile, Policy>> mp2)
-      : mo_int_(mp2->mo_integral()), mp2_(mp2) {}
+      : mp2_(mp2) {}
+
+  MolecularIntegralClass &mo_integral() const { return mp2_->mo_integral(); }
+
+  const std::shared_ptr<TRange1Engine> trange1_engine() const {
+    return mp2_->trange1_engine();
+  }
+
+  const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
+    return mp2_->orbital_energy();
+  }
 
   std::tuple<Matrix, Matrix> compute_mp2_f12_c_df();
 
   std::tuple<Matrix, Matrix> compute_mp2_f12_c();
 
   real_t compute(const rapidjson::Document& in) {
-    auto& world = this->mo_int_.get_world();
+    auto& world = mo_integral().get_world();
     auto f12_time0 = mpqc_time::fenced_now(world);
     mp2_->init(in);
 
     // solve cabs orbitals
-    auto orbital_registry = this->mo_int_.orbital_space();
-    closed_shell_cabs_mo_build_svd(this->mo_int_, in,
+    auto orbital_registry = mo_integral().orbital_space();
+    closed_shell_cabs_mo_build_svd(mo_integral(), in,
                                    this->mp2_->trange1_engine());
 
     std::string method =
@@ -77,8 +87,8 @@ class MP2F12 {
     auto emp2 = mp2_eij.sum();
     auto ef12 = f12_eij.sum();
     if (debug()) {
-      utility::print_par(mo_int_.get_world(), "E_MP2: ", emp2, "\n");
-      utility::print_par(mo_int_.get_world(), "E_F12: ", ef12, "\n");
+      utility::print_par(mo_integral().get_world(), "E_MP2: ", emp2, "\n");
+      utility::print_par(mo_integral().get_world(), "E_F12: ", ef12, "\n");
     }
 
     auto f12_time1 = mpqc_time::fenced_now(world);
@@ -89,7 +99,6 @@ class MP2F12 {
   }
 
  protected:
-  MolecularIntegralClass& mo_int_;
   std::shared_ptr<mbpt::MP2<Tile, Policy>> mp2_;
 
   int debug() const { return 1; }
@@ -98,11 +107,9 @@ class MP2F12 {
 template <typename Tile>
 std::tuple<typename MP2F12<Tile>::Matrix, typename MP2F12<Tile>::Matrix>
 MP2F12<Tile>::compute_mp2_f12_c_df() {
-  auto& world = mo_int_.get_world();
+  auto& world = mo_integral().get_world();
 
   Matrix Eij_MP2, Eij_F12;
-
-  auto& mo_integral = mo_int_;
 
   auto nocc = mp2_->trange1_engine()->get_active_occ();
 
@@ -116,7 +123,7 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
     utility::print_par(world, "Compute T_abij With DF \n");
 
     TArray g_abij;
-    g_abij("a,b,i,j") = mo_int_.compute(L"<i j|G|a b>[df]")("i,j,a,b");
+    g_abij("a,b,i,j") = mo_integral().compute(L"<i j|G|a b>[df]")("i,j,a,b");
     t2 = mpqc::cc::d_abij(g_abij, *(mp2_->orbital_energy()), nocc);
 
     // compute MP2 energy and pair energies
@@ -128,11 +135,11 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
   }
 
   // compute V term
-  TArray V_ijij_ijji = compute_V_ijij_ijji_df(mo_integral, ijij_ijji_shape);
+  TArray V_ijij_ijji = compute_V_ijij_ijji_df(mo_integral(), ijij_ijji_shape);
   {
     // G integral in MO not needed, still need G integral in AO to compute F, K,
     // hJ
-    mo_int_.registry().remove_operation(world, L"G");
+    mo_integral().registry().remove_operation(world, L"G");
 
     auto V_map = V_ijij_ijji.get_pmap();
     auto local = V_map->local_size();
@@ -148,7 +155,7 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
   }
 
   // compute C term
-  TArray C_ijab = compute_C_ijab_df(mo_integral);
+  TArray C_ijab = compute_C_ijab_df(mo_integral());
 
   {
     utility::print_par(world, "Compute CT With DF \n");
@@ -164,12 +171,12 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
   }
 
   // compute X term
-  TArray X_ijij_ijji = compute_X_ijij_ijji_df(mo_integral, ijij_ijji_shape);
+  TArray X_ijij_ijji = compute_X_ijij_ijji_df(mo_integral(), ijij_ijji_shape);
   {
     // R_ipjq not needed
-    mo_int_.registry().remove_formula(world, L"<i1 j1|R|p q>[df]");
+    mo_integral().registry().remove_formula(world, L"<i1 j1|R|p q>[df]");
 
-    auto Fij = mo_int_.compute(L"<i|F|j>[df]");
+    auto Fij = mo_integral().compute(L"<i|F|j>[df]");
     auto Fij_eigen = array_ops::array_to_eigen(Fij);
     f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
 
@@ -182,7 +189,7 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
   }
 
   // compute B term
-  TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral, ijij_ijji_shape);
+  TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral(), ijij_ijji_shape);
   {
     Matrix Eij_b = B_ijij_ijji("i1,j1,i2,j2")
                        .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
@@ -211,11 +218,9 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
 template <typename Tile>
 std::tuple<typename MP2F12<Tile>::Matrix, typename MP2F12<Tile>::Matrix>
 MP2F12<Tile>::compute_mp2_f12_c() {
-  auto& world = mo_int_.get_world();
+  auto& world = mo_integral().get_world();
 
   Matrix Eij_MP2, Eij_F12;
-
-  auto& mo_integral = mo_int_;
 
   auto occ = mp2_->trange1_engine()->get_active_occ();
 
@@ -228,7 +233,7 @@ MP2F12<Tile>::compute_mp2_f12_c() {
   {
     utility::print_par(world, "Compute T_abij Without DF \n");
     TArray g_abij;
-    g_abij("a,b,i,j") = mo_integral.compute(L"<i j|G|a b>")("i,j,a,b");
+    g_abij("a,b,i,j") = mo_integral().compute(L"<i j|G|a b>")("i,j,a,b");
     t2_nodf = mpqc::cc::d_abij(g_abij, *(mp2_->orbital_energy()), occ);
     TArray TG_ijij_ijji_nodf;
     TG_ijij_ijji_nodf("i1,j1,i2,j2") =
@@ -237,7 +242,7 @@ MP2F12<Tile>::compute_mp2_f12_c() {
                   .reduce(F12PairEnergyReductor<Tile>(2, -1, occ));
   }
 
-  TArray V_ijij_ijji_nodf = compute_V_ijij_ijji(mo_integral, ijij_ijji_shape);
+  TArray V_ijij_ijji_nodf = compute_V_ijij_ijji(mo_integral(), ijij_ijji_shape);
   {
     Eij_F12 = V_ijij_ijji_nodf("i1,j1,i2,j2")
                   .reduce(F12PairEnergyReductor<Tile>(2 * C_ijij_bar,
@@ -245,7 +250,7 @@ MP2F12<Tile>::compute_mp2_f12_c() {
     if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
   }
 
-  TArray C_ijab_nodf = compute_C_ijab(mo_integral);
+  TArray C_ijab_nodf = compute_C_ijab(mo_integral());
 
   {
     utility::print_par(world, "Compute CT Without DF \n");
@@ -260,10 +265,10 @@ MP2F12<Tile>::compute_mp2_f12_c() {
     Eij_F12 += Eij_ct;
   }
 
-  TArray X_ijij_ijji_nodf = compute_X_ijij_ijji(mo_integral, ijij_ijji_shape);
+  TArray X_ijij_ijji_nodf = compute_X_ijij_ijji(mo_integral(), ijij_ijji_shape);
   {
     // compute energy contribution
-    auto Fij = mo_integral.compute(L"<i|F|j>");
+    auto Fij = mo_integral().compute(L"<i|F|j>");
     auto Fij_eigen = array_ops::array_to_eigen(Fij);
     f12::convert_X_ijkl(X_ijij_ijji_nodf, Fij_eigen);
 
@@ -275,7 +280,7 @@ MP2F12<Tile>::compute_mp2_f12_c() {
     Eij_F12 += Eij_x;
   }
 
-  TArray B_ijij_ijji_nodf = compute_B_ijij_ijji(mo_integral, ijij_ijji_shape);
+  TArray B_ijij_ijji_nodf = compute_B_ijij_ijji(mo_integral(), ijij_ijji_shape);
   {
     Matrix Eij_b =
         B_ijij_ijji_nodf("i1,j1,i2,j2")

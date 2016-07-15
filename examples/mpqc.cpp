@@ -465,6 +465,19 @@ int try_main(int argc, char *argv[], madness::World &world) {
         mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
 
     }
+    else if(in.HasMember("DBGF2F12")){
+        corr_in = json::get_nested(in, "DBGF2F12");
+
+        // start gf2f12
+        auto time0 = mpqc_time::fenced_now(world);
+        f12::DBGF2F12<TA::TensorD> dbgf2f12(mo_integral);
+        dbgf2f12.compute(corr_in);
+        auto time1 = mpqc_time::fenced_now(world);
+        auto time = mpqc_time::duration_in_s(time0, time1);
+
+        mpqc::utility::print_par(world, "Total GF2 F12 Time:  ", time, "\n");
+
+    }
     // all of these require CCSD
     else if(in.HasMember("CCSD") || in.HasMember("CCSD(T)") || in.HasMember("CCSD(F12)") || in.HasMember("DBCCSD")) {
 

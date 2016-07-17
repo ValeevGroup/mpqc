@@ -27,9 +27,9 @@ public:
     /**
      * Constructor
      *
-     *  @prama mo_index  OrbitalIndex that represent mo space
-     *  @prama ao_index  OrbitalIndex that represent ao space
-     *  @prama tarray    TiledArray type Array
+     *  @param mo_index  OrbitalIndex that represent mo space
+     *  @param ao_index  OrbitalIndex that represent ao space
+     *  @param tarray    a TiledArray::DistArray type
      */
 
     OrbitalSpace(const OrbitalIndex& mo_index, const OrbitalIndex& ao_index, const Array& tarray)

@@ -135,7 +135,7 @@ class AtomicIntegral : public AtomicIntegralBase {
   TArray compute2(const Formula& formula_string);
 
   /// compute integrals that has three dimension
-  TArray compute3(const Formula& formula_stirng);
+  TArray compute3(const Formula& formula_string);
 
   /// compute integrals that has four dimension
   TArray compute4(const Formula& formula_string);

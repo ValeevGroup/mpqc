@@ -92,7 +92,7 @@ namespace integrals{
             return std::move(atomic_integral_(str));
         };
 
-        /// reutrn shared pointer to OrbitalSpaceRegistry
+        /// return shared pointer to OrbitalSpaceRegistry
         const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() const {
             return orbital_space_registry_;
         }

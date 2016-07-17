@@ -39,28 +39,13 @@ public:
     ~OrbitalSpace()= default;
 
     /// return mo_index
-    OrbitalIndex &mo_key(){
-        return mo_index_;
-    }
-
-    /// return mo_index
     const OrbitalIndex &mo_key() const {
         return mo_index_;
     }
 
     /// return ao_index
-    OrbitalIndex &ao_key(){
-        return ao_index_;
-    }
-
-    /// return ao_index
     const OrbitalIndex &ao_key() const {
         return ao_index_;
-    }
-
-    /// return coefficient
-    Array& array() {
-        return coefs_;
     }
 
     /// return coefficient

@@ -87,11 +87,6 @@ namespace integrals{
             return atomic_integral_;
         }
 
-        /// return reference to AtomicIntegral object
-        AtomicIntegralType& atomic_integral() {
-            return atomic_integral_;
-        }
-
         /// wrapper to operator() function in AtomicIntegral
         TA::expressions::TsrExpr<TArray,true> atomic_integral (const std::wstring& str){
             return std::move(atomic_integral_(str));

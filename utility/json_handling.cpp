@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <ctime>
 
 #include "time.h"
 
@@ -45,12 +46,11 @@ std::unique_ptr<OutputWriter> init_json_writer() {
 
     auto now = mpqc_time::system_now();
     auto date = std::chrono::system_clock::to_time_t(now);
-    auto format_date = std::put_time(std::localtime(&date), "%F %T");
-    std::stringstream date_string;
-    date_string << format_date;
+    char date_string[512];
+    std::strftime(date_string, 512, "%F %T", std::localtime(&date));
 
     writer.String("Date");
-    writer.String(date_string.str().c_str());
+    writer.String(date_string);
 
     return owriter;
 }
@@ -61,12 +61,11 @@ std::unique_ptr<OutputWriter> init_json_writer(Document &input) {
 
     auto now = mpqc_time::system_now();
     auto date = std::chrono::system_clock::to_time_t(now);
-    auto format_date = std::put_time(std::localtime(&date), "%F %T");
-    std::stringstream date_string;
-    date_string << format_date;
+    char date_string[512];
+    std::strftime(date_string, 512, "%F %T", std::localtime(&date));
 
     writer.String("Date");
-    writer.String(date_string.str().c_str());
+    writer.String(date_string);
     writer.String("Input");
     input.Accept(writer);
 

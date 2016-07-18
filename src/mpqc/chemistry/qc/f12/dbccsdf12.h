@@ -90,11 +90,20 @@ typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_c_df()
   V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
 
   // VT1 contribution
+  {
+    TArray tmp =
+            compute_VT1_ijij_ijji_db_df(mo_integral, this->ccsd_->t1(), ijij_ijji_shape);
+    V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
+  }
+
+  // V contribution to energy
+  Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
+          .reduce(f12::F12PairEnergyReductor<Tile>(2 * C_ijij_bar,
+                                                   2 * C_ijji_bar, nocc));
+  if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
 
   // compute X term
   TArray X_ijij_ijji = compute_X_ijij_ijji_db_df(mo_integral, ijij_ijji_shape);
-  // R_ipjq not needed
-  this->mo_int_.registry().remove_formula(world, L"(i1 p|R|j1 q)[df]");
 
   auto Fij = this->mo_int_.compute(L"(i|F|j)[df]");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
@@ -105,7 +114,7 @@ typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_c_df()
                     CC_ijij_bar, CC_ijji_bar, nocc));
     eij *= -1;
     if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
-    Eij_F12 = eij;
+    Eij_F12 += eij;
   }
 
   // compute B term

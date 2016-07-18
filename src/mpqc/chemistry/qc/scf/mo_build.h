@@ -237,7 +237,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
         }
 
         Eigen::VectorXd ens_occ = es.eigenvalues().segment(n_frozen_core, occ - n_frozen_core);
-        std::cout << ens_occ << std::endl;
+//        std::cout << ens_occ << std::endl;
         MatrixD C_all = es.eigenvectors();
         MatrixD C_occ = C_all.block(0, 0, S_eig.rows(), occ);
         MatrixD C_corr_occ = C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);

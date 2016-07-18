@@ -40,7 +40,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_db_df(
 
     V_ijij_ijji("i1,j1,i2,j2") = (left*middle*right).set_shape(shape);
 
-    std::cout << V_ijij_ijji << std::endl;
+//    std::cout << V_ijij_ijji << std::endl;
     // all types of GR integral not needed
     mo_integral.remove_operation_all(world, L"GR");
 
@@ -86,7 +86,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_db_df(
     utility::print_par(world,"V Term4 Time: ", time, " S\n");
   }
 
-  std::cout << V_ijij_ijji << std::endl;
+//  std::cout << V_ijij_ijji << std::endl;
 
   {
     auto left = mo_integral(L"<i1 j1|G|m a'>[df]");
@@ -95,7 +95,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_db_df(
     auto time0 = mpqc_time::now(world,accurate_time);
     TA::DistArray<Tile,TA::SparsePolicy> tmp;
     tmp("i1,j1,i2,j2") = (left*right).set_shape(shape);
-    std::cout << tmp << std::endl;
+//    std::cout << tmp << std::endl;
 //    V_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]")).set_shape(shape);
     V_ijij_ijji("i1,j1,i2,j2") -= (tmp("i1,j1,i2,j2")).set_shape(shape);
     V_ijij_ijji("i1,j1,i2,j2") -= (tmp("j1,i1,j2,i2")).set_shape(shape);
@@ -109,7 +109,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_db_df(
   auto v_time = mpqc_time::duration_in_s(v_time0,v_time1);
   utility::print_par(world,"V Term Total Time: ", v_time, " S\n");
 
-  std::cout << V_ijij_ijji << std::endl;
+//  std::cout << V_ijij_ijji << std::endl;
   return V_ijij_ijji;
 };
 
@@ -200,6 +200,105 @@ TA::DistArray<Tile,Policy> compute_V_xyab_db_df(integrals::MolecularIntegral <Ti
 
   return V_xyab;
 };
+
+
+template<typename Tile, typename Policy>
+TA::DistArray<Tile,Policy> compute_V_iaxy_db_df(integrals::MolecularIntegral <Tile, Policy> &mo_integral)
+{
+
+  auto& world = mo_integral.get_world();
+  bool accurate_time = mo_integral.accurate_time();
+  TA::DistArray<Tile,Policy> V_iaxy;
+
+  auto v_time0 = mpqc_time::now(world,accurate_time);
+
+  utility::print_par(world, "\nCompute V_iaxy With DF \n" );
+  {
+    auto left = mo_integral(L"(Κ |GR|i k)");
+    auto middle = mo_integral(L"(Κ|GR|Λ)[inv]");
+    auto right = mo_integral(L"(Λ |GR|a l)");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_iaxy("i,a,k,l") = left*middle*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term1 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = mo_integral(L"<i a|G|m1 m2>[df]");
+    auto right = mo_integral(L"<k l|R|m1 m2>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_iaxy("i,a,k,l") -= left*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term2 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = mo_integral(L"<i a|G|b c>[df]");
+    auto right = mo_integral(L"<k l|R|b c>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_iaxy("i,a,k,l") -= left*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term3 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = mo_integral(L"<i a|G|m b>[df]");
+    auto right = mo_integral(L"<k l|R|m b>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_iaxy("i,a,k,l") -= left*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term4 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = mo_integral(L"<i a|G|b m>[df]");
+    auto right = mo_integral(L"<k l|R|b m>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_iaxy("i,a,k,l") -= left*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term5 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = mo_integral(L"<i a|G|m a'>[df]");
+    auto right = mo_integral(L"<k l|R|m a'>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_iaxy("i,a,k,l") -= left*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term6 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = mo_integral(L"<i a|G|a' m>[df]");
+    auto right = mo_integral(L"<k l|R|a' m>[df]");
+
+    auto time0 = mpqc_time::now(world,accurate_time);
+    V_iaxy("i,a,k,l") -= left*right;
+    auto time1 = mpqc_time::now(world,accurate_time);
+    auto time = mpqc_time::duration_in_s(time0,time1);
+    utility::print_par(world,"V Term7 Time: ", time, " S\n");
+  }
+
+
+  auto v_time1 = mpqc_time::now(world,accurate_time);
+  auto v_time = mpqc_time::duration_in_s(v_time0,v_time1);
+  utility::print_par(world,"V Term Total Time: ", v_time, " S\n");
+  return V_iaxy;
+
+};
+
 
 
 

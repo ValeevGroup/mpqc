@@ -30,15 +30,14 @@ public:
     TArray t1;
     TArray t2;
 
-    auto direct = this->options_.HasMember("Direct") ? this->options_["Direct"].GetBool(): true;
+    auto direct = this->options_.HasMember("Direct") ? this->options_["Direct"].GetBool(): false;
+
+    if(direct == true){
+      throw std::runtime_error("Integral Direct Dual Basis CCSD is not Implemented!!\n");
+    }
+
     double ccsd_corr = 0.0;
-    if(direct){
-//                    double ccsd_corr = compute_ccsd_direct_ao(t1, t2);
-      ccsd_corr = this->compute_ccsd_direct(t1, t2);
-    }
-    else {
-      ccsd_corr = this->compute_ccsd_nondirect(t1,t2);
-    }
+    ccsd_corr = this->compute_ccsd_nondirect(t1,t2);
 
     this->T1_ = t1;
     this->T2_ = t2;

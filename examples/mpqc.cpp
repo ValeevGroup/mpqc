@@ -137,6 +137,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::cout << "N Cluster: " << nclusters << std::endl;
         std::cout << "Charge: " << charge << std::endl;
         std::cout << "OBS: " << basis_name << std::endl;
+        if(!vir_basis_name.empty()){
+            std::cout << "VBS: " << vir_basis_name << std::endl;
+        }
         std::cout << "DFBS: " << df_basis_name << std::endl;
         std::cout << "AUXBS: " << aux_basis_name << std::endl;
         std::cout << "AO Block Size: " << ao_blocksize << std::endl;
@@ -285,9 +288,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
         f12_factor = in["CorrelationFactor"].GetDouble();
         gtg_params = f12::GTGParams(f12_factor, n_functions);
     }
-    // if not use basis name to get factor
+    // if not, use basis name to get factor
     else{
-        gtg_params = f12::GTGParams(basis_name,n_functions);
+        if(vir_basis_name.empty()){
+            gtg_params = f12::GTGParams(basis_name,n_functions);
+        }
+        else{
+            gtg_params = f12::GTGParams(vir_basis_name,n_functions);
+        }
     }
 
     std::vector<std::pair<double,double>> param;

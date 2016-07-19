@@ -591,6 +591,30 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT2_ijij_ijji_db_df(
 };
 
 
+
+template<typename Tile>
+TA::DistArray<Tile,TA::SparsePolicy> compute_VT1_ijij_ijji_db_df(
+        integrals::MolecularIntegral <Tile, TA::SparsePolicy> &mo_integral,
+        const TA::DistArray <Tile, TA::SparsePolicy> &t1,
+        const TA::SparseShape<float> &ijij_ijji_shape)
+{
+  auto& world = mo_integral.get_world();
+  bool accurate_time = mo_integral.accurate_time();
+  TA::DistArray<Tile,TA::SparsePolicy> V_ijij_ijji;
+  TA::DistArray<Tile,TA::SparsePolicy> V_iaij = compute_V_iaxy_db_df(mo_integral);
+
+  auto vt1_time0 = mpqc_time::now(world,accurate_time);
+  utility::print_par(world, "\nCompute VT1_ijij_ijji With DF\n" );
+
+  V_ijij_ijji("i1,j1,i2,j2") = (V_iaij("i1,a,i2,j2")*t1("a,j1")).set_shape(ijij_ijji_shape);
+  V_ijij_ijji("i1,j1,i2,j2") += V_ijij_ijji("j1,i1,j2,i2");
+  auto vt1_time1 = mpqc_time::now(world,accurate_time);
+  auto vt1_time = mpqc_time::duration_in_s(vt1_time0,vt1_time1);
+  utility::print_par(world,"VT1 Term Total Time: ", vt1_time, " S\n");
+
+  return V_ijij_ijji;
+};
+
 }
 }
 

@@ -145,59 +145,59 @@ bool OrbitalIndex::is_mo() const {
     return index > 0;
 }
 
-OrbitalIndex::Index OrbitalIndex::wchar_to_index(const wchar_t first) {
+OrbitalIndex::Type OrbitalIndex::wchar_to_index(const wchar_t first) {
     if (first >= occ_wchar[0] && first <= occ_wchar[1]) {
-        return Index::occ;
+        return Type::occ;
     }
     else if (first >= corr_occ_wchar[0] && first <= corr_occ_wchar[1]){
-        return Index::corr_occ;
+        return Type::corr_occ;
     }
     else if ( first >= active_wchar[0] && first <= active_wchar[1]){
-        return Index::active;
+        return Type::active;
     }
     else if (first >= virt_wchar[0] && first <= virt_wchar[1]) {
-        return Index::virt;
+        return Type::virt;
     }
     else if (first >= any_wchar[0] && first <= any_wchar[1]) {
-        return Index::any;
+        return Type::any;
     }
     else if (first >= obs_wchar[0] && first <= obs_wchar[3]) {
-        return Index::obs;
+        return Type::obs;
     }
     else if (first >= vbs_wchar[0] && first <= vbs_wchar[3]) {
-        return Index::vbs;
+        return Type::vbs;
     }
     else if (first >= abs_wchar[0] && first <= abs_wchar[3]){
-        return Index::abs;
+        return Type::abs;
     }
     else if (first >= dfbs_wchar[0] && first <= dfbs_wchar[3]){
-        return Index::dfbs;
+        return Type::dfbs;
     }
     else if (first >= ribs_wchar[0] && first <= ribs_wchar[3]){
-        return Index::ribs;
+        return Type::ribs;
     }
     else{
         throw std::runtime_error("Wrong Key Index!");
-        return Index();
+        return Type();
     }
 }
 
-OrbitalIndex::Index OrbitalIndex::wchar_with_prime_to_index(const wchar_t first) {
+OrbitalIndex::Type OrbitalIndex::wchar_with_prime_to_index(const wchar_t first) {
     if (first >= othervirt_wchar[0] && first <= othervirt_wchar[1]) {
-        return Index::othervirt;
+        return Type::othervirt;
     }
     else if (first >= frozen_occ_wchar[0] && first <= frozen_occ_wchar[1]){
-        return Index::frozen_occ;
+        return Type::frozen_occ;
     }
     else if (first >= allvirt_wchar[0] && first <= allvirt_wchar[1]) {
-        return Index::allvirt;
+        return Type::allvirt;
     }
     else if (first >= allany_wchar[0] && first <= allany_wchar[1]) {
-        return Index::allany;
+        return Type::allany;
     }
     else{
         throw std::runtime_error("Wrong Key Index!");
-        return Index();
+        return Type();
     }
 }
 
@@ -207,7 +207,7 @@ bool OrbitalIndex::is_mo_in_obs() const {
 }
 
 bool OrbitalIndex::is_mo_in_abs() const {
-    return index_ == Index::othervirt;
+    return index_ == Type::othervirt;
 }
 
 bool OrbitalIndex::is_mo_in_ribs() const {

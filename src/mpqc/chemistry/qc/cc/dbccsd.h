@@ -21,20 +21,18 @@ public:
   DBCCSD() = default;
   DBCCSD(integrals::MolecularIntegral<Tile,Policy>& mo_int, rapidjson::Document &options)
           : CCSD<Tile,Policy>(mo_int,options)
-  { }
-
+  {
+    auto direct = this->options_.HasMember("Direct") ? this->options_["Direct"].GetBool() : true;
+    if (direct == true) {
+      throw std::runtime_error("Integral Direct Dual Basis CCSD is not Implemented!!\n");
+    }
+  }
   /// compute function
   virtual double compute(){
     // initialize
     init(this->options_);
     TArray t1;
     TArray t2;
-
-    auto direct = this->options_.HasMember("Direct") ? this->options_["Direct"].GetBool(): false;
-
-    if(direct == true){
-      throw std::runtime_error("Integral Direct Dual Basis CCSD is not Implemented!!\n");
-    }
 
     double ccsd_corr = 0.0;
     ccsd_corr = this->compute_ccsd_nondirect(t1,t2);

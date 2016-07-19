@@ -141,11 +141,6 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
     // hJ
     mo_integral().registry().remove_operation(world, L"G");
 
-    auto V_map = V_ijij_ijji.get_pmap();
-    auto local = V_map->local_size();
-    std::cout << "V PMap Local Size, Rank " << world.rank() << " Size " << local
-              << std::endl;
-
     // contribution from V_ijij_ijji
     // NB factor of 2 from the Hylleraas functional
     Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")

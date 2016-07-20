@@ -41,7 +41,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
         auto time0 = mpqc_time::now(world,accurate_time);
 
         V_ijij_ijji("i1,j1,i2,j2") = (left*middle*right).set_shape(shape);
-        std::cout << V_ijij_ijji << std::endl;
+//        std::cout << V_ijij_ijji << std::endl;
         // all types of GR integral not needed
         mo_integral.remove_operation_all(world, L"GR");
 
@@ -62,7 +62,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
         utility::print_par(world,"V Term2 Time: ", time, " S\n");
     }
 
-    std::cout << V_ijij_ijji << std::endl;
+//    std::cout << V_ijij_ijji << std::endl;
 
     {
         auto left = mo_integral(L"<i1 j1|G|m a'>[df]");
@@ -71,7 +71,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
         auto time0 = mpqc_time::now(world,accurate_time);
         TA::DistArray<Tile,TA::SparsePolicy> tmp;
         tmp("i1,j1,i2,j2") = (left*right).set_shape(shape);
-        std::cout << tmp << std::endl;
+//        std::cout << tmp << std::endl;
 //    V_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]")).set_shape(shape);
         V_ijij_ijji("i1,j1,i2,j2") -= (tmp("i1,j1,i2,j2")).set_shape(shape);
         V_ijij_ijji("i1,j1,i2,j2") -= (tmp("j1,i1,j2,i2")).set_shape(shape);
@@ -85,7 +85,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
     auto v_time = mpqc_time::duration_in_s(v_time0,v_time1);
     utility::print_par(world,"V Term Total Time: ", v_time, " S\n");
 
-    std::cout << V_ijij_ijji << std::endl;
+//    std::cout << V_ijij_ijji << std::endl;
     return V_ijij_ijji;
 };
 
@@ -802,9 +802,14 @@ TA::DistArray<Tile,Policy> compute_V_xyab_df(integrals::MolecularIntegral <Tile,
     {
         auto right = mo_integral(L"<a b|G|m a'>[df]");
         auto left = mo_integral(L"<i j|R|m a'>[df]");
+
+        auto time0 = mpqc_time::now(world,accurate_time);
         tmp("i,j,a,b") = left*right;
         V_xyab("i,j,a,b") -= tmp("i,j,a,b");
         V_xyab("i,j,a,b") -= tmp("j,i,b,a");
+        auto time1 = mpqc_time::now(world,accurate_time);
+        auto time = mpqc_time::duration_in_s(time0,time1);
+        utility::print_par(world,"V Term3 Time: ", time, " S\n");
     }
 
     auto v_time1 = mpqc_time::now(world,accurate_time);
@@ -1138,14 +1143,14 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT1_ijij_ijji_df(
     TA::DistArray<Tile,TA::SparsePolicy> V_ijij_ijji;
     TA::DistArray<Tile,TA::SparsePolicy> V_iaij = compute_V_iaxy_df(mo_integral);
 
-    auto vt2_time0 = mpqc_time::now(world,accurate_time);
+    auto vt1_time0 = mpqc_time::now(world,accurate_time);
     utility::print_par(world, "\nCompute VT1_ijij_ijji With DF\n" );
 
     V_ijij_ijji("i1,j1,i2,j2") = (V_iaij("i1,a,i2,j2")*t1("a,j1")).set_shape(ijij_ijji_shape);
     V_ijij_ijji("i1,j1,i2,j2") += V_ijij_ijji("j1,i1,j2,i2");
-    auto vt2_time1 = mpqc_time::now(world,accurate_time);
-    auto vt2_time = mpqc_time::duration_in_s(vt2_time0,vt2_time1);
-    utility::print_par(world,"VT1 Term Total Time: ", vt2_time, " S\n");
+    auto vt1_time1 = mpqc_time::now(world,accurate_time);
+    auto vt1_time = mpqc_time::duration_in_s(vt1_time0,vt1_time1);
+    utility::print_par(world,"VT1 Term Total Time: ", vt1_time, " S\n");
 
     return V_ijij_ijji;
 };

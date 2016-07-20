@@ -47,6 +47,7 @@
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include <mpqc/chemistry/qc/f12/mp2f12.h>
 #include <mpqc/chemistry/qc/f12/dbmp2f12.h>
+#include <mpqc/chemistry/qc/f12/dbccsdf12.h>
 #include <mpqc/chemistry/qc/f12/ccsdf12.h>
 #include "../utility/trange1_engine.h"
 #include "../ta_routines/array_to_eigen.h"
@@ -136,6 +137,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
         std::cout << "N Cluster: " << nclusters << std::endl;
         std::cout << "Charge: " << charge << std::endl;
         std::cout << "OBS: " << basis_name << std::endl;
+        if(!vir_basis_name.empty()){
+            std::cout << "VBS: " << vir_basis_name << std::endl;
+        }
         std::cout << "DFBS: " << df_basis_name << std::endl;
         std::cout << "AUXBS: " << aux_basis_name << std::endl;
         std::cout << "AO Block Size: " << ao_blocksize << std::endl;
@@ -284,9 +288,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
         f12_factor = in["CorrelationFactor"].GetDouble();
         gtg_params = f12::GTGParams(f12_factor, n_functions);
     }
-    // if not use basis name to get factor
+    // if not, use basis name to get factor
     else{
-        gtg_params = f12::GTGParams(basis_name,n_functions);
+        if(vir_basis_name.empty()){
+            gtg_params = f12::GTGParams(basis_name,n_functions);
+        }
+        else{
+            gtg_params = f12::GTGParams(vir_basis_name,n_functions);
+        }
     }
 
     std::vector<std::pair<double,double>> param;
@@ -478,12 +487,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         mpqc::utility::print_par(world, "Total GF2 F12 Time:  ", time, "\n");
 
     }
-    // all of these require CCSD
-    else if(in.HasMember("CCSD") || in.HasMember("CCSD(T)") || in.HasMember("CCSD(F12)") || in.HasMember("DBCCSD")) {
-
-        auto time0 = mpqc_time::fenced_now(world);
-
-        if(in.HasMember("CCSD")){
+        else if(in.HasMember("CCSD")){
+            auto time0 = mpqc_time::fenced_now(world);
             utility::print_par(world, "\nBegining CCSD Calculation\n");
             corr_in = json::get_nested(in, "CCSD");
             mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(mo_integral, corr_in);
@@ -493,6 +498,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             mpqc::utility::print_par(world, "Total CCSD Time:  ", time, "\n");
         }
         else if(in.HasMember("DBCCSD")){
+            auto time0 = mpqc_time::fenced_now(world);
             utility::print_par(world, "\nBegining Dual Basis CCSD Calculation\n");
             corr_in = json::get_nested(in, "DBCCSD");
             mpqc::cc::DBCCSD<TA::TensorD, TA::SparsePolicy> dbccsd(mo_integral, corr_in);
@@ -502,6 +508,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             mpqc::utility::print_par(world, "Total Dual Basis CCSD Time:  ", time, "\n");
         }
         else if(in.HasMember("CCSD(T)")){
+            auto time0 = mpqc_time::fenced_now(world);
             utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
             corr_in = json::get_nested(in, "CCSD(T)");
             mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(mo_integral, corr_in);
@@ -511,13 +518,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
             mpqc::utility::print_par(world, "Total CCSD(T) Time:  ", time, "\n");
         }
 
-        if(in.HasMember("CCSD(F12)")){
+        else if(in.HasMember("CCSD(F12)")){
 
-            time0 = mpqc_time::fenced_now(world);
-
+            auto time0 = mpqc_time::fenced_now(world);
             utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
-            corr_in = json::get_nested(in, "CCSD(F12)");
-
             corr_in = json::get_nested(in, "CCSD(F12)");
 
             f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral, corr_in);
@@ -525,9 +529,22 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
             auto time1 = mpqc_time::fenced_now(world);
             auto time = mpqc_time::duration_in_s(time0, time1);
-            mpqc::utility::print_par(world, "Total F12 Time:  ", time, "\n");
+            mpqc::utility::print_par(world, "Total CCSD(F12) Time:  ", time, "\n");
 
         }
+    else if(in.HasMember("DBCCSD(F12)")){
+
+        auto time0 = mpqc_time::fenced_now(world);
+        utility::print_par(world, "\nBegining DBCCSD(F12) Calculation\n");
+        corr_in = json::get_nested(in, "DBCCSD(F12)");
+
+        f12::DBCCSDF12<TA::TensorD> db_ccsd_f12(mo_integral, corr_in);
+        corr_e += db_ccsd_f12.compute();
+
+        auto time1 = mpqc_time::fenced_now(world);
+        auto time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::utility::print_par(world, "Total DBCCSD(F12) Time:  ", time, "\n");
+
     }
 
     utility::print_par(world, "Total Correlation Energy: ", corr_e, "\n");

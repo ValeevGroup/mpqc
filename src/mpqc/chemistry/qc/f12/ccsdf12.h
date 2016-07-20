@@ -11,7 +11,6 @@
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/cc/ccsd.h>
 #include <mpqc/chemistry/qc/f12/f12_intermediates.h>
-#include <mpqc/chemistry/qc/integrals/molecular_integral.h>
 
 namespace mpqc {
 namespace f12 {
@@ -32,13 +31,17 @@ class CCSDF12 {
     ccsd_ = std::make_shared<cc::CCSD<Tile, Policy>>(mo_int, options);
   }
 
-  double compute() {
+  CCSDF12(std::shared_ptr<cc::CCSD<Tile,Policy>> ccsd)
+  : mo_int_(ccsd->intermediate()->mo_integral()), ccsd_(ccsd)
+  { }
+
+
+  virtual real_t compute() {
     // compute ccsd
-    double ccsd = ccsd_->compute();
+    real_t ccsd = ccsd_->compute();
 
     auto& option = ccsd_->options();
     // initialize CABS orbitals
-    auto orbital_registry = this->mo_int_.orbital_space();
     closed_shell_cabs_mo_build_svd(this->mo_int_, option,
                                    this->ccsd_->trange1_engine());
 
@@ -66,12 +69,9 @@ class CCSDF12 {
   template <typename DirectArray>
   Matrix compute_c(const DirectArray& darray);
 
- private:
+ protected:
   MolecularIntegralClass& mo_int_;
   std::shared_ptr<cc::CCSD<Tile, Policy>> ccsd_;
-
-  //    TArray ccsd_->t1(); /// t1 amplitude
-  //    TArray ccsd_->t2(); /// t2 amplitude
 
   int debug() const { return 1; }
 };
@@ -144,7 +144,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
                      .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
                                                          CC_ijji_bar, nocc));
-    if (debug()) utility::print_par(world, "E_B: ", eij, "\n");
+    if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
 

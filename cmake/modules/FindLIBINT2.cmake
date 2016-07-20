@@ -89,6 +89,22 @@ else (LIBINT2_INCLUDE_DIRS)
     if (NOT LIBINT2_IS_UP_TO_DATE)
       message(FATAL_ERROR "Libint2 library is too old: 2.2.0 (beta) is required")
     endif()
+
+    # make sure libint2 is properly configured
+    CHECK_CXX_SOURCE_COMPILES(
+      "
+          #include <libint2.hpp>
+          #include <libint2/config.h>
+          #if !(INCLUDE_ONEBODY>=0 && INCLUDE_ERI>=0 && INCLUDE_ERI3>=0 && INCLUDE_ERI2>=0)
+          # error \"Libint2 library must be configured with support for 1-body and (2, 3, and 4-center) 2-body integrals\"
+          #endif
+          int main(int argc, char** argv) {
+            return 0;
+          }
+      "  LIBINT2_IS_CONFIGURED_CORRECTLY)    
+    if (NOT LIBINT2_IS_CONFIGURED_CORRECTLY)
+      message(FATAL_ERROR "Libint2 library is not configured correctly: need support for 1-body and (2, 3, and 4-center) 2-body integrals")
+    endif()
     
     cmake_pop_check_state()
   

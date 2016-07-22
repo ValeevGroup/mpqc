@@ -13,6 +13,7 @@ namespace mbpt {
 template <typename Tile, typename Policy>
 class DBMP2 : public MP2<Tile,Policy> {
  public:
+  using real_t = typename Tile::scalar_type;
   using TArray = TA::DistArray<Tile, Policy>;
   using MolecularIntegralType = integrals::MolecularIntegral<Tile, Policy>;
 
@@ -21,14 +22,14 @@ class DBMP2 : public MP2<Tile,Policy> {
   DBMP2(MolecularIntegralType &mo_int) : MP2<Tile,Policy>(mo_int) { }
 
 
-  virtual double compute(const rapidjson::Document &in) {
+  virtual real_t compute(const rapidjson::Document &in) {
 
     // initialize dual basis orbitals
     init(in);
 
     std::string method = in.HasMember("Method") ? in["Method"].GetString() : "df";
 
-    double mp2_energy = 0.0;
+    real_t mp2_energy = 0.0;
 
     if (method == "four center") {
       mp2_energy = this->compute_four_center();
@@ -37,6 +38,17 @@ class DBMP2 : public MP2<Tile,Policy> {
     } else {
       throw std::runtime_error("Wrong MP2 Method");
     }
+
+    real_t scf_correction = compute_scf_correction(in);
+    return scf_correction + mp2_energy;
+  }
+
+private:
+  real_t compute_scf_correction(const rapidjson::Document &in){
+
+    init(in);
+
+    std::string method = in.HasMember("Method") ? in["Method"].GetString() : "df";
 
     int occ = this->trange1_engine()->get_active_occ();
     TArray F_ia;
@@ -51,27 +63,29 @@ class DBMP2 : public MP2<Tile,Policy> {
       throw std::runtime_error("Wrong MP2 Method");
     }
 
-    double scf_correction = F_ia("i,a").reduce(ScfCorrection(this->orbital_energy(),occ));
+    real_t scf_correction = F_ia("i,a").reduce(ScfCorrection(this->orbital_energy(),occ));
 
     if (F_ia.get_world().rank() == 0) {
       std::cout << "SCF Correction: " << scf_correction << std::endl;
     }
-    return scf_correction + mp2_energy;
+
+    return scf_correction;
   }
 
-  private:
-
   void init(const rapidjson::Document &in) {
-    auto& mo_int = this->mo_integral();
-    auto mol = mo_int.atomic_integral().molecule();
-    int occ = mol.occupation(0) / 2;
-    Eigen::VectorXd orbital_energy;
-    this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(mo_int, orbital_energy, in, mol, occ);
-    this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+    // if not initialized
+    if(this->trange1_engine_== nullptr || this->orbital_energy_ == nullptr){
+      auto& mo_int = this->mo_integral();
+      auto mol = mo_int.atomic_integral().molecule();
+      int occ = mol.occupation(0) / 2;
+      Eigen::VectorXd orbital_energy;
+      this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(mo_int, orbital_energy, in, mol, occ);
+      this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+    }
   }
 
   struct ScfCorrection {
-    using result_type = double;
+    using result_type = real_t;
     using argument_type = Tile;
 
     std::shared_ptr<Eig::VectorXd> vec_;

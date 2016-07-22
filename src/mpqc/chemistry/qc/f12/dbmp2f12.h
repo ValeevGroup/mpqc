@@ -38,7 +38,7 @@ public:
     // dbmp2 time
     auto mp2_time0 = mpqc_time::fenced_now(world);
 
-    this->mp2_->compute(in);
+    double dbmp2 = this->mp2_->compute(in);
 
     auto mp2_time1 = mpqc_time::fenced_now(world);
     auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
@@ -73,11 +73,10 @@ public:
                  f12_eij(i, j), mp2_eij(i, j) + f12_eij(i, j));
     }
 
-    auto emp2 = mp2_eij.sum();
     auto ef12 = f12_eij.sum();
     if (debug()) {
-      utility::print_par(this->mo_integral().get_world(), "E_MP2: ", emp2, "\n");
-      utility::print_par(this->mo_integral().get_world(), "E_F12: ", ef12, "\n");
+      utility::print_par(this->mo_integral().get_world(), "E_DBMP2: ", dbmp2, "\n");
+      utility::print_par(this->mo_integral().get_world(), "E_DBMP2F12: ", ef12, "\n");
     }
 
     auto f12_time1 = mpqc_time::fenced_now(world);
@@ -85,7 +84,7 @@ public:
 
     mpqc::utility::print_par(world, "Total DBF12 Time:  ", f12_time, "\n");
 
-    return emp2 + ef12;
+    return dbmp2 + ef12;
   }
 
 private:

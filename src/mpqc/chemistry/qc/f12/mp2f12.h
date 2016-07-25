@@ -444,11 +444,11 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   auto nocc = this->mp2_->trange1_engine()->get_active_occ();
   auto nuocc = this->mp2_->trange1_engine()->get_vir();
   // map orbital_ (index relative to Fermi level) to orbital index in active orbital space
-  const auto act_orbital = (orbital_ < 0) ? nocc + orbital_ : nocc + orbital_ - 1;
-  auto SE = orbital_energy()->operator()(act_orbital);
+  const auto orbital = nfzc + nocc + ((orbital_ < 0) ? orbital_ : orbital_ - 1);
+  auto SE = orbital_energy()->operator()(orbital);
 
-  Eigen::VectorXd occ_evals = orbital_energy()->segment(0,nocc);
-  Eigen::VectorXd uocc_evals = orbital_energy()->segment(nocc, nuocc);
+  Eigen::VectorXd occ_evals = orbital_energy()->segment(nfzc, nocc + nfzc);
+  Eigen::VectorXd uocc_evals = orbital_energy()->segment(nfzc + nocc, nuocc);
 
   // will use only the target orbital to transform ints
   // create an OrbitalSpace here
@@ -457,7 +457,6 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     auto orbital_registry = this->mo_integral().orbital_space();
     auto p_space = orbital_registry->retrieve(OrbitalIndex(L"p"));
     auto C_p = array_ops::array_to_eigen(p_space.array());
-    auto orbital = nfzc + act_orbital;
     auto C_x = C_p.block(0, orbital, C_p.rows(), 1);
     auto tr_obs = p_space.array().trange().data().front();
     TA::TiledRange1 tr_x{0,1};
@@ -515,7 +514,7 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
     //std::cout << "Sigma = " << Sigma << std::endl;
 
-    auto SE_updated = Sigma(0, 0) + orbital_energy()->operator()(act_orbital);
+    auto SE_updated = Sigma(0, 0) + orbital_energy()->operator()(orbital);
     SE_diff = SE_updated - SE;
 
     printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated, SE_diff);

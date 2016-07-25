@@ -1245,7 +1245,7 @@ VX_pqrs_pqsr(const std::string &target_str,
   // if !equiv(p,q) || !equiv(r,s), particles are not equivalent =>
   // must include ma' and a'm contributions explicitly, rather than by
   // symmetrization
-  const auto p1_equiv_p2 = !equiv_pq || !equiv_rs;
+  const auto p1_equiv_p2 = equiv_pq && equiv_rs;
 
   const auto v_time0 = mpqc_time::now(world, accurate_time);
 

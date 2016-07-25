@@ -376,22 +376,27 @@ public:
 
   GF2F12() = default;
 
-  GF2F12(MolecularIntegralClass& mo_int) : mp2f12_(std::make_shared<mbpt::MP2<Tile, Policy>>(mo_int)) {}
+  GF2F12(MolecularIntegralClass& mo_int) : mp2_(std::make_shared<mbpt::MP2<Tile, Policy>>(mo_int)) {}
 
-  MolecularIntegralClass &mo_integral() const { return mp2f12_->mo_integral(); }
+  MolecularIntegralClass &mo_integral() const { return mp2_->mo_integral(); }
 
   const std::shared_ptr<TRange1Engine> trange1_engine() const {
-    return mp2f12_->trange1_engine();
+    return mp2_->trange1_engine();
   }
 
   const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
-    return mp2f12_->orbital_energy();
+    return mp2_->orbital_energy();
   }
 
   virtual real_t compute(const rapidjson::Document& in){
     auto& world = this->mo_integral().get_world();
 
-    this->mp2f12_->compute(in);
+    this->mp2_->compute(in);
+
+    // solve cabs orbitals
+    auto orbital_registry = mo_integral().orbital_space();
+    closed_shell_cabs_mo_build_svd(mo_integral(), in,
+                                   this->mp2_->trange1_engine());
 
     auto time0 = mpqc_time::fenced_now(world);
 
@@ -421,7 +426,7 @@ public:
 
 private:
 
-  std::shared_ptr<mbpt::MP2<Tile, Policy>> mp2f12_;
+  std::shared_ptr<mbpt::MP2<Tile, Policy>> mp2_;
   int orbital_;
 
   /// use self-energy in diagonal representation
@@ -431,9 +436,9 @@ private:
 template <typename Tile>
 void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
-  auto nfzc = this->mp2f12_->trange1_engine()->get_nfrozen();
-  auto nocc = this->mp2f12_->trange1_engine()->get_active_occ();
-  auto nuocc = this->mp2f12_->trange1_engine()->get_vir();
+  auto nfzc = this->mp2_->trange1_engine()->get_nfrozen();
+  auto nocc = this->mp2_->trange1_engine()->get_active_occ();
+  auto nuocc = this->mp2_->trange1_engine()->get_vir();
   // map orbital_ (index relative to Fermi level) to orbital index in active orbital space
   const auto act_orbital = (orbital_ < 0) ? nocc + orbital_ : nocc + orbital_ - 1;
   auto SE = orbital_energy()->operator()(act_orbital);
@@ -461,6 +466,16 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     auto x_space = OrbitalSpaceTArray(OrbitalIndex(L"x"),OrbitalIndex(L"κ"), C_x_ta);
     orbital_registry->add(x_space);
   }
+
+  // for now the f12 contribution is energy-independent
+  TArray Sigma_pph_f12;
+  {
+    TArray V_ixix, V_ixxi;
+    std::tie(V_ixix, V_ixxi) = mpqc::f12::VX_pqrs_pqsr("V", mo_integral(), "i", "x", "j", "y");
+    Sigma_pph_f12("x,y") = 0.5 * (1.25 * V_ixix("i,x,j,y") - 0.25 * V_ixxi("i,x,y,j")) * mo_integral()(L"<i|I|j>");
+  }
+  //std::cout << "Sigma_pph_f12:\n" << Sigma_pph_f12 << std::endl;
+  Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
 
   printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
   printf("==== =========== =========== ===========\n");
@@ -499,12 +514,20 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     auto SE_updated = Sigma(0, 0) + orbital_energy()->operator()(act_orbital);
     SE_diff = SE_updated - SE;
 
-    printf(" %3ld %11.3lf %11.3lf %11.3lf", iter, SE, SE_updated, SE_diff);
+    printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated, SE_diff);
 
     SE = SE_updated;
     ++iter;
 
   } while ((fabs(SE_diff) > 1e-6) && (iter <= max_niter));
+
+  auto SE_F12 = SE + Sigma_f12(0,0);
+  auto Hartree2eV = 27.21138602;
+  std::string orblabel = std::string(orbital_ < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
+  printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n", orblabel.c_str(), SE * Hartree2eV, SE);
+  printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n", orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
+  if (orbital_ > 0)
+    printf("WARNING: non-strongly-orthogonal F12 projector is used for the F12 correction to EA!!!");
 }
 
 }  // namespace f12

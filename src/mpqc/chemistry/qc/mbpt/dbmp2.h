@@ -50,22 +50,22 @@ private:
 
     std::string method = in.HasMember("Method") ? in["Method"].GetString() : "df";
 
-    int occ = this->trange1_engine()->get_active_occ();
-    TArray F_ia;
+    int occ = this->trange1_engine()->get_occ();
+    TArray F_ma;
 
     if(method == "four center"){
-      F_ia = this->mo_integral().compute(L"<i|F|a>");
+      F_ma = this->mo_integral().compute(L"<m|F|a>");
     }
     else if(method == "df"){
-      F_ia = this->mo_integral().compute(L"<i|F|a>[df]");
+      F_ma = this->mo_integral().compute(L"<m|F|a>[df]");
     }
     else{
       throw std::runtime_error("Wrong MP2 Method");
     }
 
-    real_t scf_correction = F_ia("i,a").reduce(ScfCorrection(this->orbital_energy(),occ));
+    real_t scf_correction = 2*F_ma("m,a").reduce(ScfCorrection(this->orbital_energy(),occ));
 
-    if (F_ia.get_world().rank() == 0) {
+    if (F_ma.get_world().rank() == 0) {
       std::cout << "SCF Correction: " << scf_correction << std::endl;
     }
 
@@ -121,7 +121,7 @@ private:
         for (auto a = sta; a < fna; ++a, ++tile_idx) {
           const auto e_ia = e_i - vec[a + n_occ_];
           const auto data = tile.data()[tile_idx];
-          me += (2.0 * data * data) / (e_ia);
+          me += (data * data) / (e_ia);
         }
       }
     }

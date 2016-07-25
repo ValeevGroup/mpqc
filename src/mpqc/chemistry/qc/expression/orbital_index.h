@@ -7,6 +7,10 @@
 
 #include <string>
 
+#include <TiledArray/error.h>
+
+#include <mpqc/util/misc/string.h>
+
 namespace mpqc {
 
 /**
@@ -97,13 +101,16 @@ class OrbitalIndex {
   OrbitalIndex &operator=(OrbitalIndex &&) = default;
 
   /**
-   * Constructor
-   * Construct OrbitalIndex wstring
-   * @param letter
+   * \brief constructs from a label
+   *
+   * Construct OrbitalIndex from a std::wstring
+   * @param symbol
    * check description of class for mappings
    */
-
-  OrbitalIndex(std::wstring letter);
+  template <typename String,
+            typename = typename std::enable_if<
+                not std::is_same<typename std::decay<String>::type, OrbitalIndex>::value>::type>
+  OrbitalIndex(String &&symbol);
 
   /// check equality by comparing index and spin
   bool operator==(OrbitalIndex const &) const;
@@ -166,6 +173,36 @@ class OrbitalIndex {
   /// the name that user passed in from the constructor
   std::wstring name_;
 };
+
+template <typename String, typename>
+OrbitalIndex::OrbitalIndex(String &&symbol) {
+
+  name_ = utility::to_wstring(symbol);
+
+  if (name_.find_first_of(L'_') == std::wstring::npos) {
+    init(name_.c_str());
+    spin_ = Spin::None;
+  } else {
+    auto left = name_.find_first_of(L'_');
+
+    TA_ASSERT(left != std::wstring::npos);
+    TA_ASSERT(name_.size() - left == 2);
+    std::wstring sub_letter = name_.substr(0, left);
+
+    init(sub_letter.c_str());
+
+    wchar_t spin = name_[left + 1];
+
+    if (spin == L'α') {
+      spin_ = Spin::Alpha;
+    } else if (spin == L'β') {
+      spin_ = Spin::Beta;
+    } else {
+      throw std::runtime_error("Wrong Spin Label");
+    }
+  }
+}
+
 }
 
 #endif  // MPQC_ORBITAL_INDEX_H

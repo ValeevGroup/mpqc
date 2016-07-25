@@ -237,12 +237,6 @@ namespace mpqc{
             this->remove_if(world, pred);
 
         }
-
-        /// remove all formula that have index
-        void remove_orbital(madness::World& world, const std::wstring& orbital){
-            OrbitalIndex orbital_index(orbital);
-            remove_orbital(world, orbital_index);
-        }
     };
 } // end of namespace mpqc
 

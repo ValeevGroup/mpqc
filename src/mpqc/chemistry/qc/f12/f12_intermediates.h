@@ -41,7 +41,6 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
         auto time0 = mpqc_time::now(world,accurate_time);
 
         V_ijij_ijji("i1,j1,i2,j2") = (left*middle*right).set_shape(shape);
-//        std::cout << V_ijij_ijji << std::endl;
         // all types of GR integral not needed
         mo_integral.remove_operation_all(world, L"GR");
 
@@ -62,8 +61,6 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
         utility::print_par(world,"V Term2 Time: ", time, " S\n");
     }
 
-//    std::cout << V_ijij_ijji << std::endl;
-
     {
         auto left = mo_integral(L"<i1 j1|G|m a'>[df]");
         auto right = mo_integral(L"<i2 j2|R|m a'>[df]");
@@ -71,8 +68,6 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
         auto time0 = mpqc_time::now(world,accurate_time);
         TA::DistArray<Tile,TA::SparsePolicy> tmp;
         tmp("i1,j1,i2,j2") = (left*right).set_shape(shape);
-//        std::cout << tmp << std::endl;
-//    V_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 m|G|i1 a')[df]")*mo_integral(L"(j2 m|R|i2 a')[df]")).set_shape(shape);
         V_ijij_ijji("i1,j1,i2,j2") -= (tmp("i1,j1,i2,j2")).set_shape(shape);
         V_ijij_ijji("i1,j1,i2,j2") -= (tmp("j1,i1,j2,i2")).set_shape(shape);
         auto time1 = mpqc_time::now(world,accurate_time);
@@ -85,7 +80,6 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_df(
     auto v_time = mpqc_time::duration_in_s(v_time0,v_time1);
     utility::print_par(world,"V Term Total Time: ", v_time, " S\n");
 
-//    std::cout << V_ijij_ijji << std::endl;
     return V_ijij_ijji;
 };
 
@@ -753,8 +747,8 @@ TA::DistArray<Tile,Policy> compute_V_iaxy(integrals::MolecularIntegral <Tile, Po
 
 
 /**
- * CC-F12 C approach V term with DF
- * \f$V_{xy}^{ab}\f$
+ * DF-based builder for the V intermediate with general indices,
+ * \f$V_{xy}^{ab} \equiv R_{xy}^{\alpha \beta} g_{\alpha \beta}^{a b}\f$, for the use in CC F12.
  * @param mo_integral reference to MolecularIntegral
  * @return V("x,y,a,b")
  */
@@ -788,8 +782,8 @@ TA::DistArray<Tile,Policy> compute_V_xyab_df(integrals::MolecularIntegral <Tile,
     }
 
     {
-        auto left = mo_integral(L"<a b|G|p q>[df]");
-        auto right = mo_integral(L"<i j|R|p q>[df]");
+        auto right = mo_integral(L"<a b|G|p q>[df]");
+        auto left = mo_integral(L"<i j|R|p q>[df]");
 
         auto time0 = mpqc_time::now(world,accurate_time);
         V_xyab("i,j,a,b") -= left*right;
@@ -821,8 +815,8 @@ TA::DistArray<Tile,Policy> compute_V_xyab_df(integrals::MolecularIntegral <Tile,
 
 
 /**
- * CC-F12 C approach V term without DF
- * \f$V_{xy}^{ab}\f$
+ * non-DF-based builder for the V intermediate with general indices,
+ * \f$V_{xy}^{ab} \equiv R_{xy}^{\alpha \beta} g_{\alpha \beta}^{a b}\f$, for the use in CC F12.
  * @param mo_integral reference to MolecularIntegral
  * @return V("x,y,a,b")
  */

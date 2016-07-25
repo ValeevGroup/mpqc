@@ -6,6 +6,7 @@
 #define MPQC_F12_INTERMEDIATES_H
 
 #include "../../../../../include/tiledarray.h"
+#include <mpqc/util/misc/string.h>
 #include "../../../../../common/namespaces.h"
 #include <mpqc/chemistry/qc/integrals/molecular_integral.h>
 
@@ -1188,6 +1189,171 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT1_ijij_ijji(
     return V_ijij_ijji;
 };
 
+/**
+ * the DF-based builder for the F12 intermediates V (or X). The V intermediate
+ * is defined as
+ * \f$V_{pq}^{rs} \equiv R_{pq}^{\alpha \beta} g_{\alpha \beta}^{r s}\f$ and
+ * \f$V_{pq}^{sr} \equiv R_{pq}^{\alpha \beta} g_{\alpha \beta}^{r s}\f$,
+ * and the X intermediate is obtained from these expressions by replacement \f$
+ * g \to R \f$.
+ * If \c p refers to the same space as \c q **or** \c r refers to the same space
+ * as \c s , the two
+ * tensors are equivalent and only the former is computed.
+ *
+ * @tparam String any string type (e.g., std::basic_string and char[])
+s * @param target_str std::string, the only valid vales are "V" or "X"
+ * @param mo_integral reference to MolecularIntegral
+ * @param p an OrbitalIndex key (must be known to \c mo_integral )
+ * @param q an OrbitalIndex key (must be known to \c mo_integral )
+ * @param r an OrbitalIndex key (must be known to \c mo_integral )
+ * @param s an OrbitalIndex key (must be known to \c mo_integral )
+ * @param df if \c true , use density fitting (\c df=false is not yet supported)
+ * @return \c std::tuple with V("p,q,r,s") and V("p,q,s,r"); the latter
+ *         is empty if \c p refers to the same space as \c q **or** \c r refers
+ * to the same space as \c s .
+ */
+template <typename Tile, typename Policy, typename String>
+std::tuple<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>
+VX_pqrs_pqsr(const std::string &target_str,
+             integrals::MolecularIntegral<Tile, Policy> &mo_integral,
+             const String &p, const String &q, const String &r,
+             const String &s, bool df = true) {
+  using mpqc::utility::concat;
+  using mpqc::utility::wconcat;
+  using mpqc::utility::concatcm;
+
+  enum class Target { X, V };
+  Target target;
+  if (target_str == "V")
+    target = Target::V;
+  else if (target_str == "X")
+    target = Target::X;
+  else
+    TA_USER_ASSERT(false, "invalid target type");
+
+  TA_USER_ASSERT(df == true, "non-DF-based generic VX build is not yet supported");
+  const auto methodstr = df ? "[df]" : "";
+
+  auto &world = mo_integral.get_world();
+  auto &ao_integral = mo_integral.atomic_integral();
+  const bool accurate_time = mo_integral.accurate_time();
+
+  const auto equiv_pq = OrbitalIndex(p) == OrbitalIndex(q);
+  const auto equiv_rs = OrbitalIndex(r) == OrbitalIndex(s);
+  // if !equiv(p,q) && !equiv(r,s), must compute both
+  const auto need_pqsr = !equiv_pq && !equiv_rs;
+  // if !equiv(p,q) || !equiv(r,s), particles are not equivalent =>
+  // must include ma' and a'm contributions explicitly, rather than by
+  // symmetrization
+  const auto p1_equiv_p2 = !equiv_pq || !equiv_rs;
+
+  const auto v_time0 = mpqc_time::now(world, accurate_time);
+
+  TA::DistArray<Tile, Policy> A_pqrs;
+  TA::DistArray<Tile, Policy> A_pqsr;
+
+  if (need_pqsr) {
+    utility::print_par(world, "Compute ", target_str, "(", p, ",", q, ",", r,
+                        ",", s, ") and ", target_str, "(", p, ",", q, ",", s,
+                        ",", r, ") DF=", std::to_string(df), "\n");
+  } else {
+    utility::print_par(world, "\nCompute ", target_str, "(", p, ",", q, ",", r,
+                        ",", s, ") DF=", std::to_string(df), "\n");
+  }
+
+  {
+    const char* opstr = (target == Target::V) ? "GR" : "R2";
+    const auto left_pr =
+        mo_integral(wconcat(L"(Κ |", opstr, "|", p, " ", r, ")"));
+    const auto middle = ao_integral(wconcat(L"(Κ|", opstr, L"|Λ)[inv]"));
+    const auto right_qs =
+        mo_integral(wconcat(L"(Λ |", opstr, "|", q, " ", s, ")"));
+
+    const auto time0 = mpqc_time::now(world, accurate_time);
+    A_pqrs(concatcm(p, q, r, s)) = left_pr * middle * right_qs;
+    if (need_pqsr) {
+      const auto left_ps =
+          mo_integral(wconcat(L"(Κ |", opstr, "|", p, " ", s, ")"));
+      const auto right_qr =
+          mo_integral(wconcat(L"(Λ |", opstr, "|", q, " ", r, ")"));
+      A_pqsr(concatcm(p, q, s, r)) = left_ps * middle * right_qr;
+    }
+    const auto time1 = mpqc_time::now(world, accurate_time);
+    const auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "V Term1 Time: ", time, " S\n");
+  }
+
+  {
+    const auto rightopstr = (target == Target::V) ? "G" : "R";
+
+    const auto left = mo_integral(wconcat("<", p, " ", q, "|R|p0 q0>", methodstr));
+    const auto right_rs =
+        mo_integral(wconcat("<", r, " ", s, "|", rightopstr, "|p0 q0>", methodstr));
+
+    const auto time0 = mpqc_time::now(world, accurate_time);
+    A_pqrs(concatcm(p, q, r, s)) -= left * right_rs;
+    if (need_pqsr) {
+      const auto right_sr =
+          mo_integral(wconcat("<", s, " ", r, "|", rightopstr, "|p0 q0>", methodstr));
+      A_pqsr(concatcm(p, q, s, r)) -= left * right_sr;
+    }
+    const auto time1 = mpqc_time::now(world, accurate_time);
+    const auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "V Term2 Time: ", time, " S\n");
+  }
+
+  {
+    const auto rightopstr = (target == Target::V) ? "G" : "R";
+
+    const auto pqRmA = mo_integral(wconcat("<", p, " ", q, "|R|m0 a'0>", methodstr));
+    // Y == R (if need X) or G (if need V)
+    const auto rsYmA =
+        mo_integral(wconcat("<", r, " ", s, "|", rightopstr, "|m0 a'0>", methodstr));
+    const auto qpRmA = mo_integral(wconcat("<", q, " ", p, "|R|m0 a'0>", methodstr));
+    const auto srYmA =
+        mo_integral(wconcat("<", s, " ", r, "|", rightopstr, "|m0 a'0>", methodstr));
+
+    const auto time0 = mpqc_time::now(world, accurate_time);
+    {
+      const auto pqrs_str = concatcm(p, q, r, s);
+      if (p1_equiv_p2) {  // compute by symmetrization
+        TA::DistArray<Tile, Policy> tmp;
+        tmp(pqrs_str) = pqRmA * rsYmA;
+        A_pqrs(pqrs_str) -= tmp(pqrs_str);
+        A_pqrs(pqrs_str) -= tmp(concatcm(q, p, s, r));
+      } else {
+        A_pqrs(pqrs_str) -= pqRmA * rsYmA;
+        A_pqrs(pqrs_str) -= qpRmA * srYmA;
+      }
+    }
+
+    if (need_pqsr) {
+      const auto pqsr_str = concatcm(p, q, s, r);
+      if (p1_equiv_p2) {  // compute by symmetrization
+        TA::DistArray<Tile, Policy> tmp;
+        tmp(pqsr_str) = pqRmA * srYmA;
+        A_pqsr(pqsr_str) -= tmp(pqsr_str);
+        A_pqsr(pqsr_str) -= tmp(concatcm(q, p, r, s));
+      } else {
+        A_pqsr(pqsr_str) -= pqRmA * srYmA;
+        A_pqsr(pqsr_str) -= qpRmA * rsYmA;
+      }
+    }
+
+    const auto time1 = mpqc_time::now(world, accurate_time);
+    const auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "V Term3 Time: ", time, " S\n");
+  }
+
+  const auto v_time1 = mpqc_time::now(world, accurate_time);
+  const auto v_time = mpqc_time::duration_in_s(v_time0, v_time1);
+  utility::print_par(world, "V Term Total Time: ", v_time, " S\n");
+
+//  std::cout << "A_pqrs:\n" << A_pqrs << std::endl;
+//  if (need_pqsr) std::cout << "A_pqsr:\n" << A_pqsr << std::endl;
+
+  return std::make_tuple(A_pqrs, A_pqsr);
+}
 
 } // end of namespace f12
 } // end of namespace mpqc

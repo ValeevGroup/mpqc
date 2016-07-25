@@ -15,6 +15,13 @@
 namespace mpqc {
 namespace f12 {
 
+/**
+ *  CCSD(2)F12 Takes all options from CCSD
+ *
+ *  @param MP2F12: bool, default false
+ *
+ */
+
 template <typename Tile>
 class CCSDF12 {
  public:
@@ -87,7 +94,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
   // clean MO integrals
   mo_integral.registry().clear();
 
-  auto nocc = ccsd_->trange1_engine()->get_active_occ();
+  auto n_active_occ = ccsd_->trange1_engine()->get_active_occ();
 
   // create shape
   auto occ_tr1 = ccsd_->trange1_engine()->get_occ_tr1();
@@ -118,7 +125,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
   // V contribution to energy
   Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
                 .reduce(f12::F12PairEnergyReductor<Tile>(2 * C_ijij_bar,
-                                                         2 * C_ijji_bar, nocc));
+                                                         2 * C_ijji_bar, n_active_occ));
   if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
 
   // compute X term
@@ -132,7 +139,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
   {
     Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
                      .reduce(f12::F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, nocc));
+                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
     eij *= -1;
     if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
     Eij_F12 += eij;
@@ -143,7 +150,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
     TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral, ijij_ijji_shape);
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
                      .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
-                                                         CC_ijji_bar, nocc));
+                                                         CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
@@ -164,7 +171,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
   // clean MO integrals
   mo_integral.registry().clear();
 
-  auto nocc = ccsd_->trange1_engine()->get_active_occ();
+  auto n_active_occ = ccsd_->trange1_engine()->get_active_occ();
 
   // create shape
   auto occ_tr1 = ccsd_->trange1_engine()->get_occ_tr1();
@@ -199,7 +206,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
   // V contribution to energy
   Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
                 .reduce(f12::F12PairEnergyReductor<Tile>(2 * C_ijij_bar,
-                                                         2 * C_ijji_bar, nocc));
+                                                         2 * C_ijji_bar, n_active_occ));
   if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
 
   //    {
@@ -229,7 +236,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
   {
     Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
                      .reduce(f12::F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, nocc));
+                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
     eij *= -1;
     if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
     Eij_F12 += eij;
@@ -240,7 +247,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
     TArray B_ijij_ijji = compute_B_ijij_ijji(mo_integral, ijij_ijji_shape);
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
                      .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
-                                                         CC_ijji_bar, nocc));
+                                                         CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }

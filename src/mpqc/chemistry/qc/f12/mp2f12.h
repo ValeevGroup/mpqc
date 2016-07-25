@@ -111,7 +111,9 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
 
   Matrix Eij_MP2, Eij_F12;
 
-  auto nocc = mp2_->trange1_engine()->get_active_occ();
+  auto n_active_occ = mp2_->trange1_engine()->get_active_occ();
+  auto n_occ = mp2_->trange1_engine()->get_occ();
+  auto n_frozen = mp2_->trange1_engine()->get_nfrozen();
 
   // create shape
   auto occ_tr1 = mp2_->trange1_engine()->get_occ_tr1();
@@ -124,14 +126,14 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
 
     TArray g_abij;
     g_abij("a,b,i,j") = mo_integral().compute(L"<i j|G|a b>[df]")("i,j,a,b");
-    t2 = mpqc::cc::d_abij(g_abij, *(mp2_->orbital_energy()), nocc);
+    t2 = mpqc::cc::d_abij(g_abij, *(mp2_->orbital_energy()), n_occ, n_frozen);
 
     // compute MP2 energy and pair energies
     TArray TG_ijij_ijji;
     TG_ijij_ijji("i1,j1,i2,j2") =
         (t2("a,b,i1,j1") * g_abij("a,b,i2,j2")).set_shape(ijij_ijji_shape);
     Eij_MP2 = TG_ijij_ijji("i1,j1,i2,j2")
-                  .reduce(F12PairEnergyReductor<Tile>(2, -1, nocc));
+                  .reduce(F12PairEnergyReductor<Tile>(2, -1, n_active_occ));
   }
 
   // compute V term
@@ -145,7 +147,7 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
     // NB factor of 2 from the Hylleraas functional
     Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
                   .reduce(F12PairEnergyReductor<Tile>(2 * C_ijij_bar,
-                                                      2 * C_ijji_bar, nocc));
+                                                      2 * C_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
   }
 
@@ -160,7 +162,7 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
     // NB factor of 2 from the Hylleraas functional
     Matrix Eij_ct = V_ijij_ijji("i1,j1,i2,j2")
                         .reduce(F12PairEnergyReductor<Tile>(
-                            2 * C_ijij_bar, 2 * C_ijji_bar, nocc));
+                            2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_CT: ", Eij_ct.sum(), "\n");
     Eij_F12 += Eij_ct;
   }
@@ -177,7 +179,7 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
 
     Matrix Eij_x = X_ijij_ijji("i1,j1,i2,j2")
                        .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
-                                                           CC_ijji_bar, nocc));
+                                                           CC_ijji_bar, n_active_occ));
     Eij_x *= -1.0;
     if (debug()) utility::print_par(world, "E_X: ", Eij_x.sum(), "\n");
     Eij_F12 += Eij_x;
@@ -188,7 +190,7 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
   {
     Matrix Eij_b = B_ijij_ijji("i1,j1,i2,j2")
                        .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
-                                                           CC_ijji_bar, nocc));
+                                                           CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_B: ", Eij_b.sum(), "\n");
     Eij_F12 += Eij_b;
   }
@@ -196,13 +198,13 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
   {
     utility::print_par(world, "Compute CC Term With DF \n");
     auto C_bar_ijab =
-        f12::convert_C_ijab(C_ijab, nocc, *(mp2_->orbital_energy()));
+        f12::convert_C_ijab(C_ijab, n_occ, n_frozen, *(mp2_->orbital_energy()));
     B_ijij_ijji("i1,j1,i2,j2") = (C_ijab("i1,j1,a,b") * C_bar_ijab("i2,j2,a,b"))
                                      .set_shape(ijij_ijji_shape);
 
     Matrix Eij_cc = B_ijij_ijji("i1,j1,i2,j2")
                         .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
-                                                            CC_ijji_bar, nocc));
+                                                            CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_CC: ", Eij_cc.sum(), "\n");
     Eij_F12 += Eij_cc;
   }
@@ -217,7 +219,9 @@ MP2F12<Tile>::compute_mp2_f12_c() {
 
   Matrix Eij_MP2, Eij_F12;
 
-  auto occ = mp2_->trange1_engine()->get_active_occ();
+  auto n_active_occ = mp2_->trange1_engine()->get_active_occ();
+  auto n_occ = mp2_->trange1_engine()->get_occ();
+  auto n_frozen = mp2_->trange1_engine()->get_nfrozen();
 
   // create shape
   auto occ_tr1 = mp2_->trange1_engine()->get_occ_tr1();
@@ -229,19 +233,19 @@ MP2F12<Tile>::compute_mp2_f12_c() {
     utility::print_par(world, "Compute T_abij Without DF \n");
     TArray g_abij;
     g_abij("a,b,i,j") = mo_integral().compute(L"<i j|G|a b>")("i,j,a,b");
-    t2_nodf = mpqc::cc::d_abij(g_abij, *(mp2_->orbital_energy()), occ);
+    t2_nodf = mpqc::cc::d_abij(g_abij, *(mp2_->orbital_energy()), n_occ, n_frozen);
     TArray TG_ijij_ijji_nodf;
     TG_ijij_ijji_nodf("i1,j1,i2,j2") =
         (t2_nodf("a,b,i1,j1") * g_abij("a,b,i2,j2")).set_shape(ijij_ijji_shape);
     Eij_MP2 = TG_ijij_ijji_nodf("i1,j1,i2,j2")
-                  .reduce(F12PairEnergyReductor<Tile>(2, -1, occ));
+                  .reduce(F12PairEnergyReductor<Tile>(2, -1, n_active_occ));
   }
 
   TArray V_ijij_ijji_nodf = compute_V_ijij_ijji(mo_integral(), ijij_ijji_shape);
   {
     Eij_F12 = V_ijij_ijji_nodf("i1,j1,i2,j2")
                   .reduce(F12PairEnergyReductor<Tile>(2 * C_ijij_bar,
-                                                      2 * C_ijji_bar, occ));
+                                                      2 * C_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
   }
 
@@ -255,7 +259,7 @@ MP2F12<Tile>::compute_mp2_f12_c() {
 
     Matrix Eij_ct = V_ijij_ijji_nodf("i1,j1,i2,j2")
                         .reduce(F12PairEnergyReductor<Tile>(
-                            2 * C_ijij_bar, 2 * C_ijji_bar, occ));
+                            2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_CT: ", Eij_ct, "\n");
     Eij_F12 += Eij_ct;
   }
@@ -269,7 +273,7 @@ MP2F12<Tile>::compute_mp2_f12_c() {
 
     Matrix Eij_x =
         X_ijij_ijji_nodf("i1,j1,i2,j2")
-            .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar, CC_ijji_bar, occ));
+            .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar, CC_ijji_bar, n_active_occ));
     Eij_x *= -1;
     if (debug()) utility::print_par(world, "E_X: ", Eij_x.sum(), "\n");
     Eij_F12 += Eij_x;
@@ -279,7 +283,7 @@ MP2F12<Tile>::compute_mp2_f12_c() {
   {
     Matrix Eij_b =
         B_ijij_ijji_nodf("i1,j1,i2,j2")
-            .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar, CC_ijji_bar, occ));
+            .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar, CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_B: ", Eij_b.sum(), "\n");
     Eij_F12 += Eij_b;
   }
@@ -287,14 +291,14 @@ MP2F12<Tile>::compute_mp2_f12_c() {
   {
     utility::print_par(world, "Compute CC Term Without DF \n");
     auto C_bar_ijab =
-        f12::convert_C_ijab(C_ijab_nodf, occ, *(mp2_->orbital_energy()));
+        f12::convert_C_ijab(C_ijab_nodf, n_occ, n_frozen, *(mp2_->orbital_energy()));
     B_ijij_ijji_nodf("i1,j1,i2,j2") =
         (C_ijab_nodf("i1,j1,a,b") * C_bar_ijab("i2,j2,a,b"))
             .set_shape(ijij_ijji_shape);
 
     Matrix Eij_cc =
         B_ijij_ijji_nodf("i1,j1,i2,j2")
-            .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar, CC_ijji_bar, occ));
+            .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar, CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_CC: ", Eij_cc.sum(), "\n");
     Eij_F12 += Eij_cc;
   }

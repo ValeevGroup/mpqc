@@ -31,10 +31,13 @@ namespace mpqc {
         TA::TiledRange1 compute_range(std::size_t range, std::size_t block_size);
 
 
+        /// get TiledRange1 for active occuppied space
         TA::TiledRange1 get_occ_tr1() const { return tr_occupied_; }
 
+        /// get TiledRange1 for active virtual occuppied space
         TA::TiledRange1 get_vir_tr1() const { return tr_virtual_; }
 
+        /// /// get TiledRange1 for all obs space
         TA::TiledRange1 get_all_tr1() const { return tr_all_; }
 
         std::size_t get_occ() const { return occ_; }

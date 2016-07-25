@@ -34,9 +34,9 @@ namespace mpqc{
         // reduce matrix 1/(ei + ej - ea - eb)
         template <typename Tile, typename Policy>
         void d_abij_inplace(TA::Array<double, 4, Tile, Policy> &abij,
-                            const Eigen::VectorXd &ens, std::size_t n_occ)
+                            const Eigen::VectorXd &ens, std::size_t n_occ, std::size_t n_frozen)
         {
-            auto convert = [&ens, n_occ](Tile &result_tile) {
+            auto convert = [&ens, n_occ, n_frozen](Tile &result_tile) {
 
                 // compute index
                 const auto a0 = result_tile.range().lobound()[0];
@@ -55,9 +55,9 @@ namespace mpqc{
                     for (auto b = b0; b < bn; ++b) {
                         const auto e_b = ens[b + n_occ];
                         for (auto i = i0; i < in; ++i) {
-                            const auto e_i = ens[i];
+                            const auto e_i = ens[i + n_frozen];
                             for (auto j = j0; j < jn; ++j, ++tile_idx) {
-                                const auto e_j = ens[j];
+                                const auto e_j = ens[j + n_frozen];
                                 const auto e_iajb = e_i + e_j - e_a - e_b;
                                 const auto old = result_tile[tile_idx];
                                 const auto result_abij = old/(e_iajb);
@@ -75,9 +75,9 @@ namespace mpqc{
 
         template <typename Tile, typename Policy>
         TA::Array<double, 4, Tile, Policy> d_abij(TA::Array<double, 4, Tile, Policy> &abij,
-                            const Eigen::VectorXd &ens, std::size_t n_occ)
+                            const Eigen::VectorXd &ens, std::size_t n_occ, std::size_t n_frozen)
         {
-            auto convert = [&ens, n_occ](Tile &result_tile, const Tile &arg_tile) {
+            auto convert = [&ens, n_occ, n_frozen](Tile &result_tile, const Tile &arg_tile) {
 
                 result_tile = Tile(arg_tile.range());
 
@@ -98,9 +98,9 @@ namespace mpqc{
                     for (auto b = b0; b < bn; ++b) {
                         const auto e_b = ens[b + n_occ];
                         for (auto i = i0; i < in; ++i) {
-                            const auto e_i = ens[i];
+                            const auto e_i = ens[i + n_frozen];
                             for (auto j = j0; j < jn; ++j, ++tile_idx) {
-                                const auto e_j = ens[j];
+                                const auto e_j = ens[j + n_frozen];
                                 const auto e_iajb = e_i + e_j - e_a - e_b;
                                 const auto old = arg_tile[tile_idx];
                                 const auto result_abij = old/(e_iajb);
@@ -119,11 +119,11 @@ namespace mpqc{
         // create matrix d("a,b,i,j) = 1/(ei + ej - ea - eb)
         template<typename Tile, typename Policy>
         void create_d_abij(TA::Array<double, 4, Tile, Policy> &abij,
-                           const Eigen::VectorXd &ens, std::size_t n_occ) {
+                           const Eigen::VectorXd &ens, std::size_t n_occ, std::size_t n_frozen) {
             typedef typename TA::Array<double, 4, Tile, Policy>::range_type range_type;
             typedef typename TA::Array<double, 4, Tile, Policy>::iterator iterator;
 
-            auto make_tile = [&ens, n_occ](range_type &range) {
+            auto make_tile = [&ens, n_occ, n_frozen](range_type &range) {
 
                 auto result_tile = Tile(range);
 
@@ -144,9 +144,9 @@ namespace mpqc{
                     for (auto b = b0; b < bn; ++b) {
                         const auto e_b = ens[b + n_occ];
                         for (auto i = i0; i < in; ++i) {
-                            const auto e_i = ens[i];
+                            const auto e_i = ens[i + n_frozen];
                             for (auto j = j0; j < jn; ++j, ++tile_idx) {
-                                const auto e_j = ens[j];
+                                const auto e_j = ens[j + n_frozen];
                                 const auto e_iajb = e_i + e_j - e_a - e_b;
                                 const auto result_abij = tmp / (e_iajb);
                                 result_tile[tile_idx] = result_abij;
@@ -172,11 +172,11 @@ namespace mpqc{
 
         // create matrix d("a,i") = 1/(ei - ea)
         template<typename Tile, typename Policy>
-        void create_d_ai(TA::Array<double, 2, Tile, Policy> &f_ai, const Eigen::VectorXd &ens, int n_occ) {
+        void create_d_ai(TA::Array<double, 2, Tile, Policy> &f_ai, const Eigen::VectorXd &ens, std::size_t n_occ, std::size_t n_frozen) {
             typedef typename TA::Array <double, 2, Tile, Policy>::range_type range_type;
             typedef typename TA::Array <double, 2, Tile, Policy>::iterator iterator;
 
-            auto make_tile = [&ens, n_occ](range_type &range) {
+            auto make_tile = [&ens, n_occ, n_frozen](range_type &range) {
 
                 auto result_tile = Tile(range);
                 const auto a0 = result_tile.range().lobound()[0];
@@ -189,7 +189,7 @@ namespace mpqc{
                 for (auto a = a0; a < an; ++a) {
                     const auto e_a = ens[a + n_occ];
                     for (auto i = i0; i < in; ++i, ++ai) {
-                        const auto e_i = ens[i];
+                        const auto e_i = ens[i + n_frozen];
                         const auto e_ia = e_i - e_a;
                         const auto result_ai = tmp / (e_ia);
                         result_tile[ai] = result_ai;

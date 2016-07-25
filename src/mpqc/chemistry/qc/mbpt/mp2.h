@@ -92,7 +92,10 @@ class MP2 {
     double energy_mp2 =
         (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
             .reduce(
-                Mp2Energy(orbital_energy_, trange1_engine_->get_active_occ()));
+                Mp2Energy(orbital_energy_,
+                          trange1_engine_->get_occ(),
+                          trange1_engine_->get_nfrozen())
+            );
 
     if (g_ijab.get_world().rank() == 0) {
       std::cout << "MP2 Energy With DF: " << energy_mp2 << std::endl;
@@ -107,7 +110,7 @@ class MP2 {
     double energy_mp2 =
         (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
             .reduce(
-                Mp2Energy(orbital_energy_, trange1_engine_->get_active_occ()));
+                Mp2Energy(orbital_energy_, trange1_engine_->get_occ(), trange1_engine_->get_nfrozen()));
 
     if (g_ijab.get_world().rank() == 0) {
       std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
@@ -124,10 +127,11 @@ class MP2 {
     using argument_type = Tile;
 
     std::shared_ptr<Eig::VectorXd> vec_;
-    unsigned int n_occ_;
+    std::size_t n_occ_;
+    std::size_t n_frozen_;
 
-    Mp2Energy(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
-        : vec_(std::move(vec)), n_occ_(n_occ) {}
+    Mp2Energy(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ, std::size_t n_frozen )
+        : vec_(std::move(vec)), n_occ_(n_occ), n_frozen_(n_frozen) {}
 
     Mp2Energy(Mp2Energy const &) = default;
 
@@ -156,9 +160,9 @@ class MP2 {
       auto fnb = fn[3];
 
       for (auto i = sti; i < fni; ++i) {
-        const auto e_i = vec[i];
+        const auto e_i = vec[i + n_frozen_];
         for (auto j = stj; j < fnj; ++j) {
-          const auto e_ij = e_i + vec[j];
+          const auto e_ij = e_i + vec[j + n_frozen_];
           for (auto a = sta; a < fna; ++a) {
             const auto e_ija = e_ij - vec[a + n_occ_];
             for (auto b = stb; b < fnb; ++b, ++tile_idx) {

@@ -187,7 +187,8 @@ namespace mpqc {
             // used as reference for development
             double compute_ccsd_straight(TArray &t1, TArray &t2) {
 
-                auto n_occ = trange1_engine_->get_active_occ();
+                auto n_occ = trange1_engine_->get_occ();
+                auto n_frozen = trange1_engine()->get_nfrozen();
 
                 TArray g_abij = ccsd_intermediate_->get_abij();
 
@@ -206,12 +207,12 @@ namespace mpqc {
                 TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
-                mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ);
+                mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
 
                 TArray d2(world, g_abij.trange(),
                            g_abij.get_shape(), g_abij.get_pmap());
                 // store d2 distributed
-                mpqc::cc::create_d_abij(d2, *orbital_energy_, n_occ);
+                mpqc::cc::create_d_abij(d2, *orbital_energy_, n_occ, n_frozen);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
                 t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
@@ -535,8 +536,8 @@ namespace mpqc {
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
                 bool accurate_time = options_.HasMember("AccurateTime") ? options_["AccurateTime"].GetBool() : false;
 
-                auto n_occ = trange1_engine_->get_active_occ();
-
+                auto n_occ = trange1_engine_->get_occ();
+                auto n_frozen = trange1_engine()->get_nfrozen();
 
                 if(world.rank() == 0){
                     std::cout << "Use Straight CCSD Compute" <<std::endl;
@@ -565,11 +566,11 @@ namespace mpqc {
                 TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
                            f_ai.get_pmap());
                 // store d1 to local
-                mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ);
+                mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
 
-                t2= d_abij(g_abij,*orbital_energy_,n_occ);
+                t2= d_abij(g_abij,*orbital_energy_,n_occ, n_frozen);
 
                 TArray tau;
                 tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -835,7 +836,7 @@ namespace mpqc {
                         mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
                     }
 
-                    d_abij_inplace(r2, *orbital_energy_, n_occ);
+                    d_abij_inplace(r2, *orbital_energy_, n_occ, n_frozen);
 
                     r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -942,7 +943,8 @@ namespace mpqc {
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
                 bool accurate_time = options_.HasMember("AccurateTime") ? options_["AccurateTime"].GetBool() : false;
 
-                auto n_occ = trange1_engine_->get_active_occ();
+                auto n_occ = trange1_engine_->get_occ();
+                auto n_frozen = trange1_engine()->get_nfrozen();
 
                 auto tmp_time0 = mpqc_time::now(world,accurate_time);
 
@@ -978,11 +980,11 @@ namespace mpqc {
 
                 TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
 
-                create_d_ai(d1, *orbital_energy_, n_occ);
+                create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
 
-                t2 = d_abij(g_abij, *orbital_energy_, n_occ);
+                t2 = d_abij(g_abij, *orbital_energy_, n_occ, n_frozen);
 
 
                 TArray tau;
@@ -1248,7 +1250,7 @@ namespace mpqc {
                             mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
                         }
 
-                        d_abij_inplace(r2, *orbital_energy_, n_occ);
+                        d_abij_inplace(r2, *orbital_energy_, n_occ, n_frozen);
 
                         r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -1365,7 +1367,8 @@ namespace mpqc {
                 bool print_detail = options_.HasMember("PrintDetail") ? options_["PrintDetail"].GetBool() : false;
                 bool accurate_time = options_.HasMember("AccurateTime") ? options_["AccurateTime"].GetBool() : false;
 
-                auto n_occ = trange1_engine_->get_active_occ();
+                auto n_occ = trange1_engine_->get_occ();
+                auto n_frozen = trange1_engine()->get_nfrozen();
 
                 auto tmp_time0 = mpqc_time::now(world,accurate_time);
 
@@ -1380,11 +1383,11 @@ namespace mpqc {
 
                 TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(), f_ai.get_pmap());
 
-                create_d_ai(d1, *orbital_energy_, n_occ);
+                create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
 
                 t1("a,i") = f_ai("a,i") * d1("a,i");
 
-                t2 = d_abij(g_abij,*orbital_energy_,n_occ);
+                t2 = d_abij(g_abij,*orbital_energy_,n_occ, n_frozen);
 
 //      std::cout << t1 << std::endl;
 //      std::cout << t2 << std::endl;
@@ -1657,7 +1660,7 @@ namespace mpqc {
                             mpqc::utility::print_par(world,"t2 b term time: ", tmp_time, "\n");
                         }
 
-                        d_abij_inplace(r2, *orbital_energy_, n_occ);
+                        d_abij_inplace(r2, *orbital_energy_, n_occ, n_frozen);
 
                         r2("a,b,i,j") -= t2("a,b,i,j");
 

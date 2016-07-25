@@ -133,8 +133,8 @@ void convert_X_ijkl(TiledArray::Array<double, 4, Tile, Policy> &ijkl,
 template <typename Tile, typename Policy>
 TiledArray::Array<double, 4, Tile, Policy> convert_C_ijab(
     TiledArray::Array<double, 4, Tile, Policy> &ijab, const std::size_t n_occ,
-    const Eigen::VectorXd &ens) {
-  auto convert = [&ens, n_occ](Tile &result_tile, const Tile &arg_tile) {
+    const std::size_t n_frozen, const Eigen::VectorXd &ens) {
+  auto convert = [&ens, n_occ, n_frozen](Tile &result_tile, const Tile &arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
@@ -151,9 +151,9 @@ TiledArray::Array<double, 4, Tile, Policy> convert_C_ijab(
     auto tile_idx = 0;
     typename Tile::value_type norm = 0.0;
     for (auto i = i0; i < in; ++i) {
-      auto en_i = ens[i];
+      auto en_i = ens[i + n_frozen];
       for (auto j = j0; j < jn; ++j) {
-        auto en_j = ens[j];
+        auto en_j = ens[j + n_frozen];
         for (auto a = a0; a < an; ++a) {
           auto en_a = ens[a + n_occ];
           for (auto b = b0; b < bn; ++b, ++tile_idx) {

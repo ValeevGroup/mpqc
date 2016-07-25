@@ -112,7 +112,7 @@ namespace integrals{
         }
 
         /// return accurate time
-        bool accurate_time(){
+        bool accurate_time() const {
             return accurate_time_;
         }
 

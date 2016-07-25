@@ -9,7 +9,6 @@
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include "atomic_integral_base.h"
-#include "../../../../../utility/wcout_utf8.h"
 #include "../../../../../ta_routines/array_to_eigen.h"
 #include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/parallel_break_point.h"

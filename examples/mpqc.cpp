@@ -97,8 +97,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
     std::cout.sync_with_stdio(true);
     std::cerr.sync_with_stdio(true);
     std::cout << std::setprecision(15);
-    std::wcout.sync_with_stdio(false);
+    std::wcout.sync_with_stdio(true);
+    std::wcerr.sync_with_stdio(true);
     std::wcout.imbue(std::locale("en_US.UTF-8"));
+    std::wcerr.imbue(std::locale("en_US.UTF-8"));
 
     /**
      * obtain basis option for program

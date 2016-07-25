@@ -528,7 +528,9 @@ namespace mpqc{
 
                                 auto ccsd_t_reduce = CCSD_T_Reduce(
                                         this->orbital_energy_,
-                                        this->trange1_engine_->get_active_occ(), offset);
+                                        this->trange1_engine_->get_occ(),
+                                        this->trange1_engine_->get_nfrozen(),
+                                        offset);
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -546,7 +548,9 @@ namespace mpqc{
 
                                 auto ccsd_t_reduce = CCSD_T_ReduceSymm(
                                         this->orbital_energy_,
-                                        this->trange1_engine_->get_active_occ(), offset);
+                                        this->trange1_engine_->get_occ(),
+                                        this->trange1_engine_->get_nfrozen(),
+                                        offset);
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -605,7 +609,8 @@ namespace mpqc{
 
                 auto ccsd_t_reduce = CCSD_T_Reduce(
                         this->orbital_energy_,
-                        this->trange1_engine_->get_active_occ(),
+                        this->trange1_engine_->get_occ(),
+                        this->trange1_engine_->get_nfrozen(),
                         offset);
 
                 double triple_energy =
@@ -906,7 +911,9 @@ namespace mpqc{
 
                                 auto ccsd_t_reduce = CCSD_T_Reduce(
                                         this->orbital_energy_,
-                                        this->trange1_engine_->get_active_occ(), offset);
+                                        this->trange1_engine_->get_occ(),
+                                        this->trange1_engine_->get_nfrozen(),
+                                        offset);
                                 tmp_energy =
                                         (
                                                 (t3("a,b,c,i,j,k")
@@ -924,7 +931,9 @@ namespace mpqc{
 
                                 auto ccsd_t_reduce = CCSD_T_ReduceSymm(
                                         this->orbital_energy_,
-                                        this->trange1_engine_->get_active_occ(), offset);
+                                        this->trange1_engine_->get_occ(),
+                                        this->trange1_engine_->get_nfrozen(),
+                                        offset);
 
                                 tmp_energy =
                                         (
@@ -965,11 +974,12 @@ namespace mpqc{
                 typedef Tile argument_type;
 
                 std::shared_ptr<Eig::VectorXd> vec_;
-                unsigned int n_occ_;
+                std::size_t n_occ_;
+                std::size_t n_frozen_;
                 std::array<std::size_t,6> offset_;
 
-                ReduceBase(std::shared_ptr<Eig::VectorXd> vec, int n_occ, std::array<std::size_t,6> offset)
-                : vec_(std::move(vec)), n_occ_(n_occ) , offset_(offset){ }
+                ReduceBase(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ, std::size_t n_frozen, std::array<std::size_t,6> offset)
+                : vec_(std::move(vec)), n_occ_(n_occ) , n_frozen_(n_frozen), offset_(offset){ }
 
                 ReduceBase(ReduceBase const &) = default;
 
@@ -986,8 +996,8 @@ namespace mpqc{
                 typedef typename ReduceBase::result_type result_type;
                 typedef typename ReduceBase::argument_type argument_type ;
 
-                CCSD_T_Reduce(std::shared_ptr<Eig::VectorXd> vec, int n_occ, std::array<std::size_t,6> offset)
-                : ReduceBase(vec,n_occ,offset){ }
+                CCSD_T_Reduce(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ, std::size_t n_frozen, std::array<std::size_t,6> offset)
+                : ReduceBase(vec,n_occ,n_frozen,offset){ }
 
                 CCSD_T_Reduce(CCSD_T_Reduce const &) = default;
 
@@ -998,6 +1008,7 @@ namespace mpqc{
                     auto const &ens = *this->vec_;
                     std::size_t n_occ = this->n_occ_;
                     auto offset_ = this->offset_;
+                    auto n_frozen = this->n_frozen_;
 
                     const auto a0 = tile.range().lobound()[0];
                     const auto an = tile.range().upbound()[0];
@@ -1013,20 +1024,20 @@ namespace mpqc{
                     const auto kn = tile.range().upbound()[5];
 
                     // get the offset
-                    const auto a_offset = offset_[0];
-                    const auto b_offset = offset_[1];
-                    const auto c_offset = offset_[2];
-                    const auto i_offset = offset_[3];
-                    const auto j_offset = offset_[4];
-                    const auto k_offset = offset_[5];
+                    const auto a_offset = offset_[0] + n_occ;
+                    const auto b_offset = offset_[1] + n_occ;
+                    const auto c_offset = offset_[2] + n_occ;
+                    const auto i_offset = offset_[3] + n_frozen;
+                    const auto j_offset = offset_[4] + n_frozen;
+                    const auto k_offset = offset_[5] + n_frozen;
 
                     auto tile_idx = 0;
                     for (auto a = a0; a < an; ++a) {
-                        const auto e_a = ens[a + n_occ + a_offset];
+                        const auto e_a = ens[a + a_offset];
                         for (auto b = b0; b < bn; ++b) {
-                            const auto e_b = ens[b + n_occ + b_offset];
+                            const auto e_b = ens[b + b_offset];
                             for(auto c = c0; c < cn; ++c){
-                                const auto e_c = ens[c + n_occ + c_offset];
+                                const auto e_c = ens[c + c_offset];
                                 for (auto i = i0; i < in; ++i) {
                                     const auto e_i = ens[i + i_offset];
                                     for (auto j = j0; j < jn; ++j) {
@@ -1053,8 +1064,8 @@ namespace mpqc{
                 typedef typename ReduceBase::result_type result_type;
                 typedef typename ReduceBase::argument_type argument_type ;
 
-                CCSD_T_ReduceSymm(std::shared_ptr<Eig::VectorXd> vec, int n_occ, std::array<std::size_t,6> offset)
-                : ReduceBase(vec,n_occ,offset){ }
+                CCSD_T_ReduceSymm(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ, std::size_t n_frozen, std::array<std::size_t,6> offset)
+                : ReduceBase(vec,n_occ, n_frozen,offset){ }
 
                 CCSD_T_ReduceSymm(CCSD_T_ReduceSymm const &) = default;
 
@@ -1064,6 +1075,7 @@ namespace mpqc{
 
                     auto const &ens = *this->vec_;
                     std::size_t n_occ = this->n_occ_;
+                    std::size_t n_frozen = this->n_frozen_;
 
                     // get the offset
                     const auto a_offset = this->offset_[0];
@@ -1107,11 +1119,11 @@ namespace mpqc{
                             for(auto c = c0; c < cn && c <= b; ++c){
                                 const auto e_c = ens[c + n_occ];
                                 for (auto i = i0; i < in; ++i) {
-                                    const auto e_i = ens[i];
+                                    const auto e_i = ens[i + n_frozen];
                                     for (auto j = j0; j < jn; ++j) {
-                                        const auto e_j = ens[j];
+                                        const auto e_j = ens[j + n_frozen];
                                         for (auto k = k0; k < kn; ++k){
-                                            const auto e_k = ens[k];
+                                            const auto e_k = ens[k + n_frozen];
 
                                             const auto tile_idx = (a-a0)*nbcijk + (b-b0)*ncijk + (c-c0)*nijk + (i-i0)*njk + (j-j0)*nk + (k-k0);
 

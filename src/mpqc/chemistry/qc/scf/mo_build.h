@@ -67,7 +67,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
         n_frozen_core = n_frozen_core / 2;
     }
 
-    ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
+    ens = es.eigenvalues();
     MatrixD C_all = es.eigenvectors();
     MatrixD C_occ = C_all.block(0, 0, S_eig.rows(),occ);
     MatrixD C_corr_occ = C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
@@ -236,7 +236,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
             n_frozen_core = n_frozen_core / 2;
         }
 
-        Eigen::VectorXd ens_occ = es.eigenvalues().segment(n_frozen_core, occ - n_frozen_core);
+        Eigen::VectorXd ens_occ = es.eigenvalues().segment(0, occ);
 //        std::cout << ens_occ << std::endl;
         MatrixD C_all = es.eigenvectors();
         MatrixD C_occ = C_all.block(0, 0, S_eig.rows(), occ);
@@ -333,7 +333,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
         Eigen::SelfAdjointEigenSolver<MatrixD> es3(F_vbs_mo_eigen);
         auto ens_vir = es3.eigenvalues();
 
-        ens = Eigen::VectorXd(nbf_vbs - n_frozen_core);
+        ens = Eigen::VectorXd(nbf_vbs);
         ens << ens_occ, ens_vir;
 
 //        std::cout << "Energy of Orbitals " << std::endl;

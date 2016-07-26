@@ -25,6 +25,32 @@
 namespace mpqc {
 namespace scf {
 
+namespace detail {
+/// fills the density in a minimal basis a subshell of size \c size with \c num_of_electrons
+/// starting with AO \c ao
+/// @param[in,out] D the density matrix in a minimal basis, only the diagonal elements are updated
+///                with column/row indices in the [ao, ao+size) interval
+/// @param[in,out] ao the first atomic orbital of the subshell, on return
+///                contains the first AO of the next subshell
+/// @param[in] size size of the subshell
+/// @param[in,out] num_of_electrons number of electrons, on return contains the
+///                remaining number of electrons
+void fill_subshell(MatrixD &mat, size_t &ao, size_t size,
+                   size_t &num_of_electrons) {
+  const auto ao_fence = ao + size;
+  const auto num_of_electrons_in_subshell =
+      (num_of_electrons > 2 * size) ? 2 * size
+                                             : num_of_electrons;
+  num_of_electrons -= num_of_electrons_in_subshell;
+  // # of electrons / orbital compute as precisely as possible
+  const double num_of_electrons_per_orbital =
+      (num_of_electrons_in_subshell % size == 0)
+          ? (double)(num_of_electrons_in_subshell / size)
+          : ((double)num_of_electrons_in_subshell) / size;
+  for (; ao != ao_fence; ++ao) mat(ao, ao) = num_of_electrons_per_orbital;
+}
+}  // namespace detail
+
 MatrixD soad_density_eig_matrix(molecule::Molecule const &mol) {
     auto nao = 0;
     for (const auto &atom : mol.atoms()) {
@@ -32,9 +58,15 @@ MatrixD soad_density_eig_matrix(molecule::Molecule const &mol) {
         if (Z == 1 || Z == 2) // H, He
             nao += 1;
         else if (Z <= 10) // Li - Ne
-            nao += 5;
+            nao += 5;   // 2p is included even for Li and Be
+        else if (Z <= 18) // Na - Ar
+            nao += 9;   // 3p is included even for Na and Mg
+        else if (Z <= 20) // K, Ca
+            nao += 13;  // 4p is included
+        else if (Z <= 36) // Sc - Kr
+            nao += 18;
         else
-            throw "SOAD with Z > 10 is not yet supported";
+            throw "SOAD with Z > 36 is not yet supported";
     }
 
     MatrixD D(nao, nao);
@@ -42,23 +74,29 @@ MatrixD soad_density_eig_matrix(molecule::Molecule const &mol) {
 
     size_t ao_offset = 0; // first AO of this atom
     for (const auto &atom : mol.atoms()) {
-        const auto Z = atom.charge();
-        if (Z == 1 || Z == 2) {          // H, He
-            D(ao_offset, ao_offset) = Z; // all electrons go to the 1s
-            ao_offset += 1;
-        } else if (Z <= 10) {
-            D(ao_offset, ao_offset) = 2; // 2 electrons go to the 1s
-            D(ao_offset + 1, ao_offset + 1)
-                  = (Z == 3) ? 1
-                             : 2; // Li? only 1 electron in 2s, else 2 electrons
-            // smear the remaining electrons in 2p orbitals
-            const double num_electrons_per_2p = (Z > 4) ? (double)(Z - 4) / 3
-                                                        : 0;
-            for (auto xyz = 0; xyz != 3; ++xyz)
-                D(ao_offset + 2 + xyz, ao_offset + 2 + xyz)
-                      = num_electrons_per_2p;
-            ao_offset += 5;
-        }
+      using detail::fill_subshell;
+      const auto Z = atom.charge();
+      size_t num_of_electrons = Z;
+
+      fill_subshell(D, ao_offset, 1, num_of_electrons);            // 1s
+      if (Z > 2)   {  // Li+
+        fill_subshell(D, ao_offset, 1, num_of_electrons);          // 2s
+        fill_subshell(D, ao_offset, 3, num_of_electrons);          // 2p
+      }
+      if (Z > 10)  {  // Na+
+        fill_subshell(D, ao_offset, 1, num_of_electrons);          // 3s
+        fill_subshell(D, ao_offset, 3, num_of_electrons);          // 3p
+      }
+      if (Z > 18)  {  // K+
+        // NB 4s is singly occupied in K, Cr, and Cu
+        size_t num_of_4s_electrons = (Z == 19 || Z == 24 || Z == 29) ? 1 : 2;
+        num_of_electrons -= num_of_4s_electrons;
+        fill_subshell(D, ao_offset, 1, num_of_4s_electrons);       // 4s
+        size_t num_of_4p_electrons = std::min(decltype(Z)(6), (Z > 30) ? Z - 30 : 0);
+        num_of_electrons -= num_of_4p_electrons;
+        fill_subshell(D, ao_offset, 3, num_of_4p_electrons);       // 4p
+        fill_subshell(D, ao_offset, 5, num_of_electrons);          // 3d
+      }
     }
 
     return D * 0.5; // we use densities normalized to # of electrons/2

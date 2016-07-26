@@ -30,7 +30,7 @@ struct ArchiveStoreImpl<Archive, RowMatrix<_T>> {
   static inline void store(const Archive& ar, const RowMatrix<_T>& t) {
     ar & t.rows() & t.cols();
     if (t.size())
-      madness::archive::wrap(t.data(), t.size());
+      ar & madness::archive::wrap(t.data(), t.size());
   }
 };
 
@@ -41,7 +41,7 @@ struct ArchiveLoadImpl<Archive, RowMatrix<_T>> {
     ar & nrows & ncols;
     t.resize(nrows, ncols);
     if (t.size())
-      madness::archive::wrap(t.data(), t.size());
+      ar & madness::archive::wrap(t.data(), t.size());
   }
 };
 

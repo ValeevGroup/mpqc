@@ -1221,6 +1221,7 @@ VX_pqrs_pqsr(const std::string &target_str,
   using mpqc::utility::concat;
   using mpqc::utility::wconcat;
   using mpqc::utility::concatcm;
+  using mpqc::utility::to_wstring;
 
   enum class Target { X, V };
   Target target;
@@ -1278,6 +1279,8 @@ VX_pqrs_pqsr(const std::string &target_str,
           mo_integral(wconcat(L"(Λ |", opstr, "|", q, " ", r, ")"));
       A_pqsr(concatcm(p, q, s, r)) = left_ps * middle * right_qr;
     }
+    // remove all generated integrals as they are likely not needed any longer
+    mo_integral.remove_operation_all(world, to_wstring(opstr));
     const auto time1 = mpqc_time::now(world, accurate_time);
     const auto time = mpqc_time::duration_in_s(time0, time1);
     utility::print_par(world, "V Term1 Time: ", time, " S\n");

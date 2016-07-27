@@ -149,17 +149,25 @@ namespace integrals{
             return result(formula.to_ta_expression());
         };
 
-        /// remove all formula that has operation oper_str in mo_registry and ao_registry
-        void remove_operation_all(madness::World& world, const std::wstring& oper_str){
+        /// purge formulae that contain Operator described by string \c str
+        /// from mo_registry and ao_registry
+        void purge_operator(madness::World& world, const std::wstring& str) {
+          Operator oper(str);
+          Operator::Type oper_type = oper.type();
 
-            Operator oper(oper_str);
-            Operator::Type oper_type = oper.type();
-
-            mo_formula_registry_.remove_operation(world, oper_type);
-            atomic_integral().registry().remove_operation(world, oper_type);
+          mo_formula_registry_.purge_operator(world, oper_type);
+          atomic_integral().registry().purge_operator(world, oper_type);
         }
 
-    private:
+        /// purge formulae that contain index described by string \c idx_str
+        /// from mo_registry and ao_registry
+        void purge_index(madness::World& world, const std::wstring& idx_str) {
+          OrbitalIndex index(idx_str);
+          mo_formula_registry_.purge_index(world, index);
+          atomic_integral().registry().purge_index(world, index);
+        }
+
+       private:
 
         /// function to parse input
         void parse_input(const rapidjson::Document &in) {

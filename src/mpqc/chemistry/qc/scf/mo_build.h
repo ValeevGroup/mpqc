@@ -346,7 +346,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
         // remove old virtual orbitals
         mo_int.orbital_space()->remove(OrbitalIndex(L"a"));
-        mo_int.registry().remove_orbital(world,OrbitalIndex(L"a"));
+        mo_int.registry().purge_index(world,OrbitalIndex(L"a"));
 
         // add new virtual orbial
         vir_space = OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"Α"), C_vir_ta_new);

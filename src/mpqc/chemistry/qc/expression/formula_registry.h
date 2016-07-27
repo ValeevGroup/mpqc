@@ -122,9 +122,9 @@ namespace mpqc{
             return registry_.cend();
         }
 
-        /// removes all objects if p(key) == true
+        /// purges all objects if p(key) == true
         template<typename Pred>
-        void remove_if(const Pred& p){
+        void purge_if(const Pred& p){
             auto i = registry_.begin();
             for(; i != registry_.end(); ){
                 if (p(*i)){
@@ -176,9 +176,9 @@ namespace mpqc{
             }
         }
 
-        /// removes all objects if p(key) == true
+        /// purges all objects if p(key) == true
         template<typename Pred>
-        void remove_if(madness::World& world, const Pred& p){
+        void purge_if(madness::World& world, const Pred& p){
             auto i = this->registry_.begin();
             for(; i != this->registry_.end(); ){
                 if (p(*i)){
@@ -192,49 +192,49 @@ namespace mpqc{
             }
         }
 
-        /// remove all formula that has operation oper
-        void remove_operation(madness::World& world, const Operator::Type & oper_type){
+        /// purges formulae that contain Operator whose type matches \c optype
+        void purge_operator(madness::World& world, const Operator::Type & optype){
 
-            auto pred = [oper_type](const value_type& item){
-                return item.first.oper().type() == oper_type;
+            auto pred = [optype](const value_type& item){
+                return item.first.oper().type() == optype;
             };
 
-            this->remove_if(world, pred);
+            this->purge_if(world, pred);
         }
 
-        /// remove all formula that has operation oper
-        void remove_operation(madness::World& world, const std::wstring& oper_str){
+        /// purges formulae that contain Operator described by string \c opstr
+        void purge_operator(madness::World& world, const std::wstring& opstr){
 
-            Operator oper(oper_str);
+            Operator oper(opstr);
             Operator::Type oper_type = oper.type();
-            remove_operation(world, oper_type);
+            purge_operator(world, oper_type);
         }
 
-        /// remove this formula
-        void remove_formula(madness::World& world, const Formula& formula){
+        /// purges the Formula object that equals \c formula from the registry
+        void purge_formula(madness::World& world, const Formula& formula){
 
             auto pred = [& formula](const value_type& item){
                 return item.first == formula;
             };
 
-            this->remove_if(world, pred);
+            this->purge_if(world, pred);
         }
 
-        /// remove this formula
-        void remove_formula(madness::World& world, const std::wstring& formula_string){
+        /// purges the formula that that corresponds to string \c str
+        void purge_formula(madness::World& world, const std::wstring& str){
 
-            Formula formula(formula_string);
-            remove_formula(world, formula);
+            Formula formula(str);
+            purge_formula(world, formula);
         }
 
-        /// remove all formula that have index
-        void remove_orbital(madness::World& world, const OrbitalIndex& orbital_index){
+        /// purges formulae that contain index \c idx
+        void purge_index(madness::World& world, const OrbitalIndex& idx){
 
-            auto pred = [&orbital_index](const value_type& item){
-                return item.first.has_index(orbital_index);
+            auto pred = [&idx](const value_type& item){
+                return item.first.has_index(idx);
             };
 
-            this->remove_if(world, pred);
+            this->purge_if(world, pred);
 
         }
     };

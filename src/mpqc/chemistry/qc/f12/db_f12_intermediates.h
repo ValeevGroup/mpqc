@@ -42,7 +42,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_V_ijij_ijji_db_df(
 
 //    std::cout << V_ijij_ijji << std::endl;
     // all types of GR integral not needed
-    mo_integral.remove_operation_all(world, L"GR");
+    mo_integral.purge_operator(world, L"GR");
 
     auto time1 = mpqc_time::now(world,accurate_time);
     auto time = mpqc_time::duration_in_s(time0,time1);
@@ -409,7 +409,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
 
     auto time0 = mpqc_time::now(world,accurate_time);
     B_ijij_ijji("i1,j1,i2,j2") = (left*middle*right).set_shape(ijij_ijji_shape);
-    mo_integral.remove_operation_all(world, L"dR2");
+    mo_integral.purge_operator(world, L"dR2");
     auto time1 = mpqc_time::now(world,accurate_time);
     auto time = mpqc_time::duration_in_s(time0,time1);
     utility::print_par(world,"B Term1 Time: ", time, " S\n");
@@ -428,7 +428,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
 
-    mo_integral.remove_operation_all(world, L"R2");
+    mo_integral.purge_operator(world, L"R2");
     auto time1 = mpqc_time::now(world,accurate_time);
     auto time = mpqc_time::duration_in_s(time0,time1);
     utility::print_par(world,"B Term2 Time: ", time, " S\n");
@@ -452,7 +452,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
     // AO R integral not needed
-    mo_integral.atomic_integral().registry().remove_operation(world, L"R");
+    mo_integral.atomic_integral().registry().purge_operator(world, L"R");
     auto time1 = mpqc_time::now(world,accurate_time);
     auto time = mpqc_time::duration_in_s(time0,time1);
     utility::print_par(world,"B Term3 Time: ", time, " S\n");
@@ -476,7 +476,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
 //    B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(j2 R'|R|i2 m)[df]")).set_shape(ijij_ijji_shape);
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
-    mo_integral.remove_operation_all(world, L"hJ");
+    mo_integral.purge_operator(world, L"hJ");
     auto time1 = mpqc_time::now(world,accurate_time);
     auto time = mpqc_time::duration_in_s(time0,time1);
     utility::print_par(world,"B Term4 Time: ", time, " S\n");
@@ -500,7 +500,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
 
     // P' doesn't appear later
-    mo_integral.registry().remove_orbital(world, L"P'");
+    mo_integral.registry().purge_index(world, L"P'");
 
     auto time1 = mpqc_time::now(world,accurate_time);
     auto time = mpqc_time::duration_in_s(time0,time1);

@@ -138,7 +138,7 @@ DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
   TArray V_ijij_ijji = compute_V_ijij_ijji_db_df(mo_integral(), ijij_ijji_shape);
   {
     // G integral in MO not needed, still need G integral in AO to compute F, K, hJ
-    this->mo_integral().registry().remove_operation(world, L"G");
+    this->mo_integral().registry().purge_operator(world, L"G");
 
     //contribution from V_ijij_ijji
     Matrix eij = V_ijij_ijji("i1,j1,i2,j2").reduce(F12PairEnergyReductor<Tile>(2 * C_ijij_bar,2 * C_ijji_bar,n_active_occ));

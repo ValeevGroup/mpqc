@@ -131,7 +131,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
   // compute X term
   TArray X_ijij_ijji = compute_X_ijij_ijji_df(mo_integral, ijij_ijji_shape);
   // R_ipjq not needed
-  mo_int_.registry().remove_formula(world, L"(i1 p|R|j1 q)[df]");
+  mo_int_.registry().purge_formula(world, L"(i1 p|R|j1 q)[df]");
 
   auto Fij = mo_int_.compute(L"(i|F|j)[df]");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
@@ -228,7 +228,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
   //    std::cout << X_ijij_ijji << std::endl;
 
   // R_ipjq not needed
-  mo_int_.registry().remove_formula(world, L"(i1 p|R|j1 q)");
+  mo_int_.registry().purge_formula(world, L"(i1 p|R|j1 q)");
 
   auto Fij = mo_int_.compute(L"(i|F|j)");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);

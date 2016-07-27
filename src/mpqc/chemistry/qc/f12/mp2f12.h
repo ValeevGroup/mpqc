@@ -141,7 +141,7 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
   {
     // G integral in MO not needed, still need G integral in AO to compute F, K,
     // hJ
-    mo_integral().registry().remove_operation(world, L"G");
+    mo_integral().registry().purge_operator(world, L"G");
 
     // contribution from V_ijij_ijji
     // NB factor of 2 from the Hylleraas functional
@@ -171,7 +171,7 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
   TArray X_ijij_ijji = compute_X_ijij_ijji_df(mo_integral(), ijij_ijji_shape);
   {
     // R_ipjq not needed
-    mo_integral().registry().remove_formula(world, L"<i1 j1|R|p q>[df]");
+    mo_integral().registry().purge_formula(world, L"<i1 j1|R|p q>[df]");
 
     auto Fij = mo_integral().compute(L"<i|F|j>[df]");
     auto Fij_eigen = array_ops::array_to_eigen(Fij);

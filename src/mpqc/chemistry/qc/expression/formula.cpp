@@ -176,32 +176,6 @@ std::wstring Formula::string() const {
   return result;
 }
 
-std::string Formula::to_ta_expression() const {
-  std::string ta_expression;
-  std::size_t rank = this->rank();
-  std::size_t count = 0;
-
-  // add left index
-  for (const auto& index : bra_indices_) {
-    std::string index_expression = index.to_ta_expression();
-    ta_expression.append(index_expression.begin(), index_expression.end());
-    ++count;
-    ta_expression.append(", ");
-  }
-
-  // add right index
-  for (const auto& index : ket_indices_) {
-    std::string index_expression = index.to_ta_expression();
-    ta_expression.append(index_expression.begin(), index_expression.end());
-    ++count;
-    if (count < rank) {
-      ta_expression.append(", ");
-    }
-  }
-
-  return ta_expression;
-}
-
 bool Formula::has_index(const OrbitalIndex& ind) const {
   for (auto& index : bra_indices_) {
     if (ind == index) {
@@ -217,4 +191,19 @@ bool Formula::has_index(const OrbitalIndex& ind) const {
 
   return false;
 }
+
+bool Formula::is_ao() const {
+  for (const auto& index : bra_indices_) {
+    if (not index.is_ao()) {
+      return false;
+    }
+  }
+  for (const auto& index : ket_indices_) {
+    if (not index.is_ao()) {
+      return false;
+    }
+  }
+  return true;
 }
+
+}  // namespace mpqc

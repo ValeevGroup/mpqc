@@ -16,6 +16,24 @@ using mpqc::Operator;
 
 namespace mpqc {
 
+namespace detail {
+/// provides identity transform for strings
+struct identity {
+  std::string operator()(std::string&& arg) const {
+    return std::forward<std::string>(arg);
+  }
+};
+/// transforms strings by appending string representation of an integral counter
+struct append_count {
+  append_count(long count_init = 0) : count_(count_init) {}
+  append_count(const append_count& append_count) = default;
+  std::string operator()(std::string&& arg) {
+    return arg + std::to_string(count_++);
+  }
+  long count_;
+};
+}
+
 /**
  * \brief Formula class that represent quantum mechanical expressions
  *
@@ -98,8 +116,11 @@ class Formula {
     return notation_;
   }
 
-  /// check if formula has index in left_index and right_index
+  /// @return true if this contains \c index
   bool has_index(const OrbitalIndex &index) const;
+
+  /// @return true if it only contains AO indices
+  bool is_ao() const;
 
   /// dimension of formula(2, 3 or 4)
   std::size_t rank() const;
@@ -108,8 +129,11 @@ class Formula {
   bool operator==(const Formula &other) const;
   bool operator!=(const Formula &other) const { return !(*this == other); }
 
-  /// convert to TA expression string format
-  std::string to_ta_expression() const;
+  /// converts this to a TA expression annotation
+  /// @tparam Transformer a unary functor class
+  /// @param transform_op used to transform index keys
+  template <typename Transformer = detail::identity>
+  std::string to_ta_expression(Transformer transform_op = detail::identity()) const;
 
  private:
   /// parse the index on one side
@@ -121,6 +145,33 @@ class Formula {
   std::vector<OrbitalIndex> bra_indices_;
   std::vector<OrbitalIndex> ket_indices_;
 };
+
+template <typename Transformer>
+std::string Formula::to_ta_expression(Transformer transform_op) const {
+  std::string ta_expression;
+  std::size_t rank = this->rank();
+  std::size_t count = 0;
+
+  // add left index
+  for (const auto& index : bra_indices_) {
+    std::string index_expression = transform_op(index.to_ta_expression());
+    ta_expression.append(index_expression.begin(), index_expression.end());
+    ++count;
+    ta_expression.append(", ");
+  }
+
+  // add right index
+  for (const auto& index : ket_indices_) {
+    std::string index_expression = transform_op(index.to_ta_expression());
+    ta_expression.append(index_expression.begin(), index_expression.end());
+    ++count;
+    if (count < rank) {
+      ta_expression.append(", ");
+    }
+  }
+
+  return ta_expression;
+}
 
 }
 

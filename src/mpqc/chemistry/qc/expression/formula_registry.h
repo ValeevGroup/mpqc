@@ -117,7 +117,7 @@ namespace mpqc{
             return registry_.cbegin();
         }
 
-        /// reutrn end of const_iterator
+        /// return end of const_iterator
         const_iterator cend() const {
             return registry_.cend();
         }

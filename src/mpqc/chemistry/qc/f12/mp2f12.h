@@ -395,9 +395,9 @@ public:
   virtual real_t compute(const rapidjson::Document& in){
     auto& world = this->mo_integral().get_world();
 
-    this->mp2_->compute(in);
+    this->mp2_->init(in);
 
-    // solve cabs orbitals
+    // compute cabs
     auto orbital_registry = mo_integral().orbital_space();
     closed_shell_cabs_mo_build_svd(mo_integral(), in,
                                    this->mp2_->trange1_engine());

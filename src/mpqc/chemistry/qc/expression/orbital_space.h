@@ -14,8 +14,7 @@
 namespace mpqc{
 
 /**
- *  \brief Class that represent MO to AO coefficients
- *
+ *  \brief Class that represent a set of LCAO
  */
 
 template <typename Array>
@@ -38,19 +37,29 @@ public:
 
     ~OrbitalSpace()= default;
 
-    /// return mo_index
+    /// @return OrbitalIndex object for this space
     const OrbitalIndex &mo_key() const {
         return mo_index_;
     }
 
-    /// return ao_index
+    /// @return OrbitalIndex object for the AO space supporting this space
     const OrbitalIndex &ao_key() const {
         return ao_index_;
     }
 
-    /// return coefficient
+    /// @return the coefficient matrix (rows = AOs, columns = LCAOs)
     const Array& array() const {
         return coefs_;
+    }
+
+    /// @return rank of this space
+    size_t rank() const {
+        return coefs_.trange().element_range().extent_data()[1];
+    }
+
+    /// @return rank of the AO space
+    size_t ao_rank() const {
+        return coefs_.trange().element_range().extent_data()[0];
     }
 
     /// interface to TA::Array () function

@@ -2,7 +2,7 @@
 #ifndef SRC_MPQC_UTIL_MISC_STRING_H_
 #define SRC_MPQC_UTIL_MISC_STRING_H_
 
-#include <codecvt>
+//#include <codecvt>
 #include <string>
 #include <sstream>
 
@@ -41,15 +41,19 @@ static constexpr const wchar_t* default_wchar_separator = L"";
 
 /// @brief converts an utf-8 encoded std::string to an utf-8 encoded std::wstring
 inline std::wstring to_wstring(const std::string& str_utf8) {
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
-  return myconv.from_bytes(str_utf8);
+//  std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
+//  return myconv.from_bytes(str_utf8);
+  std::wstring result(str_utf8.begin(), str_utf8.end());
+  return result;
 }
 
 /// @brief converts an utf-8 encoded char[] to a utf-8 encoded std::wstring
 template <size_t N>
 std::wstring to_wstring(const char str_utf8[N]) {
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
-  return myconv.from_bytes(&str_utf8[0]);
+//  std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
+//  return myconv.from_bytes(&str_utf8[0]);
+  std::wstring result(&str_utf8[0], &str_utf8[0] + N);
+  return result;
 }
 
 /// @brief dummy converter

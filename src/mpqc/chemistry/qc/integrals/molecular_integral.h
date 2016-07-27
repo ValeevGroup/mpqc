@@ -196,7 +196,8 @@ namespace integrals{
         Formula mo_to_ao(const Formula& formula);
 
         /// "reduce" by converting to AO at most 1 index in the formula,
-        /// the index is chosen to maximize strength reduction
+        /// the index is chosen to minimize strength reduction (thus recursive
+        /// reduction ensures maximum strength reduction)
         /// @return {"reduced" formula, {\c pos , \c rank }}, where \c pos and \c rank
         ///         are the location and rank of the reduced index
         std::tuple<Formula, std::pair<Formula::Position, size_t>>
@@ -316,12 +317,46 @@ namespace integrals{
           }
         }
         else {  // tform to optimally reduce strength, store partial transform results
-          // reduce one index at a time
+
+          // compute reduced formula
           Formula reduced_formula;  // reduced formula
-          std::pair<Formula::Position, size_t> reduced_index;
-          std::tie(reduced_formula, reduced_index) = reduce_formula(formula_string);
-          auto reduced_integral = atomic_integral_.compute(reduced_formula);
-          assert(false);
+          std::pair<Formula::Position, size_t> reduced_index_coord;
+          std::tie(reduced_formula, reduced_index_coord) = reduce_formula(formula_string);
+          auto reduced_integral =
+              reduced_formula.is_ao()
+                  ? atomic_integral_.compute(reduced_formula)
+                  : (keep_partial_transforms()
+                         ? this->compute(reduced_formula)
+                         : this->compute3(reduced_formula));
+
+          const auto reduced_index_position = reduced_index_coord.first;
+          const auto reduced_index_rank = reduced_index_coord.second;
+          const auto reduced_index_absrank =
+              reduced_index_rank +
+              (reduced_index_position == Formula::Position::Bra
+                   ? 0
+                   : reduced_formula.bra_indices().size());
+
+          // extract orbital coefficients for transformation
+          auto reduced_index =
+              (reduced_index_position == Formula::Position::Bra)
+                  ? formula_string.bra_indices()[reduced_index_rank]
+                  : formula_string.ket_indices()[reduced_index_rank];
+          auto& reduced_index_space =
+              orbital_space_registry_->retrieve(reduced_index);
+          const auto& reduced_index_coeff = reduced_index_space.array();
+
+          // transform
+          auto result_key =
+              formula_string.to_ta_expression(mpqc::detail::append_count(0));
+          auto reduced_key =
+              reduced_formula.to_ta_expression(mpqc::detail::append_count(0));
+          auto coeff_key = reduced_index_space.ao_key().to_ta_expression() +
+                           std::to_string(reduced_index_absrank) + ", " +
+                           reduced_index.to_ta_expression() +
+                           std::to_string(reduced_index_absrank);
+          result(result_key) =
+              reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);
         }
 
         time1 = mpqc_time::now(world_,accurate_time_);
@@ -486,29 +521,36 @@ MolecularIntegral<Tile,Policy>::reduce_formula(const Formula &formula) {
   compute_strength_factors(bra_indices, bra_strength_factors);
   compute_strength_factors(ket_indices, ket_strength_factors);
 
-  auto max_bra_iter = std::max_element(bra_strength_factors.begin(),
-                                       bra_strength_factors.end());
-  auto max_ket_iter = std::max_element(ket_strength_factors.begin(),
-                                       ket_strength_factors.end());
+  auto nonzero_float_compare = [](float a, float b) -> bool {
+    if (a == 0.0) return false;
+    if (b == 0.0) return true;
+    return a < b;
+  };
+  auto min_bra_iter = std::min_element(bra_strength_factors.begin(),
+                                       bra_strength_factors.end(),
+                                       nonzero_float_compare);
+  auto min_ket_iter = std::min_element(ket_strength_factors.begin(),
+                                       ket_strength_factors.end(),
+                                       nonzero_float_compare);
   Formula::Position pos;  // where the reduced index is located
   if (bra_indices.empty())
     pos = Formula::Position::Ket;
   else if (ket_indices.empty())
     pos = Formula::Position::Bra;
   else {
-    pos = *max_bra_iter > *max_ket_iter ? Formula::Position::Bra
+    pos = *min_bra_iter > *min_ket_iter ? Formula::Position::Bra
                                         : Formula::Position::Ket;
   }
 
   size_t idx;
   if (pos == Formula::Position::Bra) {
-    TA_USER_ASSERT(*max_bra_iter > 0.0, "cannot reduce Formula with AO indices only");
-    idx = max_bra_iter - bra_strength_factors.begin();
+    TA_USER_ASSERT(*min_bra_iter != 0.0, "cannot reduce Formula with AO indices only");
+    idx = min_bra_iter - bra_strength_factors.begin();
     auto ao_index = orbital_space_registry_->retrieve(bra_indices[idx]).ao_key();
     bra_indices[idx] = ao_index;
   } else {
-    TA_USER_ASSERT(*max_ket_iter > 0.0, "cannot reduce Formula with AO indices only");
-    idx = max_ket_iter - ket_strength_factors.begin();
+    TA_USER_ASSERT(*min_ket_iter != 0.0, "cannot reduce Formula with AO indices only");
+    idx = min_ket_iter - ket_strength_factors.begin();
     auto ao_index = orbital_space_registry_->retrieve(ket_indices[idx]).ao_key();
     ket_indices[idx] = ao_index;
   }

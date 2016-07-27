@@ -470,6 +470,8 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     orbital_registry->add(x_space);
   }
 
+  mo_integral().keep_partial_transforms(true);
+
   // for now the f12 contribution is energy-independent
   TArray Sigma_pph_f12;
   {
@@ -482,6 +484,12 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
   printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
   printf("==== =========== =========== ===========\n");
+
+  // done with F12 ... remove all geminal ints and CABS indices
+  auto& world = mo_integral().get_world();
+  mo_integral().purge_operator(world, L"R");
+  mo_integral().purge_index(world, L"a'");
+  mo_integral().purge_index(world, L"ρ");
 
   size_t iter = 0;
   decltype(SE) SE_diff;
@@ -523,6 +531,8 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     ++iter;
 
   } while ((fabs(SE_diff) > 1e-6) && (iter <= max_niter));
+
+  mo_integral().keep_partial_transforms(false);
 
   auto SE_F12 = SE + Sigma_f12(0,0);
   auto Hartree2eV = 27.21138602;

@@ -71,7 +71,8 @@ namespace integrals{
                         )
                 : world_(atomic_integral.world()), atomic_integral_(atomic_integral),
                   orbital_space_registry_(orbital_space_registry),
-                  mo_formula_registry_()
+                  mo_formula_registry_(),
+                  keep_partial_transforms_(false)
         {
             atomic_integral_.set_orbital_space_registry(orbital_space_registry);
             parse_input(in);
@@ -114,6 +115,18 @@ namespace integrals{
         /// return accurate time
         bool accurate_time() const {
             return accurate_time_;
+        }
+
+        /// reports the partial tform flag; if true, partially-transformed integrals are stored
+        /// @note at this time only supported for 3-index integrals
+        bool keep_partial_transforms() const {
+          return keep_partial_transforms_;
+        }
+
+        /// sets the partial tform flag; if true, partially-transformed integrals are stored
+        /// @note at this time only supported for 3-index integrals
+        void keep_partial_transforms(bool flag) {
+          keep_partial_transforms_ = flag;
         }
 
         /// wrapper to compute function
@@ -174,6 +187,13 @@ namespace integrals{
         /// find the corresponding AO formula, if index is already AO, it will be ignored
         Formula mo_to_ao(const Formula& formula);
 
+        /// "reduce" by converting to AO at most 1 index in the formula,
+        /// the index is chosen to maximize strength reduction
+        /// @return {"reduced" formula, {\c pos , \c rank }}, where \c pos and \c rank
+        ///         are the location and rank of the reduced index
+        std::tuple<Formula, std::pair<Formula::Position, size_t>>
+        reduce_formula(const Formula &formula);
+
         /// assert all index in formula are in MO
         void assert_all_mo(const Formula &formula);
 
@@ -183,6 +203,7 @@ namespace integrals{
         AtomicIntegralType& atomic_integral_;
         std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
         FormulaRegistry<TArray> mo_formula_registry_;
+        bool keep_partial_transforms_;  //!< if true, keep partially-transformed ints (false by default)
         bool accurate_time_;
     };
 
@@ -263,25 +284,36 @@ namespace integrals{
         mpqc_time::t_point time1;
 
         TArray result;
-        // get AO
-        auto ao_formula = mo_to_ao(formula_string);
-        auto ao_integral = atomic_integral_.compute(ao_formula);
+        if (not keep_partial_transforms()) {  // compute from AO ints
+          // get AO
+          auto ao_formula = mo_to_ao(formula_string);
+          auto ao_integral = atomic_integral_.compute(ao_formula);
 
-        // convert to MO, only convert the right side
-        time0 = mpqc_time::now(world_,accurate_time_);
+          time0 = mpqc_time::now(world_, accurate_time_);
 
-        // get coefficient
-        if (right_index1.is_mo()) {
+          // transform to MO, only convert the right side
+          // TODO optimize strength reduction,
+          //      e.g. may need to transform last index first
           auto right_index1 = formula_string.ket_indices()[0];
+          if (right_index1.is_mo()) {
             auto& right1 = orbital_space_registry_->retrieve(right_index1);
             result("K,i,q") = ao_integral("K,p,q") * right1("p,i");
             world_.gop.fence();
-        }
-        if (right_index2.is_mo()) {
+          }
           auto right_index2 = formula_string.ket_indices()[1];
+          if (right_index2.is_mo()) {
             auto& right2 = orbital_space_registry_->retrieve(right_index2);
             result("K,p,j") = result("K,p,q") * right2("q,j");
             world_.gop.fence();
+          }
+        }
+        else {  // tform to optimally reduce strength, store partial transform results
+          // reduce one index at a time
+          Formula reduced_formula;  // reduced formula
+          std::pair<Formula::Position, size_t> reduced_index;
+          std::tie(reduced_formula, reduced_index) = reduce_formula(formula_string);
+          auto reduced_integral = atomic_integral_.compute(reduced_formula);
+          assert(false);
         }
 
         time1 = mpqc_time::now(world_,accurate_time_);
@@ -415,6 +447,70 @@ Formula MolecularIntegral<Tile,Policy>::mo_to_ao(const Formula &formula) {
     ao_formula.set_right_index(ao_right_index);
 
     return ao_formula;
+}
+
+template <typename Tile, typename Policy>
+std::tuple<Formula, std::pair<Formula::Position, size_t>>
+MolecularIntegral<Tile,Policy>::reduce_formula(const Formula &formula) {
+
+  std::vector<float> bra_strength_factors;
+  std::vector<float> ket_strength_factors;
+
+  auto compute_strength_factors = [=](
+      const std::vector<OrbitalIndex>& indices,
+      std::vector<float>& strenth_factors) -> void {
+    for (const auto& index : indices) {
+      float strength_factor;
+      if (index.is_mo()) {
+        const auto& orb_space = orbital_space_registry_->retrieve(index);
+        const auto rank = orb_space.rank();
+        const auto ao_rank = orb_space.ao_rank();
+        strength_factor = static_cast<float>(ao_rank) / rank;
+      } else
+        strength_factor = 0.0;
+      strenth_factors.push_back(strength_factor);
+    }
+  };
+
+  auto bra_indices = formula.bra_indices();
+  auto ket_indices = formula.ket_indices();
+  TA_USER_ASSERT(!bra_indices.empty() || !ket_indices.empty(), "cannot reduce Formula with empty bra and ket");
+  compute_strength_factors(bra_indices, bra_strength_factors);
+  compute_strength_factors(ket_indices, ket_strength_factors);
+
+  auto max_bra_iter = std::max_element(bra_strength_factors.begin(),
+                                       bra_strength_factors.end());
+  auto max_ket_iter = std::max_element(ket_strength_factors.begin(),
+                                       ket_strength_factors.end());
+  Formula::Position pos;  // where the reduced index is located
+  if (bra_indices.empty())
+    pos = Formula::Position::Ket;
+  else if (ket_indices.empty())
+    pos = Formula::Position::Bra;
+  else {
+    pos = *max_bra_iter > *max_ket_iter ? Formula::Position::Bra
+                                        : Formula::Position::Ket;
+  }
+
+  size_t idx;
+  if (pos == Formula::Position::Bra) {
+    TA_USER_ASSERT(*max_bra_iter > 0.0, "cannot reduce Formula with AO indices only");
+    idx = max_bra_iter - bra_strength_factors.begin();
+    auto ao_index = orbital_space_registry_->retrieve(bra_indices[idx]).ao_key();
+    bra_indices[idx] = ao_index;
+  } else {
+    TA_USER_ASSERT(*max_ket_iter > 0.0, "cannot reduce Formula with AO indices only");
+    idx = max_ket_iter - ket_strength_factors.begin();
+    auto ao_index = orbital_space_registry_->retrieve(ket_indices[idx]).ao_key();
+    ket_indices[idx] = ao_index;
+  }
+
+  // reduce the index with maximum strength factor
+  auto reduced_formula = formula;
+  reduced_formula.set_left_index(bra_indices);
+  reduced_formula.set_right_index(ket_indices);
+
+  return std::make_tuple(reduced_formula, std::make_pair(pos, idx));
 }
 
 template <typename Tile, typename Policy>

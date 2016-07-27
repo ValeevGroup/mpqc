@@ -199,8 +199,8 @@ namespace integrals{
 
             time0 = mpqc_time::now(world_,accurate_time_);
 
-            auto left_index1 = formula_string.left_index()[0];
-            auto right_index1 = formula_string.right_index()[0];
+            auto left_index1 = formula_string.bra_indices()[0];
+            auto right_index1 = formula_string.ket_indices()[0];
             auto& left1 = orbital_space_registry_->retrieve(left_index1);
             auto& right1 = orbital_space_registry_->retrieve(right_index1);
 
@@ -215,7 +215,7 @@ namespace integrals{
             time+= mpqc_time::duration_in_s(time0,time1);
 
             utility::print_par(world_, "Computed Identity: ");
-            utility::wprint_par(world_, formula_string.formula_string());
+            utility::wprint_par(world_, formula_string.string());
             double size = utility::array_size(result);
             utility::print_par(world_," Size: ", size, " GB");
             utility::print_par(world_," Time: ", time, " s\n");
@@ -231,13 +231,13 @@ namespace integrals{
         // convert to MO
         result = ao_integral;
         // get coefficient
-        auto left_index1 = formula_string.left_index()[0];
+        auto left_index1 = formula_string.bra_indices()[0];
         if(left_index1.is_mo()){
             auto& left1 = orbital_space_registry_->retrieve(left_index1);
             result("i,r") = result("p,r")*left1("p,i");
             world_.gop.fence();
         }
-        auto right_index1 = formula_string.right_index()[0];
+        auto right_index1 = formula_string.ket_indices()[0];
         if(right_index1.is_mo()){
             auto& right1 = orbital_space_registry_->retrieve(right_index1);
             result("p,k") = result("p,r")*right1("r,k");
@@ -247,7 +247,7 @@ namespace integrals{
         time1 = mpqc_time::now(world_,accurate_time_);
         time+= mpqc_time::duration_in_s(time0,time1);
         utility::print_par(world_, "Transformed MO Integral: ");
-        utility::wprint_par(world_, formula_string.formula_string());
+        utility::wprint_par(world_, formula_string.string());
         double size = utility::array_size(result);
         utility::print_par(world_," Size: ", size, " GB");
         utility::print_par(world_," Time: ", time, " s\n");
@@ -271,14 +271,14 @@ namespace integrals{
         time0 = mpqc_time::now(world_,accurate_time_);
 
         // get coefficient
-        auto right_index1 = formula_string.right_index()[0];
         if (right_index1.is_mo()) {
+          auto right_index1 = formula_string.ket_indices()[0];
             auto& right1 = orbital_space_registry_->retrieve(right_index1);
             result("K,i,q") = ao_integral("K,p,q") * right1("p,i");
             world_.gop.fence();
         }
-        auto right_index2 = formula_string.right_index()[1];
         if (right_index2.is_mo()) {
+          auto right_index2 = formula_string.ket_indices()[1];
             auto& right2 = orbital_space_registry_->retrieve(right_index2);
             result("K,p,j") = result("K,p,q") * right2("q,j");
             world_.gop.fence();
@@ -288,7 +288,7 @@ namespace integrals{
         time+= mpqc_time::duration_in_s(time0,time1);
 
         utility::print_par(world_, "Transformed MO Integral: ");
-        utility::wprint_par(world_, formula_string.formula_string());
+        utility::wprint_par(world_, formula_string.string());
         double size = utility::array_size(result);
         utility::print_par(world_," Size: ", size, " GB");
         utility::print_par(world_," Time: ", time, " s\n");
@@ -337,27 +337,27 @@ namespace integrals{
             time0 = mpqc_time::now(world_,accurate_time_);
 
             // get coefficient
-            auto left_index1 = formula_string.left_index()[0];
+            auto left_index1 = formula_string.bra_indices()[0];
             if (left_index1.is_mo()) {
                 auto& left1 = orbital_space_registry_->retrieve(left_index1);
                 result("i,q,r,s") = ao_integral("p,q,r,s") * left1("p,i");
                 world_.gop.fence();
             }
 
-            auto left_index2 = formula_string.left_index()[1];
+            auto left_index2 = formula_string.bra_indices()[1];
             if (left_index2.is_mo()) {
                 auto& left2 = orbital_space_registry_->retrieve(left_index2);
                 result("p,i,r,s") = result("p,q,r,s") * left2("q,i");
                 world_.gop.fence();
             }
 
-            auto right_index1 = formula_string.right_index()[0];
+            auto right_index1 = formula_string.ket_indices()[0];
             if (right_index1.is_mo()) {
                 auto& right1 = orbital_space_registry_->retrieve(right_index1);
                 result("p,q,i,s") = result("p,q,r,s") * right1("r,i");
                 world_.gop.fence();
             }
-            auto right_index2 = formula_string.right_index()[1];
+            auto right_index2 = formula_string.ket_indices()[1];
             if (right_index2.is_mo()) {
                 auto& right2 = orbital_space_registry_->retrieve(right_index2);
                 result("p,q,r,i") = result("p,q,r,s") * right2("s,i");
@@ -369,7 +369,7 @@ namespace integrals{
         }
 
         utility::print_par(world_, "Transformed MO Integral: ");
-        utility::wprint_par(world_, formula_string.formula_string());
+        utility::wprint_par(world_, formula_string.string());
         double size = utility::array_size(result);
         utility::print_par(world_," Size: ", size, " GB");
         utility::print_par(world_," Time: ", time, " s\n");
@@ -382,7 +382,7 @@ Formula MolecularIntegral<Tile,Policy>::mo_to_ao(const Formula &formula) {
 
     std::vector<OrbitalIndex> ao_left_index, ao_right_index;
 
-    auto left_index = formula.left_index();
+    auto left_index = formula.bra_indices();
     for(const auto& index : left_index){
 
         // find the correspoding ao index
@@ -396,7 +396,7 @@ Formula MolecularIntegral<Tile,Policy>::mo_to_ao(const Formula &formula) {
         }
     }
 
-    auto right_index = formula.right_index();
+    auto right_index = formula.ket_indices();
     for(const auto& index : right_index){
         // find the correspoding ao index
         if(index.is_mo()){
@@ -420,12 +420,12 @@ Formula MolecularIntegral<Tile,Policy>::mo_to_ao(const Formula &formula) {
 template <typename Tile, typename Policy>
 void MolecularIntegral<Tile,Policy>::assert_all_mo(const Formula &formula) {
 
-    auto left = formula.left_index();
+    auto left = formula.bra_indices();
     for(auto& index : left){
         TA_ASSERT(index.is_mo());
     }
 
-    auto right = formula.right_index();
+    auto right = formula.ket_indices();
     for(auto& index : right){
         TA_ASSERT(index.is_mo());
     }
@@ -447,7 +447,7 @@ typename MolecularIntegral<Tile,Policy>::TArray& MolecularIntegral<Tile,Policy>:
     if(iter != mo_formula_registry_.end()){
         result = *(iter->second);
         utility::print_par(world_,"Retrieved MO Integral: ");
-        utility::wprint_par(world_, formula.formula_string());
+        utility::wprint_par(world_, formula.string());
         double size = utility::array_size(result);
         utility::print_par(world_," Size: ", size, " GB\n");
     }else{

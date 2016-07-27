@@ -10,6 +10,8 @@
 #include <string>
 #include <map>
 
+#include <TiledArray/error.h>
+
 namespace mpqc{
 
     /**
@@ -47,6 +49,7 @@ namespace mpqc{
          *  Operator types
          */
         enum class Type {
+            Invalid = -1,
             __first_1body_operator = 0,
             Identity = 0,
             Overlap = 1,
@@ -93,7 +96,7 @@ namespace mpqc{
         static const std::map<Option,std::wstring> option_to_string;
         static const std::unordered_map<std::wstring, Option> string_to_option;
 
-        Operator() = default;
+        Operator() : type_(Type::Invalid) {}
         Operator(Operator const &) = default;
         Operator(Operator &&) = default;
         Operator& operator=(Operator const &) = default;
@@ -115,12 +118,14 @@ namespace mpqc{
 
         /// return operation oper_
         const Type &type() const {
-            return type_;
+          TA_USER_ASSERT(type_ != Type::Invalid, "invalid Operator");
+          return type_;
         }
 
         /// set operation oper_
-        void set_type(const Type &oper) {
-            Operator::type_ = oper;
+        void set_type(const Type &type) {
+          TA_USER_ASSERT(type != Type::Invalid, "invalid Operator");
+          Operator::type_ = type;
         }
 
         /// return string that correspond to oper_

@@ -102,8 +102,8 @@ void AtomicIntegralBase::parse_one_body(const Formula& formula,
                                         std::shared_ptr<EnginePool<libint2::Engine>>& engine_pool,
                                         Barray<2>& bases){
 
-    auto bra_indices = formula.left_index();
-    auto ket_indices = formula.right_index();
+    auto bra_indices = formula.bra_indices();
+    auto ket_indices = formula.ket_indices();
 
     TA_ASSERT(bra_indices.size() == 1);
     TA_ASSERT(ket_indices.size() == 1);
@@ -135,8 +135,8 @@ void AtomicIntegralBase::parse_two_body_two_center(
 
     TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Two Body Two Center Integral Must Use Chemical Notation");
 
-    auto bra_indexs = formula.left_index();
-    auto ket_indexs = formula.right_index();
+    auto bra_indexs = formula.bra_indices();
+    auto ket_indexs = formula.ket_indices();
 
     TA_ASSERT(bra_indexs.size() == 1);
     TA_ASSERT(ket_indexs.size() == 1);
@@ -168,8 +168,8 @@ void AtomicIntegralBase::parse_two_body_three_center(
 
     TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Three Center Integral Must Use Chemical Notation");
 
-    auto bra_indexs = formula.left_index();
-    auto ket_indexs = formula.right_index();
+    auto bra_indexs = formula.bra_indices();
+    auto ket_indexs = formula.ket_indices();
 
     TA_ASSERT(bra_indexs.size() == 1);
     TA_ASSERT(ket_indexs.size() == 2);
@@ -200,8 +200,8 @@ void AtomicIntegralBase::parse_two_body_four_center(
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
     Barray<4> &bases) {
 
-    auto bra_indexs = formula.left_index();
-    auto ket_indexs = formula.right_index();
+    auto bra_indexs = formula.bra_indices();
+    auto ket_indexs = formula.ket_indices();
 
     TA_ASSERT(bra_indexs.size() == 2);
     TA_ASSERT(ket_indexs.size() == 2);
@@ -243,11 +243,11 @@ std::array<std::wstring, 3> AtomicIntegralBase::get_df_formula(const Formula &fo
     if (formula.notation() == Formula::Notation::Chemical) {
 
         std::wstring left =
-                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.left_index()[0].name() + L" " +
-                formula.left_index()[1].name() + L" )";
+                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.bra_indices()[0].name() + L" " +
+                formula.bra_indices()[1].name() + L" )";
         std::wstring right =
-                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.right_index()[0].name() + L" " +
-                formula.right_index()[1].name() + L" )";
+                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.ket_indices()[0].name() + L" " +
+                formula.ket_indices()[1].name() + L" )";
         std::wstring center = L"( Κ |" + formula.oper().oper_string() + L"| Λ)[inv]";
         result[0] = left;
         result[1] = center;
@@ -256,11 +256,11 @@ std::array<std::wstring, 3> AtomicIntegralBase::get_df_formula(const Formula &fo
     //physical notation
     else {
         std::wstring left =
-                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.left_index()[0].name() + L" " +
-                formula.right_index()[0].name() + L" )";
+                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.bra_indices()[0].name() + L" " +
+                formula.ket_indices()[0].name() + L" )";
         std::wstring right =
-                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.left_index()[1].name() + L" " +
-                formula.right_index()[1].name() + L" )";
+                L"( Κ |" + formula.oper().oper_string() + L"| " + formula.bra_indices()[1].name() + L" " +
+                formula.ket_indices()[1].name() + L" )";
         std::wstring center = L"( Κ |" + formula.oper().oper_string() + L"| Λ)[inv]";
         result[0] = left;
         result[1] = center;
@@ -281,18 +281,18 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula, const std::ws
       result.set_notation(Formula::Notation::Chemical);
       if(formula.oper().type() == Operator::Type::J){
 
-        result.left_index().push_back(formula.left_index()[0]);
-        result.left_index().push_back(formula.right_index()[0]);
-        result.right_index().push_back(obs);
-        result.right_index().push_back(obs);
+        result.bra_indices().push_back(formula.bra_indices()[0]);
+        result.bra_indices().push_back(formula.ket_indices()[0]);
+        result.ket_indices().push_back(obs);
+        result.ket_indices().push_back(obs);
 
       }
       else{
 
-        result.left_index().push_back(formula.left_index()[0]);
-        result.left_index().push_back(obs);
-        result.right_index().push_back(formula.right_index()[0]);
-        result.right_index().push_back(obs);
+        result.bra_indices().push_back(formula.bra_indices()[0]);
+        result.bra_indices().push_back(obs);
+        result.ket_indices().push_back(formula.ket_indices()[0]);
+        result.ket_indices().push_back(obs);
 
       }
     }
@@ -300,18 +300,18 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula, const std::ws
       result.set_notation(Formula::Notation::Physical);
       if(formula.oper().type() == Operator::Type::K){
 
-        result.left_index().push_back(formula.left_index()[0]);
-        result.left_index().push_back(formula.right_index()[0]);
-        result.right_index().push_back(obs);
-        result.right_index().push_back(obs);
+        result.bra_indices().push_back(formula.bra_indices()[0]);
+        result.bra_indices().push_back(formula.ket_indices()[0]);
+        result.ket_indices().push_back(obs);
+        result.ket_indices().push_back(obs);
 
       }
       else{
 
-        result.left_index().push_back(formula.left_index()[0]);
-        result.left_index().push_back(obs);
-        result.right_index().push_back(formula.right_index()[0]);
-        result.right_index().push_back(obs);
+        result.bra_indices().push_back(formula.bra_indices()[0]);
+        result.bra_indices().push_back(obs);
+        result.ket_indices().push_back(formula.ket_indices()[0]);
+        result.ket_indices().push_back(obs);
 
       }
     }
@@ -322,15 +322,15 @@ std::array<Formula,3> AtomicIntegralBase::get_jk_df_formula(const Formula &formu
     std::array<Formula,3> result;
 
     if(formula.oper().type() == Operator::Type::J){
-        std::wstring left =  L"( Κ |G| " + formula.left_index()[0].name() + L" " + formula.right_index()[0].name() + L" )";
+        std::wstring left =  L"( Κ |G| " + formula.bra_indices()[0].name() + L" " + formula.ket_indices()[0].name() + L" )";
         std::wstring right = L"( Κ |G| " + obs + L" " + obs + L" )";
 
         result[0] = Formula(left);
         result[2] = Formula(right);
     }
     else{
-        std::wstring left =  L"( Κ |G| " + formula.left_index()[0].name() + L" " + obs  + L" )";
-        std::wstring right = L"( Κ |G| " + formula.right_index()[0].name() +L" " + obs + L" )";
+        std::wstring left =  L"( Κ |G| " + formula.bra_indices()[0].name() + L" " + obs  + L" )";
+        std::wstring right = L"( Κ |G| " + formula.ket_indices()[0].name() +L" " + obs + L" )";
 
         result[0] = Formula(left);
         result[2] = Formula(right);

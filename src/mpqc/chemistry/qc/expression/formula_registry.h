@@ -170,7 +170,7 @@ namespace mpqc{
 
             if(world.rank()==0){
                 for(const auto& item : this->registry_){
-                    utility::wprint_size_info(item.second, item.first.formula_string());
+                    utility::wprint_size_info(item.second, item.first.string());
                 }
                 std::cout << std::endl;
             }
@@ -183,7 +183,7 @@ namespace mpqc{
             for(; i != this->registry_.end(); ){
                 if (p(*i)){
                     utility::print_par(world, "Removed from Registry: ");
-                    utility::wprint_par(world, i->first.formula_string());
+                    utility::wprint_par(world, i->first.string());
                     utility::print_par(world, "\n");
                     this->registry_.erase(i++);
                 }else{

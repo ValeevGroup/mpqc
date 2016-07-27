@@ -286,7 +286,7 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
   if (iter != ao_formula_registry_.end()) {
     result = *(iter->second);
     utility::print_par(world_, "Retrieved AO Integral: ");
-    utility::wprint_par(world_, formula.formula_string());
+    utility::wprint_par(world_, formula.string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");
   } else {
@@ -348,7 +348,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       time += mpqc_time::duration_in_s(time0, time1);
     }
     utility::print_par(world_, "Computed One Body Integral: ");
-    utility::wprint_par(world_, formula.formula_string());
+    utility::wprint_par(world_, formula.string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -438,7 +438,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     time += mpqc_time::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Twobody Two Center Integral: ");
-    utility::wprint_par(world_, formula.formula_string());
+    utility::wprint_par(world_, formula.string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -511,7 +511,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       time += mpqc_time::duration_in_s(time0, time1);
     }
     utility::print_par(world_, "Computed Coulumb/Exchange Integral: ");
-    utility::wprint_par(world_, formula.formula_string());
+    utility::wprint_par(world_, formula.string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -536,7 +536,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     time += mpqc_time::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Coulumb/Exchange Integral: ");
-    utility::wprint_par(world_, formula.formula_string());
+    utility::wprint_par(world_, formula.string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -565,7 +565,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     time += mpqc_time::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Fock Integral: ");
-    utility::wprint_par(world_, formula.formula_string());
+    utility::wprint_par(world_, formula.string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -594,7 +594,7 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   time += mpqc_time::duration_in_s(time0, time1);
 
   utility::print_par(world_, "Computed Twobody Three Center Integral: ");
-  utility::wprint_par(world_, formula.formula_string());
+  utility::wprint_par(world_, formula.string());
   double size = utility::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
@@ -632,7 +632,7 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
 
     utility::print_par(
         world_, "Computed Twobody Four Center Density-Fitting Integral: ");
-    utility::wprint_par(world_, formula.formula_string());
+    utility::wprint_par(world_, formula.string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -655,7 +655,7 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
     time += mpqc_time::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Twobody Four Center Integral: ");
-    utility::wprint_par(world_, formula.formula_string());
+    utility::wprint_par(world_, formula.string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");

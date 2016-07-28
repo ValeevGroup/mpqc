@@ -29,6 +29,7 @@ public:
 
   virtual real_t compute(){
 
+    auto& world = this->mo_int_.get_world();
     // compute ccsd
     real_t ccsd = this->ccsd_->compute();
 
@@ -44,12 +45,32 @@ public:
     if (method == "df") {
       Eij_F12 = compute_c_df();
     } else {
-      throw std::runtime_error("Wrong CCSDF12 Method");
+      throw std::runtime_error("Wrong DBCCSDF12 Method");
     }
 
-    return ccsd + Eij_F12.sum();
+    real_t e_f12 = Eij_F12.sum();
+    if (debug()) utility::print_par(world, "E_F12: ", e_f12, "\n");
 
-    return 0;
+    // compute cabs singles
+    real_t e_s = 0.0;
+    bool singles = option.HasMember("Singles") ? option["Singles"].GetBool() : true;
+    if(singles){
+
+      auto single_time0 = mpqc_time::fenced_now(world);
+
+      // non-canonical, don't include F_m^a
+      CABSSingles<Tile> cabs_singles(this->mo_int_,false);
+      e_s = cabs_singles.compute();
+      if (debug()) {
+        utility::print_par(world, "E_S: ", e_s, "\n");
+      }
+      auto single_time1 = mpqc_time::fenced_now(world);
+      auto single_time = mpqc_time::duration_in_s(single_time0, single_time1);
+      mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time, "\n");
+    }
+
+
+    return ccsd + e_f12 + e_s;
   }
 
   using CCSDF12<Tile>::debug;
@@ -126,8 +147,6 @@ typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_c_df()
     if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
-
-  if (debug()) utility::print_par(world, "E_F12: ", Eij_F12.sum(), "\n");
 
   return Eij_F12;
 

@@ -7,7 +7,6 @@
 
 #include "../../../../../include/eigen.h"
 #include "../../../../../include/tiledarray.h"
-#include "../../../../../ta_routines/array_to_eigen.h"
 #include <mpqc/chemistry/qc/integrals/molecular_integral.h>
 #include <TiledArray/algebra/conjgrad.h>
 
@@ -27,7 +26,11 @@ public:
 
   CABSSingles() = default;
 
-  CABSSingles(MolecularIntegralClass& mo_int) : mo_int_(mo_int){}
+  /**
+   * @param mo_int MolecularIntegral Object
+   * @param vir   if include F_ia in singles, default is true
+   */
+  CABSSingles(MolecularIntegralClass& mo_int, bool vir=true) : mo_int_(mo_int), couple_virtual_(vir){}
 
   real_t compute();
 
@@ -66,6 +69,7 @@ private:
 private:
 
   MolecularIntegralClass& mo_int_;
+  bool couple_virtual_;
 };
 
 template <typename Tile>
@@ -74,16 +78,54 @@ CABSSingles<Tile>::compute() {
 
   bool df = mo_int_.atomic_integral().orbital_basis_registry()->have(OrbitalIndex(L"Κ"));
 
-  TArray F_AB, F_MA, F_MN;
+  TArray F_AB, F_MN;
   if(df){
     F_AB = mo_int_.compute(L"<A'|F|B'>[df]");
     F_MN = mo_int_.compute(L"<m|F|n>[df]");
-    F_MA = mo_int_.compute(L"<m|F|A'>[df]");
+
   }
   else{
     F_AB = mo_int_.compute(L"<A'|F|B'>");
     F_MN = mo_int_.compute(L"<m|F|n>");
-    F_MA = mo_int_.compute(L"<m|F|A'>");
+  }
+
+
+  TArray F_MA;
+  /// include contribution of F_m^a into F_m^A'
+  if(couple_virtual_){
+    if(df){
+      F_MA = mo_int_.compute(L"<m|F|A'>[df]");
+    }
+    else{
+      F_MA = mo_int_.compute(L"<m|F|A'>");
+    }
+  }
+  /// not include contribution of F_m^a into F_m^A'
+  else{
+    TArray F_Ma;
+    if(df){
+      F_Ma = mo_int_.compute(L"<m|F|a'>[df]");
+    }
+    else{
+      F_Ma = mo_int_.compute(L"<m|F|a'>");
+    }
+    MatrixD F_Ma_eigen = array_ops::array_to_eigen(F_Ma);
+    auto n_occ = F_Ma_eigen.rows();
+    auto n_cabs = F_Ma_eigen.cols();
+    auto n_allvir = F_AB.trange().elements().extent()[0];
+    auto n_vir = n_allvir - n_cabs;
+
+    MatrixD F_MA_eigen = MatrixD::Zero(n_occ, n_allvir);
+    F_MA_eigen.block(0,n_vir,n_occ,n_cabs) << F_Ma_eigen;
+
+    auto tr_m = F_Ma.trange().data()[0];
+    auto tr_A = F_AB.trange().data()[0];
+
+    F_MA = array_ops::eigen_to_array<Tile>(F_Ma.get_world(), F_MA_eigen,tr_m, tr_A);
+    F_MA.truncate();
+
+
+    std::cout << F_MA << std::endl;
   }
 
   TArray t;

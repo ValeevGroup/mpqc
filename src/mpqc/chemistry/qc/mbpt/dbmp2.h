@@ -19,6 +19,12 @@ class DBMP2 : public MP2<Tile,Policy> {
 
   DBMP2() = default;
 
+
+  DBMP2(MolecularIntegralType &mo_int,
+  std::shared_ptr<Eigen::VectorXd> orbital_energy,
+  const std::shared_ptr<TRange1Engine> tre) : MP2<Tile,Policy>(mo_int,orbital_energy,tre){}
+
+
   DBMP2(MolecularIntegralType &mo_int) : MP2<Tile,Policy>(mo_int) { }
 
 
@@ -43,7 +49,6 @@ class DBMP2 : public MP2<Tile,Policy> {
     return scf_correction + mp2_energy;
   }
 
-private:
   real_t compute_scf_correction(const rapidjson::Document &in){
 
     init(in);
@@ -72,7 +77,7 @@ private:
     return scf_correction;
   }
 
-  void init(const rapidjson::Document &in) {
+  virtual void init(const rapidjson::Document &in) {
     // if not initialized
     if(this->trange1_engine_== nullptr || this->orbital_energy_ == nullptr){
       auto& mo_int = this->mo_integral();
@@ -84,6 +89,7 @@ private:
     }
   }
 
+private:
   struct ScfCorrection {
     using result_type = real_t;
     using argument_type = Tile;

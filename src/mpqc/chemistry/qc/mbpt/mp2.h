@@ -73,7 +73,7 @@ class MP2 {
   }
 
   /// initialize orbitals
-  void init(const rapidjson::Document &in) {
+  virtual void init(const rapidjson::Document &in) {
     if(orbital_energy_== nullptr || trange1_engine_ == nullptr) {
       auto mol = mo_int_.atomic_integral().molecule();
       int occ = mol.occupation(0) / 2;

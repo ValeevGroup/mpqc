@@ -35,17 +35,11 @@ public:
 
   virtual real_t compute(const rapidjson::Document& in){
     auto& world = this->mo_integral().get_world();
-    // dbmp2 time
-    auto mp2_time0 = mpqc_time::fenced_now(world);
-
-    double dbmp2 = this->mp2_->compute(in);
-
-    auto mp2_time1 = mpqc_time::fenced_now(world);
-    auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
-    mpqc::utility::print_par(world, "Total DBMP2 Time:  ", mp2_time, "\n");
 
     // start f12
     auto f12_time0 = mpqc_time::fenced_now(world);
+
+    this->mp2_->init(in);
 
     // solve cabs orbitals
     auto orbital_registry = this->mo_integral().orbital_space();
@@ -74,9 +68,33 @@ public:
     }
 
     auto ef12 = f12_eij.sum();
+    auto emp2 = mp2_eij.sum();
     if (debug()) {
-      utility::print_par(this->mo_integral().get_world(), "E_DBMP2: ", dbmp2, "\n");
+      utility::print_par(this->mo_integral().get_world(), "E_DBMP2: ", emp2, "\n");
       utility::print_par(this->mo_integral().get_world(), "E_DBMP2F12: ", ef12, "\n");
+    }
+
+    // compute cabs singles
+    real_t e_s = 0.0;
+    bool singles = in.HasMember("Singles") ? in["Singles"].GetBool() : true;
+    if(singles){
+
+      auto single_time0 = mpqc_time::fenced_now(world);
+
+      CABSSingles<Tile> cabs_singles(mo_integral());
+      e_s = cabs_singles.compute();
+      if (debug()) {
+        utility::print_par(mo_integral().get_world(), "E_S: ", e_s, "\n");
+      }
+      auto single_time1 = mpqc_time::fenced_now(world);
+      auto single_time = mpqc_time::duration_in_s(single_time0, single_time1);
+      mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time, "\n");
+    }
+    // scf correction from DBMP2
+    else{
+
+      mbpt::DBMP2<Tile,Policy> dbmp2(mo_integral(), this->mp2_->orbital_energy(), this->mp2_->trange1_engine());
+      e_s = dbmp2.compute_scf_correction(in);
     }
 
     auto f12_time1 = mpqc_time::fenced_now(world);
@@ -84,7 +102,7 @@ public:
 
     mpqc::utility::print_par(world, "Total DBF12 Time:  ", f12_time, "\n");
 
-    return dbmp2 + ef12;
+    return emp2 + ef12 + e_s;
   }
 
 private:

@@ -124,9 +124,8 @@ CABSSingles<Tile>::compute() {
     F_MA = array_ops::eigen_to_array<Tile>(F_Ma.get_world(), F_MA_eigen,tr_m, tr_A);
     F_MA.truncate();
 
-
-    std::cout << F_MA << std::endl;
   }
+//  std::cout << F_MA << std::endl;
 
   TArray t;
   t("i,A") = -F_MA("i,A");
@@ -134,6 +133,7 @@ CABSSingles<Tile>::compute() {
   // compute preconditioner
   TArray P_MA(F_MA.get_world(), F_MA.trange(), F_MA.get_shape());
   compute_preconditioner(P_MA, F_AB, F_MN);
+//  std::cout << P_MA << std::endl;
 
   CABSSingleEquation cabs_singles(F_AB,F_MN);
 

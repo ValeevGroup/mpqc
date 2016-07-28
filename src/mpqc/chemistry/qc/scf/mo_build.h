@@ -443,14 +443,15 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   }
 
  // get mo block size
- std::size_t mo_blocksize = in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
- utility::print_par(world, "MoBlockSize: ", mo_blocksize, "\n");
+  std::size_t mo_blocksize = in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
+  std::size_t vir_blocksize = in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
+  utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
   // get cabs trange
   auto tr_cabs = mo_int.atomic_integral().orbital_basis_registry()->retrieve(OrbitalIndex(L"α")).create_trange1();
   auto tr_ribs = S_ribs.trange().data().back();
-  auto tr_cabs_mo = tre->compute_range(tr_cabs.elements().second, mo_blocksize);
-  auto tr_allvir_mo = tre->compute_range(nbf_ribs_minus_occ, mo_blocksize);
+  auto tr_cabs_mo = tre->compute_range(tr_cabs.elements().second, vir_blocksize);
+  auto tr_allvir_mo = tre->compute_range(nbf_ribs_minus_occ, vir_blocksize);
 
 
  utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");

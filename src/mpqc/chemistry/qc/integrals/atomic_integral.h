@@ -18,6 +18,9 @@ namespace mpqc {
 namespace integrals {
 
 // TODO rename AtomicIntegral -> OperatorAOFactory
+// TODO better inverse of two center
+// TODO direct integral
+// TODO Screener for different type of integral
 /**
  * \brief Atomic Integral Class
  *
@@ -143,9 +146,6 @@ class AtomicIntegral : public AtomicIntegralBase {
 
   /// compute sparse array
 
-  /// TODO better inverse of two center
-  /// TODO direct integral
-  /// TODO Screener for different type of integral
   template <typename E, unsigned long N, typename U = Policy>
   TA::Array<double, N, Tile,
             typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,

@@ -12,10 +12,20 @@
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/f12/f12_intermediates.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
+#include <mpqc/chemistry/qc/f12/cabs_singles.h>
 #include <mpqc/chemistry/qc/mbpt/mp2.h>
 
 namespace mpqc {
 namespace f12 {
+
+/*
+ *  MP2F12 Class
+ *  Take all the options from MP2
+ *
+ *  Other options:
+ *  Singles = bool, if perform cabs_singles calculation, default is true
+ *
+ */
 
 template <typename Tile>
 class MP2F12 {
@@ -91,11 +101,29 @@ class MP2F12 {
       utility::print_par(mo_integral().get_world(), "E_F12: ", ef12, "\n");
     }
 
+
+    // compute cabs singles
+    real_t e_s = 0.0;
+    bool singles = in.HasMember("Singles") ? in["Singles"].GetBool() : true;
+    if(singles){
+
+      auto single_time0 = mpqc_time::fenced_now(world);
+
+      CABSSingles<Tile> cabs_singles(mo_integral());
+      e_s = cabs_singles.compute();
+      if (debug()) {
+        utility::print_par(mo_integral().get_world(), "E_S: ", e_s, "\n");
+      }
+      auto single_time1 = mpqc_time::fenced_now(world);
+      auto single_time = mpqc_time::duration_in_s(single_time0, single_time1);
+      mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time, "\n");
+    }
+
     auto f12_time1 = mpqc_time::fenced_now(world);
     auto f12_time = mpqc_time::duration_in_s(f12_time0, f12_time1);
     mpqc::utility::print_par(world, "Total MP2F12 Time:  ", f12_time, "\n");
 
-    return emp2 + ef12;
+    return emp2 + ef12 + e_s;
   }
 
  protected:
@@ -260,7 +288,7 @@ MP2F12<Tile>::compute_mp2_f12_c() {
     Matrix Eij_ct = V_ijij_ijji_nodf("i1,j1,i2,j2")
                         .reduce(F12PairEnergyReductor<Tile>(
                             2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
-    if (debug()) utility::print_par(world, "E_CT: ", Eij_ct, "\n");
+    if (debug()) utility::print_par(world, "E_CT: ", Eij_ct.sum(), "\n");
     Eij_F12 += Eij_ct;
   }
 

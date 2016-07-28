@@ -1,4 +1,5 @@
 set(sources
+        cabs_singles.h
         f12_intermediates.h
         f12_utility.cpp
         f12_utility.h

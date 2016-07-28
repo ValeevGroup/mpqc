@@ -19,24 +19,26 @@
 namespace mpqc {
     namespace cc {
 
-        // CCSD class that computed CCSD energy
+    /*
+     * CCSD class that computed CCSD energy
+     *   Options
+     *   BlockSize = int, control the block size in MO, default 16
+     *   OccBlockSize = int, control the block size in Occ, overide BlockSize
+     *   VirBlockSize = int, control the block size in Vir, overide BlockSize
+     *   FrozenCore = bool, control if use frozen core, default False
+     *   Direct = bool , control if use direct approach, default True
+     *   DIIS_ndi = int, control the number of data sets to retain, default is 5
+     *   DIIS_dmp = float, see DIIS in TA
+     *   DIIS_strt = int, see DIIS in TA
+     *   DIIS_ngr = int, see DIIS in TA
+     *   DIIS_ngrdiis = int, see DIIS in TA
+     *   DIIS_mf = float, see DIIS in TA
+     *   LessMemory = bool, control if store large intermediate in straight approach, default is true
+     *   PrintDetail = bool, if do detail printing, default is false
+     *   Converge = double, convergence of CCSD energy, default is 1.0e-07
+     */
 
 
-        // Options
-        // BlockSize = int, control the block size in MO, default 16
-        // OccBlockSize = int, control the block size in Occ, overide BlockSize
-        // VirBlockSize = int, control the block size in Vir, overide BlockSize
-        // FrozenCore = bool, control if use frozen core, default False
-        // Direct = bool , control if use direct approach, default True
-        // DIIS_ndi = int, control the number of data sets to retain, default is 5
-        // DIIS_dmp = float, see DIIS in TA
-        // DIIS_strt = int, see DIIS in TA
-        // DIIS_ngr = int, see DIIS in TA
-        // DIIS_ngrdiis = int, see DIIS in TA
-        // DIIS_mf = float, see DIIS in TA
-        // LessMemory = bool, control if store large intermediate in straight approach, default is true
-        // PrintDetail = bool, if do detail printing, default is false
-        // Converge = double, convergence of CCSD energy, default is 1.0e-07
 
         template<typename Tile, typename Policy>
         class CCSD {

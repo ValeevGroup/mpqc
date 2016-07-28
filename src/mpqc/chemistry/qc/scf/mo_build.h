@@ -143,7 +143,7 @@ void closed_shell_cabs_mo_build_svd(
     auto S_obs = ao_int.compute(L"<κ|λ>");
 
     // construct cabs
-    TA::DistArray <Tile, Policy> C_cabs, C_ri;
+    TA::DistArray <Tile, Policy> C_cabs, C_ri, C_allvir;
     {
         MatrixD S_obs_eigen = array_ops::array_to_eigen(S_obs);
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_obs_eigen);
@@ -167,29 +167,52 @@ void closed_shell_cabs_mo_build_svd(
         MatrixD C_cabs_eigen = X_ribs_eigen_inv * Vnull;
 
 
+
+        // solve orbitals for all virtual
+
+        auto n_vir = tre->get_vir();
+        MatrixD C_allvirtual_eigen = MatrixD::Zero(nbf_ribs, n_vir+nbf_cabs);
+
+        {
+
+          auto C_vir = orbital_registry->retrieve(OrbitalIndex(L"a")).array();
+          MatrixD C_vir_eigen = array_ops::array_to_eigen(C_vir);
+
+          auto n_obs = C_vir_eigen.rows();
+
+          C_allvirtual_eigen.block(0,0,n_obs,n_vir) << C_vir_eigen;
+          C_allvirtual_eigen.block(0,n_vir,nbf_ribs, nbf_cabs) << C_cabs_eigen;
+        }
+
         // get mo block size
         std::size_t mo_blocksize = in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
-        utility::print_par(world, "MoBlockSize: ", mo_blocksize, "\n");
+        std::size_t vir_blocksize = in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
+        utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
         auto tr_ribs = S_ribs.trange().data()[0];
         auto tr_cabs = S_cabs.trange().data()[0];
-        auto tr_cabs_mo = tre->compute_range(tr_cabs.elements().second, mo_blocksize);
-        auto tr_ribs_mo = tre->compute_range(tr_ribs.elements().second, mo_blocksize);
+        auto tr_cabs_mo = tre->compute_range(nbf_cabs, vir_blocksize);
+        auto tr_ribs_mo = tre->compute_range(nbf_ribs, vir_blocksize);
+        auto tr_allvir_mo = tre->compute_range(nbf_cabs+n_vir, vir_blocksize);
 
 
         utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+        utility::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
         utility::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
 
         C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen, tr_ribs, tr_cabs_mo);
         C_ri = array_ops::eigen_to_array<TA::TensorD>(world, X_ribs_eigen_inv, tr_ribs, tr_ribs_mo);
+        C_allvir = array_ops::eigen_to_array<TA::TensorD>(world, C_allvirtual_eigen, tr_ribs, tr_allvir_mo);
 
         // insert to orbital space
         using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray < Tile, Policy>>;
         auto C_cabs_space = OrbitalSpaceTArray(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
         auto C_ribs_space = OrbitalSpaceTArray(OrbitalIndex(L"P'"), OrbitalIndex(L"ρ"), C_ri);
+        auto C_allvir_space = OrbitalSpaceTArray(OrbitalIndex(L"A'"), OrbitalIndex(L"ρ"), C_allvir);
 
         orbital_registry->add(C_cabs_space);
         orbital_registry->add(C_ribs_space);
+        orbital_registry->add(C_allvir_space);
 
         auto mo_time1 = mpqc_time::fenced_now(world);
         auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);

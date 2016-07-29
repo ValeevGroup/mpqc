@@ -177,8 +177,6 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
     Eij_F12 += eij;
   }
 
-  if (debug()) utility::print_par(world, "E_F12: ", Eij_F12.sum(), "\n");
-
   return Eij_F12;
 }
 

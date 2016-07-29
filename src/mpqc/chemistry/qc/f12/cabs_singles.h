@@ -64,7 +64,7 @@ private:
    * @param[in] F_AB  Fock matrix in all virtual space
    * @param[in] F_MN  Fock matrix in occupied space
    */
-  void compute_preconditioner(TArray &P_MA, const TArray &F_AB, const TArray &F_MN);
+   TArray compute_preconditioner(const TA::TiledRange& trange, const TArray &F_AB, const TArray &F_MN);
 
 private:
 
@@ -122,7 +122,7 @@ CABSSingles<Tile>::compute() {
     auto tr_A = F_AB.trange().data()[0];
 
     F_MA = array_ops::eigen_to_array<Tile>(F_Ma.get_world(), F_MA_eigen,tr_m, tr_A);
-    F_MA.truncate();
+//    F_MA.truncate();
 
   }
 //  std::cout << F_MA << std::endl;
@@ -131,8 +131,7 @@ CABSSingles<Tile>::compute() {
   t("i,A") = -F_MA("i,A");
 
   // compute preconditioner
-  TArray P_MA(F_MA.get_world(), F_MA.trange(), F_MA.get_shape());
-  compute_preconditioner(P_MA, F_AB, F_MN);
+  TArray P_MA = compute_preconditioner(F_MA.trange(), F_AB, F_MN);
 //  std::cout << P_MA << std::endl;
 
   CABSSingleEquation cabs_singles(F_AB,F_MN);
@@ -148,18 +147,19 @@ CABSSingles<Tile>::compute() {
 }
 
 template <typename Tile>
-void CABSSingles<Tile>::compute_preconditioner(TA::DistArray <Tile, TA::SparsePolicy> &P_MA,
-                                          const TA::DistArray <Tile, TA::SparsePolicy> &F_AB,
-                                          const TA::DistArray <Tile, TA::SparsePolicy> &F_MN)
+TA::DistArray <Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner
+        (const TA::TiledRange& trange,
+         const TA::DistArray <Tile, TA::SparsePolicy> &F_AB,
+         const TA::DistArray <Tile, TA::SparsePolicy> &F_MN)
 {
+  auto& world = F_AB.get_world();
+
   Eigen::MatrixXd F_AB_eigen = array_ops::array_to_eigen(F_AB);
   Eigen::MatrixXd F_MN_eigen = array_ops::array_to_eigen(F_MN);
 
-  auto& world = P_MA.get_world();
   using range_type = typename TArray::range_type;
-  using iterator = typename TArray::iterator;
 
-  auto make_tile = [&F_AB_eigen, &F_MN_eigen](range_type &range){
+  auto make_tile = [&F_AB_eigen, &F_MN_eigen](int64_t ord, range_type range, Tile* out_tile, TA::TensorF* norms){
     auto result_tile = Tile(range);
     // compute index
     const auto i0 = result_tile.range().lobound()[0];
@@ -177,18 +177,43 @@ void CABSSingles<Tile>::compute_preconditioner(TA::DistArray <Tile, TA::SparsePo
         result_tile[ia] = result_ai;
       }
     }
-    return result_tile;
 
+
+    const auto tile_volume = result_tile.range().volume();
+    const auto tile_norm = result_tile.norm();
+    bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
+    if (save_norm) {
+      *out_tile = result_tile;
+      (*norms)[ord] = tile_norm;
+    }
   };
 
-  for (iterator it = P_MA.begin(); it != P_MA.end(); ++it ){
-    madness::Future<Tile> tile = world.taskq.add(
-            make_tile,
-            P_MA.trange().make_tile_range(it.ordinal())
-            );
-    *it = tile;
+  const auto tvolume = trange.tiles().volume();
+  std::vector<Tile> tiles(tvolume);
+  TA::TensorF tile_norms(trange.tiles(), 0.0);
+
+  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  for (auto const ord : *pmap) {
+    world.taskq.add(make_tile, ord, trange.make_tile_range(ord), &tiles[ord], &tile_norms);
   }
+
   world.gop.fence();
+
+  TA::SparseShape<float> shape(world, tile_norms, trange);
+  TArray P_MA(world, trange, shape, pmap);
+
+  for (auto const ord : *pmap){
+
+    if(P_MA.is_local(ord) && !P_MA.is_zero(ord)){
+      auto &tile = tiles[ord];
+      assert(!tile.empty());
+      P_MA.set(ord, tile);
+    }
+  }
+
+  world.gop.fence();
+
+  return P_MA;
 
 }
 

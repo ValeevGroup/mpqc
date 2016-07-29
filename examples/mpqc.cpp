@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <chrono>
+#include <clocale>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
@@ -94,13 +95,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
     in.Parse(json);
     delete[] json;
 
-    std::cout.sync_with_stdio(true);
-    std::cerr.sync_with_stdio(true);
     std::cout << std::setprecision(15);
     std::wcout.sync_with_stdio(false);
     std::wcerr.sync_with_stdio(false);
+    std::setlocale(LC_ALL, "en_US.utf8");
     std::wcout.imbue(std::locale("en_US.UTF-8"));
     std::wcerr.imbue(std::locale("en_US.UTF-8"));
+    std::wcout.sync_with_stdio(true);
+    std::wcerr.sync_with_stdio(true);
 
     /**
      * obtain basis option for program

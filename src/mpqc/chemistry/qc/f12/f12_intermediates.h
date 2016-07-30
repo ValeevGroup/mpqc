@@ -1201,13 +1201,14 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_VT1_ijij_ijji(
  * tensors are equivalent and only the former is computed.
  *
  * @tparam String any string type (e.g., std::basic_string and char[])
-s * @param target_str std::string, the only valid vales are "V" or "X"
+ * @param target_str std::string, the only valid vales are "V" or "X"
  * @param mo_integral reference to MolecularIntegral
  * @param p an OrbitalIndex key (must be known to \c mo_integral )
  * @param q an OrbitalIndex key (must be known to \c mo_integral )
  * @param r an OrbitalIndex key (must be known to \c mo_integral )
  * @param s an OrbitalIndex key (must be known to \c mo_integral )
  * @param df if \c true , use density fitting (\c df=false is not yet supported)
+ * @param cabs if \c false , skip the CABS contributions; the default value is \c true
  * @return \c std::tuple with V("p,q,r,s") and V("p,q,s,r"); the latter
  *         is empty if \c p refers to the same space as \c q **or** \c r refers
  * to the same space as \c s .
@@ -1217,7 +1218,7 @@ std::tuple<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>
 VX_pqrs_pqsr(const std::string &target_str,
              integrals::MolecularIntegral<Tile, Policy> &mo_integral,
              const String &p, const String &q, const String &r,
-             const String &s, bool df = true) {
+             const String &s, bool df = true, bool cabs = true) {
   using mpqc::utility::concat;
   using mpqc::utility::wconcat;
   using mpqc::utility::concatcm;
@@ -1248,18 +1249,17 @@ VX_pqrs_pqsr(const std::string &target_str,
   // symmetrization
   const auto p1_equiv_p2 = equiv_pq && equiv_rs;
 
-  const auto v_time0 = mpqc_time::now(world, accurate_time);
+  const auto time0 = mpqc_time::now(world, accurate_time);
 
-  TA::DistArray<Tile, Policy> A_pqrs;
-  TA::DistArray<Tile, Policy> A_pqsr;
+  TA::DistArray<Tile, Policy> A_pqrs, A_pqsr;
 
   if (need_pqsr) {
     utility::print_par(world, "Compute ", target_str, "(", p, ",", q, ",", r,
-                        ",", s, ") and ", target_str, "(", p, ",", q, ",", s,
-                        ",", r, ") DF=", std::to_string(df), "\n");
+                       ",", s, ") and ", target_str, "(", p, ",", q, ",", s,
+                       ",", r, ") DF=", std::to_string(df), "\n");
   } else {
-    utility::print_par(world, "\nCompute ", target_str, "(", p, ",", q, ",", r,
-                        ",", s, ") DF=", std::to_string(df), "\n");
+    utility::print_par(world, "Compute ", target_str, "(", p, ",", q, ",", r,
+                       ",", s, ") DF=", std::to_string(df), "\n");
   }
 
   {
@@ -1283,7 +1283,7 @@ VX_pqrs_pqsr(const std::string &target_str,
     mo_integral.purge_operator(world, to_wstring(opstr));
     const auto time1 = mpqc_time::now(world, accurate_time);
     const auto time = mpqc_time::duration_in_s(time0, time1);
-    utility::print_par(world, "V Term1 Time: ", time, " S\n");
+    utility::print_par(world, target_str, " Term1 Time: ", time, " S\n");
   }
 
   {
@@ -1302,10 +1302,10 @@ VX_pqrs_pqsr(const std::string &target_str,
     }
     const auto time1 = mpqc_time::now(world, accurate_time);
     const auto time = mpqc_time::duration_in_s(time0, time1);
-    utility::print_par(world, "V Term2 Time: ", time, " S\n");
+    utility::print_par(world, target_str, " Term2 Time: ", time, " S\n");
   }
 
-  {
+  if (cabs) {
     const auto rightopstr = (target == Target::V) ? "G" : "R";
 
     const auto pqRmA = mo_integral(wconcat("<", p, " ", q, "|R|m0 a'0>", methodstr));
@@ -1345,12 +1345,12 @@ VX_pqrs_pqsr(const std::string &target_str,
 
     const auto time1 = mpqc_time::now(world, accurate_time);
     const auto time = mpqc_time::duration_in_s(time0, time1);
-    utility::print_par(world, "V Term3 Time: ", time, " S\n");
+    utility::print_par(world, target_str, " Term3 Time: ", time, " S\n");
   }
 
-  const auto v_time1 = mpqc_time::now(world, accurate_time);
-  const auto v_time = mpqc_time::duration_in_s(v_time0, v_time1);
-  utility::print_par(world, "V Term Total Time: ", v_time, " S\n");
+  const auto time1 = mpqc_time::now(world, accurate_time);
+  const auto time = mpqc_time::duration_in_s(time0, time1);
+  utility::print_par(world, target_str, " Total Time: ", time, " S\n");
 
 //  std::cout << "A_pqrs:\n" << A_pqrs << std::endl;
 //  if (need_pqsr) std::cout << "A_pqsr:\n" << A_pqsr << std::endl;

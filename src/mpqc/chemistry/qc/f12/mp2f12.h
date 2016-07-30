@@ -408,7 +408,8 @@ public:
 
   GF2F12() = default;
 
-  GF2F12(MolecularIntegralClass& mo_int) : mp2_(std::make_shared<mbpt::MP2<Tile, Policy>>(mo_int)) {}
+  GF2F12(MolecularIntegralClass& mo_int) :
+    mp2_(std::make_shared<mbpt::MP2<Tile, Policy>>(mo_int)){}
 
   MolecularIntegralClass &mo_integral() const { return mp2_->mo_integral(); }
 
@@ -433,6 +434,7 @@ public:
     auto time0 = mpqc_time::fenced_now(world);
 
     orbital_ = in.HasMember("Orbital") ? in["Orbital"].GetInt() : -1;
+    use_cabs_ = in.HasMember("UseCABS") ? in["UseCABS"].GetBool() : true;
     if (orbital_ == 0)
       throw std::runtime_error("GF2F12::Orbital must be positive (for particles) or negative (for holes)");
     if (orbital_ < 0 && (abs(orbital_)-1 >= trange1_engine()->get_active_occ()))
@@ -444,7 +446,8 @@ public:
     TA_USER_ASSERT(method == "diagonal-fixed" || method == "diagonal-iterative",
                    "GF2F12: unknown value for keyword \"method\"");
 
-    std::cout << "orbital = " << orbital_ << " method = " << method << std::endl;
+    std::cout << "orbital = " << orbital_ << " method = " << method
+              << " cabs = " << std::to_string(use_cabs_) << std::endl;
 
     compute_diagonal(method == "diagonal-fixed" ? 0 : 100);
 
@@ -460,6 +463,7 @@ private:
 
   std::shared_ptr<mbpt::MP2<Tile, Policy>> mp2_;
   int orbital_;
+  bool use_cabs_;
 
   /// use self-energy in diagonal representation
   void compute_diagonal(int max_niter = 0);
@@ -504,14 +508,13 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   TArray Sigma_pph_f12;
   {
     TArray V_ixix, V_ixxi;
-    std::tie(V_ixix, V_ixxi) = mpqc::f12::VX_pqrs_pqsr("V", mo_integral(), "i", "x", "j", "y");
+    const bool df = true;  // always do DF
+    std::tie(V_ixix, V_ixxi) = mpqc::f12::VX_pqrs_pqsr("V", mo_integral(), "i", "x", "j", "y",
+                                                       df, use_cabs_);
     Sigma_pph_f12("x,y") = 0.5 * (1.25 * V_ixix("i,x,j,y") - 0.25 * V_ixxi("i,x,y,j")) * mo_integral()(L"<i|I|j>");
   }
   //std::cout << "Sigma_pph_f12:\n" << Sigma_pph_f12 << std::endl;
   Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
-
-  printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
-  printf("==== =========== =========== ===========\n");
 
   // done with F12 ... remove all geminal ints and CABS indices
   auto& world = mo_integral().get_world();
@@ -519,13 +522,18 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   mo_integral().purge_index(world, L"a'");
   mo_integral().purge_index(world, L"ρ");
 
+  // in diagonal approximation these integrals do not change in root-search
+  TArray& g_vvog = mo_integral().compute(L"<a b|G|i x>[df]");
+  TArray& g_oovg = mo_integral().compute(L"<i j|G|a x>[df]");
+
+  printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+  printf("==== =========== =========== ===========\n");
   size_t iter = 0;
   decltype(SE) SE_diff;
   do {
 
     TArray Sigma_pph;
     {
-      TArray& g_vvog = mo_integral().compute(L"<a b|G|i x>[df]");
       TArray dg_vvog = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
           g_vvog, uocc_evals, uocc_evals, occ_evals, SE);
       Sigma_pph("x,y") = 0.5 * (4*g_vvog("a,b,i,x") - 2*g_vvog("b,a,i,x")) * dg_vvog("a,b,i,y");
@@ -534,7 +542,6 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
     TArray Sigma_hhp;
     {
-      TArray& g_oovg = mo_integral().compute(L"<i j|G|a x>[df]");
       TArray dg_oovg = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
           g_oovg, occ_evals, occ_evals, uocc_evals, SE);
       Sigma_hhp("x,y") = 0.5 * (4*g_oovg("i,j,a,x") - 2*g_oovg("j,i,a,x")) * dg_oovg("i,j,a,y");

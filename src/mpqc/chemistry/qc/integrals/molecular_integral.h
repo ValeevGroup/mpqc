@@ -329,6 +329,8 @@ namespace integrals{
                          ? this->compute(reduced_formula)
                          : this->compute3(reduced_formula));
 
+          time0 = mpqc_time::now(world_, accurate_time_);
+
           const auto reduced_index_position = reduced_index_coord.first;
           const auto reduced_index_rank = reduced_index_coord.second;
           const auto reduced_index_absrank =

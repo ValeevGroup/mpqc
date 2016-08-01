@@ -422,6 +422,8 @@ public:
   }
 
   virtual real_t compute(const rapidjson::Document& in){
+    using mpqc::utility::print_par;
+
     auto& world = this->mo_integral().get_world();
 
     this->mp2_->init(in);
@@ -446,15 +448,15 @@ public:
     TA_USER_ASSERT(method == "diagonal-fixed" || method == "diagonal-iterative",
                    "GF2F12: unknown value for keyword \"method\"");
 
-    std::cout << "orbital = " << orbital_ << " method = " << method
-              << " cabs = " << std::to_string(use_cabs_) << std::endl;
+    print_par(world, "orbital = ", orbital_, " method = ", method,
+              " cabs = ", std::to_string(use_cabs_), "\n");
 
     compute_diagonal(method == "diagonal-fixed" ? 0 : 100);
 
     auto time1 = mpqc_time::fenced_now(world);
     auto time = mpqc_time::duration_in_s(time0, time1);
 
-    mpqc::utility::print_par(world, "Total GF2F12 Time:  ", time, "\n");
+    print_par(world, "Total GF2F12 Time:  ", time, "\n");
 
     return 0.0;
   }
@@ -526,8 +528,10 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   TArray& g_vvog = mo_integral().compute(L"<a b|G|i x>[df]");
   TArray& g_oovg = mo_integral().compute(L"<i j|G|a x>[df]");
 
-  printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
-  printf("==== =========== =========== ===========\n");
+  if (world.rank() == 0) {
+    printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+    printf("==== =========== =========== ===========\n");
+  }
   size_t iter = 0;
   decltype(SE) SE_diff;
   do {
@@ -560,7 +564,8 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     auto SE_updated = Sigma(0, 0) + orbital_energy()->operator()(orbital);
     SE_diff = SE_updated - SE;
 
-    printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated, SE_diff);
+    if (world.rank() == 0)
+      printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated, SE_diff);
 
     SE = SE_updated;
     ++iter;
@@ -569,13 +574,15 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
   mo_integral().keep_partial_transforms(false);
 
-  auto SE_F12 = SE + Sigma_f12(0,0);
-  auto Hartree2eV = 27.21138602;
-  std::string orblabel = std::string(orbital_ < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
-  printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n", orblabel.c_str(), SE * Hartree2eV, SE);
-  printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n", orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
-  if (orbital_ > 0)
-    printf("WARNING: non-strongly-orthogonal F12 projector is used for the F12 correction to EA!!!");
+  if (world.rank() == 0) {
+    auto SE_F12 = SE + Sigma_f12(0,0);
+    auto Hartree2eV = 27.21138602;
+    std::string orblabel = std::string(orbital_ < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
+    printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n", orblabel.c_str(), SE * Hartree2eV, SE);
+    printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n", orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
+    if (orbital_ > 0)
+      printf("WARNING: non-strongly-orthogonal F12 projector is used for the F12 correction to EA!!!");
+  }
 }
 
 }  // namespace f12

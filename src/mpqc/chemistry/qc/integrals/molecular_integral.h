@@ -167,6 +167,12 @@ namespace integrals{
           atomic_integral().registry().purge_index(world, index);
         }
 
+        /// purge formula described by string \c str
+        /// from mo_registry
+        void purge_formula(madness::World& world, const std::wstring& str) {
+          mo_formula_registry_.purge_formula(world, str);
+        }
+
        private:
 
         /// function to parse input

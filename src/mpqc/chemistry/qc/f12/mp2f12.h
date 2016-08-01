@@ -444,14 +444,20 @@ public:
     if (orbital_ > 0 && (orbital_-1 >= trange1_engine()->get_vir()))
       throw std::runtime_error("GF2F12::orbital is invalid (the number of particles exceeded)");
 
-    std::string method = in.HasMember("DysonMethod") ? in["DysonMethod"].GetString() : "diagonal-fixed";
-    TA_USER_ASSERT(method == "diagonal-fixed" || method == "diagonal-iterative",
-                   "GF2F12: unknown value for keyword \"method\"");
+    std::string method_str = in.HasMember("DysonMethod") ? in["DysonMethod"].GetString() : "diagonal";
+    enum class Method {diag, nondiag};
+    Method method;
+    if (method_str.find("diagonal") == 0) method = Method::diag;
+    else if (method_str == "nondiagonal") method = Method::nondiag;
+    else throw std::runtime_error("GF2F12: unknown value for keyword \"method\"");
 
-    print_par(world, "orbital = ", orbital_, " method = ", method,
+    print_par(world, "orbital = ", orbital_, " method = ", method_str,
               " cabs = ", std::to_string(use_cabs_), "\n");
 
-    compute_diagonal(method == "diagonal-fixed" ? 0 : 100);
+    if (method == Method::diag)
+      compute_diagonal();
+    else
+      compute_nondiagonal();
 
     auto time1 = mpqc_time::fenced_now(world);
     auto time = mpqc_time::duration_in_s(time0, time1);
@@ -468,11 +474,14 @@ private:
   bool use_cabs_;
 
   /// use self-energy in diagonal representation
-  void compute_diagonal(int max_niter = 0);
+  void compute_diagonal(int max_niter = 100);
+  /// use non-diagonal self-energy
+  void compute_nondiagonal(int max_niter = 100);
 };
 
 template <typename Tile>
 void GF2F12<Tile>::compute_diagonal(int max_niter) {
+  auto& world = mo_integral().get_world();
 
   auto nfzc = this->mp2_->trange1_engine()->get_nfrozen();
   auto nocc = this->mp2_->trange1_engine()->get_active_occ();
@@ -506,7 +515,6 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
   mo_integral().keep_partial_transforms(true);
 
-  // in diagonal approximation these integrals do not change in root-search
   TArray& g_vvog = mo_integral().compute(L"<a b|G|i x>[df]");
   TArray& g_oovg = mo_integral().compute(L"<i j|G|a x>[df]");
 
@@ -570,7 +578,137 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
 
   // done with F12 ... remove all geminal ints and CABS indices
+  mo_integral().purge_operator(world, L"R");
+  mo_integral().purge_index(world, L"a'");
+  mo_integral().purge_index(world, L"ρ");
+
+  mo_integral().keep_partial_transforms(false);
+
+  if (world.rank() == 0) {
+    auto SE_F12 = SE + Sigma_f12(0,0);
+    auto Hartree2eV = 27.21138602;
+    std::string orblabel = std::string(orbital_ < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
+    printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n", orblabel.c_str(), SE * Hartree2eV, SE);
+    printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n", orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
+    if (orbital_ > 0)
+      printf("WARNING: non-strongly-orthogonal F12 projector is used for the F12 correction to EA!!!");
+  }
+}
+
+template <typename Tile>
+void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   auto& world = mo_integral().get_world();
+
+  auto nfzc = this->mp2_->trange1_engine()->get_nfrozen();
+  auto nocc = this->mp2_->trange1_engine()->get_active_occ();
+  auto nuocc = this->mp2_->trange1_engine()->get_vir();
+  // map orbital_ (index relative to Fermi level) to orbital index in active orbital space
+  const auto orbital = nfzc + nocc + ((orbital_ < 0) ? orbital_ : orbital_ - 1);
+  auto SE = orbital_energy()->operator()(orbital);
+
+  Eigen::VectorXd occ_evals = orbital_energy()->segment(nfzc, nocc + nfzc);
+  Eigen::VectorXd uocc_evals = orbital_energy()->segment(nfzc + nocc, nuocc);
+
+  mo_integral().keep_partial_transforms(true);
+
+  auto qp_str = L"p";
+  //auto qp_str = (orbital_ < 0) ? L"i" : L"a";
+  using mpqc::utility::wconcat;
+  TArray& g_vvog = mo_integral().compute(wconcat("<a b|G|i ", qp_str, ">[df]"));
+  TArray& g_oovg = mo_integral().compute(wconcat("<i j|G|a ", qp_str, ">[df]"));
+
+  if (world.rank() == 0) {
+    printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+    printf("==== =========== =========== ===========\n");
+  }
+  size_t iter = 0;
+  decltype(SE) SE_diff;
+  RowMatrixXd C_dyson;  // Dyson orbital coefficients
+  do {
+
+    TArray Sigma_pph;
+    {
+      TArray dg_vvog = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
+          g_vvog, uocc_evals, uocc_evals, occ_evals, SE);
+      Sigma_pph("x,y") = 0.5 * (4*g_vvog("a,b,i,x") - 2*g_vvog("b,a,i,x")) * dg_vvog("a,b,i,y");
+    }
+    //std::cout << "Sigma_pph:\n" << Sigma_pph << std::endl;
+
+    TArray Sigma_hhp;
+    {
+      TArray dg_oovg = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
+          g_oovg, occ_evals, occ_evals, uocc_evals, SE);
+      Sigma_hhp("x,y") = 0.5 * (4*g_oovg("i,j,a,x") - 2*g_oovg("j,i,a,x")) * dg_oovg("i,j,a,y");
+    }
+    //std::cout << "Sigma_hhp:\n" << Sigma_hhp << std::endl;
+
+    RowMatrixXd Sigma;
+    {
+      TArray Sigma_ta;
+      Sigma_ta("x,y") = Sigma_pph("x,y") + Sigma_hhp("x,y");
+      Sigma = array_ops::array_to_eigen(Sigma_ta);
+    }
+
+    //std::cout << "Sigma = " << Sigma << std::endl;
+
+    // to keep numerics consistent, diagonalize on 1 node and propagate to the rest
+    decltype(SE) SE_updated = 0.0;
+    if (world.rank() == 0) {
+      RowMatrixXd F_dyson = Sigma + RowMatrixXd(orbital_energy()->asDiagonal());
+      Eigen::SelfAdjointEigenSolver<RowMatrixXd> eig_solver(F_dyson);
+      auto eps_dyson = eig_solver.eigenvalues();
+      SE_updated = eps_dyson(orbital);
+      C_dyson = eig_solver.eigenvectors();
+      assert(world.size() == 1);
+    }
+
+    SE_diff = SE_updated - SE;
+
+    if (world.rank() == 0)
+      printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated, SE_diff);
+
+    SE = SE_updated;
+    ++iter;
+
+  } while ((fabs(SE_diff) > 1e-6) && (iter <= max_niter));
+
+  mo_integral().purge_index(world, qp_str);
+
+  // will use only the target orbital to transform ints
+  // create an OrbitalSpace here
+  {
+    auto& world = this->mo_integral().get_world();
+    auto orbital_registry = this->mo_integral().orbital_space();
+    auto qp_space = orbital_registry->retrieve(OrbitalIndex(qp_str));
+    auto C_qp = array_ops::array_to_eigen(qp_space.array());
+    auto C_qp_dyson = C_qp * C_dyson;
+    auto C_x = C_qp_dyson.block(0, orbital, C_qp_dyson.rows(), 1);
+    auto tr_obs = qp_space.array().trange().data().front();
+    TA::TiledRange1 tr_x{0,1};
+    auto C_x_ta = array_ops::eigen_to_array<Tile>(world,
+                                                  C_x,
+                                                  tr_obs,
+                                                  tr_x);
+
+    using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile,Policy>>;
+    auto x_space = OrbitalSpaceTArray(OrbitalIndex(L"x"),OrbitalIndex(L"κ"), C_x_ta);
+    orbital_registry->add(x_space);
+  }
+
+
+  // for now the f12 contribution is energy-independent
+  TArray Sigma_pph_f12;
+  {
+    TArray V_ixix, V_ixxi;
+    const bool df = true;  // always do DF
+    std::tie(V_ixix, V_ixxi) = mpqc::f12::VX_pqrs_pqsr("V", mo_integral(), "i", "x", "j", "y",
+                                                       df, use_cabs_);
+    Sigma_pph_f12("x,y") = 0.5 * (1.25 * V_ixix("i,x,j,y") - 0.25 * V_ixxi("i,x,y,j")) * mo_integral()(L"<i|I|j>");
+  }
+  //std::cout << "Sigma_pph_f12:\n" << Sigma_pph_f12 << std::endl;
+  Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
+
+  // done with F12 ... remove all geminal ints and CABS indices
   mo_integral().purge_operator(world, L"R");
   mo_integral().purge_index(world, L"a'");
   mo_integral().purge_index(world, L"ρ");

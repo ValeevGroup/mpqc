@@ -506,24 +506,6 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
   mo_integral().keep_partial_transforms(true);
 
-  // for now the f12 contribution is energy-independent
-  TArray Sigma_pph_f12;
-  {
-    TArray V_ixix, V_ixxi;
-    const bool df = true;  // always do DF
-    std::tie(V_ixix, V_ixxi) = mpqc::f12::VX_pqrs_pqsr("V", mo_integral(), "i", "x", "j", "y",
-                                                       df, use_cabs_);
-    Sigma_pph_f12("x,y") = 0.5 * (1.25 * V_ixix("i,x,j,y") - 0.25 * V_ixxi("i,x,y,j")) * mo_integral()(L"<i|I|j>");
-  }
-  //std::cout << "Sigma_pph_f12:\n" << Sigma_pph_f12 << std::endl;
-  Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
-
-  // done with F12 ... remove all geminal ints and CABS indices
-  auto& world = mo_integral().get_world();
-  mo_integral().purge_operator(world, L"R");
-  mo_integral().purge_index(world, L"a'");
-  mo_integral().purge_index(world, L"ρ");
-
   // in diagonal approximation these integrals do not change in root-search
   TArray& g_vvog = mo_integral().compute(L"<a b|G|i x>[df]");
   TArray& g_oovg = mo_integral().compute(L"<i j|G|a x>[df]");
@@ -571,6 +553,27 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     ++iter;
 
   } while ((fabs(SE_diff) > 1e-6) && (iter <= max_niter));
+
+  mo_integral().purge_formula(world, L"<a b|G|i x>[df]");
+  mo_integral().purge_formula(world, L"<i j|G|a x>[df]");
+
+  // for now the f12 contribution is energy-independent
+  TArray Sigma_pph_f12;
+  {
+    TArray V_ixix, V_ixxi;
+    const bool df = true;  // always do DF
+    std::tie(V_ixix, V_ixxi) = mpqc::f12::VX_pqrs_pqsr("V", mo_integral(), "i", "x", "j", "y",
+                                                       df, use_cabs_);
+    Sigma_pph_f12("x,y") = 0.5 * (1.25 * V_ixix("i,x,j,y") - 0.25 * V_ixxi("i,x,y,j")) * mo_integral()(L"<i|I|j>");
+  }
+  //std::cout << "Sigma_pph_f12:\n" << Sigma_pph_f12 << std::endl;
+  Matrix Sigma_f12 = array_ops::array_to_eigen(Sigma_pph_f12);
+
+  // done with F12 ... remove all geminal ints and CABS indices
+  auto& world = mo_integral().get_world();
+  mo_integral().purge_operator(world, L"R");
+  mo_integral().purge_index(world, L"a'");
+  mo_integral().purge_index(world, L"ρ");
 
   mo_integral().keep_partial_transforms(false);
 

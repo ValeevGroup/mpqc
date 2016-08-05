@@ -613,8 +613,7 @@ class KeyVal {
   /// This resolves the references in the path.
   /// @note repeatedly recurses, hence can be expensive
   /// @note circular references are not detected, thus to prevent infinite
-  /// recursion possible
-  ///       will throw if too many iterations are needed
+  /// recursion will throw if too many iterations are needed
   /// @param niter_max max number of iterations
   /// @throws \c KeyVal::bad_input if max number of iterations exceeded
   key_type resolve_refs(const key_type& path, size_t niter_max = 10) const {

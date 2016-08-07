@@ -43,15 +43,11 @@ class CCSDIntermediate {
     return direct_ao_;
   }
 
-/// clean the three center ingeral
-    void clean_three_center() {
-    }
+  bool is_df() const {
+    return df_;
+  }
 
-    /// clean all the two electron integral computed
-    void clean_two_electron() {
-    }
-
-    /// get mo coefficient
+  /// get mo coefficient
     /// occ part
     const TArray get_Ci() const {
         return mo_int_.orbital_space()->retrieve(OrbitalIndex(L"i")).array();

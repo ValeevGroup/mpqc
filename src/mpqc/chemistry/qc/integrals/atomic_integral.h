@@ -245,27 +245,27 @@ AtomicIntegral<Tile, Policy>::compute_two_body_integral(
       if (operation.type() == Operator::Type::cGTG2) {
         auto squared_pragmas = f12::gtg_params_squared(this->gtg_params_);
         libint2::TwoBodyEngine<libint2::cGTG> engine(
-            max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
+            max_nprim, max_am, 0, precision_;
             squared_pragmas);
         auto engine_pool = make_pool(engine);
         result = compute_integrals(this->world_, engine_pool, bs_array);
 
       } else {
         libint2::TwoBodyEngine<libint2::cGTG> engine(
-            max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
+            max_nprim, max_am, 0, precision_,
             this->gtg_params_);
         auto engine_pool = make_pool(engine);
         result = compute_integrals(this->world_, engine_pool, bs_array);
       }
     } else if (kernel == libint2::cGTG_times_Coulomb) {
       libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(
-          max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
+          max_nprim, max_am, 0, precision_
           this->gtg_params_);
       auto engine_pool = make_pool(engine);
       result = compute_integrals(this->world_, engine_pool, bs_array);
     } else if (kernel == libint2::DelcGTG_square) {
       libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(
-          max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
+          max_nprim, max_am, 0, precision_,
           this->gtg_params_);
       auto engine_pool = make_pool(engine);
       result = compute_integrals(this->world_, engine_pool, bs_array);

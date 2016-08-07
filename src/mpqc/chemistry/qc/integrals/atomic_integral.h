@@ -60,6 +60,7 @@ class AtomicIntegral : public AtomicIntegralBase {
    *  @param AccurateTime, bool, control if use fence in timing, default false
    *  @param Screen, string, name of screen method to use, default none
    *  @param Threshold, double, screen threshold, qqr or schwarz, default
+   *  @param Precision, double, precision in computing integral, default std::numeric_limits<double>::epsilon()
    *1.0e-10
    */
 
@@ -79,10 +80,12 @@ class AtomicIntegral : public AtomicIntegralBase {
       screen_ = in.HasMember("Screen") ? in["Screen"].GetString() : "";
       screen_threshold_ =
           in.HasMember("Threshold") ? in["Threshold"].GetDouble() : 1.0e-10;
+      precision_ = in.HasMember("Precision") ? in["Precision"].GetDouble() : std::numeric_limits<double>::epsilon();
     } else {
       accurate_time_ = false;
       screen_ = "";
       screen_threshold_ = 1.0e-10;
+      precision_ = std::numeric_limits<double>::epsilon();
     }
 
     utility::print_par(world, "\nConstructing Atomic Integral Class \n");
@@ -91,7 +94,10 @@ class AtomicIntegral : public AtomicIntegralBase {
     if (!screen_.empty()) {
       utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
     }
+    utility::print_par(world, "Precision: ", precision_, "\n");
     utility::print_par(world, "\n");
+
+    integrals::detail::integral_engine_precision = precision_;
   }
 
   AtomicIntegral(AtomicIntegral&&) = default;
@@ -212,6 +218,7 @@ class AtomicIntegral : public AtomicIntegralBase {
   bool accurate_time_;
   std::string screen_;
   double screen_threshold_;
+  double precision_;
 };
 
 #if 0

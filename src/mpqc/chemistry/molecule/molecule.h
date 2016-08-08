@@ -39,16 +39,21 @@ class Molecule : public DescribedClass {
  public:
   Molecule() = default;
 
-  /*! \brief KeyVal constructor for Molecule
+  /** \brief KeyVal constructor for Molecule
    *
-   *  The KeyVal constructor expects a field called file_name and an optional
-   *  input sort_input, which are the name of a file that contains molecular
-   *  coordinates and a boolean telling the constructor whether the atoms
-   *  should be sorted based on their distance from the center of mass. By
-   *  default sort_input is set to true.
+   *  <table border="1">
    *
-   *  The clustering of the KeyVal constructor is currently one cluster per
-   *  atom, but this may change as KeyVal input is finalized.
+   *  <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
+   *
+   *  <tr><td><tt>file_name</tt><td>string<td>none<td>This gives
+   *    the name of a XYZ file, from which the nuclear coordinates will be
+   *    read (the XYZ format is described
+   *    <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).
+   *
+   *  <tr><td><tt>sort_input</tt><td>boolean<td>true<td>If true, atoms
+   *    will be resorted based on their distance from the center of mass.
+   *
+   *  </table>
    */
   Molecule(const KeyVal &kv);
 

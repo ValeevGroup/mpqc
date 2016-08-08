@@ -1,3 +1,4 @@
+#include <madness/world/worldmem.h>
 #include <mpqc/chemistry/qc/scf/scf.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include "../../../../../utility/time.h"
@@ -20,6 +21,8 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
                   << "\tMaximum number of iterations: " << max_iters << "\n";
     }
 
+    madness::print_meminfo(world.rank(), "ClosedShellSCF:begin");
+
     auto iter = 0;
     auto error = std::numeric_limits<double>::max();
     auto rms_error = std::numeric_limits<double>::max();
@@ -31,8 +34,10 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
 
         auto s0 = mpqc_time::fenced_now(world);
 
+        madness::print_meminfo(world.rank(), "ClosedShellSCF:before_fock");
         build_F();
         auto b1 = mpqc_time::fenced_now(world);
+        madness::print_meminfo(world.rank(), "ClosedShellSCF:after_fock");
 
         auto current_energy = energy();
         error = std::abs(old_energy - current_energy);
@@ -41,15 +46,18 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
         array_type Grad;
         Grad("i,j") = F_("i,k") * D_("k,l") * S_("l,j")
                       - S_("i,k") * D_("k,l") * F_("l,j");
+        madness::print_meminfo(world.rank(), "ClosedShellSCF:orbgrad");
 
         rms_error = Grad("i,j").norm().get();
 
         F_diis_ = F_;
         diis_.extrapolate(F_diis_, Grad);
+        madness::print_meminfo(world.rank(), "ClosedShellSCF:diis");
 
         auto d0 = mpqc_time::fenced_now(world);
         compute_density();
         auto s1 = mpqc_time::fenced_now(world);
+        madness::print_meminfo(world.rank(), "ClosedShellSCF:density");
 
         scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
         d_times_.push_back(mpqc_time::duration_in_s(d0, s1));
@@ -86,7 +94,8 @@ void ClosedShellSCF::compute_density() {
 }
 
 void ClosedShellSCF::build_F() {
-    F_("i,j") = H_("i,j") + f_builder_->operator()(D_, C_)("i,j");
+  auto G = f_builder_->operator()(D_, C_);
+  F_("i,j") = H_("i,j") + G("i,j");
 }
 
 rapidjson::Value ClosedShellSCF::results(rapidjson::Document &d) const {

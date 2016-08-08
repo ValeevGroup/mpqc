@@ -6,6 +6,7 @@
 #define MPQC_ATOMIC_INTEGRAL_H
 
 #include <rapidjson/document.h>
+#include <madness/world/worldmem.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include "atomic_integral_base.h"
@@ -442,6 +443,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
+    madness::print_meminfo(world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
   }
   // compute JK, requires orbital space registry
   else if (formula.oper().is_jk()) {
@@ -598,6 +600,7 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   double size = utility::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
+  madness::print_meminfo(world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
 
   return result;
 }
@@ -659,6 +662,7 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
+    madness::print_meminfo(world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
   }
   return result;
 }

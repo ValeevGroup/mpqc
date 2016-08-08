@@ -8,6 +8,7 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <libint2.hpp>
+#include <madness/world/worldmem.h>
 
 #include "../include/tiledarray.h"
 
@@ -80,6 +81,8 @@ TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
  *
  */
 int try_main(int argc, char *argv[], madness::World &world) {
+
+  std::locale::global(std::locale("en_US.UTF-8"));
 
     if (argc != 2) {
         std::cout << "usage: " << argv[0] << " <input_file.json>" << std::endl;
@@ -566,6 +569,8 @@ int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
     mpqc::utility::print_par(world, "MADNESS process total size: ", world.size(), "\n");
 
+    madness::print_meminfo(world.rank(), "MPQC start");
+
     try {
 
         try_main(argc, argv, world);
@@ -578,6 +583,10 @@ int main(int argc, char *argv[]) {
         rc = 1;
     } catch (SafeMPI::Exception &e) {
         std::cerr << "!! SafeMPI exception: " << e.what() << "\n";
+        rc = 1;
+    } catch (std::bad_alloc &e) {
+        std::cerr << "!! std::bad_alloc exception: " << e.what() << "\n";
+        madness::print_meminfo(world.rank(), "bad alloc");
         rc = 1;
     } catch (std::exception &e) {
         std::cerr << "!! std exception: " << e.what() << "\n";

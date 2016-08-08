@@ -255,6 +255,9 @@ namespace integrals{
             double size = utility::array_size(result);
             utility::print_par(world_," Size: ", size, " GB");
             utility::print_par(world_," Time: ", time, " s\n");
+            madness::print_meminfo(
+                world_.rank(),
+                utility::wconcat("MolecularIntegral:", formula_string.string()));
             return result;
         }
 
@@ -287,6 +290,9 @@ namespace integrals{
         double size = utility::array_size(result);
         utility::print_par(world_," Size: ", size, " GB");
         utility::print_par(world_," Time: ", time, " s\n");
+        madness::print_meminfo(
+            world_.rank(),
+            utility::wconcat("MolecularIntegral:", formula_string.string()));
 
         return result;
     }
@@ -375,6 +381,9 @@ namespace integrals{
         double size = utility::array_size(result);
         utility::print_par(world_," Size: ", size, " GB");
         utility::print_par(world_," Time: ", time, " s\n");
+        madness::print_meminfo(
+            world_.rank(),
+            utility::wconcat("MolecularIntegral:", formula_string.string()));
 
         return result;
     };
@@ -456,6 +465,9 @@ namespace integrals{
         double size = utility::array_size(result);
         utility::print_par(world_," Size: ", size, " GB");
         utility::print_par(world_," Time: ", time, " s\n");
+        madness::print_meminfo(
+            world_.rank(),
+            utility::wconcat("MolecularIntegral:", formula_string.string()));
 
         return result;
     }

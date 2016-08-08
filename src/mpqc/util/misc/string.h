@@ -43,7 +43,7 @@ static constexpr const wchar_t* default_wchar_separator = L"";
 inline std::wstring to_wstring(const std::string& str_utf8) {
 //  std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
 //  return myconv.from_bytes(str_utf8);
-  std::wstring result(str_utf8.begin(), str_utf8.end());
+  std::wstring result(str_utf8.cbegin(), str_utf8.cend());
   return result;
 }
 
@@ -59,6 +59,11 @@ std::wstring to_wstring(const char str_utf8[N]) {
 /// @brief dummy converter
 inline std::wstring to_wstring(const std::wstring& wstr_utf8) {
   return wstr_utf8;
+}
+
+/// @brief converts UTF-8 encoded wstring to UTF-8 encoded string
+inline std::string to_string(const std::wstring& wstr_utf8) {
+  return std::string(wstr_utf8.cbegin(), wstr_utf8.cend());
 }
 
 /// @return a std::string obtained by streaming \c args to a

@@ -35,7 +35,7 @@ public:
     TArray t2;
 
     double ccsd_corr = 0.0;
-    ccsd_corr = this->compute_ccsd_nondirect(t1,t2);
+    ccsd_corr = this->compute_ccsd_conventional(t1, t2);
 
     this->T1_ = t1;
     this->T2_ = t2;

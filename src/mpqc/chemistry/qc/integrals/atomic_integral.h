@@ -61,6 +61,7 @@ class AtomicIntegral : public AtomicIntegralBase {
    *  @param AccurateTime, bool, control if use fence in timing, default false
    *  @param Screen, string, name of screen method to use, default none
    *  @param Threshold, double, screen threshold, qqr or schwarz, default
+   *  @param Precision, double, precision in computing integral, default std::numeric_limits<double>::epsilon()
    *1.0e-10
    */
 
@@ -80,10 +81,12 @@ class AtomicIntegral : public AtomicIntegralBase {
       screen_ = in.HasMember("Screen") ? in["Screen"].GetString() : "";
       screen_threshold_ =
           in.HasMember("Threshold") ? in["Threshold"].GetDouble() : 1.0e-10;
+      precision_ = in.HasMember("Precision") ? in["Precision"].GetDouble() : std::numeric_limits<double>::epsilon();
     } else {
       accurate_time_ = false;
       screen_ = "";
       screen_threshold_ = 1.0e-10;
+      precision_ = std::numeric_limits<double>::epsilon();
     }
 
     utility::print_par(world, "\nConstructing Atomic Integral Class \n");
@@ -92,7 +95,10 @@ class AtomicIntegral : public AtomicIntegralBase {
     if (!screen_.empty()) {
       utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
     }
+    utility::print_par(world, "Precision: ", precision_, "\n");
     utility::print_par(world, "\n");
+
+    integrals::detail::integral_engine_precision = precision_;
   }
 
   AtomicIntegral(AtomicIntegral&&) = default;
@@ -213,6 +219,7 @@ class AtomicIntegral : public AtomicIntegralBase {
   bool accurate_time_;
   std::string screen_;
   double screen_threshold_;
+  double precision_;
 };
 
 #if 0
@@ -239,27 +246,27 @@ AtomicIntegral<Tile, Policy>::compute_two_body_integral(
       if (operation.type() == Operator::Type::cGTG2) {
         auto squared_pragmas = f12::gtg_params_squared(this->gtg_params_);
         libint2::TwoBodyEngine<libint2::cGTG> engine(
-            max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
+            max_nprim, max_am, 0, precision_;
             squared_pragmas);
         auto engine_pool = make_pool(engine);
         result = compute_integrals(this->world_, engine_pool, bs_array);
 
       } else {
         libint2::TwoBodyEngine<libint2::cGTG> engine(
-            max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
+            max_nprim, max_am, 0, precision_,
             this->gtg_params_);
         auto engine_pool = make_pool(engine);
         result = compute_integrals(this->world_, engine_pool, bs_array);
       }
     } else if (kernel == libint2::cGTG_times_Coulomb) {
       libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(
-          max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
+          max_nprim, max_am, 0, precision_
           this->gtg_params_);
       auto engine_pool = make_pool(engine);
       result = compute_integrals(this->world_, engine_pool, bs_array);
     } else if (kernel == libint2::DelcGTG_square) {
       libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(
-          max_nprim, max_am, 0, std::numeric_limits<double>::epsilon(),
+          max_nprim, max_am, 0, precision_,
           this->gtg_params_);
       auto engine_pool = make_pool(engine);
       result = compute_integrals(this->world_, engine_pool, bs_array);

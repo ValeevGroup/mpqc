@@ -219,8 +219,9 @@ OrbitalIndex OrbitalIndex::mo_to_ao() const{
 
         while(*pt){
             length = std::wctomb(buffer,*pt);
+            TA_USER_ASSERT(length != -1, "OrbitalIndex::to_ta_expression encountered invalid character");
             // multiple byte, convert to english name
-            if(length == -1){
+            if(length > 1){
                 auto pos = greek_to_english_name.find(*pt);
                 if (pos == greek_to_english_name.end()){
                     throw std::runtime_error("Couldn't Find The English Name of Greek Letter");

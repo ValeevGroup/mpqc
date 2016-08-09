@@ -50,10 +50,10 @@ namespace mpqc {
 
           /// constructor with already computed components
             CCSD(const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
-                 const std::shared_ptr<TRange1Engine> &tre,
                  const std::shared_ptr<Eigen::VectorXd> &ens,
+                 const std::shared_ptr<TRange1Engine> &tre,
                  rapidjson::Document &options) :
-                    ccsd_intermediate_(inter), trange1_engine_(tre), orbital_energy_(ens), options_(std::move(options))
+                    ccsd_intermediate_(inter), orbital_energy_(ens), trange1_engine_(tre), options_(std::move(options))
             {
             }
 
@@ -1448,6 +1448,8 @@ namespace mpqc {
             TArray T2_;
         }; // class CCSD
 
+    extern template
+    CCSD<TA::TArrayD, TA::SparsePolicy>;
     } //namespace cc
 } //namespace mpqc
 

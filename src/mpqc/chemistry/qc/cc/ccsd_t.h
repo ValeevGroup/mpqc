@@ -25,9 +25,9 @@ namespace mpqc{
             using TArray = TA::DistArray<Tile,Policy>;
 
             CCSD_T(const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
-                const std::shared_ptr<TRange1Engine> &tre,
                 const std::shared_ptr<Eigen::VectorXd> &ens,
-                rapidjson::Document &options) : CCSD<Tile,Policy>(inter,tre,ens,options)
+                const std::shared_ptr<TRange1Engine> &tre,
+                rapidjson::Document &options) : CCSD<Tile,Policy>(inter,ens,tre,options)
             {}
 
             CCSD_T(integrals::MolecularIntegral<Tile,Policy>& mo_int, rapidjson::Document &options)

@@ -177,8 +177,8 @@ class MP2 {
 
 protected:
   MolecularIntegralType &mo_int_;
-  std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
   std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+  std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
 };
 
 }  // end of namespace mbpt

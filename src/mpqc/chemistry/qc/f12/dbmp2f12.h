@@ -12,7 +12,14 @@
 
 namespace mpqc{
 namespace f12{
-
+/***
+ * \class DBMP2F12 Dual basis MP2 F12 class
+ *
+ * takes all options from MP2F12 and the flowing options
+ *
+ * @param RIMethod: OBS or VBS, if OBS, RI Basis is union of OBS+CABS; if VBS, RI Basis is union of VBS+CABS, default VBS
+ *
+ */
 
 template <typename Tile>
 class DBMP2F12 : protected MP2F12<Tile>{

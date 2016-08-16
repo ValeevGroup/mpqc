@@ -129,12 +129,24 @@ void closed_shell_cabs_mo_build_svd(
         integrals::MolecularIntegral <Tile, Policy> &mo_int,
         const rapidjson::Document &in,
         const std::shared_ptr<TRange1Engine> tre) {
+
     auto& ao_int = mo_int.atomic_integral();
     auto orbital_registry = mo_int.orbital_space();
     auto &world = ao_int.world();
     // CABS fock build
     auto mo_time0 = mpqc_time::fenced_now(world);
     utility::print_par(world, "\nBuilding ClosedShell CABS MO Orbital\n");
+
+    // build the RI basis
+
+    auto abs_basis = ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"α"));
+    auto obs_basis = ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"κ"));
+
+    basis::Basis ri_basis;
+    ri_basis = obs_basis.join(abs_basis);
+
+    utility::parallel_print_range_info(world, ri_basis.create_trange1(), "RI Basis");
+    ao_int.orbital_basis_registry()->add(OrbitalIndex(L"ρ"), ri_basis);
 
     // integral
     auto S_cabs = ao_int.compute(L"<α|β>");
@@ -395,6 +407,27 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   // CABS fock build
   auto mo_time0 = mpqc_time::fenced_now(world);
   utility::print_par(world, "\nBuilding ClosedShell Dual Basis CABS MO Orbital\n");
+
+  // build RI Basis First
+  auto abs_basis = ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"α"));
+  auto vir_basis = ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"Α"));
+  auto obs_basis = ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"κ"));
+
+  std::string ri_method = in.HasMember("RIMethod") ? in["RIMethod"].GetString() : "VBS";
+  basis::Basis ri_basis;
+
+  if(ri_method == "VBS"){
+    ri_basis = vir_basis.join(abs_basis);
+    utility::parallel_print_range_info(world, ri_basis.create_trange1(), "RI Basis with VBS");
+  }
+  else if(ri_method == "OBS"){
+    ri_basis = obs_basis.join(abs_basis);
+    utility::parallel_print_range_info(world, ri_basis.create_trange1(), "RI Basis with OBS");
+  }
+  else{
+    throw std::runtime_error("Invalid RI Method!");
+  }
+  ao_int.orbital_basis_registry()->add(OrbitalIndex(L"ρ"), ri_basis);
 
   // integral
   auto S_ribs = ao_int.compute(L"<ρ|σ>");

@@ -60,6 +60,7 @@
 using namespace mpqc;
 namespace ints = integrals;
 
+
 TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
 /**
  *
@@ -256,30 +257,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
 
     basis::Basis abs_basis;
-    basis::Basis ri_basis;
-    if(!aux_basis_name.empty()){
-        basis::BasisSet abs(aux_basis_name);
-        abs_basis = basis::parallel_construct_basis(world,abs,clustered_mol);
-        if(ao_blocksize!=0){
-            abs_basis = reblock(abs_basis, cc::reblock_basis, ao_blocksize);
-        }
-        utility::parallel_print_range_info(world, abs_basis.create_trange1(), "AUX Basis");
-        bs_registry->add(OrbitalIndex(L"α"), abs_basis);
 
-        // WARNING, RIBS will differ for different approach
-        if(vir_basis_name.empty()){
-            ri_basis = basis.join(abs_basis);
-        }
-        else{
-            ri_basis = vir_basis.join(abs_basis);
-        }
-
-        if(ao_blocksize != 0){
-            ri_basis = reblock(ri_basis, cc::reblock_basis, ao_blocksize);
-        }
-        utility::parallel_print_range_info(world, ri_basis.create_trange1(), "RI Basis");
-        bs_registry->add(OrbitalIndex(L"ρ"), ri_basis);
+    if(!aux_basis_name.empty()) {
+      basis::BasisSet abs(aux_basis_name);
+      abs_basis = basis::parallel_construct_basis(world, abs, clustered_mol);
+      if (ao_blocksize != 0) {
+        abs_basis = reblock(abs_basis, cc::reblock_basis, ao_blocksize);
+      }
+      utility::parallel_print_range_info(world, abs_basis.create_trange1(), "AUX Basis");
+      bs_registry->add(OrbitalIndex(L"α"), abs_basis);
     }
+
+
 
     /**
      * Deal with f12 parameters

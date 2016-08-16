@@ -71,25 +71,25 @@ class Formula {
   /// @sa Formula::to_ta_expression()
   std::wstring string() const;
 
-  /// return left_index
+  /// return bra_index
   const std::vector<OrbitalIndex> &bra_indices() const { return bra_indices_; }
 
-  /// return left_index
+  /// return bra_index
   std::vector<OrbitalIndex> &bra_indices() { return bra_indices_; }
 
-  /// return right_index
+  /// return ket_index
   const std::vector<OrbitalIndex> &ket_indices() const { return ket_indices_; }
 
-  /// return right_index
+  /// return ket_index
   std::vector<OrbitalIndex> &ket_indices() { return ket_indices_; }
 
-  /// set right_index
-  void set_right_index(const std::vector<OrbitalIndex> &bra_idxs) {
+  /// set ket_index
+  void set_ket_indices(const std::vector<OrbitalIndex> &bra_idxs) {
     ket_indices_ = bra_idxs;
   }
 
-  /// set left_index
-  void set_left_index(const std::vector<OrbitalIndex> &ket_idxs) {
+  /// set bra index
+  void set_bra_indices(const std::vector<OrbitalIndex> &ket_idxs) {
     bra_indices_ = ket_idxs;
   }
 

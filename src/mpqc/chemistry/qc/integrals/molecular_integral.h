@@ -506,8 +506,8 @@ Formula MolecularIntegral<Tile,Policy>::mo_to_ao(const Formula &formula) {
 
     // set formula with ao index
     auto ao_formula = formula;
-    ao_formula.set_left_index(ao_left_index);
-    ao_formula.set_right_index(ao_right_index);
+    ao_formula.set_bra_indices(ao_left_index);
+    ao_formula.set_ket_indices(ao_right_index);
 
     return ao_formula;
 }
@@ -577,8 +577,8 @@ MolecularIntegral<Tile,Policy>::reduce_formula(const Formula &formula) {
 
   // reduce the index with maximum strength factor
   auto reduced_formula = formula;
-  reduced_formula.set_left_index(bra_indices);
-  reduced_formula.set_right_index(ket_indices);
+  reduced_formula.set_bra_indices(bra_indices);
+  reduced_formula.set_ket_indices(ket_indices);
 
   return std::make_tuple(reduced_formula, std::make_pair(pos, idx));
 }

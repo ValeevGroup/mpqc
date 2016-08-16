@@ -115,6 +115,9 @@ class OrbitalIndex {
   /// check equality by comparing index and spin
   bool operator==(OrbitalIndex const &) const;
 
+  /// check inequality by comparing index and spin
+  bool operator!=(OrbitalIndex const &) const;
+
   /// comparison by index and spin
   bool operator<(const OrbitalIndex &) const;
 

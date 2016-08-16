@@ -10,6 +10,8 @@ set(sources
         greek_to_english_name.h
         orbital_space.h
         orbital_registry.h
+        permutation.h
+        permutation.cpp
         )
 
 add_library(MPQCexpression ${sources})

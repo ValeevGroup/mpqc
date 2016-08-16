@@ -1,7 +1,7 @@
 
 #include <catch.hpp>
 
-#include "../molecule/atom.h"
+#include <mpqc/chemistry/molecule/atom.h>
 
 SCENARIO("atoms can be intialized", "[atom]"){
     GIVEN("a default initalized atom"){

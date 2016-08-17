@@ -136,12 +136,18 @@ CABSSingles<Tile>::compute() {
 
   CABSSingleEquation cabs_singles(F_AB,F_MN);
 
+  double converge = 1e-12;
+
   TA::ConjugateGradientSolver<TArray,CABSSingleEquation> cg_solver;
-  auto resnorm = cg_solver(cabs_singles, F_MA, t, P_MA, 1e-12);
+  auto resnorm = cg_solver(cabs_singles, F_MA, t, P_MA, converge);
 
-
-  real_t E_S = 2*TA::dot(t("i,A"), F_MA("i,A"));
-
+  real_t E_S(0.0);
+  if(resnorm < converge ){
+    E_S = 2*TA::dot(t("i,A"), F_MA("i,A"));
+  }
+  else{
+    utility::print_par(t.get_world(),"\n Warning!  CABSSingles Not Converged!!! \n");
+  }
   return E_S;
 
 }

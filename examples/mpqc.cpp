@@ -83,7 +83,7 @@ TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
  */
 int try_main(int argc, char *argv[], madness::World &world) {
 
-  std::locale::global(std::locale("en_US.UTF-8"));
+    std::setlocale(LC_ALL,"en_US.UTF-8");
 
     if (argc != 2) {
         std::cout << "usage: " << argv[0] << " <input_file.json>" << std::endl;

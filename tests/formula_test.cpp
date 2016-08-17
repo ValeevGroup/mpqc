@@ -4,6 +4,7 @@
 
 #include <catch.hpp>
 #include <mpqc/chemistry/qc/expression/formula.h>
+#include <mpqc/chemistry/qc/expression/permutation.h>
 
 using namespace mpqc;
 
@@ -19,7 +20,7 @@ TEST_CASE("Formula Expression", "[formula]"){
         REQUIRE(overlap.bra_indices()[0].index() == OrbitalIndex::Type::obs);
         REQUIRE(overlap.oper().is_onebody() == true);
         REQUIRE(overlap.notation() == Formula::Notation::Physical);
-        REQUIRE(overlap.to_ta_expression() == "kappa, lamda");
+//        REQUIRE(overlap.to_ta_expression() == "kappa, lamda");
 
         Formula J(L"<κ|J|λ>");
         REQUIRE( J.oper().type() == Operator::Type::J);
@@ -76,6 +77,11 @@ TEST_CASE("Formula Expression", "[formula]"){
         REQUIRE(formula1 == formula2);
         REQUIRE(formula2 != formula1df);
         REQUIRE(formula1 != formula3);
+
+        // special case, rank 2 doesn't compare notation
+        Formula formula4(L"<i|H|a>");
+        Formula formula5(L"(i|H|a)");
+        REQUIRE(formula4 == formula5);
     }
 
     SECTION("comparision test case"){
@@ -94,6 +100,56 @@ TEST_CASE("Formula Expression", "[formula]"){
 
     }
 
+    SECTION("permutation test"){
+
+        // rank 2
+        Formula formula1(L"<i|V|j>");
+        auto permu1 = permutations(formula1);
+        REQUIRE(permu1.empty());
+
+        formula1 = Formula(L"<i|V|a>");
+        permu1 = permutations(formula1);
+        REQUIRE(permu1.size() == 1);
+        REQUIRE(permu1[0] == Formula(L"<a|V|i>"));
+
+        // rank 3
+        Formula formula2(L"(Κ|G|a b)");
+        auto permu2 = permutations(formula2);
+        REQUIRE(permu2.empty());
+
+        formula2 = Formula(L"(Κ|G|i a)");
+        permu2 = permutations(formula2);
+        REQUIRE(permu2.size()==1);
+        REQUIRE(permu2[0] == Formula(L"(Κ|G|a i)"));
+
+        // rank4
+        Formula formula3(L"(i j|G|a b)");
+        auto permu3 = permutations(formula3);
+        REQUIRE(permu3.size() == 1);
+        REQUIRE(permu3[0] == Formula(L"(a b|G|i j)"));
+
+        formula3 = Formula(L"<i j|G|a b>");
+        permu3 = permutations(formula3);
+        REQUIRE(permu3.size() == 3);
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"<a j|G|i b>")) != permu3.cend() );
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"<a b|G|i j>")) != permu3.cend() );
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"<i b|G|a j>")) != permu3.cend() );
+
+        formula3 = Formula(L"(i a|G|p b)");
+        permu3 = permutations(formula3);
+        REQUIRE(permu3.size() == 7);
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"(a i|G|p b)")) != permu3.cend() );
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"(i a|G|b p)")) != permu3.cend() );
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"(a i|G|b p)")) != permu3.cend() );
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"(p b|G|i a)")) != permu3.cend() );
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"(b p|G|i a)")) != permu3.cend() );
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"(p b|G|a i)")) != permu3.cend() );
+        REQUIRE(std::find(permu3.cbegin(), permu3.cend(),Formula(L"(b p|G|a i)")) != permu3.cend() );
+
+        formula3 = Formula(L"<i p|G|a b>");
+        permu3 = permutations(formula3);
+        REQUIRE(permu3.size() == 7);
+    }
 
     SECTION("error handling"){
         // wrong operation

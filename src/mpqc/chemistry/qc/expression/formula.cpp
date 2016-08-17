@@ -143,8 +143,14 @@ bool Formula::operator<(const Formula& other) const {
 }
 
 bool Formula::operator==(const Formula& other) const {
-  return (oper_ == other.oper_) && (bra_indices_ == other.bra_indices_) &&
-         (ket_indices_ == other.ket_indices_) && (notation_ == other.notation_);
+  // special case
+  if(this->rank()==2){
+    return  (oper_ == other.oper_) && (bra_indices_ == other.bra_indices_) &&
+            (ket_indices_ == other.ket_indices_);
+  }else{
+    return (oper_ == other.oper_) && (bra_indices_ == other.bra_indices_) &&
+           (ket_indices_ == other.ket_indices_) && (notation_ == other.notation_);
+  }
 }
 
 std::wstring Formula::string() const {

@@ -11,38 +11,26 @@ namespace detail{
 
 void swap(Formula& formula)
 {
-
-  auto bra = formula.bra_indices();
-  formula.set_bra_indices(formula.ket_indices());
-  formula.set_ket_indices(bra);
-
+  std::swap(formula.bra_indices(), formula.ket_indices());
 }
 
 void swap_internal(Formula& formula, bool right_size)
 {
   if(right_size){
-    auto ket = formula.ket_indices();
-    std::swap(ket[0],ket[1]);
-    formula.set_ket_indices(ket);
+    std::swap(formula.ket_indices()[0],formula.ket_indices()[1]);
   }else{
-    auto bra = formula.bra_indices();
-    std::swap(bra[0],bra[1]);
-    formula.set_bra_indices(bra);
+    std::swap(formula.bra_indices()[0],formula.bra_indices()[1]);
   }
 }
 
 void swap_external(Formula& formula, bool right_size){
   // swap index 1
   if(right_size){
-    auto index = formula.bra_indices()[1];
-    formula.bra_indices()[1] = formula.ket_indices()[1];
-    formula.ket_indices()[1] = index;
+    std::swap(formula.bra_indices()[1], formula.ket_indices()[1]);
   }
   // swap index 0
   else{
-    auto index = formula.bra_indices()[0];
-    formula.bra_indices()[0] = formula.ket_indices()[0];
-    formula.ket_indices()[0] = index;
+    std::swap(formula.bra_indices()[0], formula.ket_indices()[0]);
   }
 
 }
@@ -91,10 +79,9 @@ std::vector<Formula> permutations_physical(const Formula& formula){
     result.push_back(permutation);
   }
 
-  if( (bra[0]!=ket[0]) && (bra[1]!=ket[1]) ){
+  if( bra != ket){
     Formula permutation = formula;
-    swap_external(permutation,true);
-    swap_external(permutation,false);
+    swap(permutation);
     result.push_back(permutation);
   }
 
@@ -107,15 +94,20 @@ std::vector<Formula> permutations(const Formula& formula){
   std::vector<Formula> result;
 
   if(formula.rank()==2){
+
+    if(formula.bra_indices()!=formula.ket_indices()){
     Formula permutation = formula;
     detail::swap(permutation);
     result.push_back(permutation);
   }
+  }
   else if(formula.rank()==3){
 
+    if(formula.ket_indices()[0] != formula.ket_indices()[1]){
     Formula permutation = formula;
     detail::swap_internal(permutation);
     result.push_back(permutation);
+  }
   }
   else if(formula.rank()==4){
 
@@ -127,10 +119,10 @@ std::vector<Formula> permutations(const Formula& formula){
       result.insert(result.cend(),permutations1.begin(), permutations1.end());
 
       if(formula.bra_indices() != formula.ket_indices()){
-        Formula swap_bra_ket = formula;
-        detail::swap(swap_bra_ket);
-
-        auto permutations2 = detail::permutations_chemical(formula);
+        Formula swap_bra_ket_formula = formula;
+        detail::swap(swap_bra_ket_formula);
+        result.push_back(swap_bra_ket_formula);
+        auto permutations2 = detail::permutations_chemical(swap_bra_ket_formula);
         result.insert(result.cend(),permutations2.begin(), permutations2.end());
       }
 
@@ -142,11 +134,12 @@ std::vector<Formula> permutations(const Formula& formula){
 
       result.insert(result.cend(),permutations1.begin(), permutations1.end());
 
-      if(formula.bra_indices() != formula.ket_indices()){
-        Formula swap_bra_ket = formula;
-        detail::swap(swap_bra_ket);
-
-        auto permutations2 = detail::permutations_physical(formula);
+      if((formula.bra_indices()[0]!=formula.ket_indices()[0]) && (formula.bra_indices()[1]!=formula.ket_indices()[1]) ){
+        Formula swap_bra_ket_formula = formula;
+        detail::swap_internal(swap_bra_ket_formula,true);
+        detail::swap_internal(swap_bra_ket_formula,false);
+        result.push_back(swap_bra_ket_formula);
+        auto permutations2 = detail::permutations_physical(swap_bra_ket_formula);
         result.insert(result.cend(),permutations2.begin(), permutations2.end());
       }
 
@@ -157,6 +150,13 @@ std::vector<Formula> permutations(const Formula& formula){
 
   }
 
+  // only get the unique ones
+  std::sort(result.begin(), result.end());
+  auto last = std::unique(result.begin(), result.end());
+  result.erase(last, result.end());
+
+  // remove self
+  result.erase(std::remove(result.begin(), result.end(), formula),result.end());
   return result;
 
 }

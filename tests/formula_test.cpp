@@ -149,6 +149,10 @@ TEST_CASE("Formula Expression", "[formula]"){
         formula3 = Formula(L"<i p|G|a b>");
         permu3 = permutations(formula3);
         REQUIRE(permu3.size() == 7);
+
+        formula3 = Formula(L"<i p|G| a b>");
+        permu3 = permutations(formula3);
+        REQUIRE(permu3.size() == 7);
     }
 
     SECTION("error handling"){

@@ -134,7 +134,7 @@ std::vector<Formula> permutations(const Formula& formula){
 
       result.insert(result.cend(),permutations1.begin(), permutations1.end());
 
-      if((formula.bra_indices()[0]!=formula.ket_indices()[0]) && (formula.bra_indices()[1]!=formula.ket_indices()[1]) ){
+      if((formula.bra_indices()[0]!=formula.bra_indices()[1]) || (formula.ket_indices()[0]!=formula.ket_indices()[1]) ){
         Formula swap_bra_ket_formula = formula;
         detail::swap_internal(swap_bra_ket_formula,true);
         detail::swap_internal(swap_bra_ket_formula,false);

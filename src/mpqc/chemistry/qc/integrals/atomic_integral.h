@@ -9,6 +9,7 @@
 #include <madness/world/worldmem.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
+#include <mpqc/chemistry/qc/expression/permutation.h>
 #include "atomic_integral_base.h"
 #include "../../../../../ta_routines/array_to_eigen.h"
 #include "../../../../../utility/parallel_print.h"
@@ -107,7 +108,7 @@ class AtomicIntegral : public AtomicIntegralBase {
   virtual ~AtomicIntegral() noexcept = default;
 
   /// wrapper to compute function
-  TArray& compute(const std::wstring&);
+  TArray compute(const std::wstring&);
 
   /**
    *  compute integral by Formula
@@ -115,7 +116,7 @@ class AtomicIntegral : public AtomicIntegralBase {
    *  if Formula computed, it will return it from registry
    *  if not, it will compute it
    */
-  TArray& compute(const Formula&);
+  TArray compute(const Formula&);
 
   /// compute with str and return expression
   TA::expressions::TsrExpr<TArray, true> operator()(const std::wstring& str) {
@@ -278,17 +279,18 @@ AtomicIntegral<Tile, Policy>::compute_two_body_integral(
 #endif
 
 template <typename Tile, typename Policy>
-typename AtomicIntegral<Tile, Policy>::TArray&
+typename AtomicIntegral<Tile, Policy>::TArray
 AtomicIntegral<Tile, Policy>::compute(const std::wstring& formula_string) {
   auto formula = Formula(formula_string);
   return compute(formula);
 }
 
 template <typename Tile, typename Policy>
-typename AtomicIntegral<Tile, Policy>::TArray&
+typename AtomicIntegral<Tile, Policy>::TArray
 AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
   TArray result;
 
+  // find if in registry
   auto iter = ao_formula_registry_.find(formula);
 
   if (iter != ao_formula_registry_.end()) {
@@ -297,7 +299,41 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
     utility::wprint_par(world_, formula.string());
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");
-  } else {
+    return result;
+  }
+  else {
+    // find a permutation, currently, it won't store permutation in registry
+
+    std::vector<Formula> permutes = permutations(formula);
+    typename FormulaRegistry<TArray>::iterator find_permute;
+
+    for(auto& permute : permutes){
+
+      find_permute = ao_formula_registry_.find(permute);
+      if(find_permute != ao_formula_registry_.end()){
+
+        mpqc_time::t_point time0 = mpqc_time::now(world_, accurate_time_);
+
+        // permute the array
+        result(formula.to_ta_expression()) = (*(find_permute->second))(permute.to_ta_expression());
+
+        mpqc_time::t_point time1 = mpqc_time::now(world_, accurate_time_);
+        double time = mpqc_time::duration_in_s(time0, time1);
+
+        utility::print_par(world_, "Permuted AO Integral: ");
+        utility::wprint_par(world_, formula.string());
+        utility::print_par(world_, " From ");
+        utility::wprint_par(world_, permute.string());
+        double size = utility::array_size(result);
+        utility::print_par(world_, " Size: ", size, " GB ");
+        utility::print_par(world_, " Time: ", time, " s\n");
+
+        return result;
+      }
+
+    }
+
+    // compute formula
     if (formula.rank() == 2) {
       result = compute2(formula);
       ao_formula_registry_.insert(formula, result);
@@ -308,11 +344,10 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
       result = compute4(formula);
       ao_formula_registry_.insert(formula, result);
     }
+    return ao_formula_registry_.retrieve(formula);
   }
-
   // wait all process to obtain and insert result
   //        world_.gop.fence();
-  return ao_formula_registry_.retrieve(formula);
 }
 
 template <typename Tile, typename Policy>

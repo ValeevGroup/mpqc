@@ -1448,8 +1448,6 @@ namespace mpqc {
             TArray T2_;
         }; // class CCSD
 
-    extern template
-    CCSD<TA::TArrayD, TA::SparsePolicy>;
     } //namespace cc
 } //namespace mpqc
 

@@ -2,6 +2,7 @@
 // Created by Chong Peng on 8/16/16.
 //
 
+#include <algorithm>
 #include "permutation.h"
 
 

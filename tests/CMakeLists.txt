@@ -35,7 +35,7 @@ set(utests
 #TODO install xyz file to bin directory
 
 add_executable(tests EXCLUDE_FROM_ALL test_main.cpp ${utests})
-target_link_libraries(tests ${MPQC_LIBRARIES})
+target_link_libraries(tests ${TA_LIBRARIES} MPQCmolecule MPQCexpression MPQCkeyval MPQCf12)
 set_target_properties(unit_tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 add_dependencies(tests catch)

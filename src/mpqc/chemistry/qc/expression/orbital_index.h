@@ -161,7 +161,7 @@ class OrbitalIndex {
   std::string to_ta_expression() const;
 
  private:
-  void init(const wchar_t *letter);
+  void init(const std::wstring& string);
 
   /// convert wchar to index
   Type wchar_to_index(const wchar_t);
@@ -183,7 +183,7 @@ OrbitalIndex::OrbitalIndex(String &&symbol) {
   name_ = utility::to_wstring(symbol);
 
   if (name_.find_first_of(L'_') == std::wstring::npos) {
-    init(name_.c_str());
+    init(name_);
     spin_ = Spin::None;
   } else {
     auto left = name_.find_first_of(L'_');
@@ -192,7 +192,7 @@ OrbitalIndex::OrbitalIndex(String &&symbol) {
     TA_ASSERT(name_.size() - left == 2);
     std::wstring sub_letter = name_.substr(0, left);
 
-    init(sub_letter.c_str());
+    init(sub_letter);
 
     wchar_t spin = name_[left + 1];
 

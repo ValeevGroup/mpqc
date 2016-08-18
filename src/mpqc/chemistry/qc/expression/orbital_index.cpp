@@ -33,9 +33,10 @@ const wchar_t OrbitalIndex::abs_wchar[4] = {L'α', L'β',L'γ',L'δ'};
 const wchar_t OrbitalIndex::ribs_wchar[4] = {L'ρ',L'σ',L'τ',L'υ'};
 
 //TODO better error handling in throw
-void OrbitalIndex::init(const wchar_t* letter) {
+void OrbitalIndex::init(const std::wstring& string) {
 
-    std::string error_message("Wrong Key Index!");
+    const wchar_t* letter = string.c_str();
+
 
     auto length = wcslen(letter);
         
@@ -55,6 +56,7 @@ void OrbitalIndex::init(const wchar_t* letter) {
             index_ = wchar_to_index(first);
         }
         else{
+            std::string error_message = "Wrong Key Index " + utility::to_string(string) + " ! \n";
             throw std::runtime_error(error_message);
         }
     }
@@ -81,6 +83,7 @@ void OrbitalIndex::init(const wchar_t* letter) {
             index_ = wchar_to_index(first);
         }
         else{
+            std::string error_message = "Wrong Key Index " + utility::to_string(string) + " ! \n";
             throw std::runtime_error(error_message);
         }
     }
@@ -116,7 +119,10 @@ bool OrbitalIndex::is_mo() const {
 }
 
 OrbitalIndex::Type OrbitalIndex::wchar_to_index(const wchar_t first) {
-    if (first >= occ_wchar[0] && first <= occ_wchar[1]) {
+
+
+
+  if (first >= occ_wchar[0] && first <= occ_wchar[1]) {
         return Type::occ;
     }
     else if (first >= corr_occ_wchar[0] && first <= corr_occ_wchar[1]){
@@ -147,7 +153,8 @@ OrbitalIndex::Type OrbitalIndex::wchar_to_index(const wchar_t first) {
         return Type::ribs;
     }
     else{
-        throw std::runtime_error("Wrong Key Index!");
+        std::string error_message = "Wrong Key Index " + utility::to_string(std::wstring(1,first)) + " ! \n";
+        throw std::runtime_error(error_message);
         return Type();
     }
 }
@@ -166,7 +173,8 @@ OrbitalIndex::Type OrbitalIndex::wchar_with_prime_to_index(const wchar_t first) 
         return Type::allany;
     }
     else{
-        throw std::runtime_error("Wrong Key Index!");
+        std::string error_message = "Wrong Key Index " + utility::to_string(std::wstring(1,first)) + " !";
+        throw std::runtime_error(error_message);
         return Type();
     }
 }

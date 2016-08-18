@@ -5,6 +5,8 @@
 //#include <codecvt>
 #include <string>
 #include <sstream>
+#include <codecvt>
+#include <locale>
 
 namespace mpqc {
 namespace utility {
@@ -63,7 +65,9 @@ inline std::wstring to_wstring(const std::wstring& wstr_utf8) {
 
 /// @brief converts UTF-8 encoded wstring to UTF-8 encoded string
 inline std::string to_string(const std::wstring& wstr_utf8) {
-  return std::string(wstr_utf8.cbegin(), wstr_utf8.cend());
+  using convert_type = std::codecvt_utf8<wchar_t>;
+  std::wstring_convert<convert_type, wchar_t> converter;
+  return converter.to_bytes(wstr_utf8);
 }
 
 /// @return a std::string obtained by streaming \c args to a

@@ -101,7 +101,7 @@ LINK_DIRECTORIES(${MPQC_BINARY_DIR}/utility)
 LINK_DIRECTORIES(${MPQC_BINARY_DIR}/ta_routines)
 LINK_DIRECTORIES(${MPQC_BINARY_DIR}/eom_cc)
 
-LIST(APPEND MPQC_LIBRARIES MPQCmolecule MPQCbasis tensor utility MPQCexpression MPQCf12 MPQCcc MPQCmbpt MPQCintegrals ta_routines MPQCscf libeomcc MPQCkeyval)
+LIST(APPEND MPQC_LIBRARIES MPQCmolecule MPQCbasis MPQCwfn MPQCProperties tensor utility MPQCexpression MPQCf12 MPQCcc MPQCmbpt MPQCintegrals ta_routines MPQCscf libeomcc MPQCkeyval)
 
 message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
 

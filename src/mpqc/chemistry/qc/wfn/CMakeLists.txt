@@ -1,0 +1,8 @@
+set(sources
+    ao_wfn.h
+    ao_wfn.cpp
+    wfn_world.h
+    wfn_world.cpp
+)
+
+add_library(MPQCwfn ${sources})

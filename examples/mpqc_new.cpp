@@ -2,9 +2,15 @@
 
 #include "../include/tiledarray.h"
 
-#include "../molecule/molecule.h"
 #include "../utility/parallel_file.h"
 #include "../utility/parallel_print.h"
+
+#include <mpqc/chemistry/molecule/molecule.h>
+#include <mpqc/util/keyval/keyval.hpp>
+#include <mpqc/chemistry/qc/wfn/ao_wfn.h>
+#include <mpqc/chemistry/qc/properties/energy.h>
+
+#include <sstream>
 
 using namespace mpqc;
 
@@ -14,19 +20,34 @@ int try_main(int argc, char *argv[], madness::World &world) {
     throw std::invalid_argument("no input file given");
   }
 
-  std::stringstream input_stream = utility::parallel_read_file(world, argv[1]);
+  std::stringstream ss; 
+  utility::parallel_read_file(world, argv[1], ss);
 
   KeyVal kv;
-  kv.read_json(input_stream);
+  kv.read_json(ss);
   kv.assign("world", &world);
 
-  /// construct Molecule
+  // construct molecule
+  std::shared_ptr<molecule::Molecule> mol =
+    std::make_shared<molecule::Molecule>(kv.keyval("molecule"));
 
-//  std::shared_ptr<molecule::Molecule> mol =
-//      std::make_shared<molecule::Molecule>(kv.keyval("molecule"));
+  std::cout << "Molecule:\n" << (*mol) << std::endl;
 
+  // construct basis
   std::shared_ptr<basis::Basis> bs =
       std::make_shared<basis::Basis>(kv.keyval("obs"));
+
+  std::cout << "Basis:\n" << (*bs) << std::endl;
+
+  qc::AOWfn wfn = kv.keyval("wfn");
+  std::shared_ptr<qc::Energy> energy = std::make_shared<qc::Energy>(kv.keyval("energy_property"));
+
+  wfn.visit(energy.get());
+  std::cout << "Energy of the wavefunction is: " << *(energy->result()) << std::endl;
+
+
+
+  return 0;
 }
 
 int main(int argc, char *argv[]) {

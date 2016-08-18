@@ -328,6 +328,9 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
         utility::print_par(world_, " Size: ", size, " GB ");
         utility::print_par(world_, " Time: ", time, " s\n");
 
+        // store current array and delete old one
+        ao_formula_registry_.insert(formula,result);
+        ao_formula_registry_.remove(permute);
         return result;
       }
 

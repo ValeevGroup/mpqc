@@ -515,8 +515,8 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
   mo_integral().keep_partial_transforms(true);
 
-  TArray& g_vvog = mo_integral().compute(L"<a b|G|i x>[df]");
-  TArray& g_oovg = mo_integral().compute(L"<i j|G|a x>[df]");
+  TArray g_vvog = mo_integral().compute(L"<a b|G|i x>[df]");
+  TArray g_oovg = mo_integral().compute(L"<i j|G|a x>[df]");
 
   if (world.rank() == 0) {
     printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
@@ -614,8 +614,8 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   auto qp_str = L"p";
   //auto qp_str = (orbital_ < 0) ? L"i" : L"a";
   using mpqc::utility::wconcat;
-  TArray& g_vvog = mo_integral().compute(wconcat("<a b|G|i ", qp_str, ">[df]"));
-  TArray& g_oovg = mo_integral().compute(wconcat("<i j|G|a ", qp_str, ">[df]"));
+  TArray g_vvog = mo_integral().compute(wconcat("<a b|G|i ", qp_str, ">[df]"));
+  TArray g_oovg = mo_integral().compute(wconcat("<i j|G|a ", qp_str, ">[df]"));
 
   if (world.rank() == 0) {
     printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");

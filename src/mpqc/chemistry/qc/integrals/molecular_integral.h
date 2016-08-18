@@ -130,7 +130,7 @@ namespace integrals{
         }
 
         /// wrapper to compute function
-        TArray& compute(const std::wstring& );
+        TArray compute(const std::wstring& );
 
 
         /**
@@ -139,7 +139,7 @@ namespace integrals{
          *  if Formula computed, it will return it from registry
          *  if not, it will compute it
          */
-        TArray& compute(const Formula&);
+        TArray compute(const Formula&);
 
         /// compute with str and return expression
         TA::expressions::TsrExpr<TArray,true> operator() (const std::wstring& str){
@@ -598,13 +598,13 @@ void MolecularIntegral<Tile,Policy>::assert_all_mo(const Formula &formula) {
 
 }
 template <typename Tile, typename Policy>
-typename MolecularIntegral<Tile,Policy>::TArray& MolecularIntegral<Tile,Policy>::compute(const std::wstring &formula_string) {
+typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute(const std::wstring &formula_string) {
     Formula formula(formula_string);
     return compute(formula);
 }
 
 template <typename Tile, typename Policy>
-typename MolecularIntegral<Tile,Policy>::TArray& MolecularIntegral<Tile,Policy>::compute(const Formula& formula) {
+typename MolecularIntegral<Tile,Policy>::TArray MolecularIntegral<Tile,Policy>::compute(const Formula& formula) {
 
     auto iter = mo_formula_registry_.find(formula);
 
@@ -616,7 +616,41 @@ typename MolecularIntegral<Tile,Policy>::TArray& MolecularIntegral<Tile,Policy>:
         utility::wprint_par(world_, formula.string());
         double size = utility::array_size(result);
         utility::print_par(world_," Size: ", size, " GB\n");
+        return result;
     }else{
+
+        // find a permutation
+        std::vector<Formula> permutes = permutations(formula);
+        typename FormulaRegistry<TArray>::iterator find_permute;
+
+        for(auto& permute : permutes){
+
+            find_permute = mo_formula_registry_.find(permute);
+            if(find_permute != mo_formula_registry_.end()){
+
+                mpqc_time::t_point time0 = mpqc_time::now(world_, accurate_time_);
+
+                // permute the array
+                result(formula.to_ta_expression()) = (*(find_permute->second))(permute.to_ta_expression());
+
+                mpqc_time::t_point time1 = mpqc_time::now(world_, accurate_time_);
+                double time = mpqc_time::duration_in_s(time0, time1);
+
+                utility::print_par(world_, "Permuted MO Integral: ");
+                utility::wprint_par(world_, formula.string());
+                utility::print_par(world_, " From ");
+                utility::wprint_par(world_, permute.string());
+                double size = utility::array_size(result);
+                utility::print_par(world_, " Size: ", size, " GB ");
+                utility::print_par(world_, " Time: ", time, " s\n");
+
+                // store current array and delete old one
+                mo_formula_registry_.insert(formula,result);
+                mo_formula_registry_.remove(permute);
+                return result;
+            }
+
+        }
 
         if(formula.rank() == 2){
             result =  compute2(formula);
@@ -630,12 +664,9 @@ typename MolecularIntegral<Tile,Policy>::TArray& MolecularIntegral<Tile,Policy>:
             result =  compute4(formula);
             mo_formula_registry_.insert(formula, result);
         }
+        return result;
     }
 
-    // make sure all processes obtained result and insert formula
-//    world_.gop.fence();
-
-    return mo_formula_registry_.retrieve(formula);
 }
 } // namespace integral
 } // namespace mpqc

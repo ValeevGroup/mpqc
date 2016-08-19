@@ -32,6 +32,7 @@ class Qmatrix {
     // Convert a function index into a shell index
     int64_t f2s(int64_t a) const {
         auto it = func_to_shell_map_.find(a);
+
         // If this hits the issue was likely an index that was not the
         // first function in the shell.
         assert(it != func_to_shell_map_.end());

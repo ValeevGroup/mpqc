@@ -182,10 +182,8 @@ Array fock_from_soad(madness::World &world,
     // Soad Density
     auto D = soad_density_eig_matrix(clustered_mol);
 
-    // Get minimal basis TODO fix this to BCAST basis to avoid file reads
-    const auto min_bs_shells
-          = basis::BasisSet("sto-3g").get_flat_shells(clustered_mol);
-
+    // Get minimal basis
+    const auto min_bs_shells = parallel_construct_basis(world, basis::BasisSet("sto-3g"),clustered_mol).flattened_shells();
     // Make F scaffolding
     auto const &trange = H.trange();
     auto const &shape_range = H.get_shape().data().range();

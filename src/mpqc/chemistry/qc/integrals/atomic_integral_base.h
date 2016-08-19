@@ -14,14 +14,16 @@
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include "../../../../../include/tiledarray.h"
 #include "../../../../../common/namespaces.h"
+#include "../../../../../utility/make_array.h"
 #include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/qc/basis/basis.h>
 #include <mpqc/chemistry/qc/integrals/integral_engine_pool.h>
-#include "../../../../../utility/make_array.h"
+#include "integrals.h"
 #include <mpqc/chemistry/qc/integrals/task_integrals.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
 
 #include <libint2/engine.h>
+#include <document.h>
 
 namespace mpqc {
 namespace integrals {
@@ -50,10 +52,32 @@ public:
     AtomicIntegralBase(madness::World &world,
                        const std::shared_ptr <molecule::Molecule>& mol,
                        const std::shared_ptr <OrbitalBasisRegistry>& obs,
-                       const std::vector <std::pair<double, double>>& gtg_params = std::vector<std::pair<double,double>>()
-                        )
+                       const std::vector <std::pair<double, double>>& gtg_params = std::vector<std::pair<double,double>>(),
+                        const rapidjson::Document& in = rapidjson::Document()
+                    )
     : world_(world), orbital_basis_registry_(obs), mol_(mol), gtg_params_(gtg_params)
-    { }
+    {
+        utility::print_par(world, "\nConstructing Atomic Integral Class \n");
+        if (in.IsObject()) {
+            screen_ = in.HasMember("Screen") ? in["Screen"].GetString() : "";
+            screen_threshold_ =
+                    in.HasMember("Threshold") ? in["Threshold"].GetDouble() : 1.0e-10;
+            precision_ = in.HasMember("Precision") ? in["Precision"].GetDouble() : std::numeric_limits<double>::epsilon();
+        } else {
+            screen_ = "";
+            screen_threshold_ = 1.0e-10;
+            precision_ = std::numeric_limits<double>::epsilon();
+        }
+
+        utility::print_par(world, "Screen: ", screen_, "\n");
+        if (!screen_.empty()) {
+            utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
+        }
+        utility::print_par(world, "Precision: ", precision_, "\n");
+        utility::print_par(world, "\n");
+
+        integrals::detail::integral_engine_precision = precision_;
+    }
 
     virtual ~AtomicIntegralBase() = default;
 
@@ -121,13 +145,51 @@ protected:
     void parse_two_body_three_center(
         const Formula &formula,
         std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-        Barray<3> &bases);
+        Barray<3> &bases,
+        std::shared_ptr<Screener> &p_screener
+    );
+
 
     /// parse two body four center formula and set two body kernel, basis array, max_nprim and max_am
     void parse_two_body_four_center(
         const Formula &formula,
         std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-        Barray<4> &bases);
+        Barray<4> &bases,
+        std::shared_ptr<Screener>& p_screener
+    );
+
+    std::shared_ptr<Screener> make_screener_four_center(ShrPool<libint2::Engine> &engine,basis::Basis &basis) {
+
+      std::shared_ptr<Screener> p_screen;
+      if (screen_.empty()) {
+        p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+      } else if (screen_ == "qqr") {
+        auto screen_builder = integrals::init_qqr_screen{};
+        p_screen =
+                std::make_shared<integrals::Screener>(screen_builder(world_, engine, basis, screen_threshold_));
+      } else if (screen_ == "schwarz") {
+        auto screen_builder =
+                integrals::init_schwarz_screen(screen_threshold_);
+        p_screen =
+                std::make_shared<integrals::Screener>(screen_builder(world_, engine, basis));
+      }
+        return p_screen;
+    }
+
+    std::shared_ptr<Screener> make_screener_three_center(ShrPool<libint2::Engine> &engine,basis::Basis &basis1, basis::Basis& basis2) {
+      std::shared_ptr<Screener> p_screen;
+      if (screen_.empty()) {
+        p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+      } else if (screen_ == "qqr") {
+        p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+      } else if (screen_ == "schwarz") {
+        auto screen_builder = integrals::init_schwarz_screen(screen_threshold_);
+        p_screen =
+                std::make_shared<integrals::Screener>(screen_builder(world_, engine, basis1, basis2));
+      }
+        return p_screen;
+    }
+
 
     /**
      *  Given formula with rank = 2 and J or K operation, return the G integral
@@ -190,6 +252,9 @@ protected:
     // TODO these specify operator params, need to abstract out better
     std::shared_ptr<molecule::Molecule> mol_;
     gtg_params_t gtg_params_;
+    std::string screen_;
+    double screen_threshold_;
+    double precision_;
 
 };
 } // end of namespace integral

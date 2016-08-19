@@ -164,7 +164,9 @@ void AtomicIntegralBase::parse_two_body_two_center(
 void AtomicIntegralBase::parse_two_body_three_center(
     const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-    Barray<3> &bases) {
+    Barray<3> &bases,
+    std::shared_ptr<Screener>& p_screener)
+    {
 
     TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical, "Three Center Integral Must Use Chemical Notation");
 
@@ -189,16 +191,23 @@ void AtomicIntegralBase::parse_two_body_three_center(
 
     bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0, *ket_basis1);
 
+
     auto oper_type = formula.oper().type();
     engine_pool = integrals::make_engine_pool(
         to_libint2_operator(oper_type), utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
         libint2::BraKet::xs_xx, to_libint2_operator_params(oper_type, *this));
-}
+
+    if(ket_indexs[0] == ket_indexs[1]){
+        p_screener = make_screener_three_center(engine_pool,*bra_basis0,*ket_basis0);
+    }
+    }
 
 void AtomicIntegralBase::parse_two_body_four_center(
     const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-    Barray<4> &bases) {
+    Barray<4> &bases,
+    std::shared_ptr<Screener>& p_screener)
+{
 
     auto bra_indexs = formula.bra_indices();
     auto ket_indexs = formula.ket_indices();
@@ -233,6 +242,10 @@ void AtomicIntegralBase::parse_two_body_four_center(
     engine_pool = integrals::make_engine_pool(
         to_libint2_operator(oper_type), utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
         libint2::BraKet::xx_xx, to_libint2_operator_params(oper_type, *this));
+
+    if((bra_indexs[0] == bra_indexs[1]) && (ket_indexs[0] == ket_indexs[1]) && (ket_indexs[0]==bra_indexs[0])){
+        p_screener = make_screener_four_center(engine_pool,*bra_basis0);
+    }
 }
 
 

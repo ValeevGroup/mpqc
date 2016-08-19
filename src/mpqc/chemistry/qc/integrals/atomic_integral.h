@@ -72,34 +72,17 @@ class AtomicIntegral : public AtomicIntegralBase {
                  const std::vector<std::pair<double, double>>& gtg_params =
                      std::vector<std::pair<double, double>>(),
                  const rapidjson::Document& in = rapidjson::Document())
-      : AtomicIntegralBase(world, mol, obs, gtg_params),
+      : AtomicIntegralBase(world, mol, obs, gtg_params, in),
         ao_formula_registry_(),
         orbital_space_registry_(),
         op_(op) {
     if (in.IsObject()) {
       accurate_time_ =
           in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
-      screen_ = in.HasMember("Screen") ? in["Screen"].GetString() : "";
-      screen_threshold_ =
-          in.HasMember("Threshold") ? in["Threshold"].GetDouble() : 1.0e-10;
-      precision_ = in.HasMember("Precision") ? in["Precision"].GetDouble() : std::numeric_limits<double>::epsilon();
     } else {
       accurate_time_ = false;
-      screen_ = "";
-      screen_threshold_ = 1.0e-10;
-      precision_ = std::numeric_limits<double>::epsilon();
     }
-
-    utility::print_par(world, "\nConstructing Atomic Integral Class \n");
     utility::print_par(world, "AccurateTime: ", accurate_time_, "\n");
-    utility::print_par(world, "Screen: ", screen_, "\n");
-    if (!screen_.empty()) {
-      utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
-    }
-    utility::print_par(world, "Precision: ", precision_, "\n");
-    utility::print_par(world, "\n");
-
-    integrals::detail::integral_engine_precision = precision_;
   }
 
   AtomicIntegral(AtomicIntegral&&) = default;
@@ -154,62 +137,29 @@ class AtomicIntegral : public AtomicIntegralBase {
 
   /// compute sparse array
 
-  template <typename E, unsigned long N, typename U = Policy>
-  TA::Array<double, N, Tile,
-            typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
-                                    TA::SparsePolicy>::type>
-  compute_integrals(madness::World& world, E const& engine,
-                    Barray<N> const& bases) {
-    std::shared_ptr<Screener> p_screen;
-    //            if(screen_.empty()){
-    p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
-    //            }
-    //            else if(screen_ == "qqr"){
-    //                auto screen_builder = integrals::init_qqr_screen{};
-    //                p_screen =
-    //                std::make_shared<integrals::Screener>(screen_builder(world,
-    //                engine, bases, screen_threshold_));
-    //            }
-    //            else if(screen_ == "schwarz"){
-    //                auto screen_builder =
-    //                integrals::init_schwarz_screen(screen_threshold_);
-    //                p_screen =
-    //                std::make_shared<integrals::Screener>(screen_builder(world,
-    //                engine, bases));
-    //            }
-
+  template <unsigned long N, typename U = Policy>
+  TA::Array<double, N, Tile, typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value, TA::SparsePolicy>::type>
+  compute_integrals(madness::World& world,
+                    ShrPool<libint2::Engine> &engine,
+                    Barray<N> const& bases,
+                    std::shared_ptr<Screener> p_screen = std::make_shared<integrals::Screener>(integrals::Screener{})
+                  )
+  {
     auto result =
         mpqc::integrals::sparse_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
   /// compute dense array
-  template <typename E, unsigned long N, typename U = Policy>
-  TA::Array<double, N, Tile,
-            typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
-                                    TA::DensePolicy>::type>
-  compute_integrals(madness::World& world, E const& engine,
-                    Barray<N> const& bases) {
-    std::shared_ptr<Screener> p_screen;
-    //            if(screen_.empty()){
-    p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
-    //            }
-    //            else if(screen_ == "qqr"){
-    //                auto screen_builder = integrals::init_qqr_screen{};
-    //                p_screen =
-    //                std::make_shared<integrals::Screener>(screen_builder(world,
-    //                engine, bases, screen_threshold_));
-    //            }
-    //            else if(screen_ == "schwarz"){
-    //                auto screen_builder =
-    //                integrals::init_schwarz_screen(screen_threshold_);
-    //                p_screen =
-    //                std::make_shared<integrals::Screener>(screen_builder(world,
-    //                engine, bases));
-    //            }
+  template<unsigned long N, typename U = Policy>
+  TA::Array<double, N, Tile, typename std::enable_if<std::is_same<U, TA::DensePolicy>::value, TA::DensePolicy>::type>
+  compute_integrals(madness::World &world,
+                    ShrPool<libint2::Engine> &engine,
+                    Barray<N> const &bases,
+                    std::shared_ptr<Screener> p_screen = std::make_shared<integrals::Screener>(integrals::Screener{})
+  ) {
 
-    auto result =
-        mpqc::integrals::dense_integrals(world, engine, bases, p_screen, op_);
+    auto result = mpqc::integrals::dense_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -218,65 +168,7 @@ class AtomicIntegral : public AtomicIntegralBase {
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
   Op op_;
   bool accurate_time_;
-  std::string screen_;
-  double screen_threshold_;
-  double precision_;
 };
-
-#if 0
-template <typename Tile, typename Policy>
-template <typename Basis>
-typename AtomicIntegral<Tile, Policy>::TArray
-AtomicIntegral<Tile, Policy>::compute_two_body_integral(
-    const libint2::MultiplicativeSphericalTwoBodyKernel& kernel,
-    const Basis& bs_array, int64_t max_nprim, int64_t max_am,
-    const Operator& operation) {
-  typename AtomicIntegral<Tile, Policy>::TArray result;
-
-  if (kernel == libint2::Coulomb) {
-    libint2::TwoBodyEngine<libint2::Coulomb> engine(max_nprim,
-                                                    static_cast<int>(max_am));
-    auto engine_pool = make_pool(engine);
-    result = compute_integrals(this->world_, engine_pool, bs_array);
-  } else {
-    if (this->gtg_params_.empty()) {
-      throw std::runtime_error("Gaussian Type Geminal Parameters are empty!");
-    }
-
-    if (kernel == libint2::cGTG) {
-      if (operation.type() == Operator::Type::cGTG2) {
-        auto squared_pragmas = f12::gtg_params_squared(this->gtg_params_);
-        libint2::TwoBodyEngine<libint2::cGTG> engine(
-            max_nprim, max_am, 0, precision_;
-            squared_pragmas);
-        auto engine_pool = make_pool(engine);
-        result = compute_integrals(this->world_, engine_pool, bs_array);
-
-      } else {
-        libint2::TwoBodyEngine<libint2::cGTG> engine(
-            max_nprim, max_am, 0, precision_,
-            this->gtg_params_);
-        auto engine_pool = make_pool(engine);
-        result = compute_integrals(this->world_, engine_pool, bs_array);
-      }
-    } else if (kernel == libint2::cGTG_times_Coulomb) {
-      libint2::TwoBodyEngine<libint2::cGTG_times_Coulomb> engine(
-          max_nprim, max_am, 0, precision_
-          this->gtg_params_);
-      auto engine_pool = make_pool(engine);
-      result = compute_integrals(this->world_, engine_pool, bs_array);
-    } else if (kernel == libint2::DelcGTG_square) {
-      libint2::TwoBodyEngine<libint2::DelcGTG_square> engine(
-          max_nprim, max_am, 0, precision_,
-          this->gtg_params_);
-      auto engine_pool = make_pool(engine);
-      result = compute_integrals(this->world_, engine_pool, bs_array);
-    }
-  }
-  TA_ASSERT(result.is_initialized());
-  return result;
-}
-#endif
 
 template <typename Tile, typename Policy>
 typename AtomicIntegral<Tile, Policy>::TArray
@@ -627,15 +519,15 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   double time = 0.0;
   mpqc_time::t_point time0;
   mpqc_time::t_point time1;
+  time0 = mpqc_time::now(world_, accurate_time_);
   TArray result;
 
   Barray<3> bs_array;
-
-  time0 = mpqc_time::now(world_, accurate_time_);
-
   std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
-  parse_two_body_three_center(formula, engine_pool, bs_array);
-  result = compute_integrals(this->world_, engine_pool, bs_array);
+  std::shared_ptr<Screener> p_screener = std::make_shared<integrals::Screener>(integrals::Screener{});
+
+  parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
+  result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
 
   time1 = mpqc_time::now(world_, accurate_time_);
   time += mpqc_time::duration_in_s(time0, time1);
@@ -689,10 +581,11 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
     time0 = mpqc_time::now(world_, accurate_time_);
 
     Barray<4> bs_array;
+    std::shared_ptr<Screener> p_screener = std::make_shared<integrals::Screener>(integrals::Screener{});
 
     std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
-    parse_two_body_four_center(formula, engine_pool, bs_array);
-    result = compute_integrals(this->world_, engine_pool, bs_array);
+    parse_two_body_four_center(formula, engine_pool, bs_array, p_screener);
+    result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
 
     // TODO handle permutation better
     if (formula.notation() == Formula::Notation::Physical) {

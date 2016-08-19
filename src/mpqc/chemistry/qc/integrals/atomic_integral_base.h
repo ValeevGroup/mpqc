@@ -12,7 +12,6 @@
 
 #include <mpqc/chemistry/qc/expression/formula.h>
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
-#include "../../../../../include/tiledarray.h"
 #include "../../../../../common/namespaces.h"
 #include "../../../../../utility/make_array.h"
 #include <mpqc/chemistry/molecule/molecule.h>
@@ -23,7 +22,7 @@
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
 
 #include <libint2/engine.h>
-#include <document.h>
+#include <rapidjson/document.h>
 
 namespace mpqc {
 namespace integrals {

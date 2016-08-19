@@ -81,8 +81,7 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
       }
       result = cgtg2_params;
     } break;
-    default:
-      ;  // nothing to do
+    default:;  // nothing to do
   }
   return result;
 }
@@ -96,6 +95,43 @@ libint2::Engine AtomicIntegralBase::make_engine(const Operator &oper,
   engine.set_params(std::move(params));
 
   return engine;
+}
+
+std::shared_ptr<Screener> AtomicIntegralBase::make_screener_three_center(
+    ShrPool<libint2::Engine> &engine, basis::Basis &basis1,
+    basis::Basis &basis2) {
+  std::shared_ptr<Screener> p_screen;
+  if (screen_.empty()) {
+    p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+  } else if (screen_ == "qqr") {
+    p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+  } else if (screen_ == "schwarz") {
+    auto screen_builder = integrals::init_schwarz_screen(screen_threshold_);
+    p_screen = std::make_shared<integrals::Screener>(
+        screen_builder(world_, engine, basis1, basis2));
+  } else {
+    throw std::runtime_error("Wrong Screening Method!");
+  }
+  return p_screen;
+}
+
+std::shared_ptr<Screener> AtomicIntegralBase::make_screener_four_center(
+    ShrPool<libint2::Engine> &engine, basis::Basis &basis) {
+  std::shared_ptr<Screener> p_screen;
+  if (screen_.empty()) {
+    p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+  } else if (screen_ == "qqr") {
+    auto screen_builder = integrals::init_qqr_screen{};
+    p_screen = std::make_shared<integrals::Screener>(
+        screen_builder(world_, engine, basis, screen_threshold_));
+  } else if (screen_ == "schwarz") {
+    auto screen_builder = integrals::init_schwarz_screen(screen_threshold_);
+    p_screen = std::make_shared<integrals::Screener>(
+        screen_builder(world_, engine, basis));
+  } else {
+    throw std::runtime_error("Wrong Screening Method!");
+  }
+  return p_screen;
 }
 
 void AtomicIntegralBase::parse_one_body(
@@ -196,7 +232,8 @@ void AtomicIntegralBase::parse_two_body_three_center(
       utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
       libint2::BraKet::xs_xx, to_libint2_operator_params(oper_type, *this));
 
-  if (ket_indexs[0] == ket_indexs[1]) {
+  if (!screen_.empty() && (ket_indexs[0] == ket_indexs[1])) {
+    /// make another engine to screener!!!
 
     auto screen_engine_pool = integrals::make_engine_pool(
         to_libint2_operator(oper_type),

@@ -157,37 +157,11 @@ class AtomicIntegralBase {
       Barray<4> &bases, std::shared_ptr<Screener> &p_screener);
 
   std::shared_ptr<Screener> make_screener_four_center(
-      ShrPool<libint2::Engine> &engine, basis::Basis &basis) {
-    std::shared_ptr<Screener> p_screen;
-    if (screen_.empty()) {
-      p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
-    } else if (screen_ == "qqr") {
-      auto screen_builder = integrals::init_qqr_screen{};
-      p_screen = std::make_shared<integrals::Screener>(
-          screen_builder(world_, engine, basis, screen_threshold_));
-    } else if (screen_ == "schwarz") {
-      auto screen_builder = integrals::init_schwarz_screen(screen_threshold_);
-      p_screen = std::make_shared<integrals::Screener>(
-          screen_builder(world_, engine, basis));
-    }
-    return p_screen;
-  }
+      ShrPool<libint2::Engine> &engine, basis::Basis &basis);
 
   std::shared_ptr<Screener> make_screener_three_center(
-      ShrPool<libint2::Engine> &engine, basis::Basis &basis1,
-      basis::Basis &basis2) {
-    std::shared_ptr<Screener> p_screen;
-    if (screen_.empty()) {
-      p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
-    } else if (screen_ == "qqr") {
-      p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
-    } else if (screen_ == "schwarz") {
-      auto screen_builder = integrals::init_schwarz_screen(screen_threshold_);
-      p_screen = std::make_shared<integrals::Screener>(
-          screen_builder(world_, engine, basis1, basis2));
-    }
-    return p_screen;
-  }
+      ShrPool<libint2::Engine> &engine, basis::Basis &dfbasis,
+      basis::Basis &basis);
 
   /**
    *  Given formula with rank = 2 and J or K operation, return the G integral

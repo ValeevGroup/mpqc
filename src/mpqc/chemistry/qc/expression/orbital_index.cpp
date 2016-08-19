@@ -32,7 +32,6 @@ const wchar_t OrbitalIndex::dfbs_wchar[4] = {L'Κ',L'Λ',L'Μ', L'Ν'};
 const wchar_t OrbitalIndex::abs_wchar[4] = {L'α', L'β',L'γ',L'δ'};
 const wchar_t OrbitalIndex::ribs_wchar[4] = {L'ρ',L'σ',L'τ',L'υ'};
 
-//TODO better error handling in throw
 void OrbitalIndex::init(const std::wstring& string) {
 
     const wchar_t* letter = string.c_str();

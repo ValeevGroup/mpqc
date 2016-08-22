@@ -2,11 +2,11 @@
 #ifndef SRC_MPQC_UTIL_MISC_STRING_H_
 #define SRC_MPQC_UTIL_MISC_STRING_H_
 
-//#include <codecvt>
 #include <string>
 #include <sstream>
-#include <codecvt>
 #include <locale>
+//#include <codecvt> // no gcc support
+#include <boost/locale/encoding_utf.hpp>
 
 namespace mpqc {
 namespace utility {
@@ -65,9 +65,11 @@ inline std::wstring to_wstring(const std::wstring& wstr_utf8) {
 
 /// @brief converts UTF-8 encoded wstring to UTF-8 encoded string
 inline std::string to_string(const std::wstring& wstr_utf8) {
-  using convert_type = std::codecvt_utf8<wchar_t>;
-  std::wstring_convert<convert_type, wchar_t> converter;
-  return converter.to_bytes(wstr_utf8);
+//  using convert_type = std::codecvt_utf8<wchar_t>;
+//  std::wstring_convert<convert_type, wchar_t> converter;
+//  return converter.to_bytes(wstr_utf8);
+  using boost::locale::conv::utf_to_utf;
+  return utf_to_utf<char>(wstr_utf8.c_str(), wstr_utf8.c_str() + wstr_utf8.size());
 }
 
 /// @return a std::string obtained by streaming \c args to a

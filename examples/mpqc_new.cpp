@@ -1,6 +1,6 @@
 /// New MPQC Main file with KeyVal
 
-#include "../include/tiledarray.h"
+// #include "../include/tiledarray.h"
 
 #include "../utility/parallel_file.h"
 #include "../utility/parallel_print.h"
@@ -9,10 +9,13 @@
 #include <mpqc/util/keyval/keyval.hpp>
 #include <mpqc/chemistry/qc/wfn/ao_wfn.h>
 #include <mpqc/chemistry/qc/properties/energy.h>
+// #include <mpqc/chemistry/qc/integrals/atomic_integral.h>
 
 #include <sstream>
 
 using namespace mpqc;
+
+TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
 
 int try_main(int argc, char *argv[], madness::World &world) {
   if (argc != 2) {
@@ -27,25 +30,36 @@ int try_main(int argc, char *argv[], madness::World &world) {
   kv.read_json(ss);
   kv.assign("world", &world);
 
+  auto threshold = 1e-11;  // Hardcode for now.
+  TiledArray::SparseShape<float>::threshold(threshold);
+
+  //
   // construct molecule
-  std::shared_ptr<molecule::Molecule> mol =
+  //
+  molecule::Molecule mol =
       std::make_shared<molecule::Molecule>(kv.keyval("molecule"));
+  auto nclusters = 1;  // Hard Coded for now
+  auto clustered_mol = std::make_shared<molecule::Molecule>(
+      molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters));
+  kv.assign("molecule", clustered_mol);
 
-  std::cout << "Molecule:\n" << (*mol) << std::endl;
+  //
+  // construct basis registry
+  //
+  auto bs = kv.value<basis::Basis>("obs");
+  auto dfbs = kv.value<basis::Basis>("dfbs");
 
-  // construct basis
-  std::shared_ptr<basis::Basis> bs =
-      std::make_shared<basis::Basis>(kv.keyval("obs"));
+  auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
+  bs_registry->add(OrbitalIndex(L"κ"), bs);
+  bs_registry->add(OrbitalIndex(L"Κ"), dfbs);
 
-  std::cout << "Basis:\n" << (*bs) << std::endl;
-
-  qc::AOWfn wfn = kv.keyval("wfn");
-  std::shared_ptr<qc::Energy> energy =
-      std::make_shared<qc::Energy>(kv.keyval("energy_property"));
-
-  wfn.visit(energy.get());
-  std::cout << "Energy of the wavefunction is: " << *(energy->result())
-            << std::endl;
+  //
+  // construct integrals
+  //
+  libint2::initialize();
+  integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(
+      world, ta_pass_through, kv.class_ptr<molecule::Molecule>("molecule"),
+      bs_registry);
 
   return 0;
 }

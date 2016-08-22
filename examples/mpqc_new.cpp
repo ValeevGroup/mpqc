@@ -20,7 +20,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     throw std::invalid_argument("no input file given");
   }
 
-  std::stringstream ss; 
+  std::stringstream ss;
   utility::parallel_read_file(world, argv[1], ss);
 
   KeyVal kv;
@@ -29,7 +29,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   // construct molecule
   std::shared_ptr<molecule::Molecule> mol =
-    std::make_shared<molecule::Molecule>(kv.keyval("molecule"));
+      std::make_shared<molecule::Molecule>(kv.keyval("molecule"));
 
   std::cout << "Molecule:\n" << (*mol) << std::endl;
 
@@ -40,12 +40,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
   std::cout << "Basis:\n" << (*bs) << std::endl;
 
   qc::AOWfn wfn = kv.keyval("wfn");
-  std::shared_ptr<qc::Energy> energy = std::make_shared<qc::Energy>(kv.keyval("energy_property"));
+  std::shared_ptr<qc::Energy> energy =
+      std::make_shared<qc::Energy>(kv.keyval("energy_property"));
 
   wfn.visit(energy.get());
-  std::cout << "Energy of the wavefunction is: " << *(energy->result()) << std::endl;
-
-
+  std::cout << "Energy of the wavefunction is: " << *(energy->result())
+            << std::endl;
 
   return 0;
 }

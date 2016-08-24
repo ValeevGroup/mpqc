@@ -423,7 +423,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto hJ2 = mo_integral(L"<A' | hJ | i2>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
-    tmp("i1,j1,i2,j2") = (left1*hJ1 + left2*hJ2).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1*hJ1).set_shape(ijij_ijji_shape) + (left2*hJ2).set_shape(ijij_ijji_shape);
 //    B_ijij_ijji("i1,j1,i2,j2") += (mo_integral(L"(j1 P'|R2|i1 i2)[df]")*hJ("P',j2")).set_shape(ijij_ijji_shape);
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
@@ -448,7 +448,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right3 = mo_integral(L"<i2 j2|R|C' B'>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
-    tmp("i1,j1,i2,j2") = (left1*middle1*right1 + 2.0*left2*middle2*right2 + left3*middle3*right3).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1*middle1*right1).set_shape(ijij_ijji_shape)  + (2.0*left2*middle2*right2).set_shape(ijij_ijji_shape)  + (left3*middle3*right3).set_shape(ijij_ijji_shape);
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
     // AO R integral not needed
@@ -472,7 +472,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right3 = mo_integral(L"<i2 j2|R|m B'>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
-    tmp("i1,j1,i2,j2") = (left1*middle1*right1 + 2.0*left2*middle2*right2 + left3*middle3*right3).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1*middle1*right1).set_shape(ijij_ijji_shape)  + (2.0*left2*middle2*right2).set_shape(ijij_ijji_shape)  + (left3*middle3*right3).set_shape(ijij_ijji_shape);
 //    B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 P'|R|i1 m)[df]")*mo_integral(L"(P'|F|R')[df]")*mo_integral(L"(j2 R'|R|i2 m)[df]")).set_shape(ijij_ijji_shape);
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -494,7 +494,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right2 = mo_integral(L"<i2 j2|R|A' b'>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
-    tmp("i1,j1,i2,j2") = (left1*middle1*right1 + 2.0*left2*middle2*right2).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1*middle1*right1).set_shape(ijij_ijji_shape)  + (2.0*left2*middle2*right2).set_shape(ijij_ijji_shape);
 //    B_ijij_ijji("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 m|R|i1 b')[df]")*mo_integral(L"(m|F|P')[df]")*mo_integral(L"(j2 P'|R|i2 b')[df]")).set_shape(ijij_ijji_shape);
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -522,7 +522,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right3 = mo_integral(L"<i2 j2|R|c a>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
-    tmp("i1,j1,i2,j2") = (left1*middle1*right1 + 2*left2*middle2*right2 + left3*middle3*right3).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1*middle1*right1).set_shape(ijij_ijji_shape)  + (2*left2*middle2*right2).set_shape(ijij_ijji_shape)  + (left3*middle3*right3).set_shape(ijij_ijji_shape);
 //    B_ijij_ijji("i1,j1,i2,j2") -= (mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|r)[df]")*mo_integral(L"(j2 r|R|i2 a)[df]")).set_shape(ijij_ijji_shape);
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -541,7 +541,7 @@ TA::DistArray<Tile,TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right2 = mo_integral(L"<i2 j2|R|a' a>[df]");
 
     auto time0 = mpqc_time::now(world,accurate_time);
-    tmp("i1,j1,i2,j2") = (2.0*(left1*middle1*right1 + left2*middle2*right2)).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = 2.0*((left1*middle1*right1).set_shape(ijij_ijji_shape)  + (left2*middle2*right2).set_shape(ijij_ijji_shape));
 //    B_ijij_ijji("i1,j1,i2,j2") -= (2.0*mo_integral(L"(j1 p|R|i1 a)[df]")*mo_integral(L"(p|F|a')[df]")*mo_integral(L"(i2 a|R|j2 a')[df]")).set_shape(ijij_ijji_shape);
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");

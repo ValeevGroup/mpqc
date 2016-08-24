@@ -62,7 +62,8 @@ class AtomicIntegral : public AtomicIntegralBase {
    *  @param AccurateTime, bool, control if use fence in timing, default false
    *  @param Screen, string, name of screen method to use, default none
    *  @param Threshold, double, screen threshold, qqr or schwarz, default
-   *  @param Precision, double, precision in computing integral, default std::numeric_limits<double>::epsilon()
+   *  @param Precision, double, precision in computing integral, default
+   *std::numeric_limits<double>::epsilon()
    *1.0e-10
    */
 
@@ -134,32 +135,34 @@ class AtomicIntegral : public AtomicIntegralBase {
   TArray compute4(const Formula& formula_string);
 
  private:
-
   /// compute sparse array
 
   template <unsigned long N, typename U = Policy>
-  TA::Array<double, N, Tile, typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value, TA::SparsePolicy>::type>
-  compute_integrals(madness::World& world,
-                    ShrPool<libint2::Engine> &engine,
-                    Barray<N> const& bases,
-                    std::shared_ptr<Screener> p_screen = std::make_shared<integrals::Screener>(integrals::Screener{})
-                  )
-  {
+  TA::Array<double, N, Tile,
+            typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
+                                    TA::SparsePolicy>::type>
+  compute_integrals(
+      madness::World& world, ShrPool<libint2::Engine>& engine,
+      Barray<N> const& bases,
+      std::shared_ptr<Screener> p_screen =
+          std::make_shared<integrals::Screener>(integrals::Screener{})) {
     auto result =
         mpqc::integrals::sparse_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
   /// compute dense array
-  template<unsigned long N, typename U = Policy>
-  TA::Array<double, N, Tile, typename std::enable_if<std::is_same<U, TA::DensePolicy>::value, TA::DensePolicy>::type>
-  compute_integrals(madness::World &world,
-                    ShrPool<libint2::Engine> &engine,
-                    Barray<N> const &bases,
-                    std::shared_ptr<Screener> p_screen = std::make_shared<integrals::Screener>(integrals::Screener{})
-  ) {
-
-    auto result = mpqc::integrals::dense_integrals(world, engine, bases, p_screen, op_);
+  template <unsigned long N, typename U = Policy>
+  TA::Array<double, N, Tile,
+            typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
+                                    TA::DensePolicy>::type>
+  compute_integrals(
+      madness::World& world, ShrPool<libint2::Engine>& engine,
+      Barray<N> const& bases,
+      std::shared_ptr<Screener> p_screen =
+          std::make_shared<integrals::Screener>(integrals::Screener{})) {
+    auto result =
+        mpqc::integrals::dense_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -192,22 +195,20 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
-  }
-  else {
+  } else {
     // find a permutation, currently, it won't store permutation in registry
 
     std::vector<Formula> permutes = permutations(formula);
     typename FormulaRegistry<TArray>::iterator find_permute;
 
-    for(auto& permute : permutes){
-
+    for (auto& permute : permutes) {
       find_permute = ao_formula_registry_.find(permute);
-      if(find_permute != ao_formula_registry_.end()){
-
+      if (find_permute != ao_formula_registry_.end()) {
         mpqc_time::t_point time0 = mpqc_time::now(world_, accurate_time_);
 
         // permute the array
-        result(formula.to_ta_expression()) = (*(find_permute->second))(permute.to_ta_expression());
+        result(formula.to_ta_expression()) =
+            (*(find_permute->second))(permute.to_ta_expression());
 
         mpqc_time::t_point time1 = mpqc_time::now(world_, accurate_time_);
         double time = mpqc_time::duration_in_s(time0, time1);
@@ -221,11 +222,10 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
         utility::print_par(world_, " Time: ", time, " s\n");
 
         // store current array and delete old one
-        ao_formula_registry_.insert(formula,result);
+        ao_formula_registry_.insert(formula, result);
         ao_formula_registry_.remove(permute);
         return result;
       }
-
     }
 
     // compute formula
@@ -380,7 +380,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
-    madness::print_meminfo(world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
+    madness::print_meminfo(
+        world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
   }
   // compute JK, requires orbital space registry
   else if (formula.oper().is_jk()) {
@@ -392,7 +393,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
     auto obs = space.ao_key().name();
     if (formula.oper().has_option(Operator::Option::DensityFitting)) {
-      auto three_center_formula = get_jk_df_formula(formula,obs);
+      auto three_center_formula = get_jk_df_formula(formula, obs);
 
       auto left = compute(three_center_formula[0]);
       auto center = compute(three_center_formula[1]);
@@ -400,16 +401,16 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
       time0 = mpqc_time::now(world_, accurate_time_);
 
-        // J case
-        if (formula.oper().type() == Operator::Type::J) {
-          result("i,j") = center("K,Q") * right("Q,k,l") *
-                          (space("k,a") * space("l,a")) * left("K,i,j");
-        }
-          // K case
-        else {
-          result("i,j") = (left("K,i,k") * space("k,a")) * center("K,Q") *
-                          (right("Q,j,l") * space("l,a"));
-        }
+      // J case
+      if (formula.oper().type() == Operator::Type::J) {
+        result("i,j") = center("K,Q") * right("Q,k,l") *
+                        (space("k,a") * space("l,a")) * left("K,i,j");
+      }
+      // K case
+      else {
+        result("i,j") = (left("K,i,k") * space("k,a")) * center("K,Q") *
+                        (right("Q,j,l") * space("l,a"));
+      }
 
       time1 = mpqc_time::now(world_, accurate_time_);
       time += mpqc_time::duration_in_s(time0, time1);
@@ -421,29 +422,27 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       auto& space = orbital_space_registry_->retrieve(space_index);
       auto obs = space.ao_key().name();
       // convert to ao formula
-      auto four_center_formula = get_jk_formula(formula,obs);
+      auto four_center_formula = get_jk_formula(formula, obs);
       auto four_center = this->compute(four_center_formula);
 
       time0 = mpqc_time::now(world_, accurate_time_);
 
-      if(formula.notation() == Formula::Notation::Chemical){
+      if (formula.notation() == Formula::Notation::Chemical) {
         if (formula.oper().type() == Operator::Type::J) {
           result("rho,sigma") =
-                  four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
+              four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
         } else {
           result("rho,sigma") =
-                  four_center("rho,mu,sigma,nu") * (space("mu,i") * space("nu,i"));
+              four_center("rho,mu,sigma,nu") * (space("mu,i") * space("nu,i"));
         }
-      }
-      else{
+      } else {
         if (formula.oper().type() == Operator::Type::K) {
           result("rho,sigma") =
-                  four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
+              four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
         } else {
           result("rho,sigma") =
-                  four_center("rho,mu,sigma,nu") * (space("mu,i") * space("nu,i"));
+              four_center("rho,mu,sigma,nu") * (space("mu,i") * space("nu,i"));
         }
-
       }
 
       time1 = mpqc_time::now(world_, accurate_time_);
@@ -524,7 +523,8 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
 
   Barray<3> bs_array;
   std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
-  std::shared_ptr<Screener> p_screener = std::make_shared<integrals::Screener>(integrals::Screener{});
+  std::shared_ptr<Screener> p_screener =
+      std::make_shared<integrals::Screener>(integrals::Screener{});
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
@@ -537,7 +537,8 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   double size = utility::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
-  madness::print_meminfo(world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
+  madness::print_meminfo(world_.rank(),
+                         utility::wconcat("AtomicIntegral:", formula.string()));
 
   return result;
 }
@@ -581,7 +582,8 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
     time0 = mpqc_time::now(world_, accurate_time_);
 
     Barray<4> bs_array;
-    std::shared_ptr<Screener> p_screener = std::make_shared<integrals::Screener>(integrals::Screener{});
+    std::shared_ptr<Screener> p_screener =
+        std::make_shared<integrals::Screener>(integrals::Screener{});
 
     std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
     parse_two_body_four_center(formula, engine_pool, bs_array, p_screener);
@@ -600,7 +602,8 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
-    madness::print_meminfo(world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
+    madness::print_meminfo(
+        world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
   }
   return result;
 }

@@ -3,4 +3,5 @@ set(sources
     energy.cpp
 )
 
-add_library(MPQCProperties ${sources})
+add_library(MPQCproperties ${sources})
+target_link_libraries(MPQCproperties MPQCwfn)

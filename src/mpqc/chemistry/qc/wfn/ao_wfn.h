@@ -1,7 +1,7 @@
 /*
  * ao_wfn.h
  *
- *  Created on: Apr 27, 2016
+ *  Created on: Aug 17, 2016
  *      Author: Drew Lewis
  */
 
@@ -15,11 +15,9 @@ namespace mpqc {
 namespace qc {
 
 class AOWfn : public Wfn {
-
  public:
   AOWfn(KeyVal const &kv);
-
-  void visit(PropertyBase *pb) override; 
+  void visit(PropertyBase *pb) override;
 };
 
 }  // namespace qc

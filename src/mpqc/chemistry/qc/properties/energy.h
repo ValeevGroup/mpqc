@@ -23,6 +23,7 @@ class Energy : public PropertyBase {
   Energy(KeyVal const &kv);
 
   void apply(AOWfn *) override;
+
   boost::optional<double> result() { return result_; }
 };
 

@@ -10,7 +10,10 @@
 
 #include <mpqc/util/keyval/keyval.hpp>
 #include <mpqc/chemistry/qc/wfn/wfn_world.h>
+#include <mpqc/chemistry/qc/properties/propertybase.h>
+
 #include <memory>
+#include <functional>
 
 namespace mpqc {
 namespace qc {
@@ -18,17 +21,25 @@ namespace qc {
 class PropertyBase;
 
 class Wfn : public DescribedClass {
+ public:
+  using ArrayType = WfnWorld::ArrayType;
+
  private:
-  std::shared_ptr<WfnWorld> wfn_world_;
-  std::vector<std::shared_ptr<PropertyBase>> properties_;
+  /*! Pointer to to the WfnWorld
+   *
+   * \note No need to make this shared Wfn is just a member of the world it
+   *lives in so no ownership here.
+   *
+   * \warning Wfn should never delete or allocate this pointer.
+   */
+  WfnWorld* wfn_world_ = nullptr;
 
  public:
-  Wfn(KeyVal const &kv) 
-      : wfn_world_(std::make_shared<WfnWorld>(kv.keyval("wfn_world"))){};
+  Wfn(KeyVal const& kv) : wfn_world_(kv.value<WfnWorld*>("wfn_world")){};
 
-  virtual void visit(PropertyBase *) = 0;
+  virtual void visit(PropertyBase* pb) = 0;
 
-  std::shared_ptr<WfnWorld> wfn_world() { return wfn_world_; }
+  WfnWorld* wfn_world() { return wfn_world_; }
 };
 
 }  // namespace qc

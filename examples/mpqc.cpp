@@ -60,7 +60,6 @@
 using namespace mpqc;
 namespace ints = integrals;
 
-
 TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
 /**
  *
@@ -74,7 +73,8 @@ TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
  *  @param DfBasis string, name of density fitting basis function, default none
  *  @param AuxBasis string, name of auxilary basis function, default, none
  *  @param Sparse double,  sparse threashhold, default 1e-13
- *  @param CorrelationFactor double, f12 correlation factor, default by basis name
+ *  @param CorrelationFactor double, f12 correlation factor, default by basis
+ *name
  *  @param CorrelationFunction int, number of f12 correlation fuction, defualt 6
  *  @param CLSCF object, ClosedShellSCF class
  *  @param AOIntegral object, AtomicIntegral class
@@ -82,510 +82,509 @@ TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
  *
  */
 int try_main(int argc, char *argv[], madness::World &world) {
+  std::setlocale(LC_ALL, "en_US.UTF-8");
 
-    std::setlocale(LC_ALL,"en_US.UTF-8");
+  if (argc != 2) {
+    std::cout << "usage: " << argv[0] << " <input_file.json>" << std::endl;
+    throw std::invalid_argument("no input file given");
+  }
 
-    if (argc != 2) {
-        std::cout << "usage: " << argv[0] << " <input_file.json>" << std::endl;
-        throw std::invalid_argument("no input file given");
+  char *json;
+  utility::parallel_read_file(world, argv[1], json);
+
+  // parse the input
+  rapidjson::Document in;
+  in.Parse(json);
+  delete[] json;
+
+  std::cout << std::setprecision(15);
+  std::wcout.sync_with_stdio(false);
+  std::wcerr.sync_with_stdio(false);
+  std::wcout.imbue(std::locale("en_US.UTF-8"));
+  std::wcerr.imbue(std::locale("en_US.UTF-8"));
+  std::wcout.sync_with_stdio(true);
+  std::wcerr.sync_with_stdio(true);
+
+  /**
+   * obtain basis option for program
+   */
+
+  if (!in.HasMember("Molecule") || !in.HasMember("NCluster")) {
+    if (world.rank() == 0) {
+      std::cout << "At a minimum your input file must provide\n";
+      std::cout << "\"Molecule\", which is path to an xyz input\n";
     }
+  }
 
+  // get Molecule info
+  std::string mol_file = in["Molecule"].GetString();
+  std::string ghost_atoms =
+      in.HasMember("GhostMolecule") ? in["GhostMolecule"].GetString() : "";
+  int charge = in.HasMember("Charge") ? in["Charge"].GetInt() : 0;
 
-    char* json;
-    utility::parallel_read_file(world, argv[1], json);
+  // get cluster info
+  int nclusters = in.HasMember("NCluster") ? in["NCluster"].GetInt() : 1;
+  std::size_t ao_blocksize =
+      in.HasMember("AOBlockSize") ? in["AOBlockSize"].GetInt() : 0;
 
-    // parse the input
-    rapidjson::Document in;
-    in.Parse(json);
-    delete[] json;
+  // get basis info
+  std::string basis_name =
+      in.HasMember("Basis") ? in["Basis"].GetString() : "cc-pvdz";
+  std::string df_basis_name =
+      in.HasMember("DfBasis") ? in["DfBasis"].GetString() : "";
+  std::string aux_basis_name =
+      in.HasMember("AuxBasis") ? in["AuxBasis"].GetString() : "";
+  std::string vir_basis_name =
+      in.HasMember("VirtualBasis") ? in["VirtualBasis"].GetString() : "";
 
-    std::cout << std::setprecision(15);
-    std::wcout.sync_with_stdio(false);
-    std::wcerr.sync_with_stdio(false);
-    std::wcout.imbue(std::locale("en_US.UTF-8"));
-    std::wcerr.imbue(std::locale("en_US.UTF-8"));
-    std::wcout.sync_with_stdio(true);
-    std::wcerr.sync_with_stdio(true);
-
-    /**
-     * obtain basis option for program
-     */
-
-    if (!in.HasMember("Molecule") || !in.HasMember("NCluster")) {
-        if (world.rank() == 0) {
-            std::cout << "At a minimum your input file must provide\n";
-            std::cout << "\"Molecule\", which is path to an xyz input\n";
-        }
+  // Get thresh info
+  auto threshold = in.HasMember("Sparse") ? in["Sparse"].GetDouble() : 1e-15;
+  TiledArray::SparseShape<float>::threshold(threshold);
+  // print out basis options
+  if (world.rank() == 0) {
+    std::cout << "Molecule: " << mol_file << std::endl;
+    utility::print_file(world, mol_file);
+    std::cout << "N Cluster: " << nclusters << std::endl;
+    std::cout << "Charge: " << charge << std::endl;
+    std::cout << "OBS: " << basis_name << std::endl;
+    if (!vir_basis_name.empty()) {
+      std::cout << "VBS: " << vir_basis_name << std::endl;
     }
+    std::cout << "DFBS: " << df_basis_name << std::endl;
+    std::cout << "AUXBS: " << aux_basis_name << std::endl;
+    std::cout << "AO Block Size: " << ao_blocksize << std::endl;
+    std::cout << "Sparse Threshold: " << threshold << std::endl;
+  }
 
-    // get Molecule info
-    std::string mol_file = in["Molecule"].GetString();
-    std::string ghost_atoms = in.HasMember("GhostMolecule") ? in["GhostMolecule"].GetString() : "";
-    int charge = in.HasMember("Charge") ? in["Charge"].GetInt() : 0;
+  /**
+   * Construct Molecule
+   */
 
-    // get cluster info
-    int nclusters = in.HasMember("NCluster") ? in["NCluster"].GetInt() : 1;
-    std::size_t ao_blocksize = in.HasMember("AOBlockSize") ? in["AOBlockSize"].GetInt() : 0;
+  char *xyz_file_buffer;
+  utility::parallel_read_file(world, mol_file, xyz_file_buffer);
+  std::stringstream xyz_file_stream;
+  xyz_file_stream << xyz_file_buffer;
+  delete[] xyz_file_buffer;
 
+  using molecule::Molecule;
+  Molecule mol;
+  // construct molecule
+  if (nclusters == 0) {
+    mol = Molecule(xyz_file_stream, false);
+  } else {
+    mol = Molecule(xyz_file_stream, true);
+  }
+  auto occ = mol.occupation(charge);
+  auto repulsion_energy = mol.nuclear_repulsion();
+  utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy,
+                     "\n");
 
-    // get basis info
-    std::string basis_name = in.HasMember("Basis") ? in["Basis"].GetString() : "cc-pvdz";
-    std::string df_basis_name = in.HasMember("DfBasis") ? in["DfBasis"].GetString() : "";
-    std::string aux_basis_name = in.HasMember("AuxBasis") ? in["AuxBasis"].GetString() : "";
-    std::string vir_basis_name = in.HasMember("VirtualBasis") ? in["VirtualBasis"].GetString() : "";
-
-    // Get thresh info
-    auto threshold = in.HasMember("Sparse") ? in["Sparse"].GetDouble() : 1e-15;
-    TiledArray::SparseShape<float>::threshold(threshold);
-    // print out basis options
-    if(world.rank() == 0){
-        std::cout << "Molecule: " << mol_file << std::endl;
-        utility::print_file(world,mol_file);
-        std::cout << "N Cluster: " << nclusters << std::endl;
-        std::cout << "Charge: " << charge << std::endl;
-        std::cout << "OBS: " << basis_name << std::endl;
-        if(!vir_basis_name.empty()){
-            std::cout << "VBS: " << vir_basis_name << std::endl;
-        }
-        std::cout << "DFBS: " << df_basis_name << std::endl;
-        std::cout << "AUXBS: " << aux_basis_name << std::endl;
-        std::cout << "AO Block Size: " << ao_blocksize << std::endl;
-        std::cout << "Sparse Threshold: " << threshold << std::endl;
+  /**
+   * Construct Clustered Molecule, which is used to construct Basis
+   */
+  molecule::Molecule clustered_mol;
+  // if no ghost molecule
+  if (ghost_atoms.empty()) {
+    utility::print_par(world, "Ghost Atom file: None", "\n");
+    if (nclusters == 0) {
+      clustered_mol = mol;
+    } else {
+      clustered_mol =
+          molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
     }
+  }
+  // if has ghost molecule
+  else {
+    char *ghost_xyz_buffer;
+    utility::parallel_read_file(world, ghost_atoms, ghost_xyz_buffer);
+    std::stringstream ghost_xyz_stream;
+    ghost_xyz_stream << ghost_xyz_buffer;
+    delete[] ghost_xyz_buffer;
 
-    /**
-     * Construct Molecule
-     */
+    utility::print_par(world, "Ghost Atom file: ", ghost_atoms, "\n");
+    utility::print_file(world, ghost_atoms);
 
-    char* xyz_file_buffer;
-    utility::parallel_read_file(world,mol_file,xyz_file_buffer);
-    std::stringstream xyz_file_stream;
-    xyz_file_stream << xyz_file_buffer;
-    delete[] xyz_file_buffer;
+    auto ghost_molecue = Molecule(ghost_xyz_stream, false);
+    auto ghost_elements = ghost_molecue.clusterables();
 
-    using molecule::Molecule;
-    Molecule mol;
-    // construct molecule
-    if(nclusters==0){
-        mol = Molecule(xyz_file_stream, false);
-    }else{
-        mol = Molecule(xyz_file_stream, true);
+    // combine both molecule
+    auto mol_elements = mol.clusterables();
+    mol_elements.insert(mol_elements.end(), ghost_elements.begin(),
+                        ghost_elements.end());
+
+    if (nclusters == 0) {
+      clustered_mol = mpqc::molecule::Molecule(mol_elements, false);
+    } else {
+      clustered_mol =
+          mpqc::molecule::attach_hydrogens_and_kmeans(mol_elements, nclusters);
     }
-    auto occ = mol.occupation(charge);
-    auto repulsion_energy = mol.nuclear_repulsion();
-    utility::print_par(world, "Nuclear repulsion_energy = ", repulsion_energy, "\n");
+  }
 
+  /**
+   * Construct Basis
+   *
+   */
 
-    /**
-     * Construct Clustered Molecule, which is used to construct Basis
-     */
-    molecule::Molecule clustered_mol;
-    // if no ghost molecule
-    if(ghost_atoms.empty()){
-        utility::print_par(world, "Ghost Atom file: None", "\n");
-        if(nclusters==0){
-            clustered_mol = mol;
-        }else{
-            clustered_mol = molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
-        }
+  auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
+  basis::BasisSet bs(basis_name);
+  basis::Basis basis =
+      basis::parallel_construct_basis(world, bs, clustered_mol);
+  //    std::cout << basis << std::endl;
+  if (ao_blocksize != 0) {
+    basis = reblock(basis, cc::reblock_basis, ao_blocksize);
+  }
+  utility::parallel_print_range_info(world, basis.create_trange1(),
+                                     "OBS Basis");
+  bs_registry->add(OrbitalIndex(L"κ"), basis);
+
+  basis::Basis df_basis;
+  if (!df_basis_name.empty()) {
+    basis::BasisSet dfbs(df_basis_name);
+    df_basis = basis::parallel_construct_basis(world, dfbs, clustered_mol);
+    if (ao_blocksize != 0) {
+      df_basis = reblock(df_basis, cc::reblock_basis, ao_blocksize);
     }
-    // if has ghost molecule
-    else{
-        char* ghost_xyz_buffer;
-        utility::parallel_read_file(world,ghost_atoms,ghost_xyz_buffer);
-        std::stringstream ghost_xyz_stream;
-        ghost_xyz_stream << ghost_xyz_buffer;
-        delete[] ghost_xyz_buffer;
+    utility::parallel_print_range_info(world, df_basis.create_trange1(),
+                                       "DF Basis");
+    bs_registry->add(OrbitalIndex(L"Κ"), df_basis);
+  }
 
-        utility::print_par(world, "Ghost Atom file: ", ghost_atoms, "\n");
-        utility::print_file(world,ghost_atoms);
-
-        auto ghost_molecue = Molecule(ghost_xyz_stream, false);
-        auto ghost_elements = ghost_molecue.clusterables();
-
-        // combine both molecule
-        auto mol_elements = mol.clusterables();
-        mol_elements.insert(mol_elements.end(), ghost_elements.begin(), ghost_elements.end());
-
-
-        if(nclusters==0){
-            clustered_mol = mpqc::molecule::Molecule(mol_elements, false);
-        }
-        else{
-            clustered_mol = mpqc::molecule::attach_hydrogens_and_kmeans(mol_elements, nclusters);
-        }
-
+  basis::Basis vir_basis;
+  if (!vir_basis_name.empty()) {
+    basis::BasisSet vbs(vir_basis_name);
+    vir_basis = basis::parallel_construct_basis(world, vbs, clustered_mol);
+    if (ao_blocksize != 0) {
+      vir_basis = reblock(vir_basis, cc::reblock_basis, ao_blocksize);
     }
+    utility::parallel_print_range_info(world, vir_basis.create_trange1(),
+                                       "Virtual Basis");
+    bs_registry->add(OrbitalIndex(L"Α"), vir_basis);
+    //        std::cout << vir_basis << std::endl;
+  }
 
+  basis::Basis abs_basis;
 
-    /**
-     * Construct Basis
-     *
-     */
-
-    auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
-    basis::BasisSet bs(basis_name);
-    basis::Basis basis = basis::parallel_construct_basis(world,bs,clustered_mol);
-//    std::cout << basis << std::endl;
-    if(ao_blocksize!=0){
-        basis = reblock(basis, cc::reblock_basis, ao_blocksize);
+  if (!aux_basis_name.empty()) {
+    basis::BasisSet abs(aux_basis_name);
+    abs_basis = basis::parallel_construct_basis(world, abs, clustered_mol);
+    if (ao_blocksize != 0) {
+      abs_basis = reblock(abs_basis, cc::reblock_basis, ao_blocksize);
     }
-    utility::parallel_print_range_info(world, basis.create_trange1(), "OBS Basis");
-    bs_registry->add(OrbitalIndex(L"κ"),basis);
+    utility::parallel_print_range_info(world, abs_basis.create_trange1(),
+                                       "AUX Basis");
+    bs_registry->add(OrbitalIndex(L"α"), abs_basis);
+  }
 
-    basis::Basis df_basis;
-    if(!df_basis_name.empty()){
-        basis::BasisSet dfbs(df_basis_name);
-        df_basis = basis::parallel_construct_basis(world,dfbs,clustered_mol);
-        if(ao_blocksize!=0){
-            df_basis = reblock(df_basis, cc::reblock_basis, ao_blocksize);
-        }
-        utility::parallel_print_range_info(world, df_basis.create_trange1(), "DF Basis");
-        bs_registry->add(OrbitalIndex(L"Κ"),df_basis);
+  /**
+   * Deal with f12 parameters
+   *
+   */
+
+  f12::GTGParams gtg_params;
+  int n_functions = in.HasMember("CorrelationFunction")
+                        ? in["CorrelationFunction"].GetInt()
+                        : 6;
+  double f12_factor;
+  // if user provide factor, use that
+  if (in.HasMember("CorrelationFactor")) {
+    f12_factor = in["CorrelationFactor"].GetDouble();
+    gtg_params = f12::GTGParams(f12_factor, n_functions);
+  }
+  // if not, use basis name to get factor
+  else {
+    if (vir_basis_name.empty()) {
+      gtg_params = f12::GTGParams(basis_name, n_functions);
+    } else {
+      gtg_params = f12::GTGParams(vir_basis_name, n_functions);
     }
+  }
 
-    basis::Basis vir_basis;
-    if(!vir_basis_name.empty()){
-        basis::BasisSet vbs(vir_basis_name);
-        vir_basis = basis::parallel_construct_basis(world,vbs,clustered_mol);
-        if(ao_blocksize!=0){
-            vir_basis = reblock(vir_basis, cc::reblock_basis, ao_blocksize);
-        }
-        utility::parallel_print_range_info(world, vir_basis.create_trange1(), "Virtual Basis");
-        bs_registry->add(OrbitalIndex(L"Α"),vir_basis);
-//        std::cout << vir_basis << std::endl;
-    }
+  std::vector<std::pair<double, double>> param;
 
-    basis::Basis abs_basis;
-
-    if(!aux_basis_name.empty()) {
-      basis::BasisSet abs(aux_basis_name);
-      abs_basis = basis::parallel_construct_basis(world, abs, clustered_mol);
-      if (ao_blocksize != 0) {
-        abs_basis = reblock(abs_basis, cc::reblock_basis, ao_blocksize);
+  if (!aux_basis_name.empty()) {
+    param = gtg_params.compute();
+    if (world.rank() == 0) {
+      std::cout << "F12 Correlation Factor: " << gtg_params.exponent
+                << std::endl;
+      std::cout << "NFunction: " << gtg_params.n_fit << std::endl;
+      std::cout << "F12 Exponent Coefficient" << std::endl;
+      for (auto &pair : param) {
+        std::cout << pair.first << " " << pair.second << std::endl;
       }
-      utility::parallel_print_range_info(world, abs_basis.create_trange1(), "AUX Basis");
-      bs_registry->add(OrbitalIndex(L"α"), abs_basis);
+      std::cout << std::endl;
+    }
+  }
+  /**
+   * Start Caculation Here
+   */
+
+  /// initialize AO integral
+  libint2::initialize();
+
+  auto ao_in = json::get_nested(in, "AOIntegral");
+
+  integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(
+      world, ta_pass_through,
+      std::make_shared<molecule::Molecule>(clustered_mol), bs_registry, param,
+      ao_in);
+
+  /**
+   * CLSCF
+   */
+  double scf_energy;
+  if (in.HasMember("CLSCF")) {
+    auto scf_time0 = mpqc_time::fenced_now(world);
+
+    auto scf_in = json::get_nested(in, "CLSCF");
+    double scf_converge = scf_in.HasMember("SCFConverge")
+                              ? scf_in["SCFConverge"].GetDouble()
+                              : 1.0e-7;
+    int scf_max_iter =
+        scf_in.HasMember("SCFMaxIter") ? scf_in["SCFMaxIter"].GetInt() : 30;
+
+    // Overlap ints
+    auto S = ao_int.compute(L"<κ|λ>");
+    // H core int
+    auto H = ao_int.compute(L"<κ|H|λ>");
+
+    // emultipole integral
+    const auto bs_array = utility::make_array(basis, basis);
+    auto multi_pool = ints::make_engine_pool(
+        libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
+    auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+
+    /// deal with fock builder
+    std::string fock_method = scf_in.HasMember("FockBuilder")
+                                  ? scf_in["FockBuilder"].GetString()
+                                  : "df";
+    std::unique_ptr<scf::FockBuilder> f_builder;
+    if (fock_method == "df") {
+      auto inv = ao_int.compute(L"( Κ | G| Λ )");
+      auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
+      scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
+      f_builder = make_unique<decltype(builder)>(std::move(builder));
+    } else if (fock_method == "four center") {
+      auto eri4 = ao_int.compute(L"<μ ν| G|κ λ>");
+      eri4("mu,nu,kappa, lambda") = eri4("mu,kappa,nu,lambda");
+      auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
+      f_builder = make_unique<decltype(builder)>(std::move(builder));
     }
 
-
-
-    /**
-     * Deal with f12 parameters
-     *
-     */
-
-    f12::GTGParams gtg_params;
-    int n_functions = in.HasMember("CorrelationFunction") ? in["CorrelationFunction"].GetInt() : 6;
-    double f12_factor;
-    // if user provide factor, use that
-    if(in.HasMember("CorrelationFactor")){
-        f12_factor = in["CorrelationFactor"].GetDouble();
-        gtg_params = f12::GTGParams(f12_factor, n_functions);
-    }
-    // if not, use basis name to get factor
-    else{
-        if(vir_basis_name.empty()){
-            gtg_params = f12::GTGParams(basis_name,n_functions);
-        }
-        else{
-            gtg_params = f12::GTGParams(vir_basis_name,n_functions);
-        }
+    /// deal with density builder
+    std::string density_method = scf_in.HasMember("DensityBuilder")
+                                     ? scf_in["DensityBuilder"].GetString()
+                                     : "cholesky";
+    std::unique_ptr<scf::DensityBuilder> d_builder;
+    if (density_method == "purification") {
+      auto db = scf::PurificationDensityBuilder(
+          S, r_xyz, occ / 2, std::max(nclusters, 1), 0.0, false);
+      d_builder = make_unique<scf::PurificationDensityBuilder>(std::move(db));
+    } else if (density_method == "cholesky") {
+      auto db =
+          scf::ESolveDensityBuilder(S, r_xyz, occ / 2, std::max(nclusters, 1),
+                                    0.0, "cholesky inverse", false);
+      d_builder = make_unique<scf::ESolveDensityBuilder>(std::move(db));
     }
 
-    std::vector<std::pair<double,double>> param;
+    auto time0 = mpqc_time::fenced_now(world);
+    auto eri_e =
+        ints::make_engine_pool(libint2::Operator::coulomb,
+                               utility::make_array_of_refs(df_basis, basis));
+    auto F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
+    auto time1 = mpqc_time::fenced_now(world);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    mpqc::utility::print_par(world, "Soad Time:  ", time, "\n");
 
-    if(!aux_basis_name.empty()){
-        param = gtg_params.compute();
-        if(world.rank() == 0){
-            std::cout << "F12 Correlation Factor: " << gtg_params.exponent << std::endl;
-            std::cout << "NFunction: " << gtg_params.n_fit << std::endl;
-            std::cout << "F12 Exponent Coefficient" << std::endl;
-            for(auto& pair : param){
-                std::cout << pair.first << " " << pair.second << std::endl;
-            }
-            std::cout << std::endl;
-        }
+    /// CL scf class
+    scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(f_builder),
+                            std::move(d_builder), F_soad);
+    scf.solve(scf_max_iter, scf_converge);
+
+    scf_energy = scf.scf_energy();
+    auto scf_time1 = mpqc_time::fenced_now(world);
+    auto scf_time = mpqc_time::duration_in_s(scf_time0, scf_time1);
+    mpqc::utility::print_par(world, "SCF Energy:  ", scf_energy, "\n");
+    mpqc::utility::print_par(world, "Total SCF Time:  ", scf_time, "\n");
+
+    auto F = scf.fock();
+    if (fock_method == "df") {
+      ao_int.registry().insert(Formula(L"<μ|F|ν>[df]"), F);
+    } else if (fock_method == "four center") {
+      ao_int.registry().insert(Formula(L"<μ|F|ν>"), F);
     }
-    /**
-     * Start Caculation Here
-     */
+  } else {
+    throw std::runtime_error("CLSCF object not found in the input file");
+  }
 
+  // Correlation Methods
 
-    /// initialize AO integral
-    libint2::initialize();
+  auto mo_in = json::get_nested(in, "MOIntegral");
+  double corr_e = 0.0;
+  auto orbital_registry = std::make_shared<
+      OrbitalSpaceRegistry<TA::DistArray<TA::TensorD, TA::SparsePolicy>>>();
+  auto mo_integral =
+      integrals::MolecularIntegral<TA::TensorD, TA::SparsePolicy>(
+          ao_int, orbital_registry, mo_in);
+  Eigen::VectorXd ens;
+  std::shared_ptr<TRange1Engine> tre;
+  rapidjson::Document corr_in;
 
-    auto ao_in = json::get_nested(in, "AOIntegral");
+  if (in.HasMember("MP2")) {
+    auto mp2_time0 = mpqc_time::fenced_now(world);
 
-    integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int
-                (world,
-                ta_pass_through,
-                std::make_shared<molecule::Molecule>(clustered_mol),
-                bs_registry,
-                param,
-                ao_in);
+    corr_in = json::get_nested(in, "MP2");
+    auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral);
+    corr_e += mp2.compute(corr_in);
 
+    auto mp2_time1 = mpqc_time::fenced_now(world);
+    auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
+    mpqc::utility::print_par(world, "Total MP2 Time:  ", mp2_time, "\n");
+  } else if (in.HasMember("DBMP2")) {
+    auto dbmp2_time0 = mpqc_time::fenced_now(world);
 
-    /**
-     * CLSCF
-     */
-    double scf_energy;
-    if(in.HasMember("CLSCF")){
-        auto scf_time0 = mpqc_time::fenced_now(world);
+    corr_in = json::get_nested(in, "DBMP2");
+    std::shared_ptr<mbpt::MP2<TA::TensorD, TA::SparsePolicy>> mp2 =
+        std::make_shared<mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>>(
+            mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(mo_integral));
+    corr_e += mp2->compute(corr_in);
 
-        auto scf_in = json::get_nested(in, "CLSCF");
-        double scf_converge = scf_in.HasMember("SCFConverge") ? scf_in["SCFConverge"].GetDouble() : 1.0e-7;
-        int scf_max_iter = scf_in.HasMember("SCFMaxIter") ? scf_in["SCFMaxIter"].GetInt() : 30;
+    auto dbmp2_time1 = mpqc_time::fenced_now(world);
+    auto dbmp2_time = mpqc_time::duration_in_s(dbmp2_time0, dbmp2_time1);
+    mpqc::utility::print_par(world, "Total DBMP2 Time:  ", dbmp2_time, "\n");
 
+  } else if (in.HasMember("MP2F12")) {
+    corr_in = json::get_nested(in, "MP2F12");
 
-        // Overlap ints
-        auto S = ao_int.compute(L"<κ|λ>");
-        // H core int
-        auto H = ao_int.compute(L"<κ|H|λ>");
+    // start mp2f12
+    auto mp2f12_time0 = mpqc_time::fenced_now(world);
+    f12::MP2F12<TA::TensorD> mp2f12(mo_integral);
+    corr_e += mp2f12.compute(corr_in);
 
-        // emultipole integral
-        const auto bs_array = utility::make_array(basis, basis);
-        auto multi_pool = ints::make_engine_pool(libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
-        auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
+    auto mp2f12_time1 = mpqc_time::fenced_now(world);
+    auto mp2f12_time = mpqc_time::duration_in_s(mp2f12_time0, mp2f12_time1);
+    mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
+  } else if (in.HasMember("DBMP2F12")) {
+    corr_in = json::get_nested(in, "DBMP2F12");
 
-        /// deal with fock builder
-        std::string fock_method = scf_in.HasMember("FockBuilder") ? scf_in["FockBuilder"].GetString() : "df";
-        std::unique_ptr<scf::FockBuilder> f_builder;
-        if(fock_method=="df"){
-            auto inv = ao_int.compute(L"( Κ | G| Λ )");
-            auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
-            scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
-            f_builder = make_unique<decltype(builder)>(std::move(builder));
-        }
-        else if(fock_method=="four center"){
+    // start mp2f12
+    auto mp2f12_time0 = mpqc_time::fenced_now(world);
+    f12::DBMP2F12<TA::TensorD> dbmp2f12(mo_integral);
+    corr_e += dbmp2f12.compute(corr_in);
 
-            auto eri4 = ao_int.compute(L"<μ ν| G|κ λ>");
-            eri4("mu,nu,kappa, lambda") = eri4("mu,kappa,nu,lambda");
-            auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
-            f_builder = make_unique<decltype(builder)>(std::move(builder));
-        }
+    auto mp2f12_time1 = mpqc_time::fenced_now(world);
+    auto mp2f12_time = mpqc_time::duration_in_s(mp2f12_time0, mp2f12_time1);
+    mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
 
+  } else if (in.HasMember("GF2F12")) {
+    corr_in = json::get_nested(in, "GF2F12");
 
-        /// deal with density builder
-        std::string density_method = scf_in.HasMember("DensityBuilder") ? scf_in["DensityBuilder"].GetString() : "cholesky";
-        std::unique_ptr<scf::DensityBuilder> d_builder;
-        if(density_method == "purification"){
+    // start gf2f12
+    auto time0 = mpqc_time::fenced_now(world);
+    f12::GF2F12<TA::TensorD> gf2f12(mo_integral);
+    gf2f12.compute(corr_in);
+    auto time1 = mpqc_time::fenced_now(world);
+    auto time = mpqc_time::duration_in_s(time0, time1);
 
-            auto db = scf::PurificationDensityBuilder(S, r_xyz, occ/2, std::max(nclusters,1), 0.0, false);
-            d_builder = make_unique<scf::PurificationDensityBuilder>(std::move(db));
-        }
-        else if(density_method == "cholesky"){
-            auto db = scf::ESolveDensityBuilder(S, r_xyz, occ/2, std::max(nclusters,1), 0.0, "cholesky inverse", false);
-            d_builder = make_unique<scf::ESolveDensityBuilder>(std::move(db));
-        }
+    mpqc::utility::print_par(world, "Total GF2 F12 Time:  ", time, "\n");
 
+  } else if (in.HasMember("CCSD")) {
+    auto time0 = mpqc_time::fenced_now(world);
+    utility::print_par(world, "\nBegining CCSD Calculation\n");
+    corr_in = json::get_nested(in, "CCSD");
+    mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(mo_integral, corr_in);
+    corr_e += ccsd.compute();
+    auto time1 = mpqc_time::fenced_now(world);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    mpqc::utility::print_par(world, "Total CCSD Time:  ", time, "\n");
+  } else if (in.HasMember("DBCCSD")) {
+    auto time0 = mpqc_time::fenced_now(world);
+    utility::print_par(world, "\nBegining Dual Basis CCSD Calculation\n");
+    corr_in = json::get_nested(in, "DBCCSD");
+    mpqc::cc::DBCCSD<TA::TensorD, TA::SparsePolicy> dbccsd(mo_integral,
+                                                           corr_in);
+    corr_e += dbccsd.compute();
+    auto time1 = mpqc_time::fenced_now(world);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    mpqc::utility::print_par(world, "Total Dual Basis CCSD Time:  ", time,
+                             "\n");
+  } else if (in.HasMember("CCSD(T)")) {
+    auto time0 = mpqc_time::fenced_now(world);
+    utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
+    corr_in = json::get_nested(in, "CCSD(T)");
+    mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(mo_integral,
+                                                           corr_in);
+    corr_e += ccsd_t.compute();
+    auto time1 = mpqc_time::fenced_now(world);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    mpqc::utility::print_par(world, "Total CCSD(T) Time:  ", time, "\n");
+  }
 
-        auto time0 = mpqc_time::fenced_now(world);
-        auto eri_e = ints::make_engine_pool(libint2::Operator::coulomb, utility::make_array_of_refs(df_basis, basis));
-        auto F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-        auto time1 = mpqc_time::fenced_now(world);
-        auto time = mpqc_time::duration_in_s(time0, time1);
-        mpqc::utility::print_par(world, "Soad Time:  ", time, "\n");
+  else if (in.HasMember("CCSD(F12)")) {
+    auto time0 = mpqc_time::fenced_now(world);
+    utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
+    corr_in = json::get_nested(in, "CCSD(F12)");
 
-        /// CL scf class
-        scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(f_builder), std::move(d_builder), F_soad);
-        scf.solve(scf_max_iter, scf_converge);
+    f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral, corr_in);
+    corr_e += ccsd_f12.compute();
 
-        scf_energy = scf.scf_energy();
-        auto scf_time1 = mpqc_time::fenced_now(world);
-        auto scf_time = mpqc_time::duration_in_s(scf_time0, scf_time1);
-        mpqc::utility::print_par(world, "SCF Energy:  ", scf_energy, "\n");
-        mpqc::utility::print_par(world, "Total SCF Time:  ", scf_time, "\n");
+    auto time1 = mpqc_time::fenced_now(world);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    mpqc::utility::print_par(world, "Total CCSD(F12) Time:  ", time, "\n");
 
-        auto F = scf.fock();
-        if(fock_method == "df"){
-            ao_int.registry().insert(Formula(L"<μ|F|ν>[df]"),F);
-        }
-        else if(fock_method == "four center"){
-            ao_int.registry().insert(Formula(L"<μ|F|ν>"),F);
-        }
-    }
-    else {
-      throw std::runtime_error("CLSCF object not found in the input file");
-    }
+  } else if (in.HasMember("DBCCSD(F12)")) {
+    auto time0 = mpqc_time::fenced_now(world);
+    utility::print_par(world, "\nBegining DBCCSD(F12) Calculation\n");
+    corr_in = json::get_nested(in, "DBCCSD(F12)");
 
+    f12::DBCCSDF12<TA::TensorD> db_ccsd_f12(mo_integral, corr_in);
+    corr_e += db_ccsd_f12.compute();
 
-    // Correlation Methods
+    auto time1 = mpqc_time::fenced_now(world);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    mpqc::utility::print_par(world, "Total DBCCSD(F12) Time:  ", time, "\n");
+  }
 
-    auto mo_in = json::get_nested(in, "MOIntegral");
-    double corr_e = 0.0;
-    auto orbital_registry = std::make_shared<OrbitalSpaceRegistry<TA::DistArray<TA::TensorD, TA::SparsePolicy>>>();
-    auto mo_integral = integrals::MolecularIntegral<TA::TensorD,TA::SparsePolicy>(ao_int,orbital_registry,mo_in);
-    Eigen::VectorXd ens;
-    std::shared_ptr<TRange1Engine> tre;
-    rapidjson::Document corr_in;
+  utility::print_par(world, "Total Correlation Energy: ", corr_e, "\n");
+  utility::print_par(world, "Total Energy: ", corr_e + scf_energy, "\n");
 
-    if(in.HasMember("MP2")){
-
-        auto mp2_time0 = mpqc_time::fenced_now(world);
-
-        corr_in = json::get_nested(in, "MP2");
-        auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral);
-        corr_e += mp2.compute(corr_in);
-
-        auto mp2_time1 = mpqc_time::fenced_now(world);
-        auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
-        mpqc::utility::print_par(world, "Total MP2 Time:  ", mp2_time, "\n");
-    }
-    else if(in.HasMember("DBMP2")){
-        auto dbmp2_time0 = mpqc_time::fenced_now(world);
-
-        corr_in = json::get_nested(in, "DBMP2");
-        std::shared_ptr<mbpt::MP2<TA::TensorD, TA::SparsePolicy>> mp2 = std::make_shared<mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>>(mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(mo_integral));
-        corr_e += mp2->compute(corr_in);
-
-        auto dbmp2_time1 = mpqc_time::fenced_now(world);
-        auto dbmp2_time = mpqc_time::duration_in_s(dbmp2_time0, dbmp2_time1);
-        mpqc::utility::print_par(world, "Total DBMP2 Time:  ", dbmp2_time, "\n");
-
-    }
-    else if(in.HasMember("MP2F12")){
-        corr_in = json::get_nested(in, "MP2F12");
-
-        // start mp2f12
-        auto mp2f12_time0 = mpqc_time::fenced_now(world);
-        f12::MP2F12<TA::TensorD> mp2f12(mo_integral);
-        corr_e += mp2f12.compute(corr_in);
-
-        auto mp2f12_time1 = mpqc_time::fenced_now(world);
-        auto mp2f12_time = mpqc_time::duration_in_s(mp2f12_time0, mp2f12_time1);
-        mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
-    }
-    else if(in.HasMember("DBMP2F12")){
-        corr_in = json::get_nested(in, "DBMP2F12");
-
-        // start mp2f12
-        auto mp2f12_time0 = mpqc_time::fenced_now(world);
-        f12::DBMP2F12<TA::TensorD> dbmp2f12(mo_integral);
-        corr_e += dbmp2f12.compute(corr_in);
-
-        auto mp2f12_time1 = mpqc_time::fenced_now(world);
-        auto mp2f12_time = mpqc_time::duration_in_s(mp2f12_time0, mp2f12_time1);
-        mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
-
-    }
-    else if(in.HasMember("GF2F12")){
-        corr_in = json::get_nested(in, "GF2F12");
-
-        // start gf2f12
-        auto time0 = mpqc_time::fenced_now(world);
-        f12::GF2F12<TA::TensorD> gf2f12(mo_integral);
-        gf2f12.compute(corr_in);
-        auto time1 = mpqc_time::fenced_now(world);
-        auto time = mpqc_time::duration_in_s(time0, time1);
-
-        mpqc::utility::print_par(world, "Total GF2 F12 Time:  ", time, "\n");
-
-    }
-        else if(in.HasMember("CCSD")){
-            auto time0 = mpqc_time::fenced_now(world);
-            utility::print_par(world, "\nBegining CCSD Calculation\n");
-            corr_in = json::get_nested(in, "CCSD");
-            mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(mo_integral, corr_in);
-            corr_e += ccsd.compute();
-            auto time1 = mpqc_time::fenced_now(world);
-            auto time = mpqc_time::duration_in_s(time0, time1);
-            mpqc::utility::print_par(world, "Total CCSD Time:  ", time, "\n");
-        }
-        else if(in.HasMember("DBCCSD")){
-            auto time0 = mpqc_time::fenced_now(world);
-            utility::print_par(world, "\nBegining Dual Basis CCSD Calculation\n");
-            corr_in = json::get_nested(in, "DBCCSD");
-            mpqc::cc::DBCCSD<TA::TensorD, TA::SparsePolicy> dbccsd(mo_integral, corr_in);
-            corr_e += dbccsd.compute();
-            auto time1 = mpqc_time::fenced_now(world);
-            auto time = mpqc_time::duration_in_s(time0, time1);
-            mpqc::utility::print_par(world, "Total Dual Basis CCSD Time:  ", time, "\n");
-        }
-        else if(in.HasMember("CCSD(T)")){
-            auto time0 = mpqc_time::fenced_now(world);
-            utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
-            corr_in = json::get_nested(in, "CCSD(T)");
-            mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(mo_integral, corr_in);
-            corr_e += ccsd_t.compute();
-            auto time1 = mpqc_time::fenced_now(world);
-            auto time = mpqc_time::duration_in_s(time0, time1);
-            mpqc::utility::print_par(world, "Total CCSD(T) Time:  ", time, "\n");
-        }
-
-        else if(in.HasMember("CCSD(F12)")){
-
-            auto time0 = mpqc_time::fenced_now(world);
-            utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
-            corr_in = json::get_nested(in, "CCSD(F12)");
-
-            f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral, corr_in);
-            corr_e += ccsd_f12.compute();
-
-            auto time1 = mpqc_time::fenced_now(world);
-            auto time = mpqc_time::duration_in_s(time0, time1);
-            mpqc::utility::print_par(world, "Total CCSD(F12) Time:  ", time, "\n");
-
-        }
-    else if(in.HasMember("DBCCSD(F12)")){
-
-        auto time0 = mpqc_time::fenced_now(world);
-        utility::print_par(world, "\nBegining DBCCSD(F12) Calculation\n");
-        corr_in = json::get_nested(in, "DBCCSD(F12)");
-
-        f12::DBCCSDF12<TA::TensorD> db_ccsd_f12(mo_integral, corr_in);
-        corr_e += db_ccsd_f12.compute();
-
-        auto time1 = mpqc_time::fenced_now(world);
-        auto time = mpqc_time::duration_in_s(time0, time1);
-        mpqc::utility::print_par(world, "Total DBCCSD(F12) Time:  ", time, "\n");
-
-    }
-
-    utility::print_par(world, "Total Correlation Energy: ", corr_e, "\n");
-    utility::print_par(world, "Total Energy: ", corr_e + scf_energy, "\n");
-
-    world.gop.fence();
-    libint2::finalize();
-    return 0;
+  world.gop.fence();
+  libint2::finalize();
+  return 0;
 }
 
-
 int main(int argc, char *argv[]) {
+  int rc = 0;
 
-    int rc = 0;
+  auto &world = madness::initialize(argc, argv);
+  mpqc::utility::print_par(world, "MADNESS process total size: ", world.size(),
+                           "\n");
 
-    auto &world = madness::initialize(argc, argv);
-    mpqc::utility::print_par(world, "MADNESS process total size: ", world.size(), "\n");
+  madness::print_meminfo(world.rank(), "MPQC start");
 
-    madness::print_meminfo(world.rank(), "MPQC start");
+  try {
+    try_main(argc, argv, world);
 
-    try {
+  } catch (TiledArray::Exception &e) {
+    std::cerr << "!! TiledArray exception: " << e.what() << "\n";
+    rc = 1;
+  } catch (madness::MadnessException &e) {
+    std::cerr << "!! MADNESS exception: " << e.what() << "\n";
+    rc = 1;
+  } catch (SafeMPI::Exception &e) {
+    std::cerr << "!! SafeMPI exception: " << e.what() << "\n";
+    rc = 1;
+  } catch (std::bad_alloc &e) {
+    std::cerr << "!! std::bad_alloc exception: " << e.what() << "\n";
+    madness::print_meminfo(world.rank(), "bad alloc");
+    rc = 1;
+  } catch (std::exception &e) {
+    std::cerr << "!! std exception: " << e.what() << "\n";
+    rc = 1;
+  } catch (...) {
+    std::cerr << "!! exception: unknown exception\n";
+    rc = 1;
+  }
 
-        try_main(argc, argv, world);
-
-    } catch (TiledArray::Exception &e) {
-        std::cerr << "!! TiledArray exception: " << e.what() << "\n";
-        rc = 1;
-    } catch (madness::MadnessException &e) {
-        std::cerr << "!! MADNESS exception: " << e.what() << "\n";
-        rc = 1;
-    } catch (SafeMPI::Exception &e) {
-        std::cerr << "!! SafeMPI exception: " << e.what() << "\n";
-        rc = 1;
-    } catch (std::bad_alloc &e) {
-        std::cerr << "!! std::bad_alloc exception: " << e.what() << "\n";
-        madness::print_meminfo(world.rank(), "bad alloc");
-        rc = 1;
-    } catch (std::exception &e) {
-        std::cerr << "!! std exception: " << e.what() << "\n";
-        rc = 1;
-    } catch (...) {
-        std::cerr << "!! exception: unknown exception\n";
-        rc = 1;
-    }
-
-
-    madness::finalize();
-    return rc;
+  madness::finalize();
+  return rc;
 }

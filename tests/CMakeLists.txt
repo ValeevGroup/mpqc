@@ -30,6 +30,7 @@ set(utests
     keyval_test.cpp
     orbital_index_test.cpp
     formula_test.cpp
+    util_string.cpp
     )
 
 #TODO install xyz file to bin directory

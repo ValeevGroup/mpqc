@@ -218,11 +218,17 @@ TEST_CASE("KeyVal", "[keyval]") {
     auto b1 = kv.keyval("mpqc:base").class_ptr<Base>();
     auto b2 = kv.keyval("base").class_ptr<Base>();
     REQUIRE(b1 == b2);
+    auto b3 = kv.keyval("mpqc:base").class_ptr<Base>();
+    REQUIRE(b1 == b3);
     Derived<0> x(kv.keyval("mpqc:deriv"));
     auto d1 = kv.keyval("mpqc:deriv").class_ptr<Derived<0>>();
     auto d2 = kv.keyval("deriv0").class_ptr<Derived<0>>();
+    Derived<0>* d3 = &x;
     REQUIRE(d1 == d2);
+    REQUIRE(d1.get() != d3);
     REQUIRE(d1->value() == kv.value<double>("b"));
+
+    REQUIRE(kv.exists("c")==false);
   }
 
 }  // end of test case

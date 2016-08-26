@@ -628,7 +628,7 @@ class KeyVal {
     throw KeyVal::bad_input("excessive or circular references in path", path);
   }
 
-  /// @returns true if \c path did not include a reference
+  /// @returns true if \c path did not include a reference, even if path does not exist
   bool resolve_first_ref(key_type& path) const {
     if (path.size() == 0)
       return true;  // handle this corner case now to make the rest a bit
@@ -641,6 +641,7 @@ class KeyVal {
           path.size();  // this ensures that the full path is checked
     while (subpath_last_char <= path.size()) {
       auto subpath = path.substr(0, subpath_last_char);
+      if (!exists_(subpath)) return true;
       auto value = top_tree_->get<key_type>(ptree::path_type{
           subpath, separator});  // value corresponding to subpath
       auto subpath_is_a_ref = (value.size() > 0 && value[0] == '$');

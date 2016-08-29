@@ -17,7 +17,7 @@ namespace qc {
 class AOWfn : public Wfn {
  public:
   AOWfn(KeyVal const &kv);
-  void visit(PropertyBase *pb) override;
+  void compute(PropertyBase *pb) override;
 };
 
 }  // namespace qc

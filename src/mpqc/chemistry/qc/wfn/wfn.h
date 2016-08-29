@@ -37,7 +37,7 @@ class Wfn : public DescribedClass {
  public:
   Wfn(KeyVal const& kv) : wfn_world_(kv.value<WfnWorld*>("wfn_world")){};
 
-  virtual void visit(PropertyBase* pb) = 0;
+  virtual void compute(PropertyBase* pb) = 0;
 
   WfnWorld* wfn_world() { return wfn_world_; }
 };

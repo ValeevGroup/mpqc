@@ -6,4 +6,4 @@ MPQC_CLASS_EXPORT_KEY(mpqc::qc::AOWfn);
 using namespace mpqc;
 qc::AOWfn::AOWfn(KeyVal const &kv) : Wfn(kv) {}
 
-void qc::AOWfn::visit(qc::PropertyBase *pb) { pb->apply(this); }
+void qc::AOWfn::compute(qc::PropertyBase *pb) { pb->apply(this); }

@@ -21,30 +21,24 @@ namespace integrals {
 ///
 template <typename Basis, size_t N>
 libint2::Engine make_engine(const libint2::Operator &oper,
-                            std::array<std::reference_wrapper<Basis>,N> bases,
+                            std::array<std::reference_wrapper<Basis>, N> bases,
                             libint2::BraKet braket = libint2::BraKet::invalid,
                             libint2::any oper_params = libint2::any()) {
   // assign default params and braket, if needed
   if (braket == libint2::BraKet::invalid)
     braket = libint2::default_braket(oper);
-  if (oper_params.empty())
-    oper_params = libint2::default_params(oper);
+  if (oper_params.empty()) oper_params = libint2::default_params(oper);
 
   int max_am = 0;
   size_t max_nprim = 0;
-  for(const auto& bs: bases) {
+  for (const auto &bs : bases) {
     max_am = std::max(max_am, static_cast<int>(bs.get().max_am()));
     max_nprim = std::max(max_nprim, static_cast<size_t>(bs.get().max_nprim()));
   }
   const auto deriv_order = 0;
-  libint2::Engine result{
-      oper,
-      max_nprim,
-      max_am,
-      deriv_order,
-      std::numeric_limits<libint2::real_t>::epsilon(),
-      oper_params,
-      braket};
+  libint2::Engine result{oper, max_nprim, max_am, deriv_order,
+                         std::numeric_limits<libint2::real_t>::epsilon(),
+                         oper_params, braket};
   return result;
 }
 
@@ -70,7 +64,7 @@ inline q_vector make_q(molecule::Molecule const &mol) {
 template <typename Basis, size_t N>
 inline ShrPool<libint2::Engine> make_engine_pool(
     const libint2::Operator &oper,
-    std::array<std::reference_wrapper<Basis>,N> bases,
+    std::array<std::reference_wrapper<Basis>, N> bases,
     libint2::BraKet braket = libint2::BraKet::invalid,
     libint2::any oper_params = libint2::any()) {
   // assign default braket, if needed
@@ -81,6 +75,17 @@ inline ShrPool<libint2::Engine> make_engine_pool(
   if (oper_params.empty()) {
     oper_params = libint2::default_params(oper);
   }
+
+  int max_am = 0;
+  size_t max_nprim = 0;
+  for (const auto &bs : bases) {
+    max_am = std::max(max_am, static_cast<int>(bs.get().max_am()));
+    max_nprim = std::max(max_nprim, static_cast<size_t>(bs.get().max_nprim()));
+  }
+
+  assert(max_am != 0);
+  assert(max_nprim != 0);
+
   return std::make_shared<Epool<libint2::Engine>>(
       make_engine(oper, bases, braket, oper_params));
 }

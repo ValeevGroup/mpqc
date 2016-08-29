@@ -41,6 +41,7 @@
 #include <mpqc/chemistry/qc/scf/eigen_solve_density_builder.h>
 #include <mpqc/chemistry/qc/scf/traditional_four_center_fock_builder.h>
 #include <mpqc/chemistry/qc/scf/mo_build.h>
+#include <mpqc/chemistry/qc/scf/cadf_builder.h>
 
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
 #include <mpqc/chemistry/qc/cc/dbccsd.h>
@@ -226,9 +227,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
    */
 
   auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
-  basis::BasisSet bs(basis_name);
+  basis::BasisSet bs_set(basis_name);
   basis::Basis basis =
-      basis::parallel_construct_basis(world, bs, clustered_mol);
+      basis::parallel_construct_basis(world, bs_set, clustered_mol);
   //    std::cout << basis << std::endl;
   if (ao_blocksize != 0) {
     basis = reblock(basis, cc::reblock_basis, ao_blocksize);
@@ -237,10 +238,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                      "OBS Basis");
   bs_registry->add(OrbitalIndex(L"κ"), basis);
 
+  basis::BasisSet dfbs_set(df_basis_name);
   basis::Basis df_basis;
   if (!df_basis_name.empty()) {
-    basis::BasisSet dfbs(df_basis_name);
-    df_basis = basis::parallel_construct_basis(world, dfbs, clustered_mol);
+    df_basis = basis::parallel_construct_basis(world, dfbs_set, clustered_mol);
     if (ao_blocksize != 0) {
       df_basis = reblock(df_basis, cc::reblock_basis, ao_blocksize);
     }
@@ -365,8 +366,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
       f_builder = make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "four center") {
       auto eri4 = ao_int.compute(L"<μ ν| G|κ λ>");
-      eri4("mu,nu,kappa, lambda") = eri4("mu,kappa,nu,lambda");
+      eri4("mu, nu, kappa, lambda") = eri4("mu,kappa,nu,lambda");
       auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
+      f_builder = make_unique<decltype(builder)>(std::move(builder));
+    } else if (fock_method == "cadf") {
+      auto builder = scf::CADFFockBuilder(clustered_mol, clustered_mol, bs_set,
+                                          dfbs_set, ao_int);
       f_builder = make_unique<decltype(builder)>(std::move(builder));
     }
 
@@ -380,9 +385,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
           S, r_xyz, occ / 2, std::max(nclusters, 1), 0.0, false);
       d_builder = make_unique<scf::PurificationDensityBuilder>(std::move(db));
     } else if (density_method == "cholesky") {
+      bool localize =
+          scf_in.HasMember("localize") ? scf_in["localize"].GetBool() : false;
       auto db =
           scf::ESolveDensityBuilder(S, r_xyz, occ / 2, std::max(nclusters, 1),
-                                    0.0, "cholesky inverse", false);
+                                    0.0, "cholesky inverse", localize);
       d_builder = make_unique<scf::ESolveDensityBuilder>(std::move(db));
     }
 
@@ -406,8 +413,21 @@ int try_main(int argc, char *argv[], madness::World &world) {
     mpqc::utility::print_par(world, "SCF Energy:  ", scf_energy, "\n");
     mpqc::utility::print_par(world, "Total SCF Time:  ", scf_time, "\n");
 
+    std::string scf_out_file_name = scf_in.HasMember("scf output file")
+                                        ? scf_in["scf output file"].GetString()
+                                        : std::string("");
+    if (scf_out_file_name != "") {
+      auto owriter = json::init_json_writer(scf_in);
+      auto &out_doc = owriter->doc();
+
+      out_doc.AddMember("CLSCF", scf.results(out_doc), out_doc.GetAllocator());
+      std::ofstream scf_out_file(scf_out_file_name, std::ofstream::out);
+
+      owriter->finalize_and_print(scf_out_file);
+    }
+
     auto F = scf.fock();
-    if (fock_method == "df") {
+    if (fock_method == "df" || fock_method == "cadf") {
       ao_int.registry().insert(Formula(L"<μ|F|ν>[df]"), F);
     } else if (fock_method == "four center") {
       ao_int.registry().insert(Formula(L"<μ|F|ν>"), F);

@@ -12,6 +12,7 @@
 #include <mpqc/chemistry/qc/expression/permutation.h>
 #include "atomic_integral_base.h"
 #include "../../../../../ta_routines/array_to_eigen.h"
+#include "../../../../../ta_routines/tile_convert.h"
 #include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/parallel_break_point.h"
 #include "../../../../../utility/time.h"
@@ -38,7 +39,8 @@ class AtomicIntegral : public AtomicIntegralBase {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
 
-  typedef Tile (*Op)(TA::TensorD&&);
+  /// Op is a function pointer that convert TA::Tensor to Tile
+  using Op = Tile (*) (TA::TensorD&&);
 
   template <unsigned int N, typename E>
   using IntegralBuilder = integrals::IntegralBuilder<N, E, Op>;
@@ -84,6 +86,26 @@ class AtomicIntegral : public AtomicIntegralBase {
       accurate_time_ = false;
     }
     utility::print_par(world, "AccurateTime: ", accurate_time_, "\n");
+  }
+
+  /**
+   * KeyVal Constructor
+   *
+   * It takes all the options from AtomicIntegralBase
+   *
+   * @param accurate_time, bool, control if use fence in timing, default false
+   *
+   * @return
+   */
+
+  AtomicIntegral(const KeyVal& kv) : AtomicIntegralBase(kv)
+  {
+    accurate_time_ = kv.value("accurate_time",false);
+
+    /// Warning!!!!
+    /// This is temporary workround
+    /// For other Tile type, need a better way to set Op
+    op_ = mpqc::ta_routines::ta_tensor_pass_through;
   }
 
   AtomicIntegral(AtomicIntegral&&) = default;

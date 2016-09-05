@@ -5,15 +5,16 @@
 #include "../utility/parallel_file.h"
 #include "../utility/parallel_print.h"
 
-#include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/molecule/clustering_functions.h>
 #include <mpqc/chemistry/molecule/make_clusters.h>
-#include <mpqc/util/keyval/keyval.hpp>
-#include <mpqc/chemistry/qc/wfn/ao_wfn.h>
-#include <mpqc/chemistry/qc/properties/energy.h>
+#include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+#include <mpqc/chemistry/qc/properties/energy.h>
+#include <mpqc/chemistry/qc/wfn/ao_wfn.h>
+#include <mpqc/util/keyval/keyval.hpp>
 
 #include <sstream>
+#include <clocale>
 
 using namespace mpqc;
 
@@ -36,36 +37,36 @@ int try_main(int argc, char *argv[], madness::World &world) {
   //
   // construct molecule
   //
-  auto mol = molecule::Molecule(kv.keyval("molecule"));
+  //  auto mol = molecule::Molecule(kv.keyval("molecule"));
+  auto mol = kv.keyval("molecule").class_ptr<molecule::Molecule>();
   auto nclusters = 1;  // Hard Coded for now
   auto clustered_mol = std::make_shared<molecule::Molecule>(
-      molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters));
+      molecule::attach_hydrogens_and_kmeans(mol->clusterables(), nclusters));
   kv.assign("molecule", clustered_mol);
 
   //
   // construct basis registry
   //
-  auto bs = basis::Basis(kv.keyval("obs"));
-  auto dfbs = basis::Basis(kv.keyval("dfbs"));
+  //  auto bs = kv.keyval("obs").class_ptr<basis::Basis>();
+  //  auto dfbs = kv.keyval("dfbs").class_ptr<basis::Basis>();
 
-  auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
-  bs_registry->add(OrbitalIndex(L"κ"), bs);
-  bs_registry->add(OrbitalIndex(L"Κ"), dfbs);
+  //  auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
+  //  bs_registry->add(OrbitalIndex(L"κ"), *bs);
+  //  bs_registry->add(OrbitalIndex(L"Κ"), *dfbs);
 
   //
   // construct integrals
   //
   libint2::initialize();
-  integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(
-      world, ta_pass_through, kv.class_ptr<molecule::Molecule>("molecule"),
-      bs_registry);
+
+  integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(kv);
 
   kv.assign("ao_integrals", &ao_int);
 
   auto wfn_world = qc::WfnWorld(kv);
   kv.assign("wfn_world", &wfn_world);
 
-  qc::Wfn* wfn = new qc::AOWfn(kv);
+  qc::Wfn *wfn = new qc::AOWfn(kv);
 
   auto energy_prop = qc::Energy(kv);
   auto energy_prop_ptr = &energy_prop;
@@ -75,7 +76,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   {  // Test ints from Wfn
     auto S = wfn->wfn_world()->ao_integrals().compute(L"<κ|λ>");
-    // TA::DistArray<TA::TensorD, TA::SparsePolicy> S = ao_int.compute(L"<κ|λ>");
     assert(S.is_initialized());
   }
 
@@ -90,6 +90,15 @@ int main(int argc, char *argv[]) {
   auto &world = madness::initialize(argc, argv);
   mpqc::utility::print_par(world, "MADNESS process total size: ", world.size(),
                            "\n");
+
+  std::setlocale(LC_ALL, "en_US.UTF-8");
+  std::cout << std::setprecision(15);
+  std::wcout.sync_with_stdio(false);
+  std::wcerr.sync_with_stdio(false);
+  std::wcout.imbue(std::locale("en_US.UTF-8"));
+  std::wcerr.imbue(std::locale("en_US.UTF-8"));
+  std::wcout.sync_with_stdio(true);
+  std::wcerr.sync_with_stdio(true);
 
   try {
     try_main(argc, argv, world);

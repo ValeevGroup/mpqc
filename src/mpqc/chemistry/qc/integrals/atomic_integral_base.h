@@ -5,21 +5,21 @@
 #ifndef MPQC_ATOMIC_INTEGRAL_BASE_H
 #define MPQC_ATOMIC_INTEGRAL_BASE_H
 
+#include <cwchar>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <cwchar>
 
-#include <mpqc/chemistry/qc/expression/formula.h>
-#include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include "../../../../../common/namespaces.h"
 #include "../../../../../utility/make_array.h"
+#include "integrals.h"
 #include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/qc/basis/basis.h>
+#include <mpqc/chemistry/qc/expression/formula.h>
+#include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include <mpqc/chemistry/qc/integrals/integral_engine_pool.h>
-#include "integrals.h"
-#include <mpqc/chemistry/qc/integrals/task_integrals.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
+#include <mpqc/chemistry/qc/integrals/task_integrals.h>
 
 #include <libint2/engine.h>
 #include <rapidjson/document.h>
@@ -52,35 +52,15 @@ class AtomicIntegralBase {
                      const std::shared_ptr<molecule::Molecule> &mol,
                      const std::shared_ptr<OrbitalBasisRegistry> &obs,
                      const std::vector<std::pair<double, double>> &gtg_params =
-                         std::vector<std::pair<double, double>>(),
-                     const rapidjson::Document &in = rapidjson::Document())
-      : world_(world),
-        orbital_basis_registry_(obs),
-        mol_(mol),
-        gtg_params_(gtg_params) {
-    utility::print_par(world, "\nConstructing Atomic Integral Class \n");
-    if (in.IsObject()) {
-      screen_ = in.HasMember("Screen") ? in["Screen"].GetString() : "";
-      screen_threshold_ =
-          in.HasMember("Threshold") ? in["Threshold"].GetDouble() : 1.0e-10;
-      precision_ = in.HasMember("Precision")
-                       ? in["Precision"].GetDouble()
-                       : std::numeric_limits<double>::epsilon();
-    } else {
-      screen_ = "";
-      screen_threshold_ = 1.0e-10;
-      precision_ = std::numeric_limits<double>::epsilon();
-    }
+                     std::vector<std::pair<double, double>>(),
+                     const rapidjson::Document &in = rapidjson::Document());
 
-    utility::print_par(world, "Screen: ", screen_, "\n");
-    if (!screen_.empty()) {
-      utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
-    }
-    utility::print_par(world, "Precision: ", precision_, "\n");
-    utility::print_par(world, "\n");
+  /**
+   * KeyVal constructor
+   *
+   */
 
-    integrals::detail::integral_engine_precision = precision_;
-  }
+  AtomicIntegralBase(const KeyVal &kv);
 
   virtual ~AtomicIntegralBase() = default;
 

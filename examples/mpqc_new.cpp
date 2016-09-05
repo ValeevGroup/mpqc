@@ -71,7 +71,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   auto energy_prop = qc::Energy(kv);
   auto energy_prop_ptr = &energy_prop;
 
-  wfn->visit(energy_prop_ptr);
+  wfn->compute(energy_prop_ptr);
   std::cout << "Wfn energy is: " << *energy_prop.result() << std::endl;
 
   {  // Test ints from Wfn

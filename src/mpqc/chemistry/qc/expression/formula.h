@@ -19,15 +19,15 @@ namespace mpqc {
 namespace detail {
 /// provides identity transform for strings
 struct identity {
-  std::string operator()(std::string&& arg) const {
+  std::string operator()(std::string &&arg) const {
     return std::forward<std::string>(arg);
   }
 };
 /// transforms strings by appending string representation of an integral counter
 struct append_count {
   append_count(long count_init = 0) : count_(count_init) {}
-  append_count(const append_count& append_count) = default;
-  std::string operator()(std::string&& arg) {
+  append_count(const append_count &append_count) = default;
+  std::string operator()(std::string &&arg) {
     return arg + std::to_string(count_++);
   }
   long count_;
@@ -133,7 +133,8 @@ class Formula {
   /// @tparam Transformer a unary functor class
   /// @param transform_op used to transform index keys
   template <typename Transformer = detail::identity>
-  std::string to_ta_expression(Transformer transform_op = detail::identity()) const;
+  std::string to_ta_expression(
+      Transformer transform_op = detail::identity()) const;
 
  private:
   /// parse the index on one side
@@ -153,7 +154,7 @@ std::string Formula::to_ta_expression(Transformer transform_op) const {
   std::size_t count = 0;
 
   // add left index
-  for (const auto& index : bra_indices_) {
+  for (const auto &index : bra_indices_) {
     std::string index_expression = transform_op(index.to_ta_expression());
     ta_expression.append(index_expression.begin(), index_expression.end());
     ++count;
@@ -161,7 +162,7 @@ std::string Formula::to_ta_expression(Transformer transform_op) const {
   }
 
   // add right index
-  for (const auto& index : ket_indices_) {
+  for (const auto &index : ket_indices_) {
     std::string index_expression = transform_op(index.to_ta_expression());
     ta_expression.append(index_expression.begin(), index_expression.end());
     ++count;
@@ -172,7 +173,6 @@ std::string Formula::to_ta_expression(Transformer transform_op) const {
 
   return ta_expression;
 }
-
 }
 
 #endif  // MPQC_FORMULA_H

@@ -1,4 +1,4 @@
-#include <memory>
+
 #include <fstream>
 #include <algorithm>
 #include <iomanip>
@@ -57,6 +57,8 @@
 #include <mpqc/chemistry/qc/scf/soad.h>
 #include <mpqc/chemistry/qc/integrals/atomic_integral.h>
 #include <mpqc/chemistry/qc/integrals/molecular_integral.h>
+
+#include <mpqc/util/array_info/tensor_store.h>
 
 using namespace mpqc;
 namespace ints = integrals;
@@ -370,8 +372,22 @@ int try_main(int argc, char *argv[], madness::World &world) {
       auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
       f_builder = make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "cadf") {
-      auto builder = scf::CADFFockBuilder(clustered_mol, clustered_mol, bs_set,
-                                          dfbs_set, ao_int);
+      auto use_forced_shape = scf_in.HasMember("forced shape")
+                                  ? scf_in["forced shape"].GetBool()
+                                  : false;
+      auto force_threshold = TA::SparseShape<float>::threshold();
+      if (use_forced_shape) {
+        force_threshold = scf_in["shape threshold"].GetDouble();
+        if (world.rank() == 0) {
+          std::cout
+              << "Using forced shape in CADF fock builder with threshold: "
+              << force_threshold << std::endl;
+        }
+      }
+
+      auto builder =
+          scf::CADFFockBuilder(clustered_mol, clustered_mol, bs_set, dfbs_set,
+                               ao_int, use_forced_shape, force_threshold);
       f_builder = make_unique<decltype(builder)>(std::move(builder));
     }
 

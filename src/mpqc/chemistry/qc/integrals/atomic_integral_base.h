@@ -93,7 +93,7 @@ class AtomicIntegralBase {
   /**
     * Given Formula with rank = 4, return DensityFitting formula
     *
-    * This function is also used in MolecularIntegral density fitting formula
+    * This function is also used in LCAOFactory density fitting formula
     *parsing
     *
     * @param formula that has string format (in1 in2 | oper | in3 in4 ) or <in1

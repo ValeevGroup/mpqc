@@ -1,62 +1,62 @@
-#include <memory>
-#include <fstream>
 #include <algorithm>
-#include <iomanip>
 #include <chrono>
 #include <clocale>
+#include <fstream>
+#include <iomanip>
+#include <libint2.hpp>
+#include <madness/world/worldmem.h>
+#include <memory>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-#include <libint2.hpp>
-#include <madness/world/worldmem.h>
 
 #include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
-#include "../utility/parallel_print.h"
 #include "../utility/parallel_break_point.h"
+#include "../utility/parallel_print.h"
 
 #include "../utility/array_info.h"
 #include "../utility/print_size_info.h"
 
-#include "../utility/time.h"
 #include "../utility/json_handling.h"
 #include "../utility/parallel_file.h"
+#include "../utility/time.h"
 
 #include <mpqc/chemistry/molecule/atom.h>
 #include <mpqc/chemistry/molecule/cluster.h>
-#include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/molecule/clustering_functions.h>
 #include <mpqc/chemistry/molecule/make_clusters.h>
+#include <mpqc/chemistry/molecule/molecule.h>
 
 #include <mpqc/chemistry/qc/basis/atom_basisset.h>
+#include <mpqc/chemistry/qc/basis/basis.h>
 #include <mpqc/chemistry/qc/basis/basis_set.h>
 #include <mpqc/chemistry/qc/basis/cluster_shells.h>
-#include <mpqc/chemistry/qc/basis/basis.h>
 
+#include <mpqc/chemistry/qc/scf/cadf_builder.h>
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
+#include <mpqc/chemistry/qc/scf/eigen_solve_density_builder.h>
+#include <mpqc/chemistry/qc/scf/mo_build.h>
+#include <mpqc/chemistry/qc/scf/purification_density_build.h>
 #include <mpqc/chemistry/qc/scf/scf.h>
 #include <mpqc/chemistry/qc/scf/traditional_df_fock_builder.h>
-#include <mpqc/chemistry/qc/scf/purification_density_build.h>
-#include <mpqc/chemistry/qc/scf/eigen_solve_density_builder.h>
 #include <mpqc/chemistry/qc/scf/traditional_four_center_fock_builder.h>
-#include <mpqc/chemistry/qc/scf/mo_build.h>
-#include <mpqc/chemistry/qc/scf/cadf_builder.h>
 
+#include "../ta_routines/array_to_eigen.h"
+#include "../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
 #include <mpqc/chemistry/qc/cc/dbccsd.h>
-#include <mpqc/chemistry/qc/mbpt/mp2.h>
-#include <mpqc/chemistry/qc/mbpt/dbmp2.h>
+#include <mpqc/chemistry/qc/f12/ccsdf12.h>
+#include <mpqc/chemistry/qc/f12/dbccsdf12.h>
+#include <mpqc/chemistry/qc/f12/dbmp2f12.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include <mpqc/chemistry/qc/f12/mp2f12.h>
-#include <mpqc/chemistry/qc/f12/dbmp2f12.h>
-#include <mpqc/chemistry/qc/f12/dbccsdf12.h>
-#include <mpqc/chemistry/qc/f12/ccsdf12.h>
-#include "../utility/trange1_engine.h"
-#include "../ta_routines/array_to_eigen.h"
-#include <mpqc/chemistry/qc/scf/soad.h>
 #include <mpqc/chemistry/qc/integrals/atomic_integral.h>
-#include <mpqc/chemistry/qc/integrals/molecular_integral.h>
+#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
+#include <mpqc/chemistry/qc/mbpt/dbmp2.h>
+#include <mpqc/chemistry/qc/mbpt/mp2.h>
+#include <mpqc/chemistry/qc/scf/soad.h>
 
 using namespace mpqc;
 namespace ints = integrals;
@@ -78,7 +78,7 @@ namespace ints = integrals;
  *  @param CorrelationFunction int, number of f12 correlation fuction, defualt 6
  *  @param CLSCF object, ClosedShellSCF class
  *  @param AOIntegral object, AtomicIntegral class
- *  @param MOIntegral object, MolecularIntegral class
+ *  @param MOIntegral object, LCAOFactory class
  *
  */
 int try_main(int argc, char *argv[], madness::World &world) {
@@ -441,9 +441,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
   double corr_e = 0.0;
   auto orbital_registry = std::make_shared<
       OrbitalSpaceRegistry<TA::DistArray<TA::TensorD, TA::SparsePolicy>>>();
-  auto mo_integral =
-      integrals::MolecularIntegral<TA::TensorD, TA::SparsePolicy>(
-          ao_int, orbital_registry, mo_in);
+  auto lcao_factory = integrals::LCAOFactory<TA::TensorD, TA::SparsePolicy>(
+      ao_int, orbital_registry, mo_in);
   Eigen::VectorXd ens;
   std::shared_ptr<TRange1Engine> tre;
   rapidjson::Document corr_in;
@@ -452,7 +451,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     auto mp2_time0 = mpqc_time::fenced_now(world);
 
     corr_in = json::get_nested(in, "MP2");
-    auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(mo_integral);
+    auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(lcao_factory);
     corr_e += mp2.compute(corr_in);
 
     auto mp2_time1 = mpqc_time::fenced_now(world);
@@ -464,7 +463,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     corr_in = json::get_nested(in, "DBMP2");
     std::shared_ptr<mbpt::MP2<TA::TensorD, TA::SparsePolicy>> mp2 =
         std::make_shared<mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>>(
-            mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(mo_integral));
+            mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(lcao_factory));
     corr_e += mp2->compute(corr_in);
 
     auto dbmp2_time1 = mpqc_time::fenced_now(world);
@@ -476,7 +475,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     // start mp2f12
     auto mp2f12_time0 = mpqc_time::fenced_now(world);
-    f12::MP2F12<TA::TensorD> mp2f12(mo_integral);
+    f12::MP2F12<TA::TensorD> mp2f12(lcao_factory);
     corr_e += mp2f12.compute(corr_in);
 
     auto mp2f12_time1 = mpqc_time::fenced_now(world);
@@ -487,7 +486,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     // start mp2f12
     auto mp2f12_time0 = mpqc_time::fenced_now(world);
-    f12::DBMP2F12<TA::TensorD> dbmp2f12(mo_integral);
+    f12::DBMP2F12<TA::TensorD> dbmp2f12(lcao_factory);
     corr_e += dbmp2f12.compute(corr_in);
 
     auto mp2f12_time1 = mpqc_time::fenced_now(world);
@@ -499,7 +498,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
     // start gf2f12
     auto time0 = mpqc_time::fenced_now(world);
-    f12::GF2F12<TA::TensorD> gf2f12(mo_integral);
+    f12::GF2F12<TA::TensorD> gf2f12(lcao_factory);
     gf2f12.compute(corr_in);
     auto time1 = mpqc_time::fenced_now(world);
     auto time = mpqc_time::duration_in_s(time0, time1);
@@ -510,7 +509,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     auto time0 = mpqc_time::fenced_now(world);
     utility::print_par(world, "\nBegining CCSD Calculation\n");
     corr_in = json::get_nested(in, "CCSD");
-    mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(mo_integral, corr_in);
+    mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(lcao_factory, corr_in);
     corr_e += ccsd.compute();
     auto time1 = mpqc_time::fenced_now(world);
     auto time = mpqc_time::duration_in_s(time0, time1);
@@ -519,7 +518,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     auto time0 = mpqc_time::fenced_now(world);
     utility::print_par(world, "\nBegining Dual Basis CCSD Calculation\n");
     corr_in = json::get_nested(in, "DBCCSD");
-    mpqc::cc::DBCCSD<TA::TensorD, TA::SparsePolicy> dbccsd(mo_integral,
+    mpqc::cc::DBCCSD<TA::TensorD, TA::SparsePolicy> dbccsd(lcao_factory,
                                                            corr_in);
     corr_e += dbccsd.compute();
     auto time1 = mpqc_time::fenced_now(world);
@@ -530,7 +529,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     auto time0 = mpqc_time::fenced_now(world);
     utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
     corr_in = json::get_nested(in, "CCSD(T)");
-    mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(mo_integral,
+    mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(lcao_factory,
                                                            corr_in);
     corr_e += ccsd_t.compute();
     auto time1 = mpqc_time::fenced_now(world);
@@ -543,7 +542,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
     corr_in = json::get_nested(in, "CCSD(F12)");
 
-    f12::CCSDF12<TA::TensorD> ccsd_f12(mo_integral, corr_in);
+    f12::CCSDF12<TA::TensorD> ccsd_f12(lcao_factory, corr_in);
     corr_e += ccsd_f12.compute();
 
     auto time1 = mpqc_time::fenced_now(world);
@@ -555,7 +554,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     utility::print_par(world, "\nBegining DBCCSD(F12) Calculation\n");
     corr_in = json::get_nested(in, "DBCCSD(F12)");
 
-    f12::DBCCSDF12<TA::TensorD> db_ccsd_f12(mo_integral, corr_in);
+    f12::DBCCSDF12<TA::TensorD> db_ccsd_f12(lcao_factory, corr_in);
     corr_e += db_ccsd_f12.compute();
 
     auto time1 = mpqc_time::fenced_now(world);

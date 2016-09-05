@@ -7,7 +7,7 @@
 
 #include "../../../../../include/eigen.h"
 #include "../../../../../include/tiledarray.h"
-#include <mpqc/chemistry/qc/integrals/molecular_integral.h>
+#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 #include <TiledArray/algebra/conjgrad.h>
 
 namespace mpqc{
@@ -18,7 +18,7 @@ class CABSSingles {
 public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
-  using MolecularIntegralClass = integrals::MolecularIntegral<Tile, Policy>;
+  using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
 
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
@@ -27,10 +27,10 @@ public:
   CABSSingles() = default;
 
   /**
-   * @param mo_int MolecularIntegral Object
+   * @param lcao_factory LCAOFactory Object
    * @param vir   if include F_ia in singles, default is true
    */
-  CABSSingles(MolecularIntegralClass& mo_int, bool vir=true) : mo_int_(mo_int), couple_virtual_(vir){}
+  CABSSingles(LCAOFactoryType& lcao_factory, bool vir=true) : lcao_factory_(lcao_factory), couple_virtual_(vir){}
 
   real_t compute();
 
@@ -68,7 +68,7 @@ private:
 
 private:
 
-  MolecularIntegralClass& mo_int_;
+  LCAOFactoryType& lcao_factory_;
   bool couple_virtual_;
 };
 
@@ -76,17 +76,17 @@ template <typename Tile>
 typename CABSSingles<Tile>::real_t
 CABSSingles<Tile>::compute() {
 
-  bool df = mo_int_.atomic_integral().orbital_basis_registry()->have(OrbitalIndex(L"Κ"));
+  bool df = lcao_factory_.atomic_integral().orbital_basis_registry()->have(OrbitalIndex(L"Κ"));
 
   TArray F_AB, F_MN;
   if(df){
-    F_AB = mo_int_.compute(L"<A'|F|B'>[df]");
-    F_MN = mo_int_.compute(L"<m|F|n>[df]");
+    F_AB = lcao_factory_.compute(L"<A'|F|B'>[df]");
+    F_MN = lcao_factory_.compute(L"<m|F|n>[df]");
 
   }
   else{
-    F_AB = mo_int_.compute(L"<A'|F|B'>");
-    F_MN = mo_int_.compute(L"<m|F|n>");
+    F_AB = lcao_factory_.compute(L"<A'|F|B'>");
+    F_MN = lcao_factory_.compute(L"<m|F|n>");
   }
 
 
@@ -94,20 +94,20 @@ CABSSingles<Tile>::compute() {
   /// include contribution of F_m^a into F_m^A'
   if(couple_virtual_){
     if(df){
-      F_MA = mo_int_.compute(L"<m|F|A'>[df]");
+      F_MA = lcao_factory_.compute(L"<m|F|A'>[df]");
     }
     else{
-      F_MA = mo_int_.compute(L"<m|F|A'>");
+      F_MA = lcao_factory_.compute(L"<m|F|A'>");
     }
   }
   /// not include contribution of F_m^a into F_m^A'
   else{
     TArray F_Ma;
     if(df){
-      F_Ma = mo_int_.compute(L"<m|F|a'>[df]");
+      F_Ma = lcao_factory_.compute(L"<m|F|a'>[df]");
     }
     else{
-      F_Ma = mo_int_.compute(L"<m|F|a'>");
+      F_Ma = lcao_factory_.compute(L"<m|F|a'>");
     }
     MatrixD F_Ma_eigen = array_ops::array_to_eigen(F_Ma);
     auto n_occ = F_Ma_eigen.rows();

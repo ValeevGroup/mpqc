@@ -17,8 +17,6 @@
 
 using namespace mpqc;
 
-TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
-
 int try_main(int argc, char *argv[], madness::World &world) {
   if (argc != 2) {
     std::cout << "usage: " << argv[0] << " <input_file.json>" << std::endl;

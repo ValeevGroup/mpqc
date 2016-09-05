@@ -61,7 +61,6 @@
 using namespace mpqc;
 namespace ints = integrals;
 
-TA::TensorD ta_pass_through(TA::TensorD &&ten) { return std::move(ten); }
 /**
  *
  *  Example of Main MPQC file
@@ -325,7 +324,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   auto ao_in = json::get_nested(in, "AOIntegral");
 
   integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(
-      world, ta_pass_through,
+      world, ta_routines::ta_tensor_pass_through,
       std::make_shared<molecule::Molecule>(clustered_mol), bs_registry, param,
       ao_in);
 

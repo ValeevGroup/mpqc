@@ -41,15 +41,24 @@ class CADFFockBuilder : public FockBuilder {
 
   bool use_forced_shape_ = false;
   float force_threshold_ = 0.0;
+  double lcao_chop_threshold_ = 0.0;
 
   // Vectors to store timings
-  std::vector<double> e_mo_times_;   // E_ * C times
-  std::vector<double> j_times_;      // Time J in a single step times
-  std::vector<double> c_mo_times_;   // C_df_ * C times
-  std::vector<double> shape_times_;  // Time to compute the forced shape
-  std::vector<double> f_df_times_;   // E_mo_ + M * C_mo times
-  std::vector<double> l_times_;      // (C_mo)^T * F_df times
-  std::vector<double> k_times_;      // L^T + L times
+  std::vector<double> e_mo_times_;       // E_ * C times
+  std::vector<double> j_times_;          // Time J in a single step times
+  std::vector<double> lcao_chop_times_;  // Time spent chopping orbitals
+  std::vector<double> c_mo_times_;       // C_df_ * C times
+  std::vector<double> shape_times_;      // Time to compute the forced shape
+  std::vector<double> f_df_times_;       // E_mo_ + M * C_mo times
+  std::vector<double> l_times_;          // (C_mo)^T * F_df times
+  std::vector<double> k_times_;          // L^T + L times
+
+  std::vector<std::array<double, 2>> e_mo_sizes_;
+  std::vector<std::array<double, 2>> lcao_sizes_;
+  std::vector<std::array<double, 2>> lcao_chopped_sizes_;
+  std::vector<std::array<double, 2>> c_mo_sizes_;
+  std::vector<std::array<double, 2>> e_mo_forced_sizes_;
+  std::vector<std::array<double, 2>> f_df_sizes_;
 
  public:
   CADFFockBuilder(
@@ -57,11 +66,13 @@ class CADFFockBuilder : public FockBuilder {
       molecule::Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints,
-      bool use_forced_shape, double force_threshold)
+      bool use_forced_shape, double force_threshold,
+      double lcao_chop_threshold = 0.0)
       : CADFFockBuilder(clustered_mol, df_clustered_mol, obs_set, dfbs_set,
                         ao_ints) {
     use_forced_shape_ = use_forced_shape;
     force_threshold_ = force_threshold;
+    lcao_chop_threshold_ = lcao_chop_threshold;
   }
 
   CADFFockBuilder(
@@ -118,6 +129,10 @@ class CADFFockBuilder : public FockBuilder {
     auto e_mo1 = mpqc_time::fenced_now(world);
     e_mo_times_.push_back(mpqc_time::duration_in_s(e_mo0, e_mo1));
 
+    auto E_mo_sizes = utility::array_storage(E_mo);
+    e_mo_sizes_.push_back(
+        std::array<double, 2>{{E_mo_sizes[0], E_mo_sizes[1]}});
+
     ArrayType G;
     G("m, n") = 2 * compute_J(C, E_mo)("m, n") - compute_K(C, E_mo)("m, n");
     return G;
@@ -136,7 +151,19 @@ class CADFFockBuilder : public FockBuilder {
       if (!shape_times_.empty()) {
         shape_time = shape_times_.back();
       }
-      auto ktotal = et + ct + ft + lt + kt + shape_time;
+
+      auto cut_time = 0.0;
+      if (!lcao_chop_times_.empty()) {
+        cut_time = lcao_chop_times_.back();
+      }
+
+      auto ktotal = 0.0; 
+      if(use_forced_shape_){ // Forced shape recomputes E_mo and the time is contained in F_df time
+          ktotal = ct + ft + lt + kt + shape_time + cut_time;
+      } else { // No forced shape shares E_mo with J so add time here 
+          ktotal = et + ct + ft + lt + kt + shape_time + cut_time;
+      }
+
       std::cout << leader << "E_mo time: " << et << "\n";
       std::cout << leader << "J time   : " << jt << "\n";
       if (!shape_times_.empty()) {
@@ -146,6 +173,25 @@ class CADFFockBuilder : public FockBuilder {
       std::cout << leader << "L time   : " << lt << "\n";
       std::cout << leader << "K time   : " << kt << "\n";
       std::cout << leader << "Exchange time   : " << ktotal << "\n";
+      std::cout << leader << "Storages(Dense, Sparse):\n";
+      std::cout << leader << leader << "E_mo(" << e_mo_sizes_.back()[0] << ", "
+                << e_mo_sizes_.back()[1] << ")\n";
+      std::cout << leader << leader << "lcao(" << lcao_sizes_.back()[0] << ", "
+                << lcao_sizes_.back()[1] << ")\n";
+      if (!lcao_chopped_sizes_.empty()) {
+        std::cout << leader << leader << "lcao chopped("
+                  << lcao_chopped_sizes_.back()[0] << ", "
+                  << lcao_chopped_sizes_.back()[1] << ")\n";
+      }
+      std::cout << leader << leader << "C_mo(" << c_mo_sizes_.back()[0] << ", "
+                << c_mo_sizes_.back()[1] << ")\n";
+      if (use_forced_shape_) {
+        std::cout << leader << leader << "E_mo Forced("
+                  << e_mo_forced_sizes_.back()[0] << ", "
+                  << e_mo_forced_sizes_.back()[1] << ")\n";
+      }
+      std::cout << leader << leader << "F_df(" << f_df_sizes_.back()[0] << ", "
+                << f_df_sizes_.back()[1] << ")\n";
     }
   }
 
@@ -159,12 +205,27 @@ class CADFFockBuilder : public FockBuilder {
     auto f_df_build = utility::vec_avg(f_df_times_);
     auto l_build = utility::vec_avg(l_times_);
     auto k_build = utility::vec_avg(k_times_);
+
+    auto cut_time = 0.0;
+    if (lcao_chop_threshold_ != 0.0) {
+      auto cut_time = utility::vec_avg(lcao_chop_times_);
+      fock_builder.AddMember("Avg LCAO Cut Time", cut_time, d.GetAllocator());
+    }
+
     auto shape_time = 0.0;
     if (!shape_times_.empty()) {
       shape_time = utility::vec_avg(shape_times_);
     }
-    auto ktotal =
-        e_mo_build + c_mo_build + f_df_build + l_build + k_build + shape_time;
+
+    auto ktotal = 0.0;
+    if (use_forced_shape_) {  // If forced shape was used F_df contains the E_mo
+                              // time for K
+      ktotal =
+          c_mo_build + f_df_build + l_build + k_build + shape_time + cut_time;
+    } else {  // Else it does not.
+      ktotal = e_mo_build + c_mo_build + f_df_build + l_build + k_build +
+               shape_time + cut_time;
+    }
 
     fock_builder.AddMember("Forced Sahpe", use_forced_shape_, d.GetAllocator());
     if (use_forced_shape_) {
@@ -172,13 +233,64 @@ class CADFFockBuilder : public FockBuilder {
                              d.GetAllocator());
       fock_builder.AddMember("Avg Shape Time", shape_time, d.GetAllocator());
     }
-    fock_builder.AddMember("Avg Emo Time", e_mo_build, d.GetAllocator());
+    if (lcao_chop_threshold_ != 0.0) {
+      fock_builder.AddMember("LCAO Cut Threshold", lcao_chop_threshold_,
+                             d.GetAllocator());
+      fock_builder.AddMember("Avg LCAO Cut Time", cut_time, d.GetAllocator());
+    }
+    fock_builder.AddMember("Avg E_mo Time", e_mo_build, d.GetAllocator());
     fock_builder.AddMember("Avg J Time", j_build, d.GetAllocator());
-    fock_builder.AddMember("Avg Cmo Time", c_mo_build, d.GetAllocator());
-    fock_builder.AddMember("Avg Fdf Time", f_df_build, d.GetAllocator());
+    fock_builder.AddMember("Avg C_mo Time", c_mo_build, d.GetAllocator());
+    fock_builder.AddMember("Avg F_df Time", f_df_build, d.GetAllocator());
     fock_builder.AddMember("Avg L Time", l_build, d.GetAllocator());
     fock_builder.AddMember("Avg K Time", k_build, d.GetAllocator());
     fock_builder.AddMember("Avg Total Exchange Time", ktotal, d.GetAllocator());
+
+    auto average_storage = [](std::vector<std::array<double, 2>> const &store) {
+      auto dense = 0.0;
+      auto sparse = 0.0;
+
+      for (auto const &s : store) {
+        dense += s[0];
+        sparse += s[1];
+      }
+      dense /= double(store.size());
+      sparse /= double(store.size());
+
+      return std::array<double, 2>{{dense, sparse}};
+    };
+
+    auto store = average_storage(e_mo_sizes_);
+    fock_builder.AddMember("Avg E_mo Dense", store[0], d.GetAllocator());
+    fock_builder.AddMember("Avg E_mo Sparse", store[1], d.GetAllocator());
+
+    store = average_storage(lcao_sizes_);
+    fock_builder.AddMember("Avg C Dense", store[0], d.GetAllocator());
+    fock_builder.AddMember("Avg C Sparse", store[1], d.GetAllocator());
+
+    if (!lcao_chopped_sizes_.empty()) {
+      store = average_storage(lcao_chopped_sizes_);
+      fock_builder.AddMember("Avg C(chopped) Dense", store[0],
+                             d.GetAllocator());
+      fock_builder.AddMember("Avg C(chopped) Sparse", store[1],
+                             d.GetAllocator());
+    }
+
+    store = average_storage(c_mo_sizes_);
+    fock_builder.AddMember("Avg C_mo Dense", store[0], d.GetAllocator());
+    fock_builder.AddMember("Avg C_mo Sparse", store[1], d.GetAllocator());
+
+    if (!e_mo_forced_sizes_.empty()) {
+      store = average_storage(e_mo_forced_sizes_);
+      fock_builder.AddMember("Avg E_mo forced Dense", store[0],
+                             d.GetAllocator());
+      fock_builder.AddMember("Avg E_mo forced Sparse", store[1],
+                             d.GetAllocator());
+    }
+
+    store = average_storage(f_df_sizes_);
+    fock_builder.AddMember("Avg F_df Dense", store[0], d.GetAllocator());
+    fock_builder.AddMember("Avg F_df Sparse", store[1], d.GetAllocator());
 
     return fock_builder;
   }
@@ -197,10 +309,36 @@ class CADFFockBuilder : public FockBuilder {
     return J;
   }
 
-  array_type compute_K(ArrayType const &C, ArrayType const &E_mo) {
+  array_type compute_K(ArrayType const &C_in, ArrayType const &E_mo) {
     auto &world = M_.get_world();
     ArrayType L, K;        // Matrices
     ArrayType C_mo, F_df;  // Tensors
+
+    // Deep copy C for chopping
+    ArrayType C;
+    C("mu, i") = C_in("mu, i");
+    // Capture C sizes
+    auto lcao_sizes = utility::array_storage(C);
+    lcao_sizes_.push_back(
+        std::array<double, 2>{{lcao_sizes[0], lcao_sizes[1]}});
+
+    if (lcao_chop_threshold_ != 0.0) {
+      auto chop0 = mpqc_time::fenced_now(world);
+      TA::foreach_inplace(C, [&](TA::Tensor<double> &t) {
+        const auto norm = t.norm();
+        if (norm > lcao_chop_threshold_) {
+          return norm;
+        } else {
+          return 0.0;
+        }
+      });
+      auto chop1 = mpqc_time::fenced_now(world);
+      lcao_chop_times_.push_back(mpqc_time::duration_in_s(chop0, chop1));
+
+      auto chop_sizes = utility::array_storage(C);
+      lcao_chopped_sizes_.push_back(
+          std::array<double, 2>{{chop_sizes[0], chop_sizes[1]}});
+    }
 
     // Contract C_df with orbitals
     auto c_mo0 = mpqc_time::fenced_now(world);
@@ -208,6 +346,10 @@ class CADFFockBuilder : public FockBuilder {
     C_mo.truncate();
     auto c_mo1 = mpqc_time::fenced_now(world);
     c_mo_times_.push_back(mpqc_time::duration_in_s(c_mo0, c_mo1));
+
+    auto c_mo_sizes = utility::array_storage(C_mo);
+    c_mo_sizes_.push_back(
+        std::array<double, 2>{{c_mo_sizes[0], c_mo_sizes[1]}});
 
     // Get forced output shape
     TA::SparseShape<float> forced_shape;
@@ -238,7 +380,7 @@ class CADFFockBuilder : public FockBuilder {
           }
 
           // Then for every X we mark all important mu. The output will have
-          // significant mu X pairs that the input did not. 
+          // significant mu X pairs that the input did not.
           for (auto const &X : sig_X) {
             for (auto const &mu : sig_mu) {
               t(X, i, mu) = std::numeric_limits<float>::max();
@@ -266,6 +408,10 @@ class CADFFockBuilder : public FockBuilder {
           (E_("X, mu, nu") * C("nu,i")).set_shape(forced_shape);
       E_mo_forced.truncate();
 
+      auto e_mo_sizes = utility::array_storage(E_mo_forced);
+      e_mo_forced_sizes_.push_back(
+          std::array<double, 2>{{e_mo_sizes[0], e_mo_sizes[1]}});
+
       array_type R_df;
       R_df("X, i, mu") =
           (M_("X, Y") * C_mo("Y, i, mu")).set_shape(forced_shape);
@@ -275,6 +421,10 @@ class CADFFockBuilder : public FockBuilder {
     F_df.truncate();
     auto f_df1 = mpqc_time::fenced_now(world);
     f_df_times_.push_back(mpqc_time::duration_in_s(f_df0, f_df1));
+
+    auto f_df_sizes = utility::array_storage(F_df);
+    f_df_sizes_.push_back(
+        std::array<double, 2>{{f_df_sizes[0], f_df_sizes[1]}});
 
     // Construct L
     auto l0 = mpqc_time::fenced_now(world);

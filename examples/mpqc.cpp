@@ -372,6 +372,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
       auto use_forced_shape = scf_in.HasMember("forced shape")
                                   ? scf_in["forced shape"].GetBool()
                                   : false;
+
+      auto lcao_chop_threshold = scf_in.HasMember("TCutC")
+                                  ? scf_in["TCutC"].GetDouble()
+                                  : 0.0;
+
       auto force_threshold = TA::SparseShape<float>::threshold();
       if (use_forced_shape) {
         force_threshold = scf_in["shape threshold"].GetDouble();
@@ -384,7 +389,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
       auto builder =
           scf::CADFFockBuilder(clustered_mol, clustered_mol, bs_set, dfbs_set,
-                               ao_int, use_forced_shape, force_threshold);
+                               ao_int, use_forced_shape, force_threshold, lcao_chop_threshold);
       f_builder = make_unique<decltype(builder)>(std::move(builder));
     }
 

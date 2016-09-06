@@ -7,6 +7,8 @@
 namespace mpqc {
 namespace integrals {
 
+namespace detail {
+
 libint2::Operator to_libint2_operator(Operator::Type mpqc_oper) {
   TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
                   mpqc_oper <= Operator::Type::__last_1body_operator) ||
@@ -85,12 +87,88 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
   }
   return result;
 }
+}
+
+AtomicIntegralBase::AtomicIntegralBase(
+    madness::World &world, const std::shared_ptr<molecule::Molecule> &mol,
+    const std::shared_ptr<OrbitalBasisRegistry> &obs,
+    const std::vector<std::pair<double, double>> &gtg_params,
+    const rapidjson::Document &in)
+    : world_(world),
+      orbital_basis_registry_(obs),
+      mol_(mol),
+      gtg_params_(gtg_params) {
+  utility::print_par(world, "\nConstructing Atomic Integral Class \n");
+  if (in.IsObject()) {
+    screen_ = in.HasMember("Screen") ? in["Screen"].GetString() : "";
+    screen_threshold_ =
+        in.HasMember("Threshold") ? in["Threshold"].GetDouble() : 1.0e-10;
+    precision_ = in.HasMember("Precision")
+                     ? in["Precision"].GetDouble()
+                     : std::numeric_limits<double>::epsilon();
+  } else {
+    screen_ = "";
+    screen_threshold_ = 1.0e-10;
+    precision_ = std::numeric_limits<double>::epsilon();
+  }
+
+  utility::print_par(world, "Screen: ", screen_, "\n");
+  if (!screen_.empty()) {
+    utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
+  }
+  utility::print_par(world, "Precision: ", precision_, "\n");
+  utility::print_par(world, "\n");
+
+  integrals::detail::integral_engine_precision = precision_;
+}
+
+AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
+    : world_(*kv.value<madness::World*>("world")),
+      orbital_basis_registry_(),
+      mol_(),
+      gtg_params_() {
+
+  orbital_basis_registry_ = std::make_shared<OrbitalBasisRegistry>(OrbitalBasisRegistry());
+  mol_ = kv.keyval("molecule").class_ptr<molecule::Molecule>();
+
+  auto basis = kv.keyval("basis").class_ptr<basis::Basis>();
+  assert(basis != nullptr);
+  orbital_basis_registry_->add(OrbitalIndex(L"μ"), *basis);
+  utility::parallel_print_range_info(world_, basis->create_trange1(),
+                                     "OBS Basis");
+
+  if (kv.exists("df_basis")) {
+    auto df_basis = kv.keyval("df_basis").class_ptr<basis::Basis>();
+    assert(df_basis != nullptr);
+    utility::parallel_print_range_info(world_, df_basis->create_trange1(),
+                                       "DF Basis");
+    orbital_basis_registry_->add(OrbitalIndex(L"Κ"), *df_basis);
+  }
+
+  if (kv.exists("aux_basis")) {
+    auto aux_basis = kv.keyval("aux_basis").class_ptr<basis::Basis>();
+    assert(aux_basis != nullptr);
+    orbital_basis_registry_->add(OrbitalIndex(L"α"), *aux_basis);
+    utility::parallel_print_range_info(world_, aux_basis->create_trange1(),
+                                       "AUX Basis");
+  }
+
+  if (kv.exists("vir_basis")) {
+    auto vir_basis = kv.keyval("vir_basis").class_ptr<basis::Basis>();
+    assert(vir_basis != nullptr);
+    orbital_basis_registry_->add(OrbitalIndex(L"Α"), *vir_basis);
+    utility::parallel_print_range_info(world_, vir_basis->create_trange1(),
+                                       "Virtual Basis");
+  }
+
+
+}
 
 libint2::Engine AtomicIntegralBase::make_engine(const Operator &oper,
                                                 int64_t max_nprim,
                                                 int64_t max_am) {
-  auto op = to_libint2_operator(oper.type());
-  auto params = to_libint2_operator_params(oper.type(), *this);
+  auto op = detail::to_libint2_operator(oper.type());
+  auto params = detail::to_libint2_operator_params(oper.type(), *this);
   libint2::Engine engine(op, max_nprim, static_cast<int>(max_am), 0);
   engine.set_params(std::move(params));
 
@@ -160,9 +238,9 @@ void AtomicIntegralBase::parse_one_body(
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
-      to_libint2_operator(oper_type),
+      detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
-      to_libint2_operator_params(oper_type, *this));
+      detail::to_libint2_operator_params(oper_type, *this));
 }
 
 void AtomicIntegralBase::parse_two_body_two_center(
@@ -194,9 +272,10 @@ void AtomicIntegralBase::parse_two_body_two_center(
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
-      to_libint2_operator(oper_type),
+      detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis0, *ket_basis0),
-      libint2::BraKet::xs_xs, to_libint2_operator_params(oper_type, *this));
+      libint2::BraKet::xs_xs,
+      detail::to_libint2_operator_params(oper_type, *this));
 }
 
 void AtomicIntegralBase::parse_two_body_three_center(
@@ -228,17 +307,19 @@ void AtomicIntegralBase::parse_two_body_three_center(
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
-      to_libint2_operator(oper_type),
+      detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
-      libint2::BraKet::xs_xx, to_libint2_operator_params(oper_type, *this));
+      libint2::BraKet::xs_xx,
+      detail::to_libint2_operator_params(oper_type, *this));
 
   if (!screen_.empty() && (ket_indexs[0] == ket_indexs[1])) {
     /// make another engine to screener!!!
 
     auto screen_engine_pool = integrals::make_engine_pool(
-        to_libint2_operator(oper_type),
+        detail::to_libint2_operator(oper_type),
         utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
-        libint2::BraKet::xx_xx, to_libint2_operator_params(oper_type, *this));
+        libint2::BraKet::xx_xx,
+        detail::to_libint2_operator_params(oper_type, *this));
 
     p_screener = make_screener_three_center(screen_engine_pool, *bra_basis0,
                                             *ket_basis0);
@@ -278,9 +359,10 @@ void AtomicIntegralBase::parse_two_body_four_center(
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
-      to_libint2_operator(oper_type),
+      detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
-      libint2::BraKet::xx_xx, to_libint2_operator_params(oper_type, *this));
+      libint2::BraKet::xx_xx,
+      detail::to_libint2_operator_params(oper_type, *this));
 
   if ((bra_indexs[0] == bra_indexs[1]) && (ket_indexs[0] == ket_indexs[1]) &&
       (ket_indexs[0] == bra_indexs[0])) {

@@ -1,0 +1,652 @@
+//
+// Created by Chong Peng on 1/7/16.
+//
+
+#ifndef MPQC_MOLECULAR_INTEGRAL_H
+#define MPQC_MOLECULAR_INTEGRAL_H
+
+#include <string>
+#include <vector>
+
+#include "../../../../../common/namespaces.h"
+#include "../../../../../include/tiledarray.h"
+#include "../../../../../ta_routines/diagonal_array.h"
+#include <mpqc/chemistry/qc/expression/orbital_registry.h>
+#include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+
+namespace mpqc {
+namespace integrals {
+
+// TODO MO transform that minimize operations by permutation
+/**
+ * \brief Molecule Integral computation class
+ *  This class computes molecular integral using  Formula
+ *
+ *  compute(formula) return TArray object
+ *  (formula) return TArray expression
+ *
+ */
+template <typename Tile, typename Policy>
+class LCAOFactory {
+ public:
+  using TArray = TA::DistArray<Tile, Policy>;
+  using AtomicIntegralType = AtomicIntegral<Tile, Policy>;
+
+  /**
+   *  Constructor
+   *  @param atomic_integral  reference to AtomicIntegral class
+   *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry,
+   * which contain AO to MO coefficients
+   *  @param formula_registry  FormulaRegistry used to store computed integral
+   *  @param in rapidjson Document object
+   *
+   *
+   *  Options in Input
+   *  @param AccurateTime, bool, control if use fence in timing, default false
+   */
+  //        LCAOFactory(AtomicIntegral &atomic_integral,
+  //                          const
+  //                          std::shared_ptr<OrbitalSpaceRegistry<TArray>>
+  //                          orbital_space_registry,
+  //                          const FormulaRegistry<TArray> &formula_registry,
+  //                          const rapidjson::Document& in =
+  //                          rapidjson::Document()
+  //                        )
+  //                : world_(atomic_integral.get_world()),
+  //                atomic_integral_(atomic_integral),
+  //                  orbital_space_registry_(orbital_space_registry),
+  //                  mo_formula_registry_(std::move(formula_registry))
+  //        {
+  //            atomic_integral_.set_orbital_space_registry(orbital_space_registry);
+  //            parse_input(in);
+  //        }
+
+  /**
+   *  Constructor
+   *  @param atomic_integral  reference to AtomicIntegral class
+   *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry,
+   * which contain AO to MO coefficients
+   *
+   */
+  LCAOFactory(AtomicIntegralType& atomic_integral,
+              const std::shared_ptr<OrbitalSpaceRegistry<TArray>>
+                  orbital_space_registry,
+              const rapidjson::Document& in = rapidjson::Document())
+      : world_(atomic_integral.world()),
+        atomic_integral_(atomic_integral),
+        orbital_space_registry_(orbital_space_registry),
+        mo_formula_registry_(),
+        keep_partial_transforms_(false) {
+    atomic_integral_.set_orbital_space_registry(orbital_space_registry);
+    parse_input(in);
+  }
+
+  /// return reference to madness::World
+  madness::World& get_world() const { return world_; }
+
+  /// return reference to AtomicIntegral object
+  AtomicIntegralType& atomic_integral() const { return atomic_integral_; }
+
+  /// wrapper to operator() function in AtomicIntegral
+  TA::expressions::TsrExpr<TArray, true> atomic_integral(
+      const std::wstring& str) {
+    return std::move(atomic_integral_(str));
+  };
+
+  /// return shared pointer to OrbitalSpaceRegistry
+  const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() const {
+    return orbital_space_registry_;
+  }
+
+  std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() {
+    return orbital_space_registry_;
+  }
+
+  /// return reference to FormulaRegistry
+  const FormulaRegistry<TArray>& registry() const {
+    return mo_formula_registry_;
+  }
+
+  /// return reference to FormulaRegistry
+  FormulaRegistry<TArray>& registry() { return mo_formula_registry_; }
+
+  /// return accurate time
+  bool accurate_time() const { return accurate_time_; }
+
+  /// reports the partial tform flag; if true, partially-transformed integrals
+  /// are stored
+  /// @note at this time only supported for 3-index integrals
+  bool keep_partial_transforms() const { return keep_partial_transforms_; }
+
+  /// sets the partial tform flag; if true, partially-transformed integrals are
+  /// stored
+  /// @note at this time only supported for 3-index integrals
+  void keep_partial_transforms(bool flag) { keep_partial_transforms_ = flag; }
+
+  /// wrapper to compute function
+  TArray compute(const std::wstring&);
+
+  /**
+   *  compute integral by Formula
+   *  this function will look into registry first
+   *  if Formula computed, it will return it from registry
+   *  if not, it will compute it
+   */
+  TArray compute(const Formula&);
+
+  /// compute with str and return expression
+  TA::expressions::TsrExpr<TArray, true> operator()(const std::wstring& str) {
+    auto formula = Formula(str);
+    TArray array = compute(formula);
+    auto& result = mo_formula_registry_.retrieve(formula);
+    return result(formula.to_ta_expression());
+  };
+
+  /// purge formulae that contain Operator described by string \c str
+  /// from mo_registry and ao_registry
+  void purge_operator(madness::World& world, const std::wstring& str) {
+    Operator oper(str);
+    Operator::Type oper_type = oper.type();
+
+    mo_formula_registry_.purge_operator(world, oper_type);
+    atomic_integral().registry().purge_operator(world, oper_type);
+  }
+
+  /// purge formulae that contain index described by string \c idx_str
+  /// from mo_registry and ao_registry
+  void purge_index(madness::World& world, const std::wstring& idx_str) {
+    OrbitalIndex index(idx_str);
+    mo_formula_registry_.purge_index(world, index);
+    atomic_integral().registry().purge_index(world, index);
+  }
+
+  /// purge formula described by string \c str
+  /// from mo_registry
+  void purge_formula(madness::World& world, const std::wstring& str) {
+    mo_formula_registry_.purge_formula(world, str);
+  }
+
+ private:
+  /// function to parse input
+  void parse_input(const rapidjson::Document& in) {
+    if (in.IsObject()) {
+      accurate_time_ =
+          in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
+    } else {
+      accurate_time_ = false;
+    }
+
+    utility::print_par(world_, "\nConstructing Molecular Integral Class \n");
+    utility::print_par(world_, "AccurateTime: ", accurate_time_, "\n\n");
+  }
+  /// compute integrals that has two dimension
+  TArray compute2(const Formula& formula_string);
+
+  /// compute integrals that has three dimension
+  TArray compute3(const Formula& formula_string);
+
+  /// compute integrals that has four dimension
+  TArray compute4(const Formula& formula_string);
+
+ private:
+  /// find the corresponding AO formula, if index is already AO, it will be
+  /// ignored
+  Formula mo_to_ao(const Formula& formula);
+
+  /// "reduce" by converting to AO at most 1 index in the formula,
+  /// the index is chosen to minimize strength reduction (thus recursive
+  /// reduction ensures maximum strength reduction)
+  /// @return {"reduced" formula, {\c pos , \c rank }}, where \c pos and \c rank
+  ///         are the location and rank of the reduced index
+  std::tuple<Formula, std::pair<Formula::Position, size_t>> reduce_formula(
+      const Formula& formula);
+
+  /// assert all index in formula are in MO
+  void assert_all_mo(const Formula& formula);
+
+ private:
+  madness::World& world_;
+  AtomicIntegralType& atomic_integral_;
+  std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
+  FormulaRegistry<TArray> mo_formula_registry_;
+  bool keep_partial_transforms_;  //!< if true, keep partially-transformed ints
+                                  //!(false by default)
+  bool accurate_time_;
+};
+
+template <typename Tile, typename Policy>
+typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
+    const Formula& formula_string) {
+  double time = 0.0;
+  mpqc_time::t_point time0;
+  mpqc_time::t_point time1;
+
+  TArray result;
+  // Identity matrix
+  if (formula_string.oper().type() == Operator::Type::Identity) {
+    time0 = mpqc_time::now(world_, accurate_time_);
+
+    auto left_index1 = formula_string.bra_indices()[0];
+    auto right_index1 = formula_string.ket_indices()[0];
+    auto& left1 = orbital_space_registry_->retrieve(left_index1);
+    auto& right1 = orbital_space_registry_->retrieve(right_index1);
+
+    // TODO better way to make model for diagonal matrix
+    TArray tmp;
+    tmp("i,j") = left1("k,i") * right1("k,j");
+
+    // create diagonal array
+    result = array_ops::create_diagonal_matrix(tmp, 1.0);
+
+    time1 = mpqc_time::now(world_, accurate_time_);
+    time += mpqc_time::duration_in_s(time0, time1);
+
+    utility::print_par(world_, "Computed Identity: ");
+    utility::wprint_par(world_, formula_string.string());
+    double size = utility::array_size(result);
+    utility::print_par(world_, " Size: ", size, " GB");
+    utility::print_par(world_, " Time: ", time, " s\n");
+    madness::print_meminfo(
+        world_.rank(),
+        utility::wconcat("LCAOFactory:", formula_string.string()));
+    return result;
+  }
+
+  // get AO
+  auto ao_formula = mo_to_ao(formula_string);
+  auto ao_integral = atomic_integral_.compute(ao_formula);
+
+  time0 = mpqc_time::now(world_, accurate_time_);
+  // convert to MO
+  result = ao_integral;
+  // get coefficient
+  auto left_index1 = formula_string.bra_indices()[0];
+  if (left_index1.is_mo()) {
+    auto& left1 = orbital_space_registry_->retrieve(left_index1);
+    result("i,r") = result("p,r") * left1("p,i");
+    world_.gop.fence();
+  }
+  auto right_index1 = formula_string.ket_indices()[0];
+  if (right_index1.is_mo()) {
+    auto& right1 = orbital_space_registry_->retrieve(right_index1);
+    result("p,k") = result("p,r") * right1("r,k");
+    world_.gop.fence();
+  }
+
+  time1 = mpqc_time::now(world_, accurate_time_);
+  time += mpqc_time::duration_in_s(time0, time1);
+  utility::print_par(world_, "Transformed LCAO Integral: ");
+  utility::wprint_par(world_, formula_string.string());
+  double size = utility::array_size(result);
+  utility::print_par(world_, " Size: ", size, " GB");
+  utility::print_par(world_, " Time: ", time, " s\n");
+  madness::print_meminfo(
+      world_.rank(), utility::wconcat("LCAOFactory:", formula_string.string()));
+
+  return result;
+}
+
+template <typename Tile, typename Policy>
+typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
+    const Formula& formula_string) {
+  double time = 0.0;
+  mpqc_time::t_point time0;
+  mpqc_time::t_point time1;
+
+  TArray result;
+  if (not keep_partial_transforms()) {  // compute from AO ints
+    // get AO
+    auto ao_formula = mo_to_ao(formula_string);
+    auto ao_integral = atomic_integral_.compute(ao_formula);
+
+    time0 = mpqc_time::now(world_, accurate_time_);
+
+    // transform to MO, only convert the right side
+    // TODO optimize strength reduction,
+    //      e.g. may need to transform last index first
+    auto right_index1 = formula_string.ket_indices()[0];
+    if (right_index1.is_mo()) {
+      auto& right1 = orbital_space_registry_->retrieve(right_index1);
+      result("K,i,q") = ao_integral("K,p,q") * right1("p,i");
+      world_.gop.fence();
+    }
+    auto right_index2 = formula_string.ket_indices()[1];
+    if (right_index2.is_mo()) {
+      auto& right2 = orbital_space_registry_->retrieve(right_index2);
+      result("K,p,j") = result("K,p,q") * right2("q,j");
+      world_.gop.fence();
+    }
+  } else {  // tform to optimally reduce strength, store partial transform
+            // results
+
+    // compute reduced formula
+    Formula reduced_formula;  // reduced formula
+    std::pair<Formula::Position, size_t> reduced_index_coord;
+    std::tie(reduced_formula, reduced_index_coord) =
+        reduce_formula(formula_string);
+    auto reduced_integral =
+        reduced_formula.is_ao()
+            ? atomic_integral_.compute(reduced_formula)
+            : (keep_partial_transforms() ? this->compute(reduced_formula)
+                                         : this->compute3(reduced_formula));
+
+    time0 = mpqc_time::now(world_, accurate_time_);
+
+    const auto reduced_index_position = reduced_index_coord.first;
+    const auto reduced_index_rank = reduced_index_coord.second;
+    const auto reduced_index_absrank =
+        reduced_index_rank + (reduced_index_position == Formula::Position::Bra
+                                  ? 0
+                                  : reduced_formula.bra_indices().size());
+
+    // extract orbital coefficients for transformation
+    auto reduced_index = (reduced_index_position == Formula::Position::Bra)
+                             ? formula_string.bra_indices()[reduced_index_rank]
+                             : formula_string.ket_indices()[reduced_index_rank];
+    auto& reduced_index_space =
+        orbital_space_registry_->retrieve(reduced_index);
+    const auto& reduced_index_coeff = reduced_index_space.array();
+
+    // transform
+    auto result_key =
+        formula_string.to_ta_expression(mpqc::detail::append_count(0));
+    auto reduced_key =
+        reduced_formula.to_ta_expression(mpqc::detail::append_count(0));
+    auto coeff_key = reduced_index_space.ao_key().to_ta_expression() +
+                     std::to_string(reduced_index_absrank) + ", " +
+                     reduced_index.to_ta_expression() +
+                     std::to_string(reduced_index_absrank);
+    result(result_key) =
+        reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);
+  }
+
+  time1 = mpqc_time::now(world_, accurate_time_);
+  time += mpqc_time::duration_in_s(time0, time1);
+
+  utility::print_par(world_, "Transformed LCAO Integral: ");
+  utility::wprint_par(world_, formula_string.string());
+  double size = utility::array_size(result);
+  utility::print_par(world_, " Size: ", size, " GB");
+  utility::print_par(world_, " Time: ", time, " s\n");
+  madness::print_meminfo(
+      world_.rank(), utility::wconcat("LCAOFactory:", formula_string.string()));
+
+  return result;
+};
+
+template <typename Tile, typename Policy>
+typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
+    const Formula& formula_string) {
+  double time = 0.0;
+  mpqc_time::t_point time0;
+  mpqc_time::t_point time1;
+  TArray result;
+  if (formula_string.oper().has_option(Operator::Option::DensityFitting)) {
+    // get df formula
+    auto df_formulas = atomic_integral_.get_df_formula(formula_string);
+
+    auto notation = formula_string.notation();
+    // compute integral
+    TArray left = compute(df_formulas[0]);
+
+    TArray right = compute(df_formulas[2]);
+
+    TArray center = atomic_integral_.compute(df_formulas[1]);
+
+    time0 = mpqc_time::now(world_, accurate_time_);
+
+    if (notation == Formula::Notation::Chemical) {
+      result("i,j,k,l") = left("q,i,j") * center("q,p") * right("p,k,l");
+    } else {
+      result("i,k,j,l") = left("q,i,j") * center("q,p") * right("p,k,l");
+    }
+
+    time1 = mpqc_time::now(world_, accurate_time_);
+    time += mpqc_time::duration_in_s(time0, time1);
+
+  } else {
+    // get AO
+    auto ao_formula = mo_to_ao(formula_string);
+    auto ao_integral = atomic_integral_.compute(ao_formula);
+
+    // convert to MO
+    time0 = mpqc_time::now(world_, accurate_time_);
+
+    // get coefficient
+    auto left_index1 = formula_string.bra_indices()[0];
+    if (left_index1.is_mo()) {
+      auto& left1 = orbital_space_registry_->retrieve(left_index1);
+      result("i,q,r,s") = ao_integral("p,q,r,s") * left1("p,i");
+      world_.gop.fence();
+    }
+
+    auto left_index2 = formula_string.bra_indices()[1];
+    if (left_index2.is_mo()) {
+      auto& left2 = orbital_space_registry_->retrieve(left_index2);
+      result("p,i,r,s") = result("p,q,r,s") * left2("q,i");
+      world_.gop.fence();
+    }
+
+    auto right_index1 = formula_string.ket_indices()[0];
+    if (right_index1.is_mo()) {
+      auto& right1 = orbital_space_registry_->retrieve(right_index1);
+      result("p,q,i,s") = result("p,q,r,s") * right1("r,i");
+      world_.gop.fence();
+    }
+    auto right_index2 = formula_string.ket_indices()[1];
+    if (right_index2.is_mo()) {
+      auto& right2 = orbital_space_registry_->retrieve(right_index2);
+      result("p,q,r,i") = result("p,q,r,s") * right2("s,i");
+      world_.gop.fence();
+    }
+
+    time1 = mpqc_time::now(world_, accurate_time_);
+    time += mpqc_time::duration_in_s(time0, time1);
+  }
+
+  utility::print_par(world_, "Transformed LCAO Integral: ");
+  utility::wprint_par(world_, formula_string.string());
+  double size = utility::array_size(result);
+  utility::print_par(world_, " Size: ", size, " GB");
+  utility::print_par(world_, " Time: ", time, " s\n");
+  madness::print_meminfo(
+      world_.rank(), utility::wconcat("LCAOFactory:", formula_string.string()));
+
+  return result;
+}
+
+template <typename Tile, typename Policy>
+Formula LCAOFactory<Tile, Policy>::mo_to_ao(const Formula& formula) {
+  std::vector<OrbitalIndex> ao_left_index, ao_right_index;
+
+  auto left_index = formula.bra_indices();
+  for (const auto& index : left_index) {
+    // find the correspoding ao index
+    if (index.is_mo()) {
+      auto ao_index = orbital_space_registry_->retrieve(index).ao_key();
+      ao_left_index.push_back(ao_index);
+    }
+    // if already ao, do nothing
+    else {
+      ao_left_index.push_back(index);
+    }
+  }
+
+  auto right_index = formula.ket_indices();
+  for (const auto& index : right_index) {
+    // find the correspoding ao index
+    if (index.is_mo()) {
+      auto ao_index = orbital_space_registry_->retrieve(index).ao_key();
+      ao_right_index.push_back(ao_index);
+    }
+    // if already ao, do nothing
+    else {
+      ao_right_index.push_back(index);
+    }
+  }
+
+  // set formula with ao index
+  auto ao_formula = formula;
+  ao_formula.set_bra_indices(ao_left_index);
+  ao_formula.set_ket_indices(ao_right_index);
+
+  return ao_formula;
+}
+
+template <typename Tile, typename Policy>
+std::tuple<Formula, std::pair<Formula::Position, size_t>>
+LCAOFactory<Tile, Policy>::reduce_formula(const Formula& formula) {
+  std::vector<float> bra_strength_factors;
+  std::vector<float> ket_strength_factors;
+
+  auto compute_strength_factors = [=](
+      const std::vector<OrbitalIndex>& indices,
+      std::vector<float>& strenth_factors) -> void {
+    for (const auto& index : indices) {
+      float strength_factor;
+      if (index.is_mo()) {
+        const auto& orb_space = orbital_space_registry_->retrieve(index);
+        const auto rank = orb_space.rank();
+        const auto ao_rank = orb_space.ao_rank();
+        strength_factor = static_cast<float>(ao_rank) / rank;
+      } else
+        strength_factor = 0.0;
+      strenth_factors.push_back(strength_factor);
+    }
+  };
+
+  auto bra_indices = formula.bra_indices();
+  auto ket_indices = formula.ket_indices();
+  TA_USER_ASSERT(!bra_indices.empty() || !ket_indices.empty(),
+                 "cannot reduce Formula with empty bra and ket");
+  compute_strength_factors(bra_indices, bra_strength_factors);
+  compute_strength_factors(ket_indices, ket_strength_factors);
+
+  auto nonzero_float_compare = [](float a, float b) -> bool {
+    if (a == 0.0) return false;
+    if (b == 0.0) return true;
+    return a < b;
+  };
+  auto min_bra_iter =
+      std::min_element(bra_strength_factors.begin(), bra_strength_factors.end(),
+                       nonzero_float_compare);
+  auto min_ket_iter =
+      std::min_element(ket_strength_factors.begin(), ket_strength_factors.end(),
+                       nonzero_float_compare);
+  Formula::Position pos;  // where the reduced index is located
+  if (bra_indices.empty())
+    pos = Formula::Position::Ket;
+  else if (ket_indices.empty())
+    pos = Formula::Position::Bra;
+  else {
+    pos = *min_bra_iter > *min_ket_iter ? Formula::Position::Bra
+                                        : Formula::Position::Ket;
+  }
+
+  size_t idx;
+  if (pos == Formula::Position::Bra) {
+    TA_USER_ASSERT(*min_bra_iter != 0.0,
+                   "cannot reduce Formula with AO indices only");
+    idx = min_bra_iter - bra_strength_factors.begin();
+    auto ao_index =
+        orbital_space_registry_->retrieve(bra_indices[idx]).ao_key();
+    bra_indices[idx] = ao_index;
+  } else {
+    TA_USER_ASSERT(*min_ket_iter != 0.0,
+                   "cannot reduce Formula with AO indices only");
+    idx = min_ket_iter - ket_strength_factors.begin();
+    auto ao_index =
+        orbital_space_registry_->retrieve(ket_indices[idx]).ao_key();
+    ket_indices[idx] = ao_index;
+  }
+
+  // reduce the index with maximum strength factor
+  auto reduced_formula = formula;
+  reduced_formula.set_bra_indices(bra_indices);
+  reduced_formula.set_ket_indices(ket_indices);
+
+  return std::make_tuple(reduced_formula, std::make_pair(pos, idx));
+}
+
+template <typename Tile, typename Policy>
+void LCAOFactory<Tile, Policy>::assert_all_mo(const Formula& formula) {
+  auto left = formula.bra_indices();
+  for (auto& index : left) {
+    TA_ASSERT(index.is_mo());
+  }
+
+  auto right = formula.ket_indices();
+  for (auto& index : right) {
+    TA_ASSERT(index.is_mo());
+  }
+}
+template <typename Tile, typename Policy>
+typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
+    const std::wstring& formula_string) {
+  Formula formula(formula_string);
+  return compute(formula);
+}
+
+template <typename Tile, typename Policy>
+typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
+    const Formula& formula) {
+  auto iter = mo_formula_registry_.find(formula);
+
+  TArray result;
+
+  if (iter != mo_formula_registry_.end()) {
+    result = *(iter->second);
+    utility::print_par(world_, "Retrieved LCAO Integral: ");
+    utility::wprint_par(world_, formula.string());
+    double size = utility::array_size(result);
+    utility::print_par(world_, " Size: ", size, " GB\n");
+    return result;
+  } else {
+    // find a permutation
+    std::vector<Formula> permutes = permutations(formula);
+    typename FormulaRegistry<TArray>::iterator find_permute;
+
+    for (auto& permute : permutes) {
+      find_permute = mo_formula_registry_.find(permute);
+      if (find_permute != mo_formula_registry_.end()) {
+        mpqc_time::t_point time0 = mpqc_time::now(world_, accurate_time_);
+
+        // permute the array
+        result(formula.to_ta_expression()) =
+            (*(find_permute->second))(permute.to_ta_expression());
+
+        mpqc_time::t_point time1 = mpqc_time::now(world_, accurate_time_);
+        double time = mpqc_time::duration_in_s(time0, time1);
+
+        utility::print_par(world_, "Permuted LCAO Integral: ");
+        utility::wprint_par(world_, formula.string());
+        utility::print_par(world_, " From ");
+        utility::wprint_par(world_, permute.string());
+        double size = utility::array_size(result);
+        utility::print_par(world_, " Size: ", size, " GB ");
+        utility::print_par(world_, " Time: ", time, " s\n");
+
+        // store current array and delete old one
+        mo_formula_registry_.insert(formula, result);
+        mo_formula_registry_.remove(permute);
+        return result;
+      }
+    }
+
+    if (formula.rank() == 2) {
+      result = compute2(formula);
+      mo_formula_registry_.insert(formula, result);
+    } else if (formula.rank() == 3) {
+      result = compute3(formula);
+      mo_formula_registry_.insert(formula, result);
+    } else if (formula.rank() == 4) {
+      result = compute4(formula);
+      mo_formula_registry_.insert(formula, result);
+    }
+    return result;
+  }
+}
+}  // namespace integral
+}  // namespace mpqc
+
+#endif  // MPQC_MOLECULAR_INTEGRAL_H

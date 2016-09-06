@@ -9,7 +9,7 @@
 #include "../../../../../include/tiledarray.h"
 #include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/trange1_engine.h"
-#include <mpqc/chemistry/qc/integrals/molecular_integral.h>
+#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 //#include <mpqc/chemistry/qc/f12/mp2f12.h>
 #include <mpqc/chemistry/qc/scf/mo_build.h>
 
@@ -18,30 +18,28 @@ using namespace mpqc;
 namespace mpqc {
 namespace mbpt {
 
-
 template <typename Tile, typename Policy>
 class MP2 {
-
-//  friend class f12::MP2F12<Tile>;
+  //  friend class f12::MP2F12<Tile>;
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using MolecularIntegralType = integrals::MolecularIntegral<Tile, Policy>;
+  using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
 
   MP2() = default;
 
-  /// constructor using MO Integral with orbitals computed
-  MP2(MolecularIntegralType &mo_int,
+  /// constructor using LCAO Integral with orbitals computed
+  MP2(LCAOFactoryType &lcao_factory,
       std::shared_ptr<Eigen::VectorXd> orbital_energy,
       const std::shared_ptr<TRange1Engine> tre)
-      : mo_int_(mo_int),
+      : lcao_factory_(lcao_factory),
         orbital_energy_(orbital_energy),
         trange1_engine_(tre) {}
 
-  /// constructfor using MO Integral without orbitals computed, call init before compute
-  MP2(MolecularIntegralType &mo_int)
-      : mo_int_(mo_int) {}
+  /// constructfor using LCAO Integral without orbitals computed, call init
+  /// before compute
+  MP2(LCAOFactoryType &lcao_factory) : lcao_factory_(lcao_factory) {}
 
-  MolecularIntegralType &mo_integral() const { return mo_int_; }
+  LCAOFactoryType &lcao_factory() const { return lcao_factory_; }
 
   const std::shared_ptr<TRange1Engine> trange1_engine() const {
     return trange1_engine_;
@@ -74,28 +72,24 @@ class MP2 {
 
   /// initialize orbitals
   virtual void init(const rapidjson::Document &in) {
-    if(orbital_energy_== nullptr || trange1_engine_ == nullptr) {
-      auto mol = mo_int_.atomic_integral().molecule();
+    if (orbital_energy_ == nullptr || trange1_engine_ == nullptr) {
+      auto mol = lcao_factory_.atomic_integral().molecule();
       int occ = mol.occupation(0) / 2;
       Eigen::VectorXd orbital_energy;
-      trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(mo_int_, orbital_energy, in, mol, occ);
+      trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
+          lcao_factory_, orbital_energy, in, mol, occ);
       orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
     }
   }
 
  protected:
-
-
   double compute_df() {
-    auto g_ijab = mo_int_.compute(L"<i j|G|a b>[df]");
+    auto g_ijab = lcao_factory_.compute(L"<i j|G|a b>[df]");
     // compute mp2 energy
     double energy_mp2 =
         (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
-            .reduce(
-                Mp2Energy(orbital_energy_,
-                          trange1_engine_->get_occ(),
-                          trange1_engine_->get_nfrozen())
-            );
+            .reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_occ(),
+                              trange1_engine_->get_nfrozen()));
 
     if (g_ijab.get_world().rank() == 0) {
       std::cout << "MP2 Energy With DF: " << energy_mp2 << std::endl;
@@ -105,12 +99,12 @@ class MP2 {
   }
 
   double compute_four_center() {
-    auto g_ijab = mo_int_.compute(L"<i j|G|a b>");
+    auto g_ijab = lcao_factory_.compute(L"<i j|G|a b>");
     // compute mp2 energy
     double energy_mp2 =
         (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
-            .reduce(
-                Mp2Energy(orbital_energy_, trange1_engine_->get_occ(), trange1_engine_->get_nfrozen()));
+            .reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_occ(),
+                              trange1_engine_->get_nfrozen()));
 
     if (g_ijab.get_world().rank() == 0) {
       std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
@@ -120,8 +114,6 @@ class MP2 {
   }
 
  private:
-
-
   struct Mp2Energy {
     using result_type = double;
     using argument_type = Tile;
@@ -130,7 +122,8 @@ class MP2 {
     std::size_t n_occ_;
     std::size_t n_frozen_;
 
-    Mp2Energy(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ, std::size_t n_frozen )
+    Mp2Energy(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ,
+              std::size_t n_frozen)
         : vec_(std::move(vec)), n_occ_(n_occ), n_frozen_(n_frozen) {}
 
     Mp2Energy(Mp2Energy const &) = default;
@@ -175,8 +168,8 @@ class MP2 {
     }
   };
 
-protected:
-  MolecularIntegralType &mo_int_;
+ protected:
+  LCAOFactoryType &lcao_factory_;
   std::shared_ptr<Eigen::VectorXd> orbital_energy_;
   std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
 };

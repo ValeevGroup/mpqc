@@ -1,0 +1,17 @@
+{
+  "molecule": {
+    "type": "Molecule",
+    "file_name": "watermonomer1.xyz",
+    "sort_input": true
+  },
+  "basis": {
+    "type": "Basis",
+    "name": "cc-pVDZ",
+    "molecule": "$:molecule"
+  },
+  "df_basis": {
+    "type": "Basis",
+    "name": "cc-pVDZ-RI",
+    "molecule": "$:molecule"
+  }
+}

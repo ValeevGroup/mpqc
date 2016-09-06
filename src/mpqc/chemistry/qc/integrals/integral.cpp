@@ -2,15 +2,13 @@
 // Created by Chong Peng on 4/26/16.
 //
 
-#include <mpqc/chemistry/qc/integrals/molecular_integral.h>
+#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 
+namespace mpqc {
+namespace integrals {
 
-namespace mpqc{
-namespace integrals{
+template class AtomicIntegral<TA::TensorD, TA::SparsePolicy>;
 
-    template class AtomicIntegral<TA::TensorD, TA::SparsePolicy>;
-
-    template class MolecularIntegral<TA::TensorD, TA::SparsePolicy>;
-
+template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
 }
 }

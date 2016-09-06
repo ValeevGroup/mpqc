@@ -12,6 +12,9 @@
 #include <mpqc/chemistry/qc/cc/ccsd.h>
 #include <mpqc/chemistry/qc/f12/f12_intermediates.h>
 
+#include <mpqc/chemistry/qc/f12/cabs_singles.h>
+
+
 namespace mpqc {
 namespace f12 {
 
@@ -27,31 +30,28 @@ class CCSDF12 {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
-  using MolecularIntegralClass = integrals::MolecularIntegral<Tile, Policy>;
+  using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
 
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
 
-  CCSDF12(integrals::MolecularIntegral<Tile, Policy>& mo_int,
+  CCSDF12(integrals::LCAOFactory<Tile, Policy>& lcao_factory,
           rapidjson::Document& options)
-      : mo_int_(mo_int) {
-    ccsd_ = std::make_shared<cc::CCSD<Tile, Policy>>(mo_int, options);
+      : lcao_factory_(lcao_factory) {
+    ccsd_ = std::make_shared<cc::CCSD<Tile, Policy>>(lcao_factory, options);
   }
 
-  CCSDF12(std::shared_ptr<cc::CCSD<Tile,Policy>> ccsd)
-  : mo_int_(ccsd->intermediate()->mo_integral()), ccsd_(ccsd)
-  { }
-
+  CCSDF12(std::shared_ptr<cc::CCSD<Tile, Policy>> ccsd)
+      : lcao_factory_(ccsd->intermediate()->lcao_factory()), ccsd_(ccsd) {}
 
   virtual real_t compute() {
-
-    auto& world = mo_int_.get_world();
+    auto& world = lcao_factory_.get_world();
     // compute ccsd
     real_t ccsd = ccsd_->compute();
 
     auto& option = ccsd_->options();
     // initialize CABS orbitals
-    closed_shell_cabs_mo_build_svd(this->mo_int_, option,
+    closed_shell_cabs_mo_build_svd(this->lcao_factory_, option,
                                    this->ccsd_->trange1_engine());
 
     auto lazy_two_electron_int = ccsd_->intermediate()->direct_ao();
@@ -72,19 +72,20 @@ class CCSDF12 {
 
     // compute cabs singles
     real_t e_s = 0.0;
-    bool singles = option.HasMember("Singles") ? option["Singles"].GetBool() : true;
-    if(singles){
-
+    bool singles =
+        option.HasMember("Singles") ? option["Singles"].GetBool() : true;
+    if (singles) {
       auto single_time0 = mpqc_time::fenced_now(world);
 
-      CABSSingles<Tile> cabs_singles(mo_int_);
+      CABSSingles<Tile> cabs_singles(lcao_factory_);
       e_s = cabs_singles.compute();
       if (debug()) {
         utility::print_par(world, "E_S: ", e_s, "\n");
       }
       auto single_time1 = mpqc_time::fenced_now(world);
       auto single_time = mpqc_time::duration_in_s(single_time0, single_time1);
-      mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time, "\n");
+      mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time,
+                               "\n");
     }
 
     return ccsd + e_f12 + e_s;
@@ -99,7 +100,7 @@ class CCSDF12 {
   Matrix compute_c(const DirectArray& darray);
 
  protected:
-  MolecularIntegralClass& mo_int_;
+  LCAOFactoryType& lcao_factory_;
   std::shared_ptr<cc::CCSD<Tile, Policy>> ccsd_;
 
   int debug() const { return 1; }
@@ -109,12 +110,12 @@ template <typename Tile>
 template <typename DirectArray>
 typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
     const DirectArray& darray) {
-  auto& mo_integral = mo_int_;
-  auto& world = mo_integral.get_world();
+  auto& lcao_factory = lcao_factory_;
+  auto& world = lcao_factory.get_world();
   Matrix Eij_F12;
 
-  // clean MO integrals
-  mo_integral.registry().clear();
+  // clean LCAO Integrals
+  lcao_factory.registry().clear();
 
   auto n_active_occ = ccsd_->trange1_engine()->get_active_occ();
 
@@ -124,38 +125,38 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
   // compute V_ijij_ijji
-  TArray V_ijij_ijji = compute_V_ijij_ijji_df(mo_integral, ijij_ijji_shape);
+  TArray V_ijij_ijji = compute_V_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
 
   // VT2 contribution
   if (darray.is_initialized()) {
-    TArray tmp = compute_VT2_ijij_ijji_df_direct(mo_integral, ccsd_->t2(),
+    TArray tmp = compute_VT2_ijij_ijji_df_direct(lcao_factory, ccsd_->t2(),
                                                  ijij_ijji_shape, darray);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   } else {
     TArray tmp =
-        compute_VT2_ijij_ijji_df(mo_integral, ccsd_->t2(), ijij_ijji_shape);
+        compute_VT2_ijij_ijji_df(lcao_factory, ccsd_->t2(), ijij_ijji_shape);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // VT1 contribution
   {
     TArray tmp =
-        compute_VT1_ijij_ijji_df(mo_integral, ccsd_->t1(), ijij_ijji_shape);
+        compute_VT1_ijij_ijji_df(lcao_factory, ccsd_->t1(), ijij_ijji_shape);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // V contribution to energy
   Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
-                .reduce(f12::F12PairEnergyReductor<Tile>(2 * C_ijij_bar,
-                                                         2 * C_ijji_bar, n_active_occ));
+                .reduce(f12::F12PairEnergyReductor<Tile>(
+                    2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
   if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
 
   // compute X term
-  TArray X_ijij_ijji = compute_X_ijij_ijji_df(mo_integral, ijij_ijji_shape);
+  TArray X_ijij_ijji = compute_X_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
   // R_ipjq not needed
-  mo_int_.registry().purge_formula(world, L"(i1 p|R|j1 q)[df]");
+  lcao_factory_.registry().purge_formula(world, L"(i1 p|R|j1 q)[df]");
 
-  auto Fij = mo_int_.compute(L"(i|F|j)[df]");
+  auto Fij = lcao_factory_.compute(L"(i|F|j)[df]");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
   f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
   {
@@ -169,10 +170,10 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
 
   // compute B term
   {
-    TArray B_ijij_ijji = compute_B_ijij_ijji_df(mo_integral, ijij_ijji_shape);
+    TArray B_ijij_ijji = compute_B_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
-                     .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
-                                                         CC_ijji_bar, n_active_occ));
+                     .reduce(F12PairEnergyReductor<Tile>(
+                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
@@ -184,12 +185,12 @@ template <typename Tile>
 template <typename DirectArray>
 typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
     const DirectArray& darray) {
-  auto& mo_integral = mo_int_;
-  auto& world = mo_integral.get_world();
+  auto& lcao_factory = lcao_factory_;
+  auto& world = lcao_factory.get_world();
   Matrix Eij_F12;
 
-  // clean MO integrals
-  mo_integral.registry().clear();
+  // clean LCAO Integrals
+  lcao_factory.registry().clear();
 
   auto n_active_occ = ccsd_->trange1_engine()->get_active_occ();
 
@@ -199,39 +200,39 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
   // compute V_ijij_ijji
-  TArray V_ijij_ijji = compute_V_ijij_ijji(mo_integral, ijij_ijji_shape);
+  TArray V_ijij_ijji = compute_V_ijij_ijji(lcao_factory, ijij_ijji_shape);
 
   //    std::cout << "V_ijij_ijji" << std::endl;
   //    std::cout << V_ijij_ijji << std::endl;
 
   // VT2 contribution
   //    if(darray.is_initialized()){
-  //        TArray tmp = compute_VT2_ijij_ijji_df_direct(mo_integral,
+  //        TArray tmp = compute_VT2_ijij_ijji_df_direct(lcao_factory,
   //        ccsd_->t2(), ijij_ijji_shape, darray);
   //        V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   //    }else
   {
     TArray tmp =
-        compute_VT2_ijij_ijji(mo_integral, ccsd_->t2(), ijij_ijji_shape);
+        compute_VT2_ijij_ijji(lcao_factory, ccsd_->t2(), ijij_ijji_shape);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // VT1 contribution
   {
     TArray tmp =
-        compute_VT1_ijij_ijji(mo_integral, ccsd_->t1(), ijij_ijji_shape);
+        compute_VT1_ijij_ijji(lcao_factory, ccsd_->t1(), ijij_ijji_shape);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // V contribution to energy
   Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
-                .reduce(f12::F12PairEnergyReductor<Tile>(2 * C_ijij_bar,
-                                                         2 * C_ijji_bar, n_active_occ));
+                .reduce(f12::F12PairEnergyReductor<Tile>(
+                    2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
   if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
 
   //    {
   //        utility::print_par(world, "Compute CC Term Without DF \n");
-  //        auto C_ijab = compute_C_ijab(mo_integral);
+  //        auto C_ijab = compute_C_ijab(lcao_factory);
   //        auto C_bar_ijab = f12::convert_C_ijab(C_ijab, occ,
   //        *orbital_energy_);
   //        V_ijij_ijji("i1,j1,i2,j2") =
@@ -243,14 +244,14 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
   //        E += E_cc;
   //    }
   // compute X term
-  TArray X_ijij_ijji = compute_X_ijij_ijji(mo_integral, ijij_ijji_shape);
+  TArray X_ijij_ijji = compute_X_ijij_ijji(lcao_factory, ijij_ijji_shape);
   //    std::cout << "X_ijij_ijji" << std::endl;
   //    std::cout << X_ijij_ijji << std::endl;
 
   // R_ipjq not needed
-  mo_int_.registry().purge_formula(world, L"(i1 p|R|j1 q)");
+  lcao_factory_.registry().purge_formula(world, L"(i1 p|R|j1 q)");
 
-  auto Fij = mo_int_.compute(L"(i|F|j)");
+  auto Fij = lcao_factory_.compute(L"(i|F|j)");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
   f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
   {
@@ -264,14 +265,13 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
 
   {
     // compute B term
-    TArray B_ijij_ijji = compute_B_ijij_ijji(mo_integral, ijij_ijji_shape);
+    TArray B_ijij_ijji = compute_B_ijij_ijji(lcao_factory, ijij_ijji_shape);
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
-                     .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
-                                                         CC_ijji_bar, n_active_occ));
+                     .reduce(F12PairEnergyReductor<Tile>(
+                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
-
 
   return Eij_F12;
 }

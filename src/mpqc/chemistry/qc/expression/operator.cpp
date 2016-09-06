@@ -6,8 +6,8 @@
 
 #include <boost/algorithm/string.hpp>
 #include <memory>
-#include <string>
 #include <mpqc/util/misc/string.h>
+#include <string>
 
 namespace mpqc {
 
@@ -72,7 +72,8 @@ Operator::Operator(std::wstring oper, std::wstring opt) {
       });
 
   if (iter == oper_to_string.end())
-    throw std::runtime_error(utility::to_string(oper) + " Invalid Operation! \n");
+    throw std::runtime_error(utility::to_string(oper) +
+                             " Invalid Operation! \n");
   else
     type_ = iter->first;
 
@@ -92,7 +93,8 @@ Operator::Operator(std::wstring oper, std::wstring opt) {
             return item.second == op;
           });
       if (iter == option_to_string.end()) {
-        throw std::runtime_error(utility::to_string(op) + " Invalid Option! \n");
+        throw std::runtime_error(utility::to_string(op) +
+                                 " Invalid Option! \n");
       } else {
         result.push_back(iter->first);
       }

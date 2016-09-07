@@ -3,7 +3,7 @@ include(CheckCXXSourceCompiles)
 include(CMakePushCheckState)
 
 if (NOT ${EIGEN3_FOUND})
-  find(Eigen3)
+  find(Eigen3 REQUIRED)
 endif()
 
 if (LIBINT2_INCLUDE_DIRS)

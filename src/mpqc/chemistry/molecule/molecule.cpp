@@ -88,6 +88,10 @@ Molecule::Molecule(std::istream &file_stream, bool sort_input) {
   init(file_stream, sort_input);
 }
 
+Molecule::Molecule(std::istream &file_stream, Vec3D const &point){
+    init(file_stream, point);
+}
+
 void
 Molecule::init(std::istream& file, bool sort_input) {
   auto libint_atoms = libint2::read_dotxyz(file);
@@ -108,6 +112,26 @@ Molecule::init(std::istream& file, bool sort_input) {
   if (sort_input) {
     sort_elements(elements_, com_);
   }
+}
+
+void
+Molecule::init(std::istream& file, Vec3D const &point) {
+  auto libint_atoms = libint2::read_dotxyz(file);
+
+  using ABCbl = AtomBasedClusterable;
+  std::vector<ABCbl> atoms;
+  for (auto const &l_atom : libint_atoms) {
+      Atom atom({l_atom.x, l_atom.y, l_atom.z},
+                masses::masses[l_atom.atomic_number], l_atom.atomic_number);
+      atoms.emplace_back(std::move(atom));
+  }
+
+  elements_ = std::move(atoms);
+  com_ = center_of_mass(elements_);
+  mass_ = sum_mass(elements_);
+  charge_ = sum_charge(elements_);
+
+  sort_elements(elements_, point);
 }
 
 std::vector<Atom> Molecule::atoms() const {

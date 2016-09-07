@@ -42,6 +42,7 @@
 #include <mpqc/chemistry/qc/scf/scf.h>
 #include <mpqc/chemistry/qc/scf/traditional_df_fock_builder.h>
 #include <mpqc/chemistry/qc/scf/traditional_four_center_fock_builder.h>
+#include <mpqc/chemistry/qc/scf/cadf_builder_print_only.h>
 
 #include "../ta_routines/array_to_eigen.h"
 #include "../utility/trange1_engine.h"
@@ -169,9 +170,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
   using molecule::Molecule;
   Molecule mol;
   // construct molecule
-  if (nclusters == 0) {
+  bool sort_origin = in.HasMember("sort molecule from origin")
+                         ? in["sort molecule from origin"].GetBool()
+                         : false;
+  if (sort_origin) {
+    std::cout << "Sorting Molecule from Origin" << std::endl;
+    mol = Molecule(xyz_file_stream, {0.0, 0.0, 0.0});
+    std::cout << mol << std::endl;
+  } else if (nclusters == 0) {
     mol = Molecule(xyz_file_stream, false);
   } else {
+    std::cout << "Sorting Molecule from COM" << std::endl;
     mol = Molecule(xyz_file_stream, true);
   }
   auto occ = mol.occupation(charge);
@@ -373,9 +382,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                   ? scf_in["forced shape"].GetBool()
                                   : false;
 
-      auto lcao_chop_threshold = scf_in.HasMember("TCutC")
-                                  ? scf_in["TCutC"].GetDouble()
-                                  : 0.0;
+      auto lcao_chop_threshold =
+          scf_in.HasMember("TCutC") ? scf_in["TCutC"].GetDouble() : 0.0;
 
       auto force_threshold = TA::SparseShape<float>::threshold();
       if (use_forced_shape) {
@@ -387,9 +395,31 @@ int try_main(int argc, char *argv[], madness::World &world) {
         }
       }
 
-      auto builder =
-          scf::CADFFockBuilder(clustered_mol, clustered_mol, bs_set, dfbs_set,
-                               ao_int, use_forced_shape, force_threshold, lcao_chop_threshold);
+      auto builder = scf::CADFFockBuilder(clustered_mol, clustered_mol, bs_set,
+                                          dfbs_set, ao_int, use_forced_shape,
+                                          force_threshold, lcao_chop_threshold);
+      f_builder = make_unique<decltype(builder)>(std::move(builder));
+    } else if (fock_method == "print only cadf") {
+      auto use_forced_shape = scf_in.HasMember("forced shape")
+                                  ? scf_in["forced shape"].GetBool()
+                                  : false;
+
+      auto lcao_chop_threshold =
+          scf_in.HasMember("TCutC") ? scf_in["TCutC"].GetDouble() : 0.0;
+
+      auto force_threshold = TA::SparseShape<float>::threshold();
+      if (use_forced_shape) {
+        force_threshold = scf_in["shape threshold"].GetDouble();
+        if (world.rank() == 0) {
+          std::cout
+              << "Using forced shape in CADF fock builder with threshold: "
+              << force_threshold << std::endl;
+        }
+      }
+
+      auto builder = scf::PrintOnlyCADFFockBuilder(
+          clustered_mol, clustered_mol, bs_set, dfbs_set, ao_int,
+          use_forced_shape, force_threshold, lcao_chop_threshold);
       f_builder = make_unique<decltype(builder)>(std::move(builder));
     }
 

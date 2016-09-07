@@ -36,6 +36,8 @@ class Molecule : public DescribedClass {
 
   void init(std::istream &file, bool sort_input);
 
+  void init(std::istream &file, Vec3D const &point);
+
  public:
   Molecule() = default;
 
@@ -62,6 +64,12 @@ class Molecule : public DescribedClass {
    * This constructor has same parameters as the KeyVal constructor.
    */
   Molecule(std::istream &file_stream, bool sort_input = true);
+
+  /*! \brief Constructor to build Molecule from stream.
+   *
+   * This constructor changes the point from which the molecule is sorted
+   */
+  Molecule(std::istream &file_stream, Vec3D const &point);
 
   /*! \brief Constructor to build Molecule from a vector of clusterables
    *

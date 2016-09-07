@@ -177,13 +177,6 @@ sparse_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
         const auto tile_volume = ta_tile.range().volume();
         const auto tile_norm = ta_tile.norm();
 
-        //BUG cc-pv5z-ri doesn't work trying to figure out why.
-        // if(tile_norm != tile_norm){
-        //     std::cout << "Tile norm = " << tile_norm << std::endl;
-        //     std::cout << "Tile norm broken idx = " << idx[0] << " " << idx[1] << " " << idx[2] << std::endl;
-        //     assert(false);
-        // }
-
         // Keep tile if it was significant.
         bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
         if (save_norm) {

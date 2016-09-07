@@ -79,6 +79,10 @@ class Molecule : public DescribedClass {
    */
   Molecule(std::vector<AtomBasedClusterable> c, bool sort_input = true);
 
+  /*! \brief A function to sort the molcule's clusters from a given point. 
+   */
+  void sort_from_point(Vec3D const &point);
+
   /// Function to set the mass of the Molecule
   void set_mass(double mass) { Molecule::mass_ = mass; }
 

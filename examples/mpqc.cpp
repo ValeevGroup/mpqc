@@ -174,13 +174,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
                          ? in["sort molecule from origin"].GetBool()
                          : false;
   if (sort_origin) {
-    std::cout << "Sorting Molecule from Origin" << std::endl;
     mol = Molecule(xyz_file_stream, {0.0, 0.0, 0.0});
     std::cout << mol << std::endl;
   } else if (nclusters == 0) {
     mol = Molecule(xyz_file_stream, false);
   } else {
-    std::cout << "Sorting Molecule from COM" << std::endl;
     mol = Molecule(xyz_file_stream, true);
   }
   auto occ = mol.occupation(charge);
@@ -202,6 +200,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
           molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
     }
   }
+
+  if(sort_origin){ // Sort the clusters from the origin
+      clustered_mol.sort_from_point({0.0,0.0,0.0});
+  }
+
   // if has ghost molecule
   else {
     char *ghost_xyz_buffer;

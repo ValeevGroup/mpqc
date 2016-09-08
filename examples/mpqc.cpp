@@ -190,6 +190,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
    * Construct Clustered Molecule, which is used to construct Basis
    */
   molecule::Molecule clustered_mol;
+
   // if no ghost molecule
   if (ghost_atoms.empty()) {
     utility::print_par(world, "Ghost Atom file: None", "\n");
@@ -199,14 +200,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       clustered_mol =
           molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
     }
-  }
-
-  if(sort_origin){ // Sort the clusters from the origin
-      clustered_mol.sort_from_point({0.0,0.0,0.0});
-  }
-
-  // if has ghost molecule
-  else {
+  } else { // if has ghost molecule
     char *ghost_xyz_buffer;
     utility::parallel_read_file(world, ghost_atoms, ghost_xyz_buffer);
     std::stringstream ghost_xyz_stream;
@@ -230,6 +224,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
       clustered_mol =
           mpqc::molecule::attach_hydrogens_and_kmeans(mol_elements, nclusters);
     }
+  }
+
+  if(sort_origin){ // Sort the clusters from the origin
+      clustered_mol.sort_from_point({0.0,0.0,0.0});
   }
 
   /**

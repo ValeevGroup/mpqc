@@ -79,7 +79,7 @@ class CCSD {
       screen_option = 2;
     }
 
-    cc::DirectTwoElectronSparseArray lazy_two_electron_int;
+    typename cc::CCSDIntermediate<Tile,Policy>::DirectTwoElectronArray direct_two_electron_int;
     auto direct =
         options_.HasMember("Direct") ? options_["Direct"].GetBool() : true;
     if (direct) {
@@ -101,7 +101,7 @@ class CCSD {
       TA::TiledRange trange_4(tr_04.begin(), tr_04.end());
       auto time0 = mpqc_time::fenced_now(world);
 
-      lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(
+      direct_two_electron_int =  cc::make_direct_two_electron_sparse_array(
           world, basis, trange_4, screen_option);
 
       auto time1 = mpqc_time::fenced_now(world);
@@ -116,7 +116,7 @@ class CCSD {
 
     ccsd_intermediate_ =
         std::make_shared<mpqc::cc::CCSDIntermediate<Tile, Policy>>(
-            lcao_factory, lazy_two_electron_int, df);
+            lcao_factory, direct_two_electron_int, df);
   }
 
   /// compute function

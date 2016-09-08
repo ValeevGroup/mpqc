@@ -128,7 +128,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
   TArray V_ijij_ijji = compute_V_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
 
   // VT2 contribution
-  if (darray.is_initialized()) {
+  if (darray.array().is_initialized()) {
     TArray tmp = compute_VT2_ijij_ijji_df_direct(lcao_factory, ccsd_->t2(),
                                                  ijij_ijji_shape, darray);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");

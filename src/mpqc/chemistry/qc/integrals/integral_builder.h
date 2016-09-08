@@ -14,6 +14,7 @@
 
 #include <array>
 #include <memory>
+#include <functional>
 
 namespace mpqc {
 namespace integrals {
@@ -31,7 +32,7 @@ template <typename Tile, typename Engine=libint2::Engine>
 class IntegralBuilder
     : public std::enable_shared_from_this<IntegralBuilder<Tile,Engine>> {
  public:
-  using Op = Tile (*)(TA::TensorD &&);
+  using Op = std::function<Tile(TA::TensorD &&)>;
 
  private:
   detail::ShrBvetors bases_;
@@ -125,7 +126,7 @@ template <typename Tile, typename Engine, unsigned long N>
 std::shared_ptr<IntegralBuilder<Tile,Engine>> make_integral_builder(
     madness::World &world, ShrPool<Engine> shr_epool,
     detail::ShrBases<N> shr_bases, std::shared_ptr<Screener> shr_screen,
-    Tile(*op) (TA::TensorD&&)) {
+    std::function<Tile(TA::TensorD&&)> op) {
 
   auto shr_bases_vector = std::make_shared<Bvector>(Bvector(shr_bases->data(), shr_bases->data()+N));
 

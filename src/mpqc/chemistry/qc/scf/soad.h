@@ -50,10 +50,11 @@ MatrixD soad_density_eig_matrix(molecule::Molecule const &mol) {
     return D * 0.5; // we use densities normalized to # of electrons/2
 }
 
-template <typename Engs, typename Array, typename Op>
+template <typename Engs, typename Array, typename Tile>
 void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
                ShellVec const *obs_col, ShellVec const *min_bs,
-               const MatrixD *D, Array *F, Op op) {
+               const MatrixD *D, Array *F,
+               std::function<Tile(TA::TensorD&&)> op) {
 
     auto range = F->trange().make_tile_range(ord);
     const auto lb = range.lobound();
@@ -173,11 +174,11 @@ void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
 }
 
 template <typename ShrPool, typename Array,
-          typename Op = integrals::TensorPassThrough>
+          typename Tile = TA::TensorD>
 Array fock_from_soad(madness::World &world,
                      molecule::Molecule const &clustered_mol,
                      basis::Basis const &obs, ShrPool engs, Array const &H,
-                     Op op = Op{}) {
+                     std::function<Tile(TA::TensorD&&)> op = mpqc::ta_routines::TensorDPassThrough()) {
 
     // Soad Density
     auto D = soad_density_eig_matrix(clustered_mol);
@@ -206,7 +207,7 @@ Array fock_from_soad(madness::World &world,
                 auto const &obs_row = obs.cluster_shells()[i];
                 auto const &obs_col = obs.cluster_shells()[j];
 
-                world.taskq.add(soad_task<ShrPool, Array, Op>, engs, ord,
+                world.taskq.add(soad_task<ShrPool, Array, Tile>, engs, ord,
                                 &obs_row, &obs_col, &min_bs_shells, &D, &F, op);
             }
         }

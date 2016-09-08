@@ -10,9 +10,11 @@
 namespace mpqc{
 namespace ta_routines{
 
-
-inline TA::TensorD TATensorDPassThrough(TA::TensorD &&ten) { return std::move(ten); }
-
+struct TensorDPassThrough {
+  TA::TensorD operator()(TA::TensorD &&ten) const {
+    return std::move(ten);
+  }
+};
 
 }
 }

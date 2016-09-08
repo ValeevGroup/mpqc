@@ -394,9 +394,7 @@ inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
 
   const auto dfbs_array = utility::make_array(by_atom_dfbs, by_atom_dfbs);
 
-  auto M = integrals::dense_integrals(world, eng, dfbs_array,
-  std::make_shared<integrals::Screener>(integrals::Screener{}),
-      mpqc::ta_routines::TATensorDPassThrough);
+  auto M = integrals::dense_integrals(world, eng, dfbs_array);
 
   auto ref_array =
       utility::make_array_of_refs(by_atom_dfbs, by_atom_obs, by_atom_obs);
@@ -408,9 +406,7 @@ inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
       utility::make_array(by_atom_dfbs, by_atom_obs, by_atom_obs);
 
   auto eri3 = integrals::untruncated_direct_sparse_integrals(world, eri_e,
-                                                             three_c_array,
-                                                             std::make_shared<integrals::Screener>(integrals::Screener{}),
-                                                             mpqc::ta_routines::TATensorDPassThrough);
+                                                             three_c_array);
 
   auto trange = cadf::cadf_trange(by_atom_obs, by_atom_dfbs);
 

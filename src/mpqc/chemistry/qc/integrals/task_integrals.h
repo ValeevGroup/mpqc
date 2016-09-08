@@ -33,12 +33,11 @@ namespace integrals {
  * auto t = [](TA::TensorD &&ten){return std::move(ten);};
  * ```
  */
-template <typename E, typename Op = TensorPassThrough>
-std::vector<DArray<2, detail::Ttype<Op>, SpPolicy>>
+template <typename E, typename Tile=TA::TensorD>
+std::vector<DArray<2, Tile, SpPolicy>>
 sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
-                     Barray<2> const &bases, Op op = Op{}) {
-
-    using Tile = detail::Ttype<Op>;
+                     Barray<2> const &bases,
+                     std::function<Tile(TA::TensorD&& )> op = ta_routines::TensorDPassThrough()) {
 
     // Build the Trange and Shape Tensor
     auto trange = detail::create_trange(bases);
@@ -143,11 +142,11 @@ sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
  *
  * \param screen should be a std::shared_ptr to a Screener.
  */
-template <typename Tile, typename E, unsigned long N>
+template <typename Tile=TA::TensorD, typename E, unsigned long N>
 DArray<N, Tile, SpPolicy>
 sparse_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
                  std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-                 Tile(*op) (TA::TensorD&&) = mpqc::ta_routines::TATensorDPassThrough)
+                 std::function<Tile(TA::TensorD&&)> op = mpqc::ta_routines::TensorDPassThrough())
 {
 
     // Build the Trange and Shape Tensor
@@ -214,12 +213,12 @@ sparse_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
 /*! \brief Construct a dense integral tensor in parallel.
  *
  */
-template <typename Tile, typename E, unsigned long N>
+template <typename Tile=TA::TensorD, typename E, unsigned long N>
 DArray<N, Tile, DnPolicy>
 dense_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
                 std::shared_ptr<Screener> screen
                 = std::make_shared<Screener>(Screener{}),
-                Tile(*op) (TA::TensorD&&) = mpqc::ta_routines::TATensorDPassThrough) {
+                std::function<Tile(TA::TensorD&&)> op = mpqc::ta_routines::TensorDPassThrough()) {
 
     DArray<N, Tile, DnPolicy> out(world, detail::create_trange(bases));
 

@@ -268,7 +268,7 @@ integrals::DirectArray<TA::TensorD,TA::SparsePolicy,libint2::Engine> make_direct
     }
   }
 
-  return integrals::direct_sparse_integrals(world, p_engine_pool, bases, p_screen, ta_routines::TATensorDPassThrough);
+  return integrals::direct_sparse_integrals(world, p_engine_pool, bases, p_screen);
 }
 
 }  // namespace cc

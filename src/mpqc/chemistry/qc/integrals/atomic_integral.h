@@ -40,7 +40,8 @@ class AtomicIntegral : public AtomicIntegralBase {
   using TArray = TA::DistArray<Tile, Policy>;
 
   /// Op is a function pointer that convert TA::Tensor to Tile
-  using Op = Tile (*) (TA::TensorD&&);
+//  using Op = Tile (*) (TA::TensorD&&);
+  using Op =  std::function<Tile(TA::TensorD &&)>;
 
   AtomicIntegral() = default;
 
@@ -102,7 +103,7 @@ class AtomicIntegral : public AtomicIntegralBase {
     /// Warning!!!!
     /// This is temporary workround
     /// For other Tile type, need a better way to set Op
-    op_ = mpqc::ta_routines::TATensorDPassThrough;
+    op_ = mpqc::ta_routines::TensorDPassThrough();
   }
 
   AtomicIntegral(AtomicIntegral&&) = default;

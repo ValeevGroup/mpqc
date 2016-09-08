@@ -29,12 +29,6 @@ using OrdTileVec = std::vector<std::pair<unsigned long, T>>;
 
 const static Shell unit_shell = Shell::unit();
 
-struct TensorPassThrough {
-    TA::TensorD operator()(TA::TensorD &&ten) const {
-        return std::move(ten);
-    }
-};
-
 namespace detail {
 
 template <unsigned long N>

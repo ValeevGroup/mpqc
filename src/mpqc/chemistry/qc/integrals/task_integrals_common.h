@@ -22,6 +22,8 @@ using ShrPool = std::shared_ptr<Epool<E>>;
 template <unsigned long N>
 using Barray = std::array<basis::Basis, N>;
 
+using Bvector = std::vector<basis::Basis>;
+
 template <typename T>
 using OrdTileVec = std::vector<std::pair<unsigned long, T>>;
 
@@ -40,6 +42,8 @@ using VecArray = std::array<ShellVec const *, N>;
 
 template <unsigned long N>
 using ShrBases = std::shared_ptr<Barray<N>>;
+
+using ShrBvetors = std::shared_ptr<Bvector>;
 
 using IdxVec = std::vector<std::size_t>;
 

@@ -11,8 +11,7 @@ namespace mpqc{
 namespace ta_routines{
 
 
-template <typename T>
-TA::Tensor<T> ta_tensor_pass_through(TA::Tensor<T> &&ten) { return std::move(ten); }
+inline TA::TensorD TATensorDPassThrough(TA::TensorD &&ten) { return std::move(ten); }
 
 
 }

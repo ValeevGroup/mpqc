@@ -42,9 +42,6 @@ class AtomicIntegral : public AtomicIntegralBase {
   /// Op is a function pointer that convert TA::Tensor to Tile
   using Op = Tile (*) (TA::TensorD&&);
 
-  template <unsigned int N, typename E>
-  using IntegralBuilder = integrals::IntegralBuilder<N, E, Op>;
-
   AtomicIntegral() = default;
 
   /**
@@ -105,7 +102,7 @@ class AtomicIntegral : public AtomicIntegralBase {
     /// Warning!!!!
     /// This is temporary workround
     /// For other Tile type, need a better way to set Op
-    op_ = mpqc::ta_routines::ta_tensor_pass_through;
+    op_ = mpqc::ta_routines::TATensorDPassThrough;
   }
 
   AtomicIntegral(AtomicIntegral&&) = default;

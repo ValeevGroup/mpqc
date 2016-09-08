@@ -15,6 +15,7 @@
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 #include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
 #include <mpqc/chemistry/qc/integrals/integral_builder.h>
+#include "../../../../../ta_routines/tile_convert.h"
 
 namespace mpqc {
 namespace integrals {
@@ -142,14 +143,12 @@ sparse_xyz_integrals(mad::World &world, ShrPool<E> shr_pool,
  *
  * \param screen should be a std::shared_ptr to a Screener.
  */
-template <typename E, unsigned long N, typename Op = TensorPassThrough>
-DArray<N, detail::Ttype<Op>, SpPolicy>
+template <typename Tile, typename E, unsigned long N>
+DArray<N, Tile, SpPolicy>
 sparse_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
-                 std::shared_ptr<Screener> screen
-                 = std::make_shared<Screener>(Screener{}),
-                 Op op = Op{}) {
-
-    using Tile = detail::Ttype<Op>;
+                 std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
+                 Tile(*op) (TA::TensorD&&) = mpqc::ta_routines::TATensorDPassThrough)
+{
 
     // Build the Trange and Shape Tensor
     auto trange = detail::create_trange(bases);
@@ -215,14 +214,13 @@ sparse_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
 /*! \brief Construct a dense integral tensor in parallel.
  *
  */
-template <typename E, unsigned long N, typename Op = TensorPassThrough>
-DArray<N, detail::Ttype<Op>, DnPolicy>
+template <typename Tile, typename E, unsigned long N>
+DArray<N, Tile, DnPolicy>
 dense_integrals(mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
                 std::shared_ptr<Screener> screen
                 = std::make_shared<Screener>(Screener{}),
-                Op op = Op{}) {
+                Tile(*op) (TA::TensorD&&) = mpqc::ta_routines::TATensorDPassThrough) {
 
-    using Tile = detail::Ttype<Op>;
     DArray<N, Tile, DnPolicy> out(world, detail::create_trange(bases));
 
     // Copy the Bases for the Integral Builder

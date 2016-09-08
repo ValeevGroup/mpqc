@@ -324,7 +324,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   auto ao_in = json::get_nested(in, "AOIntegral");
 
   integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(
-      world, ta_routines::ta_tensor_pass_through,
+      world, ta_routines::TATensorDPassThrough,
       std::make_shared<molecule::Molecule>(clustered_mol), bs_registry, param,
       ao_in);
 

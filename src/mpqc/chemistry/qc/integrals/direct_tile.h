@@ -20,19 +20,19 @@ namespace integrals {
 /*! \brief A direct tile for integral construction
  *
  */
-template <typename Builder>
+template <typename Tile, typename Engine=libint2::Engine>
 class DirectTile {
+public:
+  using Builder = IntegralBuilder<Tile,Engine>;
+
   private:
     std::vector<std::size_t> idx_;
     TA::Range range_;
     std::shared_ptr<Builder> builder_;
 
-    using TileType = decltype(std::declval<Builder>()(
-          std::declval<std::vector<std::size_t>>(), std::declval<TA::Range>()));
-
   public:
     using value_type = double;
-    using eval_type = TileType;
+    using eval_type = Tile;
     using range_type = TA::Range;
 
     DirectTile() = default;
@@ -86,8 +86,13 @@ class DirectTile {
 
 
 /*! Class to hold a direct tile builder with its array. */
-template <typename Builder, typename Array>
+template <typename Tile, typename Policy, typename Engine=libint2::Engine>
 class DirectArray {
+public:
+
+  using Builder = integrals::IntegralBuilder<Tile, Engine>;
+  using Array = TA::DistArray<integrals::DirectTile<Tile,Engine>,Policy>;
+
   private:
     std::shared_ptr<Builder> builder_;
     Array array_;

@@ -6,6 +6,7 @@
 #define MPQC_TILE_CONVERT_H
 
 #include <../include/tiledarray.h>
+#include <../common/namespaces.h>
 
 namespace mpqc{
 namespace ta_routines{

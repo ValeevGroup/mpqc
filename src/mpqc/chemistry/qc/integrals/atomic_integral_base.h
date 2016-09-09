@@ -14,7 +14,7 @@
 #include "../../../../../utility/make_array.h"
 #include "integrals.h"
 #include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/chemistry/qc/basis/basis.h>
+#include <mpqc/chemistry/qc/basis/basis_registry.h>
 #include <mpqc/chemistry/qc/expression/formula.h>
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include <mpqc/chemistry/qc/integrals/integral_engine_pool.h>
@@ -50,7 +50,7 @@ class AtomicIntegralBase {
 
   AtomicIntegralBase(madness::World &world,
                      const std::shared_ptr<molecule::Molecule> &mol,
-                     const std::shared_ptr<OrbitalBasisRegistry> &obs,
+                     const std::shared_ptr<basis::OrbitalBasisRegistry> &obs,
                      const std::vector<std::pair<double, double>> &gtg_params =
                      std::vector<std::pair<double, double>>(),
                      const rapidjson::Document &in = rapidjson::Document());
@@ -81,12 +81,12 @@ class AtomicIntegralBase {
 
   /// set OrbitalBasisRegistry
   void set_orbital_basis_registry(
-      const std::shared_ptr<OrbitalBasisRegistry> &obs) {
+      const std::shared_ptr<basis::OrbitalBasisRegistry> &obs) {
     orbital_basis_registry_ = obs;
   }
 
   /// @return the OrbitalBasisRegistry object
-  const std::shared_ptr<OrbitalBasisRegistry> &orbital_basis_registry() const {
+  const std::shared_ptr<basis::OrbitalBasisRegistry> &orbital_basis_registry() const {
     return orbital_basis_registry_;
   }
 
@@ -211,7 +211,7 @@ class AtomicIntegralBase {
 
  protected:
   madness::World &world_;
-  std::shared_ptr<OrbitalBasisRegistry> orbital_basis_registry_;
+  std::shared_ptr<basis::OrbitalBasisRegistry> orbital_basis_registry_;
 
   // TODO these specify operator params, need to abstract out better
   std::shared_ptr<molecule::Molecule> mol_;

@@ -91,7 +91,7 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 
 AtomicIntegralBase::AtomicIntegralBase(
     madness::World &world, const std::shared_ptr<molecule::Molecule> &mol,
-    const std::shared_ptr<OrbitalBasisRegistry> &obs,
+    const std::shared_ptr<basis::OrbitalBasisRegistry> &obs,
     const std::vector<std::pair<double, double>> &gtg_params,
     const rapidjson::Document &in)
     : world_(world),
@@ -128,39 +128,8 @@ AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
       mol_(),
       gtg_params_() {
 
-  orbital_basis_registry_ = std::make_shared<OrbitalBasisRegistry>(OrbitalBasisRegistry());
+  orbital_basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
   mol_ = kv.keyval("molecule").class_ptr<molecule::Molecule>();
-
-  auto basis = kv.keyval("basis").class_ptr<basis::Basis>();
-  assert(basis != nullptr);
-  orbital_basis_registry_->add(OrbitalIndex(L"μ"), *basis);
-  utility::parallel_print_range_info(world_, basis->create_trange1(),
-                                     "OBS Basis");
-
-  if (kv.exists("df_basis")) {
-    auto df_basis = kv.keyval("df_basis").class_ptr<basis::Basis>();
-    assert(df_basis != nullptr);
-    utility::parallel_print_range_info(world_, df_basis->create_trange1(),
-                                       "DF Basis");
-    orbital_basis_registry_->add(OrbitalIndex(L"Κ"), *df_basis);
-  }
-
-  if (kv.exists("aux_basis")) {
-    auto aux_basis = kv.keyval("aux_basis").class_ptr<basis::Basis>();
-    assert(aux_basis != nullptr);
-    orbital_basis_registry_->add(OrbitalIndex(L"α"), *aux_basis);
-    utility::parallel_print_range_info(world_, aux_basis->create_trange1(),
-                                       "AUX Basis");
-  }
-
-  if (kv.exists("vir_basis")) {
-    auto vir_basis = kv.keyval("vir_basis").class_ptr<basis::Basis>();
-    assert(vir_basis != nullptr);
-    orbital_basis_registry_->add(OrbitalIndex(L"Α"), *vir_basis);
-    utility::parallel_print_range_info(world_, vir_basis->create_trange1(),
-                                       "Virtual Basis");
-  }
-
 
 }
 

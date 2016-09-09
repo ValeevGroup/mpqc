@@ -71,7 +71,7 @@ class AtomicIntegral : public AtomicIntegralBase {
 
   AtomicIntegral(madness::World& world, Op op,
                  const std::shared_ptr<molecule::Molecule>& mol,
-                 const std::shared_ptr<OrbitalBasisRegistry>& obs,
+                 const std::shared_ptr<basis::OrbitalBasisRegistry>& obs,
                  const std::vector<std::pair<double, double>>& gtg_params =
                      std::vector<std::pair<double, double>>(),
                  const rapidjson::Document& in = rapidjson::Document())

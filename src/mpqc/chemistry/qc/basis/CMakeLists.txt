@@ -3,6 +3,8 @@ set(sources
         basis_set.cpp
         basis.h
         basis.cpp
+        basis_registry.h
+        basis_registry.cpp
         shell_vec_functions.h
         shell_vec_functions.cpp
         cluster_shells.h

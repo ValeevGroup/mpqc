@@ -235,7 +235,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
    *
    */
 
-  auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
+  auto bs_registry = std::make_shared<basis::OrbitalBasisRegistry>();
   basis::BasisSet bs_set(basis_name);
   basis::Basis basis =
       basis::parallel_construct_basis(world, bs_set, clustered_mol);

@@ -35,9 +35,22 @@ struct Derived : public Base {
  private:
   double value_;
 };
+
 // only register Derived<0> (you could in principle register Derived generically
 // not recommended due to complications with the static data initialization,etc)
 MPQC_CLASS_EXPORT_KEY(Derived<0>);
+
+struct Nested : public DescribedClass{
+
+  Nested(const KeyVal& kv) {
+    auto base = kv.keyval("base").class_ptr<Base>();
+    base_ = base;
+  }
+
+  std::shared_ptr<Base> base_;
+};
+
+MPQC_CLASS_EXPORT_KEY(Nested)
 
 TEST_CASE("KeyVal", "[keyval]") {
   // first, test basic programmatic construction
@@ -191,6 +204,10 @@ TEST_CASE("KeyVal", "[keyval]") {
      \"type\":\"Base\",        \
      \"value\":\"$:a\"         \
   },                           \
+  \"nested\" : {               \
+      \"type\" : \"Nested\",   \
+      \"base\" : \"$:base\"    \
+  },                           \
   \"deriv0\": {                \
      \"type\":\"Derived<0>\",  \
      \"value\":\"$:a\",        \
@@ -214,6 +231,8 @@ TEST_CASE("KeyVal", "[keyval]") {
     REQUIRE(kv.value<int>("a") == 0);  // "a" specified twice, make sure
                                        // KeyVal::value gets the first
                                        // specification
+
+    auto nested = kv.keyval("nested").class_ptr<Nested>();
 
     auto b1 = kv.keyval("mpqc:base").class_ptr<Base>();
     auto b2 = kv.keyval("base").class_ptr<Base>();

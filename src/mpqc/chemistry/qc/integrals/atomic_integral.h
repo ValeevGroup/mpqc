@@ -245,7 +245,7 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
 
         // store current array and delete old one
         ao_formula_registry_.insert(formula, result);
-        ao_formula_registry_.remove(permute);
+//        ao_formula_registry_.purge_formula(world_,permute);
         return result;
       }
     }

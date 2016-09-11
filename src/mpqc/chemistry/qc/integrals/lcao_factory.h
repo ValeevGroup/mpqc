@@ -631,7 +631,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
 
         //TODO need to optimize storage and permutation, there is no need to store multiple copy of permutations
 
-//        mo_formula_registry_.remove(permute);
+//        mo_formula_registry_.purge_formula(world_,permute);
         return result;
       }
     }

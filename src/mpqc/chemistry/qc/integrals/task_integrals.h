@@ -141,9 +141,9 @@ std::vector<DArray<2, Tile, SpPolicy>> sparse_xyz_integrals(
  *
  * \param screen should be a std::shared_ptr to a Screener.
  */
-template <typename Tile = TA::TensorD, typename E, unsigned long N>
-DArray<N, Tile, SpPolicy> sparse_integrals(
-    mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
+template <typename Tile = TA::TensorD, typename E>
+TA::DistArray<Tile, SpPolicy> sparse_integrals(
+    mad::World &world, ShrPool<E> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op =
         mpqc::ta_routines::TensorDPassThrough()) {
@@ -154,7 +154,7 @@ DArray<N, Tile, SpPolicy> sparse_integrals(
   TA::TensorF tile_norms(trange.tiles(), 0.0);
 
   // Copy the Bases for the Integral Builder
-  auto shr_bases = std::make_shared<Barray<N>>(bases);
+  auto shr_bases = std::make_shared<Bvector>(bases);
 
   // Make a pointer to an Integral builder.  Doing this because we want to use
   // it in Tasks.
@@ -200,7 +200,7 @@ DArray<N, Tile, SpPolicy> sparse_integrals(
   world.gop.fence();
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
-  DArray<N, Tile, SpPolicy> out(world, trange, shape, pmap);
+  TA::DistArray<Tile, SpPolicy> out(world, trange, shape, pmap);
 
   detail::set_array(tiles, out);
   out.truncate();
@@ -211,16 +211,16 @@ DArray<N, Tile, SpPolicy> sparse_integrals(
 /*! \brief Construct a dense integral tensor in parallel.
  *
  */
-template <typename Tile = TA::TensorD, typename E, unsigned long N>
-DArray<N, Tile, DnPolicy> dense_integrals(
-    mad::World &world, ShrPool<E> shr_pool, Barray<N> const &bases,
+template <typename Tile = TA::TensorD, typename E>
+TA::DistArray<Tile, DnPolicy> dense_integrals(
+    mad::World &world, ShrPool<E> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op =
         mpqc::ta_routines::TensorDPassThrough()) {
-  DArray<N, Tile, DnPolicy> out(world, detail::create_trange(bases));
+  TA::DistArray<Tile, DnPolicy> out(world, detail::create_trange(bases));
 
   // Copy the Bases for the Integral Builder
-  auto shr_bases = std::make_shared<Barray<N>>(bases);
+  auto shr_bases = std::make_shared<Bvector>(bases);
 
   // Make a pointer to a builder which can be shared by different tasks.
   auto builder_ptr =

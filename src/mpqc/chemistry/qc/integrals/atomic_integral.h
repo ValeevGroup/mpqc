@@ -157,13 +157,13 @@ class AtomicIntegral : public AtomicIntegralBase {
  private:
   /// compute sparse array
 
-  template <unsigned long N, typename U = Policy>
-  TA::Array<double, N, Tile,
+  template <typename U = Policy>
+  TA::DistArray<Tile,
             typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
                                     TA::SparsePolicy>::type>
   compute_integrals(
       madness::World& world, ShrPool<libint2::Engine>& engine,
-      Barray<N> const& bases,
+      Bvector const& bases,
       std::shared_ptr<Screener> p_screen =
           std::make_shared<integrals::Screener>(integrals::Screener{})) {
     auto result =
@@ -172,13 +172,13 @@ class AtomicIntegral : public AtomicIntegralBase {
   }
 
   /// compute dense array
-  template <unsigned long N, typename U = Policy>
-  TA::Array<double, N, Tile,
+  template <typename U = Policy>
+  TA::DistArray<Tile,
             typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
                                     TA::DensePolicy>::type>
   compute_integrals(
       madness::World& world, ShrPool<libint2::Engine>& engine,
-      Barray<N> const& bases,
+      Bvector const& bases,
       std::shared_ptr<Screener> p_screen =
           std::make_shared<integrals::Screener>(integrals::Screener{})) {
     auto result =
@@ -268,7 +268,8 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
 template <typename Tile, typename Policy>
 typename AtomicIntegral<Tile, Policy>::TArray
 AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
-  Barray<2> bs_array;
+
+  Bvector bs_array;
   double time = 0.0;
   mpqc_time::t_point time0;
   mpqc_time::t_point time1;
@@ -541,7 +542,7 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   time0 = mpqc_time::now(world_, accurate_time_);
   TArray result;
 
-  Barray<3> bs_array;
+  Bvector bs_array;
   std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
   std::shared_ptr<Screener> p_screener =
       std::make_shared<integrals::Screener>(integrals::Screener{});
@@ -601,7 +602,7 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
   } else {
     time0 = mpqc_time::now(world_, accurate_time_);
 
-    Barray<4> bs_array;
+    Bvector bs_array;
     std::shared_ptr<Screener> p_screener =
         std::make_shared<integrals::Screener>(integrals::Screener{});
 

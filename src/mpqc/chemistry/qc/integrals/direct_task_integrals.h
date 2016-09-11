@@ -16,17 +16,17 @@ namespace integrals {
  *
  * Same requirements on Op as those in Integral Builder
  */
-template <typename Tile=TA::TensorD, typename Engine, unsigned long N>
+template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
     mad::World &world, ShrPool<Engine> shr_pool,
-    Barray<N> const &bases,
+    Bvector const &bases,
     std::function<Tile(TA::TensorD &&)> op = mpqc::ta_routines::TensorDPassThrough()) {
   const auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles().volume();
   TA::TensorF tile_norms(trange.tiles(), 0.0);
 
   // Copy the Bases for the Integral Builder
-  auto shr_bases = std::make_shared<Barray<N>>(bases);
+  auto shr_bases = std::make_shared<Bvector>(bases);
 
   // No screening
   auto screen = std::make_shared<Screener>();
@@ -80,9 +80,9 @@ DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
  *
  * Same requirements on Op as those in Integral Builder
  */
-template <typename Tile=TA::TensorD, typename Engine, unsigned long N>
+template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool, Barray<N> const &bases,
+    mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op = mpqc::ta_routines::TensorDPassThrough())
 
@@ -93,7 +93,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
   TA::TensorF tile_norms(trange.tiles(), 0.0);
 
   // Copy the Bases for the Integral Builder
-  auto shr_bases = std::make_shared<Barray<N>>(bases);
+  auto shr_bases = std::make_shared<Bvector>(bases);
 
   auto builder =
       make_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
@@ -152,9 +152,9 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
  *
  * I only plan to use this for CADF, no point in truncating tiles.
  */
-template <typename Tile=TA::TensorD, typename Engine, unsigned long N>
+template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool, Barray<N> const &bases,
+    mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD&&)> op = mpqc::ta_routines::TensorDPassThrough()) {
   const auto trange = detail::create_trange(bases);
@@ -162,7 +162,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
   TA::TensorF tile_norms(trange.tiles(), 0.0);
 
   // Copy the Bases for the Integral Builder
-  auto shr_bases = std::make_shared<Barray<N>>(bases);
+  auto shr_bases = std::make_shared<Bvector>(bases);
 
   auto builder =
       make_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
@@ -210,15 +210,15 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
  *
  * Same requirements on Op as those in Integral Builder
  */
-template <typename Tile=TA::TensorD, typename Engine, unsigned long N>
+template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool, Barray<N> const &bases,
+    mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD&&)> op = mpqc::ta_routines::TensorDPassThrough()) {
   const auto trange = detail::create_trange(bases);
 
   // Copy the Bases for the Integral Builder
-  auto shr_bases = std::make_shared<Barray<N>>(bases);
+  auto shr_bases = std::make_shared<Bvector>(bases);
 
   // Make a pointer to an Integral builder.
   auto builder =

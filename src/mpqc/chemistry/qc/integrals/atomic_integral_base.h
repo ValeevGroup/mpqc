@@ -113,28 +113,28 @@ class AtomicIntegralBase {
   /// parse one body formula and set engine_pool and basis array
   void parse_one_body(const Formula &formula,
                       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-                      Barray<2> &bases);
+                      Bvector &bases);
 
   /// parse two body two center formula and set two body kernel, basis array,
   /// max_nprim and max_am
   void parse_two_body_two_center(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-      Barray<2> &bases);
+      Bvector &bases);
 
   /// parse two body three center formula and set two body kernel, basis array,
   /// max_nprim and max_am
   void parse_two_body_three_center(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-      Barray<3> &bases, std::shared_ptr<Screener> &p_screener);
+      Bvector &bases, std::shared_ptr<Screener> &p_screener);
 
   /// parse two body four center formula and set two body kernel, basis array,
   /// max_nprim and max_am
   void parse_two_body_four_center(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-      Barray<4> &bases, std::shared_ptr<Screener> &p_screener);
+      Bvector &bases, std::shared_ptr<Screener> &p_screener);
 
   std::shared_ptr<Screener> make_screener_four_center(
       ShrPool<libint2::Engine> &engine, basis::Basis &basis);

@@ -238,7 +238,7 @@ integrals::DirectArray<TA::TensorD,TA::SparsePolicy,libint2::Engine> make_direct
                                       const mpqc::basis::Basis &basis,
                                       const TA::TiledRange &trange,
                                       const int screen_option) {
-  auto bases = utility::make_array(basis, basis, basis, basis);
+  auto bases = std::vector<mpqc::basis::Basis>{{basis, basis, basis, basis}};
 
   // make engine pool
   auto p_engine_pool = mpqc::integrals::make_engine_pool(

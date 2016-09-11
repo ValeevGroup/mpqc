@@ -61,6 +61,22 @@ TRange create_trange(Barray<N> const &basis_array) {
     return TRange(trange1s.begin(), trange1s.end());
 }
 
+// create TRange from Bvector
+inline TRange create_trange(Bvector const& basis_vector) {
+
+    std::size_t N = basis_vector.size();
+
+    std::vector<TRange1> trange1s;
+    trange1s.reserve(N);
+
+    for (auto i = 0ul; i < N; ++i) {
+        trange1s.emplace_back(basis_vector[i].create_trange1());
+    }
+
+    return TRange(trange1s.begin(), trange1s.end());
+
+}
+
 template<unsigned long N>
 ShrShellVecArray<N> get_shells(IdxVec const &idx, ShrBases<N> const& bases){
 

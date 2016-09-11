@@ -59,7 +59,11 @@ class IntegralBuilder
         engines_(std::move(shr_epool)),
         screen_(std::move(screen)),
         op_(std::move(op)),
-        id_(world.register_ptr(this)) {}
+        id_(world.register_ptr(this))
+  {
+    std::size_t N = bases_->size();
+    TA_ASSERT( (N==2) || (N==3) || (N==4));
+  }
 
   ~IntegralBuilder() {
     if (madness::initialized()) {
@@ -111,7 +115,7 @@ class IntegralBuilder
       return detail::integral_kernel(engines_->local(), std::move(range),
                                      shellvec_ptrs, *screen_);
     } else {
-      throw std::runtime_error("Invalid Size of Basis Sets!!");
+      throw std::runtime_error("Invalid Size of Basis Sets!! Must be 2 or 3 or 4!! \n");
     }
   }
 
@@ -122,16 +126,14 @@ class IntegralBuilder
  * \brief Function to make detection of template parameters easier, see
  * IntegralBuilder for details.
  */
-template <typename Tile, typename Engine, unsigned long N>
+template <typename Tile, typename Engine>
 std::shared_ptr<IntegralBuilder<Tile,Engine>> make_integral_builder(
     madness::World &world, ShrPool<Engine> shr_epool,
-    detail::ShrBases<N> shr_bases, std::shared_ptr<Screener> shr_screen,
+    detail::ShrBvetors shr_bases, std::shared_ptr<Screener> shr_screen,
     std::function<Tile(TA::TensorD&&)> op) {
 
-  auto shr_bases_vector = std::make_shared<Bvector>(Bvector(shr_bases->data(), shr_bases->data()+N));
-
   return std::make_shared<IntegralBuilder<Tile,Engine>>(
-      world, std::move(shr_epool), std::move(shr_bases_vector), std::move(shr_screen),
+      world, std::move(shr_epool), std::move(shr_bases), std::move(shr_screen),
       std::move(op));
 }
 

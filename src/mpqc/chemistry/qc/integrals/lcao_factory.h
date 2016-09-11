@@ -628,7 +628,10 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
 
         // store current array and delete old one
         mo_formula_registry_.insert(formula, result);
-        mo_formula_registry_.remove(permute);
+
+        //TODO need to optimize storage and permutation, there is no need to store multiple copy of permutations
+
+//        mo_formula_registry_.remove(permute);
         return result;
       }
     }

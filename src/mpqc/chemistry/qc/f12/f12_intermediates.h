@@ -448,6 +448,170 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_df(
   return B_ijij_ijji;
 };
 
+
+
+/**
+ * MP2-F12 D approach B term, only ijij ijji part is computed
+ * \f$B_{ij}^{ij}\f$  \f$B_{ij}^{ji}\f$
+ * @param lcao_factory reference to LCAOFactory, has to use SparsePolicy
+ * @param ijij_ijji_shape SparseShape that has ijij ijji shape
+ * @return B(i1,j1,i2,j2)
+ */
+template <typename Tile>
+TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
+    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    TA::SparseShape<float> &ijij_ijji_shape) {
+  bool accurate_time = lcao_factory.accurate_time();
+  auto &world = lcao_factory.get_world();
+  auto &ao_integral = lcao_factory.atomic_integral();
+  auto b_time0 = mpqc_time::now(world, accurate_time);
+
+  TA::DistArray<Tile, TA::SparsePolicy> B_ijij_ijji;
+  TA::DistArray<Tile, TA::SparsePolicy> tmp;
+
+  utility::print_par(world, "\nCompute B_ijij_ijji With DF \n");
+
+  {
+    auto left = lcao_factory(L"(Κ |dR2|i1 i2)");
+    auto middle = ao_integral(L"(Κ|dR2|Λ)[inv]");
+    auto right = lcao_factory(L"(Λ |dR2|j1 j2)");
+
+    auto time0 = mpqc_time::now(world, accurate_time);
+    B_ijij_ijji("i1,j1,i2,j2") =
+        (left * middle * right).set_shape(ijij_ijji_shape);
+
+    auto time1 = mpqc_time::now(world, accurate_time);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "B Term1 Time: ", time, " S\n");
+  }
+
+  // operator dR2 no longer needed
+  lcao_factory.purge_operator(world, L"dR2");
+
+  {
+    auto hJ = lcao_factory(L"<P' | hJ | i2>[df]");
+    auto left = lcao_factory(L"<i1 j1|R2|P' j2>[df]");
+
+    auto time0 = mpqc_time::now(world, accurate_time);
+    tmp("i1,j1,i2,j2") = (left * hJ).set_shape(ijij_ijji_shape);
+
+    B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
+
+    auto time1 = mpqc_time::now(world, accurate_time);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "B Term2 Time: ", time, " S\n");
+  }
+  lcao_factory.purge_operator(world, L"R2");
+  lcao_factory.purge_operator(world, L"hJ");
+
+  {
+    auto left = lcao_factory(L"<i1 j1|R|P' q>[df]");
+    auto middle = lcao_factory(L"<q|K|r>[df]");
+    auto right = lcao_factory(L"<i2 j2|R|P' r>[df]");
+
+    auto time0 = mpqc_time::now(world, accurate_time);
+    tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+    auto time1 = mpqc_time::now(world, accurate_time);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "B Term3 Time: ", time, " S\n");
+  }
+  // AO R integral not needed
+  lcao_factory.atomic_integral().registry().purge_operator(world, L"R");
+
+  {
+    auto left = lcao_factory(L"<i1 j1|R|P' m>[df]");
+    auto middle = lcao_factory(L"<P'|hJ|R'>[df]");
+    auto right = lcao_factory(L"<i2 j2|R|R' m>[df]");
+
+    auto time0 = mpqc_time::now(world, accurate_time);
+    tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+    auto time1 = mpqc_time::now(world, accurate_time);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "B Term4 Time: ", time, " S\n");
+  }
+
+  // P' doesn't appear later
+  lcao_factory.registry().purge_index(world, L"P'");
+
+  {
+    auto left = lcao_factory(L"<i1 j1|R|m p>[df]");
+    auto middle = lcao_factory(L"<p|K|q>[df]");
+    auto right = lcao_factory(L"<i2 j2|R|m q>[df]");
+
+    auto time0 = mpqc_time::now(world, accurate_time);
+    tmp("i1,j1,i2,j2") =
+        (left * middle * right).set_shape(ijij_ijji_shape);
+
+    B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
+
+    auto time1 = mpqc_time::now(world, accurate_time);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "B Term5 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = lcao_factory(L"<i1 j1|R|p a>[df]");
+    auto middle = lcao_factory(L"<p|F|r>[df]");
+    auto right = lcao_factory(L"<i2 j2|R|r a>[df]");
+
+    auto time0 = mpqc_time::now(world, accurate_time);
+    tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+    auto time1 = mpqc_time::now(world, accurate_time);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "B Term6 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = lcao_factory(L"<i1 j1|R|b' m>[df]");
+    auto middle = lcao_factory(L"<m|F|n>[df]");
+    auto right = lcao_factory(L"<i2 j2|R|b' n>[df]");
+
+    auto time0 = mpqc_time::now(world, accurate_time);
+    tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+    auto time1 = mpqc_time::now(world, accurate_time);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "B Term7 Time: ", time, " S\n");
+  }
+
+  {
+    auto left = lcao_factory(L"<i1 j1|R|p a>[df]");
+    auto middle = lcao_factory(L"<p|F|a'>[df]");
+    auto right = lcao_factory(L"<i2 j2|R|a' a>[df]");
+
+    auto time0 = mpqc_time::now(world, accurate_time);
+    tmp("i1,j1,i2,j2") =
+        (2.0 * left * middle * right).set_shape(ijij_ijji_shape);
+
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
+    auto time1 = mpqc_time::now(world, accurate_time);
+    auto time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world, "B Term8 Time: ", time, " S\n");
+  }
+
+  auto b_time1 = mpqc_time::now(world, accurate_time);
+  auto b_time = mpqc_time::duration_in_s(b_time0, b_time1);
+  utility::print_par(world, "B Term Total Time: ", b_time, " S\n");
+
+  //    std::cout << B_ijij_ijji << std::endl;
+
+  return B_ijij_ijji;
+};
+
 /**
  * MP2-F12 C approach B term without DF, only ijij ijji part is computed
  * \f$B_{ij}^{ij}\f$  \f$B_{ij}^{ji}\f$

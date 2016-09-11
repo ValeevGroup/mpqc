@@ -24,6 +24,7 @@ namespace f12 {
  *
  *  Other options:
  *  Singles = bool, if perform cabs_singles calculation, default is true
+ *  Approach = string, use C or D approach, default is C
  *
  */
 
@@ -55,9 +56,9 @@ class MP2F12 {
     return mp2_->orbital_energy();
   }
 
-  std::tuple<Matrix, Matrix> compute_mp2_f12_c_df();
+  std::tuple<Matrix, Matrix> compute_mp2_f12_df(const std::string& approach);
 
-  std::tuple<Matrix, Matrix> compute_mp2_f12_c();
+  std::tuple<Matrix, Matrix> compute_mp2_f12();
 
   real_t compute(const rapidjson::Document& in) {
     auto& world = lcao_factory().get_world();
@@ -72,12 +73,18 @@ class MP2F12 {
     std::string method =
         in.HasMember("Method") ? in["Method"].GetString() : "df";
 
+    std::string approach = in.HasMember("Approach") ? in["Approach"].GetString() : "C";
+
+    if(approach!="C" && approach != "D"){
+      throw std::runtime_error("Wrong MP2F12 Approach");
+    }
+
     Matrix mp2_eij, f12_eij;
 
     if (method == "four center") {
-      std::tie(mp2_eij, f12_eij) = compute_mp2_f12_c();
+      std::tie(mp2_eij, f12_eij) = compute_mp2_f12();
     } else if (method == "df") {
-      std::tie(mp2_eij, f12_eij) = compute_mp2_f12_c_df();
+      std::tie(mp2_eij, f12_eij) = compute_mp2_f12_df(approach);
     } else {
       throw std::runtime_error("Wrong MP2F12 Method");
     }
@@ -132,8 +139,12 @@ class MP2F12 {
 
 template <typename Tile>
 std::tuple<typename MP2F12<Tile>::Matrix, typename MP2F12<Tile>::Matrix>
-MP2F12<Tile>::compute_mp2_f12_c_df() {
+MP2F12<Tile>::compute_mp2_f12_df(const std::string& approach) {
+
+
   auto& world = lcao_factory().get_world();
+
+  utility::print_par(world, "\n Computing MP2F12 ", approach ," Approach \n");
 
   Matrix Eij_MP2, Eij_F12;
 
@@ -212,7 +223,14 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
   }
 
   // compute B term
-  TArray B_ijij_ijji = compute_B_ijij_ijji_df(lcao_factory(), ijij_ijji_shape);
+  TArray B_ijij_ijji;
+  if(approach=="C"){
+    B_ijij_ijji = compute_B_ijij_ijji_df(lcao_factory(), ijij_ijji_shape);
+  }
+  else if(approach=="D"){
+    B_ijij_ijji = compute_B_ijij_ijji_D_df(lcao_factory(), ijij_ijji_shape);
+  }
+
   {
     Matrix Eij_b = B_ijij_ijji("i1,j1,i2,j2")
                        .reduce(F12PairEnergyReductor<Tile>(
@@ -240,8 +258,11 @@ MP2F12<Tile>::compute_mp2_f12_c_df() {
 
 template <typename Tile>
 std::tuple<typename MP2F12<Tile>::Matrix, typename MP2F12<Tile>::Matrix>
-MP2F12<Tile>::compute_mp2_f12_c() {
+MP2F12<Tile>::compute_mp2_f12() {
+
   auto& world = lcao_factory().get_world();
+
+  utility::print_par(world, "\n Computing MP2F12 C Approach \n");
 
   Matrix Eij_MP2, Eij_F12;
 

@@ -311,10 +311,10 @@ int main(int argc, char *argv[]) {
   f12::MP2F12<TA::TensorD> mp2f12(lcao_factory,
                                   std::make_shared<TRange1Engine>(tre), ens);
 
-  //    mp2f12.compute_mp2_f12_c();
+  //    mp2f12.compute_mp2_f12();
   //    lcao_factory.registry().clear();
   //    ao_int.registry().clear();
-  mp2f12.compute_mp2_f12_c_df();
+  mp2f12.compute_mp2_f12_df();
   time1 = mpqc_time::fenced_now(world);
   auto mp2f12_time = mpqc_time::duration_in_s(time0, time1);
 

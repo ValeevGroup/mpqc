@@ -54,7 +54,7 @@ TEST_CASE("Formula Expression", "[formula]") {
     Formula three_center(L"( Κ|R|κ λ1)");
     REQUIRE(three_center.bra_indices().size() == 1);
     REQUIRE(three_center.ket_indices().size() == 2);
-    REQUIRE(three_center.to_ta_expression() == "KAPPA, kappa, lamda1");
+    REQUIRE(three_center.to_ta_expression() == "KAPPA, kappa, lambda1");
   }
 
   SECTION("option test case") {

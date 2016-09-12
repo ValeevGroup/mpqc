@@ -22,6 +22,7 @@ namespace f12 {
  *
 // *  @param ///MP2F12: bool, default false
  *  @param Singles, bool, if compute cabs singles correction, default true
+ *  @param VTCouple, bool, if include <p q |G| m a'> <p q|R|m a'> term in VT coupling , default true
  *  @param Approach = string, use C or D approach, default is C
  */
 
@@ -39,6 +40,7 @@ class CCSDF12 {
           rapidjson::Document& options)
       : lcao_factory_(lcao_factory) {
     ccsd_ = std::make_shared<cc::CCSD<Tile, Policy>>(lcao_factory, options);
+    vt_couple_ = ccsd_->options().HasMember("VTCouple") ? ccsd_->options()["VTCouple"].GetBool() : true;
   }
 
   CCSDF12(std::shared_ptr<cc::CCSD<Tile, Policy>> ccsd)
@@ -66,6 +68,8 @@ class CCSDF12 {
     if (approach != "C" && approach != "D") {
       throw std::runtime_error("Wrong CCSDF12 Approach");
     }
+
+    utility::print_par(lcao_factory_.get_world(), "VTCouple: ", vt_couple_);
 
     if (method == "four center") {
       Eij_F12 = compute_ccsd_f12(lazy_two_electron_int);
@@ -111,6 +115,7 @@ class CCSDF12 {
  protected:
   LCAOFactoryType& lcao_factory_;
   std::shared_ptr<cc::CCSD<Tile, Policy>> ccsd_;
+  bool vt_couple_;
 
   int debug() const { return 1; }
 };
@@ -145,14 +150,14 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   } else {
     TArray tmp =
-        compute_VT2_ijij_ijji_df(lcao_factory, ccsd_->t2(), ijij_ijji_shape);
+        compute_VT2_ijij_ijji_df(lcao_factory, ccsd_->t2(), ijij_ijji_shape, vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // VT1 contribution
   {
     TArray tmp =
-        compute_VT1_ijij_ijji_df(lcao_factory, ccsd_->t1(), ijij_ijji_shape);
+        compute_VT1_ijij_ijji_df(lcao_factory, ccsd_->t1(), ijij_ijji_shape,vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
@@ -233,14 +238,14 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
   //    }else
   {
     TArray tmp =
-        compute_VT2_ijij_ijji(lcao_factory, ccsd_->t2(), ijij_ijji_shape);
+        compute_VT2_ijij_ijji(lcao_factory, ccsd_->t2(), ijij_ijji_shape, vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // VT1 contribution
   {
     TArray tmp =
-        compute_VT1_ijij_ijji(lcao_factory, ccsd_->t1(), ijij_ijji_shape);
+        compute_VT1_ijij_ijji(lcao_factory, ccsd_->t1(), ijij_ijji_shape,vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 

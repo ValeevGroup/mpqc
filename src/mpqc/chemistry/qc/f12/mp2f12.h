@@ -18,13 +18,13 @@
 namespace mpqc {
 namespace f12 {
 
-/*
+/**
  *  MP2F12 Class
  *  Take all the options from MP2
  *
  *  Other options:
- *  Singles = bool, if perform cabs_singles calculation, default is true
- *  Approach = string, use C or D approach, default is C
+ *  @param Singles = bool, if perform cabs_singles calculation, default is true
+ *  @param Approach = string, use C or D approach, default is C
  *
  */
 

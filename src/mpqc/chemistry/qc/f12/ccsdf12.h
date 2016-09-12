@@ -14,15 +14,15 @@
 
 #include <mpqc/chemistry/qc/f12/cabs_singles.h>
 
-
 namespace mpqc {
 namespace f12 {
 
 /**
  *  CCSD(2)F12 Takes all options from CCSD
  *
- *  @param ///MP2F12: bool, default false
+// *  @param ///MP2F12: bool, default false
  *  @param Singles, bool, if compute cabs singles correction, default true
+ *  @param Approach = string, use C or D approach, default is C
  */
 
 template <typename Tile>
@@ -59,10 +59,18 @@ class CCSDF12 {
 
     std::string method =
         option.HasMember("Method") ? option["Method"].GetString() : "df";
+
+    std::string approach =
+        option.HasMember("Approach") ? option["Approach"].GetString() : "C";
+
+    if (approach != "C" && approach != "D") {
+      throw std::runtime_error("Wrong CCSDF12 Approach");
+    }
+
     if (method == "four center") {
-      Eij_F12 = compute_c(lazy_two_electron_int);
+      Eij_F12 = compute_ccsd_f12(lazy_two_electron_int);
     } else if (method == "df") {
-      Eij_F12 = compute_c_df(lazy_two_electron_int);
+      Eij_F12 = compute_ccsd_f12_df(lazy_two_electron_int, approach);
     } else {
       throw std::runtime_error("Wrong CCSDF12 Method");
     }
@@ -94,10 +102,11 @@ class CCSDF12 {
  private:
   /// standard approach
   template <typename DirectArray>
-  Matrix compute_c_df(const DirectArray& darray);
+  Matrix compute_ccsd_f12_df(const DirectArray& darray,
+                             const std::string& approach);
 
   template <typename DirectArray>
-  Matrix compute_c(const DirectArray& darray);
+  Matrix compute_ccsd_f12(const DirectArray& darray);
 
  protected:
   LCAOFactoryType& lcao_factory_;
@@ -108,11 +117,13 @@ class CCSDF12 {
 
 template <typename Tile>
 template <typename DirectArray>
-typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
-    const DirectArray& darray) {
+typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
+    const DirectArray& darray, const std::string& approach) {
   auto& lcao_factory = lcao_factory_;
   auto& world = lcao_factory.get_world();
   Matrix Eij_F12;
+
+  utility::print_par(world, "\n Computing CCSDF12 ", approach, " Approach \n");
 
   // clean LCAO Integrals
   lcao_factory.registry().clear();
@@ -170,7 +181,14 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
 
   // compute B term
   {
-    TArray B_ijij_ijji = compute_B_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
+    TArray B_ijij_ijji;
+
+    if (approach == "C") {
+      B_ijij_ijji = compute_B_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
+    } else if (approach == "D") {
+      B_ijij_ijji = compute_B_ijij_ijji_D_df(lcao_factory, ijij_ijji_shape);
+    }
+
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
                      .reduce(F12PairEnergyReductor<Tile>(
                          CC_ijij_bar, CC_ijji_bar, n_active_occ));
@@ -183,11 +201,13 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c_df(
 
 template <typename Tile>
 template <typename DirectArray>
-typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_c(
+typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
     const DirectArray& darray) {
   auto& lcao_factory = lcao_factory_;
   auto& world = lcao_factory.get_world();
   Matrix Eij_F12;
+
+  utility::print_par(world, "\n Computing CCSDF12 C Approach \n");
 
   // clean LCAO Integrals
   lcao_factory.registry().clear();

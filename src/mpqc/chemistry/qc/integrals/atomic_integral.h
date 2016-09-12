@@ -5,17 +5,17 @@
 #ifndef MPQC_ATOMIC_INTEGRAL_H
 #define MPQC_ATOMIC_INTEGRAL_H
 
-#include <rapidjson/document.h>
-#include <madness/world/worldmem.h>
-#include <mpqc/chemistry/qc/f12/f12_utility.h>
-#include <mpqc/chemistry/qc/integrals/integrals.h>
-#include <mpqc/chemistry/qc/expression/permutation.h>
-#include "atomic_integral_base.h"
 #include "../../../../../ta_routines/array_to_eigen.h"
 #include "../../../../../ta_routines/tile_convert.h"
-#include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/parallel_break_point.h"
+#include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/time.h"
+#include "atomic_integral_base.h"
+#include <madness/world/worldmem.h>
+#include <mpqc/chemistry/qc/expression/permutation.h>
+#include <mpqc/chemistry/qc/f12/f12_utility.h>
+#include <mpqc/chemistry/qc/integrals/integrals.h>
+#include <rapidjson/document.h>
 
 namespace mpqc {
 namespace integrals {
@@ -40,8 +40,8 @@ class AtomicIntegral : public AtomicIntegralBase {
   using TArray = TA::DistArray<Tile, Policy>;
 
   /// Op is a function pointer that convert TA::Tensor to Tile
-//  using Op = Tile (*) (TA::TensorD&&);
-  using Op =  std::function<Tile(TA::TensorD &&)>;
+  //  using Op = Tile (*) (TA::TensorD&&);
+  using Op = std::function<Tile(TA::TensorD&&)>;
 
   AtomicIntegral() = default;
 
@@ -96,9 +96,12 @@ class AtomicIntegral : public AtomicIntegralBase {
    * @return
    */
 
-  AtomicIntegral(const KeyVal& kv) : AtomicIntegralBase(kv)
-  {
-    accurate_time_ = kv.value("accurate_time",false);
+  AtomicIntegral(const KeyVal& kv)
+      : AtomicIntegralBase(kv),
+        ao_formula_registry_(),
+        orbital_space_registry_() {
+
+    accurate_time_ = kv.value("accurate_time", false);
 
     /// Warning!!!!
     /// This is temporary workround
@@ -156,10 +159,9 @@ class AtomicIntegral : public AtomicIntegralBase {
 
  private:
   /// compute sparse array
-
   template <typename U = Policy>
-  TA::DistArray<Tile,
-            typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
+  TA::DistArray<
+      Tile, typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
                                     TA::SparsePolicy>::type>
   compute_integrals(
       madness::World& world, ShrPool<libint2::Engine>& engine,
@@ -174,8 +176,8 @@ class AtomicIntegral : public AtomicIntegralBase {
   /// compute dense array
   template <typename U = Policy>
   TA::DistArray<Tile,
-            typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
-                                    TA::DensePolicy>::type>
+                typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
+                                        TA::DensePolicy>::type>
   compute_integrals(
       madness::World& world, ShrPool<libint2::Engine>& engine,
       Bvector const& bases,
@@ -268,7 +270,6 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
 template <typename Tile, typename Policy>
 typename AtomicIntegral<Tile, Policy>::TArray
 AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
-
   Bvector bs_array;
   double time = 0.0;
   mpqc_time::t_point time0;

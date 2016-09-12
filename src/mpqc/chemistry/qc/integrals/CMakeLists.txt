@@ -10,10 +10,15 @@ set(integral_sources
         screening/qvl_screening.cpp
         screening/qvl_shell_info.h
         screening/qvl_shell_info.cpp
-        task_integral_kernels.cpp
+        atomic_integral.h
         atomic_integral_base.h
         atomic_integral_base.cpp
+        direct_atomic_integral.h
+        lcao_factory.h
+        integrals.h
         integral.cpp
+        task_integral_kernels.h
+        task_integral_kernels.cpp
         libint2_engine.cpp
 )
 

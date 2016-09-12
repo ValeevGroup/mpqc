@@ -2,7 +2,10 @@
 #include <sstream>
 
 #include <mpqc/util/keyval/keyval.hpp>
+#include "../utility/parallel_file.h"
+#include <madness/world/world.h>
 #include <catch.hpp>
+#include <mpqc/chemistry/qc/basis/basis.h>
 
 using std::cout;
 using std::endl;
@@ -248,6 +251,24 @@ TEST_CASE("KeyVal", "[keyval]") {
     REQUIRE(d1->value() == kv.value<double>("b"));
 
     REQUIRE(kv.exists("c")==false);
+  }
+
+
+  SECTION("Basis Test"){
+
+    auto& world = madness::World::get_default();
+    std::string filename = "keyval_test.json";
+
+    std::stringstream ss;
+    mpqc::utility::parallel_read_file(world, filename ,ss);
+
+    KeyVal kv;
+    kv.read_json(ss);
+
+    kv.assign("world", &world);
+
+    REQUIRE_NOTHROW(kv.keyval("basis").class_ptr<mpqc::basis::Basis>());
+
   }
 
 }  // end of test case

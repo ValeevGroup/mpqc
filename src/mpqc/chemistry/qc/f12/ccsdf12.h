@@ -48,8 +48,17 @@ class CCSDF12 {
 
   virtual real_t compute() {
     auto& world = lcao_factory_.get_world();
+
+    auto ccsd_time0 = mpqc_time::fenced_now(world);
+
     // compute ccsd
     real_t ccsd = ccsd_->compute();
+
+    auto ccsd_time1 = mpqc_time::fenced_now(world);
+    auto ccsd_time = mpqc_time::duration_in_s(ccsd_time0, ccsd_time1);
+    mpqc::utility::print_par(world, "Total CCSD Time:  ", ccsd_time, "\n");
+
+
 
     auto& option = ccsd_->options();
     // initialize CABS orbitals
@@ -90,6 +99,8 @@ class CCSDF12 {
     bool singles =
         option.HasMember("Singles") ? option["Singles"].GetBool() : true;
     if (singles) {
+      mpqc::utility::print_par(world, " CABS Singles \n");
+
       auto single_time0 = mpqc_time::fenced_now(world);
 
       CABSSingles<Tile> cabs_singles(lcao_factory_);
@@ -102,6 +113,10 @@ class CCSDF12 {
       mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time,
                                "\n");
     }
+
+    auto f12_time0 = mpqc_time::fenced_now(world);
+    auto f12_time = mpqc_time::duration_in_s(ccsd_time1,f12_time0);
+    mpqc::utility::print_par(world, "Total F12 Time:  ", f12_time, "\n");
 
     return ccsd + e_f12 + e_s;
   }

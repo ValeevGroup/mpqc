@@ -135,9 +135,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
   kv.read_json(ss);
   kv.assign("world", &world);
 
-  auto mol =  molecule::Molecule(kv.keyval("molecule"));
+  auto mol =  kv.keyval("molecule").class_ptr<molecule::Molecule>();
 
-  std::size_t occ = (mol.occupation(0) - mol.core_electrons())/2 ;
+  std::size_t occ = (mol->occupation(0) - mol->core_electrons())/2 ;
 
   basis::OrbitalBasisRegistry basis_registry(kv);
 

@@ -4,7 +4,7 @@
 #include <mpqc/util/keyval/keyval.hpp>
 #include "../utility/parallel_file.h"
 #include <madness/world/world.h>
-#include <catch.hpp>
+#include "catch.hpp"
 #include <mpqc/chemistry/qc/basis/basis.h>
 
 using std::cout;

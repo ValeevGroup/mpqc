@@ -2,7 +2,7 @@
 // Created by Chong Peng on 8/25/16.
 //
 
-#include <catch.hpp>
+#include "catch.hpp"
 #include <mpqc/util/misc/string.h>
 
 TEST_CASE("Util String", "[util_string]") {

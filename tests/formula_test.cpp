@@ -2,7 +2,7 @@
 // Created by Chong Peng on 10/19/15.
 //
 
-#include <catch.hpp>
+#include "catch.hpp"
 #include <mpqc/chemistry/qc/expression/formula.h>
 #include <mpqc/chemistry/qc/expression/permutation.h>
 

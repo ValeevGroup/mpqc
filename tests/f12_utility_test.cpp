@@ -2,7 +2,7 @@
 // Created by Chong Peng on 10/30/15.
 //
 
-#include <catch.hpp>
+#include "catch.hpp"
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 
 using namespace mpqc;

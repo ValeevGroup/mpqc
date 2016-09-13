@@ -24,9 +24,17 @@ TEST_CASE("Formula Expression", "[formula]") {
     REQUIRE(J.oper().type() == Operator::Type::J);
     REQUIRE(J.oper().is_jk() == true);
 
+    Formula J1(L"(κ|J|λ)");
+    REQUIRE(J == J1);
+
     Formula F(L"<κ|F(α)|λ>");
     REQUIRE(F.oper().type() == Operator::Type::FockAlpha);
     REQUIRE(F.oper().is_fock() == true);
+
+    Formula F1(L"<κ|F|λ>");
+    Formula F2(L"(κ|F|λ)");
+    REQUIRE(F1 == F2);
+
   }
 
   SECTION("two body test case") {

@@ -133,7 +133,7 @@ std::vector<OrbitalIndex> Formula::check_orbital_index(
 bool Formula::operator<(const Formula& other) const {
   if (oper() != other.oper()) {
     return oper() < other.oper();
-  } else if (notation_ != other.notation()) {
+  } else if ((this->rank() != 2) && (notation_ != other.notation())) {
     return notation_ < other.notation();
   } else if (bra_indices() != other.bra_indices()) {
     return bra_indices() < other.bra_indices();

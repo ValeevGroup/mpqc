@@ -157,9 +157,9 @@ class CCSDIntermediate {
   /// <a|f|i>
   const TArray get_fock_ai() {
     if (df_) {
-      return lcao_factory_.compute(L"(a|F|i)[df]");
+      return lcao_factory_.compute(L"<a|F|i>[df]");
     } else {
-      return lcao_factory_.compute(L"(a|F|i)");
+      return lcao_factory_.compute(L"<a|F|i>");
     }
   }
 

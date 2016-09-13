@@ -30,9 +30,9 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   // find fock matrix
   TArray F;
   if (ao_int.registry().have(Formula(L"<μ|F|ν>"))) {
-    F = ao_int.registry().retrieve(Formula(L"<μ|F|ν>"));
+    F = ao_int.compute(Formula(L"<μ|F|ν>"));
   } else {
-    F = ao_int.registry().retrieve(Formula(L"<μ|F|ν>[df]"));
+    F = ao_int.compute(Formula(L"<μ|F|ν>[df]"));
   }
 
   auto S = ao_int.compute(L"<κ|λ>");
@@ -257,9 +257,9 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   // solving occupied orbitals
   TArray F;
   if (ao_int.registry().have(Formula(L"<μ|F|ν>"))) {
-    F = ao_int.registry().retrieve(Formula(L"<μ|F|ν>"));
+    F = ao_int.compute(Formula(L"<μ|F|ν>"));
   } else {
-    F = ao_int.registry().retrieve(Formula(L"<μ|F|ν>[df]"));
+    F = ao_int.compute(Formula(L"<μ|F|ν>[df]"));
   }
 
   auto S = ao_int.compute(L"<κ|λ>");

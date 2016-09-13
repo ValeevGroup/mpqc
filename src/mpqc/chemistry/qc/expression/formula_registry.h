@@ -157,6 +157,7 @@ class FormulaRegistry : public Registry<Formula, Value> {
   /// purges all objects if p(key) == true
   template <typename Pred>
   void purge_if(madness::World& world, const Pred& p) {
+//    world.gop.fence();
     auto i = this->registry_.begin();
     for (; i != this->registry_.end();) {
       if (p(*i)) {

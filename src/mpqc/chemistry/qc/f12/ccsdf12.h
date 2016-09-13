@@ -140,6 +140,41 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
   TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
+
+  // compute B term
+  {
+    TArray B_ijij_ijji;
+
+    if (approach == "C") {
+      B_ijij_ijji = compute_B_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
+    } else if (approach == "D") {
+      B_ijij_ijji = compute_B_ijij_ijji_D_df(lcao_factory, ijij_ijji_shape);
+    }
+
+    Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
+        .reduce(F12PairEnergyReductor<Tile>(
+            CC_ijij_bar, CC_ijji_bar, n_active_occ));
+    if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
+    Eij_F12 = eij;
+  }
+
+  // compute X term
+  TArray X_ijij_ijji = compute_X_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
+
+  lcao_factory.purge_operator(world,L"R2");
+
+  auto Fij = lcao_factory_.compute(L"<i|F|j>[df]");
+  auto Fij_eigen = array_ops::array_to_eigen(Fij);
+  f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
+  {
+    Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
+        .reduce(f12::F12PairEnergyReductor<Tile>(
+            CC_ijij_bar, CC_ijji_bar, n_active_occ));
+    eij *= -1;
+    if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
+    Eij_F12 += eij;
+  }
+
   // compute V_ijij_ijji
   TArray V_ijij_ijji = compute_V_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
 
@@ -162,44 +197,13 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
   }
 
   // V contribution to energy
-  Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
+  Matrix e_ij = V_ijij_ijji("i1,j1,i2,j2")
                 .reduce(f12::F12PairEnergyReductor<Tile>(
                     2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
-  if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
+  Eij_F12 += e_ij;
+  if (debug()) utility::print_par(world, "E_V: ", e_ij.sum(), "\n");
 
-  // compute X term
-  TArray X_ijij_ijji = compute_X_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
-  // R_ipjq not needed
-  lcao_factory_.registry().purge_formula(world, L"(i1 p|R|j1 q)[df]");
 
-  auto Fij = lcao_factory_.compute(L"(i|F|j)[df]");
-  auto Fij_eigen = array_ops::array_to_eigen(Fij);
-  f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
-  {
-    Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
-                     .reduce(f12::F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
-    eij *= -1;
-    if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
-    Eij_F12 += eij;
-  }
-
-  // compute B term
-  {
-    TArray B_ijij_ijji;
-
-    if (approach == "C") {
-      B_ijij_ijji = compute_B_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
-    } else if (approach == "D") {
-      B_ijij_ijji = compute_B_ijij_ijji_D_df(lcao_factory, ijij_ijji_shape);
-    }
-
-    Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
-                     .reduce(F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
-    if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
-    Eij_F12 += eij;
-  }
 
   return Eij_F12;
 }
@@ -223,6 +227,34 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
   auto occ_tr1 = ccsd_->trange1_engine()->get_occ_tr1();
   TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
+
+  {
+    // compute B term
+    TArray B_ijij_ijji = compute_B_ijij_ijji(lcao_factory, ijij_ijji_shape);
+    Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
+        .reduce(F12PairEnergyReductor<Tile>(
+            CC_ijij_bar, CC_ijji_bar, n_active_occ));
+    if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
+    Eij_F12 = eij;
+  }
+
+  // compute X term
+  TArray X_ijij_ijji = compute_X_ijij_ijji(lcao_factory, ijij_ijji_shape);
+  //    std::cout << "X_ijij_ijji" << std::endl;
+  //    std::cout << X_ijij_ijji << std::endl;
+  lcao_factory.purge_operator(world,L"R2");
+
+  auto Fij = lcao_factory_.compute(L"<i|F|j>");
+  auto Fij_eigen = array_ops::array_to_eigen(Fij);
+  f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
+  {
+    Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
+        .reduce(f12::F12PairEnergyReductor<Tile>(
+            CC_ijij_bar, CC_ijji_bar, n_active_occ));
+    eij *= -1;
+    if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
+    Eij_F12 += eij;
+  }
 
   // compute V_ijij_ijji
   TArray V_ijij_ijji = compute_V_ijij_ijji(lcao_factory, ijij_ijji_shape);
@@ -250,53 +282,11 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
   }
 
   // V contribution to energy
-  Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
+  Matrix eij = V_ijij_ijji("i1,j1,i2,j2")
                 .reduce(f12::F12PairEnergyReductor<Tile>(
                     2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
-  if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
-
-  //    {
-  //        utility::print_par(world, "Compute CC Term Without DF \n");
-  //        auto C_ijab = compute_C_ijab(lcao_factory);
-  //        auto C_bar_ijab = f12::convert_C_ijab(C_ijab, occ,
-  //        *orbital_energy_);
-  //        V_ijij_ijji("i1,j1,i2,j2") =
-  //        (C_ijab("i1,j1,a,b")*C_bar_ijab("i2,j2,a,b")).set_shape(ijij_ijji_shape);
-  //
-  //        double E_cc =
-  //        V_ijij_ijji("i1,j1,i2,j2").reduce(f12::CLF12Energy<Tile>(CC_ijij_bar,CC_ijji_bar));
-  //        utility::print_par(world, "E_CC: ", E_cc, "\n");
-  //        E += E_cc;
-  //    }
-  // compute X term
-  TArray X_ijij_ijji = compute_X_ijij_ijji(lcao_factory, ijij_ijji_shape);
-  //    std::cout << "X_ijij_ijji" << std::endl;
-  //    std::cout << X_ijij_ijji << std::endl;
-
-  // R_ipjq not needed
-  lcao_factory_.registry().purge_formula(world, L"(i1 p|R|j1 q)");
-
-  auto Fij = lcao_factory_.compute(L"(i|F|j)");
-  auto Fij_eigen = array_ops::array_to_eigen(Fij);
-  f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
-  {
-    Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
-                     .reduce(f12::F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
-    eij *= -1;
-    if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
-    Eij_F12 += eij;
-  }
-
-  {
-    // compute B term
-    TArray B_ijij_ijji = compute_B_ijij_ijji(lcao_factory, ijij_ijji_shape);
-    Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
-                     .reduce(F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
-    if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
-    Eij_F12 += eij;
-  }
+  if (debug()) utility::print_par(world, "E_V: ", eij.sum(), "\n");
+  Eij_F12 += eij;
 
   return Eij_F12;
 }

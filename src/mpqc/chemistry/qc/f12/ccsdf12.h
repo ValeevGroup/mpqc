@@ -69,7 +69,10 @@ class CCSDF12 {
       throw std::runtime_error("Wrong CCSDF12 Approach");
     }
 
-    utility::print_par(lcao_factory_.get_world(), "VTCouple: ", vt_couple_);
+    utility::print_par(lcao_factory_.get_world(), "VTCouple: ", vt_couple_, "\n");
+
+    // clean LCAO Integrals
+    lcao_factory_.registry().purge(world);
 
     if (method == "four center") {
       Eij_F12 = compute_ccsd_f12(lazy_two_electron_int);
@@ -130,8 +133,6 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
 
   utility::print_par(world, "\n Computing CCSDF12 ", approach, " Approach \n");
 
-  // clean LCAO Integrals
-  lcao_factory.registry().clear();
 
   auto n_active_occ = ccsd_->trange1_engine()->get_active_occ();
 
@@ -217,9 +218,6 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
   Matrix Eij_F12;
 
   utility::print_par(world, "\n Computing CCSDF12 C Approach \n");
-
-  // clean LCAO Integrals
-  lcao_factory.registry().clear();
 
   auto n_active_occ = ccsd_->trange1_engine()->get_active_occ();
 

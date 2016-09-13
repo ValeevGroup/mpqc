@@ -210,6 +210,15 @@ class FormulaRegistry : public Registry<Formula, Value> {
 
     this->purge_if(world, pred);
   }
+
+  /// purges all formula in registry
+  void purge(madness::World& world){
+    auto pred =[] (const value_type& item){
+      return true;
+    };
+
+    this->purge_if(world,pred);
+  }
 };
 }  // end of namespace mpqc
 

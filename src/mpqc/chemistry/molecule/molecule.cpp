@@ -87,6 +87,8 @@ Molecule::Molecule(std::istream &file_stream, Vec3D const &point) {
   init(file_stream, point);
 }
 
+Molecule::~Molecule() = default;
+
 void Molecule::init(std::istream &file, bool sort_input) {
   auto libint_atoms = libint2::read_dotxyz(file);
 

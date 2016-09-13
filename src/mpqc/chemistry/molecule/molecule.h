@@ -79,6 +79,8 @@ class Molecule : public DescribedClass {
    */
   Molecule(std::vector<AtomBasedClusterable> c, bool sort_input = true);
 
+  ~Molecule();
+
   /*! \brief A function to sort the molcule's clusters from a given point. 
    */
   void sort_from_point(Vec3D const &point);

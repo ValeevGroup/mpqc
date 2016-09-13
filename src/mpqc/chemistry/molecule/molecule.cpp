@@ -4,6 +4,7 @@
 #include <mpqc/chemistry/molecule/common.h>
 #include <mpqc/chemistry/molecule/atom_masses.h>
 #include "../../../../utility/parallel_file.h"
+#include "clustering_functions.h"
 
 #include <libint2/atom.h>
 
@@ -74,9 +75,33 @@ Molecule::Molecule(const KeyVal &kv) {
   std::stringstream file;
   utility::parallel_read_file(*world, file_name, file);
 
-  auto sort_input = kv.value<bool>("sort_input", true);
+  bool sort_input = kv.value<bool>("sort_input", true);
+  bool sort_origin = kv.value<bool>("sort_origin", false);
 
-  init(file, sort_input);
+  if(sort_origin){
+    init(file,{0.0, 0.0, 0.0} );
+  }else{
+    init(file, sort_input);
+  }
+
+  int n_cluster = kv.value<int>("n_cluster",0);
+  bool attach_hydrogen = kv.value<bool>("attach_hydrogen",true);
+  // cluster molecule
+  if(n_cluster != 0){
+    molecule::Molecule clustered_mol;
+    if(attach_hydrogen){
+      clustered_mol = molecule::attach_hydrogens_and_kmeans(clusterables(), n_cluster);
+    }
+    else{
+      clustered_mol = molecule::kmeans(clusterables(), n_cluster);
+    }
+
+    elements_ = std::move(clustered_mol.elements_);
+    com_ = std::move(clustered_mol.com_);
+    mass_ = std::move(clustered_mol.mass_);
+    charge_ = std::move(clustered_mol.charge_);
+  }
+
 }
 
 Molecule::Molecule(std::istream &file_stream, bool sort_input) {

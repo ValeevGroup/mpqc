@@ -55,7 +55,22 @@ class Molecule : public DescribedClass {
    *  <tr><td><tt>sort_input</tt><td>boolean<td>true<td>If true, atoms
    *    will be resorted based on their distance from the center of mass.
    *
+   *  <tr><td><tt>sort_origin</tt><td>boolean<td>false<td>If true, sort atoms
+   *  from origin {0.0, 0.0, 0.0}
+   *
+   *  <tr><td><tt>n_cluster</tt><td>int<td>0<td> If nonzero, cluster moleucle by n_cluster
+   *
+   *  <tr><td><tt>attach_hydrogen</tt><td>bool<td>true<td> use attach_hydrogen_kmeans when clustering
    *  </table>
+   *
+   *  example input:
+   *  "molecule": {
+   *    "type": "Molecule",
+   *    "file_name": "water.xyz",
+   *    "sort_input": true,
+   *    "n_cluster": 20
+   *  }
+   *
    */
   Molecule(const KeyVal &kv);
 

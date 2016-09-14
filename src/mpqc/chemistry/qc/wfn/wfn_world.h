@@ -17,6 +17,11 @@
 namespace mpqc {
 namespace qc {
 
+/**
+ * WfnWorld is a work environment for one or more collaborating Wfn.
+ * It provides an execution context (madness::World), a molecule, and
+ * basis and operator registries.
+ */
 class WfnWorld : public DescribedClass {
  public:
   using AOIntegral = integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy>;

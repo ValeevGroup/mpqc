@@ -20,12 +20,15 @@ namespace qc {
 
 class PropertyBase;
 
+/**
+ * Wfn is a wave function that lives in a WfnWorld
+ */
 class Wfn : public DescribedClass {
  public:
   using ArrayType = WfnWorld::ArrayType;
 
  private:
-  /*! Pointer to to the WfnWorld
+  /*! Pointer to the WfnWorld
    *
    * \note No need to make this shared Wfn is just a member of the world it
    *lives in so no ownership here.
@@ -35,7 +38,7 @@ class Wfn : public DescribedClass {
   WfnWorld* wfn_world_ = nullptr;
 
  public:
-  Wfn(KeyVal const& kv) : wfn_world_(kv.value<WfnWorld*>("wfn_world")){};
+  Wfn(KeyVal const& kv) : wfn_world_(kv.value<WfnWorld*>("wfn_world")){}
 
   virtual void compute(PropertyBase* pb) = 0;
 

@@ -159,7 +159,7 @@ TA::DistArray<Tile, SpPolicy> sparse_integrals(
   // Make a pointer to an Integral builder.  Doing this because we want to use
   // it in Tasks.
   auto builder_ptr =
-      make_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
+      make_integral_builder(std::move(shr_pool), std::move(shr_bases),
                             std::move(screen), std::move(op));
 
   auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng,
@@ -224,7 +224,7 @@ TA::DistArray<Tile, DnPolicy> dense_integrals(
 
   // Make a pointer to a builder which can be shared by different tasks.
   auto builder_ptr =
-      make_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
+      make_integral_builder(std::move(shr_pool), std::move(shr_bases),
                             std::move(screen), std::move(op));
 
   // builder is shared_ptr so just capture it by copy.

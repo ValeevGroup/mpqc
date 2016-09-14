@@ -13,8 +13,8 @@
 #include <mpqc/chemistry/qc/integrals/task_integral_kernels.h>
 
 #include <array>
-#include <memory>
 #include <functional>
+#include <memory>
 
 namespace mpqc {
 namespace integrals {
@@ -28,9 +28,9 @@ namespace integrals {
  * auto op = [](TA::Tensor<double> && t){ return std::move(t) };
  * ```
  */
-template <typename Tile, typename Engine=libint2::Engine>
+template <typename Tile, typename Engine = libint2::Engine>
 class IntegralBuilder
-    : public std::enable_shared_from_this<IntegralBuilder<Tile,Engine>> {
+    : public std::enable_shared_from_this<IntegralBuilder<Tile, Engine>> {
  public:
   using Op = std::function<Tile(TA::TensorD &&)>;
 
@@ -39,7 +39,6 @@ class IntegralBuilder
   ShrPool<Engine> engines_;
   std::shared_ptr<Screener> screen_;
   Op op_;
-  madness::uniqueidT id_;
 
  public:
   /*! \brief Constructor which copies all shared_ptr members
@@ -52,27 +51,17 @@ class IntegralBuilder
    * \param op should be a thread safe function or functor that takes a
    *  rvalue of a TA::TensorD and returns a valid TA::Array tile.
    */
-  IntegralBuilder(madness::World &world, ShrPool<Engine> shr_epool,
-                  detail::ShrBvetors shr_bases,
+  IntegralBuilder(ShrPool<Engine> shr_epool, detail::ShrBvetors shr_bases,
                   std::shared_ptr<Screener> screen, Op op)
       : bases_(std::move(shr_bases)),
         engines_(std::move(shr_epool)),
         screen_(std::move(screen)),
-        op_(std::move(op)),
-        id_(world.register_ptr(this))
-  {
+        op_(std::move(op)) {
     std::size_t N = bases_->size();
-    TA_ASSERT( (N==2) || (N==3) || (N==4));
+    TA_ASSERT((N == 2) || (N == 3) || (N == 4));
   }
 
-  ~IntegralBuilder() {
-    if (madness::initialized()) {
-      madness::World *world = madness::World::world_from_id(id_.get_world_id());
-      world->unregister_ptr(this);
-    }
-  }
-
-  madness::uniqueidT id() const { return id_; }
+  virtual ~IntegralBuilder() = default;
 
   Tile operator()(std::vector<std::size_t> const &idx, TA::Range range) {
     return op_(integrals(idx, std::move(range)));
@@ -115,11 +104,40 @@ class IntegralBuilder
       return detail::integral_kernel(engines_->local(), std::move(range),
                                      shellvec_ptrs, *screen_);
     } else {
-      throw std::runtime_error("Invalid Size of Basis Sets!! Must be 2 or 3 or 4!! \n");
+      throw std::runtime_error(
+          "Invalid Size of Basis Sets!! Must be 2 or 3 or 4!! \n");
     }
   }
 
   Tile op(TA::TensorD &&tensor) { return op_(std::move(tensor)); }
+};
+
+template <typename Tile, typename Engine = libint2::Engine>
+class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
+ public:
+  using Op = typename IntegralBuilder<Tile,Engine>::Op;
+
+  DirectIntegralBuilder(madness::World &world, ShrPool<Engine> shr_epool,
+                        detail::ShrBvetors shr_bases,
+                        std::shared_ptr<Screener> screen, Op op)
+      : IntegralBuilder<Tile, Engine>(shr_epool, shr_bases, screen, op),
+        id_(world.register_ptr(this)) {}
+
+  madness::uniqueidT id() const { return id_; }
+
+  ~DirectIntegralBuilder() {
+    if (madness::initialized()) {
+      madness::World *world = madness::World::world_from_id(id_.get_world_id());
+      world->unregister_ptr(this);
+    }
+  }
+
+  using IntegralBuilder<Tile,Engine>::operator();
+  using IntegralBuilder<Tile,Engine>::integrals;
+  using IntegralBuilder<Tile,Engine>::op;
+
+ private:
+  madness::uniqueidT id_;
 };
 
 /*!
@@ -127,12 +145,25 @@ class IntegralBuilder
  * IntegralBuilder for details.
  */
 template <typename Tile, typename Engine>
-std::shared_ptr<IntegralBuilder<Tile,Engine>> make_integral_builder(
+std::shared_ptr<IntegralBuilder<Tile, Engine>> make_integral_builder(
+    ShrPool<Engine> shr_epool, detail::ShrBvetors shr_bases,
+    std::shared_ptr<Screener> shr_screen,
+    std::function<Tile(TA::TensorD &&)> op) {
+  return std::make_shared<IntegralBuilder<Tile, Engine>>(
+      std::move(shr_epool), std::move(shr_bases), std::move(shr_screen),
+      std::move(op));
+}
+
+/*!
+ * \brief Function to make detection of template parameters easier, see
+ * DirectIntegralBuilder for details.
+ */
+template <typename Tile, typename Engine>
+std::shared_ptr<DirectIntegralBuilder<Tile, Engine>> make_direct_integral_builder(
     madness::World &world, ShrPool<Engine> shr_epool,
     detail::ShrBvetors shr_bases, std::shared_ptr<Screener> shr_screen,
-    std::function<Tile(TA::TensorD&&)> op) {
-
-  return std::make_shared<IntegralBuilder<Tile,Engine>>(
+    std::function<Tile(TA::TensorD &&)> op) {
+  return std::make_shared<DirectIntegralBuilder<Tile, Engine>>(
       world, std::move(shr_epool), std::move(shr_bases), std::move(shr_screen),
       std::move(op));
 }

@@ -32,7 +32,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
   auto screen = std::make_shared<Screener>();
 
   auto builder =
-      make_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
+      make_direct_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
                             std::move(screen), std::move(op));
 
   auto dir_array = DirectArray<Tile, TA::SparsePolicy, Engine>(std::move(builder));
@@ -96,7 +96,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
   auto shr_bases = std::make_shared<Bvector>(bases);
 
   auto builder =
-      make_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
+      make_direct_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
                             std::move(screen), std::move(op));
 
   auto dir_array = DirectArray<Tile, TA::SparsePolicy,Engine>(std::move(builder));
@@ -165,7 +165,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
   auto shr_bases = std::make_shared<Bvector>(bases);
 
   auto builder =
-      make_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
+      make_direct_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
                             std::move(screen), std::move(op));
 
   auto dir_array = DirectArray<Tile, TA::SparsePolicy,Engine>(std::move(builder));
@@ -222,7 +222,7 @@ DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
 
   // Make a pointer to an Integral builder.
   auto builder =
-      make_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
+      make_direct_integral_builder(world, std::move(shr_pool), std::move(shr_bases),
                             std::move(screen), std::move(op));
 
   auto dir_array = DirectArray<Tile, TA::DensePolicy,Engine>(std::move(builder));

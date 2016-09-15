@@ -12,6 +12,7 @@
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
 
 #include "../../../../../utility/make_array.h"
+#include "ccsd_intermediates.h"
 
 static auto DIRECTAOTWOELECTONINTEGRAL =
     std::make_shared<mpqc::cc::TwoBodyIntGenerator>();
@@ -232,11 +233,44 @@ DirectTwoElectronSparseArray make_lazy_two_electron_sparse_array(
   return lazy_two_electron;
 }
 
-// direct ao integral using DF three center integral
-typedef mpqc::cc::LazyTile<4, TwoElectronIntDFGenerator<TA::DensePolicy>>
-    LazyTwoElectronDFDenseTile;
-typedef TA::Array<double, 4, LazyTwoElectronDFDenseTile, TA::DensePolicy>
-    DirectTwoElectronDFDenseArray;
+//using DirectTwoElectronArray = typename CCSDIntermediate<TA::TensorD, TA::SparsePolicy>::DirectTwoElectronArray;
+integrals::DirectArray<TA::TensorD,TA::SparsePolicy,libint2::Engine> make_direct_two_electron_sparse_array(madness::World &world,
+                                      const mpqc::basis::Basis &basis,
+                                      const TA::TiledRange &trange,
+                                      const int screen_option) {
+  auto bases = std::vector<mpqc::basis::Basis>{{basis, basis, basis, basis}};
+
+  // make engine pool
+  auto p_engine_pool = mpqc::integrals::make_engine_pool(
+      libint2::Operator::coulomb, utility::make_array_of_refs(basis));
+
+  // compute screener
+  std::shared_ptr<integrals::Screener> p_screen;
+  if (screen_option == 1) {
+    auto screen_builder = integrals::init_schwarz_screen(1e-10);
+    p_screen = std::make_shared<integrals::Screener>(
+        screen_builder(world, p_engine_pool, basis));
+
+    if (world.rank() == 0) {
+      std::cout << "schwarz screen" << std::endl;
+    }
+  } else if (screen_option == 2) {
+    auto screen_builder = integrals::init_qqr_screen{};
+    p_screen = std::make_shared<integrals::Screener>(
+        screen_builder(world, p_engine_pool, basis));
+    if (world.rank() == 0) {
+      std::cout << "qqr screen" << std::endl;
+    }
+  } else {
+    p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+    if (world.rank() == 0) {
+      std::cout << "no screen" << std::endl;
+    }
+  }
+
+  return integrals::direct_sparse_integrals(world, p_engine_pool, bases, p_screen);
+}
+
 }  // namespace cc
 }  // namespace mpqc
 

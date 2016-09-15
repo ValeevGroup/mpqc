@@ -392,7 +392,7 @@ inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
   auto by_atom_dfbs =
       cadf::by_atom_basis(dfbs_molecule, dfbs_set, dfbs_atom_to_cluster_map);
 
-  const auto dfbs_array = utility::make_array(by_atom_dfbs, by_atom_dfbs);
+  const auto dfbs_array = std::vector<basis::Basis>{{by_atom_dfbs, by_atom_dfbs}};
 
   auto M = integrals::dense_integrals(world, eng, dfbs_array);
 
@@ -403,7 +403,7 @@ inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
       integrals::make_engine_pool(libint2::Operator::coulomb, ref_array, libint2::BraKet::xs_xx);
 
   auto three_c_array =
-      utility::make_array(by_atom_dfbs, by_atom_obs, by_atom_obs);
+      std::vector<basis::Basis>{{by_atom_dfbs, by_atom_obs, by_atom_obs}};
 
   auto eri3 = integrals::untruncated_direct_sparse_integrals(world, eri_e,
                                                              three_c_array);

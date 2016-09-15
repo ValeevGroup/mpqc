@@ -9,6 +9,7 @@
 #include "../../../../../include/tiledarray.h"
 #include <mpqc/chemistry/qc/cc/lazy_tile.h>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
+#include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>
 
 namespace mpqc {
 
@@ -25,12 +26,12 @@ template <typename Tile, typename Policy>
 class CCSDIntermediate {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectTwoElectronArray = cc::DirectTwoElectronSparseArray;
+  using DirectTwoElectronArray = integrals::DirectArray<Tile,Policy>;
 
   CCSDIntermediate(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
                    DirectTwoElectronArray &direct_ao, bool df = true)
       : lcao_factory_(lcao_factory), direct_ao_(direct_ao), df_(df) {
-    have_four_center_ = direct_ao.is_initialized();
+    have_four_center_ = direct_ao.array().is_initialized();
   }
 
   integrals::LCAOFactory<Tile, Policy> &lcao_factory() const {

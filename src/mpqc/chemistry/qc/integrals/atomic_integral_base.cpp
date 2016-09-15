@@ -184,7 +184,7 @@ std::shared_ptr<Screener> AtomicIntegralBase::make_screener_four_center(
 void AtomicIntegralBase::parse_one_body(
     const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-    Barray<2> &bases) {
+    Bvector &bases) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -203,7 +203,7 @@ void AtomicIntegralBase::parse_one_body(
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
 
-  bases = mpqc::utility::make_array(*bra_basis, *ket_basis);
+  bases = Bvector {{*bra_basis, *ket_basis}};
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
@@ -215,7 +215,7 @@ void AtomicIntegralBase::parse_one_body(
 void AtomicIntegralBase::parse_two_body_two_center(
     const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-    Barray<2> &bases) {
+    Bvector &bases) {
   TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical,
                  "Two Body Two Center Integral Must Use Chemical Notation");
 
@@ -237,7 +237,7 @@ void AtomicIntegralBase::parse_two_body_two_center(
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
 
-  bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0);
+  bases = Bvector {{*bra_basis0, *ket_basis0}};
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
@@ -249,7 +249,7 @@ void AtomicIntegralBase::parse_two_body_two_center(
 
 void AtomicIntegralBase::parse_two_body_three_center(
     const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Barray<3> &bases,
+    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
     std::shared_ptr<Screener> &p_screener) {
   TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical,
                  "Three Center Integral Must Use Chemical Notation");
@@ -272,7 +272,7 @@ void AtomicIntegralBase::parse_two_body_three_center(
   TA_ASSERT(ket_basis0 != nullptr);
   TA_ASSERT(ket_basis1 != nullptr);
 
-  bases = mpqc::utility::make_array(*bra_basis0, *ket_basis0, *ket_basis1);
+  bases = Bvector {{*bra_basis0, *ket_basis0, *ket_basis1}};
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
@@ -297,7 +297,7 @@ void AtomicIntegralBase::parse_two_body_three_center(
 
 void AtomicIntegralBase::parse_two_body_four_center(
     const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Barray<4> &bases,
+    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
     std::shared_ptr<Screener> &p_screener) {
   auto bra_indexs = formula.bra_indices();
   auto ket_indexs = formula.ket_indices();

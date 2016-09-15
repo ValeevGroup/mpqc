@@ -6,14 +6,16 @@
 #define MPQC_TILE_CONVERT_H
 
 #include <../include/tiledarray.h>
+#include <../common/namespaces.h>
 
 namespace mpqc{
 namespace ta_routines{
 
-
-template <typename T>
-TA::Tensor<T> ta_tensor_pass_through(TA::Tensor<T> &&ten) { return std::move(ten); }
-
+struct TensorDPassThrough {
+  TA::TensorD operator()(TA::TensorD &&ten) const {
+    return std::move(ten);
+  }
+};
 
 }
 }

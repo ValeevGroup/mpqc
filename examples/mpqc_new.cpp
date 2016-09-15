@@ -60,13 +60,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
   libint2::initialize();
 
   integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(kv);
-  if(kv.contains("print_ints")){
-      for(p : prints){
-          p = L"< κ | λ >";
-          ao_ints.print_shape(p);
-      }
-          
-          }
 
   kv.assign("ao_integrals", &ao_int);
 

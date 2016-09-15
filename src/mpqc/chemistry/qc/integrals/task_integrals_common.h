@@ -22,16 +22,12 @@ using ShrPool = std::shared_ptr<Epool<E>>;
 template <unsigned long N>
 using Barray = std::array<basis::Basis, N>;
 
+using Bvector = std::vector<basis::Basis>;
+
 template <typename T>
 using OrdTileVec = std::vector<std::pair<unsigned long, T>>;
 
 const static Shell unit_shell = Shell::unit();
-
-struct TensorPassThrough {
-    TA::TensorD operator()(TA::TensorD &&ten) const {
-        return std::move(ten);
-    }
-};
 
 namespace detail {
 
@@ -40,6 +36,8 @@ using VecArray = std::array<ShellVec const *, N>;
 
 template <unsigned long N>
 using ShrBases = std::shared_ptr<Barray<N>>;
+
+using ShrBvetors = std::shared_ptr<Bvector>;
 
 using IdxVec = std::vector<std::size_t>;
 
@@ -61,6 +59,22 @@ TRange create_trange(Barray<N> const &basis_array) {
     }
 
     return TRange(trange1s.begin(), trange1s.end());
+}
+
+// create TRange from Bvector
+inline TRange create_trange(Bvector const& basis_vector) {
+
+    std::size_t N = basis_vector.size();
+
+    std::vector<TRange1> trange1s;
+    trange1s.reserve(N);
+
+    for (auto i = 0ul; i < N; ++i) {
+        trange1s.emplace_back(basis_vector[i].create_trange1());
+    }
+
+    return TRange(trange1s.begin(), trange1s.end());
+
 }
 
 template<unsigned long N>

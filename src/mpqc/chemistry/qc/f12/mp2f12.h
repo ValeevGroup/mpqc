@@ -115,8 +115,14 @@ class MP2F12 {
     if (singles) {
       auto single_time0 = mpqc_time::fenced_now(world);
 
-      CABSSingles<Tile> cabs_singles(lcao_factory());
-      e_s = cabs_singles.compute();
+      if(approach=="D"){
+        CABSSingles<Tile> cabs_singles(lcao_factory(),true,true);
+        e_s = cabs_singles.compute();
+      }else{
+        CABSSingles<Tile> cabs_singles(lcao_factory(),true,false);
+        e_s = cabs_singles.compute();
+      }
+
       if (debug()) {
         utility::print_par(lcao_factory().get_world(), "E_S: ", e_s, "\n");
       }

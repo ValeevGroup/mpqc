@@ -103,8 +103,13 @@ class CCSDF12 {
 
       auto single_time0 = mpqc_time::fenced_now(world);
 
-      CABSSingles<Tile> cabs_singles(lcao_factory_);
-      e_s = cabs_singles.compute();
+      if(approach=="D"){
+        CABSSingles<Tile> cabs_singles(lcao_factory_,true,true);
+        e_s = cabs_singles.compute();
+      }else{
+        CABSSingles<Tile> cabs_singles(lcao_factory_,true,false);
+        e_s = cabs_singles.compute();
+      }
       if (debug()) {
         utility::print_par(world, "E_S: ", e_s, "\n");
       }

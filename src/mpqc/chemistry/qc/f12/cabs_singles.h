@@ -29,8 +29,9 @@ public:
   /**
    * @param lcao_factory LCAOFactory Object
    * @param vir   if include F_ia in singles, default is true
+   * @param d   bool, F12 D Approach, default is false
    */
-  CABSSingles(LCAOFactoryType& lcao_factory, bool vir=true) : lcao_factory_(lcao_factory), couple_virtual_(vir){}
+  CABSSingles(LCAOFactoryType& lcao_factory, bool vir=true, bool d=false) : lcao_factory_(lcao_factory), couple_virtual_(vir), d_approach_(d){}
 
   real_t compute();
 
@@ -70,6 +71,7 @@ private:
 
   LCAOFactoryType& lcao_factory_;
   bool couple_virtual_;
+  bool d_approach_;
 };
 
 template <typename Tile>
@@ -80,12 +82,26 @@ CABSSingles<Tile>::compute() {
 
   TArray F_AB, F_MN;
   if(df){
-    F_AB = lcao_factory_.compute(L"<A'|F|B'>[df]");
+    if(d_approach_){
+
+      F_AB = lcao_factory_.compute(L"<A'|hJ|B'>[df]");
+
+    }else{
+
+      F_AB = lcao_factory_.compute(L"<A'|F|B'>[df]");
+    }
     F_MN = lcao_factory_.compute(L"<m|F|n>[df]");
 
   }
   else{
-    F_AB = lcao_factory_.compute(L"<A'|F|B'>");
+    if(d_approach_){
+
+      F_AB = lcao_factory_.compute(L"<A'|hJ|B'>");
+
+    }else{
+
+      F_AB = lcao_factory_.compute(L"<A'|F|B'>");
+    }
     F_MN = lcao_factory_.compute(L"<m|F|n>");
   }
 

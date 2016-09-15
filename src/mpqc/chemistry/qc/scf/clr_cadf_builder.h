@@ -71,7 +71,7 @@ class ClrCADFFockBuilder : public FockBuilder {
                                          basis::Basis const &dfbs) {
     auto &world = E_.get_world();
 
-    auto basis_array = utility::make_array(dfbs, obs, obs);
+    auto basis_array = std::vector<basis::Basis>{{dfbs, obs, obs}};
 
     auto eng_pool = integrals::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, obs, obs),
@@ -80,9 +80,12 @@ class ClrCADFFockBuilder : public FockBuilder {
     auto p_screen =
         std::make_shared<integrals::Screener>(integrals::Screener{});
 
-    return integrals::sparse_integrals(
-        world, eng_pool, basis_array, p_screen,
-        tensor::TaToDecompTensor(clr_threshold_));
+    auto my_class = tensor::TaToDecompTensor(clr_threshold_);
+    using clr_type = decltype(my_class(std::declval<TA::TensorD>()));
+    auto func = std::function<clr_type(TA::TensorD &&)>(my_class);
+
+    return integrals::sparse_integrals(world, eng_pool, basis_array,
+                                           p_screen, func);
   }
 
  public:
@@ -272,8 +275,8 @@ class ClrCADFFockBuilder : public FockBuilder {
       shape_time = utility::vec_avg(shape_times_);
     }
 
-    auto ktotal = c_mo_build + f_df_build + l_build +
-                  k_build + shape_time + cut_time;
+    auto ktotal =
+        c_mo_build + f_df_build + l_build + k_build + shape_time + cut_time;
 
     fock_builder.AddMember("Forced Shape", use_forced_shape_, d.GetAllocator());
     if (use_forced_shape_) {

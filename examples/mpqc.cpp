@@ -43,6 +43,7 @@
 #include <mpqc/chemistry/qc/scf/traditional_df_fock_builder.h>
 #include <mpqc/chemistry/qc/scf/traditional_four_center_fock_builder.h>
 #include <mpqc/chemistry/qc/scf/cadf_builder_print_only.h>
+#include <mpqc/chemistry/qc/scf/clr_cadf_builder.h>
 
 #include "../ta_routines/array_to_eigen.h"
 #include "../utility/trange1_engine.h"
@@ -61,6 +62,8 @@
 
 using namespace mpqc;
 namespace ints = integrals;
+
+bool tensor::detail::recompress = false;
 
 /**
  *
@@ -200,7 +203,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       clustered_mol =
           molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
     }
-  } else { // if has ghost molecule
+  } else {  // if has ghost molecule
     char *ghost_xyz_buffer;
     utility::parallel_read_file(world, ghost_atoms, ghost_xyz_buffer);
     std::stringstream ghost_xyz_stream;
@@ -226,8 +229,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
   }
 
-  if(sort_origin){ // Sort the clusters from the origin
-      clustered_mol.sort_from_point({0.0,0.0,0.0});
+  if (sort_origin) {  // Sort the clusters from the origin
+    clustered_mol.sort_from_point({0.0, 0.0, 0.0});
   }
 
   /**
@@ -400,6 +403,33 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                           dfbs_set, ao_int, use_forced_shape,
                                           force_threshold, lcao_chop_threshold);
       f_builder = make_unique<decltype(builder)>(std::move(builder));
+    } else if (fock_method == "clr_cadf") {
+      auto use_forced_shape = scf_in.HasMember("forced shape")
+                                  ? scf_in["forced shape"].GetBool()
+                                  : false;
+
+      auto lcao_chop_threshold =
+          scf_in.HasMember("TCutC") ? scf_in["TCutC"].GetDouble() : 0.0;
+
+      auto clr_threshold = scf_in.HasMember("clr threshold")
+                               ? scf_in["clr threshold"].GetDouble()
+                               : 0.0;
+
+      auto force_threshold = TA::SparseShape<float>::threshold();
+      if (use_forced_shape) {
+        force_threshold = scf_in["shape threshold"].GetDouble();
+        if (world.rank() == 0) {
+          std::cout
+              << "Using forced shape in CADF fock builder with threshold: "
+              << force_threshold << std::endl;
+        }
+      }
+
+      auto builder = scf::ClrCADFFockBuilder(
+          clustered_mol, clustered_mol, bs_set, dfbs_set, ao_int,
+          use_forced_shape, force_threshold, lcao_chop_threshold,
+          clr_threshold);
+      f_builder = make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "print only cadf") {
       auto use_forced_shape = scf_in.HasMember("forced shape")
                                   ? scf_in["forced shape"].GetBool()
@@ -476,7 +506,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
     }
 
     auto F = scf.fock();
-    if (fock_method == "df" || fock_method == "cadf") {
+    if (fock_method == "df" || fock_method == "cadf" ||
+        fock_method == "clr_cadf") {
       ao_int.registry().insert(Formula(L"<μ|F|ν>[df]"), F);
     } else if (fock_method == "four center") {
       ao_int.registry().insert(Formula(L"<μ|F|ν>"), F);

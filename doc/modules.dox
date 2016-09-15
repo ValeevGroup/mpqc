@@ -1,0 +1,149 @@
+
+/**
+   @defgroup Init mpqc.Init
+   Supports initialization of MPQC. Provides initialization of various runtime components (MADNESS, TiledArray, etc.)
+   as well as translation of simple traditional quantum-chemistry input to the MPQC object-oriented KeyVal input.
+*/
+
+/**
+  @defgroup Chemistry mpqc.Chemistry
+  @anchor labelmpqcChemistry
+  Provides functionality related to the domain of chemistry. This includes
+  - @ref labelmpqcChemistryMolecule "mpqc.Chemistry.Molecule"
+  - @ref labelmpqcChemistryBasis "mpqc.Chemistry.Basis"
+  - @ref labelmpqcChemistryElectronicStructure "mpqc.Chemistry.ElectronicStructure"
+*/
+
+/**
+  @defgroup ChemistryMolecule mpqc.Chemistry.Molecule
+  @ingroup Chemistry
+  @anchor labelmpqcChemistryMolecule
+  Provides Molecule class and related functionality.
+*/
+
+/**
+  @defgroup ChemistryBasis mpqc.Chemistry.Basis
+  @ingroup Chemistry
+  @anchor labelmpqcChemistryBasis
+  Classes/functions related to basis representations used in chemistry, i.e. atomic basis functions.
+*/
+
+/**
+  @defgroup ChemistryBasisIntegral mpqc.Chemistry.Basis.Integral
+  @ingroup ChemistryBasis
+  Classes/functions related to integrals over atomic basis function.
+
+  Synopsis:
+    @code
+    @endcode
+  In this example the computed integrals are extracted one-by-one. Often you want to
+  fill an entire TiledArray with AO integrals. This can be done using
+  @ref ChemistryBasisIntegralTA "mpqc.Chemistry.Basis.Integral.TiledArray".
+*/
+
+/**
+   @defgroup ChemistryBasisIntegralTA mpqc.Chemistry.Basis.Integral.TiledArray
+   @ingroup ChemistryBasisIntegral
+ * Provides interface to get atomic basis integrals into TiledArray tensors.
+ * @code
+ * IntegralEnginePool<Engine_type> engine_pool(seed_engine);
+ * TiledArray::Array<double, 2> array = Integrals(world, engine_pool);
+ * @endcode
+ */
+
+/**
+  @defgroup ChemistryElectronicStructure mpqc.Chemistry.ElectronicStructure
+  @ingroup Chemistry
+  @anchor labelmpqcChemistryElectronicStructure
+  Classes/functions related to state of electrons in Molecule.
+*/
+
+/**
+  @defgroup ChemistryElectronicStructureOneBody mpqc.Chemistry.ElectronicStructure.OneBody
+  @ingroup ChemistryElectronicStructure
+  Classes/functions related to one-body models of electronic structure.
+*/
+
+/**
+  @defgroup ChemistryElectronicStructureOneBodyHF mpqc.Chemistry.ElectronicStructure.OneBody.HF
+  @ingroup ChemistryElectronicStructureOneBody
+  Classes/functions related to Hartree-Fock (HF) one-body models of electronic structure.
+*/
+
+/**
+  @defgroup ChemistryElectronicStructureOneBodyHFCADF mpqc.Chemistry.ElectronicStructure.OneBody.HF.CADF
+  @ingroup ChemistryElectronicStructureOneBody
+  Classes/functions related to concentric atomic density fitting (CADF) formulation of Hartree-Fock
+*/
+
+/**
+  @defgroup ChemistryElectronicStructureNBody mpqc.Chemistry.ElectronicStructure.NBody
+  @ingroup ChemistryElectronicStructure
+  Classes/functions related to many-body models of electronic structure.
+*/
+
+/**
+  @defgroup CI mpqc.Chemistry.ElectronicStructure.NBody.CI
+  @ingroup ChemistryElectronicStructureNBody
+  Configuration Interaction (CI) implementation 
+*/
+
+/**
+  @defgroup ChemistryElectronicStructureSpin mpqc.Chemistry.ElectronicStructure.Spin
+  @ingroup ChemistryElectronicStructure
+  Functionality related to spin states of electrons.
+*/
+
+/**
+   @defgroup Core mpqc.Core
+   @anchor labelmpqcCore
+   Provides core, domain-independent functionality:
+   reading objects from an input file, etc.
+*/
+
+/**
+   @defgroup CoreKeyVal mpqc.Core.KeyVal
+   @ingroup Core
+   Classes/functions for managing structured sets of keyword-value associations, such as encoded in the MPQC object-oriented input format.
+*/
+
+/**
+   @defgroup CoreFile mpqc.Core.File
+   @ingroup Core
+   Implementation of hierarchical file objects based on
+   <a href="http://www.hdfgroup.org/HDF5/">HDF5</a>.
+
+   To work with files:
+   - create a file object
+   - create a dataset in that file (where actual data resides)
+   - write/read data to/from the dataset
+   @code
+
+   File file("file.h5");
+   std::vector<size_t> dims{m,n};
+   File::Dataset<double> ds(file, "my dataset", dims);
+   Vector v(m*n);
+   ds.write(v.data());
+   ds.read(v.data());
+   // or
+   ds << v; // write v to ds
+   ds >> v; // read ds to v
+   @endcode
+*/
+
+/**
+   @defgroup CoreUtility mpqc.Core.Util
+   @ingroup Core
+   Miscellaneous utilities
+*/
+
+/**
+   @defgroup Math mpqc.Math
+   @anchor labelmpqcMath
+   Provides mathematical functionality, e.g. Matrix and Tensor classes, linear algebra, etc.
+*/
+
+/** @defgroup MathMatrix mpqc.Math.LRTensor
+    @ingroup Math
+    Low-rank tensors.
+*/

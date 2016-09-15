@@ -9,7 +9,7 @@
 #include <utility>
 #include <random>
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 template <typename T>
 using Matrix = Eig::Matrix<T, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
@@ -29,9 +29,9 @@ class VectorCluster {
         for (auto const &elem : elems_) {
             new_center += elem.first;
         }
-        center_ = new_center;
         if (!elems_.empty()) {
-            center_ /= elems_.size();
+            new_center /= elems_.size();
+            center_ = new_center;
         }
     }
 
@@ -62,6 +62,8 @@ class VectorCluster {
 
     std::vector<VecIdx> const &elems() const { return elems_; }
 
+    bool empty() const { return elems_.empty(); }
+
     void update() {
         update_center();
         clear_elems();
@@ -77,14 +79,15 @@ void attach_to_closest(Matrix<T> const &D,
             cluster.update();
         }
     }
+
     for (auto i = 0; i < D.rows(); ++i) {
         Vector<T> current = D.row(i);
         auto &closest
               = *std::min_element(clusters.begin(), clusters.end(),
                                   [&current](VectorCluster<T> const &a,
                                              VectorCluster<T> const &b) {
-                  return (a.center() - current).norm()
-                         < (b.center() - current).norm();
+                  return (a.center() - current).squaredNorm()
+                         < (b.center() - current).squaredNorm();
               });
 
         closest.add_elem(current, i);
@@ -96,11 +99,10 @@ std::vector<VectorCluster<T>>
 init_rows(Matrix<T> const &D, unsigned long num_clusters) {
 
     std::vector<double> weights(D.rows(), 1.0);
-    std::mt19937 engine(42);
+    std::minstd_rand engine(42);
 
     std::vector<VectorCluster<T>> clusters(num_clusters);
 
-    auto size = D.rows();
     for (auto i = 0ul; i < num_clusters; ++i) {
 
         std::discrete_distribution<unsigned int> random_index(weights.begin(),
@@ -109,21 +111,27 @@ init_rows(Matrix<T> const &D, unsigned long num_clusters) {
         auto idx = random_index(engine);
         clusters[i] = VectorCluster<T>(D.row(idx));
 
-        for (auto j = 0; j < D.rows(); ++j) {
-            Vector<T> current = D.row(j);
+        weights[idx] = 0;
 
-            auto closest_cluster = 0;
-            auto smallest_norm
-                  = (clusters[closest_cluster].center() - current).norm();
-            for (auto k = 1ul; k <= i; ++k) {
-                auto diff_norm = (current - clusters[k].center()).norm();
-                if (diff_norm < smallest_norm) {
-                    smallest_norm = diff_norm;
-                }
-            }
+        // for (auto j = 0; j < D.rows(); ++j) {
+        //     Vector<T> current = D.row(j);
 
-            weights[j] = smallest_norm * smallest_norm;
-        }
+        //     // Need to search for this
+        //     auto closest_cluster = 0;
+        //     for(
+
+        //     auto smallest_norm
+        //           = (clusters[closest_cluster].center() - current).norm();
+
+        //     for (auto k = 1ul; k <= i; ++k) {
+        //         auto diff_norm = (current - clusters[k].center()).norm();
+        //         if (diff_norm < smallest_norm) {
+        //             smallest_norm = diff_norm;
+        //         }
+        //     }
+
+        //     weights[j] = smallest_norm * smallest_norm;
+        // }
     }
     bool initial_clustering = true;
     attach_to_closest(D, clusters, initial_clustering);
@@ -147,19 +155,55 @@ get_pivots(std::vector<VectorCluster<T>> const &clusters) {
 }
 
 template <typename T>
+auto all_have_elems(std::vector<T> &vs) -> decltype(vs.begin()) {
+    auto end = vs.end();
+    for (auto it = vs.begin(); it != end; ++it) {
+        if (it->elems().size() == 0) {
+            return it;
+        }
+    }
+    return end;
+}
+
+template <typename T>
 TA::TiledRange1 localize_vectors_with_kmeans(Matrix<T> const &xyz, Matrix<T> &D,
                                              unsigned long num_clusters) {
     auto clusters = init_rows(xyz, num_clusters);
-    for (auto i = 0; i < 30; ++i) {
+    for (auto i = 0; i < 5; ++i) {
         attach_to_closest(xyz, clusters);
+
+        for (auto j = 0; j < clusters.size(); ++j) {
+            if (clusters[j].elems().empty()) {
+                clusters[j] = VectorCluster<T>(xyz.row(j));
+                attach_to_closest(xyz, clusters);
+            }
+        }
     }
+
+    for (auto i = 0; i < clusters.size(); ++i) {
+        if (clusters[i].elems().empty()) {
+            std::cout << "Cluster " << i << " was emepty with center "
+                      << clusters[i].center().transpose() << std::endl;
+            std::cout << "Other clusters had\n";
+            for (auto j = 0; j < clusters.size(); ++j) {
+                if (i != j) {
+                    std::cout << "\t" << j << ": " << clusters[j].elems().size()
+                              << std::endl;
+                }
+            }
+            throw std::runtime_error("Empty cluster");
+        }
+    }
+
     Vector<unsigned long> J = get_pivots(clusters);
     Eig::PermutationWrapper<Vector<unsigned long>> P(J);
     P.applyThisOnTheRight(D);
 
     std::vector<unsigned long> blocks(1, 0);
     blocks.reserve(num_clusters);
+
     for (auto const &cluster : clusters) {
+        assert(!cluster.empty());
         blocks.push_back(cluster.elems().size() + blocks.back());
     }
 
@@ -167,4 +211,4 @@ TA::TiledRange1 localize_vectors_with_kmeans(Matrix<T> const &xyz, Matrix<T> &D,
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc

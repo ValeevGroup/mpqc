@@ -8,7 +8,7 @@
 #include <array>
 #include <utility>
 
-namespace tcc {
+namespace mpqc {
 namespace array_ops {
 
 template <typename T, unsigned int DIM, typename Tile>
@@ -87,6 +87,6 @@ deep_filter(TA::Array<T, DIM, Tile, TA::SparsePolicy> const &t,
 
 
 } // namespace array_ops
-} // namespace tcc
+} // namespace mpqc
 
 #endif // TCC_ARRAYOPS_DEEPFILTER_H

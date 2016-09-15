@@ -1,13 +1,69 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORUNARY_H
-#define TCC_TENSOR_DECOMPOSEDTENSORUNARY_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
 
 #include "decomposed_tensor.h"
 #include "decomposed_tensor_algebra.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
+
+/*! \brief Returns the trace of a decompose tensor 
+ * Currently not recommended due to implementation details
+ */
+template <typename T>
+T trace(DecomposedTensor<T> const &t) {
+    return algebra::combine(t).trace();
+}
+
+/*! \brief Returns the sum of a decomposed tensor tile
+ * Currently not recommended due to implementation details
+ */
+template <typename T>
+T sum(DecomposedTensor<T> const &t) {
+    return algebra::combine(t).sum();
+}
+
+/*! \brief Returns the min of a decomposed tensor tile
+ * Currently not recommended due to implementation details
+ */
+template <typename T>
+T min(DecomposedTensor<T> const &t) {
+    return algebra::combine(t).min();
+}
+
+/*! \brief Returns the max of a decomposed tensor tile
+ * Currently not recommended due to implementation details
+ */
+template <typename T>
+T max(DecomposedTensor<T> const &t) {
+    return algebra::combine(t).max();
+}
+
+/*! \brief Returns the abs_min of a decomposed tensor tile
+ * Currently not recommended due to implementation details
+ */
+template <typename T>
+T abs_min(DecomposedTensor<T> const &t) {
+    return algebra::combine(t).abs_min();
+}
+
+/*! \brief Returns the abs_max of a decomposed tensor tile
+ * Currently not recommended due to implementation details
+ */
+template <typename T>
+T abs_max(DecomposedTensor<T> const &t) {
+    return algebra::combine(t).abs_max();
+}
+
+/*! \brief Returns the product of a decomposed tensor tile
+ * Currently not recommended due to implementation details
+ */
+template <typename T>
+T product(DecomposedTensor<T> const &t) {
+    return algebra::combine(t).product();
+}
 
 template <typename T>
 T norm(DecomposedTensor<T> const &t) {
@@ -22,6 +78,7 @@ T norm(DecomposedTensor<T> const &t) {
     }
     return norm_bound;
 }
+
 template <typename T>
 T squared_norm(DecomposedTensor<T> const &t) {
     return algebra::combine(t).squared_norm();
@@ -49,8 +106,8 @@ DecomposedTensor<T> clone(DecomposedTensor<T> const &t) {
     return DecomposedTensor<T>(t.cut(), std::move(ts));
 }
 
-template <typename T>
-DecomposedTensor<T> scale(DecomposedTensor<T> const &t, T factor) {
+template <typename T, typename F>
+DecomposedTensor<T> scale(DecomposedTensor<T> const &t, F factor) {
     auto left = t.tensor(0).scale(factor);
     if (t.ndecomp() == 2) {
         // assert(false);
@@ -61,9 +118,9 @@ DecomposedTensor<T> scale(DecomposedTensor<T> const &t, T factor) {
     return DecomposedTensor<T>(t.cut(), std::move(left));
 }
 
-template <typename T>
+template <typename T, typename F>
 DecomposedTensor<T>
-scale(DecomposedTensor<T> const &t, T factor, TA::Permutation const &p) {
+scale(DecomposedTensor<T> const &t, F factor, TA::Permutation const &p) {
     assert(false);
 }
 
@@ -96,15 +153,15 @@ DecomposedTensor<T> &neg_to(DecomposedTensor<T> const &t) {
     assert(false);
 }
 
-template <typename T>
-DecomposedTensor<T> &scale_to(DecomposedTensor<T> &t, T factor) {
+template <typename T, typename F>
+DecomposedTensor<T> &scale_to(DecomposedTensor<T> &t, F factor) {
     t.tensor(0).scale_to(factor);
     return t;
 }
 
-template <typename T>
+template <typename T, typename F>
 DecomposedTensor<T> &
-scale_to(DecomposedTensor<T> &t, T factor, TA::Permutation const &p) {
+scale_to(DecomposedTensor<T> &t, F factor, TA::Permutation const &p) {
     assert(false);
 }
 
@@ -119,6 +176,6 @@ bool empty(DecomposedTensor<T> const &t) {
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_TENSOR_DECOMPOSEDTENSORUNARY_H
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H

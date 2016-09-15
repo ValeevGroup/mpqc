@@ -1,6 +1,36 @@
-/*! \mainpage Welcome to TileClusterChem
-    
-    TCC is a chemistry library that attempts to exploit localility in a low rank
-    manor in order to reduce both storage and computaion time of various 
-    electronic structure methods.
+
+/** \mainpage The Massively Parallel Quantum Chemistry Program (MPQC)
+
+The Massively Parallel Quantum Chemistry program (MPQC) computes the properties of
+molecules using first-principles quantum mechanics on a wide variety of parallel
+computer architectures. MPQC is an ongoing research project intended to bring
+the advanced electronic structure theory to massively parallel machines of
+today and tomorrow. Version 4 of MPQC was completely re-designed from the ground up to support
+massive concurrency from the ground up and to use novel reduced-scaling algorithms.
+These two unique traits of MPQC version 4 (or MPQC4) permit accurate electronic structure simulation
+for molecules of unprecedented size.
+
+MPQC provides basic electronic structure methods: Hartree-Fock, second-order Moller-Plesset theory,
+and some advanced electron correlation methods (in particular, explicitly correlated coupled-cluster
+methods).
+
+MPQC is distributed under the terms of the General Public License (GPL), version 3.
+
+<ul>
+  <li> \ref overview
+  <li> \ref compile
+</ul>
+
+\section userref Command Reference
+<ul>
+  <li> \ref mpqc
+</ul>
+
+\section develref Developer's Reference
+<ul>
+  <li> \ref develop
+  <li> \ref srctree
+  <li> \ref keyval
+</ul>
+
 */

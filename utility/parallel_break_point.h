@@ -1,13 +1,13 @@
 #pragma once
-#ifndef TCC_UTILITY_PARALLELBREAKPOINT_H
-#define TCC_UTILITY_PARALLELBREAKPOINT_H
+#ifndef MPQC_UTILITY_PARALLELBREAKPOINT_H
+#define MPQC_UTILITY_PARALLELBREAKPOINT_H
 
 #include "../include/tiledarray.h"
 
-namespace tcc {
+namespace mpqc {
 namespace utility {
 
-void parallal_break_point(madness::World &world, volatile int debug) {
+inline void parallel_break_point(madness::World &world, volatile int debug) {
     if (0 != debug) {
         char hostname[256];
         gethostname(hostname, sizeof(hostname));
@@ -21,6 +21,6 @@ void parallal_break_point(madness::World &world, volatile int debug) {
 }
 
 } // namespace utility
-} // namespace namespace tcc
+} // namespace namespace mpqc
 
-#endif // TCC_UTILITY_PARALLELBREAKPOINT_H
+#endif // MPQC_UTILITY_PARALLELBREAKPOINT_H

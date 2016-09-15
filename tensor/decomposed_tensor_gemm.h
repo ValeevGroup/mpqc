@@ -1,15 +1,31 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORGEMM_H
-#define TCC_TENSOR_DECOMPOSEDTENSORGEMM_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H
 
 #include "../include/tiledarray.h"
+#include "../common/typedefs.h"
+
 #include "decomposed_tensor.h"
 #include "decomposed_tensor_algebra.h"
 #include "decomposed_tensor_addition.h"
 #include "decomposed_tensor_gemm_helper.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
+
+template <typename T>
+TA::TensorD gemm(DecomposedTensor<T> const &a, TA::TensorD const &b,
+                 const T factor, TA::math::GemmHelper const &gh) {
+    TA::TensorD ac = algebra::combine(a); 
+    return a.gemm(b,factor, gh);
+}
+
+template <typename T>
+TA::TensorD gemm(TA::TensorD &c, DecomposedTensor<T> const &a, TA::TensorD const &b,
+                 const T factor, TA::math::GemmHelper const &gh) {
+    TA::TensorD ac = algebra::combine(a); 
+    return c.gemm(ac, b, factor, gh);
+}
 
 template <typename T>
 DecomposedTensor<T>
@@ -35,8 +51,8 @@ gemm(DecomposedTensor<T> const &a, DecomposedTensor<T> const &b, const T factor,
                 out = detail::low_rank_gemm<2, 3, 1>{}(a, b, factor, gh);
             }
         } else if (gh.left_rank() == 2) {
-            if(gh.right_rank() == 2){
-                out = detail::low_rank_gemm<2,2,2>{}(a,b,factor,gh);
+            if (gh.right_rank() == 2) {
+                out = detail::low_rank_gemm<2, 2, 2>{}(a, b, factor, gh);
             }
         }
     } else if (gh.result_rank() == 1) {
@@ -80,9 +96,9 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
             if (gh.right_rank() == 1) {
                 detail::low_rank_gemm<2, 3, 1>{}(c, a, b, factor, gh);
             }
-        } else if(gh.left_rank() == 2){
-            if(gh.right_rank() == 2){
-                detail::low_rank_gemm<2,2,2>{}(c,a,b,factor,gh);
+        } else if (gh.left_rank() == 2) {
+            if (gh.right_rank() == 2) {
+                detail::low_rank_gemm<2, 2, 2>{}(c, a, b, factor, gh);
             }
         }
     } else if (gh.result_rank() == 1) {
@@ -104,6 +120,6 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_TENSOR_DECOMPOSEDTENSORGEMM_H
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H

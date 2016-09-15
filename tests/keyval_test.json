@@ -1,0 +1,12 @@
+{
+  "molecule": {
+    "type": "Molecule",
+    "file_name": "../examples/watermonomer1.xyz",
+    "sort_input": true
+  },
+  "basis": {
+    "type": "Basis",
+    "name": "cc-pVDZ",
+    "molecule": "$:molecule"
+  }
+}

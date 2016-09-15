@@ -1,23 +1,23 @@
 #pragma once
 
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
-#define TCC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
 
 #include "decomposed_tensor.h"
 #include "decomposed_tensor_algebra.h"
 #include "decomposed_tensor_addition.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 namespace detail {
+
+extern bool recompress;
 
 template <typename U>
 using Dtensor = DecomposedTensor<U>;
 
 using GHelper = TA::math::GemmHelper;
 
-static constexpr auto NoT = madness::cblas::CBLAS_TRANSPOSE::NoTrans;
-static constexpr auto Tr = madness::cblas::CBLAS_TRANSPOSE::Trans;
 
 template <unsigned long... Dims>
 struct low_rank_gemm {
@@ -44,7 +44,14 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
             return Dtensor<T>{a.cut(), a.tensor(0).gemm(b.tensor(0), f, gh)};
         } else if (a.ndecomp() == 2) { // LR gemm
             auto Rp = a.tensor(1).gemm(b.tensor(0), f, gh);
-            return Dtensor<T>{a.cut(), a.tensor(0).clone(), std::move(Rp)};
+            auto tensor
+                  = Dtensor<T>{a.cut(), a.tensor(0).clone(), std::move(Rp)};
+
+            if (recompress) {
+                return tensor;
+            } else {
+                return Dtensor<T>{a.cut(), algebra::combine(tensor)};
+            }
         }
         assert(false);
         return Dtensor<T>{};
@@ -75,11 +82,6 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
                 auto gh = TA::math::GemmHelper(NoT, NoT, 3, 2, 3);
                 ab_tensor.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
                 c = DecomposedTensor<double>(c.cut(), std::move(ab_tensor));
-                // auto decomp_test = algebra::two_way_decomposition(c);
-
-                // if (!decomp_test.empty()) {
-                //     c = std::move(decomp_test);
-                // }
 
                 return c;
             }
@@ -91,8 +93,10 @@ struct low_rank_gemm<3ul, 3ul, 2ul> {
             auto out_dim = c.rank();
             const auto full_rank = std::min(c_left_extent[0], long_dim);
 
-            algebra::recompress(c);
-            out_dim = c.rank();
+            if (recompress) {
+                algebra::recompress(c);
+                out_dim = c.rank();
+            }
 
             if (out_dim > full_rank / 2) {
                 c = DecomposedTensor<T>(c.cut(), algebra::combine(c));
@@ -111,19 +115,19 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
     template <typename T>
     Dtensor<T> operator()(Dtensor<T> const &a, Dtensor<T> const &b, const T f,
                           GHelper const &gh) {
+        Dtensor<T> out;
         if (a.ndecomp() == 1) {     // Full *
             if (b.ndecomp() == 1) { // Full Full
-                return Dtensor<T>{a.cut(),
-                                  a.tensor(0).gemm(b.tensor(0), f, gh)};
+                out = Dtensor<T>{a.cut(), a.tensor(0).gemm(b.tensor(0), f, gh)};
             } else { // Full Low
                 const auto gh_fl = GHelper(NoT, NoT, 2, 2, 2);
                 auto sw = a.tensor(0).gemm(b.tensor(0), f, gh_fl);
-                return Dtensor<T>{a.cut(), std::move(sw), b.tensor(1).clone()};
+                out = Dtensor<T>{a.cut(), std::move(sw), b.tensor(1).clone()};
             }
         } else {                    // Low *
             if (b.ndecomp() == 1) { // Low Full
                 auto Tw = a.tensor(1).gemm(b.tensor(0), f, gh);
-                return Dtensor<T>{a.cut(), a.tensor(0).clone(), std::move(Tw)};
+                out = Dtensor<T>{a.cut(), a.tensor(0).clone(), std::move(Tw)};
             } else { // Low Low
                 const auto gh_m = GHelper(NoT, NoT, 2, 2, 2);
                 auto M = a.tensor(1).gemm(b.tensor(0), 1.0, gh_m);
@@ -132,15 +136,28 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                 const auto go_left = a.rank() >= b.rank();
                 if (go_left) {
                     const auto gh_left = GHelper(NoT, NoT, 2, 2, 2);
-                    return Dtensor<T>{a.cut(), a.tensor(0).gemm(M, f, gh_left),
-                                      b.tensor(1).clone()};
+                    out = Dtensor<T>{a.cut(), a.tensor(0).gemm(M, f, gh_left),
+                                     b.tensor(1).clone()};
                 } else {
                     const auto gh_right = GHelper(NoT, NoT, 3, 2, 3);
-                    return Dtensor<T>{a.cut(), a.tensor(0).clone(),
-                                      M.gemm(b.tensor(1), f, gh_right)};
+                    out = Dtensor<T>{a.cut(), a.tensor(0).clone(),
+                                     M.gemm(b.tensor(1), f, gh_right)};
                 }
             }
         }
+
+        if (recompress && out.cut() != 0.0) {
+            if (out.ndecomp() == 1) {
+                auto test = tensor::algebra::two_way_decomposition(out);
+                if (!test.empty()) {
+                    out = test;
+                }
+            } else {
+                tensor::algebra::recompress(out);
+            }
+        }
+
+        return out;
     }
 
     template <typename T>
@@ -155,6 +172,7 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                     c.tensor(0)
                           .gemm(a.tensor(0).gemm(b.tensor(0), 1.0, gh_left),
                                 b.tensor(1), f, gh);
+
                 }
             } else {                    // Full Low *
                 if (b.ndecomp() == 1) { //  Full Low Full
@@ -188,7 +206,6 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                         c.tensor(0).gemm(a.tensor(0), right_tensor, f, gh);
                     }
                 }
-                return c;
             }
         } else {                                        // Low * *
             if (a.ndecomp() == 1 && b.ndecomp() == 1) { // Low Full Full
@@ -196,15 +213,23 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                 temp.gemm(c.tensor(0), c.tensor(1), 1.0, gh);
 
                 c = Dtensor<T>{c.cut(), std::move(temp)};
-                // auto decomp_c = algebra::two_way_decomposition(c);
-                // if (!decomp_c.empty()) {
-                //     c = std::move(decomp_c);
-                // }
+
             } else { // Other cases can be handled by the following LFL LLF and
                      // LLL
                 auto ab = this->operator()(a, b, f, gh);
                 c = add(c, ab);
-                algebra::recompress(c);
+            }
+        }
+
+        if (recompress && c.cut() != 0.0) {
+            if (c.ndecomp() == 1) {
+                auto test = tensor::algebra::two_way_decomposition(c);
+                if (!test.empty()) {
+                    c = test;
+                }
+            } else {
+                tensor::algebra::recompress(c);
+
                 auto out_dim = c.rank();
                 auto left_dim = c.tensor(0).range().extent()[0];
                 auto const &right_extent = c.tensor(1).range().extent();
@@ -214,6 +239,7 @@ struct low_rank_gemm<3ul, 2ul, 3ul> {
                 }
             }
         }
+
         return c;
     }
 };
@@ -444,7 +470,7 @@ struct low_rank_gemm<2ul, 2ul, 2ul> {
 
 } // namespace detail
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
 
-#endif // TCC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H

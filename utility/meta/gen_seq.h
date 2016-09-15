@@ -6,7 +6,7 @@
 #include <tuple>
 #include <array>
 
-namespace tcc {
+namespace mpqc {
 namespace utility {
 
 /// seq and gen_seq are taken from stackoverflow's pretty print tuple answer.
@@ -20,6 +20,6 @@ template <std::size_t... Is>
 struct gen_seq<0, Is...> : seq<Is...> {};
 
 } // namespace utility
-} // namespace tcc
+} // namespace mpqc
 
 #endif /* end of include guard: TCC_UTLITIY_EXPANDCONTAINER_H */

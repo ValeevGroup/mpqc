@@ -1,0 +1,507 @@
+
+namespace mpqc {
+
+/** \page keyval The KeyVal Library
+
+The most powerful way to use MPQC is to provide input in an object-oriented text format
+that can be understood by the KeyVal class. MPQC version 3 and older use a custom text format
+for input data. MPQC4 abandoned the old format in favor of these popular industry-standard formats
+used for data exchange:
+  - <a href="http://json.org/">JSON</a>,
+  - <a href="http://www.w3.org/XML/">XML</a>.
+
+The KeyVal class is a means in a C++ program to convert such JSON or XML input to
+C++ primitive data (booleans, integers, reals, string) and
+user-defined objects. For example, the following JSON,
+@verbatim
+{
+  "type" : "Atom"
+  "element" : "C",
+  "r" : [0.0 1.0 -2.0],
+  "isotope" : "13"
+}
+@endverbatim
+can be used to construct an object of the following C++ class representing an atom:
+@code
+struct Atom {
+  int Z;
+  std::array<double, 3> r;
+  int isotope;
+};
+@endcode
+
+KeyVal is more than just an JSON/XML importer: it is a general-purpose component
+for representing "keyword=value" associations in a flexible structured form.
+and can be used in any C++ program that needs such functionality.
+KeyVal objects can be created from JSON- or XML-formatted text, or purely programmatically.
+For brevity, only the programmatic and JSON-based methods will be illustrated here.
+
+<ul>
+  <li> \ref keyvalass
+  <li> \ref keyvalconstruct
+  <li> \ref keyvalgroup
+  <li> \ref keyvalobj
+  <li> \ref keyvalpobj
+  <li> \ref keyvalarray
+  <li> \ref keyvalsub
+  <li> \ref keyvaldescribedclass
+</ul>
+
+\section keyvalass Assignment
+
+As an example of the use of KeyVal, consider the following
+JSON input:
+@verbatim
+{
+  "x_coordinate" :  1.0,
+  "y_coordinate" :  2.0,
+  "x_coordinate" :  3.0
+}
+@endverbatim
+Two assignements will be made.  The keyword \c x_coordinate will be
+associated with the value \c 1.0 and the keyword \c y_coordinate
+will be assigned to \c 2.0.  The third line in the above input
+will have no effect since \c x_coordinate is already assigned.
+
+\note The data specified by the third line is still internally kept
+by KeyVal, but cannot be accessed by the standard API. Use KeyVal::tree or KeyVal::top_tree
+to access the Boost.PropertyTree object to extract this data
+
+\section keyvalgroup Keyword Grouping and Paths
+
+Lets imagine that we have a program which needs to read in the
+characteristics of animals.  There are lots of animals so it might be
+nice to catagorize them by their family.  Here is a sample JSON
+input file for such a program:
+\anchor KeyValPage_Example1
+@verbatim
+{
+  "reptile": {
+    "trex": {
+      "legs": 2,
+      "extinct: true
+    },
+    "python": {
+      "legs": 0,
+      "extinct": false
+    }
+  },
+  "bird": {
+    "bald eagle": {
+      "species": "Haliaeetus leucocephalus",
+      "flys": true,
+      "extinct": false
+    }
+  }
+}
+@endverbatim
+
+This sample illustrates the use of \c keyword:value 
+assignments and the keyword grouping operators \c { and \c } .
+The hierarchy of keyword/value pairs forms a tree.
+Direct access to a location in this tree is
+possible by arranging keywords into composite keywords,
+or \em paths. The data in this example can be accessed
+using these paths:
+@verbatim
+reptile:trex:legs
+reptile:trex:extinct
+reptile:python:legs
+reptile:python:extinct
+bird:bald eagle:species
+bird:bald eagle:flys
+bird:bald eagle:extinct
+@endverbatim
+
+The KeyVal::separator character, '\c : ' , occuring in these paths
+break the paths into individual keywords, or path segments.
+The sole purpose of this is to allow persons writing input files to group the input into easy to
+read sections (JSON refers to such sections as \em objects , not to be confused with
+C++ objects).  In the above example there are two main sections, the
+reptile section and the bird section.  The reptile section takes the
+form @verbatim "reptile" : { "keyword1": value1, "keyword2": value2, ... } @endverbatim .
+Each of the keywords found in the reptile section has the \c reptile: prefix attached to its path.
+Within each of these sections further keyword groupings can be used, as many and as
+deeply nested as the user wants.
+
+@note Keywords ("bald eagle") as well as string values ("Haliaeetus leucocephalus") can contain whitespace characters.
+The former was not possible in the old KeyVal input format.
+
+Keyword grouping is also useful when you need many different programs to
+read from the same input file.  Each program can be assigned its own
+unique section.
+
+\section keyvalconstruct Constructing KeyVal
+
+KeyVal objects can be directly created using JSON text input, or created
+programmatically. If the JSON text shown in \ref KeyValPage_Example1 "Example 1" is stored in
+text file \c "example1.json" then a KeyVal object is constructed and used as follows:
+@code
+#include <fstream>
+#include <cassert>
+#include <mpqc/util/keyval/keyval.hpp>
+
+std::ifstream f("example1.json");  assert(f.is_good());
+
+mpqc::KeyVal kv; kv.read_json(f);
+
+auto trex_extinct = kv.value<bool>("reptile:trex:extinct");
+auto python_legs = kv.value<int>("reptile:python:legs"); // could use any integer type, e.g. 'unsigned long'
+auto bald_eagle_species = kv.value<std::string>("bird:bald eagle:species");
+@endcode
+Of course, any basic_istream can be used (e.g. std::istringstream) and not just std::ifstream.
+
+It is often convenient to construct KeyVal objects programmatically. This is particularly useful
+to construct programmatically classes that have constructors that take KeyVal (see \ref keyvaldescribedclass ).
+A KeyVal object corresponding to the JSON input in \ref KeyValPage_Example1 "Example 1" can be created as
+follows:
+\anchor KeyValPage_Example2
+@code
+KeyVal kv;
+kv.assign("reptile:trex:legs", 2);
+kv.assign("reptile:trex:extinct", true);
+kv.assign("reptile:python:legs", 0).assign("reptile:python:extinct", false);  // can chain assignments
+kv.assign("bird:bald eagle:species", "Haliaeetus leucocephalus").assign("bird:bald eagle:flys", true).assign("bird:bald eagle:extinct", false);
+@endcode
+
+So far so good. But why all this complexity? To understand that, let's consider
+how KeyVal helps to construct C++ objects, not just simple data.
+
+\section keyvalobj Simple Object Construction
+
+Consider the following class representing Birds:
+@code
+struct Bird {
+    std::string species;
+    bool flys;
+    bool extinct;
+};
+@endcode
+To construct \c Bird from KeyVal objects we need to add a constructor:
+@code
+Bird::Bird(const KeyVal& kv) {
+  species = kv.value<std::string>("species");
+  flys = kv.value<bool>("flys");
+  extinct = kv.value<bool>("extinct");
+}
+@endcode
+Then, given a KeyVal object constructed from JSON \ref KeyValPage_Example1 "Example 1" or
+as in \ref KeyValPage_Example2 "Example 2" we can construct a \c Bird object representing a bald eagle as follows:
+@code
+Bird bald_eagle(kv.keyval("bird:bald eagle"));
+@endcode
+Note the use of KeyVal::keyval method to construct a KeyVal object representing the subtree
+whose root is at "bird:bald eagle" of the base KeyVal object. The ability to refer
+to keyword sections in an existing KeyVal is crucial for constructing hierarchies of C++ objects easily.
+
+\section keyvalpobj Polymorphic Object Construction
+
+JSON in \ref KeyValPage_Example1 "Example 1" specifies three animals: 2 reptiles and 1 bird. Reptiles and birds are
+both animals, thus they have much in common, e.g. they can both be extinct.
+Although possible to express in other ways, this fact is often represented using inheritance:
+@code
+struct Animal {
+  bool extinct() const;
+private:
+  bool m_extinct;
+};
+struct Reptile: public Animal {
+  int legs const ();
+private:
+  int m_legs;
+};
+struct Bird: public Animal {
+  bool flys() const;
+private:
+  bool m_flys;
+};
+@endcode
+This then allows to write a function that takes as its lone argument a reference or a pointer to an
+object of class Animal.
+@code
+bool is_extinct(const Animal& a) { return a.extinct(); }
+
+Reptile trex;
+Bird owl;
+// initialization not shown
+assert(is_extinct(trex) == true); // ok
+assert(is_extinct(owl) == false); // ok
+@endcode
+
+Now we would like the user to be able to give a list of Animal objects and have the program count how many extinct
+animals are given, as well as print out their attributes like scientific names, etc. For each object in the input
+the user should be able to specify the exact \em kind of Animal it represents: Bird or Reptile.
+
+For example, in a chemistry context, the MPQC program needs to be able to perform geometry optimization given
+a Wavefunction object whose type is specified by the user (Hartree-Fock, CCSD, etc.). The input parser code
+could read in a type string corresponding to the Wavefunction type and then test it in a long series of
+\c if statements against the known types. This unfortunately means that whenever a new Wavefunction is
+implemented the input parser code must be modified. This problem is solved by the KeyVal library.
+
+Consider the following variant of \ref KeyValPage_Example1 "Example 1" JSON:
+\anchor KeyValPage_Example11
+@verbatim
+{
+  "trex": {
+    "type": "Reptile",
+    "legs": 2,
+    "extinct: true
+  },
+  "python": {
+    "type": "Reptile",
+    "legs": 0
+    "extinct": false
+  },
+  "bald eagle": {
+    "type": "Bird",
+    "species": "Haliaeetus leucocephalus",
+    "flys": true
+    "extinct": false
+  }
+}
+@endverbatim
+Note that we eliminated the reptile and bird sections so that all animals appear at the same level.
+
+Skipping for now the modifications of the C++ classes necessary, see how easy it is to read in these animals as
+objects of Animal class:
+@code
+auto trex = kv.class<Animal>("trex");              assert(trex->extinct() == true);
+auto python = kv.class<Animal>("python");          assert(python->extinct() == false);
+auto bald_eagle = kv.class<Animal>("bald eagle");  assert(bald_eagle->extinct() == false);
+@endcode
+KeyVal::class<T> returns \c std::shared_ptr<T> , hence the pointer dereferencing. Also, the actual types of
+\c trex , \c python , and \c bald_eagle are Reptile, Reptile, and Bird, so we can access their full properties:
+@code
+assert(std::dynamic_pointer_cast<Reptile>(trex)->legs() == 2);
+assert(std::dynamic_pointer_cast<Bird>(bald_eagle)->flys() == true);
+@endcode
+
+Now let's see the actual implementation of Animal, Reptile, and Bird classes:
+@code
+struct Animal : public DescribedClass {
+  Animal(const KeyVal& kv) {
+    m_extinct = kv.value<bool>("extinct");
+  }
+  bool extinct() const { return extinct; }
+private:
+  bool m_extinct;
+};
+
+struct Reptile: public Animal {
+  Reptile(const KeyVal& kv) : Animal(kv) {
+    m_legs = kv.value<int>("legs");
+  }
+  int legs const ();
+private:
+  int m_legs;
+};
+MPQC_CLASS_EXPORT_KEY(Reptile);
+
+struct Bird: public Animal {
+  Bird(const KeyVal& kv) : Animal(kv) {
+    m_flys = kv.value<bool>("flys");
+  }
+  bool flys() const;
+private:
+  bool m_flys;
+};
+MPQC_CLASS_EXPORT_KEY(Bird);
+@endcode
+
+A few comments:
+  - Animal class is derived from DescribedClass to support polymorphic construction using KeyVal::class 
+    (see \ref keyvaldescribedclass ).
+  - Smart pointers to objects created using KeyVal::class method are stored in the registry associated
+    with that KeyVal's top tree. They will not be destroyed until KeyVal is destroyed as well.
+  - Every class that we want to construct from KeyVal polymorphically needs to be associated with a
+    global unique identifier descriptor (GUID) string (typically, GUID is the class name without the namespace).
+    This is done using the MPQC_CLASS_EXPORT_KEY macro. The value of keyword \c type in the object section
+    must be one of the known GUID's.
+
+@note Animal could also be an abstract class; no additional complications arise.
+
+It is convenient to be able to refer to existing objects of classes derived from DescribedClass
+in a KeyVal constructed programmatically. This example demonstrates this capability:
+@code
+Keyval kv;
+std::shared_ptr<DescribedClass> trex = std::make_shared<Reptile>(...);
+kv.assign("trex", trex);
+assert(kv.class("trex") == trex);
+@endcode
+
+\section keyvalarray Array Specification
+
+Input for an array can be specified in several forms. In JSON there is standard
+support for arrays; alternatively, an array can be specified as a keyword group
+to make it possible to refer to elements of such arrays. Programmatic manipulation of KeyVal
+can assign and read arrays stored in standard sequence containers such as
+\c std::vector , \c std::array , and \c std::list .
+
+\subsection keyvalarrayjsonarray JSON Standard Array Syntax
+
+Consider how the attributes of animals in JSON \ref KeyValPage_Example11 "Example 3"
+can be specified using JSON arrays:
+\anchor KeyValPage_Example3
+@verbatim
+{
+  "names": [ "trex", "python", "bald eagle" ],
+  "legs": [ 2, 0, 2 ],
+  "extinct": [ true, false, false ]
+}
+@endverbatim
+Keyword \c names equals an array of 3 strings, keyword \c legs equals an array of
+3 integers, etc. The following C++ code can access the data in the corresponding KeyVal:
+@code
+auto names = kv.value<std::vector<std::string>>("names");
+auto names = kv.value<std::vector<int>>("legs");
+auto names = kv.value<std::vector<bool>>("extinct");
+@endcode
+Unfortunately, it is not yet possible to specify an array of objects this way.
+
+@note Elements of an array specified in standard syntax all have same (empty) key,
+i.e. elements of an array corresponding to path \c path are located at path \c path: . This
+scheme for assigning keys is used by Boost.PropertyTree when reading JSON arrays.
+This makes it impossible to refer to individual elements since they all share a path,
+i.e. \c KeyVal::value<T>("path:") return only the first element of the array at path \c path .
+
+\subsection keyvalarrayjsonextarray JSON Extended Array Syntax
+
+The extended array syntax specifies arrays as a group of keywords \c "0", \c"1", etc.
+For example, the arrays in JSON \ref KeyValPage_Example3 "Example 3"
+can be specified in the extended syntax as
+@verbatim
+{
+  "names": { "0":"trex", "1":"python", "2":"bald eagle" },
+  "legs": { "0":2, "1":0, "2":2 },
+  "extinct": { "0":true, "1":false, "2":false }
+}
+@endverbatim
+
+Although, this syntax is more verbose than the standard JSON array syntax,
+it can be used to specify arrays of objects and 
+to refer to the elements of an array (see \ref keyvalsub).
+
+@note Another advantage of the extended syntax is that by ensuring that all paths are
+unique and do not involve empty keywords it is compatible with XML.
+
+\subsection keyvalarrayprogrammatic Programmatic Handling of Arrays
+
+The following C++ snippet demonstrates how to assign array values to keywords, and
+read the array values:
+@code
+// assign three 3-element arrays; std::array, std::vector, and std::list can be used as input
+kv.assign("x:ivec", std::vector<int>{{0, 1, 2}});
+kv.assign("x:iarr", std::array<int,3>{{1, 2, 3}});
+kv.assign("x:bvec", std::vector<bool>{{false, true, true}});
+
+// read the arrays; the container type is not sticky
+auto ivec = kv.value<std::array<int,3>>("x:ivec"); // x:ivec was assigned using std::vector, read into std::array
+auto iarr = kv.value<std::list<int>>("x:iarr");
+auto bvec = kv.value<std::vector<bool>>("x:bvec");
+@endcode
+
+\section keyvalsub Value Substitution
+
+Another powerful feature of KeyVal is the ability to refer to the same
+value/object multiple times in a KeyVal. The <em>value substitution feature</em> of KeyVal
+allows for multiple paths to refer to the same value/object.
+This is accomplished by setting keyword's value to a string that starts with \c $ followed by the (relative or
+absolute) path to the keyword whose value to be used.
+The variable substition feature is best illustrated by a simple JSON example:
+@verbatim
+{
+  "types": { "0":"Reptile", "1":"Reptile", "2":"Bird" },
+  "extinct": { "0":true, "1":false, "2":"$1" },
+  "trex": {
+    "type": "$:types:0",
+    "extinct": "$..:extinct:0"
+  },
+  "anothertrex": "$trex",
+  "bald eagle": {
+    "type": "$:types:3",
+    "extinct": "$..:extinct:3"
+  }
+}
+@endverbatim
+is (almost) the same as the following JSON:
+@verbatim
+{
+  "types": { "0":"Reptile", "1":"Reptile", "2":"Bird" },
+  "extinct": { "0":true, "1":false, "2":false },
+  "trex": {
+    "type": "Reptile",
+    "extinct": true
+  },
+  "anothertrex": {
+    "type": "Reptile",
+    "extinct": true
+  },
+  "bald eagle": {
+    "type": "Bird",
+    "extinct": false
+  }
+}
+@endverbatim
+The only difference between the examples with and without the value substition:
+in the first case constructing Reptile objects corresponding to keywords \c trex and \c anothertrex
+would produce pointers to the \em same object, whereas in the second case the two pointers would refer
+to two \em different Reptile objects. This feature is implemented by tracking all smart pointers
+produced by KeyVal::class . The pointer registry is destroyed when the main KeyVal and all
+of its subobjects produced with KeyVal::keyval are destroyed. Therefore it is a good practice
+to delete KeyVal objects as soon as they are no longer needed.
+
+Value substitution can be used also with the programmatic KeyVal construction:
+@code
+KeyVal kv;
+kv.assign("types:0", "Reptile").assign("types:1", "Reptile").assign("types:2", "Bird");
+kv.assign("extinct:0", true).assign("extinct:1", false).assign("extinct:2", "$1");
+kv.assign("trex:type", "$..:types:0").assign("trex:extinct", "$:extinct:0");
+kv.assign("anothertrex", "$trex");
+kv.assign("bald eagle:type", "$..:types:2").assign("bald eagle:extinct", "$:extinct:2");
+
+assert(kv.value<bool>("extinct:0") == kv.value<bool>("trex:extinct"));
+assert(kv.value<bool>("extinct:1") == kv.value<bool>("extinct:2"));
+assert(kv.value<bool>("extinct:2") == kv.value<bool>("bald eagle:extinct"));
+assert(kv.class<Reptile>("trex") == kv.class<Reptile>("anothertrex")); // anothertrex referred to trex, hence point to same object
+@endcode
+
+Value substitution can also be used when constructing polymorphic objects programmatically:
+@code
+KeyVal kv;
+std::shared_ptr<DescribedClass> donkey = std::make_shared<Donkey>();
+std::shared_ptr<DescribedClass> horse = std::make_shared<Horse>();
+kv.assign("donkey", donkey);
+kv.assign("horse", horse);
+kv.assign("mule:type", "Mule");
+kv.assign("mule:father", "$:donkey");
+kv.assign("mule:mother", "$..:horse");
+auto mule = kv.class("mule");
+@endcode
+
+\section keyvaldescribedclass The DescribedClass 
+
+To support polymorphic object construction (see \ref keyvalpobj) the base class must be
+(publicly) derived from DescribedClass. This potentially adds the overhead of a vtable (DescribedClass
+has a virtual destructor) and can complicate the lifetime management of such objects because their
+smart pointers will survive in a KeyVal registry at least through the lifetime of the owning
+KeyVal object.
+
+To be able to construct a class \c T from KeyVal objects do this:
+<ol>
+  <li> make DescribedClass a public base of \c T, or any of its bases, and </li>
+  <li> register \c T with DescribedClass . </li>
+</ol>
+The latter can be achieved in a number of ways, but the easiest is to add any of the following statements
+to a source file in the global scope:
+<ol>
+  <li>if you want to use class name \c T as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY(T) </li>
+  <li>if you want to use any other key \c Key as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY2(T, Key) </li>
+</ol>
+It is the easiest to add these statements in the .cpp file that defines \c T , but any other .cpp
+file will work.
+@note If \c T is a template class, you must register each instance of this class you want to construct
+from KeyVal.
+
+*/
+
+} // namespace mpqc

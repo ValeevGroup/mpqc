@@ -1,12 +1,16 @@
 #pragma once
-#ifndef TCC_UTLITY_PARALLELPRINT_H
-#define TCC_UTLITY_PARALLELPRINT_H
+#ifndef MPQC_UTLITY_PARALLELPRINT_H
+#define MPQC_UTLITY_PARALLELPRINT_H
 
 #include <tuple>
+#include <string>
 #include <iostream>
+#include <fstream>
 #include "../include/tiledarray.h"
+#include <mpqc/chemistry/qc/basis/basis.h>
+#include "cc_utility.h"
 
-namespace tcc {
+namespace mpqc {
 namespace utility {
 namespace aux {
 
@@ -45,7 +49,44 @@ void print_par(madness::World &world, Args&&... args) {
     }
 }
 
-} // namespace utility
-} // namespace tcc
+template <typename... Args>
+void wprint_par(madness::World &world, Args&&... args) {
+    auto t = std::make_tuple<Args...>(std::forward<Args>(args)...);
+    if (world.rank() == 0) {
+        std::wcout << t << std::flush;
+    }
+}
 
-#endif // TCC_UTLITY_PARALLELPRINT_H
+inline void print_file(madness::World &world, const std::string& file){
+
+    if (world.rank() == 0){
+        std::ifstream file_stream(file);
+
+        std::string line;
+        while(getline(file_stream,line)){
+            std::cout << '\t' << line << std::endl;
+        }
+
+        file_stream.close();
+    }
+
+}
+
+inline void parallel_print_range_info(madness::World &world, const TA::TiledRange1 &bs_range, const std::string &name){
+
+    if(world.rank() == 0){
+        auto minmax_block = cc::minmax_blocksize(bs_range);
+        auto average_block = cc::average_blocksize(bs_range);
+        std::cout <<  name << " Trange " << std::endl;
+        std::cout << bs_range << std::endl;
+        std::cout << "Min and Max block size: " << minmax_block.first << " " << minmax_block.second << std::endl;
+        std::cout << "Average: " << average_block << std::endl;
+        std::cout << std::endl;
+    }
+}
+
+
+} // namespace utility
+} // namespace mpqc
+
+#endif // MPQC_UTLITY_PARALLELPRINT_H

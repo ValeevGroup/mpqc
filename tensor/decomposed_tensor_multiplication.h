@@ -1,10 +1,10 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H
-#define TCC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H
 
 #include "decomposed_tensor.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
 template <typename T>
@@ -46,6 +46,6 @@ mult_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r, const T factor) {
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
-#endif // TCC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H

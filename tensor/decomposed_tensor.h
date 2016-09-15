@@ -1,13 +1,13 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSOR_H
-#define TCC_TENSOR_DECOMPOSEDTENSOR_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSOR_H
+#define MPQC_TENSOR_DECOMPOSEDTENSOR_H
 
 #include "../common/namespaces.h"
 #include "../include/tiledarray.h"
 #include <vector>
 #include <iostream>
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
 /// Class to hold decomposition of a tensor.  The class can hold an arbitrary
@@ -22,12 +22,12 @@ class DecomposedTensor {
     using numeric_type = T;
     using value_type = TA::Tensor<T>;
 
-    DecomposedTensor() = default;
-    ~DecomposedTensor() = default;
-    DecomposedTensor(DecomposedTensor const &) = default;
-    DecomposedTensor(DecomposedTensor &&) = default;
-    DecomposedTensor &operator=(DecomposedTensor const &) = default;
-    DecomposedTensor &operator=(DecomposedTensor &&) = default;
+    DecomposedTensor(): tensors_() {};
+    // ~DecomposedTensor() = default;
+    // DecomposedTensor(DecomposedTensor const &) = default;
+    // DecomposedTensor(DecomposedTensor &&) = default;
+    // DecomposedTensor &operator=(DecomposedTensor const &) = default;
+    // DecomposedTensor &operator=(DecomposedTensor &&) = default;
 
     DecomposedTensor(double c) : cut_(c) {}
     DecomposedTensor(double c, std::vector<TA::Tensor<T>> ts)
@@ -35,7 +35,7 @@ class DecomposedTensor {
 
     template <typename... Tensors>
     DecomposedTensor(double c, Tensors &&... ts)
-            : cut_(c), tensors_{std::forward<Tensors>(ts)...} {}
+            : cut_(c), tensors_({std::forward<Tensors>(ts)...}) {}
 
     // Will default init cut, this is here to assist with set_all_local
     // functionality
@@ -55,7 +55,7 @@ class DecomposedTensor {
     std::vector<std::size_t> orders() const {
         std::vector<std::size_t> o;
         o.reserve(ndecomp());
-        for (auto i = 0; i < ndecomp(); ++i) {
+        for (auto i = 0ul; i < ndecomp(); ++i) {
             o.push_back(tensors_[i].range().rank());
         }
         return o;
@@ -67,7 +67,6 @@ class DecomposedTensor {
     TA::Tensor<T> &tensor(std::size_t i) { return tensors_[i]; }
     TA::Tensor<T> const &tensor(std::size_t i) const { return tensors_[i]; }
 
-    TA::Range &range(std::size_t i) { return tensors_[i].range(); }
     TA::Range const &range(std::size_t i) const { return tensors_[i].range(); }
 
     template <typename Archive>
@@ -97,6 +96,9 @@ class DecomposedTensor {
     }
 };
 
+extern template class DecomposedTensor<double>;
+extern template DecomposedTensor<double>::DecomposedTensor();
+
 template <typename T>
 std::ostream &operator<<(std::ostream &os, DecomposedTensor<T> const &t) {
     std::cout << "DecomposedTensor: Cut = " << t.cut()
@@ -108,6 +110,6 @@ std::ostream &operator<<(std::ostream &os, DecomposedTensor<T> const &t) {
 }
 
 } // namespace tensor
-} // namespace tcc
+} // namespace mpqc
 
-#endif //  TCC_TENSOR_DECOMPOSEDTENSOR_H
+#endif //  MPQC_TENSOR_DECOMPOSEDTENSOR_H

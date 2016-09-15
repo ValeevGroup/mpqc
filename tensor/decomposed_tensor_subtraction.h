@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
-#define TCC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
+#ifndef MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
+#define MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
 
 #include "decomposed_tensor.h"
 #include "decomposed_tensor_unary.h"
@@ -8,7 +8,7 @@
 #include "decomposed_tensor_nonintrusive_interface.h"
 #include "../include/tiledarray.h"
 
-namespace tcc {
+namespace mpqc {
 namespace tensor {
 
 template <typename T>
@@ -21,21 +21,6 @@ subt(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r) {
     }
     return add(l,tensor::scale(r,-1.0));
 }
-
-// template <typename T>
-// DecomposedTensor<T>
-// subt(DecomposedTensor<T> const &l, TA::Tensor<double> const &r) {
-// 
-//     auto l_tensor = algebra::combine(l);
-// 
-//     // Get around Justus' range checks
-//     decltype(l_tensor) out_t(l_tensor.range());
-//     auto size = l_tensor.range().volume();
-//     std::transform(l_tensor.data(), l_tensor.data() + size, r.data(),
-//                    out_t.data(), [](T left, T right) { return left - right; });
-// 
-//     return DecomposedTensor<T>{l.cut(), std::move(out_t)};
-// }
 
 template <typename T>
 DecomposedTensor<T>
@@ -96,5 +81,5 @@ DecomposedTensor<T> &subt_to(DecomposedTensor<T> &l, const T factor) {
 }
 
 } // namespace tensor
-} // namespace tcc
-#endif // TCC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
+} // namespace mpqc
+#endif // MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TCC_PUREIFICATION_SQRTINV_H
-#define TCC_PUREIFICATION_SQRTINV_H
+#ifndef MPQC_TAROUTINES_SQRTINV_H
+#define MPQC_TAROUTINES_SQRTINV_H
 
 #include "../include/tiledarray.h"
 #include "../include/eigen.h"
@@ -8,7 +8,7 @@
 #include "diagonal_array.h"
 
 #include "../utility/time.h"
-#include "../utility/array_storage.h"
+#include "../utility/array_info.h"
 
 #include <limits>
 #include <type_traits>
@@ -17,10 +17,12 @@
 #include <fstream>
 #include <cstdlib>
 
-namespace tcc {
-namespace pure {
+#include <madness/world/array_addons.h>
 
-void print_ranks_to_file(
+namespace mpqc {
+namespace array_ops {
+
+inline void print_ranks_to_file(
       TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
                 TA::SparsePolicy> const &a,
       std::string file_name) {
@@ -47,7 +49,7 @@ void print_ranks_to_file(
     }
 }
 
-void print_ranks_to_file(
+inline void print_ranks_to_file(
       TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> const &a,
       std::string file_name) {
     // Do nothing
@@ -175,7 +177,7 @@ void add_to_diag(Array &A, double val) {
     }
 }
 
-void add_to_diag_tile(double val, TA::Tensor<double> &tile) {
+inline void add_to_diag_tile(double val, TA::Tensor<double> &tile) {
     auto const extent = tile.range().extent();
     auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
     for (auto i = 0ul; i < extent[0]; ++i) {
@@ -183,7 +185,7 @@ void add_to_diag_tile(double val, TA::Tensor<double> &tile) {
     }
 }
 
-void add_to_diag_tile(double val,
+inline void add_to_diag_tile(double val,
                       tensor::Tile<tensor::DecomposedTensor<double>> &tile) {
     auto const extent = tile.range().extent();
     auto map
@@ -383,15 +385,19 @@ struct compress {
 
 template <typename Array>
 void third_order_update(Array const &S, Array &Z) {
-
+    auto &world = Z.get_world();
+        
     // Calculate the lambda parameter, since we are currently only trying to
     // invert Positive definite matrices, we will cap the smallest eigen value
     // guess at 0.
 
-    auto evg0 = tcc_time::now();
+    if (S.get_world().rank() == 0) {
+        std::cout << "Starting inverse sqrt\n";
+    }
+    auto evg0 = mpqc_time::fenced_now(world);
     auto spectral_range = eval_guess(S);
-    auto evg1 = tcc_time::now();
-    auto eval_time = tcc_time::duration_in_s(evg0, evg1);
+    auto evg1 = mpqc_time::fenced_now(world);
+    auto eval_time = mpqc_time::duration_in_s(evg0, evg1);
     if (S.get_world().rank() == 0) {
         std::cout << "\tEigenvalue estimation time = " << eval_time << " s\n";
     }
@@ -405,60 +411,38 @@ void third_order_update(Array const &S, Array &Z) {
     Array X;
     auto Tscale = 1.0 / 8.0;
 
-    auto ident = tcc::array::create_diagonal_matrix(Z, 1.0);
+    auto ident = create_diagonal_matrix(Z, 1.0);
     Array approx_zero;
     auto iter = 0;
     auto norm_diff = std::numeric_limits<double>::max();
-    while (norm_diff > 1.0e-13 && iter < 4) {
-        auto iter0 = tcc_time::now();
+    while (norm_diff > 1.0e-13 && iter < 50) {
         // Xn = \lambda*Yn*Z
-        auto x0 = tcc_time::now();
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
-        auto x1 = tcc_time::now();
         X.truncate();
-        TA::foreach_inplace(X, compress(1e-6));
 
         // Third order update
-        auto t0 = tcc_time::now();
         T("i,j") = -10 * X("i,j") + 3 * X("i,k") * X("k,j");
         add_to_diag(T, 15);
         T("i,j") = Tscale * T("i,j");
-        auto t1 = tcc_time::now();
-        TA::foreach_inplace(T, compress(1e-6));
+        T.truncate();
 
 
         // Updating Z and Y
-        auto z0 = tcc_time::now();
         Z("i,j") = Z("i,k") * T("k,j"); // Zn+1 = Zn*Tn
-        auto z1 = tcc_time::now();
         Y("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
-        auto y1 = tcc_time::now();
-        TA::foreach_inplace(Z, compress(1e-6));
-        TA::foreach_inplace(Y, compress(1e-6));
-
-        auto zy_trn0 = tcc_time::now();
         Z.truncate();
         Y.truncate();
-        auto zy_trn1 = tcc_time::now();
 
         approx_zero("i,j") = X("i,j") - T("i,j");
-
         const auto current_norm = approx_zero("i,j").norm().get();
 
-        auto iter1 = tcc_time::now();
-        auto x_time = tcc_time::duration_in_s(x0, x1);
-        auto t_time = tcc_time::duration_in_s(t0, t1);
-        auto z_time = tcc_time::duration_in_s(z0, z1);
-        auto y_time = tcc_time::duration_in_s(z1, y1);
-        auto trun_time = tcc_time::duration_in_s(zy_trn0, zy_trn1);
-        auto iter_time = tcc_time::duration_in_s(iter0, iter1);
         if (S.get_world().rank() == 0) {
-            std::cout << "\t\tCurrent difference norm = " << current_norm
+            std::cout << "\tCurrent difference norm = " << current_norm
                       << "\n";
         }
         if (current_norm >= norm_diff) { // Once norm is increasing exit!
             if (S.get_world().rank() == 0) {
-                std::cout << "\n";
+                std::cout << "Error in sqrt inverse increased. Exiting\n";
             }
             Z("i,j") = std::sqrt(S_scale) * Z("i,j");
             return;
@@ -467,139 +451,21 @@ void third_order_update(Array const &S, Array &Z) {
         ++iter;
     }
 
-
-    auto num_repeats = std::min(15 * X.get_world().size(), 30);
-
-    decltype(X) Ytemp = Y;
-    decltype(Z) Ztemp = Z;
-
-    if (S.get_world().rank() == 0) {
-        std::cout << "\nStarting repeats for iteration 5" << std::endl;
-    }
-
-    auto Itertimes = std::vector<double>(num_repeats);
-    for (auto i = 0; i < num_repeats; ++i) {
-        if (S.get_world().rank() == 0) {
-            std::cout << "repeat: " << i + 1 << std::endl;
-        }
-        if (i == 0) {
-            auto Y_sparsity = Y.get_shape().sparsity();
-            auto Z_sparsity = Z.get_shape().sparsity();
-            auto X_sparsity = X.get_shape().sparsity();
-            auto T_sparsity = T.get_shape().sparsity();
-            if (S.get_world().rank() == 0) {
-                std::cout << "\tZ iter sparsity = " << 100 * Z_sparsity << "%"
-                          << std::endl;
-                std::cout << "\tY iter sparsity = " << 100 * Y_sparsity << "%"
-                          << std::endl;
-                std::cout << "\tX iter sparsity = " << 100 * X_sparsity << "%"
-                          << std::endl;
-                std::cout << "\tT iter sparsity = " << 100 * T_sparsity << "%"
-                          << std::endl;
-            }
-        }
-
-        Z.get_world().gop.fence();
-        auto iter0 = tcc_time::now();
-        // Xn = \lambda*Yn*Z
-        X("i,j") = S_scale * Y("i,k") * Z("k,j");
-        X.truncate();
-        TA::foreach_inplace(X, compress(1e-6), false);
-
-        // Third order update
-        T("i,j") = -10 * X("i,j") + 3 * X("i,k") * X("k,j");
-        add_to_diag(T, 15);
-        T("i,j") = Tscale * T("i,j");
-        TA::foreach_inplace(T, compress(1e-6), false);
-
-
-        // Updating Z and Y
-        Ztemp("i,j") = Z("i,k") * T("k,j"); // Zn+1 = Zn*Tn
-        Ytemp("i,j") = T("i,k") * Y("k,j"); // Yn+1 = Tn*Yn
-
-        Ztemp.truncate();
-        Ytemp.truncate();
-        TA::foreach_inplace(Ztemp, compress(1e-6),false);
-        TA::foreach_inplace(Ytemp, compress(1e-6),false);
-
-        approx_zero("i,j") = X("i,j") - T("i,j");
-
-        const auto current_norm = approx_zero("i,j").norm().get();
-
-        Z.get_world().gop.fence();
-        auto iter1 = tcc_time::now();
-
-        if(i == 0){
-            std::string prefixX = "X_ranks";
-            std::string prefixT = "T_ranks";
-            std::string prefixZ = "Z_ranks";
-            std::string prefixY = "Y_ranks";
-
-            print_ranks_to_file(X, prefixX);
-            print_ranks_to_file(T, prefixT);
-            print_ranks_to_file(Z, prefixZ);
-            print_ranks_to_file(Y, prefixY);
-        }
-
-        Itertimes[i] = tcc_time::duration_in_s(iter0, iter1);
-        if(S.get_world().rank() == 0){
-            std::cout << "\ttime = " << Itertimes[i] << std::endl;
-        }
-    }
-
-    if (S.get_world().rank() == 0) {
-        std::cout << "\n" << std::endl;
-    }
-
-    auto maxIter = *std::max_element(Itertimes.begin(), Itertimes.end());
-    auto minIter = *std::min_element(Itertimes.begin(), Itertimes.end());
-
-    auto avg = [](std::vector<double> const &x) {
-        double avg_time = 0.0;
-        for (auto const &elem : x) {
-            avg_time += elem;
-        }
-        return avg_time / double(x.size());
-    };
-    auto avgIter = avg(Itertimes);
-
-    auto stddev = [](std::vector<double> const &x, double avg) {
-        auto sum = 0.0;
-        for (auto elem : x) {
-            auto diff = elem - avg;
-            sum += diff * diff;
-        }
-        sum /= double(x.size() - 1);
-        return std::sqrt(sum);
-    };
-    auto devIter = stddev(Itertimes, avgIter);
-
-    if (S.get_world().rank() == 0) {
-        std::cout << std::setprecision(5);
-        std::cout << "Iter avg         = " << avgIter << "\tMin: " << minIter
-                  << "\tMax: " << maxIter << "\tSTDDEV: " << devIter
-                  << std::endl;
-        std::cout << "\n\n" << std::endl;
-    }
-
-
     Z("i,j") = std::sqrt(S_scale) * Z("i,j");
 }
-
 
 // Taken from J. Chem. Phys. 126. 124104 (2007)
 // Uses the third order function, because I didn't feel like typing the
 // longer ones. --Drew
 template <typename Array>
 Array inverse_sqrt(Array const &S) {
-    Array Z = tcc::array::create_diagonal_matrix(S, 1.0);
+    Array Z = create_diagonal_matrix(S, 1.0);
     third_order_update(S, Z);
     return Z;
 }
 
 
-} // namespace pure
-} // namespace tcc
+} // namespace array_ops
+} // namespace mpqc
 
-
-#endif /* end of include guard: TCC_PUREIFICATION_SQRTINV_H */
+#endif // MPQC_TAROUTINES_SQRTINV_H

@@ -19,5 +19,11 @@
     "type": "Basis",
     "name": "cc-pVDZ-F12-CABS",
     "molecule": "$:molecule"
+  },
+  "wfn_world":{
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
+    "basis" : "$:basis",
+    "df_basis" :"$:df_basis"
   }
 }

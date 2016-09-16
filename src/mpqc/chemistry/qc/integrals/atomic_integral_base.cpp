@@ -123,7 +123,7 @@ AtomicIntegralBase::AtomicIntegralBase(
 }
 
 AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
-    : world_(*kv.value<madness::World*>("world")),
+    : world_(*kv.value<madness::World*>("$:world")),
       orbital_basis_registry_(),
       mol_(),
       gtg_params_() {
@@ -131,6 +131,17 @@ AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
   orbital_basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
   mol_ = kv.keyval("molecule").class_ptr<molecule::Molecule>();
 
+  // if have auxilary basis
+  if(kv.exists("aux_bs")){
+    std::string basis_name = kv.value<std::string>("basis");
+    int n_function = kv.value<int>("corr_functions",6);
+    double corr_param = kv.value<double>("corr_param",0);
+    if(corr_param != 0){
+      gtg_params_ = f12::GTGParams(corr_param, n_function).compute();
+    } else{
+      gtg_params_ = f12::GTGParams(basis_name, n_function).compute();
+    }
+  }
 }
 
 libint2::Engine AtomicIntegralBase::make_engine(const Operator &oper,

@@ -34,37 +34,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
   auto threshold = 1e-11;  // Hardcode for now.
   TiledArray::SparseShape<float>::threshold(threshold);
 
-  //
-  // construct molecule
-  //
-  //  auto mol = molecule::Molecule(kv.keyval("molecule"));
-  auto mol = kv.keyval("molecule").class_ptr<molecule::Molecule>();
-  auto nclusters = 1;  // Hard Coded for now
-  auto clustered_mol = std::make_shared<molecule::Molecule>(
-      molecule::attach_hydrogens_and_kmeans(mol->clusterables(), nclusters));
-  kv.assign("molecule", clustered_mol);
-
-  //
-  // construct basis registry
-  //
-  //  auto bs = kv.keyval("obs").class_ptr<basis::Basis>();
-  //  auto dfbs = kv.keyval("dfbs").class_ptr<basis::Basis>();
-
-  //  auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
-  //  bs_registry->add(OrbitalIndex(L"κ"), *bs);
-  //  bs_registry->add(OrbitalIndex(L"Κ"), *dfbs);
-
-  //
-  // construct integrals
-  //
   libint2::initialize();
 
-  integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(kv);
-
-  kv.assign("ao_integrals", &ao_int);
-
-  auto wfn_world = qc::WfnWorld(kv);
-  kv.assign("wfn_world", &wfn_world);
+  auto wfn_world = kv.keyval("wfn_world").class_ptr<qc::WfnWorld>();
+  kv.assign("wfn_world", wfn_world);
 
   qc::Wfn *wfn = new qc::AOWfn(kv);
 
@@ -101,6 +74,7 @@ int main(int argc, char *argv[]) {
   std::wcerr.sync_with_stdio(true);
 
   try {
+
     try_main(argc, argv, world);
 
   } catch (TiledArray::Exception &e) {

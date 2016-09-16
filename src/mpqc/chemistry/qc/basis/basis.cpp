@@ -35,7 +35,7 @@ Basis::Basis(const KeyVal &kv) {
   auto mol_ptr = kv.keyval("molecule").class_ptr<mpqc::molecule::Molecule>();
 
   // find world from one level above
-  madness::World* world = kv.value<madness::World*>("..:world");
+  madness::World* world = kv.value<madness::World*>("$:world");
 
   auto basis = parallel_construct_basis(*world,basis_set,*mol_ptr);
 

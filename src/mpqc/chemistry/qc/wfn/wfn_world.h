@@ -24,11 +24,13 @@ class WfnWorld : public DescribedClass {
 
  private:
   madness::World &world_;
+  AOIntegral ao_ints_;
   std::shared_ptr<molecule::Molecule> mol_;
-  AOIntegral &ao_ints_;
+  std::shared_ptr<basis::OrbitalBasisRegistry> basis_registry_;
 
  public:
   WfnWorld(KeyVal const &kv);
+  ~WfnWorld();
 
   /// Return a reference to the madness world
   madness::World &world() { return world_; }

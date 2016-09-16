@@ -9,7 +9,7 @@ namespace mpqc {
 template <>
 mpqc::OrbitalRegistry<mpqc::basis::Basis>::OrbitalRegistry(const KeyVal& kv)
     : Registry<OrbitalIndex, mpqc::basis::Basis>() {
-  auto& world = *kv.value<madness::World*>("world");
+  auto& world = *kv.value<madness::World*>("$:world");
 
   auto basis = kv.keyval("basis").class_ptr<basis::Basis>();
   assert(basis != nullptr);

@@ -70,7 +70,7 @@ Molecule::Molecule(const KeyVal &kv) {
   auto file_name = kv.value<std::string>("file_name", "");
 
   // find world one level higher
-  madness::World *world = kv.value<madness::World *>("..:world");
+  madness::World *world = kv.value<madness::World *>("$:world");
 
   std::stringstream file;
   utility::parallel_read_file(*world, file_name, file);

@@ -7,6 +7,7 @@
 
 #include "../../../../../ta_routines/array_to_eigen.h"
 #include "../../../../../ta_routines/tile_convert.h"
+#include "../../../../../ta_routines/sqrt_inv.h"
 #include "../../../../../utility/parallel_break_point.h"
 #include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/time.h"
@@ -60,11 +61,8 @@ class AtomicIntegral : public AtomicIntegralBase {
    *
    *  Options in Input
    *  @param AccurateTime, bool, control if use fence in timing, default false
-   *  @param Screen, string, name of screen method to use, default none
-   *  @param Threshold, double, screen threshold, qqr or schwarz, default
-   *  @param Precision, double, precision in computing integral, default
-   *std::numeric_limits<double>::epsilon()
-   *1.0e-10
+   *  @param IterativeInvSqrt, bool, if use iterative approach to compute
+   *inverse square root, defualt false
    */
 
   AtomicIntegral(madness::World& world, Op op,
@@ -80,10 +78,17 @@ class AtomicIntegral : public AtomicIntegralBase {
     if (in.IsObject()) {
       accurate_time_ =
           in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
+
+      iterative_inv_sqrt_ = in.HasMember("IterativeInvSqrt")
+                                ? in["IterativeInvSqrt"].GetBool()
+                                : false;
+
     } else {
       accurate_time_ = false;
+      iterative_inv_sqrt_ = false;
     }
     utility::print_par(world, "AccurateTime: ", accurate_time_, "\n");
+    utility::print_par(world, "IterativeInvSqrt: ", iterative_inv_sqrt_, "\n");
   }
 
   /**
@@ -100,8 +105,8 @@ class AtomicIntegral : public AtomicIntegralBase {
       : AtomicIntegralBase(kv),
         ao_formula_registry_(),
         orbital_space_registry_() {
-
     accurate_time_ = kv.value("accurate_time", false);
+    iterative_inv_sqrt_ = kv.value("iterative_inv_sqrt", false);
 
     /// Warning!!!!
     /// This is temporary workround
@@ -193,6 +198,7 @@ class AtomicIntegral : public AtomicIntegralBase {
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
   Op op_;
   bool accurate_time_;
+  bool iterative_inv_sqrt_;
 };
 
 template <typename Tile, typename Policy>
@@ -245,7 +251,7 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
 
         // store current array and delete old one
         ao_formula_registry_.insert(formula, result);
-//        ao_formula_registry_.purge_formula(world_,permute);
+        //        ao_formula_registry_.purge_formula(world_,permute);
         return result;
       }
     }
@@ -317,80 +323,108 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
   else if (formula.oper().is_twobody()) {
     time0 = mpqc_time::now(world_, accurate_time_);
 
-    std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
-    parse_two_body_two_center(formula, engine_pool, bs_array);
-    result = compute_integrals(this->world_, engine_pool, bs_array);
+    // compute inverse square root first in this case
+    if (iterative_inv_sqrt_ &&
+        formula.oper().has_option(Operator::Option::Inverse)) {
+      auto inv_sqrt_formula = formula;
+      inv_sqrt_formula.set_operator_option({Operator::Option::InverseSquareRoot});
 
-    if (formula.oper().has_option(Operator::Option::Inverse)) {
-      if (formula.oper().type() == Operator::Type::cGTG ||
-          formula.oper().type() == Operator::Type::cGTGCoulomb) {
-        result("i,j") = -result("i,j");
-      }
+      result = this->compute(inv_sqrt_formula);
 
-      //                utility::parallel_break_point(world_,0);
-      //                std::cout << "Before Array To Eigen" << std::endl;
-      //                std::cout << result << std::endl;
-      MatrixD result_eig = array_ops::array_to_eigen(result);
-
-      // compute cholesky decomposition
-      auto llt_solver = Eig::LLT<MatrixD>(result_eig);
-
-      // check success
-      Eigen::ComputationInfo info = llt_solver.info();
-      if (info == Eigen::ComputationInfo::Success) {
-        MatrixD L = MatrixD(llt_solver.matrixL());
-        MatrixD L_inv_eig = L.inverse();
-        result_eig = L_inv_eig.transpose() * L_inv_eig;
-      } else if (info == Eigen::ComputationInfo::NumericalIssue) {
-        utility::print_par(
-            world_,
-            "!!!\nWarning!! NumericalIssue in Cholesky Decomposition\n!!!\n");
-      } else if (info == Eigen::ComputationInfo::NoConvergence) {
-        utility::print_par(
-            world_,
-            "!!!\nWarning!! NoConvergence in Cholesky Decomposition\n!!!\n");
-      } else if (info == Eigen::ComputationInfo::InvalidInput) {
-        utility::print_par(
-            world_,
-            "!!!\nWarning!! InvalidInput in Cholesky Decomposition\n!!!\n");
-      }
-
-      if (info != Eigen::ComputationInfo::Success) {
-        utility::print_par(world_, "Using Eigen LU Decomposition Inverse!\n");
-
-        Eigen::FullPivLU<MatrixD> lu(result_eig);
-
-        TA_ASSERT(lu.isInvertible());
-
-        result_eig = lu.inverse();
-      }
-
-      auto tr_result = result.trange().data()[0];
-      result = array_ops::eigen_to_array<TA::TensorD>(
-          result.get_world(), result_eig, tr_result, tr_result);
+      time0 = mpqc_time::now(world_, accurate_time_);
+      result("p,q") = result("p,r") * result("r,q");
 
       if (formula.oper().type() == Operator::Type::cGTG ||
           formula.oper().type() == Operator::Type::cGTGCoulomb) {
         result("i,j") = -result("i,j");
       }
-    }
 
-    if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
-      if (formula.oper().type() == Operator::Type::cGTG ||
-          formula.oper().type() == Operator::Type::cGTGCoulomb) {
-        result("i,j") = -result("i,j");
+    } else {
+
+      // compute integral
+      std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+      parse_two_body_two_center(formula, engine_pool, bs_array);
+      result = compute_integrals(this->world_, engine_pool, bs_array);
+
+      // inverse of integral
+      if (formula.oper().has_option(Operator::Option::Inverse)) {
+        if (formula.oper().type() == Operator::Type::cGTG ||
+            formula.oper().type() == Operator::Type::cGTGCoulomb) {
+          result("i,j") = -result("i,j");
+        }
+
+        //                utility::parallel_break_point(world_,0);
+        //                std::cout << "Before Array To Eigen" << std::endl;
+        //                std::cout << result << std::endl;
+        MatrixD result_eig = array_ops::array_to_eigen(result);
+
+        // compute cholesky decomposition
+        auto llt_solver = Eig::LLT<MatrixD>(result_eig);
+
+        // check success
+        Eigen::ComputationInfo info = llt_solver.info();
+        if (info == Eigen::ComputationInfo::Success) {
+          MatrixD L = MatrixD(llt_solver.matrixL());
+          MatrixD L_inv_eig = L.inverse();
+          result_eig = L_inv_eig.transpose() * L_inv_eig;
+        } else if (info == Eigen::ComputationInfo::NumericalIssue) {
+          utility::print_par(
+              world_,
+              "!!!\nWarning!! NumericalIssue in Cholesky Decomposition\n!!!\n");
+        } else if (info == Eigen::ComputationInfo::NoConvergence) {
+          utility::print_par(
+              world_,
+              "!!!\nWarning!! NoConvergence in Cholesky Decomposition\n!!!\n");
+        } else if (info == Eigen::ComputationInfo::InvalidInput) {
+          utility::print_par(
+              world_,
+              "!!!\nWarning!! InvalidInput in Cholesky Decomposition\n!!!\n");
+        }
+
+        if (info != Eigen::ComputationInfo::Success) {
+          utility::print_par(world_, "Using Eigen LU Decomposition Inverse!\n");
+
+          Eigen::FullPivLU<MatrixD> lu(result_eig);
+
+          TA_ASSERT(lu.isInvertible());
+
+          result_eig = lu.inverse();
+        }
+
+        auto tr_result = result.trange().data()[0];
+        result = array_ops::eigen_to_array<TA::TensorD>(
+            result.get_world(), result_eig, tr_result, tr_result);
+
+        if (formula.oper().type() == Operator::Type::cGTG ||
+            formula.oper().type() == Operator::Type::cGTGCoulomb) {
+          result("i,j") = -result("i,j");
+        }
       }
 
-      auto result_eig = array_ops::array_to_eigen(result);
-      MatrixD L_inv_eig =
-          MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
-      auto tr_result = result.trange().data()[0];
-      result = array_ops::eigen_to_array<TA::TensorD>(
-          result.get_world(), L_inv_eig, tr_result, tr_result);
+      // inverse square root of integral
+      if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
 
-      if (formula.oper().type() == Operator::Type::cGTG ||
-          formula.oper().type() == Operator::Type::cGTGCoulomb) {
-        result("i,j") = -result("i,j");
+        if (formula.oper().type() == Operator::Type::cGTG ||
+            formula.oper().type() == Operator::Type::cGTGCoulomb) {
+          result("i,j") = -result("i,j");
+        }
+
+        if (iterative_inv_sqrt_) {
+          TArray tmp = array_ops::inverse_sqrt(result);
+          result("i,j") = tmp("i,j");
+        } else {
+          auto result_eig = array_ops::array_to_eigen(result);
+          MatrixD L_inv_eig =
+              MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
+          auto tr_result = result.trange().data()[0];
+          result = array_ops::eigen_to_array<TA::TensorD>(
+              result.get_world(), L_inv_eig, tr_result, tr_result);
+        }
+
+        if (formula.oper().type() == Operator::Type::cGTG ||
+            formula.oper().type() == Operator::Type::cGTGCoulomb) {
+          result("i,j") = -result("i,j");
+        }
       }
     }
 

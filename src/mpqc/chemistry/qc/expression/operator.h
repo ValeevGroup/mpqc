@@ -123,6 +123,11 @@ class Operator {
     Operator::type_ = type;
   }
 
+  /// set option option_
+  void set_option(const std::vector<Option> & option){
+    Operator::option_ = option;
+  }
+
   /// return string that correspond to oper_
   const std::wstring oper_string() const;
 

@@ -31,6 +31,11 @@ namespace integrals {
  *
  * \brief base class for AtomicIntegral
  *
+ *  Options in Input
+ *  @param Screen, string, name of screen method to use, default none
+ *  @param Threshold, double, screen threshold, qqr or schwarz, default 1.0e-10
+ *  @param Precision, double, precision in computing integral, default std::numeric_limits<double>::epsilon()
+   *
  */
 
 class AtomicIntegralBase {

@@ -241,14 +241,11 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
     time1 = mpqc_time::now(world_, accurate_time_);
     time += mpqc_time::duration_in_s(time0, time1);
 
-    utility::print_par(world_, "Computed Identity: ");
-    utility::wprint_par(world_, formula_string.string());
+    utility::print_par(world_, "Computed Identity: ",
+                       utility::to_string(formula_string.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
-    madness::print_meminfo(
-        world_.rank(),
-        utility::wconcat("LCAOFactory:", formula_string.string()));
     return result;
   }
 
@@ -275,13 +272,11 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
 
   time1 = mpqc_time::now(world_, accurate_time_);
   time += mpqc_time::duration_in_s(time0, time1);
-  utility::print_par(world_, "Transformed LCAO Integral: ");
-  utility::wprint_par(world_, formula_string.string());
+  utility::print_par(world_, "Transformed LCAO Integral: ",
+                     utility::to_string(formula_string.string()));
   double size = utility::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
-  madness::print_meminfo(
-      world_.rank(), utility::wconcat("LCAOFactory:", formula_string.string()));
 
   return result;
 }
@@ -363,13 +358,11 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
   time1 = mpqc_time::now(world_, accurate_time_);
   time += mpqc_time::duration_in_s(time0, time1);
 
-  utility::print_par(world_, "Transformed LCAO Integral: ");
-  utility::wprint_par(world_, formula_string.string());
+  utility::print_par(world_, "Transformed LCAO Integral: ",
+                     utility::to_string(formula_string.string()));
   double size = utility::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
-  madness::print_meminfo(
-      world_.rank(), utility::wconcat("LCAOFactory:", formula_string.string()));
 
   return result;
 };
@@ -444,13 +437,11 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
     time += mpqc_time::duration_in_s(time0, time1);
   }
 
-  utility::print_par(world_, "Transformed LCAO Integral: ");
-  utility::wprint_par(world_, formula_string.string());
+  utility::print_par(world_, "Transformed LCAO Integral: ",
+                     utility::to_string(formula_string.string()));
   double size = utility::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
-  madness::print_meminfo(
-      world_.rank(), utility::wconcat("LCAOFactory:", formula_string.string()));
 
   return result;
 }
@@ -596,8 +587,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
 
   if (iter != mo_formula_registry_.end()) {
     result = *(iter->second);
-    utility::print_par(world_, "Retrieved LCAO Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, "Retrieved LCAO Integral: ",
+                       utility::to_string(formula.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
@@ -618,10 +609,9 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
         mpqc_time::t_point time1 = mpqc_time::now(world_, accurate_time_);
         double time = mpqc_time::duration_in_s(time0, time1);
 
-        utility::print_par(world_, "Permuted LCAO Integral: ");
-        utility::wprint_par(world_, formula.string());
-        utility::print_par(world_, " From ");
-        utility::wprint_par(world_, permute.string());
+        utility::print_par(world_, "Permuted LCAO Integral: ",
+                           utility::to_string(formula.string()), " From ",
+                           utility::to_string(permute.string()));
         double size = utility::array_size(result);
         utility::print_par(world_, " Size: ", size, " GB ");
         utility::print_par(world_, " Time: ", time, " s\n");
@@ -629,9 +619,10 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
         // store current array and delete old one
         mo_formula_registry_.insert(formula, result);
 
-        //TODO need to optimize storage and permutation, there is no need to store multiple copy of permutations
+        // TODO need to optimize storage and permutation, there is no need to
+        // store multiple copy of permutations
 
-//        mo_formula_registry_.purge_formula(world_,permute);
+        //        mo_formula_registry_.purge_formula(world_,permute);
         return result;
       }
     }
@@ -646,6 +637,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
       result = compute4(formula);
       mo_formula_registry_.insert(formula, result);
     }
+    madness::print_meminfo(world_.rank(),
+                           utility::wconcat("LCAOFactory:", formula.string()));
     return result;
   }
 }

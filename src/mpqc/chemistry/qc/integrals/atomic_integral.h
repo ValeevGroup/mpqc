@@ -6,8 +6,8 @@
 #define MPQC_ATOMIC_INTEGRAL_H
 
 #include "../../../../../ta_routines/array_to_eigen.h"
-#include "../../../../../ta_routines/tile_convert.h"
 #include "../../../../../ta_routines/sqrt_inv.h"
+#include "../../../../../ta_routines/tile_convert.h"
 #include "../../../../../utility/parallel_break_point.h"
 #include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/time.h"
@@ -218,8 +218,7 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
 
   if (iter != ao_formula_registry_.end()) {
     result = *(iter->second);
-    utility::print_par(world_, "Retrieved AO Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, "Retrieved AO Integral: ", utility::to_string(formula.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
@@ -241,10 +240,9 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
         mpqc_time::t_point time1 = mpqc_time::now(world_, accurate_time_);
         double time = mpqc_time::duration_in_s(time0, time1);
 
-        utility::print_par(world_, "Permuted AO Integral: ");
-        utility::wprint_par(world_, formula.string());
-        utility::print_par(world_, " From ");
-        utility::wprint_par(world_, permute.string());
+        utility::print_par(world_, "Permuted AO Integral: ",
+                           utility::to_string(formula.string()), " From ",
+                           utility::to_string(permute.string()));
         double size = utility::array_size(result);
         utility::print_par(world_, " Size: ", size, " GB ");
         utility::print_par(world_, " Time: ", time, " s\n");
@@ -267,6 +265,10 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
       result = compute4(formula);
       ao_formula_registry_.insert(formula, result);
     }
+
+    madness::print_meminfo(world_.rank(),
+                           utility::wconcat("AOFactory:", formula.string()));
+
     return ao_formula_registry_.retrieve(formula);
   }
   // wait all process to obtain and insert result
@@ -313,8 +315,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       time1 = mpqc_time::now(world_, accurate_time_);
       time += mpqc_time::duration_in_s(time0, time1);
     }
-    utility::print_par(world_, "Computed One Body Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, "Computed One Body Integral: ",
+                       utility::to_string(formula.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -327,7 +329,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     if (iterative_inv_sqrt_ &&
         formula.oper().has_option(Operator::Option::Inverse)) {
       auto inv_sqrt_formula = formula;
-      inv_sqrt_formula.set_operator_option({Operator::Option::InverseSquareRoot});
+      inv_sqrt_formula.set_operator_option(
+          {Operator::Option::InverseSquareRoot});
 
       result = this->compute(inv_sqrt_formula);
 
@@ -340,7 +343,6 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       }
 
     } else {
-
       // compute integral
       std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
       parse_two_body_two_center(formula, engine_pool, bs_array);
@@ -403,7 +405,6 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
       // inverse square root of integral
       if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
-
         if (formula.oper().type() == Operator::Type::cGTG ||
             formula.oper().type() == Operator::Type::cGTGCoulomb) {
           result("i,j") = -result("i,j");
@@ -431,13 +432,11 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     time1 = mpqc_time::now(world_, accurate_time_);
     time += mpqc_time::duration_in_s(time0, time1);
 
-    utility::print_par(world_, "Computed Twobody Two Center Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, "Computed Twobody Two Center Integral: ",
+                       utility::to_string(formula.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
-    madness::print_meminfo(
-        world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
   }
   // compute JK, requires orbital space registry
   else if (formula.oper().is_jk()) {
@@ -504,8 +503,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       time1 = mpqc_time::now(world_, accurate_time_);
       time += mpqc_time::duration_in_s(time0, time1);
     }
-    utility::print_par(world_, "Computed Coulumb/Exchange Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
+                       utility::to_string(formula.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -529,8 +528,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     time1 = mpqc_time::now(world_, accurate_time_);
     time += mpqc_time::duration_in_s(time0, time1);
 
-    utility::print_par(world_, "Computed Coulumb/Exchange Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
+                       utility::to_string(formula.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -558,8 +557,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
     time += mpqc_time::duration_in_s(time0, time1);
 
-    utility::print_par(world_, "Computed Fock Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, "Computed Fock Integral: ",
+                       utility::to_string(formula.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -588,13 +587,11 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   time1 = mpqc_time::now(world_, accurate_time_);
   time += mpqc_time::duration_in_s(time0, time1);
 
-  utility::print_par(world_, "Computed Twobody Three Center Integral: ");
-  utility::wprint_par(world_, formula.string());
+  utility::print_par(world_, "Computed Twobody Three Center Integral: ",
+                     utility::to_string(formula.string()));
   double size = utility::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
-  madness::print_meminfo(world_.rank(),
-                         utility::wconcat("AtomicIntegral:", formula.string()));
 
   return result;
 }
@@ -628,8 +625,8 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
     time += mpqc_time::duration_in_s(time0, time1);
 
     utility::print_par(
-        world_, "Computed Twobody Four Center Density-Fitting Integral: ");
-    utility::wprint_par(world_, formula.string());
+        world_, "Computed Twobody Four Center Density-Fitting Integral: ",
+        utility::to_string(formula.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -653,13 +650,11 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
     time1 = mpqc_time::now(world_, accurate_time_);
     time += mpqc_time::duration_in_s(time0, time1);
 
-    utility::print_par(world_, "Computed Twobody Four Center Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, "Computed Twobody Four Center Integral: ",
+                       utility::to_string(formula.string()));
     double size = utility::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
-    madness::print_meminfo(
-        world_.rank(), utility::wconcat("AtomicIntegral:", formula.string()));
   }
   return result;
 }

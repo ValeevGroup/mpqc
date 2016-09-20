@@ -638,7 +638,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
       mo_formula_registry_.insert(formula, result);
     }
     madness::print_meminfo(world_.rank(),
-                           utility::wconcat("LCAOFactory:", formula.string()));
+                           "LCAOFactory: " + utility::to_string(formula.string()));
     return result;
   }
 }

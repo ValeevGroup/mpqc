@@ -266,8 +266,7 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
       ao_formula_registry_.insert(formula, result);
     }
 
-    madness::print_meminfo(world_.rank(),
-                           utility::wconcat("AOFactory:", formula.string()));
+    madness::print_meminfo(world_.rank(), "AOFactory: " + utility::to_string(formula.string()));
 
     return ao_formula_registry_.retrieve(formula);
   }

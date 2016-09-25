@@ -65,55 +65,45 @@ std::array<double, 3> array_storage(TA::DistArray<TileType, Policy> const &A) {
     return out;
 }
 
-template <typename Tile>
-double array_size(const TA::DistArray<Tile,TA::DensePolicy>& A){
-    std::atomic_ulong full_size(0);
-    auto const &pmap = A.get_pmap();
-    TA::TiledRange const &trange = A.trange();
 
-    auto task = [&trange, &full_size](unsigned long ord){
-        const TA::Range range = trange.make_tile_range(ord);
-        const auto size = range.volume();
-        full_size += size;
-    };
+/// @brief reports array size (in bytes) on each process
+/// @note this is a collective operation
+/// @return vector of integers, each element is the aggregate size of array's
+///         tiles on the corresponding process
+template <typename Tile, typename Policy,
+          typename = typename std::enable_if<
+              std::is_fundamental<typename Tile::value_type>::value>::type>
+std::vector<std::size_t> array_sizes(const TA::DistArray<Tile, Policy> &A) {
+  auto const &pmap = A.get_pmap();
+  TA::TiledRange const &trange = A.trange();
 
+  const auto end = pmap->end();
 
-    const auto end = pmap->end();
-
-    for (auto it = pmap->begin(); it != end; ++it) {
-        A.get_world().taskq.add(task,*it);
+  std::size_t full_size(0); // number of elements in nonzero local tiles
+  for (auto it = pmap->begin(); it != end; ++it) {
+    const auto tile_ord = *it;
+    if (!A.is_zero(tile_ord)) {
+      full_size += trange.make_tile_range(tile_ord).volume();
     }
-    A.get_world().gop.fence();
+  }
 
-    double size = double(full_size)*8* 1e-9;
-    A.get_world().gop.sum(size);
-    return size;
+  const auto world_size = A.get_world().size();
+  std::vector<std::size_t> result(world_size, 0);
+  result[A.get_world().rank()] = full_size * sizeof(typename Tile::value_type);
+  A.get_world().gop.sum(&result[0], world_size);
+
+  return result;
 }
 
-template <typename Tile>
-double array_size(const TA::DistArray<Tile,TA::SparsePolicy>& A){
-    std::atomic_ulong full_size(0);
-    auto const &pmap = A.get_pmap();
-    TA::TiledRange const &trange = A.trange();
-
-    auto task = [&trange, &full_size](unsigned long ord){
-      const TA::Range range = trange.make_tile_range(ord);
-      const auto size = range.volume();
-      full_size += size;
-    };
-
-    const auto end = pmap->end();
-
-    for (auto it = pmap->begin(); it != end; ++it) {
-        if(!A.is_zero(*it)){
-            A.get_world().taskq.add(task,*it);
-        }
-    }
-    A.get_world().gop.fence();
-
-    double size = double(full_size)*8* 1e-9;
-    A.get_world().gop.sum(size);
-    return size;
+/// @brief reports the total size of an array's tiles (in gigabytes)
+/// @note this is a collective operation
+/// @return the aggregate size of array's tiles in gigabytes
+template <typename Tile, typename Policy>
+double array_size(const TA::DistArray<Tile,Policy>& A){
+  const auto rank_sizes = array_sizes(A);
+  const auto total_size =
+      std::accumulate(rank_sizes.begin(), rank_sizes.end(), std::size_t(0));
+  return double(total_size) / (1<<30);
 }
 
 } // namespace utility

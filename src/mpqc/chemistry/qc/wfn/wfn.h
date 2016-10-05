@@ -34,15 +34,20 @@ class Wfn : public DescribedClass {
    *lives in so no ownership here.
    *
    * \warning Wfn should never delete or allocate this pointer.
+   *
+   * \note by chong I changed this to shared pointer, for example, MP2 and HF
+   *          will share the same wfn_world
    */
-  WfnWorld* wfn_world_ = nullptr;
+  std::shared_ptr<WfnWorld> wfn_world_;
 
  public:
-  Wfn(KeyVal const& kv) : wfn_world_(kv.value<WfnWorld*>("wfn_world")){}
+  Wfn(const KeyVal& kv);
+  virtual ~Wfn();
 
   virtual void compute(PropertyBase* pb) = 0;
+//  virtual void compute(PropertyBase* pb);
 
-  WfnWorld* wfn_world() { return wfn_world_; }
+  std::shared_ptr<WfnWorld> wfn_world() { return wfn_world_; }
 };
 
 }  // namespace qc

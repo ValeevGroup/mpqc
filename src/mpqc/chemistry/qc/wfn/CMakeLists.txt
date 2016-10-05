@@ -1,4 +1,6 @@
 set(sources
+    wfn.h
+    wfn.cpp
     ao_wfn.h
     ao_wfn.cpp
     wfn_world.h

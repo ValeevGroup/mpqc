@@ -5,13 +5,13 @@
 #include "../utility/parallel_file.h"
 #include "../utility/parallel_print.h"
 
-#include <mpqc/chemistry/molecule/clustering_functions.h>
-#include <mpqc/chemistry/molecule/make_clusters.h>
-#include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/chemistry/qc/integrals/atomic_integral.h>
 #include <mpqc/chemistry/qc/properties/energy.h>
-#include <mpqc/chemistry/qc/wfn/ao_wfn.h>
+#include <mpqc/chemistry/qc/wfn/wfn.h>
 #include <mpqc/util/keyval/keyval.hpp>
+
+// include linkage file
+#include <mpqc/chemistry/qc/wfn/linkage.h>
+#include <mpqc/chemistry/molecule/linkage.h>
 
 #include <sstream>
 #include <clocale>
@@ -36,10 +36,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   libint2::initialize();
 
-  auto wfn_world = kv.keyval("wfn_world").class_ptr<qc::WfnWorld>();
-  kv.assign("wfn_world", wfn_world);
-
-  qc::Wfn *wfn = new qc::AOWfn(kv);
+  auto wfn = kv.keyval("wfn").class_ptr<qc::Wfn>();
 
   auto energy_prop = qc::Energy(kv);
   auto energy_prop_ptr = &energy_prop;
@@ -51,8 +48,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
     auto S = wfn->wfn_world()->ao_integrals().compute(L"<κ|λ>");
     assert(S.is_initialized());
   }
-
-  delete wfn;
 
   return 0;
 }

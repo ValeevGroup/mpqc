@@ -47,6 +47,7 @@ void ao_basis_analysis (basis::Basis& basis, int occ){
   std::cout << "OOVP: " << bytes_to_gb(occ*occ*n*v*8) << " GB" << std::endl;
   std::cout << "OVVV: " << bytes_to_gb(occ*v*v*v*8) << " GB" << std::endl;
   std::cout << "VVVV: " << bytes_to_gb(v*v*v*v*8) << " GB" << std::endl;
+  std::cout << "VVPP: " << bytes_to_gb(v*v*n*n*8) << " GB" << std::endl;
   std::cout << std::endl;
 
 }

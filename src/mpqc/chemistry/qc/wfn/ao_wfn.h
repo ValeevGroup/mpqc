@@ -8,8 +8,8 @@
 #ifndef MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 #define MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 
-#include <mpqc/util/keyval/keyval.hpp>
 #include <mpqc/chemistry/qc/wfn/wfn.h>
+#include <mpqc/util/keyval/keyval.hpp>
 
 namespace mpqc {
 namespace qc {
@@ -17,6 +17,8 @@ namespace qc {
 class AOWfn : public Wfn {
  public:
   AOWfn(KeyVal const &kv);
+  ~AOWfn();
+
   void compute(PropertyBase *pb) override;
 };
 

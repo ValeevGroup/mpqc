@@ -3,6 +3,7 @@
     "type": "Molecule",
     "file_name": "watermonomer1.xyz",
     "sort_input": true,
+    "charge": 0,
     "n_cluster": 2
   },
   "basis": {

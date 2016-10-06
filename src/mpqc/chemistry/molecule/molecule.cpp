@@ -59,7 +59,8 @@ Molecule::Molecule(std::vector<ABCbl> c, bool sort_input)
     : elements_(std::move(c)),
       com_(center_of_mass(elements_)),
       mass_(sum_mass(elements_)),
-      charge_(sum_charge(elements_)) {
+      charge_(0),
+      total_charge_(sum_charge(elements_)) {
   if (sort_input) {
     sort_elements(elements_, com_);
   }
@@ -77,6 +78,7 @@ Molecule::Molecule(const KeyVal &kv) {
 
   bool sort_input = kv.value<bool>("sort_input", true);
   bool sort_origin = kv.value<bool>("sort_origin", false);
+
 
   if(sort_origin){
     init(file,{0.0, 0.0, 0.0} );
@@ -99,7 +101,13 @@ Molecule::Molecule(const KeyVal &kv) {
     elements_ = std::move(clustered_mol.elements_);
     com_ = std::move(clustered_mol.com_);
     mass_ = std::move(clustered_mol.mass_);
-    charge_ = std::move(clustered_mol.charge_);
+    total_charge_ = std::move(clustered_mol.total_charge_);
+  }
+
+  // attention, has to get charge at the end
+  charge_ = kv.value<int>("charge",0);
+  if(charge_ > total_charge_){
+    throw std::invalid_argument("Charge > Total Charge of Molecule! \n");
   }
 
 }
@@ -128,7 +136,7 @@ void Molecule::init(std::istream &file, bool sort_input) {
   elements_ = std::move(atoms);
   com_ = center_of_mass(elements_);
   mass_ = sum_mass(elements_);
-  charge_ = sum_charge(elements_);
+  total_charge_ = sum_charge(elements_);
 
   if (sort_input) {
     sort_elements(elements_, com_);
@@ -149,7 +157,7 @@ void Molecule::init(std::istream &file, Vec3D const &point) {
   elements_ = std::move(atoms);
   com_ = center_of_mass(elements_);
   mass_ = sum_mass(elements_);
-  charge_ = sum_charge(elements_);
+  total_charge_ = sum_charge(elements_);
 
   sort_elements(elements_, point);
 }

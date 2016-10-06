@@ -25,8 +25,7 @@ RHF::RHF(const KeyVal& kv) : AOWfn(kv){
   auto& mol = ao_int.molecule();
 
   // check if even number of electron first
-  //TODO handle charge better
-  std::size_t occ = mol.occupation(0);
+  std::size_t occ = mol.occupation();
   if(occ % 2 != 0){
     throw std::invalid_argument("RHF doesn't support ODD number of electrons! \n");
   }

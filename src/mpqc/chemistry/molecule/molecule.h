@@ -33,6 +33,7 @@ class Molecule : public DescribedClass {
   Vec3D com_ = {0, 0, 0};  /// Center of Mass
   double mass_ = 0.0;
   int64_t charge_ = 0;  /// Net charge (# protons - # electrons)
+  int64_t total_charge_ = 0;  // total charge # protons
 
   void init(std::istream &file, bool sort_input);
 
@@ -52,6 +53,8 @@ class Molecule : public DescribedClass {
    *    read (the XYZ format is described
    *    <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).
    *
+   *  <tr><td><tt>charge</tt><td>int<td>0<td> the charge of this molecule
+   *
    *  <tr><td><tt>sort_input</tt><td>boolean<td>true<td>If true, atoms
    *    will be resorted based on their distance from the center of mass.
    *
@@ -66,6 +69,7 @@ class Molecule : public DescribedClass {
    *  example input:
    *  "molecule": {
    *    "type": "Molecule",
+   *    "charge": 0,
    *    "file_name": "water.xyz",
    *    "sort_input": true,
    *    "n_cluster": 20
@@ -109,6 +113,9 @@ class Molecule : public DescribedClass {
   /// Charge of the Molecule: charge = (# protons - # electrons)
   int64_t charge() const { return charge_; }
 
+  /// total nuclear charge # of protons
+  int64_t  total_charge() const { return  total_charge_;}
+
   /// Mass of the Molecule
   double mass() const { return mass_; }
 
@@ -130,14 +137,16 @@ class Molecule : public DescribedClass {
     return elements_;
   }
 
-  /*! \brief Returns the difference between the Molecule's charge and the
+  /*! \brief Returns the difference between the Molecule's total_charge and the
    * charge passed into the function.
-   *
-   * \note this interface is a bit weird and will likely change with updates
-   * to KeyVal construction.
    */
-  int64_t occupation(unsigned long total_charge) const {
-    return charge_ - total_charge;
+  int64_t occupation(unsigned long charge) const {
+    return total_charge_ - charge;
+  }
+
+  /// return the occupation number
+  int64_t occupation() const{
+    return total_charge_ - charge_;
   }
 
   /// Computes the number of core electrons in the Molecule.

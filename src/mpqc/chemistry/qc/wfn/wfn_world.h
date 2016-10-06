@@ -29,7 +29,7 @@ class WfnWorld : public DescribedClass {
 
  private:
   madness::World &world_;
-  AOIntegral ao_ints_;
+  std::shared_ptr<AOIntegral> ao_ints_;
   std::shared_ptr<molecule::Molecule> mol_;
   std::shared_ptr<basis::OrbitalBasisRegistry> basis_registry_;
 
@@ -48,7 +48,7 @@ class WfnWorld : public DescribedClass {
    * \note This reference can't be made const without modifying the
    * AtomicIntegral library so that certain members are mutable.
    */
-  AOIntegral &ao_integrals() { return ao_ints_; }
+  AOIntegral &ao_integrals() { return *ao_ints_; }
 };
 
 }  // namespace qc

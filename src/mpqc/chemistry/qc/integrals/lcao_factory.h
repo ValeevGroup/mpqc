@@ -13,6 +13,7 @@
 #include "../../../../../ta_routines/diagonal_array.h"
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+#include <mpqc/chemistry/qc/wfn/wfn_world.h>
 
 namespace mpqc {
 namespace integrals {
@@ -37,35 +38,6 @@ class LCAOFactory {
    *  @param atomic_integral  reference to AtomicIntegral class
    *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry,
    * which contain AO to MO coefficients
-   *  @param formula_registry  FormulaRegistry used to store computed integral
-   *  @param in rapidjson Document object
-   *
-   *
-   *  Options in Input
-   *  @param AccurateTime, bool, control if use fence in timing, default false
-   */
-  //        LCAOFactory(AtomicIntegral &atomic_integral,
-  //                          const
-  //                          std::shared_ptr<OrbitalSpaceRegistry<TArray>>
-  //                          orbital_space_registry,
-  //                          const FormulaRegistry<TArray> &formula_registry,
-  //                          const rapidjson::Document& in =
-  //                          rapidjson::Document()
-  //                        )
-  //                : world_(atomic_integral.get_world()),
-  //                atomic_integral_(atomic_integral),
-  //                  orbital_space_registry_(orbital_space_registry),
-  //                  mo_formula_registry_(std::move(formula_registry))
-  //        {
-  //            atomic_integral_.set_orbital_space_registry(orbital_space_registry);
-  //            parse_input(in);
-  //        }
-
-  /**
-   *  Constructor
-   *  @param atomic_integral  reference to AtomicIntegral class
-   *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry,
-   * which contain AO to MO coefficients
    *
    */
   LCAOFactory(AtomicIntegralType& atomic_integral,
@@ -79,6 +51,26 @@ class LCAOFactory {
         keep_partial_transforms_(false) {
     atomic_integral_.set_orbital_space_registry(orbital_space_registry);
     parse_input(in);
+  }
+
+  /**
+   * Constructor
+   * @param WfnWorld
+   * @param KeyVal
+   *
+   * KeyVal options
+   * @param accurate_time, if do fence when timing, default false
+   * @param keep_partial_transform, if use strength reduction, default false
+   *
+   */
+  LCAOFactory(qc::WfnWorld& wfn_world, const KeyVal& kv)
+    : world_(wfn_world.world()),
+      atomic_integral_(wfn_world.ao_integrals()),
+      orbital_space_registry_(std::make_shared<OrbitalSpaceRegistry<TArray>>()),
+      mo_formula_registry_()
+  {
+    accurate_time_ = kv.value<bool>("accurate_time",false);
+    keep_partial_transforms_ = kv.value<bool>("keep_partial_transform",false);
   }
 
   /// return reference to madness::World

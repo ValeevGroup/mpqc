@@ -108,6 +108,7 @@ class AtomicIntegral : public AtomicIntegralBase {
     accurate_time_ = kv.value("accurate_time", false);
     iterative_inv_sqrt_ = kv.value("iterative_inv_sqrt", false);
 
+    //TODO determite Tile types from KeyVal input
     /// Warning!!!!
     /// This is temporary workround
     /// For other Tile type, need a better way to set Op

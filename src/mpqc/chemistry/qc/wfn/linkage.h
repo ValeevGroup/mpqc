@@ -6,12 +6,13 @@
 #define MPQC_CHEMISTRY_QC_WFN_LINKAGE_H
 
 #include <mpqc/chemistry/qc/wfn/ao_wfn.h>
+#include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
 #include <mpqc/util/keyval/forcelink.h>
 
 namespace mpqc{
 namespace qc{
 
-//mpqc::detail::ForceLink<mpqc::qc::AOWfn> fl2;
+mpqc::detail::ForceLink<mpqc::qc::LCAOWfn> fl2;
 
 
 }

@@ -2,25 +2,81 @@
 // Created by Chong Peng on 6/24/15.
 //
 
-#ifndef MPQC_MP2_H
-#define MPQC_MP2_H
+#ifndef MPQC_CHEMISTRY_QC_MBPT_MP2_H
+#define MPQC_CHEMISTRY_QC_MBPT_MP2_H
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 #include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
-//#include <mpqc/chemistry/qc/f12/mp2f12.h>
 #include <mpqc/chemistry/qc/scf/mo_build.h>
+#include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
 
 using namespace mpqc;
 
 namespace mpqc {
 namespace mbpt {
 
+namespace detail {
+
+template <typename Tile>
+struct Mp2Energy {
+  using result_type = double;
+  using argument_type = Tile;
+
+  std::shared_ptr<Eig::VectorXd> vec_;
+  std::size_t n_occ_;
+  std::size_t n_frozen_;
+
+  Mp2Energy(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ,
+            std::size_t n_frozen)
+      : vec_(std::move(vec)), n_occ_(n_occ), n_frozen_(n_frozen) {}
+
+  Mp2Energy(Mp2Energy const &) = default;
+
+  result_type operator()() const { return 0.0; }
+
+  result_type operator()(result_type const &t) const { return t; }
+
+  void operator()(result_type &me, result_type const &other) const {
+    me += other;
+  }
+
+  void operator()(result_type &me, argument_type const &tile) const {
+    auto const &range = tile.range();
+    auto const &vec = *vec_;
+    auto const st = range.lobound_data();
+    auto const fn = range.upbound_data();
+    auto tile_idx = 0;
+
+    auto sti = st[0];
+    auto fni = fn[0];
+    auto stj = st[1];
+    auto fnj = fn[1];
+    auto sta = st[2];
+    auto fna = fn[2];
+    auto stb = st[3];
+    auto fnb = fn[3];
+
+    for (auto i = sti; i < fni; ++i) {
+      const auto e_i = vec[i + n_frozen_];
+      for (auto j = stj; j < fnj; ++j) {
+        const auto e_ij = e_i + vec[j + n_frozen_];
+        for (auto a = sta; a < fna; ++a) {
+          const auto e_ija = e_ij - vec[a + n_occ_];
+          for (auto b = stb; b < fnb; ++b, ++tile_idx) {
+            const auto e_iajb = e_ija - vec[b + n_occ_];
+            me += 1.0 / (e_iajb)*tile.data()[tile_idx];
+          }
+        }
+      }
+    }
+  }
+};
+
+}
+
 template <typename Tile, typename Policy>
 class MP2 {
-  //  friend class f12::MP2F12<Tile>;
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
@@ -74,10 +130,9 @@ class MP2 {
   virtual void init(const rapidjson::Document &in) {
     if (orbital_energy_ == nullptr || trange1_engine_ == nullptr) {
       auto mol = lcao_factory_.atomic_integral().molecule();
-      int occ = mol.occupation(0) / 2;
       Eigen::VectorXd orbital_energy;
       trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-          lcao_factory_, orbital_energy, in, mol, occ);
+          lcao_factory_, orbital_energy, in, mol);
       orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
     }
   }
@@ -88,7 +143,7 @@ class MP2 {
     // compute mp2 energy
     double energy_mp2 =
         (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
-            .reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_occ(),
+            .reduce(detail::Mp2Energy<Tile>(orbital_energy_, trange1_engine_->get_occ(),
                               trange1_engine_->get_nfrozen()));
 
     if (g_ijab.get_world().rank() == 0) {
@@ -103,7 +158,7 @@ class MP2 {
     // compute mp2 energy
     double energy_mp2 =
         (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
-            .reduce(Mp2Energy(orbital_energy_, trange1_engine_->get_occ(),
+            .reduce(detail::Mp2Energy<Tile>(orbital_energy_, trange1_engine_->get_occ(),
                               trange1_engine_->get_nfrozen()));
 
     if (g_ijab.get_world().rank() == 0) {
@@ -114,66 +169,42 @@ class MP2 {
   }
 
  private:
-  struct Mp2Energy {
-    using result_type = double;
-    using argument_type = Tile;
-
-    std::shared_ptr<Eig::VectorXd> vec_;
-    std::size_t n_occ_;
-    std::size_t n_frozen_;
-
-    Mp2Energy(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ,
-              std::size_t n_frozen)
-        : vec_(std::move(vec)), n_occ_(n_occ), n_frozen_(n_frozen) {}
-
-    Mp2Energy(Mp2Energy const &) = default;
-
-    result_type operator()() const { return 0.0; }
-
-    result_type operator()(result_type const &t) const { return t; }
-
-    void operator()(result_type &me, result_type const &other) const {
-      me += other;
-    }
-
-    void operator()(result_type &me, argument_type const &tile) const {
-      auto const &range = tile.range();
-      auto const &vec = *vec_;
-      auto const st = range.lobound_data();
-      auto const fn = range.upbound_data();
-      auto tile_idx = 0;
-
-      auto sti = st[0];
-      auto fni = fn[0];
-      auto stj = st[1];
-      auto fnj = fn[1];
-      auto sta = st[2];
-      auto fna = fn[2];
-      auto stb = st[3];
-      auto fnb = fn[3];
-
-      for (auto i = sti; i < fni; ++i) {
-        const auto e_i = vec[i + n_frozen_];
-        for (auto j = stj; j < fnj; ++j) {
-          const auto e_ij = e_i + vec[j + n_frozen_];
-          for (auto a = sta; a < fna; ++a) {
-            const auto e_ija = e_ij - vec[a + n_occ_];
-            for (auto b = stb; b < fnb; ++b, ++tile_idx) {
-              const auto e_iajb = e_ija - vec[b + n_occ_];
-              me += 1.0 / (e_iajb)*tile.data()[tile_idx];
-            }
-          }
-        }
-      }
-    }
-  };
-
  protected:
   LCAOFactoryType &lcao_factory_;
   std::shared_ptr<Eigen::VectorXd> orbital_energy_;
   std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
 };
 
+class RMP2 : public qc::LCAOWfn {
+
+public:
+
+  RMP2(const KeyVal& kv);
+  ~RMP2() = default;
+
+  const std::shared_ptr<TRange1Engine> trange1_engine() const {
+    return trange1_engine_;
+  }
+
+  const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
+    return orbital_energy_;
+  }
+
+  double value() override;
+  double compute();
+  void compute(qc::PropertyBase* pb) override;
+
+private:
+
+  std::shared_ptr<qc::Wfn> ref_wfn_;
+  std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+  std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
+  double rmp2_energy_;
+  bool frozen_core_;
+  std::size_t occ_block_;
+  std::size_t unocc_block_;
+};
+
 }  // end of namespace mbpt
 }  // end of namespace mpqc
-#endif  // MPQC_MP2_H
+#endif  // MPQC_CHEMISTRY_QC_MBPT_MP2_H

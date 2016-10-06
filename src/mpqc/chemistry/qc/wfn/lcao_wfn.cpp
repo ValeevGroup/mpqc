@@ -11,10 +11,10 @@ namespace qc {
 
 LCAOWfn::LCAOWfn(const KeyVal &kv) : Wfn(kv) {
   lcao_factory_ =
-      std::make_shared<LCAOWfn::LCAOIntegral>(*(this->wfn_world()), kv);
+      std::make_shared<LCAOWfn::LCAOFactoryType>(*(this->wfn_world()), kv);
 }
 
-LCAOWfn::LCAOIntegral &LCAOWfn::lcao_factory() { return *lcao_factory_; }
+LCAOWfn::LCAOFactoryType &LCAOWfn::lcao_factory() { return *lcao_factory_; }
 
 void LCAOWfn::compute(PropertyBase *pb) {}
 

@@ -11,6 +11,7 @@
 
 // include linkage file
 #include <mpqc/chemistry/qc/wfn/linkage.h>
+#include <mpqc/chemistry/qc/mbpt/linkage.h>
 #include <mpqc/chemistry/qc/scf/linkage.h>
 #include <mpqc/chemistry/molecule/linkage.h>
 
@@ -43,7 +44,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
 //  auto energy_prop_ptr = &energy_prop;
 
   double val = wfn->value();
-  std::cout << "Wfn energy is: " << val << std::endl;
+  utility::print_par(world,"Wfn energy is: ", val, "\n");
+
+
+  libint2::finalize();
+  madness::finalize();
 
   return 0;
 }
@@ -85,6 +90,5 @@ int main(int argc, char *argv[]) {
     rc = 1;
   }
 
-  madness::finalize();
   return rc;
 }

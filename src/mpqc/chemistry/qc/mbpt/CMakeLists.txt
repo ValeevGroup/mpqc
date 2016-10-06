@@ -1,6 +1,7 @@
 set(sources
         dbmp2.h
         mp2.h
+        mp2.cpp
         mbpt.cpp
         )
 

@@ -15,10 +15,43 @@
 
 namespace mpqc {
 
+namespace detail {
+
+inline std::tuple<bool, std::size_t, std::size_t> get_mo_build_option(
+    const rapidjson::Document &in) {
+  bool frozen_core =
+      in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
+
+  // get all the sizes
+  std::size_t mo_blocksize =
+      in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
+  std::size_t occ_blocksize =
+      in.HasMember("OccBlockSize") ? in["OccBlockSize"].GetInt() : mo_blocksize;
+  std::size_t vir_blocksize =
+      in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
+
+  return std::make_tuple(frozen_core, occ_blocksize, vir_blocksize);
+};
+}
+
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
-    const rapidjson::Document &in, const molecule::Molecule &mols, int occ) {
+    const rapidjson::Document &in, const molecule::Molecule &mols) {
+  bool frozen_core;
+  std::size_t occ_blocksize, vir_blocksize;
+  std::tie(frozen_core, occ_blocksize, vir_blocksize) =
+      detail::get_mo_build_option(in);
+
+  return closed_shell_obs_mo_build_eigen_solve(
+      lcao_factory, ens, mols, frozen_core, occ_blocksize, vir_blocksize);
+};
+
+template <typename Tile, typename Policy>
+std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
+    integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
+    const molecule::Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
+    std::size_t vir_blocksize) {
   auto &ao_int = lcao_factory.atomic_integral();
   auto orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_int.world();
@@ -26,6 +59,8 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 
   auto mo_time0 = mpqc_time::fenced_now(world);
   utility::print_par(world, "\nBuilding ClosedShell OBS MO Orbital\n");
+
+  auto occ = mols.occupation() / 2;
 
   // find fock matrix
   TArray F;
@@ -51,8 +86,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
 
   // start to solve coefficient
-  bool frozen_core =
-      in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
+
   std::size_t n_frozen_core = 0;
   if (frozen_core) {
     n_frozen_core = mols.core_electrons();
@@ -67,14 +101,6 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   MatrixD C_corr_occ =
       C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
   MatrixD C_vir = C_all.rightCols(S_eig.rows() - occ);
-
-  // get all the sizes
-  std::size_t mo_blocksize =
-      in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
-  std::size_t occ_blocksize =
-      in.HasMember("OccBlockSize") ? in["OccBlockSize"].GetInt() : mo_blocksize;
-  std::size_t vir_blocksize =
-      in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
 
   utility::print_par(world, "OccBlockSize: ", occ_blocksize, "\n");
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");

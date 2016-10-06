@@ -15,7 +15,7 @@ namespace qc{
 class LCAOWfn : public Wfn {
 
   using ArrayType = typename Wfn::ArrayType;
-  using LCAOIntegral = integrals::LCAOFactory<TA::TensorD,TA::SparsePolicy>;
+  using LCAOFactoryType = integrals::LCAOFactory<TA::TensorD,TA::SparsePolicy>;
 
 public:
   /*
@@ -26,13 +26,13 @@ public:
   LCAOWfn(const KeyVal& kv);
   ~LCAOWfn() = default;
 
-  LCAOIntegral& lcao_factory();
+  LCAOFactoryType& lcao_factory();
   void compute(PropertyBase *pb) override;
   double value() override;
 
 private:
 
-  std::shared_ptr<LCAOIntegral> lcao_factory_;
+  std::shared_ptr<LCAOFactoryType> lcao_factory_;
 
 };
 

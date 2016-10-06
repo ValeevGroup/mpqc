@@ -53,7 +53,7 @@ class Wfn : public DescribedClass {
   virtual ~Wfn();
 
   virtual void compute(PropertyBase* pb) = 0;
-  virtual double value();
+  virtual double value() = 0;
 
   std::shared_ptr<WfnWorld> wfn_world() { return wfn_world_; }
 };

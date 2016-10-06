@@ -1,8 +1,8 @@
 namespace mpqc {
 namespace qc {
 
-class Wfn;
-class AOWfn;
+class Wavefunction;
+class AOWavefunction;
 
 }  // namespace qc
 }  // namespace mpqc

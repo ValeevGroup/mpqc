@@ -175,7 +175,7 @@ class MP2 {
   std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
 };
 
-class RMP2 : public qc::LCAOWfn {
+class RMP2 : public qc::LCAOWavefunction {
 
 public:
 
@@ -196,7 +196,7 @@ public:
 
 private:
 
-  std::shared_ptr<qc::Wfn> ref_wfn_;
+  std::shared_ptr<qc::Wavefunction> ref_wfn_;
   std::shared_ptr<Eigen::VectorXd> orbital_energy_;
   std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
   double rmp2_energy_;

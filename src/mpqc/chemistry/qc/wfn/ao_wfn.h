@@ -14,10 +14,10 @@
 namespace mpqc {
 namespace qc {
 
-class AOWfn : public Wfn {
+class AOWavefunction : public Wavefunction {
  public:
-  AOWfn(KeyVal const &kv);
-  ~AOWfn();
+  AOWavefunction(KeyVal const &kv);
+  ~AOWavefunction();
 
   void compute(PropertyBase *pb) override;
 };

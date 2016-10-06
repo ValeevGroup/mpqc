@@ -22,7 +22,7 @@ namespace qc {
  * It provides an execution context (madness::World), a molecule, and
  * basis and operator registries.
  */
-class WfnWorld : public DescribedClass {
+class WavefunctionWorld : public DescribedClass {
  public:
   using AOIntegral = integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy>;
   using ArrayType = AOIntegral::TArray;
@@ -34,8 +34,8 @@ class WfnWorld : public DescribedClass {
   std::shared_ptr<basis::OrbitalBasisRegistry> basis_registry_;
 
  public:
-  WfnWorld(KeyVal const &kv);
-  ~WfnWorld();
+  WavefunctionWorld(KeyVal const &kv);
+  ~WavefunctionWorld();
 
   /// Return a reference to the madness world
   madness::World &world() { return world_; }

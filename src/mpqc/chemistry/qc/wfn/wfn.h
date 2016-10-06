@@ -23,9 +23,9 @@ class PropertyBase;
 /**
  * Wfn is a wave function that lives in a WfnWorld
  */
-class Wfn : public DescribedClass {
+class Wavefunction : public DescribedClass {
  public:
-  using ArrayType = WfnWorld::ArrayType;
+  using ArrayType = WavefunctionWorld::ArrayType;
 
  private:
   /*! Pointer to the WfnWorld
@@ -38,7 +38,7 @@ class Wfn : public DescribedClass {
    * \note by chong I changed this to shared pointer, for example, MP2 and HF
    *          will share the same wfn_world
    */
-  std::shared_ptr<WfnWorld> wfn_world_;
+  std::shared_ptr<WavefunctionWorld> wfn_world_;
 
  public:
   /**
@@ -49,13 +49,13 @@ class Wfn : public DescribedClass {
    * @param  wfn_world,  WfnWorld object, if not provided, will check "$:wfn_world" and "..:wfn_world"
    *
    */
-  Wfn(const KeyVal& kv);
-  virtual ~Wfn();
+  Wavefunction(const KeyVal& kv);
+  virtual ~Wavefunction();
 
   virtual void compute(PropertyBase* pb) = 0;
   virtual double value() = 0;
 
-  std::shared_ptr<WfnWorld> wfn_world() { return wfn_world_; }
+  std::shared_ptr<WavefunctionWorld> wfn_world() { return wfn_world_; }
 };
 
 }  // namespace qc

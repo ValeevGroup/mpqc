@@ -18,7 +18,7 @@ MPQC_CLASS_EXPORT_KEY2(mpqc::scf::RHF, "RHF");
 namespace mpqc {
 namespace scf {
 
-RHF::RHF(const KeyVal& kv) : AOWfn(kv){
+RHF::RHF(const KeyVal& kv) : AOWavefunction(kv){
 
   auto& ao_int = this->wfn_world()->ao_integrals();
   auto& world = ao_int.world();

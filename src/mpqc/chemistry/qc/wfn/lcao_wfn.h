@@ -12,9 +12,9 @@
 namespace mpqc{
 namespace qc{
 
-class LCAOWfn : public Wfn {
+class LCAOWavefunction : public Wavefunction {
 
-  using ArrayType = typename Wfn::ArrayType;
+  using ArrayType = typename Wavefunction::ArrayType;
   using LCAOFactoryType = integrals::LCAOFactory<TA::TensorD,TA::SparsePolicy>;
 
 public:
@@ -23,8 +23,8 @@ public:
    * it includes all options from Wfn and LCAOFactory
    *
    */
-  LCAOWfn(const KeyVal& kv);
-  ~LCAOWfn() = default;
+  LCAOWavefunction(const KeyVal& kv);
+  ~LCAOWavefunction() = default;
 
   LCAOFactoryType& lcao_factory();
   void compute(PropertyBase *pb) override;

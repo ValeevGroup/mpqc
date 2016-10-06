@@ -63,7 +63,7 @@ class LCAOFactory {
    * @param keep_partial_transform, if use strength reduction, default false
    *
    */
-  LCAOFactory(qc::WfnWorld& wfn_world, const KeyVal& kv)
+  LCAOFactory(qc::WavefunctionWorld& wfn_world, const KeyVal& kv)
     : world_(wfn_world.world()),
       atomic_integral_(wfn_world.ao_integrals()),
       orbital_space_registry_(std::make_shared<OrbitalSpaceRegistry<TArray>>()),

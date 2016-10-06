@@ -16,7 +16,7 @@ namespace qc {
 
 class PropertyBase : public DescribedClass {
  public:
-  virtual void apply(AOWfn *) = 0;
+  virtual void apply(AOWavefunction *) = 0;
 };
 
 }  // namespace qc

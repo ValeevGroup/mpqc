@@ -10,7 +10,7 @@ namespace mpqc{
 namespace mbpt{
 
 
-RMP2::RMP2(const KeyVal& kv) : LCAOWfn(kv){
+RMP2::RMP2(const KeyVal& kv) : LCAOWavefunction(kv){
 
   rmp2_energy_ = 0.0;
   frozen_core_ = kv.value<bool>("frozen_core",true);
@@ -19,7 +19,7 @@ RMP2::RMP2(const KeyVal& kv) : LCAOWfn(kv){
   unocc_block_ = kv.value<int>("un_occ_block",mo_block);
 
   if(kv.exists("ref")){
-    ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wfn>();
+    ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
   }
   else{
     throw std::invalid_argument("Default Ref Wfn in RMP2 is not support! \n");

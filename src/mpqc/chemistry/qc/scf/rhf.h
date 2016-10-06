@@ -19,7 +19,7 @@
 namespace mpqc{
 namespace scf{
 
-class RHF : public qc::AOWfn {
+class RHF : public qc::AOWavefunction {
 
 public:
   using array_type = TA::TSpArrayD;

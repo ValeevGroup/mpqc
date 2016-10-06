@@ -4,20 +4,18 @@
 
 #include "lcao_wfn.h"
 
-MPQC_CLASS_EXPORT_KEY2(mpqc::qc::LCAOWfn, "LCAOWfn");
-
 namespace mpqc {
 namespace qc {
 
-LCAOWfn::LCAOWfn(const KeyVal &kv) : Wfn(kv) {
+LCAOWavefunction::LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
   lcao_factory_ =
-      std::make_shared<LCAOWfn::LCAOFactoryType>(*(this->wfn_world()), kv);
+      std::make_shared<LCAOWavefunction::LCAOFactoryType>(*(this->wfn_world()), kv);
 }
 
-LCAOWfn::LCAOFactoryType &LCAOWfn::lcao_factory() { return *lcao_factory_; }
+LCAOWavefunction::LCAOFactoryType &LCAOWavefunction::lcao_factory() { return *lcao_factory_; }
 
-void LCAOWfn::compute(PropertyBase *pb) {}
+void LCAOWavefunction::compute(PropertyBase *pb) {}
 
-double LCAOWfn::value() { return 1.0; }
+double LCAOWavefunction::value() { return 1.0; }
 }
 }

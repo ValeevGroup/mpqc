@@ -12,7 +12,7 @@
 namespace mpqc{
 namespace qc{
 
-mpqc::detail::ForceLink<mpqc::qc::LCAOWfn> fl2;
+mpqc::detail::ForceLink<mpqc::qc::LCAOWavefunction> fl2;
 
 
 }

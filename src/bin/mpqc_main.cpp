@@ -38,7 +38,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   libint2::initialize();
 
-  auto wfn = kv.keyval("wfn").class_ptr<qc::Wfn>();
+  auto wfn = kv.keyval("wfn").class_ptr<qc::Wavefunction>();
 
 //  auto energy_prop = qc::Energy(kv);
 //  auto energy_prop_ptr = &energy_prop;

@@ -90,6 +90,7 @@ INCLUDE_DIRECTORIES(${MPQC_BINARY_DIR}/src)
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
 
+
 # these will be moved eventually into src/mpqc
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tensor)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/utility)
@@ -114,6 +115,7 @@ MESSAGE(STATUS "Using libraries ${MPQC_LIBRARIES}")
 
 # none yet
 add_subdirectory(examples)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/bin)
 
 ###############################################################################
 # Declare MPQC tests and doc

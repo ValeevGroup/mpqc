@@ -1,9 +1,9 @@
 /// New MPQC Main file with KeyVal
 
-#include "../include/tiledarray.h"
+#include "../../include/tiledarray.h"
 
-#include "../utility/parallel_file.h"
-#include "../utility/parallel_print.h"
+#include "../../utility/parallel_file.h"
+#include "../../utility/parallel_print.h"
 
 #include <mpqc/chemistry/qc/properties/energy.h>
 #include <mpqc/chemistry/qc/wfn/wfn.h>

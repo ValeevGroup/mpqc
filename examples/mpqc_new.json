@@ -27,7 +27,8 @@
     "df_basis" :"$:df_basis"
   },
   "wfn":{
-    "type": "AOWfn",
-    "wfn_world": "$:world"
+    "type": "RHF",
+    "wfn_world": "$:world",
+    "fock_builder": "df"
   }
 }

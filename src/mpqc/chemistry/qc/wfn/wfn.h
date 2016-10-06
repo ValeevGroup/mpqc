@@ -41,11 +41,19 @@ class Wfn : public DescribedClass {
   std::shared_ptr<WfnWorld> wfn_world_;
 
  public:
+  /**
+   * KeyVal constructor
+   *
+   * keywords
+   *
+   * @param  wfn_world,  WfnWorld object, if not provided, will check "$:wfn_world" and "..:wfn_world"
+   *
+   */
   Wfn(const KeyVal& kv);
   virtual ~Wfn();
 
   virtual void compute(PropertyBase* pb) = 0;
-//  virtual void compute(PropertyBase* pb);
+  virtual double value();
 
   std::shared_ptr<WfnWorld> wfn_world() { return wfn_world_; }
 };

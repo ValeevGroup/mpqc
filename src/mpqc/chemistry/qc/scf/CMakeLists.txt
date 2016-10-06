@@ -1,4 +1,6 @@
 set(sources
+        rhf.h
+        rhf.cpp
         scf.h
         scf.cpp
         orbital_localization.h

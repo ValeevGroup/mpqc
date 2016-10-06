@@ -11,6 +11,7 @@
 
 // include linkage file
 #include <mpqc/chemistry/qc/wfn/linkage.h>
+#include <mpqc/chemistry/qc/scf/linkage.h>
 #include <mpqc/chemistry/molecule/linkage.h>
 
 #include <sstream>
@@ -38,16 +39,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   auto wfn = kv.keyval("wfn").class_ptr<qc::Wfn>();
 
-  auto energy_prop = qc::Energy(kv);
-  auto energy_prop_ptr = &energy_prop;
+//  auto energy_prop = qc::Energy(kv);
+//  auto energy_prop_ptr = &energy_prop;
 
-  wfn->compute(energy_prop_ptr);
-  std::cout << "Wfn energy is: " << *energy_prop.result() << std::endl;
-
-  {  // Test ints from Wfn
-    auto S = wfn->wfn_world()->ao_integrals().compute(L"<κ|λ>");
-    assert(S.is_initialized());
-  }
+  double val = wfn->value();
+  std::cout << "Wfn energy is: " << val << std::endl;
 
   return 0;
 }

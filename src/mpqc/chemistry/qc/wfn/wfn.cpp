@@ -27,6 +27,10 @@ Wfn::Wfn(const KeyVal &kv) {
 
 Wfn::~Wfn() = default;
 
+double Wfn::value() {
+  return 0.0;
+}
+
 //////void Wfn::compute(PropertyBase* pb){
 ////  throw std::runtime_error("Wfn::compute is abstract mehtod! \n");
 //}

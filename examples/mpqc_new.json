@@ -27,9 +27,14 @@
     "basis" : "$:basis",
     "df_basis" :"$:df_basis"
   },
-  "wfn":{
-    "type": "LCAOWfn",
+  "scf":{
+    "type": "RHF",
     "wfn_world": "$:world",
     "fock_builder": "df"
+  },
+  "wfn":{
+    "type": "RMP2",
+    "wfn_world": "$:world",
+    "ref": "$:scf"
   }
 }

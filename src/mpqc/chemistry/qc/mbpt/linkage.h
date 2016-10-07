@@ -12,6 +12,7 @@ namespace mbpt{
 
 
 mpqc::detail::ForceLink<RMP2> fl1;
+mpqc::detail::ForceLink<RIRMP2> fl2;
 
 }
 }

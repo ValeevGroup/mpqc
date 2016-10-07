@@ -8,6 +8,7 @@
 #include <mpqc/chemistry/qc/wfn/wfn.h>
 #include <mpqc/util/keyval/keyval.hpp>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
+#include "../../../../../utility/trange1_engine.h"
 
 namespace mpqc{
 namespace qc{
@@ -30,9 +31,28 @@ public:
   void compute(PropertyBase *pb) override;
   double value() override;
 
+  const std::shared_ptr<TRange1Engine> trange1_engine() const {
+    return trange1_engine_;
+  }
+
+  const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
+    return orbital_energy_;
+  }
+
+  bool is_frozen_core() const;
+  size_t occ_block() const;
+  size_t unocc_block() const;
+
+protected:
+  std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+  std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
+
 private:
 
   std::shared_ptr<LCAOFactoryType> lcao_factory_;
+  bool frozen_core_;
+  std::size_t occ_block_;
+  std::size_t unocc_block_;
 
 };
 

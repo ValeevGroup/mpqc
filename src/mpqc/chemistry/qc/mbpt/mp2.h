@@ -182,27 +182,22 @@ public:
   RMP2(const KeyVal& kv);
   ~RMP2() = default;
 
-  const std::shared_ptr<TRange1Engine> trange1_engine() const {
-    return trange1_engine_;
-  }
-
-  const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
-    return orbital_energy_;
-  }
-
   double value() override;
-  double compute();
+  virtual double compute();
   void compute(qc::PropertyBase* pb) override;
 
 private:
 
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
-  std::shared_ptr<Eigen::VectorXd> orbital_energy_;
-  std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
   double rmp2_energy_;
-  bool frozen_core_;
-  std::size_t occ_block_;
-  std::size_t unocc_block_;
+};
+
+class RIRMP2 : public RMP2 {
+public:
+
+  RIRMP2(const KeyVal& kv);
+  ~RIRMP2() = default;
+  double compute() override;
 };
 
 }  // end of namespace mbpt

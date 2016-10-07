@@ -10,6 +10,11 @@ namespace qc {
 LCAOWavefunction::LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
   lcao_factory_ =
       std::make_shared<LCAOWavefunction::LCAOFactoryType>(*(this->wfn_world()), kv);
+
+  frozen_core_ = kv.value<bool>("frozen_core",true);
+  std::size_t mo_block = kv.value<int>("mo_block",24);
+  occ_block_ = kv.value<int>("occ_block",mo_block);
+  unocc_block_ = kv.value<int>("un_occ_block",mo_block);
 }
 
 LCAOWavefunction::LCAOFactoryType &LCAOWavefunction::lcao_factory() { return *lcao_factory_; }
@@ -17,5 +22,15 @@ LCAOWavefunction::LCAOFactoryType &LCAOWavefunction::lcao_factory() { return *lc
 void LCAOWavefunction::compute(PropertyBase *pb) {}
 
 double LCAOWavefunction::value() { return 1.0; }
+
+bool LCAOWavefunction::is_frozen_core() const {
+  return frozen_core_;
+}
+size_t LCAOWavefunction::occ_block() const {
+  return occ_block_;
+}
+size_t LCAOWavefunction::unocc_block() const {
+  return unocc_block_;
+}
 }
 }

@@ -33,7 +33,7 @@
     "fock_builder": "df"
   },
   "wfn":{
-    "type": "RMP2",
+    "type": "RI-RMP2",
     "wfn_world": "$:world",
     "ref": "$:scf"
   }

@@ -8,6 +8,7 @@ set(sources
         db_f12_intermediates.h
         dbccsdf12.h
         dbmp2f12.h
+        dbmp2f12.cpp
         f12.cpp
 )
 

@@ -11,6 +11,7 @@
 
 // include linkage file
 #include <mpqc/chemistry/qc/wfn/linkage.h>
+#include <mpqc/chemistry/qc/f12/linkage.h>
 #include <mpqc/chemistry/qc/mbpt/linkage.h>
 #include <mpqc/chemistry/qc/scf/linkage.h>
 #include <mpqc/chemistry/molecule/linkage.h>
@@ -33,7 +34,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   kv.read_json(ss);
   kv.assign("world", &world);
 
-  auto threshold = 1e-11;  // Hardcode for now.
+  auto threshold = 1e-15;  // Hardcode for now.
   TiledArray::SparseShape<float>::threshold(threshold);
 
   libint2::initialize();

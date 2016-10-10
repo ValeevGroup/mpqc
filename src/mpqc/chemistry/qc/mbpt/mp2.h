@@ -187,7 +187,6 @@ public:
   void compute(qc::PropertyBase* pb) override;
 
 private:
-
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
   double rmp2_energy_;
 };
@@ -197,6 +196,7 @@ public:
 
   RIRMP2(const KeyVal& kv);
   ~RIRMP2() = default;
+  using RMP2::value;
   double compute() override;
 };
 

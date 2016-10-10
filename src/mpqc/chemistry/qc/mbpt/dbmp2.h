@@ -79,10 +79,9 @@ class DBMP2 : public MP2<Tile, Policy> {
     if (this->trange1_engine_ == nullptr || this->orbital_energy_ == nullptr) {
       auto &lcao_factory = this->lcao_factory();
       auto mol = lcao_factory.atomic_integral().molecule();
-      int occ = mol.occupation(0) / 2;
       Eigen::VectorXd orbital_energy;
       this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
-          lcao_factory, orbital_energy, in, mol, occ);
+          lcao_factory, orbital_energy, in, mol);
       this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
     }
   }

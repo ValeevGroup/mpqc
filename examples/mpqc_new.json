@@ -8,32 +8,40 @@
   },
   "basis": {
     "type": "Basis",
-    "name": "cc-pVDZ-F12",
+    "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
   "df_basis": {
     "type": "Basis",
-    "name": "aug-cc-pVDZ-RI",
+    "name": "aug-cc-pVTZ-RI",
     "molecule": "$:molecule"
   },
   "aux_basis":{
     "type": "Basis",
-    "name": "cc-pVDZ-F12-CABS",
+    "name": "aug-cc-pVDZ-CABS",
+    "molecule": "$:molecule"
+  },
+  "vir_basis":{
+    "type": "Basis",
+    "name": "aug-cc-pVDZ",
     "molecule": "$:molecule"
   },
   "world":{
     "type" : "WfnWorld",
     "molecule" : "$:molecule",
     "basis" : "$:basis",
-    "df_basis" :"$:df_basis"
+    "df_basis" :"$:df_basis",
+    "aux_basis": "$:aux_basis",
+    "vir_basis": "$:vir_basis"
   },
   "scf":{
     "type": "RHF",
     "wfn_world": "$:world",
-    "fock_builder": "df"
+    "fock_builder": "df",
+    "converge": 1.0e-11
   },
   "wfn":{
-    "type": "RI-RMP2",
+    "type": "RI-DBRMP2F12",
     "wfn_world": "$:world",
     "ref": "$:scf"
   }

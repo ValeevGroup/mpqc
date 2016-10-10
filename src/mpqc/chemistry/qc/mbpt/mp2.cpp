@@ -23,7 +23,7 @@ RMP2::RMP2(const KeyVal &kv) : LCAOWavefunction(kv) {
 }
 
 double RMP2::value() {
-  if (rmp2_energy_ == 0) {
+  if (rmp2_energy_ == 0.0) {
     double ref_energy = ref_wfn_->value();
 
     auto mol = this->lcao_factory().atomic_integral().molecule();

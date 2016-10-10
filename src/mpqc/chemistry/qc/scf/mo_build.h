@@ -272,13 +272,28 @@ void closed_shell_cabs_mo_build_svd(
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
-    const rapidjson::Document &in, const molecule::Molecule &mols, int occ) {
+    const rapidjson::Document &in, const molecule::Molecule &mols) {
+
+  bool frozen_core;
+  std::size_t occ_blocksize, vir_blocksize;
+  std::tie(frozen_core, occ_blocksize, vir_blocksize) =
+      detail::get_mo_build_option(in);
+
+  return closed_shell_dualbasis_mo_build_eigen_solve_svd(
+      lcao_factory, ens, mols, frozen_core, occ_blocksize, vir_blocksize);
+}
+
+template <typename Tile, typename Policy>
+std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
+    integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
+    const molecule::Molecule &mols, bool frozen_core, std::size_t occ_blocksize, std::size_t vir_blocksize){
   auto &ao_int = lcao_factory.atomic_integral();
   auto &world = ao_int.world();
   using TArray = TA::DistArray<Tile, Policy>;
 
   utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO Orbital\n");
   auto mo_time0 = mpqc_time::fenced_now(world);
+  std::size_t occ = mols.occupation()/2;
 
   // solving occupied orbitals
   TArray F;
@@ -296,8 +311,6 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   // solve mo coefficients
   Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
 
-  bool frozen_core =
-      in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
   std::size_t n_frozen_core = 0;
   if (frozen_core) {
     n_frozen_core = mols.core_electrons();
@@ -346,13 +359,6 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
     C_vbs = X_vbs_eigen_inv.transpose() * Vnull;
   }
 
-  // get all the sizes
-  std::size_t mo_blocksize =
-      in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
-  std::size_t vir_blocksize =
-      in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
-  std::size_t occ_blocksize =
-      in.HasMember("OccBlockSize") ? in["OccBlockSize"].GetInt() : mo_blocksize;
   utility::print_par(world, "OccBlockSize: ", occ_blocksize, "\n");
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
@@ -434,7 +440,24 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 template <typename Tile, typename Policy>
 void closed_shell_dualbasis_cabs_mo_build_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory,
-    const rapidjson::Document &in, const std::shared_ptr<TRange1Engine> tre) {
+    const rapidjson::Document &in, const std::shared_ptr<TRange1Engine> tre)
+{
+  std::string ri_method =
+      in.HasMember("RIMethod") ? in["RIMethod"].GetString() : "VBS";
+
+  // get mo block size
+  std::size_t mo_blocksize =
+      in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
+  std::size_t vir_blocksize =
+      in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
+
+  closed_shell_dualbasis_cabs_mo_build_svd(lcao_factory,tre,ri_method,vir_blocksize);
+}
+template <typename Tile, typename Policy>
+void closed_shell_dualbasis_cabs_mo_build_svd(
+    integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+    const std::shared_ptr<TRange1Engine> tre, std::string ri_method, std::size_t vir_blocksize)
+{
   auto &ao_int = lcao_factory.atomic_integral();
   auto orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_int.world();
@@ -451,8 +474,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto obs_basis =
       ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"κ"));
 
-  std::string ri_method =
-      in.HasMember("RIMethod") ? in["RIMethod"].GetString() : "VBS";
+
   basis::Basis ri_basis;
 
   if (ri_method == "VBS") {
@@ -517,13 +539,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
     C_cabs_eigen = C_allvir_eigen * Vnull2;
   }
 
-  // get mo block size
-  std::size_t mo_blocksize =
-      in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
-  std::size_t vir_blocksize =
-      in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
-
   // get cabs trange
   auto tr_cabs = lcao_factory.atomic_integral()
                      .orbital_basis_registry()

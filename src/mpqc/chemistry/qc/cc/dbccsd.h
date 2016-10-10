@@ -53,10 +53,9 @@ class DBCCSD : public CCSD<Tile, Policy> {
     if (this->orbital_energy_ == nullptr || this->trange1_engine_ == nullptr) {
       auto &lcao_factory = this->ccsd_intermediate_->lcao_factory();
       auto mol = lcao_factory.atomic_integral().molecule();
-      int occ = mol.occupation(0) / 2;
       Eigen::VectorXd orbital_energy;
       this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
-          lcao_factory, orbital_energy, in, mol, occ);
+          lcao_factory, orbital_energy, in, mol);
       this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
     }
   }

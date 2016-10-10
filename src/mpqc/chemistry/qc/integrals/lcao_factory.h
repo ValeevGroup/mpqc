@@ -71,6 +71,7 @@ class LCAOFactory {
   {
     accurate_time_ = kv.value<bool>("accurate_time",false);
     keep_partial_transforms_ = kv.value<bool>("keep_partial_transform",false);
+    atomic_integral_.set_orbital_space_registry(orbital_space_registry_);
   }
 
   /// return reference to madness::World

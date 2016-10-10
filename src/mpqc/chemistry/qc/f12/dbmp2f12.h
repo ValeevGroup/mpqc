@@ -238,6 +238,27 @@ DBMP2F12<Tile>::compute_db_mp2_f12_c_df() {
   return std::make_tuple(Eij_MP2, Eij_F12);
 }
 
+class RIDBRMP2F12 : public qc::LCAOWavefunction{
+
+public:
+
+  using Matrix = RowMatrix<double>;
+
+  RIDBRMP2F12(const KeyVal& kv);
+  ~RIDBRMP2F12() = default;
+
+  double value() override;
+  double compute();
+  void compute(qc::PropertyBase* pb) override;
+
+private:
+  std::tuple<Matrix,Matrix>  compute_db_mp2_f12_c();
+
+private:
+  std::shared_ptr<qc::Wavefunction> ref_wfn_; // scf
+  double db_rmp2f12_energy_;
+
+};
 }  // namespace f12
 }  // namespace mpqc
 

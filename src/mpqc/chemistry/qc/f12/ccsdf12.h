@@ -179,6 +179,8 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
     Eij_F12 = eij;
   }
 
+  lcao_factory.atomic_integral().registry().purge_operator(world,L"R");
+
   // compute X term
   TArray X_ijij_ijji = compute_X_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
 

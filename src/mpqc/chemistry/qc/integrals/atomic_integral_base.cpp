@@ -132,7 +132,7 @@ AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
   mol_ = kv.keyval("molecule").class_ptr<molecule::Molecule>();
 
   // if have auxilary basis
-  if(kv.exists("aux_bs")){
+  if(kv.exists("aux_basis")){
     std::string basis_name = kv.value<std::string>("basis");
     int n_function = kv.value<int>("corr_functions",6);
     double corr_param = kv.value<double>("corr_param",0);

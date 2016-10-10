@@ -133,15 +133,47 @@ AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
 
   // if have auxilary basis
   if(kv.exists("aux_basis")){
-    std::string basis_name = kv.value<std::string>("basis");
     int n_function = kv.value<int>("corr_functions",6);
     double corr_param = kv.value<double>("corr_param",0);
+    f12::GTGParams gtg_params;
     if(corr_param != 0){
-      gtg_params_ = f12::GTGParams(corr_param, n_function).compute();
+      gtg_params = f12::GTGParams(corr_param, n_function);
     } else{
-      gtg_params_ = f12::GTGParams(basis_name, n_function).compute();
+      if(kv.exists("vir_basis")){
+        std::string basis_name = kv.value<std::string>("vir_basis:name");
+        gtg_params = f12::GTGParams(basis_name, n_function);
+      }else{
+        std::string basis_name = kv.value<std::string>("basis:name");
+        gtg_params = f12::GTGParams(basis_name, n_function);
+      }
+    }
+    gtg_params_ = gtg_params.compute();
+    if (world().rank() == 0) {
+      std::cout << "F12 Correlation Factor: " << gtg_params.exponent
+                << std::endl;
+      std::cout << "NFunction: " << gtg_params.n_fit << std::endl;
+      std::cout << "F12 Exponent Coefficient" << std::endl;
+      for (auto &pair : gtg_params_) {
+        std::cout << pair.first << " " << pair.second << std::endl;
+      }
+      std::cout << std::endl;
     }
   }
+  // other initialization
+  screen_ = kv.value<std::string>("screen","");
+  screen_threshold_ = kv.value<double>("threshold",1.0e-10);
+  auto default_precision = std::numeric_limits<double>::epsilon();
+  precision_ = kv.value<double>("precision",default_precision);
+  integrals::detail::integral_engine_precision = precision_;
+
+  utility::print_par(world_, "Screen: ", screen_, "\n");
+  if (!screen_.empty()) {
+    utility::print_par(world_, "Threshold: ", screen_threshold_, "\n");
+  }
+  utility::print_par(world_, "Precision: ", precision_, "\n");
+  utility::print_par(world_, "\n");
+
+
 }
 
 libint2::Engine AtomicIntegralBase::make_engine(const Operator &oper,

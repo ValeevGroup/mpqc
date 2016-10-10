@@ -6,22 +6,22 @@
     "charge": 0,
     "n_cluster": 2
   },
-  "basis": {
+  "basis1": {
     "type": "Basis",
     "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
-  "df_basis": {
+  "basis2": {
     "type": "Basis",
     "name": "aug-cc-pVTZ-RI",
     "molecule": "$:molecule"
   },
-  "aux_basis":{
+  "basis3":{
     "type": "Basis",
     "name": "aug-cc-pVDZ-CABS",
     "molecule": "$:molecule"
   },
-  "vir_basis":{
+  "basis4":{
     "type": "Basis",
     "name": "aug-cc-pVDZ",
     "molecule": "$:molecule"
@@ -29,10 +29,11 @@
   "world":{
     "type" : "WfnWorld",
     "molecule" : "$:molecule",
-    "basis" : "$:basis",
-    "df_basis" :"$:df_basis",
-    "aux_basis": "$:aux_basis",
-    "vir_basis": "$:vir_basis"
+    "basis" : "$:basis1",
+    "df_basis" :"$:basis2",
+    "aux_basis": "$:basis3",
+    "vir_basis": "$:basis4",
+    "screen": "qqr"
   },
   "scf":{
     "type": "RHF",
@@ -43,6 +44,8 @@
   "wfn":{
     "type": "RI-DBRMP2F12",
     "wfn_world": "$:world",
-    "ref": "$:scf"
+    "ref": "$:scf",
+    "occ_block" : 1,
+    "un_occ_block" : 24
   }
 }

@@ -111,6 +111,11 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 
   ~PrintOnlyCADFFockBuilder() = default;
 
+  void register_fock(const TA::TSpArrayD &fock,
+                     FormulaRegistry<TA::TSpArrayD> &registry) override {
+    registry.insert(Formula(L"(κ|F|λ)[df]"), fock);
+  }
+
   ArrayType operator()(ArrayType const &D, ArrayType const &C) override {
     auto &world = D.get_world();
     ++iteration;

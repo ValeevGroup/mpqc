@@ -102,8 +102,8 @@ class ClrCADFFockBuilder : public FockBuilder {
     force_threshold_ = force_threshold;
     lcao_chop_threshold_ = lcao_chop_threshold;
 
-    basis::Basis obs = ao_ints.orbital_basis_registry()->retrieve(L"κ");
-    basis::Basis dfbs = ao_ints.orbital_basis_registry()->retrieve(L"Κ");
+    basis::Basis obs = ao_ints.orbital_basis_registry().retrieve(L"κ");
+    basis::Basis dfbs = ao_ints.orbital_basis_registry().retrieve(L"Κ");
 
     dE_ = make_three_center_integrals(obs, dfbs);
 
@@ -158,8 +158,8 @@ class ClrCADFFockBuilder : public FockBuilder {
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
 
-    basis::Basis obs = ao_ints.orbital_basis_registry()->retrieve(L"κ");
-    basis::Basis dfbs = ao_ints.orbital_basis_registry()->retrieve(L"Κ");
+    basis::Basis obs = ao_ints.orbital_basis_registry().retrieve(L"κ");
+    basis::Basis dfbs = ao_ints.orbital_basis_registry().retrieve(L"Κ");
 
     auto eng_pool = integrals::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, dfbs),

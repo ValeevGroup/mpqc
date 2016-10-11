@@ -18,7 +18,7 @@ MPQC_CLASS_EXPORT_KEY2(mpqc::scf::RHF, "RHF");
 namespace mpqc {
 namespace scf {
 
-RHF::RHF(const KeyVal& kv) : AOWavefunction(kv), kv_(std::make_shared<KeyVal>(kv)){
+RHF::RHF(const KeyVal& kv) : AOWavefunction(kv), kv_(kv){
   rhf_energy_ = 0.0;
 }
 
@@ -103,7 +103,7 @@ void RHF::init(const KeyVal &kv) {
 double RHF::value() {
 
   if(rhf_energy_ == 0.0){
-    init(*kv_);
+    init(kv_);
     solve(max_iter_,converge_);
   }
   return rhf_energy_;

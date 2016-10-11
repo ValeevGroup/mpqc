@@ -89,7 +89,7 @@ private:
 
 private:
 
-  const std::shared_ptr<KeyVal> kv_;
+  const KeyVal kv_;
 
 };
 

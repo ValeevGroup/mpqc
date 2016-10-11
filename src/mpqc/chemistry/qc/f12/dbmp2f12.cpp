@@ -41,7 +41,6 @@ double RIDBRMP2F12::value() {
 
     // clear registry and recompute scf
     obsolete();
-    this->wfn_world()->ao_integrals().registry().purge_index(wfn_world()->world(), OrbitalIndex(L"Α"));
 
     // recompute scf
     auto vbs = wfn_world()->ao_integrals().orbital_basis_registry().retrieve(OrbitalIndex(L"Α"));

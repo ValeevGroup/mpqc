@@ -97,8 +97,8 @@ class CADFFockBuilder : public FockBuilder {
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
 
-    basis::Basis obs = ao_ints.orbital_basis_registry()->retrieve(L"κ");
-    basis::Basis dfbs = ao_ints.orbital_basis_registry()->retrieve(L"Κ");
+    basis::Basis obs = ao_ints.orbital_basis_registry().retrieve(L"κ");
+    basis::Basis dfbs = ao_ints.orbital_basis_registry().retrieve(L"Κ");
 
     auto ref_array = utility::make_array_of_refs(dfbs, dfbs);
     auto eng_pool = integrals::make_engine_pool(

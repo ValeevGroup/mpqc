@@ -54,6 +54,7 @@
 #include <mpqc/chemistry/qc/f12/dbmp2f12.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include <mpqc/chemistry/qc/f12/mp2f12.h>
+#include <mpqc/chemistry/qc/f12/gf2f12.h>
 #include <mpqc/chemistry/qc/integrals/atomic_integral.h>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 #include <mpqc/chemistry/qc/mbpt/dbmp2.h>

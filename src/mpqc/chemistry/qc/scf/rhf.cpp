@@ -183,7 +183,8 @@ bool RHF::solve(int64_t max_iters, double thresh) {
   } else {
     rhf_energy_ = old_energy;
     // store fock matix in registry
-    this->wfn_world()->ao_integrals().registry().insert(Formula(L"(κ|F|λ)"),F_);
+    auto& registry = this->wfn_world()->ao_integrals().registry();
+    f_builder_->register_fock(F_,registry);
     return true;
   }
 }

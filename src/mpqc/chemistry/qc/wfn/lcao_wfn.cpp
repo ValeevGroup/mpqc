@@ -23,6 +23,12 @@ void LCAOWavefunction::compute(PropertyBase *pb) {}
 
 double LCAOWavefunction::value() { return 1.0; }
 
+void LCAOWavefunction::obsolete() {
+  lcao_factory_->registry().purge(wfn_world()->world());
+  lcao_factory_->orbital_space().clear();
+  wfn_world()->ao_integrals().registry().purge(wfn_world()->world());
+}
+
 bool LCAOWavefunction::is_frozen_core() const {
   return frozen_core_;
 }

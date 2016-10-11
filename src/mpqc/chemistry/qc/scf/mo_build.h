@@ -53,7 +53,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     const molecule::Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
     std::size_t vir_blocksize) {
   auto &ao_int = lcao_factory.atomic_integral();
-  auto orbital_registry = lcao_factory.orbital_space();
+  auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_int.world();
   using TArray = TA::DistArray<Tile, Policy>;
 
@@ -132,19 +132,19 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
   auto occ_space =
       OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
-  orbital_registry->add(occ_space);
+  orbital_registry.add(occ_space);
 
   auto corr_occ_space =
       OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
-  orbital_registry->add(corr_occ_space);
+  orbital_registry.add(corr_occ_space);
 
   auto vir_space =
       OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_vir_ta);
-  orbital_registry->add(vir_space);
+  orbital_registry.add(vir_space);
 
   auto obs_space =
       OrbitalSpaceTArray(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_all_ta);
-  orbital_registry->add(obs_space);
+  orbital_registry.add(obs_space);
 
   auto mo_time1 = mpqc_time::fenced_now(world);
   auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
@@ -158,7 +158,7 @@ void closed_shell_cabs_mo_build_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory,
     const rapidjson::Document &in, const std::shared_ptr<TRange1Engine> tre) {
   auto &ao_int = lcao_factory.atomic_integral();
-  auto orbital_registry = lcao_factory.orbital_space();
+  auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_int.world();
   // CABS fock build
   auto mo_time0 = mpqc_time::fenced_now(world);
@@ -167,16 +167,16 @@ void closed_shell_cabs_mo_build_svd(
   // build the RI basis
 
   auto abs_basis =
-      ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"α"));
+      ao_int.orbital_basis_registry().retrieve(OrbitalIndex(L"α"));
   auto obs_basis =
-      ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"κ"));
+      ao_int.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
 
   basis::Basis ri_basis;
   ri_basis = obs_basis.join(abs_basis);
 
   utility::parallel_print_range_info(world, ri_basis.create_trange1(),
                                      "RI Basis");
-  ao_int.orbital_basis_registry()->add(OrbitalIndex(L"ρ"), ri_basis);
+  ao_int.orbital_basis_registry().add(OrbitalIndex(L"ρ"), ri_basis);
 
   // integral
   auto S_cabs = ao_int.compute(L"<α|β>");
@@ -215,7 +215,7 @@ void closed_shell_cabs_mo_build_svd(
     MatrixD C_allvirtual_eigen = MatrixD::Zero(nbf_ribs, n_vir + nbf_cabs);
 
     {
-      auto C_vir = orbital_registry->retrieve(OrbitalIndex(L"a")).array();
+      auto C_vir = orbital_registry.retrieve(OrbitalIndex(L"a")).array();
       MatrixD C_vir_eigen = array_ops::array_to_eigen(C_vir);
 
       auto n_obs = C_vir_eigen.rows();
@@ -258,9 +258,9 @@ void closed_shell_cabs_mo_build_svd(
     auto C_allvir_space =
         OrbitalSpaceTArray(OrbitalIndex(L"A'"), OrbitalIndex(L"ρ"), C_allvir);
 
-    orbital_registry->add(C_cabs_space);
-    orbital_registry->add(C_ribs_space);
-    orbital_registry->add(C_allvir_space);
+    orbital_registry.add(C_cabs_space);
+    orbital_registry.add(C_ribs_space);
+    orbital_registry.add(C_allvir_space);
 
     auto mo_time1 = mpqc_time::fenced_now(world);
     auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
@@ -384,15 +384,15 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
   auto occ_space =
       OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
-  lcao_factory.orbital_space()->add(occ_space);
+  lcao_factory.orbital_space().add(occ_space);
 
   auto corr_occ_space =
       OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
-  lcao_factory.orbital_space()->add(corr_occ_space);
+  lcao_factory.orbital_space().add(corr_occ_space);
 
   auto vir_space =
       OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"Α"), C_vir_ta);
-  lcao_factory.orbital_space()->add(vir_space);
+  lcao_factory.orbital_space().add(vir_space);
 
   // solve energy in virtual orbital
   TArray F_vbs;
@@ -421,13 +421,13 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
       array_ops::eigen_to_array<Tile>(world, C_vbs, tr_vbs, tr_vir);
 
   // remove old virtual orbitals
-  lcao_factory.orbital_space()->remove(OrbitalIndex(L"a"));
+  lcao_factory.orbital_space().remove(OrbitalIndex(L"a"));
   lcao_factory.registry().purge_index(world, OrbitalIndex(L"a"));
 
   // add new virtual orbial
   vir_space =
       OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"Α"), C_vir_ta_new);
-  lcao_factory.orbital_space()->add(vir_space);
+  lcao_factory.orbital_space().add(vir_space);
 
   auto mo_time1 = mpqc_time::fenced_now(world);
   auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
@@ -459,7 +459,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
     const std::shared_ptr<TRange1Engine> tre, std::string ri_method, std::size_t vir_blocksize)
 {
   auto &ao_int = lcao_factory.atomic_integral();
-  auto orbital_registry = lcao_factory.orbital_space();
+  auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_int.world();
   // CABS fock build
   auto mo_time0 = mpqc_time::fenced_now(world);
@@ -468,11 +468,11 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
 
   // build RI Basis First
   auto abs_basis =
-      ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"α"));
+      ao_int.orbital_basis_registry().retrieve(OrbitalIndex(L"α"));
   auto vir_basis =
-      ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"Α"));
+      ao_int.orbital_basis_registry().retrieve(OrbitalIndex(L"Α"));
   auto obs_basis =
-      ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"κ"));
+      ao_int.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
 
 
   basis::Basis ri_basis;
@@ -488,7 +488,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   } else {
     throw std::runtime_error("Invalid RI Method!");
   }
-  ao_int.orbital_basis_registry()->add(OrbitalIndex(L"ρ"), ri_basis);
+  ao_int.orbital_basis_registry().add(OrbitalIndex(L"ρ"), ri_basis);
 
   // integral
   auto S_ribs = ao_int.compute(L"<ρ|σ>");
@@ -508,7 +508,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
 
     // C_mu^i
     TA::DistArray<Tile, Policy> Ci =
-        orbital_registry->retrieve(OrbitalIndex(L"m")).array();
+        orbital_registry.retrieve(OrbitalIndex(L"m")).array();
     MatrixD Ci_eigen = array_ops::array_to_eigen(Ci);
 
     MatrixD X1 = Ci_eigen.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
@@ -526,7 +526,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
     MatrixD S_vbs_ribs_eigen = array_ops::array_to_eigen(S_vbs_ribs);
     // C_a
     TA::DistArray<Tile, Policy> Ca =
-        orbital_registry->retrieve(OrbitalIndex(L"a")).array();
+        orbital_registry.retrieve(OrbitalIndex(L"a")).array();
     MatrixD Ca_eigen = array_ops::array_to_eigen(Ca);
     MatrixD X2 = Ca_eigen.transpose() * S_vbs_ribs_eigen * C_allvir_eigen;
 
@@ -542,8 +542,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
   // get cabs trange
   auto tr_cabs = lcao_factory.atomic_integral()
-                     .orbital_basis_registry()
-                     ->retrieve(OrbitalIndex(L"α"))
+                     .orbital_basis_registry().retrieve(OrbitalIndex(L"α"))
                      .create_trange1();
   auto tr_ribs = S_ribs.trange().data().back();
   auto tr_cabs_mo =
@@ -558,7 +557,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
   auto C_cabs_space =
       OrbitalSpaceTArray(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
-  orbital_registry->add(C_cabs_space);
+  orbital_registry.add(C_cabs_space);
 
   utility::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
   TA::DistArray<Tile, Policy> C_allvir = array_ops::eigen_to_array<TA::TensorD>(
@@ -567,7 +566,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   // insert to orbital space
   auto C_allvir_space =
       OrbitalSpaceTArray(OrbitalIndex(L"A'"), OrbitalIndex(L"ρ"), C_allvir);
-  orbital_registry->add(C_allvir_space);
+  orbital_registry.add(C_allvir_space);
 
   auto mo_time1 = mpqc_time::fenced_now(world);
   auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);

@@ -30,6 +30,7 @@ public:
   LCAOFactoryType& lcao_factory();
   void compute(PropertyBase *pb) override;
   double value() override;
+  void obsolete() override;
 
   const std::shared_ptr<TRange1Engine> trange1_engine() const {
     return trange1_engine_;

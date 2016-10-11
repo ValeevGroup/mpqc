@@ -86,14 +86,14 @@ class CCSD {
       // find the basis
       basis::Basis basis;
       // if VBS
-      if (lcao_factory.atomic_integral().orbital_basis_registry()->have(
+      if (lcao_factory.atomic_integral().orbital_basis_registry().have(
               OrbitalIndex(L"Α"))) {
         basis =
-            lcao_factory.atomic_integral().orbital_basis_registry()->retrieve(
+            lcao_factory.atomic_integral().orbital_basis_registry().retrieve(
                 OrbitalIndex(L"Α"));
       } else {
         basis =
-            lcao_factory.atomic_integral().orbital_basis_registry()->retrieve(
+            lcao_factory.atomic_integral().orbital_basis_registry().retrieve(
                 OrbitalIndex(L"μ"));
       }
 

@@ -39,10 +39,30 @@ double RIDBRMP2F12::value() {
     // compute
     double mp2_f12_energy = compute();
 
+    // clear registry and recompute scf
+    obsolete();
+    this->wfn_world()->ao_integrals().registry().purge_index(wfn_world()->world(), OrbitalIndex(L"Α"));
+
+    // recompute scf
+    auto vbs = wfn_world()->ao_integrals().orbital_basis_registry().retrieve(OrbitalIndex(L"Α"));
+    wfn_world()->ao_integrals().orbital_basis_registry().remove(OrbitalIndex(L"κ"));
+    wfn_world()->ao_integrals().orbital_basis_registry().insert(OrbitalIndex(L"κ"),vbs);
+    wfn_world()->ao_integrals().orbital_basis_registry().remove(OrbitalIndex(L"Α"));
+
+    double new_ref_energy = ref_wfn_->value();
+
     db_rmp2f12_energy_ = ref_energy + mp2_f12_energy;
   }
   return db_rmp2f12_energy_;
 }
+
+
+void RIDBRMP2F12::obsolete() {
+  db_rmp2f12_energy_ = 0.0;
+  qc::LCAOWavefunction::obsolete();
+  ref_wfn_->obsolete();
+}
+
 
 double RIDBRMP2F12::compute() {
   auto& world = this->wfn_world()->world();

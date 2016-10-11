@@ -45,12 +45,12 @@ class CCSDIntermediate {
   /// get mo coefficient
   /// occ part
   const TArray get_Ci() const {
-    return lcao_factory_.orbital_space()->retrieve(OrbitalIndex(L"i")).array();
+    return lcao_factory_.orbital_space().retrieve(OrbitalIndex(L"i")).array();
   }
 
   /// vir part
   const TArray get_Ca() const {
-    return lcao_factory_.orbital_space()->retrieve(OrbitalIndex(L"a")).array();
+    return lcao_factory_.orbital_space().retrieve(OrbitalIndex(L"a")).array();
   }
 
   /// get three center integral (X|ab)

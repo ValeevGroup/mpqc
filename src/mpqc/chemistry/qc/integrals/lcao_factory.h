@@ -86,13 +86,13 @@ class LCAOFactory {
     return std::move(atomic_integral_(str));
   };
 
-  /// return shared pointer to OrbitalSpaceRegistry
-  const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() const {
-    return orbital_space_registry_;
+  /// return OrbitalSpaceRegistry
+  const OrbitalSpaceRegistry<TArray>& orbital_space() const {
+    return *orbital_space_registry_;
   }
 
-  std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() {
-    return orbital_space_registry_;
+  OrbitalSpaceRegistry<TArray>& orbital_space() {
+    return *orbital_space_registry_;
   }
 
   /// return reference to FormulaRegistry

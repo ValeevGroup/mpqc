@@ -18,8 +18,11 @@ MPQC_CLASS_EXPORT_KEY2(mpqc::scf::RHF, "RHF");
 namespace mpqc {
 namespace scf {
 
-RHF::RHF(const KeyVal& kv) : AOWavefunction(kv){
+RHF::RHF(const KeyVal& kv) : AOWavefunction(kv), kv_(std::make_shared<KeyVal>(kv)){
+  rhf_energy_ = 0.0;
+}
 
+void RHF::init(const KeyVal &kv) {
   auto& ao_int = this->wfn_world()->ao_integrals();
   auto& world = ao_int.world();
   auto& mol = ao_int.molecule();
@@ -65,7 +68,7 @@ RHF::RHF(const KeyVal& kv) : AOWavefunction(kv){
   }
 
   // emultipole integral TODO better interface to compute this
-  auto basis = ao_int.orbital_basis_registry()->retrieve(OrbitalIndex(L"λ"));
+  auto basis = ao_int.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
   const auto bs_array = utility::make_array(basis, basis);
   auto multi_pool = integrals::make_engine_pool(libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
   auto r_xyz = integrals::sparse_xyz_integrals(world, multi_pool, bs_array);
@@ -90,20 +93,26 @@ RHF::RHF(const KeyVal& kv) : AOWavefunction(kv){
 
   // soad
   auto eri_e = integrals::make_engine_pool(libint2::Operator::coulomb,
-                             utility::make_array_of_refs(basis));
+                                           utility::make_array_of_refs(basis));
   F_ = scf::fock_from_soad(world, mol, basis, eri_e, H_);
 
   F_diis_ = F_;
   compute_density();
-
 }
 
 double RHF::value() {
 
   if(rhf_energy_ == 0.0){
+    init(*kv_);
     solve(max_iter_,converge_);
   }
   return rhf_energy_;
+}
+
+
+void RHF::obsolete() {
+  rhf_energy_ = 0.0;
+  qc::AOWavefunction::obsolete();
 }
 
 double RHF::energy() const {
@@ -121,6 +130,8 @@ bool RHF::solve(int64_t max_iters, double thresh) {
   }
 
   madness::print_meminfo(world.rank(), "RHF:begin");
+
+  TiledArray::DIIS<array_type> diis;
 
   auto iter = 0;
   auto error = std::numeric_limits<double>::max();
@@ -150,7 +161,7 @@ bool RHF::solve(int64_t max_iters, double thresh) {
     rms_error = Grad("i,j").norm().get();
 
     F_diis_ = F_;
-    diis_.extrapolate(F_diis_, Grad);
+    diis.extrapolate(F_diis_, Grad);
     madness::print_meminfo(world.rank(), "RHF:diis");
 
     auto d0 = mpqc_time::fenced_now(world);

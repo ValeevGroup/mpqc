@@ -78,7 +78,7 @@ template <typename Tile>
 typename CABSSingles<Tile>::real_t
 CABSSingles<Tile>::compute() {
 
-  bool df = lcao_factory_.atomic_integral().orbital_basis_registry()->have(OrbitalIndex(L"Κ"));
+  bool df = lcao_factory_.atomic_integral().orbital_basis_registry().have(OrbitalIndex(L"Κ"));
 
   TArray F_AB, F_MN;
   if(df){

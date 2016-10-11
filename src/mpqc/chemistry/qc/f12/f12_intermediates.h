@@ -1176,8 +1176,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
   }
 
   TA::DistArray<Tile, TA::SparsePolicy> U;
-  auto Ca = lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"a")).array();
-  auto Cp = lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"p")).array();
+  auto Ca = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a")).array();
+  auto Cp = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"p")).array();
   {
     auto time0 = mpqc_time::now(world, accurate_time);
 

@@ -22,6 +22,12 @@ RMP2::RMP2(const KeyVal &kv) : LCAOWavefunction(kv) {
 
 }
 
+void RMP2::obsolete() {
+  rmp2_energy_ = 0.0;
+  qc::LCAOWavefunction::obsolete();
+  ref_wfn_->obsolete();
+}
+
 double RMP2::value() {
   if (rmp2_energy_ == 0.0) {
     double ref_energy = ref_wfn_->value();

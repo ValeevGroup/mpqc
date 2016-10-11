@@ -38,6 +38,7 @@ public:
 //  void compute(qc::PropertyBase *pb) override;
 
   double value() override;
+  void obsolete() override;
 
   double energy() const;
 
@@ -72,7 +73,6 @@ protected:
   array_type F_diis_;
   array_type D_;
   array_type C_;
-  TiledArray::DIIS<array_type> diis_;
 
   std::unique_ptr<FockBuilder> f_builder_;
   std::unique_ptr<DensityBuilder> d_builder_;
@@ -83,8 +83,13 @@ protected:
 
 
 private:
+  void init(const KeyVal& kv);
   void compute_density();
   void build_F();
+
+private:
+
+  const std::shared_ptr<KeyVal> kv_;
 
 };
 

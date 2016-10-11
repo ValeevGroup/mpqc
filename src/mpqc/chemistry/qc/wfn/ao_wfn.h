@@ -20,6 +20,7 @@ class AOWavefunction : public Wavefunction {
   ~AOWavefunction();
 
   void compute(PropertyBase *pb) override;
+  void obsolete() override;
 };
 
 }  // namespace qc

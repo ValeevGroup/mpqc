@@ -185,6 +185,7 @@ public:
   double value() override;
   virtual double compute();
   void compute(qc::PropertyBase* pb) override;
+  void obsolete() override;
 
 private:
   std::shared_ptr<qc::Wavefunction> ref_wfn_;

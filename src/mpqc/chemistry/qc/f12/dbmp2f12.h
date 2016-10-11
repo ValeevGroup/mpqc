@@ -249,6 +249,7 @@ public:
 
   double value() override;
   double compute();
+  void obsolete() override;
   void compute(qc::PropertyBase* pb) override;
 
 private:

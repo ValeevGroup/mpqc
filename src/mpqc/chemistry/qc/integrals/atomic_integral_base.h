@@ -91,10 +91,17 @@ class AtomicIntegralBase {
   }
 
   /// @return the OrbitalBasisRegistry object
-  const std::shared_ptr<basis::OrbitalBasisRegistry> &orbital_basis_registry() const {
-    return orbital_basis_registry_;
+  const basis::OrbitalBasisRegistry &orbital_basis_registry() const {
+    return *orbital_basis_registry_;
   }
 
+  basis::OrbitalBasisRegistry &orbital_basis_registry() {
+    return *orbital_basis_registry_;
+  }
+
+  const std::shared_ptr<basis::OrbitalBasisRegistry> orbital_basis_registry_ptr() const {
+    return orbital_basis_registry_;
+  }
   /**
     * Given Formula with rank = 4, return DensityFitting formula
     *

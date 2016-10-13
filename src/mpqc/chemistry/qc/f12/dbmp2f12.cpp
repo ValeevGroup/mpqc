@@ -12,9 +12,7 @@ namespace f12 {
 using TArray = RIRMP2F12::TArray;
 
 RIDBRMP2F12::RIDBRMP2F12(const KeyVal& kv) : RIRMP2F12(kv), kv_(kv) {
-
-  redo_mp2_ = kv.value<bool>("redo_mp2",false);
-
+  redo_mp2_ = kv.value<bool>("redo_mp2", false);
 }
 
 double RIDBRMP2F12::value() {
@@ -64,10 +62,9 @@ double RIDBRMP2F12::value() {
     }
     utility::print_par(world, "E_S: ", e_s, "\n");
 
-    if(!redo_mp2_){
+    if (!redo_mp2_) {
       rmp2f12_energy_ = ref_energy + emp2 + ef12 + e_s;
-    }
-    else{
+    } else {
       // clear registry
       obsolete();
 
@@ -86,7 +83,6 @@ double RIDBRMP2F12::value() {
 
       rmp2f12_energy_ = new_mp2 + ef12 + e_s;
     }
-
   }
   return rmp2f12_energy_;
 }
@@ -123,8 +119,14 @@ double RIDBRMP2F12::compute_cabs_singles() {
         "Dual Basis RIRMP2F12 D Approximation Not Implemented!!");
   } else {
     CABSSingles<TA::TensorD> cabs_singles(lcao_factory());
+    es = cabs_singles.compute(true, false, true);
     // if redo mp2, this should not include the non-canonical virtual part
-    es = cabs_singles.compute(true, false, (!redo_mp2_));
+    if (redo_mp2_) {
+      auto F_ma = this->lcao_factory().compute(L"<m|F|a>[df]");
+      es -= 2 *
+            F_ma("m,a").reduce(mbpt::detail::ScfCorrection<TA::TensorD>(
+                this->orbital_energy(), this->trange1_engine()->get_occ()));
+    }
   }
 
   return es;

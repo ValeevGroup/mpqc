@@ -10,6 +10,54 @@
 namespace mpqc {
 namespace mbpt {
 
+namespace detail{
+
+template<typename Tile>
+struct ScfCorrection {
+  using result_type = double;
+  using argument_type = Tile;
+
+  std::shared_ptr<Eig::VectorXd> vec_;
+  unsigned int n_occ_;
+
+  ScfCorrection(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+      : vec_(std::move(vec)), n_occ_(n_occ) {}
+
+  ScfCorrection(ScfCorrection const &) = default;
+
+  result_type operator()() const { return 0.0; }
+
+  result_type operator()(result_type const &t) const { return t; }
+
+  void operator()(result_type &me, result_type const &other) const {
+    me += other;
+  }
+
+  void operator()(result_type &me, argument_type const &tile) const {
+    auto const &range = tile.range();
+    auto const &vec = *vec_;
+    auto const st = range.lobound_data();
+    auto const fn = range.upbound_data();
+    auto tile_idx = 0;
+
+    auto sti = st[0];
+    auto fni = fn[0];
+    auto sta = st[1];
+    auto fna = fn[1];
+
+    for (auto i = sti; i < fni; ++i) {
+      const auto e_i = vec[i];
+      for (auto a = sta; a < fna; ++a, ++tile_idx) {
+        const auto e_ia = e_i - vec[a + n_occ_];
+        const auto data = tile.data()[tile_idx];
+        me += (data * data) / (e_ia);
+      }
+    }
+  }
+};
+
+} // end of namespace detail
+
 template <typename Tile, typename Policy>
 class DBMP2 : public MP2<Tile, Policy> {
  public:
@@ -65,7 +113,7 @@ class DBMP2 : public MP2<Tile, Policy> {
     }
 
     real_t scf_correction =
-        2 * F_ma("m,a").reduce(ScfCorrection(this->orbital_energy(), occ));
+        2 * F_ma("m,a").reduce(detail::ScfCorrection<Tile>(this->orbital_energy(), occ));
 
     if (F_ma.get_world().rank() == 0) {
       std::cout << "SCF Correction: " << scf_correction << std::endl;
@@ -87,48 +135,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   }
 
  private:
-  struct ScfCorrection {
-    using result_type = real_t;
-    using argument_type = Tile;
 
-    std::shared_ptr<Eig::VectorXd> vec_;
-    unsigned int n_occ_;
-
-    ScfCorrection(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
-        : vec_(std::move(vec)), n_occ_(n_occ) {}
-
-    ScfCorrection(ScfCorrection const &) = default;
-
-    result_type operator()() const { return 0.0; }
-
-    result_type operator()(result_type const &t) const { return t; }
-
-    void operator()(result_type &me, result_type const &other) const {
-      me += other;
-    }
-
-    void operator()(result_type &me, argument_type const &tile) const {
-      auto const &range = tile.range();
-      auto const &vec = *vec_;
-      auto const st = range.lobound_data();
-      auto const fn = range.upbound_data();
-      auto tile_idx = 0;
-
-      auto sti = st[0];
-      auto fni = fn[0];
-      auto sta = st[1];
-      auto fna = fn[1];
-
-      for (auto i = sti; i < fni; ++i) {
-        const auto e_i = vec[i];
-        for (auto a = sta; a < fna; ++a, ++tile_idx) {
-          const auto e_ia = e_i - vec[a + n_occ_];
-          const auto data = tile.data()[tile_idx];
-          me += (data * data) / (e_ia);
-        }
-      }
-    }
-  };
 
   //  std::shared_ptr<TRange1Engine> pulay_build(
   //      integrals::LCAOFactory<Tile, Policy> &lcao_factory,

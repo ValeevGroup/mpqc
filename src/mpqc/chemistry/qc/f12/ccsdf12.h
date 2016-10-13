@@ -83,10 +83,13 @@ class CCSDF12 {
     // clean LCAO Integrals
     lcao_factory_.registry().purge(world);
 
+    bool df;
     if (method == "four center") {
       Eij_F12 = compute_ccsd_f12(lazy_two_electron_int);
+      df = false;
     } else if (method == "df") {
       Eij_F12 = compute_ccsd_f12_df(lazy_two_electron_int, approach);
+      df = true;
     } else {
       throw std::runtime_error("Wrong CCSDF12 Method");
     }
@@ -104,11 +107,11 @@ class CCSDF12 {
       auto single_time0 = mpqc_time::fenced_now(world);
 
       if(approach=="D"){
-        CABSSingles<Tile> cabs_singles(lcao_factory_,true,true);
-        e_s = cabs_singles.compute();
+        CABSSingles<Tile> cabs_singles(lcao_factory_);
+        e_s = cabs_singles.compute(df,true,true);
       }else{
-        CABSSingles<Tile> cabs_singles(lcao_factory_,true,false);
-        e_s = cabs_singles.compute();
+        CABSSingles<Tile> cabs_singles(lcao_factory_);
+        e_s = cabs_singles.compute(df,false,true);
       }
       if (debug()) {
         utility::print_par(world, "E_S: ", e_s, "\n");
@@ -167,7 +170,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
     TArray B_ijij_ijji;
 
     if (approach == "C") {
-      B_ijij_ijji = compute_B_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
+      B_ijij_ijji = compute_B_ijij_ijji_C_df(lcao_factory, ijij_ijji_shape);
     } else if (approach == "D") {
       B_ijij_ijji = compute_B_ijij_ijji_D_df(lcao_factory, ijij_ijji_shape);
     }
@@ -250,7 +253,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
 
   {
     // compute B term
-    TArray B_ijij_ijji = compute_B_ijij_ijji(lcao_factory, ijij_ijji_shape);
+    TArray B_ijij_ijji = compute_B_ijij_ijji_C(lcao_factory, ijij_ijji_shape);
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
         .reduce(F12PairEnergyReductor<Tile>(
             CC_ijij_bar, CC_ijji_bar, n_active_occ));

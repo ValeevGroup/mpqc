@@ -68,8 +68,8 @@ class DBCCSDF12 : public CCSDF12<Tile> {
       auto single_time0 = mpqc_time::fenced_now(world);
 
       // non-canonical, don't include F_m^a
-      CABSSingles<Tile> cabs_singles(this->lcao_factory_, false);
-      e_s = cabs_singles.compute();
+      CABSSingles<Tile> cabs_singles(this->lcao_factory_);
+      e_s = cabs_singles.compute(true,false,false);
       if (debug()) {
         utility::print_par(world, "E_S: ", e_s, "\n");
       }

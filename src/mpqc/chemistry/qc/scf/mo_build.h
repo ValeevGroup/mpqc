@@ -156,7 +156,22 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory,
-    const rapidjson::Document &in, const std::shared_ptr<TRange1Engine> tre) {
+    const rapidjson::Document &in, const std::shared_ptr<TRange1Engine> tre)
+{
+  // get all the sizes
+  std::size_t mo_blocksize =
+      in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
+  std::size_t vir_blocksize =
+      in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
+
+  closed_shell_cabs_mo_build_svd(lcao_factory,tre,vir_blocksize);
+};
+
+template <typename Tile, typename Policy>
+void closed_shell_cabs_mo_build_svd(
+    integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+    const std::shared_ptr<TRange1Engine> tre,
+    std::size_t vir_blocksize) {
   auto &ao_int = lcao_factory.atomic_integral();
   auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_int.world();
@@ -223,14 +238,6 @@ void closed_shell_cabs_mo_build_svd(
       C_allvirtual_eigen.block(0, 0, n_obs, n_vir) << C_vir_eigen;
       C_allvirtual_eigen.block(0, n_vir, nbf_ribs, nbf_cabs) << C_cabs_eigen;
     }
-
-    // get mo block size
-    std::size_t mo_blocksize =
-        in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
-    std::size_t vir_blocksize = in.HasMember("VirBlockSize")
-                                    ? in["VirBlockSize"].GetInt()
-                                    : mo_blocksize;
-    utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
     auto tr_ribs = S_ribs.trange().data()[0];
     auto tr_cabs = S_cabs.trange().data()[0];

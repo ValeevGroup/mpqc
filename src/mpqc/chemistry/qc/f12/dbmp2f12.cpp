@@ -94,7 +94,7 @@ double RIDBRMP2F12::compute() {
   auto single_time0 = mpqc_time::fenced_now(world);
 
   CABSSingles<TA::TensorD> cabs_singles(this->lcao_factory());
-  e_s = cabs_singles.compute();
+  e_s = cabs_singles.compute(true,false,true);
   utility::print_par(lcao_factory().get_world(), "E_S: ", e_s, "\n");
   auto single_time1 = mpqc_time::fenced_now(world);
   auto single_time = mpqc_time::duration_in_s(single_time0, single_time1);

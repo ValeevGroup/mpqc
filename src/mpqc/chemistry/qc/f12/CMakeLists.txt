@@ -3,6 +3,7 @@ set(sources
         f12_intermediates.h
         f12_utility.cpp
         f12_utility.h
+        mp2f12.cpp
         mp2f12.h
         ccsdf12.h
         db_f12_intermediates.h

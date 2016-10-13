@@ -10,7 +10,8 @@
 namespace mpqc{
 namespace f12{
 
-mpqc::detail::ForceLink<RIDBRMP2F12> fl1;
+mpqc::detail::ForceLink<RMP2F12> fl1;
+mpqc::detail::ForceLink<RIDBRMP2F12> fl2;
 
 }
 }

@@ -28,12 +28,14 @@ public:
 
   /**
    * @param lcao_factory LCAOFactory Object
+   */
+  CABSSingles(LCAOFactoryType& lcao_factory) : lcao_factory_(lcao_factory){}
+
+  /**
    * @param vir   if include F_ia in singles, default is true
    * @param d   bool, F12 D Approach, default is false
    */
-  CABSSingles(LCAOFactoryType& lcao_factory, bool vir=true, bool d=false) : lcao_factory_(lcao_factory), couple_virtual_(vir), d_approach_(d){}
-
-  real_t compute();
+  real_t compute(bool df, bool d, bool couple_virtual);
 
 private:
 
@@ -70,19 +72,15 @@ private:
 private:
 
   LCAOFactoryType& lcao_factory_;
-  bool couple_virtual_;
-  bool d_approach_;
 };
 
 template <typename Tile>
 typename CABSSingles<Tile>::real_t
-CABSSingles<Tile>::compute() {
-
-  bool df = lcao_factory_.atomic_integral().orbital_basis_registry().have(OrbitalIndex(L"Κ"));
+CABSSingles<Tile>::compute(bool df, bool d_approach, bool couple_virtual) {
 
   TArray F_AB, F_MN;
   if(df){
-    if(d_approach_){
+    if(d_approach){
 
       F_AB = lcao_factory_.compute(L"<A'|hJ|B'>[df]");
 
@@ -94,7 +92,7 @@ CABSSingles<Tile>::compute() {
 
   }
   else{
-    if(d_approach_){
+    if(d_approach){
 
       F_AB = lcao_factory_.compute(L"<A'|hJ|B'>");
 
@@ -108,7 +106,7 @@ CABSSingles<Tile>::compute() {
 
   TArray F_MA;
   /// include contribution of F_m^a into F_m^A'
-  if(couple_virtual_){
+  if(couple_virtual){
     if(df){
       F_MA = lcao_factory_.compute(L"<m|F|A'>[df]");
     }

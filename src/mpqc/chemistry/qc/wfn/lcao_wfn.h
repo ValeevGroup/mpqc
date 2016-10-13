@@ -15,10 +15,10 @@ namespace qc{
 
 class LCAOWavefunction : public Wavefunction {
 
+public:
   using ArrayType = typename Wavefunction::ArrayType;
   using LCAOFactoryType = integrals::LCAOFactory<TA::TensorD,TA::SparsePolicy>;
 
-public:
   /*
    * KeyVal constructor
    * it includes all options from Wfn and LCAOFactory

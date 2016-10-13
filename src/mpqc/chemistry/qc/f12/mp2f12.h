@@ -83,10 +83,13 @@ class MP2F12 {
 
     lcao_factory().registry().purge(world);
 
+    bool df;
     if (method == "four center") {
       std::tie(mp2_eij, f12_eij) = compute_mp2_f12();
+      df = false;
     } else if (method == "df") {
       std::tie(mp2_eij, f12_eij) = compute_mp2_f12_df(approach);
+      df = true;
     } else {
       throw std::runtime_error("Wrong MP2F12 Method");
     }
@@ -116,11 +119,11 @@ class MP2F12 {
       auto single_time0 = mpqc_time::fenced_now(world);
 
       if(approach=="D"){
-        CABSSingles<Tile> cabs_singles(lcao_factory(),true,true);
-        e_s = cabs_singles.compute();
+        CABSSingles<Tile> cabs_singles(lcao_factory());
+        e_s = cabs_singles.compute(df,true,true);
       }else{
-        CABSSingles<Tile> cabs_singles(lcao_factory(),true,false);
-        e_s = cabs_singles.compute();
+        CABSSingles<Tile> cabs_singles(lcao_factory());
+        e_s = cabs_singles.compute(df,false,true);
       }
 
       if (debug()) {
@@ -167,7 +170,7 @@ MP2F12<Tile>::compute_mp2_f12_df(const std::string& approach) {
   // compute B term
   TArray B_ijij_ijji;
   if(approach=="C"){
-    B_ijij_ijji = compute_B_ijij_ijji_df(lcao_factory(), ijij_ijji_shape);
+    B_ijij_ijji = compute_B_ijij_ijji_C_df(lcao_factory(), ijij_ijji_shape);
   }
   else if(approach=="D"){
     B_ijij_ijji = compute_B_ijij_ijji_D_df(lcao_factory(), ijij_ijji_shape);
@@ -285,7 +288,7 @@ MP2F12<Tile>::compute_mp2_f12() {
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
   TArray B_ijij_ijji_nodf =
-      compute_B_ijij_ijji(lcao_factory(), ijij_ijji_shape);
+      compute_B_ijij_ijji_C(lcao_factory(), ijij_ijji_shape);
   {
     Matrix Eij_b = B_ijij_ijji_nodf("i1,j1,i2,j2")
         .reduce(F12PairEnergyReductor<Tile>(
@@ -370,6 +373,37 @@ MP2F12<Tile>::compute_mp2_f12() {
 
   return std::make_tuple(Eij_MP2, Eij_F12);
 }
+
+class RMP2F12 : public qc::LCAOWavefunction{
+
+public:
+  using TArray = qc::LCAOWavefunction::ArrayType;
+  using Matrix = RowMatrix<double>;
+
+  RMP2F12(const KeyVal& kv);
+  ~RMP2F12() = default;
+
+  double value() override;
+  std::tuple<Matrix,Matrix> compute();
+  void compute(qc::PropertyBase* pb) override;
+  void obsolete() override;
+
+private:
+
+  virtual TArray compute_B();
+  virtual TArray compute_V();
+  virtual TArray compute_X();
+  virtual TArray compute_C();
+  virtual std::tuple<TArray, TArray> compute_T();
+  virtual double compute_cabs_singles();
+
+private:
+  std::shared_ptr<qc::Wavefunction> ref_wfn_;
+  double rmp2f12_energy_;
+  char approximation_;
+  bool cabs_singles_;
+  TA::SparseShape<float> ijij_ijji_shape_;
+};
 
 }  // end of namespace f12
 }  // mpqc

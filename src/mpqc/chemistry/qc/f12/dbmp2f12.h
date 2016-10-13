@@ -91,7 +91,7 @@ class DBMP2F12 : protected MP2F12<Tile> {
       auto single_time0 = mpqc_time::fenced_now(world);
 
       CABSSingles<Tile> cabs_singles(lcao_factory());
-      e_s = cabs_singles.compute();
+      e_s = cabs_singles.compute(true,false,true);
       if (debug()) {
         utility::print_par(lcao_factory().get_world(), "E_S: ", e_s, "\n");
       }

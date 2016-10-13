@@ -8,7 +8,7 @@
   },
   "basis1": {
     "type": "Basis",
-    "name": "aug-cc-pVDZ",
+    "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
   "basis2": {
@@ -32,6 +32,7 @@
     "basis" : "$:basis1",
     "df_basis" :"$:basis2",
     "aux_basis": "$:basis3",
+    "vir_basis": "$:basis4",
     "screen": "qqr"
   },
   "scf":{
@@ -41,7 +42,7 @@
     "converge": 1.0e-11
   },
   "wfn":{
-    "type": "RI-RMP2F12",
+    "type": "RI-DBRMP2F12",
     "wfn_world": "$:world",
     "ref": "$:scf",
     "occ_block" : 1,

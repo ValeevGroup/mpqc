@@ -18,6 +18,7 @@
 namespace mpqc {
 namespace f12 {
 
+
 class RMP2F12 : public qc::LCAOWavefunction{
 
 public:
@@ -44,11 +45,9 @@ private:
 protected:
   char approximation_;
   TA::SparseShape<float> ijij_ijji_shape_;
-
-private:
-  std::shared_ptr<qc::Wavefunction> ref_wfn_;
   double rmp2f12_energy_;
   bool cabs_singles_;
+  std::shared_ptr<qc::Wavefunction> ref_wfn_;
 };
 
 class RIRMP2F12 : public RMP2F12{
@@ -58,12 +57,12 @@ public:
   ~RIRMP2F12() = default;
 
 private:
-  TArray compute_B() override ;
-  TArray compute_V() override ;
-  TArray compute_X() override ;
-  TArray compute_C() override ;
-  std::tuple<TArray, TArray> compute_T() override ;
-  double compute_cabs_singles() override;
+  virtual TArray compute_B() override ;
+  virtual TArray compute_V() override ;
+  virtual TArray compute_X() override ;
+  virtual TArray compute_C() override ;
+  virtual std::tuple<TArray, TArray> compute_T() override ;
+  virtual double compute_cabs_singles() override;
 
 };
 

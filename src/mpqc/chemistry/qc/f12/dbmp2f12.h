@@ -12,26 +12,26 @@
 namespace mpqc {
 namespace f12 {
 
-class RIDBRMP2F12 : public qc::LCAOWavefunction{
+class RIDBRMP2F12 : public RIRMP2F12{
 
 public:
-
-  using Matrix = RowMatrix<double>;
 
   RIDBRMP2F12(const KeyVal& kv);
   ~RIDBRMP2F12() = default;
 
   double value() override;
-  double compute();
-  void obsolete() override;
-  void compute(qc::PropertyBase* pb) override;
 
 private:
-  std::tuple<Matrix,Matrix>  compute_db_mp2_f12_c();
+
+  TArray compute_B() override ;
+  TArray compute_V() override ;
+  TArray compute_X() override ;
+  double compute_cabs_singles() override;
 
 private:
-  std::shared_ptr<qc::Wavefunction> ref_wfn_; // scf
-  double db_rmp2f12_energy_;
+
+  const KeyVal kv_;
+  bool redo_mp2_;
 
 };
 }  // namespace f12

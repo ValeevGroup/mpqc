@@ -91,6 +91,7 @@ double RMP2F12::value() {
 void RMP2F12::obsolete() {
   rmp2f12_energy_ = 0.0;
   qc::LCAOWavefunction::obsolete();
+  ref_wfn_->obsolete();
 }
 
 void RMP2F12::compute(qc::PropertyBase* pb) {}

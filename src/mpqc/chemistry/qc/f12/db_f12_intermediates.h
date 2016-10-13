@@ -122,7 +122,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab_db_df(
   TA::DistArray<Tile, Policy> V_xyab;
   TA::DistArray<Tile, Policy> tmp;
 
-  utility::print_par(world, "\nCompute V_xyab With DF \n");
+  utility::print_par(world, "\nCompute V_xyab With Dual Basis DF \n");
 
   {
     auto left = lcao_factory(L"(Κ |GR|i a)");
@@ -200,7 +200,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_db_df(
 
   auto v_time0 = mpqc_time::now(world, accurate_time);
 
-  utility::print_par(world, "\nCompute V_iaxy With DF \n");
+  utility::print_par(world, "\nCompute V_iaxy With Dual Basis DF \n");
   {
     auto left = lcao_factory(L"(Κ |GR|i k)");
     auto middle = lcao_factory(L"(Κ|GR|Λ)[inv]");
@@ -296,7 +296,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
 
   TA::DistArray<Tile, TA::SparsePolicy> X_ijij_ijji;
 
-  utility::print_par(world, "\nCompute X_ijij_ijji With DF \n");
+  utility::print_par(world, "\nCompute X_ijij_ijji With Dual Basis DF \n");
   {
     auto left = lcao_factory(L"(Κ |R2|i1 i2)");
     auto middle = ao_integral(L"(Κ|R2|Λ)[inv]");
@@ -385,7 +385,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
   TA::DistArray<Tile, TA::SparsePolicy> B_ijij_ijji;
   TA::DistArray<Tile, TA::SparsePolicy> tmp;
 
-  utility::print_par(world, "\nCompute B_ijij_ijji With DF \n");
+  utility::print_par(world, "\nCompute B_ijij_ijji C With Dual Basis DF \n");
 
   {
     auto left = lcao_factory(L"(Κ |dR2|i1 i2)");
@@ -584,7 +584,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_db_df(
       compute_V_xyab_db_df(lcao_factory);
 
   auto vt2_time0 = mpqc_time::now(world, accurate_time);
-  utility::print_par(world, "\nCompute VT2_ijij_ijji With DF\n");
+  utility::print_par(world, "\nCompute VT2_ijij_ijji With Dual Basis DF\n");
   V_ijij_ijji("i1,j1,i2,j2") =
       ((V_ijab("i2,j2,a,b") + C_ijab("i2,j2,a,b")) * t2("a,b,i1,j1"))
           .set_shape(ijij_ijji_shape);
@@ -608,7 +608,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_db_df(
       compute_V_iaxy_db_df(lcao_factory);
 
   auto vt1_time0 = mpqc_time::now(world, accurate_time);
-  utility::print_par(world, "\nCompute VT1_ijij_ijji With DF\n");
+  utility::print_par(world, "\nCompute VT1_ijij_ijji With Dual Basis DF\n");
 
   V_ijij_ijji("i1,j1,i2,j2") =
       (V_iaij("i1,a,i2,j2") * t1("a,j1")).set_shape(ijij_ijji_shape);

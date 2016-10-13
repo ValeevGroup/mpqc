@@ -36,9 +36,8 @@
     "screen": "qqr"
   },
   "scf":{
-    "type": "RHF",
+    "type": "RI-RHF",
     "wfn_world": "$:world",
-    "fock_builder": "df",
     "converge": 1.0e-11
   },
   "wfn":{

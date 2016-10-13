@@ -12,6 +12,7 @@ namespace mpqc{
 namespace qc{
 
 mpqc::detail::ForceLink<mpqc::scf::RHF> fl1;
+mpqc::detail::ForceLink<mpqc::scf::RIRHF> fl2;
 
 
 }

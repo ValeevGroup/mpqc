@@ -84,12 +84,23 @@ protected:
 
 private:
   void init(const KeyVal& kv);
+  virtual void init_fock_builder();
   void compute_density();
   void build_F();
 
 private:
 
   const KeyVal kv_;
+
+};
+
+class RIRHF: public RHF{
+
+public:
+  RIRHF(const KeyVal& kv);
+
+private:
+  void init_fock_builder() override;
 
 };
 

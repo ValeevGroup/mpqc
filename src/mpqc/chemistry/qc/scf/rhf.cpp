@@ -14,9 +14,14 @@
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 
 MPQC_CLASS_EXPORT_KEY2(mpqc::scf::RHF, "RHF");
+MPQC_CLASS_EXPORT_KEY2(mpqc::scf::RIRHF, "RI-RHF");
 
 namespace mpqc {
 namespace scf {
+
+/**
+ *  RHF member functions
+ */
 
 RHF::RHF(const KeyVal& kv) : AOWavefunction(kv), kv_(kv){
   rhf_energy_ = 0.0;
@@ -45,27 +50,7 @@ void RHF::init(const KeyVal &kv) {
   H_ = ao_int.compute(L"<κ|H|λ>");
 
   // fock builder
-  std::string fock_builder = kv.value<std::string>("fock_builder","df");
-  if(fock_builder == "df"){
-    auto inv = ao_int.compute(L"( Κ | G| Λ )");
-    auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
-    scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
-    f_builder_ = make_unique<decltype(builder)>(std::move(builder));
-  }
-  else if(fock_builder == "four_center"){
-    auto eri4 = ao_int.compute(L"(μ ν| G|κ λ)");
-    auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
-    f_builder_ = make_unique<decltype(builder)>(std::move(builder));
-  }
-  else if(fock_builder == "cadf"){
-    throw std::runtime_error("Will Implement Soon!");
-  }
-  else if(fock_builder == "clr_cadf"){
-    throw std::runtime_error("Will Implement Soon!");
-  }
-  else{
-    throw std::runtime_error("Unkown FockBuilder name! \n");
-  }
+  init_fock_builder();
 
   // emultipole integral TODO better interface to compute this
   auto basis = ao_int.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
@@ -98,6 +83,13 @@ void RHF::init(const KeyVal &kv) {
 
   F_diis_ = F_;
   compute_density();
+}
+
+void RHF::init_fock_builder() {
+  auto& ao_int = this->wfn_world()->ao_integrals();
+  auto eri4 = ao_int.compute(L"(μ ν| G|κ λ)");
+  auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
+  f_builder_ = make_unique<decltype(builder)>(std::move(builder));
 }
 
 double RHF::value() {
@@ -235,6 +227,20 @@ rapidjson::Value RHF::results(rapidjson::Document &d) const {
                        d.GetAllocator());
 
   return rhf_object;
+}
+
+/**
+ *  RIRHF member functions
+ */
+
+RIRHF::RIRHF(const KeyVal &kv) : RHF(kv){}
+
+void RIRHF::init_fock_builder() {
+  auto& ao_int = this->wfn_world()->ao_integrals();
+  auto inv = ao_int.compute(L"( Κ | G| Λ )");
+  auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
+  scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
+  f_builder_ = make_unique<decltype(builder)>(std::move(builder));
 }
 
 } // namespace scf

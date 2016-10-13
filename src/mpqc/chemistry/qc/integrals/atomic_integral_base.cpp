@@ -429,28 +429,28 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula,
     if (formula.oper().type() == Operator::Type::J) {
       result.bra_indices().push_back(formula.bra_indices()[0]);
       result.bra_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs);
-      result.ket_indices().push_back(obs);
+      result.ket_indices().push_back(obs+L"4");
+      result.ket_indices().push_back(obs+L"5");
 
     } else {
       result.bra_indices().push_back(formula.bra_indices()[0]);
-      result.bra_indices().push_back(obs);
+      result.bra_indices().push_back(obs+L"4");
       result.ket_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs);
+      result.ket_indices().push_back(obs+L"5");
     }
   } else {
     result.set_notation(Formula::Notation::Physical);
     if (formula.oper().type() == Operator::Type::K) {
       result.bra_indices().push_back(formula.bra_indices()[0]);
       result.bra_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs);
-      result.ket_indices().push_back(obs);
+      result.ket_indices().push_back(obs+L"4");
+      result.ket_indices().push_back(obs+L"5");
 
     } else {
       result.bra_indices().push_back(formula.bra_indices()[0]);
-      result.bra_indices().push_back(obs);
+      result.bra_indices().push_back(obs+L"4");
       result.ket_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs);
+      result.ket_indices().push_back(obs+L"5");
     }
   }
   return result;
@@ -463,15 +463,15 @@ std::array<Formula, 3> AtomicIntegralBase::get_jk_df_formula(
   if (formula.oper().type() == Operator::Type::J) {
     std::wstring left = L"( Κ |G| " + formula.bra_indices()[0].name() + L" " +
                         formula.ket_indices()[0].name() + L" )";
-    std::wstring right = L"( Κ |G| " + obs + L" " + obs + L" )";
+    std::wstring right = L"( Κ |G| " + obs + L"4 " + obs + L"5 )";
 
     result[0] = Formula(left);
     result[2] = Formula(right);
   } else {
     std::wstring left =
-        L"( Κ |G| " + formula.bra_indices()[0].name() + L" " + obs + L" )";
+        L"( Κ |G| " + formula.bra_indices()[0].name() + L" " + obs + L"4 )";
     std::wstring right =
-        L"( Κ |G| " + formula.ket_indices()[0].name() + L" " + obs + L" )";
+        L"( Κ |G| " + formula.ket_indices()[0].name() + L" " + obs + L"5 )";
 
     result[0] = Formula(left);
     result[2] = Formula(right);

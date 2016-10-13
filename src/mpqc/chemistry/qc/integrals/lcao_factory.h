@@ -443,12 +443,15 @@ template <typename Tile, typename Policy>
 Formula LCAOFactory<Tile, Policy>::mo_to_ao(const Formula& formula) {
   std::vector<OrbitalIndex> ao_left_index, ao_right_index;
 
+  int increment = 0;
   auto left_index = formula.bra_indices();
   for (const auto& index : left_index) {
     // find the correspoding ao index
     if (index.is_mo()) {
-      auto ao_index = orbital_space_registry_->retrieve(index).ao_key();
+      auto ao_index = orbital_space_registry_->retrieve(index).ao_key().name();
+      ao_index = ao_index + std::to_wstring(increment);
       ao_left_index.push_back(ao_index);
+      increment++;
     }
     // if already ao, do nothing
     else {
@@ -460,8 +463,10 @@ Formula LCAOFactory<Tile, Policy>::mo_to_ao(const Formula& formula) {
   for (const auto& index : right_index) {
     // find the correspoding ao index
     if (index.is_mo()) {
-      auto ao_index = orbital_space_registry_->retrieve(index).ao_key();
+      auto ao_index = orbital_space_registry_->retrieve(index).ao_key().name();
+      ao_index = ao_index + std::to_wstring(increment);
       ao_right_index.push_back(ao_index);
+      increment++;
     }
     // if already ao, do nothing
     else {

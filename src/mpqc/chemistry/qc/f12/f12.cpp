@@ -14,11 +14,7 @@ namespace f12 {
 
 template class CABSSingles<TA::TensorD>;
 
-template class MP2F12<TA::TensorD>;
-
 template class CCSDF12<TA::TensorD>;
-
-template class DBMP2F12<TA::TensorD>;
 
 template class DBCCSDF12<TA::TensorD>;
 

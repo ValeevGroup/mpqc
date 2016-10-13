@@ -552,30 +552,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
     auto dbmp2_time = mpqc_time::duration_in_s(dbmp2_time0, dbmp2_time1);
     mpqc::utility::print_par(world, "Total DBMP2 Time:  ", dbmp2_time, "\n");
 
-  } else if (in.HasMember("MP2F12")) {
-    corr_in = json::get_nested(in, "MP2F12");
-
-    // start mp2f12
-    auto mp2f12_time0 = mpqc_time::fenced_now(world);
-    f12::MP2F12<TA::TensorD> mp2f12(lcao_factory);
-    corr_e += mp2f12.compute(corr_in);
-
-    auto mp2f12_time1 = mpqc_time::fenced_now(world);
-    auto mp2f12_time = mpqc_time::duration_in_s(mp2f12_time0, mp2f12_time1);
-    mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
-  } else if (in.HasMember("DBMP2F12")) {
-    corr_in = json::get_nested(in, "DBMP2F12");
-
-    // start mp2f12
-    auto mp2f12_time0 = mpqc_time::fenced_now(world);
-    f12::DBMP2F12<TA::TensorD> dbmp2f12(lcao_factory);
-    corr_e += dbmp2f12.compute(corr_in);
-
-    auto mp2f12_time1 = mpqc_time::fenced_now(world);
-    auto mp2f12_time = mpqc_time::duration_in_s(mp2f12_time0, mp2f12_time1);
-    mpqc::utility::print_par(world, "Total MP2 F12 Time:  ", mp2f12_time, "\n");
-
-  } else if (in.HasMember("GF2F12")) {
+  }
+  else if (in.HasMember("GF2F12")) {
     corr_in = json::get_nested(in, "GF2F12");
 
     // start gf2f12

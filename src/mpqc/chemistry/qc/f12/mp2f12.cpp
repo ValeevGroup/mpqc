@@ -5,6 +5,7 @@
 #include "mp2f12.h"
 
 MPQC_CLASS_EXPORT_KEY2(mpqc::f12::RMP2F12, "RMP2F12");
+MPQC_CLASS_EXPORT_KEY2(mpqc::f12::RIRMP2F12, "RI-RMP2F12");
 
 namespace mpqc {
 namespace f12 {
@@ -246,5 +247,59 @@ double RMP2F12::compute_cabs_singles() {
 
   return es;
 }
+
+
+RIRMP2F12::RIRMP2F12(const KeyVal &kv) : RMP2F12(kv){}
+
+TArray RIRMP2F12::compute_B() {
+  TArray B;
+  if (approximation_ == 'C') {
+    B = f12::compute_B_ijij_ijji_C_df(this->lcao_factory(), ijij_ijji_shape_);
+  } else if (approximation_ == 'D') {
+    B = f12::compute_B_ijij_ijji_D_df(this->lcao_factory(), ijij_ijji_shape_);
+  }
+  return B;
 }
+
+TArray RIRMP2F12::compute_C() {
+  return f12::compute_C_ijab_df(this->lcao_factory());
 }
+
+TArray RIRMP2F12::compute_V() {
+  return f12::compute_V_ijij_ijji_df(this->lcao_factory(), ijij_ijji_shape_);
+}
+
+TArray RIRMP2F12::compute_X() {
+  TArray X = f12::compute_X_ijij_ijji_df(this->lcao_factory(), ijij_ijji_shape_);
+  auto Fij = this->lcao_factory().compute(L"(i|F|j)[df]");
+  auto Fij_eigen = array_ops::array_to_eigen(Fij);
+  f12::convert_X_ijkl(X, Fij_eigen);
+  return X;
+}
+
+std::tuple<TArray, TArray> RIRMP2F12::compute_T() {
+  TArray g_abij, t2;
+  g_abij("a,b,i,j") = lcao_factory().compute(L"<i j|G|a b>[df]")("i,j,a,b");
+  t2 = mpqc::cc::d_abij(g_abij, *(this->orbital_energy()),
+                        this->trange1_engine()->get_occ(),
+                        this->trange1_engine()->get_nfrozen());
+
+  return std::tuple<TArray, TArray>(t2, g_abij);
+}
+
+double RIRMP2F12::compute_cabs_singles() {
+  double es;
+
+  if (approximation_ == 'D') {
+    CABSSingles<TA::TensorD> cabs_singles(lcao_factory());
+    es = cabs_singles.compute(true, true, true);
+  } else {
+    CABSSingles<TA::TensorD> cabs_singles(lcao_factory());
+    es = cabs_singles.compute(true, false, true);
+  }
+
+  return es;
+}
+
+} // end of namespace f12
+} // end of namespace mpqc

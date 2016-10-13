@@ -37,11 +37,11 @@
   "scf":{
     "type": "RHF",
     "wfn_world": "$:world",
-    "fock_builder": "four_center",
+    "fock_builder": "df",
     "converge": 1.0e-11
   },
   "wfn":{
-    "type": "RMP2F12",
+    "type": "RI-RMP2F12",
     "wfn_world": "$:world",
     "ref": "$:scf",
     "occ_block" : 1,

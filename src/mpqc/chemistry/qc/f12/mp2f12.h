@@ -397,12 +397,30 @@ private:
   virtual std::tuple<TArray, TArray> compute_T();
   virtual double compute_cabs_singles();
 
+protected:
+  char approximation_;
+  TA::SparseShape<float> ijij_ijji_shape_;
+
 private:
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
   double rmp2f12_energy_;
-  char approximation_;
   bool cabs_singles_;
-  TA::SparseShape<float> ijij_ijji_shape_;
+};
+
+class RIRMP2F12 : public RMP2F12{
+
+public:
+  RIRMP2F12(const KeyVal& kv);
+  ~RIRMP2F12() = default;
+
+private:
+  TArray compute_B() override ;
+  TArray compute_V() override ;
+  TArray compute_X() override ;
+  TArray compute_C() override ;
+  std::tuple<TArray, TArray> compute_T() override ;
+  double compute_cabs_singles() override;
+
 };
 
 }  // end of namespace f12

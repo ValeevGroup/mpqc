@@ -100,7 +100,6 @@ class CADFFockBuilder : public FockBuilder {
     basis::Basis obs = ao_ints.orbital_basis_registry().retrieve(L"κ");
     basis::Basis dfbs = ao_ints.orbital_basis_registry().retrieve(L"Κ");
 
-    auto ref_array = utility::make_array_of_refs(dfbs, dfbs);
     auto eng_pool = integrals::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, dfbs),
         libint2::BraKet::xs_xs);

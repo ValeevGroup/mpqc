@@ -89,7 +89,6 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
     basis::Basis obs = ao_ints.orbital_basis_registry().retrieve(L"κ");
     basis::Basis dfbs = ao_ints.orbital_basis_registry().retrieve(L"Κ");
 
-    auto ref_array = utility::make_array_of_refs(dfbs, dfbs);
     auto eng_pool = integrals::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, dfbs),
         libint2::BraKet::xs_xs);
@@ -117,7 +116,6 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
   }
 
   ArrayType operator()(ArrayType const &D, ArrayType const &C) override {
-    auto &world = D.world();
     ++iteration;
 
     ArrayType E_mo;  // Temp array shared by J and K
@@ -135,7 +133,6 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 
  private:
   ArrayType compute_J(ArrayType const &C, ArrayType const &E_mo) {
-    auto &world = C.world();
     ArrayType J;
     J("mu, nu") = E_("X, mu, nu") *
                   (Mchol_inv_("Z, X") *
@@ -145,7 +142,6 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
   }
 
   array_type compute_K(ArrayType const &C_in, ArrayType const &E_mo) {
-    auto &world = M_.world();
     ArrayType L, K;        // Matrices
     ArrayType C_mo, F_df;  // Tensors
 
@@ -154,7 +150,6 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
     C("mu, i") = C_in("mu, i");
 
     if (lcao_chop_threshold_ != 0.0) {
-      auto chop0 = mpqc_time::fenced_now(world);
       TA::foreach_inplace(C, [&](TA::Tensor<double> &t) {
         const auto norm = t.norm();
         if (norm > lcao_chop_threshold_) {

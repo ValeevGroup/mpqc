@@ -195,8 +195,6 @@ class ClrCADFFockBuilder : public FockBuilder {
   }
 
   ArrayType operator()(ArrayType const &D, ArrayType const &C) override {
-    auto &world = D.world();
-
     ArrayType G;
     G("m, n") = 2 * compute_J(D)("m, n") - compute_K(C)("m, n");
     return G;

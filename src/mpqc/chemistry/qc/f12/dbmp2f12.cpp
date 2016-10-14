@@ -17,7 +17,17 @@ RIDBRMP2F12::RIDBRMP2F12(const KeyVal& kv) : RIRMP2F12(kv), kv_(kv) {
 
 double RIDBRMP2F12::value() {
   if (rmp2f12_energy_ == 0.0) {
+
+    auto& world = this->wfn_world()->world();
+
+    double time;
+    auto time0 = mpqc_time::fenced_now(world);
+
     double ref_energy = ref_wfn_->value();
+
+    auto time1 = mpqc_time::fenced_now(world);
+    time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
     // initialize
     auto mol = this->lcao_factory().atomic_integral().molecule();
@@ -27,7 +37,7 @@ double RIDBRMP2F12::value() {
         occ_block(), unocc_block());
     this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
 
-    // create shap
+    // create shape
     auto occ_tr1 = this->trange1_engine()->get_occ_tr1();
     TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
     ijij_ijji_shape_ = f12::make_ijij_ijji_shape(occ4_trange);
@@ -36,7 +46,6 @@ double RIDBRMP2F12::value() {
         this->lcao_factory(), this->trange1_engine(), "VBS", unocc_block());
 
     // compute
-    auto& world = this->wfn_world()->world();
     Matrix mp2_eij, f12_eij;
     std::tie(mp2_eij, f12_eij) = compute();
 
@@ -62,6 +71,10 @@ double RIDBRMP2F12::value() {
     }
     utility::print_par(world, "E_S: ", e_s, "\n");
 
+    auto time2 = mpqc_time::fenced_now(world);
+    time = mpqc_time::duration_in_s(time1, time2);
+    utility::print_par(world,"Total F12 Time: ", time, " S \n");
+
     if (!redo_mp2_) {
       rmp2f12_energy_ = ref_energy + emp2 + ef12 + e_s;
     } else {
@@ -82,7 +95,16 @@ double RIDBRMP2F12::value() {
       double new_mp2 = mp2.value();
 
       rmp2f12_energy_ = new_mp2 + ef12 + e_s;
+
+      auto time3 = mpqc_time::fenced_now(world);
+      time = mpqc_time::duration_in_s(time2, time3);
+      utility::print_par(world,"Total New MP2 Time: ", time, " S \n");
+
+      time = mpqc_time::duration_in_s(time0, time3);
+      utility::print_par(world,"Total DBMP2F12 Time: ", time, " S \n");
+
     }
+
   }
   return rmp2f12_energy_;
 }

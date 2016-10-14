@@ -36,7 +36,14 @@ double RMP2F12::value() {
   if (rmp2f12_energy_ == 0.0) {
     auto& world = this->wfn_world()->world();
 
+    double time;
+    auto time0 = mpqc_time::fenced_now(world);
+
     double ref_energy = ref_wfn_->value();
+
+    auto time1 = mpqc_time::fenced_now(world);
+    time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
     // initialize
     auto mol = this->lcao_factory().atomic_integral().molecule();
@@ -83,6 +90,13 @@ double RMP2F12::value() {
     utility::print_par(world, "E_S: ", e_s, "\n");
 
     rmp2f12_energy_ = ref_energy + emp2 + ef12 + e_s;
+
+    auto time2 = mpqc_time::fenced_now(world);
+    time = mpqc_time::duration_in_s(time1, time2);
+    utility::print_par(world,"Total F12 Time: ", time, " S \n");
+
+    time = mpqc_time::duration_in_s(time0, time2);
+    utility::print_par(world,"Total MP2F12 Time: ", time, " S \n");
   }
 
   return rmp2f12_energy_;

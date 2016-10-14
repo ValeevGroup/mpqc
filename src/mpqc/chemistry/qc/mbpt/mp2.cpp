@@ -30,7 +30,16 @@ void RMP2::obsolete() {
 
 double RMP2::value() {
   if (rmp2_energy_ == 0.0) {
+    auto& world = this->wfn_world()->world();
+
+    double time;
+    auto time0 = mpqc_time::fenced_now(world);
+
     double ref_energy = ref_wfn_->value();
+
+    auto time1 = mpqc_time::fenced_now(world);
+    time = mpqc_time::duration_in_s(time0, time1);
+    utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
     auto mol = this->lcao_factory().atomic_integral().molecule();
     Eigen::VectorXd orbital_energy;
@@ -41,6 +50,13 @@ double RMP2::value() {
     double mp2_energy = compute();
 
     rmp2_energy_ = mp2_energy + ref_energy;
+
+    auto time2 = mpqc_time::fenced_now(world);
+    time = mpqc_time::duration_in_s(time1, time2);
+    utility::print_par(world,"Total MP2 Correlation Time: ", time, " S \n");
+
+    time = mpqc_time::duration_in_s(time0, time2);
+    utility::print_par(world,"Total MP2 Time: ", time, " S \n");
   }
   return rmp2_energy_;
 }

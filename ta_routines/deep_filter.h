@@ -52,26 +52,26 @@ deep_filter(TA::Array<T, DIM, Tile, TA::SparsePolicy> const &t,
 
     TA::TiledRange new_trange(trange1s.begin(), trange1s.end());
 
-    TA::Tensor<float> tile_norms(new_trange.tiles(),
-                                 new_trange.elements().volume()
-                                 / new_trange.tiles().volume());
+    TA::Tensor<float> tile_norms(new_trange.tiles_range(),
+                                 new_trange.elements_range().volume()
+                                 / new_trange.tiles_range().volume());
 
-    TA::SparseShape<float> shape(t.get_world(), tile_norms, new_trange);
+    TA::SparseShape<float> shape(t.world(), tile_norms, new_trange);
 
-    TA::Array<T, DIM, Tile, TA::SparsePolicy> new_array(t.get_world(),
+    TA::Array<T, DIM, Tile, TA::SparsePolicy> new_array(t.world(),
                                                         new_trange, shape);
 
 
-    auto pmap = new_array.get_pmap();
+    auto pmap = new_array.pmap();
     const auto end = pmap->end();
     for (auto it = pmap->begin(); it != end; ++it) {
         auto range = new_trange.make_tile_range(*it);
-        auto idx = new_trange.tiles().idx(*it);
+        auto idx = new_trange.tiles_range().idx(*it);
         for (auto i = 0u; i < DIM; ++i) {
             idx[i] += tile_starts[i];
         }
 
-        auto old_ord = t.trange().tiles().ordinal(idx);
+        auto old_ord = t.trange().tiles_range().ordinal(idx);
         if (!t.is_zero(old_ord)) {
             auto old_tile = t.find(old_ord).get();
             new_array.set(*it, Tile(range, old_tile.data()));

@@ -35,28 +35,28 @@ std::array<double, 3> array_storage(TA::DistArray<TileType, Policy> const &A) {
         low_size += tile_clr_storage(t);
     };
 
-    auto const &pmap = A.get_pmap();
+    auto const &pmap = A.pmap();
     const auto end = pmap->end();
 
     for (auto it = pmap->begin(); it != end; ++it) {
         const auto ord = *it;
         if(A.is_local(ord)){
             if(!A.is_zero(ord)){
-                A.get_world().taskq.add(task_is_not_zero, ord, A.find(ord));
+                A.world().taskq.add(task_is_not_zero, ord, A.find(ord));
             } else {
-                A.get_world().taskq.add(task_is_zero, ord);
+                A.world().taskq.add(task_is_zero, ord);
             }
         }
     }
 
-    A.get_world().gop.fence();
+    A.world().gop.fence();
 
     std::array<double, 3> out;
     out[0] = double(full_size);
     out[1] = double(sparse_size);
     out[2] = double(low_size);
 
-    A.get_world().gop.sum(&out[0], 3);
+    A.world().gop.sum(&out[0], 3);
 
     out[0] *= 8 * 1e-9;
     out[1] *= 8 * 1e-9;
@@ -74,7 +74,7 @@ template <typename Tile, typename Policy,
           typename = typename std::enable_if<
               std::is_fundamental<typename Tile::value_type>::value>::type>
 std::vector<std::size_t> array_sizes(const TA::DistArray<Tile, Policy> &A) {
-  auto const &pmap = A.get_pmap();
+  auto const &pmap = A.pmap();
   TA::TiledRange const &trange = A.trange();
 
   const auto end = pmap->end();
@@ -87,10 +87,10 @@ std::vector<std::size_t> array_sizes(const TA::DistArray<Tile, Policy> &A) {
     }
   }
 
-  const auto world_size = A.get_world().size();
+  const auto world_size = A.world().size();
   std::vector<std::size_t> result(world_size, 0);
-  result[A.get_world().rank()] = full_size * sizeof(typename Tile::value_type);
-  A.get_world().gop.sum(&result[0], world_size);
+  result[A.world().rank()] = full_size * sizeof(typename Tile::value_type);
+  A.world().gop.sum(&result[0], world_size);
 
   return result;
 }

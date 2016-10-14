@@ -53,8 +53,8 @@ double RIDBRMP2F12::value() {
 
     auto emp2 = mp2_eij.sum();
     auto ef12 = f12_eij.sum();
-    utility::print_par(lcao_factory().get_world(), "E_MP2: ", emp2, "\n");
-    utility::print_par(lcao_factory().get_world(), "E_F12: ", ef12, "\n");
+    utility::print_par(lcao_factory().world(), "E_MP2: ", emp2, "\n");
+    utility::print_par(lcao_factory().world(), "E_F12: ", ef12, "\n");
 
     double e_s;
     if (cabs_singles_) {

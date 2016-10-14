@@ -115,7 +115,7 @@ class DBMP2 : public MP2<Tile, Policy> {
     real_t scf_correction =
         2 * F_ma("m,a").reduce(detail::ScfCorrection<Tile>(this->orbital_energy(), occ));
 
-    if (F_ma.get_world().rank() == 0) {
+    if (F_ma.world().rank() == 0) {
       std::cout << "SCF Correction: " << scf_correction << std::endl;
     }
 
@@ -188,7 +188,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    // finished solving occupied orbitals
   //
   //    // get all the sizes
-  //    auto n_obs = S.trange().elements().extent()[0];
+  //    auto n_obs = S.trange().elements_range().extent()[0];
   //    std::size_t mo_blocksize =
   //        in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
   //    std::size_t vir_blocksize = in.HasMember("VirBlockSize")
@@ -237,7 +237,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    } else {
   //      F_vbs = ao_int.compute(Formula(L"<Α|F|Β>"));
   //    }
-  //    auto n_vbs = F_vbs.trange().elements().extent()[0];
+  //    auto n_vbs = F_vbs.trange().elements_range().extent()[0];
   //    tre = std::make_shared<TRange1Engine>(occ, n_vbs, occ_blocksize,
   //                                          vir_blocksize, n_frozen_core);
   //
@@ -350,7 +350,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    // finished solving occupied orbitals
   //
   //    // get all the sizes
-  //    auto n_obs = S.trange().elements().extent()[0];
+  //    auto n_obs = S.trange().elements_range().extent()[0];
   //    std::size_t mo_blocksize =
   //        in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
   //    std::size_t vir_blocksize = in.HasMember("VirBlockSize")
@@ -378,7 +378,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //
   //    TArray S_vbs_inv = ao_int.compute(L"<Α|Β>[inv]");
   //    TArray S_vbs_obs = ao_int.compute(L"<Α|μ>");
-  //    auto n_vbs = S_vbs_inv.trange().elements().extent()[0];
+  //    auto n_vbs = S_vbs_inv.trange().elements_range().extent()[0];
   //    auto tr_vbs = S_vbs_inv.trange().data().back();
   //
   //    TArray t;

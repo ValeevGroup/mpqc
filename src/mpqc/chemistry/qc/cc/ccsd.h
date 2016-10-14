@@ -57,7 +57,7 @@ class CCSD {
   CCSD(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
        rapidjson::Document &options)
       : options_(std::move(options)) {
-    auto &world = lcao_factory.get_world();
+    auto &world = lcao_factory.world();
 
     bool df;
     std::string method =
@@ -184,7 +184,7 @@ class CCSD {
   // store all the integrals in memory
   // used as reference for development
   double compute_ccsd_conventional(TArray &t1, TArray &t2) {
-    auto &world = ccsd_intermediate_->get_Ca().get_world();
+    auto &world = ccsd_intermediate_->get_Ca().world();
 
     bool print_detail = options_.HasMember("PrintDetail")
                             ? options_["PrintDetail"].GetBool()
@@ -220,8 +220,8 @@ class CCSD {
     TArray f_ai = ccsd_intermediate_->get_fock_ai();
     world.gop.fence();
 
-    TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
-              f_ai.get_pmap());
+    TArray d1(f_ai.world(), f_ai.trange(), f_ai.shape(),
+              f_ai.pmap());
     // store d1 to local
     mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
 
@@ -586,7 +586,7 @@ class CCSD {
   }
 
   double compute_ccsd_df(TArray &t1, TArray &t2) {
-    auto &world = ccsd_intermediate_->get_Ca().get_world();
+    auto &world = ccsd_intermediate_->get_Ca().world();
 
     bool print_detail = options_.HasMember("PrintDetail")
                             ? options_["PrintDetail"].GetBool()
@@ -623,8 +623,8 @@ class CCSD {
     TArray f_ai = ccsd_intermediate_->get_fock_ai();
     world.gop.fence();
 
-    TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
-              f_ai.get_pmap());
+    TArray d1(f_ai.world(), f_ai.trange(), f_ai.shape(),
+              f_ai.pmap());
     // store d1 to local
     mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
 
@@ -998,7 +998,7 @@ class CCSD {
     TArray Xij = ccsd_intermediate_->get_Xij();
     TArray Xai = ccsd_intermediate_->get_Xai();
 
-    auto &world = ca.get_world();
+    auto &world = ca.world();
 
     mpqc::utility::print_par(world, "Use Direct CCSD Compute \n");
 
@@ -1022,8 +1022,8 @@ class CCSD {
 
     //      std::cout << g_abij << std::endl;
 
-    TArray d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
-              f_ai.get_pmap());
+    TArray d1(f_ai.world(), f_ai.trange(), f_ai.shape(),
+              f_ai.pmap());
 
     create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
 
@@ -1102,7 +1102,7 @@ class CCSD {
         utility::print_size_info(u2_u11, "U_aaoo");
       }
 
-      //                    if (g_abij.get_world().rank() == 0) {
+      //                    if (g_abij.world().rank() == 0) {
       //                        std::cout << "Time to compute U intermediates
       //                        " << duration << std::endl;
       //                    }

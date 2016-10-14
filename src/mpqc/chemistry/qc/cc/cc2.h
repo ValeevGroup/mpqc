@@ -52,13 +52,13 @@ class CC2 {
 
     auto g_abij = intermediate_->get_abij();
 
-    TArray2 d1(f_ai.get_world(), f_ai.trange(), f_ai.get_shape(),
-               f_ai.get_pmap());
+    TArray2 d1(f_ai.world(), f_ai.trange(), f_ai.shape(),
+               f_ai.pmap());
     // store d1 to local
     d_ai(d1, ens_, n_occ);
 
-    TArray4 d2(g_abij.get_world(), g_abij.trange(), g_abij.get_shape(),
-               g_abij.get_pmap());
+    TArray4 d2(g_abij.world(), g_abij.trange(), g_abij.shape(),
+               g_abij.pmap());
     // store d2 distributed
     d_abij_inplace(d2, ens_, n_occ);
 

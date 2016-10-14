@@ -26,15 +26,15 @@ inline void print_ranks_to_file(
       TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
                 TA::SparsePolicy> const &a,
       std::string file_name) {
-    std::vector<long long> tile_ranks(a.trange().tiles().volume(), 0);
+    std::vector<long long> tile_ranks(a.trange().tiles_range().volume(), 0);
     auto end = a.end();
     for (auto it = a.begin(); it != end; ++it) {
         tile_ranks[it.ordinal()] = it->get().tile().rank();
     }
 
-    a.get_world().gop.sum(tile_ranks.data(), tile_ranks.size());
+    a.world().gop.sum(tile_ranks.data(), tile_ranks.size());
 
-    if (a.get_world().rank() == 0) {
+    if (a.world().rank() == 0) {
         if(char *id = std::getenv("PBS_JOBID")){
             std::string job_id(id);
             file_name += "_" + job_id + ".txt";
@@ -121,7 +121,7 @@ std::array<TiledArray::Tensor<T, AT>, 2>
 
 template <typename Array>
 double max_eval_est(Array const &S) {
-    auto const &array_extent = S.trange().tiles().extent();
+    auto const &array_extent = S.trange().tiles_range().extent();
     std::vector<Eigen::VectorXd> row_norms(array_extent[0]);
 
     for (auto it = S.begin(); it != S.end(); ++it) {
@@ -306,17 +306,17 @@ template <typename Array>
 std::array<typename Array::value_type::numeric_type, 2>
 eval_guess(Array const &A) {
 
-    A.get_world().gop.fence();
+    A.world().gop.fence();
 
     using global_accumlator = pair_accumulator<Array>;
     std::vector<TiledArray::detail::ReduceTask<global_accumlator>> tasks;
-    tasks.reserve(A.trange().tiles().extent()[0]);
-    for (auto i = 0ul; i < A.trange().tiles().extent()[0]; ++i) {
+    tasks.reserve(A.trange().tiles_range().extent()[0]);
+    for (auto i = 0ul; i < A.trange().tiles_range().extent()[0]; ++i) {
         auto row_ranges = A.trange().data()[0].tile(i);
         std::array<typename Array::size_type, 1> start = {{row_ranges.first}};
         std::array<typename Array::size_type, 1> finish = {{row_ranges.second}};
         TiledArray::Range range(start, finish);
-        tasks.emplace_back(A.get_world(), global_accumlator(range));
+        tasks.emplace_back(A.world(), global_accumlator(range));
     }
 
     auto end = A.end();
@@ -324,18 +324,18 @@ eval_guess(Array const &A) {
         tasks[it.index()[0]].add(A.find(it.ordinal()));
     }
 
-    TiledArray::detail::ReduceTask<pair_smasher> local_reduce(A.get_world(),
+    TiledArray::detail::ReduceTask<pair_smasher> local_reduce(A.world(),
                                                               pair_smasher{});
 
     auto counter = 0;
-    for (auto i = 0ul; i < A.trange().tiles().extent()[0]; ++i) {
+    for (auto i = 0ul; i < A.trange().tiles_range().extent()[0]; ++i) {
         auto pair = tasks[i].submit();
         auto row_ranges = A.trange().data()[0].tile(i);
         std::array<typename Array::size_type, 1> start = {{row_ranges.first}};
         std::array<typename Array::size_type, 1> finish = {{row_ranges.second}};
         TiledArray::Range range(start, finish);
         madness::DistributedID key(A.id(), counter++);
-        local_reduce.add(A.get_world().gop.all_reduce(
+        local_reduce.add(A.world().gop.all_reduce(
               key, pair, global_accumlator{range}));
     }
 
@@ -345,7 +345,7 @@ eval_guess(Array const &A) {
 
 /* template <typename Array> */
 /* std::pair<double, double> correct_scale(Array const &S) { */
-/*     const auto dim = S.elements().size()[0]; */
+/*     const auto dim = S.elements_range().size()[0]; */
 /*     Eigen::MatrixXd eig_S = Eigen::MatrixXd::Zero(dim, dim); */
 /*     for (auto it = S.begin(); it != S.end(); ++it) { */
 /*         auto const &tile = (*it).get(); */
@@ -385,20 +385,20 @@ struct compress {
 
 template <typename Array>
 void third_order_update(Array const &S, Array &Z) {
-    auto &world = Z.get_world();
+    auto &world = Z.world();
         
     // Calculate the lambda parameter, since we are currently only trying to
     // invert Positive definite matrices, we will cap the smallest eigen value
     // guess at 0.
 
-    if (S.get_world().rank() == 0) {
+    if (S.world().rank() == 0) {
         std::cout << "Starting inverse sqrt\n";
     }
     auto evg0 = mpqc_time::fenced_now(world);
     auto spectral_range = eval_guess(S);
     auto evg1 = mpqc_time::fenced_now(world);
     auto eval_time = mpqc_time::duration_in_s(evg0, evg1);
-    if (S.get_world().rank() == 0) {
+    if (S.world().rank() == 0) {
         std::cout << "\tEigenvalue estimation time = " << eval_time << " s\n";
     }
 
@@ -436,12 +436,12 @@ void third_order_update(Array const &S, Array &Z) {
         approx_zero("i,j") = X("i,j") - T("i,j");
         const auto current_norm = approx_zero("i,j").norm().get();
 
-        if (S.get_world().rank() == 0) {
+        if (S.world().rank() == 0) {
             std::cout << "\tCurrent difference norm = " << current_norm
                       << "\n";
         }
         if (current_norm >= norm_diff) { // Once norm is increasing exit!
-            if (S.get_world().rank() == 0) {
+            if (S.world().rank() == 0) {
                 std::cout << "Error in sqrt inverse increased. Exiting\n";
             }
             Z("i,j") = std::sqrt(S_scale) * Z("i,j");

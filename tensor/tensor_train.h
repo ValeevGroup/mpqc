@@ -42,7 +42,7 @@ MatrixD one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
 std::array<MatrixD, 4>
 TT_TA_ARRAY(TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A) {
     std::cout << "Starting Amplitude TT decomp\n";
-    auto A_extent = A.trange().elements().extent();
+    auto A_extent = A.trange().elements_range().extent();
     MatrixD A_eig(A_extent[0] * A_extent[1], A_extent[2] * A_extent[3]);
     A_eig.setZero();
 
@@ -190,7 +190,7 @@ make_Wir0k(madness::World &world, MatrixD const &G0, MatrixD const &W,
     TA::TiledRange1 r_trange1(rvec.begin(), rvec.end());
     TA::TiledRange trange({occ_trange, r_trange1, occ_trange});
 
-    TA::TensorD norms(trange.tiles(), std::numeric_limits<float>::max());
+    TA::TensorD norms(trange.tiles_range(), std::numeric_limits<float>::max());
     TA::SparseShape<float> shape(norms, trange);
 
     TA::DistArray<TA::TensorD, TA::SparsePolicy> Wir0k(world, trange, shape);
@@ -213,7 +213,7 @@ make_Wir0k(madness::World &world, MatrixD const &G0, MatrixD const &W,
         Wir0k.set(ord, tile);
     };
 
-    const auto vol = trange.tiles().volume();
+    const auto vol = trange.tiles_range().volume();
     for (auto i = 0; i < vol; ++i) {
         world.taskq.add(task, trange.make_tile_range(i), i);
     }
@@ -232,7 +232,7 @@ make_Ycr2b(madness::World &world, MatrixD const &G3, MatrixD const &Cv,
     TA::TiledRange1 r_trange1(rvec.begin(), rvec.end());
     TA::TiledRange trange({pao_trange, r_trange1, pao_trange});
 
-    TA::TensorD norms(trange.tiles(), std::numeric_limits<float>::max());
+    TA::TensorD norms(trange.tiles_range(), std::numeric_limits<float>::max());
     TA::SparseShape<float> shape(norms, trange);
 
     TA::DistArray<TA::TensorD, TA::SparsePolicy> Ycr2b(world, trange, shape);
@@ -255,7 +255,7 @@ make_Ycr2b(madness::World &world, MatrixD const &G3, MatrixD const &Cv,
         Ycr2b.set(ord, tile);
     };
 
-    const auto vol = trange.tiles().volume();
+    const auto vol = trange.tiles_range().volume();
     for (auto i = 0; i < vol; ++i) {
         world.taskq.add(task, trange.make_tile_range(i), i);
     }
@@ -276,7 +276,7 @@ make_Wr1lr2j(madness::World &world, MatrixD const &G2, MatrixD const &W,
     TA::TiledRange1 r2_trange1(rvec2.begin(), rvec2.end());
     TA::TiledRange trange({r1_trange1, occ_trange, r2_trange1, occ_trange});
 
-    TA::TensorD norms(trange.tiles(), std::numeric_limits<float>::max());
+    TA::TensorD norms(trange.tiles_range(), std::numeric_limits<float>::max());
     TA::SparseShape<float> shape(norms, trange);
 
     TA::DistArray<TA::TensorD, TA::SparsePolicy> Wr1lr2j(world, trange, shape);
@@ -303,7 +303,7 @@ make_Wr1lr2j(madness::World &world, MatrixD const &G2, MatrixD const &W,
         Wr1lr2j.set(ord, tile);
     };
 
-    const auto vol = trange.tiles().volume();
+    const auto vol = trange.tiles_range().volume();
     for (auto i = 0; i < vol; ++i) {
         world.taskq.add(task, trange.make_tile_range(i), i);
     }
@@ -324,7 +324,7 @@ make_Yr0ar1d(madness::World &world, MatrixD const &G1, MatrixD const &Cv,
     TA::TiledRange1 r1_trange1(rvec1.begin(), rvec1.end());
     TA::TiledRange trange({r0_trange1, pao_trange, r1_trange1, pao_trange});
 
-    TA::TensorD norms(trange.tiles(), std::numeric_limits<float>::max());
+    TA::TensorD norms(trange.tiles_range(), std::numeric_limits<float>::max());
     TA::SparseShape<float> shape(norms, trange);
 
     TA::DistArray<TA::TensorD, TA::SparsePolicy> Yr0ar1d(world, trange, shape);
@@ -351,7 +351,7 @@ make_Yr0ar1d(madness::World &world, MatrixD const &G1, MatrixD const &Cv,
         Yr0ar1d.set(ord, tile);
     };
 
-    const auto vol = trange.tiles().volume();
+    const auto vol = trange.tiles_range().volume();
     for (auto i = 0; i < vol; ++i) {
         world.taskq.add(task, trange.make_tile_range(i), i);
     }

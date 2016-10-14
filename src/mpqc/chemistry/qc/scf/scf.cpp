@@ -9,11 +9,11 @@ namespace scf {
 
 double ClosedShellSCF::energy() const {
     return repulsion_
-           + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
+           + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
 }
 
 bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
-    auto &world = F_.get_world();
+    auto &world = F_.world();
 
     if (world.rank() == 0) {
         std::cout << "Starting SCF:\n"
@@ -27,7 +27,7 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
     auto error = std::numeric_limits<double>::max();
     auto rms_error = std::numeric_limits<double>::max();
     auto old_energy = energy();
-    const double volume = F_.trange().elements().volume();
+    const double volume = F_.trange().elements_range().volume();
 
     while (iter < max_iters && (thresh < (error / old_energy)
                                 || thresh < (rms_error / volume))) {

@@ -89,8 +89,8 @@ class TwoElectronIntDFGenerator {
   TwoElectronIntDFGenerator(TwoElectronIntDFGenerator const &) = default;
 
   TwoElectronIntDFGenerator(const TArray &Xpq) : Xpq_(Xpq) {
-    Xlobound_ = Xpq.trange().data().front().tiles().first;
-    Xupbound_ = Xpq.trange().data().front().tiles().second;
+    Xlobound_ = Xpq.trange().data().front().tiles_range().first;
+    Xupbound_ = Xpq.trange().data().front().tiles_range().second;
   }
 
   TwoElectronIntDFGenerator &operator=(TwoElectronIntDFGenerator const &) =
@@ -98,8 +98,8 @@ class TwoElectronIntDFGenerator {
 
   void set(const TArray &Xpq) {
     Xpq_ = Xpq;
-    Xlobound_ = Xpq.trange().data().front().tiles().first;
-    Xupbound_ = Xpq.trange().data().front().tiles().second;
+    Xlobound_ = Xpq.trange().data().front().tiles_range().first;
+    Xupbound_ = Xpq.trange().data().front().tiles_range().second;
   }
 
   // use chemical notation

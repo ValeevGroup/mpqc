@@ -92,7 +92,7 @@ class CADFFockBuilder : public FockBuilder {
 
     auto trange1_M = M_.trange().data()[0];  // Assumes symmetric blocking
     Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(
-        M_.get_world(), L_inv_eig, trange1_M, trange1_M);
+        M_.world(), L_inv_eig, trange1_M, trange1_M);
 
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
@@ -106,7 +106,7 @@ class CADFFockBuilder : public FockBuilder {
         libint2::BraKet::xs_xs);
 
     ArrayType C_df_temp = scf::compute_atomic_fitting_coeffs(
-        M_.get_world(), clustered_mol, df_clustered_mol, obs_set, dfbs_set,
+        M_.world(), clustered_mol, df_clustered_mol, obs_set, dfbs_set,
         eng_pool, obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
 
     auto by_cluster_trange =
@@ -125,7 +125,7 @@ class CADFFockBuilder : public FockBuilder {
   }
 
   ArrayType operator()(ArrayType const &D, ArrayType const &C) override {
-    auto &world = D.get_world();
+    auto &world = D.world();
 
     auto e_mo0 = mpqc_time::fenced_now(world);
     ArrayType E_mo;  // Temp array shared by J and K
@@ -144,7 +144,7 @@ class CADFFockBuilder : public FockBuilder {
   }
 
   void print_iter(std::string const &leader) override {
-    if (E_.get_world().rank() == 0) {
+    if (E_.world().rank() == 0) {
       auto et = e_mo_times_.back();
       auto jt = j_times_.back();
       auto ct = c_mo_times_.back();
@@ -302,7 +302,7 @@ class CADFFockBuilder : public FockBuilder {
 
  private:
   ArrayType compute_J(ArrayType const &C, ArrayType const &E_mo) {
-    auto &world = C.get_world();
+    auto &world = C.world();
     auto j0 = mpqc_time::fenced_now(world);
     ArrayType J;
     J("mu, nu") = E_("X, mu, nu") *
@@ -315,7 +315,7 @@ class CADFFockBuilder : public FockBuilder {
   }
 
   array_type compute_K(ArrayType const &C_in, ArrayType const &E_mo) {
-    auto &world = M_.get_world();
+    auto &world = M_.world();
     ArrayType L, K;        // Matrices
     ArrayType C_mo, F_df;  // Tensors
 
@@ -397,7 +397,7 @@ class CADFFockBuilder : public FockBuilder {
       };
 
       auto shape_time0 = mpqc_time::fenced_now(world);
-      forced_shape = C_mo.get_shape().transform(cadf_df_k_shape);
+      forced_shape = C_mo.shape().transform(cadf_df_k_shape);
       auto shape_time1 = mpqc_time::fenced_now(world);
       shape_times_.push_back(
           mpqc_time::duration_in_s(shape_time0, shape_time1));

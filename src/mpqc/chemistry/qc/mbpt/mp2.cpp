@@ -53,7 +53,7 @@ double RMP2::compute() {
       .reduce(detail::Mp2Energy<TA::TensorD>(orbital_energy_, trange1_engine_->get_occ(),
                                              trange1_engine_->get_nfrozen()));
 
-  if (g_ijab.get_world().rank() == 0) {
+  if (g_ijab.world().rank() == 0) {
     std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
   }
   return energy_mp2;
@@ -74,7 +74,7 @@ double RIRMP2::compute() {
           .reduce(detail::Mp2Energy<TA::TensorD>(orbital_energy_, trange1_engine_->get_occ(),
                                                  trange1_engine_->get_nfrozen()));
 
-  if (g_ijab.get_world().rank() == 0) {
+  if (g_ijab.world().rank() == 0) {
     std::cout << "MP2 Energy With DF: " << energy_mp2 << std::endl;
   }
 

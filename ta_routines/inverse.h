@@ -12,7 +12,7 @@ Array invert(Array const &S) {
     auto spectral_range = pure::eval_guess(S);
     auto evg1 = tcc_time::now();
     auto eval_time = tcc_time::duration_in_s(evg0, evg1);
-    if (S.get_world().rank() == 0) {
+    if (S.world().rank() == 0) {
         std::cout << "\tEigenvalue estimation time = " << eval_time << " s\n";
     }
 
@@ -27,7 +27,7 @@ Array invert(Array const &S) {
     Inv("i,j") = X("i,k") * S("k,j");
 
     auto iter = 0;
-    double trace_ideal = S.trange().tiles().extent()[0];
+    double trace_ideal = S.trange().tiles_range().extent()[0];
     double trace_real = 0.0;
     while (iter < 1000 && std::abs(trace_real - trace_ideal) >= 1e-10) {
         X("i,j") = 2 * X("i,j") - X("i,k") * S("k,l") * X("l,j");
@@ -38,7 +38,7 @@ Array invert(Array const &S) {
         ++iter;
     }
 
-    X.get_world().gop.fence();
+    X.world().gop.fence();
     return X;
 }
 

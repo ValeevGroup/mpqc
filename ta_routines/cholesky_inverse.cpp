@@ -6,7 +6,7 @@ namespace array_ops {
 
 TA::DistArray<TA::TensorD, SpPolicy>
 cholesky_inverse(TA::DistArray<TA::TensorD, SpPolicy> const &A) {
-    auto &world = A.get_world();
+    auto &world = A.world();
 
     auto A_eig = array_to_eigen(A);
     Eig::LLT<decltype(A_eig)> llt(A_eig);

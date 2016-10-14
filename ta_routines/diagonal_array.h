@@ -40,30 +40,30 @@ TiledArray::DistArray<Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
 
     using Array = TiledArray::DistArray<Tile, TiledArray::SparsePolicy>;
 
-    TiledArray::Tensor<float> tile_shape(model.trange().tiles(), 0.0);
+    TiledArray::Tensor<float> tile_shape(model.trange().tiles_range(), 0.0);
 
-    auto pmap = model.get_pmap();
+    auto pmap = model.pmap();
 
     auto pmap_end = pmap->end();
     for (auto it = pmap->begin(); it != pmap_end; ++it) {
-        auto idx = model.trange().tiles().idx(*it);
+        auto idx = model.trange().tiles_range().idx(*it);
         if (idx[0] == idx[1]) {
             tile_shape[*it] = val;
         }
     }
 
-    TiledArray::SparseShape<float> shape(model.get_world(), tile_shape,
+    TiledArray::SparseShape<float> shape(model.world(), tile_shape,
                                          model.trange());
 
-    Array diag(model.get_world(), model.trange(), shape);
+    Array diag(model.world(), model.trange(), shape);
 
     auto const &trange = diag.trange();
-    pmap = diag.get_pmap();
+    pmap = diag.pmap();
     auto end = pmap->end();
     for (auto it = pmap->begin(); it != end; ++it) {
         const auto ord = *it;
 
-        auto idx = trange.tiles().idx(ord);
+        auto idx = trange.tiles_range().idx(ord);
         auto diagonal_tile
               = std::all_of(idx.begin(), idx.end(),
                             [&](typename Array::size_type const &x) {
@@ -102,7 +102,7 @@ diagonal_matrix(TiledArray::TiledRange const &trange, double val,
 
     using Array = TiledArray::Array<T, 2, Tile, TiledArray::SparsePolicy>;
 
-    TiledArray::Tensor<float> tile_norms(trange.tiles(), 0.0);
+    TiledArray::Tensor<float> tile_norms(trange.tiles_range(), 0.0);
 
     TiledArray::SparseShape<float> shape(world, tile_norms, trange);
 
@@ -118,14 +118,14 @@ TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> create_diagonal_matrix(
 
     using Array = TiledArray::Array<T, N, Tile, TiledArray::DensePolicy>;
 
-    Array diag(model.get_world(), model.trange());
+    Array diag(model.world(), model.trange());
 
-    auto pmap_ptr = diag.get_pmap();
+    auto pmap_ptr = diag.pmap();
     const auto end = pmap_ptr->end();
     for (auto it = pmap_ptr->begin(); it != end; ++it) {
 
         const auto ord = *it;
-        auto const &idx = diag.trange().tiles().idx(ord);
+        auto const &idx = diag.trange().tiles_range().idx(ord);
         auto tile = Tile{diag.trange().make_tile_range(ord)};
         auto const extent = tile.range().extent();
         auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);

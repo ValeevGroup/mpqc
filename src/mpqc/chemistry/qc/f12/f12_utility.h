@@ -71,9 +71,9 @@ TiledArray::SparseShape<float>
 make_ijij_ijji_shape(const TiledArray::TiledRange& trange){
 
 // number of occ tiles
-auto n_occ =  trange.data()[0].tiles().second;
+auto n_occ =  trange.data()[0].tiles_range().second;
 
-TiledArray::Tensor<float> tile_norms(trange.tiles(), 0.0);
+TiledArray::Tensor<float> tile_norms(trange.tiles_range(), 0.0);
 
 auto max = std::numeric_limits<float>::max();
 

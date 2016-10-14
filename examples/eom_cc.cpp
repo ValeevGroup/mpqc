@@ -384,7 +384,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         decltype(S_eig) C_vir = C_all.rightCols(S_eig.rows() - occ / 2);
         C_all = C_all.rightCols(S_eig.rows() - n_frozen_core);
 
-        std::size_t all = S.trange().elements().extent()[0];
+        std::size_t all = S.trange().elements_range().extent()[0];
 
 
         // check block size

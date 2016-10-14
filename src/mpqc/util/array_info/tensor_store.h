@@ -33,7 +33,7 @@ inline void write_array_tuple3D(
     TiledArray::DistArray<TiledArray::Tensor<double>,
                           TiledArray::SparsePolicy> const &A,
     std::string const &output_file_name) {
-  const auto volume = A.trange().tiles().volume();
+  const auto volume = A.trange().tiles_range().volume();
 
   std::ofstream outfile(output_file_name);
 
@@ -57,7 +57,7 @@ inline void write_shape_tuple3D(
 
   std::ofstream outfile(output_file_name);
 
-  write_tensor3D_to_file(A.get_shape().data(), outfile);
+  write_tensor3D_to_file(A.shape().data(), outfile);
 
   outfile.close();
 }

@@ -56,7 +56,7 @@ class OrthTraceResettingPurifier {
             ++iter;
         }
         if (iter >= 100) {
-            if (D.get_world().rank() == 0) {
+            if (D.world().rank() == 0) {
                 std::cout << "Purification took " << iter
                           << " iterations with error " << error
                           << " this is likely unconverged." << std::endl;

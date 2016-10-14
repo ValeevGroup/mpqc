@@ -37,7 +37,7 @@ class DBCCSDF12 : public CCSDF12<Tile> {
       : CCSDF12<Tile>(construct_db_ccsd(lcao_factory, options)) {}
 
   virtual real_t compute() {
-    auto& world = this->lcao_factory_.get_world();
+    auto& world = this->lcao_factory_.world();
     // compute ccsd
     real_t ccsd = this->ccsd_->compute();
 
@@ -98,7 +98,7 @@ class DBCCSDF12 : public CCSDF12<Tile> {
 template <typename Tile>
 typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_c_df() {
   auto& lcao_factory = this->lcao_factory_;
-  auto& world = lcao_factory.get_world();
+  auto& world = lcao_factory.world();
   Matrix Eij_F12;
 
   // clean LCAO Integrals

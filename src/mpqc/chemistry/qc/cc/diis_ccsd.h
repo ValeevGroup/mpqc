@@ -49,8 +49,8 @@ template <typename T, typename Tile, typename Policy>
 inline size_t size(const T1T2<T, Tile, Policy> &a) {
   // this is the number of tiles
   if (a.first.size() && a.second.size() > 0)  // assuming dense shape
-    return a.first.trange().elements().volume() +
-           a.second.trange().elements().volume();
+    return a.first.trange().elements_range().volume() +
+           a.second.trange().elements_range().volume();
   else
     return 0;
 };

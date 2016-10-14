@@ -193,13 +193,13 @@ DirectTwoElectronSparseArray make_lazy_two_electron_sparse_array(
   DIRECTAOTWOELECTONINTEGRAL->set_screener(p_screen);
 
   // make shape
-  TA::TensorF tile_norms(trange.tiles(), 0.0);
-  auto t_volume = trange.tiles().volume();
+  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
+  auto t_volume = trange.tiles_range().volume();
   auto pmap = TA::SparsePolicy::default_pmap(world, t_volume);
 
   auto compute_tile = [=](int64_t ord, TA::Range range,
                           TA::TensorF *ptr_tile_norm) {
-    auto index = trange.tiles().idx(ord);
+    auto index = trange.tiles_range().idx(ord);
     auto ta_tile = DIRECTAOTWOELECTONINTEGRAL->compute(range, index);
 
     const auto tile_volume = ta_tile.range().volume();

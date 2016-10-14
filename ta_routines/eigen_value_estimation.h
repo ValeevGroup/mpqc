@@ -45,7 +45,7 @@ double min_eval_guess(It first, It second) {
 
 template <typename Array>
 std::pair<double, double> symmetric_min_max_evals(Array const &S) {
-    auto const &array_extent = S.trange().tiles().extent();
+    auto const &array_extent = S.trange().tiles_range().extent();
     std::vector<Eigen::VectorXd> row_norms(array_extent[0]);
 
     for (auto it = S.begin(); it != S.end(); ++it) {
@@ -98,7 +98,7 @@ Array invert(Array const &S) {
     product("i,j") = X("i,k") * S("k,j");
 
     auto iter = 0;
-    double trace_ideal = S.trange().tiles().extent()[0];
+    double trace_ideal = S.trange().tiles_range().extent()[0];
     double trace_real = 0.0;
     while (iter < 1000 && std::abs(trace_real - trace_ideal) >= 1e-10) {
         X("i,j") = 2 * X("i,j") - X("i,k") * S("k,l") * X("l,j");
@@ -106,7 +106,7 @@ Array invert(Array const &S) {
         trace_real = product("i,j").trace();
         ++iter;
     }
-    X.get_world().gop.fence();
+    X.world().gop.fence();
     return X;
 }
 
@@ -117,7 +117,7 @@ double min_eval_est(Array const &H, Array const &S) {
     HSinv("i,j") = invert(S)("i,k") * H("k,j");
 
     auto min = std::numeric_limits<double>::max();
-    auto extent = HSinv.trange().tiles().extent();
+    auto extent = HSinv.trange().tiles_range().extent();
 
     // Check every row of tiles for its minimum eval guess
     for (auto tile_row_it = HSinv.begin(); tile_row_it != HSinv.end();) {

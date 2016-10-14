@@ -56,7 +56,7 @@ inline TA::TiledRange cadf_trange(basis::Basis const &obs_by_atom,
 inline TA::SparseShape<float> cadf_shape(madness::World &world,
                                          basis::Basis const &obs,
                                          TA::TiledRange const &trange) {
-  auto &tiles = trange.tiles();
+  auto &tiles = trange.tiles_range();
   TA::TensorD norms(tiles, 0.0);
 
   for (auto i = 0ul; i < obs.nclusters(); ++i) {
@@ -83,8 +83,8 @@ void create_tiles_prime(madness::World &world,
                         unsigned long natoms) {
   auto task = [&](unsigned long i, unsigned long j) {
     auto &trange = C_df.trange();
-    auto &tiles = trange.tiles();
-    auto &M_tiles = M.trange().tiles();
+    auto &tiles = trange.tiles_range();
+    auto &M_tiles = M.trange().tiles_range();
 
     if (i == j) {
       auto eri3_idx = std::array<unsigned long, 3>{{i, i, i}};
@@ -320,8 +320,8 @@ void create_tiles(madness::World &world,
     }
   };
 
-  auto const &eri3_tiles = eri3.array().trange().tiles();
-  auto const &M_tiles = M.trange().tiles();
+  auto const &eri3_tiles = eri3.array().trange().tiles_range();
+  auto const &M_tiles = M.trange().tiles_range();
 
   for (auto i = 0ul; i < natoms; ++i) {
     std::array<unsigned long, 3> eri3_idx = {{i, i, i}};
@@ -412,7 +412,7 @@ inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
 
   auto shape = cadf::cadf_shape(world, by_atom_obs, trange);
 
-  auto pmap = eri3.array().get_pmap();
+  auto pmap = eri3.array().pmap();
 
   TA::DistArray<TA::TensorD, SpPolicy> C_df(world, trange, shape, pmap);
 

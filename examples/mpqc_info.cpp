@@ -28,7 +28,7 @@ void ao_basis_analysis (basis::Basis& basis, int occ){
 
 
   auto range = basis.create_trange1();
-  std::size_t n = range.elements().second;
+  std::size_t n = range.elements_range().second;
   std::size_t v = n - occ;
   auto min_max = cc::minmax_blocksize(range);
   std::size_t b_min = min_max.first;
@@ -55,14 +55,14 @@ void ao_basis_analysis (basis::Basis& basis, int occ){
 void df_basis_analysis(basis::Basis& basis, basis::Basis& dfbs, int occ){
 
   auto range = basis.create_trange1();
-  std::size_t n = range.elements().second;
+  std::size_t n = range.elements_range().second;
   std::size_t v = n - occ;
   auto min_max = cc::minmax_blocksize(range);
   std::size_t b_min = min_max.first;
   std::size_t b_max = min_max.second;
 
   auto df_range = dfbs.create_trange1();
-  std::size_t N = df_range.elements().second;
+  std::size_t N = df_range.elements_range().second;
   auto min_max2 = cc::minmax_blocksize(df_range);
   std::size_t b_min2 = min_max2.first;
   std::size_t b_max2 = min_max2.second;
@@ -85,20 +85,20 @@ void df_basis_analysis(basis::Basis& basis, basis::Basis& dfbs, int occ){
 
 void cabs_basis_analysis(basis::Basis& basis, basis::Basis& dfbs, basis::Basis& cabs, int occ){
   auto range = basis.create_trange1();
-  std::size_t n = range.elements().second;
+  std::size_t n = range.elements_range().second;
   std::size_t v = n - occ;
   auto min_max = cc::minmax_blocksize(range);
   std::size_t b_min = min_max.first;
   std::size_t b_max = min_max.second;
 
   auto df_range = dfbs.create_trange1();
-  std::size_t N = df_range.elements().second;
+  std::size_t N = df_range.elements_range().second;
   auto min_max2 = cc::minmax_blocksize(df_range);
   std::size_t b_min2 = min_max2.first;
   std::size_t b_max2 = min_max2.second;
 
   auto cabs_range = cabs.create_trange1();
-  std::size_t A = cabs_range.elements().second + n;
+  std::size_t A = cabs_range.elements_range().second + n;
   auto min_max3 = cc::minmax_blocksize(cabs_range);
   std::size_t b_min3 = min_max3.first;
   std::size_t b_max3 = min_max3.second;

@@ -13,7 +13,7 @@ namespace scf {
 inline TA::DistArray<TA::TensorD, SpPolicy>
 array_from_tile_map(madness::World &world, TA::TiledRange const &trange,
                     std::unordered_map<std::size_t, TA::TensorD> const &tiles) {
-    auto shape_data = TA::TensorF(trange.tiles(), 0.0);
+    auto shape_data = TA::TensorF(trange.tiles_range(), 0.0);
     for (auto &pair : tiles) {
         *(shape_data.data() + pair.first) = pair.second.norm();
     }
@@ -37,12 +37,12 @@ inline TA::DistArray<TA::TensorD, SpPolicy> reblock_from_atoms(
       std::unordered_map<std::size_t, std::size_t> const &output_cluster_df,
       TA::TiledRange by_cluster_trange) {
 
-    // auto const &pmap = *(A.get_pmap());
+    // auto const &pmap = *(A.pmap());
     std::unordered_map<std::size_t, TA::TensorD> tiles;
     // for (auto ord = pmap.begin(); ord != pmap.end(); ++ord) {
-    for (auto ord = 0ul; ord != A.trange().tiles().volume(); ++ord) {
+    for (auto ord = 0ul; ord != A.trange().tiles_range().volume(); ++ord) {
         if (!A.is_zero(ord)) {
-            auto idx_in = A.trange().tiles().idx(ord);
+            auto idx_in = A.trange().tiles_range().idx(ord);
             auto idx_out = idx_in;
             for (auto i = 0ul; i < A.range().rank(); ++i) {
                 if (i == 0) {
@@ -55,7 +55,7 @@ inline TA::DistArray<TA::TensorD, SpPolicy> reblock_from_atoms(
             auto in_tile = A.find(ord).get();
             auto in_range = in_tile.range();
 
-            auto by_cluster_ord = by_cluster_trange.tiles().ordinal(idx_out);
+            auto by_cluster_ord = by_cluster_trange.tiles_range().ordinal(idx_out);
             auto out_range = by_cluster_trange.make_tile_range(by_cluster_ord);
 
             auto write_inner_tile =
@@ -77,7 +77,7 @@ inline TA::DistArray<TA::TensorD, SpPolicy> reblock_from_atoms(
         }
     }
 
-    return array_from_tile_map(A.get_world(), by_cluster_trange, tiles);
+    return array_from_tile_map(A.world(), by_cluster_trange, tiles);
 }
 
 

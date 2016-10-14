@@ -105,7 +105,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   utility::print_par(world, "OccBlockSize: ", occ_blocksize, "\n");
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
-  std::size_t all = S.trange().elements().extent()[0];
+  std::size_t all = S.trange().elements_range().extent()[0];
   auto tre = std::make_shared<TRange1Engine>(occ, all, occ_blocksize,
                                              vir_blocksize, n_frozen_core);
 
@@ -553,7 +553,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
                      .create_trange1();
   auto tr_ribs = S_ribs.trange().data().back();
   auto tr_cabs_mo =
-      tre->compute_range(tr_cabs.elements().second, vir_blocksize);
+      tre->compute_range(tr_cabs.elements_range().second, vir_blocksize);
   auto tr_allvir_mo = tre->compute_range(nbf_ribs_minus_occ, vir_blocksize);
 
   utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");

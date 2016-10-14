@@ -395,7 +395,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
         auto tr_result = result.trange().data()[0];
         result = array_ops::eigen_to_array<TA::TensorD>(
-            result.get_world(), result_eig, tr_result, tr_result);
+            result.world(), result_eig, tr_result, tr_result);
 
         if (formula.oper().type() == Operator::Type::cGTG ||
             formula.oper().type() == Operator::Type::cGTGCoulomb) {
@@ -419,7 +419,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
               MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
           auto tr_result = result.trange().data()[0];
           result = array_ops::eigen_to_array<TA::TensorD>(
-              result.get_world(), L_inv_eig, tr_result, tr_result);
+              result.world(), L_inv_eig, tr_result, tr_result);
         }
 
         if (formula.oper().type() == Operator::Type::cGTG ||

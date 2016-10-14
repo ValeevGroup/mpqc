@@ -126,7 +126,7 @@ CABSSingles<Tile>::compute(bool df, bool d_approach, bool couple_virtual) {
     MatrixD F_Ma_eigen = array_ops::array_to_eigen(F_Ma);
     auto n_occ = F_Ma_eigen.rows();
     auto n_cabs = F_Ma_eigen.cols();
-    auto n_allvir = F_AB.trange().elements().extent()[0];
+    auto n_allvir = F_AB.trange().elements_range().extent()[0];
     auto n_vir = n_allvir - n_cabs;
 
     MatrixD F_MA_eigen = MatrixD::Zero(n_occ, n_allvir);
@@ -135,7 +135,7 @@ CABSSingles<Tile>::compute(bool df, bool d_approach, bool couple_virtual) {
     auto tr_m = F_Ma.trange().data()[0];
     auto tr_A = F_AB.trange().data()[0];
 
-    F_MA = array_ops::eigen_to_array<Tile>(F_Ma.get_world(), F_MA_eigen,tr_m, tr_A);
+    F_MA = array_ops::eigen_to_array<Tile>(F_Ma.world(), F_MA_eigen,tr_m, tr_A);
 //    F_MA.truncate();
 
   }
@@ -160,7 +160,7 @@ CABSSingles<Tile>::compute(bool df, bool d_approach, bool couple_virtual) {
     E_S = 2*TA::dot(t("i,A"), F_MA("i,A"));
   }
   else{
-    utility::print_par(t.get_world(),"\n Warning!  CABSSingles Not Converged!!! \n");
+    utility::print_par(t.world(),"\n Warning!  CABSSingles Not Converged!!! \n");
   }
   return E_S;
 
@@ -172,7 +172,7 @@ TA::DistArray <Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner
          const TA::DistArray <Tile, TA::SparsePolicy> &F_AB,
          const TA::DistArray <Tile, TA::SparsePolicy> &F_MN)
 {
-  auto& world = F_AB.get_world();
+  auto& world = F_AB.world();
 
   Eigen::MatrixXd F_AB_eigen = array_ops::array_to_eigen(F_AB);
   Eigen::MatrixXd F_MN_eigen = array_ops::array_to_eigen(F_MN);
@@ -208,9 +208,9 @@ TA::DistArray <Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner
     }
   };
 
-  const auto tvolume = trange.tiles().volume();
+  const auto tvolume = trange.tiles_range().volume();
   std::vector<Tile> tiles(tvolume);
-  TA::TensorF tile_norms(trange.tiles(), 0.0);
+  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
   auto pmap = SpPolicy::default_pmap(world, tvolume);
   for (auto const ord : *pmap) {

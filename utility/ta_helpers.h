@@ -40,7 +40,7 @@ double array_fnorm_diff(TA::Array<T, DIM, TileType, Policy> const &A,
     remove_ref_const_t<decltype(A)> out;
     const std::string indices = detail::make_indices<DIM>();
     out(indices) = A(indices) - B(indices);
-    return out(indices).norm(out.get_world()).get();
+    return out(indices).norm(out.world()).get();
 }
 
 } // namespace utility

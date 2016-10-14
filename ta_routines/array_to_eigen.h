@@ -48,25 +48,25 @@ template <typename T, typename Policy>
 Matrix<T> array_to_eigen(TA::DistArray<TA::Tensor<T>, Policy> const &A) {
   TA_ASSERT(A.range().rank() == 2);
 
-  auto const &mat_extent = A.trange().elements().extent();
+  auto const &mat_extent = A.trange().elements_range().extent();
   Matrix<T> out_mat = Matrix<T>::Zero(mat_extent[0], mat_extent[1]);
 
   // Copy A and make it replicated.  Making A replicated is a mutating op.
   auto repl_A = A;
-  A.get_world().gop.fence();
+  A.world().gop.fence();
   repl_A.make_replicated();
 
   // Loop over the array and assign the tiles to blocks of the Eigen Mat.
-  auto pmap = repl_A.get_pmap();
+  auto pmap = repl_A.pmap();
   const auto end = pmap->end();
   for (auto it = pmap->begin(); it != end; ++it) {
     if (!repl_A.is_zero(*it)) {
       auto tile = repl_A.find(*it).get();
-      A.get_world().taskq.add(write_to_eigen_task<TA::Tensor<T>>, tile,
+      A.world().taskq.add(write_to_eigen_task<TA::Tensor<T>>, tile,
                               &out_mat);
     }
   }
-  A.get_world().gop.fence();  // Can't let M go out of scope
+  A.world().gop.fence();  // Can't let M go out of scope
 
   return out_mat;
 }
@@ -113,13 +113,13 @@ TA::Array<double, 2, Tile, TA::SparsePolicy> eigen_to_array(
     madness::World &world, Matrix<double> const &M, TA::TiledRange1 tr0,
     TA::TiledRange1 tr1, double cut = 1e-7) {
   TA::TiledRange trange{tr0, tr1};
-  TA::Tensor<float> norms(trange.tiles(),
-                          trange.elements().volume() / trange.tiles().volume());
+  TA::Tensor<float> norms(trange.tiles_range(),
+                          trange.elements_range().volume() / trange.tiles_range().volume());
 
   TA::SparseShape<float> shape(world, norms, trange);
   TA::Array<double, 2, Tile, TA::SparsePolicy> array(world, trange, shape);
 
-  auto const &pmap = array.get_pmap();
+  auto const &pmap = array.pmap();
   const auto end = pmap->end();
   for (auto it = pmap->begin(); it != end; ++it) {
     if (!array.is_zero(*it)) {

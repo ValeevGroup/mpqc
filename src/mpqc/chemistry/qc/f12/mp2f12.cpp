@@ -72,8 +72,8 @@ double RMP2F12::value() {
 
     auto emp2 = mp2_eij.sum();
     auto ef12 = f12_eij.sum();
-    utility::print_par(lcao_factory().get_world(), "E_MP2: ", emp2, "\n");
-    utility::print_par(lcao_factory().get_world(), "E_F12: ", ef12, "\n");
+    utility::print_par(lcao_factory().world(), "E_MP2: ", emp2, "\n");
+    utility::print_par(lcao_factory().world(), "E_F12: ", ef12, "\n");
 
     double e_s;
     if (cabs_singles_) {
@@ -97,7 +97,7 @@ void RMP2F12::obsolete() {
 void RMP2F12::compute(qc::PropertyBase* pb) {}
 
 std::tuple<Matrix, Matrix> RMP2F12::compute() {
-  auto& world = lcao_factory().get_world();
+  auto& world = lcao_factory().world();
 
   utility::print_par(world, "\n Computing MP2F12 ", approximation_,
                      " Approximation \n");

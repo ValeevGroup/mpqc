@@ -75,7 +75,7 @@ class LCAOFactory {
   }
 
   /// return reference to madness::World
-  madness::World& get_world() const { return world_; }
+  madness::World& world() const { return world_; }
 
   /// return reference to AtomicIntegral object
   AtomicIntegralType& atomic_integral() const { return atomic_integral_; }

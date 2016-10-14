@@ -41,7 +41,7 @@ class DFFockBuilder : public FockBuilder {
 
     auto tr_M = M.trange().data()[0];
 
-    L_inv_ = array_ops::eigen_to_array<TA::TensorD>(M.get_world(), L_inv_eig,
+    L_inv_ = array_ops::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig,
                                                     tr_M, tr_M);
   }
 
@@ -58,7 +58,7 @@ class DFFockBuilder : public FockBuilder {
        * template is to allow for Direct Integral wrappers or other options.
        */
   array_type operator()(array_type const &D, array_type const &C) override {
-    auto &world = D.get_world();
+    auto &world = D.world();
 
     array_type G;
     madness::print_meminfo(world.rank(), "DFFockBuilder:0");
@@ -100,7 +100,7 @@ class DFFockBuilder : public FockBuilder {
   }
 
   void print_iter(std::string const &leader) override {
-    auto &world = L_inv_.get_world();
+    auto &world = L_inv_.world();
 
     if (world.rank() == 0) {
       std::cout << leader << "DF Fock builder:\n"

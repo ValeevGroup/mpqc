@@ -14,7 +14,7 @@ namespace utility {
 
 template<typename Array>
 void print_size_info(Array const &A, std::string const &name){
-   auto &world = A.get_world(); 
+   auto &world = A.world(); 
    auto sizes = array_storage(A);
 
    if(world.rank() == 0){
@@ -31,7 +31,7 @@ void print_size_info(Array const &A, std::string const &name){
 
 template<typename Array>
 void wprint_size_info(Array const &A, const std::wstring &name){
-    auto &world = A.get_world();
+    auto &world = A.world();
     auto sizes = array_storage(A);
 
     if(world.rank() == 0){

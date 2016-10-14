@@ -40,13 +40,13 @@ std::vector<DArray<2, Tile, SpPolicy>> sparse_xyz_integrals(
         ta_routines::TensorDPassThrough()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
-  const auto tvolume = trange.tiles().volume();
+  const auto tvolume = trange.tiles_range().volume();
 
   using TileVec = std::vector<std::pair<unsigned long, Tile>>;
   std::vector<TileVec> tiles(3, TileVec(tvolume));
 
   using NormVec = std::vector<TA::TensorF>;
-  NormVec tile_norms(3, TA::TensorF(trange.tiles(), 0.0));
+  NormVec tile_norms(3, TA::TensorF(trange.tiles_range(), 0.0));
 
   // Capture by ref since we are going to fence after loops.
   auto task_f = [&](int64_t ord, detail::IdxVec idx, TA::Range rng) {
@@ -112,7 +112,7 @@ std::vector<DArray<2, Tile, SpPolicy>> sparse_xyz_integrals(
     tiles[0][ord].first = ord;
     tiles[1][ord].first = ord;
     tiles[2][ord].first = ord;
-    detail::IdxVec idx = trange.tiles().idx(ord);
+    detail::IdxVec idx = trange.tiles_range().idx(ord);
     world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord));
   }
   world.gop.fence();
@@ -149,9 +149,9 @@ TA::DistArray<Tile, SpPolicy> sparse_integrals(
         mpqc::ta_routines::TensorDPassThrough()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
-  const auto tvolume = trange.tiles().volume();
+  const auto tvolume = trange.tiles_range().volume();
   std::vector<std::pair<unsigned long, Tile>> tiles(tvolume);
-  TA::TensorF tile_norms(trange.tiles(), 0.0);
+  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<Bvector>(bases);
@@ -185,7 +185,7 @@ TA::DistArray<Tile, SpPolicy> sparse_integrals(
   auto pmap = SpPolicy::default_pmap(world, tvolume);
   for (auto const ord : *pmap) {
     tiles[ord].first = ord;
-    detail::IdxVec idx = trange.tiles().idx(ord);
+    detail::IdxVec idx = trange.tiles_range().idx(ord);
     world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord), &tile_norms,
                     &tiles[ord].second);
   }
@@ -225,9 +225,9 @@ TA::DistArray<Tile, DnPolicy> dense_integrals(
   };
 
   auto const &trange = out.trange();
-  auto const &pmap = *(out.get_pmap());
+  auto const &pmap = *(out.pmap());
   for (auto const ord : pmap) {
-    detail::IdxVec idx = trange.tiles().idx(ord);
+    detail::IdxVec idx = trange.tiles_range().idx(ord);
 
     auto range = trange.make_tile_range(ord);
     mad::Future<Tile> tile = world.taskq.add(task_func, idx, range);

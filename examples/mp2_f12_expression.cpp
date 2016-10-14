@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
   auto hf_time = mpqc_time::duration_in_s(time0, time1);
 
   // obs fock build
-  std::size_t all = S.trange().elements().extent()[0];
+  std::size_t all = S.trange().elements_range().extent()[0];
 
   // attention!! occ has to be blocked by 1!!
   auto tre = TRange1Engine(occ / 2, all, 1, mo_block_size, 0);
@@ -285,9 +285,9 @@ int main(int argc, char *argv[]) {
     auto tr_cabs = S_cabs.trange().data()[0];
     auto tr_ribs = S_ribs.trange().data()[0];
     auto tr_cabs_mo =
-        tre.compute_range(tr_cabs.elements().second, mo_block_size);
+        tre.compute_range(tr_cabs.elements_range().second, mo_block_size);
     auto tr_ribs_mo =
-        tre.compute_range(tr_ribs.elements().second, mo_block_size);
+        tre.compute_range(tr_ribs.elements_range().second, mo_block_size);
 
     utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
     utility::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");

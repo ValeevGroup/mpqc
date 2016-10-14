@@ -47,7 +47,7 @@ class CCSDF12 {
       : lcao_factory_(ccsd->intermediate()->lcao_factory()), ccsd_(ccsd) {}
 
   virtual real_t compute() {
-    auto& world = lcao_factory_.get_world();
+    auto& world = lcao_factory_.world();
 
     auto ccsd_time0 = mpqc_time::fenced_now(world);
 
@@ -78,7 +78,7 @@ class CCSDF12 {
       throw std::runtime_error("Wrong CCSDF12 Approach");
     }
 
-    utility::print_par(lcao_factory_.get_world(), "VTCouple: ", vt_couple_, "\n");
+    utility::print_par(lcao_factory_.world(), "VTCouple: ", vt_couple_, "\n");
 
     // clean LCAO Integrals
     lcao_factory_.registry().purge(world);
@@ -151,7 +151,7 @@ template <typename DirectArray>
 typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
     const DirectArray& darray, const std::string& approach) {
   auto& lcao_factory = lcao_factory_;
-  auto& world = lcao_factory.get_world();
+  auto& world = lcao_factory.world();
   Matrix Eij_F12;
 
   utility::print_par(world, "\n Computing CCSDF12 ", approach, " Approach \n");
@@ -239,7 +239,7 @@ template <typename DirectArray>
 typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
     const DirectArray& darray) {
   auto& lcao_factory = lcao_factory_;
-  auto& world = lcao_factory.get_world();
+  auto& world = lcao_factory.world();
   Matrix Eij_F12;
 
   utility::print_par(world, "\n Computing CCSDF12 C Approach \n");

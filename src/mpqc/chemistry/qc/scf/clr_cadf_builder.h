@@ -69,7 +69,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 
   DArrayType make_three_center_integrals(basis::Basis const &obs,
                                          basis::Basis const &dfbs) {
-    auto &world = E_.get_world();
+    auto &world = E_.world();
 
     auto basis_array = std::vector<basis::Basis>{{dfbs, obs, obs}};
 
@@ -108,7 +108,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     dE_ = make_three_center_integrals(obs, dfbs);
 
     E_clr_sizes_ = utility::array_storage(dE_);
-    if (dE_.get_world().rank() == 0) {
+    if (dE_.world().rank() == 0) {
       std::cout << "E with clr storage:\n"
                 << "\tDense  " << E_clr_sizes_[0] << "\n"
                 << "\tSparse " << E_clr_sizes_[1] << "\n"
@@ -126,7 +126,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     // Grab needed ao integrals
     E_ = ao_ints.compute(L"( Κ | G|κ λ)");
     E_J_sizes_ = utility::array_storage(E_);
-    if (E_.get_world().rank() == 0) {
+    if (E_.world().rank() == 0) {
       std::cout << "E for J storage:\n"
                 << "\tDense  " << E_J_sizes_[0] << "\n"
                 << "\tSparse " << E_J_sizes_[1] << std::endl;
@@ -136,10 +136,10 @@ class ClrCADFFockBuilder : public FockBuilder {
     bool compress_M = false;
     M_ = TA::to_new_tile_type(
         M, tensor::TaToDecompTensor(clr_threshold_, compress_M));
-    M_.get_world().gop.fence();
+    M_.world().gop.fence();
 
     auto m_store = utility::array_storage(M_);
-    if (E_.get_world().rank() == 0) {
+    if (E_.world().rank() == 0) {
       std::cout << "M storage:\n"
                 << "\tDense  " << m_store[0] << "\n"
                 << "\tSparse " << m_store[1] << "\n"
@@ -153,7 +153,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 
     auto trange1_M = M.trange().data()[0];  // Assumes symmetric blocking
     Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(
-        M.get_world(), L_inv_eig, trange1_M, trange1_M);
+        M.world(), L_inv_eig, trange1_M, trange1_M);
 
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
@@ -166,7 +166,7 @@ class ClrCADFFockBuilder : public FockBuilder {
         libint2::BraKet::xs_xs);
 
     ArrayType C_df_temp = scf::compute_atomic_fitting_coeffs(
-        M_.get_world(), clustered_mol, df_clustered_mol, obs_set, dfbs_set,
+        M_.world(), clustered_mol, df_clustered_mol, obs_set, dfbs_set,
         eng_pool, obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
 
     auto by_cluster_trange =
@@ -177,9 +177,9 @@ class ClrCADFFockBuilder : public FockBuilder {
                                 dfbs_atom_to_cluster_map, by_cluster_trange);
     C_df_ =
         TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(clr_threshold_));
-    E_.get_world().gop.fence();
+    E_.world().gop.fence();
     auto c_df_store = utility::array_storage(C_df_);
-    if (E_.get_world().rank() == 0) {
+    if (E_.world().rank() == 0) {
       std::cout << "C_df storage:\n"
                 << "\tDense  " << c_df_store[0] << "\n"
                 << "\tSparse " << c_df_store[1] << "\n"
@@ -195,7 +195,7 @@ class ClrCADFFockBuilder : public FockBuilder {
   }
 
   ArrayType operator()(ArrayType const &D, ArrayType const &C) override {
-    auto &world = D.get_world();
+    auto &world = D.world();
 
     ArrayType G;
     G("m, n") = 2 * compute_J(D)("m, n") - compute_K(C)("m, n");
@@ -203,7 +203,7 @@ class ClrCADFFockBuilder : public FockBuilder {
   }
 
   void print_iter(std::string const &leader) override {
-    if (E_.get_world().rank() == 0) {
+    if (E_.world().rank() == 0) {
       auto jt = j_times_.back();
       auto ct = c_mo_times_.back();
       auto ft = f_df_times_.back();
@@ -353,7 +353,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 
  private:
   ArrayType compute_J(ArrayType const &D) {
-    auto &world = D.get_world();
+    auto &world = D.world();
     auto j0 = mpqc_time::fenced_now(world);
     ArrayType J;
     J("mu, nu") =
@@ -367,7 +367,7 @@ class ClrCADFFockBuilder : public FockBuilder {
   }
 
   array_type compute_K(ArrayType const &C_in) {
-    auto &world = M_.get_world();
+    auto &world = M_.world();
     ArrayType K;            // Matrices
     DArrayType dC, dL;      // Matrices
     DArrayType C_mo, F_df;  // Tensors
@@ -447,7 +447,7 @@ class ClrCADFFockBuilder : public FockBuilder {
       };
 
       auto shape_time0 = mpqc_time::fenced_now(world);
-      forced_shape = C_mo.get_shape().transform(cadf_df_k_shape);
+      forced_shape = C_mo.shape().transform(cadf_df_k_shape);
       auto shape_time1 = mpqc_time::fenced_now(world);
       shape_times_.push_back(
           mpqc_time::duration_in_s(shape_time0, shape_time1));

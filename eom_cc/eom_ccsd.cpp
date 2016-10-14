@@ -321,7 +321,7 @@ namespace mpqc{
     std::size_t Nroots = in["RootNumber"].GetInt();
     C_.resize(Nroots);
 
-    madness::World& world = T1_.get_world();
+    madness::World& world = T1_.world();
     for (std::size_t i = 0; i < Nroots; ++i) {
 
       const std::string rootn_str = "Root" + std::to_string(i+1);
@@ -360,7 +360,7 @@ namespace mpqc{
             const auto tile_range = T2_.trange().make_tile_range(tile_idx);
 
             // Construct sparse shape for array
-            TiledArray::TensorF tile_norm(T2_.trange().tiles(), 0);
+            TiledArray::TensorF tile_norm(T2_.trange().tiles_range(), 0);
             tile_norm[tile_idx] = tile_range.volume();
             typename TArray::shape_type shape(tile_norm, T2_.trange());
 
@@ -394,7 +394,7 @@ namespace mpqc{
             const auto tile_range = T1_.trange().make_tile_range(tile_idx);
 
             // Construct sparse shape for array
-            TiledArray::TensorF tile_norm(T1_.trange().tiles(), 0);
+            TiledArray::TensorF tile_norm(T1_.trange().tiles_range(), 0);
             tile_norm[tile_idx] = tile_range.volume();
             typename TArray::shape_type shape(tile_norm, T1_.trange());
 
@@ -421,8 +421,8 @@ namespace mpqc{
 
   void EOM_CCSD::davidson_solver(std::size_t max_iter, double convergence) {
 
-    madness::World& world = C_[0].Cai.is_initialized()? C_[0].Cai.get_world()
-                                                      : C_[0].Cabij.get_world();
+    madness::World& world = C_[0].Cai.is_initialized()? C_[0].Cai.world()
+                                                      : C_[0].Cabij.world();
     std::size_t iter = 0;
     double norm_r = 1.0;
 
@@ -494,20 +494,20 @@ namespace mpqc{
         for (std::size_t i = 0; i < dim; ++i) {
           if (C_[i].Cai.is_initialized()) {
               if (!r[k].Cai.is_initialized()) {
-                TiledArray::TensorF tile_norms(C_[i].Cai.trange().tiles(), 0.0f);
+                TiledArray::TensorF tile_norms(C_[i].Cai.trange().tiles_range(), 0.0f);
                 TArray::shape_type shape(tile_norms, C_[i].Cai.trange());
-                r[k].Cai = TArray(C_[i].Cai.get_world(), C_[i].Cai.trange(),
-                                  shape, C_[i].Cai.get_pmap());
+                r[k].Cai = TArray(C_[i].Cai.world(), C_[i].Cai.trange(),
+                                  shape, C_[i].Cai.pmap());
               }
               r[k].Cai("a,i") += es_vectors(i,k)
                                 * (HC[i].Cai("a,i") - C_[i].Cai("a,i") * e_k);
           }
           if (C_[i].Cabij.is_initialized()) {
               if (!r[k].Cabij.is_initialized()) {
-                TiledArray::TensorF tile_norms(C_[i].Cabij.trange().tiles(), 0.0f);
+                TiledArray::TensorF tile_norms(C_[i].Cabij.trange().tiles_range(), 0.0f);
                 TArray::shape_type shape(tile_norms, C_[i].Cabij.trange());
-                r[k].Cabij = TArray(C_[i].Cabij.get_world(), C_[i].Cabij.trange(),
-                                  shape, C_[i].Cabij.get_pmap());
+                r[k].Cabij = TArray(C_[i].Cabij.world(), C_[i].Cabij.trange(),
+                                  shape, C_[i].Cabij.pmap());
               }
               r[k].Cabij("a,b,i,j") += es_vectors(i,k)
                                       * (HC[i].Cabij("a,b,i,j") - C_[i].Cabij("a,b,i,j") * e_k);
@@ -551,7 +551,7 @@ namespace mpqc{
     compute_FWintermediates();
 
     // test intermediates
-//    if (T1_.get_world().rank() == 0) {
+//    if (T1_.world().rank() == 0) {
 //      std::cout << "T1_ " << T1_ << std::endl;
 //    }
 //
@@ -574,7 +574,7 @@ namespace mpqc{
 //                    - CGac("c,d") * (2.0 * WAkCd_("c,i,d,a") - WAkCd_("c,i,a,d"))
 //                    - CGki("k,l") * (2.0 * WKlIc_("k,i,l,a") - WKlIc_("i,k,l,a"))//+ WKliC_("k,i,l,a"))
 //                    ;
-//    if (T1_.get_world().rank() == 0) {
+//    if (T1_.world().rank() == 0) {
 //      std::cout << "L1_test " << L1_test << std::endl;
 //    }
 //
@@ -613,7 +613,7 @@ namespace mpqc{
 //                        - Gabij_("a,b,k,j") * CGki("k,i")
 //                        ;
 //    double E_L = dot(gabij_temp("a,b,i,j"), L2_test("a,b,i,j") );
-//    if (T1_.get_world().rank() == 0) {
+//    if (T1_.world().rank() == 0) {
 //      std::cout << "CCSD test E_L: " << E_L << std::endl;
 //
 //      //std::cout << "Gijkl_: " << Gijkl_ << std::endl;

@@ -189,7 +189,7 @@ Array fock_from_soad(madness::World &world,
           .flattened_shells();
   // Make F scaffolding
   auto const &trange = H.trange();
-  auto const &shape_range = H.get_shape().data().range();
+  auto const &shape_range = H.shape().data().range();
 
   const auto max_norm = std::numeric_limits<float>::max();
   auto shape_norms = TA::Tensor<float>(shape_range, max_norm);
@@ -198,7 +198,7 @@ Array fock_from_soad(madness::World &world,
   Array F(world, trange, F_shape);
 
   // Loop over lower diagonal tiles
-  const auto F_extent = F.trange().tiles().extent();
+  const auto F_extent = F.trange().tiles_range().extent();
   for (auto i = 0; i < F_extent[0]; ++i) {
     const auto i_ord = i * F_extent[1];
 

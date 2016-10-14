@@ -92,7 +92,7 @@ ShrShellVecArray<N> get_shells(IdxVec const &idx, ShrBases<N> const& bases){
 
 template<typename Tile, typename Array>
 void set_array(std::vector<std::pair<unsigned long, Tile>> &tiles, Array &a){
-    auto const &pmap = a.get_pmap();
+    auto const &pmap = a.pmap();
     for(auto ord : *pmap){
         if(a.is_local(ord) && !a.is_zero(ord)){
             auto &tile = tiles[ord];

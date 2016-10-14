@@ -52,7 +52,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
                                darray_type const &C_df, darray_type const &G_df,
                                double clr_thresh, double j_clr_thresh)
             : FockBuilder(), C_df_(C_df), G_df_(G_df), clr_thresh_(clr_thresh) {
-        auto &world = C_df_.get_world();
+        auto &world = C_df_.world();
 
         auto l0 = mpqc_time::fenced_now(world);
         auto M_eig = array_ops::array_to_eigen(M);
@@ -63,7 +63,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
         auto tr_M = M.trange().data()[0];
 
         auto L_inv
-              = array_ops::eigen_to_array<TA::TensorD>(M.get_world(), L_inv_eig,
+              = array_ops::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig,
                                                        tr_M, tr_M);
 
         constexpr auto compress_L = false;
@@ -107,7 +107,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     }
 
     void print_iter(std::string const &leader) override {
-        auto &world = C_df_.get_world();
+        auto &world = C_df_.world();
         if (world.rank() == 0) {
             std::cout << leader << "CADF Forced Shape Builder:\n" << leader
                       << "\tJ time: " << j_times_.back() << "\n" << leader
@@ -171,7 +171,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
 
   private:
     array_type compute_J(array_type const &D) {
-        auto &world = C_df_.get_world();
+        auto &world = C_df_.world();
 
         constexpr bool compress_D = false;
         auto dD = TA::to_new_tile_type(D, tensor::TaToDecompTensor(clr_thresh_,
@@ -191,7 +191,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
     }
 
     array_type compute_K(array_type const &C) {
-        auto &world = C_df_.get_world();
+        auto &world = C_df_.world();
 
         constexpr bool compress_C = false;
         auto dC = TA::to_new_tile_type(C, tensor::TaToDecompTensor(clr_thresh_,
@@ -206,7 +206,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
 
         auto fdf0 = mpqc_time::fenced_now(world);
         F_df("X, i, mu")
-              = (G_df_("X,mu, nu") * dC("nu,i")).set_shape(C_mo.get_shape());
+              = (G_df_("X,mu, nu") * dC("nu,i")).set_shape(C_mo.shape());
         F_df.truncate();
         auto fdf1 = mpqc_time::fenced_now(world);
         f_df_storages_.push_back(utility::array_storage(F_df));

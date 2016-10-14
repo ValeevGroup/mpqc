@@ -48,8 +48,8 @@ void TRange1Engine::init() {
     tr_occupied_ = tr_occupied();
     tr_virtual_ = tr_virtual();
     tr_all_ = tr_all();
-    occ_blocks_ = tr_occupied_.tiles().second;
-    vir_blocks_ = tr_virtual_.tiles().second;
+    occ_blocks_ = tr_occupied_.tiles_range().second;
+    vir_blocks_ = tr_virtual_.tiles_range().second;
     //std::cout << tr_occupied_ << std::endl;
     //std::cout << occ_blocks_ << " " << vir_blocks_ << std::endl;
 }

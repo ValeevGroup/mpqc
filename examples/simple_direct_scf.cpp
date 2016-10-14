@@ -49,7 +49,7 @@ class FourCenterSCF {
     array_type compute_k(Integral const &eri4) {
 
         array_type K;
-        auto &world = eri4.array().get_world();
+        auto &world = eri4.array().world();
         world.gop.fence();
         auto k0 = mpqc_time::now();
         K("i,j") = eri4("i,k,j,l") * D_("k,l");
@@ -64,7 +64,7 @@ class FourCenterSCF {
     array_type compute_j(Integral const &eri4) {
 
         array_type J;
-        auto &world = eri4.array().get_world();
+        auto &world = eri4.array().world();
         world.gop.fence();
         auto j0 = mpqc_time::now();
         J("i,j") = eri4("i,j,k,l") * D_("k,l");
@@ -87,7 +87,7 @@ class FourCenterSCF {
 
         auto tr_ao = S_.trange().data()[0];
 
-        D_ = array_ops::eigen_to_array<TA::TensorD>(F_.get_world(), D_eig,
+        D_ = array_ops::eigen_to_array<TA::TensorD>(F_.world(), D_eig,
                                                          tr_ao, tr_ao);
     }
 
@@ -113,7 +113,7 @@ class FourCenterSCF {
 
         while (iter < max_iters && thresh < error) {
             auto s0 = mpqc_time::now();
-            F_.get_world().gop.fence();
+            F_.world().gop.fence();
             form_fock(eri4);
 
             auto current_energy = energy();
@@ -129,7 +129,7 @@ class FourCenterSCF {
             // Lastly update density
             compute_density(occ_);
 
-            F_.get_world().gop.fence();
+            F_.world().gop.fence();
             auto s1 = mpqc_time::now();
             scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
 
@@ -164,7 +164,7 @@ class FourCenterSCF {
 
     double energy() {
         return repulsion_
-               + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
+               + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
     }
 };
 

@@ -36,7 +36,7 @@ class BoysLocalization {
 
         auto trange = C.trange();
         return array_ops::eigen_to_array<typename Array::value_type>(
-              C.get_world(), U, trange.data()[1], trange.data()[1]);
+              C.world(), U, trange.data()[1], trange.data()[1]);
     }
 };
 

@@ -75,7 +75,7 @@ class ONCADFFockBuilder : public FockBuilder {
         force_cut_thresh_(force_cut_thresh),
         mo_cut_thresh_(mo_cut_thresh),
         force_shape_(force_shape) {
-    auto &world = C_df_.get_world();
+    auto &world = C_df_.world();
     bool compress_M = false;
 
     auto l0 = mpqc_time::fenced_now(world);
@@ -97,7 +97,7 @@ class ONCADFFockBuilder : public FockBuilder {
   }
 
   void print_iter(std::string const &leader) override {
-    auto &world = C_df_.get_world();
+    auto &world = C_df_.world();
     if (world.rank() == 0) {
       std::cout << leader << "CADF Builder:\n" << leader << "\tStorages:\n"
                 << leader << "\t\tFully Dense: " << c_mo_storages_.back()[0]
@@ -181,7 +181,7 @@ class ONCADFFockBuilder : public FockBuilder {
 
  private:
   array_type compute_J(array_type const &D) {
-    auto &world = C_df_.get_world();
+    auto &world = C_df_.world();
 
     constexpr bool compress_D = false;
     auto dD = TA::to_new_tile_type(
@@ -242,7 +242,7 @@ class ONCADFFockBuilder : public FockBuilder {
   };
 
   array_type compute_K(array_type const &D, array_type const &C) {
-    auto &world = C_df_.get_world();
+    auto &world = C_df_.world();
 
     constexpr bool compress_C = false;
     auto dC = TA::to_new_tile_type(
@@ -282,7 +282,7 @@ class ONCADFFockBuilder : public FockBuilder {
 
     TA::SparseShape<float> forced_shape;
     if (force_shape_) {
-      forced_shape = C_mo.get_shape().transform(Rdf_shape{force_cut_thresh_});
+      forced_shape = C_mo.shape().transform(Rdf_shape{force_cut_thresh_});
     }
 
     auto edf0 = mpqc_time::fenced_now(world);

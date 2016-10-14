@@ -93,7 +93,7 @@ public:
   virtual real_t compute(const rapidjson::Document& in) {
     using mpqc::utility::print_par;
 
-    auto& world = this->lcao_factory().get_world();
+    auto& world = this->lcao_factory().world();
 
     this->mp2_->init(in);
 
@@ -159,7 +159,7 @@ private:
 
 template <typename Tile>
 void GF2F12<Tile>::compute_diagonal(int max_niter) {
-  auto& world = lcao_factory().get_world();
+  auto& world = lcao_factory().world();
 
   auto nfzc = this->mp2_->trange1_engine()->get_nfrozen();
   auto nocc = this->mp2_->trange1_engine()->get_active_occ();
@@ -175,7 +175,7 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   // will use only the target orbital to transform ints
   // create an OrbitalSpace here
   {
-    auto& world = this->lcao_factory().get_world();
+    auto& world = this->lcao_factory().world();
     auto& orbital_registry = this->lcao_factory().orbital_space();
     auto p_space = orbital_registry.retrieve(OrbitalIndex(L"p"));
     auto C_p = array_ops::array_to_eigen(p_space.array());
@@ -282,7 +282,7 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
 template <typename Tile>
 void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
-  auto& world = lcao_factory().get_world();
+  auto& world = lcao_factory().world();
 
   auto nfzc = this->mp2_->trange1_engine()->get_nfrozen();
   auto nocc = this->mp2_->trange1_engine()->get_active_occ();
@@ -365,7 +365,7 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   // will use only the target orbital to transform ints
   // create an OrbitalSpace here
   {
-    auto& world = this->lcao_factory().get_world();
+    auto& world = this->lcao_factory().world();
     auto& orbital_registry = this->lcao_factory().orbital_space();
     auto qp_space = orbital_registry.retrieve(OrbitalIndex(qp_str));
     auto C_qp = array_ops::array_to_eigen(qp_space.array());

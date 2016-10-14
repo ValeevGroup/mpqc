@@ -33,7 +33,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
       : CCSD<Tile, Policy>(lcao_factory, options) {}
 
   double compute() {
-    auto &world = this->ccsd_intermediate_->lcao_factory().get_world();
+    auto &world = this->ccsd_intermediate_->lcao_factory().world();
 
     double ccsd_corr = 0.0;
     ccsd_corr = CCSD<Tile, Policy>::compute();
@@ -83,7 +83,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
     bool df = this->options_.HasMember("DFExpr")
                   ? this->options_["DFExpr"].GetBool()
                   : true;
-    if (df && t1.get_world().rank() == 0) {
+    if (df && t1.world().rank() == 0) {
       std::cout << "Use Density Fitting Expression to avoid storing G_vovv"
                 << std::endl;
     }
@@ -109,7 +109,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
     auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
     std::size_t n_tr_x = 0;
     if (df) {
-      n_tr_x = Xdb.trange().data().front().tiles().second;
+      n_tr_x = Xdb.trange().data().front().tiles_range().second;
     }
 
     double triple_energy = 0.0;
@@ -130,7 +130,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
     double mem =
         (n_blocks * std::pow(block_size, 6) * 8) / (std::pow(1024.0, 3));
 
-    if (t1.get_world().rank() == 0) {
+    if (t1.world().rank() == 0) {
       std::cout << "Increase in the loop " << increase << std::endl;
       std::cout << "Number of blocks at each iteration " << n_blocks
                 << std::endl;
@@ -196,7 +196,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
           std::size_t blocks = (a_up - a_low) * (b_up - b_low) *
                                (c_up - c_low) * n_tr_occ * n_tr_occ * n_tr_occ;
-          //                            if (t1.get_world().rank() == 0){
+          //                            if (t1.world().rank() == 0){
           //                                std::cout << "{" << a_low << " " <<
           //                                b_low << " " << c_low << "}" << " ";
           //                                std::cout << "{" << a_up << " " <<
@@ -601,13 +601,13 @@ class CCSD_T : public CCSD<Tile, Policy> {
         b += b_increase;
       }
 
-      if (t1.get_world().rank() == 0) {
+      if (t1.world().rank() == 0) {
         print_progress(a, a + increase, n_tr_vir);
       }
       a += a_increase;
     }
 
-    if (t1.get_world().rank() == 0) {
+    if (t1.world().rank() == 0) {
       std::cout << "Total Blocks Computed  " << n_blocks_computed;
       std::cout << " from " << std::pow(n_tr_occ, 3) * std::pow(n_tr_vir, 3)
                 << std::endl;
@@ -990,12 +990,12 @@ class CCSD_T : public CCSD<Tile, Policy> {
           triple_energy += tmp_energy;
         }
       }
-      if (t1.get_world().rank() == 0) {
+      if (t1.world().rank() == 0) {
         print_progress(a, a + 1, n_tr_vir);
       }
     }
 
-    if (t1.get_world().rank() == 0) {
+    if (t1.world().rank() == 0) {
       std::cout << "Total Blocks Computed  " << n_blocks_computed;
       std::cout << " from " << std::pow(n_tr_occ, 3) * std::pow(n_tr_vir, 3)
                 << std::endl;

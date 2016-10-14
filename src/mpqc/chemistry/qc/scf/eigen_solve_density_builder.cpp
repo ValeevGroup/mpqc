@@ -28,7 +28,7 @@ ESolveDensityBuilder::ESolveDensityBuilder(
           TcutC_(TcutC),
           metric_decomp_type_(metric_decomp_type),
           localize_(localize) {
-    auto inv0 = mpqc_time::fenced_now(S_.get_world());
+    auto inv0 = mpqc_time::fenced_now(S_.world());
     if (metric_decomp_type_ == "cholesky inverse") {
         M_inv_ = array_ops::cholesky_inverse(S_);
     } else if (metric_decomp_type_ == "inverse sqrt") {
@@ -42,14 +42,14 @@ ESolveDensityBuilder::ESolveDensityBuilder(
         throw "Error did not recognize overlap decomposition in "
               "EsolveDensityBuilder";
     }
-    auto inv1 = mpqc_time::fenced_now(S_.get_world());
+    auto inv1 = mpqc_time::fenced_now(S_.world());
     inverse_time_ = mpqc_time::duration_in_s(inv0, inv1);
 }
 
 std::pair<array_type, array_type> ESolveDensityBuilder::
 operator()(array_type const &F) {
     array_type Fp, C, Cao, D;
-    auto &world = F.get_world();
+    auto &world = F.world();
 
     auto e0 = mpqc_time::fenced_now(world);
     Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
@@ -61,7 +61,7 @@ operator()(array_type const &F) {
     auto tr_ao = Fp.trange().data()[0];
 
     auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
-    C = array_ops::eigen_to_array<TA::TensorD>(Fp.get_world(), C_eig, tr_ao,
+    C = array_ops::eigen_to_array<TA::TensorD>(Fp.world(), C_eig, tr_ao,
                                                tr_occ);
 
     // Get back to AO land
@@ -80,7 +80,7 @@ operator()(array_type const &F) {
         Cao("mu,i") = Cao("mu,k") * U("k,i");
         auto l1 = mpqc_time::fenced_now(world);
 
-        auto obs_ntiles = Cao.trange().tiles().extent()[0];
+        auto obs_ntiles = Cao.trange().tiles_range().extent()[0];
         scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
         auto c1 = mpqc_time::fenced_now(world);
         localization_times_.push_back(mpqc_time::duration_in_s(l0, l1));
@@ -89,7 +89,7 @@ operator()(array_type const &F) {
 
     if (TcutC_ != 0) {
         ta_routines::minimize_storage(Cao, TcutC_);
-        auto shape_c = Cao.get_shape();
+        auto shape_c = Cao.shape();
         auto &norms = shape_c.data();
         auto norm_mat = TA::eigen_map(norms, norms.range().extent_data()[0],
                                       norms.range().extent_data()[1]);

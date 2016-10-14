@@ -159,13 +159,13 @@ namespace mpqc{
 
             for (iterator it = abij.begin(); it != abij.end(); ++it) {
 
-                madness::Future<Tile> tile = abij.get_world().taskq.add(
+                madness::Future<Tile> tile = abij.world().taskq.add(
                         make_tile,
                         abij.trange().make_tile_range(it.ordinal()));
 
                 *it = tile;
             }
-            abij.get_world().gop.fence();
+            abij.world().gop.fence();
 
         }
 
@@ -200,13 +200,13 @@ namespace mpqc{
 
             for (iterator it = f_ai.begin(); it != f_ai.end(); ++it) {
 
-                madness::Future<Tile> tile = f_ai.get_world().taskq.add(
+                madness::Future<Tile> tile = f_ai.world().taskq.add(
                         make_tile,
                         f_ai.trange().make_tile_range(it.ordinal()));
 
                 *it = tile;
             }
-            f_ai.get_world().gop.fence();
+            f_ai.world().gop.fence();
 
         }
 

@@ -30,7 +30,7 @@ PurificationDensityBuilder::PurificationDensityBuilder(
 }
 
 array_type PurificationDensityBuilder::purify(array_type const &F) {
-    auto &world = F.get_world();
+    auto &world = F.world();
 
     array_type Fp, D, D2;
     Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
@@ -74,14 +74,14 @@ array_type PurificationDensityBuilder::orbitals(array_type const &D) {
     auto tr_ao = D.trange().data()[0];
     auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
 
-    auto Cao = array_ops::eigen_to_array<TA::TensorD>(D.get_world(), D_eig,
+    auto Cao = array_ops::eigen_to_array<TA::TensorD>(D.world(), D_eig,
                                                       tr_ao, tr_occ);
 
     if (localize_) {
         auto U = mpqc::scf::BoysLocalization{}(Cao, r_xyz_ints_);
         Cao("mu,i") = Cao("mu,k") * U("k,i");
 
-        auto obs_ntiles = Cao.trange().tiles().extent()[0];
+        auto obs_ntiles = Cao.trange().tiles_range().extent()[0];
         scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
     }
 

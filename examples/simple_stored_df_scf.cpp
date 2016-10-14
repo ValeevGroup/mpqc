@@ -299,7 +299,7 @@ class ThreeCenterScf {
     double exchange_energy_;
 
     void compute_density(int64_t occ) {
-        auto &world = F_.get_world();
+        auto &world = F_.world();
 
         auto F_eig = array_ops::array_to_eigen(F_);
         auto S_eig = array_ops::array_to_eigen(S_);
@@ -310,7 +310,7 @@ class ThreeCenterScf {
         auto tr_ao = S_.trange().data()[0];
 
         auto tr_occ = scf::tr_occupied(occ_, occ_);
-        C_ = array_ops::eigen_to_array<TA::TensorD>(H_.get_world(), C, tr_ao,
+        C_ = array_ops::eigen_to_array<TA::TensorD>(H_.world(), C, tr_ao,
                                                     tr_occ);
 
         auto loc0 = mpqc_time::fenced_now(world);
@@ -323,7 +323,7 @@ class ThreeCenterScf {
 
         auto cluster0 = mpqc_time::fenced_now(world);
 
-        auto obs_ntiles = C_.trange().tiles().extent()[0];
+        auto obs_ntiles = C_.trange().tiles_range().extent()[0];
         scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
 
         auto cluster1 = mpqc_time::fenced_now(world);
@@ -335,7 +335,7 @@ class ThreeCenterScf {
 
     template <typename Integral, typename Array>
     void form_fock(Integral const &eri3, Array const &B) {
-        auto &world = F_.get_world();
+        auto &world = F_.world();
 
         darray_type dH_ = TA::to_new_tile_type(H_, to_dtile(clr_thresh_));
         darray_type dS_ = TA::to_new_tile_type(S_, to_dtile(clr_thresh_));
@@ -443,7 +443,7 @@ class ThreeCenterScf {
         dV_inv_oh_ = TA::to_new_tile_type(V_inv_oh, to_dtile(clr_thresh_));
         auto dl_sizes = utility::array_storage(dV_inv_oh_);
 
-        if (dV_inv_oh_.get_world().rank() == 0) {
+        if (dV_inv_oh_.world().rank() == 0) {
             std::cout << "V_inv storage:"
                       << "\n\tFull: " << dl_sizes[0]
                       << "\n\tSparse Only: " << dl_sizes[1]
@@ -460,9 +460,9 @@ class ThreeCenterScf {
         auto error = std::numeric_limits<double>::max();
         auto rms_error = std::numeric_limits<double>::max();
         auto old_energy = 0.0;
-        const double volume = F_.trange().elements().volume();
+        const double volume = F_.trange().elements_range().volume();
 
-        auto &world = F_.get_world();
+        auto &world = F_.world();
 
         while (iter < max_iters && (thresh < error || thresh < rms_error)
                && (thresh / 100.0 < error && thresh / 100.0 < rms_error)) {
@@ -475,7 +475,7 @@ class ThreeCenterScf {
 
             if (iter == 0) {
                 exchange_energy_
-                      = D_("i,j").dot(K_("i,j"), F_.get_world()).get();
+                      = D_("i,j").dot(K_("i,j"), F_.world()).get();
             }
 
             array_type Grad;
@@ -526,7 +526,7 @@ class ThreeCenterScf {
 
     double energy() {
         return repulsion_
-               + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.get_world()).get();
+               + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
     }
 
     array_type fock_matrix() const { return F_; }

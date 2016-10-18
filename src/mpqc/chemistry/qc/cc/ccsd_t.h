@@ -36,7 +36,19 @@ class CCSD_T : public CCSD<Tile, Policy> {
     auto &world = this->ccsd_intermediate_->lcao_factory().world();
 
     double ccsd_corr = 0.0;
+
+
+    auto time0 = mpqc_time::fenced_now(world);
     ccsd_corr = CCSD<Tile, Policy>::compute();
+    auto time1 = mpqc_time::fenced_now(world);
+    auto duration0 = mpqc_time::duration_in_s(time0, time1);
+    if(world.rank() == 0){
+      std::cout << "CCSD Time " << duration0 << std::endl;
+    }
+
+    // clean all LCAO integral
+    this->ccsd_intermediate_->lcao_factory().registry().purge(world);
+
     // compute CCSD first
     //                auto direct = this->options_.HasMember("Direct") ?
     //                this->options_["Direct"].GetBool(): false;
@@ -58,11 +70,11 @@ class CCSD_T : public CCSD<Tile, Policy> {
     if (world.rank() == 0) {
       std::cout << "\nBegining CCSD(T) " << std::endl;
     }
-    auto time0 = mpqc_time::now();
+    time0 = mpqc_time::fenced_now(world);
     TArray t1 = this->t1();
     TArray t2 = this->t2();
     double ccsd_t = compute_ccsd_t(t1, t2);
-    auto time1 = mpqc_time::now();
+    time1 = mpqc_time::fenced_now(world);
     auto duration1 = mpqc_time::duration_in_s(time0, time1);
 
     if (world.rank() == 0) {
@@ -83,7 +95,10 @@ class CCSD_T : public CCSD<Tile, Policy> {
     bool df = this->options_.HasMember("DFExpr")
                   ? this->options_["DFExpr"].GetBool()
                   : true;
-    if (df && t1.world().rank() == 0) {
+    auto& world = t1.world();
+    bool accurate_time = this->ccsd_intermediate_->lcao_factory().accurate_time();
+
+    if (df && world.rank() == 0) {
       std::cout << "Use Density Fitting Expression to avoid storing G_vovv"
                 << std::endl;
     }
@@ -138,6 +153,14 @@ class CCSD_T : public CCSD<Tile, Policy> {
       std::cout << "Size of T3 or V3 at each iteration " << mem << " GB"
                 << std::endl;
     }
+
+    double t3_time = 0.0;
+    double v3_time = 0.0;
+    double reduce_time = 0.0;
+    mpqc_time::t_point time0;
+    mpqc_time::t_point time1;
+    mpqc_time::t_point time2;
+    mpqc_time::t_point time3;
 
     // index in virtual blocks
     std::size_t a = 0;
@@ -207,6 +230,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
           typedef std::vector<std::size_t> block;
 
+          time0 = mpqc_time::now(world,accurate_time);
           // compute t3
           TArray t3;
           // abcijk contribution
@@ -513,6 +537,9 @@ class CCSD_T : public CCSD<Tile, Policy> {
                 block_g_jila("j,i,l,a") * block_t2_cbkl("c,b,k,l");
           }
 
+          time1 = mpqc_time::now(world,accurate_time);
+          t3_time += mpqc_time::duration_in_s(time0,time1);
+
           // compute v3
           TArray v3;
           // abcijk contribution
@@ -560,6 +587,9 @@ class CCSD_T : public CCSD<Tile, Policy> {
                 t1("a,i").block(t1_ai_low, t1_ai_up);
           }
 
+          time2 = mpqc_time::now(world,accurate_time);
+          v3_time += mpqc_time::duration_in_s(time1,time2);
+
           // compute offset
           std::size_t a_offset = tr_vir.tile(a).first;
           std::size_t b_offset = tr_vir.tile(b).first;
@@ -594,6 +624,9 @@ class CCSD_T : public CCSD<Tile, Policy> {
                              .reduce(ccsd_t_reduce);
           }
 
+          time3 = mpqc_time::now(world,accurate_time);
+          reduce_time += mpqc_time::duration_in_s(time2,time3);
+
           triple_energy += tmp_energy;
 
           c += c_increase;
@@ -611,6 +644,10 @@ class CCSD_T : public CCSD<Tile, Policy> {
       std::cout << "Total Blocks Computed  " << n_blocks_computed;
       std::cout << " from " << std::pow(n_tr_occ, 3) * std::pow(n_tr_vir, 3)
                 << std::endl;
+
+      std::cout << "T3 Total Time: " << t3_time << " S \n";
+      std::cout << "V3 Total Time: " << v3_time << " S \n";
+      std::cout << "Reduction Total Time: " << reduce_time << " S \n";
     }
     return triple_energy;
   }
@@ -1074,17 +1111,15 @@ class CCSD_T : public CCSD<Tile, Policy> {
       for (auto a = a0; a < an; ++a) {
         const auto e_a = ens[a + a_offset];
         for (auto b = b0; b < bn; ++b) {
-          const auto e_b = ens[b + b_offset];
+          const auto e_ab = e_a + ens[b + b_offset];
           for (auto c = c0; c < cn; ++c) {
-            const auto e_c = ens[c + c_offset];
+            const auto e_abc = e_ab + ens[c + c_offset];
             for (auto i = i0; i < in; ++i) {
-              const auto e_i = ens[i + i_offset];
+              const auto e_abci = ens[i + i_offset] - e_abc;
               for (auto j = j0; j < jn; ++j) {
-                const auto e_j = ens[j + j_offset];
+                const auto e_abcij = e_abci + ens[j + j_offset];
                 for (auto k = k0; k < kn; ++k, ++tile_idx) {
-                  const auto e_k = ens[k + k_offset];
-
-                  const auto e_abcijk = e_i + e_j + e_k - e_a - e_b - e_c;
+                  const auto e_abcijk = e_abcij + ens[k + k_offset];
 
                   me += (1.0 / e_abcijk) * tile[tile_idx];
                 }
@@ -1150,30 +1185,32 @@ class CCSD_T : public CCSD<Tile, Policy> {
       // use symmetry in loop, only sum result over c <= b <= a
       for (auto a = a0; a < an; ++a) {
         const auto e_a = ens[a + n_occ];
+        const auto aa0 = (a - a0)*nbcijk;
         for (auto b = b0; b < bn && b <= a; ++b) {
-          const auto e_b = ens[b + n_occ];
+          const auto e_ab = e_a + ens[b + n_occ];
+          const auto bb0 = aa0 + (b - b0)*ncijk;
           for (auto c = c0; c < cn && c <= b; ++c) {
-            const auto e_c = ens[c + n_occ];
+            const auto e_abc = e_ab + ens[c + n_occ];
+            const auto cc0 = bb0 + (c - c0)*nijk;
+            bool none_equal = (a != b && a != c && b != c);
+            bool diagonal = (a == b && b == c);
             for (auto i = i0; i < in; ++i) {
-              const auto e_i = ens[i + n_frozen];
+              const auto e_abci = ens[i + n_frozen] - e_abc;
+              const auto ii0 = cc0 + (i-i0)*njk;
               for (auto j = j0; j < jn; ++j) {
-                const auto e_j = ens[j + n_frozen];
+                const auto e_abcij = e_abci + ens[j + n_frozen];
+                const auto jj0 = ii0 + (j - j0)*nk;
                 for (auto k = k0; k < kn; ++k) {
-                  const auto e_k = ens[k + n_frozen];
-
-                  const auto tile_idx = (a - a0) * nbcijk + (b - b0) * ncijk +
-                                        (c - c0) * nijk + (i - i0) * njk +
-                                        (j - j0) * nk + (k - k0);
-
-                  const auto e_abcijk = e_i + e_j + e_k - e_a - e_b - e_c;
+                  const auto e_abcijk = e_abcij + ens[k + n_frozen];
+                  const auto tile_idx = jj0 + (k - k0);
 
                   tmp = (1.0 / e_abcijk) * tile[tile_idx];
                   // 6 fold symmetry if none in a,b,c equal
-                  if (a != b && a != c && b != c) {
+                  if (none_equal) {
                     tmp = 2.0 * tmp;
                   }
                   // if diagonal, a==b==c no symmetry
-                  else if (a == b && b == c) {
+                  else if(diagonal)  {
                     tmp = 0;
                   }
                   // three fold symmetry if two in a,b,c equal

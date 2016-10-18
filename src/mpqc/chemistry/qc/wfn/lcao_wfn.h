@@ -21,7 +21,15 @@ public:
 
   /*
    * KeyVal constructor
-   * it includes all options from Wfn and LCAOFactory
+   * it includes all options from Wavefunction and LCAOFactory,
+   * and also the following keywords
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | frozen_core | bool | true | if froze core electrons |
+   * | mo_block | int | 24 | block size in mo space |
+   * | occ_block | int | mo_block | block size in occupied space |
+   * | un_occ_block | int | mo_block | block size in unoccupied space |
    *
    */
   LCAOWavefunction(const KeyVal& kv);

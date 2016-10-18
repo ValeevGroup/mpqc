@@ -28,7 +28,7 @@ class Wavefunction : public DescribedClass {
   using ArrayType = WavefunctionWorld::ArrayType;
 
  private:
-  /*! Pointer to the WfnWorld
+  /** Pointer to the WfnWorld
    *
    * \note No need to make this shared Wfn is just a member of the world it
    *lives in so no ownership here.
@@ -42,11 +42,12 @@ class Wavefunction : public DescribedClass {
 
  public:
   /**
-   * KeyVal constructor
+   *  \brief KeyVal constructor
    *
-   * keywords
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | wfn_world or $:wfn_world or ..:wfn_world | WavefunctionWorld | none | none |
    *
-   * @param  wfn_world,  WfnWorld object, if not provided, will check "$:wfn_world" and "..:wfn_world"
    *
    */
   Wavefunction(const KeyVal& kv);

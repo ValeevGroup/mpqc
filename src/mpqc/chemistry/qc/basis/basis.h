@@ -41,7 +41,16 @@ class Basis : public DescribedClass {
   ///
   Basis(std::vector<ShellVec> cs);
 
-  /// KeyVal constructor
+  /**
+   * \brief KeyVal constructor for Basis
+   *
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * |molecule|Molecule|none|keyval to construct molecule|
+   * |name|string|none|basis set name|
+   *
+   */
   Basis(const KeyVal &kv);
 
   /// join another basis together

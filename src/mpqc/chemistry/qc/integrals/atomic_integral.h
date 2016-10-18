@@ -92,14 +92,17 @@ class AtomicIntegral : public AtomicIntegralBase {
   }
 
   /**
-   * KeyVal Constructor
+   * \brief  KeyVal constructor
    *
-   * It takes all the options from AtomicIntegralBase
+   * It takes all the keys to construct AtomicIntegralBase and also the following
    *
-   * @param accurate_time, bool, control if use fence in timing, default false
+   *  | KeyWord | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |accurate_time|bool|false|if do fence at timing|
+   *  |iterative_inv_sqrt|bool|false| use interative inverse square root |
    *
-   * @return
-   */
+   *
+   **/
 
   AtomicIntegral(const KeyVal& kv)
       : AtomicIntegralBase(kv),

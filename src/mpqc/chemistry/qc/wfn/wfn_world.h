@@ -34,6 +34,15 @@ class WavefunctionWorld : public DescribedClass {
   std::shared_ptr<basis::OrbitalBasisRegistry> basis_registry_;
 
  public:
+  /**
+   * \brief KeyVal constructor
+   *
+   * it take all keys to construct AtomicIntegral
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | molecule | Molecule | none | |
+   **/
   WavefunctionWorld(KeyVal const &kv);
   ~WavefunctionWorld();
 

@@ -61,10 +61,19 @@ class AtomicIntegralBase {
                      const rapidjson::Document &in = rapidjson::Document());
 
   /**
-   * KeyVal constructor
+   * \brief  KeyVal constructor
    *
+   * It takes all the keys to construct OrbitalBasisRegistry and also the following
+   *
+   *  | KeyWord | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |molecule|Molecule|none|keyval to construct molecule|
+   *  |screen|string|none|method of screening, qqr or schwarz |
+   *  |threshold|double|1e-10| screening threshold |
+   *  |precision|double|std::numeric_limits<double>::epsilon() | integral precision |
+   *  |corr_functions|int|6|f12 n of corr function,valid if aux_basis exsist in OrbitalBasisRegistry|
+   *  |corr_param|int|0|f12 corr param, ,valid if aux_basis exsist in OrbitalBasisRegistry|
    */
-
   AtomicIntegralBase(const KeyVal &kv);
 
   virtual ~AtomicIntegralBase() = default;

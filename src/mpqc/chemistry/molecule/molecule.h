@@ -44,29 +44,22 @@ class Molecule : public DescribedClass {
 
   /** \brief KeyVal constructor for Molecule
    *
-   *  <table border="1">
    *
-   *  <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
+   *  | KeyWord | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |file_name|string|none|This gives the name of a XYZ file, from which the nuclear coordinates will be read |
+   *  |||| (the XYZ format is described <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).|
+   *  |charge|int|0|the charge of this molecule|
+   *  |sort_input|boolean|true|If true, sort atoms from origin {0.0, 0.0, 0.0} |
+   *  |sort_origin|boolean|false|sort atoms from origin {0.0, 0.0, 0.0} |
+   *  |n_cluster|int|0|If nonzero, cluster moleucle by n_cluster|
+   *  |attach_hydrogen|boolean|true|use attach_hydrogen_kmeans when clustering|
    *
-   *  <tr><td><tt>file_name</tt><td>string<td>none<td>This gives
-   *    the name of a XYZ file, from which the nuclear coordinates will be
-   *    read (the XYZ format is described
-   *    <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).
    *
-   *  <tr><td><tt>charge</tt><td>int<td>0<td> the charge of this molecule
-   *
-   *  <tr><td><tt>sort_input</tt><td>boolean<td>true<td>If true, atoms
-   *    will be resorted based on their distance from the center of mass.
-   *
-   *  <tr><td><tt>sort_origin</tt><td>boolean<td>false<td>If true, sort atoms
-   *  from origin {0.0, 0.0, 0.0}
-   *
-   *  <tr><td><tt>n_cluster</tt><td>int<td>0<td> If nonzero, cluster moleucle by n_cluster
-   *
-   *  <tr><td><tt>attach_hydrogen</tt><td>bool<td>true<td> use attach_hydrogen_kmeans when clustering
-   *  </table>
    *
    *  example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
    *  "molecule": {
    *    "type": "Molecule",
    *    "charge": 0,
@@ -75,6 +68,7 @@ class Molecule : public DescribedClass {
    *    "n_cluster": 20
    *  }
    *
+   * ~~~~~~~~~~~~~~~~~~~~~
    */
   Molecule(const KeyVal &kv);
 

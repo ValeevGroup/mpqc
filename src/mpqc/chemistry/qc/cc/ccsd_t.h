@@ -157,10 +157,14 @@ class CCSD_T : public CCSD<Tile, Policy> {
     double t3_time = 0.0;
     double v3_time = 0.0;
     double reduce_time = 0.0;
+    double block_time = 0.0;
+    double contraction_time = 0.0;
     mpqc_time::t_point time0;
     mpqc_time::t_point time1;
     mpqc_time::t_point time2;
     mpqc_time::t_point time3;
+    mpqc_time::t_point time00;
+    mpqc_time::t_point time01;
 
     // index in virtual blocks
     std::size_t a = 0;
@@ -246,40 +250,58 @@ class CCSD_T : public CCSD<Tile, Policy> {
               block Xai_low{0, a_low, 0};
               block Xai_up{n_tr_x, a_up, n_tr_occ};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_diba("d,i,b,a") = Xai("X,a,i").block(Xai_low, Xai_up) *
                                         Xdb("X,d,b").block(Xdb_low, Xdb_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
             } else {
               // block for g_diba
               block g_diba_low{0, 0, b_low, a_low};
               block g_diba_up{n_tr_vir, n_tr_occ, b_up, a_up};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_diba("d,i,b,a") =
                   g_diba("d,i,b,a").block(g_diba_low, g_diba_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
             }
 
             // block for t2_cdk
             block t2_cdkj_low{c_low, 0, 0, 0};
             block t2_cdkj_up{c_up, n_tr_vir, n_tr_occ, n_tr_occ};
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_cdkj("c,d,k,j") =
                 t2("c,d,k,j").block(t2_cdkj_low, t2_cdkj_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
             // block for g_jklc
             block g_jklc_low{0, 0, 0, c_low};
             block g_jklc_up{n_tr_occ, n_tr_occ, n_tr_occ, c_up};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_g_jklc("j,k,l,c") =
                 g_jklc("j,k,l,c").block(g_jklc_low, g_jklc_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
             // block for t2_abil
             block t2_abil_low{a_low, b_low, 0, 0};
             block t2_abil_up{a_up, b_up, n_tr_occ, n_tr_occ};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_abil("a,b,i,l") =
                 t2("a,b,i,l").block(t2_abil_low, t2_abil_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
+            time00 = mpqc_time::now(world,accurate_time);
             t3("a,b,c,i,j,k") =
                 block_g_diba("d,i,b,a") * block_t2_cdkj("c,d,k,j") -
                 block_g_jklc("l,k,j,c") * block_t2_abil("a,b,i,l");
+            time01 = mpqc_time::now(world,accurate_time);
+	    contraction_time += mpqc::time::duration_in_s(time00,time01);
           }
 
           // bcajki contribution
@@ -296,39 +318,57 @@ class CCSD_T : public CCSD<Tile, Policy> {
               block Xbj_low{0, b_low, 0};
               block Xbj_up{n_tr_x, b_up, n_tr_occ};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_djcb("d,j,c,b") = Xai("X,b,j").block(Xbj_low, Xbj_up) *
                                         Xdb("X,d,c").block(Xdc_low, Xdc_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
             } else {
               // block for g_djcb
               block g_djcb_low{0, 0, c_low, b_low};
               block g_djcb_up{n_tr_vir, n_tr_occ, c_up, b_up};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_djcb("d,j,c,b") =
                   g_diba("d,j,c,b").block(g_djcb_low, g_djcb_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
             }
 
             // block for t2_adik
             block t2_adik_low{a_low, 0, 0, 0};
             block t2_adik_up{a_up, n_tr_vir, n_tr_occ, n_tr_occ};
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_adik("a,d,i,k") =
                 t2("a,d,i,k").block(t2_adik_low, t2_adik_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
             // block for g_kila
             block g_kila_low{0, 0, 0, a_low};
             block g_kila_up{n_tr_occ, n_tr_occ, n_tr_occ, a_up};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_g_kila("k,i,l,a") =
                 g_jklc("k,i,l,a").block(g_kila_low, g_kila_up);
-
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
             // block for t2_bcjl
             block t2_bcjl_low{b_low, c_low, 0, 0};
             block t2_bcjl_up{b_up, c_up, n_tr_occ, n_tr_occ};
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_bcjl("b,c,j,l") =
                 t2("b,c,j,l").block(t2_bcjl_low, t2_bcjl_up);
 
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
+
+            time00 = mpqc_time::now(world,accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_djcb("d,j,c,b") * block_t2_adik("a,d,i,k") -
                 block_g_kila("k,i,l,a") * block_t2_bcjl("b,c,j,l");
+            time01 = mpqc_time::now(world,accurate_time);
+	    contraction_time += mpqc::time::duration_in_s(time00,time01);
           }
 
           // cabkij contribution
@@ -345,41 +385,59 @@ class CCSD_T : public CCSD<Tile, Policy> {
               block Xck_low{0, c_low, 0};
               block Xck_up{n_tr_x, c_up, n_tr_occ};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_dkac("d,k,a,c") = Xai("X,c,k").block(Xck_low, Xck_up) *
                                         Xdb("X,d,a").block(Xda_low, Xda_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
 
             } else {
               // block for g_dkac
               block g_dkac_low{0, 0, a_low, c_low};
               block g_dkac_up{n_tr_vir, n_tr_occ, a_up, c_up};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_dkac("d,k,a,c") =
                   g_diba("d,k,a,c").block(g_dkac_low, g_dkac_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
             }
 
             // block for t2_bdji
             block t2_bdji_low{b_low, 0, 0, 0};
             block t2_bdji_up{b_up, n_tr_vir, n_tr_occ, n_tr_occ};
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_bdji("b,d,j,i") =
                 t2("b,d,j,i").block(t2_bdji_low, t2_bdji_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
             // block for g_ijlb
             block g_ijlb_low{0, 0, 0, b_low};
             block g_ijlb_up{n_tr_occ, n_tr_occ, n_tr_occ, b_up};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_g_ijlb("i,j,l,b") =
                 g_jklc("i,j,l,b").block(g_ijlb_low, g_ijlb_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
             // block for t2_cakl
             block t2_cakl_low{c_low, a_low, 0, 0};
             block t2_cakl_up{c_up, a_up, n_tr_occ, n_tr_occ};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_cakl("c,a,k,l") =
                 t2("c,a,k,l").block(t2_cakl_low, t2_cakl_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
+            time00 = mpqc_time::now(world,accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_dkac("d,k,a,c") * block_t2_bdji("b,d,j,i") -
                 block_g_ijlb("i,j,l,b") * block_t2_cakl("c,a,k,l");
+            time01 = mpqc_time::now(world,accurate_time);
+	    contraction_time += mpqc::time::duration_in_s(time00,time01);
           }
 
           // bacjik contribution
@@ -396,41 +454,59 @@ class CCSD_T : public CCSD<Tile, Policy> {
               block Xbj_low{0, b_low, 0};
               block Xbj_up{n_tr_x, b_up, n_tr_occ};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_djab("d,j,a,b") = Xai("X,b,j").block(Xbj_low, Xbj_up) *
                                         Xdb("X,d,a").block(Xda_low, Xda_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
 
             } else {
               // block for g_djab
               block g_djab_low{0, 0, a_low, b_low};
               block g_djab_up{n_tr_vir, n_tr_occ, a_up, b_up};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_djab("d,j,a,b") =
                   g_diba("d,j,a,b").block(g_djab_low, g_djab_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
             }
 
             // block for t2_cdki
             block t2_cdki_low{c_low, 0, 0, 0};
             block t2_cdki_up{c_up, n_tr_vir, n_tr_occ, n_tr_occ};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_cdki("c,d,k,i") =
                 t2("c,d,k,i").block(t2_cdki_low, t2_cdki_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
             // block for g_iklc
             block g_iklc_low{0, 0, 0, c_low};
             block g_iklc_up{n_tr_occ, n_tr_occ, n_tr_occ, c_up};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_g_iklc("i,k,l,c") =
                 g_jklc("i,k,l,c").block(g_iklc_low, g_iklc_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
             // block for t2_bajl
             block t2_bajl_low{b_low, a_low, 0, 0};
             block t2_bajl_up{b_up, a_up, n_tr_occ, n_tr_occ};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_bajl("b,a,j,l") =
                 t2("b,a,j,l").block(t2_bajl_low, t2_bajl_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
+            time00 = mpqc_time::now(world,accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_djab("d,j,a,b") * block_t2_cdki("c,d,k,i") -
+            time01 = mpqc_time::now(world,accurate_time);
+	    contraction_time += mpqc::time::duration_in_s(time00,time01);
                 block_g_iklc("i,k,l,c") * block_t2_bajl("b,a,j,l");
           }
 
@@ -448,42 +524,60 @@ class CCSD_T : public CCSD<Tile, Policy> {
               block Xai_low{0, a_low, 0};
               block Xai_up{n_tr_x, a_up, n_tr_occ};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_dica("d,i,c,a") = Xai("X,a,i").block(Xai_low, Xai_up) *
                                         Xdb("X,d,c").block(Xdc_low, Xdc_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
 
             } else {
               // block for g_dica
               block g_dica_low{0, 0, c_low, a_low};
               block g_dica_up{n_tr_vir, n_tr_occ, c_up, a_up};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_dica("d,i,c,a") =
                   g_diba("d,i,c,a").block(g_dica_low, g_dica_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
             }
 
             // block for t2_bdjk
             block t2_bdjk_low{b_low, 0, 0, 0};
             block t2_bdjk_up{b_up, n_tr_vir, n_tr_occ, n_tr_occ};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_bdjk("b,d,j,k") =
                 t2("b,d,j,k").block(t2_bdjk_low, t2_bdjk_up);
-
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
             // block for g_kjlb
             block g_kjlb_low{0, 0, 0, b_low};
             block g_kjlb_up{n_tr_occ, n_tr_occ, n_tr_occ, b_up};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_g_kjlb("k,j,l,b") =
                 g_jklc("k,j,l,b").block(g_kjlb_low, g_kjlb_up);
 
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
             // block for t2_acil
             block t2_acil_low{a_low, c_low, 0, 0};
             block t2_acil_up{a_up, c_up, n_tr_occ, n_tr_occ};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_acil("a,c,i,l") =
                 t2("a,c,i,l").block(t2_acil_low, t2_acil_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
+
+            time00 = mpqc_time::now(world,accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_dica("d,i,c,a") * block_t2_bdjk("b,d,j,k") -
                 block_g_kjlb("k,j,l,b") * block_t2_acil("a,c,i,l");
+            time01 = mpqc_time::now(world,accurate_time);
+	    contraction_time += mpqc::time::duration_in_s(time00,time01);
           }
 
           // cbakji contribution
@@ -500,41 +594,59 @@ class CCSD_T : public CCSD<Tile, Policy> {
               block Xck_low{0, c_low, 0};
               block Xck_up{n_tr_x, c_up, n_tr_occ};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_dkbc("d,k,b,c") = Xai("X,c,k").block(Xck_low, Xck_up) *
                                         Xdb("X,d,b").block(Xdb_low, Xdb_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
 
             } else {
               // block for g_dkbc
               block g_dkbc_low{0, 0, b_low, c_low};
               block g_dkbc_up{n_tr_vir, n_tr_occ, b_up, c_up};
 
+              time00 = mpqc_time::now(world,accurate_time);
               block_g_dkbc("d,k,b,c") =
                   g_diba("d,k,b,c").block(g_dkbc_low, g_dkbc_up);
+              time01 = mpqc_time::now(world,accurate_time);
+	      block_time += mpqc::time::duration_in_s(time00,time01);
             }
             // block for t2_adi
             block t2_adij_low{a_low, 0, 0, 0};
             block t2_adij_up{a_up, n_tr_vir, n_tr_occ, n_tr_occ};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_adij("a,d,i,j") =
                 t2("a,d,i,j").block(t2_adij_low, t2_adij_up);
 
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
             // block for g_jila
             block g_jila_low{0, 0, 0, a_low};
             block g_jila_up{n_tr_occ, n_tr_occ, n_tr_occ, a_up};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_g_jila("j,i,l,a") =
                 g_jklc("j,i,l,a").block(g_jila_low, g_jila_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
             // block for t2_cbkl
             block t2_cbkl_low{c_low, b_low, 0, 0};
             block t2_cbkl_up{c_up, b_up, n_tr_occ, n_tr_occ};
 
+            time00 = mpqc_time::now(world,accurate_time);
             block_t2_cbkl("c,b,k,l") =
                 t2("c,b,k,l").block(t2_cbkl_low, t2_cbkl_up);
+            time01 = mpqc_time::now(world,accurate_time);
+	    block_time += mpqc::time::duration_in_s(time00,time01);
 
+            time00 = mpqc_time::now(world,accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_dkbc("d,k,b,c") * block_t2_adij("a,d,i,j") -
                 block_g_jila("j,i,l,a") * block_t2_cbkl("c,b,k,l");
+            time01 = mpqc_time::now(world,accurate_time);
+	    contraction_time += mpqc::time::duration_in_s(time00,time01);
           }
 
           time1 = mpqc_time::now(world,accurate_time);
@@ -646,6 +758,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
                 << std::endl;
 
       std::cout << "T3 Total Time: " << t3_time << " S \n";
+      std::cout << "T3 Block Time: " << block_time << " S \n";
+      std::cout << "T3 Contraction Time: " << contraction_time << " S \n";
       std::cout << "V3 Total Time: " << v3_time << " S \n";
       std::cout << "Reduction Total Time: " << reduce_time << " S \n";
     }

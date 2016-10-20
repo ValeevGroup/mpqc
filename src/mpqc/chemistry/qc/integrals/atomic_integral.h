@@ -111,15 +111,16 @@ class AtomicIntegral : public AtomicIntegralBase {
     accurate_time_ = kv.value("accurate_time", false);
     iterative_inv_sqrt_ = kv.value("iterative_inv_sqrt", false);
 
-    //TODO determite Tile types from KeyVal input
-    /// Warning!!!!
-    /// This is temporary workround
-    /// For other Tile type, need a better way to set Op
-    op_ = mpqc::ta_routines::TensorDPassThrough();
+    set_oper(Tile());
   }
 
   AtomicIntegral(AtomicIntegral&&) = default;
   AtomicIntegral& operator=(AtomicIntegral&&) = default;
+
+  template<typename T = Tile>
+  void set_oper(typename std::enable_if<std::is_same<T,TA::TensorD>::value, T>::type && t){
+    op_ = mpqc::ta_routines::TensorDPassThrough();
+  }
 
   virtual ~AtomicIntegral() noexcept = default;
 

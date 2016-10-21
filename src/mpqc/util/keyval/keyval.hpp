@@ -273,6 +273,18 @@ class KeyVal {
     return exists_(resolve_path(path));
   }
 
+  /// check whether the given class exists
+  /// @param path the path
+  /// @return true if \c path class exists
+  bool exists_class(const key_type& path) const{
+    bool exist_class = false;
+    auto cptr = class_registry_->find(resolve_path(path));
+    if (cptr != class_registry_->end()){
+      exist_class = true;
+    }
+    return exist_class;
+  }
+
   /// counts the number of children of the node at this path
   /// @param path the path
   /// @return 0 if \c path does not exist or it points to a simple keyword,
@@ -292,7 +304,7 @@ class KeyVal {
   /// a KeyVal::key_type using a
   /// std::basic_ostream<KeyVal::key_type::value_type>
   template <typename T,
-            typename = enable_if_t<not KeyVal::is_sequence<T>::value>>
+            typename = enable_if_t<not KeyVal::is_sequence<T>::value >>
   KeyVal& assign(const key_type& path, const T& value) {
     auto abs_path = to_absolute_path(path);
     top_tree_->put(ptree::path_type{abs_path, separator}, value);

@@ -82,13 +82,13 @@ double RIDBRMP2F12::value() {
       obsolete();
 
       // change basis
-      auto vbs = wfn_world()->ao_integrals().orbital_basis_registry().retrieve(
+      auto vbs = lcao_factory().atomic_integral().orbital_basis_registry().retrieve(
           OrbitalIndex(L"Α"));
-      wfn_world()->ao_integrals().orbital_basis_registry().remove(
+      lcao_factory().atomic_integral().orbital_basis_registry().remove(
           OrbitalIndex(L"κ"));
-      wfn_world()->ao_integrals().orbital_basis_registry().insert(
+      lcao_factory().atomic_integral().orbital_basis_registry().insert(
           OrbitalIndex(L"κ"), vbs);
-      wfn_world()->ao_integrals().orbital_basis_registry().remove(
+      lcao_factory().atomic_integral().orbital_basis_registry().remove(
           OrbitalIndex(L"Α"));
 
       auto mp2 = mbpt::RIRMP2(kv_);

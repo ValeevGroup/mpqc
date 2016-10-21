@@ -4,14 +4,19 @@
 namespace mpqc{
 namespace qc{
 
-AOWavefunction::AOWavefunction(KeyVal const &kv) : Wavefunction(kv) {}
+AOWavefunction::AOWavefunction(const KeyVal &kv) : Wavefunction(kv)
+{
+  ao_ints_ = integrals::detail::construct_atomic_integral<TA::TensorD, TA::SparsePolicy>(kv);
+  ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
+
+}
 
 AOWavefunction::~AOWavefunction() = default;
 
 void AOWavefunction::compute(qc::PropertyBase *pb) { pb->apply(this); }
 
 void AOWavefunction::obsolete() {
-  wfn_world()->ao_integrals().registry().purge(wfn_world()->world());
+  ao_integrals().registry().purge(wfn_world()->world());
 }
 
 }//namespace qc

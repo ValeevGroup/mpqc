@@ -251,6 +251,10 @@ TEST_CASE("KeyVal", "[keyval]") {
     REQUIRE(d1->value() == kv.value<double>("b"));
 
     REQUIRE(kv.exists("c")==false);
+
+    kv.keyval("mpqc:deriv").assign("d",0);
+    REQUIRE(kv.keyval("deriv0").exists("d"));
+    REQUIRE(kv.value<int>("deriv0:d")==0);
   }
 
 

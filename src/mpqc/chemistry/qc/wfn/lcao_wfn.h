@@ -16,7 +16,7 @@ namespace qc{
 class LCAOWavefunction : public Wavefunction {
 
 public:
-  using ArrayType = typename Wavefunction::ArrayType;
+  using ArrayType = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
   using LCAOFactoryType = integrals::LCAOFactory<TA::TensorD,TA::SparsePolicy>;
 
   /*

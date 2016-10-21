@@ -128,22 +128,23 @@ AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
       mol_(),
       gtg_params_() {
 
-  orbital_basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
-  mol_ = kv.keyval("molecule").class_ptr<molecule::Molecule>();
+  /// Basis will come from wfn_world
+//  orbital_basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
+  mol_ = kv.keyval("wfn_world:molecule").class_ptr<molecule::Molecule>();
 
   // if have auxilary basis
-  if(kv.exists("aux_basis")){
-    int n_function = kv.value<int>("corr_functions",6);
-    double corr_param = kv.value<double>("corr_param",0);
+  if(kv.exists("wfn_world:aux_basis")){
+    int n_function = kv.value<int>("wfn_world:corr_functions",6);
+    double corr_param = kv.value<double>("wfn_world:corr_param",0);
     f12::GTGParams gtg_params;
     if(corr_param != 0){
       gtg_params = f12::GTGParams(corr_param, n_function);
     } else{
-      if(kv.exists("vir_basis")){
-        std::string basis_name = kv.value<std::string>("vir_basis:name");
+      if(kv.exists("wfn_world:vir_basis")){
+        std::string basis_name = kv.value<std::string>("wfn_world:vir_basis:name");
         gtg_params = f12::GTGParams(basis_name, n_function);
       }else{
-        std::string basis_name = kv.value<std::string>("basis:name");
+        std::string basis_name = kv.value<std::string>("wfn_world:basis:name");
         gtg_params = f12::GTGParams(basis_name, n_function);
       }
     }
@@ -160,10 +161,10 @@ AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
     }
   }
   // other initialization
-  screen_ = kv.value<std::string>("screen","");
-  screen_threshold_ = kv.value<double>("threshold",1.0e-10);
+  screen_ = kv.value<std::string>("wfn_world:screen","");
+  screen_threshold_ = kv.value<double>("wfn_world:threshold",1.0e-10);
   auto default_precision = std::numeric_limits<double>::epsilon();
-  precision_ = kv.value<double>("precision",default_precision);
+  precision_ = kv.value<double>("wfn_world:precision",default_precision);
   integrals::detail::integral_engine_precision = precision_;
 
   utility::print_par(world_, "Screen: ", screen_, "\n");

@@ -65,7 +65,7 @@ class LCAOFactory {
    */
   LCAOFactory(qc::WavefunctionWorld& wfn_world, const KeyVal& kv)
     : world_(wfn_world.world()),
-      atomic_integral_(wfn_world.ao_integrals()),
+      atomic_integral_(*detail::construct_atomic_integral<Tile,Policy>(kv)),
       orbital_space_registry_(std::make_shared<OrbitalSpaceRegistry<TArray>>()),
       mo_formula_registry_()
   {

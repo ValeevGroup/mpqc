@@ -24,9 +24,6 @@ class PropertyBase;
  * Wfn is a wave function that lives in a WfnWorld
  */
 class Wavefunction : public DescribedClass {
- public:
-  using ArrayType = WavefunctionWorld::ArrayType;
-
  private:
   /** Pointer to the WfnWorld
    *

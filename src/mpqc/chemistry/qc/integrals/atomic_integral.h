@@ -21,6 +21,30 @@
 namespace mpqc {
 namespace integrals {
 
+template <typename Tile, typename Policy>
+class AtomicIntegral;
+
+namespace detail{
+
+
+template <typename Tile, typename Policy>
+std::shared_ptr<AtomicIntegral<Tile,Policy>> construct_atomic_integral(const KeyVal& kv){
+  std::shared_ptr<AtomicIntegral<Tile,Policy>> ao_int;
+  if(kv.exists_class("wfn_world:atomic_integral")){
+    ao_int = kv.class_ptr<AtomicIntegral<Tile,Policy>>("wfn_world:atomic_integral");
+  }
+  else{
+    ao_int = std::make_shared<AtomicIntegral<Tile,Policy>>(kv);
+    std::shared_ptr<DescribedClass> ao_int_base = ao_int;
+    KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
+    kv_nonconst.keyval("wfn_world").assign("atomic_integral",ao_int_base);
+  }
+  return ao_int;
+};
+
+
+} // namespace detail
+
 // TODO rename AtomicIntegral -> OperatorAOFactory
 // TODO better inverse of two center
 // TODO direct integral
@@ -35,8 +59,8 @@ namespace integrals {
  *
  */
 
-template <typename Tile, typename Policy>
-class AtomicIntegral : public AtomicIntegralBase {
+template <typename Tile, typename Policy=TA::SparsePolicy>
+class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
 

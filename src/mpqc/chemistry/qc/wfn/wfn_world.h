@@ -24,12 +24,9 @@ namespace qc {
  */
 class WavefunctionWorld : public DescribedClass {
  public:
-  using AOIntegral = integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy>;
-  using ArrayType = AOIntegral::TArray;
 
  private:
   madness::World &world_;
-  std::shared_ptr<AOIntegral> ao_ints_;
   std::shared_ptr<molecule::Molecule> mol_;
   std::shared_ptr<basis::OrbitalBasisRegistry> basis_registry_;
 
@@ -37,7 +34,7 @@ class WavefunctionWorld : public DescribedClass {
   /**
    * \brief KeyVal constructor
    *
-   * it take all keys to construct AtomicIntegral
+   * it take all keys to construct OrbitalBasisRegistry
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
@@ -52,13 +49,11 @@ class WavefunctionWorld : public DescribedClass {
   /// Return a reference to the molecule in the world
   molecule::Molecule const &molecule() const { return *mol_; }
 
-  /*! Return a reference to the AtomicIntegral Library
-   *
-   * \note This reference can't be made const without modifying the
-   * AtomicIntegral library so that certain members are mutable.
-   */
-  AOIntegral &ao_integrals() { return *ao_ints_; }
+  /// Return Basis Registry
+  std::shared_ptr<basis::OrbitalBasisRegistry> const basis_registry() {return basis_registry_;}
+
 };
+
 
 }  // namespace qc
 }  // namespace mpqc

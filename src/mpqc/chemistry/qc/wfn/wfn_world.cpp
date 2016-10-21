@@ -6,8 +6,7 @@ using namespace mpqc;
 qc::WavefunctionWorld::WavefunctionWorld(KeyVal const &kv)
     : world_(*kv.value<madness::World *>("$:world"))
 {
-  ao_ints_ = std::make_shared<AOIntegral>(kv);
   mol_ = kv.keyval("molecule").class_ptr<molecule::Molecule>();
-  basis_registry_ = ao_ints_->orbital_basis_registry_ptr();
+  basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(kv);
 }
 qc::WavefunctionWorld::~WavefunctionWorld() = default;

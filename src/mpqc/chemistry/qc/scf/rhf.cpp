@@ -28,7 +28,7 @@ RHF::RHF(const KeyVal& kv) : AOWavefunction(kv), kv_(kv){
 }
 
 void RHF::init(const KeyVal &kv) {
-  auto& ao_int = this->wfn_world()->ao_integrals();
+  auto& ao_int = this->ao_integrals();
   auto& world = ao_int.world();
   auto& mol = ao_int.molecule();
 
@@ -86,7 +86,7 @@ void RHF::init(const KeyVal &kv) {
 }
 
 void RHF::init_fock_builder() {
-  auto& ao_int = this->wfn_world()->ao_integrals();
+  auto& ao_int = this->ao_integrals();
   auto eri4 = ao_int.compute(L"(μ ν| G|κ λ)");
   auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
   f_builder_ = make_unique<decltype(builder)>(std::move(builder));
@@ -186,7 +186,7 @@ bool RHF::solve(int64_t max_iters, double thresh) {
   } else {
     rhf_energy_ = old_energy;
     // store fock matix in registry
-    auto& registry = this->wfn_world()->ao_integrals().registry();
+    auto& registry = this->ao_integrals().registry();
     f_builder_->register_fock(F_,registry);
     return true;
   }
@@ -236,7 +236,7 @@ rapidjson::Value RHF::results(rapidjson::Document &d) const {
 RIRHF::RIRHF(const KeyVal &kv) : RHF(kv){}
 
 void RIRHF::init_fock_builder() {
-  auto& ao_int = this->wfn_world()->ao_integrals();
+  auto& ao_int = this->ao_integrals();
   auto inv = ao_int.compute(L"( Κ | G| Λ )");
   auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
   scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);

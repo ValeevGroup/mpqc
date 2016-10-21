@@ -14,7 +14,9 @@
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 
 MPQC_CLASS_EXPORT_KEY2("RHF", mpqc::scf::RHF);
+MPQC_CLASS_EXPORT_KEY2("Direct-RHF", mpqc::scf::DirectRHF);
 MPQC_CLASS_EXPORT_KEY2("RI-RHF", mpqc::scf::RIRHF);
+MPQC_CLASS_EXPORT_KEY2("Direct-RI-RHF", mpqc::scf::DirectRIRHF);
 
 namespace mpqc {
 namespace scf {
@@ -240,6 +242,40 @@ void RIRHF::init_fock_builder() {
   auto inv = ao_int.compute(L"( Κ | G| Λ )");
   auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
   scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
+  f_builder_ = make_unique<decltype(builder)>(std::move(builder));
+}
+
+
+/**
+ * DirectRIRHF member functions
+ */
+
+DirectRIRHF::DirectRIRHF(const KeyVal &kv) : RHF(kv) {}
+
+void DirectRIRHF::init_fock_builder() {
+
+  auto& direct_ao_int = this->direct_ao_integrals();
+  auto& ao_int = this->ao_integrals();
+
+  auto inv = ao_int.compute(L"( Κ | G| Λ )");
+  auto eri3 = direct_ao_int.compute(L"( Κ | G|κ λ)");
+
+  scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
+  f_builder_ = make_unique<decltype(builder)>(std::move(builder));
+
+}
+
+
+/**
+ * DirectRHF member functions
+ */
+
+DirectRHF::DirectRHF(const KeyVal &kv) : RHF(kv) {}
+
+void DirectRHF::init_fock_builder() {
+  auto& direct_ao_int = this->direct_ao_integrals();
+  auto eri4 = direct_ao_int.compute(L"(μ ν| G|κ λ)");
+  auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
   f_builder_ = make_unique<decltype(builder)>(std::move(builder));
 }
 

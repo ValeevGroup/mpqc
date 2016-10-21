@@ -92,6 +92,12 @@ private:
 
 };
 
+
+/**
+ *
+ * RIRHF class, fock_builder is overide to use three center integral
+ */
+
 class RIRHF: public RHF{
 
 public:
@@ -100,6 +106,32 @@ public:
 private:
   void init_fock_builder() override;
 
+};
+
+
+/**
+ * DirectRIRHF, fock_builder is overide to use direct three center integral
+ */
+
+class DirectRIRHF : public RHF{
+
+public:
+  DirectRIRHF(const KeyVal& kv);
+
+private:
+  void init_fock_builder() override;
+};
+
+/**
+ * DirectRHF, fock_builder is overide to use direct four center integral
+ */
+class DirectRHF : public RHF{
+
+public:
+  DirectRHF(const KeyVal& kv);
+
+private:
+  void init_fock_builder() override;
 };
 
 } // end of namespace scf

@@ -13,6 +13,8 @@ namespace qc{
 
 mpqc::detail::ForceLink<mpqc::scf::RHF> fl1;
 mpqc::detail::ForceLink<mpqc::scf::RIRHF> fl2;
+mpqc::detail::ForceLink<mpqc::scf::DirectRHF> fl3;
+mpqc::detail::ForceLink<mpqc::scf::DirectRIRHF> fl4;
 
 
 }

@@ -7,32 +7,7 @@
 namespace mpqc {
 namespace qc {
 
-LCAOWavefunction::LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-  lcao_factory_ = integrals::detail::construct_lcao_factory<TA::TensorD,TA::SparsePolicy>(kv);
+template class LCAOWavefunction<TA::TensorD>;
 
-  frozen_core_ = kv.value<bool>("frozen_core",true);
-  std::size_t mo_block = kv.value<int>("mo_block",24);
-  occ_block_ = kv.value<int>("occ_block",mo_block);
-  unocc_block_ = kv.value<int>("un_occ_block",mo_block);
-}
-
-LCAOWavefunction::LCAOFactoryType &LCAOWavefunction::lcao_factory() { return *lcao_factory_; }
-
-
-void LCAOWavefunction::obsolete() {
-  lcao_factory_->registry().purge(wfn_world()->world());
-  lcao_factory_->orbital_space().clear();
-  lcao_factory_->atomic_integral().registry().purge(wfn_world()->world());
-}
-
-bool LCAOWavefunction::is_frozen_core() const {
-  return frozen_core_;
-}
-size_t LCAOWavefunction::occ_block() const {
-  return occ_block_;
-}
-size_t LCAOWavefunction::unocc_block() const {
-  return unocc_block_;
-}
 }
 }

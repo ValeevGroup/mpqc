@@ -175,7 +175,7 @@ class MP2 {
   std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
 };
 
-class RMP2 : public qc::LCAOWavefunction {
+class RMP2 : public qc::LCAOWavefunction<TA::TensorD> {
 
 public:
 

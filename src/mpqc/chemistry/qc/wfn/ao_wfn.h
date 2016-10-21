@@ -22,7 +22,7 @@ class AOWavefunction : public Wavefunction {
 
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv)
   {
-    ao_ints_ = integrals::detail::construct_atomic_integral<TA::TensorD, TA::SparsePolicy>(kv);
+    ao_ints_ = integrals::detail::construct_atomic_integral<Tile, TA::SparsePolicy>(kv);
     ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
   }

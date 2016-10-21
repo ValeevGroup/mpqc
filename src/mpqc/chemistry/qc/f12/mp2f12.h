@@ -19,10 +19,10 @@ namespace mpqc {
 namespace f12 {
 
 
-class RMP2F12 : public qc::LCAOWavefunction{
+class RMP2F12 : public qc::LCAOWavefunction<TA::TensorD>{
 
 public:
-  using TArray = qc::LCAOWavefunction::ArrayType;
+  using TArray = qc::LCAOWavefunction<TA::TensorD>::ArrayType;
   using Matrix = RowMatrix<double>;
 
   RMP2F12(const KeyVal& kv);

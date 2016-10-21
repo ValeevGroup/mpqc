@@ -24,7 +24,7 @@ RMP2::RMP2(const KeyVal &kv) : LCAOWavefunction(kv) {
 
 void RMP2::obsolete() {
   rmp2_energy_ = 0.0;
-  qc::LCAOWavefunction::obsolete();
+  qc::LCAOWavefunction<TA::TensorD>::obsolete();
   ref_wfn_->obsolete();
 }
 

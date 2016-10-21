@@ -14,16 +14,27 @@
 namespace mpqc {
 namespace qc {
 
+template<typename Tile>
 class AOWavefunction : public Wavefunction {
  public:
-  using AOIntegral = integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy>;
-  using ArrayType = AOIntegral::TArray;
+  using AOIntegral = integrals::AtomicIntegral<Tile, TA::SparsePolicy>;
+  using ArrayType = typename AOIntegral::TArray;
 
-  AOWavefunction(const KeyVal &kv);
-  ~AOWavefunction();
+  AOWavefunction(const KeyVal &kv) : Wavefunction(kv)
+  {
+    ao_ints_ = integrals::detail::construct_atomic_integral<TA::TensorD, TA::SparsePolicy>(kv);
+    ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
-  void compute(PropertyBase *pb) override;
-  void obsolete() override;
+  }
+  ~AOWavefunction() = default;
+
+  void compute(PropertyBase *pb) override {
+    throw std::logic_error("Not Implemented!");
+  }
+
+  void obsolete() override {
+    ao_integrals().registry().purge(wfn_world()->world());
+  }
 
   /*! Return a reference to the AtomicIntegral Library
    *

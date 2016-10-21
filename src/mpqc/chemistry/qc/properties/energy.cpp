@@ -7,6 +7,6 @@ using namespace mpqc;
 
 qc::Energy::Energy(KeyVal const &kv) : result_() {}
 
-void qc::Energy::apply(AOWavefunction *aowfn){
+void qc::Energy::apply(Wavefunction *aowfn){
     result_ = 1.0;
 }

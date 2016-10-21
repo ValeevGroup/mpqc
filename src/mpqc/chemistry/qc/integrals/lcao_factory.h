@@ -18,6 +18,31 @@
 namespace mpqc {
 namespace integrals {
 
+template <typename Tile, typename Policy>
+class LCAOFactory;
+
+
+namespace detail{
+
+
+template <typename Tile, typename Policy>
+std::shared_ptr<LCAOFactory<Tile,Policy>> construct_lcao_factory(const KeyVal& kv){
+  std::shared_ptr<LCAOFactory<Tile,Policy>> lcao_factory;
+  if(kv.exists_class("wfn_world:lcao_factory")){
+    lcao_factory = kv.class_ptr<LCAOFactory<Tile,Policy>>("wfn_world:lcao_factory");
+  }
+  else{
+    lcao_factory = std::make_shared<LCAOFactory<Tile,Policy>>(kv);
+    std::shared_ptr<DescribedClass> ao_int_base = lcao_factory;
+    KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
+    kv_nonconst.keyval("wfn_world").assign("lcao_factory",ao_int_base);
+  }
+  return lcao_factory;
+};
+
+
+} // namespace detail
+
 // TODO MO transform that minimize operations by permutation
 /**
  * \brief Molecule Integral computation class
@@ -28,7 +53,7 @@ namespace integrals {
  *
  */
 template <typename Tile, typename Policy>
-class LCAOFactory {
+class LCAOFactory : public DescribedClass{
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using AtomicIntegralType = AtomicIntegral<Tile, Policy>;
@@ -63,8 +88,8 @@ class LCAOFactory {
    * @param keep_partial_transform, if use strength reduction, default false
    *
    */
-  LCAOFactory(qc::WavefunctionWorld& wfn_world, const KeyVal& kv)
-    : world_(wfn_world.world()),
+  LCAOFactory(const KeyVal& kv)
+    : world_(*kv.value<madness::World *>("$:world")),
       atomic_integral_(*detail::construct_atomic_integral<Tile,Policy>(kv)),
       orbital_space_registry_(std::make_shared<OrbitalSpaceRegistry<TArray>>()),
       mo_formula_registry_()

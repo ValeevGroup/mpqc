@@ -8,8 +8,7 @@ namespace mpqc {
 namespace qc {
 
 LCAOWavefunction::LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-  lcao_factory_ =
-      std::make_shared<LCAOWavefunction::LCAOFactoryType>(*(this->wfn_world()), kv);
+  lcao_factory_ = integrals::detail::construct_lcao_factory<TA::TensorD,TA::SparsePolicy>(kv);
 
   frozen_core_ = kv.value<bool>("frozen_core",true);
   std::size_t mo_block = kv.value<int>("mo_block",24);
@@ -19,9 +18,6 @@ LCAOWavefunction::LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
 
 LCAOWavefunction::LCAOFactoryType &LCAOWavefunction::lcao_factory() { return *lcao_factory_; }
 
-void LCAOWavefunction::compute(PropertyBase *pb) {}
-
-double LCAOWavefunction::value() { return 1.0; }
 
 void LCAOWavefunction::obsolete() {
   lcao_factory_->registry().purge(wfn_world()->world());

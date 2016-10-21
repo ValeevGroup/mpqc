@@ -19,7 +19,7 @@
 namespace mpqc{
 namespace scf{
 
-class RHF : public qc::AOWavefunction {
+class RHF : public qc::AOWavefunction<TA::TensorD> {
 
 public:
   using array_type = TA::TSpArrayD;
@@ -34,8 +34,6 @@ public:
    */
 
   RHF(const KeyVal& kv);
-
-//  void compute(qc::PropertyBase *pb) override;
 
   double value() override;
   void obsolete() override;

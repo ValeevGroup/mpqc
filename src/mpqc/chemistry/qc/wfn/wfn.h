@@ -8,7 +8,6 @@
 #ifndef MPQC_CHEMISTRY_QC_WFN_WFN_H_
 #define MPQC_CHEMISTRY_QC_WFN_WFN_H_
 
-#include <mpqc/util/keyval/keyval.hpp>
 #include <mpqc/chemistry/qc/wfn/wfn_world.h>
 #include <mpqc/chemistry/qc/properties/propertybase.h>
 

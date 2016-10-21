@@ -9,7 +9,8 @@
 #define MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 
 #include <mpqc/chemistry/qc/wfn/wfn.h>
-#include <mpqc/util/keyval/keyval.hpp>
+#include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+#include <mpqc/chemistry/qc/integrals/direct_atomic_integral.h>
 
 namespace mpqc {
 namespace qc {
@@ -18,12 +19,16 @@ template<typename Tile>
 class AOWavefunction : public Wavefunction {
  public:
   using AOIntegral = integrals::AtomicIntegral<Tile, TA::SparsePolicy>;
+  using DirectAOIntegral = integrals::DirectAtomicIntegral<Tile, TA::SparsePolicy>;
   using ArrayType = typename AOIntegral::TArray;
 
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv)
   {
     ao_ints_ = integrals::detail::construct_atomic_integral<Tile, TA::SparsePolicy>(kv);
     ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
+
+    direct_ao_ints_ = integrals::detail::construct_direct_atomic_integral<Tile,TA::SparsePolicy>(kv);
+    direct_ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
   }
   ~AOWavefunction() = default;
@@ -32,8 +37,10 @@ class AOWavefunction : public Wavefunction {
     throw std::logic_error("Not Implemented!");
   }
 
+  /// obsolete, purge the registry in AOIntegral and DirectAOInetgral
   void obsolete() override {
     ao_integrals().registry().purge(wfn_world()->world());
+    direct_ao_integrals().registry().purge(wfn_world()->world());
   }
 
   /*! Return a reference to the AtomicIntegral Library
@@ -42,8 +49,12 @@ class AOWavefunction : public Wavefunction {
    * AtomicIntegral library so that certain members are mutable.
    */
   AOIntegral &ao_integrals() { return *ao_ints_; }
+
+  /// return a reference to DirectAtomicIntegral
+  DirectAOIntegral& direct_ao_integrals() { return *direct_ao_ints_;}
 private:
   std::shared_ptr<AOIntegral> ao_ints_;
+  std::shared_ptr<DirectAOIntegral> direct_ao_ints_;
 };
 
 }  // namespace qc

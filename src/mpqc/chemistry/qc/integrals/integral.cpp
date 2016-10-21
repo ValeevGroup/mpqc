@@ -8,6 +8,7 @@
 
 MPQC_CLASS_EXPORT_KEY2("AtomicIntegralTensorD", mpqc::integrals::AtomicIntegral<TA::TensorD,TA::SparsePolicy>);
 MPQC_CLASS_EXPORT_KEY2("LCAOFactoryTensorD", mpqc::integrals::LCAOFactory<TA::TensorD,TA::SparsePolicy>);
+MPQC_CLASS_EXPORT_KEY2("DirectAtomicIntegralTensorD", mpqc::integrals::DirectAtomicIntegral<TA::TensorD,TA::SparsePolicy>);
 
 namespace mpqc {
 namespace integrals {

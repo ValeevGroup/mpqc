@@ -10,7 +10,7 @@
 #include "../../../../../include/tiledarray.h"
 #include <mpqc/util/keyval/keyval.hpp>
 #include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+#include <mpqc/chemistry/qc/basis/basis_registry.h>
 
 #include <memory>
 

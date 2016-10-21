@@ -7,12 +7,32 @@
 
 #include <type_traits>
 
-#include "atomic_integral_base.h"
-#include <mpqc/chemistry/qc/integrals/integrals.h>
+#include <mpqc/chemistry/qc/integrals/atomic_integral_base.h>
 #include <rapidjson/document.h>
 
 namespace mpqc {
 namespace integrals {
+
+template <typename Tile, typename Policy>
+class DirectAtomicIntegral;
+
+namespace detail{
+template <typename Tile, typename Policy>
+std::shared_ptr<DirectAtomicIntegral<Tile,Policy>> construct_direct_atomic_integral(const KeyVal& kv){
+  std::shared_ptr<DirectAtomicIntegral<Tile,Policy>> direct_ao_int;
+  if(kv.exists_class("wfn_world:direct_atomic_integral")){
+    direct_ao_int = kv.class_ptr<DirectAtomicIntegral<Tile,Policy>>("wfn_world:direct_atomic_integral");
+  }
+  else{
+    direct_ao_int = std::make_shared<DirectAtomicIntegral<Tile,Policy>>(kv);
+    std::shared_ptr<DescribedClass> direct_ao_int_base = direct_ao_int;
+    KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
+    kv_nonconst.keyval("wfn_world").assign("direct_atomic_integral",direct_ao_int_base);
+  }
+  return direct_ao_int;
+};
+}
+
 
 /**
  * \brief Direct Atomic Integral Class
@@ -20,8 +40,9 @@ namespace integrals {
  *
  */
 
+
 template <typename Tile, typename Policy>
-class DirectAtomicIntegral : public AtomicIntegralBase {
+class DirectAtomicIntegral : public AtomicIntegralBase, public DescribedClass {
  public:
   using DirectTArray = integrals::DirectArray<Tile, Policy>;
   using TArray = TA::DistArray<integrals::DirectTile<Tile>, Policy>;
@@ -84,14 +105,17 @@ class DirectAtomicIntegral : public AtomicIntegralBase {
       : AtomicIntegralBase(kv), direct_ao_formula_registry_() {
     accurate_time_ = kv.value("accurate_time", false);
 
-    /// Warning!!!!
-    /// This is temporary workround
-    /// For other Tile type, need a better way to set Op
-    op_ = mpqc::ta_routines::TensorDPassThrough();
+    /// For other Tile type, need to implement set_oper();
+    set_oper(Tile());
   }
 
   virtual ~DirectAtomicIntegral() noexcept = default;
 
+  /// set oper based on Tile type
+  template<typename T = Tile>
+  void set_oper(typename std::enable_if<std::is_same<T,TA::TensorD>::value, T>::type && t){
+    op_ = mpqc::ta_routines::TensorDPassThrough();
+  }
   /// wrapper to compute function
   DirectTArray compute(const std::wstring& str) {
     auto formula = Formula(str);

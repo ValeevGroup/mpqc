@@ -1,6 +1,6 @@
 #include <mpqc/chemistry/qc/wfn/wfn_world.h>
 
-MPQC_CLASS_EXPORT_KEY2(mpqc::qc::WavefunctionWorld, "WfnWorld");
+MPQC_CLASS_EXPORT_KEY2("WfnWorld", mpqc::qc::WavefunctionWorld);
 
 using namespace mpqc;
 qc::WavefunctionWorld::WavefunctionWorld(KeyVal const &kv)

@@ -4,7 +4,7 @@
 
 #include "dbmp2f12.h"
 
-MPQC_CLASS_EXPORT_KEY2(mpqc::f12::RIDBRMP2F12, "RI-DBRMP2F12");
+MPQC_CLASS_EXPORT_KEY2("RI-DBRMP2F12", mpqc::f12::RIDBRMP2F12);
 
 namespace mpqc {
 namespace f12 {

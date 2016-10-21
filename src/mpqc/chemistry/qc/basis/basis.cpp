@@ -5,7 +5,7 @@
 #include <mpqc/chemistry/qc/basis/basis.h>
 #include <mpqc/chemistry/qc/basis/shell_vec_functions.h>
 
-MPQC_CLASS_EXPORT_KEY2(mpqc::basis::Basis, "Basis");
+MPQC_CLASS_EXPORT_KEY2("Basis", mpqc::basis::Basis);
 namespace mpqc {
 
 namespace mol = molecule;

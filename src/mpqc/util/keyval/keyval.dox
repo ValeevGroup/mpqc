@@ -492,10 +492,10 @@ To be able to construct a class \c T from KeyVal objects do this:
   <li> register \c T with DescribedClass . </li>
 </ol>
 The latter can be achieved in a number of ways, but the easiest is to add any of the following statements
-to a source file in the global scope:
+to a source file in the <i>global</i> scope:
 <ol>
   <li>if you want to use class name \c T as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY(T) </li>
-  <li>if you want to use any other key \c Key as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY2(T, Key) </li>
+  <li>if you want to use any other key \c Key as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY2(Key, T) </li>
 </ol>
 It is the easiest to add these statements in the .cpp file that defines \c T , but any other .cpp
 file will work.

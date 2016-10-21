@@ -151,24 +151,41 @@ struct register_keyval_ctor;
 /// @addtogroup CoreKeyVal
 /// @{
 
+/// MPQC_BOOST_CLASS_EXPORT_KEY2(K,T) associates key \c K with type \c T
+/// \note this is a variadic version of BOOST_CLASS_EXPORT_KEY2
+#define MPQC_BOOST_CLASS_EXPORT_KEY2(K, ...)               \
+  namespace boost {                                        \
+  namespace serialization {                                \
+  template <>                                              \
+  struct guid_defined<__VA_ARGS__> : boost::mpl::true_ {}; \
+  template <>                                              \
+  inline const char* guid<__VA_ARGS__>() {                 \
+    return K;                                              \
+  }                                                        \
+  } /* serialization */                                    \
+  } /* boost */                                            \
+/**/
+
 /// \brief Associates a key (character string) with a class using
 /// Boost.Serialization
 /// and register the class's KeyVal constructor with DescribedClass's registry.
 ///
-/// Use BOOST_CLASS_EXPORT_KEY2 to skip the KeyVal constructor registration.
-#define MPQC_CLASS_EXPORT_KEY2(T, K)                               \
-  BOOST_CLASS_EXPORT_KEY2(T, K)                                    \
-  namespace mpqc {                                                 \
-  namespace detail {                                               \
-  template <>                                                      \
-  struct register_keyval_ctor<T> {                                 \
-    static DescribedClass::registrar<T> const& r;                  \
-  };                                                               \
-  DescribedClass::registrar<T> const& register_keyval_ctor<T>::r = \
-      ::boost::serialization::singleton<                           \
-          DescribedClass::registrar<T>>::get_mutable_instance();   \
-  }                                                                \
-  }                                                                \
+/// Use MPQC_BOOST_CLASS_EXPORT_KEY2 to skip the KeyVal constructor
+/// registration.
+#define MPQC_CLASS_EXPORT_KEY2(K, ...)                                         \
+  MPQC_BOOST_CLASS_EXPORT_KEY2(K, __VA_ARGS__)                                 \
+  namespace mpqc {                                                             \
+  namespace detail {                                                           \
+  template <>                                                                  \
+  struct register_keyval_ctor<__VA_ARGS__> {                                   \
+    static DescribedClass::registrar<__VA_ARGS__> const& r;                    \
+  };                                                                           \
+  DescribedClass::registrar<__VA_ARGS__> const&                                \
+      register_keyval_ctor<__VA_ARGS__>::r =                                   \
+          ::boost::serialization::singleton<                                   \
+              DescribedClass::registrar<__VA_ARGS__>>::get_mutable_instance(); \
+  }                                                                            \
+  }                                                                            \
 /**/
 
 /// \brief Associates a key (character string) with a class using
@@ -176,14 +193,33 @@ struct register_keyval_ctor;
 /// and register the class's KeyVal constructor with DescribedClass's registry.
 ///
 /// Identical to MPQC_CLASS_EXPORT_KEY2, but uses class name for the class key.
-/// Use BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
+/// Use MPQC_BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
 /// @sa MPQC_CLASS_EXPORT_KEY2
-#define MPQC_CLASS_EXPORT_KEY(T) \
-  MPQC_CLASS_EXPORT_KEY2(T, BOOST_PP_STRINGIZE(T)) /**/
+#define MPQC_CLASS_EXPORT_KEY(...) \
+  MPQC_CLASS_EXPORT_KEY2(BOOST_PP_STRINGIZE(__VA__ARGS__), __VA_ARGS__)
+/**/
 
 /// \brief Forces the class instantiation so that it can be deserialized with
 /// Boost.Serialization and/or constructed from a KeyVal.
-#define MPQC_CLASS_EXPORT_IMPLEMENT(T) BOOST_CLASS_EXPORT_IMPLEMENT(T) /**/
+/// \note this is a variadic version of BOOST_CLASS_EXPORT_IMPLEMENT
+#define MPQC_CLASS_EXPORT_IMPLEMENT(...)                           \
+  namespace boost {                                                \
+  namespace archive {                                              \
+  namespace detail {                                               \
+  namespace extra_detail {                                         \
+  template <>                                                      \
+  struct init_guid<__VA_ARGS__> {                                  \
+    static guid_initializer<__VA_ARGS__> const& g;                 \
+  };                                                               \
+  guid_initializer<__VA_ARGS__> const& init_guid<__VA_ARGS__>::g = \
+      ::boost::serialization::singleton<                           \
+          guid_initializer<__VA_ARGS__>>::get_mutable_instance()   \
+          .export_guid();                                          \
+  }                                                                \
+  }                                                                \
+  }                                                                \
+  }                                                                \
+/**/
 
 /// @}
 

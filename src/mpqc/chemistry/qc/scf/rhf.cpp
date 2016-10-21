@@ -13,8 +13,8 @@
 #include <mpqc/chemistry/qc/scf/traditional_df_fock_builder.h>
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 
-MPQC_CLASS_EXPORT_KEY2(mpqc::scf::RHF, "RHF");
-MPQC_CLASS_EXPORT_KEY2(mpqc::scf::RIRHF, "RI-RHF");
+MPQC_CLASS_EXPORT_KEY2("RHF", mpqc::scf::RHF);
+MPQC_CLASS_EXPORT_KEY2("RI-RHF", mpqc::scf::RIRHF);
 
 namespace mpqc {
 namespace scf {

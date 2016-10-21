@@ -72,7 +72,7 @@ std::array<double, 3> array_storage(TA::DistArray<TileType, Policy> const &A) {
 ///         tiles on the corresponding process
 template <typename Tile, typename Policy,
           typename = typename std::enable_if<
-              std::is_fundamental<typename Tile::value_type>::value>::type>
+              TA::detail::is_numeric<typename Tile::value_type>::value>::type>
 std::vector<std::size_t> array_sizes(const TA::DistArray<Tile, Policy> &A) {
   auto const &pmap = A.pmap();
   TA::TiledRange const &trange = A.trange();

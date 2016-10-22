@@ -75,7 +75,7 @@ void RHF::init(const KeyVal &kv) {
     d_builder_ = make_unique<decltype(density_builder)>(std::move(density_builder));
   }
   else{
-    throw std::runtime_error("Unkown DensityBuilder name! \n");
+    throw std::runtime_error("Unknown DensityBuilder name! \n");
   }
 
   // soad

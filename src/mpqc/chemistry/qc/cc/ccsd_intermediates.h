@@ -128,6 +128,15 @@ class CCSDIntermediate {
     }
   }
 
+  /// <ab|ci>
+  const TArray get_abci() {
+    if (df_) {
+      return lcao_factory_.compute(L"<a b|G|c i>[df]");
+    } else {
+      return lcao_factory_.compute(L"<a b|G|c i>");
+    }
+  }
+
   /// <ij|ak>
   const TArray get_ijak() {
     if (df_) {
@@ -143,6 +152,15 @@ class CCSDIntermediate {
       return lcao_factory_.compute(L"<i j|G|k a>[df]");
     } else {
       return lcao_factory_.compute(L"<i j|G|k a>");
+    }
+  }
+
+  /// <ai|jk>
+  const TArray get_aijk() {
+    if (df_) {
+      return lcao_factory_.compute(L"<a i|G|j k>[df]");
+    } else {
+      return lcao_factory_.compute(L"<a i|G|j k>");
     }
   }
 

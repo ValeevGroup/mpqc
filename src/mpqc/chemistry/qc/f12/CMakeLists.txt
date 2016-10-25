@@ -1,4 +1,12 @@
 set(sources
+        f12_utility.cpp
+        f12_utility.h
+)
+
+add_library(MPQCf12utility ${sources})
+target_link_libraries(MPQCf12utility ${TA_LIBRARIES} )
+
+set(sources
         cabs_singles.h
         f12_intermediates.h
         f12_utility.cpp
@@ -14,4 +22,6 @@ set(sources
 )
 
 add_library(MPQCf12 ${sources})
-target_link_libraries(MPQCf12 ${TA_LIBRARIES} MPQCintegrals)
+
+target_link_libraries(MPQCf12 MPQCintegrals)
+

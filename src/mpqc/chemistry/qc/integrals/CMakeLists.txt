@@ -23,5 +23,5 @@ set(integral_sources
 )
 
 add_library(MPQCintegrals ${integral_sources})
-target_link_libraries(MPQCintegrals ${TA_LIBRARIES} ${LIBINT2_LIBRARIES} ${TBB_LIBRARIES} MPQCexpression MPQCbasis MPQCf12)
+target_link_libraries(MPQCintegrals ${LIBINT2_LIBRARIES} ${TBB_LIBRARIES} MPQCexpression MPQCbasis MPQCf12utility)
 

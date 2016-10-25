@@ -32,7 +32,7 @@ Matrix<T> tile_to_eigen(tensor::Tile<tensor::DecomposedTensor<T>> const &t) {
  * Takes tiles by copy since they are shallow copy and will not be written to.
  */
 template <typename Tile>
-void write_to_eigen_task(Tile t, Matrix<double> *mat) {
+void write_to_eigen_task(Tile t, Matrix<typename Tile::numeric_type> *mat) {
   auto const &start = t.range().lobound();
   const auto extent = t.range().extent();
   mat->block(start[0], start[1], extent[0], extent[1]) = tile_to_eigen(t);
@@ -77,7 +77,7 @@ Matrix<T> array_to_eigen(TA::DistArray<TA::Tensor<T>, Policy> const &A) {
  * tile type that they want.
  */
 template <typename TileType>
-TileType mat_to_tile(TA::Range range, Matrix<double> const *M, double cut);
+TileType mat_to_tile(TA::Range range, Matrix<typename TileType::numeric_type> const *M, double cut);
 
 template <>
 inline tensor::Tile<tensor::DecomposedTensor<double>>
@@ -107,17 +107,29 @@ inline TA::TensorD mat_to_tile<TA::TensorD>(TA::Range range,
   return tensor;
 }
 
+template <>
+inline TA::TensorZ mat_to_tile<TA::TensorZ>(TA::Range range,
+                                            Matrix<std::complex<double>> const *M, double) {
+  const auto extent = range.extent();
+  auto tensor = TA::TensorZ(range);
+  auto t_map = TA::eigen_map(tensor, extent[0], extent[1]);
+
+  auto const start = range.lobound();
+  t_map = M->block(start[0], start[1], extent[0], extent[1]);
+  return tensor;
+}
+
 // M must be replicated on all nodes.
 template <typename Tile>
-TA::Array<double, 2, Tile, TA::SparsePolicy> eigen_to_array(
-    madness::World &world, Matrix<double> const &M, TA::TiledRange1 tr0,
+TA::DistArray<Tile, TA::SparsePolicy> eigen_to_array(
+    madness::World &world, Matrix<typename Tile::numeric_type> const &M, TA::TiledRange1 tr0,
     TA::TiledRange1 tr1, double cut = 1e-7) {
   TA::TiledRange trange{tr0, tr1};
   TA::Tensor<float> norms(trange.tiles_range(),
                           trange.elements_range().volume() / trange.tiles_range().volume());
 
   TA::SparseShape<float> shape(world, norms, trange);
-  TA::Array<double, 2, Tile, TA::SparsePolicy> array(world, trange, shape);
+  TA::DistArray<Tile, TA::SparsePolicy> array(world, trange, shape);
 
   auto const &pmap = array.pmap();
   const auto end = pmap->end();

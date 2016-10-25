@@ -95,11 +95,12 @@ mat_to_tile<tensor::Tile<tensor::DecomposedTensor<double>>>(
                                                         std::move(tensor));
 }
 
-template <>
-inline TA::TensorD mat_to_tile<TA::TensorD>(TA::Range range,
-                                            Matrix<double> const *M, double) {
+template <typename T>
+inline TA::Tensor<T> mat_to_ta_tensor(TA::Range & range,
+                                      Matrix<T> const *M)
+{
   const auto extent = range.extent();
-  auto tensor = TA::Tensor<double>(range);
+  auto tensor = TA::Tensor<T>(range);
   auto t_map = TA::eigen_map(tensor, extent[0], extent[1]);
 
   auto const start = range.lobound();
@@ -108,15 +109,15 @@ inline TA::TensorD mat_to_tile<TA::TensorD>(TA::Range range,
 }
 
 template <>
+inline TA::TensorD mat_to_tile<TA::TensorD>(TA::Range range,
+                                            Matrix<double> const *M, double) {
+  return mat_to_ta_tensor(range,M);
+}
+
+template <>
 inline TA::TensorZ mat_to_tile<TA::TensorZ>(TA::Range range,
                                             Matrix<std::complex<double>> const *M, double) {
-  const auto extent = range.extent();
-  auto tensor = TA::TensorZ(range);
-  auto t_map = TA::eigen_map(tensor, extent[0], extent[1]);
-
-  auto const start = range.lobound();
-  t_map = M->block(start[0], start[1], extent[0], extent[1]);
-  return tensor;
+  return mat_to_ta_tensor(range, M);
 }
 
 // M must be replicated on all nodes.

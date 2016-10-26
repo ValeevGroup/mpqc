@@ -3,11 +3,32 @@
 #define MPQC_TAROUTINES_DIAGONALARRAY_H
 
 #include "../include/tiledarray.h"
-#include "../tensor/mpqc_tile.h"
+#include "array_to_eigen.h"
 #include "../tensor/decomposed_tensor.h"
+#include "../tensor/mpqc_tile.h"
 
 namespace mpqc {
 namespace array_ops {
+
+template <typename Tile>
+TA::DistArray<Tile, TA::SparsePolicy> create_diagonal_array_from_eigen(madness::World& world,
+    const TA::TiledRange1 &trange1, const TA::TiledRange1 &trange2, typename Tile::numeric_type val){
+
+    using numeric_type = typename Tile::numeric_type;
+
+    std::size_t x = trange1.elements().second;
+    std::size_t y = trange2.elements().second;
+
+    TA_ASSERT(x == y);
+
+    auto diag = Eigen::DiagonalMatrix<numeric_type, Eigen::Dynamic>(x);
+    diag.setIdentity();
+    diag = val*diag;
+
+//    RowMatrix<numeric_type> matrix = diag;
+    return array_ops::eigen_to_array<Tile>(world, diag, trange1, trange2);
+
+};
 
 template <typename T>
 void make_diagonal_tile(TiledArray::Tensor<T> &tile, T val) {

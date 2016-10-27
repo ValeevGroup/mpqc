@@ -22,15 +22,25 @@ class CCSD_T : public CCSD<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
 
-  CCSD_T(const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &inter,
-         const std::shared_ptr<Eigen::VectorXd> &ens,
-         const std::shared_ptr<TRange1Engine> &tre,
-         rapidjson::Document &options)
-      : CCSD<Tile, Policy>(inter, ens, tre, options) {}
+ private:
+  bool reblock_;
+  bool reblock_inner_;
+  std::size_t inner_block_size_;
+  TRange1 tr_occ_inner_;
+  TRange1 tr_vir_inner_;
 
+ public:
   CCSD_T(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
          rapidjson::Document &options)
-      : CCSD<Tile, Policy>(lcao_factory, options) {}
+      : CCSD<Tile, Policy>(lcao_factory, options) {
+    reblock_ = (this->options_.HasMember("ReblockOcc") ||
+                this->options_.HasMember("ReblockVir"));
+    reblock_inner_ = this->options_.HasMember("ReblockInner");
+    inner_block_size_ = 0;
+    if (reblock_inner_) {
+      inner_block_size_ = this->options_["ReblockInner"].GetInt();
+    }
+  }
 
   double compute() {
     auto &world = this->ccsd_intermediate_->lcao_factory().world();
@@ -45,31 +55,18 @@ class CCSD_T : public CCSD<Tile, Policy> {
       std::cout << "CCSD Time " << duration0 << std::endl;
     }
 
+    time0 = mpqc_time::fenced_now(world);
     // clean all LCAO integral
     this->ccsd_intermediate_->lcao_factory().registry().purge(world);
 
-    // compute CCSD first
-    //                auto direct = this->options_.HasMember("Direct") ?
-    //                this->options_["Direct"].GetBool(): false;
-    //                if(direct){
-    //                    ccsd_corr = CCSD<Tile,
-    //                    Policy>::compute_ccsd_direct(t1, t2);
-    //                     TODO smarter way to clean integrals not needed
-    //                     clean integrals not needed
-    //                    this->ccsd_intermediate_->clean_two_electron();
-    //
-    //                }
-    //                else {
-    //                    ccsd_corr =
-    //                    CCSD<Tile,Policy>::compute_ccsd_straight(t1, t2);
-    //                    this->ccsd_intermediate_->clean_two_electron();
-    //                }
+    if (reblock_) {
+      reblock();
+    }
 
     // start CCSD(T)
     if (world.rank() == 0) {
       std::cout << "\nBegining CCSD(T) " << std::endl;
     }
-    time0 = mpqc_time::fenced_now(world);
     TArray t1 = this->t1();
     TArray t2 = this->t2();
     double ccsd_t = compute_ccsd_t(t1, t2);
@@ -90,6 +87,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
     return ccsd_corr + ccsd_t;
   }
 
+
+
   double compute_ccsd_t(TArray &t1, TArray &t2) {
     bool df = this->options_.HasMember("DFExpr")
                   ? this->options_["DFExpr"].GetBool()
@@ -103,8 +102,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
                 << std::endl;
     }
     // get integral
-    TArray g_cjkl = this->ccsd_intermediate_->get_aijk();
-    TArray g_abij = this->ccsd_intermediate_->get_abij();
+    TArray g_cjkl = get_aijk();
+    TArray g_abij = get_abij();
 
     TArray g_dabi;
     TArray Xdb;
@@ -114,14 +113,29 @@ class CCSD_T : public CCSD<Tile, Policy> {
       Xdb = this->ccsd_intermediate_->get_Xab();
       Xai = this->ccsd_intermediate_->get_Xai();
     } else {
-      g_dabi = this->ccsd_intermediate_->get_abci();
+      g_dabi = get_abci();
     }
+
+    // T2
+    TArray t2_left = t2;
+    TArray t2_right = t2;
+
+    if (reblock_inner_) {
+      reblock_inner_t2(t2_left, t2_right);
+    }
+
     // get trange1
     auto tr_occ = this->trange1_engine_->get_occ_tr1();
     auto tr_vir = this->trange1_engine_->get_vir_tr1();
 
     auto n_tr_occ = this->trange1_engine_->get_occ_blocks();
     auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
+    auto n_tr_occ_inner = n_tr_occ;
+    auto n_tr_vir_inner = n_tr_vir;
+    if (reblock_inner_) {
+      n_tr_occ_inner = tr_occ_inner_.tiles_range().second;
+      n_tr_vir_inner = tr_vir_inner_.tiles_range().second;
+    }
     std::size_t n_tr_x = 0;
     if (df) {
       n_tr_x = Xdb.trange().data().front().tiles_range().second;
@@ -143,8 +157,9 @@ class CCSD_T : public CCSD<Tile, Policy> {
     std::size_t vir_block_size = this->trange1_engine_->get_vir_block_size();
     std::size_t n_blocks =
         increase * increase * increase * n_tr_occ * n_tr_occ * n_tr_occ;
-    double mem =
-        (n_blocks * std::pow(occ_block_size, 3) * std::pow(vir_block_size,3) * 8) / (std::pow(1024.0, 3));
+    double mem = (n_blocks * std::pow(occ_block_size, 3) *
+                  std::pow(vir_block_size, 3) * 8) /
+                 (std::pow(1024.0, 3));
 
     if (t1.world().rank() == 0) {
       std::cout << "Increase in the loop " << increase << std::endl;
@@ -229,13 +244,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
           std::size_t blocks = (a_up - a_low) * (b_up - b_low) *
                                (c_up - c_low) * n_tr_occ * n_tr_occ * n_tr_occ;
-          //                            if (t1.world().rank() == 0){
-          //                                std::cout << "{" << a_low << " " <<
-          //                                b_low << " " << c_low << "}" << " ";
-          //                                std::cout << "{" << a_up << " " <<
-          //                                b_up << " " << c_up << "} " <<
-          //                                blocks << std::endl;
-          //                            }
+
           n_blocks_computed += blocks;
 
           typedef std::vector<std::size_t> block;
@@ -250,7 +259,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             if (df) {
               // block for Xdb
               block Xdb_low{0, 0, b_low};
-              block Xdb_up{n_tr_x, n_tr_vir, b_up};
+              block Xdb_up{n_tr_x, n_tr_vir_inner, b_up};
 
               // block for Xai
               block Xai_low{0, a_low, 0};
@@ -264,7 +273,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             } else {
               // block for g_dbai
               block g_dabi_low{0, a_low, b_low, 0};
-              block g_dabi_up{n_tr_vir, a_up, b_up, n_tr_occ};
+              block g_dabi_up{n_tr_vir_inner, a_up, b_up, n_tr_occ};
 
               time00 = mpqc_time::now(world, accurate_time);
               block_g_dabi("d,a,b,i") =
@@ -275,16 +284,16 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
             // block for t2_cdk
             block t2_dcjk_low{0, c_low, 0, 0};
-            block t2_dcjk_up{n_tr_vir, c_up, n_tr_occ, n_tr_occ};
+            block t2_dcjk_up{n_tr_vir_inner, c_up, n_tr_occ, n_tr_occ};
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_dcjk("d,c,j,k") =
-                t2("d,c,j,k").block(t2_dcjk_low, t2_dcjk_up);
+                t2_left("d,c,j,k").block(t2_dcjk_low, t2_dcjk_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
 
             // block for g_cjkl
             block g_cjkl_low{c_low, 0, 0, 0};
-            block g_cjkl_up{c_up, n_tr_occ, n_tr_occ, n_tr_occ};
+            block g_cjkl_up{c_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_g_cjkl("c,j,k,l") =
@@ -294,19 +303,18 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
             // block for t2_abil
             block t2_abil_low{a_low, b_low, 0, 0};
-            block t2_abil_up{a_up, b_up, n_tr_occ, n_tr_occ};
-
+            block t2_abil_up{a_up, b_up, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_abil("a,b,i,l") =
-                t2("a,b,i,l").block(t2_abil_low, t2_abil_up);
+                t2_right("a,b,i,l").block(t2_abil_low, t2_abil_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
 
             time00 = mpqc_time::now(world, accurate_time);
             t3("a,b,c,i,j,k") =
                 block_g_dabi("d,a,b,i") * block_t2_dcjk("d,c,j,k") -
-                    block_t2_abil("a,b,i,l") * block_g_cjkl("c,j,k,l");
+                block_t2_abil("a,b,i,l") * block_g_cjkl("c,j,k,l");
             time01 = mpqc_time::now(world, accurate_time);
             contraction_time1 += mpqc_time::duration_in_s(time00, time01);
           }
@@ -319,7 +327,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             if (df) {
               // block for Xdc
               block Xdc_low{0, 0, c_low};
-              block Xdc_up{n_tr_x, n_tr_vir, c_up};
+              block Xdc_up{n_tr_x, n_tr_vir_inner, c_up};
 
               // block for Xbj
               block Xbj_low{0, b_low, 0};
@@ -333,7 +341,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             } else {
               // block for g_djcb
               block g_dbcj_low{0, b_low, c_low, 0};
-              block g_dbcj_up{n_tr_vir,b_up, c_up, n_tr_occ};
+              block g_dbcj_up{n_tr_vir_inner, b_up, c_up, n_tr_occ};
 
               time00 = mpqc_time::now(world, accurate_time);
               block_g_dbcj("d,j,c,b") =
@@ -344,16 +352,16 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
             // block for t2_daki
             block t2_daki_low{0, a_low, 0, 0};
-            block t2_daki_up{n_tr_vir, a_up, n_tr_occ, n_tr_occ};
+            block t2_daki_up{n_tr_vir_inner, a_up, n_tr_occ, n_tr_occ};
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_daki("d,a,k,i") =
-                t2("d,a,k,i").block(t2_daki_low, t2_daki_up);
+                t2_left("d,a,k,i").block(t2_daki_low, t2_daki_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
 
             // block for g_akil
             block g_akil_low{a_low, 0, 0, 0};
-            block g_akil_up{a_up, n_tr_occ, n_tr_occ, n_tr_occ};
+            block g_akil_up{a_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_g_akil("a,k,i,l") =
@@ -362,10 +370,10 @@ class CCSD_T : public CCSD<Tile, Policy> {
             block_time += mpqc_time::duration_in_s(time00, time01);
             // block for t2_bcjl
             block t2_bcjl_low{b_low, c_low, 0, 0};
-            block t2_bcjl_up{b_up, c_up, n_tr_occ, n_tr_occ};
+            block t2_bcjl_up{b_up, c_up, n_tr_occ, n_tr_occ_inner};
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_bcjl("b,c,j,l") =
-                t2("b,c,j,l").block(t2_bcjl_low, t2_bcjl_up);
+                t2_right("b,c,j,l").block(t2_bcjl_low, t2_bcjl_up);
 
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
@@ -373,7 +381,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             time00 = mpqc_time::now(world, accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_dbcj("d,b,c,j") * block_t2_daki("d,a,k,i") -
-                 block_t2_bcjl("b,c,j,l") * block_g_akil("a,k,i,l");
+                block_t2_bcjl("b,c,j,l") * block_g_akil("a,k,i,l");
             time01 = mpqc_time::now(world, accurate_time);
             contraction_time2 += mpqc_time::duration_in_s(time00, time01);
           }
@@ -386,7 +394,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             if (df) {
               // block for Xda
               block Xda_low{0, 0, a_low};
-              block Xda_up{n_tr_x, n_tr_vir, a_up};
+              block Xda_up{n_tr_x, n_tr_vir_inner, a_up};
 
               // block for Xck
               block Xck_low{0, c_low, 0};
@@ -401,7 +409,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             } else {
               // block for g_dcak
               block g_dcak_low{0, c_low, a_low, 0};
-              block g_dcak_up{n_tr_vir, c_up, a_up, n_tr_occ};
+              block g_dcak_up{n_tr_vir_inner, c_up, a_up, n_tr_occ};
 
               time00 = mpqc_time::now(world, accurate_time);
               block_g_dcak("d,c,a,k") =
@@ -412,16 +420,16 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
             // block for t2_dbij
             block t2_dbij_low{0, b_low, 0, 0};
-            block t2_dbij_up{n_tr_vir, b_up, n_tr_occ, n_tr_occ};
+            block t2_dbij_up{n_tr_vir_inner, b_up, n_tr_occ, n_tr_occ};
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_dbij("d,b,i,j") =
-                t2("d,b,i,j").block(t2_dbij_low, t2_dbij_up);
+                t2_left("d,b,i,j").block(t2_dbij_low, t2_dbij_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
 
             // block for g_bijl
             block g_bijl_low{b_low, 0, 0, 0};
-            block g_bijl_up{b_up, n_tr_occ, n_tr_occ, n_tr_occ};
+            block g_bijl_up{b_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_g_bijl("b,i,j,l") =
@@ -431,18 +439,18 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
             // block for t2_cakl
             block t2_cakl_low{c_low, a_low, 0, 0};
-            block t2_cakl_up{c_up, a_up, n_tr_occ, n_tr_occ};
+            block t2_cakl_up{c_up, a_up, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_cakl("c,a,k,l") =
-                t2("c,a,k,l").block(t2_cakl_low, t2_cakl_up);
+                t2_right("c,a,k,l").block(t2_cakl_low, t2_cakl_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
 
             time00 = mpqc_time::now(world, accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_dcak("d,c,a,k") * block_t2_dbij("d,b,i,j") -
-                    block_t2_cakl("c,a,k,l") * block_g_bijl("b,i,j,l");
+                block_t2_cakl("c,a,k,l") * block_g_bijl("b,i,j,l");
             time01 = mpqc_time::now(world, accurate_time);
             contraction_time3 += mpqc_time::duration_in_s(time00, time01);
           }
@@ -455,7 +463,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             if (df) {
               // block for Xda
               block Xda_low{0, 0, a_low};
-              block Xda_up{n_tr_x, n_tr_vir, a_up};
+              block Xda_up{n_tr_x, n_tr_vir_inner, a_up};
 
               // block for Xbj
               block Xbj_low{0, b_low, 0};
@@ -470,7 +478,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             } else {
               // block for g_dbaj
               block g_dbaj_low{0, b_low, a_low, 0};
-              block g_dbaj_up{n_tr_vir, b_up, a_up, n_tr_occ};
+              block g_dbaj_up{n_tr_vir_inner, b_up, a_up, n_tr_occ};
 
               time00 = mpqc_time::now(world, accurate_time);
               block_g_dbaj("d,b,a,j") =
@@ -481,17 +489,17 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
             // block for t2_cdki
             block t2_dcik_low{0, c_low, 0, 0};
-            block t2_dcik_up{n_tr_vir, c_up, n_tr_occ, n_tr_occ};
+            block t2_dcik_up{n_tr_vir_inner, c_up, n_tr_occ, n_tr_occ};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_dcik("d,c,i,k") =
-                t2("d,c,i,k").block(t2_dcik_low, t2_dcik_up);
+                t2_left("d,c,i,k").block(t2_dcik_low, t2_dcik_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
 
             // block for g_iklc
             block g_cikl_low{c_low, 0, 0, 0};
-            block g_cikl_up{c_up, n_tr_occ, n_tr_occ, n_tr_occ};
+            block g_cikl_up{c_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_g_cikl("c,i,k,l") =
@@ -501,18 +509,18 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
             // block for t2_bajl
             block t2_bajl_low{b_low, a_low, 0, 0};
-            block t2_bajl_up{b_up, a_up, n_tr_occ, n_tr_occ};
+            block t2_bajl_up{b_up, a_up, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_bajl("b,a,j,l") =
-                t2("b,a,j,l").block(t2_bajl_low, t2_bajl_up);
+                t2_right("b,a,j,l").block(t2_bajl_low, t2_bajl_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
 
             time00 = mpqc_time::now(world, accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_dbaj("d,b,a,j") * block_t2_dcik("d,c,i,k") -
-                 block_t2_bajl("b,a,j,l") * block_g_cikl("c,i,k,l");
+                block_t2_bajl("b,a,j,l") * block_g_cikl("c,i,k,l");
             time01 = mpqc_time::now(world, accurate_time);
             contraction_time4 += mpqc_time::duration_in_s(time00, time01);
           }
@@ -525,7 +533,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             if (df) {
               // block for Xdc
               block Xdc_low{0, 0, c_low};
-              block Xdc_up{n_tr_x, n_tr_vir, c_up};
+              block Xdc_up{n_tr_x, n_tr_vir_inner, c_up};
 
               // block for Xai
               block Xai_low{0, a_low, 0};
@@ -540,7 +548,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             } else {
               // block for g_daci
               block g_daci_low{0, a_low, c_low, 0};
-              block g_daci_up{n_tr_vir, a_up, c_up, n_tr_occ};
+              block g_daci_up{n_tr_vir_inner, a_up, c_up, n_tr_occ};
 
               time00 = mpqc_time::now(world, accurate_time);
               block_g_daci("d,a,c,i") =
@@ -551,16 +559,16 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
             // block for t2_bdjk
             block t2_dbkj_low{0, b_low, 0, 0};
-            block t2_dbki_up{n_tr_vir, b_up, n_tr_occ, n_tr_occ};
+            block t2_dbki_up{n_tr_vir_inner, b_up, n_tr_occ, n_tr_occ};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_dbkj("d,b,k,j") =
-                t2("d,b,k,j").block(t2_dbkj_low, t2_dbki_up);
+                t2_left("d,b,k,j").block(t2_dbkj_low, t2_dbki_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
             // block for g_kjlb
             block g_bkjl_low{b_low, 0, 0, 0};
-            block g_bkjl_up{b_up, n_tr_occ, n_tr_occ, n_tr_occ};
+            block g_bkjl_up{b_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_g_bkjl("b,k,j,l") =
@@ -570,18 +578,18 @@ class CCSD_T : public CCSD<Tile, Policy> {
             block_time += mpqc_time::duration_in_s(time00, time01);
             // block for t2_acil
             block t2_acil_low{a_low, c_low, 0, 0};
-            block t2_acil_up{a_up, c_up, n_tr_occ, n_tr_occ};
+            block t2_acil_up{a_up, c_up, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_acil("a,c,i,l") =
-                t2("a,c,i,l").block(t2_acil_low, t2_acil_up);
+                t2_right("a,c,i,l").block(t2_acil_low, t2_acil_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
 
             time00 = mpqc_time::now(world, accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_daci("d,a,c,i") * block_t2_dbkj("d,b,k,j") -
-                 block_t2_acil("a,c,i,l") * block_g_bkjl("b,k,j,l");
+                block_t2_acil("a,c,i,l") * block_g_bkjl("b,k,j,l");
             time01 = mpqc_time::now(world, accurate_time);
             contraction_time5 += mpqc_time::duration_in_s(time00, time01);
           }
@@ -594,7 +602,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             if (df) {
               // block for Xdb
               block Xdb_low{0, 0, b_low};
-              block Xdb_up{n_tr_x, n_tr_vir, b_up};
+              block Xdb_up{n_tr_x, n_tr_vir_inner, b_up};
 
               // block for Xck
               block Xck_low{0, c_low, 0};
@@ -609,7 +617,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
             } else {
               // block for g_dcbk
               block g_dcbk_low{0, c_low, b_low, 0};
-              block g_dcbk_up{n_tr_vir, c_up, b_up, n_tr_occ};
+              block g_dcbk_up{n_tr_vir_inner, c_up, b_up, n_tr_occ};
 
               time00 = mpqc_time::now(world, accurate_time);
               block_g_dcbk("d,c,b,k") =
@@ -619,17 +627,17 @@ class CCSD_T : public CCSD<Tile, Policy> {
             }
             // block for t2_adi
             block t2_daji_low{0, a_low, 0, 0};
-            block t2_daji_up{n_tr_vir,a_up, n_tr_occ, n_tr_occ};
+            block t2_daji_up{n_tr_vir_inner, a_up, n_tr_occ, n_tr_occ};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_daji("d,a,j,i") =
-                t2("d,a,j,i").block(t2_daji_low, t2_daji_up);
+                t2_left("d,a,j,i").block(t2_daji_low, t2_daji_up);
 
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
             // block for g_ajil
             block g_ajil_low{a_low, 0, 0, 0};
-            block g_ajil_up{a_up, n_tr_occ, n_tr_occ, n_tr_occ};
+            block g_ajil_up{a_up, n_tr_occ, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_g_ajil("a,j,i,l") =
@@ -639,18 +647,18 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
             // block for t2_cbkl
             block t2_cbkl_low{c_low, b_low, 0, 0};
-            block t2_cbkl_up{c_up, b_up, n_tr_occ, n_tr_occ};
+            block t2_cbkl_up{c_up, b_up, n_tr_occ, n_tr_occ_inner};
 
             time00 = mpqc_time::now(world, accurate_time);
             block_t2_cbkl("c,b,k,l") =
-                t2("c,b,k,l").block(t2_cbkl_low, t2_cbkl_up);
+                t2_right("c,b,k,l").block(t2_cbkl_low, t2_cbkl_up);
             time01 = mpqc_time::now(world, accurate_time);
             block_time += mpqc_time::duration_in_s(time00, time01);
 
             time00 = mpqc_time::now(world, accurate_time);
             t3("a,b,c,i,j,k") +=
                 block_g_dcbk("d,c,b,k") * block_t2_daji("d,a,j,i") -
-                 block_t2_cbkl("c,b,k,l") * block_g_ajil("a,j,i,l");
+                block_t2_cbkl("c,b,k,l") * block_g_ajil("a,j,i,l");
             time01 = mpqc_time::now(world, accurate_time);
             contraction_time6 += mpqc_time::duration_in_s(time00, time01);
           }
@@ -712,7 +720,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
           std::size_t a_offset = tr_vir.tile(a).first;
           std::size_t b_offset = tr_vir.tile(b).first;
           std::size_t c_offset = tr_vir.tile(c).first;
-          //                            std::cout << a_offset << " " << b_offset
+          //                            std::cout << a_offset << " " <<
+          //                            b_offset
           //                            << " " << c_offset << std::endl;
           std::array<std::size_t, 6> offset{
               {a_offset, b_offset, c_offset, 0, 0, 0}};
@@ -781,14 +790,21 @@ class CCSD_T : public CCSD<Tile, Policy> {
   // computing
   double compute_ccsd_t_straight(const TArray &t1, const TArray &t2) {
     // get integral
-    TArray g_jklc = this->ccsd_intermediate_->get_ijka();
-    TArray g_diba = this->ccsd_intermediate_->get_aibc();
-    TArray g_abij = this->ccsd_intermediate_->get_abij();
+    TArray g_cjkl = get_aijk();
+    TArray g_dabi = get_abci();
+    TArray g_abij = get_abij();
+
+    TArray t2_left = t2;
+    TArray t2_right = t2;
+
+    if(reblock_inner_){
+      reblock_inner_t2(t2_left, t2_right);
+    }
 
     // compute t3
     TArray t3;
     t3("a,b,c,i,j,k") =
-        g_diba("d,i,b,a") * t2("c,d,k,j") - g_jklc("l,k,j,c") * t2("a,b,i,l");
+        g_dabi("d,a,b,i") * t2_left("d,c,j,k") - g_cjkl("c,j,k,l") * t2_right("a,b,i,l");
     t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
                         t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
                         t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
@@ -814,355 +830,163 @@ class CCSD_T : public CCSD<Tile, Policy> {
     return triple_energy;
   }
 
-  double compute_ccsd_t_direct(TArray &t1, TArray &t2) {
-    // get integral
-    TArray g_jklc = this->ccsd_intermediate_->get_ijka();
-    TArray g_diba = this->ccsd_intermediate_->get_aibc();
-    TArray g_abij = this->ccsd_intermediate_->get_abij();
+ private:
+  void reblock() {
+    auto &option = this->options();
+    auto &lcao_factory = this->ccsd_intermediate_->lcao_factory();
+    auto &world = lcao_factory.world();
 
-    // get trange1
-    auto tr_occ = this->trange1_engine_->get_occ_tr1();
-    auto tr_vir = this->trange1_engine_->get_vir_tr1();
+    std::size_t b_occ =
+        option.HasMember("ReblockOcc") ? option["ReblockOcc"].GetInt() : 8;
+    std::size_t b_vir =
+        option.HasMember("ReblockVir") ? option["ReblockVir"].GetInt() : 8;
 
-    auto n_tr_occ = this->trange1_engine_->get_occ_blocks();
-    auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
+    std::size_t occ = this->trange1_engine_->get_occ();
+    std::size_t vir = this->trange1_engine_->get_vir();
+    std::size_t all = this->trange1_engine_->get_all();
+    std::size_t n_frozen = this->trange1_engine_->get_nfrozen();
 
-    // number of blocks computed
-    std::size_t n_blocks_computed = 0;
+    TRange1 old_occ = this->trange1_engine_->get_occ_tr1();
+    TRange1 old_vir = this->trange1_engine_->get_vir_tr1();
 
-    double triple_energy = 0.0;
-    // loop over virtual blocks
-    for (std::size_t a = 0; a < n_tr_vir; ++a) {
-      for (std::size_t b = 0; b <= a; ++b) {
-        for (std::size_t c = 0; c <= b; ++c) {
-          //                            std::cout << a << " " << b << " " << c
-          //                            << std::endl;
-          std::size_t a_low = a;
-          std::size_t a_up = a + 1;
-          std::size_t b_low = b;
-          std::size_t b_up = b + 1;
-          std::size_t c_low = c;
-          std::size_t c_up = c + 1;
-          std::size_t blocks = (a_up - a_low) * (b_up - b_low) * (c_up - c_low);
-          //                            std::cout << a_up << " " << b_up << " "
-          //                            << c_up << std::endl;
-          //                            std::cout << a << " " << b << " " << c
-          //                            << std::endl;
-          n_blocks_computed += blocks;
+    auto new_tr1 =
+        std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
 
-          typedef std::vector<std::size_t> block;
+    TRange1 new_occ = new_tr1->get_occ_tr1();
+    TRange1 new_vir = new_tr1->get_vir_tr1();
 
-          // compute t3
-          TArray t3;
-          // abcijk contribution
-          // g^{di}_{ba}*t^{cd}_{kj} - g^{jk}_{lc}*t^{ab}_{il}
-          {
-            // block for t2_cdkj
-            block t2_cdkj_low{c_low, 0, 0, 0};
-            block t2_cdkj_up{c_up, n_tr_vir, n_tr_occ, n_tr_occ};
 
-            // block for t2_abil
-            block t2_abil_low{a_low, b_low, 0, 0};
-            block t2_abil_up{a_up, b_up, n_tr_occ, n_tr_occ};
+    utility::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
+    utility::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
 
-            // block for g_diba
-            block g_diba_low{0, 0, b_low, a_low};
-            block g_diba_up{n_tr_vir, n_tr_occ, b_up, a_up};
+    this->set_trange1_engine(new_tr1);
 
-            // block for g_jklc
-            block g_jklc_low{0, 0, 0, c_low};
-            block g_jklc_up{n_tr_occ, n_tr_occ, n_tr_occ, c_up};
+    TArray occ_convert = array_ops::create_diagonal_array_from_eigen<Tile>(
+        world, old_occ, new_occ, 1.0);
 
-            TArray block_g_diba, block_t2_cdkj, block_g_jklc, block_t2_abil;
-            block_g_diba("d,i,b,a") =
-                g_diba("d,i,b,a").block(g_diba_low, g_diba_up);
-            block_t2_cdkj("c,d,k,j") =
-                t2("c,d,k,j").block(t2_cdkj_low, t2_cdkj_up);
+    TArray vir_convert = array_ops::create_diagonal_array_from_eigen<Tile>(
+        world, old_vir, new_vir, 1.0);
 
-            block_g_jklc("j,k,l,c") =
-                g_jklc("j,k,l,c").block(g_jklc_low, g_jklc_up);
-            block_t2_abil("a,b,i,l") =
-                t2("a,b,i,l").block(t2_abil_low, t2_abil_up);
+    // get occupied and virtual orbitals
+    auto occ_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"i"));
+    auto vir_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a"));
 
-            t3("a,b,c,i,j,k") =
-                block_g_diba("d,i,b,a") * block_t2_cdkj("c,d,k,j") -
-                block_g_jklc("l,k,j,c") * block_t2_abil("a,b,i,l");
-          }
+    auto new_occ_space = occ_space;
+    new_occ_space("k,i") = occ_space("k,j") * occ_convert("j,i");
 
-          // bcajki contribution
-          // g^{dj}_{cb}*t^{ad}_{ik} - g^{ki}_{la}*t^{bc}_{jl}
-          {
-            // block for t2_adik
-            block t2_adik_low{a_low, 0, 0, 0};
-            block t2_adik_up{a_up, n_tr_vir, n_tr_occ, n_tr_occ};
+    auto new_vir_space = vir_space;
+    new_vir_space("k,a") = vir_space("k,b") * vir_convert("b,a");
 
-            // block for t2_bcjl
-            block t2_bcjl_low{b_low, c_low, 0, 0};
-            block t2_bcjl_up{b_up, c_up, n_tr_occ, n_tr_occ};
+    lcao_factory.orbital_space().clear();
+    lcao_factory.orbital_space().add(new_occ_space);
+    lcao_factory.orbital_space().add(new_vir_space);
 
-            // block for g_djcb
-            block g_djcb_low{0, 0, c_low, b_low};
-            block g_djcb_up{n_tr_vir, n_tr_occ, c_up, b_up};
+    if (reblock_inner_) {
+      // occ inner
+      tr_occ_inner_ =
+          new_tr1->compute_range(new_tr1->get_active_occ(), inner_block_size_);
 
-            // block for g_kila
-            block g_kila_low{0, 0, 0, a_low};
-            block g_kila_up{n_tr_occ, n_tr_occ, n_tr_occ, a_up};
+      utility::parallel_print_range_info(world, tr_occ_inner_, "CCSD(T) OCC Inner");
 
-            TArray block_g_djcb, block_g_kila, block_t2_adik, block_t2_bcjl;
+      auto occ_inner_convert =
+          array_ops::create_diagonal_array_from_eigen<Tile>(world, old_occ,
+                                                            tr_occ_inner_, 1.0);
 
-            block_g_djcb("d,j,c,b") =
-                g_diba("d,j,c,b").block(g_djcb_low, g_djcb_up);
-            block_t2_adik("a,d,i,k") =
-                t2("a,d,i,k").block(t2_adik_low, t2_adik_up);
+      TArray inner_occ;
+      inner_occ("k,i") = occ_space("k,j") * occ_inner_convert("j,i");
+      OrbitalSpace<TArray> inner_occ_space = OrbitalSpace<TArray>(
+          OrbitalIndex(L"m"), OrbitalIndex(L"κ"), inner_occ);
 
-            block_g_kila("k,i,l,a") =
-                g_jklc("k,i,l,a").block(g_kila_low, g_kila_up);
-            block_t2_bcjl("b,c,j,l") =
-                t2("b,c,j,l").block(t2_bcjl_low, t2_bcjl_up);
+      lcao_factory.orbital_space().add(inner_occ_space);
 
-            t3("a,b,c,i,j,k") +=
-                block_g_djcb("d,j,c,b") * block_t2_adik("a,d,i,k") -
-                block_g_kila("k,i,l,a") * block_t2_bcjl("b,c,j,l");
-          }
+      // vir inner
+      tr_vir_inner_ = new_tr1->compute_range(vir, inner_block_size_);
+      utility::parallel_print_range_info(world, tr_vir_inner_, "CCSD(T) Vir Inner");
+      auto vir_inner_convert =
+          array_ops::create_diagonal_array_from_eigen<Tile>(world, old_vir,
+                                                            tr_vir_inner_, 1.0);
 
-          // cabkij contribution
-          // g^{dk}_{ac}*t^{bd}_{ji} - g^{ij}_{lb}*t^{ca}_{kl}
-          {
-            // block for t2_bdji
-            block t2_bdji_low{b_low, 0, 0, 0};
-            block t2_bdji_up{b_up, n_tr_vir, n_tr_occ, n_tr_occ};
+      TArray inner_vir;
+      inner_vir("k,a") = vir_space("k,b") * vir_inner_convert("b,a");
+      OrbitalSpace<TArray> inner_vir_space = OrbitalSpace<TArray>(
+          OrbitalIndex(L"a'"), OrbitalIndex(L"κ"), inner_vir);
+      lcao_factory.orbital_space().add(inner_vir_space);
 
-            // block for t2_cakl
-            block t2_cakl_low{c_low, a_low, 0, 0};
-            block t2_cakl_up{c_up, a_up, n_tr_occ, n_tr_occ};
-
-            // block for g_dkac
-            block g_dkac_low{0, 0, a_low, c_low};
-            block g_dkac_up{n_tr_vir, n_tr_occ, a_up, c_up};
-
-            // block for g_ijlb
-            block g_ijlb_low{0, 0, 0, b_low};
-            block g_ijlb_up{n_tr_occ, n_tr_occ, n_tr_occ, b_up};
-
-            TArray block_g_dkac, block_g_ijlb, block_t2_bdji, block_t2_cakl;
-
-            block_g_dkac("d,k,a,c") =
-                g_diba("d,k,a,c").block(g_dkac_low, g_dkac_up);
-            block_t2_bdji("b,d,j,i") =
-                t2("b,d,j,i").block(t2_bdji_low, t2_bdji_up);
-
-            block_g_ijlb("i,j,l,b") =
-                g_jklc("i,j,l,b").block(g_ijlb_low, g_ijlb_up);
-            block_t2_cakl("c,a,k,l") =
-                t2("c,a,k,l").block(t2_cakl_low, t2_cakl_up);
-
-            t3("a,b,c,i,j,k") +=
-                block_g_dkac("d,k,a,c") * block_t2_bdji("b,d,j,i") -
-                block_g_ijlb("i,j,l,b") * block_t2_cakl("c,a,k,l");
-          }
-
-          // bacjik contribution
-          // g^{dj}_{ab}*t^{cd}_{ki} - g^{ik}_{lc}*t^{ba}_{jl}
-          {
-            // block for t2_cdki
-            block t2_cdki_low{c_low, 0, 0, 0};
-            block t2_cdki_up{c_up, n_tr_vir, n_tr_occ, n_tr_occ};
-
-            // block for t2_bajl
-            block t2_bajl_low{b_low, a_low, 0, 0};
-            block t2_bajl_up{b_up, a_up, n_tr_occ, n_tr_occ};
-
-            // block for g_djab
-            block g_djab_low{0, 0, a_low, b_low};
-            block g_djab_up{n_tr_vir, n_tr_occ, a_up, b_up};
-
-            // block for g_iklc
-            block g_iklc_low{0, 0, 0, c_low};
-            block g_iklc_up{n_tr_occ, n_tr_occ, n_tr_occ, c_up};
-
-            TArray block_g_djab, block_t2_cdki, block_g_iklc, block_t2_bajl;
-            block_g_djab("d,j,a,b") =
-                g_diba("d,j,a,b").block(g_djab_low, g_djab_up);
-            block_t2_cdki("c,d,k,i") =
-                t2("c,d,k,i").block(t2_cdki_low, t2_cdki_up);
-
-            block_g_iklc("i,k,l,c") =
-                g_jklc("i,k,l,c").block(g_iklc_low, g_iklc_up);
-            block_t2_bajl("b,a,j,l") =
-                t2("b,a,j,l").block(t2_bajl_low, t2_bajl_up);
-
-            t3("a,b,c,i,j,k") +=
-                block_g_djab("d,j,a,b") * block_t2_cdki("c,d,k,i") -
-                block_g_iklc("i,k,l,c") * block_t2_bajl("b,a,j,l");
-          }
-
-          // acbikj contribution
-          // g^{di}_{ca}*t^{bd}_{jk} - g^{kj}_{lb}*t^{ac}_{il}
-          {
-            // block for t2_bdjk
-            block t2_bdjk_low{b_low, 0, 0, 0};
-            block t2_bdjk_up{b_up, n_tr_vir, n_tr_occ, n_tr_occ};
-
-            // block for t2_acil
-            block t2_acil_low{a_low, c_low, 0, 0};
-            block t2_acil_up{a_up, c_up, n_tr_occ, n_tr_occ};
-
-            // block for g_dica
-            block g_dica_low{0, 0, c_low, a_low};
-            block g_dica_up{n_tr_vir, n_tr_occ, c_up, a_up};
-
-            // block for g_kjlb
-            block g_kjlb_low{0, 0, 0, b_low};
-            block g_kjlb_up{n_tr_occ, n_tr_occ, n_tr_occ, b_up};
-
-            TArray block_g_dica, block_t2_bdjk, block_g_kjlb, block_t2_acil;
-            block_g_dica("d,i,c,a") =
-                g_diba("d,i,c,a").block(g_dica_low, g_dica_up);
-            block_t2_bdjk("b,d,j,k") =
-                t2("b,d,j,k").block(t2_bdjk_low, t2_bdjk_up);
-
-            block_g_kjlb("k,j,l,b") =
-                g_jklc("k,j,l,b").block(g_kjlb_low, g_kjlb_up);
-            block_t2_acil("a,c,i,l") =
-                t2("a,c,i,l").block(t2_acil_low, t2_acil_up);
-
-            t3("a,b,c,i,j,k") +=
-                block_g_dica("d,i,c,a") * block_t2_bdjk("b,d,j,k") -
-                block_g_kjlb("k,j,l,b") * block_t2_acil("a,c,i,l");
-          }
-
-          // cbakji contribution
-          // g^{dk}_{bc}*t^{ad}_{ij} - g^{ji}_{la}*t^{cb}_{kl}
-          {
-            // block for t2_adij
-            block t2_adij_low{a_low, 0, 0, 0};
-            block t2_adij_up{a_up, n_tr_vir, n_tr_occ, n_tr_occ};
-
-            // block for t2_cbkl
-            block t2_cbkl_low{c_low, b_low, 0, 0};
-            block t2_cbkl_up{c_up, b_up, n_tr_occ, n_tr_occ};
-
-            // block for g_dkbc
-            block g_dkbc_low{0, 0, b_low, c_low};
-            block g_dkbc_up{n_tr_vir, n_tr_occ, b_up, c_up};
-
-            // block for g_jila
-            block g_jila_low{0, 0, 0, a_low};
-            block g_jila_up{n_tr_occ, n_tr_occ, n_tr_occ, a_up};
-
-            TArray block_g_dkbc, block_g_jila, block_t2_adij, block_t2_cbkl;
-
-            block_g_dkbc("d,k,b,c") =
-                g_diba("d,k,b,c").block(g_dkbc_low, g_dkbc_up);
-            block_t2_adij("a,d,i,j") =
-                t2("a,d,i,j").block(t2_adij_low, t2_adij_up);
-
-            block_g_jila("j,i,l,a") =
-                g_jklc("j,i,l,a").block(g_jila_low, g_jila_up);
-            block_t2_cbkl("c,b,k,l") =
-                t2("c,b,k,l").block(t2_cbkl_low, t2_cbkl_up);
-
-            t3("a,b,c,i,j,k") +=
-                block_g_dkbc("d,k,b,c") * block_t2_adij("a,d,i,j") -
-                block_g_jila("j,i,l,a") * block_t2_cbkl("c,b,k,l");
-          }
-
-          // compute v3
-          TArray v3;
-          // abcijk contribution
-          // g^{ab}_{ij}*t^{c}_{k}
-          {
-            // block for g_abij
-            block g_abij_low{a_low, b_low, 0, 0};
-            block g_abij_up{a_up, b_up, n_tr_occ, n_tr_occ};
-
-            // block for t1_ck
-            block t1_ck_low{c_low, 0};
-            block t1_ck_up{c_up, n_tr_occ};
-            v3("a,b,c,i,j,k") = g_abij("a,b,i,j").block(g_abij_low, g_abij_up) *
-                                t1("c,k").block(t1_ck_low, t1_ck_up);
-          }
-
-          // acbikj contribution
-          // g^{ac}_{ik}*t^{b}_{j}
-          {
-            // block for g_acik
-            block g_acik_low{a_low, c_low, 0, 0};
-            block g_acik_up{a_up, c_up, n_tr_occ, n_tr_occ};
-
-            // block for t1_bj
-            block t1_bj_low{b_low, 0};
-            block t1_bj_up{b_up, n_tr_occ};
-            v3("a,b,c,i,j,k") +=
-                g_abij("a,c,i,k").block(g_acik_low, g_acik_up) *
-                t1("b,j").block(t1_bj_low, t1_bj_up);
-          }
-
-          // bcajki contribution
-          // g^{bc}_{jk}*t^{a}_{i}
-          {
-            // block for g_bcjk
-            block g_bcjk_low{b_low, c_low, 0, 0};
-            block g_bcjk_up{b_up, c_up, n_tr_occ, n_tr_occ};
-
-            // block for t1_ai
-            block t1_ai_low{a_low, 0};
-            block t1_ai_up{a_up, n_tr_occ};
-
-            v3("a,b,c,i,j,k") +=
-                g_abij("b,c,j,k").block(g_bcjk_low, g_bcjk_up) *
-                t1("a,i").block(t1_ai_low, t1_ai_up);
-          }
-
-          // compute offset
-          std::size_t a_offset = tr_vir.tile(a).first;
-          std::size_t b_offset = tr_vir.tile(b).first;
-          std::size_t c_offset = tr_vir.tile(c).first;
-          //                            std::cout << a_offset << " " << b_offset
-          //                            << " " << c_offset << std::endl;
-          std::array<std::size_t, 6> offset{
-              {a_offset, b_offset, c_offset, 0, 0, 0}};
-
-          double tmp_energy = 0.0;
-          if (b < a && c < b) {
-            auto ccsd_t_reduce = CCSD_T_Reduce(
-                this->orbital_energy_, this->trange1_engine_->get_occ(),
-                this->trange1_engine_->get_nfrozen(), offset);
-            tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
-                          (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
-                           t3("a,b,c,j,k,i") -
-                           2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") +
-                                t3("a,b,c,j,i,k"))))
-                             .reduce(ccsd_t_reduce);
-
-            tmp_energy *= 2;
-          } else {
-            auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                this->orbital_energy_, this->trange1_engine_->get_occ(),
-                this->trange1_engine_->get_nfrozen(), offset);
-
-            tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
-                          (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
-                           t3("a,b,c,j,k,i") -
-                           2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") +
-                                t3("a,b,c,j,i,k"))))
-                             .reduce(ccsd_t_reduce);
-          }
-
-          triple_energy += tmp_energy;
-        }
-      }
-      if (t1.world().rank() == 0) {
-        print_progress(a, a + 1, n_tr_vir);
-      }
+      utility::print_par(world,
+                         "Warning!! Using m for Inner Occupied Orbitals and a' "
+                         "for Inner Virtual Orbitals! \n");
     }
 
-    if (t1.world().rank() == 0) {
-      std::cout << "Total Blocks Computed  " << n_blocks_computed;
-      std::cout << " from " << std::pow(n_tr_occ, 3) * std::pow(n_tr_vir, 3)
-                << std::endl;
+    // get t1
+    auto t1 = this->t1();
+    t1("a,i") = t1("b,j") * vir_convert("b,a") * occ_convert("j,i");
+    this->set_t1(t1);
+
+    // get t2
+    auto t2 = this->t2();
+    t2("a,b,i,j") = t2("c,d,k,l") * vir_convert("c,a") * vir_convert("d,b") *
+                    occ_convert("k,i") * occ_convert("l,j");
+    this->set_t2(t2);
+  }
+
+  void reblock_inner_t2(TArray& t2_left, TArray t2_right){
+
+    auto& world = this->ccsd_intermediate_->lcao_factory().world();
+
+    auto vir_inner_convert =
+        array_ops::create_diagonal_array_from_eigen<Tile>(
+            world, t2_left.trange().data()[0], tr_vir_inner_, 1.0);
+
+    auto occ_inner_convert =
+        array_ops::create_diagonal_array_from_eigen<Tile>(
+            world, t2_left.trange().data()[3], tr_occ_inner_, 1.0);
+
+    t2_left("d,a,i,j") = t2_left("c,a,i,j") * vir_inner_convert("c,d");
+
+    t2_right("a,b,i,l") = t2_right("a,b,i,j") * occ_inner_convert("j,l");
+  }
+
+
+  /// <ai|jk>
+  const TArray get_aijk() {
+    std::wstring post_fix = L"";
+    if (this->ccsd_intermediate_->is_df()) {
+      post_fix = L"[df]";
     }
-    return triple_energy;
+
+    if (reblock_inner_) {
+      return this->ccsd_intermediate_->lcao_factory().compute(L"<a i|G|j m>" +
+                                                              post_fix);
+    } else {
+      return this->ccsd_intermediate_->lcao_factory().compute(L"<a i|G|j k>" +
+                                                              post_fix);
+    }
+  }
+
+  /// <ab|ci>
+  const TArray get_abci() {
+    std::wstring post_fix = L"";
+    if (this->ccsd_intermediate_->is_df()) {
+      post_fix = L"[df]";
+    }
+
+    if (reblock_inner_) {
+      return this->ccsd_intermediate_->lcao_factory().compute(L"<a' b|G|c i>" +
+                                                              post_fix);
+    } else {
+      return this->ccsd_intermediate_->lcao_factory().compute(L"<a b|G|c i>" +
+                                                              post_fix);
+    }
+  }
+
+  /// <ab|ij>
+  const TArray get_abij() {
+    if (this->ccsd_intermediate_->is_df()) {
+      return this->ccsd_intermediate_->lcao_factory().compute(
+          L"<a b|G|i j>[df]");
+    } else {
+      return this->ccsd_intermediate_->lcao_factory().compute(L"<a b|G|i j>");
+    }
   }
 
  private:

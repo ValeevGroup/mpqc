@@ -32,74 +32,71 @@ TA::DistArray<Tile, TA::SparsePolicy> create_diagonal_array_from_eigen(madness::
 
 template <typename T>
 void make_diagonal_tile(TiledArray::Tensor<T> &tile, T val) {
-    auto const extent = tile.range().extent();
-    auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
-    for (auto i = 0ul; i < extent[0]; ++i) {
-        map(i, i) = val;
-    }
+  auto const extent = tile.range().extent();
+  auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
+  for (auto i = 0ul; i < extent[0]; ++i) {
+    map(i, i) = val;
+  }
 }
 
 template <typename T>
 void make_diagonal_tile(tensor::Tile<tensor::DecomposedTensor<T>> &tile,
                         T val) {
-    assert(tile.tile().ndecomp() == 1);
-    auto extent = tile.range().extent();
-    auto local_range = TA::Range(extent[0], extent[1]);
-    auto tensor = tensor::DecomposedTensor<T>(tile.tile().cut(),
-                                              TA::Tensor<T>(local_range, 0.0));
-    auto map = TiledArray::eigen_map(tensor.tensor(0), extent[0], extent[1]);
-    for (auto i = 0ul; i < extent[0]; ++i) {
-        map(i, i) = val;
-    }
-    tile.tile() = std::move(tensor);
+  assert(tile.tile().ndecomp() == 1);
+  auto extent = tile.range().extent();
+  auto local_range = TA::Range(extent[0], extent[1]);
+  auto tensor = tensor::DecomposedTensor<T>(tile.tile().cut(),
+                                            TA::Tensor<T>(local_range, 0.0));
+  auto map = TiledArray::eigen_map(tensor.tensor(0), extent[0], extent[1]);
+  for (auto i = 0ul; i < extent[0]; ++i) {
+    map(i, i) = val;
+  }
+  tile.tile() = std::move(tensor);
 }
 
 template <typename Tile>
 TiledArray::DistArray<Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
-      TiledArray::DistArray<Tile, TiledArray::SparsePolicy> const &model,
-      double val) {
+    TiledArray::DistArray<Tile, TiledArray::SparsePolicy> const &model,
+    double val) {
+  using Array = TiledArray::DistArray<Tile, TiledArray::SparsePolicy>;
 
-    using Array = TiledArray::DistArray<Tile, TiledArray::SparsePolicy>;
+  TiledArray::Tensor<float> tile_shape(model.trange().tiles_range(), 0.0);
 
-    TiledArray::Tensor<float> tile_shape(model.trange().tiles_range(), 0.0);
+  auto pmap = model.pmap();
 
-    auto pmap = model.pmap();
-
-    auto pmap_end = pmap->end();
-    for (auto it = pmap->begin(); it != pmap_end; ++it) {
-        auto idx = model.trange().tiles_range().idx(*it);
-        if (idx[0] == idx[1]) {
-            tile_shape[*it] = val;
-        }
+  auto pmap_end = pmap->end();
+  for (auto it = pmap->begin(); it != pmap_end; ++it) {
+    auto idx = model.trange().tiles_range().idx(*it);
+    if (idx[0] == idx[1]) {
+      tile_shape[*it] = val;
     }
+  }
 
-    TiledArray::SparseShape<float> shape(model.world(), tile_shape,
-                                         model.trange());
+  TiledArray::SparseShape<float> shape(model.world(), tile_shape,
+                                       model.trange());
 
-    Array diag(model.world(), model.trange(), shape);
+  Array diag(model.world(), model.trange(), shape);
 
-    auto const &trange = diag.trange();
-    pmap = diag.pmap();
-    auto end = pmap->end();
-    for (auto it = pmap->begin(); it != end; ++it) {
-        const auto ord = *it;
+  auto const &trange = diag.trange();
+  pmap = diag.pmap();
+  auto end = pmap->end();
+  for (auto it = pmap->begin(); it != end; ++it) {
+    const auto ord = *it;
 
         auto idx = trange.tiles_range().idx(ord);
         auto diagonal_tile
               = std::all_of(idx.begin(), idx.end(),
-                            [&](typename Array::size_type const &x) {
-                  return x == idx.front();
-              });
+        [&](typename Array::size_type const &x) { return x == idx.front(); });
 
-        using TileType = typename Array::value_type;
-        if (diagonal_tile && !diag.is_zero(ord)) {
-            TileType tile = TileType{trange.make_tile_range(ord), 0.0};
-            make_diagonal_tile(tile, val);
-            diag.set(ord, std::move(tile));
-        }
+    using TileType = typename Array::value_type;
+    if (diagonal_tile && !diag.is_zero(ord)) {
+      TileType tile = TileType{trange.make_tile_range(ord), 0.0};
+      make_diagonal_tile(tile, val);
+      diag.set(ord, std::move(tile));
     }
+  }
 
-    return diag;
+  return diag;
 }
 /*!
  * \breif takes a TiledArray::TiledRange and a value and returns a diagonal
@@ -116,66 +113,65 @@ TiledArray::DistArray<Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
  * \todo Finish diagonal matrix this is a little trickier than previous identity
  *functions because it needs to gracefully handle non symmetric tiling.
  */
-template <typename T, typename Tile>
-TiledArray::Array<T, 2, Tile, TiledArray::SparsePolicy>
-diagonal_matrix(TiledArray::TiledRange const &trange, double val,
-                madness::World &world = madness::World::get_default()) {
+template <typename Tile>
+TiledArray::DistArray<Tile, TiledArray::SparsePolicy> diagonal_matrix(
+    TiledArray::TiledRange const &trange, double val,
+    madness::World &world = madness::World::get_default()) {
+  TA_ASSERT(trange.rank() == 2);
 
-    using Array = TiledArray::Array<T, 2, Tile, TiledArray::SparsePolicy>;
+  using Array = TiledArray::DistArray<Tile, TiledArray::SparsePolicy>;
 
-    TiledArray::Tensor<float> tile_norms(trange.tiles_range(), 0.0);
+  TiledArray::Tensor<float> tile_norms(trange.tiles_range(), 0.0);
 
-    TiledArray::SparseShape<float> shape(world, tile_norms, trange);
+  TiledArray::SparseShape<float> shape(world, tile_norms, trange);
 
-    Array diag(world, trange, shape);
+  Array diag(world, trange, shape);
 
-    return diag;
+  return diag;
 }
 
 template <typename T, unsigned int N, typename Tile>
 TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> create_diagonal_matrix(
-      TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> const &model,
-      double val) {
+    TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> const &model,
+    double val) {
+  using Array = TiledArray::Array<T, N, Tile, TiledArray::DensePolicy>;
 
-    using Array = TiledArray::Array<T, N, Tile, TiledArray::DensePolicy>;
+  Array diag(model.world(), model.trange());
 
-    Array diag(model.world(), model.trange());
+  auto pmap_ptr = diag.pmap();
+  const auto end = pmap_ptr->end();
+  for (auto it = pmap_ptr->begin(); it != end; ++it) {
+    const auto ord = *it;
+    auto const &idx = diag.trange().tiles_range().idx(ord);
+    auto tile = Tile{diag.trange().make_tile_range(ord)};
+    auto const extent = tile.range().extent();
+    auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
 
-    auto pmap_ptr = diag.pmap();
-    const auto end = pmap_ptr->end();
-    for (auto it = pmap_ptr->begin(); it != end; ++it) {
-
-        const auto ord = *it;
-        auto const &idx = diag.trange().tiles_range().idx(ord);
-        auto tile = Tile{diag.trange().make_tile_range(ord)};
-        auto const extent = tile.range().extent();
-        auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
-
-        if (idx[0] == idx[1]) {
-            for (auto i = 0ul; i < extent[0]; ++i) {
-                for (auto j = 0ul; j < extent[1]; ++j) {
-                    if (i != j) {
-                        map(i, j) = 0;
-                    } else {
-                        map(i, i) = val;
-                    }
-                }
-            }
-        } else {
-            for (auto i = 0ul; i < extent[0]; ++i) {
-                for (auto j = 0ul; j < extent[1]; ++j) {
-                    map(i, j) = 0;
-                }
-            }
+    if (idx[0] == idx[1]) {
+      for (auto i = 0ul; i < extent[0]; ++i) {
+        for (auto j = 0ul; j < extent[1]; ++j) {
+          if (i != j) {
+            map(i, j) = 0;
+          } else {
+            map(i, i) = val;
+          }
         }
-
-        diag.set(ord, std::move(tile));
+      }
+    } else {
+      for (auto i = 0ul; i < extent[0]; ++i) {
+        for (auto j = 0ul; j < extent[1]; ++j) {
+          map(i, j) = 0;
+        }
+      }
     }
 
-    return diag;
+    diag.set(ord, std::move(tile));
+  }
+
+  return diag;
 }
 
-} // namespace array_ops
-} // namespace mpqc
+}  // namespace array_ops
+}  // namespace mpqc
 
-#endif // MPQC_TAROUTINES_DIAGONALARRAY_H
+#endif  // MPQC_TAROUTINES_DIAGONALARRAY_H

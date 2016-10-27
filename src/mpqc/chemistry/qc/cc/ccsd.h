@@ -153,6 +153,10 @@ class CCSD {
     return trange1_engine_;
   }
 
+  void set_trange1_engine(const std::shared_ptr<TRange1Engine>& tr1){
+    trange1_engine_ = tr1;
+  }
+
   const rapidjson::Document &options() const { return options_; }
 
   const std::shared_ptr<CCSDIntermediate<Tile, Policy>> &intermediate() const {
@@ -178,6 +182,14 @@ class CCSD {
     } else {
       throw std::runtime_error("CCSD T2 amplitudes have not been computed");
     }
+  }
+
+  void set_t1(const TArray& t1){
+    T1_ = t1;
+  }
+
+  void set_t2(const TArray& t2){
+    T2_ = t2;
   }
 
  protected:

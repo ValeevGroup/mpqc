@@ -87,8 +87,6 @@ class CCSD_T : public CCSD<Tile, Policy> {
     return ccsd_corr + ccsd_t;
   }
 
-
-
   double compute_ccsd_t(TArray &t1, TArray &t2) {
     bool df = this->options_.HasMember("DFExpr")
                   ? this->options_["DFExpr"].GetBool()
@@ -797,14 +795,14 @@ class CCSD_T : public CCSD<Tile, Policy> {
     TArray t2_left = t2;
     TArray t2_right = t2;
 
-    if(reblock_inner_){
+    if (reblock_inner_) {
       reblock_inner_t2(t2_left, t2_right);
     }
 
     // compute t3
     TArray t3;
-    t3("a,b,c,i,j,k") =
-        g_dabi("d,a,b,i") * t2_left("d,c,j,k") - g_cjkl("c,j,k,l") * t2_right("a,b,i,l");
+    t3("a,b,c,i,j,k") = g_dabi("d,a,b,i") * t2_left("d,c,j,k") -
+                        g_cjkl("c,j,k,l") * t2_right("a,b,i,l");
     t3("a,b,c,i,j,k") = t3("a,b,c,i,j,k") + t3("a,c,b,i,k,j") +
                         t3("c,a,b,k,i,j") + t3("c,b,a,k,j,i") +
                         t3("b,c,a,j,k,i") + t3("b,a,c,j,i,k");
@@ -855,7 +853,6 @@ class CCSD_T : public CCSD<Tile, Policy> {
     TRange1 new_occ = new_tr1->get_occ_tr1();
     TRange1 new_vir = new_tr1->get_vir_tr1();
 
-
     utility::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
     utility::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
 
@@ -886,7 +883,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
       tr_occ_inner_ =
           new_tr1->compute_range(new_tr1->get_active_occ(), inner_block_size_);
 
-      utility::parallel_print_range_info(world, tr_occ_inner_, "CCSD(T) OCC Inner");
+      utility::parallel_print_range_info(world, tr_occ_inner_,
+                                         "CCSD(T) OCC Inner");
 
       auto occ_inner_convert =
           array_ops::create_diagonal_array_from_eigen<Tile>(world, old_occ,
@@ -901,7 +899,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
       // vir inner
       tr_vir_inner_ = new_tr1->compute_range(vir, inner_block_size_);
-      utility::parallel_print_range_info(world, tr_vir_inner_, "CCSD(T) Vir Inner");
+      utility::parallel_print_range_info(world, tr_vir_inner_,
+                                         "CCSD(T) Vir Inner");
       auto vir_inner_convert =
           array_ops::create_diagonal_array_from_eigen<Tile>(world, old_vir,
                                                             tr_vir_inner_, 1.0);
@@ -929,23 +928,19 @@ class CCSD_T : public CCSD<Tile, Policy> {
     this->set_t2(t2);
   }
 
-  void reblock_inner_t2(TArray& t2_left, TArray t2_right){
+  void reblock_inner_t2(TArray &t2_left, TArray &t2_right) {
+    auto &world = this->ccsd_intermediate_->lcao_factory().world();
 
-    auto& world = this->ccsd_intermediate_->lcao_factory().world();
+    auto vir_inner_convert = array_ops::create_diagonal_array_from_eigen<Tile>(
+        world, t2_left.trange().data()[0], tr_vir_inner_, 1.0);
 
-    auto vir_inner_convert =
-        array_ops::create_diagonal_array_from_eigen<Tile>(
-            world, t2_left.trange().data()[0], tr_vir_inner_, 1.0);
-
-    auto occ_inner_convert =
-        array_ops::create_diagonal_array_from_eigen<Tile>(
-            world, t2_left.trange().data()[3], tr_occ_inner_, 1.0);
+    auto occ_inner_convert = array_ops::create_diagonal_array_from_eigen<Tile>(
+        world, t2_right.trange().data()[3], tr_occ_inner_, 1.0);
 
     t2_left("d,a,i,j") = t2_left("c,a,i,j") * vir_inner_convert("c,d");
 
     t2_right("a,b,i,l") = t2_right("a,b,i,j") * occ_inner_convert("j,l");
   }
-
 
   /// <ai|jk>
   const TArray get_aijk() {

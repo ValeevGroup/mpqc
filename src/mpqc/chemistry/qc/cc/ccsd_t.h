@@ -108,7 +108,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
     TArray Xai;
 
     if (df) {
-      Xdb = this->ccsd_intermediate_->get_Xab();
+      Xdb = get_Xab();
       Xai = this->ccsd_intermediate_->get_Xai();
     } else {
       g_dabi = get_abci();
@@ -940,6 +940,23 @@ class CCSD_T : public CCSD<Tile, Policy> {
     t2_left("d,a,i,j") = t2_left("c,a,i,j") * vir_inner_convert("c,d");
 
     t2_right("a,b,i,l") = t2_right("a,b,i,j") * occ_inner_convert("j,l");
+  }
+
+  const TArray get_Xab() const {
+    TArray result;
+    TArray sqrt =
+        this->ccsd_intermediate_->lcao_factory().atomic_integral().compute(
+            L"(Κ|G| Λ)[inv_sqr]");
+    TArray three_center;
+    if (reblock_inner_) {
+      three_center =
+          this->ccsd_intermediate_->lcao_factory().compute(L"(Κ|G|a' b)");
+    } else {
+      three_center =
+          this->ccsd_intermediate_->lcao_factory().compute(L"(Κ|G|a b)");
+    }
+    result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
+    return result;
   }
 
   /// <ai|jk>

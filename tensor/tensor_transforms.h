@@ -99,7 +99,7 @@ class TaToDecompTensor {
 
     Tile<DecomposedTensor<double>> operator()(TA::Tensor<double> const &t_ref) {
         // Just make a copy of the reference
-        TA::Tensor<double> t = t_ref;
+        TA::Tensor<double> t = t_ref.clone();
 
         if (t.range().rank() == 3) {
             return rank_three_convert(std::move(t));
@@ -112,6 +112,7 @@ class TaToDecompTensor {
         }
         return Tile<DecomposedTensor<double>>();
     }
+
 };
 
 class DecompToTaTensor {

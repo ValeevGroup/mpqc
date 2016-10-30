@@ -27,7 +27,7 @@ namespace molecule {
  *
  */
 class Molecule : public DescribedClass {
- private:
+ protected:
   std::vector<AtomBasedClusterable> elements_;
 
   Vec3D com_ = {0, 0, 0};  /// Center of Mass
@@ -147,7 +147,7 @@ class Molecule : public DescribedClass {
   int64_t core_electrons() const;
 
   /// Returns the nuclear repulsion energy of the Molecule.
-  double nuclear_repulsion() const;
+  virtual double nuclear_repulsion() const;
 
   /*! \brief A vector of all atoms in the Molecule
    *
@@ -165,6 +165,9 @@ class Molecule : public DescribedClass {
    * also clusterable.
   */
   Vec3D const &com() const { return com_; }
+
+  /// Print Molecule information
+  virtual void print(std::ostream & os) const;
 };
 
 /// Make Molecules printable

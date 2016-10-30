@@ -17,6 +17,8 @@ set(sources
         molecule.h
         molecule_fwd.h
         molecule.cpp
+        periodic_system.h
+        periodic_system.cpp
 )
 
 add_library(MPQCmolecule ${sources})

@@ -204,21 +204,24 @@ int64_t Molecule::core_electrons() const {
   return n;
 }
 
-std::ostream &operator<<(std::ostream &os, Molecule const &mol) {
-  os << "Molecule C.O.M: " << mol.com().transpose() << ", ";
-  os << "charge: " << mol.charge() << ", ";
-  os << "mass: " << mol.mass() << ", with Elements: {";
+void Molecule::print(std::ostream & os) const {
+    os << "Molecule C.O.M: " << com().transpose() << ", ";
+    os << "charge: " << charge() << ", ";
+    os << "mass: " << mass() << ", with Elements: {";
 
-  auto last = mol.end();
-  auto second_last = last - 1;
-  for (auto it = mol.begin(); it != last; ++it) {
-    if (it != second_last) {
-      it->print(os) << ", ";
-    } else {
-      it->print(os) << "}";
+    auto last = end();
+    auto second_last = last - 1;
+    for (auto it = begin(); it != last; ++it) {
+      if (it != second_last) {
+        it->print(os) << ", ";
+      } else {
+        it->print(os) << "}";
+      }
     }
-  }
+}
 
+std::ostream &operator<<(std::ostream &os, Molecule const &mol) {
+  mol.print(os);
   return os;
 }
 

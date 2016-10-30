@@ -17,6 +17,12 @@ struct TensorDPassThrough {
   }
 };
 
+struct TensorZPassThrough {
+  TA::TensorZ operator()(TA::TensorZ &&ten) const {
+    return std::move(ten);
+    }
+};
+
 }
 }
 

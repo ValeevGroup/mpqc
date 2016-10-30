@@ -31,6 +31,8 @@ target_link_libraries(mpqc ${MPQC_LIBRARIES})
 add_executable(mpqc_info mpqc_info.cpp)
 target_link_libraries(mpqc_info MPQCbasis MPQCmolecule MPQCkeyval MPQCexpression utility)
 
+add_executable(phf EXCLUDE_FROM_ALL phf.cpp)
+target_link_libraries(phf MPQCmolecule MPQCkeyval MPQCbasis MPQCintegrals ${LIBINT2_LIBRARIES})
 
 add_executable(eomcc EXCLUDE_FROM_ALL eom_cc.cpp)
 target_link_libraries(eomcc ${MPQC_LIBRARIES})

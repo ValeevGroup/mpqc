@@ -13,12 +13,12 @@
 namespace mpqc{
 namespace qc{
 
-template<typename Tile>
+template<typename Tile, typename Policy>
 class LCAOWavefunction : public Wavefunction {
 
 public:
-  using ArrayType = TA::DistArray<Tile, TA::SparsePolicy>;
-  using LCAOFactoryType = integrals::LCAOFactory<Tile,TA::SparsePolicy>;
+  using ArrayType = TA::DistArray<Tile, Policy>;
+  using LCAOFactoryType = integrals::LCAOFactory<Tile,Policy>;
 
   /*
    * KeyVal constructor
@@ -34,7 +34,7 @@ public:
    *
    */
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-    lcao_factory_ = integrals::detail::construct_lcao_factory<Tile,TA::SparsePolicy>(kv);
+    lcao_factory_ = integrals::detail::construct_lcao_factory<Tile,Policy>(kv);
 
     frozen_core_ = kv.value<bool>("frozen_core",true);
     std::size_t mo_block = kv.value<int>("mo_block",24);

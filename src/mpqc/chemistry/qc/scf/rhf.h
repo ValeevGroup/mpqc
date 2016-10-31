@@ -19,7 +19,7 @@
 namespace mpqc{
 namespace scf{
 
-class RHF : public qc::AOWavefunction<TA::TensorD> {
+class RHF : public qc::AOWavefunction<TA::TensorD,TA::SparsePolicy> {
 
 public:
   using array_type = TA::TSpArrayD;

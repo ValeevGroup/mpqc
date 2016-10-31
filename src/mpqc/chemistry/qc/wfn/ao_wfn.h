@@ -15,19 +15,19 @@
 namespace mpqc {
 namespace qc {
 
-template<typename Tile>
+template<typename Tile, typename Policy>
 class AOWavefunction : public Wavefunction {
  public:
-  using AOIntegral = integrals::AtomicIntegral<Tile, TA::SparsePolicy>;
-  using DirectAOIntegral = integrals::DirectAtomicIntegral<Tile, TA::SparsePolicy>;
+  using AOIntegral = integrals::AtomicIntegral<Tile, Policy>;
+  using DirectAOIntegral = integrals::DirectAtomicIntegral<Tile, Policy>;
   using ArrayType = typename AOIntegral::TArray;
 
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv)
   {
-    ao_ints_ = integrals::detail::construct_atomic_integral<Tile, TA::SparsePolicy>(kv);
+    ao_ints_ = integrals::detail::construct_atomic_integral<Tile, Policy>(kv);
     ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
-    direct_ao_ints_ = integrals::detail::construct_direct_atomic_integral<Tile,TA::SparsePolicy>(kv);
+    direct_ao_ints_ = integrals::detail::construct_direct_atomic_integral<Tile,Policy>(kv);
     direct_ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
   }

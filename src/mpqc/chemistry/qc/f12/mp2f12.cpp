@@ -105,7 +105,7 @@ double RMP2F12::value() {
 
 void RMP2F12::obsolete() {
   rmp2f12_energy_ = 0.0;
-  qc::LCAOWavefunction<TA::TensorD>::obsolete();
+  qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
   ref_wfn_->obsolete();
 }
 

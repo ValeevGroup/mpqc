@@ -107,7 +107,7 @@ double RHF::value() {
 
 void RHF::obsolete() {
   rhf_energy_ = 0.0;
-  qc::AOWavefunction<TA::TensorD>::obsolete();
+  qc::AOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
 }
 
 double RHF::energy() const {

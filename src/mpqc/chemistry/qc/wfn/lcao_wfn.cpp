@@ -7,7 +7,8 @@
 namespace mpqc {
 namespace qc {
 
-template class LCAOWavefunction<TA::TensorD>;
+template class LCAOWavefunction<TA::TensorD, TA::DensePolicy>;
+template class LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;
 
 }
 }

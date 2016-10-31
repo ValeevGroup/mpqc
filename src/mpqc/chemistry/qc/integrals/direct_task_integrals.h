@@ -6,7 +6,6 @@
 #include <mpqc/chemistry/qc/integrals/integral_builder.h>
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 
-#include "../../../../../ta_routines/tile_convert.h"
 #include <limits>
 
 namespace mpqc {
@@ -20,7 +19,7 @@ template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
     mad::World &world, ShrPool<Engine> shr_pool,
     Bvector const &bases,
-    std::function<Tile(TA::TensorD &&)> op = mpqc::ta_routines::TensorDPassThrough()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD,true>()) {
   const auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
@@ -84,7 +83,7 @@ template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = mpqc::ta_routines::TensorDPassThrough())
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD,true>())
 
 {
 
@@ -156,7 +155,7 @@ template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
     mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD&&)> op = mpqc::ta_routines::TensorDPassThrough()) {
+    std::function<Tile(TA::TensorD&&)> op = TA::Noop<TA::TensorD,true>()) {
   const auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
@@ -214,7 +213,7 @@ template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
     mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD&&)> op = mpqc::ta_routines::TensorDPassThrough()) {
+    std::function<Tile(TA::TensorD&&)> op = TA::Noop<TA::TensorD,true>()) {
   const auto trange = detail::create_trange(bases);
 
   // Copy the Bases for the Integral Builder

@@ -114,7 +114,7 @@ class DirectAtomicIntegral : public AtomicIntegralBase, public DescribedClass {
   /// set oper based on Tile type
   template<typename T = Tile>
   void set_oper(typename std::enable_if<std::is_same<T,TA::TensorD>::value, T>::type && t){
-    op_ = mpqc::ta_routines::TensorDPassThrough();
+    op_ = TA::Noop<TA::TensorD,true>();
   }
   /// wrapper to compute function
   DirectTArray compute(const std::wstring& str) {

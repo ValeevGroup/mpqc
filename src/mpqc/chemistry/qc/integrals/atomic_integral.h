@@ -7,7 +7,6 @@
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "../../../../../ta_routines/sqrt_inv.h"
-#include "../../../../../ta_routines/tile_convert.h"
 #include "../../../../../utility/parallel_break_point.h"
 #include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/time.h"
@@ -144,7 +143,7 @@ class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
   /// set oper based on Tile type
   template<typename T = Tile>
   void set_oper(typename std::enable_if<std::is_same<T,TA::TensorD>::value, T>::type && t){
-    op_ = mpqc::ta_routines::TensorDPassThrough();
+    op_ = TA::Noop<TA::TensorD,true>();
   }
 
   virtual ~AtomicIntegral() noexcept = default;

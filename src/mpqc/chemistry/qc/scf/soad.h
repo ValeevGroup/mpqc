@@ -179,7 +179,7 @@ Array fock_from_soad(madness::World &world,
                      molecule::Molecule const &clustered_mol,
                      basis::Basis const &obs, ShrPool engs, Array const &H,
                      std::function<Tile(TA::TensorD &&)> op =
-                         mpqc::ta_routines::TensorDPassThrough()) {
+                         TA::Noop<TA::TensorD,true>()) {
   // Soad Density
   auto D = soad_density_eig_matrix(clustered_mol);
 

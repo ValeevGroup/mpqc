@@ -12,7 +12,6 @@
 
 #include <TiledArray/tensor/tensor_map.h>
 
-#include "../../../../../ta_routines/tile_convert.h"
 #include <mpqc/chemistry/qc/integrals/integral_builder.h>
 #include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
@@ -37,7 +36,7 @@ template <typename E, typename Tile = TA::TensorD>
 std::vector<DArray<2, Tile, SpPolicy>> sparse_xyz_integrals(
     mad::World &world, ShrPool<E> shr_pool, Barray<2> const &bases,
     std::function<Tile(TA::TensorD &&)> op =
-        ta_routines::TensorDPassThrough()) {
+        TA::Noop<TA::TensorD,true>()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
@@ -146,7 +145,7 @@ TA::DistArray<Tile, SpPolicy> sparse_integrals(
     mad::World &world, ShrPool<E> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op =
-        mpqc::ta_routines::TensorDPassThrough()) {
+        TA::Noop<TA::TensorD,true>()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
@@ -208,7 +207,7 @@ TA::DistArray<Tile, DnPolicy> dense_integrals(
     mad::World &world, ShrPool<E> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op =
-        mpqc::ta_routines::TensorDPassThrough()) {
+        TA::Noop<TA::TensorD,true>()) {
   TA::DistArray<Tile, DnPolicy> out(world, detail::create_trange(bases));
 
   // Copy the Bases for the Integral Builder

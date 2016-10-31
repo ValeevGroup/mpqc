@@ -4,11 +4,12 @@
  *  Created on: Feb 26, 2016
  *      Author: jinmei
  */
+#include "../eom/eom_ccsd.h"
+
 #include <math.h>
 #include <rapidjson/document.h>
 #include <tiledarray.h>
 #include <Eigen/Eigenvalues>
-#include "eom_ccsd.h"
 
 namespace mpqc{
 

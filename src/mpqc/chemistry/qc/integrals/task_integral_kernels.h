@@ -8,13 +8,12 @@
 #ifndef MPQC_INTEGRALS_TASKINTEGRALSHELPER_H
 #define MPQC_INTEGRALS_TASKINTEGRALSHELPER_H
 
-#include "../../../../../common/typedefs.h"
-#include "../../../../../include/tiledarray.h"
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
-
-#include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
-
 #include <libint2/engine.h>
+#include <tiledarray.h>
+
+#include "../../../../../common/typedefs.h"
+#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
+#include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
 
 namespace mpqc {
 namespace integrals {

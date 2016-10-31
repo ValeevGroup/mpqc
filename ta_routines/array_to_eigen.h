@@ -4,11 +4,12 @@
 
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
-#include "../include/eigen.h"
 #include "../include/tiledarray.h"
 #include "../tensor/decomposed_tensor.h"
 #include "../tensor/decomposed_tensor_nonintrusive_interface.h"
 #include "../tensor/mpqc_tile.h"
+
+#include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
 namespace array_ops {

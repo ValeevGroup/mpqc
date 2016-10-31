@@ -5,13 +5,14 @@
 #ifndef MPQC_UTILITY_H
 #define MPQC_UTILITY_H
 
-#include "../../../../../include/eigen.h"
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
 #include <TiledArray/error.h>
 #include <TiledArray/sparse_shape.h>
 #include <TiledArray/tiled_range1.h>
 #include <string>
 #include <vector>
+
+#include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
 namespace f12 {

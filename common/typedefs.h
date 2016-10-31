@@ -3,7 +3,7 @@
 #define MPQC_COMMON_TYPEDEFS_H
 
 #include "namespaces.h"
-#include "../include/eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 
 #include <type_traits>
 #include <vector>

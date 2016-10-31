@@ -2,19 +2,18 @@
 #ifndef MPQC_INTEGRALS_INTEGRAL_BUILDER_H
 #define MPQC_INTEGRALS_INTEGRAL_BUILDER_H
 
-#include "../../../../../common/typedefs.h"
-#include "../../../../../include/tiledarray.h"
-#include <mpqc/chemistry/qc/basis/basis.h>
-
-#include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
-
-#include <mpqc/chemistry/qc/integrals/integral_engine_pool.h>
-#include <mpqc/chemistry/qc/integrals/task_integral_kernels.h>
-
 #include <array>
 #include <functional>
 #include <memory>
+
+#include <tiledarray.h>
+
+#include "../../../../../common/typedefs.h"
+#include <mpqc/chemistry/qc/basis/basis.h>
+#include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
+#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
+#include <mpqc/chemistry/qc/integrals/integral_engine_pool.h>
+#include <mpqc/chemistry/qc/integrals/task_integral_kernels.h>
 
 namespace mpqc {
 namespace integrals {

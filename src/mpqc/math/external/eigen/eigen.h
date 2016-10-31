@@ -1,17 +1,16 @@
 #pragma once
-#ifndef TCC_INCLUDE_EIGEN_H
-#define TCC_INCLUDE_EIGEN_H
+#ifndef SRC_MPQC_MATH_EXTERNAL_EIGEN_EIGEN_H_
+#define SRC_MPQC_MATH_EXTERNAL_EIGEN_EIGEN_H_
 
-#pragma GCC diagnostic push
-#pragma GCC system_header
 #include <Eigen/Dense>
-#pragma GCC diagnostic pop
 
+namespace mpqc {
 template <typename T>
-using RowMatrix
-    = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+using RowMatrix =
+    ::Eigen::Matrix<T, ::Eigen::Dynamic, ::Eigen::Dynamic, ::Eigen::RowMajor>;
 
 using RowMatrixXd = RowMatrix<double>;
+}
 
 namespace madness {
 namespace archive {
@@ -26,8 +25,8 @@ template <class Archive, typename Data>
 struct ArchiveLoadImpl;
 
 template <class Archive, typename _T>
-struct ArchiveStoreImpl<Archive, RowMatrix<_T>> {
-  static inline void store(const Archive& ar, const RowMatrix<_T>& t) {
+struct ArchiveStoreImpl<Archive, mpqc::RowMatrix<_T>> {
+  static inline void store(const Archive& ar, const mpqc::RowMatrix<_T>& t) {
     ar & t.rows() & t.cols();
     if (t.size())
       ar & madness::archive::wrap(t.data(), t.size());
@@ -35,9 +34,9 @@ struct ArchiveStoreImpl<Archive, RowMatrix<_T>> {
 };
 
 template <class Archive, typename _T>
-struct ArchiveLoadImpl<Archive, RowMatrix<_T>> {
-  static inline void load(const Archive& ar, RowMatrix<_T>& t) {
-    typename RowMatrix<_T>::Index nrows, ncols;
+struct ArchiveLoadImpl<Archive, mpqc::RowMatrix<_T>> {
+  static inline void load(const Archive& ar, mpqc::RowMatrix<_T>& t) {
+    typename mpqc::RowMatrix<_T>::Index nrows, ncols;
     ar & nrows & ncols;
     t.resize(nrows, ncols);
     if (t.size())

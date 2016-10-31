@@ -2,7 +2,7 @@
 #ifndef MPQC_CLUSTERING_KMEANS_H
 #define MPQC_CLUSTERING_KMEANS_H
 
-#include "../../../../../common/typedefs.h"
+#include "../../../../common/typedefs.h"
 #include <mpqc/math/clustering/common.h>
 
 #include <iostream>

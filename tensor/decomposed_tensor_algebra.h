@@ -2,7 +2,7 @@
 #ifndef MPQC_TENSOR_DECOMPOSEDTENSORALGEBRA_H
 #define MPQC_TENSOR_DECOMPOSEDTENSORALGEBRA_H
 
-#include "../include/eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
 

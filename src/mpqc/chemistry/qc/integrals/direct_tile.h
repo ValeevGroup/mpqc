@@ -4,15 +4,13 @@
 
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 
-// #include "../tensor/tcc_tile.h"
-
-#include "../../../../../include/tiledarray.h"
-
 #include <madness/world/worldptr.h>
 
 #include <functional>
 #include <memory>
 #include <vector>
+
+#include <tiledarray.h>
 
 namespace mpqc {
 namespace integrals {

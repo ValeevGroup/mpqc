@@ -3,7 +3,6 @@
 #define MPQC_TAROUTINES_SQRTINV_H
 
 #include "../include/tiledarray.h"
-#include "../include/eigen.h"
 
 #include "diagonal_array.h"
 
@@ -18,6 +17,8 @@
 #include <cstdlib>
 
 #include <madness/world/array_addons.h>
+
+#include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
 namespace array_ops {

@@ -3,15 +3,15 @@
 #ifndef MPQC_INTEGRALS_TASKINTEGRALSCOMMON_H
 #define MPQC_INTEGRALS_TASKINTEGRALSCOMMON_H
 
-#include "../../../../../common/typedefs.h"
-#include "../../../../../include/tiledarray.h"
-
-#include <mpqc/chemistry/qc/basis/basis.h>
-
 #include <memory>
 #include <array>
 #include <vector>
 #include <utility>
+
+#include <tiledarray.h>
+
+#include "../../../../../common/typedefs.h"
+#include <mpqc/chemistry/qc/basis/basis.h>
 
 namespace mpqc {
 namespace integrals {

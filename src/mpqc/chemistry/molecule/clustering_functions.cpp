@@ -2,7 +2,7 @@
 #include <mpqc/chemistry/molecule/common.h>
 #include <mpqc/chemistry/molecule/molecule.h>
 
-#include <mpqc/lib/math/clustering/kmeans.h>
+#include <mpqc/math/clustering/kmeans.h>
 
 
 namespace mpqc {

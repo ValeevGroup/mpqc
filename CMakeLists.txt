@@ -18,6 +18,25 @@ endif(MPQC_BUILDID)
 set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 
 ###############################################################################
+# Load up extra CMake packages
+###############################################################################
+include(FeatureSummary)
+
+###############################################################################
+# Options
+###############################################################################
+# boolean
+# non-boolean
+if (NOT DEFINED MPQC_MEMORY_CHECK)
+  set(MPQC_MEMORY_CHECK -1) # How to check memory use (see mpqc_config.h for details)
+else()
+  message("MPQC_MEMORY_CHECK = ${MPQC_MEMORY_CHECK}")
+endif()
+if (NOT DEFINED MPQC_ASSERT_MODE)
+  set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
+endif()
+
+###############################################################################
 # How to compile
 ###############################################################################
 
@@ -125,6 +144,18 @@ ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/doc)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tests)
 enable_testing(true)
 
+###############################################################################
+# Wrap up
+###############################################################################
+
+CONFIGURE_FILE(
+  ${PROJECT_SOURCE_DIR}/src/mpqc/mpqc_config.h.in
+  ${PROJECT_BINARY_DIR}/src/mpqc/mpqc_config.h
+)
+
+feature_summary(WHAT ALL
+                DESCRIPTION "=== MPQC Package/Feature Info ===")
+                
 ###############################################################################
 # appendix: misc details
 ###############################################################################

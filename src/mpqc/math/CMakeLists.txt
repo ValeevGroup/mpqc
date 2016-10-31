@@ -1,0 +1,3 @@
+ADD_SUBDIRECTORY(clustering)
+ADD_SUBDIRECTORY(tensor)
+ADD_SUBDIRECTORY(external)

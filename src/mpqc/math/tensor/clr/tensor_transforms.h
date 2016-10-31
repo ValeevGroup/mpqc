@@ -2,10 +2,10 @@
 #ifndef MPQC_TENSOR_TENSORTRANSFORMS_H
 #define MPQC_TENSOR_TENSORTRANSFORMS_H
 
-#include "mpqc_tile.h"
-#include "decomposed_tensor.cpp"
-#include "decomposed_tensor_algebra.cpp"
 #include <tiledarray.h>
+#include "../clr/decomposed_tensor.cpp"
+#include "../clr/decomposed_tensor_algebra.cpp"
+#include "../clr/mpqc_tile.h"
 
 namespace mpqc {
 namespace tensor {

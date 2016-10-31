@@ -3,9 +3,10 @@
 #define MPQC_TAROUTINES_DIAGONALARRAY_H
 
 #include <tiledarray.h>
+
+#include "../src/mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "../src/mpqc/math/tensor/clr/mpqc_tile.h"
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../tensor/decomposed_tensor.h"
-#include "../tensor/mpqc_tile.h"
 #include "../ta_routines/array_to_eigen.h"
 
 namespace mpqc {

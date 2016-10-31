@@ -5,5 +5,5 @@ set(sources
     decomposed_tensor.h
 )
 
-add_library(tensor ${sources})
-target_link_libraries(tensor ${TA_LIBRARIES} utility)
+add_library(MPQCmath_tensor_clr ${sources})
+target_link_libraries(MPQCmath_tensor_clr ${TA_LIBRARIES})

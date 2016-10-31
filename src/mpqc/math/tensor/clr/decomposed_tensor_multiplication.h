@@ -2,7 +2,7 @@
 #ifndef MPQC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H
 #define MPQC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H
 
-#include "decomposed_tensor.h"
+#include "../clr/decomposed_tensor.h"
 
 namespace mpqc {
 namespace tensor {

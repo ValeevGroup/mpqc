@@ -5,9 +5,8 @@
 #include "../common/typedefs.h"
 #include <tiledarray.h>
 #include "../utility/meta/get_type.h"
-#include "decomposed_tensor_unary.h"
-
 #include <memory>
+#include "../clr/decomposed_tensor_unary.h"
 
 namespace mpqc {
 namespace tensor {

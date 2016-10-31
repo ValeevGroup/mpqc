@@ -1,5 +1,6 @@
-#include "decomposed_tensor.h"
-#include "decomposed_tensor_algebra.h"
+#include "../clr/decomposed_tensor_algebra.h"
+
+#include "../clr/decomposed_tensor.h"
 
 namespace mpqc {
 namespace tensor {

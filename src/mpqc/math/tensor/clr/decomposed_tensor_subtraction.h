@@ -2,11 +2,11 @@
 #ifndef MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
 #define MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
 
-#include "decomposed_tensor.h"
-#include "decomposed_tensor_unary.h"
-#include "decomposed_tensor_addition.h"
-#include "decomposed_tensor_nonintrusive_interface.h"
 #include <tiledarray.h>
+#include "../clr/decomposed_tensor.h"
+#include "../clr/decomposed_tensor_addition.h"
+#include "../clr/decomposed_tensor_nonintrusive_interface.h"
+#include "../clr/decomposed_tensor_unary.h"
 
 namespace mpqc {
 namespace tensor {

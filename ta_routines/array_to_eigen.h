@@ -5,10 +5,10 @@
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
 #include <tiledarray.h>
-#include "../tensor/decomposed_tensor.h"
-#include "../tensor/decomposed_tensor_nonintrusive_interface.h"
-#include "../tensor/mpqc_tile.h"
 
+#include "../src/mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "../src/mpqc/math/tensor/clr/decomposed_tensor_nonintrusive_interface.h"
+#include "../src/mpqc/math/tensor/clr/mpqc_tile.h"
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {

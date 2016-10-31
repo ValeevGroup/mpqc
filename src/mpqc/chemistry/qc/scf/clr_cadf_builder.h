@@ -8,9 +8,9 @@
 #include "../../../../../utility/array_info.h"
 #include "../../../../../utility/vector_functions.h"
 
-#include "../../../../../tensor/decomposed_tensor.h"
-#include "../../../../../tensor/mpqc_tile.h"
-#include "../../../../../tensor/tensor_transforms.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/mpqc_tile.h"
+#include "mpqc/math/tensor/clr/tensor_transforms.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "../../../../../ta_routines/minimize_storage.h"

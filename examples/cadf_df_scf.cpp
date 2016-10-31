@@ -50,7 +50,7 @@
 #include "../scf/cadf_builder_forced_shape.h"
 #include "../scf/linear_cadf_builder.h"
 
-#include "../tensor/tensor_transforms.h"
+#include "mpqc/math/tensor/clr/tensor_transforms.h"
 
 #include "../f12/f12_utility.h"
 

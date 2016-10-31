@@ -10,7 +10,7 @@
 
 #include "mpqc/math/external/eigen/eigen.h"
 
-#include "../../../../../tensor/vector_localization.h"
+#include "mpqc/math/tensor/clr/vector_localization.h"
 
 namespace mpqc {
 namespace scf {

@@ -26,10 +26,10 @@
 #include "../scf/orbital_localization.h"
 #include "../scf/clusterd_coeffs.h"
 
-#include "../tensor/decomposed_tensor.h"
-#include "../tensor/decomposed_tensor_nonintrusive_interface.h"
-#include "../tensor/mpqc_tile.h"
-#include "../tensor/tensor_transforms.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_nonintrusive_interface.h"
+#include "mpqc/math/tensor/clr/mpqc_tile.h"
+#include "mpqc/math/tensor/clr/tensor_transforms.h"
 
 #include "../ta_routines/diagonal_array.h"
 #include "mpqc/math/external/eigen/eigen.h"

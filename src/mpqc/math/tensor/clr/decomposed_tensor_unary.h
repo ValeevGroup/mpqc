@@ -2,8 +2,8 @@
 #ifndef MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
 #define MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
 
-#include "decomposed_tensor.h"
-#include "decomposed_tensor_algebra.h"
+#include "../clr/decomposed_tensor.h"
+#include "../clr/decomposed_tensor_algebra.h"
 
 namespace mpqc {
 namespace tensor {

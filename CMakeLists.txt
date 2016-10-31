@@ -108,16 +108,14 @@ ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
 
 
 # these will be moved eventually into src/mpqc
-ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tensor)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/utility)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/ta_routines)
 
-LINK_DIRECTORIES(${MPQC_BINARY_DIR}/tensor)
 LINK_DIRECTORIES(${MPQC_BINARY_DIR}/utility)
 LINK_DIRECTORIES(${MPQC_BINARY_DIR}/ta_routines)
 LINK_DIRECTORIES(${MPQC_BINARY_DIR}/eom_cc)
 
-LIST(APPEND MPQC_LIBRARIES MPQCmolecule MPQCbasis MPQCwfn MPQCproperties tensor utility MPQCexpression MPQCf12 MPQCcc MPQCmbpt MPQCintegrals ta_routines MPQCscf libeomcc MPQCkeyval)
+LIST(APPEND MPQC_LIBRARIES MPQCmolecule MPQCbasis MPQCwfn MPQCproperties MPQCmath_tensor_clr utility MPQCexpression MPQCf12 MPQCcc MPQCmbpt MPQCintegrals ta_routines MPQCscf libeomcc MPQCkeyval)
 
 message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
 

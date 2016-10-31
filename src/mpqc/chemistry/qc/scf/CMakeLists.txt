@@ -12,4 +12,4 @@ set(sources
         )
 
 add_library(MPQCscf ${sources})
-target_link_libraries(MPQCscf ${TA_LIBRARIES} tensor ta_routines MPQCintegrals)
+target_link_libraries(MPQCscf ${TA_LIBRARIES} MPQCmath_tensor_clr ta_routines MPQCintegrals)

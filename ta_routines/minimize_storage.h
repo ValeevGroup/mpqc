@@ -6,9 +6,9 @@
 #include "../common/typedefs.h"
 #include "../common/namespaces.h"
 
-#include "../tensor/decomposed_tensor.h"
-#include "../tensor/decomposed_tensor_algebra.h"
-#include "../tensor/mpqc_tile.h"
+#include "../src/mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "../src/mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
+#include "../src/mpqc/math/tensor/clr/mpqc_tile.h"
 
 namespace mpqc {
 namespace ta_routines {

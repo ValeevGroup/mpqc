@@ -2,7 +2,7 @@
 #ifndef MPQC_SCF_CADFFITTINGCOEFFS_H
 #define MPQC_SCF_CADFFITTINGCOEFFS_H
 
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
 #include "../../../../../common/namespaces.h"
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>

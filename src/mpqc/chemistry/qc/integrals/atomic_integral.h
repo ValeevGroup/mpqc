@@ -5,7 +5,7 @@
 #ifndef MPQC_ATOMIC_INTEGRAL_H
 #define MPQC_ATOMIC_INTEGRAL_H
 
-#include "../../../../../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../../../../../ta_routines/sqrt_inv.h"
 #include "../../../../../ta_routines/tile_convert.h"
 #include "../../../../../utility/parallel_break_point.h"

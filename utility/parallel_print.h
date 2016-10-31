@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 #include <mpqc/chemistry/qc/basis/basis.h>
 #include "cc_utility.h"
 

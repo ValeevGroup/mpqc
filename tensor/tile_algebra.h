@@ -4,7 +4,7 @@
 #ifndef Lin_Algebra_H
 #define Lin_Algebra_H
 
-#include "../include/eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include <TiledArray/madness.h>
 #include <madness/tensor/clapack.h>
 

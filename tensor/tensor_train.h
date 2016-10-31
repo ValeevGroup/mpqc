@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../include/eigen.h"
-#include "../include/tiledarray.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include <tiledarray.h>
 #include "../common/typedefs.h"
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include <array>
 #include <iostream>
 

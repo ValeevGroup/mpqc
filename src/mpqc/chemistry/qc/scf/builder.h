@@ -2,7 +2,8 @@
 #ifndef MPQC_SCF_BUILDER_H
 #define MPQC_SCF_BUILDER_H
 
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
+
 #include "../../../../../common/namespaces.h"
 
 #include "../../../../../utility/json_handling.h"

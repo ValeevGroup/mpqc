@@ -7,10 +7,9 @@
 
 #include <cmath>
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
 
-// interface to use DIIS class for ccsd
+#include "../../../../../common/namespaces.h"
 
 namespace mpqc {
 

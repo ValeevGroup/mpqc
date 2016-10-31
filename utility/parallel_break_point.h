@@ -2,7 +2,7 @@
 #ifndef MPQC_UTILITY_PARALLELBREAKPOINT_H
 #define MPQC_UTILITY_PARALLELBREAKPOINT_H
 
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
 namespace mpqc {
 namespace utility {

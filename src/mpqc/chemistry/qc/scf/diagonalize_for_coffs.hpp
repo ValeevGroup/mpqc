@@ -3,11 +3,11 @@
 #define MPQC_SCF_DIAGONALIZEFORCOFFS_H
 
 #include "../../../../../common/namespaces.h"
-
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../include/eigen.h"
-
 #include "../../../../../ta_routines/array_to_eigen.h"
+
+#include <tiledarray.h>
+#include "mpqc/math/external/eigen/eigen.h"
+
 #include "../../../../../tensor/decomposed_tensor_algebra.h"
 
 #include <mpqc/chemistry/qc/integrals/make_engine.h>

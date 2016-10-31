@@ -5,7 +5,7 @@
 #include "mpqc_tile.h"
 #include "decomposed_tensor.cpp"
 #include "decomposed_tensor_algebra.cpp"
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
 namespace mpqc {
 namespace tensor {

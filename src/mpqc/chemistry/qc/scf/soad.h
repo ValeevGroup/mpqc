@@ -9,7 +9,7 @@
 #include <mpqc/chemistry/qc/basis/basis_set.h>
 
 #include "../../../../../common/typedefs.h"
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
 #include "../../../../../utility/array_info.h"
 #include "../../../../../utility/make_array.h"
 
@@ -19,7 +19,7 @@
 #include <mpqc/chemistry/qc/integrals/task_integrals.h>
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 
-#include "../../../../../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 
 #include <memory>
 #include <vector>

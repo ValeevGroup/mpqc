@@ -1,7 +1,7 @@
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/scf/eigen_solve_density_builder.h>
 
-#include "../../../../../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../../../../../ta_routines/cholesky_inverse.h"
 #include "../../../../../ta_routines/sqrt_inv.h"
 #include "../../../../../ta_routines/minimize_storage.h"

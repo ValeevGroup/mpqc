@@ -4,7 +4,7 @@
 
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 #include "../tensor/decomposed_tensor.h"
 #include "../tensor/decomposed_tensor_nonintrusive_interface.h"
 #include "../tensor/mpqc_tile.h"

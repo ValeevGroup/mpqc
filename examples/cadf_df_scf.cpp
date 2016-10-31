@@ -1,7 +1,8 @@
+
+#include <tiledarray.h>
+
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
-
-#include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
 #include "../clustering/kmeans.h"
@@ -29,7 +30,7 @@
 #include "../utility/time.h"
 #include "../utility/array_info.h"
 
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../ta_routines/minimize_storage.h"
 #include "../ta_routines/diagonal_array.h"
 #include "../ta_routines/cholesky_inverse.h"

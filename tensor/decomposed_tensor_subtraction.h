@@ -6,7 +6,7 @@
 #include "decomposed_tensor_unary.h"
 #include "decomposed_tensor_addition.h"
 #include "decomposed_tensor_nonintrusive_interface.h"
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
 namespace mpqc {
 namespace tensor {

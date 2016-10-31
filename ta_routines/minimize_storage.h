@@ -2,7 +2,7 @@
 #ifndef MPQC_TAROUTINES_MINIMIZE_STORAGE_H
 #define MPQC_TAROUTINES_MINIMIZE_STORAGE_H
 
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 #include "../common/typedefs.h"
 #include "../common/namespaces.h"
 

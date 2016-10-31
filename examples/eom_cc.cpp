@@ -1,11 +1,11 @@
 #include <memory>
 #include <fstream>
 #include <iomanip>
+
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
 #include "../utility/make_array.h"
 #include "../utility/parallel_print.h"
@@ -40,7 +40,7 @@
 #include "../cc/lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
 #include "../utility/trange1_engine.h"
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../scf/soad.h"
 #include "../eom_cc/eom_ccsd.h"
 

@@ -2,13 +2,13 @@
 #ifndef MPQC_SCF_CLUSTERED_COEFFS_H
 #define MPQC_SCF_CLUSTERED_COEFFS_H
 
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../include/eigen.h"
+#include <tiledarray.h>
+#include "mpqc/math/external/eigen/eigen.h"
 
 #include "../../../../../common/namespaces.h"
 #include "../../../../../common/typedefs.h"
 
-#include "../../../../../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 
 #include "../../../../../tensor/vector_localization.h"
 

@@ -1,6 +1,9 @@
 /// New MPQC Main file with KeyVal
 
-#include "../../include/tiledarray.h"
+#include <sstream>
+#include <clocale>
+
+#include <tiledarray.h>
 
 #include "../../utility/parallel_file.h"
 #include "../../utility/parallel_print.h"
@@ -15,9 +18,6 @@
 #include <mpqc/chemistry/qc/mbpt/linkage.h>
 #include <mpqc/chemistry/qc/scf/linkage.h>
 #include <mpqc/chemistry/molecule/linkage.h>
-
-#include <sstream>
-#include <clocale>
 
 using namespace mpqc;
 

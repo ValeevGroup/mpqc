@@ -6,7 +6,7 @@
 #define MPQC_BLOCK_SIZE_ENGINE_H
 
 #include "../common/namespaces.h"
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
 #include <algorithm>
 

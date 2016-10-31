@@ -1,7 +1,7 @@
+#include <tiledarray.h>
+
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
-
-#include "../include/tiledarray.h"
 
 #include "../utility/make_array.h"
 #include "../clustering/kmeans.h"
@@ -20,7 +20,7 @@
 
 #include "../utility/time.h"
 #include "../utility/array_info.h"
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;

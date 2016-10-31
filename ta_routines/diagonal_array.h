@@ -2,10 +2,11 @@
 #ifndef MPQC_TAROUTINES_DIAGONALARRAY_H
 #define MPQC_TAROUTINES_DIAGONALARRAY_H
 
-#include "../include/tiledarray.h"
-#include "array_to_eigen.h"
+#include <tiledarray.h>
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../tensor/decomposed_tensor.h"
 #include "../tensor/mpqc_tile.h"
+#include "../ta_routines/array_to_eigen.h"
 
 namespace mpqc {
 namespace array_ops {

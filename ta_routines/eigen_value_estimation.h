@@ -7,8 +7,8 @@
 #include <cmath>
 #include <iostream>
 
-#include "../include/eigen.h"
-#include "../include/tiledarray.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include <tiledarray.h>
 
 // Compute the min eval guess for a row of tiles.
 template <typename It>

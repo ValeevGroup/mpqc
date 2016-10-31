@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../include/eigen.h"
+#include <tiledarray.h>
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../../../../../common/typedefs.h"
 
 using MatrixI = Eig::Matrix<int, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;

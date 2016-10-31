@@ -3,9 +3,9 @@
 #define MPQC_SCF_TRADITIONALDFFOCKBUILDER_H
 
 #include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
 
-#include "../../../../../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../../../../../utility/time.h"
 #include "../../../../../utility/vector_functions.h"
 

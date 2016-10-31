@@ -2,7 +2,7 @@
 #ifndef MPQC_TAROUTINES_SQRTINV_H
 #define MPQC_TAROUTINES_SQRTINV_H
 
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
 #include "diagonal_array.h"
 

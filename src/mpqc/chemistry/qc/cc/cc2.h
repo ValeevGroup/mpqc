@@ -6,7 +6,7 @@
 #define MPQC_CC2_H
 
 #include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
 
 #include "../../../../../ta_routines/tarray_block.h"
 #include "../../../../../utility/trange1_engine.h"

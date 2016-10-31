@@ -4,7 +4,7 @@
 
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
 #include <string>
 

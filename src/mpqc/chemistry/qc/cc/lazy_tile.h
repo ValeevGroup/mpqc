@@ -5,8 +5,9 @@
 #ifndef MPQC_LAZY_TILE_H
 #define MPQC_LAZY_TILE_H
 
+#include <tiledarray.h>
+
 #include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 #include <mpqc/chemistry/qc/cc/integral_generator.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>

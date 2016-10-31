@@ -2,7 +2,7 @@
 #ifndef MPQC_SCF_DENSITYBUILDER_H
 #define MPQC_SCF_DENSITYBUILDER_H
 
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
 #include "../../../../../common/namespaces.h"
 #include "../../../../../utility/json_handling.h"
 

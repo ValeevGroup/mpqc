@@ -1,7 +1,8 @@
+
+#include <tiledarray.h>
+
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
-
-#include "../include/tiledarray.h"
 
 #include "../clustering/kmeans.h"
 #include "../utility/make_array.h"
@@ -26,7 +27,7 @@
 
 #include "../scf/eigen_solve_density_builder.h"
 #include "../scf/traditional_df_fock_builder.h"
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../utility/array_info.h"
 #include "../utility/parallel_file.h"
 #include "../utility/time.h"

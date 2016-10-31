@@ -3,7 +3,7 @@
 #define MPQC_UTILITY_PRINTSIZEINFO_H
 
 #include "../common/typedefs.h"
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
 #include "array_info.h"
 

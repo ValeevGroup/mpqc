@@ -2,7 +2,7 @@
 #ifndef TCC_ARRAYOPS_DEEPFILTER_H
 #define TCC_ARRAYOPS_DEEPFILTER_H
 
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 #include "../common/namespaces.h"
 #include <vector>
 #include <array>

@@ -3,14 +3,14 @@
 #include <clocale>
 #include <fstream>
 #include <iomanip>
-#include <libint2.hpp>
-#include <madness/world/worldmem.h>
 #include <memory>
+
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-
-#include "../include/tiledarray.h"
+#include <libint2.hpp>
+#include <madness/world/worldmem.h>
+#include <tiledarray.h>
 
 #include "../utility/make_array.h"
 #include "../utility/parallel_break_point.h"
@@ -45,7 +45,7 @@
 #include <mpqc/chemistry/qc/scf/cadf_builder_print_only.h>
 #include <mpqc/chemistry/qc/scf/clr_cadf_builder.h>
 
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
 #include <mpqc/chemistry/qc/cc/dbccsd.h>

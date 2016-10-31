@@ -1,6 +1,6 @@
 #ifndef MPQC_UTILITY_ARRAYINFO_TENSOR_STORE_H
 #define MPQC_UTILITY_ARRAYINFO_TENSOR_STORE_H
-#include "../../../../include/tiledarray.h"
+#include <tiledarray.h>
 #include <string>
 #include <array>
 #include <iostream>

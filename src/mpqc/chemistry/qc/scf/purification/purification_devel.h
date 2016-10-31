@@ -2,8 +2,8 @@
 #ifndef TCC_PURIFICATION_PURIFICATIONDEVEL_H
 #define TCC_PURIFICATION_PURIFICATIONDEVEL_H
 
-#include "../../../../../../include/eigen.h"
-#include "../../../../../../include/tiledarray.h"
+#include <tiledarray.h>
+
 #include "../../../../../../utility/parallel_print.h"
 #include "../../../../../../utility/time.h"
 

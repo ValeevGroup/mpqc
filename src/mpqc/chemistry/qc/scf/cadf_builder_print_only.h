@@ -2,8 +2,9 @@
 #ifndef MPQC_SCF_CADFBUILDERPRINTONLY_H
 #define MPQC_SCF_CADFBUILDERPRINTONLY_H
 
+#include <tiledarray.h>
+
 #include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 #include "../../../../../utility/time.h"
 #include "../../../../../utility/array_info.h"
 #include "../../../../../utility/vector_functions.h"
@@ -12,7 +13,7 @@
 #include "../../../../../tensor/mpqc_tile.h"
 #include "../../../../../tensor/tensor_transforms.h"
 
-#include "../../../../../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../../../../../ta_routines/minimize_storage.h"
 
 #include <mpqc/chemistry/qc/scf/builder.h>

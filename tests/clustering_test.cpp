@@ -1,6 +1,6 @@
 #include "catch.hpp"
 
-#include "../include/eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../common/typedefs.h"
 
 #include "../clustering/kmeans.h"

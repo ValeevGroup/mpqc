@@ -5,10 +5,10 @@
 #ifndef MPQC_CABS_SINGLES_H
 #define MPQC_CABS_SINGLES_H
 
-#include "../../../../../include/eigen.h"
-#include "../../../../../include/tiledarray.h"
-#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
+#include <tiledarray.h>
 #include <TiledArray/algebra/conjgrad.h>
+
+#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 
 namespace mpqc{
 namespace f12{

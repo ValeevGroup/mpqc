@@ -5,9 +5,10 @@
 #ifndef MPQC_INTEGRAL_GENERATOR_H
 #define MPQC_INTEGRAL_GENERATOR_H
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 #include <libint2/engine.h>
+#include <tiledarray.h>
+
+#include "../../../../../common/namespaces.h"
 #include <mpqc/chemistry/qc/basis/cluster_shells.h>
 #include <mpqc/chemistry/qc/integrals/integral_engine_pool.h>
 #include <mpqc/chemistry/qc/integrals/task_integral_kernels.h>

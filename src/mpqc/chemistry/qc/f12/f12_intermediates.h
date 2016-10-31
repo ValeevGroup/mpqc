@@ -5,8 +5,9 @@
 #ifndef MPQC_F12_INTERMEDIATES_H
 #define MPQC_F12_INTERMEDIATES_H
 
+#include <tiledarray.h>
+
 #include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 #include <mpqc/util/misc/string.h>
 

@@ -5,8 +5,9 @@
 #ifndef MPQC_CCSD_H
 #define MPQC_CCSD_H
 
+#include <tiledarray.h>
+
 #include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 
 #include "../../../../../ta_routines/tarray_block.h"
 #include "../../../../../utility/cc_utility.h"

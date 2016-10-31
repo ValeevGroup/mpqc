@@ -2,7 +2,7 @@
 #ifndef MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H
 #define MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H
 
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 #include "../common/typedefs.h"
 
 #include "decomposed_tensor.h"

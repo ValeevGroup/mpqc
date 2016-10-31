@@ -2,20 +2,21 @@
 #ifndef MPQC_SCF_ORBITALLOCALIZATION_H
 #define MPQC_SCF_ORBITALLOCALIZATION_H
 
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../include/eigen.h"
+#include <tiledarray.h>
+#include "mpqc/math/external/eigen/eigen.h"
 
-#include "../../../../../ta_routines/array_to_eigen.h"
 #include <cmath>
 
 #include <array>
 #include <iomanip>
 
+#include "mpqc/math/external/eigen/eigen.h"
+#include "../../../../../ta_routines/array_to_eigen.h"
 
 namespace mpqc {
 namespace scf {
 
-using Mat = Eig::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
+using Mat = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 double boys_object(std::array<Mat, 3> const &xyz);
 

@@ -2,8 +2,8 @@
 
 #include "../common/namespaces.h"
 
-#include "../include/eigen.h"
-#include "../include/tiledarray.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include <tiledarray.h>
 
 #include <vector>
 #include <utility>

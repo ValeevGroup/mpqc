@@ -1,11 +1,11 @@
 #include <memory>
 #include <fstream>
 #include <iomanip>
+
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
 #include "../utility/make_array.h"
 #include "../utility/parallel_print.h"
@@ -38,6 +38,8 @@
 #include "../scf/eigen_solve_density_builder.h"
 
 #include "../scf/traditional_four_center_fock_builder.h"
+
+#include "../ta_routines/array_to_eigen.h"
 
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
 #include "../scf/soad.h"

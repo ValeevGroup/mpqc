@@ -1,7 +1,7 @@
+#include <tiledarray.h>
+
 #include "../common/namespaces.h"
 #include "../common/typedefs.h"
-
-#include "../include/tiledarray.h"
 
 #include "../clustering/kmeans.h"
 
@@ -32,7 +32,7 @@
 #include "../tensor/tensor_transforms.h"
 
 #include "../ta_routines/diagonal_array.h"
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 #include "../ta_routines/minimize_storage.h"
 
 using namespace mpqc;

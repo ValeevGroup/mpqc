@@ -5,8 +5,9 @@
 #ifndef MPQC_CCSD_INTERMEDIATES_H
 #define MPQC_CCSD_INTERMEDIATES_H
 
+#include <tiledarray.h>
+
 #include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 #include <mpqc/chemistry/qc/cc/lazy_tile.h>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 #include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>

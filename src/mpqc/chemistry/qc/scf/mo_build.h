@@ -6,9 +6,9 @@
 #define MPQC_MO_BUILD_H
 
 #include <rapidjson/document.h>
+#include <tiledarray.h>
 
 #include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>

@@ -5,7 +5,7 @@
 #ifndef MPQC_TARRAY_BLOCK_H
 #define MPQC_TARRAY_BLOCK_H
 
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 #include "../common/namespaces.h"
 
 namespace mpqc {

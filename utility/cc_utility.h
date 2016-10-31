@@ -6,7 +6,7 @@
 #define MPQC_UTILITY_H_H
 
 #include <libint2/shell.h>
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 #include "../common/namespaces.h"
 
 

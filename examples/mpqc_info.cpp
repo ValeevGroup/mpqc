@@ -8,6 +8,7 @@
 #include <madness/world/world.h>
 
 #include <mpqc/chemistry/molecule/molecule.h>
+#include <mpqc/chemistry/molecule/linkage.h>
 #include <mpqc/chemistry/qc/basis/basis_registry.h>
 #include <mpqc/util/keyval/keyval.hpp>
 

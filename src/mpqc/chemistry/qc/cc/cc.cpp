@@ -2,11 +2,12 @@
 // Created by Chong Peng on 6/6/16.
 //
 
-#include <mpqc/chemistry/qc/cc/ccsd.h>
-//#include <mpqc/chemistry/qc/cc/ccsd_t.h>
+#include "ccsd.h"
+#include "ccsd_t.h"
 //#include <mpqc/chemistry/qc/cc/dbccsd.h>
 
 MPQC_CLASS_EXPORT_KEY2("CCSD", mpqc::cc::CCSD<TA::TensorD>);
+MPQC_CLASS_EXPORT_KEY2("CCSD(T)", mpqc::cc::CCSD_T);
 
 namespace mpqc {
 namespace cc {

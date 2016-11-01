@@ -160,6 +160,10 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     }
   }
 
+  bool is_df() const {
+    return df_;
+  }
+
   void set_t1(const TArray &t1) { T1_ = t1; }
 
   void set_t2(const TArray &t2) { T2_ = t2; }

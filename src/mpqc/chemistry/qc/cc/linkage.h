@@ -6,13 +6,14 @@
 #define MPQC_CHEMISTRY_QC_CC_LINKAGE_H
 
 //#include <mpqc/util/keyval/forcelink.h>
-#include "ccsd.h"
+#include "ccsd_t.h"
 
 namespace mpqc{
 namespace cc{
 
 
 mpqc::detail::ForceLink<CCSD<TA::TensorD>> fl1;
+mpqc::detail::ForceLink<CCSD_T> fl2;
 
 }
 }

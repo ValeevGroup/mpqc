@@ -5,3 +5,4 @@ set(sources
 )
 
 add_library(MPQCmath_ta ${sources})
+target_link_libraries(MPQCmath_ta tiledarray)

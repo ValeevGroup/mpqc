@@ -34,14 +34,16 @@ cd _build
 tar -xvzf ../external/libint-2.2.0-beta1.tgz
 cd libint-2.2.0-beta1/
 
-export CXXFLAGS="-O0 -std=c++11"
+ls /usr/include
+ls /usr/local/include
+
+# export CXXFLAGS="-O0 -std=c++11"
 ./configure \
     --prefix="$HOME/_install/libint" \
     CXX=$CXX \
-    CXXFLAGS="$CXXFLAGS" \
     --with-incdirs=/usr/include/eigen3 
+#    CXXFLAGS="$CXXFLAGS" \
 
-cat config.log
 
 make -j2
 make install

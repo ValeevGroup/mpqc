@@ -41,6 +41,8 @@ export CXXFLAGS="-O0 -std=c++11"
     CXXFLAGS="$CXXFLAGS" \
     --with-incdirs=/usr/include/eigen3 
 
+cat config.log
+
 make -j2
 make install
 

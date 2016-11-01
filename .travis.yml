@@ -4,21 +4,15 @@ compiler:
   - gcc
   - clang
 env:
-  - GCC_VERSION=4.7
-  - GCC_VERSION=4.8
   - GCC_VERSION=4.9
   - GCC_VERSION=5
-matrix:
-  exclude:
-    - compiler: clang
-      env: GCC_VERSION=4.7
-    - compiler: clang
-      env: GCC_VERSION=4.8
-    - compiler: clang
-      env: GCC_VERSION=4.9
-  allow_failures:
-    - compiler: clang      # until llvm.org apt server is back up
-      env: GCC_VERSION=5   #
+# matrix:
+#   exclude:
+#     - compiler: clang
+#       env: GCC_VERSION=4.9
+#  allow_failures:
+#    - compiler: clang      # until llvm.org apt server is back up
+#      env: GCC_VERSION=5   #
 sudo: false
 addons:
   apt:
@@ -29,28 +23,19 @@ addons:
       # LLVM apt mirror is down
       #- llvm-toolchain-precise-3.7
     packages:
-      - g++-4.7
-      - g++-4.8
       - g++-4.9
       - g++-5
-# llvm.org apt repo is down
-#      - clang-3.7
       - libeigen3-dev
       - libboost1.55-dev
       - libblas-dev
       - liblapack-dev
-      #- mpich2 # disallowed - build from source
       - libtbb-dev
       - cmake
       - cmake-data
-#notifications:
-#  email:
-#    recipients:
-#      - @github.com
-#    on_success: change
-#    on_failure: always
-before_install: ./bin/dep-$TRAVIS_OS_NAME.sh
-script: ./bin/build-$TRAVIS_OS_NAME.sh
+# llvm.org apt repo is down
+#     - clang-3.7
+# before_install: ./bin/dep-$TRAVIS_OS_NAME.sh
+# script: ./bin/build-$TRAVIS_OS_NAME.sh
 after_failure:
   - cat ./_build/external/build/madness/CMakeFiles/CMakeOutput.log
   - cat ./_build/external/build/madness/CMakeFiles/CMakeError.log

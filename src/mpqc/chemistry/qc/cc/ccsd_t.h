@@ -18,11 +18,11 @@ namespace cc {
  *
  */
 
-//template <typename Tile, typename Policy>
-class CCSD_T : public CCSD<TA::TensorD, TA::SparsePolicy> {
+template <typename Tile, typename Policy>
+class CCSD_T : public CCSD<Tile, Policy> {
  public:
-  using Tile = TA::TensorD;
-  using Policy = TA::SparsePolicy;
+//  using Tile = TA::TensorD;
+//  using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
 
  private:
@@ -54,8 +54,9 @@ class CCSD_T : public CCSD<TA::TensorD, TA::SparsePolicy> {
     increase_ = kv.value<int>("increase",2);
   }
 
+  ~CCSD_T();
 
-  double compute() {
+  double value() override {
     auto &world = this->lcao_factory().world();
 
     double ccsd_corr = 0.0;

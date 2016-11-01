@@ -38,14 +38,14 @@ namespace cc {
  *   Converge = double, convergence of CCSD energy, default is 1.0e-07
  */
 
-template <typename Tile, typename Policy=TA::SparsePolicy>
+template <typename Tile, typename Policy>
 class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectAOIntegral = integrals::DirectAtomicIntegral<Tile, Policy>;
 
   CCSD() = default;
-  ~CCSD() = default;
+  ~CCSD();
 
   /**
    * KeyVal constructor
@@ -1332,7 +1332,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   }
 
  private:
-  void init() {
+  virtual void init() {
     if (this->orbital_energy() == nullptr || this->trange1_engine() == nullptr) {
       auto mol = this->lcao_factory().atomic_integral().molecule();
       Eigen::VectorXd orbital_energy;

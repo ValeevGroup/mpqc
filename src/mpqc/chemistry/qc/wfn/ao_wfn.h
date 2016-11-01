@@ -43,6 +43,10 @@ class AOWavefunction : public Wavefunction {
     direct_ao_integrals().registry().purge(wfn_world()->world());
   }
 
+  double value() override {
+    return 0.0;
+  };
+
   /*! Return a reference to the AtomicIntegral Library
    *
    * \note This reference can't be made const without modifying the

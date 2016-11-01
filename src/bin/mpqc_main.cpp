@@ -15,6 +15,7 @@
 // include linkage file
 #include <mpqc/chemistry/qc/wfn/linkage.h>
 #include <mpqc/chemistry/qc/f12/linkage.h>
+#include <mpqc/chemistry/qc/cc/linkage.h>
 #include <mpqc/chemistry/qc/mbpt/linkage.h>
 #include <mpqc/chemistry/qc/scf/linkage.h>
 #include <mpqc/chemistry/molecule/linkage.h>

@@ -9,7 +9,6 @@
 
 #include "../../../../../common/namespaces.h"
 
-#include "../../../../../ta_routines/tarray_block.h"
 #include "../../../../../utility/cc_utility.h"
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>

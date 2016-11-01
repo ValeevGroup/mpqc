@@ -12,8 +12,6 @@ namespace mbpt {
 
 RMP2::RMP2(const KeyVal &kv) : LCAOWavefunction(kv) {
 
-  rmp2_energy_ = 0.0;
-
   if (kv.exists("ref")) {
     ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
   } else {
@@ -23,13 +21,13 @@ RMP2::RMP2(const KeyVal &kv) : LCAOWavefunction(kv) {
 }
 
 void RMP2::obsolete() {
-  rmp2_energy_ = 0.0;
+  this->energy_ = 0.0;
   qc::LCAOWavefunction<TA::TensorD,TA::SparsePolicy>::obsolete();
   ref_wfn_->obsolete();
 }
 
 double RMP2::value() {
-  if (rmp2_energy_ == 0.0) {
+  if (this->energy_ == 0.0) {
     auto& world = this->wfn_world()->world();
 
     double time;
@@ -49,7 +47,7 @@ double RMP2::value() {
 
     double mp2_energy = compute();
 
-    rmp2_energy_ = mp2_energy + ref_energy;
+    this->energy_ = mp2_energy + ref_energy;
 
     auto time2 = mpqc::fenced_now(world);
     time = mpqc::duration_in_s(time1, time2);
@@ -58,7 +56,7 @@ double RMP2::value() {
     time = mpqc::duration_in_s(time0, time2);
     utility::print_par(world,"Total MP2 Time: ", time, " S \n");
   }
-  return rmp2_energy_;
+  return this->energy_;
 }
 
 double RMP2::compute() {

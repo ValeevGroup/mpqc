@@ -22,8 +22,6 @@ RMP2F12::RMP2F12(const KeyVal& kv) : LCAOWavefunction(kv) {
         "Default Ref Wfn in RMP2F12 is not support! \n");
   }
 
-  rmp2f12_energy_ = 0.0;
-
   approximation_ = kv.value<char>("approaximation", 'C');
   if (approximation_ != 'C' && approximation_ != 'D') {
     throw std::invalid_argument("Only approaximation C or D is supported!");
@@ -34,7 +32,7 @@ RMP2F12::RMP2F12(const KeyVal& kv) : LCAOWavefunction(kv) {
 }
 
 double RMP2F12::value() {
-  if (rmp2f12_energy_ == 0.0) {
+  if (this->energy_ == 0.0) {
     auto& world = this->wfn_world()->world();
 
     double time;
@@ -90,7 +88,7 @@ double RMP2F12::value() {
 
     utility::print_par(world, "E_S: ", e_s, "\n");
 
-    rmp2f12_energy_ = ref_energy + emp2 + ef12 + e_s;
+    this->energy_ = ref_energy + emp2 + ef12 + e_s;
 
     auto time2 = mpqc::fenced_now(world);
     time = mpqc::duration_in_s(time1, time2);
@@ -100,11 +98,11 @@ double RMP2F12::value() {
     utility::print_par(world,"Total MP2F12 Time: ", time, " S \n");
   }
 
-  return rmp2f12_energy_;
+  return this->energy_;
 }
 
 void RMP2F12::obsolete() {
-  rmp2f12_energy_ = 0.0;
+  this->energy_ = 0.0;
   qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
   ref_wfn_->obsolete();
 }

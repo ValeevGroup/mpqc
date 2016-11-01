@@ -44,7 +44,6 @@ private:
 protected:
   char approximation_;
   TA::SparseShape<float> ijij_ijji_shape_;
-  double rmp2f12_energy_;
   bool cabs_singles_;
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
 };

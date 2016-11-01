@@ -44,7 +44,7 @@ public:
   inline array_type const &fock() const { return F_; }
   inline array_type const &density() const { return D_; }
   inline array_type const &coefficents() const { return C_; }
-  inline double rhf_energy() const { return rhf_energy_; }
+  inline double rhf_energy() const { return this->energy_; }
 
   /*! Function to compute the density to the desired accuracy.
    *
@@ -63,7 +63,6 @@ protected:
   double converge_;
   std::size_t max_iter_;
   double repulsion_;
-  double rhf_energy_;
 
   array_type H_;
   array_type S_;

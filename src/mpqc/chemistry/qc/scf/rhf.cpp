@@ -27,7 +27,6 @@ namespace scf {
  */
 
 RHF::RHF(const KeyVal& kv) : AOWavefunction(kv), kv_(kv){
-  rhf_energy_ = 0.0;
 }
 
 void RHF::init(const KeyVal &kv) {
@@ -45,7 +44,6 @@ void RHF::init(const KeyVal &kv) {
   converge_ = kv.value<double>("converge",1.0e-7);
   max_iter_ = kv.value<int>("max_iter",30);
   repulsion_ = mol.nuclear_repulsion();
-  rhf_energy_ = 0.0;
 
   // Overlap ints
   S_ = ao_int.compute(L"<κ|λ>");
@@ -97,16 +95,16 @@ void RHF::init_fock_builder() {
 
 double RHF::value() {
 
-  if(rhf_energy_ == 0.0){
+  if(this->energy_ == 0.0){
     init(kv_);
     solve(max_iter_,converge_);
   }
-  return rhf_energy_;
+  return energy_;
 }
 
 
 void RHF::obsolete() {
-  rhf_energy_ = 0.0;
+  this->energy_ = 0.0;
   qc::AOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
 }
 
@@ -187,7 +185,7 @@ bool RHF::solve(int64_t max_iters, double thresh) {
   if (iter == max_iters) {
     return false;
   } else {
-    rhf_energy_ = old_energy;
+    this->energy_ = old_energy;
     // store fock matix in registry
     auto& registry = this->ao_integrals().registry();
     f_builder_->register_fock(F_,registry);

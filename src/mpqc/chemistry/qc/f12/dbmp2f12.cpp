@@ -16,7 +16,7 @@ RIDBRMP2F12::RIDBRMP2F12(const KeyVal& kv) : RIRMP2F12(kv), kv_(kv) {
 }
 
 double RIDBRMP2F12::value() {
-  if (rmp2f12_energy_ == 0.0) {
+  if (this->energy_ == 0.0) {
 
     auto& world = this->wfn_world()->world();
 
@@ -76,7 +76,7 @@ double RIDBRMP2F12::value() {
     utility::print_par(world,"Total F12 Time: ", time, " S \n");
 
     if (!redo_mp2_) {
-      rmp2f12_energy_ = ref_energy + emp2 + ef12 + e_s;
+      this->energy_ = ref_energy + emp2 + ef12 + e_s;
     } else {
       // clear registry
       obsolete();
@@ -94,7 +94,7 @@ double RIDBRMP2F12::value() {
       auto mp2 = mbpt::RIRMP2(kv_);
       double new_mp2 = mp2.value();
 
-      rmp2f12_energy_ = new_mp2 + ef12 + e_s;
+      this->energy_ = new_mp2 + ef12 + e_s;
 
       auto time3 = mpqc::fenced_now(world);
       time = mpqc::duration_in_s(time2, time3);
@@ -106,7 +106,7 @@ double RIDBRMP2F12::value() {
     }
 
   }
-  return rmp2f12_energy_;
+  return this->energy_;
 }
 
 TArray RIDBRMP2F12::compute_B() {

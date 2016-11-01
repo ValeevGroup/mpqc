@@ -189,7 +189,6 @@ public:
 
 private:
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
-  double rmp2_energy_;
 };
 
 class RIRMP2 : public RMP2 {

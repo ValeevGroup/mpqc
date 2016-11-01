@@ -36,6 +36,9 @@ class Wavefunction : public DescribedClass {
    */
   std::shared_ptr<WavefunctionWorld> wfn_world_;
 
+ protected:
+  double energy_ = 0.0;
+
  public:
   /**
    *  \brief KeyVal constructor

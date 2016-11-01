@@ -52,24 +52,25 @@ int try_main(int argc, char *argv[], madness::World &world) {
     std::cout << "Nuclear Repulsion: " << enuc << std::endl;
   }
 
-  auto obr = std::make_shared<basis::OrbitalBasisRegistry>(kv);
-
-  // Build 1-e integrals
-  //  integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(kv);
-  //  ao_int.set_orbital_basis_registry(obr);
-
+  /// Build 1-e integrals
   integrals::PeriodicAtomicIntegral<TA::TensorZ, TA::SparsePolicy> pao_int(kv);
+  auto obr = std::make_shared<basis::OrbitalBasisRegistry>(kv);
   pao_int.set_orbital_basis_registry(obr);
+  // Read max iter and thresholds
+  auto maxiter = 50;
+  auto d_conv = 1.0E-8;
+  auto e_conv = 1.0E-8;
+
   // Kinetic matrix
   auto pT = pao_int.compute(L"<κ|T|λ>");
 
   // Nuclear-attraction matrix
   auto pV = pao_int.compute(L"<κ|V|λ>");
 
-  // Overlap matrix in real space: <u,0|v,R>
+  // Overlap matrix in real space: <u0|vR>
   auto pS_R = pao_int.compute(L"<κ|λ>");
 
-  // Overlap matrix in reciprocal space: Sum_R(<u,0|v,R>exp(ikR) )
+  // Overlap matrix in reciprocal space: Sum_R ( <u0|vR>exp(ikR) )
   auto pS_k = pao_int.transform_real2recip(pS_R);
 
   // One-body fock matrix in real space
@@ -85,13 +86,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   /// Main iterative loop
   auto iter = 0;
-  auto maxiter = 30;
   auto rms = 0.0;
   auto converged = false;
   auto ehf = 0.0;
   auto ediff = 0.0;
-  auto d_conv = 1.0E-5;
-  auto e_conv = 1.0E-5;
 
   do {
       ++ iter;

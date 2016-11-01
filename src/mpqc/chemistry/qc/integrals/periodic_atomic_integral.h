@@ -81,17 +81,7 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
   TArray compute(const Formula &formula);
 
   /// transform a matrix from real to reciprocal space
-  std::vector<TArray> transform_real2recip(std::vector<TArray> &matrix);
-
-  /// transform a matrix from real to reciprocal space
   TArray transform_real2recip(TArray &matrix);
-
-
-  /// compute density: D = C(occ).C(occ)t
-  std::vector<TArray> compute_density(std::vector<TArray> &fock_real,
-                                      std::vector<TArray> &fock_recip,
-                                      std::vector<TArray> &overlap_inv_sqrt,
-                                      int64_t ndocc);
 
   /// compute density: D = C(occ).C(occ)t
   TArray compute_density(TArray &fock_real, TArray &fock_recip,
@@ -138,17 +128,7 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
   void parse_one_body_periodic(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-      Vec3D shift_orb, molecule::Molecule &shifted_mol);
-
-  void parse_one_body_periodic(
-      const Formula &formula,
-      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
       molecule::Molecule &shifted_mol);
-
-  void parse_two_body_periodic(
-      const Formula &formula,
-      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-      Vec3D shift_orb1, Vec3D shift_orb2, Vec3D shift_orb3);
 
   void parse_two_body_periodic(const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
@@ -185,14 +165,6 @@ typename PeriodicAtomicIntegral<Tile, Policy>::TArray PeriodicAtomicIntegral<
   auto formula = Formula(formula_string);
   return compute(formula);
 }
-
-// template <typename Tile, typename Policy>
-// std::vector<typename PeriodicAtomicIntegral<Tile, Policy>::TArray>
-// PeriodicAtomicIntegral<Tile, Policy>::compute(
-//    const std::wstring &formula_string) {
-//  auto formula = Formula(formula_string);
-//  return compute(formula);
-//}
 
 template <typename Tile, typename Policy>
 typename PeriodicAtomicIntegral<Tile, Policy>::TArray
@@ -275,130 +247,12 @@ PeriodicAtomicIntegral<Tile, Policy>::compute(const Formula &formula) {
   return result;
 }
 
-// template <typename Tile, typename Policy>
-// std::vector<typename PeriodicAtomicIntegral<Tile, Policy>::TArray>
-// PeriodicAtomicIntegral<Tile, Policy>::compute(const Formula &formula) {
-//  std::vector<TArray> result;
-
-//  // compute formula
-//  if (formula.rank() == 2) {
-//    Bvector bs_array;
-//    std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
-
-//    double size = 0.0;
-//    if (formula.oper().type() == Operator::Type::Overlap) {
-//      result.resize(1 + idx_k(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_));
-
-//      for (auto k = 0; k < result.size(); ++k) {
-//        auto vec_k = k_vector(k);
-
-//        auto vec_R0 = R_vector(0, R_max_);
-//        parse_one_body_periodic(formula, engine_pool, bs_array, vec_R0,
-//        *mol_);
-//        auto exponent0 = std::exp(I * vec_k.dot(vec_R0));
-
-//        result[k] = compute_integrals(this->world_, engine_pool, bs_array);
-//        result[k]("mu, nu") = exponent0 * result[k]("mu, nu");
-//        size += utility::array_size(result[k]);
-
-//        auto R_size = idx_lattice(R_max_(0), R_max_(1), R_max_(2), R_max_);
-//        for (auto R = 1; R < R_size; ++R) {
-//          auto vec_R = R_vector(R, R_max_);
-//          parse_one_body_periodic(formula, engine_pool, bs_array, vec_R,
-//          *mol_);
-//          auto exponent = std::exp(I * vec_k.dot(vec_R));
-//          result[k]("mu, nu") +=
-//              exponent *
-//              compute_integrals(this->world_, engine_pool, bs_array)("mu,
-//              nu");
-//        }
-//      }
-
-//    } else {
-//      result.resize(1 + idx_lattice(R_max_(0), R_max_(1), R_max_(2), R_max_));
-
-//      for (auto R = 0; R < result.size(); ++R) {
-//        auto shift_orb = R_vector(R, R_max_);
-//        parse_one_body_periodic(formula, engine_pool, bs_array, shift_orb,
-//                                *mol_);
-
-//        if (formula.oper().type() == Operator::Type::Kinetic) {
-//          result[R] = compute_integrals(this->world_, engine_pool, bs_array);
-//          size += utility::array_size(result[R]);
-//        } else if (formula.oper().type() == Operator::Type::Nuclear) {
-//          auto shift_mol = R_vector(0, RJ_max_);
-//          auto shifted_mol = shift_mol_origin(*mol_, shift_mol);
-//          parse_one_body_periodic(formula, engine_pool, bs_array, shift_orb,
-//                                  *shifted_mol);
-//          result[R] = compute_integrals(this->world_, engine_pool, bs_array);
-//          size += utility::array_size(result[R]);
-
-//          for (auto RR = 1;
-//               RR <= idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-//               ++RR) {
-//            shift_mol = R_vector(RR, RJ_max_);
-//            shifted_mol = shift_mol_origin(*mol_, shift_mol);
-//            parse_one_body_periodic(formula, engine_pool, bs_array, shift_orb,
-//                                    *shifted_mol);
-//            result[R]("mu, nu") += compute_integrals(this->world_,
-//            engine_pool,
-//                                                     bs_array)("mu, nu");
-//          }
-//        }
-//      }
-//    }
-
-//    if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
-//      for (auto k = 0; k < result.size(); ++k) {
-//        auto result_eig = array_ops::array_to_eigen(result[k]);
-//        auto tr_ao = result[k].trange().data()[0];
-//        result[k] = array_ops::eigen_to_array<TA::TensorZ>(
-//            world_, result_eig.pow(-0.5), tr_ao, tr_ao);
-//      }
-//    }
-
-//    utility::print_par(world_,
-//                       "Computed One Body Integral for Periodic System: ",
-//                       utility::to_string(formula.string()));
-//    utility::print_par(world_, " Size: ", size, " GB");
-
-//  } else if (formula.rank() == 4) {
-//    Bvector bs_array;
-//    std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
-
-//    if (formula.oper().type() == Operator::Type::Coulomb) {
-//      result.resize(1 + idx_lattice(R_max_(0), R_max_(1), R_max_(2), R_max_));
-//      for (auto R = 0; R < result.size(); ++R) {
-//        auto vec_R = R_vector(R, R_max_);
-
-//        for (auto RR = 0;
-//             RR < idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-//             ++RR) {
-//          auto vec_RR = R_vector(RR, RJ_max_);
-
-//          for (auto RRR = 0; RRR < idx_lattice(RD_max_(0), RD_max_(1),
-//                                               RD_max_(2), RD_max_);
-//               ++RRR) {
-//            auto vec_RRR = R_vector(RRR, RD_max_);
-
-//            parse_two_body_periodic(formula, engine_pool, bs_array, vec_R,
-//                                    vec_RR, vec_RRR);
-
-//          }
-//        }
-//      }
-
-//    } else
-//      throw std::runtime_error("Operator type not supported");
-//  } else
-//    throw std::runtime_error("Formula rank not supported");
-
-//  return result;
-//}
 
 template <typename Tile, typename Policy>
-void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases, molecule::Molecule &shifted_mol) {
+void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(
+        const Formula &formula,
+        std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+        molecule::Molecule &shifted_mol) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -420,41 +274,6 @@ void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(const Formula
   // Form a compound ket basis by shifting origins from -Rmax to Rmax
   Vec3D zero_shift_base(0.0, 0.0, 0.0);
   ket_basis = shift_basis_origin(*ket_basis, zero_shift_base, R_max_, true);
-
-  bases = Bvector{{*bra_basis, *ket_basis}};
-
-  auto oper_type = formula.oper().type();
-  engine_pool = integrals::make_engine_pool(
-      to_libint2_operator(oper_type),
-      utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
-      to_libint2_operator_params(oper_type, *this, shifted_mol));
-}
-
-template <typename Tile, typename Policy>
-void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(
-    const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-    Vec3D shift_orb, molecule::Molecule &shifted_mol) {
-  auto bra_indices = formula.bra_indices();
-  auto ket_indices = formula.ket_indices();
-
-  TA_ASSERT(bra_indices.size() == 1);
-  TA_ASSERT(ket_indices.size() == 1);
-
-  auto bra_index = bra_indices[0];
-  auto ket_index = ket_indices[0];
-
-  TA_ASSERT(bra_index.is_ao());
-  TA_ASSERT(ket_index.is_ao());
-
-  auto bra_basis = this->index_to_basis(bra_index);
-  auto ket_basis = this->index_to_basis(ket_index);
-
-  TA_ASSERT(bra_basis != nullptr);
-  TA_ASSERT(ket_basis != nullptr);
-
-  // Shift origins of ket basis
-  ket_basis = shift_basis_origin(*ket_basis, shift_orb);
 
   bases = Bvector{{*bra_basis, *ket_basis}};
 
@@ -512,55 +331,6 @@ void PeriodicAtomicIntegral<Tile, Policy>::parse_two_body_periodic(const Formula
   else
       throw "Physical notation not supported!";
 //    bases = Bvector{{*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1}};
-
-  auto oper_type = formula.oper().type();
-  engine_pool = integrals::make_engine_pool(
-      to_libint2_operator(oper_type),
-      utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
-      libint2::BraKet::xx_xx,
-      to_libint2_operator_params(oper_type, *this, *mol_));
-}
-
-template <typename Tile, typename Policy>
-void PeriodicAtomicIntegral<Tile, Policy>::parse_two_body_periodic(
-    const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-    Vec3D shift_orb1, Vec3D shift_orb2, Vec3D shift_orb3) {
-  auto bra_indices = formula.bra_indices();
-  auto ket_indices = formula.ket_indices();
-
-  TA_ASSERT(bra_indices.size() == 2);
-  TA_ASSERT(ket_indices.size() == 2);
-
-  auto bra_index0 = bra_indices[0];
-  auto bra_index1 = bra_indices[0];
-  auto ket_index0 = ket_indices[0];
-  auto ket_index1 = ket_indices[0];
-
-  TA_ASSERT(bra_index0.is_ao());
-  TA_ASSERT(bra_index1.is_ao());
-  TA_ASSERT(ket_index0.is_ao());
-  TA_ASSERT(ket_index1.is_ao());
-
-  auto bra_basis0 = this->index_to_basis(bra_index0);
-  auto bra_basis1 = this->index_to_basis(bra_index1);
-  auto ket_basis0 = this->index_to_basis(ket_index0);
-  auto ket_basis1 = this->index_to_basis(ket_index1);
-
-  TA_ASSERT(bra_basis0 != nullptr);
-  TA_ASSERT(bra_basis1 != nullptr);
-  TA_ASSERT(ket_basis0 != nullptr);
-  TA_ASSERT(ket_basis1 != nullptr);
-
-  // shift origins
-  bra_basis1 = shift_basis_origin(*bra_basis1, shift_orb1);
-  ket_basis0 = shift_basis_origin(*ket_basis0, shift_orb2);
-  ket_basis1 = shift_basis_origin(*ket_basis1, shift_orb2 + shift_orb3);
-
-  if (formula.notation() == Formula::Notation::Chemical)
-    bases = Bvector{{*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1}};
-  else
-    bases = Bvector{{*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1}};
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
@@ -816,31 +586,6 @@ PeriodicAtomicIntegral<Tile, Policy>::sparse_complex_integrals(
 }
 
 template <typename Tile, typename Policy>
-std::vector<typename PeriodicAtomicIntegral<Tile, Policy>::TArray>
-PeriodicAtomicIntegral<Tile, Policy>::transform_real2recip(
-    std::vector<TArray> &matrix) {
-  std::vector<TArray> result;
-  result.resize(1 + idx_k(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_));
-
-  for (auto k = 0; k < result.size(); ++k) {
-    auto vec_k = k_vector(k);
-    auto vec_R0 = R_vector(0, R_max_);
-    auto exponent0 = std::exp(I * vec_k.dot(vec_R0));
-
-    result[k] = matrix[0];
-    result[k]("mu, nu") = exponent0 * result[k]("mu, nu");
-
-    for (auto R = 1; R < matrix.size(); ++R) {
-      auto vec_R = R_vector(R, R_max_);
-      auto exponent = std::exp(I * vec_k.dot(vec_R));
-      result[k]("mu, nu") += exponent * matrix[R]("mu, nu");
-    }
-  }
-
-  return result;
-}
-
-template <typename Tile, typename Policy>
 typename PeriodicAtomicIntegral<Tile, Policy>::TArray
 PeriodicAtomicIntegral<Tile, Policy>::transform_real2recip(
     TArray &matrix) {
@@ -953,65 +698,6 @@ PeriodicAtomicIntegral<Tile, Policy>::compute_density(
     return result;
 }
 
-
-template <typename Tile, typename Policy>
-std::vector<typename PeriodicAtomicIntegral<Tile, Policy>::TArray>
-PeriodicAtomicIntegral<Tile, Policy>::compute_density(
-    std::vector<TArray> &fock_real, std::vector<TArray> &fock_recip,
-    std::vector<TArray> &overlap_inv_sqrt, int64_t ndocc) {
-  if (fock_recip.size() == overlap_inv_sqrt.size()) {
-    std::vector<Vectorc> eps(fock_recip.size());
-    std::vector<Matrixc> C(fock_recip.size());
-
-    for (auto idx = 0; idx < fock_recip.size(); ++idx) {
-      auto F = array_ops::array_to_eigen(fock_recip[idx]);
-      auto X = array_ops::array_to_eigen(overlap_inv_sqrt[idx]);
-      // Symmetrize Fock
-      F = (F + F.transpose().conjugate()) / 2.0;
-
-      // F' = Xt.F.X
-      auto Xt = X.transpose().conjugate();
-      auto XtF = Xt * F;
-      auto Ft = XtF * X;
-
-      // Diagonalize F'
-      Eig::ComplexEigenSolver<decltype(X)> comp_eig_solver(Ft);
-      eps[idx] = comp_eig_solver.eigenvalues();
-      auto Ctemp = comp_eig_solver.eigenvectors();
-      C[idx] = X * Ctemp;
-      // Sort eigenvalues and eigenvectors in ascending order
-      sort_eigen(eps[idx], C[idx]);
-    }
-
-    std::vector<TArray> result;
-    result.resize(1 + idx_lattice(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_));
-    for (auto R = 0; R < result.size(); ++R) {
-      auto vec_R = R_vector(R, RD_max_);
-      for (auto k = 0; k < fock_recip.size(); ++k) {
-        auto vec_k = k_vector(k);
-        auto C_occ = C[k].leftCols(ndocc);
-        auto d_real = C_occ.conjugate() * C_occ.transpose();
-        auto exponent =
-            std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
-        auto density = exponent * d_real;
-
-        auto tr_ao = fock_real[R].trange().data()[0];
-        if (k == 0)
-          result[R] = array_ops::eigen_to_array<TA::TensorZ>(world_, density,
-                                                             tr_ao, tr_ao);
-        else
-          result[R]("mu, nu") += array_ops::eigen_to_array<TA::TensorZ>(
-              world_, density, tr_ao, tr_ao)("mu, nu");
-      }
-    }
-
-    // save a copy for internal use
-    D_ = result;
-
-    return result;
-  } else
-    throw("fock.size() and overlap.size() do not match");
-}
 
 template <typename Tile, typename Policy>
 void PeriodicAtomicIntegral<Tile, Policy>::sort_eigen(Vectorc &eigVal,

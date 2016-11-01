@@ -9,7 +9,6 @@
 
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include "mpqc/chemistry/qc/mbpt/denom.h"
-#include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>
 #include <mpqc/chemistry/qc/cc/diis_ccsd.h>
 #include <mpqc/chemistry/qc/integrals/direct_atomic_integral.h>
 #include <mpqc/chemistry/qc/scf/mo_build.h>

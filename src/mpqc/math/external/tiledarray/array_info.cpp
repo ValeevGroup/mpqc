@@ -7,6 +7,9 @@
 
 #include "mpqc/math/external/tiledarray/array_info.h"
 
+namespace mpqc {
+namespace detail{
+
 // average block size
 std::size_t average_blocksize(TA::TiledRange1 tr1){
     std::vector<std::size_t> block_sizes;
@@ -38,3 +41,5 @@ minmax_blocksize(TiledArray::TiledRange1 tr1){
     return result;
 };
 
+}  // namespace detail
+}  // namespace mpqc

@@ -5,6 +5,10 @@
  *      Author: evaleev
  */
 
+#include <cmath>
+#include <iostream>
+#include <vector>
+
 #include "mpqc/util/misc/print.h"
 
 // print progress

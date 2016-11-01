@@ -92,7 +92,9 @@ using Describable = std::is_base_of<DescribedClass, T>;
 /// @note If \c T is a template class, you must register each instance of this
 /// class you want to construct from KeyVal.
 /// @warning to ensure that the class registration code of the derived class is
-///          linked in its destructor (at least) must be explicitly instantiated
+///          linked in, its destructor (at least) must be explicitly instantiated.
+///          Related: how gcc instantiates vtable and RTTI info see
+///          <a href="https://gcc.gnu.org/onlinedocs/gcc/Vague-Linkage.html">here</a>
 /// @ingroup CoreKeyVal
 class DescribedClass {
  public:

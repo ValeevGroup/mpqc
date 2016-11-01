@@ -38,7 +38,7 @@ namespace cc {
  *   Converge = double, convergence of CCSD energy, default is 1.0e-07
  */
 
-template <typename Tile, typename Policy>
+template <typename Tile, typename Policy=TA::SparsePolicy>
 class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
@@ -496,7 +496,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
                   << " total/second " << std::endl;
       }
 
-      if (dE >= converge || error >= converge) {
+      if (dE >= converge_ || error >= converge_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
         mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
@@ -826,7 +826,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
           b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
-          if (print_detail) {
+          if (print_detail_) {
             detail::print_size_info(b_abij, "B_abij");
           }
 
@@ -838,7 +838,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
                               g_aibc("a,k,c,d") * t1("b,k") -
                               g_iabc("k,b,c,d") * t1("a,k");
 
-          if (print_detail) {
+          if (print_detail_) {
             detail::print_size_info(b_abcd, "B_abcd");
           }
 
@@ -847,7 +847,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
       }
       tmp_time1 = mpqc::now(world, accurate_time);
       tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-      if (print_detail) {
+      if (print_detail_) {
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
@@ -862,7 +862,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
       auto t2_time1 = mpqc::now(world, accurate_time);
       auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
-      if (print_detail) {
+      if (print_detail_) {
         mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
       }
       // recompute energy
@@ -891,7 +891,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         t1("a,i") = t.first("a,i");
         t2("a,b,i,j") = t.second("a,b,i,j");
 
-        if (print_detail) {
+        if (print_detail_) {
           detail::print_size_info(r2, "R2");
           detail::print_size_info(t2, "T2");
         }
@@ -899,7 +899,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail) {
+        if (print_detail_) {
           mpqc::utility::print_par(world, "diis time: ", tmp_time, "\n");
         }
 
@@ -913,8 +913,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
         iter += 1ul;
       } else {
-        auto time1 = mpqc_time::fenced_now(world);
-        auto duration = mpqc_time::duration_in_s(time0, time1);
+        auto time1 = mpqc::fenced_now(world);
+        auto duration = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
           std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  "
@@ -980,7 +980,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-    if (print_detail) {
+    if (print_detail_) {
       mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time,
                                "\n");
     }
@@ -1015,24 +1015,24 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     while (iter < max_iter_) {
       // start timer
-      auto time0 = mpqc_time::fenced_now(world);
+      auto time0 = mpqc::fenced_now(world);
       TArray::wait_for_lazy_cleanup(world);
 
       TArray u2_u11;
       // compute half transformed intermediates
-      auto tu0 = mpqc_time::now(world, accurate_time);
+      auto tu0 = mpqc::now(world, accurate_time);
       { u2_u11 = this->compute_u2_u11(t2, t1); }
-      auto tu1 = mpqc_time::now(world, accurate_time);
-      auto duration_u = mpqc_time::duration_in_s(tu0, tu1);
+      auto tu1 = mpqc::now(world, accurate_time);
+      auto duration_u = mpqc::duration_in_s(tu0, tu1);
 
-      if (print_detail) {
+      if (print_detail_) {
         detail::print_size_info(u2_u11, "U_aaoo");
         mpqc::utility::print_par(world, "u term time: ", duration_u, "\n");
       } else if (iter == 0) {
         detail::print_size_info(u2_u11, "U_aaoo");
       }
 
-      auto t1_time0 = mpqc_time::now(world, accurate_time);
+      auto t1_time0 = mpqc::now(world, accurate_time);
       TArray h_ac, h_ki;
       {
         // intermediates for t1
@@ -1064,7 +1064,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail) {
+        if (print_detail_) {
           mpqc::utility::print_par(world, "t1 h term time: ", tmp_time, "\n");
         }
 
@@ -1084,13 +1084,13 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail) {
+        if (print_detail_) {
           mpqc::utility::print_par(world, "t1 other time: ", tmp_time, "\n");
         }
       }
       auto t1_time1 = mpqc::now(world, accurate_time);
       auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
-      if (print_detail) {
+      if (print_detail_) {
         mpqc::utility::print_par(world, "t1 total time: ", t1_time, "\n");
       }
 
@@ -1110,7 +1110,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         }
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail) {
+        if (print_detail_) {
           mpqc::utility::print_par(world, "t2 other time: ", tmp_time, "\n");
         }
 
@@ -1134,7 +1134,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         }
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail) {
+        if (print_detail_) {
           mpqc::utility::print_par(world, "t2 g term time: ", tmp_time, "\n");
         }
 
@@ -1167,7 +1167,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
                                 - g_abij("d,c,k,l") * T("d,a,i,l");
 
-            if (print_detail) {
+            if (print_detail_) {
               detail::print_size_info(T, "T");
               detail::print_size_info(j_akic, "J_akic");
               detail::print_size_info(k_kaic, "K_kaic");
@@ -1182,7 +1182,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         }
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail) {
+        if (print_detail_) {
           mpqc::utility::print_par(world, "t2 j,k term time: ", tmp_time, "\n");
         }
 
@@ -1205,13 +1205,13 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
           r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
 
-          if (print_detail) {
+          if (print_detail_) {
             detail::print_size_info(a_klij, "A_klij");
           }
         }
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail) {
+        if (print_detail_) {
           mpqc::utility::print_par(world, "t2 a term time: ", tmp_time, "\n");
         }
 
@@ -1228,13 +1228,13 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
           r2("a,b,i,j") += b_abij("a,b,i,j");
 
-          if (print_detail) {
+          if (print_detail_) {
             detail::print_size_info(b_abij, "B_abij");
           }
         }
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail) {
+        if (print_detail_) {
           mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
         }
 
@@ -1250,7 +1250,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
       auto t2_time1 = mpqc::now(world, accurate_time);
       auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
-      if (print_detail) {
+      if (print_detail_) {
         mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
       }
 
@@ -1281,7 +1281,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         t1("a,i") = t.first("a,i");
         t2("a,b,i,j") = t.second("a,b,i,j");
 
-        if (print_detail) {
+        if (print_detail_) {
           detail::print_size_info(r2, "R2");
           detail::print_size_info(t2, "T2");
         }
@@ -1289,12 +1289,12 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
         tmp_time1 = mpqc::now(world, accurate_time);
         tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-        if (print_detail) {
+        if (print_detail_) {
           mpqc::utility::print_par(world, "diis time: ", tmp_time, "\n");
         }
 
-        auto time1 = mpqc_time::fenced_now(world);
-        auto duration_t = mpqc_time::duration_in_s(time0, time1);
+        auto time1 = mpqc::fenced_now(world);
+        auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
           std::cout.precision(15);
@@ -1304,8 +1304,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
         iter += 1ul;
       } else {
-        auto time1 = mpqc_time::fenced_now(world);
-        auto duration_t = mpqc_time::duration_in_s(time0, time1);
+        auto time1 = mpqc::fenced_now(world);
+        auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
           std::cout.precision(15);

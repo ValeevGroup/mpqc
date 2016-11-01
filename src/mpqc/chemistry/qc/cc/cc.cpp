@@ -6,7 +6,7 @@
 //#include <mpqc/chemistry/qc/cc/ccsd_t.h>
 //#include <mpqc/chemistry/qc/cc/dbccsd.h>
 
-MPQC_CLASS_EXPORT_KEY2("CCSD", mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy>);
+MPQC_CLASS_EXPORT_KEY2("CCSD", mpqc::cc::CCSD<TA::TensorD>);
 
 namespace mpqc {
 namespace cc {

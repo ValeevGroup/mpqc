@@ -12,7 +12,7 @@ namespace mpqc{
 namespace cc{
 
 
-mpqc::detail::ForceLink<CCSD<TA::TensorD, TA::SparsePolicy>> fl1;
+mpqc::detail::ForceLink<CCSD<TA::TensorD>> fl1;
 
 }
 }

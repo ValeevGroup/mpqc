@@ -22,7 +22,7 @@ esac
 $CC --version
 $CXX --version
 
-export CXXFLAGS="-O0 -std=c++11"
+ls 
 
 # Make install directory for MPQC dependencies 
 mkdir -p _build
@@ -31,16 +31,17 @@ mkdir -p _install
 cd _build
 
 # Unpack libint tarball
-tar -xvzf ./external/libint-2.2.0-beta1.tgz
+tar -xvzf ../external/libint-2.2.0-beta1.tgz
 
 cd libint-2.2.0-beta1
 ./autogen.sh
 
 cd ..
-mkdir libint
+mkdir -p libint
 
 cd libint
 
+export CXXFLAGS="-O0 -std=c++11"
 ../libint-2.2.0-beta1/configure \
     --prefix="$HOME/_install/libint" \
     CXX=$CXX \

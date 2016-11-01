@@ -17,10 +17,10 @@ struct ScfCorrection {
   using result_type = double;
   using argument_type = Tile;
 
-  std::shared_ptr<Eig::VectorXd> vec_;
+  std::shared_ptr<Eigen::VectorXd> vec_;
   unsigned int n_occ_;
 
-  ScfCorrection(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+  ScfCorrection(std::shared_ptr<Eigen::VectorXd> vec, int n_occ)
       : vec_(std::move(vec)), n_occ_(n_occ) {}
 
   ScfCorrection(ScfCorrection const &) = default;
@@ -141,7 +141,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //      integrals::LCAOFactory<Tile, Policy> &lcao_factory,
   //      OrbitalSpaceRegistry<TArray>& orbital_registry,
   //      Eigen::VectorXd &ens, const rapidjson::Document &in,
-  //      const molecule::Molecule &mols, int occ) {
+  //      const Molecule &mols, int occ) {
   //    auto &ao_int = lcao_factory.atomic_integral();
   //    auto &world = ao_int.world();
   //    using TArray = TA::DistArray<Tile, Policy>;
@@ -164,7 +164,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    MatrixD S_eig = array_ops::array_to_eigen(S);
   //
   //    // solve mo coefficients
-  //    Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  //    Eigen::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
   //
   //    bool frozen_core =
   //        in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
@@ -308,7 +308,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //          integrals::LCAOFactory<Tile, Policy> &lcao_factory,
   //      OrbitalSpaceRegistry<TArray>& orbital_registry,
   //      Eigen::VectorXd &ens, const rapidjson::Document &in,
-  //      const molecule::Molecule &mols, int occ) {
+  //      const Molecule &mols, int occ) {
   //    auto &ao_int = lcao_factory.atomic_integral();
   //    auto &world = ao_int.world();
   //    using TArray = TA::DistArray<Tile, Policy>;
@@ -331,7 +331,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    MatrixD S_eig = array_ops::array_to_eigen(S);
   //
   //    // solve mo coefficients
-  //    Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  //    Eigen::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
   //
   //    bool frozen_core =
   //        in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;

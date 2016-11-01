@@ -2,7 +2,7 @@
 #ifndef MPQC_TENSOR_DECOMPOSEDTENSOR_H
 #define MPQC_TENSOR_DECOMPOSEDTENSOR_H
 
-#include "../common/namespaces.h"
+
 #include <tiledarray.h>
 #include <vector>
 #include <iostream>

@@ -9,7 +9,6 @@
 #include <mpqc/util/keyval/keyval.hpp>
 
 namespace mpqc {
-namespace molecule {
 
 /*!
  * \defgroup Molecule Molecule
@@ -172,7 +171,6 @@ std::ostream &operator<<(std::ostream &, Molecule const &);
 
 /*! @} */
 
-}  // namespace molecule
 }  // namespace mpqc
 
 #endif  // MPQC_MOLECULE_MOLECULE_H

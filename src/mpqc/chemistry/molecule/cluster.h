@@ -10,7 +10,6 @@
 #include <iosfwd>
 
 namespace mpqc {
-namespace molecule {
 /*! 
  * \ingroup Molecule
  *
@@ -99,7 +98,6 @@ inline Vec3D const& center(Cluster const &c){
 
 /*! @} */
 
-} // namespace molecule
 } // namespace mpqc
 
 #endif // MPQC_MOLECULE_CLUSTER_H

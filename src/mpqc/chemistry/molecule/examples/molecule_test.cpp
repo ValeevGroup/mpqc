@@ -8,13 +8,13 @@
 using namespace mpqc;
 using namespace mpqc::molecule;
 
-molecule::Molecule read_xyz(std::ifstream &f) {
+Molecule read_xyz(std::ifstream &f) {
     // Get number of atoms.
     unsigned long natoms = 0;
     f >> natoms;
 
     std::string line;
-    std::vector<molecule::Clusterable> clusterables;
+    std::vector<Clusterable> clusterables;
     while (std::getline(f, line)) {
         if (!line.empty()) {
             std::stringstream ss(line);
@@ -33,7 +33,7 @@ molecule::Molecule read_xyz(std::ifstream &f) {
             }
         }
     }
-    return molecule::Molecule{std::move(clusterables)};
+    return Molecule{std::move(clusterables)};
 }
 
 int main(int argc, char **argv) {

@@ -55,7 +55,7 @@ operator()(array_type const &F) {
     Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
 
     auto Fp_eig = array_ops::array_to_eigen(Fp);
-    Eig::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
+    Eigen::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
 
     decltype(Fp_eig) C_eig = es.eigenvectors().leftCols(occ_);
     auto tr_ao = Fp.trange().data()[0];

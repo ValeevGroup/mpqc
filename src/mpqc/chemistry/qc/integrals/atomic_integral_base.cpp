@@ -90,7 +90,7 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 }
 
 AtomicIntegralBase::AtomicIntegralBase(
-    madness::World &world, const std::shared_ptr<molecule::Molecule> &mol,
+    madness::World &world, const std::shared_ptr<Molecule> &mol,
     const std::shared_ptr<basis::OrbitalBasisRegistry> &obs,
     const std::vector<std::pair<double, double>> &gtg_params,
     const rapidjson::Document &in)
@@ -134,7 +134,7 @@ AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
   }
   /// Basis will come from wfn_world
   //  orbital_basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
-  mol_ = kv.keyval(prefix + "molecule").class_ptr<molecule::Molecule>();
+  mol_ = kv.keyval(prefix + "molecule").class_ptr<Molecule>();
 
   // if have auxilary basis
   if(kv.exists( prefix + "aux_basis")){

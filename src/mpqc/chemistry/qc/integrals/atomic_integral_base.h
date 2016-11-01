@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "../../../../../common/namespaces.h"
+
 #include "../../../../../utility/make_array.h"
 #include "integrals.h"
 #include <mpqc/chemistry/molecule/molecule.h>
@@ -54,7 +54,7 @@ class AtomicIntegralBase {
    */
 
   AtomicIntegralBase(madness::World &world,
-                     const std::shared_ptr<molecule::Molecule> &mol,
+                     const std::shared_ptr<Molecule> &mol,
                      const std::shared_ptr<basis::OrbitalBasisRegistry> &obs,
                      const std::vector<std::pair<double, double>> &gtg_params =
                      std::vector<std::pair<double, double>>(),
@@ -83,7 +83,7 @@ class AtomicIntegralBase {
 
   /// @brief Molecule accessor
   /// @return molecule object
-  const molecule::Molecule &molecule() const { return *mol_; }
+  const Molecule &molecule() const { return *mol_; }
 
   /// @brief (contracted) Gaussian-types geminal parameters accessor
   /// @return Gaussian-type geminal parameters
@@ -235,7 +235,7 @@ class AtomicIntegralBase {
   std::shared_ptr<basis::OrbitalBasisRegistry> orbital_basis_registry_;
 
   // TODO these specify operator params, need to abstract out better
-  std::shared_ptr<molecule::Molecule> mol_;
+  std::shared_ptr<Molecule> mol_;
   gtg_params_t gtg_params_;
   std::string screen_;
   double screen_threshold_;

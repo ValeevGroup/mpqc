@@ -1,7 +1,7 @@
 
 #include <tiledarray.h>
 
-#include "../common/namespaces.h"
+
 #include "../common/typedefs.h"
 
 #include "../clustering/kmeans.h"
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   xyz_file_stream << xyz_file_buffer;
   delete[] xyz_file_buffer;
 
-  auto mol = mpqc::molecule::Molecule(xyz_file_stream);
+  auto mol = mpqc::Molecule(xyz_file_stream);
   auto clustered_mol = molecule::kmeans(mol.clusterables(), nclusters);
 
   auto repulsion_energy = clustered_mol.nuclear_repulsion();
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
 
   integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(
       world, ta_pass_through,
-      std::make_shared<molecule::Molecule>(clustered_mol), bs_registry, param);
+      std::make_shared<Molecule>(clustered_mol), bs_registry, param);
 
   auto time0 = mpqc::fenced_now(world);
   // Overlap ints
@@ -183,10 +183,10 @@ int main(int argc, char *argv[]) {
   std::size_t n_frozen_core = 0;
   auto F_eig = array_ops::array_to_eigen(F);
   auto S_eig = array_ops::array_to_eigen(S);
-  Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
-  Eig::VectorXd ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
+  Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
+  Eigen::VectorXd ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
 
-  Eig::MatrixXd C_all = es.eigenvectors();
+  Eigen::MatrixXd C_all = es.eigenvectors();
   decltype(S_eig) C_occ = C_all.block(0, 0, S_eig.rows(), occ / 2);
   decltype(S_eig) C_occ_corr =
       C_all.block(0, n_frozen_core, S_eig.rows(), occ / 2 - n_frozen_core);

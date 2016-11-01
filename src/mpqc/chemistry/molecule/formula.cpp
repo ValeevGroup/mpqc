@@ -32,13 +32,12 @@
 #include <libint2/chemistry/elements.h>
 
 namespace mpqc {
-namespace molecule{
 
-MolecularFormula::MolecularFormula(const mpqc::molecule::Molecule& mol) {
+MolecularFormula::MolecularFormula(const mpqc::Molecule& mol) {
   compute(mol);
 }
 
-void MolecularFormula::compute(const mpqc::molecule::Molecule& mol) {
+void MolecularFormula::compute(const mpqc::Molecule& mol) {
   std::map<int, size_t> count; // maps atomic number -> number of atoms
 
   auto atoms = mol.atoms();
@@ -76,4 +75,4 @@ void MolecularFormula::compute(const mpqc::molecule::Molecule& mol) {
   formula_str_ = sstr.str();
 }
 
-}}  // namespace mpqc::molecule
+}  // namespace mpqc

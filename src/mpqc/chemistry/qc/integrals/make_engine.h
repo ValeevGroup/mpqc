@@ -45,11 +45,11 @@ libint2::Engine make_engine(const libint2::Operator &oper,
 // Function to return the q_vector given a basis
 using q_vector = std::vector<std::pair<double, std::array<double, 3>>>;
 
-inline q_vector make_q(molecule::Molecule const &mol) {
+inline q_vector make_q(Molecule const &mol) {
   q_vector q;
 
   for (auto const &cluster : mol) {
-    for (auto const &atom : mpqc::molecule::collapse_to_atoms(cluster)) {
+    for (auto const &atom : mpqc::collapse_to_atoms(cluster)) {
       auto const &c = atom.center();
       std::array<double, 3> O = {{c[0], c[1], c[2]}};
       const double charge = atom.charge();

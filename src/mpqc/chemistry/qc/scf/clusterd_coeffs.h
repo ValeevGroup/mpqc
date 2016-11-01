@@ -5,7 +5,7 @@
 #include <tiledarray.h>
 #include "mpqc/math/external/eigen/eigen.h"
 
-#include "../../../../../common/namespaces.h"
+
 #include "../../../../../common/typedefs.h"
 
 #include "mpqc/math/external/eigen/eigen.h"

@@ -7,7 +7,7 @@
 
 #include <tiledarray.h>
 
-#include "../../../../../common/namespaces.h"
+
 #include <mpqc/chemistry/qc/cc/lazy_tile.h>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 #include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>

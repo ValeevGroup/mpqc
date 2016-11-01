@@ -5,7 +5,7 @@
 #include <mpqc/chemistry/molecule/molecule_fwd.h>
 #include <mpqc/chemistry/qc/basis/basis_fwd.h>
 
-#include "../../../../../common/namespaces.h"
+
 #include "../../../../../common/typedefs.h"
 
 #include <string>
@@ -33,11 +33,11 @@ class BasisSet {
      *
      * Each ShellVec represents the shells for a cluster.
      */
-    std::vector<ShellVec> get_cluster_shells(mol::Molecule const &) const;
+    std::vector<ShellVec> get_cluster_shells(Molecule const &) const;
 
 
     /*! \brief returns a single vector of all shells in the molecule */
-    ShellVec get_flat_shells(mol::Molecule const &) const;
+    ShellVec get_flat_shells(Molecule const &) const;
 
   private:
     std::string basis_set_name_;

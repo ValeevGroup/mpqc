@@ -4,7 +4,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "../../../../../common/typedefs.h"
 
-using MatrixI = Eig::Matrix<int, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
+using MatrixI = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 struct ShapeTracker {
     MatrixI Cshape_;

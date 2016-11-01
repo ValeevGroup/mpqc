@@ -1061,12 +1061,12 @@ class CCSD_T : public CCSD<Tile, Policy> {
     typedef double result_type;
     typedef Tile argument_type;
 
-    std::shared_ptr<Eig::VectorXd> vec_;
+    std::shared_ptr<Eigen::VectorXd> vec_;
     std::size_t n_occ_;
     std::size_t n_frozen_;
     std::array<std::size_t, 6> offset_;
 
-    ReduceBase(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ,
+    ReduceBase(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
                std::size_t n_frozen, std::array<std::size_t, 6> offset)
         : vec_(std::move(vec)),
           n_occ_(n_occ),
@@ -1088,7 +1088,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
     typedef typename ReduceBase::result_type result_type;
     typedef typename ReduceBase::argument_type argument_type;
 
-    CCSD_T_Reduce(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ,
+    CCSD_T_Reduce(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
                   std::size_t n_frozen, std::array<std::size_t, 6> offset)
         : ReduceBase(vec, n_occ, n_frozen, offset) {}
 
@@ -1151,7 +1151,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
     typedef typename ReduceBase::result_type result_type;
     typedef typename ReduceBase::argument_type argument_type;
 
-    CCSD_T_ReduceSymm(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ,
+    CCSD_T_ReduceSymm(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
                       std::size_t n_frozen, std::array<std::size_t, 6> offset)
         : ReduceBase(vec, n_occ, n_frozen, offset) {}
 

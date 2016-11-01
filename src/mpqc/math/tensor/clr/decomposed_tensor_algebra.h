@@ -3,7 +3,7 @@
 #define MPQC_TENSOR_DECOMPOSEDTENSORALGEBRA_H
 
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../common/namespaces.h"
+
 #include "../common/typedefs.h"
 
 #include <tiledarray.h>
@@ -99,7 +99,7 @@ TA::Tensor<double> combine(DecomposedTensor<double> const &t);
  * corresponding to the matrix.
 */
 integer
-piv_cholesky(Eig::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor> &a);
+piv_cholesky(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &a);
 
 } // namespace algebra
 } // namespace tensor

@@ -76,7 +76,7 @@ class DirectAtomicIntegral : public AtomicIntegralBase, public DescribedClass {
    */
   DirectAtomicIntegral(
       madness::World& world, Op op,
-      const std::shared_ptr<molecule::Molecule>& mol,
+      const std::shared_ptr<Molecule>& mol,
       const std::shared_ptr<basis::OrbitalBasisRegistry>& obs,
       const std::vector<std::pair<double, double>>& gtg_params =
           std::vector<std::pair<double, double>>(),

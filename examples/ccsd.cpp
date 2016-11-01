@@ -155,7 +155,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         xyz_file_stream << xyz_file_buffer;
         delete[] xyz_file_buffer;
 
-        auto mol = mpqc::molecule::Molecule(xyz_file_stream, do_cluster);
+        auto mol = mpqc::Molecule(xyz_file_stream, do_cluster);
         auto charge = 0;
         auto occ = mol.occupation(charge);
         auto repulsion_energy = mol.nuclear_repulsion();
@@ -176,7 +176,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                            repulsion_energy, "\n");
 
         // use clustered_mol to generate basis
-        molecule::Molecule clustered_mol{};
+        Molecule clustered_mol{};
         if (!ghost_atoms.empty()) {
 
             char* ghost_xyz_buffer;
@@ -184,7 +184,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
             std::stringstream ghost_xyz_stream;
             ghost_xyz_stream << ghost_xyz_buffer;
             delete[] ghost_xyz_buffer;
-            auto ghost_molecue = mpqc::molecule::Molecule(ghost_xyz_stream, false);
+            auto ghost_molecue = mpqc::Molecule(ghost_xyz_stream, false);
             auto ghost_elements = ghost_molecue.clusterables();
 
             if (world.rank() == 0) {
@@ -198,7 +198,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                 ghost_elements.end());
 
             if(do_cluster){
-                clustered_mol = mpqc::molecule::Molecule(mol_elements, false);
+                clustered_mol = mpqc::Molecule(mol_elements, false);
             }
             else{
                 clustered_mol = mpqc::molecule::kmeans(mol_elements, nclusters);
@@ -401,7 +401,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         {
             auto M_eig = array_ops::array_to_eigen(Metric);
             MatrixD L_inv_eig
-                  = MatrixD(Eig::LLT<MatrixD>(M_eig).matrixL()).inverse();
+                  = MatrixD(Eigen::LLT<MatrixD>(M_eig).matrixL()).inverse();
             auto tr_M = Metric.trange().data()[0];
             L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
                                                            tr_M, tr_M);
@@ -414,14 +414,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
         auto S_eig = array_ops::array_to_eigen(S);
 
         // check the condition number in Overlap
-        Eig::SelfAdjointEigenSolver<decltype(S_eig)> S_es(S_eig);
+        Eigen::SelfAdjointEigenSolver<decltype(S_eig)> S_es(S_eig);
         // eigen value in increasing order
         auto cond = S_es.eigenvalues()(S_es.eigenvalues().size() - 1)
                     / S_es.eigenvalues()(0);
         utility::print_par(world, "Condition Number in Overlap: ", cond, "\n");
 
         // solve C
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+        Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
 
@@ -497,7 +497,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         //            basis,
         //            basis, basis);
         //            auto lazy_two_electron_int =
-        //            mpqc_ints::direct_sparse_integrals(world, eri_e,
+        //            mpqc::integrals::direct_sparse_integrals(world, eri_e,
         //            bs4_array, shr_screen);
         //            intermidiate =
         //            std::make_shared<mpqc::cc::CCSDIntermediate<TA::TensorD,
@@ -509,7 +509,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
         //            basis,
         //            basis, basis);
         //            auto lazy_two_electron_int =
-        //            mpqc_ints::direct_sparse_integrals(world, eri_e,
+        //            mpqc::integrals::direct_sparse_integrals(world, eri_e,
         //            bs4_array);
 
         std::string screen

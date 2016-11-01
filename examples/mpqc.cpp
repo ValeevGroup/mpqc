@@ -171,7 +171,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   xyz_file_stream << xyz_file_buffer;
   delete[] xyz_file_buffer;
 
-  using molecule::Molecule;
+  using Molecule;
   Molecule mol;
   // construct molecule
   bool sort_origin = in.HasMember("sort molecule from origin")
@@ -193,7 +193,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   /**
    * Construct Clustered Molecule, which is used to construct Basis
    */
-  molecule::Molecule clustered_mol;
+  Molecule clustered_mol;
 
   // if no ghost molecule
   if (ghost_atoms.empty()) {
@@ -223,7 +223,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                         ghost_elements.end());
 
     if (nclusters == 0) {
-      clustered_mol = mpqc::molecule::Molecule(mol_elements, false);
+      clustered_mol = mpqc::Molecule(mol_elements, false);
     } else {
       clustered_mol =
           mpqc::molecule::attach_hydrogens_and_kmeans(mol_elements, nclusters);
@@ -339,7 +339,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(
       world, TA::Noop<TA::TensorD,true>(),
-      std::make_shared<molecule::Molecule>(clustered_mol), bs_registry, param,
+      std::make_shared<Molecule>(clustered_mol), bs_registry, param,
       ao_in);
 
   /**

@@ -6,7 +6,6 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
-namespace molecule {
 
 class Atom;
 class Cluster;
@@ -15,7 +14,6 @@ class AtomBasedClusterable;
 class AtomBasedCluster;
 class Molecule;
 
-} // namespace molecule
 } // namespace mpqc
 
 

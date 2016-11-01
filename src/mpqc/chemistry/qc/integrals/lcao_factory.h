@@ -10,7 +10,7 @@
 
 #include <tiledarray.h>
 
-#include "../../../../../common/namespaces.h"
+
 #include "mpqc/math/linalg/diagonal_array.h"
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include <mpqc/chemistry/qc/integrals/atomic_integral.h>

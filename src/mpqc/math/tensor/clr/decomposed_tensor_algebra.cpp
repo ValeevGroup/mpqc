@@ -124,7 +124,7 @@ std::size_t qr_rank(double const *data, std::size_t rows, std::size_t cols,
     const auto full_rank = std::min(cols, rows);
     auto out_rank = full_rank;
 
-    auto M = Eig::Map<const Eig::MatrixXd>(data, rows, cols);
+    auto M = Eigen::Map<const Eigen::MatrixXd>(data, rows, cols);
 
     auto squared_sum = 0.0;
     auto thresh2 = threshold * threshold;
@@ -194,11 +194,11 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
     L = TA::Tensor<double>(std::move(l_range));
 
     // Eigen map the input
-    auto A = Eig::Map<Eig::MatrixXd>(in_data.get(), rows, cols);
+    auto A = Eigen::Map<Eigen::MatrixXd>(in_data.get(), rows, cols);
 
     // Assign into l_tensor
-    auto L_map = Eig::Map<Eig::MatrixXd>(L.data(), rank, cols);
-    L_map = Eig::MatrixXd(A.topLeftCorner(rank, cols)
+    auto L_map = Eigen::Map<Eigen::MatrixXd>(L.data(), rank, cols);
+    L_map = Eigen::MatrixXd(A.topLeftCorner(rank, cols)
                                 .template triangularView<Eigen::Upper>())
             * P.transpose();
 
@@ -219,7 +219,7 @@ bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
         assert(false);
     }
 
-    auto R_map = Eig::Map<Eig::MatrixXd>(R.data(), rows, rank);
+    auto R_map = Eigen::Map<Eigen::MatrixXd>(R.data(), rows, rank);
     R_map = A.leftCols(rank);
     return true;
 }
@@ -261,11 +261,11 @@ void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
     L = TA::Tensor<double>(std::move(l_range));
 
     // Eigen map the input
-    auto A = Eig::Map<Eig::MatrixXd>(in.data(), rows, cols);
+    auto A = Eigen::Map<Eigen::MatrixXd>(in.data(), rows, cols);
 
     // Assign into l_tensor
-    auto L_map = Eig::Map<Eig::MatrixXd>(L.data(), rank, cols);
-    L_map = Eig::MatrixXd(A.topLeftCorner(rank, cols)
+    auto L_map = Eigen::Map<Eigen::MatrixXd>(L.data(), rank, cols);
+    L_map = Eigen::MatrixXd(A.topLeftCorner(rank, cols)
                                 .template triangularView<Eigen::Upper>())
             * P.transpose();
 
@@ -287,7 +287,7 @@ void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
         assert(false);
     }
 
-    auto R_map = Eig::Map<Eig::MatrixXd>(R.data(), rows, rank);
+    auto R_map = Eigen::Map<Eigen::MatrixXd>(R.data(), rows, rank);
     R_map = A.leftCols(rank);
 }
 
@@ -332,10 +332,10 @@ void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
     L = TA::Tensor<double>(std::move(l_range));
 
     // Eigen map the input
-    auto A = Eig::Map<Eig::MatrixXd>(in.data(), rows, cols);
+    auto A = Eigen::Map<Eigen::MatrixXd>(in.data(), rows, cols);
 
     // Assign into l_tensor
-    auto L_map = Eig::Map<Eig::MatrixXd>(L.data(), full_rank, cols);
+    auto L_map = Eigen::Map<Eigen::MatrixXd>(L.data(), full_rank, cols);
     L_map = A.topLeftCorner(full_rank, cols)
                   .template triangularView<Eigen::Upper>();
 
@@ -357,7 +357,7 @@ void ta_tensor_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
     }
 
 
-    auto R_map = Eig::Map<Eig::MatrixXd>(R.data(), rows, full_rank);
+    auto R_map = Eigen::Map<Eigen::MatrixXd>(R.data(), rows, full_rank);
     R_map = A.leftCols(full_rank);
 }
 
@@ -401,9 +401,9 @@ void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
         assert(false);
     }
 
-    auto A = Eig::Map<Eig::MatrixXd>(in.data(), rows, cols);
+    auto A = Eigen::Map<Eigen::MatrixXd>(in.data(), rows, cols);
 
-    auto R_map = Eig::Map<Eig::MatrixXd>(R.data(), rows, full_rank);
+    auto R_map = Eigen::Map<Eigen::MatrixXd>(R.data(), rows, full_rank);
     R_map = A.bottomLeftCorner(rows, full_rank)
                   .template triangularView<Eigen::Lower>();
 
@@ -417,7 +417,7 @@ void ta_tensor_lq(TA::Tensor<double> &in, TA::Tensor<double> &L,
                       static_cast<unsigned int>(full_rank)};
     L = TA::Tensor<double>(std::move(l_range));
 
-    Eig::Map<Eig::MatrixXd> L_map(L.data(), full_rank, cols);
+    Eigen::Map<Eigen::MatrixXd> L_map(L.data(), full_rank, cols);
     L_map = A.topRows(full_rank);
 }
 
@@ -564,11 +564,11 @@ TA::Tensor<double> combine(DecomposedTensor<double> const &t) {
  * corresponding to the matrix.
 */
 integer piv_cholesky(
-      Eig::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor> &a) {
+      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &a) {
 
     integer dim = a.rows();
-    Eig::Matrix<integer, Eigen::Dynamic, 1> piv
-          = Eig::Matrix<integer, Eigen::Dynamic, 1>::Zero(dim);
+    Eigen::Matrix<integer, Eigen::Dynamic, 1> piv
+          = Eigen::Matrix<integer, Eigen::Dynamic, 1>::Zero(dim);
 
     integer rank = 0;
     integer info;
@@ -576,7 +576,7 @@ integer piv_cholesky(
     const char uplo = 'U';
     std::unique_ptr<double[]> work{new double[2 * dim]};
 
-    // Eigen::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor> D = a;
+    // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> D = a;
     dpstrf_(&uplo, &dim, a.data(), &dim, piv.data(), &rank, &tol, work.get(),
             &info);
 
@@ -585,8 +585,8 @@ integer piv_cholesky(
         --piv[i];
     }
 
-    Eig::PermutationWrapper<decltype(piv)> P(piv);
-    a = a.triangularView<Eig::Lower>();
+    Eigen::PermutationWrapper<decltype(piv)> P(piv);
+    a = a.triangularView<Eigen::Lower>();
     // Eigen doesn't like you to assign to a with this expression directly
     typename std::remove_reference<decltype(a)>::type L = P * a.leftCols(rank);
     a = L;

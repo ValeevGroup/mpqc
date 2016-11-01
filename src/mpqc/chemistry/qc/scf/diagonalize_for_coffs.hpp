@@ -2,7 +2,7 @@
 #ifndef MPQC_SCF_DIAGONALIZEFORCOFFS_H
 #define MPQC_SCF_DIAGONALIZEFORCOFFS_H
 
-#include "../../../../../common/namespaces.h"
+
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 #include <tiledarray.h>
@@ -38,7 +38,7 @@ inline Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1
     auto F_eig = array_ops::array_to_eigen(F);
     auto S_eig = array_ops::array_to_eigen(S);
 
-    Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
+    Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
     decltype(S_eig) C = es.eigenvectors().leftCols(occ);
 
     if (use_chol_vectors) {

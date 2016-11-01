@@ -3,7 +3,7 @@
 #define MPQC_SCF_DENSITYBUILDER_H
 
 #include <tiledarray.h>
-#include "../../../../../common/namespaces.h"
+
 #include "mpqc/util/misc/json_handling.h"
 
 #include <string>

@@ -83,7 +83,7 @@ TT_TA_ARRAY(TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A) {
     // Resize D (i, ajb)
     A_eig.resize(occ, vir * occ * vir);
 
-    Eigen::JacobiSVD<MatrixD> svd(A_eig, Eig::ComputeThinU | Eig::ComputeThinV);
+    Eigen::JacobiSVD<MatrixD> svd(A_eig, Eigen::ComputeThinU | Eigen::ComputeThinV);
     svd.setThreshold(1e-3);
 
 
@@ -139,7 +139,7 @@ TT_one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
     // Resize D (i, ajb)
     D.resize(occ, vir * occ * vir);
 
-    Eigen::JacobiSVD<MatrixD> svd(D, Eig::ComputeThinU | Eig::ComputeThinV);
+    Eigen::JacobiSVD<MatrixD> svd(D, Eigen::ComputeThinU | Eigen::ComputeThinV);
     svd.setThreshold(1e-3);
 
 

@@ -8,7 +8,6 @@
 #include <iostream>
 
 namespace mpqc {
-namespace molecule {
 
 /*!
  * \addtogroup Molecule
@@ -87,7 +86,6 @@ class Clusterable {
 
 /*! @} */
 
-} // namespace molecule
 } // namespace mpqc
 
 #endif // MPQC_MOLECULE_CLUSTERCONCEPT_H

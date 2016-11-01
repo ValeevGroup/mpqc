@@ -17,7 +17,7 @@ namespace integrals {
  */
 template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool,
+    madness::World &world, ShrPool<Engine> shr_pool,
     Bvector const &bases,
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD,true>()) {
   const auto trange = detail::create_trange(bases);
@@ -81,7 +81,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
  */
 template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD,true>())
 
@@ -153,7 +153,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
  */
 template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD&&)> op = TA::Noop<TA::TensorD,true>()) {
   const auto trange = detail::create_trange(bases);
@@ -211,7 +211,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
  */
 template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD&&)> op = TA::Noop<TA::TensorD,true>()) {
   const auto trange = detail::create_trange(bases);

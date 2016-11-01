@@ -13,7 +13,7 @@ ClusterShells &ClusterShells::operator=(ClusterShells const &) = default;
 ClusterShells &ClusterShells::operator=(ClusterShells &&) = default;
 
 ClusterShells::ClusterShells(std::vector<std::vector<libint2::Shell>> shell,
-                             std::shared_ptr<molecule::Cluster> c)
+                             std::shared_ptr<Cluster> c)
     : shells_{std::move(shell)}, cluster_{c} {}
 
 unsigned int ClusterShells::max_am() const { return shells_.size() - 1; }
@@ -68,7 +68,7 @@ std::vector<libint2::Shell> ClusterShells::flattened_shells() const {
     return shells;
 }
 
-molecule::Cluster const &ClusterShells::cluster() const { return *cluster_; }
+Cluster const &ClusterShells::cluster() const { return *cluster_; }
 
 } // namespace basis
 } // namespace mpqc

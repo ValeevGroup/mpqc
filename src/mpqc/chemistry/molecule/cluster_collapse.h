@@ -7,7 +7,6 @@
 #include <vector>
 
 namespace mpqc {
-namespace molecule {
 
 /*! \brief collapse_to_atoms ends the recursive loop of the templated version of
   the function
@@ -37,7 +36,6 @@ std::vector<Atom> collapse_to_atoms(T const &t) {
     return atoms;
 }
 
-} // namespace molecule
 } // namespace mpqc
 
 #endif // MPQC_CLUSTER_COLLAPSE_H

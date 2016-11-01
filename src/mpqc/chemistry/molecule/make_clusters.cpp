@@ -3,7 +3,6 @@
 #include <mpqc/chemistry/molecule/make_clusters.h>
 
 namespace mpqc {
-namespace molecule {
 
 std::vector<std::shared_ptr<Cluster>>
 attach_hydrogens_kmeans(Molecule const &m, unsigned long nclusters) {
@@ -59,5 +58,4 @@ kmeans(Molecule const &m, unsigned long nclusters) {
     return clusters;
 }
 
-} // namespace molecule
 } // namespace mpqc

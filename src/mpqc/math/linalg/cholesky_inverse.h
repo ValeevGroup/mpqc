@@ -3,7 +3,7 @@
 #define MPQC_TAROUTINES_CHOLEKSYINVERSE_H
 
 #include <tiledarray.h>
-#include "../common/namespaces.h"
+
 #include "../common/typedefs.h"
 
 namespace mpqc {

@@ -3,7 +3,7 @@
 
 #include <tiledarray.h>
 #include "../common/typedefs.h"
-#include "../common/namespaces.h"
+
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"

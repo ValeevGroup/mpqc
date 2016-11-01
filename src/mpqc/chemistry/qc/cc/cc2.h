@@ -5,7 +5,7 @@
 #ifndef MPQC_CC2_H
 #define MPQC_CC2_H
 
-#include "../../../../../common/namespaces.h"
+
 #include <tiledarray.h>
 
 #include "../../../../../utility/trange1_engine.h"

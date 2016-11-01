@@ -23,11 +23,11 @@ struct Mp2Energy {
   using result_type = double;
   using argument_type = Tile;
 
-  std::shared_ptr<Eig::VectorXd> vec_;
+  std::shared_ptr<Eigen::VectorXd> vec_;
   std::size_t n_occ_;
   std::size_t n_frozen_;
 
-  Mp2Energy(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ,
+  Mp2Energy(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
             std::size_t n_frozen)
       : vec_(std::move(vec)), n_occ_(n_occ), n_frozen_(n_frozen) {}
 

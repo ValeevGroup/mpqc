@@ -2,7 +2,7 @@
 #ifndef MPQC_SCF_TRADITIONALDFFOCKBUILDER_H
 #define MPQC_SCF_TRADITIONALDFFOCKBUILDER_H
 
-#include "../../../../../common/namespaces.h"
+
 #include <tiledarray.h>
 
 #include "mpqc/math/external/eigen/eigen.h"
@@ -37,7 +37,7 @@ class DFFockBuilder : public FockBuilder {
   DFFockBuilder(array_type const &M, Integral const &eri3) : eri3_(eri3) {
     auto M_eig = array_ops::array_to_eigen(M);
 
-    MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(M_eig).matrixL()).inverse();
+    MatrixD L_inv_eig = MatrixD(Eigen::LLT<MatrixD>(M_eig).matrixL()).inverse();
 
     auto tr_M = M.trange().data()[0];
 

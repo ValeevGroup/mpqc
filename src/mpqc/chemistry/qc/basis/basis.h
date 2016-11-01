@@ -111,7 +111,7 @@ Basis reblock(Basis const &basis, Op op, Args... args) {
 }
 
 Basis parallel_construct_basis(madness::World &world, const BasisSet &basis_set,
-                               const mpqc::molecule::Molecule &mol);
+                               const mpqc::Molecule &mol);
 
 }  // namespace basis
 }  // namespace mpqc

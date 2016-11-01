@@ -23,7 +23,7 @@ individual_clustering(std::vector<Clusterable> const &c_ables) {
     return cs;
 }
 
-// A map to keep track of which heavy the hydrogens belog to.
+// A map to keep track of which heavy the hydrogens belong to.
 // Similar to unordered multimap, but I used a vector instead.
 template <typename It>
 std::vector<std::pair<It, std::vector<It>>>

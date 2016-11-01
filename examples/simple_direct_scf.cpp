@@ -1,6 +1,6 @@
 #include <tiledarray.h>
 
-#include "../common/namespaces.h"
+
 #include "../common/typedefs.h"
 
 #include "../utility/make_array.h"
@@ -80,7 +80,7 @@ class FourCenterSCF {
         auto F_eig = array_ops::array_to_eigen(F_);
         auto S_eig = array_ops::array_to_eigen(S_);
 
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+        Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         decltype(S_eig) C = es.eigenvectors().leftCols(occ);
         MatrixD D_eig = C * C.transpose();
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Took " << mpqc::duration_in_s(screen0, screen1)
                   << " s to form screening Matrix!" << std::endl;
 
-        auto eri4 = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array,
+        auto eri4 = mpqc::integrals::direct_sparse_integrals(world, eri_e, bs4_array,
                                                        shr_screen);
 
 

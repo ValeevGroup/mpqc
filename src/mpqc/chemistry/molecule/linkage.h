@@ -5,11 +5,9 @@
 #include <mpqc/util/keyval/forcelink.h>
 
 namespace mpqc {
-namespace molecule {
 
-mpqc::detail::ForceLink<mpqc::molecule::Molecule> fl1;
+mpqc::detail::ForceLink<mpqc::Molecule> fl1;
 
-}
 }
 
 #endif // MPQC_MOLECULE_CLUSTER_H

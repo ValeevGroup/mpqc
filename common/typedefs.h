@@ -2,7 +2,6 @@
 #ifndef MPQC_COMMON_TYPEDEFS_H
 #define MPQC_COMMON_TYPEDEFS_H
 
-#include "namespaces.h"
 #include "mpqc/math/external/eigen/eigen.h"
 
 #include <type_traits>
@@ -41,9 +40,9 @@ using DecompTensorD = DecompTensor<double>;
 /////////////////////////////////////////////////////////
 // Eigen typedefs
 /////////////////////////////////////////////////////////
-using MatrixD = Eig::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
-using VectorD = Eig::VectorXd;
-using Vec3D = Eig::Vector3d;
+using MatrixD = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+using VectorD = Eigen::VectorXd;
+using Vec3D = Eigen::Vector3d;
 
 /////////////////////////////////////////////////////////
 // Libint typedefs

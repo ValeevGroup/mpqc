@@ -2,12 +2,11 @@
 #include <mpqc/chemistry/molecule/common.h>
 
 namespace mpqc {
-namespace molecule {
 
 void AtomBasedCluster::update_cluster() {
-    mass_ = sum_mass(elements_);
-    charge_ = sum_charge(elements_);
-    com_ = center_of_mass(elements_);
+    mass_ = molecule::sum_mass(elements_);
+    charge_ = molecule::sum_charge(elements_);
+    com_ = molecule::center_of_mass(elements_);
 }
 
 std::vector<Atom> AtomBasedCluster::atoms() const {
@@ -41,5 +40,4 @@ std::ostream &operator<<(std::ostream &os, AtomBasedCluster const &c) {
 }
 
 
-} // namespace molecule
 } // namespace mpqc

@@ -2,7 +2,7 @@
 #ifndef MPQC_SCF_CADFBUILDER_H
 #define MPQC_SCF_CADFBUILDER_H
 
-#include "../../../../../common/namespaces.h"
+
 #include <tiledarray.h>
 #include "mpqc/util/misc/time.h"
 #include "../../../../../utility/array_info.h"
@@ -62,8 +62,8 @@ class CADFFockBuilder : public FockBuilder {
 
  public:
   CADFFockBuilder(
-      molecule::Molecule const &clustered_mol,
-      molecule::Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol,
+      Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints,
       bool use_forced_shape, double force_threshold,
@@ -76,8 +76,8 @@ class CADFFockBuilder : public FockBuilder {
   }
 
   CADFFockBuilder(
-      molecule::Molecule const &clustered_mol,
-      molecule::Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol,
+      Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints)
       : FockBuilder() {
@@ -88,7 +88,7 @@ class CADFFockBuilder : public FockBuilder {
     // Form L^{-1} for M
     auto M_eig = array_ops::array_to_eigen(M_);
     using MatType = decltype(M_eig);
-    MatType L_inv_eig = MatType(Eig::LLT<MatType>(M_eig).matrixL()).inverse();
+    MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M_.trange().data()[0];  // Assumes symmetric blocking
     Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(

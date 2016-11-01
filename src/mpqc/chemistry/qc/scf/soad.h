@@ -13,7 +13,7 @@
 #include "../../../../../utility/array_info.h"
 #include "../../../../../utility/make_array.h"
 
-#include "../../../../../common/namespaces.h"
+
 
 #include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>
 #include <mpqc/chemistry/qc/integrals/task_integrals.h>
@@ -27,7 +27,7 @@
 namespace mpqc {
 namespace scf {
 
-MatrixD soad_density_eig_matrix(molecule::Molecule const &mol) {
+MatrixD soad_density_eig_matrix(Molecule const &mol) {
   auto nao = 0;
   for (const auto &atom : mol.atoms()) {
     const auto Z = atom.charge();
@@ -176,7 +176,7 @@ void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
 
 template <typename ShrPool, typename Array, typename Tile = TA::TensorD>
 Array fock_from_soad(madness::World &world,
-                     molecule::Molecule const &clustered_mol,
+                     Molecule const &clustered_mol,
                      basis::Basis const &obs, ShrPool engs, Array const &H,
                      std::function<Tile(TA::TensorD &&)> op =
                          TA::Noop<TA::TensorD,true>()) {

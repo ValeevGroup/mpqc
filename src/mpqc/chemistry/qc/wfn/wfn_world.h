@@ -28,7 +28,7 @@ class WavefunctionWorld : public DescribedClass {
 
  private:
   madness::World &world_;
-  std::shared_ptr<molecule::Molecule> mol_;
+  std::shared_ptr<Molecule> mol_;
   std::shared_ptr<basis::OrbitalBasisRegistry> basis_registry_;
 
  public:
@@ -48,7 +48,7 @@ class WavefunctionWorld : public DescribedClass {
   madness::World &world() { return world_; }
 
   /// Return a reference to the molecule in the world
-  molecule::Molecule const &molecule() const { return *mol_; }
+  Molecule const &molecule() const { return *mol_; }
 
   /// Return Basis Registry
   std::shared_ptr<basis::OrbitalBasisRegistry> const basis_registry() {return basis_registry_;}

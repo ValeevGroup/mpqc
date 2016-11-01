@@ -3,7 +3,7 @@
 #define MPQC_SCF_CADFFITTINGCOEFFS_H
 
 #include <tiledarray.h>
-#include "../../../../../common/namespaces.h"
+
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>
 #include "../../../../../common/typedefs.h"
@@ -22,7 +22,7 @@ namespace scf {
 namespace cadf {
 
 inline basis::Basis by_atom_basis(
-    molecule::Molecule const &mol, basis::BasisSet const &bs,
+    Molecule const &mol, basis::BasisSet const &bs,
     std::unordered_map<std::size_t, std::size_t> &atom_to_cluster_map) {
   std::vector<molecule::AtomBasedClusterable> atoms;
   std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
@@ -40,7 +40,7 @@ inline basis::Basis by_atom_basis(
 
   auto sort_atoms_in_mol = false;
   return basis::Basis(bs.get_cluster_shells(
-      molecule::Molecule(std::move(atoms), sort_atoms_in_mol)));
+      Molecule(std::move(atoms), sort_atoms_in_mol)));
 }
 
 inline TA::TiledRange cadf_trange(basis::Basis const &obs_by_atom,
@@ -381,8 +381,8 @@ void create_tiles(madness::World &world,
 
 template <typename MetricEngine>
 inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
-    madness::World &world, molecule::Molecule const &obs_molecule,
-    molecule::Molecule const &dfbs_molecule, basis::BasisSet const &obs_set,
+    madness::World &world, Molecule const &obs_molecule,
+    Molecule const &dfbs_molecule, basis::BasisSet const &obs_set,
     basis::BasisSet const &dfbs_set, MetricEngine const &eng,
     std::unordered_map<std::size_t, std::size_t> &obs_atom_to_cluster_map,
     std::unordered_map<std::size_t, std::size_t> &dfbs_atom_to_cluster_map) {

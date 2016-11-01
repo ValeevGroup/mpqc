@@ -2,7 +2,7 @@
 #ifndef MPQC_ARRAYOPS_ARRAYTOEIGEN_H
 #define MPQC_ARRAYOPS_ARRAYTOEIGEN_H
 
-#include "../../../../../common/namespaces.h"
+
 #include "../../../../../common/typedefs.h"
 #include <tiledarray.h>
 
@@ -15,7 +15,7 @@ namespace mpqc {
 namespace array_ops {
 
 template <typename T>
-using Matrix = Eig::Matrix<T, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
+using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 template <typename T>
 Matrix<T> tile_to_eigen(TA::Tensor<T> const &t) {

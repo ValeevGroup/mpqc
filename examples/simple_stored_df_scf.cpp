@@ -1,6 +1,6 @@
 #include <tiledarray.h>
 
-#include "../common/namespaces.h"
+
 #include "../common/typedefs.h"
 
 #include "../clustering/kmeans.h"
@@ -304,7 +304,7 @@ class ThreeCenterScf {
         auto F_eig = array_ops::array_to_eigen(F_);
         auto S_eig = array_ops::array_to_eigen(S_);
 
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+        Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         decltype(S_eig) C = es.eigenvectors().leftCols(occ);
         auto tr_ao = S_.trange().data()[0];
@@ -704,10 +704,10 @@ int main(int argc, char *argv[]) {
         auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
         auto V_eig = array_ops::array_to_eigen(Vmetric);
 
-        MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
+        MatrixD Leig = Eigen::LLT<MatrixD>(V_eig).matrixL();
         MatrixD L_inv_eig = Leig.inverse();
 
-        Eig::SelfAdjointEigenSolver<MatrixD> es(V_eig);
+        Eigen::SelfAdjointEigenSolver<MatrixD> es(V_eig);
         MatrixD V_inv_oh_eig = es.operatorInverseSqrt();
 
         auto tr_V = Vmetric.trange().data()[0];
@@ -935,10 +935,10 @@ int main(int argc, char *argv[]) {
         auto F_eig = array_ops::array_to_eigen(Fao);
         auto S_eig = array_ops::array_to_eigen(S);
 
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+        Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
 
-        auto vec_ptr = std::make_shared<Eig::VectorXd>(es.eigenvalues());
+        auto vec_ptr = std::make_shared<Eigen::VectorXd>(es.eigenvalues());
 
         decltype(S_eig) Ceigi = es.eigenvectors().leftCols(mp2_occ);
         decltype(S_eig) Ceigv = es.eigenvectors().rightCols(mp2_vir);
@@ -1100,10 +1100,10 @@ int main(int argc, char *argv[]) {
                     using result_type = double;
                     using argument_type = TA::Tensor<double>;
 
-                    std::shared_ptr<Eig::VectorXd> vec_;
+                    std::shared_ptr<Eigen::VectorXd> vec_;
                     unsigned int n_occ_;
 
-                    Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+                    Mp2Red(std::shared_ptr<Eigen::VectorXd> vec, int n_occ)
                             : vec_(std::move(vec)), n_occ_(n_occ) {}
                     Mp2Red(Mp2Red const &) = default;
 

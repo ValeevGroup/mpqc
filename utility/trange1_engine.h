@@ -5,7 +5,7 @@
 #ifndef MPQC_BLOCK_SIZE_ENGINE_H
 #define MPQC_BLOCK_SIZE_ENGINE_H
 
-#include "../common/namespaces.h"
+
 #include <tiledarray.h>
 
 #include <algorithm>

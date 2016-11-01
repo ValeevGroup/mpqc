@@ -7,11 +7,12 @@
 #include <vector>
 
 namespace mpqc {
-namespace molecule {
 
 /// Function takes mpqc::molecule::Atom vector and converts it to a vector 
 /// of libint atoms. 
 std::vector<libint2::Atom> to_libint_atom(std::vector<Atom> const &);
+
+namespace molecule {
 
 /*! \brief Function to compute the center of mass of a collection
  *

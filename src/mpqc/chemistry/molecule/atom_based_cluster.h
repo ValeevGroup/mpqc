@@ -9,7 +9,6 @@
 #include <iosfwd>
 
 namespace mpqc {
-namespace molecule {
 /*!
  * \ingroup Molecule
  *
@@ -40,14 +39,14 @@ class AtomBasedCluster {
     AtomBasedCluster(AtomBasedCluster &&c) = default;
     AtomBasedCluster &operator=(AtomBasedCluster &&c) = default;
 
-    AtomBasedCluster(std::vector<AtomBasedClusterable> const &elems)
+    explicit AtomBasedCluster(std::vector<AtomBasedClusterable> const &elems)
             : elements_(elems) {}
-    AtomBasedCluster(std::vector<AtomBasedClusterable> &&elems)
+    explicit AtomBasedCluster(std::vector<AtomBasedClusterable> &&elems)
             : elements_(std::move(elems)) {}
 
     // When constructed from list update immediately
     template <typename... Cs>
-    AtomBasedCluster(Cs... cs)
+    explicit AtomBasedCluster(Cs... cs)
             : elements_{std::move(cs)...} {
         update_cluster();
     }
@@ -140,7 +139,6 @@ inline void update_center(AtomBasedCluster &c){
 
 /*! @} */
 
-} // namespace molecule
 } // namespace mpqc
 
 #endif // MPQC_MOLECULE_ATOMBASEDCLUSTER_H

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../common/namespaces.h"
+
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include <tiledarray.h>
@@ -12,10 +12,10 @@
 namespace mpqc {
 namespace tensor {
 template <typename T>
-using Matrix = Eig::Matrix<T, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
+using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 template <typename T>
-using Vector = Eig::Matrix<T, Eig::Dynamic, 1>;
+using Vector = Eigen::Matrix<T, Eigen::Dynamic, 1>;
 
 template <typename T>
 class VectorCluster {
@@ -150,7 +150,7 @@ get_pivots(std::vector<VectorCluster<T>> const &clusters) {
 
 
     Vector<unsigned long> J
-          = Eig::Map<Vector<unsigned long>>(pivs.data(), pivs.size(), 1);
+          = Eigen::Map<Vector<unsigned long>>(pivs.data(), pivs.size(), 1);
     return J;
 }
 
@@ -196,7 +196,7 @@ TA::TiledRange1 localize_vectors_with_kmeans(Matrix<T> const &xyz, Matrix<T> &D,
     }
 
     Vector<unsigned long> J = get_pivots(clusters);
-    Eig::PermutationWrapper<Vector<unsigned long>> P(J);
+    Eigen::PermutationWrapper<Vector<unsigned long>> P(J);
     P.applyThisOnTheRight(D);
 
     std::vector<unsigned long> blocks(1, 0);

@@ -7,7 +7,7 @@
 
 #include <tiledarray.h>
 
-#include "../../../../../common/namespaces.h"
+
 #include <mpqc/chemistry/qc/cc/integral_generator.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>

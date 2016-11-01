@@ -8,7 +8,6 @@
 #include "./molecule_fwd.h"
 
 namespace mpqc {
-namespace molecule {
 
 /*! \ingroup Molecule @{ */
 
@@ -76,7 +75,6 @@ inline Vec3D const &center_of_mass(Atom const &a) { return a.center(); }
 
 /*! @} */
 
-} // namespace molecule
 } // namespace mpqc
 
 #endif // MPQC_MOLECULE_ATOM_H

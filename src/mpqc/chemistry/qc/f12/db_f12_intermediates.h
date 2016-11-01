@@ -7,7 +7,7 @@
 
 #include <tiledarray.h>
 
-#include "../../../../../common/namespaces.h"
+
 #include <mpqc/chemistry/qc/f12/f12_intermediates.h>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 

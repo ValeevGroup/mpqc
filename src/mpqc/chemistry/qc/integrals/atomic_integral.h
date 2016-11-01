@@ -89,7 +89,7 @@ class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
    */
 
   AtomicIntegral(madness::World& world, Op op,
-                 const std::shared_ptr<molecule::Molecule>& mol,
+                 const std::shared_ptr<Molecule>& mol,
                  const std::shared_ptr<basis::OrbitalBasisRegistry>& obs,
                  const std::vector<std::pair<double, double>>& gtg_params =
                      std::vector<std::pair<double, double>>(),
@@ -389,7 +389,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
         MatrixD result_eig = array_ops::array_to_eigen(result);
 
         // compute cholesky decomposition
-        auto llt_solver = Eig::LLT<MatrixD>(result_eig);
+        auto llt_solver = Eigen::LLT<MatrixD>(result_eig);
 
         // check success
         Eigen::ComputationInfo info = llt_solver.info();
@@ -444,7 +444,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
         } else {
           auto result_eig = array_ops::array_to_eigen(result);
           MatrixD L_inv_eig =
-              MatrixD(Eig::LLT<MatrixD>(result_eig).matrixL()).inverse();
+              MatrixD(Eigen::LLT<MatrixD>(result_eig).matrixL()).inverse();
           auto tr_result = result.trange().data()[0];
           result = array_ops::eigen_to_array<TA::TensorD>(
               result.world(), L_inv_eig, tr_result, tr_result);

@@ -34,7 +34,7 @@ namespace integrals {
  */
 template <typename E, typename Tile = TA::TensorD>
 std::vector<DArray<2, Tile, SpPolicy>> sparse_xyz_integrals(
-    mad::World &world, ShrPool<E> shr_pool, Barray<2> const &bases,
+    madness::World &world, ShrPool<E> shr_pool, Barray<2> const &bases,
     std::function<Tile(TA::TensorD &&)> op =
         TA::Noop<TA::TensorD,true>()) {
   // Build the Trange and Shape Tensor
@@ -142,7 +142,7 @@ std::vector<DArray<2, Tile, SpPolicy>> sparse_xyz_integrals(
  */
 template <typename Tile = TA::TensorD, typename E>
 TA::DistArray<Tile, SpPolicy> sparse_integrals(
-    mad::World &world, ShrPool<E> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op =
         TA::Noop<TA::TensorD,true>()) {
@@ -204,7 +204,7 @@ TA::DistArray<Tile, SpPolicy> sparse_integrals(
  */
 template <typename Tile = TA::TensorD, typename E>
 TA::DistArray<Tile, DnPolicy> dense_integrals(
-    mad::World &world, ShrPool<E> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op =
         TA::Noop<TA::TensorD,true>()) {
@@ -229,7 +229,7 @@ TA::DistArray<Tile, DnPolicy> dense_integrals(
     detail::IdxVec idx = trange.tiles_range().idx(ord);
 
     auto range = trange.make_tile_range(ord);
-    mad::Future<Tile> tile = world.taskq.add(task_func, idx, range);
+    madness::Future<Tile> tile = world.taskq.add(task_func, idx, range);
 
     out.set(ord, tile);
   }

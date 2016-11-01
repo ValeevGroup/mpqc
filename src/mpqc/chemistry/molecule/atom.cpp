@@ -4,7 +4,6 @@
 #include <iostream>
 
 namespace mpqc {
-namespace molecule {
 
 static std::map<int, std::string> atom_names = {{1, "H"},
                                                 {2, "He"},
@@ -44,5 +43,4 @@ std::ostream &operator<<(std::ostream &os, Atom const &a) {
     return os;
 }
 
-} // namespace molecule
 } // namespace mpqc

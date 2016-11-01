@@ -4,7 +4,7 @@
 
 #include <cassert>
 
-#include "../../../../../common/namespaces.h"
+
 #include <tiledarray.h>
 
 #include <mpqc/chemistry/qc/scf/builder.h>

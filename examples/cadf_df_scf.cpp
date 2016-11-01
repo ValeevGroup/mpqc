@@ -1,7 +1,7 @@
 
 #include <tiledarray.h>
 
-#include "../common/namespaces.h"
+
 #include "../common/typedefs.h"
 
 #include "../utility/make_array.h"
@@ -106,14 +106,14 @@ int main(int argc, char *argv[]) {
   }
 
   std::fstream mol_file(mol_file_name);
-  auto atom_mol = molecule::Molecule(mol_file, false);
+  auto atom_mol = Molecule(mol_file, false);
   mol_file.close();
 
   out_doc.AddMember("number of atoms", int(atom_mol.atoms().size()),
                     out_doc.GetAllocator());
 
   auto nclusters = 0;
-  molecule::Molecule clustered_mol;
+  Molecule clustered_mol;
   if (in.HasMember("cluster by atom") && in["cluster by atom"].GetBool()) {
     clustered_mol = std::move(atom_mol);
     nclusters = clustered_mol.nclusters();

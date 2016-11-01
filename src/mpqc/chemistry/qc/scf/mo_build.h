@@ -8,7 +8,7 @@
 #include <rapidjson/document.h>
 #include <tiledarray.h>
 
-#include "../../../../../common/namespaces.h"
+
 #include "../../../../../utility/trange1_engine.h"
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
@@ -37,7 +37,7 @@ inline std::tuple<bool, std::size_t, std::size_t> get_mo_build_option(
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
-    const rapidjson::Document &in, const molecule::Molecule &mols) {
+    const rapidjson::Document &in, const Molecule &mols) {
   bool frozen_core;
   std::size_t occ_blocksize, vir_blocksize;
   std::tie(frozen_core, occ_blocksize, vir_blocksize) =
@@ -50,7 +50,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
-    const molecule::Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
+    const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
     std::size_t vir_blocksize) {
   auto &ao_int = lcao_factory.atomic_integral();
   auto &orbital_registry = lcao_factory.orbital_space();
@@ -76,14 +76,14 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   MatrixD S_eig = array_ops::array_to_eigen(S);
 
   // check the condition number in Overlap
-  Eig::SelfAdjointEigenSolver<MatrixD> S_es(S_eig);
+  Eigen::SelfAdjointEigenSolver<MatrixD> S_es(S_eig);
   // eigen value in increasing order
   auto cond =
       S_es.eigenvalues()(S_es.eigenvalues().size() - 1) / S_es.eigenvalues()(0);
   utility::print_par(world, "Condition Number in Overlap: ", cond, "\n");
 
   // solve mo coefficients
-  Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  Eigen::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
 
   // start to solve coefficient
 
@@ -279,7 +279,7 @@ void closed_shell_cabs_mo_build_svd(
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
-    const rapidjson::Document &in, const molecule::Molecule &mols) {
+    const rapidjson::Document &in, const Molecule &mols) {
 
   bool frozen_core;
   std::size_t occ_blocksize, vir_blocksize;
@@ -293,7 +293,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
-    const molecule::Molecule &mols, bool frozen_core, std::size_t occ_blocksize, std::size_t vir_blocksize){
+    const Molecule &mols, bool frozen_core, std::size_t occ_blocksize, std::size_t vir_blocksize){
   auto &ao_int = lcao_factory.atomic_integral();
   auto &world = ao_int.world();
   using TArray = TA::DistArray<Tile, Policy>;
@@ -316,7 +316,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   MatrixD S_eig = array_ops::array_to_eigen(S);
 
   // solve mo coefficients
-  Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  Eigen::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
 
   std::size_t n_frozen_core = 0;
   if (frozen_core) {

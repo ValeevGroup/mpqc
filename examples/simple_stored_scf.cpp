@@ -1,6 +1,6 @@
 #include <tiledarray.h>
 
-#include "../common/namespaces.h"
+
 #include "../common/typedefs.h"
 
 #include "../utility/make_array.h"
@@ -77,7 +77,7 @@ class FourCenterSCF {
         auto F_eig = array_ops::array_to_eigen(F_);
         auto S_eig = array_ops::array_to_eigen(S_);
 
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+        Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         decltype(S_eig) C = es.eigenvectors().leftCols(occ);
         MatrixD D_eig = C * C.transpose();

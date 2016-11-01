@@ -1,7 +1,6 @@
 #include <mpqc/chemistry/molecule/cluster.h>
 
 namespace mpqc {
-namespace molecule {
 
 void Cluster::update_center(){
     center_ = Vec3D{0,0,0};
@@ -39,6 +38,4 @@ std::ostream & operator<<(std::ostream &os, Cluster const &c){
     return os;
 }
 
-
-} // namespace molecule
 } // namespace mpqc

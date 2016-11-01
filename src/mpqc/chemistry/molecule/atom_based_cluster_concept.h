@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace mpqc {
-namespace molecule {
 
 /*!
  * \addtogroup Molecule
@@ -87,7 +86,7 @@ class AtomBasedClusterable {
 
   public:
     template <typename C>
-    AtomBasedClusterable(C c)
+    explicit AtomBasedClusterable(C c)
             : element_impl_(
                     std::make_shared<AtomBasedClusterModel<C>>(std::move(c))) {}
     AtomBasedClusterable(AtomBasedClusterable const &c) = default;
@@ -134,7 +133,6 @@ inline std::vector<Atom> collapse_to_atoms(AtomBasedClusterable const &ac){
 
 /*! @} */
 
-} // namespace molecule
 } // namespace mpqc
 
 #endif // MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H

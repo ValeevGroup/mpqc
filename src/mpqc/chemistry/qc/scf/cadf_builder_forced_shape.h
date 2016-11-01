@@ -4,7 +4,7 @@
 
 #include <tiledarray.h>
 
-#include "../../../../../common/namespaces.h"
+
 #include "mpqc/util/misc/time.h"
 #include "../../../../../utility/array_info.h"
 
@@ -59,7 +59,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
         auto M_eig = array_ops::array_to_eigen(M);
 
         MatrixD L_inv_eig
-              = MatrixD(Eig::LLT<MatrixD>(M_eig).matrixL()).inverse();
+              = MatrixD(Eigen::LLT<MatrixD>(M_eig).matrixL()).inverse();
 
         auto tr_M = M.trange().data()[0];
 

@@ -3,7 +3,6 @@
 #define MPQC_CLUSTERING_FUNCTIONS_H
 
 #include <mpqc/chemistry/molecule/molecule_fwd.h>
-#include <mpqc/math/clustering/clustering_fwd.h>
 
 #include <vector>
 

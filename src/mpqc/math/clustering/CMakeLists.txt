@@ -1,5 +1,4 @@
 #set(sources
-#  clustering_fwd.h
 #  common.h
 #  kmeans.h
 #)

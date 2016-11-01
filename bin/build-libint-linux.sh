@@ -38,15 +38,16 @@ ls /usr/include
 ls /usr/local/include
 
 # export CXXFLAGS="-O0 -std=c++11"
-./configure \
-    --prefix="$HOME/_install/libint" \
-    CXX=$CXX \
-    --with-incdirs=/usr/include/eigen3 
+# ./configure \
+#     --prefix="$HOME/_install/libint" \
+#     CXX=$CXX \
+#     --with-incdirs=/usr/include/eigen3 
 #    CXXFLAGS="$CXXFLAGS" \
+./configure
 
 
-make -j2
-make install
+# make -j2
+# make install
 
 cd $HOME
 ls 

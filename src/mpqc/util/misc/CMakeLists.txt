@@ -7,3 +7,4 @@ set(sources
 )
 
 add_library(MPQCmisc ${sources})
+target_link_libraries(MPQCmisc MADworld)

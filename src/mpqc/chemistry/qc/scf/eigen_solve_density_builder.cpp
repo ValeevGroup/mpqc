@@ -6,7 +6,7 @@
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include "../../../../../utility/vector_functions.h"
+#include "mpqc/chemistry/qc/scf/util.h"
 
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 #include <mpqc/chemistry/qc/scf/orbital_localization.h>

@@ -7,7 +7,7 @@
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/util/misc/time.h"
-#include "../../../../../utility/vector_functions.h"
+#include "mpqc/chemistry/qc/scf/util.h"
 
 #include <mpqc/chemistry/qc/scf/builder.h>
 

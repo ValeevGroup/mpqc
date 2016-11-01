@@ -6,7 +6,7 @@
 #include <tiledarray.h>
 #include "mpqc/util/misc/time.h"
 #include "../../../../../utility/array_info.h"
-#include "../../../../../utility/vector_functions.h"
+#include "mpqc/chemistry/qc/scf/util.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/mpqc_tile.h"

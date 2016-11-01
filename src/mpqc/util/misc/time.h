@@ -1,11 +1,9 @@
-#pragma once
 #ifndef MPQC_UTILITY_TIME_H
 #define MPQC_UTILITY_TIME_H
 
-#include "../../../../common/typedefs.h"
-#include <tiledarray.h>
-
 #include <chrono>
+
+#include <madness/world/MADworld.h>
 
 namespace mpqc {
 

@@ -24,14 +24,14 @@ namespace cadf {
 inline basis::Basis by_atom_basis(
     Molecule const &mol, basis::BasisSet const &bs,
     std::unordered_map<std::size_t, std::size_t> &atom_to_cluster_map) {
-  std::vector<molecule::AtomBasedClusterable> atoms;
+  std::vector<AtomBasedClusterable> atoms;
   std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
 
   auto cluster_ind = 0;
   auto atom_ind = 0;
   for (auto const &cluster : mol.clusterables()) {
     for (auto atom : cluster.atoms()) {
-      atoms.push_back(std::move(atom));
+      atoms.push_back(AtomBasedClusterable(std::move(atom)));
       atom_to_cluster_map[atom_ind] = cluster_ind;
       ++atom_ind;
     }

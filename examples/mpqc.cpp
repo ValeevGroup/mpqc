@@ -171,7 +171,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   xyz_file_stream << xyz_file_buffer;
   delete[] xyz_file_buffer;
 
-  using Molecule;
+  using mpqc::Molecule;
   Molecule mol;
   // construct molecule
   bool sort_origin = in.HasMember("sort molecule from origin")
@@ -202,7 +202,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       clustered_mol = mol;
     } else {
       clustered_mol =
-          molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
+          attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
     }
   } else {  // if has ghost molecule
     char *ghost_xyz_buffer;
@@ -226,7 +226,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       clustered_mol = mpqc::Molecule(mol_elements, false);
     } else {
       clustered_mol =
-          mpqc::molecule::attach_hydrogens_and_kmeans(mol_elements, nclusters);
+          attach_hydrogens_and_kmeans(mol_elements, nclusters);
     }
   }
 

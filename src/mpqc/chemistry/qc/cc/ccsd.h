@@ -7,10 +7,8 @@
 
 #include <tiledarray.h>
 
-
-
-#include "../../../../../utility/cc_utility.h"
-#include "../../../../../utility/trange1_engine.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/mbpt/denom.h"
 #include <mpqc/chemistry/qc/cc/ccsd_intermediates.h>
 #include <mpqc/chemistry/qc/cc/diis_ccsd.h>
 #include <mpqc/chemistry/qc/cc/mo_block.h>
@@ -235,7 +233,7 @@ class CCSD {
     TArray d1(f_ai.world(), f_ai.trange(), f_ai.shape(),
               f_ai.pmap());
     // store d1 to local
-    mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
+    create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
 
@@ -638,7 +636,7 @@ class CCSD {
     TArray d1(f_ai.world(), f_ai.trange(), f_ai.shape(),
               f_ai.pmap());
     // store d1 to local
-    mpqc::cc::create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
+    create_d_ai(d1, *orbital_energy_, n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
 

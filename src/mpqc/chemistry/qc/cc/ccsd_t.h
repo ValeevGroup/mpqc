@@ -6,6 +6,7 @@
 #define MPQC_CCSD_T_H_H
 
 #include <mpqc/chemistry/qc/cc/ccsd.h>
+#include <mpqc/util/misc/print.h>
 
 namespace mpqc {
 namespace cc {
@@ -908,8 +909,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
     TA::TiledRange1 new_occ = new_tr1->get_occ_tr1();
     TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
 
-    cc::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
-    cc::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
+    detail::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
+    detail::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
 
     this->set_trange1_engine(new_tr1);
 
@@ -938,7 +939,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
       tr_occ_inner_ =
           new_tr1->compute_range(new_tr1->get_active_occ(), inner_block_size_);
 
-      cc::parallel_print_range_info(world, tr_occ_inner_,
+      detail::parallel_print_range_info(world, tr_occ_inner_,
                                          "CCSD(T) OCC Inner");
 
       auto occ_inner_convert =
@@ -954,7 +955,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
       // vir inner
       tr_vir_inner_ = new_tr1->compute_range(vir, inner_block_size_);
-      cc::parallel_print_range_info(world, tr_vir_inner_,
+      detail::parallel_print_range_info(world, tr_vir_inner_,
                                          "CCSD(T) Vir Inner");
       auto vir_inner_convert =
           array_ops::create_diagonal_array_from_eigen<Tile>(world, old_vir,

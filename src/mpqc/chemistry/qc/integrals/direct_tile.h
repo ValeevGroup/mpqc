@@ -57,7 +57,7 @@ class DirectTile {
 #else
 
   template <typename Archive>
-  enable_if_t<madness::archive::is_output_archive<Archive>::value, void>
+  std::enable_if_t<madness::archive::is_output_archive<Archive>::value, void>
   serialize(Archive &ar) {
     ar &idx_;
     ar &range_;
@@ -66,7 +66,7 @@ class DirectTile {
   }
 
   template <typename Archive>
-  enable_if_t<madness::archive::is_input_archive<Archive>::value, void>
+  std::enable_if_t<madness::archive::is_input_archive<Archive>::value, void>
   serialize(Archive &ar) {
     ar &idx_;
     ar &range_;

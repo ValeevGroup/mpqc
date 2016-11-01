@@ -12,7 +12,7 @@
 #include <madness/world/worldmem.h>
 #include <tiledarray.h>
 
-#include "../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 #include "mpqc/util/external/madworld/parallel_break_point.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 
@@ -33,6 +33,7 @@
 #include <mpqc/chemistry/qc/basis/basis.h>
 #include <mpqc/chemistry/qc/basis/basis_set.h>
 #include <mpqc/chemistry/qc/basis/cluster_shells.h>
+#include <mpqc/chemistry/qc/basis/shell_vec_functions.h>
 
 #include <mpqc/chemistry/qc/scf/cadf_builder.h>
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
@@ -46,7 +47,7 @@
 #include <mpqc/chemistry/qc/scf/clr_cadf_builder.h>
 
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../utility/trange1_engine.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
 #include <mpqc/chemistry/qc/cc/dbccsd.h>
 #include <mpqc/chemistry/qc/f12/ccsdf12.h>
@@ -245,9 +246,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
       basis::parallel_construct_basis(world, bs_set, clustered_mol);
   //    std::cout << basis << std::endl;
   if (ao_blocksize != 0) {
-    basis = reblock(basis, cc::reblock_basis, ao_blocksize);
+    basis = reblock(basis, basis::reblock_basis, ao_blocksize);
   }
-  cc::parallel_print_range_info(world, basis.create_trange1(),
+  detail::parallel_print_range_info(world, basis.create_trange1(),
                                      "OBS Basis");
   bs_registry->add(OrbitalIndex(L"κ"), basis);
 
@@ -256,9 +257,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
   if (!df_basis_name.empty()) {
     df_basis = basis::parallel_construct_basis(world, dfbs_set, clustered_mol);
     if (ao_blocksize != 0) {
-      df_basis = reblock(df_basis, cc::reblock_basis, ao_blocksize);
+      df_basis = reblock(df_basis, basis::reblock_basis, ao_blocksize);
     }
-    cc::parallel_print_range_info(world, df_basis.create_trange1(),
+    detail::parallel_print_range_info(world, df_basis.create_trange1(),
                                        "DF Basis");
     bs_registry->add(OrbitalIndex(L"Κ"), df_basis);
   }
@@ -268,9 +269,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
     basis::BasisSet vbs(vir_basis_name);
     vir_basis = basis::parallel_construct_basis(world, vbs, clustered_mol);
     if (ao_blocksize != 0) {
-      vir_basis = reblock(vir_basis, cc::reblock_basis, ao_blocksize);
+      vir_basis = reblock(vir_basis, basis::reblock_basis, ao_blocksize);
     }
-    cc::parallel_print_range_info(world, vir_basis.create_trange1(),
+    detail::parallel_print_range_info(world, vir_basis.create_trange1(),
                                        "Virtual Basis");
     bs_registry->add(OrbitalIndex(L"Α"), vir_basis);
     //        std::cout << vir_basis << std::endl;
@@ -282,9 +283,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
     basis::BasisSet abs(aux_basis_name);
     abs_basis = basis::parallel_construct_basis(world, abs, clustered_mol);
     if (ao_blocksize != 0) {
-      abs_basis = reblock(abs_basis, cc::reblock_basis, ao_blocksize);
+      abs_basis = reblock(abs_basis, basis::reblock_basis, ao_blocksize);
     }
-    cc::parallel_print_range_info(world, abs_basis.create_trange1(),
+    detail::parallel_print_range_info(world, abs_basis.create_trange1(),
                                        "AUX Basis");
     bs_registry->add(OrbitalIndex(L"α"), abs_basis);
   }

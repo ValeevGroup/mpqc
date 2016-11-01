@@ -8,7 +8,7 @@
 #include <mpqc/chemistry/qc/wfn/wfn.h>
 #include <mpqc/util/keyval/keyval.hpp>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
-#include "../../../../../utility/trange1_engine.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 
 namespace mpqc{
 namespace qc{

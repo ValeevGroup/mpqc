@@ -7,7 +7,7 @@
 #include <rapidjson/writer.h>
 #include <tiledarray.h>
 
-#include "../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/util/external/madworld/parallel_break_point.h"
 
@@ -39,7 +39,7 @@
 #include "../cc/ccsd_t.h"
 #include "../cc/lazy_tile.h"
 #include "../cc/ccsd_intermediates.h"
-#include "../utility/trange1_engine.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "../scf/soad.h"
 #include "../eom_cc/eom_ccsd.h"

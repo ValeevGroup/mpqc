@@ -5,7 +5,7 @@
 #ifndef MPQC_MO_BLOCK_H
 #define MPQC_MO_BLOCK_H
 
-#include "../../../../../utility/trange1_engine.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include <memory>
 #include <utility>
 #include <vector>

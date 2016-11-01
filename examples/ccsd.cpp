@@ -7,7 +7,7 @@
 #include <rapidjson/writer.h>
 #include <tiledarray.h>
 
-#include "../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/util/external/madworld/parallel_break_point.h"
 

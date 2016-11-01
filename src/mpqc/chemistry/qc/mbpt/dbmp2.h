@@ -206,8 +206,8 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    auto tr_obs = S.trange().data().back();
   //    auto tr_occ = tre->compute_range(occ, occ_blocksize);
   //    auto tr_corr_occ = tre->get_occ_tr1();
-  //    cc::parallel_print_range_info(world, tr_occ, "Occ");
-  //    cc::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
+  //    detail::parallel_print_range_info(world, tr_occ, "Occ");
+  //    detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
   //
   //    // convert to TA
   //    auto C_occ_ta =
@@ -283,10 +283,10 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    // get all the trange1s
   //    auto tr_vir = tre->get_vir_tr1();
   //    auto tr_vbs = F_vbs.trange().data().back();
-  //    cc::parallel_print_range_info(world, tr_vir, "Vir");
+  //    detail::parallel_print_range_info(world, tr_vir, "Vir");
   //
   //    //    auto tr_all = tre->get_all_tr1();
-  //    //    cc::parallel_print_range_info(world, tr_all, "Vbs");
+  //    //    detail::parallel_print_range_info(world, tr_all, "Vbs");
   //
   //    auto C_vir_ta =
   //        array_ops::eigen_to_array<Tile>(world, C_vir, tr_vbs, tr_vir);
@@ -368,7 +368,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    auto tr_obs = S.trange().data().back();
   //    auto tr_occ = tre->compute_range(occ, occ_blocksize);
   //    auto tr_corr_occ = tre->get_occ_tr1();
-  //    cc::parallel_print_range_info(world, tr_occ, "Occ");
+  //    detail::parallel_print_range_info(world, tr_occ, "Occ");
   //
   //    // convert to TA
   //    auto C_occ_ta =
@@ -425,10 +425,10 @@ class DBMP2 : public MP2<Tile, Policy> {
   //
   //    // get all the trange1s
   //    auto tr_vir = tre->get_vir_tr1();
-  //    cc::parallel_print_range_info(world, tr_vir, "Vir");
+  //    detail::parallel_print_range_info(world, tr_vir, "Vir");
   //
   //    //    auto tr_all = tre->get_all_tr1();
-  //    //    cc::parallel_print_range_info(world, tr_all, "Vbs");
+  //    //    detail::parallel_print_range_info(world, tr_all, "Vbs");
   //
   //    C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_vbs,
   //    tr_occ);

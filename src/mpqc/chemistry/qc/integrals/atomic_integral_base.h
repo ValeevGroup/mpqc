@@ -11,7 +11,7 @@
 #include <vector>
 
 
-#include "../../../../../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 #include "integrals.h"
 #include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/qc/basis/basis_registry.h>

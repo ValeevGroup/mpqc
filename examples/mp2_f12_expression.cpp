@@ -5,7 +5,7 @@
 
 
 #include "../clustering/kmeans.h"
-#include "../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/atom_based_cluster.h"
@@ -112,13 +112,13 @@ int main(int argc, char *argv[]) {
   basis::Basis ri_basis = basis.join(abs_basis);
   ri_basis = reblock(ri_basis, cc::reblock_basis, ao_block_size);
 
-  cc::parallel_print_range_info(world, basis.create_trange1(),
+  detail::parallel_print_range_info(world, basis.create_trange1(),
                                      "OBS Basis");
-  cc::parallel_print_range_info(world, df_basis.create_trange1(),
+  detail::parallel_print_range_info(world, df_basis.create_trange1(),
                                      "DF Basis");
-  cc::parallel_print_range_info(world, abs_basis.create_trange1(),
+  detail::parallel_print_range_info(world, abs_basis.create_trange1(),
                                      "AUX Basis");
-  cc::parallel_print_range_info(world, ri_basis.create_trange1(),
+  detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                      "RI Basis");
 
   auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
@@ -197,9 +197,9 @@ int main(int argc, char *argv[]) {
   auto tr_i0 = tre.get_occ_tr1();
   auto tr_vir = tre.get_vir_tr1();
 
-  cc::parallel_print_range_info(world, tr_i0, "Occ");
-  cc::parallel_print_range_info(world, tr_vir, "Vir");
-  cc::parallel_print_range_info(world, tr_all, "Obs");
+  detail::parallel_print_range_info(world, tr_i0, "Occ");
+  detail::parallel_print_range_info(world, tr_vir, "Vir");
+  detail::parallel_print_range_info(world, tr_all, "Obs");
 
   auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ_corr,
                                                           tr_0, tr_i0);
@@ -290,8 +290,8 @@ int main(int argc, char *argv[]) {
     auto tr_ribs_mo =
         tre.compute_range(tr_ribs.elements_range().second, mo_block_size);
 
-    cc::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
-    cc::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
+    detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+    detail::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
 
     C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen,
                                                     tr_ribs, tr_cabs_mo);

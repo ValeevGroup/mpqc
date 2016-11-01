@@ -3,7 +3,7 @@
 
 
 
-#include "../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 #include "../clustering/kmeans.h"
 
 #include "../molecule/atom.h"

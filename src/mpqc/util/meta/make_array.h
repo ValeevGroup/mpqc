@@ -4,8 +4,9 @@
 
 #include <array>
 #include <functional>
-#include "meta/get_type.h"
-#include "meta/predicates.h"
+
+#include "mpqc/util/meta/get_type.h"
+#include "mpqc/util/meta/predicates.h"
 
 namespace mpqc {
 namespace utility {

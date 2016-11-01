@@ -12,7 +12,7 @@
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
 
-#include "../../../../../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 #include "ccsd_intermediates.h"
 
 static auto DIRECTAOTWOELECTONINTEGRAL =

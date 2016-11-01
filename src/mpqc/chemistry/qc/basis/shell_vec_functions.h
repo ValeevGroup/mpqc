@@ -22,6 +22,10 @@ int64_t max_nprim(ShellVec const &);
  */
 int64_t nfunctions(ShellVec const &);
 
+// reblock based on blocksize
+std::vector<std::vector<libint2::Shell>>
+        reblock_basis(std::vector<libint2::Shell> shells, std::size_t blocksize);
+
 } // namespace basis
 } // namespace mpqc
 

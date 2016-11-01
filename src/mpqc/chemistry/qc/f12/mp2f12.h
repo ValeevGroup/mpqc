@@ -8,8 +8,7 @@
 #include <string>
 
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../../../../../utility/cc_utility.h"
-#include "../../../../../utility/trange1_engine.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include <mpqc/chemistry/qc/f12/cabs_singles.h>
 #include <mpqc/chemistry/qc/f12/f12_intermediates.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>

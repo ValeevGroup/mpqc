@@ -3,6 +3,7 @@
 //
 
 #include "mp2f12.h"
+#include "mpqc/chemistry/qc/mbpt/denom.h"
 
 MPQC_CLASS_EXPORT_KEY2("RMP2F12", mpqc::f12::RMP2F12);
 MPQC_CLASS_EXPORT_KEY2("RI-RMP2F12", mpqc::f12::RIRMP2F12);
@@ -242,7 +243,7 @@ TArray RMP2F12::compute_X() {
 std::tuple<TArray, TArray> RMP2F12::compute_T() {
   TArray g_abij, t2;
   g_abij("a,b,i,j") = lcao_factory().compute(L"<i j|G|a b>")("i,j,a,b");
-  t2 = mpqc::cc::d_abij(g_abij, *(this->orbital_energy()),
+  t2 = d_abij(g_abij, *(this->orbital_energy()),
                         this->trange1_engine()->get_occ(),
                         this->trange1_engine()->get_nfrozen());
 
@@ -295,7 +296,7 @@ TArray RIRMP2F12::compute_X() {
 std::tuple<TArray, TArray> RIRMP2F12::compute_T() {
   TArray g_abij, t2;
   g_abij("a,b,i,j") = lcao_factory().compute(L"<i j|G|a b>[df]")("i,j,a,b");
-  t2 = mpqc::cc::d_abij(g_abij, *(this->orbital_energy()),
+  t2 = d_abij(g_abij, *(this->orbital_energy()),
                         this->trange1_engine()->get_occ(),
                         this->trange1_engine()->get_nfrozen());
 

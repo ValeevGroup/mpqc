@@ -12,7 +12,7 @@
 #include <mpqc/chemistry/qc/basis/basis.h>
 #include <mpqc/chemistry/qc/basis/basis_set.h>
 
-#include "../../../../../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 
 #include <unordered_map>
 

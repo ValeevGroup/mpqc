@@ -18,7 +18,7 @@
 #include "../integrals/integrals.h"
 
 #include "mpqc/util/misc/time.h"
-#include "../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 #include "mpqc/math/external/tiledarray/array_info.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"

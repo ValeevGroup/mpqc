@@ -2,9 +2,9 @@
 #ifndef TCC_UTLITIY_EXPANDCONTAINER_H
 #define TCC_UTLITIY_EXPANDCONTAINER_H
 
-#include <utility>
-#include <tuple>
 #include <array>
+#include <tuple>
+#include <utility>
 
 namespace mpqc {
 namespace utility {

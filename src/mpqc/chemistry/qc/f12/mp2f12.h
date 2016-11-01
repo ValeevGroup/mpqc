@@ -24,6 +24,18 @@ public:
   using TArray = qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::ArrayType;
   using Matrix = RowMatrix<double>;
 
+  /**
+   * KeyVal constructor
+   * @param kv
+   * keywords: takes all keywords from LCAOWavefunction
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
+   * | approaximation | char | C | approaximation to use (C or D) |
+   * | cabs_singles | bool | true | if do CABSSingles calculation |
+   *
+   */
   RMP2F12(const KeyVal& kv);
   ~RMP2F12() = default;
 

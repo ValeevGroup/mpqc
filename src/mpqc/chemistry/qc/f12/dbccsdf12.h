@@ -36,11 +36,14 @@ class DBCCSDF12 : public CCSDF12<Tile> {
 
   /**
    * KeyVal constructor
-   * @return
+   * @param kv
+   *
+   * keywords: takes all keywords from CCSDF12 class
+   *
+   * invalid keywords: approximation, vt_couple
    */
-  DBCCSDF12(const KeyVal& kv) : CCSDF12<Tile>(kv){}
+  DBCCSDF12(const KeyVal& kv) : CCSDF12<Tile>(kv) {}
   ~DBCCSDF12();
-
 
  private:
   /// overide initialization of CCSD
@@ -59,8 +62,9 @@ class DBCCSDF12 : public CCSDF12<Tile> {
 
   /// override initialization of CABS in CCSDF12
   void init_cabs() override {
-    closed_shell_dualbasis_cabs_mo_build_svd(
-        this->lcao_factory(), this->trange1_engine(), "VBS", this->unocc_block());
+    closed_shell_dualbasis_cabs_mo_build_svd(this->lcao_factory(),
+                                             this->trange1_engine(), "VBS",
+                                             this->unocc_block());
   }
 
   /// override cabs singles in CCSDF12
@@ -71,7 +75,6 @@ class DBCCSDF12 : public CCSDF12<Tile> {
 
   Matrix compute_db_ccsd_f12_df();
 };
-
 
 template <typename Tile>
 void DBCCSDF12<Tile>::compute_cabs_singles() {
@@ -122,14 +125,14 @@ typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_db_ccsd_f12_df() {
   TArray V_ijij_ijji = compute_V_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
 
   // VT2 contribution
-  TArray tmp = compute_VT2_ijij_ijji_db_df(lcao_factory, this->t2(),
-                                           ijij_ijji_shape);
+  TArray tmp =
+      compute_VT2_ijij_ijji_db_df(lcao_factory, this->t2(), ijij_ijji_shape);
   V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
 
   // VT1 contribution
   {
-    TArray tmp = compute_VT1_ijij_ijji_db_df(lcao_factory, this->t1(),
-                                             ijij_ijji_shape);
+    TArray tmp =
+        compute_VT1_ijij_ijji_db_df(lcao_factory, this->t1(), ijij_ijji_shape);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 

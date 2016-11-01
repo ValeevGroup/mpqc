@@ -18,13 +18,8 @@ namespace mpqc {
 namespace f12 {
 
 /**
- *  CCSD(2)F12 Takes all options from CCSD
+ *  CCSD(2)F12 class
  *
-// *  @param ///MP2F12: bool, default false
- *  @param Singles, bool, if compute cabs singles correction, default true
- *  @param VTCouple, bool, if include <p q |G| m a'> <p q|R|m a'> term in VT
-coupling , default true
- *  @param Approach = string, use C or D approach, default is C
  */
 
 template <typename Tile>
@@ -39,9 +34,23 @@ class CCSDF12 : public cc::CCSD<Tile, TA::SparsePolicy> {
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
 
+  /**
+   * KeyVal constructor
+   *
+   * @param kv
+   *
+   * keywords: takes all keywords from CCSD class
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | approaximation | char | C | approaximation to compute F12 (C or D) |
+   * | cabs_singles | bool | true | if do CABSSingles calculation |
+   * | vt_couple | bool | true | if couple last two term in VT2 and VT1 term |
+   *
+   */
   CCSDF12(const KeyVal& kv) : cc::CCSD<Tile, Policy>(kv) {
     vt_couple_ = kv.value<bool>("vt_couple", true);
-    cabs_singles_ = kv.value<bool>("do_singles", true);
+    cabs_singles_ = kv.value<bool>("cabs_singles", true);
 
     approximation_ = kv.value<char>("approaximation", 'C');
     if (approximation_ != 'C' && approximation_ != 'D') {

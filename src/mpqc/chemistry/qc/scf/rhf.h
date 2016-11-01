@@ -28,8 +28,17 @@ public:
 
   /**
    * KeyVal constructor for RHF
-   * keywords
-   * @param
+   *
+   * keywords: takes all keywords from AOWavefunction
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | converge | double | 1.0e-07 | converge limit |
+   * | max_iter | int | 30 | maximum number of iteration |
+   * | density_builder | string | eigen_solve | type of DensityBuilder (eigen_solve->ESolveDensityBuilder, purification-> PurificationDensityBuilder) |
+   * | localize | bool | false | if localize in DensityBuilder |
+   * | t_cut_c | double | 0.0 | threshold in DensityBuilder |
+   * | decompo_type | string | cholesky_inverse | (cholesky inverse, inverse sqrt) only valid if use ESolveDensityBuilder |
    *
    */
 

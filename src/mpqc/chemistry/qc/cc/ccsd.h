@@ -7,8 +7,8 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include "mpqc/chemistry/qc/mbpt/denom.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include <mpqc/chemistry/qc/cc/diis_ccsd.h>
 #include <mpqc/chemistry/qc/integrals/direct_atomic_integral.h>
 #include <mpqc/chemistry/qc/scf/mo_build.h>
@@ -17,24 +17,8 @@
 namespace mpqc {
 namespace cc {
 
-/*
+/**
  * CCSD class that computed CCSD energy
- *   Options
- *   BlockSize = int, control the block size in MO, default 16
- *   OccBlockSize = int, control the block size in Occ, overide BlockSize
- *   VirBlockSize = int, control the block size in Vir, overide BlockSize
- *   FrozenCore = bool, control if use frozen core, default False
- *   Direct = bool , control if use direct approach, default True
- *   DIIS_ndi = int, control the number of data sets to retain, default is 5
- *   DIIS_dmp = float, see DIIS in TA
- *   DIIS_strt = int, see DIIS in TA
- *   DIIS_ngr = int, see DIIS in TA
- *   DIIS_ngrdiis = int, see DIIS in TA
- *   DIIS_mf = float, see DIIS in TA
- *   LessMemory = bool, control if store large intermediate in straight
- * approach, default is false
- *   PrintDetail = bool, if do detail printing, default is false
- *   Converge = double, convergence of CCSD energy, default is 1.0e-07
  */
 
 template <typename Tile, typename Policy>
@@ -50,19 +34,21 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
    * KeyVal constructor
    * @param kv
    *
-   * keywords
+   * keywords : all keywords for LCAOWavefunciton
+   *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | method | string | standard | method to compute ccsd (standard, df,
-   * direct) |
+   * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
+   * | method | string | standard | method to compute ccsd (standard, df, direct) |
+   * | converge | double | 1.0e-07 | converge limit |
+   * | max_iter | int | 20 | maxmium iteration in CCSD |
+   * | print_detail | bool | false | if print more information in CCSD iteration |
    */
   CCSD(const KeyVal &kv) : qc::LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
-
     if (kv.exists("ref")) {
       ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
     } else {
-      throw std::invalid_argument(
-          "Default Ref Wfn in CCSD is not support! \n");
+      throw std::invalid_argument("Default Ref Wfn in CCSD is not support! \n");
     }
 
     method_ = kv_.value<std::string>("method", "df");
@@ -77,9 +63,9 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
       direct_ao_ints_ = direct_ao_integral->compute(L"(μ ν| G|κ λ)");
     }
 
-    max_iter_ = kv.value<int>("max_iter", 15);
+    max_iter_ = kv.value<int>("max_iter", 20);
     converge_ = kv.value<double>("converge", 1.0e-7);
-    print_detail_ = kv.value<bool>("print_detail_", false);
+    print_detail_ = kv.value<bool>("print_detail", false);
   }
 
  protected:
@@ -98,7 +84,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   double ccsd_corr_energy_;
 
  public:
-  void compute(qc::PropertyBase* pb) override {
+  void compute(qc::PropertyBase *pb) override {
     throw std::runtime_error("Not Implemented!!");
   }
 
@@ -110,9 +96,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
   /// compute function
   double value() override {
-
-    if(this->energy_ == 0.0){
-
+    if (this->energy_ == 0.0) {
       double ref_energy = ref_wfn_->value();
 
       // initialize
@@ -159,19 +143,17 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     }
   }
 
-  bool is_df() const {
-    return df_;
-  }
+  bool is_df() const { return df_; }
 
   void set_t1(const TArray &t1) { T1_ = t1; }
 
   void set_t2(const TArray &t2) { T2_ = t2; }
 
-  const typename DirectAOIntegral::DirectTArray& get_direct_ao_ints() const {
+  const typename DirectAOIntegral::DirectTArray &get_direct_ao_ints() const {
     return direct_ao_ints_;
   }
 
-protected:
+ protected:
   // store all the integrals in memory
   // used as reference for development
   double compute_ccsd_conventional(TArray &t1, TArray &t2) {
@@ -1336,7 +1318,8 @@ protected:
 
  private:
   virtual void init() {
-    if (this->orbital_energy() == nullptr || this->trange1_engine() == nullptr) {
+    if (this->orbital_energy() == nullptr ||
+        this->trange1_engine() == nullptr) {
       auto mol = this->lcao_factory().atomic_integral().molecule();
       Eigen::VectorXd orbital_energy;
       this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(

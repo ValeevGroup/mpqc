@@ -23,13 +23,16 @@ class DBCCSD : public CCSD<Tile, Policy> {
 
   /**
    *  KeyVal constructor
-   *  Takes all the argument of CCSD class
+   *  keywords: all keywords of CCSD class
    *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | method | string | standard | method to compute ccsd (standard or df) |
    *
    */
 
   DBCCSD(const KeyVal& kv) : CCSD<Tile, Policy>(kv) {
-    std::string method = kv.value<std::string>("method");
+    std::string method = kv.value<std::string>("method", "standard");
     if (method == "direct") {
       throw std::invalid_argument(
           "Integral Direct Dual Basis CCSD is not Implemented!!\n");

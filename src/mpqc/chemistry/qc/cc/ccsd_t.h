@@ -41,8 +41,14 @@ class CCSD_T : public CCSD<Tile, Policy> {
    * KeyVal constructor
    * @param kv
    *
-   * keywords
+   * keywords : all keywords for CCSD
    *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | reblock_occ | int | none | block size to reblock occ |
+   * | reblock_unocc | int | none | block size to reblock unocc |
+   * | reblock_inner | int | none | block size to reblock inner dimension |
+   * | increase | int | 2 | number of block in virtual dimension to load at each virtual loop |
    */
 
   CCSD_T(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {

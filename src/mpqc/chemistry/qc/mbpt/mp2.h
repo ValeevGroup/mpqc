@@ -179,6 +179,15 @@ class RMP2 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
 
 public:
 
+  /**
+   * KeyVal constructor
+   * @param kv
+   *
+   * keywords: takes all keywords from LCAOWavefunction
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
+   */
   RMP2(const KeyVal& kv);
   ~RMP2() = default;
 
@@ -195,6 +204,12 @@ protected:
 class RIRMP2 : public RMP2 {
 public:
 
+  /**
+  * KeyVal constructor
+  * @param kv
+  *
+  * keywords: takes all keywords from RMP2
+  */
   RIRMP2(const KeyVal& kv);
   ~RIRMP2() = default;
   using RMP2::value;

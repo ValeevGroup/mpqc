@@ -81,6 +81,22 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
   GF2F12() = default;
   virtual ~GF2F12();
 
+
+  /**
+   * KeyVal constructor
+   * @param kv
+   *
+   * keywords: all keywords for LCAOWavefuction
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
+   * | orbital | int | -1 | orbitals |
+   * | use_cabs | bool | true | if use cabs |
+   * | dyson_method | string | diagonal | dyson_method to use, (diagonal or nondiagonal ) |
+   * | max_iter | int | 100 | maximum iteration |
+   */
+
   GF2F12(const KeyVal& kv) : qc::LCAOWavefunction<Tile, Policy>(kv) {
     if (kv.exists("ref")) {
       ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
@@ -146,7 +162,7 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
 
     print_par(world, "Total GF2F12 Time:  ", time, "\n");
 
-    return 0.0;
+    return this->energy_;
   }
 
  private:

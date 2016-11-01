@@ -21,8 +21,8 @@ namespace cc {
 template <typename Tile, typename Policy>
 class CCSD_T : public CCSD<Tile, Policy> {
  public:
-//  using Tile = TA::TensorD;
-//  using Policy = TA::SparsePolicy;
+  //  using Tile = TA::TensorD;
+  //  using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
 
  private:
@@ -37,7 +37,6 @@ class CCSD_T : public CCSD<Tile, Policy> {
   TA::TiledRange1 tr_vir_inner_;
 
  public:
-
   /**
    * KeyVal constructor
    * @param kv
@@ -46,20 +45,19 @@ class CCSD_T : public CCSD<Tile, Policy> {
    *
    */
 
-  CCSD_T(const KeyVal& kv) : CCSD<Tile,Policy>(kv) {
+  CCSD_T(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     reblock_ = kv.exists("reblock_occ") || kv.exists("reblock_unocc");
     reblock_inner_ = kv.exists("reblock_inner");
-    occ_block_size_ = kv.value<int>("reblock_occ",8);
-    unocc_block_size_ = kv.value<int>("reblock_unocc",8);
-    inner_block_size_ = kv.value<int>("reblock_inner",128);
-    increase_ = kv.value<int>("increase",2);
+    occ_block_size_ = kv.value<int>("reblock_occ", 8);
+    unocc_block_size_ = kv.value<int>("reblock_unocc", 8);
+    inner_block_size_ = kv.value<int>("reblock_inner", 128);
+    increase_ = kv.value<int>("increase", 2);
   }
 
   virtual ~CCSD_T();
 
   double value() override {
-
-    if(this->energy_ == 0.0){
+    if (this->energy_ == 0.0) {
       auto &world = this->lcao_factory().world();
 
       double ccsd_corr = 0.0;
@@ -92,11 +90,11 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
       if (world.rank() == 0) {
         std::cout << std::setprecision(15);
-        std::cout << "(T) Energy      " << ccsd_t << " Time " << duration1
+        std::cout << "(T) Energy      " << triples_energy_ << " Time " << duration1
                   << std::endl;
         //                    std::cout << "(T) Energy      " << ccsd_t_d << "
         //                    Time " << duration2 << std::endl;
-        std::cout << "CCSD(T) Energy  " << ccsd_t + ccsd_corr << std::endl;
+        std::cout << "CCSD(T) Energy  " << triples_energy_ + ccsd_corr << std::endl;
         //                    std::cout << "CCSD(T) Energy  " << ccsd_t_d +
         //                    ccsd_corr << std::endl;
       }
@@ -106,11 +104,16 @@ class CCSD_T : public CCSD<Tile, Policy> {
     return this->energy_;
   }
 
+  void obsolete() override {
+    triples_energy_ = 0.0;
+    CCSD<Tile, Policy>::obsolete();
+  }
+
+ private:
   double compute_ccsd_t(TArray &t1, TArray &t2) {
     bool df = this->is_df();
     auto &world = t1.world();
-    bool accurate_time =
-        this->lcao_factory().accurate_time();
+    bool accurate_time = this->lcao_factory().accurate_time();
 
     if (df && world.rank() == 0) {
       std::cout << "Use Density Fitting Expression to avoid storing G_vovv"
@@ -890,7 +893,6 @@ class CCSD_T : public CCSD<Tile, Policy> {
     return triple_energy;
   }
 
- private:
   void reblock() {
     auto &lcao_factory = this->lcao_factory();
     auto &world = lcao_factory.world();
@@ -1004,15 +1006,12 @@ class CCSD_T : public CCSD<Tile, Policy> {
   const TArray get_Xab() {
     TArray result;
     TArray sqrt =
-        this->lcao_factory().atomic_integral().compute(
-            L"(Κ|G| Λ)[inv_sqr]");
+        this->lcao_factory().atomic_integral().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center;
     if (reblock_inner_) {
-      three_center =
-          this->lcao_factory().compute(L"(Κ|G|a' b)");
+      three_center = this->lcao_factory().compute(L"(Κ|G|a' b)");
     } else {
-      three_center =
-          this->lcao_factory().compute(L"(Κ|G|a b)");
+      three_center = this->lcao_factory().compute(L"(Κ|G|a b)");
     }
     result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
     return result;
@@ -1036,11 +1035,9 @@ class CCSD_T : public CCSD<Tile, Policy> {
     }
 
     if (reblock_inner_) {
-      return this->lcao_factory().compute(L"<a i|G|j m>" +
-                                                              post_fix);
+      return this->lcao_factory().compute(L"<a i|G|j m>" + post_fix);
     } else {
-      return this->lcao_factory().compute(L"<a i|G|j k>" +
-                                                              post_fix);
+      return this->lcao_factory().compute(L"<a i|G|j k>" + post_fix);
     }
   }
 
@@ -1052,19 +1049,16 @@ class CCSD_T : public CCSD<Tile, Policy> {
     }
 
     if (reblock_inner_) {
-      return this->lcao_factory().compute(L"<a' b|G|c i>" +
-                                                              post_fix);
+      return this->lcao_factory().compute(L"<a' b|G|c i>" + post_fix);
     } else {
-      return this->lcao_factory().compute(L"<a b|G|c i>" +
-                                                              post_fix);
+      return this->lcao_factory().compute(L"<a b|G|c i>" + post_fix);
     }
   }
 
   /// <ab|ij>
   const TArray get_abij() {
     if (this->is_df()) {
-      return this->lcao_factory().compute(
-          L"<a b|G|i j>[df]");
+      return this->lcao_factory().compute(L"<a b|G|i j>[df]");
     } else {
       return this->lcao_factory().compute(L"<a b|G|i j>");
     }

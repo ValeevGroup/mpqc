@@ -42,7 +42,7 @@ public:
     unocc_block_ = kv.value<int>("un_occ_block",mo_block);
   }
 
-  ~LCAOWavefunction() = default;
+  virtual ~LCAOWavefunction() = default;
 
   LCAOFactoryType& lcao_factory() {
     return *lcao_factory_;
@@ -51,6 +51,7 @@ public:
     lcao_factory_->registry().purge(wfn_world()->world());
     lcao_factory_->orbital_space().clear();
     lcao_factory_->atomic_integral().registry().purge(wfn_world()->world());
+    Wavefunction::obsolete();
   }
 
   const std::shared_ptr<TRange1Engine> trange1_engine() const {

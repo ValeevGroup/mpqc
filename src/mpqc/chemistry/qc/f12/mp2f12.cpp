@@ -45,7 +45,7 @@ double RMP2F12::value() {
     utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
     // initialize
-    auto mol = this->lcao_factory().atomic_integral().molecule();
+    auto mol = this->wfn_world()->molecule();
     Eigen::VectorXd orbital_energy;
     this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
         this->lcao_factory(), orbital_energy, mol, is_frozen_core(),

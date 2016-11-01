@@ -5,9 +5,9 @@
 #ifndef MPQC_CHEMISTRY_QC_CC_LINKAGE_H
 #define MPQC_CHEMISTRY_QC_CC_LINKAGE_H
 
-//#include <mpqc/util/keyval/forcelink.h>
 #include "ccsd_t.h"
 #include "dbccsd.h"
+#include <mpqc/util/keyval/forcelink.h>
 
 namespace mpqc{
 namespace cc{

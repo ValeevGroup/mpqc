@@ -104,7 +104,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   }
 
   void obsolete() override {
-    this->energy_ = 0.0;
+    ccsd_corr_energy_ = 0.0;
     qc::LCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
   }
@@ -168,7 +168,11 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
   void set_t2(const TArray &t2) { T2_ = t2; }
 
- protected:
+  const typename DirectAOIntegral::DirectTArray& get_direct_ao_ints() const {
+    return direct_ao_ints_;
+  }
+
+protected:
   // store all the integrals in memory
   // used as reference for development
   double compute_ccsd_conventional(TArray &t1, TArray &t2) {

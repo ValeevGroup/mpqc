@@ -31,7 +31,7 @@ class AOWavefunction : public Wavefunction {
     direct_ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
   }
-  ~AOWavefunction() = default;
+  virtual ~AOWavefunction() = default;
 
   void compute(PropertyBase *pb) override {
     throw std::logic_error("Not Implemented!");
@@ -41,6 +41,7 @@ class AOWavefunction : public Wavefunction {
   void obsolete() override {
     ao_integrals().registry().purge(wfn_world()->world());
     direct_ao_integrals().registry().purge(wfn_world()->world());
+    Wavefunction::obsolete();
   }
 
   double value() override {

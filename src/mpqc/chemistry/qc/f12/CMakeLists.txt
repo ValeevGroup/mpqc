@@ -14,6 +14,7 @@ set(sources
         mp2f12.cpp
         mp2f12.h
         ccsdf12.h
+        ccsdf12.cpp
         db_f12_intermediates.h
         dbccsdf12.h
         dbmp2f12.h

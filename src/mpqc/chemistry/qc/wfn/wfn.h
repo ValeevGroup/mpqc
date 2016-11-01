@@ -54,7 +54,9 @@ class Wavefunction : public DescribedClass {
 
   virtual void compute(PropertyBase* pb) = 0;
   virtual double value() = 0;
-  virtual void obsolete() = 0;
+  virtual void obsolete() {
+    energy_ = 0.0;
+  };
 
   std::shared_ptr<WavefunctionWorld> wfn_world() { return wfn_world_; }
 };

@@ -5,7 +5,7 @@
 #include <madness/world/worldmem.h>
 #include <mpqc/chemistry/qc/scf/rhf.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
-#include "../../../../../utility/time.h"
+#include "mpqc/util/misc/time.h"
 #include "purification_density_build.h"
 #include "eigen_solve_density_builder.h"
 #include "soad.h"

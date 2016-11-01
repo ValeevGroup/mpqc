@@ -14,7 +14,7 @@
 #include "../utility/array_info.h"
 #include "../utility/print_size_info.h"
 
-#include "../utility/time.h"
+#include "mpqc/util/misc/time.h"
 #include "../utility/json_handling.h"
 #include "../utility/parallel_file.h"
 

@@ -3,8 +3,6 @@ set(sources
     array_info.cpp
     cc_utility.h
     cc_utility.cpp
-    memory_usage.h
-    memory_usage.cpp
     json_handling.h
     json_handling.cpp
     trange1_engine.h

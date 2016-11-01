@@ -9,7 +9,7 @@
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "../../../../../utility/parallel_break_point.h"
 #include "../../../../../utility/parallel_print.h"
-#include "../../../../../utility/time.h"
+#include "mpqc/util/misc/time.h"
 #include "atomic_integral_base.h"
 #include <madness/world/worldmem.h>
 #include <mpqc/chemistry/qc/expression/permutation.h>

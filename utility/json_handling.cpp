@@ -5,7 +5,7 @@
 #include <fstream>
 #include <ctime>
 
-#include "time.h"
+#include "mpqc/util/misc/time.h"
 
 namespace mpqc {
 namespace json {

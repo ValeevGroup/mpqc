@@ -30,7 +30,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "../utility/array_info.h"
 #include "../utility/parallel_file.h"
-#include "../utility/time.h"
+#include "mpqc/util/misc/time.h"
 
 #include "../scf/traditional_four_center_fock_builder.h"
 #include <mpqc/chemistry/qc/mbpt/mp2.h>

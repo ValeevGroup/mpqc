@@ -21,7 +21,7 @@
 
 #include "../utility/json_handling.h"
 #include "../utility/parallel_file.h"
-#include "../utility/time.h"
+#include "mpqc/util/misc/time.h"
 
 #include <mpqc/chemistry/molecule/atom.h>
 #include <mpqc/chemistry/molecule/cluster.h>

@@ -17,7 +17,7 @@
 
 #include "../integrals/integrals.h"
 
-#include "../utility/time.h"
+#include "mpqc/util/misc/time.h"
 #include "../utility/make_array.h"
 #include "../utility/array_info.h"
 

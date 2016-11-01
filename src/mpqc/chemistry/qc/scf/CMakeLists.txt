@@ -9,7 +9,8 @@ set(sources
         eigen_solve_density_builder.cpp
         purification_density_build.h
         purification_density_build.cpp
+        util.h
         )
 
 add_library(MPQCscf ${sources})
-target_link_libraries(MPQCscf ${TA_LIBRARIES} tensor ta_routines MPQCintegrals)
+target_link_libraries(MPQCscf ${TA_LIBRARIES} MPQCmath_linalg MPQCmath_clr MPQCintegrals)

@@ -39,9 +39,9 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz) {
         for (auto i = 0; i < Cm.cols(); ++i) {
             for (auto j = i + 1; j < Cm.cols(); ++j) {
 
-                Vec3D vij = {mx(i, j), my(i, j), mz(i, j)};
-                Vec3D vii = {mx(i, i), my(i, i), mz(i, i)};
-                Vec3D vjj = {mx(j, j), my(j, j), mz(j, j)};
+                Vector3d vij = {mx(i, j), my(i, j), mz(i, j)};
+                Vector3d vii = {mx(i, i), my(i, i), mz(i, i)};
+                Vector3d vjj = {mx(j, j), my(j, j), mz(j, j)};
 
                 double Aij = vij.squaredNorm()
                              - 0.25 * (vii - vjj).squaredNorm();
@@ -51,16 +51,16 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz) {
                 auto cg = std::cos(g);
                 auto sg = std::sin(g);
 
-                Eig::VectorXd col_Ui = U.col(i);
-                Eig::VectorXd col_Uj = U.col(j);
+                Eigen::VectorXd col_Ui = U.col(i);
+                Eigen::VectorXd col_Uj = U.col(j);
 
                 U.col(i) = cg * col_Ui + sg * col_Uj;
                 U.col(j) = -sg * col_Ui + cg * col_Uj;
 
                 for (auto z = 0; z < 3; ++z) {
                     auto &m = mo_xyz[z];
-                    Eig::VectorXd z_i = m.col(i);
-                    Eig::VectorXd z_j = m.col(j);
+                    Eigen::VectorXd z_i = m.col(i);
+                    Eigen::VectorXd z_j = m.col(j);
 
                     m.col(i) = cg * z_i + sg * z_j;
                     m.col(j) = -sg * z_i + cg * z_j;

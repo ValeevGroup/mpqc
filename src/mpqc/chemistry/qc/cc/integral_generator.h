@@ -5,9 +5,9 @@
 #ifndef MPQC_INTEGRAL_GENERATOR_H
 #define MPQC_INTEGRAL_GENERATOR_H
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 #include <libint2/engine.h>
+#include <tiledarray.h>
+
 #include <mpqc/chemistry/qc/basis/cluster_shells.h>
 #include <mpqc/chemistry/qc/integrals/integral_engine_pool.h>
 #include <mpqc/chemistry/qc/integrals/task_integral_kernels.h>
@@ -19,6 +19,8 @@ namespace cc {
 // it used libint2 for generation of integrals
 class TwoBodyIntGenerator {
  public:
+  using Shell = libint2::Shell;
+  using ShellVec = std::vector<Shell>;
   typedef libint2::Engine Engine;
   typedef mpqc::integrals::EnginePool<Engine> EnginePool;
 

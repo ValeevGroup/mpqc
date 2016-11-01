@@ -9,7 +9,6 @@
 #include <mpqc/util/keyval/keyval.hpp>
 
 namespace mpqc {
-namespace molecule {
 
 /*!
  * \defgroup Molecule Molecule
@@ -30,14 +29,14 @@ class Molecule : public DescribedClass {
  protected:
   std::vector<AtomBasedClusterable> elements_;
 
-  Vec3D com_ = {0, 0, 0};  /// Center of Mass
+  Vector3d com_ = {0, 0, 0};  /// Center of Mass
   double mass_ = 0.0;
   int64_t charge_ = 0;  /// Net charge (# protons - # electrons)
   int64_t total_charge_ = 0;  // total charge # protons
 
   void init(std::istream &file, bool sort_input);
 
-  void init(std::istream &file, Vec3D const &point);
+  void init(std::istream &file, Vector3d const &point);
 
  public:
   Molecule() = default;
@@ -82,7 +81,7 @@ class Molecule : public DescribedClass {
    *
    * This constructor changes the point from which the molecule is sorted
    */
-  Molecule(std::istream &file_stream, Vec3D const &point);
+  Molecule(std::istream &file_stream, Vector3d const &point);
 
   /*! \brief Constructor to build Molecule from a vector of clusterables
    *
@@ -96,7 +95,7 @@ class Molecule : public DescribedClass {
 
   /*! \brief A function to sort the molcule's clusters from a given point. 
    */
-  void sort_from_point(Vec3D const &point);
+  void sort_from_point(Vector3d const &point);
 
   /// Function to set the mass of the Molecule
   void set_mass(double mass) { Molecule::mass_ = mass; }
@@ -164,7 +163,7 @@ class Molecule : public DescribedClass {
    * Necessary to satisfy the AtomBasedClusterable interface so Molecules are
    * also clusterable.
   */
-  Vec3D const &com() const { return com_; }
+  Vector3d const &com() const { return com_; }
 
   /// Print Molecule information
   virtual void print(std::ostream & os) const;
@@ -175,7 +174,6 @@ std::ostream &operator<<(std::ostream &, Molecule const &);
 
 /*! @} */
 
-}  // namespace molecule
 }  // namespace mpqc
 
 #endif  // MPQC_MOLECULE_MOLECULE_H

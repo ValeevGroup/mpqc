@@ -17,10 +17,10 @@ struct ScfCorrection {
   using result_type = double;
   using argument_type = Tile;
 
-  std::shared_ptr<Eig::VectorXd> vec_;
+  std::shared_ptr<Eigen::VectorXd> vec_;
   unsigned int n_occ_;
 
-  ScfCorrection(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+  ScfCorrection(std::shared_ptr<Eigen::VectorXd> vec, int n_occ)
       : vec_(std::move(vec)), n_occ_(n_occ) {}
 
   ScfCorrection(ScfCorrection const &) = default;
@@ -141,12 +141,12 @@ class DBMP2 : public MP2<Tile, Policy> {
   //      integrals::LCAOFactory<Tile, Policy> &lcao_factory,
   //      OrbitalSpaceRegistry<TArray>& orbital_registry,
   //      Eigen::VectorXd &ens, const rapidjson::Document &in,
-  //      const molecule::Molecule &mols, int occ) {
+  //      const Molecule &mols, int occ) {
   //    auto &ao_int = lcao_factory.atomic_integral();
   //    auto &world = ao_int.world();
   //    using TArray = TA::DistArray<Tile, Policy>;
   //
-  //    auto mo_time0 = mpqc_time::fenced_now(world);
+  //    auto mo_time0 = mpqc::fenced_now(world);
   //    utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO
   //    Orbital\n");
   //
@@ -160,11 +160,11 @@ class DBMP2 : public MP2<Tile, Policy> {
   //
   //    auto S = ao_int.compute(L"<κ|λ>");
   //
-  //    MatrixD F_eig = array_ops::array_to_eigen(F);
-  //    MatrixD S_eig = array_ops::array_to_eigen(S);
+  //    RowMatrixXd F_eig = array_ops::array_to_eigen(F);
+  //    RowMatrixXd S_eig = array_ops::array_to_eigen(S);
   //
   //    // solve mo coefficients
-  //    Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  //    Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
   //
   //    bool frozen_core =
   //        in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
@@ -180,9 +180,9 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    Eigen::VectorXd ens_occ =
   //        es.eigenvalues().segment(n_frozen_core, occ - n_frozen_core);
   //    std::cout << es.eigenvalues() << std::endl;
-  //    MatrixD C_all = es.eigenvectors();
-  //    MatrixD C_occ = C_all.block(0, 0, S_eig.rows(), occ);
-  //    MatrixD C_corr_occ =
+  //    RowMatrixXd C_all = es.eigenvectors();
+  //    RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), occ);
+  //    RowMatrixXd C_corr_occ =
   //        C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
   //
   //    // finished solving occupied orbitals
@@ -206,8 +206,8 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    auto tr_obs = S.trange().data().back();
   //    auto tr_occ = tre->compute_range(occ, occ_blocksize);
   //    auto tr_corr_occ = tre->get_occ_tr1();
-  //    utility::parallel_print_range_info(world, tr_occ, "Occ");
-  //    utility::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
+  //    detail::parallel_print_range_info(world, tr_occ, "Occ");
+  //    detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
   //
   //    // convert to TA
   //    auto C_occ_ta =
@@ -242,7 +242,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //                                          vir_blocksize, n_frozen_core);
   //
   //    // project Fock matrix against occ orbitals
-  //    MatrixD C_vir;
+  //    RowMatrixXd C_vir;
   //    {
   //      auto tr_vbs = F_vbs.trange().data().back();
   //
@@ -253,9 +253,9 @@ class DBMP2 : public MP2<Tile, Policy> {
   //      // get overlap
   //      auto S_vbs = ao_int.compute(L"<Α|Β>");
   //      // get density
-  //      MatrixD D_obs = C_occ * C_occ.transpose();
+  //      RowMatrixXd D_obs = C_occ * C_occ.transpose();
   //
-  //      MatrixD D_vbs = MatrixD::Zero(n_vbs, n_vbs);
+  //      RowMatrixXd D_vbs = RowMatrixXd::Zero(n_vbs, n_vbs);
   //      D_vbs.block(0, 0, n_obs, n_obs) << D_obs;
   //      TArray D_vbs_ta =
   //          array_ops::eigen_to_array<Tile>(world, D_vbs, tr_vbs, tr_vbs);
@@ -265,9 +265,9 @@ class DBMP2 : public MP2<Tile, Policy> {
   //          F_vbs("D,E") *
   //          (identity_ta("E,B") - 0.5 * D_vbs_ta("E,mu") * S_vbs("mu,B"));
   //
-  //      MatrixD F_vbs_eigen = array_ops::array_to_eigen(F_vbs);
+  //      RowMatrixXd F_vbs_eigen = array_ops::array_to_eigen(F_vbs);
   //
-  //      Eigen::SelfAdjointEigenSolver<MatrixD> es(F_vbs_eigen);
+  //      Eigen::SelfAdjointEigenSolver<RowMatrixXd> es(F_vbs_eigen);
   //
   //      std::cout << es.eigenvalues() << std::endl;
   //      auto ens_vbs_vir = es.eigenvalues().bottomRows(n_vbs - occ);
@@ -283,10 +283,10 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    // get all the trange1s
   //    auto tr_vir = tre->get_vir_tr1();
   //    auto tr_vbs = F_vbs.trange().data().back();
-  //    utility::parallel_print_range_info(world, tr_vir, "Vir");
+  //    detail::parallel_print_range_info(world, tr_vir, "Vir");
   //
   //    //    auto tr_all = tre->get_all_tr1();
-  //    //    utility::parallel_print_range_info(world, tr_all, "Vbs");
+  //    //    detail::parallel_print_range_info(world, tr_all, "Vbs");
   //
   //    auto C_vir_ta =
   //        array_ops::eigen_to_array<Tile>(world, C_vir, tr_vbs, tr_vir);
@@ -295,8 +295,8 @@ class DBMP2 : public MP2<Tile, Policy> {
   //        C_vir_ta);
   //    orbital_registry.add(vir_space);
   //
-  //    auto mo_time1 = mpqc_time::fenced_now(world);
-  //    auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
+  //    auto mo_time1 = mpqc::fenced_now(world);
+  //    auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
   //    utility::print_par(world, "ClosedShell Dual Basis MO Build Time: ",
   //    mo_time,
   //                       " S\n");
@@ -308,12 +308,12 @@ class DBMP2 : public MP2<Tile, Policy> {
   //          integrals::LCAOFactory<Tile, Policy> &lcao_factory,
   //      OrbitalSpaceRegistry<TArray>& orbital_registry,
   //      Eigen::VectorXd &ens, const rapidjson::Document &in,
-  //      const molecule::Molecule &mols, int occ) {
+  //      const Molecule &mols, int occ) {
   //    auto &ao_int = lcao_factory.atomic_integral();
   //    auto &world = ao_int.world();
   //    using TArray = TA::DistArray<Tile, Policy>;
   //
-  //    auto mo_time0 = mpqc_time::fenced_now(world);
+  //    auto mo_time0 = mpqc::fenced_now(world);
   //    utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO
   //    Orbital\n");
   //
@@ -327,11 +327,11 @@ class DBMP2 : public MP2<Tile, Policy> {
   //
   //    auto S = ao_int.compute(L"<κ|λ>");
   //
-  //    MatrixD F_eig = array_ops::array_to_eigen(F);
-  //    MatrixD S_eig = array_ops::array_to_eigen(S);
+  //    RowMatrixXd F_eig = array_ops::array_to_eigen(F);
+  //    RowMatrixXd S_eig = array_ops::array_to_eigen(S);
   //
   //    // solve mo coefficients
-  //    Eig::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  //    Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
   //
   //    bool frozen_core =
   //        in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
@@ -345,7 +345,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    }
   //
   //    std::cout << es.eigenvalues() << std::endl;
-  //    MatrixD C_occ = es.eigenvectors().leftCols(occ);
+  //    RowMatrixXd C_occ = es.eigenvectors().leftCols(occ);
   //
   //    // finished solving occupied orbitals
   //
@@ -368,7 +368,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    auto tr_obs = S.trange().data().back();
   //    auto tr_occ = tre->compute_range(occ, occ_blocksize);
   //    auto tr_corr_occ = tre->get_occ_tr1();
-  //    utility::parallel_print_range_info(world, tr_occ, "Occ");
+  //    detail::parallel_print_range_info(world, tr_occ, "Occ");
   //
   //    // convert to TA
   //    auto C_occ_ta =
@@ -406,12 +406,12 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    tre = std::make_shared<TRange1Engine>(occ, n_vbs, occ_blocksize,
   //                                          vir_blocksize, n_frozen_core);
   //
-  //    MatrixD C_vir;
-  //    MatrixD C_corr_occ;
+  //    RowMatrixXd C_vir;
+  //    RowMatrixXd C_corr_occ;
   //    {
-  //      MatrixD F_vbs_eigen = array_ops::array_to_eigen(F_vbs);
+  //      RowMatrixXd F_vbs_eigen = array_ops::array_to_eigen(F_vbs);
   //
-  //      Eigen::SelfAdjointEigenSolver<MatrixD> es(F_vbs_eigen);
+  //      Eigen::SelfAdjointEigenSolver<RowMatrixXd> es(F_vbs_eigen);
   //
   //      assert(es.info() == Eigen::ComputationInfo::Success);
   //      std::cout << es.eigenvalues() << std::endl;
@@ -425,10 +425,10 @@ class DBMP2 : public MP2<Tile, Policy> {
   //
   //    // get all the trange1s
   //    auto tr_vir = tre->get_vir_tr1();
-  //    utility::parallel_print_range_info(world, tr_vir, "Vir");
+  //    detail::parallel_print_range_info(world, tr_vir, "Vir");
   //
   //    //    auto tr_all = tre->get_all_tr1();
-  //    //    utility::parallel_print_range_info(world, tr_all, "Vbs");
+  //    //    detail::parallel_print_range_info(world, tr_all, "Vbs");
   //
   //    C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_vbs,
   //    tr_occ);
@@ -457,8 +457,8 @@ class DBMP2 : public MP2<Tile, Policy> {
   //        C_vir_ta);
   //    orbital_registry.add(vir_space);
   //
-  //    auto mo_time1 = mpqc_time::fenced_now(world);
-  //    auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
+  //    auto mo_time1 = mpqc::fenced_now(world);
+  //    auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
   //    utility::print_par(world, "ClosedShell Dual Basis MO Build Time: ",
   //    mo_time,
   //                       " S\n");

@@ -4,15 +4,13 @@
 
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 
-// #include "../tensor/tcc_tile.h"
-
-#include "../../../../../include/tiledarray.h"
-
 #include <madness/world/worldptr.h>
 
 #include <functional>
 #include <memory>
 #include <vector>
+
+#include <tiledarray.h>
 
 namespace mpqc {
 namespace integrals {
@@ -59,7 +57,7 @@ class DirectTile {
 #else
 
   template <typename Archive>
-  enable_if_t<madness::archive::is_output_archive<Archive>::value, void>
+  std::enable_if_t<madness::archive::is_output_archive<Archive>::value, void>
   serialize(Archive &ar) {
     ar &idx_;
     ar &range_;
@@ -68,7 +66,7 @@ class DirectTile {
   }
 
   template <typename Archive>
-  enable_if_t<madness::archive::is_input_archive<Archive>::value, void>
+  std::enable_if_t<madness::archive::is_input_archive<Archive>::value, void>
   serialize(Archive &ar) {
     ar &idx_;
     ar &range_;

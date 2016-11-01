@@ -3,25 +3,25 @@
 #include <clocale>
 #include <fstream>
 #include <iomanip>
-#include <libint2.hpp>
-#include <madness/world/worldmem.h>
 #include <memory>
+
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <libint2.hpp>
+#include <madness/world/worldmem.h>
+#include <tiledarray.h>
 
-#include "../include/tiledarray.h"
+#include "mpqc/util/meta/make_array.h"
+#include "mpqc/util/external/madworld/parallel_break_point.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
 
-#include "../utility/make_array.h"
-#include "../utility/parallel_break_point.h"
-#include "../utility/parallel_print.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 
-#include "../utility/array_info.h"
-#include "../utility/print_size_info.h"
-
-#include "../utility/json_handling.h"
-#include "../utility/parallel_file.h"
-#include "../utility/time.h"
+#include "mpqc/util/misc/json_handling.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
+#include "mpqc/util/misc/time.h"
 
 #include <mpqc/chemistry/molecule/atom.h>
 #include <mpqc/chemistry/molecule/cluster.h>
@@ -33,6 +33,7 @@
 #include <mpqc/chemistry/qc/basis/basis.h>
 #include <mpqc/chemistry/qc/basis/basis_set.h>
 #include <mpqc/chemistry/qc/basis/cluster_shells.h>
+#include <mpqc/chemistry/qc/basis/shell_vec_functions.h>
 
 #include <mpqc/chemistry/qc/scf/cadf_builder.h>
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
@@ -45,8 +46,8 @@
 #include <mpqc/chemistry/qc/scf/cadf_builder_print_only.h>
 #include <mpqc/chemistry/qc/scf/clr_cadf_builder.h>
 
-#include "../ta_routines/array_to_eigen.h"
-#include "../utility/trange1_engine.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
 #include <mpqc/chemistry/qc/cc/dbccsd.h>
 #include <mpqc/chemistry/qc/f12/ccsdf12.h>
@@ -171,7 +172,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   xyz_file_stream << xyz_file_buffer;
   delete[] xyz_file_buffer;
 
-  using molecule::Molecule;
+  using mpqc::Molecule;
   Molecule mol;
   // construct molecule
   bool sort_origin = in.HasMember("sort molecule from origin")
@@ -193,7 +194,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   /**
    * Construct Clustered Molecule, which is used to construct Basis
    */
-  molecule::Molecule clustered_mol;
+  Molecule clustered_mol;
 
   // if no ghost molecule
   if (ghost_atoms.empty()) {
@@ -202,7 +203,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       clustered_mol = mol;
     } else {
       clustered_mol =
-          molecule::attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
+          attach_hydrogens_and_kmeans(mol.clusterables(), nclusters);
     }
   } else {  // if has ghost molecule
     char *ghost_xyz_buffer;
@@ -223,10 +224,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
                         ghost_elements.end());
 
     if (nclusters == 0) {
-      clustered_mol = mpqc::molecule::Molecule(mol_elements, false);
+      clustered_mol = mpqc::Molecule(mol_elements, false);
     } else {
       clustered_mol =
-          mpqc::molecule::attach_hydrogens_and_kmeans(mol_elements, nclusters);
+          attach_hydrogens_and_kmeans(mol_elements, nclusters);
     }
   }
 
@@ -245,9 +246,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
       basis::parallel_construct_basis(world, bs_set, clustered_mol);
   //    std::cout << basis << std::endl;
   if (ao_blocksize != 0) {
-    basis = reblock(basis, cc::reblock_basis, ao_blocksize);
+    basis = reblock(basis, basis::reblock_basis, ao_blocksize);
   }
-  utility::parallel_print_range_info(world, basis.create_trange1(),
+  detail::parallel_print_range_info(world, basis.create_trange1(),
                                      "OBS Basis");
   bs_registry->add(OrbitalIndex(L"κ"), basis);
 
@@ -256,9 +257,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
   if (!df_basis_name.empty()) {
     df_basis = basis::parallel_construct_basis(world, dfbs_set, clustered_mol);
     if (ao_blocksize != 0) {
-      df_basis = reblock(df_basis, cc::reblock_basis, ao_blocksize);
+      df_basis = reblock(df_basis, basis::reblock_basis, ao_blocksize);
     }
-    utility::parallel_print_range_info(world, df_basis.create_trange1(),
+    detail::parallel_print_range_info(world, df_basis.create_trange1(),
                                        "DF Basis");
     bs_registry->add(OrbitalIndex(L"Κ"), df_basis);
   }
@@ -268,9 +269,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
     basis::BasisSet vbs(vir_basis_name);
     vir_basis = basis::parallel_construct_basis(world, vbs, clustered_mol);
     if (ao_blocksize != 0) {
-      vir_basis = reblock(vir_basis, cc::reblock_basis, ao_blocksize);
+      vir_basis = reblock(vir_basis, basis::reblock_basis, ao_blocksize);
     }
-    utility::parallel_print_range_info(world, vir_basis.create_trange1(),
+    detail::parallel_print_range_info(world, vir_basis.create_trange1(),
                                        "Virtual Basis");
     bs_registry->add(OrbitalIndex(L"Α"), vir_basis);
     //        std::cout << vir_basis << std::endl;
@@ -282,9 +283,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
     basis::BasisSet abs(aux_basis_name);
     abs_basis = basis::parallel_construct_basis(world, abs, clustered_mol);
     if (ao_blocksize != 0) {
-      abs_basis = reblock(abs_basis, cc::reblock_basis, ao_blocksize);
+      abs_basis = reblock(abs_basis, basis::reblock_basis, ao_blocksize);
     }
-    utility::parallel_print_range_info(world, abs_basis.create_trange1(),
+    detail::parallel_print_range_info(world, abs_basis.create_trange1(),
                                        "AUX Basis");
     bs_registry->add(OrbitalIndex(L"α"), abs_basis);
   }
@@ -338,8 +339,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
   auto ao_in = json::get_nested(in, "AOIntegral");
 
   integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(
-      world, ta_routines::TensorDPassThrough(),
-      std::make_shared<molecule::Molecule>(clustered_mol), bs_registry, param,
+      world, TA::Noop<TA::TensorD,true>(),
+      std::make_shared<Molecule>(clustered_mol), bs_registry, param,
       ao_in);
 
   /**
@@ -347,7 +348,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
    */
   double scf_energy;
   if (in.HasMember("CLSCF")) {
-    auto scf_time0 = mpqc_time::fenced_now(world);
+    auto scf_time0 = mpqc::fenced_now(world);
 
     auto scf_in = json::get_nested(in, "CLSCF");
     double scf_converge = scf_in.HasMember("SCFConverge")
@@ -376,12 +377,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
       auto inv = ao_int.compute(L"( Κ | G| Λ )");
       auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
       scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "four center") {
       auto eri4 = ao_int.compute(L"<μ ν| G|κ λ>");
       eri4("mu, nu, kappa, lambda") = eri4("mu,kappa,nu,lambda");
       auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "cadf") {
       auto use_forced_shape = scf_in.HasMember("forced shape")
                                   ? scf_in["forced shape"].GetBool()
@@ -403,7 +404,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       auto builder = scf::CADFFockBuilder(clustered_mol, clustered_mol, bs_set,
                                           dfbs_set, ao_int, use_forced_shape,
                                           force_threshold, lcao_chop_threshold);
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "clr_cadf") {
       auto use_forced_shape = scf_in.HasMember("forced shape")
                                   ? scf_in["forced shape"].GetBool()
@@ -430,7 +431,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
           clustered_mol, clustered_mol, bs_set, dfbs_set, ao_int,
           use_forced_shape, force_threshold, lcao_chop_threshold,
           clr_threshold);
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "print only cadf") {
       auto use_forced_shape = scf_in.HasMember("forced shape")
                                   ? scf_in["forced shape"].GetBool()
@@ -452,7 +453,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       auto builder = scf::PrintOnlyCADFFockBuilder(
           clustered_mol, clustered_mol, bs_set, dfbs_set, ao_int,
           use_forced_shape, force_threshold, lcao_chop_threshold);
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     }
 
     /// deal with density builder
@@ -463,23 +464,23 @@ int try_main(int argc, char *argv[], madness::World &world) {
     if (density_method == "purification") {
       auto db = scf::PurificationDensityBuilder(
           S, r_xyz, occ / 2, std::max(nclusters, 1), 0.0, false);
-      d_builder = make_unique<scf::PurificationDensityBuilder>(std::move(db));
+      d_builder = std::make_unique<scf::PurificationDensityBuilder>(std::move(db));
     } else if (density_method == "cholesky") {
       bool localize =
           scf_in.HasMember("localize") ? scf_in["localize"].GetBool() : false;
       auto db =
           scf::ESolveDensityBuilder(S, r_xyz, occ / 2, std::max(nclusters, 1),
                                     0.0, "cholesky inverse", localize);
-      d_builder = make_unique<scf::ESolveDensityBuilder>(std::move(db));
+      d_builder = std::make_unique<scf::ESolveDensityBuilder>(std::move(db));
     }
 
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     auto eri_e =
         ints::make_engine_pool(libint2::Operator::coulomb,
                                utility::make_array_of_refs(df_basis, basis));
     auto F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Soad Time:  ", time, "\n");
 
     /// CL scf class
@@ -488,8 +489,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
     scf.solve(scf_max_iter, scf_converge);
 
     scf_energy = scf.scf_energy();
-    auto scf_time1 = mpqc_time::fenced_now(world);
-    auto scf_time = mpqc_time::duration_in_s(scf_time0, scf_time1);
+    auto scf_time1 = mpqc::fenced_now(world);
+    auto scf_time = mpqc::duration_in_s(scf_time0, scf_time1);
     mpqc::utility::print_par(world, "SCF Energy:  ", scf_energy, "\n");
     mpqc::utility::print_par(world, "Total SCF Time:  ", scf_time, "\n");
 
@@ -530,17 +531,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
   rapidjson::Document corr_in;
 
   if (in.HasMember("MP2")) {
-    auto mp2_time0 = mpqc_time::fenced_now(world);
+    auto mp2_time0 = mpqc::fenced_now(world);
 
     corr_in = json::get_nested(in, "MP2");
     auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(lcao_factory);
     corr_e += mp2.compute(corr_in);
 
-    auto mp2_time1 = mpqc_time::fenced_now(world);
-    auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
+    auto mp2_time1 = mpqc::fenced_now(world);
+    auto mp2_time = mpqc::duration_in_s(mp2_time0, mp2_time1);
     mpqc::utility::print_par(world, "Total MP2 Time:  ", mp2_time, "\n");
   } else if (in.HasMember("DBMP2")) {
-    auto dbmp2_time0 = mpqc_time::fenced_now(world);
+    auto dbmp2_time0 = mpqc::fenced_now(world);
 
     corr_in = json::get_nested(in, "DBMP2");
     std::shared_ptr<mbpt::MP2<TA::TensorD, TA::SparsePolicy>> mp2 =
@@ -548,8 +549,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
             mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(lcao_factory));
     corr_e += mp2->compute(corr_in);
 
-    auto dbmp2_time1 = mpqc_time::fenced_now(world);
-    auto dbmp2_time = mpqc_time::duration_in_s(dbmp2_time0, dbmp2_time1);
+    auto dbmp2_time1 = mpqc::fenced_now(world);
+    auto dbmp2_time = mpqc::duration_in_s(dbmp2_time0, dbmp2_time1);
     mpqc::utility::print_par(world, "Total DBMP2 Time:  ", dbmp2_time, "\n");
 
   }
@@ -557,68 +558,68 @@ int try_main(int argc, char *argv[], madness::World &world) {
     corr_in = json::get_nested(in, "GF2F12");
 
     // start gf2f12
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     f12::GF2F12<TA::TensorD> gf2f12(lcao_factory);
     gf2f12.compute(corr_in);
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
 
     mpqc::utility::print_par(world, "Total GF2 F12 Time:  ", time, "\n");
 
   } else if (in.HasMember("CCSD")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining CCSD Calculation\n");
     corr_in = json::get_nested(in, "CCSD");
     mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(lcao_factory, corr_in);
     corr_e += ccsd.compute();
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total CCSD Time:  ", time, "\n");
   } else if (in.HasMember("DBCCSD")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining Dual Basis CCSD Calculation\n");
     corr_in = json::get_nested(in, "DBCCSD");
     mpqc::cc::DBCCSD<TA::TensorD, TA::SparsePolicy> dbccsd(lcao_factory,
                                                            corr_in);
     corr_e += dbccsd.compute();
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total Dual Basis CCSD Time:  ", time,
                              "\n");
   } else if (in.HasMember("CCSD(T)")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
     corr_in = json::get_nested(in, "CCSD(T)");
     mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(lcao_factory,
                                                            corr_in);
     corr_e += ccsd_t.compute();
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total CCSD(T) Time:  ", time, "\n");
   }
 
   else if (in.HasMember("CCSD(F12)")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
     corr_in = json::get_nested(in, "CCSD(F12)");
 
     f12::CCSDF12<TA::TensorD> ccsd_f12(lcao_factory, corr_in);
     corr_e += ccsd_f12.compute();
 
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total CCSD(F12) Time:  ", time, "\n");
 
   } else if (in.HasMember("DBCCSD(F12)")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining DBCCSD(F12) Calculation\n");
     corr_in = json::get_nested(in, "DBCCSD(F12)");
 
     f12::DBCCSDF12<TA::TensorD> db_ccsd_f12(lcao_factory, corr_in);
     corr_e += db_ccsd_f12.compute();
 
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total DBCCSD(F12) Time:  ", time, "\n");
   }
 

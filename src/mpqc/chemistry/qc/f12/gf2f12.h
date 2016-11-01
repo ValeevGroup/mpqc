@@ -102,7 +102,7 @@ public:
     closed_shell_cabs_mo_build_svd(lcao_factory(), in,
                                    this->mp2_->trange1_engine());
 
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
 
     orbital_ = in.HasMember("Orbital") ? in["Orbital"].GetInt() : -1;
     use_cabs_ = in.HasMember("UseCABS") ? in["UseCABS"].GetBool() : true;
@@ -138,8 +138,8 @@ public:
     else
       compute_nondiagonal();
 
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
 
     print_par(world, "Total GF2F12 Time:  ", time, "\n");
 

@@ -2,7 +2,7 @@
 #include <sstream>
 
 #include <mpqc/util/keyval/keyval.hpp>
-#include "../utility/parallel_file.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
 #include <madness/world/world.h>
 #include "catch.hpp"
 #include <mpqc/chemistry/qc/basis/basis.h>

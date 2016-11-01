@@ -5,13 +5,14 @@
 #ifndef MPQC_LAZY_TILE_H
 #define MPQC_LAZY_TILE_H
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
+
+
 #include <mpqc/chemistry/qc/cc/integral_generator.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
 
-#include "../../../../../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 #include "ccsd_intermediates.h"
 
 static auto DIRECTAOTWOELECTONINTEGRAL =
@@ -103,6 +104,8 @@ DirectTwoElectronDenseArray make_lazy_two_electron_dense_array(
     const TA::TiledRange &trange, const int screen_option) {
   // compute cluster shell
   auto cluster_shells = basis.cluster_shells();
+  using Shell = mpqc::basis::Basis::Shell;
+  using ShellVec = std::vector<Shell>;
   auto p_cluster_shells =
       std::make_shared<std::vector<ShellVec>>(cluster_shells);
 
@@ -158,6 +161,8 @@ DirectTwoElectronSparseArray make_lazy_two_electron_sparse_array(
     const TA::TiledRange &trange, const int screen_option) {
   // compute cluster shell
   auto cluster_shells = basis.cluster_shells();
+  using Shell = mpqc::basis::Basis::Shell;
+  using ShellVec = std::vector<Shell>;
   auto p_cluster_shells =
       std::make_shared<std::vector<ShellVec>>(cluster_shells);
 

@@ -1,0 +1,27 @@
+#ifndef SRC_MPQC_UTIL_EXTERNAL_CPP_TYPE_TRAITS
+#define SRC_MPQC_UTIL_EXTERNAL_CPP_TYPE_TRAITS
+
+#include <type_traits>
+
+// C++14 only
+#if __cplusplus < 201402L
+
+namespace std {
+
+template <typename T>
+using remove_reference_t = typename std::remove_reference<T>::type;
+
+template <typename T>
+using remove_const_t = typename std::remove_const<T>::type;
+
+template <typename T>
+using result_of_t = typename std::result_of<T>::type;
+
+template <bool B, typename U = void>
+using enable_if_t = typename std::enable_if<B, U>::type;
+
+}  // namespace std
+
+#endif  // __cplusplus < 201402L
+
+#endif  // SRC_MPQC_UTIL_EXTERNAL_CPP_TYPE_TRAITS

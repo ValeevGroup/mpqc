@@ -2,16 +2,21 @@
 #ifndef MPQC_MOLECULE_COMMON_H
 #define MPQC_MOLECULE_COMMON_H
 
-#include <mpqc/chemistry/molecule/cluster_concept.h>
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
 #include <vector>
 
+#include <libint2/atom.h>
+
+#include "mpqc/chemistry/molecule/cluster_concept.h"
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
+
+
 namespace mpqc {
-namespace molecule {
 
 /// Function takes mpqc::molecule::Atom vector and converts it to a vector 
 /// of libint atoms. 
 std::vector<libint2::Atom> to_libint_atom(std::vector<Atom> const &);
+
+namespace molecule {
 
 /*! \brief Function to compute the center of mass of a collection
  *
@@ -21,9 +26,9 @@ std::vector<libint2::Atom> to_libint_atom(std::vector<Atom> const &);
  * TODO Eventually add some static checking for the functions
  */
 template <typename T>
-Vec3D center_of_mass(std::vector<T> const &ts){
+Vector3d center_of_mass(std::vector<T> const &ts){
     double total_mass = 0.0;
-    Vec3D com = {0.0, 0.0, 0.0};
+    Vector3d com = {0.0, 0.0, 0.0};
 
     // The overloads for mass and center_of_mass must be defined elsewhere
     // Center of mass formula: com = \frac{1}{total_mass}(\sum_k m_k * r_k)

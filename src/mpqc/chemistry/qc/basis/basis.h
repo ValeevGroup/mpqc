@@ -2,25 +2,28 @@
 #ifndef MPQC_BASIS_BASIS_H
 #define MPQC_BASIS_BASIS_H
 
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
-#include <mpqc/chemistry/qc/basis/basis_fwd.h>
-
 #include <iosfwd>
 #include <memory>
 #include <vector>
 
+#include <tiledarray.h>
 #include <madness/world/array_addons.h>
+#include <libint2/shell.h>
+
 #include <mpqc/util/keyval/keyval.hpp>
 
-#include "../../../../../common/typedefs.h"
 
-#include "../../../../../include/tiledarray.h"
+
 #include <mpqc/chemistry/qc/basis/basis_set.h>
-
-#include <libint2/shell.h>
+#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include <mpqc/chemistry/qc/basis/basis_fwd.h>
 
 namespace mpqc {
 namespace basis {
+
+using Shell = libint2::Shell;
+using ShellVec = std::vector<Shell>;
+
 /*
  * \defgroup Basis Basis
  *
@@ -31,6 +34,9 @@ namespace basis {
 
 class Basis : public DescribedClass {
  public:
+
+  using Shell = libint2::Shell;
+
   Basis();
   ~Basis();
   Basis(Basis const &);
@@ -112,7 +118,7 @@ Basis reblock(Basis const &basis, Op op, Args... args) {
 }
 
 Basis parallel_construct_basis(madness::World &world, const BasisSet &basis_set,
-                               const mpqc::molecule::Molecule &mol);
+                               const mpqc::Molecule &mol);
 
 }  // namespace basis
 }  // namespace mpqc

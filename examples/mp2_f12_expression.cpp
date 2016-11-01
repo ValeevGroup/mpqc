@@ -1,10 +1,11 @@
-#include "../common/namespaces.h"
-#include "../common/typedefs.h"
 
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
+
+
+
 
 #include "../clustering/kmeans.h"
-#include "../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/atom_based_cluster.h"
@@ -26,10 +27,10 @@
 
 #include "../scf/eigen_solve_density_builder.h"
 #include "../scf/traditional_df_fock_builder.h"
-#include "../ta_routines/array_to_eigen.h"
-#include "../utility/array_info.h"
-#include "../utility/parallel_file.h"
-#include "../utility/time.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
+#include "mpqc/util/misc/time.h"
 
 #include "../scf/traditional_four_center_fock_builder.h"
 #include <mpqc/chemistry/qc/mbpt/mp2.h>
@@ -87,7 +88,7 @@ int main(int argc, char *argv[]) {
   xyz_file_stream << xyz_file_buffer;
   delete[] xyz_file_buffer;
 
-  auto mol = mpqc::molecule::Molecule(xyz_file_stream);
+  auto mol = mpqc::Molecule(xyz_file_stream);
   auto clustered_mol = molecule::kmeans(mol.clusterables(), nclusters);
 
   auto repulsion_energy = clustered_mol.nuclear_repulsion();
@@ -111,13 +112,13 @@ int main(int argc, char *argv[]) {
   basis::Basis ri_basis = basis.join(abs_basis);
   ri_basis = reblock(ri_basis, cc::reblock_basis, ao_block_size);
 
-  utility::parallel_print_range_info(world, basis.create_trange1(),
+  detail::parallel_print_range_info(world, basis.create_trange1(),
                                      "OBS Basis");
-  utility::parallel_print_range_info(world, df_basis.create_trange1(),
+  detail::parallel_print_range_info(world, df_basis.create_trange1(),
                                      "DF Basis");
-  utility::parallel_print_range_info(world, abs_basis.create_trange1(),
+  detail::parallel_print_range_info(world, abs_basis.create_trange1(),
                                      "AUX Basis");
-  utility::parallel_print_range_info(world, ri_basis.create_trange1(),
+  detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                      "RI Basis");
 
   auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
@@ -140,9 +141,9 @@ int main(int argc, char *argv[]) {
 
   integrals::AtomicIntegral<TA::TensorD, TA::SparsePolicy> ao_int(
       world, ta_pass_through,
-      std::make_shared<molecule::Molecule>(clustered_mol), bs_registry, param);
+      std::make_shared<Molecule>(clustered_mol), bs_registry, param);
 
-  auto time0 = mpqc_time::fenced_now(world);
+  auto time0 = mpqc::fenced_now(world);
   // Overlap ints
   auto S = ao_int.compute(L"(κ|λ)");
   auto H = ao_int.compute(L"(κ|H|λ)");
@@ -163,8 +164,8 @@ int main(int argc, char *argv[]) {
                           std::move(db));
   scf.solve(50, 1e-10);
 
-  auto time1 = mpqc_time::fenced_now(world);
-  auto hf_time = mpqc_time::duration_in_s(time0, time1);
+  auto time1 = mpqc::fenced_now(world);
+  auto hf_time = mpqc::duration_in_s(time0, time1);
 
   // obs fock build
   std::size_t all = S.trange().elements_range().extent()[0];
@@ -176,16 +177,16 @@ int main(int argc, char *argv[]) {
   ao_int.registry().insert(Formula(L"(μ|F|ν)[df]"), F);
 
   // mp2
-  time0 = mpqc_time::fenced_now(world);
+  time0 = mpqc::fenced_now(world);
 
   // solve Coefficient
   std::size_t n_frozen_core = 0;
   auto F_eig = array_ops::array_to_eigen(F);
   auto S_eig = array_ops::array_to_eigen(S);
-  Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
-  Eig::VectorXd ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
+  Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
+  Eigen::VectorXd ens = es.eigenvalues().bottomRows(S_eig.rows() - n_frozen_core);
 
-  Eig::MatrixXd C_all = es.eigenvectors();
+  Eigen::MatrixXd C_all = es.eigenvectors();
   decltype(S_eig) C_occ = C_all.block(0, 0, S_eig.rows(), occ / 2);
   decltype(S_eig) C_occ_corr =
       C_all.block(0, n_frozen_core, S_eig.rows(), occ / 2 - n_frozen_core);
@@ -196,9 +197,9 @@ int main(int argc, char *argv[]) {
   auto tr_i0 = tre.get_occ_tr1();
   auto tr_vir = tre.get_vir_tr1();
 
-  utility::parallel_print_range_info(world, tr_i0, "Occ");
-  utility::parallel_print_range_info(world, tr_vir, "Vir");
-  utility::parallel_print_range_info(world, tr_all, "Obs");
+  detail::parallel_print_range_info(world, tr_i0, "Occ");
+  detail::parallel_print_range_info(world, tr_vir, "Vir");
+  detail::parallel_print_range_info(world, tr_all, "Obs");
 
   auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ_corr,
                                                           tr_0, tr_i0);
@@ -240,11 +241,11 @@ int main(int argc, char *argv[]) {
         lcao_factory, ens, std::make_shared<TRange1Engine>(tre));
     mp2.compute_df();
   }
-  time1 = mpqc_time::fenced_now(world);
-  auto mp2_time = mpqc_time::duration_in_s(time0, time1);
+  time1 = mpqc::fenced_now(world);
+  auto mp2_time = mpqc::duration_in_s(time0, time1);
 
   //    lcao_factory.atomic_integral().registry().print_formula();
-  time0 = mpqc_time::fenced_now(world);
+  time0 = mpqc::fenced_now(world);
   // CABS fock build
 
   // integral
@@ -261,26 +262,26 @@ int main(int argc, char *argv[]) {
   decltype(S_obs) C_cabs, C_ri;
   {
     auto S_obs_eigen = array_ops::array_to_eigen(S_obs);
-    //        MatrixD X_obs_eigen_inv =
-    //        MatrixD(Eigen::LLT<MatrixD>(S_obs_eigen).matrixL()).inverse();
+    //        RowMatrixXd X_obs_eigen_inv =
+    //        RowMatrixXd(Eigen::LLT<RowMatrixXd>(S_obs_eigen).matrixL()).inverse();
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_obs_eigen);
-    MatrixD X_obs_eigen_inv = es.operatorInverseSqrt();
+    RowMatrixXd X_obs_eigen_inv = es.operatorInverseSqrt();
 
     auto S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
-    //        MatrixD X_ribs_eigen_inv =
-    //        MatrixD(Eigen::LLT<MatrixD>(S_ribs_eigen).matrixL()).inverse();
+    //        RowMatrixXd X_ribs_eigen_inv =
+    //        RowMatrixXd(Eigen::LLT<RowMatrixXd>(S_ribs_eigen).matrixL()).inverse();
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es2(S_ribs_eigen);
-    MatrixD X_ribs_eigen_inv = es2.operatorInverseSqrt();
-    MatrixD S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
-    MatrixD S_obs_ribs_ortho_eigen =
+    RowMatrixXd X_ribs_eigen_inv = es2.operatorInverseSqrt();
+    RowMatrixXd S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
+    RowMatrixXd S_obs_ribs_ortho_eigen =
         X_obs_eigen_inv.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
-    Eigen::JacobiSVD<MatrixD> svd(S_obs_ribs_ortho_eigen, Eigen::ComputeFullV);
-    MatrixD V_eigen = svd.matrixV();
+    Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen, Eigen::ComputeFullV);
+    RowMatrixXd V_eigen = svd.matrixV();
     size_t nbf_ribs = S_obs_ribs_ortho_eigen.cols();
     auto nbf_cabs = nbf_ribs - svd.nonzeroSingularValues();
-    MatrixD Vnull(nbf_ribs, nbf_cabs);
+    RowMatrixXd Vnull(nbf_ribs, nbf_cabs);
     Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_ribs, nbf_cabs);
-    MatrixD C_cabs_eigen = X_ribs_eigen_inv * Vnull;
+    RowMatrixXd C_cabs_eigen = X_ribs_eigen_inv * Vnull;
 
     auto tr_cabs = S_cabs.trange().data()[0];
     auto tr_ribs = S_ribs.trange().data()[0];
@@ -289,8 +290,8 @@ int main(int argc, char *argv[]) {
     auto tr_ribs_mo =
         tre.compute_range(tr_ribs.elements_range().second, mo_block_size);
 
-    utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
-    utility::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
+    detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+    detail::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
 
     C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen,
                                                     tr_ribs, tr_cabs_mo);
@@ -315,8 +316,8 @@ int main(int argc, char *argv[]) {
   //    lcao_factory.registry().clear();
   //    ao_int.registry().clear();
   mp2f12.compute_mp2_f12_df();
-  time1 = mpqc_time::fenced_now(world);
-  auto mp2f12_time = mpqc_time::duration_in_s(time0, time1);
+  time1 = mpqc::fenced_now(world);
+  auto mp2f12_time = mpqc::duration_in_s(time0, time1);
 
   //    ao_int.registry().print_formula(world);
   //    lcao_factory.registry().print_formula(world);

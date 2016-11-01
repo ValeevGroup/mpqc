@@ -8,7 +8,6 @@
 #include <iostream>
 
 namespace mpqc {
-namespace molecule {
 
 /*!
  * \addtogroup Molecule
@@ -25,7 +24,7 @@ class ClusterConcept {
     virtual ~ClusterConcept() = default;
 
     virtual ClusterConcept *clone_() const = 0;
-    virtual Vec3D const & center_() const = 0;
+    virtual Vector3d const & center_() const = 0;
     virtual std::ostream &print_(std::ostream &) const = 0;
 };
 
@@ -52,7 +51,7 @@ class ClusterModel : public ClusterConcept {
         return new ClusterModel(*this);
     }
 
-    Vec3D const &center_() const override final { return center(element_); }
+    Vector3d const &center_() const override final { return center(element_); }
     std::ostream &print_(std::ostream &os) const override final {
         os << element_;
         return os;
@@ -78,7 +77,7 @@ class Clusterable {
     Clusterable(Clusterable &&c) = default;
     Clusterable &operator=(Clusterable &&c) = default;
 
-    Vec3D const &center() const { return element_impl_->center_(); }
+    Vector3d const &center() const { return element_impl_->center_(); }
 
     std::ostream &print(std::ostream &os) const {
         return element_impl_->print_(os);
@@ -87,7 +86,6 @@ class Clusterable {
 
 /*! @} */
 
-} // namespace molecule
 } // namespace mpqc
 
 #endif // MPQC_MOLECULE_CLUSTERCONCEPT_H

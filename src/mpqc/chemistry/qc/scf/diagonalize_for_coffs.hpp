@@ -2,17 +2,17 @@
 #ifndef MPQC_SCF_DIAGONALIZEFORCOFFS_H
 #define MPQC_SCF_DIAGONALIZEFORCOFFS_H
 
-#include "../../../../../common/namespaces.h"
 
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../include/eigen.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 
-#include "../../../../../ta_routines/array_to_eigen.h"
-#include "../../../../../tensor/decomposed_tensor_algebra.h"
+#include <tiledarray.h>
+#include "mpqc/math/external/eigen/eigen.h"
 
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
 
-#include "../../../../../tensor/vector_localization.h"
+#include "mpqc/math/tensor/clr/vector_localization.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
+
 
 namespace mpqc {
 namespace scf {
@@ -38,7 +38,7 @@ inline Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1
     auto F_eig = array_ops::array_to_eigen(F);
     auto S_eig = array_ops::array_to_eigen(S);
 
-    Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
+    Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig, S_eig);
     decltype(S_eig) C = es.eigenvectors().leftCols(occ);
 
     if (use_chol_vectors) {

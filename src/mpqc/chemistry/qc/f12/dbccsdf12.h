@@ -65,7 +65,7 @@ class DBCCSDF12 : public CCSDF12<Tile> {
     bool singles =
         option.HasMember("Singles") ? option["Singles"].GetBool() : true;
     if (singles) {
-      auto single_time0 = mpqc_time::fenced_now(world);
+      auto single_time0 = mpqc::fenced_now(world);
 
       // non-canonical, don't include F_m^a
       CABSSingles<Tile> cabs_singles(this->lcao_factory_);
@@ -73,8 +73,8 @@ class DBCCSDF12 : public CCSDF12<Tile> {
       if (debug()) {
         utility::print_par(world, "E_S: ", e_s, "\n");
       }
-      auto single_time1 = mpqc_time::fenced_now(world);
-      auto single_time = mpqc_time::duration_in_s(single_time0, single_time1);
+      auto single_time1 = mpqc::fenced_now(world);
+      auto single_time = mpqc::duration_in_s(single_time0, single_time1);
       mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time,
                                "\n");
     }

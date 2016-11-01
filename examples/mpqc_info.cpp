@@ -2,12 +2,13 @@
 // Created by Chong Peng on 9/9/16.
 //
 
-#include "../utility/parallel_print.h"
-#include "../utility/parallel_file.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
 #include "../utility/cc_utility.h"
 #include <madness/world/world.h>
 
 #include <mpqc/chemistry/molecule/molecule.h>
+#include <mpqc/chemistry/molecule/linkage.h>
 #include <mpqc/chemistry/qc/basis/basis_registry.h>
 #include <mpqc/util/keyval/keyval.hpp>
 
@@ -136,7 +137,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   kv.read_json(ss);
   kv.assign("world", &world);
 
-  auto mol =  kv.keyval("molecule").class_ptr<molecule::Molecule>();
+  auto mol =  kv.keyval("molecule").class_ptr<Molecule>();
 
   std::size_t occ = (mol->occupation(0) - mol->core_electrons())/2 ;
 

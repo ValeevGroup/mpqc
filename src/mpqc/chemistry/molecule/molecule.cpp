@@ -3,15 +3,14 @@
 
 #include <mpqc/chemistry/molecule/common.h>
 #include <mpqc/chemistry/molecule/atom_masses.h>
-#include "../../../../utility/parallel_file.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
 #include "clustering_functions.h"
 
 #include <libint2/atom.h>
 
-MPQC_CLASS_EXPORT_KEY2("Molecule", mpqc::molecule::Molecule);
+MPQC_CLASS_EXPORT_KEY2("Molecule", mpqc::Molecule);
 
 namespace mpqc {
-namespace molecule {
 
 namespace {
 
@@ -20,11 +19,11 @@ using ABCbl = AtomBasedClusterable;
 // Functor for sorting centers based on the distance from a point.
 class sort_by_distance_from_point {
  public:
-  sort_by_distance_from_point(Vec3D const &point) : point_(point) {}
+  sort_by_distance_from_point(Vector3d const &point) : point_(point) {}
 
   bool operator()(ABCbl const &a, ABCbl const &b) const {
-    Vec3D a_diff = center_of_mass(a) - point_;
-    Vec3D b_diff = center_of_mass(b) - point_;
+    Vector3d a_diff = center_of_mass(a) - point_;
+    Vector3d b_diff = center_of_mass(b) - point_;
 
     const auto a_dist2 = a_diff.squaredNorm();
     const auto b_dist2 = b_diff.squaredNorm();
@@ -46,10 +45,10 @@ class sort_by_distance_from_point {
   }
 
  private:
-  Vec3D point_;
+  Vector3d point_;
 };
 
-void sort_elements(std::vector<ABCbl> &elems, const Vec3D &point) {
+void sort_elements(std::vector<ABCbl> &elems, const Vector3d &point) {
   std::sort(elems.begin(), elems.end(), sort_by_distance_from_point(point));
 }
 
@@ -57,10 +56,10 @@ void sort_elements(std::vector<ABCbl> &elems, const Vec3D &point) {
 
 Molecule::Molecule(std::vector<ABCbl> c, bool sort_input)
     : elements_(std::move(c)),
-      com_(center_of_mass(elements_)),
-      mass_(sum_mass(elements_)),
+      com_(center_of_mass(AtomBasedCluster(elements_))),
+      mass_(molecule::sum_mass(elements_)),
       charge_(0),
-      total_charge_(sum_charge(elements_)) {
+      total_charge_(molecule::sum_charge(elements_)) {
   if (sort_input) {
     sort_elements(elements_, com_);
   }
@@ -90,12 +89,12 @@ Molecule::Molecule(const KeyVal &kv) {
   bool attach_hydrogen = kv.value<bool>("attach_hydrogen",true);
   // cluster molecule
   if(n_cluster != 0){
-    molecule::Molecule clustered_mol;
+    Molecule clustered_mol;
     if(attach_hydrogen){
-      clustered_mol = molecule::attach_hydrogens_and_kmeans(clusterables(), n_cluster);
+      clustered_mol = attach_hydrogens_and_kmeans(clusterables(), n_cluster);
     }
     else{
-      clustered_mol = molecule::kmeans(clusterables(), n_cluster);
+      clustered_mol = kmeans(clusterables(), n_cluster);
     }
 
     elements_ = std::move(clustered_mol.elements_);
@@ -116,7 +115,7 @@ Molecule::Molecule(std::istream &file_stream, bool sort_input) {
   init(file_stream, sort_input);
 }
 
-Molecule::Molecule(std::istream &file_stream, Vec3D const &point) {
+Molecule::Molecule(std::istream &file_stream, Vector3d const &point) {
   init(file_stream, point);
 }
 
@@ -129,40 +128,40 @@ void Molecule::init(std::istream &file, bool sort_input) {
   std::vector<ABCbl> atoms;
   for (auto const &l_atom : libint_atoms) {
     Atom atom({l_atom.x, l_atom.y, l_atom.z},
-              masses::masses[l_atom.atomic_number], l_atom.atomic_number);
+              molecule::masses::masses[l_atom.atomic_number], l_atom.atomic_number);
     atoms.emplace_back(std::move(atom));
   }
 
   elements_ = std::move(atoms);
-  com_ = center_of_mass(elements_);
-  mass_ = sum_mass(elements_);
-  total_charge_ = sum_charge(elements_);
+  com_ = molecule::center_of_mass(elements_);
+  mass_ = molecule::sum_mass(elements_);
+  total_charge_ = molecule::sum_charge(elements_);
 
   if (sort_input) {
     sort_elements(elements_, com_);
   }
 }
 
-void Molecule::init(std::istream &file, Vec3D const &point) {
+void Molecule::init(std::istream &file, Vector3d const &point) {
   auto libint_atoms = libint2::read_dotxyz(file);
 
   using ABCbl = AtomBasedClusterable;
   std::vector<ABCbl> atoms;
   for (auto const &l_atom : libint_atoms) {
     Atom atom({l_atom.x, l_atom.y, l_atom.z},
-              masses::masses[l_atom.atomic_number], l_atom.atomic_number);
+              molecule::masses::masses[l_atom.atomic_number], l_atom.atomic_number);
     atoms.emplace_back(std::move(atom));
   }
 
   elements_ = std::move(atoms);
-  com_ = center_of_mass(elements_);
-  mass_ = sum_mass(elements_);
-  total_charge_ = sum_charge(elements_);
+  com_ = molecule::center_of_mass(elements_);
+  mass_ = molecule::sum_mass(elements_);
+  total_charge_ = molecule::sum_charge(elements_);
 
   sort_elements(elements_, point);
 }
 
-void Molecule::sort_from_point(Vec3D const &point) {
+void Molecule::sort_from_point(Vector3d const &point) {
   sort_elements(elements_, point);
 }
 
@@ -225,5 +224,4 @@ std::ostream &operator<<(std::ostream &os, Molecule const &mol) {
   return os;
 }
 
-}  // namespace molecule
 }  // namespace mpqc

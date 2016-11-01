@@ -22,6 +22,8 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/serialization/export.hpp>
 
+#include "mpqc/util/external/c++/type_traits"
+
 // serialize all pointers as void*
 // NB XCode 7.3.1 (7D1014) libc++ char stream does not properly deserialize
 // void*, use size_t instead
@@ -90,7 +92,9 @@ using Describable = std::is_base_of<DescribedClass, T>;
 /// @note If \c T is a template class, you must register each instance of this
 /// class you want to construct from KeyVal.
 /// @warning to ensure that the class registration code of the derived class is
-///          linked in its destructor (at least) must be explicitly instantiated
+///          linked in, its destructor (at least) must be explicitly instantiated.
+///          Related: how gcc instantiates vtable and RTTI info see
+///          <a href="https://gcc.gnu.org/onlinedocs/gcc/Vague-Linkage.html">here</a>
 /// @ingroup CoreKeyVal
 class DescribedClass {
  public:
@@ -119,7 +123,7 @@ class DescribedClass {
   /// class
   /// @tparam T a class derived from DescribedClass
   /// @sa MPQC_CLASS_EXPORT_KEY2
-  template <typename T, typename = enable_if_t<Describable<T>::value>>
+  template <typename T, typename = std::enable_if_t<Describable<T>::value>>
   struct registrar {
     registrar() { DescribedClass::register_keyval_ctor<T>(); }
   };
@@ -340,7 +344,7 @@ class KeyVal {
   /// a KeyVal::key_type using a
   /// std::basic_ostream<KeyVal::key_type::value_type>
   template <typename T,
-            typename = enable_if_t<not KeyVal::is_sequence<T>::value >>
+            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value >>
   KeyVal& assign(const key_type& path, const T& value) {
     auto abs_path = to_absolute_path(path);
     top_tree_->put(ptree::path_type{abs_path, separator}, value);
@@ -364,7 +368,7 @@ class KeyVal {
   KeyVal& assign(
       const key_type& path, const SequenceContainer& value,
       bool json_style = true,
-      enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* = nullptr) {
+      std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* = nullptr) {
     auto abs_path = to_absolute_path(path);
     ptree obj;
     size_t count = 0;
@@ -403,7 +407,7 @@ class KeyVal {
   /// @throws KeyVal::bad_input if path not found or cannot convert value
   /// representation to the desired type
   template <typename T,
-            typename = enable_if_t<not KeyVal::is_sequence<T>::value>>
+            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value>>
   T value(const key_type& path) const {
     auto abs_path = resolve_path(path);
     T result;
@@ -426,7 +430,7 @@ class KeyVal {
   template <typename SequenceContainer>
   SequenceContainer value(
       const key_type& path,
-      enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* =
+      std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* =
           nullptr) const {
     auto abs_path = resolve_path(path);
     using value_type = typename SequenceContainer::value_type;
@@ -466,7 +470,7 @@ class KeyVal {
   /// @param default_value
   /// @return value of type \c T
   template <typename T,
-            typename = enable_if_t<not KeyVal::is_sequence<T>::value>>
+            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value>>
   T value(const key_type& path, const T& default_value) const {
     auto abs_path = resolve_path(path);
     T result;
@@ -489,7 +493,7 @@ class KeyVal {
   /// @return std::shared_Ptr \c T
   /// @throws KeyVal::bad_input if key not found or cannot convert value
   /// representation to the desired type
-  template <typename T, typename = enable_if_t<Describable<T>::value>>
+  template <typename T, typename = std::enable_if_t<Describable<T>::value>>
   std::shared_ptr<T> class_ptr(const key_type& path = key_type()) const {
     // if this class already exists in the registry under path
     // (e.g. if the ptr was assigned programmatically), return immediately

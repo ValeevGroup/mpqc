@@ -4,7 +4,6 @@
 #include <iostream>
 
 namespace mpqc {
-namespace molecule {
 
 static std::map<int, std::string> atom_names = {{1, "H"},
                                                 {2, "He"},
@@ -26,7 +25,7 @@ std::string Atom::xyz_string(bool convert_to_angstroms) const {
     std::string name = atom_names[atomic_number_];
     name += ' ';
 
-    Vec3D center = center_;
+    Vector3d center = center_;
     if (convert_to_angstroms) {
         center *= bohr_to_ang;
     }
@@ -44,5 +43,4 @@ std::ostream &operator<<(std::ostream &os, Atom const &a) {
     return os;
 }
 
-} // namespace molecule
 } // namespace mpqc

@@ -2,18 +2,19 @@
 #ifndef MPQC_SCF_CADFBUILDERPRINTONLY_H
 #define MPQC_SCF_CADFBUILDERPRINTONLY_H
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../utility/time.h"
-#include "../../../../../utility/array_info.h"
-#include "../../../../../utility/vector_functions.h"
+#include <tiledarray.h>
 
-#include "../../../../../tensor/decomposed_tensor.h"
-#include "../../../../../tensor/mpqc_tile.h"
-#include "../../../../../tensor/tensor_transforms.h"
 
-#include "../../../../../ta_routines/array_to_eigen.h"
-#include "../../../../../ta_routines/minimize_storage.h"
+#include "mpqc/util/misc/time.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/chemistry/qc/scf/util.h"
+
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/tile.h"
+#include "mpqc/math/tensor/clr/tensor_transforms.h"
+
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
@@ -21,7 +22,7 @@
 #include <mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h>
 #include <mpqc/chemistry/qc/scf/cadf_helper_functions.h>
 
-#include <mpqc/util/array_info/tensor_store.h>
+#include <mpqc/math/external/tiledarray/tensor_store.h>
 
 #include <vector>
 #include <iostream>
@@ -49,8 +50,8 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 
  public:
   PrintOnlyCADFFockBuilder(
-      molecule::Molecule const &clustered_mol,
-      molecule::Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol,
+      Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints,
       bool use_forced_shape, double force_threshold,
@@ -63,8 +64,8 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
   }
 
   PrintOnlyCADFFockBuilder(
-      molecule::Molecule const &clustered_mol,
-      molecule::Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol,
+      Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints)
       : FockBuilder() {
@@ -77,7 +78,7 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
     // Form L^{-1} for M
     auto M_eig = array_ops::array_to_eigen(M_);
     using MatType = decltype(M_eig);
-    MatType L_inv_eig = MatType(Eig::LLT<MatType>(M_eig).matrixL()).inverse();
+    MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M_.trange().data()[0];  // Assumes symmetric blocking
     Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(

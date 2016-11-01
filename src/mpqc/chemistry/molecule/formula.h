@@ -19,7 +19,6 @@
 #include "./molecule.h"
 
 namespace mpqc {
-namespace molecule {
 
 /// @addtogroup ChemistryMolecule
 /// @{
@@ -52,7 +51,6 @@ class MolecularFormula {
 /// @}
 // end of addtogroup ChemistryMolecule
 
-}  // namespace molecule
 }  // namespace mpqc
 
 #endif  // SRC_MPQC_CHEMISTRY_MOLECULE_FORMULA_H_

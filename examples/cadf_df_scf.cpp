@@ -1,9 +1,10 @@
-#include "../common/namespaces.h"
-#include "../common/typedefs.h"
 
-#include "../include/tiledarray.h"
+#include <tiledarray.h>
 
-#include "../utility/make_array.h"
+
+
+
+#include "mpqc/util/meta/make_array.h"
 #include "../clustering/kmeans.h"
 
 #include "../molecule/atom.h"
@@ -17,7 +18,8 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/prettywriter.h>
 
-#include "../utility/json_handling.h"
+#include "mpqc/util/external/c++/memory"
+#include "mpqc/util/misc/json_handling.h"
 
 #include "../basis/atom_basisset.h"
 #include "../basis/basis_set.h"
@@ -26,13 +28,13 @@
 #include "../integrals/integrals.h"
 #include "../integrals/atomic_integral.h"
 
-#include "../utility/time.h"
-#include "../utility/array_info.h"
+#include "mpqc/util/misc/time.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 
-#include "../ta_routines/array_to_eigen.h"
-#include "../ta_routines/minimize_storage.h"
-#include "../ta_routines/diagonal_array.h"
-#include "../ta_routines/cholesky_inverse.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
+#include "mpqc/math/linalg/diagonal_array.h"
+#include "mpqc/math/linalg/cholesky_inverse.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/soad.h"
@@ -49,7 +51,7 @@
 #include "../scf/cadf_builder_forced_shape.h"
 #include "../scf/linear_cadf_builder.h"
 
-#include "../tensor/tensor_transforms.h"
+#include "mpqc/math/tensor/clr/tensor_transforms.h"
 
 #include "../f12/f12_utility.h"
 
@@ -105,14 +107,14 @@ int main(int argc, char *argv[]) {
   }
 
   std::fstream mol_file(mol_file_name);
-  auto atom_mol = molecule::Molecule(mol_file, false);
+  auto atom_mol = Molecule(mol_file, false);
   mol_file.close();
 
   out_doc.AddMember("number of atoms", int(atom_mol.atoms().size()),
                     out_doc.GetAllocator());
 
   auto nclusters = 0;
-  molecule::Molecule clustered_mol;
+  Molecule clustered_mol;
   if (in.HasMember("cluster by atom") && in["cluster by atom"].GetBool()) {
     clustered_mol = std::move(atom_mol);
     nclusters = clustered_mol.nclusters();
@@ -176,18 +178,18 @@ int main(int argc, char *argv[]) {
   const auto bs_array = utility::make_array(basis, basis);
 
   // Overlap ints
-  auto s0 = mpqc_time::fenced_now(world);
+  auto s0 = mpqc::fenced_now(world);
   auto overlap_e = ints::make_engine_pool(libint2::Operator::overlap,
                                           utility::make_array_of_refs(basis));
   auto S = ints::sparse_integrals(world, overlap_e, bs_array);
-  auto s1 = mpqc_time::fenced_now(world);
-  auto stime = mpqc_time::duration_in_s(s0, s1);
+  auto s1 = mpqc::fenced_now(world);
+  auto stime = mpqc::duration_in_s(s0, s1);
   if (world.rank() == 0) {
     std::cout << "Overlap time: " << stime << std::endl;
   }
   out_doc.AddMember("overlap time", stime, out_doc.GetAllocator());
 
-  auto h0 = mpqc_time::fenced_now(world);
+  auto h0 = mpqc::fenced_now(world);
   auto kinetic_e = ints::make_engine_pool(libint2::Operator::kinetic, utility::make_array_of_refs(basis));
   auto T = ints::sparse_integrals(world, kinetic_e, bs_array);
 
@@ -198,8 +200,8 @@ int main(int argc, char *argv[]) {
 
   decltype(T) H;
   H("i,j") = T("i,j") + V("i,j");
-  auto h1 = mpqc_time::fenced_now(world);
-  auto htime = mpqc_time::duration_in_s(h0, h1);
+  auto h1 = mpqc::fenced_now(world);
+  auto htime = mpqc::duration_in_s(h0, h1);
   if (world.rank() == 0) {
     std::cout << "Hcore time: " << stime << std::endl;
   }
@@ -210,17 +212,17 @@ int main(int argc, char *argv[]) {
                                       utility::make_array_of_refs(df_basis, basis));
 
   auto three_c_array = utility::make_array(df_basis, basis, basis);
-  auto m0 = mpqc_time::fenced_now(world);
+  auto m0 = mpqc::fenced_now(world);
 
   decltype(H) Mj = ints::sparse_integrals(world, eri_e, dfbs_array);
 
-  auto m1 = mpqc_time::fenced_now(world);
-  auto mtime = mpqc_time::duration_in_s(m0, m1);
+  auto m1 = mpqc::fenced_now(world);
+  auto mtime = mpqc::duration_in_s(m0, m1);
   if (world.rank() == 0) {
     std::cout << "Metric time: " << mtime << std::endl;
   }
   out_doc.AddMember("metric time", mtime, out_doc.GetAllocator());
-  auto Mj_store = utility::array_storage(Mj);
+  auto Mj_store = detail::array_storage(Mj);
 
   if (world.rank() == 0) {
     std::cout << "(X|Y) storage:\n"
@@ -237,19 +239,19 @@ int main(int argc, char *argv[]) {
   }
   out_doc.AddMember("schwarz thresh", schwarz_thresh, out_doc.GetAllocator());
 
-  auto ss0 = mpqc_time::fenced_now(world);
+  auto ss0 = mpqc::fenced_now(world);
   auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
   auto shr_screen = std::make_shared<ints::SchwarzScreen>(
       sbuilder(world, eri_e, df_basis, basis));
-  auto ss1 = mpqc_time::fenced_now(world);
-  auto sstime = mpqc_time::duration_in_s(ss0, ss1);
+  auto ss1 = mpqc::fenced_now(world);
+  auto sstime = mpqc::duration_in_s(ss0, ss1);
   if (world.rank() == 0) {
     std::cout << "Screener time: " << sstime << std::endl;
   }
 
   decltype(Mj) Mk;
-  TA::DistArray<TA::TensorD, SpPolicy> C_df_;
-  auto cdf0 = mpqc_time::fenced_now(world);
+  TA::DistArray<TA::TensorD, TA::SparsePolicy> C_df_;
+  auto cdf0 = mpqc::fenced_now(world);
   std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
   std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
   if (in.HasMember("Metric")) {
@@ -313,15 +315,15 @@ int main(int argc, char *argv[]) {
     Mk = Mj;
   }
 
-  auto cdf1 = mpqc_time::fenced_now(world);
-  auto cdftime = mpqc_time::duration_in_s(cdf0, cdf1);
+  auto cdf1 = mpqc::fenced_now(world);
+  auto cdftime = mpqc::duration_in_s(cdf0, cdf1);
   if (world.rank() == 0) {
     std::cout << "Cdf time: " << cdftime << std::endl;
   }
 
   out_doc.AddMember("Cdf build time", cdftime, out_doc.GetAllocator());
 
-  auto array_storage_Cdf = utility::array_storage(C_df_);
+  auto array_storage_Cdf = detail::array_storage(C_df_);
   if (world.rank() == 0) {
     std::cout << "C_df by atom storage = \n"
               << "\tFull   " << array_storage_Cdf[0] << "\n"
@@ -344,12 +346,12 @@ int main(int argc, char *argv[]) {
   if (in.HasMember("cluster by atom") && in["cluster by atom"].GetBool()) {
     C_df = C_df_;
   } else {
-    auto reblock0 = mpqc_time::fenced_now(world);
+    auto reblock0 = mpqc::fenced_now(world);
     C_df = scf::reblock_from_atoms(C_df_, obs_atom_to_cluster_map,
                                    dfbs_atom_to_cluster_map, by_cluster_trange);
 
-    auto reblock1 = mpqc_time::fenced_now(world);
-    auto reblock_time = mpqc_time::duration_in_s(reblock0, reblock1);
+    auto reblock1 = mpqc::fenced_now(world);
+    auto reblock_time = mpqc::duration_in_s(reblock0, reblock1);
     if (world.rank() == 0) {
       std::cout << "Reblock C_df time " << reblock_time << std::endl;
     }
@@ -358,23 +360,23 @@ int main(int argc, char *argv[]) {
   }
 
   // Begin scf
-  auto soad0 = mpqc_time::fenced_now(world);
+  auto soad0 = mpqc::fenced_now(world);
   decltype(S) F_soad =
       scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-  auto soad1 = mpqc_time::fenced_now(world);
-  auto soadtime = mpqc_time::duration_in_s(soad0, soad1);
+  auto soad1 = mpqc::fenced_now(world);
+  auto soadtime = mpqc::duration_in_s(soad0, soad1);
   if (world.rank() == 0) {
     std::cout << "SOAD time: " << soadtime << std::endl;
   }
   out_doc.AddMember("Soad Time", soadtime, out_doc.GetAllocator());
 
-  auto rxyz0 = mpqc_time::fenced_now(world);
+  auto rxyz0 = mpqc::fenced_now(world);
   auto multi_pool =
       ints::make_1body_shr_pool("emultipole1", basis, clustered_mol);
 
   auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
-  auto rxyz1 = mpqc_time::fenced_now(world);
-  auto rxyztime = mpqc_time::duration_in_s(rxyz0, rxyz1);
+  auto rxyz1 = mpqc::fenced_now(world);
+  auto rxyztime = mpqc::duration_in_s(rxyz0, rxyz1);
   if (world.rank() == 0) {
     std::cout << "dipole integrals time: " << rxyztime << std::endl;
   }
@@ -394,7 +396,7 @@ int main(int argc, char *argv[]) {
   auto dC_df =
       TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(clr_threshold));
 
-  array_storage_Cdf = utility::array_storage(dC_df);
+  array_storage_Cdf = detail::array_storage(dC_df);
   if (world.rank() == 0) {
     std::cout << "C_df storage = \n"
               << "\tFull   " << array_storage_Cdf[0] << "\n"
@@ -427,7 +429,7 @@ int main(int argc, char *argv[]) {
                                             0.0, "cholesky inverse", localize);
 
   std::unique_ptr<scf::DensityBuilder> d_builder =
-      make_unique<decltype(ebuilder)>(std::move(ebuilder));
+      std::std::make_unique<decltype(ebuilder)>(std::move(ebuilder));
 
   std::unique_ptr<scf::FockBuilder> f_builder;
 
@@ -449,16 +451,16 @@ int main(int argc, char *argv[]) {
 
   if (in.HasMember("stored integrals") &&
       in["stored integrals"].GetBool() == true) {
-    auto e0 = mpqc_time::fenced_now(world);
+    auto e0 = mpqc::fenced_now(world);
     auto deri3s =
         ints::sparse_integrals(world, eri_e, three_c_array, shr_screen,
                                tensor::TaToDecompTensor(clr_threshold));
-    auto e1 = mpqc_time::fenced_now(world);
-    auto etime = mpqc_time::duration_in_s(e0, e1);
+    auto e1 = mpqc::fenced_now(world);
+    auto etime = mpqc::duration_in_s(e0, e1);
     if (world.rank() == 0) {
       std::cout << "3 center time: " << etime << std::endl;
     }
-    auto e_store = utility::array_storage(deri3s);
+    auto e_store = detail::array_storage(deri3s);
     if (world.rank() == 0) {
       std::cout << "E storage:"
                 << "\n\tFull     = " << e_store[0]
@@ -475,14 +477,14 @@ int main(int argc, char *argv[]) {
     scf::ONCADFFockBuilder<decltype(deri3s)> test_scf(
         dMj, dMk, deri3s, dC_df, clr_threshold, force_thresh, mo_thresh,
         force_shape);
-    f_builder = make_unique<decltype(test_scf)>(std::move(test_scf));
+    f_builder = std::make_unique<decltype(test_scf)>(std::move(test_scf));
 
     out_doc.AddMember("Stored integrals", true, out_doc.GetAllocator());
   } else {
     scf::ONCADFFockBuilder<decltype(deri3)> test_scf(
         dMj, dMk, deri3, dC_df, clr_threshold, force_thresh, mo_thresh,
         force_shape);
-    f_builder = make_unique<decltype(test_scf)>(std::move(test_scf));
+    f_builder = std::make_unique<decltype(test_scf)>(std::move(test_scf));
     out_doc.AddMember("Stored integrals", false, out_doc.GetAllocator());
   }
 

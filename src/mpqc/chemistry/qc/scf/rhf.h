@@ -5,9 +5,9 @@
 #ifndef MPQC_CHEMISTRY_QC_SCF_RHF_H
 #define MPQC_CHEMISTRY_QC_SCF_RHF_H
 
-#include "../../../../../common/typedefs.h"
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../utility/json_handling.h"
+
+#include <tiledarray.h>
+#include "mpqc/util/misc/json_handling.h"
 #include <mpqc/chemistry/qc/wfn/ao_wfn.h>
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/scf/density_builder.h>

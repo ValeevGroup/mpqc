@@ -8,8 +8,6 @@
 MPQC_CLASS_EXPORT_KEY2("Basis", mpqc::basis::Basis);
 namespace mpqc {
 
-namespace mol = molecule;
-
 namespace basis {
 
 Basis::Basis() = default;
@@ -32,7 +30,7 @@ Basis::Basis(const KeyVal &kv) {
   BasisSet basis_set(basis_name);
 
   // molecule
-  auto mol_ptr = kv.keyval("molecule").class_ptr<mpqc::molecule::Molecule>();
+  auto mol_ptr = kv.keyval("molecule").class_ptr<mpqc::Molecule>();
 
   // find world from one level above
   madness::World* world = kv.value<madness::World*>("$:world");
@@ -116,7 +114,7 @@ std::ostream &operator<<(std::ostream &os, Basis const &b) {
 }
 
 Basis parallel_construct_basis(madness::World &world, const BasisSet &basis_set,
-                               const mpqc::molecule::Molecule &mol) {
+                               const mpqc::Molecule &mol) {
   Basis basis;
 
   if (world.rank() == 0) {

@@ -15,7 +15,7 @@ set(sources
 )
 
 add_library(MPQCbasis ${sources})
-target_link_libraries(MPQCbasis MPQCmolecule utility)
+target_link_libraries(MPQCbasis MPQCmolecule)
 
 add_executable(libint2_basis_test EXCLUDE_FROM_ALL libint2_basis_test.cpp)
 target_link_libraries(libint2_basis_test ${LIBINT2_LIBRARIES} MPQCbasis)

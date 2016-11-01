@@ -1,7 +1,7 @@
-#include "../common/namespaces.h"
-#include "../common/typedefs.h"
+#include <tiledarray.h>
 
-#include "../include/tiledarray.h"
+
+
 
 #include "../clustering/kmeans.h"
 
@@ -17,23 +17,23 @@
 
 #include "../integrals/integrals.h"
 
-#include "../utility/time.h"
-#include "../utility/make_array.h"
-#include "../utility/array_info.h"
+#include "mpqc/util/misc/time.h"
+#include "mpqc/util/meta/make_array.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/soad.h"
 #include "../scf/orbital_localization.h"
 #include "../scf/clusterd_coeffs.h"
+#include "../src/mpqc/math/tensor/clr/tile.h"
 
-#include "../tensor/decomposed_tensor.h"
-#include "../tensor/decomposed_tensor_nonintrusive_interface.h"
-#include "../tensor/mpqc_tile.h"
-#include "../tensor/tensor_transforms.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_nonintrusive_interface.h"
+#include "mpqc/math/tensor/clr/tensor_transforms.h"
 
-#include "../ta_routines/diagonal_array.h"
-#include "../ta_routines/array_to_eigen.h"
-#include "../ta_routines/minimize_storage.h"
+#include "mpqc/math/linalg/diagonal_array.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;
@@ -260,9 +260,9 @@ class to_ta_tile {
 
 class ThreeCenterScf {
   private:
-    using array_type = DArray<2, TA::TensorD, SpPolicy>;
+    using array_type = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
     using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
-    using darray_type = DArray<2, dtile, SpPolicy>;
+    using darray_type = TA::DistArray<dtile, TA::SparsePolicy>;
 
     array_type H_;
     array_type S_;
@@ -304,7 +304,7 @@ class ThreeCenterScf {
         auto F_eig = array_ops::array_to_eigen(F_);
         auto S_eig = array_ops::array_to_eigen(S_);
 
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+        Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         decltype(S_eig) C = es.eigenvectors().leftCols(occ);
         auto tr_ao = S_.trange().data()[0];
@@ -313,22 +313,22 @@ class ThreeCenterScf {
         C_ = array_ops::eigen_to_array<TA::TensorD>(H_.world(), C, tr_ao,
                                                     tr_occ);
 
-        auto loc0 = mpqc_time::fenced_now(world);
+        auto loc0 = mpqc::fenced_now(world);
 
         auto U = mpqc::scf::BoysLocalization{}(C_, r_xyz_ints_);
         C_("mu,i") = C_("mu,k") * U("k,i");
 
-        auto loc1 = mpqc_time::fenced_now(world);
-        localization_times_.push_back(mpqc_time::duration_in_s(loc0, loc1));
+        auto loc1 = mpqc::fenced_now(world);
+        localization_times_.push_back(mpqc::duration_in_s(loc0, loc1));
 
-        auto cluster0 = mpqc_time::fenced_now(world);
+        auto cluster0 = mpqc::fenced_now(world);
 
         auto obs_ntiles = C_.trange().tiles_range().extent()[0];
         scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
 
-        auto cluster1 = mpqc_time::fenced_now(world);
+        auto cluster1 = mpqc::fenced_now(world);
         clustering_times_.push_back(
-              mpqc_time::duration_in_s(cluster0, cluster1));
+              mpqc::duration_in_s(cluster0, cluster1));
 
         D_("i,j") = C_("i,k") * C_("j,k");
     }
@@ -343,7 +343,7 @@ class ThreeCenterScf {
         darray_type dD_ = TA::to_new_tile_type(D_, to_dtile(clr_thresh_));
 
         darray_type J;
-        auto j0 = mpqc_time::fenced_now(world);
+        auto j0 = mpqc::fenced_now(world);
         auto old_thresh = TA::SparseShape<float>::threshold();
         TA::SparseShape<float>::threshold(std::min(1e-18f, old_thresh));
 
@@ -351,14 +351,14 @@ class ThreeCenterScf {
                       * (dV_inv_oh_("Y,Z")
                          * (dV_inv_oh_("Z,X") * (eri3("X,r,s") * dD_("r,s"))));
 
-        auto j1 = mpqc_time::fenced_now(world);
+        auto j1 = mpqc::fenced_now(world);
         TA::SparseShape<float>::threshold(old_thresh);
 
-        j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
+        j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
-        auto w0 = mpqc_time::fenced_now(world);
+        auto w0 = mpqc::fenced_now(world);
 
-        DArray<3, dtile, SpPolicy> W;
+        TA::DistArray<dtile, TA::SparsePolicy> W;
         W("X, mu, i") = B("X, mu, nu") * dC_("nu, i");
 
         if (clr_thresh_ != 0 && tensor::detail::recompress) {
@@ -392,15 +392,15 @@ class ThreeCenterScf {
 
         W("X,i,mu") = W("X,mu,i");
 
-        auto w1 = mpqc_time::fenced_now(world);
-        w_times_.push_back(mpqc_time::duration_in_s(w0, w1));
+        auto w1 = mpqc::fenced_now(world);
+        w_times_.push_back(mpqc::duration_in_s(w0, w1));
 
-        auto w_store = utility::array_storage(W);
+        auto w_store = detail::array_storage(W);
         w_sparse_store_.push_back(w_store[1]);
         w_sparse_clr_store_.push_back(w_store[2]);
         w_full_storage_ = w_store[0];
 
-        auto occk0 = mpqc_time::fenced_now(world);
+        auto occk0 = mpqc::fenced_now(world);
 
         // OCC RI
         darray_type K, Kij, Sc;
@@ -410,15 +410,15 @@ class ThreeCenterScf {
         K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
                       - (Sc("mu,i") * Kij("i,j")) * Sc("nu,j");
 
-        auto occk1 = mpqc_time::fenced_now(world);
-        occ_k_times_.push_back(mpqc_time::duration_in_s(occk0, occk1));
+        auto occk1 = mpqc::fenced_now(world);
+        occ_k_times_.push_back(mpqc::duration_in_s(occk0, occk1));
 
-        auto k0 = mpqc_time::fenced_now(world);
+        auto k0 = mpqc::fenced_now(world);
 
         K("mu, nu") = W("X,i,mu") * W("X,i,nu");
 
-        auto k1 = mpqc_time::fenced_now(world);
-        k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
+        auto k1 = mpqc::fenced_now(world);
+        k_times_.push_back(mpqc::duration_in_s(k0, k1));
 
         darray_type dF_;
         dF_("i,j") = dH_("i,j") + 2 * J("i,j") - K("i,j");
@@ -441,7 +441,7 @@ class ThreeCenterScf {
               clr_thresh_(clr_thresh) {
 
         dV_inv_oh_ = TA::to_new_tile_type(V_inv_oh, to_dtile(clr_thresh_));
-        auto dl_sizes = utility::array_storage(dV_inv_oh_);
+        auto dl_sizes = detail::array_storage(dV_inv_oh_);
 
         if (dV_inv_oh_.world().rank() == 0) {
             std::cout << "V_inv storage:"
@@ -466,7 +466,7 @@ class ThreeCenterScf {
 
         while (iter < max_iters && (thresh < error || thresh < rms_error)
                && (thresh / 100.0 < error && thresh / 100.0 < rms_error)) {
-            auto s0 = mpqc_time::fenced_now(world);
+            auto s0 = mpqc::fenced_now(world);
             form_fock(eri3, B);
 
             auto current_energy = energy();
@@ -489,8 +489,8 @@ class ThreeCenterScf {
             // Lastly update density
             compute_density(occ_);
 
-            auto s1 = mpqc_time::fenced_now(world);
-            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
+            auto s1 = mpqc::fenced_now(world);
+            scf_times_.push_back(mpqc::duration_in_s(s0, s1));
 
 
             if (world.rank() == 0) {
@@ -704,11 +704,11 @@ int main(int argc, char *argv[]) {
         auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
         auto V_eig = array_ops::array_to_eigen(Vmetric);
 
-        MatrixD Leig = Eig::LLT<MatrixD>(V_eig).matrixL();
-        MatrixD L_inv_eig = Leig.inverse();
+        RowMatrixXd Leig = Eigen::LLT<RowMatrixXd>(V_eig).matrixL();
+        RowMatrixXd L_inv_eig = Leig.inverse();
 
-        Eig::SelfAdjointEigenSolver<MatrixD> es(V_eig);
-        MatrixD V_inv_oh_eig = es.operatorInverseSqrt();
+        Eigen::SelfAdjointEigenSolver<RowMatrixXd> es(V_eig);
+        RowMatrixXd V_inv_oh_eig = es.operatorInverseSqrt();
 
         auto tr_V = Vmetric.trange().data()[0];
         L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig, tr_V,
@@ -727,12 +727,12 @@ int main(int argc, char *argv[]) {
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               sbuilder(world, eri_e, df_basis, basis));
 
-        auto soad0 = mpqc_time::fenced_now(world);
+        auto soad0 = mpqc::fenced_now(world);
         auto F_soad = scf::fock_from_soad(world, clustered_mol, basis,
                                           eri_e, H);
 
-        auto soad1 = mpqc_time::fenced_now(world);
-        auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
+        auto soad1 = mpqc::fenced_now(world);
+        auto soad_time = mpqc::duration_in_s(soad0, soad1);
         if (world.rank() == 0) {
             std::cout << "Soad Time: " << soad_time << std::endl;
         }
@@ -743,7 +743,7 @@ int main(int argc, char *argv[]) {
 
         JobSummary job_summary;
 
-        DArray<2, TA::TensorD, SpPolicy> Fao;
+        TA::DistArray<TA::TensorD, TA::SparsePolicy> Fao;
 
         auto decomp_3d = [&](TA::TensorD &&t) {
             auto range = t.range();
@@ -792,7 +792,7 @@ int main(int argc, char *argv[]) {
         }
         double scf_time = 0;
         using BTile = tensor::Tile<tensor::DecomposedTensor<double>>;
-        DArray<3, BTile, SpPolicy> B;
+        TA::DistArray<BTile, TA::SparsePolicy> B;
 
         if (use_direct_ints) {
 
@@ -800,20 +800,20 @@ int main(int argc, char *argv[]) {
             std::array<double, 3> b_storage;
             {
                 world.gop.fence();
-                auto int0 = mpqc_time::fenced_now(world);
+                auto int0 = mpqc::fenced_now(world);
 
                 auto eri3 = ints::direct_sparse_integrals(
                       world, eri_e, three_c_array, shr_screen, decomp_3d);
 
-                auto int1 = mpqc_time::fenced_now(world);
-                auto eri3_time = mpqc_time::duration_in_s(int0, int1);
+                auto int1 = mpqc::fenced_now(world);
+                auto eri3_time = mpqc::duration_in_s(int0, int1);
 
 
                 if (world.rank() == 0) {
                     std::cout << "Eri3 Integral time: " << eri3_time
                               << std::endl;
                 }
-                eri3_storage = utility::array_storage(eri3.array());
+                eri3_storage = detail::array_storage(eri3.array());
                 if (world.rank() == 0) {
                     std::cout << "Eri3 Integral Storage:\n";
                     std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
@@ -829,7 +829,7 @@ int main(int argc, char *argv[]) {
                 auto old_compress = tensor::detail::recompress;
                 tensor::detail::recompress = true;
 
-                auto B0 = mpqc_time::fenced_now(world);
+                auto B0 = mpqc::fenced_now(world);
                 B("X,mu,nu") = dL_inv("X,Y") * eri3("Y,mu,nu");
                 if (clr_threshold != 0) {
                     TA::foreach_inplace(
@@ -861,13 +861,13 @@ int main(int argc, char *argv[]) {
                 } else {
                     B.truncate();
                 }
-                auto B1 = mpqc_time::fenced_now(world);
-                auto Btime = mpqc_time::duration_in_s(B0, B1);
+                auto B1 = mpqc::fenced_now(world);
+                auto Btime = mpqc::duration_in_s(B0, B1);
 
                 if (world.rank() == 0) {
                     std::cout << "B time = " << Btime << std::endl;
                 }
-                b_storage = utility::array_storage(B);
+                b_storage = detail::array_storage(B);
                 if (world.rank() == 0) {
                     std::cout << "B Storage:\n";
                     std::cout << "\tAll Full: " << b_storage[0] << "\n";
@@ -896,10 +896,10 @@ int main(int argc, char *argv[]) {
             world.gop.fence();
             TA::SparseShape<float>::threshold(old_thresh);
 
-            auto scf0 = mpqc_time::fenced_now(world);
+            auto scf0 = mpqc::fenced_now(world);
             scf.solve(30, 1e-11, eri3, B);
-            auto scf1 = mpqc_time::fenced_now(world);
-            scf_time = mpqc_time::duration_in_s(scf0, scf1);
+            auto scf1 = mpqc::fenced_now(world);
+            scf_time = mpqc::duration_in_s(scf0, scf1);
 
             job_summary = scf.init_summary();
 
@@ -935,10 +935,10 @@ int main(int argc, char *argv[]) {
         auto F_eig = array_ops::array_to_eigen(Fao);
         auto S_eig = array_ops::array_to_eigen(S);
 
-        Eig::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
+        Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
 
-        auto vec_ptr = std::make_shared<Eig::VectorXd>(es.eigenvalues());
+        auto vec_ptr = std::make_shared<Eigen::VectorXd>(es.eigenvalues());
 
         decltype(S_eig) Ceigi = es.eigenvectors().leftCols(mp2_occ);
         decltype(S_eig) Ceigv = es.eigenvectors().rightCols(mp2_vir);
@@ -966,8 +966,8 @@ int main(int argc, char *argv[]) {
                                                           Q_thresh));
             auto dS = TA::to_new_tile_type(S, tensor::TaToDecompTensor(
                                                           Q_thresh));
-            auto Q_storage = utility::array_storage(dQpao);
-            auto S_storage = utility::array_storage(dS);
+            auto Q_storage = detail::array_storage(dQpao);
+            auto S_storage = detail::array_storage(dS);
             if (world.rank() == 0) {
                 std::cout << "Q Thresh = " << Q_thresh << "\n"
                           << "\tQ Full   = " << Q_storage[0] << "\n"
@@ -1002,7 +1002,7 @@ int main(int argc, char *argv[]) {
             auto ldQpao
                   = TA::to_new_tile_type(LinDepQpao,
                                          tensor::TaToDecompTensor(Q_thresh));
-            auto Q_storage = utility::array_storage(ldQpao);
+            auto Q_storage = detail::array_storage(ldQpao);
             if (world.rank() == 0) {
                 std::cout << "Q Thresh = " << Q_thresh << "\n"
                           << "\tQ Full   = " << Q_storage[0] << "\n"
@@ -1016,7 +1016,7 @@ int main(int argc, char *argv[]) {
             W("X, mu, rho") = B("X, mu, nu") * nldQpao("nu, rho");
             ta_routines::minimize_storage(W, Q_thresh/100);
 
-            auto W_storage = utility::array_storage(W);
+            auto W_storage = detail::array_storage(W);
             if (world.rank() == 0) {
                 std::cout << "Q Thresh = " << Q_thresh << "\n"
                           << "\tW Full   = " << W_storage[0] << "\n"
@@ -1090,8 +1090,8 @@ int main(int argc, char *argv[]) {
                       = ints::sparse_integrals(world, eri_e, three_c_array,
                                                shr_screen);
 
-                auto mp20 = mpqc_time::fenced_now(world);
-                DArray<3, TA::TensorD, TA::SparsePolicy> Wiv;
+                auto mp20 = mpqc::fenced_now(world);
+                TA::DistArray<TA::TensorD, TA::SparsePolicy> Wiv;
                 Wiv("Y,i,a") = eri3_mp2("Y,nu,mu") * Ci("mu,i") * Cv("nu,a");
                 Wiv("X,i,a") = L_inv("X,Y") * Wiv("Y,i,a");
 
@@ -1100,10 +1100,10 @@ int main(int argc, char *argv[]) {
                     using result_type = double;
                     using argument_type = TA::Tensor<double>;
 
-                    std::shared_ptr<Eig::VectorXd> vec_;
+                    std::shared_ptr<Eigen::VectorXd> vec_;
                     unsigned int n_occ_;
 
-                    Mp2Red(std::shared_ptr<Eig::VectorXd> vec, int n_occ)
+                    Mp2Red(std::shared_ptr<Eigen::VectorXd> vec, int n_occ)
                             : vec_(std::move(vec)), n_occ_(n_occ) {}
                     Mp2Red(Mp2Red const &) = default;
 
@@ -1143,15 +1143,15 @@ int main(int argc, char *argv[]) {
                 };
 
 
-                DArray<4, TA::TensorD, TA::SparsePolicy> G;
+                TA::DistArray<TA::TensorD, TA::SparsePolicy> G;
                 G("i,a,j,b") = Wiv("X,i,a") * Wiv("X,j,b");
 
                 double energy_mp2
                       = (G("i,a,j,b") * (2 * G("i,a,j,b") - G("i,b,j,a")))
                               .reduce(Mp2Red(vec_ptr, mp2_occ))
                               .get();
-                auto mp21 = mpqc_time::fenced_now(world);
-                auto mp2_time = mpqc_time::duration_in_s(mp20, mp21);
+                auto mp21 = mpqc::fenced_now(world);
+                auto mp2_time = mpqc::duration_in_s(mp20, mp21);
 
                 if (world.rank() == 0) {
                     std::cout << "Energy from MP2: " << energy_mp2 << std::endl;

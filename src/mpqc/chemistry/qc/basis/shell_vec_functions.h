@@ -3,8 +3,8 @@
 #ifndef MPQC_BASIS_SHELLVECFUNCTIONS_H
 #define MPQC_BASIS_SHELLVECFUNCTIONS_H
 
-#include "../../../../../common/typedefs.h"
-#include <mpqc/chemistry/qc/basis/basis_fwd.h>
+
+#include <mpqc/chemistry/qc/basis/basis.h>
 
 #include <libint2/shell.h>
 
@@ -21,6 +21,10 @@ int64_t max_nprim(ShellVec const &);
 /*! \brief Returns the maximum number of primatives of any shell in the vector.
  */
 int64_t nfunctions(ShellVec const &);
+
+// reblock based on blocksize
+std::vector<std::vector<libint2::Shell>>
+        reblock_basis(std::vector<libint2::Shell> shells, std::size_t blocksize);
 
 } // namespace basis
 } // namespace mpqc

@@ -3,7 +3,6 @@
 #include "../molecule/molecule.h"
 
 using namespace mpqc;
-using namespace molecule;
 
 int main(int argc, char **argv) {
     AtomBasedCluster h20f(Atom({0, -1, 1}, 1, 1), Atom({0, 1, 1}, 1, 1),

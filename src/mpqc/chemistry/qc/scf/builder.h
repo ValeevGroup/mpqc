@@ -2,10 +2,11 @@
 #ifndef MPQC_SCF_BUILDER_H
 #define MPQC_SCF_BUILDER_H
 
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../common/namespaces.h"
+#include <tiledarray.h>
 
-#include "../../../../../utility/json_handling.h"
+
+
+#include "mpqc/util/misc/json_handling.h"
 #include <mpqc/chemistry/qc/expression/formula_registry.h>
 
 #include <string>

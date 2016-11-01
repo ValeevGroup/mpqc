@@ -5,12 +5,11 @@
 #ifndef MPQC_SCF_SCF_H
 #define MPQC_SCF_SCF_H
 
-
-#include "../../../../../common/typedefs.h"
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/scf/density_builder.h>
-#include "../../../../../utility/json_handling.h"
+#include "mpqc/util/misc/json_handling.h"
+#include "mpqc/util/external/c++/memory"
 
 #include <memory>
 
@@ -49,8 +48,8 @@ class ClosedShellSCF {
                    array_type const &F_guess = array_type{})
             : H_(H),
               S_(S),
-              f_builder_(make_unique<FBuilder>(std::move(f_builder))),
-              d_builder_(make_unique<DBuilder>(std::move(d_builder))),
+              f_builder_(std::make_unique<FBuilder>(std::move(f_builder))),
+              d_builder_(std::make_unique<DBuilder>(std::move(d_builder))),
               repulsion_(rep) {
 
         if (F_guess.is_initialized()) {

@@ -1,7 +1,9 @@
 #include <madness/world/worldmem.h>
 #include <mpqc/chemistry/qc/scf/scf.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
-#include "../../../../../utility/time.h"
+#include "mpqc/util/misc/time.h"
+
+
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 
 namespace mpqc {
@@ -32,11 +34,11 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
     while (iter < max_iters && (thresh < (error / old_energy)
                                 || thresh < (rms_error / volume))) {
 
-        auto s0 = mpqc_time::fenced_now(world);
+        auto s0 = mpqc::fenced_now(world);
 
         madness::print_meminfo(world.rank(), "ClosedShellSCF:before_fock");
         build_F();
-        auto b1 = mpqc_time::fenced_now(world);
+        auto b1 = mpqc::fenced_now(world);
         madness::print_meminfo(world.rank(), "ClosedShellSCF:after_fock");
 
         auto current_energy = energy();
@@ -54,14 +56,14 @@ bool ClosedShellSCF::solve(int64_t max_iters, double thresh) {
         diis_.extrapolate(F_diis_, Grad);
         madness::print_meminfo(world.rank(), "ClosedShellSCF:diis");
 
-        auto d0 = mpqc_time::fenced_now(world);
+        auto d0 = mpqc::fenced_now(world);
         compute_density();
-        auto s1 = mpqc_time::fenced_now(world);
+        auto s1 = mpqc::fenced_now(world);
         madness::print_meminfo(world.rank(), "ClosedShellSCF:density");
 
-        scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
-        d_times_.push_back(mpqc_time::duration_in_s(d0, s1));
-        build_times_.push_back(mpqc_time::duration_in_s(s0, b1));
+        scf_times_.push_back(mpqc::duration_in_s(s0, s1));
+        d_times_.push_back(mpqc::duration_in_s(d0, s1));
+        build_times_.push_back(mpqc::duration_in_s(s0, b1));
 
         if (world.rank() == 0) {
             std::cout << "iteration: " << iter << "\n"

@@ -2,18 +2,18 @@
 #ifndef MPQC_SCF_CLRCADFBUILDER_H
 #define MPQC_SCF_CLRCADFBUILDER_H
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../utility/time.h"
-#include "../../../../../utility/array_info.h"
-#include "../../../../../utility/vector_functions.h"
 
-#include "../../../../../tensor/decomposed_tensor.h"
-#include "../../../../../tensor/mpqc_tile.h"
-#include "../../../../../tensor/tensor_transforms.h"
+#include <tiledarray.h>
+#include "mpqc/util/misc/time.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/chemistry/qc/scf/util.h"
 
-#include "../../../../../ta_routines/array_to_eigen.h"
-#include "../../../../../ta_routines/minimize_storage.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/tile.h"
+#include "mpqc/math/tensor/clr/tensor_transforms.h"
+
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
@@ -90,8 +90,8 @@ class ClrCADFFockBuilder : public FockBuilder {
 
  public:
   ClrCADFFockBuilder(
-      molecule::Molecule const &clustered_mol,
-      molecule::Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol,
+      Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints,
       bool use_forced_shape, double force_threshold, double lcao_chop_threshold,
@@ -107,7 +107,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 
     dE_ = make_three_center_integrals(obs, dfbs);
 
-    E_clr_sizes_ = utility::array_storage(dE_);
+    E_clr_sizes_ = detail::array_storage(dE_);
     if (dE_.world().rank() == 0) {
       std::cout << "E with clr storage:\n"
                 << "\tDense  " << E_clr_sizes_[0] << "\n"
@@ -117,15 +117,15 @@ class ClrCADFFockBuilder : public FockBuilder {
   }
 
   ClrCADFFockBuilder(
-      molecule::Molecule const &clustered_mol,
-      molecule::Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol,
+      Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints,
       double clr_threshold)
       : FockBuilder(), clr_threshold_(clr_threshold) {
     // Grab needed ao integrals
     E_ = ao_ints.compute(L"( Κ | G|κ λ)");
-    E_J_sizes_ = utility::array_storage(E_);
+    E_J_sizes_ = detail::array_storage(E_);
     if (E_.world().rank() == 0) {
       std::cout << "E for J storage:\n"
                 << "\tDense  " << E_J_sizes_[0] << "\n"
@@ -138,7 +138,7 @@ class ClrCADFFockBuilder : public FockBuilder {
         M, tensor::TaToDecompTensor(clr_threshold_, compress_M));
     M_.world().gop.fence();
 
-    auto m_store = utility::array_storage(M_);
+    auto m_store = detail::array_storage(M_);
     if (E_.world().rank() == 0) {
       std::cout << "M storage:\n"
                 << "\tDense  " << m_store[0] << "\n"
@@ -149,7 +149,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     // Form L^{-1} for M
     auto M_eig = array_ops::array_to_eigen(M);
     using MatType = decltype(M_eig);
-    MatType L_inv_eig = MatType(Eig::LLT<MatType>(M_eig).matrixL()).inverse();
+    MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M.trange().data()[0];  // Assumes symmetric blocking
     Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(
@@ -178,7 +178,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     C_df_ =
         TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(clr_threshold_));
     E_.world().gop.fence();
-    auto c_df_store = utility::array_storage(C_df_);
+    auto c_df_store = detail::array_storage(C_df_);
     if (E_.world().rank() == 0) {
       std::cout << "C_df storage:\n"
                 << "\tDense  " << c_df_store[0] << "\n"
@@ -352,14 +352,14 @@ class ClrCADFFockBuilder : public FockBuilder {
  private:
   ArrayType compute_J(ArrayType const &D) {
     auto &world = D.world();
-    auto j0 = mpqc_time::fenced_now(world);
+    auto j0 = mpqc::fenced_now(world);
     ArrayType J;
     J("mu, nu") =
         E_("X, mu, nu") *
         (Mchol_inv_("Z, X") *
          (Mchol_inv_("Z, Y") * (E_("Y, rho, sigma") * D("rho, sigma"))));
-    auto j1 = mpqc_time::fenced_now(world);
-    j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
+    auto j1 = mpqc::fenced_now(world);
+    j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
     return J;
   }
@@ -374,10 +374,10 @@ class ClrCADFFockBuilder : public FockBuilder {
     ArrayType C;
     C("mu, i") = C_in("mu, i");
     // Capture C sizes
-    lcao_sizes_.push_back(utility::array_storage(C));
+    lcao_sizes_.push_back(detail::array_storage(C));
 
     if (lcao_chop_threshold_ != 0.0) {
-      auto chop0 = mpqc_time::fenced_now(world);
+      auto chop0 = mpqc::fenced_now(world);
       TA::foreach_inplace(C, [&](TA::Tensor<double> &t) {
         const auto norm = t.norm();
         if (norm > lcao_chop_threshold_) {
@@ -386,10 +386,10 @@ class ClrCADFFockBuilder : public FockBuilder {
           return 0.0;
         }
       });
-      auto chop1 = mpqc_time::fenced_now(world);
-      lcao_chop_times_.push_back(mpqc_time::duration_in_s(chop0, chop1));
+      auto chop1 = mpqc::fenced_now(world);
+      lcao_chop_times_.push_back(mpqc::duration_in_s(chop0, chop1));
 
-      lcao_chopped_sizes_.push_back(utility::array_storage(C));
+      lcao_chopped_sizes_.push_back(detail::array_storage(C));
     }
 
     bool compress_C = false;
@@ -397,12 +397,12 @@ class ClrCADFFockBuilder : public FockBuilder {
         C, tensor::TaToDecompTensor(clr_threshold_, compress_C));
 
     // Contract C_df with orbitals
-    auto c_mo0 = mpqc_time::fenced_now(world);
+    auto c_mo0 = mpqc::fenced_now(world);
     C_mo("X, i, mu") = C_df_("X, mu, nu") * dC("nu, i");
     C_mo.truncate();
-    auto c_mo1 = mpqc_time::fenced_now(world);
-    c_mo_times_.push_back(mpqc_time::duration_in_s(c_mo0, c_mo1));
-    c_mo_sizes_.push_back(utility::array_storage(C_mo));
+    auto c_mo1 = mpqc::fenced_now(world);
+    c_mo_times_.push_back(mpqc::duration_in_s(c_mo0, c_mo1));
+    c_mo_sizes_.push_back(detail::array_storage(C_mo));
 
     // Get forced output shape
     TA::SparseShape<float> forced_shape;
@@ -444,67 +444,67 @@ class ClrCADFFockBuilder : public FockBuilder {
         return t;
       };
 
-      auto shape_time0 = mpqc_time::fenced_now(world);
+      auto shape_time0 = mpqc::fenced_now(world);
       forced_shape = C_mo.shape().transform(cadf_df_k_shape);
-      auto shape_time1 = mpqc_time::fenced_now(world);
+      auto shape_time1 = mpqc::fenced_now(world);
       shape_times_.push_back(
-          mpqc_time::duration_in_s(shape_time0, shape_time1));
+          mpqc::duration_in_s(shape_time0, shape_time1));
     }
 
     // Construct F_df
-    auto f_df0 = mpqc_time::fenced_now(world);
+    auto f_df0 = mpqc::fenced_now(world);
     if (!use_forced_shape_) {
-      auto emo0 = mpqc_time::fenced_now(world);
+      auto emo0 = mpqc::fenced_now(world);
       DArrayType E_mo;
       E_mo("X,i,mu") = dE_("X, mu, nu") * dC("nu,i");
       E_mo.truncate();
-      auto emo1 = mpqc_time::fenced_now(world);
-      e_mo_times_.push_back(mpqc_time::duration_in_s(emo0, emo1));
-      e_mo_sizes_.push_back(utility::array_storage(E_mo));
+      auto emo1 = mpqc::fenced_now(world);
+      e_mo_times_.push_back(mpqc::duration_in_s(emo0, emo1));
+      e_mo_sizes_.push_back(detail::array_storage(E_mo));
 
-      auto rdf0 = mpqc_time::fenced_now(world);
+      auto rdf0 = mpqc::fenced_now(world);
       DArrayType R_df;
       R_df("X, i, mu") = M_("X, Y") * C_mo("Y, i, mu");
-      auto rdf1 = mpqc_time::fenced_now(world);
-      r_df_times_.push_back(mpqc_time::duration_in_s(rdf0, rdf1));
+      auto rdf1 = mpqc::fenced_now(world);
+      r_df_times_.push_back(mpqc::duration_in_s(rdf0, rdf1));
       F_df("X, i, mu") = E_mo("X, i, mu") - 0.5 * R_df("X, i, mu");
     } else {
-      auto emo0 = mpqc_time::fenced_now(world);
+      auto emo0 = mpqc::fenced_now(world);
       DArrayType E_mo;
       E_mo("X,i,mu") = (dE_("X, mu, nu") * dC("nu,i")).set_shape(forced_shape);
       E_mo.truncate();
-      auto emo1 = mpqc_time::fenced_now(world);
-      e_mo_times_.push_back(mpqc_time::duration_in_s(emo0, emo1));
-      e_mo_sizes_.push_back(utility::array_storage(E_mo));
+      auto emo1 = mpqc::fenced_now(world);
+      e_mo_times_.push_back(mpqc::duration_in_s(emo0, emo1));
+      e_mo_sizes_.push_back(detail::array_storage(E_mo));
 
-      auto rdf0 = mpqc_time::fenced_now(world);
+      auto rdf0 = mpqc::fenced_now(world);
       DArrayType R_df;
       R_df("X, i, mu") =
           (M_("X, Y") * C_mo("Y, i, mu")).set_shape(forced_shape);
-      auto rdf1 = mpqc_time::fenced_now(world);
-      r_df_times_.push_back(mpqc_time::duration_in_s(rdf0, rdf1));
+      auto rdf1 = mpqc::fenced_now(world);
+      r_df_times_.push_back(mpqc::duration_in_s(rdf0, rdf1));
 
       F_df("X, i, mu") = E_mo("X, i, mu") - 0.5 * R_df("X, i, mu");
     }
     F_df.truncate();
-    auto f_df1 = mpqc_time::fenced_now(world);
-    f_df_times_.push_back(mpqc_time::duration_in_s(f_df0, f_df1));
-    f_df_sizes_.push_back(utility::array_storage(F_df));
+    auto f_df1 = mpqc::fenced_now(world);
+    f_df_times_.push_back(mpqc::duration_in_s(f_df0, f_df1));
+    f_df_sizes_.push_back(detail::array_storage(F_df));
 
     // Construct L
-    auto l0 = mpqc_time::fenced_now(world);
+    auto l0 = mpqc::fenced_now(world);
     dL("mu, nu") = C_mo("X, i, mu") * F_df("X, i, nu");
     dL.truncate();
     auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
-    auto l1 = mpqc_time::fenced_now(world);
-    l_times_.push_back(mpqc_time::duration_in_s(l0, l1));
+    auto l1 = mpqc::fenced_now(world);
+    l_times_.push_back(mpqc::duration_in_s(l0, l1));
 
-    auto k0 = mpqc_time::fenced_now(world);
-    l_times_.push_back(mpqc_time::duration_in_s(l0, l1));
+    auto k0 = mpqc::fenced_now(world);
+    l_times_.push_back(mpqc::duration_in_s(l0, l1));
     K("mu, nu") = L("mu, nu") + L("nu, mu");
     K.truncate();
-    auto k1 = mpqc_time::fenced_now(world);
-    k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
+    auto k1 = mpqc::fenced_now(world);
+    k_times_.push_back(mpqc::duration_in_s(k0, k1));
 
     return K;
   }

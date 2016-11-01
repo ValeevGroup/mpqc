@@ -13,7 +13,7 @@ namespace basis {
 BasisSet::BasisSet(std::string const &s) : basis_set_name_{s} {}
 
 std::vector<ShellVec>
-BasisSet::get_cluster_shells(mol::Molecule const &mol) const {
+BasisSet::get_cluster_shells(Molecule const &mol) const {
 
     std::vector<ShellVec> cs;
     for (auto const &cluster : mol) {
@@ -40,7 +40,7 @@ BasisSet::get_cluster_shells(mol::Molecule const &mol) const {
     return cs;
 }
 
-ShellVec BasisSet::get_flat_shells(mol::Molecule const &mol) const {
+ShellVec BasisSet::get_flat_shells(Molecule const &mol) const {
 
     ShellVec cs;
     for (auto const &cluster : mol) {

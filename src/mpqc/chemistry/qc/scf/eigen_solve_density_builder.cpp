@@ -1,12 +1,12 @@
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/scf/eigen_solve_density_builder.h>
 
-#include "../../../../../ta_routines/array_to_eigen.h"
-#include "../../../../../ta_routines/cholesky_inverse.h"
-#include "../../../../../ta_routines/sqrt_inv.h"
-#include "../../../../../ta_routines/minimize_storage.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/linalg/cholesky_inverse.h"
+#include "mpqc/math/linalg/sqrt_inv.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include "../../../../../utility/vector_functions.h"
+#include "mpqc/chemistry/qc/scf/util.h"
 
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 #include <mpqc/chemistry/qc/scf/orbital_localization.h>
@@ -28,7 +28,7 @@ ESolveDensityBuilder::ESolveDensityBuilder(
           TcutC_(TcutC),
           metric_decomp_type_(metric_decomp_type),
           localize_(localize) {
-    auto inv0 = mpqc_time::fenced_now(S_.world());
+    auto inv0 = mpqc::fenced_now(S_.world());
     if (metric_decomp_type_ == "cholesky inverse") {
         M_inv_ = array_ops::cholesky_inverse(S_);
     } else if (metric_decomp_type_ == "inverse sqrt") {
@@ -42,8 +42,8 @@ ESolveDensityBuilder::ESolveDensityBuilder(
         throw "Error did not recognize overlap decomposition in "
               "EsolveDensityBuilder";
     }
-    auto inv1 = mpqc_time::fenced_now(S_.world());
-    inverse_time_ = mpqc_time::duration_in_s(inv0, inv1);
+    auto inv1 = mpqc::fenced_now(S_.world());
+    inverse_time_ = mpqc::duration_in_s(inv0, inv1);
 }
 
 std::pair<array_type, array_type> ESolveDensityBuilder::
@@ -51,11 +51,11 @@ operator()(array_type const &F) {
     array_type Fp, C, Cao, D;
     auto &world = F.world();
 
-    auto e0 = mpqc_time::fenced_now(world);
+    auto e0 = mpqc::fenced_now(world);
     Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
 
     auto Fp_eig = array_ops::array_to_eigen(Fp);
-    Eig::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
+    Eigen::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
 
     decltype(Fp_eig) C_eig = es.eigenvectors().leftCols(occ_);
     auto tr_ao = Fp.trange().data()[0];
@@ -67,36 +67,36 @@ operator()(array_type const &F) {
     // Get back to AO land
     Cao("i,j") = M_inv_("k,i") * C("k,j");
     Cao.truncate();
-    auto e1 = mpqc_time::fenced_now(world);
+    auto e1 = mpqc::fenced_now(world);
 
     // Compute D to full accuracy
     D("i,j") = Cao("i,k") * Cao("j,k");
     D.truncate();
-    density_storages_.push_back(utility::array_storage(D));
+    density_storages_.push_back(detail::array_storage(D));
 
     if (localize_) {
-        auto l0 = mpqc_time::fenced_now(world);
+        auto l0 = mpqc::fenced_now(world);
         auto U = mpqc::scf::BoysLocalization{}(Cao, r_xyz_ints_);
         Cao("mu,i") = Cao("mu,k") * U("k,i");
-        auto l1 = mpqc_time::fenced_now(world);
+        auto l1 = mpqc::fenced_now(world);
 
         auto obs_ntiles = Cao.trange().tiles_range().extent()[0];
         scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
-        auto c1 = mpqc_time::fenced_now(world);
-        localization_times_.push_back(mpqc_time::duration_in_s(l0, l1));
-        clustering_times_.push_back(mpqc_time::duration_in_s(l1, c1));
+        auto c1 = mpqc::fenced_now(world);
+        localization_times_.push_back(mpqc::duration_in_s(l0, l1));
+        clustering_times_.push_back(mpqc::duration_in_s(l1, c1));
     }
 
     if (TcutC_ != 0) {
-        ta_routines::minimize_storage(Cao, TcutC_);
+        minimize_storage(Cao, TcutC_);
         auto shape_c = Cao.shape();
         auto &norms = shape_c.data();
         auto norm_mat = TA::eigen_map(norms, norms.range().extent_data()[0],
                                       norms.range().extent_data()[1]);
     }
 
-    esolve_times_.push_back(mpqc_time::duration_in_s(e0, e1));
-    coeff_storages_.push_back(utility::array_storage(Cao));
+    esolve_times_.push_back(mpqc::duration_in_s(e0, e1));
+    coeff_storages_.push_back(detail::array_storage(Cao));
 
     return std::make_pair(D, Cao);
 }

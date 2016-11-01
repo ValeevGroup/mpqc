@@ -2,7 +2,7 @@
 #ifndef MPQC_INTEGRALS_SCREENING_QVLSHELLINFO_H
 #define MPQC_INTEGRALS_SCREENING_QVLSHELLINFO_H
 
-#include "../../../../../../common/typedefs.h"
+
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 
 namespace mpqc {
@@ -14,14 +14,14 @@ namespace detail {
 class QVlShellInfo {
   private:
     std::vector<double> a_extents_;
-    MatrixD cd_extents_;
+    RowMatrixXd cd_extents_;
 
-    std::vector<Vec3D> a_centers_;
-    std::vector<std::vector<Vec3D>> cd_centers_;
+    std::vector<Vector3d> a_centers_;
+    std::vector<std::vector<Vector3d>> cd_centers_;
 
     std::vector<double> a_factor_;
     std::vector<double> a_am_;
-    MatrixD one_over_gamma_ab_pow_;
+    RowMatrixXd one_over_gamma_ab_pow_;
 
     double erfinv_thr_;
 
@@ -31,10 +31,10 @@ class QVlShellInfo {
                  double thresh);
 
     double a_extent(int64_t i) const { return a_extents_[i]; }
-    Vec3D const &a_center(int64_t i) const { return a_centers_[i]; }
+    Vector3d const &a_center(int64_t i) const { return a_centers_[i]; }
 
     double cd_extent(int64_t i, int64_t j) const { return cd_extents_(i, j); }
-    Vec3D const &cd_center(int64_t i, int64_t j) const {
+    Vector3d const &cd_center(int64_t i, int64_t j) const {
         return cd_centers_[i][j];
     }
 
@@ -46,9 +46,9 @@ class QVlShellInfo {
     }
 
   private:
-    double pair_extent(Shell const &sh0, Shell const &sh1, Vec3D const &r_01);
+    double pair_extent(Shell const &sh0, Shell const &sh1, Vector3d const &r_01);
     double a_shell_min_exp(Shell const &sh);
-    Vec3D shell_weighted_center(Shell const &sh0, Shell const &sh1) const;
+    Vector3d shell_weighted_center(Shell const &sh0, Shell const &sh1) const;
 };
 
 } // namespace detail

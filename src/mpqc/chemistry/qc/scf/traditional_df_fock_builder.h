@@ -2,12 +2,12 @@
 #ifndef MPQC_SCF_TRADITIONALDFFOCKBUILDER_H
 #define MPQC_SCF_TRADITIONALDFFOCKBUILDER_H
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 
-#include "../../../../../ta_routines/array_to_eigen.h"
-#include "../../../../../utility/time.h"
-#include "../../../../../utility/vector_functions.h"
+#include <tiledarray.h>
+
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/util/misc/time.h"
+#include "mpqc/chemistry/qc/scf/util.h"
 
 #include <mpqc/chemistry/qc/scf/builder.h>
 
@@ -37,7 +37,7 @@ class DFFockBuilder : public FockBuilder {
   DFFockBuilder(array_type const &M, Integral const &eri3) : eri3_(eri3) {
     auto M_eig = array_ops::array_to_eigen(M);
 
-    MatrixD L_inv_eig = MatrixD(Eig::LLT<MatrixD>(M_eig).matrixL()).inverse();
+    RowMatrixXd L_inv_eig = RowMatrixXd(Eigen::LLT<RowMatrixXd>(M_eig).matrixL()).inverse();
 
     auto tr_M = M.trange().data()[0];
 
@@ -63,17 +63,17 @@ class DFFockBuilder : public FockBuilder {
     array_type G;
     madness::print_meminfo(world.rank(), "DFFockBuilder:0");
     {
-      auto w0 = mpqc_time::fenced_now(world);
+      auto w0 = mpqc::fenced_now(world);
       array_type W;
       W("X, rho, i") = L_inv_("X,Y") * (eri3_("Y, rho, sig") * C("sig, i"));
-      auto w1 = mpqc_time::fenced_now(world);
+      auto w1 = mpqc::fenced_now(world);
       madness::print_meminfo(world.rank(), "DFFockBuilder:W");
 
       // Make J
       array_type J;
       J("mu, nu") = eri3_("Z, mu, nu") *
                     (L_inv_("X, Z") * (W("X, rho, i") * C("rho, i")));
-      auto j1 = mpqc_time::fenced_now(world);
+      auto j1 = mpqc::fenced_now(world);
       madness::print_meminfo(world.rank(), "DFFockBuilder:J");
 
       // Permute W
@@ -83,12 +83,12 @@ class DFFockBuilder : public FockBuilder {
 
       array_type K;
       K("mu, nu") = W("X, i, mu") * W("X, i, nu");
-      auto k1 = mpqc_time::fenced_now(world);
+      auto k1 = mpqc::fenced_now(world);
       madness::print_meminfo(world.rank(), "DFFockBuilder:K");
 
-      w_times_.push_back(mpqc_time::duration_in_s(w0, w1));
-      j_times_.push_back(mpqc_time::duration_in_s(w1, j1));
-      k_times_.push_back(mpqc_time::duration_in_s(j1, k1));
+      w_times_.push_back(mpqc::duration_in_s(w0, w1));
+      j_times_.push_back(mpqc::duration_in_s(w1, j1));
+      k_times_.push_back(mpqc::duration_in_s(j1, k1));
 
       // Make G
       G("mu, nu") = 2 * J("mu, nu") - K("mu, nu");

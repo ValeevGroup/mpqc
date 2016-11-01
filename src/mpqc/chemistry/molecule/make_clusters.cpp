@@ -3,7 +3,6 @@
 #include <mpqc/chemistry/molecule/make_clusters.h>
 
 namespace mpqc {
-namespace molecule {
 
 std::vector<std::shared_ptr<Cluster>>
 attach_hydrogens_kmeans(Molecule const &m, unsigned long nclusters) {
@@ -16,8 +15,8 @@ attach_hydrogens_kmeans(Molecule const &m, unsigned long nclusters) {
 
     auto sorter = [](std::shared_ptr<Cluster> const &a,
                      std::shared_ptr<Cluster> const &b) {
-        Vec3D a_dist = a->center();
-        Vec3D b_dist = b->center();
+        Vector3d a_dist = a->center();
+        Vector3d b_dist = b->center();
         if (!(a_dist.squaredNorm() == b_dist.squaredNorm())) {
             return a_dist.squaredNorm() < b_dist.squaredNorm();
         } else if (a_dist[0] == b_dist[0]) {
@@ -43,8 +42,8 @@ kmeans(Molecule const &m, unsigned long nclusters) {
 
     auto sorter = [](std::shared_ptr<Cluster> const &a,
                      std::shared_ptr<Cluster> const &b) {
-        Vec3D a_dist = a->center();
-        Vec3D b_dist = b->center();
+        Vector3d a_dist = a->center();
+        Vector3d b_dist = b->center();
         if (!(a_dist.squaredNorm() == b_dist.squaredNorm())) {
             return a_dist.squaredNorm() < b_dist.squaredNorm();
         } else if (a_dist[0] == b_dist[0]) {
@@ -59,5 +58,4 @@ kmeans(Molecule const &m, unsigned long nclusters) {
     return clusters;
 }
 
-} // namespace molecule
 } // namespace mpqc

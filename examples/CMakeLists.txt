@@ -26,10 +26,10 @@ add_executable(ccsd EXCLUDE_FROM_ALL ccsd.cpp)
 target_link_libraries(ccsd ${MPQC_LIBRARIES})
 
 add_executable(mpqc EXCLUDE_FROM_ALL mpqc.cpp)
-target_link_libraries(mpqc ${MPQC_LIBRARIES})
+target_link_libraries(mpqc ${MPQC_LIBRARIES} MPQCmisc)
 
 add_executable(mpqc_info mpqc_info.cpp)
-target_link_libraries(mpqc_info MPQCbasis MPQCmolecule MPQCkeyval MPQCexpression utility)
+target_link_libraries(mpqc_info MPQCbasis MPQCmolecule MPQCkeyval MPQCexpression MPQCmisc ${Boost_LIBRARIES})
 
 add_executable(phf EXCLUDE_FROM_ALL phf.cpp)
 target_link_libraries(phf MPQCmolecule MPQCkeyval MPQCbasis MPQCintegrals ${LIBINT2_LIBRARIES})

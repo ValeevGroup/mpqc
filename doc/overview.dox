@@ -15,18 +15,18 @@ QC methods easily. In turn, @ref labelmpqcChemistry "mpqc.Chemistry" libraries a
   
 Two key libraries whose development was driven by the needs of MPQC are maintained as
 standalone components to make their reuse easier:
-  - <a href="http://libint.valeyev.net">Libint library</a> for efficient computation of operators in Gaussian basis, and
+  - <a href="http://libint.valeyev.net">Libint library</a> for efficient construction of operators in Gaussian basis, and
   - <a href="http://github.com/ValeevGroup/tiledarray">TiledArray framework</a> for block-sparse tensor algebra.
 
 The \ref mpqc "MPQC" program is the end-user code for practical
 application of the variety of quantum chemistry methods.
 Although MPQC lacks many features demanded by many mainstream users of quantum chemistry,
 it can be used by non-experts for applications of routine (Hartree-Fock, MP2)
-as well as some unique advanced quantum chemistry methods (explicitly-correlated
+as well as some more advanced quantum chemistry methods (explicitly-correlated
 coupled-cluster). MPQC is also
 suitable for learning quantum chemistry by advanced undergraduate
 and beginning graduate students. Lastly, MPQC includes unique emerging functionality that is
-not yet accessible by non-experts.
+not yet accessible for non-experts.
 
 Although the development of MPQC has been ongoing since 1992, the code is constantly evolving.
 MPQC is fundamentally an experimental/research platform that is

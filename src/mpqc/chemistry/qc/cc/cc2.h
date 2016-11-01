@@ -5,11 +5,10 @@
 #ifndef MPQC_CC2_H
 #define MPQC_CC2_H
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
 
-#include "../../../../../ta_routines/tarray_block.h"
-#include "../../../../../utility/trange1_engine.h"
+#include <tiledarray.h>
+
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include "mo_block.h"
 
 #include "../../../../../utility/cc_utility.h"

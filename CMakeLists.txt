@@ -18,6 +18,25 @@ endif(MPQC_BUILDID)
 set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 
 ###############################################################################
+# Load up extra CMake packages
+###############################################################################
+include(FeatureSummary)
+
+###############################################################################
+# Options
+###############################################################################
+# boolean
+# non-boolean
+if (NOT DEFINED MPQC_MEMORY_CHECK)
+  set(MPQC_MEMORY_CHECK -1) # How to check memory use (see mpqc_config.h for details)
+else()
+  message("MPQC_MEMORY_CHECK = ${MPQC_MEMORY_CHECK}")
+endif()
+if (NOT DEFINED MPQC_ASSERT_MODE)
+  set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
+endif()
+
+###############################################################################
 # How to compile
 ###############################################################################
 
@@ -74,9 +93,7 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${LIBINT2_INCLUDE_DIRS})
 add_definitions(${LIBINT2_EXTRA_DEFINITIONS})
 INCLUDE_DIRECTORIES(${RAPIDJSON_INCLUDE_DIRS})
-
-ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/include)
-INCLUDE_DIRECTORIES(${CEREAL_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 
 set(MPQC_LIBRARIES
     "${MPQC_LIBRARIES};${TBB_LIBRARIES};${LIBINT2_LIBRARIES};${Boost_LIBRARIES}")
@@ -90,19 +107,7 @@ INCLUDE_DIRECTORIES(${MPQC_BINARY_DIR}/src)
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
 
-
-# these will be moved eventually into src/mpqc
-ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tensor)
-ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/utility)
-ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/ta_routines)
-ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/eom_cc)
-
-LINK_DIRECTORIES(${MPQC_BINARY_DIR}/tensor)
-LINK_DIRECTORIES(${MPQC_BINARY_DIR}/utility)
-LINK_DIRECTORIES(${MPQC_BINARY_DIR}/ta_routines)
-LINK_DIRECTORIES(${MPQC_BINARY_DIR}/eom_cc)
-
-LIST(APPEND MPQC_LIBRARIES MPQCmolecule MPQCbasis MPQCwfn MPQCproperties tensor utility MPQCexpression MPQCf12 MPQCcc MPQCmbpt MPQCintegrals ta_routines MPQCscf libeomcc MPQCkeyval)
+LIST(APPEND MPQC_LIBRARIES MPQCmolecule MPQCbasis MPQCwfn MPQCproperties MPQCmath_linalg MPQCmath_ta MPQCmath_clr MPQCexpression MPQCf12 MPQCcc MPQCmbpt MPQCintegrals MPQCscf MPQCkeyval)
 
 message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
 
@@ -125,6 +130,18 @@ ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/doc)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tests)
 enable_testing(true)
 
+###############################################################################
+# Wrap up
+###############################################################################
+
+CONFIGURE_FILE(
+  ${PROJECT_SOURCE_DIR}/src/mpqc/mpqc_config.h.in
+  ${PROJECT_BINARY_DIR}/src/mpqc/mpqc_config.h
+)
+
+feature_summary(WHAT ALL
+                DESCRIPTION "=== MPQC Package/Feature Info ===")
+                
 ###############################################################################
 # appendix: misc details
 ###############################################################################

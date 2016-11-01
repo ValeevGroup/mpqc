@@ -3,8 +3,9 @@
 #ifndef MPQC_INTEGRALS_SCHWARZSCREEN_H
 #define MPQC_INTEGRALS_SCHWARZSCREEN_H
 
-#include "../../../../../../common/typedefs.h"
-#include "../../../../../../include/tiledarray.h"
+#include <tiledarray.h>
+
+
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 #include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
 
@@ -24,9 +25,9 @@ namespace integrals {
  */
 class Qmatrix {
   private:
-    MatrixD Q_;
+    RowMatrixXd Q_;
     std::unordered_map<int64_t, int64_t> func_to_shell_map_;
-    VectorD max_elem_in_row_;
+    Eigen::VectorXd max_elem_in_row_;
     double max_elem_in_Q_;
 
     // Convert a function index into a shell index
@@ -45,10 +46,10 @@ class Qmatrix {
     Qmatrix(Qmatrix &&) = default;
     Qmatrix &operator=(Qmatrix const &) = default;
     Qmatrix &operator=(Qmatrix &&) = default;
-    Qmatrix(MatrixD Q, std::unordered_map<int64_t, int64_t>);
+    Qmatrix(RowMatrixXd Q, std::unordered_map<int64_t, int64_t>);
 
     // Get whole matrix
-    MatrixD const &Q() const { return Q_; }
+    RowMatrixXd const &Q() const { return Q_; }
     // If vector get index
     double const &Q(int64_t idx) const { return Q_(f2s(idx)); }
     // If Matrix get elem
@@ -264,7 +265,7 @@ func_to_shell(std::vector<Shell> const &shells) {
 
 // Compute Q vector
 template <typename E>
-inline MatrixD auxiliary_Q(madness::World &world, ShrPool<E> const &eng,
+inline RowMatrixXd auxiliary_Q(madness::World &world, ShrPool<E> const &eng,
                            std::vector<Shell> const &shells) {
 
     // pass by pointers since tasks copy params
@@ -272,13 +273,13 @@ inline MatrixD auxiliary_Q(madness::World &world, ShrPool<E> const &eng,
         const auto& bufs = eng->local().compute(*sh, *ush, *sh, *ush);
         TA_USER_ASSERT(bufs.size() == 1, "unexpected result from Engine::compute");
         const auto nsh = sh->size();
-        const auto bmap = Eig::Map<const MatrixD>(bufs[0], nsh, nsh);
+        const auto bmap = Eigen::Map<const RowMatrixXd>(bufs[0], nsh, nsh);
 
         *Q_val = std::sqrt(bmap.lpNorm<2>());
     };
 
     const auto nshells = shells.size();
-    VectorD Q(nshells);
+    Eigen::VectorXd Q(nshells);
 
     auto const *ush = &unit_shell;
     for (auto i = 0ul; i < nshells; ++i) {
@@ -292,7 +293,7 @@ inline MatrixD auxiliary_Q(madness::World &world, ShrPool<E> const &eng,
 
 // Compute Q matrix
 template <typename E>
-inline MatrixD four_center_Q(madness::World &world, ShrPool<E> const &eng,
+inline RowMatrixXd four_center_Q(madness::World &world, ShrPool<E> const &eng,
                              std::vector<Shell> const &shells) {
 
     auto task_func =
@@ -303,7 +304,7 @@ inline MatrixD four_center_Q(madness::World &world, ShrPool<E> const &eng,
                        "unexpected result from Engine::compute");
 
         const auto n2 = sh0->size() * sh1->size();
-        const auto bmap = Eig::Map<const MatrixD>(bufs[0], n2, n2);
+        const auto bmap = Eigen::Map<const RowMatrixXd>(bufs[0], n2, n2);
 
         eng->local().set_precision(std::numeric_limits<double>::epsilon());
 
@@ -311,7 +312,7 @@ inline MatrixD four_center_Q(madness::World &world, ShrPool<E> const &eng,
     };
 
     const auto nshells = shells.size();
-    MatrixD Q(nshells, nshells);
+    RowMatrixXd Q(nshells, nshells);
 
     for (auto i = 0ul; i < nshells; ++i) {
         for (auto j = 0ul; j < nshells; ++j) {
@@ -331,7 +332,7 @@ inline std::shared_ptr<Qmatrix>
 compute_Q(madness::World &world, ShrPool<E> const &eng, basis::Basis const &bs,
           bool auxiliary_basis = false) {
     const auto shells = bs.flattened_shells();
-    MatrixD Q;
+    RowMatrixXd Q;
     if (auxiliary_basis) {
         Q = auxiliary_Q(world, eng, shells);
     } else {

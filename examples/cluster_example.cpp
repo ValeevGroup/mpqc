@@ -2,7 +2,6 @@
 #include "../molecule/atom.h"
 
 using namespace mpqc;
-using namespace molecule;
 
 int main(int argc, char **argv) {
     Atom a1({0, 0, 0}, 1, 1);

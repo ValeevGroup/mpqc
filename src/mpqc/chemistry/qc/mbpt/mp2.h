@@ -5,8 +5,8 @@
 #ifndef MPQC_CHEMISTRY_QC_MBPT_MP2_H
 #define MPQC_CHEMISTRY_QC_MBPT_MP2_H
 
-#include "../../../../../utility/parallel_print.h"
-#include "../../../../../utility/trange1_engine.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 #include <mpqc/chemistry/qc/scf/mo_build.h>
 #include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
@@ -23,11 +23,11 @@ struct Mp2Energy {
   using result_type = double;
   using argument_type = Tile;
 
-  std::shared_ptr<Eig::VectorXd> vec_;
+  std::shared_ptr<Eigen::VectorXd> vec_;
   std::size_t n_occ_;
   std::size_t n_frozen_;
 
-  Mp2Energy(std::shared_ptr<Eig::VectorXd> vec, std::size_t n_occ,
+  Mp2Energy(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
             std::size_t n_frozen)
       : vec_(std::move(vec)), n_occ_(n_occ), n_frozen_(n_frozen) {}
 

@@ -23,7 +23,7 @@ class ClusterShells {
     enum class ang_mo { s = 0, p = 1, d = 2, f = 3, g = 4, h = 5, i = 6 };
 
     ClusterShells(std::vector<std::vector<libint2::Shell>> shell,
-                  std::shared_ptr<molecule::Cluster> c);
+                  std::shared_ptr<Cluster> c);
 
     std::vector<libint2::Shell> const &shells(unsigned int) const;
     std::vector<libint2::Shell> flattened_shells() const;
@@ -41,11 +41,11 @@ class ClusterShells {
     unsigned int max_am() const;
     bool has_am(unsigned int) const;
 
-    molecule::Cluster const &cluster() const;
+    Cluster const &cluster() const;
 
   private:
     std::vector<std::vector<libint2::Shell>> shells_;
-    std::shared_ptr<molecule::Cluster> cluster_;
+    std::shared_ptr<Cluster> cluster_;
 
 }; // class ClusterShells
 

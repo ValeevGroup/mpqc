@@ -3,6 +3,7 @@
 //
 
 #include "mp2f12.h"
+#include "mpqc/chemistry/qc/mbpt/denom.h"
 
 MPQC_CLASS_EXPORT_KEY2("RMP2F12", mpqc::f12::RMP2F12);
 MPQC_CLASS_EXPORT_KEY2("RI-RMP2F12", mpqc::f12::RIRMP2F12);
@@ -37,12 +38,12 @@ double RMP2F12::value() {
     auto& world = this->wfn_world()->world();
 
     double time;
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
 
     double ref_energy = ref_wfn_->value();
 
-    auto time1 = mpqc_time::fenced_now(world);
-    time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
     // initialize
@@ -91,11 +92,11 @@ double RMP2F12::value() {
 
     rmp2f12_energy_ = ref_energy + emp2 + ef12 + e_s;
 
-    auto time2 = mpqc_time::fenced_now(world);
-    time = mpqc_time::duration_in_s(time1, time2);
+    auto time2 = mpqc::fenced_now(world);
+    time = mpqc::duration_in_s(time1, time2);
     utility::print_par(world,"Total F12 Time: ", time, " S \n");
 
-    time = mpqc_time::duration_in_s(time0, time2);
+    time = mpqc::duration_in_s(time0, time2);
     utility::print_par(world,"Total MP2F12 Time: ", time, " S \n");
   }
 
@@ -242,7 +243,7 @@ TArray RMP2F12::compute_X() {
 std::tuple<TArray, TArray> RMP2F12::compute_T() {
   TArray g_abij, t2;
   g_abij("a,b,i,j") = lcao_factory().compute(L"<i j|G|a b>")("i,j,a,b");
-  t2 = mpqc::cc::d_abij(g_abij, *(this->orbital_energy()),
+  t2 = d_abij(g_abij, *(this->orbital_energy()),
                         this->trange1_engine()->get_occ(),
                         this->trange1_engine()->get_nfrozen());
 
@@ -295,7 +296,7 @@ TArray RIRMP2F12::compute_X() {
 std::tuple<TArray, TArray> RIRMP2F12::compute_T() {
   TArray g_abij, t2;
   g_abij("a,b,i,j") = lcao_factory().compute(L"<i j|G|a b>[df]")("i,j,a,b");
-  t2 = mpqc::cc::d_abij(g_abij, *(this->orbital_energy()),
+  t2 = d_abij(g_abij, *(this->orbital_energy()),
                         this->trange1_engine()->get_occ(),
                         this->trange1_engine()->get_nfrozen());
 

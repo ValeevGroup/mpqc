@@ -8,18 +8,18 @@
 #include <mpqc/chemistry/qc/basis/basis.h>
 #include <mpqc/chemistry/qc/basis/basis_set.h>
 
-#include "../../../../../common/typedefs.h"
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../utility/array_info.h"
-#include "../../../../../utility/make_array.h"
 
-#include "../../../../../common/namespaces.h"
+#include <tiledarray.h>
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/util/meta/make_array.h"
+
+
 
 #include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>
 #include <mpqc/chemistry/qc/integrals/task_integrals.h>
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 
-#include "../../../../../ta_routines/array_to_eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 
 #include <memory>
 #include <vector>
@@ -27,14 +27,14 @@
 namespace mpqc {
 namespace scf {
 
-MatrixD soad_density_eig_matrix(molecule::Molecule const &mol) {
+RowMatrixXd soad_density_eig_matrix(Molecule const &mol) {
   auto nao = 0;
   for (const auto &atom : mol.atoms()) {
     const auto Z = atom.charge();
     nao += libint2::sto3g_num_ao(Z);
   }
 
-  MatrixD D(nao, nao);
+  RowMatrixXd D(nao, nao);
   D.setZero();
 
   size_t ao = 0;
@@ -51,9 +51,10 @@ MatrixD soad_density_eig_matrix(molecule::Molecule const &mol) {
 }
 
 template <typename Engs, typename Array, typename Tile>
-void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
-               ShellVec const *obs_col, ShellVec const *min_bs,
-               const MatrixD *D, Array *F,
+void soad_task(Engs eng_pool, int64_t ord, std::vector<libint2::Shell> const *obs_row,
+               std::vector<libint2::Shell> const *obs_col,
+               std::vector<libint2::Shell> const *min_bs,
+               const RowMatrixXd *D, Array *F,
                std::function<Tile(TA::TensorD &&)> op) {
   auto range = F->trange().make_tile_range(ord);
   const auto lb = range.lobound();
@@ -176,10 +177,11 @@ void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
 
 template <typename ShrPool, typename Array, typename Tile = TA::TensorD>
 Array fock_from_soad(madness::World &world,
-                     molecule::Molecule const &clustered_mol,
+                     Molecule const &clustered_mol,
                      basis::Basis const &obs, ShrPool engs, Array const &H,
                      std::function<Tile(TA::TensorD &&)> op =
-                         mpqc::ta_routines::TensorDPassThrough()) {
+                         TA::Noop<TA::TensorD,true>()) {
+
   // Soad Density
   auto D = soad_density_eig_matrix(clustered_mol);
 

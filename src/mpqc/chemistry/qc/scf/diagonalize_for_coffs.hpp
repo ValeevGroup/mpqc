@@ -3,7 +3,7 @@
 #define MPQC_SCF_DIAGONALIZEFORCOFFS_H
 
 #include "../../../../../common/namespaces.h"
-#include "../../../../../ta_routines/array_to_eigen.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 #include <tiledarray.h>
 #include "mpqc/math/external/eigen/eigen.h"

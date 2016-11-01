@@ -39,7 +39,7 @@
 
 #include "../scf/traditional_four_center_fock_builder.h"
 
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 #include <mpqc/chemistry/qc/cc/ccsd_t.h>
 #include "../scf/soad.h"

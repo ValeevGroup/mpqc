@@ -2,13 +2,13 @@
 #ifndef MPQC_ARRAYOPS_ARRAYTOEIGEN_H
 #define MPQC_ARRAYOPS_ARRAYTOEIGEN_H
 
-#include "../common/namespaces.h"
-#include "../common/typedefs.h"
+#include "../../../../../common/namespaces.h"
+#include "../../../../../common/typedefs.h"
 #include <tiledarray.h>
 
-#include "../src/mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "../src/mpqc/math/tensor/clr/decomposed_tensor_nonintrusive_interface.h"
-#include "../src/mpqc/math/tensor/clr/mpqc_tile.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_nonintrusive_interface.h"
+#include "mpqc/math/tensor/clr/mpqc_tile.h"
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
@@ -28,7 +28,7 @@ Matrix<T> tile_to_eigen(tensor::Tile<tensor::DecomposedTensor<T>> const &t) {
   return tile_to_eigen(tensor::algebra::combine(t.tile()));
 }
 
-/*! \brief copies the tiles fromn TA to eigen using tasks
+/*! \brief copies the tiles from TA to eigen using tasks
  *
  * Takes tiles by copy since they are shallow copy and will not be written to.
  */

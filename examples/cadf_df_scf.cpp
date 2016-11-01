@@ -31,9 +31,9 @@
 #include "../utility/array_info.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../ta_routines/minimize_storage.h"
-#include "../ta_routines/diagonal_array.h"
-#include "../ta_routines/cholesky_inverse.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
+#include "mpqc/math/linalg/diagonal_array.h"
+#include "mpqc/math/linalg/cholesky_inverse.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/soad.h"

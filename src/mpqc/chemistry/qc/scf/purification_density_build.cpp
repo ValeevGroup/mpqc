@@ -2,9 +2,9 @@
 
 #include <mpqc/chemistry/qc/scf/purification_density_build.h>
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../../../../../ta_routines/cholesky_inverse.h"
-#include "../../../../../ta_routines/sqrt_inv.h"
-#include "../../../../../ta_routines/minimize_storage.h"
+#include "mpqc/math/linalg/cholesky_inverse.h"
+#include "mpqc/math/linalg/sqrt_inv.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 #include <mpqc/chemistry/qc/scf/orbital_localization.h>
@@ -86,7 +86,7 @@ array_type PurificationDensityBuilder::orbitals(array_type const &D) {
     }
 
     if (TcutC_ != 0) {
-        ta_routines::minimize_storage(Cao, TcutC_);
+        minimize_storage(Cao, TcutC_);
     }
 
     return Cao;

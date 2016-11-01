@@ -4,8 +4,6 @@
 
 #include <tiledarray.h>
 
-#include "diagonal_array.h"
-
 #include "../utility/time.h"
 #include "../utility/array_info.h"
 
@@ -19,42 +17,10 @@
 #include <madness/world/array_addons.h>
 
 #include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/linalg/diagonal_array.h"
 
 namespace mpqc {
 namespace array_ops {
-
-inline void print_ranks_to_file(
-      TA::Array<double, 2, tensor::Tile<tensor::DecomposedTensor<double>>,
-                TA::SparsePolicy> const &a,
-      std::string file_name) {
-    std::vector<long long> tile_ranks(a.trange().tiles_range().volume(), 0);
-    auto end = a.end();
-    for (auto it = a.begin(); it != end; ++it) {
-        tile_ranks[it.ordinal()] = it->get().tile().rank();
-    }
-
-    a.world().gop.sum(tile_ranks.data(), tile_ranks.size());
-
-    if (a.world().rank() == 0) {
-        if(char *id = std::getenv("PBS_JOBID")){
-            std::string job_id(id);
-            file_name += "_" + job_id + ".txt";
-        } else {
-            file_name += ".txt";
-        }
-        std::ofstream outfile(file_name);
-        for (auto rank : tile_ranks) {
-            outfile << rank << std::endl;; 
-        }
-        outfile.close();
-    }
-}
-
-inline void print_ranks_to_file(
-      TA::Array<double, 2, TA::Tensor<double>, TA::SparsePolicy> const &a,
-      std::string file_name) {
-    // Do nothing
-}
 
 template <typename T, typename AT>
 std::array<TiledArray::Tensor<T, AT>, 2>

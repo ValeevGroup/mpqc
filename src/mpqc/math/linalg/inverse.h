@@ -1,10 +1,8 @@
 #pragma once
 
-#include "sqrt_inv.h"
+#include "mpqc/math/linalg/sqrt_inv.h"
 
 namespace mpqc {
-namespace ta_routines {
-
 
 template <typename Array>
 Array invert(Array const &S) {
@@ -42,5 +40,4 @@ Array invert(Array const &S) {
     return X;
 }
 
-} // namespace ta_routines
 } // namespace mpqc

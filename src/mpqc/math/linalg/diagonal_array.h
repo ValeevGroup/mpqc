@@ -7,7 +7,7 @@
 #include "../src/mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "../src/mpqc/math/tensor/clr/mpqc_tile.h"
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 namespace mpqc {
 namespace array_ops {
@@ -101,7 +101,7 @@ TiledArray::DistArray<Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
   return diag;
 }
 /*!
- * \breif takes a TiledArray::TiledRange and a value and returns a diagonal
+ * \brief takes a TiledArray::TiledRange and a value and returns a diagonal
  *matrix.
  *
  * This function creates a diagonal matrix given a TiledArray::TiledRange and

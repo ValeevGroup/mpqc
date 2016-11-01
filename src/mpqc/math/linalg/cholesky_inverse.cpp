@@ -1,7 +1,7 @@
-#include "cholesky_inverse.h"
+#include "mpqc/math/linalg/cholesky_inverse.h"
 #include "mpqc/math/external/eigen/eigen.h"
 
-#include "../ta_routines/array_to_eigen.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 namespace mpqc {
 namespace array_ops {

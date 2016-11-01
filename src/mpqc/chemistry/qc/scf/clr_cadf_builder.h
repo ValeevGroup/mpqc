@@ -13,7 +13,7 @@
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../../../../../ta_routines/minimize_storage.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>

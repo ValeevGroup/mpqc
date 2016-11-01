@@ -31,9 +31,9 @@
 #include "mpqc/math/tensor/clr/mpqc_tile.h"
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
 
-#include "../ta_routines/diagonal_array.h"
+#include "mpqc/math/linalg/diagonal_array.h"
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../ta_routines/minimize_storage.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
 using namespace mpqc;
 namespace ints = mpqc::integrals;

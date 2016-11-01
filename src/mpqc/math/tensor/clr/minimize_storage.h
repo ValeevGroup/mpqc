@@ -1,17 +1,15 @@
-#pragma once
-#ifndef MPQC_TAROUTINES_MINIMIZE_STORAGE_H
-#define MPQC_TAROUTINES_MINIMIZE_STORAGE_H
+#ifndef SRC_MPQC_MATH_TENSOR_CLR_MINIMIZE_STORAGE_H_
+#define SRC_MPQC_MATH_TENSOR_CLR_MINIMIZE_STORAGE_H_
 
 #include <tiledarray.h>
 #include "../common/typedefs.h"
 #include "../common/namespaces.h"
 
-#include "../src/mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "../src/mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
-#include "../src/mpqc/math/tensor/clr/mpqc_tile.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
+#include "mpqc/math/tensor/clr/mpqc_tile.h"
 
 namespace mpqc {
-namespace ta_routines {
 
 inline void minimize_storage(TA::DistArray<TA::TensorD, SpPolicy> &A) {
     A.truncate();
@@ -65,7 +63,6 @@ minimize_storage(TA::DistArray<tensor::Tile<tensor::DecomposedTensor<double>>,
     }
 }
 
-} // namespace ta_routines
 } // namespace mpqc
 
-#endif // MPQC_TAROUTINES_MINIMIZE_STORAGE_H
+#endif  // SRC_MPQC_MATH_TENSOR_CLR_MINIMIZE_STORAGE_H_

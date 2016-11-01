@@ -6,7 +6,7 @@
 #define MPQC_ATOMIC_INTEGRAL_H
 
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../../../../../ta_routines/sqrt_inv.h"
+#include "mpqc/math/linalg/sqrt_inv.h"
 #include "../../../../../utility/parallel_break_point.h"
 #include "../../../../../utility/parallel_print.h"
 #include "../../../../../utility/time.h"

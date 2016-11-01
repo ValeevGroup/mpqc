@@ -83,7 +83,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
         tensor::detail::recompress = true;
 
         B_("X, mu, nu") = dL_inv("X, Y") * eri3("Y, mu, nu");
-        ta_routines::minimize_storage(B_, j_clr_thresh);
+        minimize_storage(B_, j_clr_thresh);
 
         auto B1 = mpqc_time::fenced_now(world);
         tensor::detail::recompress = old_compress;

@@ -2,9 +2,9 @@ language: cpp
 os: linux
 compiler:
   - gcc
-  - clang
+    # - clang
 env:
-  - GCC_VERSION=4.9
+    # - GCC_VERSION=4.9
   - GCC_VERSION=5
 # matrix:
 #   exclude:
@@ -23,7 +23,7 @@ addons:
       # LLVM apt mirror is down
       #- llvm-toolchain-precise-3.7
     packages:
-      - g++-4.9
+        # - g++-4.9
       - g++-5
       - libeigen3-dev
       - libboost1.55-dev
@@ -34,9 +34,12 @@ addons:
       - cmake-data
 # llvm.org apt repo is down
 #     - clang-3.7
-# before_install: ./bin/dep-$TRAVIS_OS_NAME.sh
+before_install: 
+   #- ./bin/dep-$TRAVIS_OS_NAME.sh
+   - ./bin/build-libint-$TRAVIS_OS_NAME.sh
 script: ./bin/build-$TRAVIS_OS_NAME.sh
 after_failure:
+  - ls $HOME
   - cat ./_build/external/build/madness/CMakeFiles/CMakeOutput.log
   - cat ./_build/external/build/madness/CMakeFiles/CMakeError.log
   - cat ./_build/CMakeFiles/CMakeOutput.log

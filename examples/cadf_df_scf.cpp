@@ -2,7 +2,7 @@
 #include <tiledarray.h>
 
 
-#include "../common/typedefs.h"
+
 
 #include "../utility/make_array.h"
 #include "../clustering/kmeans.h"
@@ -18,6 +18,7 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/prettywriter.h>
 
+#include "mpqc/util/external/c++/memory"
 #include "mpqc/util/misc/json_handling.h"
 
 #include "../basis/atom_basisset.h"
@@ -428,7 +429,7 @@ int main(int argc, char *argv[]) {
                                             0.0, "cholesky inverse", localize);
 
   std::unique_ptr<scf::DensityBuilder> d_builder =
-      make_unique<decltype(ebuilder)>(std::move(ebuilder));
+      std::std::make_unique<decltype(ebuilder)>(std::move(ebuilder));
 
   std::unique_ptr<scf::FockBuilder> f_builder;
 
@@ -476,14 +477,14 @@ int main(int argc, char *argv[]) {
     scf::ONCADFFockBuilder<decltype(deri3s)> test_scf(
         dMj, dMk, deri3s, dC_df, clr_threshold, force_thresh, mo_thresh,
         force_shape);
-    f_builder = make_unique<decltype(test_scf)>(std::move(test_scf));
+    f_builder = std::make_unique<decltype(test_scf)>(std::move(test_scf));
 
     out_doc.AddMember("Stored integrals", true, out_doc.GetAllocator());
   } else {
     scf::ONCADFFockBuilder<decltype(deri3)> test_scf(
         dMj, dMk, deri3, dC_df, clr_threshold, force_thresh, mo_thresh,
         force_shape);
-    f_builder = make_unique<decltype(test_scf)>(std::move(test_scf));
+    f_builder = std::make_unique<decltype(test_scf)>(std::move(test_scf));
     out_doc.AddMember("Stored integrals", false, out_doc.GetAllocator());
   }
 

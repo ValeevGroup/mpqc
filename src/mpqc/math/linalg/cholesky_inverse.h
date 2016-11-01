@@ -1,10 +1,7 @@
-#pragma once
 #ifndef MPQC_TAROUTINES_CHOLEKSYINVERSE_H
 #define MPQC_TAROUTINES_CHOLEKSYINVERSE_H
 
 #include <tiledarray.h>
-
-#include "../common/typedefs.h"
 
 namespace mpqc {
 namespace array_ops {

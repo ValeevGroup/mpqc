@@ -3,7 +3,7 @@
 #ifndef MPQC_INTEGRALS_INTEGRALSCREENERS_H
 #define MPQC_INTEGRALS_INTEGRALSCREENERS_H
 
-#include "../../../../../../common/typedefs.h"
+
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 #include <mpqc/chemistry/qc/basis/basis.h>
 

@@ -1,7 +1,7 @@
 #ifndef SRC_MPQC_MATH_TENSOR_CLR_TILE_H_
 #define SRC_MPQC_MATH_TENSOR_CLR_TILE_H_
 
-#include "../common/typedefs.h"
+
 #include <tiledarray.h>
 #include "../utility/meta/get_type.h"
 #include <memory>

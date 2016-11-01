@@ -2,7 +2,7 @@
 #define SRC_MPQC_MATH_TENSOR_CLR_MINIMIZE_STORAGE_H_
 
 #include <tiledarray.h>
-#include "../common/typedefs.h"
+
 
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"

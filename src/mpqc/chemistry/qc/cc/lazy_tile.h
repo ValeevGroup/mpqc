@@ -104,6 +104,8 @@ DirectTwoElectronDenseArray make_lazy_two_electron_dense_array(
     const TA::TiledRange &trange, const int screen_option) {
   // compute cluster shell
   auto cluster_shells = basis.cluster_shells();
+  using Shell = mpqc::basis::Basis::Shell;
+  using ShellVec = std::vector<Shell>;
   auto p_cluster_shells =
       std::make_shared<std::vector<ShellVec>>(cluster_shells);
 
@@ -159,6 +161,8 @@ DirectTwoElectronSparseArray make_lazy_two_electron_sparse_array(
     const TA::TiledRange &trange, const int screen_option) {
   // compute cluster shell
   auto cluster_shells = basis.cluster_shells();
+  using Shell = mpqc::basis::Basis::Shell;
+  using ShellVec = std::vector<Shell>;
   auto p_cluster_shells =
       std::make_shared<std::vector<ShellVec>>(cluster_shells);
 

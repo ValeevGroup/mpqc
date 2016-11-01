@@ -12,7 +12,7 @@
 
 #include <mpqc/util/keyval/keyval.hpp>
 
-#include "../../../../../common/typedefs.h"
+
 
 #include <mpqc/chemistry/qc/basis/basis_set.h>
 #include <mpqc/chemistry/molecule/molecule_fwd.h>
@@ -20,6 +20,10 @@
 
 namespace mpqc {
 namespace basis {
+
+using Shell = libint2::Shell;
+using ShellVec = std::vector<Shell>;
+
 /*
  * \defgroup Basis Basis
  *
@@ -30,6 +34,9 @@ namespace basis {
 
 class Basis : public DescribedClass {
  public:
+
+  using Shell = libint2::Shell;
+
   Basis();
   ~Basis();
   Basis(Basis const &);

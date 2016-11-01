@@ -2,7 +2,7 @@
 #ifndef MPQC_INTEGRALS_QQRSCREENING
 #define MPQC_INTEGRALS_QQRSCREENING
 
-#include "../../../../../../common/typedefs.h"
+
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 
 #include <mpqc/chemistry/qc/integrals/screening/screen_base.h>

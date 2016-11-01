@@ -2,7 +2,7 @@
 
 #include <tiledarray.h>
 
-#include "../common/typedefs.h"
+
 
 namespace math = TA::math;
 using TATensor = TA::Tensor<double>;

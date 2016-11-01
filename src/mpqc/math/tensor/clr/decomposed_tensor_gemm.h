@@ -8,8 +8,6 @@
 #include "mpqc/math/tensor/clr/decomposed_tensor_addition.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_gemm_helper.h"
-#include "../common/typedefs.h"
-
 
 namespace mpqc {
 namespace tensor {

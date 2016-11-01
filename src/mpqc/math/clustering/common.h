@@ -2,7 +2,7 @@
 #ifndef MPQC_CLUSTERING_COMMON_H
 #define MPQC_CLUSTERING_COMMON_H
 
-#include "../common/typedefs.h"
+
 
 #include <vector>
 

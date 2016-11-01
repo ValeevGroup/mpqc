@@ -376,12 +376,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
       auto inv = ao_int.compute(L"( Κ | G| Λ )");
       auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
       scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "four center") {
       auto eri4 = ao_int.compute(L"<μ ν| G|κ λ>");
       eri4("mu, nu, kappa, lambda") = eri4("mu,kappa,nu,lambda");
       auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "cadf") {
       auto use_forced_shape = scf_in.HasMember("forced shape")
                                   ? scf_in["forced shape"].GetBool()
@@ -403,7 +403,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       auto builder = scf::CADFFockBuilder(clustered_mol, clustered_mol, bs_set,
                                           dfbs_set, ao_int, use_forced_shape,
                                           force_threshold, lcao_chop_threshold);
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "clr_cadf") {
       auto use_forced_shape = scf_in.HasMember("forced shape")
                                   ? scf_in["forced shape"].GetBool()
@@ -430,7 +430,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
           clustered_mol, clustered_mol, bs_set, dfbs_set, ao_int,
           use_forced_shape, force_threshold, lcao_chop_threshold,
           clr_threshold);
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     } else if (fock_method == "print only cadf") {
       auto use_forced_shape = scf_in.HasMember("forced shape")
                                   ? scf_in["forced shape"].GetBool()
@@ -452,7 +452,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
       auto builder = scf::PrintOnlyCADFFockBuilder(
           clustered_mol, clustered_mol, bs_set, dfbs_set, ao_int,
           use_forced_shape, force_threshold, lcao_chop_threshold);
-      f_builder = make_unique<decltype(builder)>(std::move(builder));
+      f_builder = std::make_unique<decltype(builder)>(std::move(builder));
     }
 
     /// deal with density builder
@@ -463,14 +463,14 @@ int try_main(int argc, char *argv[], madness::World &world) {
     if (density_method == "purification") {
       auto db = scf::PurificationDensityBuilder(
           S, r_xyz, occ / 2, std::max(nclusters, 1), 0.0, false);
-      d_builder = make_unique<scf::PurificationDensityBuilder>(std::move(db));
+      d_builder = std::make_unique<scf::PurificationDensityBuilder>(std::move(db));
     } else if (density_method == "cholesky") {
       bool localize =
           scf_in.HasMember("localize") ? scf_in["localize"].GetBool() : false;
       auto db =
           scf::ESolveDensityBuilder(S, r_xyz, occ / 2, std::max(nclusters, 1),
                                     0.0, "cholesky inverse", localize);
-      d_builder = make_unique<scf::ESolveDensityBuilder>(std::move(db));
+      d_builder = std::make_unique<scf::ESolveDensityBuilder>(std::move(db));
     }
 
     auto time0 = mpqc::fenced_now(world);

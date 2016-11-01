@@ -2,7 +2,7 @@
 #ifndef MPQC_INTEGRALS_SCREENING_QVLSHELLINFO_H
 #define MPQC_INTEGRALS_SCREENING_QVLSHELLINFO_H
 
-#include "../../../../../../common/typedefs.h"
+
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 
 namespace mpqc {

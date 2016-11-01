@@ -2,7 +2,7 @@
 #include <tiledarray.h>
 
 
-#include "../common/typedefs.h"
+
 
 #include "../clustering/kmeans.h"
 #include "../utility/make_array.h"

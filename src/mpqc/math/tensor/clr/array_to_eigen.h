@@ -2,8 +2,6 @@
 #ifndef MPQC_ARRAYOPS_ARRAYTOEIGEN_H
 #define MPQC_ARRAYOPS_ARRAYTOEIGEN_H
 
-
-#include "../../../../../common/typedefs.h"
 #include <tiledarray.h>
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"

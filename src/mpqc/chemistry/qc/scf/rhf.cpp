@@ -12,6 +12,7 @@
 #include <mpqc/chemistry/qc/scf/traditional_four_center_fock_builder.h>
 #include <mpqc/chemistry/qc/scf/traditional_df_fock_builder.h>
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
+#include "mpqc/util/external/c++/memory"
 
 MPQC_CLASS_EXPORT_KEY2("RHF", mpqc::scf::RHF);
 MPQC_CLASS_EXPORT_KEY2("Direct-RHF", mpqc::scf::DirectRHF);
@@ -67,12 +68,12 @@ void RHF::init(const KeyVal &kv) {
   std::size_t n_cluster = mol.nclusters();
   if(density_builder == "purification"){
     auto density_builder = scf::PurificationDensityBuilder(S_,r_xyz,occ,n_cluster,t_cut_c,localize);
-    d_builder_ = make_unique<decltype(density_builder)>(std::move(density_builder));
+    d_builder_ = std::make_unique<decltype(density_builder)>(std::move(density_builder));
   }
   else if(density_builder == "eigen_solve"){
     std::string decompo_type = kv.value<std::string>("decompo_type","cholesky inverse");
     auto density_builder = scf::ESolveDensityBuilder(S_,r_xyz,occ,n_cluster,t_cut_c,decompo_type,localize);
-    d_builder_ = make_unique<decltype(density_builder)>(std::move(density_builder));
+    d_builder_ = std::make_unique<decltype(density_builder)>(std::move(density_builder));
   }
   else{
     throw std::runtime_error("Unknown DensityBuilder name! \n");
@@ -91,7 +92,7 @@ void RHF::init_fock_builder() {
   auto& ao_int = this->ao_integrals();
   auto eri4 = ao_int.compute(L"(μ ν| G|κ λ)");
   auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
-  f_builder_ = make_unique<decltype(builder)>(std::move(builder));
+  f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
 double RHF::value() {
@@ -242,7 +243,7 @@ void RIRHF::init_fock_builder() {
   auto inv = ao_int.compute(L"( Κ | G| Λ )");
   auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
   scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
-  f_builder_ = make_unique<decltype(builder)>(std::move(builder));
+  f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
 
@@ -261,7 +262,7 @@ void DirectRIRHF::init_fock_builder() {
   auto eri3 = direct_ao_int.compute(L"( Κ | G|κ λ)");
 
   scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
-  f_builder_ = make_unique<decltype(builder)>(std::move(builder));
+  f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 
 }
 
@@ -276,7 +277,7 @@ void DirectRHF::init_fock_builder() {
   auto& direct_ao_int = this->direct_ao_integrals();
   auto eri4 = direct_ao_int.compute(L"(μ ν| G|κ λ)");
   auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
-  f_builder_ = make_unique<decltype(builder)>(std::move(builder));
+  f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
 } // namespace scf

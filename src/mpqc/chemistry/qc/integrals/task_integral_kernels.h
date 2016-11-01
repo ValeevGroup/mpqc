@@ -11,7 +11,7 @@
 #include <libint2/engine.h>
 #include <tiledarray.h>
 
-#include "../../../../../common/typedefs.h"
+
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 #include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
 

@@ -86,7 +86,7 @@ inline ShrPool<libint2::Engine> make_engine_pool(
   assert(max_am != 0);
   assert(max_nprim != 0);
 
-  return std::make_shared<Epool<libint2::Engine>>(
+  return std::make_shared<mpqc::integrals::EnginePool<libint2::Engine>>(
       make_engine(oper, bases, braket, oper_params));
 }
 

@@ -2,9 +2,13 @@
 #ifndef MPQC_MOLECULE_COMMON_H
 #define MPQC_MOLECULE_COMMON_H
 
-#include <mpqc/chemistry/molecule/cluster_concept.h>
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
 #include <vector>
+
+#include <libint2/atom.h>
+
+#include "mpqc/chemistry/molecule/cluster_concept.h"
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
+
 
 namespace mpqc {
 

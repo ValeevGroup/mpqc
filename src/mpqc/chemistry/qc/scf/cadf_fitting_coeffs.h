@@ -6,7 +6,7 @@
 
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>
-#include "../../../../../common/typedefs.h"
+
 
 #include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/qc/basis/basis.h>

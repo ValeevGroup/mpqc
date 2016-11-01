@@ -5,7 +5,7 @@
 #ifndef MPQC_CHEMISTRY_QC_SCF_RHF_H
 #define MPQC_CHEMISTRY_QC_SCF_RHF_H
 
-#include "../../../../../common/typedefs.h"
+
 #include <tiledarray.h>
 #include "mpqc/util/misc/json_handling.h"
 #include <mpqc/chemistry/qc/wfn/ao_wfn.h>

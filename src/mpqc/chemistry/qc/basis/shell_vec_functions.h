@@ -3,8 +3,8 @@
 #ifndef MPQC_BASIS_SHELLVECFUNCTIONS_H
 #define MPQC_BASIS_SHELLVECFUNCTIONS_H
 
-#include "../../../../../common/typedefs.h"
-#include <mpqc/chemistry/qc/basis/basis_fwd.h>
+
+#include <mpqc/chemistry/qc/basis/basis.h>
 
 #include <libint2/shell.h>
 

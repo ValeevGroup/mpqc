@@ -8,7 +8,7 @@
 #include <mpqc/chemistry/qc/basis/basis.h>
 #include <mpqc/chemistry/qc/basis/basis_set.h>
 
-#include "../../../../../common/typedefs.h"
+
 #include <tiledarray.h>
 #include "mpqc/math/external/tiledarray/array_info.h"
 #include "../../../../../utility/make_array.h"
@@ -51,8 +51,9 @@ RowMatrixXd soad_density_eig_matrix(Molecule const &mol) {
 }
 
 template <typename Engs, typename Array, typename Tile>
-void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
-               ShellVec const *obs_col, ShellVec const *min_bs,
+void soad_task(Engs eng_pool, int64_t ord, std::vector<libint2::Shell> const *obs_row,
+               std::vector<libint2::Shell> const *obs_col,
+               std::vector<libint2::Shell> const *min_bs,
                const RowMatrixXd *D, Array *F,
                std::function<Tile(TA::TensorD &&)> op) {
   auto range = F->trange().make_tile_range(ord);
@@ -180,6 +181,7 @@ Array fock_from_soad(madness::World &world,
                      basis::Basis const &obs, ShrPool engs, Array const &H,
                      std::function<Tile(TA::TensorD &&)> op =
                          TA::Noop<TA::TensorD,true>()) {
+
   // Soad Density
   auto D = soad_density_eig_matrix(clustered_mol);
 

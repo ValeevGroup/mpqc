@@ -6,7 +6,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 
-#include "../../../../../common/typedefs.h"
+
 
 #include "mpqc/math/external/eigen/eigen.h"
 

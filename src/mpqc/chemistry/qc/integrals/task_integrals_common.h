@@ -10,14 +10,18 @@
 
 #include <tiledarray.h>
 
-#include "../../../../../common/typedefs.h"
-#include <mpqc/chemistry/qc/basis/basis.h>
+
+#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/integrals/integral_engine_pool.h"
 
 namespace mpqc {
 namespace integrals {
 
+using Shell = mpqc::basis::Basis::Shell;
+using ShellVec = std::vector<Shell>;
+
 template <typename E>
-using ShrPool = std::shared_ptr<Epool<E>>;
+using ShrPool = std::shared_ptr<mpqc::integrals::EnginePool<E>>;
 
 template <unsigned long N>
 using Barray = std::array<basis::Basis, N>;
@@ -37,7 +41,7 @@ using VecArray = std::array<ShellVec const *, N>;
 template <unsigned long N>
 using ShrBases = std::shared_ptr<Barray<N>>;
 
-using ShrBvetors = std::shared_ptr<Bvector>;
+using ShrBvectors = std::shared_ptr<Bvector>;
 
 using IdxVec = std::vector<std::size_t>;
 

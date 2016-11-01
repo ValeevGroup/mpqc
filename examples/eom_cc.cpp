@@ -298,11 +298,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
             auto builder
                   = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
 
-            f_builder = make_unique<decltype(builder)>(std::move(builder));
+            f_builder = std::make_unique<decltype(builder)>(std::move(builder));
         } else {
 
 
-            f_builder = make_unique<decltype(builder)>(std::move(builder));
+            f_builder = std::make_unique<decltype(builder)>(std::move(builder));
         }
 
         time0 = mpqc::fenced_now(world);
@@ -322,11 +322,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
                                                       nclusters, 0.0, false);
 
             d_builder
-                  = make_unique<scf::PurificationDensityBuilder>(std::move(db));
+                  = std::make_unique<scf::PurificationDensityBuilder>(std::move(db));
         } else {
             auto db = scf::ESolveDensityBuilder(S, r_xyz, occ / 2, nclusters,
                                                 0.0, "cholesky inverse", false);
-            d_builder = make_unique<scf::ESolveDensityBuilder>(std::move(db));
+            d_builder = std::make_unique<scf::ESolveDensityBuilder>(std::move(db));
         }
 
         scf::ClosedShellSCF scf(H, S, repulsion_energy, std::move(f_builder),

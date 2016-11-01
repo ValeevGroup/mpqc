@@ -150,6 +150,8 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
                                                    Vec3I nshift,
                                                    bool is_real_space);
 
+  TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
+
   std::shared_ptr<molecule::Molecule> shift_mol_origin(molecule::Molecule &mol,
                                                        Vec3D shift);
 
@@ -456,6 +458,21 @@ PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
 }
 
 template <typename Tile, typename Policy>
+TA::TiledRange1
+PeriodicAtomicIntegral<Tile, Policy>::extend_trange1(TA::TiledRange1 tr0,
+                                                     int64_t size) {
+    auto blocking = std::vector<int64_t> {0};
+    for (auto idx = 0; idx < size; ++idx) {
+        for (auto u = 0; u < tr0.tile_extent(); ++u) {
+            auto next = blocking.back() + tr0.tile(u).second - tr0.tile(u).first;
+            blocking.emplace_back(next);
+        }
+    }
+    TA::TiledRange1 tr1(blocking.begin(), blocking.end());
+    return tr1;
+}
+
+template <typename Tile, typename Policy>
 std::shared_ptr<molecule::Molecule>
 PeriodicAtomicIntegral<Tile, Policy>::shift_mol_origin(molecule::Molecule &mol,
                                                        Vec3D shift) {
@@ -595,16 +612,7 @@ PeriodicAtomicIntegral<Tile, Policy>::transform_real2recip(
     TArray &matrix) {
   TArray result;
   auto tr0 = matrix.trange().data()[0];
-
-  // Make tiled range for the compound index (k,v)
-  auto blocking = std::vector<int64_t> {0};
-  for (auto k = 0; k < k_size_; ++k) {
-      for (auto u = 0; u < tr0.tile_extent(); ++u) {
-          auto next = blocking.back() + tr0.tile(u).second - tr0.tile(u).first;
-          blocking.emplace_back(next);
-      }
-  }
-  TA::TiledRange1 tr1(blocking.begin(), blocking.end());
+  auto tr1 = extend_trange1(tr0, k_size_);
 
   // Perform real->reciprocal transformation with Eigen
   // TODO: perform it with TA (take arg tile from "matrix",
@@ -612,7 +620,7 @@ PeriodicAtomicIntegral<Tile, Policy>::transform_real2recip(
   // use MADNESSworld ...)
 
   auto matrix_eig = array_ops::array_to_eigen(matrix);
-  Eig::MatrixXcd result_eig(tr0.extent(), tr1.extent());
+  Matrixc result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
 
   auto threshold = std::numeric_limits<double>::epsilon();

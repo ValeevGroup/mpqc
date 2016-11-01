@@ -3,7 +3,6 @@
 //
 
 #include <mpqc/chemistry/qc/f12/ccsdf12.h>
-//#include <mpqc/chemistry/qc/f12/dbccsdf12.h>
 
 MPQC_CLASS_EXPORT_KEY2("CCSD(F12)", mpqc::f12::CCSDF12<TA::TensorD>);
 
@@ -14,7 +13,6 @@ template class CCSDF12<TA::TensorD>;
 template <>
 CCSDF12<TA::TensorD>::~CCSDF12() = default;
 
-//template class DBCCSDF12<TA::TensorD>;
 
 }
 }

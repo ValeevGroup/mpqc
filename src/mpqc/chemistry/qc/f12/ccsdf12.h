@@ -73,51 +73,21 @@ class CCSDF12 : public cc::CCSD<Tile, TA::SparsePolicy> {
       mpqc::utility::print_par(world, "Total CCSD Time:  ", ccsd_time, "\n");
 
       // initialize CABS orbitals
-      auto mol = this->wfn_world()->molecule();
-      Eigen::VectorXd orbital_energy;
-      closed_shell_cabs_mo_build_svd(
-          this->lcao_factory(), this->trange1_engine(), this->unocc_block());
-
-      auto lazy_two_electron_int = this->get_direct_ao_ints();
-      Matrix Eij_F12;
+      init_cabs();
 
       utility::print_par(world, "VTCouple: ", vt_couple_, "\n");
 
       // clean LCAO Integrals
       this->lcao_factory().registry().purge(world);
 
-      bool df = this->is_df();
-      if (method_ == "standard") {
-        Eij_F12 = compute_ccsd_f12(lazy_two_electron_int);
-      } else if (method_ == "df") {
-        Eij_F12 = compute_ccsd_f12_df(lazy_two_electron_int, approximation_);
-      } else if (method_ == "direct") {
-        Eij_F12 = compute_ccsd_f12_df(lazy_two_electron_int, approximation_);
-      }
+      // compute, this will set f12_energy_
+      compute_f12();
 
-      f12_energy_ = Eij_F12.sum();
       if (debug()) utility::print_par(world, "E_F12: ", f12_energy_, "\n");
 
-      // compute cabs singles
+      // compute cabs singles, this will set singles_energy_
       if (cabs_singles_) {
-        mpqc::utility::print_par(world, " CABS Singles \n");
-
-        auto single_time0 = mpqc::fenced_now(world);
-
-        if (approximation_ == 'D') {
-          CABSSingles<Tile> cabs_singles(this->lcao_factory());
-          singles_energy_ = cabs_singles.compute(df, true, true);
-        } else {
-          CABSSingles<Tile> cabs_singles(this->lcao_factory());
-          singles_energy_ = cabs_singles.compute(df, false, true);
-        }
-        if (debug()) {
-          utility::print_par(world, "E_S: ", singles_energy_, "\n");
-        }
-        auto single_time1 = mpqc::fenced_now(world);
-        auto single_time = mpqc::duration_in_s(single_time0, single_time1);
-        mpqc::utility::print_par(world, "Total CABS Singles Time:  ",
-                                 single_time, "\n");
+        compute_cabs_singles();
       }
 
       auto f12_time0 = mpqc::fenced_now(world);
@@ -136,21 +106,72 @@ class CCSDF12 : public cc::CCSD<Tile, TA::SparsePolicy> {
   }
 
  private:
+  virtual void init_cabs() {
+    closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),
+                                   this->unocc_block());
+  }
+
+  virtual void compute_cabs_singles();
+
+  virtual void compute_f12();
+
   /// standard approach
   Matrix compute_ccsd_f12_df(const DirectArray& darray, const char approach);
 
   Matrix compute_ccsd_f12(const DirectArray& darray);
 
  protected:
-  bool vt_couple_;
   bool cabs_singles_;
-  char approximation_;
-  std::string method_;
   double f12_energy_;
   double singles_energy_;
-
+  std::string method_;
   int debug() const { return 1; }
+
+ private:
+  bool vt_couple_;
+  char approximation_;
 };
+
+template <typename Tile>
+void CCSDF12<Tile>::compute_cabs_singles() {
+  auto& world = this->wfn_world()->world();
+
+  mpqc::utility::print_par(world, " CABS Singles \n");
+
+  auto single_time0 = mpqc::fenced_now(world);
+
+  bool df = this->is_df();
+
+  if (approximation_ == 'D') {
+    CABSSingles<Tile> cabs_singles(this->lcao_factory());
+    singles_energy_ = cabs_singles.compute(df, true, true);
+  } else {
+    CABSSingles<Tile> cabs_singles(this->lcao_factory());
+    singles_energy_ = cabs_singles.compute(df, false, true);
+  }
+  if (debug()) {
+    utility::print_par(world, "E_S: ", singles_energy_, "\n");
+  }
+  auto single_time1 = mpqc::fenced_now(world);
+  auto single_time = mpqc::duration_in_s(single_time0, single_time1);
+  mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time,
+                           "\n");
+}
+
+template <typename Tile>
+void CCSDF12<Tile>::compute_f12() {
+  auto lazy_two_electron_int = this->get_direct_ao_ints();
+  Matrix Eij_F12;
+  if (method_ == "standard") {
+    Eij_F12 = compute_ccsd_f12(lazy_two_electron_int);
+  } else if (method_ == "df") {
+    Eij_F12 = compute_ccsd_f12_df(lazy_two_electron_int, approximation_);
+  } else if (method_ == "direct") {
+    Eij_F12 = compute_ccsd_f12_df(lazy_two_electron_int, approximation_);
+  }
+
+  f12_energy_ = Eij_F12.sum();
+}
 
 template <typename Tile>
 typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(

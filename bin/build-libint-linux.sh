@@ -28,6 +28,8 @@ ls
 mkdir -p _build
 mkdir -p _install
 
+cd _build
+
 # Unpack libint tarball
 tar -xvzf ../external/libint-2.2.0-beta1.tgz
 cd libint-2.2.0-beta1/

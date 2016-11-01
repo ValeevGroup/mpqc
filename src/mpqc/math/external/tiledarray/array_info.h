@@ -1,18 +1,17 @@
-#pragma once
-#ifndef MPQC_UTILITY_ARRAYINFO_H
-#define MPQC_UTILITY_ARRAYINFO_H
-
-#include "../common/typedefs.h"
-#include <tiledarray.h>
+#ifndef SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_ARRAY_INFO_H
+#define SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_ARRAY_INFO_H
 
 #include <array>
 #include <atomic>
+#include <string>
+
+#include <tiledarray.h>
 
 namespace mpqc {
-namespace utility {
+namespace detail {
 
-unsigned long tile_clr_storage(Tile<DecompTensorD> const &tile);
-unsigned long tile_clr_storage(TA::TensorD const &);
+template <typename T>
+unsigned long tile_clr_storage(TA::Tensor<T> const &) { return 0ul; }
 
 template <typename TileType, typename Policy>
 std::array<double, 3> array_storage(TA::DistArray<TileType, Policy> const &A) {
@@ -106,7 +105,42 @@ double array_size(const TA::DistArray<Tile,Policy>& A){
   return double(total_size) / (1<<30);
 }
 
-} // namespace utility
+template<typename Array>
+void print_size_info(Array const &A, std::string const &name){
+   auto &world = A.world();
+   auto sizes = mpqc::detail::array_storage(A);
+
+   if(world.rank() == 0){
+       std::cout << "Printing size information for " << name << "\n";
+
+
+       std::cout << "\tFull     = " << sizes[0] << " GB\n"
+                 << "\tSparse   = " << sizes[1] << " GB\n"
+                 << "\tLow Rank = " << sizes[2] << " GB\n\n";
+   }
+
+   world.gop.fence();
+}
+
+template<typename Array>
+void wprint_size_info(Array const &A, const std::wstring &name){
+    auto &world = A.world();
+    auto sizes = mpqc::detail::array_storage(A);
+
+    if(world.rank() == 0){
+        std::cout << "Printing size information for ";
+        std::wcout << name << L"\n";
+
+
+        std::cout << "\tFull     = " << sizes[0] << " GB\n"
+        << "\tSparse   = " << sizes[1] << " GB\n"
+        << "\tLow Rank = " << sizes[2] << " GB\n\n";
+    }
+
+    world.gop.fence();
+}
+
+} // namespace detail
 } // namespace mpqc
 
-#endif // MPQC_UTILITY_ARRAYINFO_H
+#endif  // SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_ARRAY_INFO_H

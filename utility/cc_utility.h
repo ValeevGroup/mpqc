@@ -8,7 +8,7 @@
 #include <libint2/shell.h>
 #include <tiledarray.h>
 
-
+#include "mpqc/util/external/madworld/parallel_print.h"
 
 
 namespace mpqc{
@@ -30,6 +30,19 @@ namespace mpqc{
 
         // print progress
         void print_progress(int lowprogress, int upprogress, int total);
+
+        inline void parallel_print_range_info(madness::World &world, const TA::TiledRange1 &bs_range, const std::string &name){
+
+            if(world.rank() == 0){
+                auto minmax_block = cc::minmax_blocksize(bs_range);
+                auto average_block = cc::average_blocksize(bs_range);
+                std::cout <<  name << " Trange " << std::endl;
+                std::cout << bs_range << std::endl;
+                std::cout << "Min and Max block size: " << minmax_block.first << " " << minmax_block.second << std::endl;
+                std::cout << "Average: " << average_block << std::endl;
+                std::cout << std::endl;
+            }
+        }
 
         // reduce matrix 1/(ei + ej - ea - eb)
         template <typename Tile, typename Policy>

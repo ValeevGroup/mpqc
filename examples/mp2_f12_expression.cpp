@@ -28,8 +28,8 @@
 #include "../scf/eigen_solve_density_builder.h"
 #include "../scf/traditional_df_fock_builder.h"
 #include "mpqc/math/external/eigen/eigen.h"
-#include "../utility/array_info.h"
-#include "../utility/parallel_file.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/misc/time.h"
 
 #include "../scf/traditional_four_center_fock_builder.h"
@@ -112,13 +112,13 @@ int main(int argc, char *argv[]) {
   basis::Basis ri_basis = basis.join(abs_basis);
   ri_basis = reblock(ri_basis, cc::reblock_basis, ao_block_size);
 
-  utility::parallel_print_range_info(world, basis.create_trange1(),
+  cc::parallel_print_range_info(world, basis.create_trange1(),
                                      "OBS Basis");
-  utility::parallel_print_range_info(world, df_basis.create_trange1(),
+  cc::parallel_print_range_info(world, df_basis.create_trange1(),
                                      "DF Basis");
-  utility::parallel_print_range_info(world, abs_basis.create_trange1(),
+  cc::parallel_print_range_info(world, abs_basis.create_trange1(),
                                      "AUX Basis");
-  utility::parallel_print_range_info(world, ri_basis.create_trange1(),
+  cc::parallel_print_range_info(world, ri_basis.create_trange1(),
                                      "RI Basis");
 
   auto bs_registry = std::make_shared<OrbitalBasisRegistry>();
@@ -197,9 +197,9 @@ int main(int argc, char *argv[]) {
   auto tr_i0 = tre.get_occ_tr1();
   auto tr_vir = tre.get_vir_tr1();
 
-  utility::parallel_print_range_info(world, tr_i0, "Occ");
-  utility::parallel_print_range_info(world, tr_vir, "Vir");
-  utility::parallel_print_range_info(world, tr_all, "Obs");
+  cc::parallel_print_range_info(world, tr_i0, "Occ");
+  cc::parallel_print_range_info(world, tr_vir, "Vir");
+  cc::parallel_print_range_info(world, tr_all, "Obs");
 
   auto Ci = array_ops::eigen_to_array<TA::Tensor<double>>(world, C_occ_corr,
                                                           tr_0, tr_i0);
@@ -290,8 +290,8 @@ int main(int argc, char *argv[]) {
     auto tr_ribs_mo =
         tre.compute_range(tr_ribs.elements_range().second, mo_block_size);
 
-    utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
-    utility::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
+    cc::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+    cc::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
 
     C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen,
                                                     tr_ribs, tr_cabs_mo);

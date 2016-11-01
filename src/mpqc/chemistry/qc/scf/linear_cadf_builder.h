@@ -5,7 +5,7 @@
 
 #include <tiledarray.h>
 #include "mpqc/util/misc/time.h"
-#include "../../../../../utility/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/chemistry/qc/scf/util.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
@@ -269,8 +269,8 @@ class ONCADFFockBuilder : public FockBuilder {
       return t.norm();
     });
     
-    auto Umo_storage = utility::array_storage(dC);
-    u_mo_storages_.push_back(utility::array_storage(dC));
+    auto Umo_storage = detail::array_storage(dC);
+    u_mo_storages_.push_back(detail::array_storage(dC));
 
     darray_type C_mo, dL, F_df;
 
@@ -278,7 +278,7 @@ class ONCADFFockBuilder : public FockBuilder {
     C_mo("X, i, mu") = C_df_("X, mu, nu") * dC("nu, i");
     C_mo.truncate();
     auto cmo1 = mpqc::fenced_now(world);
-    c_mo_storages_.push_back(utility::array_storage(C_mo));
+    c_mo_storages_.push_back(detail::array_storage(C_mo));
 
     TA::SparseShape<float> forced_shape;
     if (force_shape_) {
@@ -293,7 +293,7 @@ class ONCADFFockBuilder : public FockBuilder {
     }
     F_df.truncate();
     auto edf1 = mpqc::fenced_now(world);
-    e_df_storages_.push_back(utility::array_storage(F_df));
+    e_df_storages_.push_back(detail::array_storage(F_df));
 
     auto rdf0 = mpqc::fenced_now(world);
     if (force_shape_) {
@@ -305,7 +305,7 @@ class ONCADFFockBuilder : public FockBuilder {
     }
     F_df.truncate();
     auto rdf1 = mpqc::fenced_now(world);
-    f_df_storages_.push_back(utility::array_storage(F_df));
+    f_df_storages_.push_back(detail::array_storage(F_df));
 
     auto l0 = mpqc::fenced_now(world);
     dL("mu, nu") = C_mo("X, i, mu") * F_df("X, i, nu");

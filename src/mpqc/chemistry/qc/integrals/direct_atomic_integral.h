@@ -206,7 +206,7 @@ DirectAtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
     result = *(iter->second);
     utility::print_par(world_, "Retrieved Direct AO Integral: ");
     utility::wprint_par(world_, formula.string());
-    double size = utility::array_size(result.array());
+    double size = mpqc::detail::array_size(result.array());
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
 
@@ -248,7 +248,7 @@ DirectAtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
     utility::print_par(world_, "Computed Direct One Body Integral: ");
     utility::wprint_par(world_, formula.string());
-    double size = utility::array_size(result.array());
+    double size = mpqc::detail::array_size(result.array());
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
 
@@ -263,7 +263,7 @@ DirectAtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
     utility::print_par(world_, "Computed Direct Twobody Two Center Integral: ");
     utility::wprint_par(world_, formula.string());
-    double size = utility::array_size(result.array());
+    double size = mpqc::detail::array_size(result.array());
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
   } else {
@@ -299,7 +299,7 @@ DirectAtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
 
   utility::print_par(world_, "Computed Direct Twobody Three Center Integral: ");
   utility::wprint_par(world_, formula.string());
-  double size = utility::array_size(result.array());
+  double size = mpqc::detail::array_size(result.array());
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
   madness::print_meminfo(
@@ -338,7 +338,7 @@ DirectAtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
 
   utility::print_par(world_, "Computed Direct Twobody Four Center Integral: ");
   utility::wprint_par(world_, formula.string());
-  double size = utility::array_size(result.array());
+  double size = mpqc::detail::array_size(result.array());
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
   madness::print_meminfo(world_.rank(),

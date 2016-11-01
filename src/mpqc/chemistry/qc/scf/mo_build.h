@@ -10,6 +10,7 @@
 
 
 #include "../../../../../utility/trange1_engine.h"
+#include "../../../../../utility/cc_utility.h"
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 
@@ -116,10 +117,10 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   auto tr_vir = tre->get_vir_tr1();
   auto tr_all = tre->get_all_tr1();
 
-  utility::parallel_print_range_info(world, tr_occ, "Occ");
-  utility::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
-  utility::parallel_print_range_info(world, tr_vir, "Vir");
-  utility::parallel_print_range_info(world, tr_all, "Obs");
+  cc::parallel_print_range_info(world, tr_occ, "Occ");
+  cc::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
+  cc::parallel_print_range_info(world, tr_vir, "Vir");
+  cc::parallel_print_range_info(world, tr_all, "Obs");
 
   // convert to TA
   auto C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_obs, tr_occ);
@@ -189,7 +190,7 @@ void closed_shell_cabs_mo_build_svd(
   basis::Basis ri_basis;
   ri_basis = obs_basis.join(abs_basis);
 
-  utility::parallel_print_range_info(world, ri_basis.create_trange1(),
+  cc::parallel_print_range_info(world, ri_basis.create_trange1(),
                                      "RI Basis");
   ao_int.orbital_basis_registry().add(OrbitalIndex(L"ρ"), ri_basis);
 
@@ -245,9 +246,9 @@ void closed_shell_cabs_mo_build_svd(
     auto tr_ribs_mo = tre->compute_range(nbf_ribs, vir_blocksize);
     auto tr_allvir_mo = tre->compute_range(nbf_cabs + n_vir, vir_blocksize);
 
-    utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
-    utility::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
-    utility::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
+    cc::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+    cc::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
+    cc::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
 
     C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen,
                                                     tr_ribs, tr_cabs_mo);
@@ -377,9 +378,9 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   auto tr_corr_occ = tre->get_occ_tr1();
   auto tr_vir = tre->get_vir_tr1();
 
-  utility::parallel_print_range_info(world, tr_occ, "Occ");
-  utility::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
-  utility::parallel_print_range_info(world, tr_vir, "Vir");
+  cc::parallel_print_range_info(world, tr_occ, "Occ");
+  cc::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
+  cc::parallel_print_range_info(world, tr_vir, "Vir");
 
   // convert to TA
   auto C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_obs, tr_occ);
@@ -486,11 +487,11 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
 
   if (ri_method == "VBS") {
     ri_basis = vir_basis.join(abs_basis);
-    utility::parallel_print_range_info(world, ri_basis.create_trange1(),
+    cc::parallel_print_range_info(world, ri_basis.create_trange1(),
                                        "RI Basis with VBS");
   } else if (ri_method == "OBS") {
     ri_basis = obs_basis.join(abs_basis);
-    utility::parallel_print_range_info(world, ri_basis.create_trange1(),
+    cc::parallel_print_range_info(world, ri_basis.create_trange1(),
                                        "RI Basis with OBS");
   } else {
     throw std::runtime_error("Invalid RI Method!");
@@ -556,7 +557,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
       tre->compute_range(tr_cabs.elements_range().second, vir_blocksize);
   auto tr_allvir_mo = tre->compute_range(nbf_ribs_minus_occ, vir_blocksize);
 
-  utility::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+  cc::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
   TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<TA::TensorD>(
       world, C_cabs_eigen, tr_ribs, tr_cabs_mo);
 
@@ -566,7 +567,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
       OrbitalSpaceTArray(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
   orbital_registry.add(C_cabs_space);
 
-  utility::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
+  cc::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
   TA::DistArray<Tile, Policy> C_allvir = array_ops::eigen_to_array<TA::TensorD>(
       world, C_allvir_eigen, tr_ribs, tr_allvir_mo);
 

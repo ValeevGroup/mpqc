@@ -19,7 +19,7 @@
 
 #include "mpqc/util/misc/time.h"
 #include "../utility/make_array.h"
-#include "../utility/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 
 #include "../scf/diagonalize_for_coffs.hpp"
 #include "../scf/soad.h"
@@ -395,7 +395,7 @@ class ThreeCenterScf {
         auto w1 = mpqc::fenced_now(world);
         w_times_.push_back(mpqc::duration_in_s(w0, w1));
 
-        auto w_store = utility::array_storage(W);
+        auto w_store = detail::array_storage(W);
         w_sparse_store_.push_back(w_store[1]);
         w_sparse_clr_store_.push_back(w_store[2]);
         w_full_storage_ = w_store[0];
@@ -441,7 +441,7 @@ class ThreeCenterScf {
               clr_thresh_(clr_thresh) {
 
         dV_inv_oh_ = TA::to_new_tile_type(V_inv_oh, to_dtile(clr_thresh_));
-        auto dl_sizes = utility::array_storage(dV_inv_oh_);
+        auto dl_sizes = detail::array_storage(dV_inv_oh_);
 
         if (dV_inv_oh_.world().rank() == 0) {
             std::cout << "V_inv storage:"
@@ -813,7 +813,7 @@ int main(int argc, char *argv[]) {
                     std::cout << "Eri3 Integral time: " << eri3_time
                               << std::endl;
                 }
-                eri3_storage = utility::array_storage(eri3.array());
+                eri3_storage = detail::array_storage(eri3.array());
                 if (world.rank() == 0) {
                     std::cout << "Eri3 Integral Storage:\n";
                     std::cout << "\tAll Full: " << eri3_storage[0] << "\n";
@@ -867,7 +867,7 @@ int main(int argc, char *argv[]) {
                 if (world.rank() == 0) {
                     std::cout << "B time = " << Btime << std::endl;
                 }
-                b_storage = utility::array_storage(B);
+                b_storage = detail::array_storage(B);
                 if (world.rank() == 0) {
                     std::cout << "B Storage:\n";
                     std::cout << "\tAll Full: " << b_storage[0] << "\n";
@@ -966,8 +966,8 @@ int main(int argc, char *argv[]) {
                                                           Q_thresh));
             auto dS = TA::to_new_tile_type(S, tensor::TaToDecompTensor(
                                                           Q_thresh));
-            auto Q_storage = utility::array_storage(dQpao);
-            auto S_storage = utility::array_storage(dS);
+            auto Q_storage = detail::array_storage(dQpao);
+            auto S_storage = detail::array_storage(dS);
             if (world.rank() == 0) {
                 std::cout << "Q Thresh = " << Q_thresh << "\n"
                           << "\tQ Full   = " << Q_storage[0] << "\n"
@@ -1002,7 +1002,7 @@ int main(int argc, char *argv[]) {
             auto ldQpao
                   = TA::to_new_tile_type(LinDepQpao,
                                          tensor::TaToDecompTensor(Q_thresh));
-            auto Q_storage = utility::array_storage(ldQpao);
+            auto Q_storage = detail::array_storage(ldQpao);
             if (world.rank() == 0) {
                 std::cout << "Q Thresh = " << Q_thresh << "\n"
                           << "\tQ Full   = " << Q_storage[0] << "\n"
@@ -1016,7 +1016,7 @@ int main(int argc, char *argv[]) {
             W("X, mu, rho") = B("X, mu, nu") * nldQpao("nu, rho");
             ta_routines::minimize_storage(W, Q_thresh/100);
 
-            auto W_storage = utility::array_storage(W);
+            auto W_storage = detail::array_storage(W);
             if (world.rank() == 0) {
                 std::cout << "Q Thresh = " << Q_thresh << "\n"
                           << "\tW Full   = " << W_storage[0] << "\n"

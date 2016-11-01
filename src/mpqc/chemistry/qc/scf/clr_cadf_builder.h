@@ -5,7 +5,7 @@
 
 #include <tiledarray.h>
 #include "mpqc/util/misc/time.h"
-#include "../../../../../utility/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/chemistry/qc/scf/util.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
@@ -107,7 +107,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 
     dE_ = make_three_center_integrals(obs, dfbs);
 
-    E_clr_sizes_ = utility::array_storage(dE_);
+    E_clr_sizes_ = detail::array_storage(dE_);
     if (dE_.world().rank() == 0) {
       std::cout << "E with clr storage:\n"
                 << "\tDense  " << E_clr_sizes_[0] << "\n"
@@ -125,7 +125,7 @@ class ClrCADFFockBuilder : public FockBuilder {
       : FockBuilder(), clr_threshold_(clr_threshold) {
     // Grab needed ao integrals
     E_ = ao_ints.compute(L"( Κ | G|κ λ)");
-    E_J_sizes_ = utility::array_storage(E_);
+    E_J_sizes_ = detail::array_storage(E_);
     if (E_.world().rank() == 0) {
       std::cout << "E for J storage:\n"
                 << "\tDense  " << E_J_sizes_[0] << "\n"
@@ -138,7 +138,7 @@ class ClrCADFFockBuilder : public FockBuilder {
         M, tensor::TaToDecompTensor(clr_threshold_, compress_M));
     M_.world().gop.fence();
 
-    auto m_store = utility::array_storage(M_);
+    auto m_store = detail::array_storage(M_);
     if (E_.world().rank() == 0) {
       std::cout << "M storage:\n"
                 << "\tDense  " << m_store[0] << "\n"
@@ -178,7 +178,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     C_df_ =
         TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(clr_threshold_));
     E_.world().gop.fence();
-    auto c_df_store = utility::array_storage(C_df_);
+    auto c_df_store = detail::array_storage(C_df_);
     if (E_.world().rank() == 0) {
       std::cout << "C_df storage:\n"
                 << "\tDense  " << c_df_store[0] << "\n"
@@ -374,7 +374,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     ArrayType C;
     C("mu, i") = C_in("mu, i");
     // Capture C sizes
-    lcao_sizes_.push_back(utility::array_storage(C));
+    lcao_sizes_.push_back(detail::array_storage(C));
 
     if (lcao_chop_threshold_ != 0.0) {
       auto chop0 = mpqc::fenced_now(world);
@@ -389,7 +389,7 @@ class ClrCADFFockBuilder : public FockBuilder {
       auto chop1 = mpqc::fenced_now(world);
       lcao_chop_times_.push_back(mpqc::duration_in_s(chop0, chop1));
 
-      lcao_chopped_sizes_.push_back(utility::array_storage(C));
+      lcao_chopped_sizes_.push_back(detail::array_storage(C));
     }
 
     bool compress_C = false;
@@ -402,7 +402,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     C_mo.truncate();
     auto c_mo1 = mpqc::fenced_now(world);
     c_mo_times_.push_back(mpqc::duration_in_s(c_mo0, c_mo1));
-    c_mo_sizes_.push_back(utility::array_storage(C_mo));
+    c_mo_sizes_.push_back(detail::array_storage(C_mo));
 
     // Get forced output shape
     TA::SparseShape<float> forced_shape;
@@ -460,7 +460,7 @@ class ClrCADFFockBuilder : public FockBuilder {
       E_mo.truncate();
       auto emo1 = mpqc::fenced_now(world);
       e_mo_times_.push_back(mpqc::duration_in_s(emo0, emo1));
-      e_mo_sizes_.push_back(utility::array_storage(E_mo));
+      e_mo_sizes_.push_back(detail::array_storage(E_mo));
 
       auto rdf0 = mpqc::fenced_now(world);
       DArrayType R_df;
@@ -475,7 +475,7 @@ class ClrCADFFockBuilder : public FockBuilder {
       E_mo.truncate();
       auto emo1 = mpqc::fenced_now(world);
       e_mo_times_.push_back(mpqc::duration_in_s(emo0, emo1));
-      e_mo_sizes_.push_back(utility::array_storage(E_mo));
+      e_mo_sizes_.push_back(detail::array_storage(E_mo));
 
       auto rdf0 = mpqc::fenced_now(world);
       DArrayType R_df;
@@ -489,7 +489,7 @@ class ClrCADFFockBuilder : public FockBuilder {
     F_df.truncate();
     auto f_df1 = mpqc::fenced_now(world);
     f_df_times_.push_back(mpqc::duration_in_s(f_df0, f_df1));
-    f_df_sizes_.push_back(utility::array_storage(F_df));
+    f_df_sizes_.push_back(detail::array_storage(F_df));
 
     // Construct L
     auto l0 = mpqc::fenced_now(world);

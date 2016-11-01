@@ -6,7 +6,7 @@
 
 
 #include "mpqc/util/misc/time.h"
-#include "../../../../../utility/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/tile.h"
@@ -89,7 +89,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
         tensor::detail::recompress = old_compress;
         B_time_ = mpqc::duration_in_s(B0, B1);
 
-        B_storages_ = utility::array_storage(B_);
+        B_storages_ = detail::array_storage(B_);
         if (world.rank() == 0) {
             std::cout << "B time: " << B_time_ << std::endl;
             std::cout << "B storage:\n"
@@ -203,14 +203,14 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
         C_mo("X,  i, mu") = C_df_("X, mu, nu") * dC("nu, i");
         C_mo.truncate();
         auto cmo1 = mpqc::fenced_now(world);
-        c_mo_storages_.push_back(utility::array_storage(C_mo));
+        c_mo_storages_.push_back(detail::array_storage(C_mo));
 
         auto fdf0 = mpqc::fenced_now(world);
         F_df("X, i, mu")
               = (G_df_("X,mu, nu") * dC("nu,i")).set_shape(C_mo.shape());
         F_df.truncate();
         auto fdf1 = mpqc::fenced_now(world);
-        f_df_storages_.push_back(utility::array_storage(F_df));
+        f_df_storages_.push_back(detail::array_storage(F_df));
 
         auto l0 = mpqc::fenced_now(world);
         dL("mu, nu") = C_mo("X, i, mu") * F_df("X, i, nu");

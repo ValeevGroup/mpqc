@@ -10,7 +10,7 @@
 
 #include "../../../../../common/typedefs.h"
 #include <tiledarray.h>
-#include "../../../../../utility/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 #include "../../../../../utility/make_array.h"
 
 

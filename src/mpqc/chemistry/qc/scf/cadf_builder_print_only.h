@@ -6,7 +6,7 @@
 
 
 #include "mpqc/util/misc/time.h"
-#include "../../../../../utility/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/chemistry/qc/scf/util.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
@@ -22,7 +22,7 @@
 #include <mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h>
 #include <mpqc/chemistry/qc/scf/cadf_helper_functions.h>
 
-#include <mpqc/util/array_info/tensor_store.h>
+#include <mpqc/math/external/tiledarray/tensor_store.h>
 
 #include <vector>
 #include <iostream>

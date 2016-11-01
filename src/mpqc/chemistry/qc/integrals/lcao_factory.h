@@ -263,7 +263,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
 
     utility::print_par(world_, "Computed Identity: ",
                        utility::to_string(formula_string.string()));
-    double size = utility::array_size(result);
+    double size = mpqc::detail::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
     return result;
@@ -294,7 +294,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   time += mpqc::duration_in_s(time0, time1);
   utility::print_par(world_, "Transformed LCAO Integral: ",
                      utility::to_string(formula_string.string()));
-  double size = utility::array_size(result);
+  double size = mpqc::detail::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
 
@@ -380,7 +380,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
 
   utility::print_par(world_, "Transformed LCAO Integral: ",
                      utility::to_string(formula_string.string()));
-  double size = utility::array_size(result);
+  double size = mpqc::detail::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
 
@@ -459,7 +459,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
 
   utility::print_par(world_, "Transformed LCAO Integral: ",
                      utility::to_string(formula_string.string()));
-  double size = utility::array_size(result);
+  double size = mpqc::detail::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
 
@@ -614,7 +614,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
     result = *(iter->second);
     utility::print_par(world_, "Retrieved LCAO Integral: ",
                        utility::to_string(formula.string()));
-    double size = utility::array_size(result);
+    double size = mpqc::detail::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
   } else {
@@ -637,7 +637,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
         utility::print_par(world_, "Permuted LCAO Integral: ",
                            utility::to_string(formula.string()), " From ",
                            utility::to_string(permute.string()));
-        double size = utility::array_size(result);
+        double size = mpqc::detail::array_size(result);
         utility::print_par(world_, " Size: ", size, " GB ");
         utility::print_par(world_, " Time: ", time, " s\n");
 

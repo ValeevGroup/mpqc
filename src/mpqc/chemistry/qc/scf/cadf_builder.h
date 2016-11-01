@@ -5,7 +5,7 @@
 
 #include <tiledarray.h>
 #include "mpqc/util/misc/time.h"
-#include "../../../../../utility/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/chemistry/qc/scf/util.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
@@ -133,7 +133,7 @@ class CADFFockBuilder : public FockBuilder {
     auto e_mo1 = mpqc::fenced_now(world);
     e_mo_times_.push_back(mpqc::duration_in_s(e_mo0, e_mo1));
 
-    auto E_mo_sizes = utility::array_storage(E_mo);
+    auto E_mo_sizes = detail::array_storage(E_mo);
     e_mo_sizes_.push_back(
         std::array<double, 2>{{E_mo_sizes[0], E_mo_sizes[1]}});
 
@@ -322,7 +322,7 @@ class CADFFockBuilder : public FockBuilder {
     ArrayType C;
     C("mu, i") = C_in("mu, i");
     // Capture C sizes
-    auto lcao_sizes = utility::array_storage(C);
+    auto lcao_sizes = detail::array_storage(C);
     lcao_sizes_.push_back(
         std::array<double, 2>{{lcao_sizes[0], lcao_sizes[1]}});
 
@@ -339,7 +339,7 @@ class CADFFockBuilder : public FockBuilder {
       auto chop1 = mpqc::fenced_now(world);
       lcao_chop_times_.push_back(mpqc::duration_in_s(chop0, chop1));
 
-      auto chop_sizes = utility::array_storage(C);
+      auto chop_sizes = detail::array_storage(C);
       lcao_chopped_sizes_.push_back(
           std::array<double, 2>{{chop_sizes[0], chop_sizes[1]}});
     }
@@ -351,7 +351,7 @@ class CADFFockBuilder : public FockBuilder {
     auto c_mo1 = mpqc::fenced_now(world);
     c_mo_times_.push_back(mpqc::duration_in_s(c_mo0, c_mo1));
 
-    auto c_mo_sizes = utility::array_storage(C_mo);
+    auto c_mo_sizes = detail::array_storage(C_mo);
     c_mo_sizes_.push_back(
         std::array<double, 2>{{c_mo_sizes[0], c_mo_sizes[1]}});
 
@@ -412,7 +412,7 @@ class CADFFockBuilder : public FockBuilder {
           (E_("X, mu, nu") * C("nu,i")).set_shape(forced_shape);
       E_mo_forced.truncate();
 
-      auto e_mo_sizes = utility::array_storage(E_mo_forced);
+      auto e_mo_sizes = detail::array_storage(E_mo_forced);
       e_mo_forced_sizes_.push_back(
           std::array<double, 2>{{e_mo_sizes[0], e_mo_sizes[1]}});
 
@@ -426,7 +426,7 @@ class CADFFockBuilder : public FockBuilder {
     auto f_df1 = mpqc::fenced_now(world);
     f_df_times_.push_back(mpqc::duration_in_s(f_df0, f_df1));
 
-    auto f_df_sizes = utility::array_storage(F_df);
+    auto f_df_sizes = detail::array_storage(F_df);
     f_df_sizes_.push_back(
         std::array<double, 2>{{f_df_sizes[0], f_df_sizes[1]}});
 

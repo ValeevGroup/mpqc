@@ -28,7 +28,7 @@
 #include "../integrals/atomic_integral.h"
 
 #include "mpqc/util/misc/time.h"
-#include "../utility/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Metric time: " << mtime << std::endl;
   }
   out_doc.AddMember("metric time", mtime, out_doc.GetAllocator());
-  auto Mj_store = utility::array_storage(Mj);
+  auto Mj_store = detail::array_storage(Mj);
 
   if (world.rank() == 0) {
     std::cout << "(X|Y) storage:\n"
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
 
   out_doc.AddMember("Cdf build time", cdftime, out_doc.GetAllocator());
 
-  auto array_storage_Cdf = utility::array_storage(C_df_);
+  auto array_storage_Cdf = detail::array_storage(C_df_);
   if (world.rank() == 0) {
     std::cout << "C_df by atom storage = \n"
               << "\tFull   " << array_storage_Cdf[0] << "\n"
@@ -395,7 +395,7 @@ int main(int argc, char *argv[]) {
   auto dC_df =
       TA::to_new_tile_type(C_df, tensor::TaToDecompTensor(clr_threshold));
 
-  array_storage_Cdf = utility::array_storage(dC_df);
+  array_storage_Cdf = detail::array_storage(dC_df);
   if (world.rank() == 0) {
     std::cout << "C_df storage = \n"
               << "\tFull   " << array_storage_Cdf[0] << "\n"
@@ -459,7 +459,7 @@ int main(int argc, char *argv[]) {
     if (world.rank() == 0) {
       std::cout << "3 center time: " << etime << std::endl;
     }
-    auto e_store = utility::array_storage(deri3s);
+    auto e_store = detail::array_storage(deri3s);
     if (world.rank() == 0) {
       std::cout << "E storage:"
                 << "\n\tFull     = " << e_store[0]

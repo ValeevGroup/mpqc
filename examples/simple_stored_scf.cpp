@@ -19,7 +19,7 @@
 #include "../integrals/integrals.h"
 
 #include "mpqc/util/misc/time.h"
-#include "../utility/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/math/external/eigen/eigen.h"
 
 using namespace mpqc;

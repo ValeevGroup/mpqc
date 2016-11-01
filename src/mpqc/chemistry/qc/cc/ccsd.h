@@ -426,9 +426,9 @@ class CCSD {
 
                               - g_abij("d,c,k,l") * T("d,a,i,l");
           if (print_detail) {
-            utility::print_size_info(T, "T");
-            utility::print_size_info(j_akic, "J_akic");
-            utility::print_size_info(k_kaic, "K_kaic");
+            detail::print_size_info(T, "T");
+            detail::print_size_info(j_akic, "J_akic");
+            detail::print_size_info(k_kaic, "K_kaic");
           }
         }
 
@@ -464,7 +464,7 @@ class CCSD {
         r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
 
         if (print_detail) {
-          utility::print_size_info(a_klij, "A_klij");
+          detail::print_size_info(a_klij, "A_klij");
         }
       }
       tmp_time1 = mpqc::now(world, accurate_time);
@@ -486,7 +486,7 @@ class CCSD {
           b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
           if (print_detail) {
-            utility::print_size_info(b_abij, "B_abij");
+            detail::print_size_info(b_abij, "B_abij");
           }
 
           r2("a,b,i,j") += b_abij("a,b,i,j");
@@ -498,7 +498,7 @@ class CCSD {
                               g_iabc("k,b,c,d") * t1("a,k");
 
           if (print_detail) {
-            utility::print_size_info(b_abcd, "B_abcd");
+            detail::print_size_info(b_abcd, "B_abcd");
           }
 
           r2("a,b,i,j") += b_abcd("a,b,c,d") * tau("c,d,i,j");
@@ -551,8 +551,8 @@ class CCSD {
         t2("a,b,i,j") = t.second("a,b,i,j");
 
         if (print_detail) {
-          utility::print_size_info(r2, "R2");
-          utility::print_size_info(t2, "T2");
+          detail::print_size_info(r2, "R2");
+          detail::print_size_info(t2, "T2");
         }
 
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -829,9 +829,9 @@ class CCSD {
 
                               - g_abij("d,c,k,l") * T("d,a,i,l");
           if (print_detail) {
-            utility::print_size_info(T, "T");
-            utility::print_size_info(j_akic, "J_akic");
-            utility::print_size_info(k_kaic, "K_kaic");
+            detail::print_size_info(T, "T");
+            detail::print_size_info(j_akic, "J_akic");
+            detail::print_size_info(k_kaic, "K_kaic");
           }
         }
 
@@ -867,7 +867,7 @@ class CCSD {
         r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
 
         if (print_detail) {
-          utility::print_size_info(a_klij, "A_klij");
+          detail::print_size_info(a_klij, "A_klij");
         }
       }
       tmp_time1 = mpqc::now(world, accurate_time);
@@ -889,7 +889,7 @@ class CCSD {
           b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
           if (print_detail) {
-            utility::print_size_info(b_abij, "B_abij");
+            detail::print_size_info(b_abij, "B_abij");
           }
 
           r2("a,b,i,j") += b_abij("a,b,i,j");
@@ -901,7 +901,7 @@ class CCSD {
                               g_iabc("k,b,c,d") * t1("a,k");
 
           if (print_detail) {
-            utility::print_size_info(b_abcd, "B_abcd");
+            detail::print_size_info(b_abcd, "B_abcd");
           }
 
           r2("a,b,i,j") += b_abcd("a,b,c,d") * tau("c,d,i,j");
@@ -954,8 +954,8 @@ class CCSD {
         t2("a,b,i,j") = t.second("a,b,i,j");
 
         if (print_detail) {
-          utility::print_size_info(r2, "R2");
-          utility::print_size_info(t2, "T2");
+          detail::print_size_info(r2, "R2");
+          detail::print_size_info(t2, "T2");
         }
 
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -1108,10 +1108,10 @@ class CCSD {
       auto duration_u = mpqc::duration_in_s(tu0, tu1);
 
       if (print_detail) {
-        utility::print_size_info(u2_u11, "U_aaoo");
+        detail::print_size_info(u2_u11, "U_aaoo");
         mpqc::utility::print_par(world, "u term time: ", duration_u, "\n");
       } else if (iter == 0) {
-        utility::print_size_info(u2_u11, "U_aaoo");
+        detail::print_size_info(u2_u11, "U_aaoo");
       }
 
       //                    if (g_abij.world().rank() == 0) {
@@ -1255,9 +1255,9 @@ class CCSD {
                                 - g_abij("d,c,k,l") * T("d,a,i,l");
 
             if (print_detail) {
-              utility::print_size_info(T, "T");
-              utility::print_size_info(j_akic, "J_akic");
-              utility::print_size_info(k_kaic, "K_kaic");
+              detail::print_size_info(T, "T");
+              detail::print_size_info(j_akic, "J_akic");
+              detail::print_size_info(k_kaic, "K_kaic");
             }
           }
 
@@ -1293,7 +1293,7 @@ class CCSD {
           r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
 
           if (print_detail) {
-            utility::print_size_info(a_klij, "A_klij");
+            detail::print_size_info(a_klij, "A_klij");
           }
         }
         tmp_time1 = mpqc::now(world, accurate_time);
@@ -1316,7 +1316,7 @@ class CCSD {
           r2("a,b,i,j") += b_abij("a,b,i,j");
 
           if (print_detail) {
-            utility::print_size_info(b_abij, "B_abij");
+            detail::print_size_info(b_abij, "B_abij");
           }
         }
         tmp_time1 = mpqc::now(world, accurate_time);
@@ -1369,8 +1369,8 @@ class CCSD {
         t2("a,b,i,j") = t.second("a,b,i,j");
 
         if (print_detail) {
-          utility::print_size_info(r2, "R2");
-          utility::print_size_info(t2, "T2");
+          detail::print_size_info(r2, "R2");
+          detail::print_size_info(t2, "T2");
         }
 
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");

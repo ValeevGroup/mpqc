@@ -13,14 +13,14 @@
 #include <tiledarray.h>
 
 #include "../utility/make_array.h"
-#include "../utility/parallel_break_point.h"
-#include "../utility/parallel_print.h"
+#include "mpqc/util/external/madworld/parallel_break_point.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
 
-#include "../utility/array_info.h"
-#include "../utility/print_size_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 
 #include "mpqc/util/misc/json_handling.h"
-#include "../utility/parallel_file.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/misc/time.h"
 
 #include <mpqc/chemistry/molecule/atom.h>
@@ -247,7 +247,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   if (ao_blocksize != 0) {
     basis = reblock(basis, cc::reblock_basis, ao_blocksize);
   }
-  utility::parallel_print_range_info(world, basis.create_trange1(),
+  cc::parallel_print_range_info(world, basis.create_trange1(),
                                      "OBS Basis");
   bs_registry->add(OrbitalIndex(L"κ"), basis);
 
@@ -258,7 +258,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     if (ao_blocksize != 0) {
       df_basis = reblock(df_basis, cc::reblock_basis, ao_blocksize);
     }
-    utility::parallel_print_range_info(world, df_basis.create_trange1(),
+    cc::parallel_print_range_info(world, df_basis.create_trange1(),
                                        "DF Basis");
     bs_registry->add(OrbitalIndex(L"Κ"), df_basis);
   }
@@ -270,7 +270,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     if (ao_blocksize != 0) {
       vir_basis = reblock(vir_basis, cc::reblock_basis, ao_blocksize);
     }
-    utility::parallel_print_range_info(world, vir_basis.create_trange1(),
+    cc::parallel_print_range_info(world, vir_basis.create_trange1(),
                                        "Virtual Basis");
     bs_registry->add(OrbitalIndex(L"Α"), vir_basis);
     //        std::cout << vir_basis << std::endl;
@@ -284,7 +284,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     if (ao_blocksize != 0) {
       abs_basis = reblock(abs_basis, cc::reblock_basis, ao_blocksize);
     }
-    utility::parallel_print_range_info(world, abs_basis.create_trange1(),
+    cc::parallel_print_range_info(world, abs_basis.create_trange1(),
                                        "AUX Basis");
     bs_registry->add(OrbitalIndex(L"α"), abs_basis);
   }

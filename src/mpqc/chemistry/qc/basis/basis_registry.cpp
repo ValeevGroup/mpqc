@@ -3,6 +3,7 @@
 //
 
 #include "basis_registry.h"
+#include "../../../../../utility/cc_utility.h"
 
 namespace mpqc {
 
@@ -14,14 +15,13 @@ mpqc::OrbitalRegistry<mpqc::basis::Basis>::OrbitalRegistry(const KeyVal& kv)
   auto basis = kv.keyval("basis").class_ptr<basis::Basis>();
   assert(basis != nullptr);
   this->add(OrbitalIndex(L"μ"), *basis);
-  utility::parallel_print_range_info(world, basis->create_trange1(),
-                                     "OBS Basis");
+  cc::parallel_print_range_info(world, basis->create_trange1(), "OBS Basis");
 
   if (kv.exists("df_basis")) {
     auto df_basis = kv.keyval("df_basis").class_ptr<basis::Basis>();
     assert(df_basis != nullptr);
-    utility::parallel_print_range_info(world, df_basis->create_trange1(),
-                                       "DF Basis");
+    cc::parallel_print_range_info(world, df_basis->create_trange1(),
+                                  "DF Basis");
     this->add(OrbitalIndex(L"Κ"), *df_basis);
   }
 
@@ -29,16 +29,16 @@ mpqc::OrbitalRegistry<mpqc::basis::Basis>::OrbitalRegistry(const KeyVal& kv)
     auto aux_basis = kv.keyval("aux_basis").class_ptr<basis::Basis>();
     assert(aux_basis != nullptr);
     this->add(OrbitalIndex(L"α"), *aux_basis);
-    utility::parallel_print_range_info(world, aux_basis->create_trange1(),
-                                       "AUX Basis");
+    cc::parallel_print_range_info(world, aux_basis->create_trange1(),
+                                  "AUX Basis");
   }
 
   if (kv.exists("vir_basis")) {
     auto vir_basis = kv.keyval("vir_basis").class_ptr<basis::Basis>();
     assert(vir_basis != nullptr);
     this->add(OrbitalIndex(L"Α"), *vir_basis);
-    utility::parallel_print_range_info(world, vir_basis->create_trange1(),
-                                       "Virtual Basis");
+    cc::parallel_print_range_info(world, vir_basis->create_trange1(),
+                                  "Virtual Basis");
   }
 }
 

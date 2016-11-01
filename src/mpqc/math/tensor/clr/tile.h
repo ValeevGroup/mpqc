@@ -439,6 +439,15 @@ inline std::ostream &operator<<(std::ostream &os, Tile<T> const &tile) {
     return os;
 }
 
+template <typename T>
+unsigned long tile_clr_storage(Tile<DecomposedTensor<T>> const &tile) {
+  auto size = 0ul;
+  for (auto const &t : tile.tile().tensors()) {
+      size += t.range().volume();
+  }
+  return size;
+}
+
 } // namespace tensor
 } // namespace mpqc
 

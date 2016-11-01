@@ -8,11 +8,11 @@
 #include <tiledarray.h>
 
 #include "../utility/make_array.h"
-#include "../utility/parallel_print.h"
-#include "../utility/parallel_break_point.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/util/external/madworld/parallel_break_point.h"
 
-#include "../utility/array_info.h"
-#include "../utility/print_size_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 
 #include "mpqc/util/misc/time.h"
 #include "mpqc/util/misc/json_handling.h"

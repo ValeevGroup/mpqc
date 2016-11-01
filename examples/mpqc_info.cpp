@@ -2,8 +2,8 @@
 // Created by Chong Peng on 9/9/16.
 //
 
-#include "../utility/parallel_print.h"
-#include "../utility/parallel_file.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
 #include "../utility/cc_utility.h"
 #include <madness/world/world.h>
 

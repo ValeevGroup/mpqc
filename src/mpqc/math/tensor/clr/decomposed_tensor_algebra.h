@@ -3,10 +3,10 @@
 
 #include "mpqc/math/external/eigen/eigen.h"
 
-#include "../common/typedefs.h"
-
 #include <tiledarray.h>
 #include <madness/tensor/clapack.h>
+
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
 
 extern "C" void
 sgesdd_(const char *jobz, integer *m, integer *n, real4 *a, integer *lda,

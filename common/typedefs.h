@@ -21,13 +21,13 @@
 template <typename E>
 using Epool = mpqc::integrals::EnginePool<E>;
 
-template <typename T>
-using Tile = mpqc::tensor::Tile<T>;
-
-template <typename T>
-using DecompTensor = mpqc::tensor::DecomposedTensor<T>;
-
-using DecompTensorD = DecompTensor<double>;
+//template <typename T>
+//using Tile = mpqc::tensor::Tile<T>;
+//
+//template <typename T>
+//using DecompTensor = mpqc::tensor::DecomposedTensor<T>;
+//
+//using DecompTensorD = DecompTensor<double>;
 
 /////////////////////////////////////////////////////////
 // Libint typedefs

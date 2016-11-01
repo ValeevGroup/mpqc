@@ -72,7 +72,7 @@ operator()(array_type const &F) {
     // Compute D to full accuracy
     D("i,j") = Cao("i,k") * Cao("j,k");
     D.truncate();
-    density_storages_.push_back(utility::array_storage(D));
+    density_storages_.push_back(detail::array_storage(D));
 
     if (localize_) {
         auto l0 = mpqc::fenced_now(world);
@@ -96,7 +96,7 @@ operator()(array_type const &F) {
     }
 
     esolve_times_.push_back(mpqc::duration_in_s(e0, e1));
-    coeff_storages_.push_back(utility::array_storage(Cao));
+    coeff_storages_.push_back(detail::array_storage(Cao));
 
     return std::make_pair(D, Cao);
 }

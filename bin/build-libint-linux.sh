@@ -28,16 +28,12 @@ ls
 mkdir -p _build
 mkdir -p _install
 
-cd _build
-
 # Unpack libint tarball
 tar -xvzf ../external/libint-2.2.0-beta1.tgz
-
-mkdir -p libint
-cd libint
+cd libint-2.2.0-beta1/
 
 export CXXFLAGS="-O0 -std=c++11"
-../libint-2.2.0-beta1/configure \
+./configure \
     --prefix="$HOME/_install/libint" \
     CXX=$CXX \
     CXXFLAGS="$CXXFLAGS" \

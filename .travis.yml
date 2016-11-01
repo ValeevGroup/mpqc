@@ -35,8 +35,9 @@ addons:
 # llvm.org apt repo is down
 #     - clang-3.7
 before_install: 
-   #- ./bin/dep-$TRAVIS_OS_NAME.sh
+   - ./bin/build-mpich-$TRAVIS_OS_NAME.sh
    - ./bin/build-libint-$TRAVIS_OS_NAME.sh
+   - ./bin/build-TA-$TRAVIS_OS_NAME.sh
 script: ./bin/build-$TRAVIS_OS_NAME.sh
 after_failure:
   - cat ./_build/libint-2.2.0-beta1/config.log

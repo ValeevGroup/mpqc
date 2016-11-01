@@ -68,21 +68,20 @@ int try_main(int argc, char *argv[], madness::World &world) {
   auto pV = pao_int.compute(L"<κ|V|λ>");
 
   // Overlap matrix in real space: <u0|vR>
-  auto pS_R = pao_int.compute(L"<κ|λ>");
+  auto pS = pao_int.compute(L"<κ|λ>");
 
   // Overlap matrix in reciprocal space: Sum_R ( <u0|vR>exp(ikR) )
-  auto pS_k = pao_int.transform_real2recip(pS_R);
+  auto pS_k = pao_int.transform_real2recip(pS);
 
   // One-body fock matrix in real space
-  auto p_oneFock_real = pT;
-  p_oneFock_real("mu, nu") += pV("mu, nu");
+  auto pH = pT;
+  pH("mu, nu") += pV("mu, nu");
 
   // One-body fock matrix in reciprocal space
-  auto p_oneFock_recip = pao_int.transform_real2recip(p_oneFock_real);
+  auto pH_k = pao_int.transform_real2recip(pH);
 
   // Diagonalize fock in recip space and form density matrix
-  auto pD = pao_int.compute_density(p_oneFock_real, p_oneFock_recip,
-                                    pS_k, docc);
+  auto pD = pao_int.compute_density(pH_k, pS_k, docc);
 
   /// Main iterative loop
   auto iter = 0;
@@ -102,15 +101,15 @@ int try_main(int argc, char *argv[], madness::World &world) {
       // Exchange matrix
       auto pK = pao_int.compute(L"(μ ν| K|κ λ)");
       // F = H + 2J - K
-      auto pF = p_oneFock_real;
+      auto pF = pH;
       pF("mu, nu") += 2.0 * pJ("mu, nu") - pK("mu, nu");
 
       // Transform Fock from real sapce to reciprocal space
-      auto pF_recip = pao_int.transform_real2recip(pF);
-      pD = pao_int.compute_density(pF, pF_recip, pS_k, docc);
+      auto pF_k = pao_int.transform_real2recip(pF);
+      pD = pao_int.compute_density(pF_k, pS_k, docc);
 
       // Compute SCF energy
-      pF("mu, nu") += p_oneFock_real("mu, nu");
+      pF("mu, nu") += pH("mu, nu");
       std::complex<double> E = pF("mu, nu") * pD("mu, nu");
       ehf = E.real();
 

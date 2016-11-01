@@ -90,7 +90,7 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
   TArray transform_real2recip(TArray &matrix);
 
   /// compute density: D = C(occ).C(occ)t
-  TArray compute_density(TArray &fock_real, TArray &fock_recip,
+  TArray compute_density(TArray &fock_recip,
                          TArray &overlap,
                          int64_t ndocc);
 
@@ -647,7 +647,7 @@ PeriodicAtomicIntegral<Tile, Policy>::transform_real2recip(
 template <typename Tile, typename Policy>
 typename PeriodicAtomicIntegral<Tile, Policy>::TArray
 PeriodicAtomicIntegral<Tile, Policy>::compute_density(
-    TArray &fock_real, TArray &fock_recip,
+    TArray &fock_recip,
     TArray &overlap,
     int64_t ndocc) {
 
@@ -656,9 +656,8 @@ PeriodicAtomicIntegral<Tile, Policy>::compute_density(
     std::vector<Vectorc> eps(k_size_);
     std::vector<Matrixc> C(k_size_);
 
-    auto tr0 = fock_real.trange().data()[0];
-    //TODO: write a function to form tr1. Now R_max_ must equal RD_max_
-    auto tr1 = fock_real.trange().data()[1];
+    auto tr0 = fock_recip.trange().data()[0];
+    auto tr1 = extend_trange1(tr0, RD_size_);
 
     auto fock_eig = array_ops::array_to_eigen(fock_recip);
     auto overlap_eig = array_ops::array_to_eigen(overlap);

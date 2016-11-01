@@ -57,7 +57,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   auto &world = ao_int.world();
   using TArray = TA::DistArray<Tile, Policy>;
 
-  auto mo_time0 = mpqc_time::fenced_now(world);
+  auto mo_time0 = mpqc::fenced_now(world);
   utility::print_par(world, "\nBuilding ClosedShell OBS MO Orbital\n");
 
   auto occ = mols.occupation() / 2;
@@ -146,8 +146,8 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
       OrbitalSpaceTArray(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_all_ta);
   orbital_registry.add(obs_space);
 
-  auto mo_time1 = mpqc_time::fenced_now(world);
-  auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
+  auto mo_time1 = mpqc::fenced_now(world);
+  auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
   utility::print_par(world, "ClosedShell OBS MO Build Time: ", mo_time, " S\n");
 
   return tre;
@@ -176,7 +176,7 @@ void closed_shell_cabs_mo_build_svd(
   auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_int.world();
   // CABS fock build
-  auto mo_time0 = mpqc_time::fenced_now(world);
+  auto mo_time0 = mpqc::fenced_now(world);
   utility::print_par(world, "\nBuilding ClosedShell CABS MO Orbital\n");
 
   // build the RI basis
@@ -269,8 +269,8 @@ void closed_shell_cabs_mo_build_svd(
     orbital_registry.add(C_ribs_space);
     orbital_registry.add(C_allvir_space);
 
-    auto mo_time1 = mpqc_time::fenced_now(world);
-    auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
+    auto mo_time1 = mpqc::fenced_now(world);
+    auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
     utility::print_par(world, "ClosedShell CABS MO Build Time: ", mo_time,
                        " S\n");
   }
@@ -299,7 +299,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   using TArray = TA::DistArray<Tile, Policy>;
 
   utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO Orbital\n");
-  auto mo_time0 = mpqc_time::fenced_now(world);
+  auto mo_time0 = mpqc::fenced_now(world);
   std::size_t occ = mols.occupation()/2;
 
   // solving occupied orbitals
@@ -436,8 +436,8 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
       OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"Α"), C_vir_ta_new);
   lcao_factory.orbital_space().add(vir_space);
 
-  auto mo_time1 = mpqc_time::fenced_now(world);
-  auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
+  auto mo_time1 = mpqc::fenced_now(world);
+  auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
   utility::print_par(world, "ClosedShell Dual Basis MO Build Time: ", mo_time,
                      " S\n");
 
@@ -469,7 +469,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_int.world();
   // CABS fock build
-  auto mo_time0 = mpqc_time::fenced_now(world);
+  auto mo_time0 = mpqc::fenced_now(world);
   utility::print_par(world,
                      "\nBuilding ClosedShell Dual Basis CABS MO Orbital\n");
 
@@ -575,8 +575,8 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
       OrbitalSpaceTArray(OrbitalIndex(L"A'"), OrbitalIndex(L"ρ"), C_allvir);
   orbital_registry.add(C_allvir_space);
 
-  auto mo_time1 = mpqc_time::fenced_now(world);
-  auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
+  auto mo_time1 = mpqc::fenced_now(world);
+  auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
   utility::print_par(world, "ClosedShell Dual Basis CABS MO Build Time: ",
                      mo_time, " S\n");
 };

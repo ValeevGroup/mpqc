@@ -21,12 +21,12 @@ double RIDBRMP2F12::value() {
     auto& world = this->wfn_world()->world();
 
     double time;
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
 
     double ref_energy = ref_wfn_->value();
 
-    auto time1 = mpqc_time::fenced_now(world);
-    time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
     // initialize
@@ -71,8 +71,8 @@ double RIDBRMP2F12::value() {
     }
     utility::print_par(world, "E_S: ", e_s, "\n");
 
-    auto time2 = mpqc_time::fenced_now(world);
-    time = mpqc_time::duration_in_s(time1, time2);
+    auto time2 = mpqc::fenced_now(world);
+    time = mpqc::duration_in_s(time1, time2);
     utility::print_par(world,"Total F12 Time: ", time, " S \n");
 
     if (!redo_mp2_) {
@@ -96,11 +96,11 @@ double RIDBRMP2F12::value() {
 
       rmp2f12_energy_ = new_mp2 + ef12 + e_s;
 
-      auto time3 = mpqc_time::fenced_now(world);
-      time = mpqc_time::duration_in_s(time2, time3);
+      auto time3 = mpqc::fenced_now(world);
+      time = mpqc::duration_in_s(time2, time3);
       utility::print_par(world,"Total New MP2 Time: ", time, " S \n");
 
-      time = mpqc_time::duration_in_s(time0, time3);
+      time = mpqc::duration_in_s(time0, time3);
       utility::print_par(world,"Total DBMP2F12 Time: ", time, " S \n");
 
     }

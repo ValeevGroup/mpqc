@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
       world, ta_pass_through,
       std::make_shared<molecule::Molecule>(clustered_mol), bs_registry, param);
 
-  auto time0 = mpqc_time::fenced_now(world);
+  auto time0 = mpqc::fenced_now(world);
   // Overlap ints
   auto S = ao_int.compute(L"(κ|λ)");
   auto H = ao_int.compute(L"(κ|H|λ)");
@@ -164,8 +164,8 @@ int main(int argc, char *argv[]) {
                           std::move(db));
   scf.solve(50, 1e-10);
 
-  auto time1 = mpqc_time::fenced_now(world);
-  auto hf_time = mpqc_time::duration_in_s(time0, time1);
+  auto time1 = mpqc::fenced_now(world);
+  auto hf_time = mpqc::duration_in_s(time0, time1);
 
   // obs fock build
   std::size_t all = S.trange().elements_range().extent()[0];
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   ao_int.registry().insert(Formula(L"(μ|F|ν)[df]"), F);
 
   // mp2
-  time0 = mpqc_time::fenced_now(world);
+  time0 = mpqc::fenced_now(world);
 
   // solve Coefficient
   std::size_t n_frozen_core = 0;
@@ -241,11 +241,11 @@ int main(int argc, char *argv[]) {
         lcao_factory, ens, std::make_shared<TRange1Engine>(tre));
     mp2.compute_df();
   }
-  time1 = mpqc_time::fenced_now(world);
-  auto mp2_time = mpqc_time::duration_in_s(time0, time1);
+  time1 = mpqc::fenced_now(world);
+  auto mp2_time = mpqc::duration_in_s(time0, time1);
 
   //    lcao_factory.atomic_integral().registry().print_formula();
-  time0 = mpqc_time::fenced_now(world);
+  time0 = mpqc::fenced_now(world);
   // CABS fock build
 
   // integral
@@ -316,8 +316,8 @@ int main(int argc, char *argv[]) {
   //    lcao_factory.registry().clear();
   //    ao_int.registry().clear();
   mp2f12.compute_mp2_f12_df();
-  time1 = mpqc_time::fenced_now(world);
-  auto mp2f12_time = mpqc_time::duration_in_s(time0, time1);
+  time1 = mpqc::fenced_now(world);
+  auto mp2f12_time = mpqc::duration_in_s(time0, time1);
 
   //    ao_int.registry().print_formula(world);
   //    lcao_factory.registry().print_formula(world);

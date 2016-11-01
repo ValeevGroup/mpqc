@@ -55,7 +55,7 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
             : FockBuilder(), C_df_(C_df), G_df_(G_df), clr_thresh_(clr_thresh) {
         auto &world = C_df_.world();
 
-        auto l0 = mpqc_time::fenced_now(world);
+        auto l0 = mpqc::fenced_now(world);
         auto M_eig = array_ops::array_to_eigen(M);
 
         MatrixD L_inv_eig
@@ -71,23 +71,23 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
         auto dL_inv = TA::to_new_tile_type(
               L_inv, tensor::TaToDecompTensor(j_clr_thresh, compress_L));
 
-        auto l1 = mpqc_time::fenced_now(world);
-        l_inv_time_ = mpqc_time::duration_in_s(l0, l1);
+        auto l1 = mpqc::fenced_now(world);
+        l_inv_time_ = mpqc::duration_in_s(l0, l1);
 
         if (world.rank() == 0) {
             std::cout << "L_inv of Metric time: " << l_inv_time_ << std::endl;
         }
 
-        auto B0 = mpqc_time::fenced_now(world);
+        auto B0 = mpqc::fenced_now(world);
         const auto old_compress = tensor::detail::recompress;
         tensor::detail::recompress = true;
 
         B_("X, mu, nu") = dL_inv("X, Y") * eri3("Y, mu, nu");
         minimize_storage(B_, j_clr_thresh);
 
-        auto B1 = mpqc_time::fenced_now(world);
+        auto B1 = mpqc::fenced_now(world);
         tensor::detail::recompress = old_compress;
-        B_time_ = mpqc_time::duration_in_s(B0, B1);
+        B_time_ = mpqc::duration_in_s(B0, B1);
 
         B_storages_ = utility::array_storage(B_);
         if (world.rank() == 0) {
@@ -179,12 +179,12 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
                                                                    compress_D));
 
         darray_type dJ;
-        auto j0 = mpqc_time::fenced_now(world);
+        auto j0 = mpqc::fenced_now(world);
 
         dJ("mu, nu") = B_("X,mu,nu") * (B_("X,r,s") * dD("r,s"));
 
-        auto j1 = mpqc_time::fenced_now(world);
-        j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
+        auto j1 = mpqc::fenced_now(world);
+        j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
         auto J = TA::to_new_tile_type(dJ, tensor::DecompToTaTensor{});
 
@@ -199,34 +199,34 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
                                                                    compress_C));
 
         darray_type C_mo, dL, F_df;
-        auto cmo0 = mpqc_time::fenced_now(world);
+        auto cmo0 = mpqc::fenced_now(world);
         C_mo("X,  i, mu") = C_df_("X, mu, nu") * dC("nu, i");
         C_mo.truncate();
-        auto cmo1 = mpqc_time::fenced_now(world);
+        auto cmo1 = mpqc::fenced_now(world);
         c_mo_storages_.push_back(utility::array_storage(C_mo));
 
-        auto fdf0 = mpqc_time::fenced_now(world);
+        auto fdf0 = mpqc::fenced_now(world);
         F_df("X, i, mu")
               = (G_df_("X,mu, nu") * dC("nu,i")).set_shape(C_mo.shape());
         F_df.truncate();
-        auto fdf1 = mpqc_time::fenced_now(world);
+        auto fdf1 = mpqc::fenced_now(world);
         f_df_storages_.push_back(utility::array_storage(F_df));
 
-        auto l0 = mpqc_time::fenced_now(world);
+        auto l0 = mpqc::fenced_now(world);
         dL("mu, nu") = C_mo("X, i, mu") * F_df("X, i, nu");
         dL.truncate();
-        auto l1 = mpqc_time::fenced_now(world);
+        auto l1 = mpqc::fenced_now(world);
 
         array_type K;
-        auto k0 = mpqc_time::fenced_now(world);
+        auto k0 = mpqc::fenced_now(world);
         auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
         K("mu, nu") = L("mu, nu") + L("nu, mu");
-        auto k1 = mpqc_time::fenced_now(world);
+        auto k1 = mpqc::fenced_now(world);
 
-        c_mo_times_.push_back(mpqc_time::duration_in_s(cmo0, cmo1));
-        f_df_times_.push_back(mpqc_time::duration_in_s(fdf0, fdf1));
-        dl_times_.push_back(mpqc_time::duration_in_s(l0, l1));
-        dl_to_k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
+        c_mo_times_.push_back(mpqc::duration_in_s(cmo0, cmo1));
+        f_df_times_.push_back(mpqc::duration_in_s(fdf0, fdf1));
+        dl_times_.push_back(mpqc::duration_in_s(l0, l1));
+        dl_to_k_times_.push_back(mpqc::duration_in_s(k0, k1));
 
         return K;
     }

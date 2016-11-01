@@ -63,17 +63,17 @@ class DFFockBuilder : public FockBuilder {
     array_type G;
     madness::print_meminfo(world.rank(), "DFFockBuilder:0");
     {
-      auto w0 = mpqc_time::fenced_now(world);
+      auto w0 = mpqc::fenced_now(world);
       array_type W;
       W("X, rho, i") = L_inv_("X,Y") * (eri3_("Y, rho, sig") * C("sig, i"));
-      auto w1 = mpqc_time::fenced_now(world);
+      auto w1 = mpqc::fenced_now(world);
       madness::print_meminfo(world.rank(), "DFFockBuilder:W");
 
       // Make J
       array_type J;
       J("mu, nu") = eri3_("Z, mu, nu") *
                     (L_inv_("X, Z") * (W("X, rho, i") * C("rho, i")));
-      auto j1 = mpqc_time::fenced_now(world);
+      auto j1 = mpqc::fenced_now(world);
       madness::print_meminfo(world.rank(), "DFFockBuilder:J");
 
       // Permute W
@@ -83,12 +83,12 @@ class DFFockBuilder : public FockBuilder {
 
       array_type K;
       K("mu, nu") = W("X, i, mu") * W("X, i, nu");
-      auto k1 = mpqc_time::fenced_now(world);
+      auto k1 = mpqc::fenced_now(world);
       madness::print_meminfo(world.rank(), "DFFockBuilder:K");
 
-      w_times_.push_back(mpqc_time::duration_in_s(w0, w1));
-      j_times_.push_back(mpqc_time::duration_in_s(w1, j1));
-      k_times_.push_back(mpqc_time::duration_in_s(j1, k1));
+      w_times_.push_back(mpqc::duration_in_s(w0, w1));
+      j_times_.push_back(mpqc::duration_in_s(w1, j1));
+      k_times_.push_back(mpqc::duration_in_s(j1, k1));
 
       // Make G
       G("mu, nu") = 2 * J("mu, nu") - K("mu, nu");

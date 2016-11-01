@@ -260,14 +260,14 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
     for (auto& permute : permutes) {
       find_permute = ao_formula_registry_.find(permute);
       if (find_permute != ao_formula_registry_.end()) {
-        mpqc_time::t_point time0 = mpqc_time::now(world_, accurate_time_);
+        mpqc::time_point time0 = mpqc::now(world_, accurate_time_);
 
         // permute the array
         result(formula.to_ta_expression()) =
             (*(find_permute->second))(permute.to_ta_expression());
 
-        mpqc_time::t_point time1 = mpqc_time::now(world_, accurate_time_);
-        double time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::time_point time1 = mpqc::now(world_, accurate_time_);
+        double time = mpqc::duration_in_s(time0, time1);
 
         utility::print_par(world_, "Permuted AO Integral: ",
                            utility::to_string(formula.string()), " From ",
@@ -308,8 +308,8 @@ typename AtomicIntegral<Tile, Policy>::TArray
 AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
   Bvector bs_array;
   double time = 0.0;
-  mpqc_time::t_point time0;
-  mpqc_time::t_point time1;
+  mpqc::time_point time0;
+  mpqc::time_point time1;
   TArray result;
 
   // use one body engine
@@ -325,23 +325,23 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       auto v = this->compute(v_formula);
       auto t = this->compute(t_formula);
 
-      time0 = mpqc_time::now(world_, accurate_time_);
+      time0 = mpqc::now(world_, accurate_time_);
 
       result("i,j") = v("i,j") + t("i,j");
 
-      time1 = mpqc_time::now(world_, accurate_time_);
-      time += mpqc_time::duration_in_s(time0, time1);
+      time1 = mpqc::now(world_, accurate_time_);
+      time += mpqc::duration_in_s(time0, time1);
     }
     // one body integral S, V, T...
     else {
-      time0 = mpqc_time::now(world_, accurate_time_);
+      time0 = mpqc::now(world_, accurate_time_);
 
       std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
       parse_one_body(formula, engine_pool, bs_array);
       result = compute_integrals(this->world_, engine_pool, bs_array);
 
-      time1 = mpqc_time::now(world_, accurate_time_);
-      time += mpqc_time::duration_in_s(time0, time1);
+      time1 = mpqc::now(world_, accurate_time_);
+      time += mpqc::duration_in_s(time0, time1);
     }
     utility::print_par(world_, "Computed One Body Integral: ",
                        utility::to_string(formula.string()));
@@ -351,7 +351,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
   }
   // use two body engine
   else if (formula.oper().is_twobody()) {
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     // compute inverse square root first in this case
     if (iterative_inv_sqrt_ &&
@@ -362,7 +362,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 
       result = this->compute(inv_sqrt_formula);
 
-      time0 = mpqc_time::now(world_, accurate_time_);
+      time0 = mpqc::now(world_, accurate_time_);
       result("p,q") = result("p,r") * result("r,q");
 
       if (formula.oper().type() == Operator::Type::cGTG ||
@@ -457,8 +457,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       }
     }
 
-    time1 = mpqc_time::now(world_, accurate_time_);
-    time += mpqc_time::duration_in_s(time0, time1);
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Twobody Two Center Integral: ",
                        utility::to_string(formula.string()));
@@ -482,7 +482,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       auto center = compute(three_center_formula[1]);
       auto right = compute(three_center_formula[2]);
 
-      time0 = mpqc_time::now(world_, accurate_time_);
+      time0 = mpqc::now(world_, accurate_time_);
 
       // J case
       if (formula.oper().type() == Operator::Type::J) {
@@ -495,8 +495,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
                         (right("Q,j,l") * space("l,a"));
       }
 
-      time1 = mpqc_time::now(world_, accurate_time_);
-      time += mpqc_time::duration_in_s(time0, time1);
+      time1 = mpqc::now(world_, accurate_time_);
+      time += mpqc::duration_in_s(time0, time1);
     }
     // four center case
     else {
@@ -508,7 +508,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       auto four_center_formula = get_jk_formula(formula, obs);
       auto four_center = this->compute(four_center_formula);
 
-      time0 = mpqc_time::now(world_, accurate_time_);
+      time0 = mpqc::now(world_, accurate_time_);
 
       if (formula.notation() == Formula::Notation::Chemical) {
         if (formula.oper().type() == Operator::Type::J) {
@@ -528,8 +528,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
         }
       }
 
-      time1 = mpqc_time::now(world_, accurate_time_);
-      time += mpqc_time::duration_in_s(time0, time1);
+      time1 = mpqc::now(world_, accurate_time_);
+      time += mpqc::duration_in_s(time0, time1);
     }
     utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
                        utility::to_string(formula.string()));
@@ -549,12 +549,12 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     auto h = this->compute(h_formula);
     auto j = this->compute(j_formula);
 
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     result("i,j") = h("i,j") + 2 * j("i,j");
 
-    time1 = mpqc_time::now(world_, accurate_time_);
-    time += mpqc_time::duration_in_s(time0, time1);
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
                        utility::to_string(formula.string()));
@@ -570,7 +570,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     auto j = compute(formulas[1]);
     auto k = compute(formulas[2]);
 
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
     // if closed shell
     if (formula.oper().type() == Operator::Type::Fock) {
       result("rho,sigma") =
@@ -581,9 +581,9 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
       result("rho,sigma") = h("rho,sigma") + j("rho,sigma") - k("rho,sigma");
     }
 
-    time1 = mpqc_time::now(world_, accurate_time_);
+    time1 = mpqc::now(world_, accurate_time_);
 
-    time += mpqc_time::duration_in_s(time0, time1);
+    time += mpqc::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Fock Integral: ",
                        utility::to_string(formula.string()));
@@ -599,9 +599,9 @@ template <typename Tile, typename Policy>
 typename AtomicIntegral<Tile, Policy>::TArray
 AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   double time = 0.0;
-  mpqc_time::t_point time0;
-  mpqc_time::t_point time1;
-  time0 = mpqc_time::now(world_, accurate_time_);
+  mpqc::time_point time0;
+  mpqc::time_point time1;
+  time0 = mpqc::now(world_, accurate_time_);
   TArray result;
 
   Bvector bs_array;
@@ -612,8 +612,8 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
 
-  time1 = mpqc_time::now(world_, accurate_time_);
-  time += mpqc_time::duration_in_s(time0, time1);
+  time1 = mpqc::now(world_, accurate_time_);
+  time += mpqc::duration_in_s(time0, time1);
 
   utility::print_par(world_, "Computed Twobody Three Center Integral: ",
                      utility::to_string(formula.string()));
@@ -628,8 +628,8 @@ template <typename Tile, typename Policy>
 typename AtomicIntegral<Tile, Policy>::TArray
 AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
   double time = 0.0;
-  mpqc_time::t_point time0;
-  mpqc_time::t_point time1;
+  mpqc::time_point time0;
+  mpqc::time_point time1;
   TArray result;
 
   if (formula.oper().has_option(Operator::Option::DensityFitting)) {
@@ -641,7 +641,7 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
     auto center = compute(formula_strings[1]);
     auto right = compute(formula_strings[2]);
 
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     if (formula.notation() == Formula::Notation::Chemical) {
       result("i,j,k,l") = left("q,i,j") * center("q,p") * right("p,k,l");
@@ -649,8 +649,8 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
       result("i,j,k,l") = left("q,i,k") * center("q,p") * right("p,j,l");
     }
 
-    time1 = mpqc_time::now(world_, accurate_time_);
-    time += mpqc_time::duration_in_s(time0, time1);
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
 
     utility::print_par(
         world_, "Computed Twobody Four Center Density-Fitting Integral: ",
@@ -660,7 +660,7 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
     utility::print_par(world_, " Time: ", time, " s\n");
 
   } else {
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     Bvector bs_array;
     std::shared_ptr<Screener> p_screener =
@@ -675,8 +675,8 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
       result("i,j,k,l") = result("i,k,j,l");
     }
 
-    time1 = mpqc_time::now(world_, accurate_time_);
-    time += mpqc_time::duration_in_s(time0, time1);
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Twobody Four Center Integral: ",
                        utility::to_string(formula.string()));

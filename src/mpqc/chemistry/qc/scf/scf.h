@@ -10,7 +10,7 @@
 #include <tiledarray.h>
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/scf/density_builder.h>
-#include "../../../../../utility/json_handling.h"
+#include "mpqc/util/misc/json_handling.h"
 
 #include <memory>
 

@@ -18,7 +18,7 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/prettywriter.h>
 
-#include "../utility/json_handling.h"
+#include "mpqc/util/misc/json_handling.h"
 
 #include "../basis/atom_basisset.h"
 #include "../basis/basis_set.h"
@@ -177,18 +177,18 @@ int main(int argc, char *argv[]) {
   const auto bs_array = utility::make_array(basis, basis);
 
   // Overlap ints
-  auto s0 = mpqc_time::fenced_now(world);
+  auto s0 = mpqc::fenced_now(world);
   auto overlap_e = ints::make_engine_pool(libint2::Operator::overlap,
                                           utility::make_array_of_refs(basis));
   auto S = ints::sparse_integrals(world, overlap_e, bs_array);
-  auto s1 = mpqc_time::fenced_now(world);
-  auto stime = mpqc_time::duration_in_s(s0, s1);
+  auto s1 = mpqc::fenced_now(world);
+  auto stime = mpqc::duration_in_s(s0, s1);
   if (world.rank() == 0) {
     std::cout << "Overlap time: " << stime << std::endl;
   }
   out_doc.AddMember("overlap time", stime, out_doc.GetAllocator());
 
-  auto h0 = mpqc_time::fenced_now(world);
+  auto h0 = mpqc::fenced_now(world);
   auto kinetic_e = ints::make_engine_pool(libint2::Operator::kinetic, utility::make_array_of_refs(basis));
   auto T = ints::sparse_integrals(world, kinetic_e, bs_array);
 
@@ -199,8 +199,8 @@ int main(int argc, char *argv[]) {
 
   decltype(T) H;
   H("i,j") = T("i,j") + V("i,j");
-  auto h1 = mpqc_time::fenced_now(world);
-  auto htime = mpqc_time::duration_in_s(h0, h1);
+  auto h1 = mpqc::fenced_now(world);
+  auto htime = mpqc::duration_in_s(h0, h1);
   if (world.rank() == 0) {
     std::cout << "Hcore time: " << stime << std::endl;
   }
@@ -211,12 +211,12 @@ int main(int argc, char *argv[]) {
                                       utility::make_array_of_refs(df_basis, basis));
 
   auto three_c_array = utility::make_array(df_basis, basis, basis);
-  auto m0 = mpqc_time::fenced_now(world);
+  auto m0 = mpqc::fenced_now(world);
 
   decltype(H) Mj = ints::sparse_integrals(world, eri_e, dfbs_array);
 
-  auto m1 = mpqc_time::fenced_now(world);
-  auto mtime = mpqc_time::duration_in_s(m0, m1);
+  auto m1 = mpqc::fenced_now(world);
+  auto mtime = mpqc::duration_in_s(m0, m1);
   if (world.rank() == 0) {
     std::cout << "Metric time: " << mtime << std::endl;
   }
@@ -238,19 +238,19 @@ int main(int argc, char *argv[]) {
   }
   out_doc.AddMember("schwarz thresh", schwarz_thresh, out_doc.GetAllocator());
 
-  auto ss0 = mpqc_time::fenced_now(world);
+  auto ss0 = mpqc::fenced_now(world);
   auto sbuilder = ints::init_schwarz_screen(schwarz_thresh);
   auto shr_screen = std::make_shared<ints::SchwarzScreen>(
       sbuilder(world, eri_e, df_basis, basis));
-  auto ss1 = mpqc_time::fenced_now(world);
-  auto sstime = mpqc_time::duration_in_s(ss0, ss1);
+  auto ss1 = mpqc::fenced_now(world);
+  auto sstime = mpqc::duration_in_s(ss0, ss1);
   if (world.rank() == 0) {
     std::cout << "Screener time: " << sstime << std::endl;
   }
 
   decltype(Mj) Mk;
   TA::DistArray<TA::TensorD, SpPolicy> C_df_;
-  auto cdf0 = mpqc_time::fenced_now(world);
+  auto cdf0 = mpqc::fenced_now(world);
   std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
   std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
   if (in.HasMember("Metric")) {
@@ -314,8 +314,8 @@ int main(int argc, char *argv[]) {
     Mk = Mj;
   }
 
-  auto cdf1 = mpqc_time::fenced_now(world);
-  auto cdftime = mpqc_time::duration_in_s(cdf0, cdf1);
+  auto cdf1 = mpqc::fenced_now(world);
+  auto cdftime = mpqc::duration_in_s(cdf0, cdf1);
   if (world.rank() == 0) {
     std::cout << "Cdf time: " << cdftime << std::endl;
   }
@@ -345,12 +345,12 @@ int main(int argc, char *argv[]) {
   if (in.HasMember("cluster by atom") && in["cluster by atom"].GetBool()) {
     C_df = C_df_;
   } else {
-    auto reblock0 = mpqc_time::fenced_now(world);
+    auto reblock0 = mpqc::fenced_now(world);
     C_df = scf::reblock_from_atoms(C_df_, obs_atom_to_cluster_map,
                                    dfbs_atom_to_cluster_map, by_cluster_trange);
 
-    auto reblock1 = mpqc_time::fenced_now(world);
-    auto reblock_time = mpqc_time::duration_in_s(reblock0, reblock1);
+    auto reblock1 = mpqc::fenced_now(world);
+    auto reblock_time = mpqc::duration_in_s(reblock0, reblock1);
     if (world.rank() == 0) {
       std::cout << "Reblock C_df time " << reblock_time << std::endl;
     }
@@ -359,23 +359,23 @@ int main(int argc, char *argv[]) {
   }
 
   // Begin scf
-  auto soad0 = mpqc_time::fenced_now(world);
+  auto soad0 = mpqc::fenced_now(world);
   decltype(S) F_soad =
       scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-  auto soad1 = mpqc_time::fenced_now(world);
-  auto soadtime = mpqc_time::duration_in_s(soad0, soad1);
+  auto soad1 = mpqc::fenced_now(world);
+  auto soadtime = mpqc::duration_in_s(soad0, soad1);
   if (world.rank() == 0) {
     std::cout << "SOAD time: " << soadtime << std::endl;
   }
   out_doc.AddMember("Soad Time", soadtime, out_doc.GetAllocator());
 
-  auto rxyz0 = mpqc_time::fenced_now(world);
+  auto rxyz0 = mpqc::fenced_now(world);
   auto multi_pool =
       ints::make_1body_shr_pool("emultipole1", basis, clustered_mol);
 
   auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
-  auto rxyz1 = mpqc_time::fenced_now(world);
-  auto rxyztime = mpqc_time::duration_in_s(rxyz0, rxyz1);
+  auto rxyz1 = mpqc::fenced_now(world);
+  auto rxyztime = mpqc::duration_in_s(rxyz0, rxyz1);
   if (world.rank() == 0) {
     std::cout << "dipole integrals time: " << rxyztime << std::endl;
   }
@@ -450,12 +450,12 @@ int main(int argc, char *argv[]) {
 
   if (in.HasMember("stored integrals") &&
       in["stored integrals"].GetBool() == true) {
-    auto e0 = mpqc_time::fenced_now(world);
+    auto e0 = mpqc::fenced_now(world);
     auto deri3s =
         ints::sparse_integrals(world, eri_e, three_c_array, shr_screen,
                                tensor::TaToDecompTensor(clr_threshold));
-    auto e1 = mpqc_time::fenced_now(world);
-    auto etime = mpqc_time::duration_in_s(e0, e1);
+    auto e1 = mpqc::fenced_now(world);
+    auto etime = mpqc::duration_in_s(e0, e1);
     if (world.rank() == 0) {
       std::cout << "3 center time: " << etime << std::endl;
     }

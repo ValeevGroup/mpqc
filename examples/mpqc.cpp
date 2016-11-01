@@ -19,7 +19,7 @@
 #include "../utility/array_info.h"
 #include "../utility/print_size_info.h"
 
-#include "../utility/json_handling.h"
+#include "mpqc/util/misc/json_handling.h"
 #include "../utility/parallel_file.h"
 #include "mpqc/util/misc/time.h"
 
@@ -347,7 +347,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
    */
   double scf_energy;
   if (in.HasMember("CLSCF")) {
-    auto scf_time0 = mpqc_time::fenced_now(world);
+    auto scf_time0 = mpqc::fenced_now(world);
 
     auto scf_in = json::get_nested(in, "CLSCF");
     double scf_converge = scf_in.HasMember("SCFConverge")
@@ -473,13 +473,13 @@ int try_main(int argc, char *argv[], madness::World &world) {
       d_builder = make_unique<scf::ESolveDensityBuilder>(std::move(db));
     }
 
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     auto eri_e =
         ints::make_engine_pool(libint2::Operator::coulomb,
                                utility::make_array_of_refs(df_basis, basis));
     auto F_soad = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Soad Time:  ", time, "\n");
 
     /// CL scf class
@@ -488,8 +488,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
     scf.solve(scf_max_iter, scf_converge);
 
     scf_energy = scf.scf_energy();
-    auto scf_time1 = mpqc_time::fenced_now(world);
-    auto scf_time = mpqc_time::duration_in_s(scf_time0, scf_time1);
+    auto scf_time1 = mpqc::fenced_now(world);
+    auto scf_time = mpqc::duration_in_s(scf_time0, scf_time1);
     mpqc::utility::print_par(world, "SCF Energy:  ", scf_energy, "\n");
     mpqc::utility::print_par(world, "Total SCF Time:  ", scf_time, "\n");
 
@@ -530,17 +530,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
   rapidjson::Document corr_in;
 
   if (in.HasMember("MP2")) {
-    auto mp2_time0 = mpqc_time::fenced_now(world);
+    auto mp2_time0 = mpqc::fenced_now(world);
 
     corr_in = json::get_nested(in, "MP2");
     auto mp2 = mbpt::MP2<TA::TensorD, TA::SparsePolicy>(lcao_factory);
     corr_e += mp2.compute(corr_in);
 
-    auto mp2_time1 = mpqc_time::fenced_now(world);
-    auto mp2_time = mpqc_time::duration_in_s(mp2_time0, mp2_time1);
+    auto mp2_time1 = mpqc::fenced_now(world);
+    auto mp2_time = mpqc::duration_in_s(mp2_time0, mp2_time1);
     mpqc::utility::print_par(world, "Total MP2 Time:  ", mp2_time, "\n");
   } else if (in.HasMember("DBMP2")) {
-    auto dbmp2_time0 = mpqc_time::fenced_now(world);
+    auto dbmp2_time0 = mpqc::fenced_now(world);
 
     corr_in = json::get_nested(in, "DBMP2");
     std::shared_ptr<mbpt::MP2<TA::TensorD, TA::SparsePolicy>> mp2 =
@@ -548,8 +548,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
             mbpt::DBMP2<TA::TensorD, TA::SparsePolicy>(lcao_factory));
     corr_e += mp2->compute(corr_in);
 
-    auto dbmp2_time1 = mpqc_time::fenced_now(world);
-    auto dbmp2_time = mpqc_time::duration_in_s(dbmp2_time0, dbmp2_time1);
+    auto dbmp2_time1 = mpqc::fenced_now(world);
+    auto dbmp2_time = mpqc::duration_in_s(dbmp2_time0, dbmp2_time1);
     mpqc::utility::print_par(world, "Total DBMP2 Time:  ", dbmp2_time, "\n");
 
   }
@@ -557,68 +557,68 @@ int try_main(int argc, char *argv[], madness::World &world) {
     corr_in = json::get_nested(in, "GF2F12");
 
     // start gf2f12
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     f12::GF2F12<TA::TensorD> gf2f12(lcao_factory);
     gf2f12.compute(corr_in);
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
 
     mpqc::utility::print_par(world, "Total GF2 F12 Time:  ", time, "\n");
 
   } else if (in.HasMember("CCSD")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining CCSD Calculation\n");
     corr_in = json::get_nested(in, "CCSD");
     mpqc::cc::CCSD<TA::TensorD, TA::SparsePolicy> ccsd(lcao_factory, corr_in);
     corr_e += ccsd.compute();
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total CCSD Time:  ", time, "\n");
   } else if (in.HasMember("DBCCSD")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining Dual Basis CCSD Calculation\n");
     corr_in = json::get_nested(in, "DBCCSD");
     mpqc::cc::DBCCSD<TA::TensorD, TA::SparsePolicy> dbccsd(lcao_factory,
                                                            corr_in);
     corr_e += dbccsd.compute();
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total Dual Basis CCSD Time:  ", time,
                              "\n");
   } else if (in.HasMember("CCSD(T)")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining CCSD(T) Calculation\n");
     corr_in = json::get_nested(in, "CCSD(T)");
     mpqc::cc::CCSD_T<TA::TensorD, TA::SparsePolicy> ccsd_t(lcao_factory,
                                                            corr_in);
     corr_e += ccsd_t.compute();
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total CCSD(T) Time:  ", time, "\n");
   }
 
   else if (in.HasMember("CCSD(F12)")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining CCSD(F12) Calculation\n");
     corr_in = json::get_nested(in, "CCSD(F12)");
 
     f12::CCSDF12<TA::TensorD> ccsd_f12(lcao_factory, corr_in);
     corr_e += ccsd_f12.compute();
 
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total CCSD(F12) Time:  ", time, "\n");
 
   } else if (in.HasMember("DBCCSD(F12)")) {
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
     utility::print_par(world, "\nBegining DBCCSD(F12) Calculation\n");
     corr_in = json::get_nested(in, "DBCCSD(F12)");
 
     f12::DBCCSDF12<TA::TensorD> db_ccsd_f12(lcao_factory, corr_in);
     corr_e += db_ccsd_f12.compute();
 
-    auto time1 = mpqc_time::fenced_now(world);
-    auto time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     mpqc::utility::print_par(world, "Total DBCCSD(F12) Time:  ", time, "\n");
   }
 

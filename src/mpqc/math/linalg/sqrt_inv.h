@@ -361,10 +361,10 @@ void third_order_update(Array const &S, Array &Z) {
     if (S.world().rank() == 0) {
         std::cout << "Starting inverse sqrt\n";
     }
-    auto evg0 = mpqc_time::fenced_now(world);
+    auto evg0 = mpqc::fenced_now(world);
     auto spectral_range = eval_guess(S);
-    auto evg1 = mpqc_time::fenced_now(world);
-    auto eval_time = mpqc_time::duration_in_s(evg0, evg1);
+    auto evg1 = mpqc::fenced_now(world);
+    auto eval_time = mpqc::duration_in_s(evg0, evg1);
     if (S.world().rank() == 0) {
         std::cout << "\tEigenvalue estimation time = " << eval_time << " s\n";
     }

@@ -48,11 +48,11 @@ class FourCenterSCF {
         array_type K;
         auto &world = eri4.world();
         world.gop.fence();
-        auto k0 = mpqc_time::now();
+        auto k0 = mpqc::now();
         K("i,j") = eri4("i,k,j,l") * D_("k,l");
         world.gop.fence();
-        auto k1 = mpqc_time::now();
-        k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
+        auto k1 = mpqc::now();
+        k_times_.push_back(mpqc::duration_in_s(k0, k1));
 
         return K;
     }
@@ -63,11 +63,11 @@ class FourCenterSCF {
         array_type J;
         auto &world = eri4.world();
         world.gop.fence();
-        auto j0 = mpqc_time::now();
+        auto j0 = mpqc::now();
         J("i,j") = eri4("i,j,k,l") * D_("k,l");
         world.gop.fence();
-        auto j1 = mpqc_time::now();
-        j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
+        auto j1 = mpqc::now();
+        j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
         return J;
     }
@@ -110,7 +110,7 @@ class FourCenterSCF {
         auto old_energy = 0.0;
 
         while (iter < max_iters && thresh < error) {
-            auto s0 = mpqc_time::now();
+            auto s0 = mpqc::now();
             F_.world().gop.fence();
             form_fock(eri4);
 
@@ -128,8 +128,8 @@ class FourCenterSCF {
             compute_density(occ_);
 
             F_.world().gop.fence();
-            auto s1 = mpqc_time::now();
-            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
+            auto s1 = mpqc::now();
+            scf_times_.push_back(mpqc::duration_in_s(s0, s1));
 
 
             std::cout << "Iteration: " << (iter + 1)

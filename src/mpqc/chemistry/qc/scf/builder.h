@@ -6,7 +6,7 @@
 
 #include "../../../../../common/namespaces.h"
 
-#include "../../../../../utility/json_handling.h"
+#include "mpqc/util/misc/json_handling.h"
 #include <mpqc/chemistry/qc/expression/formula_registry.h>
 
 #include <string>

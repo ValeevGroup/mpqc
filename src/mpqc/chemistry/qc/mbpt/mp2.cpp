@@ -33,12 +33,12 @@ double RMP2::value() {
     auto& world = this->wfn_world()->world();
 
     double time;
-    auto time0 = mpqc_time::fenced_now(world);
+    auto time0 = mpqc::fenced_now(world);
 
     double ref_energy = ref_wfn_->value();
 
-    auto time1 = mpqc_time::fenced_now(world);
-    time = mpqc_time::duration_in_s(time0, time1);
+    auto time1 = mpqc::fenced_now(world);
+    time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
     auto mol = this->lcao_factory().atomic_integral().molecule();
@@ -51,11 +51,11 @@ double RMP2::value() {
 
     rmp2_energy_ = mp2_energy + ref_energy;
 
-    auto time2 = mpqc_time::fenced_now(world);
-    time = mpqc_time::duration_in_s(time1, time2);
+    auto time2 = mpqc::fenced_now(world);
+    time = mpqc::duration_in_s(time1, time2);
     utility::print_par(world,"Total MP2 Correlation Time: ", time, " S \n");
 
-    time = mpqc_time::duration_in_s(time0, time2);
+    time = mpqc::duration_in_s(time0, time2);
     utility::print_par(world,"Total MP2 Time: ", time, " S \n");
   }
   return rmp2_energy_;

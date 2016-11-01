@@ -313,22 +313,22 @@ class ThreeCenterScf {
         C_ = array_ops::eigen_to_array<TA::TensorD>(H_.world(), C, tr_ao,
                                                     tr_occ);
 
-        auto loc0 = mpqc_time::fenced_now(world);
+        auto loc0 = mpqc::fenced_now(world);
 
         auto U = mpqc::scf::BoysLocalization{}(C_, r_xyz_ints_);
         C_("mu,i") = C_("mu,k") * U("k,i");
 
-        auto loc1 = mpqc_time::fenced_now(world);
-        localization_times_.push_back(mpqc_time::duration_in_s(loc0, loc1));
+        auto loc1 = mpqc::fenced_now(world);
+        localization_times_.push_back(mpqc::duration_in_s(loc0, loc1));
 
-        auto cluster0 = mpqc_time::fenced_now(world);
+        auto cluster0 = mpqc::fenced_now(world);
 
         auto obs_ntiles = C_.trange().tiles_range().extent()[0];
         scf::clustered_coeffs(r_xyz_ints_, C_, obs_ntiles);
 
-        auto cluster1 = mpqc_time::fenced_now(world);
+        auto cluster1 = mpqc::fenced_now(world);
         clustering_times_.push_back(
-              mpqc_time::duration_in_s(cluster0, cluster1));
+              mpqc::duration_in_s(cluster0, cluster1));
 
         D_("i,j") = C_("i,k") * C_("j,k");
     }
@@ -343,7 +343,7 @@ class ThreeCenterScf {
         darray_type dD_ = TA::to_new_tile_type(D_, to_dtile(clr_thresh_));
 
         darray_type J;
-        auto j0 = mpqc_time::fenced_now(world);
+        auto j0 = mpqc::fenced_now(world);
         auto old_thresh = TA::SparseShape<float>::threshold();
         TA::SparseShape<float>::threshold(std::min(1e-18f, old_thresh));
 
@@ -351,12 +351,12 @@ class ThreeCenterScf {
                       * (dV_inv_oh_("Y,Z")
                          * (dV_inv_oh_("Z,X") * (eri3("X,r,s") * dD_("r,s"))));
 
-        auto j1 = mpqc_time::fenced_now(world);
+        auto j1 = mpqc::fenced_now(world);
         TA::SparseShape<float>::threshold(old_thresh);
 
-        j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
+        j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
-        auto w0 = mpqc_time::fenced_now(world);
+        auto w0 = mpqc::fenced_now(world);
 
         DArray<3, dtile, SpPolicy> W;
         W("X, mu, i") = B("X, mu, nu") * dC_("nu, i");
@@ -392,15 +392,15 @@ class ThreeCenterScf {
 
         W("X,i,mu") = W("X,mu,i");
 
-        auto w1 = mpqc_time::fenced_now(world);
-        w_times_.push_back(mpqc_time::duration_in_s(w0, w1));
+        auto w1 = mpqc::fenced_now(world);
+        w_times_.push_back(mpqc::duration_in_s(w0, w1));
 
         auto w_store = utility::array_storage(W);
         w_sparse_store_.push_back(w_store[1]);
         w_sparse_clr_store_.push_back(w_store[2]);
         w_full_storage_ = w_store[0];
 
-        auto occk0 = mpqc_time::fenced_now(world);
+        auto occk0 = mpqc::fenced_now(world);
 
         // OCC RI
         darray_type K, Kij, Sc;
@@ -410,15 +410,15 @@ class ThreeCenterScf {
         K("mu, nu") = Sc("mu, j") * K("nu, j") + K("mu, j") * Sc("nu,j")
                       - (Sc("mu,i") * Kij("i,j")) * Sc("nu,j");
 
-        auto occk1 = mpqc_time::fenced_now(world);
-        occ_k_times_.push_back(mpqc_time::duration_in_s(occk0, occk1));
+        auto occk1 = mpqc::fenced_now(world);
+        occ_k_times_.push_back(mpqc::duration_in_s(occk0, occk1));
 
-        auto k0 = mpqc_time::fenced_now(world);
+        auto k0 = mpqc::fenced_now(world);
 
         K("mu, nu") = W("X,i,mu") * W("X,i,nu");
 
-        auto k1 = mpqc_time::fenced_now(world);
-        k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
+        auto k1 = mpqc::fenced_now(world);
+        k_times_.push_back(mpqc::duration_in_s(k0, k1));
 
         darray_type dF_;
         dF_("i,j") = dH_("i,j") + 2 * J("i,j") - K("i,j");
@@ -466,7 +466,7 @@ class ThreeCenterScf {
 
         while (iter < max_iters && (thresh < error || thresh < rms_error)
                && (thresh / 100.0 < error && thresh / 100.0 < rms_error)) {
-            auto s0 = mpqc_time::fenced_now(world);
+            auto s0 = mpqc::fenced_now(world);
             form_fock(eri3, B);
 
             auto current_energy = energy();
@@ -489,8 +489,8 @@ class ThreeCenterScf {
             // Lastly update density
             compute_density(occ_);
 
-            auto s1 = mpqc_time::fenced_now(world);
-            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
+            auto s1 = mpqc::fenced_now(world);
+            scf_times_.push_back(mpqc::duration_in_s(s0, s1));
 
 
             if (world.rank() == 0) {
@@ -727,12 +727,12 @@ int main(int argc, char *argv[]) {
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               sbuilder(world, eri_e, df_basis, basis));
 
-        auto soad0 = mpqc_time::fenced_now(world);
+        auto soad0 = mpqc::fenced_now(world);
         auto F_soad = scf::fock_from_soad(world, clustered_mol, basis,
                                           eri_e, H);
 
-        auto soad1 = mpqc_time::fenced_now(world);
-        auto soad_time = mpqc_time::duration_in_s(soad0, soad1);
+        auto soad1 = mpqc::fenced_now(world);
+        auto soad_time = mpqc::duration_in_s(soad0, soad1);
         if (world.rank() == 0) {
             std::cout << "Soad Time: " << soad_time << std::endl;
         }
@@ -800,13 +800,13 @@ int main(int argc, char *argv[]) {
             std::array<double, 3> b_storage;
             {
                 world.gop.fence();
-                auto int0 = mpqc_time::fenced_now(world);
+                auto int0 = mpqc::fenced_now(world);
 
                 auto eri3 = ints::direct_sparse_integrals(
                       world, eri_e, three_c_array, shr_screen, decomp_3d);
 
-                auto int1 = mpqc_time::fenced_now(world);
-                auto eri3_time = mpqc_time::duration_in_s(int0, int1);
+                auto int1 = mpqc::fenced_now(world);
+                auto eri3_time = mpqc::duration_in_s(int0, int1);
 
 
                 if (world.rank() == 0) {
@@ -829,7 +829,7 @@ int main(int argc, char *argv[]) {
                 auto old_compress = tensor::detail::recompress;
                 tensor::detail::recompress = true;
 
-                auto B0 = mpqc_time::fenced_now(world);
+                auto B0 = mpqc::fenced_now(world);
                 B("X,mu,nu") = dL_inv("X,Y") * eri3("Y,mu,nu");
                 if (clr_threshold != 0) {
                     TA::foreach_inplace(
@@ -861,8 +861,8 @@ int main(int argc, char *argv[]) {
                 } else {
                     B.truncate();
                 }
-                auto B1 = mpqc_time::fenced_now(world);
-                auto Btime = mpqc_time::duration_in_s(B0, B1);
+                auto B1 = mpqc::fenced_now(world);
+                auto Btime = mpqc::duration_in_s(B0, B1);
 
                 if (world.rank() == 0) {
                     std::cout << "B time = " << Btime << std::endl;
@@ -896,10 +896,10 @@ int main(int argc, char *argv[]) {
             world.gop.fence();
             TA::SparseShape<float>::threshold(old_thresh);
 
-            auto scf0 = mpqc_time::fenced_now(world);
+            auto scf0 = mpqc::fenced_now(world);
             scf.solve(30, 1e-11, eri3, B);
-            auto scf1 = mpqc_time::fenced_now(world);
-            scf_time = mpqc_time::duration_in_s(scf0, scf1);
+            auto scf1 = mpqc::fenced_now(world);
+            scf_time = mpqc::duration_in_s(scf0, scf1);
 
             job_summary = scf.init_summary();
 
@@ -1090,7 +1090,7 @@ int main(int argc, char *argv[]) {
                       = ints::sparse_integrals(world, eri_e, three_c_array,
                                                shr_screen);
 
-                auto mp20 = mpqc_time::fenced_now(world);
+                auto mp20 = mpqc::fenced_now(world);
                 DArray<3, TA::TensorD, TA::SparsePolicy> Wiv;
                 Wiv("Y,i,a") = eri3_mp2("Y,nu,mu") * Ci("mu,i") * Cv("nu,a");
                 Wiv("X,i,a") = L_inv("X,Y") * Wiv("Y,i,a");
@@ -1150,8 +1150,8 @@ int main(int argc, char *argv[]) {
                       = (G("i,a,j,b") * (2 * G("i,a,j,b") - G("i,b,j,a")))
                               .reduce(Mp2Red(vec_ptr, mp2_occ))
                               .get();
-                auto mp21 = mpqc_time::fenced_now(world);
-                auto mp2_time = mpqc_time::duration_in_s(mp20, mp21);
+                auto mp21 = mpqc::fenced_now(world);
+                auto mp2_time = mpqc::duration_in_s(mp20, mp21);
 
                 if (world.rank() == 0) {
                     std::cout << "Energy from MP2: " << energy_mp2 << std::endl;

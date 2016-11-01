@@ -51,11 +51,11 @@ class FourCenterSCF {
         array_type K;
         auto &world = eri4.array().world();
         world.gop.fence();
-        auto k0 = mpqc_time::now();
+        auto k0 = mpqc::now();
         K("i,j") = eri4("i,k,j,l") * D_("k,l");
         world.gop.fence();
-        auto k1 = mpqc_time::now();
-        k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
+        auto k1 = mpqc::now();
+        k_times_.push_back(mpqc::duration_in_s(k0, k1));
 
         return K;
     }
@@ -66,11 +66,11 @@ class FourCenterSCF {
         array_type J;
         auto &world = eri4.array().world();
         world.gop.fence();
-        auto j0 = mpqc_time::now();
+        auto j0 = mpqc::now();
         J("i,j") = eri4("i,j,k,l") * D_("k,l");
         world.gop.fence();
-        auto j1 = mpqc_time::now();
-        j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
+        auto j1 = mpqc::now();
+        j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
         return J;
     }
@@ -112,7 +112,7 @@ class FourCenterSCF {
         auto old_energy = 0.0;
 
         while (iter < max_iters && thresh < error) {
-            auto s0 = mpqc_time::now();
+            auto s0 = mpqc::now();
             F_.world().gop.fence();
             form_fock(eri4);
 
@@ -130,8 +130,8 @@ class FourCenterSCF {
             compute_density(occ_);
 
             F_.world().gop.fence();
-            auto s1 = mpqc_time::now();
-            scf_times_.push_back(mpqc_time::duration_in_s(s0, s1));
+            auto s1 = mpqc::now();
+            scf_times_.push_back(mpqc::duration_in_s(s0, s1));
 
 
             std::cout << "Iteration: " << (iter + 1)
@@ -229,14 +229,14 @@ int main(int argc, char *argv[]) {
     { // Do schwarz
         std::cout << "\nComputing HF with Schwarz Screening" << std::endl;
         world.gop.fence();
-        auto screen0 = mpqc_time::now();
+        auto screen0 = mpqc::now();
 
         auto screen_builder = ints::init_schwarz_screen(1e-10);
         auto shr_screen = std::make_shared<ints::SchwarzScreen>(
               screen_builder(world, eri_e, basis));
 
-        auto screen1 = mpqc_time::now();
-        std::cout << "Took " << mpqc_time::duration_in_s(screen0, screen1)
+        auto screen1 = mpqc::now();
+        std::cout << "Took " << mpqc::duration_in_s(screen0, screen1)
                   << " s to form screening Matrix!" << std::endl;
 
         auto eri4 = mpqc_ints::direct_sparse_integrals(world, eri_e, bs4_array,
@@ -244,10 +244,10 @@ int main(int argc, char *argv[]) {
 
 
         world.gop.fence();
-        auto eri40 = mpqc_time::now();
+        auto eri40 = mpqc::now();
         world.gop.fence();
-        auto eri41 = mpqc_time::now();
-        std::cout << "Took " << mpqc_time::duration_in_s(eri40, eri41)
+        auto eri41 = mpqc::now();
+        std::cout << "Took " << mpqc::duration_in_s(eri40, eri41)
                   << " to compute direct integrals " << std::endl;
 
         FourCenterSCF scf(H, S, F_soad, occ / 2, repulsion_energy);
@@ -306,11 +306,11 @@ int main(int argc, char *argv[]) {
     { // Unscreened SCF
         std::cout << "\n\nComputing HF with No Screening" << std::endl;
         world.gop.fence();
-        auto eri40 = mpqc_time::now();
+        auto eri40 = mpqc::now();
         auto eri4 = ints::direct_sparse_integrals(world, eri_e, bs4_array);
         world.gop.fence();
-        auto eri41 = mpqc_time::now();
-        std::cout << "Took " << mpqc_time::duration_in_s(eri40, eri41)
+        auto eri41 = mpqc::now();
+        std::cout << "Took " << mpqc::duration_in_s(eri40, eri41)
                   << " s to initialize integrals." << std::endl;
 
         FourCenterSCF scf(H, S, F_soad, occ / 2, repulsion_energy);

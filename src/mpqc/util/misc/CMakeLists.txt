@@ -1,4 +1,6 @@
 set(sources
+  json_handling.cpp
+  json_handling.h
   string.h
   time.h
   type_traits.h

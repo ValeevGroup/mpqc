@@ -49,13 +49,13 @@ class CCSDF12 {
   virtual real_t compute() {
     auto& world = lcao_factory_.world();
 
-    auto ccsd_time0 = mpqc_time::fenced_now(world);
+    auto ccsd_time0 = mpqc::fenced_now(world);
 
     // compute ccsd
     real_t ccsd = ccsd_->compute();
 
-    auto ccsd_time1 = mpqc_time::fenced_now(world);
-    auto ccsd_time = mpqc_time::duration_in_s(ccsd_time0, ccsd_time1);
+    auto ccsd_time1 = mpqc::fenced_now(world);
+    auto ccsd_time = mpqc::duration_in_s(ccsd_time0, ccsd_time1);
     mpqc::utility::print_par(world, "Total CCSD Time:  ", ccsd_time, "\n");
 
 
@@ -104,7 +104,7 @@ class CCSDF12 {
     if (singles) {
       mpqc::utility::print_par(world, " CABS Singles \n");
 
-      auto single_time0 = mpqc_time::fenced_now(world);
+      auto single_time0 = mpqc::fenced_now(world);
 
       if(approach=="D"){
         CABSSingles<Tile> cabs_singles(lcao_factory_);
@@ -116,14 +116,14 @@ class CCSDF12 {
       if (debug()) {
         utility::print_par(world, "E_S: ", e_s, "\n");
       }
-      auto single_time1 = mpqc_time::fenced_now(world);
-      auto single_time = mpqc_time::duration_in_s(single_time0, single_time1);
+      auto single_time1 = mpqc::fenced_now(world);
+      auto single_time = mpqc::duration_in_s(single_time0, single_time1);
       mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time,
                                "\n");
     }
 
-    auto f12_time0 = mpqc_time::fenced_now(world);
-    auto f12_time = mpqc_time::duration_in_s(ccsd_time1,f12_time0);
+    auto f12_time0 = mpqc::fenced_now(world);
+    auto f12_time = mpqc::duration_in_s(ccsd_time1,f12_time0);
     mpqc::utility::print_par(world, "Total F12 Time:  ", f12_time, "\n");
 
     return ccsd + e_f12 + e_s;

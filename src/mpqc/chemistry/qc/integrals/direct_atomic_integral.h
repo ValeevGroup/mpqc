@@ -232,19 +232,19 @@ DirectAtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
   Bvector bs_array;
   double time = 0.0;
   std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
-  mpqc_time::t_point time0;
-  mpqc_time::t_point time1;
+  mpqc::time_point time0;
+  mpqc::time_point time1;
 
   DirectTArray result;
 
   if (formula.oper().is_onebody()) {
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     parse_one_body(formula, engine_pool, bs_array);
     result = compute_integrals(world_, engine_pool, bs_array);
 
-    time1 = mpqc_time::now(world_, accurate_time_);
-    time += mpqc_time::duration_in_s(time0, time1);
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Direct One Body Integral: ");
     utility::wprint_par(world_, formula.string());
@@ -253,13 +253,13 @@ DirectAtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     utility::print_par(world_, " Time: ", time, " s\n");
 
   } else if (formula.oper().is_twobody()) {
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     parse_two_body_two_center(formula, engine_pool, bs_array);
     result = compute_integrals(world_, engine_pool, bs_array);
 
-    time1 = mpqc_time::now(world_, accurate_time_);
-    time += mpqc_time::duration_in_s(time0, time1);
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Direct Twobody Two Center Integral: ");
     utility::wprint_par(world_, formula.string());
@@ -281,9 +281,9 @@ template <typename Tile, typename Policy>
 typename DirectAtomicIntegral<Tile, Policy>::DirectTArray
 DirectAtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   double time = 0.0;
-  mpqc_time::t_point time0;
-  mpqc_time::t_point time1;
-  time0 = mpqc_time::now(world_, accurate_time_);
+  mpqc::time_point time0;
+  mpqc::time_point time1;
+  time0 = mpqc::now(world_, accurate_time_);
   DirectTArray result;
 
   Bvector bs_array;
@@ -294,8 +294,8 @@ DirectAtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
 
-  time1 = mpqc_time::now(world_, accurate_time_);
-  time += mpqc_time::duration_in_s(time0, time1);
+  time1 = mpqc::now(world_, accurate_time_);
+  time += mpqc::duration_in_s(time0, time1);
 
   utility::print_par(world_, "Computed Direct Twobody Three Center Integral: ");
   utility::wprint_par(world_, formula.string());
@@ -318,11 +318,11 @@ DirectAtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
   }
 
   double time = 0.0;
-  mpqc_time::t_point time0;
-  mpqc_time::t_point time1;
+  mpqc::time_point time0;
+  mpqc::time_point time1;
   DirectTArray result;
 
-  time0 = mpqc_time::now(world_, accurate_time_);
+  time0 = mpqc::now(world_, accurate_time_);
 
   Bvector bs_array;
   std::shared_ptr<Screener> p_screener =
@@ -333,8 +333,8 @@ DirectAtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
 
   result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
 
-  time1 = mpqc_time::now(world_, accurate_time_);
-  time += mpqc_time::duration_in_s(time0, time1);
+  time1 = mpqc::now(world_, accurate_time_);
+  time += mpqc::duration_in_s(time0, time1);
 
   utility::print_par(world_, "Computed Direct Twobody Four Center Integral: ");
   utility::wprint_par(world_, formula.string());

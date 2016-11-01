@@ -78,10 +78,10 @@ class ONCADFFockBuilder : public FockBuilder {
     auto &world = C_df_.world();
     bool compress_M = false;
 
-    auto l0 = mpqc_time::fenced_now(world);
+    auto l0 = mpqc::fenced_now(world);
     M_sqrt_inv_ = array_ops::inverse_sqrt(Mj);
-    auto l1 = mpqc_time::fenced_now(world);
-    auto l_inv_time_ = mpqc_time::duration_in_s(l0, l1);
+    auto l1 = mpqc::fenced_now(world);
+    auto l_inv_time_ = mpqc::duration_in_s(l0, l1);
 
     if (world.rank() == 0) {
       std::cout << "Sqrt Inv of Metric time: " << l_inv_time_ << std::endl;
@@ -188,14 +188,14 @@ class ONCADFFockBuilder : public FockBuilder {
         D, tensor::TaToDecompTensor(clr_thresh_, compress_D));
 
     darray_type dJ;
-    auto j0 = mpqc_time::fenced_now(world);
+    auto j0 = mpqc::fenced_now(world);
 
     dJ("mu, nu") =
         E_("X,mu,nu") * (M_sqrt_inv_("X,Z") *
                          (M_sqrt_inv_("Z, Y") * (E_("Y,r,s") * dD("r,s"))));
 
-    auto j1 = mpqc_time::fenced_now(world);
-    j_times_.push_back(mpqc_time::duration_in_s(j0, j1));
+    auto j1 = mpqc::fenced_now(world);
+    j_times_.push_back(mpqc::duration_in_s(j0, j1));
 
     auto J = TA::to_new_tile_type(dJ, tensor::DecompToTaTensor{});
 
@@ -274,10 +274,10 @@ class ONCADFFockBuilder : public FockBuilder {
 
     darray_type C_mo, dL, F_df;
 
-    auto cmo0 = mpqc_time::fenced_now(world);
+    auto cmo0 = mpqc::fenced_now(world);
     C_mo("X, i, mu") = C_df_("X, mu, nu") * dC("nu, i");
     C_mo.truncate();
-    auto cmo1 = mpqc_time::fenced_now(world);
+    auto cmo1 = mpqc::fenced_now(world);
     c_mo_storages_.push_back(utility::array_storage(C_mo));
 
     TA::SparseShape<float> forced_shape;
@@ -285,17 +285,17 @@ class ONCADFFockBuilder : public FockBuilder {
       forced_shape = C_mo.shape().transform(Rdf_shape{force_cut_thresh_});
     }
 
-    auto edf0 = mpqc_time::fenced_now(world);
+    auto edf0 = mpqc::fenced_now(world);
     if (force_shape_) {
       F_df("X, i, mu") = (E_("X, mu, nu") * dC("nu,i")).set_shape(forced_shape);
     } else {
       F_df("X, i, mu") = E_("X, mu, nu") * dC("nu,i");
     }
     F_df.truncate();
-    auto edf1 = mpqc_time::fenced_now(world);
+    auto edf1 = mpqc::fenced_now(world);
     e_df_storages_.push_back(utility::array_storage(F_df));
 
-    auto rdf0 = mpqc_time::fenced_now(world);
+    auto rdf0 = mpqc::fenced_now(world);
     if (force_shape_) {
       F_df("X, i, mu") =
           F_df("X, i, mu") -
@@ -304,25 +304,25 @@ class ONCADFFockBuilder : public FockBuilder {
       F_df("X, i, mu") = F_df("X, i , mu") - 0.5 * M_("X,Y") * C_mo("Y, i, mu");
     }
     F_df.truncate();
-    auto rdf1 = mpqc_time::fenced_now(world);
+    auto rdf1 = mpqc::fenced_now(world);
     f_df_storages_.push_back(utility::array_storage(F_df));
 
-    auto l0 = mpqc_time::fenced_now(world);
+    auto l0 = mpqc::fenced_now(world);
     dL("mu, nu") = C_mo("X, i, mu") * F_df("X, i, nu");
     dL.truncate();
-    auto l1 = mpqc_time::fenced_now(world);
+    auto l1 = mpqc::fenced_now(world);
 
     array_type K;
-    auto k0 = mpqc_time::fenced_now(world);
+    auto k0 = mpqc::fenced_now(world);
     auto L = TA::to_new_tile_type(dL, tensor::DecompToTaTensor{});
     K("mu, nu") = L("mu, nu") + L("nu, mu");
-    auto k1 = mpqc_time::fenced_now(world);
+    auto k1 = mpqc::fenced_now(world);
 
-    c_mo_times_.push_back(mpqc_time::duration_in_s(cmo0, cmo1));
-    e_df_times_.push_back(mpqc_time::duration_in_s(edf0, edf1));
-    r_df_times_.push_back(mpqc_time::duration_in_s(rdf0, rdf1));
-    dl_times_.push_back(mpqc_time::duration_in_s(l0, l1));
-    dl_to_k_times_.push_back(mpqc_time::duration_in_s(k0, k1));
+    c_mo_times_.push_back(mpqc::duration_in_s(cmo0, cmo1));
+    e_df_times_.push_back(mpqc::duration_in_s(edf0, edf1));
+    r_df_times_.push_back(mpqc::duration_in_s(rdf0, rdf1));
+    dl_times_.push_back(mpqc::duration_in_s(l0, l1));
+    dl_to_k_times_.push_back(mpqc::duration_in_s(k0, k1));
 
     return K;
   }

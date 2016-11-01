@@ -146,7 +146,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    auto &world = ao_int.world();
   //    using TArray = TA::DistArray<Tile, Policy>;
   //
-  //    auto mo_time0 = mpqc_time::fenced_now(world);
+  //    auto mo_time0 = mpqc::fenced_now(world);
   //    utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO
   //    Orbital\n");
   //
@@ -295,8 +295,8 @@ class DBMP2 : public MP2<Tile, Policy> {
   //        C_vir_ta);
   //    orbital_registry.add(vir_space);
   //
-  //    auto mo_time1 = mpqc_time::fenced_now(world);
-  //    auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
+  //    auto mo_time1 = mpqc::fenced_now(world);
+  //    auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
   //    utility::print_par(world, "ClosedShell Dual Basis MO Build Time: ",
   //    mo_time,
   //                       " S\n");
@@ -313,7 +313,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    auto &world = ao_int.world();
   //    using TArray = TA::DistArray<Tile, Policy>;
   //
-  //    auto mo_time0 = mpqc_time::fenced_now(world);
+  //    auto mo_time0 = mpqc::fenced_now(world);
   //    utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO
   //    Orbital\n");
   //
@@ -457,8 +457,8 @@ class DBMP2 : public MP2<Tile, Policy> {
   //        C_vir_ta);
   //    orbital_registry.add(vir_space);
   //
-  //    auto mo_time1 = mpqc_time::fenced_now(world);
-  //    auto mo_time = mpqc_time::duration_in_s(mo_time0, mo_time1);
+  //    auto mo_time1 = mpqc::fenced_now(world);
+  //    auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
   //    utility::print_par(world, "ClosedShell Dual Basis MO Build Time: ",
   //    mo_time,
   //                       " S\n");

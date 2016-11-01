@@ -44,7 +44,7 @@ std::unique_ptr<OutputWriter> init_json_writer() {
     std::unique_ptr<OutputWriter> owriter{new OutputWriter};
     auto &writer = owriter->writer();
 
-    auto now = mpqc_time::system_now();
+    auto now = mpqc::system_now();
     auto date = std::chrono::system_clock::to_time_t(now);
     char date_string[512];
     std::strftime(date_string, 512, "%F %T", std::localtime(&date));
@@ -59,7 +59,7 @@ std::unique_ptr<OutputWriter> init_json_writer(Document &input) {
     std::unique_ptr<OutputWriter> owriter{new OutputWriter};
     auto &writer = owriter->writer();
 
-    auto now = mpqc_time::system_now();
+    auto now = mpqc::system_now();
     auto date = std::chrono::system_clock::to_time_t(now);
     char date_string[512];
     std::strftime(date_string, 512, "%F %T", std::localtime(&date));

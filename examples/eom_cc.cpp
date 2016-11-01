@@ -15,7 +15,7 @@
 #include "../utility/print_size_info.h"
 
 #include "mpqc/util/misc/time.h"
-#include "../utility/json_handling.h"
+#include "mpqc/util/misc/json_handling.h"
 
 #include "../molecule/atom.h"
 #include "../molecule/cluster.h"
@@ -232,56 +232,56 @@ int try_main(int argc, char *argv[], madness::World &world) {
         const auto bs_array = utility::make_array(basis, basis);
 
         // Overlap ints
-        auto time0 = mpqc_time::fenced_now(world);
+        auto time0 = mpqc::fenced_now(world);
         auto overlap_e = ints::make_1body_shr_pool("overlap", basis, mol);
         auto S = ints::sparse_integrals(world, overlap_e, bs_array);
-        auto time1 = mpqc_time::fenced_now(world);
-        auto time = mpqc_time::duration_in_s(time0, time1);
+        auto time1 = mpqc::fenced_now(world);
+        auto time = mpqc::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Overlap Time:  ", time, "\n");
 
         // Kinetic ints
-        time0 = mpqc_time::fenced_now(world);
+        time0 = mpqc::fenced_now(world);
         auto kinetic_e = ints::make_1body_shr_pool("kinetic", basis, mol);
         auto T = ints::sparse_integrals(world, kinetic_e, bs_array);
-        time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0, time1);
+        time1 = mpqc::fenced_now(world);
+        time = mpqc::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Kinetic Time:  ", time, "\n");
 
-        time0 = mpqc_time::fenced_now(world);
+        time0 = mpqc::fenced_now(world);
         auto nuclear_e = ints::make_1body_shr_pool("nuclear", basis, mol);
         auto V = ints::sparse_integrals(world, nuclear_e, bs_array);
-        time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0, time1);
+        time1 = mpqc::fenced_now(world);
+        time = mpqc::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Nuclear Time:  ", time, "\n");
 
-        time0 = mpqc_time::fenced_now(world);
+        time0 = mpqc::fenced_now(world);
         decltype(T) H;
         H("i,j") = T("i,j") + V("i,j");
-        time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0, time1);
+        time1 = mpqc::fenced_now(world);
+        time = mpqc::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Core Time:  ", time, "\n");
 
-        time0 = mpqc_time::fenced_now(world);
+        time0 = mpqc::fenced_now(world);
         auto eri_e = ints::make_2body_shr_pool(df_basis, basis);
         auto F_soad
               = scf::fock_from_soad(world, clustered_mol, basis, eri_e, H);
-        time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0, time1);
+        time1 = mpqc::fenced_now(world);
+        time = mpqc::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Soad Time:  ", time, "\n");
 
-        time0 = mpqc_time::fenced_now(world);
+        time0 = mpqc::fenced_now(world);
         auto three_c_array = utility::make_array(df_basis, basis, basis);
         auto eri3 = ints::sparse_integrals(world, eri_e, three_c_array);
-        time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0, time1);
+        time1 = mpqc::fenced_now(world);
+        time = mpqc::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Three Center Time:  ", time, "\n");
 
-        time0 = mpqc_time::fenced_now(world);
+        time0 = mpqc::fenced_now(world);
         const auto dfbs_array = utility::make_array(df_basis, df_basis);
         auto Metric = ints::sparse_integrals(world, eri_e, dfbs_array);
         scf::DFFockBuilder<decltype(eri3)> builder(Metric, eri3);
-        time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0, time1);
+        time1 = mpqc::fenced_now(world);
+        time = mpqc::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Two Center Time:  ", time, "\n");
 
         std::unique_ptr<scf::FockBuilder> f_builder;
@@ -289,10 +289,10 @@ int try_main(int argc, char *argv[], madness::World &world) {
             && in["Fock Builder"].GetString() == std::string("four center")) {
             auto four_c_array = utility::make_array(basis, basis, basis, basis);
 
-            time0 = mpqc_time::fenced_now(world);
+            time0 = mpqc::fenced_now(world);
             auto eri4 = ints::sparse_integrals(world, eri_e, four_c_array);
-            time1 = mpqc_time::fenced_now(world);
-            time = mpqc_time::duration_in_s(time0, time1);
+            time1 = mpqc::fenced_now(world);
+            time = mpqc::duration_in_s(time0, time1);
             mpqc::utility::print_par(world, "Four Center Time: ", time, "\n");
 
             auto builder
@@ -305,12 +305,12 @@ int try_main(int argc, char *argv[], madness::World &world) {
             f_builder = make_unique<decltype(builder)>(std::move(builder));
         }
 
-        time0 = mpqc_time::fenced_now(world);
+        time0 = mpqc::fenced_now(world);
         auto multi_pool
               = ints::make_1body_shr_pool("emultipole2", basis, clustered_mol);
         auto r_xyz = ints::sparse_xyz_integrals(world, multi_pool, bs_array);
-        time1 = mpqc_time::fenced_now(world);
-        time = mpqc_time::duration_in_s(time0, time1);
+        time1 = mpqc::fenced_now(world);
+        time = mpqc::duration_in_s(time0, time1);
         mpqc::utility::print_par(world, "Multipole Integral Time:  ", time,
                                  "\n");
 
@@ -480,11 +480,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
         if (direct) {
 
-            auto time0 = mpqc_time::now();
+            auto time0 = mpqc::now();
             lazy_two_electron_int = cc::make_lazy_two_electron_sparse_array(
                   world, basis, trange_4, screen_option);
-            auto time1 = mpqc_time::now();
-            auto duration = mpqc_time::duration_in_s(time0, time1);
+            auto time1 = mpqc::now();
+            auto duration = mpqc::duration_in_s(time0, time1);
             if (world.rank() == 0) {
                 std::cout << "Time to initialize direct two electron sparse "
                              "integral: " << duration << std::endl;

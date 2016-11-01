@@ -28,14 +28,18 @@ PeriodicSystem::PeriodicSystem(const KeyVal &kv) : Molecule(kv) {
     RD_max_ = decltype(RD_max_)(kv.value<std::vector<int>>("rdmax").data());
     RJ_max_ = decltype(RJ_max_)(kv.value<std::vector<int>>("rjmax").data());
     nk_ = decltype(nk_)(kv.value<std::vector<int>>("k_points").data());
+
+    if (R_max_ != RD_max_) {
+        throw std::runtime_error("rmax and rdmax do not match! ");
+    }
 }
 
 double PeriodicSystem::nuclear_repulsion() const {
   auto const &atoms = this->atoms();
   double enuc = 0.0;
-  for (auto nx = -R_max_(0); nx <= R_max_(0); ++nx) {
-    for (auto ny = -R_max_(1); ny <= R_max_(1); ++ny) {
-      for (auto nz = -R_max_(2); nz <= R_max_(2); ++nz) {
+  for (auto nx = -RJ_max_(0); nx <= RJ_max_(0); ++nx) {
+    for (auto ny = -RJ_max_(1); ny <= RJ_max_(1); ++ny) {
+      for (auto nz = -RJ_max_(2); nz <= RJ_max_(2); ++nz) {
         Vec3D shift(nx * dcell_(0),
                     ny * dcell_(1),
                     nz * dcell_(2));

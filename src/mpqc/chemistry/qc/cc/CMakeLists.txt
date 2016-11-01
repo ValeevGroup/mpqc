@@ -7,6 +7,7 @@ set(sources
         eom/eom_ccsd.cpp
         ccsd.cpp
         ccsd_t.cpp
+        dbccsd.cpp
         )
 
 add_library(MPQCcc ${sources})

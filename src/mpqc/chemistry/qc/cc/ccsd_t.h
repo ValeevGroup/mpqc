@@ -54,7 +54,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
     increase_ = kv.value<int>("increase",2);
   }
 
-  ~CCSD_T();
+  virtual ~CCSD_T();
 
   double value() override {
     auto &world = this->lcao_factory().world();

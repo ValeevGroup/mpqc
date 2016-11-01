@@ -15,6 +15,5 @@ template class CCSD<TA::TensorD, TA::SparsePolicy>;
 template <>
 CCSD<TA::TensorD, TA::SparsePolicy>::~CCSD() = default;
 
-// template class DBCCSD<TA::TensorD, TA::SparsePolicy>;
 }
 }

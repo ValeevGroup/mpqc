@@ -75,12 +75,12 @@ class Kmeans {
      *      computed.
      *
      * Requirements on Clusterable:
-     *  - non-intrusive center: returns a Vec3D
+     *  - non-intrusive center: returns a Vector3d
      *
      * Requirements on Cluster:
-     *  - non-intrusive center: returns a Vec3D.
+     *  - non-intrusive center: returns a Vector3d.
      *
-     *  - non-intrusive set_center: takes Vec3D allowing for the cluster's
+     *  - non-intrusive set_center: takes Vector3d allowing for the cluster's
      *      center to be set manually, this is needed for initialization
      *      of the clusters with a guess.
      *
@@ -118,9 +118,9 @@ class Kmeans {
   private:
     // Save old centers so we can see if Kmeans has converged.
     template <typename Cluster>
-    std::vector<Vec3D> centers(std::vector<Cluster> const &clusters) const {
+    std::vector<Vector3d> centers(std::vector<Cluster> const &clusters) const {
 
-        std::vector<Vec3D> centers;
+        std::vector<Vector3d> centers;
         centers.reserve(clusters.size());
 
         for (auto const &cluster : clusters) {
@@ -171,10 +171,10 @@ class Kmeans {
         }
     }
 
-    bool kmeans_converged(std::vector<Vec3D> const &old_centers,
-                          std::vector<Vec3D> const &new_centers) {
+    bool kmeans_converged(std::vector<Vector3d> const &old_centers,
+                          std::vector<Vector3d> const &new_centers) {
         auto compare_center_position =
-              [](Vec3D const &oldc, Vec3D const &newc) {
+              [](Vector3d const &oldc, Vector3d const &newc) {
             return 1e-7 < (oldc - newc).squaredNorm();
         };
 

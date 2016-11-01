@@ -1,7 +1,7 @@
 #include "array_info.h"
 
 #include "../src/mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "../src/mpqc/math/tensor/clr/mpqc_tile.h"
+#include "../src/mpqc/math/tensor/clr/tile.h"
 
 namespace mpqc {
 namespace utility {

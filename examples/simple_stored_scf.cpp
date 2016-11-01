@@ -27,7 +27,7 @@ namespace ints = mpqc::integrals;
 
 class FourCenterSCF {
   private:
-    using array_type = DArray<2, TA::TensorD, SpPolicy>;
+    using array_type = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
     array_type H_;
     array_type S_;
 
@@ -80,7 +80,7 @@ class FourCenterSCF {
         Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         decltype(S_eig) C = es.eigenvectors().leftCols(occ);
-        MatrixD D_eig = C * C.transpose();
+        RowMatrixXd D_eig = C * C.transpose();
 
         auto tr_ao = S_.trange().data()[0];
 

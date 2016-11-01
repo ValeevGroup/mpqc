@@ -1,6 +1,6 @@
-#include "../clr/decomposed_tensor_algebra.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 
-#include "../clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
 
 namespace mpqc {
 namespace tensor {

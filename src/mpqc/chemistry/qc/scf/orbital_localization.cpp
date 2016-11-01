@@ -39,9 +39,9 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz) {
         for (auto i = 0; i < Cm.cols(); ++i) {
             for (auto j = i + 1; j < Cm.cols(); ++j) {
 
-                Vec3D vij = {mx(i, j), my(i, j), mz(i, j)};
-                Vec3D vii = {mx(i, i), my(i, i), mz(i, i)};
-                Vec3D vjj = {mx(j, j), my(j, j), mz(j, j)};
+                Vector3d vij = {mx(i, j), my(i, j), mz(i, j)};
+                Vector3d vii = {mx(i, i), my(i, i), mz(i, i)};
+                Vector3d vjj = {mx(j, j), my(j, j), mz(j, j)};
 
                 double Aij = vij.squaredNorm()
                              - 0.25 * (vii - vjj).squaredNorm();

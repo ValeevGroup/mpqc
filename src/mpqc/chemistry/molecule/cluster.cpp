@@ -3,7 +3,7 @@
 namespace mpqc {
 
 void Cluster::update_center(){
-    center_ = Vec3D{0,0,0};
+    center_ = Vector3d{0,0,0};
 
     for(auto const &elem : elements_){
         center_ += elem.center();

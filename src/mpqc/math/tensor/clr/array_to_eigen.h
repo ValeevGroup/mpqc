@@ -8,8 +8,8 @@
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_nonintrusive_interface.h"
-#include "mpqc/math/tensor/clr/mpqc_tile.h"
 #include "mpqc/math/external/eigen/eigen.h"
+#include "tile.h"
 
 namespace mpqc {
 namespace array_ops {

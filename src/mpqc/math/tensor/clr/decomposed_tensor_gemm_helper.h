@@ -3,9 +3,9 @@
 #ifndef MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
 #define MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
 
-#include "../clr/decomposed_tensor.h"
-#include "../clr/decomposed_tensor_addition.h"
-#include "../clr/decomposed_tensor_algebra.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_addition.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 
 namespace mpqc {
 namespace tensor {

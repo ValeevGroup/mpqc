@@ -1464,7 +1464,7 @@ class CCSD {
   // orbital energy
   std::shared_ptr<Eigen::VectorXd> orbital_energy_;
 
-  // TRange1 Engine class
+  // TA::TiledRange1 Engine class
   std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
 
   // option member

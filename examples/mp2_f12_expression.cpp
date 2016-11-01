@@ -262,26 +262,26 @@ int main(int argc, char *argv[]) {
   decltype(S_obs) C_cabs, C_ri;
   {
     auto S_obs_eigen = array_ops::array_to_eigen(S_obs);
-    //        MatrixD X_obs_eigen_inv =
-    //        MatrixD(Eigen::LLT<MatrixD>(S_obs_eigen).matrixL()).inverse();
+    //        RowMatrixXd X_obs_eigen_inv =
+    //        RowMatrixXd(Eigen::LLT<RowMatrixXd>(S_obs_eigen).matrixL()).inverse();
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_obs_eigen);
-    MatrixD X_obs_eigen_inv = es.operatorInverseSqrt();
+    RowMatrixXd X_obs_eigen_inv = es.operatorInverseSqrt();
 
     auto S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
-    //        MatrixD X_ribs_eigen_inv =
-    //        MatrixD(Eigen::LLT<MatrixD>(S_ribs_eigen).matrixL()).inverse();
+    //        RowMatrixXd X_ribs_eigen_inv =
+    //        RowMatrixXd(Eigen::LLT<RowMatrixXd>(S_ribs_eigen).matrixL()).inverse();
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es2(S_ribs_eigen);
-    MatrixD X_ribs_eigen_inv = es2.operatorInverseSqrt();
-    MatrixD S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
-    MatrixD S_obs_ribs_ortho_eigen =
+    RowMatrixXd X_ribs_eigen_inv = es2.operatorInverseSqrt();
+    RowMatrixXd S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
+    RowMatrixXd S_obs_ribs_ortho_eigen =
         X_obs_eigen_inv.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
-    Eigen::JacobiSVD<MatrixD> svd(S_obs_ribs_ortho_eigen, Eigen::ComputeFullV);
-    MatrixD V_eigen = svd.matrixV();
+    Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen, Eigen::ComputeFullV);
+    RowMatrixXd V_eigen = svd.matrixV();
     size_t nbf_ribs = S_obs_ribs_ortho_eigen.cols();
     auto nbf_cabs = nbf_ribs - svd.nonzeroSingularValues();
-    MatrixD Vnull(nbf_ribs, nbf_cabs);
+    RowMatrixXd Vnull(nbf_ribs, nbf_cabs);
     Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_ribs, nbf_cabs);
-    MatrixD C_cabs_eigen = X_ribs_eigen_inv * Vnull;
+    RowMatrixXd C_cabs_eigen = X_ribs_eigen_inv * Vnull;
 
     auto tr_cabs = S_cabs.trange().data()[0];
     auto tr_ribs = S_ribs.trange().data()[0];

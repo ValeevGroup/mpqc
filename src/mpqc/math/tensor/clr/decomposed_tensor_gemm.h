@@ -4,10 +4,10 @@
 
 #include <tiledarray.h>
 
-#include "../clr/decomposed_tensor.h"
-#include "../clr/decomposed_tensor_addition.h"
-#include "../clr/decomposed_tensor_algebra.h"
-#include "../clr/decomposed_tensor_gemm_helper.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_addition.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_gemm_helper.h"
 #include "../common/typedefs.h"
 
 

@@ -19,11 +19,11 @@ using ABCbl = AtomBasedClusterable;
 // Functor for sorting centers based on the distance from a point.
 class sort_by_distance_from_point {
  public:
-  sort_by_distance_from_point(Vec3D const &point) : point_(point) {}
+  sort_by_distance_from_point(Vector3d const &point) : point_(point) {}
 
   bool operator()(ABCbl const &a, ABCbl const &b) const {
-    Vec3D a_diff = center_of_mass(a) - point_;
-    Vec3D b_diff = center_of_mass(b) - point_;
+    Vector3d a_diff = center_of_mass(a) - point_;
+    Vector3d b_diff = center_of_mass(b) - point_;
 
     const auto a_dist2 = a_diff.squaredNorm();
     const auto b_dist2 = b_diff.squaredNorm();
@@ -45,10 +45,10 @@ class sort_by_distance_from_point {
   }
 
  private:
-  Vec3D point_;
+  Vector3d point_;
 };
 
-void sort_elements(std::vector<ABCbl> &elems, const Vec3D &point) {
+void sort_elements(std::vector<ABCbl> &elems, const Vector3d &point) {
   std::sort(elems.begin(), elems.end(), sort_by_distance_from_point(point));
 }
 
@@ -115,7 +115,7 @@ Molecule::Molecule(std::istream &file_stream, bool sort_input) {
   init(file_stream, sort_input);
 }
 
-Molecule::Molecule(std::istream &file_stream, Vec3D const &point) {
+Molecule::Molecule(std::istream &file_stream, Vector3d const &point) {
   init(file_stream, point);
 }
 
@@ -142,7 +142,7 @@ void Molecule::init(std::istream &file, bool sort_input) {
   }
 }
 
-void Molecule::init(std::istream &file, Vec3D const &point) {
+void Molecule::init(std::istream &file, Vector3d const &point) {
   auto libint_atoms = libint2::read_dotxyz(file);
 
   using ABCbl = AtomBasedClusterable;
@@ -161,7 +161,7 @@ void Molecule::init(std::istream &file, Vec3D const &point) {
   sort_elements(elements_, point);
 }
 
-void Molecule::sort_from_point(Vec3D const &point) {
+void Molecule::sort_from_point(Vector3d const &point) {
   sort_elements(elements_, point);
 }
 

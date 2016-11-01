@@ -27,7 +27,7 @@ class AtomBasedClusterConcept : public ClusterConcept {
     virtual ~AtomBasedClusterConcept() noexcept = default;
     virtual int64_t charge_() const = 0;
     virtual double mass_() const = 0;
-    virtual Vec3D const& com_() const = 0;
+    virtual Vector3d const& com_() const = 0;
     virtual std::vector<Atom> atoms_() const = 0;
 };
 
@@ -54,8 +54,8 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
         return new AtomBasedClusterModel(*this);
     }
 
-    Vec3D const &center_() const override final { return center(element_); }
-    Vec3D const &com_() const override final {
+    Vector3d const &center_() const override final { return center(element_); }
+    Vector3d const &com_() const override final {
         return center_of_mass(element_);
     }
 
@@ -95,8 +95,8 @@ class AtomBasedClusterable {
     AtomBasedClusterable &operator=(AtomBasedClusterable &&c) = default;
 
     // Don't provide a way to access the center
-    // Vec3D const &center() const { return element_impl_->center_(); }
-    Vec3D const &com() const { return element_impl_->com_(); }
+    // Vector3d const &center() const { return element_impl_->center_(); }
+    Vector3d const &com() const { return element_impl_->com_(); }
 
     /// Vector of atoms that make up the clusterable
     std::vector<Atom> atoms() const { return element_impl_->atoms_(); }
@@ -117,11 +117,11 @@ inline double charge(AtomBasedClusterable const &ac){
     return ac.charge();
 }
 
-inline Vec3D const& center(AtomBasedClusterable const &ac){
+inline Vector3d const& center(AtomBasedClusterable const &ac){
     return ac.com();
 }
 
-inline Vec3D const& center_of_mass(AtomBasedClusterable const &ac){
+inline Vector3d const& center_of_mass(AtomBasedClusterable const &ac){
     return ac.com();
 }
 

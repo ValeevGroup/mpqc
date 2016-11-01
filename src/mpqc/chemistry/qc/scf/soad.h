@@ -27,14 +27,14 @@
 namespace mpqc {
 namespace scf {
 
-MatrixD soad_density_eig_matrix(Molecule const &mol) {
+RowMatrixXd soad_density_eig_matrix(Molecule const &mol) {
   auto nao = 0;
   for (const auto &atom : mol.atoms()) {
     const auto Z = atom.charge();
     nao += libint2::sto3g_num_ao(Z);
   }
 
-  MatrixD D(nao, nao);
+  RowMatrixXd D(nao, nao);
   D.setZero();
 
   size_t ao = 0;
@@ -53,7 +53,7 @@ MatrixD soad_density_eig_matrix(Molecule const &mol) {
 template <typename Engs, typename Array, typename Tile>
 void soad_task(Engs eng_pool, int64_t ord, ShellVec const *obs_row,
                ShellVec const *obs_col, ShellVec const *min_bs,
-               const MatrixD *D, Array *F,
+               const RowMatrixXd *D, Array *F,
                std::function<Tile(TA::TensorD &&)> op) {
   auto range = F->trange().make_tile_range(ord);
   const auto lb = range.lobound();

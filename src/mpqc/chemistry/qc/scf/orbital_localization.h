@@ -32,7 +32,7 @@ class BoysLocalization {
         auto ao_z = array_ops::array_to_eigen(r_ao[2]);
         auto c_eig = array_ops::array_to_eigen(C);
 
-        MatrixD U = MatrixD::Identity(c_eig.cols(), c_eig.cols());
+        RowMatrixXd U = RowMatrixXd::Identity(c_eig.cols(), c_eig.cols());
         jacobi_sweeps(c_eig, U, {ao_x, ao_y, ao_z});
 
         auto trange = C.trange();

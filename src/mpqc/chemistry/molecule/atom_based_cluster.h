@@ -27,7 +27,7 @@ namespace mpqc {
 class AtomBasedCluster {
   private:
     std::vector<AtomBasedClusterable> elements_;
-    Vec3D com_ = {0, 0, 0};
+    Vector3d com_ = {0, 0, 0};
     double mass_ = 0.0;
     int64_t charge_ = 0.0;
 
@@ -68,7 +68,7 @@ class AtomBasedCluster {
     /**
      * @brief sets the center equal to a point.
      */
-    void set_com(Vec3D point) { com_ = point; }
+    void set_com(Vector3d point) { com_ = point; }
 
     /**
      * @brief will update the center based on the current elements.
@@ -78,7 +78,7 @@ class AtomBasedCluster {
      */
     void update_cluster();
 
-    inline Vec3D const &com() const { return com_; }
+    inline Vector3d const &com() const { return com_; }
 
     /**
      * @brief begin returns the begin iterator to the vector of clusterables.
@@ -107,19 +107,19 @@ std::ostream &operator<<(std::ostream &, AtomBasedCluster const &);
  * Overloading center to return the center of mass is in some sense specializing
  * center for atoms.
  */
-inline Vec3D const &center(AtomBasedCluster const &c) { return c.com(); }
+inline Vector3d const &center(AtomBasedCluster const &c) { return c.com(); }
 
 inline double mass(AtomBasedCluster const &c) { return c.mass(); }
 
 inline int64_t charge(AtomBasedCluster const &c) { return c.charge(); }
 
-inline Vec3D const &center_of_mass(AtomBasedCluster const &c) {
+inline Vector3d const &center_of_mass(AtomBasedCluster const &c) {
     return c.com();
 }
 
 std::vector<Atom> collapse_to_atoms(AtomBasedCluster const&);
 
-inline void set_center(AtomBasedCluster &c, Vec3D const &point){
+inline void set_center(AtomBasedCluster &c, Vector3d const &point){
     c.set_com(point);
 }
 

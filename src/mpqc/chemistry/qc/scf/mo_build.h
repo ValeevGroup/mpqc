@@ -72,18 +72,18 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 
   auto S = ao_int.compute(L"<κ|λ>");
 
-  MatrixD F_eig = array_ops::array_to_eigen(F);
-  MatrixD S_eig = array_ops::array_to_eigen(S);
+  RowMatrixXd F_eig = array_ops::array_to_eigen(F);
+  RowMatrixXd S_eig = array_ops::array_to_eigen(S);
 
   // check the condition number in Overlap
-  Eigen::SelfAdjointEigenSolver<MatrixD> S_es(S_eig);
+  Eigen::SelfAdjointEigenSolver<RowMatrixXd> S_es(S_eig);
   // eigen value in increasing order
   auto cond =
       S_es.eigenvalues()(S_es.eigenvalues().size() - 1) / S_es.eigenvalues()(0);
   utility::print_par(world, "Condition Number in Overlap: ", cond, "\n");
 
   // solve mo coefficients
-  Eigen::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
 
   // start to solve coefficient
 
@@ -96,11 +96,11 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   }
 
   ens = es.eigenvalues();
-  MatrixD C_all = es.eigenvectors();
-  MatrixD C_occ = C_all.block(0, 0, S_eig.rows(), occ);
-  MatrixD C_corr_occ =
+  RowMatrixXd C_all = es.eigenvectors();
+  RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), occ);
+  RowMatrixXd C_corr_occ =
       C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
-  MatrixD C_vir = C_all.rightCols(S_eig.rows() - occ);
+  RowMatrixXd C_vir = C_all.rightCols(S_eig.rows() - occ);
 
   utility::print_par(world, "OccBlockSize: ", occ_blocksize, "\n");
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
@@ -202,36 +202,36 @@ void closed_shell_cabs_mo_build_svd(
   // construct cabs
   TA::DistArray<Tile, Policy> C_cabs, C_ri, C_allvir;
   {
-    MatrixD S_obs_eigen = array_ops::array_to_eigen(S_obs);
+    RowMatrixXd S_obs_eigen = array_ops::array_to_eigen(S_obs);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_obs_eigen);
-    MatrixD X_obs_eigen_inv = es.operatorInverseSqrt();
+    RowMatrixXd X_obs_eigen_inv = es.operatorInverseSqrt();
 
-    MatrixD S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
+    RowMatrixXd S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es2(S_ribs_eigen);
-    MatrixD X_ribs_eigen_inv = es2.operatorInverseSqrt();
+    RowMatrixXd X_ribs_eigen_inv = es2.operatorInverseSqrt();
 
     // orthogonalize
-    MatrixD S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
-    MatrixD S_obs_ribs_ortho_eigen =
+    RowMatrixXd S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
+    RowMatrixXd S_obs_ribs_ortho_eigen =
         X_obs_eigen_inv.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
 
     // SVD solve
-    Eigen::JacobiSVD<MatrixD> svd(S_obs_ribs_ortho_eigen, Eigen::ComputeFullV);
-    MatrixD V_eigen = svd.matrixV();
+    Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen, Eigen::ComputeFullV);
+    RowMatrixXd V_eigen = svd.matrixV();
     size_t nbf_ribs = S_obs_ribs_ortho_eigen.cols();
     auto nbf_cabs = nbf_ribs - svd.nonzeroSingularValues();
-    MatrixD Vnull(nbf_ribs, nbf_cabs);
+    RowMatrixXd Vnull(nbf_ribs, nbf_cabs);
     Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_ribs, nbf_cabs);
-    MatrixD C_cabs_eigen = X_ribs_eigen_inv * Vnull;
+    RowMatrixXd C_cabs_eigen = X_ribs_eigen_inv * Vnull;
 
     // solve orbitals for all virtual
 
     auto n_vir = tre->get_vir();
-    MatrixD C_allvirtual_eigen = MatrixD::Zero(nbf_ribs, n_vir + nbf_cabs);
+    RowMatrixXd C_allvirtual_eigen = RowMatrixXd::Zero(nbf_ribs, n_vir + nbf_cabs);
 
     {
       auto C_vir = orbital_registry.retrieve(OrbitalIndex(L"a")).array();
-      MatrixD C_vir_eigen = array_ops::array_to_eigen(C_vir);
+      RowMatrixXd C_vir_eigen = array_ops::array_to_eigen(C_vir);
 
       auto n_obs = C_vir_eigen.rows();
 
@@ -312,11 +312,11 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
   auto S = ao_int.compute(L"<κ|λ>");
 
-  MatrixD F_eig = array_ops::array_to_eigen(F);
-  MatrixD S_eig = array_ops::array_to_eigen(S);
+  RowMatrixXd F_eig = array_ops::array_to_eigen(F);
+  RowMatrixXd S_eig = array_ops::array_to_eigen(S);
 
   // solve mo coefficients
-  Eigen::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
 
   std::size_t n_frozen_core = 0;
   if (frozen_core) {
@@ -328,9 +328,9 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
   Eigen::VectorXd ens_occ = es.eigenvalues().segment(0, occ);
   //        std::cout << ens_occ << std::endl;
-  MatrixD C_all = es.eigenvectors();
-  MatrixD C_occ = C_all.block(0, 0, S_eig.rows(), occ);
-  MatrixD C_corr_occ =
+  RowMatrixXd C_all = es.eigenvectors();
+  RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), occ);
+  RowMatrixXd C_corr_occ =
       C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
 
   // finished solving occupied orbitals
@@ -340,28 +340,28 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   auto S_obs_vbs = ao_int.compute(L"<μ|Α>");
 
   // construct C_vbs
-  MatrixD C_vbs;
+  RowMatrixXd C_vbs;
   std::size_t nbf_vbs;
   std::size_t nbf_v;
   {
     // S_A^B -(1/2)
-    MatrixD S_vbs_eigen = array_ops::array_to_eigen(S_vbs);
+    RowMatrixXd S_vbs_eigen = array_ops::array_to_eigen(S_vbs);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es2(S_vbs_eigen);
-    MatrixD X_vbs_eigen_inv = es2.operatorInverseSqrt();
+    RowMatrixXd X_vbs_eigen_inv = es2.operatorInverseSqrt();
 
     // orthogonalize
-    MatrixD S_obs_vbs_eigen = array_ops::array_to_eigen(S_obs_vbs);
-    MatrixD S_obs_vbs_ortho_eigen = S_obs_vbs_eigen * X_vbs_eigen_inv;
+    RowMatrixXd S_obs_vbs_eigen = array_ops::array_to_eigen(S_obs_vbs);
+    RowMatrixXd S_obs_vbs_ortho_eigen = S_obs_vbs_eigen * X_vbs_eigen_inv;
 
-    MatrixD X_i_mu = C_occ.transpose() * S_obs_vbs_ortho_eigen;
+    RowMatrixXd X_i_mu = C_occ.transpose() * S_obs_vbs_ortho_eigen;
 
     // SVD solve
-    Eigen::JacobiSVD<MatrixD> svd(X_i_mu, Eigen::ComputeFullV);
-    MatrixD V_eigen = svd.matrixV();
+    Eigen::JacobiSVD<RowMatrixXd> svd(X_i_mu, Eigen::ComputeFullV);
+    RowMatrixXd V_eigen = svd.matrixV();
     nbf_vbs = S_obs_vbs_ortho_eigen.cols();
     nbf_v = nbf_vbs - svd.nonzeroSingularValues();
     std::cout << "Virtual Orbital Size:  " << nbf_v << std::endl;
-    MatrixD Vnull(nbf_vbs, nbf_v);
+    RowMatrixXd Vnull(nbf_vbs, nbf_v);
     Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_vbs, nbf_v);
     C_vbs = X_vbs_eigen_inv.transpose() * Vnull;
   }
@@ -408,11 +408,11 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   } else {
     F_vbs = lcao_factory.compute(L"<a|F|b>[df]");
   }
-  MatrixD F_vbs_mo_eigen = array_ops::array_to_eigen(F_vbs);
+  RowMatrixXd F_vbs_mo_eigen = array_ops::array_to_eigen(F_vbs);
   //    std::cout << "F_vbs MO" << std::endl;
   //    std::cout << F_vbs_mo_eigen << std::endl;
 
-  Eigen::SelfAdjointEigenSolver<MatrixD> es3(F_vbs_mo_eigen);
+  Eigen::SelfAdjointEigenSolver<RowMatrixXd> es3(F_vbs_mo_eigen);
   auto ens_vir = es3.eigenvalues();
 
   ens = Eigen::VectorXd(nbf_vbs);
@@ -422,7 +422,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   //        std::cout << ens << std::endl;
 
   // resolve the virtual orbitals
-  MatrixD C_vir_rotate = es3.eigenvectors();
+  RowMatrixXd C_vir_rotate = es3.eigenvectors();
   C_vbs = C_vbs * C_vir_rotate;
   TArray C_vir_ta_new =
       array_ops::eigen_to_array<Tile>(world, C_vbs, tr_vbs, tr_vir);
@@ -503,44 +503,44 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto S_vbs_ribs = ao_int.compute(L"<Α|σ>");
 
   // construct cabs
-  MatrixD C_cabs_eigen;
-  MatrixD C_allvir_eigen;
+  RowMatrixXd C_cabs_eigen;
+  RowMatrixXd C_allvir_eigen;
   std::size_t nbf_ribs_minus_occ;
   {
-    MatrixD S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
+    RowMatrixXd S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_ribs_eigen);
-    MatrixD X_ribs_eigen_inv = es.operatorInverseSqrt();
+    RowMatrixXd X_ribs_eigen_inv = es.operatorInverseSqrt();
 
-    MatrixD S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
+    RowMatrixXd S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
 
     // C_mu^i
     TA::DistArray<Tile, Policy> Ci =
         orbital_registry.retrieve(OrbitalIndex(L"m")).array();
-    MatrixD Ci_eigen = array_ops::array_to_eigen(Ci);
+    RowMatrixXd Ci_eigen = array_ops::array_to_eigen(Ci);
 
-    MatrixD X1 = Ci_eigen.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
+    RowMatrixXd X1 = Ci_eigen.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
 
     // SVD solve to project out occupied
-    Eigen::JacobiSVD<MatrixD> svd1(X1, Eigen::ComputeFullV);
-    MatrixD V_eigen = svd1.matrixV();
+    Eigen::JacobiSVD<RowMatrixXd> svd1(X1, Eigen::ComputeFullV);
+    RowMatrixXd V_eigen = svd1.matrixV();
     size_t nbf_ribs = S_ribs_eigen.cols();
     nbf_ribs_minus_occ = nbf_ribs - svd1.nonzeroSingularValues();
-    MatrixD Vnull1(nbf_ribs, nbf_ribs_minus_occ);
+    RowMatrixXd Vnull1(nbf_ribs, nbf_ribs_minus_occ);
     Vnull1 = V_eigen.block(0, svd1.nonzeroSingularValues(), nbf_ribs,
                            nbf_ribs_minus_occ);
     C_allvir_eigen = X_ribs_eigen_inv * Vnull1;
 
-    MatrixD S_vbs_ribs_eigen = array_ops::array_to_eigen(S_vbs_ribs);
+    RowMatrixXd S_vbs_ribs_eigen = array_ops::array_to_eigen(S_vbs_ribs);
     // C_a
     TA::DistArray<Tile, Policy> Ca =
         orbital_registry.retrieve(OrbitalIndex(L"a")).array();
-    MatrixD Ca_eigen = array_ops::array_to_eigen(Ca);
-    MatrixD X2 = Ca_eigen.transpose() * S_vbs_ribs_eigen * C_allvir_eigen;
+    RowMatrixXd Ca_eigen = array_ops::array_to_eigen(Ca);
+    RowMatrixXd X2 = Ca_eigen.transpose() * S_vbs_ribs_eigen * C_allvir_eigen;
 
-    Eigen::JacobiSVD<MatrixD> svd2(X2, Eigen::ComputeFullV);
-    MatrixD V_eigen2 = svd2.matrixV();
+    Eigen::JacobiSVD<RowMatrixXd> svd2(X2, Eigen::ComputeFullV);
+    RowMatrixXd V_eigen2 = svd2.matrixV();
     auto nbf_cabs = nbf_ribs_minus_occ - svd2.nonzeroSingularValues();
-    MatrixD Vnull2(nbf_ribs_minus_occ, nbf_cabs);
+    RowMatrixXd Vnull2(nbf_ribs_minus_occ, nbf_cabs);
     Vnull2 = V_eigen2.block(0, svd2.nonzeroSingularValues(), nbf_ribs_minus_occ,
                             nbf_cabs);
     C_cabs_eigen = C_allvir_eigen * Vnull2;

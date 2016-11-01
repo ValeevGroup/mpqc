@@ -22,9 +22,9 @@ namespace molecule {
  * TODO Eventually add some static checking for the functions
  */
 template <typename T>
-Vec3D center_of_mass(std::vector<T> const &ts){
+Vector3d center_of_mass(std::vector<T> const &ts){
     double total_mass = 0.0;
-    Vec3D com = {0.0, 0.0, 0.0};
+    Vector3d com = {0.0, 0.0, 0.0};
 
     // The overloads for mass and center_of_mass must be defined elsewhere
     // Center of mass formula: com = \frac{1}{total_mass}(\sum_k m_k * r_k)

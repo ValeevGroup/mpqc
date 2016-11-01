@@ -47,33 +47,33 @@ using ShrShellVecArray = std::array<std::shared_ptr<const ShellVec>, N>;
 template <typename Op>
 using Ttype = decltype(std::declval<Op>()(std::declval<TA::TensorD>()));
 
-// Create TRange from bases
+// Create TA::TiledRange from bases
 template <unsigned long N>
-TRange create_trange(Barray<N> const &basis_array) {
+TA::TiledRange create_trange(Barray<N> const &basis_array) {
 
-    std::vector<TRange1> trange1s;
+    std::vector<TA::TiledRange1> trange1s;
     trange1s.reserve(N);
 
     for (auto i = 0ul; i < N; ++i) {
         trange1s.emplace_back(basis_array[i].create_trange1());
     }
 
-    return TRange(trange1s.begin(), trange1s.end());
+    return TA::TiledRange(trange1s.begin(), trange1s.end());
 }
 
-// create TRange from Bvector
-inline TRange create_trange(Bvector const& basis_vector) {
+// create TA::TiledRange from Bvector
+inline TA::TiledRange create_trange(Bvector const& basis_vector) {
 
     std::size_t N = basis_vector.size();
 
-    std::vector<TRange1> trange1s;
+    std::vector<TA::TiledRange1> trange1s;
     trange1s.reserve(N);
 
     for (auto i = 0ul; i < N; ++i) {
         trange1s.emplace_back(basis_vector[i].create_trange1());
     }
 
-    return TRange(trange1s.begin(), trange1s.end());
+    return TA::TiledRange(trange1s.begin(), trange1s.end());
 
 }
 

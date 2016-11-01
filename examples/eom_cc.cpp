@@ -353,8 +353,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
         decltype(Metric) L_inv;
         {
             auto M_eig = array_ops::array_to_eigen(Metric);
-            MatrixD L_inv_eig
-                  = MatrixD(Eigen::LLT<MatrixD>(M_eig).matrixL()).inverse();
+            RowMatrixXd L_inv_eig
+                  = RowMatrixXd(Eigen::LLT<RowMatrixXd>(M_eig).matrixL()).inverse();
             auto tr_M = Metric.trange().data()[0];
             L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig,
                                                            tr_M, tr_M);

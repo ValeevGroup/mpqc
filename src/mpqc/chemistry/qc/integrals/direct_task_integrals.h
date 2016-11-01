@@ -52,7 +52,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
     norms[ord] = tile_norm;
   };
 
-  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (auto const &ord : *pmap) {
     detail::IdxVec idx = trange.tiles_range().idx(ord);
     tiles[ord].first = ord;
@@ -61,8 +61,8 @@ DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
   }
   world.gop.fence();
 
-  SpShapeF shape(world, tile_norms, trange);
-  TA::DistArray<DirectTileType, SpPolicy> out(world, trange, shape, pmap);
+  TA::SparseShape<float> shape(world, tile_norms, trange);
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   for (auto it : *out.pmap()) {
     if (!out.is_zero(it)) {
@@ -114,7 +114,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     const auto tile_norm = ta_tile.norm();
 
     // Keep tile if it was significant.
-    bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
+    bool save_norm = tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
     if (save_norm) {
       *out_tile = DirectTileType(idx, std::move(rng), std::move(builder_ptr));
 
@@ -123,7 +123,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     }
   };
 
-  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (auto const &ord : *pmap) {
     detail::IdxVec idx = trange.tiles_range().idx(ord);
     tiles[ord].first = ord;
@@ -132,8 +132,8 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
   }
   world.gop.fence();
 
-  SpShapeF shape(world, tile_norms, trange);
-  TA::DistArray<DirectTileType, SpPolicy> out(world, trange, shape, pmap);
+  TA::SparseShape<float> shape(world, tile_norms, trange);
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   for (auto it : *out.pmap()) {
     if (!out.is_zero(it)) {
@@ -183,7 +183,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
 
   };
 
-  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (auto const &ord : *pmap) {
     detail::IdxVec idx = trange.tiles_range().idx(ord);
     tiles[ord].first = ord;
@@ -192,8 +192,8 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
   }
   world.gop.fence();
 
-  SpShapeF shape(world, tile_norms, trange);
-  TA::DistArray<DirectTileType, SpPolicy> out(world, trange, shape, pmap);
+  TA::SparseShape<float> shape(world, tile_norms, trange);
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   for (auto it : *out.pmap()) {
     if (!out.is_zero(it)) {

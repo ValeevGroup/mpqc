@@ -30,7 +30,7 @@ namespace ints = mpqc::integrals;
 
 class FourCenterSCF {
   private:
-    using array_type = DArray<2, TA::TensorD, SpPolicy>;
+    using array_type = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
     array_type H_;
     array_type S_;
 
@@ -83,7 +83,7 @@ class FourCenterSCF {
         Eigen::GeneralizedSelfAdjointEigenSolver<decltype(S_eig)> es(F_eig,
                                                                    S_eig);
         decltype(S_eig) C = es.eigenvectors().leftCols(occ);
-        MatrixD D_eig = C * C.transpose();
+        RowMatrixXd D_eig = C * C.transpose();
 
         auto tr_ao = S_.trange().data()[0];
 
@@ -279,7 +279,7 @@ int main(int argc, char *argv[]) {
             }
         };
 
-        Vec3D e_xyz = {0, 0, 0};
+        Vector3d e_xyz = {0, 0, 0};
         for (auto i = 0; i < 3; ++i) {
             e_xyz[i] = -2 * (D("i,j") * r_xyz[i]("i,j")).reduce(TileSum{});
         }
@@ -289,12 +289,12 @@ int main(int argc, char *argv[]) {
                       << std::endl;
         }
 
-        Vec3D n_xyz = {0, 0, 0};
+        Vector3d n_xyz = {0, 0, 0};
         for (auto const &atom : clustered_mol.atoms()) {
             n_xyz += atom.charge() * atom.center();
         }
 
-        Vec3D dp_vec = e_xyz + n_xyz;
+        Vector3d dp_vec = e_xyz + n_xyz;
         auto dp_mon = dp_vec.norm();
 
         if (world.rank() == 0) {

@@ -7,21 +7,13 @@
 #include <type_traits>
 #include <vector>
 #include <memory>
-#include "forward_declarations.h"
+
+#include "mpqc/chemistry/qc/integrals/integral_engine_pool.h"
+#include "mpqc/math/tensor/clr/tile.h"
 
 /////////////////////////////////////////////////////////
 // TiledArray typedefs
 /////////////////////////////////////////////////////////
-using SpPolicy = TA::SparsePolicy;
-using DnPolicy = TA::DensePolicy;
-
-using TRange1 = TA::TiledRange1;
-using TRange = TA::TiledRange;
-
-using SpShapeF = TA::SparseShape<float>;
-
-template <unsigned int, typename Tile, typename Policy>
-using DArray = TA::DistArray<Tile, Policy>;
 
 /////////////////////////////////////////////////////////
 // MPQC typedefs
@@ -36,13 +28,6 @@ template <typename T>
 using DecompTensor = mpqc::tensor::DecomposedTensor<T>;
 
 using DecompTensorD = DecompTensor<double>;
-
-/////////////////////////////////////////////////////////
-// Eigen typedefs
-/////////////////////////////////////////////////////////
-using MatrixD = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-using VectorD = Eigen::VectorXd;
-using Vec3D = Eigen::Vector3d;
 
 /////////////////////////////////////////////////////////
 // Libint typedefs

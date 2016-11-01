@@ -7,15 +7,15 @@
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
-#include "mpqc/math/tensor/clr/mpqc_tile.h"
+#include "tile.h"
 
 namespace mpqc {
 
-inline void minimize_storage(TA::DistArray<TA::TensorD, SpPolicy> &A) {
+inline void minimize_storage(TA::DistArray<TA::TensorD, TA::SparsePolicy> &A) {
     A.truncate();
 }
 
-inline void minimize_storage(TA::DistArray<TA::TensorD, SpPolicy> &A,
+inline void minimize_storage(TA::DistArray<TA::TensorD, TA::SparsePolicy> &A,
                              double truncate_threshold) {
     if (truncate_threshold > TA::SparseShape<float>::threshold()) {
         TA::foreach_inplace(A, [=](TA::TensorD &t) {
@@ -31,7 +31,7 @@ inline void minimize_storage(TA::DistArray<TA::TensorD, SpPolicy> &A,
 
 inline void
 minimize_storage(TA::DistArray<tensor::Tile<tensor::DecomposedTensor<double>>,
-                               SpPolicy> &A,
+                               TA::SparsePolicy> &A,
                  double clr_threshold) {
     if (clr_threshold != 0) {
         TA::foreach_inplace(

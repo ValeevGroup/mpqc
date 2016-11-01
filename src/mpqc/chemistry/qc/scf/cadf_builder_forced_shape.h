@@ -9,7 +9,7 @@
 #include "../../../../../utility/array_info.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "mpqc/math/tensor/clr/mpqc_tile.h"
+#include "mpqc/math/tensor/clr/tile.h"
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
@@ -25,7 +25,7 @@ namespace scf {
 class CADFForcedShapeFockBuilder : public FockBuilder {
   public:
     using dtile_type = tensor::Tile<tensor::DecomposedTensor<double>>;
-    using darray_type = TA::DistArray<dtile_type, SpPolicy>;
+    using darray_type = TA::DistArray<dtile_type, TA::SparsePolicy>;
 
   private:
     darray_type B_;    // CADF fitting coeffs
@@ -58,8 +58,8 @@ class CADFForcedShapeFockBuilder : public FockBuilder {
         auto l0 = mpqc::fenced_now(world);
         auto M_eig = array_ops::array_to_eigen(M);
 
-        MatrixD L_inv_eig
-              = MatrixD(Eigen::LLT<MatrixD>(M_eig).matrixL()).inverse();
+        RowMatrixXd L_inv_eig
+              = RowMatrixXd(Eigen::LLT<RowMatrixXd>(M_eig).matrixL()).inverse();
 
         auto tr_M = M.trange().data()[0];
 

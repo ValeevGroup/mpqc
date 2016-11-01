@@ -11,8 +11,8 @@ namespace clustering_test {
 
 // Dummy class cluster for testing k-means.
 struct Cluster {
-    Vec3D center;
-    std::vector<Vec3D> elements;
+    Vector3d center;
+    std::vector<Vector3d> elements;
 
     auto begin() const -> decltype(elements.begin()) {
         return elements.begin();
@@ -23,12 +23,12 @@ struct Cluster {
 
 void remove_clusterables(Cluster &cluster) { cluster.elements.clear(); }
 
-void attach_clusterable(Cluster &cluster, Vec3D const &vec) {
+void attach_clusterable(Cluster &cluster, Vector3d const &vec) {
     cluster.elements.emplace_back(vec);
 }
 
 void update_center(Cluster &cluster) {
-    Vec3D new_center = {0.0, 0.0, 0.0};
+    Vector3d new_center = {0.0, 0.0, 0.0};
     for (auto const &elem : cluster.elements) {
         new_center += elem;
     }
@@ -37,9 +37,9 @@ void update_center(Cluster &cluster) {
     cluster.center = new_center;
 }
 
-void set_center(Cluster &cluster, Vec3D const &vec) { cluster.center = vec; }
+void set_center(Cluster &cluster, Vector3d const &vec) { cluster.center = vec; }
 
-Vec3D const &center(Cluster const &cluster) { return cluster.center; }
+Vector3d const &center(Cluster const &cluster) { return cluster.center; }
 
 std::ostream &operator<<(std::ostream &os, Cluster const &cluster) {
     os << "Cluster(" << cluster.elements.size() << "):\n";
@@ -54,7 +54,7 @@ std::ostream &operator<<(std::ostream &os, Cluster const &cluster) {
 } // namespace clustering test
 
 namespace Eigen {
-Vec3D center(Vec3D const &vec) { return vec; }
+Vector3d center(Vector3d const &vec) { return vec; }
 }
 
 
@@ -64,9 +64,9 @@ TEST_CASE("k-means can cluster clusterables", "[k-means, clustering]") {
     using Cluster = ctest::Cluster;
 
     auto default_kmeans = clustering::Kmeans();
-    auto vectors = std::vector<Vec3D>(
-          {Vec3D{0.0, 0.0, 0.0}, Vec3D{1.0, 0.0, 0.0}, Vec3D{0.0, 1.0, 0.0},
-           Vec3D{2.0, 2.0, 2.0}, Vec3D{3.0, 2.0, 2.0}, Vec3D{2.0, 3.0, 2.0}});
+    auto vectors = std::vector<Vector3d>(
+          {Vector3d{0.0, 0.0, 0.0}, Vector3d{1.0, 0.0, 0.0}, Vector3d{0.0, 1.0, 0.0},
+           Vector3d{2.0, 2.0, 2.0}, Vector3d{3.0, 2.0, 2.0}, Vector3d{2.0, 3.0, 2.0}});
 
     SECTION("k-means can form different number of clusters") {
         REQUIRE_THROWS(default_kmeans.cluster<Cluster>(vectors, -1));

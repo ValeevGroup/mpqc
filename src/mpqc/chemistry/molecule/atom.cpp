@@ -25,7 +25,7 @@ std::string Atom::xyz_string(bool convert_to_angstroms) const {
     std::string name = atom_names[atomic_number_];
     name += ' ';
 
-    Vec3D center = center_;
+    Vector3d center = center_;
     if (convert_to_angstroms) {
         center *= bohr_to_ang;
     }

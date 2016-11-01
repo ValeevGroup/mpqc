@@ -25,10 +25,10 @@
 #include "../scf/soad.h"
 #include "../scf/orbital_localization.h"
 #include "../scf/clusterd_coeffs.h"
+#include "../src/mpqc/math/tensor/clr/tile.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_nonintrusive_interface.h"
-#include "mpqc/math/tensor/clr/mpqc_tile.h"
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
 
 #include "mpqc/math/linalg/diagonal_array.h"
@@ -260,9 +260,9 @@ class to_ta_tile {
 
 class ThreeCenterScf {
   private:
-    using array_type = DArray<2, TA::TensorD, SpPolicy>;
+    using array_type = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
     using dtile = tensor::Tile<tensor::DecomposedTensor<double>>;
-    using darray_type = DArray<2, dtile, SpPolicy>;
+    using darray_type = TA::DistArray<dtile, TA::SparsePolicy>;
 
     array_type H_;
     array_type S_;
@@ -358,7 +358,7 @@ class ThreeCenterScf {
 
         auto w0 = mpqc::fenced_now(world);
 
-        DArray<3, dtile, SpPolicy> W;
+        TA::DistArray<dtile, TA::SparsePolicy> W;
         W("X, mu, i") = B("X, mu, nu") * dC_("nu, i");
 
         if (clr_thresh_ != 0 && tensor::detail::recompress) {
@@ -704,11 +704,11 @@ int main(int argc, char *argv[]) {
         auto Vmetric = ints::sparse_integrals(world, eri_e, dfbs_array);
         auto V_eig = array_ops::array_to_eigen(Vmetric);
 
-        MatrixD Leig = Eigen::LLT<MatrixD>(V_eig).matrixL();
-        MatrixD L_inv_eig = Leig.inverse();
+        RowMatrixXd Leig = Eigen::LLT<RowMatrixXd>(V_eig).matrixL();
+        RowMatrixXd L_inv_eig = Leig.inverse();
 
-        Eigen::SelfAdjointEigenSolver<MatrixD> es(V_eig);
-        MatrixD V_inv_oh_eig = es.operatorInverseSqrt();
+        Eigen::SelfAdjointEigenSolver<RowMatrixXd> es(V_eig);
+        RowMatrixXd V_inv_oh_eig = es.operatorInverseSqrt();
 
         auto tr_V = Vmetric.trange().data()[0];
         L_inv = array_ops::eigen_to_array<TA::TensorD>(world, L_inv_eig, tr_V,
@@ -743,7 +743,7 @@ int main(int argc, char *argv[]) {
 
         JobSummary job_summary;
 
-        DArray<2, TA::TensorD, SpPolicy> Fao;
+        TA::DistArray<TA::TensorD, TA::SparsePolicy> Fao;
 
         auto decomp_3d = [&](TA::TensorD &&t) {
             auto range = t.range();
@@ -792,7 +792,7 @@ int main(int argc, char *argv[]) {
         }
         double scf_time = 0;
         using BTile = tensor::Tile<tensor::DecomposedTensor<double>>;
-        DArray<3, BTile, SpPolicy> B;
+        TA::DistArray<BTile, TA::SparsePolicy> B;
 
         if (use_direct_ints) {
 
@@ -1091,7 +1091,7 @@ int main(int argc, char *argv[]) {
                                                shr_screen);
 
                 auto mp20 = mpqc::fenced_now(world);
-                DArray<3, TA::TensorD, TA::SparsePolicy> Wiv;
+                TA::DistArray<TA::TensorD, TA::SparsePolicy> Wiv;
                 Wiv("Y,i,a") = eri3_mp2("Y,nu,mu") * Ci("mu,i") * Cv("nu,a");
                 Wiv("X,i,a") = L_inv("X,Y") * Wiv("Y,i,a");
 
@@ -1143,7 +1143,7 @@ int main(int argc, char *argv[]) {
                 };
 
 
-                DArray<4, TA::TensorD, TA::SparsePolicy> G;
+                TA::DistArray<TA::TensorD, TA::SparsePolicy> G;
                 G("i,a,j,b") = Wiv("X,i,a") * Wiv("X,j,b");
 
                 double energy_mp2

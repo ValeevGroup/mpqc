@@ -27,7 +27,7 @@ namespace mpqc {
 class Cluster {
   private:
     std::vector<Clusterable> elements_;
-    Vec3D center_ = {0, 0, 0};
+    Vector3d center_ = {0, 0, 0};
 
   public:
     Cluster() = default;
@@ -53,7 +53,7 @@ class Cluster {
     /**
      * @brief sets the center equal to a point.
      */
-    void set_center(Vec3D point) { center_ = point; }
+    void set_center(Vector3d point) { center_ = point; }
 
     /**
      * @brief will update the center based on the current elements.
@@ -68,7 +68,7 @@ class Cluster {
      */
     double sum_distances_from_center() const;
 
-    inline Vec3D const& center() const { return center_; }
+    inline Vector3d const& center() const { return center_; }
 
     /**
      * @brief begin returns the begin iterator to the vector of clusterables.
@@ -92,7 +92,7 @@ class Cluster {
  */
 std::ostream & operator<<(std::ostream &, Cluster const &);
 
-inline Vec3D const& center(Cluster const &c){
+inline Vector3d const& center(Cluster const &c){
     return c.center();
 }
 

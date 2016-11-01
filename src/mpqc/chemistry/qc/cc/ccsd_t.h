@@ -34,8 +34,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
   bool reblock_;
   bool reblock_inner_;
   std::size_t inner_block_size_;
-  TRange1 tr_occ_inner_;
-  TRange1 tr_vir_inner_;
+  TA::TiledRange1 tr_occ_inner_;
+  TA::TiledRange1 tr_vir_inner_;
 
  public:
   CCSD_T(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
@@ -899,14 +899,14 @@ class CCSD_T : public CCSD<Tile, Policy> {
     std::size_t all = this->trange1_engine_->get_all();
     std::size_t n_frozen = this->trange1_engine_->get_nfrozen();
 
-    TRange1 old_occ = this->trange1_engine_->get_occ_tr1();
-    TRange1 old_vir = this->trange1_engine_->get_vir_tr1();
+    TA::TiledRange1 old_occ = this->trange1_engine_->get_occ_tr1();
+    TA::TiledRange1 old_vir = this->trange1_engine_->get_vir_tr1();
 
     auto new_tr1 =
         std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
 
-    TRange1 new_occ = new_tr1->get_occ_tr1();
-    TRange1 new_vir = new_tr1->get_vir_tr1();
+    TA::TiledRange1 new_occ = new_tr1->get_occ_tr1();
+    TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
 
     utility::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
     utility::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");

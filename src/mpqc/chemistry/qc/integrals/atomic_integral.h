@@ -386,16 +386,16 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
         //                utility::parallel_break_point(world_,0);
         //                std::cout << "Before Array To Eigen" << std::endl;
         //                std::cout << result << std::endl;
-        MatrixD result_eig = array_ops::array_to_eigen(result);
+        RowMatrixXd result_eig = array_ops::array_to_eigen(result);
 
         // compute cholesky decomposition
-        auto llt_solver = Eigen::LLT<MatrixD>(result_eig);
+        auto llt_solver = Eigen::LLT<RowMatrixXd>(result_eig);
 
         // check success
         Eigen::ComputationInfo info = llt_solver.info();
         if (info == Eigen::ComputationInfo::Success) {
-          MatrixD L = MatrixD(llt_solver.matrixL());
-          MatrixD L_inv_eig = L.inverse();
+          RowMatrixXd L = RowMatrixXd(llt_solver.matrixL());
+          RowMatrixXd L_inv_eig = L.inverse();
           result_eig = L_inv_eig.transpose() * L_inv_eig;
         } else if (info == Eigen::ComputationInfo::NumericalIssue) {
           utility::print_par(
@@ -414,7 +414,7 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
         if (info != Eigen::ComputationInfo::Success) {
           utility::print_par(world_, "Using Eigen LU Decomposition Inverse!\n");
 
-          Eigen::FullPivLU<MatrixD> lu(result_eig);
+          Eigen::FullPivLU<RowMatrixXd> lu(result_eig);
 
           TA_ASSERT(lu.isInvertible());
 
@@ -443,8 +443,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
           result("i,j") = tmp("i,j");
         } else {
           auto result_eig = array_ops::array_to_eigen(result);
-          MatrixD L_inv_eig =
-              MatrixD(Eigen::LLT<MatrixD>(result_eig).matrixL()).inverse();
+          RowMatrixXd L_inv_eig =
+              RowMatrixXd(Eigen::LLT<RowMatrixXd>(result_eig).matrixL()).inverse();
           auto tr_result = result.trange().data()[0];
           result = array_ops::eigen_to_array<TA::TensorD>(
               result.world(), L_inv_eig, tr_result, tr_result);

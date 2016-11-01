@@ -1,4 +1,4 @@
-#include "../clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
 
 namespace mpqc {
 namespace tensor {

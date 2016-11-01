@@ -160,11 +160,11 @@ class DBMP2 : public MP2<Tile, Policy> {
   //
   //    auto S = ao_int.compute(L"<κ|λ>");
   //
-  //    MatrixD F_eig = array_ops::array_to_eigen(F);
-  //    MatrixD S_eig = array_ops::array_to_eigen(S);
+  //    RowMatrixXd F_eig = array_ops::array_to_eigen(F);
+  //    RowMatrixXd S_eig = array_ops::array_to_eigen(S);
   //
   //    // solve mo coefficients
-  //    Eigen::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  //    Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
   //
   //    bool frozen_core =
   //        in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
@@ -180,9 +180,9 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    Eigen::VectorXd ens_occ =
   //        es.eigenvalues().segment(n_frozen_core, occ - n_frozen_core);
   //    std::cout << es.eigenvalues() << std::endl;
-  //    MatrixD C_all = es.eigenvectors();
-  //    MatrixD C_occ = C_all.block(0, 0, S_eig.rows(), occ);
-  //    MatrixD C_corr_occ =
+  //    RowMatrixXd C_all = es.eigenvectors();
+  //    RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), occ);
+  //    RowMatrixXd C_corr_occ =
   //        C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
   //
   //    // finished solving occupied orbitals
@@ -242,7 +242,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //                                          vir_blocksize, n_frozen_core);
   //
   //    // project Fock matrix against occ orbitals
-  //    MatrixD C_vir;
+  //    RowMatrixXd C_vir;
   //    {
   //      auto tr_vbs = F_vbs.trange().data().back();
   //
@@ -253,9 +253,9 @@ class DBMP2 : public MP2<Tile, Policy> {
   //      // get overlap
   //      auto S_vbs = ao_int.compute(L"<Α|Β>");
   //      // get density
-  //      MatrixD D_obs = C_occ * C_occ.transpose();
+  //      RowMatrixXd D_obs = C_occ * C_occ.transpose();
   //
-  //      MatrixD D_vbs = MatrixD::Zero(n_vbs, n_vbs);
+  //      RowMatrixXd D_vbs = RowMatrixXd::Zero(n_vbs, n_vbs);
   //      D_vbs.block(0, 0, n_obs, n_obs) << D_obs;
   //      TArray D_vbs_ta =
   //          array_ops::eigen_to_array<Tile>(world, D_vbs, tr_vbs, tr_vbs);
@@ -265,9 +265,9 @@ class DBMP2 : public MP2<Tile, Policy> {
   //          F_vbs("D,E") *
   //          (identity_ta("E,B") - 0.5 * D_vbs_ta("E,mu") * S_vbs("mu,B"));
   //
-  //      MatrixD F_vbs_eigen = array_ops::array_to_eigen(F_vbs);
+  //      RowMatrixXd F_vbs_eigen = array_ops::array_to_eigen(F_vbs);
   //
-  //      Eigen::SelfAdjointEigenSolver<MatrixD> es(F_vbs_eigen);
+  //      Eigen::SelfAdjointEigenSolver<RowMatrixXd> es(F_vbs_eigen);
   //
   //      std::cout << es.eigenvalues() << std::endl;
   //      auto ens_vbs_vir = es.eigenvalues().bottomRows(n_vbs - occ);
@@ -327,11 +327,11 @@ class DBMP2 : public MP2<Tile, Policy> {
   //
   //    auto S = ao_int.compute(L"<κ|λ>");
   //
-  //    MatrixD F_eig = array_ops::array_to_eigen(F);
-  //    MatrixD S_eig = array_ops::array_to_eigen(S);
+  //    RowMatrixXd F_eig = array_ops::array_to_eigen(F);
+  //    RowMatrixXd S_eig = array_ops::array_to_eigen(S);
   //
   //    // solve mo coefficients
-  //    Eigen::GeneralizedSelfAdjointEigenSolver<MatrixD> es(F_eig, S_eig);
+  //    Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
   //
   //    bool frozen_core =
   //        in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
@@ -345,7 +345,7 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    }
   //
   //    std::cout << es.eigenvalues() << std::endl;
-  //    MatrixD C_occ = es.eigenvectors().leftCols(occ);
+  //    RowMatrixXd C_occ = es.eigenvectors().leftCols(occ);
   //
   //    // finished solving occupied orbitals
   //
@@ -406,12 +406,12 @@ class DBMP2 : public MP2<Tile, Policy> {
   //    tre = std::make_shared<TRange1Engine>(occ, n_vbs, occ_blocksize,
   //                                          vir_blocksize, n_frozen_core);
   //
-  //    MatrixD C_vir;
-  //    MatrixD C_corr_occ;
+  //    RowMatrixXd C_vir;
+  //    RowMatrixXd C_corr_occ;
   //    {
-  //      MatrixD F_vbs_eigen = array_ops::array_to_eigen(F_vbs);
+  //      RowMatrixXd F_vbs_eigen = array_ops::array_to_eigen(F_vbs);
   //
-  //      Eigen::SelfAdjointEigenSolver<MatrixD> es(F_vbs_eigen);
+  //      Eigen::SelfAdjointEigenSolver<RowMatrixXd> es(F_vbs_eigen);
   //
   //      assert(es.info() == Eigen::ComputationInfo::Success);
   //      std::cout << es.eigenvalues() << std::endl;

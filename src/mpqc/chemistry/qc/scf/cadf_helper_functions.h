@@ -10,7 +10,7 @@
 namespace mpqc {
 namespace scf {
 
-inline TA::DistArray<TA::TensorD, SpPolicy>
+inline TA::DistArray<TA::TensorD, TA::SparsePolicy>
 array_from_tile_map(madness::World &world, TA::TiledRange const &trange,
                     std::unordered_map<std::size_t, TA::TensorD> const &tiles) {
     auto shape_data = TA::TensorF(trange.tiles_range(), 0.0);
@@ -19,7 +19,7 @@ array_from_tile_map(madness::World &world, TA::TiledRange const &trange,
     }
 
     TA::SparseShape<float> shape(shape_data, trange);
-    TA::DistArray<TA::TensorD, SpPolicy> array(world, trange, shape);
+    TA::DistArray<TA::TensorD, TA::SparsePolicy> array(world, trange, shape);
 
     for (auto &pair : tiles) {
         if(!array.is_zero(pair.first) && array.is_local(pair.first)){
@@ -31,8 +31,8 @@ array_from_tile_map(madness::World &world, TA::TiledRange const &trange,
     return array;
 }
 
-inline TA::DistArray<TA::TensorD, SpPolicy> reblock_from_atoms(
-      TA::DistArray<TA::TensorD, SpPolicy> const &A,
+inline TA::DistArray<TA::TensorD, TA::SparsePolicy> reblock_from_atoms(
+      TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A,
       std::unordered_map<std::size_t, std::size_t> const &output_cluster_obs,
       std::unordered_map<std::size_t, std::size_t> const &output_cluster_df,
       TA::TiledRange by_cluster_trange) {

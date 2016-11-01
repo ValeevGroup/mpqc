@@ -1,12 +1,11 @@
-#pragma once
-#ifndef MPQC_TENSOR_MPQCTILE_H
-#define MPQC_TENSOR_MPQCTILE_H
+#ifndef SRC_MPQC_MATH_TENSOR_CLR_TILE_H_
+#define SRC_MPQC_MATH_TENSOR_CLR_TILE_H_
 
 #include "../common/typedefs.h"
 #include <tiledarray.h>
 #include "../utility/meta/get_type.h"
 #include <memory>
-#include "../clr/decomposed_tensor_unary.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_unary.h"
 
 namespace mpqc {
 namespace tensor {
@@ -443,4 +442,4 @@ inline std::ostream &operator<<(std::ostream &os, Tile<T> const &tile) {
 } // namespace tensor
 } // namespace mpqc
 
-#endif // MPQC_TENSOR_MPQCTILE_H
+#endif  // SRC_MPQC_MATH_TENSOR_CLR_TILE_H_

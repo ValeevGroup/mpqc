@@ -123,13 +123,13 @@ CABSSingles<Tile>::compute(bool df, bool d_approach, bool couple_virtual) {
     else{
       F_Ma = lcao_factory_.compute(L"<m|F|a'>");
     }
-    MatrixD F_Ma_eigen = array_ops::array_to_eigen(F_Ma);
+    RowMatrixXd F_Ma_eigen = array_ops::array_to_eigen(F_Ma);
     auto n_occ = F_Ma_eigen.rows();
     auto n_cabs = F_Ma_eigen.cols();
     auto n_allvir = F_AB.trange().elements_range().extent()[0];
     auto n_vir = n_allvir - n_cabs;
 
-    MatrixD F_MA_eigen = MatrixD::Zero(n_occ, n_allvir);
+    RowMatrixXd F_MA_eigen = RowMatrixXd::Zero(n_occ, n_allvir);
     F_MA_eigen.block(0,n_vir,n_occ,n_cabs) << F_Ma_eigen;
 
     auto tr_m = F_Ma.trange().data()[0];
@@ -201,7 +201,7 @@ TA::DistArray <Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner
 
     const auto tile_volume = result_tile.range().volume();
     const auto tile_norm = result_tile.norm();
-    bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
+    bool save_norm = tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
     if (save_norm) {
       *out_tile = result_tile;
       (*norms)[ord] = tile_norm;
@@ -212,7 +212,7 @@ TA::DistArray <Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner
   std::vector<Tile> tiles(tvolume);
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
-  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (auto const ord : *pmap) {
     world.taskq.add(make_tile, ord, trange.make_tile_range(ord), &tiles[ord], &tile_norms);
   }

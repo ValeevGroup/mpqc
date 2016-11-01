@@ -9,7 +9,6 @@
 #include "mpqc/chemistry/qc/scf/util.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "mpqc/math/tensor/clr/mpqc_tile.h"
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
@@ -24,6 +23,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_set>
+#include "../../../math/tensor/clr/tile.h"
 
 namespace mpqc {
 namespace scf {

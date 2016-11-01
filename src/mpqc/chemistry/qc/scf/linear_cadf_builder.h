@@ -9,7 +9,7 @@
 #include "mpqc/chemistry/qc/scf/util.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "mpqc/math/tensor/clr/mpqc_tile.h"
+#include "mpqc/math/tensor/clr/tile.h"
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
@@ -32,7 +32,7 @@ template <typename Integral>
 class ONCADFFockBuilder : public FockBuilder {
  public:
   using dtile_type = tensor::Tile<tensor::DecomposedTensor<double>>;
-  using darray_type = TA::DistArray<dtile_type, SpPolicy>;
+  using darray_type = TA::DistArray<dtile_type, TA::SparsePolicy>;
 
  private:
   Integral E_;              // Direct three center integrals

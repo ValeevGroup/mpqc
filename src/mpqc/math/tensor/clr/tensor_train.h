@@ -10,7 +10,7 @@
 namespace mpqc {
 namespace TT {
 
-MatrixD one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
+RowMatrixXd one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
     const auto size = e_vals.size();
     const auto vir = size - occ;
     Eigen::MatrixXd delta(occ * vir, occ * vir);
@@ -39,11 +39,11 @@ MatrixD one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
     return delta;
 }
 
-std::array<MatrixD, 4>
+std::array<RowMatrixXd, 4>
 TT_TA_ARRAY(TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A) {
     std::cout << "Starting Amplitude TT decomp\n";
     auto A_extent = A.trange().elements_range().extent();
-    MatrixD A_eig(A_extent[0] * A_extent[1], A_extent[2] * A_extent[3]);
+    RowMatrixXd A_eig(A_extent[0] * A_extent[1], A_extent[2] * A_extent[3]);
     A_eig.setZero();
 
     auto occ = A_extent[0];
@@ -78,12 +78,12 @@ TT_TA_ARRAY(TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A) {
         }
     }
 
-    MatrixD G0, G1, G2, G3;
+    RowMatrixXd G0, G1, G2, G3;
 
     // Resize D (i, ajb)
     A_eig.resize(occ, vir * occ * vir);
 
-    Eigen::JacobiSVD<MatrixD> svd(A_eig, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::JacobiSVD<RowMatrixXd> svd(A_eig, Eigen::ComputeThinU | Eigen::ComputeThinV);
     svd.setThreshold(1e-3);
 
 
@@ -93,9 +93,9 @@ TT_TA_ARRAY(TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A) {
     G0 = svd.matrixU().leftCols(rank0);
 
     // R = (r0, ajb)
-    MatrixD sig = MatrixD(svd.singularValues().asDiagonal())
+    RowMatrixXd sig = RowMatrixXd(svd.singularValues().asDiagonal())
                         .block(0, 0, rank0, rank0);
-    MatrixD R0 = sig * svd.matrixV().leftCols(rank0).transpose();
+    RowMatrixXd R0 = sig * svd.matrixV().leftCols(rank0).transpose();
 
     // Resize R(r0a, jb)
     R0.resize(rank0 * vir, occ * vir);
@@ -107,8 +107,8 @@ TT_TA_ARRAY(TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A) {
     G1 = svd.matrixU().leftCols(rank1);
 
     // R1 = (r1, jb)
-    sig = MatrixD(svd.singularValues().asDiagonal()).block(0, 0, rank1, rank1);
-    MatrixD R1 = sig * svd.matrixV().leftCols(rank1).transpose();
+    sig = RowMatrixXd(svd.singularValues().asDiagonal()).block(0, 0, rank1, rank1);
+    RowMatrixXd R1 = sig * svd.matrixV().leftCols(rank1).transpose();
 
     // Resize R1(r1j, b);
     R1.resize(rank1 * occ, vir);
@@ -120,13 +120,13 @@ TT_TA_ARRAY(TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A) {
     G2 = svd.matrixU().leftCols(rank2);
 
     // G3 = (r2, b)
-    sig = MatrixD(svd.singularValues().asDiagonal()).block(0, 0, rank2, rank2);
+    sig = RowMatrixXd(svd.singularValues().asDiagonal()).block(0, 0, rank2, rank2);
     G3 = sig * svd.matrixV().leftCols(rank2).transpose();
 
     return {{G0, G1, G2, G3}};
 }
 
-std::array<MatrixD, 4>
+std::array<RowMatrixXd, 4>
 TT_one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
     const auto size = e_vals.size();
     const auto vir = size - occ;
@@ -134,12 +134,12 @@ TT_one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
     // D(ia,jb)
     auto D = one_over_delta(e_vals, occ);
 
-    MatrixD G0, G1, G2, G3;
+    RowMatrixXd G0, G1, G2, G3;
 
     // Resize D (i, ajb)
     D.resize(occ, vir * occ * vir);
 
-    Eigen::JacobiSVD<MatrixD> svd(D, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::JacobiSVD<RowMatrixXd> svd(D, Eigen::ComputeThinU | Eigen::ComputeThinV);
     svd.setThreshold(1e-3);
 
 
@@ -149,9 +149,9 @@ TT_one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
     G0 = svd.matrixU().leftCols(rank0);
 
     // R = (r0, ajb)
-    MatrixD sig = MatrixD(svd.singularValues().asDiagonal())
+    RowMatrixXd sig = RowMatrixXd(svd.singularValues().asDiagonal())
                         .block(0, 0, rank0, rank0);
-    MatrixD R0 = sig * svd.matrixV().leftCols(rank0).transpose();
+    RowMatrixXd R0 = sig * svd.matrixV().leftCols(rank0).transpose();
 
     // Resize R(r0a, jb)
     R0.resize(rank0 * vir, occ * vir);
@@ -163,8 +163,8 @@ TT_one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
     G1 = svd.matrixU().leftCols(rank1);
 
     // R1 = (r1, jb)
-    sig = MatrixD(svd.singularValues().asDiagonal()).block(0, 0, rank1, rank1);
-    MatrixD R1 = sig * svd.matrixV().leftCols(rank1).transpose();
+    sig = RowMatrixXd(svd.singularValues().asDiagonal()).block(0, 0, rank1, rank1);
+    RowMatrixXd R1 = sig * svd.matrixV().leftCols(rank1).transpose();
 
     // Resize R1(r1j, b);
     R1.resize(rank1 * occ, vir);
@@ -176,14 +176,14 @@ TT_one_over_delta(Eigen::VectorXd const &e_vals, int64_t occ) {
     G2 = svd.matrixU().leftCols(rank2);
 
     // G3 = (r2, b)
-    sig = MatrixD(svd.singularValues().asDiagonal()).block(0, 0, rank2, rank2);
+    sig = RowMatrixXd(svd.singularValues().asDiagonal()).block(0, 0, rank2, rank2);
     G3 = sig * svd.matrixV().leftCols(rank2).transpose();
 
     return {{G0, G1, G2, G3}};
 }
 
 TA::DistArray<TA::TensorD, TA::SparsePolicy>
-make_Wir0k(madness::World &world, MatrixD const &G0, MatrixD const &W,
+make_Wir0k(madness::World &world, RowMatrixXd const &G0, RowMatrixXd const &W,
            TA::TiledRange1 const &occ_trange, int64_t occ, int64_t rank0) {
 
     std::vector<int64_t> rvec = {0, rank0};
@@ -224,8 +224,8 @@ make_Wir0k(madness::World &world, MatrixD const &G0, MatrixD const &W,
 }
 
 TA::DistArray<TA::TensorD, TA::SparsePolicy>
-make_Ycr2b(madness::World &world, MatrixD const &G3, MatrixD const &Cv,
-           MatrixD const &Q, TA::TiledRange1 const &pao_trange, int64_t vir,
+make_Ycr2b(madness::World &world, RowMatrixXd const &G3, RowMatrixXd const &Cv,
+           RowMatrixXd const &Q, TA::TiledRange1 const &pao_trange, int64_t vir,
            int64_t rank2) {
 
     std::vector<int64_t> rvec = {0, rank2};
@@ -266,7 +266,7 @@ make_Ycr2b(madness::World &world, MatrixD const &G3, MatrixD const &Cv,
 }
 
 TA::DistArray<TA::TensorD, TA::SparsePolicy>
-make_Wr1lr2j(madness::World &world, MatrixD const &G2, MatrixD const &W,
+make_Wr1lr2j(madness::World &world, RowMatrixXd const &G2, RowMatrixXd const &W,
              TA::TiledRange1 const &occ_trange, int64_t occ, int64_t rank1,
              int64_t rank2) {
 
@@ -314,8 +314,8 @@ make_Wr1lr2j(madness::World &world, MatrixD const &G2, MatrixD const &W,
 }
 
 TA::DistArray<TA::TensorD, TA::SparsePolicy>
-make_Yr0ar1d(madness::World &world, MatrixD const &G1, MatrixD const &Cv,
-             MatrixD const &Q, TA::TiledRange1 const &pao_trange, int64_t vir,
+make_Yr0ar1d(madness::World &world, RowMatrixXd const &G1, RowMatrixXd const &Cv,
+             RowMatrixXd const &Q, TA::TiledRange1 const &pao_trange, int64_t vir,
              int64_t rank0, int64_t rank1) {
 
     std::vector<int64_t> rvec0 = {0, rank0};
@@ -364,8 +364,8 @@ make_Yr0ar1d(madness::World &world, MatrixD const &G1, MatrixD const &Cv,
 std::array<TA::DistArray<TA::TensorD, TA::SparsePolicy>, 4>
 transform_tensors(Eigen::VectorXd const &e_vals, int64_t occ,
                   madness::World &world, TA::TiledRange1 const &occ_trange,
-                  TA::TiledRange1 const &vir_trange, MatrixD const &Uocc,
-                  MatrixD const &Cv, MatrixD const &Q) {
+                  TA::TiledRange1 const &vir_trange, RowMatrixXd const &Uocc,
+                  RowMatrixXd const &Cv, RowMatrixXd const &Q) {
     const auto vir = e_vals.size() - occ;
 
     auto mats = TT_one_over_delta(e_vals, occ);

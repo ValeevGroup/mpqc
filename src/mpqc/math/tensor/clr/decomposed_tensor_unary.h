@@ -2,8 +2,8 @@
 #ifndef MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
 #define MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
 
-#include "../clr/decomposed_tensor.h"
-#include "../clr/decomposed_tensor_algebra.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 
 namespace mpqc {
 namespace tensor {
@@ -14,7 +14,7 @@ namespace tensor {
  */
 template <typename T>
 T trace(DecomposedTensor<T> const &t) {
-    return algebra::combine(t).trace();
+    return mpqc::tensor::algebra::combine(t).trace();
 }
 
 /*! \brief Returns the sum of a decomposed tensor tile

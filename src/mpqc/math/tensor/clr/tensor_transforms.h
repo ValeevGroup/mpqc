@@ -3,9 +3,9 @@
 #define MPQC_TENSOR_TENSORTRANSFORMS_H
 
 #include <tiledarray.h>
-#include "../clr/decomposed_tensor.cpp"
-#include "../clr/decomposed_tensor_algebra.cpp"
-#include "../clr/mpqc_tile.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.cpp"
+#include "mpqc/math/tensor/clr/decomposed_tensor_algebra.cpp"
+#include "mpqc/math/tensor/clr/tile.h"
 
 namespace mpqc {
 namespace tensor {

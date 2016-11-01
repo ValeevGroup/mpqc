@@ -9,6 +9,7 @@ using RowMatrix =
     ::Eigen::Matrix<T, ::Eigen::Dynamic, ::Eigen::Dynamic, ::Eigen::RowMajor>;
 
 using RowMatrixXd = RowMatrix<double>;
+using Vector3d = Eigen::Vector3d;
 }
 
 namespace madness {

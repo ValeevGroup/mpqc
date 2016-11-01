@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
   }
 
   decltype(Mj) Mk;
-  TA::DistArray<TA::TensorD, SpPolicy> C_df_;
+  TA::DistArray<TA::TensorD, TA::SparsePolicy> C_df_;
   auto cdf0 = mpqc::fenced_now(world);
   std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
   std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;

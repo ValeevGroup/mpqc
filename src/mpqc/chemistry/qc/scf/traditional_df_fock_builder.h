@@ -37,7 +37,7 @@ class DFFockBuilder : public FockBuilder {
   DFFockBuilder(array_type const &M, Integral const &eri3) : eri3_(eri3) {
     auto M_eig = array_ops::array_to_eigen(M);
 
-    MatrixD L_inv_eig = MatrixD(Eigen::LLT<MatrixD>(M_eig).matrixL()).inverse();
+    RowMatrixXd L_inv_eig = RowMatrixXd(Eigen::LLT<RowMatrixXd>(M_eig).matrixL()).inverse();
 
     auto tr_M = M.trange().data()[0];
 

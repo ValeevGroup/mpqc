@@ -9,8 +9,8 @@
 namespace mpqc {
 namespace array_ops {
 
-TA::DistArray<TA::TensorD, SpPolicy>
-cholesky_inverse(TA::DistArray<TA::TensorD, SpPolicy> const &A);
+TA::DistArray<TA::TensorD, TA::SparsePolicy>
+cholesky_inverse(TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A);
 
 } // namespace ta_routines
 } // namespace mpqc

@@ -40,7 +40,7 @@ export CXXFLAGS="-O0 -std=c++11"
 ../libint-2.2.0-beta1/configure \
     --prefix="$HOME/_install/libint" \
     CXX=$CXX \
-    CXXFLAGS=$CXXFLAGS \
+    CXXFLAGS="$CXXFLAGS" \
     --with-incdirs=/usr/include/eigen3 
 
 make -j2

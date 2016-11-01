@@ -39,7 +39,7 @@ before_install:
     # - ./bin/build-mpich-$TRAVIS_OS_NAME.sh
     # - ./bin/build-libint-$TRAVIS_OS_NAME.sh
     # - ./bin/build-TA-$TRAVIS_OS_NAME.sh
-script:  ls /usr/lib/boost # ./bin/build-$TRAVIS_OS_NAME.sh
+script:  ls /usr/lib # ./bin/build-$TRAVIS_OS_NAME.sh
 after_failure:
   - cat ./_build/libint-2.2.0-beta1/config.log
   - ls $HOME

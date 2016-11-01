@@ -30,6 +30,7 @@ addons:
       - libblas-dev
       - liblapack-dev
       - libtbb-dev
+      - librapidjson-dev
       - cmake
       - cmake-data
 # llvm.org apt repo is down

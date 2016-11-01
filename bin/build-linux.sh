@@ -17,24 +17,19 @@ fi
 echo $($CC --version)
 echo $($CXX --version)
 
-exit
+cd _build
 
-# export MPICC=$HOME/mpich/bin/mpicc
-# export MPICXX=$HOME/mpich/bin/mpicxx
-# export LD_LIBRARY_PATH=/usr/lib/lapack:/usr/lib/libblas:$LD_LIBRARY_PATH
+mkdir -p mpqc4
+cd mpqc4
 
-# Configure TiledArray
-# mkdir _build
-# mkdir _install
-# cd _build
-# cmake .. -DCMAKE_INSTALL_PREFIX=../_install -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_C_COMPILER=$CC \
-#       -DMPI_CXX_COMPILER=$MPICXX -DMPI_C_COMPILER=$MPICC -DTA_BUILD_UNITTEST=ON \
-#       -DCMAKE_BUILD_TYPE=Debug -DENABLE_ELEMENTAL=ON
-# 
-# # Build all libraries, examples, and applications
-# make -j2 all VERBOSE=1
-# make install
-# make -j2 ta_test VERBOSE=1
-# cd tests
-# export MAD_NUM_THREADS=2
-# ./ta_test --show_progress
+INSTALL_DIR=/home/travis/build/ValeevGroup/mpqc4/_install
+ls $INSTALL_DIR
+
+cmake ../.. \
+    -DTiledArray_DIR="$INSTALL_DIR/TA/lib/cmake/tiledarray" \
+    -DCMAKE_PREFIX_PATH="$INSTALL_DIR/TA" \
+    -DCMAKE_BUILD_TYPE=DEBUG \
+    -DLINBINT2_INSTALL_DIR="$INSTALL_DIR/libint"
+
+make -j2 mpqc
+

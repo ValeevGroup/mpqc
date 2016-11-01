@@ -32,7 +32,7 @@ cd TA
 git clone https://github.com/ValeevGroup/tiledarray.git ta_src
 
 cmake ta_src \
-      -DCMAKE_INSTALL_PREFIX=../../_install \
+      -DCMAKE_INSTALL_PREFIX=../../_install/TA \
       -DCMAKE_CXX_COMPILER=$CXX \
       -DCMAKE_C_COMPILER=$CC \
       -DMPI_CXX_COMPILER=$MPICXX \

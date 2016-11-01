@@ -37,18 +37,15 @@ cd libint-2.2.0-beta1/
 ls /usr/include
 ls /usr/local/include
 
-# export CXXFLAGS="-O0 -std=c++11"
-# ./configure \
-#     --prefix="$HOME/_install/libint" \
-#     CXX=$CXX \
-#     --with-incdirs=/usr/include/eigen3 
-#    CXXFLAGS="$CXXFLAGS" \
-./configure
+ ./configure \
+     --prefix="$HOME/_install/libint" \
+     --with-incdirs=/usr/include/eigen3 \
+     --with-cxx-optflags="-O0" 
 
 
-# make -j2
-# make install
+make -j2
+make install
 
-cd $HOME
+cd ../..
 ls 
 ls _install

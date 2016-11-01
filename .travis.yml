@@ -39,6 +39,7 @@ before_install:
    - ./bin/build-libint-$TRAVIS_OS_NAME.sh
 script: ./bin/build-$TRAVIS_OS_NAME.sh
 after_failure:
+  - cat ./_build/libint-2.2.0-beta1/config.log
   - ls $HOME
   - cat ./_build/external/build/madness/CMakeFiles/CMakeOutput.log
   - cat ./_build/external/build/madness/CMakeFiles/CMakeError.log

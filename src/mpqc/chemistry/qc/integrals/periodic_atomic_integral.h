@@ -53,6 +53,12 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
     RD_max_ = ps->RD_max();
     RJ_max_ = ps->RJ_max();
     nk_ = ps->nk();
+
+    R_size_ = 1 + idx_lattice(R_max_(0), R_max_(1), R_max_(2), R_max_);
+    RJ_size_ = 1 + idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
+    RD_size_ = 1 + idx_lattice(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
+    k_size_ = 1 + idx_k(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+
     op_ = mpqc::ta_routines::TensorZPassThrough();
   }
 
@@ -95,10 +101,7 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
   Op op_;
 
   // Density
-  std::vector<TArray> D_;
-  TArray density_;
-
-  // Constants
+  TArray D_;
 
   Vec3I R_max_ = {0, 0,
                   0};  // range of expansion of Bloch Gaussians in AO Gaussians
@@ -106,6 +109,11 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
   Vec3I RD_max_ = {0, 0, 0};       // range of density representation
   Vec3I nk_ = {1, 1, 1};           // # of k points in each direction
   Vec3D dcell_ = {0.0, 0.0, 0.0};  // direct unit cell params (in a.u.)
+
+  int64_t R_size_;
+  int64_t RJ_size_;
+  int64_t RD_size_;
+  int64_t k_size_;
 
   int64_t idx_lattice(int x, int y, int z, Vec3I vec);
   Vec3D R_vector(int64_t idx_lattice, Vec3I vec);
@@ -183,9 +191,7 @@ PeriodicAtomicIntegral<Tile, Policy>::compute(const Formula &formula) {
     }
     else if (formula.oper().type() == Operator::Type::Nuclear) {
 
-      auto RJ_size =
-          1 + idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-      for (auto RJ = 0; RJ < RJ_size; ++RJ) {
+      for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
           auto shift_mol = R_vector(RJ, RJ_max_);
           auto shifted_mol = shift_mol_origin(*mol_, shift_mol);
           parse_one_body_periodic(formula, engine_pool, bs_array,
@@ -212,29 +218,27 @@ PeriodicAtomicIntegral<Tile, Policy>::compute(const Formula &formula) {
       if (formula.oper().type() == Operator::Type::J) {
           auto j_formula = formula;
           j_formula.set_operator_type(Operator::Type::Coulomb);
-          auto RJ_size = 1 + idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-          for (auto RJ = 0; RJ < RJ_size; ++RJ) {
+          for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
               auto vec_RJ = R_vector(RJ, RJ_max_);
               parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
               auto J = compute_integrals(this->world_, engine_pool, bs_array);
               if (RJ == 0)
-                  result("mu, nu") = J("mu, nu, lambda, rho") * density_("lambda, rho");
+                  result("mu, nu") = J("mu, nu, lambda, rho") * D_("lambda, rho");
               else
-                  result("mu, nu") += J("mu, nu, lambda, rho") * density_("lambda, rho");
+                  result("mu, nu") += J("mu, nu, lambda, rho") * D_("lambda, rho");
           }
       }
       else if (formula.oper().type() == Operator::Type::K) {
           auto k_formula = formula;
           k_formula.set_operator_type(Operator::Type::Coulomb);
-          auto RJ_size = 1 + idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-          for (auto RJ = 0; RJ < RJ_size; ++RJ) {
+          for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
               auto vec_RJ = R_vector(RJ, RJ_max_);
               parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ, false);
               auto K = compute_integrals(this->world_, engine_pool, bs_array);
               if (RJ == 0)
-                  result("mu, nu") = K("mu, lambda, nu, rho") * density_("lambda, rho");
+                  result("mu, nu") = K("mu, lambda, nu, rho") * D_("lambda, rho");
               else
-                  result("mu, nu") += K("mu, lambda, nu, rho") * density_("lambda, rho");
+                  result("mu, nu") += K("mu, lambda, nu, rho") * D_("lambda, rho");
           }
       }
       else
@@ -427,7 +431,7 @@ PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
 
   int64_t shift_size =
       is_real_space ? (1 + idx_lattice(nshift(0), nshift(1), nshift(2), nshift))
-                    : (1 + idx_k(nshift(0), nshift(1), nshift(2), nshift));
+                    : (1 + idx_k(nshift(0) - 1, nshift(1) - 1, nshift(2) - 1, nshift));
 
   for (auto idx_shift = 0; idx_shift < shift_size; ++idx_shift) {
     Vec3D shift = is_real_space ? (R_vector(idx_shift, nshift) + shift_base)
@@ -590,13 +594,11 @@ typename PeriodicAtomicIntegral<Tile, Policy>::TArray
 PeriodicAtomicIntegral<Tile, Policy>::transform_real2recip(
     TArray &matrix) {
   TArray result;
-  auto k_size = 1 + idx_k(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
-  auto R_size = 1 + idx_lattice(R_max_(0), R_max_(1), R_max_(2), R_max_);
   auto tr0 = matrix.trange().data()[0];
 
   // Make tiled range for the compound index (k,v)
   auto blocking = std::vector<int64_t> {0};
-  for (auto k = 0; k < k_size; ++k) {
+  for (auto k = 0; k < k_size_; ++k) {
       for (auto u = 0; u < tr0.tile_extent(); ++u) {
           auto next = blocking.back() + tr0.tile(u).second - tr0.tile(u).first;
           blocking.emplace_back(next);
@@ -614,13 +616,13 @@ PeriodicAtomicIntegral<Tile, Policy>::transform_real2recip(
   result_eig.setZero();
 
   auto threshold = std::numeric_limits<double>::epsilon();
-  for (auto R = 0; R < R_size; ++R) {
+  for (auto R = 0; R < R_size_; ++R) {
       auto bmat = matrix_eig.block(0, R*tr0.extent(), tr0.extent(), tr0.extent());
       if (bmat.norm() < bmat.size() * threshold)
           continue;
       else {
           auto vec_R = R_vector(R, R_max_);
-          for (auto k = 0; k < k_size; ++k) {
+          for (auto k = 0; k < k_size_; ++k) {
               auto vec_k = k_vector(k);
               auto exponent = std::exp(I * vec_k.dot(vec_R));
               result_eig.block(0, k*tr0.extent(), tr0.extent(), tr0.extent()) +=
@@ -643,10 +645,8 @@ PeriodicAtomicIntegral<Tile, Policy>::compute_density(
 
     TArray result;
 
-    auto k_size = 1 + idx_k(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
-
-    std::vector<Vectorc> eps(k_size);
-    std::vector<Matrixc> C(k_size);
+    std::vector<Vectorc> eps(k_size_);
+    std::vector<Matrixc> C(k_size_);
 
     auto tr0 = fock_real.trange().data()[0];
     //TODO: write a function to form tr1. Now R_max_ must equal RD_max_
@@ -654,7 +654,7 @@ PeriodicAtomicIntegral<Tile, Policy>::compute_density(
 
     auto fock_eig = array_ops::array_to_eigen(fock_recip);
     auto overlap_eig = array_ops::array_to_eigen(overlap);
-    for (auto k = 0; k < k_size; ++k) {
+    for (auto k = 0; k < k_size_; ++k) {
         // Compute X = S^(-1/2)
         auto S = overlap_eig.block(0, k*tr0.extent(), tr0.extent(), tr0.extent());
         auto X = S.pow(-0.5);
@@ -678,10 +678,9 @@ PeriodicAtomicIntegral<Tile, Policy>::compute_density(
 
     Matrixc result_eig(tr0.extent(), tr1.extent());
     result_eig.setZero();
-    auto R_size = 1 + idx_lattice(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
-    for (auto R = 0; R < R_size; ++R) {
+    for (auto R = 0; R < RD_size_; ++R) {
         auto vec_R = R_vector(R, RD_max_);
-        for (auto k = 0; k < k_size; ++k) {
+        for (auto k = 0; k < k_size_; ++k) {
             auto vec_k = k_vector(k);
             auto C_occ = C[k].leftCols(ndocc);
             auto D_real = C_occ.conjugate() * C_occ.transpose();
@@ -693,7 +692,7 @@ PeriodicAtomicIntegral<Tile, Policy>::compute_density(
     }
     result = array_ops::eigen_to_array<Tile>(world_, result_eig, tr0, tr1);
 
-    density_ = result;
+    D_ = result;
 
     return result;
 }

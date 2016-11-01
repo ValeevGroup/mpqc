@@ -32,6 +32,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
   std::size_t unocc_block_size_;
   std::size_t inner_block_size_;
   std::size_t increase_;
+  double triples_energy_;
   TA::TiledRange1 tr_occ_inner_;
   TA::TiledRange1 tr_vir_inner_;
 
@@ -57,48 +58,52 @@ class CCSD_T : public CCSD<Tile, Policy> {
   virtual ~CCSD_T();
 
   double value() override {
-    auto &world = this->lcao_factory().world();
 
-    double ccsd_corr = 0.0;
+    if(this->energy_ == 0.0){
+      auto &world = this->lcao_factory().world();
 
-    auto time0 = mpqc::fenced_now(world);
-    ccsd_corr = CCSD<Tile, Policy>::value();
-    auto time1 = mpqc::fenced_now(world);
-    auto duration0 = mpqc::duration_in_s(time0, time1);
-    if (world.rank() == 0) {
-      std::cout << "CCSD Time " << duration0 << std::endl;
+      double ccsd_corr = 0.0;
+
+      auto time0 = mpqc::fenced_now(world);
+      ccsd_corr = CCSD<Tile, Policy>::value();
+      auto time1 = mpqc::fenced_now(world);
+      auto duration0 = mpqc::duration_in_s(time0, time1);
+      if (world.rank() == 0) {
+        std::cout << "CCSD Time " << duration0 << std::endl;
+      }
+
+      time0 = mpqc::fenced_now(world);
+      // clean all LCAO integral
+      this->lcao_factory().registry().purge(world);
+
+      if (reblock_) {
+        reblock();
+      }
+
+      // start CCSD(T)
+      if (world.rank() == 0) {
+        std::cout << "\nBegining CCSD(T) " << std::endl;
+      }
+      TArray t1 = this->t1();
+      TArray t2 = this->t2();
+      triples_energy_ = compute_ccsd_t(t1, t2);
+      time1 = mpqc::fenced_now(world);
+      auto duration1 = mpqc::duration_in_s(time0, time1);
+
+      if (world.rank() == 0) {
+        std::cout << std::setprecision(15);
+        std::cout << "(T) Energy      " << ccsd_t << " Time " << duration1
+                  << std::endl;
+        //                    std::cout << "(T) Energy      " << ccsd_t_d << "
+        //                    Time " << duration2 << std::endl;
+        std::cout << "CCSD(T) Energy  " << ccsd_t + ccsd_corr << std::endl;
+        //                    std::cout << "CCSD(T) Energy  " << ccsd_t_d +
+        //                    ccsd_corr << std::endl;
+      }
+
+      this->energy_ = ccsd_corr + triples_energy_;
     }
-
-    time0 = mpqc::fenced_now(world);
-    // clean all LCAO integral
-    this->lcao_factory().registry().purge(world);
-
-    if (reblock_) {
-      reblock();
-    }
-
-    // start CCSD(T)
-    if (world.rank() == 0) {
-      std::cout << "\nBegining CCSD(T) " << std::endl;
-    }
-    TArray t1 = this->t1();
-    TArray t2 = this->t2();
-    double ccsd_t = compute_ccsd_t(t1, t2);
-    time1 = mpqc::fenced_now(world);
-    auto duration1 = mpqc::duration_in_s(time0, time1);
-
-    if (world.rank() == 0) {
-      std::cout << std::setprecision(15);
-      std::cout << "(T) Energy      " << ccsd_t << " Time " << duration1
-                << std::endl;
-      //                    std::cout << "(T) Energy      " << ccsd_t_d << "
-      //                    Time " << duration2 << std::endl;
-      std::cout << "CCSD(T) Energy  " << ccsd_t + ccsd_corr << std::endl;
-      //                    std::cout << "CCSD(T) Energy  " << ccsd_t_d +
-      //                    ccsd_corr << std::endl;
-    }
-
-    return ccsd_corr + ccsd_t;
+    return this->energy_;
   }
 
   double compute_ccsd_t(TArray &t1, TArray &t2) {

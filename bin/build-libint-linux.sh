@@ -36,8 +36,8 @@ tar -xvzf ../external/libint-2.2.0-beta1.tgz
 cd libint-2.2.0-beta1/
 
 
- ./configure --prefix="/home/travis/build/ValeevGroup/mpqc4/_install/libint"
-# --with-incdirs=/usr/include/eigen3 
+./configure --prefix="/home/travis/build/ValeevGroup/mpqc4/_install/libint" \
+ --with-incdirs="-I/usr/include/eigen3"
 
 
 make -j2

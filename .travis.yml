@@ -35,7 +35,7 @@ addons:
 # llvm.org apt repo is down
 #     - clang-3.7
 # before_install: ./bin/dep-$TRAVIS_OS_NAME.sh
-# script: ./bin/build-$TRAVIS_OS_NAME.sh
+script: ./bin/build-$TRAVIS_OS_NAME.sh
 after_failure:
   - cat ./_build/external/build/madness/CMakeFiles/CMakeOutput.log
   - cat ./_build/external/build/madness/CMakeFiles/CMakeError.log

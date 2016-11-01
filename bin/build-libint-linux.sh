@@ -23,6 +23,7 @@ $CC --version
 $CXX --version
 
 ls 
+echo $CWD
 
 # Make install directory for MPQC dependencies 
 mkdir -p _build
@@ -38,9 +39,9 @@ ls /usr/include
 ls /usr/local/include
 
  ./configure \
-     --prefix="$HOME/_install/libint" \
-     --with-incdirs=/usr/include/eigen3 \
-     --with-cxx-optflags="-O0" 
+     --prefix="../../_install/libint" \
+     --with-incdirs=/usr/include/eigen3 
+     #--with-cxx-optflags="-O0" 
 
 
 make -j2

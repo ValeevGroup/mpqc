@@ -187,7 +187,8 @@ public:
   void compute(qc::PropertyBase* pb) override;
   void obsolete() override;
 
-private:
+protected:
+  void init();
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
 };
 

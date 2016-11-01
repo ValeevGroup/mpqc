@@ -7,6 +7,7 @@
 
 #include "dbmp2f12.h"
 #include "dbccsdf12.h"
+#include "gf2f12.h"
 #include <mpqc/util/keyval/forcelink.h>
 
 namespace mpqc{
@@ -18,6 +19,8 @@ mpqc::detail::ForceLink<RIDBRMP2F12> fl3;
 
 mpqc::detail::ForceLink<CCSDF12<TA::TensorD>> fl4;
 mpqc::detail::ForceLink<DBCCSDF12<TA::TensorD>> fl5;
+
+mpqc::detail::ForceLink<GF2F12<TA::TensorD>> fl6;
 }
 }
 

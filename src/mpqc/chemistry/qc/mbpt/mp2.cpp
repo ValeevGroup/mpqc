@@ -39,11 +39,8 @@ double RMP2::value() {
     time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
-    auto mol = this->lcao_factory().atomic_integral().molecule();
-    Eigen::VectorXd orbital_energy;
-    this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-        this->lcao_factory(), orbital_energy, mol, is_frozen_core(), occ_block(), unocc_block());
-    this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+    // initialize
+    init();
 
     double mp2_energy = compute();
 
@@ -57,6 +54,14 @@ double RMP2::value() {
     utility::print_par(world,"Total MP2 Time: ", time, " S \n");
   }
   return this->energy_;
+}
+
+void RMP2::init() {
+  auto mol = this->lcao_factory().atomic_integral().molecule();
+  Eigen::VectorXd orbital_energy;
+  this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
+      this->lcao_factory(), orbital_energy, mol, is_frozen_core(), occ_block(), unocc_block());
+  this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
 }
 
 double RMP2::compute() {

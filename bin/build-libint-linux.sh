@@ -37,9 +37,8 @@ cd libint-2.2.0-beta1/
 
 
  ./configure \
-     --prefix="$HOME/_install/libint" \
+     --prefix="/home/travis/build/ValeevGroup/mpqc4/_install/libint" \
      --with-incdirs=/usr/include/eigen3 
-     #--with-cxx-optflags="-O0" 
 
 
 make -j2

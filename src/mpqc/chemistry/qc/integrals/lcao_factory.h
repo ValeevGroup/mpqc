@@ -64,7 +64,7 @@ class LCAOFactory : public DescribedClass{
    *  Constructor
    *  @param atomic_integral  reference to AtomicIntegral class
    *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry,
-   * which contain AO to MO coefficients
+   * which contain LCAO coefficients
    *
    */
   LCAOFactory(AtomicIntegralType& atomic_integral,

@@ -5,9 +5,9 @@
 #ifndef MPQC_CHEMISTRY_QC_F12_GF2F12_H
 #define MPQC_CHEMISTRY_QC_F12_GF2F12_H
 
-#include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
 #include <mpqc/chemistry/qc/f12/f12_intermediates.h>
 #include <mpqc/chemistry/qc/scf/mo_build.h>
+#include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
 
 namespace mpqc {
 
@@ -81,7 +81,6 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
   GF2F12() = default;
   virtual ~GF2F12();
 
-
   /**
    * KeyVal constructor
    * @param kv
@@ -123,7 +122,6 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
 
     // init
     init();
-
 
     auto time0 = mpqc::fenced_now(world);
 
@@ -167,7 +165,6 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
 
  private:
   void init() {
-
     // init obs
     auto mol = this->lcao_factory().atomic_integral().molecule();
     Eigen::VectorXd orbital_energy;
@@ -177,8 +174,7 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
     this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
 
     // compute cabs
-    closed_shell_cabs_mo_build_svd(this->lcao_factory(),
-                                   this->trange1_engine(),
+    closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),
                                    this->unocc_block());
   }
 
@@ -207,8 +203,10 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   const auto orbital = nfzc + nocc + ((orbital_ < 0) ? orbital_ : orbital_ - 1);
   auto SE = this->orbital_energy()->operator()(orbital);
 
-  Eigen::VectorXd occ_evals = this->orbital_energy()->segment(nfzc, nocc + nfzc);
-  Eigen::VectorXd uocc_evals = this->orbital_energy()->segment(nfzc + nocc, nuocc);
+  Eigen::VectorXd occ_evals =
+      this->orbital_energy()->segment(nfzc, nocc + nfzc);
+  Eigen::VectorXd uocc_evals =
+      this->orbital_energy()->segment(nfzc + nocc, nuocc);
 
   // will use only the target orbital to transform ints
   // create an OrbitalSpace here
@@ -330,8 +328,10 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   const auto orbital = nfzc + nocc + ((orbital_ < 0) ? orbital_ : orbital_ - 1);
   auto SE = this->orbital_energy()->operator()(orbital);
 
-  Eigen::VectorXd occ_evals = this->orbital_energy()->segment(nfzc, nocc + nfzc);
-  Eigen::VectorXd uocc_evals = this->orbital_energy()->segment(nfzc + nocc, nuocc);
+  Eigen::VectorXd occ_evals =
+      this->orbital_energy()->segment(nfzc, nocc + nfzc);
+  Eigen::VectorXd uocc_evals =
+      this->orbital_energy()->segment(nfzc + nocc, nuocc);
 
   this->lcao_factory().keep_partial_transforms(true);
 
@@ -382,7 +382,8 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
     // rest
     decltype(SE) SE_updated = 0.0;
     if (world.rank() == 0) {
-      RowMatrixXd F_dyson = Sigma + RowMatrixXd(this->orbital_energy()->asDiagonal());
+      RowMatrixXd F_dyson =
+          Sigma + RowMatrixXd(this->orbital_energy()->asDiagonal());
       Eigen::SelfAdjointEigenSolver<RowMatrixXd> eig_solver(F_dyson);
       auto eps_dyson = eig_solver.eigenvalues();
       SE_updated = eps_dyson(orbital);

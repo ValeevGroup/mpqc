@@ -18,7 +18,7 @@ addons:
     packages:
       - g++-5
       - libeigen3-dev
-      - libboost1.55-dev
+      - libboost1.55-dev-all
       - libblas-dev
       - liblapack-dev
       - libtbb-dev

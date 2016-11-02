@@ -19,9 +19,9 @@ namespace qc {
 
 class PropertyBase;
 
-/**
- * Wfn is a wave function that lives in a WfnWorld
- */
+/// Wavefunction is a wave function
+
+/// \todo elaborate Wavefunction documentation
 class Wavefunction : public DescribedClass {
  private:
   /** Pointer to the WfnWorld

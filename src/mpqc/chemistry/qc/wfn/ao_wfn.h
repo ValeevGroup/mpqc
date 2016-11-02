@@ -15,6 +15,10 @@
 namespace mpqc {
 namespace qc {
 
+/// AOWavefunction is a Wavefunction with an AOFactory
+
+/// This models wave function methods expressed in AO basis.
+/// \todo elaborate AOWavefunction documentation
 template<typename Tile, typename Policy>
 class AOWavefunction : public Wavefunction {
  public:
@@ -37,7 +41,7 @@ class AOWavefunction : public Wavefunction {
     throw std::logic_error("Not Implemented!");
   }
 
-  /// obsolete, purge the registry in AOIntegral and DirectAOInetgral
+  /// obsolete, purge the registry in AOIntegral and DirectAOIntegral
   void obsolete() override {
     ao_integrals().registry().purge(wfn_world()->world());
     direct_ao_integrals().registry().purge(wfn_world()->world());

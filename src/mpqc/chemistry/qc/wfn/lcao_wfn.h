@@ -13,6 +13,11 @@
 namespace mpqc{
 namespace qc{
 
+/// LCAOWavefunction is a Wavefunction with an LCAOFactory
+
+/// This models wave function methods expressed in LCAO basis (e.g. traditional
+/// electron correlation methods, like MO-basis CCSD).
+/// \todo elaborate LCAOWavefunction documentation
 template<typename Tile, typename Policy>
 class LCAOWavefunction : public Wavefunction {
 

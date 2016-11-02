@@ -44,6 +44,8 @@ public:
 
   RHF(const KeyVal& kv);
 
+  virtual ~RHF() = default;
+
   double value() override;
   void obsolete() override;
 

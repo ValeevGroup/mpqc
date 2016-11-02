@@ -8,7 +8,7 @@
   },
   "basis1": {
     "type": "Basis",
-    "name": "cc-pVDZ",
+    "name": "t-aug-cc-pVDZ",
     "molecule": "$:molecule"
   },
   "basis2": {
@@ -41,10 +41,12 @@
     "converge": 1.0e-11
   },
   "wfn":{
-    "type": "RI-DBRMP2F12",
+    "type": "DBRMP2",
     "wfn_world": "$:world",
     "ref": "$:scf",
-    "redo_mp2": true,
+    "use_cabs" : true,
+    "orbital" : 1,
+    "dyson_method" : "diagonal",
     "occ_block" : 1,
     "un_occ_block" : 24
   }

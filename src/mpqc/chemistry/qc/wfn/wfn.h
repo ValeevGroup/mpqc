@@ -45,7 +45,7 @@ class Wavefunction : public DescribedClass {
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | wfn_world or $:wfn_world or ..:wfn_world | WavefunctionWorld | none | none |
+   * | \c "wfn_world" OR \c "..:wfn_world" OR \c "$:wfn_world" | WavefunctionWorld | none | |
    *
    *
    */

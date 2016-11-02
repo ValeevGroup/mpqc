@@ -21,6 +21,7 @@ addons:
       - libboost1.55-all-dev
       - libblas-dev
       - liblapack-dev
+      - rapidjson-dev
       - libtbb-dev
       - cmake
       - cmake-data

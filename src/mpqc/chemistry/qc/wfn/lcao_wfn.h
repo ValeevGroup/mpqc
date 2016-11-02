@@ -20,17 +20,15 @@ public:
   using ArrayType = TA::DistArray<Tile, Policy>;
   using LCAOFactoryType = integrals::LCAOFactory<Tile,Policy>;
 
-  /*
-   * KeyVal constructor
-   * it includes all options from Wavefunction and LCAOFactory,
-   * and also the following keywords
+  /**
+   * The KeyVal constructor uses keywords of Wavefunction and LCAOFactory, and the following keywords:
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | frozen_core | bool | true | if froze core electrons |
-   * | mo_block | int | 24 | block size in mo space |
-   * | occ_block | int | mo_block | block size in occupied space |
-   * | un_occ_block | int | mo_block | block size in unoccupied space |
+   * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
+   * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space block size |
+   * | \c "occ_block_size" | int | \c "$mo_block" | the target block size of the occupied space |
+   * | \c "uocc_block_size" | int | \c "$mo_block" | the target block size of the unoccupied space |
    *
    */
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {

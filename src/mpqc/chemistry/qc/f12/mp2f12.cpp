@@ -3,7 +3,11 @@
 //
 
 #include "mp2f12.h"
-#include "mpqc/chemistry/qc/mbpt/denom.h"
+#include <mpqc/chemistry/qc/mbpt/denom.h>
+#include <mpqc/util/keyval/forcelink.h>
+
+MPQC_CLASS_EXPORT2("RMP2F12", mpqc::f12::RMP2F12);
+MPQC_CLASS_EXPORT2("RI-RMP2F12", mpqc::f12::RIRMP2F12);
 
 namespace mpqc {
 namespace f12 {

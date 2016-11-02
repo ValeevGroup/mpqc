@@ -2,15 +2,8 @@
 // Created by Chong Peng on 11/1/16.
 //
 
-#include <mpqc/chemistry/qc/f12/ccsdf12.h>
+#include "ccsdf12.h"
+#include "mpqc/util/keyval/forcelink.h"
 
-namespace mpqc {
-namespace f12 {
+MPQC_CLASS_EXPORT2("CCSD(F12)", mpqc::f12::CCSDF12<TA::TensorD>);
 
-template class CCSDF12<TA::TensorD>;
-template <>
-CCSDF12<TA::TensorD>::~CCSDF12() = default;
-
-
-}
-}

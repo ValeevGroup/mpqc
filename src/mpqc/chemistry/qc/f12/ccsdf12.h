@@ -66,7 +66,7 @@ class CCSDF12 : public cc::CCSD<Tile, TA::SparsePolicy> {
     singles_energy_ = 0.0;
   }
 
-  virtual ~CCSDF12();
+  virtual ~CCSDF12() = default;
 
   virtual double value() override {
     if (this->energy_ == 0.0) {

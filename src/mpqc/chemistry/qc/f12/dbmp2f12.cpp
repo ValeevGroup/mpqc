@@ -3,6 +3,8 @@
 //
 
 #include "dbmp2f12.h"
+#include <mpqc/util/keyval/forcelink.h>
+MPQC_CLASS_EXPORT2("RI-DBRMP2F12", mpqc::f12::RIDBRMP2F12);
 
 namespace mpqc {
 namespace f12 {

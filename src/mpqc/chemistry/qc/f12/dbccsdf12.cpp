@@ -3,16 +3,6 @@
 //
 
 #include <mpqc/chemistry/qc/f12/dbccsdf12.h>
+#include <mpqc/util/keyval/forcelink.h>
 
-namespace mpqc {
-namespace f12 {
-
-template class DBCCSDF12<TA::TensorD>;
-
-template <>
-DBCCSDF12<TA::TensorD>::~DBCCSDF12() = default;
-
-//template class DBCCSDF12<TA::TensorD>;
-
-}
-}
+MPQC_CLASS_EXPORT2("DBCCSD(F12)", mpqc::f12::DBCCSDF12<TA::TensorD>);

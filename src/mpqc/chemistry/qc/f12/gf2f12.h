@@ -79,7 +79,7 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
   using Matrix = RowMatrix<real_t>;
 
   GF2F12() = default;
-  virtual ~GF2F12();
+  virtual ~GF2F12() = default;
 
   /**
    * KeyVal constructor

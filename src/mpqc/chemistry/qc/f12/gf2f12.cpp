@@ -3,14 +3,6 @@
 //
 
 #include <mpqc/chemistry/qc/f12/gf2f12.h>
+#include <mpqc/util/keyval/forcelink.h>
 
-namespace mpqc {
-namespace f12 {
-
-template class GF2F12<TA::TensorD>;
-template <>
-GF2F12<TA::TensorD>::~GF2F12() = default;
-
-
-}
-}
+MPQC_CLASS_EXPORT2("GF2F12", mpqc::f12::GF2F12<TA::TensorD>);

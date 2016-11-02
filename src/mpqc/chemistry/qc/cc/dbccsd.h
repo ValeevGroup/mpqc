@@ -19,7 +19,7 @@ class DBCCSD : public CCSD<Tile, Policy> {
 
  public:
   DBCCSD() = default;
-  virtual ~DBCCSD();
+  virtual ~DBCCSD() {}
 
   /**
    *  KeyVal constructor

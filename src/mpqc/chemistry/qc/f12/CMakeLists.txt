@@ -22,6 +22,7 @@ set(sources
         dbccsdf12.cpp
         dbmp2f12.h
         dbmp2f12.cpp
+        linkage.cpp
         )
 
 add_library(MPQCf12 ${sources})

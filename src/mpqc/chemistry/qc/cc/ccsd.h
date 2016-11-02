@@ -28,7 +28,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   using DirectAOIntegral = integrals::DirectAtomicIntegral<Tile, Policy>;
 
   CCSD() = default;
-  virtual ~CCSD();
+  virtual ~CCSD() {}
 
   /**
    * KeyVal constructor

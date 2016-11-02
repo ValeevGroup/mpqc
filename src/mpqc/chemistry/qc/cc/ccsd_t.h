@@ -60,7 +60,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
     increase_ = kv.value<int>("increase", 2);
   }
 
-  virtual ~CCSD_T();
+  virtual ~CCSD_T() {}
 
   double value() override {
     if (this->energy_ == 0.0) {

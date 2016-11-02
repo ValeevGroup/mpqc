@@ -8,8 +8,6 @@
 
 #include <libint2/atom.h>
 
-MPQC_CLASS_EXPORT_KEY2("Molecule", mpqc::Molecule);
-
 namespace mpqc {
 
 namespace {

@@ -17,24 +17,47 @@ class ForceLinkBase {
   virtual DescribedClass *create(A) = 0;
 };
 
-/** This, together with ForceLinkBase, is used to force code for particular
-classes to be linked into executables.  Objects are created from input and
-checkpoint files by using class name lookup to find that class's ClassDesc
-object.  The ClassDesc object has members that can create the class.
-Unfortunately, linking in a library doesn't cause code for the
-ClassDesc, and thus the class itself, to be linked.  ForceLink objects are
-created in linkage.h files for each library.  The code containing the main
-routine for an executable can include these linkage files to force code for
-that library's classes to be linked. */
+/**
+ * \brief This, together with ForceLinkBase, is used to force code for particular
+ *        classes to be linked into executables.
+ *
+ * \note Objects of classes derived from DescribedClass can be created from KeyVal input
+ *       and/or checkpoint files by using class name lookup to find that class's entry
+ *       in the constructor registry. Unfortunately, linking in a library that defines
+ *       such a class doesn't cause the code for the class to be linked. To force linking
+ *       of class T derived from DescribedClass create an object of class ForceLink<T>
+ *       in the main executable. This is most conveniently done by having every library
+ *       define such objects in its \c linkage.h file; the main executable
+ *       then includes all \c linkage.h files from the libraries that it needs.
+ * \note Only a declaration of class T is needed to define an object of type ForceLink<T>;
+ *       this is key to avoiding instantiation of class T in the executable.
+ *       Nevertheless, it is necessary to define ForceLink<T>::create in the library somewhere,
+ *       usually in a file called \c linkage.cpp ; this file usually also contains
+ *       constructor registration macros.
+ * \sa MPQC_FORCELINK_KEYVAL_CTOR
+ */
 template <class T, class A = const KeyVal& >
 class ForceLink : public ForceLinkBase<A> {
  public:
   ForceLink() {}
   virtual ~ForceLink() {}
-  DescribedClass *create(A a) { return new T(a); }
+  DescribedClass *create(A a);
 };
 
 }  // namespace detail
 }  // namespace mpqc
+
+
+/// Streamlines the definition of ForceLink<T>::create methods
+
+/// For every object of ForceLink<T> type defined in \c linkage.h
+/// add MPQC_FORCELINK_KEYVAL_CTOR(T) to \c linkage.cpp file.
+#define MPQC_FORCELINK_KEYVAL_CTOR(...)                              \
+  template <>                                                        \
+  mpqc::DescribedClass*                                              \
+  mpqc::detail::ForceLink<__VA_ARGS__, const mpqc::KeyVal&>::create( \
+      const mpqc::KeyVal& kv) {                                      \
+    return new __VA_ARGS__(kv);                                      \
+  }
 
 #endif  // SRC_MPQC_UTIL_KEYVAL_FORCELINK_H_

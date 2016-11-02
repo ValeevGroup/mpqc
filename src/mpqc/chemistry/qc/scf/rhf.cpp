@@ -14,11 +14,6 @@
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 #include "mpqc/util/external/c++/memory"
 
-MPQC_CLASS_EXPORT_KEY2("RHF", mpqc::scf::RHF);
-MPQC_CLASS_EXPORT_KEY2("Direct-RHF", mpqc::scf::DirectRHF);
-MPQC_CLASS_EXPORT_KEY2("RI-RHF", mpqc::scf::RIRHF);
-MPQC_CLASS_EXPORT_KEY2("Direct-RI-RHF", mpqc::scf::DirectRIRHF);
-
 namespace mpqc {
 namespace scf {
 

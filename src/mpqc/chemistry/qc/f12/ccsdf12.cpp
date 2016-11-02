@@ -4,8 +4,6 @@
 
 #include <mpqc/chemistry/qc/f12/ccsdf12.h>
 
-MPQC_CLASS_EXPORT_KEY2("CCSD(F12)", mpqc::f12::CCSDF12<TA::TensorD>);
-
 namespace mpqc {
 namespace f12 {
 

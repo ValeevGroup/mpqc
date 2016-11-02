@@ -4,9 +4,6 @@
 
 #include "mp2.h"
 
-MPQC_CLASS_EXPORT_KEY2("RMP2", mpqc::mbpt::RMP2);
-MPQC_CLASS_EXPORT_KEY2("RI-RMP2", mpqc::mbpt::RIRMP2);
-
 namespace mpqc{
 namespace mbpt {
 

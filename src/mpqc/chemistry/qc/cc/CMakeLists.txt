@@ -5,9 +5,7 @@ set(sources
         diis_ccsd.h
         eom/eom_ccsd.h
         eom/eom_ccsd.cpp
-        ccsd.cpp
-        ccsd_t.cpp
-        dbccsd.cpp
+        linkage.cpp
         )
 
 add_library(MPQCcc ${sources})

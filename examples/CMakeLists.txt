@@ -21,12 +21,11 @@ add_executable(basis_example EXCLUDE_FROM_ALL basis_example.cpp)
 target_link_libraries(basis_example molecule;basis)
 add_dependencies(examples basis_example)
 
-
 add_executable(ccsd EXCLUDE_FROM_ALL ccsd.cpp)
 target_link_libraries(ccsd ${MPQC_LIBRARIES})
 
-add_executable(mpqc EXCLUDE_FROM_ALL mpqc.cpp)
-target_link_libraries(mpqc ${MPQC_LIBRARIES} MPQCmisc)
+add_executable(mpqc_test EXCLUDE_FROM_ALL mpqc.cpp)
+target_link_libraries(mpqc_test ${MPQC_LIBRARIES} MPQCmisc)
 
 add_executable(mpqc_info mpqc_info.cpp)
 target_link_libraries(mpqc_info MPQCbasis MPQCmolecule MPQCkeyval MPQCexpression MPQCmisc ${Boost_LIBRARIES})

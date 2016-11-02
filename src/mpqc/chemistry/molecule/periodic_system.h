@@ -49,7 +49,6 @@ class PeriodicSystem : public Molecule {
    *
    *  <tr><td><tt>attach_hydrogen</tt><td>bool<td>true<td> use
    * attach_hydrogen_kmeans when clustering
-   *  </table>
    *
    *  <tr><td><tt>direct_lattice_vector</tt><td>int<td>0<td> This gives three
    * direct lattice vectors:
@@ -60,8 +59,10 @@ class PeriodicSystem : public Molecule {
    * all lattice sums
    *
    *  <tr><td><tt>k_points</tt><td>int<td>0<td> number of k points
+   *  </table>
    *
    *  example input:
+   *  \code
    *  "molecule": {
    *    "type": "PeriodicSystem",
    *    "charge": 0,
@@ -72,6 +73,7 @@ class PeriodicSystem : public Molecule {
    *    "direct_lattice_vector": [0.0, 0.0, 2.8],
    *    "k_points": [1, 1, 10]
    *  }
+   *  \endcode
    *
    */
   PeriodicSystem(const KeyVal& kv);

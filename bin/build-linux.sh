@@ -31,5 +31,5 @@ cmake ../.. \
     -DCMAKE_BUILD_TYPE=DEBUG \
     -DLIBINT2_INSTALL_DIR="$INSTALL_DIR/libint"
 
-make -j2 mpqc
+make -j2 mpqc_info
 

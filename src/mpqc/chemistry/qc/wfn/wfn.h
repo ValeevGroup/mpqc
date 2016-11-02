@@ -41,7 +41,7 @@ class Wavefunction : public DescribedClass {
 
  public:
   /**
-   *  \brief KeyVal constructor
+   *  \brief The KeyVal constructor
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|

@@ -58,7 +58,8 @@ class Wavefunction : public DescribedClass {
     energy_ = 0.0;
   };
 
-  std::shared_ptr<WavefunctionWorld> wfn_world() { return wfn_world_; }
+  const std::shared_ptr<WavefunctionWorld>&
+  wfn_world() const { return wfn_world_; }
 };
 
 }  // namespace qc

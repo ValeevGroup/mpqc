@@ -29,7 +29,7 @@ cmake ../.. \
     -DTiledArray_DIR="$INSTALL_DIR/TA/lib/cmake/tiledarray" \
     -DCMAKE_PREFIX_PATH="$INSTALL_DIR/TA" \
     -DCMAKE_BUILD_TYPE=DEBUG \
-    -DLINBINT2_INSTALL_DIR="$INSTALL_DIR/libint"
+    -DLIBINT2_INSTALL_DIR="$INSTALL_DIR/libint"
 
 make -j2 mpqc
 

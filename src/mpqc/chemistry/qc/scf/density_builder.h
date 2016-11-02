@@ -29,7 +29,6 @@ class DensityBuilder {
 
     virtual void print_iter(std::string const &) = 0;
 
-    virtual rapidjson::Value results(rapidjson::Document &d) = 0;
 };
 
 } // namespace scf

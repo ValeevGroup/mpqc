@@ -67,9 +67,6 @@ public:
    */
   bool solve(int64_t max_iters, double thresh);
 
-  virtual rapidjson::Value results(rapidjson::Document &) const;
-
-
 protected:
   double converge_;
   std::size_t max_iter_;

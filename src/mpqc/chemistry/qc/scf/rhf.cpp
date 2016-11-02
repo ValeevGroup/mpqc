@@ -199,31 +199,6 @@ void RHF::build_F() {
   F_("i,j") = H_("i,j") + G("i,j");
 }
 
-rapidjson::Value RHF::results(rapidjson::Document &d) const {
-  rapidjson::Value rhf_object(rapidjson::kObjectType);
-  rhf_object.AddMember("Type", "RHF", d.GetAllocator());
-  rhf_object.AddMember("Energy", energy(), d.GetAllocator());
-
-  auto avg = [](std::vector<double> const &v) {
-    auto sum = 0.0;
-    for (auto d : v) {
-      sum += d;
-    }
-    return sum / double(v.size());
-  };
-
-  rhf_object.AddMember("Avg Scf Time", avg(rhf_times_), d.GetAllocator());
-  rhf_object.AddMember("Avg Density Build Time", avg(d_times_),
-                       d.GetAllocator());
-  rhf_object.AddMember("Density Builder", d_builder_->results(d),
-                       d.GetAllocator());
-  rhf_object.AddMember("Avg Fock Build Time", avg(build_times_),
-                       d.GetAllocator());
-  rhf_object.AddMember("Fock Builder", f_builder_->results(d),
-                       d.GetAllocator());
-
-  return rhf_object;
-}
 
 /**
  *  RIRHF member functions

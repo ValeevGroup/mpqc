@@ -89,39 +89,6 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 }
 }
 
-AtomicIntegralBase::AtomicIntegralBase(
-    madness::World &world, const std::shared_ptr<Molecule> &mol,
-    const std::shared_ptr<basis::OrbitalBasisRegistry> &obs,
-    const std::vector<std::pair<double, double>> &gtg_params,
-    const rapidjson::Document &in)
-    : world_(world),
-      orbital_basis_registry_(obs),
-      mol_(mol),
-      gtg_params_(gtg_params) {
-  utility::print_par(world, "\nConstructing Atomic Integral Class \n");
-  if (in.IsObject()) {
-    screen_ = in.HasMember("Screen") ? in["Screen"].GetString() : "";
-    screen_threshold_ =
-        in.HasMember("Threshold") ? in["Threshold"].GetDouble() : 1.0e-10;
-    precision_ = in.HasMember("Precision")
-                     ? in["Precision"].GetDouble()
-                     : std::numeric_limits<double>::epsilon();
-  } else {
-    screen_ = "";
-    screen_threshold_ = 1.0e-10;
-    precision_ = std::numeric_limits<double>::epsilon();
-  }
-
-  utility::print_par(world, "Screen: ", screen_, "\n");
-  if (!screen_.empty()) {
-    utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
-  }
-  utility::print_par(world, "Precision: ", precision_, "\n");
-  utility::print_par(world, "\n");
-
-  integrals::detail::integral_engine_precision = precision_;
-}
-
 AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
     : world_(*kv.value<madness::World*>("$:world")),
       orbital_basis_registry_(),

@@ -22,7 +22,6 @@
 #include <mpqc/chemistry/qc/integrals/task_integrals.h>
 
 #include <libint2/engine.h>
-#include <rapidjson/document.h>
 
 namespace mpqc {
 namespace integrals {
@@ -43,22 +42,6 @@ class AtomicIntegralBase {
   using gtg_params_t = std::vector<std::pair<double, double>>;
 
   AtomicIntegralBase() noexcept = default;
-
-  /**
-   * Constructor
-   *
-   * @param world reference to madness World
-   * @param mol shared pointer to Molecule
-   * @param obs shared pointer to OrbitalBasisRegistry
-   * @param gtg_params  parameters used in computing f12 integrals
-   */
-
-  AtomicIntegralBase(madness::World &world,
-                     const std::shared_ptr<Molecule> &mol,
-                     const std::shared_ptr<basis::OrbitalBasisRegistry> &obs,
-                     const std::vector<std::pair<double, double>> &gtg_params =
-                     std::vector<std::pair<double, double>>(),
-                     const rapidjson::Document &in = rapidjson::Document());
 
   /**
    * \brief  KeyVal constructor

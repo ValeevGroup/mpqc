@@ -2,8 +2,6 @@ set(sources
         linkage.cpp
         rhf.h
         rhf.cpp
-        scf.h
-        scf.cpp
         orbital_localization.h
         orbital_localization.cpp
         eigen_solve_density_builder.h

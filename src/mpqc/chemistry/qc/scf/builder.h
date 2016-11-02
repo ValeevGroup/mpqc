@@ -25,7 +25,6 @@ class FockBuilder {
 
     virtual void register_fock(const TA::TSpArrayD &, FormulaRegistry<TA::TSpArrayD>& ) = 0;
 
-    virtual rapidjson::Value results(rapidjson::Document &) = 0;
 };
 
 } // namespace scf

@@ -8,8 +8,11 @@
 #include "mpqc/util/keyval/forcelink.h"
 #include "mpqc/chemistry/molecule/linkage.h"
 
-namespace mpqc{
-namespace qc{
+namespace mpqc {
+namespace qc {
+
+class WavefunctionWorld;
+mpqc::detail::ForceLink<WavefunctionWorld> fl1;
 
 }
 }

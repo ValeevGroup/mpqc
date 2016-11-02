@@ -59,5 +59,14 @@ class ForceLink : public ForceLinkBase<A> {
       const mpqc::KeyVal& kv) {                                      \
     return new __VA_ARGS__(kv);                                      \
   }
+/**/
+
+#define MPQC_CLASS_EXPORT(...)        \
+  MPQC_CLASS_EXPORT_KEY(__VA_ARGS__) \
+  MPQC_FORCELINK_KEYVAL_CTOR(__VA_ARGS__)
+
+#define MPQC_CLASS_EXPORT2(K, ...)        \
+  MPQC_CLASS_EXPORT_KEY2(K, __VA_ARGS__) \
+  MPQC_FORCELINK_KEYVAL_CTOR(__VA_ARGS__)
 
 #endif  // SRC_MPQC_UTIL_KEYVAL_FORCELINK_H_

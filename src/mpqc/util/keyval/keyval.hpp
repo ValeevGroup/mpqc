@@ -113,6 +113,7 @@ class DescribedClass {
     const std::string type_name = boost::serialization::guid<T>();
     auto& registry = keyval_ctor_registry();
     assert(registry.find(type_name) == registry.end());
+    std::cout << "DescribedClass \"" << type_name << "\" registered" << std::endl;
     registry[type_name] = keyval_ctor_wrapper<T>;
   }
 

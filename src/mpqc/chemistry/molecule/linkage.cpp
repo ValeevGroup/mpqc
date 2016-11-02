@@ -8,5 +8,4 @@
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT_KEY2("Molecule", mpqc::Molecule);
-MPQC_FORCELINK_KEYVAL_CTOR(mpqc::Molecule)
+MPQC_CLASS_EXPORT2("Molecule", mpqc::Molecule);

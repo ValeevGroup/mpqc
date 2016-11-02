@@ -89,7 +89,7 @@ public:
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    */
   RMP2(const KeyVal& kv);
-  ~RMP2() = default;
+  virtual ~RMP2();
 
   double value() override;
   virtual double compute();

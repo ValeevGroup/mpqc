@@ -1,7 +1,6 @@
 set(sources
         dbmp2.h
         dbmp2.cpp
-        linkage.cpp
         mp2.h
         mp2.cpp
         )

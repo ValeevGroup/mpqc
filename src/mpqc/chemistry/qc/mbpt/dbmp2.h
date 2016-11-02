@@ -63,27 +63,26 @@ class DBRMP2 : public RMP2 {
  public:
   using Tile = TA::TensorD;
   using Policy = TA::SparsePolicy;
-  using real_t = typename Tile::scalar_type;
   using TArray = TA::DistArray<Tile, Policy>;
   using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
 
   DBRMP2() = default;
 
-  virtual ~DBRMP2() = default;
+  virtual ~DBRMP2();
 
   DBRMP2(const KeyVal &kv) : RMP2(kv) {}
 
-  real_t value() override {
+  double value() override {
     if (this->energy_ == 0.0) {
-      real_t mp2_energy = RMP2::value();
+      double mp2_energy = RMP2::value();
 
-      real_t scf_correction = compute_scf_correction();
+      double scf_correction = compute_scf_correction();
       this->energy_ = scf_correction + mp2_energy;
     }
     return this->energy_;
   }
 
-  real_t compute_scf_correction() {
+  double compute_scf_correction() {
     init();
 
     int occ = this->trange1_engine()->get_occ();
@@ -93,7 +92,7 @@ class DBRMP2 : public RMP2 {
     //    } else if (method == "df") {
     //      F_ma = this->lcao_factory().compute(L"<m|F|a>[df]");
 
-    real_t scf_correction = 2 *
+    double scf_correction = 2 *
                             F_ma("m,a").reduce(detail::ScfCorrection<Tile>(
                                 this->orbital_energy(), occ));
 

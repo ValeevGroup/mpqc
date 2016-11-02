@@ -3,7 +3,10 @@
 //
 
 #include "mp2.h"
+#include "mpqc/util/keyval/forcelink.h"
 
+MPQC_CLASS_EXPORT2("RMP2", mpqc::mbpt::RMP2);
+MPQC_CLASS_EXPORT2("RI-RMP2", mpqc::mbpt::RIRMP2);
 
 namespace mpqc{
 namespace mbpt {
@@ -17,6 +20,8 @@ RMP2::RMP2(const KeyVal &kv) : LCAOWavefunction(kv) {
   }
 
 }
+
+RMP2::~RMP2() = default;
 
 void RMP2::obsolete() {
   this->energy_ = 0.0;

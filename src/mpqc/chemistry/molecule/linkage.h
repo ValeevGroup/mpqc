@@ -8,7 +8,7 @@
 namespace mpqc {
 
 mpqc::detail::ForceLink<mpqc::Molecule> fl1;
-mpqc::detail::ForceLink<mpqc::PeriodicSystem> fl2;
+mpqc::detail::ForceLink<mpqc::molecule::PeriodicSystem> fl2;
 
 }
 

@@ -1,11 +1,13 @@
-/// New MPQC Main file with KeyVal
+/// Periodic SCF file with Keyval
 
-#include "../include/tiledarray.h"
+#include <sstream>
+#include <clocale>
 
-#include "../utility/parallel_file.h"
-#include "../utility/parallel_print.h"
+#include <tiledarray.h>
 
-#include <mpqc/chemistry/qc/properties/energy.h>
+#include "mpqc/util/external/madworld/parallel_file.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
+
 #include <mpqc/chemistry/qc/wfn/wfn.h>
 #include <mpqc/util/keyval/keyval.hpp>
 
@@ -14,8 +16,6 @@
 
 #include <mpqc/chemistry/qc/integrals/periodic_atomic_integral.h>
 
-#include <sstream>
-#include <clocale>
 
 using namespace mpqc;
 
@@ -42,7 +42,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   libint2::initialize();
 
-  auto mol = kv.keyval("molecule").class_ptr<molecule::Molecule>();
+  auto mol = kv.keyval("molecule").class_ptr<Molecule>();
   auto charge = mol->charge();
   auto docc = mol->occupation(charge) / 2;
   auto enuc = mol->nuclear_repulsion();

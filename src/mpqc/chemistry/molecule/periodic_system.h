@@ -10,6 +10,7 @@
 #include <Eigen/Dense>
 
 typedef Eigen::Vector3i Vec3I;
+typedef Eigen::Vector3d Vec3D;
 
 namespace mpqc {
 namespace molecule {

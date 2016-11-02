@@ -3,7 +3,6 @@
 
 #include <mpqc/chemistry/molecule/common.h>
 #include <mpqc/chemistry/molecule/atom_masses.h>
-#include "../../../../utility/parallel_file.h"
 #include "clustering_functions.h"
 
 #include <libint2/atom.h>

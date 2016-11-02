@@ -4,13 +4,18 @@
 #include <iosfwd>
 #include <vector>
 
+// See if any is needed
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
+
+
+
+#include "mpqc/math/external/eigen/eigen.h"
 #include "atomic_integral_base.h"
 #include "atomic_integral_base.cpp"
-#include "atomic_integral.h"
+#include <mpqc/chemistry/molecule/periodic_system.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/util/keyval/keyval.hpp>
 // Eigen matrix algebra library
-#include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
 
 typedef Eigen::Vector3i Vec3I;
@@ -59,7 +64,7 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
     RD_size_ = 1 + idx_lattice(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
     k_size_ = 1 + idx_k(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
 
-    op_ = mpqc::ta_routines::TensorZPassThrough();
+    op_ = TA::Noop<TA::TensorZ, true>();
   }
 
   ~PeriodicAtomicIntegral() noexcept = default;
@@ -136,7 +141,7 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
   void parse_one_body_periodic(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-      molecule::Molecule &shifted_mol);
+      Molecule &shifted_mol);
 
   void parse_two_body_periodic(const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
@@ -152,19 +157,19 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
 
   TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
 
-  std::shared_ptr<molecule::Molecule> shift_mol_origin(molecule::Molecule &mol,
+  std::shared_ptr<Molecule> shift_mol_origin(Molecule &mol,
                                                        Vec3D shift);
 
   libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
                                           const AtomicIntegralBase &base,
-                                          molecule::Molecule &mol);
+                                          Molecule &mol);
 
   template <typename E>
   TA::DistArray<Tile, TA::SparsePolicy> sparse_complex_integrals(
-      mad::World &world, ShrPool<E> shr_pool, Bvector const &bases,
+      madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
       std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
       std::function<Tile(TA::TensorZ &&)> op =
-          mpqc::ta_routines::TensorZPassThrough());
+          TA::Noop<TA::TensorZ, true>());
 
   void sort_eigen(Vectorc &eigVal, Matrixc &eigVec);
 };
@@ -209,7 +214,7 @@ PeriodicAtomicIntegral<Tile, Policy>::compute(const Formula &formula) {
     else
         throw std::runtime_error("Rank-2 operator type not supported");
 
-    size = utility::array_size(result);
+    size = mpqc::detail::array_size(result);
     utility::print_par(world_,
                        "\nComputed One Body Integral for Periodic System: ",
                        utility::to_string(formula.string()));
@@ -258,7 +263,7 @@ template <typename Tile, typename Policy>
 void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(
         const Formula &formula,
         std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-        molecule::Molecule &shifted_mol) {
+        Molecule &shifted_mol) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -285,7 +290,7 @@ void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
-      to_libint2_operator(oper_type),
+      detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
       to_libint2_operator_params(oper_type, *this, shifted_mol));
 }
@@ -473,14 +478,14 @@ PeriodicAtomicIntegral<Tile, Policy>::extend_trange1(TA::TiledRange1 tr0,
 }
 
 template <typename Tile, typename Policy>
-std::shared_ptr<molecule::Molecule>
-PeriodicAtomicIntegral<Tile, Policy>::shift_mol_origin(molecule::Molecule &mol,
+std::shared_ptr<Molecule>
+PeriodicAtomicIntegral<Tile, Policy>::shift_mol_origin(Molecule &mol,
                                                        Vec3D shift) {
-  std::vector<molecule::AtomBasedClusterable> vec_of_clusters;
+  std::vector<AtomBasedClusterable> vec_of_clusters;
   for (auto &cluster : mol) {
-    molecule::AtomBasedCluster shifted_cluster;
-    for (auto &atom : molecule::collapse_to_atoms(cluster)) {
-      molecule::Atom shifted_atom(atom.center() + shift, atom.mass(),
+    AtomBasedCluster shifted_cluster;
+    for (auto &atom : collapse_to_atoms(cluster)) {
+      Atom shifted_atom(atom.center() + shift, atom.mass(),
                                   atom.charge());
       shifted_cluster.add_clusterable(shifted_atom);
     }
@@ -488,16 +493,16 @@ PeriodicAtomicIntegral<Tile, Policy>::shift_mol_origin(molecule::Molecule &mol,
     vec_of_clusters.emplace_back(shifted_cluster);
   }
 
-  molecule::Molecule result(vec_of_clusters);
+  Molecule result(vec_of_clusters);
 
-  auto result_ptr = std::make_shared<molecule::Molecule>(result);
+  auto result_ptr = std::make_shared<Molecule>(result);
   return result_ptr;
 }
 
 template <typename Tile, typename Policy>
 libint2::any PeriodicAtomicIntegral<Tile, Policy>::to_libint2_operator_params(
     Operator::Type mpqc_oper, const AtomicIntegralBase &base,
-    molecule::Molecule &mol) {
+    Molecule &mol) {
   TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
                   mpqc_oper <= Operator::Type::__last_1body_operator) ||
                      (Operator::Type::__first_2body_operator <= mpqc_oper &&
@@ -550,7 +555,7 @@ template <typename Tile, typename Policy>
 template <typename E>
 TA::DistArray<Tile, TA::SparsePolicy>
 PeriodicAtomicIntegral<Tile, Policy>::sparse_complex_integrals(
-    mad::World &world, ShrPool<E> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen, std::function<Tile(TA::TensorZ &&)> op) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
@@ -588,7 +593,7 @@ PeriodicAtomicIntegral<Tile, Policy>::sparse_complex_integrals(
     }
   };
 
-  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (auto const ord : *pmap) {
     tiles[ord].first = ord;
     detail::IdxVec idx = trange.tiles_range().idx(ord);
@@ -598,7 +603,7 @@ PeriodicAtomicIntegral<Tile, Policy>::sparse_complex_integrals(
   world.gop.fence();
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
-  TA::DistArray<Tile, SpPolicy> out(world, trange, shape, pmap);
+  TA::DistArray<Tile, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   detail::set_array(tiles, out);
   out.truncate();
@@ -675,7 +680,7 @@ PeriodicAtomicIntegral<Tile, Policy>::compute_density(
         auto Ft = XtF * X;
 
         // Diagonalize F'
-        Eig::ComplexEigenSolver<Matrixc> comp_eig_solver(Ft);
+        Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(Ft);
         eps[k] = comp_eig_solver.eigenvalues();
         auto Ctemp = comp_eig_solver.eigenvectors();
         C[k] = X * Ctemp;

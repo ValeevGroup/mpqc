@@ -6,6 +6,7 @@
 #include <madness/world/world.h>
 #include "catch.hpp"
 #include <mpqc/chemistry/qc/basis/basis.h>
+#include <mpqc/chemistry/molecule/linkage.h>
 
 using std::cout;
 using std::endl;
@@ -26,7 +27,7 @@ struct Base : public DescribedClass {
  private:
   int value_;
 };
-MPQC_CLASS_EXPORT_KEY(Base);
+MPQC_CLASS_EXPORT(Base);
 
 template <size_t tag>
 struct Derived : public Base {
@@ -41,7 +42,7 @@ struct Derived : public Base {
 
 // only register Derived<0> (you could in principle register Derived generically
 // not recommended due to complications with the static data initialization,etc)
-MPQC_CLASS_EXPORT_KEY(Derived<0>);
+MPQC_CLASS_EXPORT2("Derived<0>", Derived<0>);
 
 struct Nested : public DescribedClass{
 
@@ -53,7 +54,7 @@ struct Nested : public DescribedClass{
   std::shared_ptr<Base> base_;
 };
 
-MPQC_CLASS_EXPORT_KEY(Nested)
+MPQC_CLASS_EXPORT2("Nested",Nested)
 
 TEST_CASE("KeyVal", "[keyval]") {
   // first, test basic programmatic construction

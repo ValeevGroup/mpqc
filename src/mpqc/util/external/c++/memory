@@ -1,0 +1,20 @@
+#ifndef SRC_MPQC_UTIL_EXTERNAL_CPP_MEMORY
+#define SRC_MPQC_UTIL_EXTERNAL_CPP_MEMORY
+
+#include <memory>
+
+// C++14 only
+#if __cplusplus < 201402L
+
+namespace std {
+
+template <typename T, typename ...Args>
+std::unique_ptr<T> make_unique(Args &&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+}  // namespace std
+
+#endif  // __cplusplus < 201402L
+
+#endif  // SRC_MPQC_UTIL_EXTERNAL_CPP_MEMORY

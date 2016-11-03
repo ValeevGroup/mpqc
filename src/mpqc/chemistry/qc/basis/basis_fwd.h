@@ -1,8 +1,8 @@
-#pragma once
+
 #ifndef MPQC_BASIS_BASISFWD_H
 #define MPQC_BASIS_BASISFWD_H
 
-#include "../../../../../common/typedefs.h"
+
 
 namespace mpqc {
 namespace basis {

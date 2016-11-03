@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_INTEGRALS_DIRECTTASKINTEGRALS_H
 #define MPQC_INTEGRALS_DIRECTTASKINTEGRALS_H
 
@@ -6,7 +6,6 @@
 #include <mpqc/chemistry/qc/integrals/integral_builder.h>
 #include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
 
-#include "../../../../../ta_routines/tile_convert.h"
 #include <limits>
 
 namespace mpqc {
@@ -18,12 +17,12 @@ namespace integrals {
  */
 template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool,
+    madness::World &world, ShrPool<Engine> shr_pool,
     Bvector const &bases,
-    std::function<Tile(TA::TensorD &&)> op = mpqc::ta_routines::TensorDPassThrough()) {
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD,true>()) {
   const auto trange = detail::create_trange(bases);
-  const auto tvolume = trange.tiles().volume();
-  TA::TensorF tile_norms(trange.tiles(), 0.0);
+  const auto tvolume = trange.tiles_range().volume();
+  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<Bvector>(bases);
@@ -53,19 +52,19 @@ DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
     norms[ord] = tile_norm;
   };
 
-  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (auto const &ord : *pmap) {
-    detail::IdxVec idx = trange.tiles().idx(ord);
+    detail::IdxVec idx = trange.tiles_range().idx(ord);
     tiles[ord].first = ord;
     auto range = trange.make_tile_range(ord);
     world.taskq.add(task_f, ord, idx, range, &tile_norms, &tiles[ord].second);
   }
   world.gop.fence();
 
-  SpShapeF shape(world, tile_norms, trange);
-  TA::DistArray<DirectTileType, SpPolicy> out(world, trange, shape, pmap);
+  TA::SparseShape<float> shape(world, tile_norms, trange);
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape, pmap);
 
-  for (auto it : *out.get_pmap()) {
+  for (auto it : *out.pmap()) {
     if (!out.is_zero(it)) {
       out.set(it, std::move(tiles[it].second));
     }
@@ -82,15 +81,15 @@ DirectArray<Tile, TA::SparsePolicy, Engine> soad_direct_integrals(
  */
 template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD &&)> op = mpqc::ta_routines::TensorDPassThrough())
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD,true>())
 
 {
 
   const auto trange = detail::create_trange(bases);
-  const auto tvolume = trange.tiles().volume();
-  TA::TensorF tile_norms(trange.tiles(), 0.0);
+  const auto tvolume = trange.tiles_range().volume();
+  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<Bvector>(bases);
@@ -115,7 +114,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     const auto tile_norm = ta_tile.norm();
 
     // Keep tile if it was significant.
-    bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
+    bool save_norm = tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
     if (save_norm) {
       *out_tile = DirectTileType(idx, std::move(rng), std::move(builder_ptr));
 
@@ -124,19 +123,19 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     }
   };
 
-  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (auto const &ord : *pmap) {
-    detail::IdxVec idx = trange.tiles().idx(ord);
+    detail::IdxVec idx = trange.tiles_range().idx(ord);
     tiles[ord].first = ord;
     auto range = trange.make_tile_range(ord);
     world.taskq.add(task_f, ord, idx, range, &tile_norms, &tiles[ord].second);
   }
   world.gop.fence();
 
-  SpShapeF shape(world, tile_norms, trange);
-  TA::DistArray<DirectTileType, SpPolicy> out(world, trange, shape, pmap);
+  TA::SparseShape<float> shape(world, tile_norms, trange);
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape, pmap);
 
-  for (auto it : *out.get_pmap()) {
+  for (auto it : *out.pmap()) {
     if (!out.is_zero(it)) {
       out.set(it, std::move(tiles[it].second));
     }
@@ -154,12 +153,12 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
  */
 template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD&&)> op = mpqc::ta_routines::TensorDPassThrough()) {
+    std::function<Tile(TA::TensorD&&)> op = TA::Noop<TA::TensorD,true>()) {
   const auto trange = detail::create_trange(bases);
-  const auto tvolume = trange.tiles().volume();
-  TA::TensorF tile_norms(trange.tiles(), 0.0);
+  const auto tvolume = trange.tiles_range().volume();
+  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<Bvector>(bases);
@@ -184,19 +183,19 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
 
   };
 
-  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (auto const &ord : *pmap) {
-    detail::IdxVec idx = trange.tiles().idx(ord);
+    detail::IdxVec idx = trange.tiles_range().idx(ord);
     tiles[ord].first = ord;
     auto range = trange.make_tile_range(ord);
     world.taskq.add(task_f, ord, idx, range, &tile_norms, &tiles[ord].second);
   }
   world.gop.fence();
 
-  SpShapeF shape(world, tile_norms, trange);
-  TA::DistArray<DirectTileType, SpPolicy> out(world, trange, shape, pmap);
+  TA::SparseShape<float> shape(world, tile_norms, trange);
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape, pmap);
 
-  for (auto it : *out.get_pmap()) {
+  for (auto it : *out.pmap()) {
     if (!out.is_zero(it)) {
       out.set(it, std::move(tiles[it].second));
     }
@@ -212,9 +211,9 @@ DirectArray<Tile, TA::SparsePolicy, Engine> untruncated_direct_sparse_integrals(
  */
 template <typename Tile=TA::TensorD, typename Engine>
 DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
-    mad::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<Engine> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-    std::function<Tile(TA::TensorD&&)> op = mpqc::ta_routines::TensorDPassThrough()) {
+    std::function<Tile(TA::TensorD&&)> op = TA::Noop<TA::TensorD,true>()) {
   const auto trange = detail::create_trange(bases);
 
   // Copy the Bases for the Integral Builder
@@ -232,9 +231,9 @@ DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
   
   TA::DistArray<DirectTileType, TA::DensePolicy> out(world, trange);
 
-  auto pmap = out.get_pmap();
+  auto pmap = out.pmap();
   for (auto const &ord : *pmap) {
-    detail::IdxVec idx = trange.tiles().idx(ord);
+    detail::IdxVec idx = trange.tiles_range().idx(ord);
     auto range = trange.make_tile_range(ord);
     out.set(ord, DirectTileType(idx, std::move(range), builder_ptr));
   }

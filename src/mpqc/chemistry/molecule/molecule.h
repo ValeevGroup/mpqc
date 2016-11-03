@@ -9,7 +9,6 @@
 #include <mpqc/util/keyval/keyval.hpp>
 
 namespace mpqc {
-namespace molecule {
 
 /*!
  * \defgroup Molecule Molecule
@@ -30,47 +29,45 @@ class Molecule : public DescribedClass {
  private:
   std::vector<AtomBasedClusterable> elements_;
 
-  Vec3D com_ = {0, 0, 0};  /// Center of Mass
+  Vector3d com_ = {0, 0, 0};  /// Center of Mass
   double mass_ = 0.0;
   int64_t charge_ = 0;  /// Net charge (# protons - # electrons)
+  int64_t total_charge_ = 0;  // total charge # protons
 
   void init(std::istream &file, bool sort_input);
 
-  void init(std::istream &file, Vec3D const &point);
+  void init(std::istream &file, Vector3d const &point);
 
  public:
   Molecule() = default;
 
   /** \brief KeyVal constructor for Molecule
    *
-   *  <table border="1">
    *
-   *  <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
+   *  | KeyWord | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |file_name|string|none|This gives the name of a XYZ file, from which the nuclear coordinates will be read |
+   *  |||| (the XYZ format is described <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).|
+   *  |charge|int|0|the charge of this molecule|
+   *  |sort_input|boolean|true|If true, sort atoms from origin {0.0, 0.0, 0.0} |
+   *  |sort_origin|boolean|false|sort atoms from origin {0.0, 0.0, 0.0} |
+   *  |n_cluster|int|0|If nonzero, cluster moleucle by n_cluster|
+   *  |attach_hydrogen|boolean|true|use attach_hydrogen_kmeans when clustering|
    *
-   *  <tr><td><tt>file_name</tt><td>string<td>none<td>This gives
-   *    the name of a XYZ file, from which the nuclear coordinates will be
-   *    read (the XYZ format is described
-   *    <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).
    *
-   *  <tr><td><tt>sort_input</tt><td>boolean<td>true<td>If true, atoms
-   *    will be resorted based on their distance from the center of mass.
-   *
-   *  <tr><td><tt>sort_origin</tt><td>boolean<td>false<td>If true, sort atoms
-   *  from origin {0.0, 0.0, 0.0}
-   *
-   *  <tr><td><tt>n_cluster</tt><td>int<td>0<td> If nonzero, cluster moleucle by n_cluster
-   *
-   *  <tr><td><tt>attach_hydrogen</tt><td>bool<td>true<td> use attach_hydrogen_kmeans when clustering
-   *  </table>
    *
    *  example input:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
    *  "molecule": {
    *    "type": "Molecule",
+   *    "charge": 0,
    *    "file_name": "water.xyz",
    *    "sort_input": true,
    *    "n_cluster": 20
    *  }
    *
+   * ~~~~~~~~~~~~~~~~~~~~~
    */
   Molecule(const KeyVal &kv);
 
@@ -84,7 +81,7 @@ class Molecule : public DescribedClass {
    *
    * This constructor changes the point from which the molecule is sorted
    */
-  Molecule(std::istream &file_stream, Vec3D const &point);
+  Molecule(std::istream &file_stream, Vector3d const &point);
 
   /*! \brief Constructor to build Molecule from a vector of clusterables
    *
@@ -98,7 +95,7 @@ class Molecule : public DescribedClass {
 
   /*! \brief A function to sort the molcule's clusters from a given point. 
    */
-  void sort_from_point(Vec3D const &point);
+  void sort_from_point(Vector3d const &point);
 
   /// Function to set the mass of the Molecule
   void set_mass(double mass) { Molecule::mass_ = mass; }
@@ -108,6 +105,9 @@ class Molecule : public DescribedClass {
 
   /// Charge of the Molecule: charge = (# protons - # electrons)
   int64_t charge() const { return charge_; }
+
+  /// total nuclear charge # of protons
+  int64_t  total_charge() const { return  total_charge_;}
 
   /// Mass of the Molecule
   double mass() const { return mass_; }
@@ -130,14 +130,16 @@ class Molecule : public DescribedClass {
     return elements_;
   }
 
-  /*! \brief Returns the difference between the Molecule's charge and the
+  /*! \brief Returns the difference between the Molecule's total_charge and the
    * charge passed into the function.
-   *
-   * \note this interface is a bit weird and will likely change with updates
-   * to KeyVal construction.
    */
-  int64_t occupation(unsigned long total_charge) const {
-    return charge_ - total_charge;
+  int64_t occupation(unsigned long charge) const {
+    return total_charge_ - charge;
+  }
+
+  /// return the occupation number
+  int64_t occupation() const{
+    return total_charge_ - charge_;
   }
 
   /// Computes the number of core electrons in the Molecule.
@@ -161,7 +163,7 @@ class Molecule : public DescribedClass {
    * Necessary to satisfy the AtomBasedClusterable interface so Molecules are
    * also clusterable.
   */
-  Vec3D const &com() const { return com_; }
+  Vector3d const &com() const { return com_; }
 };
 
 /// Make Molecules printable
@@ -169,7 +171,6 @@ std::ostream &operator<<(std::ostream &, Molecule const &);
 
 /*! @} */
 
-}  // namespace molecule
 }  // namespace mpqc
 
 #endif  // MPQC_MOLECULE_MOLECULE_H

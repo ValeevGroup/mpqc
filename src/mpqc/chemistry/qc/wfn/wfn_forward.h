@@ -1,8 +1,9 @@
 namespace mpqc {
 namespace qc {
 
-class Wfn;
-class AOWfn;
+class Wavefunction;
+template <typename Tile, typename Policy>
+class AOWavefunction;
 
 }  // namespace qc
 }  // namespace mpqc

@@ -2,12 +2,12 @@
 // Created by Chong Peng on 9/9/16.
 //
 
-#include "../utility/parallel_print.h"
-#include "../utility/parallel_file.h"
-#include "../utility/cc_utility.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
 #include <madness/world/world.h>
 
 #include <mpqc/chemistry/molecule/molecule.h>
+#include <mpqc/chemistry/molecule/linkage.h>
 #include <mpqc/chemistry/qc/basis/basis_registry.h>
 #include <mpqc/util/keyval/keyval.hpp>
 
@@ -28,9 +28,9 @@ void ao_basis_analysis (basis::Basis& basis, int occ){
 
 
   auto range = basis.create_trange1();
-  std::size_t n = range.elements().second;
+  std::size_t n = range.elements_range().second;
   std::size_t v = n - occ;
-  auto min_max = cc::minmax_blocksize(range);
+  auto min_max = detail::minmax_blocksize(range);
   std::size_t b_min = min_max.first;
   std::size_t b_max = min_max.second;
 
@@ -47,6 +47,7 @@ void ao_basis_analysis (basis::Basis& basis, int occ){
   std::cout << "OOVP: " << bytes_to_gb(occ*occ*n*v*8) << " GB" << std::endl;
   std::cout << "OVVV: " << bytes_to_gb(occ*v*v*v*8) << " GB" << std::endl;
   std::cout << "VVVV: " << bytes_to_gb(v*v*v*v*8) << " GB" << std::endl;
+  std::cout << "VVPP: " << bytes_to_gb(v*v*n*n*8) << " GB" << std::endl;
   std::cout << std::endl;
 
 }
@@ -54,15 +55,15 @@ void ao_basis_analysis (basis::Basis& basis, int occ){
 void df_basis_analysis(basis::Basis& basis, basis::Basis& dfbs, int occ){
 
   auto range = basis.create_trange1();
-  std::size_t n = range.elements().second;
+  std::size_t n = range.elements_range().second;
   std::size_t v = n - occ;
-  auto min_max = cc::minmax_blocksize(range);
+  auto min_max = detail::minmax_blocksize(range);
   std::size_t b_min = min_max.first;
   std::size_t b_max = min_max.second;
 
   auto df_range = dfbs.create_trange1();
-  std::size_t N = df_range.elements().second;
-  auto min_max2 = cc::minmax_blocksize(df_range);
+  std::size_t N = df_range.elements_range().second;
+  auto min_max2 = detail::minmax_blocksize(df_range);
   std::size_t b_min2 = min_max2.first;
   std::size_t b_max2 = min_max2.second;
 
@@ -84,21 +85,21 @@ void df_basis_analysis(basis::Basis& basis, basis::Basis& dfbs, int occ){
 
 void cabs_basis_analysis(basis::Basis& basis, basis::Basis& dfbs, basis::Basis& cabs, int occ){
   auto range = basis.create_trange1();
-  std::size_t n = range.elements().second;
+  std::size_t n = range.elements_range().second;
   std::size_t v = n - occ;
-  auto min_max = cc::minmax_blocksize(range);
+  auto min_max = detail::minmax_blocksize(range);
   std::size_t b_min = min_max.first;
   std::size_t b_max = min_max.second;
 
   auto df_range = dfbs.create_trange1();
-  std::size_t N = df_range.elements().second;
-  auto min_max2 = cc::minmax_blocksize(df_range);
+  std::size_t N = df_range.elements_range().second;
+  auto min_max2 = detail::minmax_blocksize(df_range);
   std::size_t b_min2 = min_max2.first;
   std::size_t b_max2 = min_max2.second;
 
   auto cabs_range = cabs.create_trange1();
-  std::size_t A = cabs_range.elements().second + n;
-  auto min_max3 = cc::minmax_blocksize(cabs_range);
+  std::size_t A = cabs_range.elements_range().second + n;
+  auto min_max3 = detail::minmax_blocksize(cabs_range);
   std::size_t b_min3 = min_max3.first;
   std::size_t b_max3 = min_max3.second;
 
@@ -135,7 +136,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   kv.read_json(ss);
   kv.assign("world", &world);
 
-  auto mol =  kv.keyval("molecule").class_ptr<molecule::Molecule>();
+  auto mol =  kv.keyval("molecule").class_ptr<Molecule>();
 
   std::size_t occ = (mol->occupation(0) - mol->core_electrons())/2 ;
 

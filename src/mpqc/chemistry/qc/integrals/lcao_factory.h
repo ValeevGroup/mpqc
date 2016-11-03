@@ -8,14 +8,42 @@
 #include <string>
 #include <vector>
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../ta_routines/diagonal_array.h"
+#include <tiledarray.h>
+
+
+#include "mpqc/math/linalg/diagonal_array.h"
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
 #include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+#include <mpqc/chemistry/qc/wfn/wfn_world.h>
+
 
 namespace mpqc {
 namespace integrals {
+
+template <typename Tile, typename Policy>
+class LCAOFactory;
+
+
+namespace detail{
+
+
+template <typename Tile, typename Policy>
+std::shared_ptr<LCAOFactory<Tile,Policy>> construct_lcao_factory(const KeyVal& kv){
+  std::shared_ptr<LCAOFactory<Tile,Policy>> lcao_factory;
+  if(kv.exists_class("wfn_world:lcao_factory")){
+    lcao_factory = kv.class_ptr<LCAOFactory<Tile,Policy>>("wfn_world:lcao_factory");
+  }
+  else{
+    lcao_factory = std::make_shared<LCAOFactory<Tile,Policy>>(kv);
+    std::shared_ptr<DescribedClass> ao_int_base = lcao_factory;
+    KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
+    kv_nonconst.keyval("wfn_world").assign("lcao_factory",ao_int_base);
+  }
+  return lcao_factory;
+};
+
+
+} // namespace detail
 
 // TODO MO transform that minimize operations by permutation
 /**
@@ -27,62 +55,34 @@ namespace integrals {
  *
  */
 template <typename Tile, typename Policy>
-class LCAOFactory {
+class LCAOFactory : public DescribedClass{
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using AtomicIntegralType = AtomicIntegral<Tile, Policy>;
 
   /**
-   *  Constructor
-   *  @param atomic_integral  reference to AtomicIntegral class
-   *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry,
-   * which contain AO to MO coefficients
-   *  @param formula_registry  FormulaRegistry used to store computed integral
-   *  @param in rapidjson Document object
+   * Constructor
+   * @param WfnWorld
+   * @param KeyVal
    *
-   *
-   *  Options in Input
-   *  @param AccurateTime, bool, control if use fence in timing, default false
-   */
-  //        LCAOFactory(AtomicIntegral &atomic_integral,
-  //                          const
-  //                          std::shared_ptr<OrbitalSpaceRegistry<TArray>>
-  //                          orbital_space_registry,
-  //                          const FormulaRegistry<TArray> &formula_registry,
-  //                          const rapidjson::Document& in =
-  //                          rapidjson::Document()
-  //                        )
-  //                : world_(atomic_integral.get_world()),
-  //                atomic_integral_(atomic_integral),
-  //                  orbital_space_registry_(orbital_space_registry),
-  //                  mo_formula_registry_(std::move(formula_registry))
-  //        {
-  //            atomic_integral_.set_orbital_space_registry(orbital_space_registry);
-  //            parse_input(in);
-  //        }
-
-  /**
-   *  Constructor
-   *  @param atomic_integral  reference to AtomicIntegral class
-   *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry,
-   * which contain AO to MO coefficients
+   * KeyVal options
+   * @param accurate_time, if do fence when timing, default false
+   * @param keep_partial_transform, if use strength reduction, default false
    *
    */
-  LCAOFactory(AtomicIntegralType& atomic_integral,
-              const std::shared_ptr<OrbitalSpaceRegistry<TArray>>
-                  orbital_space_registry,
-              const rapidjson::Document& in = rapidjson::Document())
-      : world_(atomic_integral.world()),
-        atomic_integral_(atomic_integral),
-        orbital_space_registry_(orbital_space_registry),
-        mo_formula_registry_(),
-        keep_partial_transforms_(false) {
-    atomic_integral_.set_orbital_space_registry(orbital_space_registry);
-    parse_input(in);
+  LCAOFactory(const KeyVal& kv)
+    : world_(*kv.value<madness::World *>("$:world")),
+      atomic_integral_(*detail::construct_atomic_integral<Tile,Policy>(kv)),
+      orbital_space_registry_(std::make_shared<OrbitalSpaceRegistry<TArray>>()),
+      mo_formula_registry_()
+  {
+    accurate_time_ = kv.value<bool>("accurate_time",false);
+    keep_partial_transforms_ = kv.value<bool>("keep_partial_transform",false);
+    atomic_integral_.set_orbital_space_registry(orbital_space_registry_);
   }
 
   /// return reference to madness::World
-  madness::World& get_world() const { return world_; }
+  madness::World& world() const { return world_; }
 
   /// return reference to AtomicIntegral object
   AtomicIntegralType& atomic_integral() const { return atomic_integral_; }
@@ -93,13 +93,13 @@ class LCAOFactory {
     return std::move(atomic_integral_(str));
   };
 
-  /// return shared pointer to OrbitalSpaceRegistry
-  const std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() const {
-    return orbital_space_registry_;
+  /// return OrbitalSpaceRegistry
+  const OrbitalSpaceRegistry<TArray>& orbital_space() const {
+    return *orbital_space_registry_;
   }
 
-  std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space() {
-    return orbital_space_registry_;
+  OrbitalSpaceRegistry<TArray>& orbital_space() {
+    return *orbital_space_registry_;
   }
 
   /// return reference to FormulaRegistry
@@ -167,18 +167,7 @@ class LCAOFactory {
   }
 
  private:
-  /// function to parse input
-  void parse_input(const rapidjson::Document& in) {
-    if (in.IsObject()) {
-      accurate_time_ =
-          in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
-    } else {
-      accurate_time_ = false;
-    }
 
-    utility::print_par(world_, "\nConstructing Molecular Integral Class \n");
-    utility::print_par(world_, "AccurateTime: ", accurate_time_, "\n\n");
-  }
   /// compute integrals that has two dimension
   TArray compute2(const Formula& formula_string);
 
@@ -218,13 +207,13 @@ template <typename Tile, typename Policy>
 typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
     const Formula& formula_string) {
   double time = 0.0;
-  mpqc_time::t_point time0;
-  mpqc_time::t_point time1;
+  mpqc::time_point time0;
+  mpqc::time_point time1;
 
   TArray result;
   // Identity matrix
   if (formula_string.oper().type() == Operator::Type::Identity) {
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     auto left_index1 = formula_string.bra_indices()[0];
     auto right_index1 = formula_string.ket_indices()[0];
@@ -238,17 +227,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
     // create diagonal array
     result = array_ops::create_diagonal_matrix(tmp, 1.0);
 
-    time1 = mpqc_time::now(world_, accurate_time_);
-    time += mpqc_time::duration_in_s(time0, time1);
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
 
-    utility::print_par(world_, "Computed Identity: ");
-    utility::wprint_par(world_, formula_string.string());
-    double size = utility::array_size(result);
+    utility::print_par(world_, "Computed Identity: ",
+                       utility::to_string(formula_string.string()));
+    double size = mpqc::detail::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
-    madness::print_meminfo(
-        world_.rank(),
-        utility::wconcat("LCAOFactory:", formula_string.string()));
     return result;
   }
 
@@ -256,7 +242,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   auto ao_formula = mo_to_ao(formula_string);
   auto ao_integral = atomic_integral_.compute(ao_formula);
 
-  time0 = mpqc_time::now(world_, accurate_time_);
+  time0 = mpqc::now(world_, accurate_time_);
   // convert to MO
   result = ao_integral;
   // get coefficient
@@ -273,15 +259,13 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
     world_.gop.fence();
   }
 
-  time1 = mpqc_time::now(world_, accurate_time_);
-  time += mpqc_time::duration_in_s(time0, time1);
-  utility::print_par(world_, "Transformed LCAO Integral: ");
-  utility::wprint_par(world_, formula_string.string());
-  double size = utility::array_size(result);
+  time1 = mpqc::now(world_, accurate_time_);
+  time += mpqc::duration_in_s(time0, time1);
+  utility::print_par(world_, "Transformed LCAO Integral: ",
+                     utility::to_string(formula_string.string()));
+  double size = mpqc::detail::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
-  madness::print_meminfo(
-      world_.rank(), utility::wconcat("LCAOFactory:", formula_string.string()));
 
   return result;
 }
@@ -290,8 +274,8 @@ template <typename Tile, typename Policy>
 typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     const Formula& formula_string) {
   double time = 0.0;
-  mpqc_time::t_point time0;
-  mpqc_time::t_point time1;
+  mpqc::time_point time0;
+  mpqc::time_point time1;
 
   TArray result;
   if (not keep_partial_transforms()) {  // compute from AO ints
@@ -299,7 +283,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     auto ao_formula = mo_to_ao(formula_string);
     auto ao_integral = atomic_integral_.compute(ao_formula);
 
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     // transform to MO, only convert the right side
     // TODO optimize strength reduction,
@@ -330,7 +314,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
             : (keep_partial_transforms() ? this->compute(reduced_formula)
                                          : this->compute3(reduced_formula));
 
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     const auto reduced_index_position = reduced_index_coord.first;
     const auto reduced_index_rank = reduced_index_coord.second;
@@ -360,16 +344,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
         reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);
   }
 
-  time1 = mpqc_time::now(world_, accurate_time_);
-  time += mpqc_time::duration_in_s(time0, time1);
+  time1 = mpqc::now(world_, accurate_time_);
+  time += mpqc::duration_in_s(time0, time1);
 
-  utility::print_par(world_, "Transformed LCAO Integral: ");
-  utility::wprint_par(world_, formula_string.string());
-  double size = utility::array_size(result);
+  utility::print_par(world_, "Transformed LCAO Integral: ",
+                     utility::to_string(formula_string.string()));
+  double size = mpqc::detail::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
-  madness::print_meminfo(
-      world_.rank(), utility::wconcat("LCAOFactory:", formula_string.string()));
 
   return result;
 };
@@ -378,8 +360,8 @@ template <typename Tile, typename Policy>
 typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
     const Formula& formula_string) {
   double time = 0.0;
-  mpqc_time::t_point time0;
-  mpqc_time::t_point time1;
+  mpqc::time_point time0;
+  mpqc::time_point time1;
   TArray result;
   if (formula_string.oper().has_option(Operator::Option::DensityFitting)) {
     // get df formula
@@ -393,7 +375,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
 
     TArray center = atomic_integral_.compute(df_formulas[1]);
 
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     if (notation == Formula::Notation::Chemical) {
       result("i,j,k,l") = left("q,i,j") * center("q,p") * right("p,k,l");
@@ -401,8 +383,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
       result("i,k,j,l") = left("q,i,j") * center("q,p") * right("p,k,l");
     }
 
-    time1 = mpqc_time::now(world_, accurate_time_);
-    time += mpqc_time::duration_in_s(time0, time1);
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
 
   } else {
     // get AO
@@ -410,7 +392,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
     auto ao_integral = atomic_integral_.compute(ao_formula);
 
     // convert to MO
-    time0 = mpqc_time::now(world_, accurate_time_);
+    time0 = mpqc::now(world_, accurate_time_);
 
     // get coefficient
     auto left_index1 = formula_string.bra_indices()[0];
@@ -440,17 +422,15 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
       world_.gop.fence();
     }
 
-    time1 = mpqc_time::now(world_, accurate_time_);
-    time += mpqc_time::duration_in_s(time0, time1);
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
   }
 
-  utility::print_par(world_, "Transformed LCAO Integral: ");
-  utility::wprint_par(world_, formula_string.string());
-  double size = utility::array_size(result);
+  utility::print_par(world_, "Transformed LCAO Integral: ",
+                     utility::to_string(formula_string.string()));
+  double size = mpqc::detail::array_size(result);
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
-  madness::print_meminfo(
-      world_.rank(), utility::wconcat("LCAOFactory:", formula_string.string()));
 
   return result;
 }
@@ -459,12 +439,15 @@ template <typename Tile, typename Policy>
 Formula LCAOFactory<Tile, Policy>::mo_to_ao(const Formula& formula) {
   std::vector<OrbitalIndex> ao_left_index, ao_right_index;
 
+  int increment = 0;
   auto left_index = formula.bra_indices();
   for (const auto& index : left_index) {
     // find the correspoding ao index
     if (index.is_mo()) {
-      auto ao_index = orbital_space_registry_->retrieve(index).ao_key();
+      auto ao_index = orbital_space_registry_->retrieve(index).ao_key().name();
+      ao_index = ao_index + std::to_wstring(increment);
       ao_left_index.push_back(ao_index);
+      increment++;
     }
     // if already ao, do nothing
     else {
@@ -476,8 +459,10 @@ Formula LCAOFactory<Tile, Policy>::mo_to_ao(const Formula& formula) {
   for (const auto& index : right_index) {
     // find the correspoding ao index
     if (index.is_mo()) {
-      auto ao_index = orbital_space_registry_->retrieve(index).ao_key();
+      auto ao_index = orbital_space_registry_->retrieve(index).ao_key().name();
+      ao_index = ao_index + std::to_wstring(increment);
       ao_right_index.push_back(ao_index);
+      increment++;
     }
     // if already ao, do nothing
     else {
@@ -596,9 +581,9 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
 
   if (iter != mo_formula_registry_.end()) {
     result = *(iter->second);
-    utility::print_par(world_, "Retrieved LCAO Integral: ");
-    utility::wprint_par(world_, formula.string());
-    double size = utility::array_size(result);
+    utility::print_par(world_, "Retrieved LCAO Integral: ",
+                       utility::to_string(formula.string()));
+    double size = mpqc::detail::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
   } else {
@@ -609,29 +594,29 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
     for (auto& permute : permutes) {
       find_permute = mo_formula_registry_.find(permute);
       if (find_permute != mo_formula_registry_.end()) {
-        mpqc_time::t_point time0 = mpqc_time::now(world_, accurate_time_);
+        mpqc::time_point time0 = mpqc::now(world_, accurate_time_);
 
         // permute the array
         result(formula.to_ta_expression()) =
             (*(find_permute->second))(permute.to_ta_expression());
 
-        mpqc_time::t_point time1 = mpqc_time::now(world_, accurate_time_);
-        double time = mpqc_time::duration_in_s(time0, time1);
+        mpqc::time_point time1 = mpqc::now(world_, accurate_time_);
+        double time = mpqc::duration_in_s(time0, time1);
 
-        utility::print_par(world_, "Permuted LCAO Integral: ");
-        utility::wprint_par(world_, formula.string());
-        utility::print_par(world_, " From ");
-        utility::wprint_par(world_, permute.string());
-        double size = utility::array_size(result);
+        utility::print_par(world_, "Permuted LCAO Integral: ",
+                           utility::to_string(formula.string()), " From ",
+                           utility::to_string(permute.string()));
+        double size = mpqc::detail::array_size(result);
         utility::print_par(world_, " Size: ", size, " GB ");
         utility::print_par(world_, " Time: ", time, " s\n");
 
         // store current array and delete old one
         mo_formula_registry_.insert(formula, result);
 
-        //TODO need to optimize storage and permutation, there is no need to store multiple copy of permutations
+        // TODO need to optimize storage and permutation, there is no need to
+        // store multiple copy of permutations
 
-//        mo_formula_registry_.purge_formula(world_,permute);
+        //        mo_formula_registry_.purge_formula(world_,permute);
         return result;
       }
     }
@@ -646,6 +631,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
       result = compute4(formula);
       mo_formula_registry_.insert(formula, result);
     }
+    madness::print_meminfo(world_.rank(),
+                           "LCAOFactory: " + utility::to_string(formula.string()));
     return result;
   }
 }

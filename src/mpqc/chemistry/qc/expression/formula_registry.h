@@ -5,8 +5,8 @@
 #ifndef MPQC_FORMULA_MAP_H
 #define MPQC_FORMULA_MAP_H
 
-#include "../../../../../utility/parallel_print.h"
-#include "../../../../../utility/print_size_info.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
 #include <map>
 #include <mpqc/chemistry/qc/expression/formula.h>
 
@@ -148,7 +148,7 @@ class FormulaRegistry : public Registry<Formula, Value> {
   void print_formula(madness::World& world) const {
     if (world.rank() == 0) {
       for (const auto& item : this->registry_) {
-        utility::wprint_size_info(item.second, item.first.string());
+        mpqc::detail::wprint_size_info(item.second, item.first.string());
       }
       std::cout << std::endl;
     }

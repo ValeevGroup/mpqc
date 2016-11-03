@@ -44,7 +44,7 @@ QVlShellInfo::QVlShellInfo(ShellVec const &a_shells, ShellVec const &cd_shells,
         : a_extents_(a_shells.size(), 0.0),
           cd_extents_(cd_shells.size(), cd_shells.size()),
           a_centers_(a_shells.size()),
-          cd_centers_(cd_shells.size(), std::vector<Vec3D>(cd_shells.size())),
+          cd_centers_(cd_shells.size(), std::vector<Vector3d>(cd_shells.size())),
           a_factor_(a_shells.size(), 0.0),
           a_am_(a_shells.size(), 0.0),
           one_over_gamma_ab_pow_(cd_shells.size(), cd_shells.size()),
@@ -91,20 +91,20 @@ double QVlShellInfo::a_shell_min_exp(Shell const &sh) {
 }
 
 
-Vec3D
+Vector3d
 QVlShellInfo::shell_weighted_center(Shell const &sh0, Shell const &sh1) const {
 
-    Vec3D center = {0.0, 0.0, 0.0};
+    Vector3d center = {0.0, 0.0, 0.0};
     double sum_of_coeff_products = 0.0;
 
     auto const &exp0 = sh0.alpha;
     auto const &exp1 = sh1.alpha;
 
     auto const &O0 = sh0.O;
-    Vec3D center0 = {O0[0], O0[1], O0[2]};
+    Vector3d center0 = {O0[0], O0[1], O0[2]};
 
     auto const &O1 = sh1.O;
-    Vec3D center1 = {O1[0], O1[1], O1[2]};
+    Vector3d center1 = {O1[0], O1[1], O1[2]};
 
     const auto nprim0 = sh0.nprim();
     const auto nprim1 = sh1.nprim();
@@ -132,7 +132,7 @@ QVlShellInfo::shell_weighted_center(Shell const &sh0, Shell const &sh1) const {
 }
 
 double QVlShellInfo::pair_extent(Shell const &sh0, Shell const &sh1,
-                                 Vec3D const &r_01) {
+                                 Vector3d const &r_01) {
 
     double max_extent = 0.0;
 
@@ -140,10 +140,10 @@ double QVlShellInfo::pair_extent(Shell const &sh0, Shell const &sh1,
     auto const &exp1 = sh1.alpha;
 
     auto const &O0 = sh0.O;
-    Vec3D center0 = {O0[0], O0[1], O0[2]};
+    Vector3d center0 = {O0[0], O0[1], O0[2]};
 
     auto const &O1 = sh1.O;
-    Vec3D center1 = {O1[0], O1[1], O1[2]};
+    Vector3d center1 = {O1[0], O1[1], O1[2]};
 
     const auto nprim0 = sh0.nprim();
     const auto nprim1 = sh1.nprim();
@@ -158,7 +158,7 @@ double QVlShellInfo::pair_extent(Shell const &sh0, Shell const &sh1,
             const auto exp_sum = i_exp + j_exp;
             const auto inv_sum = 1 / exp_sum;
 
-            Vec3D r_ij = inv_sum * (i_scaled_center + j_exp * center1);
+            Vector3d r_ij = inv_sum * (i_scaled_center + j_exp * center1);
             const auto diff = (r_ij - r_01).norm();
             const auto ext_ij = std::sqrt(2 * inv_sum) * erfinv_thr_ + diff;
 

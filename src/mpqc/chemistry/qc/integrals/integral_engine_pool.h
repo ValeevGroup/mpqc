@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_INTEGRALS_INTEGRALENGINEPOOL_H
 #define MPQC_INTEGRALS_INTEGRALENGINEPOOL_H
 //
@@ -10,7 +10,7 @@
 // Based on file integral_engine_pool.hpp from mpqc
 //
 
-#include "../../../../../include/tbb.h"
+#include <tbb/enumerable_thread_specific.h>
 
 #include <libint2/engine.h>
 

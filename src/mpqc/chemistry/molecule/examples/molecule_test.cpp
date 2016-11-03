@@ -1,20 +1,20 @@
+#include <chrono>
 #include <iostream>
 #include <vector>
 
 #include <mpqc/chemistry/molecule/atom.h>
-#include "../../../../../include/tbb.h"
 #include <mpqc/chemistry/molecule/molecule.h>
 
 using namespace mpqc;
 using namespace mpqc::molecule;
 
-molecule::Molecule read_xyz(std::ifstream &f) {
+Molecule read_xyz(std::ifstream &f) {
     // Get number of atoms.
     unsigned long natoms = 0;
     f >> natoms;
 
     std::string line;
-    std::vector<molecule::Clusterable> clusterables;
+    std::vector<Clusterable> clusterables;
     while (std::getline(f, line)) {
         if (!line.empty()) {
             std::stringstream ss(line);
@@ -33,7 +33,7 @@ molecule::Molecule read_xyz(std::ifstream &f) {
             }
         }
     }
-    return molecule::Molecule{std::move(clusterables)};
+    return Molecule{std::move(clusterables)};
 }
 
 int main(int argc, char **argv) {
@@ -52,10 +52,12 @@ int main(int argc, char **argv) {
     molecule_file.close();
 
     // Making clusters
-    tbb::tick_count mc0 = tbb::tick_count::now();
+    auto mc0 = std::chrono::high_resolution_clock::now();
     auto clusters = mol.attach_H_and_kmeans(nclusters);
-    tbb::tick_count mc1 = tbb::tick_count::now();
-    double mc_alloc = (mc1 - mc0).seconds();
+    auto mc1 = std::chrono::high_resolution_clock::now();
+    double mc_alloc =
+        std::chrono::duration_cast<std::chrono::duration<double>>(mc1 - mc0)
+            .count();
     std::cout << "cluster allocing time = " << mc_alloc << std::endl;
 
     auto i = 0;
@@ -64,21 +66,6 @@ int main(int argc, char **argv) {
         std::cout << "Cluster " << i << " has " << atoms.size() << " atoms\n";
         ++i;
     }
-            
-
-    /*
-    using iter_t = decltype(clusters.begin());
-    double sum = tbb::parallel_reduce(
-        tbb::blocked_range<iter_t>(clusters.begin(), clusters.end()), 0.0,
-        [](const tbb::blocked_range<iter_t> & r, double d)->double {
-            return std::accumulate(r.begin(), r.end(), d,
-                                   [](double d, const Clusterable
-                                      &b) { return d + b.center().norm(); });
-        },
-        std::plus<double>());
-
-    std::cout << "Sum of distances = " << sum << std::endl;
-    */
 
     return 0;
 }

@@ -1,11 +1,11 @@
-#pragma once
+
 #ifndef TCC_PURIFICATION_PURIFICATIONDEVEL_H
 #define TCC_PURIFICATION_PURIFICATIONDEVEL_H
 
-#include "../../../../../../include/eigen.h"
-#include "../../../../../../include/tiledarray.h"
-#include "../../../../../../utility/parallel_print.h"
-#include "../../../../../../utility/time.h"
+#include <tiledarray.h>
+
+#include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/util/misc/time.h"
 
 #include "eigen_value_estimation.h"
 #include "diagonal_array.h"
@@ -56,7 +56,7 @@ class OrthTraceResettingPurifier {
             ++iter;
         }
         if (iter >= 100) {
-            if (D.get_world().rank() == 0) {
+            if (D.world().rank() == 0) {
                 std::cout << "Purification took " << iter
                           << " iterations with error " << error
                           << " this is likely unconverged." << std::endl;

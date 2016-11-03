@@ -2,10 +2,11 @@
 #include <sstream>
 
 #include <mpqc/util/keyval/keyval.hpp>
-#include "../utility/parallel_file.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
 #include <madness/world/world.h>
 #include "catch.hpp"
 #include <mpqc/chemistry/qc/basis/basis.h>
+#include <mpqc/chemistry/molecule/linkage.h>
 
 using std::cout;
 using std::endl;
@@ -251,6 +252,10 @@ TEST_CASE("KeyVal", "[keyval]") {
     REQUIRE(d1->value() == kv.value<double>("b"));
 
     REQUIRE(kv.exists("c")==false);
+
+    kv.keyval("mpqc:deriv").assign("d",0);
+    REQUIRE(kv.keyval("deriv0").exists("d"));
+    REQUIRE(kv.value<int>("deriv0:d")==0);
   }
 
 

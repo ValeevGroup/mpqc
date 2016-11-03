@@ -107,6 +107,10 @@ class Formula {
     oper_.set_type(oper_type);
   }
 
+  /// set Option in Operator
+  void set_operator_option(const std::vector<Operator::Option> & option){
+    oper_.set_option(option);
+  }
   /// Operator accessor
   const Operator &oper() const { return oper_; }
 

@@ -5,7 +5,6 @@
 
 
 namespace mpqc {
-namespace molecule {
 
 std::vector<libint2::Atom> to_libint_atom(std::vector<Atom> const &atoms){
     std::vector<libint2::Atom> l_atoms; 
@@ -26,5 +25,4 @@ std::vector<libint2::Atom> to_libint_atom(std::vector<Atom> const &atoms){
     return l_atoms; 
 }
 
-} // namespace molecule
 } // namespace mpqc

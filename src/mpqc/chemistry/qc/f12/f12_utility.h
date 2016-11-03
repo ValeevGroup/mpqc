@@ -5,13 +5,14 @@
 #ifndef MPQC_UTILITY_H
 #define MPQC_UTILITY_H
 
-#include "../../../../../include/eigen.h"
-#include "../../../../../include/tiledarray.h"
+#include <tiledarray.h>
 #include <TiledArray/error.h>
 #include <TiledArray/sparse_shape.h>
 #include <TiledArray/tiled_range1.h>
 #include <string>
 #include <vector>
+
+#include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
 namespace f12 {
@@ -71,9 +72,9 @@ TiledArray::SparseShape<float>
 make_ijij_ijji_shape(const TiledArray::TiledRange& trange){
 
 // number of occ tiles
-auto n_occ =  trange.data()[0].tiles().second;
+auto n_occ =  trange.data()[0].tiles_range().second;
 
-TiledArray::Tensor<float> tile_norms(trange.tiles(), 0.0);
+TiledArray::Tensor<float> tile_norms(trange.tiles_range(), 0.0);
 
 auto max = std::numeric_limits<float>::max();
 

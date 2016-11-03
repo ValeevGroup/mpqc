@@ -1,19 +1,20 @@
-#pragma once
+
 #ifndef MPQC_SCF_CADFBUILDERPRINTONLY_H
 #define MPQC_SCF_CADFBUILDERPRINTONLY_H
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../utility/time.h"
-#include "../../../../../utility/array_info.h"
-#include "../../../../../utility/vector_functions.h"
+#include <tiledarray.h>
 
-#include "../../../../../tensor/decomposed_tensor.h"
-#include "../../../../../tensor/mpqc_tile.h"
-#include "../../../../../tensor/tensor_transforms.h"
 
-#include "../../../../../ta_routines/array_to_eigen.h"
-#include "../../../../../ta_routines/minimize_storage.h"
+#include "mpqc/util/misc/time.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/chemistry/qc/scf/util.h"
+
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/tile.h"
+#include "mpqc/math/tensor/clr/tensor_transforms.h"
+
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
@@ -21,7 +22,7 @@
 #include <mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h>
 #include <mpqc/chemistry/qc/scf/cadf_helper_functions.h>
 
-#include <mpqc/util/array_info/tensor_store.h>
+#include <mpqc/math/external/tiledarray/tensor_store.h>
 
 #include <vector>
 #include <iostream>
@@ -49,8 +50,8 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 
  public:
   PrintOnlyCADFFockBuilder(
-      molecule::Molecule const &clustered_mol,
-      molecule::Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol,
+      Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints,
       bool use_forced_shape, double force_threshold,
@@ -63,8 +64,8 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
   }
 
   PrintOnlyCADFFockBuilder(
-      molecule::Molecule const &clustered_mol,
-      molecule::Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol,
+      Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints)
       : FockBuilder() {
@@ -77,25 +78,24 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
     // Form L^{-1} for M
     auto M_eig = array_ops::array_to_eigen(M_);
     using MatType = decltype(M_eig);
-    MatType L_inv_eig = MatType(Eig::LLT<MatType>(M_eig).matrixL()).inverse();
+    MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M_.trange().data()[0];  // Assumes symmetric blocking
     Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(
-        M_.get_world(), L_inv_eig, trange1_M, trange1_M);
+        M_.world(), L_inv_eig, trange1_M, trange1_M);
 
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
 
-    basis::Basis obs = ao_ints.orbital_basis_registry()->retrieve(L"κ");
-    basis::Basis dfbs = ao_ints.orbital_basis_registry()->retrieve(L"Κ");
+    basis::Basis obs = ao_ints.orbital_basis_registry().retrieve(L"κ");
+    basis::Basis dfbs = ao_ints.orbital_basis_registry().retrieve(L"Κ");
 
-    auto ref_array = utility::make_array_of_refs(dfbs, dfbs);
     auto eng_pool = integrals::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, dfbs),
         libint2::BraKet::xs_xs);
 
     ArrayType C_df_temp = scf::compute_atomic_fitting_coeffs(
-        M_.get_world(), clustered_mol, df_clustered_mol, obs_set, dfbs_set,
+        M_.world(), clustered_mol, df_clustered_mol, obs_set, dfbs_set,
         eng_pool, obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
 
     auto by_cluster_trange =
@@ -111,8 +111,12 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 
   ~PrintOnlyCADFFockBuilder() = default;
 
+  void register_fock(const TA::TSpArrayD &fock,
+                     FormulaRegistry<TA::TSpArrayD> &registry) override {
+    registry.insert(Formula(L"(κ|F|λ)[df]"), fock);
+  }
+
   ArrayType operator()(ArrayType const &D, ArrayType const &C) override {
-    auto &world = D.get_world();
     ++iteration;
 
     ArrayType E_mo;  // Temp array shared by J and K
@@ -130,7 +134,6 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 
  private:
   ArrayType compute_J(ArrayType const &C, ArrayType const &E_mo) {
-    auto &world = C.get_world();
     ArrayType J;
     J("mu, nu") = E_("X, mu, nu") *
                   (Mchol_inv_("Z, X") *
@@ -140,7 +143,6 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
   }
 
   array_type compute_K(ArrayType const &C_in, ArrayType const &E_mo) {
-    auto &world = M_.get_world();
     ArrayType L, K;        // Matrices
     ArrayType C_mo, F_df;  // Tensors
 
@@ -149,7 +151,6 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
     C("mu, i") = C_in("mu, i");
 
     if (lcao_chop_threshold_ != 0.0) {
-      auto chop0 = mpqc_time::fenced_now(world);
       TA::foreach_inplace(C, [&](TA::Tensor<double> &t) {
         const auto norm = t.norm();
         if (norm > lcao_chop_threshold_) {
@@ -208,7 +209,7 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
         return t;
       };
 
-      forced_shape = C_mo.get_shape().transform(cadf_df_k_shape);
+      forced_shape = C_mo.shape().transform(cadf_df_k_shape);
     }
 
     // Construct F_df

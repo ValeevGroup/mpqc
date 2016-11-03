@@ -89,47 +89,62 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 }
 }
 
-AtomicIntegralBase::AtomicIntegralBase(
-    madness::World &world, const std::shared_ptr<molecule::Molecule> &mol,
-    const std::shared_ptr<basis::OrbitalBasisRegistry> &obs,
-    const std::vector<std::pair<double, double>> &gtg_params,
-    const rapidjson::Document &in)
-    : world_(world),
-      orbital_basis_registry_(obs),
-      mol_(mol),
-      gtg_params_(gtg_params) {
-  utility::print_par(world, "\nConstructing Atomic Integral Class \n");
-  if (in.IsObject()) {
-    screen_ = in.HasMember("Screen") ? in["Screen"].GetString() : "";
-    screen_threshold_ =
-        in.HasMember("Threshold") ? in["Threshold"].GetDouble() : 1.0e-10;
-    precision_ = in.HasMember("Precision")
-                     ? in["Precision"].GetDouble()
-                     : std::numeric_limits<double>::epsilon();
-  } else {
-    screen_ = "";
-    screen_threshold_ = 1.0e-10;
-    precision_ = std::numeric_limits<double>::epsilon();
-  }
-
-  utility::print_par(world, "Screen: ", screen_, "\n");
-  if (!screen_.empty()) {
-    utility::print_par(world, "Threshold: ", screen_threshold_, "\n");
-  }
-  utility::print_par(world, "Precision: ", precision_, "\n");
-  utility::print_par(world, "\n");
-
-  integrals::detail::integral_engine_precision = precision_;
-}
-
 AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
-    : world_(*kv.value<madness::World*>("world")),
+    : world_(*kv.value<madness::World*>("$:world")),
       orbital_basis_registry_(),
       mol_(),
       gtg_params_() {
 
-  orbital_basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
-  mol_ = kv.keyval("molecule").class_ptr<molecule::Molecule>();
+  std::string prefix = "";
+  if(kv.exists("wfn_wolrd") || kv.exists_class("wfn_world")){
+    prefix = "wfn_world:";
+  }
+  /// Basis will come from wfn_world
+  //  orbital_basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
+  mol_ = kv.keyval(prefix + "molecule").class_ptr<Molecule>();
+
+  // if have auxilary basis
+  if(kv.exists( prefix + "aux_basis")){
+    int n_function = kv.value<int>(prefix + "corr_functions",6);
+    double corr_param = kv.value<double>(prefix + "corr_param",0);
+    f12::GTGParams gtg_params;
+    if(corr_param != 0){
+      gtg_params = f12::GTGParams(corr_param, n_function);
+    } else{
+      if(kv.exists(prefix + "vir_basis")){
+        std::string basis_name = kv.value<std::string>(prefix + "vir_basis:name");
+        gtg_params = f12::GTGParams(basis_name, n_function);
+      }else{
+        std::string basis_name = kv.value<std::string>(prefix + "basis:name");
+        gtg_params = f12::GTGParams(basis_name, n_function);
+      }
+    }
+    gtg_params_ = gtg_params.compute();
+    if (world().rank() == 0) {
+      std::cout << "F12 Correlation Factor: " << gtg_params.exponent
+                << std::endl;
+      std::cout << "NFunction: " << gtg_params.n_fit << std::endl;
+      std::cout << "F12 Exponent Coefficient" << std::endl;
+      for (auto &pair : gtg_params_) {
+        std::cout << pair.first << " " << pair.second << std::endl;
+      }
+      std::cout << std::endl;
+    }
+  }
+  // other initialization
+  screen_ = kv.value<std::string>(prefix + "screen","");
+  screen_threshold_ = kv.value<double>(prefix + "threshold",1.0e-10);
+  auto default_precision = std::numeric_limits<double>::epsilon();
+  precision_ = kv.value<double>(prefix + "precision",default_precision);
+  integrals::detail::integral_engine_precision = precision_;
+
+  utility::print_par(world_, "Screen: ", screen_, "\n");
+  if (!screen_.empty()) {
+    utility::print_par(world_, "Threshold: ", screen_threshold_, "\n");
+  }
+  utility::print_par(world_, "Precision: ", precision_, "\n");
+  utility::print_par(world_, "\n");
+
 
 }
 
@@ -386,28 +401,28 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula,
     if (formula.oper().type() == Operator::Type::J) {
       result.bra_indices().push_back(formula.bra_indices()[0]);
       result.bra_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs);
-      result.ket_indices().push_back(obs);
+      result.ket_indices().push_back(obs+L"4");
+      result.ket_indices().push_back(obs+L"5");
 
     } else {
       result.bra_indices().push_back(formula.bra_indices()[0]);
-      result.bra_indices().push_back(obs);
+      result.bra_indices().push_back(obs+L"4");
       result.ket_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs);
+      result.ket_indices().push_back(obs+L"5");
     }
   } else {
     result.set_notation(Formula::Notation::Physical);
     if (formula.oper().type() == Operator::Type::K) {
       result.bra_indices().push_back(formula.bra_indices()[0]);
       result.bra_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs);
-      result.ket_indices().push_back(obs);
+      result.ket_indices().push_back(obs+L"4");
+      result.ket_indices().push_back(obs+L"5");
 
     } else {
       result.bra_indices().push_back(formula.bra_indices()[0]);
-      result.bra_indices().push_back(obs);
+      result.bra_indices().push_back(obs+L"4");
       result.ket_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs);
+      result.ket_indices().push_back(obs+L"5");
     }
   }
   return result;
@@ -420,15 +435,15 @@ std::array<Formula, 3> AtomicIntegralBase::get_jk_df_formula(
   if (formula.oper().type() == Operator::Type::J) {
     std::wstring left = L"( Κ |G| " + formula.bra_indices()[0].name() + L" " +
                         formula.ket_indices()[0].name() + L" )";
-    std::wstring right = L"( Κ |G| " + obs + L" " + obs + L" )";
+    std::wstring right = L"( Κ |G| " + obs + L"4 " + obs + L"5 )";
 
     result[0] = Formula(left);
     result[2] = Formula(right);
   } else {
     std::wstring left =
-        L"( Κ |G| " + formula.bra_indices()[0].name() + L" " + obs + L" )";
+        L"( Κ |G| " + formula.bra_indices()[0].name() + L" " + obs + L"4 )";
     std::wstring right =
-        L"( Κ |G| " + formula.ket_indices()[0].name() + L" " + obs + L" )";
+        L"( Κ |G| " + formula.ket_indices()[0].name() + L" " + obs + L"5 )";
 
     result[0] = Formula(left);
     result[2] = Formula(right);

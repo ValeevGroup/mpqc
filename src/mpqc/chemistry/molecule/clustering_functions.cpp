@@ -2,11 +2,10 @@
 #include <mpqc/chemistry/molecule/common.h>
 #include <mpqc/chemistry/molecule/molecule.h>
 
-#include "../../../../clustering/kmeans.h"
+#include <mpqc/math/clustering/kmeans.h>
 
 
 namespace mpqc {
-namespace molecule {
 
 namespace {
 using ABCbl = AtomBasedClusterable;
@@ -98,5 +97,4 @@ Molecule kmeans(ABCbls const &clusterables, int64_t nclusters) {
                 .cluster<AtomBasedCluster>(clusterables, nclusters)));
 }
 
-} // namespace molecule
 } // namespace mpqc

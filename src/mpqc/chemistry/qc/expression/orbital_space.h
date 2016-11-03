@@ -47,12 +47,12 @@ class OrbitalSpace {
 
   /// @return rank of this space
   size_t rank() const {
-    return coefs_.trange().element_range().extent_data()[1];
+    return coefs_.trange().elements_range().extent_data()[1];
   }
 
   /// @return rank of the AO space
   size_t ao_rank() const {
-    return coefs_.trange().element_range().extent_data()[0];
+    return coefs_.trange().elements_range().extent_data()[0];
   }
 
   /// interface to TA::Array () function

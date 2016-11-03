@@ -10,11 +10,12 @@ massive concurrency from the ground up and to use novel reduced-scaling algorith
 These two unique traits of MPQC version 4 (or MPQC4) permit accurate electronic structure simulation
 for molecules of unprecedented size.
 
-MPQC provides basic electronic structure methods: Hartree-Fock, second-order Moller-Plesset theory,
+Currently MPQC provides only basic electronic structure methods: Hartree-Fock, second-order Moller-Plesset theory,
 and some advanced electron correlation methods (in particular, explicitly correlated coupled-cluster
 methods).
 
-MPQC is distributed under the terms of the General Public License (GPL), version 3.
+MPQC is a <em>research</em> platform developed with very limited resources. It is provided
+without warranty or support. MPQC is distributed under the terms of the General Public License (GPL), version 3.
 
 <ul>
   <li> \ref overview

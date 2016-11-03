@@ -5,10 +5,10 @@
 #ifndef MPQC_CABS_SINGLES_H
 #define MPQC_CABS_SINGLES_H
 
-#include "../../../../../include/eigen.h"
-#include "../../../../../include/tiledarray.h"
-#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
+#include <tiledarray.h>
 #include <TiledArray/algebra/conjgrad.h>
+
+#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 
 namespace mpqc{
 namespace f12{
@@ -28,12 +28,14 @@ public:
 
   /**
    * @param lcao_factory LCAOFactory Object
+   */
+  CABSSingles(LCAOFactoryType& lcao_factory) : lcao_factory_(lcao_factory){}
+
+  /**
    * @param vir   if include F_ia in singles, default is true
    * @param d   bool, F12 D Approach, default is false
    */
-  CABSSingles(LCAOFactoryType& lcao_factory, bool vir=true, bool d=false) : lcao_factory_(lcao_factory), couple_virtual_(vir), d_approach_(d){}
-
-  real_t compute();
+  real_t compute(bool df, bool d, bool couple_virtual);
 
 private:
 
@@ -70,19 +72,15 @@ private:
 private:
 
   LCAOFactoryType& lcao_factory_;
-  bool couple_virtual_;
-  bool d_approach_;
 };
 
 template <typename Tile>
 typename CABSSingles<Tile>::real_t
-CABSSingles<Tile>::compute() {
-
-  bool df = lcao_factory_.atomic_integral().orbital_basis_registry()->have(OrbitalIndex(L"Κ"));
+CABSSingles<Tile>::compute(bool df, bool d_approach, bool couple_virtual) {
 
   TArray F_AB, F_MN;
   if(df){
-    if(d_approach_){
+    if(d_approach){
 
       F_AB = lcao_factory_.compute(L"<A'|hJ|B'>[df]");
 
@@ -94,7 +92,7 @@ CABSSingles<Tile>::compute() {
 
   }
   else{
-    if(d_approach_){
+    if(d_approach){
 
       F_AB = lcao_factory_.compute(L"<A'|hJ|B'>");
 
@@ -108,7 +106,7 @@ CABSSingles<Tile>::compute() {
 
   TArray F_MA;
   /// include contribution of F_m^a into F_m^A'
-  if(couple_virtual_){
+  if(couple_virtual){
     if(df){
       F_MA = lcao_factory_.compute(L"<m|F|A'>[df]");
     }
@@ -125,19 +123,19 @@ CABSSingles<Tile>::compute() {
     else{
       F_Ma = lcao_factory_.compute(L"<m|F|a'>");
     }
-    MatrixD F_Ma_eigen = array_ops::array_to_eigen(F_Ma);
+    RowMatrixXd F_Ma_eigen = array_ops::array_to_eigen(F_Ma);
     auto n_occ = F_Ma_eigen.rows();
     auto n_cabs = F_Ma_eigen.cols();
-    auto n_allvir = F_AB.trange().elements().extent()[0];
+    auto n_allvir = F_AB.trange().elements_range().extent()[0];
     auto n_vir = n_allvir - n_cabs;
 
-    MatrixD F_MA_eigen = MatrixD::Zero(n_occ, n_allvir);
+    RowMatrixXd F_MA_eigen = RowMatrixXd::Zero(n_occ, n_allvir);
     F_MA_eigen.block(0,n_vir,n_occ,n_cabs) << F_Ma_eigen;
 
     auto tr_m = F_Ma.trange().data()[0];
     auto tr_A = F_AB.trange().data()[0];
 
-    F_MA = array_ops::eigen_to_array<Tile>(F_Ma.get_world(), F_MA_eigen,tr_m, tr_A);
+    F_MA = array_ops::eigen_to_array<Tile>(F_Ma.world(), F_MA_eigen,tr_m, tr_A);
 //    F_MA.truncate();
 
   }
@@ -162,7 +160,7 @@ CABSSingles<Tile>::compute() {
     E_S = 2*TA::dot(t("i,A"), F_MA("i,A"));
   }
   else{
-    utility::print_par(t.get_world(),"\n Warning!  CABSSingles Not Converged!!! \n");
+    utility::print_par(t.world(),"\n Warning!  CABSSingles Not Converged!!! \n");
   }
   return E_S;
 
@@ -174,7 +172,7 @@ TA::DistArray <Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner
          const TA::DistArray <Tile, TA::SparsePolicy> &F_AB,
          const TA::DistArray <Tile, TA::SparsePolicy> &F_MN)
 {
-  auto& world = F_AB.get_world();
+  auto& world = F_AB.world();
 
   Eigen::MatrixXd F_AB_eigen = array_ops::array_to_eigen(F_AB);
   Eigen::MatrixXd F_MN_eigen = array_ops::array_to_eigen(F_MN);
@@ -203,18 +201,18 @@ TA::DistArray <Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner
 
     const auto tile_volume = result_tile.range().volume();
     const auto tile_norm = result_tile.norm();
-    bool save_norm = tile_norm >= tile_volume * SpShapeF::threshold();
+    bool save_norm = tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
     if (save_norm) {
       *out_tile = result_tile;
       (*norms)[ord] = tile_norm;
     }
   };
 
-  const auto tvolume = trange.tiles().volume();
+  const auto tvolume = trange.tiles_range().volume();
   std::vector<Tile> tiles(tvolume);
-  TA::TensorF tile_norms(trange.tiles(), 0.0);
+  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
-  auto pmap = SpPolicy::default_pmap(world, tvolume);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
   for (auto const ord : *pmap) {
     world.taskq.add(make_tile, ord, trange.make_tile_range(ord), &tiles[ord], &tile_norms);
   }

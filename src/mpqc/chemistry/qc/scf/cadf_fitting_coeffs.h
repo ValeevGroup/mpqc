@@ -1,18 +1,18 @@
-#pragma once
+
 #ifndef MPQC_SCF_CADFFITTINGCOEFFS_H
 #define MPQC_SCF_CADFFITTINGCOEFFS_H
 
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../common/namespaces.h"
+#include <tiledarray.h>
+
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>
-#include "../../../../../common/typedefs.h"
+
 
 #include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/qc/basis/basis.h>
 #include <mpqc/chemistry/qc/basis/basis_set.h>
 
-#include "../../../../../utility/make_array.h"
+#include "mpqc/util/meta/make_array.h"
 
 #include <unordered_map>
 
@@ -22,16 +22,16 @@ namespace scf {
 namespace cadf {
 
 inline basis::Basis by_atom_basis(
-    molecule::Molecule const &mol, basis::BasisSet const &bs,
+    Molecule const &mol, basis::BasisSet const &bs,
     std::unordered_map<std::size_t, std::size_t> &atom_to_cluster_map) {
-  std::vector<molecule::AtomBasedClusterable> atoms;
+  std::vector<AtomBasedClusterable> atoms;
   std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
 
   auto cluster_ind = 0;
   auto atom_ind = 0;
   for (auto const &cluster : mol.clusterables()) {
     for (auto atom : cluster.atoms()) {
-      atoms.push_back(std::move(atom));
+      atoms.push_back(AtomBasedClusterable(std::move(atom)));
       atom_to_cluster_map[atom_ind] = cluster_ind;
       ++atom_ind;
     }
@@ -40,7 +40,7 @@ inline basis::Basis by_atom_basis(
 
   auto sort_atoms_in_mol = false;
   return basis::Basis(bs.get_cluster_shells(
-      molecule::Molecule(std::move(atoms), sort_atoms_in_mol)));
+      Molecule(std::move(atoms), sort_atoms_in_mol)));
 }
 
 inline TA::TiledRange cadf_trange(basis::Basis const &obs_by_atom,
@@ -50,13 +50,13 @@ inline TA::TiledRange cadf_trange(basis::Basis const &obs_by_atom,
   trange1s.emplace_back(obs_by_atom.create_trange1());
   trange1s.emplace_back(obs_by_atom.create_trange1());
 
-  return TRange(trange1s.begin(), trange1s.end());
+  return TA::TiledRange(trange1s.begin(), trange1s.end());
 }
 
 inline TA::SparseShape<float> cadf_shape(madness::World &world,
                                          basis::Basis const &obs,
                                          TA::TiledRange const &trange) {
-  auto &tiles = trange.tiles();
+  auto &tiles = trange.tiles_range();
   TA::TensorD norms(tiles, 0.0);
 
   for (auto i = 0ul; i < obs.nclusters(); ++i) {
@@ -77,14 +77,14 @@ inline TA::SparseShape<float> cadf_shape(madness::World &world,
 
 template <typename Integral>
 void create_tiles_prime(madness::World &world,
-                        TA::DistArray<TA::TensorD, SpPolicy> &C_df,
+                        TA::DistArray<TA::TensorD, TA::SparsePolicy> &C_df,
                         Integral &eri3,
                         TA::DistArray<TA::TensorD, TA::DensePolicy> const &M,
                         unsigned long natoms) {
   auto task = [&](unsigned long i, unsigned long j) {
     auto &trange = C_df.trange();
-    auto &tiles = trange.tiles();
-    auto &M_tiles = M.trange().tiles();
+    auto &tiles = trange.tiles_range();
+    auto &M_tiles = M.trange().tiles_range();
 
     if (i == j) {
       auto eri3_idx = std::array<unsigned long, 3>{{i, i, i}};
@@ -93,18 +93,18 @@ void create_tiles_prime(madness::World &world,
       if (C_df.is_local(eri3_ord)) {
         TA::TensorD eri3_tile = eri3.array().find(eri3_ord).get();
         auto eri3_extent = eri3_tile.range().extent();
-        MatrixD eri3_eig = TA::eigen_map(eri3_tile, eri3_extent[0],
+        RowMatrixXd eri3_eig = TA::eigen_map(eri3_tile, eri3_extent[0],
                                          eri3_extent[1] * eri3_extent[2]);
 
         auto M_idx = std::array<unsigned long, 2>{{i, i}};
         auto M_ord = M_tiles.ordinal(M_idx);
         auto M_tile = M.find(M_ord).get();
         auto M_extent = M_tile.range().extent();
-        MatrixD M_eig = TA::eigen_map(M_tile, M_extent[0], M_extent[1]);
+        RowMatrixXd M_eig = TA::eigen_map(M_tile, M_extent[0], M_extent[1]);
 
         TA::TensorD out_tile(eri3_tile.range());
 
-        MatrixD out_eig = M_eig.inverse() * eri3_eig;
+        RowMatrixXd out_eig = M_eig.inverse() * eri3_eig;
         TA::eigen_map(out_tile, eri3_extent[0],
                       eri3_extent[1] * eri3_extent[2]) = out_eig;
 
@@ -125,11 +125,11 @@ void create_tiles_prime(madness::World &world,
         auto eri3_extent_1 = eri3_range_1.extent();
 
         TA::TensorD eri3_tile_0 = eri3.array().find(eri3_ord_0).get();
-        MatrixD eri3_eig_0 = TA::eigen_map(eri3_tile_0, eri3_extent_0[0],
+        RowMatrixXd eri3_eig_0 = TA::eigen_map(eri3_tile_0, eri3_extent_0[0],
                                            eri3_extent_0[1] * eri3_extent_0[2]);
 
         TA::TensorD eri3_tile_1 = eri3.array().find(eri3_ord_1).get();
-        MatrixD eri3_eig_1 = TA::eigen_map(eri3_tile_1, eri3_extent_1[0],
+        RowMatrixXd eri3_eig_1 = TA::eigen_map(eri3_tile_1, eri3_extent_1[0],
                                            eri3_extent_1[1] * eri3_extent_1[2]);
 
         auto M_idx_11 = std::array<unsigned long, 2>{{i, i}};
@@ -155,7 +155,7 @@ void create_tiles_prime(madness::World &world,
         auto rows = M_extent_11[0] + M_extent_21[0];
         auto cols = M_extent_11[1] + M_extent_12[1];
 
-        MatrixD M_combo(rows, cols);
+        RowMatrixXd M_combo(rows, cols);
         // Write M11
         M_combo.block(0, 0, M_extent_11[0], M_extent_11[1]) =
             TA::eigen_map(M_tile_11, M_extent_11[0], M_extent_11[1]);
@@ -173,7 +173,7 @@ void create_tiles_prime(madness::World &world,
                       M_extent_22[1]) =
             TA::eigen_map(M_tile_22, M_extent_22[0], M_extent_22[1]);
 
-        MatrixD M_combo_inv = M_combo.inverse();
+        RowMatrixXd M_combo_inv = M_combo.inverse();
 
         // Doing the block wise GEMM by hand for now.
         auto block11 = M_combo_inv.block(0, 0, M_extent_11[0], M_extent_11[1]);
@@ -184,8 +184,8 @@ void create_tiles_prime(madness::World &world,
         auto block22 = M_combo_inv.block(M_extent_11[0], M_extent_11[1],
                                          M_extent_22[0], M_extent_22[1]);
 
-        MatrixD C0 = block11 * eri3_eig_0 + block12 * eri3_eig_1;
-        MatrixD C1 = block21 * eri3_eig_0 + block22 * eri3_eig_1;
+        RowMatrixXd C0 = block11 * eri3_eig_0 + block12 * eri3_eig_1;
+        RowMatrixXd C1 = block21 * eri3_eig_0 + block22 * eri3_eig_1;
 
         TA::TensorD out_tile_0(eri3_range_0);
         TA::TensorD out_tile_1(eri3_range_1);
@@ -217,7 +217,7 @@ void create_tiles_prime(madness::World &world,
 
 template <typename Integral>
 void create_tiles(madness::World &world,
-                  TA::DistArray<TA::TensorD, SpPolicy> &C_df, Integral &eri3,
+                  TA::DistArray<TA::TensorD, TA::SparsePolicy> &C_df, Integral &eri3,
                   TA::DistArray<TA::TensorD, TA::DensePolicy> const &M,
                   unsigned long natoms) {
   using integral_tile_type = typename Integral::tile_type;
@@ -226,15 +226,15 @@ void create_tiles(madness::World &world,
                            TA::TensorD M_tile, unsigned long ord) {
     TA::TensorD eri3_tile = eri3_direct_tile;
     auto eri3_extent = eri3_tile.range().extent();
-    MatrixD eri3_eig = TA::eigen_map(eri3_tile, eri3_extent[0],
+    RowMatrixXd eri3_eig = TA::eigen_map(eri3_tile, eri3_extent[0],
                                      eri3_extent[1] * eri3_extent[2]);
 
     auto M_extent = M_tile.range().extent();
-    MatrixD M_eig = TA::eigen_map(M_tile, M_extent[0], M_extent[1]);
+    RowMatrixXd M_eig = TA::eigen_map(M_tile, M_extent[0], M_extent[1]);
 
     TA::TensorD out_tile(eri3_tile.range());
 
-    MatrixD out_eig = M_eig.inverse() * eri3_eig;
+    RowMatrixXd out_eig = M_eig.inverse() * eri3_eig;
     TA::eigen_map(out_tile, eri3_extent[0], eri3_extent[1] * eri3_extent[2]) =
         out_eig;
 
@@ -253,10 +253,10 @@ void create_tiles(madness::World &world,
     auto eri3_extent0 = eri3_tile0.range().extent();
     auto eri3_extent1 = eri3_tile1.range().extent();
 
-    MatrixD eri3_eig0 = TA::eigen_map(eri3_tile0, eri3_extent0[0],
+    RowMatrixXd eri3_eig0 = TA::eigen_map(eri3_tile0, eri3_extent0[0],
                                       eri3_extent0[1] * eri3_extent0[2]);
 
-    MatrixD eri3_eig1 = TA::eigen_map(eri3_tile1, eri3_extent1[0],
+    RowMatrixXd eri3_eig1 = TA::eigen_map(eri3_tile1, eri3_extent1[0],
                                       eri3_extent1[1] * eri3_extent1[2]);
 
     auto M_extent00 = M_tile00.range().extent();
@@ -267,7 +267,7 @@ void create_tiles(madness::World &world,
     auto rows = M_extent00[0] + M_extent10[0];
     auto cols = M_extent00[1] + M_extent01[1];
 
-    MatrixD M_combo(rows, cols);
+    RowMatrixXd M_combo(rows, cols);
 
     // Write M00
     M_combo.block(0, 0, M_extent00[0], M_extent00[1]) =
@@ -285,7 +285,7 @@ void create_tiles(madness::World &world,
     M_combo.block(M_extent00[0], M_extent00[1], M_extent11[0], M_extent11[1]) =
         TA::eigen_map(M_tile11, M_extent11[0], M_extent11[1]);
 
-    MatrixD M_combo_inv = M_combo.inverse();
+    RowMatrixXd M_combo_inv = M_combo.inverse();
 
     // Doing the block wise GEMM by hand for now.
     auto block00 = M_combo_inv.block(0, 0, M_extent00[0], M_extent00[1]);
@@ -300,7 +300,7 @@ void create_tiles(madness::World &world,
                                      M_extent11[0], M_extent11[1]);
 
     if (C_df.is_local(ord0)) {
-      MatrixD C0 = block00 * eri3_eig0 + block01 * eri3_eig1;
+      RowMatrixXd C0 = block00 * eri3_eig0 + block01 * eri3_eig1;
       TA::TensorD out_tile0(eri3_tile0.range());
 
       TA::eigen_map(out_tile0, eri3_extent0[0],
@@ -309,7 +309,7 @@ void create_tiles(madness::World &world,
       C_df.set(ord0, out_tile0);
     }
     if (C_df.is_local(ord1)) {
-      MatrixD C1 = block10 * eri3_eig0 + block11 * eri3_eig1;
+      RowMatrixXd C1 = block10 * eri3_eig0 + block11 * eri3_eig1;
 
       TA::TensorD out_tile1(eri3_tile1.range());
 
@@ -320,8 +320,8 @@ void create_tiles(madness::World &world,
     }
   };
 
-  auto const &eri3_tiles = eri3.array().trange().tiles();
-  auto const &M_tiles = M.trange().tiles();
+  auto const &eri3_tiles = eri3.array().trange().tiles_range();
+  auto const &M_tiles = M.trange().tiles_range();
 
   for (auto i = 0ul; i < natoms; ++i) {
     std::array<unsigned long, 3> eri3_idx = {{i, i, i}};
@@ -380,9 +380,9 @@ void create_tiles(madness::World &world,
 }  // namespace cadf
 
 template <typename MetricEngine>
-inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
-    madness::World &world, molecule::Molecule const &obs_molecule,
-    molecule::Molecule const &dfbs_molecule, basis::BasisSet const &obs_set,
+inline TA::DistArray<TA::TensorD, TA::SparsePolicy> compute_atomic_fitting_coeffs(
+    madness::World &world, Molecule const &obs_molecule,
+    Molecule const &dfbs_molecule, basis::BasisSet const &obs_set,
     basis::BasisSet const &dfbs_set, MetricEngine const &eng,
     std::unordered_map<std::size_t, std::size_t> &obs_atom_to_cluster_map,
     std::unordered_map<std::size_t, std::size_t> &dfbs_atom_to_cluster_map) {
@@ -412,9 +412,9 @@ inline TA::DistArray<TA::TensorD, SpPolicy> compute_atomic_fitting_coeffs(
 
   auto shape = cadf::cadf_shape(world, by_atom_obs, trange);
 
-  auto pmap = eri3.array().get_pmap();
+  auto pmap = eri3.array().pmap();
 
-  TA::DistArray<TA::TensorD, SpPolicy> C_df(world, trange, shape, pmap);
+  TA::DistArray<TA::TensorD, TA::SparsePolicy> C_df(world, trange, shape, pmap);
 
   cadf::create_tiles(world, C_df, eri3, M, by_atom_obs.nclusters());
   C_df.truncate();

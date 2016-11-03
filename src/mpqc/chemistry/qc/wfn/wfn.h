@@ -8,7 +8,6 @@
 #ifndef MPQC_CHEMISTRY_QC_WFN_WFN_H_
 #define MPQC_CHEMISTRY_QC_WFN_WFN_H_
 
-#include <mpqc/util/keyval/keyval.hpp>
 #include <mpqc/chemistry/qc/wfn/wfn_world.h>
 #include <mpqc/chemistry/qc/properties/propertybase.h>
 
@@ -20,26 +19,47 @@ namespace qc {
 
 class PropertyBase;
 
-class Wfn : public DescribedClass {
- public:
-  using ArrayType = WfnWorld::ArrayType;
+/// Wavefunction is a wave function
 
+/// \todo elaborate Wavefunction documentation
+class Wavefunction : public DescribedClass {
  private:
-  /*! Pointer to to the WfnWorld
+  /** Pointer to the WfnWorld
    *
    * \note No need to make this shared Wfn is just a member of the world it
    *lives in so no ownership here.
    *
    * \warning Wfn should never delete or allocate this pointer.
+   *
+   * \note by chong I changed this to shared pointer, for example, MP2 and HF
+   *          will share the same wfn_world
    */
-  WfnWorld* wfn_world_ = nullptr;
+  std::shared_ptr<WavefunctionWorld> wfn_world_;
+
+ protected:
+  double energy_ = 0.0;
 
  public:
-  Wfn(KeyVal const& kv) : wfn_world_(kv.value<WfnWorld*>("wfn_world")){};
+  /**
+   *  \brief The KeyVal constructor
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | \c "wfn_world" OR \c "..:wfn_world" OR \c "$:wfn_world" | WavefunctionWorld | none | |
+   *
+   *
+   */
+  Wavefunction(const KeyVal& kv);
+  virtual ~Wavefunction();
 
   virtual void compute(PropertyBase* pb) = 0;
+  virtual double value() = 0;
+  virtual void obsolete() {
+    energy_ = 0.0;
+  };
 
-  WfnWorld* wfn_world() { return wfn_world_; }
+  const std::shared_ptr<WavefunctionWorld>&
+  wfn_world() const { return wfn_world_; }
 };
 
 }  // namespace qc

@@ -1,10 +1,10 @@
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 
 #include <mpqc/chemistry/qc/scf/purification_density_build.h>
-#include "../../../../../ta_routines/array_to_eigen.h"
-#include "../../../../../ta_routines/cholesky_inverse.h"
-#include "../../../../../ta_routines/sqrt_inv.h"
-#include "../../../../../ta_routines/minimize_storage.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/linalg/cholesky_inverse.h"
+#include "mpqc/math/linalg/sqrt_inv.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 #include <mpqc/chemistry/qc/scf/orbital_localization.h>
@@ -30,7 +30,7 @@ PurificationDensityBuilder::PurificationDensityBuilder(
 }
 
 array_type PurificationDensityBuilder::purify(array_type const &F) {
-    auto &world = F.get_world();
+    auto &world = F.world();
 
     array_type Fp, D, D2;
     Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
@@ -74,19 +74,19 @@ array_type PurificationDensityBuilder::orbitals(array_type const &D) {
     auto tr_ao = D.trange().data()[0];
     auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
 
-    auto Cao = array_ops::eigen_to_array<TA::TensorD>(D.get_world(), D_eig,
+    auto Cao = array_ops::eigen_to_array<TA::TensorD>(D.world(), D_eig,
                                                       tr_ao, tr_occ);
 
     if (localize_) {
         auto U = mpqc::scf::BoysLocalization{}(Cao, r_xyz_ints_);
         Cao("mu,i") = Cao("mu,k") * U("k,i");
 
-        auto obs_ntiles = Cao.trange().tiles().extent()[0];
+        auto obs_ntiles = Cao.trange().tiles_range().extent()[0];
         scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
     }
 
     if (TcutC_ != 0) {
-        ta_routines::minimize_storage(Cao, TcutC_);
+        minimize_storage(Cao, TcutC_);
     }
 
     return Cao;
@@ -97,10 +97,6 @@ operator()(array_type const &F) {
     auto D = purify(F);
     auto C = orbitals(D);
     return std::make_pair(D, C);
-}
-
-rapidjson::Value PurificationDensityBuilder::results(rapidjson::Document &d) {
-  assert(false);
 }
 
 } // namespace scf

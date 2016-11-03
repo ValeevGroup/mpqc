@@ -22,6 +22,8 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/serialization/export.hpp>
 
+#include "mpqc/util/external/c++/type_traits"
+
 // serialize all pointers as void*
 // NB XCode 7.3.1 (7D1014) libc++ char stream does not properly deserialize
 // void*, use size_t instead
@@ -88,8 +90,11 @@ using Describable = std::is_base_of<DescribedClass, T>;
 /// , but any other .cpp
 /// file will work.
 /// @note If \c T is a template class, you must register each instance of this
-/// class you want to construct
-/// from KeyVal.
+/// class you want to construct from KeyVal.
+/// @warning to ensure that the class registration code of the derived class is
+///          linked in, its destructor (at least) must be explicitly instantiated.
+///          Related: how gcc instantiates vtable and RTTI info see
+///          <a href="https://gcc.gnu.org/onlinedocs/gcc/Vague-Linkage.html">here</a>
 /// @ingroup CoreKeyVal
 class DescribedClass {
  public:
@@ -118,7 +123,7 @@ class DescribedClass {
   /// class
   /// @tparam T a class derived from DescribedClass
   /// @sa MPQC_CLASS_EXPORT_KEY2
-  template <typename T, typename = enable_if_t<Describable<T>::value>>
+  template <typename T, typename = std::enable_if_t<Describable<T>::value>>
   struct registrar {
     registrar() { DescribedClass::register_keyval_ctor<T>(); }
   };
@@ -150,24 +155,41 @@ struct register_keyval_ctor;
 /// @addtogroup CoreKeyVal
 /// @{
 
+/// MPQC_BOOST_CLASS_EXPORT_KEY2(K,T) associates key \c K with type \c T
+/// \note this is a variadic version of BOOST_CLASS_EXPORT_KEY2
+#define MPQC_BOOST_CLASS_EXPORT_KEY2(K, ...)               \
+  namespace boost {                                        \
+  namespace serialization {                                \
+  template <>                                              \
+  struct guid_defined<__VA_ARGS__> : boost::mpl::true_ {}; \
+  template <>                                              \
+  inline const char* guid<__VA_ARGS__>() {                 \
+    return K;                                              \
+  }                                                        \
+  } /* serialization */                                    \
+  } /* boost */                                            \
+/**/
+
 /// \brief Associates a key (character string) with a class using
 /// Boost.Serialization
 /// and register the class's KeyVal constructor with DescribedClass's registry.
 ///
-/// Use BOOST_CLASS_EXPORT_KEY2 to skip the KeyVal constructor registration.
-#define MPQC_CLASS_EXPORT_KEY2(T, K)                               \
-  BOOST_CLASS_EXPORT_KEY2(T, K)                                    \
-  namespace mpqc {                                                 \
-  namespace detail {                                               \
-  template <>                                                      \
-  struct register_keyval_ctor<T> {                                 \
-    static DescribedClass::registrar<T> const& r;                  \
-  };                                                               \
-  DescribedClass::registrar<T> const& register_keyval_ctor<T>::r = \
-      ::boost::serialization::singleton<                           \
-          DescribedClass::registrar<T>>::get_mutable_instance();   \
-  }                                                                \
-  }                                                                \
+/// Use MPQC_BOOST_CLASS_EXPORT_KEY2 to skip the KeyVal constructor
+/// registration.
+#define MPQC_CLASS_EXPORT_KEY2(K, ...)                                         \
+  MPQC_BOOST_CLASS_EXPORT_KEY2(K, __VA_ARGS__)                                 \
+  namespace mpqc {                                                             \
+  namespace detail {                                                           \
+  template <>                                                                  \
+  struct register_keyval_ctor<__VA_ARGS__> {                                   \
+    static DescribedClass::registrar<__VA_ARGS__> const& r;                    \
+  };                                                                           \
+  DescribedClass::registrar<__VA_ARGS__> const&                                \
+      register_keyval_ctor<__VA_ARGS__>::r =                                   \
+          ::boost::serialization::singleton<                                   \
+              DescribedClass::registrar<__VA_ARGS__>>::get_mutable_instance(); \
+  }                                                                            \
+  }                                                                            \
 /**/
 
 /// \brief Associates a key (character string) with a class using
@@ -175,14 +197,33 @@ struct register_keyval_ctor;
 /// and register the class's KeyVal constructor with DescribedClass's registry.
 ///
 /// Identical to MPQC_CLASS_EXPORT_KEY2, but uses class name for the class key.
-/// Use BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
+/// Use MPQC_BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
 /// @sa MPQC_CLASS_EXPORT_KEY2
-#define MPQC_CLASS_EXPORT_KEY(T) \
-  MPQC_CLASS_EXPORT_KEY2(T, BOOST_PP_STRINGIZE(T)) /**/
+#define MPQC_CLASS_EXPORT_KEY(...) \
+  MPQC_CLASS_EXPORT_KEY2(BOOST_PP_STRINGIZE(__VA_ARGS__), __VA_ARGS__)
+/**/
 
 /// \brief Forces the class instantiation so that it can be deserialized with
 /// Boost.Serialization and/or constructed from a KeyVal.
-#define MPQC_CLASS_EXPORT_IMPLEMENT(T) BOOST_CLASS_EXPORT_IMPLEMENT(T) /**/
+/// \note this is a variadic version of BOOST_CLASS_EXPORT_IMPLEMENT
+#define MPQC_CLASS_EXPORT_IMPLEMENT(...)                           \
+  namespace boost {                                                \
+  namespace archive {                                              \
+  namespace detail {                                               \
+  namespace extra_detail {                                         \
+  template <>                                                      \
+  struct init_guid<__VA_ARGS__> {                                  \
+    static guid_initializer<__VA_ARGS__> const& g;                 \
+  };                                                               \
+  guid_initializer<__VA_ARGS__> const& init_guid<__VA_ARGS__>::g = \
+      ::boost::serialization::singleton<                           \
+          guid_initializer<__VA_ARGS__>>::get_mutable_instance()   \
+          .export_guid();                                          \
+  }                                                                \
+  }                                                                \
+  }                                                                \
+  }                                                                \
+/**/
 
 /// @}
 
@@ -272,6 +313,18 @@ class KeyVal {
     return exists_(resolve_path(path));
   }
 
+  /// check whether the given class exists
+  /// @param path the path
+  /// @return true if \c path class exists
+  bool exists_class(const key_type& path) const{
+    bool exist_class = false;
+    auto cptr = class_registry_->find(resolve_path(path));
+    if (cptr != class_registry_->end()){
+      exist_class = true;
+    }
+    return exist_class;
+  }
+
   /// counts the number of children of the node at this path
   /// @param path the path
   /// @return 0 if \c path does not exist or it points to a simple keyword,
@@ -291,7 +344,7 @@ class KeyVal {
   /// a KeyVal::key_type using a
   /// std::basic_ostream<KeyVal::key_type::value_type>
   template <typename T,
-            typename = enable_if_t<not KeyVal::is_sequence<T>::value>>
+            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value >>
   KeyVal& assign(const key_type& path, const T& value) {
     auto abs_path = to_absolute_path(path);
     top_tree_->put(ptree::path_type{abs_path, separator}, value);
@@ -315,7 +368,7 @@ class KeyVal {
   KeyVal& assign(
       const key_type& path, const SequenceContainer& value,
       bool json_style = true,
-      enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* = nullptr) {
+      std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* = nullptr) {
     auto abs_path = to_absolute_path(path);
     ptree obj;
     size_t count = 0;
@@ -354,7 +407,7 @@ class KeyVal {
   /// @throws KeyVal::bad_input if path not found or cannot convert value
   /// representation to the desired type
   template <typename T,
-            typename = enable_if_t<not KeyVal::is_sequence<T>::value>>
+            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value>>
   T value(const key_type& path) const {
     auto abs_path = resolve_path(path);
     T result;
@@ -377,7 +430,7 @@ class KeyVal {
   template <typename SequenceContainer>
   SequenceContainer value(
       const key_type& path,
-      enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* =
+      std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* =
           nullptr) const {
     auto abs_path = resolve_path(path);
     using value_type = typename SequenceContainer::value_type;
@@ -417,7 +470,7 @@ class KeyVal {
   /// @param default_value
   /// @return value of type \c T
   template <typename T,
-            typename = enable_if_t<not KeyVal::is_sequence<T>::value>>
+            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value>>
   T value(const key_type& path, const T& default_value) const {
     auto abs_path = resolve_path(path);
     T result;
@@ -440,7 +493,7 @@ class KeyVal {
   /// @return std::shared_Ptr \c T
   /// @throws KeyVal::bad_input if key not found or cannot convert value
   /// representation to the desired type
-  template <typename T, typename = enable_if_t<Describable<T>::value>>
+  template <typename T, typename = std::enable_if_t<Describable<T>::value>>
   std::shared_ptr<T> class_ptr(const key_type& path = key_type()) const {
     // if this class already exists in the registry under path
     // (e.g. if the ptr was assigned programmatically), return immediately

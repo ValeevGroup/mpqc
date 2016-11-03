@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_SCF_EIGENSOLVEDENSITYBUILDER_H
 #define MPQC_SCF_EIGENSOLVEDENSITYBUILDER_H
 
@@ -48,8 +48,6 @@ class ESolveDensityBuilder : public DensityBuilder {
     std::pair<array_type, array_type> operator()(array_type const &F) override;
 
     inline void print_iter(std::string const &) override {}
-
-    virtual rapidjson::Value results(rapidjson::Document &d) override;
 
     inline double condition_num_threshold() const {
         return condition_num_thresh_;

@@ -1,13 +1,11 @@
-#pragma once
 #ifndef MPQC_SCF_BUILDER_H
 #define MPQC_SCF_BUILDER_H
 
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../common/namespaces.h"
-
-#include "../../../../../utility/json_handling.h"
-
 #include <string>
+
+#include <tiledarray.h>
+
+#include "mpqc/chemistry/qc/expression/formula_registry.h"
 
 namespace mpqc {
 namespace scf {
@@ -21,7 +19,8 @@ class FockBuilder {
 
     virtual void print_iter(std::string const &) = 0;
 
-    virtual rapidjson::Value results(rapidjson::Document &) = 0;
+    virtual void register_fock(const TA::TSpArrayD &, FormulaRegistry<TA::TSpArrayD>& ) = 0;
+
 };
 
 } // namespace scf

@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_MOLECULE_ATOM_H
 #define MPQC_MOLECULE_ATOM_H
 
@@ -8,7 +8,6 @@
 #include "./molecule_fwd.h"
 
 namespace mpqc {
-namespace molecule {
 
 /*! \ingroup Molecule @{ */
 
@@ -19,7 +18,7 @@ namespace molecule {
  */
 class Atom {
   private:
-    Vec3D center_ = {0, 0, 0};
+    Vector3d center_ = {0, 0, 0};
     int64_t atomic_number_ = 0;
     double mass_ = 0;
 
@@ -32,11 +31,11 @@ class Atom {
 
     /*! \brief Constructs the atom with the center, mass and charge provided.
      */
-    Atom(Vec3D const &center, double mass, int64_t Z)
+    Atom(Vector3d const &center, double mass, int64_t Z)
             : center_(center), atomic_number_(Z), mass_(mass) {}
 
     /*! Returns the location of the atom in Bohr. */
-    Vec3D const &center() const { return center_; }
+    Vector3d const &center() const { return center_; }
 
     /*! Returns the charge of the atom in atomic units. */
     int64_t charge() const { return atomic_number_; }
@@ -60,7 +59,7 @@ class Atom {
 std::ostream &operator<<(std::ostream &, Atom const &);
 
 /// Returns the center of the atom
-inline Vec3D const &center(Atom const &a) { return a.center(); }
+inline Vector3d const &center(Atom const &a) { return a.center(); }
 
 /// Returns the mass of the atom
 inline double mass(Atom const &a) { return a.mass(); }
@@ -72,11 +71,10 @@ inline int64_t charge(Atom const &a) { return a.charge(); }
  *
  * Center of mass is part of the clustering interface.
  */
-inline Vec3D const &center_of_mass(Atom const &a) { return a.center(); }
+inline Vector3d const &center_of_mass(Atom const &a) { return a.center(); }
 
 /*! @} */
 
-} // namespace molecule
 } // namespace mpqc
 
 #endif // MPQC_MOLECULE_ATOM_H

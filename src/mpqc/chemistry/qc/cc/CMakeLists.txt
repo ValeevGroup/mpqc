@@ -1,14 +1,12 @@
 set(sources
         ccsd.h
-        ccsd_intermediates.h
+        ccsd.cpp
         ccsd_t.h
+        ccsd_t.cpp
         dbccsd.h
+        dbccsd.cpp
         diis_ccsd.h
-        integral_generator.h
-        lazy_tile.h
-        mo_block.h
-        cc.cpp
         )
 
 add_library(MPQCcc ${sources})
-target_link_libraries(MPQCcc ${TA_LIBRARIES} MPQCintegrals)
+target_link_libraries(MPQCcc MPQCintegrals MPQCmisc)

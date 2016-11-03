@@ -1,21 +1,22 @@
-#pragma once
+
 #ifndef MPQC_SCF_ORBITALLOCALIZATION_H
 #define MPQC_SCF_ORBITALLOCALIZATION_H
 
-#include "../../../../../include/tiledarray.h"
-#include "../../../../../include/eigen.h"
+#include <tiledarray.h>
+#include "mpqc/math/external/eigen/eigen.h"
 
-#include "../../../../../ta_routines/array_to_eigen.h"
 #include <cmath>
 
 #include <array>
 #include <iomanip>
 
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 namespace mpqc {
 namespace scf {
 
-using Mat = Eig::Matrix<double, Eig::Dynamic, Eig::Dynamic, Eig::RowMajor>;
+using Mat = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 double boys_object(std::array<Mat, 3> const &xyz);
 
@@ -31,12 +32,12 @@ class BoysLocalization {
         auto ao_z = array_ops::array_to_eigen(r_ao[2]);
         auto c_eig = array_ops::array_to_eigen(C);
 
-        MatrixD U = MatrixD::Identity(c_eig.cols(), c_eig.cols());
+        RowMatrixXd U = RowMatrixXd::Identity(c_eig.cols(), c_eig.cols());
         jacobi_sweeps(c_eig, U, {ao_x, ao_y, ao_z});
 
         auto trange = C.trange();
         return array_ops::eigen_to_array<typename Array::value_type>(
-              C.get_world(), U, trange.data()[1], trange.data()[1]);
+              C.world(), U, trange.data()[1], trange.data()[1]);
     }
 };
 

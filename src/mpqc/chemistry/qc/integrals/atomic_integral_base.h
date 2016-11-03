@@ -10,8 +10,8 @@
 #include <string>
 #include <vector>
 
-#include "../../../../../common/namespaces.h"
-#include "../../../../../utility/make_array.h"
+
+#include "mpqc/util/meta/make_array.h"
 #include "integrals.h"
 #include <mpqc/chemistry/molecule/molecule.h>
 #include <mpqc/chemistry/qc/basis/basis_registry.h>
@@ -22,7 +22,6 @@
 #include <mpqc/chemistry/qc/integrals/task_integrals.h>
 
 #include <libint2/engine.h>
-#include <rapidjson/document.h>
 
 namespace mpqc {
 namespace integrals {
@@ -31,6 +30,11 @@ namespace integrals {
  *
  * \brief base class for AtomicIntegral
  *
+ *  Options in Input
+ *  @param Screen, string, name of screen method to use, default none
+ *  @param Threshold, double, screen threshold, qqr or schwarz, default 1.0e-10
+ *  @param Precision, double, precision in computing integral, default std::numeric_limits<double>::epsilon()
+   *
  */
 
 class AtomicIntegralBase {
@@ -40,26 +44,19 @@ class AtomicIntegralBase {
   AtomicIntegralBase() noexcept = default;
 
   /**
-   * Constructor
+   * \brief  KeyVal constructor
    *
-   * @param world reference to madness World
-   * @param mol shared pointer to Molecule
-   * @param obs shared pointer to OrbitalBasisRegistry
-   * @param gtg_params  parameters used in computing f12 integrals
-   */
-
-  AtomicIntegralBase(madness::World &world,
-                     const std::shared_ptr<molecule::Molecule> &mol,
-                     const std::shared_ptr<basis::OrbitalBasisRegistry> &obs,
-                     const std::vector<std::pair<double, double>> &gtg_params =
-                     std::vector<std::pair<double, double>>(),
-                     const rapidjson::Document &in = rapidjson::Document());
-
-  /**
-   * KeyVal constructor
+   * It takes all the keys to construct OrbitalBasisRegistry and also the following
    *
+   *  | KeyWord | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |molecule|Molecule|none|keyval to construct molecule|
+   *  |screen|string|none|method of screening, qqr or schwarz |
+   *  |threshold|double|1e-10| screening threshold |
+   *  |precision|double|std::numeric_limits<double>::epsilon() | integral precision |
+   *  |corr_functions|int|6|f12 n of corr function,valid if aux_basis exsist in OrbitalBasisRegistry|
+   *  |corr_param|int|0|f12 corr param, ,valid if aux_basis exsist in OrbitalBasisRegistry|
    */
-
   AtomicIntegralBase(const KeyVal &kv);
 
   virtual ~AtomicIntegralBase() = default;
@@ -69,7 +66,7 @@ class AtomicIntegralBase {
 
   /// @brief Molecule accessor
   /// @return molecule object
-  const molecule::Molecule &molecule() const { return *mol_; }
+  const Molecule &molecule() const { return *mol_; }
 
   /// @brief (contracted) Gaussian-types geminal parameters accessor
   /// @return Gaussian-type geminal parameters
@@ -86,10 +83,17 @@ class AtomicIntegralBase {
   }
 
   /// @return the OrbitalBasisRegistry object
-  const std::shared_ptr<basis::OrbitalBasisRegistry> &orbital_basis_registry() const {
-    return orbital_basis_registry_;
+  const basis::OrbitalBasisRegistry &orbital_basis_registry() const {
+    return *orbital_basis_registry_;
   }
 
+  basis::OrbitalBasisRegistry &orbital_basis_registry() {
+    return *orbital_basis_registry_;
+  }
+
+  const std::shared_ptr<basis::OrbitalBasisRegistry> orbital_basis_registry_ptr() const {
+    return orbital_basis_registry_;
+  }
   /**
     * Given Formula with rank = 4, return DensityFitting formula
     *
@@ -214,7 +218,7 @@ class AtomicIntegralBase {
   std::shared_ptr<basis::OrbitalBasisRegistry> orbital_basis_registry_;
 
   // TODO these specify operator params, need to abstract out better
-  std::shared_ptr<molecule::Molecule> mol_;
+  std::shared_ptr<Molecule> mol_;
   gtg_params_t gtg_params_;
   std::string screen_;
   double screen_threshold_;

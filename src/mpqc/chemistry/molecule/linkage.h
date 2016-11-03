@@ -6,7 +6,9 @@
 
 namespace mpqc {
 class Molecule;
+} // namespace mpqc
+
 mpqc::detail::ForceLink<mpqc::Molecule> fl1;
-}
+
 
 #endif  // SRC_MPQC_CHEMISTRY_MOLECULE_LINKAGE_H_

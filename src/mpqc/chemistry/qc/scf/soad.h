@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef TCC_INTEGRALS_SCF_SOAD_H
 #define TCC_INTEGRALS_SCF_SOAD_H
 

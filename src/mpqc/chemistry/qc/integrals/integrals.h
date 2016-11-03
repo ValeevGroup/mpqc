@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_INTEGRALS_INTEGRALS_H
 #define MPQC_INTEGRALS_INTEGRALS_H
 

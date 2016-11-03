@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_INTEGRALS_QVLSCREENING
 #define MPQC_INTEGRALS_QVLSCREENING
 

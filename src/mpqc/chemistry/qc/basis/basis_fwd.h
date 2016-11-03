@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_BASIS_BASISFWD_H
 #define MPQC_BASIS_BASISFWD_H
 

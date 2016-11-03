@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_SCF_CADFBUILDER_H
 #define MPQC_SCF_CADFBUILDER_H
 

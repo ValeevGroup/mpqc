@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_UTILITY_MAKEARRAY_H
 #define MPQC_UTILITY_MAKEARRAY_H
 

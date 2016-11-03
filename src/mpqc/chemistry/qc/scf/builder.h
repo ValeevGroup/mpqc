@@ -1,15 +1,11 @@
-#pragma once
 #ifndef MPQC_SCF_BUILDER_H
 #define MPQC_SCF_BUILDER_H
 
+#include <string>
+
 #include <tiledarray.h>
 
-
-
-#include "mpqc/util/misc/json_handling.h"
-#include <mpqc/chemistry/qc/expression/formula_registry.h>
-
-#include <string>
+#include "mpqc/chemistry/qc/expression/formula_registry.h"
 
 namespace mpqc {
 namespace scf {

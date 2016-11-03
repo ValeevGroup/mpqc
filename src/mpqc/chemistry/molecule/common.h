@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_MOLECULE_COMMON_H
 #define MPQC_MOLECULE_COMMON_H
 

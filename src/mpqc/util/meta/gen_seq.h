@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef TCC_UTLITIY_EXPANDCONTAINER_H
 #define TCC_UTLITIY_EXPANDCONTAINER_H
 

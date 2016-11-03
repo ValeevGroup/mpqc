@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef TCC_BASIS_BASISSETMAP_H
 #define TCC_BASIS_BASISSETMAP_H
 

@@ -5,13 +5,13 @@
 #ifndef MPQC_SCF_SCF_H
 #define MPQC_SCF_SCF_H
 
+#include <memory>
+
 #include <tiledarray.h>
+
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/scf/density_builder.h>
-#include "mpqc/util/misc/json_handling.h"
 #include "mpqc/util/external/c++/memory"
-
-#include <memory>
 
 namespace mpqc {
 namespace scf {

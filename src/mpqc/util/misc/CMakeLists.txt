@@ -1,6 +1,4 @@
 set(sources
-  json_handling.cpp
-  json_handling.h
   print.cpp
   print.h
   string.h

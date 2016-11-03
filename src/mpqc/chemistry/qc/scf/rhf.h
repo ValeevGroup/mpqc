@@ -7,7 +7,7 @@
 
 
 #include <tiledarray.h>
-#include "mpqc/util/misc/json_handling.h"
+
 #include <mpqc/chemistry/qc/wfn/ao_wfn.h>
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/scf/density_builder.h>

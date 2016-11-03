@@ -13,7 +13,7 @@
 
 #include "mpqc/math/linalg/diagonal_array.h"
 #include <mpqc/chemistry/qc/expression/orbital_registry.h>
-#include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+#include <mpqc/chemistry/qc/integrals/ao_factory.h>
 #include <mpqc/chemistry/qc/wfn/wfn_world.h>
 
 
@@ -35,9 +35,9 @@ std::shared_ptr<LCAOFactory<Tile,Policy>> construct_lcao_factory(const KeyVal& k
   }
   else{
     lcao_factory = std::make_shared<LCAOFactory<Tile,Policy>>(kv);
-    std::shared_ptr<DescribedClass> ao_int_base = lcao_factory;
+    std::shared_ptr<DescribedClass> ao_factory_base = lcao_factory;
     KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
-    kv_nonconst.keyval("wfn_world").assign("lcao_factory",ao_int_base);
+    kv_nonconst.keyval("wfn_world").assign("lcao_factory",ao_factory_base);
   }
   return lcao_factory;
 };
@@ -58,7 +58,7 @@ template <typename Tile, typename Policy>
 class LCAOFactory : public DescribedClass{
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using AtomicIntegralType = AtomicIntegral<Tile, Policy>;
+  using AOFactoryType = AOFactory<Tile, Policy>;
 
   /**
    * Constructor
@@ -72,25 +72,25 @@ class LCAOFactory : public DescribedClass{
    */
   LCAOFactory(const KeyVal& kv)
     : world_(*kv.value<madness::World *>("$:world")),
-      atomic_integral_(*detail::construct_atomic_integral<Tile,Policy>(kv)),
+      ao_factory_(*detail::construct_ao_factory<Tile,Policy>(kv)),
       orbital_space_registry_(std::make_shared<OrbitalSpaceRegistry<TArray>>()),
       mo_formula_registry_()
   {
     accurate_time_ = kv.value<bool>("accurate_time",false);
     keep_partial_transforms_ = kv.value<bool>("keep_partial_transform",false);
-    atomic_integral_.set_orbital_space_registry(orbital_space_registry_);
+    ao_factory_.set_orbital_space_registry(orbital_space_registry_);
   }
 
   /// return reference to madness::World
   madness::World& world() const { return world_; }
 
-  /// return reference to AtomicIntegral object
-  AtomicIntegralType& atomic_integral() const { return atomic_integral_; }
+  /// return reference to AOFactory object
+  AOFactoryType& ao_factory() const { return ao_factory_; }
 
-  /// wrapper to operator() function in AtomicIntegral
-  TA::expressions::TsrExpr<TArray, true> atomic_integral(
+  /// wrapper to operator() function in AOFactory
+  TA::expressions::TsrExpr<TArray, true> ao_factory(
       const std::wstring& str) {
-    return std::move(atomic_integral_(str));
+    return std::move(ao_factory_(str));
   };
 
   /// return OrbitalSpaceRegistry
@@ -149,7 +149,7 @@ class LCAOFactory : public DescribedClass{
     Operator::Type oper_type = oper.type();
 
     mo_formula_registry_.purge_operator(world, oper_type);
-    atomic_integral().registry().purge_operator(world, oper_type);
+    ao_factory().registry().purge_operator(world, oper_type);
   }
 
   /// purge formulae that contain index described by string \c idx_str
@@ -157,7 +157,7 @@ class LCAOFactory : public DescribedClass{
   void purge_index(madness::World& world, const std::wstring& idx_str) {
     OrbitalIndex index(idx_str);
     mo_formula_registry_.purge_index(world, index);
-    atomic_integral().registry().purge_index(world, index);
+    ao_factory().registry().purge_index(world, index);
   }
 
   /// purge formula described by string \c str
@@ -195,7 +195,7 @@ class LCAOFactory : public DescribedClass{
 
  private:
   madness::World& world_;
-  AtomicIntegralType& atomic_integral_;
+  AOFactoryType& ao_factory_;
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
   FormulaRegistry<TArray> mo_formula_registry_;
   bool keep_partial_transforms_;  //!< if true, keep partially-transformed ints
@@ -240,11 +240,11 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
 
   // get AO
   auto ao_formula = mo_to_ao(formula_string);
-  auto ao_integral = atomic_integral_.compute(ao_formula);
+  auto ao_factory = ao_factory_.compute(ao_formula);
 
   time0 = mpqc::now(world_, accurate_time_);
   // convert to MO
-  result = ao_integral;
+  result = ao_factory;
   // get coefficient
   auto left_index1 = formula_string.bra_indices()[0];
   if (left_index1.is_mo()) {
@@ -281,7 +281,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
   if (not keep_partial_transforms()) {  // compute from AO ints
     // get AO
     auto ao_formula = mo_to_ao(formula_string);
-    auto ao_integral = atomic_integral_.compute(ao_formula);
+    auto ao_factory = ao_factory_.compute(ao_formula);
 
     time0 = mpqc::now(world_, accurate_time_);
 
@@ -291,7 +291,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     auto right_index1 = formula_string.ket_indices()[0];
     if (right_index1.is_mo()) {
       auto& right1 = orbital_space_registry_->retrieve(right_index1);
-      result("K,i,q") = ao_integral("K,p,q") * right1("p,i");
+      result("K,i,q") = ao_factory("K,p,q") * right1("p,i");
       world_.gop.fence();
     }
     auto right_index2 = formula_string.ket_indices()[1];
@@ -310,7 +310,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
         reduce_formula(formula_string);
     auto reduced_integral =
         reduced_formula.is_ao()
-            ? atomic_integral_.compute(reduced_formula)
+            ? ao_factory_.compute(reduced_formula)
             : (keep_partial_transforms() ? this->compute(reduced_formula)
                                          : this->compute3(reduced_formula));
 
@@ -365,7 +365,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
   TArray result;
   if (formula_string.oper().has_option(Operator::Option::DensityFitting)) {
     // get df formula
-    auto df_formulas = atomic_integral_.get_df_formula(formula_string);
+    auto df_formulas = ao_factory_.get_df_formula(formula_string);
 
     auto notation = formula_string.notation();
     // compute integral
@@ -373,7 +373,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
 
     TArray right = compute(df_formulas[2]);
 
-    TArray center = atomic_integral_.compute(df_formulas[1]);
+    TArray center = ao_factory_.compute(df_formulas[1]);
 
     time0 = mpqc::now(world_, accurate_time_);
 
@@ -389,7 +389,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
   } else {
     // get AO
     auto ao_formula = mo_to_ao(formula_string);
-    auto ao_integral = atomic_integral_.compute(ao_formula);
+    auto ao_factory = ao_factory_.compute(ao_formula);
 
     // convert to MO
     time0 = mpqc::now(world_, accurate_time_);
@@ -398,7 +398,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
     auto left_index1 = formula_string.bra_indices()[0];
     if (left_index1.is_mo()) {
       auto& left1 = orbital_space_registry_->retrieve(left_index1);
-      result("i,q,r,s") = ao_integral("p,q,r,s") * left1("p,i");
+      result("i,q,r,s") = ao_factory("p,q,r,s") * left1("p,i");
       world_.gop.fence();
     }
 

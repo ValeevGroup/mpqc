@@ -16,7 +16,7 @@
 
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
-#include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+#include <mpqc/chemistry/qc/integrals/ao_factory.h>
 #include <mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h>
 #include <mpqc/chemistry/qc/scf/cadf_helper_functions.h>
 
@@ -65,11 +65,11 @@ class CADFFockBuilder : public FockBuilder {
       Molecule const &clustered_mol,
       Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints,
+      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       bool use_forced_shape, double force_threshold,
       double lcao_chop_threshold = 0.0)
       : CADFFockBuilder(clustered_mol, df_clustered_mol, obs_set, dfbs_set,
-                        ao_ints) {
+                        ao_factory) {
     use_forced_shape_ = use_forced_shape;
     force_threshold_ = force_threshold;
     lcao_chop_threshold_ = lcao_chop_threshold;
@@ -79,11 +79,11 @@ class CADFFockBuilder : public FockBuilder {
       Molecule const &clustered_mol,
       Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints)
+      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory)
       : FockBuilder() {
     // Grab needed ao integrals
-    E_ = ao_ints.compute(L"( Κ | G|κ λ)");
-    M_ = ao_ints.compute(L"( Κ | G| Λ )");
+    E_ = ao_factory.compute(L"( Κ | G|κ λ)");
+    M_ = ao_factory.compute(L"( Κ | G| Λ )");
 
     // Form L^{-1} for M
     auto M_eig = array_ops::array_to_eigen(M_);
@@ -97,8 +97,8 @@ class CADFFockBuilder : public FockBuilder {
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
 
-    basis::Basis obs = ao_ints.orbital_basis_registry().retrieve(L"κ");
-    basis::Basis dfbs = ao_ints.orbital_basis_registry().retrieve(L"Κ");
+    basis::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
+    basis::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
 
     auto eng_pool = integrals::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, dfbs),

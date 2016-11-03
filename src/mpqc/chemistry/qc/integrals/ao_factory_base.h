@@ -2,8 +2,8 @@
 // Created by Chong Peng on 3/2/16.
 //
 
-#ifndef MPQC_ATOMIC_INTEGRAL_BASE_H
-#define MPQC_ATOMIC_INTEGRAL_BASE_H
+#ifndef MPQC_AO_FACTORY_BASE_H
+#define MPQC_AO_FACTORY_BASE_H
 
 #include <cwchar>
 #include <iostream>
@@ -28,7 +28,7 @@ namespace integrals {
 
 /**
  *
- * \brief base class for AtomicIntegral
+ * \brief base class for AOFactory
  *
  *  Options in Input
  *  @param Screen, string, name of screen method to use, default none
@@ -37,11 +37,11 @@ namespace integrals {
    *
  */
 
-class AtomicIntegralBase {
+class AOFactoryBase {
  public:
   using gtg_params_t = std::vector<std::pair<double, double>>;
 
-  AtomicIntegralBase() noexcept = default;
+  AOFactoryBase() noexcept = default;
 
   /**
    * \brief  KeyVal constructor
@@ -57,9 +57,9 @@ class AtomicIntegralBase {
    *  |corr_functions|int|6|f12 n of corr function,valid if aux_basis exsist in OrbitalBasisRegistry|
    *  |corr_param|int|0|f12 corr param, ,valid if aux_basis exsist in OrbitalBasisRegistry|
    */
-  AtomicIntegralBase(const KeyVal &kv);
+  AOFactoryBase(const KeyVal &kv);
 
-  virtual ~AtomicIntegralBase() = default;
+  virtual ~AOFactoryBase() = default;
 
   /// @return MADNESS world
   madness::World &world() { return world_; }
@@ -227,4 +227,4 @@ class AtomicIntegralBase {
 }  // end of namespace integral
 }  // end of namespace mpqc
 
-#endif  // MPQC_ATOMIC_INTEGRAL_BASE_H
+#endif  // MPQC_AO_FACTORY_BASE_H

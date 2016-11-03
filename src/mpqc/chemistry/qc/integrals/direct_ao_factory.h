@@ -2,48 +2,48 @@
 // Created by Chong Peng on 9/12/16.
 //
 
-#ifndef MPQC_DIRECT_ATOMIC_INTEGRAL_H
-#define MPQC_DIRECT_ATOMIC_INTEGRAL_H
+#ifndef MPQC_DIRECT_AO_FACTORY_H
+#define MPQC_DIRECT_AO_FACTORY_H
 
 #include <type_traits>
 
 #include <mpqc/util/misc/time.h>
 #include <madness/world/worldmem.h>
-#include <mpqc/chemistry/qc/integrals/atomic_integral_base.h>
+#include <mpqc/chemistry/qc/integrals/ao_factory_base.h>
 
 namespace mpqc {
 namespace integrals {
 
 template <typename Tile, typename Policy>
-class DirectAtomicIntegral;
+class DirectAOFactory;
 
 namespace detail{
 template <typename Tile, typename Policy>
-std::shared_ptr<DirectAtomicIntegral<Tile,Policy>> construct_direct_atomic_integral(const KeyVal& kv){
-  std::shared_ptr<DirectAtomicIntegral<Tile,Policy>> direct_ao_int;
-  if(kv.exists_class("wfn_world:direct_atomic_integral")){
-    direct_ao_int = kv.class_ptr<DirectAtomicIntegral<Tile,Policy>>("wfn_world:direct_atomic_integral");
+std::shared_ptr<DirectAOFactory<Tile,Policy>> construct_direct_ao_factory(const KeyVal& kv){
+  std::shared_ptr<DirectAOFactory<Tile,Policy>> direct_ao_factory;
+  if(kv.exists_class("wfn_world:direct_ao_factory")){
+    direct_ao_factory = kv.class_ptr<DirectAOFactory<Tile,Policy>>("wfn_world:direct_ao_factory");
   }
   else{
-    direct_ao_int = std::make_shared<DirectAtomicIntegral<Tile,Policy>>(kv);
-    std::shared_ptr<DescribedClass> direct_ao_int_base = direct_ao_int;
+    direct_ao_factory = std::make_shared<DirectAOFactory<Tile,Policy>>(kv);
+    std::shared_ptr<DescribedClass> direct_ao_factory_base = direct_ao_factory;
     KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
-    kv_nonconst.keyval("wfn_world").assign("direct_atomic_integral",direct_ao_int_base);
+    kv_nonconst.keyval("wfn_world").assign("direct_ao_factory",direct_ao_factory_base);
   }
-  return direct_ao_int;
+  return direct_ao_factory;
 };
 }
 
 
 /**
- * \brief Direct Atomic Integral Class
+ * \brief Direct AOFactory Class
  *
  *
  */
 
 
 template <typename Tile, typename Policy>
-class DirectAtomicIntegral : public AtomicIntegralBase, public DescribedClass {
+class DirectAOFactory : public AOFactoryBase, public DescribedClass {
  public:
   using DirectTArray = integrals::DirectArray<Tile, Policy>;
   using TArray = TA::DistArray<integrals::DirectTile<Tile>, Policy>;
@@ -59,28 +59,28 @@ class DirectAtomicIntegral : public AtomicIntegralBase, public DescribedClass {
   /**
    * Default Constructor
    */
-  DirectAtomicIntegral() = default;
-  DirectAtomicIntegral(DirectAtomicIntegral&&) = default;
+  DirectAOFactory() = default;
+  DirectAOFactory(DirectAOFactory&&) = default;
 
-  DirectAtomicIntegral& operator=(DirectAtomicIntegral&&) = default;
+  DirectAOFactory& operator=(DirectAOFactory&&) = default;
 
   /**
    * KeyVal constructor
-   * It takes all the options from AtomicIntegralBase
+   * It takes all the options from AOFactoryBase
    * @param accurate_time, bool, control if use fence in timing, default false
    *
    * @return
    */
 
-  DirectAtomicIntegral(const KeyVal& kv)
-      : AtomicIntegralBase(kv), direct_ao_formula_registry_() {
+  DirectAOFactory(const KeyVal& kv)
+      : AOFactoryBase(kv), direct_ao_formula_registry_() {
     accurate_time_ = kv.value("accurate_time", false);
 
     /// For other Tile type, need to implement set_oper();
     set_oper(Tile());
   }
 
-  virtual ~DirectAtomicIntegral() noexcept = default;
+  virtual ~DirectAOFactory() noexcept = default;
 
   /// set oper based on Tile type
   template<typename T = Tile>
@@ -166,8 +166,8 @@ class DirectAtomicIntegral : public AtomicIntegralBase, public DescribedClass {
 };
 
 template <typename Tile, typename Policy>
-typename DirectAtomicIntegral<Tile, Policy>::DirectTArray
-DirectAtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
+typename DirectAOFactory<Tile, Policy>::DirectTArray
+DirectAOFactory<Tile, Policy>::compute(const Formula& formula) {
   DirectTArray result;
 
   // find if in registry
@@ -198,8 +198,8 @@ DirectAtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
 }
 
 template <typename Tile, typename Policy>
-typename DirectAtomicIntegral<Tile, Policy>::DirectTArray
-DirectAtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
+typename DirectAOFactory<Tile, Policy>::DirectTArray
+DirectAOFactory<Tile, Policy>::compute2(const Formula& formula) {
   Bvector bs_array;
   double time = 0.0;
   std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
@@ -239,18 +239,18 @@ DirectAtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
     utility::print_par(world_, " Time: ", time, " s\n");
   } else {
     throw std::runtime_error(
-        "Unsupported Operator in DirectAtomicIntegral!!\n");
+        "Unsupported Operator in DirectAOFactory!!\n");
   }
 
   madness::print_meminfo(
       world_.rank(),
-      utility::wconcat("DirectAtomicIntegral:", formula.string()));
+      utility::wconcat("DirectAOFactory:", formula.string()));
   return result;
 }
 
 template <typename Tile, typename Policy>
-typename DirectAtomicIntegral<Tile, Policy>::DirectTArray
-DirectAtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
+typename DirectAOFactory<Tile, Policy>::DirectTArray
+DirectAOFactory<Tile, Policy>::compute3(const Formula& formula) {
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
@@ -275,14 +275,14 @@ DirectAtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
   utility::print_par(world_, " Time: ", time, " s\n");
   madness::print_meminfo(
       world_.rank(),
-      utility::wconcat("DirectAtomicIntegral:", formula.string()));
+      utility::wconcat("DirectAOFactory:", formula.string()));
 
   return result;
 }
 
 template <typename Tile, typename Policy>
-typename DirectAtomicIntegral<Tile, Policy>::DirectTArray
-DirectAtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
+typename DirectAOFactory<Tile, Policy>::DirectTArray
+DirectAOFactory<Tile, Policy>::compute4(const Formula& formula) {
 
   if(formula.notation() != Formula::Notation::Chemical){
     throw std::runtime_error("Direct AO Integral Only Support Chemical Notation! \n");
@@ -313,11 +313,11 @@ DirectAtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
   madness::print_meminfo(world_.rank(),
-                         utility::wconcat("AtomicIntegral:", formula.string()));
+                         utility::wconcat("AOFactory:", formula.string()));
   return result;
 }
 
 }  // end of namespace integrals
 }  // end of namespace mpqc
 
-#endif  // MPQC_DIRECT_ATOMIC_INTEGRAL_H
+#endif  // MPQC_DIRECT_AO_FACTORY_H

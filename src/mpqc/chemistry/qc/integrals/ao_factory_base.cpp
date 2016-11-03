@@ -2,7 +2,7 @@
 // Created by Chong Peng on 3/2/16.
 //
 
-#include <mpqc/chemistry/qc/integrals/atomic_integral_base.h>
+#include <mpqc/chemistry/qc/integrals/ao_factory_base.h>
 
 namespace mpqc {
 namespace integrals {
@@ -51,7 +51,7 @@ libint2::Operator to_libint2_operator(Operator::Type mpqc_oper) {
 }
 
 libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
-                                        const AtomicIntegralBase &base) {
+                                        const AOFactoryBase &base) {
   TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
                   mpqc_oper <= Operator::Type::__last_1body_operator) ||
                      (Operator::Type::__first_2body_operator <= mpqc_oper &&
@@ -89,7 +89,7 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 }
 }
 
-AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
+AOFactoryBase::AOFactoryBase(const KeyVal &kv)
     : world_(*kv.value<madness::World*>("$:world")),
       orbital_basis_registry_(),
       mol_(),
@@ -148,7 +148,7 @@ AtomicIntegralBase::AtomicIntegralBase(const KeyVal &kv)
 
 }
 
-libint2::Engine AtomicIntegralBase::make_engine(const Operator &oper,
+libint2::Engine AOFactoryBase::make_engine(const Operator &oper,
                                                 int64_t max_nprim,
                                                 int64_t max_am) {
   auto op = detail::to_libint2_operator(oper.type());
@@ -159,7 +159,7 @@ libint2::Engine AtomicIntegralBase::make_engine(const Operator &oper,
   return engine;
 }
 
-std::shared_ptr<Screener> AtomicIntegralBase::make_screener_three_center(
+std::shared_ptr<Screener> AOFactoryBase::make_screener_three_center(
     ShrPool<libint2::Engine> &engine, basis::Basis &basis1,
     basis::Basis &basis2) {
   std::shared_ptr<Screener> p_screen;
@@ -177,7 +177,7 @@ std::shared_ptr<Screener> AtomicIntegralBase::make_screener_three_center(
   return p_screen;
 }
 
-std::shared_ptr<Screener> AtomicIntegralBase::make_screener_four_center(
+std::shared_ptr<Screener> AOFactoryBase::make_screener_four_center(
     ShrPool<libint2::Engine> &engine, basis::Basis &basis) {
   std::shared_ptr<Screener> p_screen;
   if (screen_.empty()) {
@@ -196,7 +196,7 @@ std::shared_ptr<Screener> AtomicIntegralBase::make_screener_four_center(
   return p_screen;
 }
 
-void AtomicIntegralBase::parse_one_body(
+void AOFactoryBase::parse_one_body(
     const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
     Bvector &bases) {
@@ -227,7 +227,7 @@ void AtomicIntegralBase::parse_one_body(
       detail::to_libint2_operator_params(oper_type, *this));
 }
 
-void AtomicIntegralBase::parse_two_body_two_center(
+void AOFactoryBase::parse_two_body_two_center(
     const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
     Bvector &bases) {
@@ -262,7 +262,7 @@ void AtomicIntegralBase::parse_two_body_two_center(
       detail::to_libint2_operator_params(oper_type, *this));
 }
 
-void AtomicIntegralBase::parse_two_body_three_center(
+void AOFactoryBase::parse_two_body_three_center(
     const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
     std::shared_ptr<Screener> &p_screener) {
@@ -310,7 +310,7 @@ void AtomicIntegralBase::parse_two_body_three_center(
   }
 }
 
-void AtomicIntegralBase::parse_two_body_four_center(
+void AOFactoryBase::parse_two_body_four_center(
     const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
     std::shared_ptr<Screener> &p_screener) {
@@ -354,7 +354,7 @@ void AtomicIntegralBase::parse_two_body_four_center(
   }
 }
 
-std::array<std::wstring, 3> AtomicIntegralBase::get_df_formula(
+std::array<std::wstring, 3> AOFactoryBase::get_df_formula(
     const Formula &formula) {
   std::array<std::wstring, 3> result;
 
@@ -390,7 +390,7 @@ std::array<std::wstring, 3> AtomicIntegralBase::get_df_formula(
   return result;
 }
 
-Formula AtomicIntegralBase::get_jk_formula(const Formula &formula,
+Formula AOFactoryBase::get_jk_formula(const Formula &formula,
                                            const std::wstring &obs) {
   Formula result;
 
@@ -428,7 +428,7 @@ Formula AtomicIntegralBase::get_jk_formula(const Formula &formula,
   return result;
 }
 
-std::array<Formula, 3> AtomicIntegralBase::get_jk_df_formula(
+std::array<Formula, 3> AOFactoryBase::get_jk_df_formula(
     const Formula &formula, const std::wstring &obs) {
   std::array<Formula, 3> result;
 
@@ -454,7 +454,7 @@ std::array<Formula, 3> AtomicIntegralBase::get_jk_df_formula(
   return result;
 }
 
-OrbitalIndex AtomicIntegralBase::get_jk_orbital_space(
+OrbitalIndex AOFactoryBase::get_jk_orbital_space(
     const Operator &operation) {
   if (operation.type() == Operator::Type::J ||
       operation.type() == Operator::Type::K) {
@@ -469,7 +469,7 @@ OrbitalIndex AtomicIntegralBase::get_jk_orbital_space(
   }
 }
 
-std::array<Formula, 3> AtomicIntegralBase::get_fock_formula(
+std::array<Formula, 3> AOFactoryBase::get_fock_formula(
     const Formula &formula) {
   std::array<Formula, 3> result;
   Formula h(formula);

@@ -30,7 +30,7 @@ double RIDBRMP2F12::value() {
     utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
     // initialize
-    auto mol = this->lcao_factory().atomic_integral().molecule();
+    auto mol = this->lcao_factory().ao_factory().molecule();
     Eigen::VectorXd orbital_energy;
     this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
         this->lcao_factory(), orbital_energy, mol, is_frozen_core(),
@@ -82,13 +82,13 @@ double RIDBRMP2F12::value() {
       obsolete();
 
       // change basis
-      auto vbs = lcao_factory().atomic_integral().orbital_basis_registry().retrieve(
+      auto vbs = lcao_factory().ao_factory().orbital_basis_registry().retrieve(
           OrbitalIndex(L"Α"));
-      lcao_factory().atomic_integral().orbital_basis_registry().remove(
+      lcao_factory().ao_factory().orbital_basis_registry().remove(
           OrbitalIndex(L"κ"));
-      lcao_factory().atomic_integral().orbital_basis_registry().insert(
+      lcao_factory().ao_factory().orbital_basis_registry().insert(
           OrbitalIndex(L"κ"), vbs);
-      lcao_factory().atomic_integral().orbital_basis_registry().remove(
+      lcao_factory().ao_factory().orbital_basis_registry().remove(
           OrbitalIndex(L"Α"));
 
       auto mp2 = mbpt::RIRMP2(kv_);

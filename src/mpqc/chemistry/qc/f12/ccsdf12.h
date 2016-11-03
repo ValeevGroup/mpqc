@@ -169,7 +169,7 @@ void CCSDF12<Tile>::compute_cabs_singles() {
 
 template <typename Tile>
 void CCSDF12<Tile>::compute_f12() {
-  auto lazy_two_electron_int = this->get_direct_ao_ints();
+  auto lazy_two_electron_int = this->get_direct_ao_factory();
   Matrix Eij_F12;
   if (method_ == "standard") {
     Eij_F12 = compute_ccsd_f12(lazy_two_electron_int);
@@ -215,7 +215,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
     Eij_F12 = eij;
   }
 
-  lcao_factory.atomic_integral().registry().purge_operator(world, L"R");
+  lcao_factory.ao_factory().registry().purge_operator(world, L"R");
 
   // compute X term
   TArray X_ijij_ijji = compute_X_ijij_ijji_df(lcao_factory, ijij_ijji_shape);

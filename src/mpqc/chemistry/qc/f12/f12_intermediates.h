@@ -28,7 +28,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_df(
     TA::SparseShape<float> &shape) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   auto v_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> V_ijij_ijji;
@@ -36,7 +36,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_df(
   utility::print_par(world, "\nCompute V_ijij_ijji With DF \n");
   {
     auto left = lcao_factory(L"(Κ |GR|i2 i1)");
-    auto middle = ao_integral(L"(Κ|GR|Λ)[inv]");
+    auto middle = ao_factory(L"(Κ|GR|Λ)[inv]");
     auto right = lcao_factory(L"(Λ |GR|j1 j2)");
 
     auto time0 = mpqc::now(world, accurate_time);
@@ -156,7 +156,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_df(
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   auto x_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> X_ijij_ijji;
@@ -164,7 +164,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_df(
   utility::print_par(world, "\nCompute X_ijij_ijji With DF \n");
   {
     auto left = lcao_factory(L"(Κ |R2|i1 i2)");
-    auto middle = ao_integral(L"(Κ|R2|Λ)[inv]");
+    auto middle = ao_factory(L"(Κ|R2|Λ)[inv]");
     auto right = lcao_factory(L"(Λ |R2|j1 j2)");
 
     auto time0 = mpqc::now(world, accurate_time);
@@ -286,7 +286,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   auto b_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> B_ijij_ijji;
@@ -296,7 +296,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
 
   {
     auto left = lcao_factory(L"(Κ |dR2|i1 i2)");
-    auto middle = ao_integral(L"(Κ|dR2|Λ)[inv]");
+    auto middle = ao_factory(L"(Κ|dR2|Λ)[inv]");
     auto right = lcao_factory(L"(Λ |dR2|j1 j2)");
 
     auto time0 = mpqc::now(world, accurate_time);
@@ -450,7 +450,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   auto b_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> B_ijij_ijji;
@@ -460,7 +460,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
 
   {
     auto left = lcao_factory(L"(Κ |dR2|i1 i2)");
-    auto middle = ao_integral(L"(Κ|dR2|Λ)[inv]");
+    auto middle = ao_factory(L"(Κ|dR2|Λ)[inv]");
     auto right = lcao_factory(L"(Λ |dR2|j1 j2)");
 
     auto time0 = mpqc::now(world, accurate_time);
@@ -1300,7 +1300,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape, DirectArray direct_array) {
   auto &world = lcao_factory.world();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   bool accurate_time = lcao_factory.accurate_time();
 
   TA::DistArray<Tile, TA::SparsePolicy> V_ijji_ijji;
@@ -1312,7 +1312,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
   auto vt2_time0 = mpqc::now(world, accurate_time);
   {
     auto left = lcao_factory(L"(Κ |GR|i a)");
-    auto middle = ao_integral(L"(Κ|GR|Λ)[inv]");
+    auto middle = ao_factory(L"(Κ|GR|Λ)[inv]");
     auto right = lcao_factory(L"(Λ |GR|j b)");
 
     auto time0 = mpqc::now(world, accurate_time);
@@ -1622,7 +1622,7 @@ VX_pqrs_pqsr(const std::string &target_str,
   const auto methodstr = df ? "[df]" : "";
 
   auto &world = lcao_factory.world();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   const bool accurate_time = lcao_factory.accurate_time();
 
   const auto equiv_pq = OrbitalIndex(p) == OrbitalIndex(q);
@@ -1651,7 +1651,7 @@ VX_pqrs_pqsr(const std::string &target_str,
     const char *opstr = (target == Target::V) ? "GR" : "R2";
     const auto left_pr =
         lcao_factory(wconcat(L"(Κ |", opstr, "|", p, " ", r, ")"));
-    const auto middle = ao_integral(wconcat(L"(Κ|", opstr, L"|Λ)[inv]"));
+    const auto middle = ao_factory(wconcat(L"(Κ|", opstr, L"|Λ)[inv]"));
     const auto right_qs =
         lcao_factory(wconcat(L"(Λ |", opstr, "|", q, " ", s, ")"));
 

@@ -10,7 +10,7 @@
 #include "mpqc/chemistry/qc/mbpt/denom.h"
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include <mpqc/chemistry/qc/cc/diis_ccsd.h>
-#include <mpqc/chemistry/qc/integrals/direct_atomic_integral.h>
+#include <mpqc/chemistry/qc/integrals/direct_ao_factory.h>
 #include <mpqc/chemistry/qc/scf/mo_build.h>
 #include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
 
@@ -25,7 +25,7 @@ template <typename Tile, typename Policy>
 class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectAOIntegral = integrals::DirectAtomicIntegral<Tile, Policy>;
+  using DirectAOIntegral = integrals::DirectAOFactory<Tile, Policy>;
 
   CCSD() = default;
   virtual ~CCSD() {}
@@ -58,9 +58,9 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     // initialize direct integral class
     if (method_ == "direct") {
-      auto direct_ao_integral =
-          integrals::detail::construct_direct_atomic_integral<Tile, Policy>(kv);
-      direct_ao_ints_ = direct_ao_integral->compute(L"(μ ν| G|κ λ)");
+      auto direct_ao_factory =
+          integrals::detail::construct_direct_ao_factory<Tile, Policy>(kv);
+      direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
     }
 
     max_iter_ = kv.value<int>("max_iter", 20);
@@ -75,7 +75,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
  private:
   const KeyVal kv_;
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
-  typename DirectAOIntegral::DirectTArray direct_ao_ints_;
+  typename DirectAOIntegral::DirectTArray direct_ao_array_;
   bool df_;
   std::string method_;
   std::size_t max_iter_;
@@ -149,8 +149,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
   void set_t2(const TArray &t2) { T2_ = t2; }
 
-  const typename DirectAOIntegral::DirectTArray &get_direct_ao_ints() const {
-    return direct_ao_ints_;
+  const typename DirectAOIntegral::DirectTArray &get_direct_ao_factory() const {
+    return direct_ao_array_;
   }
 
  protected:
@@ -1320,7 +1320,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   virtual void init() {
     if (this->orbital_energy() == nullptr ||
         this->trange1_engine() == nullptr) {
-      auto mol = this->lcao_factory().atomic_integral().molecule();
+      auto mol = this->lcao_factory().ao_factory().molecule();
       Eigen::VectorXd orbital_energy;
       this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
           this->lcao_factory(), orbital_energy, mol, this->is_frozen_core(),
@@ -1376,7 +1376,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   const TArray get_Xab() {
     TArray result;
     TArray sqrt =
-        this->lcao_factory().atomic_integral().compute(L"(Κ|G| Λ)[inv_sqr]");
+        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|a b)");
     result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
     return result;
@@ -1386,7 +1386,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   const TArray get_Xij() {
     TArray result;
     TArray sqrt =
-        this->lcao_factory().atomic_integral().compute(L"(Κ|G| Λ)[inv_sqr]");
+        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|i j)");
     result("K,i,j") = sqrt("K,Q") * three_center("Q,i,j");
     return result;
@@ -1396,7 +1396,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   const TArray get_Xai() {
     TArray result;
     TArray sqrt =
-        this->lcao_factory().atomic_integral().compute(L"(Κ|G| Λ)[inv_sqr]");
+        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
     result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
     return result;
@@ -1504,14 +1504,14 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   /// @param t1 singles amplitudes in MO basis
   /// @return U tensor
   TArray compute_u2_u11(const TArray &t2, const TArray &t1) {
-    if (direct_ao_ints_.array().is_initialized()) {
+    if (direct_ao_array_.array().is_initialized()) {
       TArray Ca = get_Ca();
       TArray tc;
       TArray u2_u11;
       tc("i,q") = Ca("q,c") * t1("c,i");
       u2_u11("p, r, i, j") =
           ((t2("a,b,i,j") * Ca("q,a")) * Ca("s,b") + tc("i,q") * tc("j,s")) *
-          direct_ao_ints_("p,q,r,s");
+          direct_ao_array_("p,q,r,s");
       return u2_u11;
     } else {
       throw std::runtime_error(

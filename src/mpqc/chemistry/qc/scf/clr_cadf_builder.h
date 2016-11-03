@@ -17,7 +17,7 @@
 
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/integrals/make_engine.h>
-#include <mpqc/chemistry/qc/integrals/atomic_integral.h>
+#include <mpqc/chemistry/qc/integrals/ao_factory.h>
 #include <mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h>
 #include <mpqc/chemistry/qc/scf/cadf_helper_functions.h>
 
@@ -93,17 +93,17 @@ class ClrCADFFockBuilder : public FockBuilder {
       Molecule const &clustered_mol,
       Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints,
+      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       bool use_forced_shape, double force_threshold, double lcao_chop_threshold,
       double clr_thresh)
       : ClrCADFFockBuilder(clustered_mol, df_clustered_mol, obs_set, dfbs_set,
-                           ao_ints, clr_thresh) {
+                           ao_factory, clr_thresh) {
     use_forced_shape_ = use_forced_shape;
     force_threshold_ = force_threshold;
     lcao_chop_threshold_ = lcao_chop_threshold;
 
-    basis::Basis obs = ao_ints.orbital_basis_registry().retrieve(L"κ");
-    basis::Basis dfbs = ao_ints.orbital_basis_registry().retrieve(L"Κ");
+    basis::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
+    basis::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
 
     dE_ = make_three_center_integrals(obs, dfbs);
 
@@ -120,18 +120,18 @@ class ClrCADFFockBuilder : public FockBuilder {
       Molecule const &clustered_mol,
       Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AtomicIntegral<TileType, TA::SparsePolicy> &ao_ints,
+      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       double clr_threshold)
       : FockBuilder(), clr_threshold_(clr_threshold) {
     // Grab needed ao integrals
-    E_ = ao_ints.compute(L"( Κ | G|κ λ)");
+    E_ = ao_factory.compute(L"( Κ | G|κ λ)");
     E_J_sizes_ = detail::array_storage(E_);
     if (E_.world().rank() == 0) {
       std::cout << "E for J storage:\n"
                 << "\tDense  " << E_J_sizes_[0] << "\n"
                 << "\tSparse " << E_J_sizes_[1] << std::endl;
     }
-    ArrayType M = ao_ints.compute(L"( Κ | G| Λ )");
+    ArrayType M = ao_factory.compute(L"( Κ | G| Λ )");
 
     bool compress_M = false;
     M_ = TA::to_new_tile_type(
@@ -158,8 +158,8 @@ class ClrCADFFockBuilder : public FockBuilder {
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
 
-    basis::Basis obs = ao_ints.orbital_basis_registry().retrieve(L"κ");
-    basis::Basis dfbs = ao_ints.orbital_basis_registry().retrieve(L"Κ");
+    basis::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
+    basis::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
 
     auto eng_pool = integrals::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, dfbs),

@@ -25,9 +25,9 @@ RHF::RHF(const KeyVal& kv) : AOWavefunction(kv), kv_(kv){
 }
 
 void RHF::init(const KeyVal &kv) {
-  auto& ao_int = this->ao_integrals();
-  auto& world = ao_int.world();
-  auto& mol = ao_int.molecule();
+  auto& ao_factory = this->ao_factory();
+  auto& world = ao_factory.world();
+  auto& mol = ao_factory.molecule();
 
   // check if even number of electron first
   std::size_t occ = mol.occupation();
@@ -41,15 +41,15 @@ void RHF::init(const KeyVal &kv) {
   repulsion_ = mol.nuclear_repulsion();
 
   // Overlap ints
-  S_ = ao_int.compute(L"<κ|λ>");
+  S_ = ao_factory.compute(L"<κ|λ>");
   // H core int
-  H_ = ao_int.compute(L"<κ|H|λ>");
+  H_ = ao_factory.compute(L"<κ|H|λ>");
 
   // fock builder
   init_fock_builder();
 
   // emultipole integral TODO better interface to compute this
-  auto basis = ao_int.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
+  auto basis = ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
   const auto bs_array = utility::make_array(basis, basis);
   auto multi_pool = integrals::make_engine_pool(libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
   auto r_xyz = integrals::sparse_xyz_integrals(world, multi_pool, bs_array);
@@ -82,8 +82,8 @@ void RHF::init(const KeyVal &kv) {
 }
 
 void RHF::init_fock_builder() {
-  auto& ao_int = this->ao_integrals();
-  auto eri4 = ao_int.compute(L"(μ ν| G|κ λ)");
+  auto& ao_factory = this->ao_factory();
+  auto eri4 = ao_factory.compute(L"(μ ν| G|κ λ)");
   auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
@@ -182,7 +182,7 @@ bool RHF::solve(int64_t max_iters, double thresh) {
   } else {
     this->energy_ = old_energy;
     // store fock matix in registry
-    auto& registry = this->ao_integrals().registry();
+    auto& registry = this->ao_factory().registry();
     f_builder_->register_fock(F_,registry);
     return true;
   }
@@ -207,9 +207,9 @@ void RHF::build_F() {
 RIRHF::RIRHF(const KeyVal &kv) : RHF(kv){}
 
 void RIRHF::init_fock_builder() {
-  auto& ao_int = this->ao_integrals();
-  auto inv = ao_int.compute(L"( Κ | G| Λ )");
-  auto eri3 = ao_int.compute(L"( Κ | G|κ λ)");
+  auto& ao_factory = this->ao_factory();
+  auto inv = ao_factory.compute(L"( Κ | G| Λ )");
+  auto eri3 = ao_factory.compute(L"( Κ | G|κ λ)");
   scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
@@ -223,11 +223,11 @@ DirectRIRHF::DirectRIRHF(const KeyVal &kv) : RHF(kv) {}
 
 void DirectRIRHF::init_fock_builder() {
 
-  auto& direct_ao_int = this->direct_ao_integrals();
-  auto& ao_int = this->ao_integrals();
+  auto& direct_ao_factory = this->direct_ao_factory();
+  auto& ao_factory = this->ao_factory();
 
-  auto inv = ao_int.compute(L"( Κ | G| Λ )");
-  auto eri3 = direct_ao_int.compute(L"( Κ | G|κ λ)");
+  auto inv = ao_factory.compute(L"( Κ | G| Λ )");
+  auto eri3 = direct_ao_factory.compute(L"( Κ | G|κ λ)");
 
   scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
@@ -242,8 +242,8 @@ void DirectRIRHF::init_fock_builder() {
 DirectRHF::DirectRHF(const KeyVal &kv) : RHF(kv) {}
 
 void DirectRHF::init_fock_builder() {
-  auto& direct_ao_int = this->direct_ao_integrals();
-  auto eri4 = direct_ao_int.compute(L"(μ ν| G|κ λ)");
+  auto& direct_ao_factory = this->direct_ao_factory();
+  auto eri4 = direct_ao_factory.compute(L"(μ ν| G|κ λ)");
   auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }

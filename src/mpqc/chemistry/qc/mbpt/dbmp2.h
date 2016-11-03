@@ -122,8 +122,8 @@ class DBRMP2 : public RMP2 {
   //      OrbitalSpaceRegistry<TArray>& orbital_registry,
   //      Eigen::VectorXd &ens, const rapidjson::Document &in,
   //      const Molecule &mols, int occ) {
-  //    auto &ao_int = lcao_factory.atomic_integral();
-  //    auto &world = ao_int.world();
+  //    auto &ao_factory = lcao_factory.ao_factory();
+  //    auto &world = ao_factory.world();
   //    using TArray = TA::DistArray<Tile, Policy>;
   //
   //    auto mo_time0 = mpqc::fenced_now(world);
@@ -132,13 +132,13 @@ class DBRMP2 : public RMP2 {
   //
   //    // solving occupied orbitals
   //    TArray F;
-  //    if (ao_int.registry().have(Formula(L"<μ|F|ν>"))) {
-  //      F = ao_int.registry().retrieve(Formula(L"<μ|F|ν>"));
+  //    if (ao_factory.registry().have(Formula(L"<μ|F|ν>"))) {
+  //      F = ao_factory.registry().retrieve(Formula(L"<μ|F|ν>"));
   //    } else {
-  //      F = ao_int.registry().retrieve(Formula(L"<μ|F|ν>[df]"));
+  //      F = ao_factory.registry().retrieve(Formula(L"<μ|F|ν>[df]"));
   //    }
   //
-  //    auto S = ao_int.compute(L"<κ|λ>");
+  //    auto S = ao_factory.compute(L"<κ|λ>");
   //
   //    RowMatrixXd F_eig = array_ops::array_to_eigen(F);
   //    RowMatrixXd S_eig = array_ops::array_to_eigen(S);
@@ -212,10 +212,10 @@ class DBRMP2 : public RMP2 {
   //    // find fock matrix
   //    TArray F_vbs;
   //    // if use density fitting
-  //    if (ao_int.registry().have(Formula(L"<μ|F|ν>[df]"))) {
-  //      F_vbs = ao_int.compute(Formula(L"<Α|F|Β>[df]"));
+  //    if (ao_factory.registry().have(Formula(L"<μ|F|ν>[df]"))) {
+  //      F_vbs = ao_factory.compute(Formula(L"<Α|F|Β>[df]"));
   //    } else {
-  //      F_vbs = ao_int.compute(Formula(L"<Α|F|Β>"));
+  //      F_vbs = ao_factory.compute(Formula(L"<Α|F|Β>"));
   //    }
   //    auto n_vbs = F_vbs.trange().elements_range().extent()[0];
   //    tre = std::make_shared<TRange1Engine>(occ, n_vbs, occ_blocksize,
@@ -231,7 +231,7 @@ class DBRMP2 : public RMP2 {
   //      auto identity_ta =
   //          array_ops::eigen_to_array<Tile>(world, identity, tr_vbs, tr_vbs);
   //      // get overlap
-  //      auto S_vbs = ao_int.compute(L"<Α|Β>");
+  //      auto S_vbs = ao_factory.compute(L"<Α|Β>");
   //      // get density
   //      RowMatrixXd D_obs = C_occ * C_occ.transpose();
   //
@@ -289,8 +289,8 @@ class DBRMP2 : public RMP2 {
   //      OrbitalSpaceRegistry<TArray>& orbital_registry,
   //      Eigen::VectorXd &ens, const rapidjson::Document &in,
   //      const Molecule &mols, int occ) {
-  //    auto &ao_int = lcao_factory.atomic_integral();
-  //    auto &world = ao_int.world();
+  //    auto &ao_factory = lcao_factory.ao_factory();
+  //    auto &world = ao_factory.world();
   //    using TArray = TA::DistArray<Tile, Policy>;
   //
   //    auto mo_time0 = mpqc::fenced_now(world);
@@ -299,13 +299,13 @@ class DBRMP2 : public RMP2 {
   //
   //    // solving occupied orbitals
   //    TArray F;
-  //    if (ao_int.registry().have(Formula(L"<μ|F|ν>"))) {
-  //      F = ao_int.registry().retrieve(Formula(L"<μ|F|ν>"));
+  //    if (ao_factory.registry().have(Formula(L"<μ|F|ν>"))) {
+  //      F = ao_factory.registry().retrieve(Formula(L"<μ|F|ν>"));
   //    } else {
-  //      F = ao_int.registry().retrieve(Formula(L"<μ|F|ν>[df]"));
+  //      F = ao_factory.registry().retrieve(Formula(L"<μ|F|ν>[df]"));
   //    }
   //
-  //    auto S = ao_int.compute(L"<κ|λ>");
+  //    auto S = ao_factory.compute(L"<κ|λ>");
   //
   //    RowMatrixXd F_eig = array_ops::array_to_eigen(F);
   //    RowMatrixXd S_eig = array_ops::array_to_eigen(S);
@@ -356,8 +356,8 @@ class DBRMP2 : public RMP2 {
   //
   //    // project to large basis set
   //
-  //    TArray S_vbs_inv = ao_int.compute(L"<Α|Β>[inv]");
-  //    TArray S_vbs_obs = ao_int.compute(L"<Α|μ>");
+  //    TArray S_vbs_inv = ao_factory.compute(L"<Α|Β>[inv]");
+  //    TArray S_vbs_obs = ao_factory.compute(L"<Α|μ>");
   //    auto n_vbs = S_vbs_inv.trange().elements_range().extent()[0];
   //    auto tr_vbs = S_vbs_inv.trange().data().back();
   //
@@ -378,10 +378,10 @@ class DBRMP2 : public RMP2 {
   //    // find fock matrix
   //    TArray F_vbs;
   //    // if use density fitting
-  //    if (ao_int.registry().have(Formula(L"<μ|F|ν>[df]"))) {
-  //      F_vbs = ao_int.compute(Formula(L"<Α|F|Β>[df]"));
+  //    if (ao_factory.registry().have(Formula(L"<μ|F|ν>[df]"))) {
+  //      F_vbs = ao_factory.compute(Formula(L"<Α|F|Β>[df]"));
   //    } else {
-  //      F_vbs = ao_int.compute(Formula(L"<Α|F|Β>"));
+  //      F_vbs = ao_factory.compute(Formula(L"<Α|F|Β>"));
   //    }
   //    tre = std::make_shared<TRange1Engine>(occ, n_vbs, occ_blocksize,
   //                                          vir_blocksize, n_frozen_core);

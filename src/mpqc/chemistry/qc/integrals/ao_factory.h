@@ -2,15 +2,15 @@
 // Created by Chong Peng on 10/14/15.
 //
 
-#ifndef MPQC_ATOMIC_INTEGRAL_H
-#define MPQC_ATOMIC_INTEGRAL_H
+#ifndef MPQC_AO_FACTORY_H
+#define MPQC_AO_FACTORY_H
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "mpqc/util/external/madworld/parallel_break_point.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/util/misc/time.h"
-#include "atomic_integral_base.h"
+#include "ao_factory_base.h"
 #include <madness/world/worldmem.h>
 #include <mpqc/chemistry/qc/expression/permutation.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
@@ -20,30 +20,29 @@ namespace mpqc {
 namespace integrals {
 
 template <typename Tile, typename Policy>
-class AtomicIntegral;
+class AOFactory;
 
 namespace detail{
 
 
 template <typename Tile, typename Policy>
-std::shared_ptr<AtomicIntegral<Tile,Policy>> construct_atomic_integral(const KeyVal& kv){
-  std::shared_ptr<AtomicIntegral<Tile,Policy>> ao_int;
-  if(kv.exists_class("wfn_world:atomic_integral")){
-    ao_int = kv.class_ptr<AtomicIntegral<Tile,Policy>>("wfn_world:atomic_integral");
+std::shared_ptr<AOFactory<Tile,Policy>> construct_ao_factory(const KeyVal& kv){
+  std::shared_ptr<AOFactory<Tile,Policy>> ao_factory;
+  if(kv.exists_class("wfn_world:ao_factory")){
+    ao_factory = kv.class_ptr<AOFactory<Tile,Policy>>("wfn_world:ao_factory");
   }
   else{
-    ao_int = std::make_shared<AtomicIntegral<Tile,Policy>>(kv);
-    std::shared_ptr<DescribedClass> ao_int_base = ao_int;
+    ao_factory = std::make_shared<AOFactory<Tile,Policy>>(kv);
+    std::shared_ptr<DescribedClass> ao_factory_base = ao_factory;
     KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
-    kv_nonconst.keyval("wfn_world").assign("atomic_integral",ao_int_base);
+    kv_nonconst.keyval("wfn_world").assign("ao_factory",ao_factory_base);
   }
-  return ao_int;
+  return ao_factory;
 };
 
 
 } // namespace detail
 
-// TODO rename AtomicIntegral -> OperatorAOFactory
 // TODO better inverse of two center
 // TODO direct integral
 // TODO Screener for different type of integral
@@ -58,7 +57,7 @@ std::shared_ptr<AtomicIntegral<Tile,Policy>> construct_atomic_integral(const Key
  */
 
 template <typename Tile, typename Policy=TA::SparsePolicy>
-class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
+class AOFactory : public AOFactoryBase, public DescribedClass {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
 
@@ -66,12 +65,12 @@ class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
   //  using Op = Tile (*) (TA::TensorD&&);
   using Op = std::function<Tile(TA::TensorD&&)>;
 
-  AtomicIntegral() = default;
+  AOFactory() = default;
 
   /**
    * \brief  KeyVal constructor
    *
-   * It takes all the keys to construct AtomicIntegralBase and also the following
+   * It takes all the keys to construct AOFactoryBase and also the following
    *
    *  | KeyWord | Type | Default| Description |
    *  |---------|------|--------|-------------|
@@ -81,8 +80,8 @@ class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
    *
    **/
 
-  AtomicIntegral(const KeyVal& kv)
-      : AtomicIntegralBase(kv),
+  AOFactory(const KeyVal& kv)
+      : AOFactoryBase(kv),
         ao_formula_registry_(),
         orbital_space_registry_() {
     accurate_time_ = kv.value("accurate_time", false);
@@ -91,8 +90,8 @@ class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
     set_oper(Tile());
   }
 
-  AtomicIntegral(AtomicIntegral&&) = default;
-  AtomicIntegral& operator=(AtomicIntegral&&) = default;
+  AOFactory(AOFactory&&) = default;
+  AOFactory& operator=(AOFactory&&) = default;
 
   /// set oper based on Tile type
   template<typename T = Tile>
@@ -100,7 +99,7 @@ class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
     op_ = TA::Noop<TA::TensorD,true>();
   }
 
-  virtual ~AtomicIntegral() noexcept = default;
+  virtual ~AOFactory() noexcept = default;
 
   /// wrapper to compute function
   TArray compute(const std::wstring&);
@@ -185,15 +184,15 @@ class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
 };
 
 template <typename Tile, typename Policy>
-typename AtomicIntegral<Tile, Policy>::TArray
-AtomicIntegral<Tile, Policy>::compute(const std::wstring& formula_string) {
+typename AOFactory<Tile, Policy>::TArray
+AOFactory<Tile, Policy>::compute(const std::wstring& formula_string) {
   auto formula = Formula(formula_string);
   return compute(formula);
 }
 
 template <typename Tile, typename Policy>
-typename AtomicIntegral<Tile, Policy>::TArray
-AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray
+AOFactory<Tile, Policy>::compute(const Formula& formula) {
   TArray result;
 
   // find if in registry
@@ -258,8 +257,8 @@ AtomicIntegral<Tile, Policy>::compute(const Formula& formula) {
 }
 
 template <typename Tile, typename Policy>
-typename AtomicIntegral<Tile, Policy>::TArray
-AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray
+AOFactory<Tile, Policy>::compute2(const Formula& formula) {
   Bvector bs_array;
   double time = 0.0;
   mpqc::time_point time0;
@@ -550,8 +549,8 @@ AtomicIntegral<Tile, Policy>::compute2(const Formula& formula) {
 }
 
 template <typename Tile, typename Policy>
-typename AtomicIntegral<Tile, Policy>::TArray
-AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray
+AOFactory<Tile, Policy>::compute3(const Formula& formula) {
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
@@ -579,8 +578,8 @@ AtomicIntegral<Tile, Policy>::compute3(const Formula& formula) {
 }
 
 template <typename Tile, typename Policy>
-typename AtomicIntegral<Tile, Policy>::TArray
-AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray
+AOFactory<Tile, Policy>::compute4(const Formula& formula) {
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
@@ -643,4 +642,4 @@ AtomicIntegral<Tile, Policy>::compute4(const Formula& formula) {
 }
 }
 
-#endif  // MPQC_ATOMIC_INTEGRAL_H
+#endif  // MPQC_AO_FACTORY_H

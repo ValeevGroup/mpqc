@@ -44,7 +44,7 @@ class DBCCSD : public CCSD<Tile, Policy> {
     if (this->orbital_energy() == nullptr ||
         this->trange1_engine() == nullptr) {
       auto& lcao_factory = this->lcao_factory();
-      auto mol = lcao_factory.atomic_integral().molecule();
+      auto mol = lcao_factory.ao_factory().molecule();
       Eigen::VectorXd orbital_energy;
       this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
           lcao_factory, orbital_energy, mol, this->is_frozen_core(),

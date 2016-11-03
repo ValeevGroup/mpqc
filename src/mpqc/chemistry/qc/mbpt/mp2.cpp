@@ -60,7 +60,7 @@ double RMP2::value() {
 }
 
 void RMP2::init() {
-  auto mol = this->lcao_factory().atomic_integral().molecule();
+  auto mol = this->lcao_factory().ao_factory().molecule();
   Eigen::VectorXd orbital_energy;
   this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
       this->lcao_factory(), orbital_energy, mol, is_frozen_core(), occ_block(), unocc_block());

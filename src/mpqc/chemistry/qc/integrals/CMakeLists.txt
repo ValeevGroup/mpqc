@@ -10,10 +10,10 @@ set(integral_sources
         screening/qvl_screening.cpp
         screening/qvl_shell_info.h
         screening/qvl_shell_info.cpp
-        atomic_integral.h
-        atomic_integral_base.h
-        atomic_integral_base.cpp
-        direct_atomic_integral.h
+        ao_factory.h
+        ao_factory_base.h
+        ao_factory_base.cpp
+        direct_ao_factory.h
         lcao_factory.h
         integrals.h
         integral.cpp

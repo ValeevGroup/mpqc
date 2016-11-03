@@ -166,7 +166,7 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
  private:
   void init() {
     // init obs
-    auto mol = this->lcao_factory().atomic_integral().molecule();
+    auto mol = this->lcao_factory().ao_factory().molecule();
     Eigen::VectorXd orbital_energy;
     this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
         this->lcao_factory(), orbital_energy, mol, this->is_frozen_core(),

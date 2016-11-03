@@ -24,7 +24,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_db_df(
     TA::SparseShape<float> &shape) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   auto v_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> V_ijij_ijji;
@@ -32,7 +32,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_db_df(
   utility::print_par(world, "\nCompute V_ijij_ijji With Dual Basis DF \n");
   {
     auto left = lcao_factory(L"(Κ |GR|i2 i1)");
-    auto middle = ao_integral(L"(Κ|GR|Λ)[inv]");
+    auto middle = ao_factory(L"(Κ|GR|Λ)[inv]");
     auto right = lcao_factory(L"(Λ |GR|j1 j2)");
 
     auto time0 = mpqc::now(world, accurate_time);
@@ -121,7 +121,7 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_xyab_db_df(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   bool accurate_time = lcao_factory.accurate_time();
 
   auto v_time0 = mpqc::now(world, accurate_time);
@@ -133,7 +133,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab_db_df(
 
   {
     auto left = lcao_factory(L"(Κ |GR|i a)");
-    auto middle = ao_integral(L"(Κ|GR|Λ)[inv]");
+    auto middle = ao_factory(L"(Κ|GR|Λ)[inv]");
     auto right = lcao_factory(L"(Λ |GR|j b)");
 
     auto time0 = mpqc::now(world, accurate_time);
@@ -298,7 +298,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   auto x_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> X_ijij_ijji;
@@ -306,7 +306,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
   utility::print_par(world, "\nCompute X_ijij_ijji With Dual Basis DF \n");
   {
     auto left = lcao_factory(L"(Κ |R2|i1 i2)");
-    auto middle = ao_integral(L"(Κ|R2|Λ)[inv]");
+    auto middle = ao_factory(L"(Κ|R2|Λ)[inv]");
     auto right = lcao_factory(L"(Λ |R2|j1 j2)");
 
     auto time0 = mpqc::now(world, accurate_time);
@@ -388,7 +388,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
-  auto &ao_integral = lcao_factory.atomic_integral();
+  auto &ao_factory = lcao_factory.ao_factory();
   auto b_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> B_ijij_ijji;
@@ -398,7 +398,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
 
   {
     auto left = lcao_factory(L"(Κ |dR2|i1 i2)");
-    auto middle = ao_integral(L"(Κ|dR2|Λ)[inv]");
+    auto middle = ao_factory(L"(Κ|dR2|Λ)[inv]");
     auto right = lcao_factory(L"(Λ |dR2|j1 j2)");
 
     auto time0 = mpqc::now(world, accurate_time);
@@ -457,7 +457,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
     // AO R integral not needed
-    lcao_factory.atomic_integral().registry().purge_operator(world, L"R");
+    lcao_factory.ao_factory().registry().purge_operator(world, L"R");
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "B Term3 Time: ", time, " S\n");

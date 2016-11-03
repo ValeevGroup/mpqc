@@ -15,4 +15,4 @@ set(sources
         )
 
 add_library(MPQCexpression ${sources})
-target_link_libraries(MPQCexpression ${TA_LIBRARIES})
+target_link_libraries(MPQCexpression MPQCmath_ta ${TA_LIBRARIES})

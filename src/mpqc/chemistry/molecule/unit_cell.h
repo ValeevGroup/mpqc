@@ -1,5 +1,5 @@
-#ifndef SRC_MPQC_CHEMISTRY_MOLECULE_PERIODIC_SYSTEM_H_
-#define SRC_MPQC_CHEMISTRY_MOLECULE_PERIODIC_SYSTEM_H_
+#ifndef SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_
+#define SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_
 
 #include <iosfwd>
 #include <vector>
@@ -9,21 +9,16 @@
 
 #include <Eigen/Dense>
 
-typedef Eigen::Vector3i Vec3I;
-typedef Eigen::Vector3d Vec3D;
-
 namespace mpqc {
-namespace molecule {
-
-class PeriodicSystem : public Molecule {
+class UnitCell : public Molecule {
  private:
-  Vec3I R_max_ = {0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
-  Vec3I RJ_max_ = {0, 0, 0};       // range of Coulomb operation
-  Vec3I RD_max_ = {0, 0, 0};       // range of density representation
-  Vec3I nk_ = {1, 1, 1};           // # of k points in each direction
-  Vec3D dcell_ = {0.0, 0.0, 0.0};  // direct unit cell params (in a.u.)
+  Vector3i R_max_ = {0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
+  Vector3i RJ_max_ = {0, 0, 0};       // range of Coulomb operation
+  Vector3i RD_max_ = {0, 0, 0};       // range of density representation
+  Vector3i nk_ = {1, 1, 1};           // # of k points in each direction
+  Vector3d dcell_ = {0.0, 0.0, 0.0};  // direct unit cell params (in a.u.)
  public:
-  PeriodicSystem() = default;
+  UnitCell() = default;
 
   /** \brief KeyVal constructor for Periodic System
    *
@@ -64,7 +59,7 @@ class PeriodicSystem : public Molecule {
    *  example input:
    *  \code
    *  "molecule": {
-   *    "type": "PeriodicSystem",
+   *    "type": "UnitCell",
    *    "charge": 0,
    *    "file_name": "water.xyz",
    *    "sort_input": true,
@@ -76,26 +71,26 @@ class PeriodicSystem : public Molecule {
    *  \endcode
    *
    */
-  PeriodicSystem(const KeyVal& kv);
+  UnitCell(const KeyVal& kv);
 
   /// Return the nuclear repulsion energy of the Periodic System.
-  double nuclear_repulsion() const override;
+  double nuclear_repulsion(Vector3i RJ_max) const;
 
-  ~PeriodicSystem() = default;
+  ~UnitCell() = default;
 
   /// Print out molecule and atom information
   void print(std::ostream& out) const override;
 
   /// Return dcell_
-  Vec3D dcell() {return dcell_;}
-  Vec3I R_max() {return R_max_;}
-  Vec3I RD_max() {return RD_max_;}
-  Vec3I RJ_max() {return RJ_max_;}
-  Vec3I nk() {return nk_;}
+  Vector3d dcell() {return dcell_;}
+  Vector3i R_max() {return R_max_;}
+  Vector3i RD_max() {return RD_max_;}
+  Vector3i RJ_max() {return RJ_max_;}
+  Vector3i nk() {return nk_;}
 
 };
 
-}  // molecule namespace
+
 }  // mpqc namespace
 
-#endif  // SRC_MPQC_CHEMISTRY_MOLECULE_PERIODIC_SYSTEM_H
+#endif  // SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H

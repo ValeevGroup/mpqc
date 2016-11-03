@@ -16,7 +16,6 @@
 
 #include <mpqc/chemistry/qc/integrals/periodic_atomic_integral.h>
 
-
 using namespace mpqc;
 
 typedef std::vector<TA::DistArray<TA::TensorZ, TA::SparsePolicy>> TArrayVec;
@@ -45,12 +44,15 @@ int try_main(int argc, char *argv[], madness::World &world) {
   auto mol = kv.keyval("molecule").class_ptr<Molecule>();
   auto charge = mol->charge();
   auto docc = mol->occupation(charge) / 2;
-  auto enuc = mol->nuclear_repulsion();
+  if (world.rank() == 0)
+      std::cout << *mol << std::endl;
 
-  if (world.rank() == 0) {
-    std::cout << *mol << std::endl;
-    std::cout << "Nuclear Repulsion: " << enuc << std::endl;
-  }
+  auto unitcell = std::dynamic_pointer_cast<UnitCell>(mol);
+  auto RJ_max = Vector3i(kv.value<std::vector<int>>("molecule:rjmax").data());
+  auto enuc = unitcell->nuclear_repulsion(RJ_max);
+  if (world.rank() == 0)
+      std::cout << "Nuclear Repulsion: " << enuc << std::endl;
+
 
   /// Build 1-e integrals
   integrals::PeriodicAtomicIntegral<TA::TensorZ, TA::SparsePolicy> pao_int(kv);

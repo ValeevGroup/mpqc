@@ -10,6 +10,7 @@ using RowMatrix =
 
 using RowMatrixXd = RowMatrix<double>;
 using Vector3d = Eigen::Vector3d;
+using Vector3i = Eigen::Vector3i;
 }
 
 namespace madness {

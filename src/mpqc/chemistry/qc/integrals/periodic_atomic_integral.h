@@ -12,13 +12,12 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "atomic_integral_base.h"
 #include "atomic_integral_base.cpp"
-#include <mpqc/chemistry/molecule/periodic_system.h>
+#include <mpqc/chemistry/molecule/unit_cell.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/util/keyval/keyval.hpp>
 // Eigen matrix algebra library
 #include <unsupported/Eigen/MatrixFunctions>
 
-typedef Eigen::Vector3i Vec3I;
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
                       Eigen::RowMajor> Matrixc;
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> Vectorc;
@@ -49,10 +48,10 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
         orbital_space_registry_() {
     std::string molecule_type = kv.value<std::string>("molecule:type");
 
-    if (molecule_type != "PeriodicSystem") {
-      throw std::invalid_argument("Moleule Type Has To be PeriodicSystem!!");
+    if (molecule_type != "UnitCell") {
+      throw std::invalid_argument("Moleule Type Has To be UnitCell!!");
     }
-    auto ps = std::dynamic_pointer_cast<molecule::PeriodicSystem>(mol_);
+    auto ps = std::dynamic_pointer_cast<UnitCell>(mol_);
     dcell_ = ps->dcell();
     R_max_ = ps->R_max();
     RD_max_ = ps->RD_max();
@@ -108,22 +107,22 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
   // Density
   TArray D_;
 
-  Vec3I R_max_ = {0, 0,
+  Vector3i R_max_ = {0, 0,
                   0};  // range of expansion of Bloch Gaussians in AO Gaussians
-  Vec3I RJ_max_ = {0, 0, 0};       // range of Coulomb operation
-  Vec3I RD_max_ = {0, 0, 0};       // range of density representation
-  Vec3I nk_ = {1, 1, 1};           // # of k points in each direction
-  Vec3D dcell_ = {0.0, 0.0, 0.0};  // direct unit cell params (in a.u.)
+  Vector3i RJ_max_ = {0, 0, 0};       // range of Coulomb operation
+  Vector3i RD_max_ = {0, 0, 0};       // range of density representation
+  Vector3i nk_ = {1, 1, 1};           // # of k points in each direction
+  Vector3d dcell_ = {0.0, 0.0, 0.0};  // direct unit cell params (in a.u.)
 
   int64_t R_size_;
   int64_t RJ_size_;
   int64_t RD_size_;
   int64_t k_size_;
 
-  int64_t idx_lattice(int x, int y, int z, Vec3I vec);
-  Vec3D R_vector(int64_t idx_lattice, Vec3I vec);
-  int64_t idx_k(int x, int y, int z, Vec3I nk);
-  Vec3D k_vector(int64_t idx_k);
+  int64_t idx_lattice(int x, int y, int z, Vector3i vec);
+  Vector3d R_vector(int64_t idx_lattice, Vector3i vec);
+  int64_t idx_k(int x, int y, int z, Vector3i nk);
+  Vector3d k_vector(int64_t idx_k);
 
   template <typename U = Policy>
   TA::DistArray<
@@ -145,20 +144,20 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
 
   void parse_two_body_periodic(const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-      Vec3D shift_coul, bool if_coulomb);
+      Vector3d shift_coul, bool if_coulomb);
 
   std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                   Vec3D shift);
+                                                   Vector3d shift);
 
   std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                   Vec3D shift_base,
-                                                   Vec3I nshift,
+                                                   Vector3d shift_base,
+                                                   Vector3i nshift,
                                                    bool is_real_space);
 
   TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
 
   std::shared_ptr<Molecule> shift_mol_origin(Molecule &mol,
-                                                       Vec3D shift);
+                                                       Vector3d shift);
 
   libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
                                           const AtomicIntegralBase &base,
@@ -283,7 +282,7 @@ void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(
   TA_ASSERT(ket_basis != nullptr);
 
   // Form a compound ket basis by shifting origins from -Rmax to Rmax
-  Vec3D zero_shift_base(0.0, 0.0, 0.0);
+  Vector3d zero_shift_base(0.0, 0.0, 0.0);
   ket_basis = shift_basis_origin(*ket_basis, zero_shift_base, R_max_, true);
 
   bases = Bvector{{*bra_basis, *ket_basis}};
@@ -298,7 +297,7 @@ void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(
 template <typename Tile, typename Policy>
 void PeriodicAtomicIntegral<Tile, Policy>::parse_two_body_periodic(const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-    Vec3D shift_coul, bool if_coulomb) {
+    Vector3d shift_coul, bool if_coulomb) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -326,7 +325,7 @@ void PeriodicAtomicIntegral<Tile, Policy>::parse_two_body_periodic(const Formula
   TA_ASSERT(ket_basis1 != nullptr);
 
   // Form a compound index basis
-  Vec3D zero_shift_base(0.0, 0.0, 0.0);
+  Vector3d zero_shift_base(0.0, 0.0, 0.0);
   if (if_coulomb) {
       bra_basis1 = shift_basis_origin(*bra_basis1, zero_shift_base, R_max_, true);
       ket_basis0 = shift_basis_origin(*ket_basis0, shift_coul);
@@ -353,7 +352,7 @@ void PeriodicAtomicIntegral<Tile, Policy>::parse_two_body_periodic(const Formula
 
 template <typename Tile, typename Policy>
 int64_t PeriodicAtomicIntegral<Tile, Policy>::idx_lattice(int x, int y, int z,
-                                                          Vec3I vec) {
+                                                          Vector3i vec) {
   if (vec(0) >= 0 && vec(1) >= 0 && vec(2) >= 0 && abs(x) <= vec(0) &&
       abs(y) <= vec(1) && abs(z) <= vec(2)) {
     int64_t idx = (x + vec(0)) * (2 * vec(0) + 1) * (2 * vec(1) + 1) +
@@ -366,7 +365,7 @@ int64_t PeriodicAtomicIntegral<Tile, Policy>::idx_lattice(int x, int y, int z,
 
 template <typename Tile, typename Policy>
 int64_t PeriodicAtomicIntegral<Tile, Policy>::idx_k(int x, int y, int z,
-                                                    Vec3I nk) {
+                                                    Vector3i nk) {
   if (nk(0) >= 1 && nk(1) >= 1 && nk(2) >= 1 && x >= 0 && y >= 0 && z >= 0 &&
       x < nk(0) && y < nk(1) && z < nk(2)) {
     int64_t idx = x * nk(0) * nk(1) + y * nk(1) + z;
@@ -377,8 +376,8 @@ int64_t PeriodicAtomicIntegral<Tile, Policy>::idx_k(int x, int y, int z,
 }
 
 template <typename Tile, typename Policy>
-Vec3D PeriodicAtomicIntegral<Tile, Policy>::k_vector(int64_t idx_k) {
-  Vec3D result;
+Vector3d PeriodicAtomicIntegral<Tile, Policy>::k_vector(int64_t idx_k) {
+  Vector3d result;
   auto x = idx_k / nk_(2) / nk_(1);
   auto y = (idx_k / nk_(2)) % nk_(1);
   auto z = idx_k % nk_(2);
@@ -395,12 +394,12 @@ Vec3D PeriodicAtomicIntegral<Tile, Policy>::k_vector(int64_t idx_k) {
 }
 
 template <typename Tile, typename Policy>
-Vec3D PeriodicAtomicIntegral<Tile, Policy>::R_vector(int64_t idx_lattice,
-                                                     Vec3I vec) {
+Vector3d PeriodicAtomicIntegral<Tile, Policy>::R_vector(int64_t idx_lattice,
+                                                     Vector3i vec) {
   auto z = idx_lattice % (2 * vec(2) + 1);
   auto y = (idx_lattice / (2 * vec(2) + 1)) % (2 * vec(1) + 1);
   auto x = idx_lattice / (2 * vec(2) + 1) / (2 * vec(1) + 1);
-  Vec3D result((x - vec(0)) * dcell_(0), (y - vec(1)) * dcell_(1),
+  Vector3d result((x - vec(0)) * dcell_(0), (y - vec(1)) * dcell_(1),
                (z - vec(2)) * dcell_(2));
   return result;
 }
@@ -408,7 +407,7 @@ Vec3D PeriodicAtomicIntegral<Tile, Policy>::R_vector(int64_t idx_lattice,
 template <typename Tile, typename Policy>
 std::shared_ptr<basis::Basis>
 PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
-                                                         Vec3D shift) {
+                                                         Vector3d shift) {
   std::vector<ShellVec> vec_of_shells;
   for (auto shell_vec : basis.cluster_shells()) {
     ShellVec shells;
@@ -431,8 +430,8 @@ PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
 template <typename Tile, typename Policy>
 std::shared_ptr<basis::Basis>
 PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
-                                                         Vec3D shift_base,
-                                                         Vec3I nshift,
+                                                         Vector3d shift_base,
+                                                         Vector3i nshift,
                                                          bool is_real_space) {
   std::vector<ShellVec> vec_of_shells;
 
@@ -441,7 +440,7 @@ PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
                     : (1 + idx_k(nshift(0) - 1, nshift(1) - 1, nshift(2) - 1, nshift));
 
   for (auto idx_shift = 0; idx_shift < shift_size; ++idx_shift) {
-    Vec3D shift = is_real_space ? (R_vector(idx_shift, nshift) + shift_base)
+    Vector3d shift = is_real_space ? (R_vector(idx_shift, nshift) + shift_base)
                                 : (k_vector(idx_shift) + shift_base);
 
     for (auto shell_vec : basis.cluster_shells()) {
@@ -480,7 +479,7 @@ PeriodicAtomicIntegral<Tile, Policy>::extend_trange1(TA::TiledRange1 tr0,
 template <typename Tile, typename Policy>
 std::shared_ptr<Molecule>
 PeriodicAtomicIntegral<Tile, Policy>::shift_mol_origin(Molecule &mol,
-                                                       Vec3D shift) {
+                                                       Vector3d shift) {
   std::vector<AtomBasedClusterable> vec_of_clusters;
   for (auto &cluster : mol) {
     AtomBasedCluster shifted_cluster;

@@ -13,13 +13,16 @@ set(sources
         f12_utility.h
         mp2f12.cpp
         mp2f12.h
+        gf2f12.h
+        gf2f12.cpp
         ccsdf12.h
+        ccsdf12.cpp
         db_f12_intermediates.h
         dbccsdf12.h
+        dbccsdf12.cpp
         dbmp2f12.h
         dbmp2f12.cpp
-        f12.cpp
-)
+        )
 
 add_library(MPQCf12 ${sources})
 

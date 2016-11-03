@@ -13,36 +13,39 @@
 namespace mpqc{
 namespace qc{
 
-template<typename Tile>
+/// LCAOWavefunction is a Wavefunction with an LCAOFactory
+
+/// This models wave function methods expressed in LCAO basis (e.g. traditional
+/// electron correlation methods, like MO-basis CCSD).
+/// \todo elaborate LCAOWavefunction documentation
+template<typename Tile, typename Policy>
 class LCAOWavefunction : public Wavefunction {
 
 public:
-  using ArrayType = TA::DistArray<Tile, TA::SparsePolicy>;
-  using LCAOFactoryType = integrals::LCAOFactory<Tile,TA::SparsePolicy>;
+  using ArrayType = TA::DistArray<Tile, Policy>;
+  using LCAOFactoryType = integrals::LCAOFactory<Tile,Policy>;
 
-  /*
-   * KeyVal constructor
-   * it includes all options from Wavefunction and LCAOFactory,
-   * and also the following keywords
+  /**
+   * The KeyVal constructor uses keywords of Wavefunction and LCAOFactory, and the following keywords:
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | frozen_core | bool | true | if froze core electrons |
-   * | mo_block | int | 24 | block size in mo space |
-   * | occ_block | int | mo_block | block size in occupied space |
-   * | un_occ_block | int | mo_block | block size in unoccupied space |
+   * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
+   * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space block size |
+   * | \c "occ_block_size" | int | \c "$obs_block_size" | the target block size of the occupied space |
+   * | \c "uocc_block_size" | int | \c "$obs_block_size" | the target block size of the unoccupied space |
    *
    */
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-    lcao_factory_ = integrals::detail::construct_lcao_factory<Tile,TA::SparsePolicy>(kv);
+    lcao_factory_ = integrals::detail::construct_lcao_factory<Tile,Policy>(kv);
 
     frozen_core_ = kv.value<bool>("frozen_core",true);
-    std::size_t mo_block = kv.value<int>("mo_block",24);
-    occ_block_ = kv.value<int>("occ_block",mo_block);
-    unocc_block_ = kv.value<int>("un_occ_block",mo_block);
+    std::size_t mo_block = kv.value<int>("obs_block_size",24);
+    occ_block_ = kv.value<int>("occ_block_size",mo_block);
+    unocc_block_ = kv.value<int>("uocc_block_size",mo_block);
   }
 
-  ~LCAOWavefunction() = default;
+  virtual ~LCAOWavefunction() = default;
 
   LCAOFactoryType& lcao_factory() {
     return *lcao_factory_;
@@ -51,6 +54,7 @@ public:
     lcao_factory_->registry().purge(wfn_world()->world());
     lcao_factory_->orbital_space().clear();
     lcao_factory_->atomic_integral().registry().purge(wfn_world()->world());
+    Wavefunction::obsolete();
   }
 
   const std::shared_ptr<TRange1Engine> trange1_engine() const {

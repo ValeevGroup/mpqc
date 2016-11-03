@@ -5,7 +5,6 @@
 #ifndef MPQC_MO_BUILD_H
 #define MPQC_MO_BUILD_H
 
-#include <rapidjson/document.h>
 #include <tiledarray.h>
 
 
@@ -15,37 +14,6 @@
 
 namespace mpqc {
 
-namespace detail {
-
-inline std::tuple<bool, std::size_t, std::size_t> get_mo_build_option(
-    const rapidjson::Document &in) {
-  bool frozen_core =
-      in.HasMember("FrozenCore") ? in["FrozenCore"].GetBool() : false;
-
-  // get all the sizes
-  std::size_t mo_blocksize =
-      in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
-  std::size_t occ_blocksize =
-      in.HasMember("OccBlockSize") ? in["OccBlockSize"].GetInt() : mo_blocksize;
-  std::size_t vir_blocksize =
-      in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
-
-  return std::make_tuple(frozen_core, occ_blocksize, vir_blocksize);
-};
-}
-
-template <typename Tile, typename Policy>
-std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
-    const rapidjson::Document &in, const Molecule &mols) {
-  bool frozen_core;
-  std::size_t occ_blocksize, vir_blocksize;
-  std::tie(frozen_core, occ_blocksize, vir_blocksize) =
-      detail::get_mo_build_option(in);
-
-  return closed_shell_obs_mo_build_eigen_solve(
-      lcao_factory, ens, mols, frozen_core, occ_blocksize, vir_blocksize);
-};
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
@@ -156,20 +124,6 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory,
-    const rapidjson::Document &in, const std::shared_ptr<TRange1Engine> tre)
-{
-  // get all the sizes
-  std::size_t mo_blocksize =
-      in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
-  std::size_t vir_blocksize =
-      in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
-
-  closed_shell_cabs_mo_build_svd(lcao_factory,tre,vir_blocksize);
-};
-
-template <typename Tile, typename Policy>
-void closed_shell_cabs_mo_build_svd(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory,
     const std::shared_ptr<TRange1Engine> tre,
     std::size_t vir_blocksize) {
   auto &ao_int = lcao_factory.atomic_integral();
@@ -275,20 +229,6 @@ void closed_shell_cabs_mo_build_svd(
                        " S\n");
   }
 };
-
-template <typename Tile, typename Policy>
-std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
-    const rapidjson::Document &in, const Molecule &mols) {
-
-  bool frozen_core;
-  std::size_t occ_blocksize, vir_blocksize;
-  std::tie(frozen_core, occ_blocksize, vir_blocksize) =
-      detail::get_mo_build_option(in);
-
-  return closed_shell_dualbasis_mo_build_eigen_solve_svd(
-      lcao_factory, ens, mols, frozen_core, occ_blocksize, vir_blocksize);
-}
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
@@ -444,22 +384,6 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   return tre;
 }
 
-template <typename Tile, typename Policy>
-void closed_shell_dualbasis_cabs_mo_build_svd(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory,
-    const rapidjson::Document &in, const std::shared_ptr<TRange1Engine> tre)
-{
-  std::string ri_method =
-      in.HasMember("RIMethod") ? in["RIMethod"].GetString() : "VBS";
-
-  // get mo block size
-  std::size_t mo_blocksize =
-      in.HasMember("MoBlockSize") ? in["MoBlockSize"].GetInt() : 24;
-  std::size_t vir_blocksize =
-      in.HasMember("VirBlockSize") ? in["VirBlockSize"].GetInt() : mo_blocksize;
-
-  closed_shell_dualbasis_cabs_mo_build_svd(lcao_factory,tre,ri_method,vir_blocksize);
-}
 template <typename Tile, typename Policy>
 void closed_shell_dualbasis_cabs_mo_build_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory,

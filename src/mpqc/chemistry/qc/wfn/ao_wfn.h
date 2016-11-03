@@ -15,33 +15,42 @@
 namespace mpqc {
 namespace qc {
 
-template<typename Tile>
+/// AOWavefunction is a Wavefunction with an AOFactory
+
+/// This models wave function methods expressed in AO basis.
+/// \todo elaborate AOWavefunction documentation
+template<typename Tile, typename Policy>
 class AOWavefunction : public Wavefunction {
  public:
-  using AOIntegral = integrals::AtomicIntegral<Tile, TA::SparsePolicy>;
-  using DirectAOIntegral = integrals::DirectAtomicIntegral<Tile, TA::SparsePolicy>;
+  using AOIntegral = integrals::AtomicIntegral<Tile, Policy>;
+  using DirectAOIntegral = integrals::DirectAtomicIntegral<Tile, Policy>;
   using ArrayType = typename AOIntegral::TArray;
 
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv)
   {
-    ao_ints_ = integrals::detail::construct_atomic_integral<Tile, TA::SparsePolicy>(kv);
+    ao_ints_ = integrals::detail::construct_atomic_integral<Tile, Policy>(kv);
     ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
-    direct_ao_ints_ = integrals::detail::construct_direct_atomic_integral<Tile,TA::SparsePolicy>(kv);
+    direct_ao_ints_ = integrals::detail::construct_direct_atomic_integral<Tile,Policy>(kv);
     direct_ao_ints_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
   }
-  ~AOWavefunction() = default;
+  virtual ~AOWavefunction() = default;
 
   void compute(PropertyBase *pb) override {
     throw std::logic_error("Not Implemented!");
   }
 
-  /// obsolete, purge the registry in AOIntegral and DirectAOInetgral
+  /// obsolete, purge the registry in AOIntegral and DirectAOIntegral
   void obsolete() override {
     ao_integrals().registry().purge(wfn_world()->world());
     direct_ao_integrals().registry().purge(wfn_world()->world());
+    Wavefunction::obsolete();
   }
+
+  double value() override {
+    return 0.0;
+  };
 
   /*! Return a reference to the AtomicIntegral Library
    *

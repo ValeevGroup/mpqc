@@ -49,8 +49,6 @@ class ESolveDensityBuilder : public DensityBuilder {
 
     inline void print_iter(std::string const &) override {}
 
-    virtual rapidjson::Value results(rapidjson::Document &d) override;
-
     inline double condition_num_threshold() const {
         return condition_num_thresh_;
     }

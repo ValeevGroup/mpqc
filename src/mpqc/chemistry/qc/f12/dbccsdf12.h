@@ -5,10 +5,8 @@
 #ifndef MPQC_DB_CCSDF12_H
 #define MPQC_DB_CCSDF12_H
 
-#include <mpqc/chemistry/qc/cc/dbccsd.h>
 #include <mpqc/chemistry/qc/f12/ccsdf12.h>
 #include <mpqc/chemistry/qc/f12/db_f12_intermediates.h>
-#include <mpqc/chemistry/qc/f12/cabs_singles.h>
 
 namespace mpqc {
 namespace f12 {
@@ -33,81 +31,93 @@ class DBCCSDF12 : public CCSDF12<Tile> {
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
 
-  DBCCSDF12(LCAOFactoryType& lcao_factory, rapidjson::Document& options)
-      : CCSDF12<Tile>(construct_db_ccsd(lcao_factory, options)) {}
-
-  virtual real_t compute() {
-    auto& world = this->lcao_factory_.world();
-    // compute ccsd
-    real_t ccsd = this->ccsd_->compute();
-
-    auto& option = this->ccsd_->options();
-    // initialize CABS orbitals
-    closed_shell_dualbasis_cabs_mo_build_svd(this->lcao_factory_, option,
-                                             this->ccsd_->trange1_engine());
-
-    Matrix Eij_F12;
-
-    std::string method =
-        option.HasMember("Method") ? option["Method"].GetString() : "df";
-
-    if (method == "df") {
-      Eij_F12 = compute_c_df();
-    } else {
-      throw std::runtime_error("Wrong DBCCSDF12 Method");
-    }
-
-    real_t e_f12 = Eij_F12.sum();
-    if (debug()) utility::print_par(world, "E_F12: ", e_f12, "\n");
-
-    // compute cabs singles
-    real_t e_s = 0.0;
-    bool singles =
-        option.HasMember("Singles") ? option["Singles"].GetBool() : true;
-    if (singles) {
-      auto single_time0 = mpqc::fenced_now(world);
-
-      // non-canonical, don't include F_m^a
-      CABSSingles<Tile> cabs_singles(this->lcao_factory_);
-      e_s = cabs_singles.compute(true,false,false);
-      if (debug()) {
-        utility::print_par(world, "E_S: ", e_s, "\n");
-      }
-      auto single_time1 = mpqc::fenced_now(world);
-      auto single_time = mpqc::duration_in_s(single_time0, single_time1);
-      mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time,
-                               "\n");
-    }
-
-    return ccsd + e_f12 + e_s;
-  }
-
+  using CCSDF12<Tile>::value;
   using CCSDF12<Tile>::debug;
 
- private:
-  Matrix compute_c_df();
+  /**
+   * KeyVal constructor
+   * @param kv
+   *
+   * keywords: takes all keywords from CCSDF12 class
+   *
+   * invalid keywords: approximation, vt_couple
+   */
+  DBCCSDF12(const KeyVal& kv) : CCSDF12<Tile>(kv) {}
+  virtual ~DBCCSDF12() = default;
 
-  std::shared_ptr<cc::CCSD<Tile, Policy>> construct_db_ccsd(
-      LCAOFactoryType& lcao_factory, rapidjson::Document& options) {
-    std::shared_ptr<cc::CCSD<Tile, Policy>> dbccsd =
-        std::make_shared<cc::DBCCSD<Tile, Policy>>(lcao_factory, options);
-    return dbccsd;
+ private:
+  /// overide initialization of CCSD
+  void init() override {
+    if (this->orbital_energy() == nullptr ||
+        this->trange1_engine() == nullptr) {
+      auto& lcao_factory = this->lcao_factory();
+      auto mol = lcao_factory.atomic_integral().molecule();
+      Eigen::VectorXd orbital_energy;
+      this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
+          lcao_factory, orbital_energy, mol, this->is_frozen_core(),
+          this->occ_block(), this->unocc_block());
+      this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+    }
   }
+
+  /// override initialization of CABS in CCSDF12
+  void init_cabs() override {
+    closed_shell_dualbasis_cabs_mo_build_svd(this->lcao_factory(),
+                                             this->trange1_engine(), "VBS",
+                                             this->unocc_block());
+  }
+
+  /// override cabs singles in CCSDF12
+  void compute_cabs_singles() override;
+
+  /// override compute_f12 in CCSDF12
+  void compute_f12() override;
+
+  Matrix compute_db_ccsd_f12_df();
 };
 
 template <typename Tile>
-typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_c_df() {
-  auto& lcao_factory = this->lcao_factory_;
+void DBCCSDF12<Tile>::compute_cabs_singles() {
+  auto& world = this->wfn_world()->world();
+
+  mpqc::utility::print_par(world, " CABS Singles \n");
+  auto single_time0 = mpqc::fenced_now(world);
+
+  // non-canonical, don't include F_m^a
+  CABSSingles<Tile> cabs_singles(this->lcao_factory());
+  this->singles_energy_ = cabs_singles.compute(true, false, false);
+  if (debug()) {
+    utility::print_par(world, "E_S: ", this->singles_energy_, "\n");
+  }
+  auto single_time1 = mpqc::fenced_now(world);
+  auto single_time = mpqc::duration_in_s(single_time0, single_time1);
+  mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time,
+                           "\n");
+}
+
+template <typename Tile>
+void DBCCSDF12<Tile>::compute_f12() {
+  auto& world = this->wfn_world()->world();
+
+  Matrix Eij_F12;
+  if (this->method_ != "df") {
+    utility::print_par(world, "\n Warning! DBCCSD only support method==df! \n");
+  }
+  Eij_F12 = compute_db_ccsd_f12_df();
+
+  this->f12_energy_ = Eij_F12.sum();
+}
+
+template <typename Tile>
+typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_db_ccsd_f12_df() {
+  auto& lcao_factory = this->lcao_factory();
   auto& world = lcao_factory.world();
   Matrix Eij_F12;
 
-  // clean LCAO Integrals
-  lcao_factory.registry().clear();
-
-  auto nocc = this->ccsd_->trange1_engine()->get_active_occ();
+  auto nocc = this->trange1_engine()->get_active_occ();
 
   // create shape
-  auto occ_tr1 = this->ccsd_->trange1_engine()->get_occ_tr1();
+  auto occ_tr1 = this->trange1_engine()->get_occ_tr1();
   TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
@@ -115,14 +125,14 @@ typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_c_df() {
   TArray V_ijij_ijji = compute_V_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
 
   // VT2 contribution
-  TArray tmp = compute_VT2_ijij_ijji_db_df(lcao_factory, this->ccsd_->t2(),
-                                           ijij_ijji_shape);
+  TArray tmp =
+      compute_VT2_ijij_ijji_db_df(lcao_factory, this->t2(), ijij_ijji_shape);
   V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
 
   // VT1 contribution
   {
-    TArray tmp = compute_VT1_ijij_ijji_db_df(lcao_factory, this->ccsd_->t1(),
-                                             ijij_ijji_shape);
+    TArray tmp =
+        compute_VT1_ijij_ijji_db_df(lcao_factory, this->t1(), ijij_ijji_shape);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
@@ -135,7 +145,7 @@ typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_c_df() {
   // compute X term
   TArray X_ijij_ijji = compute_X_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
 
-  auto Fij = this->lcao_factory_.compute(L"(i|F|j)[df]");
+  auto Fij = this->lcao_factory().compute(L"(i|F|j)[df]");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
   f12::convert_X_ijkl(X_ijij_ijji, Fij_eigen);
   {

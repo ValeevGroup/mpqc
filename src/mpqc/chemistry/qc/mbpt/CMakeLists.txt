@@ -1,8 +1,8 @@
 set(sources
         dbmp2.h
+        dbmp2.cpp
         mp2.h
         mp2.cpp
-        mbpt.cpp
         )
 
 add_library(MPQCmbpt ${sources})

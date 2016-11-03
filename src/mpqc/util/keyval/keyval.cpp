@@ -7,7 +7,7 @@ DescribedClass::keyval_ctor_wrapper_type DescribedClass::type_to_keyval_ctor(
   auto& registry = keyval_ctor_registry();
   if (registry.find(type_name) == registry.end())
     throw std::runtime_error(
-        "DescribedClass::type_to_keyval_ctor -- type not registered");
+        "DescribedClass::type_to_keyval_ctor -- type \"" + type_name + "\" not registered");
   return registry[type_name];
 }
 

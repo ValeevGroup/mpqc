@@ -5,17 +5,20 @@
 #ifndef MPQC_CHEMISTRY_QC_SCF_LINKAGE_H
 #define MPQC_CHEMISTRY_QC_SCF_LINKAGE_H
 
-#include <mpqc/chemistry/qc/scf/rhf.h>
 #include <mpqc/util/keyval/forcelink.h>
+#include "mpqc/chemistry/qc/wfn/linkage.h"
 
 namespace mpqc{
-namespace qc{
+namespace scf{
 
-mpqc::detail::ForceLink<mpqc::scf::RHF> fl1;
-mpqc::detail::ForceLink<mpqc::scf::RIRHF> fl2;
-mpqc::detail::ForceLink<mpqc::scf::DirectRHF> fl3;
-mpqc::detail::ForceLink<mpqc::scf::DirectRIRHF> fl4;
-
+class RHF;
+class RIRHF;
+class DirectRHF;
+class DirectRIRHF;
+mpqc::detail::ForceLink<RHF> fl1;
+mpqc::detail::ForceLink<RIRHF> fl2;
+mpqc::detail::ForceLink<DirectRHF> fl3;
+mpqc::detail::ForceLink<DirectRIRHF> fl4;
 
 }
 }

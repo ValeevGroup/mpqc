@@ -61,26 +61,6 @@ class LCAOFactory : public DescribedClass{
   using AtomicIntegralType = AtomicIntegral<Tile, Policy>;
 
   /**
-   *  Constructor
-   *  @param atomic_integral  reference to AtomicIntegral class
-   *  @param orbital_space_registry  shared pointer to OrbitalSpaceRegistry,
-   * which contain AO to MO coefficients
-   *
-   */
-  LCAOFactory(AtomicIntegralType& atomic_integral,
-              const std::shared_ptr<OrbitalSpaceRegistry<TArray>>
-                  orbital_space_registry,
-              const rapidjson::Document& in = rapidjson::Document())
-      : world_(atomic_integral.world()),
-        atomic_integral_(atomic_integral),
-        orbital_space_registry_(orbital_space_registry),
-        mo_formula_registry_(),
-        keep_partial_transforms_(false) {
-    atomic_integral_.set_orbital_space_registry(orbital_space_registry);
-    parse_input(in);
-  }
-
-  /**
    * Constructor
    * @param WfnWorld
    * @param KeyVal
@@ -187,18 +167,7 @@ class LCAOFactory : public DescribedClass{
   }
 
  private:
-  /// function to parse input
-  void parse_input(const rapidjson::Document& in) {
-    if (in.IsObject()) {
-      accurate_time_ =
-          in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
-    } else {
-      accurate_time_ = false;
-    }
 
-    utility::print_par(world_, "\nConstructing Molecular Integral Class \n");
-    utility::print_par(world_, "AccurateTime: ", accurate_time_, "\n\n");
-  }
   /// compute integrals that has two dimension
   TArray compute2(const Formula& formula_string);
 

@@ -5,6 +5,7 @@ set(sources
     ao_wfn.cpp
     lcao_wfn.h
     lcao_wfn.cpp
+    linkage.cpp
     trange1_engine.h
     trange1_engine.cpp
     wfn_world.h

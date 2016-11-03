@@ -101,36 +101,6 @@ operator()(array_type const &F) {
     return std::make_pair(D, Cao);
 }
 
-rapidjson::Value ESolveDensityBuilder::results(rapidjson::Document &d) {
-    rapidjson::Value builder(rapidjson::kObjectType);
-    builder.AddMember("Name", "ESolveDensityBuilder", d.GetAllocator());
-    builder.AddMember("Metric Decomp Time", inverse_time_, d.GetAllocator());
-    builder.AddMember("Avg Eigensolve Time", utility::vec_avg(esolve_times_),
-                      d.GetAllocator());
-    builder.AddMember("Localization", localize_, d.GetAllocator());
-    if (localize_) {
-        builder.AddMember("Avg Localization Time",
-                          utility::vec_avg(localization_times_),
-                          d.GetAllocator());
-        builder.AddMember("Avg Clustering Time",
-                          utility::vec_avg(clustering_times_),
-                          d.GetAllocator());
-    }
-
-    auto c_avg = utility::vec_avg(coeff_storages_);
-    auto d_avg = utility::vec_avg(density_storages_);
-
-    builder.AddMember("Coeff Dense Storage", c_avg[0], d.GetAllocator());
-
-    builder.AddMember("Density Dense Storage", d_avg[0], d.GetAllocator());
-
-    builder.AddMember("Avg Coeff Sparse Storage", c_avg[1], d.GetAllocator());
-
-    builder.AddMember("Avg Density Sparse Storage", d_avg[1], d.GetAllocator());
-
-    return builder;
-}
-
 
 } // namespace scf
 } // namespace mpqc

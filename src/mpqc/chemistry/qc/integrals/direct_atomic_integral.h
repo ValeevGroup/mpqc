@@ -7,8 +7,9 @@
 
 #include <type_traits>
 
+#include <mpqc/util/misc/time.h>
+#include <madness/world/worldmem.h>
 #include <mpqc/chemistry/qc/integrals/atomic_integral_base.h>
-#include <rapidjson/document.h>
 
 namespace mpqc {
 namespace integrals {
@@ -62,36 +63,6 @@ class DirectAtomicIntegral : public AtomicIntegralBase, public DescribedClass {
   DirectAtomicIntegral(DirectAtomicIntegral&&) = default;
 
   DirectAtomicIntegral& operator=(DirectAtomicIntegral&&) = default;
-
-  /**
-   * Constructor
-   *  @param world madness::World object
-   *  @param op op is a function that will take TA::TensorD as argument and
-   * return Tile
-   *  @param mol shared pointer to Molecule
-   *  @param obs shared pointer to OrbitalBasisRegistry
-   *  @param gtg_params  parameters used in computing f12 integrals
-   *  @param in rapidjson Document object
-   *
-   */
-  DirectAtomicIntegral(
-      madness::World& world, Op op,
-      const std::shared_ptr<Molecule>& mol,
-      const std::shared_ptr<basis::OrbitalBasisRegistry>& obs,
-      const std::vector<std::pair<double, double>>& gtg_params =
-          std::vector<std::pair<double, double>>(),
-      const rapidjson::Document& in = rapidjson::Document())
-      : AtomicIntegralBase(world, mol, obs, gtg_params, in),
-        direct_ao_formula_registry_(),
-        op_(op) {
-    if (in.IsObject()) {
-      accurate_time_ =
-          in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
-    } else {
-      accurate_time_ = false;
-    }
-    utility::print_par(world, "AccurateTime: ", accurate_time_, "\n");
-  }
 
   /**
    * KeyVal constructor

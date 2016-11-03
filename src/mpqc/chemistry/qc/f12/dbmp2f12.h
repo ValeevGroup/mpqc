@@ -16,8 +16,18 @@ class RIDBRMP2F12 : public RIRMP2F12{
 
 public:
 
+  /**
+   * KeyVal constructor
+   * @param kv
+   *
+   * keywords:  takes all keywords from RIRMP2F12 class
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | redo_mp2 | bool | false | if to recompute mp2 energy in VBS |
+   */
   RIDBRMP2F12(const KeyVal& kv);
-  ~RIDBRMP2F12() = default;
+  virtual ~RIDBRMP2F12() = default;
 
   double value() override;
 

@@ -8,7 +8,7 @@
   },
   "basis1": {
     "type": "Basis",
-    "name": "t-aug-cc-pVDZ",
+    "name": "aug-cc-pVDZ",
     "molecule": "$:molecule"
   },
   "basis2": {
@@ -21,18 +21,12 @@
     "name": "aug-cc-pVDZ-CABS",
     "molecule": "$:molecule"
   },
-  "basis4":{
-    "type": "Basis",
-    "name": "aug-cc-pVDZ",
-    "molecule": "$:molecule"
-  },
   "world":{
     "type" : "WfnWorld",
     "molecule" : "$:molecule",
     "basis" : "$:basis1",
     "df_basis" :"$:basis2",
     "aux_basis": "$:basis3",
-    "vir_basis": "$:basis4",
     "screen": "qqr"
   },
   "scf":{
@@ -41,13 +35,11 @@
     "converge": 1.0e-11
   },
   "wfn":{
-    "type": "DBRMP2",
+    "type": "CCSD(F12)",
     "wfn_world": "$:world",
     "ref": "$:scf",
-    "use_cabs" : true,
-    "orbital" : 1,
-    "dyson_method" : "diagonal",
-    "occ_block" : 1,
-    "un_occ_block" : 24
+    "method" : "df",
+    "occ_block_size" : 1,
+    "uocc_block_size" : 24
   }
 }

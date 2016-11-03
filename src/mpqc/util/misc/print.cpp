@@ -9,6 +9,8 @@
 #include <iostream>
 #include <vector>
 
+#include <algorithm>
+
 #include "mpqc/util/misc/print.h"
 
 // print progress

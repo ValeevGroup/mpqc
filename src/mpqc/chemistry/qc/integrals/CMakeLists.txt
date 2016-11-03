@@ -20,7 +20,7 @@ set(integral_sources
         task_integral_kernels.h
         task_integral_kernels.cpp
         libint2_engine.cpp
-        periodic_atomic_integral.h
+        periodic_ao_factory.h
 )
 
 add_library(MPQCintegrals ${integral_sources})

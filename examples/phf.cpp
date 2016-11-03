@@ -14,7 +14,7 @@
 // include linkage file
 #include <mpqc/chemistry/molecule/linkage.h>
 
-#include <mpqc/chemistry/qc/integrals/periodic_atomic_integral.h>
+#include <mpqc/chemistry/qc/integrals/periodic_ao_factory.h>
 
 using namespace mpqc;
 
@@ -55,7 +55,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
 
   /// Build 1-e integrals
-  integrals::PeriodicAtomicIntegral<TA::TensorZ, TA::SparsePolicy> pao_int(kv);
+  integrals::PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy> pao_int(kv);
   auto obr = std::make_shared<basis::OrbitalBasisRegistry>(kv);
   pao_int.set_orbital_basis_registry(obr);
   // Read max iter and thresholds

@@ -1,17 +1,13 @@
-#ifndef MPQC_PERIODIC_ATOMIC_INTEGRAL_H
-#define MPQC_PERIODIC_ATOMIC_INTEGRAL_H
+#ifndef MPQC_PERIODIC_AO_FACTORY_H
+#define MPQC_PERIODIC_AO_FACTORY_H
 
 #include <iosfwd>
 #include <vector>
 
-// See if any is needed
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
-
-
-
 #include "mpqc/math/external/eigen/eigen.h"
-#include "atomic_integral_base.h"
-#include "atomic_integral_base.cpp"
+#include "ao_factory_base.h"
+#include "ao_factory_base.cpp"
 #include <mpqc/chemistry/molecule/unit_cell.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/util/keyval/keyval.hpp>
@@ -32,18 +28,18 @@ namespace mpqc {
 namespace integrals {
 
 template <typename Tile, typename Policy>
-class PeriodicAtomicIntegral : public AtomicIntegralBase {
+class PeriodicAOFactory : public AOFactoryBase {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   //    using Op = std::function<Tile(TA::TensorD&&)>;
   using Op = std::function<Tile(TA::TensorZ &&)>;
 
-  PeriodicAtomicIntegral() = default;
-  PeriodicAtomicIntegral(PeriodicAtomicIntegral &&) = default;
-  PeriodicAtomicIntegral &operator=(PeriodicAtomicIntegral &&) = default;
+  PeriodicAOFactory() = default;
+  PeriodicAOFactory(PeriodicAOFactory &&) = default;
+  PeriodicAOFactory &operator=(PeriodicAOFactory &&) = default;
 
-  PeriodicAtomicIntegral(const KeyVal &kv)
-      : AtomicIntegralBase(kv),
+  PeriodicAOFactory(const KeyVal &kv)
+      : AOFactoryBase(kv),
         ao_formula_registry_(),
         orbital_space_registry_() {
     std::string molecule_type = kv.value<std::string>("molecule:type");
@@ -66,7 +62,7 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
     op_ = TA::Noop<TA::TensorZ, true>();
   }
 
-  ~PeriodicAtomicIntegral() noexcept = default;
+  ~PeriodicAOFactory() noexcept = default;
 
   /// wrapper to compute function
   //  std::vector<TArray> compute(const std::wstring &);
@@ -160,7 +156,7 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
                                                        Vector3d shift);
 
   libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
-                                          const AtomicIntegralBase &base,
+                                          const AOFactoryBase &base,
                                           Molecule &mol);
 
   template <typename E>
@@ -174,15 +170,15 @@ class PeriodicAtomicIntegral : public AtomicIntegralBase {
 };
 
 template <typename Tile, typename Policy>
-typename PeriodicAtomicIntegral<Tile, Policy>::TArray PeriodicAtomicIntegral<
+typename PeriodicAOFactory<Tile, Policy>::TArray PeriodicAOFactory<
     Tile, Policy>::compute(const std::wstring &formula_string) {
   auto formula = Formula(formula_string);
   return compute(formula);
 }
 
 template <typename Tile, typename Policy>
-typename PeriodicAtomicIntegral<Tile, Policy>::TArray
-PeriodicAtomicIntegral<Tile, Policy>::compute(const Formula &formula) {
+typename PeriodicAOFactory<Tile, Policy>::TArray
+PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 
   TArray result;
   Bvector bs_array;
@@ -259,7 +255,7 @@ PeriodicAtomicIntegral<Tile, Policy>::compute(const Formula &formula) {
 
 
 template <typename Tile, typename Policy>
-void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(
+void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
         const Formula &formula,
         std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
         Molecule &shifted_mol) {
@@ -295,7 +291,7 @@ void PeriodicAtomicIntegral<Tile, Policy>::parse_one_body_periodic(
 }
 
 template <typename Tile, typename Policy>
-void PeriodicAtomicIntegral<Tile, Policy>::parse_two_body_periodic(const Formula &formula,
+void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
     Vector3d shift_coul, bool if_coulomb) {
   auto bra_indices = formula.bra_indices();
@@ -351,7 +347,7 @@ void PeriodicAtomicIntegral<Tile, Policy>::parse_two_body_periodic(const Formula
 }
 
 template <typename Tile, typename Policy>
-int64_t PeriodicAtomicIntegral<Tile, Policy>::idx_lattice(int x, int y, int z,
+int64_t PeriodicAOFactory<Tile, Policy>::idx_lattice(int x, int y, int z,
                                                           Vector3i vec) {
   if (vec(0) >= 0 && vec(1) >= 0 && vec(2) >= 0 && abs(x) <= vec(0) &&
       abs(y) <= vec(1) && abs(z) <= vec(2)) {
@@ -364,7 +360,7 @@ int64_t PeriodicAtomicIntegral<Tile, Policy>::idx_lattice(int x, int y, int z,
 }
 
 template <typename Tile, typename Policy>
-int64_t PeriodicAtomicIntegral<Tile, Policy>::idx_k(int x, int y, int z,
+int64_t PeriodicAOFactory<Tile, Policy>::idx_k(int x, int y, int z,
                                                     Vector3i nk) {
   if (nk(0) >= 1 && nk(1) >= 1 && nk(2) >= 1 && x >= 0 && y >= 0 && z >= 0 &&
       x < nk(0) && y < nk(1) && z < nk(2)) {
@@ -376,7 +372,7 @@ int64_t PeriodicAtomicIntegral<Tile, Policy>::idx_k(int x, int y, int z,
 }
 
 template <typename Tile, typename Policy>
-Vector3d PeriodicAtomicIntegral<Tile, Policy>::k_vector(int64_t idx_k) {
+Vector3d PeriodicAOFactory<Tile, Policy>::k_vector(int64_t idx_k) {
   Vector3d result;
   auto x = idx_k / nk_(2) / nk_(1);
   auto y = (idx_k / nk_(2)) % nk_(1);
@@ -394,7 +390,7 @@ Vector3d PeriodicAtomicIntegral<Tile, Policy>::k_vector(int64_t idx_k) {
 }
 
 template <typename Tile, typename Policy>
-Vector3d PeriodicAtomicIntegral<Tile, Policy>::R_vector(int64_t idx_lattice,
+Vector3d PeriodicAOFactory<Tile, Policy>::R_vector(int64_t idx_lattice,
                                                      Vector3i vec) {
   auto z = idx_lattice % (2 * vec(2) + 1);
   auto y = (idx_lattice / (2 * vec(2) + 1)) % (2 * vec(1) + 1);
@@ -406,7 +402,7 @@ Vector3d PeriodicAtomicIntegral<Tile, Policy>::R_vector(int64_t idx_lattice,
 
 template <typename Tile, typename Policy>
 std::shared_ptr<basis::Basis>
-PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
+PeriodicAOFactory<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
                                                          Vector3d shift) {
   std::vector<ShellVec> vec_of_shells;
   for (auto shell_vec : basis.cluster_shells()) {
@@ -429,7 +425,7 @@ PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
 // u is conventional AO index within a cell
 template <typename Tile, typename Policy>
 std::shared_ptr<basis::Basis>
-PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
+PeriodicAOFactory<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
                                                          Vector3d shift_base,
                                                          Vector3i nshift,
                                                          bool is_real_space) {
@@ -463,7 +459,7 @@ PeriodicAtomicIntegral<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
 
 template <typename Tile, typename Policy>
 TA::TiledRange1
-PeriodicAtomicIntegral<Tile, Policy>::extend_trange1(TA::TiledRange1 tr0,
+PeriodicAOFactory<Tile, Policy>::extend_trange1(TA::TiledRange1 tr0,
                                                      int64_t size) {
     auto blocking = std::vector<int64_t> {0};
     for (auto idx = 0; idx < size; ++idx) {
@@ -478,7 +474,7 @@ PeriodicAtomicIntegral<Tile, Policy>::extend_trange1(TA::TiledRange1 tr0,
 
 template <typename Tile, typename Policy>
 std::shared_ptr<Molecule>
-PeriodicAtomicIntegral<Tile, Policy>::shift_mol_origin(Molecule &mol,
+PeriodicAOFactory<Tile, Policy>::shift_mol_origin(Molecule &mol,
                                                        Vector3d shift) {
   std::vector<AtomBasedClusterable> vec_of_clusters;
   for (auto &cluster : mol) {
@@ -499,8 +495,8 @@ PeriodicAtomicIntegral<Tile, Policy>::shift_mol_origin(Molecule &mol,
 }
 
 template <typename Tile, typename Policy>
-libint2::any PeriodicAtomicIntegral<Tile, Policy>::to_libint2_operator_params(
-    Operator::Type mpqc_oper, const AtomicIntegralBase &base,
+libint2::any PeriodicAOFactory<Tile, Policy>::to_libint2_operator_params(
+    Operator::Type mpqc_oper, const AOFactoryBase &base,
     Molecule &mol) {
   TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
                   mpqc_oper <= Operator::Type::__last_1body_operator) ||
@@ -553,7 +549,7 @@ libint2::any PeriodicAtomicIntegral<Tile, Policy>::to_libint2_operator_params(
 template <typename Tile, typename Policy>
 template <typename E>
 TA::DistArray<Tile, TA::SparsePolicy>
-PeriodicAtomicIntegral<Tile, Policy>::sparse_complex_integrals(
+PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
     madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
     std::shared_ptr<Screener> screen, std::function<Tile(TA::TensorZ &&)> op) {
   // Build the Trange and Shape Tensor
@@ -611,8 +607,8 @@ PeriodicAtomicIntegral<Tile, Policy>::sparse_complex_integrals(
 }
 
 template <typename Tile, typename Policy>
-typename PeriodicAtomicIntegral<Tile, Policy>::TArray
-PeriodicAtomicIntegral<Tile, Policy>::transform_real2recip(
+typename PeriodicAOFactory<Tile, Policy>::TArray
+PeriodicAOFactory<Tile, Policy>::transform_real2recip(
     TArray &matrix) {
   TArray result;
   auto tr0 = matrix.trange().data()[0];
@@ -649,8 +645,8 @@ PeriodicAtomicIntegral<Tile, Policy>::transform_real2recip(
 }
 
 template <typename Tile, typename Policy>
-typename PeriodicAtomicIntegral<Tile, Policy>::TArray
-PeriodicAtomicIntegral<Tile, Policy>::compute_density(
+typename PeriodicAOFactory<Tile, Policy>::TArray
+PeriodicAOFactory<Tile, Policy>::compute_density(
     TArray &fock_recip,
     TArray &overlap,
     int64_t ndocc) {
@@ -710,7 +706,7 @@ PeriodicAtomicIntegral<Tile, Policy>::compute_density(
 
 
 template <typename Tile, typename Policy>
-void PeriodicAtomicIntegral<Tile, Policy>::sort_eigen(Vectorc &eigVal,
+void PeriodicAOFactory<Tile, Policy>::sort_eigen(Vectorc &eigVal,
                                                       Matrixc &eigVec) {
   auto val = eigVal.real();
 
@@ -737,4 +733,4 @@ void PeriodicAtomicIntegral<Tile, Policy>::sort_eigen(Vectorc &eigVal,
 
 }  // mpqc namespace
 }  // integrals namespace
-#endif  // MPQC_PERIODIC_ATOMIC_INTEGRAL_H
+#endif  // MPQC_PERIODIC_AO_FACTORY_H

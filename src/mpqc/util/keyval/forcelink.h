@@ -68,12 +68,15 @@ class ForceLink : public ForceLinkBase<A> {
 ///       MPQC_CLASS_EXPORT(T)
 /// \sa MPQC_CLASS_EXPORT
 /// \sa MPQC_CLASS_EXPORT2
-#define MPQC_FORCELINK_KEYVAL_CTOR(...)                              \
-  template <>                                                        \
-  mpqc::DescribedClass*                                              \
-  mpqc::detail::ForceLink<__VA_ARGS__, const mpqc::KeyVal&>::create( \
-      const mpqc::KeyVal& kv) {                                      \
-    return new __VA_ARGS__(kv);                                      \
+#define MPQC_FORCELINK_KEYVAL_CTOR(...)                          \
+  namespace mpqc {                                               \
+  namespace detail {                                             \
+  template <>                                                    \
+  DescribedClass* ForceLink<__VA_ARGS__, const KeyVal&>::create( \
+      const KeyVal& kv) {                                        \
+    return new __VA_ARGS__(kv);                                  \
+  }                                                              \
+  }                                                              \
   }
 /**/
 

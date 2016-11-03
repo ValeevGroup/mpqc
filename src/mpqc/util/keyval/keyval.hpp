@@ -200,7 +200,7 @@ struct register_keyval_ctor;
 /// Use MPQC_BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
 /// @sa MPQC_CLASS_EXPORT_KEY2
 #define MPQC_CLASS_EXPORT_KEY(...) \
-  MPQC_CLASS_EXPORT_KEY2(BOOST_PP_STRINGIZE(__VA__ARGS__), __VA_ARGS__)
+  MPQC_CLASS_EXPORT_KEY2(BOOST_PP_STRINGIZE(__VA_ARGS__), __VA_ARGS__)
 /**/
 
 /// \brief Forces the class instantiation so that it can be deserialized with

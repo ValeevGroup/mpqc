@@ -12,25 +12,25 @@
 namespace mpqc {
 namespace array_ops {
 
-template <typename Tile>
-TA::DistArray<Tile, TA::SparsePolicy> create_diagonal_array_from_eigen(madness::World& world,
-    const TA::TiledRange1 &trange1, const TA::TiledRange1 &trange2, typename Tile::numeric_type val){
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, Policy> create_diagonal_array_from_eigen(
+    madness::World &world, const TA::TiledRange1 &trange1,
+    const TA::TiledRange1 &trange2, typename Tile::numeric_type val) {
+  using numeric_type = typename Tile::numeric_type;
 
-    using numeric_type = typename Tile::numeric_type;
+  std::size_t x = trange1.elements().second;
+  std::size_t y = trange2.elements().second;
 
-    std::size_t x = trange1.elements().second;
-    std::size_t y = trange2.elements().second;
+  TA_ASSERT(x == y);
 
-    TA_ASSERT(x == y);
+  auto diag = Eigen::DiagonalMatrix<numeric_type, Eigen::Dynamic>(x);
+  diag.setIdentity();
 
-    auto diag = Eigen::DiagonalMatrix<numeric_type, Eigen::Dynamic>(x);
-    diag.setIdentity();
-    diag = val*diag;
+  auto result = array_ops::eigen_to_array<Tile>(world, diag, trange1, trange2);
+  result("i,j") = val * result("i,j");
 
-//    RowMatrix<numeric_type> matrix = diag;
-    return array_ops::eigen_to_array<Tile>(world, diag, trange1, trange2);
-
-};
+  return result;
+}
 
 template <typename T>
 void make_diagonal_tile(TiledArray::Tensor<T> &tile, T val) {
@@ -85,9 +85,9 @@ TiledArray::DistArray<Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
   for (auto it = pmap->begin(); it != end; ++it) {
     const auto ord = *it;
 
-        auto idx = trange.tiles_range().idx(ord);
-        auto diagonal_tile
-              = std::all_of(idx.begin(), idx.end(),
+    auto idx = trange.tiles_range().idx(ord);
+    auto diagonal_tile = std::all_of(
+        idx.begin(), idx.end(),
         [&](typename Array::size_type const &x) { return x == idx.front(); });
 
     using TileType = typename Array::value_type;

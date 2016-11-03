@@ -358,10 +358,6 @@ AOFactory<Tile, Policy>::compute2(const Formula& formula) {
           utility::print_par(
               world_,
               "!!!\nWarning!! NoConvergence in Cholesky Decomposition\n!!!\n");
-        } else if (info == Eigen::ComputationInfo::InvalidInput) {
-          utility::print_par(
-              world_,
-              "!!!\nWarning!! InvalidInput in Cholesky Decomposition\n!!!\n");
         }
 
         if (info != Eigen::ComputationInfo::Success) {

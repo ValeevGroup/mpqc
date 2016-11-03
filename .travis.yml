@@ -1,18 +1,13 @@
 language: cpp
 os: linux
+branches:
+    only:
+        - master
+        - transition_to_mpqc
 compiler:
   - gcc
-    # - clang
 env:
-    # - GCC_VERSION=4.9
   - GCC_VERSION=5
-# matrix:
-#   exclude:
-#     - compiler: clang
-#       env: GCC_VERSION=4.9
-#  allow_failures:
-#    - compiler: clang      # until llvm.org apt server is back up
-#      env: GCC_VERSION=5   #
 sudo: false
 addons:
   apt:
@@ -20,26 +15,25 @@ addons:
       - george-edison55-precise-backports
       - ubuntu-toolchain-r-test
       - boost-latest
-      # LLVM apt mirror is down
-      #- llvm-toolchain-precise-3.7
     packages:
-        # - g++-4.9
       - g++-5
       - libeigen3-dev
-      - libboost1.55-dev
+      - libboost1.55-all-dev
       - libblas-dev
       - liblapack-dev
+      - rapidjson-dev
       - libtbb-dev
-      - librapidjson-dev
       - cmake
       - cmake-data
-# llvm.org apt repo is down
-#     - clang-3.7
 before_install: 
      - ./bin/build-mpich-$TRAVIS_OS_NAME.sh
      - ./bin/build-libint-$TRAVIS_OS_NAME.sh
      - ./bin/build-TA-$TRAVIS_OS_NAME.sh
 script: ./bin/build-$TRAVIS_OS_NAME.sh
 after_failure:
+  - ls -l ./_install
+  - ls -l ./_install/libint
+  - ls -l /usr/lib
+  - ls -l /usr/include
   - cat ./_build/mpqc4/CMakeFiles/CMakeOutput.log
   - cat ./_build/mpqc4/CMakeFiles/CMakeError.log

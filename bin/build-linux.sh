@@ -4,7 +4,7 @@
 set -ev
 
 # Environment variables
-export CXXFLAGS="-mno-avx"
+export CXXFLAGS="-mno-avx -std=c++11"
 
 if [ "$CXX" = "g++" ]; then
     export CC=/usr/bin/gcc-$GCC_VERSION
@@ -29,7 +29,7 @@ cmake ../.. \
     -DTiledArray_DIR="$INSTALL_DIR/TA/lib/cmake/tiledarray" \
     -DCMAKE_PREFIX_PATH="$INSTALL_DIR/TA" \
     -DCMAKE_BUILD_TYPE=DEBUG \
-    -DLINBINT2_INSTALL_DIR="$INSTALL_DIR/libint"
+    -DLIBINT2_INSTALL_DIR="$INSTALL_DIR/libint"
 
-make -j2 mpqc
+make -j2 mpqc_info
 

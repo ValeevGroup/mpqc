@@ -30,9 +30,7 @@ before_install:
      - ./bin/build-TA-$TRAVIS_OS_NAME.sh
 script: ./bin/build-$TRAVIS_OS_NAME.sh
 after_failure:
-  - ls -l ./_install
-  - ls -l ./_install/libint
-  - ls -l /usr/lib
-  - ls -l /usr/include
+  - cat /usr/include/eigen3/signature_of_eigen3_matrix_library
+  - cat /usr/include/eigen3/Eigen/src/Core/util/Constants.h
   - cat ./_build/mpqc4/CMakeFiles/CMakeOutput.log
   - cat ./_build/mpqc4/CMakeFiles/CMakeError.log

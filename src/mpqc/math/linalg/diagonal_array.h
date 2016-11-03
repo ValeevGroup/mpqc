@@ -24,10 +24,9 @@ TA::DistArray<Tile, Policy> create_diagonal_array_from_eigen(
   TA_ASSERT(x == y);
 
   auto diag = Eigen::DiagonalMatrix<numeric_type, Eigen::Dynamic>(x);
-  diag.setIdentity();
+  diag.diagonal().setConstant(val);
 
   auto result = array_ops::eigen_to_array<Tile>(world, diag, trange1, trange2);
-  result("i,j") = val * result("i,j");
 
   return result;
 }

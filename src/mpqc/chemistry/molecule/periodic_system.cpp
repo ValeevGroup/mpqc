@@ -4,6 +4,7 @@
 #include <mpqc/chemistry/molecule/common.h>
 #include <mpqc/chemistry/molecule/atom_masses.h>
 #include "clustering_functions.h"
+#include "mpqc/util/keyval/forcelink.h"
 
 #include <libint2/atom.h>
 

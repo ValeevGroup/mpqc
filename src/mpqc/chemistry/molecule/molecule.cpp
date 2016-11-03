@@ -5,6 +5,7 @@
 #include <mpqc/chemistry/molecule/atom_masses.h>
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "clustering_functions.h"
+#include "mpqc/util/keyval/forcelink.h"
 
 #include <libint2/atom.h>
 

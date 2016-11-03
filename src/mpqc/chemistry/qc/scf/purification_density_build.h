@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_SCF_PURIFICATIONDENSITYBUILD_H
 #define MPQC_SCF_PURIFICATIONDENSITYBUILD_H
 
@@ -29,7 +29,6 @@ class PurificationDensityBuilder : public DensityBuilder {
     std::pair<array_type, array_type> operator()(array_type const &F) override;
 
     inline void print_iter(std::string const &) override {}
-    rapidjson::Value results(rapidjson::Document &d) override;
 
   private:
     array_type purify(array_type const &);

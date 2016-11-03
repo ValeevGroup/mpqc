@@ -19,9 +19,9 @@ namespace qc {
 
 class PropertyBase;
 
-/**
- * Wfn is a wave function that lives in a WfnWorld
- */
+/// Wavefunction is a wave function
+
+/// \todo elaborate Wavefunction documentation
 class Wavefunction : public DescribedClass {
  private:
   /** Pointer to the WfnWorld
@@ -36,13 +36,16 @@ class Wavefunction : public DescribedClass {
    */
   std::shared_ptr<WavefunctionWorld> wfn_world_;
 
+ protected:
+  double energy_ = 0.0;
+
  public:
   /**
-   *  \brief KeyVal constructor
+   *  \brief The KeyVal constructor
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | wfn_world or $:wfn_world or ..:wfn_world | WavefunctionWorld | none | none |
+   * | \c "wfn_world" OR \c "..:wfn_world" OR \c "$:wfn_world" | WavefunctionWorld | none | |
    *
    *
    */
@@ -51,9 +54,12 @@ class Wavefunction : public DescribedClass {
 
   virtual void compute(PropertyBase* pb) = 0;
   virtual double value() = 0;
-  virtual void obsolete() = 0;
+  virtual void obsolete() {
+    energy_ = 0.0;
+  };
 
-  std::shared_ptr<WavefunctionWorld> wfn_world() { return wfn_world_; }
+  const std::shared_ptr<WavefunctionWorld>&
+  wfn_world() const { return wfn_world_; }
 };
 
 }  // namespace qc

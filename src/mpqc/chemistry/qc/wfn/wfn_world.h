@@ -18,11 +18,10 @@
 namespace mpqc {
 namespace qc {
 
-/**
- * WfnWorld is a work environment for one or more collaborating Wfn.
- * It provides an execution context (madness::World), a molecule, and
- * basis and operator registries.
- */
+/// WavefunctionWorld is an environment for one or more collaborating Wavefunction objects.
+
+/// It provides an execution context (madness::World), a molecule, and
+/// basis and operator registries.
 class WavefunctionWorld : public DescribedClass {
  public:
 
@@ -33,9 +32,9 @@ class WavefunctionWorld : public DescribedClass {
 
  public:
   /**
-   * \brief KeyVal constructor
+   * \brief The KeyVal constructor
    *
-   * it take all keys to construct OrbitalBasisRegistry
+   * The KeyVal constructor uses keywords of OrbitalBasisRegistry, and the following keywords:
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|

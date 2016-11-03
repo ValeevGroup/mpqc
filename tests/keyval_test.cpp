@@ -6,6 +6,7 @@
 #include <madness/world/world.h>
 #include "catch.hpp"
 #include <mpqc/chemistry/qc/basis/basis.h>
+#include <mpqc/chemistry/molecule/linkage.h>
 
 using std::cout;
 using std::endl;

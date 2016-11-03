@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_SCF_TRADITIONALFOURCENTERFOCKBUILDER_H
 #define MPQC_SCF_TRADITIONALFOURCENTERFOCKBUILDER_H
 
@@ -43,9 +43,6 @@ class FourCenterBuilder : public FockBuilder {
   }
 
   inline void print_iter(std::string const &leader) override {}
-  inline rapidjson::Value results(rapidjson::Document &d) override {
-    assert(false && "not implemented");
-  }
 };
 
 }  // namespace scf

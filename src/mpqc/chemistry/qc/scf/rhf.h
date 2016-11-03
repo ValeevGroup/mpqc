@@ -7,7 +7,7 @@
 
 
 #include <tiledarray.h>
-#include "mpqc/util/misc/json_handling.h"
+
 #include <mpqc/chemistry/qc/wfn/ao_wfn.h>
 #include <mpqc/chemistry/qc/scf/builder.h>
 #include <mpqc/chemistry/qc/scf/density_builder.h>
@@ -19,7 +19,7 @@
 namespace mpqc{
 namespace scf{
 
-class RHF : public qc::AOWavefunction<TA::TensorD> {
+class RHF : public qc::AOWavefunction<TA::TensorD,TA::SparsePolicy> {
 
 public:
   using array_type = TA::TSpArrayD;
@@ -28,12 +28,23 @@ public:
 
   /**
    * KeyVal constructor for RHF
-   * keywords
-   * @param
+   *
+   * keywords: takes all keywords from AOWavefunction
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | converge | double | 1.0e-07 | converge limit |
+   * | max_iter | int | 30 | maximum number of iteration |
+   * | density_builder | string | eigen_solve | type of DensityBuilder (eigen_solve->ESolveDensityBuilder, purification-> PurificationDensityBuilder) |
+   * | localize | bool | false | if localize in DensityBuilder |
+   * | t_cut_c | double | 0.0 | threshold in DensityBuilder |
+   * | decompo_type | string | cholesky_inverse | (cholesky inverse, inverse sqrt) only valid if use ESolveDensityBuilder |
    *
    */
 
   RHF(const KeyVal& kv);
+
+  virtual ~RHF() = default;
 
   double value() override;
   void obsolete() override;
@@ -44,7 +55,7 @@ public:
   inline array_type const &fock() const { return F_; }
   inline array_type const &density() const { return D_; }
   inline array_type const &coefficents() const { return C_; }
-  inline double rhf_energy() const { return rhf_energy_; }
+  inline double rhf_energy() const { return this->energy_; }
 
   /*! Function to compute the density to the desired accuracy.
    *
@@ -56,14 +67,10 @@ public:
    */
   bool solve(int64_t max_iters, double thresh);
 
-  virtual rapidjson::Value results(rapidjson::Document &) const;
-
-
 protected:
   double converge_;
   std::size_t max_iter_;
   double repulsion_;
-  double rhf_energy_;
 
   array_type H_;
   array_type S_;

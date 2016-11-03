@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_SCF_CADFFITTINGCOEFFS_H
 #define MPQC_SCF_CADFFITTINGCOEFFS_H
 

@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_CLUSTERING_KMEANS_H
 #define MPQC_CLUSTERING_KMEANS_H
 

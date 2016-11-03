@@ -3,7 +3,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 
-#include "../clustering/kmeans.h"
+#include "mpqc/math/clustering/kmeans.h"
 
 using namespace mpqc;
 

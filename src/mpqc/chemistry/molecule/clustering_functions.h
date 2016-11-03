@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_CLUSTERING_FUNCTIONS_H
 #define MPQC_CLUSTERING_FUNCTIONS_H
 

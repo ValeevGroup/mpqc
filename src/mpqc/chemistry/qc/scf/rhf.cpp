@@ -14,11 +14,6 @@
 #include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
 #include "mpqc/util/external/c++/memory"
 
-MPQC_CLASS_EXPORT_KEY2("RHF", mpqc::scf::RHF);
-MPQC_CLASS_EXPORT_KEY2("Direct-RHF", mpqc::scf::DirectRHF);
-MPQC_CLASS_EXPORT_KEY2("RI-RHF", mpqc::scf::RIRHF);
-MPQC_CLASS_EXPORT_KEY2("Direct-RI-RHF", mpqc::scf::DirectRIRHF);
-
 namespace mpqc {
 namespace scf {
 
@@ -27,7 +22,6 @@ namespace scf {
  */
 
 RHF::RHF(const KeyVal& kv) : AOWavefunction(kv), kv_(kv){
-  rhf_energy_ = 0.0;
 }
 
 void RHF::init(const KeyVal &kv) {
@@ -45,7 +39,6 @@ void RHF::init(const KeyVal &kv) {
   converge_ = kv.value<double>("converge",1.0e-7);
   max_iter_ = kv.value<int>("max_iter",30);
   repulsion_ = mol.nuclear_repulsion();
-  rhf_energy_ = 0.0;
 
   // Overlap ints
   S_ = ao_int.compute(L"<κ|λ>");
@@ -97,17 +90,17 @@ void RHF::init_fock_builder() {
 
 double RHF::value() {
 
-  if(rhf_energy_ == 0.0){
+  if(this->energy_ == 0.0){
     init(kv_);
     solve(max_iter_,converge_);
   }
-  return rhf_energy_;
+  return energy_;
 }
 
 
 void RHF::obsolete() {
-  rhf_energy_ = 0.0;
-  qc::AOWavefunction<TA::TensorD>::obsolete();
+  this->energy_ = 0.0;
+  qc::AOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
 }
 
 double RHF::energy() const {
@@ -187,7 +180,7 @@ bool RHF::solve(int64_t max_iters, double thresh) {
   if (iter == max_iters) {
     return false;
   } else {
-    rhf_energy_ = old_energy;
+    this->energy_ = old_energy;
     // store fock matix in registry
     auto& registry = this->ao_integrals().registry();
     f_builder_->register_fock(F_,registry);
@@ -206,31 +199,6 @@ void RHF::build_F() {
   F_("i,j") = H_("i,j") + G("i,j");
 }
 
-rapidjson::Value RHF::results(rapidjson::Document &d) const {
-  rapidjson::Value rhf_object(rapidjson::kObjectType);
-  rhf_object.AddMember("Type", "RHF", d.GetAllocator());
-  rhf_object.AddMember("Energy", energy(), d.GetAllocator());
-
-  auto avg = [](std::vector<double> const &v) {
-    auto sum = 0.0;
-    for (auto d : v) {
-      sum += d;
-    }
-    return sum / double(v.size());
-  };
-
-  rhf_object.AddMember("Avg Scf Time", avg(rhf_times_), d.GetAllocator());
-  rhf_object.AddMember("Avg Density Build Time", avg(d_times_),
-                       d.GetAllocator());
-  rhf_object.AddMember("Density Builder", d_builder_->results(d),
-                       d.GetAllocator());
-  rhf_object.AddMember("Avg Fock Build Time", avg(build_times_),
-                       d.GetAllocator());
-  rhf_object.AddMember("Fock Builder", f_builder_->results(d),
-                       d.GetAllocator());
-
-  return rhf_object;
-}
 
 /**
  *  RIRHF member functions

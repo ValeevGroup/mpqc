@@ -16,93 +16,110 @@ namespace cc {
 /**
  *  \brief CCSD_T class that compute CCSD(T) triple calculation
  *
- *   Options:
- *  All options in CCSD class
- *
- *  DFExpr = bool, control if use df in compute ccsd, default is True
- *  Increase = int, control the increasement in outer loop, default is 2
- *  ReblockOcc = int, reblock occuppied space, default is 8
- *  ReblockVir = int, reblock virtual space, default is 8
- *  ReblockInner = int, reblock the inner contraction occ and vir space
  */
 
 template <typename Tile, typename Policy>
 class CCSD_T : public CCSD<Tile, Policy> {
  public:
+  //  using Tile = TA::TensorD;
+  //  using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
 
  private:
   bool reblock_;
   bool reblock_inner_;
+  std::size_t occ_block_size_;
+  std::size_t unocc_block_size_;
   std::size_t inner_block_size_;
+  std::size_t increase_;
+  double triples_energy_;
   TA::TiledRange1 tr_occ_inner_;
   TA::TiledRange1 tr_vir_inner_;
 
  public:
-  CCSD_T(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
-         rapidjson::Document &options)
-      : CCSD<Tile, Policy>(lcao_factory, options) {
-    reblock_ = (this->options_.HasMember("ReblockOcc") ||
-                this->options_.HasMember("ReblockVir"));
-    reblock_inner_ = this->options_.HasMember("ReblockInner");
-    inner_block_size_ = 0;
-    if (reblock_inner_) {
-      inner_block_size_ = this->options_["ReblockInner"].GetInt();
-    }
+  /**
+   * KeyVal constructor
+   * @param kv
+   *
+   * keywords : all keywords for CCSD
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | reblock_occ | int | none | block size to reblock occ |
+   * | reblock_unocc | int | none | block size to reblock unocc |
+   * | reblock_inner | int | none | block size to reblock inner dimension |
+   * | increase | int | 2 | number of block in virtual dimension to load at each virtual loop |
+   */
+
+  CCSD_T(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
+    reblock_ = kv.exists("reblock_occ") || kv.exists("reblock_unocc");
+    reblock_inner_ = kv.exists("reblock_inner");
+    occ_block_size_ = kv.value<int>("reblock_occ", 8);
+    unocc_block_size_ = kv.value<int>("reblock_unocc", 8);
+    inner_block_size_ = kv.value<int>("reblock_inner", 128);
+    increase_ = kv.value<int>("increase", 2);
   }
 
-  double compute() {
-    auto &world = this->ccsd_intermediate_->lcao_factory().world();
+  virtual ~CCSD_T() {}
 
-    double ccsd_corr = 0.0;
+  double value() override {
+    if (this->energy_ == 0.0) {
+      auto &world = this->lcao_factory().world();
 
-    auto time0 = mpqc::fenced_now(world);
-    ccsd_corr = CCSD<Tile, Policy>::compute();
-    auto time1 = mpqc::fenced_now(world);
-    auto duration0 = mpqc::duration_in_s(time0, time1);
-    if (world.rank() == 0) {
-      std::cout << "CCSD Time " << duration0 << std::endl;
+      double ccsd_corr = 0.0;
+
+      auto time0 = mpqc::fenced_now(world);
+      ccsd_corr = CCSD<Tile, Policy>::value();
+      auto time1 = mpqc::fenced_now(world);
+      auto duration0 = mpqc::duration_in_s(time0, time1);
+      if (world.rank() == 0) {
+        std::cout << "CCSD Time " << duration0 << std::endl;
+      }
+
+      time0 = mpqc::fenced_now(world);
+      // clean all LCAO integral
+      this->lcao_factory().registry().purge(world);
+
+      if (reblock_) {
+        reblock();
+      }
+
+      // start CCSD(T)
+      if (world.rank() == 0) {
+        std::cout << "\nBegining CCSD(T) " << std::endl;
+      }
+      TArray t1 = this->t1();
+      TArray t2 = this->t2();
+      triples_energy_ = compute_ccsd_t(t1, t2);
+      time1 = mpqc::fenced_now(world);
+      auto duration1 = mpqc::duration_in_s(time0, time1);
+
+      if (world.rank() == 0) {
+        std::cout << std::setprecision(15);
+        std::cout << "(T) Energy      " << triples_energy_ << " Time " << duration1
+                  << std::endl;
+        //                    std::cout << "(T) Energy      " << ccsd_t_d << "
+        //                    Time " << duration2 << std::endl;
+        std::cout << "CCSD(T) Energy  " << triples_energy_ + ccsd_corr << std::endl;
+        //                    std::cout << "CCSD(T) Energy  " << ccsd_t_d +
+        //                    ccsd_corr << std::endl;
+      }
+
+      this->energy_ = ccsd_corr + triples_energy_;
     }
-
-    time0 = mpqc::fenced_now(world);
-    // clean all LCAO integral
-    this->ccsd_intermediate_->lcao_factory().registry().purge(world);
-
-    if (reblock_) {
-      reblock();
-    }
-
-    // start CCSD(T)
-    if (world.rank() == 0) {
-      std::cout << "\nBegining CCSD(T) " << std::endl;
-    }
-    TArray t1 = this->t1();
-    TArray t2 = this->t2();
-    double ccsd_t = compute_ccsd_t(t1, t2);
-    time1 = mpqc::fenced_now(world);
-    auto duration1 = mpqc::duration_in_s(time0, time1);
-
-    if (world.rank() == 0) {
-      std::cout << std::setprecision(15);
-      std::cout << "(T) Energy      " << ccsd_t << " Time " << duration1
-                << std::endl;
-      //                    std::cout << "(T) Energy      " << ccsd_t_d << "
-      //                    Time " << duration2 << std::endl;
-      std::cout << "CCSD(T) Energy  " << ccsd_t + ccsd_corr << std::endl;
-      //                    std::cout << "CCSD(T) Energy  " << ccsd_t_d +
-      //                    ccsd_corr << std::endl;
-    }
-
-    return ccsd_corr + ccsd_t;
+    return this->energy_;
   }
 
+  void obsolete() override {
+    triples_energy_ = 0.0;
+    CCSD<Tile, Policy>::obsolete();
+  }
+
+ private:
   double compute_ccsd_t(TArray &t1, TArray &t2) {
-    bool df = this->options_.HasMember("DFExpr")
-                  ? this->options_["DFExpr"].GetBool()
-                  : true;
+    bool df = this->is_df();
     auto &world = t1.world();
-    bool accurate_time =
-        this->ccsd_intermediate_->lcao_factory().accurate_time();
+    bool accurate_time = this->lcao_factory().accurate_time();
 
     if (df && world.rank() == 0) {
       std::cout << "Use Density Fitting Expression to avoid storing G_vovv"
@@ -118,7 +135,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
     if (df) {
       Xdb = get_Xab();
-      Xai = this->ccsd_intermediate_->get_Xai();
+      Xai = this->get_Xai();
     } else {
       g_dabi = get_abci();
     }
@@ -150,9 +167,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
     double triple_energy = 0.0;
 
-    std::size_t increase = this->options_.HasMember("Increase")
-                               ? this->options_["Increase"].GetInt()
-                               : 2;
+    std::size_t increase = increase_;
     if (increase > n_tr_vir) {
       increase = n_tr_vir;
     }
@@ -884,16 +899,12 @@ class CCSD_T : public CCSD<Tile, Policy> {
     return triple_energy;
   }
 
- private:
   void reblock() {
-    auto &option = this->options();
-    auto &lcao_factory = this->ccsd_intermediate_->lcao_factory();
+    auto &lcao_factory = this->lcao_factory();
     auto &world = lcao_factory.world();
 
-    std::size_t b_occ =
-        option.HasMember("ReblockOcc") ? option["ReblockOcc"].GetInt() : 8;
-    std::size_t b_vir =
-        option.HasMember("ReblockVir") ? option["ReblockVir"].GetInt() : 8;
+    std::size_t b_occ = occ_block_size_;
+    std::size_t b_vir = unocc_block_size_;
 
     std::size_t occ = this->trange1_engine_->get_occ();
     std::size_t vir = this->trange1_engine_->get_vir();
@@ -985,7 +996,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
   }
 
   void reblock_inner_t2(TArray &t2_left, TArray &t2_right) {
-    auto &world = this->ccsd_intermediate_->lcao_factory().world();
+    auto &world = this->lcao_factory().world();
 
     auto vir_inner_convert = array_ops::create_diagonal_array_from_eigen<Tile>(
         world, t2_left.trange().data()[0], tr_vir_inner_, 1.0);
@@ -998,62 +1009,64 @@ class CCSD_T : public CCSD<Tile, Policy> {
     t2_right("a,b,i,l") = t2_right("a,b,i,j") * occ_inner_convert("j,l");
   }
 
-  const TArray get_Xab() const {
+  const TArray get_Xab() {
     TArray result;
     TArray sqrt =
-        this->ccsd_intermediate_->lcao_factory().atomic_integral().compute(
-            L"(Κ|G| Λ)[inv_sqr]");
+        this->lcao_factory().atomic_integral().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center;
     if (reblock_inner_) {
-      three_center =
-          this->ccsd_intermediate_->lcao_factory().compute(L"(Κ|G|a' b)");
+      three_center = this->lcao_factory().compute(L"(Κ|G|a' b)");
     } else {
-      three_center =
-          this->ccsd_intermediate_->lcao_factory().compute(L"(Κ|G|a b)");
+      three_center = this->lcao_factory().compute(L"(Κ|G|a b)");
     }
     result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
+    return result;
+  }
+
+  /// get three center integral (X|ai)
+  const TArray get_Xai() {
+    TArray result;
+    TArray sqrt =
+        this->lcao_factory().atomic_integral().compute(L"(Κ|G| Λ)[inv_sqr]");
+    TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
+    result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
     return result;
   }
 
   /// <ai|jk>
   const TArray get_aijk() {
     std::wstring post_fix = L"";
-    if (this->ccsd_intermediate_->is_df()) {
+    if (this->is_df()) {
       post_fix = L"[df]";
     }
 
     if (reblock_inner_) {
-      return this->ccsd_intermediate_->lcao_factory().compute(L"<a i|G|j m>" +
-                                                              post_fix);
+      return this->lcao_factory().compute(L"<a i|G|j m>" + post_fix);
     } else {
-      return this->ccsd_intermediate_->lcao_factory().compute(L"<a i|G|j k>" +
-                                                              post_fix);
+      return this->lcao_factory().compute(L"<a i|G|j k>" + post_fix);
     }
   }
 
   /// <ab|ci>
   const TArray get_abci() {
     std::wstring post_fix = L"";
-    if (this->ccsd_intermediate_->is_df()) {
+    if (this->is_df()) {
       post_fix = L"[df]";
     }
 
     if (reblock_inner_) {
-      return this->ccsd_intermediate_->lcao_factory().compute(L"<a' b|G|c i>" +
-                                                              post_fix);
+      return this->lcao_factory().compute(L"<a' b|G|c i>" + post_fix);
     } else {
-      return this->ccsd_intermediate_->lcao_factory().compute(L"<a b|G|c i>" +
-                                                              post_fix);
+      return this->lcao_factory().compute(L"<a b|G|c i>" + post_fix);
     }
   }
 
   /// <ab|ij>
   const TArray get_abij() {
-    if (this->ccsd_intermediate_->is_df()) {
-      return this->ccsd_intermediate_->lcao_factory().compute(
-          L"<a b|G|i j>[df]");
+    if (this->is_df()) {
+      return this->lcao_factory().compute(L"<a b|G|i j>[df]");
     } else {
-      return this->ccsd_intermediate_->lcao_factory().compute(L"<a b|G|i j>");
+      return this->lcao_factory().compute(L"<a b|G|i j>");
     }
   }
 

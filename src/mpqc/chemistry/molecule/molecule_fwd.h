@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_MOLECULE_MOLECULE_FWD_H
 #define MPQC_MOLECULE_MOLECULE_FWD_H
 

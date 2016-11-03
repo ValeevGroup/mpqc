@@ -15,7 +15,6 @@
 #include <mpqc/chemistry/qc/expression/permutation.h>
 #include <mpqc/chemistry/qc/f12/f12_utility.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
-#include <rapidjson/document.h>
 
 namespace mpqc {
 namespace integrals {
@@ -68,51 +67,6 @@ class AtomicIntegral : public AtomicIntegralBase, public DescribedClass {
   using Op = std::function<Tile(TA::TensorD&&)>;
 
   AtomicIntegral() = default;
-
-  /**
-   *  Constructor
-   *  @param world madness::World object
-   *  @param op op is a function that will take TA::TensorD as argument and
-   *return Tile
-   *  @param mol shared pointer to Molecule
-   *  @param obs shared pointer to OrbitalBasisRegistry
-   *  @param gtg_params  parameters used in computing f12 integrals
-   *  @param in rapidjson Document object
-   *
-   *
-   *
-   *
-   *  Options in Input
-   *  @param AccurateTime, bool, control if use fence in timing, default false
-   *  @param IterativeInvSqrt, bool, if use iterative approach to compute
-   *inverse square root, defualt false
-   */
-
-  AtomicIntegral(madness::World& world, Op op,
-                 const std::shared_ptr<Molecule>& mol,
-                 const std::shared_ptr<basis::OrbitalBasisRegistry>& obs,
-                 const std::vector<std::pair<double, double>>& gtg_params =
-                     std::vector<std::pair<double, double>>(),
-                 const rapidjson::Document& in = rapidjson::Document())
-      : AtomicIntegralBase(world, mol, obs, gtg_params, in),
-        ao_formula_registry_(),
-        orbital_space_registry_(),
-        op_(op) {
-    if (in.IsObject()) {
-      accurate_time_ =
-          in.HasMember("AccurateTime") ? in["AccurateTime"].GetBool() : false;
-
-      iterative_inv_sqrt_ = in.HasMember("IterativeInvSqrt")
-                                ? in["IterativeInvSqrt"].GetBool()
-                                : false;
-
-    } else {
-      accurate_time_ = false;
-      iterative_inv_sqrt_ = false;
-    }
-    utility::print_par(world, "AccurateTime: ", accurate_time_, "\n");
-    utility::print_par(world, "IterativeInvSqrt: ", iterative_inv_sqrt_, "\n");
-  }
 
   /**
    * \brief  KeyVal constructor

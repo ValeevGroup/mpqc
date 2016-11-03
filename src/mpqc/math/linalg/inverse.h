@@ -1,4 +1,4 @@
-#pragma once
+
 
 #include "mpqc/math/linalg/sqrt_inv.h"
 

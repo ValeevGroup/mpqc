@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_SCF_TRADITIONALDFFOCKBUILDER_H
 #define MPQC_SCF_TRADITIONALDFFOCKBUILDER_H
 
@@ -112,22 +112,6 @@ class DFFockBuilder : public FockBuilder {
     }
   }
 
-  rapidjson::Value results(rapidjson::Document &d) override {
-    rapidjson::Value fock_builder(rapidjson::kObjectType);
-    fock_builder.AddMember("Type", "DFFockBuilder", d.GetAllocator());
-
-    auto w_build = utility::vec_avg(w_times_);
-    auto j_build = utility::vec_avg(j_times_);
-    auto k_build = utility::vec_avg(k_times_);
-    auto X_avg = w_build + k_build;
-
-    fock_builder.AddMember("Avg W Time", w_build, d.GetAllocator());
-    fock_builder.AddMember("Avg J Time", j_build, d.GetAllocator());
-    fock_builder.AddMember("Avg K Time", k_build, d.GetAllocator());
-    fock_builder.AddMember("Avg Total K Time", X_avg, d.GetAllocator());
-
-    return fock_builder;
-  }
 };
 
 }  // namespace scf

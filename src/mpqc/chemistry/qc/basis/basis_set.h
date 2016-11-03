@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_BASIS_BASISSET_H
 #define MPQC_BASIS_BASISSET_H
 

@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_CLUSTER_COLLAPSE_H
 #define MPQC_CLUSTER_COLLAPSE_H
 

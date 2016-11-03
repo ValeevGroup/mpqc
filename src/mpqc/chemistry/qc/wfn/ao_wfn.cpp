@@ -5,7 +5,8 @@ namespace mpqc{
 namespace qc{
 
 
-template class AOWavefunction<TA::TensorD>;
+template class AOWavefunction<TA::TensorD, TA::SparsePolicy>;
+template class AOWavefunction<TA::TensorD, TA::DensePolicy>;
 
 }//namespace qc
 }//namespace mpqc

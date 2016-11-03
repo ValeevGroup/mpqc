@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_MOLCULE_CLUSTER_H
 #define MPQC_MOLCULE_CLUSTER_H
 

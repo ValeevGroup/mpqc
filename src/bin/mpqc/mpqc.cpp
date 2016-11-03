@@ -3,6 +3,7 @@
 #include <sstream>
 #include <clocale>
 
+#include <libint2.hpp>
 #include <tiledarray.h>
 
 #include "mpqc/util/external/madworld/parallel_file.h"
@@ -12,12 +13,11 @@
 #include <mpqc/chemistry/qc/wfn/wfn.h>
 #include <mpqc/util/keyval/keyval.hpp>
 
-// include linkage file
-#include <mpqc/chemistry/qc/wfn/linkage.h>
-#include <mpqc/chemistry/qc/f12/linkage.h>
-#include <mpqc/chemistry/qc/mbpt/linkage.h>
+/// linkage files to force linking in of ALL Wavefunction-based classes
 #include <mpqc/chemistry/qc/scf/linkage.h>
-#include <mpqc/chemistry/molecule/linkage.h>
+#include <mpqc/chemistry/qc/mbpt/linkage.h>
+#include <mpqc/chemistry/qc/cc/linkage.h>
+#include <mpqc/chemistry/qc/f12/linkage.h>
 
 using namespace mpqc;
 

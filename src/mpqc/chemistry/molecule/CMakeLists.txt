@@ -14,6 +14,7 @@ set(sources
         common.cpp
         formula.h
         formula.cpp
+        linkage.cpp
         molecule.h
         molecule_fwd.h
         molecule.cpp

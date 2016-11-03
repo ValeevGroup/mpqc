@@ -1,13 +1,11 @@
-#pragma once
+
 #ifndef MPQC_SCF_DENSITYBUILDER_H
 #define MPQC_SCF_DENSITYBUILDER_H
 
-#include <tiledarray.h>
-
-#include "mpqc/util/misc/json_handling.h"
-
 #include <string>
 #include <utility>
+
+#include <tiledarray.h>
 
 namespace mpqc {
 namespace scf {
@@ -29,7 +27,6 @@ class DensityBuilder {
 
     virtual void print_iter(std::string const &) = 0;
 
-    virtual rapidjson::Value results(rapidjson::Document &d) = 0;
 };
 
 } // namespace scf

@@ -7,7 +7,7 @@
 
 #include <libint2/atom.h>
 
-MPQC_CLASS_EXPORT_KEY2("PeriodicSystem", mpqc::molecule::PeriodicSystem);
+MPQC_CLASS_EXPORT2("PeriodicSystem", mpqc::molecule::PeriodicSystem);
 
 namespace mpqc {
 namespace molecule {

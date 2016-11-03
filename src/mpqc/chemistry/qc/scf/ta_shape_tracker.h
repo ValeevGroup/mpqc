@@ -1,4 +1,4 @@
-#pragma once
+
 
 #include <tiledarray.h>
 #include "mpqc/math/external/eigen/eigen.h"

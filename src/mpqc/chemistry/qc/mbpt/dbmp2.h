@@ -2,17 +2,17 @@
 // Created by Chong Peng on 6/13/16.
 //
 
-#ifndef MPQC_DBMP2_H
-#define MPQC_DBMP2_H
+#ifndef MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
+#define MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
 
 #include <mpqc/chemistry/qc/mbpt/mp2.h>
 
 namespace mpqc {
 namespace mbpt {
 
-namespace detail{
+namespace detail {
 
-template<typename Tile>
+template <typename Tile>
 struct ScfCorrection {
   using result_type = double;
   using argument_type = Tile;
@@ -56,64 +56,45 @@ struct ScfCorrection {
   }
 };
 
-} // end of namespace detail
+}  // end of namespace detail
 
-template <typename Tile, typename Policy>
-class DBMP2 : public MP2<Tile, Policy> {
+// template <typename Tile, typename Policy>
+class DBRMP2 : public RMP2 {
  public:
-  using real_t = typename Tile::scalar_type;
+  using Tile = TA::TensorD;
+  using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
   using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
 
-  DBMP2() = default;
+  DBRMP2() = default;
 
-  DBMP2(LCAOFactoryType &lcao_factory,
-        std::shared_ptr<Eigen::VectorXd> orbital_energy,
-        const std::shared_ptr<TRange1Engine> tre)
-      : MP2<Tile, Policy>(lcao_factory, orbital_energy, tre) {}
+  virtual ~DBRMP2();
 
-  DBMP2(LCAOFactoryType &lcao_factory) : MP2<Tile, Policy>(lcao_factory) {}
+  DBRMP2(const KeyVal &kv) : RMP2(kv) {}
 
-  virtual real_t compute(const rapidjson::Document &in) {
-    // initialize dual basis orbitals
-    init(in);
+  double value() override {
+    if (this->energy_ == 0.0) {
+      double mp2_energy = RMP2::value();
 
-    std::string method =
-        in.HasMember("Method") ? in["Method"].GetString() : "df";
-
-    real_t mp2_energy = 0.0;
-
-    if (method == "four center") {
-      mp2_energy = this->compute_four_center();
-    } else if (method == "df") {
-      mp2_energy = this->compute_df();
-    } else {
-      throw std::runtime_error("Wrong MP2 Method");
+      double scf_correction = compute_scf_correction();
+      this->energy_ = scf_correction + mp2_energy;
     }
-
-    real_t scf_correction = compute_scf_correction(in);
-    return scf_correction + mp2_energy;
+    return this->energy_;
   }
 
-  real_t compute_scf_correction(const rapidjson::Document &in) {
-    init(in);
-
-    std::string method =
-        in.HasMember("Method") ? in["Method"].GetString() : "df";
+  double compute_scf_correction() {
+    init();
 
     int occ = this->trange1_engine()->get_occ();
     TArray F_ma;
 
-    if (method == "four center") {
-      F_ma = this->lcao_factory().compute(L"<m|F|a>");
-    } else if (method == "df") {
-      F_ma = this->lcao_factory().compute(L"<m|F|a>[df]");
-    } else {
-      throw std::runtime_error("Wrong MP2 Method");
-    }
+    F_ma = this->lcao_factory().compute(L"<m|F|a>");
+    //    } else if (method == "df") {
+    //      F_ma = this->lcao_factory().compute(L"<m|F|a>[df]");
 
-    real_t scf_correction =
-        2 * F_ma("m,a").reduce(detail::ScfCorrection<Tile>(this->orbital_energy(), occ));
+    double scf_correction = 2 *
+                            F_ma("m,a").reduce(detail::ScfCorrection<Tile>(
+                                this->orbital_energy(), occ));
 
     if (F_ma.world().rank() == 0) {
       std::cout << "SCF Correction: " << scf_correction << std::endl;
@@ -122,20 +103,19 @@ class DBMP2 : public MP2<Tile, Policy> {
     return scf_correction;
   }
 
-  virtual void init(const rapidjson::Document &in) {
+ private:
+  void init() override {
     // if not initialized
-    if (this->trange1_engine_ == nullptr || this->orbital_energy_ == nullptr) {
-      auto &lcao_factory = this->lcao_factory();
-      auto mol = lcao_factory.atomic_integral().molecule();
+    if (this->trange1_engine() == nullptr ||
+        this->orbital_energy() == nullptr) {
+      auto mol = this->wfn_world()->molecule();
       Eigen::VectorXd orbital_energy;
       this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
-          lcao_factory, orbital_energy, in, mol);
+          this->lcao_factory(), orbital_energy, mol, this->is_frozen_core(),
+          this->occ_block(), this->unocc_block());
       this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
     }
   }
-
- private:
-
 
   //  std::shared_ptr<TRange1Engine> pulay_build(
   //      integrals::LCAOFactory<Tile, Policy> &lcao_factory,
@@ -470,4 +450,4 @@ class DBMP2 : public MP2<Tile, Policy> {
 }  // end of namespace mbpt
 }  // end of namespace mpqc
 
-#endif  // MPQC_DBMP2_H
+#endif  // MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_

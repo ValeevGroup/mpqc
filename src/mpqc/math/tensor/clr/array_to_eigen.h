@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_ARRAYOPS_ARRAYTOEIGEN_H
 #define MPQC_ARRAYOPS_ARRAYTOEIGEN_H
 

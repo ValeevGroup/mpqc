@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_TAROUTINES_SQRTINV_H
 #define MPQC_TAROUTINES_SQRTINV_H
 

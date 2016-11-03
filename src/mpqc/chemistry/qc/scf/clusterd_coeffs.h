@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef MPQC_SCF_CLUSTERED_COEFFS_H
 #define MPQC_SCF_CLUSTERED_COEFFS_H
 

@@ -1,56 +1,8 @@
 add_custom_target(examples)
-add_custom_target(fastK)
-
-add_executable(cluster_example EXCLUDE_FROM_ALL cluster_example.cpp)
-target_link_libraries(cluster_example molecule)
-add_dependencies(examples cluster_example)
-
-add_executable(atom_based_cluster_example EXCLUDE_FROM_ALL atom_based_cluster_example.cpp)
-target_link_libraries(atom_based_cluster_example molecule)
-add_dependencies(examples atom_based_cluster_example)
-
-add_executable(molecule_example EXCLUDE_FROM_ALL molecule_example.cpp)
-target_link_libraries(molecule_example molecule)
-add_dependencies(examples molecule_example)
-
-add_executable(clustering_example EXCLUDE_FROM_ALL clustering_example.cpp)
-target_link_libraries(clustering_example molecule)
-add_dependencies(examples clustering_example)
-
-add_executable(basis_example EXCLUDE_FROM_ALL basis_example.cpp)
-target_link_libraries(basis_example molecule;basis)
-add_dependencies(examples basis_example)
-
-
-add_executable(ccsd EXCLUDE_FROM_ALL ccsd.cpp)
-target_link_libraries(ccsd ${MPQC_LIBRARIES})
-
-add_executable(mpqc EXCLUDE_FROM_ALL mpqc.cpp)
-target_link_libraries(mpqc ${MPQC_LIBRARIES} MPQCmisc)
 
 add_executable(mpqc_info mpqc_info.cpp)
-target_link_libraries(mpqc_info MPQCbasis MPQCmolecule MPQCkeyval MPQCexpression MPQCmisc ${Boost_LIBRARIES})
+target_link_libraries(mpqc_info MPQCbasis MPQCmolecule MPQCkeyval MPQCexpression MPQCmath_ta MPQCmisc ${Boost_LIBRARIES})
 
 add_executable(phf EXCLUDE_FROM_ALL phf.cpp)
 target_link_libraries(phf ${MPQC_LIBRARIES})
 
-add_executable(eomcc EXCLUDE_FROM_ALL eom_cc.cpp)
-target_link_libraries(eomcc ${MPQC_LIBRARIES})
-
-file(COPY ${CMAKE_SOURCE_DIR}/examples/default_input.json DESTINATION ${CMAKE_BINARY_DIR}/examples)
-file(COPY ${CMAKE_SOURCE_DIR}/examples/generate_input.py DESTINATION ${CMAKE_BINARY_DIR}/examples)
-
-add_executable(simple_direct_scf EXCLUDE_FROM_ALL simple_direct_scf.cpp) 
-target_link_libraries(simple_direct_scf ${MPQC_LIBRARIES})
-
-add_executable(simple_stored_scf EXCLUDE_FROM_ALL simple_stored_scf.cpp) 
-target_link_libraries(simple_stored_scf ${MPQC_LIBRARIES})
-
-add_executable(cadf_df_scf EXCLUDE_FROM_ALL cadf_df_scf.cpp) 
-target_link_libraries(cadf_df_scf ${MPQC_LIBRARIES})
-
-add_executable(simple_stored_df_scf EXCLUDE_FROM_ALL simple_stored_df_scf.cpp) 
-target_link_libraries(simple_stored_df_scf ${MPQC_LIBRARIES})
-
-add_executable(mp2_f12_expression EXCLUDE_FROM_ALL mp2_f12_expression.cpp)
-target_link_libraries(mp2_f12_expression ${MPQC_LIBRARIES})

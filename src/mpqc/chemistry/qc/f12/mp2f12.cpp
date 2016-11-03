@@ -3,10 +3,11 @@
 //
 
 #include "mp2f12.h"
-#include "mpqc/chemistry/qc/mbpt/denom.h"
+#include <mpqc/chemistry/qc/mbpt/denom.h>
+#include <mpqc/util/keyval/forcelink.h>
 
-MPQC_CLASS_EXPORT_KEY2("RMP2F12", mpqc::f12::RMP2F12);
-MPQC_CLASS_EXPORT_KEY2("RI-RMP2F12", mpqc::f12::RIRMP2F12);
+MPQC_CLASS_EXPORT2("RMP2F12", mpqc::f12::RMP2F12);
+MPQC_CLASS_EXPORT2("RI-RMP2F12", mpqc::f12::RIRMP2F12);
 
 namespace mpqc {
 namespace f12 {
@@ -22,8 +23,6 @@ RMP2F12::RMP2F12(const KeyVal& kv) : LCAOWavefunction(kv) {
         "Default Ref Wfn in RMP2F12 is not support! \n");
   }
 
-  rmp2f12_energy_ = 0.0;
-
   approximation_ = kv.value<char>("approaximation", 'C');
   if (approximation_ != 'C' && approximation_ != 'D') {
     throw std::invalid_argument("Only approaximation C or D is supported!");
@@ -34,7 +33,7 @@ RMP2F12::RMP2F12(const KeyVal& kv) : LCAOWavefunction(kv) {
 }
 
 double RMP2F12::value() {
-  if (rmp2f12_energy_ == 0.0) {
+  if (this->energy_ == 0.0) {
     auto& world = this->wfn_world()->world();
 
     double time;
@@ -47,7 +46,7 @@ double RMP2F12::value() {
     utility::print_par(world,"Total Ref Time: ", time, " S \n");
 
     // initialize
-    auto mol = this->lcao_factory().atomic_integral().molecule();
+    auto mol = this->wfn_world()->molecule();
     Eigen::VectorXd orbital_energy;
     this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
         this->lcao_factory(), orbital_energy, mol, is_frozen_core(),
@@ -90,7 +89,7 @@ double RMP2F12::value() {
 
     utility::print_par(world, "E_S: ", e_s, "\n");
 
-    rmp2f12_energy_ = ref_energy + emp2 + ef12 + e_s;
+    this->energy_ = ref_energy + emp2 + ef12 + e_s;
 
     auto time2 = mpqc::fenced_now(world);
     time = mpqc::duration_in_s(time1, time2);
@@ -100,12 +99,12 @@ double RMP2F12::value() {
     utility::print_par(world,"Total MP2F12 Time: ", time, " S \n");
   }
 
-  return rmp2f12_energy_;
+  return this->energy_;
 }
 
 void RMP2F12::obsolete() {
-  rmp2f12_energy_ = 0.0;
-  qc::LCAOWavefunction<TA::TensorD>::obsolete();
+  this->energy_ = 0.0;
+  qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
   ref_wfn_->obsolete();
 }
 

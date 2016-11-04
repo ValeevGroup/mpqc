@@ -6,10 +6,10 @@
 namespace mpqc {
 namespace array_ops {
 
-TA::DistArray<TA::TensorD, TA::SparsePolicy>
-cholesky_inverse(TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A);
+TA::DistArray<TA::TensorD, TA::SparsePolicy> cholesky_inverse(
+    TA::DistArray<TA::TensorD, TA::SparsePolicy> const &A);
 
-} // namespace ta_routines
-} // namespace mpqc
+}  // namespace ta_routines
+}  // namespace mpqc
 
-#endif // MPQC_TAROUTINES_CHOLEKSYINVERSE_H
+#endif  // MPQC_TAROUTINES_CHOLEKSYINVERSE_H

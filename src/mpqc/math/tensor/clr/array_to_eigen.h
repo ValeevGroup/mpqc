@@ -4,16 +4,17 @@
 
 #include <tiledarray.h>
 
+#include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_nonintrusive_interface.h"
-#include "mpqc/math/external/eigen/eigen.h"
 #include "tile.h"
 
 namespace mpqc {
 namespace array_ops {
 
 template <typename T>
-using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+using Matrix =
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 template <typename T>
 Matrix<T> tile_to_eigen(TA::Tensor<T> const &t) {
@@ -61,8 +62,7 @@ Matrix<T> array_to_eigen(TA::DistArray<TA::Tensor<T>, Policy> const &A) {
   for (auto it = pmap->begin(); it != end; ++it) {
     if (!repl_A.is_zero(*it)) {
       auto tile = repl_A.find(*it).get();
-      A.world().taskq.add(write_to_eigen_task<TA::Tensor<T>>, tile,
-                              &out_mat);
+      A.world().taskq.add(write_to_eigen_task<TA::Tensor<T>>, tile, &out_mat);
     }
   }
   A.world().gop.fence();  // Can't let M go out of scope
@@ -76,7 +76,9 @@ Matrix<T> array_to_eigen(TA::DistArray<TA::Tensor<T>, Policy> const &A) {
  * tile type that they want.
  */
 template <typename TileType>
-TileType mat_to_tile(TA::Range range, Matrix<typename TileType::numeric_type> const *M, double cut);
+TileType mat_to_tile(TA::Range range,
+                     Matrix<typename TileType::numeric_type> const *M,
+                     double cut);
 
 template <>
 inline tensor::Tile<tensor::DecomposedTensor<double>>
@@ -95,9 +97,7 @@ mat_to_tile<tensor::Tile<tensor::DecomposedTensor<double>>>(
 }
 
 template <typename T>
-inline TA::Tensor<T> mat_to_ta_tensor(TA::Range & range,
-                                      Matrix<T> const *M)
-{
+inline TA::Tensor<T> mat_to_ta_tensor(TA::Range &range, Matrix<T> const *M) {
   const auto extent = range.extent();
   auto tensor = TA::Tensor<T>(range);
   auto t_map = TA::eigen_map(tensor, extent[0], extent[1]);
@@ -110,23 +110,24 @@ inline TA::Tensor<T> mat_to_ta_tensor(TA::Range & range,
 template <>
 inline TA::TensorD mat_to_tile<TA::TensorD>(TA::Range range,
                                             Matrix<double> const *M, double) {
-  return mat_to_ta_tensor(range,M);
+  return mat_to_ta_tensor(range, M);
 }
 
 template <>
-inline TA::TensorZ mat_to_tile<TA::TensorZ>(TA::Range range,
-                                            Matrix<std::complex<double>> const *M, double) {
+inline TA::TensorZ mat_to_tile<TA::TensorZ>(
+    TA::Range range, Matrix<std::complex<double>> const *M, double) {
   return mat_to_ta_tensor(range, M);
 }
 
 // M must be replicated on all nodes.
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> eigen_to_array(
-    madness::World &world, Matrix<typename Tile::numeric_type> const &M, TA::TiledRange1 tr0,
-    TA::TiledRange1 tr1, double cut = 1e-7) {
+    madness::World &world, Matrix<typename Tile::numeric_type> const &M,
+    TA::TiledRange1 tr0, TA::TiledRange1 tr1, double cut = 1e-7) {
   TA::TiledRange trange{tr0, tr1};
-  TA::Tensor<float> norms(trange.tiles_range(),
-                          trange.elements_range().volume() / trange.tiles_range().volume());
+  TA::Tensor<float> norms(
+      trange.tiles_range(),
+      trange.elements_range().volume() / trange.tiles_range().volume());
 
   TA::SparseShape<float> shape(world, norms, trange);
   TA::DistArray<Tile, TA::SparsePolicy> array(world, trange, shape);

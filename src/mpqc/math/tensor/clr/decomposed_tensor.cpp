@@ -5,5 +5,5 @@ namespace tensor {
 
 template class DecomposedTensor<double>;
 
-} // namespace tensor
-} // namespace mpqc
+}  // namespace tensor
+}  // namespace mpqc

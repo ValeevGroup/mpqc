@@ -47,7 +47,7 @@ class PeriodicAOFactory : public AOFactoryBase {
     }
 
     dcell_ = decltype(dcell_)(
-        kv.value<std::vector<double>>("molecule:direct_lattice_vector").data());
+        kv.value<std::vector<double>>("molecule:lattice_param").data());
     const auto angstrom_to_bohr = 1 / 0.52917721092;  // 2010 CODATA value
     dcell_ *= angstrom_to_bohr;
     R_max_ =

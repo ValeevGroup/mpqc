@@ -14,7 +14,7 @@ MPQC_CLASS_EXPORT2("UnitCell", mpqc::UnitCell);
 namespace mpqc {
 UnitCell::UnitCell(const KeyVal &kv) : Molecule(kv) {
   dcell_ = decltype(dcell_)(
-      kv.value<std::vector<double>>("direct_lattice_vector").data());
+      kv.value<std::vector<double>>("lattice_param").data());
   const auto angstrom_to_bohr = 1 / 0.52917721092;  // 2010 CODATA value
   dcell_ *= angstrom_to_bohr;
 }

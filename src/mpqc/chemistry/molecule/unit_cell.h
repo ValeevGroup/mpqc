@@ -34,23 +34,28 @@ class UnitCell : public Molecule {
    *    will be resorted based on their distance from the center of mass.
    *
    *  <tr><td><tt>sort_origin</tt><td>boolean<td>false<td>If true, sort atoms
-   *  from origin {0.0, 0.0, 0.0}
+   *    from origin {0.0, 0.0, 0.0}
    *
    *  <tr><td><tt>n_cluster</tt><td>int<td>0<td> If nonzero, cluster moleucle by
-   * n_cluster
+   *    n_cluster
    *
    *  <tr><td><tt>attach_hydrogen</tt><td>bool<td>true<td> use
-   * attach_hydrogen_kmeans when clustering
+   *    attach_hydrogen_kmeans when clustering
    *
-   *  <tr><td><tt>direct_lattice_vector</tt><td>int<td>0<td> This gives three
-   * direct lattice vectors:
-   *  [Vx, 0.0, 0.0], [0.0, Vy, 0.0], and [0.0, 0.0, Vz]. Units are Bohr.
+   *  <tr><td><tt>lattice_param</tt><td>int<td>0<td> This gives lattice
+   *    parameters (orthohombic, tetragonal, cubic lattice only)
    *
-   *  <tr><td><tt>max_lattice_sum</tt><td>int<td>0<td> Go out [Nx, Ny, Nz] cells
-   *  in both positive and negative directions of three dimensions. Applied in
-   * all lattice sums
+   *  <tr><td><tt>rmax</tt><td>int<td>0<td> This gives range of expansion of
+   *    Bloch Gaussians in AO Gaussians
    *
-   *  <tr><td><tt>k_points</tt><td>int<td>0<td> number of k points
+   *  <tr><td><tt>rdmax</tt><td>int<td>0<td> This gives range of Coulomb
+   *    operation
+   *
+   *  <tr><td><tt>rjmax</tt><td>int<td>0<td> This gives range of density
+   *    representation
+   *
+   *  <tr><td><tt>k_points</tt><td>int<td>0<td> number of k points in each
+   *    direction
    *  </table>
    *
    *  example input:
@@ -60,10 +65,11 @@ class UnitCell : public Molecule {
    *    "charge": 0,
    *    "file_name": "water.xyz",
    *    "sort_input": true,
-   *    "n_cluster": 20
-   *    "max_lattice_sum": [0, 0, 10],
-   *    "direct_lattice_vector": [0.0, 0.0, 2.8],
-   *    "k_points": [1, 1, 10]
+   *    "lattice_param": [0.0, 0.0, 2.672359],
+   *    "rmax": [0, 0, 10],
+   *    "rjmax": [0, 0, 20],
+   *    "rdmax": [0, 0, 10],
+   *    "k_points": [1, 1, 20]
    *  }
    *  \endcode
    *

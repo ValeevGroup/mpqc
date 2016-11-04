@@ -12,8 +12,6 @@
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
 #include "mpqc/chemistry/qc/basis/basis_fwd.h"
 
-
-
 namespace mpqc {
 namespace basis {
 

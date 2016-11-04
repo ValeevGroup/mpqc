@@ -22,25 +22,24 @@ namespace integrals {
 template <typename Tile, typename Policy>
 class AOFactory;
 
-namespace detail{
-
+namespace detail {
 
 template <typename Tile, typename Policy>
-std::shared_ptr<AOFactory<Tile,Policy>> construct_ao_factory(const KeyVal& kv){
-  std::shared_ptr<AOFactory<Tile,Policy>> ao_factory;
-  if(kv.exists_class("wfn_world:ao_factory")){
-    ao_factory = kv.class_ptr<AOFactory<Tile,Policy>>("wfn_world:ao_factory");
-  }
-  else{
-    ao_factory = std::make_shared<AOFactory<Tile,Policy>>(kv);
+std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
+    const KeyVal& kv) {
+  std::shared_ptr<AOFactory<Tile, Policy>> ao_factory;
+  if (kv.exists_class("wfn_world:ao_factory")) {
+    ao_factory = kv.class_ptr<AOFactory<Tile, Policy>>("wfn_world:ao_factory");
+  } else {
+    ao_factory = std::make_shared<AOFactory<Tile, Policy>>(kv);
     std::shared_ptr<DescribedClass> ao_factory_base = ao_factory;
     KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
-    kv_nonconst.keyval("wfn_world").assign("ao_factory",ao_factory_base);
+    kv_nonconst.keyval("wfn_world").assign("ao_factory", ao_factory_base);
   }
   return ao_factory;
 };
 
-} // namespace detail
+}  // namespace detail
 
 // TODO better inverse of two center
 // TODO direct integral
@@ -55,7 +54,7 @@ std::shared_ptr<AOFactory<Tile,Policy>> construct_ao_factory(const KeyVal& kv){
  *
  */
 
-template <typename Tile, typename Policy=TA::SparsePolicy>
+template <typename Tile, typename Policy = TA::SparsePolicy>
 class AOFactory : public AOFactoryBase, public DescribedClass {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
@@ -96,9 +95,10 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
   AOFactory& operator=(AOFactory&&) = default;
 
   /// set oper based on Tile type
-  template<typename T = Tile>
-  void set_oper(typename std::enable_if<std::is_same<T,TA::TensorD>::value, T>::type && t){
-    op_ = TA::Noop<TA::TensorD,true>();
+  template <typename T = Tile>
+  void set_oper(typename std::enable_if<std::is_same<T, TA::TensorD>::value,
+                                        T>::type&& t) {
+    op_ = TA::Noop<TA::TensorD, true>();
   }
 
   virtual ~AOFactory() noexcept = default;
@@ -186,15 +186,15 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
 };
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute(const std::wstring& formula_string) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
+    const std::wstring& formula_string) {
   auto formula = Formula(formula_string);
   return compute(formula);
 }
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
+    const Formula& formula) {
   TArray result;
 
   // find if in registry
@@ -202,7 +202,8 @@ AOFactory<Tile, Policy>::compute(const Formula& formula) {
 
   if (iter != ao_formula_registry_.end()) {
     result = *(iter->second);
-    utility::print_par(world_, "Retrieved AO Integral: ", utility::to_string(formula.string()));
+    utility::print_par(world_, "Retrieved AO Integral: ",
+                       utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
@@ -250,7 +251,8 @@ AOFactory<Tile, Policy>::compute(const Formula& formula) {
       ao_formula_registry_.insert(formula, result);
     }
 
-    madness::print_meminfo(world_.rank(), "AOFactory: " + utility::to_string(formula.string()));
+    madness::print_meminfo(
+        world_.rank(), "AOFactory: " + utility::to_string(formula.string()));
 
     return ao_formula_registry_.retrieve(formula);
   }
@@ -259,8 +261,8 @@ AOFactory<Tile, Policy>::compute(const Formula& formula) {
 }
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute2(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
+    const Formula& formula) {
   Bvector bs_array;
   double time = 0.0;
   mpqc::time_point time0;
@@ -298,6 +300,27 @@ AOFactory<Tile, Policy>::compute2(const Formula& formula) {
       time1 = mpqc::now(world_, accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
     }
+
+    // inverse square root of integral
+    if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
+
+      if (iterative_inv_sqrt_) {
+        TArray tmp = array_ops::inverse_sqrt(result);
+        result("i,j") = tmp("i,j");
+      } else {
+        auto result_eig = array_ops::array_to_eigen(result);
+
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(result_eig);
+        RowMatrixXd inv_eig = es.operatorInverseSqrt();
+
+        auto tr_result = result.trange().data()[0];
+        result = array_ops::eigen_to_array<TA::TensorD>(
+            result.world(), inv_eig, tr_result, tr_result);
+      }
+
+    }
+
+
     utility::print_par(world_, "Computed One Body Integral: ",
                        utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result);
@@ -308,7 +331,6 @@ AOFactory<Tile, Policy>::compute2(const Formula& formula) {
   else if (formula.oper().is_twobody()) {
     time0 = mpqc::now(world_, accurate_time_);
 
-    // compute inverse square root first in this case
     if (iterative_inv_sqrt_ &&
         formula.oper().has_option(Operator::Option::Inverse)) {
       auto inv_sqrt_formula = formula;
@@ -325,22 +347,22 @@ AOFactory<Tile, Policy>::compute2(const Formula& formula) {
         result("i,j") = -result("i,j");
       }
 
-    } else {
+    }
+
+    else {
       // compute integral
       std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
       parse_two_body_two_center(formula, engine_pool, bs_array);
       result = compute_integrals(this->world_, engine_pool, bs_array);
 
-      // inverse of integral
-      if (formula.oper().has_option(Operator::Option::Inverse)) {
+      // compute inverse square root first in this case
+      if (!iterative_inv_sqrt_ &&
+          formula.oper().has_option(Operator::Option::Inverse)) {
         if (formula.oper().type() == Operator::Type::cGTG ||
             formula.oper().type() == Operator::Type::cGTGCoulomb) {
           result("i,j") = -result("i,j");
         }
 
-        //                utility::parallel_break_point(world_,0);
-        //                std::cout << "Before Array To Eigen" << std::endl;
-        //                std::cout << result << std::endl;
         RowMatrixXd result_eig = array_ops::array_to_eigen(result);
 
         // compute cholesky decomposition
@@ -353,13 +375,13 @@ AOFactory<Tile, Policy>::compute2(const Formula& formula) {
           RowMatrixXd L_inv_eig = L.inverse();
           result_eig = L_inv_eig.transpose() * L_inv_eig;
         } else if (info == Eigen::ComputationInfo::NumericalIssue) {
-          utility::print_par(
-              world_,
-              "!!!\nWarning!! NumericalIssue in Cholesky Decomposition\n!!!\n");
+          utility::print_par(world_,
+                             "!!!\nWarning!! NumericalIssue in Cholesky "
+                             "Decomposition\n!!!\n");
         } else if (info == Eigen::ComputationInfo::NoConvergence) {
-          utility::print_par(
-              world_,
-              "!!!\nWarning!! NoConvergence in Cholesky Decomposition\n!!!\n");
+          utility::print_par(world_,
+                             "!!!\nWarning!! NoConvergence in Cholesky "
+                             "Decomposition\n!!!\n");
         }
 
         if (info != Eigen::ComputationInfo::Success) {
@@ -394,11 +416,14 @@ AOFactory<Tile, Policy>::compute2(const Formula& formula) {
           result("i,j") = tmp("i,j");
         } else {
           auto result_eig = array_ops::array_to_eigen(result);
-          RowMatrixXd L_inv_eig =
-              RowMatrixXd(Eigen::LLT<RowMatrixXd>(result_eig).matrixL()).inverse();
+
+          Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(result_eig);
+          RowMatrixXd inv_eig = es.operatorInverseSqrt();
+
+
           auto tr_result = result.trange().data()[0];
           result = array_ops::eigen_to_array<TA::TensorD>(
-              result.world(), L_inv_eig, tr_result, tr_result);
+              result.world(), inv_eig, tr_result, tr_result);
         }
 
         if (formula.oper().type() == Operator::Type::cGTG ||
@@ -487,7 +512,6 @@ AOFactory<Tile, Policy>::compute2(const Formula& formula) {
     double size = mpqc::detail::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
-
   }
   // hJ = H + J
   else if (formula.oper().type() == Operator::Type::hJ) {
@@ -542,13 +566,12 @@ AOFactory<Tile, Policy>::compute2(const Formula& formula) {
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
   }
-
   return result;
 }
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute3(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
+    const Formula& formula) {
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
@@ -576,8 +599,8 @@ AOFactory<Tile, Policy>::compute3(const Formula& formula) {
 }
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute4(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
+    const Formula& formula) {
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;

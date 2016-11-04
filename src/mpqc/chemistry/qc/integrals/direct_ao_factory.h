@@ -74,7 +74,13 @@ class DirectAOFactory : public AOFactoryBase, public DescribedClass {
 
   DirectAOFactory(const KeyVal& kv)
       : AOFactoryBase(kv), direct_ao_formula_registry_() {
-    accurate_time_ = kv.value("accurate_time", false);
+
+    std::string prefix = "";
+    if(kv.exists("wfn_wolrd") || kv.exists_class("wfn_world")){
+      prefix = "wfn_world:";
+    }
+
+    accurate_time_ = kv.value(prefix + "accurate_time", false);
 
     /// For other Tile type, need to implement set_oper();
     set_oper(Tile());

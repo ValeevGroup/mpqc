@@ -5,16 +5,16 @@
 #ifndef MPQC_AO_FACTORY_H
 #define MPQC_AO_FACTORY_H
 
+#include "ao_factory_base.h"
+#include "mpqc/chemistry/qc/expression/permutation.h"
+#include "mpqc/chemistry/qc/f12/f12_utility.h"
+#include "mpqc/chemistry/qc/integrals/integrals.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "mpqc/util/external/madworld/parallel_break_point.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/util/misc/time.h"
-#include "ao_factory_base.h"
 #include <madness/world/worldmem.h>
-#include "mpqc/chemistry/qc/expression/permutation.h"
-#include "mpqc/chemistry/qc/f12/f12_utility.h"
-#include "mpqc/chemistry/qc/integrals/integrals.h"
 
 namespace mpqc {
 namespace integrals {
@@ -39,7 +39,6 @@ std::shared_ptr<AOFactory<Tile,Policy>> construct_ao_factory(const KeyVal& kv){
   }
   return ao_factory;
 };
-
 
 } // namespace detail
 
@@ -81,11 +80,14 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
    **/
 
   AOFactory(const KeyVal& kv)
-      : AOFactoryBase(kv),
-        ao_formula_registry_(),
-        orbital_space_registry_() {
-    accurate_time_ = kv.value("accurate_time", false);
-    iterative_inv_sqrt_ = kv.value("iterative_inv_sqrt", false);
+      : AOFactoryBase(kv), ao_formula_registry_(), orbital_space_registry_() {
+    std::string prefix = "";
+    if (kv.exists("wfn_wolrd") || kv.exists_class("wfn_world")) {
+      prefix = "wfn_world:";
+    }
+
+    accurate_time_ = kv.value<bool>(prefix + "accurate_time", false);
+    iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);
 
     set_oper(Tile());
   }

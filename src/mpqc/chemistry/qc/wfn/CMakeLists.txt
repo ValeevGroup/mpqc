@@ -13,4 +13,4 @@ set(sources
 )
 
 add_library(MPQCwfn ${sources})
-target_link_libraries(MPQCwfn ${TA_LIBRARIES} MPQCkeyval MPQCmolecule)
+target_link_libraries(MPQCwfn ${TA_LIBRARIES} MPQCutil_keyval MPQCmolecule)

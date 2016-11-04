@@ -1,12 +1,12 @@
 /*
- * keyval.hpp
+ * keyval.h
  *
  *  Created on: Apr 18, 2016
  *      Author: evaleev
  */
 
-#ifndef SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_
-#define SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_
+#ifndef SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_
+#define SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_
 
 #include <array>
 #include <cassert>
@@ -760,4 +760,4 @@ KeyVal operator+(const KeyVal& first, const KeyVal& second);
 
 /// @}
 
-#endif /* SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_ */
+#endif /* SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_ */

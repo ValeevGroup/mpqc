@@ -10,7 +10,7 @@
 #include <madness/world/array_addons.h>
 #include <tiledarray.h>
 
-#include "mpqc/util/keyval/keyval.hpp"
+#include "mpqc/util/keyval/keyval.h"
 
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
 #include "mpqc/chemistry/qc/basis/basis_fwd.h"

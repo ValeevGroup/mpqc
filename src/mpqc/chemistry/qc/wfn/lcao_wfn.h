@@ -6,7 +6,7 @@
 #define MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
 
 #include "mpqc/chemistry/qc/wfn/wfn.h"
-#include "mpqc/util/keyval/keyval.hpp"
+#include "mpqc/util/keyval/keyval.h"
 #include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 

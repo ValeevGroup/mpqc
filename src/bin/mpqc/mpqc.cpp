@@ -11,7 +11,7 @@
 
 #include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
-#include "mpqc/util/keyval/keyval.hpp"
+#include "mpqc/util/keyval/keyval.h"
 
 /// linkage files to force linking in of ALL Wavefunction-based classes
 #include "mpqc/chemistry/qc/scf/linkage.h"

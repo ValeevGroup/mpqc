@@ -11,7 +11,7 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/util/keyval/keyval.hpp"
+#include "mpqc/util/keyval/keyval.h"
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/basis/basis_registry.h"
 

@@ -1,7 +1,7 @@
 #include <vector>
 #include <sstream>
 
-#include "mpqc/util/keyval/keyval.hpp"
+#include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include <madness/world/world.h>
 #include "catch.hpp"

@@ -32,7 +32,6 @@ template <typename Tile, typename Policy>
 class PeriodicAOFactory : public AOFactoryBase {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  //    using Op = std::function<Tile(TA::TensorD&&)>;
   using Op = std::function<Tile(TA::TensorZ &&)>;
 
   PeriodicAOFactory() = default;
@@ -46,12 +45,30 @@ class PeriodicAOFactory : public AOFactoryBase {
     if (molecule_type != "UnitCell") {
       throw std::invalid_argument("Moleule Type Has To be UnitCell!!");
     }
-    auto ps = std::dynamic_pointer_cast<UnitCell>(mol_);
-    dcell_ = ps->dcell();
-    R_max_ = ps->R_max();
-    RD_max_ = ps->RD_max();
-    RJ_max_ = ps->RJ_max();
-    nk_ = ps->nk();
+
+    dcell_ = decltype(dcell_)(
+        kv.value<std::vector<double>>("molecule:direct_lattice_vector").data());
+    const auto angstrom_to_bohr = 1 / 0.52917721092;  // 2010 CODATA value
+    dcell_ *= angstrom_to_bohr;
+    R_max_ =
+        decltype(R_max_)(kv.value<std::vector<int>>("molecule:rmax").data());
+    RD_max_ =
+        decltype(RD_max_)(kv.value<std::vector<int>>("molecule:rdmax").data());
+    RJ_max_ =
+        decltype(RJ_max_)(kv.value<std::vector<int>>("molecule:rjmax").data());
+    nk_ = decltype(nk_)(kv.value<std::vector<int>>("molecule:k_points").data());
+
+    std::cout << "\nPeriodic Hartree-Fock computational parameter:"
+              << std::endl;
+    std::cout
+        << "\tR_max (range of expansion of Bloch Gaussians in AO Gaussians): ["
+        << R_max_.transpose() << "]" << std::endl;
+    std::cout << "\tRj_max (range of Coulomb operation): ["
+              << RJ_max_.transpose() << "]" << std::endl;
+    std::cout << "\tRd_max (Range of density representation): ["
+              << RD_max_.transpose() << "]" << std::endl;
+    std::cout << "\t# of k points in each direction: [" << nk_.transpose()
+              << "]\n" << std::endl;
 
     R_size_ = 1 + idx_lattice(R_max_(0), R_max_(1), R_max_(2), R_max_);
     RJ_size_ = 1 + idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);

@@ -13,11 +13,6 @@
 namespace mpqc {
 class UnitCell : public Molecule {
  private:
-  Vector3i R_max_ = {
-      0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
-  Vector3i RJ_max_ = {0, 0, 0};       // range of Coulomb operation
-  Vector3i RD_max_ = {0, 0, 0};       // range of density representation
-  Vector3i nk_ = {1, 1, 1};           // # of k points in each direction
   Vector3d dcell_ = {0.0, 0.0, 0.0};  // direct unit cell params (in a.u.)
  public:
   UnitCell() = default;
@@ -85,10 +80,6 @@ class UnitCell : public Molecule {
 
   /// Return dcell_
   Vector3d dcell() { return dcell_; }
-  Vector3i R_max() { return R_max_; }
-  Vector3i RD_max() { return RD_max_; }
-  Vector3i RJ_max() { return RJ_max_; }
-  Vector3i nk() { return nk_; }
 };
 
 }  // mpqc namespace

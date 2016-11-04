@@ -7,20 +7,18 @@
 
 #include <string>
 
-#include "mpqc/math/external/eigen/eigen.h"
-#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include "mpqc/chemistry/qc/f12/cabs_singles.h"
 #include "mpqc/chemistry/qc/f12/f12_intermediates.h"
 #include "mpqc/chemistry/qc/f12/f12_utility.h"
 #include "mpqc/chemistry/qc/mbpt/mp2.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
+#include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
 namespace f12 {
 
-
-class RMP2F12 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>{
-
-public:
+class RMP2F12 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
+ public:
   using TArray = qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::ArrayType;
   using Matrix = RowMatrix<double>;
 
@@ -40,12 +38,11 @@ public:
   ~RMP2F12() = default;
 
   double value() override;
-  std::tuple<Matrix,Matrix> compute();
+  std::tuple<Matrix, Matrix> compute();
   void compute(qc::PropertyBase* pb) override;
   void obsolete() override;
 
-private:
-
+ private:
   virtual TArray compute_B();
   virtual TArray compute_V();
   virtual TArray compute_X();
@@ -53,27 +50,25 @@ private:
   virtual std::tuple<TArray, TArray> compute_T();
   virtual double compute_cabs_singles();
 
-protected:
+ protected:
   char approximation_;
   TA::SparseShape<float> ijij_ijji_shape_;
   bool cabs_singles_;
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
 };
 
-class RIRMP2F12 : public RMP2F12{
-
-public:
+class RIRMP2F12 : public RMP2F12 {
+ public:
   RIRMP2F12(const KeyVal& kv);
   ~RIRMP2F12() = default;
 
-private:
-  virtual TArray compute_B() override ;
-  virtual TArray compute_V() override ;
-  virtual TArray compute_X() override ;
-  virtual TArray compute_C() override ;
-  virtual std::tuple<TArray, TArray> compute_T() override ;
+ private:
+  virtual TArray compute_B() override;
+  virtual TArray compute_V() override;
+  virtual TArray compute_X() override;
+  virtual TArray compute_C() override;
+  virtual std::tuple<TArray, TArray> compute_T() override;
   virtual double compute_cabs_singles() override;
-
 };
 
 }  // end of namespace f12

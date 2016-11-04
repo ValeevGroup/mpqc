@@ -6,4 +6,3 @@
 #include "mpqc/util/keyval/forcelink.h"
 
 MPQC_CLASS_EXPORT2("CCSD(F12)", mpqc::f12::CCSDF12<TA::TensorD>);
-

@@ -48,7 +48,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
    * | reblock_occ | int | none | block size to reblock occ |
    * | reblock_unocc | int | none | block size to reblock unocc |
    * | reblock_inner | int | none | block size to reblock inner dimension |
-   * | increase | int | 2 | number of block in virtual dimension to load at each virtual loop |
+   * | increase | int | 2 | number of block in virtual dimension to load at each
+   * virtual loop |
    */
 
   CCSD_T(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
@@ -96,11 +97,12 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
       if (world.rank() == 0) {
         std::cout << std::setprecision(15);
-        std::cout << "(T) Energy      " << triples_energy_ << " Time " << duration1
-                  << std::endl;
+        std::cout << "(T) Energy      " << triples_energy_ << " Time "
+                  << duration1 << std::endl;
         //                    std::cout << "(T) Energy      " << ccsd_t_d << "
         //                    Time " << duration2 << std::endl;
-        std::cout << "CCSD(T) Energy  " << triples_energy_ + ccsd_corr << std::endl;
+        std::cout << "CCSD(T) Energy  " << triples_energy_ + ccsd_corr
+                  << std::endl;
         //                    std::cout << "CCSD(T) Energy  " << ccsd_t_d +
         //                    ccsd_corr << std::endl;
       }
@@ -925,11 +927,13 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
     this->set_trange1_engine(new_tr1);
 
-    TArray occ_convert = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
-        world, old_occ, new_occ, 1.0);
+    TArray occ_convert =
+        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+            world, old_occ, new_occ, 1.0);
 
-    TArray vir_convert = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
-        world, old_vir, new_vir, 1.0);
+    TArray vir_convert =
+        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+            world, old_vir, new_vir, 1.0);
 
     // get occupied and virtual orbitals
     auto occ_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"i"));
@@ -951,11 +955,11 @@ class CCSD_T : public CCSD<Tile, Policy> {
           new_tr1->compute_range(new_tr1->get_active_occ(), inner_block_size_);
 
       detail::parallel_print_range_info(world, tr_occ_inner_,
-                                         "CCSD(T) OCC Inner");
+                                        "CCSD(T) OCC Inner");
 
       auto occ_inner_convert =
-          array_ops::create_diagonal_array_from_eigen<Tile,Policy>(world, old_occ,
-                                                            tr_occ_inner_, 1.0);
+          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+              world, old_occ, tr_occ_inner_, 1.0);
 
       TArray inner_occ;
       inner_occ("k,i") = occ_space("k,j") * occ_inner_convert("j,i");
@@ -967,10 +971,10 @@ class CCSD_T : public CCSD<Tile, Policy> {
       // vir inner
       tr_vir_inner_ = new_tr1->compute_range(vir, inner_block_size_);
       detail::parallel_print_range_info(world, tr_vir_inner_,
-                                         "CCSD(T) Vir Inner");
+                                        "CCSD(T) Vir Inner");
       auto vir_inner_convert =
-          array_ops::create_diagonal_array_from_eigen<Tile,Policy>(world, old_vir,
-                                                            tr_vir_inner_, 1.0);
+          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+              world, old_vir, tr_vir_inner_, 1.0);
 
       TArray inner_vir;
       inner_vir("k,a") = vir_space("k,b") * vir_inner_convert("b,a");
@@ -998,11 +1002,13 @@ class CCSD_T : public CCSD<Tile, Policy> {
   void reblock_inner_t2(TArray &t2_left, TArray &t2_right) {
     auto &world = this->lcao_factory().world();
 
-    auto vir_inner_convert = array_ops::create_diagonal_array_from_eigen<Tile,Policy>(
-        world, t2_left.trange().data()[0], tr_vir_inner_, 1.0);
+    auto vir_inner_convert =
+        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+            world, t2_left.trange().data()[0], tr_vir_inner_, 1.0);
 
-    auto occ_inner_convert = array_ops::create_diagonal_array_from_eigen<Tile,Policy>(
-        world, t2_right.trange().data()[3], tr_occ_inner_, 1.0);
+    auto occ_inner_convert =
+        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+            world, t2_right.trange().data()[3], tr_occ_inner_, 1.0);
 
     t2_left("d,a,i,j") = t2_left("c,a,i,j") * vir_inner_convert("c,d");
 

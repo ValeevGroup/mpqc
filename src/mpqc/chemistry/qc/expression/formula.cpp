@@ -39,7 +39,8 @@ Formula::Formula(std::wstring string) {
 
   if (bra_symbol == string.cend() || ket_symbol == string.cend()) {
     throw std::runtime_error(
-        utility::to_string(string) + " Formula should start with < or ( and end with > or ). \n");
+        utility::to_string(string) +
+        " Formula should start with < or ( and end with > or ). \n");
   }
 
   TA_ASSERT((*bra_symbol == L'<' && *ket_symbol == L'>') ||
@@ -89,7 +90,8 @@ Formula::Formula(std::wstring string) {
     ket_indices_ = check_orbital_index(right_formula);
 
   } else {
-    throw std::runtime_error(utility::to_string(string) + " Formula in wrong length. \n");
+    throw std::runtime_error(utility::to_string(string) +
+                             " Formula in wrong length. \n");
   }
 
   // error detecting
@@ -97,12 +99,14 @@ Formula::Formula(std::wstring string) {
   // one body operation
   if (oper_.is_onebody() && (bra_indices_.size() != 1) &&
       (ket_indices_.size() != 1)) {
-    throw std::runtime_error(utility::to_string(string) + "One body Operator with Wrong Index Size! \n");
+    throw std::runtime_error(utility::to_string(string) +
+                             "One body Operator with Wrong Index Size! \n");
   }
 
   // more than three index
   if ((bra_indices_.size() >= 3) || (ket_indices_.size() >= 3)) {
-    throw std::runtime_error(utility::to_string(string) + " Wrong Number of Index! \n");
+    throw std::runtime_error(utility::to_string(string) +
+                             " Wrong Number of Index! \n");
   }
 }
 
@@ -144,12 +148,13 @@ bool Formula::operator<(const Formula& other) const {
 
 bool Formula::operator==(const Formula& other) const {
   // special case
-  if(this->rank()==2){
-    return  (oper_ == other.oper_) && (bra_indices_ == other.bra_indices_) &&
-            (ket_indices_ == other.ket_indices_);
-  }else{
+  if (this->rank() == 2) {
     return (oper_ == other.oper_) && (bra_indices_ == other.bra_indices_) &&
-           (ket_indices_ == other.ket_indices_) && (notation_ == other.notation_);
+           (ket_indices_ == other.ket_indices_);
+  } else {
+    return (oper_ == other.oper_) && (bra_indices_ == other.bra_indices_) &&
+           (ket_indices_ == other.ket_indices_) &&
+           (notation_ == other.notation_);
   }
 }
 

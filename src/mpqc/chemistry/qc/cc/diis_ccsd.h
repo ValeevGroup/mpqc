@@ -9,8 +9,6 @@
 
 #include <tiledarray.h>
 
-
-
 namespace mpqc {
 
 namespace cc {

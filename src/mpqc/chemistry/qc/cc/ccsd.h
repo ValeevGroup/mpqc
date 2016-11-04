@@ -7,12 +7,12 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/mbpt/denom.h"
-#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include "mpqc/chemistry/qc/cc/diis_ccsd.h"
 #include "mpqc/chemistry/qc/integrals/direct_ao_factory.h"
+#include "mpqc/chemistry/qc/mbpt/denom.h"
 #include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 
 namespace mpqc {
 namespace cc {
@@ -39,10 +39,12 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
-   * | method | string | standard | method to compute ccsd (standard, df, direct) |
+   * | method | string | standard | method to compute ccsd (standard, df,
+   * direct) |
    * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
-   * | print_detail | bool | false | if print more information in CCSD iteration |
+   * | print_detail | bool | false | if print more information in CCSD iteration
+   * |
    */
   CCSD(const KeyVal &kv) : qc::LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
     if (kv.exists("ref")) {

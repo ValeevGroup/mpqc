@@ -92,7 +92,8 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    * | orbital | int | -1 | orbitals |
    * | use_cabs | bool | true | if use cabs |
-   * | dyson_method | string | diagonal | dyson_method to use, (diagonal or nondiagonal ) |
+   * | dyson_method | string | diagonal | dyson_method to use, (diagonal or
+   * nondiagonal ) |
    * | max_iter | int | 100 | maximum iteration |
    */
 

@@ -5,8 +5,8 @@
 #ifndef SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H
 #define SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H
 
-#include <tiledarray.h>
 #include "mpqc/math/external/eigen/eigen.h"
+#include <tiledarray.h>
 
 namespace mpqc {
 

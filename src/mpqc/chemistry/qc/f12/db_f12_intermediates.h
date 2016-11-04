@@ -7,7 +7,6 @@
 
 #include <tiledarray.h>
 
-
 #include "mpqc/chemistry/qc/f12/f12_intermediates.h"
 #include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 
@@ -328,7 +327,6 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
     utility::print_par(world, "X Term2 Time: ", time, " S\n");
   }
 
-
   {
     auto left = lcao_factory(L"<i1 j1|R|m a>[df]");
     auto right = lcao_factory(L"<i2 j2|R|m a>[df]");
@@ -344,7 +342,6 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "V Term3 Time: ", time, " S\n");
   }
-
 
   {
     auto left = lcao_factory(L"<i1 j1|R|a b>[df]");

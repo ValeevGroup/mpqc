@@ -17,7 +17,6 @@ RIDBRMP2F12::RIDBRMP2F12(const KeyVal& kv) : RIRMP2F12(kv), kv_(kv) {
 
 double RIDBRMP2F12::value() {
   if (this->energy_ == 0.0) {
-
     auto& world = this->wfn_world()->world();
 
     double time;
@@ -27,7 +26,7 @@ double RIDBRMP2F12::value() {
 
     auto time1 = mpqc::fenced_now(world);
     time = mpqc::duration_in_s(time0, time1);
-    utility::print_par(world,"Total Ref Time: ", time, " S \n");
+    utility::print_par(world, "Total Ref Time: ", time, " S \n");
 
     // initialize
     auto mol = this->lcao_factory().ao_factory().molecule();
@@ -73,7 +72,7 @@ double RIDBRMP2F12::value() {
 
     auto time2 = mpqc::fenced_now(world);
     time = mpqc::duration_in_s(time1, time2);
-    utility::print_par(world,"Total F12 Time: ", time, " S \n");
+    utility::print_par(world, "Total F12 Time: ", time, " S \n");
 
     if (!redo_mp2_) {
       this->energy_ = ref_energy + emp2 + ef12 + e_s;
@@ -98,13 +97,11 @@ double RIDBRMP2F12::value() {
 
       auto time3 = mpqc::fenced_now(world);
       time = mpqc::duration_in_s(time2, time3);
-      utility::print_par(world,"Total New MP2 Time: ", time, " S \n");
+      utility::print_par(world, "Total New MP2 Time: ", time, " S \n");
 
       time = mpqc::duration_in_s(time0, time3);
-      utility::print_par(world,"Total DBMP2F12 Time: ", time, " S \n");
-
+      utility::print_par(world, "Total DBMP2F12 Time: ", time, " S \n");
     }
-
   }
   return this->energy_;
 }

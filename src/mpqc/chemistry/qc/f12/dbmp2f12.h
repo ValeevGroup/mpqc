@@ -12,10 +12,8 @@
 namespace mpqc {
 namespace f12 {
 
-class RIDBRMP2F12 : public RIRMP2F12{
-
-public:
-
+class RIDBRMP2F12 : public RIRMP2F12 {
+ public:
   /**
    * KeyVal constructor
    * @param kv
@@ -31,18 +29,15 @@ public:
 
   double value() override;
 
-private:
-
-  TArray compute_B() override ;
-  TArray compute_V() override ;
-  TArray compute_X() override ;
+ private:
+  TArray compute_B() override;
+  TArray compute_V() override;
+  TArray compute_X() override;
   double compute_cabs_singles() override;
 
-private:
-
+ private:
   const KeyVal kv_;
   bool redo_mp2_;
-
 };
 }  // namespace f12
 }  // namespace mpqc

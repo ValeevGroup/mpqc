@@ -4,7 +4,6 @@
 
 #include <cassert>
 
-
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/scf/builder.h"

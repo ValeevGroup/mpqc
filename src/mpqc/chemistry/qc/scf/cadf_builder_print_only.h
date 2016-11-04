@@ -4,29 +4,28 @@
 
 #include <tiledarray.h>
 
-
-#include "mpqc/util/misc/time.h"
-#include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/chemistry/qc/scf/util.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/util/misc/time.h"
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "mpqc/math/tensor/clr/tile.h"
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
+#include "mpqc/math/tensor/clr/tile.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include "mpqc/chemistry/qc/scf/builder.h"
-#include "mpqc/chemistry/qc/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/integrals/make_engine.h"
+#include "mpqc/chemistry/qc/scf/builder.h"
 #include "mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h"
 #include "mpqc/chemistry/qc/scf/cadf_helper_functions.h"
 
 #include "mpqc/math/external/tiledarray/tensor_store.h"
 
-#include <vector>
 #include <iostream>
 #include <unordered_set>
+#include <vector>
 
 namespace mpqc {
 namespace scf {
@@ -50,8 +49,7 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 
  public:
   PrintOnlyCADFFockBuilder(
-      Molecule const &clustered_mol,
-      Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol, Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       bool use_forced_shape, double force_threshold,
@@ -64,15 +62,13 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
   }
 
   PrintOnlyCADFFockBuilder(
-      Molecule const &clustered_mol,
-      Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol, Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory)
       : FockBuilder() {
     // Grab needed ao integrals
     E_ = ao_factory.compute(L"( Κ | G|κ λ)");
-    util::write_shape_tuple3D(
-        E_, std::string("E_shape.txt"));
+    util::write_shape_tuple3D(E_, std::string("E_shape.txt"));
     M_ = ao_factory.compute(L"( Κ | G| Λ )");
 
     // Form L^{-1} for M
@@ -81,8 +77,8 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
     MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M_.trange().data()[0];  // Assumes symmetric blocking
-    Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(
-        M_.world(), L_inv_eig, trange1_M, trange1_M);
+    Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(M_.world(), L_inv_eig,
+                                                        trange1_M, trange1_M);
 
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
@@ -105,8 +101,7 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
         scf::reblock_from_atoms(C_df_temp, obs_atom_to_cluster_map,
                                 dfbs_atom_to_cluster_map, by_cluster_trange);
 
-    util::write_shape_tuple3D(
-        C_df_, std::string("C_df_shape.txt"));
+    util::write_shape_tuple3D(C_df_, std::string("C_df_shape.txt"));
   }
 
   ~PrintOnlyCADFFockBuilder() = default;
@@ -167,7 +162,6 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 
     util::write_shape_tuple3D(
         C_mo, std::string("C_mo_shape") + std::to_string(iteration) + ".txt");
-    
 
     // Get forced output shape
     TA::SparseShape<float> forced_shape;

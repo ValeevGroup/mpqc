@@ -2,28 +2,27 @@
 #ifndef MPQC_SCF_CLRCADFBUILDER_H
 #define MPQC_SCF_CLRCADFBUILDER_H
 
-
-#include <tiledarray.h>
-#include "mpqc/util/misc/time.h"
-#include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/chemistry/qc/scf/util.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/util/misc/time.h"
+#include <tiledarray.h>
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "mpqc/math/tensor/clr/tile.h"
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
+#include "mpqc/math/tensor/clr/tile.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include "mpqc/chemistry/qc/scf/builder.h"
-#include "mpqc/chemistry/qc/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/integrals/make_engine.h"
+#include "mpqc/chemistry/qc/scf/builder.h"
 #include "mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h"
 #include "mpqc/chemistry/qc/scf/cadf_helper_functions.h"
 
-#include <vector>
 #include <iostream>
 #include <unordered_set>
+#include <vector>
 
 namespace mpqc {
 namespace scf {
@@ -84,14 +83,13 @@ class ClrCADFFockBuilder : public FockBuilder {
     using clr_type = decltype(my_class(std::declval<TA::TensorD>()));
     auto func = std::function<clr_type(TA::TensorD &&)>(my_class);
 
-    return integrals::sparse_integrals(world, eng_pool, basis_array,
-                                           p_screen, func);
+    return integrals::sparse_integrals(world, eng_pool, basis_array, p_screen,
+                                       func);
   }
 
  public:
   ClrCADFFockBuilder(
-      Molecule const &clustered_mol,
-      Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol, Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       bool use_forced_shape, double force_threshold, double lcao_chop_threshold,
@@ -117,8 +115,7 @@ class ClrCADFFockBuilder : public FockBuilder {
   }
 
   ClrCADFFockBuilder(
-      Molecule const &clustered_mol,
-      Molecule const &df_clustered_mol,
+      Molecule const &clustered_mol, Molecule const &df_clustered_mol,
       basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
       integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       double clr_threshold)
@@ -152,8 +149,8 @@ class ClrCADFFockBuilder : public FockBuilder {
     MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M.trange().data()[0];  // Assumes symmetric blocking
-    Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(
-        M.world(), L_inv_eig, trange1_M, trange1_M);
+    Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig,
+                                                        trange1_M, trange1_M);
 
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
@@ -447,8 +444,7 @@ class ClrCADFFockBuilder : public FockBuilder {
       auto shape_time0 = mpqc::fenced_now(world);
       forced_shape = C_mo.shape().transform(cadf_df_k_shape);
       auto shape_time1 = mpqc::fenced_now(world);
-      shape_times_.push_back(
-          mpqc::duration_in_s(shape_time0, shape_time1));
+      shape_times_.push_back(mpqc::duration_in_s(shape_time0, shape_time1));
     }
 
     // Construct F_df

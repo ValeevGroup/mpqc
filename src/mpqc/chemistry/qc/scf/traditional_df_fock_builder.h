@@ -2,12 +2,11 @@
 #ifndef MPQC_SCF_TRADITIONALDFFOCKBUILDER_H
 #define MPQC_SCF_TRADITIONALDFFOCKBUILDER_H
 
-
 #include <tiledarray.h>
 
+#include "mpqc/chemistry/qc/scf/util.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/util/misc/time.h"
-#include "mpqc/chemistry/qc/scf/util.h"
 
 #include "mpqc/chemistry/qc/scf/builder.h"
 
@@ -37,12 +36,13 @@ class DFFockBuilder : public FockBuilder {
   DFFockBuilder(array_type const &M, Integral const &eri3) : eri3_(eri3) {
     auto M_eig = array_ops::array_to_eigen(M);
 
-    RowMatrixXd L_inv_eig = RowMatrixXd(Eigen::LLT<RowMatrixXd>(M_eig).matrixL()).inverse();
+    RowMatrixXd L_inv_eig =
+        RowMatrixXd(Eigen::LLT<RowMatrixXd>(M_eig).matrixL()).inverse();
 
     auto tr_M = M.trange().data()[0];
 
-    L_inv_ = array_ops::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig,
-                                                    tr_M, tr_M);
+    L_inv_ = array_ops::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig, tr_M,
+                                                    tr_M);
   }
 
   const array_type &inv() const { return L_inv_; }
@@ -111,7 +111,6 @@ class DFFockBuilder : public FockBuilder {
                 << w_times_.back() + k_times_.back() << "\n";
     }
   }
-
 };
 
 }  // namespace scf

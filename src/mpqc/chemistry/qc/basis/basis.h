@@ -52,6 +52,7 @@ class Basis : public DescribedClass {
    * |---------|------|--------|-------------|
    * |molecule|Molecule|none|keyval to construct molecule|
    * |name|string|none|basis set name|
+   * |reblock| int | 0 | size to reblock basis |
    *
    */
   Basis(const KeyVal &kv);

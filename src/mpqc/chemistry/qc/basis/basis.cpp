@@ -36,6 +36,11 @@ Basis::Basis(const KeyVal &kv) {
 
   auto basis = parallel_construct_basis(*world, basis_set, *mol_ptr);
 
+  std::size_t reblock_size = kv.value<int>("reblock",0);
+  if(reblock_size != 0){
+    basis =  reblock(basis, reblock_basis, reblock_size);
+  }
+
   shells_ = basis.shells_;
 }
 

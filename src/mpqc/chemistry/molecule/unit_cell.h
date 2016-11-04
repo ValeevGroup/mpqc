@@ -8,7 +8,7 @@
 
 #include <Eigen/Dense>
 
-#include "mpqc/util/keyval/keyval.hpp"
+#include "mpqc/util/keyval/keyval.h"
 
 namespace mpqc {
 class UnitCell : public Molecule {

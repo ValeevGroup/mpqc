@@ -1,17 +1,18 @@
 #ifndef MPQC_PERIODIC_AO_FACTORY_H
 #define MPQC_PERIODIC_AO_FACTORY_H
 
+#include "ao_factory_base.cpp"
+#include "ao_factory_base.h"
+
 #include <iosfwd>
 #include <vector>
 
-#include <mpqc/chemistry/molecule/unit_cell.h>
-#include <mpqc/chemistry/qc/integrals/integrals.h>
-#include <mpqc/util/keyval/keyval.hpp>
-#include "ao_factory_base.cpp"
-#include "ao_factory_base.h"
+#include "mpqc/chemistry/molecule/unit_cell.h"
+#include "mpqc/chemistry/qc/integrals/integrals.h"
+#include "mpqc/util/keyval/keyval.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
-// Eigen matrix algebra library
+
 #include <unsupported/Eigen/MatrixFunctions>
 
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,

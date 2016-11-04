@@ -11,7 +11,7 @@
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
-#include "mpqc/util/keyval/keyval.hpp"
+#include "mpqc/util/keyval/keyval.h"
 
 
 

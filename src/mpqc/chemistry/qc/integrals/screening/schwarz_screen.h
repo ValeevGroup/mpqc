@@ -6,8 +6,8 @@
 #include <tiledarray.h>
 
 
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
-#include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
+#include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
+#include "mpqc/chemistry/qc/integrals/screening/screen_base.h"
 
 #include <stdexcept>
 #include <unordered_map>

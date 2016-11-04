@@ -5,10 +5,10 @@
 #ifndef MPQC_FORMULA_MAP_H
 #define MPQC_FORMULA_MAP_H
 
-#include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/chemistry/qc/expression/formula.h"
 #include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/util/external/madworld/parallel_print.h"
 #include <map>
-#include <mpqc/chemistry/qc/expression/formula.h>
 
 namespace mpqc {
 
@@ -157,7 +157,7 @@ class FormulaRegistry : public Registry<Formula, Value> {
   /// purges all objects if p(key) == true
   template <typename Pred>
   void purge_if(madness::World& world, const Pred& p) {
-//    world.gop.fence();
+    //    world.gop.fence();
     auto i = this->registry_.begin();
     for (; i != this->registry_.end();) {
       if (p(*i)) {
@@ -212,12 +212,10 @@ class FormulaRegistry : public Registry<Formula, Value> {
   }
 
   /// purges all formula in registry
-  void purge(madness::World& world){
-    auto pred =[] (const value_type& item){
-      return true;
-    };
+  void purge(madness::World& world) {
+    auto pred = [](const value_type& item) { return true; };
 
-    this->purge_if(world,pred);
+    this->purge_if(world, pred);
   }
 };
 }  // end of namespace mpqc

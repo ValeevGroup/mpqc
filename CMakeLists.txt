@@ -105,7 +105,7 @@ INCLUDE_DIRECTORIES(${MPQC_BINARY_DIR}/src)
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
 
-LIST(APPEND MPQC_LIBRARIES MPQCmolecule MPQCbasis MPQCwfn MPQCproperties MPQCmath_linalg MPQCmath_ta MPQCmath_clr MPQCexpression MPQCf12 MPQCcc MPQCmbpt MPQCintegrals MPQCscf MPQCkeyval)
+LIST(APPEND MPQC_LIBRARIES MPQCmolecule MPQCbasis MPQCwfn MPQCproperties MPQCmath_linalg MPQCmath_ta MPQCmath_clr MPQCexpression MPQCf12 MPQCcc MPQCmbpt MPQCintegrals MPQCscf MPQCutil_keyval)
 
 message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
 

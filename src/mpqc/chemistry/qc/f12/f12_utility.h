@@ -5,11 +5,11 @@
 #ifndef MPQC_UTILITY_H
 #define MPQC_UTILITY_H
 
-#include <tiledarray.h>
 #include <TiledArray/error.h>
 #include <TiledArray/sparse_shape.h>
 #include <TiledArray/tiled_range1.h>
 #include <string>
+#include <tiledarray.h>
 #include <vector>
 
 #include "mpqc/math/external/eigen/eigen.h"
@@ -65,34 +65,33 @@ struct GTGParams {
 /// only shape elements [i,j,i,j] and [i,j,j,i] are needed.
 /// @tparam P1_eq_P2 if \c true , restrict i <= j
 /// @note make sure the occ is blocked by 1!
-/// TODO must rewrite intermediate expressions to support P1_eq_P2==true, e.g. <ij|ma'><ma'|r|ij> term
+/// TODO must rewrite intermediate expressions to support P1_eq_P2==true, e.g.
+/// <ij|ma'><ma'|r|ij> term
 ///      must become <ij|ma'><ma'|r|ij> + <ij|a'm><a'm|r|ij>
 template <bool P1_eq_P2 = false>
-TiledArray::SparseShape<float>
-make_ijij_ijji_shape(const TiledArray::TiledRange& trange){
+TiledArray::SparseShape<float> make_ijij_ijji_shape(
+    const TiledArray::TiledRange &trange) {
+  // number of occ tiles
+  auto n_occ = trange.data()[0].tiles_range().second;
 
-// number of occ tiles
-auto n_occ =  trange.data()[0].tiles_range().second;
+  TiledArray::Tensor<float> tile_norms(trange.tiles_range(), 0.0);
 
-TiledArray::Tensor<float> tile_norms(trange.tiles_range(), 0.0);
+  auto max = std::numeric_limits<float>::max();
 
-auto max = std::numeric_limits<float>::max();
+  // set sparse tile
+  for (auto i = 0; i < n_occ; i++) {
+    const auto j_start = P1_eq_P2 ? i : 0;
+    for (auto j = j_start; j < n_occ; j++) {
+      const auto ijij = ((i * n_occ + j) * n_occ + i) * n_occ + j;
+      const auto ijji = ((i * n_occ + j) * n_occ + j) * n_occ + i;
+      tile_norms[ijij] = max;
+      tile_norms[ijji] = max;
+    }
+  }
 
-// set sparse tile
-for(auto i = 0; i < n_occ; i++) {
-  const auto j_start = P1_eq_P2 ? i : 0;
-  for(auto j=j_start; j < n_occ; j++) {
-    const auto ijij = ((i * n_occ + j) * n_occ + i) * n_occ + j;
-    const auto ijji = ((i * n_occ + j) * n_occ + j) * n_occ + i;
-    tile_norms[ijij] = max;
-    tile_norms[ijji] = max;
-   }
+  TiledArray::SparseShape<float> shape(tile_norms, trange);
+  return shape;
 }
-
-TiledArray::SparseShape<float> shape(tile_norms,trange);
-return shape;
-}
-
 
 template <typename Tile, typename Policy>
 void convert_X_ijkl(TiledArray::Array<double, 4, Tile, Policy> &ijkl,
@@ -135,7 +134,8 @@ template <typename Tile, typename Policy>
 TiledArray::Array<double, 4, Tile, Policy> convert_C_ijab(
     TiledArray::Array<double, 4, Tile, Policy> &ijab, const std::size_t n_occ,
     const std::size_t n_frozen, const Eigen::VectorXd &ens) {
-  auto convert = [&ens, n_occ, n_frozen](Tile &result_tile, const Tile &arg_tile) {
+  auto convert = [&ens, n_occ, n_frozen](Tile &result_tile,
+                                         const Tile &arg_tile) {
 
     result_tile = Tile(arg_tile.range());
 
@@ -189,7 +189,8 @@ TiledArray::Array<double, 4, Tile, Policy> convert_C_ijab(
 /// quadratic in the geminal; they will also vary with the reference case, e.g.
 /// closed-shell
 /// spin-restricted case, open-shell, or spin-unrestricted cases.
-/// -# if pairspin == none (closed-shell reference) will compute pair energies for i<=j
+/// -# if pairspin == none (closed-shell reference) will compute pair energies
+/// for i<=j
 /// -# if pairspin == aa/bb will compute pair energies for i<j
 /// -# if pairspin == ab will compute pair energies for all ij
 /// -# if pairspin == s0 will compute pair energies for all i<=j
@@ -264,8 +265,8 @@ struct F12PairEnergyReductor {
     const auto *value_ptr = tile.data();
     for (auto i = sti; i < fni; ++i) {
       for (auto j = stj; j < fnj; ++j) {
-        const auto ii = std::min(i,j);
-        const auto jj = std::max(i,j);
+        const auto ii = std::min(i, j);
+        const auto jj = std::max(i, j);
         for (auto k = stk; k < fnk; ++k) {
           for (auto l = stl; l < fnl; ++l, ++value_ptr) {
             // ijij

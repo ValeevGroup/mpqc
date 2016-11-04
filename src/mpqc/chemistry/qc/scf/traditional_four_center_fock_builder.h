@@ -4,10 +4,9 @@
 
 #include <cassert>
 
-
 #include <tiledarray.h>
 
-#include <mpqc/chemistry/qc/scf/builder.h>
+#include "mpqc/chemistry/qc/scf/builder.h"
 
 namespace mpqc {
 namespace scf {

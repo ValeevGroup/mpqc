@@ -7,9 +7,9 @@
 
 #include <memory>
 
+#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/expression/orbital_index.h"
 #include "operator.h"
-#include <mpqc/chemistry/qc/basis/basis.h>
-#include <mpqc/chemistry/qc/expression/orbital_index.h>
 
 namespace mpqc {
 

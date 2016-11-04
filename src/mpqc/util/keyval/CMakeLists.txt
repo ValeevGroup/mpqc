@@ -1,7 +1,7 @@
 set(sources
-  keyval.hpp
+  keyval.h
   keyval.cpp
 )
 
-add_library(MPQCkeyval ${sources})
-target_link_libraries(MPQCkeyval ${BOOST_LIBRARIES})
+add_library(MPQCutil_keyval ${sources})
+target_link_libraries(MPQCutil_keyval ${BOOST_LIBRARIES})

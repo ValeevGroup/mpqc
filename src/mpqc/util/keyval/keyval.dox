@@ -139,7 +139,7 @@ text file \c "example1.json" then a KeyVal object is constructed and used as fol
 @code
 #include <fstream>
 #include <cassert>
-#include <mpqc/util/keyval/keyval.hpp>
+#include "mpqc/util/keyval/keyval.h"
 
 std::ifstream f("example1.json");  assert(f.is_good());
 

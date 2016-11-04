@@ -5,9 +5,9 @@
 #ifndef MPQC_CHEMISTRY_QC_F12_GF2F12_H
 #define MPQC_CHEMISTRY_QC_F12_GF2F12_H
 
-#include <mpqc/chemistry/qc/f12/f12_intermediates.h>
-#include <mpqc/chemistry/qc/scf/mo_build.h>
-#include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
+#include "mpqc/chemistry/qc/f12/f12_intermediates.h"
+#include "mpqc/chemistry/qc/scf/mo_build.h"
+#include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
 
 namespace mpqc {
 
@@ -92,7 +92,8 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    * | orbital | int | -1 | orbitals |
    * | use_cabs | bool | true | if use cabs |
-   * | dyson_method | string | diagonal | dyson_method to use, (diagonal or nondiagonal ) |
+   * | dyson_method | string | diagonal | dyson_method to use, (diagonal or
+   * nondiagonal ) |
    * | max_iter | int | 100 | maximum iteration |
    */
 

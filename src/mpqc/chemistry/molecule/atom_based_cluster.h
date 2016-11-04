@@ -2,11 +2,11 @@
 #ifndef MPQC_MOLCULE_ATOMBASEDCLUSTER_H
 #define MPQC_MOLCULE_ATOMBASEDCLUSTER_H
 
-#include <mpqc/chemistry/molecule/atom_based_cluster_concept.h>
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include "mpqc/chemistry/molecule/atom_based_cluster_concept.h"
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 
-#include <vector>
 #include <iosfwd>
+#include <vector>
 
 namespace mpqc {
 /*!
@@ -25,74 +25,73 @@ namespace mpqc {
  * added.
  */
 class AtomBasedCluster {
-  private:
-    std::vector<AtomBasedClusterable> elements_;
-    Vector3d com_ = {0, 0, 0};
-    double mass_ = 0.0;
-    int64_t charge_ = 0.0;
+ private:
+  std::vector<AtomBasedClusterable> elements_;
+  Vector3d com_ = {0, 0, 0};
+  double mass_ = 0.0;
+  int64_t charge_ = 0.0;
 
-  public:
-    AtomBasedCluster() = default;
-    AtomBasedCluster(const AtomBasedCluster &c) = default;
-    AtomBasedCluster &operator=(const AtomBasedCluster &c) = default;
+ public:
+  AtomBasedCluster() = default;
+  AtomBasedCluster(const AtomBasedCluster &c) = default;
+  AtomBasedCluster &operator=(const AtomBasedCluster &c) = default;
 
-    AtomBasedCluster(AtomBasedCluster &&c) = default;
-    AtomBasedCluster &operator=(AtomBasedCluster &&c) = default;
+  AtomBasedCluster(AtomBasedCluster &&c) = default;
+  AtomBasedCluster &operator=(AtomBasedCluster &&c) = default;
 
-    explicit AtomBasedCluster(std::vector<AtomBasedClusterable> const &elems)
-            : elements_(elems) {}
-    explicit AtomBasedCluster(std::vector<AtomBasedClusterable> &&elems)
-            : elements_(std::move(elems)) {}
+  explicit AtomBasedCluster(std::vector<AtomBasedClusterable> const &elems)
+      : elements_(elems) {}
+  explicit AtomBasedCluster(std::vector<AtomBasedClusterable> &&elems)
+      : elements_(std::move(elems)) {}
 
-    // When constructed from list update immediately
-    template <typename... Cs>
-    explicit AtomBasedCluster(Cs... cs)
-            : elements_{std::move(cs)...} {
-        update_cluster();
-    }
+  // When constructed from list update immediately
+  template <typename... Cs>
+  explicit AtomBasedCluster(Cs... cs) : elements_{std::move(cs)...} {
+    update_cluster();
+  }
 
-    template <typename T>
-    void add_clusterable(T t) {
-        elements_.emplace_back(std::move(t));
-    }
+  template <typename T>
+  void add_clusterable(T t) {
+    elements_.emplace_back(std::move(t));
+  }
 
-    int64_t size() const { return elements_.size(); }
+  int64_t size() const { return elements_.size(); }
 
-    int64_t charge() const { return charge_; }
-    double mass() const { return mass_; }
+  int64_t charge() const { return charge_; }
+  double mass() const { return mass_; }
 
-    std::vector<Atom> atoms() const;
+  std::vector<Atom> atoms() const;
 
-    void clear() { elements_.clear(); }
+  void clear() { elements_.clear(); }
 
-    /**
-     * @brief sets the center equal to a point.
-     */
-    void set_com(Vector3d point) { com_ = point; }
+  /**
+   * @brief sets the center equal to a point.
+   */
+  void set_com(Vector3d point) { com_ = point; }
 
-    /**
-     * @brief will update the center based on the current elements.
-     *
-     * This is done as a separate step because it would be inefficent to update
-     *after each addition of a AtomBasedClusterable
-     */
-    void update_cluster();
+  /**
+   * @brief will update the center based on the current elements.
+   *
+   * This is done as a separate step because it would be inefficent to update
+   *after each addition of a AtomBasedClusterable
+   */
+  void update_cluster();
 
-    inline Vector3d const &com() const { return com_; }
+  inline Vector3d const &com() const { return com_; }
 
-    /**
-     * @brief begin returns the begin iterator to the vector of clusterables.
-     */
-    inline std::vector<AtomBasedClusterable>::const_iterator begin() const {
-        return elements_.begin();
-    }
+  /**
+   * @brief begin returns the begin iterator to the vector of clusterables.
+   */
+  inline std::vector<AtomBasedClusterable>::const_iterator begin() const {
+    return elements_.begin();
+  }
 
-    /**
-     * @brief end returns the end iterator to the vector of clusterables
-     */
-    inline std::vector<AtomBasedClusterable>::const_iterator end() const {
-        return elements_.end();
-    }
+  /**
+   * @brief end returns the end iterator to the vector of clusterables
+   */
+  inline std::vector<AtomBasedClusterable>::const_iterator end() const {
+    return elements_.end();
+  }
 };
 
 // External interface
@@ -114,31 +113,26 @@ inline double mass(AtomBasedCluster const &c) { return c.mass(); }
 inline int64_t charge(AtomBasedCluster const &c) { return c.charge(); }
 
 inline Vector3d const &center_of_mass(AtomBasedCluster const &c) {
-    return c.com();
+  return c.com();
 }
 
-std::vector<Atom> collapse_to_atoms(AtomBasedCluster const&);
+std::vector<Atom> collapse_to_atoms(AtomBasedCluster const &);
 
-inline void set_center(AtomBasedCluster &c, Vector3d const &point){
-    c.set_com(point);
+inline void set_center(AtomBasedCluster &c, Vector3d const &point) {
+  c.set_com(point);
 }
 
-inline void remove_clusterables(AtomBasedCluster &c){
-    c.clear();
-}
+inline void remove_clusterables(AtomBasedCluster &c) { c.clear(); }
 
 template <typename T>
-inline void attach_clusterable(AtomBasedCluster &c, T t){
-    c.add_clusterable(std::move(t));
+inline void attach_clusterable(AtomBasedCluster &c, T t) {
+  c.add_clusterable(std::move(t));
 }
 
-inline void update_center(AtomBasedCluster &c){
-    c.update_cluster();
-}
-
+inline void update_center(AtomBasedCluster &c) { c.update_cluster(); }
 
 /*! @} */
 
-} // namespace mpqc
+}  // namespace mpqc
 
-#endif // MPQC_MOLECULE_ATOMBASEDCLUSTER_H
+#endif  // MPQC_MOLECULE_ATOMBASEDCLUSTER_H

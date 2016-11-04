@@ -12,9 +12,9 @@
 
 
 #include "mpqc/math/linalg/diagonal_array.h"
-#include <mpqc/chemistry/qc/expression/orbital_registry.h>
-#include <mpqc/chemistry/qc/integrals/ao_factory.h>
-#include <mpqc/chemistry/qc/wfn/wfn_world.h>
+#include "mpqc/chemistry/qc/expression/orbital_registry.h"
+#include "mpqc/chemistry/qc/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/wfn/wfn_world.h"
 
 
 namespace mpqc {

@@ -5,10 +5,9 @@
 #ifndef MPQC_CC2_H
 #define MPQC_CC2_H
 
-
 #include <tiledarray.h>
 
-#include <mpqc/chemistry/qc/wfn/trange1_engine.h>
+#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 
 #include "../../../../../utility/cc_utility.h"
 #include "diis_ccsd.h"
@@ -47,13 +46,11 @@ class CC2 {
 
     auto g_abij = intermediate_->get_abij();
 
-    TArray2 d1(f_ai.world(), f_ai.trange(), f_ai.shape(),
-               f_ai.pmap());
+    TArray2 d1(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
     // store d1 to local
     d_ai(d1, ens_, n_occ);
 
-    TArray4 d2(g_abij.world(), g_abij.trange(), g_abij.shape(),
-               g_abij.pmap());
+    TArray4 d2(g_abij.world(), g_abij.trange(), g_abij.shape(), g_abij.pmap());
     // store d2 distributed
     d_abij_inplace(d2, ens_, n_occ);
 

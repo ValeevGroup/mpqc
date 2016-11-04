@@ -7,13 +7,11 @@
 
 #include <tiledarray.h>
 
-
+#include "mpqc/chemistry/qc/expression/orbital_registry.h"
+#include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
-#include <mpqc/chemistry/qc/expression/orbital_registry.h>
-#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
 
 namespace mpqc {
-
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
@@ -124,8 +122,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory,
-    const std::shared_ptr<TRange1Engine> tre,
-    std::size_t vir_blocksize) {
+    const std::shared_ptr<TRange1Engine> tre, std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_factory.world();
@@ -144,7 +141,7 @@ void closed_shell_cabs_mo_build_svd(
   ri_basis = obs_basis.join(abs_basis);
 
   detail::parallel_print_range_info(world, ri_basis.create_trange1(),
-                                     "RI Basis");
+                                    "RI Basis");
   ao_factory.orbital_basis_registry().add(OrbitalIndex(L"ρ"), ri_basis);
 
   // integral
@@ -170,7 +167,8 @@ void closed_shell_cabs_mo_build_svd(
         X_obs_eigen_inv.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
 
     // SVD solve
-    Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen, Eigen::ComputeFullV);
+    Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen,
+                                      Eigen::ComputeFullV);
     RowMatrixXd V_eigen = svd.matrixV();
     size_t nbf_ribs = S_obs_ribs_ortho_eigen.cols();
     auto nbf_cabs = nbf_ribs - svd.nonzeroSingularValues();
@@ -181,7 +179,8 @@ void closed_shell_cabs_mo_build_svd(
     // solve orbitals for all virtual
 
     auto n_vir = tre->get_vir();
-    RowMatrixXd C_allvirtual_eigen = RowMatrixXd::Zero(nbf_ribs, n_vir + nbf_cabs);
+    RowMatrixXd C_allvirtual_eigen =
+        RowMatrixXd::Zero(nbf_ribs, n_vir + nbf_cabs);
 
     {
       auto C_vir = orbital_registry.retrieve(OrbitalIndex(L"a")).array();
@@ -233,14 +232,15 @@ void closed_shell_cabs_mo_build_svd(
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
-    const Molecule &mols, bool frozen_core, std::size_t occ_blocksize, std::size_t vir_blocksize){
+    const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
+    std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &world = ao_factory.world();
   using TArray = TA::DistArray<Tile, Policy>;
 
   utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO Orbital\n");
   auto mo_time0 = mpqc::fenced_now(world);
-  std::size_t occ = mols.occupation()/2;
+  std::size_t occ = mols.occupation() / 2;
 
   // solving occupied orbitals
   TArray F;
@@ -387,8 +387,8 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 template <typename Tile, typename Policy>
 void closed_shell_dualbasis_cabs_mo_build_svd(
     integrals::LCAOFactory<Tile, Policy> &lcao_factory,
-    const std::shared_ptr<TRange1Engine> tre, std::string ri_method, std::size_t vir_blocksize)
-{
+    const std::shared_ptr<TRange1Engine> tre, std::string ri_method,
+    std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_factory.world();
@@ -405,17 +405,16 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto obs_basis =
       ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
 
-
   basis::Basis ri_basis;
 
   if (ri_method == "VBS") {
     ri_basis = vir_basis.join(abs_basis);
     detail::parallel_print_range_info(world, ri_basis.create_trange1(),
-                                       "RI Basis with VBS");
+                                      "RI Basis with VBS");
   } else if (ri_method == "OBS") {
     ri_basis = obs_basis.join(abs_basis);
     detail::parallel_print_range_info(world, ri_basis.create_trange1(),
-                                       "RI Basis with OBS");
+                                      "RI Basis with OBS");
   } else {
     throw std::runtime_error("Invalid RI Method!");
   }
@@ -473,7 +472,8 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
   // get cabs trange
   auto tr_cabs = lcao_factory.ao_factory()
-                     .orbital_basis_registry().retrieve(OrbitalIndex(L"α"))
+                     .orbital_basis_registry()
+                     .retrieve(OrbitalIndex(L"α"))
                      .create_trange1();
   auto tr_ribs = S_ribs.trange().data().back();
   auto tr_cabs_mo =

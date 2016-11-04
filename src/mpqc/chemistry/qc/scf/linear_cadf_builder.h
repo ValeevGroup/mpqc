@@ -2,28 +2,27 @@
 #ifndef MPQC_SCF_LINEARCADFBUILDER_H
 #define MPQC_SCF_LINEARCADFBUILDER_H
 
-
-#include <tiledarray.h>
-#include "mpqc/util/misc/time.h"
-#include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/chemistry/qc/scf/util.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/util/misc/time.h"
+#include <tiledarray.h>
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "mpqc/math/tensor/clr/tile.h"
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
+#include "mpqc/math/tensor/clr/tile.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
-#include "mpqc/math/tensor/clr/minimize_storage.h"
 #include "mpqc/math/linalg/sqrt_inv.h"
+#include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include <mpqc/chemistry/qc/scf/builder.h>
-#include <mpqc/chemistry/qc/scf/ta_shape_tracker.h>
+#include "mpqc/chemistry/qc/scf/builder.h"
+#include "mpqc/chemistry/qc/scf/ta_shape_tracker.h"
 
-#include <vector>
+#include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <unordered_set>
-#include <iomanip>
-#include <cmath>
+#include <vector>
 
 namespace mpqc {
 namespace scf {
@@ -99,30 +98,33 @@ class ONCADFFockBuilder : public FockBuilder {
   void print_iter(std::string const &leader) override {
     auto &world = C_df_.world();
     if (world.rank() == 0) {
-      std::cout << leader << "CADF Builder:\n" << leader << "\tStorages:\n"
-                << leader << "\t\tFully Dense: " << c_mo_storages_.back()[0]
-                << " GB\n" << leader
-                << "\t\tU mo dense storage: " << u_mo_storages_.back()[0]
-                << " GB\n" << leader
-                << "\t\tU mo sparse storage: " << u_mo_storages_.back()[1]
-                << " GB\n" << leader
-                << "\t\tC mo sparse storage: " << c_mo_storages_.back()[1]
-                << " GB\n" << leader
-                << "\t\tC mo clr storage: " << c_mo_storages_.back()[2]
-                << " GB\n" << leader
-                << "\t\tE df storage: " << e_df_storages_.back()[1] << " GB\n"
-                << leader
-                << "\t\tE df clr storage: " << e_df_storages_.back()[2]
-                << " GB\n" << leader
-                << "\t\tF df storage: " << f_df_storages_.back()[1] << " GB\n"
-                << leader
-                << "\t\tF df clr storage: " << f_df_storages_.back()[2]
-                << " GB\n" << leader << "\tJ time: " << j_times_.back() << "\n"
-                << leader << "\tC mo time: " << c_mo_times_.back() << "\n"
-                << leader << "\tE df time: " << e_df_times_.back() << "\n"
-                << leader << "\tR df time: " << r_df_times_.back() << "\n"
-                << leader << "\tdL time: " << dl_times_.back() << "\n" << leader
-                << "\tdL to K time: " << dl_to_k_times_.back() << "\n";
+      std::cout
+          << leader << "CADF Builder:\n"
+          << leader << "\tStorages:\n"
+          << leader << "\t\tFully Dense: " << c_mo_storages_.back()[0]
+          << " GB\n"
+          << leader << "\t\tU mo dense storage: " << u_mo_storages_.back()[0]
+          << " GB\n"
+          << leader << "\t\tU mo sparse storage: " << u_mo_storages_.back()[1]
+          << " GB\n"
+          << leader << "\t\tC mo sparse storage: " << c_mo_storages_.back()[1]
+          << " GB\n"
+          << leader << "\t\tC mo clr storage: " << c_mo_storages_.back()[2]
+          << " GB\n"
+          << leader << "\t\tE df storage: " << e_df_storages_.back()[1]
+          << " GB\n"
+          << leader << "\t\tE df clr storage: " << e_df_storages_.back()[2]
+          << " GB\n"
+          << leader << "\t\tF df storage: " << f_df_storages_.back()[1]
+          << " GB\n"
+          << leader << "\t\tF df clr storage: " << f_df_storages_.back()[2]
+          << " GB\n"
+          << leader << "\tJ time: " << j_times_.back() << "\n"
+          << leader << "\tC mo time: " << c_mo_times_.back() << "\n"
+          << leader << "\tE df time: " << e_df_times_.back() << "\n"
+          << leader << "\tR df time: " << r_df_times_.back() << "\n"
+          << leader << "\tdL time: " << dl_times_.back() << "\n"
+          << leader << "\tdL to K time: " << dl_to_k_times_.back() << "\n";
       auto total_k_time = c_mo_times_.back() + e_df_times_.back() +
                           r_df_times_.back() + dl_times_.back() +
                           dl_to_k_times_.back();
@@ -248,8 +250,7 @@ class ONCADFFockBuilder : public FockBuilder {
     auto dC = TA::to_new_tile_type(
         C, tensor::TaToDecompTensor(clr_thresh_, compress_C));
     dC.truncate();
-    TA::foreach_inplace(dC,
-                        [&](typename decltype(dC)::value_type &tile_t) {
+    TA::foreach_inplace(dC, [&](typename decltype(dC)::value_type &tile_t) {
 
       auto &t = tile_t.tile().tensor(0);
       auto range = t.range();
@@ -268,7 +269,7 @@ class ONCADFFockBuilder : public FockBuilder {
 
       return t.norm();
     });
-    
+
     auto Umo_storage = detail::array_storage(dC);
     u_mo_storages_.push_back(detail::array_storage(dC));
 

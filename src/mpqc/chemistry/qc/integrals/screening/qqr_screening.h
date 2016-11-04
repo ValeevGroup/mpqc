@@ -3,11 +3,11 @@
 #define MPQC_INTEGRALS_QQRSCREENING
 
 
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
+#include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
 
-#include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
-#include <mpqc/chemistry/qc/integrals/screening/schwarz_screen.h>
-#include <mpqc/chemistry/qc/integrals/screening/cached_shell_info.h>
+#include "mpqc/chemistry/qc/integrals/screening/screen_base.h"
+#include "mpqc/chemistry/qc/integrals/screening/schwarz_screen.h"
+#include "mpqc/chemistry/qc/integrals/screening/cached_shell_info.h"
 
 #include <boost/math/special_functions/erf.hpp>
 

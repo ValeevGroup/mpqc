@@ -2,9 +2,9 @@
 #ifndef MPQC_INTEGRALS_DIRECTTASKINTEGRALS_H
 #define MPQC_INTEGRALS_DIRECTTASKINTEGRALS_H
 
-#include <mpqc/chemistry/qc/integrals/direct_tile.h>
-#include <mpqc/chemistry/qc/integrals/integral_builder.h>
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
+#include "mpqc/chemistry/qc/integrals/direct_tile.h"
+#include "mpqc/chemistry/qc/integrals/integral_builder.h"
+#include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
 
 #include <limits>
 

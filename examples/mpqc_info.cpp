@@ -6,10 +6,10 @@
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include <madness/world/world.h>
 
-#include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/chemistry/molecule/linkage.h>
-#include <mpqc/chemistry/qc/basis/basis_registry.h>
-#include <mpqc/util/keyval/keyval.hpp>
+#include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/chemistry/molecule/linkage.h"
+#include "mpqc/chemistry/qc/basis/basis_registry.h"
+#include "mpqc/util/keyval/keyval.h"
 
 #include <clocale>
 #include <iostream>

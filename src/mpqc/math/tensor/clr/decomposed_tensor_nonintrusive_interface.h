@@ -9,4 +9,4 @@
 #include "mpqc/math/tensor/clr/decomposed_tensor_subtraction.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_unary.h"
 
-#endif // MPQC_TENSOR_DECOMPOSEDTENSORNONINTRUSIVEINTERFACE_H
+#endif  // MPQC_TENSOR_DECOMPOSEDTENSORNONINTRUSIVEINTERFACE_H

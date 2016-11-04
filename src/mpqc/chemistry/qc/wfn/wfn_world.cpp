@@ -1,4 +1,4 @@
-#include <mpqc/chemistry/qc/wfn/wfn_world.h>
+#include "mpqc/chemistry/qc/wfn/wfn_world.h"
 
 using namespace mpqc;
 qc::WavefunctionWorld::WavefunctionWorld(KeyVal const &kv)

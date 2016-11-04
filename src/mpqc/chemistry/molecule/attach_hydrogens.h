@@ -2,7 +2,7 @@
 #ifndef MPQC_MOLECULE_ATTACHHYDROGENS_H
 #define MPQC_MOLECULE_ATTACHHYDROGENS_H
 
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 #include <vector>
 
 namespace mpqc {
@@ -14,15 +14,14 @@ namespace clustering {
 /// hydrogens then return each hydrogen as its own cluster.  If there are no
 /// hydrogens then return each heavy atom as its own cluster.
 class attach_hydrogens {
-  public:
-    /// take a vector of clusterables and return a vector of clusters.
-    /// clusterables are copied because they will be sorted.
-    std::vector<Cluster> operator()(std::vector<Clusterable> clusterables);
+ public:
+  /// take a vector of clusterables and return a vector of clusters.
+  /// clusterables are copied because they will be sorted.
+  std::vector<Cluster> operator()(std::vector<Clusterable> clusterables);
 };
 
-} // namespace clustering
-} // namespace molecule
-} // namespace mpqc
-
+}  // namespace clustering
+}  // namespace molecule
+}  // namespace mpqc
 
 #endif /* end of include guard: MPQC_MOLECULE_ATTACHHYDROGENS_H */

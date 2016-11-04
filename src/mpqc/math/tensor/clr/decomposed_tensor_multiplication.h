@@ -8,44 +8,44 @@ namespace mpqc {
 namespace tensor {
 
 template <typename T>
-DecomposedTensor<T>
-mult(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r) {
-    assert(false);
+DecomposedTensor<T> mult(DecomposedTensor<T> const &l,
+                         DecomposedTensor<T> const &r) {
+  assert(false);
 }
 
 template <typename T>
-DecomposedTensor<T>
-mult(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r,
-     TA::Permutation const &p) {
-    assert(false);
+DecomposedTensor<T> mult(DecomposedTensor<T> const &l,
+                         DecomposedTensor<T> const &r,
+                         TA::Permutation const &p) {
+  assert(false);
 }
 
 template <typename T>
-DecomposedTensor<T>
-mult(DecomposedTensor<T> const &l, DecomposedTensor<T> const &r,
-     TA::Permutation const &p, const T factor) {
-    assert(false);
+DecomposedTensor<T> mult(DecomposedTensor<T> const &l,
+                         DecomposedTensor<T> const &r, TA::Permutation const &p,
+                         const T factor) {
+  assert(false);
 }
 
 template <typename T>
 DecomposedTensor<T> mult(DecomposedTensor<T> const &l,
                          DecomposedTensor<T> const &r, const T factor) {
-    assert(false);
+  assert(false);
 }
 
 template <typename T>
-DecomposedTensor<T> &
-mult_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r) {
-    assert(false);
+DecomposedTensor<T> &mult_to(DecomposedTensor<T> &l,
+                             DecomposedTensor<T> const &r) {
+  assert(false);
 }
 
 template <typename T>
-DecomposedTensor<T> &
-mult_to(DecomposedTensor<T> &l, DecomposedTensor<T> const &r, const T factor) {
-    assert(false);
+DecomposedTensor<T> &mult_to(DecomposedTensor<T> &l,
+                             DecomposedTensor<T> const &r, const T factor) {
+  assert(false);
 }
 
-} // namespace tensor
-} // namespace mpqc
+}  // namespace tensor
+}  // namespace mpqc
 
-#endif // MPQC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H
+#endif  // MPQC_TENSOR_DECOMPOSEDTENSORMULTIPLICATION_H

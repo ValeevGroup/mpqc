@@ -5,11 +5,11 @@
 #ifndef MPQC_CHEMISTRY_QC_MBPT_MP2_H
 #define MPQC_CHEMISTRY_QC_MBPT_MP2_H
 
-#include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/chemistry/qc/integrals/lcao_factory.h"
+#include "mpqc/chemistry/qc/scf/mo_build.h"
+#include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
-#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
-#include <mpqc/chemistry/qc/scf/mo_build.h>
-#include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
+#include "mpqc/util/external/madworld/parallel_print.h"
 
 using namespace mpqc;
 
@@ -73,12 +73,10 @@ struct Mp2Energy {
   }
 };
 
-} // end of namespce detail
+}  // end of namespce detail
 
 class RMP2 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
-
-public:
-
+ public:
   /**
    * KeyVal constructor
    * @param kv
@@ -88,29 +86,28 @@ public:
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    */
-  RMP2(const KeyVal& kv);
+  RMP2(const KeyVal &kv);
   virtual ~RMP2();
 
   double value() override;
   virtual double compute();
-  void compute(qc::PropertyBase* pb) override;
+  void compute(qc::PropertyBase *pb) override;
   void obsolete() override;
 
-protected:
+ protected:
   virtual void init();
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
 };
 
 class RIRMP2 : public RMP2 {
-public:
-
+ public:
   /**
   * KeyVal constructor
   * @param kv
   *
   * keywords: takes all keywords from RMP2
   */
-  RIRMP2(const KeyVal& kv);
+  RIRMP2(const KeyVal &kv);
   ~RIRMP2() = default;
   using RMP2::value;
   double compute() override;

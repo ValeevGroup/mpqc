@@ -5,23 +5,21 @@
 #ifndef MPQC_CHEMISTRY_QC_SCF_RHF_H
 #define MPQC_CHEMISTRY_QC_SCF_RHF_H
 
-
 #include <tiledarray.h>
 
-#include <mpqc/chemistry/qc/wfn/ao_wfn.h>
-#include <mpqc/chemistry/qc/scf/builder.h>
-#include <mpqc/chemistry/qc/scf/density_builder.h>
+#include "mpqc/chemistry/qc/scf/builder.h"
+#include "mpqc/chemistry/qc/scf/density_builder.h"
+#include "mpqc/chemistry/qc/wfn/ao_wfn.h"
 
 /**
  *  RHF Class of AOWfn
  *
  */
-namespace mpqc{
-namespace scf{
+namespace mpqc {
+namespace scf {
 
-class RHF : public qc::AOWavefunction<TA::TensorD,TA::SparsePolicy> {
-
-public:
+class RHF : public qc::AOWavefunction<TA::TensorD, TA::SparsePolicy> {
+ public:
   using array_type = TA::TSpArrayD;
 
   RHF() = default;
@@ -35,10 +33,13 @@ public:
    * |---------|------|--------|-------------|
    * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 30 | maximum number of iteration |
-   * | density_builder | string | eigen_solve | type of DensityBuilder (eigen_solve->ESolveDensityBuilder, purification-> PurificationDensityBuilder) |
+   * | density_builder | string | eigen_solve | type of DensityBuilder
+   * (eigen_solve->ESolveDensityBuilder, purification->
+   * PurificationDensityBuilder) |
    * | localize | bool | false | if localize in DensityBuilder |
    * | t_cut_c | double | 0.0 | threshold in DensityBuilder |
-   * | decompo_type | string | cholesky_inverse | (cholesky inverse, inverse sqrt) only valid if use ESolveDensityBuilder |
+   * | decompo_type | string | cholesky_inverse | (cholesky inverse, inverse
+   * sqrt) only valid if use ESolveDensityBuilder |
    *
    */
 
@@ -51,10 +52,10 @@ public:
 
   double energy() const;
 
-  inline array_type const &overlap() const { return S_; }
-  inline array_type const &fock() const { return F_; }
-  inline array_type const &density() const { return D_; }
-  inline array_type const &coefficents() const { return C_; }
+  inline array_type const& overlap() const { return S_; }
+  inline array_type const& fock() const { return F_; }
+  inline array_type const& density() const { return D_; }
+  inline array_type const& coefficents() const { return C_; }
   inline double rhf_energy() const { return this->energy_; }
 
   /*! Function to compute the density to the desired accuracy.
@@ -67,7 +68,7 @@ public:
    */
   bool solve(int64_t max_iters, double thresh);
 
-protected:
+ protected:
   double converge_;
   std::size_t max_iter_;
   double repulsion_;
@@ -86,62 +87,53 @@ protected:
   std::vector<double> d_times_;
   std::vector<double> build_times_;
 
-
-private:
+ private:
   void init(const KeyVal& kv);
   virtual void init_fock_builder();
   void compute_density();
   void build_F();
 
-private:
-
+ private:
   const KeyVal kv_;
-
 };
-
 
 /**
  *
  * RIRHF class, fock_builder is overide to use three center integral
  */
 
-class RIRHF: public RHF{
-
-public:
+class RIRHF : public RHF {
+ public:
   RIRHF(const KeyVal& kv);
 
-private:
+ private:
   void init_fock_builder() override;
-
 };
-
 
 /**
  * DirectRIRHF, fock_builder is overide to use direct three center integral
  */
 
-class DirectRIRHF : public RHF{
-
-public:
+class DirectRIRHF : public RHF {
+ public:
   DirectRIRHF(const KeyVal& kv);
 
-private:
+ private:
   void init_fock_builder() override;
 };
 
 /**
  * DirectRHF, fock_builder is overide to use direct four center integral
  */
-class DirectRHF : public RHF{
-
-public:
+class DirectRHF : public RHF {
+ public:
   DirectRHF(const KeyVal& kv);
 
-private:
+ private:
   void init_fock_builder() override;
 };
 
-} // end of namespace scf
-} // end of namespace mpqc
+}  // end of namespace scf
+}  // end of namespace mpqc
 
-#endif //MPQC_CHEMISTRY_QC_SCF_RHF_H
+#endif  // MPQC_CHEMISTRY_QC_SCF_RHF_H

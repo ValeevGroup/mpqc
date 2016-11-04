@@ -7,8 +7,8 @@
 #ifndef MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
 #define MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
 
-#include <mpqc/util/keyval/keyval.hpp>
-#include <mpqc/chemistry/qc/properties/propertybase.h>
+#include "mpqc/util/keyval/keyval.h"
+#include "mpqc/chemistry/qc/properties/propertybase.h"
 
 #include <boost/optional.hpp>
 

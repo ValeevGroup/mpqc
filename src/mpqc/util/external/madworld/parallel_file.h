@@ -42,7 +42,8 @@ inline void parallel_read_file(madness::World &world,
 }
 
 inline void parallel_read_file(madness::World &world,
-                                            const std::string &filename, std::stringstream& output) {
+                               const std::string &filename,
+                               std::stringstream &output) {
   char *buffer;
   parallel_read_file(world, filename, buffer);
   output << buffer;

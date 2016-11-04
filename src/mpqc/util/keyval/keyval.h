@@ -1,24 +1,24 @@
 /*
- * keyval.hpp
+ * keyval.h
  *
  *  Created on: Apr 18, 2016
  *      Author: evaleev
  */
 
-#ifndef SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_
-#define SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_
+#ifndef SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_
+#define SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_
 
-#include <cassert>
-#include <map>
-#include <string>
-#include <memory>
-#include <vector>
 #include <array>
+#include <cassert>
 #include <list>
+#include <map>
+#include <memory>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/serialization/export.hpp>
 
@@ -27,36 +27,35 @@
 // serialize all pointers as void*
 // NB XCode 7.3.1 (7D1014) libc++ char stream does not properly deserialize
 // void*, use size_t instead
-namespace boost { namespace property_tree
-{
-    template <typename Ch, typename Traits, typename E>
-    struct customize_stream<Ch,Traits,E*,void>
-    {
-        using stored_t  = size_t; // TODO convert to void* when it works
-        static_assert(sizeof(stored_t) == sizeof(E*), "expected ptr width");
+namespace boost {
+namespace property_tree {
+template <typename Ch, typename Traits, typename E>
+struct customize_stream<Ch, Traits, E*, void> {
+  using stored_t = size_t;  // TODO convert to void* when it works
+  static_assert(sizeof(stored_t) == sizeof(E*), "expected ptr width");
 
-        static void insert(std::basic_ostream<Ch, Traits>& s, const E* e) {
-            auto flags = s.flags();
-            std::hex(s); // write as hexadecimal
-            std::showbase(s);
-            s << reinterpret_cast<stored_t>(e);
-            s.setf(flags); // restore flags
-        }
-        static void extract(std::basic_istream<Ch, Traits>& s, E*& e) {
-            auto flags = s.flags();
-            std::hex(s); // read as hexadecimal
-            std::showbase(s);
-            stored_t e_stored;
-            s >> e_stored;
-            s.setf(flags); // restore flags
-            e = reinterpret_cast<E*>(e_stored);
-            if(!s.eof()) {
-                s >> std::ws;
-            }
-        }
-    };
-}} // namespace boost::property_tree
-
+  static void insert(std::basic_ostream<Ch, Traits>& s, const E* e) {
+    auto flags = s.flags();
+    std::hex(s);  // write as hexadecimal
+    std::showbase(s);
+    s << reinterpret_cast<stored_t>(e);
+    s.setf(flags);  // restore flags
+  }
+  static void extract(std::basic_istream<Ch, Traits>& s, E*& e) {
+    auto flags = s.flags();
+    std::hex(s);  // read as hexadecimal
+    std::showbase(s);
+    stored_t e_stored;
+    s >> e_stored;
+    s.setf(flags);  // restore flags
+    e = reinterpret_cast<E*>(e_stored);
+    if (!s.eof()) {
+      s >> std::ws;
+    }
+  }
+};
+}
+}  // namespace boost::property_tree
 
 #include "mpqc/util/misc/type_traits.h"
 
@@ -92,9 +91,11 @@ using Describable = std::is_base_of<DescribedClass, T>;
 /// @note If \c T is a template class, you must register each instance of this
 /// class you want to construct from KeyVal.
 /// @warning to ensure that the class registration code of the derived class is
-///          linked in, its destructor (at least) must be explicitly instantiated.
+///          linked in, its destructor (at least) must be explicitly
+///          instantiated.
 ///          Related: how gcc instantiates vtable and RTTI info see
-///          <a href="https://gcc.gnu.org/onlinedocs/gcc/Vague-Linkage.html">here</a>
+///          <a
+///          href="https://gcc.gnu.org/onlinedocs/gcc/Vague-Linkage.html">here</a>
 /// @ingroup CoreKeyVal
 class DescribedClass {
  public:
@@ -316,10 +317,10 @@ class KeyVal {
   /// check whether the given class exists
   /// @param path the path
   /// @return true if \c path class exists
-  bool exists_class(const key_type& path) const{
+  bool exists_class(const key_type& path) const {
     bool exist_class = false;
     auto cptr = class_registry_->find(resolve_path(path));
-    if (cptr != class_registry_->end()){
+    if (cptr != class_registry_->end()) {
       exist_class = true;
     }
     return exist_class;
@@ -332,7 +333,8 @@ class KeyVal {
   ///         a keyword group
   size_t count(const key_type& path) const {
     auto resolved_path = resolve_path(path);
-    auto child_opt = top_tree_->get_child_optional(ptree::path_type{path, separator});
+    auto child_opt =
+        top_tree_->get_child_optional(ptree::path_type{path, separator});
     if (child_opt == boost::optional<ptree&>())
       return 0;
     else
@@ -344,7 +346,7 @@ class KeyVal {
   /// a KeyVal::key_type using a
   /// std::basic_ostream<KeyVal::key_type::value_type>
   template <typename T,
-            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value >>
+            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value>>
   KeyVal& assign(const key_type& path, const T& value) {
     auto abs_path = to_absolute_path(path);
     top_tree_->put(ptree::path_type{abs_path, separator}, value);
@@ -368,7 +370,8 @@ class KeyVal {
   KeyVal& assign(
       const key_type& path, const SequenceContainer& value,
       bool json_style = true,
-      std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* = nullptr) {
+      std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* =
+          nullptr) {
     auto abs_path = to_absolute_path(path);
     ptree obj;
     size_t count = 0;
@@ -681,7 +684,8 @@ class KeyVal {
     throw KeyVal::bad_input("excessive or circular references in path", path);
   }
 
-  /// @returns true if \c path did not include a reference, even if path does not exist
+  /// @returns true if \c path did not include a reference, even if path does
+  /// not exist
   bool resolve_first_ref(key_type& path) const {
     if (path.size() == 0)
       return true;  // handle this corner case now to make the rest a bit
@@ -756,4 +760,4 @@ KeyVal operator+(const KeyVal& first, const KeyVal& second);
 
 /// @}
 
-#endif /* SRC_MPQC_UTIL_KEYVAL_KEYVAL_HPP_ */
+#endif /* SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_ */

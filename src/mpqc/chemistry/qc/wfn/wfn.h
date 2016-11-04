@@ -8,8 +8,8 @@
 #ifndef MPQC_CHEMISTRY_QC_WFN_WFN_H_
 #define MPQC_CHEMISTRY_QC_WFN_WFN_H_
 
-#include <mpqc/chemistry/qc/wfn/wfn_world.h>
-#include <mpqc/chemistry/qc/properties/propertybase.h>
+#include "mpqc/chemistry/qc/wfn/wfn_world.h"
+#include "mpqc/chemistry/qc/properties/propertybase.h"
 
 #include <memory>
 #include <functional>
@@ -19,7 +19,8 @@ namespace qc {
 
 class PropertyBase;
 
-/// Wavefunction is a wave function
+/// Wavefunction computes a wave function (or a wave function-like quantity, like
+/// Green's function or reduced density matrix) in a Gaussian basis.
 
 /// \todo elaborate Wavefunction documentation
 class Wavefunction : public DescribedClass {

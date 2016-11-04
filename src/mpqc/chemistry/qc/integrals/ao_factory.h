@@ -12,9 +12,9 @@
 #include "mpqc/util/misc/time.h"
 #include "ao_factory_base.h"
 #include <madness/world/worldmem.h>
-#include <mpqc/chemistry/qc/expression/permutation.h>
-#include <mpqc/chemistry/qc/f12/f12_utility.h>
-#include <mpqc/chemistry/qc/integrals/integrals.h>
+#include "mpqc/chemistry/qc/expression/permutation.h"
+#include "mpqc/chemistry/qc/f12/f12_utility.h"
+#include "mpqc/chemistry/qc/integrals/integrals.h"
 
 namespace mpqc {
 namespace integrals {

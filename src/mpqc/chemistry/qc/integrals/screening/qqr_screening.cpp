@@ -1,4 +1,4 @@
-#include <mpqc/chemistry/qc/integrals/screening/qqr_screening.h>
+#include "mpqc/chemistry/qc/integrals/screening/qqr_screening.h"
 
 namespace mpqc {
 namespace integrals {

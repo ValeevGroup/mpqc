@@ -9,11 +9,11 @@
 #include <tiledarray.h>
 
 
-#include <mpqc/chemistry/qc/basis/basis.h>
-#include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
-#include <mpqc/chemistry/qc/integrals/integral_engine_pool.h>
-#include <mpqc/chemistry/qc/integrals/task_integral_kernels.h>
+#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/integrals/screening/screen_base.h"
+#include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
+#include "mpqc/chemistry/qc/integrals/integral_engine_pool.h"
+#include "mpqc/chemistry/qc/integrals/task_integral_kernels.h"
 
 namespace mpqc {
 namespace integrals {

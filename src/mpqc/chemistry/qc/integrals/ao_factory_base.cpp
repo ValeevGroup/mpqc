@@ -2,7 +2,7 @@
 // Created by Chong Peng on 3/2/16.
 //
 
-#include <mpqc/chemistry/qc/integrals/ao_factory_base.h>
+#include "mpqc/chemistry/qc/integrals/ao_factory_base.h"
 
 namespace mpqc {
 namespace integrals {

@@ -12,9 +12,9 @@
 
 #include <TiledArray/tensor/tensor_map.h>
 
-#include <mpqc/chemistry/qc/integrals/integral_builder.h>
-#include <mpqc/chemistry/qc/integrals/screening/screen_base.h>
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
+#include "mpqc/chemistry/qc/integrals/integral_builder.h"
+#include "mpqc/chemistry/qc/integrals/screening/screen_base.h"
+#include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
 
 namespace mpqc {
 namespace integrals {

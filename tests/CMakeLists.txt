@@ -11,5 +11,5 @@ set(utests
 #TODO install xyz file to bin directory
 
 add_executable(tests EXCLUDE_FROM_ALL test_main.cpp ${utests})
-target_link_libraries(tests ${TA_LIBRARIES} ${Boost_LIBRARIES} MPQCbasis MPQCmolecule MPQCexpression MPQCkeyval MPQCf12utility)
+target_link_libraries(tests ${TA_LIBRARIES} ${Boost_LIBRARIES} MPQCbasis MPQCmolecule MPQCexpression MPQCutil_keyval MPQCf12utility)
 add_test(NAME TestAll COMMAND ${CMAKE_BINARY_DIR}/tests/tests)

@@ -9,7 +9,7 @@
 
 #include <TiledArray/error.h>
 
-#include <mpqc/util/misc/string.h>
+#include "mpqc/util/misc/string.h"
 
 namespace mpqc {
 
@@ -30,20 +30,33 @@ namespace mpqc {
 
         <tr> <td> Label base <td> OrbitalIndex::Type <td> Description
 
-        <tr><td><tt>m,n</tt><td><tt>occ</tt><td> (active and core) occupied </tr>
+        <tr><td><tt>m,n</tt><td><tt>occ</tt><td> (active and core) occupied
+   </tr>
         <tr><td><tt>m', n'</tt><td><tt>frozen_occ</tt><td> core occupied </tr>
         <tr><td><tt>i,j,k,l</tt><td><tt>corr_occ</tt><td> active occupied </tr>
-        <tr><td><tt>x, y</tt><td><tt>active</tt><td> active (e.g. active space in MR theories) </tr>
+        <tr><td><tt>x, y</tt><td><tt>active</tt><td> active (e.g. active space
+   in MR theories) </tr>
         <tr><td><tt>a,b,c,d</tt><td><tt>virt</tt><td> unoccupied/virtual </tr>
-        <tr><td><tt>p,q,r,s</tt><td><tt>any</tt><td> occupied or unoccupied expressed in the orbital AO basis and/or virtual AO basis </tr>
-        <tr><td><tt>a', b', c', d'</tt><td><tt>othervirt</tt><td> unoccupied orbitals orthogonal to <tt>any</tt> (in F12 theory denoted as CABS) </tr>
-        <tr><td><tt>A', B', C', D'</tt><td><tt>allvirt</tt><td> all unoccupied orbitals, i.e. union of <tt>virt</tt> and <tt>othervirt</tt> </tr>
-        <tr><td><tt>P', Q', R', S'</tt><td><tt>allany</tt><td> union of <tt>any</tt> and <tt>othervirt</tt> </tr>
-        <tr><td><tt>κ, λ, μ, ν</tt><td><tt>obs</tt><td> orbital AO basis, supports at least occupied orbitals, or more usually supports <tt>any</tt> and all of its subsets </tr>
-        <tr><td><tt>Α, Β, Γ, Δ</tt><td><tt>vbs</tt><td> unoccupied/virtual AO basis, supports <tt>virt</tt> in <em>dual-basis</em> theories </tr>
-        <tr><td><tt>Κ, Λ, Μ, Ν</tt><td><tt>dfbs</tt><td> density-fitting AO basis </tr>
-        <tr><td><tt>α, β, γ, δ</tt><td><tt>abs</tt><td> auxiliary AO basis used in F12 theories </tr>
-        <tr><td><tt>ρ, σ, τ, υ</tt><td><tt>ribs</tt><td> union of <tt>obs</tt> and <tt>abs</tt>, supports <tt>othervirt</tt>, <tt>allvirt</tt>, and <tt>allany</tt> </tr>
+        <tr><td><tt>p,q,r,s</tt><td><tt>any</tt><td> occupied or unoccupied
+   expressed in the orbital AO basis and/or virtual AO basis </tr>
+        <tr><td><tt>a', b', c', d'</tt><td><tt>othervirt</tt><td> unoccupied
+   orbitals orthogonal to <tt>any</tt> (in F12 theory denoted as CABS) </tr>
+        <tr><td><tt>A', B', C', D'</tt><td><tt>allvirt</tt><td> all unoccupied
+   orbitals, i.e. union of <tt>virt</tt> and <tt>othervirt</tt> </tr>
+        <tr><td><tt>P', Q', R', S'</tt><td><tt>allany</tt><td> union of
+   <tt>any</tt> and <tt>othervirt</tt> </tr>
+        <tr><td><tt>κ, λ, μ, ν</tt><td><tt>obs</tt><td> orbital AO basis,
+   supports at least occupied orbitals, or more usually supports <tt>any</tt>
+   and all of its subsets </tr>
+        <tr><td><tt>Α, Β, Γ, Δ</tt><td><tt>vbs</tt><td> unoccupied/virtual AO
+   basis, supports <tt>virt</tt> in <em>dual-basis</em> theories </tr>
+        <tr><td><tt>Κ, Λ, Μ, Ν</tt><td><tt>dfbs</tt><td> density-fitting AO
+   basis </tr>
+        <tr><td><tt>α, β, γ, δ</tt><td><tt>abs</tt><td> auxiliary AO basis used
+   in F12 theories </tr>
+        <tr><td><tt>ρ, σ, τ, υ</tt><td><tt>ribs</tt><td> union of <tt>obs</tt>
+   and <tt>abs</tt>, supports <tt>othervirt</tt>, <tt>allvirt</tt>, and
+   <tt>allany</tt> </tr>
 
         </table>
  */
@@ -108,8 +121,8 @@ class OrbitalIndex {
    * check description of class for mappings
    */
   template <typename String,
-            typename = typename std::enable_if<
-                not std::is_same<typename std::decay<String>::type, OrbitalIndex>::value>::type>
+            typename = typename std::enable_if<not std::is_same<
+                typename std::decay<String>::type, OrbitalIndex>::value>::type>
   OrbitalIndex(String &&symbol);
 
   /// check equality by comparing index and spin
@@ -161,7 +174,7 @@ class OrbitalIndex {
   std::string to_ta_expression() const;
 
  private:
-  void init(const std::wstring& string);
+  void init(const std::wstring &string);
 
   /// convert wchar to index
   Type wchar_to_index(const wchar_t);
@@ -179,7 +192,6 @@ class OrbitalIndex {
 
 template <typename String, typename>
 OrbitalIndex::OrbitalIndex(String &&symbol) {
-
   name_ = utility::to_wstring(symbol);
 
   if (name_.find_first_of(L'_') == std::wstring::npos) {
@@ -205,7 +217,6 @@ OrbitalIndex::OrbitalIndex(String &&symbol) {
     }
   }
 }
-
 }
 
 #endif  // MPQC_ORBITAL_INDEX_H

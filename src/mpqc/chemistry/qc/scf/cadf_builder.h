@@ -2,11 +2,10 @@
 #ifndef MPQC_SCF_CADFBUILDER_H
 #define MPQC_SCF_CADFBUILDER_H
 
-
-#include <tiledarray.h>
-#include "mpqc/util/misc/time.h"
-#include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/chemistry/qc/scf/util.h"
+#include "mpqc/math/external/tiledarray/array_info.h"
+#include "mpqc/util/misc/time.h"
+#include <tiledarray.h>
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/tensor_transforms.h"
@@ -14,16 +13,16 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include <mpqc/chemistry/qc/scf/builder.h>
-#include <mpqc/chemistry/qc/integrals/make_engine.h>
-#include <mpqc/chemistry/qc/integrals/ao_factory.h>
-#include <mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h>
-#include <mpqc/chemistry/qc/scf/cadf_helper_functions.h>
+#include "mpqc/chemistry/qc/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/integrals/make_engine.h"
+#include "mpqc/chemistry/qc/scf/builder.h"
+#include "mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h"
+#include "mpqc/chemistry/qc/scf/cadf_helper_functions.h"
 
-#include <vector>
+#include "../../../math/tensor/clr/tile.h"
 #include <iostream>
 #include <unordered_set>
-#include "../../../math/tensor/clr/tile.h"
+#include <vector>
 
 namespace mpqc {
 namespace scf {
@@ -61,13 +60,13 @@ class CADFFockBuilder : public FockBuilder {
   std::vector<std::array<double, 2>> f_df_sizes_;
 
  public:
-  CADFFockBuilder(
-      Molecule const &clustered_mol,
-      Molecule const &df_clustered_mol,
-      basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
-      bool use_forced_shape, double force_threshold,
-      double lcao_chop_threshold = 0.0)
+  CADFFockBuilder(Molecule const &clustered_mol,
+                  Molecule const &df_clustered_mol,
+                  basis::BasisSet const &obs_set,
+                  basis::BasisSet const &dfbs_set,
+                  integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
+                  bool use_forced_shape, double force_threshold,
+                  double lcao_chop_threshold = 0.0)
       : CADFFockBuilder(clustered_mol, df_clustered_mol, obs_set, dfbs_set,
                         ao_factory) {
     use_forced_shape_ = use_forced_shape;
@@ -75,11 +74,11 @@ class CADFFockBuilder : public FockBuilder {
     lcao_chop_threshold_ = lcao_chop_threshold;
   }
 
-  CADFFockBuilder(
-      Molecule const &clustered_mol,
-      Molecule const &df_clustered_mol,
-      basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory)
+  CADFFockBuilder(Molecule const &clustered_mol,
+                  Molecule const &df_clustered_mol,
+                  basis::BasisSet const &obs_set,
+                  basis::BasisSet const &dfbs_set,
+                  integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory)
       : FockBuilder() {
     // Grab needed ao integrals
     E_ = ao_factory.compute(L"( Κ | G|κ λ)");
@@ -91,8 +90,8 @@ class CADFFockBuilder : public FockBuilder {
     MatType L_inv_eig = MatType(Eigen::LLT<MatType>(M_eig).matrixL()).inverse();
 
     auto trange1_M = M_.trange().data()[0];  // Assumes symmetric blocking
-    Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(
-        M_.world(), L_inv_eig, trange1_M, trange1_M);
+    Mchol_inv_ = array_ops::eigen_to_array<TA::TensorD>(M_.world(), L_inv_eig,
+                                                        trange1_M, trange1_M);
 
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
@@ -161,11 +160,12 @@ class CADFFockBuilder : public FockBuilder {
         cut_time = lcao_chop_times_.back();
       }
 
-      auto ktotal = 0.0; 
-      if(use_forced_shape_){ // Forced shape recomputes E_mo and the time is contained in F_df time
-          ktotal = ct + ft + lt + kt + shape_time + cut_time;
-      } else { // No forced shape shares E_mo with J so add time here 
-          ktotal = et + ct + ft + lt + kt + shape_time + cut_time;
+      auto ktotal = 0.0;
+      if (use_forced_shape_) {  // Forced shape recomputes E_mo and the time is
+                                // contained in F_df time
+        ktotal = ct + ft + lt + kt + shape_time + cut_time;
+      } else {  // No forced shape shares E_mo with J so add time here
+        ktotal = et + ct + ft + lt + kt + shape_time + cut_time;
       }
 
       std::cout << leader << "E_mo time: " << et << "\n";
@@ -398,8 +398,7 @@ class CADFFockBuilder : public FockBuilder {
       auto shape_time0 = mpqc::fenced_now(world);
       forced_shape = C_mo.shape().transform(cadf_df_k_shape);
       auto shape_time1 = mpqc::fenced_now(world);
-      shape_times_.push_back(
-          mpqc::duration_in_s(shape_time0, shape_time1));
+      shape_times_.push_back(mpqc::duration_in_s(shape_time0, shape_time1));
     }
 
     // Construct F_df

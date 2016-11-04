@@ -13,13 +13,13 @@
 
 #include "mpqc/util/meta/make_array.h"
 #include "integrals.h"
-#include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/chemistry/qc/basis/basis_registry.h>
-#include <mpqc/chemistry/qc/expression/formula.h>
-#include <mpqc/chemistry/qc/expression/orbital_registry.h>
-#include <mpqc/chemistry/qc/integrals/integral_engine_pool.h>
-#include <mpqc/chemistry/qc/integrals/make_engine.h>
-#include <mpqc/chemistry/qc/integrals/task_integrals.h>
+#include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/chemistry/qc/basis/basis_registry.h"
+#include "mpqc/chemistry/qc/expression/formula.h"
+#include "mpqc/chemistry/qc/expression/orbital_registry.h"
+#include "mpqc/chemistry/qc/integrals/integral_engine_pool.h"
+#include "mpqc/chemistry/qc/integrals/make_engine.h"
+#include "mpqc/chemistry/qc/integrals/task_integrals.h"
 
 #include <libint2/engine.h>
 

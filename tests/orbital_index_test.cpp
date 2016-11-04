@@ -4,7 +4,7 @@
 
 #include "catch.hpp"
 
-#include <mpqc/chemistry/qc/expression/orbital_index.h>
+#include "mpqc/chemistry/qc/expression/orbital_index.h"
 
 TEST_CASE("Orbital Index", "[orbital_index]") {
   SECTION("single letter case") {

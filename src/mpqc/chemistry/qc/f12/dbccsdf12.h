@@ -5,8 +5,8 @@
 #ifndef MPQC_DB_CCSDF12_H
 #define MPQC_DB_CCSDF12_H
 
-#include <mpqc/chemistry/qc/f12/ccsdf12.h>
-#include <mpqc/chemistry/qc/f12/db_f12_intermediates.h>
+#include "mpqc/chemistry/qc/f12/ccsdf12.h"
+#include "mpqc/chemistry/qc/f12/db_f12_intermediates.h"
 
 namespace mpqc {
 namespace f12 {

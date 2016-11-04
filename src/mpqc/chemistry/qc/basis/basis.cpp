@@ -1,9 +1,9 @@
 // #include "../molecule/cluster.h"
 
-#include <mpqc/chemistry/molecule/molecule.h>
+#include "mpqc/chemistry/molecule/molecule.h"
 
-#include <mpqc/chemistry/qc/basis/basis.h>
-#include <mpqc/chemistry/qc/basis/shell_vec_functions.h>
+#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/basis/shell_vec_functions.h"
 
 MPQC_CLASS_EXPORT_KEY2("Basis", mpqc::basis::Basis);
 namespace mpqc {
@@ -21,8 +21,7 @@ Basis &Basis::operator=(Basis &&) = default;
 Basis::Basis(std::vector<ShellVec> shells) : shells_(std::move(shells)) {}
 
 Basis::Basis(const KeyVal &kv) {
-
-//  std::cout << "Construct Basis " << std::endl;
+  //  std::cout << "Construct Basis " << std::endl;
   // name of basis
   std::string basis_name = kv.value<std::string>("name");
 
@@ -33,9 +32,9 @@ Basis::Basis(const KeyVal &kv) {
   auto mol_ptr = kv.keyval("molecule").class_ptr<mpqc::Molecule>();
 
   // find world from one level above
-  madness::World* world = kv.value<madness::World*>("$:world");
+  madness::World *world = kv.value<madness::World *>("$:world");
 
-  auto basis = parallel_construct_basis(*world,basis_set,*mol_ptr);
+  auto basis = parallel_construct_basis(*world, basis_set, *mol_ptr);
 
   shells_ = basis.shells_;
 }

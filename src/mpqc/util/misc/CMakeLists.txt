@@ -6,5 +6,5 @@ set(sources
   type_traits.h
 )
 
-add_library(MPQCmisc ${sources})
-target_link_libraries(MPQCmisc MADworld)
+add_library(MPQCutil_misc ${sources})
+target_link_libraries(MPQCutil_misc MADworld)

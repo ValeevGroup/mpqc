@@ -3,32 +3,32 @@
 
 #include "mpqc/math/external/eigen/eigen.h"
 
-#include <tiledarray.h>
 #include <madness/tensor/clapack.h>
+#include <tiledarray.h>
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 
-extern "C" void
-sgesdd_(const char *jobz, integer *m, integer *n, real4 *a, integer *lda,
-        real4 *s, real4 *u, integer *ldu, real4 *vt, integer *ldvt, real4 *work,
-        integer *lwork, integer *iwork, integer *info);
+extern "C" void sgesdd_(const char *jobz, integer *m, integer *n, real4 *a,
+                        integer *lda, real4 *s, real4 *u, integer *ldu,
+                        real4 *vt, integer *ldvt, real4 *work, integer *lwork,
+                        integer *iwork, integer *info);
 
-extern "C" void
-dgesdd_(const char *jobz, integer *m, integer *n, real8 *a, integer *lda,
-        real8 *s, real8 *u, integer *ldu, real8 *vt, integer *ldvt, real8 *work,
-        integer *lwork, integer *iwork, integer *info);
+extern "C" void dgesdd_(const char *jobz, integer *m, integer *n, real8 *a,
+                        integer *lda, real8 *s, real8 *u, integer *ldu,
+                        real8 *vt, integer *ldvt, real8 *work, integer *lwork,
+                        integer *iwork, integer *info);
 
-extern "C" void
-dgelqf_(integer *m, integer *n, real8 *a, integer *lda, real8 *tau, real8 *work,
-        integer *lwork, integer *infoOUT);
+extern "C" void dgelqf_(integer *m, integer *n, real8 *a, integer *lda,
+                        real8 *tau, real8 *work, integer *lwork,
+                        integer *infoOUT);
 
-extern "C" void
-dorglq_(integer *m, integer *n, integer *k, real8 *a, integer *lda, real8 *tau,
-        real8 *work, integer *lwork, integer *info);
+extern "C" void dorglq_(integer *m, integer *n, integer *k, real8 *a,
+                        integer *lda, real8 *tau, real8 *work, integer *lwork,
+                        integer *info);
 
-extern "C" void
-dpstrf_(const char *uplo, integer *n, real8 *a, integer *lda, integer *piv,
-        integer *rank, real8 *tol, real8 *work, integer *info);
+extern "C" void dpstrf_(const char *uplo, integer *n, real8 *a, integer *lda,
+                        integer *piv, integer *rank, real8 *tol, real8 *work,
+                        integer *info);
 
 namespace mpqc {
 namespace tensor {
@@ -47,8 +47,8 @@ integer non_pivoted_qr(double *data, double *Tau, integer rows, integer cols);
 
 integer non_pivoted_lq(double *data, double *Tau, integer rows, integer cols);
 
-integer
-svd(double *data, double *s, double *u, double *vt, integer rows, integer cols);
+integer svd(double *data, double *s, double *u, double *vt, integer rows,
+            integer cols);
 
 integer form_q(double *data, double *Tau, integer rows, integer rank);
 
@@ -62,10 +62,10 @@ std::size_t qr_rank(double const *data, std::size_t rows, std::size_t cols,
                     double threshold);
 
 // Returns true if input is low rank.
-bool full_rank_decompose(TA::Tensor<double> const &in, TA::Tensor<double> &L,
-                         TA::Tensor<double> &R, double thresh,
-                         std::size_t max_out_rank
-                         = std::numeric_limits<std::size_t>::max());
+bool full_rank_decompose(
+    TA::Tensor<double> const &in, TA::Tensor<double> &L, TA::Tensor<double> &R,
+    double thresh,
+    std::size_t max_out_rank = std::numeric_limits<std::size_t>::max());
 
 void ta_tensor_col_pivoted_qr(TA::Tensor<double> &in, TA::Tensor<double> &L,
                               TA::Tensor<double> &R, double thresh);
@@ -86,8 +86,8 @@ void ta_tensor_svd(TA::Tensor<double> &in, TA::Tensor<double> &L,
 void recompress(DecomposedTensor<double> &t);
 
 /// Returns an empty DecomposedTensor if the compression rank was to large.
-DecomposedTensor<double>
-two_way_decomposition(DecomposedTensor<double> const &t);
+DecomposedTensor<double> two_way_decomposition(
+    DecomposedTensor<double> const &t);
 
 TA::Tensor<double> combine(DecomposedTensor<double> const &t);
 
@@ -97,11 +97,11 @@ TA::Tensor<double> combine(DecomposedTensor<double> const &t);
  * and over write it with the permuted and truncated Cholesky vectors
  * corresponding to the matrix.
 */
-integer
-piv_cholesky(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &a);
+integer piv_cholesky(
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &a);
 
-} // namespace algebra
-} // namespace tensor
-} // namespace mpqc
+}  // namespace algebra
+}  // namespace tensor
+}  // namespace mpqc
 
-#endif // MPQC_TENSOR_DECOMPOSEDTENSORALGEBRA_H
+#endif  // MPQC_TENSOR_DECOMPOSEDTENSORALGEBRA_H

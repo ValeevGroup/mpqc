@@ -1,10 +1,10 @@
 #ifndef MPQC_UTILITY_ARRAYINFO_TENSOR_STORE_H
 #define MPQC_UTILITY_ARRAYINFO_TENSOR_STORE_H
-#include <tiledarray.h>
-#include <string>
 #include <array>
 #include <iostream>
 #include <ostream>
+#include <string>
+#include <tiledarray.h>
 
 namespace mpqc {
 namespace util {
@@ -18,12 +18,12 @@ void write_tensor3D_to_file(TiledArray::Tensor<T> const &t,
   for (auto i = lo[0]; i < hi[0]; ++i) {
     for (auto j = lo[1]; j < hi[1]; ++j) {
       for (auto k = lo[2]; k < hi[2]; ++k) {
-          const auto val = t(i,j,k);
-          if(val >= 1e-16){
-            file << i << " " << j << " " << k << " " << val << "\n";
-          } else {
-            file << i << " " << j << " " << k << " " << 0.0 << "\n";
-          }
+        const auto val = t(i, j, k);
+        if (val >= 1e-16) {
+          file << i << " " << j << " " << k << " " << val << "\n";
+        } else {
+          file << i << " " << j << " " << k << " " << 0.0 << "\n";
+        }
       }
     }
   }
@@ -54,7 +54,6 @@ inline void write_shape_tuple3D(
     TiledArray::DistArray<TiledArray::Tensor<double>,
                           TiledArray::SparsePolicy> const &A,
     std::string const &output_file_name) {
-
   std::ofstream outfile(output_file_name);
 
   write_tensor3D_to_file(A.shape().data(), outfile);

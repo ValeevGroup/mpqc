@@ -2,8 +2,8 @@
 #ifndef MPQC_MOLECULE_ATOM_H
 #define MPQC_MOLECULE_ATOM_H
 
-#include <string>
 #include <iosfwd>
+#include <string>
 
 #include "./molecule_fwd.h"
 
@@ -17,39 +17,39 @@ namespace mpqc {
  *  position is an Eigen::Vector3d.
  */
 class Atom {
-  private:
-    Vector3d center_ = {0, 0, 0};
-    int64_t atomic_number_ = 0;
-    double mass_ = 0;
+ private:
+  Vector3d center_ = {0, 0, 0};
+  int64_t atomic_number_ = 0;
+  double mass_ = 0;
 
-  public:
-    Atom() = default;
-    Atom(const Atom &atom) = default;
-    Atom &operator=(const Atom &atom) = default;
-    Atom(Atom &&atom) = default;
-    Atom &operator=(Atom &&atom) = default;
+ public:
+  Atom() = default;
+  Atom(const Atom &atom) = default;
+  Atom &operator=(const Atom &atom) = default;
+  Atom(Atom &&atom) = default;
+  Atom &operator=(Atom &&atom) = default;
 
-    /*! \brief Constructs the atom with the center, mass and charge provided.
-     */
-    Atom(Vector3d const &center, double mass, int64_t Z)
-            : center_(center), atomic_number_(Z), mass_(mass) {}
+  /*! \brief Constructs the atom with the center, mass and charge provided.
+   */
+  Atom(Vector3d const &center, double mass, int64_t Z)
+      : center_(center), atomic_number_(Z), mass_(mass) {}
 
-    /*! Returns the location of the atom in Bohr. */
-    Vector3d const &center() const { return center_; }
+  /*! Returns the location of the atom in Bohr. */
+  Vector3d const &center() const { return center_; }
 
-    /*! Returns the charge of the atom in atomic units. */
-    int64_t charge() const { return atomic_number_; }
+  /*! Returns the charge of the atom in atomic units. */
+  int64_t charge() const { return atomic_number_; }
 
-    /*! Returns the mass of the atom in atomic units. */
-    double mass() const { return mass_; }
+  /*! Returns the mass of the atom in atomic units. */
+  double mass() const { return mass_; }
 
-    /*! \brief Returns the atom in xyz format.
-     *
-     * By default the function assumes the units are in Bohr, so it will
-     * convert to ang, but by passing false to the function it will
-     * not convert the position.
-     */
-    std::string xyz_string(bool convert_to_angstroms = true) const;
+  /*! \brief Returns the atom in xyz format.
+   *
+   * By default the function assumes the units are in Bohr, so it will
+   * convert to ang, but by passing false to the function it will
+   * not convert the position.
+   */
+  std::string xyz_string(bool convert_to_angstroms = true) const;
 };
 
 //
@@ -75,6 +75,6 @@ inline Vector3d const &center_of_mass(Atom const &a) { return a.center(); }
 
 /*! @} */
 
-} // namespace mpqc
+}  // namespace mpqc
 
-#endif // MPQC_MOLECULE_ATOM_H
+#endif  // MPQC_MOLECULE_ATOM_H

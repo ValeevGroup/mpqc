@@ -19,7 +19,7 @@ struct gen_seq : gen_seq<N - 1, N - 1, Is...> {};
 template <std::size_t... Is>
 struct gen_seq<0, Is...> : seq<Is...> {};
 
-} // namespace utility
-} // namespace mpqc
+}  // namespace utility
+}  // namespace mpqc
 
 #endif /* end of include guard: TCC_UTLITIY_EXPANDCONTAINER_H */

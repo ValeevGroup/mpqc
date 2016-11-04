@@ -8,19 +8,19 @@ namespace mpqc {
 namespace utility {
 
 inline void parallel_break_point(madness::World &world, volatile int debug) {
-    if (0 != debug) {
-        char hostname[256];
-        gethostname(hostname, sizeof(hostname));
-        printf("PID %d on %s ready for attach\n", getpid(), hostname);
-        fflush(stdout);
-        if (world.rank() == 1) {
-            while (0 != debug) sleep(5);
-        }
+  if (0 != debug) {
+    char hostname[256];
+    gethostname(hostname, sizeof(hostname));
+    printf("PID %d on %s ready for attach\n", getpid(), hostname);
+    fflush(stdout);
+    if (world.rank() == 1) {
+      while (0 != debug) sleep(5);
     }
-    world.gop.fence();
+  }
+  world.gop.fence();
 }
 
-} // namespace utility
-} // namespace namespace mpqc
+}  // namespace utility
+}  // namespace namespace mpqc
 
-#endif // MPQC_UTILITY_PARALLELBREAKPOINT_H
+#endif  // MPQC_UTILITY_PARALLELBREAKPOINT_H

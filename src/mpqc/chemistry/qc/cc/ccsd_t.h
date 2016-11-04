@@ -5,8 +5,8 @@
 #ifndef MPQC_CCSD_T_H_H
 #define MPQC_CCSD_T_H_H
 
-#include <mpqc/chemistry/qc/cc/ccsd.h>
-#include <mpqc/util/misc/print.h>
+#include "mpqc/chemistry/qc/cc/ccsd.h"
+#include "mpqc/util/misc/print.h"
 
 namespace mpqc {
 namespace cc {

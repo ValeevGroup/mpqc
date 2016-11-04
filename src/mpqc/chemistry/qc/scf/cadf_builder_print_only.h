@@ -16,13 +16,13 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include <mpqc/chemistry/qc/scf/builder.h>
-#include <mpqc/chemistry/qc/integrals/make_engine.h>
-#include <mpqc/chemistry/qc/integrals/ao_factory.h>
-#include <mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h>
-#include <mpqc/chemistry/qc/scf/cadf_helper_functions.h>
+#include "mpqc/chemistry/qc/scf/builder.h"
+#include "mpqc/chemistry/qc/integrals/make_engine.h"
+#include "mpqc/chemistry/qc/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/scf/cadf_fitting_coeffs.h"
+#include "mpqc/chemistry/qc/scf/cadf_helper_functions.h"
 
-#include <mpqc/math/external/tiledarray/tensor_store.h>
+#include "mpqc/math/external/tiledarray/tensor_store.h"
 
 #include <vector>
 #include <iostream>

@@ -10,13 +10,13 @@
 #include <madness/world/array_addons.h>
 #include <libint2/shell.h>
 
-#include <mpqc/util/keyval/keyval.hpp>
+#include "mpqc/util/keyval/keyval.hpp"
 
 
 
-#include <mpqc/chemistry/qc/basis/basis_set.h>
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
-#include <mpqc/chemistry/qc/basis/basis_fwd.h>
+#include "mpqc/chemistry/qc/basis/basis_set.h"
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
+#include "mpqc/chemistry/qc/basis/basis_fwd.h"
 
 namespace mpqc {
 namespace basis {

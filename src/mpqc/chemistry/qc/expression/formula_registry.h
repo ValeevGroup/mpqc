@@ -8,7 +8,7 @@
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/math/external/tiledarray/array_info.h"
 #include <map>
-#include <mpqc/chemistry/qc/expression/formula.h>
+#include "mpqc/chemistry/qc/expression/formula.h"
 
 namespace mpqc {
 

@@ -1,5 +1,5 @@
-#include <mpqc/chemistry/molecule/attach_hydrogens.h>
-#include <mpqc/chemistry/molecule/cluster.h>
+#include "mpqc/chemistry/molecule/attach_hydrogens.h"
+#include "mpqc/chemistry/molecule/cluster.h"
 #include <unordered_map>
 
 namespace mpqc {

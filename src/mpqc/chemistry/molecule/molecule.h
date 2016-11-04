@@ -6,7 +6,7 @@
 
 #include "./atom_based_cluster.h"
 #include "./molecule_fwd.h"
-#include <mpqc/util/keyval/keyval.hpp>
+#include "mpqc/util/keyval/keyval.hpp"
 
 namespace mpqc {
 

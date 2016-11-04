@@ -8,9 +8,9 @@
 #ifndef MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 #define MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 
-#include <mpqc/chemistry/qc/wfn/wfn.h>
-#include <mpqc/chemistry/qc/integrals/ao_factory.h>
-#include <mpqc/chemistry/qc/integrals/direct_ao_factory.h>
+#include "mpqc/chemistry/qc/wfn/wfn.h"
+#include "mpqc/chemistry/qc/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/integrals/direct_ao_factory.h"
 
 namespace mpqc {
 namespace qc {

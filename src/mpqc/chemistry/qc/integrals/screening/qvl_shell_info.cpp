@@ -1,4 +1,4 @@
-#include <mpqc/chemistry/qc/integrals/screening/qvl_shell_info.h>
+#include "mpqc/chemistry/qc/integrals/screening/qvl_shell_info.h"
 
 namespace mpqc {
 namespace integrals {

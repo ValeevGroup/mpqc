@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include <mpqc/chemistry/qc/expression/formula.h>
+#include "mpqc/chemistry/qc/expression/formula.h"
 
 #include <TiledArray/error.h>
 #include <boost/algorithm/string.hpp>

@@ -9,8 +9,8 @@
 
 
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
-#include <mpqc/chemistry/qc/expression/orbital_registry.h>
-#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
+#include "mpqc/chemistry/qc/expression/orbital_registry.h"
+#include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 
 namespace mpqc {
 

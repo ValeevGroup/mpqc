@@ -1,4 +1,4 @@
-#include <mpqc/chemistry/qc/integrals/screening/schwarz_screen.h>
+#include "mpqc/chemistry/qc/integrals/screening/schwarz_screen.h"
 
 namespace mpqc {
 namespace integrals {

@@ -2,8 +2,8 @@
 // Created by Chong Peng on 4/26/16.
 //
 
-#include <mpqc/chemistry/qc/integrals/direct_ao_factory.h>
-#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
+#include "mpqc/chemistry/qc/integrals/direct_ao_factory.h"
+#include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 
 MPQC_CLASS_EXPORT_KEY2(
     "AOFactoryTensorD",

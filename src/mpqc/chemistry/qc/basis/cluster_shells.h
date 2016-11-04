@@ -2,7 +2,7 @@
 #ifndef MPQC_BASIS_CLUSTERSHELLS_H
 #define MPQC_BASIS_CLUSTERSHELLS_H
 
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 
 #include <libint2/shell.h>
 

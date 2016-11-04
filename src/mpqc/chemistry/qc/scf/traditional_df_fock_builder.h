@@ -9,7 +9,7 @@
 #include "mpqc/util/misc/time.h"
 #include "mpqc/chemistry/qc/scf/util.h"
 
-#include <mpqc/chemistry/qc/scf/builder.h>
+#include "mpqc/chemistry/qc/scf/builder.h"
 
 #include <vector>
 

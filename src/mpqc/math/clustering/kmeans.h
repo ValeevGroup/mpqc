@@ -3,7 +3,7 @@
 #define MPQC_CLUSTERING_KMEANS_H
 
 
-#include <mpqc/math/clustering/common.h>
+#include "mpqc/math/clustering/common.h"
 
 #include <iostream>
 

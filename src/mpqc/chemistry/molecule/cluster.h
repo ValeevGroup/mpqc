@@ -3,8 +3,8 @@
 #define MPQC_MOLCULE_CLUSTER_H
 
 
-#include <mpqc/chemistry/molecule/cluster_concept.h>
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include "mpqc/chemistry/molecule/cluster_concept.h"
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 
 #include <vector>
 #include <iosfwd>

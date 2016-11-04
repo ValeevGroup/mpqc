@@ -1,4 +1,4 @@
-#include <mpqc/chemistry/molecule/atom.h>
+#include "mpqc/chemistry/molecule/atom.h"
 
 #include <map>
 #include <iostream>

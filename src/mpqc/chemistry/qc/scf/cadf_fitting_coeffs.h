@@ -4,13 +4,13 @@
 
 #include <tiledarray.h>
 
-#include <mpqc/chemistry/qc/integrals/integrals.h>
-#include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>
+#include "mpqc/chemistry/qc/integrals/integrals.h"
+#include "mpqc/chemistry/qc/integrals/direct_task_integrals.h"
 
 
-#include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/chemistry/qc/basis/basis.h>
-#include <mpqc/chemistry/qc/basis/basis_set.h>
+#include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/basis/basis_set.h"
 
 #include "mpqc/util/meta/make_array.h"
 

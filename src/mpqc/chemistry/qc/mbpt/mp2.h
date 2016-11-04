@@ -7,9 +7,9 @@
 
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
-#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
-#include <mpqc/chemistry/qc/scf/mo_build.h>
-#include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
+#include "mpqc/chemistry/qc/integrals/lcao_factory.h"
+#include "mpqc/chemistry/qc/scf/mo_build.h"
+#include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
 
 using namespace mpqc;
 

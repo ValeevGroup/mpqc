@@ -14,7 +14,7 @@
 
 #include "mpqc/math/external/eigen/eigen.h"
 
-#include <mpqc/chemistry/qc/scf/builder.h>
+#include "mpqc/chemistry/qc/scf/builder.h"
 
 #include <vector>
 #include <iostream>

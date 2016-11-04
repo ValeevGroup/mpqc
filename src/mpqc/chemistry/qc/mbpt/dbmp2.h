@@ -5,7 +5,7 @@
 #ifndef MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
 #define MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
 
-#include <mpqc/chemistry/qc/mbpt/mp2.h>
+#include "mpqc/chemistry/qc/mbpt/mp2.h"
 
 namespace mpqc {
 namespace mbpt {

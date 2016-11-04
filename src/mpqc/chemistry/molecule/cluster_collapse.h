@@ -2,7 +2,7 @@
 #ifndef MPQC_CLUSTER_COLLAPSE_H
 #define MPQC_CLUSTER_COLLAPSE_H
 
-#include <mpqc/chemistry/molecule/atom.h>
+#include "mpqc/chemistry/molecule/atom.h"
 
 #include <vector>
 

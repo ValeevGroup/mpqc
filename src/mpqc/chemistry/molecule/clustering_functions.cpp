@@ -1,8 +1,8 @@
-#include <mpqc/chemistry/molecule/clustering_functions.h>
-#include <mpqc/chemistry/molecule/common.h>
-#include <mpqc/chemistry/molecule/molecule.h>
+#include "mpqc/chemistry/molecule/clustering_functions.h"
+#include "mpqc/chemistry/molecule/common.h"
+#include "mpqc/chemistry/molecule/molecule.h"
 
-#include <mpqc/math/clustering/kmeans.h>
+#include "mpqc/math/clustering/kmeans.h"
 
 
 namespace mpqc {

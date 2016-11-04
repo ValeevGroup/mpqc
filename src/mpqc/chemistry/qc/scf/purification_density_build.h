@@ -2,7 +2,7 @@
 #ifndef MPQC_SCF_PURIFICATIONDENSITYBUILD_H
 #define MPQC_SCF_PURIFICATIONDENSITYBUILD_H
 
-#include <mpqc/chemistry/qc/scf/density_builder.h>
+#include "mpqc/chemistry/qc/scf/density_builder.h"
 #include <vector>
 
 namespace mpqc {

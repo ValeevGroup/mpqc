@@ -5,8 +5,8 @@
 #ifndef MPQC_BASIS_REGISTRY_H
 #define MPQC_BASIS_REGISTRY_H
 
-#include <mpqc/chemistry/qc/basis/basis.h>
-#include <mpqc/chemistry/qc/expression/orbital_registry.h>
+#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/expression/orbital_registry.h"
 
 namespace mpqc {
 namespace basis {

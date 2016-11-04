@@ -8,8 +8,8 @@
 #include <tiledarray.h>
 
 
-#include <mpqc/chemistry/qc/f12/f12_intermediates.h>
-#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
+#include "mpqc/chemistry/qc/f12/f12_intermediates.h"
+#include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 
 /**
  * Dual Basis F12 Intermediates

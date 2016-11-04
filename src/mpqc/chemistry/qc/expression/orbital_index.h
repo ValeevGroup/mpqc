@@ -9,7 +9,7 @@
 
 #include <TiledArray/error.h>
 
-#include <mpqc/util/misc/string.h>
+#include "mpqc/util/misc/string.h"
 
 namespace mpqc {
 

@@ -2,8 +2,8 @@
 #ifndef MPQC_MOLCULE_ATOMBASEDCLUSTER_H
 #define MPQC_MOLCULE_ATOMBASEDCLUSTER_H
 
-#include <mpqc/chemistry/molecule/atom_based_cluster_concept.h>
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include "mpqc/chemistry/molecule/atom_based_cluster_concept.h"
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 
 #include <vector>
 #include <iosfwd>

@@ -1,5 +1,5 @@
 
-#include <mpqc/chemistry/qc/wfn/wfn.h>
+#include "mpqc/chemistry/qc/wfn/wfn.h"
 
 namespace mpqc{
 namespace qc{

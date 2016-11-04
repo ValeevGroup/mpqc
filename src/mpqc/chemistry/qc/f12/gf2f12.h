@@ -5,9 +5,9 @@
 #ifndef MPQC_CHEMISTRY_QC_F12_GF2F12_H
 #define MPQC_CHEMISTRY_QC_F12_GF2F12_H
 
-#include <mpqc/chemistry/qc/f12/f12_intermediates.h>
-#include <mpqc/chemistry/qc/scf/mo_build.h>
-#include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
+#include "mpqc/chemistry/qc/f12/f12_intermediates.h"
+#include "mpqc/chemistry/qc/scf/mo_build.h"
+#include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
 
 namespace mpqc {
 

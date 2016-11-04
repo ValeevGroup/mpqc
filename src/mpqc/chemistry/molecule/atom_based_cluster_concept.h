@@ -2,9 +2,9 @@
 #ifndef MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H
 #define MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H
 
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
-#include <mpqc/chemistry/molecule/cluster_concept.h>
-#include <mpqc/chemistry/molecule/cluster_collapse.h>
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
+#include "mpqc/chemistry/molecule/cluster_concept.h"
+#include "mpqc/chemistry/molecule/cluster_collapse.h"
 
 #include <memory>
 #include <iostream>

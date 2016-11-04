@@ -1,8 +1,8 @@
-#include <mpqc/chemistry/molecule/molecule.h>
+#include "mpqc/chemistry/molecule/molecule.h"
 //#include <madness/world/world.h>
 
-#include <mpqc/chemistry/molecule/common.h>
-#include <mpqc/chemistry/molecule/atom_masses.h>
+#include "mpqc/chemistry/molecule/common.h"
+#include "mpqc/chemistry/molecule/atom_masses.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "clustering_functions.h"
 

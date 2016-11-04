@@ -1,4 +1,4 @@
-#include <mpqc/chemistry/qc/basis/shell_vec_functions.h>
+#include "mpqc/chemistry/qc/basis/shell_vec_functions.h"
 
 #include <numeric>
 

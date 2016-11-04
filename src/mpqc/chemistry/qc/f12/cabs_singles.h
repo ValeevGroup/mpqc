@@ -8,7 +8,7 @@
 #include <tiledarray.h>
 #include <TiledArray/algebra/conjgrad.h>
 
-#include <mpqc/chemistry/qc/integrals/lcao_factory.h>
+#include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 
 namespace mpqc{
 namespace f12{

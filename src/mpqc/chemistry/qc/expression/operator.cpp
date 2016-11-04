@@ -6,7 +6,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <memory>
-#include <mpqc/util/misc/string.h>
+#include "mpqc/util/misc/string.h"
 #include <string>
 
 namespace mpqc {

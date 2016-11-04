@@ -9,15 +9,15 @@
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 
-#include <mpqc/chemistry/qc/properties/energy.h>
-#include <mpqc/chemistry/qc/wfn/wfn.h>
-#include <mpqc/util/keyval/keyval.hpp>
+#include "mpqc/chemistry/qc/properties/energy.h"
+#include "mpqc/chemistry/qc/wfn/wfn.h"
+#include "mpqc/util/keyval/keyval.hpp"
 
 /// linkage files to force linking in of ALL Wavefunction-based classes
-#include <mpqc/chemistry/qc/scf/linkage.h>
-#include <mpqc/chemistry/qc/mbpt/linkage.h>
-#include <mpqc/chemistry/qc/cc/linkage.h>
-#include <mpqc/chemistry/qc/f12/linkage.h>
+#include "mpqc/chemistry/qc/scf/linkage.h"
+#include "mpqc/chemistry/qc/mbpt/linkage.h"
+#include "mpqc/chemistry/qc/cc/linkage.h"
+#include "mpqc/chemistry/qc/f12/linkage.h"
 
 using namespace mpqc;
 
@@ -32,7 +32,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   KeyVal kv;
   kv.read_json(ss);
-  kv.assign("world", &world);
+  kv.assign("world", &world);  // set "$:world" keyword to &world to define
+                               // the default execution context for this input
 
   auto threshold = 1e-15;  // Hardcode for now.
   TiledArray::SparseShape<float>::threshold(threshold);

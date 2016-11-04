@@ -8,7 +8,7 @@
 #include <tiledarray.h>
 #include "mpqc/math/external/eigen/eigen.h"
 
-#include <mpqc/chemistry/qc/integrals/make_engine.h>
+#include "mpqc/chemistry/qc/integrals/make_engine.h"
 
 #include "mpqc/math/tensor/clr/vector_localization.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"

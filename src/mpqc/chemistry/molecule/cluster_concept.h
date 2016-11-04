@@ -2,7 +2,7 @@
 #ifndef MPQC_MOLECULE_CLUSTERCONCEPT_H
 #define MPQC_MOLECULE_CLUSTERCONCEPT_H
 
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 
 #include <memory>
 #include <iostream>

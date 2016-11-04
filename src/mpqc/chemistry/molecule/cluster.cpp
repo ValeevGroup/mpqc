@@ -1,4 +1,4 @@
-#include <mpqc/chemistry/molecule/cluster.h>
+#include "mpqc/chemistry/molecule/cluster.h"
 
 namespace mpqc {
 

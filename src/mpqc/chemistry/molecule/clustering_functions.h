@@ -2,7 +2,7 @@
 #ifndef MPQC_CLUSTERING_FUNCTIONS_H
 #define MPQC_CLUSTERING_FUNCTIONS_H
 
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 
 #include <vector>
 

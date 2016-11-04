@@ -1,5 +1,5 @@
-#include <mpqc/chemistry/molecule/atom_based_cluster.h>
-#include <mpqc/chemistry/molecule/common.h>
+#include "mpqc/chemistry/molecule/atom_based_cluster.h"
+#include "mpqc/chemistry/molecule/common.h"
 
 namespace mpqc {
 

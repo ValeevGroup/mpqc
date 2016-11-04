@@ -5,7 +5,7 @@
 #ifndef MPQC_DBCCSD_H
 #define MPQC_DBCCSD_H
 
-#include <mpqc/chemistry/qc/cc/ccsd.h>
+#include "mpqc/chemistry/qc/cc/ccsd.h"
 
 namespace mpqc {
 namespace cc {

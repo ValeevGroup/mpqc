@@ -2,7 +2,7 @@
 #ifndef MPQC_MOLECULE_MAKECLUSTERS_H
 #define MPQC_MOLECULE_MAKECLUSTERS_H
 
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 #include <memory>
 #include <vector>
 

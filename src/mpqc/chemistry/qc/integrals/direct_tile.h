@@ -2,7 +2,7 @@
 #ifndef MPQC_INTEGRALS_DIRECTTILE_H
 #define MPQC_INTEGRALS_DIRECTTILE_H
 
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
+#include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
 
 #include <madness/world/worldptr.h>
 

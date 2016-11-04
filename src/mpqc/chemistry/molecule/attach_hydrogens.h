@@ -2,7 +2,7 @@
 #ifndef MPQC_MOLECULE_ATTACHHYDROGENS_H
 #define MPQC_MOLECULE_ATTACHHYDROGENS_H
 
-#include <mpqc/chemistry/molecule/molecule_fwd.h>
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 #include <vector>
 
 namespace mpqc {

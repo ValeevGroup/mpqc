@@ -1,4 +1,4 @@
-#include <mpqc/chemistry/qc/integrals/task_integral_kernels.h>
+#include "mpqc/chemistry/qc/integrals/task_integral_kernels.h"
 
 #include <TiledArray/tensor/tensor_map.h>
 

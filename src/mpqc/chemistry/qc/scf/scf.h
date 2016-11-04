@@ -9,8 +9,8 @@
 
 #include <tiledarray.h>
 
-#include <mpqc/chemistry/qc/scf/builder.h>
-#include <mpqc/chemistry/qc/scf/density_builder.h>
+#include "mpqc/chemistry/qc/scf/builder.h"
+#include "mpqc/chemistry/qc/scf/density_builder.h"
 #include "mpqc/util/external/c++/memory"
 
 namespace mpqc {

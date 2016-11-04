@@ -4,8 +4,8 @@
 #define MPQC_INTEGRALS_INTEGRALSCREENERS_H
 
 
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
-#include <mpqc/chemistry/qc/basis/basis.h>
+#include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
+#include "mpqc/chemistry/qc/basis/basis.h"
 
 namespace mpqc {
 namespace integrals {

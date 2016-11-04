@@ -1,5 +1,5 @@
-#include <mpqc/chemistry/qc/integrals/integrals.h>
-#include <mpqc/chemistry/qc/scf/eigen_solve_density_builder.h>
+#include "mpqc/chemistry/qc/integrals/integrals.h"
+#include "mpqc/chemistry/qc/scf/eigen_solve_density_builder.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/cholesky_inverse.h"
@@ -8,9 +8,9 @@
 
 #include "mpqc/chemistry/qc/scf/util.h"
 
-#include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
-#include <mpqc/chemistry/qc/scf/orbital_localization.h>
-#include <mpqc/chemistry/qc/scf/clusterd_coeffs.h>
+#include "mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp"
+#include "mpqc/chemistry/qc/scf/orbital_localization.h"
+#include "mpqc/chemistry/qc/scf/clusterd_coeffs.h"
 
 namespace mpqc {
 namespace scf {

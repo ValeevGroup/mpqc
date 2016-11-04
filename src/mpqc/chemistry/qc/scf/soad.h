@@ -4,9 +4,9 @@
 
 #include <libint2/chemistry/sto3g_atomic_density.h>
 
-#include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/chemistry/qc/basis/basis.h>
-#include <mpqc/chemistry/qc/basis/basis_set.h>
+#include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/basis/basis_set.h"
 
 
 #include <tiledarray.h>
@@ -15,9 +15,9 @@
 
 
 
-#include <mpqc/chemistry/qc/integrals/direct_task_integrals.h>
-#include <mpqc/chemistry/qc/integrals/task_integrals.h>
-#include <mpqc/chemistry/qc/integrals/task_integrals_common.h>
+#include "mpqc/chemistry/qc/integrals/direct_task_integrals.h"
+#include "mpqc/chemistry/qc/integrals/task_integrals.h"
+#include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
 
 #include "mpqc/math/external/eigen/eigen.h"
 

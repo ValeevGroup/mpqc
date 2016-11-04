@@ -1,9 +1,9 @@
 // #include "../molecule/cluster.h"
 
-#include <mpqc/chemistry/molecule/molecule.h>
+#include "mpqc/chemistry/molecule/molecule.h"
 
-#include <mpqc/chemistry/qc/basis/basis.h>
-#include <mpqc/chemistry/qc/basis/shell_vec_functions.h>
+#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/basis/shell_vec_functions.h"
 
 MPQC_CLASS_EXPORT_KEY2("Basis", mpqc::basis::Basis);
 namespace mpqc {

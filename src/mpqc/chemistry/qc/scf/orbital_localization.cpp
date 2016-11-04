@@ -1,4 +1,4 @@
-#include <mpqc/chemistry/qc/scf/orbital_localization.h>
+#include "mpqc/chemistry/qc/scf/orbital_localization.h"
 
 namespace mpqc {
 namespace scf {

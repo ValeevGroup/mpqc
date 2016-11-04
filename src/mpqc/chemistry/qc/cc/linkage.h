@@ -6,7 +6,7 @@
 #define SRC_MPQC_CHEMISTRY_QC_CC_LINKAGE_H_
 
 #include "mpqc/chemistry/qc/scf/linkage.h"
-#include <mpqc/util/keyval/forcelink.h>
+#include "mpqc/util/keyval/forcelink.h"
 
 namespace mpqc {
 namespace cc {

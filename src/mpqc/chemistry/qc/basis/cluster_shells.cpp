@@ -1,5 +1,5 @@
-#include <mpqc/chemistry/qc/basis/cluster_shells.h>
-#include <mpqc/chemistry/molecule/cluster.h>
+#include "mpqc/chemistry/qc/basis/cluster_shells.h"
+#include "mpqc/chemistry/molecule/cluster.h"
 
 #include <numeric>
 

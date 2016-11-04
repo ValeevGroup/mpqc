@@ -3,15 +3,15 @@
 //
 
 #include <madness/world/worldmem.h>
-#include <mpqc/chemistry/qc/scf/rhf.h>
-#include <mpqc/chemistry/qc/integrals/integrals.h>
+#include "mpqc/chemistry/qc/scf/rhf.h"
+#include "mpqc/chemistry/qc/integrals/integrals.h"
 #include "mpqc/util/misc/time.h"
 #include "purification_density_build.h"
 #include "eigen_solve_density_builder.h"
 #include "soad.h"
-#include <mpqc/chemistry/qc/scf/traditional_four_center_fock_builder.h>
-#include <mpqc/chemistry/qc/scf/traditional_df_fock_builder.h>
-#include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
+#include "mpqc/chemistry/qc/scf/traditional_four_center_fock_builder.h"
+#include "mpqc/chemistry/qc/scf/traditional_df_fock_builder.h"
+#include "mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp"
 #include "mpqc/util/external/c++/memory"
 
 namespace mpqc {

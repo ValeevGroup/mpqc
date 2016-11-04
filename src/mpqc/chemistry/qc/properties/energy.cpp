@@ -1,5 +1,5 @@
-#include <mpqc/chemistry/qc/properties/energy.h>
-#include <mpqc/chemistry/qc/wfn/ao_wfn.h>
+#include "mpqc/chemistry/qc/properties/energy.h"
+#include "mpqc/chemistry/qc/wfn/ao_wfn.h"
 
 MPQC_CLASS_EXPORT_KEY2("Energy", mpqc::qc::Energy);
 

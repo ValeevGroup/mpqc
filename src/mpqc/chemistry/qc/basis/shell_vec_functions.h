@@ -4,7 +4,7 @@
 #define MPQC_BASIS_SHELLVECFUNCTIONS_H
 
 
-#include <mpqc/chemistry/qc/basis/basis.h>
+#include "mpqc/chemistry/qc/basis/basis.h"
 
 #include <libint2/shell.h>
 

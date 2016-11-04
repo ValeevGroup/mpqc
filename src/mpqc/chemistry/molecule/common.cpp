@@ -1,7 +1,7 @@
-#include <mpqc/chemistry/molecule/common.h>
+#include "mpqc/chemistry/molecule/common.h"
 #include <libint2/atom.h>
 
-#include <mpqc/chemistry/molecule/atom.h>
+#include "mpqc/chemistry/molecule/atom.h"
 
 
 namespace mpqc {

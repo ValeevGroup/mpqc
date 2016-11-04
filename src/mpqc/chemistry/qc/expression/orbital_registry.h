@@ -5,8 +5,8 @@
 #ifndef MPQC_ORBITAL_REGISTRY_H
 #define MPQC_ORBITAL_REGISTRY_H
 
-#include <mpqc/chemistry/qc/expression/formula_registry.h>
-#include <mpqc/chemistry/qc/expression/orbital_space.h>
+#include "mpqc/chemistry/qc/expression/formula_registry.h"
+#include "mpqc/chemistry/qc/expression/orbital_space.h"
 
 namespace mpqc {
 

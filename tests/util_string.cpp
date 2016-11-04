@@ -3,7 +3,7 @@
 //
 
 #include "catch.hpp"
-#include <mpqc/util/misc/string.h>
+#include "mpqc/util/misc/string.h"
 
 TEST_CASE("Util String", "[util_string]") {
   SECTION("to_string") {

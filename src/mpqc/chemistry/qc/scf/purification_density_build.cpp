@@ -1,14 +1,14 @@
-#include <mpqc/chemistry/qc/integrals/integrals.h>
+#include "mpqc/chemistry/qc/integrals/integrals.h"
 
-#include <mpqc/chemistry/qc/scf/purification_density_build.h>
+#include "mpqc/chemistry/qc/scf/purification_density_build.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/cholesky_inverse.h"
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include <mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp>
-#include <mpqc/chemistry/qc/scf/orbital_localization.h>
-#include <mpqc/chemistry/qc/scf/clusterd_coeffs.h>
+#include "mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp"
+#include "mpqc/chemistry/qc/scf/orbital_localization.h"
+#include "mpqc/chemistry/qc/scf/clusterd_coeffs.h"
 
 
 namespace mpqc {

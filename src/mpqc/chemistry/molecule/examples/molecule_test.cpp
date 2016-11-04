@@ -2,8 +2,8 @@
 #include <iostream>
 #include <vector>
 
-#include <mpqc/chemistry/molecule/atom.h>
-#include <mpqc/chemistry/molecule/molecule.h>
+#include "mpqc/chemistry/molecule/atom.h"
+#include "mpqc/chemistry/molecule/molecule.h"
 
 using namespace mpqc;
 using namespace mpqc::molecule;

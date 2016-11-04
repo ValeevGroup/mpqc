@@ -7,9 +7,9 @@
 
 #include <type_traits>
 
-#include <mpqc/util/misc/time.h>
+#include "mpqc/util/misc/time.h"
 #include <madness/world/worldmem.h>
-#include <mpqc/chemistry/qc/integrals/ao_factory_base.h>
+#include "mpqc/chemistry/qc/integrals/ao_factory_base.h"
 
 namespace mpqc {
 namespace integrals {

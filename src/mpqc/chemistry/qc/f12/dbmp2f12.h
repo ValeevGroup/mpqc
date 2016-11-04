@@ -5,9 +5,9 @@
 #ifndef MPQC_DBMP2F12_H
 #define MPQC_DBMP2F12_H
 
-#include <mpqc/chemistry/qc/f12/db_f12_intermediates.h>
-#include <mpqc/chemistry/qc/f12/mp2f12.h>
-#include <mpqc/chemistry/qc/mbpt/dbmp2.h>
+#include "mpqc/chemistry/qc/f12/db_f12_intermediates.h"
+#include "mpqc/chemistry/qc/f12/mp2f12.h"
+#include "mpqc/chemistry/qc/mbpt/dbmp2.h"
 
 namespace mpqc {
 namespace f12 {

@@ -9,10 +9,10 @@
 
 #include "mpqc/chemistry/qc/mbpt/denom.h"
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
-#include <mpqc/chemistry/qc/cc/diis_ccsd.h>
-#include <mpqc/chemistry/qc/integrals/direct_ao_factory.h>
-#include <mpqc/chemistry/qc/scf/mo_build.h>
-#include <mpqc/chemistry/qc/wfn/lcao_wfn.h>
+#include "mpqc/chemistry/qc/cc/diis_ccsd.h"
+#include "mpqc/chemistry/qc/integrals/direct_ao_factory.h"
+#include "mpqc/chemistry/qc/scf/mo_build.h"
+#include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
 
 namespace mpqc {
 namespace cc {

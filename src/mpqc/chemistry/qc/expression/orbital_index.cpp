@@ -9,8 +9,8 @@
 #include <stdexcept>
 #include <string>
 
-#include <mpqc/chemistry/qc/expression/greek_to_english_name.h>
-#include <mpqc/chemistry/qc/expression/orbital_index.h>
+#include "mpqc/chemistry/qc/expression/greek_to_english_name.h"
+#include "mpqc/chemistry/qc/expression/orbital_index.h"
 
 namespace mpqc {
 

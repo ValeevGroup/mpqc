@@ -1,9 +1,9 @@
-#include <mpqc/chemistry/qc/basis/basis_set.h>
-#include <mpqc/chemistry/qc/basis/basis_set_maps.h>
-#include <mpqc/chemistry/qc/basis/cluster_shells.h>
+#include "mpqc/chemistry/qc/basis/basis_set.h"
+#include "mpqc/chemistry/qc/basis/basis_set_maps.h"
+#include "mpqc/chemistry/qc/basis/cluster_shells.h"
 
-#include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/chemistry/molecule/common.h>
+#include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/chemistry/molecule/common.h"
 
 #include <libint2/basis.h>
 

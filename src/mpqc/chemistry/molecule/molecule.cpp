@@ -1,10 +1,10 @@
 #include "mpqc/chemistry/molecule/molecule.h"
 //#include <madness/world/world.h>
 
-#include "mpqc/chemistry/molecule/common.h"
-#include "mpqc/chemistry/molecule/atom_masses.h"
-#include "mpqc/util/external/madworld/parallel_file.h"
 #include "clustering_functions.h"
+#include "mpqc/chemistry/molecule/atom_masses.h"
+#include "mpqc/chemistry/molecule/common.h"
+#include "mpqc/util/external/madworld/parallel_file.h"
 
 #include <libint2/atom.h>
 
@@ -76,22 +76,20 @@ Molecule::Molecule(const KeyVal &kv) {
   bool sort_input = kv.value<bool>("sort_input", true);
   bool sort_origin = kv.value<bool>("sort_origin", false);
 
-
-  if(sort_origin){
-    init(file,{0.0, 0.0, 0.0} );
-  }else{
+  if (sort_origin) {
+    init(file, {0.0, 0.0, 0.0});
+  } else {
     init(file, sort_input);
   }
 
-  int n_cluster = kv.value<int>("n_cluster",0);
-  bool attach_hydrogen = kv.value<bool>("attach_hydrogen",true);
+  int n_cluster = kv.value<int>("n_cluster", 0);
+  bool attach_hydrogen = kv.value<bool>("attach_hydrogen", true);
   // cluster molecule
-  if(n_cluster != 0){
+  if (n_cluster != 0) {
     Molecule clustered_mol;
-    if(attach_hydrogen){
+    if (attach_hydrogen) {
       clustered_mol = attach_hydrogens_and_kmeans(clusterables(), n_cluster);
-    }
-    else{
+    } else {
       clustered_mol = kmeans(clusterables(), n_cluster);
     }
 
@@ -102,11 +100,10 @@ Molecule::Molecule(const KeyVal &kv) {
   }
 
   // attention, has to get charge at the end
-  charge_ = kv.value<int>("charge",0);
-  if(charge_ > total_charge_){
+  charge_ = kv.value<int>("charge", 0);
+  if (charge_ > total_charge_) {
     throw std::invalid_argument("Charge > Total Charge of Molecule! \n");
   }
-
 }
 
 Molecule::Molecule(std::istream &file_stream, bool sort_input) {
@@ -126,7 +123,8 @@ void Molecule::init(std::istream &file, bool sort_input) {
   std::vector<ABCbl> atoms;
   for (auto const &l_atom : libint_atoms) {
     Atom atom({l_atom.x, l_atom.y, l_atom.z},
-              molecule::masses::masses[l_atom.atomic_number], l_atom.atomic_number);
+              molecule::masses::masses[l_atom.atomic_number],
+              l_atom.atomic_number);
     atoms.emplace_back(std::move(atom));
   }
 
@@ -147,7 +145,8 @@ void Molecule::init(std::istream &file, Vector3d const &point) {
   std::vector<ABCbl> atoms;
   for (auto const &l_atom : libint_atoms) {
     Atom atom({l_atom.x, l_atom.y, l_atom.z},
-              molecule::masses::masses[l_atom.atomic_number], l_atom.atomic_number);
+              molecule::masses::masses[l_atom.atomic_number],
+              l_atom.atomic_number);
     atoms.emplace_back(std::move(atom));
   }
 

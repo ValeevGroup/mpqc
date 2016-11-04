@@ -4,8 +4,8 @@
 
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
 
-#include <memory>
 #include <iostream>
+#include <memory>
 
 namespace mpqc {
 
@@ -20,12 +20,12 @@ namespace mpqc {
  * different clusterable types must have.
  */
 class ClusterConcept {
-  public:
-    virtual ~ClusterConcept() = default;
+ public:
+  virtual ~ClusterConcept() = default;
 
-    virtual ClusterConcept *clone_() const = 0;
-    virtual Vector3d const & center_() const = 0;
-    virtual std::ostream &print_(std::ostream &) const = 0;
+  virtual ClusterConcept *clone_() const = 0;
+  virtual Vector3d const &center_() const = 0;
+  virtual std::ostream &print_(std::ostream &) const = 0;
 };
 
 /*
@@ -33,29 +33,29 @@ class ClusterConcept {
  */
 template <typename T>
 class ClusterModel : public ClusterConcept {
-  private:
-    T element_;
+ private:
+  T element_;
 
-  public:
-    ClusterModel(T t) : element_(std::move(t)) {}
-    ClusterModel(const ClusterModel &c) = default;
-    ClusterModel &operator=(ClusterModel c) {
-        element_ = std::move(c.element_);
-        return *this;
-    }
+ public:
+  ClusterModel(T t) : element_(std::move(t)) {}
+  ClusterModel(const ClusterModel &c) = default;
+  ClusterModel &operator=(ClusterModel c) {
+    element_ = std::move(c.element_);
+    return *this;
+  }
 
-    ClusterModel(ClusterModel &&c) = default;
-    ClusterModel &operator=(ClusterModel &&c) = default;
+  ClusterModel(ClusterModel &&c) = default;
+  ClusterModel &operator=(ClusterModel &&c) = default;
 
-    ClusterConcept *clone_() const override final {
-        return new ClusterModel(*this);
-    }
+  ClusterConcept *clone_() const override final {
+    return new ClusterModel(*this);
+  }
 
-    Vector3d const &center_() const override final { return center(element_); }
-    std::ostream &print_(std::ostream &os) const override final {
-        os << element_;
-        return os;
-    }
+  Vector3d const &center_() const override final { return center(element_); }
+  std::ostream &print_(std::ostream &os) const override final {
+    os << element_;
+    return os;
+  }
 };
 
 /*!
@@ -65,27 +65,27 @@ class ClusterModel : public ClusterConcept {
  * functions
  */
 class Clusterable {
-  private:
-    std::shared_ptr<const ClusterConcept> element_impl_;
+ private:
+  std::shared_ptr<const ClusterConcept> element_impl_;
 
-  public:
-    template <typename C>
-    Clusterable(C c)
-            : element_impl_(std::make_shared<ClusterModel<C>>(std::move(c))) {}
-    Clusterable(Clusterable const &c) = default;
-    Clusterable &operator=(Clusterable const &c) = default;
-    Clusterable(Clusterable &&c) = default;
-    Clusterable &operator=(Clusterable &&c) = default;
+ public:
+  template <typename C>
+  Clusterable(C c)
+      : element_impl_(std::make_shared<ClusterModel<C>>(std::move(c))) {}
+  Clusterable(Clusterable const &c) = default;
+  Clusterable &operator=(Clusterable const &c) = default;
+  Clusterable(Clusterable &&c) = default;
+  Clusterable &operator=(Clusterable &&c) = default;
 
-    Vector3d const &center() const { return element_impl_->center_(); }
+  Vector3d const &center() const { return element_impl_->center_(); }
 
-    std::ostream &print(std::ostream &os) const {
-        return element_impl_->print_(os);
-    }
+  std::ostream &print(std::ostream &os) const {
+    return element_impl_->print_(os);
+  }
 };
 
 /*! @} */
 
-} // namespace mpqc
+}  // namespace mpqc
 
-#endif // MPQC_MOLECULE_CLUSTERCONCEPT_H
+#endif  // MPQC_MOLECULE_CLUSTERCONCEPT_H

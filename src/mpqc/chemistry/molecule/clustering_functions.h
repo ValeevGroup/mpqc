@@ -8,12 +8,11 @@
 
 namespace mpqc {
 
-Molecule attach_hydrogens_and_kmeans(
-      std::vector<AtomBasedClusterable> const &, int64_t);
+Molecule attach_hydrogens_and_kmeans(std::vector<AtomBasedClusterable> const &,
+                                     int64_t);
 
-Molecule kmeans(
-      std::vector<AtomBasedClusterable> const &, int64_t);
+Molecule kmeans(std::vector<AtomBasedClusterable> const &, int64_t);
 
-} // namespace tcc
+}  // namespace tcc
 
-#endif // MPQC_CLUSTERING_FUNCTIONS_H
+#endif  // MPQC_CLUSTERING_FUNCTIONS_H

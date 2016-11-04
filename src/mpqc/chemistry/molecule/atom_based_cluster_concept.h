@@ -2,12 +2,12 @@
 #ifndef MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H
 #define MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H
 
-#include "mpqc/chemistry/molecule/molecule_fwd.h"
-#include "mpqc/chemistry/molecule/cluster_concept.h"
 #include "mpqc/chemistry/molecule/cluster_collapse.h"
+#include "mpqc/chemistry/molecule/cluster_concept.h"
+#include "mpqc/chemistry/molecule/molecule_fwd.h"
 
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 namespace mpqc {
@@ -23,12 +23,12 @@ namespace mpqc {
  * different clusterable types must have.
  */
 class AtomBasedClusterConcept : public ClusterConcept {
-  public:
-    virtual ~AtomBasedClusterConcept() noexcept = default;
-    virtual int64_t charge_() const = 0;
-    virtual double mass_() const = 0;
-    virtual Vector3d const& com_() const = 0;
-    virtual std::vector<Atom> atoms_() const = 0;
+ public:
+  virtual ~AtomBasedClusterConcept() noexcept = default;
+  virtual int64_t charge_() const = 0;
+  virtual double mass_() const = 0;
+  virtual Vector3d const &com_() const = 0;
+  virtual std::vector<Atom> atoms_() const = 0;
 };
 
 /*
@@ -36,40 +36,40 @@ class AtomBasedClusterConcept : public ClusterConcept {
  */
 template <typename T>
 class AtomBasedClusterModel : public AtomBasedClusterConcept {
-  private:
-    T element_;
+ private:
+  T element_;
 
-  public:
-    AtomBasedClusterModel(T t) : element_(std::move(t)) {}
-    AtomBasedClusterModel(const AtomBasedClusterModel &c) = default;
-    AtomBasedClusterModel &operator=(AtomBasedClusterModel c) {
-        element_ = std::move(c.element_);
-        return *this;
-    }
+ public:
+  AtomBasedClusterModel(T t) : element_(std::move(t)) {}
+  AtomBasedClusterModel(const AtomBasedClusterModel &c) = default;
+  AtomBasedClusterModel &operator=(AtomBasedClusterModel c) {
+    element_ = std::move(c.element_);
+    return *this;
+  }
 
-    AtomBasedClusterModel(AtomBasedClusterModel &&c) = default;
-    AtomBasedClusterModel &operator=(AtomBasedClusterModel &&c) = default;
+  AtomBasedClusterModel(AtomBasedClusterModel &&c) = default;
+  AtomBasedClusterModel &operator=(AtomBasedClusterModel &&c) = default;
 
-    AtomBasedClusterConcept *clone_() const override final {
-        return new AtomBasedClusterModel(*this);
-    }
+  AtomBasedClusterConcept *clone_() const override final {
+    return new AtomBasedClusterModel(*this);
+  }
 
-    Vector3d const &center_() const override final { return center(element_); }
-    Vector3d const &com_() const override final {
-        return center_of_mass(element_);
-    }
+  Vector3d const &center_() const override final { return center(element_); }
+  Vector3d const &com_() const override final {
+    return center_of_mass(element_);
+  }
 
-    int64_t charge_() const override final { return charge(element_); }
-    double mass_() const override final { return mass(element_); }
+  int64_t charge_() const override final { return charge(element_); }
+  double mass_() const override final { return mass(element_); }
 
-    std::vector<Atom> atoms_() const override final {
-        return collapse_to_atoms(element_);
-    }
+  std::vector<Atom> atoms_() const override final {
+    return collapse_to_atoms(element_);
+  }
 
-    std::ostream &print_(std::ostream &os) const override final {
-        os << element_;
-        return os;
-    }
+  std::ostream &print_(std::ostream &os) const override final {
+    os << element_;
+    return os;
+  }
 };
 
 /*!
@@ -81,58 +81,52 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
  * collapsable to a vector of atoms.
  */
 class AtomBasedClusterable {
-  private:
-    std::shared_ptr<const AtomBasedClusterConcept> element_impl_;
+ private:
+  std::shared_ptr<const AtomBasedClusterConcept> element_impl_;
 
-  public:
-    template <typename C>
-    explicit AtomBasedClusterable(C c)
-            : element_impl_(
-                    std::make_shared<AtomBasedClusterModel<C>>(std::move(c))) {}
-    AtomBasedClusterable(AtomBasedClusterable const &c) = default;
-    AtomBasedClusterable &operator=(AtomBasedClusterable const &c) = default;
-    AtomBasedClusterable(AtomBasedClusterable &&c) = default;
-    AtomBasedClusterable &operator=(AtomBasedClusterable &&c) = default;
+ public:
+  template <typename C>
+  explicit AtomBasedClusterable(C c)
+      : element_impl_(
+            std::make_shared<AtomBasedClusterModel<C>>(std::move(c))) {}
+  AtomBasedClusterable(AtomBasedClusterable const &c) = default;
+  AtomBasedClusterable &operator=(AtomBasedClusterable const &c) = default;
+  AtomBasedClusterable(AtomBasedClusterable &&c) = default;
+  AtomBasedClusterable &operator=(AtomBasedClusterable &&c) = default;
 
-    // Don't provide a way to access the center
-    // Vector3d const &center() const { return element_impl_->center_(); }
-    Vector3d const &com() const { return element_impl_->com_(); }
+  // Don't provide a way to access the center
+  // Vector3d const &center() const { return element_impl_->center_(); }
+  Vector3d const &com() const { return element_impl_->com_(); }
 
-    /// Vector of atoms that make up the clusterable
-    std::vector<Atom> atoms() const { return element_impl_->atoms_(); }
+  /// Vector of atoms that make up the clusterable
+  std::vector<Atom> atoms() const { return element_impl_->atoms_(); }
 
-    double mass() const { return element_impl_->mass_(); }
-    double charge() const { return element_impl_->charge_(); }
+  double mass() const { return element_impl_->mass_(); }
+  double charge() const { return element_impl_->charge_(); }
 
-    std::ostream &print(std::ostream &os) const {
-        return element_impl_->print_(os);
-    }
+  std::ostream &print(std::ostream &os) const {
+    return element_impl_->print_(os);
+  }
 };
 
-inline double mass(AtomBasedClusterable const &ac){
-    return ac.mass();
+inline double mass(AtomBasedClusterable const &ac) { return ac.mass(); }
+
+inline double charge(AtomBasedClusterable const &ac) { return ac.charge(); }
+
+inline Vector3d const &center(AtomBasedClusterable const &ac) {
+  return ac.com();
 }
 
-inline double charge(AtomBasedClusterable const &ac){
-    return ac.charge();
+inline Vector3d const &center_of_mass(AtomBasedClusterable const &ac) {
+  return ac.com();
 }
 
-inline Vector3d const& center(AtomBasedClusterable const &ac){
-    return ac.com();
+inline std::vector<Atom> collapse_to_atoms(AtomBasedClusterable const &ac) {
+  return ac.atoms();
 }
-
-inline Vector3d const& center_of_mass(AtomBasedClusterable const &ac){
-    return ac.com();
-}
-
-inline std::vector<Atom> collapse_to_atoms(AtomBasedClusterable const &ac){
-    return ac.atoms();
-}
-
-
 
 /*! @} */
 
-} // namespace mpqc
+}  // namespace mpqc
 
-#endif // MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H
+#endif  // MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H

@@ -31,7 +31,7 @@ class Molecule : public DescribedClass {
 
   Vector3d com_ = {0, 0, 0};  /// Center of Mass
   double mass_ = 0.0;
-  int64_t charge_ = 0;  /// Net charge (# protons - # electrons)
+  int64_t charge_ = 0;        /// Net charge (# protons - # electrons)
   int64_t total_charge_ = 0;  // total charge # protons
 
   void init(std::istream &file, bool sort_input);
@@ -46,8 +46,10 @@ class Molecule : public DescribedClass {
    *
    *  | KeyWord | Type | Default| Description |
    *  |---------|------|--------|-------------|
-   *  |file_name|string|none|This gives the name of a XYZ file, from which the nuclear coordinates will be read |
-   *  |||| (the XYZ format is described <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).|
+   *  |file_name|string|none|This gives the name of a XYZ file, from which the
+   * nuclear coordinates will be read |
+   *  |||| (the XYZ format is described <a
+   * href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).|
    *  |charge|int|0|the charge of this molecule|
    *  |sort_input|boolean|true|If true, sort atoms from origin {0.0, 0.0, 0.0} |
    *  |sort_origin|boolean|false|sort atoms from origin {0.0, 0.0, 0.0} |
@@ -93,7 +95,7 @@ class Molecule : public DescribedClass {
 
   ~Molecule();
 
-  /*! \brief A function to sort the molcule's clusters from a given point. 
+  /*! \brief A function to sort the molcule's clusters from a given point.
    */
   void sort_from_point(Vector3d const &point);
 
@@ -107,7 +109,7 @@ class Molecule : public DescribedClass {
   int64_t charge() const { return charge_; }
 
   /// total nuclear charge # of protons
-  int64_t  total_charge() const { return  total_charge_;}
+  int64_t total_charge() const { return total_charge_; }
 
   /// Mass of the Molecule
   double mass() const { return mass_; }
@@ -138,9 +140,7 @@ class Molecule : public DescribedClass {
   }
 
   /// return the occupation number
-  int64_t occupation() const{
-    return total_charge_ - charge_;
-  }
+  int64_t occupation() const { return total_charge_ - charge_; }
 
   /// Computes the number of core electrons in the Molecule.
   int64_t core_electrons() const;

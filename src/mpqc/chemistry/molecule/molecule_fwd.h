@@ -2,7 +2,6 @@
 #ifndef MPQC_MOLECULE_MOLECULE_FWD_H
 #define MPQC_MOLECULE_MOLECULE_FWD_H
 
-
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
@@ -14,7 +13,6 @@ class AtomBasedClusterable;
 class AtomBasedCluster;
 class Molecule;
 
-} // namespace mpqc
+}  // namespace mpqc
 
-
-#endif // MPQC_MOLECULE_MOLECULE_FWD_H
+#endif  // MPQC_MOLECULE_MOLECULE_FWD_H

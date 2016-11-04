@@ -4,18 +4,19 @@
 #include <iosfwd>
 #include <vector>
 
-#include "mpqc/math/tensor/clr/array_to_eigen.h"
-#include "mpqc/math/external/eigen/eigen.h"
-#include "ao_factory_base.h"
-#include "ao_factory_base.cpp"
 #include <mpqc/chemistry/molecule/unit_cell.h>
 #include <mpqc/chemistry/qc/integrals/integrals.h>
 #include <mpqc/util/keyval/keyval.hpp>
+#include "ao_factory_base.cpp"
+#include "ao_factory_base.h"
+#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 // Eigen matrix algebra library
 #include <unsupported/Eigen/MatrixFunctions>
 
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
-                      Eigen::RowMajor> Matrixc;
+                      Eigen::RowMajor>
+    Matrixc;
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> Vectorc;
 
 // constant
@@ -39,9 +40,7 @@ class PeriodicAOFactory : public AOFactoryBase {
   PeriodicAOFactory &operator=(PeriodicAOFactory &&) = default;
 
   PeriodicAOFactory(const KeyVal &kv)
-      : AOFactoryBase(kv),
-        ao_formula_registry_(),
-        orbital_space_registry_() {
+      : AOFactoryBase(kv), ao_formula_registry_(), orbital_space_registry_() {
     std::string molecule_type = kv.value<std::string>("molecule:type");
 
     if (molecule_type != "UnitCell") {
@@ -90,10 +89,7 @@ class PeriodicAOFactory : public AOFactoryBase {
   TArray transform_real2recip(TArray &matrix);
 
   /// compute density: D = C(occ).C(occ)t
-  TArray compute_density(TArray &fock_recip,
-                         TArray &overlap,
-                         int64_t ndocc);
-
+  TArray compute_density(TArray &fock_recip, TArray &overlap, int64_t ndocc);
 
  private:
   FormulaRegistry<TArray> ao_formula_registry_;
@@ -103,8 +99,8 @@ class PeriodicAOFactory : public AOFactoryBase {
   // Density
   TArray D_;
 
-  Vector3i R_max_ = {0, 0,
-                  0};  // range of expansion of Bloch Gaussians in AO Gaussians
+  Vector3i R_max_ = {
+      0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i RJ_max_ = {0, 0, 0};       // range of Coulomb operation
   Vector3i RD_max_ = {0, 0, 0};       // range of density representation
   Vector3i nk_ = {1, 1, 1};           // # of k points in each direction
@@ -138,7 +134,8 @@ class PeriodicAOFactory : public AOFactoryBase {
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
       Molecule &shifted_mol);
 
-  void parse_two_body_periodic(const Formula &formula,
+  void parse_two_body_periodic(
+      const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
       Vector3d shift_coul, bool if_coulomb);
 
@@ -152,8 +149,7 @@ class PeriodicAOFactory : public AOFactoryBase {
 
   TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
 
-  std::shared_ptr<Molecule> shift_mol_origin(Molecule &mol,
-                                                       Vector3d shift);
+  std::shared_ptr<Molecule> shift_mol_origin(Molecule &mol, Vector3d shift);
 
   libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
                                           const AOFactoryBase &base,
@@ -163,15 +159,14 @@ class PeriodicAOFactory : public AOFactoryBase {
   TA::DistArray<Tile, TA::SparsePolicy> sparse_complex_integrals(
       madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
       std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-      std::function<Tile(TA::TensorZ &&)> op =
-          TA::Noop<TA::TensorZ, true>());
+      std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>());
 
   void sort_eigen(Vectorc &eigVal, Matrixc &eigVec);
 };
 
 template <typename Tile, typename Policy>
-typename PeriodicAOFactory<Tile, Policy>::TArray PeriodicAOFactory<
-    Tile, Policy>::compute(const std::wstring &formula_string) {
+typename PeriodicAOFactory<Tile, Policy>::TArray
+PeriodicAOFactory<Tile, Policy>::compute(const std::wstring &formula_string) {
   auto formula = Formula(formula_string);
   return compute(formula);
 }
@@ -179,35 +174,29 @@ typename PeriodicAOFactory<Tile, Policy>::TArray PeriodicAOFactory<
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
-
   TArray result;
   Bvector bs_array;
   std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
   double size = 0.0;
 
   if (formula.rank() == 2) {
-    if (formula.oper().type() == Operator::Type::Kinetic
-            || formula.oper().type() == Operator::Type::Overlap) {
+    if (formula.oper().type() == Operator::Type::Kinetic ||
+        formula.oper().type() == Operator::Type::Overlap) {
       parse_one_body_periodic(formula, engine_pool, bs_array, *mol_);
       result = compute_integrals(this->world_, engine_pool, bs_array);
-    }
-    else if (formula.oper().type() == Operator::Type::Nuclear) {
-
+    } else if (formula.oper().type() == Operator::Type::Nuclear) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-          auto shift_mol = R_vector(RJ, RJ_max_);
-          auto shifted_mol = shift_mol_origin(*mol_, shift_mol);
-          parse_one_body_periodic(formula, engine_pool, bs_array,
-                                  *shifted_mol);
-          if (RJ == 0)
-              result = compute_integrals(this->world_, engine_pool, bs_array);
-          else
-              result("mu, nu") +=
-                      compute_integrals(this->world_, engine_pool, bs_array)
-                      ("mu, nu");
+        auto shift_mol = R_vector(RJ, RJ_max_);
+        auto shifted_mol = shift_mol_origin(*mol_, shift_mol);
+        parse_one_body_periodic(formula, engine_pool, bs_array, *shifted_mol);
+        if (RJ == 0)
+          result = compute_integrals(this->world_, engine_pool, bs_array);
+        else
+          result("mu, nu") +=
+              compute_integrals(this->world_, engine_pool, bs_array)("mu, nu");
       }
-    }
-    else
-        throw std::runtime_error("Rank-2 operator type not supported");
+    } else
+      throw std::runtime_error("Rank-2 operator type not supported");
 
     size = mpqc::detail::array_size(result);
     utility::print_par(world_,
@@ -215,50 +204,46 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
                        utility::to_string(formula.string()));
     utility::print_par(world_, " Size: ", size, " GB\n");
 
-  }
-  else if (formula.rank() == 4) {
-      if (formula.oper().type() == Operator::Type::J) {
-          auto j_formula = formula;
-          j_formula.set_operator_type(Operator::Type::Coulomb);
-          for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-              auto vec_RJ = R_vector(RJ, RJ_max_);
-              parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
-              auto J = compute_integrals(this->world_, engine_pool, bs_array);
-              if (RJ == 0)
-                  result("mu, nu") = J("mu, nu, lambda, rho") * D_("lambda, rho");
-              else
-                  result("mu, nu") += J("mu, nu, lambda, rho") * D_("lambda, rho");
-          }
+  } else if (formula.rank() == 4) {
+    if (formula.oper().type() == Operator::Type::J) {
+      auto j_formula = formula;
+      j_formula.set_operator_type(Operator::Type::Coulomb);
+      for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+        auto vec_RJ = R_vector(RJ, RJ_max_);
+        parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
+        auto J = compute_integrals(this->world_, engine_pool, bs_array);
+        if (RJ == 0)
+          result("mu, nu") = J("mu, nu, lambda, rho") * D_("lambda, rho");
+        else
+          result("mu, nu") += J("mu, nu, lambda, rho") * D_("lambda, rho");
       }
-      else if (formula.oper().type() == Operator::Type::K) {
-          auto k_formula = formula;
-          k_formula.set_operator_type(Operator::Type::Coulomb);
-          for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-              auto vec_RJ = R_vector(RJ, RJ_max_);
-              parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ, false);
-              auto K = compute_integrals(this->world_, engine_pool, bs_array);
-              if (RJ == 0)
-                  result("mu, nu") = K("mu, lambda, nu, rho") * D_("lambda, rho");
-              else
-                  result("mu, nu") += K("mu, lambda, nu, rho") * D_("lambda, rho");
-          }
+    } else if (formula.oper().type() == Operator::Type::K) {
+      auto k_formula = formula;
+      k_formula.set_operator_type(Operator::Type::Coulomb);
+      for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+        auto vec_RJ = R_vector(RJ, RJ_max_);
+        parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ,
+                                false);
+        auto K = compute_integrals(this->world_, engine_pool, bs_array);
+        if (RJ == 0)
+          result("mu, nu") = K("mu, lambda, nu, rho") * D_("lambda, rho");
+        else
+          result("mu, nu") += K("mu, lambda, nu, rho") * D_("lambda, rho");
       }
-      else
-          throw std::runtime_error("Rank-4 operator type not supported");
+    } else
+      throw std::runtime_error("Rank-4 operator type not supported");
 
-  }
-  else
-      throw std::runtime_error("Operator rank not supported");
+  } else
+    throw std::runtime_error("Operator rank not supported");
 
   return result;
 }
 
-
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
-        const Formula &formula,
-        std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-        Molecule &shifted_mol) {
+    const Formula &formula,
+    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+    Molecule &shifted_mol) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -291,7 +276,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
 }
 
 template <typename Tile, typename Policy>
-void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(const Formula &formula,
+void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
+    const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
     Vector3d shift_coul, bool if_coulomb) {
   auto bra_indices = formula.bra_indices();
@@ -323,20 +309,19 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(const Formula &for
   // Form a compound index basis
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
   if (if_coulomb) {
-      bra_basis1 = shift_basis_origin(*bra_basis1, zero_shift_base, R_max_, true);
-      ket_basis0 = shift_basis_origin(*ket_basis0, shift_coul);
-  }
-  else {
-      bra_basis1 = shift_basis_origin(*bra_basis1, shift_coul);
-      ket_basis0 = shift_basis_origin(*ket_basis0, zero_shift_base, R_max_, true);
+    bra_basis1 = shift_basis_origin(*bra_basis1, zero_shift_base, R_max_, true);
+    ket_basis0 = shift_basis_origin(*ket_basis0, shift_coul);
+  } else {
+    bra_basis1 = shift_basis_origin(*bra_basis1, shift_coul);
+    ket_basis0 = shift_basis_origin(*ket_basis0, zero_shift_base, R_max_, true);
   }
   ket_basis1 = shift_basis_origin(*ket_basis1, shift_coul, RD_max_, true);
 
   if (formula.notation() == Formula::Notation::Chemical)
     bases = Bvector{{*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1}};
   else
-      throw "Physical notation not supported!";
-//    bases = Bvector{{*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1}};
+    throw "Physical notation not supported!";
+  //    bases = Bvector{{*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1}};
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
@@ -348,7 +333,7 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(const Formula &for
 
 template <typename Tile, typename Policy>
 int64_t PeriodicAOFactory<Tile, Policy>::idx_lattice(int x, int y, int z,
-                                                          Vector3i vec) {
+                                                     Vector3i vec) {
   if (vec(0) >= 0 && vec(1) >= 0 && vec(2) >= 0 && abs(x) <= vec(0) &&
       abs(y) <= vec(1) && abs(z) <= vec(2)) {
     int64_t idx = (x + vec(0)) * (2 * vec(0) + 1) * (2 * vec(1) + 1) +
@@ -361,7 +346,7 @@ int64_t PeriodicAOFactory<Tile, Policy>::idx_lattice(int x, int y, int z,
 
 template <typename Tile, typename Policy>
 int64_t PeriodicAOFactory<Tile, Policy>::idx_k(int x, int y, int z,
-                                                    Vector3i nk) {
+                                               Vector3i nk) {
   if (nk(0) >= 1 && nk(1) >= 1 && nk(2) >= 1 && x >= 0 && y >= 0 && z >= 0 &&
       x < nk(0) && y < nk(1) && z < nk(2)) {
     int64_t idx = x * nk(0) * nk(1) + y * nk(1) + z;
@@ -377,33 +362,33 @@ Vector3d PeriodicAOFactory<Tile, Policy>::k_vector(int64_t idx_k) {
   auto x = idx_k / nk_(2) / nk_(1);
   auto y = (idx_k / nk_(2)) % nk_(1);
   auto z = idx_k % nk_(2);
-  result(0) =
-      (dcell_(0) == 0.0) ? 0.0 : (-1.0 + (2.0 * (x + 1) - 1.0) / nk_(0)) *
-                                     (M_PI / dcell_(0));
-  result(1) =
-      (dcell_(1) == 0.0) ? 0.0 : (-1.0 + (2.0 * (y + 1) - 1.0) / nk_(1)) *
-                                     (M_PI / dcell_(1));
-  result(2) =
-      (dcell_(2) == 0.0) ? 0.0 : (-1.0 + (2.0 * (z + 1) - 1.0) / nk_(2)) *
-                                     (M_PI / dcell_(2));
+  result(0) = (dcell_(0) == 0.0) ? 0.0
+                                 : (-1.0 + (2.0 * (x + 1) - 1.0) / nk_(0)) *
+                                       (M_PI / dcell_(0));
+  result(1) = (dcell_(1) == 0.0) ? 0.0
+                                 : (-1.0 + (2.0 * (y + 1) - 1.0) / nk_(1)) *
+                                       (M_PI / dcell_(1));
+  result(2) = (dcell_(2) == 0.0) ? 0.0
+                                 : (-1.0 + (2.0 * (z + 1) - 1.0) / nk_(2)) *
+                                       (M_PI / dcell_(2));
   return result;
 }
 
 template <typename Tile, typename Policy>
 Vector3d PeriodicAOFactory<Tile, Policy>::R_vector(int64_t idx_lattice,
-                                                     Vector3i vec) {
+                                                   Vector3i vec) {
   auto z = idx_lattice % (2 * vec(2) + 1);
   auto y = (idx_lattice / (2 * vec(2) + 1)) % (2 * vec(1) + 1);
   auto x = idx_lattice / (2 * vec(2) + 1) / (2 * vec(1) + 1);
   Vector3d result((x - vec(0)) * dcell_(0), (y - vec(1)) * dcell_(1),
-               (z - vec(2)) * dcell_(2));
+                  (z - vec(2)) * dcell_(2));
   return result;
 }
 
 template <typename Tile, typename Policy>
 std::shared_ptr<basis::Basis>
 PeriodicAOFactory<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
-                                                         Vector3d shift) {
+                                                    Vector3d shift) {
   std::vector<ShellVec> vec_of_shells;
   for (auto shell_vec : basis.cluster_shells()) {
     ShellVec shells;
@@ -426,18 +411,19 @@ PeriodicAOFactory<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
 template <typename Tile, typename Policy>
 std::shared_ptr<basis::Basis>
 PeriodicAOFactory<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
-                                                         Vector3d shift_base,
-                                                         Vector3i nshift,
-                                                         bool is_real_space) {
+                                                    Vector3d shift_base,
+                                                    Vector3i nshift,
+                                                    bool is_real_space) {
   std::vector<ShellVec> vec_of_shells;
 
   int64_t shift_size =
-      is_real_space ? (1 + idx_lattice(nshift(0), nshift(1), nshift(2), nshift))
-                    : (1 + idx_k(nshift(0) - 1, nshift(1) - 1, nshift(2) - 1, nshift));
+      is_real_space
+          ? (1 + idx_lattice(nshift(0), nshift(1), nshift(2), nshift))
+          : (1 + idx_k(nshift(0) - 1, nshift(1) - 1, nshift(2) - 1, nshift));
 
   for (auto idx_shift = 0; idx_shift < shift_size; ++idx_shift) {
     Vector3d shift = is_real_space ? (R_vector(idx_shift, nshift) + shift_base)
-                                : (k_vector(idx_shift) + shift_base);
+                                   : (k_vector(idx_shift) + shift_base);
 
     for (auto shell_vec : basis.cluster_shells()) {
       ShellVec shells;
@@ -458,30 +444,27 @@ PeriodicAOFactory<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
 }
 
 template <typename Tile, typename Policy>
-TA::TiledRange1
-PeriodicAOFactory<Tile, Policy>::extend_trange1(TA::TiledRange1 tr0,
-                                                     int64_t size) {
-    auto blocking = std::vector<int64_t> {0};
-    for (auto idx = 0; idx < size; ++idx) {
-        for (auto u = 0; u < tr0.tile_extent(); ++u) {
-            auto next = blocking.back() + tr0.tile(u).second - tr0.tile(u).first;
-            blocking.emplace_back(next);
-        }
+TA::TiledRange1 PeriodicAOFactory<Tile, Policy>::extend_trange1(
+    TA::TiledRange1 tr0, int64_t size) {
+  auto blocking = std::vector<int64_t>{0};
+  for (auto idx = 0; idx < size; ++idx) {
+    for (auto u = 0; u < tr0.tile_extent(); ++u) {
+      auto next = blocking.back() + tr0.tile(u).second - tr0.tile(u).first;
+      blocking.emplace_back(next);
     }
-    TA::TiledRange1 tr1(blocking.begin(), blocking.end());
-    return tr1;
+  }
+  TA::TiledRange1 tr1(blocking.begin(), blocking.end());
+  return tr1;
 }
 
 template <typename Tile, typename Policy>
-std::shared_ptr<Molecule>
-PeriodicAOFactory<Tile, Policy>::shift_mol_origin(Molecule &mol,
-                                                       Vector3d shift) {
+std::shared_ptr<Molecule> PeriodicAOFactory<Tile, Policy>::shift_mol_origin(
+    Molecule &mol, Vector3d shift) {
   std::vector<AtomBasedClusterable> vec_of_clusters;
   for (auto &cluster : mol) {
     AtomBasedCluster shifted_cluster;
     for (auto &atom : collapse_to_atoms(cluster)) {
-      Atom shifted_atom(atom.center() + shift, atom.mass(),
-                                  atom.charge());
+      Atom shifted_atom(atom.center() + shift, atom.mass(), atom.charge());
       shifted_cluster.add_clusterable(shifted_atom);
     }
     shifted_cluster.update_cluster();
@@ -496,8 +479,7 @@ PeriodicAOFactory<Tile, Policy>::shift_mol_origin(Molecule &mol,
 
 template <typename Tile, typename Policy>
 libint2::any PeriodicAOFactory<Tile, Policy>::to_libint2_operator_params(
-    Operator::Type mpqc_oper, const AOFactoryBase &base,
-    Molecule &mol) {
+    Operator::Type mpqc_oper, const AOFactoryBase &base, Molecule &mol) {
   TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
                   mpqc_oper <= Operator::Type::__last_1body_operator) ||
                      (Operator::Type::__first_2body_operator <= mpqc_oper &&
@@ -608,8 +590,7 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
 
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
-PeriodicAOFactory<Tile, Policy>::transform_real2recip(
-    TArray &matrix) {
+PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
   TArray result;
   auto tr0 = matrix.trange().data()[0];
   auto tr1 = extend_trange1(tr0, k_size_);
@@ -625,18 +606,19 @@ PeriodicAOFactory<Tile, Policy>::transform_real2recip(
 
   auto threshold = std::numeric_limits<double>::epsilon();
   for (auto R = 0; R < R_size_; ++R) {
-      auto bmat = matrix_eig.block(0, R*tr0.extent(), tr0.extent(), tr0.extent());
-      if (bmat.norm() < bmat.size() * threshold)
-          continue;
-      else {
-          auto vec_R = R_vector(R, R_max_);
-          for (auto k = 0; k < k_size_; ++k) {
-              auto vec_k = k_vector(k);
-              auto exponent = std::exp(I * vec_k.dot(vec_R));
-              result_eig.block(0, k*tr0.extent(), tr0.extent(), tr0.extent()) +=
-                      bmat * exponent;
-          }
+    auto bmat =
+        matrix_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent());
+    if (bmat.norm() < bmat.size() * threshold)
+      continue;
+    else {
+      auto vec_R = R_vector(R, R_max_);
+      for (auto k = 0; k < k_size_; ++k) {
+        auto vec_k = k_vector(k);
+        auto exponent = std::exp(I * vec_k.dot(vec_R));
+        result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
+            bmat * exponent;
       }
+    }
   }
 
   result = array_ops::eigen_to_array<Tile>(world_, result_eig, tr0, tr1);
@@ -646,68 +628,66 @@ PeriodicAOFactory<Tile, Policy>::transform_real2recip(
 
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
-PeriodicAOFactory<Tile, Policy>::compute_density(
-    TArray &fock_recip,
-    TArray &overlap,
-    int64_t ndocc) {
+PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
+                                                 TArray &overlap,
+                                                 int64_t ndocc) {
+  TArray result;
 
-    TArray result;
+  std::vector<Vectorc> eps(k_size_);
+  std::vector<Matrixc> C(k_size_);
 
-    std::vector<Vectorc> eps(k_size_);
-    std::vector<Matrixc> C(k_size_);
+  auto tr0 = fock_recip.trange().data()[0];
+  auto tr1 = extend_trange1(tr0, RD_size_);
 
-    auto tr0 = fock_recip.trange().data()[0];
-    auto tr1 = extend_trange1(tr0, RD_size_);
+  auto fock_eig = array_ops::array_to_eigen(fock_recip);
+  auto overlap_eig = array_ops::array_to_eigen(overlap);
+  for (auto k = 0; k < k_size_; ++k) {
+    // Compute X = S^(-1/2)
+    auto S = overlap_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
+    auto X = S.pow(-0.5);
 
-    auto fock_eig = array_ops::array_to_eigen(fock_recip);
-    auto overlap_eig = array_ops::array_to_eigen(overlap);
+    // Symmetrize Fock
+    auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
+    F = (F + F.transpose().conjugate()) / 2.0;
+    // F' = Xt.F.X
+    Matrixc Xt = X.transpose().conjugate();
+    auto XtF = Xt * F;
+    auto Ft = XtF * X;
+
+    // Diagonalize F'
+    Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(Ft);
+    eps[k] = comp_eig_solver.eigenvalues();
+    auto Ctemp = comp_eig_solver.eigenvectors();
+    C[k] = X * Ctemp;
+    // Sort eigenvalues and eigenvectors in ascending order
+    sort_eigen(eps[k], C[k]);
+  }
+
+  Matrixc result_eig(tr0.extent(), tr1.extent());
+  result_eig.setZero();
+  for (auto R = 0; R < RD_size_; ++R) {
+    auto vec_R = R_vector(R, RD_max_);
     for (auto k = 0; k < k_size_; ++k) {
-        // Compute X = S^(-1/2)
-        auto S = overlap_eig.block(0, k*tr0.extent(), tr0.extent(), tr0.extent());
-        auto X = S.pow(-0.5);
-
-        // Symmetrize Fock
-        auto F = fock_eig.block(0, k*tr0.extent(), tr0.extent(), tr0.extent());
-        F = (F + F.transpose().conjugate()) / 2.0;
-        // F' = Xt.F.X
-        Matrixc Xt = X.transpose().conjugate();
-        auto XtF = Xt * F;
-        auto Ft = XtF * X;
-
-        // Diagonalize F'
-        Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(Ft);
-        eps[k] = comp_eig_solver.eigenvalues();
-        auto Ctemp = comp_eig_solver.eigenvectors();
-        C[k] = X * Ctemp;
-        // Sort eigenvalues and eigenvectors in ascending order
-        sort_eigen(eps[k], C[k]);
+      auto vec_k = k_vector(k);
+      auto C_occ = C[k].leftCols(ndocc);
+      auto D_real = C_occ.conjugate() * C_occ.transpose();
+      auto exponent =
+          std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
+      auto D_comp = exponent * D_real;
+      result_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent()) +=
+          D_comp;
     }
+  }
+  result = array_ops::eigen_to_array<Tile>(world_, result_eig, tr0, tr1);
 
-    Matrixc result_eig(tr0.extent(), tr1.extent());
-    result_eig.setZero();
-    for (auto R = 0; R < RD_size_; ++R) {
-        auto vec_R = R_vector(R, RD_max_);
-        for (auto k = 0; k < k_size_; ++k) {
-            auto vec_k = k_vector(k);
-            auto C_occ = C[k].leftCols(ndocc);
-            auto D_real = C_occ.conjugate() * C_occ.transpose();
-            auto exponent =
-                    std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
-            auto D_comp = exponent * D_real;
-            result_eig.block(0, R*tr0.extent(), tr0.extent(), tr0.extent()) += D_comp;
-        }
-    }
-    result = array_ops::eigen_to_array<Tile>(world_, result_eig, tr0, tr1);
+  D_ = result;
 
-    D_ = result;
-
-    return result;
+  return result;
 }
-
 
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::sort_eigen(Vectorc &eigVal,
-                                                      Matrixc &eigVec) {
+                                                 Matrixc &eigVec) {
   auto val = eigVal.real();
 
   // Sort by ascending eigenvalues

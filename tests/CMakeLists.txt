@@ -17,4 +17,6 @@ add_test(build_${executable} "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --ta
 
 add_test(NAME run_${executable}
          COMMAND ${executable})
-set_tests_properties(run_${executable} PROPERTIES DEPENDS build_${executable})
+set_tests_properties(run_${executable}
+                     PROPERTIES DEPENDS build_${executable}
+                                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)

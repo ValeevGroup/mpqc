@@ -1,4 +1,4 @@
-set(utests
+set(utests_src
     atom_test.cpp
     clustering_test.cpp
     f12_utility_test.cpp
@@ -10,6 +10,11 @@ set(utests
 
 #TODO install xyz file to bin directory
 
-add_executable(tests EXCLUDE_FROM_ALL test_main.cpp ${utests})
-target_link_libraries(tests ${TA_LIBRARIES} ${Boost_LIBRARIES} MPQCbasis MPQCmolecule MPQCexpression MPQCutil_keyval MPQCf12utility)
-add_test(NAME TestAll COMMAND ${CMAKE_BINARY_DIR}/tests/tests)
+set(executable unit_tests)
+add_executable(${executable} EXCLUDE_FROM_ALL test_main.cpp ${utests_src})
+target_link_libraries(${executable} ${TA_LIBRARIES} ${Boost_LIBRARIES} MPQCbasis MPQCmolecule MPQCexpression MPQCutil_keyval MPQCf12utility)
+add_test(build_${executable} "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${executable})
+
+add_test(NAME run_${executable}
+         COMMAND ${executable})
+set_tests_properties(run_${executable} PROPERTIES DEPENDS build_${executable})

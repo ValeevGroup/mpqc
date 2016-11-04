@@ -1,0 +1,18 @@
+                     CITING RESULTS PRODUCED WITH MPQC
+
+If you publish results using MPQC, please cite it using:
+
+An unmodified standard release:
+
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0
+Prerelease, Edward F. Valeev, Chong Peng, Cannada A. Lewis, Justus A. Calvin
+http://github.com/ValeevGroup/mpqc4.
+
+A modified release:
+
+The Massively Parallel Quantum Chemistry Program (MPQC), Version 4.0.0
+Prerelease, Edward F. Valeev, Chong Peng, Cannada A. Lewis, Justus A. Calvin
+http://github.com/ValeevGroup/mpqc4. Modified by <Author1>, <Author2>, and <Author3>,
+<Institution>, <Location>, <Year>.
+
+Also, please include the scientific citations for the methods and basis sets you use.

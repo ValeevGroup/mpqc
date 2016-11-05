@@ -26,5 +26,5 @@ set(sources
 
 add_library(MPQCf12 ${sources})
 
-target_link_libraries(MPQCf12 MPQCintegrals)
+target_link_libraries(MPQCf12 MPQCwfn MPQCintegrals)
 

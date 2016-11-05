@@ -9,4 +9,4 @@ set(sources
         )
 
 add_library(MPQCcc ${sources})
-target_link_libraries(MPQCcc MPQCintegrals MPQCutil_misc)
+target_link_libraries(MPQCcc MPQCwfn MPQCintegrals MPQCutil_misc)

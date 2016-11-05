@@ -145,26 +145,18 @@ void closed_shell_cabs_mo_build_svd(
   ao_factory.orbital_basis_registry().add(OrbitalIndex(L"ρ"), ri_basis);
 
   // integral
-  auto S_cabs = ao_factory.compute(L"<α|β>");
-  auto S_ribs = ao_factory.compute(L"<ρ|σ>");
+  auto S_ribs_inv = ao_factory.compute(L"<ρ|σ>[inv_sqr]");
   auto S_obs_ribs = ao_factory.compute(L"<μ|σ>");
-  auto S_obs = ao_factory.compute(L"<κ|λ>");
+  auto S_obs_inv = ao_factory.compute(L"<κ|λ>[inv_sqr]");
 
   // construct cabs
   TA::DistArray<Tile, Policy> C_cabs, C_ri, C_allvir;
   {
-    RowMatrixXd S_obs_eigen = array_ops::array_to_eigen(S_obs);
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_obs_eigen);
-    RowMatrixXd X_obs_eigen_inv = es.operatorInverseSqrt();
-
-    RowMatrixXd S_ribs_eigen = array_ops::array_to_eigen(S_ribs);
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es2(S_ribs_eigen);
-    RowMatrixXd X_ribs_eigen_inv = es2.operatorInverseSqrt();
 
     // orthogonalize
-    RowMatrixXd S_obs_ribs_eigen = array_ops::array_to_eigen(S_obs_ribs);
-    RowMatrixXd S_obs_ribs_ortho_eigen =
-        X_obs_eigen_inv.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
+    decltype(S_obs_inv) S_obs_ribs_ortho;
+    S_obs_ribs_ortho("i,j") = S_obs_inv("i,k") * S_obs_ribs("k,l")*S_ribs_inv("l,j");
+    RowMatrixXd S_obs_ribs_ortho_eigen = array_ops::array_to_eigen(S_obs_ribs_ortho);
 
     // SVD solve
     Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen,
@@ -174,7 +166,15 @@ void closed_shell_cabs_mo_build_svd(
     auto nbf_cabs = nbf_ribs - svd.nonzeroSingularValues();
     RowMatrixXd Vnull(nbf_ribs, nbf_cabs);
     Vnull = V_eigen.block(0, svd.nonzeroSingularValues(), nbf_ribs, nbf_cabs);
-    RowMatrixXd C_cabs_eigen = X_ribs_eigen_inv * Vnull;
+
+    auto tr_ribs = ri_basis.create_trange1();
+    auto tr_cabs_mo = tre->compute_range(nbf_cabs, vir_blocksize);
+    detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+
+    C_cabs = array_ops::eigen_to_array<Tile>(world, Vnull, tr_ribs, tr_cabs_mo);
+    C_cabs("i,j") = S_ribs_inv("i,k") * C_cabs("k, j");
+
+    RowMatrixXd C_cabs_eigen = array_ops::array_to_eigen(C_cabs);
 
     // solve orbitals for all virtual
 
@@ -192,20 +192,17 @@ void closed_shell_cabs_mo_build_svd(
       C_allvirtual_eigen.block(0, n_vir, nbf_ribs, nbf_cabs) << C_cabs_eigen;
     }
 
-    auto tr_ribs = S_ribs.trange().data()[0];
-    auto tr_cabs = S_cabs.trange().data()[0];
-    auto tr_cabs_mo = tre->compute_range(nbf_cabs, vir_blocksize);
+
+    // reblock C_ribs
     auto tr_ribs_mo = tre->compute_range(nbf_ribs, vir_blocksize);
-    auto tr_allvir_mo = tre->compute_range(nbf_cabs + n_vir, vir_blocksize);
-
-    detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
-    detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
     detail::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
+    auto ribs_to_mo = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(world, tr_ribs, tr_ribs_mo, 1.0);
+    C_ri("i,j") = S_ribs_inv("i,k")*ribs_to_mo("k,j");
 
-    C_cabs = array_ops::eigen_to_array<TA::TensorD>(world, C_cabs_eigen,
-                                                    tr_ribs, tr_cabs_mo);
-    C_ri = array_ops::eigen_to_array<TA::TensorD>(world, X_ribs_eigen_inv,
-                                                  tr_ribs, tr_ribs_mo);
+
+    auto tr_allvir_mo = tre->compute_range(nbf_cabs + n_vir, vir_blocksize);
+    detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
+
     C_allvir = array_ops::eigen_to_array<TA::TensorD>(world, C_allvirtual_eigen,
                                                       tr_ribs, tr_allvir_mo);
 

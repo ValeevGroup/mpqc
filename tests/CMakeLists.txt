@@ -3,6 +3,7 @@ set(utests_src
     clustering_test.cpp
     f12_utility_test.cpp
     keyval_test.cpp
+    libint_test.cpp
     orbital_index_test.cpp
     formula_test.cpp
     util_string.cpp
@@ -12,7 +13,7 @@ set(utests_src
 
 set(executable unit_tests)
 add_executable(${executable} EXCLUDE_FROM_ALL test_main.cpp ${utests_src})
-target_link_libraries(${executable} ${TA_LIBRARIES} ${Boost_LIBRARIES} MPQCbasis MPQCmolecule MPQCexpression MPQCutil_keyval MPQCf12utility)
+target_link_libraries(${executable} ${TA_LIBRARIES} ${Boost_LIBRARIES} ${LIBINT2_LIBRARIES} MPQCbasis MPQCmolecule MPQCexpression MPQCutil_keyval MPQCf12utility)
 add_test(build_${executable} "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${executable})
 
 add_test(NAME run_${executable}

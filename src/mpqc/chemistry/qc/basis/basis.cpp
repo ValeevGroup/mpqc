@@ -4,8 +4,10 @@
 
 #include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/chemistry/qc/basis/shell_vec_functions.h"
+#include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT_KEY2("Basis", mpqc::basis::Basis);
+MPQC_CLASS_EXPORT2("Basis", mpqc::basis::Basis);
+
 namespace mpqc {
 
 namespace basis {

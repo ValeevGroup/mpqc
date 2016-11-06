@@ -36,16 +36,15 @@ and can be used in any C++ program that needs such functionality.
 KeyVal objects can be created from JSON- or XML-formatted text, or purely programmatically.
 For brevity, only the programmatic and JSON-based methods will be illustrated here.
 
-<ul>
-  <li> \ref keyvalass
-  <li> \ref keyvalconstruct
-  <li> \ref keyvalgroup
-  <li> \ref keyvalobj
-  <li> \ref keyvalpobj
-  <li> \ref keyvalarray
-  <li> \ref keyvalsub
-  <li> \ref keyvaldescribedclass
-</ul>
+  -  \ref keyvalass
+  -  \ref keyvalconstruct
+  -  \ref keyvalgroup
+  -  \ref keyvalobj
+  -  \ref keyvalpobj
+  -  \ref keyvalarray
+  -  \ref keyvalsub
+  -  \ref keyvaldescribedclass
+  -  \ref keyvalforcelink
 
 \section keyvalass Assignment
 
@@ -269,7 +268,7 @@ auto trex = kv.class<Animal>("trex");              assert(trex->extinct() == tru
 auto python = kv.class<Animal>("python");          assert(python->extinct() == false);
 auto bald_eagle = kv.class<Animal>("bald eagle");  assert(bald_eagle->extinct() == false);
 @endcode
-KeyVal::class<T> returns \c std::shared_ptr<T> , hence the pointer dereferencing. Also, the actual types of
+KeyVal::class_ptr<T> returns \c std::shared_ptr<T> , hence the pointer dereferencing. Also, the actual types of
 \c trex , \c python , and \c bald_eagle are Reptile, Reptile, and Bird, so we can access their full properties:
 @code
 assert(std::dynamic_pointer_cast<Reptile>(trex)->legs() == 2);
@@ -312,9 +311,9 @@ MPQC_CLASS_EXPORT_KEY2("Bird", mammals::Bird);
 @endcode
 
 A few comments:
-  - Animal class is derived from DescribedClass to support polymorphic construction using KeyVal::class 
+  - Animal class is derived from DescribedClass to support polymorphic construction using KeyVal::class_ptr 
     (see \ref keyvaldescribedclass ).
-  - Smart pointers to objects created using KeyVal::class method are stored in the registry associated
+  - Smart pointers to objects created using KeyVal::class_ptr method are stored in the registry associated
     with that KeyVal's top tree. They will not be destroyed until KeyVal is destroyed as well.
   - Every class that we want to construct from KeyVal polymorphically needs to be associated with a
     global unique identifier descriptor (GUID) string (typically, GUID is the class name without the namespace).
@@ -335,7 +334,7 @@ in a KeyVal constructed programmatically. This example demonstrates this capabil
 Keyval kv;
 std::shared_ptr<DescribedClass> trex = std::make_shared<Reptile>(...);
 kv.assign("trex", trex);
-assert(kv.class("trex") == trex);
+assert(kv.class_ptr("trex") == trex);
 @endcode
 
 \section keyvalarray Array Specification
@@ -455,7 +454,7 @@ The only difference between the examples with and without the value substition:
 in the first case constructing Reptile objects corresponding to keywords \c trex and \c anothertrex
 would produce pointers to the \em same object, whereas in the second case the two pointers would refer
 to two \em different Reptile objects. This feature is implemented by tracking all smart pointers
-produced by KeyVal::class . The pointer registry is destroyed when the main KeyVal and all
+produced by KeyVal::class_ptr . The pointer registry is destroyed when the main KeyVal and all
 of its subobjects produced with KeyVal::keyval are destroyed. Therefore it is a good practice
 to delete KeyVal objects as soon as they are no longer needed.
 
@@ -484,7 +483,7 @@ kv.assign("horse", horse);
 kv.assign("mule:type", "Mule");
 kv.assign("mule:father", "$:donkey");
 kv.assign("mule:mother", "$..:horse");
-auto mule = kv.class("mule");
+auto mule = kv.class_ptr("mule");
 @endcode
 
 \section keyvaldescribedclass The DescribedClass class
@@ -496,32 +495,39 @@ smart pointers will survive in a KeyVal registry at least through the lifetime o
 KeyVal object.
 
 To be able to construct a class \c T from KeyVal objects do this:
-<ol>
-  <li> make DescribedClass a public base of \c T, or any of its bases, and </li>
-  <li> register \c T with DescribedClass . </li>
-</ol>
-The latter can be achieved in a number of ways, but the easiest is to add any of the following statements
+  1. make DescribedClass a public base of \c T, or any of its bases, and
+  2. register \c T with DescribedClass . The latter can be achieved in a number of ways, but the easiest is to add any of the following statements
 to a source file in the <i>global</i> scope:
-<ol>
-  <li>if you want to use class name \c T as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY(T) </li>
-  <li>if you want to use any other key \c Key as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY2(Key, T) </li>
-</ol>
-It is the easiest to add these statements in the .cpp file that defines \c T , but any other .cpp
+    1. if you want to use class name \c T as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY(T)
+    2. if you want to use any other key \c Key as the type identifier in KeyVal input: \c MPQC_CLASS_EXPORT_KEY2(Key, T)
+    
+    It is the easiest to add these statements to the .cpp file that defines \c T , but any other .cpp
 file will work.
+
+@note Both MPQC_CLASS_EXPORT_KEY() and MPQC_CLASS_EXPORT_KEY2() create a Global Unique ID (GUID) for
+the class using the Boost.Serialization mechanism
+(see <a href="http://www.boost.org/doc/libs/1_62_0/libs/serialization/doc/special.html#export">Boost docs</a>
+for more details). Therefore using these macros also makes the type usable with
+Boost.Serialization (note that as of Boost 1.62.0, the Boost.Serialization macros
+are not variadic and should not work for template classes with 2 or more template arguments;
+the MPQC macros use modified variadic versions of the Boost macros and do work fine for
+classes with 2 or more template arguments).
+
 @note If \c T is a template class, you must register each instance of this class you want to construct
 from KeyVal.
 
 \section keyvalforcelink Forced linkage of DescribedClass objects
 
-Executables that initialize DescribedClass-derived objects using KeyVal library need
-a mechanism for forcing the linkage in of the corresponding libraries. For example,
+Executables that initialize DescribedClass-derived objects using the KeyVal library need
+a mechanism for forcing the linkage of the corresponding libraries. For example,
 the MPQC executable program knows that user will want to construct and use
-an object of Wavefunction class, but does not know which Wavefunction the input file
-specifies until runtime. The easiest way to force the linking is to explicitly
-instantiate an object of every Wavefunction class that the MPQC executable can possibly
-need to use. This would create a massive compile interdependency between all __template__ classes
+an object of Wavefunction class, but does not know GUID of *which* Wavefunction class
+the user specified in the input file until runtime.
+The easiest way to force the linkage of all Wavefunction classes that the executable
+wants to be able to use is to explicitly instantiate an object of every Wavefunction class.
+But this would create a massive compile dependency between all *template* classes
 derived from Wavefunction: changing any of them will force recompilation of all of them
-as part of recompiling the main executable. Class ForceLink<> provides a workaround to this problem.
+when recompiling the main executable. Class ForceLink provides a workaround to this problem.
 To force linkage of template class \c T into an executable the user needs to do the following:
   - add the following code to the executable:
 \code
@@ -529,7 +535,7 @@ To force linkage of template class \c T into an executable the user needs to do 
 
 template <typename U> class T;  // note the forward declaration! no need to include the definition of T
 
-// declare each instantiation to be linked in
+// define 1 ForceLink object per each instantiation of T
 mpqc::detail::ForceLink<T<double>> link_T_double;
 mpqc::detail::ForceLink<T<int>> link_T_int;
 \endcode
@@ -542,8 +548,8 @@ MPQC_FORCELINK_KEYVAL_CTOR(T<int>);
 \endcode
 
 N.B. For convenience, we provide macros MPQC_CLASS_EXPORT() and MPQC_CLASS_EXPORT2()
-that combine GUID creation macros MPQC_CLASS_KEY_EXPORT() and MPQC_CLASS_KEY_EXPORT2(), respectively,
-with the MPQC_FORCELINK_KEYVAL_CTOR() macro.
+that combine the DescribedClass registration macros MPQC_CLASS_EXPORT_KEY() and
+MPQC_CLASS_EXPORT_KEY2(), respectively, with the MPQC_FORCELINK_KEYVAL_CTOR() macro.
 
 */
 

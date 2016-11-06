@@ -206,7 +206,7 @@ private:
   bool m_extinct;
 };
 struct Reptile: public Animal {
-  int legs const ();
+  int legs() const;
 private:
   int m_legs;
 };
@@ -297,15 +297,18 @@ private:
 };
 MPQC_CLASS_EXPORT_KEY(Reptile);
 
-struct Bird: public Animal {
-  Bird(const KeyVal& kv) : Animal(kv) {
-    m_flys = kv.value<bool>("flys");
-  }
-  bool flys() const;
-private:
-  bool m_flys;
-};
-MPQC_CLASS_EXPORT_KEY(Bird);
+namespace mammals {
+  struct Bird: public Animal {
+    Bird(const KeyVal& kv) : Animal(kv) {
+      m_flys = kv.value<bool>("flys");
+    }
+    bool flys() const;
+  private:
+    bool m_flys;
+  };
+}  // namespace mammals
+
+MPQC_CLASS_EXPORT_KEY2("Bird", mammals::Bird);
 @endcode
 
 A few comments:
@@ -315,8 +318,14 @@ A few comments:
     with that KeyVal's top tree. They will not be destroyed until KeyVal is destroyed as well.
   - Every class that we want to construct from KeyVal polymorphically needs to be associated with a
     global unique identifier descriptor (GUID) string (typically, GUID is the class name without the namespace).
-    This is done using the MPQC_CLASS_EXPORT_KEY macro. The value of keyword \c type in the object section
-    must be one of the known GUID's.
+    This is done using the MPQC_CLASS_EXPORT_KEY() macro. MPQC_CLASS_EXPORT_KEY(Reptile) registers
+    GUID "Reptile" with class \c Reptile. Then a keyword group that includes keyword \c type set to "Reptile"
+    can be used to construct an object of class \c Reptile . Note that the MPQC_CLASS_EXPORT_KEY() statements
+    must be placed in global namespace.
+    - For a class \c T that lives in a namespace \c N it is usually desired to use "T" instead
+      of "N::T" for its GUID; this can be done by using the MPQC_CLASS_EXPORT_KEY2() macro that
+      accepts the string GUID and the class as its two arguments.
+
 
 @note Animal could also be an abstract class; no additional complications arise.
 
@@ -478,7 +487,7 @@ kv.assign("mule:mother", "$..:horse");
 auto mule = kv.class("mule");
 @endcode
 
-\section keyvaldescribedclass The DescribedClass 
+\section keyvaldescribedclass The DescribedClass class
 
 To support polymorphic object construction (see \ref keyvalpobj) the base class must be
 (publicly) derived from DescribedClass. This potentially adds the overhead of a vtable (DescribedClass
@@ -501,6 +510,40 @@ It is the easiest to add these statements in the .cpp file that defines \c T , b
 file will work.
 @note If \c T is a template class, you must register each instance of this class you want to construct
 from KeyVal.
+
+\section keyvalforcelink Forced linkage of DescribedClass objects
+
+Executables that initialize DescribedClass-derived objects using KeyVal library need
+a mechanism for forcing the linkage in of the corresponding libraries. For example,
+the MPQC executable program knows that user will want to construct and use
+an object of Wavefunction class, but does not know which Wavefunction the input file
+specifies until runtime. The easiest way to force the linking is to explicitly
+instantiate an object of every Wavefunction class that the MPQC executable can possibly
+need to use. This would create a massive compile interdependency between all __template__ classes
+derived from Wavefunction: changing any of them will force recompilation of all of them
+as part of recompiling the main executable. Class ForceLink<> provides a workaround to this problem.
+To force linkage of template class \c T into an executable the user needs to do the following:
+  - add the following code to the executable:
+\code
+#include "mpqc/util/keyval/forcelink.h"
+
+template <typename U> class T;  // note the forward declaration! no need to include the definition of T
+
+// declare each instantiation to be linked in
+mpqc::detail::ForceLink<T<double>> link_T_double;
+mpqc::detail::ForceLink<T<int>> link_T_int;
+\endcode
+  - instantate and export instances of class \c T in a source file of the library that defines \c T :
+\code
+#include "mpqc/util/keyval/forcelink.h"
+
+MPQC_FORCELINK_KEYVAL_CTOR(T<double>);
+MPQC_FORCELINK_KEYVAL_CTOR(T<int>);
+\endcode
+
+N.B. For convenience, we provide macros MPQC_CLASS_EXPORT() and MPQC_CLASS_EXPORT2()
+that combine GUID creation macros MPQC_CLASS_KEY_EXPORT() and MPQC_CLASS_KEY_EXPORT2(), respectively,
+with the MPQC_FORCELINK_KEYVAL_CTOR() macro.
 
 */
 

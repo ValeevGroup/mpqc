@@ -35,7 +35,11 @@ Matrix<T> tile_to_eigen(tensor::Tile<tensor::DecomposedTensor<T>> const &t) {
 
 template <typename T, typename Policy>
 Matrix<T> array_to_eigen(TA::DistArray<TA::Tensor<T>, Policy> const &A) {
-  return TA::array_to_eigen<TA::Tensor<T>, Policy, Eigen::RowMajor>(A);
+  // Copy A and make it replicated.  Making A replicated is a mutating op.
+  auto A_repl = A;
+  A.world().gop.fence();
+  repl_A.make_replicated();
+  return TA::array_to_eigen<TA::Tensor<T>, Policy, Eigen::RowMajor>(A_repl);
 }
 
 /*! \brief takes an Eigen matrix and converts it to the type of the template.

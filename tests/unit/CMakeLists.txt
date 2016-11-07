@@ -17,10 +17,11 @@ set(utests_src
 set(executable unit_tests)
 add_executable(${executable} EXCLUDE_FROM_ALL test_main.cpp ${utests_src})
 target_link_libraries(${executable} ${TA_LIBRARIES} ${Boost_LIBRARIES} ${LIBINT2_LIBRARIES} MPQCbasis MPQCmolecule MPQCexpression MPQCutil_keyval MPQCf12utility)
-add_test(build_${executable} "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${executable})
+add_test(unit/build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${executable})
 
-add_test(NAME run_${executable}
+add_test(NAME unit/run
          COMMAND ${executable})
-set_tests_properties(run_${executable}
-                     PROPERTIES DEPENDS build_${executable}
-                                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
+set_tests_properties(unit/run
+                     PROPERTIES DEPENDS unit/build
+                                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/unit
+                                ENVIRONMENT MAD_NUM_THREADS=2)

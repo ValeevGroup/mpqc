@@ -1,7 +1,7 @@
 {
   "molecule": {
     "type": "Molecule",
-    "file_name": "../../examples/watermonomer1.xyz",
+    "file_name": "h2o.xyz",
     "sort_input": true
   },
   "basis": {

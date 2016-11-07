@@ -1,3 +1,6 @@
+enable_testing(true)
+add_custom_target(check_unit COMMAND ${CMAKE_CTEST_COMMAND} -V)
+
 set(utests_src
     atom_test.cpp
     clustering_test.cpp

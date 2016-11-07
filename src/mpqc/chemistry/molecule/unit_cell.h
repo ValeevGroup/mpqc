@@ -23,6 +23,9 @@ class UnitCell : public Molecule {
    *
    *  <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
    *
+   *  <tr><td><tt>type</tt><td>int<td>0<td> the type of this molecule. If type
+   *    is UnitCell, periodic calculations will be performed
+   *
    *  <tr><td><tt>file_name</tt><td>string<td>none<td>This gives
    *    the name of a XYZ file, from which the nuclear coordinates will be
    *    read (the XYZ format is described

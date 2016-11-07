@@ -73,7 +73,7 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
    *  | KeyWord | Type | Default| Description |
    *  |---------|------|--------|-------------|
    *  |accurate_time|bool|false|if do fence at timing|
-   *  |iterative_inv_sqrt|bool|false| use interative inverse square root |
+   *  |iterative_inv_sqrt|bool|false| use iterative inverse square root |
    *
    *
    **/

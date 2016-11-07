@@ -39,10 +39,16 @@ class PeriodicAOFactory : public AOFactoryBase {
   PeriodicAOFactory(PeriodicAOFactory &&) = default;
   PeriodicAOFactory &operator=(PeriodicAOFactory &&) = default;
 
+  /**
+   * \brief  KeyVal constructor
+   *
+   * It takes all the keys to construct PeriodicAOFactory
+   *
+   */
   PeriodicAOFactory(const KeyVal &kv)
       : AOFactoryBase(kv), ao_formula_registry_(), orbital_space_registry_() {
-    std::string molecule_type = kv.value<std::string>("molecule:type");
 
+      std::string molecule_type = kv.value<std::string>("molecule:type");
     if (molecule_type != "UnitCell") {
       throw std::invalid_argument("Moleule Type Has To be UnitCell!!");
     }
@@ -82,17 +88,6 @@ class PeriodicAOFactory : public AOFactoryBase {
   ~PeriodicAOFactory() noexcept = default;
 
   /// wrapper to compute function
-  //  std::vector<TArray> compute(const std::wstring &);
-
-  /**
-   *  compute integral by Formula
-   *  this function will look into registry first
-   *  if Formula computed, it will return it from registry
-   *  if not, it will compute it
-   */
-  //  std::vector<TArray> compute(const Formula &formula);
-
-  /// wrapper to compute function
   TArray compute(const std::wstring &);
 
   /**
@@ -106,7 +101,11 @@ class PeriodicAOFactory : public AOFactoryBase {
   /// transform a matrix from real to reciprocal space
   TArray transform_real2recip(TArray &matrix);
 
-  /// compute density: D = C(occ).C(occ)t
+  /**
+   *  this function does two things,
+   *  1. diagonalize Fock matrix in reciprocal space: F C = S C E
+   *  2. compute density: D = Int_k( Exp(I k.R) C(occ).C(occ)t ) and return D
+   */
   TArray compute_density(TArray &fock_recip, TArray &overlap, int64_t ndocc);
 
  private:
@@ -114,8 +113,7 @@ class PeriodicAOFactory : public AOFactoryBase {
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
   Op op_;
 
-  // Density
-  TArray D_;
+  TArray D_;    // Density
 
   Vector3i R_max_ = {
       0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
@@ -129,11 +127,22 @@ class PeriodicAOFactory : public AOFactoryBase {
   int64_t RD_size_;
   int64_t k_size_;
 
+  /**
+   *  this takes {x, y, z} index of vec, and returns the total index,
+   *  e.g, {-R_max_(0), -R_max_(1), -R_max_(2)} of R_max_ will return 0.
+   */
   int64_t idx_lattice(int x, int y, int z, Vector3i vec);
-  Vector3d R_vector(int64_t idx_lattice, Vector3i vec);
   int64_t idx_k(int x, int y, int z, Vector3i nk);
+
+  /**
+   *  this takes total index of vec, and returns a lattice vector,
+   *  e.g. 0 of R_max_ will return the lattice vector corresponding to
+   *  {-R_max_(0), -R_max_(1), -R_max_(2)} unit cell.
+   */
+  Vector3d R_vector(int64_t idx_lattice, Vector3i vec);
   Vector3d k_vector(int64_t idx_k);
 
+  /// compute sparse array involving complex values
   template <typename U = Policy>
   TA::DistArray<
       Tile, typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
@@ -147,26 +156,36 @@ class PeriodicAOFactory : public AOFactoryBase {
     return result;
   }
 
+  /// parse one body formula and set engine_pool and basis array for periodic system
   void parse_one_body_periodic(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
       Molecule &shifted_mol);
 
+  /// parse two body formula and set engine_pool and basis array for periodic system
   void parse_two_body_periodic(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
       Vector3d shift_coul, bool if_coulomb);
 
+  /// shift center of {basis} by {shift} and return a new basis
   std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
                                                    Vector3d shift);
 
+  /**
+   *  shift center of {basis} by {shift_base} + R_vector if is_real_space == true,
+   *  by {shift_base} + k_vector if is_real_space == false,
+   *  and return a new compound basis consisting of all shifted basis.
+   */
   std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
                                                    Vector3d shift_base,
                                                    Vector3i nshift,
                                                    bool is_real_space);
 
+  /// repeat tiledrange1 {tr0} by {size} times, and return a long tiledrange1
   TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
 
+  /// shift positions of all atoms in {mol} by {shift}, and return a shifted molecule
   std::shared_ptr<Molecule> shift_mol_origin(Molecule &mol, Vector3d shift);
 
   libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
@@ -179,6 +198,7 @@ class PeriodicAOFactory : public AOFactoryBase {
       std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
       std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>());
 
+  /// Sort eigenvalues and eigenvectors in ascending order
   void sort_eigen(Vectorc &eigVal, Matrixc &eigVec);
 };
 
@@ -663,7 +683,6 @@ PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
     // Compute X = S^(-1/2)
     auto S = overlap_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
     auto X = S.pow(-0.5);
-
     // Symmetrize Fock
     auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
     F = (F + F.transpose().conjugate()) / 2.0;
@@ -671,7 +690,6 @@ PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
     Matrixc Xt = X.transpose().conjugate();
     auto XtF = Xt * F;
     auto Ft = XtF * X;
-
     // Diagonalize F'
     Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(Ft);
     eps[k] = comp_eig_solver.eigenvalues();

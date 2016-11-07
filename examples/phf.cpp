@@ -104,7 +104,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     auto pF = pH;
     pF("mu, nu") += 2.0 * pJ("mu, nu") - pK("mu, nu");
 
-    // Transform Fock from real sapce to reciprocal space
+    // Transform Fock from real space to reciprocal space
     auto pF_k = pao_int.transform_real2recip(pF);
     pD = pao_int.compute_density(pF_k, pS_k, docc);
 

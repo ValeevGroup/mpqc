@@ -27,17 +27,6 @@ Matrix<T> tile_to_eigen(tensor::Tile<tensor::DecomposedTensor<T>> const &t) {
   return tile_to_eigen(tensor::algebra::combine(t.tile()));
 }
 
-/*! \brief copies the tiles from TA to eigen using tasks
- *
- * Takes tiles by copy since they are shallow copy and will not be written to.
- */
-template <typename Tile>
-void write_to_eigen_task(Tile t, Matrix<typename Tile::numeric_type> *mat) {
-  auto const &start = t.range().lobound();
-  const auto extent = t.range().extent();
-  mat->block(start[0], start[1], extent[0], extent[1]) = tile_to_eigen(t);
-}
-
 /*! \brief converts a TiledArray::Array to an Eigen Matrix
  *
  * The function needs to know the tile type and policy type to work.
@@ -46,28 +35,7 @@ void write_to_eigen_task(Tile t, Matrix<typename Tile::numeric_type> *mat) {
 
 template <typename T, typename Policy>
 Matrix<T> array_to_eigen(TA::DistArray<TA::Tensor<T>, Policy> const &A) {
-  TA_ASSERT(A.range().rank() == 2);
-
-  auto const &mat_extent = A.trange().elements_range().extent();
-  Matrix<T> out_mat = Matrix<T>::Zero(mat_extent[0], mat_extent[1]);
-
-  // Copy A and make it replicated.  Making A replicated is a mutating op.
-  auto repl_A = A;
-  A.world().gop.fence();
-  repl_A.make_replicated();
-
-  // Loop over the array and assign the tiles to blocks of the Eigen Mat.
-  auto pmap = repl_A.pmap();
-  const auto end = pmap->end();
-  for (auto it = pmap->begin(); it != end; ++it) {
-    if (!repl_A.is_zero(*it)) {
-      auto tile = repl_A.find(*it).get();
-      A.world().taskq.add(write_to_eigen_task<TA::Tensor<T>>, tile, &out_mat);
-    }
-  }
-  A.world().gop.fence();  // Can't let M go out of scope
-
-  return out_mat;
+  return TA::array_to_eigen<TA::Tensor<T>, Policy, Eigen::RowMajor>(A);
 }
 
 /*! \brief takes an Eigen matrix and converts it to the type of the template.

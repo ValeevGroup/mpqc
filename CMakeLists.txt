@@ -78,6 +78,8 @@ set(MPQC_LIBRARIES "" CACHE INTERNAL "MPQC libs and dependencies")
 
 # search for TA first, other packages can be found with it
 FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
+include(ValidateTiledArray)
+validate_tiledarray()
 set(TA_LIBRARIES tiledarray)
 set(MPQC_LIBRARIES "${TA_LIBRARIES}")
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")

@@ -18,16 +18,16 @@ macro (validate_tiledarray)
     TA::finalize();
     return 0;
   }
-  "  TA_COMPILES)
+  "  TILEDARRAY_COMPILES)
 
-  if (NOT TA_COMPILES)
+  if (NOT TILEDARRAY_COMPILES)
     message(FATAL_ERROR "TiledArray found, but does not compile correctly.")
   endif()
 
   ##########################
   # ensure it's fresh enough
   ##########################
-  set (TA_OLDEST_REVISION 7087fd4b)
+  set (TILEDARRAY_OLDEST_REVISION 7087fd4b)
   CHECK_CXX_SOURCE_COMPILES(
   "
   #include <tiledarray.h>
@@ -45,10 +45,10 @@ macro (validate_tiledarray)
     TA::finalize();
     return 0;
   }
-  "  TA_IS_FRESH)
+  "  TILEDARRAY_IS_FRESH)
 
-  if (NOT TA_IS_FRESH)
-    message(FATAL_ERROR "TiledArray found, but is not fresh enough. Use ${TA_OLDEST_REVISION} or later")
+  if (NOT TILEDARRAY_IS_FRESH)
+    message(FATAL_ERROR "TiledArray found, but is not fresh enough. Use ${TILEDARRAY_OLDEST_REVISION} or later")
   endif()
 
   cmake_pop_check_state()

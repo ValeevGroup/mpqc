@@ -5,16 +5,16 @@
 #ifndef MPQC_AO_FACTORY_H
 #define MPQC_AO_FACTORY_H
 
+#include "ao_factory_base.h"
+#include "mpqc/chemistry/qc/expression/permutation.h"
+#include "mpqc/chemistry/qc/f12/f12_utility.h"
+#include "mpqc/chemistry/qc/integrals/integrals.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "mpqc/util/external/madworld/parallel_break_point.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/util/misc/time.h"
-#include "ao_factory_base.h"
 #include <madness/world/worldmem.h>
-#include "mpqc/chemistry/qc/expression/permutation.h"
-#include "mpqc/chemistry/qc/f12/f12_utility.h"
-#include "mpqc/chemistry/qc/integrals/integrals.h"
 
 namespace mpqc {
 namespace integrals {
@@ -22,26 +22,24 @@ namespace integrals {
 template <typename Tile, typename Policy>
 class AOFactory;
 
-namespace detail{
-
+namespace detail {
 
 template <typename Tile, typename Policy>
-std::shared_ptr<AOFactory<Tile,Policy>> construct_ao_factory(const KeyVal& kv){
-  std::shared_ptr<AOFactory<Tile,Policy>> ao_factory;
-  if(kv.exists_class("wfn_world:ao_factory")){
-    ao_factory = kv.class_ptr<AOFactory<Tile,Policy>>("wfn_world:ao_factory");
-  }
-  else{
-    ao_factory = std::make_shared<AOFactory<Tile,Policy>>(kv);
+std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
+    const KeyVal& kv) {
+  std::shared_ptr<AOFactory<Tile, Policy>> ao_factory;
+  if (kv.exists_class("wfn_world:ao_factory")) {
+    ao_factory = kv.class_ptr<AOFactory<Tile, Policy>>("wfn_world:ao_factory");
+  } else {
+    ao_factory = std::make_shared<AOFactory<Tile, Policy>>(kv);
     std::shared_ptr<DescribedClass> ao_factory_base = ao_factory;
     KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
-    kv_nonconst.keyval("wfn_world").assign("ao_factory",ao_factory_base);
+    kv_nonconst.keyval("wfn_world").assign("ao_factory", ao_factory_base);
   }
   return ao_factory;
 };
 
-
-} // namespace detail
+}  // namespace detail
 
 // TODO better inverse of two center
 // TODO direct integral
@@ -56,7 +54,7 @@ std::shared_ptr<AOFactory<Tile,Policy>> construct_ao_factory(const KeyVal& kv){
  *
  */
 
-template <typename Tile, typename Policy=TA::SparsePolicy>
+template <typename Tile, typename Policy = TA::SparsePolicy>
 class AOFactory : public AOFactoryBase, public DescribedClass {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
@@ -81,11 +79,14 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
    **/
 
   AOFactory(const KeyVal& kv)
-      : AOFactoryBase(kv),
-        ao_formula_registry_(),
-        orbital_space_registry_() {
-    accurate_time_ = kv.value("accurate_time", false);
-    iterative_inv_sqrt_ = kv.value("iterative_inv_sqrt", false);
+      : AOFactoryBase(kv), ao_formula_registry_(), orbital_space_registry_() {
+    std::string prefix = "";
+    if (kv.exists("wfn_wolrd") || kv.exists_class("wfn_world")) {
+      prefix = "wfn_world:";
+    }
+
+    accurate_time_ = kv.value<bool>(prefix + "accurate_time", false);
+    iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);
 
     set_oper(Tile());
   }
@@ -94,9 +95,10 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
   AOFactory& operator=(AOFactory&&) = default;
 
   /// set oper based on Tile type
-  template<typename T = Tile>
-  void set_oper(typename std::enable_if<std::is_same<T,TA::TensorD>::value, T>::type && t){
-    op_ = TA::Noop<TA::TensorD,true>();
+  template <typename T = Tile>
+  void set_oper(typename std::enable_if<std::is_same<T, TA::TensorD>::value,
+                                        T>::type&& t) {
+    op_ = TA::Noop<TA::TensorD, true>();
   }
 
   virtual ~AOFactory() noexcept = default;
@@ -184,15 +186,15 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
 };
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute(const std::wstring& formula_string) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
+    const std::wstring& formula_string) {
   auto formula = Formula(formula_string);
   return compute(formula);
 }
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
+    const Formula& formula) {
   TArray result;
 
   // find if in registry
@@ -200,7 +202,8 @@ AOFactory<Tile, Policy>::compute(const Formula& formula) {
 
   if (iter != ao_formula_registry_.end()) {
     result = *(iter->second);
-    utility::print_par(world_, "Retrieved AO Integral: ", utility::to_string(formula.string()));
+    utility::print_par(world_, "Retrieved AO Integral: ",
+                       utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result);
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
@@ -248,7 +251,8 @@ AOFactory<Tile, Policy>::compute(const Formula& formula) {
       ao_formula_registry_.insert(formula, result);
     }
 
-    madness::print_meminfo(world_.rank(), "AOFactory: " + utility::to_string(formula.string()));
+    madness::print_meminfo(
+        world_.rank(), "AOFactory: " + utility::to_string(formula.string()));
 
     return ao_formula_registry_.retrieve(formula);
   }
@@ -257,296 +261,317 @@ AOFactory<Tile, Policy>::compute(const Formula& formula) {
 }
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute2(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
+    const Formula& formula) {
   Bvector bs_array;
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
   TArray result;
 
-  // use one body engine
-  if (formula.oper().is_onebody()) {
-    // H = V + T
-    if (formula.oper().type() == Operator::Type::Core) {
-      auto v_formula = formula;
-      v_formula.set_operator_type(Operator::Type::Nuclear);
+  // get the inverse square root instead
+  if (iterative_inv_sqrt_ &&
+      formula.oper().has_option(Operator::Option::Inverse)) {
+    auto inv_sqrt_formula = formula;
+    inv_sqrt_formula.set_operator_option({Operator::Option::InverseSquareRoot});
 
-      auto t_formula = formula;
-      t_formula.set_operator_type(Operator::Type::Kinetic);
+    result = this->compute(inv_sqrt_formula);
 
-      auto v = this->compute(v_formula);
-      auto t = this->compute(t_formula);
+    time0 = mpqc::now(world_, accurate_time_);
+    result("p,q") = result("p,r") * result("r,q");
 
-      time0 = mpqc::now(world_, accurate_time_);
-
-      result("i,j") = v("i,j") + t("i,j");
-
-      time1 = mpqc::now(world_, accurate_time_);
-      time += mpqc::duration_in_s(time0, time1);
+    if (formula.oper().type() == Operator::Type::cGTG ||
+        formula.oper().type() == Operator::Type::cGTGCoulomb) {
+      result("i,j") = -result("i,j");
     }
-    // one body integral S, V, T...
-    else {
-      time0 = mpqc::now(world_, accurate_time_);
-
-      std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
-      parse_one_body(formula, engine_pool, bs_array);
-      result = compute_integrals(this->world_, engine_pool, bs_array);
-
-      time1 = mpqc::now(world_, accurate_time_);
-      time += mpqc::duration_in_s(time0, time1);
-    }
-    utility::print_par(world_, "Computed One Body Integral: ",
+    utility::print_par(world_, "Computed Inverse of Integral: ",
                        utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result);
+
+    time1 = mpqc::now(world_, accurate_time_);
+    time += mpqc::duration_in_s(time0, time1);
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
   }
-  // use two body engine
-  else if (formula.oper().is_twobody()) {
-    time0 = mpqc::now(world_, accurate_time_);
+  // continue with normal step
+  else {
+    // use one body engine
+    if (formula.oper().is_onebody()) {
+      // H = V + T
+      if (formula.oper().type() == Operator::Type::Core) {
+        auto v_formula = formula;
+        v_formula.set_operator_type(Operator::Type::Nuclear);
 
-    // compute inverse square root first in this case
-    if (iterative_inv_sqrt_ &&
-        formula.oper().has_option(Operator::Option::Inverse)) {
-      auto inv_sqrt_formula = formula;
-      inv_sqrt_formula.set_operator_option(
-          {Operator::Option::InverseSquareRoot});
+        auto t_formula = formula;
+        t_formula.set_operator_type(Operator::Type::Kinetic);
 
-      result = this->compute(inv_sqrt_formula);
+        auto v = this->compute(v_formula);
+        auto t = this->compute(t_formula);
 
-      time0 = mpqc::now(world_, accurate_time_);
-      result("p,q") = result("p,r") * result("r,q");
+        time0 = mpqc::now(world_, accurate_time_);
 
-      if (formula.oper().type() == Operator::Type::cGTG ||
-          formula.oper().type() == Operator::Type::cGTGCoulomb) {
-        result("i,j") = -result("i,j");
+        result("i,j") = v("i,j") + t("i,j");
+
+        time1 = mpqc::now(world_, accurate_time_);
+        time += mpqc::duration_in_s(time0, time1);
+      }
+      // one body integral S, V, T...
+      else {
+        time0 = mpqc::now(world_, accurate_time_);
+
+        std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+        parse_one_body(formula, engine_pool, bs_array);
+        result = compute_integrals(this->world_, engine_pool, bs_array);
+
+        time1 = mpqc::now(world_, accurate_time_);
+        time += mpqc::duration_in_s(time0, time1);
       }
 
-    } else {
+      utility::print_par(world_, "Computed One Body Integral: ",
+                         utility::to_string(formula.string()));
+      double size = mpqc::detail::array_size(result);
+      utility::print_par(world_, " Size: ", size, " GB");
+      utility::print_par(world_, " Time: ", time, " s\n");
+    }
+    // use two body engine
+    else if (formula.oper().is_twobody()) {
+      time0 = mpqc::now(world_, accurate_time_);
+
       // compute integral
       std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
       parse_two_body_two_center(formula, engine_pool, bs_array);
       result = compute_integrals(this->world_, engine_pool, bs_array);
 
-      // inverse of integral
-      if (formula.oper().has_option(Operator::Option::Inverse)) {
-        if (formula.oper().type() == Operator::Type::cGTG ||
-            formula.oper().type() == Operator::Type::cGTGCoulomb) {
-          result("i,j") = -result("i,j");
-        }
-
-        //                utility::parallel_break_point(world_,0);
-        //                std::cout << "Before Array To Eigen" << std::endl;
-        //                std::cout << result << std::endl;
-        RowMatrixXd result_eig = array_ops::array_to_eigen(result);
-
-        // compute cholesky decomposition
-        auto llt_solver = Eigen::LLT<RowMatrixXd>(result_eig);
-
-        // check success
-        Eigen::ComputationInfo info = llt_solver.info();
-        if (info == Eigen::ComputationInfo::Success) {
-          RowMatrixXd L = RowMatrixXd(llt_solver.matrixL());
-          RowMatrixXd L_inv_eig = L.inverse();
-          result_eig = L_inv_eig.transpose() * L_inv_eig;
-        } else if (info == Eigen::ComputationInfo::NumericalIssue) {
-          utility::print_par(
-              world_,
-              "!!!\nWarning!! NumericalIssue in Cholesky Decomposition\n!!!\n");
-        } else if (info == Eigen::ComputationInfo::NoConvergence) {
-          utility::print_par(
-              world_,
-              "!!!\nWarning!! NoConvergence in Cholesky Decomposition\n!!!\n");
-        }
-
-        if (info != Eigen::ComputationInfo::Success) {
-          utility::print_par(world_, "Using Eigen LU Decomposition Inverse!\n");
-
-          Eigen::FullPivLU<RowMatrixXd> lu(result_eig);
-
-          TA_ASSERT(lu.isInvertible());
-
-          result_eig = lu.inverse();
-        }
-
-        auto tr_result = result.trange().data()[0];
-        result = array_ops::eigen_to_array<TA::TensorD>(
-            result.world(), result_eig, tr_result, tr_result);
-
-        if (formula.oper().type() == Operator::Type::cGTG ||
-            formula.oper().type() == Operator::Type::cGTGCoulomb) {
-          result("i,j") = -result("i,j");
-        }
-      }
-
-      // inverse square root of integral
-      if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
-        if (formula.oper().type() == Operator::Type::cGTG ||
-            formula.oper().type() == Operator::Type::cGTGCoulomb) {
-          result("i,j") = -result("i,j");
-        }
-
-        if (iterative_inv_sqrt_) {
-          TArray tmp = array_ops::inverse_sqrt(result);
-          result("i,j") = tmp("i,j");
-        } else {
-          auto result_eig = array_ops::array_to_eigen(result);
-          RowMatrixXd L_inv_eig =
-              RowMatrixXd(Eigen::LLT<RowMatrixXd>(result_eig).matrixL()).inverse();
-          auto tr_result = result.trange().data()[0];
-          result = array_ops::eigen_to_array<TA::TensorD>(
-              result.world(), L_inv_eig, tr_result, tr_result);
-        }
-
-        if (formula.oper().type() == Operator::Type::cGTG ||
-            formula.oper().type() == Operator::Type::cGTGCoulomb) {
-          result("i,j") = -result("i,j");
-        }
-      }
-    }
-
-    time1 = mpqc::now(world_, accurate_time_);
-    time += mpqc::duration_in_s(time0, time1);
-
-    utility::print_par(world_, "Computed Twobody Two Center Integral: ",
-                       utility::to_string(formula.string()));
-    double size = mpqc::detail::array_size(result);
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
-  }
-  // compute JK, requires orbital space registry
-  else if (formula.oper().is_jk()) {
-    // density fitting case
-
-    // find the density
-    auto space_index = get_jk_orbital_space(formula.oper());
-    auto& space = orbital_space_registry_->retrieve(space_index);
-
-    auto obs = space.ao_key().name();
-    if (formula.oper().has_option(Operator::Option::DensityFitting)) {
-      auto three_center_formula = get_jk_df_formula(formula, obs);
-
-      auto left = compute(three_center_formula[0]);
-      auto center = compute(three_center_formula[1]);
-      auto right = compute(three_center_formula[2]);
-
-      time0 = mpqc::now(world_, accurate_time_);
-
-      // J case
-      if (formula.oper().type() == Operator::Type::J) {
-        result("i,j") = center("K,Q") * right("Q,k,l") *
-                        (space("k,a") * space("l,a")) * left("K,i,j");
-      }
-      // K case
-      else {
-        result("i,j") = (left("K,i,k") * space("k,a")) * center("K,Q") *
-                        (right("Q,j,l") * space("l,a"));
-      }
 
       time1 = mpqc::now(world_, accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
+
+      utility::print_par(world_, "Computed Twobody Two Center Integral: ",
+                         utility::to_string(formula.string()));
+      double size = mpqc::detail::array_size(result);
+      utility::print_par(world_, " Size: ", size, " GB");
+      utility::print_par(world_, " Time: ", time, " s\n");
     }
-    // four center case
-    else {
+    // compute JK, requires orbital space registry
+    else if (formula.oper().is_jk()) {
+      // density fitting case
+
       // find the density
       auto space_index = get_jk_orbital_space(formula.oper());
       auto& space = orbital_space_registry_->retrieve(space_index);
+
       auto obs = space.ao_key().name();
-      // convert to ao formula
-      auto four_center_formula = get_jk_formula(formula, obs);
-      auto four_center = this->compute(four_center_formula);
+      if (formula.oper().has_option(Operator::Option::DensityFitting)) {
+        auto three_center_formula = get_jk_df_formula(formula, obs);
+
+        auto left = compute(three_center_formula[0]);
+        auto center = compute(three_center_formula[1]);
+        auto right = compute(three_center_formula[2]);
+
+        time0 = mpqc::now(world_, accurate_time_);
+
+        // J case
+        if (formula.oper().type() == Operator::Type::J) {
+          result("i,j") = center("K,Q") * right("Q,k,l") *
+                          (space("k,a") * space("l,a")) * left("K,i,j");
+        }
+        // K case
+        else {
+          result("i,j") = (left("K,i,k") * space("k,a")) * center("K,Q") *
+                          (right("Q,j,l") * space("l,a"));
+        }
+
+        time1 = mpqc::now(world_, accurate_time_);
+        time += mpqc::duration_in_s(time0, time1);
+      }
+      // four center case
+      else {
+        // find the density
+        auto space_index = get_jk_orbital_space(formula.oper());
+        auto& space = orbital_space_registry_->retrieve(space_index);
+        auto obs = space.ao_key().name();
+        // convert to ao formula
+        auto four_center_formula = get_jk_formula(formula, obs);
+        auto four_center = this->compute(four_center_formula);
+
+        time0 = mpqc::now(world_, accurate_time_);
+
+        if (formula.notation() == Formula::Notation::Chemical) {
+          if (formula.oper().type() == Operator::Type::J) {
+            result("rho,sigma") = four_center("rho,sigma,mu,nu") *
+                                  (space("mu,i") * space("nu,i"));
+          } else {
+            result("rho,sigma") = four_center("rho,mu,sigma,nu") *
+                                  (space("mu,i") * space("nu,i"));
+          }
+        } else {
+          if (formula.oper().type() == Operator::Type::K) {
+            result("rho,sigma") = four_center("rho,sigma,mu,nu") *
+                                  (space("mu,i") * space("nu,i"));
+          } else {
+            result("rho,sigma") = four_center("rho,mu,sigma,nu") *
+                                  (space("mu,i") * space("nu,i"));
+          }
+        }
+
+        time1 = mpqc::now(world_, accurate_time_);
+        time += mpqc::duration_in_s(time0, time1);
+      }
+      utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
+                         utility::to_string(formula.string()));
+      double size = mpqc::detail::array_size(result);
+      utility::print_par(world_, " Size: ", size, " GB");
+      utility::print_par(world_, " Time: ", time, " s\n");
+    }
+    // hJ = H + J
+    else if (formula.oper().type() == Operator::Type::hJ) {
+      auto h_formula = formula;
+      h_formula.set_operator(Operator(L"H"));
+
+      auto j_formula = formula;
+      j_formula.set_operator_type(Operator::Type::J);
+
+      auto h = this->compute(h_formula);
+      auto j = this->compute(j_formula);
 
       time0 = mpqc::now(world_, accurate_time_);
 
-      if (formula.notation() == Formula::Notation::Chemical) {
-        if (formula.oper().type() == Operator::Type::J) {
-          result("rho,sigma") =
-              four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
-        } else {
-          result("rho,sigma") =
-              four_center("rho,mu,sigma,nu") * (space("mu,i") * space("nu,i"));
-        }
-      } else {
-        if (formula.oper().type() == Operator::Type::K) {
-          result("rho,sigma") =
-              four_center("rho,sigma,mu,nu") * (space("mu,i") * space("nu,i"));
-        } else {
-          result("rho,sigma") =
-              four_center("rho,mu,sigma,nu") * (space("mu,i") * space("nu,i"));
-        }
-      }
+      result("i,j") = h("i,j") + 2 * j("i,j");
 
       time1 = mpqc::now(world_, accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
+
+      utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
+                         utility::to_string(formula.string()));
+      double size = mpqc::detail::array_size(result);
+      utility::print_par(world_, " Size: ", size, " GB");
+      utility::print_par(world_, " Time: ", time, " s\n");
     }
-    utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
-                       utility::to_string(formula.string()));
-    double size = mpqc::detail::array_size(result);
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
+    // compute Fock, requires orbital space registry
+    else if (formula.oper().is_fock()) {
+      auto formulas = get_fock_formula(formula);
 
+      auto h = compute(formulas[0]);
+      auto j = compute(formulas[1]);
+      auto k = compute(formulas[2]);
+
+      time0 = mpqc::now(world_, accurate_time_);
+      // if closed shell
+      if (formula.oper().type() == Operator::Type::Fock) {
+        result("rho,sigma") =
+            h("rho,sigma") + 2 * j("rho,sigma") - k("rho,sigma");
+      }
+      // else if spin orbital
+      else {
+        result("rho,sigma") = h("rho,sigma") + j("rho,sigma") - k("rho,sigma");
+      }
+
+      time1 = mpqc::now(world_, accurate_time_);
+
+      time += mpqc::duration_in_s(time0, time1);
+
+      utility::print_par(world_, "Computed Fock Integral: ",
+                         utility::to_string(formula.string()));
+      double size = mpqc::detail::array_size(result);
+      utility::print_par(world_, " Size: ", size, " GB");
+      utility::print_par(world_, " Time: ", time, " s\n");
+    }
   }
-  // hJ = H + J
-  else if (formula.oper().type() == Operator::Type::hJ) {
-    auto h_formula = formula;
-    h_formula.set_operator(Operator(L"H"));
 
-    auto j_formula = formula;
-    j_formula.set_operator_type(Operator::Type::J);
+  // check for other options
 
-    auto h = this->compute(h_formula);
-    auto j = this->compute(j_formula);
+  // compute inverse square root first in this case
+  if (!iterative_inv_sqrt_ &&
+      formula.oper().has_option(Operator::Option::Inverse)) {
 
     time0 = mpqc::now(world_, accurate_time_);
 
-    result("i,j") = h("i,j") + 2 * j("i,j");
+    if (formula.oper().type() == Operator::Type::cGTG ||
+        formula.oper().type() == Operator::Type::cGTGCoulomb) {
+      result("i,j") = -result("i,j");
+    }
 
+    RowMatrixXd result_eig = array_ops::array_to_eigen(result);
+
+    // compute cholesky decomposition
+    auto llt_solver = Eigen::LLT<RowMatrixXd>(result_eig);
+
+    // check success
+    Eigen::ComputationInfo info = llt_solver.info();
+    if (info == Eigen::ComputationInfo::Success) {
+      RowMatrixXd L = RowMatrixXd(llt_solver.matrixL());
+      RowMatrixXd L_inv_eig = L.inverse();
+      result_eig = L_inv_eig.transpose() * L_inv_eig;
+    } else if (info == Eigen::ComputationInfo::NumericalIssue) {
+      utility::print_par(world_,
+                         "!!!\nWarning!! NumericalIssue in Cholesky "
+                             "Decomposition\n!!!\n");
+    } else if (info == Eigen::ComputationInfo::NoConvergence) {
+      utility::print_par(world_,
+                         "!!!\nWarning!! NoConvergence in Cholesky "
+                             "Decomposition\n!!!\n");
+    }
+
+    if (info != Eigen::ComputationInfo::Success) {
+      utility::print_par(world_, "Using Eigen LU Decomposition Inverse!\n");
+
+      Eigen::FullPivLU<RowMatrixXd> lu(result_eig);
+
+      TA_ASSERT(lu.isInvertible());
+
+      result_eig = lu.inverse();
+    }
+
+    auto tr_result = result.trange().data()[0];
+    result = array_ops::eigen_to_array<TA::TensorD>(
+        result.world(), result_eig, tr_result, tr_result);
+
+    if (formula.oper().type() == Operator::Type::cGTG ||
+        formula.oper().type() == Operator::Type::cGTGCoulomb) {
+      result("i,j") = -result("i,j");
+    }
     time1 = mpqc::now(world_, accurate_time_);
-    time += mpqc::duration_in_s(time0, time1);
-
-    utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
-                       utility::to_string(formula.string()));
-    double size = mpqc::detail::array_size(result);
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
+    auto inv_time = mpqc::duration_in_s(time0, time1);
+    utility::print_par(world_, "Inverse Time: ", inv_time, " s\n");
   }
-  // compute Fock, requires orbital space registry
-  else if (formula.oper().is_fock()) {
-    auto formulas = get_fock_formula(formula);
 
-    auto h = compute(formulas[0]);
-    auto j = compute(formulas[1]);
-    auto k = compute(formulas[2]);
-
+  // inverse square root of integral
+  if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
     time0 = mpqc::now(world_, accurate_time_);
-    // if closed shell
-    if (formula.oper().type() == Operator::Type::Fock) {
-      result("rho,sigma") =
-          h("rho,sigma") + 2 * j("rho,sigma") - k("rho,sigma");
-    }
-    // else if spin orbital
-    else {
-      result("rho,sigma") = h("rho,sigma") + j("rho,sigma") - k("rho,sigma");
+    if (formula.oper().type() == Operator::Type::cGTG ||
+        formula.oper().type() == Operator::Type::cGTGCoulomb) {
+      result("i,j") = -result("i,j");
     }
 
+    if (iterative_inv_sqrt_) {
+      TArray tmp = array_ops::inverse_sqrt(result);
+      result("i,j") = tmp("i,j");
+    } else {
+      auto result_eig = array_ops::array_to_eigen(result);
+
+      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(result_eig);
+      RowMatrixXd inv_eig = es.operatorInverseSqrt();
+
+      auto tr_result = result.trange().data()[0];
+      result = array_ops::eigen_to_array<TA::TensorD>(
+          result.world(), inv_eig, tr_result, tr_result);
+    }
+
+    if (formula.oper().type() == Operator::Type::cGTG ||
+        formula.oper().type() == Operator::Type::cGTGCoulomb) {
+      result("i,j") = -result("i,j");
+    }
     time1 = mpqc::now(world_, accurate_time_);
-
-    time += mpqc::duration_in_s(time0, time1);
-
-    utility::print_par(world_, "Computed Fock Integral: ",
-                       utility::to_string(formula.string()));
-    double size = mpqc::detail::array_size(result);
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
+    auto inv_sqrt_time = mpqc::duration_in_s(time0, time1);
+    utility::print_par(world_, "Inverse Square Root Time: ", inv_sqrt_time, " s\n");
   }
 
   return result;
 }
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute3(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
+    const Formula& formula) {
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
@@ -574,8 +599,8 @@ AOFactory<Tile, Policy>::compute3(const Formula& formula) {
 }
 
 template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray
-AOFactory<Tile, Policy>::compute4(const Formula& formula) {
+typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
+    const Formula& formula) {
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;

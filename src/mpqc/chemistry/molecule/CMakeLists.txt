@@ -22,7 +22,7 @@ set(sources
 )
 
 add_library(MPQCmolecule ${sources})
-target_link_libraries(MPQCmolecule ${TBB_LIBRARIES} ${TA_LIBRARIES})
+target_link_libraries(MPQCmolecule MPQCutil_mad ${TBB_LIBRARIES} ${TA_LIBRARIES})
 
 add_executable(molecule_test EXCLUDE_FROM_ALL examples/molecule_test.cpp)
 target_link_libraries(molecule_test MPQCmolecule)

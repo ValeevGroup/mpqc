@@ -76,8 +76,12 @@ class LCAOFactory : public DescribedClass{
       orbital_space_registry_(std::make_shared<OrbitalSpaceRegistry<TArray>>()),
       mo_formula_registry_()
   {
-    accurate_time_ = kv.value<bool>("accurate_time",false);
-    keep_partial_transforms_ = kv.value<bool>("keep_partial_transform",false);
+    std::string prefix = "";
+    if(kv.exists("wfn_wolrd") || kv.exists_class("wfn_world")){
+      prefix = "wfn_world:";
+    }
+    accurate_time_ = kv.value<bool>(prefix + "accurate_time",false);
+    keep_partial_transforms_ = kv.value<bool>(prefix + "keep_partial_transform",false);
     ao_factory_.set_orbital_space_registry(orbital_space_registry_);
   }
 

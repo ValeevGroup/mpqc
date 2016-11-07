@@ -105,7 +105,7 @@ INCLUDE_DIRECTORIES(${MPQC_BINARY_DIR}/src)
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
 
-LIST(APPEND MPQC_LIBRARIES MPQCmolecule MPQCbasis MPQCwfn MPQCproperties MPQCmath_linalg MPQCmath_ta MPQCmath_clr MPQCexpression MPQCf12 MPQCcc MPQCmbpt MPQCintegrals MPQCscf MPQCutil_keyval)
+LIST(APPEND MPQC_LIBRARIES MPQCf12 MPQCcc MPQCmbpt MPQCscf)
 
 message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
 
@@ -125,8 +125,9 @@ ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/bin)
 ###############################################################################
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/doc)
-ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tests)
 enable_testing(true)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V)
+ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tests)
 
 ###############################################################################
 # Wrap up

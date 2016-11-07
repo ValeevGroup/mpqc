@@ -38,7 +38,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
   auto threshold = 1e-15;  // Hardcode for now.
   TiledArray::SparseShape<float>::threshold(threshold);
 
-  libint2::initialize();
 
   auto wfn = kv.keyval("wfn").class_ptr<qc::Wavefunction>();
 
@@ -49,8 +48,6 @@ int try_main(int argc, char *argv[], madness::World &world) {
   utility::print_par(world,"Wfn energy is: ", val, "\n");
 
 
-  libint2::finalize();
-  madness::finalize();
 
   return 0;
 }
@@ -61,6 +58,7 @@ int main(int argc, char *argv[]) {
   auto &world = madness::initialize(argc, argv);
   mpqc::utility::print_par(world, "MADNESS process total size: ", world.size(),
                            "\n");
+  libint2::initialize();
 
   std::setlocale(LC_ALL, "en_US.UTF-8");
   std::cout << std::setprecision(15);
@@ -91,6 +89,9 @@ int main(int argc, char *argv[]) {
     std::cerr << "!! exception: unknown exception\n";
     rc = 1;
   }
+
+  libint2::finalize();
+  madness::finalize();
 
   return rc;
 }

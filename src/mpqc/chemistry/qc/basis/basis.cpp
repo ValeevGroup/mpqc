@@ -4,8 +4,10 @@
 
 #include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/chemistry/qc/basis/shell_vec_functions.h"
+#include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT_KEY2("Basis", mpqc::basis::Basis);
+MPQC_CLASS_EXPORT2("Basis", mpqc::basis::Basis);
+
 namespace mpqc {
 
 namespace basis {
@@ -35,6 +37,11 @@ Basis::Basis(const KeyVal &kv) {
   madness::World *world = kv.value<madness::World *>("$:world");
 
   auto basis = parallel_construct_basis(*world, basis_set, *mol_ptr);
+
+  std::size_t reblock_size = kv.value<int>("reblock",0);
+  if(reblock_size != 0){
+    basis =  reblock(basis, reblock_basis, reblock_size);
+  }
 
   shells_ = basis.shells_;
 }

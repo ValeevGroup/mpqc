@@ -12,4 +12,4 @@ set(sources
         )
 
 add_library(MPQCscf ${sources})
-target_link_libraries(MPQCscf MPQCmath_ta MPQCmath_linalg MPQCmath_clr MPQCintegrals)
+target_link_libraries(MPQCscf MPQCwfn MPQCmath_ta MPQCmath_linalg MPQCmath_clr)

@@ -1,0 +1,25 @@
+{
+  "molecule": {
+    "type": "Molecule",
+    "file_name": "watermonomer1.xyz",
+    "sort_input": true,
+    "charge": 0,
+    "n_cluster": 72
+  },
+  "basis": {
+    "type": "Basis",
+    "name": "cc-pVDZ-F12",
+    "reblock" : 20,
+    "molecule": "$:molecule"
+  },
+  "df_basis": {
+    "type": "Basis",
+    "name": "aug-cc-pVDZ-RI",
+    "molecule": "$:molecule"
+  },
+  "aux_basis":{
+    "type": "Basis",
+    "name": "cc-pVDZ-F12-CABS",
+    "molecule": "$:molecule"
+  }
+}

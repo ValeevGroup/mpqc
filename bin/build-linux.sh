@@ -32,3 +32,4 @@ cmake ../.. \
     -DLIBINT2_INSTALL_DIR="$INSTALL_DIR/libint"
 
 make -j1 mpqc
+make -j1 check

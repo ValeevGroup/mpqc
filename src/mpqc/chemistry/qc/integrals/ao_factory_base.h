@@ -26,6 +26,8 @@
 namespace mpqc {
 namespace integrals {
 
+
+
 /**
  *
  * \brief base class for AOFactory
@@ -224,6 +226,15 @@ class AOFactoryBase {
   double screen_threshold_;
   double precision_;
 };
+
+
+namespace detail{
+
+libint2::Operator to_libint2_operator(Operator::Type mpqc_oper);
+
+libint2::any to_libint2_operator_params(Operator::Type mpqc_oper, const AOFactoryBase &base);
+}
+
 }  // end of namespace integral
 }  // end of namespace mpqc
 

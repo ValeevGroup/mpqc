@@ -38,7 +38,7 @@ namespace sc {
   namespace detail {
 
     template <> struct SEvalCreator<2u> {
-      static Ref< typename OneBodyIntEvalType<2u>::value >
+      static Ref< OneBodyIntEvalType<2u>::value >
       eval(const Ref<Integral>& factory, const Ref<IntParamsVoid>& params) {
         return factory->overlap();
       }

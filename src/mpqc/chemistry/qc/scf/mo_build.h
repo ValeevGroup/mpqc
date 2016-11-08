@@ -77,7 +77,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 
   // get all the trange1s
   auto tr_obs = S.trange().data().back();
-  auto tr_corr_occ = tre->get_occ_tr1();
+  auto tr_corr_occ = tre->get_active_occ_tr1();
   auto tr_occ = tre->compute_range(occ, occ_blocksize);
   auto tr_vir = tre->get_vir_tr1();
   auto tr_all = tre->get_all_tr1();
@@ -264,7 +264,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   }
 
   Eigen::VectorXd ens_occ = es.eigenvalues().segment(0, occ);
-  //        std::cout << ens_occ << std::endl;
+//  std::cout << "Energy of Occupied: \n" << ens_occ << std::endl;
   RowMatrixXd C_all = es.eigenvectors();
   RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), occ);
   RowMatrixXd C_corr_occ =
@@ -311,7 +311,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   auto tr_obs = S.trange().data().back();
   auto tr_vbs = S_vbs.trange().data().back();
   auto tr_occ = tre->compute_range(occ, occ_blocksize);
-  auto tr_corr_occ = tre->get_occ_tr1();
+  auto tr_corr_occ = tre->get_active_occ_tr1();
   auto tr_vir = tre->get_vir_tr1();
 
   detail::parallel_print_range_info(world, tr_occ, "Occ");
@@ -355,8 +355,8 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   ens = Eigen::VectorXd(nbf_vbs);
   ens << ens_occ, ens_vir;
 
-  //        std::cout << "Energy of Orbitals " << std::endl;
-  //        std::cout << ens << std::endl;
+  std::cout << "Energy of Orbitals " << std::endl;
+  std::cout << ens << std::endl;
 
   // resolve the virtual orbitals
   RowMatrixXd C_vir_rotate = es3.eigenvectors();

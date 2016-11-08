@@ -185,7 +185,7 @@ class DBRMP2 : public RMP2 {
   //                                               n_frozen_core);
   //    auto tr_obs = S.trange().data().back();
   //    auto tr_occ = tre->compute_range(occ, occ_blocksize);
-  //    auto tr_corr_occ = tre->get_occ_tr1();
+  //    auto tr_corr_occ = tre->get_active_occ_tr1();
   //    detail::parallel_print_range_info(world, tr_occ, "Occ");
   //    detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
   //
@@ -347,7 +347,7 @@ class DBRMP2 : public RMP2 {
   //                                               n_frozen_core);
   //    auto tr_obs = S.trange().data().back();
   //    auto tr_occ = tre->compute_range(occ, occ_blocksize);
-  //    auto tr_corr_occ = tre->get_occ_tr1();
+  //    auto tr_corr_occ = tre->get_active_occ_tr1();
   //    detail::parallel_print_range_info(world, tr_occ, "Occ");
   //
   //    // convert to TA

@@ -117,7 +117,7 @@ typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_db_ccsd_f12_df() {
   auto nocc = this->trange1_engine()->get_active_occ();
 
   // create shape
-  auto occ_tr1 = this->trange1_engine()->get_occ_tr1();
+  auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
   TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 

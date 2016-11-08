@@ -69,7 +69,7 @@ Below is a code fragment illustrating the use of sc::MPQCInit.
 
 \section devsampmp2 Using MPQC's main: MP2 Implementation Example
 
-This section illustrates how to add a new quantum chemsitry method implementation to MPQC.
+This section illustrates how to add a new quantum chemistry method implementation to MPQC.
 
 \subsection devsampmp2src MP2 Implementation Example: Source
 

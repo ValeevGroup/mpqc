@@ -40,8 +40,8 @@ void PHF::init(const KeyVal& kv) {
     if (world.rank() == 0)
       std::cout << "\nNuclear Repulsion: " << repulsion_ << std::endl;
 
-    d_converge_ = kv.value<double>("d_converge", 1.0E-4);
-    e_converge_ = kv.value<double>("e_converge", 1.0E-8);
+    e_converge_ = kv.value<double>("converge", 1.0E-8); // 1.0e(-N)
+    d_converge_ = pow(1.0, log(e_converge_) / 2.0); // 1.0e(-N/2)
     maxiter_ = kv.value<int64_t>("max_iter", 30);
 
     T_ = pao_factory_.compute(L"<κ|T|λ>"); // Kinetic

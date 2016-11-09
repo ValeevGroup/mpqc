@@ -70,6 +70,43 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 ###############################################################################
+# Compiler/library features
+###############################################################################
+
+include(CheckCXXSourceCompiles)
+include(CheckIncludeFiles)
+include(CheckFunctionExists)
+
+check_include_files(libunwind.h          HAVE_LIBUNWIND_H)
+include(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(cxxabi.h          HAVE_CXXABI_H)
+if (HAVE_CXXABI_H)
+  CHECK_CXX_SOURCE_COMPILES("
+    #include <cxxabi.h>
+    int main(int argc, char* argv[]) {
+      char* result = abi::__cxa_demangle(\"\", 0, 0, 0);
+      return 0;
+    }" HAVE_CXA_DEMANGLE)
+  if (HAVE_CXA_DEMANGLE)
+    message("-- Looking for abi::__cxa_demangle - found")
+  else()
+    message("-- Looking for abi::__cxa_demangle - not found")
+  endif()
+endif(HAVE_CXXABI_H)
+if (HAVE_LIBUNWIND_H)
+  CHECK_FUNCTION_EXISTS (unw_init_local          HAVE_LIBUNWIND)
+endif(HAVE_LIBUNWIND_H)
+if (HAVE_EXECINFO_H)
+  CHECK_FUNCTION_EXISTS (backtrace               HAVE_BACKTRACE_FN)
+  CHECK_FUNCTION_EXISTS (backtrace_symbols       HAVE_BACKTRACE_SYMBOLS_FN)
+  if (HAVE_BACKTRACE_FN AND HAVE_BACKTRACE_SYMBOLS_FN)
+    set (HAVE_BACKTRACE)
+  endif()
+else (HAVE_EXECINFO_H)
+  #find_package(ExecInfo)
+endif (HAVE_EXECINFO_H)
+
+###############################################################################
 # Dependencies
 ###############################################################################
 

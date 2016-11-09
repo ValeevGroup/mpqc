@@ -1,4 +1,13 @@
 set(sources
+  assert.h
+  bug.h
+  bug.cc
+  exception.h
+  exception.cc
+  exenv.cc
+  exenv.h
+  formio.cc
+  formio.h
   print.cpp
   print.h
   string.h

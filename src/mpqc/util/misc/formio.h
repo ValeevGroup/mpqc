@@ -106,6 +106,11 @@ class mpqcprintf {
    const Char* str() const { return str_; }
 };
 
+template <typename Char, typename ... Args>
+mpqcprintf<Char> printf(const Char* fmt, Args&& ... args) {
+  return mpqcprintf<Char>(fmt, args...);
+}
+
 template <typename Char>
 std::basic_ostream<Char>& operator<<(std::basic_ostream<Char>& o,
                                      const mpqcprintf<Char>& s) {

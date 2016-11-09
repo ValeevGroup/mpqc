@@ -31,7 +31,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cunistd>
+#include <unistd.h>
 #include <iostream>
 #include <signal.h>
 #include <sstream>
@@ -415,7 +415,7 @@ Debugger::Backtrace::Backtrace(const std::string& prefix) : prefix_(prefix)
       std::ostringstream oss;
       oss << prefix_
           << "frame " << frame
-          << ": " << scprintf("ip = 0x%lx sp = 0x%lx ", (long) ip, (long) sp)
+          << ": " << mpqc::printf("ip = 0x%lx sp = 0x%lx ", (long) ip, (long) sp)
           << " symbol = " << __demangle(name);
       frames_.push_back(oss.str());
       ++frame;

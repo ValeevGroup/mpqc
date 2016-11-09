@@ -17,11 +17,14 @@ PHF::PHF(const KeyVal &kv) : Wavefunction(kv), kv_(kv), pao_factory_(kv) {}
 
 void PHF::init(const KeyVal& kv) {
 
+    // retrieve world from pao_factory
+    auto& world = pao_factory_.world();
+
+    auto init_start = mpqc::fenced_now(world);
+
     // set OrbitalBasisRegistry
     pao_factory_.set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
-    // retrieve world from pao_factory
-    auto& world = pao_factory_.world();
 
     //TODO: retrive unitcell from pao_factory
     auto& unitcell = *kv.keyval("wfn_world:molecule").class_ptr<UnitCell>();
@@ -54,6 +57,9 @@ void PHF::init(const KeyVal& kv) {
     // compute density matrix using core guess
     // TODO: write SOAD guess
     D_ = pao_factory_.compute_density(Hk_, Sk_, docc_);
+
+    auto init_end = mpqc::fenced_now(world);
+    std::cout << "\nPHF init time: " << mpqc::duration_in_s(init_start, init_end) << "s\n";
 }
 
 bool PHF::solve() {
@@ -68,6 +74,8 @@ bool PHF::solve() {
     auto ediff = 0.0;
 
     do {
+        auto iter_start = mpqc::fenced_now(world);
+
         ++iter;
         // Save a copy of energy and density
         auto ephf_old = ephf;
@@ -94,16 +102,18 @@ bool PHF::solve() {
         rms = Ddiff("mu, nu").norm();
         if ((rms <= d_converge_) || fabs(ediff) <= e_converge_) converged = true;
 
+        auto iter_end = mpqc::fenced_now(world);
+        auto iter_duration = mpqc::duration_in_s(iter_start, iter_end);
         // Print out information
         std::string niter = "Iter", nEle = "E(HF)", nTot = "E(tot)",
                     nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
         if (world.rank() == 0) {
           if (iter == 1)
-            printf("\n\n %4s %20s %20s %20s %20s %13s\n", niter.c_str(),
+            printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
                    nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
                    nT.c_str());
-          printf(" %4d %20.12f %20.12f %20.12f %20.12f\n", iter, ephf, ephf + repulsion_,
-                 ediff, rms);
+          printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ephf, ephf + repulsion_,
+                 ediff, rms, iter_duration);
         }
 
     } while ((iter < maxiter_) && (!converged));

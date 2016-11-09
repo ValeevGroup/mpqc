@@ -48,12 +48,12 @@ class Debugger: public DescribedClass {
     std::string cmd_;
     volatile int debugger_ready_;
 
-    int debug_;
-    int traceback_;
-    int exit_on_signal_;
-    int sleep_;
-    int wait_for_debugger_;
-    int handle_sigint_;
+    bool debug_;
+    bool traceback_;
+    bool exit_on_signal_;
+    bool sleep_;
+    bool wait_for_debugger_;
+    bool handle_sigint_;
     int *mysigs_;
 
     void init();

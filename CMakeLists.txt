@@ -106,6 +106,9 @@ else (HAVE_EXECINFO_H)
   #find_package(ExecInfo)
 endif (HAVE_EXECINFO_H)
 
+CHECK_FUNCTION_EXISTS (posix_spawn       HAVE_POSIX_SPAWN)
+CHECK_FUNCTION_EXISTS (system            HAVE_SYSTEM)
+CHECK_FUNCTION_EXISTS (signal            HAVE_SIGNAL)
 ###############################################################################
 # Dependencies
 ###############################################################################

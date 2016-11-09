@@ -1,0 +1,12 @@
+{
+"debug": {
+  "type": "Debugger",
+  "cmd": "/bin/echo $(PREFIX) OOPS process $(PID) executable $(EXEC)",
+  "prefix":"xyz:",
+  "wait_for_debugger":false,
+  "handle_defaults":true,
+  "debug":true,
+  "traceback":true
+}
+}
+

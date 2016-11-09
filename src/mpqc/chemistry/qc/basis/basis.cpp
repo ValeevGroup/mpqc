@@ -43,7 +43,7 @@ Basis::Basis(const KeyVal &kv) {
     basis =  reblock(basis, reblock_basis, reblock_size);
   }
 
-  shells_ = basis.shells_;
+  shells_ = std::move(basis.shells_);
 }
 
 int64_t Basis::nfunctions() const {

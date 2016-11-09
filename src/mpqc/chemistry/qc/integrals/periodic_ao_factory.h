@@ -1,7 +1,6 @@
 #ifndef MPQC_PERIODIC_AO_FACTORY_H
 #define MPQC_PERIODIC_AO_FACTORY_H
 
-#include "ao_factory_base.cpp"
 #include "ao_factory_base.h"
 
 #include <iosfwd>
@@ -9,9 +8,9 @@
 
 #include "mpqc/chemistry/molecule/unit_cell.h"
 #include "mpqc/chemistry/qc/integrals/integrals.h"
-#include "mpqc/util/keyval/keyval.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
+#include "mpqc/util/keyval/keyval.h"
 
 #include <unsupported/Eigen/MatrixFunctions>
 
@@ -24,13 +23,36 @@ typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> Vectorc;
 const std::complex<double> I(0.0, 1.0);
 const auto angstrom_to_bohr = 1 / 0.52917721092;  // 2010 CODATA value
 
-using namespace mpqc::integrals::detail;
-
 namespace mpqc {
 namespace integrals {
 
 template <typename Tile, typename Policy>
-class PeriodicAOFactory : public AOFactoryBase {
+class PeriodicAOFactory;
+
+namespace detail {
+
+template <typename Tile, typename Policy>
+std::shared_ptr<PeriodicAOFactory<Tile, Policy>> construct_periodic_ao_factory(
+    const KeyVal &kv) {
+  std::shared_ptr<PeriodicAOFactory<Tile, Policy>> pao_factory;
+
+  if (kv.exists_class("wfn_world:periodic_ao_factory")) {
+    pao_factory = kv.class_ptr<PeriodicAOFactory<Tile, Policy>>(
+        "wfn_world:periodic_ao_factory");
+  } else {
+    pao_factory = std::make_shared<PeriodicAOFactory<Tile, Policy>>(kv);
+    std::shared_ptr<DescribedClass> pao_factory_base = pao_factory;
+    KeyVal &kv_nonconst = const_cast<KeyVal &>(kv);
+    kv_nonconst.keyval("wfn_world")
+        .assign("periodic_ao_factory", pao_factory_base);
+  }
+  return pao_factory;
+}
+
+}  // end of namespace detail
+
+template <typename Tile, typename Policy>
+class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using Op = std::function<Tile(TA::TensorZ &&)>;
@@ -47,35 +69,29 @@ class PeriodicAOFactory : public AOFactoryBase {
    */
   PeriodicAOFactory(const KeyVal &kv)
       : AOFactoryBase(kv), ao_formula_registry_(), orbital_space_registry_() {
+    std::string prefix = "";
+    if (kv.exists("wfn_wolrd") || kv.exists_class("wfn_world"))
+      prefix = "wfn_world:";
 
-      std::string molecule_type = kv.value<std::string>("molecule:type");
+    std::string molecule_type = kv.value<std::string>(prefix + "molecule:type");
     if (molecule_type != "UnitCell") {
       throw std::invalid_argument("Moleule Type Has To be UnitCell!!");
     }
 
     dcell_ = decltype(dcell_)(
-        kv.value<std::vector<double>>("molecule:lattice_param").data());
+        kv.value<std::vector<double>>(prefix + "molecule:lattice_param")
+            .data());
     const auto angstrom_to_bohr = 1 / 0.52917721092;  // 2010 CODATA value
     dcell_ *= angstrom_to_bohr;
-    R_max_ =
-        decltype(R_max_)(kv.value<std::vector<int>>("molecule:rmax").data());
-    RD_max_ =
-        decltype(RD_max_)(kv.value<std::vector<int>>("molecule:rdmax").data());
-    RJ_max_ =
-        decltype(RJ_max_)(kv.value<std::vector<int>>("molecule:rjmax").data());
-    nk_ = decltype(nk_)(kv.value<std::vector<int>>("molecule:k_points").data());
 
-    std::cout << "\nPeriodic Hartree-Fock computational parameter:"
-              << std::endl;
-    std::cout
-        << "\tR_max (range of expansion of Bloch Gaussians in AO Gaussians): ["
-        << R_max_.transpose() << "]" << std::endl;
-    std::cout << "\tRj_max (range of Coulomb operation): ["
-              << RJ_max_.transpose() << "]" << std::endl;
-    std::cout << "\tRd_max (Range of density representation): ["
-              << RD_max_.transpose() << "]" << std::endl;
-    std::cout << "\t# of k points in each direction: [" << nk_.transpose()
-              << "]\n" << std::endl;
+    R_max_ = decltype(R_max_)(
+        kv.value<std::vector<int>>(prefix + "molecule:rmax").data());
+    RD_max_ = decltype(RD_max_)(
+        kv.value<std::vector<int>>(prefix + "molecule:rdmax").data());
+    RJ_max_ = decltype(RJ_max_)(
+        kv.value<std::vector<int>>(prefix + "molecule:rjmax").data());
+    nk_ = decltype(nk_)(
+        kv.value<std::vector<int>>(prefix + "molecule:k_points").data());
 
     R_size_ = 1 + idx_lattice(R_max_(0), R_max_(1), R_max_(2), R_max_);
     RJ_size_ = 1 + idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
@@ -108,12 +124,18 @@ class PeriodicAOFactory : public AOFactoryBase {
    */
   TArray compute_density(TArray &fock_recip, TArray &overlap, int64_t ndocc);
 
+  Vector3i R_max() {return R_max_;}
+  Vector3i RJ_max() {return RJ_max_;}
+  Vector3i RD_max() {return RD_max_;}
+  Vector3i nk() {return nk_;}
+
+
  private:
   FormulaRegistry<TArray> ao_formula_registry_;
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
   Op op_;
 
-  TArray D_;    // Density
+  TArray D_;  // Density
 
   Vector3i R_max_ = {
       0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
@@ -156,13 +178,15 @@ class PeriodicAOFactory : public AOFactoryBase {
     return result;
   }
 
-  /// parse one body formula and set engine_pool and basis array for periodic system
+  /// parse one body formula and set engine_pool and basis array for periodic
+  /// system
   void parse_one_body_periodic(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
       Molecule &shifted_mol);
 
-  /// parse two body formula and set engine_pool and basis array for periodic system
+  /// parse two body formula and set engine_pool and basis array for periodic
+  /// system
   void parse_two_body_periodic(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
@@ -173,7 +197,8 @@ class PeriodicAOFactory : public AOFactoryBase {
                                                    Vector3d shift);
 
   /**
-   *  shift center of {basis} by {shift_base} + R_vector if is_real_space == true,
+   *  shift center of {basis} by {shift_base} + R_vector if is_real_space ==
+   * true,
    *  by {shift_base} + k_vector if is_real_space == false,
    *  and return a new compound basis consisting of all shifted basis.
    */
@@ -185,7 +210,8 @@ class PeriodicAOFactory : public AOFactoryBase {
   /// repeat tiledrange1 {tr0} by {size} times, and return a long tiledrange1
   TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
 
-  /// shift positions of all atoms in {mol} by {shift}, and return a shifted molecule
+  /// shift positions of all atoms in {mol} by {shift}, and return a shifted
+  /// molecule
   std::shared_ptr<Molecule> shift_mol_origin(Molecule &mol, Vector3d shift);
 
   libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
@@ -200,6 +226,8 @@ class PeriodicAOFactory : public AOFactoryBase {
 
   /// Sort eigenvalues and eigenvectors in ascending order
   void sort_eigen(Vectorc &eigVal, Matrixc &eigVec);
+
+
 };
 
 template <typename Tile, typename Policy>
@@ -363,7 +391,7 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
 
   auto oper_type = formula.oper().type();
   engine_pool = integrals::make_engine_pool(
-      to_libint2_operator(oper_type),
+      detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
       libint2::BraKet::xx_xx,
       to_libint2_operator_params(oper_type, *this, *mol_));
@@ -747,6 +775,22 @@ void PeriodicAOFactory<Tile, Policy>::sort_eigen(Vectorc &eigVal,
   eigVec = sortedEigVec;
 }
 
-}  // mpqc namespace
+/// Make PeriodicAOFactory printable
+template <typename Tile, typename Policy>
+std::ostream &operator<<(std::ostream &os, PeriodicAOFactory<Tile, Policy> &pao) {
+    os << "\nPeriodic Hartree-Fock computational parameter:" << std::endl;
+    os << "\tR_max (range of expansion of Bloch Gaussians in AO Gaussians): ["
+        << pao.R_max().transpose() << "]" << std::endl;
+    os << "\tRj_max (range of Coulomb operation): ["
+              << pao.RJ_max().transpose() << "]" << std::endl;
+    os << "\tRd_max (Range of density representation): ["
+              << pao.RD_max().transpose() << "]" << std::endl;
+    os << "\t# of k points in each direction: [" << pao.nk().transpose()
+              << "]\n"
+              << std::endl;
+    return os;
+}
+
 }  // integrals namespace
+}  // mpqc namespace
 #endif  // MPQC_PERIODIC_AO_FACTORY_H

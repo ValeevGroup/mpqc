@@ -18,6 +18,7 @@
 #include "mpqc/chemistry/qc/mbpt/linkage.h"
 #include "mpqc/chemistry/qc/cc/linkage.h"
 #include "mpqc/chemistry/qc/f12/linkage.h"
+#include "mpqc/chemistry/qc/phf/linkage.h"
 
 using namespace mpqc;
 

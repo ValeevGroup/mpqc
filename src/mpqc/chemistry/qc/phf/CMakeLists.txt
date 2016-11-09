@@ -1,4 +1,5 @@
 set(sources
+        linkage.cpp
         phf.h
         phf.cpp
         )

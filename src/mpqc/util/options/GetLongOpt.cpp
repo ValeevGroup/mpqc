@@ -1,5 +1,7 @@
 #include "mpqc/util/options/GetLongOpt.h"
 
+#include <cstring>
+
 using namespace std;
 using namespace mpqc;
 

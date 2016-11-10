@@ -2,9 +2,10 @@
 #ifndef SRC_MPQC_UTIL_OPTIONS_GETLONGOPT_H_
 #define SRC_MPQC_UTIL_OPTIONS_GETLONGOPT_H_
 
-#include <string>
 #include <iostream>
 #include <list>
+#include <memory>
+#include <string>
 
 namespace mpqc {
 
@@ -20,9 +21,9 @@ class GetLongOpt {
 
  private:
   struct Cell {
-    std::string option;       // option name
-    OptType type;             // option type
-    std::string description;  // a description of option
+    std::string option;                  // option name
+    OptType type;                        // option type
+    std::string description;             // a description of option
     std::unique_ptr<std::string> value;  // ptr to value (nullptr, if not given)
 
     Cell() = default;
@@ -32,8 +33,9 @@ class GetLongOpt {
           type(other.type),
           description(std::move(other.description)),
           value(std::move(other.value)) {}
-    Cell(std::string opt, OptType t, std::string descr, std::unique_ptr<std::string> val) :
-          option(std::move(opt)),
+    Cell(std::string opt, OptType t, std::string descr,
+         std::unique_ptr<std::string> val)
+        : option(std::move(opt)),
           type(t),
           description(std::move(descr)),
           value(std::move(val)) {}
@@ -41,17 +43,17 @@ class GetLongOpt {
   };
 
  private:
-  std::list<Cell> table;          // option table
-  std::string ustring;  // usage message
-  std::string pname;          // program basename
-  char optmarker;       // option marker
+  std::list<Cell> table;  // option table
+  std::string ustring;    // usage message
+  std::string pname;      // program basename
+  char optmarker;         // option marker
 
   bool finalized;  // finished enrolling
 
  private:
   std::string basename(const std::string& p) const;
-  int setcell(Cell& c, const char *valtoken, const char *nexttoken,
-              const std::string &name);
+  int setcell(Cell& c, const char* valtoken, const char* nexttoken,
+              const std::string& name);
 
  public:
   /// Initialize the object.
@@ -61,15 +63,17 @@ class GetLongOpt {
 
   /// Parse command line options.
   /// @note call this once, after all options have been enrolled
-  /// @warning this object becomes finalized, additional options cannot be enrolled
+  /// @warning this object becomes finalized, additional options cannot be
+  /// enrolled
   /// @param argc the number of arguments, as passed to <tt>main</tt>
   /// @param argv the arguments, as passed to <tt>main</tt>
   /// @return the index to the start of arguments that were not
   ///         processed (an error occurred if the return value is < 1)
-  int parse(int argc, char *const *argv);
+  int parse(int argc, char* const* argv);
   /// Parse options in a string.
   /// @note call this once, after all options have been enrolled
-  /// @warning this object becomes finalized, additional options cannot be enrolled
+  /// @warning this object becomes finalized, additional options cannot be
+  /// enrolled
   /// @param str the string to be parsed
   /// @param p a prefix that will be prefixed to error messages
   /// @return the index to the start of arguments that were not
@@ -80,25 +84,25 @@ class GetLongOpt {
   /// @param opt the option name
   /// @param t whether or not a value is expected
   /// @param desc a description of the option
-  int enroll(std::string opt, const OptType t,
-             std::string desc);
+  int enroll(std::string opt, const OptType t, std::string desc);
 
   /// Enroll an option, with the default value provided.
   /// @param opt the option name
   /// @param t whether or not a value is expected
   /// @param desc a description of the option
   /// @param val the default value for the option with an optional value
-  int enroll(std::string opt, const OptType t,
-             std::string desc, std::string default_value);
+  int enroll(std::string opt, const OptType t, std::string desc,
+             std::string default_value);
 
   /// Retrieve the value of the option.
   /// @param opt the name of the option
-  /// @return if given(opt) is true, return the value of the option, otherwise an empty string
+  /// @return if given(opt) is true, return the value of the option, otherwise
+  /// an empty string
   std::string retrieve(const std::string& opt) const;
 
   /// Print usage information.
   /// @param outfile stream to use for printing (default: <tt>std::cout</tt>)
-  void usage(std::ostream &outfile = std::cout) const;
+  void usage(std::ostream& outfile = std::cout) const;
   /// Initialize usage synopsis.
   /// @param str the usage synopsis
   void usage(std::string&& str) { ustring = std::move(str); }

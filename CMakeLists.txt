@@ -138,6 +138,8 @@ INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 set(MPQC_LIBRARIES
     "${MPQC_LIBRARIES};${TBB_LIBRARIES};${LIBINT2_LIBRARIES};${Boost_LIBRARIES}")
 
+find_package(PythonInterp 3.0)
+
 ###############################################################################
 # Declare LibMPQC
 ###############################################################################

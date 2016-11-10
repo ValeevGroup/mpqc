@@ -101,7 +101,7 @@ int GetLongOpt::parse(int argc, char *const *argv) {
     } else if (matchStatus == NoMatch) {
       cerr << pname << ": unrecognized option ";
       cerr << optmarker << strtok(token, "= ") << "\n";
-      throw std::runtime_error("unrecognized option " + std::to_string(optmarker) +
+      throw std::runtime_error("unrecognized option " + std::string(1, optmarker) +
                                std::string(strtok(token, "= ")));
     }
 
@@ -159,7 +159,7 @@ int GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
     } else if (matchStatus == NoMatch) {
       cerr << name << ": unrecognized option ";
       cerr << optmarker << strtok(token, "= ") << "\n";
-      throw std::runtime_error("unrecognized option " + std::to_string(optmarker) +
+      throw std::runtime_error("unrecognized option " + std::string(1, optmarker) +
                                std::string(strtok(token, "= ")));
     }
 
@@ -181,7 +181,7 @@ int GetLongOpt::setcell(Cell &c, const char *valtoken, const char *nexttoken,
     case GetLongOpt::NoValue:
       if (*valtoken == '=') {
         throw std::runtime_error("unsolicited value for program option " +
-                                 std::to_string(optmarker) + c.option);
+                                 std::string(1, optmarker) + c.option);
       }
       return 0;
     case GetLongOpt::OptionalValue:
@@ -202,7 +202,7 @@ int GetLongOpt::setcell(Cell &c, const char *valtoken, const char *nexttoken,
       }
 
       throw std::runtime_error("mandatory value for program option " +
-                               std::to_string(optmarker) + c.option + " not specified");
+                               std::string(1, optmarker) + c.option + " not specified");
     default:
       break;
   }

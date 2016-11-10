@@ -52,7 +52,7 @@ std::vector<std::vector<libint2::Shell>> reblock_basis(
   }
 
   // handle the boundary condition
-  if (4 * tmp_size < 5 * blocksize) {
+  if (!tmp.empty()) {
     // if boundary is less than 2/3 of the block size
     // include it to previous block
     if (3 * tmp_size < 2 * blocksize) {

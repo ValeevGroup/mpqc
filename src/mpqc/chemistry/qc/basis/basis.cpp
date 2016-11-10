@@ -40,7 +40,7 @@ Basis::Basis(const KeyVal &kv) {
 
   std::size_t reblock_size = kv.value<int>("reblock",0);
   if(reblock_size != 0){
-    basis =  reblock(basis, reblock_basis, reblock_size);
+    basis =  reblock(basis, basis::reblock_basis, reblock_size);
   }
 
   shells_ = std::move(basis.shells_);

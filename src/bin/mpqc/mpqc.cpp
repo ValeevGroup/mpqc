@@ -104,7 +104,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   // announce ourselves
   announce();
 
-  auto threshold = 1e-15;  // Hardcode for now.
+  double threshold = kv.value<double>("spase_threshold", 1e-20);
   TiledArray::SparseShape<float>::threshold(threshold);
 
   auto wfn = kv.keyval("wfn").class_ptr<qc::Wavefunction>();

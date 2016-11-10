@@ -10,9 +10,8 @@ set(CHECK_ARGS "${srcDir}/check.py"
 
 if (NOT EXISTS "${OUTPUT_FILE_NAME}")
 
-  set(MPQC_CMD "${CMAKE_BINARY_DIR}/../../examples/run.sh")
-  set(MPQC_ARGS "${CMAKE_BINARY_DIR}/../../src/bin/mpqc/mpqc"
-      "-p ${srcDir}/reference/inputs"
+  set(MPQC_CMD "${CMAKE_BINARY_DIR}/../../src/bin/mpqc/mpqc")
+  set(MPQC_ARGS "-p ${srcDir}/reference/inputs"
       "${srcDir}/reference/inputs/${baseName}.json")
 
   execute_process(COMMAND

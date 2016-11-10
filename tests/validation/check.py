@@ -7,6 +7,8 @@
 # util
 ##########################################################
 
+# should work with python 2 and 3
+from __future__ import absolute_import, division, print_function, unicode_literals
 import sys, re, math
 
 def validate(label, data, refdata, tolerance):

@@ -23,5 +23,5 @@ if (${PYTHONINTERP_FOUND})
     
   endforeach(infileName)
 else (${PYTHONINTERP_FOUND})
-  message(WARNING "Python 3 interpreter is not found, cannot perform validation tests")
+  add_custom_target(check_validation COMMENT "Python interpreter is not found, will skip validation tests")
 endif (${PYTHONINTERP_FOUND})

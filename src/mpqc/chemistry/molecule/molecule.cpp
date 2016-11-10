@@ -5,6 +5,7 @@
 #include "mpqc/chemistry/molecule/atom_masses.h"
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
+#include "mpqc/util/misc/assert.h"
 
 #include <libint2/atom.h>
 
@@ -66,6 +67,11 @@ Molecule::Molecule(std::vector<ABCbl> c, bool sort_input)
 Molecule::Molecule(const KeyVal &kv) {
   //  std::cout << "Construct Molecule" << std::endl;
   auto file_name = kv.value<std::string>("file_name", "");
+  MPQC_ASSERT(!file_name.empty());
+  if (file_name[0] != '/' && kv.exists("$:file_prefix")) {
+    file_name = kv.value<std::string>("$:file_prefix") + "/" +
+                file_name;
+  }
 
   // find world one level higher
   madness::World *world = kv.value<madness::World *>("$:world");

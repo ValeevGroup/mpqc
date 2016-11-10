@@ -162,7 +162,7 @@ class FormulaRegistry : public Registry<Formula, Value> {
     for (; i != this->registry_.end();) {
       if (p(*i)) {
         utility::print_par(world, "Removed from Registry: ");
-        utility::wprint_par(world, i->first.string());
+        utility::print_par(world, utility::to_string(i->first.string()));
         utility::print_par(world, "\n");
         this->registry_.erase(i++);
       } else {

@@ -70,6 +70,46 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 ###############################################################################
+# Compiler/library features
+###############################################################################
+
+include(CheckCXXSourceCompiles)
+include(CheckIncludeFiles)
+include(CheckFunctionExists)
+
+check_include_files(libunwind.h          HAVE_LIBUNWIND_H)
+include(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(cxxabi.h          HAVE_CXXABI_H)
+if (HAVE_CXXABI_H)
+  CHECK_CXX_SOURCE_COMPILES("
+    #include <cxxabi.h>
+    int main(int argc, char* argv[]) {
+      char* result = abi::__cxa_demangle(\"\", 0, 0, 0);
+      return 0;
+    }" HAVE_CXA_DEMANGLE)
+  if (HAVE_CXA_DEMANGLE)
+    message("-- Looking for abi::__cxa_demangle - found")
+  else()
+    message("-- Looking for abi::__cxa_demangle - not found")
+  endif()
+endif(HAVE_CXXABI_H)
+if (HAVE_LIBUNWIND_H)
+  CHECK_FUNCTION_EXISTS (unw_init_local          HAVE_LIBUNWIND)
+endif(HAVE_LIBUNWIND_H)
+if (HAVE_EXECINFO_H)
+  CHECK_FUNCTION_EXISTS (backtrace               HAVE_BACKTRACE_FN)
+  CHECK_FUNCTION_EXISTS (backtrace_symbols       HAVE_BACKTRACE_SYMBOLS_FN)
+  if (HAVE_BACKTRACE_FN AND HAVE_BACKTRACE_SYMBOLS_FN)
+    set (HAVE_BACKTRACE)
+  endif()
+else (HAVE_EXECINFO_H)
+  #find_package(ExecInfo)
+endif (HAVE_EXECINFO_H)
+
+CHECK_FUNCTION_EXISTS (posix_spawn       HAVE_POSIX_SPAWN)
+CHECK_FUNCTION_EXISTS (system            HAVE_SYSTEM)
+CHECK_FUNCTION_EXISTS (signal            HAVE_SIGNAL)
+###############################################################################
 # Dependencies
 ###############################################################################
 
@@ -78,6 +118,8 @@ set(MPQC_LIBRARIES "" CACHE INTERNAL "MPQC libs and dependencies")
 
 # search for TA first, other packages can be found with it
 FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
+include(ValidateTiledArray)
+validate_tiledarray()
 set(TA_LIBRARIES tiledarray)
 set(MPQC_LIBRARIES "${TA_LIBRARIES}")
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
@@ -96,6 +138,8 @@ INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 set(MPQC_LIBRARIES
     "${MPQC_LIBRARIES};${TBB_LIBRARIES};${LIBINT2_LIBRARIES};${Boost_LIBRARIES}")
 
+find_package(PythonInterp 3.0)
+
 ###############################################################################
 # Declare LibMPQC
 ###############################################################################
@@ -105,7 +149,7 @@ INCLUDE_DIRECTORIES(${MPQC_BINARY_DIR}/src)
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
 
-LIST(APPEND MPQC_LIBRARIES MPQCf12 MPQCcc MPQCmbpt MPQCscf MPQCphf)
+LIST(APPEND MPQC_LIBRARIES MPQCf12 MPQCcc MPQCmbpt MPQCscf MPQCphf MPQCutil_options)
 
 message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
 
@@ -125,8 +169,6 @@ ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/bin)
 ###############################################################################
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/doc)
-enable_testing(true)
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tests)
 
 ###############################################################################

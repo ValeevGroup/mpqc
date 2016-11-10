@@ -77,10 +77,12 @@ void RHF::init(const KeyVal& kv) {
     throw std::runtime_error("Unknown DensityBuilder name! \n");
   }
 
-  // soad
-  auto eri_e = integrals::make_engine_pool(libint2::Operator::coulomb,
-                                           utility::make_array_of_refs(basis));
-  F_ = scf::fock_from_soad(world, mol, basis, eri_e, H_);
+  if(!F_.is_initialized()){
+    // soad
+    auto eri_e = integrals::make_engine_pool(libint2::Operator::coulomb,
+                                             utility::make_array_of_refs(basis));
+    F_ = scf::fock_from_soad(world, mol, basis, eri_e, H_);
+  }
 
   F_diis_ = F_;
   compute_density();
@@ -103,6 +105,18 @@ double RHF::value() {
 
 void RHF::obsolete() {
   this->energy_ = 0.0;
+
+  H_ = array_type();
+  S_ = array_type();
+  F_ = array_type();
+  F_diis_ = array_type();
+  D_ = array_type();
+  C_ = array_type();
+
+  rhf_times_ = std::vector<double>();
+  d_times_ = std::vector<double>();
+  build_times_ = std::vector<double>();
+
   qc::AOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
 }
 

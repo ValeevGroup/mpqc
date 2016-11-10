@@ -151,10 +151,10 @@ class CCSD_T : public CCSD<Tile, Policy> {
     }
 
     // get trange1
-    auto tr_occ = this->trange1_engine_->get_occ_tr1();
+    auto tr_occ = this->trange1_engine_->get_active_occ_tr1();
     auto tr_vir = this->trange1_engine_->get_vir_tr1();
 
-    auto n_tr_occ = this->trange1_engine_->get_occ_blocks();
+    auto n_tr_occ = this->trange1_engine_->get_active_occ_blocks();
     auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
     auto n_tr_occ_inner = n_tr_occ;
     auto n_tr_vir_inner = n_tr_vir;
@@ -913,13 +913,13 @@ class CCSD_T : public CCSD<Tile, Policy> {
     std::size_t all = this->trange1_engine_->get_all();
     std::size_t n_frozen = this->trange1_engine_->get_nfrozen();
 
-    TA::TiledRange1 old_occ = this->trange1_engine_->get_occ_tr1();
+    TA::TiledRange1 old_occ = this->trange1_engine_->get_active_occ_tr1();
     TA::TiledRange1 old_vir = this->trange1_engine_->get_vir_tr1();
 
     auto new_tr1 =
         std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
 
-    TA::TiledRange1 new_occ = new_tr1->get_occ_tr1();
+    TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
     TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
 
     detail::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");

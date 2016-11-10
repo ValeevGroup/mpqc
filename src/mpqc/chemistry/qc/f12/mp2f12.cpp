@@ -54,7 +54,7 @@ double RMP2F12::value() {
     this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
 
     // create shap
-    auto occ_tr1 = this->trange1_engine()->get_occ_tr1();
+    auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
     TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
     ijij_ijji_shape_ = f12::make_ijij_ijji_shape(occ4_trange);
 

@@ -193,7 +193,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
   auto n_active_occ = this->trange1_engine()->get_active_occ();
 
   // create shape
-  auto occ_tr1 = this->trange1_engine()->get_occ_tr1();
+  auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
   TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
@@ -276,7 +276,7 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
   auto n_active_occ = this->trange1_engine()->get_active_occ();
 
   // create shape
-  auto occ_tr1 = this->trange1_engine()->get_occ_tr1();
+  auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
   TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 

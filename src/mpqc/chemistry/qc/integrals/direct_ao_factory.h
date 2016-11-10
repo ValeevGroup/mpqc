@@ -182,7 +182,7 @@ DirectAOFactory<Tile, Policy>::compute(const Formula& formula) {
   if (iter != direct_ao_formula_registry_.end()) {
     result = *(iter->second);
     utility::print_par(world_, "Retrieved Direct AO Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result.array());
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
@@ -224,7 +224,7 @@ DirectAOFactory<Tile, Policy>::compute2(const Formula& formula) {
     time += mpqc::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Direct One Body Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result.array());
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -239,7 +239,7 @@ DirectAOFactory<Tile, Policy>::compute2(const Formula& formula) {
     time += mpqc::duration_in_s(time0, time1);
 
     utility::print_par(world_, "Computed Direct Twobody Two Center Integral: ");
-    utility::wprint_par(world_, formula.string());
+    utility::print_par(world_, utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result.array());
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
@@ -275,7 +275,7 @@ DirectAOFactory<Tile, Policy>::compute3(const Formula& formula) {
   time += mpqc::duration_in_s(time0, time1);
 
   utility::print_par(world_, "Computed Direct Twobody Three Center Integral: ");
-  utility::wprint_par(world_, formula.string());
+  utility::print_par(world_, utility::to_string(formula.string()));
   double size = mpqc::detail::array_size(result.array());
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
@@ -314,7 +314,7 @@ DirectAOFactory<Tile, Policy>::compute4(const Formula& formula) {
   time += mpqc::duration_in_s(time0, time1);
 
   utility::print_par(world_, "Computed Direct Twobody Four Center Integral: ");
-  utility::wprint_par(world_, formula.string());
+  utility::print_par(world_, utility::to_string(formula.string()));
   double size = mpqc::detail::array_size(result.array());
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");

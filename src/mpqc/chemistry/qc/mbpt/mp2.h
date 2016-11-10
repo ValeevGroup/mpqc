@@ -29,7 +29,7 @@ struct Mp2Energy {
 
   Mp2Energy(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
             std::size_t n_frozen)
-      : vec_(std::move(vec)), n_occ_(n_occ), n_frozen_(n_frozen) {}
+      : vec_(vec), n_occ_(n_occ), n_frozen_(n_frozen) {}
 
   Mp2Energy(Mp2Energy const &) = default;
 
@@ -73,6 +73,32 @@ struct Mp2Energy {
   }
 };
 
+template <typename Tile, typename Policy>
+double compute_mp2(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+                   std::shared_ptr<Eigen::VectorXd> orbital_energy,
+                   std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df) {
+  auto& world = lcao_factory.world();
+  TA::DistArray<Tile, Policy> g_ijab;
+  if (df) {
+    g_ijab = lcao_factory.compute(L"<i j|G|a b>[df]");
+  } else {
+    g_ijab = lcao_factory.compute(L"<i j|G|a b>");
+  }
+  // compute mp2 energy
+  double energy_mp2 =
+      (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
+          .reduce(detail::Mp2Energy<Tile>(
+              orbital_energy, tr1_engine->get_occ(),
+              tr1_engine->get_nfrozen()));
+
+  if (df) {
+    utility::print_par(world, "MP2 Energy With DF: ", energy_mp2, "\n");
+  } else {
+    utility::print_par(world, "MP2 Energy: ", energy_mp2, "\n");
+  }
+  return energy_mp2;
+};
+
 }  // end of namespce detail
 
 class RMP2 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
@@ -93,6 +119,7 @@ class RMP2 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
   virtual double compute();
   void compute(qc::PropertyBase *pb) override;
   void obsolete() override;
+  const std::shared_ptr<qc::Wavefunction> refwfn() const;
 
  protected:
   virtual void init();

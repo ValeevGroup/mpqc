@@ -58,13 +58,6 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
       df_ = true;
     }
 
-    // initialize direct integral class
-    if (method_ == "direct") {
-      auto direct_ao_factory =
-          integrals::detail::construct_direct_ao_factory<Tile, Policy>(kv);
-      direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
-    }
-
     max_iter_ = kv.value<int>("max_iter", 20);
     converge_ = kv.value<double>("converge", 1.0e-7);
     print_detail_ = kv.value<bool>("print_detail", false);
@@ -112,6 +105,10 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
       } else if (method_ == "df") {
         ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
       } else if (method_ == "direct") {
+        // initialize direct integral class
+        auto direct_ao_factory =
+        integrals::detail::construct_direct_ao_factory<Tile, Policy>(kv_);
+        direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
 

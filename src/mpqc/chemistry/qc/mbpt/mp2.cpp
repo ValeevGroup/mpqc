@@ -58,50 +58,38 @@ double RMP2::value() {
 }
 
 void RMP2::init() {
-  auto mol = this->lcao_factory().ao_factory().molecule();
-  Eigen::VectorXd orbital_energy;
-  this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-      this->lcao_factory(), orbital_energy, mol, is_frozen_core(), occ_block(),
-      unocc_block());
-  this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+  if (this->trange1_engine_ == nullptr || this->orbital_energy_ == nullptr) {
+    auto mol = this->lcao_factory().ao_factory().molecule();
+    Eigen::VectorXd orbital_energy;
+    this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
+        this->lcao_factory(), orbital_energy, mol, is_frozen_core(),
+        occ_block(), unocc_block());
+    this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+  }
 }
 
 double RMP2::compute() {
   auto &lcao_factory = this->lcao_factory();
-  auto g_ijab = lcao_factory.compute(L"<i j|G|a b>");
-  // compute mp2 energy
-  double energy_mp2 =
-      (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
-          .reduce(detail::Mp2Energy<TA::TensorD>(
-              orbital_energy_, trange1_engine_->get_occ(),
-              trange1_engine_->get_nfrozen()));
-
-  if (g_ijab.world().rank() == 0) {
-    std::cout << "MP2 Energy  " << energy_mp2 << std::endl;
-  }
-  return energy_mp2;
+  return detail::compute_mp2(lcao_factory, this->orbital_energy(),
+                             this->trange1_engine(), false);
 }
 
 void RMP2::compute(qc::PropertyBase *pb) {}
+
+const std::shared_ptr<qc::Wavefunction> RMP2::refwfn() const {
+  return ref_wfn_;
+}
+
+//
+// Member function of RIRMP2 class
+//
 
 RIRMP2::RIRMP2(const KeyVal &kv) : RMP2(kv) {}
 
 double RIRMP2::compute() {
   auto &lcao_factory = this->lcao_factory();
-
-  auto g_ijab = lcao_factory.compute(L"<i j|G|a b>[df]");
-  // compute mp2 energy
-  double energy_mp2 =
-      (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
-          .reduce(detail::Mp2Energy<TA::TensorD>(
-              orbital_energy_, trange1_engine_->get_occ(),
-              trange1_engine_->get_nfrozen()));
-
-  if (g_ijab.world().rank() == 0) {
-    std::cout << "MP2 Energy With DF: " << energy_mp2 << std::endl;
-  }
-
-  return energy_mp2;
+  return detail::compute_mp2(lcao_factory, this->orbital_energy(),
+                             this->trange1_engine(), true);
 }
 }  // end of namespace mbpt
 }  // end of namespace mpqc

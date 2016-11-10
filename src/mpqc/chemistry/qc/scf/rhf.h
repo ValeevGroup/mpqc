@@ -54,6 +54,7 @@ class RHF : public qc::AOWavefunction<TA::TensorD, TA::SparsePolicy> {
 
   inline array_type const& overlap() const { return S_; }
   inline array_type const& fock() const { return F_; }
+  inline void set_fock(array_type f) {F_ = f;}
   inline array_type const& density() const { return D_; }
   inline array_type const& coefficents() const { return C_; }
   inline double rhf_energy() const { return this->energy_; }

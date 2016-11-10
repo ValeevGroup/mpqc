@@ -19,7 +19,7 @@ if (${PYTHONINTERP_FOUND})
               -DpythonExec=${PYTHON_EXECUTABLE}
               -P ${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
     set_tests_properties(validation/${baseName}
-                         PROPERTIES DEPENDS mpqc)
+                         PROPERTIES DEPENDS ../../src/bin/mpqc/mpqc)
     
   endforeach(infileName)
 else (${PYTHONINTERP_FOUND})

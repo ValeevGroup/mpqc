@@ -11,8 +11,8 @@ set(CHECK_ARGS "${srcDir}/check.py"
 if (NOT EXISTS "${OUTPUT_FILE_NAME}")
 
   set(MPQC_CMD "${CMAKE_BINARY_DIR}/../../src/bin/mpqc/mpqc")
-  set(MPQC_ARGS "-p ${srcDir}/reference/inputs"
-      "${srcDir}/reference/inputs/${baseName}.json")
+  set(MPQC_ARGS "-p" "${srcDir}/reference/inputs"
+  "${srcDir}/reference/inputs/${baseName}.json")
 
   execute_process(COMMAND
                   ${MPQC_CMD} ${MPQC_ARGS}
@@ -20,7 +20,6 @@ if (NOT EXISTS "${OUTPUT_FILE_NAME}")
                   RESULT_VARIABLE MPQC_RESULT)
 
   if(MPQC_RESULT)
-    message(STATUS "output: ${OUTPUT_VARIABLE}")
     message(FATAL_ERROR "Error running ${MPQC_CMD}")
   endif()
 endif()

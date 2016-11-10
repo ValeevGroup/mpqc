@@ -129,6 +129,10 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
   Vector3i RD_max() {return RD_max_;}
   Vector3i nk() {return nk_;}
 
+  /// Return crystal orbital coefficients
+  TArray C();
+  /// Return crystal orbital epsilons
+  std::vector<Vectorc> eps() {return eps_;}
 
  private:
   FormulaRegistry<TArray> ao_formula_registry_;
@@ -136,6 +140,8 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
   Op op_;
 
   TArray D_;  // Density
+  std::vector<Matrixc> C_;
+  std::vector<Vectorc> eps_;
 
   Vector3i R_max_ = {
       0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
@@ -699,8 +705,8 @@ PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
                                                  int64_t ndocc) {
   TArray result;
 
-  std::vector<Vectorc> eps(k_size_);
-  std::vector<Matrixc> C(k_size_);
+  eps_.resize(k_size_);
+  C_.resize(k_size_);
 
   auto tr0 = fock_recip.trange().data()[0];
   auto tr1 = extend_trange1(tr0, RD_size_);
@@ -720,11 +726,11 @@ PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
     auto Ft = XtF * X;
     // Diagonalize F'
     Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(Ft);
-    eps[k] = comp_eig_solver.eigenvalues();
+    eps_[k] = comp_eig_solver.eigenvalues();
     auto Ctemp = comp_eig_solver.eigenvectors();
-    C[k] = X * Ctemp;
+    C_[k] = X * Ctemp;
     // Sort eigenvalues and eigenvectors in ascending order
-    sort_eigen(eps[k], C[k]);
+    sort_eigen(eps_[k], C_[k]);
   }
 
   Matrixc result_eig(tr0.extent(), tr1.extent());
@@ -733,7 +739,7 @@ PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
     auto vec_R = R_vector(R, RD_max_);
     for (auto k = 0; k < k_size_; ++k) {
       auto vec_k = k_vector(k);
-      auto C_occ = C[k].leftCols(ndocc);
+      auto C_occ = C_[k].leftCols(ndocc);
       auto D_real = C_occ.conjugate() * C_occ.transpose();
       auto exponent =
           std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
@@ -773,6 +779,22 @@ void PeriodicAOFactory<Tile, Policy>::sort_eigen(Vectorc &eigVal,
 
   eigVal = sortedEigVal;
   eigVec = sortedEigVec;
+}
+
+/// Return crystal orbital coefficients
+template <typename Tile, typename Policy>
+typename PeriodicAOFactory<Tile, Policy>::TArray
+PeriodicAOFactory<Tile, Policy>::C() {
+    TArray C;
+    auto tr0 = D_.trange().data()[0];
+    auto tr1 = extend_trange1(tr0, k_size_);
+
+    Matrixc C_eig(tr0.extent(), tr1.extent());
+    for (auto k = 0; k < k_size_; ++k)
+        C_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) = C_[k];
+
+    C = array_ops::eigen_to_array<Tile>(world_, C_eig, tr0, tr1);
+    return C;
 }
 
 /// Make PeriodicAOFactory printable

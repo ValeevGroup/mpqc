@@ -1,0 +1,603 @@
+env DYLD_LIBRARY_PATH=/opt/intel//compilers_and_libraries_2016.3.170/mac/tbb/lib:/opt/intel//compilers_and_libraries_2016.3.170/mac/compiler/lib:/opt/intel//compilers_and_libraries_2016.3.170/mac/mkl/lib:/Users/evaleev/code/install/tiledarray-clang/lib
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+MADNESS process total size: 1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+
+
+Warning!! User asked for more clusters than there were clusterables! Use 1 clusters!
+
+OBS Basis Trange 
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+DF Basis Trange 
+( tiles = [ 0, 1 ), elements = [ 0, 24 ) )
+Min and Max block size: 24 24
+Average: 24
+
+AUX Basis Trange 
+( tiles = [ 0, 1 ), elements = [ 0, 41 ) )
+Min and Max block size: 41 41
+Average: 41
+
+F12 Correlation Factor: 1.2
+NFunction: 6
+F12 Exponent Coefficient
+0.275538292729334 -0.219608292300018
+1.14054587188257 -0.254494187225885
+3.95825703637032 -0.154545984684514
+13.1268593363167 -0.0932731181168354
+49.2874118680304 -0.0579166932428649
+272.920102420411 -0.0359421673455034
+
+Screen: qqr
+Threshold: 1e-10
+Precision: 2.22044604925031e-16
+
+F12 Correlation Factor: 1.2
+NFunction: 6
+F12 Exponent Coefficient
+0.275538292729334 -0.219608292300018
+1.14054587188257 -0.254494187225885
+3.95825703637032 -0.154545984684514
+13.1268593363167 -0.0932731181168354
+49.2874118680304 -0.0579166932428649
+272.920102420411 -0.0359421673455034
+
+Screen: qqr
+Threshold: 1e-10
+Precision: 2.22044604925031e-16
+
+Computed One Body Integral: < κ | λ > Size: 1.25914812088013e-06 GB Time: 0.007125747 s
+Computed One Body Integral: < κ |V| λ > Size: 1.25914812088013e-06 GB Time: 0.006682453 s
+Computed One Body Integral: < κ |T| λ > Size: 1.25914812088013e-06 GB Time: 0.000469321 s
+Computed One Body Integral: < κ |H| λ > Size: 1.25914812088013e-06 GB Time: 0.000243102 s
+Computed Twobody Two Center Integral: ( Κ |G| Λ ) Size: 4.29153442382812e-06 GB Time: 0.54082867 s
+Computed Twobody Three Center Integral: ( Κ |G| κ λ ) Size: 3.0219554901123e-05 GB Time: 1.843203151 s
+Starting SCF:
+	Threshold: 1e-11
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -76.172009821117
+	abs(Energy Change)/energy: 0.00365736590796156
+	(Gradient Norm)/n^2: 0.00233094621894013
+	Scf Time: 0.004482271
+		Density Time: 0.001488705
+		Fock Build Time: 0.002048835
+		DF Fock builder:
+			W time: 0.000372059
+			J time: 0.000481804
+			K time: 0.00049965
+			Total exchange time: 0.000871709
+iteration: 1
+	Energy: -76.2140757286781
+	abs(Energy Change)/energy: 0.000551944075407597
+	(Gradient Norm)/n^2: 0.00111729007317871
+	Scf Time: 0.012812548
+		Density Time: 0.001660926
+		Fock Build Time: 0.009489041
+		DF Fock builder:
+			W time: 0.000308976
+			J time: 0.003642046
+			K time: 0.000500316
+			Total exchange time: 0.000809292
+iteration: 2
+	Energy: -76.223908152774
+	abs(Energy Change)/energy: 0.000128993964415962
+	(Gradient Norm)/n^2: 0.000143551463877738
+	Scf Time: 0.009967313
+		Density Time: 0.001562174
+		Fock Build Time: 0.003040922
+		DF Fock builder:
+			W time: 0.000276077
+			J time: 0.001760405
+			K time: 0.000427829
+			Total exchange time: 0.000703906
+iteration: 3
+	Energy: -76.2241794040672
+	abs(Energy Change)/energy: 3.55859906029762e-06
+	(Gradient Norm)/n^2: 2.08758073188106e-05
+	Scf Time: 0.004894377
+		Density Time: 0.001537024
+		Fock Build Time: 0.001733206
+		DF Fock builder:
+			W time: 0.000285225
+			J time: 0.00043011
+			K time: 0.000453209
+			Total exchange time: 0.000738434
+iteration: 4
+	Energy: -76.2241830588952
+	abs(Energy Change)/energy: 4.79484048969864e-08
+	(Gradient Norm)/n^2: 1.52468495842645e-06
+	Scf Time: 0.005997577
+		Density Time: 0.001535286
+		Fock Build Time: 0.001660759
+		DF Fock builder:
+			W time: 0.000278371
+			J time: 0.000420333
+			K time: 0.000439325
+			Total exchange time: 0.000717696
+iteration: 5
+	Energy: -76.2241830968484
+	abs(Energy Change)/energy: 4.9791546661651e-10
+	(Gradient Norm)/n^2: 2.57160622434833e-07
+	Scf Time: 0.005499692
+		Density Time: 0.001976356
+		Fock Build Time: 0.001694291
+		DF Fock builder:
+			W time: 0.000283652
+			J time: 0.000429881
+			K time: 0.000459599
+			Total exchange time: 0.000743251
+iteration: 6
+	Energy: -76.2241830985434
+	abs(Energy Change)/energy: 2.22375925830323e-11
+	(Gradient Norm)/n^2: 8.13417220529724e-08
+	Scf Time: 0.0128715
+		Density Time: 0.001867996
+		Fock Build Time: 0.002585309
+		DF Fock builder:
+			W time: 0.000395787
+			J time: 0.000429148
+			K time: 0.001187749
+			Total exchange time: 0.001583536
+iteration: 7
+	Energy: -76.2241830987049
+	abs(Energy Change)/energy: 2.11790147171072e-12
+	(Gradient Norm)/n^2: 5.89483140567933e-09
+	Scf Time: 0.00612155
+		Density Time: 0.001745129
+		Fock Build Time: 0.002279017
+		DF Fock builder:
+			W time: 0.000342379
+			J time: 0.000472978
+			K time: 0.000620757
+			Total exchange time: 0.000963136
+iteration: 8
+	Energy: -76.2241830987058
+	abs(Energy Change)/energy: 1.17454042885364e-14
+	(Gradient Norm)/n^2: 1.52333192792233e-09
+	Scf Time: 0.005335727
+		Density Time: 0.001668371
+		Fock Build Time: 0.001729036
+		DF Fock builder:
+			W time: 0.000316154
+			J time: 0.000429938
+			K time: 0.000441101
+			Total exchange time: 0.000757255
+iteration: 9
+	Energy: -76.2241830987058
+	abs(Energy Change)/energy: 9.32174943534638e-16
+	(Gradient Norm)/n^2: 3.29602070543589e-10
+	Scf Time: 0.005308987
+		Density Time: 0.00145704
+		Fock Build Time: 0.002129575
+		DF Fock builder:
+			W time: 0.000284289
+			J time: 0.000441938
+			K time: 0.000469153
+			Total exchange time: 0.000753442
+iteration: 10
+	Energy: -76.224183098706
+	abs(Energy Change)/energy: 1.86434988706927e-15
+	(Gradient Norm)/n^2: 9.18507006453861e-11
+	Scf Time: 0.005763095
+		Density Time: 0.001788332
+		Fock Build Time: 0.001861862
+		DF Fock builder:
+			W time: 0.000351411
+			J time: 0.000460298
+			K time: 0.000491901
+			Total exchange time: 0.000843312
+iteration: 11
+	Energy: -76.2241830987059
+	abs(Energy Change)/energy: 9.32174943534637e-16
+	(Gradient Norm)/n^2: 1.28132536979621e-11
+	Scf Time: 0.005063841
+		Density Time: 0.001506237
+		Fock Build Time: 0.001814208
+		DF Fock builder:
+			W time: 0.000279629
+			J time: 0.000422364
+			K time: 0.000480457
+			Total exchange time: 0.000760086
+iteration: 12
+	Energy: -76.224183098706
+	abs(Energy Change)/energy: 5.59304966120782e-16
+	(Gradient Norm)/n^2: 4.55483693477666e-12
+	Scf Time: 0.013532647
+		Density Time: 0.001724558
+		Fock Build Time: 0.009297754
+		DF Fock builder:
+			W time: 0.00033607
+			J time: 0.000479613
+			K time: 0.00787694
+			Total exchange time: 0.00821301
+
+Building ClosedShell OBS MO Orbital
+Retrieved AO Integral: < μ |F| ν >[df] Size: 1.25914812088013e-06 GB
+Retrieved AO Integral: < κ | λ > Size: 1.25914812088013e-06 GB
+Condition Number in Overlap: 50.5531878082314
+Frozen Core: 2 electrons
+OccBlockSize: 1
+VirBlockSize: 24
+Occ Trange 
+( tiles = [ 0, 5 ), elements = [ 0, 5 ) )
+Min and Max block size: 1 1
+Average: 1
+
+CorrOcc Trange 
+( tiles = [ 0, 4 ), elements = [ 0, 4 ) )
+Min and Max block size: 1 1
+Average: 1
+
+Vir Trange 
+( tiles = [ 0, 1 ), elements = [ 0, 8 ) )
+Min and Max block size: 8 8
+Average: 8
+
+Obs Trange 
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+ClosedShell OBS MO Build Time: 0.00349675 S
+Use DF CCSD Compute
+Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |G| a i ) Size: 5.7220458984375e-06 GB Time: 0.000630343 s
+Retrieved LCAO Integral: ( Κ |G| b j ) Size: 5.7220458984375e-06 GB
+Computed Twobody Two Center Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 0.001052991 s
+Inverse Time: 0.001251321 s
+Transformed LCAO Integral: < a b |G| i j >[df] Size: 7.62939453125e-06 GB Time: 0.00178679 s
+Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |G| i k ) Size: 2.86102294921875e-06 GB Time: 0.00060938 s
+Retrieved LCAO Integral: ( Κ |G| j l ) Size: 2.86102294921875e-06 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i j |G| k l >[df] Size: 1.9073486328125e-06 GB Time: 0.021698003 s
+Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |G| a c ) Size: 1.1444091796875e-05 GB Time: 0.000630205 s
+Retrieved LCAO Integral: ( Κ |G| b d ) Size: 1.1444091796875e-05 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < a b |G| c d >[df] Size: 3.0517578125e-05 GB Time: 0.000563775 s
+Computed Twobody Two Center Integral: ( Κ |G| Λ )[inv_sqr] Size: 4.29153442382812e-06 GB Time: 0.00110164 s
+Inverse Square Root Time: 0.002918976 s
+Retrieved LCAO Integral: ( Κ |G| a i ) Size: 5.7220458984375e-06 GB
+Retrieved LCAO Integral: ( Κ |G| i j ) Size: 2.86102294921875e-06 GB
+Retrieved LCAO Integral: ( Κ |G| a b ) Size: 1.1444091796875e-05 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i a |G| j b >[df] Size: 7.62939453125e-06 GB Time: 0.000519842 s
+Permuted LCAO Integral: ( Κ |G| i b ) From ( Κ |G| b i ) Size: 5.7220458984375e-06 GB  Time: 0.000132051 s
+Retrieved LCAO Integral: ( Κ |G| a c ) Size: 1.1444091796875e-05 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i a |G| b c >[df] Size: 1.52587890625e-05 GB Time: 0.000521689 s
+Permuted LCAO Integral: < a i |G| b c >[df] From < i a |G| c b >[df] Size: 1.52587890625e-05 GB  Time: 9.6009e-05 s
+Retrieved LCAO Integral: ( Κ |G| i a ) Size: 5.7220458984375e-06 GB
+Retrieved LCAO Integral: ( Κ |G| j k ) Size: 2.86102294921875e-06 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i j |G| a k >[df] Size: 3.814697265625e-06 GB Time: 0.00222732 s
+Permuted LCAO Integral: < i j |G| k a >[df] From < j i |G| a k >[df] Size: 3.814697265625e-06 GB  Time: 0.000380889 s
+Retrieved AO Integral: < κ0 |F| κ1 >[df] Size: 1.25914812088013e-06 GB
+Transformed LCAO Integral: < a |F| i >[df] Size: 2.38418579101562e-07 GB Time: 0.000410679 s
+MP2 Energy      -0.116778998452078
+Start Iteration
+Max Iteration20
+Convergence 1e-07
+AccurateTime0
+PrintDetail0
+Less Memory Approach: No
+DIIS Starting Iteration:  1
+DIIS Storing Size:  8
+DIIS ngr:  2
+DIIS ngrdiis:  1
+DIIS dmp:  0
+DIIS mf:  0
+iter     deltaE                residual             energy      total/second 
+0  0  2.28826405114461e-05  -0.116778998452078  0.063985152
+1  0.00175241711231505  8.01958300450517e-06  -0.118531415564393  0.050860157
+2  0.00271882316016296  1.56293036405412e-06  -0.121250238724556  0.060960142
+3  0.000216765702989549  3.97101605801502e-07  -0.121467004427545  0.046767985
+4  7.85581721902961e-06  1.14715824468111e-07  -0.121474860244764  0.098965482
+5  1.60234303897555e-06  3.22549056997505e-08  -0.121476462587803  0.084355181
+6  1.47366332897692e-06  5.71373506528656e-09  -0.121474988924474  0.057289284
+7  5.64409142339573e-08  5.71373506528656e-09  -0.121475045365388  0.043814483
+CCSD Energy  -0.121475045365388
+Total CCSD Time:  3.138846522
+
+Building ClosedShell CABS MO Orbital
+RI Basis Trange 
+( tiles = [ 0, 2 ), elements = [ 0, 54 ) )
+Min and Max block size: 13 41
+Average: 27
+
+Computed One Body Integral: < ρ | σ >[inv_sqr] Size: 2.17258930206299e-05 GB Time: 0.001341612 s
+Inverse Square Root Time: 0.023436275 s
+Computed One Body Integral: < μ | σ > Size: 5.23030757904053e-06 GB Time: 0.011092819 s
+Computed One Body Integral: < κ | λ >[inv_sqr] Size: 1.25914812088013e-06 GB Time: 0.000433125 s
+Inverse Square Root Time: 0.000881999 s
+CABS MO Trange 
+( tiles = [ 0, 2 ), elements = [ 0, 41 ) )
+Min and Max block size: 17 24
+Average: 20
+
+RIBS MO Trange 
+( tiles = [ 0, 2 ), elements = [ 0, 54 ) )
+Min and Max block size: 24 30
+Average: 27
+
+All Virtual MO Trange 
+( tiles = [ 0, 2 ), elements = [ 0, 49 ) )
+Min and Max block size: 24 25
+Average: 24
+
+ClosedShell CABS MO Build Time: 0.048133462 S
+VTCouple: 1
+Removed from Registry: < a |F| i >[df]
+Removed from Registry: ( Κ |G| i k )
+Removed from Registry: ( Κ |G| i b )
+Removed from Registry: ( Κ |G| a i )
+Removed from Registry: ( Κ |G| a c )
+Removed from Registry: < i j |G| k l >[df]
+Removed from Registry: < i j |G| k a >[df]
+Removed from Registry: < i j |G| a k >[df]
+Removed from Registry: < i a |G| j b >[df]
+Removed from Registry: < i a |G| b c >[df]
+Removed from Registry: < a i |G| b c >[df]
+Removed from Registry: < a b |G| i j >[df]
+Removed from Registry: < a b |G| c d >[df]
+
+ Computing CCSDF12 C Approach 
+
+Compute B_ijij_ijji C With DF 
+Computed Twobody Three Center Integral: ( Κ |dR2| κ0 κ1 ) Size: 3.0219554901123e-05 GB Time: 0.032370657 s
+Transformed LCAO Integral: ( Κ |dR2| i1 i2 ) Size: 2.86102294921875e-06 GB Time: 0.000764448 s
+Computed Twobody Two Center Integral: ( Κ |dR2| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 0.002031021 s
+Inverse Time: 0.001365892 s
+Retrieved LCAO Integral: ( Λ |dR2| j1 j2 ) Size: 2.86102294921875e-06 GB
+B Term1 Time: 0.002148064 S
+Removed from Registry: ( Κ |dR2| i1 i2 )
+Removed from Registry: ( Κ |dR2| κ0 κ1 )
+Removed from Registry: ( Κ |dR2| Λ )[inv]
+Computed One Body Integral: < ρ0 |V| κ1 > Size: 5.23030757904053e-06 GB Time: 0.006399244 s
+Computed One Body Integral: < ρ0 |T| κ1 > Size: 5.23030757904053e-06 GB Time: 0.000794017 s
+Computed One Body Integral: < ρ0 |H| κ1 > Size: 5.23030757904053e-06 GB Time: 0.000129406 s
+Computed Twobody Three Center Integral: ( Κ |G| ρ0 κ1 ) Size: 0.000125527381896973 GB Time: 0.044351769 s
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Retrieved AO Integral: ( Κ |G| κ4 κ5 ) Size: 3.0219554901123e-05 GB
+Computed Coulumb/Exchange Integral: < ρ0 |J| κ1 >[df] Size: 5.23030757904053e-06 GB Time: 0.000803752 s
+Computed Coulumb/Exchange Integral: < ρ0 |hJ| κ1 >[df] Size: 5.23030757904053e-06 GB Time: 0.000195931 s
+Transformed LCAO Integral: < P' |hJ| i2 >[df] Size: 1.60932540893555e-06 GB Time: 0.000570762 s
+Computed Twobody Three Center Integral: ( Κ |R2| κ0 ρ1 ) Size: 0.000125527381896973 GB Time: 0.069655701 s
+Transformed LCAO Integral: ( Κ |R2| i1 P' ) Size: 3.86238098144531e-05 GB Time: 0.001035766 s
+Computed Twobody Three Center Integral: ( Κ |R2| κ0 κ1 ) Size: 3.0219554901123e-05 GB Time: 0.04275308 s
+Transformed LCAO Integral: ( Κ |R2| j1 j2 ) Size: 2.86102294921875e-06 GB Time: 0.001231096 s
+Computed Twobody Two Center Integral: ( Κ |R2| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 0.002546092 s
+Inverse Time: 0.001218085 s
+Transformed LCAO Integral: < i1 j1 |R2| P' j2 >[df] Size: 2.57492065429688e-05 GB Time: 0.001631312 s
+B Term2 Time: 0.001966917 S
+Removed from Registry: < P' |hJ| i2 >[df]
+Removed from Registry: < ρ0 |hJ| κ1 >[df]
+Removed from Registry: < i1 j1 |R2| P' j2 >[df]
+Computed Twobody Three Center Integral: ( Κ |R| κ0 ρ1 ) Size: 0.000125527381896973 GB Time: 0.033987146 s
+Transformed LCAO Integral: ( Κ |R| i1 P' ) Size: 3.86238098144531e-05 GB Time: 0.000976353 s
+Retrieved LCAO Integral: ( Κ |R| j1 Q' ) Size: 3.86238098144531e-05 GB
+Computed Twobody Two Center Integral: ( Κ |R| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 0.001227156 s
+Inverse Time: 0.001308152 s
+Transformed LCAO Integral: < i1 j1 |R| P' Q' >[df] Size: 0.000347614288330078 GB Time: 0.002585631 s
+Retrieved AO Integral: ( Κ |G| ρ0 κ4 ) Size: 0.000125527381896973 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Retrieved AO Integral: ( Κ |G| ρ1 κ5 ) Size: 0.000125527381896973 GB
+Computed Coulumb/Exchange Integral: < ρ0 |K| ρ1 >[df] Size: 2.17258930206299e-05 GB Time: 0.002095857 s
+Transformed LCAO Integral: < P' |K| R' >[df] Size: 2.17258930206299e-05 GB Time: 0.000553964 s
+Retrieved LCAO Integral: < i2 j2 |R| R' Q' >[df] Size: 0.000347614288330078 GB
+B Term3 Time: 0.003253091 S
+Removed from Registry: < i1 j1 |R| P' Q' >[df]
+Retrieved LCAO Integral: ( Κ |R| i1 P' ) Size: 3.86238098144531e-05 GB
+Computed Twobody Three Center Integral: ( Κ |R| κ0 κ1 ) Size: 3.0219554901123e-05 GB Time: 0.015798838 s
+Transformed LCAO Integral: ( Κ |R| j1 m ) Size: 3.57627868652344e-06 GB Time: 0.000841259 s
+Retrieved AO Integral: ( Κ |R| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i1 j1 |R| P' m >[df] Size: 3.21865081787109e-05 GB Time: 0.007658339 s
+Computed One Body Integral: < ρ0 |V| ρ1 > Size: 2.17258930206299e-05 GB Time: 0.013032648 s
+Computed One Body Integral: < ρ0 |T| ρ1 > Size: 2.17258930206299e-05 GB Time: 0.011776104 s
+Computed One Body Integral: < ρ0 |H| ρ1 > Size: 2.17258930206299e-05 GB Time: 0.00020696 s
+Computed Twobody Three Center Integral: ( Κ |G| ρ0 ρ1 ) Size: 0.000521421432495117 GB Time: 0.043615141 s
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Retrieved AO Integral: ( Κ |G| κ4 κ5 ) Size: 3.0219554901123e-05 GB
+Computed Coulumb/Exchange Integral: < ρ0 |J| ρ1 >[df] Size: 2.17258930206299e-05 GB Time: 0.000767465 s
+Retrieved AO Integral: < ρ0 |K| ρ1 >[df] Size: 2.17258930206299e-05 GB
+Computed Fock Integral: < ρ0 |F| ρ1 >[df] Size: 2.17258930206299e-05 GB Time: 0.00034271 s
+Transformed LCAO Integral: < P' |F| R' >[df] Size: 2.17258930206299e-05 GB Time: 0.002079548 s
+Retrieved LCAO Integral: < i2 j2 |R| R' m >[df] Size: 3.21865081787109e-05 GB
+B Term4 Time: 0.007445643 S
+Removed from Registry: < i1 j1 |R| P' m >[df]
+Retrieved LCAO Integral: ( Κ |R| i1 m ) Size: 3.57627868652344e-06 GB
+Retrieved AO Integral: ( Κ |R| κ0 ρ1 ) Size: 0.000125527381896973 GB
+Transformed LCAO Integral: ( Κ |R| j1 b' ) Size: 2.93254852294922e-05 GB Time: 0.002512445 s
+Retrieved AO Integral: ( Κ |R| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i1 j1 |R| m b' >[df] Size: 2.44379043579102e-05 GB Time: 0.001440274 s
+Permuted AO Integral: < κ0 |H| ρ1 > From < ρ1 |H| κ0 > Size: 5.23030757904053e-06 GB  Time: 8.7699e-05 s
+Permuted AO Integral: < κ0 |J| ρ1 >[df] From < ρ1 |J| κ0 >[df] Size: 5.23030757904053e-06 GB  Time: 7.2112e-05 s
+Retrieved AO Integral: ( Κ |G| κ0 κ4 ) Size: 3.0219554901123e-05 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Retrieved AO Integral: ( Κ |G| ρ1 κ5 ) Size: 0.000125527381896973 GB
+Computed Coulumb/Exchange Integral: < κ0 |K| ρ1 >[df] Size: 5.23030757904053e-06 GB Time: 0.004606469 s
+Computed Fock Integral: < κ0 |F| ρ1 >[df] Size: 5.23030757904053e-06 GB Time: 0.000197989 s
+Transformed LCAO Integral: < m |F| P' >[df] Size: 2.01165676116943e-06 GB Time: 0.000543168 s
+Retrieved LCAO Integral: ( Κ |R| i2 P' ) Size: 3.86238098144531e-05 GB
+Retrieved LCAO Integral: ( Κ |R| j2 b' ) Size: 2.93254852294922e-05 GB
+Retrieved AO Integral: ( Κ |R| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i2 j2 |R| P' b' >[df] Size: 0.00026392936706543 GB Time: 0.00533764 s
+B Term5 Time: 0.004488833 S
+Removed from Registry: < P' |K| R' >[df]
+Removed from Registry: < m |F| P' >[df]
+Removed from Registry: < P' |F| R' >[df]
+Removed from Registry: ( Κ |R| i1 P' )
+Removed from Registry: < i2 j2 |R| P' b' >[df]
+Removed from Registry: ( Κ |R2| i1 P' )
+Retrieved AO Integral: ( Κ |R| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |R| i1 p ) Size: 9.29832458496094e-06 GB Time: 0.000582304 s
+Retrieved AO Integral: ( Κ |R| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |R| j1 a ) Size: 5.7220458984375e-06 GB Time: 0.000541675 s
+Retrieved AO Integral: ( Κ |R| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i1 j1 |R| p a >[df] Size: 1.23977661132812e-05 GB Time: 0.001605589 s
+Retrieved AO Integral: < κ0 |F| κ1 >[df] Size: 1.25914812088013e-06 GB
+Transformed LCAO Integral: < p |F| r >[df] Size: 1.25914812088013e-06 GB Time: 0.000322303 s
+Retrieved LCAO Integral: < i2 j2 |R| r a >[df] Size: 1.23977661132812e-05 GB
+B Term6 Time: 0.002818572 S
+Retrieved LCAO Integral: < i1 j1 |R| m b' >[df] Size: 2.44379043579102e-05 GB
+Retrieved AO Integral: < κ0 |F| κ1 >[df] Size: 1.25914812088013e-06 GB
+Transformed LCAO Integral: < m |F| n >[df] Size: 1.86264514923096e-07 GB Time: 0.000587411 s
+Retrieved LCAO Integral: < i2 j2 |R| n b' >[df] Size: 2.44379043579102e-05 GB
+B Term7 Time: 0.004225459 S
+Retrieved LCAO Integral: < i1 j1 |R| p a >[df] Size: 1.23977661132812e-05 GB
+Retrieved AO Integral: < κ0 |F| ρ1 >[df] Size: 5.23030757904053e-06 GB
+Transformed LCAO Integral: < p |F| a' >[df] Size: 3.9711594581604e-06 GB Time: 0.000958186 s
+Retrieved LCAO Integral: ( Κ |R| i2 a' ) Size: 2.93254852294922e-05 GB
+Retrieved LCAO Integral: ( Κ |R| j2 a ) Size: 5.7220458984375e-06 GB
+Retrieved AO Integral: ( Κ |R| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i2 j2 |R| a' a >[df] Size: 3.91006469726562e-05 GB Time: 0.000607159 s
+B Term8 Time: 0.001817106 S
+Removed from Registry: < i1 j1 |R| p a >[df]
+Removed from Registry: < i2 j2 |R| a' a >[df]
+B Term Total Time: 0.44106679 S
+E_B: 0.100567345944867
+Removed from Registry: ( Κ |R| κ0 ρ1 )
+Removed from Registry: ( Κ |R| κ0 κ1 )
+Removed from Registry: ( Κ |R| Λ )[inv]
+
+Compute X_ijij_ijji With DF 
+Retrieved LCAO Integral: ( Κ |R2| i1 i2 ) Size: 2.86102294921875e-06 GB
+Retrieved AO Integral: ( Κ |R2| Λ )[inv] Size: 4.29153442382812e-06 GB
+Retrieved LCAO Integral: ( Λ |R2| j1 j2 ) Size: 2.86102294921875e-06 GB
+X Term1 Time: 0.000937746 S
+Retrieved LCAO Integral: ( Κ |R| i1 p ) Size: 9.29832458496094e-06 GB
+Retrieved LCAO Integral: ( Κ |R| j1 q ) Size: 9.29832458496094e-06 GB
+Computed Twobody Two Center Integral: ( Κ |R| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 0.001293405 s
+Inverse Time: 0.001467623 s
+Transformed LCAO Integral: < i1 j1 |R| p q >[df] Size: 2.0146369934082e-05 GB Time: 0.000505063 s
+Retrieved LCAO Integral: < i2 j2 |R| p q >[df] Size: 2.0146369934082e-05 GB
+X Term2 Time: 0.000824794 S
+Retrieved LCAO Integral: < i1 j1 |R| m a' >[df] Size: 2.44379043579102e-05 GB
+Retrieved LCAO Integral: < i2 j2 |R| m a' >[df] Size: 2.44379043579102e-05 GB
+X Term3 Time: 0.002123101 S
+X Term Total Time: 0.01107866 S
+Removed from Registry: ( Κ |R2| j1 j2 )
+Removed from Registry: ( Κ |R2| κ0 ρ1 )
+Removed from Registry: ( Κ |R2| κ0 κ1 )
+Removed from Registry: ( Κ |R2| Λ )[inv]
+Retrieved AO Integral: < κ0 |F| κ1 >[df] Size: 1.25914812088013e-06 GB
+Transformed LCAO Integral: < i |F| j >[df] Size: 1.19209289550781e-07 GB Time: 0.000495885 s
+E_X: 0.0183903538521053
+
+Compute V_ijij_ijji With DF 
+Computed Twobody Three Center Integral: ( Κ |GR| κ0 κ1 ) Size: 3.0219554901123e-05 GB Time: 0.034976408 s
+Transformed LCAO Integral: ( Κ |GR| i2 i1 ) Size: 2.86102294921875e-06 GB Time: 0.000729008 s
+Computed Twobody Two Center Integral: ( Κ |GR| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 0.001853607 s
+Inverse Time: 0.001313741 s
+Retrieved LCAO Integral: ( Λ |GR| j1 j2 ) Size: 2.86102294921875e-06 GB
+V Term1 Time: 0.000768821 S
+Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |G| i1 p ) Size: 9.29832458496094e-06 GB Time: 0.000740745 s
+Retrieved LCAO Integral: ( Κ |G| j1 q ) Size: 9.29832458496094e-06 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i1 j1 |G| p q >[df] Size: 2.0146369934082e-05 GB Time: 0.000470026 s
+Retrieved LCAO Integral: < i2 j2 |R| p q >[df] Size: 2.0146369934082e-05 GB
+V Term2 Time: 0.000755536 S
+Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |G| i1 m ) Size: 3.57627868652344e-06 GB Time: 0.000651642 s
+Permuted AO Integral: ( Κ |G| κ0 ρ1 ) From ( Κ |G| ρ1 κ0 ) Size: 0.000125527381896973 GB  Time: 8.8323e-05 s
+Transformed LCAO Integral: ( Κ |G| j1 a' ) Size: 2.93254852294922e-05 GB Time: 0.002107576 s
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i1 j1 |G| m a' >[df] Size: 2.44379043579102e-05 GB Time: 0.001497777 s
+Retrieved LCAO Integral: < i2 j2 |R| m a' >[df] Size: 2.44379043579102e-05 GB
+V Term3 Time: 0.0022171 S
+V Term Total Time: 0.062050414 S
+
+Compute C_ijab With DF 
+Retrieved LCAO Integral: ( Κ |R| i a ) Size: 5.7220458984375e-06 GB
+Retrieved LCAO Integral: ( Κ |R| j a' ) Size: 2.93254852294922e-05 GB
+Retrieved AO Integral: ( Κ |R| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i j |R| a a' >[df] Size: 3.91006469726562e-05 GB Time: 0.002826572 s
+Permuted AO Integral: < ρ0 |F| κ1 >[df] From < κ1 |F| ρ0 >[df] Size: 5.23030757904053e-06 GB  Time: 8.0522e-05 s
+Transformed LCAO Integral: < a' |F| b >[df] Size: 2.44379043579102e-06 GB Time: 0.000421685 s
+C Term Time: 0.000622904 S
+Removed from Registry: < i j |R| a a' >[df]
+C Term Total Time: 0.005916706 S
+
+Compute V_xyab With DF 
+Retrieved AO Integral: ( Κ |GR| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |GR| i a ) Size: 5.7220458984375e-06 GB Time: 0.000554022 s
+Retrieved LCAO Integral: ( Κ |GR| j b ) Size: 5.7220458984375e-06 GB
+Retrieved AO Integral: ( Κ |GR| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i j |GR| a b >[df] Size: 7.62939453125e-06 GB Time: 0.000444488 s
+V Term1 Time: 0.000132907 S
+Removed from Registry: < i j |GR| a b >[df]
+Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |G| a p ) Size: 1.85966491699219e-05 GB Time: 0.000533128 s
+Retrieved LCAO Integral: ( Κ |G| b q ) Size: 1.85966491699219e-05 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < a b |G| p q >[df] Size: 8.05854797363281e-05 GB Time: 0.000705058 s
+Retrieved LCAO Integral: < i j |R| p q >[df] Size: 2.0146369934082e-05 GB
+V Term2 Time: 0.000777037 S
+Removed from Registry: < a b |G| p q >[df]
+Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |G| a m ) Size: 7.15255737304688e-06 GB Time: 0.004911063 s
+Retrieved AO Integral: ( Κ |G| κ0 ρ1 ) Size: 0.000125527381896973 GB
+Transformed LCAO Integral: ( Κ |G| b a' ) Size: 5.86509704589844e-05 GB Time: 0.003162968 s
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < a b |G| m a' >[df] Size: 9.77516174316406e-05 GB Time: 0.000629595 s
+Retrieved LCAO Integral: < i j |R| m a' >[df] Size: 2.44379043579102e-05 GB
+V Term3 Time: 0.007493697 S
+Removed from Registry: < a b |G| m a' >[df]
+V Term Total Time: 0.030223466 S
+
+Compute VT2_ijij_ijji With DF
+VT2 Term Total Time: 0.000876682 S
+
+Compute V_iaxy With DF 
+Retrieved LCAO Integral: ( Κ |GR| i k ) Size: 2.86102294921875e-06 GB
+Permuted LCAO Integral: ( Κ |GR| a l ) From ( Κ |GR| l a ) Size: 5.7220458984375e-06 GB  Time: 9.774e-05 s
+Retrieved AO Integral: ( Κ |GR| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i a |GR| k l >[df] Size: 3.814697265625e-06 GB Time: 0.000996518 s
+V Term1 Time: 0.000386432 S
+Removed from Registry: < i a |GR| k l >[df]
+Skip V Term2 
+Retrieved LCAO Integral: ( Κ |G| i m ) Size: 3.57627868652344e-06 GB
+Retrieved LCAO Integral: ( Κ |G| a a' ) Size: 5.86509704589844e-05 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < i a |G| m a' >[df] Size: 4.88758087158203e-05 GB Time: 0.000724911 s
+Retrieved LCAO Integral: < k l |R| m a' >[df] Size: 2.44379043579102e-05 GB
+V Term3 Time: 0.002253769 S
+Removed from Registry: < i a |G| m a' >[df]
+Retrieved LCAO Integral: ( Κ |G| a m ) Size: 7.15255737304688e-06 GB
+Retrieved LCAO Integral: ( Κ |G| i a' ) Size: 2.93254852294922e-05 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: < a i |G| m a' >[df] Size: 4.88758087158203e-05 GB Time: 0.000681029 s
+Retrieved LCAO Integral: < l k |R| m a' >[df] Size: 2.44379043579102e-05 GB
+V Term4 Time: 0.002359099 S
+Removed from Registry: < a i |G| m a' >[df]
+V Term Total Time: 0.013740758 S
+
+Compute VT1_ijij_ijji With DF
+VT1 Term1 Time: 0.001358135 S
+Retrieved LCAO Integral: ( Κ |G| i1 p ) Size: 9.29832458496094e-06 GB
+Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
+Transformed LCAO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 4.03e-07 s
+Retrieved LCAO Integral: ( Λ |G| a q ) Size: 1.85966491699219e-05 GB
+Retrieved LCAO Integral: < i2 j2 |R| p q >[df] Size: 2.0146369934082e-05 GB
+VT1 Term2 Time: 0.002046227 S
+VT1 Term Total Time: 0.004676901 S
+E_V: -0.268237040959346
+E_F12: -0.149279341162373
+ CABS Singles 
+Retrieved AO Integral: < ρ0 |F| ρ1 >[df] Size: 2.17258930206299e-05 GB
+Transformed LCAO Integral: < A' |F| B' >[df] Size: 1.78888440132141e-05 GB Time: 0.000495116 s
+Retrieved LCAO Integral: < m |F| n >[df] Size: 1.86264514923096e-07 GB
+Retrieved AO Integral: < κ0 |F| ρ1 >[df] Size: 5.23030757904053e-06 GB
+Transformed LCAO Integral: < m |F| A' >[df] Size: 1.82539224624634e-06 GB Time: 0.000526962 s
+E_S: -0.0677592661958523
+Total CABS Singles Time:  0.392276072
+Total F12 Time:  1.020325719
+Wfn energy is: -76.5626967514296

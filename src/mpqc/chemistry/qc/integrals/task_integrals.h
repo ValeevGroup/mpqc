@@ -99,8 +99,9 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
         {t_xyz[0].norm(), t_xyz[1].norm(), t_xyz[2].norm()}};
 
     for (auto i = 0; i < 3; ++i) {
-      tile_norms[i][ord] = norm[i];
-      if (TA::SparseShape<float>::threshold() <= t_volume * norm[i]) {
+      const float norm_float = norm[i];
+      tile_norms[i][ord] = norm_float;
+      if (TA::SparseShape<float>::threshold() * t_volume <= norm_float) {
         tiles[i][ord].second = op(std::move(t_xyz[i]));
       }
     }

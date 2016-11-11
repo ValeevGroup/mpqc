@@ -62,7 +62,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
 
     std::vector<TA::TensorD> t_xyz = {TA::TensorD(rng, 0.0),
                                       TA::TensorD(rng, 0.0),
-                                      TA::TensorD(std::move(rng), 0.0)};
+                                      TA::TensorD(rng, 0.0)};
 
     double dummy = 0.0;
     auto map = TA::make_const_map(&dummy, {0, 0}, {1, 1});

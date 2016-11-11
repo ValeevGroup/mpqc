@@ -15,6 +15,7 @@
 #include "mpqc/chemistry/qc/integrals/integral_builder.h"
 #include "mpqc/chemistry/qc/integrals/screening/screen_base.h"
 #include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
+#include "mpqc/util/misc/assert.h"
 
 namespace mpqc {
 namespace integrals {
@@ -39,13 +40,17 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
         TA::Noop<TA::TensorD,true>()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
-  const auto tvolume = trange.tiles_range().volume();
+  const auto tiles_range = trange.tiles_range();
+  const auto tvolume = tiles_range.volume();
 
   using TileVec = std::vector<std::pair<unsigned long, Tile>>;
-  std::vector<TileVec> tiles(3, TileVec(tvolume));
+  std::array<TileVec, 3> tiles{{TileVec(tvolume),TileVec(tvolume),TileVec(tvolume)}};
 
-  using NormVec = std::vector<TA::TensorF>;
-  NormVec tile_norms(3, TA::TensorF(trange.tiles_range(), 0.0));
+  using NormVec = std::array<TA::TensorF, 3>;
+  NormVec tile_norms{{TA::TensorF(tiles_range, 0.0),
+    TA::TensorF(tiles_range, 0.0),
+    TA::TensorF(tiles_range, 0.0)
+  }};
 
   // Capture by ref since we are going to fence after loops.
   auto task_f = [&](int64_t ord, detail::IdxVec idx, TA::Range rng) {
@@ -80,8 +85,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
         ub[1] += n1;
 
         const auto &bufs = eng.compute(s0, s1);
-        TA_USER_ASSERT(bufs.size() >= 4,
-                       "unexpected result from Engine::compute()");
+        MPQC_ASSERT(bufs.size() >= 4);
 
         if (bufs[0] != nullptr) {
           for (auto i = 1; i < 4; ++i) {
@@ -112,7 +116,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
     tiles[0][ord].first = ord;
     tiles[1][ord].first = ord;
     tiles[2][ord].first = ord;
-    detail::IdxVec idx = trange.tiles_range().idx(ord);
+    detail::IdxVec idx = tiles_range.idx(ord);
     world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord));
   }
   world.gop.fence();

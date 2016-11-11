@@ -13,10 +13,12 @@ namespace mbpt {
 class RMP2;
 class RIRMP2;
 class DBRMP2;
+class RIDBRMP2;
 
 mpqc::detail::ForceLink<RMP2> fl1;
 mpqc::detail::ForceLink<RIRMP2> fl2;
 mpqc::detail::ForceLink<DBRMP2> fl3;
+mpqc::detail::ForceLink<RIDBRMP2> fl4;
 }
 }
 

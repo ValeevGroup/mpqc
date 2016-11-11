@@ -1,5 +1,8 @@
 #! /bin/sh
 
+# set to the release id of the required library
+export RELID=2.2.0
+
 # Exit on error
 set -ev
 case "$CXX" in
@@ -31,10 +34,10 @@ mkdir -p _install
 
 cd _build
 
-# Unpack libint tarball
-tar -xvzf ../external/libint-2.2.0-beta1.tgz
-cd libint-2.2.0-beta1/
-
+# download and unpack libint tarball
+wget --no-check-certificate -q https://github.com/evaleev/libint/releases/download/v$RELID/libint-$RELID-test-mpqc4.tgz
+tar -xvzf libint-$RELID-test-mpqc4.tgz
+cd libint-$RELID/
 
 ./configure --prefix="/home/travis/build/ValeevGroup/mpqc4/_install/libint" \
  --with-incdirs="-I/usr/include/eigen3"

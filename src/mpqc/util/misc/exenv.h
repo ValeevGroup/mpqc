@@ -52,8 +52,8 @@ class ExEnv {
     static size_t mem_;
     static int nproc_;
 
-    static std::ostream *out_;
-    static std::ostream *nullstream_;
+    static std::ostream* out_;
+    static std::unique_ptr<std::ostream> nullstream_;
   public:
     /// Set the argument count and vector.
     static void init(int &argcref, char **&argvref);

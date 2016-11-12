@@ -41,6 +41,7 @@
 
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/external/c++/memory"
 
 using namespace std;
 using namespace mpqc;
@@ -52,8 +53,8 @@ int *ExEnv::argc_ = 0;
 char ***ExEnv::argv_ = 0;
 char ExEnv::hostname_[256] = { '\0' };
 char ExEnv::username_[9] = { '\0' };
-ostream *ExEnv::out_ = 0;
-ostream *ExEnv::nullstream_ = 0;
+ostream *ExEnv::out_ = nullptr;
+std::unique_ptr<ostream> ExEnv::nullstream_;
 
 const char *
 ExEnv::program_name()
@@ -80,19 +81,13 @@ ExEnv::getenv_string(const char *name)
   return value;
 }
 
-std::ostream &
-ExEnv::out0()
-{
-  if (!FormIO::get_debug()
-      && FormIO::get_printnode() != FormIO::get_node()) {
-      if (!nullstream_) {
-          ofstream *nullofstream = new ofstream;
-          if (nullofstream->bad() || nullofstream->fail())
-              nullofstream->open("/dev/null");
-          nullstream_ = nullofstream;
-        }
-    return *nullstream_;
+std::ostream &ExEnv::out0() {
+  if (!FormIO::get_debug() && FormIO::get_printnode() != FormIO::get_node()) {
+    if (!nullstream_) {
+      nullstream_ = std::make_unique<std::ofstream>("/dev/null");
     }
+    return *nullstream_;
+  }
 
   return outn();
 }

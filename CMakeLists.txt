@@ -113,15 +113,11 @@ CHECK_FUNCTION_EXISTS (signal            HAVE_SIGNAL)
 # Dependencies
 ###############################################################################
 
-# grand list of all MPQC libraries and dependencies goes here; may go away
-set(MPQC_LIBRARIES "" CACHE INTERNAL "MPQC libs and dependencies")
-
 # search for TA first, other packages can be found with it
 FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
 include(ValidateTiledArray)
 validate_tiledarray()
 set(TA_LIBRARIES tiledarray)
-set(MPQC_LIBRARIES "${TA_LIBRARIES}")
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
 
 FIND_PACKAGE(TBB REQUIRED)
@@ -135,9 +131,6 @@ INCLUDE_DIRECTORIES(${LIBINT2_INCLUDE_DIRS})
 add_definitions(${LIBINT2_EXTRA_DEFINITIONS})
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 
-set(MPQC_LIBRARIES
-    "${MPQC_LIBRARIES};${TBB_LIBRARIES};${LIBINT2_LIBRARIES};${Boost_LIBRARIES}")
-
 find_package(PythonInterp)
 
 ###############################################################################
@@ -149,12 +142,7 @@ INCLUDE_DIRECTORIES(${MPQC_BINARY_DIR}/src)
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
 
-LIST(APPEND MPQC_LIBRARIES MPQCf12 MPQCcc MPQCmbpt MPQCscf MPQCutil_options)
-
-message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
-
 MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
-MESSAGE(STATUS "Using libraries ${MPQC_LIBRARIES}")
 
 ###############################################################################
 # Declare MPQC program

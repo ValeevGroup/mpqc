@@ -1,2 +1,6 @@
 add_executable(mpqc EXCLUDE_FROM_ALL mpqc.cpp)
-target_link_libraries(mpqc ${MPQC_LIBRARIES})
+# add the libraries you need and force their linkage in mpqc.cpp
+# developers will want to trim this list down to the minimum needed
+target_link_libraries(mpqc
+                      MPQCf12 MPQCcc MPQCmbpt MPQCscf
+                      MPQCutil_options MPQCutil_misc)

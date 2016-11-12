@@ -18,7 +18,8 @@
 #include "mpqc/util/misc/exenv.h"
 #include "mpqc/util/options/GetLongOpt.h"
 
-/// linkage files to force linking in of ALL Wavefunction-based classes
+// linkage files to force linking in of ALL Wavefunction-based classes
+// this list must be in sync with CMakeLists.txt
 #include "mpqc/chemistry/qc/cc/linkage.h"
 #include "mpqc/chemistry/qc/f12/linkage.h"
 #include "mpqc/chemistry/qc/mbpt/linkage.h"

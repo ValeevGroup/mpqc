@@ -36,9 +36,6 @@ using namespace mpqc;
 TEST_CASE("FormIO", "[formio]") {
   std::ostringstream oss;
 
-  int elem = ios::xalloc();
-  oss << "elem = " << elem << endl;
-
   oss << indent << "l0" << endl;
   oss << incindent;
   oss << indent << "l1" << endl;
@@ -59,8 +56,7 @@ TEST_CASE("FormIO", "[formio]") {
 
   oss << indent << mpqc::printf("%3d %10.5f",10,3.14) << endl;
 
-  std::string ref_output("elem = 5\n\
-l0\n\
+  std::string ref_output("l0\n\
   l1\n\
     l2\n\
     l2\n\

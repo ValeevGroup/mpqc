@@ -7,6 +7,8 @@
 #include <memory>
 #include <string>
 
+#include <boost/optional.hpp>
+
 namespace mpqc {
 
 /// @addtogroup Init
@@ -96,9 +98,10 @@ class GetLongOpt {
 
   /// Retrieve the value of the option.
   /// @param opt the name of the option
-  /// @return if given(opt) is true, return the value of the option, otherwise
-  /// an empty string
-  std::string retrieve(const std::string& opt) const;
+  /// @return if \c opt was given, return \c boost::optional<std::string>
+  ///         initialized with the value of the option (empty string for \c NoValue option types),
+  ///         otherwise a default-initialized \c boost::optional<std::string>
+  boost::optional<std::string> retrieve(const std::string& opt) const;
 
   /// Print usage information.
   /// @param outfile stream to use for printing (default: <tt>std::cout</tt>)

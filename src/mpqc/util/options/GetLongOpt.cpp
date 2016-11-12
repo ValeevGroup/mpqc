@@ -38,15 +38,18 @@ int GetLongOpt::enroll(std::string opt, const OptType t,
   return 1;
 }
 
-std::string GetLongOpt::retrieve(const std::string &opt) const {
+boost::optional<std::string> GetLongOpt::retrieve(
+    const std::string &opt) const {
+  using result_t = boost::optional<std::string>;
   if (finalized == true) {
     for (const auto &t : table) {
-      if (opt == t.option) return t.value ? *t.value : std::string();
+      if (opt == t.option)
+        return t.value ? result_t(std::string(*t.value)) : result_t();
     }
     std::cerr << "GetLongOpt::retrieve - unenrolled option ";
     std::cerr << optmarker << opt << "\n";
   }
-  return std::string();
+  return result_t();
 }
 
 int GetLongOpt::parse(int argc, char *const *argv) {
@@ -183,6 +186,7 @@ int GetLongOpt::setcell(Cell &c, const char *valtoken, const char *nexttoken,
         throw std::runtime_error("unsolicited value for program option " +
                                  std::string(1, optmarker) + c.option);
       }
+      c.value = std::make_unique<std::string>("");
       return 0;
     case GetLongOpt::OptionalValue:
       if (*valtoken == '=') {

@@ -52,23 +52,24 @@ int try_main(int argc, char *argv[], madness::World &world) {
   options.enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
                  ".");
   //options.enroll("c", GetLongOpt::NoValue, "check input then exit");
-  //options.enroll("v", GetLongOpt::NoValue, "print the version number");
-  //options.enroll("w", GetLongOpt::NoValue, "print the warranty");
-  //options.enroll("L", GetLongOpt::NoValue, "print the license");
+  options.enroll("v", GetLongOpt::NoValue, "print the version number");
+  options.enroll("w", GetLongOpt::NoValue, "print the warranty");
+  options.enroll("L", GetLongOpt::NoValue, "print the license");
   //options.enroll("d", GetLongOpt::NoValue, "debug");
-  //options.enroll("h", GetLongOpt::NoValue, "print this message");
+  options.enroll("h", GetLongOpt::NoValue, "print this message");
 
   const int optind = options.parse(argc, argv);
 
   // set the working dir
-  if (options.retrieve("W") == ".") {
-      auto err = chdir(options.retrieve("W").c_str());
+  if (*options.retrieve("W") != ".") {
+      auto err = chdir((*options.retrieve("W")).c_str());
       MPQC_ASSERT(!err);
   }
 
   // redirect the output, if needed
-  std::string output_filename = options.retrieve("o");
+  auto output_opt = options.retrieve("o");
   std::ofstream output;
+  std::string output_filename = output_opt ? *output_opt : std::string();
   if (!output_filename.empty()) output.open(output_filename);
   if (!output.good()) throw FileOperationFailed("failed to open output file",
                                                 __FILE__, __LINE__, output_filename.c_str(),
@@ -77,6 +78,41 @@ int try_main(int argc, char *argv[], madness::World &world) {
   std::unique_ptr<std::streambuf, decltype(cout_streambuf_reset)> cout_buffer_holder(
       std::cout.rdbuf(), cout_streambuf_reset);
   if (!output_filename.empty()) std::cout.rdbuf(output.rdbuf());
+
+  if (options.retrieve("h")) {
+    ExEnv::out0()
+         << indent << "MPQC version " << MPQC_VERSION << std::endl
+         << indent << "compiled for " << TARGET_ARCH << std::endl
+         << FormIO::copyright << std::endl;
+    options.usage(ExEnv::out0());
+    exit(0);
+  }
+
+  if (options.retrieve("v")) {
+    ExEnv::out0()
+         << indent << "MPQC version " << MPQC_VERSION << std::endl
+         << indent << "compiled for " << TARGET_ARCH << std::endl
+         << FormIO::copyright;
+    exit(0);
+  }
+
+  if (options.retrieve("w")) {
+    ExEnv::out0()
+         << indent << "MPQC version " << MPQC_VERSION << std::endl
+         << indent << "compiled for " << TARGET_ARCH << std::endl
+         << FormIO::copyright << std::endl
+         << FormIO::warranty;
+    exit(0);
+  }
+
+  if (options.retrieve("L")) {
+    ExEnv::out0()
+         << indent << "MPQC version " << MPQC_VERSION << std::endl
+         << indent << "compiled for " << TARGET_ARCH << std::endl
+         << FormIO::copyright << std::endl
+         << FormIO::license;
+    exit(0);
+  }
 
   // get input file name
   std::string input_filename;
@@ -96,10 +132,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
   kv.assign("world", &world);  // set "$:world" keyword to &world to define
                                // the default execution context for this input
 
-  { // set file prefix, if given
-    std::string prefix = options.retrieve("p");
-    if (!prefix.empty())
-      kv.assign("file_prefix", prefix);
+  auto prefix_opt = options.retrieve("p");
+  if (prefix_opt) { // set file prefix, if given
+    kv.assign("file_prefix", *prefix_opt);
   }
 
   // announce ourselves

@@ -7,10 +7,11 @@ set(utests_src
     clustering_test.cpp
     exception_test.cpp
     f12_utility_test.cpp
+    formio_test.cpp
+    formula_test.cpp
     keyval_test.cpp
     libint_test.cpp
     orbital_index_test.cpp
-    formula_test.cpp
     util_string.cpp
     )
 

@@ -30,6 +30,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/misc/formio.h"

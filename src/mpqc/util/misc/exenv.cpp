@@ -30,6 +30,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "mpqc/mpqc_config.h"
+
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
@@ -39,7 +41,6 @@
 
 #include <cstring>
 
-#include "mpqc/mpqc_config.h"
 #include "mpqc/util/misc/exenv.h"
 #include "mpqc/util/external/c++/memory"
 
@@ -47,12 +48,10 @@ using namespace std;
 using namespace mpqc;
 
 int ExEnv::initialized_ = 0;
-size_t ExEnv::mem_ = 0;
-int ExEnv::nproc_ = 0;
 int *ExEnv::argc_ = 0;
 char ***ExEnv::argv_ = 0;
 char ExEnv::hostname_[256] = { '\0' };
-char ExEnv::username_[9] = { '\0' };
+char ExEnv::username_[32] = { '\0' };
 ostream *ExEnv::out_ = nullptr;
 std::unique_ptr<ostream> ExEnv::nullstream_;
 
@@ -67,9 +66,9 @@ ExEnv::program_name()
 }
 
 std::string
-ExEnv::getenv_string(const char *name)
+ExEnv::getenv(const std::string& name)
 {
-  const char *env = getenv(name);
+  const char *env = std::getenv(name.c_str());
   std::string value;
   if (env) {
       value = env;
@@ -104,7 +103,7 @@ ExEnv::init(int &argcref, char **&argvref)
   strcpy(hostname_, "UNKNOWN");
 #endif
 
-  memset(username_,0,9);
+  memset(username_, 0, 9);
 #if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
   struct passwd *pw = getpwuid(geteuid());
   if (pw && pw->pw_name) {
@@ -119,43 +118,6 @@ ExEnv::init(int &argcref, char **&argvref)
 #endif
 
   initialized_ = 1;
-
-#ifdef HAVE_NIAMA
-#if 0
-  using namespace NIAMA;
-
-  CORBA::ORB_var orb = CORBA::ORB_init(*argc_, *argv_, "mico-local-orb");
-  CORBA::BOA_var boa = orb->BOA_init(*argc_, *argv_, "mico-local-boa");
-  CORBA::Object_var obj = orb->bind("IDL:NIAMA/Machine:1.0");
-  if (CORBA::is_nil (obj)) {
-      ExEnv::outn() << "could not bind to NIAMA server ... giving up" << endl;
-      return;
-    }
-  Machine_var machine = Machine::_narrow (obj);
-  if (CORBA::is_nil(machine)) {
-      return;
-    }
-
-  nproc_ = machine->n_processor();
-  mem_ = machine->memory();
-
-  ExEnv::outn() << "ExEnv::init: NIAMA: nproc = " << nproc_ << endl;
-  ExEnv::outn() << "ExEnv::init: NIAMA: memory = " << mem_ << endl;
-#else
-  using namespace NIAMA;
-  // init ORB
-  CORBA::ORB_var orb = CORBA::ORB_init(*argc_, *argv_, "mico-local-orb");
-
-  // server side
-  Machine_impl* machine = new Machine_impl;
-
-  nproc_ = machine->n_processor();
-  mem_ = machine->memory();
-
-  CORBA::release(machine);
-  
-#endif
-#endif
 }
 
 // Local Variables:

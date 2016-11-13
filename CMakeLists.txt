@@ -77,6 +77,8 @@ include(CheckCXXSourceCompiles)
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
 
+check_include_files(sys/types.h          HAVE_SYS_TYPES_H)
+check_include_files(pwd.h                HAVE_PWD_H)
 check_include_files(libunwind.h          HAVE_LIBUNWIND_H)
 include(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(cxxabi.h          HAVE_CXXABI_H)

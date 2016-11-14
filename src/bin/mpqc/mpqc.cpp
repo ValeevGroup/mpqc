@@ -25,7 +25,7 @@
 #include "mpqc/chemistry/qc/mbpt/linkage.h"
 #include "mpqc/chemistry/qc/scf/linkage.h"
 
-using namespace mpqc;
+namespace mpqc {
 
 void announce() {
   const char title1[] = "MPQC4: Massively Parallel Quantum Chemistry (v4)";
@@ -42,7 +42,37 @@ void announce() {
   ExEnv::out0() << title2 << std::endl << std::endl;
 }
 
-int try_main(int argc, char *argv[], madness::World &world) {
+/// \brief An MPQC computation
+///
+/// A computation is specified by a KeyVal object and a World object
+class MPQCTask {
+ public:
+  MPQCTask(madness::World& world, std::shared_ptr<KeyVal> kv) : world_(world), keyval_(kv) {
+  }
+  ~MPQCTask() = default;
+
+  void run() {
+    // announce ourselves
+    announce();
+
+    double threshold = keyval_->value<double>("sparse_threshold", 1e-20);
+    TiledArray::SparseShape<float>::threshold(threshold);
+
+    auto wfn = keyval_->keyval("wfn").class_ptr<qc::Wavefunction>();
+
+    //  auto energy_prop = qc::Energy(kv);
+    //  auto energy_prop_ptr = &energy_prop;
+
+    double val = wfn->value();
+    utility::print_par(world_, "Wfn energy is: ", val, "\n");
+  }
+
+ private:
+  madness::World& world_;
+  std::shared_ptr<KeyVal> keyval_;
+};
+
+std::shared_ptr<GetLongOpt> make_options() {
   // parse commandline options
   std::shared_ptr<GetLongOpt> options = std::make_shared<GetLongOpt>();
 
@@ -58,10 +88,11 @@ int try_main(int argc, char *argv[], madness::World &world) {
   //options->enroll("d", GetLongOpt::NoValue, "debug");
   options->enroll("h", GetLongOpt::NoValue, "print this message");
 
-  mpqc::initialize(argc, argv, options);
+  return options;
+}
 
-  const int optind = options->parse(argc, argv);
-
+std::tuple<std::string, std::string>
+process_options(const std::shared_ptr<GetLongOpt>& options) {
   // set the working dir
   if (*options->retrieve("W") != ".") {
     std::string dir = *options->retrieve("W");
@@ -74,16 +105,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   // redirect the output, if needed
   auto output_opt = options->retrieve("o");
-  std::ofstream output;
   std::string output_filename = output_opt ? *output_opt : std::string();
-  if (!output_filename.empty()) output.open(output_filename);
-  if (!output.good()) throw FileOperationFailed("failed to open output file",
-                                                __FILE__, __LINE__, output_filename.c_str(),
-                                                FileOperationFailed::OpenW);
-  auto cout_streambuf_reset = [](std::streambuf *p) { std::cout.rdbuf(p); };
-  std::unique_ptr<std::streambuf, decltype(cout_streambuf_reset)> cout_buffer_holder(
-      std::cout.rdbuf(), cout_streambuf_reset);
-  if (!output_filename.empty()) std::cout.rdbuf(output.rdbuf());
 
   if (options->retrieve("h")) {
     ExEnv::out0()
@@ -122,35 +144,59 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   // get input file name
   std::string input_filename;
-  if (argc - optind == 1) {
-    input_filename = argv[optind];
+  if (MPQCInit::instance().argc() - options->first_unprocessed_arg() == 1) {
+    input_filename = MPQCInit::instance().argv()[options->first_unprocessed_arg()];
   }
   else {
     options->usage();
     throw std::invalid_argument("input filename not given");
   }
 
+  return std::make_tuple(input_filename, output_filename);
+}
+
+}  // namespace mpqc
+
+int try_main(int argc, char *argv[]) {
+  using namespace mpqc;
+
+  // define default MPQC options
+  auto options = make_options();
+
+  // initialize MPQC
+  initialize(argc, argv, options);
+
+  // parse and process options
+  options->parse(argc, argv);
+  std::string input_filename, output_filename;
+  std::tie(input_filename, output_filename) = process_options(options);
+
+  // redirect the output to output_file
+  std::ofstream output;
+  if (!output_filename.empty()) output.open(output_filename);
+  if (!output.good()) throw FileOperationFailed("failed to open output file",
+                                                __FILE__, __LINE__, output_filename.c_str(),
+                                                FileOperationFailed::OpenW);
+  auto cout_streambuf_reset = [](std::streambuf *p) { std::cout.rdbuf(p); };
+  std::unique_ptr<std::streambuf, decltype(cout_streambuf_reset)> cout_buffer_holder(
+      std::cout.rdbuf(), cout_streambuf_reset);
+  if (!output_filename.empty()) std::cout.rdbuf(output.rdbuf());
+
   MPQCInit::instance().set_basename(input_filename, output_filename);
+
+  // by default compute in default world
+  auto& world = madness::World::get_default();
   std::shared_ptr<KeyVal> kv = MPQCInit::instance().make_keyval(world, input_filename);
 
+  // redirect filenames in KeyVal to the directory given by -p cmdline option
   auto prefix_opt = options->retrieve("p");
   if (prefix_opt) { // set file prefix, if given
     kv->assign("file_prefix", *prefix_opt);
   }
 
-  // announce ourselves
-  announce();
-
-  double threshold = kv->value<double>("sparse_threshold", 1e-20);
-  TiledArray::SparseShape<float>::threshold(threshold);
-
-  auto wfn = kv->keyval("wfn").class_ptr<qc::Wavefunction>();
-
-  //  auto energy_prop = qc::Energy(kv);
-  //  auto energy_prop_ptr = &energy_prop;
-
-  double val = wfn->value();
-  utility::print_par(world, "Wfn energy is: ", val, "\n");
+  // run
+  MPQCTask task(world, kv);
+  task.run();
 
   return 0;
 }
@@ -168,7 +214,7 @@ int main(int argc, char *argv[]) {
   }
 
   try {
-    try_main(argc, argv, madness::World::get_default());
+    try_main(argc, argv);
 
   } catch (TiledArray::Exception &e) {
     std::cerr << "!! TiledArray exception: " << e.what() << "\n";

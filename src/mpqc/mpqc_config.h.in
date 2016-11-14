@@ -38,13 +38,20 @@
 #cmakedefine HAVE_SYS_TYPES_H
 #endif
 
+/* Define if you have <sys/resource.h>.  */
+#ifndef HAVE_SYS_RESOURCE_H
+#cmakedefine HAVE_SYS_RESOURCE_H
+#endif
+
 /* Define if you have <pwd.h>.  */
 #ifndef HAVE_PWD_H
 #cmakedefine HAVE_PWD_H
 #endif
 
 /* Define if you have the C99 <fenv.h>.  */
+#ifndef HAVE_FENV_H
 #cmakedefine HAVE_FENV_H
+#endif
 
 /* Define if you have <libunwind.h> and unw_init_local.  */
 #cmakedefine HAVE_LIBUNWIND

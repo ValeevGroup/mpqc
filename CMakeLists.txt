@@ -78,6 +78,7 @@ include(CheckIncludeFiles)
 include(CheckFunctionExists)
 
 check_include_files(sys/types.h          HAVE_SYS_TYPES_H)
+check_include_files(sys/resource.h       HAVE_SYS_RESOURCE_H)
 check_include_files(pwd.h                HAVE_PWD_H)
 check_include_files(libunwind.h          HAVE_LIBUNWIND_H)
 check_include_files(fenv.h               HAVE_FENV_H)
@@ -119,7 +120,6 @@ CHECK_FUNCTION_EXISTS (signal            HAVE_SIGNAL)
 CHECK_FUNCTION_EXISTS (feenableexcept    HAVE_FEENABLEEXCEPT)
 CHECK_FUNCTION_EXISTS (fedisableexcept   HAVE_FEDISABLEEXCEPT)
 CHECK_FUNCTION_EXISTS (setrlimit         HAVE_SETRLIMIT)
-
 
 ###############################################################################
 # Dependencies

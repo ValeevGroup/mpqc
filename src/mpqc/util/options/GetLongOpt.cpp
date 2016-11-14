@@ -10,7 +10,7 @@ using namespace mpqc;
 GetLongOpt::GetLongOpt(const char optmark)
     : ustring("[valid options and arguments]"),
       optmarker(optmark),
-      finalized(false) {}
+      finalized(false), first_unprocessed_arg_(0) {}
 
 std::string GetLongOpt::basename(const std::string &pname) const {
   auto pos = pname.find_last_of('/');
@@ -52,12 +52,12 @@ boost::optional<std::string> GetLongOpt::retrieve(
   return result_t();
 }
 
-int GetLongOpt::parse(int argc, char *const *argv) {
+void GetLongOpt::parse(int argc, char *const *argv) {
   int optind = 1;
 
   pname = basename(*argv);
   finalized = true;
-  if (argc-- <= 1) return optind;
+  if (argc-- <= 1) { first_unprocessed_arg_ = optind; return; }
 
   while (argc >= 1) {
     char *token = *++argv;
@@ -110,10 +110,10 @@ int GetLongOpt::parse(int argc, char *const *argv) {
 
   } /* end while */
 
-  return optind;
+ first_unprocessed_arg_ = optind;
 }
 
-int GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
+void GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
   finalized = true;
   std::unique_ptr<char[]> str_ptr(strdup(cppstr.c_str()));
   char* str = str_ptr.get();
@@ -169,7 +169,7 @@ int GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
     token = ladtoken ? ladtoken : strtok(0, " \t");
   } /* end while */
 
-  return 1;
+  first_unprocessed_arg_ = 1;
 }
 
 /* ----------------------------------------------------------------

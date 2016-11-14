@@ -31,7 +31,7 @@ def pat_numbers(n):
 def total_energy(file_name):
     file = open(file_name, 'r')
     for line in file:
-        match1 = re.match('Wfn energy is: ' + pat_numbers(1), line)
+        match1 = re.match('\A\s*Wfn energy is: ' + pat_numbers(1), line)
         if match1:
             return match1.groups()
 

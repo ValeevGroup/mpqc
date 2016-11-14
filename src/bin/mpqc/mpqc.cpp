@@ -47,9 +47,16 @@ void announce() {
 /// A computation is specified by a KeyVal object and a World object
 class MPQCTask {
  public:
-  MPQCTask(madness::World& world, std::shared_ptr<KeyVal> kv) : world_(world), keyval_(kv) {
-  }
+  MPQCTask(madness::World &world, std::shared_ptr<KeyVal> kv)
+      : world_(world), keyval_(kv) {}
   ~MPQCTask() = default;
+
+  madness::World& world() const {
+    return world_;
+  }
+  const std::shared_ptr<KeyVal>& keyval() const {
+    return keyval_;
+  }
 
   void run() {
     // announce ourselves
@@ -63,8 +70,8 @@ class MPQCTask {
     //  auto energy_prop = qc::Energy(kv);
     //  auto energy_prop_ptr = &energy_prop;
 
-    double val = wfn->value();
-    utility::print_par(world_, "Wfn energy is: ", val, "\n");
+    const auto value = wfn->value();
+    keyval_->assign("wfn:energy", value);
   }
 
  private:
@@ -197,6 +204,7 @@ int try_main(int argc, char *argv[]) {
   // run
   MPQCTask task(world, kv);
   task.run();
+  ExEnv::out0() << indent << "Wfn energy is: " << kv->value<double>("wfn:energy") << std::endl;
 
   return 0;
 }

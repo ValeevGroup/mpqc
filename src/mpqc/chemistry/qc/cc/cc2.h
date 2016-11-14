@@ -59,8 +59,6 @@ class CC2 {
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t2("a,b,i,j") = g_abij("a,b,i,j") * d2("a,b,i,j");
 
-    //      std::cout << t1 << std::endl;
-    //      std::cout << t2 << std::endl;
     TArray4 tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
 
@@ -69,7 +67,6 @@ class CC2 {
         2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
         TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"), tau("a,b,i,j"));
     double dE = std::abs(E1 - E0);
-    std::cout << E1 << std::endl;
 
     // get all two electron integrals
     TArray4 g_ijkl = intermediate_->get_ijkl();
@@ -181,12 +178,9 @@ class CC2 {
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
       iter += 1ul;
-      std::cout << iter << "  " << dE << std::endl;
-      //        std::cout << indent << scprintf("%-5.0f", iter) <<
-      //        scprintf("%-20.10f", Delta_E)
-      //        << scprintf("%-15.10f", E_1) << std::endl;
+      ExEnv::out0() << iter << "  " << dE << std::endl;
     }
-    std::cout << E1 << std::endl;
+    ExEnv::out0() << E1 << std::endl;
   }
 
  private:

@@ -23,7 +23,6 @@ Basis &Basis::operator=(Basis &&) = default;
 Basis::Basis(std::vector<ShellVec> shells) : shells_(std::move(shells)) {}
 
 Basis::Basis(const KeyVal &kv) {
-  //  std::cout << "Construct Basis " << std::endl;
   // name of basis
   std::string basis_name = kv.value<std::string>("name");
 

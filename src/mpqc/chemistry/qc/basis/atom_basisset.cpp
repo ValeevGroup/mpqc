@@ -25,9 +25,9 @@ std::ostream &operator<<(std::ostream &os, AtomBasisShell const &abs) {
     if (is_SP) {
       os << "With coefficents ";
       for (auto const &elem : coeffs[i]) {
-        std::cout << elem << " ";
+        os << elem << " ";
       }
-      std::cout << "\n";
+      os << "\n";
     } else {
       os << "With coefficent " << coeffs[i][0] << "\n";
     }

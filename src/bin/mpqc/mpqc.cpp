@@ -1,12 +1,12 @@
 // Massively Parallel Quantum Chemistry program
 // computes properties of a Wavefunction
 
-#include <clocale>
 #include <sstream>
 
 #include <libint2.hpp>
 #include <tiledarray.h>
 
+#include "mpqcinit.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
@@ -44,30 +44,36 @@ void announce() {
 
 int try_main(int argc, char *argv[], madness::World &world) {
   // parse commandline options
-  GetLongOpt options;
+  std::shared_ptr<GetLongOpt> options = std::make_shared<GetLongOpt>();
 
-  options.usage("[options] input_file.json");
-  options.enroll("o", GetLongOpt::MandatoryValue, "the name of the output file");
-  options.enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
-  options.enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
+  options->usage("[options] input_file.json");
+  options->enroll("o", GetLongOpt::MandatoryValue, "the name of the output file");
+  options->enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
+  options->enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
                  ".");
-  //options.enroll("c", GetLongOpt::NoValue, "check input then exit");
-  options.enroll("v", GetLongOpt::NoValue, "print the version number");
-  options.enroll("w", GetLongOpt::NoValue, "print the warranty");
-  options.enroll("L", GetLongOpt::NoValue, "print the license");
-  //options.enroll("d", GetLongOpt::NoValue, "debug");
-  options.enroll("h", GetLongOpt::NoValue, "print this message");
+  //options->enroll("c", GetLongOpt::NoValue, "check input then exit");
+  options->enroll("v", GetLongOpt::NoValue, "print the version number");
+  options->enroll("w", GetLongOpt::NoValue, "print the warranty");
+  options->enroll("L", GetLongOpt::NoValue, "print the license");
+  //options->enroll("d", GetLongOpt::NoValue, "debug");
+  options->enroll("h", GetLongOpt::NoValue, "print this message");
 
-  const int optind = options.parse(argc, argv);
+  mpqc::initialize(argc, argv, options);
+
+  const int optind = options->parse(argc, argv);
 
   // set the working dir
-  if (*options.retrieve("W") != ".") {
-      auto err = chdir((*options.retrieve("W")).c_str());
-      MPQC_ASSERT(!err);
+  if (*options->retrieve("W") != ".") {
+    std::string dir = *options->retrieve("W");
+    auto err = chdir(dir.c_str());
+    if (err)
+      throw FileOperationFailed("could not change directory", __FILE__,
+                                __LINE__, dir.c_str(),
+                                FileOperationFailed::Chdir);
   }
 
   // redirect the output, if needed
-  auto output_opt = options.retrieve("o");
+  auto output_opt = options->retrieve("o");
   std::ofstream output;
   std::string output_filename = output_opt ? *output_opt : std::string();
   if (!output_filename.empty()) output.open(output_filename);
@@ -79,16 +85,16 @@ int try_main(int argc, char *argv[], madness::World &world) {
       std::cout.rdbuf(), cout_streambuf_reset);
   if (!output_filename.empty()) std::cout.rdbuf(output.rdbuf());
 
-  if (options.retrieve("h")) {
+  if (options->retrieve("h")) {
     ExEnv::out0()
          << indent << "MPQC version " << MPQC_VERSION << std::endl
          << indent << "compiled for " << TARGET_ARCH << std::endl
          << FormIO::copyright << std::endl;
-    options.usage(ExEnv::out0());
+    options->usage(ExEnv::out0());
     exit(0);
   }
 
-  if (options.retrieve("v")) {
+  if (options->retrieve("v")) {
     ExEnv::out0()
          << indent << "MPQC version " << MPQC_VERSION << std::endl
          << indent << "compiled for " << TARGET_ARCH << std::endl
@@ -96,7 +102,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     exit(0);
   }
 
-  if (options.retrieve("w")) {
+  if (options->retrieve("w")) {
     ExEnv::out0()
          << indent << "MPQC version " << MPQC_VERSION << std::endl
          << indent << "compiled for " << TARGET_ARCH << std::endl
@@ -105,7 +111,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
     exit(0);
   }
 
-  if (options.retrieve("L")) {
+  if (options->retrieve("L")) {
     ExEnv::out0()
          << indent << "MPQC version " << MPQC_VERSION << std::endl
          << indent << "compiled for " << TARGET_ARCH << std::endl
@@ -120,30 +126,25 @@ int try_main(int argc, char *argv[], madness::World &world) {
     input_filename = argv[optind];
   }
   else {
-    options.usage();
+    options->usage();
     throw std::invalid_argument("input filename not given");
   }
 
-  std::stringstream ss;
-  utility::parallel_read_file(world, input_filename, ss);
+  MPQCInit::instance().set_basename(input_filename, output_filename);
+  std::shared_ptr<KeyVal> kv = MPQCInit::instance().make_keyval(world, input_filename);
 
-  KeyVal kv;
-  kv.read_json(ss);
-  kv.assign("world", &world);  // set "$:world" keyword to &world to define
-                               // the default execution context for this input
-
-  auto prefix_opt = options.retrieve("p");
+  auto prefix_opt = options->retrieve("p");
   if (prefix_opt) { // set file prefix, if given
-    kv.assign("file_prefix", *prefix_opt);
+    kv->assign("file_prefix", *prefix_opt);
   }
 
   // announce ourselves
   announce();
 
-  double threshold = kv.value<double>("sparse_threshold", 1e-20);
+  double threshold = kv->value<double>("sparse_threshold", 1e-20);
   TiledArray::SparseShape<float>::threshold(threshold);
 
-  auto wfn = kv.keyval("wfn").class_ptr<qc::Wavefunction>();
+  auto wfn = kv->keyval("wfn").class_ptr<qc::Wavefunction>();
 
   //  auto energy_prop = qc::Energy(kv);
   //  auto energy_prop_ptr = &energy_prop;
@@ -157,22 +158,17 @@ int try_main(int argc, char *argv[], madness::World &world) {
 int main(int argc, char *argv[]) {
   int rc = 0;
 
-  auto &world = madness::initialize(argc, argv);
-  mpqc::utility::print_par(world, "MADNESS process total size: ", world.size(),
-                           "\n");
-  libint2::initialize();
-
-  std::setlocale(LC_ALL, "en_US.UTF-8");
-  std::cout << std::setprecision(15);
-  std::wcout.sync_with_stdio(false);
-  std::wcerr.sync_with_stdio(false);
-  std::wcout.imbue(std::locale("en_US.UTF-8"));
-  std::wcerr.imbue(std::locale("en_US.UTF-8"));
-  std::wcout.sync_with_stdio(true);
-  std::wcerr.sync_with_stdio(true);
+  // initialize MADNESS first
+  try {
+    madness::initialize(argc, argv);
+  }
+  catch (...) {
+    std::cerr << "!! Failed to initialize MADWorld: " << "\n";
+    return 1;
+  }
 
   try {
-    try_main(argc, argv, world);
+    try_main(argc, argv, madness::World::get_default());
 
   } catch (TiledArray::Exception &e) {
     std::cerr << "!! TiledArray exception: " << e.what() << "\n";
@@ -191,7 +187,6 @@ int main(int argc, char *argv[]) {
     rc = 1;
   }
 
-  libint2::finalize();
   madness::finalize();
 
   return rc;

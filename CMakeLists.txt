@@ -80,6 +80,7 @@ include(CheckFunctionExists)
 check_include_files(sys/types.h          HAVE_SYS_TYPES_H)
 check_include_files(pwd.h                HAVE_PWD_H)
 check_include_files(libunwind.h          HAVE_LIBUNWIND_H)
+check_include_files(fenv.h               HAVE_FENV_H)
 include(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(cxxabi.h          HAVE_CXXABI_H)
 if (HAVE_CXXABI_H)
@@ -108,9 +109,18 @@ else (HAVE_EXECINFO_H)
   #find_package(ExecInfo)
 endif (HAVE_EXECINFO_H)
 
+CHECK_FUNCTION_EXISTS (gethostname       HAVE_GETHOSTNAME)
+CHECK_FUNCTION_EXISTS (getpwuid          HAVE_GETPWUID)
+CHECK_FUNCTION_EXISTS (geteuid           HAVE_GETEUID)
+CHECK_FUNCTION_EXISTS (getrusage         HAVE_GETRUSAGE)
 CHECK_FUNCTION_EXISTS (posix_spawn       HAVE_POSIX_SPAWN)
 CHECK_FUNCTION_EXISTS (system            HAVE_SYSTEM)
 CHECK_FUNCTION_EXISTS (signal            HAVE_SIGNAL)
+CHECK_FUNCTION_EXISTS (feenableexcept    HAVE_FEENABLEEXCEPT)
+CHECK_FUNCTION_EXISTS (fedisableexcept   HAVE_FEDISABLEEXCEPT)
+CHECK_FUNCTION_EXISTS (setrlimit         HAVE_SETRLIMIT)
+
+
 ###############################################################################
 # Dependencies
 ###############################################################################

@@ -43,6 +43,9 @@
 #cmakedefine HAVE_PWD_H
 #endif
 
+/* Define if you have the C99 <fenv.h>.  */
+#cmakedefine HAVE_FENV_H
+
 /* Define if you have <libunwind.h> and unw_init_local.  */
 #cmakedefine HAVE_LIBUNWIND
 
@@ -69,6 +72,15 @@
 
 /* Define if you have the gethostname function.  */
 #cmakedefine HAVE_GETHOSTNAME
+
+/* Define if you have the glibc feenableexcept extension.  */
+#cmakedefine HAVE_FEENABLEEXCEPT
+
+/* Define if you have the glibc fedisableexcept extension.  */
+#cmakedefine HAVE_FEDISABLEEXCEPT
+
+/* Define if you have the setrlimit function.  */
+#cmakedefine HAVE_SETRLIMIT
 
 /* ----------------------------------------------------- */
 

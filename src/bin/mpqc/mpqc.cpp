@@ -6,7 +6,7 @@
 #include <libint2.hpp>
 #include <tiledarray.h>
 
-#include "mpqcinit.h"
+#include "mpqc_task.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
@@ -24,6 +24,7 @@
 #include "mpqc/chemistry/qc/f12/linkage.h"
 #include "mpqc/chemistry/qc/mbpt/linkage.h"
 #include "mpqc/chemistry/qc/scf/linkage.h"
+#include "mpqc_init.h"
 
 namespace mpqc {
 
@@ -40,126 +41,6 @@ void announce() {
   for (auto i = 0; i < (target_width - sizeof(title2)) / 2; i++)
     ExEnv::out0() << ' ';
   ExEnv::out0() << title2 << std::endl << std::endl;
-}
-
-/// \brief An MPQC computation
-///
-/// A computation is specified by a KeyVal object and a World object
-class MPQCTask {
- public:
-  MPQCTask(madness::World &world, std::shared_ptr<KeyVal> kv)
-      : world_(world), keyval_(kv) {}
-  ~MPQCTask() = default;
-
-  madness::World& world() const {
-    return world_;
-  }
-  const std::shared_ptr<KeyVal>& keyval() const {
-    return keyval_;
-  }
-
-  void run() {
-    // announce ourselves
-    announce();
-
-    double threshold = keyval_->value<double>("sparse_threshold", 1e-20);
-    TiledArray::SparseShape<float>::threshold(threshold);
-
-    auto wfn = keyval_->keyval("wfn").class_ptr<qc::Wavefunction>();
-
-    //  auto energy_prop = qc::Energy(kv);
-    //  auto energy_prop_ptr = &energy_prop;
-
-    const auto value = wfn->value();
-    keyval_->assign("wfn:energy", value);
-  }
-
- private:
-  madness::World& world_;
-  std::shared_ptr<KeyVal> keyval_;
-};
-
-std::shared_ptr<GetLongOpt> make_options() {
-  // parse commandline options
-  std::shared_ptr<GetLongOpt> options = std::make_shared<GetLongOpt>();
-
-  options->usage("[options] input_file.json");
-  options->enroll("o", GetLongOpt::MandatoryValue, "the name of the output file");
-  options->enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
-  options->enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
-                 ".");
-  //options->enroll("c", GetLongOpt::NoValue, "check input then exit");
-  options->enroll("v", GetLongOpt::NoValue, "print the version number");
-  options->enroll("w", GetLongOpt::NoValue, "print the warranty");
-  options->enroll("L", GetLongOpt::NoValue, "print the license");
-  //options->enroll("d", GetLongOpt::NoValue, "debug");
-  options->enroll("h", GetLongOpt::NoValue, "print this message");
-
-  return options;
-}
-
-std::tuple<std::string, std::string>
-process_options(const std::shared_ptr<GetLongOpt>& options) {
-  // set the working dir
-  if (*options->retrieve("W") != ".") {
-    std::string dir = *options->retrieve("W");
-    auto err = chdir(dir.c_str());
-    if (err)
-      throw FileOperationFailed("could not change directory", __FILE__,
-                                __LINE__, dir.c_str(),
-                                FileOperationFailed::Chdir);
-  }
-
-  // redirect the output, if needed
-  auto output_opt = options->retrieve("o");
-  std::string output_filename = output_opt ? *output_opt : std::string();
-
-  if (options->retrieve("h")) {
-    ExEnv::out0()
-         << indent << "MPQC version " << MPQC_VERSION << std::endl
-         << indent << "compiled for " << TARGET_ARCH << std::endl
-         << FormIO::copyright << std::endl;
-    options->usage(ExEnv::out0());
-    exit(0);
-  }
-
-  if (options->retrieve("v")) {
-    ExEnv::out0()
-         << indent << "MPQC version " << MPQC_VERSION << std::endl
-         << indent << "compiled for " << TARGET_ARCH << std::endl
-         << FormIO::copyright;
-    exit(0);
-  }
-
-  if (options->retrieve("w")) {
-    ExEnv::out0()
-         << indent << "MPQC version " << MPQC_VERSION << std::endl
-         << indent << "compiled for " << TARGET_ARCH << std::endl
-         << FormIO::copyright << std::endl
-         << FormIO::warranty;
-    exit(0);
-  }
-
-  if (options->retrieve("L")) {
-    ExEnv::out0()
-         << indent << "MPQC version " << MPQC_VERSION << std::endl
-         << indent << "compiled for " << TARGET_ARCH << std::endl
-         << FormIO::copyright << std::endl
-         << FormIO::license;
-    exit(0);
-  }
-
-  // get input file name
-  std::string input_filename;
-  if (MPQCInit::instance().argc() - options->first_unprocessed_arg() == 1) {
-    input_filename = MPQCInit::instance().argv()[options->first_unprocessed_arg()];
-  }
-  else {
-    options->usage();
-    throw std::invalid_argument("input filename not given");
-  }
-
-  return std::make_tuple(input_filename, output_filename);
 }
 
 }  // namespace mpqc
@@ -200,6 +81,9 @@ int try_main(int argc, char *argv[]) {
   if (prefix_opt) { // set file prefix, if given
     kv->assign("file_prefix", *prefix_opt);
   }
+
+  // announce ourselves
+  announce();
 
   // run
   MPQCTask task(world, kv);

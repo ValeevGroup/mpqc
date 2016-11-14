@@ -1,7 +1,8 @@
 
-#ifndef SRC_BIN_MPQC_MPQCINIT_H_
-#define SRC_BIN_MPQC_MPQCINIT_H_
+#ifndef SRC_BIN_MPQC_MPQC_INIT_H_
+#define SRC_BIN_MPQC_MPQC_INIT_H_
 
+#include <cstdlib>
 #include <string>
 
 #include <madness/world/world.h>
@@ -106,6 +107,31 @@ class MPQCInit {
   void init(const std::string &input_filename,
             const std::string &output_filename = "");
 };
+
+/// \brief Creates a default options parser object for an MPQC executable
+///
+/// Creates a new options parser object and enrolls standard MPQC options:
+/// | option | accept value?| description                                           |
+/// |--------|--------------|-------------------------------------------------------|
+/// | -o     | mandatory    | output file                                           |
+/// | -p     | mandatory    | prefix for all relative paths in KeyVal               |
+/// | -W     | mandatory    | the working directory in which to compute             |
+/// | -v     | no           | print the version number and exit                     |
+/// | -w     | no           | print the warranty and exit                           |
+/// | -L     | no           | print the license and exit                            |
+/// | -h     | no           | print the usage info and exit                         |
+///
+/// \return a smart pointer to the newly created options parser object (see mpqc::GetLongOpt )
+std::shared_ptr<GetLongOpt> make_options();
+
+/// \brief Processes command-line options parsed by the options parser.
+///
+/// \param options the options parser object whose \c parse method has already
+/// been called.
+/// \return the {input,output} file name tuple.
+/// \note will exit via \c std::exit(0) if any of these options are given: -h, -v, -w, or -L
+std::tuple<std::string, std::string>
+process_options(const std::shared_ptr<GetLongOpt>& options);
 
 /// @}
 // end of addtogroup Init

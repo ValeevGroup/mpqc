@@ -1,5 +1,6 @@
 
-#include "mpqcinit.h"
+#include "mpqc_init.h"
+
 #include "mpqc/mpqc_config.h"
 
 #include <libgen.h>
@@ -178,6 +179,89 @@ void MPQCInit::set_basename(const std::string &input_filename,
   basename[nfilebase] = '\0';
   FormIO::set_default_basename(basename);
   free(input_copy);
+}
+
+std::shared_ptr<GetLongOpt> make_options() {
+  // parse commandline options
+  std::shared_ptr<GetLongOpt> options = std::make_shared<GetLongOpt>();
+
+  options->usage("[options] input_file.json");
+  options->enroll("o", GetLongOpt::MandatoryValue, "the name of the output file");
+  options->enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
+  options->enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
+                 ".");
+  //options->enroll("c", GetLongOpt::NoValue, "check input then exit");
+  options->enroll("v", GetLongOpt::NoValue, "print the version number");
+  options->enroll("w", GetLongOpt::NoValue, "print the warranty");
+  options->enroll("L", GetLongOpt::NoValue, "print the license");
+  //options->enroll("d", GetLongOpt::NoValue, "debug");
+  options->enroll("h", GetLongOpt::NoValue, "print this message");
+
+  return options;
+}
+
+std::tuple<std::string, std::string>
+process_options(const std::shared_ptr<GetLongOpt>& options) {
+  // set the working dir
+  if (*options->retrieve("W") != ".") {
+    std::string dir = *options->retrieve("W");
+    auto err = chdir(dir.c_str());
+    if (err)
+      throw FileOperationFailed("could not change directory", __FILE__,
+                                __LINE__, dir.c_str(),
+                                FileOperationFailed::Chdir);
+  }
+
+  // redirect the output, if needed
+  auto output_opt = options->retrieve("o");
+  std::string output_filename = output_opt ? *output_opt : std::string();
+
+  if (options->retrieve("h")) {
+    ExEnv::out0()
+         << indent << "MPQC version " << MPQC_VERSION << std::endl
+         << indent << "compiled for " << TARGET_ARCH << std::endl
+         << FormIO::copyright << std::endl;
+    options->usage(ExEnv::out0());
+    std::exit(0);
+  }
+
+  if (options->retrieve("v")) {
+    ExEnv::out0()
+         << indent << "MPQC version " << MPQC_VERSION << std::endl
+         << indent << "compiled for " << TARGET_ARCH << std::endl
+         << FormIO::copyright;
+    std::exit(0);
+  }
+
+  if (options->retrieve("w")) {
+    ExEnv::out0()
+         << indent << "MPQC version " << MPQC_VERSION << std::endl
+         << indent << "compiled for " << TARGET_ARCH << std::endl
+         << FormIO::copyright << std::endl
+         << FormIO::warranty;
+    std::exit(0);
+  }
+
+  if (options->retrieve("L")) {
+    ExEnv::out0()
+         << indent << "MPQC version " << MPQC_VERSION << std::endl
+         << indent << "compiled for " << TARGET_ARCH << std::endl
+         << FormIO::copyright << std::endl
+         << FormIO::license;
+    std::exit(0);
+  }
+
+  // get input file name
+  std::string input_filename;
+  if (MPQCInit::instance().argc() - options->first_unprocessed_arg() == 1) {
+    input_filename = MPQCInit::instance().argv()[options->first_unprocessed_arg()];
+  }
+  else {
+    options->usage();
+    throw std::invalid_argument("input filename not given");
+  }
+
+  return std::make_tuple(input_filename, output_filename);
 }
 
 }  // namespace mpqc

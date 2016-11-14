@@ -1,6 +1,7 @@
 add_library(
   MPQCinit
-  mpqcinit.cpp
+  mpqc_init.cpp
+  mpqc_init.h
 )
 
 target_link_libraries(

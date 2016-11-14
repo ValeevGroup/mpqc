@@ -3,7 +3,7 @@
 #define SRC_MPQC_CHEMISTRY_MOLECULE_LINKAGE_H_
 
 
-#include <mpqc/util/keyval/forcelink.h>
+#include "mpqc/util/keyval/forcelink.h"
 
 namespace mpqc {
 

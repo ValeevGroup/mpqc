@@ -83,15 +83,29 @@ bool PHF::solve() {
     auto ephf_old = ephf;
     auto D_old = D_;
 
+//    auto j_start = mpqc::fenced_now(world);
     J_ = pao_factory_.compute(L"(μ ν| J|κ λ)");  // Coulomb
+//    auto j_end = mpqc::fenced_now(world);
+//    auto j_duration = mpqc::duration_in_s(j_start, j_end);
+
+//    auto k_start = mpqc::fenced_now(world);
     K_ = pao_factory_.compute(L"(μ ν| K|κ λ)");  // Exchange
+//    auto k_end = mpqc::fenced_now(world);
+//    auto k_duration = mpqc::duration_in_s(k_start, k_end);
 
     // F = H + 2J - K
     F_ = H_;
     F_("mu, nu") += 2.0 * J_("mu, nu") - K_("mu, nu");
 
+//    auto trans_start = mpqc::fenced_now(world);
     Fk_ = pao_factory_.transform_real2recip(F_);
+//    auto trans_end = mpqc::fenced_now(world);
+//    auto trans_duration = mpqc::duration_in_s(trans_start, trans_end);
+
+//    auto d_start = mpqc::fenced_now(world);
     D_ = pao_factory_.compute_density(Fk_, Sk_, docc_);
+//    auto d_end = mpqc::fenced_now(world);
+//    auto d_duration = mpqc::duration_in_s(d_start, d_end);
 
     // compute PHF energy
     F_("mu, nu") += H_("mu, nu");
@@ -108,14 +122,27 @@ bool PHF::solve() {
     auto iter_duration = mpqc::duration_in_s(iter_start, iter_end);
     // Print out information
     std::string niter = "Iter", nEle = "E(HF)", nTot = "E(tot)",
-                nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
+                nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)",
+                nJ = "Coul(s)", nK = "Ex(s)", nTrans = "Real2Recip(s)",
+                nD = "Diag+Dens(s)";
     if (world.rank() == 0) {
-      if (iter == 1)
-        printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
-               nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
-               nT.c_str());
-      printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ephf,
-             ephf + repulsion_, ediff, rms, iter_duration);
+//      if (iter == 1)
+//        printf("\n\n %4s %20s %20s %20s %20s %20s %20s %20s %20s %20s\n",
+//               niter.c_str(), nEle.c_str(), nTot.c_str(), nDel.c_str(),
+//               nRMS.c_str(), nT.c_str(), nJ.c_str(), nK.c_str(), nTrans.c_str(),
+//               nD.c_str());
+//      printf(
+//          " %4d %20.12f %20.12f %20.12f %20.12f %20.3f %20.3f %20.3f %20.3f "
+//          "%20.3f\n",
+//          iter, ephf, ephf + repulsion_, ediff, rms, iter_duration, j_duration,
+//          k_duration, trans_duration, d_duration);
+        if (iter == 1)
+          printf("\n\n %4s %20s %20s %20s %20s %20s\n",
+                 niter.c_str(), nEle.c_str(), nTot.c_str(), nDel.c_str(),
+                 nRMS.c_str(), nT.c_str());
+        printf(
+            " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n",
+            iter, ephf, ephf + repulsion_, ediff, rms, iter_duration);
     }
 
   } while ((iter < maxiter_) && (!converged));

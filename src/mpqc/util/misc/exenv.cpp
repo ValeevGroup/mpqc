@@ -1,5 +1,5 @@
 //
-// exenv.cc
+// exenv.cpp
 //
 // Copyright (C) 1997 Limit Point Systems, Inc.
 //

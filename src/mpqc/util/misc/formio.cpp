@@ -1,5 +1,5 @@
 //
-// formio.cc
+// formio.cpp
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //

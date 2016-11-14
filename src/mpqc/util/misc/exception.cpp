@@ -1,5 +1,5 @@
 //
-// scexception.cc
+// exception.cpp
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //

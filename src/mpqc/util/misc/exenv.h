@@ -32,6 +32,8 @@
 #include <iostream>
 #include <memory>
 
+#include <madness/world/world.h>
+
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/misc/formio.h"
 
@@ -77,14 +79,24 @@ class ExEnv {
         exist, then an empty string is returned. */
     static std::string getenv(const std::string& name);
 
-    /// Return an ostream that writes from all nodes.
-    static std::ostream &outn() { if (!out_)set_out(&std::cout);return *out_; }
-    /// Return an ostream for error messages that writes from all nodes.
-    static std::ostream &errn() { return outn(); }
-    /// Return an ostream that writes from node 0.
-    static std::ostream &out0();
-    /// Return an ostream for error messages that writes from node 0.
-    static std::ostream &err0() { return out0(); }
+    /// Return an ostream that writes from all processes.
+    static std::ostream& outn();
+    /// Return an ostream for error messages that writes from all processes.
+    static std::ostream& errn();
+    /// Return an ostream that writes from process 0 of the default World.
+    /// \note FormIO::set_printnode() can be used to specify which process this
+    /// prints from
+    static std::ostream& out0();
+    /// Return an ostream for error messages that writes from process 0 of the
+    /// default World.
+    /// \note FormIO::set_printnode() can be used to specify which process this
+    /// prints from
+    static std::ostream& err0();
+    /// Return an ostream that writes from process 0 of the given World.
+    static std::ostream& out0(madness::World& world);
+    /// Return an ostream for error messages that writes from process 0 of the
+    /// given World.
+    static std::ostream& err0(madness::World& world);
 };
 
 /// @}

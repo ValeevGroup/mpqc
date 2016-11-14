@@ -80,7 +80,8 @@ ExEnv::getenv(const std::string& name)
   return value;
 }
 
-std::ostream &ExEnv::out0() {
+std::ostream&
+ExEnv::out0() {
   if (!FormIO::get_debug() && FormIO::get_printnode() != FormIO::get_node()) {
     if (!nullstream_) {
       nullstream_ = std::make_unique<std::ofstream>("/dev/null");
@@ -89,6 +90,38 @@ std::ostream &ExEnv::out0() {
   }
 
   return outn();
+}
+
+std::ostream&
+ExEnv::out0(madness::World& world) {
+  if (!FormIO::get_debug() && world.rank() != FormIO::get_printnode()) {
+    if (!nullstream_) {
+      nullstream_ = std::make_unique<std::ofstream>("/dev/null");
+    }
+    return *nullstream_;
+  }
+
+  return outn();
+}
+
+std::ostream& ExEnv::outn() {
+  if (!out_) set_out(&std::cout);
+  return *out_;
+}
+
+std::ostream&
+ExEnv::err0() {
+    return out0();
+}
+
+std::ostream&
+ExEnv::err0(madness::World& world) {
+    return out0(world);
+}
+
+std::ostream&
+ExEnv::errn() {
+    return outn();
 }
 
 void

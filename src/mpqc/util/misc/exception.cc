@@ -376,6 +376,9 @@ FileOperationFailed::FileOperationFailed(const char *description,
         case Corrupt:
             elaborate() << "Corrupt";
             break;
+        case Chdir:
+          elaborate() << "Chdir";
+          break;
         case Other:
             elaborate() << "Other";
             break;

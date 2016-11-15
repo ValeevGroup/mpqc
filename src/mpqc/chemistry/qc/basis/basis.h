@@ -115,8 +115,25 @@ Basis reblock(Basis const &basis, Op op, Args... args) {
   return Basis(op(basis.flattened_shells(), args...));
 }
 
+/**
+ * construct basis on MPI process 0 and broadcast to all processes
+ * @param world madness::World
+ * @param basis_set BasisSet object
+ * @param mol Molecule object
+ * @return Basis object
+ */
 Basis parallel_construct_basis(madness::World &world, const BasisSet &basis_set,
                                const mpqc::Molecule &mol);
+/**
+ * construct a map that maps column of basis to column of sub_basis, sub_basis has to be a subset of basis
+ * @warning the value in index starts with 1, value 0 in index indicates this column is missing in sub_basis
+ * This approach uses N^2 algorithm
+ * //TODO need unit test for this
+ * @param basis Basis object
+ * @param sub_basis Basis object, subset of basis
+ * @return a vector of column id of sub_basis
+ */
+Eigen::RowVectorXi sub_basis_map(const Basis& basis, const Basis& sub_basis);
 
 }  // namespace basis
 }  // namespace mpqc

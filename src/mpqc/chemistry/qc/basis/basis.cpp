@@ -131,6 +131,65 @@ Basis parallel_construct_basis(madness::World &world, const BasisSet &basis_set,
   return basis;
 }
 
+Eigen::RowVectorXi sub_basis_map(const Basis& basis, const Basis& sub_basis){
+
+  auto shells = basis.flattened_shells();
+  auto sub_shells = sub_basis.flattened_shells();
+
+  std::size_t n_functions = basis.nfunctions();
+  std::size_t n_sub_functions = sub_basis.nfunctions();
+  TA_ASSERT(n_functions >= n_sub_functions);
+
+  std::size_t n_shells = basis.nshells();
+  std::size_t n_sub_shells = sub_basis.nshells();
+
+  Eigen::RowVectorXi result = Eigen::RowVectorXi::Zero(n_functions);
+
+  std::size_t sub_shell_lowbound = 0;
+  std::size_t sub_shell_highbound = 0;
+  for(std::size_t i = 0; i < n_sub_shells; i++){
+
+    auto& sub_shell = sub_shells[i];
+    sub_shell_lowbound = sub_shell_highbound;
+    sub_shell_highbound += sub_shell.size();
+
+    std::size_t shell_lowbound = 0;
+    std::size_t shell_highbound = 0;
+
+    bool find = false;
+
+    // locate the position in shells
+    for(std::size_t j = 0; j < n_shells; j++){
+
+      auto& shell = shells[j];
+      shell_lowbound = shell_highbound;
+      shell_highbound += shell.size();
+
+      if(sub_shell == shell){
+        find = true;
+
+        // fill in the value
+        const std::size_t gap = sub_shell_lowbound - shell_lowbound;
+        for(std::size_t k = shell_lowbound; k < shell_highbound; k++){
+          result[k] =  gap + k + 1;
+        }
+
+        break;
+
+      }
+
+    }
+
+    if(find == false){
+      throw std::runtime_error("\n Not a Sub Basis! \n");
+    }
+
+  }
+
+  return result;
+
+}
+
 Basis Basis::join(const Basis &basis) {
   auto self_shells = this->cluster_shells();
   auto other_shells = basis.cluster_shells();

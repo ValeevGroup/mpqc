@@ -66,9 +66,15 @@ private:
     int64_t docc_;
 
     const KeyVal kv_;
-    double d_converge_;
-    double e_converge_;
+    double converge_;
     int64_t maxiter_;
+
+    double init_duration_ = 0.0;
+    double j_duration_ = 0.0;
+    double k_duration_ = 0.0;
+    double trans_duration_ = 0.0;
+    double d_duration_ = 0.0;
+    double scf_duration_ = 0.0;
 
     void init(const KeyVal& kv);
 };

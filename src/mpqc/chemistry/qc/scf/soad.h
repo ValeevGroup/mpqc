@@ -24,7 +24,7 @@
 namespace mpqc {
 namespace scf {
 
-RowMatrixXd soad_density_eig_matrix(Molecule const &mol) {
+inline RowMatrixXd soad_density_eig_matrix(Molecule const &mol) {
   auto nao = 0;
   for (const auto &atom : mol.atoms()) {
     const auto Z = atom.charge();

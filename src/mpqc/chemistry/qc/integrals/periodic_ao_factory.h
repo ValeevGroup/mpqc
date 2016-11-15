@@ -129,46 +129,30 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
   Vector3i RD_max() {return RD_max_;}
   Vector3i nk() {return nk_;}
 
+  int64_t R_size() {return R_size_;}
+  int64_t RJ_size() {return RJ_size_;}
+  int64_t RD_size() {return RD_size_;}
+  int64_t k_size() {return k_size_;}
+
   /// Return crystal orbital coefficients
   TArray C();
   /// Return crystal orbital epsilons
   std::vector<Vectorc> eps() {return eps_;}
 
- private:
-  FormulaRegistry<TArray> ao_formula_registry_;
-  std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
-  Op op_;
-
-  TArray D_;  // Density
-  std::vector<Matrixc> C_;
-  std::vector<Vectorc> eps_;
-
-  Vector3i R_max_ = {
-      0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
-  Vector3i RJ_max_ = {0, 0, 0};       // range of Coulomb operation
-  Vector3i RD_max_ = {0, 0, 0};       // range of density representation
-  Vector3i nk_ = {1, 1, 1};           // # of k points in each direction
-  Vector3d dcell_ = {0.0, 0.0, 0.0};  // direct unit cell params (in a.u.)
-
-  int64_t R_size_;
-  int64_t RJ_size_;
-  int64_t RD_size_;
-  int64_t k_size_;
+  /// shift center of {basis} by {shift} and return a new basis
+  std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
+                                                   Vector3d shift);
 
   /**
-   *  this takes {x, y, z} index of vec, and returns the total index,
-   *  e.g, {-R_max_(0), -R_max_(1), -R_max_(2)} of R_max_ will return 0.
+   *  shift center of {basis} by {shift_base} + R_vector if is_real_space ==
+   * true,
+   *  by {shift_base} + k_vector if is_real_space == false,
+   *  and return a new compound basis consisting of all shifted basis.
    */
-  int64_t idx_lattice(int x, int y, int z, Vector3i vec);
-  int64_t idx_k(int x, int y, int z, Vector3i nk);
-
-  /**
-   *  this takes total index of vec, and returns a lattice vector,
-   *  e.g. 0 of R_max_ will return the lattice vector corresponding to
-   *  {-R_max_(0), -R_max_(1), -R_max_(2)} unit cell.
-   */
-  Vector3d R_vector(int64_t idx_lattice, Vector3i vec);
-  Vector3d k_vector(int64_t idx_k);
+  std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
+                                                   Vector3d shift_base,
+                                                   Vector3i nshift,
+                                                   bool is_real_space);
 
   /// compute sparse array involving complex values
   template <typename U = Policy>
@@ -198,21 +182,6 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
       Vector3d shift_coul, bool if_coulomb);
 
-  /// shift center of {basis} by {shift} and return a new basis
-  std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                   Vector3d shift);
-
-  /**
-   *  shift center of {basis} by {shift_base} + R_vector if is_real_space ==
-   * true,
-   *  by {shift_base} + k_vector if is_real_space == false,
-   *  and return a new compound basis consisting of all shifted basis.
-   */
-  std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                   Vector3d shift_base,
-                                                   Vector3i nshift,
-                                                   bool is_real_space);
-
   /// repeat tiledrange1 {tr0} by {size} times, and return a long tiledrange1
   TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
 
@@ -233,6 +202,42 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
   /// Sort eigenvalues and eigenvectors in ascending order
   void sort_eigen(Vectorc &eigVal, Matrixc &eigVec);
 
+  /**
+   *  this takes {x, y, z} index of vec, and returns the total index,
+   *  e.g, {-R_max_(0), -R_max_(1), -R_max_(2)} of R_max_ will return 0.
+   */
+  int64_t idx_lattice(int x, int y, int z, Vector3i vec);
+  int64_t idx_k(int x, int y, int z, Vector3i nk);
+
+  /**
+   *  this takes total index of vec, and returns a lattice vector,
+   *  e.g. 0 of R_max_ will return the lattice vector corresponding to
+   *  {-R_max_(0), -R_max_(1), -R_max_(2)} unit cell.
+   */
+  Vector3d R_vector(int64_t idx_lattice, Vector3i vec);
+  Vector3d k_vector(int64_t idx_k);
+
+
+ private:
+  FormulaRegistry<TArray> ao_formula_registry_;
+  std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
+  Op op_;
+
+  TArray D_;  // Density
+  std::vector<Matrixc> C_;
+  std::vector<Vectorc> eps_;
+
+  Vector3i R_max_ = {
+      0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
+  Vector3i RJ_max_ = {0, 0, 0};       // range of Coulomb operation
+  Vector3i RD_max_ = {0, 0, 0};       // range of density representation
+  Vector3i nk_ = {1, 1, 1};           // # of k points in each direction
+  Vector3d dcell_ = {0.0, 0.0, 0.0};  // direct unit cell params (in a.u.)
+
+  int64_t R_size_;
+  int64_t RJ_size_;
+  int64_t RD_size_;
+  int64_t k_size_;
 
 };
 

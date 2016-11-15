@@ -1,4 +1,5 @@
 #include "mpqc/chemistry/qc/phf/phf.h"
+#include "periodic_soad.h"
 
 #include <clocale>
 #include <sstream>
@@ -41,8 +42,7 @@ void PHF::init(const KeyVal& kv) {
   if (world.rank() == 0)
     std::cout << "\nNuclear Repulsion: " << repulsion_ << std::endl;
 
-  e_converge_ = kv.value<double>("converge", 1.0E-8);         // 1.0E(-N)
-  d_converge_ = pow(10.0, log(e_converge_) / log(10) / 2.0);  // 1.0E(-N/2)
+  converge_ = kv.value<double>("converge", 1.0E-8);         // 1.0E(-N)
   maxiter_ = kv.value<int64_t>("max_iter", 30);
 
   T_ = pao_factory_.compute(L"<κ|T|λ>");        // Kinetic
@@ -51,18 +51,21 @@ void PHF::init(const KeyVal& kv) {
   Sk_ = pao_factory_.transform_real2recip(S_);  // Overlap in reciprocal space
   H_("mu, nu") =
       T_("mu, nu") + V_("mu, nu");  // One-body hamiltonian in real space
-  Hk_ = pao_factory_.transform_real2recip(
-      H_);  // One-body hamiltonian in reciprocal space
 
-  // compute density matrix using core guess
-  // TODO: write SOAD guess
-  D_ = pao_factory_.compute_density(Hk_, Sk_, docc_);
+  // compute density matrix using soad/core guess
+  bool soad_guess = kv.value<bool>("soad_guess", true);
+  if (!soad_guess) {
+    F_ = H_;
+  } else {
+    F_ = periodic_fock_soad(world, unitcell, H_, pao_factory_);
+  }
+  // transform Fock from real to reciprocal space
+  Fk_ = pao_factory_.transform_real2recip(F_);
+  // compute guess density
+  D_ = pao_factory_.compute_density(Fk_, Sk_, docc_);
 
   auto init_end = mpqc::fenced_now(world);
-  if (world.rank() == 0) {
-    std::cout << "\nPHF init time: "
-              << mpqc::duration_in_s(init_start, init_end) << "s\n";
-  }
+  init_duration_ = mpqc::duration_in_s(init_start, init_end);
 }
 
 bool PHF::solve() {
@@ -77,72 +80,63 @@ bool PHF::solve() {
 
   do {
     auto iter_start = mpqc::fenced_now(world);
-
     ++iter;
+
     // Save a copy of energy and density
     auto ephf_old = ephf;
     auto D_old = D_;
-
-//    auto j_start = mpqc::fenced_now(world);
-    J_ = pao_factory_.compute(L"(μ ν| J|κ λ)");  // Coulomb
-//    auto j_end = mpqc::fenced_now(world);
-//    auto j_duration = mpqc::duration_in_s(j_start, j_end);
-
-//    auto k_start = mpqc::fenced_now(world);
-    K_ = pao_factory_.compute(L"(μ ν| K|κ λ)");  // Exchange
-//    auto k_end = mpqc::fenced_now(world);
-//    auto k_duration = mpqc::duration_in_s(k_start, k_end);
-
-    // F = H + 2J - K
-    F_ = H_;
-    F_("mu, nu") += 2.0 * J_("mu, nu") - K_("mu, nu");
-
-//    auto trans_start = mpqc::fenced_now(world);
-    Fk_ = pao_factory_.transform_real2recip(F_);
-//    auto trans_end = mpqc::fenced_now(world);
-//    auto trans_duration = mpqc::duration_in_s(trans_start, trans_end);
-
-//    auto d_start = mpqc::fenced_now(world);
-    D_ = pao_factory_.compute_density(Fk_, Sk_, docc_);
-//    auto d_end = mpqc::fenced_now(world);
-//    auto d_duration = mpqc::duration_in_s(d_start, d_end);
 
     // compute PHF energy
     F_("mu, nu") += H_("mu, nu");
     std::complex<double> e_complex = F_("mu, nu") * D_("mu, nu");
     ephf = e_complex.real();
 
+    auto j_start = mpqc::fenced_now(world);
+    J_ = pao_factory_.compute(L"(μ ν| J|κ λ)");  // Coulomb
+    auto j_end = mpqc::fenced_now(world);
+    j_duration_ += mpqc::duration_in_s(j_start, j_end);
+
+    auto k_start = mpqc::fenced_now(world);
+    K_ = pao_factory_.compute(L"(μ ν| K|κ λ)");  // Exchange
+    auto k_end = mpqc::fenced_now(world);
+    k_duration_ += mpqc::duration_in_s(k_start, k_end);
+
+    // F = H + 2J - K
+    F_ = H_;
+    F_("mu, nu") += 2.0 * J_("mu, nu") - K_("mu, nu");
+
+    // transform Fock from real to reciprocal space
+    auto trans_start = mpqc::fenced_now(world);
+    Fk_ = pao_factory_.transform_real2recip(F_);
+    auto trans_end = mpqc::fenced_now(world);
+    trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
+
+    // compute new density
+    auto d_start = mpqc::fenced_now(world);
+    D_ = pao_factory_.compute_density(Fk_, Sk_, docc_);
+    auto d_end = mpqc::fenced_now(world);
+    d_duration_ += mpqc::duration_in_s(d_start, d_end);
+
     // compute difference with last iteration
     ediff = ephf - ephf_old;
     Ddiff("mu, nu") = D_("mu, nu") - D_old("mu, nu");
     rms = Ddiff("mu, nu").norm();
-    if ((rms <= d_converge_) || fabs(ediff) <= e_converge_) converged = true;
+    if ((rms <= converge_) || fabs(ediff) <= converge_) converged = true;
 
     auto iter_end = mpqc::fenced_now(world);
     auto iter_duration = mpqc::duration_in_s(iter_start, iter_end);
+    scf_duration_ += iter_duration;
+
     // Print out information
     std::string niter = "Iter", nEle = "E(HF)", nTot = "E(tot)",
-                nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)",
-                nJ = "Coul(s)", nK = "Ex(s)", nTrans = "Real2Recip(s)",
-                nD = "Diag+Dens(s)";
+                nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
     if (world.rank() == 0) {
-//      if (iter == 1)
-//        printf("\n\n %4s %20s %20s %20s %20s %20s %20s %20s %20s %20s\n",
-//               niter.c_str(), nEle.c_str(), nTot.c_str(), nDel.c_str(),
-//               nRMS.c_str(), nT.c_str(), nJ.c_str(), nK.c_str(), nTrans.c_str(),
-//               nD.c_str());
-//      printf(
-//          " %4d %20.12f %20.12f %20.12f %20.12f %20.3f %20.3f %20.3f %20.3f "
-//          "%20.3f\n",
-//          iter, ephf, ephf + repulsion_, ediff, rms, iter_duration, j_duration,
-//          k_duration, trans_duration, d_duration);
-        if (iter == 1)
-          printf("\n\n %4s %20s %20s %20s %20s %20s\n",
-                 niter.c_str(), nEle.c_str(), nTot.c_str(), nDel.c_str(),
-                 nRMS.c_str(), nT.c_str());
-        printf(
-            " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n",
-            iter, ephf, ephf + repulsion_, ediff, rms, iter_duration);
+      if (iter == 1)
+        printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
+               nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
+               nT.c_str());
+      printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ephf,
+             ephf + repulsion_, ediff, rms, iter_duration);
     }
 
   } while ((iter < maxiter_) && (!converged));
@@ -161,6 +155,15 @@ bool PHF::solve() {
       std::cout << "\nPeriodic Hartree-Fock iterations have converged!"
                 << std::endl;
       printf("\nTotal Periodic Hartree-Fock energy = %20.12f\n", energy_);
+
+      // print out timings
+      printf("\nTime(s):\n");
+      printf("\tInit:                %20.3f\n", init_duration_);
+      printf("\tCoulomb term:        %20.3f\n", j_duration_);
+      printf("\tExchange term:       %20.3f\n", k_duration_);
+      printf("\tReal->Recip trans:   %20.3f\n", trans_duration_);
+      printf("\tDiag + Density:      %20.3f\n", d_duration_);
+      printf("\tTotal:               %20.3f\n\n", scf_duration_);
     }
     return true;
   }

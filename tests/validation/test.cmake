@@ -1,5 +1,5 @@
 
-macro(runtest srcDir baseName)
+macro(runtest)
 
 set(OUTPUT_FILE_NAME "${CMAKE_BINARY_DIR}/${baseName}.out")
 
@@ -15,7 +15,12 @@ if (NOT EXISTS "${OUTPUT_FILE_NAME}")
   "${srcDir}/reference/inputs/${baseName}.json")
 
   execute_process(COMMAND
+                  ${mpiExec}
+                  ${mpiNPFlags}
+                  ${mpiNProc}
+                  ${mpiPre}
                   ${MPQC_CMD} ${MPQC_ARGS}
+                  ${mpiPost}
                   OUTPUT_FILE "${OUTPUT_FILE_NAME}"
                   RESULT_VARIABLE MPQC_RESULT)
 
@@ -33,4 +38,4 @@ endif(CHECK_RESULT)
 
 endmacro(runtest)
 
-runtest(${srcDir} ${testName} ${pythonExec})
+runtest()

@@ -17,6 +17,11 @@ if (${PYTHONINTERP_FOUND})
               -DtestName=${baseName}
               -DsrcDir=${CMAKE_CURRENT_SOURCE_DIR}
               -DpythonExec=${PYTHON_EXECUTABLE}
+              -DmpiExec=${MPIEXEC}
+              -DmpiNPFlags=${MPIEXEC_NUMPROC_FLAG}
+              -DmpiNProc=2
+              -DmpiPre=${MPIEXEC_PREFLAGS}
+              -DmpiPost=${MPIEXEC_POSTFLAGS}
               -P ${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
     set_tests_properties(validation/${baseName}
                          PROPERTIES DEPENDS ../../src/bin/mpqc/mpqc)

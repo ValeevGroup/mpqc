@@ -54,8 +54,6 @@ Formula::Formula(std::wstring string) {
 
   std::wstring formula(bra_symbol + 1, ket_symbol);
 
-  //        std::wcout << formula_string;
-
   // find option between [ and ]
   auto option_left = std::find(string.cbegin(), string.cend(), L'[');
   auto option_right = std::find(string.cbegin(), string.cend(), L']');

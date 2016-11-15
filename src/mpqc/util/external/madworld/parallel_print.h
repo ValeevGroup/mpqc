@@ -7,6 +7,8 @@
 #include <tiledarray.h>
 #include <tuple>
 
+#include "mpqc/util/misc/exenv.h"
+
 namespace mpqc {
 namespace utility {
 namespace aux {
@@ -39,17 +41,7 @@ auto operator<<(std::basic_ostream<Ch, Tr> &os, std::tuple<Args...> const &t)
 template <typename... Args>
 void print_par(madness::World &world, Args &&... args) {
   auto t = std::make_tuple<Args...>(std::forward<Args>(args)...);
-  if (world.rank() == 0) {
-    std::cout << t << std::flush;
-  }
-}
-
-template <typename... Args>
-void wprint_par(madness::World &world, Args &&... args) {
-  auto t = std::make_tuple<Args...>(std::forward<Args>(args)...);
-  if (world.rank() == 0) {
-    std::wcout << t << std::flush;
-  }
+  ExEnv::out0() << t << std::flush;
 }
 
 inline void print_file(madness::World &world, const std::string &file) {

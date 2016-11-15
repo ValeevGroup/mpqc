@@ -1,5 +1,5 @@
 //
-// formula.cc --- implementation of the MolecularFormula class
+// formula.cpp --- implementation of the MolecularFormula class
 //
 // Copyright (C) 1997 Limit Point Systems, Inc.
 //

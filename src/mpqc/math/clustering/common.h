@@ -7,7 +7,7 @@
 namespace mpqc {
 namespace clustering {
 
-/*! \ingroup Clustering @{ */
+/*! \ingroup MathClustering @{ */
 
 /*! \brief returns the closest element in the input range to the center provided
  *

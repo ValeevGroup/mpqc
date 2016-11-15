@@ -147,3 +147,9 @@
     @ingroup Math
     Low-rank tensors.
 */
+
+/** @defgroup MathClustering mpqc.Math.Clustering
+ *  @ingroup Math
+ *  Provides classes and functions for generic
+ *  <a href="https://en.wikipedia.org/wiki/Cluster_analysis">cluster analysis</a>.
+*/

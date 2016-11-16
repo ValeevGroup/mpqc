@@ -1,18 +1,18 @@
 
 macro(runtest)
 
-set(OUTPUT_FILE_NAME "${CMAKE_BINARY_DIR}/${baseName}.out")
+set(OUTPUT_FILE_NAME "${CMAKE_BINARY_DIR}/${testName}.out")
 
 set(CHECK_CMD "${pythonExec}")
 set(CHECK_ARGS "${srcDir}/check.py"
 "${OUTPUT_FILE_NAME}"
-"${srcDir}/reference/outputs/${baseName}.out")
+"${srcDir}/reference/outputs/${testName}.out")
 
 if (NOT EXISTS "${OUTPUT_FILE_NAME}")
 
   set(MPQC_CMD "${CMAKE_BINARY_DIR}/../../src/bin/mpqc/mpqc")
   set(MPQC_ARGS "-p" "${srcDir}/reference/inputs"
-  "${srcDir}/reference/inputs/${baseName}.json")
+  "${srcDir}/reference/inputs/${testName}.json")
 
   execute_process(COMMAND
                   ${mpiExec}

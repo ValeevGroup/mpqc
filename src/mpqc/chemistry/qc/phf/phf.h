@@ -68,6 +68,7 @@ private:
     const KeyVal kv_;
     double converge_;
     int64_t maxiter_;
+    bool print_detail_;
 
     double init_duration_ = 0.0;
     double j_duration_ = 0.0;

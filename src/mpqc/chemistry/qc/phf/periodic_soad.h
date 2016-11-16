@@ -16,9 +16,13 @@ namespace phf {
 
 template <typename Array, typename FactoryType, typename Tile = TA::TensorZ>
 Array periodic_fock_soad(
-    madness::World &world, UnitCell const &unitcell,
-    Array const &H, FactoryType &pao_factory,
+    madness::World &world, UnitCell const &unitcell, Array const &H,
+    FactoryType &pao_factory,
     std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>()) {
+
+  if (world.rank() == 0) {
+    std::cout << "\nBuilding Fock Matrix from SOAD Guess ...\n";
+  }
 
   auto F = H;
 
@@ -40,7 +44,8 @@ Array periodic_fock_soad(
   // get normal basis
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
   auto R_max = pao_factory.R_max();
-  auto normal_bs = pao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
+  auto normal_bs =
+      pao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
   auto normal_bs0 = std::make_shared<basis::Basis>(normal_bs);
   auto normal_bs1 =
       pao_factory.shift_basis_origin(*normal_bs0, zero_shift_base, R_max, true);

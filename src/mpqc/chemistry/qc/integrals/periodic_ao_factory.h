@@ -11,6 +11,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 #include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/misc/time.h"
 
 #include <unsupported/Eigen/MatrixFunctions>
 
@@ -99,6 +100,8 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
     k_size_ = 1 + idx_k(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
 
     op_ = TA::Noop<TA::TensorZ, true>();
+
+    print_detail_ = kv.value<bool>("print_detail", false);
   }
 
   ~PeriodicAOFactory() noexcept = default;
@@ -239,6 +242,7 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
   int64_t RD_size_;
   int64_t k_size_;
 
+  bool print_detail_;
 };
 
 template <typename Tile, typename Policy>
@@ -257,6 +261,11 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
   double size = 0.0;
 
   if (formula.rank() == 2) {
+      utility::print_par(world_,
+                         "\nComputing One Body Integral for Periodic System: ",
+                         utility::to_string(formula.string()), "\n");
+
+    auto time0 = mpqc::now(world_, false);
     if (formula.oper().type() == Operator::Type::Kinetic ||
         formula.oper().type() == Operator::Type::Overlap) {
       parse_one_body_periodic(formula, engine_pool, bs_array, *mol_);
@@ -274,41 +283,87 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       }
     } else
       throw std::runtime_error("Rank-2 operator type not supported");
+    auto time1 = mpqc::now(world_, false);
+    auto time = mpqc::duration_in_s(time0, time1);
 
     size = mpqc::detail::array_size(result);
-    utility::print_par(world_,
-                       "\nComputed One Body Integral for Periodic System: ",
-                       utility::to_string(formula.string()));
-    utility::print_par(world_, " Size: ", size, " GB\n");
+    utility::print_par(world_, " Size: ", size, " GB");
+    utility::print_par(world_, " Time: ", time, " s\n");
 
   } else if (formula.rank() == 4) {
+
+      auto time_4idx = 0.0;
+      auto time_contr = 0.0;
+      auto time = 0.0;
+
+      if (print_detail_) {
+          utility::print_par(world_,
+                             "\nComputing Two Body Integral for Periodic System: ",
+                             utility::to_string(formula.string()), "\n");
+      }
+
     if (formula.oper().type() == Operator::Type::J) {
-      auto j_formula = formula;
+        auto time_j0 = mpqc::now(world_, false);
+
+        auto j_formula = formula;
       j_formula.set_operator_type(Operator::Type::Coulomb);
+
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         auto vec_RJ = R_vector(RJ, RJ_max_);
         parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
+
+        auto time_g0 = mpqc::now(world_, false);
         auto J = compute_integrals(this->world_, engine_pool, bs_array);
+        auto time_g1 = mpqc::now(world_, false);
+        time_4idx += mpqc::duration_in_s(time_g0, time_g1);
+
+        auto time_contr0 = mpqc::now(world_, false);
         if (RJ == 0)
           result("mu, nu") = J("mu, nu, lambda, rho") * D_("lambda, rho");
         else
           result("mu, nu") += J("mu, nu, lambda, rho") * D_("lambda, rho");
+        auto time_contr1 = mpqc::now(world_, false);
+        time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
       }
+      auto time_j1 = mpqc::now(world_, false);
+      time = mpqc::duration_in_s(time_j0, time_j1);
+
     } else if (formula.oper().type() == Operator::Type::K) {
-      auto k_formula = formula;
+        auto time_k0 = mpqc::now(world_, false);
+
+        auto k_formula = formula;
       k_formula.set_operator_type(Operator::Type::Coulomb);
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         auto vec_RJ = R_vector(RJ, RJ_max_);
         parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ,
                                 false);
+        auto time_g0 = mpqc::now(world_, false);
         auto K = compute_integrals(this->world_, engine_pool, bs_array);
+        auto time_g1 = mpqc::now(world_, false);
+        time_4idx += mpqc::duration_in_s(time_g0, time_g1);
+
+        auto time_contr0 = mpqc::now(world_, false);
         if (RJ == 0)
           result("mu, nu") = K("mu, lambda, nu, rho") * D_("lambda, rho");
         else
           result("mu, nu") += K("mu, lambda, nu, rho") * D_("lambda, rho");
+        auto time_contr1 = mpqc::now(world_, false);
+        time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
+
       }
+      auto time_k1 = mpqc::now(world_, false);
+      time = mpqc::duration_in_s(time_k0, time_k1);
+
     } else
       throw std::runtime_error("Rank-4 operator type not supported");
+
+    if (print_detail_) {
+        size = mpqc::detail::array_size(result);
+        utility::print_par(world_, " Size: ", size, " GB\n");
+        utility::print_par(world_, " \t4-index g tensor time: ", time_4idx, " s\n");
+        utility::print_par(world_, " \tg*D contraction time: ", time_contr, " s\n");
+        utility::print_par(world_, " \ttotal time: ", time, " s\n");
+    }
 
   } else
     throw std::runtime_error("Operator rank not supported");
@@ -648,6 +703,8 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
   };
 
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
+
+  auto time_f0 = mpqc::now(world_, true);
   for (auto const ord : *pmap) {
     tiles[ord].first = ord;
     detail::IdxVec idx = trange.tiles_range().idx(ord);
@@ -655,6 +712,11 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
                     &tiles[ord].second);
   }
   world.gop.fence();
+  auto time_f1 = mpqc::now(world_, true);
+  auto time_f = mpqc::duration_in_s(time_f0, time_f1);
+  if (print_detail_) {
+      utility::print_par(world_, " \tsum of task_f time: ", time_f, " s\n");
+  }
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
   TA::DistArray<Tile, TA::SparsePolicy> out(world, trange, shape, pmap);

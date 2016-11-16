@@ -19,14 +19,19 @@ mpqc::detail::ForceLink<RIDBRMP2F12> fl3;
 
 template <typename Tile>
 class CCSDF12;
+mpqc::detail::ForceLink<CCSDF12<TA::TensorD>> fl4;
+
 template <typename Tile>
 class DBCCSDF12;
-mpqc::detail::ForceLink<CCSDF12<TA::TensorD>> fl4;
 mpqc::detail::ForceLink<DBCCSDF12<TA::TensorD>> fl5;
 
 template <typename Tile>
+class CCSD_T_F12;
+mpqc::detail::ForceLink<CCSD_T_F12<TA::TensorD>> fl6;
+
+template <typename Tile>
 class GF2F12;
-mpqc::detail::ForceLink<GF2F12<TA::TensorD>> fl6;
+mpqc::detail::ForceLink<GF2F12<TA::TensorD>> fl7;
 }
 }
 

@@ -28,7 +28,6 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   using DirectAOIntegral = integrals::DirectAOFactory<Tile, Policy>;
 
   CCSD() = default;
-  virtual ~CCSD() {}
 
   /**
    * KeyVal constructor
@@ -62,6 +61,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     converge_ = kv.value<double>("converge", 1.0e-7);
     print_detail_ = kv.value<bool>("print_detail", false);
   }
+
+  virtual ~CCSD() {}
 
  protected:
   TArray T1_;

@@ -42,7 +42,7 @@ class DBCCSDF12 : public CCSDF12<Tile> {
    *
    * invalid keywords: approximation, vt_couple
    */
-  DBCCSDF12(const KeyVal& kv) : CCSDF12<Tile>(kv) {}
+  DBCCSDF12(const KeyVal& kv) : CCSDF12<Tile>(kv), cc::CCSD<Tile,TA::SparsePolicy>(kv) {}
   virtual ~DBCCSDF12() = default;
 
  private:

@@ -22,7 +22,7 @@ namespace f12 {
  */
 
 template <typename Tile>
-class CCSDF12 : public cc::CCSD<Tile, TA::SparsePolicy> {
+class CCSDF12 : virtual public cc::CCSD<Tile, TA::SparsePolicy> {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
@@ -67,7 +67,7 @@ class CCSDF12 : public cc::CCSD<Tile, TA::SparsePolicy> {
 
   virtual ~CCSDF12() = default;
 
-  virtual double value() override {
+  double value() override {
     if (this->energy_ == 0.0) {
       auto& world = this->wfn_world()->world();
 

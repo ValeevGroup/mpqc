@@ -21,6 +21,7 @@ class PHF : public qc::Wavefunction {
 public:
     using TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>;
     using PeriodicAOIntegral = integrals::PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy>;
+    using MatrixcVec = std::vector<Matrixc>;
 
     PHF() = default;
 
@@ -61,6 +62,8 @@ private:
     TArray Fk_;
     TArray D_;
     TArray C_;
+
+    MatrixcVec X_;
 
     double repulsion_;
     int64_t docc_;

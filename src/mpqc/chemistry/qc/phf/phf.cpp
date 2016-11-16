@@ -17,23 +17,21 @@ namespace phf {
 PHF::PHF(const KeyVal& kv) : Wavefunction(kv), kv_(kv), pao_factory_(kv) {}
 
 void PHF::init(const KeyVal& kv) {
+  // TODO: retrive unitcell from pao_factory
+  auto& unitcell = *kv.keyval("wfn_world:molecule").class_ptr<UnitCell>();
 
-    // TODO: retrive unitcell from pao_factory
-    auto& unitcell = *kv.keyval("wfn_world:molecule").class_ptr<UnitCell>();
+  converge_ = kv.value<double>("converge", 1.0E-8);  // 1.0E(-N)
+  maxiter_ = kv.value<int64_t>("max_iter", 30);
+  bool soad_guess = kv.value<bool>("soad_guess", true);
+  print_detail_ = kv.value<bool>("print_detail", false);
 
-    converge_ = kv.value<double>("converge", 1.0E-8);         // 1.0E(-N)
-    maxiter_ = kv.value<int64_t>("max_iter", 30);
-    bool soad_guess = kv.value<bool>("soad_guess", true);
-    print_detail_ = kv.value<bool>("print_detail", false);
-
-    // retrieve world from pao_factory
+  // retrieve world from pao_factory
   auto& world = pao_factory_.world();
 
   auto init_start = mpqc::fenced_now(world);
 
   // set OrbitalBasisRegistry
   pao_factory_.set_orbital_basis_registry(this->wfn_world()->basis_registry());
-
 
   if (world.rank() == 0) {
     std::cout << pao_factory_ << std::endl;
@@ -48,7 +46,6 @@ void PHF::init(const KeyVal& kv) {
   repulsion_ = unitcell.nuclear_repulsion(RJ_max);
   if (world.rank() == 0)
     std::cout << "\nNuclear Repulsion: " << repulsion_ << std::endl;
-
 
   T_ = pao_factory_.compute(L"<κ|T|λ>");        // Kinetic
   V_ = pao_factory_.compute(L"<κ|V|λ>");        // Nuclear-attraction
@@ -66,8 +63,10 @@ void PHF::init(const KeyVal& kv) {
 
   // transform Fock from real to reciprocal space
   Fk_ = pao_factory_.transform_real2recip(F_);
+  // compute orthogonalizer matrix
+  X_ = pao_factory_.gen_orthogonalizer(Sk_);
   // compute guess density
-  D_ = pao_factory_.compute_density(Fk_, Sk_, docc_);
+  D_ = pao_factory_.compute_density(Fk_, X_, docc_);
 
   auto init_end = mpqc::fenced_now(world);
   init_duration_ = mpqc::duration_in_s(init_start, init_end);
@@ -92,8 +91,7 @@ bool PHF::solve() {
     auto D_old = D_;
 
     if (print_detail_)
-        if (world.rank() == 0)
-            std::cout << "\nIteration: " << iter << "\n";
+      if (world.rank() == 0) std::cout << "\nIteration: " << iter << "\n";
 
     // compute PHF energy
     F_("mu, nu") += H_("mu, nu");
@@ -122,7 +120,7 @@ bool PHF::solve() {
 
     // compute new density
     auto d_start = mpqc::fenced_now(world);
-    D_ = pao_factory_.compute_density(Fk_, Sk_, docc_);
+    D_ = pao_factory_.compute_density(Fk_, X_, docc_);
     auto d_end = mpqc::fenced_now(world);
     d_duration_ += mpqc::duration_in_s(d_start, d_end);
 
@@ -138,29 +136,32 @@ bool PHF::solve() {
 
     // Print out information
     if (print_detail_) {
-        if (world.rank() == 0) {
-            std::cout << "\nPHF Energy: " << ephf << "\n"
-                      << "Total Energy: " << ephf + repulsion_ << "\n"
-                      << "Delta(E): " << ediff << "\n"
-                      << "RMS(D): " << rms << "\n"
-                      << "Coulomb Build Time: " << mpqc::duration_in_s(j_start, j_end) << " s\n"
-                      << "Exchange Build Time: " << mpqc::duration_in_s(k_start, k_end) << " s\n"
-                      << "Transform Fock (Real->Recip) Time: " << mpqc::duration_in_s(trans_start, trans_end) << " s\n"
-                      << "Density Time: " << mpqc::duration_in_s(d_start, d_end) << " s\n"
-                      << "Iteration Time: " << iter_duration << " s\n";
-        }
-    }
-    else {
-        std::string niter = "Iter", nEle = "E(HF)", nTot = "E(tot)",
-                    nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
-        if (world.rank() == 0) {
-          if (iter == 1)
-            printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
-                   nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
-                   nT.c_str());
-          printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ephf,
-                 ephf + repulsion_, ediff, rms, iter_duration);
-        }
+      if (world.rank() == 0) {
+        std::cout << "\nPHF Energy: " << ephf << "\n"
+                  << "Total Energy: " << ephf + repulsion_ << "\n"
+                  << "Delta(E): " << ediff << "\n"
+                  << "RMS(D): " << rms << "\n"
+                  << "Coulomb Build Time: "
+                  << mpqc::duration_in_s(j_start, j_end) << " s\n"
+                  << "Exchange Build Time: "
+                  << mpqc::duration_in_s(k_start, k_end) << " s\n"
+                  << "Transform Fock (Real->Recip) Time: "
+                  << mpqc::duration_in_s(trans_start, trans_end) << " s\n"
+                  << "Density Time: " << mpqc::duration_in_s(d_start, d_end)
+                  << " s\n"
+                  << "Iteration Time: " << iter_duration << " s\n";
+      }
+    } else {
+      std::string niter = "Iter", nEle = "E(HF)", nTot = "E(tot)",
+                  nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
+      if (world.rank() == 0) {
+        if (iter == 1)
+          printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
+                 nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
+                 nT.c_str());
+        printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ephf,
+               ephf + repulsion_, ediff, rms, iter_duration);
+      }
     }
 
   } while ((iter < maxiter_) && (!converged));

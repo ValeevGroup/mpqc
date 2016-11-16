@@ -127,7 +127,16 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
    *  1. diagonalize Fock matrix in reciprocal space: F C = S C E
    *  2. compute density: D = Int_k( Exp(I k.R) C(occ).C(occ)t ) and return D
    */
-  TArray compute_density(TArray &fock_recip, TArray &overlap, int64_t ndocc);
+  TArray compute_density(TArray &fock_recip, std::vector<Matrixc> &Xvec,
+                         int64_t ndocc);
+
+  /**
+   * \brief gen_orthogonalizer
+   *
+   * \param overlap is rectangular overlap matrix in k_space
+   * \return
+   */
+  std::vector<Matrixc> gen_orthogonalizer(const TArray overlap);
 
   /**
    * \brief conditioning_orthogonalizer
@@ -136,22 +145,23 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
    * \param S_condition_num_thresh is maximum condition number allowed
    * \return conditioned orthogonalizer
    */
-  Matrixc conditioning_orthogonalizer(const Matrixc S, bool symmetric = false, double max_condition_num = 1.0e8);
+  Matrixc conditioning_orthogonalizer(const Matrixc S, bool symmetric = false,
+                                      double max_condition_num = 1.0e8);
 
-  Vector3i R_max() {return R_max_;}
-  Vector3i RJ_max() {return RJ_max_;}
-  Vector3i RD_max() {return RD_max_;}
-  Vector3i nk() {return nk_;}
+  Vector3i R_max() { return R_max_; }
+  Vector3i RJ_max() { return RJ_max_; }
+  Vector3i RD_max() { return RD_max_; }
+  Vector3i nk() { return nk_; }
 
-  int64_t R_size() {return R_size_;}
-  int64_t RJ_size() {return RJ_size_;}
-  int64_t RD_size() {return RD_size_;}
-  int64_t k_size() {return k_size_;}
+  int64_t R_size() { return R_size_; }
+  int64_t RJ_size() { return RJ_size_; }
+  int64_t RD_size() { return RD_size_; }
+  int64_t k_size() { return k_size_; }
 
   /// Return crystal orbital coefficients
   TArray C();
   /// Return crystal orbital epsilons
-  std::vector<Vectorc> eps() {return eps_;}
+  std::vector<Vectorc> eps() { return eps_; }
 
   /// shift center of {basis} by {shift} and return a new basis
   std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
@@ -231,7 +241,6 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
   Vector3d R_vector(int64_t idx_lattice, Vector3i vec);
   Vector3d k_vector(int64_t idx_k);
 
-
  private:
   FormulaRegistry<TArray> ao_formula_registry_;
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
@@ -274,9 +283,9 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
   double size = 0.0;
 
   if (formula.rank() == 2) {
-      utility::print_par(world_,
-                         "\nComputing One Body Integral for Periodic System: ",
-                         utility::to_string(formula.string()), "\n");
+    utility::print_par(world_,
+                       "\nComputing One Body Integral for Periodic System: ",
+                       utility::to_string(formula.string()), "\n");
 
     auto time0 = mpqc::now(world_, false);
     if (formula.oper().type() == Operator::Type::Kinetic ||
@@ -304,21 +313,20 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     utility::print_par(world_, " Time: ", time, " s\n");
 
   } else if (formula.rank() == 4) {
+    auto time_4idx = 0.0;
+    auto time_contr = 0.0;
+    auto time = 0.0;
 
-      auto time_4idx = 0.0;
-      auto time_contr = 0.0;
-      auto time = 0.0;
-
-      if (print_detail_) {
-          utility::print_par(world_,
-                             "\nComputing Two Body Integral for Periodic System: ",
-                             utility::to_string(formula.string()), "\n");
-      }
+    if (print_detail_) {
+      utility::print_par(world_,
+                         "\nComputing Two Body Integral for Periodic System: ",
+                         utility::to_string(formula.string()), "\n");
+    }
 
     if (formula.oper().type() == Operator::Type::J) {
-        auto time_j0 = mpqc::now(world_, false);
+      auto time_j0 = mpqc::now(world_, false);
 
-        auto j_formula = formula;
+      auto j_formula = formula;
       j_formula.set_operator_type(Operator::Type::Coulomb);
 
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
@@ -342,9 +350,9 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       time = mpqc::duration_in_s(time_j0, time_j1);
 
     } else if (formula.oper().type() == Operator::Type::K) {
-        auto time_k0 = mpqc::now(world_, false);
+      auto time_k0 = mpqc::now(world_, false);
 
-        auto k_formula = formula;
+      auto k_formula = formula;
       k_formula.set_operator_type(Operator::Type::Coulomb);
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         auto vec_RJ = R_vector(RJ, RJ_max_);
@@ -362,7 +370,6 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
           result("mu, nu") += K("mu, lambda, nu, rho") * D_("lambda, rho");
         auto time_contr1 = mpqc::now(world_, false);
         time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
-
       }
       auto time_k1 = mpqc::now(world_, false);
       time = mpqc::duration_in_s(time_k0, time_k1);
@@ -371,11 +378,13 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       throw std::runtime_error("Rank-4 operator type not supported");
 
     if (print_detail_) {
-        size = mpqc::detail::array_size(result);
-        utility::print_par(world_, " Size: ", size, " GB\n");
-        utility::print_par(world_, " \t4-index g tensor time: ", time_4idx, " s\n");
-        utility::print_par(world_, " \tg*D contraction time: ", time_contr, " s\n");
-        utility::print_par(world_, " \ttotal time: ", time, " s\n");
+      size = mpqc::detail::array_size(result);
+      utility::print_par(world_, " Size: ", size, " GB\n");
+      utility::print_par(world_, " \t4-index g tensor time: ", time_4idx,
+                         " s\n");
+      utility::print_par(world_, " \tg*D contraction time: ", time_contr,
+                         " s\n");
+      utility::print_par(world_, " \ttotal time: ", time, " s\n");
     }
 
   } else
@@ -728,7 +737,7 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
   auto time_f1 = mpqc::now(world_, true);
   auto time_f = mpqc::duration_in_s(time_f0, time_f1);
   if (print_detail_) {
-      utility::print_par(world_, " \tsum of task_f time: ", time_f, " s\n");
+    utility::print_par(world_, " \tsum of task_f time: ", time_f, " s\n");
   }
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
@@ -781,7 +790,7 @@ PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
-                                                 TArray &overlap,
+                                                 std::vector<Matrixc> &Xvec,
                                                  int64_t ndocc) {
   TArray result;
 
@@ -791,21 +800,14 @@ PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
   auto tr0 = fock_recip.trange().data()[0];
   auto tr1 = extend_trange1(tr0, RD_size_);
 
-
   auto fock_eig = array_ops::array_to_eigen(fock_recip);
-  auto overlap_eig = array_ops::array_to_eigen(overlap);
   for (auto k = 0; k < k_size_; ++k) {
-    // Compute X = S^(-1/2)
-    auto S = overlap_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
-
-//    auto S_condition_num_thresh = 1.0 / std::numeric_limits<double>::epsilon();
-    auto X = conditioning_orthogonalizer(S, false, max_condition_num_);
-//    auto X = S.pow(-0.5);
-
+    // Get orthogonalizer
+    auto X = Xvec[k];
     // Symmetrize Fock
     auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
     F = (F + F.transpose().conjugate()) / 2.0;
-    // F' = Xt.F.X
+    // Orthogonalize Fock matrix: F' = Xt * F * X
     Matrixc Xt = X.transpose().conjugate();
     auto XtF = Xt * F;
     auto Ft = XtF * X;
@@ -870,104 +872,126 @@ void PeriodicAOFactory<Tile, Policy>::sort_eigen(Vectorc &eigVal,
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::C() {
-    TArray C;
-    auto tr0 = D_.trange().data()[0];
-    auto tr1 = extend_trange1(tr0, k_size_);
+  TArray C;
+  auto tr0 = D_.trange().data()[0];
+  auto tr1 = extend_trange1(tr0, k_size_);
 
-    Matrixc C_eig(tr0.extent(), tr1.extent());
-    for (auto k = 0; k < k_size_; ++k)
-        C_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) = C_[k];
+  Matrixc C_eig(tr0.extent(), tr1.extent());
+  for (auto k = 0; k < k_size_; ++k)
+    C_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) = C_[k];
 
-    C = array_ops::eigen_to_array<Tile>(world_, C_eig, tr0, tr1);
-    return C;
+  C = array_ops::eigen_to_array<Tile>(world_, C_eig, tr0, tr1);
+  return C;
+}
+
+template <typename Tile, typename Policy>
+std::vector<Matrixc> PeriodicAOFactory<Tile, Policy>::gen_orthogonalizer(
+    const TArray overlap) {
+  std::vector<Matrixc> X;
+  X.resize(k_size_);
+
+  auto tr0 = overlap.trange().data()[0];
+  auto tr1 = overlap.trange().data()[1];
+
+  assert(tr1.extent() == (tr0.extent() * k_size_));
+
+  auto overlap_eig = array_ops::array_to_eigen(overlap);
+  for (auto k = 0; k < k_size_; ++k) {
+    auto S = overlap_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
+    X[k] = conditioning_orthogonalizer(S, false, max_condition_num_);
+  }
+
+  return X;
 }
 
 template <typename Tile, typename Policy>
 Matrixc PeriodicAOFactory<Tile, Policy>::conditioning_orthogonalizer(
-        const Matrixc S, bool symmetric, double max_condition_num) {
-    int64_t obs_rank;
-    double S_condition_num;
-    double XtX_condition_num;
-    Matrixc X, Xinv;
+    const Matrixc S, bool symmetric, double max_condition_num) {
+  double S_condition_num;
+  Matrixc X;
 
-    assert(S.rows() == S.cols());
+  assert(S.rows() == S.cols());
 
-    // compute generalized orthogonalizer X such that Xt.S.X = I
-    // if symmetric, X = U.s_sqrtinv.Ut
-    // if canonical, X = U.s_sqrtinv
-    // where s and U are eigenvalues and eigenvectors of S
-    Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(S);
-    auto U = comp_eig_solver.eigenvectors();
-    auto s = comp_eig_solver.eigenvalues();
-    sort_eigen(s, U);
+  // compute generalized orthogonalizer X such that Xt.S.X = I
+  // if symmetric, X = U.s_sqrtinv.Ut
+  // if canonical, X = U.s_sqrtinv
+  // where s and U are eigenvalues and eigenvectors of S
+  Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(S);
+  auto U = comp_eig_solver.eigenvectors();
+  auto s = comp_eig_solver.eigenvalues();
+  sort_eigen(s, U);
 
-    auto s_real_max = s.real().maxCoeff();
-    auto s_real_min = s.real().minCoeff();
+  auto s_real_max = s.real().maxCoeff();
+  auto s_real_min = s.real().minCoeff();
 
-    S_condition_num = std::min(s_real_max / std::max(s_real_min, std::numeric_limits<double>::min()), 1.0 / std::numeric_limits<double>::epsilon());
+  S_condition_num = std::min(
+      s_real_max / std::max(s_real_min, std::numeric_limits<double>::min()),
+      1.0 / std::numeric_limits<double>::epsilon());
 
-    auto threshold = s_real_max / max_condition_num;
+  auto threshold = s_real_max / max_condition_num;
 
-    int64_t s_rows = s.rows();
-    int64_t s_cond = 0;
-    for (int64_t i = s_rows - 1; i >= 0; --i) {
-        if (s.real()(i) >= threshold) {
-            ++s_cond;
-        } else
-            i = 0;
+  int64_t s_rows = s.rows();
+  int64_t s_cond = 0;
+  for (int64_t i = s_rows - 1; i >= 0; --i) {
+    if (s.real()(i) >= threshold) {
+      ++s_cond;
+    } else
+      i = 0;
+  }
+
+  auto sigma = s.bottomRows(s_cond);
+  auto result_condition_num = sigma.real().maxCoeff() / sigma.real().minCoeff();
+  auto sigma_invsqrt = sigma.array().sqrt().inverse().matrix().asDiagonal();
+
+  // make canonical X
+  auto U_cond = U.block(0, s_rows - s_cond, s_rows, s_cond);
+  X = U_cond * sigma_invsqrt;
+  // make symmetric X
+  if (symmetric) {
+    X = X * U_cond.transpose().conjugate();
+  }
+
+  auto nbf_omitted = s_rows - s_cond;
+  if (nbf_omitted < 0) throw "Error: dropping negative number of functions!";
+
+  if (print_detail_) {
+    if (nbf_omitted == 0) {
+      if (world_.rank() == 0) {
+        std::cout << "\toverlap condition number = " << S_condition_num
+                  << std::endl;
+      }
+    } else {
+      auto should_be_I = X.transpose().conjugate() * S * X;
+      auto I_real =
+          Eigen::MatrixXd::Identity(should_be_I.rows(), should_be_I.cols());
+      auto I_comp = I_real.cast<std::complex<double>>();
+      auto should_be_zero = (should_be_I - I_comp).norm();
+      if (world_.rank() == 0) {
+        std::cout << "\toverlap condition number after dropping " << nbf_omitted
+                  << " function(s) = " << result_condition_num << std::endl;
+        std::cout << "\t||Xt*S*X - I||_2 = " << should_be_zero
+                  << " (should be zero)" << std::endl;
+      }
     }
+  }
 
-    auto sigma = s.bottomRows(s_cond);
-    auto result_condition_num = sigma.real().maxCoeff() / sigma.real().minCoeff();
-    auto sigma_invsqrt = sigma.array().sqrt().inverse().matrix().asDiagonal();
-
-    // make canonical X
-    auto U_cond = U.block(0, s_rows - s_cond, s_rows, s_cond);
-    X = U_cond * sigma_invsqrt;
-    // make symmetric X
-    if (symmetric) {
-        X = X * U_cond.transpose().conjugate();
-    }
-
-    auto nbf_omitted = s_rows - s_cond;
-    if (nbf_omitted < 0)
-        throw "Error: dropping negative number of functions!";
-
-    if (print_detail_) {
-        if (nbf_omitted == 0) {
-            if (world_.rank() == 0) {
-                std::cout << "\toverlap condition number = " << S_condition_num << std::endl;
-            }
-        }
-        else {
-            auto should_be_I = X.transpose().conjugate() * S * X;
-            auto I_real = Eigen::MatrixXd::Identity(should_be_I.rows(), should_be_I.cols());
-            auto I_comp = I_real.cast<std::complex<double>>();
-            auto should_be_zero = (should_be_I - I_comp).norm();
-            if (world_.rank() == 0) {
-                std::cout << "\toverlap condition number after dropping " << nbf_omitted << " function(s) = " << result_condition_num << std::endl;
-                std::cout << "\t||Xt*S*X - I||_2 = " << should_be_zero << " (should be zero)" << std::endl;
-            }
-        }
-    }
-
-    return X;
+  return X;
 }
 
 /// Make PeriodicAOFactory printable
 template <typename Tile, typename Policy>
-std::ostream &operator<<(std::ostream &os, PeriodicAOFactory<Tile, Policy> &pao) {
-    os << "\nPeriodic Hartree-Fock computational parameter:" << std::endl;
-    os << "\tR_max (range of expansion of Bloch Gaussians in AO Gaussians): ["
-        << pao.R_max().transpose() << "]" << std::endl;
-    os << "\tRj_max (range of Coulomb operation): ["
-              << pao.RJ_max().transpose() << "]" << std::endl;
-    os << "\tRd_max (Range of density representation): ["
-              << pao.RD_max().transpose() << "]" << std::endl;
-    os << "\t# of k points in each direction: [" << pao.nk().transpose()
-              << "]\n"
-              << std::endl;
-    return os;
+std::ostream &operator<<(std::ostream &os,
+                         PeriodicAOFactory<Tile, Policy> &pao) {
+  os << "\nPeriodic Hartree-Fock computational parameter:" << std::endl;
+  os << "\tR_max (range of expansion of Bloch Gaussians in AO Gaussians): ["
+     << pao.R_max().transpose() << "]" << std::endl;
+  os << "\tRj_max (range of Coulomb operation): [" << pao.RJ_max().transpose()
+     << "]" << std::endl;
+  os << "\tRd_max (Range of density representation): ["
+     << pao.RD_max().transpose() << "]" << std::endl;
+  os << "\t# of k points in each direction: [" << pao.nk().transpose() << "]\n"
+     << std::endl;
+  return os;
 }
 
 }  // integrals namespace

@@ -102,6 +102,8 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
     op_ = TA::Noop<TA::TensorZ, true>();
 
     print_detail_ = kv.value<bool>("print_detail", false);
+
+    max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
   }
 
   ~PeriodicAOFactory() noexcept = default;
@@ -126,6 +128,15 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
    *  2. compute density: D = Int_k( Exp(I k.R) C(occ).C(occ)t ) and return D
    */
   TArray compute_density(TArray &fock_recip, TArray &overlap, int64_t ndocc);
+
+  /**
+   * \brief conditioning_orthogonalizer
+   *
+   * \param S is complex overlap matrix for a specific k vector
+   * \param S_condition_num_thresh is maximum condition number allowed
+   * \return conditioned orthogonalizer
+   */
+  Matrixc conditioning_orthogonalizer(const Matrixc S, bool symmetric = false, double max_condition_num = 1.0e8);
 
   Vector3i R_max() {return R_max_;}
   Vector3i RJ_max() {return RJ_max_;}
@@ -243,6 +254,8 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
   int64_t k_size_;
 
   bool print_detail_;
+
+  double max_condition_num_;
 };
 
 template <typename Tile, typename Policy>
@@ -778,12 +791,17 @@ PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
   auto tr0 = fock_recip.trange().data()[0];
   auto tr1 = extend_trange1(tr0, RD_size_);
 
+
   auto fock_eig = array_ops::array_to_eigen(fock_recip);
   auto overlap_eig = array_ops::array_to_eigen(overlap);
   for (auto k = 0; k < k_size_; ++k) {
     // Compute X = S^(-1/2)
     auto S = overlap_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
-    auto X = S.pow(-0.5);
+
+//    auto S_condition_num_thresh = 1.0 / std::numeric_limits<double>::epsilon();
+    auto X = conditioning_orthogonalizer(S, false, max_condition_num_);
+//    auto X = S.pow(-0.5);
+
     // Symmetrize Fock
     auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
     F = (F + F.transpose().conjugate()) / 2.0;
@@ -862,6 +880,78 @@ PeriodicAOFactory<Tile, Policy>::C() {
 
     C = array_ops::eigen_to_array<Tile>(world_, C_eig, tr0, tr1);
     return C;
+}
+
+template <typename Tile, typename Policy>
+Matrixc PeriodicAOFactory<Tile, Policy>::conditioning_orthogonalizer(
+        const Matrixc S, bool symmetric, double max_condition_num) {
+    int64_t obs_rank;
+    double S_condition_num;
+    double XtX_condition_num;
+    Matrixc X, Xinv;
+
+    assert(S.rows() == S.cols());
+
+    // compute generalized orthogonalizer X such that Xt.S.X = I
+    // if symmetric, X = U.s_sqrtinv.Ut
+    // if canonical, X = U.s_sqrtinv
+    // where s and U are eigenvalues and eigenvectors of S
+    Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(S);
+    auto U = comp_eig_solver.eigenvectors();
+    auto s = comp_eig_solver.eigenvalues();
+    sort_eigen(s, U);
+
+    auto s_real_max = s.real().maxCoeff();
+    auto s_real_min = s.real().minCoeff();
+
+    S_condition_num = std::min(s_real_max / std::max(s_real_min, std::numeric_limits<double>::min()), 1.0 / std::numeric_limits<double>::epsilon());
+
+    auto threshold = s_real_max / max_condition_num;
+
+    int64_t s_rows = s.rows();
+    int64_t s_cond = 0;
+    for (int64_t i = s_rows - 1; i >= 0; --i) {
+        if (s.real()(i) >= threshold) {
+            ++s_cond;
+        } else
+            i = 0;
+    }
+
+    auto sigma = s.bottomRows(s_cond);
+    auto result_condition_num = sigma.real().maxCoeff() / sigma.real().minCoeff();
+    auto sigma_invsqrt = sigma.array().sqrt().inverse().matrix().asDiagonal();
+
+    // make canonical X
+    auto U_cond = U.block(0, s_rows - s_cond, s_rows, s_cond);
+    X = U_cond * sigma_invsqrt;
+    // make symmetric X
+    if (symmetric) {
+        X = X * U_cond.transpose().conjugate();
+    }
+
+    auto nbf_omitted = s_rows - s_cond;
+    if (nbf_omitted < 0)
+        throw "Error: dropping negative number of functions!";
+
+    if (print_detail_) {
+        if (nbf_omitted == 0) {
+            if (world_.rank() == 0) {
+                std::cout << "\toverlap condition number = " << S_condition_num << std::endl;
+            }
+        }
+        else {
+            auto should_be_I = X.transpose().conjugate() * S * X;
+            auto I_real = Eigen::MatrixXd::Identity(should_be_I.rows(), should_be_I.cols());
+            auto I_comp = I_real.cast<std::complex<double>>();
+            auto should_be_zero = (should_be_I - I_comp).norm();
+            if (world_.rank() == 0) {
+                std::cout << "\toverlap condition number after dropping " << nbf_omitted << " function(s) = " << result_condition_num << std::endl;
+                std::cout << "\t||Xt*S*X - I||_2 = " << should_be_zero << " (should be zero)" << std::endl;
+            }
+        }
+    }
+
+    return X;
 }
 
 /// Make PeriodicAOFactory printable

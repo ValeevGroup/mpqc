@@ -348,7 +348,7 @@ Removed from Registry: < a i |G| b c >[df]
 Removed from Registry: < a b |G| i j >[df]
 Removed from Registry: < a b |G| c d >[df]
 
- Computing CCSDF12 C Approach 
+ Computing CCSD_F12 C Approach
 
 Compute B_ijij_ijji C With DF 
 Computed Twobody Three Center Integral: ( Κ |dR2| κ0 κ1 ) Size: 3.0219554901123e-05 GB Time: 0.032370657 s

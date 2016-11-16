@@ -6,7 +6,7 @@
 #define MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_
 
 #include "mpqc/chemistry/qc/cc/ccsd_t.h"
-#include "mpqc/chemistry/qc/f12/ccsdf12.h"
+#include "mpqc/chemistry/qc/f12/ccsd_f12.h"
 
 namespace mpqc {
 namespace f12 {
@@ -17,7 +17,7 @@ namespace f12 {
 
 template <typename Tile>
 class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
-                   public CCSDF12<Tile> {
+                   public CCSD_F12<Tile> {
  public:
   /**
    * KeyVal constructor
@@ -28,7 +28,7 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
 
   CCSD_T_F12(const KeyVal& kv)
       : cc::CCSD_T<Tile, TA::SparsePolicy>(kv),
-        CCSDF12<Tile>(kv),
+        CCSD_F12<Tile>(kv),
         cc::CCSD<Tile, TA::SparsePolicy>(kv) {}
 
   virtual ~CCSD_T_F12() {}
@@ -40,7 +40,7 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
       // compute CCSD(F12) first
       auto ccsdf12_time0 = mpqc::fenced_now(world);
 
-      double ccsd_f12 = CCSDF12<Tile>::value();
+      double ccsd_f12 = CCSD_F12<Tile>::value();
 
       auto ccsdf12_time1 = mpqc::fenced_now(world);
       auto ccsdf12_time = mpqc::duration_in_s(ccsdf12_time0, ccsdf12_time1);
@@ -63,7 +63,7 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
   }
 
   void obsolete() override {
-    CCSDF12<Tile>::obsolete();
+    CCSD_F12<Tile>::obsolete();
     cc::CCSD_T<Tile, TA::SparsePolicy>::obsolete();
   }
 
@@ -71,7 +71,8 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
 
   }
 };
-}
-}
+
+} //namespace f12
+} // namespace mpqc
 
 #endif  // MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_ MPQC_CCSD_T_F12_H

@@ -2,10 +2,10 @@
 // Created by Chong Peng on 7/12/16.
 //
 
-#ifndef MPQC_DB_CCSDF12_H
-#define MPQC_DB_CCSDF12_H
+#ifndef MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_
+#define MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_
 
-#include "mpqc/chemistry/qc/f12/ccsdf12.h"
+#include "mpqc/chemistry/qc/f12/ccsd_f12.h"
 #include "mpqc/chemistry/qc/f12/db_f12_intermediates.h"
 
 namespace mpqc {
@@ -22,7 +22,7 @@ namespace f12 {
  */
 
 template <typename Tile>
-class DBCCSDF12 : public CCSDF12<Tile> {
+class DBCCSD_F12 : public CCSD_F12<Tile> {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
@@ -31,8 +31,8 @@ class DBCCSDF12 : public CCSDF12<Tile> {
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
 
-  using CCSDF12<Tile>::value;
-  using CCSDF12<Tile>::debug;
+  using CCSD_F12<Tile>::value;
+  using CCSD_F12<Tile>::debug;
 
   /**
    * KeyVal constructor
@@ -42,8 +42,8 @@ class DBCCSDF12 : public CCSDF12<Tile> {
    *
    * invalid keywords: approximation, vt_couple
    */
-  DBCCSDF12(const KeyVal& kv) : CCSDF12<Tile>(kv), cc::CCSD<Tile,TA::SparsePolicy>(kv) {}
-  virtual ~DBCCSDF12() = default;
+  DBCCSD_F12(const KeyVal& kv) : CCSD_F12<Tile>(kv), cc::CCSD<Tile,TA::SparsePolicy>(kv) {}
+  virtual ~DBCCSD_F12() = default;
 
  private:
   /// overide initialization of CCSD
@@ -77,7 +77,7 @@ class DBCCSDF12 : public CCSDF12<Tile> {
 };
 
 template <typename Tile>
-void DBCCSDF12<Tile>::compute_cabs_singles() {
+void DBCCSD_F12<Tile>::compute_cabs_singles() {
   auto& world = this->wfn_world()->world();
 
   mpqc::utility::print_par(world, " CABS Singles \n");
@@ -96,7 +96,7 @@ void DBCCSDF12<Tile>::compute_cabs_singles() {
 }
 
 template <typename Tile>
-void DBCCSDF12<Tile>::compute_f12() {
+void DBCCSD_F12<Tile>::compute_f12() {
   auto& world = this->wfn_world()->world();
 
   Matrix Eij_F12;
@@ -109,7 +109,7 @@ void DBCCSDF12<Tile>::compute_f12() {
 }
 
 template <typename Tile>
-typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_db_ccsd_f12_df() {
+typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
   auto& lcao_factory = this->lcao_factory();
   auto& world = lcao_factory.world();
   Matrix Eij_F12;
@@ -174,4 +174,4 @@ typename DBCCSDF12<Tile>::Matrix DBCCSDF12<Tile>::compute_db_ccsd_f12_df() {
 }  // end of namespace f12
 }  // end of namespace mpqc
 
-#endif  // MPQC_DB_CCSDF12_H
+#endif  // MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_

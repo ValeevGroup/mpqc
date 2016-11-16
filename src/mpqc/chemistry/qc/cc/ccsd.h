@@ -42,8 +42,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
    * direct) |
    * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
-   * | print_detail | bool | false | if print more information in CCSD iteration
-   * |
+   * | print_detail | bool | false | if print more information in CCSD iteration |
+   * | less_memory | bool | false | avoid store another abcd term in standard and df method |
    */
   CCSD(const KeyVal &kv) : qc::LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
     if (kv.exists("ref")) {
@@ -149,7 +149,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
   void set_t2(const TArray &t2) { T2_ = t2; }
 
-  const typename DirectAOIntegral::DirectTArray &get_direct_ao_factory() const {
+  const typename DirectAOIntegral::DirectTArray &get_direct_ao_integral() const {
     return direct_ao_array_;
   }
 
@@ -216,10 +216,10 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
-      std::cout << "Max Iteration" << max_iter_ << std::endl;
-      std::cout << "Convergence " << converge_ << std::endl;
-      std::cout << "AccurateTime" << accurate_time << std::endl;
-      std::cout << "PrintDetail" << print_detail_ << std::endl;
+      std::cout << "Max Iteration: " << max_iter_ << std::endl;
+      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "AccurateTime: " << accurate_time << std::endl;
+      std::cout << "PrintDetail: " << print_detail_ << std::endl;
       if (less) {
         std::cout << "Less Memory Approach: Yes" << std::endl;
       } else {

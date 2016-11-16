@@ -42,7 +42,7 @@ class CCSDF12 : virtual public cc::CCSD<Tile, TA::SparsePolicy> {
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | approaximation | char | C | approaximation to compute F12 (C or D) |
+   * | approx | char | C | approaximation to compute F12 (C or D) |
    * | cabs_singles | bool | true | if do CABSSingles calculation |
    * | vt_couple | bool | true | if couple last two term in VT2 and VT1 term |
    *
@@ -51,7 +51,7 @@ class CCSDF12 : virtual public cc::CCSD<Tile, TA::SparsePolicy> {
     vt_couple_ = kv.value<bool>("vt_couple", true);
     cabs_singles_ = kv.value<bool>("cabs_singles", true);
 
-    approximation_ = kv.value<char>("approaximation", 'C');
+    approximation_ = kv.value<char>("approx", 'C');
     if (approximation_ != 'C' && approximation_ != 'D') {
       throw std::runtime_error("Wrong CCSDF12 Approach");
     }

@@ -75,4 +75,4 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
 } //namespace f12
 } // namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_ MPQC_CCSD_T_F12_H
+#endif  // MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_

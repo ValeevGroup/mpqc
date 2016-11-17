@@ -41,6 +41,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_df(
     auto time0 = mpqc::now(world, accurate_time);
 
     V_ijij_ijji("i1,j1,i2,j2") = (left * middle * right).set_shape(shape);
+    V_ijij_ijji.truncate();
 
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
@@ -53,6 +54,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     V_ijij_ijji("i1,j1,i2,j2") -= (left * right).set_shape(shape);
+    V_ijij_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "V Term2 Time: ", time, " S\n");
@@ -65,8 +67,9 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_df(
     auto time0 = mpqc::now(world, accurate_time);
     TA::DistArray<Tile, TA::SparsePolicy> tmp;
     tmp("i1,j1,i2,j2") = (left * right).set_shape(shape);
-    V_ijij_ijji("i1,j1,i2,j2") -= (tmp("i1,j1,i2,j2")).set_shape(shape);
-    V_ijij_ijji("i1,j1,i2,j2") -= (tmp("j1,i1,j2,i2")).set_shape(shape);
+    tmp.truncate();
+    V_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    V_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "V Term3 Time: ", time, " S\n");
@@ -103,6 +106,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji(
     auto time0 = mpqc::now(world, accurate_time);
 
     V_ijij_ijji("i1,j1,i2,j2") = (left).set_shape(shape);
+    V_ijij_ijji.truncate();
 
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
@@ -115,6 +119,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji(
 
     auto time0 = mpqc::now(world, accurate_time);
     V_ijij_ijji("i1,j1,i2,j2") -= (left * right).set_shape(shape);
+    V_ijij_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "V Term2 Time: ", time, " S\n");
@@ -127,10 +132,9 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji(
     auto time0 = mpqc::now(world, accurate_time);
     TA::DistArray<Tile, TA::SparsePolicy> tmp;
     tmp("i1,j1,i2,j2") = (left * right).set_shape(shape);
-    //    V_ijij_ijji("i1,j1,i2,j2") -= (lcao_factory(L"(j1 m|G|i1
-    //    a')[df]")*lcao_factory(L"(j2 m|R|i2 a')[df]")).set_shape(shape);
-    V_ijij_ijji("i1,j1,i2,j2") -= (tmp("i1,j1,i2,j2")).set_shape(shape);
-    V_ijij_ijji("i1,j1,i2,j2") -= (tmp("j1,i1,j2,i2")).set_shape(shape);
+    tmp.truncate();
+    V_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
+    V_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "V Term3 Time: ", time, " S\n");
@@ -169,6 +173,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_df(
     auto time0 = mpqc::now(world, accurate_time);
     X_ijij_ijji("i1,j1,i2,j2") =
         (left * middle * right).set_shape(ijij_ijji_shape);
+    X_ijij_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "X Term1 Time: ", time, " S\n");
@@ -180,6 +185,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     X_ijij_ijji("i1,j1,i2,j2") -= (left * right).set_shape(ijij_ijji_shape);
+    X_ijij_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "X Term2 Time: ", time, " S\n");
@@ -192,9 +198,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_df(
     auto time0 = mpqc::now(world, accurate_time);
     TA::DistArray<Tile, TA::SparsePolicy> tmp;
     tmp("i1,j1,i2,j2") = (left * right).set_shape(ijij_ijji_shape);
-    //    X_ijij_ijji("i1,j1,i2,j2") -= (lcao_factory(L"(j1 m|R|i1
-    //    a')[df]")*lcao_factory(L"(j2 m|R|i2
-    //    a')[df]")).set_shape(ijij_ijji_shape);
+    tmp.truncate();
     X_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     X_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
     auto time1 = mpqc::now(world, accurate_time);
@@ -233,6 +237,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji(
 
     auto time0 = mpqc::now(world, accurate_time);
     X_ijij_ijji("i1,j1,i2,j2") = (left).set_shape(ijij_ijji_shape);
+    X_ijij_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "X Term1 Time: ", time, " S\n");
@@ -244,6 +249,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji(
 
     auto time0 = mpqc::now(world, accurate_time);
     X_ijij_ijji("i1,j1,i2,j2") -= (left * right).set_shape(ijij_ijji_shape);
+    X_ijij_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "X Term2 Time: ", time, " S\n");
@@ -256,9 +262,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji(
     auto time0 = mpqc::now(world, accurate_time);
     TA::DistArray<Tile, TA::SparsePolicy> tmp;
     tmp("i1,j1,i2,j2") = (left * right).set_shape(ijij_ijji_shape);
-    //    X_ijij_ijji("i1,j1,i2,j2") -= (lcao_factory(L"(j1 m|R|i1
-    //    a')[df]")*lcao_factory(L"(j2 m|R|i2
-    //    a')[df]")).set_shape(ijij_ijji_shape);
+    tmp.truncate();
     X_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     X_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
     auto time1 = mpqc::now(world, accurate_time);
@@ -301,6 +305,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
     auto time0 = mpqc::now(world, accurate_time);
     B_ijij_ijji("i1,j1,i2,j2") =
         (left * middle * right).set_shape(ijij_ijji_shape);
+    B_ijij_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "B Term1 Time: ", time, " S\n");
@@ -314,6 +319,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * hJ).set_shape(ijij_ijji_shape);
+    tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
 
@@ -332,6 +338,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -349,6 +356,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -367,6 +375,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") =
         (2.0 * left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
 
@@ -385,6 +394,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -400,6 +410,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
@@ -416,6 +427,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") =
         (2.0 * left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -465,6 +477,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
     auto time0 = mpqc::now(world, accurate_time);
     B_ijij_ijji("i1,j1,i2,j2") =
         (left * middle * right).set_shape(ijij_ijji_shape);
+    B_ijij_ijji.truncate();
 
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
@@ -480,6 +493,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * hJ).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
@@ -499,6 +513,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -516,6 +531,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -534,6 +550,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
@@ -552,6 +569,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -567,6 +585,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -583,6 +602,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") =
         (2.0 * left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -628,6 +648,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
 
     auto time0 = mpqc::now(world, accurate_time);
     B_ijij_ijji("i1,j1,i2,j2") = (left).set_shape(ijij_ijji_shape);
+    B_ijij_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "B Term1 Time: ", time, " S\n");
@@ -641,6 +662,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * hJ).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
@@ -660,6 +682,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -677,6 +700,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -695,9 +719,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") =
         (2.0 * left * middle * right).set_shape(ijij_ijji_shape);
-    //    B_ijij_ijji("i1,j1,i2,j2") -= (2.0*lcao_factory(L"(j1 m|R|i1
-    //    b')[df]")*lcao_factory(L"(m|F|P')[df]")*lcao_factory(L"(j2 P'|R|i2
-    //    b')[df]")).set_shape(ijij_ijji_shape);
+    tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
 
@@ -716,6 +738,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -731,6 +754,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
@@ -747,6 +771,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") =
         (2.0 * left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -789,6 +814,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
 
     auto time0 = mpqc::now(world, accurate_time);
     B_ijij_ijji("i1,j1,i2,j2") = (left).set_shape(ijij_ijji_shape);
+    B_ijij_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "B Term1 Time: ", time, " S\n");
@@ -803,6 +829,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * hJ).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
@@ -822,6 +849,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -839,6 +867,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -857,6 +886,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
@@ -875,6 +905,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -890,6 +921,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -906,6 +938,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") =
         (2.0 * left * middle * right).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -1328,6 +1361,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
 
     auto time0 = mpqc::now(world, accurate_time);
     V_ijji_ijji("i1,j1,i2,j2") = (left * right).set_shape(ijij_ijji_shape);
+    V_ijji_ijji.truncate();
     // clean V_xyab
     V_xyab = TA::DistArray<Tile, TA::SparsePolicy>();
     auto time1 = mpqc::now(world, accurate_time);
@@ -1361,6 +1395,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
     V_ijji_ijji("i1,j1,i2,j2") -=
         ((left * Cp("rho,p") * Cp("mu,q")) * U("i1,j1,rho,mu"))
             .set_shape(ijij_ijji_shape);
+    V_ijji_ijji.truncate();
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "VT2 Term3 Time: ", time, " S\n");
@@ -1410,6 +1445,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df(
       ((V_ijab("i2,j2,a,b") + C_ijab("i2,j2,a,b")) * t2("a,b,i1,j1"))
           .set_shape(ijij_ijji_shape);
 
+  V_ijij_ijji.truncate();
+
   auto vt2_time1 = mpqc::now(world, accurate_time);
   auto vt2_time = mpqc::duration_in_s(vt2_time0, vt2_time1);
   utility::print_par(world, "VT2 Term Total Time: ", vt2_time, " S\n");
@@ -1449,6 +1486,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji(
   V_ijij_ijji("i1,j1,i2,j2") =
       ((V_ijab("i2,j2,a,b") + C_ijab("i2,j2,a,b")) * t2("a,b,i1,j1"))
           .set_shape(ijij_ijji_shape);
+  V_ijij_ijji.truncate();
 
   //    V_ijij_ijji("i1,j1,i2,j2") =
   //    ((V_ijab("i2,j2,a,b"))*t2("a,b,i1,j1")).set_shape(ijij_ijji_shape);
@@ -1496,6 +1534,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
 
   V_ijij_ijji("i1,j1,i2,j2") =
       (V_iaij("i1,a,i2,j2") * t1("a,j1")).set_shape(ijij_ijji_shape);
+  V_ijij_ijji.truncate();
   V_ijij_ijji("i1,j1,i2,j2") += V_ijij_ijji("j1,i1,j2,i2");
   auto vt1_time1 = mpqc::now(world, accurate_time);
   auto vt1_time = mpqc::duration_in_s(vt1_time0, vt1_time1);
@@ -1516,6 +1555,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
     TA::DistArray<Tile, TA::SparsePolicy> tmp;
     tmp("i1,j1,i2,j2") =
         (left_array("i1,j1,p,q") * right_array).set_shape(ijij_ijji_shape);
+    tmp.truncate();
 
     V_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     V_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -1556,6 +1596,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji(
 
   V_ijij_ijji("i1,j1,i2,j2") =
       (V_iaij("i1,a,i2,j2") * t1("a,j1")).set_shape(ijij_ijji_shape);
+  V_ijij_ijji.truncate();
 
   //    std::cout << "VT1 First" << std::endl;
   //    std::cout << V_ijij_ijji << std::endl;

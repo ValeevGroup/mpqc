@@ -132,6 +132,9 @@ class RIRMP2 : public RMP2 {
   double compute() override;
 };
 
+//extern class RMP2;
+//extern class RIRMP2;
+
 }  // end of namespace mbpt
 }  // end of namespace mpqc
 #endif  // MPQC_CHEMISTRY_QC_MBPT_MP2_H

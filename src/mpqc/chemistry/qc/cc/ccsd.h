@@ -1521,6 +1521,9 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   }
 };  // class CCSD
 
+extern template
+class CCSD<TA::TensorD, TA::SparsePolicy>;
+
 }  // namespace cc
 }  // namespace mpqc
 

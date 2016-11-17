@@ -1273,6 +1273,9 @@ protected:
 
 };  // class CCSD_T
 
+extern template
+class CCSD_T<TA::TensorD,TA::SparsePolicy>;
+
 }  // namespace cc
 }  // namespace mpqc
 

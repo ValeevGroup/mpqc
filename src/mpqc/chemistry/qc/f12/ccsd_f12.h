@@ -343,6 +343,9 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
   return Eij_F12;
 }
 
+extern template
+class CCSD_F12<TA::TensorD>;
+
 }  // end of namespace f12
 }  // end of namespace mpqc
 

@@ -27,9 +27,9 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
    */
 
   CCSD_T_F12(const KeyVal& kv)
-      : cc::CCSD_T<Tile, TA::SparsePolicy>(kv),
-        CCSD_F12<Tile>(kv),
-        cc::CCSD<Tile, TA::SparsePolicy>(kv) {}
+      : cc::CCSD<Tile, TA::SparsePolicy>(kv),
+        cc::CCSD_T<Tile, TA::SparsePolicy>(kv),
+        CCSD_F12<Tile>(kv) {}
 
   virtual ~CCSD_T_F12() {}
 
@@ -50,7 +50,7 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
       // compute (T) energy
       this->lcao_factory().ao_factory().registry().purge(world);
 
-      cc::CCSD_T<Tile, TA::SparsePolicy>::compute();
+      cc::CCSD_T<Tile, TA::SparsePolicy>::compute_();
 
       auto ccsdtf12_time1 = mpqc::fenced_now(world);
       auto ccsdtf12_time = mpqc::duration_in_s(ccsdf12_time0, ccsdtf12_time1);
@@ -67,8 +67,8 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
     cc::CCSD_T<Tile, TA::SparsePolicy>::obsolete();
   }
 
-  void compute(qc::PropertyBase* pb) override {
-
+  void compute(qc::PropertyBase *pb) override {
+    throw std::runtime_error("Not Implemented!!");
   }
 };
 

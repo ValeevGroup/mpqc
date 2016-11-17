@@ -62,6 +62,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   virtual ~CCSD_T() {}
 
+  void compute(qc::PropertyBase *pb) override {
+    throw std::runtime_error("Not Implemented!!");
+  }
+
   double value() override {
     if (this->energy_ == 0.0) {
       auto &world = this->lcao_factory().world();
@@ -77,7 +81,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
 
       // compute
-      compute();
+      compute_();
 
       std::cout << "CCSD(T) Energy  " << triples_energy_ + ccsd_corr
                 << std::endl;
@@ -96,7 +100,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   }
 
 protected:
-  void compute() {
+  void compute_() {
     auto& world = this->wfn_world()->world();
     auto time0 = mpqc::fenced_now(world);
 

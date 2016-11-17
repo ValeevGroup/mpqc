@@ -40,11 +40,11 @@ TEST_CASE("multiple tasks", "[multiworld]") {
     world.gop.fence();
 
     double energy[2];
-    {
+    if (odd) {
       const std::string srcdir = std::string(SRCDIR);
       const std::string ifile =
           srcdir +
-          std::string(odd ? "mpqc_test_odd.json" : "mpqc_test_even.json");
+          std::string(odd ? "/mpqc_test_odd.json" : "/mpqc_test_even.json");
       std::shared_ptr<mpqc::KeyVal> kv =
           mpqc::MPQCInit::instance().make_keyval(my_world, ifile);
       kv->assign("file_prefix", srcdir);
@@ -52,10 +52,9 @@ TEST_CASE("multiple tasks", "[multiworld]") {
       task.run();
       energy[rank] = kv->value<double>("wfn:energy");
     }
+    madness::World::get_default().gop.sum(energy, sizeof(energy)/sizeof(double));
 
     if (rank == 0) {
-      madness::World::get_default().gop.broadcast(energy);
-
       // check energies
       REQUIRE(energy[0] == 0.0);
       REQUIRE(energy[1] == 0.0);

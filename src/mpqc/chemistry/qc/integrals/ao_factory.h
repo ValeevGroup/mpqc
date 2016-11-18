@@ -660,6 +660,12 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
   }
   return result;
 }
+
+extern template
+class AOFactory<TA::TensorD, TA::SparsePolicy>;
+//extern template
+//class AOFactory<TA::TensorD, TA::DensePolicy>;
+
 }
 }
 

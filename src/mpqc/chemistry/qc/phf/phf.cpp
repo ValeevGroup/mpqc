@@ -181,6 +181,15 @@ bool PHF::solve() {
                 << std::endl;
       printf("\nTotal Periodic Hartree-Fock energy = %20.12f\n", energy_);
 
+      if (print_detail_) {
+          auto orb_e = pao_factory_.eps();
+          Eigen::IOFormat fmt(5);
+          std::cout << "\n k | orbital energies" << std::endl;
+          for (auto k = 0; k < pao_factory_.k_size(); ++k) {
+              std::cout << k << " | " << orb_e[k].real().transpose().format(fmt) << std::endl;
+          }
+      }
+
       // print out timings
       printf("\nTime(s):\n");
       printf("\tInit:                %20.3f\n", init_duration_);

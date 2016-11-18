@@ -46,14 +46,14 @@ void announce() {
 
 }  // namespace mpqc
 
-int try_main(int argc, char *argv[]) {
+int try_main(int argc, char *argv[], madness::World& world) {
   using namespace mpqc;
 
   // define default MPQC options
   auto options = make_options();
 
   // initialize MPQC
-  initialize(argc, argv, options);
+  initialize(argc, argv, options, world);
 
   // parse and process options
   options->parse(argc, argv);
@@ -73,8 +73,7 @@ int try_main(int argc, char *argv[]) {
 
   MPQCInit::instance().set_basename(input_filename, output_filename);
 
-  // by default compute in default world
-  auto& world = madness::World::get_default();
+  // make keyval
   std::shared_ptr<KeyVal> kv = MPQCInit::instance().make_keyval(world, input_filename);
 
   // redirect filenames in KeyVal to the directory given by -p cmdline option
@@ -97,9 +96,10 @@ int try_main(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   int rc = 0;
 
+  madness::World* world_ptr;
   // initialize MADNESS first
   try {
-    madness::initialize(argc, argv);
+    world_ptr = &madness::initialize(argc, argv);
   }
   catch (...) {
     std::cerr << "!! Failed to initialize MADWorld: " << "\n";
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   }
 
   try {
-    try_main(argc, argv);
+    try_main(argc, argv, *world_ptr);
 
   } catch (TiledArray::Exception &e) {
     std::cerr << "!! TiledArray exception: " << e.what() << "\n";

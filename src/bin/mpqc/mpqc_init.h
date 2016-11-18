@@ -29,7 +29,10 @@ namespace mpqc {
 /// \param[in/out] argv the sequence of argument strings
 /// \param[in/out] opt command-line options parser, if non-null
 ///                additional MPQC-specific options will be enrolled
-void initialize(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt = nullptr);
+/// \param[in] world the top World object in which MPQC will execute (MPQCTask object will
+///                  live in subworlds of this)
+void initialize(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt = nullptr,
+                const madness::World& top_world = madness::World::get_default());
 
 /// Finalize MPQC.
 void finalize();
@@ -78,8 +81,9 @@ class MPQCInit {
                     const std::string &output_filename = "");
 
  private:
-
-  friend void ::mpqc::initialize(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt);
+  friend void ::mpqc::initialize(int &argc, char **argv,
+                                 std::shared_ptr<GetLongOpt> opt,
+                                 const madness::World &world);
   friend void ::mpqc::finalize();
 
   /// Create the initializer. Only one object of this time can be created.
@@ -90,7 +94,10 @@ class MPQCInit {
   ///
   /// N.B. This is not explicitly implemented as a Singleton for syntactic
   /// reasons.
-  MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt);
+  ///
+  /// \param[in] world the top World object in which MPQC will execute
+  MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
+           const madness::World& world);
 
   /// Initialize the floating point control word.
   void init_fp();
@@ -100,7 +107,8 @@ class MPQCInit {
   void init_resources(std::shared_ptr<mpqc::KeyVal> keyval);
 
   /// Initialize formatted I/O.
-  void init_io();
+  /// \param[in] world the top World object in which MPQC will execute
+  void init_io(const madness::World& top_world);
   /// Calls all of the initialize routines in the proper sequence.
   /// The parse member for the GetLongOpt object given to the
   /// constructor must have been called before this is called.

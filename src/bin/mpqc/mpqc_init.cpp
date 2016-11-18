@@ -31,7 +31,8 @@ namespace mpqc {
 
 std::unique_ptr<MPQCInit> MPQCInit::instance_;
 
-void initialize(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt)
+void initialize(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
+                const madness::World& top_world)
 {
   if (!madness::initialized()) {
     throw ProgrammingError(
@@ -42,7 +43,8 @@ void initialize(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt)
     throw ProgrammingError("Only one MPQCInit object can be created!", __FILE__,
                            __LINE__);
   } else {
-    MPQCInit::instance_ = std::unique_ptr<MPQCInit>(new MPQCInit(argc, argv, opt));
+    MPQCInit::instance_ =
+        std::unique_ptr<MPQCInit>(new MPQCInit(argc, argv, opt, top_world));
   }
 }
 
@@ -50,7 +52,8 @@ void finalize() {
   MPQCInit::instance_.reset();
 }
 
-MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt)
+MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
+                   const madness::World &top_world)
     : opt_(opt), argv_(argv), argc_(argc) {
   if (opt_)
     opt_->enroll("max_memory", GetLongOpt::MandatoryValue,
@@ -63,7 +66,7 @@ MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt)
 
   libint2::initialize();
 
-  init_io();
+  init_io(top_world);
   //init_resources(keyval);
 }
 
@@ -128,7 +131,7 @@ MPQCInit::make_keyval(madness::World& world, const std::string &filename) {
   return kv;
 }
 
-void MPQCInit::init_io() {
+void MPQCInit::init_io(const madness::World& top_world) {
   std::setlocale(LC_ALL, "en_US.UTF-8");
   std::cout << std::setprecision(15);
   FormIO::setindent(ExEnv::outn(), 2);
@@ -136,8 +139,7 @@ void MPQCInit::init_io() {
   FormIO::setindent(std::cout, 2);
   FormIO::setindent(std::cerr, 2);
   FormIO::set_printnode(0);
-  auto& world = madness::World::get_default();
-  if (world.size() > 1) FormIO::init_mp(world.rank());
+  if (top_world.size() > 1) FormIO::init_mp(top_world.rank());
 }
 
 //void MPQCInit::init_resources(Ref<KeyVal> keyval) {

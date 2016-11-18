@@ -188,6 +188,7 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
       Bvector const &bases,
       std::shared_ptr<Screener> p_screen =
           std::make_shared<integrals::Screener>(integrals::Screener{})) {
+    integrals::detail::integral_engine_precision = 0.0;
     auto result = sparse_complex_integrals(world, engine, bases, p_screen, op_);
     return result;
   }

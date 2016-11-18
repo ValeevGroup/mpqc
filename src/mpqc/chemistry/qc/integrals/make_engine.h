@@ -83,7 +83,6 @@ inline ShrPool<libint2::Engine> make_engine_pool(
     max_nprim = std::max(max_nprim, static_cast<size_t>(bs.get().max_nprim()));
   }
 
-  assert(max_am != 0);
   assert(max_nprim != 0);
 
   return std::make_shared<mpqc::integrals::EnginePool<libint2::Engine>>(

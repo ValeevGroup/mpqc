@@ -420,8 +420,9 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto hJ2 = lcao_factory(L"<A' | hJ | i2>[df]");
 
     auto time0 = mpqc::now(world, accurate_time);
-    tmp("i1,j1,i2,j2") = (left1 * hJ1).set_shape(ijij_ijji_shape) +
-                         (left2 * hJ2).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1 * hJ1).set_shape(ijij_ijji_shape);
+    tmp.truncate();
+    tmp("i1,j1,i2,j2") += (left2 * hJ2).set_shape(ijij_ijji_shape);
     tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") += tmp("j1,i1,j2,i2");
@@ -449,9 +450,11 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right3 = lcao_factory(L"<i2 j2|R|C' B'>[df]");
 
     auto time0 = mpqc::now(world, accurate_time);
-    tmp("i1,j1,i2,j2") = (left1 * middle1 * right1).set_shape(ijij_ijji_shape) +
-        (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape) +
-        (left3 * middle3 * right3).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1 * middle1 * right1).set_shape(ijij_ijji_shape);
+    tmp.truncate();
+    tmp("i1,j1,i2,j2") += (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape); 
+    tmp.truncate();
+    tmp("i1,j1,i2,j2") += (left3 * middle3 * right3).set_shape(ijij_ijji_shape);
     tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -478,10 +481,11 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right3 = lcao_factory(L"<i2 j2|R|m B'>[df]");
 
     auto time0 = mpqc::now(world, accurate_time);
-    tmp("i1,j1,i2,j2") =
-        (left1 * middle1 * right1).set_shape(ijij_ijji_shape) +
-        (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape) +
-        (left3 * middle3 * right3).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1 * middle1 * right1).set_shape(ijij_ijji_shape);
+    tmp.truncate();
+    tmp("i1,j1,i2,j2") += (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
+    tmp.truncate();
+    tmp("i1,j1,i2,j2") += (left3 * middle3 * right3).set_shape(ijij_ijji_shape);
     tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -503,9 +507,9 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right2 = lcao_factory(L"<i2 j2|R|A' b'>[df]");
 
     auto time0 = mpqc::now(world, accurate_time);
-    tmp("i1,j1,i2,j2") =
-        (left1 * middle1 * right1).set_shape(ijij_ijji_shape) +
-        (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1 * middle1 * right1).set_shape(ijij_ijji_shape);
+    tmp.truncate();
+    tmp("i1,j1,i2,j2") += (2.0 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
     tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -532,10 +536,11 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right3 = lcao_factory(L"<i2 j2|R|c a>[df]");
 
     auto time0 = mpqc::now(world, accurate_time);
-    tmp("i1,j1,i2,j2") =
-        (left1 * middle1 * right1).set_shape(ijij_ijji_shape) +
-        (2 * left2 * middle2 * right2).set_shape(ijij_ijji_shape) +
-        (left3 * middle3 * right3).set_shape(ijij_ijji_shape);
+    tmp("i1,j1,i2,j2") = (left1 * middle1 * right1).set_shape(ijij_ijji_shape);
+    tmp.truncate();
+    tmp("i1,j1,i2,j2") += (2 * left2 * middle2 * right2).set_shape(ijij_ijji_shape);
+    tmp.truncate();
+    tmp("i1,j1,i2,j2") += (left3 * middle3 * right3).set_shape(ijij_ijji_shape);
     tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");
@@ -554,9 +559,9 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
     auto right2 = lcao_factory(L"<i2 j2|R|a' a>[df]");
 
     auto time0 = mpqc::now(world, accurate_time);
-    tmp("i1,j1,i2,j2") =
-        2.0 * ((left1 * middle1 * right1).set_shape(ijij_ijji_shape) +
-               (left2 * middle2 * right2).set_shape(ijij_ijji_shape));
+    tmp("i1,j1,i2,j2") = (2.0 * left1 * middle1 * right1).set_shape(ijij_ijji_shape);
+    tmp.truncate();
+    tmp("i1,j1,i2,j2") += (left2 * middle2 * right2).set_shape(ijij_ijji_shape);
     tmp.truncate();
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("i1,j1,i2,j2");
     B_ijij_ijji("i1,j1,i2,j2") -= tmp("j1,i1,j2,i2");

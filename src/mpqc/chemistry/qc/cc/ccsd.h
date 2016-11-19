@@ -216,6 +216,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
+    t1.truncate();
 
     t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
 
@@ -589,6 +590,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
+    t1.truncate();
 
     t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
 
@@ -954,6 +956,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
+    t1.truncate();
 
     t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
 

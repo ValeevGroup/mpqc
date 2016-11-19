@@ -42,7 +42,7 @@ class DBCCSD_F12 : public CCSD_F12<Tile> {
    *
    * invalid keywords: approximation, vt_couple
    */
-  DBCCSD_F12(const KeyVal& kv) : CCSD_F12<Tile>(kv), cc::CCSD<Tile,TA::SparsePolicy>(kv) {}
+  DBCCSD_F12(const KeyVal& kv) : cc::CCSD<Tile,TA::SparsePolicy>(kv), CCSD_F12<Tile>(kv)  {}
   virtual ~DBCCSD_F12() = default;
 
  private:

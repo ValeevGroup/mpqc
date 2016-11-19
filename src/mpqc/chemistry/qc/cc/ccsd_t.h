@@ -934,8 +934,8 @@ protected:
     TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
     TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
 
-    detail::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
-    detail::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
+    mpqc::detail::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
+    mpqc::detail::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
 
     this->set_trange1_engine(new_tr1);
 
@@ -966,7 +966,7 @@ protected:
       tr_occ_inner_ =
           new_tr1->compute_range(new_tr1->get_active_occ(), inner_block_size_);
 
-      detail::parallel_print_range_info(world, tr_occ_inner_,
+      mpqc::detail::parallel_print_range_info(world, tr_occ_inner_,
                                         "CCSD(T) OCC Inner");
 
       auto occ_inner_convert =
@@ -982,7 +982,7 @@ protected:
 
       // vir inner
       tr_vir_inner_ = new_tr1->compute_range(vir, inner_block_size_);
-      detail::parallel_print_range_info(world, tr_vir_inner_,
+      mpqc::detail::parallel_print_range_info(world, tr_vir_inner_,
                                         "CCSD(T) Vir Inner");
       auto vir_inner_convert =
           array_ops::create_diagonal_array_from_eigen<Tile, Policy>(

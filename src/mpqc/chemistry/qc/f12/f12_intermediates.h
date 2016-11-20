@@ -332,9 +332,9 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
   lcao_factory.purge_formula(world, L"<i1 j1|R2|P' j2>[df]");
 
   {
-    auto left = lcao_factory(L"<i1 j1|R|P' Q'>[df]");
+    auto left = lcao_factory(L"<i1 j1|R|Q' P'>[df]");
     auto middle = lcao_factory(L"<P'|K|R'>[df]");
-    auto right = lcao_factory(L"<i2 j2|R|R' Q'>[df]");
+    auto right = lcao_factory(L"<i2 j2|R|Q' R'>[df]");
 
     auto time0 = mpqc::now(world, accurate_time);
     tmp("i1,j1,i2,j2") = (left * middle * right).set_shape(ijij_ijji_shape);

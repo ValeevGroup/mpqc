@@ -230,6 +230,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
 
     // create diagonal array
     result = array_ops::create_diagonal_matrix(tmp, 1.0);
+    result.truncate();
 
     time1 = mpqc::now(world_, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
@@ -254,15 +255,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   if (left_index1.is_mo()) {
     auto& left1 = orbital_space_registry_->retrieve(left_index1);
     result("i,r") = result("p,r") * left1("p,i");
-    world_.gop.fence();
   }
   auto right_index1 = formula_string.ket_indices()[0];
   if (right_index1.is_mo()) {
     auto& right1 = orbital_space_registry_->retrieve(right_index1);
     result("p,k") = result("p,r") * right1("r,k");
-    world_.gop.fence();
   }
 
+  result.truncate();
   time1 = mpqc::now(world_, accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
   utility::print_par(world_, "Transformed LCAO Integral: ",
@@ -296,13 +296,11 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     if (right_index1.is_mo()) {
       auto& right1 = orbital_space_registry_->retrieve(right_index1);
       result("K,i,q") = ao_factory("K,p,q") * right1("p,i");
-      world_.gop.fence();
     }
     auto right_index2 = formula_string.ket_indices()[1];
     if (right_index2.is_mo()) {
       auto& right2 = orbital_space_registry_->retrieve(right_index2);
       result("K,p,j") = result("K,p,q") * right2("q,j");
-      world_.gop.fence();
     }
   } else {  // tform to optimally reduce strength, store partial transform
             // results
@@ -347,6 +345,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     result(result_key) =
         reduced_integral(reduced_key) * reduced_index_coeff(coeff_key);
   }
+
+  result.truncate();
 
   time1 = mpqc::now(world_, accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
@@ -403,32 +403,30 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
     if (left_index1.is_mo()) {
       auto& left1 = orbital_space_registry_->retrieve(left_index1);
       result("i,q,r,s") = ao_factory("p,q,r,s") * left1("p,i");
-      world_.gop.fence();
     }
 
     auto left_index2 = formula_string.bra_indices()[1];
     if (left_index2.is_mo()) {
       auto& left2 = orbital_space_registry_->retrieve(left_index2);
       result("p,i,r,s") = result("p,q,r,s") * left2("q,i");
-      world_.gop.fence();
     }
 
     auto right_index1 = formula_string.ket_indices()[0];
     if (right_index1.is_mo()) {
       auto& right1 = orbital_space_registry_->retrieve(right_index1);
       result("p,q,i,s") = result("p,q,r,s") * right1("r,i");
-      world_.gop.fence();
     }
     auto right_index2 = formula_string.ket_indices()[1];
     if (right_index2.is_mo()) {
       auto& right2 = orbital_space_registry_->retrieve(right_index2);
       result("p,q,r,i") = result("p,q,r,s") * right2("s,i");
-      world_.gop.fence();
     }
 
     time1 = mpqc::now(world_, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
   }
+
+  result.truncate();
 
   utility::print_par(world_, "Transformed LCAO Integral: ",
                      utility::to_string(formula_string.string()));

@@ -14,7 +14,7 @@ namespace f12 {
 /***
  * \class DBCCSDF12 Dual basis CCSD F12 class
  *
- * takes all options from CCSDF12 and the flowing options
+ * takes all options from CCSDF12 and the following options:
  *
  * @param RIMethod: OBS or VBS, if OBS, RI Basis is union of OBS+CABS; if VBS,
  * RI Basis is union of VBS+CABS, default VBS

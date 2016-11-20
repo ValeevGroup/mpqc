@@ -158,7 +158,7 @@ bool RHF::solve(int64_t max_iters, double thresh) {
 
     array_type Grad;
     Grad("i,j") =
-        F_("i,k") * D_("k,l") * S_("l,j") - S_("i,k") * D_("k,l") * F_("l,j");
+        (F_("i,k") * D_("k,l") * S_("l,j") - S_("i,k") * D_("k,l") * F_("l,j")).set_world(world);
     madness::print_meminfo(world.rank(), "RHF:orbgrad");
 
     rms_error = Grad("i,j").norm().get();

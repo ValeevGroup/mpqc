@@ -40,6 +40,12 @@ macro (validate_tiledarray)
       auto x = TA::array_to_eigen<TA::Tensor<double>, TA::DensePolicy, Eigen::RowMajor>(arr);
     }
     
+    // test 2
+    {
+      TA::TArrayD arr;
+      auto x = arr(\"i,j\").set_world(world);
+    }
+    
     // add more tests here
     
     TA::finalize();

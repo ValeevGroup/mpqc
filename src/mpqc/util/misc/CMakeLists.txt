@@ -1,12 +1,12 @@
 set(sources
   assert.h
+  bug.cpp
   bug.h
-  bug.cc
+  exception.cpp
   exception.h
-  exception.cc
-  exenv.cc
+  exenv.cpp
   exenv.h
-  formio.cc
+  formio.cpp
   formio.h
   print.cpp
   print.h

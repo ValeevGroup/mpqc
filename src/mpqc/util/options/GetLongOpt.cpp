@@ -10,7 +10,7 @@ using namespace mpqc;
 GetLongOpt::GetLongOpt(const char optmark)
     : ustring("[valid options and arguments]"),
       optmarker(optmark),
-      finalized(false) {}
+      finalized(false), first_unprocessed_arg_(0) {}
 
 std::string GetLongOpt::basename(const std::string &pname) const {
   auto pos = pname.find_last_of('/');
@@ -38,23 +38,26 @@ int GetLongOpt::enroll(std::string opt, const OptType t,
   return 1;
 }
 
-std::string GetLongOpt::retrieve(const std::string &opt) const {
+boost::optional<std::string> GetLongOpt::retrieve(
+    const std::string &opt) const {
+  using result_t = boost::optional<std::string>;
   if (finalized == true) {
     for (const auto &t : table) {
-      if (opt == t.option) return t.value ? *t.value : std::string();
+      if (opt == t.option)
+        return t.value ? result_t(std::string(*t.value)) : result_t();
     }
     std::cerr << "GetLongOpt::retrieve - unenrolled option ";
     std::cerr << optmarker << opt << "\n";
   }
-  return std::string();
+  return result_t();
 }
 
-int GetLongOpt::parse(int argc, char *const *argv) {
+void GetLongOpt::parse(int argc, char *const *argv) {
   int optind = 1;
 
   pname = basename(*argv);
   finalized = true;
-  if (argc-- <= 1) return optind;
+  if (argc-- <= 1) { first_unprocessed_arg_ = optind; return; }
 
   while (argc >= 1) {
     char *token = *++argv;
@@ -101,16 +104,16 @@ int GetLongOpt::parse(int argc, char *const *argv) {
     } else if (matchStatus == NoMatch) {
       cerr << pname << ": unrecognized option ";
       cerr << optmarker << strtok(token, "= ") << "\n";
-      throw std::runtime_error("unrecognized option " + std::to_string(optmarker) +
+      throw std::runtime_error("unrecognized option " + std::string(1, optmarker) +
                                std::string(strtok(token, "= ")));
     }
 
   } /* end while */
 
-  return optind;
+ first_unprocessed_arg_ = optind;
 }
 
-int GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
+void GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
   finalized = true;
   std::unique_ptr<char[]> str_ptr(strdup(cppstr.c_str()));
   char* str = str_ptr.get();
@@ -159,14 +162,14 @@ int GetLongOpt::parse(const std::string &cppstr, const std::string &p) {
     } else if (matchStatus == NoMatch) {
       cerr << name << ": unrecognized option ";
       cerr << optmarker << strtok(token, "= ") << "\n";
-      throw std::runtime_error("unrecognized option " + std::to_string(optmarker) +
+      throw std::runtime_error("unrecognized option " + std::string(1, optmarker) +
                                std::string(strtok(token, "= ")));
     }
 
     token = ladtoken ? ladtoken : strtok(0, " \t");
   } /* end while */
 
-  return 1;
+  first_unprocessed_arg_ = 1;
 }
 
 /* ----------------------------------------------------------------
@@ -181,8 +184,9 @@ int GetLongOpt::setcell(Cell &c, const char *valtoken, const char *nexttoken,
     case GetLongOpt::NoValue:
       if (*valtoken == '=') {
         throw std::runtime_error("unsolicited value for program option " +
-                                 std::to_string(optmarker) + c.option);
+                                 std::string(1, optmarker) + c.option);
       }
+      c.value = std::make_unique<std::string>("");
       return 0;
     case GetLongOpt::OptionalValue:
       if (*valtoken == '=') {
@@ -202,7 +206,7 @@ int GetLongOpt::setcell(Cell &c, const char *valtoken, const char *nexttoken,
       }
 
       throw std::runtime_error("mandatory value for program option " +
-                               std::to_string(optmarker) + c.option + " not specified");
+                               std::string(1, optmarker) + c.option + " not specified");
     default:
       break;
   }

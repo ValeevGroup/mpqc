@@ -6,27 +6,27 @@
     "charge": 0,
     "n_cluster": 2
   },
-  "basis1": {
+  "obs": {
+    "type": "Basis",
+    "name": "6-31G",
+    "molecule": "$:molecule"
+  },
+  "dfbs": {
+    "type": "Basis",
+    "name": "cc-pVDZ",
+    "molecule": "$:molecule"
+  },
+  "ribs":{
     "type": "Basis",
     "name": "aug-cc-pVDZ",
-    "molecule": "$:molecule"
-  },
-  "basis2": {
-    "type": "Basis",
-    "name": "aug-cc-pVTZ-RI",
-    "molecule": "$:molecule"
-  },
-  "basis3":{
-    "type": "Basis",
-    "name": "aug-cc-pVDZ-CABS",
     "molecule": "$:molecule"
   },
   "world":{
     "type" : "WfnWorld",
     "molecule" : "$:molecule",
-    "basis" : "$:basis1",
-    "df_basis" :"$:basis2",
-    "aux_basis": "$:basis3",
+    "basis" : "$:obs",
+    "df_basis" :"$:dfbs",
+    "aux_basis": "$:ribs",
     "screen": "qqr"
   },
   "scf":{

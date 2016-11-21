@@ -1,5 +1,5 @@
 //
-// scexception.cc
+// exception.cpp
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
@@ -376,6 +376,9 @@ FileOperationFailed::FileOperationFailed(const char *description,
         case Corrupt:
             elaborate() << "Corrupt";
             break;
+        case Chdir:
+          elaborate() << "Chdir";
+          break;
         case Other:
             elaborate() << "Other";
             break;

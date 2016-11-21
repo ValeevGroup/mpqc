@@ -7,6 +7,9 @@
 
 #include <tiledarray.h>
 
+#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/misc/string.h"
+
 namespace mpqc {
 namespace detail {
 
@@ -59,9 +62,11 @@ std::array<double, 3> array_storage(TA::DistArray<TileType, Policy> const &A) {
 
   A.world().gop.sum(&out[0], 3);
 
-  out[0] *= 8 * 1e-9;
-  out[1] *= 8 * 1e-9;
-  out[2] *= 8 * 1e-9;
+  // reals -> GBs
+  using value_type = typename TileType::value_type;
+  out[0] *= sizeof(value_type) * 1e-9;
+  out[1] *= sizeof(value_type) * 1e-9;
+  out[2] *= sizeof(value_type) * 1e-9;
 
   return out;
 }
@@ -108,35 +113,19 @@ double array_size(const TA::DistArray<Tile, Policy> &A) {
 
 template <typename Array>
 void print_size_info(Array const &A, std::string const &name) {
-  auto &world = A.world();
   auto sizes = mpqc::detail::array_storage(A);
 
-  if (world.rank() == 0) {
-    std::cout << "Printing size information for " << name << "\n";
+  ExEnv::out0(A.world()) << indent << "Printing size information for "
+                         << utility::to_string(name) << std::endl
+                         << incindent;
 
-    std::cout << "\tFull     = " << sizes[0] << " GB\n"
-              << "\tSparse   = " << sizes[1] << " GB\n"
-              << "\tLow Rank = " << sizes[2] << " GB\n\n";
-  }
-
-  world.gop.fence();
-}
-
-template <typename Array>
-void wprint_size_info(Array const &A, const std::wstring &name) {
-  auto &world = A.world();
-  auto sizes = mpqc::detail::array_storage(A);
-
-  if (world.rank() == 0) {
-    std::cout << "Printing size information for ";
-    std::wcout << name << L"\n";
-
-    std::cout << "\tFull     = " << sizes[0] << " GB\n"
-              << "\tSparse   = " << sizes[1] << " GB\n"
-              << "\tLow Rank = " << sizes[2] << " GB\n\n";
-  }
-
-  world.gop.fence();
+  ExEnv::out0(A.world()) << indent << "Full     = " << sizes[0] << " GB"
+                         << std::endl
+                         << indent << "Sparse   = " << sizes[1] << " GB"
+                         << std::endl
+                         << indent << "Low Rank = " << sizes[2] << " GB"
+                         << std::endl
+                         << decindent;
 }
 
 // average block size

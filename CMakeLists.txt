@@ -77,7 +77,11 @@ include(CheckCXXSourceCompiles)
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
 
+check_include_files(sys/types.h          HAVE_SYS_TYPES_H)
+check_include_files(sys/resource.h       HAVE_SYS_RESOURCE_H)
+check_include_files(pwd.h                HAVE_PWD_H)
 check_include_files(libunwind.h          HAVE_LIBUNWIND_H)
+check_include_files(fenv.h               HAVE_FENV_H)
 include(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(cxxabi.h          HAVE_CXXABI_H)
 if (HAVE_CXXABI_H)
@@ -106,22 +110,26 @@ else (HAVE_EXECINFO_H)
   #find_package(ExecInfo)
 endif (HAVE_EXECINFO_H)
 
+CHECK_FUNCTION_EXISTS (gethostname       HAVE_GETHOSTNAME)
+CHECK_FUNCTION_EXISTS (getpwuid          HAVE_GETPWUID)
+CHECK_FUNCTION_EXISTS (geteuid           HAVE_GETEUID)
+CHECK_FUNCTION_EXISTS (getrusage         HAVE_GETRUSAGE)
 CHECK_FUNCTION_EXISTS (posix_spawn       HAVE_POSIX_SPAWN)
 CHECK_FUNCTION_EXISTS (system            HAVE_SYSTEM)
 CHECK_FUNCTION_EXISTS (signal            HAVE_SIGNAL)
+CHECK_FUNCTION_EXISTS (feenableexcept    HAVE_FEENABLEEXCEPT)
+CHECK_FUNCTION_EXISTS (fedisableexcept   HAVE_FEDISABLEEXCEPT)
+CHECK_FUNCTION_EXISTS (setrlimit         HAVE_SETRLIMIT)
+
 ###############################################################################
 # Dependencies
 ###############################################################################
-
-# grand list of all MPQC libraries and dependencies goes here; may go away
-set(MPQC_LIBRARIES "" CACHE INTERNAL "MPQC libs and dependencies")
 
 # search for TA first, other packages can be found with it
 FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
 include(ValidateTiledArray)
 validate_tiledarray()
 set(TA_LIBRARIES tiledarray)
-set(MPQC_LIBRARIES "${TA_LIBRARIES}")
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
 
 FIND_PACKAGE(TBB REQUIRED)
@@ -135,10 +143,7 @@ INCLUDE_DIRECTORIES(${LIBINT2_INCLUDE_DIRS})
 add_definitions(${LIBINT2_EXTRA_DEFINITIONS})
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 
-set(MPQC_LIBRARIES
-    "${MPQC_LIBRARIES};${TBB_LIBRARIES};${LIBINT2_LIBRARIES};${Boost_LIBRARIES}")
-
-find_package(PythonInterp 3.0)
+find_package(PythonInterp)
 
 ###############################################################################
 # Declare LibMPQC
@@ -149,12 +154,7 @@ INCLUDE_DIRECTORIES(${MPQC_BINARY_DIR}/src)
 
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
 
-LIST(APPEND MPQC_LIBRARIES MPQCf12 MPQCcc MPQCmbpt MPQCscf MPQCphf MPQCutil_options)
-
-message (STATUS "MPQC_LIBRARIES=${MPQC_LIBRARIES}")
-
 MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
-MESSAGE(STATUS "Using libraries ${MPQC_LIBRARIES}")
 
 ###############################################################################
 # Declare MPQC program

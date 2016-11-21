@@ -8,8 +8,6 @@
 #include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/chemistry/molecule/linkage.h"
 
-using std::cout;
-using std::endl;
 using std::vector;
 using std::array;
 using std::string;
@@ -119,13 +117,13 @@ TEST_CASE("KeyVal", "[keyval]") {
   SECTION("JSON read/write") {
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-    // cout << oss.str();
+    // std::cout << oss.str();
   }
 
   SECTION("JSON read/write") {
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_xml(oss));
-    // cout << oss.str();
+    // std::cout << oss.str();
   }
 
   SECTION("making subtree KeyVal") {
@@ -179,7 +177,7 @@ TEST_CASE("KeyVal", "[keyval]") {
 
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-    //    cout << oss.str();
+    //    std::cout << oss.str();
 
     REQUIRE(kv.value<int>("i4") == 1);
     REQUIRE(kv.value<int>("i5") == 2);
@@ -230,7 +228,7 @@ TEST_CASE("KeyVal", "[keyval]") {
 
     stringstream oss;
     REQUIRE_NOTHROW(kv.write_json(oss));
-    // cout << oss.str();
+    // std::cout << oss.str();
 
     REQUIRE(kv.value<int>("a") == 0);  // "a" specified twice, make sure
                                        // KeyVal::value gets the first

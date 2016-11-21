@@ -52,7 +52,8 @@ class CABSSingles {
      * @param[in] t T1 amplitude
      * @param[out] r  residual
      */
-    void operator()(const TArray& t, TArray& r) {
+    void operator()(TArray& t, TArray& r) {
+      t.truncate();
       r("i,A") = F_MN_("i,j") * t("j,A") - t("i,B") * F_AB_("B,A");
     }
   };
@@ -124,12 +125,12 @@ typename CABSSingles<Tile>::real_t CABSSingles<Tile>::compute(
 
     F_MA =
         array_ops::eigen_to_array<Tile>(F_Ma.world(), F_MA_eigen, tr_m, tr_A);
-    //    F_MA.truncate();
   }
   //  std::cout << F_MA << std::endl;
 
   TArray t;
   t("i,A") = -F_MA("i,A");
+  t.truncate();
 
   // compute preconditioner
   TArray P_MA = compute_preconditioner(F_MA.trange(), F_AB, F_MN);
@@ -216,8 +217,9 @@ TA::DistArray<Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner(
       P_MA.set(ord, tile);
     }
   }
-
   world.gop.fence();
+  
+  P_MA.truncate();
 
   return P_MA;
 }

@@ -17,11 +17,16 @@ if (${PYTHONINTERP_FOUND})
               -DtestName=${baseName}
               -DsrcDir=${CMAKE_CURRENT_SOURCE_DIR}
               -DpythonExec=${PYTHON_EXECUTABLE}
+              -DmpiExec=${MPIEXEC}
+              -DmpiNPFlags=${MPIEXEC_NUMPROC_FLAG}
+              -DmpiNProc=2
+              -DmpiPre=${MPIEXEC_PREFLAGS}
+              -DmpiPost=${MPIEXEC_POSTFLAGS}
               -P ${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
     set_tests_properties(validation/${baseName}
-                         PROPERTIES DEPENDS mpqc)
+                         PROPERTIES DEPENDS ../../src/bin/mpqc/mpqc)
     
   endforeach(infileName)
 else (${PYTHONINTERP_FOUND})
-  message(WARNING "Python 3 interpreter is not found, cannot perform validation tests")
+  add_custom_target(check_validation COMMENT "Python interpreter is not found, will skip validation tests")
 endif (${PYTHONINTERP_FOUND})

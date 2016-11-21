@@ -117,7 +117,7 @@ TiledArray::DistArray<Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
 template <typename Tile>
 TiledArray::DistArray<Tile, TiledArray::SparsePolicy> diagonal_matrix(
     TiledArray::TiledRange const &trange, double val,
-    madness::World &world = madness::World::get_default()) {
+    madness::World &world) {
   TA_ASSERT(trange.rank() == 2);
 
   using Array = TiledArray::DistArray<Tile, TiledArray::SparsePolicy>;

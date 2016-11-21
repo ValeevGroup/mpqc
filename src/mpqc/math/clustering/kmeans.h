@@ -12,14 +12,7 @@
 namespace mpqc {
 namespace clustering {
 /*!
- * \defgroup Clustering Clustering
- *
- * \brief The clustering module contains classes and functions for generic
- *     clustering
- *
- *  Clustering is the process of taking a collection of things and determining
- *  how to group them in a logical way.
- *
+ * \ingroup MathClustering
  * @{
  */
 

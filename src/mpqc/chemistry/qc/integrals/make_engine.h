@@ -76,15 +76,6 @@ inline ShrPool<libint2::Engine> make_engine_pool(
     oper_params = libint2::default_params(oper);
   }
 
-  int max_am = 0;
-  size_t max_nprim = 0;
-  for (const auto &bs : bases) {
-    max_am = std::max(max_am, static_cast<int>(bs.get().max_am()));
-    max_nprim = std::max(max_nprim, static_cast<size_t>(bs.get().max_nprim()));
-  }
-
-  assert(max_nprim != 0);
-
   return std::make_shared<mpqc::integrals::EnginePool<libint2::Engine>>(
       make_engine(oper, bases, braket, oper_params));
 }

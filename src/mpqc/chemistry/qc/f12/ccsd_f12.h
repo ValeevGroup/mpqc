@@ -2,8 +2,8 @@
 // Created by Chong Peng on 4/12/16.
 //
 
-#ifndef MPQC_CCSDF12_H
-#define MPQC_CCSDF12_H
+#ifndef MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_
+#define MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_
 
 #include <tiledarray.h>
 
@@ -22,7 +22,7 @@ namespace f12 {
  */
 
 template <typename Tile>
-class CCSDF12 : public cc::CCSD<Tile, TA::SparsePolicy> {
+class CCSD_F12 : virtual public cc::CCSD<Tile, TA::SparsePolicy> {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
@@ -42,32 +42,32 @@ class CCSDF12 : public cc::CCSD<Tile, TA::SparsePolicy> {
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | approaximation | char | C | approaximation to compute F12 (C or D) |
+   * | approx | char | C | approaximation to compute F12 (C or D) |
    * | cabs_singles | bool | true | if do CABSSingles calculation |
    * | vt_couple | bool | true | if couple last two term in VT2 and VT1 term |
    *
    */
-  CCSDF12(const KeyVal& kv) : cc::CCSD<Tile, Policy>(kv) {
+  CCSD_F12(const KeyVal& kv) : cc::CCSD<Tile, Policy>(kv) {
     vt_couple_ = kv.value<bool>("vt_couple", true);
     cabs_singles_ = kv.value<bool>("cabs_singles", true);
 
-    approximation_ = kv.value<char>("approaximation", 'C');
+    approximation_ = kv.value<char>("approx", 'C');
     if (approximation_ != 'C' && approximation_ != 'D') {
-      throw std::runtime_error("Wrong CCSDF12 Approach");
+      throw std::runtime_error("Wrong CCSD_F12 Approach");
     }
 
     method_ = kv.value<std::string>("method", "df");
     if (method_ != "standard" && method_ != "df" && method_ != "direct") {
-      throw std::invalid_argument("Invalid Method For CCSDF12");
+      throw std::invalid_argument("Invalid Method For CCSD_F12");
     }
 
     f12_energy_ = 0.0;
     singles_energy_ = 0.0;
   }
 
-  virtual ~CCSDF12() = default;
+  virtual ~CCSD_F12() = default;
 
-  virtual double value() override {
+  double value() override {
     if (this->energy_ == 0.0) {
       auto& world = this->wfn_world()->world();
 
@@ -141,7 +141,7 @@ class CCSDF12 : public cc::CCSD<Tile, TA::SparsePolicy> {
 };
 
 template <typename Tile>
-void CCSDF12<Tile>::compute_cabs_singles() {
+void CCSD_F12<Tile>::compute_cabs_singles() {
   auto& world = this->wfn_world()->world();
 
   mpqc::utility::print_par(world, " CABS Singles \n");
@@ -167,8 +167,8 @@ void CCSDF12<Tile>::compute_cabs_singles() {
 }
 
 template <typename Tile>
-void CCSDF12<Tile>::compute_f12() {
-  auto lazy_two_electron_int = this->get_direct_ao_factory();
+void CCSD_F12<Tile>::compute_f12() {
+  auto lazy_two_electron_int = this->get_direct_ao_integral();
   Matrix Eij_F12;
   if (method_ == "standard") {
     Eij_F12 = compute_ccsd_f12(lazy_two_electron_int);
@@ -182,13 +182,13 @@ void CCSDF12<Tile>::compute_f12() {
 }
 
 template <typename Tile>
-typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
+typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
     const DirectArray& darray, const char approach) {
   auto& lcao_factory = this->lcao_factory();
   auto& world = lcao_factory.world();
   Matrix Eij_F12;
 
-  utility::print_par(world, "\n Computing CCSDF12 ", approach, " Approach \n");
+  utility::print_par(world, "\n Computing CCSD_F12 ", approach, " Approach \n");
 
   auto n_active_occ = this->trange1_engine()->get_active_occ();
 
@@ -265,13 +265,13 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12_df(
 }
 
 template <typename Tile>
-typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
+typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
     const DirectArray& darray) {
   auto& lcao_factory = this->lcao_factory();
   auto& world = lcao_factory.world();
   Matrix Eij_F12;
 
-  utility::print_par(world, "\n Computing CCSDF12 C Approach \n");
+  utility::print_par(world, "\n Computing CCSD_F12 C Approach \n");
 
   auto n_active_occ = this->trange1_engine()->get_active_occ();
 
@@ -343,7 +343,10 @@ typename CCSDF12<Tile>::Matrix CCSDF12<Tile>::compute_ccsd_f12(
   return Eij_F12;
 }
 
+extern template
+class CCSD_F12<TA::TensorD>;
+
 }  // end of namespace f12
 }  // end of namespace mpqc
 
-#endif  // MPQC_CCSDF12_H
+#endif  // MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_

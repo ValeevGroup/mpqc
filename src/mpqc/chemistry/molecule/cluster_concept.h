@@ -10,7 +10,7 @@
 namespace mpqc {
 
 /*!
- * \addtogroup Molecule
+ * \addtogroup ChemistryMolecule
  *
  * @{
  */

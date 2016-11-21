@@ -1,5 +1,5 @@
 //
-// bug.cc
+// bug.cpp
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //

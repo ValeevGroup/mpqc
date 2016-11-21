@@ -22,7 +22,7 @@ class RIDBRMP2F12 : public RIRMP2F12 {
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | redo_mp2 | bool | false | if to recompute mp2 energy in VBS |
+   * | mp2 | string | none | if to recompute mp2 energy(redo) or update  |
    */
   RIDBRMP2F12(const KeyVal& kv);
   virtual ~RIDBRMP2F12() = default;
@@ -34,10 +34,11 @@ class RIDBRMP2F12 : public RIRMP2F12 {
   TArray compute_V() override;
   TArray compute_X() override;
   double compute_cabs_singles() override;
+  double compute_new_mp2();
 
  private:
   const KeyVal kv_;
-  bool redo_mp2_;
+  std::string mp2_method_;
 };
 }  // namespace f12
 }  // namespace mpqc

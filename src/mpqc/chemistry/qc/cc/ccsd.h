@@ -17,6 +17,29 @@
 namespace mpqc {
 namespace cc {
 
+namespace detail {
+
+inline void print_ccsd(int iter, double dE, double error, double E1,
+                       double time) {
+  if (iter == 0) {
+    std::printf("%3s \t %10s \t %10s \t %15s \t %10s \n", "iter", "deltaE",
+                "residual", "energy", "total time/s");
+  }
+  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, error, E1,
+              time);
+}
+
+inline void print_ccsd_direct(int iter, double dE, double error, double E1,
+                              double time1, double time2) {
+  if (iter == 0) {
+    std::printf("%3s \t %10s \t %10s \t %15s \t %10s \t %10s \n", "iter",
+                "deltaE", "residual", "energy", "u time/s" ,"total time/s");
+  }
+  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter, dE, error, E1,
+              time1, time2);
+}
+}
+
 /**
  * CCSD class that computed CCSD energy
  */
@@ -28,7 +51,6 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   using DirectAOIntegral = integrals::DirectAOFactory<Tile, Policy>;
 
   CCSD() = default;
-  virtual ~CCSD() {}
 
   /**
    * KeyVal constructor
@@ -45,6 +67,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration
    * |
+   * | less_memory | bool | false | avoid store another abcd term in standard
+   * and df method |
    */
   CCSD(const KeyVal &kv) : qc::LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
     if (kv.exists("ref")) {
@@ -62,6 +86,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     converge_ = kv.value<double>("converge", 1.0e-7);
     print_detail_ = kv.value<bool>("print_detail", false);
   }
+
+  virtual ~CCSD() {}
 
  protected:
   TArray T1_;
@@ -107,7 +133,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
       } else if (method_ == "direct") {
         // initialize direct integral class
         auto direct_ao_factory =
-        integrals::detail::construct_direct_ao_factory<Tile, Policy>(kv_);
+            integrals::detail::construct_direct_ao_factory<Tile, Policy>(kv_);
         direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
@@ -148,7 +174,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
   void set_t2(const TArray &t2) { T2_ = t2; }
 
-  const typename DirectAOIntegral::DirectTArray &get_direct_ao_factory() const {
+  const typename DirectAOIntegral::DirectTArray &get_direct_ao_integral()
+      const {
     return direct_ao_array_;
   }
 
@@ -185,11 +212,11 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     TArray f_ai = this->get_fock_ai();
 
-    TArray d1(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
     // store d1 to local
-    create_d_ai(d1, *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
+    t1.truncate();
 
     t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
 
@@ -215,10 +242,10 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
-      std::cout << "Max Iteration" << max_iter_ << std::endl;
-      std::cout << "Convergence " << converge_ << std::endl;
-      std::cout << "AccurateTime" << accurate_time << std::endl;
-      std::cout << "PrintDetail" << print_detail_ << std::endl;
+      std::cout << "Max Iteration: " << max_iter_ << std::endl;
+      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "AccurateTime: " << accurate_time << std::endl;
+      std::cout << "PrintDetail: " << print_detail_ << std::endl;
       if (less) {
         std::cout << "Less Memory Approach: Yes" << std::endl;
       } else {
@@ -371,9 +398,9 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
                               - g_abij("d,c,k,l") * T("d,a,i,l");
           if (print_detail_) {
-            detail::print_size_info(T, "T");
-            detail::print_size_info(j_akic, "J_akic");
-            detail::print_size_info(k_kaic, "K_kaic");
+            mpqc::detail::print_size_info(T, "T");
+            mpqc::detail::print_size_info(j_akic, "J_akic");
+            mpqc::detail::print_size_info(k_kaic, "K_kaic");
           }
         }
 
@@ -409,7 +436,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
 
         if (print_detail_) {
-          detail::print_size_info(a_klij, "A_klij");
+          mpqc::detail::print_size_info(a_klij, "A_klij");
         }
       }
       tmp_time1 = mpqc::now(world, accurate_time);
@@ -431,7 +458,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
           b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
           if (print_detail_) {
-            detail::print_size_info(b_abij, "B_abij");
+            mpqc::detail::print_size_info(b_abij, "B_abij");
           }
 
           r2("a,b,i,j") += b_abij("a,b,i,j");
@@ -443,7 +470,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
                               g_iabc("k,b,c,d") * t1("a,k");
 
           if (print_detail_) {
-            detail::print_size_info(b_abcd, "B_abcd");
+            mpqc::detail::print_size_info(b_abcd, "B_abcd");
           }
 
           r2("a,b,i,j") += b_abcd("a,b,c,d") * tau("c,d,i,j");
@@ -476,14 +503,6 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (iter == 0 && world.rank() == 0) {
-        std::cout << "iter "
-                  << "    deltaE    "
-                  << "            residual       "
-                  << "      energy     "
-                  << " total/second " << std::endl;
-      }
-
       if (dE >= converge_ || error >= converge_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
@@ -496,8 +515,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         t2("a,b,i,j") = t.second("a,b,i,j");
 
         if (print_detail_) {
-          detail::print_size_info(r2, "R2");
-          detail::print_size_info(t2, "T2");
+          mpqc::detail::print_size_info(r2, "R2");
+          mpqc::detail::print_size_info(t2, "T2");
         }
 
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -511,8 +530,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         auto duration = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  "
-                    << duration << std::endl;
+          detail::print_ccsd(iter, dE, error, E1, duration);
         }
 
         iter += 1ul;
@@ -521,8 +539,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         auto duration = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  "
-                    << duration << std::endl;
+          detail::print_ccsd(iter, dE, error, E1, duration);
         }
 
         break;
@@ -569,11 +586,11 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     TArray f_ai = this->get_fock_ai();
 
-    TArray d1(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
     // store d1 to local
-    create_d_ai(d1, *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
+    t1.truncate();
 
     t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
 
@@ -599,10 +616,10 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
-      std::cout << "Max Iteration" << max_iter_ << std::endl;
-      std::cout << "Convergence " << converge_ << std::endl;
-      std::cout << "AccurateTime" << accurate_time << std::endl;
-      std::cout << "PrintDetail" << print_detail_ << std::endl;
+      std::cout << "Max Iteration: " << max_iter_ << std::endl;
+      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "AccurateTime: " << accurate_time << std::endl;
+      std::cout << "PrintDetail: " << print_detail_ << std::endl;
       if (less) {
         std::cout << "Less Memory Approach: Yes" << std::endl;
       } else {
@@ -755,9 +772,9 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
                               - g_abij("d,c,k,l") * T("d,a,i,l");
           if (print_detail_) {
-            detail::print_size_info(T, "T");
-            detail::print_size_info(j_akic, "J_akic");
-            detail::print_size_info(k_kaic, "K_kaic");
+            mpqc::detail::print_size_info(T, "T");
+            mpqc::detail::print_size_info(j_akic, "J_akic");
+            mpqc::detail::print_size_info(k_kaic, "K_kaic");
           }
         }
 
@@ -793,7 +810,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
 
         if (print_detail_) {
-          detail::print_size_info(a_klij, "A_klij");
+          mpqc::detail::print_size_info(a_klij, "A_klij");
         }
       }
       tmp_time1 = mpqc::now(world, accurate_time);
@@ -815,7 +832,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
           b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
 
           if (print_detail_) {
-            detail::print_size_info(b_abij, "B_abij");
+            mpqc::detail::print_size_info(b_abij, "B_abij");
           }
 
           r2("a,b,i,j") += b_abij("a,b,i,j");
@@ -827,7 +844,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
                               g_iabc("k,b,c,d") * t1("a,k");
 
           if (print_detail_) {
-            detail::print_size_info(b_abcd, "B_abcd");
+            mpqc::detail::print_size_info(b_abcd, "B_abcd");
           }
 
           r2("a,b,i,j") += b_abcd("a,b,c,d") * tau("c,d,i,j");
@@ -860,14 +877,6 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (iter == 0 && world.rank() == 0) {
-        std::cout << "iter "
-                  << "    deltaE    "
-                  << "            residual       "
-                  << "      energy     "
-                  << " total/second " << std::endl;
-      }
-
       if (dE >= converge_ || error >= converge_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
@@ -880,8 +889,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         t2("a,b,i,j") = t.second("a,b,i,j");
 
         if (print_detail_) {
-          detail::print_size_info(r2, "R2");
-          detail::print_size_info(t2, "T2");
+          mpqc::detail::print_size_info(r2, "R2");
+          mpqc::detail::print_size_info(t2, "T2");
         }
 
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -895,8 +904,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         auto duration = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  "
-                    << duration << std::endl;
+          detail::print_ccsd(iter, dE, error, E1, duration);
         }
 
         iter += 1ul;
@@ -905,15 +913,11 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         auto duration = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  "
-                    << duration << std::endl;
+          detail::print_ccsd(iter, dE, error, E1, duration);
         }
 
         break;
       }
-      //        std::cout << indent << scprintf("%-5.0f", iter) <<
-      //        scprintf("%-20.10f", Delta_E)
-      //        << scprintf("%-15.10f", E_1) << std::endl;
     }
     if (iter >= max_iter_) {
       utility::print_par(this->wfn_world()->world(),
@@ -949,11 +953,10 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     TArray f_ai = this->get_fock_ai();
 
-    TArray d1(f_ai.world(), f_ai.trange(), f_ai.shape(), f_ai.pmap());
-
-    create_d_ai(d1, *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
+    t1.truncate();
 
     t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
 
@@ -993,10 +996,10 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
-      std::cout << "Max Iteration" << max_iter_ << std::endl;
-      std::cout << "Convergence " << converge_ << std::endl;
-      std::cout << "AccurateTime" << accurate_time << std::endl;
-      std::cout << "PrintDetail" << print_detail_ << std::endl;
+      std::cout << "Max Iteration: " << max_iter_ << std::endl;
+      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "AccurateTime: " << accurate_time << std::endl;
+      std::cout << "PrintDetail: " << print_detail_ << std::endl;
     };
 
     auto diis = get_diis(world);
@@ -1014,10 +1017,10 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
       auto duration_u = mpqc::duration_in_s(tu0, tu1);
 
       if (print_detail_) {
-        detail::print_size_info(u2_u11, "U_aaoo");
+        mpqc::detail::print_size_info(u2_u11, "U_aaoo");
         mpqc::utility::print_par(world, "u term time: ", duration_u, "\n");
       } else if (iter == 0) {
-        detail::print_size_info(u2_u11, "U_aaoo");
+        mpqc::detail::print_size_info(u2_u11, "U_aaoo");
       }
 
       auto t1_time0 = mpqc::now(world, accurate_time);
@@ -1156,9 +1159,9 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
                                 - g_abij("d,c,k,l") * T("d,a,i,l");
 
             if (print_detail_) {
-              detail::print_size_info(T, "T");
-              detail::print_size_info(j_akic, "J_akic");
-              detail::print_size_info(k_kaic, "K_kaic");
+              mpqc::detail::print_size_info(T, "T");
+              mpqc::detail::print_size_info(j_akic, "J_akic");
+              mpqc::detail::print_size_info(k_kaic, "K_kaic");
             }
           }
 
@@ -1194,7 +1197,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
           r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
 
           if (print_detail_) {
-            detail::print_size_info(a_klij, "A_klij");
+            mpqc::detail::print_size_info(a_klij, "A_klij");
           }
         }
         tmp_time1 = mpqc::now(world, accurate_time);
@@ -1217,7 +1220,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
           r2("a,b,i,j") += b_abij("a,b,i,j");
 
           if (print_detail_) {
-            detail::print_size_info(b_abij, "B_abij");
+            mpqc::detail::print_size_info(b_abij, "B_abij");
           }
         }
         tmp_time1 = mpqc::now(world, accurate_time);
@@ -1249,15 +1252,6 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (iter == 0 && world.rank() == 0) {
-        std::cout << "iter "
-                  << "    deltaE    "
-                  << "            residual       "
-                  << "      energy     "
-                  << "    U/second  "
-                  << " total/second " << std::endl;
-      }
-
       if (dE >= converge_ || error >= converge_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
@@ -1270,8 +1264,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         t2("a,b,i,j") = t.second("a,b,i,j");
 
         if (print_detail_) {
-          detail::print_size_info(r2, "R2");
-          detail::print_size_info(t2, "T2");
+          mpqc::detail::print_size_info(r2, "R2");
+          mpqc::detail::print_size_info(t2, "T2");
         }
 
         tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -1285,9 +1279,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          std::cout.precision(15);
-          std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  "
-                    << duration_u << " " << duration_t << std::endl;
+          detail::print_ccsd_direct(iter, dE, error, E1, duration_u, duration_t);
         }
 
         iter += 1ul;
@@ -1296,10 +1288,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
         auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          std::cout.precision(15);
-          //                            std::cout.width(20);
-          std::cout << iter << "  " << dE << "  " << error << "  " << E1 << "  "
-                    << duration_u << " " << duration_t << std::endl;
+          detail::print_ccsd_direct(iter, dE, error, E1, duration_u, duration_t);
         }
 
         break;
@@ -1519,6 +1508,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     }
   }
 };  // class CCSD
+
+extern template class CCSD<TA::TensorD, TA::SparsePolicy>;
 
 }  // namespace cc
 }  // namespace mpqc

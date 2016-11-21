@@ -1,12 +1,12 @@
 // Massively Parallel Quantum Chemistry program
 // computes properties of a Wavefunction
 
-#include <clocale>
 #include <sstream>
 
 #include <libint2.hpp>
 #include <tiledarray.h>
 
+#include "mpqc_task.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
@@ -15,17 +15,20 @@
 #include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/assert.h"
+#include "mpqc/util/misc/exception.h"
 #include "mpqc/util/misc/exenv.h"
 #include "mpqc/util/options/GetLongOpt.h"
 
-/// linkage files to force linking in of ALL Wavefunction-based classes
-#include "mpqc/chemistry/qc/cc/linkage.h"
+// linkage files to force linking in of ALL Wavefunction-based classes
+// this list must be in sync with CMakeLists.txt
 #include "mpqc/chemistry/qc/f12/linkage.h"
 #include "mpqc/chemistry/qc/phf/linkage.h"
+#include "mpqc/chemistry/qc/cc/linkage.h"
 #include "mpqc/chemistry/qc/mbpt/linkage.h"
 #include "mpqc/chemistry/qc/scf/linkage.h"
+#include "mpqc_init.h"
 
-using namespace mpqc;
+namespace mpqc {
 
 void announce() {
   const char title1[] = "MPQC4: Massively Parallel Quantum Chemistry (v4)";
@@ -42,32 +45,23 @@ void announce() {
   ExEnv::out0() << title2 << std::endl << std::endl;
 }
 
-int try_main(int argc, char *argv[], madness::World &world) {
-  // parse commandline options
-  GetLongOpt options;
+}  // namespace mpqc
 
-  options.usage("[options] input_file.json");
-  options.enroll("o", GetLongOpt::MandatoryValue, "the name of the output file");
-  options.enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
-  options.enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
-                 ".");
-  //options.enroll("c", GetLongOpt::NoValue, "check input then exit");
-  //options.enroll("v", GetLongOpt::NoValue, "print the version number");
-  //options.enroll("w", GetLongOpt::NoValue, "print the warranty");
-  //options.enroll("L", GetLongOpt::NoValue, "print the license");
-  //options.enroll("d", GetLongOpt::NoValue, "debug");
-  //options.enroll("h", GetLongOpt::NoValue, "print this message");
+int try_main(int argc, char *argv[], madness::World& world) {
+  using namespace mpqc;
 
-  const int optind = options.parse(argc, argv);
+  // define default MPQC options
+  auto options = make_options();
 
-  // set the working dir
-  if (options.retrieve("W") == ".") {
-      auto err = chdir(options.retrieve("W").c_str());
-      MPQC_ASSERT(!err);
-  }
+  // initialize MPQC
+  initialize(argc, argv, options, world);
 
-  // redirect the output, if needed
-  std::string output_filename = options.retrieve("o");
+  // parse and process options
+  options->parse(argc, argv);
+  std::string input_filename, output_filename;
+  std::tie(input_filename, output_filename) = process_options(options);
+
+  // redirect the output to output_file
   std::ofstream output;
   if (!output_filename.empty()) output.open(output_filename);
   if (!output.good()) throw FileOperationFailed("failed to open output file",
@@ -78,43 +72,24 @@ int try_main(int argc, char *argv[], madness::World &world) {
       std::cout.rdbuf(), cout_streambuf_reset);
   if (!output_filename.empty()) std::cout.rdbuf(output.rdbuf());
 
-  // get input file name
-  std::string input_filename;
-  if (argc - optind == 1) {
-    input_filename = argv[optind];
-  }
-  else {
-    options.usage();
-    throw std::invalid_argument("input filename not given");
-  }
+  MPQCInit::instance().set_basename(input_filename, output_filename);
 
-  std::stringstream ss;
-  utility::parallel_read_file(world, input_filename, ss);
+  // make keyval
+  std::shared_ptr<KeyVal> kv = MPQCInit::instance().make_keyval(world, input_filename);
 
-  KeyVal kv;
-  kv.read_json(ss);
-  kv.assign("world", &world);  // set "$:world" keyword to &world to define
-                               // the default execution context for this input
-
-  { // set file prefix, if given
-    std::string prefix = options.retrieve("p");
-    if (!prefix.empty())
-      kv.assign("file_prefix", prefix);
+  // redirect filenames in KeyVal to the directory given by -p cmdline option
+  auto prefix_opt = options->retrieve("p");
+  if (prefix_opt) { // set file prefix, if given
+    kv->assign("file_prefix", *prefix_opt);
   }
 
   // announce ourselves
   announce();
 
-  double threshold = kv.value<double>("sparse_threshold", 1e-20);
-  TiledArray::SparseShape<float>::threshold(threshold);
-
-  auto wfn = kv.keyval("wfn").class_ptr<qc::Wavefunction>();
-
-  //  auto energy_prop = qc::Energy(kv);
-  //  auto energy_prop_ptr = &energy_prop;
-
-  double val = wfn->value();
-  utility::print_par(world, "Wfn energy is: ", val, "\n");
+  // run
+  MPQCTask task(world, kv);
+  task.run();
+  ExEnv::out0() << indent << "Wfn energy is: " << kv->value<double>("wfn:energy") << std::endl;
 
   return 0;
 }
@@ -122,22 +97,18 @@ int try_main(int argc, char *argv[], madness::World &world) {
 int main(int argc, char *argv[]) {
   int rc = 0;
 
-  auto &world = madness::initialize(argc, argv);
-  mpqc::utility::print_par(world, "MADNESS process total size: ", world.size(),
-                           "\n");
-  libint2::initialize();
-
-  std::setlocale(LC_ALL, "en_US.UTF-8");
-  std::cout << std::setprecision(15);
-  std::wcout.sync_with_stdio(false);
-  std::wcerr.sync_with_stdio(false);
-  std::wcout.imbue(std::locale("en_US.UTF-8"));
-  std::wcerr.imbue(std::locale("en_US.UTF-8"));
-  std::wcout.sync_with_stdio(true);
-  std::wcerr.sync_with_stdio(true);
+  madness::World* world_ptr;
+  // initialize MADNESS first
+  try {
+    world_ptr = &madness::initialize(argc, argv);
+  }
+  catch (...) {
+    std::cerr << "!! Failed to initialize MADWorld: " << "\n";
+    return 1;
+  }
 
   try {
-    try_main(argc, argv, world);
+    try_main(argc, argv, *world_ptr);
 
   } catch (TiledArray::Exception &e) {
     std::cerr << "!! TiledArray exception: " << e.what() << "\n";
@@ -156,7 +127,6 @@ int main(int argc, char *argv[]) {
     rc = 1;
   }
 
-  libint2::finalize();
   madness::finalize();
 
   return rc;

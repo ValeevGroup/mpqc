@@ -148,7 +148,7 @@ class FormulaRegistry : public Registry<Formula, Value> {
   void print_formula(madness::World& world) const {
     if (world.rank() == 0) {
       for (const auto& item : this->registry_) {
-        mpqc::detail::wprint_size_info(item.second, item.first.string());
+        mpqc::detail::print_size_info(item.second, item.first.string());
       }
       std::cout << std::endl;
     }

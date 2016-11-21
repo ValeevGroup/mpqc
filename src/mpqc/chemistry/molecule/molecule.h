@@ -11,7 +11,7 @@
 namespace mpqc {
 
 /*!
- * \defgroup Molecule Molecule
+ * \addtogroup ChemistryMolecule
  *
  * \brief The molecule module contains information about how to make and cluster
  *molecules

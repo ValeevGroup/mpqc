@@ -70,10 +70,6 @@ Molecule attach_hydrogens_and_kmeans(ABCbls const &clusterables,
 
 Molecule kmeans(ABCbls const &clusterables, int64_t nclusters) {
   if (clusterables.size() < std::size_t(nclusters)) {
-    std::cout << "\nWarning!! User asked for more clusters than there were "
-                 "clusterables! Use "
-              << clusterables.size() << " clusters!\n"
-              << std::endl;
     nclusters = clusterables.size();
   }
 

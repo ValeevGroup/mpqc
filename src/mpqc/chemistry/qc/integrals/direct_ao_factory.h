@@ -323,6 +323,11 @@ DirectAOFactory<Tile, Policy>::compute4(const Formula& formula) {
   return result;
 }
 
+extern template
+class DirectAOFactory<TA::TensorD, TA::SparsePolicy>;
+//extern template
+//class DirectAOFactory<TA::TensorD, TA::DensePolicy>;
+
 }  // end of namespace integrals
 }  // end of namespace mpqc
 

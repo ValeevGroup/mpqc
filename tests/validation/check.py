@@ -7,6 +7,8 @@
 # util
 ##########################################################
 
+# should work with python 2 and 3
+from __future__ import absolute_import, division, print_function, unicode_literals
 import sys, re, math
 
 def validate(label, data, refdata, tolerance):
@@ -29,7 +31,7 @@ def pat_numbers(n):
 def total_energy(file_name):
     file = open(file_name, 'r')
     for line in file:
-        match1 = re.match('Wfn energy is: ' + pat_numbers(1), line)
+        match1 = re.match('\A\s*Wfn energy is: ' + pat_numbers(1), line)
         if match1:
             return match1.groups()
 

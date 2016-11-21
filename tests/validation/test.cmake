@@ -1,27 +1,30 @@
 
-macro(runtest srcDir baseName)
+macro(runtest)
 
-set(OUTPUT_FILE_NAME "${CMAKE_BINARY_DIR}/${baseName}.out")
+set(OUTPUT_FILE_NAME "${CMAKE_BINARY_DIR}/${testName}.out")
 
 set(CHECK_CMD "${pythonExec}")
 set(CHECK_ARGS "${srcDir}/check.py"
 "${OUTPUT_FILE_NAME}"
-"${srcDir}/reference/outputs/${baseName}.out")
+"${srcDir}/reference/outputs/${testName}.out")
 
 if (NOT EXISTS "${OUTPUT_FILE_NAME}")
 
-  set(MPQC_CMD "${CMAKE_BINARY_DIR}/../../examples/run.sh")
-  set(MPQC_ARGS "${CMAKE_BINARY_DIR}/../../src/bin/mpqc/mpqc"
-      "-p ${srcDir}/reference/inputs"
-      "${srcDir}/reference/inputs/${baseName}.json")
+  set(MPQC_CMD "${CMAKE_BINARY_DIR}/../../src/bin/mpqc/mpqc")
+  set(MPQC_ARGS "-p" "${srcDir}/reference/inputs"
+  "${srcDir}/reference/inputs/${testName}.json")
 
   execute_process(COMMAND
+                  ${mpiExec}
+                  ${mpiNPFlags}
+                  ${mpiNProc}
+                  ${mpiPre}
                   ${MPQC_CMD} ${MPQC_ARGS}
+                  ${mpiPost}
                   OUTPUT_FILE "${OUTPUT_FILE_NAME}"
                   RESULT_VARIABLE MPQC_RESULT)
 
   if(MPQC_RESULT)
-    message(STATUS "output: ${OUTPUT_VARIABLE}")
     message(FATAL_ERROR "Error running ${MPQC_CMD}")
   endif()
 endif()
@@ -35,4 +38,4 @@ endif(CHECK_RESULT)
 
 endmacro(runtest)
 
-runtest(${srcDir} ${testName} ${pythonExec})
+runtest()

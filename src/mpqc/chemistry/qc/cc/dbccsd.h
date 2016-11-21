@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/12/16.
 //
 
-#ifndef MPQC_DBCCSD_H
-#define MPQC_DBCCSD_H
+#ifndef MPQC_CHEMISTRY_QC_CC_DBCCSD_H_
+#define MPQC_CHEMISTRY_QC_CC_DBCCSD_H_
 
 #include "mpqc/chemistry/qc/cc/ccsd.h"
 
@@ -53,7 +53,11 @@ class DBCCSD : public CCSD<Tile, Policy> {
     }
   }
 };
-}
-}
 
-#endif  // MPQC_DBCCSD_H
+extern template
+class DBCCSD<TA::TensorD, TA::SparsePolicy>;
+
+} // end of namespace cc
+} // end of namespace mpqc
+
+#endif  // MPQC_CHEMISTRY_QC_CC_DBCCSD_H_

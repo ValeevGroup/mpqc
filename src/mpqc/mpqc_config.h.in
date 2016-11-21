@@ -33,6 +33,26 @@
 
 /* ----------------------------------------------------- */
 
+/* Define if you have <sys/types.h>.  */
+#ifndef HAVE_SYS_TYPES_H
+#cmakedefine HAVE_SYS_TYPES_H
+#endif
+
+/* Define if you have <sys/resource.h>.  */
+#ifndef HAVE_SYS_RESOURCE_H
+#cmakedefine HAVE_SYS_RESOURCE_H
+#endif
+
+/* Define if you have <pwd.h>.  */
+#ifndef HAVE_PWD_H
+#cmakedefine HAVE_PWD_H
+#endif
+
+/* Define if you have the C99 <fenv.h>.  */
+#ifndef HAVE_FENV_H
+#cmakedefine HAVE_FENV_H
+#endif
+
 /* Define if you have <libunwind.h> and unw_init_local.  */
 #cmakedefine HAVE_LIBUNWIND
 
@@ -50,6 +70,24 @@
 
 /* Define if you have the posix_spawn function.  */
 #cmakedefine HAVE_POSIX_SPAWN
+
+/* Define if you have the getpwuid function.  */
+#cmakedefine HAVE_GETPWUID
+
+/* Define if you have the geteuid function.  */
+#cmakedefine HAVE_GETEUID
+
+/* Define if you have the gethostname function.  */
+#cmakedefine HAVE_GETHOSTNAME
+
+/* Define if you have the glibc feenableexcept extension.  */
+#cmakedefine HAVE_FEENABLEEXCEPT
+
+/* Define if you have the glibc fedisableexcept extension.  */
+#cmakedefine HAVE_FEDISABLEEXCEPT
+
+/* Define if you have the setrlimit function.  */
+#cmakedefine HAVE_SETRLIMIT
 
 /* ----------------------------------------------------- */
 

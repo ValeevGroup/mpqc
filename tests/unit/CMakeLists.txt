@@ -7,10 +7,11 @@ set(utests_src
     clustering_test.cpp
     exception_test.cpp
     f12_utility_test.cpp
+    formio_test.cpp
+    formula_test.cpp
     keyval_test.cpp
     libint_test.cpp
     orbital_index_test.cpp
-    formula_test.cpp
     util_string.cpp
     )
 
@@ -22,9 +23,16 @@ target_link_libraries(${executable} ${TA_LIBRARIES} ${Boost_LIBRARIES} ${LIBINT2
 add_test(unit/build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${executable})
 set_property(SOURCE bug_test.cpp PROPERTY COMPILE_DEFINITIONS
              SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_test(NAME unit/run
-         COMMAND ${executable})
-set_tests_properties(unit/run
+
+add_test(NAME unit/run-np-1
+         COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${executable}> ${MPIEXEC_POSTFLAGS})
+set_tests_properties(unit/run-np-1
+                     PROPERTIES DEPENDS unit/build
+                                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/unit
+                                ENVIRONMENT MAD_NUM_THREADS=2)
+add_test(NAME unit/run-np-2
+         COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${executable}> ${MPIEXEC_POSTFLAGS})
+set_tests_properties(unit/run-np-2
                      PROPERTIES DEPENDS unit/build
                                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/unit
                                 ENVIRONMENT MAD_NUM_THREADS=2)

@@ -79,11 +79,7 @@ double compute_mp2(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
                    std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df) {
   auto& world = lcao_factory.world();
   TA::DistArray<Tile, Policy> g_ijab;
-  if (df) {
-    g_ijab = lcao_factory.compute(L"<i j|G|a b>[df]");
-  } else {
-    g_ijab = lcao_factory.compute(L"<i j|G|a b>");
-  }
+  g_ijab = lcao_factory.compute(df ? L"<i j|G|a b>[df]" : L"<i j|G|a b>");
   // compute mp2 energy
   double energy_mp2 =
       (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
@@ -91,11 +87,7 @@ double compute_mp2(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
               orbital_energy, tr1_engine->get_occ(),
               tr1_engine->get_nfrozen()));
 
-  if (df) {
-    utility::print_par(world, "MP2 Energy With DF: ", energy_mp2, "\n");
-  } else {
-    utility::print_par(world, "MP2 Energy: ", energy_mp2, "\n");
-  }
+  utility::print_par(world, (df ? "RI-" : ""), "MP2 Energy: ", energy_mp2, "\n");
   return energy_mp2;
 };
 
@@ -139,6 +131,9 @@ class RIRMP2 : public RMP2 {
   using RMP2::value;
   double compute() override;
 };
+
+//extern class RMP2;
+//extern class RIRMP2;
 
 }  // end of namespace mbpt
 }  // end of namespace mpqc

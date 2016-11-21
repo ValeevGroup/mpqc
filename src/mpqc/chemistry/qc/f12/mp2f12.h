@@ -71,6 +71,9 @@ class RIRMP2F12 : public RMP2F12 {
   virtual double compute_cabs_singles() override;
 };
 
+//extern class RMP2F12;
+//extern class RIRMP2F12;
+
 }  // end of namespace f12
 }  // mpqc
 

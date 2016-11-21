@@ -7,6 +7,8 @@
 #include <memory>
 #include <string>
 
+#include <boost/optional.hpp>
+
 namespace mpqc {
 
 /// @addtogroup Init
@@ -49,6 +51,7 @@ class GetLongOpt {
   char optmarker;         // option marker
 
   bool finalized;  // finished enrolling
+  int first_unprocessed_arg_;  //!< index of the first argument that was not processed
 
  private:
   std::string basename(const std::string& p) const;
@@ -67,18 +70,21 @@ class GetLongOpt {
   /// enrolled
   /// @param argc the number of arguments, as passed to <tt>main</tt>
   /// @param argv the arguments, as passed to <tt>main</tt>
-  /// @return the index to the start of arguments that were not
-  ///         processed (an error occurred if the return value is < 1)
-  int parse(int argc, char* const* argv);
+  void parse(int argc, char* const* argv);
   /// Parse options in a string.
   /// @note call this once, after all options have been enrolled
   /// @warning this object becomes finalized, additional options cannot be
   /// enrolled
   /// @param str the string to be parsed
   /// @param p a prefix that will be prefixed to error messages
+  void parse(const std::string& str, const std::string& p);
+
+  /// After calling parse() this will return the index of the first argument that was not processed
   /// @return the index to the start of arguments that were not
   ///         processed (an error occurred if the return value is < 1)
-  int parse(const std::string& str, const std::string& p);
+  int first_unprocessed_arg() const {
+    return first_unprocessed_arg_;
+  }
 
   /// Enroll an option.
   /// @param opt the option name
@@ -96,9 +102,10 @@ class GetLongOpt {
 
   /// Retrieve the value of the option.
   /// @param opt the name of the option
-  /// @return if given(opt) is true, return the value of the option, otherwise
-  /// an empty string
-  std::string retrieve(const std::string& opt) const;
+  /// @return if \c opt was given, return \c boost::optional<std::string>
+  ///         initialized with the value of the option (empty string for \c NoValue option types),
+  ///         otherwise a default-initialized \c boost::optional<std::string>
+  boost::optional<std::string> retrieve(const std::string& opt) const;
 
   /// Print usage information.
   /// @param outfile stream to use for printing (default: <tt>std::cout</tt>)

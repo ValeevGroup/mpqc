@@ -19,7 +19,7 @@ namespace cc {
  */
 
 template <typename Tile, typename Policy>
-class CCSD_T : public CCSD<Tile, Policy> {
+class CCSD_T : virtual public CCSD<Tile, Policy> {
  public:
   //  using Tile = TA::TensorD;
   //  using Policy = TA::SparsePolicy;
@@ -48,8 +48,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
    * | reblock_occ | int | none | block size to reblock occ |
    * | reblock_unocc | int | none | block size to reblock unocc |
    * | reblock_inner | int | none | block size to reblock inner dimension |
-   * | increase | int | 2 | number of block in virtual dimension to load at each
-   * virtual loop |
+   * | increase | int | 2 | number of block in virtual dimension to load at each virtual loop |
    */
 
   CCSD_T(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
@@ -62,6 +61,10 @@ class CCSD_T : public CCSD<Tile, Policy> {
   }
 
   virtual ~CCSD_T() {}
+
+  void compute(qc::PropertyBase *pb) override {
+    throw std::runtime_error("Not Implemented!!");
+  }
 
   double value() override {
     if (this->energy_ == 0.0) {
@@ -77,36 +80,11 @@ class CCSD_T : public CCSD<Tile, Policy> {
         std::cout << "CCSD Time " << duration0 << std::endl;
       }
 
-      time0 = mpqc::fenced_now(world);
-      // clean all LCAO integral
-      this->lcao_factory().registry().purge(world);
+      // compute
+      compute_();
 
-      if (reblock_) {
-        reblock();
-      }
-
-      // start CCSD(T)
-      if (world.rank() == 0) {
-        std::cout << "\nBegining CCSD(T) " << std::endl;
-      }
-      TArray t1 = this->t1();
-      TArray t2 = this->t2();
-      triples_energy_ = compute_ccsd_t(t1, t2);
-      time1 = mpqc::fenced_now(world);
-      auto duration1 = mpqc::duration_in_s(time0, time1);
-
-      if (world.rank() == 0) {
-        std::cout << std::setprecision(15);
-        std::cout << "(T) Energy      " << triples_energy_ << " Time "
-                  << duration1 << std::endl;
-        //                    std::cout << "(T) Energy      " << ccsd_t_d << "
-        //                    Time " << duration2 << std::endl;
-        std::cout << "CCSD(T) Energy  " << triples_energy_ + ccsd_corr
-                  << std::endl;
-        //                    std::cout << "CCSD(T) Energy  " << ccsd_t_d +
-        //                    ccsd_corr << std::endl;
-      }
-
+      std::cout << "CCSD(T) Energy  " << triples_energy_ + ccsd_corr
+                << std::endl;
       this->energy_ = ccsd_corr + triples_energy_;
     }
     return this->energy_;
@@ -115,6 +93,40 @@ class CCSD_T : public CCSD<Tile, Policy> {
   void obsolete() override {
     triples_energy_ = 0.0;
     CCSD<Tile, Policy>::obsolete();
+  }
+
+  double triples_energy() const {
+    return this->triples_energy_;
+  }
+
+protected:
+  void compute_() {
+    auto& world = this->wfn_world()->world();
+    auto time0 = mpqc::fenced_now(world);
+
+    // clean all LCAO integral
+    this->lcao_factory().registry().purge(world);
+
+    if (reblock_) {
+      reblock();
+    }
+
+    // start CCSD(T)
+    if (world.rank() == 0) {
+      std::cout << "\nBegining CCSD(T) " << std::endl;
+    }
+    TArray t1 = this->t1();
+    TArray t2 = this->t2();
+    triples_energy_ = compute_ccsd_t(t1, t2);
+    auto time1 = mpqc::fenced_now(world);
+    auto duration1 = mpqc::duration_in_s(time0, time1);
+
+    if (world.rank() == 0) {
+      std::cout << std::setprecision(15);
+      std::cout << "(T) Energy      " << triples_energy_ << " Time "
+                << duration1 << std::endl;
+    }
+
   }
 
  private:
@@ -922,8 +934,8 @@ class CCSD_T : public CCSD<Tile, Policy> {
     TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
     TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
 
-    detail::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
-    detail::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
+    mpqc::detail::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
+    mpqc::detail::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
 
     this->set_trange1_engine(new_tr1);
 
@@ -954,7 +966,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
       tr_occ_inner_ =
           new_tr1->compute_range(new_tr1->get_active_occ(), inner_block_size_);
 
-      detail::parallel_print_range_info(world, tr_occ_inner_,
+      mpqc::detail::parallel_print_range_info(world, tr_occ_inner_,
                                         "CCSD(T) OCC Inner");
 
       auto occ_inner_convert =
@@ -970,7 +982,7 @@ class CCSD_T : public CCSD<Tile, Policy> {
 
       // vir inner
       tr_vir_inner_ = new_tr1->compute_range(vir, inner_block_size_);
-      detail::parallel_print_range_info(world, tr_vir_inner_,
+      mpqc::detail::parallel_print_range_info(world, tr_vir_inner_,
                                         "CCSD(T) Vir Inner");
       auto vir_inner_convert =
           array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
@@ -1264,6 +1276,9 @@ class CCSD_T : public CCSD<Tile, Policy> {
   };  // structure CCSD_T_ReduceSymm
 
 };  // class CCSD_T
+
+extern template
+class CCSD_T<TA::TensorD,TA::SparsePolicy>;
 
 }  // namespace cc
 }  // namespace mpqc

@@ -15,6 +15,7 @@
 #include "mpqc/chemistry/qc/integrals/integral_builder.h"
 #include "mpqc/chemistry/qc/integrals/screening/screen_base.h"
 #include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
+#include "mpqc/util/misc/assert.h"
 
 namespace mpqc {
 namespace integrals {
@@ -39,13 +40,17 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
         TA::Noop<TA::TensorD,true>()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
-  const auto tvolume = trange.tiles_range().volume();
+  const auto tiles_range = trange.tiles_range();
+  const auto tvolume = tiles_range.volume();
 
   using TileVec = std::vector<std::pair<unsigned long, Tile>>;
-  std::vector<TileVec> tiles(3, TileVec(tvolume));
+  std::array<TileVec, 3> tiles{{TileVec(tvolume),TileVec(tvolume),TileVec(tvolume)}};
 
-  using NormVec = std::vector<TA::TensorF>;
-  NormVec tile_norms(3, TA::TensorF(trange.tiles_range(), 0.0));
+  using NormVec = std::array<TA::TensorF, 3>;
+  NormVec tile_norms{{TA::TensorF(tiles_range, 0.0),
+    TA::TensorF(tiles_range, 0.0),
+    TA::TensorF(tiles_range, 0.0)
+  }};
 
   // Capture by ref since we are going to fence after loops.
   auto task_f = [&](int64_t ord, detail::IdxVec idx, TA::Range rng) {
@@ -62,7 +67,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
 
     std::vector<TA::TensorD> t_xyz = {TA::TensorD(rng, 0.0),
                                       TA::TensorD(rng, 0.0),
-                                      TA::TensorD(std::move(rng), 0.0)};
+                                      TA::TensorD(rng, 0.0)};
 
     double dummy = 0.0;
     auto map = TA::make_const_map(&dummy, {0, 0}, {1, 1});
@@ -80,8 +85,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
         ub[1] += n1;
 
         const auto &bufs = eng.compute(s0, s1);
-        TA_USER_ASSERT(bufs.size() >= 4,
-                       "unexpected result from Engine::compute()");
+        MPQC_ASSERT(bufs.size() >= 4);
 
         if (bufs[0] != nullptr) {
           for (auto i = 1; i < 4; ++i) {
@@ -99,8 +103,9 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
         {t_xyz[0].norm(), t_xyz[1].norm(), t_xyz[2].norm()}};
 
     for (auto i = 0; i < 3; ++i) {
-      tile_norms[i][ord] = norm[i];
-      if (TA::SparseShape<float>::threshold() <= t_volume * norm[i]) {
+      const float norm_float = norm[i];
+      tile_norms[i][ord] = norm_float;
+      if (TA::SparseShape<float>::threshold() * t_volume <= norm_float) {
         tiles[i][ord].second = op(std::move(t_xyz[i]));
       }
     }
@@ -111,7 +116,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
     tiles[0][ord].first = ord;
     tiles[1][ord].first = ord;
     tiles[2][ord].first = ord;
-    detail::IdxVec idx = trange.tiles_range().idx(ord);
+    detail::IdxVec idx = tiles_range.idx(ord);
     world.taskq.add(task_f, ord, idx, trange.make_tile_range(ord));
   }
   world.gop.fence();

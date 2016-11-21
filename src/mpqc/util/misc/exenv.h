@@ -30,6 +30,9 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <memory>
+
+#include <madness/world/world.h>
 
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/misc/formio.h"
@@ -39,26 +42,28 @@ namespace mpqc {
 /// @addtogroup Init
 /// @{
 
-/** The ExEnv class is used to find out about how
-    the program is being run. */
+/** \brief Describes the execution environment of the program.
+
+    \note This is a singleton.
+ */
 class ExEnv {
   protected:
     static int initialized_;
     static int *argc_;
     static char ***argv_;
     static char hostname_[256];
-    static char username_[9];
+    static char username_[32];
 
-    static size_t mem_;
-    static int nproc_;
-
-    static std::ostream *out_;
-    static std::ostream *nullstream_;
+    static std::ostream* out_;
+    static std::unique_ptr<std::ostream> nullstream_;
   public:
     /// Set the argument count and vector.
     static void init(int &argcref, char **&argvref);
+    /// Set the stdout stream
+    static void set_out(std::ostream *o) { mpqc::FormIO::init_ostream(*o);out_=o; }
     /// Return nonzero if ExEnv has been initialized.
     static int initialized() { return argc_ != 0; }
+
     /// Return an reference to the argument count.
     static int &argc() { return *argc_; }
     /// Return an reference to the argument vector.
@@ -72,22 +77,26 @@ class ExEnv {
 
     /** Return the value of an environment variable. If it does not
         exist, then an empty string is returned. */
-    static std::string getenv_string(const char *name);
+    static std::string getenv(const std::string& name);
 
-    static void set_out(std::ostream *o) { mpqc::FormIO::init_ostream(*o);out_=o; }
-    /// Return an ostream that writes from all nodes.
-    static std::ostream &outn() { if (!out_)set_out(&std::cout);return *out_; }
-    /// Return an ostream for error messages that writes from all nodes.
-    static std::ostream &errn() { return outn(); }
-    /// Return an ostream that writes from node 0.
-    static std::ostream &out0();
-    /// Return an ostream for error messages that writes from node 0.
-    static std::ostream &err0() { return out0(); }
-
-    /// The amount of memory on this node.
-    static size_t memory() { return mem_; }
-    /// The number of processors on this node.
-    static int nproc() { return nproc_; }
+    /// Return an ostream that writes from all processes.
+    static std::ostream& outn();
+    /// Return an ostream for error messages that writes from all processes.
+    static std::ostream& errn();
+    /// Return an ostream that writes from process 0 of the default World.
+    /// \note FormIO::set_printnode() can be used to specify which process this
+    /// prints from
+    static std::ostream& out0();
+    /// Return an ostream for error messages that writes from process 0 of the
+    /// default World.
+    /// \note FormIO::set_printnode() can be used to specify which process this
+    /// prints from
+    static std::ostream& err0();
+    /// Return an ostream that writes from process 0 of the given World.
+    static std::ostream& out0(madness::World& world);
+    /// Return an ostream for error messages that writes from process 0 of the
+    /// given World.
+    static std::ostream& err0(madness::World& world);
 };
 
 /// @}

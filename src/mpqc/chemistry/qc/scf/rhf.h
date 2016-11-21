@@ -134,6 +134,11 @@ class DirectRHF : public RHF {
   void init_fock_builder() override;
 };
 
+//extern class RHF;
+//extern class RIRHF;
+//extern class DirectRHF;
+//extern class DirectRIRHF;
+
 }  // end of namespace scf
 }  // end of namespace mpqc
 

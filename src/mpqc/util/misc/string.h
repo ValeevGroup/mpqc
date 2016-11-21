@@ -62,14 +62,15 @@ inline std::wstring to_wstring(const std::wstring& wstr_utf8) {
   return wstr_utf8;
 }
 
-/// @brief converts UTF-8 encoded wstring to UTF-8 encoded string
-inline std::string to_string(const std::wstring& wstr_utf8) {
-  //  using convert_type = std::codecvt_utf8<wchar_t>;
-  //  std::wstring_convert<convert_type, wchar_t> converter;
-  //  return converter.to_bytes(wstr_utf8);
+/// @brief narrowing character converter.
+///
+/// Converts a UTF-8 encoded std::basic_string<Char> to a UTF-8 encoded std::basic_string<char>
+/// \tparam Char character type: wchar_t or char
+template <typename Char>
+inline std::basic_string<char> to_string(const std::basic_string<Char>& str_utf8) {
   using boost::locale::conv::utf_to_utf;
-  return utf_to_utf<char>(wstr_utf8.c_str(),
-                          wstr_utf8.c_str() + wstr_utf8.size());
+  return utf_to_utf<char>(str_utf8.c_str(),
+                          str_utf8.c_str() + str_utf8.size());
 }
 
 /// @return a std::string obtained by streaming \c args to a

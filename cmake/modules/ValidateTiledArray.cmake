@@ -27,7 +27,7 @@ macro (validate_tiledarray)
   ##########################
   # ensure it's fresh enough
   ##########################
-  set (TILEDARRAY_OLDEST_REVISION 7087fd4b)
+  set (TILEDARRAY_OLDEST_REVISION 54ea1920)
   CHECK_CXX_SOURCE_COMPILES(
   "
   #include <tiledarray.h>
@@ -42,6 +42,7 @@ macro (validate_tiledarray)
     
     // test 2
     {
+      auto w = TA::push_default_world(world);
       TA::TArrayD arr;
       auto x = arr(\"i,j\").set_world(world);
     }

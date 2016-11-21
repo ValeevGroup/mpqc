@@ -69,8 +69,7 @@ Molecule::Molecule(const KeyVal &kv) {
   auto file_name = kv.value<std::string>("file_name", "");
   MPQC_ASSERT(!file_name.empty());
   if (file_name[0] != '/' && kv.exists("$:file_prefix")) {
-    file_name = kv.value<std::string>("$:file_prefix") + "/" +
-                file_name;
+    file_name = kv.value<std::string>("$:file_prefix") + "/" + file_name;
   }
 
   // find world one level higher
@@ -206,20 +205,20 @@ int64_t Molecule::core_electrons() const {
   return n;
 }
 
-void Molecule::print(std::ostream & os) const {
-    os << "Molecule C.O.M: " << com().transpose() << ", ";
-    os << "charge: " << charge() << ", ";
-    os << "mass: " << mass() << ", with Elements: {";
+void Molecule::print(std::ostream &os) const {
+  os << "Molecule C.O.M: " << com().transpose() << ", ";
+  os << "charge: " << charge() << ", ";
+  os << "mass: " << mass() << ", with Elements: {";
 
-    auto last = end();
-    auto second_last = last - 1;
-    for (auto it = begin(); it != last; ++it) {
-      if (it != second_last) {
-        it->print(os) << ", ";
-      } else {
-        it->print(os) << "}";
-      }
+  auto last = end();
+  auto second_last = last - 1;
+  for (auto it = begin(); it != last; ++it) {
+    if (it != second_last) {
+      it->print(os) << ", ";
+    } else {
+      it->print(os) << "}";
     }
+  }
 }
 
 std::ostream &operator<<(std::ostream &os, Molecule const &mol) {

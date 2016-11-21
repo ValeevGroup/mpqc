@@ -15,6 +15,8 @@ using std::stringstream;
 using mpqc::KeyVal;
 using mpqc::DescribedClass;
 
+extern madness::World* default_world;
+
 struct Base : public DescribedClass {
   Base(const KeyVal& kv) : DescribedClass(), value_(kv.value<int>("value")) {}
   Base(int v) : value_(v) {}
@@ -259,16 +261,15 @@ TEST_CASE("KeyVal", "[keyval]") {
 
   SECTION("Basis Test"){
 
-    auto& world = madness::World::get_default();
     std::string filename = "keyval_test.json";
 
     std::stringstream ss;
-    mpqc::utility::parallel_read_file(world, filename ,ss);
+    mpqc::utility::parallel_read_file(*default_world, filename ,ss);
 
     KeyVal kv;
     kv.read_json(ss);
 
-    kv.assign("world", &world);
+    kv.assign("world", default_world);
 
     REQUIRE_NOTHROW(kv.keyval("basis").class_ptr<mpqc::basis::Basis>());
 

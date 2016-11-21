@@ -220,7 +220,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
 
         // permute the array
         result(formula.to_ta_expression()) =
-            (*(find_permute->second))(permute.to_ta_expression()).set_world(world_);
+            (*(find_permute->second))(permute.to_ta_expression());
 
         mpqc::time_point time1 = mpqc::now(world_, accurate_time_);
         double time = mpqc::duration_in_s(time0, time1);
@@ -310,7 +310,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
         time0 = mpqc::now(world_, accurate_time_);
 
-        result("i,j") = (v("i,j") + t("i,j")).set_world(world_);
+        result("i,j") = v("i,j") + t("i,j");
 
         time1 = mpqc::now(world_, accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
@@ -618,9 +618,9 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
     time0 = mpqc::now(world_, accurate_time_);
 
     if (formula.notation() == Formula::Notation::Chemical) {
-      result("i,j,k,l") = (left("q,i,j") * center("q,p") * right("p,k,l")).set_world(world_);
+      result("i,j,k,l") = left("q,i,j") * center("q,p") * right("p,k,l");
     } else {
-      result("i,j,k,l") = (left("q,i,k") * center("q,p") * right("p,j,l")).set_world(world_);
+      result("i,j,k,l") = left("q,i,k") * center("q,p") * right("p,j,l");
     }
 
     time1 = mpqc::now(world_, accurate_time_);

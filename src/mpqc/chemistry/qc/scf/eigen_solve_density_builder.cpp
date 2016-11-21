@@ -52,7 +52,7 @@ std::pair<array_type, array_type> ESolveDensityBuilder::operator()(
   auto &world = F.world();
 
   auto e0 = mpqc::fenced_now(world);
-  Fp("i,j") = (M_inv_("i,k") * F("k,l") * M_inv_("j,l")).set_world(world);
+  Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
 
   auto Fp_eig = array_ops::array_to_eigen(Fp);
   Eigen::SelfAdjointEigenSolver<decltype(Fp_eig)> es(Fp_eig);
@@ -64,19 +64,19 @@ std::pair<array_type, array_type> ESolveDensityBuilder::operator()(
   C = array_ops::eigen_to_array<TA::TensorD>(Fp.world(), C_eig, tr_ao, tr_occ);
 
   // Get back to AO land
-  Cao("i,j") = (M_inv_("k,i") * C("k,j")).set_world(world);
+  Cao("i,j") = M_inv_("k,i") * C("k,j");
   Cao.truncate();
   auto e1 = mpqc::fenced_now(world);
 
   // Compute D to full accuracy
-  D("i,j") = (Cao("i,k") * Cao("j,k")).set_world(world);
+  D("i,j") = Cao("i,k") * Cao("j,k");
   D.truncate();
   density_storages_.push_back(detail::array_storage(D));
 
   if (localize_) {
     auto l0 = mpqc::fenced_now(world);
     auto U = mpqc::scf::BoysLocalization{}(Cao, r_xyz_ints_);
-    Cao("mu,i") = (Cao("mu,k") * U("k,i")).set_world(world);
+    Cao("mu,i") = Cao("mu,k") * U("k,i");
     auto l1 = mpqc::fenced_now(world);
 
     auto obs_ntiles = Cao.trange().tiles_range().extent()[0];

@@ -48,7 +48,18 @@ double fngtg(const std::vector<double>& cc, const std::vector<double>& aa,
   const auto n = cc.size();
 
   for (auto i = 0ul; i < n; ++i) {
-    value += cc[i] * std::exp(-aa[i] * x2);
+    const auto cc_i = cc[i];
+    const auto aa_i = aa[i];
+    const double x_aa_i = - aa_i * x2;
+    double result;
+    if(x_aa_i < -708.4){
+      result = 0.0;
+    }
+    else{
+      TA_ASSERT( x_aa_i < 709.8  );
+      result =  std::exp(x_aa_i);
+    }
+    value += cc_i * result;
   }
 
   return value;

@@ -253,8 +253,8 @@ double RIDBRMP2F12::compute_new_mp2() {
     new_mp2 =
         (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
             .reduce(mbpt::detail::Mp2Energy<TA::TensorD>(
-//                std::make_shared<Eigen::VectorXd>(ens_all),
-                this->orbital_energy_,
+                std::make_shared<Eigen::VectorXd>(ens_all),
+//                this->orbital_energy_,
                 trange1_engine_->get_occ(), trange1_engine_->get_nfrozen()));
 
     utility::print_par(world, "New MP2: ", new_mp2, "\n");

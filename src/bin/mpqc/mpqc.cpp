@@ -86,6 +86,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
   announce();
 
   // run
+  TA::set_default_world(world);  // must specify default world to avoid madness::World::get_default() getting called
   MPQCTask task(world, kv);
   task.run();
   ExEnv::out0() << indent << "Wfn energy is: " << kv->value<double>("wfn:energy") << std::endl;

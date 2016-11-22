@@ -129,6 +129,7 @@ class MPQCInit {
 /// | -w     | no           | print the warranty and exit                           |
 /// | -L     | no           | print the license and exit                            |
 /// | -h     | no           | print the usage info and exit                         |
+/// | -d     | no           | start the program and attach a debugger               |
 ///
 /// \return a smart pointer to the newly created options parser object (see mpqc::GetLongOpt )
 std::shared_ptr<GetLongOpt> make_options();

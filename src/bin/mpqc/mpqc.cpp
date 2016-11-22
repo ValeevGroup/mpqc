@@ -76,6 +76,16 @@ int try_main(int argc, char *argv[], madness::World& world) {
   // make keyval
   std::shared_ptr<KeyVal> kv = MPQCInit::instance().make_keyval(world, input_filename);
 
+  // now set up the debugger
+  auto debugger = kv->class_ptr<Debugger>("debugger");
+  if (debugger) {
+    Debugger::set_default_debugger(debugger);
+    debugger->set_exec(argv[0]);
+    debugger->set_prefix(world.rank());
+    if (options->retrieve("d"))
+      debugger->debug("Starting debugger because -d given on command line.");
+  }
+
   // redirect filenames in KeyVal to the directory given by -p cmdline option
   auto prefix_opt = options->retrieve("p");
   if (prefix_opt) { // set file prefix, if given

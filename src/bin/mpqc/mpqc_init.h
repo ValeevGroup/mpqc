@@ -27,12 +27,13 @@ namespace mpqc {
 /// \note The initialize()/finalize() sequence can occur more than once.
 /// \param[in/out] argc the argument count
 /// \param[in/out] argv the sequence of argument strings
-/// \param[in/out] opt command-line options parser, if non-null
-///                additional MPQC-specific options will be enrolled
 /// \param[in] world the top World object in which MPQC will execute (MPQCTask object will
 ///                  live in subworlds of this)
-void initialize(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt = nullptr,
-                const madness::World& top_world = madness::World::get_default());
+/// \param[in/out] opt command-line options parser, if non-null
+///                additional MPQC-specific options will be enrolled
+void initialize(int &argc, char **argv,
+                const madness::World& top_world,
+                std::shared_ptr<GetLongOpt> opt = nullptr);
 
 /// Finalize MPQC.
 void finalize();
@@ -82,8 +83,8 @@ class MPQCInit {
 
  private:
   friend void ::mpqc::initialize(int &argc, char **argv,
-                                 std::shared_ptr<GetLongOpt> opt,
-                                 const madness::World &world);
+                                 const madness::World &world,
+                                 std::shared_ptr<GetLongOpt> opt);
   friend void ::mpqc::finalize();
 
   /// Create the initializer. Only one object of this time can be created.

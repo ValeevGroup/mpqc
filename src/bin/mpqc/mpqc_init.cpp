@@ -31,8 +31,9 @@ namespace mpqc {
 
 std::unique_ptr<MPQCInit> MPQCInit::instance_;
 
-void initialize(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
-                const madness::World& top_world)
+void initialize(int &argc, char **argv,
+                const madness::World& top_world,
+                std::shared_ptr<GetLongOpt> opt)
 {
   if (!madness::initialized()) {
     throw ProgrammingError(

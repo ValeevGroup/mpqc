@@ -22,7 +22,7 @@ int main( int argc, char* argv[] )
 
   world_ptr = &madness::initialize(argc, argv);
   assert(world_ptr != nullptr);
-  mpqc::initialize(argc, argv, nullptr, *world_ptr);
+  mpqc::initialize(argc, argv, *world_ptr);
   mpqc::FormIO::set_printnode(-1); // disable all output
 
   int result = session.run( argc, argv );

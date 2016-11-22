@@ -53,7 +53,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
   auto options = make_options();
 
   // initialize MPQC
-  initialize(argc, argv, options, world);
+  initialize(argc, argv, world, options);
 
   // parse and process options
   options->parse(argc, argv);

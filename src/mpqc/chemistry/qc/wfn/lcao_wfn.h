@@ -33,7 +33,7 @@ public:
    * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
    * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space block size |
    * | \c "occ_block_size" | int | \c "$obs_block_size" | the target block size of the occupied space |
-   * | \c "uocc_block_size" | int | \c "$obs_block_size" | the target block size of the unoccupied space |
+   * | \c "unocc_block_size" | int | \c "$obs_block_size" | the target block size of the unoccupied space |
    *
    */
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
@@ -42,7 +42,7 @@ public:
     frozen_core_ = kv.value<bool>("frozen_core",true);
     std::size_t mo_block = kv.value<int>("obs_block_size",24);
     occ_block_ = kv.value<int>("occ_block_size",mo_block);
-    unocc_block_ = kv.value<int>("uocc_block_size",mo_block);
+    unocc_block_ = kv.value<int>("unocc_block_size",mo_block);
   }
 
   virtual ~LCAOWavefunction() = default;

@@ -33,13 +33,10 @@ class RHF : public qc::AOWavefunction<TA::TensorD, TA::SparsePolicy> {
    * |---------|------|--------|-------------|
    * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 30 | maximum number of iteration |
-   * | density_builder | string | eigen_solve | type of DensityBuilder
-   * (eigen_solve->ESolveDensityBuilder, purification->
-   * PurificationDensityBuilder) |
+   * | density_builder | string | eigen_solve | type of DensityBuilder (eigen_solve->ESolveDensityBuilder, purification->PurificationDensityBuilder) |
    * | localize | bool | false | if localize in DensityBuilder |
    * | t_cut_c | double | 0.0 | threshold in DensityBuilder |
-   * | decompo_type | string | cholesky_inverse | (cholesky inverse, inverse
-   * sqrt) only valid if use ESolveDensityBuilder |
+   * | decompo_type | string | cholesky_inverse | (cholesky_inverse, inverse_sqrt, conditioned_inverse) only valid if use ESolveDensityBuilder |
    *
    */
 

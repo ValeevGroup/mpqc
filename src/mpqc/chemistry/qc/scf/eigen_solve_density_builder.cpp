@@ -3,6 +3,7 @@
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/cholesky_inverse.h"
+#include "mpqc/math/linalg/conditioned_orthogonalizer.h"
 #include "mpqc/math/linalg/sqrt_inv.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
@@ -29,15 +30,12 @@ ESolveDensityBuilder::ESolveDensityBuilder(
       metric_decomp_type_(metric_decomp_type),
       localize_(localize) {
   auto inv0 = mpqc::fenced_now(S_.world());
-  if (metric_decomp_type_ == "cholesky inverse") {
+  if (metric_decomp_type_ == "cholesky_inverse") {
     M_inv_ = array_ops::cholesky_inverse(S_);
-  } else if (metric_decomp_type_ == "inverse sqrt") {
+  } else if (metric_decomp_type_ == "inverse_sqrt") {
     M_inv_ = array_ops::inverse_sqrt(S_);
-  } else if (metric_decomp_type_ == "conditioned inverse sqrt") {
-    // M_inv_ = cond_inv_sqrt(S_);
-    throw "Error conditioned inverse sqrt is not yet implemented "
-              "for "
-              "EsolveDensityBuilder\n";
+  } else if (metric_decomp_type_ == "conditioned") {
+     M_inv_ = array_ops::conditioned_orthogonalizer(S_, 1.0 / std::numeric_limits<double>::epsilon());
   } else {
     throw "Error did not recognize overlap decomposition in "
               "EsolveDensityBuilder";

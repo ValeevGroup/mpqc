@@ -493,8 +493,8 @@ class KeyVal {
   /// @tparam T a class derived from DescribedClass corresponding to the value
   /// of path:"type" or its base
   /// @param path the path
-  /// @return std::shared_Ptr \c T
-  /// @throws KeyVal::bad_input if key not found or cannot convert value
+  /// @return a std::shared_ptr to \c T ; null pointer will be returned if \c path does not exist.
+  /// @throws KeyVal::bad_input if cannot convert value
   /// representation to the desired type
   template <typename T, typename = std::enable_if_t<Describable<T>::value>>
   std::shared_ptr<T> class_ptr(const key_type& path = key_type()) const {
@@ -514,6 +514,11 @@ class KeyVal {
     auto cptr = class_registry_->find(abs_path);
     if (cptr != class_registry_->end())
       return std::dynamic_pointer_cast<T>(cptr->second);
+
+    // return nullptr if the path does not exist
+    if (!this->exists_(abs_path)) {
+      return std::shared_ptr<T>();
+    }
 
     // get class name
     std::string derived_class_name;
@@ -760,4 +765,4 @@ KeyVal operator+(const KeyVal& first, const KeyVal& second);
 
 /// @}
 
-#endif /* SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_ */
+#endif  // SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_

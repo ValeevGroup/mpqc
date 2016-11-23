@@ -1,5 +1,5 @@
-#ifndef MPQC_CHEMISTRY_QC_PHF_PERIODIC_SOAD_H
-#define MPQC_CHEMISTRY_QC_PHF_PERIODIC_SOAD_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PERIODIC_SOAD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PERIODIC_SOAD_H_
 
 #include <libint2/chemistry/sto3g_atomic_density.h>
 #include <tiledarray.h>
@@ -19,7 +19,6 @@ Array periodic_fock_soad(
     madness::World &world, UnitCell const &unitcell, Array const &H,
     FactoryType &pao_factory,
     std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>()) {
-
   if (world.rank() == 0) {
     std::cout << "\nBuilding Fock Matrix from SOAD Guess ...\n";
   }
@@ -80,4 +79,4 @@ Array periodic_fock_soad(
 
 }  // end of namespace phf
 }  // end of namespace mpqc
-#endif  // MPQC_CHEMISTRY_QC_PHF_PERIODIC_SOAD_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PERIODIC_SOAD_H_

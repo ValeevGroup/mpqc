@@ -1,7 +1,7 @@
-#ifndef SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_
-#define SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_
 
-#include "./molecule.h"
+#include "mpqc/chemistry/molecule/molecule.h"
 
 #include <iosfwd>
 #include <vector>
@@ -93,4 +93,4 @@ class UnitCell : public Molecule {
 
 }  // mpqc namespace
 
-#endif  // SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_

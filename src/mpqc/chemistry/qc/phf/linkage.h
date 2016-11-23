@@ -1,5 +1,5 @@
-#ifndef MPQC_CHEMISTRY_QC_PHF_LINKAGE_H
-#define MPQC_CHEMISTRY_QC_PHF_LINKAGE_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_LINKAGE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_LINKAGE_H_
 
 #include "mpqc/chemistry/qc/wfn/linkage.h"
 #include "mpqc/util/keyval/forcelink.h"
@@ -13,5 +13,5 @@ mpqc::detail::ForceLink<PHF> fl1;
 }
 }
 
-#endif  // MPQC_CHEMISTRY_QC_PHF_LINKAGE_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_LINKAGE_H_
 

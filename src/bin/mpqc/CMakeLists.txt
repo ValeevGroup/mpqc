@@ -14,7 +14,7 @@ target_link_libraries(
 add_executable(mpqc EXCLUDE_FROM_ALL mpqc.cpp)
 # add the libraries you need and force their linkage in mpqc.cpp
 # developers will want to trim this list down to the minimum needed
-set(MPQC_LIBS MPQCf12 MPQCcc MPQCmbpt MPQCscf)
+set(MPQC_LIBS MPQCf12 MPQCcc MPQCmbpt MPQCscf MPQCphf)
                       
 target_link_libraries(mpqc
                       ${MPQC_LIBS}
@@ -34,4 +34,4 @@ add_test(NAME mpqc_test/run
 set_tests_properties(mpqc_test/run
                      PROPERTIES DEPENDS mpqc_test/build
                                 ENVIRONMENT MAD_NUM_THREADS=2)
-                      
+

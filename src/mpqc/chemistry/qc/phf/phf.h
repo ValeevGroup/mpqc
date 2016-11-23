@@ -1,5 +1,5 @@
-#ifndef MPQC_CHEMISTRY_QC_PHF_PHF_H
-#define MPQC_CHEMISTRY_QC_PHF_PHF_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PHF_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PHF_H_
 
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 
@@ -85,4 +85,4 @@ private:
 
 } // end of namespace phf
 } // end of namespace mpqc
-#endif // MPQC_CHEMISTRY_QC_PHF_PHF_H
+#endif // MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PHF_H_

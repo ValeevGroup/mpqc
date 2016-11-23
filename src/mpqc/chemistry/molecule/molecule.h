@@ -1,5 +1,5 @@
-#ifndef SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_
-#define SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_
 
 #include <iosfwd>
 #include <vector>
@@ -26,7 +26,7 @@ namespace mpqc {
  *
  */
 class Molecule : public DescribedClass {
- protected:
+ private:
   std::vector<AtomBasedClusterable> elements_;
 
   Vector3d com_ = {0, 0, 0};  /// Center of Mass
@@ -166,7 +166,7 @@ class Molecule : public DescribedClass {
   Vector3d const &com() const { return com_; }
 
   /// Print Molecule information
-  virtual void print(std::ostream & os) const;
+  virtual void print(std::ostream &os) const;
 };
 
 /// Make Molecules printable
@@ -176,4 +176,4 @@ std::ostream &operator<<(std::ostream &, Molecule const &);
 
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULE_MOLECULE_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_

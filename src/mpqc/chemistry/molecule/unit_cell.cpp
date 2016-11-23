@@ -2,19 +2,16 @@
 
 #include <libint2/atom.h>
 
-#include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/molecule/atom_masses.h"
+#include "mpqc/chemistry/molecule/clustering_functions.h"
 #include "mpqc/chemistry/molecule/common.h"
-#include "clustering_functions.h"
+#include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/util/keyval/forcelink.h"
-
-
-MPQC_CLASS_EXPORT2("UnitCell", mpqc::UnitCell);
 
 namespace mpqc {
 UnitCell::UnitCell(const KeyVal &kv) : Molecule(kv) {
-  dcell_ = decltype(dcell_)(
-      kv.value<std::vector<double>>("lattice_param").data());
+  dcell_ =
+      decltype(dcell_)(kv.value<std::vector<double>>("lattice_param").data());
   const auto angstrom_to_bohr = 1 / 0.52917721092;  // 2010 CODATA value
   dcell_ *= angstrom_to_bohr;
 }
@@ -29,9 +26,9 @@ double UnitCell::nuclear_repulsion(Vector3i RJ_max) const {
 
         for (auto i = 0ul; i < atoms.size(); ++i) {
           for (auto j = 0ul; j < atoms.size(); ++j) {
-            if (nx == 0 && ny == 0 && nz == 0 && i == j)
+            if (nx == 0 && ny == 0 && nz == 0 && i == j) {
               enuc += 0.0;
-            else {
+            } else {
               auto r = (atoms[i].center() - atoms[j].center() + shift).norm();
               auto e_cell = 0.5 * atoms[i].charge() * atoms[j].charge() / r;
               enuc += e_cell;
@@ -62,4 +59,4 @@ void UnitCell::print(std::ostream &os) const {
   os << "\tLattice parameters (in Bohr): [" << dcell_.transpose() << "]"
      << std::endl;
 }
-}  // mpqc namespace
+}  // namespace mpqc

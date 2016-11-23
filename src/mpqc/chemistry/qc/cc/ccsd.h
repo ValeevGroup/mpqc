@@ -77,6 +77,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
       throw std::invalid_argument("Default Ref Wfn in CCSD is not support! \n");
     }
 
+    df_ = false;
     method_ = kv_.value<std::string>("method", "df");
     if (method_ == "df" || method_ == "direct") {
       df_ = true;
@@ -1458,7 +1459,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
   /// <ia|jb>
   const TArray get_iajb() {
-    if (df_) {
+    if (df_){
       return this->lcao_factory().compute(L"<i a|G|j b>[df]");
     } else {
       return this->lcao_factory().compute(L"<i a|G|j b>");

@@ -6,6 +6,7 @@
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/misc/assert.h"
+#include "mpqc/chemistry/units/units.h"
 
 #include <libint2/atom.h>
 
@@ -122,7 +123,9 @@ Molecule::Molecule(std::istream &file_stream, Vector3d const &point) {
 Molecule::~Molecule() = default;
 
 void Molecule::init(std::istream &file, bool sort_input) {
-  auto libint_atoms = libint2::read_dotxyz(file);
+  auto unit_factory = UnitFactory::get_default();
+  auto bohr_to_angstrom = unit_factory->make_unit("angstrom").from_atomic_units();
+  auto libint_atoms = libint2::read_dotxyz(file, bohr_to_angstrom);
 
   using ABCbl = AtomBasedClusterable;
   std::vector<ABCbl> atoms;
@@ -144,7 +147,9 @@ void Molecule::init(std::istream &file, bool sort_input) {
 }
 
 void Molecule::init(std::istream &file, Vector3d const &point) {
-  auto libint_atoms = libint2::read_dotxyz(file);
+  auto unit_factory = UnitFactory::get_default();
+  auto bohr_to_angstrom = unit_factory->make_unit("angstrom").from_atomic_units();
+  auto libint_atoms = libint2::read_dotxyz(file, bohr_to_angstrom);
 
   using ABCbl = AtomBasedClusterable;
   std::vector<ABCbl> atoms;

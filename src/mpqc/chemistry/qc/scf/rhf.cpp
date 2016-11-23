@@ -68,7 +68,7 @@ void RHF::init(const KeyVal& kv) {
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else if (density_builder == "eigen_solve") {
     std::string decompo_type =
-        kv.value<std::string>("decompo_type", "cholesky inverse");
+        kv.value<std::string>("decompo_type", "conditioned");
     auto density_builder = scf::ESolveDensityBuilder(
         S_, r_xyz, occ, n_cluster, t_cut_c, decompo_type, localize);
     d_builder_ =

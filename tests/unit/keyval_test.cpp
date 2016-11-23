@@ -8,6 +8,8 @@
 #include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/chemistry/molecule/linkage.h"
 
+extern madness::World* world_ptr;
+
 using std::vector;
 using std::array;
 using std::string;
@@ -259,7 +261,7 @@ TEST_CASE("KeyVal", "[keyval]") {
 
   SECTION("Basis Test"){
 
-    auto& world = madness::World::get_default();
+    auto& world = TiledArray::get_default_world();
     std::string filename = "keyval_test.json";
 
     std::stringstream ss;

@@ -41,13 +41,6 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   RowMatrixXd F_eig = array_ops::array_to_eigen(F);
   RowMatrixXd S_eig = array_ops::array_to_eigen(S);
 
-  // check the condition number in Overlap
-  Eigen::SelfAdjointEigenSolver<RowMatrixXd> S_es(S_eig);
-  // eigen value in increasing order
-  auto cond =
-      S_es.eigenvalues()(S_es.eigenvalues().size() - 1) / S_es.eigenvalues()(0);
-  utility::print_par(world, "Condition Number in Overlap: ", cond, "\n");
-
   // solve mo coefficients
   Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
 

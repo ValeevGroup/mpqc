@@ -1,10 +1,8 @@
 #define CATCH_CONFIG_RUNNER
 
 #include <clocale>
-#include <madness/world/world.h>
+#include <tiledarray.h>
 #include "catch.hpp"
-
-madness::World* default_world = nullptr;
 
 int main( int argc, char* argv[] )
 {
@@ -12,7 +10,8 @@ int main( int argc, char* argv[] )
   // global setup...
   std::setlocale(LC_ALL,"en_US.UTF-8");
 
-  default_world = &madness::initialize(argc, argv);
+  auto& world = madness::initialize(argc, argv);
+  TiledArray::set_default_world(world);
 
   int result = session.run( argc, argv );
 

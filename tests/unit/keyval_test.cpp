@@ -261,6 +261,7 @@ TEST_CASE("KeyVal", "[keyval]") {
 
   SECTION("Basis Test"){
 
+    auto& world = TiledArray::get_default_world();
     std::string filename = "keyval_test.json";
 
     std::stringstream ss;

@@ -1,7 +1,7 @@
-#ifndef MPQC_PERIODIC_AO_FACTORY_H
-#define MPQC_PERIODIC_AO_FACTORY_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
 
-#include "ao_factory_base.h"
+#include "mpqc/chemistry/qc/integrals/ao_factory_base.h"
 
 #include <iosfwd>
 #include <vector>
@@ -12,6 +12,7 @@
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/time.h"
+#include "mpqc/chemistry/units/units.h"
 
 #include <unsupported/Eigen/MatrixFunctions>
 
@@ -22,7 +23,6 @@ typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> Vectorc;
 
 // constant
 const std::complex<double> I(0.0, 1.0);
-const auto angstrom_to_bohr = 1 / 0.52917721092;  // 2010 CODATA value
 
 namespace mpqc {
 namespace integrals {
@@ -53,7 +53,7 @@ std::shared_ptr<PeriodicAOFactory<Tile, Policy>> construct_periodic_ao_factory(
 }  // end of namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
+class PeriodicAOFactory : public DescribedClass {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using Op = std::function<Tile(TA::TensorZ &&)>;
@@ -69,21 +69,20 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
    *
    */
   PeriodicAOFactory(const KeyVal &kv)
-      : AOFactoryBase(kv), ao_formula_registry_(), orbital_space_registry_() {
+      : world_(*kv.value<madness::World*>("$:world")) {
+    ao_factory_base_ = std::make_shared<AOFactoryBase>(AOFactoryBase(kv));
+
     std::string prefix = "";
-    if (kv.exists("wfn_wolrd") || kv.exists_class("wfn_world"))
+    if (kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
 
     std::string molecule_type = kv.value<std::string>(prefix + "molecule:type");
     if (molecule_type != "UnitCell") {
-      throw std::invalid_argument("Moleule Type Has To be UnitCell!!");
+      throw std::invalid_argument("molecule:type has to be UnitCell in order to run PHF!!");
     }
 
-    dcell_ = decltype(dcell_)(
-        kv.value<std::vector<double>>(prefix + "molecule:lattice_param")
-            .data());
-    const auto angstrom_to_bohr = 1 / 0.52917721092;  // 2010 CODATA value
-    dcell_ *= angstrom_to_bohr;
+    unitcell_ = kv.keyval(prefix + "molecule").class_ptr<UnitCell>();
+    dcell_ = unitcell_->dcell();
 
     R_max_ = decltype(R_max_)(
         kv.value<std::vector<int>>(prefix + "molecule:rmax").data());
@@ -160,8 +159,25 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
 
   /// Return crystal orbital coefficients
   TArray C();
-  /// Return crystal orbital epsilons
+  /// Return crystal orbital energies
   std::vector<Vectorc> eps() { return eps_; }
+  /// @return MADNESS world
+  madness::World &world() { return world_; }
+  /// @return AOFactoryBase
+  std::shared_ptr<AOFactoryBase> ao_factory_base() {return ao_factory_base_;}
+  /// set OrbitalBasisRegistry
+  void set_orbital_basis_registry(
+      const std::shared_ptr<basis::OrbitalBasisRegistry> &obs) {
+    ao_factory_base_->set_orbital_basis_registry(obs);
+  }
+  /// @return the OrbitalBasisRegistry object
+  const basis::OrbitalBasisRegistry &orbital_basis_registry() const {
+    return ao_factory_base_->orbital_basis_registry();
+  }
+
+  basis::OrbitalBasisRegistry &orbital_basis_registry() {
+    return ao_factory_base_->orbital_basis_registry();
+  }
 
   /// shift center of {basis} by {shift} and return a new basis
   std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
@@ -198,7 +214,7 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
   void parse_one_body_periodic(
       const Formula &formula,
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-      Molecule &shifted_mol);
+      const Molecule &shifted_mol);
 
   /// parse two body formula and set engine_pool and basis array for periodic
   /// system
@@ -212,11 +228,11 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
 
   /// shift positions of all atoms in {mol} by {shift}, and return a shifted
   /// molecule
-  std::shared_ptr<Molecule> shift_mol_origin(Molecule &mol, Vector3d shift);
+  std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol, Vector3d shift);
 
   libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
                                           const AOFactoryBase &base,
-                                          Molecule &mol);
+                                          const Molecule &mol);
 
   template <typename E>
   TA::DistArray<Tile, TA::SparsePolicy> sparse_complex_integrals(
@@ -243,8 +259,10 @@ class PeriodicAOFactory : public AOFactoryBase, public DescribedClass {
   Vector3d k_vector(int64_t idx_k);
 
  private:
-  FormulaRegistry<TArray> ao_formula_registry_;
-  std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
+  std::shared_ptr<UnitCell> unitcell_;
+  std::shared_ptr<AOFactoryBase> ao_factory_base_;
+  madness::World &world_;
+
   Op op_;
 
   TArray D_;  // Density
@@ -291,18 +309,18 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     auto time0 = mpqc::now(world_, false);
     if (formula.oper().type() == Operator::Type::Kinetic ||
         formula.oper().type() == Operator::Type::Overlap) {
-      parse_one_body_periodic(formula, engine_pool, bs_array, *mol_);
-      result = compute_integrals(this->world_, engine_pool, bs_array);
+      parse_one_body_periodic(formula, engine_pool, bs_array, ao_factory_base_->molecule());
+      result = compute_integrals(world_, engine_pool, bs_array);
     } else if (formula.oper().type() == Operator::Type::Nuclear) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         auto shift_mol = R_vector(RJ, RJ_max_);
-        auto shifted_mol = shift_mol_origin(*mol_, shift_mol);
+        auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
         parse_one_body_periodic(formula, engine_pool, bs_array, *shifted_mol);
         if (RJ == 0)
-          result = compute_integrals(this->world_, engine_pool, bs_array);
+          result = compute_integrals(world_, engine_pool, bs_array);
         else
           result("mu, nu") +=
-              compute_integrals(this->world_, engine_pool, bs_array)("mu, nu");
+              compute_integrals(world_, engine_pool, bs_array)("mu, nu");
       }
     } else
       throw std::runtime_error("Rank-2 operator type not supported");
@@ -335,7 +353,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
         parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
 
         auto time_g0 = mpqc::now(world_, false);
-        auto J = compute_integrals(this->world_, engine_pool, bs_array);
+        auto J = compute_integrals(world_, engine_pool, bs_array);
         auto time_g1 = mpqc::now(world_, false);
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
@@ -360,7 +378,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
         parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ,
                                 false);
         auto time_g0 = mpqc::now(world_, false);
-        auto K = compute_integrals(this->world_, engine_pool, bs_array);
+        auto K = compute_integrals(world_, engine_pool, bs_array);
         auto time_g1 = mpqc::now(world_, false);
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
@@ -395,10 +413,9 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 }
 
 template <typename Tile, typename Policy>
-void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
-    const Formula &formula,
+void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
-    Molecule &shifted_mol) {
+    const Molecule &shifted_mol) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -411,8 +428,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
   TA_ASSERT(bra_index.is_ao());
   TA_ASSERT(ket_index.is_ao());
 
-  auto bra_basis = this->index_to_basis(bra_index);
-  auto ket_basis = this->index_to_basis(ket_index);
+  auto bra_basis = ao_factory_base_->index_to_basis(bra_index);
+  auto ket_basis = ao_factory_base_->index_to_basis(ket_index);
 
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
@@ -427,7 +444,7 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
   engine_pool = integrals::make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
-      to_libint2_operator_params(oper_type, *this, shifted_mol));
+      to_libint2_operator_params(oper_type, *ao_factory_base_, shifted_mol));
 }
 
 template <typename Tile, typename Policy>
@@ -451,10 +468,10 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
   TA_ASSERT(ket_index0.is_ao());
   TA_ASSERT(ket_index1.is_ao());
 
-  auto bra_basis0 = this->index_to_basis(bra_index0);
-  auto bra_basis1 = this->index_to_basis(bra_index1);
-  auto ket_basis0 = this->index_to_basis(ket_index0);
-  auto ket_basis1 = this->index_to_basis(ket_index1);
+  auto bra_basis0 = ao_factory_base_->index_to_basis(bra_index0);
+  auto bra_basis1 = ao_factory_base_->index_to_basis(bra_index1);
+  auto ket_basis0 = ao_factory_base_->index_to_basis(ket_index0);
+  auto ket_basis1 = ao_factory_base_->index_to_basis(ket_index1);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(bra_basis1 != nullptr);
@@ -483,7 +500,7 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
       libint2::BraKet::xx_xx,
-      to_libint2_operator_params(oper_type, *this, *mol_));
+      to_libint2_operator_params(oper_type, *ao_factory_base_, *unitcell_));
 }
 
 template <typename Tile, typename Policy>
@@ -614,7 +631,7 @@ TA::TiledRange1 PeriodicAOFactory<Tile, Policy>::extend_trange1(
 
 template <typename Tile, typename Policy>
 std::shared_ptr<Molecule> PeriodicAOFactory<Tile, Policy>::shift_mol_origin(
-    Molecule &mol, Vector3d shift) {
+    const Molecule &mol, Vector3d shift) {
   std::vector<AtomBasedClusterable> vec_of_clusters;
   for (auto &cluster : mol) {
     AtomBasedCluster shifted_cluster;
@@ -633,8 +650,7 @@ std::shared_ptr<Molecule> PeriodicAOFactory<Tile, Policy>::shift_mol_origin(
 }
 
 template <typename Tile, typename Policy>
-libint2::any PeriodicAOFactory<Tile, Policy>::to_libint2_operator_params(
-    Operator::Type mpqc_oper, const AOFactoryBase &base, Molecule &mol) {
+libint2::any PeriodicAOFactory<Tile, Policy>::to_libint2_operator_params(Operator::Type mpqc_oper, const AOFactoryBase &base, const Molecule &mol) {
   TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
                   mpqc_oper <= Operator::Type::__last_1body_operator) ||
                      (Operator::Type::__first_2body_operator <= mpqc_oper &&
@@ -995,6 +1011,6 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-}  // integrals namespace
-}  // mpqc namespace
-#endif  // MPQC_PERIODIC_AO_FACTORY_H
+}  // namespace integrals
+}  // namespace mpqc
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_

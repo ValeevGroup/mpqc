@@ -7,12 +7,15 @@
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/util/keyval/forcelink.h"
+#include "mpqc/chemistry/units/units.h"
 
 namespace mpqc {
 UnitCell::UnitCell(const KeyVal &kv) : Molecule(kv) {
   dcell_ =
       decltype(dcell_)(kv.value<std::vector<double>>("lattice_param").data());
-  const auto angstrom_to_bohr = 1 / 0.52917721092;  // 2010 CODATA value
+
+  auto unit_factory = UnitFactory::get_default();
+  auto angstrom_to_bohr = unit_factory->make_unit("angstrom").to_atomic_units();
   dcell_ *= angstrom_to_bohr;
 }
 

@@ -156,10 +156,10 @@ bool PHF::solve() {
                   nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
       if (world.rank() == 0) {
         if (iter == 1)
-          printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
+          std::cout << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
                  nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
                  nT.c_str());
-        printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ephf,
+        std::cout << mpqc::printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ephf,
                ephf + repulsion_, ediff, rms, iter_duration);
       }
     }
@@ -179,7 +179,7 @@ bool PHF::solve() {
     if (world.rank() == 0) {
       std::cout << "\nPeriodic Hartree-Fock iterations have converged!"
                 << std::endl;
-      printf("\nTotal Periodic Hartree-Fock energy = %20.12f\n", energy_);
+      std::cout << "\nTotal Periodic Hartree-Fock energy = " << energy_ << std::endl;
 
       if (print_detail_) {
           auto orb_e = pao_factory_.eps();
@@ -191,13 +191,13 @@ bool PHF::solve() {
       }
 
       // print out timings
-      printf("\nTime(s):\n");
-      printf("\tInit:                %20.3f\n", init_duration_);
-      printf("\tCoulomb term:        %20.3f\n", j_duration_);
-      printf("\tExchange term:       %20.3f\n", k_duration_);
-      printf("\tReal->Recip trans:   %20.3f\n", trans_duration_);
-      printf("\tDiag + Density:      %20.3f\n", d_duration_);
-      printf("\tTotal:               %20.3f\n\n", scf_duration_);
+      std::cout << mpqc::printf("\nTime(s):\n");
+      std::cout << mpqc::printf("\tInit:                %20.3f\n", init_duration_);
+      std::cout << mpqc::printf("\tCoulomb term:        %20.3f\n", j_duration_);
+      std::cout << mpqc::printf("\tExchange term:       %20.3f\n", k_duration_);
+      std::cout << mpqc::printf("\tReal->Recip trans:   %20.3f\n", trans_duration_);
+      std::cout << mpqc::printf("\tDiag + Density:      %20.3f\n", d_duration_);
+      std::cout << mpqc::printf("\tTotal:               %20.3f\n\n", scf_duration_);
     }
     return true;
   }

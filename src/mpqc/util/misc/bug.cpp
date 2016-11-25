@@ -89,8 +89,8 @@ Debugger::Debugger(const KeyVal &keyval) {
   wait_for_debugger_ = keyval.value<bool>("wait_for_debugger", true);
   cmd_ = keyval.value<std::string>("cmd");
   if (cmd_.empty()) default_cmd();
-  prefix_ = keyval.value<std::string>("prefix");
-  handle_sigint_ = keyval.value<bool>("handle_sigint", true);
+  prefix_ = keyval.value<std::string>("prefix", std::string());
+  handle_sigint_ = keyval.value<bool>("handle_sigint", false);
   if (keyval.value<bool>("handle_defaults", true)) handle_defaults();
 }
 

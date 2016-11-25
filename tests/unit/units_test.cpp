@@ -11,15 +11,17 @@ TEST_CASE("Units", "[units]") {
   SECTION("UnitsFactory ctors") {
     using mpqc::UnitFactory;
     REQUIRE_NOTHROW(UnitFactory ufac("CODATA2014"));
+    REQUIRE_NOTHROW(UnitFactory ufac("2014CODATA"));
     REQUIRE_NOTHROW(UnitFactory ufac("CODATA2010"));
+    REQUIRE_NOTHROW(UnitFactory ufac("2010CODATA"));
     REQUIRE_NOTHROW(UnitFactory ufac("MPQC2"));
   }
   SECTION("UnitsFactory singleton") {
     using mpqc::UnitFactory;
     REQUIRE_NOTHROW(UnitFactory::get_default());
-    std::shared_ptr<UnitFactory> ufac = std::make_shared<UnitFactory>("MPQC2");
-    REQUIRE_NOTHROW(UnitFactory::set_default(ufac));
-    REQUIRE(UnitFactory::get_default() == ufac);
+    REQUIRE(UnitFactory::get_default()->system() == "2014CODATA");
+    REQUIRE_NOTHROW(UnitFactory::set_default("MPQC2"));
+    REQUIRE(UnitFactory::get_default()->system() == "MPQC2");
   }
   SECTION("simple units") {
     using mpqc::UnitFactory;

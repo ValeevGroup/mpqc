@@ -1,0 +1,45 @@
+
+namespace mpqc {
+
+/** \page units The Units Library
+
+\section Motivation
+
+Usually all electronic structure computations use atomic units for simplicity.
+The Units library supports precise and consistent use of quantities expressed in terms of
+units other than the atomic units. For example, atomic positions are typically specified
+in terms of angstroms. Conversion between angstroms and the atomic units of length (bohr)
+depends on the values of fundamental physical constants.
+Since the values of these constants are periodically revised, it is necessary
+to ensure that the values of fundamental constants can be easily updated
+and that the computational results obtained with the current values of
+the fundamental constants can be reproduced in the future. In other words,
+the user in 2026 should be able to say "perform a computation using the 2014 CODATA
+physical constants" and reproduce the output generated in 2016. The Units library makes
+this easy.
+
+\section Synopsis
+
+\code
+#include "mpqc/chemistry/units/units.h"
+
+int main() {
+  using namespace mpqc;
+  UnitFactory::set_default("2010CODATA");  // will use the 2010 CODATA revision of the physical constants
+
+  // simple unit conversion
+  Unit ang = UnitFactory::get_default()->make_unit("angstrom");  
+  std::cout << "1 angstrom = " << ang->to_atomic_units() << " bohr" < std::endl;
+  std::cout << "1 bohr = " << ang->from_atomic_units() << " angstrom" < std::endl;
+
+  // composite unit conversion
+  Unit m_p_s2 = UnitFactory::get_default()->make_unit("m / s * s");  
+  std::cout << "1 m/s^2 = " << m_p_s2->to_atomic_units() << " a.u. of acceleration" < std::endl;
+  std::cout << "1 a.u. of acceleration = " << m_p_s2->from_atomic_units() << " m/s^2" < std::endl;
+}
+
+\endcode
+
+*/
+
+}  // namespace mpqc

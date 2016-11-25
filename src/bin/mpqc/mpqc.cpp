@@ -13,6 +13,7 @@
 
 #include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
+#include "mpqc/chemistry/units/units.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/assert.h"
 #include "mpqc/util/misc/exception.h"
@@ -82,8 +83,29 @@ int try_main(int argc, char *argv[], madness::World& world) {
     kv->assign("file_prefix", *prefix_opt);
   }
 
+  // configure the units system
+  auto units_opt = options->retrieve("u");
+  std::string units_str;
+  if (units_opt) {
+    units_str = *units_opt;
+  }
+  else {
+    if (kv->exists("units")) {
+      units_str = kv->value<std::string>("units");
+    }
+  }
+  if (!units_str.empty()) UnitFactory::set_default(units_str);
+
   // announce ourselves
   announce();
+
+  //////////////////////////////
+  // print computation metadata
+  //////////////////////////////
+
+  // units
+  ExEnv::out0() << indent << "Using fundamental constants system "
+                << UnitFactory::get_default()->system() << std::endl;
 
   // run
   MPQCTask task(world, kv);

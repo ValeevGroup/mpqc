@@ -192,6 +192,7 @@ std::shared_ptr<GetLongOpt> make_options() {
   options->enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
   options->enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
                  ".");
+  options->enroll("u", GetLongOpt::MandatoryValue, "the units system");
   //options->enroll("c", GetLongOpt::NoValue, "check input then exit");
   options->enroll("v", GetLongOpt::NoValue, "print the version number");
   options->enroll("w", GetLongOpt::NoValue, "print the warranty");

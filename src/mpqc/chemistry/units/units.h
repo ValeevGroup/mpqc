@@ -87,7 +87,7 @@ struct mpqc2 {
   static constexpr real_t Avogadro_constant = 6.0221367e23;    // mol^-1
   static constexpr real_t Planck_constant = 6.6260755e-34;     // J s
   // non-CODATA1986
-  static constexpr real_t atomic_mass_unit = 1.6605655e-27;  // kg
+  static constexpr real_t atomic_mass_unit = 1.6605655e-27;    // kg
   // auxiliary conversion explicitly typed in MPQC (not consistent with
   // the above CODATA1986 units)
   static constexpr real_t Hartree_to_electron_volt = 27.2113834;
@@ -112,14 +112,19 @@ struct FundamentalConstants
 
 class UnitFactory;
 
-/// The Unit class is used to perform unit conversions.
+/// \brief The Unit class is used to perform unit conversions.
+/// \note Unit conversion factors depend on the fundamental physical constants,
+/// hence each Unit object refers to a particular constants system.
+/// To ensure consistent use of Unit objects they can only be created using
+/// an object of UnitFactory class.
+/// \sa UnitFactory
 class Unit {
  public:
   ~Unit() = default;
 
-  /// The conversion factor from this to u.
+  /// The conversion factor from this to \c u .
   double to(const Unit& u) const;
-  /// The conversion factor from u to this.
+  /// The conversion factor from \c u to this.
   double from(const Unit& u) const;
 
   /// The conversion factor from this to the corresponding atomic unit.
@@ -144,28 +149,55 @@ class Unit {
 
 inline std::string to_string(const Unit& unit) { return unit.strrep_; }
 
+/// UnitFactory produces Unit objects that refer to a particular system of
+/// fundamental constants.
+
+/// UnitFactory is a helper class to ensure that all unit conversions are consistent,
+/// i.e. refer to the same system of fundamental constants. Since fundamental constants
+/// are updated every few years, it is mandatory to use UnitFactory to produce Unit objects,
+/// rather than create them directly. Since typically only 1 UnitFactory needs to be used
+/// in the entire program, the UnitFactory should be used as a singleton:
+/// \code
+/// int main() {
+///   UnitFactory::set_default("CODATA2010");  // set the 2010 CODATA revision as default
+///   ...
+///   auto angstrom = UnitFactory::get_default().make_unit("angstrom");
+///
+/// }
+/// \endcode
 class UnitFactory {
  public:
-  UnitFactory(std::string version);
+  /// Creates a UnitFactory object corresponding to the given fundamental constants
+  /// system.
+  /// \param system specifies the fundamental constants system, the allowed values are:
+  ///    - "2014CODATA" : the 2014 revision of the fundamental constants (see DOI 10.1103/RevModPhys.88.035009 )
+  ///    - "2010CODATA" : the 2010 revision of the fundamental constants (see DOI 10.1103/RevModPhys.84.1527 )
+  ///    - "MPQC2" : the values of constants used by MPQC version 2.3
+  ///    The default is currently "2014CODATA", and may be revised in the future.
+  UnitFactory(std::string system);
 
-  Unit make_unit(const std::string& unit_str) {
-    return Unit(unit_str, constants_);
-  }
+  ~UnitFactory() = default;
 
-  static std::shared_ptr<UnitFactory> get_default() {
-    return instance();
-  }
-  static void set_default(const std::shared_ptr<UnitFactory>& factory) {
-    instance() = factory;
-  }
+  /// \return the name of the fundamental constants system
+  const std::string& system() const { return system_; }
+
+  /// makes a Unit object from a given string specification, using the system
+  /// of fundamental constants specified by this factory.
+  /// \param unit_str the string specification of the desired Unit. See \ref units section.
+  /// \return the Unit object
+  Unit make_unit(const std::string& unit_str) const;
+
+  /// \return the singleton UnitFactory object (default initialized with 2014CODATA fundamental constants)
+  static std::shared_ptr<const UnitFactory> get_default();
+  /// sets the singleton UnitFactory object
+  /// \param system specifies the fundamental constants system
+  static void set_default(const std::string& system);
 
  private:
+  std::string system_;
   std::shared_ptr<detail::FundamentalConstants<double>> constants_;
 
-  static std::shared_ptr<UnitFactory>& instance() {
-    static std::shared_ptr<UnitFactory> instance_ = std::make_shared<UnitFactory>("CODATA2014");
-    return instance_;
-  }
+  static std::shared_ptr<const UnitFactory>& instance();
 
 };
 

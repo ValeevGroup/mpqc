@@ -3,7 +3,7 @@
 #include "mpqc/util/misc/time.h"
 #include <madness/world/worldmem.h>
 
-#include "mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp"
+#include "mpqc/chemistry/qc/scf/diagonalize_for_coeffs.h"
 
 namespace mpqc {
 namespace scf {

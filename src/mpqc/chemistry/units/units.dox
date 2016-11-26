@@ -1,0 +1,55 @@
+
+namespace mpqc {
+
+/** \page units The Units Library
+
+\section Motivation
+
+Usually all electronic structure computations use atomic units for simplicity.
+The Units library supports precise and consistent use of quantities expressed in terms of
+units other than the atomic units. For example, atomic positions are typically specified
+in terms of angstroms. Conversion between angstroms and the atomic units of length (bohr)
+depends on the values of fundamental physical constants.
+Since the values of these constants are periodically revised, it is necessary
+to ensure that the values of fundamental constants can be easily updated
+and that the computational results obtained with the current values of
+the fundamental constants can be reproduced in the future. In other words,
+the user in 2026 should be able to say "perform a computation using the 2014 CODATA
+physical constants" and reproduce the output generated in 2016. The Units library makes
+this easy.
+
+\section Synopsis
+
+\code
+#include "mpqc/chemistry/units/units.h"
+...
+\endcode
+\snippet units_test.cpp The Units library snippet
+
+\section units_using Using the library
+
+To use the library follow these steps.
+  - #include the \c mpqc/chemistry/units/units.h header.
+  - Create a UnitFactory object for the desired fundamental constants system. It makes sense to 
+    use UnitFactory as a singleton object so that every piece of code in your program uses
+    the same fundamental constants. If you are happy with the default choice (currently,
+    it is <a href="http://physics.nist.gov/cuu/Constants/article2014.html">the 2014 CODATA revision</a>),
+    access the default UnitFactory object via the UnitFactory::get_default() static method.
+    It is recommended that you set the default UnitFactory explicitly by calling the
+    UnitFactory::set_default() static method (see UnitFactory::UnitFactory() ctor
+    documentation for the list of recognized arguments to the set_default method).
+  - Use the UnitFactory::make_unit() method to create a Unit object for the desired unit.
+    The method accepts a std::string describing the unit, which can be a simple or a composite
+    unit (see Unit::Unit() documentation for the description). 
+  - Use the Unit object to determine the conversion factors between the unit and the corresponding
+    unit in the atomic units system.
+
+Since it is guaranteed that the definitions of the physical constants will change 
+periodically, it is recommened that for the sake of reproducibility reference computations
+should specify the units explicitly. For example, all MPQC reference inputs
+used to validate the package must specify the desired fundamental constants system
+via the \c "units" keyword (see \ref mpqcinp for more information).
+
+*/
+
+}  // namespace mpqc

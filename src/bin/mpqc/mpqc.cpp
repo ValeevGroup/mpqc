@@ -6,7 +6,7 @@
 #include <libint2.hpp>
 #include <tiledarray.h>
 
-#include "mpqc_task.h"
+#include "mpqc/mpqc_task.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
@@ -26,7 +26,7 @@
 #include "mpqc/chemistry/qc/cc/linkage.h"
 #include "mpqc/chemistry/qc/mbpt/linkage.h"
 #include "mpqc/chemistry/qc/scf/linkage.h"
-#include "mpqc_init.h"
+#include "mpqc/mpqc_init.h"
 
 namespace mpqc {
 

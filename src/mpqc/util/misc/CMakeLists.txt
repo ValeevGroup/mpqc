@@ -12,7 +12,6 @@ set(sources
   print.h
   string.h
   time.h
-  type_traits.h
 )
 
 add_library(MPQCutil_misc ${sources})

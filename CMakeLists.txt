@@ -20,7 +20,29 @@ set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 ###############################################################################
 # Load up extra CMake packages
 ###############################################################################
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules/")
 include(FeatureSummary)
+include(GNUInstallDirs)
+include(AddMPQCLibrary)
+include(CMakePackageConfigHelpers)
+include(AppendFlags)
+#include(cotire)
+
+# Set install paths ============================================================
+
+set(MPQC_INSTALL_BINDIR "bin" 
+    CACHE PATH "MPQC binary install directory")
+set(MPQC_INSTALL_INCLUDEDIR "include" 
+    CACHE PATH "MPQC INCLUDE install directory")
+set(MPQC_INSTALL_LIBDIR "lib"
+    CACHE PATH "MPQC LIB install directory")
+set(MPQC_INSTALL_DATADIR "share/mpqc/${MPQC_VERSION}/data"
+    CACHE PATH "MPQC DATA install directory")
+# TODO this matches Automake value, should be adjusted to the convention: share/mpqc/${MPQC_VERSION}/doc
+set(MPQC_INSTALL_DOCDIR "share/doc/mpqc"
+    CACHE PATH "MPQC DOC install directory")
+set(MPQC_INSTALL_CMAKEDIR "lib/cmake/mpqc"
+    CACHE PATH "MPQC CMAKE install directory")
 
 ###############################################################################
 # Options
@@ -34,6 +56,28 @@ else()
 endif()
 if (NOT DEFINED MPQC_ASSERT_MODE)
   set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
+endif()
+
+##########################
+# Standard build variables
+##########################
+
+# Get standard build variables from the environment if they have not already been set
+if(NOT CMAKE_C_FLAGS OR NOT DEFINED CMAKE_C_FLAGS)
+  set(CMAKE_C_FLAGS "$ENV{CPPFLAGS}")
+  append_flags(CMAKE_C_FLAGS "$ENV{CFLAGS}")
+endif()
+if(NOT CMAKE_CXX_FLAGS OR NOT DEFINED CMAKE_CXX_FLAGS)
+  set(CMAKE_CXX_FLAGS "$ENV{CPPFLAGS}")
+  append_flags(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS}")
+endif()
+if(NOT CMAKE_EXE_LINKER_FLAGS OR NOT DEFINED CMAKE_EXE_LINKER_FLAGS)
+  set(CMAKE_EXE_LINKER_FLAGS "$ENV{LDFLAGS}")
+endif()
+
+enable_language (CXX)
+if (NOT CMAKE_CXX_COMPILER)
+  message(FATAL_ERROR "C++ compiler not found")
 endif()
 
 ###############################################################################
@@ -58,9 +102,6 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   set(CMAKE_FIND_APPBUNDLE LAST)
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-                      "${PROJECT_SOURCE_DIR}/cmake/modules/")
-
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'RelWithDebInfo' as none was specified.")
@@ -76,6 +117,18 @@ endif()
 include(CheckCXXSourceCompiles)
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
+
+# Check compiler feature support ===============================================
+
+include(CheckCXX11Support)
+check_cxx11_support(COMPILER_HAS_CXX11_SUPPORT CXX11_COMPILE_FLAG)
+if(COMPILER_HAS_CXX11_SUPPORT)
+  if(CXX11_COMPILE_FLAG)
+    append_flags(CMAKE_CXX_FLAGS "${CXX11_COMPILE_FLAG}")
+  endif()
+else()
+  message(FATAL_ERROR "${CMAKE_CXX_COMPILER} does not support C++11.")
+endif()
 
 check_include_files(sys/types.h          HAVE_SYS_TYPES_H)
 check_include_files(sys/resource.h       HAVE_SYS_RESOURCE_H)
@@ -129,7 +182,6 @@ CHECK_FUNCTION_EXISTS (setrlimit         HAVE_SETRLIMIT)
 FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
 include(ValidateTiledArray)
 validate_tiledarray()
-set(TA_LIBRARIES tiledarray)
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
 
 FIND_PACKAGE(TBB REQUIRED)
@@ -145,13 +197,17 @@ INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 
 find_package(PythonInterp)
 
+# pass on some info to pkg-config
+list(APPEND MPQC_CONFIG_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${LIBINT2_INCLUDE_DIRS})
+list(APPEND MPQC_CONFIG_LIBRARIES ${Boost_LIBRARIES})
+list(APPEND MPQC_CONFIG_DEFINITIONS ${LIBINT2_EXTRA_DEFINITIONS})
+
 ###############################################################################
-# Declare LibMPQC
+# Descend into the source tree and build component libraries and MPQC exec
 ###############################################################################
 
 INCLUDE_DIRECTORIES(${MPQC_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${MPQC_BINARY_DIR}/src)
-
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/mpqc)
 
 MESSAGE(STATUS "Using CXX Flags ${CMAKE_CXX_FLAGS}")
@@ -171,14 +227,93 @@ ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/src/bin)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/doc)
 ADD_SUBDIRECTORY(${MPQC_SOURCE_DIR}/tests)
 
+##########################
+# pkg-config variables
+##########################
+foreach(_inc ${MPQC_CONFIG_INCLUDE_DIRS})
+  append_flags(MPQC_PC_CFLAGS "-I${_inc}")
+endforeach()
+foreach(_def ${MPQC_CONFIG_DEFINITIONS})
+  append_flags(MPQC_PC_CFLAGS "${_def}")
+endforeach()
+foreach(_lib ${MPQC_CONFIG_LIBRARIES})
+  append_flags(MPQC_PC_LIBS "${_lib}")
+endforeach()
+
+##########################
+# Get the git revision tag information
+##########################
+
+if(EXISTS ${PROJECT_SOURCE_DIR}/.git)
+  find_package(Git REQUIRED)
+  execute_process(
+      COMMAND ${GIT_EXECUTABLE} rev-parse -q HEAD
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      OUTPUT_VARIABLE MPQC_REVISION )
+  string(REGEX MATCH "[0-9a-f]*"
+      MPQC_REVISION "${MPQC_REVISION}")
+else()
+  set(MPQC_REVISION "${MPQC_REVISION}")
+endif()
+
 ###############################################################################
 # Wrap up
 ###############################################################################
+
+# Force cache refresh for compile flags
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" CACHE STRING "C compile flags" FORCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compile flags" FORCE)
 
 CONFIGURE_FILE(
   ${PROJECT_SOURCE_DIR}/src/mpqc/mpqc_config.h.in
   ${PROJECT_BINARY_DIR}/src/mpqc/mpqc_config.h
 )
+
+CONFIGURE_FILE(
+  ${PROJECT_SOURCE_DIR}/mpqc.pc.in
+  ${PROJECT_BINARY_DIR}/mpqc.pc
+)
+
+# sample CMakeLists.txt
+configure_file(
+  ${PROJECT_SOURCE_DIR}/doc/devsamp/CMakeLists.txt.sample.in
+  ${PROJECT_BINARY_DIR}/doc/devsamp/CMakeLists.txt.sample
+  @ONLY
+)
+
+# install config files
+install(FILES ${PROJECT_BINARY_DIR}/mpqc.pc
+    DESTINATION lib/pkgconfig)
+
+# Create the version file
+write_basic_package_version_file(mpqc-config-version.cmake
+  VERSION ${MPQC_VERSION} COMPATIBILITY AnyNewerVersion)
+
+# Create the targets file
+export(EXPORT mpqc
+  FILE "${PROJECT_BINARY_DIR}/mpqc-targets.cmake")
+
+# Create the configure file
+configure_package_config_file(cmake/mpqc-config.cmake.in
+    "${PROJECT_BINARY_DIR}/mpqc-config.cmake"
+  INSTALL_DESTINATION "${MPQC_INSTALL_CMAKEDIR}"
+  PATH_VARS CMAKE_INSTALL_PREFIX MPQC_INSTALL_BINDIR 
+            MPQC_INSTALL_INCLUDEDIR MPQC_INSTALL_LIBDIR
+            MPQC_INSTALL_DOCDIR MPQC_INSTALL_CMAKEDIR)
+
+# Install config, version, and target files
+install(EXPORT mpqc
+    FILE "mpqc-targets.cmake"
+    DESTINATION "${MPQC_INSTALL_CMAKEDIR}" 
+    COMPONENT mpqc-config)
+install(FILES
+    "${PROJECT_BINARY_DIR}/mpqc-config.cmake"
+    "${PROJECT_BINARY_DIR}/mpqc-config-version.cmake"
+    DESTINATION "${MPQC_INSTALL_CMAKEDIR}" 
+    COMPONENT mpqc-config)
+add_custom_target(install-config
+     COMMAND ${CMAKE_COMMAND} -DCOMPONENT=mpqc-config -P ${CMAKE_BINARY_DIR}/cmake_install.cmake
+     COMMENT "Installing MPQC config components")
 
 feature_summary(WHAT ALL
                 DESCRIPTION "=== MPQC Package/Feature Info ===")

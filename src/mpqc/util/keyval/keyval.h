@@ -57,8 +57,6 @@ struct customize_stream<Ch, Traits, E*, void> {
 }
 }  // namespace boost::property_tree
 
-#include "mpqc/util/misc/type_traits.h"
-
 namespace mpqc {
 
 class KeyVal;

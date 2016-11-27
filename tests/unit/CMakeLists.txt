@@ -20,7 +20,7 @@ set(utests_src
 
 set(executable unit_tests)
 add_executable(${executable} EXCLUDE_FROM_ALL test_main.cpp ${utests_src})
-target_link_libraries(${executable} ${TA_LIBRARIES} ${Boost_LIBRARIES} ${LIBINT2_LIBRARIES} MPQCbasis MPQCmolecule MPQCexpression MPQCutil_keyval MPQCutil_misc MPQCf12utility MPQCunits)
+target_link_libraries(${executable} MPQCmpqc)
 add_test(unit/build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${executable})
 set_property(SOURCE bug_test.cpp PROPERTY COMPILE_DEFINITIONS
              SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")

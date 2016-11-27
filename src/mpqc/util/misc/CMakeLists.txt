@@ -1,5 +1,4 @@
 set(sources
-  assert.h
   bug.cpp
   bug.h
   exception.cpp
@@ -14,5 +13,4 @@ set(sources
   time.h
 )
 
-add_library(MPQCutil_misc ${sources})
-target_link_libraries(MPQCutil_misc MADworld)
+add_mpqc_library(util_misc sources sources "MADworld;util_c++" "mpqc/util/misc")

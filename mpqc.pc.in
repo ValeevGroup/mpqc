@@ -1,0 +1,7 @@
+Name: MPQC
+Description: Massively Parallel Quantum Chemistry: parallel first-principles electronic structure
+Version: @MPQC_VERSION@
+URL: https://github.com/ValeevGroup/mpqc4
+Requires: tiledarray >= 0.6.0
+Cflags: -I@CMAKE_INSTALL_PREFIX@/include @CMAKE_CXX_FLAGS@ @MPQC_PC_CFLAGS@
+Libs: -L@CMAKE_INSTALL_PREFIX@/lib @CMAKE_EXE_LINKER_FLAGS@  @MPQC_PC_LIBS@

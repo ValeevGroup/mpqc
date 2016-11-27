@@ -1,6 +1,6 @@
 set(sources
-  GetLongOpt.cpp
-  GetLongOpt.h
-)
+    GetLongOpt.cpp
+    GetLongOpt.h
+   )
 
-add_library(MPQCutil_options ${sources})
+add_mpqc_library(util_options sources sources "" "mpqc/util/options")

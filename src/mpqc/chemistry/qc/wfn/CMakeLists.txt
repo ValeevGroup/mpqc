@@ -12,5 +12,4 @@ set(sources
     wfn_world.cpp
 )
 
-add_library(MPQCwfn ${sources})
-target_link_libraries(MPQCwfn ${TA_LIBRARIES} MPQCintegrals MPQCutil_keyval MPQCmolecule)
+add_mpqc_library(wfn sources sources "MPQCintegrals;MPQCutil_keyval;MPQCmolecule" "chemistry/qc/wfn")

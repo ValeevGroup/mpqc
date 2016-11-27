@@ -11,5 +11,4 @@ set(sources
         util.h
         )
 
-add_library(MPQCscf ${sources})
-target_link_libraries(MPQCscf MPQCwfn MPQCmath_ta MPQCmath_linalg MPQCmath_clr)
+add_mpqc_library(scf sources sources "MPQCwfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "chemistry/qc/scf")

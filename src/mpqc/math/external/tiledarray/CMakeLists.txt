@@ -4,5 +4,4 @@ set(sources
   tensor_store.h
 )
 
-add_library(MPQCmath_ta ${sources})
-target_link_libraries(MPQCmath_ta ${TA_LIBRARIES})
+add_mpqc_library(math_ta sources sources "tiledarray" "mpqc/math/external/tiledarray")

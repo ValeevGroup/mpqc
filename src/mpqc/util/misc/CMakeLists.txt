@@ -1,4 +1,5 @@
 set(sources
+  assert.h
   bug.cpp
   bug.h
   exception.cpp

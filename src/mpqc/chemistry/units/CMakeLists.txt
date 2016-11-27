@@ -3,4 +3,4 @@ set(sources
         units.cpp
 )
 
-add_mpqc_library(units sources sources "MPQCutil_misc" "chemistry/units")
+add_mpqc_library(units sources sources "MPQCutil_misc" "mpqc/chemistry/units")

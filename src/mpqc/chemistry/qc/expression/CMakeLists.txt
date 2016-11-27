@@ -14,4 +14,4 @@ set(sources
         permutation.cpp
         )
 
-add_mpqc_library(expression sources sources "MPQCmath_ta" "chemistry/qc/expression")
+add_mpqc_library(expression sources sources "MPQCmath_ta" "mpqc/chemistry/qc/expression")

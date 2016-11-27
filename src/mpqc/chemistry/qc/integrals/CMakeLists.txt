@@ -24,6 +24,6 @@ set(sources
         screening/qvl_shell_info.cpp
 )
 
-add_mpqc_library(integrals sources sources "MPQCexpression;MPQCbasis" "chemistry/qc/integrals")
-target_link_libraries(MPQCintegrals PUBLIC ${LIBINT2_LIBRARIES} ${TBB_LIBRARIES})
+add_mpqc_library(integrals sources sources "MPQCexpression;MPQCbasis" "mpqc/chemistry/qc/integrals")
+target_link_libraries(MPQCintegrals PUBLIC ${TBB_LIBRARIES})
 

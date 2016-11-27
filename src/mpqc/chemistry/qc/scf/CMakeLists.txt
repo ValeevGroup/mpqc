@@ -1,5 +1,6 @@
 set(sources
         linkage.cpp
+        linkage.h
         rhf.h
         rhf.cpp
         orbital_localization.h
@@ -11,4 +12,4 @@ set(sources
         util.h
         )
 
-add_mpqc_library(scf sources sources "MPQCwfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "chemistry/qc/scf")
+add_mpqc_library(scf sources sources "MPQCwfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "mpqc/chemistry/qc/scf")

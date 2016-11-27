@@ -22,4 +22,4 @@ molecule.cpp
 molecule.h
 )
 
-add_mpqc_library(molecule sources sources "MPQCutil_mad;MPQCunits" "chemistry/molecule")
+add_mpqc_library(molecule sources sources "MPQCutil_mad;MPQCunits" "mpqc/chemistry/molecule")

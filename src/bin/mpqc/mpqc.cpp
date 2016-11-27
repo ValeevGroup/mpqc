@@ -33,6 +33,7 @@ namespace mpqc {
 void announce() {
   const char title1[] = "MPQC4: Massively Parallel Quantum Chemistry (v4)";
   const char title2[] = "Version " MPQC_VERSION;
+  const char title3[] = "Revision " MPQC_REVISION;
   const auto target_width = 80;
   ExEnv::out0() << std::endl;
   ExEnv::out0() << indent;
@@ -42,7 +43,11 @@ void announce() {
   ExEnv::out0() << indent;
   for (auto i = 0; i < (target_width - sizeof(title2)) / 2; i++)
     ExEnv::out0() << ' ';
-  ExEnv::out0() << title2 << std::endl << std::endl;
+  ExEnv::out0() << title2 << std::endl;
+  ExEnv::out0() << indent;
+  for (auto i = 0; i < (target_width - sizeof(title3)) / 2; i++)
+    ExEnv::out0() << ' ';
+  ExEnv::out0() << title3 << std::endl << std::endl;
 }
 
 }  // namespace mpqc

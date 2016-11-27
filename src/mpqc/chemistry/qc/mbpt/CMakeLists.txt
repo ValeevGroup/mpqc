@@ -5,5 +5,4 @@ set(sources
         mp2.cpp
         )
 
-add_library(MPQCmbpt ${sources})
-target_link_libraries(MPQCmbpt MPQCscf)
+add_mpqc_library(mbpt sources sources "MPQCscf" "chemistry/qc/mbpt")

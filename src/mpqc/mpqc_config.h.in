@@ -7,6 +7,11 @@
 /* The target architecture. */
 #cmakedefine TARGET_ARCH "@TARGET_ARCH@"
 
+#define MPQC_PACKAGE_URL "https://github.com/ValeevGroup/mpqc4"
+
+/* Defines a string with the Git SHA1 revision hash tag of MPQC */
+#define MPQC_REVISION "@MPQC_REVISION@"
+
 /* The version number. */
 #define MPQC_VERSION "@MPQC_VERSION@"
 

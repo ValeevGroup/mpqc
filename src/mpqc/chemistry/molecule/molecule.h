@@ -146,7 +146,7 @@ class Molecule : public DescribedClass {
   int64_t core_electrons() const;
 
   /// Returns the nuclear repulsion energy of the Molecule.
-  virtual double nuclear_repulsion() const;
+  double nuclear_repulsion() const;
 
   /*! \brief A vector of all atoms in the Molecule
    *

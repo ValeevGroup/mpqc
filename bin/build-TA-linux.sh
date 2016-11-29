@@ -23,8 +23,8 @@ export LD_LIBRARY_PATH=/usr/lib/lapack:/usr/lib/libblas:$LD_LIBRARY_PATH
 
 # Configure TiledArray
 
-mkdir -p _build
-cd _build
+mkdir -p /home/travis/build/ValeevGroup/_build
+cd  /home/travis/build/ValeevGroup/_build
 
 mkdir -p TA
 cd TA
@@ -32,7 +32,7 @@ cd TA
 git clone https://github.com/ValeevGroup/tiledarray.git ta_src
 
 cmake ta_src \
-      -DCMAKE_INSTALL_PREFIX=../../_install/TA \
+      -DCMAKE_INSTALL_PREFIX=/home/travis/build/ValeevGroup/_install/TA \
       -DCMAKE_CXX_COMPILER=$CXX \
       -DCMAKE_C_COMPILER=$CC \
       -DMPI_CXX_COMPILER=$MPICXX \

@@ -29,8 +29,8 @@ ls
 pwd
 
 # Make install directory for MPQC dependencies 
-mkdir -p _build
-mkdir -p _install
+mkdir -p /home/travis/build/ValeevGroup/_build
+mkdir -p /home/travis/build/ValeevGroup/_install
 
 cd _build
 
@@ -39,7 +39,7 @@ wget --no-check-certificate -q https://github.com/evaleev/libint/releases/downlo
 tar -xvzf libint-$RELID-test-mpqc4.tgz
 cd libint-$RELID/
 
-./configure --prefix="/home/travis/build/ValeevGroup/mpqc4/_install/libint" \
+./configure --prefix="/home/travis/build/ValeevGroup/_install/libint" \
  --with-incdirs="-I/usr/include/eigen3"
 
 

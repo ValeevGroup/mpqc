@@ -23,6 +23,10 @@ Array periodic_fock_soad(
     std::cout << "\nBuilding Fock Matrix from SOAD Guess ...\n";
   }
 
+  auto RJ_size = pao_factory.RJ_size();
+  auto RJ_max = pao_factory.RJ_max();
+  auto dcell = unitcell.dcell();
+
   auto F = H;
 
   // soad density
@@ -47,14 +51,12 @@ Array periodic_fock_soad(
       pao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
   auto normal_bs0 = std::make_shared<basis::Basis>(normal_bs);
   auto normal_bs1 =
-      pao_factory.shift_basis_origin(*normal_bs0, zero_shift_base, R_max, true);
+      integrals::pbc::shift_basis_origin(*normal_bs0, zero_shift_base, R_max, dcell, true);
 
   // F = H + 2J - K
-  auto RJ_size = pao_factory.RJ_size();
-  auto RJ_max = pao_factory.RJ_max();
   for (auto RJ = 0; RJ < RJ_size; ++RJ) {
-    auto vec_RJ = pao_factory.R_vector(RJ, RJ_max);
-    auto min_bs0 = pao_factory.shift_basis_origin(min_bs, vec_RJ);
+    auto vec_RJ = integrals::pbc::R_vector(RJ, RJ_max, dcell);
+    auto min_bs0 = integrals::pbc::shift_basis_origin(min_bs, vec_RJ);
     auto min_bs1 = min_bs0;
     // F += 2 J
     auto bases =

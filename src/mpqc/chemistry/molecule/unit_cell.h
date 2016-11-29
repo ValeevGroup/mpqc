@@ -84,12 +84,12 @@ class UnitCell : public Molecule {
 
   ~UnitCell() = default;
 
-  /// Print out molecule and atom information
-  void print(std::ostream& out) const override;
-
   /// Return dcell_
-  Vector3d dcell() { return dcell_; }
+  Vector3d dcell() const { return dcell_; }
 };
+
+/// Make UnitCell printable
+std::ostream &operator<<(std::ostream &, UnitCell const &);
 
 }  // mpqc namespace
 

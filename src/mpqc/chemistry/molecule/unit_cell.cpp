@@ -45,21 +45,24 @@ double UnitCell::nuclear_repulsion(Vector3i RJ_max) const {
   return enuc;
 }
 
-void UnitCell::print(std::ostream &os) const {
-  os << "Molecule info:" << std::endl;
-  os << "\tC.O.M: " << com().transpose() << std::endl;
-  os << "\tCharge: " << charge() << std::endl;
-  os << "\tMass: " << mass() << std::endl;
+std::ostream &operator<<(std::ostream &os, UnitCell const &unitcell) {
+    os << "Molecule info:" << std::endl;
+    os << "\tC.O.M: " << unitcell.com().transpose() << std::endl;
+    os << "\tCharge: " << unitcell.charge() << std::endl;
+    os << "\tMass: " << unitcell.mass() << std::endl;
 
-  os << "\nElements:\n";
-  auto last = end();
-  for (auto it = begin(); it != last; ++it) {
-    os << "\t";
-    it->print(os) << std::endl;
-  }
+    os << "\nElements:\n";
+    auto last = unitcell.end();
+    for (auto it = unitcell.begin(); it != last; ++it) {
+      os << "\t";
+      it->print(os) << std::endl;
+    }
 
-  os << "\nUnit cell info:" << std::endl;
-  os << "\tLattice parameters (in Bohr): [" << dcell_.transpose() << "]"
-     << std::endl;
+    os << "\nUnit cell info:" << std::endl;
+    os << "\tLattice parameters (in Bohr): [" << unitcell.dcell().transpose() << "]"
+       << std::endl;
+
+    return os;
 }
+
 }  // namespace mpqc

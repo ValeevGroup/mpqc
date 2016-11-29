@@ -19,9 +19,11 @@ namespace phf {
 
 class PHF : public qc::Wavefunction {
 public:
-    using TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>;
+    using Tile = TA::TensorZ;
+    using TArray = TA::DistArray<Tile, TA::SparsePolicy>;
     using PeriodicAOIntegral = integrals::PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy>;
     using MatrixcVec = std::vector<Matrixc>;
+    using VectorcVec = std::vector<Vectorc>;
 
     PHF() = default;
 
@@ -48,6 +50,16 @@ public:
     bool solve();
 
 private:
+
+    /**
+     * \brief compute_density
+     *
+     *  this function does two things,
+     *  1. diagonalize Fock matrix in reciprocal space: F C = S C E
+     *  2. compute density: D = Int_k( Exp(I k.R) C(occ).C(occ)t ) and return D
+     */
+    void compute_density();
+
     PeriodicAOIntegral pao_factory_;
 
     TArray T_;
@@ -61,8 +73,9 @@ private:
     TArray F_;
     TArray Fk_;
     TArray D_;
-    TArray C_;
 
+    MatrixcVec C_;
+    VectorcVec eps_;
     MatrixcVec X_;
 
     double repulsion_;
@@ -72,6 +85,17 @@ private:
     double converge_;
     int64_t maxiter_;
     bool print_detail_;
+    double max_condition_num_;
+
+    Vector3i R_max_;
+    Vector3i RJ_max_;
+    Vector3i RD_max_;
+    Vector3i nk_;
+    Vector3d dcell_;
+    int64_t R_size_;
+    int64_t RJ_size_;
+    int64_t RD_size_;
+    int64_t k_size_;
 
     double init_duration_ = 0.0;
     double j_duration_ = 0.0;

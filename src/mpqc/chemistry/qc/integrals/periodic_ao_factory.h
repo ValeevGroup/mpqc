@@ -50,7 +50,53 @@ std::shared_ptr<PeriodicAOFactory<Tile, Policy>> construct_periodic_ao_factory(
   return pao_factory;
 }
 
-}  // end of namespace detail
+}  // namespace detail
+
+namespace pbc {
+
+/// repeat tiledrange1 {tr0} by {size} times, and return a long tiledrange1
+TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
+
+/// Sort eigenvalues and eigenvectors in ascending order
+void sort_eigen(Vectorc &eigVal, Matrixc &eigVec);
+
+/**
+ *  this takes total index of vec, and returns a lattice vector,
+ *  e.g. 0 of R_max_ will return the lattice vector corresponding to
+ *  {-R_max_(0), -R_max_(1), -R_max_(2)} unit cell.
+ */
+Vector3d R_vector(int64_t idx_lattice, Vector3i vec, Vector3d dcell);
+Vector3d k_vector(int64_t idx_k, Vector3i nk, Vector3d dcell);
+
+/**
+ *  this takes {x, y, z} index of vec, and returns the total index,
+ *  e.g, {-R_max_(0), -R_max_(1), -R_max_(2)} of R_max_ will return 0.
+ */
+int64_t idx_lattice(int x, int y, int z, Vector3i vec);
+int64_t idx_k(int x, int y, int z, Vector3i nk);
+
+
+/// shift center of {basis} by {shift} and return a new basis
+std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
+                                                 Vector3d shift);
+/**
+ *  shift center of {basis} by {shift_base} + R_vector if is_real_space ==
+ * true,
+ *  by {shift_base} + k_vector if is_real_space == false,
+ *  and return a new compound basis consisting of all shifted basis.
+ */
+std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
+                                                 Vector3d shift_base,
+                                                 Vector3i nshift,
+                                                 Vector3d dcell,
+                                                 bool is_real_space);
+
+/// shift positions of all atoms in {mol} by {shift}, and return a shifted
+/// molecule
+std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol, Vector3d shift);
+
+}  // namespace pbc
+
 
 template <typename Tile, typename Policy>
 class PeriodicAOFactory : public DescribedClass {
@@ -93,16 +139,14 @@ class PeriodicAOFactory : public DescribedClass {
     nk_ = decltype(nk_)(
         kv.value<std::vector<int>>(prefix + "molecule:k_points").data());
 
-    R_size_ = 1 + idx_lattice(R_max_(0), R_max_(1), R_max_(2), R_max_);
-    RJ_size_ = 1 + idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-    RD_size_ = 1 + idx_lattice(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
-    k_size_ = 1 + idx_k(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+    R_size_ = 1 + pbc::idx_lattice(R_max_(0), R_max_(1), R_max_(2), R_max_);
+    RJ_size_ = 1 + pbc::idx_lattice(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
+    RD_size_ = 1 + pbc::idx_lattice(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
+    k_size_ = 1 + pbc::idx_k(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
 
     op_ = TA::Noop<TA::TensorZ, true>();
 
     print_detail_ = kv.value<bool>("print_detail", false);
-
-    max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
   }
 
   ~PeriodicAOFactory() noexcept = default;
@@ -121,31 +165,6 @@ class PeriodicAOFactory : public DescribedClass {
   /// transform a matrix from real to reciprocal space
   TArray transform_real2recip(TArray &matrix);
 
-  /**
-   *  this function does two things,
-   *  1. diagonalize Fock matrix in reciprocal space: F C = S C E
-   *  2. compute density: D = Int_k( Exp(I k.R) C(occ).C(occ)t ) and return D
-   */
-  TArray compute_density(TArray &fock_recip, std::vector<Matrixc> &Xvec,
-                         int64_t ndocc);
-
-  /**
-   * \brief gen_orthogonalizer
-   *
-   * \param overlap is rectangular overlap matrix in k_space
-   * \return
-   */
-  std::vector<Matrixc> gen_orthogonalizer(const TArray overlap);
-
-  /**
-   * \brief conditioning_orthogonalizer
-   *
-   * \param S is complex overlap matrix for a specific k vector
-   * \param S_condition_num_thresh is maximum condition number allowed
-   * \return conditioned orthogonalizer
-   */
-  Matrixc conditioning_orthogonalizer(const Matrixc S, bool symmetric = false,
-                                      double max_condition_num = 1.0e8);
 
   Vector3i R_max() { return R_max_; }
   Vector3i RJ_max() { return RJ_max_; }
@@ -157,19 +176,24 @@ class PeriodicAOFactory : public DescribedClass {
   int64_t RD_size() { return RD_size_; }
   int64_t k_size() { return k_size_; }
 
-  /// Return crystal orbital coefficients
-  TArray C();
-  /// Return crystal orbital energies
-  std::vector<Vectorc> eps() { return eps_; }
+  /**
+   * \brief set_density
+   * \param D is the density feeded to PeriodicAOFactory for computing J&K
+   */
+  void set_density(TArray D) { D_ = D; }
+
   /// @return MADNESS world
   madness::World &world() { return world_; }
+
   /// @return AOFactoryBase
   std::shared_ptr<AOFactoryBase> ao_factory_base() {return ao_factory_base_;}
+
   /// set OrbitalBasisRegistry
   void set_orbital_basis_registry(
       const std::shared_ptr<basis::OrbitalBasisRegistry> &obs) {
     ao_factory_base_->set_orbital_basis_registry(obs);
   }
+
   /// @return the OrbitalBasisRegistry object
   const basis::OrbitalBasisRegistry &orbital_basis_registry() const {
     return ao_factory_base_->orbital_basis_registry();
@@ -178,21 +202,6 @@ class PeriodicAOFactory : public DescribedClass {
   basis::OrbitalBasisRegistry &orbital_basis_registry() {
     return ao_factory_base_->orbital_basis_registry();
   }
-
-  /// shift center of {basis} by {shift} and return a new basis
-  std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                   Vector3d shift);
-
-  /**
-   *  shift center of {basis} by {shift_base} + R_vector if is_real_space ==
-   * true,
-   *  by {shift_base} + k_vector if is_real_space == false,
-   *  and return a new compound basis consisting of all shifted basis.
-   */
-  std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                   Vector3d shift_base,
-                                                   Vector3i nshift,
-                                                   bool is_real_space);
 
   /// compute sparse array involving complex values
   template <typename U = Policy>
@@ -209,6 +218,9 @@ class PeriodicAOFactory : public DescribedClass {
     return result;
   }
 
+
+ private:
+
   /// parse one body formula and set engine_pool and basis array for periodic
   /// system
   void parse_one_body_periodic(
@@ -223,13 +235,6 @@ class PeriodicAOFactory : public DescribedClass {
       std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
       Vector3d shift_coul, bool if_coulomb);
 
-  /// repeat tiledrange1 {tr0} by {size} times, and return a long tiledrange1
-  TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
-
-  /// shift positions of all atoms in {mol} by {shift}, and return a shifted
-  /// molecule
-  std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol, Vector3d shift);
-
   libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
                                           const AOFactoryBase &base,
                                           const Molecule &mol);
@@ -240,25 +245,6 @@ class PeriodicAOFactory : public DescribedClass {
       std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
       std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>());
 
-  /// Sort eigenvalues and eigenvectors in ascending order
-  void sort_eigen(Vectorc &eigVal, Matrixc &eigVec);
-
-  /**
-   *  this takes {x, y, z} index of vec, and returns the total index,
-   *  e.g, {-R_max_(0), -R_max_(1), -R_max_(2)} of R_max_ will return 0.
-   */
-  int64_t idx_lattice(int x, int y, int z, Vector3i vec);
-  int64_t idx_k(int x, int y, int z, Vector3i nk);
-
-  /**
-   *  this takes total index of vec, and returns a lattice vector,
-   *  e.g. 0 of R_max_ will return the lattice vector corresponding to
-   *  {-R_max_(0), -R_max_(1), -R_max_(2)} unit cell.
-   */
-  Vector3d R_vector(int64_t idx_lattice, Vector3i vec);
-  Vector3d k_vector(int64_t idx_k);
-
- private:
   std::shared_ptr<UnitCell> unitcell_;
   std::shared_ptr<AOFactoryBase> ao_factory_base_;
   madness::World &world_;
@@ -266,8 +252,6 @@ class PeriodicAOFactory : public DescribedClass {
   Op op_;
 
   TArray D_;  // Density
-  std::vector<Matrixc> C_;
-  std::vector<Vectorc> eps_;
 
   Vector3i R_max_ = {
       0, 0, 0};  // range of expansion of Bloch Gaussians in AO Gaussians
@@ -282,8 +266,6 @@ class PeriodicAOFactory : public DescribedClass {
   int64_t k_size_;
 
   bool print_detail_;
-
-  double max_condition_num_;
 };
 
 template <typename Tile, typename Policy>
@@ -313,8 +295,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       result = compute_integrals(world_, engine_pool, bs_array);
     } else if (formula.oper().type() == Operator::Type::Nuclear) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-        auto shift_mol = R_vector(RJ, RJ_max_);
-        auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
+        auto shift_mol = pbc::R_vector(RJ, RJ_max_, dcell_);
+        auto shifted_mol = pbc::shift_mol_origin(*unitcell_, shift_mol);
         parse_one_body_periodic(formula, engine_pool, bs_array, *shifted_mol);
         if (RJ == 0)
           result = compute_integrals(world_, engine_pool, bs_array);
@@ -349,7 +331,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       j_formula.set_operator_type(Operator::Type::Coulomb);
 
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-        auto vec_RJ = R_vector(RJ, RJ_max_);
+        auto vec_RJ = pbc::R_vector(RJ, RJ_max_, dcell_);
         parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
 
         auto time_g0 = mpqc::now(world_, false);
@@ -374,7 +356,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       auto k_formula = formula;
       k_formula.set_operator_type(Operator::Type::Coulomb);
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-        auto vec_RJ = R_vector(RJ, RJ_max_);
+        auto vec_RJ = pbc::R_vector(RJ, RJ_max_, dcell_);
         parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ,
                                 false);
         auto time_g0 = mpqc::now(world_, false);
@@ -436,7 +418,7 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(const Formula &for
 
   // Form a compound ket basis by shifting origins from -Rmax to Rmax
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
-  ket_basis = shift_basis_origin(*ket_basis, zero_shift_base, R_max_, true);
+  ket_basis = pbc::shift_basis_origin(*ket_basis, zero_shift_base, R_max_, dcell_, true);
 
   bases = Bvector{{*bra_basis, *ket_basis}};
 
@@ -481,13 +463,13 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
   // Form a compound index basis
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
   if (if_coulomb) {
-    bra_basis1 = shift_basis_origin(*bra_basis1, zero_shift_base, R_max_, true);
-    ket_basis0 = shift_basis_origin(*ket_basis0, shift_coul);
+    bra_basis1 = pbc::shift_basis_origin(*bra_basis1, zero_shift_base, R_max_, dcell_, true);
+    ket_basis0 = pbc::shift_basis_origin(*ket_basis0, shift_coul);
   } else {
-    bra_basis1 = shift_basis_origin(*bra_basis1, shift_coul);
-    ket_basis0 = shift_basis_origin(*ket_basis0, zero_shift_base, R_max_, true);
+    bra_basis1 = pbc::shift_basis_origin(*bra_basis1, shift_coul);
+    ket_basis0 = pbc::shift_basis_origin(*ket_basis0, zero_shift_base, R_max_, dcell_, true);
   }
-  ket_basis1 = shift_basis_origin(*ket_basis1, shift_coul, RD_max_, true);
+  ket_basis1 = pbc::shift_basis_origin(*ket_basis1, shift_coul, RD_max_, dcell_, true);
 
   if (formula.notation() == Formula::Notation::Chemical)
     bases = Bvector{{*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1}};
@@ -501,152 +483,6 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
       libint2::BraKet::xx_xx,
       to_libint2_operator_params(oper_type, *ao_factory_base_, *unitcell_));
-}
-
-template <typename Tile, typename Policy>
-int64_t PeriodicAOFactory<Tile, Policy>::idx_lattice(int x, int y, int z,
-                                                     Vector3i vec) {
-  if (vec(0) >= 0 && vec(1) >= 0 && vec(2) >= 0 && abs(x) <= vec(0) &&
-      abs(y) <= vec(1) && abs(z) <= vec(2)) {
-    int64_t idx = (x + vec(0)) * (2 * vec(0) + 1) * (2 * vec(1) + 1) +
-                  (y + vec(1)) * (2 * vec(1) + 1) + (z + vec(2));
-    return idx;
-  } else {
-    throw "invalid lattice sum index/boundaries";
-  }
-}
-
-template <typename Tile, typename Policy>
-int64_t PeriodicAOFactory<Tile, Policy>::idx_k(int x, int y, int z,
-                                               Vector3i nk) {
-  if (nk(0) >= 1 && nk(1) >= 1 && nk(2) >= 1 && x >= 0 && y >= 0 && z >= 0 &&
-      x < nk(0) && y < nk(1) && z < nk(2)) {
-    int64_t idx = x * nk(0) * nk(1) + y * nk(1) + z;
-    return idx;
-  } else {
-    throw "invalid k-space index/boundaries";
-  }
-}
-
-template <typename Tile, typename Policy>
-Vector3d PeriodicAOFactory<Tile, Policy>::k_vector(int64_t idx_k) {
-  Vector3d result;
-  auto x = idx_k / nk_(2) / nk_(1);
-  auto y = (idx_k / nk_(2)) % nk_(1);
-  auto z = idx_k % nk_(2);
-  result(0) = (dcell_(0) == 0.0) ? 0.0
-                                 : (-1.0 + (2.0 * (x + 1) - 1.0) / nk_(0)) *
-                                       (M_PI / dcell_(0));
-  result(1) = (dcell_(1) == 0.0) ? 0.0
-                                 : (-1.0 + (2.0 * (y + 1) - 1.0) / nk_(1)) *
-                                       (M_PI / dcell_(1));
-  result(2) = (dcell_(2) == 0.0) ? 0.0
-                                 : (-1.0 + (2.0 * (z + 1) - 1.0) / nk_(2)) *
-                                       (M_PI / dcell_(2));
-  return result;
-}
-
-template <typename Tile, typename Policy>
-Vector3d PeriodicAOFactory<Tile, Policy>::R_vector(int64_t idx_lattice,
-                                                   Vector3i vec) {
-  auto z = idx_lattice % (2 * vec(2) + 1);
-  auto y = (idx_lattice / (2 * vec(2) + 1)) % (2 * vec(1) + 1);
-  auto x = idx_lattice / (2 * vec(2) + 1) / (2 * vec(1) + 1);
-  Vector3d result((x - vec(0)) * dcell_(0), (y - vec(1)) * dcell_(1),
-                  (z - vec(2)) * dcell_(2));
-  return result;
-}
-
-template <typename Tile, typename Policy>
-std::shared_ptr<basis::Basis>
-PeriodicAOFactory<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
-                                                    Vector3d shift) {
-  std::vector<ShellVec> vec_of_shells;
-  for (auto shell_vec : basis.cluster_shells()) {
-    ShellVec shells;
-    for (auto shell : shell_vec) {
-      std::array<double, 3> new_origin = {
-          shell.O[0] + shift(0), shell.O[1] + shift(1), shell.O[2] + shift(2)};
-      shell.move(new_origin);
-      shells.push_back(shell);
-    }
-    vec_of_shells.push_back(shells);
-  }
-  basis::Basis result(vec_of_shells);
-  auto result_ptr = std::make_shared<basis::Basis>(result);
-  return result_ptr;
-}
-
-// Form a compound basis with double index (R, u):
-// R is cell index : [-R_max, R_max]
-// u is conventional AO index within a cell
-template <typename Tile, typename Policy>
-std::shared_ptr<basis::Basis>
-PeriodicAOFactory<Tile, Policy>::shift_basis_origin(basis::Basis &basis,
-                                                    Vector3d shift_base,
-                                                    Vector3i nshift,
-                                                    bool is_real_space) {
-  std::vector<ShellVec> vec_of_shells;
-
-  int64_t shift_size =
-      is_real_space
-          ? (1 + idx_lattice(nshift(0), nshift(1), nshift(2), nshift))
-          : (1 + idx_k(nshift(0) - 1, nshift(1) - 1, nshift(2) - 1, nshift));
-
-  for (auto idx_shift = 0; idx_shift < shift_size; ++idx_shift) {
-    Vector3d shift = is_real_space ? (R_vector(idx_shift, nshift) + shift_base)
-                                   : (k_vector(idx_shift) + shift_base);
-
-    for (auto shell_vec : basis.cluster_shells()) {
-      ShellVec shells;
-      for (auto shell : shell_vec) {
-        std::array<double, 3> new_origin = {shell.O[0] + shift(0),
-                                            shell.O[1] + shift(1),
-                                            shell.O[2] + shift(2)};
-        shell.move(new_origin);
-        shells.push_back(shell);
-      }
-      vec_of_shells.push_back(shells);
-    }
-  }
-
-  basis::Basis result(vec_of_shells);
-  auto result_ptr = std::make_shared<basis::Basis>(result);
-  return result_ptr;
-}
-
-template <typename Tile, typename Policy>
-TA::TiledRange1 PeriodicAOFactory<Tile, Policy>::extend_trange1(
-    TA::TiledRange1 tr0, int64_t size) {
-  auto blocking = std::vector<int64_t>{0};
-  for (auto idx = 0; idx < size; ++idx) {
-    for (auto u = 0; u < tr0.tile_extent(); ++u) {
-      auto next = blocking.back() + tr0.tile(u).second - tr0.tile(u).first;
-      blocking.emplace_back(next);
-    }
-  }
-  TA::TiledRange1 tr1(blocking.begin(), blocking.end());
-  return tr1;
-}
-
-template <typename Tile, typename Policy>
-std::shared_ptr<Molecule> PeriodicAOFactory<Tile, Policy>::shift_mol_origin(
-    const Molecule &mol, Vector3d shift) {
-  std::vector<AtomBasedClusterable> vec_of_clusters;
-  for (auto &cluster : mol) {
-    AtomBasedCluster shifted_cluster;
-    for (auto &atom : collapse_to_atoms(cluster)) {
-      Atom shifted_atom(atom.center() + shift, atom.mass(), atom.charge());
-      shifted_cluster.add_clusterable(shifted_atom);
-    }
-    shifted_cluster.update_cluster();
-    vec_of_clusters.emplace_back(shifted_cluster);
-  }
-
-  Molecule result(vec_of_clusters);
-
-  auto result_ptr = std::make_shared<Molecule>(result);
-  return result_ptr;
 }
 
 template <typename Tile, typename Policy>
@@ -771,7 +607,7 @@ typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
   TArray result;
   auto tr0 = matrix.trange().data()[0];
-  auto tr1 = extend_trange1(tr0, k_size_);
+  auto tr1 = pbc::extend_trange1(tr0, k_size_);
 
   // Perform real->reciprocal transformation with Eigen
   // TODO: perform it with TA (take arg tile from "matrix",
@@ -789,9 +625,9 @@ PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
     if (bmat.norm() < bmat.size() * threshold)
       continue;
     else {
-      auto vec_R = R_vector(R, R_max_);
+      auto vec_R = pbc::R_vector(R, R_max_, dcell_);
       for (auto k = 0; k < k_size_; ++k) {
-        auto vec_k = k_vector(k);
+        auto vec_k = pbc::k_vector(k, nk_, dcell_);
         auto exponent = std::exp(I * vec_k.dot(vec_R));
         result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
             bmat * exponent;
@@ -802,197 +638,6 @@ PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
   result = array_ops::eigen_to_array<Tile>(world_, result_eig, tr0, tr1);
 
   return result;
-}
-
-template <typename Tile, typename Policy>
-typename PeriodicAOFactory<Tile, Policy>::TArray
-PeriodicAOFactory<Tile, Policy>::compute_density(TArray &fock_recip,
-                                                 std::vector<Matrixc> &Xvec,
-                                                 int64_t ndocc) {
-  TArray result;
-
-  eps_.resize(k_size_);
-  C_.resize(k_size_);
-
-  auto tr0 = fock_recip.trange().data()[0];
-  auto tr1 = extend_trange1(tr0, RD_size_);
-
-  auto fock_eig = array_ops::array_to_eigen(fock_recip);
-  for (auto k = 0; k < k_size_; ++k) {
-    // Get orthogonalizer
-    auto X = Xvec[k];
-    // Symmetrize Fock
-    auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
-    F = (F + F.transpose().conjugate()) / 2.0;
-    // Orthogonalize Fock matrix: F' = Xt * F * X
-    Matrixc Xt = X.transpose().conjugate();
-    auto XtF = Xt * F;
-    auto Ft = XtF * X;
-    // Diagonalize F'
-    Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(Ft);
-    eps_[k] = comp_eig_solver.eigenvalues();
-    auto Ctemp = comp_eig_solver.eigenvectors();
-    C_[k] = X * Ctemp;
-    // Sort eigenvalues and eigenvectors in ascending order
-    sort_eigen(eps_[k], C_[k]);
-  }
-
-  Matrixc result_eig(tr0.extent(), tr1.extent());
-  result_eig.setZero();
-  for (auto R = 0; R < RD_size_; ++R) {
-    auto vec_R = R_vector(R, RD_max_);
-    for (auto k = 0; k < k_size_; ++k) {
-      auto vec_k = k_vector(k);
-      auto C_occ = C_[k].leftCols(ndocc);
-      auto D_real = C_occ.conjugate() * C_occ.transpose();
-      auto exponent =
-          std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
-      auto D_comp = exponent * D_real;
-      result_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent()) +=
-          D_comp;
-    }
-  }
-  result = array_ops::eigen_to_array<Tile>(world_, result_eig, tr0, tr1);
-
-  D_ = result;
-
-  return result;
-}
-
-template <typename Tile, typename Policy>
-void PeriodicAOFactory<Tile, Policy>::sort_eigen(Vectorc &eigVal,
-                                                 Matrixc &eigVec) {
-  auto val = eigVal.real();
-
-  // Sort by ascending eigenvalues
-  std::vector<std::pair<double, int>> sortedVal;
-  sortedVal.reserve(val.size());
-  for (auto i = 0; i != val.size(); ++i) {
-    auto pair = std::make_pair(val(i), i);
-    sortedVal.push_back(pair);
-  };
-  std::sort(sortedVal.begin(), sortedVal.end());
-
-  // Build sorted eigenvalues and eigenvectors
-  Vectorc sortedEigVal(eigVal);
-  Matrixc sortedEigVec(eigVec);
-  for (auto i = 0; i != val.size(); ++i) {
-    sortedEigVal(i) = eigVal(sortedVal[i].second);
-    sortedEigVec.col(i) = eigVec.col(sortedVal[i].second);
-  }
-
-  eigVal = sortedEigVal;
-  eigVec = sortedEigVec;
-}
-
-/// Return crystal orbital coefficients
-template <typename Tile, typename Policy>
-typename PeriodicAOFactory<Tile, Policy>::TArray
-PeriodicAOFactory<Tile, Policy>::C() {
-  TArray C;
-  auto tr0 = D_.trange().data()[0];
-  auto tr1 = extend_trange1(tr0, k_size_);
-
-  Matrixc C_eig(tr0.extent(), tr1.extent());
-  for (auto k = 0; k < k_size_; ++k)
-    C_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) = C_[k];
-
-  C = array_ops::eigen_to_array<Tile>(world_, C_eig, tr0, tr1);
-  return C;
-}
-
-template <typename Tile, typename Policy>
-std::vector<Matrixc> PeriodicAOFactory<Tile, Policy>::gen_orthogonalizer(
-    const TArray overlap) {
-  std::vector<Matrixc> X;
-  X.resize(k_size_);
-
-  auto tr0 = overlap.trange().data()[0];
-  auto tr1 = overlap.trange().data()[1];
-
-  assert(tr1.extent() == (tr0.extent() * k_size_));
-
-  auto overlap_eig = array_ops::array_to_eigen(overlap);
-  for (auto k = 0; k < k_size_; ++k) {
-    auto S = overlap_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
-    X[k] = conditioning_orthogonalizer(S, false, max_condition_num_);
-  }
-
-  return X;
-}
-
-template <typename Tile, typename Policy>
-Matrixc PeriodicAOFactory<Tile, Policy>::conditioning_orthogonalizer(
-    const Matrixc S, bool symmetric, double max_condition_num) {
-  double S_condition_num;
-  Matrixc X;
-
-  assert(S.rows() == S.cols());
-
-  // compute generalized orthogonalizer X such that Xt.S.X = I
-  // if symmetric, X = U.s_sqrtinv.Ut
-  // if canonical, X = U.s_sqrtinv
-  // where s and U are eigenvalues and eigenvectors of S
-  Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(S);
-  auto U = comp_eig_solver.eigenvectors();
-  auto s = comp_eig_solver.eigenvalues();
-  sort_eigen(s, U);
-
-  auto s_real_max = s.real().maxCoeff();
-  auto s_real_min = s.real().minCoeff();
-
-  S_condition_num = std::min(
-      s_real_max / std::max(s_real_min, std::numeric_limits<double>::min()),
-      1.0 / std::numeric_limits<double>::epsilon());
-
-  auto threshold = s_real_max / max_condition_num;
-
-  int64_t s_rows = s.rows();
-  int64_t s_cond = 0;
-  for (int64_t i = s_rows - 1; i >= 0; --i) {
-    if (s.real()(i) >= threshold) {
-      ++s_cond;
-    } else
-      i = 0;
-  }
-
-  auto sigma = s.bottomRows(s_cond);
-  auto result_condition_num = sigma.real().maxCoeff() / sigma.real().minCoeff();
-  auto sigma_invsqrt = sigma.array().sqrt().inverse().matrix().asDiagonal();
-
-  // make canonical X
-  auto U_cond = U.block(0, s_rows - s_cond, s_rows, s_cond);
-  X = U_cond * sigma_invsqrt;
-  // make symmetric X
-  if (symmetric) {
-    X = X * U_cond.transpose().conjugate();
-  }
-
-  auto nbf_omitted = s_rows - s_cond;
-  if (nbf_omitted < 0) throw "Error: dropping negative number of functions!";
-
-  if (print_detail_) {
-    if (nbf_omitted == 0) {
-      if (world_.rank() == 0) {
-        std::cout << "\toverlap condition number = " << S_condition_num
-                  << std::endl;
-      }
-    } else {
-      auto should_be_I = X.transpose().conjugate() * S * X;
-      auto I_real =
-          Eigen::MatrixXd::Identity(should_be_I.rows(), should_be_I.cols());
-      auto I_comp = I_real.cast<std::complex<double>>();
-      auto should_be_zero = (should_be_I - I_comp).norm();
-      if (world_.rank() == 0) {
-        std::cout << "\toverlap condition number after dropping " << nbf_omitted
-                  << " function(s) = " << result_condition_num << std::endl;
-        std::cout << "\t||Xt*S*X - I||_2 = " << should_be_zero
-                  << " (should be zero)" << std::endl;
-      }
-    }
-  }
-
-  return X;
 }
 
 /// Make PeriodicAOFactory printable

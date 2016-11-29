@@ -1,5 +1,6 @@
 #include "mpqc/chemistry/qc/phf/phf.h"
-#include "periodic_soad.h"
+#include "mpqc/chemistry/qc/phf/periodic_soad.h"
+#include "mpqc/chemistry/qc/phf/periodic_conditioned_orthogonalizer.h"
 
 #include <clocale>
 #include <sstream>
@@ -24,6 +25,7 @@ void PHF::init(const KeyVal& kv) {
   maxiter_ = kv.value<int64_t>("max_iter", 30);
   bool soad_guess = kv.value<bool>("soad_guess", true);
   print_detail_ = kv.value<bool>("print_detail", false);
+  max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
 
   // retrieve world from pao_factory
   auto& world = pao_factory_.world();
@@ -40,10 +42,20 @@ void PHF::init(const KeyVal& kv) {
 
   auto charge = unitcell.charge();
   docc_ = unitcell.occupation(charge) / 2;
+  dcell_ = unitcell.dcell();
+
+  // retrieve unitcell info from pao_factory
+  R_max_ = pao_factory_.R_max();
+  RJ_max_ = pao_factory_.RJ_max();
+  RD_max_ = pao_factory_.RD_max();
+  nk_ = pao_factory_.nk();
+  R_size_ = pao_factory_.R_size();
+  RJ_size_ = pao_factory_.RJ_size();
+  RD_size_ = pao_factory_.RD_size();
+  k_size_ = pao_factory_.k_size();
 
   // compute nuclear-repulsion energy
-  auto RJ_max = pao_factory_.RJ_max();
-  repulsion_ = unitcell.nuclear_repulsion(RJ_max);
+  repulsion_ = unitcell.nuclear_repulsion(RJ_max_);
   if (world.rank() == 0)
     std::cout << "\nNuclear Repulsion: " << repulsion_ << std::endl;
 
@@ -64,9 +76,14 @@ void PHF::init(const KeyVal& kv) {
   // transform Fock from real to reciprocal space
   Fk_ = pao_factory_.transform_real2recip(F_);
   // compute orthogonalizer matrix
-  X_ = pao_factory_.gen_orthogonalizer(Sk_);
+  X_ = conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
+//  X_ = pao_factory_.gen_orthogonalizer(Sk_);
   // compute guess density
-  D_ = pao_factory_.compute_density(Fk_, X_, docc_);
+//  D_ = pao_factory_.compute_density(Fk_, X_, docc_);
+  compute_density();
+
+  // set density in pao_factory
+  pao_factory_.set_density(D_);
 
   auto init_end = mpqc::fenced_now(world);
   init_duration_ = mpqc::duration_in_s(init_start, init_end);
@@ -120,7 +137,10 @@ bool PHF::solve() {
 
     // compute new density
     auto d_start = mpqc::fenced_now(world);
-    D_ = pao_factory_.compute_density(Fk_, X_, docc_);
+//    D_ = pao_factory_.compute_density(Fk_, X_, docc_);
+    compute_density();
+    // update density in pao_factory
+    pao_factory_.set_density(D_);
     auto d_end = mpqc::fenced_now(world);
     d_duration_ += mpqc::duration_in_s(d_start, d_end);
 
@@ -182,11 +202,10 @@ bool PHF::solve() {
       std::cout << "\nTotal Periodic Hartree-Fock energy = " << energy_ << std::endl;
 
       if (print_detail_) {
-          auto orb_e = pao_factory_.eps();
           Eigen::IOFormat fmt(5);
           std::cout << "\n k | orbital energies" << std::endl;
           for (auto k = 0; k < pao_factory_.k_size(); ++k) {
-              std::cout << k << " | " << orb_e[k].real().transpose().format(fmt) << std::endl;
+              std::cout << k << " | " << eps_[k].real().transpose().format(fmt) << std::endl;
           }
       }
 
@@ -207,6 +226,54 @@ double PHF::value() {
   init(kv_);
   solve();
   return energy_;
+}
+
+void PHF::compute_density() {
+  auto& world = pao_factory_.world();
+
+  eps_.resize(k_size_);
+  C_.resize(k_size_);
+
+  auto tr0 = Fk_.trange().data()[0];
+  auto tr1 = integrals::pbc::extend_trange1(tr0, RD_size_);
+
+  auto fock_eig = array_ops::array_to_eigen(Fk_);
+  for (auto k = 0; k < k_size_; ++k) {
+    // Get orthogonalizer
+    auto X = X_[k];
+    // Symmetrize Fock
+    auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
+    F = (F + F.transpose().conjugate()) / 2.0;
+    // Orthogonalize Fock matrix: F' = Xt * F * X
+    Matrixc Xt = X.transpose().conjugate();
+    auto XtF = Xt * F;
+    auto Ft = XtF * X;
+    // Diagonalize F'
+    Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(Ft);
+    eps_[k] = comp_eig_solver.eigenvalues();
+    auto Ctemp = comp_eig_solver.eigenvectors();
+    C_[k] = X * Ctemp;
+    // Sort eigenvalues and eigenvectors in ascending order
+    integrals::pbc::sort_eigen(eps_[k], C_[k]);
+  }
+
+  Matrixc result_eig(tr0.extent(), tr1.extent());
+  result_eig.setZero();
+  for (auto R = 0; R < RD_size_; ++R) {
+    auto vec_R = integrals::pbc::R_vector(R, RD_max_, dcell_);
+    for (auto k = 0; k < k_size_; ++k) {
+      auto vec_k = integrals::pbc::k_vector(k, nk_, dcell_);
+      auto C_occ = C_[k].leftCols(docc_);
+      auto D_real = C_occ.conjugate() * C_occ.transpose();
+      auto exponent =
+          std::exp(I * vec_k.dot(vec_R)) / double(nk_(0) * nk_(1) * nk_(2));
+      auto D_comp = exponent * D_real;
+      result_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent()) +=
+          D_comp;
+    }
+  }
+
+  D_ = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
 }
 
 void PHF::obsolete() { Wavefunction::obsolete(); }

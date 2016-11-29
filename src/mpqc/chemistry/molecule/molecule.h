@@ -164,9 +164,6 @@ class Molecule : public DescribedClass {
    * also clusterable.
   */
   Vector3d const &com() const { return com_; }
-
-  /// Print Molecule information
-  virtual void print(std::ostream &os) const;
 };
 
 /// Make Molecules printable

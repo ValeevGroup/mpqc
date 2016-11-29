@@ -77,9 +77,7 @@ void PHF::init(const KeyVal& kv) {
   Fk_ = pao_factory_.transform_real2recip(F_);
   // compute orthogonalizer matrix
   X_ = conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
-//  X_ = pao_factory_.gen_orthogonalizer(Sk_);
   // compute guess density
-//  D_ = pao_factory_.compute_density(Fk_, X_, docc_);
   compute_density();
 
   // set density in pao_factory
@@ -235,7 +233,7 @@ void PHF::compute_density() {
   C_.resize(k_size_);
 
   auto tr0 = Fk_.trange().data()[0];
-  auto tr1 = integrals::pbc::extend_trange1(tr0, RD_size_);
+  auto tr1 = integrals::detail::extend_trange1(tr0, RD_size_);
 
   auto fock_eig = array_ops::array_to_eigen(Fk_);
   for (auto k = 0; k < k_size_; ++k) {
@@ -254,15 +252,15 @@ void PHF::compute_density() {
     auto Ctemp = comp_eig_solver.eigenvectors();
     C_[k] = X * Ctemp;
     // Sort eigenvalues and eigenvectors in ascending order
-    integrals::pbc::sort_eigen(eps_[k], C_[k]);
+    integrals::detail::sort_eigen(eps_[k], C_[k]);
   }
 
   Matrixc result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
   for (auto R = 0; R < RD_size_; ++R) {
-    auto vec_R = integrals::pbc::R_vector(R, RD_max_, dcell_);
+    auto vec_R = integrals::detail::direct_vector(R, RD_max_, dcell_);
     for (auto k = 0; k < k_size_; ++k) {
-      auto vec_k = integrals::pbc::k_vector(k, nk_, dcell_);
+      auto vec_k = integrals::detail::k_vector(k, nk_, dcell_);
       auto C_occ = C_[k].leftCols(docc_);
       auto D_real = C_occ.conjugate() * C_occ.transpose();
       auto exponent =

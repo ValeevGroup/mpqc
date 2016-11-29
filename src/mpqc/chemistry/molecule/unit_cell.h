@@ -13,7 +13,8 @@
 namespace mpqc {
 class UnitCell : public Molecule {
  private:
-  Vector3d dcell_ = {0.0, 0.0, 0.0};  // direct unit cell params (in a.u.)
+  Vector3d dcell_ = {0.0, 0.0, 0.0};  ///< direct unit cell params (in a.u.)
+
  public:
   UnitCell() = default;
 
@@ -24,14 +25,14 @@ class UnitCell : public Molecule {
    *  <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
    *
    *  <tr><td><tt>type</tt><td>int<td>0<td> the type of this molecule. If type
-   *    is UnitCell, periodic calculations will be performed
+   *    is UnitCell, periodic calculations can be performed
    *
    *  <tr><td><tt>file_name</tt><td>string<td>none<td>This gives
    *    the name of a XYZ file, from which the nuclear coordinates will be
    *    read (the XYZ format is described
    *    <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).
    *
-   *  <tr><td><tt>charge</tt><td>int<td>0<td> the charge of this molecule
+   *  <tr><td><tt>charge</tt><td>int<td>0<td> the charge of unitcell
    *
    *  <tr><td><tt>sort_input</tt><td>boolean<td>true<td>If true, atoms
    *    will be resorted based on their distance from the center of mass.
@@ -63,7 +64,7 @@ class UnitCell : public Molecule {
    *
    *  example input:
    *  \code
-   *  "molecule": {
+   *  "unitcell": {
    *    "type": "UnitCell",
    *    "charge": 0,
    *    "file_name": "water.xyz",
@@ -79,12 +80,19 @@ class UnitCell : public Molecule {
    */
   UnitCell(const KeyVal& kv);
 
-  /// Return the nuclear repulsion energy of the Periodic System.
+  /*!
+   * \brief This computes nuclear repulsion energy for one unitcell
+   * \param RJ_max the range of nuclear repulsion interaction
+   * \return nuclear repulsion energy
+   */
   double nuclear_repulsion(Vector3i RJ_max) const;
 
   ~UnitCell() = default;
 
-  /// Return dcell_
+  /*!
+   * \brief This returns direct unit cell params
+   * \return dcell_
+   */
   Vector3d dcell() const { return dcell_; }
 };
 

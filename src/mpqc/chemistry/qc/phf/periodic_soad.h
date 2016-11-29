@@ -14,6 +14,17 @@
 namespace mpqc {
 namespace phf {
 
+/*!
+ * \brief This computes SOAD guess for the density matrix in minimal basis
+ * for the reference cell, and projects to normal basis of the periodic system
+ *
+ * \param world MADNESS world
+ * \param unitcell UnitCell object
+ * \param H core Hamiltonian in real space, should be a complex tile
+ * \param pao_factory PeriodicAOFactory object
+ * \param op a functor that takes TA::TensorZ && and returns a valid tile type
+ * \return Fock matrix in real space
+ */
 template <typename Array, typename FactoryType, typename Tile = TA::TensorZ>
 Array periodic_fock_soad(
     madness::World &world, UnitCell const &unitcell, Array const &H,
@@ -51,12 +62,12 @@ Array periodic_fock_soad(
       pao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
   auto normal_bs0 = std::make_shared<basis::Basis>(normal_bs);
   auto normal_bs1 =
-      integrals::pbc::shift_basis_origin(*normal_bs0, zero_shift_base, R_max, dcell, true);
+      integrals::detail::shift_basis_origin(*normal_bs0, zero_shift_base, R_max, dcell);
 
   // F = H + 2J - K
   for (auto RJ = 0; RJ < RJ_size; ++RJ) {
-    auto vec_RJ = integrals::pbc::R_vector(RJ, RJ_max, dcell);
-    auto min_bs0 = integrals::pbc::shift_basis_origin(min_bs, vec_RJ);
+    auto vec_RJ = integrals::detail::direct_vector(RJ, RJ_max, dcell);
+    auto min_bs0 = integrals::detail::shift_basis_origin(min_bs, vec_RJ);
     auto min_bs1 = min_bs0;
     // F += 2 J
     auto bases =

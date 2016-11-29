@@ -36,6 +36,9 @@ public:
      * |---------|------|--------|-------------|
      * | converge | double | 1.0e-07 | converge limit |
      * | max_iter | int | 30 | maximum number of iteration |
+     * | soad_guess | bool | true | if use SOAD guess for initial Fock build |
+     * | print_detail | bool | false | if print extra computation&time info |
+     * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
      *
      */
     PHF(const KeyVal& kv);
@@ -45,18 +48,23 @@ public:
     void compute(qc::PropertyBase *pb) override;
     void obsolete() override;
 
+    /*!
+     * \brief This performs a periodic Hartree-Fock computation
+     * \return periodic Hartree-Fock energy
+     */
     double value() override;
 
+    /*!
+     * \brief This performs SCF procedure for PHF
+     * \return true if SCF converges, false if not
+     */
     bool solve();
 
 private:
 
-    /**
-     * \brief compute_density
-     *
-     *  this function does two things,
-     *  1. diagonalize Fock matrix in reciprocal space: F C = S C E
-     *  2. compute density: D = Int_k( Exp(I k.R) C(occ).C(occ)t ) and return D
+    /*!
+     * \brief This diagonalizes Fock matrix in reciprocal space and
+     * computes density: D_ = Int_k( Exp(I k.R) C(occ).C(occ)t )
      */
     void compute_density();
 
@@ -104,6 +112,12 @@ private:
     double d_duration_ = 0.0;
     double scf_duration_ = 0.0;
 
+    /*!
+     * \brief This initialize PHF by assigning values to private members
+     * and computing initial guess for SCF
+     *
+     * \param kv KeyVal object
+     */
     void init(const KeyVal& kv);
 };
 

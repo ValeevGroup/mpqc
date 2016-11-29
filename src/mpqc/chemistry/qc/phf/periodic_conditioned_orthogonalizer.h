@@ -29,7 +29,7 @@ Matrixc gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int
   Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(S_eig);
   auto U = comp_eig_solver.eigenvectors();
   auto s = comp_eig_solver.eigenvalues();
-  integrals::pbc::sort_eigen(s, U);
+  integrals::detail::sort_eigen(s, U);
 
   auto s_real_max = s.real().maxCoeff();
   auto s_real_min = s.real().minCoeff();

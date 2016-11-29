@@ -2,9 +2,9 @@
 
 namespace mpqc {
 namespace integrals {
-namespace pbc {
+namespace detail {
 
-TA::TiledRange1 extend_trange1(TiledArray::TiledRange1 tr0, int64_t size) {
+TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size) {
     auto blocking = std::vector<int64_t>{0};
     for (auto idx = 0; idx < size; ++idx) {
       for (auto u = 0; u < tr0.tile_extent(); ++u) {
@@ -40,21 +40,21 @@ void sort_eigen(Vectorc &eigVal, Matrixc &eigVec) {
     eigVec = sortedEigVec;
 }
 
-Vector3d R_vector(int64_t idx_lattice, Vector3i vec, Vector3d dcell) {
-    auto z = idx_lattice % (2 * vec(2) + 1);
-    auto y = (idx_lattice / (2 * vec(2) + 1)) % (2 * vec(1) + 1);
-    auto x = idx_lattice / (2 * vec(2) + 1) / (2 * vec(1) + 1);
-    Vector3d result((x - vec(0)) * dcell(0), (y - vec(1)) * dcell(1),
-                    (z - vec(2)) * dcell(2));
+Vector3d direct_vector(int64_t ord_idx, Vector3i latt_max, Vector3d dcell) {
+    auto z = ord_idx % (2 * latt_max(2) + 1);
+    auto y = (ord_idx / (2 * latt_max(2) + 1)) % (2 * latt_max(1) + 1);
+    auto x = ord_idx / (2 * latt_max(2) + 1) / (2 * latt_max(1) + 1);
+    Vector3d result((x - latt_max(0)) * dcell(0), (y - latt_max(1)) * dcell(1),
+                    (z - latt_max(2)) * dcell(2));
     return result;
 
 }
 
-Vector3d k_vector(int64_t idx_k, Vector3i nk, Vector3d dcell) {
+Vector3d k_vector(int64_t ord_idx, Vector3i nk, Vector3d dcell) {
     Vector3d result;
-    auto x = idx_k / nk(2) / nk(1);
-    auto y = (idx_k / nk(2)) % nk(1);
-    auto z = idx_k % nk(2);
+    auto x = ord_idx / nk(2) / nk(1);
+    auto y = (ord_idx / nk(2)) % nk(1);
+    auto z = ord_idx % nk(2);
     result(0) = (dcell(0) == 0.0) ? 0.0
                                    : (-1.0 + (2.0 * (x + 1) - 1.0) / nk(0)) *
                                          (M_PI / dcell(0));
@@ -67,11 +67,11 @@ Vector3d k_vector(int64_t idx_k, Vector3i nk, Vector3d dcell) {
     return result;
 }
 
-int64_t idx_lattice(int x, int y, int z, Vector3i vec) {
-    if (vec(0) >= 0 && vec(1) >= 0 && vec(2) >= 0 && abs(x) <= vec(0) &&
-        abs(y) <= vec(1) && abs(z) <= vec(2)) {
-      int64_t idx = (x + vec(0)) * (2 * vec(0) + 1) * (2 * vec(1) + 1) +
-                    (y + vec(1)) * (2 * vec(1) + 1) + (z + vec(2));
+int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i latt_max) {
+    if (latt_max(0) >= 0 && latt_max(1) >= 0 && latt_max(2) >= 0 && std::abs(x) <= latt_max(0) &&
+        std::abs(y) <= latt_max(1) && std::abs(z) <= latt_max(2)) {
+      int64_t idx = (x + latt_max(0)) * (2 * latt_max(0) + 1) * (2 * latt_max(1) + 1) +
+                    (y + latt_max(1)) * (2 * latt_max(1) + 1) + (z + latt_max(2));
       return idx;
     } else {
       throw "invalid lattice sum index/boundaries";
@@ -79,7 +79,7 @@ int64_t idx_lattice(int x, int y, int z, Vector3i vec) {
 
 }
 
-int64_t idx_k(int x, int y, int z, Vector3i nk) {
+int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i nk) {
     if (nk(0) >= 1 && nk(1) >= 1 && nk(2) >= 1 && x >= 0 && y >= 0 && z >= 0 &&
         x < nk(0) && y < nk(1) && z < nk(2)) {
       int64_t idx = x * nk(0) * nk(1) + y * nk(1) + z;
@@ -110,18 +110,13 @@ std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
 std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
                                                  Vector3d shift_base,
                                                  Vector3i nshift,
-                                                 Vector3d dcell,
-                                                 bool is_real_space) {
+                                                 Vector3d dcell) {
     std::vector<ShellVec> vec_of_shells;
 
-    int64_t shift_size =
-        is_real_space
-            ? (1 + idx_lattice(nshift(0), nshift(1), nshift(2), nshift))
-            : (1 + idx_k(nshift(0) - 1, nshift(1) - 1, nshift(2) - 1, nshift));
+    int64_t shift_size = 1 + direct_ord_idx(nshift(0), nshift(1), nshift(2), nshift);
 
     for (auto idx_shift = 0; idx_shift < shift_size; ++idx_shift) {
-      Vector3d shift = is_real_space ? (R_vector(idx_shift, nshift, dcell) + shift_base)
-                                     : (k_vector(idx_shift, nshift, dcell) + shift_base);
+      Vector3d shift = direct_vector(idx_shift, nshift, dcell) + shift_base;
 
       for (auto shell_vec : basis.cluster_shells()) {
         ShellVec shells;
@@ -161,6 +156,44 @@ std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol, Vector3d shift) 
 
 }
 
-}  // namespace pbc
+libint2::any to_libint2_operator_params(Operator::Type mpqc_oper, const AOFactoryBase &base, const Molecule &mol) {
+    TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
+                    mpqc_oper <= Operator::Type::__last_1body_operator) ||
+                       (Operator::Type::__first_2body_operator <= mpqc_oper &&
+                        mpqc_oper <= Operator::Type::__last_2body_operator),
+                   "invalid Operator::Type");
+
+    libint2::any result;
+    switch (mpqc_oper) {
+      case Operator::Type::Nuclear: {
+        result = make_q(mol);
+      } break;
+      case Operator::Type::cGTG:
+      case Operator::Type::cGTGCoulomb:
+      case Operator::Type::DelcGTG2: {
+        result = base.gtg_params();
+      } break;
+      case Operator::Type::cGTG2: {
+        const auto &cgtg_params = base.gtg_params();
+        const auto ng = cgtg_params.size();
+        std::decay<decltype(cgtg_params)>::type cgtg2_params;
+        cgtg2_params.reserve(ng * (ng + 1) / 2);
+        for (auto b = 0; b < ng; ++b) {
+          for (auto k = 0; k <= b; ++k) {
+            const auto gexp = cgtg_params[b].first + cgtg_params[k].first;
+            const auto gcoeff = cgtg_params[b].second * cgtg_params[k].second *
+                                (b == k ? 1 : 2);  // if a != b include ab and ba
+            cgtg2_params.push_back(std::make_pair(gexp, gcoeff));
+          }
+        }
+        result = cgtg2_params;
+      } break;
+      default:;  // nothing to do
+    }
+    return result;
+
+}
+
+}  // namespace detail
 }  // namespace integrals
 }  // namespace mpqc

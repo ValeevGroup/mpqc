@@ -32,7 +32,7 @@ pwd
 mkdir -p /home/travis/build/ValeevGroup/_build
 mkdir -p /home/travis/build/ValeevGroup/_install
 
-cd _build
+cd /home/travis/build/ValeevGroup/_build
 
 # download and unpack libint tarball
 wget --no-check-certificate -q https://github.com/evaleev/libint/releases/download/v$RELID/libint-$RELID-test-mpqc4.tgz

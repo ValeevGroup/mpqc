@@ -17,17 +17,14 @@ fi
 echo $($CC --version)
 echo $($CXX --version)
 
-mkdir -p /home/travis/build/ValeevGroup/_build
-cd  /home/travis/build/ValeevGroup/_build
-
-mkdir -p mpqc4
-cd mpqc4
+mkdir -p mpqc4_build
+cd mpqc4_build
 
 INSTALL_DIR=/home/travis/build/ValeevGroup/_install
 mkdir -p /home/travis/build/ValeevGroup/_install
 ls $INSTALL_DIR
 
-cmake ../.. \
+cmake .. \
     -DTiledArray_DIR="$INSTALL_DIR/TA/lib/cmake/tiledarray" \
     -DCMAKE_PREFIX_PATH="$INSTALL_DIR/mpqc4" \
     -DCMAKE_BUILD_TYPE=DEBUG \

@@ -1,31 +1,45 @@
-add_library(
-  MPQCinit
+##################### MPQCmpqc library ###########################
+set(mpqc_sources
   mpqc_init.cpp
+)
+set(mpqc_headers
   mpqc_init.h
+  mpqc_task.h
 )
 
-target_link_libraries(
-  MPQCinit
-  MPQCutil_options
-  MPQCutil_keyval
-  MPQCutil_misc
-)
+add_mpqc_library(mpqc mpqc_sources mpqc_headers
+                 "MPQCutil_keyval;MPQCutil_mad;MPQCutil_options;MPQCwfn" "mpqc")
 
-add_executable(mpqc EXCLUDE_FROM_ALL mpqc.cpp)
+################## libmpqc super-library #########################
+
 # add the libraries you need and force their linkage in mpqc.cpp
 # developers will want to trim this list down to the minimum needed
 set(MPQC_LIBS MPQCf12 MPQCcc MPQCmbpt MPQCscf MPQCphf)
-                      
+
+# create libmpqc, an interface to MPQC_LIBS
+# linking libmpqc in will link in ALL MPQC functionality
+set(deplibs "MPQCmpqc" ${MPQC_LIBS})
+add_library(libmpqc INTERFACE)
+target_link_libraries(libmpqc INTERFACE ${deplibs})
+install(TARGETS libmpqc EXPORT mpqc
+        COMPONENT libmpqc
+        LIBRARY DESTINATION "${MPQC_INSTALL_LIBDIR}")
+
+add_custom_target(install-libmpqc)
+add_dependencies(install-libmpqc install-mpqc)
+
+##################### MPQC executable ###########################
+add_executable(mpqc mpqc.cpp)
+INCLUDE_DIRECTORIES(${MPQC_SOURCE_DIR}/src/bin)
 target_link_libraries(mpqc
-                      ${MPQC_LIBS}
-                      MPQCutil_options MPQCutil_misc
-                      MPQCinit)
+                      MPQCmpqc ${MPQC_LIBS})
+install(TARGETS mpqc RUNTIME DESTINATION bin)
+#cotire(mpqc)
 
 add_executable(mpqc_test mpqc_test.cpp)
 set_property(SOURCE mpqc_test.cpp PROPERTY COMPILE_DEFINITIONS
              SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(mpqc_test MPQCscf MPQCutil_options MPQCutil_misc
-                      MPQCinit)
+target_link_libraries(mpqc_test MPQCmpqc MPQCscf MPQCutil_options MPQCutil_misc)
 add_test(mpqc_test/build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target mpqc_test)
 
 # multiworld test is broken now, only run 1 MPI rank for now

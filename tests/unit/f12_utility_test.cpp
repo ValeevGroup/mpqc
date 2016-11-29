@@ -3,7 +3,7 @@
 //
 
 #include "catch.hpp"
-#include "mpqc/chemistry/qc/f12/f12_utility.h"
+#include "mpqc/chemistry/qc/integrals/f12_utility.h"
 
 using namespace mpqc;
 

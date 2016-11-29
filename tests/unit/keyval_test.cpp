@@ -8,8 +8,6 @@
 #include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/chemistry/molecule/linkage.h"
 
-extern madness::World* world_ptr;
-
 using std::vector;
 using std::array;
 using std::string;

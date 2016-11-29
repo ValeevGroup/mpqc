@@ -1,0 +1,8 @@
+
+                           MPQC REVISION HISTORY
+
+Following is a brief summary of changes made in each release of MPQC.
+
+- <date>: <release>
+  - libmpqc can be used from install location
+  - Units package ported and updated; can select the CODATA revision

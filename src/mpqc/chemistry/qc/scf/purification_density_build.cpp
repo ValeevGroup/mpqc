@@ -7,7 +7,7 @@
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
 #include "mpqc/chemistry/qc/scf/clusterd_coeffs.h"
-#include "mpqc/chemistry/qc/scf/diagonalize_for_coffs.hpp"
+#include "mpqc/chemistry/qc/scf/diagonalize_for_coeffs.h"
 #include "mpqc/chemistry/qc/scf/orbital_localization.h"
 
 namespace mpqc {

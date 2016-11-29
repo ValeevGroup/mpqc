@@ -1,0 +1,89 @@
+/** \page srctree The Source Tree
+
+<dl>
+
+<dt><tt>bin</tt><dd>This directory mainly contains commands that
+  are used to help with the compilation of MPQC.
+
+<dt><tt>cmake</tt><dd>This directory contains files related to the
+CMake build system.
+
+<dt><tt>doc</tt><dd>This directory contains the files related to
+building the MPQC programming documentation and development samples.
+
+<dt><tt>src/lib/util/external/madworld</tt><dd>This contains additional
+functionality related to the MADWorld parallel runtime.
+
+<dt><tt>src/lib/util/external/c++</tt><dd>This contains additional
+functionality related to the C++ programming language, e.g. functionality
+that was added in the C++14 standard.
+
+<dt><tt>src/lib/util/keyval</tt><dd>This library provides classes that read
+  keyword/value pairs from an input file.  See \ref keyval
+  for more information.
+
+<dt><tt>src/mpqc/util/meta</tt><dd>This contains template metaprogramming
+functionality.
+
+<dt><tt>src/mpqc/util/misc</tt><dd>This contains a variety of independent
+  classes and functions that don't belong anywhere else. Here one can find
+  classes to assist with debugging, provide information about the execution
+  environment, help make the output prettier, etc.
+
+<dt><tt>src/mpqc/util/options</tt>
+  <dd>This contains the GetLongOpt command line argument parsing facility
+  written by S. Manoharan, with some modifications.
+
+<dt><tt>src/mpqc/math/clustering</tt><dd>This library provides clustering facilities
+(e.g. k-means).
+
+<dt><tt>src/mpqc/math/external/eigen</tt><dd>This provides additional functionality
+related to the Eigen matrix algebra library.
+
+<dt><tt>src/mpqc/math/external/tiledarray</tt><dd>This provides additional functionality
+related to the TiledArray parallel tensor framework.
+
+<dt><tt>src/mpqc/math/linalg</tt><dd>This provides various linear algebra functionality.
+
+<dt><tt>src/mpqc/math/tensor/clr</tt><dd>This provides the tile algebra needed to
+implement the Clustered Low-Rank tensor format.
+
+<dt><tt>src/mpqc/chemistry/molecule</tt><dd>This library has classes to
+  describe molecules and unit cells.
+
+<dt><tt>src/mpqc/chemistry/units</tt><dd>This provides the Units conversion facilities.
+See \ref units for more information.
+
+<dt><tt>src/mpqc/chemistry/qc</tt><dd>This directory includes the
+electronic structure (i.e., Quantum Chemistry) functionality.
+
+<dt><tt>src/mpqc/chemistry/qc/basis</tt><dd>The basis library has classes
+  that describe Gaussian basis sets.
+
+<dt><tt>src/mpqc/chemistry/qc/cc</tt><dd>This includes the coupled-cluster functionality.
+
+<dt><tt>src/mpqc/chemistry/qc/expression</tt><dd>This provides
+the electronic structure Domain-Specific Language (DSL) functionality.
+
+<dt><tt>src/mpqc/chemistry/qc/f12</tt><dd>This provides the explicitly-correlated
+(F12) methods.
+
+<dt><tt>src/mpqc/chemistry/qc/integrals</tt><dd>This provides the classes for
+computing operators in Gaussian atomic orbital (AO) basis, as well as registries of
+operators in AO and LCAO bases.
+
+<dt><tt>src/mpqc/chemistry/qc/mbpt</tt><dd>This library computes second-order
+  perturbation theory energies and gradients.
+
+<dt><tt>src/mpqc/chemistry/qc/scf</tt><dd>This library computes the Self-Consistent Field
+solutions.
+
+<dt><tt>src/mpqc/chemistry/qc/mbpt</tt><dd>This library provides the base classes for
+all wave function classes.
+
+<dt><tt>src/bin/mpqc</tt><dd>The Massively Parallel Quantum Chemistry program
+  is in this directory.  See \ref mpqc for more information.
+
+</dl>
+
+*/

@@ -4,5 +4,4 @@ set(sources
         phf.cpp
         )
 
-add_library(MPQCphf ${sources})
-target_link_libraries(MPQCphf MPQCwfn MPQCmath_ta MPQCmath_linalg MPQCmath_clr)
+add_mpqc_library(phf sources sources "MPQCmath_ta" "mpqc/chemistry/qc/phf")

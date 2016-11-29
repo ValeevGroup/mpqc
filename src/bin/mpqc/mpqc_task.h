@@ -34,6 +34,7 @@ class MPQCTask {
   }
 
   void run() {
+    auto world_popper = TA::push_default_world(world_);
 
     auto wfn = keyval_->keyval("wfn").class_ptr<qc::Wavefunction>();
 

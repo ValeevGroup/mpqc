@@ -6,7 +6,7 @@ set(sources
         dbccsd.h
         dbccsd.cpp
         diis_ccsd.h
+        linkage.h
         )
 
-add_library(MPQCcc ${sources})
-target_link_libraries(MPQCcc MPQCscf)
+add_mpqc_library(cc sources sources "MPQCscf;MPQCutil_misc" "mpqc/chemistry/qc/cc")

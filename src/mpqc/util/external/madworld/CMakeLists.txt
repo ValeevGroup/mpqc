@@ -5,5 +5,4 @@ set(sources
   parallel_print.h
 )
 
-add_library(MPQCutil_mad ${sources})
-target_link_libraries(MPQCutil_mad ${TA_LIBRARIES})
+add_mpqc_library(util_mad sources sources "MADworld" "mpqc/util/external/madworld")

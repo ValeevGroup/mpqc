@@ -3,5 +3,4 @@ set(sources
         units.cpp
 )
 
-add_library(MPQCunits ${sources})
-target_link_libraries(MPQCunits MPQCutil_misc)
+add_mpqc_library(units sources sources "MPQCutil_misc" "mpqc/chemistry/units")

@@ -193,7 +193,7 @@ class Debugger: public DescribedClass {
         is initialized with the KeyVal constructor. */
     virtual void set_exec(const char *);
 
-    /// Called with signal sig is received.  This is mainly for internal use.
+    /// Called when signal sig is received.  This is mainly for internal use.
     virtual void got_signal(int sig);
 
     /// Set the global default debugger.  The initial value is null.

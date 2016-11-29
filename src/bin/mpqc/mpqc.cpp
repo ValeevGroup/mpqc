@@ -6,13 +6,14 @@
 #include <libint2.hpp>
 #include <tiledarray.h>
 
-#include "mpqc_task.h"
+#include "mpqc/mpqc_task.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 
 #include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
+#include "mpqc/chemistry/units/units.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/assert.h"
 #include "mpqc/util/misc/exception.h"
@@ -26,13 +27,14 @@
 #include "mpqc/chemistry/qc/cc/linkage.h"
 #include "mpqc/chemistry/qc/mbpt/linkage.h"
 #include "mpqc/chemistry/qc/scf/linkage.h"
-#include "mpqc_init.h"
+#include "mpqc/mpqc_init.h"
 
 namespace mpqc {
 
 void announce() {
   const char title1[] = "MPQC4: Massively Parallel Quantum Chemistry (v4)";
   const char title2[] = "Version " MPQC_VERSION;
+  const char title3[] = "Revision " MPQC_REVISION;
   const auto target_width = 80;
   ExEnv::out0() << std::endl;
   ExEnv::out0() << indent;
@@ -42,7 +44,11 @@ void announce() {
   ExEnv::out0() << indent;
   for (auto i = 0; i < (target_width - sizeof(title2)) / 2; i++)
     ExEnv::out0() << ' ';
-  ExEnv::out0() << title2 << std::endl << std::endl;
+  ExEnv::out0() << title2 << std::endl;
+  ExEnv::out0() << indent;
+  for (auto i = 0; i < (target_width - sizeof(title3)) / 2; i++)
+    ExEnv::out0() << ' ';
+  ExEnv::out0() << title3 << std::endl << std::endl;
 }
 
 }  // namespace mpqc
@@ -54,7 +60,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
   auto options = make_options();
 
   // initialize MPQC
-  initialize(argc, argv, options, world);
+  initialize(argc, argv, world, options);
 
   // parse and process options
   options->parse(argc, argv);
@@ -77,16 +83,48 @@ int try_main(int argc, char *argv[], madness::World& world) {
   // make keyval
   std::shared_ptr<KeyVal> kv = MPQCInit::instance().make_keyval(world, input_filename);
 
+  // now set up the debugger
+  auto debugger = kv->class_ptr<Debugger>("debugger");
+  if (debugger) {
+    Debugger::set_default_debugger(debugger);
+    debugger->set_exec(argv[0]);
+    debugger->set_prefix(world.rank());
+    if (options->retrieve("d"))
+      debugger->debug("Starting debugger because -d given on command line.");
+  }
+
   // redirect filenames in KeyVal to the directory given by -p cmdline option
   auto prefix_opt = options->retrieve("p");
   if (prefix_opt) { // set file prefix, if given
     kv->assign("file_prefix", *prefix_opt);
   }
 
+  // configure the units system
+  auto units_opt = options->retrieve("u");
+  std::string units_str;
+  if (units_opt) {
+    units_str = *units_opt;
+  }
+  else {
+    if (kv->exists("units")) {
+      units_str = kv->value<std::string>("units");
+    }
+  }
+  if (!units_str.empty()) UnitFactory::set_default(units_str);
+
   // announce ourselves
   announce();
 
+  //////////////////////////////
+  // print computation metadata
+  //////////////////////////////
+
+  // units
+  ExEnv::out0() << indent << "Using fundamental constants system "
+                << UnitFactory::get_default()->system() << std::endl;
+
   // run
+  TA::set_default_world(world);  // must specify default world to avoid madness::World::get_default() getting called
   MPQCTask task(world, kv);
   task.run();
   ExEnv::out0() << indent << "Wfn energy is: " << kv->value<double>("wfn:energy") << std::endl;

@@ -40,6 +40,13 @@ macro (validate_tiledarray)
       auto x = TA::array_to_eigen<TA::Tensor<double>, TA::DensePolicy, Eigen::RowMajor>(arr);
     }
     
+    // test 2
+    {
+      auto w = TA::push_default_world(world);
+      TA::TArrayD arr;
+      auto x = arr(\"i,j\").set_world(world);
+    }
+    
     // add more tests here
     
     TA::finalize();
@@ -49,6 +56,24 @@ macro (validate_tiledarray)
 
   if (NOT TILEDARRAY_IS_FRESH)
     message(FATAL_ERROR "TiledArray found, but is not fresh enough. Use ${TILEDARRAY_OLDEST_REVISION} or later")
+  endif()
+
+  ##########################
+  # ensure madness::World::get_default is disabled
+  ##########################
+  CHECK_CXX_SOURCE_COMPILES(
+  "
+  #include <tiledarray.h>
+  #ifndef MADNESS_DISABLE_WORLD_GET_DEFAULT
+  # error \"madness::World::get_default is usable\"
+  #endif
+  int main(int argc, char** argv) {
+    return 0;
+  }
+  "  MADNESS_WORLD_GET_DEFAULT_IS_DISABLED)
+
+  if (NOT MADNESS_WORLD_GET_DEFAULT_IS_DISABLED)
+    message(FATAL_ERROR "TiledArray need to be reconfigured with -DMADNESS_DISABLE_WORLD_GET_DEFAULT=ON CMake option")
   endif()
 
   cmake_pop_check_state()

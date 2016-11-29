@@ -87,9 +87,9 @@ Debugger::Debugger(const KeyVal &keyval) {
   exit_on_signal_ = keyval.value<bool>("exit", true);
   sleep_ = keyval.value<bool>("sleep", false);
   wait_for_debugger_ = keyval.value<bool>("wait_for_debugger", true);
-  cmd_ = keyval.value<std::string>("cmd");
+  cmd_ = keyval.value<std::string>("cmd", std::string());
   if (cmd_.empty()) default_cmd();
-  prefix_ = keyval.value<std::string>("prefix");
+  prefix_ = keyval.value<std::string>("prefix", std::string());
   handle_sigint_ = keyval.value<bool>("handle_sigint", true);
   if (keyval.value<bool>("handle_defaults", true)) handle_defaults();
 }
@@ -158,6 +158,9 @@ void Debugger::handle_defaults() {
 #ifdef SIGBUS
   handle(SIGBUS);
 #endif
+#ifdef SIGABRT
+  handle(SIGABRT);
+#endif
 }
 
 void Debugger::set_exec(const char *exec) {
@@ -183,16 +186,9 @@ void Debugger::set_prefix(int i) {
 }
 
 void Debugger::default_cmd() {
-#ifdef __GNUG__
-  int gcc = 1;
-#else
-  int gcc = 0;
-#endif
   int has_x11_display = (getenv("DISPLAY") != 0);
 
-  if (!gcc && sizeof(void *) == 8 && has_x11_display) {
-    set_cmd("xterm -title \"$(PREFIX)$(EXEC)\" -e dbx -p $(PID) $(EXEC) &");
-  } else if (has_x11_display) {
+  if (has_x11_display) {
     set_cmd("xterm -title \"$(PREFIX)$(EXEC)\" -e gdb $(EXEC) $(PID) &");
   } else {
     set_cmd(0);
@@ -267,6 +263,8 @@ void Debugger::got_signal(int sig) {
     signame = "SIGHUP";
   else if (sig == SIGINT)
     signame = "SIGINT";
+  else if (sig == SIGABRT)
+    signame = "SIGABRT";
 #ifdef SIGBUS
   else if (sig == SIGBUS)
     signame = "SIGBUS";

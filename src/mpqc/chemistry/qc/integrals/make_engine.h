@@ -5,7 +5,7 @@
 #include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
 #include "mpqc/chemistry/molecule/cluster_collapse.h"
 #include "mpqc/chemistry/molecule/molecule.h"
-#include "mpqc/chemistry/qc/f12/f12_utility.h"
+#include "mpqc/chemistry/qc/integrals/f12_utility.h"
 
 #include <iostream>
 #include <initializer_list>

@@ -31,8 +31,9 @@ namespace mpqc {
 
 std::unique_ptr<MPQCInit> MPQCInit::instance_;
 
-void initialize(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
-                const madness::World& top_world)
+void initialize(int &argc, char **argv,
+                const madness::World& top_world,
+                std::shared_ptr<GetLongOpt> opt)
 {
   if (!madness::initialized()) {
     throw ProgrammingError(
@@ -192,11 +193,12 @@ std::shared_ptr<GetLongOpt> make_options() {
   options->enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
   options->enroll("W", GetLongOpt::MandatoryValue, "set the working directory",
                  ".");
+  options->enroll("u", GetLongOpt::MandatoryValue, "the units system");
+  options->enroll("d", GetLongOpt::NoValue, "start the program and attach a debugger");
   //options->enroll("c", GetLongOpt::NoValue, "check input then exit");
   options->enroll("v", GetLongOpt::NoValue, "print the version number");
   options->enroll("w", GetLongOpt::NoValue, "print the warranty");
   options->enroll("L", GetLongOpt::NoValue, "print the license");
-  //options->enroll("d", GetLongOpt::NoValue, "debug");
   options->enroll("h", GetLongOpt::NoValue, "print this message");
 
   return options;

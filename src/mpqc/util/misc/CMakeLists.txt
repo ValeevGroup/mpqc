@@ -12,8 +12,6 @@ set(sources
   print.h
   string.h
   time.h
-  type_traits.h
 )
 
-add_library(MPQCutil_misc ${sources})
-target_link_libraries(MPQCutil_misc MADworld)
+add_mpqc_library(util_misc sources sources "MADworld;util_c++" "mpqc/util/misc")

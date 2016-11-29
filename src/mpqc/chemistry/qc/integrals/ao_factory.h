@@ -7,7 +7,7 @@
 
 #include "ao_factory_base.h"
 #include "mpqc/chemistry/qc/expression/permutation.h"
-#include "mpqc/chemistry/qc/f12/f12_utility.h"
+#include "mpqc/chemistry/qc/integrals/f12_utility.h"
 #include "mpqc/chemistry/qc/integrals/integrals.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/sqrt_inv.h"

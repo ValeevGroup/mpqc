@@ -1,0 +1,48 @@
+# - CMAKE Config file for the MPQC package
+# The following variables are defined:
+#  MPQC_INCLUDE_DIRS         - The MPQC include directory
+#  MPQC_LIBRARIES            - The MPQC libraries and their dependencies
+#  MPQC_<COMPONENT>_FOUND    - System has the specified MPQC COMPONENT
+#  MPQC_<COMPONENT>_LIBRARY  - The MPQC COMPONENT library
+#  MPQC_COMPILE_FLAGS        - Compile flags required to build with MPQC
+#  MPQC_LINKER_FLAGS         - Linker flags required to link with MPQC
+#  MPQC_VERSION              - MPQC version number
+
+# Set package version
+set(MPQC_VERSION "@PACKAGE_VERSION@")
+
+if(NOT TARGET tiledarray)
+  set(TiledArray_CONFIG @TiledArray_CONFIG@)
+  if (NOT EXISTS ${TiledArray_CONFIG})
+    message(FATAL_ERROR "Expected TiledArray config file at ${TiledArray_CONFIG}; directory moved since MPQC configuration?")
+  endif()
+  get_filename_component(TiledArray_DIR ${TiledArray_CONFIG} DIRECTORY)
+  find_package(TiledArray 0.6.0 CONFIG QUIET REQUIRED COMPONENTS tiledarray PATHS ${TiledArray_DIR} NO_DEFAULT_PATH)
+endif()
+
+# Include library IMPORT targets
+if(NOT TARGET libmpqc)
+  include("${CMAKE_CURRENT_LIST_DIR}/mpqc-targets.cmake")
+  if(NOT TARGET libmpqc)
+    message(FATAL_ERROR "expected libmpqc among imported MPQC targets")
+  endif()
+endif()
+
+# Set the MPQC super-library as the default target
+set(MPQC_LIBRARIES libmpqc)
+
+set(MPQC_SOURCE_DIR "@MPQC_SOURCE_DIR@")
+set(MPQC_BINARY_DIR "@MPQC_BINARY_DIR@")
+
+set(MPQC_BUILD_INCLUDE_DIRS "${MPQC_SOURCE_DIR}/src" "${MPQC_BINARY_DIR}/src")
+set(MPQC_INSTALL_INCLUDE_DIRS "@PACKAGE_MPQC_INSTALL_INCLUDEDIR@")
+
+# define MPQC_INCLUDE_DIRS according to where we are compiling: MPQC build tree or outside
+# external packages should use MPQC_BUILD_INCLUDE_DIRS and MPQC_INSTALL_INCLUDE_DIRS directly
+if(CMAKE_CURRENT_LIST_DIR EQUAL MPQC_BINARY_DIR)
+  set(MPQC_INCLUDE_DIRS "${MPQC_BUILD_INCLUDE_DIRS}")
+else()
+  set(MPQC_INCLUDE_DIRS "${MPQC_INSTALL_INCLUDE_DIRS}")
+endif()
+
+set(MPQC_FOUND TRUE)

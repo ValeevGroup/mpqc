@@ -54,13 +54,13 @@ public:
      */
     double value() override;
 
+private:
+
     /*!
      * \brief This performs SCF procedure for PHF
      * \return true if SCF converges, false if not
      */
     bool solve();
-
-private:
 
     /*!
      * \brief This diagonalizes Fock matrix in reciprocal space and

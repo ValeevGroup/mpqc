@@ -1,5 +1,5 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PHF_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PHF_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PHF_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PHF_H_
 
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 
@@ -11,13 +11,13 @@
 #include "mpqc/util/external/c++/memory"
 
 namespace mpqc {
-namespace phf {
+namespace scf {
 
 /**
- * Periodic Hartree-Fock class
+ * Periodic Restricted Hartree-Fock class
  */
 
-class PHF : public qc::Wavefunction {
+class PRHF : public qc::Wavefunction {
 public:
     using Tile = TA::TensorZ;
     using TArray = TA::DistArray<Tile, TA::SparsePolicy>;
@@ -25,10 +25,10 @@ public:
     using MatrixcVec = std::vector<Matrixc>;
     using VectorcVec = std::vector<Vectorc>;
 
-    PHF() = default;
+    PRHF() = default;
 
     /**
-     * KeyVal constructor for PHF
+     * KeyVal constructor for PRHF
      *
      * keywords: takes all keywords from AOWavefunction
      *
@@ -41,9 +41,9 @@ public:
      * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
      *
      */
-    PHF(const KeyVal& kv);
+    PRHF(const KeyVal& kv);
 
-    ~PHF() = default;
+    ~PRHF() = default;
 
     void compute(qc::PropertyBase *pb) override;
     void obsolete() override;
@@ -57,7 +57,7 @@ public:
 private:
 
     /*!
-     * \brief This performs SCF procedure for PHF
+     * \brief This performs SCF procedure for PRHF
      * \return true if SCF converges, false if not
      */
     bool solve();
@@ -113,7 +113,7 @@ private:
     double scf_duration_ = 0.0;
 
     /*!
-     * \brief This initialize PHF by assigning values to private members
+     * \brief This initialize PRHF by assigning values to private members
      * and computing initial guess for SCF
      *
      * \param kv KeyVal object
@@ -121,6 +121,6 @@ private:
     void init(const KeyVal& kv);
 };
 
-} // end of namespace phf
+} // end of namespace scf
 } // end of namespace mpqc
-#endif // MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PHF_H_
+#endif // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PHF_H_

@@ -197,7 +197,7 @@ class PeriodicAOFactory : public DescribedClass {
 
     std::string molecule_type = kv.value<std::string>(prefix + "molecule:type");
     if (molecule_type != "UnitCell") {
-      throw std::invalid_argument("molecule:type has to be UnitCell in order to run PHF!!");
+      throw std::invalid_argument("molecule:type has to be UnitCell in order to run PRHF!!");
     }
 
     unitcell_ = kv.keyval(prefix + "molecule").class_ptr<UnitCell>();

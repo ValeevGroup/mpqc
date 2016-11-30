@@ -1,5 +1,5 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PERIODIC_SOAD_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PERIODIC_SOAD_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_SOAD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_SOAD_H_
 
 #include <libint2/chemistry/sto3g_atomic_density.h>
 #include <tiledarray.h>
@@ -9,10 +9,10 @@
 #include "mpqc/chemistry/qc/basis/basis_set.h"
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/scf/soad.h"
-#include "phf.h"
+#include "mpqc/chemistry/qc/scf/pbc/prhf.h"
 
 namespace mpqc {
-namespace phf {
+namespace scf {
 
 /*!
  * \brief This computes SOAD guess for the density matrix in minimal basis
@@ -90,6 +90,6 @@ Array periodic_fock_soad(
   return F;
 }
 
-}  // end of namespace phf
+}  // end of namespace scf
 }  // end of namespace mpqc
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PERIODIC_SOAD_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_SOAD_H_

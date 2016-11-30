@@ -14,7 +14,7 @@ add_mpqc_library(mpqc mpqc_sources mpqc_headers
 
 # add the libraries you need and force their linkage in mpqc.cpp
 # developers will want to trim this list down to the minimum needed
-set(MPQC_LIBS MPQCf12 MPQCcc MPQCmbpt MPQCscf MPQCphf)
+set(MPQC_LIBS MPQCf12 MPQCcc MPQCmbpt MPQCscf)
 
 # create libmpqc, an interface to MPQC_LIBS
 # linking libmpqc in will link in ALL MPQC functionality

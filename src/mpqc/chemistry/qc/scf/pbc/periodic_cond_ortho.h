@@ -1,10 +1,10 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PERIODIC_CONDITIONED_ORTHOGONALIZER_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PERIODIC_CONDITIONED_ORTHOGONALIZER_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_CONDITIONED_ORTHOGONALIZER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_CONDITIONED_ORTHOGONALIZER_H_
 
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 
 namespace mpqc {
-namespace phf {
+namespace scf {
 
 /**
  * \brief gensqrtinv
@@ -122,7 +122,7 @@ std::vector<Matrixc> conditioned_orthogonalizer(
 }
 
 
-}  // namespace phf
+}  // namespace scf
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PHF_PERIODIC_CONDITIONED_ORTHOGONALIZER_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_CONDITIONED_ORTHOGONALIZER_H_

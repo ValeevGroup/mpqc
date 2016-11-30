@@ -1,6 +1,6 @@
-#include "mpqc/chemistry/qc/phf/phf.h"
-#include "mpqc/chemistry/qc/phf/periodic_soad.h"
-#include "mpqc/chemistry/qc/phf/periodic_conditioned_orthogonalizer.h"
+#include "mpqc/chemistry/qc/scf/pbc/prhf.h"
+#include "mpqc/chemistry/qc/scf/pbc/periodic_soad.h"
+#include "mpqc/chemistry/qc/scf/pbc/periodic_cond_ortho.h"
 
 #include <clocale>
 #include <sstream>
@@ -13,11 +13,11 @@
 #include "mpqc/util/keyval/keyval.h"
 
 namespace mpqc {
-namespace phf {
+namespace scf {
 
-PHF::PHF(const KeyVal& kv) : Wavefunction(kv), kv_(kv), pao_factory_(kv) {}
+PRHF::PRHF(const KeyVal& kv) : Wavefunction(kv), kv_(kv), pao_factory_(kv) {}
 
-void PHF::init(const KeyVal& kv) {
+void PRHF::init(const KeyVal& kv) {
   // TODO: retrive unitcell from pao_factory
   auto& unitcell = *kv.keyval("wfn_world:molecule").class_ptr<UnitCell>();
 
@@ -87,14 +87,14 @@ void PHF::init(const KeyVal& kv) {
   init_duration_ = mpqc::duration_in_s(init_start, init_end);
 }
 
-bool PHF::solve() {
+bool PRHF::solve() {
   auto& world = pao_factory_.world();
 
   auto iter = 0;
   auto rms = 0.0;
   TArray Ddiff;
   auto converged = false;
-  auto ephf = 0.0;
+  auto eprhf = 0.0;
   auto ediff = 0.0;
 
   do {
@@ -102,16 +102,16 @@ bool PHF::solve() {
     ++iter;
 
     // Save a copy of energy and density
-    auto ephf_old = ephf;
+    auto eprhf_old = eprhf;
     auto D_old = D_;
 
     if (print_detail_)
       if (world.rank() == 0) std::cout << "\nIteration: " << iter << "\n";
 
-    // compute PHF energy
+    // compute PRHF energy
     F_("mu, nu") += H_("mu, nu");
     std::complex<double> e_complex = F_("mu, nu") * D_("mu, nu");
-    ephf = e_complex.real();
+    eprhf = e_complex.real();
 
     auto j_start = mpqc::fenced_now(world);
     J_ = pao_factory_.compute(L"(μ ν| J|κ λ)");  // Coulomb
@@ -143,7 +143,7 @@ bool PHF::solve() {
     d_duration_ += mpqc::duration_in_s(d_start, d_end);
 
     // compute difference with last iteration
-    ediff = ephf - ephf_old;
+    ediff = eprhf - eprhf_old;
     Ddiff("mu, nu") = D_("mu, nu") - D_old("mu, nu");
     rms = Ddiff("mu, nu").norm();
     if ((rms <= converge_) || fabs(ediff) <= converge_) converged = true;
@@ -155,8 +155,8 @@ bool PHF::solve() {
     // Print out information
     if (print_detail_) {
       if (world.rank() == 0) {
-        std::cout << "\nPHF Energy: " << ephf << "\n"
-                  << "Total Energy: " << ephf + repulsion_ << "\n"
+        std::cout << "\nPRHF Energy: " << eprhf << "\n"
+                  << "Total Energy: " << eprhf + repulsion_ << "\n"
                   << "Delta(E): " << ediff << "\n"
                   << "RMS(D): " << rms << "\n"
                   << "Coulomb Build Time: "
@@ -177,15 +177,15 @@ bool PHF::solve() {
           std::cout << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
                  nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
                  nT.c_str());
-        std::cout << mpqc::printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ephf,
-               ephf + repulsion_, ediff, rms, iter_duration);
+        std::cout << mpqc::printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, eprhf,
+               eprhf + repulsion_, ediff, rms, iter_duration);
       }
     }
 
   } while ((iter < maxiter_) && (!converged));
 
-  // save total energy to energy_ no matter if PHF converges
-  energy_ = ephf + repulsion_;
+  // save total energy to energy_ no matter if PRHF converges
+  energy_ = eprhf + repulsion_;
 
   if (!converged) {
     if (world.rank() == 0) {
@@ -220,13 +220,13 @@ bool PHF::solve() {
   }
 }
 
-double PHF::value() {
+double PRHF::value() {
   init(kv_);
   solve();
   return energy_;
 }
 
-void PHF::compute_density() {
+void PRHF::compute_density() {
   auto& world = pao_factory_.world();
 
   eps_.resize(k_size_);
@@ -274,11 +274,11 @@ void PHF::compute_density() {
   D_ = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
 }
 
-void PHF::obsolete() { Wavefunction::obsolete(); }
+void PRHF::obsolete() { Wavefunction::obsolete(); }
 
-void PHF::compute(qc::PropertyBase* pb) {
+void PRHF::compute(qc::PropertyBase* pb) {
   throw std::logic_error("Not implemented!");
 }
 
-}  // end of namespace phf
+}  // end of namespace scf
 }  // end of namespace mpqc

@@ -15,6 +15,7 @@ addons:
       - george-edison55-precise-backports
       - ubuntu-toolchain-r-test
       - boost-latest
+      - kubuntu-backports
     packages:
       - g++-5
       - libeigen3-dev

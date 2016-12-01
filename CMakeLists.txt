@@ -110,6 +110,14 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "MinSizeRel" "RelWithDebInfo")
 endif()
 
+# look for ccache
+find_program(CCACHE ccache)
+if(CCACHE)
+    message (STATUS "Found ccache: ${CCACHE}")
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${CCACHE})
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${CCACHE})
+endif(CCACHE)
+
 ###############################################################################
 # Compiler/library features
 ###############################################################################

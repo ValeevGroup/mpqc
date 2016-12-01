@@ -1,7 +1,10 @@
 #ifndef MPQC4_SRC_MPQC_MATH_EXTERNAL_EIGEN_EIGEN_H_
 #define MPQC4_SRC_MPQC_MATH_EXTERNAL_EIGEN_EIGEN_H_
 
+#pragma GCC diagnostic push
+#pragma GCC system_header
 #include <Eigen/Dense>
+#pragma GCC diagnostic pop
 
 namespace mpqc {
 template <typename T>

@@ -2,8 +2,8 @@
 // Created by Chong Peng on 1/7/16.
 //
 
-#ifndef MPQC_MOLECULAR_INTEGRAL_H
-#define MPQC_MOLECULAR_INTEGRAL_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_LCAO_FACTORY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_LCAO_FACTORY_H_
 
 #include <string>
 #include <vector>
@@ -647,4 +647,4 @@ class LCAOFactory<TA::TensorD,TA::SparsePolicy>;
 }  // namespace integral
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULAR_INTEGRAL_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_LCAO_FACTORY_H_

@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/6/16.
 //
 
-#ifndef MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
-#define MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
 
 #include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/util/keyval/keyval.h"
@@ -92,4 +92,4 @@ private:
 }
 
 
-#endif //MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_

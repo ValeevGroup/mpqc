@@ -2,8 +2,8 @@
 // Created by Chong Peng on 4/14/16.
 //
 
-#ifndef MPQC_MO_BUILD_H
-#define MPQC_MO_BUILD_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_MO_BUILD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_MO_BUILD_H_
 
 #include <tiledarray.h>
 
@@ -497,4 +497,4 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
 
 }  // end of namespace mpqc
 
-#endif  // MPQC_MO_BUILD_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_MO_BUILD_H_

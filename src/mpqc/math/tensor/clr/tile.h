@@ -1,5 +1,5 @@
-#ifndef SRC_MPQC_MATH_TENSOR_CLR_TILE_H_
-#define SRC_MPQC_MATH_TENSOR_CLR_TILE_H_
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_H_
 
 #include <memory>
 
@@ -440,4 +440,4 @@ unsigned long tile_clr_storage(Tile<DecomposedTensor<T>> const &tile) {
 }  // namespace tensor
 }  // namespace mpqc
 
-#endif  // SRC_MPQC_MATH_TENSOR_CLR_TILE_H_
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_H_

@@ -1,5 +1,5 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNIT_CELL_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNIT_CELL_H_
 
 #include "mpqc/chemistry/molecule/molecule.h"
 
@@ -101,4 +101,4 @@ std::ostream &operator<<(std::ostream &, UnitCell const &);
 
 }  // mpqc namespace
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNITCELL_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_UNIT_CELL_H_

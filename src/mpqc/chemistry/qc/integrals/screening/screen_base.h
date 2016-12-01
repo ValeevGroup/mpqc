@@ -1,7 +1,7 @@
 
 
-#ifndef MPQC_INTEGRALS_INTEGRALSCREENERS_H
-#define MPQC_INTEGRALS_INTEGRALSCREENERS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_SCREEN_BASE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_SCREEN_BASE_H_
 
 
 #include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
@@ -55,4 +55,4 @@ class Screener {
 } // namespace integrals
 } // namespace mpqc
 
-#endif // MPQC_INTEGRALS_INTEGRALSCREENERS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_SCREEN_BASE_H_

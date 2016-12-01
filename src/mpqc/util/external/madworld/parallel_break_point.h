@@ -1,6 +1,6 @@
 
-#ifndef MPQC_UTILITY_PARALLELBREAKPOINT_H
-#define MPQC_UTILITY_PARALLELBREAKPOINT_H
+#ifndef MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_BREAK_POINT_H_
+#define MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_BREAK_POINT_H_
 
 #include <madness/world/world.h>
 
@@ -23,4 +23,4 @@ inline void parallel_break_point(madness::World &world, volatile int debug) {
 }  // namespace utility
 }  // namespace namespace mpqc
 
-#endif  // MPQC_UTILITY_PARALLELBREAKPOINT_H
+#endif  // MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_BREAK_POINT_H_

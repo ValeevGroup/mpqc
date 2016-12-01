@@ -1,6 +1,6 @@
 
-#ifndef MPQC_BASIS_CLUSTERSHELLS_H
-#define MPQC_BASIS_CLUSTERSHELLS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_CLUSTER_SHELLS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_CLUSTER_SHELLS_H_
 
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
 
@@ -52,4 +52,4 @@ class ClusterShells {
 }  // namespace basis
 }  // namespace mpqc
 
-#endif  // MPQC_BASIS_CLUSTERSHELLS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_CLUSTER_SHELLS_H_

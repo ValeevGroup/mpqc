@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/11/16.
 //
 
-#ifndef MPQC_DB_F12_INTERMEDIATES_H
-#define MPQC_DB_F12_INTERMEDIATES_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DB_F12_INTERMEDIATES_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DB_F12_INTERMEDIATES_H_
 
 #include <tiledarray.h>
 
@@ -639,4 +639,4 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_db_df(
 }
 }
 
-#endif  // MPQC_DB_F12_INTERMEDIATES_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DB_F12_INTERMEDIATES_H_

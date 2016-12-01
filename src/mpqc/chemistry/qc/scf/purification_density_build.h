@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_PURIFICATIONDENSITYBUILD_H
-#define MPQC_SCF_PURIFICATIONDENSITYBUILD_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_DENSITY_BUILD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_DENSITY_BUILD_H_
 
 #include "mpqc/chemistry/qc/scf/density_builder.h"
 #include <vector>
@@ -36,4 +36,4 @@ class PurificationDensityBuilder : public DensityBuilder {
 
 }  // namespace scf
 }  // namespace mpqc
-#endif  // MPQC_SCF_PURIFICATIONDENSITYBUILD_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_DENSITY_BUILD_H_

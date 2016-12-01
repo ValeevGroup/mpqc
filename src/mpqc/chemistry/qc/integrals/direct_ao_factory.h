@@ -2,8 +2,8 @@
 // Created by Chong Peng on 9/12/16.
 //
 
-#ifndef MPQC_DIRECT_AO_FACTORY_H
-#define MPQC_DIRECT_AO_FACTORY_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_AO_FACTORY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_AO_FACTORY_H_
 
 #include <type_traits>
 
@@ -331,4 +331,4 @@ class DirectAOFactory<TA::TensorD, TA::SparsePolicy>;
 }  // end of namespace integrals
 }  // end of namespace mpqc
 
-#endif  // MPQC_DIRECT_AO_FACTORY_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_AO_FACTORY_H_

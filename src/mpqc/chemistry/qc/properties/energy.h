@@ -4,8 +4,8 @@
  *  Created on: Aug 18, 2016
  *      Author: Drew Lewis
  */
-#ifndef MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
-#define MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
 
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/chemistry/qc/properties/propertybase.h"
@@ -30,4 +30,4 @@ class Energy : public PropertyBase {
 }  // namespace qc
 }  // namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_

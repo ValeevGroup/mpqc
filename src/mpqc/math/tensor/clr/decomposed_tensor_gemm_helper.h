@@ -1,7 +1,7 @@
 
 
-#ifndef MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
-#define MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_GEMM_HELPER_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_GEMM_HELPER_H_
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_addition.h"
@@ -457,4 +457,4 @@ struct low_rank_gemm<2ul, 2ul, 2ul> {
 }  // namespace tensor
 }  // namespace mpqc
 
-#endif  // MPQC_TENSOR_DECOMPOSEDTENSORGEMMHELPER_H
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_GEMM_HELPER_H_

@@ -1,6 +1,6 @@
 
-#ifndef TCC_PURIFICATION_EIGENVALUEESTIMATION_H
-#define TCC_PURIFICATION_EIGENVALUEESTIMATION_H
+#ifndef MPQC4_SRC_MPQC_MATH_LINALG_EIGEN_VALUE_ESTIMATION_H_
+#define MPQC4_SRC_MPQC_MATH_LINALG_EIGEN_VALUE_ESTIMATION_H_
 
 #include <cmath>
 #include <iostream>
@@ -151,4 +151,4 @@ double min_eval_est(Array const &H, Array const &S) {
 /*     return invert(HbetaS); */
 /* } */
 
-#endif /* end of include guard: TCC_PURIFICATION_EIGENVALUEESTIMATION_H */
+#endif  // MPQC4_SRC_MPQC_MATH_LINALG_EIGEN_VALUE_ESTIMATION_H_

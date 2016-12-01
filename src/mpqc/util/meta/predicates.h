@@ -1,6 +1,6 @@
 
-#ifndef UTILITY_META_PREDICATES_H_
-#define UTILITY_META_PREDICATES_H_
+#ifndef MPQC4_SRC_MPQC_UTIL_META_PREDICATES_H_
+#define MPQC4_SRC_MPQC_UTIL_META_PREDICATES_H_
 
 namespace mpqc {
 namespace utility {
@@ -28,4 +28,4 @@ bool is_homogeneous_parameter_pack_v =
 }
 }
 
-#endif /* UTILITY_META_PREDICATES_H_ */
+#endif  // MPQC4_SRC_MPQC_UTIL_META_PREDICATES_H_

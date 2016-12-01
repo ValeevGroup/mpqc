@@ -2,8 +2,8 @@
 // Created by Chong Peng on 8/16/16.
 //
 
-#ifndef MPQC_PERMUTATION_H
-#define MPQC_PERMUTATION_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_PERMUTATION_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_PERMUTATION_H_
 
 #include "formula.h"
 
@@ -31,4 +31,4 @@ std::vector<Formula> permutations(const Formula& formula);
 
 }  // end of namespace mpqc
 
-#endif  // MPQC_PERMUTATION_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_PERMUTATION_H_

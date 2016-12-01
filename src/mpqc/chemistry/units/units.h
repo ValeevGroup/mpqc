@@ -1,5 +1,5 @@
-#ifndef SRC_MPQC_UTIL_MISC_UNIT_H_
-#define SRC_MPQC_UTIL_MISC_UNIT_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_UNITS_UNITS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_UNITS_UNITS_H_
 
 #include <cmath>
 #include <string>
@@ -203,7 +203,7 @@ class UnitFactory {
 
 }  // namespace mpqc
 
-#endif
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_UNITS_UNITS_H_
 
 // Local Variables:
 // mode: c++

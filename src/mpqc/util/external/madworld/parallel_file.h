@@ -2,8 +2,8 @@
 // Created by Chong Peng on 3/24/16.
 //
 
-#ifndef SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_FILE_H_
-#define SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_FILE_H_
+#ifndef MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_FILE_H_
+#define MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_FILE_H_
 
 #include <madness/world/world.h>
 #include <madness/world/worldgop.h>
@@ -20,4 +20,4 @@ void parallel_read_file(madness::World &world, const std::string &filename,
 }  // end of namespace utility
 }  // end of namespace mpqc
 
-#endif  // SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_FILE_H_
+#endif  // MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_FILE_H_

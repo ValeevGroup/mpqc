@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/11/16.
 //
 
-#ifndef MPQC_DBMP2F12_H
-#define MPQC_DBMP2F12_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DBMP2F12_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DBMP2F12_H_
 
 #include "mpqc/chemistry/qc/f12/db_f12_intermediates.h"
 #include "mpqc/chemistry/qc/f12/mp2f12.h"
@@ -43,4 +43,4 @@ class RIDBRMP2F12 : public RIRMP2F12 {
 }  // namespace f12
 }  // namespace mpqc
 
-#endif  // MPQC_DBMP2F12_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DBMP2F12_H_

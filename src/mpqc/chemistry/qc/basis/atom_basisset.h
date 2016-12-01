@@ -1,6 +1,6 @@
 
-#ifndef MPQC_BASIS_ATOM_BASIS_H
-#define MPQC_BASIS_ATOM_BASIS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_ATOM_BASISSET_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_ATOM_BASISSET_H_
 
 #include <algorithm>
 #include <iosfwd>
@@ -86,4 +86,4 @@ std::ostream &operator<<(std::ostream &os, AtomBasisSet const &abs);
 }  // namespace basis
 }  // namespace mpqc
 
-#endif  // MPQC_BASIS_ATOM_BASIS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_ATOM_BASISSET_H_

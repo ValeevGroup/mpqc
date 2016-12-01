@@ -1,8 +1,8 @@
 /*
  * File to define linear algebra functions
  */
-#ifndef Lin_Algebra_H
-#define Lin_Algebra_H
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_ALGEBRA_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_ALGEBRA_H_
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include <TiledArray/madness.h>
@@ -383,4 +383,4 @@ void inline CompressRight(RowMatrix<T> &L, RowMatrix<T> &R, double cut) {
 
 }  // namespace algebra
 
-#endif  // Lin_Algebra_H
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_ALGEBRA_H_

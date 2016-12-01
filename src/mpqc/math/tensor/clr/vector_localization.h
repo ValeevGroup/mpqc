@@ -1,5 +1,5 @@
-#ifndef SRC_MPQC_MATH_TENSOR_CLR_VECTOR_LOCALIZATION_H_
-#define SRC_MPQC_MATH_TENSOR_CLR_VECTOR_LOCALIZATION_H_
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_VECTOR_LOCALIZATION_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_VECTOR_LOCALIZATION_H_
 
 #include <random>
 #include <utility>
@@ -210,4 +210,4 @@ TA::TiledRange1 localize_vectors_with_kmeans(Matrix<T> const &xyz, Matrix<T> &D,
 }  // namespace tensor
 }  // namespace mpqc
 
-#endif  // SRC_MPQC_MATH_TENSOR_CLR_VECTOR_LOCALIZATION_H_
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_VECTOR_LOCALIZATION_H_

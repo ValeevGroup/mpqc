@@ -2,8 +2,8 @@
 // Created by Chong Peng on 2/16/16.
 //
 
-#ifndef MPQC_ORBITAL_REGISTRY_H
-#define MPQC_ORBITAL_REGISTRY_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_REGISTRY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_REGISTRY_H_
 
 #include "mpqc/chemistry/qc/expression/formula_registry.h"
 #include "mpqc/chemistry/qc/expression/orbital_space.h"
@@ -44,4 +44,4 @@ using OrbitalSpaceRegistry = OrbitalRegistry<OrbitalSpace<Array>>;
 
 }  // end of namespace mpqc
 
-#endif  // MPQC_ORBITAL_REGISTRY_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_REGISTRY_H_

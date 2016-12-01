@@ -1,6 +1,6 @@
 
-#ifndef TCC_INTEGRALS_SCF_SOAD_H
-#define TCC_INTEGRALS_SCF_SOAD_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_SOAD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_SOAD_H_
 
 #include <libint2/chemistry/sto3g_atomic_density.h>
 
@@ -221,4 +221,4 @@ Array fock_from_soad(
 }  // namespace scf
 }  // namespace mpqc
 
-#endif  // TCC_INTEGRALS_SCF_SOAD_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_SOAD_H_

@@ -1,5 +1,5 @@
-#ifndef MPQC_UTILITY_TIME_H
-#define MPQC_UTILITY_TIME_H
+#ifndef MPQC4_SRC_MPQC_UTIL_MISC_TIME_H_
+#define MPQC4_SRC_MPQC_UTIL_MISC_TIME_H_
 
 #include <chrono>
 
@@ -36,4 +36,4 @@ inline time_point now(madness::World &world, bool fence) {
 
 }  // namespace mpqc
 
-#endif  // MPQC_UTILITY_TIME_H
+#endif  // MPQC4_SRC_MPQC_UTIL_MISC_TIME_H_

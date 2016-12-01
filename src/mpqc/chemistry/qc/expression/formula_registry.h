@@ -2,8 +2,8 @@
 // Created by pchong on 11/10/15.
 //
 
-#ifndef MPQC_FORMULA_MAP_H
-#define MPQC_FORMULA_MAP_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_REGISTRY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_REGISTRY_H_
 
 #include "mpqc/chemistry/qc/expression/formula.h"
 #include "mpqc/math/external/tiledarray/array_info.h"
@@ -220,4 +220,4 @@ class FormulaRegistry : public Registry<Formula, Value> {
 };
 }  // end of namespace mpqc
 
-#endif  // MPQC_FORMULA_MAP_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_REGISTRY_H_

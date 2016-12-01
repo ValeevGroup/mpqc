@@ -2,8 +2,8 @@
 // Created by Chong Peng on 6/13/16.
 //
 
-#ifndef MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
-#define MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
 
 #include "mpqc/chemistry/qc/mbpt/mp2.h"
 
@@ -427,4 +427,4 @@ private:
 }  // end of namespace mbpt
 }  // end of namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_

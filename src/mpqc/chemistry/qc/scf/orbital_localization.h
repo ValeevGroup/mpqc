@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_ORBITALLOCALIZATION_H
-#define MPQC_SCF_ORBITALLOCALIZATION_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ORBITAL_LOCALIZATION_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ORBITAL_LOCALIZATION_H_
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include <tiledarray.h>
@@ -45,4 +45,4 @@ class BoysLocalization {
 }  // namespace scf
 }  // namespace mpqc
 
-#endif  //  MPQC_SCF_ORBITALLOCALIZATION_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ORBITAL_LOCALIZATION_H_

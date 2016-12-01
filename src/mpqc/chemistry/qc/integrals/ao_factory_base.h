@@ -2,8 +2,8 @@
 // Created by Chong Peng on 3/2/16.
 //
 
-#ifndef MPQC_AO_FACTORY_BASE_H
-#define MPQC_AO_FACTORY_BASE_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_
 
 #include <cwchar>
 #include <iostream>
@@ -238,4 +238,4 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper, const AOFactor
 }  // end of namespace integral
 }  // end of namespace mpqc
 
-#endif  // MPQC_AO_FACTORY_BASE_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_

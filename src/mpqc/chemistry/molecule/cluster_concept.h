@@ -1,6 +1,6 @@
 
-#ifndef MPQC_MOLECULE_CLUSTERCONCEPT_H
-#define MPQC_MOLECULE_CLUSTERCONCEPT_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTER_CONCEPT_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTER_CONCEPT_H_
 
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
 
@@ -88,4 +88,4 @@ class Clusterable {
 
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULE_CLUSTERCONCEPT_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTER_CONCEPT_H_

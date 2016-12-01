@@ -1,6 +1,6 @@
 
-#ifndef MPQC_TAROUTINES_SQRTINV_H
-#define MPQC_TAROUTINES_SQRTINV_H
+#ifndef MPQC4_SRC_MPQC_MATH_LINALG_SQRT_INV_H_
+#define MPQC4_SRC_MPQC_MATH_LINALG_SQRT_INV_H_
 
 #include <tiledarray.h>
 
@@ -416,4 +416,4 @@ Array inverse_sqrt(Array const &S) {
 }  // namespace array_ops
 }  // namespace mpqc
 
-#endif  // MPQC_TAROUTINES_SQRTINV_H
+#endif  // MPQC4_SRC_MPQC_MATH_LINALG_SQRT_INV_H_

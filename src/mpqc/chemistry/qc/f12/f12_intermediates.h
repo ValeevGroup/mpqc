@@ -2,8 +2,8 @@
 // Created by Chong Peng on 04/11/16.
 //
 
-#ifndef MPQC_F12_INTERMEDIATES_H
-#define MPQC_F12_INTERMEDIATES_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_F12_INTERMEDIATES_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_F12_INTERMEDIATES_H_
 
 #include <tiledarray.h>
 
@@ -1789,4 +1789,4 @@ VX_pqrs_pqsr(const std::string &target_str,
 }  // end of namespace f12
 }  // end of namespace mpqc
 
-#endif  // MPQC_F12_INTERMEDIATES_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_F12_INTERMEDIATES_H_

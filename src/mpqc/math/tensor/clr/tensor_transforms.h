@@ -1,6 +1,6 @@
 
-#ifndef MPQC_TENSOR_TENSORTRANSFORMS_H
-#define MPQC_TENSOR_TENSORTRANSFORMS_H
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TENSOR_TRANSFORMS_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TENSOR_TRANSFORMS_H_
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.cpp"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.cpp"
@@ -128,4 +128,4 @@ class DecompToTaTensor {
 }  // namespace tensor
 }  // namespace mpqc
 
-#endif  // MPQC_TENSOR_TENSORTRANSFORMS_H
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TENSOR_TRANSFORMS_H_

@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_CADFBUILDERPRINTONLY_H
-#define MPQC_SCF_CADFBUILDERPRINTONLY_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_PRINT_ONLY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_PRINT_ONLY_H_
 
 #include <tiledarray.h>
 
@@ -237,4 +237,4 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 }  // namespace scf
 }  // namespace mpqc
 
-#endif  // MPQC_SCF_CADFBUILDERPRINTONLY_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_BUILDER_PRINT_ONLY_H_

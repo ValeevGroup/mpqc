@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/21/15.
 //
 
-#ifndef MPQC_UTILITY_H
-#define MPQC_UTILITY_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_F12_UTILITY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_F12_UTILITY_H_
 
 #include <TiledArray/error.h>
 #include <TiledArray/sparse_shape.h>
@@ -285,4 +285,4 @@ struct F12PairEnergyReductor {
 };
 }
 }
-#endif  // MPQC_UTILITY_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_F12_UTILITY_H_

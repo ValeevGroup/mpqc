@@ -5,8 +5,8 @@
  *      Author: evaleev
  */
 
-#ifndef SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_
-#define SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_
+#ifndef MPQC4_SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_
+#define MPQC4_SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_
 
 #include <array>
 #include <cassert>
@@ -763,4 +763,4 @@ KeyVal operator+(const KeyVal& first, const KeyVal& second);
 
 /// @}
 
-#endif  // SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_
+#endif  // MPQC4_SRC_MPQC_UTIL_KEYVAL_KEYVAL_H_

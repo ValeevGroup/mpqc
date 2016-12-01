@@ -2,8 +2,8 @@
 // Created by Chong Peng on 6/25/15.
 //
 
-#ifndef MPQC_BLOCK_SIZE_ENGINE_H
-#define MPQC_BLOCK_SIZE_ENGINE_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_TRANGE1_ENGINE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_TRANGE1_ENGINE_H_
 
 #include <tiledarray.h>
 
@@ -114,4 +114,4 @@ class TRange1Engine {
 };
 }
 
-#endif  // MPQC_BLOCK_SIZE_ENGINE_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_TRANGE1_ENGINE_H_

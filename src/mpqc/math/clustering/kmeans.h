@@ -1,6 +1,6 @@
 
-#ifndef MPQC_CLUSTERING_KMEANS_H
-#define MPQC_CLUSTERING_KMEANS_H
+#ifndef MPQC4_SRC_MPQC_MATH_CLUSTERING_KMEANS_H_
+#define MPQC4_SRC_MPQC_MATH_CLUSTERING_KMEANS_H_
 
 #include "mpqc/math/clustering/common.h"
 
@@ -260,4 +260,4 @@ double kmeans_objective(std::vector<Cluster> const &cs) {
 }  // namespace clustering
 }  // namespace mpqc
 
-#endif  // MPQC_CLUSTERING_KMEANS_H
+#endif  // MPQC4_SRC_MPQC_MATH_CLUSTERING_KMEANS_H_

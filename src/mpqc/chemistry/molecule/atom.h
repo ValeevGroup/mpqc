@@ -1,6 +1,6 @@
 
-#ifndef MPQC_MOLECULE_ATOM_H
-#define MPQC_MOLECULE_ATOM_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_H_
 
 #include <iosfwd>
 #include <string>
@@ -77,4 +77,4 @@ inline Vector3d const &center_of_mass(Atom const &a) { return a.center(); }
 
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULE_ATOM_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_H_

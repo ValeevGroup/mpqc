@@ -1,6 +1,6 @@
 
-#ifndef MPQC_UTILITY_MAKEARRAY_H
-#define MPQC_UTILITY_MAKEARRAY_H
+#ifndef MPQC4_SRC_MPQC_UTIL_META_MAKE_ARRAY_H_
+#define MPQC4_SRC_MPQC_UTIL_META_MAKE_ARRAY_H_
 
 #include <array>
 #include <functional>
@@ -29,4 +29,4 @@ make_array_of_refs(Args&... args) {
 }  // namespace utility
 }  // namespace mpqc
 
-#endif /* end of include guard: MPQC_UTILITY_MAKEARRAY_H */
+#endif  // MPQC4_SRC_MPQC_UTIL_META_MAKE_ARRAY_H_

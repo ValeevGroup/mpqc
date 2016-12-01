@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/6/16.
 //
 
-#ifndef SRC_MPQC_CHEMISTRY_QC_MBPT_LINKAGE_H_
-#define SRC_MPQC_CHEMISTRY_QC_MBPT_LINKAGE_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_LINKAGE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_LINKAGE_H_
 
 #include "mpqc/chemistry/qc/scf/linkage.h"
 #include "mpqc/util/keyval/forcelink.h"
@@ -22,4 +22,4 @@ mpqc::detail::ForceLink<RIDBRMP2> fl4;
 }
 }
 
-#endif  // SRC_MPQC_CHEMISTRY_QC_MBPT_LINKAGE_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_LINKAGE_H_

@@ -1,5 +1,5 @@
-#ifndef SRC_MPQC_MATH_EXTERNAL_EIGEN_EIGEN_H_
-#define SRC_MPQC_MATH_EXTERNAL_EIGEN_EIGEN_H_
+#ifndef MPQC4_SRC_MPQC_MATH_EXTERNAL_EIGEN_EIGEN_H_
+#define MPQC4_SRC_MPQC_MATH_EXTERNAL_EIGEN_EIGEN_H_
 
 #include <Eigen/Dense>
 
@@ -46,4 +46,4 @@ struct ArchiveLoadImpl<Archive, mpqc::RowMatrix<_T>> {
 }  // namespace archive
 }  // namespace madness
 
-#endif  // TCC_INCLUDE_EIGEN_H
+#endif  // MPQC4_SRC_MPQC_MATH_EXTERNAL_EIGEN_EIGEN_H_

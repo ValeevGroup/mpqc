@@ -1,6 +1,6 @@
 
-#ifndef TCC_UTILITY_META_STOREVARIADICPACK_H
-#define TCC_UTILITY_META_STOREVARIADICPACK_H
+#ifndef MPQC4_SRC_MPQC_UTIL_META_STORE_VARIADIC_PACK_H_
+#define MPQC4_SRC_MPQC_UTIL_META_STORE_VARIADIC_PACK_H_
 
 #include <tuple>
 
@@ -57,4 +57,4 @@ struct last_type<> {
 }  // namespace utility
 }  // namespace mpqc
 
-#endif  // TCC_UTILITY_META_STOREVARIADICPACK_H
+#endif  // MPQC4_SRC_MPQC_UTIL_META_STORE_VARIADIC_PACK_H_

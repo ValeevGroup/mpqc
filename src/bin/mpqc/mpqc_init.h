@@ -1,6 +1,6 @@
 
-#ifndef SRC_BIN_MPQC_MPQC_INIT_H_
-#define SRC_BIN_MPQC_MPQC_INIT_H_
+#ifndef MPQC4_SRC_BIN_MPQC_MPQC_INIT_H_
+#define MPQC4_SRC_BIN_MPQC_MPQC_INIT_H_
 
 #include <cstdlib>
 #include <string>
@@ -147,4 +147,4 @@ process_options(const std::shared_ptr<GetLongOpt>& options);
 // end of addtogroup Init
 }  // namespace mpqc
 
-#endif
+#endif  // MPQC4_SRC_BIN_MPQC_MPQC_INIT_H_

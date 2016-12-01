@@ -2,8 +2,8 @@
 // Created by Chong Peng on 2/9/16.
 //
 
-#ifndef MPQC_SCF_SCF_H
-#define MPQC_SCF_SCF_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_SCF_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_SCF_H_
 
 #include <memory>
 
@@ -109,4 +109,4 @@ class ClosedShellSCF {
 }  // end of namespace scf
 }  // end of namespace mpqc
 
-#endif  // MPQC_SCF_SCF_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_SCF_H_

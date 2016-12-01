@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/14/15.
 //
 
-#ifndef MPQC_AO_FACTORY_H
-#define MPQC_AO_FACTORY_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_H_
 
 #include "ao_factory_base.h"
 #include "mpqc/chemistry/qc/expression/permutation.h"
@@ -669,4 +669,4 @@ class AOFactory<TA::TensorD, TA::SparsePolicy>;
 }
 }
 
-#endif  // MPQC_AO_FACTORY_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_H_

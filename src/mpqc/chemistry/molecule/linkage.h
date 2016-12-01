@@ -1,6 +1,6 @@
 
-#ifndef SRC_MPQC_CHEMISTRY_MOLECULE_LINKAGE_H_
-#define SRC_MPQC_CHEMISTRY_MOLECULE_LINKAGE_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_LINKAGE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_LINKAGE_H_
 
 
 #include "mpqc/util/keyval/forcelink.h"
@@ -15,4 +15,4 @@ mpqc::detail::ForceLink<UnitCell> fl2;
 
 }  // namespace mpqc
 
-#endif  // SRC_MPQC_CHEMISTRY_MOLECULE_LINKAGE_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_LINKAGE_H_

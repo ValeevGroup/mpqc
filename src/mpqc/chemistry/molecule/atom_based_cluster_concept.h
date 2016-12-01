@@ -1,6 +1,6 @@
 
-#ifndef MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H
-#define MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_BASED_CLUSTER_CONCEPT_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_BASED_CLUSTER_CONCEPT_H_
 
 #include "mpqc/chemistry/molecule/cluster_collapse.h"
 #include "mpqc/chemistry/molecule/cluster_concept.h"
@@ -129,4 +129,4 @@ inline std::vector<Atom> collapse_to_atoms(AtomBasedClusterable const &ac) {
 
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULE_ATOMBASEDCLUSTERCONCEPT_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_BASED_CLUSTER_CONCEPT_H_

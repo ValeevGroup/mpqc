@@ -5,8 +5,8 @@
  *      Author: Drew Lewis
  */
 
-#ifndef MPQC_CHEMISTRY_QC_WFN_PROPERTY_BASE_H_
-#define MPQC_CHEMISTRY_QC_WFN_PROPERTY_BASE_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_PROPERTYBASE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_PROPERTYBASE_H_
 
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/chemistry/qc/wfn/wfn_forward.h"
@@ -22,4 +22,4 @@ class PropertyBase : public DescribedClass {
 }  // namespace qc
 }  // namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_WFN_PROPERTY_BASE_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_PROPERTYBASE_H_

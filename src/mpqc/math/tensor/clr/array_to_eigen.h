@@ -1,6 +1,6 @@
 
-#ifndef MPQC_ARRAYOPS_ARRAYTOEIGEN_H
-#define MPQC_ARRAYOPS_ARRAYTOEIGEN_H
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_ARRAY_TO_EIGEN_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_ARRAY_TO_EIGEN_H_
 
 #include <tiledarray.h>
 
@@ -122,4 +122,4 @@ TA::DistArray<Tile, TA::SparsePolicy> eigen_to_array(
 }  // namespace array_ops
 }  // namespace mpqc
 
-#endif  // mpqc_ARRAYOPS_ARRAYTOEIGEN_H
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_ARRAY_TO_EIGEN_H_

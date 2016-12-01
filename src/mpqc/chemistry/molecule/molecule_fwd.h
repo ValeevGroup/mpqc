@@ -1,6 +1,6 @@
 
-#ifndef MPQC_MOLECULE_MOLECULE_FWD_H
-#define MPQC_MOLECULE_MOLECULE_FWD_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_FWD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_FWD_H_
 
 #include "mpqc/math/external/eigen/eigen.h"
 
@@ -15,4 +15,4 @@ class Molecule;
 
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULE_MOLECULE_FWD_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_FWD_H_

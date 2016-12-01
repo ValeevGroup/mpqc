@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_CADFFITTINGCOEFFS_H
-#define MPQC_SCF_CADFFITTINGCOEFFS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_FITTING_COEFFS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_FITTING_COEFFS_H_
 
 #include <tiledarray.h>
 
@@ -428,4 +428,4 @@ compute_atomic_fitting_coeffs(
 }  // namespace scf
 }  // namespace mpqc
 
-#endif  // MPQC_SCF_CADFFITTINGCOEFFS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_FITTING_COEFFS_H_

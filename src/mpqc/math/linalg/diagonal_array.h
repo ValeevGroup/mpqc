@@ -1,6 +1,6 @@
 
-#ifndef MPQC_TAROUTINES_DIAGONALARRAY_H
-#define MPQC_TAROUTINES_DIAGONALARRAY_H
+#ifndef MPQC4_SRC_MPQC_MATH_LINALG_DIAGONAL_ARRAY_H_
+#define MPQC4_SRC_MPQC_MATH_LINALG_DIAGONAL_ARRAY_H_
 
 #include <tiledarray.h>
 
@@ -175,4 +175,4 @@ TiledArray::Array<T, N, Tile, TiledArray::DensePolicy> create_diagonal_matrix(
 }  // namespace array_ops
 }  // namespace mpqc
 
-#endif  // MPQC_TAROUTINES_DIAGONALARRAY_H
+#endif  // MPQC4_SRC_MPQC_MATH_LINALG_DIAGONAL_ARRAY_H_

@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _util_misc_bug_h
-#define _util_misc_bug_h
+#ifndef MPQC4_SRC_MPQC_UTIL_MISC_BUG_H_
+#define MPQC4_SRC_MPQC_UTIL_MISC_BUG_H_
 
 #include <string>
 #include <vector>
@@ -204,7 +204,7 @@ class Debugger: public DescribedClass {
 
 }
 
-#endif
+#endif  // MPQC4_SRC_MPQC_UTIL_MISC_BUG_H_
 
 // Local Variables:
 // mode: c++

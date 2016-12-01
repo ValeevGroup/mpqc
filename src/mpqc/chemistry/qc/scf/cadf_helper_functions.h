@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_CADFHELPERFUNCTIONS_H
-#define MPQC_SCF_CADFHELPERFUNCTIONS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_HELPER_FUNCTIONS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_HELPER_FUNCTIONS_H_
 
 #include <tiledarray.h>
 
@@ -79,4 +79,4 @@ inline TA::DistArray<TA::TensorD, TA::SparsePolicy> reblock_from_atoms(
 
 }  // namespace scf
 }  // namespace mpqc
-#endif  //  MPQC_SCF_CADFHELPERFUNCTIONS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CADF_HELPER_FUNCTIONS_H_

@@ -2,8 +2,8 @@
 // Created by Chong Peng on 4/12/16.
 //
 
-#ifndef MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_
-#define MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_
 
 #include <tiledarray.h>
 
@@ -349,4 +349,4 @@ class CCSD_F12<TA::TensorD>;
 }  // end of namespace f12
 }  // end of namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_

@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_CLRCADFBUILDER_H
-#define MPQC_SCF_CLRCADFBUILDER_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CLR_CADF_BUILDER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CLR_CADF_BUILDER_H_
 
 #include "mpqc/chemistry/qc/scf/util.h"
 #include "mpqc/math/external/tiledarray/array_info.h"
@@ -509,4 +509,4 @@ class ClrCADFFockBuilder : public FockBuilder {
 }  // namespace scf
 }  // namespace mpqc
 
-#endif  // MPQC_SCF_CLRCADFBUILDER_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CLR_CADF_BUILDER_H_

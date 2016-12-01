@@ -2,8 +2,8 @@
 // Created by Chong Peng on 9/9/16.
 //
 
-#ifndef MPQC_BASIS_REGISTRY_H
-#define MPQC_BASIS_REGISTRY_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_REGISTRY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_REGISTRY_H_
 
 #include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/chemistry/qc/expression/orbital_registry.h"
@@ -28,4 +28,4 @@ mpqc::OrbitalRegistry<mpqc::basis::Basis>::OrbitalRegistry(const KeyVal& kv);
 
 }  // end of namespace mpqc
 
-#endif  // MPQC_BASIS_REGISTRY_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_REGISTRY_H_

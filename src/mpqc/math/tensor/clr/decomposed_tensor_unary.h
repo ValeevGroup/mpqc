@@ -1,6 +1,6 @@
 
-#ifndef MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
-#define MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_UNARY_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_UNARY_H_
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
@@ -176,4 +176,4 @@ bool empty(DecomposedTensor<T> const &t) {
 }  // namespace tensor
 }  // namespace mpqc
 
-#endif  // MPQC_TENSOR_DECOMPOSEDTENSORUNARY_H
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_UNARY_H_

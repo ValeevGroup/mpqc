@@ -1,7 +1,7 @@
 
 
-#ifndef MPQC_INTEGRALS_TASKINTEGRALSCOMMON_H
-#define MPQC_INTEGRALS_TASKINTEGRALSCOMMON_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRALS_COMMON_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRALS_COMMON_H_
 
 #include <memory>
 #include <array>
@@ -111,4 +111,4 @@ void set_array(std::vector<std::pair<unsigned long, Tile>> &tiles, Array &a){
 } // namespace integrals
 } // namespace mpqc
 
-#endif //  MPQC_INTEGRALS_TASKINTEGRALSCOMMON_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRALS_COMMON_H_

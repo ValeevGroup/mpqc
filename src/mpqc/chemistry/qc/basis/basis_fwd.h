@@ -1,6 +1,6 @@
 
-#ifndef MPQC_BASIS_BASISFWD_H
-#define MPQC_BASIS_BASISFWD_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_FWD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_FWD_H_
 
 namespace mpqc {
 namespace basis {
@@ -12,4 +12,4 @@ class Basis;
 }  // namespace basis
 }  // namespace mpqc
 
-#endif  // MPQC_BASIS_BASISFWD_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_FWD_H_

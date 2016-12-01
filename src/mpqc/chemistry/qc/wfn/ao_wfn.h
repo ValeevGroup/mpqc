@@ -5,8 +5,8 @@
  *      Author: Drew Lewis
  */
 
-#ifndef MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
-#define MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 
 #include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/chemistry/qc/integrals/ao_factory.h"
@@ -69,4 +69,4 @@ private:
 }  // namespace qc
 }  // namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_

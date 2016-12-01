@@ -1,5 +1,5 @@
-#ifndef SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_ARRAY_INFO_H
-#define SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_ARRAY_INFO_H
+#ifndef MPQC4_SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_ARRAY_INFO_H_
+#define MPQC4_SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_ARRAY_INFO_H_
 
 #include <array>
 #include <atomic>
@@ -153,4 +153,4 @@ inline void parallel_print_range_info(madness::World &world,
 }  // namespace detail
 }  // namespace mpqc
 
-#endif  // SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_ARRAY_INFO_H
+#endif  // MPQC4_SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_ARRAY_INFO_H_

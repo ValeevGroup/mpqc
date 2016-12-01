@@ -1,6 +1,6 @@
 
-#ifndef MPQC_UTILITY_GETTYPE_H
-#define MPQC_UTILITY_GETTYPE_H
+#ifndef MPQC4_SRC_MPQC_UTIL_META_GET_TYPE_H_
+#define MPQC4_SRC_MPQC_UTIL_META_GET_TYPE_H_
 
 #include <type_traits>
 
@@ -72,4 +72,4 @@ auto back(T &&t, Ts &&... ts)
 }  // namespace utility
 }  // namespace MPQC
 
-#endif /* end of include guard: MPQC_UTILITY_GETTYPE_H */
+#endif  // MPQC4_SRC_MPQC_UTIL_META_GET_TYPE_H_

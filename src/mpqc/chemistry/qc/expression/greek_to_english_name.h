@@ -2,8 +2,8 @@
 // Created by Chong Peng on 1/25/16.
 //
 
-#ifndef MPQC_GREEK_TO_ENGLISH_NAME_H
-#define MPQC_GREEK_TO_ENGLISH_NAME_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_GREEK_TO_ENGLISH_NAME_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_GREEK_TO_ENGLISH_NAME_H_
 
 #include <string>
 #include <unordered_map>
@@ -24,4 +24,4 @@ const std::unordered_map<wchar_t, std::string> greek_to_english_name = {
     {L'φ', "phi"},     {L'χ', "chi"},   {L'ψ', "psi"},     {L'ω', "omega"}};
 }
 
-#endif  // MPQC_GREEK_TO_ENGLISH_NAME_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_GREEK_TO_ENGLISH_NAME_H_

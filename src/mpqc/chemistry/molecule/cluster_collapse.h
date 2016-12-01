@@ -1,6 +1,6 @@
 
-#ifndef MPQC_CLUSTER_COLLAPSE_H
-#define MPQC_CLUSTER_COLLAPSE_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTER_COLLAPSE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTER_COLLAPSE_H_
 
 #include "mpqc/chemistry/molecule/atom.h"
 
@@ -37,4 +37,4 @@ std::vector<Atom> collapse_to_atoms(T const &t) {
 
 }  // namespace mpqc
 
-#endif  // MPQC_CLUSTER_COLLAPSE_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTER_COLLAPSE_H_

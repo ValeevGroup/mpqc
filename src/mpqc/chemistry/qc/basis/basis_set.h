@@ -1,6 +1,6 @@
 
-#ifndef MPQC_BASIS_BASISSET_H
-#define MPQC_BASIS_BASISSET_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_SET_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_SET_H_
 
 #include <iosfwd>
 #include <memory>
@@ -48,4 +48,4 @@ class BasisSet {
 }  // namespace basis
 }  // namespace mpqc
 
-#endif  // MPQC_BASIS_BASISSET_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_SET_H_

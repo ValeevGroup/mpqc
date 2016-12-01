@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/29/15.
 //
 
-#ifndef MPQC_CC2_H
-#define MPQC_CC2_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CC2_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CC2_H_
 
 #include <tiledarray.h>
 
@@ -193,4 +193,4 @@ class CC2 {
 }  // namespace cc
 }  // namespace mpqc
 
-#endif  // MPQC_CC2_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CC2_H_

@@ -1,6 +1,6 @@
 
-#ifndef TCC_PURIFICATION_PURIFICATIONDEVEL_H
-#define TCC_PURIFICATION_PURIFICATIONDEVEL_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_PURIFICATION_DEVEL_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_PURIFICATION_DEVEL_H_
 
 #include <tiledarray.h>
 
@@ -92,4 +92,4 @@ OrthTraceResettingPurifier<T, TileType, Policy> make_orthogonal_tr_reset_pure(
 } // namespace pure
 } // namespace mpqc
 
-#endif /* end of include guard: TCC_PURIFICATION_PURIFICATIONDEVEL_H */
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_PURIFICATION_DEVEL_H_

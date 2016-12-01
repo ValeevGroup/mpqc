@@ -108,10 +108,11 @@ std::vector<Matrixc> conditioned_orthogonalizer(
 
   assert(tr1.extent() == (tr0.extent() * k_size));
 
-  auto overlap_eig = array_ops::array_to_eigen(overlap);
+  auto n_tr_nu = overlap.trange().data().front().tiles_range().second;
+
   for (auto k = 0; k < k_size; ++k) {
-    std::vector<std::size_t> S_low{0, k * tr0.extent()};
-    std::vector<std::size_t> S_up{tr0.extent(), (k + 1) * tr0.extent()};
+    std::vector<std::size_t> S_low{0, k * n_tr_nu};
+    std::vector<std::size_t> S_up{n_tr_nu, (k + 1) * n_tr_nu};
 
     TArray S;
     S("mu, nu") = overlap("mu, nu").block(S_low, S_up);

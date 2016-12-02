@@ -1,0 +1,90 @@
+MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 376d087f1eefbe8336806f5a30c0127e8eebb561
+
+  Using fundamental constants system 2014CODATA
+OBS Basis Trange 
+( tiles = [ 0, 2 ), elements = [ 0, 2 ) )
+Min and Max block size: 1 1
+Average: 1
+
+Screen: qqr
+Threshold: 1e-12
+Precision: 2.22044604925031e-16
+
+
+Periodic Hartree-Fock computational parameter:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [ 0  0 10]
+	Rj_max (range of Coulomb operation): [ 0  0 10]
+	Rd_max (Range of density representation): [ 0  0 10]
+	# of k points in each direction: [ 1  1 20]
+
+
+Molecule info:
+	C.O.M: 0 0 0
+	Charge: 0
+	Mass: 2.01568
+
+Elements:
+	Atom: {Z: 1, mass: 1.00784, pos:                  0                  0 -0.700003689748841}
+	Atom: {Z: 1, mass: 1.00784, pos:                 0                 0 0.700003689748841}
+
+Unit cell info:
+	Lattice parameters (in Bohr): [               0                0 2.79999964118636]
+
+
+Nuclear Repulsion: 5.17364234136521
+
+Computing One Body Integral for Periodic System: < κ |T| λ >
+ Size: 9.83476638793945e-07 GB Time: 0.002137967 s
+
+Computing One Body Integral for Periodic System: < κ |V| λ >
+ Size: 9.83476638793945e-07 GB Time: 0.065969539 s
+
+Computing One Body Integral for Periodic System: < κ | λ >
+ Size: 9.83476638793945e-07 GB Time: 0.001745421 s
+
+Building Fock Matrix from SOAD Guess ...
+
+	overlap condition number = 1.30379711504611 at k = 0
+	overlap condition number = 2.20729123702425 at k = 1
+	overlap condition number = 3.69078991556675 at k = 2
+	overlap condition number = 6.0413483241346 at k = 3
+	overlap condition number = 9.58622857071453 at k = 4
+	overlap condition number = 14.5820347641906 at k = 5
+	overlap condition number = 20.9908434343751 at k = 6
+	overlap condition number = 28.1742767080394 at k = 7
+	overlap condition number = 34.7081589007079 at k = 8
+	overlap condition number = 38.6905271693607 at k = 9
+	overlap condition number = 38.6905271693607 at k = 10
+	overlap condition number = 34.7081589007079 at k = 11
+	overlap condition number = 28.1742767080394 at k = 12
+	overlap condition number = 20.9908434343751 at k = 13
+	overlap condition number = 14.5820347641906 at k = 14
+	overlap condition number = 9.58622857071453 at k = 15
+	overlap condition number = 6.0413483241346 at k = 16
+	overlap condition number = 3.69078991556675 at k = 17
+	overlap condition number = 2.20729123702424 at k = 18
+	overlap condition number = 1.30379711504611 at k = 19
+
+ Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
+    1      -6.150765323232      -0.977122981867      -6.150765323232       0.000740950312                4.456
+    2      -6.161534882558      -0.987892541193      -0.010769559326       0.000090521740                4.248
+    3      -6.161535045459      -0.987892704094      -0.000000162901       0.000066128901                4.335
+    4      -6.161535052710      -0.987892711344      -0.000000007250       0.000059363502                4.262
+
+Periodic Hartree-Fock iterations have converged!
+
+Total Periodic Hartree-Fock energy = -0.987892711344435
+
+Time(s):
+	Init:                               0.512
+	Coulomb term:                       8.667
+	Exchange term:                      8.596
+	Real->Recip trans:                  0.008
+	Diag + Density:                     0.014
+	Total:                             17.301
+
+  Wfn energy is: -0.987892711344435

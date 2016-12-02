@@ -1,0 +1,35 @@
+{
+  "unitcell": {
+    "type": "UnitCell",
+    "charge": 0,
+    "file_name": "h2.xyz",
+    "sort_input": true,
+    "lattice_param": [0.0, 0.0, 1.481696],
+    "rmax": [0, 0, 10],
+    "rjmax": [0, 0, 10],
+    "rdmax": [0, 0, 10],
+    "k_points": [1, 1, 20]
+  },
+  "basis": {
+    "type": "Basis",
+    "name": "sto-3g",
+    "molecule": "$:unitcell"
+  },
+   "world":{
+     "type" : "WfnWorld",
+     "molecule" : "$:unitcell",
+     "basis" : "$:basis",
+     "screen": "qqr",
+     "threshold": 1.0e-12
+   },
+   "wfn":{
+     "type": "PRHF",
+     "wfn_world": "$:world",
+     "converge": 1.0e-8,
+     "max_iter": 50,
+     "soad_guess": true,
+     "print_detail": false,
+     "max_condition_num": 1e8
+   }
+}
+

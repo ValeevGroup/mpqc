@@ -116,6 +116,9 @@ UnitFactory::UnitFactory(std::string system) : system_(std::move(system)) {
   } else if (system_ == "CODATA2010" || system_ == "2010CODATA") {
     constants_ = std::make_shared<
         FundamentalConstants<constants::codata_2010<double>>>();
+  } else if (system_ == "CODATA2006" || system_ == "2006CODATA") {
+    constants_ = std::make_shared<
+        FundamentalConstants<constants::codata_2006<double>>>();
   } else if (system_ == "MPQC2") {
     constants_ =
         std::make_shared<FundamentalConstants<constants::mpqc2<double>>>();

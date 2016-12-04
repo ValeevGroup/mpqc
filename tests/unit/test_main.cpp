@@ -16,6 +16,7 @@ int main( int argc, char* argv[] )
   int result = session.run( argc, argv );
 
   // global clean-up...
+  madness::finalize();
 
   return result;
 }

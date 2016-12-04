@@ -12,6 +12,7 @@ namespace mpqc {
 namespace detail {
 template <typename real_t>
 struct FundamentalConstants {
+  virtual const char* description() const = 0;
   // fundamental constants proper
   virtual real_t bohr_radius() const = 0;
   virtual real_t elementary_charge() const = 0;
@@ -48,6 +49,8 @@ namespace constants {
 
 template <typename Real>
 struct codata_2014 {
+  static constexpr const char* const description =
+      "2014 CODATA revision: DOI 10.1103/RevModPhys.88.035009";
   using real_t = Real;
   static constexpr real_t bohr_radius = 5.2917721067e-11;        // m
   static constexpr real_t elementary_charge = 1.6021766208e-19;  // C
@@ -63,6 +66,8 @@ struct codata_2014 {
 };
 template <typename Real>
 struct codata_2010 {
+  static constexpr const char* const description =
+      "2010 CODATA revision: DOI 10.1103/RevModPhys.84.1527";
   using real_t = Real;
   static constexpr real_t bohr_radius = 5.2917721092e-11;       // m
   static constexpr real_t elementary_charge = 1.602176565e-19;  // C
@@ -76,10 +81,29 @@ struct codata_2010 {
       ((4 * M_PI * detail::FundamentalConstants<Real>::_electric_constant) *
        bohr_radius);
 };
+/// \note 2006 CODATA set is the default in Gaussian09 (see http://www.gaussian.com/g_tech/g_ur/k_constants.htm)
+template <typename Real>
+struct codata_2006 {
+  static constexpr const char* const description =
+      "2006 CODATA revision: DOI 10.1103/RevModPhys.80.633";
+  using real_t = Real;
+  static constexpr real_t bohr_radius = 5.2917720859e-11;       // m
+  static constexpr real_t elementary_charge = 1.602176487e-19;  // C
+  static constexpr real_t electron_mass = 9.10938215e-31;       // kg
+  static constexpr real_t Avogadro_constant = 6.02214179e23;    // mol^-1
+  static constexpr real_t Planck_constant = 6.62606896e-34;     // J s
+  static constexpr real_t atomic_mass_unit = 1.660538782e-27;   // kg
+  // auxiliary conversions
+  static constexpr real_t Hartree_to_electron_volt =
+      elementary_charge /
+      ((4 * M_PI * detail::FundamentalConstants<Real>::_electric_constant) *
+       bohr_radius);
+};
 /// \note based on CODATA1986, except the atomic mass unit
 /// see http://physics.nist.gov/cuu/pdf/codata86.pdf
 template <typename Real>
 struct mpqc2 {
+  static constexpr const char* const description = "MPQC 2.3 constants, based on 1986 CODATA";
   using real_t = Real;
   static constexpr real_t bohr_radius = 5.29177249e-11;        // m
   static constexpr real_t elementary_charge = 1.60217733e-19;  // C
@@ -98,6 +122,7 @@ struct mpqc2 {
 template <typename Data>
 struct FundamentalConstants
     : detail::FundamentalConstants<typename Data::real_t> {
+  const char* description() const override { return Data::description; }
   using real_t = typename Data::real_t;
   real_t bohr_radius() const override { return Data::bohr_radius; }
   real_t elementary_charge() const override { return Data::elementary_charge; }
@@ -172,6 +197,7 @@ class UnitFactory {
   /// \param system specifies the fundamental constants system, the allowed values are:
   ///    - "2014CODATA" : the 2014 revision of the fundamental constants (see DOI 10.1103/RevModPhys.88.035009 )
   ///    - "2010CODATA" : the 2010 revision of the fundamental constants (see DOI 10.1103/RevModPhys.84.1527 )
+  ///    - "2006CODATA" : the 2006 revision of the fundamental constants (see DOI 10.1103/RevModPhys.80.633 ) (the default of Gaussian09)
   ///    - "MPQC2" : the values of constants used by MPQC version 2.3
   ///    The default is currently "2014CODATA", and may be revised in the future.
   UnitFactory(std::string system);
@@ -180,6 +206,9 @@ class UnitFactory {
 
   /// \return the name of the fundamental constants system
   const std::string& system() const { return system_; }
+
+  /// \return the description of the fundamental constants system
+  const char* description() const { return constants_->description(); }
 
   /// makes a Unit object from a given string specification, using the system
   /// of fundamental constants specified by this factory.

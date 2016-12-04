@@ -30,19 +30,20 @@ $CXX --version
 cmake --version
 
 # Install MPICH
-if [ ! -d "${HOME}/mpich" ]; then
+export PREFIX=${HOME}/ValeevGroup/_install/mpich
+if [ ! -d "${PREFIX}" ]; then
     wget --no-check-certificate -q http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
     tar -xzf mpich-3.2.tar.gz
     cd mpich-3.2
-    ./configure CC=$CC CXX=$CXX --disable-fortran --disable-romio --prefix=${HOME}/mpich
+    ./configure CC=$CC CXX=$CXX --disable-fortran --disable-romio --prefix=${PREFIX}
     make -j2
     make install
-    ${HOME}/mpich/bin/mpichversion
-    ${HOME}/mpich/bin/mpicc -show
-    ${HOME}/mpich/bin/mpicxx -show
+    ${PREFIX}/bin/mpichversion
+    ${PREFIX}/bin/mpicc -show
+    ${PREFIX}/bin/mpicxx -show
 else
     echo "MPICH installed..."
-    find ${HOME}/mpich -name mpiexec
-    find ${HOME}/mpich -name mpicc
-    find ${HOME}/mpich -name mpicxx
+    find ${PREFIX} -name mpiexec
+    find ${PREFIX} -name mpicc
+    find ${PREFIX} -name mpicxx
 fi

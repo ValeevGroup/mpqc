@@ -3,13 +3,13 @@
   "unitcell": {
     "type": "UnitCell",
     "charge": 0,
-    "file_name": "h2.xyz",
+    "file_name": "h2o.xyz",
     "sort_input": true,
-    "lattice_param": [0.0, 0.0, 1.481696],
-    "rmax": [0, 0, 4],
-    "rjmax": [0, 0, 6],
-    "rdmax": [0, 0, 4],
-    "k_points": [1, 1, 10]
+    "lattice_param": [0.0, 0.0, 2.672359],
+    "rmax": [0, 0, 0],
+    "rjmax": [0, 0, 0],
+    "rdmax": [0, 0, 0],
+    "k_points": [1, 1, 1]
   },
   "basis": {
     "type": "Basis",
@@ -26,7 +26,7 @@
    "wfn":{
      "type": "PRHF",
      "wfn_world": "$:world",
-     "converge": 1.0e-7,
+     "converge": 1.0e-12,
      "max_iter": 100,
      "soad_guess": true,
      "print_detail": false,

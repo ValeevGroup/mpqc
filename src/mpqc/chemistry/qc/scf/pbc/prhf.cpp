@@ -68,6 +68,9 @@ void PRHF::init(const KeyVal& kv) {
 
   // compute density matrix using soad/core guess
   if (!soad_guess) {
+    if (world.rank() == 0) {
+      std::cout << "\nUsing CORE guess for initial Fock ..." << std::endl;
+    }
     F_ = H_;
   } else {
     F_ = periodic_fock_soad(world, unitcell, H_, pao_factory_);
@@ -135,7 +138,6 @@ bool PRHF::solve() {
 
     // compute new density
     auto d_start = mpqc::fenced_now(world);
-//    D_ = pao_factory_.compute_density(Fk_, X_, docc_);
     compute_density();
     // update density in pao_factory
     pao_factory_.set_density(D_);

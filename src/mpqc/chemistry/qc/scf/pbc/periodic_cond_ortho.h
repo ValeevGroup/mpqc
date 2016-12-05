@@ -26,32 +26,33 @@ Matrixc gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int
   // if symmetric, X = U.s_sqrtinv.Ut
   // if canonical, X = U.s_sqrtinv
   // where s and U are eigenvalues and eigenvectors of S
-  Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(S_eig);
+  Eigen::SelfAdjointEigenSolver<Matrixc> comp_eig_solver(S_eig);
   auto U = comp_eig_solver.eigenvectors();
   auto s = comp_eig_solver.eigenvalues();
-  integrals::detail::sort_eigen(s, U);
+//  integrals::detail::sort_eigen(s, U);
 
-  auto s_real_max = s.real().maxCoeff();
-  auto s_real_min = s.real().minCoeff();
+  auto s_max = s.maxCoeff();
+  auto s_min = s.minCoeff();
 
   S_condition_num = std::min(
-      s_real_max / std::max(s_real_min, std::numeric_limits<double>::min()),
+      s_max / std::max(s_min, std::numeric_limits<double>::min()),
       1.0 / std::numeric_limits<double>::epsilon());
 
-  auto threshold = s_real_max / max_condition_num;
+  auto threshold = s_max / max_condition_num;
 
   int64_t s_rows = s.rows();
   int64_t s_cond = 0;
   for (int64_t i = s_rows - 1; i >= 0; --i) {
-    if (s.real()(i) >= threshold) {
+    if (s(i) >= threshold) {
       ++s_cond;
     } else
       i = 0;
   }
 
   auto sigma = s.bottomRows(s_cond);
-  auto result_condition_num = sigma.real().maxCoeff() / sigma.real().minCoeff();
-  auto sigma_invsqrt = sigma.array().sqrt().inverse().matrix().asDiagonal();
+  auto result_condition_num = sigma.maxCoeff() / sigma.minCoeff();
+  auto sigma_invsqrt_real = Eigen::MatrixXd(sigma.array().sqrt().inverse().matrix().asDiagonal());
+  auto sigma_invsqrt = sigma_invsqrt_real.cast<std::complex<double>>();
 
   // make canonical X
   auto U_cond = U.block(0, s_rows - s_cond, s_rows, s_cond);
@@ -70,7 +71,9 @@ Matrixc gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int
   }
 
   if (nbf_omitted > 0) {
-      auto should_be_I = X.transpose().conjugate() * S_eig * X;
+      auto XtS = X.transpose().conjugate() * S_eig;
+      auto should_be_I = XtS * X;
+
       auto I_real =
           Eigen::MatrixXd::Identity(should_be_I.rows(), should_be_I.cols());
       auto I_comp = I_real.template cast<std::complex<double>>();

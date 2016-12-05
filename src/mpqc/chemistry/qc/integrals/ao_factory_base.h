@@ -41,7 +41,7 @@ class AOFactoryBase {
  public:
   using gtg_params_t = std::vector<std::pair<double, double>>;
 
-  AOFactoryBase() noexcept = default;
+  AOFactoryBase() = default;
 
   // clang-format off
   /**

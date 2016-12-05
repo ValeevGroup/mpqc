@@ -10,8 +10,8 @@ if [ "$CXX" = "g++" ]; then
     export CC=/usr/bin/gcc-$GCC_VERSION
     export CXX=/usr/bin/g++-$GCC_VERSION
 else
-    export CC=/usr/bin/clang-3.7
-    export CXX=/usr/bin/clang++-3.7
+    export CC=/usr/bin/clang-3.8
+    export CXX=/usr/bin/clang++-3.8
 fi
 
 echo $($CC --version)

@@ -1,12 +1,9 @@
 language: cpp
 cache: ccache
 os: linux
-branches:
-    only:
-        - master
-        - transition_to_mpqc
 compiler:
   - gcc
+  - clang
 env:
   - GCC_VERSION=5
 sudo: false
@@ -17,6 +14,7 @@ addons:
       - ubuntu-toolchain-r-test
       - boost-latest
       - kubuntu-backports
+      - llvm-toolchain-precise-3.8
     packages:
       - g++-5
       - libeigen3-dev
@@ -24,6 +22,7 @@ addons:
       - libblas-dev
       - liblapack-dev
       - libtbb-dev
+      - clang-3.8
       - cmake
       - cmake-data
 before_install: 
@@ -32,7 +31,5 @@ before_install:
      - ./bin/build-TA-$TRAVIS_OS_NAME.sh
 script: ./bin/build-$TRAVIS_OS_NAME.sh
 after_failure:
-  - cat /usr/include/eigen3/signature_of_eigen3_matrix_library
-  - cat /usr/include/eigen3/Eigen/src/Core/util/Constants.h
   - cat ./_build/mpqc4/CMakeFiles/CMakeOutput.log
   - cat ./_build/mpqc4/CMakeFiles/CMakeError.log

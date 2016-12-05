@@ -63,7 +63,7 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
   //  using Op = Tile (*) (TA::TensorD&&);
   using Op = std::function<Tile(TA::TensorD&&)>;
 
-  AOFactory() = default;
+  AOFactory() noexcept = default;
 
   /**
    * \brief  KeyVal constructor

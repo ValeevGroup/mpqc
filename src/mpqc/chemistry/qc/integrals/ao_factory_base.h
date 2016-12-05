@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-
-#include "mpqc/util/meta/make_array.h"
 #include "integrals.h"
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/basis/basis_registry.h"
@@ -20,13 +18,12 @@
 #include "mpqc/chemistry/qc/integrals/integral_engine_pool.h"
 #include "mpqc/chemistry/qc/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/integrals/task_integrals.h"
+#include "mpqc/util/meta/make_array.h"
 
 #include <libint2/engine.h>
 
 namespace mpqc {
 namespace integrals {
-
-
 
 /**
  *
@@ -35,7 +32,8 @@ namespace integrals {
  *  Options in Input
  *  @param Screen, string, name of screen method to use, default none
  *  @param Threshold, double, screen threshold, qqr or schwarz, default 1.0e-10
- *  @param Precision, double, precision in computing integral, default std::numeric_limits<double>::epsilon()
+ *  @param Precision, double, precision in computing integral, default
+ * std::numeric_limits<double>::epsilon()
    *
  */
 
@@ -45,6 +43,7 @@ class AOFactoryBase {
 
   AOFactoryBase() noexcept = default;
 
+  // clang-format off
   /**
    * \brief  KeyVal constructor
    *
@@ -59,6 +58,7 @@ class AOFactoryBase {
    *  |corr_functions|int|6|f12 n of corr function,valid if aux_basis exsist in OrbitalBasisRegistry|
    *  |corr_param|int|0|f12 corr param, ,valid if aux_basis exsist in OrbitalBasisRegistry|
    */
+  // clang-format on
   AOFactoryBase(const KeyVal &kv);
 
   virtual ~AOFactoryBase() = default;
@@ -93,7 +93,8 @@ class AOFactoryBase {
     return *orbital_basis_registry_;
   }
 
-  const std::shared_ptr<basis::OrbitalBasisRegistry> orbital_basis_registry_ptr() const {
+  const std::shared_ptr<basis::OrbitalBasisRegistry>
+  orbital_basis_registry_ptr() const {
     return orbital_basis_registry_;
   }
   /**
@@ -132,15 +133,15 @@ class AOFactoryBase {
   /// max_nprim and max_am
   void parse_two_body_three_center(
       const Formula &formula,
-      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-      Bvector &bases, std::shared_ptr<Screener> &p_screener);
+      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+      std::shared_ptr<Screener> &p_screener);
 
   /// parse two body four center formula and set two body kernel, basis array,
   /// max_nprim and max_am
   void parse_two_body_four_center(
       const Formula &formula,
-      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-      Bvector &bases, std::shared_ptr<Screener> &p_screener);
+      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+      std::shared_ptr<Screener> &p_screener);
 
   std::shared_ptr<Screener> make_screener_four_center(
       ShrPool<libint2::Engine> &engine, basis::Basis &basis);
@@ -227,12 +228,12 @@ class AOFactoryBase {
   double precision_;
 };
 
-
-namespace detail{
+namespace detail {
 
 libint2::Operator to_libint2_operator(Operator::Type mpqc_oper);
 
-libint2::any to_libint2_operator_params(Operator::Type mpqc_oper, const AOFactoryBase &base);
+libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
+                                        const AOFactoryBase &base);
 }
 
 }  // end of namespace integral

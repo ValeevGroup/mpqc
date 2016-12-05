@@ -13,7 +13,7 @@ addons:
       - george-edison55-precise-backports
       - ubuntu-toolchain-r-test
       - boost-latest
-      - llvm-toolchain-precisie-3.8
+      - llvm-toolchain-precise-3.8
     packages:
       - g++-5
       - libeigen3-dev

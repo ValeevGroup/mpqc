@@ -102,6 +102,12 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   set(CMAKE_FIND_APPBUNDLE LAST)
 endif()
 
+# may need this to link in MPI library via MADWorld dependency alone
+# e.g. when MADNESS is configured with non-throwing asserts there is no direct mention of MPI
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  set (CMAKE_EXE_LINKER_FLAGS "-Wl,--no-as-needed")
+endif()
+
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'RelWithDebInfo' as none was specified.")

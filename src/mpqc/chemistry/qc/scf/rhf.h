@@ -10,7 +10,6 @@
 #include "mpqc/chemistry/qc/scf/builder.h"
 #include "mpqc/chemistry/qc/scf/density_builder.h"
 #include "mpqc/chemistry/qc/wfn/ao_wfn.h"
-
 /**
  *  RHF Class of AOWfn
  *
@@ -18,9 +17,10 @@
 namespace mpqc {
 namespace scf {
 
-class RHF : public qc::AOWavefunction<TA::TensorD, TA::SparsePolicy> {
+template <typename Tile, typename Policy>
+class RHF : public qc::AOWavefunction<Tile, Policy> {
  public:
-  using array_type = TA::TSpArrayD;
+  using array_type = TA::DistArray<Tile,Policy>;
 
   RHF() = default;
 
@@ -99,8 +99,8 @@ class RHF : public qc::AOWavefunction<TA::TensorD, TA::SparsePolicy> {
  *
  * RIRHF class, fock_builder is overide to use three center integral
  */
-
-class RIRHF : public RHF {
+template <typename Tile, typename Policy>
+class RIRHF : public RHF<Tile,Policy> {
  public:
   RIRHF(const KeyVal& kv);
 
@@ -111,8 +111,8 @@ class RIRHF : public RHF {
 /**
  * DirectRIRHF, fock_builder is overide to use direct three center integral
  */
-
-class DirectRIRHF : public RHF {
+template <typename Tile, typename Policy>
+class DirectRIRHF : public RHF<Tile,Policy> {
  public:
   DirectRIRHF(const KeyVal& kv);
 
@@ -123,7 +123,8 @@ class DirectRIRHF : public RHF {
 /**
  * DirectRHF, fock_builder is overide to use direct four center integral
  */
-class DirectRHF : public RHF {
+template <typename Tile, typename Policy>
+class DirectRHF : public RHF<Tile,Policy> {
  public:
   DirectRHF(const KeyVal& kv);
 
@@ -131,12 +132,14 @@ class DirectRHF : public RHF {
   void init_fock_builder() override;
 };
 
-//extern class RHF;
-//extern class RIRHF;
-//extern class DirectRHF;
-//extern class DirectRIRHF;
+
+extern template class RHF<TA::TensorD, TA::SparsePolicy>;
+extern template class RIRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class DirectRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class DirectRIRHF<TA::TensorD, TA::SparsePolicy>;
 
 }  // end of namespace scf
 }  // end of namespace mpqc
 
+#include "rhf_impl.h"
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_RHF_H_

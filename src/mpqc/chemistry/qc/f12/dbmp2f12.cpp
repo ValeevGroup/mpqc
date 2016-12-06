@@ -126,7 +126,7 @@ double RIDBRMP2F12::compute_new_mp2() {
 
     auto ref = mp2.refwfn();
 
-    std::shared_ptr<scf::RHF> rhf = std::dynamic_pointer_cast<scf::RHF>(ref);
+    std::shared_ptr<scf::RHF<TA::TensorD,TA::SparsePolicy>> rhf = std::dynamic_pointer_cast<scf::RHF<TA::TensorD,TA::SparsePolicy>>(ref);
 
     rhf->set_fock(fock);
 

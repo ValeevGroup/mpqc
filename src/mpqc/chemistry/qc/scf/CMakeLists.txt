@@ -2,6 +2,7 @@ set(sources
         linkage.cpp
         linkage.h
         rhf.h
+        rhf_impl.h
         rhf.cpp
         orbital_localization.h
         orbital_localization.cpp

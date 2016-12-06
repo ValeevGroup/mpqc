@@ -11,15 +11,24 @@
 namespace mpqc {
 namespace scf {
 
+template <typename Tile, typename Policy>
 class RHF;
+
+template <typename Tile, typename Policy>
 class RIRHF;
+
+template <typename Tile, typename Policy>
 class DirectRHF;
+
+template <typename Tile, typename Policy>
 class DirectRIRHF;
+
 class zRHF;
-mpqc::detail::ForceLink<RHF> fl1;
-mpqc::detail::ForceLink<RIRHF> fl2;
-mpqc::detail::ForceLink<DirectRHF> fl3;
-mpqc::detail::ForceLink<DirectRIRHF> fl4;
+
+mpqc::detail::ForceLink<RHF<TA::TensorD, TA::SparsePolicy>> fl1;
+mpqc::detail::ForceLink<RIRHF<TA::TensorD, TA::SparsePolicy>> fl2;
+mpqc::detail::ForceLink<DirectRHF<TA::TensorD, TA::SparsePolicy>> fl3;
+mpqc::detail::ForceLink<DirectRIRHF<TA::TensorD, TA::SparsePolicy>> fl4;
 mpqc::detail::ForceLink<zRHF> fl5;
 }
 }

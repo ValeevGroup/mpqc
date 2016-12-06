@@ -1,5 +1,5 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PRHF_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PRHF_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 
@@ -14,23 +14,23 @@ namespace mpqc {
 namespace scf {
 
 /**
- * Periodic Restricted Hartree-Fock class
+ * complex-valued Restricted Hartree-Fock class
  */
 
-class PRHF : public qc::Wavefunction {
+class zRHF : public qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
 public:
     using Tile = TA::TensorZ;
-    using TArray = TA::DistArray<Tile, TA::SparsePolicy>;
-    using PeriodicAOIntegral = integrals::PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy>;
-    using MatrixcVec = std::vector<Matrixc>;
-    using VectorcVec = std::vector<Vectorc>;
+    using TArray = qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>::ArrayType;
+    using PeriodicAOIntegral = PeriodicAOWavefunction::AOIntegral;
+    using MatrixcVec = std::vector<Matrixz>;
+    using VectorcVec = std::vector<Vectorz>;
 
-    PRHF() = default;
+    zRHF() = default;
 
     /**
-     * KeyVal constructor for PRHF
+     * KeyVal constructor for zRHF
      *
-     * keywords: takes all keywords from AOWavefunction
+     * keywords: takes all keywords from PeriodicAOWavefunction
      *
      * | KeyWord | Type | Default| Description |
      * |---------|------|--------|-------------|
@@ -41,23 +41,23 @@ public:
      * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
      *
      */
-    PRHF(const KeyVal& kv);
+    zRHF(const KeyVal& kv);
 
-    ~PRHF() = default;
+    ~zRHF() = default;
 
     void compute(qc::PropertyBase *pb) override;
     void obsolete() override;
 
     /*!
-     * \brief This performs a periodic Hartree-Fock computation
-     * \return periodic Hartree-Fock energy
+     * \brief This performs a Hartree-Fock computation
+     * \return the Hartree-Fock energy
      */
     double value() override;
 
 private:
 
     /*!
-     * \brief This performs SCF procedure for PRHF
+     * \brief This performs SCF procedure for zRHF
      * \return true if SCF converges, false if not
      */
     bool solve();
@@ -67,8 +67,6 @@ private:
      * computes density: D_ = Int_k( Exp(I k.R) C(occ).C(occ)t )
      */
     void compute_density();
-
-    PeriodicAOIntegral pao_factory_;
 
     TArray T_;
     TArray V_;
@@ -113,8 +111,8 @@ private:
     double scf_duration_ = 0.0;
 
     /*!
-     * \brief This initialize PRHF by assigning values to private members
-     * and computing initial guess for SCF
+     * \brief This initialize zRHF by assigning values to private members
+     * and computing initial guess for the density
      *
      * \param kv KeyVal object
      */
@@ -123,4 +121,4 @@ private:
 
 } // end of namespace scf
 } // end of namespace mpqc
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PRHF_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_

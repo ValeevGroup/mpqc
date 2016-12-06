@@ -1,4 +1,5 @@
-#include "mpqc/chemistry/qc/scf/pbc/prhf.h"
+#include "zrhf.h"
+
 #include "mpqc/chemistry/qc/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/scf/pbc/periodic_cond_ortho.h"
 
@@ -15,10 +16,9 @@
 namespace mpqc {
 namespace scf {
 
-PRHF::PRHF(const KeyVal& kv) : Wavefunction(kv), kv_(kv), pao_factory_(kv) {}
+zRHF::zRHF(const KeyVal& kv) : PeriodicAOWavefunction(kv), kv_(kv) {}
 
-void PRHF::init(const KeyVal& kv) {
-  // TODO: retrive unitcell from pao_factory
+void zRHF::init(const KeyVal& kv) {
   auto& unitcell = *kv.keyval("wfn_world:molecule").class_ptr<UnitCell>();
 
   converge_ = kv.value<double>("converge", 1.0E-8);  // 1.0E(-N)
@@ -27,16 +27,17 @@ void PRHF::init(const KeyVal& kv) {
   print_detail_ = kv.value<bool>("print_detail", false);
   max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
 
+  auto& ao_factory = this->ao_factory();
   // retrieve world from pao_factory
-  auto& world = pao_factory_.world();
+  auto& world = ao_factory.world();
 
   auto init_start = mpqc::fenced_now(world);
 
   // set OrbitalBasisRegistry
-  pao_factory_.set_orbital_basis_registry(this->wfn_world()->basis_registry());
+  ao_factory.set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
   if (world.rank() == 0) {
-    std::cout << pao_factory_ << std::endl;
+    std::cout << ao_factory << std::endl;
     std::cout << unitcell << std::endl;
   }
 
@@ -45,24 +46,24 @@ void PRHF::init(const KeyVal& kv) {
   dcell_ = unitcell.dcell();
 
   // retrieve unitcell info from pao_factory
-  R_max_ = pao_factory_.R_max();
-  RJ_max_ = pao_factory_.RJ_max();
-  RD_max_ = pao_factory_.RD_max();
-  nk_ = pao_factory_.nk();
-  R_size_ = pao_factory_.R_size();
-  RJ_size_ = pao_factory_.RJ_size();
-  RD_size_ = pao_factory_.RD_size();
-  k_size_ = pao_factory_.k_size();
+  R_max_ = ao_factory.R_max();
+  RJ_max_ = ao_factory.RJ_max();
+  RD_max_ = ao_factory.RD_max();
+  nk_ = ao_factory.nk();
+  R_size_ = ao_factory.R_size();
+  RJ_size_ = ao_factory.RJ_size();
+  RD_size_ = ao_factory.RD_size();
+  k_size_ = ao_factory.k_size();
 
   // compute nuclear-repulsion energy
   repulsion_ = unitcell.nuclear_repulsion(RJ_max_);
   if (world.rank() == 0)
     std::cout << "\nNuclear Repulsion: " << repulsion_ << std::endl;
 
-  T_ = pao_factory_.compute(L"<κ|T|λ>");        // Kinetic
-  V_ = pao_factory_.compute(L"<κ|V|λ>");        // Nuclear-attraction
-  S_ = pao_factory_.compute(L"<κ|λ>");          // Overlap in real space
-  Sk_ = pao_factory_.transform_real2recip(S_);  // Overlap in reciprocal space
+  T_ = ao_factory.compute(L"<κ|T|λ>");        // Kinetic
+  V_ = ao_factory.compute(L"<κ|V|λ>");        // Nuclear-attraction
+  S_ = ao_factory.compute(L"<κ|λ>");          // Overlap in real space
+  Sk_ = ao_factory.transform_real2recip(S_);  // Overlap in reciprocal space
   H_("mu, nu") =
       T_("mu, nu") + V_("mu, nu");  // One-body hamiltonian in real space
 
@@ -73,25 +74,26 @@ void PRHF::init(const KeyVal& kv) {
     }
     F_ = H_;
   } else {
-    F_ = periodic_fock_soad(world, unitcell, H_, pao_factory_);
+    F_ = periodic_fock_soad(world, unitcell, H_, ao_factory);
   }
 
   // transform Fock from real to reciprocal space
-  Fk_ = pao_factory_.transform_real2recip(F_);
+  Fk_ = ao_factory.transform_real2recip(F_);
   // compute orthogonalizer matrix
   X_ = conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
   // compute guess density
   compute_density();
 
   // set density in pao_factory
-  pao_factory_.set_density(D_);
+  ao_factory.set_density(D_);
 
   auto init_end = mpqc::fenced_now(world);
   init_duration_ = mpqc::duration_in_s(init_start, init_end);
 }
 
-bool PRHF::solve() {
-  auto& world = pao_factory_.world();
+bool zRHF::solve() {
+  auto& ao_factory = this->ao_factory();
+  auto& world = ao_factory.world();
 
   auto iter = 0;
   auto rms = 0.0;
@@ -117,12 +119,12 @@ bool PRHF::solve() {
     eprhf = e_complex.real();
 
     auto j_start = mpqc::fenced_now(world);
-    J_ = pao_factory_.compute(L"(μ ν| J|κ λ)");  // Coulomb
+    J_ = ao_factory.compute(L"(μ ν| J|κ λ)");  // Coulomb
     auto j_end = mpqc::fenced_now(world);
     j_duration_ += mpqc::duration_in_s(j_start, j_end);
 
     auto k_start = mpqc::fenced_now(world);
-    K_ = pao_factory_.compute(L"(μ ν| K|κ λ)");  // Exchange
+    K_ = ao_factory.compute(L"(μ ν| K|κ λ)");  // Exchange
     auto k_end = mpqc::fenced_now(world);
     k_duration_ += mpqc::duration_in_s(k_start, k_end);
 
@@ -132,7 +134,7 @@ bool PRHF::solve() {
 
     // transform Fock from real to reciprocal space
     auto trans_start = mpqc::fenced_now(world);
-    Fk_ = pao_factory_.transform_real2recip(F_);
+    Fk_ = ao_factory.transform_real2recip(F_);
     auto trans_end = mpqc::fenced_now(world);
     trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
@@ -140,7 +142,7 @@ bool PRHF::solve() {
     auto d_start = mpqc::fenced_now(world);
     compute_density();
     // update density in pao_factory
-    pao_factory_.set_density(D_);
+    ao_factory.set_density(D_);
     auto d_end = mpqc::fenced_now(world);
     d_duration_ += mpqc::duration_in_s(d_start, d_end);
 
@@ -204,7 +206,7 @@ bool PRHF::solve() {
       if (print_detail_) {
           Eigen::IOFormat fmt(5);
           std::cout << "\n k | orbital energies" << std::endl;
-          for (auto k = 0; k < pao_factory_.k_size(); ++k) {
+          for (auto k = 0; k < ao_factory.k_size(); ++k) {
               std::cout << k << " | " << eps_[k].real().transpose().format(fmt) << std::endl;
           }
       }
@@ -222,14 +224,15 @@ bool PRHF::solve() {
   }
 }
 
-double PRHF::value() {
+double zRHF::value() {
   init(kv_);
   solve();
   return energy_;
 }
 
-void PRHF::compute_density() {
-  auto& world = pao_factory_.world();
+void zRHF::compute_density() {
+  auto& ao_factory = this->ao_factory();
+  auto& world = ao_factory.world();
 
   eps_.resize(k_size_);
   C_.resize(k_size_);
@@ -245,11 +248,11 @@ void PRHF::compute_density() {
     auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
     F = (F + F.transpose().conjugate()) / 2.0;
     // Orthogonalize Fock matrix: F' = Xt * F * X
-    Matrixc Xt = X.transpose().conjugate();
+    Matrixz Xt = X.transpose().conjugate();
     auto XtF = Xt * F;
     auto Ft = XtF * X;
     // Diagonalize F'
-    Eigen::ComplexEigenSolver<Matrixc> comp_eig_solver(Ft);
+    Eigen::ComplexEigenSolver<Matrixz> comp_eig_solver(Ft);
     eps_[k] = comp_eig_solver.eigenvalues();
     auto Ctemp = comp_eig_solver.eigenvectors();
     C_[k] = X * Ctemp;
@@ -257,7 +260,7 @@ void PRHF::compute_density() {
     integrals::detail::sort_eigen(eps_[k], C_[k]);
   }
 
-  Matrixc result_eig(tr0.extent(), tr1.extent());
+  Matrixz result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
   for (auto R = 0; R < RD_size_; ++R) {
     auto vec_R = integrals::detail::direct_vector(R, RD_max_, dcell_);
@@ -276,9 +279,9 @@ void PRHF::compute_density() {
   D_ = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
 }
 
-void PRHF::obsolete() { Wavefunction::obsolete(); }
+void zRHF::obsolete() { Wavefunction::obsolete(); }
 
-void PRHF::compute(qc::PropertyBase* pb) {
+void zRHF::compute(qc::PropertyBase* pb) {
   throw std::logic_error("Not implemented!");
 }
 

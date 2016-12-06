@@ -18,8 +18,8 @@
 
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
                       Eigen::RowMajor>
-    Matrixc;
-typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> Vectorc;
+    Matrixz;
+typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> Vectorz;
 
 // constant
 const std::complex<double> I(0.0, 1.0);
@@ -74,7 +74,7 @@ TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size);
  * \param eigVal the vector of complex eigenvalues
  * \param eigVec the complex matrix consisting of complex eigenvectors
  */
-void sort_eigen(Vectorc &eigVal, Matrixc &eigVec);
+void sort_eigen(Vectorz &eigVal, Matrixz &eigVec);
 
 /*!
  * \brief This takes the ordinal index of a lattice
@@ -679,7 +679,7 @@ PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
   // use MADNESSworld ...)
 
   auto matrix_eig = array_ops::array_to_eigen(matrix);
-  Matrixc result_eig(tr0.extent(), tr1.extent());
+  Matrixz result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
 
   auto threshold = std::numeric_limits<double>::epsilon();

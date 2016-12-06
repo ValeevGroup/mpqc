@@ -14,9 +14,9 @@ namespace scf {
  * \return
  */
 template <typename TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>>
-Matrixc gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int64_t k) {
+Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int64_t k) {
   double S_condition_num;
-  Matrixc X;
+  Matrixz X;
   auto &world = S.world();
   auto S_eig = array_ops::array_to_eigen(S);
 
@@ -101,9 +101,9 @@ Matrixc gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int
  * \return conditioned orthogonalizer
  */
 template <typename TArray = TA::DistArray<TA::TensorZ, TA::SparsePolicy>>
-std::vector<Matrixc> conditioned_orthogonalizer(
+std::vector<Matrixz> conditioned_orthogonalizer(
     const TArray overlap, int64_t k_size, double max_condition_num = 1.0e8) {
-  std::vector<Matrixc> X;
+  std::vector<Matrixz> X;
   X.resize(k_size);
 
   auto tr0 = overlap.trange().data()[0];

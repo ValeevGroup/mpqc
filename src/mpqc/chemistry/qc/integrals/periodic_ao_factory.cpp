@@ -16,7 +16,7 @@ TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size) {
     return tr1;
 }
 
-void sort_eigen(Vectorc &eigVal, Matrixc &eigVec) {
+void sort_eigen(Vectorz &eigVal, Matrixz &eigVec) {
     auto val = eigVal.real();
 
     // Sort by ascending eigenvalues
@@ -29,8 +29,8 @@ void sort_eigen(Vectorc &eigVal, Matrixc &eigVec) {
     std::sort(sortedVal.begin(), sortedVal.end());
 
     // Build sorted eigenvalues and eigenvectors
-    Vectorc sortedEigVal(eigVal);
-    Matrixc sortedEigVec(eigVec);
+    Vectorz sortedEigVal(eigVal);
+    Matrixz sortedEigVec(eigVec);
     for (auto i = 0; i != val.size(); ++i) {
       sortedEigVal(i) = eigVal(sortedVal[i].second);
       sortedEigVec.col(i) = eigVec.col(sortedVal[i].second);

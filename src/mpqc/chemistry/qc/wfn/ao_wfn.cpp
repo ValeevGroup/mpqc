@@ -7,6 +7,7 @@ namespace qc{
 
 template class AOWavefunction<TA::TensorD, TA::SparsePolicy>;
 template class AOWavefunction<TA::TensorD, TA::DensePolicy>;
+template class PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>;
 
 }//namespace qc
 }//namespace mpqc

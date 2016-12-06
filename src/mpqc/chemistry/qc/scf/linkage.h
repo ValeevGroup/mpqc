@@ -15,12 +15,12 @@ class RHF;
 class RIRHF;
 class DirectRHF;
 class DirectRIRHF;
-class PRHF;
+class zRHF;
 mpqc::detail::ForceLink<RHF> fl1;
 mpqc::detail::ForceLink<RIRHF> fl2;
 mpqc::detail::ForceLink<DirectRHF> fl3;
 mpqc::detail::ForceLink<DirectRIRHF> fl4;
-mpqc::detail::ForceLink<PRHF> fl5;
+mpqc::detail::ForceLink<zRHF> fl5;
 }
 }
 

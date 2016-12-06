@@ -9,7 +9,6 @@
 #include "mpqc/chemistry/qc/basis/basis_set.h"
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/scf/soad.h"
-#include "mpqc/chemistry/qc/scf/pbc/prhf.h"
 
 namespace mpqc {
 namespace scf {

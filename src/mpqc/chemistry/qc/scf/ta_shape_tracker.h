@@ -3,6 +3,9 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include <tiledarray.h>
 
+namespace mpqc {
+namespace detail {
+
 using MatrixI =
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
@@ -40,3 +43,6 @@ struct ShapeTracker {
     }
   }
 };
+
+}  // namespace detail
+}  // namespace mpqc

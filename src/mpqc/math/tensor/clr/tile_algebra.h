@@ -8,6 +8,7 @@
 #include <TiledArray/madness.h>
 #include <madness/tensor/clapack.h>
 
+namespace mpqc {
 namespace algebra {
 
 inline namespace eigen_version {
@@ -382,5 +383,6 @@ void inline CompressRight(RowMatrix<T> &L, RowMatrix<T> &R, double cut) {
 }  // namespace lapack
 
 }  // namespace algebra
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_TILE_ALGEBRA_H_

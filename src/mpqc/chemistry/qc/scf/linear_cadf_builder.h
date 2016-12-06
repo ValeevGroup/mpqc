@@ -58,8 +58,8 @@ class ONCADFFockBuilder : public FockBuilder {
   double force_cut_thresh_;
   double mo_cut_thresh_;
 
-  //  ShapeTracker shape_tracker_;
-  //  std::vector<ShapeTracker> shape_tracker_iters_;
+  //  mpqc::detail::ShapeTracker shape_tracker_;
+  //  std::vector<mpqc::detail::ShapeTracker> shape_tracker_iters_;
 
  public:
   ONCADFFockBuilder(darray_type const &Mj, darray_type const &Mk,

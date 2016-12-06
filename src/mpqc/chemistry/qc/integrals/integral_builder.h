@@ -1,6 +1,6 @@
 
-#ifndef MPQC_INTEGRALS_INTEGRAL_BUILDER_H
-#define MPQC_INTEGRALS_INTEGRAL_BUILDER_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRAL_BUILDER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRAL_BUILDER_H_
 
 #include <array>
 #include <functional>
@@ -169,4 +169,4 @@ std::shared_ptr<DirectIntegralBuilder<Tile, Engine>> make_direct_integral_builde
 
 }  // namespace integrals
 }  // namespace mpqc
-#endif  // MPQC_INTEGRALS_INTEGRAL_BUILDER_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRAL_BUILDER_H_

@@ -1,6 +1,6 @@
 
-#ifndef MPQC_TENSOR_DECOMPOSEDTENSORADDITION_H
-#define MPQC_TENSOR_DECOMPOSEDTENSORADDITION_H
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_ADDITION_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_ADDITION_H_
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
@@ -270,4 +270,4 @@ DecomposedTensor<T> &add_to(DecomposedTensor<T> &l, const T factor) {
 }  // namespace tensor
 }  // namespace mpqc
 
-#endif  // MPQC_TENSOR_DECOMPOSEDTENSORADDITION_H
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_ADDITION_H_

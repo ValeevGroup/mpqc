@@ -1,6 +1,6 @@
 
-#ifndef TCC_UTLITIY_EXPANDCONTAINER_H
-#define TCC_UTLITIY_EXPANDCONTAINER_H
+#ifndef MPQC4_SRC_MPQC_UTIL_META_GEN_SEQ_H_
+#define MPQC4_SRC_MPQC_UTIL_META_GEN_SEQ_H_
 
 #include <array>
 #include <tuple>
@@ -22,4 +22,4 @@ struct gen_seq<0, Is...> : seq<Is...> {};
 }  // namespace utility
 }  // namespace mpqc
 
-#endif /* end of include guard: TCC_UTLITIY_EXPANDCONTAINER_H */
+#endif  // MPQC4_SRC_MPQC_UTIL_META_GEN_SEQ_H_

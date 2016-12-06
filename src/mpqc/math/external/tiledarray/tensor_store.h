@@ -1,5 +1,5 @@
-#ifndef MPQC_UTILITY_ARRAYINFO_TENSOR_STORE_H
-#define MPQC_UTILITY_ARRAYINFO_TENSOR_STORE_H
+#ifndef MPQC4_SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_TENSOR_STORE_H_
+#define MPQC4_SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_TENSOR_STORE_H_
 #include <array>
 #include <iostream>
 #include <ostream>
@@ -63,4 +63,4 @@ inline void write_shape_tuple3D(
 
 }  //  namespace util
 }  // namespace mpqc
-#endif  // MPQC_UTILITY_ARRAYINFO_TENSOR_STORE_H
+#endif  // MPQC4_SRC_MPQC_MATH_EXTERNAL_TILEDARRAY_TENSOR_STORE_H_

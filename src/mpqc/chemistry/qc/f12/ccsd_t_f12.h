@@ -2,8 +2,8 @@
 // Created by Chong Peng on 11/15/16.
 //
 
-#ifndef MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_
-#define MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_
 
 #include "mpqc/chemistry/qc/cc/ccsd_t.h"
 #include "mpqc/chemistry/qc/f12/ccsd_f12.h"
@@ -75,4 +75,4 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
 } //namespace f12
 } // namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_

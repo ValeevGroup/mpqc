@@ -5,10 +5,10 @@
  *      Author: evaleev
  */
 
-#ifndef SRC_MPQC_UTIL_MISC_PRINT_H_
-#define SRC_MPQC_UTIL_MISC_PRINT_H_
+#ifndef MPQC4_SRC_MPQC_UTIL_MISC_PRINT_H_
+#define MPQC4_SRC_MPQC_UTIL_MISC_PRINT_H_
 
 // print progress
 void print_progress(int lowprogress, int upprogress, int total);
 
-#endif  // SRC_MPQC_UTIL_MISC_PRINT_H_
+#endif  // MPQC4_SRC_MPQC_UTIL_MISC_PRINT_H_

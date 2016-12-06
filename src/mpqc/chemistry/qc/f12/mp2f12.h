@@ -2,8 +2,8 @@
 // Created by Chong Peng on 3/31/16.
 //
 
-#ifndef MPQC_MP2F12_H
-#define MPQC_MP2F12_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_MP2F12_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_MP2F12_H_
 
 #include <string>
 
@@ -77,4 +77,4 @@ class RIRMP2F12 : public RMP2F12 {
 }  // end of namespace f12
 }  // mpqc
 
-#endif  // MPQC_MP2F12_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_MP2F12_H_

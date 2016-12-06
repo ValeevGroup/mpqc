@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/15/15.
 //
 
-#ifndef MPQC_FORMULA_H
-#define MPQC_FORMULA_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_H_
 
 #include <vector>
 
@@ -179,4 +179,4 @@ std::string Formula::to_ta_expression(Transformer transform_op) const {
 }
 }
 
-#endif  // MPQC_FORMULA_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_H_

@@ -10,6 +10,10 @@ set(sources
         purification_density_build.h
         purification_density_build.cpp
         util.h
-        )
+        zrhf.h
+        zrhf.cpp
+        pbc/periodic_cond_ortho.h
+        pbc/periodic_soad.h
+   )
 
 add_mpqc_library(scf sources sources "MPQCwfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "mpqc/chemistry/qc/scf")

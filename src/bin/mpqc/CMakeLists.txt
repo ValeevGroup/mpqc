@@ -52,4 +52,4 @@ add_test(NAME mpqc_test/run
 set_tests_properties(mpqc_test/run
                      PROPERTIES DEPENDS mpqc_test/build
                                 ENVIRONMENT MAD_NUM_THREADS=2)
-                      
+

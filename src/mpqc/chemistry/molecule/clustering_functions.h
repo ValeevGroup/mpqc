@@ -1,6 +1,6 @@
 
-#ifndef MPQC_CLUSTERING_FUNCTIONS_H
-#define MPQC_CLUSTERING_FUNCTIONS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTERING_FUNCTIONS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTERING_FUNCTIONS_H_
 
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
 
@@ -15,4 +15,4 @@ Molecule kmeans(std::vector<AtomBasedClusterable> const &, int64_t);
 
 }  // namespace tcc
 
-#endif  // MPQC_CLUSTERING_FUNCTIONS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTERING_FUNCTIONS_H_

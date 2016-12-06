@@ -2,8 +2,8 @@
 // Created by Chong Peng on 3/2/16.
 //
 
-#ifndef MPQC_AO_FACTORY_BASE_H
-#define MPQC_AO_FACTORY_BASE_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_
 
 #include <cwchar>
 #include <iostream>
@@ -112,6 +112,16 @@ class AOFactoryBase {
     */
   std::array<std::wstring, 3> get_df_formula(const Formula &formula);
 
+  /// given OrbitalIndex, find the correspoding basis
+  std::shared_ptr<basis::Basis> index_to_basis(const OrbitalIndex &index) {
+    auto iter = orbital_basis_registry_->find(index);
+    if (iter == orbital_basis_registry_->end()) {
+      throw std::runtime_error("Basis Set Not Found!!");
+    } else {
+      return iter->second;
+    }
+  }
+
  protected:
   /// parse operation and return one body engine
   libint2::Engine make_engine(const Operator &oper, int64_t max_nprim,
@@ -206,16 +216,6 @@ class AOFactoryBase {
    */
   OrbitalIndex get_jk_orbital_space(const Operator &operation);
 
-  /// given OrbitalIndex, find the correspoding basis
-  std::shared_ptr<basis::Basis> index_to_basis(const OrbitalIndex &index) {
-    auto iter = orbital_basis_registry_->find(index);
-    if (iter == orbital_basis_registry_->end()) {
-      throw std::runtime_error("Basis Set Not Found!!");
-    } else {
-      return iter->second;
-    }
-  }
-
  protected:
   madness::World &world_;
   std::shared_ptr<basis::OrbitalBasisRegistry> orbital_basis_registry_;
@@ -239,4 +239,4 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 }  // end of namespace integral
 }  // end of namespace mpqc
 
-#endif  // MPQC_AO_FACTORY_BASE_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_

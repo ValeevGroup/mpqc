@@ -1,6 +1,6 @@
 
-#ifndef MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
-#define MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_SUBTRACTION_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_SUBTRACTION_H_
 
 #include "mpqc/math/tensor/clr/decomposed_tensor.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_addition.h"
@@ -82,4 +82,4 @@ DecomposedTensor<T> &subt_to(DecomposedTensor<T> &l, const T factor) {
 
 }  // namespace tensor
 }  // namespace mpqc
-#endif  // MPQC_TENSOR_DECOMPOSEDTENSORSUBTRACTION_H
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_SUBTRACTION_H_

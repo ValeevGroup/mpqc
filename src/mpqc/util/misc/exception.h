@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _util_misc_scexception_h
-#define _util_misc_scexception_h
+#ifndef MPQC4_SRC_MPQC_UTIL_MISC_EXCEPTION_H_
+#define MPQC4_SRC_MPQC_UTIL_MISC_EXCEPTION_H_
 
 #include <stdexcept>
 #include <sstream>
@@ -568,5 +568,5 @@ class AssertionFailed : public Exception {
 }
 
 #define __scexception_h_finished
-#endif
+#endif  // MPQC4_SRC_MPQC_UTIL_MISC_EXCEPTION_H_
 

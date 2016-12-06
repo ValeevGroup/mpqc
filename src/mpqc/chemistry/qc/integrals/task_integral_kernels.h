@@ -5,8 +5,8 @@
 // Maintainer Drew Lewis
 //
 
-#ifndef MPQC_INTEGRALS_TASKINTEGRALSHELPER_H
-#define MPQC_INTEGRALS_TASKINTEGRALSHELPER_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRAL_KERNELS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRAL_KERNELS_H_
 
 #include <libint2/engine.h>
 #include <tiledarray.h>
@@ -48,4 +48,4 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
 }  // namespace integrals
 }  // namespace mpqc
 
-#endif  // MPQC_INTEGRALS_TASKINTEGRALSHELPER_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRAL_KERNELS_H_

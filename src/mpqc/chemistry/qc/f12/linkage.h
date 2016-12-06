@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/10/16.
 //
 
-#ifndef SRC_MPQC_CHEMISTRY_QC_F12_LINKAGE_H_
-#define SRC_MPQC_CHEMISTRY_QC_F12_LINKAGE_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_LINKAGE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_LINKAGE_H_
 
 #include "mpqc/chemistry/qc/cc/linkage.h"
 #include "mpqc/util/keyval/forcelink.h"
@@ -35,4 +35,4 @@ mpqc::detail::ForceLink<GF2F12<TA::TensorD>> fl7;
 }
 }
 
-#endif  // SRC_MPQC_CHEMISTRY_QC_F12_LINKAGE_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_LINKAGE_H_

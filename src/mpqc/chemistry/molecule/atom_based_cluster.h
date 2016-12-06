@@ -1,6 +1,6 @@
 
-#ifndef MPQC_MOLCULE_ATOMBASEDCLUSTER_H
-#define MPQC_MOLCULE_ATOMBASEDCLUSTER_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_BASED_CLUSTER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_BASED_CLUSTER_H_
 
 #include "mpqc/chemistry/molecule/atom_based_cluster_concept.h"
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
@@ -135,4 +135,4 @@ inline void update_center(AtomBasedCluster &c) { c.update_cluster(); }
 
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULE_ATOMBASEDCLUSTER_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_BASED_CLUSTER_H_

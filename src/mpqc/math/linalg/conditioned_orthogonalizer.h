@@ -2,8 +2,8 @@
 // Created by Chong Peng on 11/21/16.
 //
 
-#ifndef MPQC_MATH_LINALG_CONDITIONED_INVERSE_H_
-#define MPQC_MATH_LINALG_CONDITIONED_INVERSE_H_
+#ifndef MPQC4_SRC_MPQC_MATH_LINALG_CONDITIONED_ORTHOGONALIZER_H_
+#define MPQC4_SRC_MPQC_MATH_LINALG_CONDITIONED_ORTHOGONALIZER_H_
 
 #include <tiledarray.h>
 #include "mpqc/math/external/eigen/eigen.h"
@@ -100,4 +100,4 @@ TA::DistArray<Tile, Policy> conditioned_orthogonalizer(
 } // end of namespace array_ops
 } // end of namespace mpqc
 
-#endif  // MPQC_MATH_LINALG_CONDITIONED_INVERSE_H_
+#endif  // MPQC4_SRC_MPQC_MATH_LINALG_CONDITIONED_ORTHOGONALIZER_H_

@@ -5,8 +5,8 @@
  *      Author: evaleev
  */
 
-#ifndef SRC_BIN_MPQC_MPQC_TASK_H_
-#define SRC_BIN_MPQC_MPQC_TASK_H_
+#ifndef MPQC4_SRC_BIN_MPQC_MPQC_TASK_H_
+#define MPQC4_SRC_BIN_MPQC_MPQC_TASK_H_
 
 #include <memory>
 
@@ -57,4 +57,4 @@ class MPQCTask {
 }  // namespace mpqc
 
 
-#endif /* SRC_BIN_MPQC_MPQC_TASK_H_ */
+#endif  // MPQC4_SRC_BIN_MPQC_MPQC_TASK_H_

@@ -22,6 +22,8 @@ set(sources
         screening/qvl_screening.cpp
         screening/qvl_shell_info.h
         screening/qvl_shell_info.cpp
+        periodic_ao_factory.h
+        periodic_ao_factory.cpp
 )
 
 add_mpqc_library(integrals sources sources "MPQCexpression;MPQCbasis" "mpqc/chemistry/qc/integrals")

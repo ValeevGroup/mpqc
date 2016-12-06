@@ -1,5 +1,5 @@
-#ifndef MPQC_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_
-#define MPQC_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_
 
 #include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
@@ -83,4 +83,4 @@ inline ShrPool<libint2::Engine> make_engine_pool(
 }  // namespace integrals
 }  // namespace mpqc
 
-#endif  // MPQC_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_

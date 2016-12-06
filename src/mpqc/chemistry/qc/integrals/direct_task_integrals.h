@@ -1,6 +1,6 @@
 
-#ifndef MPQC_INTEGRALS_DIRECTTASKINTEGRALS_H
-#define MPQC_INTEGRALS_DIRECTTASKINTEGRALS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TASK_INTEGRALS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TASK_INTEGRALS_H_
 
 #include "mpqc/chemistry/qc/integrals/direct_tile.h"
 #include "mpqc/chemistry/qc/integrals/integral_builder.h"
@@ -247,4 +247,4 @@ DirectArray<Tile, TA::DensePolicy, Engine> direct_dense_integrals(
 }  // namespace integrals
 }  // namespace mpqc
 
-#endif  // MPQC_INTEGRALS_DIRECTTASKINTEGRALS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TASK_INTEGRALS_H_

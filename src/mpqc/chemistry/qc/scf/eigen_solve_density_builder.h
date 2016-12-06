@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_EIGENSOLVEDENSITYBUILDER_H
-#define MPQC_SCF_EIGENSOLVEDENSITYBUILDER_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_EIGEN_SOLVE_DENSITY_BUILDER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_EIGEN_SOLVE_DENSITY_BUILDER_H_
 
 #include "mpqc/chemistry/qc/scf/density_builder.h"
 #include <array>
@@ -61,4 +61,4 @@ class ESolveDensityBuilder : public DensityBuilder {
 
 }  // namespace scf
 }  // namespace mpqc
-#endif  //  MPQC_SCF_EIGENSOLVEDENSITYBUILDER_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_EIGEN_SOLVE_DENSITY_BUILDER_H_

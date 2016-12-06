@@ -1,6 +1,6 @@
 
-#ifndef MPQC_TENSOR_DECOMPOSEDTENSOR_H
-#define MPQC_TENSOR_DECOMPOSEDTENSOR_H
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_H_
 
 #include <iostream>
 #include <tiledarray.h>
@@ -112,4 +112,4 @@ std::ostream &operator<<(std::ostream &os, DecomposedTensor<T> const &t) {
 }  // namespace tensor
 }  // namespace mpqc
 
-#endif  //  MPQC_TENSOR_DECOMPOSEDTENSOR_H
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_H_

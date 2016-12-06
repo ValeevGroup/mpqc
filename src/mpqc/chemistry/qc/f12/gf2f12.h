@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/11/16.
 //
 
-#ifndef MPQC_CHEMISTRY_QC_F12_GF2F12_H
-#define MPQC_CHEMISTRY_QC_F12_GF2F12_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_GF2F12_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_GF2F12_H_
 
 #include "mpqc/chemistry/qc/f12/f12_intermediates.h"
 #include "mpqc/chemistry/qc/scf/mo_build.h"
@@ -463,4 +463,4 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
 }  // namespace f12
 }  // namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_F12_GF2F12_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_GF2F12_H_

@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/1/15.
 //
 
-#ifndef SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H
-#define SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H_
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include <tiledarray.h>
@@ -163,4 +163,4 @@ TA::DistArray<Tile,Policy> create_d_ai(madness::World &world, const TA::TiledRan
 
 }  // end of namespace mpqc
 
-#endif  // SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H_

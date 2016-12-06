@@ -1,5 +1,5 @@
-#ifndef MPQC_TAROUTINES_CHOLEKSYINVERSE_H
-#define MPQC_TAROUTINES_CHOLEKSYINVERSE_H
+#ifndef MPQC4_SRC_MPQC_MATH_LINALG_CHOLESKY_INVERSE_H_
+#define MPQC4_SRC_MPQC_MATH_LINALG_CHOLESKY_INVERSE_H_
 
 #include <tiledarray.h>
 
@@ -12,4 +12,4 @@ TA::DistArray<TA::TensorD, TA::SparsePolicy> cholesky_inverse(
 }  // namespace ta_routines
 }  // namespace mpqc
 
-#endif  // MPQC_TAROUTINES_CHOLEKSYINVERSE_H
+#endif  // MPQC4_SRC_MPQC_MATH_LINALG_CHOLESKY_INVERSE_H_

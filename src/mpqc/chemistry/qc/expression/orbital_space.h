@@ -2,8 +2,8 @@
 // Created by Chong Peng on 2/16/16.
 //
 
-#ifndef MPQC_ORBITAL_SPACE_H
-#define MPQC_ORBITAL_SPACE_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_SPACE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_SPACE_H_
 
 #include <memory>
 
@@ -73,4 +73,4 @@ class OrbitalSpace {
 };
 }
 
-#endif  // MPQC_ORBITAL_SPACE_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_SPACE_H_

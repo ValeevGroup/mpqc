@@ -70,8 +70,7 @@ Molecule::Molecule(const KeyVal &kv) {
   auto file_name = kv.value<std::string>("file_name", "");
   MPQC_ASSERT(!file_name.empty());
   if (file_name[0] != '/' && kv.exists("$:file_prefix")) {
-    file_name = kv.value<std::string>("$:file_prefix") + "/" +
-                file_name;
+    file_name = kv.value<std::string>("$:file_prefix") + "/" + file_name;
   }
 
   // find world one level higher

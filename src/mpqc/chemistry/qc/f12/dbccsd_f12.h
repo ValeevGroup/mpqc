@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/12/16.
 //
 
-#ifndef MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_
-#define MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_
 
 #include "mpqc/chemistry/qc/f12/ccsd_f12.h"
 #include "mpqc/chemistry/qc/f12/db_f12_intermediates.h"
@@ -174,4 +174,4 @@ typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
 }  // end of namespace f12
 }  // end of namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_

@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_CLUSTERED_COEFFS_H
-#define MPQC_SCF_CLUSTERED_COEFFS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CLUSTERD_COEFFS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CLUSTERD_COEFFS_H_
 
 #include "mpqc/math/external/eigen/eigen.h"
 #include <tiledarray.h>
@@ -42,4 +42,4 @@ void clustered_coeffs(
 
 }  // namespace scf
 }  // namespace mpqc
-#endif  // MPQC_SCF_CLUSTERED_COEFFS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_CLUSTERD_COEFFS_H_

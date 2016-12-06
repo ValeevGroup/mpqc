@@ -2,8 +2,8 @@
 // Created by Chong Peng on 10/14/15.
 //
 
-#ifndef MPQC_ORBITAL_INDEX_H
-#define MPQC_ORBITAL_INDEX_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_INDEX_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_INDEX_H_
 
 #include <string>
 
@@ -219,4 +219,4 @@ OrbitalIndex::OrbitalIndex(String &&symbol) {
 }
 }
 
-#endif  // MPQC_ORBITAL_INDEX_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_INDEX_H_

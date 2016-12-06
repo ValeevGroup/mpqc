@@ -1,6 +1,6 @@
 
-#ifndef MPQC_BASIS_BASIS_H
-#define MPQC_BASIS_BASIS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_H_
 
 #include <iosfwd>
 #include <memory>
@@ -180,4 +180,4 @@ struct ArchiveSerializeImpl<Archive, libint2::Shell> {
 
 }  // end of namespace madness
 }  // end of namespace archive
-#endif /* end of include guard: MPQC_BASIS_BASIS_H */
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_H_

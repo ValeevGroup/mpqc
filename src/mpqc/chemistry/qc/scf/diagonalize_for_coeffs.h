@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_DIAGONALIZEFORCOFFS_H
-#define MPQC_SCF_DIAGONALIZEFORCOFFS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_DIAGONALIZE_FOR_COEFFS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_DIAGONALIZE_FOR_COEFFS_H_
 
 
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
@@ -64,4 +64,4 @@ inline Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1
 } // namespace mpqc
 
 
-#endif // MPQC_SCF_DIAGONALIZEFORCOFFS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_DIAGONALIZE_FOR_COEFFS_H_

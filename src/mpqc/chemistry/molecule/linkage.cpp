@@ -6,6 +6,8 @@
  */
 
 #include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/chemistry/molecule/unit_cell.h"
 #include "mpqc/util/keyval/forcelink.h"
 
 MPQC_CLASS_EXPORT2("Molecule", mpqc::Molecule);
+MPQC_CLASS_EXPORT2("UnitCell", mpqc::UnitCell);

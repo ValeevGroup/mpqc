@@ -9,8 +9,8 @@
 // This file is part of the MPQC Framework. It is distributed under the terms of
 // the GNU General Public License, version 3.
 
-#ifndef SRC_MPQC_CHEMISTRY_MOLECULE_FORMULA_H_
-#define SRC_MPQC_CHEMISTRY_MOLECULE_FORMULA_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_FORMULA_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_FORMULA_H_
 
 #include <string>
 #include <utility>
@@ -53,4 +53,4 @@ class MolecularFormula {
 
 }  // namespace mpqc
 
-#endif  // SRC_MPQC_CHEMISTRY_MOLECULE_FORMULA_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_FORMULA_H_

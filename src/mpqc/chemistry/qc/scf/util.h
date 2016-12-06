@@ -1,6 +1,6 @@
 
-#ifndef MPQC_UTILITY_VECTORFUNCTIONS_H
-#define MPQC_UTILITY_VECTORFUNCTIONS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_UTIL_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_UTIL_H_
 
 #include <array>
 #include <vector>
@@ -36,4 +36,4 @@ inline std::array<double, 3> vec_avg(
 }
 }
 
-#endif  //  MPQC_UTILITY_VECTORFUNCTIONS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_UTIL_H_

@@ -1,6 +1,6 @@
 
-#ifndef MPQC_CLUSTERING_COMMON_H
-#define MPQC_CLUSTERING_COMMON_H
+#ifndef MPQC4_SRC_MPQC_MATH_CLUSTERING_COMMON_H_
+#define MPQC4_SRC_MPQC_MATH_CLUSTERING_COMMON_H_
 
 #include <vector>
 
@@ -33,4 +33,4 @@ Iter closest_cluster(Iter begin, Iter end, Vector3d const &target_center) {
 }  // namespace clustering
 }  // namespace mpqc
 
-#endif  // MPQC_CLUSTERING_COMMON_H
+#endif  // MPQC4_SRC_MPQC_MATH_CLUSTERING_COMMON_H_

@@ -1,6 +1,6 @@
 
-#ifndef SRC_MPQC_UTIL_OPTIONS_GETLONGOPT_H_
-#define SRC_MPQC_UTIL_OPTIONS_GETLONGOPT_H_
+#ifndef MPQC4_SRC_MPQC_UTIL_OPTIONS_GETLONGOPT_H_
+#define MPQC4_SRC_MPQC_UTIL_OPTIONS_GETLONGOPT_H_
 
 #include <iostream>
 #include <list>
@@ -119,4 +119,4 @@ class GetLongOpt {
 // end of addtogroup Init
 }
 
-#endif  // SRC_MPQC_UTIL_OPTIONS_GETLONGOPT_H_
+#endif  // MPQC4_SRC_MPQC_UTIL_OPTIONS_GETLONGOPT_H_

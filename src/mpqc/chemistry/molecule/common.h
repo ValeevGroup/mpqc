@@ -1,6 +1,6 @@
 
-#ifndef MPQC_MOLECULE_COMMON_H
-#define MPQC_MOLECULE_COMMON_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_COMMON_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_COMMON_H_
 
 #include <vector>
 
@@ -61,4 +61,4 @@ double sum_charge(std::vector<T> const &ts) {
 }  // namespace molecule
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULE_COMMON_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_COMMON_H_

@@ -1,6 +1,6 @@
 
-#ifndef MPQC_INTEGRALS_INTEGRALENGINEPOOL_H
-#define MPQC_INTEGRALS_INTEGRALENGINEPOOL_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRAL_ENGINE_POOL_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRAL_ENGINE_POOL_H_
 //
 // integral_engine_pool.h
 //
@@ -50,4 +50,4 @@ std::shared_ptr<EnginePool<E>> make_pool(E e) {
 } // namespace integrals
 } // namespac mpqc
 
-#endif /* end of include guard: MPQC_INTEGRALS_INTEGRALENGINEPOOL_H */
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRAL_ENGINE_POOL_H_

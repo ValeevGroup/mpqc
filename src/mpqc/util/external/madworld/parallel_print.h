@@ -1,5 +1,5 @@
-#ifndef MPQC_UTLITY_PARALLELPRINT_H
-#define MPQC_UTLITY_PARALLELPRINT_H
+#ifndef MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_PRINT_H_
+#define MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_PRINT_H_
 
 #include <fstream>
 #include <iostream>
@@ -61,4 +61,4 @@ inline void print_file(madness::World &world, const std::string &file) {
 }  // namespace utility
 }  // namespace mpqc
 
-#endif  // MPQC_UTLITY_PARALLELPRINT_H
+#endif  // MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_PRINT_H_

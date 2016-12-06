@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/26/16.
 //
 
-#ifndef MPQC_CABS_SINGLES_H
-#define MPQC_CABS_SINGLES_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CABS_SINGLES_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CABS_SINGLES_H_
 
 #include <TiledArray/algebra/conjgrad.h>
 #include <tiledarray.h>
@@ -227,4 +227,4 @@ TA::DistArray<Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner(
 }  // end of namespace f12
 }  // end of namespace mpqc
 
-#endif  // MPQC_CABS_SINGLES_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CABS_SINGLES_H_

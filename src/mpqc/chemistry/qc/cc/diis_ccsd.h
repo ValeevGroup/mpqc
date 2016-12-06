@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/7/15.
 //
 
-#ifndef MPQC_DIIS_CCSD_H
-#define MPQC_DIIS_CCSD_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_
 
 #include <cmath>
 
@@ -86,4 +86,4 @@ inline void axpy(T1T2<T, Tile, Policy> &y,
 }  // namespace cc
 }  // namespace mpqc
 
-#endif  // MPQC_DIIS_CCSD_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_

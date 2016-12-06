@@ -1,6 +1,6 @@
 
-#ifndef MPQC_INTEGRALS_INTEGRALS_H
-#define MPQC_INTEGRALS_INTEGRALS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRALS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRALS_H_
 
 #include "mpqc/chemistry/qc/integrals/task_integrals.h"
 #include "mpqc/chemistry/qc/integrals/task_integral_kernels.h"
@@ -17,4 +17,4 @@
 #include "mpqc/chemistry/qc/integrals/integral_engine_pool.h"
 #include "mpqc/chemistry/qc/integrals/make_engine.h"
 
-#endif // MPQC_INTEGRALS_INTEGRALS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRALS_H_

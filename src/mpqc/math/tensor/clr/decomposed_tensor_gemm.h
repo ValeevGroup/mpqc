@@ -1,6 +1,6 @@
 
-#ifndef MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H
-#define MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H
+#ifndef MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_GEMM_H_
+#define MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_GEMM_H_
 
 #include <tiledarray.h>
 
@@ -121,4 +121,4 @@ DecomposedTensor<T> &gemm(DecomposedTensor<T> &c, DecomposedTensor<T> const &a,
 }  // namespace tensor
 }  // namespace mpqc
 
-#endif  // MPQC_TENSOR_DECOMPOSEDTENSORGEMM_H
+#endif  // MPQC4_SRC_MPQC_MATH_TENSOR_CLR_DECOMPOSED_TENSOR_GEMM_H_

@@ -1,6 +1,6 @@
 
-#ifndef MPQC_INTEGRALS_DIRECTTILE_H
-#define MPQC_INTEGRALS_DIRECTTILE_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TILE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TILE_H_
 
 #include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
 
@@ -130,4 +130,4 @@ class DirectArray {
 }  // namespace integrals
 }  // namespace mpqc
 
-#endif  // MPQC_INTEGRALS_DIRECTTILE_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TILE_H_

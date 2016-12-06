@@ -1,6 +1,6 @@
 
-#ifndef MPQC_MOLECULE_ATOMMASSES_H
-#define MPQC_MOLECULE_ATOMMASSES_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_MASSES_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_MASSES_H_
 
 #include <vector>
 
@@ -40,4 +40,4 @@ static const std::vector<double> masses = {
 }  // namespace molecule
 }  // namespace mpqc
 
-#endif /* end of include guard: MPQC_MOLECULE_ATOMMASSES_H */
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_MASSES_H_

@@ -1,6 +1,6 @@
 
-#ifndef SRC_MPQC_UTIL_MISC_STRING_H_
-#define SRC_MPQC_UTIL_MISC_STRING_H_
+#ifndef MPQC4_SRC_MPQC_UTIL_MISC_STRING_H_
+#define MPQC4_SRC_MPQC_UTIL_MISC_STRING_H_
 
 #include <locale>
 #include <sstream>
@@ -113,4 +113,4 @@ std::string concatcm(Args&&... args) {
 }
 }
 
-#endif  // SRC_MPQC_UTIL_MISC_STRING_H_
+#endif  // MPQC4_SRC_MPQC_UTIL_MISC_STRING_H_

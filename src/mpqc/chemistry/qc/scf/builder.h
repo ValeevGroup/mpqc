@@ -1,5 +1,5 @@
-#ifndef MPQC_SCF_BUILDER_H
-#define MPQC_SCF_BUILDER_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_BUILDER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_BUILDER_H_
 
 #include <string>
 
@@ -26,4 +26,4 @@ class FockBuilder {
 }  // namespace scf
 }  // namespace mpqc
 
-#endif  // MPQC_SCF_BUILDER_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_BUILDER_H_

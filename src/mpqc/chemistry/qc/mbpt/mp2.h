@@ -2,8 +2,8 @@
 // Created by Chong Peng on 6/24/15.
 //
 
-#ifndef MPQC_CHEMISTRY_QC_MBPT_MP2_H
-#define MPQC_CHEMISTRY_QC_MBPT_MP2_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_
 
 #include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 #include "mpqc/chemistry/qc/scf/mo_build.h"
@@ -137,4 +137,4 @@ class RIRMP2 : public RMP2 {
 
 }  // end of namespace mbpt
 }  // end of namespace mpqc
-#endif  // MPQC_CHEMISTRY_QC_MBPT_MP2_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_

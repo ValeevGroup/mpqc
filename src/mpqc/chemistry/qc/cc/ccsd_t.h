@@ -2,8 +2,8 @@
 // Created by Chong Peng on 8/21/15.
 //
 
-#ifndef MPQC_CCSD_T_H_H
-#define MPQC_CCSD_T_H_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_T_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_T_H_
 
 #include "mpqc/chemistry/qc/cc/ccsd.h"
 #include "mpqc/util/misc/print.h"
@@ -1283,4 +1283,4 @@ class CCSD_T<TA::TensorD,TA::SparsePolicy>;
 }  // namespace cc
 }  // namespace mpqc
 
-#endif  // MPQC_CCSD_T_H_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_T_H_

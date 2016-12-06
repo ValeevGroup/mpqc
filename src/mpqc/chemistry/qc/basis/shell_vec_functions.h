@@ -1,7 +1,7 @@
 
 
-#ifndef MPQC_BASIS_SHELLVECFUNCTIONS_H
-#define MPQC_BASIS_SHELLVECFUNCTIONS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_SHELL_VEC_FUNCTIONS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_SHELL_VEC_FUNCTIONS_H_
 
 #include "mpqc/chemistry/qc/basis/basis.h"
 
@@ -28,4 +28,4 @@ std::vector<std::vector<libint2::Shell>> reblock_basis(
 }  // namespace basis
 }  // namespace mpqc
 
-#endif  // MPQC_BASIS_SHELLVECFUNCTIONS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_SHELL_VEC_FUNCTIONS_H_

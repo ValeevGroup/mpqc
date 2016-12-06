@@ -1,6 +1,6 @@
 
-#ifndef MPQC_SCF_DENSITYBUILDER_H
-#define MPQC_SCF_DENSITYBUILDER_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_DENSITY_BUILDER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_DENSITY_BUILDER_H_
 
 #include <string>
 #include <utility>
@@ -29,4 +29,4 @@ class DensityBuilder {
 
 }  // namespace scf
 }  // namespace mpqc
-#endif  //  MPQC_SCF_DENSITYBUILDER_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_DENSITY_BUILDER_H_

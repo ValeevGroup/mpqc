@@ -7,8 +7,8 @@
 // Based on file task_integrals.hpp from mpqc
 //
 
-#ifndef MPQC_INTEGRALS_TASKINTEGRALS_H
-#define MPQC_INTEGRALS_TASKINTEGRALS_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRALS_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRALS_H_
 
 #include <TiledArray/tensor/tensor_map.h>
 
@@ -246,4 +246,4 @@ TA::DistArray<Tile, TA::DensePolicy> dense_integrals(
 }  // namespace integrals
 }  // namespace mpqc
 
-#endif  // MPQC_INTEGRALS_TASKINTEGRALS_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRALS_H_

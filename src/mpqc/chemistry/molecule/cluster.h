@@ -1,6 +1,6 @@
 
-#ifndef MPQC_MOLCULE_CLUSTER_H
-#define MPQC_MOLCULE_CLUSTER_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTER_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTER_H_
 
 #include "mpqc/chemistry/molecule/cluster_concept.h"
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
@@ -98,4 +98,4 @@ inline Vector3d const &center(Cluster const &c) { return c.center(); }
 
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULE_CLUSTER_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_CLUSTER_H_

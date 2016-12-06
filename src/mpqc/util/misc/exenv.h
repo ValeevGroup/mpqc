@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _util_misc_exenv_h
-#define _util_misc_exenv_h
+#ifndef MPQC4_SRC_MPQC_UTIL_MISC_EXENV_H_
+#define MPQC4_SRC_MPQC_UTIL_MISC_EXENV_H_
 
 #include <cstdlib>
 #include <iostream>
@@ -104,7 +104,7 @@ class ExEnv {
 
 }
 
-#endif
+#endif  // MPQC4_SRC_MPQC_UTIL_MISC_EXENV_H_
 
 // Local Variables:
 // mode: c++

@@ -1,5 +1,5 @@
-#ifndef SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_
-#define SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_
 
 #include <iosfwd>
 #include <vector>
@@ -173,4 +173,4 @@ std::ostream &operator<<(std::ostream &, Molecule const &);
 
 }  // namespace mpqc
 
-#endif  // MPQC_MOLECULE_MOLECULE_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_MOLECULE_H_

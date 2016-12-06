@@ -2,8 +2,8 @@
 // Created by Chong Peng on 7/1/15.
 //
 
-#ifndef MPQC_CHEMISTRY_QC_CC_CCSD_H
-#define MPQC_CHEMISTRY_QC_CC_CCSD_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_H_
 
 #include <tiledarray.h>
 
@@ -1515,4 +1515,4 @@ extern template class CCSD<TA::TensorD, TA::SparsePolicy>;
 }  // namespace cc
 }  // namespace mpqc
 
-#endif  // MPQC_CHEMISTRY_QC_CC_CCSD_H
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_H_

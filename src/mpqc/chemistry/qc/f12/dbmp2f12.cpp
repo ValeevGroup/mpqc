@@ -122,7 +122,7 @@ double RIDBRMP2F12::compute_new_mp2() {
     lcao_factory.ao_factory().orbital_basis_registry().remove(
         OrbitalIndex(L"Α"));
 
-    auto mp2 = mbpt::RIRMP2(kv_);
+    auto mp2 = mbpt::RIRMP2<TA::TensorD, TA::SparsePolicy>(kv_);
 
     auto ref = mp2.refwfn();
 

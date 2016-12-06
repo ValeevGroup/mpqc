@@ -10,15 +10,22 @@
 
 namespace mpqc {
 namespace mbpt {
+template<typename Tile, typename Policy>
 class RMP2;
+
+template<typename Tile, typename Policy>
 class RIRMP2;
+
+template<typename Tile, typename Policy>
 class DBRMP2;
+
+template<typename Tile, typename Policy>
 class RIDBRMP2;
 
-mpqc::detail::ForceLink<RMP2> fl1;
-mpqc::detail::ForceLink<RIRMP2> fl2;
-mpqc::detail::ForceLink<DBRMP2> fl3;
-mpqc::detail::ForceLink<RIDBRMP2> fl4;
+mpqc::detail::ForceLink<RMP2<TA::TensorD, TA::SparsePolicy>> fl1;
+mpqc::detail::ForceLink<RIRMP2<TA::TensorD, TA::SparsePolicy>> fl2;
+mpqc::detail::ForceLink<DBRMP2<TA::TensorD, TA::SparsePolicy>> fl3;
+mpqc::detail::ForceLink<RIDBRMP2<TA::TensorD, TA::SparsePolicy>> fl4;
 }
 }
 

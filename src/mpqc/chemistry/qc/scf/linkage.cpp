@@ -13,4 +13,4 @@ MPQC_CLASS_EXPORT2("RHF", mpqc::scf::RHF);
 MPQC_CLASS_EXPORT2("Direct-RHF", mpqc::scf::DirectRHF);
 MPQC_CLASS_EXPORT2("RI-RHF", mpqc::scf::RIRHF);
 MPQC_CLASS_EXPORT2("Direct-RI-RHF", mpqc::scf::DirectRIRHF);
-MPQC_CLASS_EXPORT2("PRHF", mpqc::scf::zRHF);
+MPQC_CLASS_EXPORT2("zRHF", mpqc::scf::zRHF);

@@ -26,7 +26,7 @@ Matrixz gensqrtinv(const TArray S, bool symmetric, double max_condition_num, int
   // if symmetric, X = U.s_sqrtinv.Ut
   // if canonical, X = U.s_sqrtinv
   // where s and U are eigenvalues and eigenvectors of S
-  Eigen::SelfAdjointEigenSolver<Matrixc> comp_eig_solver(S_eig);
+  Eigen::SelfAdjointEigenSolver<Matrixz> comp_eig_solver(S_eig);
   auto U = comp_eig_solver.eigenvectors();
   auto s = comp_eig_solver.eigenvalues();
 //  integrals::detail::sort_eigen(s, U);

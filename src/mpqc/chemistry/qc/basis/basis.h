@@ -17,6 +17,7 @@
 #include "mpqc/chemistry/qc/basis/basis_set.h"
 
 namespace mpqc {
+/// \todo merge into namespace \c gaussian
 namespace basis {
 
 using Shell = libint2::Shell;
@@ -30,10 +31,13 @@ using ShellVec = std::vector<Shell>;
  *
  */
 
+/// Basis is a clustered sequence of libint2::Shell objects.
+/// The sequence is represented as a vector of vectors of shells.
 class Basis : public DescribedClass {
  public:
   using Shell = libint2::Shell;
 
+  /// created an empty Basis
   Basis();
   ~Basis();
   Basis(Basis const &);
@@ -41,12 +45,13 @@ class Basis : public DescribedClass {
   Basis &operator=(Basis const &);
   Basis &operator=(Basis &&);
 
-  ///
-  Basis(std::vector<ShellVec> cs);
+  /// constructs a Basis object from a vector of shell clusters
+  explicit Basis(std::vector<ShellVec> cs);
 
   /**
-   * \brief KeyVal constructor for Basis
+   * \brief the KeyVal constructor for Basis
    *
+   * The KeyVal constructor uses the following keywords:
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
@@ -57,19 +62,23 @@ class Basis : public DescribedClass {
    */
   Basis(const KeyVal &kv);
 
-  /// join another basis together
-  Basis join(const Basis &basis);
-
+  /// @return a reference to the vector of shell clusters
   std::vector<ShellVec> const &cluster_shells() const;
+  /// @return the vector of all shells
+  std::vector<Shell> flattened_shells() const;
 
   TiledArray::TiledRange1 create_trange1() const;
 
+  /// @return the maximum number of primitives in any shell in this Basis
   int64_t max_nprim() const;
+  /// @return the highest angular momentum of any shell in this Basis
   int64_t max_am() const;
+  /// @return the maximum number of functions (i.e., size) of any shell in this Basis
   int64_t nfunctions() const;
+  /// @return the number of shells in this Basis
   int64_t nshells() const;
+  /// @return the number of shell clusters in this Basis
   int64_t nclusters() const { return shells_.size(); };
-  std::vector<Shell> flattened_shells() const;
 
   template <typename Archive>
   typename std::enable_if<
@@ -98,7 +107,13 @@ class Basis : public DescribedClass {
 
  private:
   std::vector<ShellVec> shells_;
+
+  friend Basis merge(const Basis &basis1, const Basis &basis2);
 };
+
+/// merges two Basis objects by concatenating their shell cluster sequences.
+/// @return a Basis object in which shells of \c basis1 and \c basis2
+Basis merge(const Basis &basis1, const Basis &basis2);
 
 std::ostream &operator<<(std::ostream &, Basis const &);
 

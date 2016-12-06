@@ -190,13 +190,14 @@ Eigen::RowVectorXi sub_basis_map(const Basis& basis, const Basis& sub_basis){
 
 }
 
-Basis Basis::join(const Basis &basis) {
-  auto self_shells = this->cluster_shells();
-  auto other_shells = basis.cluster_shells();
-  self_shells.insert(self_shells.end(), other_shells.begin(),
-                     other_shells.end());
+Basis merge(const Basis &basis1, const Basis &basis2) {
+  auto shells1 = basis1.cluster_shells();
+  auto shells2 = basis2.cluster_shells();
+  shells1.insert(shells1.end(), shells2.begin(),
+                 shells2.end());
 
-  return basis::Basis(self_shells);
+  return basis::Basis(shells1);
 }
+
 }  // namespace basis
 }  // namespace mpqc

@@ -131,7 +131,7 @@ void closed_shell_cabs_mo_build_svd(
       ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
 
   basis::Basis ri_basis;
-  ri_basis = obs_basis.join(abs_basis);
+  ri_basis = basis::merge(obs_basis, abs_basis);
 
   detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                     "RI Basis");
@@ -398,11 +398,11 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   basis::Basis ri_basis;
 
   if (ri_method == "VBS") {
-    ri_basis = vir_basis.join(abs_basis);
+    ri_basis = basis::merge(vir_basis, abs_basis);
     detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                       "RI Basis with VBS");
   } else if (ri_method == "OBS") {
-    ri_basis = obs_basis.join(abs_basis);
+    ri_basis = basis::merge(obs_basis, abs_basis);
     detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                       "RI Basis with OBS");
   } else {

@@ -44,6 +44,7 @@ class Wavefunction : public DescribedClass {
   /**
    *  \brief The KeyVal constructor
    *
+   * The KeyVal object will be queried for the following keywords:
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "wfn_world" OR \c "..:wfn_world" OR \c "$:wfn_world" | WavefunctionWorld | none | |

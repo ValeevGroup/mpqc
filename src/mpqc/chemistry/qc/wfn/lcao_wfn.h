@@ -26,7 +26,9 @@ public:
   using LCAOFactoryType = integrals::LCAOFactory<Tile,Policy>;
 
   /**
-   * The KeyVal constructor uses keywords of Wavefunction and LCAOFactory, and the following keywords:
+   *  \brief The KeyVal constructor
+   *
+   * The KeyVal object will be queried for all keywords of Wavefunction and LCAOFactory, and the following keywords:
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|

@@ -27,6 +27,16 @@ class AOWavefunction : public Wavefunction {
   using DirectAOIntegral = integrals::DirectAOFactory<Tile, Policy>;
   using ArrayType = typename AOIntegral::TArray;
 
+  /**
+   *  \brief The KeyVal constructor
+   *
+   * The KeyVal object will be queried for all keywords of the Wavefunction class,
+   * as well as the following keywords:
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | \c "wfn_world:ao_factory" | integrals::AOFactory | default-constructed integrals::AOFactory | |
+   * | \c "wfn_world:direct_ao_factory" | integrals::DirectAOFactory | default-constructed integrals::DirectAOFactory | |
+   */
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv)
   {
     ao_factory_ = integrals::detail::construct_ao_factory<Tile, Policy>(kv);

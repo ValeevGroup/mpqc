@@ -70,7 +70,9 @@ class Debugger: public DescribedClass {
   public:
     Debugger(const char *exec = 0);
 
-    /** The KeyVal constructor understands the following keywords:
+    /** \brief The KeyVal constructor.
+
+        The KeyVal object will be queried for the following keywords:
         <dl>
         <dt><tt>debug</tt><dd> Try to start a debugger when an error occurs.
         Doesn't work on all machines. The default is true, if possible.

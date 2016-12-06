@@ -34,7 +34,7 @@ class WavefunctionWorld : public DescribedClass {
   /**
    * \brief The KeyVal constructor
    *
-   * The KeyVal constructor uses keywords of OrbitalBasisRegistry, and the following keywords:
+   * The KeyVal object will be queried for all keywords of OrbitalBasisRegistry, and the following keywords:
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|

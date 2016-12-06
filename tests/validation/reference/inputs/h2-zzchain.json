@@ -24,7 +24,7 @@
      "threshold": 1.0e-20
    },
    "wfn":{
-     "type": "PRHF",
+     "type": "zRHF",
      "wfn_world": "$:world",
      "converge": 1.0e-7,
      "max_iter": 100,

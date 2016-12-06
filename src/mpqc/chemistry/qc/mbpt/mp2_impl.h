@@ -44,7 +44,7 @@ RMP2<Tile,Policy>::~RMP2() = default;
 template<typename Tile, typename Policy>
 void RMP2<Tile,Policy>::obsolete() {
   this->energy_ = 0.0;
-  qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
+  qc::LCAOWavefunction<Tile, TA::SparsePolicy>::obsolete();
   ref_wfn_->obsolete();
 }
 

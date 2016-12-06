@@ -121,7 +121,7 @@ void RHF<Tile,Policy>::obsolete() {
   d_times_ = std::vector<double>();
   build_times_ = std::vector<double>();
 
-  qc::AOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
+  qc::AOWavefunction<Tile, TA::SparsePolicy>::obsolete();
 }
 
 template <typename Tile, typename Policy>

@@ -48,7 +48,7 @@ std::shared_ptr<LCAOFactory<Tile,Policy>> construct_lcao_factory(const KeyVal& k
 // TODO MO transform that minimize operations by permutation
 /**
  * \brief Molecule Integral computation class
- *  This class computes molecular integral using  Formula
+ *  This class computes molecular integrals using a Formula object
  *
  *  compute(formula) return TArray object
  *  (formula) return TArray expression

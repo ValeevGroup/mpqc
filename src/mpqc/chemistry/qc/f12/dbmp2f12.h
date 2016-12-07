@@ -12,8 +12,15 @@
 namespace mpqc {
 namespace f12 {
 
-class RIDBRMP2F12 : public RIRMP2F12 {
+
+/**
+ * \brief Dual Basis MP2F12 method for closed shell with RI
+ */
+
+template <typename Tile>
+class RIDBRMP2F12 : public RIRMP2F12<Tile> {
  public:
+  using TArray = TA::DistArray<Tile,TA::SparsePolicy>;
   /**
    * KeyVal constructor
    * @param kv
@@ -40,7 +47,12 @@ class RIDBRMP2F12 : public RIRMP2F12 {
   const KeyVal kv_;
   std::string mp2_method_;
 };
+
+extern template class RIDBRMP2F12<TA::TensorD>;
+
 }  // namespace f12
 }  // namespace mpqc
+
+#include "dbmp2f12_impl.h"
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DBMP2F12_H_

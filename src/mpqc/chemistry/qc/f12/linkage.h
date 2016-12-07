@@ -10,12 +10,19 @@
 
 namespace mpqc {
 namespace f12 {
+
+template <typename Tile>
 class RMP2F12;
+
+template <typename Tile>
 class RIRMP2F12;
+
+template <typename Tile>
 class RIDBRMP2F12;
-mpqc::detail::ForceLink<RMP2F12> fl1;
-mpqc::detail::ForceLink<RIRMP2F12> fl2;
-mpqc::detail::ForceLink<RIDBRMP2F12> fl3;
+
+mpqc::detail::ForceLink<RMP2F12<TA::TensorD>> fl1;
+mpqc::detail::ForceLink<RIRMP2F12<TA::TensorD>> fl2;
+mpqc::detail::ForceLink<RIDBRMP2F12<TA::TensorD>> fl3;
 
 template <typename Tile>
 class CCSD_F12;

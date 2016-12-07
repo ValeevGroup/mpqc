@@ -5,8 +5,9 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H_
 
-#include "mpqc/math/external/eigen/eigen.h"
 #include <tiledarray.h>
+
+#include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
 
@@ -98,9 +99,12 @@ TA::Array<double, 4, Tile, Policy> d_abij(
 
 // create matrix d("a,i") = 1/(ei - ea)
 template <typename Tile, typename Policy>
-TA::DistArray<Tile,Policy> create_d_ai(madness::World &world, const TA::TiledRange &trange,
-                 const Eigen::VectorXd &ens, std::size_t n_occ,
-                 std::size_t n_frozen) {
+TA::DistArray<
+    Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value,
+                                  TA::SparsePolicy>::type>
+create_d_ai(madness::World &world, const TA::TiledRange &trange,
+            const Eigen::VectorXd &ens, std::size_t n_occ,
+            std::size_t n_frozen) {
   typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
 
   auto make_tile = [&ens, n_occ, n_frozen](range_type &range, std::size_t ord,
@@ -137,15 +141,6 @@ TA::DistArray<Tile,Policy> create_d_ai(madness::World &world, const TA::TiledRan
   std::vector<Tile> tiles(tvolume);
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
-
-  for (auto const ord : *pmap) {
-    world.taskq.add(make_tile, trange.make_tile_range(ord), ord, &tiles[ord],
-                    &tile_norms);
-  }
-
-  world.gop.fence();
-
-#if TA_DEFAULT_POLICY == 0
   TA::DistArray<Tile, Policy> result(world, trange, pmap);
 
   for (auto const ord : *pmap) {
@@ -154,21 +149,67 @@ TA::DistArray<Tile,Policy> create_d_ai(madness::World &world, const TA::TiledRan
       assert(!tile.empty());
       result.set(ord, tile);
     }
-  }
-#elif TA_DEFAULT_POLICY == 1
-  TA::SparseShape<float> shape(world, tile_norms, trange);
-  TA::DistArray<Tile, Policy> result(world, trange, shape, pmap);
+    TA::SparseShape<float> shape(world, tile_norms, trange);
+    TA::DistArray<Tile, Policy> result(world, trange, shape, pmap);
 
-  for (auto const ord : *pmap) {
-    if (result.is_local(ord) && !result.is_zero(ord)) {
-      auto &tile = tiles[ord];
-      assert(!tile.empty());
-      result.set(ord, tile);
+    for (auto const ord : *pmap) {
+      if (result.is_local(ord) && !result.is_zero(ord)) {
+        auto &tile = tiles[ord];
+        assert(!tile.empty());
+        result.set(ord, tile);
+      }
     }
+    world.gop.fence();
+    result.truncate();
+    return result;
   }
-#endif
+}
+
+
+// create matrix d("a,i") = 1/(ei - ea)
+template <typename Tile, typename Policy>
+TA::DistArray<
+    Tile, typename std::enable_if<std::is_same<Policy, TA::DensePolicy>::value,
+                                  TA::DensePolicy>::type>
+create_d_ai(madness::World &world, const TA::TiledRange &trange,
+            const Eigen::VectorXd &ens, std::size_t n_occ,
+            std::size_t n_frozen) {
+  typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
+
+  auto make_tile = [&ens, n_occ, n_frozen](range_type &range) {
+
+    auto result_tile = Tile(range);
+    const auto a0 = result_tile.range().lobound()[0];
+    const auto an = result_tile.range().upbound()[0];
+    const auto i0 = result_tile.range().lobound()[1];
+    const auto in = result_tile.range().upbound()[1];
+
+    auto ai = 0;
+    typename Tile::value_type tmp = 1.0;
+    for (auto a = a0; a < an; ++a) {
+      const auto e_a = ens[a + n_occ];
+      for (auto i = i0; i < in; ++i, ++ai) {
+        const auto e_i = ens[i + n_frozen];
+        const auto e_ia = e_i - e_a;
+        const auto result_ai = tmp / (e_ia);
+        result_tile[ai] = result_ai;
+      }
+    }
+
+    return result_tile;
+
+  };
+
+  TA::DistArray<Tile, Policy> result(world, trange);
+
+  for (auto it = result.begin(); it != result.end(); ++it) {
+    madness::Future<Tile> tile =
+        world.taskq.add(make_tile, trange.make_tile_range(it.ordinal()));
+
+    *it = tile;
+  }
+
   world.gop.fence();
-  result.truncate();
   return result;
 }
 

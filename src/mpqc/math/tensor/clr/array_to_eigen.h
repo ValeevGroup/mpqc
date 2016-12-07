@@ -90,9 +90,21 @@ inline TA::TensorZ mat_to_tile<TA::TensorZ>(
   return mat_to_ta_tensor(range, M);
 }
 
-// M must be replicated on all nodes.
-template <typename Tile>
-TA::DistArray<Tile, TA::SparsePolicy> eigen_to_array(
+
+/**
+ *  convert eigen(replicated) to sparse TA::DistArray
+ * @tparam Tile
+ * @tparam Policy
+ * @param world
+ * @param M  Eigen matrix, must be replicated on all nodes
+ * @param tr0
+ * @param tr1
+ * @param cut
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value, TA::SparsePolicy>::type >
+eigen_to_array(
     madness::World &world, Matrix<typename Tile::numeric_type> const &M,
     TA::TiledRange1 tr0, TA::TiledRange1 tr1, double cut = 1e-7) {
   TA::TiledRange trange{tr0, tr1};
@@ -118,6 +130,41 @@ TA::DistArray<Tile, TA::SparsePolicy> eigen_to_array(
   array.truncate();   // Be lazy and fix shape like this.
   return array;
 }
+
+
+/**
+ *  convert eigen(replicated) to dense TA::DistArray
+ * @tparam Tile
+ * @tparam Policy TA::DensePolicy
+ * @param world
+ * @param M  Eigen matrix, must be replicated on all nodes
+ * @param tr0
+ * @param tr1
+ * @param cut
+ * @return
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<Tile, typename std::enable_if<std::is_same<Policy, TA::DensePolicy>::value, TA::DensePolicy>::type >
+eigen_to_array(
+    madness::World &world, Matrix<typename Tile::numeric_type> const &M,
+    TA::TiledRange1 tr0, TA::TiledRange1 tr1, double cut = 1e-7) {
+  TA::TiledRange trange{tr0, tr1};
+
+  TA::DistArray<Tile, TA::DensePolicy> array(world, trange);
+
+  auto const &pmap = array.pmap();
+  const auto end = pmap->end();
+  for (auto it = pmap->begin(); it != end; ++it) {
+    auto range = trange.make_tile_range(*it);
+    madness::Future<Tile> tile =
+        world.taskq.add(mat_to_tile<Tile>, range, &M, cut);
+    array.set(*it, tile);
+  }
+
+  world.gop.fence();  // Be careful because M is ref
+  return array;
+}
+
 
 }  // namespace array_ops
 }  // namespace mpqc

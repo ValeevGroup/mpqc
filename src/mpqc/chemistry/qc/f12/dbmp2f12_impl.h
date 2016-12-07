@@ -220,11 +220,11 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
 
       // convert to TA
       C_occ_ta =
-          array_ops::eigen_to_array<Tile>(world, C_occ, tr_vbs, tr_occ);
-      C_corr_occ_ta = array_ops::eigen_to_array<Tile>(
+          array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_occ, tr_vbs, tr_occ);
+      C_corr_occ_ta = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(
           world, C_corr_occ, tr_vbs, tr_corr_occ);
       C_vir_ta =
-          array_ops::eigen_to_array<Tile>(world, C_vir, tr_vbs, tr_vir);
+          array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_vir, tr_vbs, tr_vir);
     }
 
     lcao_factory.orbital_space().clear();

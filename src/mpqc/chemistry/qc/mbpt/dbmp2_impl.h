@@ -71,7 +71,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
   mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ");
 
   // convert to TA
-  auto C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_obs, tr_occ);
+  auto C_occ_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_occ, tr_obs, tr_occ);
 
   // project to large basis set
 
@@ -125,12 +125,12 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
   auto tr_vir = tre->get_vir_tr1();
   mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");
 
-  C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_vbs, tr_occ);
+  C_occ_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_occ, tr_vbs, tr_occ);
 
   auto C_corr_occ_ta =
-      array_ops::eigen_to_array<Tile>(world, C_corr_occ, tr_vbs, tr_corr_occ);
+      array_ops::eigen_to_array<Tile,Policy>(world, C_corr_occ, tr_vbs, tr_corr_occ);
 
-  auto C_vir_ta = array_ops::eigen_to_array<Tile>(world, C_vir, tr_vbs, tr_vir);
+  auto C_vir_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_vir, tr_vbs, tr_vir);
 
   // insert to registry
   occ_space =

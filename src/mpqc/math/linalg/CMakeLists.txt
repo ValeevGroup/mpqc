@@ -1,6 +1,5 @@
 set(sources 
     cholesky_inverse.h
-    cholesky_inverse.cpp
     conditioned_orthogonalizer.h
     diagonal_array.h
     eigen_value_estimation.h
@@ -8,4 +7,4 @@ set(sources
     sqrt_inv.h
 )
 
-add_mpqc_library(math_linalg sources sources "MPQCmath_eigen;MPQCmath_ta" "mpqc/math/linalg")
+add_mpqc_hdr_library(math_linalg sources sources "mpqc/math/linalg")

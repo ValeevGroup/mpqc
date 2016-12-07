@@ -224,12 +224,11 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
     auto& left1 = orbital_space_registry_->retrieve(left_index1);
     auto& right1 = orbital_space_registry_->retrieve(right_index1);
 
-    // TODO better way to make model for diagonal matrix
-    TArray tmp;
-    tmp("i,j") = left1("k,i") * right1("k,j");
+    auto tr1 = left1.array().trange().data()[1];
+    auto tr2 = right1.array().trange().data()[1];
 
     // create diagonal array
-    result = array_ops::create_diagonal_matrix(tmp, 1.0);
+    result = array_ops::create_diagonal_array_from_eigen<Tile,Policy>(world_,tr1,tr2,1.0);
     result.truncate();
 
     time1 = mpqc::now(world_, accurate_time_);

@@ -81,11 +81,11 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   detail::parallel_print_range_info(world, tr_all, "Obs");
 
   // convert to TA
-  auto C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_obs, tr_occ);
+  auto C_occ_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_occ, tr_obs, tr_occ);
   auto C_corr_occ_ta =
-      array_ops::eigen_to_array<Tile>(world, C_corr_occ, tr_obs, tr_corr_occ);
-  auto C_vir_ta = array_ops::eigen_to_array<Tile>(world, C_vir, tr_obs, tr_vir);
-  auto C_all_ta = array_ops::eigen_to_array<Tile>(world, C_all, tr_obs, tr_all);
+      array_ops::eigen_to_array<Tile,Policy>(world, C_corr_occ, tr_obs, tr_corr_occ);
+  auto C_vir_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_vir, tr_obs, tr_vir);
+  auto C_all_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_all, tr_obs, tr_all);
 
   // insert to registry
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
@@ -164,7 +164,7 @@ void closed_shell_cabs_mo_build_svd(
     auto tr_cabs_mo = tre->compute_range(nbf_cabs, vir_blocksize);
     detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
 
-    C_cabs = array_ops::eigen_to_array<Tile>(world, Vnull, tr_ribs, tr_cabs_mo);
+    C_cabs = array_ops::eigen_to_array<Tile,Policy>(world, Vnull, tr_ribs, tr_cabs_mo);
     C_cabs("i,j") = S_ribs_inv("i,k") * C_cabs("k, j");
 
     RowMatrixXd C_cabs_eigen = array_ops::array_to_eigen(C_cabs);
@@ -196,7 +196,7 @@ void closed_shell_cabs_mo_build_svd(
     auto tr_allvir_mo = tre->compute_range(nbf_cabs + n_vir, vir_blocksize);
     detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
 
-    C_allvir = array_ops::eigen_to_array<TA::TensorD>(world, C_allvirtual_eigen,
+    C_allvir = array_ops::eigen_to_array<Tile,Policy>(world, C_allvirtual_eigen,
                                                       tr_ribs, tr_allvir_mo);
 
     // insert to orbital space
@@ -312,10 +312,10 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   detail::parallel_print_range_info(world, tr_vir, "Vir");
 
   // convert to TA
-  auto C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_obs, tr_occ);
+  auto C_occ_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_occ, tr_obs, tr_occ);
   auto C_corr_occ_ta =
-      array_ops::eigen_to_array<Tile>(world, C_corr_occ, tr_obs, tr_corr_occ);
-  auto C_vir_ta = array_ops::eigen_to_array<Tile>(world, C_vbs, tr_vbs, tr_vir);
+      array_ops::eigen_to_array<Tile,Policy>(world, C_corr_occ, tr_obs, tr_corr_occ);
+  auto C_vir_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_vbs, tr_vbs, tr_vir);
 
   // insert to registry
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
@@ -355,7 +355,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   RowMatrixXd C_vir_rotate = es3.eigenvectors();
   C_vbs = C_vbs * C_vir_rotate;
   TArray C_vir_ta_new =
-      array_ops::eigen_to_array<Tile>(world, C_vbs, tr_vbs, tr_vir);
+      array_ops::eigen_to_array<Tile,Policy>(world, C_vbs, tr_vbs, tr_vir);
 
   // remove old virtual orbitals
   lcao_factory.orbital_space().remove(OrbitalIndex(L"a"));
@@ -471,7 +471,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto tr_allvir_mo = tre->compute_range(nbf_ribs_minus_occ, vir_blocksize);
 
   detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
-  TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<TA::TensorD>(
+  TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<Tile,Policy>(
       world, C_cabs_eigen, tr_ribs, tr_cabs_mo);
 
   // insert to orbital space
@@ -481,7 +481,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   orbital_registry.add(C_cabs_space);
 
   detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
-  TA::DistArray<Tile, Policy> C_allvir = array_ops::eigen_to_array<TA::TensorD>(
+  TA::DistArray<Tile, Policy> C_allvir = array_ops::eigen_to_array<Tile,Policy>(
       world, C_allvir_eigen, tr_ribs, tr_allvir_mo);
 
   // insert to orbital space

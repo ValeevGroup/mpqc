@@ -523,7 +523,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
 
     auto tr_result = result.trange().data()[0];
-    result = array_ops::eigen_to_array<TA::TensorD>(
+    result = array_ops::eigen_to_array<Tile,Policy>(
         result.world(), result_eig, tr_result, tr_result);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -553,7 +553,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       RowMatrixXd inv_eig = es.operatorInverseSqrt();
 
       auto tr_result = result.trange().data()[0];
-      result = array_ops::eigen_to_array<TA::TensorD>(
+      result = array_ops::eigen_to_array<Tile,Policy>(
           result.world(), inv_eig, tr_result, tr_result);
     }
 

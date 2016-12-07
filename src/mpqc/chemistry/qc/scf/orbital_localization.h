@@ -37,7 +37,7 @@ class BoysLocalization {
     jacobi_sweeps(c_eig, U, {ao_x, ao_y, ao_z});
 
     auto trange = C.trange();
-    return array_ops::eigen_to_array<typename Array::value_type>(
+    return array_ops::eigen_to_array<Tile,Policy>(
         C.world(), U, trange.data()[1], trange.data()[1]);
   }
 };

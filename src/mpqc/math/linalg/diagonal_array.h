@@ -26,7 +26,7 @@ TA::DistArray<Tile, Policy> create_diagonal_array_from_eigen(
   auto diag = Eigen::DiagonalMatrix<numeric_type, Eigen::Dynamic>(x);
   diag.diagonal().setConstant(val);
 
-  auto result = array_ops::eigen_to_array<Tile>(world, diag, trange1, trange2);
+  auto result = array_ops::eigen_to_array<Tile,Policy>(world, diag, trange1, trange2);
 
   return result;
 }

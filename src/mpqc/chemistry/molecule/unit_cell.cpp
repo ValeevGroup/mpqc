@@ -6,8 +6,8 @@
 #include "mpqc/chemistry/molecule/clustering_functions.h"
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/chemistry/molecule/molecule.h"
-#include "mpqc/util/keyval/forcelink.h"
 #include "mpqc/chemistry/units/units.h"
+#include "mpqc/util/keyval/forcelink.h"
 
 namespace mpqc {
 UnitCell::UnitCell(const KeyVal &kv) : Molecule(kv) {
@@ -46,23 +46,23 @@ double UnitCell::nuclear_repulsion(Vector3i RJ_max) const {
 }
 
 std::ostream &operator<<(std::ostream &os, UnitCell const &unitcell) {
-    os << "Molecule info:" << std::endl;
-    os << "\tC.O.M: " << unitcell.com().transpose() << std::endl;
-    os << "\tCharge: " << unitcell.charge() << std::endl;
-    os << "\tMass: " << unitcell.mass() << std::endl;
+  os << "Molecule info:" << std::endl;
+  os << "\tC.O.M: " << unitcell.com().transpose() << std::endl;
+  os << "\tCharge: " << unitcell.charge() << std::endl;
+  os << "\tMass: " << unitcell.mass() << std::endl;
 
-    os << "\nElements:\n";
-    auto last = unitcell.end();
-    for (auto it = unitcell.begin(); it != last; ++it) {
-      os << "\t";
-      it->print(os) << std::endl;
-    }
+  os << "\nElements:\n";
+  auto last = unitcell.end();
+  for (auto it = unitcell.begin(); it != last; ++it) {
+    os << "\t";
+    it->print(os) << std::endl;
+  }
 
-    os << "\nUnit cell info:" << std::endl;
-    os << "\tLattice parameters (in Bohr): [" << unitcell.dcell().transpose() << "]"
-       << std::endl;
+  os << "\nUnit cell info:" << std::endl;
+  os << "\tLattice parameters (in Bohr): [" << unitcell.dcell().transpose()
+     << "]" << std::endl;
 
-    return os;
+  return os;
 }
 
 }  // namespace mpqc

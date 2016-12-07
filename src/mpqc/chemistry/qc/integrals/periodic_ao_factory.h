@@ -8,11 +8,11 @@
 
 #include "mpqc/chemistry/molecule/unit_cell.h"
 #include "mpqc/chemistry/qc/integrals/integrals.h"
+#include "mpqc/chemistry/units/units.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/time.h"
-#include "mpqc/chemistry/units/units.h"
 
 #include <unsupported/Eigen/MatrixFunctions>
 
@@ -172,7 +172,6 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 
 }  // namespace detail
 
-
 template <typename Tile, typename Policy>
 class PeriodicAOFactory : public DescribedClass {
  public:
@@ -188,16 +187,16 @@ class PeriodicAOFactory : public DescribedClass {
    * \param kv the KeyVal object
    */
   PeriodicAOFactory(const KeyVal &kv)
-      : world_(*kv.value<madness::World*>("$:world")) {
+      : world_(*kv.value<madness::World *>("$:world")) {
     ao_factory_base_ = std::make_shared<AOFactoryBase>(AOFactoryBase(kv));
 
     std::string prefix = "";
-    if (kv.exists_class("wfn_world"))
-      prefix = "wfn_world:";
+    if (kv.exists_class("wfn_world")) prefix = "wfn_world:";
 
     std::string molecule_type = kv.value<std::string>(prefix + "molecule:type");
     if (molecule_type != "UnitCell") {
-      throw std::invalid_argument("molecule:type has to be UnitCell in order to run PRHF!!");
+      throw std::invalid_argument(
+          "molecule:type has to be UnitCell in order to run PRHF!!");
     }
 
     unitcell_ = kv.keyval(prefix + "molecule").class_ptr<UnitCell>();
@@ -212,14 +211,24 @@ class PeriodicAOFactory : public DescribedClass {
     nk_ = decltype(nk_)(
         kv.value<std::vector<int>>(prefix + "molecule:k_points").data());
 
-    R_size_ = 1 + detail::direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
-    RJ_size_ = 1 + detail::direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-    RD_size_ = 1 + detail::direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
+    R_size_ =
+        1 + detail::direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
+    RJ_size_ =
+        1 + detail::direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
+    RD_size_ =
+        1 + detail::direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
     k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
 
-    op_ = TA::Noop<TA::TensorZ, true>();
+    set_oper(Tile());
 
     print_detail_ = kv.value<bool>("print_detail", false);
+  }
+
+  /// set oper based on Tile type
+  template <typename T = Tile>
+  void set_oper(typename std::enable_if<std::is_same<T, TA::TensorZ>::value,
+                                        T>::type &&t) {
+    op_ = TA::Noop<TA::TensorZ, true>();
   }
 
   ~PeriodicAOFactory() noexcept = default;
@@ -257,7 +266,8 @@ class PeriodicAOFactory : public DescribedClass {
   /// @return the direct unit cell params
   Vector3i nk() { return nk_; }
 
-  /// @return the cardinal number of lattices included in Bloch Gaussian expansion
+  /// @return the cardinal number of lattices included in Bloch Gaussian
+  /// expansion
   int64_t R_size() { return R_size_; }
 
   /// @return the cardinal number of lattices included in Coulomb operation
@@ -281,7 +291,7 @@ class PeriodicAOFactory : public DescribedClass {
   madness::World &world() { return world_; }
 
   /// @return AOFactoryBase
-  std::shared_ptr<AOFactoryBase> ao_factory_base() {return ao_factory_base_;}
+  std::shared_ptr<AOFactoryBase> ao_factory_base() { return ao_factory_base_; }
 
   /// set OrbitalBasisRegistry
   void set_orbital_basis_registry(
@@ -323,9 +333,7 @@ class PeriodicAOFactory : public DescribedClass {
     return result;
   }
 
-
  private:
-
   /// parse one body formula and set engine_pool and basis array for periodic
   /// system
   void parse_one_body_periodic(
@@ -360,7 +368,8 @@ class PeriodicAOFactory : public DescribedClass {
       std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>());
 
   std::shared_ptr<UnitCell> unitcell_;  ///> UnitCell private member
-  std::shared_ptr<AOFactoryBase> ao_factory_base_;  ///> AOFactoryBase private member
+  std::shared_ptr<AOFactoryBase>
+      ao_factory_base_;  ///> AOFactoryBase private member
   madness::World &world_;
 
   Op op_;
@@ -374,12 +383,14 @@ class PeriodicAOFactory : public DescribedClass {
   Vector3i nk_ = {1, 1, 1};           ///> # of k points in each direction
   Vector3d dcell_ = {0.0, 0.0, 0.0};  ///> direct unit cell params (in a.u.)
 
-  int64_t R_size_;  ///> cardinal # of lattices included in Bloch Gaussian expansion
+  int64_t
+      R_size_;  ///> cardinal # of lattices included in Bloch Gaussian expansion
   int64_t RJ_size_;  ///> cardinal # of lattices included in Coulomb operation
-  int64_t RD_size_;  ///> cardinal # of lattices included in density representation
+  int64_t
+      RD_size_;  ///> cardinal # of lattices included in density representation
   int64_t k_size_;  ///> cardinal # of k points
 
-  bool print_detail_; ///> if true, print a lot more details
+  bool print_detail_;  ///> if true, print a lot more details
 };
 
 template <typename Tile, typename Policy>
@@ -405,7 +416,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     auto time0 = mpqc::now(world_, false);
     if (formula.oper().type() == Operator::Type::Kinetic ||
         formula.oper().type() == Operator::Type::Overlap) {
-      parse_one_body_periodic(formula, engine_pool, bs_array, ao_factory_base_->molecule());
+      parse_one_body_periodic(formula, engine_pool, bs_array,
+                              ao_factory_base_->molecule());
       result = compute_integrals(world_, engine_pool, bs_array);
     } else if (formula.oper().type() == Operator::Type::Nuclear) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
@@ -509,7 +521,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 }
 
 template <typename Tile, typename Policy>
-void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(const Formula &formula,
+void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
+    const Formula &formula,
     std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
     const Molecule &shifted_mol) {
   auto bra_indices = formula.bra_indices();
@@ -532,7 +545,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(const Formula &for
 
   // Form a compound ket basis by shifting origins from -Rmax to Rmax
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
-  ket_basis = detail::shift_basis_origin(*ket_basis, zero_shift_base, R_max_, dcell_);
+  ket_basis =
+      detail::shift_basis_origin(*ket_basis, zero_shift_base, R_max_, dcell_);
 
   bases = Bvector{{*bra_basis, *ket_basis}};
 
@@ -540,7 +554,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(const Formula &for
   engine_pool = integrals::make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
-      detail::to_libint2_operator_params(oper_type, *ao_factory_base_, shifted_mol));
+      detail::to_libint2_operator_params(oper_type, *ao_factory_base_,
+                                         shifted_mol));
 }
 
 template <typename Tile, typename Policy>
@@ -577,13 +592,16 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
   // Form a compound index basis
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
   if (if_coulomb) {
-    bra_basis1 = detail::shift_basis_origin(*bra_basis1, zero_shift_base, R_max_, dcell_);
+    bra_basis1 = detail::shift_basis_origin(*bra_basis1, zero_shift_base,
+                                            R_max_, dcell_);
     ket_basis0 = detail::shift_basis_origin(*ket_basis0, shift_coul);
   } else {
     bra_basis1 = detail::shift_basis_origin(*bra_basis1, shift_coul);
-    ket_basis0 = detail::shift_basis_origin(*ket_basis0, zero_shift_base, R_max_, dcell_);
+    ket_basis0 = detail::shift_basis_origin(*ket_basis0, zero_shift_base,
+                                            R_max_, dcell_);
   }
-  ket_basis1 = detail::shift_basis_origin(*ket_basis1, shift_coul, RD_max_, dcell_);
+  ket_basis1 =
+      detail::shift_basis_origin(*ket_basis1, shift_coul, RD_max_, dcell_);
 
   if (formula.notation() == Formula::Notation::Chemical)
     bases = Bvector{{*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1}};
@@ -595,8 +613,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
   engine_pool = integrals::make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
-      libint2::BraKet::xx_xx,
-      detail::to_libint2_operator_params(oper_type, *ao_factory_base_, *unitcell_));
+      libint2::BraKet::xx_xx, detail::to_libint2_operator_params(
+                                  oper_type, *ao_factory_base_, *unitcell_));
 }
 
 template <typename Tile, typename Policy>

@@ -60,8 +60,8 @@ Array periodic_fock_soad(
   auto normal_bs =
       pao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
   auto normal_bs0 = std::make_shared<basis::Basis>(normal_bs);
-  auto normal_bs1 =
-      integrals::detail::shift_basis_origin(*normal_bs0, zero_shift_base, R_max, dcell);
+  auto normal_bs1 = integrals::detail::shift_basis_origin(
+      *normal_bs0, zero_shift_base, R_max, dcell);
 
   // F = H + 2J - K
   for (auto RJ = 0; RJ < RJ_size; ++RJ) {

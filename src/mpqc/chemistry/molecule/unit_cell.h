@@ -78,7 +78,7 @@ class UnitCell : public Molecule {
    *  \endcode
    *
    */
-  UnitCell(const KeyVal& kv);
+  UnitCell(const KeyVal &kv);
 
   /*!
    * \brief This computes nuclear repulsion energy for one unitcell

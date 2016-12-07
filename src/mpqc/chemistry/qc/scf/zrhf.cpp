@@ -1,7 +1,7 @@
 #include "zrhf.h"
 
-#include "mpqc/chemistry/qc/scf/pbc/periodic_soad.h"
 #include "mpqc/chemistry/qc/scf/pbc/periodic_cond_ortho.h"
+#include "mpqc/chemistry/qc/scf/pbc/periodic_soad.h"
 
 #include <clocale>
 #include <sstream>
@@ -178,11 +178,12 @@ bool zRHF::solve() {
                   nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
       if (world.rank() == 0) {
         if (iter == 1)
-          std::cout << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
-                 nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
-                 nT.c_str());
-        std::cout << mpqc::printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, eprhf,
-               eprhf + repulsion_, ediff, rms, iter_duration);
+          std::cout << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n",
+                                    niter.c_str(), nEle.c_str(), nTot.c_str(),
+                                    nDel.c_str(), nRMS.c_str(), nT.c_str());
+        std::cout << mpqc::printf(
+            " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, eprhf,
+            eprhf + repulsion_, ediff, rms, iter_duration);
       }
     }
 
@@ -201,24 +202,29 @@ bool zRHF::solve() {
     if (world.rank() == 0) {
       std::cout << "\nPeriodic Hartree-Fock iterations have converged!"
                 << std::endl;
-      std::cout << "\nTotal Periodic Hartree-Fock energy = " << energy_ << std::endl;
+      std::cout << "\nTotal Periodic Hartree-Fock energy = " << energy_
+                << std::endl;
 
       if (print_detail_) {
-          Eigen::IOFormat fmt(5);
-          std::cout << "\n k | orbital energies" << std::endl;
-          for (auto k = 0; k < ao_factory.k_size(); ++k) {
-              std::cout << k << " | " << eps_[k].real().transpose().format(fmt) << std::endl;
-          }
+        Eigen::IOFormat fmt(5);
+        std::cout << "\n k | orbital energies" << std::endl;
+        for (auto k = 0; k < ao_factory.k_size(); ++k) {
+          std::cout << k << " | " << eps_[k].real().transpose().format(fmt)
+                    << std::endl;
+        }
       }
 
       // print out timings
       std::cout << mpqc::printf("\nTime(s):\n");
-      std::cout << mpqc::printf("\tInit:                %20.3f\n", init_duration_);
+      std::cout << mpqc::printf("\tInit:                %20.3f\n",
+                                init_duration_);
       std::cout << mpqc::printf("\tCoulomb term:        %20.3f\n", j_duration_);
       std::cout << mpqc::printf("\tExchange term:       %20.3f\n", k_duration_);
-      std::cout << mpqc::printf("\tReal->Recip trans:   %20.3f\n", trans_duration_);
+      std::cout << mpqc::printf("\tReal->Recip trans:   %20.3f\n",
+                                trans_duration_);
       std::cout << mpqc::printf("\tDiag + Density:      %20.3f\n", d_duration_);
-      std::cout << mpqc::printf("\tTotal:               %20.3f\n\n", scf_duration_);
+      std::cout << mpqc::printf("\tTotal:               %20.3f\n\n",
+                                scf_duration_);
     }
     return true;
   }

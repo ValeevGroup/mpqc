@@ -6,6 +6,8 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DBCCSD_H_
 
 #include "mpqc/chemistry/qc/cc/ccsd.h"
+#include "mpqc/mpqc_config.h"
+
 
 namespace mpqc {
 namespace cc {
@@ -54,8 +56,11 @@ class DBCCSD : public CCSD<Tile, Policy> {
   }
 };
 
-extern template
-class DBCCSD<TA::TensorD, TA::SparsePolicy>;
+#if TA_DEFAULT_POLICY == 0
+extern template class DBCCSD<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class DBCCSD<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 } // end of namespace cc
 } // end of namespace mpqc

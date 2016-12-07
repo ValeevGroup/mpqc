@@ -5,6 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_
 
+#include "mpqc/mpqc_config.h"
 #include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 #include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
@@ -122,9 +123,13 @@ class RIRMP2 : public RMP2<Tile, Policy> {
   double compute() override;
 };
 
+#if TA_DEFAULT_POLICY == 0
+extern template class RMP2<TA::TensorD, TA::DensePolicy>;
+extern template class RIRMP2<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
 extern template class RMP2<TA::TensorD, TA::SparsePolicy>;
 extern template class RIRMP2<TA::TensorD, TA::SparsePolicy>;
-
+#endif
 }  // end of namespace mbpt
 }  // end of namespace mpqc
 

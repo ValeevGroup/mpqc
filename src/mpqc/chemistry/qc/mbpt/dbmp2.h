@@ -6,6 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_
 
 #include "mpqc/chemistry/qc/mbpt/mp2.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace mbpt {
@@ -287,8 +288,13 @@ private:
 
 };
 
+#if TA_DEFAULT_POLICY == 0
+extern template class DBRMP2<TA::TensorD, TA::DensePolicy>;
+extern template class RIDBRMP2<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
 extern template class DBRMP2<TA::TensorD, TA::SparsePolicy>;
 extern template class RIDBRMP2<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // end of namespace mbpt
 }  // end of namespace mpqc

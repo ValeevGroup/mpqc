@@ -7,6 +7,7 @@
 
 #include "mpqc/chemistry/qc/wfn/linkage.h"
 #include "mpqc/util/keyval/forcelink.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace scf {
@@ -25,11 +26,19 @@ class DirectRIRHF;
 
 class zRHF;
 
+#if TA_DEFAULT_POLICY == 0
+mpqc::detail::ForceLink<RHF<TA::TensorD, TA::DensePolicy>> fl1;
+mpqc::detail::ForceLink<RIRHF<TA::TensorD, TA::DensePolicy>> fl2;
+mpqc::detail::ForceLink<DirectRHF<TA::TensorD, TA::DensePolicy>> fl3;
+mpqc::detail::ForceLink<DirectRIRHF<TA::TensorD, TA::DensePolicy>> fl4;
+#elif TA_DEFAULT_POLICY == 1
 mpqc::detail::ForceLink<RHF<TA::TensorD, TA::SparsePolicy>> fl1;
 mpqc::detail::ForceLink<RIRHF<TA::TensorD, TA::SparsePolicy>> fl2;
 mpqc::detail::ForceLink<DirectRHF<TA::TensorD, TA::SparsePolicy>> fl3;
 mpqc::detail::ForceLink<DirectRIRHF<TA::TensorD, TA::SparsePolicy>> fl4;
 mpqc::detail::ForceLink<zRHF> fl5;
+#endif
+
 }
 }
 

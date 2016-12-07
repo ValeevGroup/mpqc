@@ -13,6 +13,8 @@
 #include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
+#include "mpqc/mpqc_config.h"
+
 
 namespace mpqc {
 namespace cc {
@@ -1510,8 +1512,11 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   }
 };  // class CCSD
 
+#if TA_DEFAULT_POLICY == 0
+extern template class CCSD<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
 extern template class CCSD<TA::TensorD, TA::SparsePolicy>;
-
+#endif
 }  // namespace cc
 }  // namespace mpqc
 

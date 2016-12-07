@@ -8,6 +8,7 @@
 #include "mpqc/chemistry/qc/f12/f12_intermediates.h"
 #include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 
@@ -459,6 +460,10 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
           "correction to EA!!!");
   }
 }
+
+#if TA_DEFAULT_POLICY == 1
+extern template class GF2F12<TA::TensorD>;
+#endif
 
 }  // namespace f12
 }  // namespace mpqc

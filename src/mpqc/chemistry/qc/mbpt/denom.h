@@ -145,6 +145,17 @@ TA::DistArray<Tile,Policy> create_d_ai(madness::World &world, const TA::TiledRan
 
   world.gop.fence();
 
+#if TA_DEFAULT_POLICY == 0
+  TA::DistArray<Tile, Policy> result(world, trange, pmap);
+
+  for (auto const ord : *pmap) {
+    if (result.is_local(ord)) {
+      auto &tile = tiles[ord];
+      assert(!tile.empty());
+      result.set(ord, tile);
+    }
+  }
+#elif TA_DEFAULT_POLICY == 1
   TA::SparseShape<float> shape(world, tile_norms, trange);
   TA::DistArray<Tile, Policy> result(world, trange, shape, pmap);
 
@@ -155,7 +166,7 @@ TA::DistArray<Tile,Policy> create_d_ai(madness::World &world, const TA::TiledRan
       result.set(ord, tile);
     }
   }
-
+#endif
   world.gop.fence();
   result.truncate();
   return result;

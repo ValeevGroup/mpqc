@@ -8,6 +8,7 @@
 #include "mpqc/chemistry/qc/f12/db_f12_intermediates.h"
 #include "mpqc/chemistry/qc/f12/mp2f12.h"
 #include "mpqc/chemistry/qc/mbpt/dbmp2.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace f12 {
@@ -48,7 +49,9 @@ class RIDBRMP2F12 : public RIRMP2F12<Tile> {
   std::string mp2_method_;
 };
 
+#if TA_DEFAULT_POLICY == 1
 extern template class RIDBRMP2F12<TA::TensorD>;
+#endif
 
 }  // namespace f12
 }  // namespace mpqc

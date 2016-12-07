@@ -7,6 +7,7 @@
 
 #include "mpqc/chemistry/qc/scf/linkage.h"
 #include "mpqc/util/keyval/forcelink.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace mbpt {
@@ -22,10 +23,17 @@ class DBRMP2;
 template<typename Tile, typename Policy>
 class RIDBRMP2;
 
+#if TA_DEFAULT_POLICY == 0
+mpqc::detail::ForceLink<RMP2<TA::TensorD, TA::DensePolicy>> fl1;
+mpqc::detail::ForceLink<RIRMP2<TA::TensorD, TA::DensePolicy>> fl2;
+mpqc::detail::ForceLink<DBRMP2<TA::TensorD, TA::DensePolicy>> fl3;
+mpqc::detail::ForceLink<RIDBRMP2<TA::TensorD, TA::DensePolicy>> fl4;
+#elif TA_DEFAULT_POLICY == 1
 mpqc::detail::ForceLink<RMP2<TA::TensorD, TA::SparsePolicy>> fl1;
 mpqc::detail::ForceLink<RIRMP2<TA::TensorD, TA::SparsePolicy>> fl2;
 mpqc::detail::ForceLink<DBRMP2<TA::TensorD, TA::SparsePolicy>> fl3;
 mpqc::detail::ForceLink<RIDBRMP2<TA::TensorD, TA::SparsePolicy>> fl4;
+#endif
 }
 }
 

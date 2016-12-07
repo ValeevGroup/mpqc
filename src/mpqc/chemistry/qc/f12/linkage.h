@@ -7,6 +7,7 @@
 
 #include "mpqc/chemistry/qc/cc/linkage.h"
 #include "mpqc/util/keyval/forcelink.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace f12 {
@@ -20,25 +21,27 @@ class RIRMP2F12;
 template <typename Tile>
 class RIDBRMP2F12;
 
-mpqc::detail::ForceLink<RMP2F12<TA::TensorD>> fl1;
-mpqc::detail::ForceLink<RIRMP2F12<TA::TensorD>> fl2;
-mpqc::detail::ForceLink<RIDBRMP2F12<TA::TensorD>> fl3;
-
 template <typename Tile>
 class CCSD_F12;
-mpqc::detail::ForceLink<CCSD_F12<TA::TensorD>> fl4;
 
 template <typename Tile>
 class DBCCSD_F12;
-mpqc::detail::ForceLink<DBCCSD_F12<TA::TensorD>> fl5;
 
 template <typename Tile>
 class CCSD_T_F12;
-mpqc::detail::ForceLink<CCSD_T_F12<TA::TensorD>> fl6;
 
 template <typename Tile>
 class GF2F12;
+
+#if TA_DEFAULT_POLICY == 1
+mpqc::detail::ForceLink<RMP2F12<TA::TensorD>> fl1;
+mpqc::detail::ForceLink<RIRMP2F12<TA::TensorD>> fl2;
+mpqc::detail::ForceLink<RIDBRMP2F12<TA::TensorD>> fl3;
+mpqc::detail::ForceLink<CCSD_F12<TA::TensorD>> fl4;
+mpqc::detail::ForceLink<DBCCSD_F12<TA::TensorD>> fl5;
+mpqc::detail::ForceLink<CCSD_T_F12<TA::TensorD>> fl6;
 mpqc::detail::ForceLink<GF2F12<TA::TensorD>> fl7;
+#endif
 }
 }
 

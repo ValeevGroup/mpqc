@@ -7,6 +7,7 @@
 
 #include <tiledarray.h>
 
+#include "mpqc/mpqc_config.h"
 #include "mpqc/chemistry/qc/scf/builder.h"
 #include "mpqc/chemistry/qc/scf/density_builder.h"
 #include "mpqc/chemistry/qc/wfn/ao_wfn.h"
@@ -132,11 +133,17 @@ class DirectRHF : public RHF<Tile,Policy> {
   void init_fock_builder() override;
 };
 
-
+#if TA_DEFAULT_POLICY == 0
+extern template class RHF<TA::TensorD, TA::DensePolicy>;
+extern template class RIRHF<TA::TensorD, TA::DensePolicy>;
+extern template class DirectRHF<TA::TensorD, TA::DensePolicy>;
+extern template class DirectRIRHF<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
 extern template class RHF<TA::TensorD, TA::SparsePolicy>;
 extern template class RIRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DirectRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DirectRIRHF<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // end of namespace scf
 }  // end of namespace mpqc

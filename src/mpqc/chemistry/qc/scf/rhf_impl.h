@@ -63,14 +63,14 @@ void RHF<Tile,Policy>::init(const KeyVal& kv) {
   double t_cut_c = kv.value<double>("t_cut_c", 0.0);
   std::size_t n_cluster = mol.nclusters();
   if (density_builder == "purification") {
-    auto density_builder = scf::PurificationDensityBuilder(
+    auto density_builder = scf::PurificationDensityBuilder<Tile,Policy>(
         S_, r_xyz, occ, n_cluster, t_cut_c, localize);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else if (density_builder == "eigen_solve") {
     std::string decompo_type =
         kv.value<std::string>("decompo_type", "conditioned");
-    auto density_builder = scf::ESolveDensityBuilder(
+    auto density_builder = scf::ESolveDensityBuilder<Tile,Policy>(
         S_, r_xyz, occ, n_cluster, t_cut_c, decompo_type, localize);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
@@ -93,7 +93,7 @@ template <typename Tile, typename Policy>
 void RHF<Tile,Policy>::init_fock_builder() {
   auto& ao_factory = this->ao_factory();
   auto eri4 = ao_factory.compute(L"(μ ν| G|κ λ)");
-  auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
+  auto builder = scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(std::move(eri4));
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
@@ -121,7 +121,7 @@ void RHF<Tile,Policy>::obsolete() {
   d_times_ = std::vector<double>();
   build_times_ = std::vector<double>();
 
-  qc::AOWavefunction<Tile, TA::SparsePolicy>::obsolete();
+  qc::AOWavefunction<Tile, Policy>::obsolete();
 }
 
 template <typename Tile, typename Policy>
@@ -232,7 +232,7 @@ void RIRHF<Tile,Policy>::init_fock_builder() {
   auto& ao_factory = this->ao_factory();
   auto inv = ao_factory.compute(L"( Κ | G| Λ )");
   auto eri3 = ao_factory.compute(L"( Κ | G|κ λ)");
-  scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
+  scf::DFFockBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3);
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
@@ -250,7 +250,7 @@ void DirectRIRHF<Tile,Policy>::init_fock_builder() {
   auto inv = ao_factory.compute(L"( Κ | G| Λ )");
   auto eri3 = direct_ao_factory.compute(L"( Κ | G|κ λ)");
 
-  scf::DFFockBuilder<decltype(eri3)> builder(inv, eri3);
+  scf::DFFockBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3);
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
@@ -264,7 +264,7 @@ template <typename Tile, typename Policy>
 void DirectRHF<Tile,Policy>::init_fock_builder() {
   auto& direct_ao_factory = this->direct_ao_factory();
   auto eri4 = direct_ao_factory.compute(L"(μ ν| G|κ λ)");
-  auto builder = scf::FourCenterBuilder<decltype(eri4)>(std::move(eri4));
+  auto builder = scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(std::move(eri4));
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 

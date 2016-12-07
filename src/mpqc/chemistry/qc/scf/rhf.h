@@ -35,7 +35,7 @@ class RHF : public qc::AOWavefunction<Tile, Policy> {
    * | max_iter | int | 30 | maximum number of iteration |
    * | density_builder | string | eigen_solve | type of DensityBuilder (eigen_solve->ESolveDensityBuilder, purification->PurificationDensityBuilder) |
    * | localize | bool | false | if localize in DensityBuilder |
-   * | t_cut_c | double | 0.0 | threshold in DensityBuilder |
+   * | t_cut_c | double | 0.0 | threshold in DensityBuilder, SparsePolicy only |
    * | decompo_type | string | cholesky_inverse | (cholesky_inverse, inverse_sqrt, conditioned_inverse) only valid if use ESolveDensityBuilder |
    *
    */
@@ -78,8 +78,8 @@ class RHF : public qc::AOWavefunction<Tile, Policy> {
   array_type D_;
   array_type C_;
 
-  std::unique_ptr<FockBuilder> f_builder_;
-  std::unique_ptr<DensityBuilder> d_builder_;
+  std::unique_ptr<FockBuilder<Tile,Policy>> f_builder_;
+  std::unique_ptr<DensityBuilder<Tile,Policy>> d_builder_;
 
   std::vector<double> rhf_times_;
   std::vector<double> d_times_;

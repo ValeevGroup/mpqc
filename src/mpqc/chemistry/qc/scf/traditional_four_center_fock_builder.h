@@ -11,10 +11,10 @@
 namespace mpqc {
 namespace scf {
 
-template <typename Integral>
-class FourCenterBuilder : public FockBuilder {
+template <typename Tile, typename Policy, typename Integral>
+class FourCenterBuilder : public FockBuilder<Tile,Policy> {
  public:
-  using array_type = TA::TSpArrayD;
+  using array_type = typename FockBuilder<Tile,Policy>::array_type;
   Integral eri4_;
 
  public:
@@ -36,8 +36,8 @@ class FourCenterBuilder : public FockBuilder {
     return G;
   }
 
-  void register_fock(const TA::TSpArrayD &fock,
-                     FormulaRegistry<TA::TSpArrayD> &registry) override {
+  void register_fock(const array_type &fock,
+                     FormulaRegistry<array_type> &registry) override {
     registry.insert(Formula(L"(κ|F|λ)"), fock);
   }
 

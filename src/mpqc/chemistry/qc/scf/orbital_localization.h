@@ -26,8 +26,8 @@ void jacobi_sweeps(Mat &Cm, Mat &U, std::vector<Mat> const &ao_xyz);
 
 class BoysLocalization {
  public:
-  template <typename Array>
-  Array operator()(Array const &C, std::vector<Array> const &r_ao) const {
+  template <typename Tile, typename Policy>
+  TA::DistArray<Tile,Policy> operator()(TA::DistArray<Tile,Policy> const &C, std::vector<TA::DistArray<Tile,Policy>> const &r_ao) const {
     auto ao_x = array_ops::array_to_eigen(r_ao[0]);
     auto ao_y = array_ops::array_to_eigen(r_ao[1]);
     auto ao_z = array_ops::array_to_eigen(r_ao[2]);

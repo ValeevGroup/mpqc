@@ -7,9 +7,9 @@ set(sources
         orbital_localization.h
         orbital_localization.cpp
         eigen_solve_density_builder.h
-        eigen_solve_density_builder.cpp
+        eigen_solve_density_builder_impl.h
         purification_density_build.h
-        purification_density_build.cpp
+        purification_density_build_impl.h
         util.h
         zrhf.h
         zrhf.cpp

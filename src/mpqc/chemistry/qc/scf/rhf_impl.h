@@ -54,7 +54,7 @@ void RHF<Tile,Policy>::init(const KeyVal& kv) {
   const auto bs_array = utility::make_array(basis, basis);
   auto multi_pool = integrals::make_engine_pool(
       libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
-  auto r_xyz = integrals::sparse_xyz_integrals(world, multi_pool, bs_array);
+  auto r_xyz = integrals::xyz_integrals<Tile, Policy>(world, multi_pool, bs_array);
 
   // density builder
   std::string density_builder =

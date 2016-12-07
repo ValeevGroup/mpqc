@@ -232,6 +232,61 @@ fock_from_soad(
   return F;
 }
 
+
+/**
+ * fock matrix computed from soad for DensePolicy
+ * @tparam ShrPool
+ * @tparam Tile Tile type
+ * @tparam Policy TA::DensePolicy
+ * @param world  world object
+ * @param clustered_mol  molecule class
+ * @param obs basis object
+ * @param engs engine
+ * @param H  H matrix
+ * @param op  operator to convert TA::TensorD to Tile
+ * @return Fock matrix from soad
+ */
+template <typename ShrPool, typename Tile, typename Policy>
+TA::DistArray<Tile,typename std::enable_if<std::is_same<Policy, TA::DensePolicy>::value, TA::DensePolicy>::type>
+fock_from_soad(
+    madness::World &world, Molecule const &clustered_mol,
+    basis::Basis const &obs, ShrPool engs, TA::DistArray<Tile,Policy> const &H,
+    std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
+  // Soad Density
+  auto D = soad_density_eig_matrix(clustered_mol);
+
+  // Get minimal basis
+  const auto min_bs_shells =
+      parallel_construct_basis(world, basis::BasisSet("sto-3g"), clustered_mol)
+          .flattened_shells();
+
+  auto const &trange = H.trange();
+  TA::DistArray<Tile,Policy> F(world, trange);
+
+  // Loop over lower diagonal tiles
+  const auto F_extent = F.trange().tiles_range().extent();
+  for (auto i = 0; i < F_extent[0]; ++i) {
+    const auto i_ord = i * F_extent[1];
+
+    for (auto j = 0; j < F_extent[1]; ++j) {
+      const auto ord = i_ord + j;
+
+      if (F.is_local(ord)) {
+        auto const &obs_row = obs.cluster_shells()[i];
+        auto const &obs_col = obs.cluster_shells()[j];
+
+        world.taskq.add(soad_task<ShrPool,Tile, Policy>, engs, ord, &obs_row,
+                        &obs_col, &min_bs_shells, &D, &F, op);
+      }
+    }
+  }
+  world.gop.fence();
+
+  F("i,j") += H("i,j");
+  return F;
+}
+
+
 }  // namespace scf
 }  // namespace mpqc
 

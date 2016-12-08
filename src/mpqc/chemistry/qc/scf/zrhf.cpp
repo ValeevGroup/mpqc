@@ -99,7 +99,7 @@ bool zRHF::solve() {
   auto rms = 0.0;
   TArray Ddiff;
   auto converged = false;
-  auto eprhf = 0.0;
+  auto ezrhf = 0.0;
   auto ediff = 0.0;
 
   do {
@@ -107,16 +107,16 @@ bool zRHF::solve() {
     ++iter;
 
     // Save a copy of energy and density
-    auto eprhf_old = eprhf;
+    auto ezrhf_old = ezrhf;
     auto D_old = D_;
 
     if (print_detail_)
       if (world.rank() == 0) std::cout << "\nIteration: " << iter << "\n";
 
-    // compute PRHF energy
+    // compute zRHF energy
     F_("mu, nu") += H_("mu, nu");
     std::complex<double> e_complex = F_("mu, nu") * D_("mu, nu");
-    eprhf = e_complex.real();
+    ezrhf = e_complex.real();
 
     auto j_start = mpqc::fenced_now(world);
     J_ = ao_factory.compute(L"(μ ν| J|κ λ)");  // Coulomb
@@ -147,7 +147,7 @@ bool zRHF::solve() {
     d_duration_ += mpqc::duration_in_s(d_start, d_end);
 
     // compute difference with last iteration
-    ediff = eprhf - eprhf_old;
+    ediff = ezrhf - ezrhf_old;
     Ddiff("mu, nu") = D_("mu, nu") - D_old("mu, nu");
     rms = Ddiff("mu, nu").norm();
     if ((rms <= converge_) || fabs(ediff) <= converge_) converged = true;
@@ -159,8 +159,8 @@ bool zRHF::solve() {
     // Print out information
     if (print_detail_) {
       if (world.rank() == 0) {
-        std::cout << "\nPRHF Energy: " << eprhf << "\n"
-                  << "Total Energy: " << eprhf + repulsion_ << "\n"
+        std::cout << "\nzRHF Energy: " << ezrhf << "\n"
+                  << "Total Energy: " << ezrhf + repulsion_ << "\n"
                   << "Delta(E): " << ediff << "\n"
                   << "RMS(D): " << rms << "\n"
                   << "Coulomb Build Time: "
@@ -182,15 +182,15 @@ bool zRHF::solve() {
                                     niter.c_str(), nEle.c_str(), nTot.c_str(),
                                     nDel.c_str(), nRMS.c_str(), nT.c_str());
         std::cout << mpqc::printf(
-            " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, eprhf,
-            eprhf + repulsion_, ediff, rms, iter_duration);
+            " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ezrhf,
+            ezrhf + repulsion_, ediff, rms, iter_duration);
       }
     }
 
   } while ((iter < maxiter_) && (!converged));
 
-  // save total energy to energy_ no matter if PRHF converges
-  energy_ = eprhf + repulsion_;
+  // save total energy to energy_ no matter if zRHF converges
+  energy_ = ezrhf + repulsion_;
 
   if (!converged) {
     if (world.rank() == 0) {

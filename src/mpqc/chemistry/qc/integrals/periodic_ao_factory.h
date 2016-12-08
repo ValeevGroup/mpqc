@@ -196,7 +196,7 @@ class PeriodicAOFactory : public DescribedClass {
     std::string molecule_type = kv.value<std::string>(prefix + "molecule:type");
     if (molecule_type != "UnitCell") {
       throw std::invalid_argument(
-          "molecule:type has to be UnitCell in order to run PRHF!!");
+          "molecule:type has to be UnitCell in order to run zRHF!!");
     }
 
     unitcell_ = kv.keyval(prefix + "molecule").class_ptr<UnitCell>();
@@ -365,7 +365,7 @@ class PeriodicAOFactory : public DescribedClass {
   TA::DistArray<Tile, TA::SparsePolicy> sparse_complex_integrals(
       madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
       std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-      std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>());
+      Op op = TA::Noop<TA::TensorZ, true>());
 
   std::shared_ptr<UnitCell> unitcell_;  ///> UnitCell private member
   std::shared_ptr<AOFactoryBase>
@@ -622,7 +622,7 @@ template <typename E>
 TA::DistArray<Tile, TA::SparsePolicy>
 PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
     madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
-    std::shared_ptr<Screener> screen, std::function<Tile(TA::TensorZ &&)> op) {
+    std::shared_ptr<Screener> screen, Op op) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();

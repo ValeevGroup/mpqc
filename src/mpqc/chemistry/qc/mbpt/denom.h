@@ -51,6 +51,7 @@ void d_abij_inplace(TA::Array<double, 4, Tile, Policy> &abij,
   };
 
   TA::foreach_inplace(abij, convert);
+  abij.world().gop.fence();
 }
 
 template <typename Tile, typename Policy>
@@ -94,7 +95,9 @@ TA::Array<double, 4, Tile, Policy> d_abij(
     return std::sqrt(norm);
   };
 
-  return TA::foreach (abij, convert);
+  auto result = TA::foreach (abij, convert);
+  abij.world().gop.fence();
+  return result;
 }
 
 // create matrix d("a,i") = 1/(ei - ea)

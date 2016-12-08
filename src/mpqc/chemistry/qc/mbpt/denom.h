@@ -144,30 +144,29 @@ create_d_ai(madness::World &world, const TA::TiledRange &trange,
   std::vector<Tile> tiles(tvolume);
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
-  TA::DistArray<Tile, Policy> result(world, trange, pmap);
 
   for (auto const ord : *pmap) {
-    if (result.is_local(ord)) {
+    world.taskq.add(make_tile, trange.make_tile_range(ord), ord, &tiles[ord],
+                    &tile_norms);
+  }
+
+  world.gop.fence();
+
+  TA::SparseShape<float> shape(world, tile_norms, trange);
+  TA::DistArray<Tile, Policy> result(world, trange, shape, pmap);
+
+  for (auto const ord : *pmap) {
+    if (result.is_local(ord) && !result.is_zero(ord)) {
       auto &tile = tiles[ord];
       assert(!tile.empty());
       result.set(ord, tile);
     }
-    TA::SparseShape<float> shape(world, tile_norms, trange);
-    TA::DistArray<Tile, Policy> result(world, trange, shape, pmap);
-
-    for (auto const ord : *pmap) {
-      if (result.is_local(ord) && !result.is_zero(ord)) {
-        auto &tile = tiles[ord];
-        assert(!tile.empty());
-        result.set(ord, tile);
-      }
-    }
-    world.gop.fence();
-    result.truncate();
-    return result;
   }
-}
 
+  world.gop.fence();
+  result.truncate();
+  return result;
+}
 
 // create matrix d("a,i") = 1/(ei - ea)
 template <typename Tile, typename Policy>

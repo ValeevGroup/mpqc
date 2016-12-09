@@ -760,15 +760,20 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     }  // loop of a
     global_world.gop.fence();
 
-    // print out process 0
-    ExEnv::out0() << "Process 0 Time: " << std::endl;
-    ExEnv::out0() << "Block Time: " << block_time << " S" << std::endl;
-    ExEnv::out0() << "Permutation Time: " << permutation_time << " S"
-                  << std::endl;
-    ExEnv::out0() << "Contraction Time: " << contraction_time << " S"
-                  << std::endl;
-    ExEnv::out0() << "Reduce Time: " << reduce_time << " S" << std::endl
-                  << std::endl;
+    // loop over rank and print
+    for (auto i = 0; i < size; ++i){
+      if(rank == i){
+        // print out process n
+        std::cout << "Process " << rank << " Time: " << std::endl;
+        std::cout << "Block Time: " << block_time << " S" << std::endl;
+        std::cout << "Permutation Time: " << permutation_time << " S"
+                      << std::endl;
+        std::cout << "Contraction Time: " << contraction_time << " S"
+                      << std::endl;
+        std::cout << "Reduce Time: " << reduce_time << " S" << std::endl
+                      << std::endl;
+      }
+    }
 
     // print out all process time
     global_world.gop.sum(block_time);

@@ -6,6 +6,9 @@ compiler:
   - clang
 env:
   - GCC_VERSION=5
+branches:
+  only:
+    - master
 sudo: false
 addons:
   apt:

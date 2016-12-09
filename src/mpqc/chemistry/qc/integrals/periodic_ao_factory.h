@@ -191,7 +191,8 @@ class PeriodicAOFactory : public DescribedClass {
     ao_factory_base_ = std::make_shared<AOFactoryBase>(AOFactoryBase(kv));
 
     std::string prefix = "";
-    if (kv.exists_class("wfn_world")) prefix = "wfn_world:";
+    if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
+        prefix = "wfn_world:";
 
     std::string molecule_type = kv.value<std::string>(prefix + "molecule:type");
     if (molecule_type != "UnitCell") {
@@ -203,13 +204,13 @@ class PeriodicAOFactory : public DescribedClass {
     dcell_ = unitcell_->dcell();
 
     R_max_ = decltype(R_max_)(
-        kv.value<std::vector<int>>(prefix + "molecule:rmax").data());
+        kv.value<std::vector<int>>(prefix + "rmax").data());
     RD_max_ = decltype(RD_max_)(
-        kv.value<std::vector<int>>(prefix + "molecule:rdmax").data());
+        kv.value<std::vector<int>>(prefix + "rdmax").data());
     RJ_max_ = decltype(RJ_max_)(
-        kv.value<std::vector<int>>(prefix + "molecule:rjmax").data());
+        kv.value<std::vector<int>>(prefix + "rjmax").data());
     nk_ = decltype(nk_)(
-        kv.value<std::vector<int>>(prefix + "molecule:k_points").data());
+        kv.value<std::vector<int>>("k_points").data());
 
     R_size_ =
         1 + detail::direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);

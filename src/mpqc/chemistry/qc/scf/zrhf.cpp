@@ -82,7 +82,7 @@ void zRHF::init(const KeyVal& kv) {
   // compute orthogonalizer matrix
   X_ = conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
   // compute guess density
-  compute_density();
+  D_ = compute_density();
 
   // set density in pao_factory
   ao_factory.set_density(D_);
@@ -140,7 +140,7 @@ bool zRHF::solve() {
 
     // compute new density
     auto d_start = mpqc::fenced_now(world);
-    compute_density();
+    D_ = compute_density();
     // update density in pao_factory
     ao_factory.set_density(D_);
     auto d_end = mpqc::fenced_now(world);
@@ -236,7 +236,7 @@ double zRHF::value() {
   return energy_;
 }
 
-void zRHF::compute_density() {
+zRHF::TArray zRHF::compute_density() {
   auto& ao_factory = this->ao_factory();
   auto& world = ao_factory.world();
 
@@ -282,7 +282,8 @@ void zRHF::compute_density() {
     }
   }
 
-  D_ = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
+  auto result = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
+  return result;
 }
 
 void zRHF::obsolete() { Wavefunction::obsolete(); }

@@ -67,7 +67,9 @@ class zRHF : public qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
    * \brief This diagonalizes Fock matrix in reciprocal space and
    * computes density: D_ = Int_k( Exp(I k.R) C(occ).C(occ)t )
    */
-  void compute_density();
+  TArray compute_density();
+
+
 
   TArray T_;
   TArray V_;

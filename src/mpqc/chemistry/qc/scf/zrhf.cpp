@@ -29,7 +29,7 @@ void zRHF::init(const KeyVal& kv) {
   max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
 
   auto& ao_factory = this->ao_factory();
-  // retrieve world from pao_factory
+  // retrieve world from periodic ao_factory
   auto& world = ao_factory.world();
 
   auto init_start = mpqc::fenced_now(world);
@@ -46,7 +46,7 @@ void zRHF::init(const KeyVal& kv) {
   docc_ = unitcell.occupation(charge) / 2;
   dcell_ = unitcell.dcell();
 
-  // retrieve unitcell info from pao_factory
+  // retrieve unitcell info from periodic ao_factory
   R_max_ = ao_factory.R_max();
   RJ_max_ = ao_factory.RJ_max();
   RD_max_ = ao_factory.RD_max();
@@ -91,7 +91,7 @@ void zRHF::init(const KeyVal& kv) {
   // compute guess density
   D_ = compute_density();
 
-  // set density in pao_factory
+  // set density in periodic ao_factory
   ao_factory.set_density(D_);
 
   auto init_end = mpqc::fenced_now(world);
@@ -148,7 +148,7 @@ bool zRHF::solve() {
     // compute new density
     auto d_start = mpqc::fenced_now(world);
     D_ = compute_density();
-    // update density in pao_factory
+    // update density in periodic ao_factory
     ao_factory.set_density(D_);
     auto d_end = mpqc::fenced_now(world);
     d_duration_ += mpqc::duration_in_s(d_start, d_end);

@@ -20,21 +20,21 @@ namespace scf {
  * \param world MADNESS world
  * \param unitcell UnitCell object
  * \param H core Hamiltonian in real space, should be a complex tile
- * \param pao_factory PeriodicAOFactory object
+ * \param ao_factory PeriodicAOFactory object
  * \param op a functor that takes TA::TensorZ && and returns a valid tile type
  * \return Fock matrix in real space
  */
 template <typename Array, typename FactoryType, typename Tile = TA::TensorZ>
 Array periodic_fock_soad(
     madness::World &world, UnitCell const &unitcell, Array const &H,
-    FactoryType &pao_factory,
+    FactoryType &ao_factory,
     std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>()) {
   if (world.rank() == 0) {
     std::cout << "\nBuilding Fock Matrix from SOAD Guess ...\n";
   }
 
-  auto RJ_size = pao_factory.RJ_size();
-  auto RJ_max = pao_factory.RJ_max();
+  auto RJ_size = ao_factory.RJ_size();
+  auto RJ_max = ao_factory.RJ_max();
   auto dcell = unitcell.dcell();
 
   auto F = H;
@@ -56,9 +56,9 @@ Array periodic_fock_soad(
 
   // get normal basis
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
-  auto R_max = pao_factory.R_max();
+  auto R_max = ao_factory.R_max();
   auto normal_bs =
-      pao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
+      ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
   auto normal_bs0 = std::make_shared<basis::Basis>(normal_bs);
   auto normal_bs1 = integrals::detail::shift_basis_origin(
       *normal_bs0, zero_shift_base, R_max, dcell);
@@ -74,7 +74,7 @@ Array periodic_fock_soad(
     auto eri_e = integrals::make_engine_pool(
         libint2::Operator::coulomb,
         utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]));
-    auto J = pao_factory.compute_integrals(world, eri_e, bases);
+    auto J = ao_factory.compute_integrals(world, eri_e, bases);
     F("mu, nu") += 2.0 * J("mu, nu, lambda, rho") * D("lambda, rho");
     // F -= K
     auto bases_K =
@@ -82,7 +82,7 @@ Array periodic_fock_soad(
     auto eri_e_K = integrals::make_engine_pool(
         libint2::Operator::coulomb,
         utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]));
-    auto K = pao_factory.compute_integrals(world, eri_e_K, bases_K);
+    auto K = ao_factory.compute_integrals(world, eri_e_K, bases_K);
     F("mu, nu") -= K("mu, lambda, nu, rho") * D("lambda, rho");
   }
 

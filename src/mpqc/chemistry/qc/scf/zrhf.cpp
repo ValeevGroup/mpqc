@@ -12,6 +12,7 @@
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/misc/formio.h"
 
 namespace mpqc {
 namespace scf {
@@ -49,21 +50,27 @@ void zRHF::init(const KeyVal& kv) {
   R_max_ = ao_factory.R_max();
   RJ_max_ = ao_factory.RJ_max();
   RD_max_ = ao_factory.RD_max();
-  nk_ = ao_factory.nk();
   R_size_ = ao_factory.R_size();
   RJ_size_ = ao_factory.RJ_size();
   RD_size_ = ao_factory.RD_size();
-  k_size_ = ao_factory.k_size();
+
+  // read # kpoints from keyval
+  nk_ = decltype(nk_)(kv.value<std::vector<int>>("k_points").data());
+  k_size_ =
+      1 + integrals::detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+  ExEnv::out0() << "zRHF computational parameters:" << std::endl;
+  ExEnv::out0() << indent << "# of k points in each direction: ["
+                << nk_.transpose() << "]" << std::endl;
 
   // compute nuclear-repulsion energy
   repulsion_ = unitcell.nuclear_repulsion(RJ_max_);
   if (world.rank() == 0)
     std::cout << "\nNuclear Repulsion: " << repulsion_ << std::endl;
 
-  T_ = ao_factory.compute(L"<κ|T|λ>");        // Kinetic
-  V_ = ao_factory.compute(L"<κ|V|λ>");        // Nuclear-attraction
-  S_ = ao_factory.compute(L"<κ|λ>");          // Overlap in real space
-  Sk_ = ao_factory.transform_real2recip(S_);  // Overlap in reciprocal space
+  T_ = ao_factory.compute(L"<κ|T|λ>");  // Kinetic
+  V_ = ao_factory.compute(L"<κ|V|λ>");  // Nuclear-attraction
+  S_ = ao_factory.compute(L"<κ|λ>");    // Overlap in real space
+  Sk_ = transform_real2recip(S_);       // Overlap in reciprocal space
   H_("mu, nu") =
       T_("mu, nu") + V_("mu, nu");  // One-body hamiltonian in real space
 
@@ -78,7 +85,7 @@ void zRHF::init(const KeyVal& kv) {
   }
 
   // transform Fock from real to reciprocal space
-  Fk_ = ao_factory.transform_real2recip(F_);
+  Fk_ = transform_real2recip(F_);
   // compute orthogonalizer matrix
   X_ = conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
   // compute guess density
@@ -134,7 +141,7 @@ bool zRHF::solve() {
 
     // transform Fock from real to reciprocal space
     auto trans_start = mpqc::fenced_now(world);
-    Fk_ = ao_factory.transform_real2recip(F_);
+    Fk_ = transform_real2recip(F_);
     auto trans_end = mpqc::fenced_now(world);
     trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
@@ -208,7 +215,7 @@ bool zRHF::solve() {
       if (print_detail_) {
         Eigen::IOFormat fmt(5);
         std::cout << "\n k | orbital energies" << std::endl;
-        for (auto k = 0; k < ao_factory.k_size(); ++k) {
+        for (auto k = 0; k < k_size_; ++k) {
           std::cout << k << " | " << eps_[k].real().transpose().format(fmt)
                     << std::endl;
         }
@@ -283,6 +290,40 @@ zRHF::TArray zRHF::compute_density() {
   }
 
   auto result = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
+  return result;
+}
+
+zRHF::TArray zRHF::transform_real2recip(TArray& matrix) {
+  TArray result;
+  auto tr0 = matrix.trange().data()[0];
+  auto tr1 = integrals::detail::extend_trange1(tr0, k_size_);
+  auto& world = matrix.world();
+
+  // Perform real->reciprocal transformation with Eigen
+  // TODO: perform it with TA
+  auto matrix_eig = array_ops::array_to_eigen(matrix);
+  Matrixz result_eig(tr0.extent(), tr1.extent());
+  result_eig.setZero();
+
+  auto threshold = std::numeric_limits<double>::epsilon();
+  for (auto R = 0; R < R_size_; ++R) {
+    auto bmat =
+        matrix_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent());
+    if (bmat.norm() < bmat.size() * threshold)
+      continue;
+    else {
+      auto vec_R = integrals::detail::direct_vector(R, R_max_, dcell_);
+      for (auto k = 0; k < k_size_; ++k) {
+        auto vec_k = integrals::detail::k_vector(k, nk_, dcell_);
+        auto exponent = std::exp(I * vec_k.dot(vec_R));
+        result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
+            bmat * exponent;
+      }
+    }
+  }
+
+  result = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
+
   return result;
 }
 

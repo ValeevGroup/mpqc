@@ -209,8 +209,6 @@ class PeriodicAOFactory : public DescribedClass {
         kv.value<std::vector<int>>(prefix + "rdmax").data());
     RJ_max_ = decltype(RJ_max_)(
         kv.value<std::vector<int>>(prefix + "rjmax").data());
-    nk_ = decltype(nk_)(
-        kv.value<std::vector<int>>("k_points").data());
 
     R_size_ =
         1 + detail::direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
@@ -218,7 +216,6 @@ class PeriodicAOFactory : public DescribedClass {
         1 + detail::direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
     RD_size_ =
         1 + detail::direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
-    k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
 
     set_oper(Tile());
 
@@ -248,13 +245,6 @@ class PeriodicAOFactory : public DescribedClass {
    */
   TArray compute(const Formula &formula);
 
-  /*!
-   * \brief This transforms an integral matrix from real to reciprocal space
-   * \param matrix the real-space integral matrix
-   * \return the reciprocal-space integral matrix
-   */
-  TArray transform_real2recip(TArray &matrix);
-
   /// @return the range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i R_max() { return R_max_; }
 
@@ -263,9 +253,6 @@ class PeriodicAOFactory : public DescribedClass {
 
   /// @return the range of density representation
   Vector3i RD_max() { return RD_max_; }
-
-  /// @return the direct unit cell params
-  Vector3i nk() { return nk_; }
 
   /// @return the cardinal number of lattices included in Bloch Gaussian
   /// expansion
@@ -276,9 +263,6 @@ class PeriodicAOFactory : public DescribedClass {
 
   /// @return the cardinal number of lattices included in density representation
   int64_t RD_size() { return RD_size_; }
-
-  /// @return the cardinal number of k points
-  int64_t k_size() { return k_size_; }
 
   /*!
    * \brief This sets the density for coulomb and exchange computations
@@ -381,7 +365,6 @@ class PeriodicAOFactory : public DescribedClass {
       0, 0, 0};  ///> range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i RJ_max_ = {0, 0, 0};       ///> range of Coulomb operation
   Vector3i RD_max_ = {0, 0, 0};       ///> range of density representation
-  Vector3i nk_ = {1, 1, 1};           ///> # of k points in each direction
   Vector3d dcell_ = {0.0, 0.0, 0.0};  ///> direct unit cell params (in a.u.)
 
   int64_t
@@ -389,7 +372,6 @@ class PeriodicAOFactory : public DescribedClass {
   int64_t RJ_size_;  ///> cardinal # of lattices included in Coulomb operation
   int64_t
       RD_size_;  ///> cardinal # of lattices included in density representation
-  int64_t k_size_;  ///> cardinal # of k points
 
   bool print_detail_;  ///> if true, print a lot more details
 };
@@ -685,57 +667,17 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
   return out;
 }
 
-template <typename Tile, typename Policy>
-typename PeriodicAOFactory<Tile, Policy>::TArray
-PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
-  TArray result;
-  auto tr0 = matrix.trange().data()[0];
-  auto tr1 = detail::extend_trange1(tr0, k_size_);
-
-  // Perform real->reciprocal transformation with Eigen
-  // TODO: perform it with TA (take arg tile from "matrix",
-  // transform it, add it to result tile in "result", construct pmap&shape,
-  // use MADNESSworld ...)
-
-  auto matrix_eig = array_ops::array_to_eigen(matrix);
-  Matrixz result_eig(tr0.extent(), tr1.extent());
-  result_eig.setZero();
-
-  auto threshold = std::numeric_limits<double>::epsilon();
-  for (auto R = 0; R < R_size_; ++R) {
-    auto bmat =
-        matrix_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent());
-    if (bmat.norm() < bmat.size() * threshold)
-      continue;
-    else {
-      auto vec_R = detail::direct_vector(R, R_max_, dcell_);
-      for (auto k = 0; k < k_size_; ++k) {
-        auto vec_k = detail::k_vector(k, nk_, dcell_);
-        auto exponent = std::exp(I * vec_k.dot(vec_R));
-        result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
-            bmat * exponent;
-      }
-    }
-  }
-
-  result = array_ops::eigen_to_array<Tile>(world_, result_eig, tr0, tr1);
-
-  return result;
-}
-
 /// Make PeriodicAOFactory printable
 template <typename Tile, typename Policy>
 std::ostream &operator<<(std::ostream &os,
                          PeriodicAOFactory<Tile, Policy> &pao) {
-  os << "\nPeriodic Hartree-Fock computational parameter:" << std::endl;
+  os << "\nPeriodicAOFactory computational parameters:" << std::endl;
   os << "\tR_max (range of expansion of Bloch Gaussians in AO Gaussians): ["
      << pao.R_max().transpose() << "]" << std::endl;
   os << "\tRj_max (range of Coulomb operation): [" << pao.RJ_max().transpose()
      << "]" << std::endl;
   os << "\tRd_max (Range of density representation): ["
      << pao.RD_max().transpose() << "]" << std::endl;
-  os << "\t# of k points in each direction: [" << pao.nk().transpose() << "]\n"
-     << std::endl;
   return os;
 }
 

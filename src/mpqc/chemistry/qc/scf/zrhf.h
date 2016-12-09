@@ -69,7 +69,12 @@ class zRHF : public qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
    */
   TArray compute_density();
 
-
+  /*!
+   * \brief This transforms an integral matrix from real to reciprocal space
+   * \param matrix the real-space integral matrix
+   * \return the reciprocal-space integral matrix
+   */
+  TArray transform_real2recip(TArray &matrix);
 
   TArray T_;
   TArray V_;
@@ -96,15 +101,15 @@ class zRHF : public qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
   bool print_detail_;
   double max_condition_num_;
 
-  Vector3i R_max_;
-  Vector3i RJ_max_;
-  Vector3i RD_max_;
-  Vector3i nk_;
-  Vector3d dcell_;
-  int64_t R_size_;
-  int64_t RJ_size_;
-  int64_t RD_size_;
-  int64_t k_size_;
+  Vector3i R_max_;  ///> range of expansion of Bloch Gaussians in AO Gaussians
+  Vector3i RJ_max_;  ///> range of Coulomb operation
+  Vector3i RD_max_;  ///> range of density representation
+  Vector3i nk_ = {1, 1, 1};  ///> # of k points in each direction
+  Vector3d dcell_;  ///> direct unit cell params (in a.u.)
+  int64_t R_size_;  ///> cardinal # of lattices included in Bloch Gaussian expansion
+  int64_t RJ_size_;  ///> cardinal # of lattices included in Coulomb operation
+  int64_t RD_size_;  ///> cardinal # of lattices included in density representation
+  int64_t k_size_;  ///> cardinal # of k points
 
   double init_duration_ = 0.0;
   double j_duration_ = 0.0;

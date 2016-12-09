@@ -12,9 +12,10 @@ namespace scf {
 
 namespace TA = TiledArray;
 
+template <typename Tile, typename Policy>
 class DensityBuilder {
  public:
-  using array_type = TA::TSpArrayD;
+  using array_type = TA::DistArray<Tile,Policy>;
   DensityBuilder() = default;
   DensityBuilder(DensityBuilder const &) = default;
   DensityBuilder(DensityBuilder &&) = default;

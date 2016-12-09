@@ -5,12 +5,8 @@
  *      Author: evaleev
  */
 
-#include "mpqc/chemistry/qc/scf/rhf.h"
-#include "mpqc/util/keyval/forcelink.h"
 #include "zrhf.h"
+#include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT2("RHF", mpqc::scf::RHF);
-MPQC_CLASS_EXPORT2("Direct-RHF", mpqc::scf::DirectRHF);
-MPQC_CLASS_EXPORT2("RI-RHF", mpqc::scf::RIRHF);
-MPQC_CLASS_EXPORT2("Direct-RI-RHF", mpqc::scf::DirectRIRHF);
+
 MPQC_CLASS_EXPORT2("zRHF", mpqc::scf::zRHF);

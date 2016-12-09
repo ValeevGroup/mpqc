@@ -16,10 +16,9 @@
 namespace mpqc {
 namespace scf {
 
-using array_type = ESolveDensityBuilder::array_type;
-
-ESolveDensityBuilder::ESolveDensityBuilder(
-    array_type const &S, std::vector<array_type> r_xyz, int64_t occ,
+template <typename Tile, typename Policy>
+ESolveDensityBuilder<Tile,Policy>::ESolveDensityBuilder(
+    typename ESolveDensityBuilder<Tile,Policy>::array_type const &S, std::vector<typename ESolveDensityBuilder<Tile,Policy>::array_type> r_xyz, int64_t occ,
     int64_t nclusters, double TcutC, std::string const &metric_decomp_type,
     bool localize)
     : S_(S),
@@ -44,9 +43,11 @@ ESolveDensityBuilder::ESolveDensityBuilder(
   inverse_time_ = mpqc::duration_in_s(inv0, inv1);
 }
 
-std::pair<array_type, array_type> ESolveDensityBuilder::operator()(
-    array_type const &F) {
-  array_type Fp, C, Cao, D;
+template <typename Tile, typename Policy>
+std::pair<typename ESolveDensityBuilder<Tile,Policy>::array_type, typename ESolveDensityBuilder<Tile,Policy>::array_type>
+ESolveDensityBuilder<Tile,Policy>::operator()(
+    typename ESolveDensityBuilder<Tile,Policy>::array_type const &F) {
+  typename ESolveDensityBuilder<Tile,Policy>::array_type Fp, C, Cao, D;
   auto &world = F.world();
 
   auto e0 = mpqc::fenced_now(world);
@@ -59,7 +60,7 @@ std::pair<array_type, array_type> ESolveDensityBuilder::operator()(
   auto tr_ao = Fp.trange().data()[0];
 
   auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
-  C = array_ops::eigen_to_array<TA::TensorD>(Fp.world(), C_eig, tr_ao, tr_occ);
+  C = array_ops::eigen_to_array<Tile,Policy>(Fp.world(), C_eig, tr_ao, tr_occ);
 
   // Get back to AO land
   Cao("i,j") = M_inv_("k,i") * C("k,j");
@@ -84,6 +85,7 @@ std::pair<array_type, array_type> ESolveDensityBuilder::operator()(
     clustering_times_.push_back(mpqc::duration_in_s(l1, c1));
   }
 
+#if TA_DEFAULT_POLICY == 1
   if (TcutC_ != 0) {
     minimize_storage(Cao, TcutC_);
     auto shape_c = Cao.shape();
@@ -91,6 +93,7 @@ std::pair<array_type, array_type> ESolveDensityBuilder::operator()(
     auto norm_mat = TA::eigen_map(norms, norms.range().extent_data()[0],
                                   norms.range().extent_data()[1]);
   }
+#endif
 
   esolve_times_.push_back(mpqc::duration_in_s(e0, e1));
   coeff_storages_.push_back(detail::array_storage(Cao));

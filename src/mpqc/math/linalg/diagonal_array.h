@@ -26,7 +26,7 @@ TA::DistArray<Tile, Policy> create_diagonal_array_from_eigen(
   auto diag = Eigen::DiagonalMatrix<numeric_type, Eigen::Dynamic>(x);
   diag.diagonal().setConstant(val);
 
-  auto result = array_ops::eigen_to_array<Tile>(world, diag, trange1, trange2);
+  auto result = array_ops::eigen_to_array<Tile,Policy>(world, diag, trange1, trange2);
 
   return result;
 }
@@ -55,11 +55,20 @@ void make_diagonal_tile(tensor::Tile<tensor::DecomposedTensor<T>> &tile,
   tile.tile() = std::move(tensor);
 }
 
-template <typename Tile>
-TiledArray::DistArray<Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
-    TiledArray::DistArray<Tile, TiledArray::SparsePolicy> const &model,
+/**
+ * create sparse diagonal TA::DistArray matrix
+ * @tparam Tile
+ * @tparam Policy TA::SparsePolicy
+ * @param model   model used to construct result array
+ * @param val  value
+ * @return
+ */
+template <typename Tile, typename Policy>
+TiledArray::DistArray<Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value, TA::SparsePolicy>::type>
+create_diagonal_matrix(
+    TiledArray::DistArray<Tile, Policy> const &model,
     double val) {
-  using Array = TiledArray::DistArray<Tile, TiledArray::SparsePolicy>;
+  using Array = TiledArray::DistArray<Tile, Policy>;
 
   TiledArray::Tensor<float> tile_shape(model.trange().tiles_range(), 0.0);
 
@@ -99,6 +108,48 @@ TiledArray::DistArray<Tile, TiledArray::SparsePolicy> create_diagonal_matrix(
 
   return diag;
 }
+
+
+/**
+ * create sparse diagonal TA::DistArray matrix
+ * @tparam Tile
+ * @tparam Policy TA::SparsePolicy
+ * @param model   model used to construct result array
+ * @param val  value
+ * @return
+ */
+template <typename Tile, typename Policy>
+TiledArray::DistArray<Tile, typename std::enable_if<std::is_same<Policy, TA::DensePolicy>::value, TA::DensePolicy>::type>
+create_diagonal_matrix(
+    TiledArray::DistArray<Tile, Policy> const &model,
+    double val) {
+  using Array = TiledArray::DistArray<Tile, Policy>;
+
+
+  Array diag(model.world(), model.trange());
+
+  auto const &trange = diag.trange();
+  auto pmap = diag.pmap();
+  auto end = pmap->end();
+  for (auto it = pmap->begin(); it != end; ++it) {
+    const auto ord = *it;
+
+    auto idx = trange.tiles_range().idx(ord);
+    auto diagonal_tile = std::all_of(
+        idx.begin(), idx.end(),
+        [&](typename Array::size_type const &x) { return x == idx.front(); });
+
+    Tile tile = Tile{trange.make_tile_range(ord), 0.0};
+    if (diagonal_tile) {
+      make_diagonal_tile(tile, val);
+    }
+    diag.set(ord, std::move(tile));
+  }
+
+  return diag;
+}
+
+
 /*!
  * \brief takes a TiledArray::TiledRange and a value and returns a diagonal
  *matrix.

@@ -10,8 +10,8 @@
 #include "mpqc/chemistry/qc/cc/ccsd.h"
 #include "mpqc/chemistry/qc/f12/f12_intermediates.h"
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
-
 #include "mpqc/chemistry/qc/f12/cabs_singles.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace f12 {
@@ -343,8 +343,9 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
   return Eij_F12;
 }
 
-extern template
-class CCSD_F12<TA::TensorD>;
+#if TA_DEFAULT_POLICY == 1
+extern template class CCSD_F12<TA::TensorD>;
+#endif
 
 }  // end of namespace f12
 }  // end of namespace mpqc

@@ -58,6 +58,16 @@ if (NOT DEFINED MPQC_ASSERT_MODE)
   set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
 endif()
 
+set(TA_POLICY sparse CACHE STRING "Set to TA::DensePolicy(dense) or TA::SparsePolicy(sparse)")
+# convert string value of TA_POLICY to numerical values as TA_DEFAULT_POLICY
+set(TA_DEFAULT_POLICY 1)
+if(TA_POLICY STREQUAL sparse)
+  set(TA_DEFAULT_POLICY 1)
+  MESSAGE("Sparse")
+elseif(TA_POLICY STREQUAL dense)
+  set(TA_DEFAULT_POLICY 0)
+  MESSAGE("Dense")
+endif()
 ##########################
 # Standard build variables
 ##########################

@@ -9,7 +9,10 @@
 namespace mpqc {
 namespace scf {
 
-class ESolveDensityBuilder : public DensityBuilder {
+template <typename Tile, typename Policy>
+class ESolveDensityBuilder : public DensityBuilder<Tile,Policy> {
+ public:
+  using array_type = typename DensityBuilder<Tile,Policy>::array_type;
  private:
   array_type S_;
   array_type M_inv_;
@@ -61,4 +64,7 @@ class ESolveDensityBuilder : public DensityBuilder {
 
 }  // namespace scf
 }  // namespace mpqc
+
+#include "eigen_solve_density_builder_impl.h"
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_EIGEN_SOLVE_DENSITY_BUILDER_H_

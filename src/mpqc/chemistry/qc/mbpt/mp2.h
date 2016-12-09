@@ -5,6 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_
 
+#include "mpqc/mpqc_config.h"
 #include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 #include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
@@ -76,24 +77,13 @@ struct Mp2Energy {
 template <typename Tile, typename Policy>
 double compute_mp2(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
                    std::shared_ptr<Eigen::VectorXd> orbital_energy,
-                   std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df) {
-  auto& world = lcao_factory.world();
-  TA::DistArray<Tile, Policy> g_ijab;
-  g_ijab = lcao_factory.compute(df ? L"<i j|G|a b>[df]" : L"<i j|G|a b>");
-  // compute mp2 energy
-  double energy_mp2 =
-      (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
-          .reduce(detail::Mp2Energy<Tile>(
-              orbital_energy, tr1_engine->get_occ(),
-              tr1_engine->get_nfrozen()));
-
-  utility::print_par(world, (df ? "RI-" : ""), "MP2 Energy: ", energy_mp2, "\n");
-  return energy_mp2;
-};
+                   std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df);
 
 }  // end of namespce detail
 
-class RMP2 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
+
+template<typename Tile, typename Policy>
+class RMP2 : public qc::LCAOWavefunction<Tile,Policy> {
  public:
   /**
    * KeyVal constructor
@@ -118,7 +108,8 @@ class RMP2 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
   std::shared_ptr<qc::Wavefunction> ref_wfn_;
 };
 
-class RIRMP2 : public RMP2 {
+template <typename Tile, typename Policy>
+class RIRMP2 : public RMP2<Tile, Policy> {
  public:
   /**
   * KeyVal constructor
@@ -128,13 +119,20 @@ class RIRMP2 : public RMP2 {
   */
   RIRMP2(const KeyVal &kv);
   ~RIRMP2() = default;
-  using RMP2::value;
+  using RMP2<Tile,Policy>::value;
   double compute() override;
 };
 
-//extern class RMP2;
-//extern class RIRMP2;
-
+#if TA_DEFAULT_POLICY == 0
+extern template class RMP2<TA::TensorD, TA::DensePolicy>;
+extern template class RIRMP2<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class RMP2<TA::TensorD, TA::SparsePolicy>;
+extern template class RIRMP2<TA::TensorD, TA::SparsePolicy>;
+#endif
 }  // end of namespace mbpt
 }  // end of namespace mpqc
+
+#include "mp2_impl.h"
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_

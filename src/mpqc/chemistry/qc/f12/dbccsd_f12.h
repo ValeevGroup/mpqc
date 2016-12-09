@@ -7,6 +7,7 @@
 
 #include "mpqc/chemistry/qc/f12/ccsd_f12.h"
 #include "mpqc/chemistry/qc/f12/db_f12_intermediates.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace f12 {
@@ -170,6 +171,10 @@ typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
 
   return Eij_F12;
 }
+
+#if TA_DEFAULT_POLICY == 1
+extern template class DBCCSD_F12<TA::TensorD>;
+#endif
 
 }  // end of namespace f12
 }  // end of namespace mpqc

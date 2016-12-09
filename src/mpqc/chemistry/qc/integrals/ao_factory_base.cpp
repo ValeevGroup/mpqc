@@ -96,7 +96,7 @@ AOFactoryBase::AOFactoryBase(const KeyVal &kv)
       gtg_params_() {
 
   std::string prefix = "";
-  if(kv.exists("wfn_wolrd") || kv.exists_class("wfn_world")){
+  if(kv.exists("wfn_world") || kv.exists_class("wfn_world")){
     prefix = "wfn_world:";
   }
   /// Basis will come from wfn_world

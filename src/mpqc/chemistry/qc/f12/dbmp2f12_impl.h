@@ -129,6 +129,10 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
     auto ref = mp2.refwfn();
 
     std::shared_ptr<scf::RHF<Tile,TA::SparsePolicy>> rhf = std::dynamic_pointer_cast<scf::RHF<Tile,TA::SparsePolicy>>(ref);
+    MPQC_ASSERT( rhf != nullptr);
+    if(rhf == nullptr){
+      throw std::runtime_error("\nCan not cast ref_wfn to RHF class! \n");
+    }
 
     rhf->set_fock(fock);
 

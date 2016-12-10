@@ -58,8 +58,8 @@
 */
 
 /**
-  @defgroup ChemistryElectronicStructureSpin mpqc.Chemistry.ElectronicStructure.Spin
-  @ingroup ChemistryElectronicStructure
+  @defgroup ChemistryESSpin mpqc.Chemistry.ElectronicStructure.Spin
+  @ingroup ChemistryES
   Functionality related to spin states of electrons.
 */
 

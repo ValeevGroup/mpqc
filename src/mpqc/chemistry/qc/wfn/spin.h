@@ -34,7 +34,7 @@
 
 namespace mpqc {
 
-/// @addtogroup ChemistryES
+/// @addtogroup ChemistryESSpin
 /// @{
 
   typedef enum { NSpinCases1 = 2, NSpinCases2 = 3} NSpinCases;

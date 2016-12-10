@@ -28,7 +28,7 @@ double DBRMP2::value() {
 void DBRMP2::init() {
   // if not initialized
   if (this->trange1_engine() == nullptr || this->orbital_energy() == nullptr) {
-    auto mol = this->wfn_world()->molecule();
+    auto& mol = *this->wfn_world()->atoms();
     Eigen::VectorXd orbital_energy;
 
     if (method_ == "valeev") {

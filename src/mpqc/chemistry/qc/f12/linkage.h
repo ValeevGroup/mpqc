@@ -17,7 +17,7 @@ namespace f12 {
 mpqc::detail::ForceLink<RMP2F12> fl1;
 mpqc::detail::ForceLink<RIRMP2F12> fl2;
 mpqc::detail::ForceLink<RIDBRMP2F12> fl3;
-}  // namespace f12
+}  // namespace
 
 template <typename Tile> class CCSD_F12;
 template <typename Tile> class DBCCSD_F12;
@@ -28,7 +28,7 @@ mpqc::detail::ForceLink<CCSD_F12<TA::TensorD>> fl4;
 mpqc::detail::ForceLink<DBCCSD_F12<TA::TensorD>> fl5;
 mpqc::detail::ForceLink<CCSD_T_F12<TA::TensorD>> fl6;
 mpqc::detail::ForceLink<GF2F12<TA::TensorD>> fl7;
-}  // namespace f12
+}  // namespace
 }  // namespace lcao
 }  // namespace mpqc
 

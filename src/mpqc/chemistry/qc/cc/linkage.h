@@ -22,7 +22,7 @@ namespace cc {
 mpqc::detail::ForceLink<CCSD<TA::TensorD, TA::SparsePolicy>> fl1;
 mpqc::detail::ForceLink<CCSD_T<TA::TensorD, TA::SparsePolicy>> fl2;
 mpqc::detail::ForceLink<DBCCSD<TA::TensorD, TA::SparsePolicy>> fl3;
-}  // namespace cc
+}  // namespace
 }  // namespace lcao
 }  // namespace mpqc
 

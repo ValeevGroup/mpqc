@@ -4,8 +4,7 @@
 namespace mpqc{
 namespace lcao{
 
-
-Wavefunction::Wavefunction(const KeyVal &kv) {
+Wavefunction::Wavefunction(const KeyVal &kv) : Energy(kv) {
 
   // first check if wfn_world is provided
   if(kv.exists("wfn_world")){
@@ -27,5 +26,5 @@ Wavefunction::Wavefunction(const KeyVal &kv) {
 
 Wavefunction::~Wavefunction() = default;
 
-}
-}
+}  // namespace lcao
+}  // namespace mpqc

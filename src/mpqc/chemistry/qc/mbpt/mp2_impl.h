@@ -39,9 +39,6 @@ RMP2<Tile,Policy>::RMP2(const KeyVal &kv) : qc::LCAOWavefunction<Tile,Policy>(kv
 }
 
 template<typename Tile, typename Policy>
-RMP2<Tile,Policy>::~RMP2() = default;
-
-template<typename Tile, typename Policy>
 void RMP2<Tile,Policy>::obsolete() {
   this->energy_ = 0.0;
   qc::LCAOWavefunction<Tile, Policy>::obsolete();

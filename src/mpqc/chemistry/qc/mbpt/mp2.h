@@ -95,7 +95,7 @@ class RMP2 : public qc::LCAOWavefunction<Tile,Policy> {
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    */
   RMP2(const KeyVal &kv);
-  virtual ~RMP2();
+  virtual ~RMP2() = default;
 
   double value() override;
   virtual double compute();

@@ -193,6 +193,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double permutation_time = 0.0;
     mpqc::time_point time00;
     mpqc::time_point time01;
+    std::size_t iter = 0;
 
     // start loop over a, b, c
     // distribute all outer loop a over all worlds
@@ -200,6 +201,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       for (auto b = 0; b <= a; ++b) {
         for (auto c = 0; c <= b; ++c) {
           // inner loop
+          iter++;
 
           // index
           std::size_t a_low = a;
@@ -765,6 +767,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       if(rank == i){
         // print out process n
         std::cout << "Process " << rank << " Time: " << std::endl;
+        std::cout << "Iter: " << iter << std::endl;
         std::cout << "Block Time: " << block_time << " S" << std::endl;
         std::cout << "Permutation Time: " << permutation_time << " S"
                       << std::endl;
@@ -776,12 +779,14 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     }
 
     // print out all process time
+    global_world.gop.sum(iter);
     global_world.gop.sum(block_time);
     global_world.gop.sum(permutation_time);
     global_world.gop.sum(contraction_time);
     global_world.gop.sum(reduce_time);
 
     ExEnv::out0() << "Process All Time: " << std::endl;
+    ExEnv::out0() << "Iter: " << iter <<  std::endl;
     ExEnv::out0() << "Block Time: " << block_time << " S" << std::endl;
     ExEnv::out0() << "Permutation Time: " << permutation_time << " S"
                   << std::endl;

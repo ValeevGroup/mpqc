@@ -18,11 +18,11 @@ using mpqc::lcao::gaussian::Basis;
 
 
 double bytes_to_gb(std::size_t num){
-  return double(num)/(1024*1024*1024);
+  return double(num)/(1e9);
 }
 
 double bytes_to_mb(std::size_t num){
-  return double(num)/(1024*1024);
+  return double(num)/(1e6);
 }
 
 void ao_basis_analysis (Basis& basis, int occ){

@@ -6,6 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_LINKAGE_H_
 
 #include "mpqc/chemistry/qc/cc/linkage.h"
+#include "mpqc/chemistry/qc/mbpt/linkage.h"
 #include "mpqc/util/keyval/forcelink.h"
 #include "mpqc/mpqc_config.h"
 

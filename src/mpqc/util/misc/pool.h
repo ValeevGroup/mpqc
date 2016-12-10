@@ -2,10 +2,11 @@
 #ifndef MPQC4_SRC_MPQC_UTIL_MISC_POOL_H_
 #define MPQC4_SRC_MPQC_UTIL_MISC_POOL_H_
 
+#include <memory>
+
 #include <tbb/enumerable_thread_specific.h>
 
 namespace mpqc {
-
 namespace utility {
 
 /// A pool of thread-specific objects

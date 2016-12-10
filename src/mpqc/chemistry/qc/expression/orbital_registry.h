@@ -9,7 +9,7 @@
 #include "mpqc/chemistry/qc/expression/orbital_space.h"
 
 namespace mpqc {
-
+namespace lcao {
 /**
  *  \brief map OrbitalIndex to Value object
  */
@@ -28,8 +28,8 @@ class OrbitalRegistry : public Registry<OrbitalIndex, Value> {
   // for interface in OrbitalBasisRegistry
   OrbitalRegistry(const KeyVal& kv)  {}
 
-  /// add Value that has mo_key() function as key type
-  void add(const Value& val) { this->insert(val.mo_key(), val); }
+  /// add Value that has index() function as key type
+  void add(const Value& val) { this->insert(val.index(), val); }
 
   /// add by Key and Value
   void add(const Key& key, const Value& val) { this->insert(key, val); }
@@ -42,6 +42,7 @@ class OrbitalRegistry : public Registry<OrbitalIndex, Value> {
 template <typename Array>
 using OrbitalSpaceRegistry = OrbitalRegistry<OrbitalSpace<Array>>;
 
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_REGISTRY_H_

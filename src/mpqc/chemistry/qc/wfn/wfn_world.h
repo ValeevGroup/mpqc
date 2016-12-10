@@ -16,7 +16,7 @@
 #include "mpqc/chemistry/qc/basis/basis_registry.h"
 
 namespace mpqc {
-namespace qc {
+namespace lcao {
 
 /// WavefunctionWorld is an environment for one or more collaborating Wavefunction objects.
 
@@ -28,7 +28,7 @@ class WavefunctionWorld : public DescribedClass {
  private:
   madness::World &world_;
   std::shared_ptr<Molecule> mol_;
-  std::shared_ptr<basis::OrbitalBasisRegistry> basis_registry_;
+  std::shared_ptr<gaussian::OrbitalBasisRegistry> basis_registry_;
 
  public:
   /**
@@ -50,12 +50,12 @@ class WavefunctionWorld : public DescribedClass {
   Molecule const &molecule() const { return *mol_; }
 
   /// Return Basis Registry
-  std::shared_ptr<basis::OrbitalBasisRegistry> const basis_registry() {return basis_registry_;}
+  std::shared_ptr<gaussian::OrbitalBasisRegistry> const basis_registry() { return basis_registry_; }
 
 };
 
 
-}  // namespace qc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_WORLD_H_

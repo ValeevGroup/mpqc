@@ -8,7 +8,7 @@
 #include "mpqc/chemistry/qc/cc/ccsd.h"
 
 namespace mpqc {
-namespace cc {
+namespace lcao {
 
 /**
  *  \breif Dual basis CCSD method
@@ -57,7 +57,7 @@ class DBCCSD : public CCSD<Tile, Policy> {
 extern template
 class DBCCSD<TA::TensorD, TA::SparsePolicy>;
 
-} // end of namespace cc
-} // end of namespace mpqc
+}  // namespace  lcao
+}  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DBCCSD_H_

@@ -18,14 +18,15 @@
 #include "mpqc/util/misc/assert.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 /*! \brief Construct sparse integral tensors from sets in parallel.
  *
  * This is needed for integrals such as the dipole integrals that come as a
  * set.
  *
- * \param shr_pool should be a std::shared_ptr to an IntegralEnginePool
+ * \param shr_pool should be a std::shared_ptr to an IntegralTSPool
  * \param bases should be a std::array of Basis, which will be copied.
  * \param op needs to be a function or functor that takes a TA::TensorD && and
  * returns any valid tile type. Op is copied so it can be moved.
@@ -35,7 +36,7 @@ namespace integrals {
  */
 template <typename E, typename Tile = TA::TensorD>
 std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
-    madness::World &world, ShrPool<E> shr_pool, Barray<2> const &bases,
+    madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
     std::function<Tile(TA::TensorD &&)> op =
         TA::Noop<TA::TensorD,true>()) {
   // Build the Trange and Shape Tensor
@@ -135,7 +136,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
 
 /*! \brief Construct sparse integral tensors in parallel.
  *
- * \param shr_pool should be a std::shared_ptr to an IntegralEnginePool
+ * \param shr_pool should be a std::shared_ptr to an IntegralTSPool
  * \param bases should be a std::array of Basis, which will be copied.
  * \param op needs to be a function or functor that takes a TA::TensorD && and
  * returns any valid tile type. Op is copied so it can be moved.
@@ -147,7 +148,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
  */
 template <typename Tile = TA::TensorD, typename E>
 TA::DistArray<Tile, TA::SparsePolicy> sparse_integrals(
-    madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op =
         TA::Noop<TA::TensorD,true>()) {
@@ -158,7 +159,7 @@ TA::DistArray<Tile, TA::SparsePolicy> sparse_integrals(
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
   // Copy the Bases for the Integral Builder
-  auto shr_bases = std::make_shared<Bvector>(bases);
+  auto shr_bases = std::make_shared<BasisVector>(bases);
 
   // Make a pointer to an Integral builder.  Doing this because we want to use
   // it in Tasks.
@@ -209,14 +210,14 @@ TA::DistArray<Tile, TA::SparsePolicy> sparse_integrals(
  */
 template <typename Tile = TA::TensorD, typename E>
 TA::DistArray<Tile, TA::DensePolicy> dense_integrals(
-    madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op =
         TA::Noop<TA::TensorD,true>()) {
   TA::DistArray<Tile, TA::DensePolicy> out(world, detail::create_trange(bases));
 
   // Copy the Bases for the Integral Builder
-  auto shr_bases = std::make_shared<Bvector>(bases);
+  auto shr_bases = std::make_shared<BasisVector>(bases);
 
   // Make a pointer to a builder which can be shared by different tasks.
   auto builder_ptr =
@@ -243,7 +244,8 @@ TA::DistArray<Tile, TA::DensePolicy> dense_integrals(
   return out;
 }
 
-}  // namespace integrals
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRALS_H_

@@ -14,7 +14,8 @@
 
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 /*! \brief Class which holds shell set information for screening.
  *
@@ -329,7 +330,7 @@ inline RowMatrixXd four_center_Q(madness::World &world, ShrPool<E> const &eng,
 // Compute Q
 template <typename E>
 inline std::shared_ptr<Qmatrix>
-compute_Q(madness::World &world, ShrPool<E> const &eng, basis::Basis const &bs,
+compute_Q(madness::World &world, ShrPool<E> const &eng, Basis const &bs,
           bool auxiliary_basis = false) {
     const auto shells = bs.flattened_shells();
     RowMatrixXd Q;
@@ -342,7 +343,7 @@ compute_Q(madness::World &world, ShrPool<E> const &eng, basis::Basis const &bs,
     return std::make_shared<Qmatrix>(std::move(Q), func_to_shell(shells));
 }
 
-} // namespace detail;
+}  // namespace  detail;
 
 /*! \brief struct which builds SchwarzScreen screeners */
 class init_schwarz_screen {
@@ -352,8 +353,8 @@ class init_schwarz_screen {
     // Add more overloads as desired, can have alternate ways of passing bases.
     template <typename E>
     SchwarzScreen
-    compute_df(madness::World &world, ShrPool<E> &eng, basis::Basis const &dfbs,
-               basis::Basis const &obs) const {
+    compute_df(madness::World &world, ShrPool<E> &eng, Basis const &dfbs,
+               Basis const &obs) const {
         auto Q_a = detail::compute_Q(world, eng, dfbs, true);
         auto Q_cd = detail::compute_Q(world, eng, obs);
 
@@ -362,7 +363,7 @@ class init_schwarz_screen {
 
     template <typename E>
     SchwarzScreen compute_4c(madness::World &world, ShrPool<E> &eng,
-                             basis::Basis const &bs) const {
+                             Basis const &bs) const {
         auto Q_ab = detail::compute_Q(world, eng, bs);
         return SchwarzScreen(std::move(Q_ab), nullptr, threshold);
     }
@@ -370,7 +371,7 @@ class init_schwarz_screen {
     // TODO finish this guy mixed basis four center
     template <typename E>
     SchwarzScreen compute_4c(madness::World &, ShrPool<E> &,
-                             basis::Basis const &, basis::Basis const &) const {
+                             Basis const &, Basis const &) const {
         assert(false); // Feature not implemented yet.
         return SchwarzScreen();
     }
@@ -381,13 +382,13 @@ class init_schwarz_screen {
 
     template <typename E>
     SchwarzScreen operator()(madness::World &world, ShrPool<E> &eng,
-                             basis::Basis const &bs) const {
+                             Basis const &bs) const {
         return compute_4c(world, eng, bs);
     }
 
     template <typename E>
     SchwarzScreen operator()(madness::World &world, ShrPool<E> &eng,
-                             basis::Basis const &bs0, basis::Basis const &bs1,
+                             Basis const &bs0, Basis const &bs1,
                              bool mixed_basis_four_center = false) const {
         if (mixed_basis_four_center) {
             assert(false); // This is not yet supported by helper machinary
@@ -398,8 +399,8 @@ class init_schwarz_screen {
     }
 };
 
-
-} // namespace integrals
-} // namespace mpqc
+}  // namespace  gaussian
+}  // namespace  lcao
+}  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_SCHWARZ_SCREEN_H_

@@ -6,18 +6,18 @@
 #include "mpqc/chemistry/qc/mbpt/denom.h"
 #include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT2("RMP2F12", mpqc::f12::RMP2F12);
-MPQC_CLASS_EXPORT2("RI-RMP2F12", mpqc::f12::RIRMP2F12);
+MPQC_CLASS_EXPORT2("RMP2F12", mpqc::lcao::RMP2F12);
+MPQC_CLASS_EXPORT2("RI-RMP2F12", mpqc::lcao::RIRMP2F12);
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 using TArray = RMP2F12::TArray;
 using Matrix = RMP2F12::Matrix;
 
 RMP2F12::RMP2F12(const KeyVal& kv) : LCAOWavefunction(kv) {
   if (kv.exists("ref")) {
-    ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
+    ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
   } else {
     throw std::invalid_argument(
         "Default Ref Wfn in RMP2F12 is not support! \n");
@@ -103,11 +103,11 @@ double RMP2F12::value() {
 
 void RMP2F12::obsolete() {
   this->energy_ = 0.0;
-  qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
+  LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
   ref_wfn_->obsolete();
 }
 
-void RMP2F12::compute(qc::PropertyBase* pb) {}
+void RMP2F12::compute(PropertyBase* pb) {}
 
 std::tuple<Matrix, Matrix> RMP2F12::compute() {
   auto& world = lcao_factory().world();
@@ -127,8 +127,8 @@ std::tuple<Matrix, Matrix> RMP2F12::compute() {
   {
     TArray B_ijij_ijji = compute_B();
     Matrix Eij_b = B_ijij_ijji("i1,j1,i2,j2")
-                       .reduce(F12PairEnergyReductor<TA::TensorD>(
-                           CC_ijij_bar, CC_ijji_bar, n_active_occ));
+                       .reduce(f12::F12PairEnergyReductor<TA::TensorD>(
+                           f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     utility::print_par(world, "E_B: ", Eij_b.sum(), "\n");
     Eij_F12 = Eij_b;
   }
@@ -139,8 +139,8 @@ std::tuple<Matrix, Matrix> RMP2F12::compute() {
     lcao_factory().purge_operator(world, L"R2");
 
     Matrix Eij_x = X_ijij_ijji("i1,j1,i2,j2")
-                       .reduce(F12PairEnergyReductor<TA::TensorD>(
-                           CC_ijij_bar, CC_ijji_bar, n_active_occ));
+                       .reduce(f12::F12PairEnergyReductor<TA::TensorD>(
+                           f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     Eij_x *= -1.0;
     utility::print_par(world, "E_X: ", Eij_x.sum(), "\n");
     Eij_F12 += Eij_x;
@@ -157,8 +157,8 @@ std::tuple<Matrix, Matrix> RMP2F12::compute() {
     // contribution from V_ijij_ijji
     // NB factor of 2 from the Hylleraas functional
     Matrix e_ij = V_ijij_ijji("i1,j1,i2,j2")
-                      .reduce(F12PairEnergyReductor<TA::TensorD>(
-                          2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
+                      .reduce(f12::F12PairEnergyReductor<TA::TensorD>(
+                          2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
     Eij_F12 += e_ij;
     utility::print_par(world, "E_V: ", e_ij.sum(), "\n");
   }
@@ -174,7 +174,7 @@ std::tuple<Matrix, Matrix> RMP2F12::compute() {
         (t2("a,b,i1,j1") * g_abij("a,b,i2,j2")).set_shape(ijij_ijji_shape);
     Eij_MP2 =
         TG_ijij_ijji("i1,j1,i2,j2")
-            .reduce(F12PairEnergyReductor<TA::TensorD>(2, -1, n_active_occ));
+            .reduce(f12::F12PairEnergyReductor<TA::TensorD>(2, -1, n_active_occ));
   }
 
   // compute C term
@@ -188,8 +188,8 @@ std::tuple<Matrix, Matrix> RMP2F12::compute() {
 
     // NB factor of 2 from the Hylleraas functional
     Matrix Eij_ct = CT("i1,j1,i2,j2")
-                        .reduce(F12PairEnergyReductor<TA::TensorD>(
-                            2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
+                        .reduce(f12::F12PairEnergyReductor<TA::TensorD>(
+                            2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
     utility::print_par(world, "E_CT: ", Eij_ct.sum(), "\n");
     Eij_F12 += Eij_ct;
   }
@@ -203,8 +203,8 @@ std::tuple<Matrix, Matrix> RMP2F12::compute() {
                             .set_shape(ijij_ijji_shape);
 
     Matrix Eij_cc = CC("i1,j1,i2,j2")
-                        .reduce(F12PairEnergyReductor<TA::TensorD>(
-                            CC_ijij_bar, CC_ijji_bar, n_active_occ));
+                        .reduce(f12::F12PairEnergyReductor<TA::TensorD>(
+                            f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     utility::print_par(world, "E_CC: ", Eij_cc.sum(), "\n");
     Eij_F12 += Eij_cc;
   }
@@ -315,5 +315,5 @@ double RIRMP2F12::compute_cabs_singles() {
   return es;
 }
 
-}  // end of namespace f12
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc

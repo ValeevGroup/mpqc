@@ -18,7 +18,7 @@
 
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
 
 template <typename Tile, typename Policy>
 class LCAOFactory;
@@ -43,7 +43,7 @@ std::shared_ptr<LCAOFactory<Tile,Policy>> construct_lcao_factory(const KeyVal& k
 };
 
 
-} // namespace detail
+}  // namespace  detail
 
 // TODO MO transform that minimize operations by permutation
 /**
@@ -58,7 +58,9 @@ template <typename Tile, typename Policy>
 class LCAOFactory : public DescribedClass{
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using AOFactoryType = AOFactory<Tile, Policy>;
+  // for now hardwire to Gaussians
+  // TODO generalize to non-gaussian AO operators
+  using AOFactoryType = gaussian::AOFactory<Tile, Policy>;
 
   /**
    * Constructor
@@ -72,12 +74,12 @@ class LCAOFactory : public DescribedClass{
    */
   LCAOFactory(const KeyVal& kv)
     : world_(*kv.value<madness::World *>("$:world")),
-      ao_factory_(*detail::construct_ao_factory<Tile,Policy>(kv)),
+      ao_factory_(*gaussian::construct_ao_factory<Tile, Policy>(kv)),
       orbital_space_registry_(std::make_shared<OrbitalSpaceRegistry<TArray>>()),
       mo_formula_registry_()
   {
     std::string prefix = "";
-    if(kv.exists("wfn_wolrd") || kv.exists_class("wfn_world")){
+    if(kv.exists("wfn_world") || kv.exists_class("wfn_world")){
       prefix = "wfn_world:";
     }
     accurate_time_ = kv.value<bool>(prefix + "accurate_time",false);
@@ -331,14 +333,14 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
                              : formula_string.ket_indices()[reduced_index_rank];
     auto& reduced_index_space =
         orbital_space_registry_->retrieve(reduced_index);
-    const auto& reduced_index_coeff = reduced_index_space.array();
+    const auto& reduced_index_coeff = reduced_index_space.coefs();
 
     // transform
     auto result_key =
         formula_string.to_ta_expression(mpqc::detail::append_count(0));
     auto reduced_key =
         reduced_formula.to_ta_expression(mpqc::detail::append_count(0));
-    auto coeff_key = reduced_index_space.ao_key().to_ta_expression() +
+    auto coeff_key = reduced_index_space.ao_index().to_ta_expression() +
                      std::to_string(reduced_index_absrank) + ", " +
                      reduced_index.to_ta_expression() +
                      std::to_string(reduced_index_absrank);
@@ -446,7 +448,7 @@ Formula LCAOFactory<Tile, Policy>::mo_to_ao(const Formula& formula) {
   for (const auto& index : left_index) {
     // find the correspoding ao index
     if (index.is_mo()) {
-      auto ao_index = orbital_space_registry_->retrieve(index).ao_key().name();
+      auto ao_index = orbital_space_registry_->retrieve(index).ao_index().name();
       ao_index = ao_index + std::to_wstring(increment);
       ao_left_index.push_back(ao_index);
       increment++;
@@ -461,7 +463,7 @@ Formula LCAOFactory<Tile, Policy>::mo_to_ao(const Formula& formula) {
   for (const auto& index : right_index) {
     // find the correspoding ao index
     if (index.is_mo()) {
-      auto ao_index = orbital_space_registry_->retrieve(index).ao_key().name();
+      auto ao_index = orbital_space_registry_->retrieve(index).ao_index().name();
       ao_index = ao_index + std::to_wstring(increment);
       ao_right_index.push_back(ao_index);
       increment++;
@@ -536,14 +538,14 @@ LCAOFactory<Tile, Policy>::reduce_formula(const Formula& formula) {
                    "cannot reduce Formula with AO indices only");
     idx = min_bra_iter - bra_strength_factors.begin();
     auto ao_index =
-        orbital_space_registry_->retrieve(bra_indices[idx]).ao_key();
+        orbital_space_registry_->retrieve(bra_indices[idx]).ao_index();
     bra_indices[idx] = ao_index;
   } else {
     TA_USER_ASSERT(*min_ket_iter != 0.0,
                    "cannot reduce Formula with AO indices only");
     idx = min_ket_iter - ket_strength_factors.begin();
     auto ao_index =
-        orbital_space_registry_->retrieve(ket_indices[idx]).ao_key();
+        orbital_space_registry_->retrieve(ket_indices[idx]).ao_index();
     ket_indices[idx] = ao_index;
   }
 

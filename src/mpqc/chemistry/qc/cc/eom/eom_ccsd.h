@@ -4,6 +4,7 @@
 #include <tiledarray.h>
 
 namespace mpqc{
+namespace lcao{
 
   struct guess_vector {
     using TArray = TiledArray::TSpArrayD;
@@ -14,8 +15,8 @@ namespace mpqc{
   // close-shell eom-ccsd
   // still working on it
   class EOM_CCSD {
-    //using CC = cc::CCSD<typename Tile, typename Policy>;
-    //using CCinter = cc::CCSDIntermediate<typename Tile, typename Policy>;
+    //using CC = CCSD<typename Tile, typename Policy>;
+    //using CCinter = CCSDIntermediate<typename Tile, typename Policy>;
 
     using TArray = TiledArray::TSpArrayD;
 
@@ -87,4 +88,6 @@ namespace mpqc{
     double compute_energy(std::size_t max_iter, double convergence);
 
   };
-}
+
+}  // namespace lcao
+}  // namespace mpqc

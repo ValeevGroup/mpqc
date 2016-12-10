@@ -5,11 +5,11 @@
 #include "mpqc/chemistry/qc/mbpt/dbmp2.h"
 #include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT2("DBRMP2", mpqc::mbpt::DBRMP2);
-MPQC_CLASS_EXPORT2("RI-DBRMP2", mpqc::mbpt::RIDBRMP2);
+MPQC_CLASS_EXPORT2("DBRMP2", mpqc::lcao::DBRMP2);
+MPQC_CLASS_EXPORT2("RI-DBRMP2", mpqc::lcao::RIDBRMP2);
 
 namespace mpqc {
-namespace mbpt {
+namespace lcao {
 ///
 /// member function of DBRMP2
 ///
@@ -70,8 +70,8 @@ double DBRMP2::compute_scf_correction() {
 ///
 
 double RIDBRMP2::compute() {
-  return detail::compute_mp2(this->lcao_factory(), this->orbital_energy(),
-                             this->trange1_engine(), true);
+  return mbpt::detail::compute_mp2(this->lcao_factory(), this->orbital_energy(),
+                                   this->trange1_engine(), true);
 }
 
 double RIDBRMP2::compute_scf_correction() {
@@ -93,5 +93,5 @@ double RIDBRMP2::compute_scf_correction() {
   return scf_correction;
 }
 
-}  // end of namespace mbpt
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc

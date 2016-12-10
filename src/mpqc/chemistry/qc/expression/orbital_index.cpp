@@ -13,6 +13,7 @@
 #include "mpqc/chemistry/qc/expression/orbital_index.h"
 
 namespace mpqc {
+namespace lcao {
 
 // set the range of key index to use
 const wchar_t OrbitalIndex::frozen_occ_wchar[2] = {L'm', L'n'};
@@ -227,4 +228,6 @@ std::string OrbitalIndex::to_ta_expression() const {
   }
   return ta_expression;
 }
-}
+
+}  // namespace lcao
+}  // namespace mpqc

@@ -161,6 +161,6 @@ TA::DistArray<Tile,Policy> create_d_ai(madness::World &world, const TA::TiledRan
   return result;
 }
 
-}  // end of namespace mpqc
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DENOM_H_

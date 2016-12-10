@@ -5,15 +5,15 @@
 #include "mp2.h"
 #include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT2("RMP2", mpqc::mbpt::RMP2);
-MPQC_CLASS_EXPORT2("RI-RMP2", mpqc::mbpt::RIRMP2);
+MPQC_CLASS_EXPORT2("RMP2", mpqc::lcao::RMP2);
+MPQC_CLASS_EXPORT2("RI-RMP2", mpqc::lcao::RIRMP2);
 
 namespace mpqc {
-namespace mbpt {
+namespace lcao {
 
 RMP2::RMP2(const KeyVal &kv) : LCAOWavefunction(kv) {
   if (kv.exists("ref")) {
-    ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
+    ref_wfn_ = kv.keyval("ref").class_ptr<lcao::Wavefunction>();
   } else {
     throw std::invalid_argument("Default Ref Wfn in RMP2 is not support! \n");
   }
@@ -23,7 +23,7 @@ RMP2::~RMP2() = default;
 
 void RMP2::obsolete() {
   this->energy_ = 0.0;
-  qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
+  lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
   ref_wfn_->obsolete();
 }
 
@@ -70,13 +70,13 @@ void RMP2::init() {
 
 double RMP2::compute() {
   auto &lcao_factory = this->lcao_factory();
-  return detail::compute_mp2(lcao_factory, this->orbital_energy(),
-                             this->trange1_engine(), false);
+  return mbpt::detail::compute_mp2(lcao_factory, this->orbital_energy(),
+                                   this->trange1_engine(), false);
 }
 
-void RMP2::compute(qc::PropertyBase *pb) {}
+void RMP2::compute(lcao::PropertyBase *pb) {}
 
-const std::shared_ptr<qc::Wavefunction> RMP2::refwfn() const {
+const std::shared_ptr<lcao::Wavefunction> RMP2::refwfn() const {
   return ref_wfn_;
 }
 
@@ -88,8 +88,8 @@ RIRMP2::RIRMP2(const KeyVal &kv) : RMP2(kv) {}
 
 double RIRMP2::compute() {
   auto &lcao_factory = this->lcao_factory();
-  return detail::compute_mp2(lcao_factory, this->orbital_energy(),
-                             this->trange1_engine(), true);
+  return mbpt::detail::compute_mp2(lcao_factory, this->orbital_energy(),
+                                   this->trange1_engine(), true);
 }
-}  // end of namespace mbpt
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc

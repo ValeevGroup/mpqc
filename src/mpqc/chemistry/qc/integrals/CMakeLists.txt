@@ -27,5 +27,4 @@ set(sources
 )
 
 add_mpqc_library(integrals sources sources "MPQCexpression;MPQCbasis" "mpqc/chemistry/qc/integrals")
-target_link_libraries(MPQCintegrals PUBLIC ${TBB_LIBRARIES})
 

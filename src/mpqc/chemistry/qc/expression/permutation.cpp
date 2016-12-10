@@ -85,7 +85,7 @@ std::vector<Formula> permutations_physical(const Formula& formula) {
   return result;
 }
 
-}  // end of namespace detail
+}  // namespace detail
 
 std::vector<Formula> permutations(const Formula& formula) {
   std::vector<Formula> result;
@@ -154,4 +154,4 @@ std::vector<Formula> permutations(const Formula& formula) {
   return result;
 }
 
-}  // end of namespace mpqc
+}  // namespace mpqc

@@ -13,7 +13,7 @@
 #include "diis_ccsd.h"
 
 namespace mpqc {
-namespace cc {
+namespace lcao {
 
 template <typename Tile, typename Policy>
 class CC2 {
@@ -186,11 +186,11 @@ class CC2 {
  private:
   Eigen::VectorXd ens_;
   std::shared_ptr<mpqc::TRange1Engine> tre_;
-  std::shared_ptr<mpqc::cc::CCSDIntermediate<Tile, Policy>> intermediate_;
+  std::shared_ptr<cc::CCSDIntermediate<Tile, Policy>> intermediate_;
   TArrayBlock2 fock_;
 };
 
-}  // namespace cc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CC2_H_

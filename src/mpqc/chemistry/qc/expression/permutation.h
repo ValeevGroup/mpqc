@@ -29,6 +29,6 @@ std::vector<Formula> permutations_physical(const Formula& formula);
 
 std::vector<Formula> permutations(const Formula& formula);
 
-}  // end of namespace mpqc
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_PERMUTATION_H_

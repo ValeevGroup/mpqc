@@ -1,13 +1,86 @@
 #include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/misc/exception.h"
 
 namespace mpqc {
+
+namespace {
+  template <typename T>
+  T
+  min (const T& t1,
+       const T& t2,
+       const T& t3) {
+    return std::min(std::min(t1,t2),t3);
+  }
+
+std::string::size_type
+string_distance(const std::string& str1,
+                const std::string& str2) {
+
+  typedef std::string::size_type intsize;
+  const intsize lenStr1 = str1.length();
+  const intsize lenStr2 = str2.length();
+
+  std::vector< std::vector<intsize> > d(lenStr1+1);
+  for(intsize i=0; i<=lenStr1; ++i)
+    d[i].resize(lenStr2+1);
+
+  for(intsize i=0; i<=lenStr1; ++i)
+    d[i][0] = i;
+  for(intsize j=1; j<=lenStr2; ++j)
+    d[0][j] = j;
+
+  for(intsize i=1; i<=lenStr1; ++i) {
+    for(intsize j=1; j<=lenStr2; ++j) {
+
+      intsize cost;
+      if (str1[i-1] == str2[j-1])
+        cost = 0;
+      else
+        cost = 1;
+
+      d[i][j] = min(
+                   d[i-1][j] + 1,     // deletion
+                   d[i][j-1] + 1,     // insertion
+                   d[i-1][j-1] + cost   // substitution
+                );
+
+      if (i > 1 and j > 1 and str1[i] == str2[j-1] and str1[i-1] == str2[j])
+        d[i][j] = std::min(
+            d[i][j],
+            d[i-2][j-2] + cost   // transposition
+        );
+    }
+  }
+
+  return d[lenStr1][lenStr2];
+}
+}  // anonymous namespace
 
 DescribedClass::keyval_ctor_wrapper_type DescribedClass::type_to_keyval_ctor(
     const std::string& type_name) {
   auto& registry = keyval_ctor_registry();
-  if (registry.find(type_name) == registry.end())
-    throw std::runtime_error("DescribedClass::type_to_keyval_ctor -- type \"" +
-                             type_name + "\" not registered");
+  if (registry.find(type_name) == registry.end()) {
+    // check if the name was simply misspelled
+    std::vector<std::string> candidates;
+    // suggest possible missplelling if distance between type_name and any key
+    // less than 4 (MPQC3 default)
+    for (const auto& e : registry) {
+      if (string_distance(type_name, e.first) <= std::size_t(4)) {
+        candidates.push_back(e.first);
+      }
+    }
+    std::ostringstream oss;
+    oss << "DescribedClass::type_to_keyval_ctor -- type \"" << type_name
+        << "\" not registered\n";
+
+    if (!candidates.empty()) {
+      for (const auto& candidate : candidates)
+        oss << "misspelling of the registered class name \""
+            << candidate << "\"?\n";
+    }
+    throw mpqc::InputError(oss.str().c_str(), __FILE__, __LINE__, "type",
+                           type_name.c_str());
+  }
   return registry[type_name];
 }
 

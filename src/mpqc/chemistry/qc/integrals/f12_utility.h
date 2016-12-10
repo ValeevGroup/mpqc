@@ -15,6 +15,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
+namespace lcao {
 namespace f12 {
 
 // coeffs of intermediates linear in the geminal, i.e. V and C
@@ -283,6 +284,8 @@ struct F12PairEnergyReductor {
     }
   }
 };
-}
-}
+
+}  // namespace f12
+}  // namespace lcao
+}  // namespace mpqc
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_F12_UTILITY_H_

@@ -10,7 +10,7 @@
 #include "mpqc/chemistry/qc/mbpt/dbmp2.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 class RIDBRMP2F12 : public RIRMP2F12 {
  public:
@@ -40,7 +40,7 @@ class RIDBRMP2F12 : public RIRMP2F12 {
   const KeyVal kv_;
   std::string mp2_method_;
 };
-}  // namespace f12
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DBMP2F12_H_

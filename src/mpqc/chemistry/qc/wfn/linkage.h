@@ -9,7 +9,7 @@
 #include "mpqc/chemistry/molecule/linkage.h"
 
 namespace mpqc {
-namespace qc {
+namespace lcao {
 
 class WavefunctionWorld;
 mpqc::detail::ForceLink<WavefunctionWorld> fl1;

@@ -10,7 +10,7 @@
 #include <vector>
 
 namespace mpqc {
-namespace basis {
+namespace lcao {
 
 class ClusterShells {
  public:
@@ -49,7 +49,7 @@ class ClusterShells {
 
 };  // class ClusterShells
 
-}  // namespace basis
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_CLUSTER_SHELLS_H_

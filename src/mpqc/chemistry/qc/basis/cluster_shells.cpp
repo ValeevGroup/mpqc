@@ -4,7 +4,7 @@
 #include <numeric>
 
 namespace mpqc {
-namespace basis {
+namespace lcao {
 
 ClusterShells::ClusterShells() = default;
 ClusterShells::ClusterShells(ClusterShells const &) = default;
@@ -70,5 +70,5 @@ std::vector<libint2::Shell> ClusterShells::flattened_shells() const {
 
 Cluster const &ClusterShells::cluster() const { return *cluster_; }
 
-}  // namespace basis
+}  // namespace lcao
 }  // namespace mpqc

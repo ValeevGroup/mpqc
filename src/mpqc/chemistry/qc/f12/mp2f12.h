@@ -15,11 +15,11 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
-class RMP2F12 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
+class RMP2F12 : public LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
  public:
-  using TArray = qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::ArrayType;
+  using TArray = LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::ArrayType;
   using Matrix = RowMatrix<double>;
 
   /**
@@ -39,7 +39,7 @@ class RMP2F12 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
 
   double value() override;
   std::tuple<Matrix, Matrix> compute();
-  void compute(qc::PropertyBase* pb) override;
+  void compute(PropertyBase* pb) override;
   void obsolete() override;
 
  private:
@@ -54,7 +54,7 @@ class RMP2F12 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
   char approximation_;
   TA::SparseShape<float> ijij_ijji_shape_;
   bool cabs_singles_;
-  std::shared_ptr<qc::Wavefunction> ref_wfn_;
+  std::shared_ptr<Wavefunction> ref_wfn_;
 };
 
 class RIRMP2F12 : public RMP2F12 {
@@ -74,7 +74,7 @@ class RIRMP2F12 : public RMP2F12 {
 //extern class RMP2F12;
 //extern class RIRMP2F12;
 
-}  // end of namespace f12
+}  // namespace lcao
 }  // mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_MP2F12_H_

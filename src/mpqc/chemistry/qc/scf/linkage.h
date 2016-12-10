@@ -9,18 +9,20 @@
 #include "mpqc/util/keyval/forcelink.h"
 
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
 class RHF;
 class RIRHF;
 class DirectRHF;
 class DirectRIRHF;
 class zRHF;
+namespace {
 mpqc::detail::ForceLink<RHF> fl1;
 mpqc::detail::ForceLink<RIRHF> fl2;
 mpqc::detail::ForceLink<DirectRHF> fl3;
 mpqc::detail::ForceLink<DirectRIRHF> fl4;
 mpqc::detail::ForceLink<zRHF> fl5;
+}
 }
 }
 

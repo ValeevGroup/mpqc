@@ -15,7 +15,7 @@
 #include <madness/world/worldmem.h>
 
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
 /**
  *  RHF member functions
@@ -51,9 +51,9 @@ void RHF::init(const KeyVal& kv) {
   // emultipole integral TODO better interface to compute this
   auto basis = ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
   const auto bs_array = utility::make_array(basis, basis);
-  auto multi_pool = integrals::make_engine_pool(
+  auto multi_pool = gaussian::make_engine_pool(
       libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
-  auto r_xyz = integrals::sparse_xyz_integrals(world, multi_pool, bs_array);
+  auto r_xyz = gaussian::sparse_xyz_integrals(world, multi_pool, bs_array);
 
   // density builder
   std::string density_builder =
@@ -79,9 +79,9 @@ void RHF::init(const KeyVal& kv) {
 
   if(!F_.is_initialized()){
     // soad
-    auto eri_e = integrals::make_engine_pool(libint2::Operator::coulomb,
+    auto eri_e = gaussian::make_engine_pool(libint2::Operator::coulomb,
                                              utility::make_array_of_refs(basis));
-    F_ = scf::fock_from_soad(world, mol, basis, eri_e, H_);
+    F_ = gaussian::fock_from_soad(world, mol, basis, eri_e, H_);
   }
 
   F_diis_ = F_;
@@ -117,7 +117,7 @@ void RHF::obsolete() {
   d_times_ = std::vector<double>();
   build_times_ = std::vector<double>();
 
-  qc::AOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
+  AOWavefunction<TA::TensorD, TA::SparsePolicy>::obsolete();
 }
 
 double RHF::energy() const {
@@ -257,5 +257,5 @@ void DirectRHF::init_fock_builder() {
   f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
 }
 
-}  // namespace scf
+}  // namespace lcao
 }  // namespace mpqc

@@ -12,10 +12,11 @@
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 
 namespace mpqc {
+namespace lcao {
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
+    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
     const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
     std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
@@ -75,10 +76,10 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   auto tr_vir = tre->get_vir_tr1();
   auto tr_all = tre->get_all_tr1();
 
-  detail::parallel_print_range_info(world, tr_occ, "Occ");
-  detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
-  detail::parallel_print_range_info(world, tr_vir, "Vir");
-  detail::parallel_print_range_info(world, tr_all, "Obs");
+  mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ");
+  mpqc::detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
+  mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");
+  mpqc::detail::parallel_print_range_info(world, tr_all, "Obs");
 
   // convert to TA
   auto C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_obs, tr_occ);
@@ -114,7 +115,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+    LCAOFactory<Tile, Policy> &lcao_factory,
     const std::shared_ptr<TRange1Engine> tre, std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &orbital_registry = lcao_factory.orbital_space();
@@ -130,10 +131,10 @@ void closed_shell_cabs_mo_build_svd(
   auto obs_basis =
       ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
 
-  basis::Basis ri_basis;
-  ri_basis = basis::merge(obs_basis, abs_basis);
+  gaussian::Basis ri_basis;
+  ri_basis = merge(obs_basis, abs_basis);
 
-  detail::parallel_print_range_info(world, ri_basis.create_trange1(),
+  mpqc::detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                     "RI Basis");
   ao_factory.orbital_basis_registry().add(OrbitalIndex(L"ρ"), ri_basis);
 
@@ -162,7 +163,7 @@ void closed_shell_cabs_mo_build_svd(
 
     auto tr_ribs = ri_basis.create_trange1();
     auto tr_cabs_mo = tre->compute_range(nbf_cabs, vir_blocksize);
-    detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+    mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
 
     C_cabs = array_ops::eigen_to_array<Tile>(world, Vnull, tr_ribs, tr_cabs_mo);
     C_cabs("i,j") = S_ribs_inv("i,k") * C_cabs("k, j");
@@ -176,7 +177,7 @@ void closed_shell_cabs_mo_build_svd(
         RowMatrixXd::Zero(nbf_ribs, n_vir + nbf_cabs);
 
     {
-      auto C_vir = orbital_registry.retrieve(OrbitalIndex(L"a")).array();
+      auto C_vir = orbital_registry.retrieve(OrbitalIndex(L"a")).coefs();
       RowMatrixXd C_vir_eigen = array_ops::array_to_eigen(C_vir);
 
       auto n_obs = C_vir_eigen.rows();
@@ -188,13 +189,13 @@ void closed_shell_cabs_mo_build_svd(
 
     // reblock C_ribs
     auto tr_ribs_mo = tre->compute_range(nbf_ribs, vir_blocksize);
-    detail::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
+    mpqc::detail::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
     auto ribs_to_mo = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(world, tr_ribs, tr_ribs_mo, 1.0);
     C_ri("i,j") = S_ribs_inv("i,k")*ribs_to_mo("k,j");
 
 
     auto tr_allvir_mo = tre->compute_range(nbf_cabs + n_vir, vir_blocksize);
-    detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
+    mpqc::detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
 
     C_allvir = array_ops::eigen_to_array<TA::TensorD>(world, C_allvirtual_eigen,
                                                       tr_ribs, tr_allvir_mo);
@@ -221,7 +222,7 @@ void closed_shell_cabs_mo_build_svd(
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
+    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
     const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
     std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
@@ -307,9 +308,9 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   auto tr_corr_occ = tre->get_active_occ_tr1();
   auto tr_vir = tre->get_vir_tr1();
 
-  detail::parallel_print_range_info(world, tr_occ, "Occ");
-  detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
-  detail::parallel_print_range_info(world, tr_vir, "Vir");
+  mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ");
+  mpqc::detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
+  mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");
 
   // convert to TA
   auto C_occ_ta = array_ops::eigen_to_array<Tile>(world, C_occ, tr_obs, tr_occ);
@@ -376,7 +377,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
 template <typename Tile, typename Policy>
 void closed_shell_dualbasis_cabs_mo_build_svd(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+    LCAOFactory<Tile, Policy> &lcao_factory,
     const std::shared_ptr<TRange1Engine> tre, std::string ri_method,
     std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
@@ -395,15 +396,15 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto obs_basis =
       ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
 
-  basis::Basis ri_basis;
+  gaussian::Basis ri_basis;
 
   if (ri_method == "VBS") {
-    ri_basis = basis::merge(vir_basis, abs_basis);
-    detail::parallel_print_range_info(world, ri_basis.create_trange1(),
+    ri_basis = merge(vir_basis, abs_basis);
+    mpqc::detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                       "RI Basis with VBS");
   } else if (ri_method == "OBS") {
-    ri_basis = basis::merge(obs_basis, abs_basis);
-    detail::parallel_print_range_info(world, ri_basis.create_trange1(),
+    ri_basis = merge(obs_basis, abs_basis);
+    mpqc::detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                       "RI Basis with OBS");
   } else {
     throw std::runtime_error("Invalid RI Method!");
@@ -428,7 +429,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
 
     // C_mu^i
     TA::DistArray<Tile, Policy> Ci =
-        orbital_registry.retrieve(OrbitalIndex(L"m")).array();
+        orbital_registry.retrieve(OrbitalIndex(L"m")).coefs();
     RowMatrixXd Ci_eigen = array_ops::array_to_eigen(Ci);
 
     RowMatrixXd X1 = Ci_eigen.transpose() * S_obs_ribs_eigen * X_ribs_eigen_inv;
@@ -446,7 +447,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
     RowMatrixXd S_vbs_ribs_eigen = array_ops::array_to_eigen(S_vbs_ribs);
     // C_a
     TA::DistArray<Tile, Policy> Ca =
-        orbital_registry.retrieve(OrbitalIndex(L"a")).array();
+        orbital_registry.retrieve(OrbitalIndex(L"a")).coefs();
     RowMatrixXd Ca_eigen = array_ops::array_to_eigen(Ca);
     RowMatrixXd X2 = Ca_eigen.transpose() * S_vbs_ribs_eigen * C_allvir_eigen;
 
@@ -470,7 +471,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
       tre->compute_range(tr_cabs.elements_range().second, vir_blocksize);
   auto tr_allvir_mo = tre->compute_range(nbf_ribs_minus_occ, vir_blocksize);
 
-  detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
+  mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
   TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<TA::TensorD>(
       world, C_cabs_eigen, tr_ribs, tr_cabs_mo);
 
@@ -480,7 +481,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
       OrbitalSpaceTArray(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
   orbital_registry.add(C_cabs_space);
 
-  detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
+  mpqc::detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
   TA::DistArray<Tile, Policy> C_allvir = array_ops::eigen_to_array<TA::TensorD>(
       world, C_allvir_eigen, tr_ribs, tr_allvir_mo);
 
@@ -495,6 +496,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
                      mo_time, " S\n");
 };
 
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_MO_BUILD_H_

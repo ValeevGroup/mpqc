@@ -22,7 +22,7 @@
 #include <vector>
 
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
 inline RowMatrixXd soad_density_eig_matrix(Molecule const &mol) {
   auto nao = 0;
@@ -47,6 +47,7 @@ inline RowMatrixXd soad_density_eig_matrix(Molecule const &mol) {
   return D * 0.5;  // we use densities normalized to # of electrons/2
 }
 
+namespace gaussian {
 template <typename Engs, typename Array, typename Tile>
 void soad_task(Engs eng_pool, int64_t ord,
                std::vector<libint2::Shell> const *obs_row,
@@ -169,20 +170,20 @@ void soad_task(Engs eng_pool, int64_t ord,
   }
 
   F->set(ord, op(std::move(tile)));
-  eng.set_precision(integrals::detail::integral_engine_precision);
+  eng.set_precision(detail::integral_engine_precision);
 }
 
 template <typename ShrPool, typename Array, typename Tile = TA::TensorD>
 Array fock_from_soad(
     madness::World &world, Molecule const &clustered_mol,
-    basis::Basis const &obs, ShrPool engs, Array const &H,
+    Basis const &obs, ShrPool engs, Array const &H,
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
   // Soad Density
   auto D = soad_density_eig_matrix(clustered_mol);
 
   // Get minimal basis
   const auto min_bs_shells =
-      parallel_construct_basis(world, basis::BasisSet("sto-3g"), clustered_mol)
+      parallel_construct_basis(world, gaussian::BasisSet("sto-3g"), clustered_mol)
           .flattened_shells();
   // Make F scaffolding
   auto const &trange = H.trange();
@@ -218,7 +219,8 @@ Array fock_from_soad(
   return F;
 }
 
-}  // namespace scf
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_SOAD_H_

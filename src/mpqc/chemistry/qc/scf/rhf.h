@@ -16,9 +16,9 @@
  *
  */
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
-class RHF : public qc::AOWavefunction<TA::TensorD, TA::SparsePolicy> {
+class RHF : public AOWavefunction<TA::TensorD, TA::SparsePolicy> {
  public:
   using array_type = TA::TSpArrayD;
 
@@ -78,8 +78,8 @@ class RHF : public qc::AOWavefunction<TA::TensorD, TA::SparsePolicy> {
   array_type D_;
   array_type C_;
 
-  std::unique_ptr<FockBuilder> f_builder_;
-  std::unique_ptr<DensityBuilder> d_builder_;
+  std::unique_ptr<scf::FockBuilder> f_builder_;
+  std::unique_ptr<scf::DensityBuilder> d_builder_;
 
   std::vector<double> rhf_times_;
   std::vector<double> d_times_;
@@ -136,7 +136,7 @@ class DirectRHF : public RHF {
 //extern class DirectRHF;
 //extern class DirectRIRHF;
 
-}  // end of namespace scf
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_RHF_H_

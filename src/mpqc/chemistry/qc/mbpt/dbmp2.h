@@ -8,7 +8,7 @@
 #include "mpqc/chemistry/qc/mbpt/mp2.h"
 
 namespace mpqc {
-namespace mbpt {
+namespace lcao {
 
 namespace detail {
 
@@ -58,7 +58,7 @@ struct ScfCorrection {
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+    lcao::LCAOFactory<Tile, Policy> &lcao_factory,
     Eigen::VectorXd &ens,
     const Molecule &mols,
     bool frozen_core,
@@ -200,7 +200,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
   return tre;
 }
 
-}  // end of namespace detail
+}  // namespace detail
 
 /**
  * Dual basis MP2 method
@@ -213,7 +213,7 @@ class DBRMP2 : public RMP2 {
   using Tile = TA::TensorD;
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
-  using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
+  using LCAOFactoryType = lcao::LCAOFactory<Tile, Policy>;
 
   DBRMP2() = default;
 
@@ -424,7 +424,7 @@ private:
 
 };
 
-}  // end of namespace mbpt
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_DBMP2_H_

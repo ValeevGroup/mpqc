@@ -14,7 +14,7 @@
 #include "mpqc/util/keyval/keyval.h"
 
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
 zRHF::zRHF(const KeyVal& kv) : PeriodicAOWavefunction(kv), kv_(kv) {}
 
@@ -80,7 +80,7 @@ void zRHF::init(const KeyVal& kv) {
   // transform Fock from real to reciprocal space
   Fk_ = ao_factory.transform_real2recip(F_);
   // compute orthogonalizer matrix
-  X_ = conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
+  X_ = utility::conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
   // compute guess density
   compute_density();
 
@@ -238,7 +238,8 @@ void zRHF::compute_density() {
   C_.resize(k_size_);
 
   auto tr0 = Fk_.trange().data()[0];
-  auto tr1 = integrals::detail::extend_trange1(tr0, RD_size_);
+  using ::mpqc::lcao::detail::extend_trange1;
+  auto tr1 = extend_trange1(tr0, RD_size_);
 
   auto fock_eig = array_ops::array_to_eigen(Fk_);
   for (auto k = 0; k < k_size_; ++k) {
@@ -257,15 +258,15 @@ void zRHF::compute_density() {
     auto Ctemp = comp_eig_solver.eigenvectors();
     C_[k] = X * Ctemp;
     // Sort eigenvalues and eigenvectors in ascending order
-    integrals::detail::sort_eigen(eps_[k], C_[k]);
+    detail::sort_eigen(eps_[k], C_[k]);
   }
 
   Matrixz result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
   for (auto R = 0; R < RD_size_; ++R) {
-    auto vec_R = integrals::detail::direct_vector(R, RD_max_, dcell_);
+    auto vec_R = detail::direct_vector(R, RD_max_, dcell_);
     for (auto k = 0; k < k_size_; ++k) {
-      auto vec_k = integrals::detail::k_vector(k, nk_, dcell_);
+      auto vec_k = detail::k_vector(k, nk_, dcell_);
       auto C_occ = C_[k].leftCols(docc_);
       auto D_real = C_occ.conjugate() * C_occ.transpose();
       auto exponent =
@@ -281,9 +282,9 @@ void zRHF::compute_density() {
 
 void zRHF::obsolete() { Wavefunction::obsolete(); }
 
-void zRHF::compute(qc::PropertyBase* pb) {
+void zRHF::compute(PropertyBase* pb) {
   throw std::logic_error("Not implemented!");
 }
 
-}  // end of namespace scf
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc

@@ -15,15 +15,16 @@
 #include "mpqc/chemistry/qc/basis/basis_registry.h"
 #include "mpqc/chemistry/qc/expression/formula.h"
 #include "mpqc/chemistry/qc/expression/orbital_registry.h"
-#include "mpqc/chemistry/qc/integrals/integral_engine_pool.h"
 #include "mpqc/chemistry/qc/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/integrals/task_integrals.h"
 #include "mpqc/util/meta/make_array.h"
 
 #include <libint2/engine.h>
+#include "mpqc/util/misc/pool.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 /**
  *
@@ -80,20 +81,20 @@ class AOFactoryBase {
 
   /// set OrbitalBasisRegistry
   void set_orbital_basis_registry(
-      const std::shared_ptr<basis::OrbitalBasisRegistry> &obs) {
+      const std::shared_ptr<gaussian::OrbitalBasisRegistry> &obs) {
     orbital_basis_registry_ = obs;
   }
 
   /// @return the OrbitalBasisRegistry object
-  const basis::OrbitalBasisRegistry &orbital_basis_registry() const {
+  const OrbitalBasisRegistry &orbital_basis_registry() const {
     return *orbital_basis_registry_;
   }
 
-  basis::OrbitalBasisRegistry &orbital_basis_registry() {
+  OrbitalBasisRegistry &orbital_basis_registry() {
     return *orbital_basis_registry_;
   }
 
-  const std::shared_ptr<basis::OrbitalBasisRegistry>
+  const std::shared_ptr<OrbitalBasisRegistry>
   orbital_basis_registry_ptr() const {
     return orbital_basis_registry_;
   }
@@ -113,7 +114,7 @@ class AOFactoryBase {
   std::array<std::wstring, 3> get_df_formula(const Formula &formula);
 
   /// given OrbitalIndex, find the correspoding basis
-  std::shared_ptr<basis::Basis> index_to_basis(const OrbitalIndex &index) {
+  std::shared_ptr<Basis> index_to_basis(const OrbitalIndex &index) {
     auto iter = orbital_basis_registry_->find(index);
     if (iter == orbital_basis_registry_->end()) {
       throw std::runtime_error("Basis Set Not Found!!");
@@ -129,36 +130,36 @@ class AOFactoryBase {
 
   /// parse one body formula and set engine_pool and basis array
   void parse_one_body(const Formula &formula,
-                      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-                      Bvector &bases);
+                      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+                      BasisVector &bases);
 
   /// parse two body two center formula and set two body kernel, basis array,
   /// max_nprim and max_am
   void parse_two_body_two_center(
       const Formula &formula,
-      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-      Bvector &bases);
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases);
 
   /// parse two body three center formula and set two body kernel, basis array,
   /// max_nprim and max_am
   void parse_two_body_three_center(
       const Formula &formula,
-      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
       std::shared_ptr<Screener> &p_screener);
 
   /// parse two body four center formula and set two body kernel, basis array,
   /// max_nprim and max_am
   void parse_two_body_four_center(
       const Formula &formula,
-      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
       std::shared_ptr<Screener> &p_screener);
 
   std::shared_ptr<Screener> make_screener_four_center(
-      ShrPool<libint2::Engine> &engine, basis::Basis &basis);
+      ShrPool<libint2::Engine> &engine, Basis &basis);
 
   std::shared_ptr<Screener> make_screener_three_center(
-      ShrPool<libint2::Engine> &engine, basis::Basis &dfbasis,
-      basis::Basis &basis);
+      ShrPool<libint2::Engine> &engine, Basis &dfbasis,
+      Basis &basis);
 
   /**
    *  Given formula with rank = 2 and J or K operation, return the G integral
@@ -218,7 +219,7 @@ class AOFactoryBase {
 
  protected:
   madness::World &world_;
-  std::shared_ptr<basis::OrbitalBasisRegistry> orbital_basis_registry_;
+  std::shared_ptr<OrbitalBasisRegistry> orbital_basis_registry_;
 
   // TODO these specify operator params, need to abstract out better
   std::shared_ptr<Molecule> mol_;
@@ -236,7 +237,8 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
                                         const AOFactoryBase &base);
 }
 
-}  // end of namespace integral
-}  // end of namespace mpqc
+}  // namespace gaussian
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_

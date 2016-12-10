@@ -97,7 +97,7 @@ TA::DistArray<Tile, Policy> conditioned_orthogonalizer(
   return array_ops::eigen_to_array<Tile>(world,X,S_array.trange().data()[0], S_array.trange().data()[1]);
 }
 
-} // end of namespace array_ops
-} // end of namespace mpqc
+}  // namespace  array_ops
+}  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_MATH_LINALG_CONDITIONED_ORTHOGONALIZER_H_

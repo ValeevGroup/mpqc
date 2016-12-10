@@ -9,23 +9,26 @@
 #include "mpqc/chemistry/qc/expression/orbital_registry.h"
 
 namespace mpqc {
-namespace basis {
+namespace lcao {
+
+namespace gaussian {
 
 /**
  * Typedef of OrbitalBasisRegistry
- * A Registry that map OrbitalIndex to Basis
+ * A Registry that maps OrbitalIndex to a Gaussian Basis
  */
-using OrbitalBasisRegistry = OrbitalRegistry<mpqc::basis::Basis>;
+using OrbitalBasisRegistry = OrbitalRegistry<gaussian::Basis>;
 
-}  // end of namespace basis
+}  // namespace gaussian
 
 /**
  * KeyVal Constructor for OrbitalBasisRegistry
  */
 
 template <>
-mpqc::OrbitalRegistry<mpqc::basis::Basis>::OrbitalRegistry(const KeyVal& kv);
+OrbitalRegistry<gaussian::Basis>::OrbitalRegistry(const KeyVal& kv);
 
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_REGISTRY_H_

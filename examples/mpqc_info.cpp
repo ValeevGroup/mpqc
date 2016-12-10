@@ -14,6 +14,7 @@
 #include <clocale>
 #include <iostream>
 using namespace mpqc;
+using mpqc::lcao::gaussian::Basis;
 
 
 double bytes_to_gb(std::size_t num){
@@ -24,7 +25,7 @@ double bytes_to_mb(std::size_t num){
   return double(num)/(1024*1024);
 }
 
-void ao_basis_analysis (basis::Basis& basis, int occ){
+void ao_basis_analysis (Basis& basis, int occ){
 
 
   auto range = basis.create_trange1();
@@ -52,7 +53,7 @@ void ao_basis_analysis (basis::Basis& basis, int occ){
 
 }
 
-void df_basis_analysis(basis::Basis& basis, basis::Basis& dfbs, int occ){
+void df_basis_analysis(Basis& basis, Basis& dfbs, int occ){
 
   auto range = basis.create_trange1();
   std::size_t n = range.elements_range().second;
@@ -83,7 +84,7 @@ void df_basis_analysis(basis::Basis& basis, basis::Basis& dfbs, int occ){
 
 }
 
-void cabs_basis_analysis(basis::Basis& basis, basis::Basis& dfbs, basis::Basis& cabs, int occ){
+void cabs_basis_analysis(Basis& basis, Basis& dfbs, Basis& cabs, int occ){
   auto range = basis.create_trange1();
   std::size_t n = range.elements_range().second;
   std::size_t v = n - occ;
@@ -140,7 +141,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   std::size_t occ = (mol->occupation(0) - mol->core_electrons())/2 ;
 
-  basis::OrbitalBasisRegistry basis_registry(kv);
+  lcao::gaussian::OrbitalBasisRegistry basis_registry(kv);
 
   auto obs = basis_registry.retrieve(OrbitalIndex(L"λ"));
   ao_basis_analysis(obs,occ);

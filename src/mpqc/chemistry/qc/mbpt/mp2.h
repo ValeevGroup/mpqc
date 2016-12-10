@@ -14,8 +14,9 @@
 using namespace mpqc;
 
 namespace mpqc {
-namespace mbpt {
+namespace lcao {
 
+namespace mbpt {
 namespace detail {
 
 template <typename Tile>
@@ -74,7 +75,7 @@ struct Mp2Energy {
 };
 
 template <typename Tile, typename Policy>
-double compute_mp2(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
                    std::shared_ptr<Eigen::VectorXd> orbital_energy,
                    std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df) {
   auto& world = lcao_factory.world();
@@ -92,8 +93,9 @@ double compute_mp2(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
 };
 
 }  // end of namespce detail
+}  // end of namespce mbpt
 
-class RMP2 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
+class RMP2 : public lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
  public:
   /**
    * KeyVal constructor
@@ -109,13 +111,13 @@ class RMP2 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
 
   double value() override;
   virtual double compute();
-  void compute(qc::PropertyBase *pb) override;
+  void compute(lcao::PropertyBase *pb) override;
   void obsolete() override;
-  const std::shared_ptr<qc::Wavefunction> refwfn() const;
+  const std::shared_ptr<lcao::Wavefunction> refwfn() const;
 
  protected:
   virtual void init();
-  std::shared_ptr<qc::Wavefunction> ref_wfn_;
+  std::shared_ptr<lcao::Wavefunction> ref_wfn_;
 };
 
 class RIRMP2 : public RMP2 {
@@ -135,6 +137,6 @@ class RIRMP2 : public RMP2 {
 //extern class RMP2;
 //extern class RIRMP2;
 
-}  // end of namespace mbpt
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_

@@ -14,7 +14,7 @@
 #include "mpqc/chemistry/qc/f12/cabs_singles.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 /**
  *  CCSD(2)F12 class
@@ -22,13 +22,13 @@ namespace f12 {
  */
 
 template <typename Tile>
-class CCSD_F12 : virtual public cc::CCSD<Tile, TA::SparsePolicy> {
+class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectArray =
-      typename cc::CCSD<Tile, Policy>::DirectAOIntegral::DirectTArray;
-  using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
+      typename CCSD<Tile, Policy>::DirectAOIntegral::DirectTArray;
+  using LCAOFactoryType = LCAOFactory<Tile, Policy>;
 
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
@@ -47,7 +47,7 @@ class CCSD_F12 : virtual public cc::CCSD<Tile, TA::SparsePolicy> {
    * | vt_couple | bool | true | if couple last two term in VT2 and VT1 term |
    *
    */
-  CCSD_F12(const KeyVal& kv) : cc::CCSD<Tile, Policy>(kv) {
+  CCSD_F12(const KeyVal& kv) : CCSD<Tile, Policy>(kv) {
     vt_couple_ = kv.value<bool>("vt_couple", true);
     cabs_singles_ = kv.value<bool>("cabs_singles", true);
 
@@ -74,7 +74,7 @@ class CCSD_F12 : virtual public cc::CCSD<Tile, TA::SparsePolicy> {
       auto ccsd_time0 = mpqc::fenced_now(world);
 
       // compute ccsd
-      real_t ccsd = cc::CCSD<Tile, Policy>::value();
+      real_t ccsd = CCSD<Tile, Policy>::value();
 
       auto ccsd_time1 = mpqc::fenced_now(world);
       auto ccsd_time = mpqc::duration_in_s(ccsd_time0, ccsd_time1);
@@ -110,7 +110,7 @@ class CCSD_F12 : virtual public cc::CCSD<Tile, TA::SparsePolicy> {
   void obsolete() override {
     f12_energy_ = 0.0;
     singles_energy_ = 0.0;
-    cc::CCSD<Tile, Policy>::obsolete();
+    CCSD<Tile, Policy>::obsolete();
   }
 
  private:
@@ -202,14 +202,14 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
     TArray B_ijij_ijji;
 
     if (approach == 'C') {
-      B_ijij_ijji = compute_B_ijij_ijji_C_df(lcao_factory, ijij_ijji_shape);
+      B_ijij_ijji = f12::compute_B_ijij_ijji_C_df(lcao_factory, ijij_ijji_shape);
     } else if (approach == 'D') {
-      B_ijij_ijji = compute_B_ijij_ijji_D_df(lcao_factory, ijij_ijji_shape);
+      B_ijij_ijji = f12::compute_B_ijij_ijji_D_df(lcao_factory, ijij_ijji_shape);
     }
 
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
-                     .reduce(F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
+                     .reduce(f12::F12PairEnergyReductor<Tile>(
+                         f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 = eij;
   }
@@ -217,7 +217,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
   lcao_factory.ao_factory().registry().purge_operator(world, L"R");
 
   // compute X term
-  TArray X_ijij_ijji = compute_X_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
+  TArray X_ijij_ijji = f12::compute_X_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
 
   lcao_factory.purge_operator(world, L"R2");
 
@@ -227,29 +227,29 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
   {
     Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
                      .reduce(f12::F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
+                         f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     eij *= -1;
     if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
 
   // compute V_ijij_ijji
-  TArray V_ijij_ijji = compute_V_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
+  TArray V_ijij_ijji = f12::compute_V_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
 
   // VT2 contribution
   if (darray.array().is_initialized()) {
-    TArray tmp = compute_VT2_ijij_ijji_df_direct(lcao_factory, this->t2(),
+    TArray tmp = f12::compute_VT2_ijij_ijji_df_direct(lcao_factory, this->t2(),
                                                  ijij_ijji_shape, darray);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   } else {
-    TArray tmp = compute_VT2_ijij_ijji_df(lcao_factory, this->t2(),
+    TArray tmp = f12::compute_VT2_ijij_ijji_df(lcao_factory, this->t2(),
                                           ijij_ijji_shape, vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // VT1 contribution
   {
-    TArray tmp = compute_VT1_ijij_ijji_df(lcao_factory, this->t1(),
+    TArray tmp = f12::compute_VT1_ijij_ijji_df(lcao_factory, this->t1(),
                                           ijij_ijji_shape, vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
@@ -257,7 +257,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
   // V contribution to energy
   Matrix e_ij = V_ijij_ijji("i1,j1,i2,j2")
                     .reduce(f12::F12PairEnergyReductor<Tile>(
-                        2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
+                        2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
   Eij_F12 += e_ij;
   if (debug()) utility::print_par(world, "E_V: ", e_ij.sum(), "\n");
 
@@ -282,16 +282,16 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
 
   {
     // compute B term
-    TArray B_ijij_ijji = compute_B_ijij_ijji_C(lcao_factory, ijij_ijji_shape);
+    TArray B_ijij_ijji = f12::compute_B_ijij_ijji_C(lcao_factory, ijij_ijji_shape);
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
-                     .reduce(F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
+                     .reduce(f12::F12PairEnergyReductor<Tile>(
+                         f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 = eij;
   }
 
   // compute X term
-  TArray X_ijij_ijji = compute_X_ijij_ijji(lcao_factory, ijij_ijji_shape);
+  TArray X_ijij_ijji = f12::compute_X_ijij_ijji(lcao_factory, ijij_ijji_shape);
   //    std::cout << "X_ijij_ijji" << std::endl;
   //    std::cout << X_ijij_ijji << std::endl;
   lcao_factory.purge_operator(world, L"R2");
@@ -302,33 +302,33 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
   {
     Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
                      .reduce(f12::F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, n_active_occ));
+                         f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     eij *= -1;
     if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
 
   // compute V_ijij_ijji
-  TArray V_ijij_ijji = compute_V_ijij_ijji(lcao_factory, ijij_ijji_shape);
+  TArray V_ijij_ijji = f12::compute_V_ijij_ijji(lcao_factory, ijij_ijji_shape);
 
   //    std::cout << "V_ijij_ijji" << std::endl;
   //    std::cout << V_ijij_ijji << std::endl;
 
   // VT2 contribution
   //    if(darray.is_initialized()){
-  //        TArray tmp = compute_VT2_ijij_ijji_df_direct(lcao_factory,
+  //        TArray tmp = f12::compute_VT2_ijij_ijji_df_direct(lcao_factory,
   //        this->t2(), ijij_ijji_shape, darray);
   //        V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   //    }else
   {
-    TArray tmp = compute_VT2_ijij_ijji(lcao_factory, this->t2(),
+    TArray tmp = f12::compute_VT2_ijij_ijji(lcao_factory, this->t2(),
                                        ijij_ijji_shape, vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // VT1 contribution
   {
-    TArray tmp = compute_VT1_ijij_ijji(lcao_factory, this->t1(),
+    TArray tmp = f12::compute_VT1_ijij_ijji(lcao_factory, this->t1(),
                                        ijij_ijji_shape, vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
@@ -336,17 +336,16 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
   // V contribution to energy
   Matrix eij = V_ijij_ijji("i1,j1,i2,j2")
                    .reduce(f12::F12PairEnergyReductor<Tile>(
-                       2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
+                       2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
   if (debug()) utility::print_par(world, "E_V: ", eij.sum(), "\n");
   Eij_F12 += eij;
 
   return Eij_F12;
 }
 
-extern template
-class CCSD_F12<TA::TensorD>;
+extern template class CCSD_F12<TA::TensorD>;
 
-}  // end of namespace f12
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CCSD_F12_H_

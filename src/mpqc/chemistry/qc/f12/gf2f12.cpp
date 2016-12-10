@@ -5,4 +5,4 @@
 #include "mpqc/chemistry/qc/f12/gf2f12.h"
 #include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT2("GF2F12", mpqc::f12::GF2F12<TA::TensorD>);
+MPQC_CLASS_EXPORT2("GF2F12", mpqc::lcao::GF2F12<TA::TensorD>);

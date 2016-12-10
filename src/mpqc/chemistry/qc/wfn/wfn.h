@@ -15,7 +15,7 @@
 #include <functional>
 
 namespace mpqc {
-namespace qc {
+namespace lcao {
 
 class PropertyBase;
 
@@ -64,7 +64,7 @@ class Wavefunction : public DescribedClass {
   wfn_world() const { return wfn_world_; }
 };
 
-}  // namespace qc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_

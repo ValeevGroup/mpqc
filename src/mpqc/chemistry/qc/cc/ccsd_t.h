@@ -304,7 +304,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto n_a_b = a_b_loop.size();
 
     const auto divide = 10;
-    std::size_t increase = std::max(1.0,std::round(double(n_tr_vir) / divide));
+    std::size_t increase = std::max(1.0,std::round(double(n_a_b) / divide));
     std::vector<std::size_t> progress_points;
     for (std::size_t i = 0; i < n_a_b; i += increase) {
       progress_points.push_back(i);

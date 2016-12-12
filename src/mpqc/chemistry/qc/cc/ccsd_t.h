@@ -52,7 +52,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    * | reblock_unocc | int | none | block size to reblock unocc |
    * | reblock_inner | int | none | block size to reblock inner dimension |
    * | increase | int | 2 | number of block in virtual dimension to load at each virtual loop |
-   * | approach | string | fine | fine grain or coarse grain |
+   * | approach | string | coarse | fine grain or coarse grain |
    */
   // clang-format on
 
@@ -63,7 +63,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     unocc_block_size_ = kv.value<int>("reblock_unocc", 8);
     inner_block_size_ = kv.value<int>("reblock_inner", 128);
     increase_ = kv.value<int>("increase", 2);
-    approach_ = kv.value<std::string>("approach", "fine");
+    approach_ = kv.value<std::string>("approach", "coarse");
   }
 
   virtual ~CCSD_T() {}
@@ -632,7 +632,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         increase * increase * increase * n_tr_occ * n_tr_occ * n_tr_occ;
     double mem = (n_blocks * std::pow(occ_block_size, 3) *
                   std::pow(vir_block_size, 3) * 8) /
-                 (std::pow(1024.0, 3));
+                 (std::pow(1000.0, 3));
 
     if (t1.world().rank() == 0) {
       std::cout << "Increase in the loop " << increase << std::endl;

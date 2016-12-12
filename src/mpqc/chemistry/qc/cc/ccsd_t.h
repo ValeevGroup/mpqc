@@ -5,6 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_T_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_T_H_
 
+
 #include "mpqc/chemistry/qc/cc/ccsd.h"
 #include "mpqc/util/misc/print.h"
 #include "mpqc/mpqc_config.h"
@@ -177,9 +178,18 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     const auto rank = global_world.rank();
     const auto size = global_world.size();
 
-    SafeMPI::Group group = global_world.mpi.comm().Get_group().Incl(1, &rank);
-    SafeMPI::Intracomm comm = global_world.mpi.comm().Create(group);
-    madness::World this_world(comm);
+    madness::World* tmp_ptr;
+    std::shared_ptr<madness::World> world_ptr;
+
+    if(size > 1){
+      SafeMPI::Group group = global_world.mpi.comm().Get_group().Incl(1, &rank);
+      SafeMPI::Intracomm comm = global_world.mpi.comm().Create(group);
+      world_ptr = std::shared_ptr<madness::World>(new madness::World(comm));
+      tmp_ptr = world_ptr.get();
+    }else{
+      tmp_ptr = &global_world;
+    }
+    auto& this_world = * tmp_ptr;
     global_world.gop.fence();
 
 

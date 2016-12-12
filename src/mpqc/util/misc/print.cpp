@@ -14,19 +14,14 @@
 #include "mpqc/util/misc/print.h"
 
 // print progress
-void print_progress(int lowprogress, int upprogress, int total) {
-  int divide = 10;
+void print_progress(std::size_t lowprogress, std::size_t upprogress,
+                    std::vector<std::size_t>& progress_points) {
+  std::size_t total = progress_points.size();
   if (total < 10) {
-    divide = total;
-    int percent = 100 * double(upprogress) / divide;
-    std::cout << percent << "% done." << std::endl;
+    std::size_t divide = total;
+    std::size_t percent = 10 * double(upprogress) / divide;
+    std::cout << 10*percent << "% done." << std::endl;
   } else {
-    int increase = std::round(double(total) / divide);
-    std::vector<int> progress_points;
-    for (int i = 0; i < total; i += increase) {
-      progress_points.push_back(i);
-    }
-
     for (int i = lowprogress; i < upprogress; i++) {
       if (std::find(progress_points.begin(), progress_points.end(), i) !=
           progress_points.end()) {

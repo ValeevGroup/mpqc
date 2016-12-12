@@ -85,7 +85,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       ExEnv::out0() << "CCSD Time " << duration0 << std::endl;
 
       // compute
-      compute_();
+      compute_ccsd_t();
 
       this->energy_ = ccsd_corr + triples_energy_;
     }
@@ -100,7 +100,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   double triples_energy() const { return this->triples_energy_; }
 
  protected:
-  void compute_() {
+  void compute_ccsd_t() {
     auto &world = this->wfn_world()->world();
     auto time0 = mpqc::fenced_now(world);
 

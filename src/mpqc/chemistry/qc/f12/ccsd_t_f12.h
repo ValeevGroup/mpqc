@@ -51,7 +51,7 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
       // compute (T) energy
       this->lcao_factory().ao_factory().registry().purge(world);
 
-      cc::CCSD_T<Tile, TA::SparsePolicy>::compute_();
+      cc::CCSD_T<Tile, TA::SparsePolicy>::compute_ccsd_t();
 
       auto ccsdtf12_time1 = mpqc::fenced_now(world);
       auto ccsdtf12_time = mpqc::duration_in_s(ccsdf12_time0, ccsdtf12_time1);

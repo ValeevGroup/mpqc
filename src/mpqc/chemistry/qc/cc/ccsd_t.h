@@ -195,10 +195,20 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     mpqc::time_point time01;
     std::size_t iter = 0;
 
+    // make the outer a, b loop
+    std::vector<std::pair<std::size_t, std::size_t>> a_b_loop;
+    for (auto a = 0; a < n_tr_vir; a += 1) {
+      for (auto b = 0; b <= a; ++b) {
+        a_b_loop.push_back(std::pair<std::size_t, std::size_t>(a, b));
+      }
+    }
+
+    auto n_a_b = a_b_loop.size();
     // start loop over a, b, c
     // distribute all outer loop a over all worlds
-    for (auto a = rank; a < n_tr_vir; a += size) {
-      for (auto b = 0; b <= a; ++b) {
+    for (auto ab = rank; ab < n_a_b ; ab += size) {
+      auto a = a_b_loop[ab].first;
+      auto b = a_b_loop[ab].second;
         for (auto c = 0; c <= b; ++c) {
           // inner loop
           iter++;
@@ -757,9 +767,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
           triple_energy += tmp_energy;
         }  // loop of c
-      }    // loop of b
-      print_progress(a, a + 1, n_tr_vir);
-    }  // loop of a
+      print_progress(ab, ab + 1, n_a_b);
+    }  // loop of a_b
     global_world.gop.fence();
 
     // loop over rank and print

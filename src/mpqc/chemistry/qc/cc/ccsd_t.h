@@ -30,6 +30,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
  private:
   bool reblock_;
   bool reblock_inner_;
+  bool replicate_;
   std::string approach_;
   std::size_t occ_block_size_;
   std::size_t unocc_block_size_;
@@ -52,14 +53,16 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    * | reblock_occ | int | none | block size to reblock occ |
    * | reblock_unocc | int | none | block size to reblock unocc |
    * | reblock_inner | int | none | block size to reblock inner dimension |
-   * | increase | int | 2 | number of block in virtual dimension to load at each virtual loop |
+   * | increase | int | 2 | valid only with approach=fine, number of block in virtual dimension to load at each virtual loop |
    * | approach | string | coarse | fine grain or coarse grain |
+   * | replicate | bool | false | valid only with approach=coarse, if replicate integral g_cijk(smallest integral in (T)) |
    */
   // clang-format on
 
   CCSD_T(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     reblock_ = kv.exists("reblock_occ") || kv.exists("reblock_unocc");
     reblock_inner_ = kv.exists("reblock_inner");
+    replicate_ = kv.value<bool>("replilcate",false);
     occ_block_size_ = kv.value<int>("reblock_occ", 8);
     unocc_block_size_ = kv.value<int>("reblock_unocc", 8);
     inner_block_size_ = kv.value<int>("reblock_inner", 128);
@@ -136,9 +139,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     bool accurate_time = this->lcao_factory().accurate_time();
 
     // get integral
-    TArray g_cjkl = get_aijk();
+    TArray g_cjkl_global = get_aijk();
     TArray g_abij = get_abij();
     TArray g_dabi = get_abci();
+
 
     // T2
     TArray t2_left = t2;
@@ -192,6 +196,19 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto& this_world = * tmp_ptr;
     global_world.gop.fence();
 
+    // replicate some array
+    TArray g_cjkl, t1_this;
+    if(size > 1){
+      t1_this("a,i") = t1("a,i").set_world(this_world);
+    }else{
+      t1_this = t1;
+    }
+
+    if(replicate_ && size > 1){
+      g_cjkl("c,j,k,l") = g_cjkl_global("c,j,k,l").set_world(this_world);
+    }else{
+      g_cjkl = g_cjkl_global;
+    }
 
     // lambda function to compute t3
     auto compute_t3 = [&] (std::size_t a, std::size_t b, std::size_t c, TArray& t3){
@@ -270,7 +287,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         block t1_ai_low{a_low, 0};
         block t1_ai_up{a_up, n_tr_occ};
 
-        auto block_t_ai = t1("a,i").block(t1_ai_low, t1_ai_up);
+        auto block_t_ai = t1_this("a,i").block(t1_ai_low, t1_ai_up);
 
         if(v3.is_initialized()){
           v3("b,c,j,k,a,i") += (block_g_bcjk * block_t_ai).set_world(this_world);

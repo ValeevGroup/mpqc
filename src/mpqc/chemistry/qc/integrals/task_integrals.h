@@ -149,7 +149,7 @@ std::vector<TA::DistArray<Tile, TA::SparsePolicy>> sparse_xyz_integrals(
  */
 template <typename E, typename Tile = TA::TensorD>
 std::vector<TA::DistArray<Tile, TA::DensePolicy>> dense_xyz_integrals(
-    madness::World &world, ShrPool<E> shr_pool, Barray<2> const &bases,
+    madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
@@ -239,7 +239,7 @@ template <typename Tile, typename Policy, typename E>
 std::vector<TA::DistArray<Tile, typename std::enable_if<std::is_same<Policy, TA::DensePolicy>::value,
                              TA::DensePolicy>::type >>
     xyz_integrals(
-        madness::World &world, ShrPool<E> shr_pool, Barray<2> const &bases,
+        madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
         std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()){
         return dense_xyz_integrals(world, shr_pool, bases, op);
     };
@@ -248,7 +248,7 @@ template <typename Tile, typename Policy, typename E>
 std::vector<TA::DistArray< Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value,
                          TA::SparsePolicy>::type >>
 xyz_integrals(
-    madness::World &world, ShrPool<E> shr_pool, Barray<2> const &bases,
+    madness::World &world, ShrPool<E> shr_pool, BasisArray<2> const &bases,
 std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()){
 return sparse_xyz_integrals(world, shr_pool, bases, op);
 };

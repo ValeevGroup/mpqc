@@ -7,12 +7,12 @@
 
 
 namespace mpqc {
-namespace mbpt {
+namespace lcao {
 
 namespace detail {
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+    LCAOFactory<Tile, Policy> &lcao_factory,
     Eigen::VectorXd &ens,
     const Molecule &mols,
     bool frozen_core,
@@ -179,16 +179,16 @@ template<typename Tile, typename Policy>
 void DBRMP2<Tile,Policy>::init() {
   // if not initialized
   if (this->trange1_engine() == nullptr || this->orbital_energy() == nullptr) {
-    auto mol = this->wfn_world()->molecule();
+    auto mol = this->wfn_world()->atoms();
     Eigen::VectorXd orbital_energy;
 
     if (method_ == "valeev") {
       this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
-          this->lcao_factory(), orbital_energy, mol, this->is_frozen_core(),
+          this->lcao_factory(), orbital_energy, *mol, this->is_frozen_core(),
           this->occ_block(), this->unocc_block());
     } else if (method_ == "steele") {
       this->trange1_engine_ = detail::closed_shell_dual_basis_mo_build_steele(
-          this->lcao_factory(), orbital_energy, mol, this->is_frozen_core(),
+          this->lcao_factory(), orbital_energy, *mol, this->is_frozen_core(),
           this->occ_block(), this->unocc_block());
     }
     this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
@@ -247,8 +247,8 @@ double RIDBRMP2<Tile,Policy>::compute_scf_correction() {
   return scf_correction;
 }
 
-}  // end of namespace mbpt
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 
 #endif //SRC_MPQC_CHEMISTRY_QC_MBPT_DBMP2_IMPL_H_

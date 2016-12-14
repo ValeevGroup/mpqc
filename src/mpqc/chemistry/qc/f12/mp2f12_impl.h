@@ -8,12 +8,12 @@
 #include "mpqc/chemistry/qc/mbpt/denom.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 template <typename Tile>
-RMP2F12<Tile>::RMP2F12(const KeyVal& kv) : qc::LCAOWavefunction<Tile,TA::SparsePolicy>(kv) {
+RMP2F12<Tile>::RMP2F12(const KeyVal& kv) : LCAOWavefunction<Tile,TA::SparsePolicy>(kv) {
   if (kv.exists("ref")) {
-    ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
+    ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
   } else {
     throw std::invalid_argument(
         "Default Ref Wfn in RMP2F12 is not support! \n");
@@ -42,10 +42,10 @@ double RMP2F12<Tile>::value() {
     utility::print_par(world, "Total Ref Time: ", time, " S \n");
 
     // initialize
-    auto mol = this->wfn_world()->molecule();
+    auto mol = this->wfn_world()->atoms();
     Eigen::VectorXd orbital_energy;
     this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-        this->lcao_factory(), orbital_energy, mol, this->is_frozen_core(),
+        this->lcao_factory(), orbital_energy, *mol, this->is_frozen_core(),
         this->occ_block(), this->unocc_block());
 
     this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
@@ -101,12 +101,12 @@ double RMP2F12<Tile>::value() {
 template <typename Tile>
 void RMP2F12<Tile>::obsolete() {
   this->energy_ = 0.0;
-  qc::LCAOWavefunction<Tile, TA::SparsePolicy>::obsolete();
+  LCAOWavefunction<Tile, TA::SparsePolicy>::obsolete();
   ref_wfn_->obsolete();
 }
 
 template <typename Tile>
-void RMP2F12<Tile>::compute(qc::PropertyBase* pb) {}
+void RMP2F12<Tile>::compute(PropertyBase* pb) {}
 
 template <typename Tile>
 std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
@@ -127,8 +127,8 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
   {
     TA::DistArray<Tile,TA::SparsePolicy> B_ijij_ijji = compute_B();
     RowMatrix<double> Eij_b = B_ijij_ijji("i1,j1,i2,j2")
-        .reduce(F12PairEnergyReductor<Tile>(
-            CC_ijij_bar, CC_ijji_bar, n_active_occ));
+        .reduce(f12::F12PairEnergyReductor<Tile>(
+            f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     utility::print_par(world, "E_B: ", Eij_b.sum(), "\n");
     Eij_F12 = Eij_b;
   }
@@ -139,8 +139,8 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
     this->lcao_factory().purge_operator(world, L"R2");
 
     RowMatrix<double> Eij_x = X_ijij_ijji("i1,j1,i2,j2")
-        .reduce(F12PairEnergyReductor<Tile>(
-            CC_ijij_bar, CC_ijji_bar, n_active_occ));
+        .reduce(f12::F12PairEnergyReductor<Tile>(
+            f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     Eij_x *= -1.0;
     utility::print_par(world, "E_X: ", Eij_x.sum(), "\n");
     Eij_F12 += Eij_x;
@@ -157,8 +157,8 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
     // contribution from V_ijij_ijji
     // NB factor of 2 from the Hylleraas functional
     RowMatrix<double> e_ij = V_ijij_ijji("i1,j1,i2,j2")
-        .reduce(F12PairEnergyReductor<Tile>(
-            2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
+        .reduce(f12::F12PairEnergyReductor<Tile>(
+            2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
     Eij_F12 += e_ij;
     utility::print_par(world, "E_V: ", e_ij.sum(), "\n");
   }
@@ -174,7 +174,7 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
         (t2("a,b,i1,j1") * g_abij("a,b,i2,j2")).set_shape(ijij_ijji_shape);
     Eij_MP2 =
         TG_ijij_ijji("i1,j1,i2,j2")
-            .reduce(F12PairEnergyReductor<Tile>(2, -1, n_active_occ));
+            .reduce(f12::F12PairEnergyReductor<Tile>(2, -1, n_active_occ));
   }
 
   // compute C term
@@ -188,8 +188,8 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
 
     // NB factor of 2 from the Hylleraas functional
     RowMatrix<double> Eij_ct = CT("i1,j1,i2,j2")
-        .reduce(F12PairEnergyReductor<Tile>(
-            2 * C_ijij_bar, 2 * C_ijji_bar, n_active_occ));
+        .reduce(f12::F12PairEnergyReductor<Tile>(
+            2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
     utility::print_par(world, "E_CT: ", Eij_ct.sum(), "\n");
     Eij_F12 += Eij_ct;
   }
@@ -203,8 +203,8 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
         .set_shape(ijij_ijji_shape);
 
     RowMatrix<double> Eij_cc = CC("i1,j1,i2,j2")
-        .reduce(F12PairEnergyReductor<Tile>(
-            CC_ijij_bar, CC_ijji_bar, n_active_occ));
+        .reduce(f12::F12PairEnergyReductor<Tile>(
+            f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     utility::print_par(world, "E_CC: ", Eij_cc.sum(), "\n");
     Eij_F12 += Eij_cc;
   }
@@ -326,8 +326,8 @@ double RIRMP2F12<Tile>::compute_cabs_singles() {
   return es;
 }
 
-}  // end of namespace f12
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 
 #endif //SRC_MPQC_CHEMISTRY_QC_F12_MP2F12_IMPL_H_

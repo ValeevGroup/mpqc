@@ -251,14 +251,14 @@ template <typename ShrPool, typename Tile, typename Policy>
 TA::DistArray<Tile,typename std::enable_if<std::is_same<Policy, TA::DensePolicy>::value, TA::DensePolicy>::type>
 fock_from_soad(
     madness::World &world, Molecule const &clustered_mol,
-    basis::Basis const &obs, ShrPool engs, TA::DistArray<Tile,Policy> const &H,
+    Basis const &obs, ShrPool engs, TA::DistArray<Tile,Policy> const &H,
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
   // Soad Density
   auto D = soad_density_eig_matrix(clustered_mol);
 
   // Get minimal basis
   const auto min_bs_shells =
-      parallel_construct_basis(world, basis::BasisSet("sto-3g"), clustered_mol)
+      parallel_construct_basis(world, gaussian::BasisSet("sto-3g"), clustered_mol)
           .flattened_shells();
 
   auto const &trange = H.trange();

@@ -143,4 +143,12 @@
 # endif
 #endif
 
+/* Control Policy of TiledArray
+
+    0 - TA::DensePolicy
+    1 - TA::SparsePolicy
+
+*/
+#define TA_DEFAULT_POLICY @TA_DEFAULT_POLICY@
+
 #endif  // SRC_MPQC_MPQCCONFIG_H

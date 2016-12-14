@@ -7,10 +7,10 @@
 
 #include <tiledarray.h>
 
+#include "mpqc/mpqc_config.h"
 #include "mpqc/chemistry/qc/scf/builder.h"
 #include "mpqc/chemistry/qc/scf/density_builder.h"
 #include "mpqc/chemistry/qc/wfn/ao_wfn.h"
-
 /**
  *  RHF Class of AOWfn
  *
@@ -18,9 +18,10 @@
 namespace mpqc {
 namespace lcao {
 
-class RHF : public AOWavefunction<TA::TensorD, TA::SparsePolicy> {
+template <typename Tile, typename Policy>
+class RHF : public AOWavefunction<Tile, Policy> {
  public:
-  using array_type = TA::TSpArrayD;
+  using array_type = TA::DistArray<Tile,Policy>;
 
   RHF() = default;
 
@@ -35,7 +36,7 @@ class RHF : public AOWavefunction<TA::TensorD, TA::SparsePolicy> {
    * | max_iter | int | 30 | maximum number of iteration |
    * | density_builder | string | eigen_solve | type of DensityBuilder (eigen_solve->ESolveDensityBuilder, purification->PurificationDensityBuilder) |
    * | localize | bool | false | if localize in DensityBuilder |
-   * | t_cut_c | double | 0.0 | threshold in DensityBuilder |
+   * | t_cut_c | double | 0.0 | threshold in DensityBuilder, SparsePolicy only |
    * | decompo_type | string | cholesky_inverse | (cholesky_inverse, inverse_sqrt, conditioned_inverse) only valid if use ESolveDensityBuilder |
    *
    */
@@ -78,8 +79,8 @@ class RHF : public AOWavefunction<TA::TensorD, TA::SparsePolicy> {
   array_type D_;
   array_type C_;
 
-  std::unique_ptr<scf::FockBuilder> f_builder_;
-  std::unique_ptr<scf::DensityBuilder> d_builder_;
+  std::unique_ptr<scf::FockBuilder<Tile,Policy>> f_builder_;
+  std::unique_ptr<scf::DensityBuilder<Tile,Policy>> d_builder_;
 
   std::vector<double> rhf_times_;
   std::vector<double> d_times_;
@@ -99,8 +100,8 @@ class RHF : public AOWavefunction<TA::TensorD, TA::SparsePolicy> {
  *
  * RIRHF class, fock_builder is overide to use three center integral
  */
-
-class RIRHF : public RHF {
+template <typename Tile, typename Policy>
+class RIRHF : public RHF<Tile,Policy> {
  public:
   RIRHF(const KeyVal& kv);
 
@@ -111,8 +112,8 @@ class RIRHF : public RHF {
 /**
  * DirectRIRHF, fock_builder is overide to use direct three center integral
  */
-
-class DirectRIRHF : public RHF {
+template <typename Tile, typename Policy>
+class DirectRIRHF : public RHF<Tile,Policy> {
  public:
   DirectRIRHF(const KeyVal& kv);
 
@@ -123,7 +124,8 @@ class DirectRIRHF : public RHF {
 /**
  * DirectRHF, fock_builder is overide to use direct four center integral
  */
-class DirectRHF : public RHF {
+template <typename Tile, typename Policy>
+class DirectRHF : public RHF<Tile,Policy> {
  public:
   DirectRHF(const KeyVal& kv);
 
@@ -131,12 +133,20 @@ class DirectRHF : public RHF {
   void init_fock_builder() override;
 };
 
-//extern class RHF;
-//extern class RIRHF;
-//extern class DirectRHF;
-//extern class DirectRIRHF;
+#if TA_DEFAULT_POLICY == 0
+extern template class RHF<TA::TensorD, TA::DensePolicy>;
+extern template class RIRHF<TA::TensorD, TA::DensePolicy>;
+extern template class DirectRHF<TA::TensorD, TA::DensePolicy>;
+extern template class DirectRIRHF<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class RHF<TA::TensorD, TA::SparsePolicy>;
+extern template class RIRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class DirectRHF<TA::TensorD, TA::SparsePolicy>;
+extern template class DirectRIRHF<TA::TensorD, TA::SparsePolicy>;
+#endif
 
 }  // namespace lcao
 }  // namespace mpqc
 
+#include "rhf_impl.h"
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_RHF_H_

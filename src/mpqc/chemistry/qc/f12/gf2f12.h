@@ -8,6 +8,7 @@
 #include "mpqc/chemistry/qc/f12/f12_intermediates.h"
 #include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace lcao {
@@ -218,7 +219,7 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     auto C_x = C_p.block(0, orbital, C_p.rows(), 1);
     auto tr_obs = p_space.coefs().trange().data().front();
     TA::TiledRange1 tr_x{0, 1};
-    auto C_x_ta = array_ops::eigen_to_array<Tile>(world, C_x, tr_obs, tr_x);
+    auto C_x_ta = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_x, tr_obs, tr_x);
 
     using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
     auto x_space =
@@ -414,7 +415,7 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
     auto C_x = C_qp_dyson.block(0, orbital, C_qp_dyson.rows(), 1);
     auto tr_obs = qp_space.coefs().trange().data().front();
     TA::TiledRange1 tr_x{0, 1};
-    auto C_x_ta = array_ops::eigen_to_array<Tile>(world, C_x, tr_obs, tr_x);
+    auto C_x_ta = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_x, tr_obs, tr_x);
 
     using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
     auto x_space =
@@ -458,6 +459,10 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
           "correction to EA!!!");
   }
 }
+
+#if TA_DEFAULT_POLICY == 1
+extern template class GF2F12<TA::TensorD>;
+#endif
 
 }  // namespace lcao
 }  // namespace mpqc

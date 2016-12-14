@@ -94,7 +94,7 @@ TA::DistArray<Tile, Policy> conditioned_orthogonalizer(
   }
 
 //  return std::make_tuple(X, Xinv, XtX_condition_number);
-  return array_ops::eigen_to_array<Tile>(world,X,S_array.trange().data()[0], S_array.trange().data()[1]);
+  return array_ops::eigen_to_array<Tile,Policy>(world,X,S_array.trange().data()[0], S_array.trange().data()[1]);
 }
 
 }  // namespace  array_ops

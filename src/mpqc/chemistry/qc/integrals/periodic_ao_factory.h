@@ -721,7 +721,7 @@ PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
     }
   }
 
-  result = array_ops::eigen_to_array<Tile>(world_, result_eig, tr0, tr1);
+  result = array_ops::eigen_to_array<Tile,Policy>(world_, result_eig, tr0, tr1);
 
   return result;
 }

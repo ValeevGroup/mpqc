@@ -124,7 +124,7 @@ typename CABSSingles<Tile>::real_t CABSSingles<Tile>::compute(
     auto tr_A = F_AB.trange().data()[0];
 
     F_MA =
-        array_ops::eigen_to_array<Tile>(F_Ma.world(), F_MA_eigen, tr_m, tr_A);
+        array_ops::eigen_to_array<Tile,TA::SparsePolicy>(F_Ma.world(), F_MA_eigen, tr_m, tr_A);
   }
   //  std::cout << F_MA << std::endl;
 

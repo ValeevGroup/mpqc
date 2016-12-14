@@ -15,8 +15,10 @@
 namespace mpqc {
 namespace scf {
 
-template <typename Integral>
-class DFFockBuilder : public FockBuilder {
+template <typename Tile, typename Policy, typename Integral>
+class DFFockBuilder : public FockBuilder<Tile,Policy> {
+ public:
+  using array_type = typename FockBuilder<Tile,Policy>::array_type;
  private:
   array_type L_inv_;  // Metric Cholesky inverse
   Integral eri3_;
@@ -41,14 +43,14 @@ class DFFockBuilder : public FockBuilder {
 
     auto tr_M = M.trange().data()[0];
 
-    L_inv_ = array_ops::eigen_to_array<TA::TensorD>(M.world(), L_inv_eig, tr_M,
+    L_inv_ = array_ops::eigen_to_array<Tile,Policy>(M.world(), L_inv_eig, tr_M,
                                                     tr_M);
   }
 
   const array_type &inv() const { return L_inv_; }
 
-  void register_fock(const TA::TSpArrayD &fock,
-                     FormulaRegistry<TA::TSpArrayD> &registry) override {
+  void register_fock(const array_type &fock,
+                     FormulaRegistry<array_type > &registry) override {
     registry.insert(Formula(L"(κ|F|λ)[df]"), fock);
   }
 

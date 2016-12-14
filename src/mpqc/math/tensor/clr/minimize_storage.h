@@ -9,8 +9,14 @@
 
 namespace mpqc {
 
-inline void minimize_storage(TA::DistArray<TA::TensorD, TA::SparsePolicy> &A) {
+template <typename Policy>
+inline void minimize_storage(TA::DistArray<TA::TensorD, Policy> &A) {
   A.truncate();
+}
+
+inline void minimize_storage(TA::DistArray<TA::TensorD, TA::DensePolicy> &A,
+                             double truncate_threshold)
+{
 }
 
 inline void minimize_storage(TA::DistArray<TA::TensorD, TA::SparsePolicy> &A,

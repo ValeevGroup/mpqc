@@ -7,6 +7,7 @@
 
 #include "mpqc/chemistry/qc/cc/ccsd_t.h"
 #include "mpqc/chemistry/qc/f12/ccsd_f12.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace lcao {
@@ -71,6 +72,11 @@ class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
     throw std::runtime_error("Not Implemented!!");
   }
 };
+
+#if TA_DEFAULT_POLICY == 1
+extern template class CCSD_T_F12<TA::TensorD>;
+#endif
+
 
 }  //namespace lcao
 }  // namespace  mpqc

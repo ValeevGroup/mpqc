@@ -13,11 +13,11 @@
 namespace mpqc {
 namespace scf {
 
-using array_type = PurificationDensityBuilder::array_type;
-
-PurificationDensityBuilder::PurificationDensityBuilder(
-    array_type const &S, std::vector<array_type> r_xyz, int64_t occ,
-    int64_t nclusters, double TcutC, bool localize)
+template <typename Tile, typename Policy>
+PurificationDensityBuilder<Tile, Policy>::PurificationDensityBuilder(
+    PurificationDensityBuilder<Tile, Policy>::array_type const &S,
+    std::vector<PurificationDensityBuilder<Tile, Policy>::array_type> r_xyz,
+    int64_t occ, int64_t nclusters, double TcutC, bool localize)
     : S_(S),
       r_xyz_ints_(r_xyz),
       TcutC_(TcutC),
@@ -28,10 +28,13 @@ PurificationDensityBuilder::PurificationDensityBuilder(
   I_ = array_ops::create_diagonal_matrix(S_, 1.0);
 }
 
-array_type PurificationDensityBuilder::purify(array_type const &F) {
+template <typename Tile, typename Policy>
+typename PurificationDensityBuilder<Tile, Policy>::array_type
+PurificationDensityBuilder<Tile, Policy>::purify(
+    typename PurificationDensityBuilder<Tile, Policy>::array_type const &F) {
   auto &world = F.world();
 
-  array_type Fp, D, D2;
+  typename PurificationDensityBuilder<Tile, Policy>::array_type Fp, D, D2;
   Fp("i,j") = M_inv_("i,k") * F("k,l") * M_inv_("j,l");
 
   auto eig_pair = array_ops::eval_guess(Fp);
@@ -66,7 +69,10 @@ array_type PurificationDensityBuilder::purify(array_type const &F) {
   return D;
 }
 
-array_type PurificationDensityBuilder::orbitals(array_type const &D) {
+template <typename Tile, typename Policy>
+typename PurificationDensityBuilder<Tile, Policy>::array_type
+PurificationDensityBuilder<Tile, Policy>::orbitals(
+    typename PurificationDensityBuilder<Tile, Policy>::array_type const &D) {
   auto D_eig = array_ops::array_to_eigen(D);
   tensor::algebra::piv_cholesky(D_eig);
 
@@ -74,7 +80,7 @@ array_type PurificationDensityBuilder::orbitals(array_type const &D) {
   auto tr_occ = scf::tr_occupied(n_coeff_clusters_, occ_);
 
   auto Cao =
-      array_ops::eigen_to_array<TA::TensorD>(D.world(), D_eig, tr_ao, tr_occ);
+      array_ops::eigen_to_array<Tile,Policy>(D.world(), D_eig, tr_ao, tr_occ);
 
   if (localize_) {
     auto U = mpqc::scf::BoysLocalization{}(Cao, r_xyz_ints_);
@@ -84,15 +90,19 @@ array_type PurificationDensityBuilder::orbitals(array_type const &D) {
     scf::clustered_coeffs(r_xyz_ints_, Cao, obs_ntiles);
   }
 
+#if TA_DEFAULT_POLICY == 1
   if (TcutC_ != 0) {
     minimize_storage(Cao, TcutC_);
   }
-
+#endif
   return Cao;
 }
 
-std::pair<array_type, array_type> PurificationDensityBuilder::operator()(
-    array_type const &F) {
+template <typename Tile, typename Policy>
+std::pair<typename PurificationDensityBuilder<Tile, Policy>::array_type,
+          typename PurificationDensityBuilder<Tile, Policy>::array_type>
+PurificationDensityBuilder<Tile, Policy>::operator()(
+    typename PurificationDensityBuilder<Tile, Policy>::array_type const &F) {
   auto D = purify(F);
   auto C = orbitals(D);
   return std::make_pair(D, C);

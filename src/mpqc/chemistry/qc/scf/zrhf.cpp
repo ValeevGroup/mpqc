@@ -277,7 +277,7 @@ void zRHF::compute_density() {
     }
   }
 
-  D_ = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
+  D_ = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, result_eig, tr0, tr1);
 }
 
 void zRHF::obsolete() { Wavefunction::obsolete(); }

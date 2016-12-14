@@ -25,9 +25,9 @@ namespace gaussian {
  * \param op a functor that takes TA::TensorZ && and returns a valid tile type
  * \return Fock matrix in real space
  */
-template <typename Array, typename FactoryType, typename Tile = TA::TensorZ>
-Array periodic_fock_soad(
-    madness::World &world, UnitCell const &unitcell, Array const &H,
+template <typename Tile, typename Policy, typename FactoryType>
+TA::DistArray<Tile,Policy> periodic_fock_soad(
+    madness::World &world, UnitCell const &unitcell, TA::DistArray<Tile,Policy> const &H,
     FactoryType &pao_factory,
     std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>()) {
   if (world.rank() == 0) {
@@ -53,7 +53,7 @@ Array periodic_fock_soad(
   auto min_trange = detail::create_trange(min_bases);
   auto min_tr0 = min_trange.data()[0];
   auto min_tr1 = min_trange.data()[1];
-  auto D = array_ops::eigen_to_array<Tile>(world, D_comp, min_tr0, min_tr1);
+  auto D = array_ops::eigen_to_array<Tile,Policy>(world, D_comp, min_tr0, min_tr1);
 
   // get normal basis
   Vector3d zero_shift_base(0.0, 0.0, 0.0);

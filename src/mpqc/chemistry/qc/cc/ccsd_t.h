@@ -7,6 +7,7 @@
 
 #include "mpqc/chemistry/qc/cc/ccsd.h"
 #include "mpqc/util/misc/print.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
 namespace lcao {
@@ -1277,8 +1278,11 @@ protected:
 
 };  // class CCSD_T
 
-extern template
-class CCSD_T<TA::TensorD,TA::SparsePolicy>;
+#if TA_DEFAULT_POLICY == 0
+extern template class CCSD_T<TA::TensorD,TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class CCSD_T<TA::TensorD,TA::SparsePolicy>;
+#endif
 
 }  // namespace lcao
 }  // namespace mpqc

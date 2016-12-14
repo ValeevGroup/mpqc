@@ -503,15 +503,16 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }  // loop of c
       print_progress(ab, ab + 1, progress_points);
     }  // loop of a_b
+    this_world.gop.fence();
     global_world.gop.fence();
 
     // clean replicated array
     if(size > 1){
       t1_this = TArray();
-
       if(replicate_){
         g_cjkl = TArray();
       }
+      world_ptr.reset();
     }
 
 

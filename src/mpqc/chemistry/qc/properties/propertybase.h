@@ -12,14 +12,14 @@
 #include "mpqc/chemistry/qc/wfn/wfn_forward.h"
 
 namespace mpqc {
-namespace qc {
+namespace lcao {
 
 class PropertyBase : public DescribedClass {
  public:
   virtual void apply(Wavefunction *) = 0;
 };
 
-}  // namespace qc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_PROPERTYBASE_H_

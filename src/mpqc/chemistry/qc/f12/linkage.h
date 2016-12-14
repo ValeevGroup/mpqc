@@ -11,7 +11,7 @@
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 template <typename Tile>
 class RMP2F12;
@@ -34,6 +34,7 @@ class CCSD_T_F12;
 template <typename Tile>
 class GF2F12;
 
+namespace f12{
 #if TA_DEFAULT_POLICY == 1
 mpqc::detail::ForceLink<RMP2F12<TA::TensorD>> fl1;
 mpqc::detail::ForceLink<RIRMP2F12<TA::TensorD>> fl2;
@@ -43,7 +44,8 @@ mpqc::detail::ForceLink<DBCCSD_F12<TA::TensorD>> fl5;
 mpqc::detail::ForceLink<CCSD_T_F12<TA::TensorD>> fl6;
 mpqc::detail::ForceLink<GF2F12<TA::TensorD>> fl7;
 #endif
-}
-}
+}  // namespace
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_LINKAGE_H_

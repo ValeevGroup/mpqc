@@ -15,11 +15,12 @@
  */
 
 namespace mpqc {
+namespace lcao {
 namespace f12 {
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_db_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &shape) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -120,7 +121,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_db_df(
 
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_xyab_db_df(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory) {
+    lcao::LCAOFactory<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   auto &ao_factory = lcao_factory.ao_factory();
   bool accurate_time = lcao_factory.accurate_time();
@@ -197,11 +198,11 @@ TA::DistArray<Tile, Policy> compute_V_xyab_db_df(
   utility::print_par(world, "V Term Total Time: ", v_time, " S\n");
 
   return V_xyab;
-};
+}
 
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_iaxy_db_df(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory) {
+    lcao::LCAOFactory<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   TA::DistArray<Tile, Policy> V_iaxy;
@@ -295,7 +296,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -383,7 +384,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -578,11 +579,11 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
   //    std::cout << B_ijij_ijji << std::endl;
 
   return B_ijij_ijji;
-};
+}
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_db_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape) {
   auto &world = lcao_factory.world();
@@ -614,7 +615,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_db_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
     const TA::SparseShape<float> &ijij_ijji_shape) {
   auto &world = lcao_factory.world();
@@ -636,7 +637,9 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_db_df(
 
   return V_ijij_ijji;
 };
-}
-}
+
+}  // namespace f12
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DB_F12_INTERMEDIATES_H_

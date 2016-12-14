@@ -14,17 +14,18 @@
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 
 namespace mpqc {
-namespace qc {
+namespace lcao {
 
-/// AOWavefunction is a Wavefunction with an AOFactory
+/// AOWavefunction is a Wavefunction with an gaussian::AOFactory
 
-/// This models wave function methods expressed in AO basis.
+/// This models wave function methods expressed in Gaussian AO basis.
+/// \todo factor out the dependence on Gaussian basis into a WavefunctionPolicy
 /// \todo elaborate AOWavefunction documentation
 template<typename Tile, typename Policy>
 class AOWavefunction : public Wavefunction {
  public:
-  using AOIntegral = integrals::AOFactory<Tile, Policy>;
-  using DirectAOIntegral = integrals::DirectAOFactory<Tile, Policy>;
+  using AOIntegral = gaussian::AOFactory<Tile, Policy>;
+  using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
   using ArrayType = typename AOIntegral::TArray;
 
   /**
@@ -39,10 +40,10 @@ class AOWavefunction : public Wavefunction {
    */
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv)
   {
-    ao_factory_ = integrals::detail::construct_ao_factory<Tile, Policy>(kv);
+    ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
     ao_factory_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
-    direct_ao_factory_ = integrals::detail::construct_direct_ao_factory<Tile,Policy>(kv);
+    direct_ao_factory_ = gaussian::construct_direct_ao_factory<Tile,Policy>(kv);
     direct_ao_factory_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
 
   }
@@ -77,14 +78,15 @@ private:
   std::shared_ptr<DirectAOIntegral> direct_ao_factory_;
 };
 
-/// PeriodicAOWavefunction is a Wavefunction with a PeriodicAOFactory
+/// PeriodicAOWavefunction is a Wavefunction with a gaussian::PeriodicAOFactory
 
-/// This models wave function methods expressed in AO basis.
+/// \todo factor out the dependence on Gaussian basis into a WavefunctionPolicy
+/// This models wave function methods expressed in Gaussian AO basis.
 /// \todo elaborate PeriodicAOWavefunction documentation
 template<typename Tile, typename Policy>
 class PeriodicAOWavefunction : public Wavefunction {
  public:
-  using AOIntegral = integrals::PeriodicAOFactory<Tile, Policy>;
+  using AOIntegral = gaussian::PeriodicAOFactory<Tile, Policy>;
   using ArrayType = typename AOIntegral::TArray;
 
   /**
@@ -98,7 +100,7 @@ class PeriodicAOWavefunction : public Wavefunction {
    */
   PeriodicAOWavefunction(const KeyVal &kv) : Wavefunction(kv)
   {
-    ao_factory_ = integrals::detail::construct_periodic_ao_factory<Tile, Policy>(kv);
+    ao_factory_ = gaussian::construct_periodic_ao_factory<Tile, Policy>(kv);
     ao_factory_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
   }
   virtual ~PeriodicAOWavefunction() = default;
@@ -128,7 +130,7 @@ private:
   std::shared_ptr<AOIntegral> ao_factory_;
 };
 
-}  // namespace qc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_

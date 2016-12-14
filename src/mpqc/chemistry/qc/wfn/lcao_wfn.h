@@ -11,7 +11,7 @@
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 
 namespace mpqc{
-namespace qc{
+namespace lcao{
 
 /// LCAOWavefunction is a Wavefunction with an LCAOFactory
 
@@ -23,7 +23,7 @@ class LCAOWavefunction : public Wavefunction {
 
 public:
   using ArrayType = TA::DistArray<Tile, Policy>;
-  using LCAOFactoryType = integrals::LCAOFactory<Tile,Policy>;
+  using LCAOFactoryType = lcao::LCAOFactory<Tile,Policy>;
 
   /**
    *  \brief The KeyVal constructor
@@ -39,7 +39,7 @@ public:
    *
    */
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-    lcao_factory_ = integrals::detail::construct_lcao_factory<Tile,Policy>(kv);
+    lcao_factory_ = lcao::detail::construct_lcao_factory<Tile,Policy>(kv);
 
     frozen_core_ = kv.value<bool>("frozen_core",true);
     std::size_t mo_block = kv.value<int>("obs_block_size",24);

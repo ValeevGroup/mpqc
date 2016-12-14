@@ -8,5 +8,5 @@
 #include "mpqc/util/keyval/forcelink.h"
 #include "mpqc/chemistry/qc/wfn/wfn_world.h"
 
-MPQC_CLASS_EXPORT2("WfnWorld", mpqc::qc::WavefunctionWorld);
+MPQC_CLASS_EXPORT2("WfnWorld", mpqc::lcao::WavefunctionWorld);
 

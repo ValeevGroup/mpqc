@@ -9,7 +9,7 @@
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
-namespace mbpt {
+namespace lcao {
 
 namespace detail {
 
@@ -59,14 +59,14 @@ struct ScfCorrection {
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+    lcao::LCAOFactory<Tile, Policy> &lcao_factory,
     Eigen::VectorXd &ens,
     const Molecule &mols,
     bool frozen_core,
     std::size_t occ_blocksize,
     std::size_t vir_blocksize);
 
-}  // end of namespace detail
+}  // namespace detail
 
 /**
  * Dual basis MP2 method
@@ -76,7 +76,7 @@ template <typename Tile, typename Policy>
 class DBRMP2 : public RMP2<Tile,Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
+  using LCAOFactoryType = lcao::LCAOFactory<Tile, Policy>;
 
   DBRMP2() = default;
 
@@ -296,8 +296,8 @@ extern template class DBRMP2<TA::TensorD, TA::SparsePolicy>;
 extern template class RIDBRMP2<TA::TensorD, TA::SparsePolicy>;
 #endif
 
-}  // end of namespace mbpt
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #include "dbmp2_impl.h"
 

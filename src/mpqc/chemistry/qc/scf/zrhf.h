@@ -11,16 +11,16 @@
 #include "mpqc/util/external/c++/memory"
 
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
 /**
  * complex-valued Restricted Hartree-Fock class
  */
 
-class zRHF : public qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
+class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
 public:
     using Tile = TA::TensorZ;
-    using TArray = qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>::ArrayType;
+    using TArray = PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>::ArrayType;
     using PeriodicAOIntegral = PeriodicAOWavefunction::AOIntegral;
     using MatrixcVec = std::vector<Matrixz>;
     using VectorcVec = std::vector<Vectorz>;
@@ -45,7 +45,7 @@ public:
 
     ~zRHF() = default;
 
-    void compute(qc::PropertyBase *pb) override;
+    void compute(lcao::PropertyBase *pb) override;
     void obsolete() override;
 
     /*!
@@ -119,6 +119,6 @@ private:
     void init(const KeyVal& kv);
 };
 
-} // end of namespace scf
-} // end of namespace mpqc
+}  // namespace  lcao
+}  // namespace  mpqc
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_

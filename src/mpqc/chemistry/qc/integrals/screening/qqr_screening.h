@@ -12,7 +12,8 @@
 #include <boost/math/special_functions/erf.hpp>
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 /*! \brief Class to implement QQR Screening.
  *
@@ -55,14 +56,15 @@ class QQR : public SchwarzScreen {
 struct init_qqr_screen {
     template <typename E>
     QQR operator()(madness::World &world, ShrPool<E> &engs,
-                   basis::Basis const &bs, double threshold = 1e-10) {
+                   Basis const &bs, double threshold = 1e-10) {
         auto schwarz_screen = init_schwarz_screen{threshold}(world, engs, bs);
         return QQR(std::move(schwarz_screen), bs.flattened_shells());
     }
 };
 
-} // namespace integrals
-} // namespace mpqc
+}  // namespace  gaussian
+}  // namespace  lcao
+}  // namespace  mpqc
 
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_QQR_SCREENING_H_

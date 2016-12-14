@@ -8,25 +8,26 @@
 #include <vector>
 #include <utility>
 
+#include <libint2/engine.h>
 #include <tiledarray.h>
 
-
+#include "mpqc/util/misc/pool.h"
 #include "mpqc/chemistry/qc/basis/basis.h"
-#include "mpqc/chemistry/qc/integrals/integral_engine_pool.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
-using Shell = mpqc::basis::Basis::Shell;
+using Shell = Basis::Shell;
 using ShellVec = std::vector<Shell>;
 
 template <typename E>
-using ShrPool = std::shared_ptr<mpqc::integrals::EnginePool<E>>;
+using ShrPool = std::shared_ptr<mpqc::utility::TSPool<E>>;
 
 template <unsigned long N>
-using Barray = std::array<basis::Basis, N>;
+using BasisArray = std::array<Basis, N>;
 
-using Bvector = std::vector<basis::Basis>;
+using BasisVector = std::vector<Basis>;
 
 template <typename T>
 using OrdTileVec = std::vector<std::pair<unsigned long, T>>;
@@ -39,9 +40,7 @@ template <unsigned long N>
 using VecArray = std::array<ShellVec const *, N>;
 
 template <unsigned long N>
-using ShrBases = std::shared_ptr<Barray<N>>;
-
-using ShrBvectors = std::shared_ptr<Bvector>;
+using ShrBases = std::shared_ptr<BasisArray<N>>;
 
 using IdxVec = std::vector<std::size_t>;
 
@@ -53,7 +52,7 @@ using Ttype = decltype(std::declval<Op>()(std::declval<TA::TensorD>()));
 
 // Create TA::TiledRange from bases
 template <unsigned long N>
-TA::TiledRange create_trange(Barray<N> const &basis_array) {
+TA::TiledRange create_trange(BasisArray<N> const &basis_array) {
 
     std::vector<TA::TiledRange1> trange1s;
     trange1s.reserve(N);
@@ -65,8 +64,8 @@ TA::TiledRange create_trange(Barray<N> const &basis_array) {
     return TA::TiledRange(trange1s.begin(), trange1s.end());
 }
 
-// create TA::TiledRange from Bvector
-inline TA::TiledRange create_trange(Bvector const& basis_vector) {
+// create TA::TiledRange from BasisVector
+inline TA::TiledRange create_trange(BasisVector const& basis_vector) {
 
     std::size_t N = basis_vector.size();
 
@@ -106,9 +105,9 @@ void set_array(std::vector<std::pair<unsigned long, Tile>> &tiles, Array &a){
     }
 }
 
-} // namespace detail
-
-} // namespace integrals
-} // namespace mpqc
+}  // namespace detail
+}  // namespace gaussian
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRALS_COMMON_H_

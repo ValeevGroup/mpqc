@@ -14,11 +14,11 @@
 
 #include "mpqc/chemistry/molecule/molecule_fwd.h"
 #include "mpqc/chemistry/qc/basis/basis_fwd.h"
-#include "mpqc/chemistry/qc/basis/basis_set.h"
+//#include "mpqc/chemistry/qc/basis/basis_set.h"
 
 namespace mpqc {
-/// \todo merge into namespace \c gaussian
-namespace basis {
+namespace lcao {
+namespace gaussian {
 
 using Shell = libint2::Shell;
 using ShellVec = std::vector<Shell>;
@@ -150,7 +150,8 @@ Basis parallel_construct_basis(madness::World &world, const BasisSet &basis_set,
  */
 Eigen::RowVectorXi sub_basis_map(const Basis& basis, const Basis& sub_basis);
 
-}  // namespace basis
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 
 namespace madness {
@@ -178,6 +179,6 @@ struct ArchiveSerializeImpl<Archive, libint2::Shell> {
   };
 };
 
-}  // end of namespace madness
-}  // end of namespace archive
+}  // namespace madness
+}  // namespace archive
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_H_

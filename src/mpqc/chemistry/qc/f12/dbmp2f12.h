@@ -11,7 +11,7 @@
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 
 /**
@@ -53,7 +53,7 @@ class RIDBRMP2F12 : public RIRMP2F12<Tile> {
 extern template class RIDBRMP2F12<TA::TensorD>;
 #endif
 
-}  // namespace f12
+}  // namespace lcao
 }  // namespace mpqc
 
 #include "dbmp2f12_impl.h"

@@ -10,7 +10,7 @@
 #include <tiledarray.h>
 
 namespace mpqc {
-
+namespace lcao {
 namespace cc {
 
 template <typename T, typename Tile, typename Policy>
@@ -84,6 +84,7 @@ inline void axpy(T1T2<T, Tile, Policy> &y,
 };
 
 }  // namespace cc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DIIS_CCSD_H_

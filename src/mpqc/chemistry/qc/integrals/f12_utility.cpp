@@ -7,6 +7,7 @@
 #include <boost/algorithm/string.hpp>
 
 namespace mpqc {
+namespace lcao {
 namespace f12 {
 
 double basis_to_f12exponent(const std::string& basis_name) {
@@ -237,4 +238,5 @@ std::vector<std::pair<double, double>> stg_ng_fit(std::size_t n, double zeta) {
 }
 
 }  // end of f12 namespace
+}  // end of lcao namespace
 }  // end of mpqc namespace

@@ -8,7 +8,8 @@
 #include <libint2/basis.h>
 
 namespace mpqc {
-namespace basis {
+namespace lcao {
+namespace gaussian {
 
 BasisSet::BasisSet(std::string const &s) : basis_set_name_{s} {}
 
@@ -56,5 +57,6 @@ ShellVec BasisSet::get_flat_shells(Molecule const &mol) const {
   return cs;
 }
 
-}  // namespace basis
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc

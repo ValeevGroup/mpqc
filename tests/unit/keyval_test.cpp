@@ -270,7 +270,7 @@ TEST_CASE("KeyVal", "[keyval]") {
 
     kv.assign("world", &world);
 
-    REQUIRE_NOTHROW(kv.keyval("basis").class_ptr<mpqc::basis::Basis>());
+    REQUIRE_NOTHROW(kv.keyval("basis").class_ptr<::mpqc::lcao::gaussian::Basis>());
 
   }
 

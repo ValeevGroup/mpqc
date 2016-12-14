@@ -17,7 +17,7 @@
 
 
 namespace mpqc {
-namespace cc {
+namespace lcao {
 
 namespace detail {
 
@@ -47,10 +47,10 @@ inline void print_ccsd_direct(int iter, double dE, double error, double E1,
  */
 
 template <typename Tile, typename Policy>
-class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
+class CCSD : public LCAOWavefunction<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectAOIntegral = integrals::DirectAOFactory<Tile, Policy>;
+  using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
 
   CCSD() = default;
 
@@ -72,9 +72,9 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
    * | less_memory | bool | false | avoid store another abcd term in standard
    * and df method |
    */
-  CCSD(const KeyVal &kv) : qc::LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
+  CCSD(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
     if (kv.exists("ref")) {
-      ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
+      ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
     } else {
       throw std::invalid_argument("Default Ref Wfn in CCSD is not support! \n");
     }
@@ -98,7 +98,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
  private:
   const KeyVal kv_;
-  std::shared_ptr<qc::Wavefunction> ref_wfn_;
+  std::shared_ptr<Wavefunction> ref_wfn_;
   typename DirectAOIntegral::DirectTArray direct_ao_array_;
   bool df_;
   std::string method_;
@@ -108,13 +108,13 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
   double ccsd_corr_energy_;
 
  public:
-  void compute(qc::PropertyBase *pb) override {
+  void compute(PropertyBase *pb) override {
     throw std::runtime_error("Not Implemented!!");
   }
 
   void obsolete() override {
     ccsd_corr_energy_ = 0.0;
-    qc::LCAOWavefunction<Tile, Policy>::obsolete();
+    LCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
   }
 
@@ -136,7 +136,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
       } else if (method_ == "direct") {
         // initialize direct integral class
         auto direct_ao_factory =
-            integrals::detail::construct_direct_ao_factory<Tile, Policy>(kv_);
+            gaussian::construct_direct_ao_factory<Tile, Policy>(kv_);
         direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
@@ -508,8 +508,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
       if (dE >= converge_ || error >= converge_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-        mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+        cc::T1T2<double, Tile, Policy> t(t1, t2);
+        cc::T1T2<double, Tile, Policy> r(r1, r2);
         error = r.norm() / size(t);
         diis.extrapolate(t, r);
 
@@ -882,8 +882,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
       if (dE >= converge_ || error >= converge_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-        mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+        cc::T1T2<double, Tile, Policy> t(t1, t2);
+        cc::T1T2<double, Tile, Policy> r(r1, r2);
         error = r.norm() / size(t);
         diis.extrapolate(t, r);
 
@@ -1257,8 +1257,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
       if (dE >= converge_ || error >= converge_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        mpqc::cc::T1T2<double, Tile, Policy> t(t1, t2);
-        mpqc::cc::T1T2<double, Tile, Policy> r(r1, r2);
+        cc::T1T2<double, Tile, Policy> t(t1, t2);
+        cc::T1T2<double, Tile, Policy> r(r1, r2);
         error = r.norm() / size(t);
         diis.extrapolate(t, r);
 
@@ -1320,7 +1320,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     }
   }
 
-  TA::DIIS<mpqc::cc::T1T2<double, Tile, Policy>> get_diis(
+  TA::DIIS<cc::T1T2<double, Tile, Policy>> get_diis(
       const madness::World &world) {
     int n_diis, strt, ngr, ngrdiis;
     double dmp, mf;
@@ -1340,7 +1340,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
       std::cout << "DIIS dmp:  " << dmp << std::endl;
       std::cout << "DIIS mf:  " << mf << std::endl;
     }
-    TA::DIIS<mpqc::cc::T1T2<double, Tile, Policy>> diis(strt, n_diis, 0.0, ngr,
+    TA::DIIS<cc::T1T2<double, Tile, Policy>> diis(strt, n_diis, 0.0, ngr,
                                                         ngrdiis);
 
     return diis;
@@ -1352,7 +1352,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     return this->lcao_factory()
         .orbital_space()
         .retrieve(OrbitalIndex(L"i"))
-        .array();
+        .coefs();
   }
 
   /// vir part
@@ -1360,7 +1360,7 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     return this->lcao_factory()
         .orbital_space()
         .retrieve(OrbitalIndex(L"a"))
-        .array();
+        .coefs();
   }
 
   /// get three center integral (X|ab)
@@ -1517,7 +1517,7 @@ extern template class CCSD<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
 extern template class CCSD<TA::TensorD, TA::SparsePolicy>;
 #endif
-}  // namespace cc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_H_

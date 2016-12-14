@@ -17,7 +17,7 @@ void parallel_read_file(madness::World &world, const std::string &filename,
 void parallel_read_file(madness::World &world, const std::string &filename,
                         std::stringstream &output);
 
-}  // end of namespace utility
-}  // end of namespace mpqc
+}  // namespace utility
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_UTIL_EXTERNAL_MADWORLD_PARALLEL_FILE_H_

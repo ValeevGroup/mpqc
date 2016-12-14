@@ -11,6 +11,7 @@
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
+namespace lcao {
 
 namespace dyson {
 
@@ -67,14 +68,12 @@ TA::Array<double, 4, Tile, Policy> d_pqrE(
 
 }  // namespace dyson
 
-namespace f12 {
-
 template <typename Tile>
-class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
+class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
-  using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
+  using LCAOFactoryType = LCAOFactory<Tile, Policy>;
 
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
@@ -98,9 +97,9 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
    * | max_iter | int | 100 | maximum iteration |
    */
 
-  GF2F12(const KeyVal& kv) : qc::LCAOWavefunction<Tile, Policy>(kv) {
+  GF2F12(const KeyVal& kv) : LCAOWavefunction<Tile, Policy>(kv) {
     if (kv.exists("ref")) {
-      ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
+      ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
     } else {
       throw std::invalid_argument(
           "Default Ref Wfn in GF2F12 is not support! \n");
@@ -111,7 +110,7 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
     max_iter_ = kv.value<int>("max_iter", 100);
   }
 
-  virtual void compute(qc::PropertyBase* pb) override {
+  virtual void compute(PropertyBase* pb) override {
     throw std::runtime_error("Not Implemented!! \n");
   }
 
@@ -186,7 +185,7 @@ class GF2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
   void compute_nondiagonal(int max_niter = 100);
 
  private:
-  std::shared_ptr<qc::Wavefunction> ref_wfn_;
+  std::shared_ptr<Wavefunction> ref_wfn_;
   int orbital_;
   bool use_cabs_;
   std::string dyson_method_;
@@ -216,9 +215,9 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     auto& world = this->lcao_factory().world();
     auto& orbital_registry = this->lcao_factory().orbital_space();
     auto p_space = orbital_registry.retrieve(OrbitalIndex(L"p"));
-    auto C_p = array_ops::array_to_eigen(p_space.array());
+    auto C_p = array_ops::array_to_eigen(p_space.coefs());
     auto C_x = C_p.block(0, orbital, C_p.rows(), 1);
-    auto tr_obs = p_space.array().trange().data().front();
+    auto tr_obs = p_space.coefs().trange().data().front();
     TA::TiledRange1 tr_x{0, 1};
     auto C_x_ta = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_x, tr_obs, tr_x);
 
@@ -242,7 +241,7 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   do {
     TArray Sigma_pph;
     {
-      TArray dg_vvog = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
+      TArray dg_vvog = dyson::d_pqrE<dyson::Denominator::rEpq>(
           g_vvog, uocc_evals, uocc_evals, occ_evals, SE);
       Sigma_pph("x,y") = 0.5 * (4 * g_vvog("a,b,i,x") - 2 * g_vvog("b,a,i,x")) *
                          dg_vvog("a,b,i,y");
@@ -251,7 +250,7 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
 
     TArray Sigma_hhp;
     {
-      TArray dg_oovg = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
+      TArray dg_oovg = dyson::d_pqrE<dyson::Denominator::rEpq>(
           g_oovg, occ_evals, occ_evals, uocc_evals, SE);
       Sigma_hhp("x,y") = 0.5 * (4 * g_oovg("i,j,a,x") - 2 * g_oovg("j,i,a,x")) *
                          dg_oovg("i,j,a,y");
@@ -286,7 +285,7 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   {
     TArray V_ixix, V_ixxi;
     const bool df = true;  // always do DF
-    std::tie(V_ixix, V_ixxi) = mpqc::f12::VX_pqrs_pqsr(
+    std::tie(V_ixix, V_ixxi) = f12::VX_pqrs_pqsr(
         "V", this->lcao_factory(), "i", "x", "j", "y", df, use_cabs_);
     Sigma_pph_f12("x,y") =
         0.5 * (1.25 * V_ixix("i,x,j,y") - 0.25 * V_ixxi("i,x,y,j")) *
@@ -355,7 +354,7 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   do {
     TArray Sigma_pph;
     {
-      TArray dg_vvog = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
+      TArray dg_vvog = dyson::d_pqrE<dyson::Denominator::rEpq>(
           g_vvog, uocc_evals, uocc_evals, occ_evals, SE);
       Sigma_pph("x,y") = 0.5 * (4 * g_vvog("a,b,i,x") - 2 * g_vvog("b,a,i,x")) *
                          dg_vvog("a,b,i,y");
@@ -364,7 +363,7 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
 
     TArray Sigma_hhp;
     {
-      TArray dg_oovg = mpqc::dyson::d_pqrE<dyson::Denominator::rEpq>(
+      TArray dg_oovg = dyson::d_pqrE<dyson::Denominator::rEpq>(
           g_oovg, occ_evals, occ_evals, uocc_evals, SE);
       Sigma_hhp("x,y") = 0.5 * (4 * g_oovg("i,j,a,x") - 2 * g_oovg("j,i,a,x")) *
                          dg_oovg("i,j,a,y");
@@ -411,10 +410,10 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
     auto& world = this->lcao_factory().world();
     auto& orbital_registry = this->lcao_factory().orbital_space();
     auto qp_space = orbital_registry.retrieve(OrbitalIndex(qp_str));
-    auto C_qp = array_ops::array_to_eigen(qp_space.array());
+    auto C_qp = array_ops::array_to_eigen(qp_space.coefs());
     auto C_qp_dyson = C_qp * C_dyson;
     auto C_x = C_qp_dyson.block(0, orbital, C_qp_dyson.rows(), 1);
-    auto tr_obs = qp_space.array().trange().data().front();
+    auto tr_obs = qp_space.coefs().trange().data().front();
     TA::TiledRange1 tr_x{0, 1};
     auto C_x_ta = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, C_x, tr_obs, tr_x);
 
@@ -429,7 +428,7 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
   {
     TArray V_ixix, V_ixxi;
     const bool df = true;  // always do DF
-    std::tie(V_ixix, V_ixxi) = mpqc::f12::VX_pqrs_pqsr(
+    std::tie(V_ixix, V_ixxi) = f12::VX_pqrs_pqsr(
         "V", this->lcao_factory(), "i", "x", "j", "y", df, use_cabs_);
     Sigma_pph_f12("x,y") =
         0.5 * (1.25 * V_ixix("i,x,j,y") - 0.25 * V_ixxi("i,x,y,j")) *
@@ -465,7 +464,7 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
 extern template class GF2F12<TA::TensorD>;
 #endif
 
-}  // namespace f12
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_GF2F12_H_

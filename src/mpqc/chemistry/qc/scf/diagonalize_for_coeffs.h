@@ -60,8 +60,8 @@ inline Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1
                                                          tr_ao, tr_i);
 }
 
-} // namespace scf
-} // namespace mpqc
+}  // namespace  scf
+}  // namespace  mpqc
 
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_DIAGONALIZE_FOR_COEFFS_H_

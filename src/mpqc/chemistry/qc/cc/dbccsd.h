@@ -10,7 +10,7 @@
 
 
 namespace mpqc {
-namespace cc {
+namespace lcao {
 
 /**
  *  \breif Dual basis CCSD method
@@ -62,7 +62,7 @@ extern template class DBCCSD<TA::TensorD, TA::DensePolicy>;
 extern template class DBCCSD<TA::TensorD, TA::SparsePolicy>;
 #endif
 
-} // end of namespace cc
-} // end of namespace mpqc
+}  // namespace  lcao
+}  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_DBCCSD_H_

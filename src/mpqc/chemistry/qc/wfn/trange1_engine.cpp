@@ -58,4 +58,4 @@ void TRange1Engine::init() {
   // std::cout << active_occ_blocks_ << " " << vir_blocks_ << std::endl;
 }
 
-}  // end of namespace mpqc
+}  // namespace mpqc

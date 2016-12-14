@@ -89,7 +89,7 @@ OrthTraceResettingPurifier<T, TileType, Policy> make_orthogonal_tr_reset_pure(
     return OrthTraceResettingPurifier<T, TileType, Policy>{sqrt_inv};
 }
 
-} // namespace pure
-} // namespace mpqc
+}  // namespace  pure
+}  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_PURIFICATION_DEVEL_H_

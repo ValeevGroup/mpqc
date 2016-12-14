@@ -7,33 +7,33 @@
 
 #include <type_traits>
 
+#include "mpqc/chemistry/qc/integrals/ao_factory_base.h"
 #include "mpqc/util/misc/time.h"
 #include <madness/world/worldmem.h>
-#include "mpqc/chemistry/qc/integrals/ao_factory_base.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 template <typename Tile, typename Policy>
 class DirectAOFactory;
 
-namespace detail{
 template <typename Tile, typename Policy>
-std::shared_ptr<DirectAOFactory<Tile,Policy>> construct_direct_ao_factory(const KeyVal& kv){
-  std::shared_ptr<DirectAOFactory<Tile,Policy>> direct_ao_factory;
-  if(kv.exists_class("wfn_world:direct_ao_factory")){
-    direct_ao_factory = kv.class_ptr<DirectAOFactory<Tile,Policy>>("wfn_world:direct_ao_factory");
-  }
-  else{
-    direct_ao_factory = std::make_shared<DirectAOFactory<Tile,Policy>>(kv);
+std::shared_ptr<DirectAOFactory<Tile, Policy>> construct_direct_ao_factory(
+    const KeyVal& kv) {
+  std::shared_ptr<DirectAOFactory<Tile, Policy>> direct_ao_factory;
+  if (kv.exists_class("wfn_world:direct_ao_factory")) {
+    direct_ao_factory = kv.class_ptr<DirectAOFactory<Tile, Policy>>(
+        "wfn_world:direct_ao_factory");
+  } else {
+    direct_ao_factory = std::make_shared<DirectAOFactory<Tile, Policy>>(kv);
     std::shared_ptr<DescribedClass> direct_ao_factory_base = direct_ao_factory;
     KeyVal& kv_nonconst = const_cast<KeyVal&>(kv);
-    kv_nonconst.keyval("wfn_world").assign("direct_ao_factory",direct_ao_factory_base);
+    kv_nonconst.keyval("wfn_world")
+        .assign("direct_ao_factory", direct_ao_factory_base);
   }
   return direct_ao_factory;
 };
-}
-
 
 /**
  * \brief Direct AOFactory Class
@@ -41,12 +41,11 @@ std::shared_ptr<DirectAOFactory<Tile,Policy>> construct_direct_ao_factory(const 
  *
  */
 
-
 template <typename Tile, typename Policy>
 class DirectAOFactory : public AOFactoryBase, public DescribedClass {
  public:
-  using DirectTArray = integrals::DirectArray<Tile, Policy>;
-  using TArray = TA::DistArray<integrals::DirectTile<Tile>, Policy>;
+  using DirectTArray = DirectArray<Tile, Policy>;
+  using TArray = TA::DistArray<DirectTile<Tile>, Policy>;
   using Op = std::function<Tile(TA::TensorD&&)>;
 
   /// private class member
@@ -74,9 +73,8 @@ class DirectAOFactory : public AOFactoryBase, public DescribedClass {
 
   DirectAOFactory(const KeyVal& kv)
       : AOFactoryBase(kv), direct_ao_formula_registry_() {
-
     std::string prefix = "";
-    if(kv.exists("wfn_wolrd") || kv.exists_class("wfn_world")){
+    if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
       prefix = "wfn_world:";
     }
 
@@ -89,9 +87,10 @@ class DirectAOFactory : public AOFactoryBase, public DescribedClass {
   virtual ~DirectAOFactory() noexcept = default;
 
   /// set oper based on Tile type
-  template<typename T = Tile>
-  void set_oper(typename std::enable_if<std::is_same<T,TA::TensorD>::value, T>::type && t){
-    op_ = TA::Noop<TA::TensorD,true>();
+  template <typename T = Tile>
+  void set_oper(typename std::enable_if<std::is_same<T, TA::TensorD>::value,
+                                        T>::type&& t) {
+    op_ = TA::Noop<TA::TensorD, true>();
   }
   /// wrapper to compute function
   DirectTArray compute(const std::wstring& str) {
@@ -145,13 +144,11 @@ class DirectAOFactory : public AOFactoryBase, public DescribedClass {
   DirectArray<Tile,
               typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
                                       TA::SparsePolicy>::type>
-  compute_integrals(
-      madness::World& world, ShrPool<libint2::Engine>& engine,
-      Bvector const& bases,
-      std::shared_ptr<Screener> p_screen =
-          std::make_shared<integrals::Screener>(integrals::Screener{})) {
-    auto result = mpqc::integrals::direct_sparse_integrals(world, engine, bases,
-                                                           p_screen, op_);
+  compute_integrals(madness::World& world, ShrPool<libint2::Engine>& engine,
+                    BasisVector const& bases,
+                    std::shared_ptr<Screener> p_screen =
+                        std::make_shared<Screener>(Screener{})) {
+    auto result = direct_sparse_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -160,13 +157,12 @@ class DirectAOFactory : public AOFactoryBase, public DescribedClass {
   DirectArray<Tile,
               typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
                                       TA::DensePolicy>::type>
-  compute_integrals(
-      madness::World& world, ShrPool<libint2::Engine>& engine,
-      Bvector const& bases,
-      std::shared_ptr<Screener> p_screen =
-          std::make_shared<integrals::Screener>(integrals::Screener{})) {
-    auto result = mpqc::integrals::direct_dense_integrals(world, engine, bases,
-                                                          p_screen, op_);
+  compute_integrals(madness::World& world, ShrPool<libint2::Engine>& engine,
+                    BasisVector const& bases,
+                    std::shared_ptr<Screener> p_screen =
+                        std::make_shared<Screener>(Screener{})) {
+    auto result =
+        direct_dense_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 };
@@ -187,7 +183,7 @@ DirectAOFactory<Tile, Policy>::compute(const Formula& formula) {
     utility::print_par(world_, " Size: ", size, " GB\n");
     return result;
 
-  }else{
+  } else {
     // compute formula
     if (formula.rank() == 2) {
       result = compute2(formula);
@@ -206,9 +202,9 @@ DirectAOFactory<Tile, Policy>::compute(const Formula& formula) {
 template <typename Tile, typename Policy>
 typename DirectAOFactory<Tile, Policy>::DirectTArray
 DirectAOFactory<Tile, Policy>::compute2(const Formula& formula) {
-  Bvector bs_array;
+  BasisVector bs_array;
   double time = 0.0;
-  std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   mpqc::time_point time0;
   mpqc::time_point time1;
 
@@ -244,13 +240,11 @@ DirectAOFactory<Tile, Policy>::compute2(const Formula& formula) {
     utility::print_par(world_, " Size: ", size, " GB");
     utility::print_par(world_, " Time: ", time, " s\n");
   } else {
-    throw std::runtime_error(
-        "Unsupported Operator in DirectAOFactory!!\n");
+    throw std::runtime_error("Unsupported Operator in DirectAOFactory!!\n");
   }
 
   madness::print_meminfo(
-      world_.rank(),
-      utility::wconcat("DirectAOFactory:", formula.string()));
+      world_.rank(), utility::wconcat("DirectAOFactory:", formula.string()));
   return result;
 }
 
@@ -263,10 +257,10 @@ DirectAOFactory<Tile, Policy>::compute3(const Formula& formula) {
   time0 = mpqc::now(world_, accurate_time_);
   DirectTArray result;
 
-  Bvector bs_array;
-  std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+  BasisVector bs_array;
+  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   std::shared_ptr<Screener> p_screener =
-      std::make_shared<integrals::Screener>(integrals::Screener{});
+      std::make_shared<Screener>(Screener{});
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
@@ -280,8 +274,7 @@ DirectAOFactory<Tile, Policy>::compute3(const Formula& formula) {
   utility::print_par(world_, " Size: ", size, " GB");
   utility::print_par(world_, " Time: ", time, " s\n");
   madness::print_meminfo(
-      world_.rank(),
-      utility::wconcat("DirectAOFactory:", formula.string()));
+      world_.rank(), utility::wconcat("DirectAOFactory:", formula.string()));
 
   return result;
 }
@@ -289,9 +282,9 @@ DirectAOFactory<Tile, Policy>::compute3(const Formula& formula) {
 template <typename Tile, typename Policy>
 typename DirectAOFactory<Tile, Policy>::DirectTArray
 DirectAOFactory<Tile, Policy>::compute4(const Formula& formula) {
-
-  if(formula.notation() != Formula::Notation::Chemical){
-    throw std::runtime_error("Direct AO Integral Only Support Chemical Notation! \n");
+  if (formula.notation() != Formula::Notation::Chemical) {
+    throw std::runtime_error(
+        "Direct AO Integral Only Support Chemical Notation! \n");
   }
 
   double time = 0.0;
@@ -301,10 +294,10 @@ DirectAOFactory<Tile, Policy>::compute4(const Formula& formula) {
 
   time0 = mpqc::now(world_, accurate_time_);
 
-  Bvector bs_array;
+  BasisVector bs_array;
   std::shared_ptr<Screener> p_screener =
-      std::make_shared<integrals::Screener>(integrals::Screener{});
-  std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+      std::make_shared<Screener>(Screener{});
+  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
 
   parse_two_body_four_center(formula, engine_pool, bs_array, p_screener);
 
@@ -323,12 +316,12 @@ DirectAOFactory<Tile, Policy>::compute4(const Formula& formula) {
   return result;
 }
 
-extern template
-class DirectAOFactory<TA::TensorD, TA::SparsePolicy>;
-//extern template
-//class DirectAOFactory<TA::TensorD, TA::DensePolicy>;
+extern template class DirectAOFactory<TA::TensorD, TA::SparsePolicy>;
+// extern template
+// class DirectAOFactory<TA::TensorD, TA::DensePolicy>;
 
-}  // end of namespace integrals
-}  // end of namespace mpqc
+}  // namespace gaussian
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_AO_FACTORY_H_

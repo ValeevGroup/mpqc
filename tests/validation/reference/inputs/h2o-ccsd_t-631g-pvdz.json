@@ -5,7 +5,8 @@
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
-    "n_cluster": 2
+    "n_cluster": 1,
+    "reblock" : 4
   },
   "obs": {
     "type": "Basis",

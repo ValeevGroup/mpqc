@@ -541,12 +541,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     //                  << std::endl;
 
     // manually clean replicated array
-    TArray::wait_for_lazy_cleanup(this_world);
     if (size > 1) {
       t1_this = TArray();
       if (replicate_) {
         g_cjkl = TArray();
       }
+      TArray::wait_for_lazy_cleanup(this_world);
       global_world.gop.fence();
       world_ptr.reset();
     }

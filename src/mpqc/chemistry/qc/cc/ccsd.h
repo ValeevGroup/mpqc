@@ -54,6 +54,8 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
 
   CCSD() = default;
 
+  // clang-format off
+
   /**
    * KeyVal constructor
    * @param kv
@@ -63,15 +65,14 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
-   * | method | string | standard | method to compute ccsd (standard, df,
-   * direct) |
+   * | method | string | standard | method to compute ccsd (standard, direct) |
    * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
-   * | print_detail | bool | false | if print more information in CCSD iteration
-   * |
-   * | less_memory | bool | false | avoid store another abcd term in standard
-   * and df method |
+   * | print_detail | bool | false | if print more information in CCSD iteration |
+   * | less_memory | bool | false | avoid store another abcd term in standard and df method |
    */
+  // clang-format on
+
   CCSD(const KeyVal &kv) : qc::LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
     if (kv.exists("ref")) {
       ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
@@ -83,6 +84,10 @@ class CCSD : public qc::LCAOWavefunction<Tile, Policy> {
     method_ = kv_.value<std::string>("method", "df");
     if (method_ == "df" || method_ == "direct") {
       df_ = true;
+    }
+    if(method_ != "df" && method_!="direct" && method_!="standard")
+    {
+      throw std::runtime_error("invalid CCSD method! \n");
     }
 
     max_iter_ = kv.value<int>("max_iter", 20);

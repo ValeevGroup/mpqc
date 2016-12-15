@@ -67,6 +67,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     inner_block_size_ = kv.value<int>("reblock_inner", 128);
     increase_ = kv.value<int>("increase", 2);
     approach_ = kv.value<std::string>("approach", "coarse");
+    if(approach_ != "coarse" && approach_!="fine" && approach_!="straight")
+    {
+      throw std::runtime_error("invalid (T) approach! \n");
+    }
   }
 
   virtual ~CCSD_T() {}
@@ -328,19 +332,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           if (global_iter % size != rank) continue;
           // inner loop
           iter++;
-
-          // index
-          std::size_t a_low = a;
-          std::size_t a_up = a + 1;
-          std::size_t b_low = b;
-          std::size_t b_up = b + 1;
-          std::size_t c_low = c;
-          std::size_t c_up = c + 1;
-
-          //          std::cout << "a: " << a << " b: " << b << " c " << c <<
-          //          std::endl;
-
-          typedef std::vector<std::size_t> block;
 
           // compute t3
           TArray t3;

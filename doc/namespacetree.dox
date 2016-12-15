@@ -1,15 +1,18 @@
 /** \page namespacetree The Namespace Tree
 
-The MPQC code is organized into a hierarchy of C++ namespaces. When adding or reogranizing code
-you should adhere to this convention for the namespace tree.
+The MPQC code is organized into a hierarchy of C++ namespaces, as described below:
 
 <dl>
 
 <dt><tt>::mpqc</tt><dd>The top-level namespace for all code.
-All code in MPQC lives in this namespace, aside from few exceptions.
+All code in MPQC lives in this namespace, aside from few exceptions (e.g. instantiations
+of template classes defined in namespaces external to MPQC).
 
 <dt><tt>::mpqc::molecule</tt><dd>This namespace includes functionality
 related to collections of atoms, e.g. the ::mpqc::Molecule and ::mpqc::UnitCell classes.
+
+<dt><tt>::mpqc::math</tt><dd>This namespace includes MPQC-specific
+math functionality.
 
 <dt><tt>::mpqc::scf</tt><dd>This namespace includes functionality
 related to the self-consistent 1-body field solvers that is independent
@@ -54,5 +57,25 @@ are not intended for any users of MPQC
 should go into the nested <tt>detail</tt> namespace, e.g.
 <tt>::mpqc::lcao::gaussian::detail</tt> should contain the implementation
 details of classes in <tt>::mpqc::lcao::gaussian</tt>.
+
+When adding or reogranizing code you should adhere to a set of guidelines
+to decide which namespace should be chosen for
+a given variable, function, or class.
+- Most of the MPQC code should be placed into one of namespaces contained in namespace
+::mpqc ; the global namespace should not be used.
+- The top-level ::mpqc namespace should contain the unique functionality that is likely to be used
+by every user of the MPQC libraries. This includes for example the ::mpqc::Energy class as well as
+all exception classes. Note that this does not include classes that implement electronic
+structure methods that could have multiple implementations that e.g. use
+different numerical representations; to avoid having two DFT classes, one based on LCAO
+and another based on the finite-difference/finite-element representation each should go into
+the nested namespace for that numerical representation.
+- All LCAO-based code should be placed in the ::mpqc::lcao namespace. Although in chemistry we
+almost exclusively use Gaussians, it is recommended that Gaussian-specific code
+is placed in the ::mpqc::lcao::gaussian subspace (this is only partially implemented) so
+that it is possible to re-use the LCAO technology in non-Gaussian contexts, e.g. with
+model Hamiltonians.
+- Most of the code located under <tt>src/mpqc/math</tt> should live in <tt>::mpqc::math</tt> namespace.
+- Most of the code located under <tt>src/mpqc/util</tt> should live in <tt>::mpqc::utility</tt> namespace.
 
 */

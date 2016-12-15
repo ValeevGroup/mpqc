@@ -9,14 +9,17 @@
 
 #include <TiledArray/error.h>
 
+#include "mpqc/util/misc/assert.h"
 #include "mpqc/util/misc/string.h"
 
 namespace mpqc {
 
+namespace lcao {
+
 /**
-    \brief OrbitalIndex refers to an OrbitalSpace.
+    \brief OrbitalIndex denotes a LCAO or AO index space.
     *
-    *   OrbitalIndex is a label (wide-char string) whose semantics follow
+    *   \implementation OrbitalIndex is a label (wide-char string) whose semantics follow
     *   a convention common in the molecular electronic structure.
     *   Thus it forms a basis for a language describing mathematical expressions
     *   encountered in this domain.
@@ -217,6 +220,12 @@ OrbitalIndex::OrbitalIndex(String &&symbol) {
     }
   }
 }
+
+inline OrbitalIndex make_base_index(const OrbitalIndex& idx) {
+  return idx;
 }
+
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_INDEX_H_

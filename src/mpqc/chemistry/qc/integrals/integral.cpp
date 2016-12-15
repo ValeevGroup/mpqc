@@ -6,12 +6,16 @@
 #include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 template class AOFactory<TA::TensorD, TA::SparsePolicy>;
 
 template class DirectAOFactory<TA::TensorD, TA::SparsePolicy>;
 
+}  // namespace gaussian
+
 template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
-}
-}
+
+}  // namespace lcao
+}  // namespace mpqc

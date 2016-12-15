@@ -1,7 +1,8 @@
 #include "mpqc/chemistry/qc/integrals/screening/schwarz_screen.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 Qmatrix::Qmatrix(RowMatrixXd Q, std::unordered_map<int64_t, int64_t> map)
         : Q_(std::move(Q)),
@@ -18,5 +19,6 @@ Qmatrix::Qmatrix(RowMatrixXd Q, std::unordered_map<int64_t, int64_t> map)
     }
 }
 
-} // namespace integrals
-} // namespace mpqc
+}  // namespace  gaussian
+}  // namespace  lcao
+}  // namespace  mpqc

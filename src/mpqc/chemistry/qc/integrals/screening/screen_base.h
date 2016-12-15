@@ -8,7 +8,7 @@
 #include "mpqc/chemistry/qc/basis/basis.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
 
 /*! \brief Base class for screeners will never skip any integrals.
  *
@@ -52,7 +52,7 @@ class Screener {
 
 };
 
-} // namespace integrals
-} // namespace mpqc
+}  // namespace  lcao
+}  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_SCREEN_BASE_H_

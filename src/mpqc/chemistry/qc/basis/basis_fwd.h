@@ -3,13 +3,14 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_FWD_H_
 
 namespace mpqc {
-namespace basis {
+namespace lcao {
+namespace gaussian {
 
 class BasisSet;
-class AtomBasisSet;
 class Basis;
 
-}  // namespace basis
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_FWD_H_

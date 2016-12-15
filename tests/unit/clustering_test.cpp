@@ -51,7 +51,7 @@ std::ostream &operator<<(std::ostream &os, Cluster const &cluster) {
     return os;
 }
 
-} // namespace clustering test
+}  // namespace  clustering test
 
 namespace Eigen {
 Vector3d center(Vector3d const &vec) { return vec; }

@@ -10,14 +10,14 @@
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 /**
  * \brief CCSD(T)F12 class
  */
 
 template <typename Tile>
-class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
+class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
                    public CCSD_F12<Tile> {
  public:
   /**
@@ -28,8 +28,8 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
    */
 
   CCSD_T_F12(const KeyVal& kv)
-      : cc::CCSD<Tile, TA::SparsePolicy>(kv),
-        cc::CCSD_T<Tile, TA::SparsePolicy>(kv),
+      : CCSD<Tile, TA::SparsePolicy>(kv),
+        CCSD_T<Tile, TA::SparsePolicy>(kv),
         CCSD_F12<Tile>(kv) {}
 
   virtual ~CCSD_T_F12() {}
@@ -51,7 +51,8 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
       // compute (T) energy
       this->lcao_factory().ao_factory().registry().purge(world);
 
-      cc::CCSD_T<Tile, TA::SparsePolicy>::compute_ccsd_t();
+
+      CCSD_T<Tile, TA::SparsePolicy>::compute_ccsd_t();
 
       auto ccsdtf12_time1 = mpqc::fenced_now(world);
       auto ccsdtf12_time = mpqc::duration_in_s(ccsdf12_time0, ccsdtf12_time1);
@@ -65,10 +66,10 @@ class CCSD_T_F12 : public cc::CCSD_T<Tile, TA::SparsePolicy>,
 
   void obsolete() override {
     CCSD_F12<Tile>::obsolete();
-    cc::CCSD_T<Tile, TA::SparsePolicy>::obsolete();
+    CCSD_T<Tile, TA::SparsePolicy>::obsolete();
   }
 
-  void compute(qc::PropertyBase *pb) override {
+  void compute(PropertyBase *pb) override {
     throw std::runtime_error("Not Implemented!!");
   }
 };
@@ -78,7 +79,7 @@ extern template class CCSD_T_F12<TA::TensorD>;
 #endif
 
 
-} //namespace f12
-} // namespace mpqc
+}  //namespace lcao
+}  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CCSD_T_F12_H_

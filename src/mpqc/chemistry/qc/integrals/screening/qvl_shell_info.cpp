@@ -1,7 +1,8 @@
 #include "mpqc/chemistry/qc/integrals/screening/qvl_shell_info.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 namespace detail {
 
 namespace {
@@ -169,6 +170,7 @@ double QVlShellInfo::pair_extent(Shell const &sh0, Shell const &sh1,
     return max_extent;
 }
 
-} // namespace detail
-} // namespace integrals
-} // namespace mpqc
+}  // namespace  detail
+}  // namespace  gaussian
+}  // namespace  lcao
+}  // namespace  mpqc

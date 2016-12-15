@@ -8,7 +8,7 @@
 #include "mpqc/chemistry/qc/scf/rhf.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao{
 
 
 template <typename Tile>
@@ -124,11 +124,11 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
     lcao_factory.ao_factory().orbital_basis_registry().remove(
         OrbitalIndex(L"Α"));
 
-    auto mp2 = mbpt::RIRMP2<Tile, TA::SparsePolicy>(kv_);
+    auto mp2 = lcao::RIRMP2<Tile, TA::SparsePolicy>(kv_);
 
     auto ref = mp2.refwfn();
 
-    std::shared_ptr<scf::RHF<Tile,TA::SparsePolicy>> rhf = std::dynamic_pointer_cast<scf::RHF<Tile,TA::SparsePolicy>>(ref);
+    std::shared_ptr<RHF<Tile,TA::SparsePolicy>> rhf = std::dynamic_pointer_cast<RHF<Tile,TA::SparsePolicy>>(ref);
     MPQC_ASSERT( rhf != nullptr);
     if(rhf == nullptr){
       throw std::runtime_error("\nCan not cast ref_wfn to RHF class! \n");
@@ -172,7 +172,7 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
             this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"Α"));
         auto obs =
             this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"κ"));
-        basis_map = basis::sub_basis_map(vbs, obs);
+        basis_map = gaussian::sub_basis_map(vbs, obs);
 
 //        std::cout << "Basis Map" << basis_map << std::endl;
       }
@@ -181,7 +181,7 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
       RowMatrixXd old_coeffs = RowMatrixXd::Zero(n, n);
       {
         auto old_occ =
-            lcao_factory.orbital_space().retrieve(OrbitalIndex(L"m")).array();
+            lcao_factory.orbital_space().retrieve(OrbitalIndex(L"m")).coefs();
         RowMatrixXd old_occ_eigen = array_ops::array_to_eigen(old_occ);
 
         // convert occ to vbs
@@ -193,7 +193,7 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
         }
 
         auto old_vir =
-            lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a")).array();
+            lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a")).coefs();
         RowMatrixXd old_vir_eigen = array_ops::array_to_eigen(old_vir);
 
         old_coeffs.block(0, 0, n, o) << occ_eigen;
@@ -329,7 +329,7 @@ double RIDBRMP2F12<Tile>::compute_cabs_singles() {
     if (mp2_method_ == "redo") {
       auto F_ma = this->lcao_factory().compute(L"<m|F|a>[df]");
       es -= 2 *
-          F_ma("m,a").reduce(mbpt::detail::ScfCorrection<Tile>(
+          F_ma("m,a").reduce(detail::ScfCorrection<Tile>(
               this->orbital_energy(), this->trange1_engine()->get_occ()));
     }
   }
@@ -337,8 +337,8 @@ double RIDBRMP2F12<Tile>::compute_cabs_singles() {
   return es;
 }
 
-}  // end of namespace f12
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 
 #endif //SRC_MPQC_CHEMISTRY_QC_F12_DBMP2F12_IMPL_H_

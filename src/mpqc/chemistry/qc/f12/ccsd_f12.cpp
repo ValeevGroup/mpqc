@@ -6,6 +6,6 @@
 #include "mpqc/util/keyval/forcelink.h"
 
 #if TA_DEFAULT_POLICY == 1
-template class mpqc::f12::CCSD_F12<TA::TensorD>;
-MPQC_CLASS_EXPORT2("CCSD(F12)", mpqc::f12::CCSD_F12<TA::TensorD>);
+template class mpqc::lcao::CCSD_F12<TA::TensorD>;
+MPQC_CLASS_EXPORT2("CCSD(F12)", mpqc::lcao::CCSD_F12<TA::TensorD>);
 #endif

@@ -1,9 +1,9 @@
 namespace mpqc {
-namespace qc {
+namespace lcao {
 
 class Wavefunction;
 template <typename Tile, typename Policy>
 class AOWavefunction;
 
-}  // namespace qc
+}  // namespace lcao
 }  // namespace mpqc

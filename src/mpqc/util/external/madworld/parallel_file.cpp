@@ -48,5 +48,5 @@ void parallel_read_file(madness::World &world,
   delete[] buffer;
 }
 
-}  // end of namespace utility
-}  // end of namespace mpqc
+}  // namespace utility
+}  // namespace mpqc

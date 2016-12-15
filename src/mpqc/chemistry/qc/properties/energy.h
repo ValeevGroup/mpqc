@@ -13,7 +13,7 @@
 #include <boost/optional.hpp>
 
 namespace mpqc {
-namespace qc {
+namespace lcao {
 
 class Energy : public PropertyBase {
  private:
@@ -27,7 +27,7 @@ class Energy : public PropertyBase {
   boost::optional<double> result() { return result_; }
 };
 
-}  // namespace qc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_

@@ -4,7 +4,7 @@
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 
 namespace mpqc {
-namespace scf {
+namespace utility {
 
 /**
  * \brief gensqrtinv
@@ -126,7 +126,7 @@ std::vector<Matrixz> conditioned_orthogonalizer(
 }
 
 
-}  // namespace scf
+}  // namespace utility
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_COND_ORTHO_H_

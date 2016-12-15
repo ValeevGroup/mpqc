@@ -5,7 +5,8 @@
 #include "mpqc/chemistry/qc/integrals/ao_factory_base.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 namespace detail {
 
@@ -136,7 +137,7 @@ AOFactoryBase::AOFactoryBase(const KeyVal &kv)
   screen_threshold_ = kv.value<double>(prefix + "threshold",1.0e-10);
   auto default_precision = std::numeric_limits<double>::epsilon();
   precision_ = kv.value<double>(prefix + "precision",default_precision);
-  integrals::detail::integral_engine_precision = precision_;
+  detail::integral_engine_precision = precision_;
 
   utility::print_par(world_, "Screen: ", screen_, "\n");
   if (!screen_.empty()) {
@@ -160,16 +161,16 @@ libint2::Engine AOFactoryBase::make_engine(const Operator &oper,
 }
 
 std::shared_ptr<Screener> AOFactoryBase::make_screener_three_center(
-    ShrPool<libint2::Engine> &engine, basis::Basis &basis1,
-    basis::Basis &basis2) {
+    ShrPool<libint2::Engine> &engine, Basis &basis1,
+    Basis &basis2) {
   std::shared_ptr<Screener> p_screen;
   if (screen_.empty()) {
-    p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+    p_screen = std::make_shared<Screener>(Screener{});
   } else if (screen_ == "qqr") {
-    p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+    p_screen = std::make_shared<Screener>(Screener{});
   } else if (screen_ == "schwarz") {
-    auto screen_builder = integrals::init_schwarz_screen(screen_threshold_);
-    p_screen = std::make_shared<integrals::Screener>(
+    auto screen_builder = init_schwarz_screen(screen_threshold_);
+    p_screen = std::make_shared<Screener>(
         screen_builder(world_, engine, basis1, basis2));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
@@ -178,17 +179,17 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_three_center(
 }
 
 std::shared_ptr<Screener> AOFactoryBase::make_screener_four_center(
-    ShrPool<libint2::Engine> &engine, basis::Basis &basis) {
+    ShrPool<libint2::Engine> &engine, Basis &basis) {
   std::shared_ptr<Screener> p_screen;
   if (screen_.empty()) {
-    p_screen = std::make_shared<integrals::Screener>(integrals::Screener{});
+    p_screen = std::make_shared<Screener>(Screener{});
   } else if (screen_ == "qqr") {
-    auto screen_builder = integrals::init_qqr_screen{};
-    p_screen = std::make_shared<integrals::Screener>(
+    auto screen_builder = init_qqr_screen{};
+    p_screen = std::make_shared<Screener>(
         screen_builder(world_, engine, basis, screen_threshold_));
   } else if (screen_ == "schwarz") {
-    auto screen_builder = integrals::init_schwarz_screen(screen_threshold_);
-    p_screen = std::make_shared<integrals::Screener>(
+    auto screen_builder = init_schwarz_screen(screen_threshold_);
+    p_screen = std::make_shared<Screener>(
         screen_builder(world_, engine, basis));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
@@ -198,8 +199,8 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_four_center(
 
 void AOFactoryBase::parse_one_body(
     const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-    Bvector &bases) {
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -218,10 +219,10 @@ void AOFactoryBase::parse_one_body(
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
 
-  bases = Bvector {{*bra_basis, *ket_basis}};
+  bases = BasisVector {{*bra_basis, *ket_basis}};
 
   auto oper_type = formula.oper().type();
-  engine_pool = integrals::make_engine_pool(
+  engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
       detail::to_libint2_operator_params(oper_type, *this));
@@ -229,8 +230,8 @@ void AOFactoryBase::parse_one_body(
 
 void AOFactoryBase::parse_two_body_two_center(
     const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool,
-    Bvector &bases) {
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases) {
   TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical,
                  "Two Body Two Center Integral Must Use Chemical Notation");
 
@@ -252,10 +253,10 @@ void AOFactoryBase::parse_two_body_two_center(
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
 
-  bases = Bvector {{*bra_basis0, *ket_basis0}};
+  bases = BasisVector {{*bra_basis0, *ket_basis0}};
 
   auto oper_type = formula.oper().type();
-  engine_pool = integrals::make_engine_pool(
+  engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis0, *ket_basis0),
       libint2::BraKet::xs_xs,
@@ -264,7 +265,7 @@ void AOFactoryBase::parse_two_body_two_center(
 
 void AOFactoryBase::parse_two_body_three_center(
     const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
     std::shared_ptr<Screener> &p_screener) {
   TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical,
                  "Three Center Integral Must Use Chemical Notation");
@@ -287,10 +288,10 @@ void AOFactoryBase::parse_two_body_three_center(
   TA_ASSERT(ket_basis0 != nullptr);
   TA_ASSERT(ket_basis1 != nullptr);
 
-  bases = Bvector {{*bra_basis0, *ket_basis0, *ket_basis1}};
+  bases = BasisVector {{*bra_basis0, *ket_basis0, *ket_basis1}};
 
   auto oper_type = formula.oper().type();
-  engine_pool = integrals::make_engine_pool(
+  engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
       libint2::BraKet::xs_xx,
@@ -299,7 +300,7 @@ void AOFactoryBase::parse_two_body_three_center(
   if (!screen_.empty() && (ket_indexs[0] == ket_indexs[1])) {
     /// make another engine to screener!!!
 
-    auto screen_engine_pool = integrals::make_engine_pool(
+    auto screen_engine_pool = make_engine_pool(
         detail::to_libint2_operator(oper_type),
         utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
         libint2::BraKet::xx_xx,
@@ -312,7 +313,7 @@ void AOFactoryBase::parse_two_body_three_center(
 
 void AOFactoryBase::parse_two_body_four_center(
     const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
     std::shared_ptr<Screener> &p_screener) {
   auto bra_indexs = formula.bra_indices();
   auto ket_indexs = formula.ket_indices();
@@ -342,7 +343,7 @@ void AOFactoryBase::parse_two_body_four_center(
   }
 
   auto oper_type = formula.oper().type();
-  engine_pool = integrals::make_engine_pool(
+  engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
       libint2::BraKet::xx_xx,
@@ -490,5 +491,7 @@ std::array<Formula, 3> AOFactoryBase::get_fock_formula(
   result[2] = k;
   return result;
 }
-}  // end of namespace integral
-}  // end of namespace mpqc
+
+}  // namespace gaussian
+}  // namespace lcao
+}  // namespace mpqc

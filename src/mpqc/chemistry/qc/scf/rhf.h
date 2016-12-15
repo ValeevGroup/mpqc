@@ -16,10 +16,10 @@
  *
  */
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
 template <typename Tile, typename Policy>
-class RHF : public qc::AOWavefunction<Tile, Policy> {
+class RHF : public AOWavefunction<Tile, Policy> {
  public:
   using array_type = TA::DistArray<Tile,Policy>;
 
@@ -79,8 +79,8 @@ class RHF : public qc::AOWavefunction<Tile, Policy> {
   array_type D_;
   array_type C_;
 
-  std::unique_ptr<FockBuilder<Tile,Policy>> f_builder_;
-  std::unique_ptr<DensityBuilder<Tile,Policy>> d_builder_;
+  std::unique_ptr<scf::FockBuilder<Tile,Policy>> f_builder_;
+  std::unique_ptr<scf::DensityBuilder<Tile,Policy>> d_builder_;
 
   std::vector<double> rhf_times_;
   std::vector<double> d_times_;
@@ -145,8 +145,8 @@ extern template class DirectRHF<TA::TensorD, TA::SparsePolicy>;
 extern template class DirectRIRHF<TA::TensorD, TA::SparsePolicy>;
 #endif
 
-}  // end of namespace scf
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #include "rhf_impl.h"
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_RHF_H_

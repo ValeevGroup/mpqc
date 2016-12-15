@@ -10,7 +10,7 @@
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
-namespace mbpt {
+namespace lcao {
 template<typename Tile, typename Policy>
 class RMP2;
 
@@ -23,6 +23,7 @@ class DBRMP2;
 template<typename Tile, typename Policy>
 class RIDBRMP2;
 
+namespace mbpt {
 #if TA_DEFAULT_POLICY == 0
 mpqc::detail::ForceLink<RMP2<TA::TensorD, TA::DensePolicy>> fl1;
 mpqc::detail::ForceLink<RIRMP2<TA::TensorD, TA::DensePolicy>> fl2;
@@ -35,6 +36,8 @@ mpqc::detail::ForceLink<DBRMP2<TA::TensorD, TA::SparsePolicy>> fl3;
 mpqc::detail::ForceLink<RIDBRMP2<TA::TensorD, TA::SparsePolicy>> fl4;
 #endif
 }
-}
+
+} // namespace lcao
+} // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_LINKAGE_H_

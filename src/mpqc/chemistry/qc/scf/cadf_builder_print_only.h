@@ -50,8 +50,8 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
  public:
   PrintOnlyCADFFockBuilder(
       Molecule const &clustered_mol, Molecule const &df_clustered_mol,
-      basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
+      lcao::BasisSet const &obs_set, lcao::BasisSet const &dfbs_set,
+      lcao::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       bool use_forced_shape, double force_threshold,
       double lcao_chop_threshold = 0.0)
       : PrintOnlyCADFFockBuilder(clustered_mol, df_clustered_mol, obs_set,
@@ -63,8 +63,8 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
 
   PrintOnlyCADFFockBuilder(
       Molecule const &clustered_mol, Molecule const &df_clustered_mol,
-      basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory)
+      lcao::BasisSet const &obs_set, lcao::BasisSet const &dfbs_set,
+      lcao::AOFactory<TileType, TA::SparsePolicy> &ao_factory)
       : FockBuilder() {
     // Grab needed ao integrals
     E_ = ao_factory.compute(L"( Κ | G|κ λ)");
@@ -83,10 +83,10 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
 
-    basis::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
-    basis::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
+    lcao::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
+    lcao::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
 
-    auto eng_pool = integrals::make_engine_pool(
+    auto eng_pool = lcao::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, dfbs),
         libint2::BraKet::xs_xs);
 
@@ -95,7 +95,7 @@ class PrintOnlyCADFFockBuilder : public FockBuilder {
         eng_pool, obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
 
     auto by_cluster_trange =
-        integrals::detail::create_trange(utility::make_array(dfbs, obs, obs));
+        lcao::detail::create_trange(utility::make_array(dfbs, obs, obs));
 
     C_df_ =
         scf::reblock_from_atoms(C_df_temp, obs_atom_to_cluster_map,

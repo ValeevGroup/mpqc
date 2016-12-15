@@ -2,15 +2,15 @@
 // Created by Chong Peng on 12/6/16.
 //
 
-#ifndef MPQC_MP2_IMPL_H
-#define MPQC_MP2_IMPL_H
+#ifndef SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_IMPL_H_
+#define SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_IMPL_H_
 
 namespace mpqc {
-namespace mbpt {
+namespace lcao {
 
 namespace detail {
 template <typename Tile, typename Policy>
-double compute_mp2(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
                    std::shared_ptr<Eigen::VectorXd> orbital_energy,
                    std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df) {
   auto& world = lcao_factory.world();
@@ -19,7 +19,7 @@ double compute_mp2(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
   // compute mp2 energy
   double energy_mp2 =
       (g_ijab("i,j,a,b") * (2 * g_ijab("i,j,a,b") - g_ijab("i,j,b,a")))
-          .reduce(detail::Mp2Energy<Tile>(
+          .reduce(mbpt::detail::Mp2Energy<Tile>(
               orbital_energy, tr1_engine->get_occ(),
               tr1_engine->get_nfrozen()));
 
@@ -30,9 +30,9 @@ double compute_mp2(integrals::LCAOFactory<Tile, Policy> &lcao_factory,
 } // end of namespace detail
 
 template<typename Tile, typename Policy>
-RMP2<Tile,Policy>::RMP2(const KeyVal &kv) : qc::LCAOWavefunction<Tile,Policy>(kv) {
+RMP2<Tile,Policy>::RMP2(const KeyVal &kv) : LCAOWavefunction<Tile,Policy>(kv) {
   if (kv.exists("ref")) {
-    ref_wfn_ = kv.keyval("ref").class_ptr<qc::Wavefunction>();
+    ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
   } else {
     throw std::invalid_argument("Default Ref Wfn in RMP2 is not support! \n");
   }
@@ -41,7 +41,7 @@ RMP2<Tile,Policy>::RMP2(const KeyVal &kv) : qc::LCAOWavefunction<Tile,Policy>(kv
 template<typename Tile, typename Policy>
 void RMP2<Tile,Policy>::obsolete() {
   this->energy_ = 0.0;
-  qc::LCAOWavefunction<Tile, Policy>::obsolete();
+  LCAOWavefunction<Tile, Policy>::obsolete();
   ref_wfn_->obsolete();
 }
 
@@ -96,10 +96,10 @@ double RMP2<Tile,Policy>::compute() {
 }
 
 template<typename Tile, typename Policy>
-void RMP2<Tile,Policy>::compute(qc::PropertyBase *pb) {}
+void RMP2<Tile,Policy>::compute(PropertyBase *pb) {}
 
 template<typename Tile, typename Policy>
-const std::shared_ptr<qc::Wavefunction> RMP2<Tile,Policy>::refwfn() const {
+const std::shared_ptr<Wavefunction> RMP2<Tile,Policy>::refwfn() const {
   return ref_wfn_;
 }
 
@@ -116,7 +116,7 @@ double RIRMP2<Tile,Policy>::compute() {
   return detail::compute_mp2(lcao_factory, this->orbital_energy(),
                              this->trange1_engine(), true);
 }
-}  // end of namespace mbpt
+}  // end of namespace lcao
 }  // end of namespace mpqc
 
-#endif //MPQC_MP2_IMPL_H
+#endif //SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_IMPL_H_

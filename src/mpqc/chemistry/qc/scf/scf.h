@@ -106,7 +106,7 @@ class ClosedShellSCF {
   void build_F();
 };
 
-}  // end of namespace scf
-}  // end of namespace mpqc
+}  // namespace scf
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_SCF_H_

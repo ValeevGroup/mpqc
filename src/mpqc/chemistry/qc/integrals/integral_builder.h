@@ -8,15 +8,16 @@
 
 #include <tiledarray.h>
 
+#include "mpqc/util/misc/pool.h"
 
 #include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/chemistry/qc/integrals/screening/screen_base.h"
 #include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
-#include "mpqc/chemistry/qc/integrals/integral_engine_pool.h"
 #include "mpqc/chemistry/qc/integrals/task_integral_kernels.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 /*! \brief Builds integrals from an  array of bases and an integral engine pool.
  *
@@ -34,7 +35,7 @@ class IntegralBuilder
   using Op = std::function<Tile(TA::TensorD &&)>;
 
  private:
-  detail::ShrBvectors bases_;
+  std::shared_ptr<BasisVector> bases_;
   ShrPool<Engine> engines_;
   std::shared_ptr<Screener> screen_;
   Op op_;
@@ -44,13 +45,13 @@ class IntegralBuilder
    *
    * \param world Should be the same world as the one for the array which will
    * hold the tiles.
-   * \param shr_epool is a shared pointer to an IntegralEnginePool
+   * \param shr_epool is a shared pointer to an IntegralTSPool
    * \param shr_bases is a shared pointer to an array of Basis
    * \param screen is a shared pointer to a Screener type
    * \param op should be a thread safe function or functor that takes a
    *  rvalue of a TA::TensorD and returns a valid TA::Array tile.
    */
-  IntegralBuilder(ShrPool<Engine> shr_epool, detail::ShrBvectors shr_bases,
+  IntegralBuilder(ShrPool<Engine> shr_epool, std::shared_ptr<BasisVector> shr_bases,
                   std::shared_ptr<Screener> screen, Op op)
       : bases_(std::move(shr_bases)),
         engines_(std::move(shr_epool)),
@@ -117,7 +118,7 @@ class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
   using Op = typename IntegralBuilder<Tile,Engine>::Op;
 
   DirectIntegralBuilder(madness::World &world, ShrPool<Engine> shr_epool,
-                        detail::ShrBvectors shr_bases,
+                        std::shared_ptr<BasisVector> shr_bases,
                         std::shared_ptr<Screener> screen, Op op)
       : IntegralBuilder<Tile, Engine>(shr_epool, shr_bases, screen, op),
         id_(world.register_ptr(this)) {}
@@ -145,7 +146,7 @@ class DirectIntegralBuilder : public IntegralBuilder<Tile, Engine> {
  */
 template <typename Tile, typename Engine>
 std::shared_ptr<IntegralBuilder<Tile, Engine>> make_integral_builder(
-    ShrPool<Engine> shr_epool, detail::ShrBvectors shr_bases,
+    ShrPool<Engine> shr_epool, std::shared_ptr<BasisVector> shr_bases,
     std::shared_ptr<Screener> shr_screen,
     std::function<Tile(TA::TensorD &&)> op) {
   return std::make_shared<IntegralBuilder<Tile, Engine>>(
@@ -160,13 +161,14 @@ std::shared_ptr<IntegralBuilder<Tile, Engine>> make_integral_builder(
 template <typename Tile, typename Engine>
 std::shared_ptr<DirectIntegralBuilder<Tile, Engine>> make_direct_integral_builder(
     madness::World &world, ShrPool<Engine> shr_epool,
-    detail::ShrBvectors shr_bases, std::shared_ptr<Screener> shr_screen,
+    std::shared_ptr<BasisVector> shr_bases, std::shared_ptr<Screener> shr_screen,
     std::function<Tile(TA::TensorD &&)> op) {
   return std::make_shared<DirectIntegralBuilder<Tile, Engine>>(
       world, std::move(shr_epool), std::move(shr_bases), std::move(shr_screen),
       std::move(op));
 }
 
-}  // namespace integrals
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_INTEGRAL_BUILDER_H_

@@ -13,7 +13,8 @@
 #include <libint2/engine.h>
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 /// makes an engine for computing integrals of operator \c oper over bases \c
 /// bases
@@ -76,11 +77,12 @@ inline ShrPool<libint2::Engine> make_engine_pool(
     oper_params = libint2::default_params(oper);
   }
 
-  return std::make_shared<mpqc::integrals::EnginePool<libint2::Engine>>(
+  return std::make_shared<utility::TSPool<libint2::Engine>>(
       make_engine(oper, bases, braket, oper_params));
 }
 
-}  // namespace integrals
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_MAKE_ENGINE_H_

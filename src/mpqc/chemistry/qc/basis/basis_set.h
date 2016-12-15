@@ -13,14 +13,15 @@
 #include "mpqc/chemistry/qc/basis/basis_fwd.h"
 
 namespace mpqc {
-namespace basis {
+namespace lcao {
+namespace gaussian {
 
 using Shell = libint2::Shell;
 using ShellVec = std::vector<Shell>;
 
 class BasisSet {
  public:
-  typedef mpqc::basis::Shell Shell;
+  using Shell = mpqc::lcao::gaussian::Shell;
 
   BasisSet() = delete;  // Can't init a basis without name.
   BasisSet(BasisSet const &b) = default;
@@ -45,7 +46,8 @@ class BasisSet {
   std::string basis_set_name_;
 };
 
-}  // namespace basis
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_BASIS_BASIS_SET_H_

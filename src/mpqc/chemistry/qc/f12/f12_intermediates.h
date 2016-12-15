@@ -11,6 +11,7 @@
 #include "mpqc/util/misc/string.h"
 
 namespace mpqc {
+namespace lcao {
 namespace f12 {
 
 /**
@@ -23,7 +24,7 @@ namespace f12 {
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &shape) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -91,7 +92,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_df(
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -155,7 +156,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji(
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -223,7 +224,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_df(
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -285,7 +286,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji(
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -457,7 +458,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -632,7 +633,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -798,7 +799,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -967,7 +968,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_iaxy_df(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory, bool couple,
+    LCAOFactory<Tile, Policy> &lcao_factory, bool couple,
     bool second = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -1047,7 +1048,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_df(
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_iaxy(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory, bool couple,
+    LCAOFactory<Tile, Policy> &lcao_factory, bool couple,
     bool second = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -1125,7 +1126,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy(
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_xyab_df(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory, bool couple) {
+    LCAOFactory<Tile, Policy> &lcao_factory, bool couple) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
 
@@ -1193,7 +1194,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab_df(
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_xyab(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory, bool couple) {
+    LCAOFactory<Tile, Policy> &lcao_factory, bool couple) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
 
@@ -1259,7 +1260,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab(
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_C_ijab_df(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory) {
+    LCAOFactory<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   auto c_time0 = mpqc::now(world, accurate_time);
@@ -1291,7 +1292,7 @@ TA::DistArray<Tile, Policy> compute_C_ijab_df(
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_C_ijab(
-    integrals::LCAOFactory<Tile, Policy> &lcao_factory) {
+    LCAOFactory<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   auto c_time0 = mpqc::now(world, accurate_time);
@@ -1328,7 +1329,7 @@ TA::DistArray<Tile, Policy> compute_C_ijab(
  */
 template <typename Tile, typename DirectArray>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape, DirectArray direct_array) {
   auto &world = lcao_factory.world();
@@ -1370,15 +1371,15 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
   }
 
   TA::DistArray<Tile, TA::SparsePolicy> U;
-  auto Ca = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a")).array();
-  auto Cp = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"p")).array();
+  auto Ca = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a")).coefs();
+  auto Cp = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"p")).coefs();
   {
     auto time0 = mpqc::now(world, accurate_time);
 
     //    auto Cm =
-    //    lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"m")).array();
+    //    lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"m")).coefs();
     //    auto Ca_prime =
-    //    lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"a'")).array();
+    //    lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"a'")).coefs();
     // compuate intermediate U
     U("i,j,rho,mu") = (t2("a,b,i,j") * Ca("sigma,a") * Ca("nu,b")) *
                       direct_array("rho, sigma, mu, nu");
@@ -1423,7 +1424,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
   auto &world = lcao_factory.world();
@@ -1465,7 +1466,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
   auto &world = lcao_factory.world();
@@ -1518,7 +1519,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
     const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
   auto &world = lcao_factory.world();
@@ -1582,7 +1583,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji(
-    integrals::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
     const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
   auto &world = lcao_factory.world();
@@ -1640,7 +1641,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji(
 template <typename Tile, typename Policy, typename String>
 std::tuple<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>
 VX_pqrs_pqsr(const std::string &target_str,
-             integrals::LCAOFactory<Tile, Policy> &lcao_factory,
+             LCAOFactory<Tile, Policy> &lcao_factory,
              const String &p, const String &q, const String &r, const String &s,
              bool df = true, bool cabs = true) {
   using mpqc::utility::concat;
@@ -1786,7 +1787,8 @@ VX_pqrs_pqsr(const std::string &target_str,
   return std::make_tuple(A_pqrs, A_pqsr);
 }
 
-}  // end of namespace f12
-}  // end of namespace mpqc
+}  // namespace f12
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_F12_INTERMEDIATES_H_

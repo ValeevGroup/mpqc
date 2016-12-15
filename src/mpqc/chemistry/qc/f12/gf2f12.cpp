@@ -6,6 +6,6 @@
 #include "mpqc/util/keyval/forcelink.h"
 
 #if TA_DEFAULT_POLICY == 1
-template class mpqc::f12::GF2F12<TA::TensorD>;
-MPQC_CLASS_EXPORT2("GF2F12", mpqc::f12::GF2F12<TA::TensorD>);
+template class mpqc::lcao::GF2F12<TA::TensorD>;
+MPQC_CLASS_EXPORT2("GF2F12", mpqc::lcao::GF2F12<TA::TensorD>);
 #endif

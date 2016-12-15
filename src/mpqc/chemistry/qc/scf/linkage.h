@@ -10,7 +10,7 @@
 #include "mpqc/mpqc_config.h"
 
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
 template <typename Tile, typename Policy>
 class RHF;
@@ -26,6 +26,7 @@ class DirectRIRHF;
 
 class zRHF;
 
+namespace scf {
 #if TA_DEFAULT_POLICY == 0
 mpqc::detail::ForceLink<RHF<TA::TensorD, TA::DensePolicy>> fl1;
 mpqc::detail::ForceLink<RIRHF<TA::TensorD, TA::DensePolicy>> fl2;
@@ -38,8 +39,9 @@ mpqc::detail::ForceLink<DirectRHF<TA::TensorD, TA::SparsePolicy>> fl3;
 mpqc::detail::ForceLink<DirectRIRHF<TA::TensorD, TA::SparsePolicy>> fl4;
 mpqc::detail::ForceLink<zRHF> fl5;
 #endif
+}
 
-}
-}
+} // namespace lcao
+} // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_LINKAGE_H_

@@ -11,7 +11,7 @@
 #include "operator.h"
 #include "orbital_index.h"
 
-using mpqc::OrbitalIndex;
+using mpqc::lcao::OrbitalIndex;
 using mpqc::Operator;
 
 namespace mpqc {

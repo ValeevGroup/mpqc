@@ -12,7 +12,8 @@
 #include <boost/math/special_functions/erf.hpp>
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 /*! \brief Class to implement QVL Screening.
  *
@@ -71,7 +72,7 @@ class QVl : public SchwarzScreen {
 struct init_qvl_screen {
     template <typename E>
     QVl operator()(madness::World &world, ShrPool<E> &engs,
-                   basis::Basis const &dfbs, basis::Basis const &bs,
+                   Basis const &dfbs, Basis const &bs,
                    double threshold = 1e-10) {
         auto schwarz_screen
               = init_schwarz_screen{threshold}(world, engs, dfbs, bs);
@@ -80,8 +81,9 @@ struct init_qvl_screen {
     }
 };
 
-} // namespace integrals
-} // namespace mpqc
+}  // namespace  gaussian
+}  // namespace  lcao
+}  // namespace  mpqc
 
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_QVL_SCREENING_H_

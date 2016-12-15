@@ -218,6 +218,6 @@ class FormulaRegistry : public Registry<Formula, Value> {
     this->purge_if(world, pred);
   }
 };
-}  // end of namespace mpqc
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_REGISTRY_H_

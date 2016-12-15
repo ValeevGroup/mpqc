@@ -1,6 +1,4 @@
 set(sources
-atom_basisset.cpp
-atom_basisset.h
 basis_fwd.h
 basis_registry.cpp
 basis_registry.h

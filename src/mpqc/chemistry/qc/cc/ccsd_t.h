@@ -10,7 +10,7 @@
 #include "mpqc/util/misc/print.h"
 
 namespace mpqc {
-namespace cc {
+namespace lcao {
 
 //
 
@@ -75,7 +75,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   virtual ~CCSD_T() {}
 
-  void compute(qc::PropertyBase *pb) override {
+  void compute(lcao::PropertyBase *pb) override {
     throw std::runtime_error("Not Implemented!!");
   }
 
@@ -1365,7 +1365,7 @@ extern template class CCSD_T<TA::TensorD, TA::DensePolicy>;
 extern template class CCSD_T<TA::TensorD, TA::SparsePolicy>;
 #endif
 
-}  // namespace cc
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_CCSD_T_H_

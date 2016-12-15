@@ -1,7 +1,8 @@
 #include "mpqc/chemistry/qc/integrals/screening/cached_shell_info.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 namespace detail {
 
 CachedShellInfo::CachedShellInfo(ShellVec const &shells, double thresh)
@@ -99,6 +100,7 @@ Vector3d CachedShellInfo::shell_weighted_center(Shell const &sh0,
     return center;
 }
 
-} // namespace detail
-} // namespace integrals
-} // namespace mpqc
+}  // namespace  detail
+}  // namespace  gaussian
+}  // namespace  lcao
+}  // namespace  mpqc

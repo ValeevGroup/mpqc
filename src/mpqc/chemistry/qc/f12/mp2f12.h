@@ -15,14 +15,14 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 /**
  *  \brief MP2F12 method for closed shell
  */
 
 template <typename Tile>
-class RMP2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
+class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
  public:
   using TArray = TA::DistArray<Tile,TA::SparsePolicy>;
 
@@ -42,8 +42,8 @@ class RMP2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
   ~RMP2F12() = default;
 
   double value() override;
+  void compute(PropertyBase* pb) override;
   std::tuple<RowMatrix<double>, RowMatrix<double>> compute();
-  void compute(qc::PropertyBase* pb) override;
   void obsolete() override;
 
  private:
@@ -58,7 +58,7 @@ class RMP2F12 : public qc::LCAOWavefunction<Tile, TA::SparsePolicy> {
   char approximation_;
   TA::SparseShape<float> ijij_ijji_shape_;
   bool cabs_singles_;
-  std::shared_ptr<qc::Wavefunction> ref_wfn_;
+  std::shared_ptr<Wavefunction> ref_wfn_;
 };
 
 
@@ -97,7 +97,7 @@ class RIRMP2F12 : public RMP2F12<Tile> {
 extern template class RMP2F12<TA::TensorD>;
 extern template class RIRMP2F12<TA::TensorD>;
 
-}  // end of namespace f12
+}  // namespace lcao
 }  // mpqc
 
 #include "mp2f12_impl.h"

@@ -506,14 +506,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     this_world.gop.fence();
     global_world.gop.fence();
 
-    // clean replicated array
-    if(size > 1){
-      t1_this = TArray();
-      if(replicate_){
-        g_cjkl = TArray();
-      }
-      world_ptr.reset();
-    }
+
 
 
     // loop over rank and print
@@ -548,6 +541,21 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
     global_world.gop.sum(triple_energy);
 
+//    ExEnv::out0() << "(T) Energy: " << triple_energy << std::endl
+//                  << std::endl;
+
+    // manually clean replicated array
+    TArray::wait_for_lazy_cleanup(this_world);
+    if(size > 1){
+      t1_this = TArray();
+      if(replicate_){
+        g_cjkl = TArray();
+      }
+      global_world.gop.fence();
+      world_ptr.reset();
+    }
+
+    global_world.gop.fence();
     return triple_energy;
   }
 

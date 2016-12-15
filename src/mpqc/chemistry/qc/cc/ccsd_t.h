@@ -308,206 +308,202 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     mpqc::time_point time00;
     mpqc::time_point time01;
     std::size_t iter = 0;
+    std::size_t global_iter = 0;
 
-    // make the outer a, b loop
-    std::vector<std::pair<std::size_t, std::size_t>> a_b_loop;
-    for (auto a = 0; a < n_tr_vir; a += 1) {
-      for (auto b = 0; b <= a; ++b) {
-        a_b_loop.push_back(std::pair<std::size_t, std::size_t>(a, b));
-      }
-    }
-
-    auto n_a_b = a_b_loop.size();
+    // make progress points
 
     const auto divide = 10;
-    std::size_t increase = std::max(1.0, std::round(double(n_a_b) / divide));
+    std::size_t increase = std::max(1.0, std::round(double(n_tr_vir) / divide));
     std::vector<std::size_t> progress_points;
-    for (std::size_t i = 0; i < n_a_b; i += increase) {
+    for (std::size_t i = 0; i < n_tr_vir; i += increase) {
       progress_points.push_back(i);
     }
+
     // start loop over a, b, c
-    // distribute all outer loop a over all worlds
-    for (auto ab = rank; ab < n_a_b; ab += size) {
-      auto a = a_b_loop[ab].first;
-      auto b = a_b_loop[ab].second;
-      for (auto c = 0; c <= b; ++c) {
-        // inner loop
-        iter++;
+    for (auto a = 0; a < n_tr_vir; ++a) {
+      for (auto b = 0; b <= a; ++b) {
+        for (auto c = 0; c <= b; ++c) {
+          global_iter++;
 
-        // index
-        std::size_t a_low = a;
-        std::size_t a_up = a + 1;
-        std::size_t b_low = b;
-        std::size_t b_up = b + 1;
-        std::size_t c_low = c;
-        std::size_t c_up = c + 1;
+          if (global_iter % size != rank) continue;
+          // inner loop
+          iter++;
 
-        //          std::cout << "a: " << a << " b: " << b << " c " << c <<
-        //          std::endl;
+          // index
+          std::size_t a_low = a;
+          std::size_t a_up = a + 1;
+          std::size_t b_low = b;
+          std::size_t b_up = b + 1;
+          std::size_t c_low = c;
+          std::size_t c_up = c + 1;
 
-        typedef std::vector<std::size_t> block;
+          //          std::cout << "a: " << a << " b: " << b << " c " << c <<
+          //          std::endl;
 
-        // compute t3
-        TArray t3;
-        // abcijk contribution
-        // g^{da}_{bi}*t^{cd}_{kj} - g^{cj}_{kl}*t^{ab}_{il}
+          typedef std::vector<std::size_t> block;
 
-        time00 = mpqc::now(this_world, accurate_time);
-        compute_t3(a, b, c, t3);
-        time01 = mpqc::now(this_world, accurate_time);
-        contraction_time += mpqc::duration_in_s(time00, time01);
+          // compute t3
+          TArray t3;
+          // abcijk contribution
+          // g^{da}_{bi}*t^{cd}_{kj} - g^{cj}_{kl}*t^{ab}_{il}
 
-        // acbikj contribution
-        // g^{da}_{ci}*t^{db}_{kj} - g^{bk}_{jl}*t^{ac}_{il}
-        {
-          t3("a,c,i,b,k,j") = t3("a,b,i,c,j,k");
+          time00 = mpqc::now(this_world, accurate_time);
+          compute_t3(a, b, c, t3);
+          time01 = mpqc::now(this_world, accurate_time);
+          contraction_time += mpqc::duration_in_s(time00, time01);
+
+          // acbikj contribution
+          // g^{da}_{ci}*t^{db}_{kj} - g^{bk}_{jl}*t^{ac}_{il}
+          {
+            t3("a,c,i,b,k,j") = t3("a,b,i,c,j,k");
+            time00 = mpqc::now(this_world, accurate_time);
+            permutation_time += mpqc::duration_in_s(time01, time00);
+
+            compute_t3(a, c, b, t3);
+            time01 = mpqc::now(this_world, accurate_time);
+            contraction_time += mpqc::duration_in_s(time00, time01);
+          }
+
+          // cabkij contribution
+          // g^{dc}_{ak}*t^{db}_{ij} - g^{bi}_{jl}*t^{ca}_{kl}
+          {
+            t3("c,a,k,b,i,j") = t3("a,c,i,b,k,j");
+            time00 = mpqc::now(this_world, accurate_time);
+            permutation_time += mpqc::duration_in_s(time01, time00);
+
+            compute_t3(c, a, b, t3);
+            time01 = mpqc::now(this_world, accurate_time);
+            contraction_time += mpqc::duration_in_s(time00, time01);
+          }
+
+          // cbakji contribution
+          // g^{dc}_{bk}*t^{da}_{ji} - g^{aj}_{il}*t^{cb}_{kl}
+          {
+            t3("c,b,k,a,j,i") = t3("c,a,k,b,i,j");
+            time00 = mpqc::now(this_world, accurate_time);
+            permutation_time += mpqc::duration_in_s(time01, time00);
+
+            compute_t3(c, b, a, t3);
+            time01 = mpqc::now(this_world, accurate_time);
+            contraction_time += mpqc::duration_in_s(time00, time01);
+          }
+
+          // bcajki contribution
+          // g^{db}_{cj}*t^{da}_{ki} - g^{ak}_{il}*t^{bc}_{jl}
+          {
+            t3("b,c,j,a,k,i") = t3("c,b,k,a,j,i");
+            time00 = mpqc::now(this_world, accurate_time);
+            permutation_time += mpqc::duration_in_s(time01, time00);
+
+            compute_t3(b, c, a, t3);
+            time01 = mpqc::now(this_world, accurate_time);
+            contraction_time += mpqc::duration_in_s(time00, time01);
+          }
+
+          // bacjik contribution
+          // g^{db}_{aj}*t^{dc}_{ik} - g^{ci}_{kl}*t^{ba}_{jl}
+          {
+            t3("b,a,j,c,i,k") = t3("b,c,j,a,k,i");
+            time00 = mpqc::now(this_world, accurate_time);
+            permutation_time += mpqc::duration_in_s(time01, time00);
+
+            compute_t3(b, a, c, t3);
+            time01 = mpqc::now(this_world, accurate_time);
+            contraction_time += mpqc::duration_in_s(time00, time01);
+          }
+
+          t3("a,b,c,i,j,k") = t3("b,a,j,c,i,k");
           time00 = mpqc::now(this_world, accurate_time);
           permutation_time += mpqc::duration_in_s(time01, time00);
 
-          compute_t3(a, c, b, t3);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-        }
+          // compute v3
+          TArray v3;
 
-        // cabkij contribution
-        // g^{dc}_{ak}*t^{db}_{ij} - g^{bi}_{jl}*t^{ca}_{kl}
-        {
-          t3("c,a,k,b,i,j") = t3("a,c,i,b,k,j");
+          // bcajki contribution
+          // g^{bc}_{jk}*t^{a}_{i}
+          {
+            compute_v3(a, b, c, v3);
+            time01 = mpqc::now(this_world, accurate_time);
+            contraction_time += mpqc::duration_in_s(time00, time01);
+          }
+
+          // acbikj contribution
+          // g^{ac}_{ik}*t^{b}_{j}
+          {
+            v3("a,c,i,k,b,j") = v3("b,c,j,k,a,i");
+            time00 = mpqc::now(this_world, accurate_time);
+            permutation_time += mpqc::duration_in_s(time01, time00);
+
+            compute_v3(b, a, c, v3);
+            time01 = mpqc::now(this_world, accurate_time);
+            contraction_time += mpqc::duration_in_s(time00, time01);
+          }
+
+          // abcijk contribution
+          // g^{ab}_{ij}*t^{c}_{k}
+          {
+            v3("a,b,i,j,c,k") = v3("a,c,i,k,b,j");
+            time00 = mpqc::now(this_world, accurate_time);
+            permutation_time += mpqc::duration_in_s(time01, time00);
+
+            compute_v3(c, a, b, v3);
+            time01 = mpqc::now(this_world, accurate_time);
+            contraction_time += mpqc::duration_in_s(time00, time01);
+          }
+
+          v3("a,b,c,i,j,k") = v3("a,b,i,j,c,k");
           time00 = mpqc::now(this_world, accurate_time);
           permutation_time += mpqc::duration_in_s(time01, time00);
 
-          compute_t3(c, a, b, t3);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-        }
+          TArray result;
+          {
+            result("a,b,c,i,j,k") =
+                ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
+                 (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
+                  t3("a,b,c,j,k,i") -
+                  2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") +
+                       t3("a,b,c,j,i,k"))))
+                    .set_world(this_world);
+            time01 = mpqc::now(this_world, accurate_time);
+            contraction_time += mpqc::duration_in_s(time00, time01);
+          }
 
-        // cbakji contribution
-        // g^{dc}_{bk}*t^{da}_{ji} - g^{aj}_{il}*t^{cb}_{kl}
-        {
-          t3("c,b,k,a,j,i") = t3("c,a,k,b,i,j");
-          time00 = mpqc::now(this_world, accurate_time);
-          permutation_time += mpqc::duration_in_s(time01, time00);
+          // compute offset
+          std::size_t a_offset = tr_vir.tile(a).first;
+          std::size_t b_offset = tr_vir.tile(b).first;
+          std::size_t c_offset = tr_vir.tile(c).first;
+          std::array<std::size_t, 6> offset{
+              {a_offset, b_offset, c_offset, 0, 0, 0}};
 
-          compute_t3(c, b, a, t3);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-        }
+          double tmp_energy = 0.0;
+          if (b < a && c < b) {
+            time00 = mpqc::now(this_world, accurate_time);
+            auto ccsd_t_reduce = CCSD_T_Reduce(
+                this->orbital_energy_, this->trange1_engine_->get_occ(),
+                this->trange1_engine_->get_nfrozen(), offset);
+            tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
+            time01 = mpqc::now(this_world, accurate_time);
+            reduce_time += mpqc::duration_in_s(time00, time01);
+            tmp_energy *= 2;
+          } else {
+            time00 = mpqc::now(this_world, accurate_time);
+            auto ccsd_t_reduce = CCSD_T_ReduceSymm(
+                this->orbital_energy_, this->trange1_engine_->get_occ(),
+                this->trange1_engine_->get_nfrozen(), offset);
+            tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
+            time01 = mpqc::now(this_world, accurate_time);
+            reduce_time += mpqc::duration_in_s(time00, time01);
+          }
 
-        // bcajki contribution
-        // g^{db}_{cj}*t^{da}_{ki} - g^{ak}_{il}*t^{bc}_{jl}
-        {
-          t3("b,c,j,a,k,i") = t3("c,b,k,a,j,i");
-          time00 = mpqc::now(this_world, accurate_time);
-          permutation_time += mpqc::duration_in_s(time01, time00);
-
-          compute_t3(b, c, a, t3);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-        }
-
-        // bacjik contribution
-        // g^{db}_{aj}*t^{dc}_{ik} - g^{ci}_{kl}*t^{ba}_{jl}
-        {
-          t3("b,a,j,c,i,k") = t3("b,c,j,a,k,i");
-          time00 = mpqc::now(this_world, accurate_time);
-          permutation_time += mpqc::duration_in_s(time01, time00);
-
-          compute_t3(b, a, c, t3);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-        }
-
-        t3("a,b,c,i,j,k") = t3("b,a,j,c,i,k");
-        time00 = mpqc::now(this_world, accurate_time);
-        permutation_time += mpqc::duration_in_s(time01, time00);
-
-        // compute v3
-        TArray v3;
-
-        // bcajki contribution
-        // g^{bc}_{jk}*t^{a}_{i}
-        {
-          compute_v3(a, b, c, v3);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-        }
-
-        // acbikj contribution
-        // g^{ac}_{ik}*t^{b}_{j}
-        {
-          v3("a,c,i,k,b,j") = v3("b,c,j,k,a,i");
-          time00 = mpqc::now(this_world, accurate_time);
-          permutation_time += mpqc::duration_in_s(time01, time00);
-
-          compute_v3(b, a, c, v3);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-        }
-
-        // abcijk contribution
-        // g^{ab}_{ij}*t^{c}_{k}
-        {
-          v3("a,b,i,j,c,k") = v3("a,c,i,k,b,j");
-          time00 = mpqc::now(this_world, accurate_time);
-          permutation_time += mpqc::duration_in_s(time01, time00);
-
-          compute_v3(c, a, b, v3);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-        }
-
-        v3("a,b,c,i,j,k") = v3("a,b,i,j,c,k");
-        time00 = mpqc::now(this_world, accurate_time);
-        permutation_time += mpqc::duration_in_s(time01, time00);
-
-        TArray result;
-        {
-          result("a,b,c,i,j,k") = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
-                                   (4.0 * t3("a,b,c,i,j,k") +
-                                    t3("a,b,c,k,i,j") + t3("a,b,c,j,k,i") -
-                                    2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") +
-                                         t3("a,b,c,j,i,k"))))
-                                      .set_world(this_world);
-          time01 = mpqc::now(this_world, accurate_time);
-          contraction_time += mpqc::duration_in_s(time00, time01);
-        }
-
-        // compute offset
-        std::size_t a_offset = tr_vir.tile(a).first;
-        std::size_t b_offset = tr_vir.tile(b).first;
-        std::size_t c_offset = tr_vir.tile(c).first;
-        std::array<std::size_t, 6> offset{
-            {a_offset, b_offset, c_offset, 0, 0, 0}};
-
-        double tmp_energy = 0.0;
-        if (b < a && c < b) {
-          time00 = mpqc::now(this_world, accurate_time);
-          auto ccsd_t_reduce = CCSD_T_Reduce(
-              this->orbital_energy_, this->trange1_engine_->get_occ(),
-              this->trange1_engine_->get_nfrozen(), offset);
-          tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
-          time01 = mpqc::now(this_world, accurate_time);
-          reduce_time += mpqc::duration_in_s(time00, time01);
-          tmp_energy *= 2;
-        } else {
-          time00 = mpqc::now(this_world, accurate_time);
-          auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-              this->orbital_energy_, this->trange1_engine_->get_occ(),
-              this->trange1_engine_->get_nfrozen(), offset);
-          tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
-          time01 = mpqc::now(this_world, accurate_time);
-          reduce_time += mpqc::duration_in_s(time00, time01);
-        }
-
-        triple_energy += tmp_energy;
-      }  // loop of c
-      print_progress(ab, ab + 1, progress_points);
-    }  // loop of a_b
+          triple_energy += tmp_energy;
+        }  // loop of c
+      }    // loop of b
+      if (rank == 0) {
+        print_progress(a, a + 1, progress_points);
+      }
+    }  // loop of a
     this_world.gop.fence();
     global_world.gop.fence();
-
-
-
 
     // loop over rank and print
     for (auto i = 0; i < size; ++i) {
@@ -541,14 +537,14 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
     global_world.gop.sum(triple_energy);
 
-//    ExEnv::out0() << "(T) Energy: " << triple_energy << std::endl
-//                  << std::endl;
+    //    ExEnv::out0() << "(T) Energy: " << triple_energy << std::endl
+    //                  << std::endl;
 
     // manually clean replicated array
     TArray::wait_for_lazy_cleanup(this_world);
-    if(size > 1){
+    if (size > 1) {
       t1_this = TArray();
-      if(replicate_){
+      if (replicate_) {
         g_cjkl = TArray();
       }
       global_world.gop.fence();

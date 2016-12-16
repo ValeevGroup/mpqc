@@ -18,8 +18,8 @@ Cite MPQC4 as
 > "MPQC4: Massively Parallel Quantum Chemistry", Edward F. Valeev, Cannada A. Lewis, Chong Peng, Justus A. Calvin, Jinmei Zhang, https://github.com/valeevgroup/mpqc4 .
 
 The development of electronic structure methods in MPQC4 is partially described in the following publications:
-* Cannada A. Lewis , Justus A. Calvin , and Edward F. Valeev, "Clustered Low-Rank Tensor Format: Introduction and Application to Fast Construction of Hartree-Fock Exchange.", *J. Chem. Theor. Comp.*, in press.
-* Chong Peng, Justus A. Calvin, Fabijan Pavosevic, Jinmei Zhang, and Edward F. Valeev, "Massively Parallel Implementation of Explicitly Correlated Coupled-Cluster Singles and Doubles Using TiledArray Framework.", *J. Phys. Chem. A*, submitted.
+* Cannada A. Lewis , Justus A. Calvin , and Edward F. Valeev, "Clustered Low-Rank Tensor Format: Introduction and Application to Fast Construction of Hartree-Fock Exchange.", *J. Chem. Theor. Comp.*, DOI 10.1021/acs.jctc.6b00884;
+* Chong Peng, Justus A. Calvin, Fabijan Pavosevic, Jinmei Zhang, and Edward F. Valeev, "Massively Parallel Implementation of Explicitly Correlated Coupled-Cluster Singles and Doubles Using TiledArray Framework.", *J. Phys. Chem. A*, DOI 10.1021/acs.jpca.6b10150.
 
 ### Performance
 

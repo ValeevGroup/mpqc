@@ -184,6 +184,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
 
   void set_t2(const TArray &t2) { T2_ = t2; }
 
+  bool print_detail() const { return print_detail_; }
+
   const typename DirectAOIntegral::DirectTArray &get_direct_ao_integral()
       const {
     return direct_ao_array_;

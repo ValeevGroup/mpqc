@@ -132,8 +132,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto time1 = mpqc::fenced_now(world);
     auto duration1 = mpqc::duration_in_s(time0, time1);
 
-    ExEnv::out0() << "(T) Energy      " << triples_energy_ << " Time "
-                  << duration1 << std::endl;
+    ExEnv::out0() << "(T) Energy: " << triples_energy_ << " Time: "
+                  << duration1 << " S \n";
   }
 
  private:
@@ -496,18 +496,22 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     this_world.gop.fence();
     global_world.gop.fence();
 
-    // loop over rank and print
-    for (auto i = 0; i < size; ++i) {
-      if (rank == i) {
-        // print out process n
-        std::cout << "Process " << rank << " Time: " << std::endl;
-        std::cout << "Iter: " << iter << std::endl;
-        std::cout << "Permutation Time: " << permutation_time << " S"
-                  << std::endl;
-        std::cout << "Contraction Time: " << contraction_time << " S"
-                  << std::endl;
-        std::cout << "Reduce Time: " << reduce_time << " S" << std::endl
-                  << std::endl;
+    if(this->print_detail()){
+//    if(true){
+      // loop over rank and print
+      for (auto i = 0; i < size; ++i) {
+        global_world.gop.fence();
+        if (rank == i) {
+          // print out process n
+          std::cout << "Process " << rank << " Time: " << std::endl;
+          std::cout << "Iter: " << iter << std::endl;
+          std::cout << "Permutation Time: " << permutation_time << " S"
+                    << std::endl;
+          std::cout << "Contraction Time: " << contraction_time << " S"
+                    << std::endl;
+          std::cout << "Reduce Time: " << reduce_time << " S" << std::endl
+                    << std::endl;
+        }
       }
     }
 
@@ -534,9 +538,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // manually clean replicated array
     if (size > 1) {
       t1_this = TArray();
-      if (replicate_) {
-        g_cjkl = TArray();
-      }
+      g_cjkl = TArray();
+
       TArray::wait_for_lazy_cleanup(this_world);
       global_world.gop.fence();
       world_ptr.reset();

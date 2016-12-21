@@ -27,7 +27,7 @@ macro (validate_tiledarray)
   ##########################
   # ensure it's fresh enough
   ##########################
-  set (TILEDARRAY_OLDEST_REVISION 8682bf35)
+  set (TILEDARRAY_OLDEST_REVISION 27622cca)
   CHECK_CXX_SOURCE_COMPILES(
   "
   #include <tiledarray.h>
@@ -73,7 +73,7 @@ macro (validate_tiledarray)
   "  MADNESS_WORLD_GET_DEFAULT_IS_DISABLED)
 
   if (NOT MADNESS_WORLD_GET_DEFAULT_IS_DISABLED)
-    message(FATAL_ERROR "TiledArray need to be reconfigured with -DMADNESS_DISABLE_WORLD_GET_DEFAULT=ON CMake option")
+    message(FATAL_ERROR "TiledArray uses external MADNESS, requires MADNESS configured with -DDISABLE_WORLD_GET_DEFAULT=ON CMake option")
   endif()
 
   cmake_pop_check_state()

@@ -10,17 +10,18 @@
 namespace mpqc {
 namespace scf {
 
+template <typename Tile, typename Policy>
 class FockBuilder {
  public:
-  using array_type = TA::TSpArrayD;
+  using array_type = TA::DistArray<Tile,Policy>;
   virtual ~FockBuilder() = default;
 
   virtual array_type operator()(array_type const &, array_type const &) = 0;
 
   virtual void print_iter(std::string const &) = 0;
 
-  virtual void register_fock(const TA::TSpArrayD &,
-                             FormulaRegistry<TA::TSpArrayD> &) = 0;
+  virtual void register_fock(const array_type &,
+                             FormulaRegistry<array_type> &) = 0;
 };
 
 }  // namespace scf

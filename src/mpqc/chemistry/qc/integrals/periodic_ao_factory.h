@@ -26,39 +26,9 @@ typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> Vectorz;
 const std::complex<double> I(0.0, 1.0);
 
 namespace mpqc {
-namespace integrals {
-
-template <typename Tile, typename Policy>
-class PeriodicAOFactory;
+namespace lcao {
 
 namespace detail {
-
-/*!
- * \brief This constructs a PeriodicAOFactory object
- *
- * \tparam Tile the type of TA Tensor
- * \tparam Policy the type of TA policy
- * \param kv KeyVal object
- * \return the shared pointer of PeriodicAOFactory object
- */
-template <typename Tile, typename Policy>
-std::shared_ptr<PeriodicAOFactory<Tile, Policy>> construct_periodic_ao_factory(
-    const KeyVal &kv) {
-  std::shared_ptr<PeriodicAOFactory<Tile, Policy>> pao_factory;
-
-  if (kv.exists_class("wfn_world:periodic_ao_factory")) {
-    pao_factory = kv.class_ptr<PeriodicAOFactory<Tile, Policy>>(
-        "wfn_world:periodic_ao_factory");
-  } else {
-    pao_factory = std::make_shared<PeriodicAOFactory<Tile, Policy>>(kv);
-    std::shared_ptr<DescribedClass> pao_factory_base = pao_factory;
-    KeyVal &kv_nonconst = const_cast<KeyVal &>(kv);
-    kv_nonconst.keyval("wfn_world")
-        .assign("periodic_ao_factory", pao_factory_base);
-  }
-  return pao_factory;
-}
-
 /*!
  * \brief This extends 1D tiled range by repeating it multiple times
  *
@@ -124,6 +94,51 @@ int64_t direct_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i latt_max);
 int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i nk);
 
 /*!
+ * \brief This shifts the position of a Molecule object
+ *
+ * \note All atom positions will be shifted
+ * \param mol the Molecule object
+ * \param shift the 3D vector of the shift
+ * \return the shared pointer of the shifted Molecule object
+ */
+std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol, Vector3d shift);
+
+}  // namespace mpqc::lcao::detail
+
+namespace gaussian {
+
+template <typename Tile, typename Policy>
+class PeriodicAOFactory;
+
+/*!
+ * \brief This constructs a PeriodicAOFactory object
+ *
+ * \tparam Tile the type of TA Tensor
+ * \tparam Policy the type of TA policy
+ * \param kv KeyVal object
+ * \return the shared pointer of PeriodicAOFactory object
+ */
+template <typename Tile, typename Policy>
+std::shared_ptr<PeriodicAOFactory<Tile, Policy>> construct_periodic_ao_factory(
+    const KeyVal &kv) {
+  std::shared_ptr<PeriodicAOFactory<Tile, Policy>> pao_factory;
+
+  if (kv.exists_class("wfn_world:periodic_ao_factory")) {
+    pao_factory = kv.class_ptr<PeriodicAOFactory<Tile, Policy>>(
+        "wfn_world:periodic_ao_factory");
+  } else {
+    pao_factory = std::make_shared<PeriodicAOFactory<Tile, Policy>>(kv);
+    std::shared_ptr<DescribedClass> pao_factory_base = pao_factory;
+    KeyVal &kv_nonconst = const_cast<KeyVal &>(kv);
+    kv_nonconst.keyval("wfn_world")
+        .assign("periodic_ao_factory", pao_factory_base);
+  }
+  return pao_factory;
+}
+
+namespace detail {
+
+/*!
  * \brief This shifts the origin of a Basis object
  *
  * \note All functions in the basis will be shifted
@@ -131,8 +146,7 @@ int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i nk);
  * \param shift the 3D vector of the shift
  * \return the shared pointer of shifted Basis object
  */
-std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                 Vector3d shift);
+std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift);
 
 /*!
  * \brief This shifts the origin of a Basis object by multiple vectors,
@@ -144,20 +158,8 @@ std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
  * \param dcell the direct unit cell params
  * \return the shared pointer of the compound Basis object
  */
-std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                 Vector3d shift_base,
-                                                 Vector3i nshift,
-                                                 Vector3d dcell);
-
-/*!
- * \brief This shifts the position of a Molecule object
- *
- * \note All atom positions will be shifted
- * \param mol the Molecule object
- * \param shift the 3D vector of the shift
- * \return the shared pointer of the shifted Molecule object
- */
-std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol, Vector3d shift);
+std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift_base,
+                                          Vector3i nshift, Vector3d dcell);
 
 /*!
  * \brief This gives a valid libint2::any object
@@ -209,12 +211,13 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
     RJ_max_ = decltype(RJ_max_)(
         kv.value<std::vector<int>>(prefix + "rjmax").data());
 
+    using ::mpqc::lcao::detail::direct_ord_idx;
     R_size_ =
-        1 + detail::direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
+        1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
     RJ_size_ =
-        1 + detail::direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
+        1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
     RD_size_ =
-        1 + detail::direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
+        1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
 
     set_oper(Tile());
 
@@ -275,7 +278,7 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
    * \brief This computes sparse complex array
    *
    * \param world MADNESS world
-   * \param engine integrals::EnginePool
+   * \param engine a utility::TSPool object
    * that is initialized with Operator and bases
    * \param bases std::array of Basis
    * \param p_screen Screener
@@ -285,12 +288,11 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
   TA::DistArray<
       Tile, typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
                                     TA::SparsePolicy>::type>
-  compute_integrals(
-      madness::World &world, ShrPool<libint2::Engine> &engine,
-      Bvector const &bases,
-      std::shared_ptr<Screener> p_screen =
-          std::make_shared<integrals::Screener>(integrals::Screener{})) {
-    integrals::detail::integral_engine_precision = 0.0;
+  compute_integrals(madness::World &world, ShrPool<libint2::Engine> &engine,
+                    BasisVector const &bases,
+                    std::shared_ptr<Screener> p_screen =
+                        std::make_shared<Screener>(Screener{})) {
+    detail::integral_engine_precision = 0.0;
     auto result = sparse_complex_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
@@ -300,20 +302,20 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
   /// system
   void parse_one_body_periodic(
       const Formula &formula,
-      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
       const Molecule &shifted_mol);
 
   /// parse two body formula and set engine_pool and basis array for periodic
   /// system
   void parse_two_body_periodic(
       const Formula &formula,
-      std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
       Vector3d shift_coul, bool if_coulomb);
 
   /*!
    * \brief Construct sparse complex integral tensors in parallel.
    *
-   * \param shr_pool should be a std::shared_ptr to an IntegralEnginePool
+   * \param shr_pool should be a std::shared_ptr to an IntegralTSPool
    * \param bases should be a std::array of Basis, which will be copied.
    * \param op needs to be a function or functor that takes a TA::TensorZ && and
    * returns any valid tile type. Op is copied so it can be moved.
@@ -325,7 +327,7 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
    */
   template <typename E>
   TA::DistArray<Tile, TA::SparsePolicy> sparse_complex_integrals(
-      madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
+      madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
       std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
       Op op = TA::Noop<TA::TensorZ, true>());
 
@@ -361,8 +363,8 @@ template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
   TArray result;
-  Bvector bs_array;
-  std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+  BasisVector bs_array;
+  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   double size = 0.0;
 
   if (formula.rank() == 2) {
@@ -378,8 +380,10 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       result = compute_integrals(this->world_, engine_pool, bs_array);
     } else if (formula.oper().type() == Operator::Type::Nuclear) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-        auto shift_mol = detail::direct_vector(RJ, RJ_max_, dcell_);
-        auto shifted_mol = detail::shift_mol_origin(*unitcell_, shift_mol);
+        using ::mpqc::lcao::detail::direct_vector;
+        using ::mpqc::lcao::detail::shift_mol_origin;
+        auto shift_mol = direct_vector(RJ, RJ_max_, dcell_);
+        auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
         parse_one_body_periodic(formula, engine_pool, bs_array, *shifted_mol);
         if (RJ == 0)
           result = compute_integrals(this->world_, engine_pool, bs_array);
@@ -414,7 +418,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       j_formula.set_operator_type(Operator::Type::Coulomb);
 
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-        auto vec_RJ = detail::direct_vector(RJ, RJ_max_, dcell_);
+        using ::mpqc::lcao::detail::direct_vector;
+        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
         parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
 
         auto time_g0 = mpqc::now(this->world_, false);
@@ -439,7 +444,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       auto k_formula = formula;
       k_formula.set_operator_type(Operator::Type::Coulomb);
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-        auto vec_RJ = detail::direct_vector(RJ, RJ_max_, dcell_);
+        using ::mpqc::lcao::detail::direct_vector;
+        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
         parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ,
                                 false);
         auto time_g0 = mpqc::now(this->world_, false);
@@ -480,7 +486,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
     const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
     const Molecule &shifted_mol) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
@@ -505,10 +511,10 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
   ket_basis =
       detail::shift_basis_origin(*ket_basis, zero_shift_base, R_max_, dcell_);
 
-  bases = Bvector{{*bra_basis, *ket_basis}};
+  bases = BasisVector{{*bra_basis, *ket_basis}};
 
   auto oper_type = formula.oper().type();
-  engine_pool = integrals::make_engine_pool(
+  engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
       detail::to_libint2_operator_params(oper_type, *this,
@@ -518,7 +524,7 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
     const Formula &formula,
-    std::shared_ptr<EnginePool<libint2::Engine>> &engine_pool, Bvector &bases,
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
     Vector3d shift_coul, bool if_coulomb) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
@@ -561,13 +567,14 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
       detail::shift_basis_origin(*ket_basis1, shift_coul, RD_max_, dcell_);
 
   if (formula.notation() == Formula::Notation::Chemical)
-    bases = Bvector{{*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1}};
+    bases = BasisVector{{*bra_basis0, *bra_basis1, *ket_basis0, *ket_basis1}};
   else
     throw "Physical notation not supported!";
-  //    bases = Bvector{{*bra_basis0, *ket_basis0, *bra_basis1, *ket_basis1}};
+  //    bases = BasisVector{{*bra_basis0, *ket_basis0, *bra_basis1,
+  //    *ket_basis1}};
 
   auto oper_type = formula.oper().type();
-  engine_pool = integrals::make_engine_pool(
+  engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
       libint2::BraKet::xx_xx, detail::to_libint2_operator_params(
@@ -578,7 +585,7 @@ template <typename Tile, typename Policy>
 template <typename E>
 TA::DistArray<Tile, TA::SparsePolicy>
 PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
-    madness::World &world, ShrPool<E> shr_pool, Bvector const &bases,
+    madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen, Op op) {
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
@@ -587,7 +594,7 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
   TA::TensorF tile_norms(trange.tiles_range(), 0.0);
 
   // Copy the Bases for the Integral Builder
-  auto shr_bases = std::make_shared<Bvector>(bases);
+  auto shr_bases = std::make_shared<BasisVector>(bases);
 
   // Make a pointer to an Integral builder.  Doing this because we want to use
   // it in Tasks.
@@ -655,6 +662,7 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-}  // namespace integrals
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_

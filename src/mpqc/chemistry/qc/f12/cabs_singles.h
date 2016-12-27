@@ -11,14 +11,14 @@
 #include "mpqc/chemistry/qc/integrals/lcao_factory.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 template <typename Tile>
 class CABSSingles {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
-  using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
+  using LCAOFactoryType = LCAOFactory<Tile, Policy>;
 
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
@@ -124,7 +124,7 @@ typename CABSSingles<Tile>::real_t CABSSingles<Tile>::compute(
     auto tr_A = F_AB.trange().data()[0];
 
     F_MA =
-        array_ops::eigen_to_array<Tile>(F_Ma.world(), F_MA_eigen, tr_m, tr_A);
+        array_ops::eigen_to_array<Tile,TA::SparsePolicy>(F_Ma.world(), F_MA_eigen, tr_m, tr_A);
   }
   //  std::cout << F_MA << std::endl;
 
@@ -224,7 +224,7 @@ TA::DistArray<Tile, TA::SparsePolicy> CABSSingles<Tile>::compute_preconditioner(
   return P_MA;
 }
 
-}  // end of namespace f12
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_CABS_SINGLES_H_

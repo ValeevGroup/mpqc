@@ -6,7 +6,8 @@
 #include "mpqc/chemistry/qc/integrals/task_integrals_common.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 namespace detail {
 
 /*! \brief Class to hold information for QQR type screening.
@@ -29,8 +30,9 @@ class CachedShellInfo {
     Vector3d shell_weighted_center(Shell const &sh0, Shell const &sh1);
 };
 
-} // namespace detail
-} // namespace integrals
-} // namespace mpqc
+}  // namespace  detail
+}  // namespace  gaussian
+}  // namespace  lcao
+}  // namespace  mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_CACHED_SHELL_INFO_H_

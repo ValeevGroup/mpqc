@@ -1,7 +1,7 @@
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
 namespace detail {
 
 TA::TiledRange1 extend_trange1(TA::TiledRange1 tr0, int64_t size) {
@@ -89,8 +89,32 @@ int64_t k_ord_idx(int64_t x, int64_t y, int64_t z, Vector3i nk) {
   }
 }
 
-std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                 Vector3d shift) {
+std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol,
+                                           Vector3d shift) {
+  std::vector<AtomBasedClusterable> vec_of_clusters;
+  for (auto &cluster : mol) {
+    AtomBasedCluster shifted_cluster;
+    for (auto &atom : collapse_to_atoms(cluster)) {
+      Atom shifted_atom(atom.center() + shift, atom.mass(), atom.charge());
+      shifted_cluster.add_clusterable(shifted_atom);
+    }
+    shifted_cluster.update_cluster();
+    vec_of_clusters.emplace_back(shifted_cluster);
+  }
+
+  Molecule result(vec_of_clusters);
+
+  auto result_ptr = std::make_shared<Molecule>(result);
+  return result_ptr;
+}
+
+}  // namespace detail
+
+namespace gaussian {
+namespace detail {
+
+std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
+                                                    Vector3d shift) {
   std::vector<ShellVec> vec_of_shells;
   for (auto shell_vec : basis.cluster_shells()) {
     ShellVec shells;
@@ -102,17 +126,19 @@ std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
     }
     vec_of_shells.push_back(shells);
   }
-  basis::Basis result(vec_of_shells);
-  auto result_ptr = std::make_shared<basis::Basis>(result);
+  Basis result(vec_of_shells);
+  auto result_ptr = std::make_shared<Basis>(result);
   return result_ptr;
 }
 
-std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
-                                                 Vector3d shift_base,
-                                                 Vector3i nshift,
-                                                 Vector3d dcell) {
+std::shared_ptr<Basis> shift_basis_origin(Basis &basis,
+                                                    Vector3d shift_base,
+                                                    Vector3i nshift,
+                                                    Vector3d dcell) {
   std::vector<ShellVec> vec_of_shells;
 
+  using ::mpqc::lcao::detail::direct_ord_idx;
+  using ::mpqc::lcao::detail::direct_vector;
   int64_t shift_size =
       1 + direct_ord_idx(nshift(0), nshift(1), nshift(2), nshift);
 
@@ -132,27 +158,8 @@ std::shared_ptr<basis::Basis> shift_basis_origin(basis::Basis &basis,
     }
   }
 
-  basis::Basis result(vec_of_shells);
-  auto result_ptr = std::make_shared<basis::Basis>(result);
-  return result_ptr;
-}
-
-std::shared_ptr<Molecule> shift_mol_origin(const Molecule &mol,
-                                           Vector3d shift) {
-  std::vector<AtomBasedClusterable> vec_of_clusters;
-  for (auto &cluster : mol) {
-    AtomBasedCluster shifted_cluster;
-    for (auto &atom : collapse_to_atoms(cluster)) {
-      Atom shifted_atom(atom.center() + shift, atom.mass(), atom.charge());
-      shifted_cluster.add_clusterable(shifted_atom);
-    }
-    shifted_cluster.update_cluster();
-    vec_of_clusters.emplace_back(shifted_cluster);
-  }
-
-  Molecule result(vec_of_clusters);
-
-  auto result_ptr = std::make_shared<Molecule>(result);
+  Basis result(vec_of_shells);
+  auto result_ptr = std::make_shared<Basis>(result);
   return result_ptr;
 }
 
@@ -196,5 +203,6 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 }
 
 }  // namespace detail
-}  // namespace integrals
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc

@@ -1,7 +1,8 @@
 #include "mpqc/chemistry/qc/integrals/screening/qqr_screening.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 bool QQR::skip(int64_t a, int64_t b, int64_t c, int64_t d) {
 
@@ -42,5 +43,6 @@ bool QQR::skip(int64_t a, int64_t b, int64_t c, int64_t d) {
 double QQR::well_seperated_thresh_ = 0.2;
 
 
-} // namespace integrals
-} // namespace mpqc
+}  // namespace  gaussian
+}  // namespace  lcao
+}  // namespace  mpqc

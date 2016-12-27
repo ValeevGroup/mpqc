@@ -36,7 +36,7 @@ class MPQCTask {
   void run() {
     auto world_popper = TA::push_default_world(world_);
 
-    auto wfn = keyval_->keyval("wfn").class_ptr<qc::Wavefunction>();
+    auto wfn = keyval_->keyval("wfn").class_ptr<lcao::Wavefunction>();
 
     //  auto energy_prop = qc::Energy(kv);
     //  auto energy_prop_ptr = &energy_prop;

@@ -13,6 +13,7 @@
 namespace mpqc {
 class UnitCell : public Molecule {
  private:
+  /// \todo extend to nonorthogonal unit cells
   Vector3d dcell_ = {0.0, 0.0, 0.0};  ///< direct unit cell params (in a.u.)
 
  public:

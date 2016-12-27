@@ -8,7 +8,10 @@
 namespace mpqc {
 namespace scf {
 
-class PurificationDensityBuilder : public DensityBuilder {
+template <typename Tile, typename Policy>
+class PurificationDensityBuilder : public DensityBuilder<Tile,Policy> {
+ public:
+  using array_type = typename DensityBuilder<Tile,Policy>::array_type;
  private:
   array_type S_;
   array_type M_inv_;
@@ -36,4 +39,7 @@ class PurificationDensityBuilder : public DensityBuilder {
 
 }  // namespace scf
 }  // namespace mpqc
+
+#include "purification_density_build_impl.h"
+
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PURIFICATION_DENSITY_BUILD_H_

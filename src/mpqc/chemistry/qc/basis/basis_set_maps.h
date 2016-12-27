@@ -7,7 +7,7 @@
 #include <string>
 
 namespace mpqc {
-namespace basis {
+namespace lcao {
 static std::map<std::string, unsigned int> elements{
     {"H", 1},   {"He", 2},  {"Li", 3},  {"Be", 4},  {"B", 5},   {"C", 6},
     {"N", 7},   {"O", 8},   {"F", 9},   {"Ne", 10}, {"Na", 11}, {"Mg", 12},
@@ -20,5 +20,5 @@ static std::map<std::string, unsigned int> elements{
 static std::map<std::string, unsigned int> ang_mo_map{
     {"S", 0}, {"P", 1}, {"D", 2}, {"F", 3}, {"G", 4}, {"H", 5}, {"I", 6}};
 
-}  // namespace basis
+}  // namespace lcao
 }  // namespace mpqc

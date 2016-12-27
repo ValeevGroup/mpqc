@@ -7,9 +7,10 @@
 
 #include "mpqc/chemistry/qc/f12/ccsd_f12.h"
 #include "mpqc/chemistry/qc/f12/db_f12_intermediates.h"
+#include "mpqc/mpqc_config.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
 /***
  * \class DBCCSDF12 Dual basis CCSD F12 class
@@ -26,7 +27,7 @@ class DBCCSD_F12 : public CCSD_F12<Tile> {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
-  using LCAOFactoryType = integrals::LCAOFactory<Tile, Policy>;
+  using LCAOFactoryType = LCAOFactory<Tile, Policy>;
 
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
@@ -42,7 +43,8 @@ class DBCCSD_F12 : public CCSD_F12<Tile> {
    *
    * invalid keywords: approximation, vt_couple
    */
-  DBCCSD_F12(const KeyVal& kv) : cc::CCSD<Tile,TA::SparsePolicy>(kv), CCSD_F12<Tile>(kv)  {}
+  DBCCSD_F12(const KeyVal& kv)
+      : CCSD<Tile, TA::SparsePolicy>(kv), CCSD_F12<Tile>(kv) {}
   virtual ~DBCCSD_F12() = default;
 
  private:
@@ -122,28 +124,28 @@ typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
   auto ijij_ijji_shape = f12::make_ijij_ijji_shape(occ4_trange);
 
   // compute V_ijij_ijji
-  TArray V_ijij_ijji = compute_V_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
+  TArray V_ijij_ijji = f12::compute_V_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
 
   // VT2 contribution
   TArray tmp =
-      compute_VT2_ijij_ijji_db_df(lcao_factory, this->t2(), ijij_ijji_shape);
+      mpqc::lcao::f12::compute_VT2_ijij_ijji_db_df(lcao_factory, this->t2(), ijij_ijji_shape);
   V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
 
   // VT1 contribution
   {
     TArray tmp =
-        compute_VT1_ijij_ijji_db_df(lcao_factory, this->t1(), ijij_ijji_shape);
+        f12::compute_VT1_ijij_ijji_db_df(lcao_factory, this->t1(), ijij_ijji_shape);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 
   // V contribution to energy
   Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
-                .reduce(f12::F12PairEnergyReductor<Tile>(2 * C_ijij_bar,
-                                                         2 * C_ijji_bar, nocc));
+                .reduce(f12::F12PairEnergyReductor<Tile>(
+                    2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, nocc));
   if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
 
   // compute X term
-  TArray X_ijij_ijji = compute_X_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
+  TArray X_ijij_ijji = f12::compute_X_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
 
   auto Fij = this->lcao_factory().compute(L"(i|F|j)[df]");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
@@ -151,7 +153,7 @@ typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
   {
     Matrix eij = X_ijij_ijji("i1,j1,i2,j2")
                      .reduce(f12::F12PairEnergyReductor<Tile>(
-                         CC_ijij_bar, CC_ijji_bar, nocc));
+                         f12::CC_ijij_bar, f12::CC_ijji_bar, nocc));
     eij *= -1;
     if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
     Eij_F12 += eij;
@@ -160,10 +162,10 @@ typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
   // compute B term
   {
     TArray B_ijij_ijji =
-        compute_B_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
+        f12::compute_B_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
-                     .reduce(F12PairEnergyReductor<Tile>(CC_ijij_bar,
-                                                         CC_ijji_bar, nocc));
+                     .reduce(f12::F12PairEnergyReductor<Tile>(
+                         f12::CC_ijij_bar, f12::CC_ijji_bar, nocc));
     if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
@@ -171,7 +173,11 @@ typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
   return Eij_F12;
 }
 
-}  // end of namespace f12
-}  // end of namespace mpqc
+#if TA_DEFAULT_POLICY == 1
+extern template class DBCCSD_F12<TA::TensorD>;
+#endif
+
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_DBCCSD_F12_H_

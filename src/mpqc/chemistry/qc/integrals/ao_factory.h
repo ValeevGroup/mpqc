@@ -17,12 +17,11 @@
 #include <madness/world/worldmem.h>
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 template <typename Tile, typename Policy>
 class AOFactory;
-
-namespace detail {
 
 template <typename Tile, typename Policy>
 std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
@@ -38,8 +37,6 @@ std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
   }
   return ao_factory;
 };
-
-}  // namespace detail
 
 // TODO better inverse of two center
 // TODO direct integral
@@ -81,7 +78,7 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
   AOFactory(const KeyVal& kv)
       : AOFactoryBase(kv), ao_formula_registry_(), orbital_space_registry_() {
     std::string prefix = "";
-    if (kv.exists("wfn_wolrd") || kv.exists_class("wfn_world")) {
+    if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
       prefix = "wfn_world:";
     }
 
@@ -154,11 +151,11 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
                                     TA::SparsePolicy>::type>
   compute_integrals(
       madness::World& world, ShrPool<libint2::Engine>& engine,
-      Bvector const& bases,
+      BasisVector const& bases,
       std::shared_ptr<Screener> p_screen =
-          std::make_shared<integrals::Screener>(integrals::Screener{})) {
+          std::make_shared<Screener>(Screener{})) {
     auto result =
-        mpqc::integrals::sparse_integrals(world, engine, bases, p_screen, op_);
+        sparse_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -169,11 +166,11 @@ class AOFactory : public AOFactoryBase, public DescribedClass {
                                         TA::DensePolicy>::type>
   compute_integrals(
       madness::World& world, ShrPool<libint2::Engine>& engine,
-      Bvector const& bases,
+      BasisVector const& bases,
       std::shared_ptr<Screener> p_screen =
-          std::make_shared<integrals::Screener>(integrals::Screener{})) {
+          std::make_shared<Screener>(Screener{})) {
     auto result =
-        mpqc::integrals::dense_integrals(world, engine, bases, p_screen, op_);
+        dense_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -263,7 +260,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
 template <typename Tile, typename Policy>
 typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     const Formula& formula) {
-  Bvector bs_array;
+  BasisVector bs_array;
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
@@ -319,7 +316,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       else {
         time0 = mpqc::now(world_, accurate_time_);
 
-        std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+        std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
         parse_one_body(formula, engine_pool, bs_array);
         result = compute_integrals(this->world_, engine_pool, bs_array);
 
@@ -338,7 +335,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       time0 = mpqc::now(world_, accurate_time_);
 
       // compute integral
-      std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+      std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
       parse_two_body_two_center(formula, engine_pool, bs_array);
       result = compute_integrals(this->world_, engine_pool, bs_array);
 
@@ -360,7 +357,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       auto space_index = get_jk_orbital_space(formula.oper());
       auto& space = orbital_space_registry_->retrieve(space_index);
 
-      auto obs = space.ao_key().name();
+      auto obs = space.ao_index().name();
       if (formula.oper().has_option(Operator::Option::DensityFitting)) {
         auto three_center_formula = get_jk_df_formula(formula, obs);
 
@@ -389,7 +386,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         // find the density
         auto space_index = get_jk_orbital_space(formula.oper());
         auto& space = orbital_space_registry_->retrieve(space_index);
-        auto obs = space.ao_key().name();
+        auto obs = space.ao_index().name();
         // convert to ao formula
         auto four_center_formula = get_jk_formula(formula, obs);
         auto four_center = this->compute(four_center_formula);
@@ -523,7 +520,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
 
     auto tr_result = result.trange().data()[0];
-    result = array_ops::eigen_to_array<TA::TensorD>(
+    result = array_ops::eigen_to_array<Tile,Policy>(
         result.world(), result_eig, tr_result, tr_result);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -553,7 +550,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       RowMatrixXd inv_eig = es.operatorInverseSqrt();
 
       auto tr_result = result.trange().data()[0];
-      result = array_ops::eigen_to_array<TA::TensorD>(
+      result = array_ops::eigen_to_array<Tile,Policy>(
           result.world(), inv_eig, tr_result, tr_result);
     }
 
@@ -578,10 +575,10 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
   time0 = mpqc::now(world_, accurate_time_);
   TArray result;
 
-  Bvector bs_array;
-  std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+  BasisVector bs_array;
+  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   std::shared_ptr<Screener> p_screener =
-      std::make_shared<integrals::Screener>(integrals::Screener{});
+      std::make_shared<Screener>(Screener{});
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
@@ -636,11 +633,11 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
   } else {
     time0 = mpqc::now(world_, accurate_time_);
 
-    Bvector bs_array;
+    BasisVector bs_array;
     std::shared_ptr<Screener> p_screener =
-        std::make_shared<integrals::Screener>(integrals::Screener{});
+        std::make_shared<Screener>(Screener{});
 
-    std::shared_ptr<EnginePool<libint2::Engine>> engine_pool;
+    std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
     parse_two_body_four_center(formula, engine_pool, bs_array, p_screener);
     result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
 
@@ -666,7 +663,8 @@ class AOFactory<TA::TensorD, TA::SparsePolicy>;
 //extern template
 //class AOFactory<TA::TensorD, TA::DensePolicy>;
 
-}
-}
+}  // namespace gaussian
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_H_

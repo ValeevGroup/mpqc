@@ -66,32 +66,32 @@ class ClrCADFFockBuilder : public FockBuilder {
   std::vector<std::array<double, 3>> c_mo_sizes_;
   std::vector<std::array<double, 3>> f_df_sizes_;
 
-  DArrayType make_three_center_integrals(basis::Basis const &obs,
-                                         basis::Basis const &dfbs) {
+  DArrayType make_three_center_integrals(lcao::Basis const &obs,
+                                         lcao::Basis const &dfbs) {
     auto &world = E_.world();
 
-    auto basis_array = std::vector<basis::Basis>{{dfbs, obs, obs}};
+    auto basis_array = std::vector<lcao::Basis>{{dfbs, obs, obs}};
 
-    auto eng_pool = integrals::make_engine_pool(
+    auto eng_pool = lcao::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, obs, obs),
         libint2::BraKet::xs_xx);
 
     auto p_screen =
-        std::make_shared<integrals::Screener>(integrals::Screener{});
+        std::make_shared<lcao::Screener>(lcao::Screener{});
 
     auto my_class = tensor::TaToDecompTensor(clr_threshold_);
     using clr_type = decltype(my_class(std::declval<TA::TensorD>()));
     auto func = std::function<clr_type(TA::TensorD &&)>(my_class);
 
-    return integrals::sparse_integrals(world, eng_pool, basis_array, p_screen,
+    return lcao::sparse_integrals(world, eng_pool, basis_array, p_screen,
                                        func);
   }
 
  public:
   ClrCADFFockBuilder(
       Molecule const &clustered_mol, Molecule const &df_clustered_mol,
-      basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
+      lcao::BasisSet const &obs_set, lcao::BasisSet const &dfbs_set,
+      lcao::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       bool use_forced_shape, double force_threshold, double lcao_chop_threshold,
       double clr_thresh)
       : ClrCADFFockBuilder(clustered_mol, df_clustered_mol, obs_set, dfbs_set,
@@ -100,8 +100,8 @@ class ClrCADFFockBuilder : public FockBuilder {
     force_threshold_ = force_threshold;
     lcao_chop_threshold_ = lcao_chop_threshold;
 
-    basis::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
-    basis::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
+    lcao::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
+    lcao::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
 
     dE_ = make_three_center_integrals(obs, dfbs);
 
@@ -116,8 +116,8 @@ class ClrCADFFockBuilder : public FockBuilder {
 
   ClrCADFFockBuilder(
       Molecule const &clustered_mol, Molecule const &df_clustered_mol,
-      basis::BasisSet const &obs_set, basis::BasisSet const &dfbs_set,
-      integrals::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
+      lcao::BasisSet const &obs_set, lcao::BasisSet const &dfbs_set,
+      lcao::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       double clr_threshold)
       : FockBuilder(), clr_threshold_(clr_threshold) {
     // Grab needed ao integrals
@@ -155,10 +155,10 @@ class ClrCADFFockBuilder : public FockBuilder {
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
 
-    basis::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
-    basis::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
+    lcao::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
+    lcao::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
 
-    auto eng_pool = integrals::make_engine_pool(
+    auto eng_pool = lcao::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, dfbs),
         libint2::BraKet::xs_xs);
 
@@ -167,7 +167,7 @@ class ClrCADFFockBuilder : public FockBuilder {
         eng_pool, obs_atom_to_cluster_map, dfbs_atom_to_cluster_map);
 
     auto by_cluster_trange =
-        integrals::detail::create_trange(utility::make_array(dfbs, obs, obs));
+        lcao::detail::create_trange(utility::make_array(dfbs, obs, obs));
 
     ArrayType C_df =
         scf::reblock_from_atoms(C_df_temp, obs_atom_to_cluster_map,

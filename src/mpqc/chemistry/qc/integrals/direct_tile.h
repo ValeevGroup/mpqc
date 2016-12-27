@@ -13,7 +13,8 @@
 #include <tiledarray.h>
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 
 /*! \brief A direct tile for integral construction
  *
@@ -87,8 +88,8 @@ class DirectTile {
 template <typename Tile, typename Policy, typename Engine = libint2::Engine>
 class DirectArray {
  public:
-  using Builder = integrals::DirectIntegralBuilder<Tile, Engine>;
-  using Array = TA::DistArray<integrals::DirectTile<Tile, Engine>, Policy>;
+  using Builder = DirectIntegralBuilder<Tile, Engine>;
+  using Array = TA::DistArray<DirectTile<Tile, Engine>, Policy>;
 
  private:
   std::shared_ptr<Builder> builder_;
@@ -127,7 +128,8 @@ class DirectArray {
   const std::shared_ptr<Builder> builder() const { return builder_; }
 };
 
-}  // namespace integrals
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_DIRECT_TILE_H_

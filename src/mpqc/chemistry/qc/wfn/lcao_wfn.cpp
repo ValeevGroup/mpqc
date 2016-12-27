@@ -5,7 +5,7 @@
 #include "lcao_wfn.h"
 
 namespace mpqc {
-namespace qc {
+namespace lcao {
 
 template class LCAOWavefunction<TA::TensorD, TA::DensePolicy>;
 template class LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;

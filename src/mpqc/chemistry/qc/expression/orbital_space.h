@@ -12,9 +12,16 @@
 #include "operator.h"
 
 namespace mpqc {
+namespace lcao {
+
+/// @addtogroup ChemistryESLCAO
+/// @{
 
 /**
- *  \brief Class that represent a set of LCAO
+ *  \brief OrbitalSpace represents a set of LCAO
+ *
+ *  \tparam Array the type that represents the expansion coefficients
+ *
  */
 
 template <typename Array>
@@ -25,25 +32,30 @@ class OrbitalSpace {
   /**
    * Constructor
    *
-   *  @param mo_index  OrbitalIndex that represent mo space
-   *  @param ao_index  OrbitalIndex that represent ao space
-   *  @param tarray    a TiledArray::DistArray type
+   *  @param idx     an OrbitalIndex that represents this space; it is converted
+   *                 to the base index
+   *  @param ao_idx  an OrbitalIndex that represents the AO space supporting
+   *                 this space; it is converted to the base index
+   *  @param tarray  a TiledArray::DistArray type
    */
 
-  OrbitalSpace(const OrbitalIndex& mo_index, const OrbitalIndex& ao_index,
+  OrbitalSpace(const OrbitalIndex& idx, const OrbitalIndex& ao_idx,
                const Array& tarray)
-      : mo_index_(mo_index), ao_index_(ao_index), coefs_(tarray) {}
+      : index_(make_base_index(idx)),
+        ao_index_(make_base_index(ao_idx)),
+        coefs_(tarray) {}
 
   ~OrbitalSpace() = default;
 
-  /// @return OrbitalIndex object for this space
-  const OrbitalIndex& mo_key() const { return mo_index_; }
+  /// @return the base OrbitalIndex object for this space
+  const OrbitalIndex& index() const { return index_; }
 
-  /// @return OrbitalIndex object for the AO space supporting this space
-  const OrbitalIndex& ao_key() const { return ao_index_; }
+  /// @return the base OrbitalIndex object for the AO space supporting this space
+  const OrbitalIndex& ao_index() const { return ao_index_; }
 
-  /// @return the coefficient matrix (rows = AOs, columns = LCAOs)
-  const Array& array() const { return coefs_; }
+  /// @return a const reference to the coefficient matrix (an \c Array object,
+  ///         whose rows are AOs, and columns are LCAOs).
+  const Array& coefs() const { return coefs_; }
 
   /// @return rank of this space
   size_t rank() const {
@@ -53,6 +65,11 @@ class OrbitalSpace {
   /// @return rank of the AO space
   size_t ao_rank() const {
     return coefs_.trange().elements_range().extent_data()[0];
+  }
+
+  /// @return the \c std::string object that contains a brief description of this space
+  const std::string& descriptor() const {
+    return descriptor_;
   }
 
   /// interface to TA::Array () function
@@ -67,10 +84,15 @@ class OrbitalSpace {
   };
 
  private:
-  OrbitalIndex mo_index_;
+  OrbitalIndex index_;
   OrbitalIndex ao_index_;
+  std::string descriptor_;
   Array coefs_;
-};
-}
+};  // class mpqc::lcao::OrbitalSpace
+
+/// @}
+
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_SPACE_H_

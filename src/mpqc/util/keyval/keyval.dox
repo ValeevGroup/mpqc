@@ -553,4 +553,4 @@ MPQC_CLASS_EXPORT_KEY2(), respectively, with the MPQC_FORCELINK_KEYVAL_CTOR() ma
 
 */
 
-} // namespace mpqc
+}  // namespace  mpqc

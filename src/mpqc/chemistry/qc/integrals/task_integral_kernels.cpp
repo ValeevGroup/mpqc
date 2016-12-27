@@ -4,11 +4,12 @@
 
 
 namespace mpqc {
-namespace integrals {
-
-double detail::integral_engine_precision = 0.0;
+namespace lcao {
+namespace gaussian {
 
 namespace detail {
+
+double integral_engine_precision = 0.0;
 
 TA::TensorD
 integral_kernel(Engine &eng, TA::Range &&rng,
@@ -221,5 +222,6 @@ integral_kernel(Engine &eng, TA::Range &&rng,
 }
 
 }  // namespace detail
-} // namespace integrals
-} // namespace mpqc
+}  // namespace gaussian
+}  // namespace lcao
+}  // namespace mpqc

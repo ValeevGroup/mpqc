@@ -5,7 +5,7 @@
 #include "catch.hpp"
 #include "mpqc/chemistry/qc/integrals/f12_utility.h"
 
-using namespace mpqc;
+using namespace mpqc::lcao;
 
 TEST_CASE("F12 Utility", "[f12_utility]") {
   SECTION("basis to exponant") {

@@ -831,7 +831,7 @@ namespace Catch {
         bool m_shouldThrow;
     };
 
-} // namespace Catch
+}  // namespace  Catch
 
 // Include after due to circular dependency:
 // #included from: catch_expression_lhs.hpp
@@ -1001,8 +1001,8 @@ namespace Internal {
     }
 #endif // CATCH_CONFIG_CPP11_NULLPTR
 
-} // end of namespace Internal
-} // end of namespace Catch
+}  // namespace  Internal
+}  // namespace  Catch
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -1403,7 +1403,7 @@ namespace Catch {
         return ExpressionLhs<bool>( *this, value );
     }
 
-} // namespace Catch
+}  // namespace  Catch
 
 // #included from: catch_message.h
 #define TWOBLUECUBES_CATCH_MESSAGE_H_INCLUDED
@@ -1795,7 +1795,7 @@ namespace Catch {
         uint64_t m_ticks;
     };
 
-} // namespace Catch
+}  // namespace  Catch
 
 #include <string>
 
@@ -2348,8 +2348,8 @@ namespace Matchers {
 
             std::string m_substr;
         };
-    } // namespace StdString
-    } // namespace Impl
+    }  // namespace  StdString
+    }  // namespace  Impl
 
     // The following functions create the actual matcher objects.
     // This allows the types to be inferred
@@ -2401,11 +2401,11 @@ namespace Matchers {
         return Impl::StdString::EndsWith( Impl::StdString::makeString( substr ) );
     }
 
-} // namespace Matchers
+}  // namespace  Matchers
 
 using namespace Matchers;
 
-} // namespace Catch
+}  // namespace  Catch
 
 // #included from: internal/catch_interfaces_tag_alias_registry.h
 #define TWOBLUECUBES_CATCH_INTERFACES_TAG_ALIAS_REGISTRY_H_INCLUDED
@@ -2749,8 +2749,8 @@ namespace Catch {
                 }
             };
 
-        } // namespace NSStringMatchers
-        } // namespace Impl
+        }  // namespace  NSStringMatchers
+        }  // namespace  Impl
 
         inline Impl::NSStringMatchers::Equals
             Equals( NSString* substr ){ return Impl::NSStringMatchers::Equals( substr ); }
@@ -2764,11 +2764,11 @@ namespace Catch {
         inline Impl::NSStringMatchers::EndsWith
             EndsWith( NSString* substr ){ return Impl::NSStringMatchers::EndsWith( substr ); }
 
-    } // namespace Matchers
+    }  // namespace  Matchers
 
     using namespace Matchers;
 
-} // namespace Catch
+}  // namespace  Catch
 
 ///////////////////////////////////////////////////////////////////////////////
 #define OC_TEST_CASE( name, desc )\
@@ -3021,7 +3021,7 @@ namespace Catch {
         return TestSpecParser( ITagAliasRegistry::get() ).parse( arg ).testSpec();
     }
 
-} // namespace Catch
+}  // namespace  Catch
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -3633,7 +3633,7 @@ namespace Clara {
             void (*function)( C&, T );
         };
 
-    } // namespace Detail
+    }  // namespace  Detail
 
     struct Parser {
         Parser() : separators( " \t=:" ) {}
@@ -5056,11 +5056,11 @@ namespace SectionTracking {
         bool m_completedASectionThisRun;
     };
 
-} // namespace SectionTracking
+}  // namespace  SectionTracking
 
 using SectionTracking::TestCaseTracker;
 
-} // namespace Catch
+}  // namespace  Catch
 
 // #included from: catch_fatal_condition.hpp
 #define TWOBLUECUBES_CATCH_FATAL_CONDITION_H_INCLUDED
@@ -5077,7 +5077,7 @@ namespace Catch {
             exit( exitCode );
     }
 
-} // namespace Catch
+}  // namespace  Catch
 
 #if defined ( CATCH_PLATFORM_WINDOWS ) /////////////////////////////////////////
 
@@ -5087,7 +5087,7 @@ namespace Catch {
         void reset() {}
     };
 
-} // namespace Catch
+}  // namespace  Catch
 
 #else // Not Windows - assumed to be POSIX compatible //////////////////////////
 
@@ -5133,7 +5133,7 @@ namespace Catch {
         bool m_isSet;
     };
 
-} // namespace Catch
+}  // namespace  Catch
 
 #endif // not Windows
 
@@ -6255,7 +6255,7 @@ namespace Catch {
         };
 
     } // anon namespace
-} // namespace Catch
+}  // namespace  Catch
 
 #if !defined( CATCH_CONFIG_COLOUR_NONE ) && !defined( CATCH_CONFIG_COLOUR_WINDOWS ) && !defined( CATCH_CONFIG_COLOUR_ANSI )
 #   ifdef CATCH_PLATFORM_WINDOWS
@@ -6979,7 +6979,7 @@ namespace Catch {
         return getElapsedMicroseconds()/1000000.0;
     }
 
-} // namespace Catch
+}  // namespace  Catch
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -7160,7 +7160,7 @@ namespace Catch {
 
             return ( (info.kp_proc.p_flag & P_TRACED) != 0 );
         }
-    } // namespace Catch
+    }  // namespace  Catch
 
 #elif defined(_MSC_VER)
     extern "C" __declspec(dllimport) int __stdcall IsDebuggerPresent();

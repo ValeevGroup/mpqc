@@ -11,95 +11,94 @@
 #include "mpqc/util/external/c++/memory"
 
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
 /**
  * complex-valued Restricted Hartree-Fock class
  */
 
-class zRHF : public qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
- public:
-  using Tile = TA::TensorZ;
-  using TArray =
-      qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>::ArrayType;
-  using PeriodicAOIntegral = PeriodicAOWavefunction::AOIntegral;
-  using MatrixcVec = std::vector<Matrixz>;
-  using VectorcVec = std::vector<Vectorz>;
+class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
+public:
+    using Tile = TA::TensorZ;
+    using TArray = PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>::ArrayType;
+    using PeriodicAOIntegral = PeriodicAOWavefunction::AOIntegral;
+    using MatrixcVec = std::vector<Matrixz>;
+    using VectorcVec = std::vector<Vectorz>;
 
-  zRHF() = default;
+    zRHF() = default;
 
-  /**
-   * KeyVal constructor for zRHF
-   *
-   * keywords: takes all keywords from PeriodicAOWavefunction
-   *
-   * | KeyWord | Type | Default| Description |
-   * |---------|------|--------|-------------|
-   * | converge | double | 1.0e-07 | converge limit |
-   * | max_iter | int | 30 | maximum number of iteration |
-   * | soad_guess | bool | true | if use SOAD guess for initial Fock build |
-   * | print_detail | bool | false | if print extra computation&time info |
-   * | max_condition_num | double | 1.0e8 | maximum condition number for overlap
-   * matrix |
-   *
-   */
-  zRHF(const KeyVal& kv);
+    /**
+     * KeyVal constructor for zRHF
+     *
+     * keywords: takes all keywords from PeriodicAOWavefunction
+     *
+     * | KeyWord | Type | Default| Description |
+     * |---------|------|--------|-------------|
+     * | converge | double | 1.0e-07 | converge limit |
+     * | max_iter | int | 30 | maximum number of iteration |
+     * | soad_guess | bool | true | if use SOAD guess for initial Fock build |
+     * | print_detail | bool | false | if print extra computation&time info |
+     * | max_condition_num | double | 1.0e8 | maximum condition number for overlap matrix |
+     *
+     */
+    zRHF(const KeyVal& kv);
 
-  ~zRHF() = default;
+    ~zRHF() = default;
 
-  void compute(qc::PropertyBase* pb) override;
-  void obsolete() override;
+    void compute(lcao::PropertyBase *pb) override;
+    void obsolete() override;
 
-  /*!
-   * \brief This performs a Hartree-Fock computation
-   * \return the Hartree-Fock energy
-   */
-  double value() override;
+    /*!
+     * \brief This performs a Hartree-Fock computation
+     * \return the Hartree-Fock energy
+     */
+    double value() override;
 
- private:
-  /*!
-   * \brief This performs SCF procedure for zRHF
-   * \return true if SCF converges, false if not
-   */
-  bool solve();
+private:
 
-  /*!
-   * \brief This diagonalizes Fock matrix in reciprocal space and
-   * computes density: D_ = Int_k( Exp(I k.R) C(occ).C(occ)t )
-   */
-  TArray compute_density();
+    /*!
+     * \brief This performs SCF procedure for zRHF
+     * \return true if SCF converges, false if not
+     */
+    bool solve();
 
-  /*!
-   * \brief This transforms an integral matrix from real to reciprocal space
-   * \param matrix the real-space integral matrix
-   * \return the reciprocal-space integral matrix
-   */
-  TArray transform_real2recip(TArray &matrix);
+    /*!
+     * \brief This diagonalizes Fock matrix in reciprocal space and
+     * computes density: D_ = Int_k( Exp(I k.R) C(occ).C(occ)t )
+     */
+    TArray compute_density();
 
-  TArray T_;
-  TArray V_;
-  TArray S_;
-  TArray Sk_;
-  TArray H_;
-  TArray Hk_;
-  TArray J_;
-  TArray K_;
-  TArray F_;
-  TArray Fk_;
-  TArray D_;
+    /*!
+     * \brief This transforms an integral matrix from real to reciprocal space
+     * \param matrix the real-space integral matrix
+     * \return the reciprocal-space integral matrix
+     */
+    TArray transform_real2recip(TArray &matrix);
 
-  MatrixcVec C_;
-  VectorcVec eps_;
-  MatrixcVec X_;
+    TArray T_;
+    TArray V_;
+    TArray S_;
+    TArray Sk_;
+    TArray H_;
+    TArray Hk_;
+    TArray J_;
+    TArray K_;
+    TArray F_;
+    TArray Fk_;
+    TArray D_;
 
-  double repulsion_;
-  int64_t docc_;
+    MatrixcVec C_;
+    VectorcVec eps_;
+    MatrixcVec X_;
 
-  const KeyVal kv_;
-  double converge_;
-  int64_t maxiter_;
-  bool print_detail_;
-  double max_condition_num_;
+    double repulsion_;
+    int64_t docc_;
+
+    const KeyVal kv_;
+    double converge_;
+    int64_t maxiter_;
+    bool print_detail_;
+    double max_condition_num_;
 
   Vector3i R_max_;  ///> range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i RJ_max_;  ///> range of Coulomb operation
@@ -111,22 +110,22 @@ class zRHF : public qc::PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
   int64_t RD_size_;  ///> cardinal # of lattices included in density representation
   int64_t k_size_;  ///> cardinal # of k points
 
-  double init_duration_ = 0.0;
-  double j_duration_ = 0.0;
-  double k_duration_ = 0.0;
-  double trans_duration_ = 0.0;
-  double d_duration_ = 0.0;
-  double scf_duration_ = 0.0;
+    double init_duration_ = 0.0;
+    double j_duration_ = 0.0;
+    double k_duration_ = 0.0;
+    double trans_duration_ = 0.0;
+    double d_duration_ = 0.0;
+    double scf_duration_ = 0.0;
 
-  /*!
-   * \brief This initialize zRHF by assigning values to private members
-   * and computing initial guess for the density
-   *
-   * \param kv KeyVal object
-   */
-  void init(const KeyVal& kv);
+    /*!
+     * \brief This initialize zRHF by assigning values to private members
+     * and computing initial guess for the density
+     *
+     * \param kv KeyVal object
+     */
+    void init(const KeyVal& kv);
 };
 
-}  // end of namespace scf
-}  // end of namespace mpqc
+}  // namespace  lcao
+}  // namespace  mpqc
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_

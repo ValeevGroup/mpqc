@@ -15,7 +15,7 @@
 #include "mpqc/util/misc/formio.h"
 
 namespace mpqc {
-namespace scf {
+namespace lcao {
 
 zRHF::zRHF(const KeyVal& kv) : PeriodicAOWavefunction(kv), kv_(kv) {}
 
@@ -57,7 +57,7 @@ void zRHF::init(const KeyVal& kv) {
   // read # kpoints from keyval
   nk_ = decltype(nk_)(kv.value<std::vector<int>>("k_points").data());
   k_size_ =
-      1 + integrals::detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+      1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
   ExEnv::out0() << "zRHF computational parameters:" << std::endl;
   ExEnv::out0() << indent << "# of k points in each direction: ["
                 << nk_.transpose() << "]" << std::endl;
@@ -87,7 +87,7 @@ void zRHF::init(const KeyVal& kv) {
   // transform Fock from real to reciprocal space
   Fk_ = transform_real2recip(F_);
   // compute orthogonalizer matrix
-  X_ = conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
+  X_ = utility::conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
   // compute guess density
   D_ = compute_density();
 
@@ -251,7 +251,8 @@ zRHF::TArray zRHF::compute_density() {
   C_.resize(k_size_);
 
   auto tr0 = Fk_.trange().data()[0];
-  auto tr1 = integrals::detail::extend_trange1(tr0, RD_size_);
+  using ::mpqc::lcao::detail::extend_trange1;
+  auto tr1 = extend_trange1(tr0, RD_size_);
 
   auto fock_eig = array_ops::array_to_eigen(Fk_);
   for (auto k = 0; k < k_size_; ++k) {
@@ -270,15 +271,15 @@ zRHF::TArray zRHF::compute_density() {
     auto Ctemp = comp_eig_solver.eigenvectors();
     C_[k] = X * Ctemp;
     // Sort eigenvalues and eigenvectors in ascending order
-    integrals::detail::sort_eigen(eps_[k], C_[k]);
+    detail::sort_eigen(eps_[k], C_[k]);
   }
 
   Matrixz result_eig(tr0.extent(), tr1.extent());
   result_eig.setZero();
   for (auto R = 0; R < RD_size_; ++R) {
-    auto vec_R = integrals::detail::direct_vector(R, RD_max_, dcell_);
+    auto vec_R = detail::direct_vector(R, RD_max_, dcell_);
     for (auto k = 0; k < k_size_; ++k) {
-      auto vec_k = integrals::detail::k_vector(k, nk_, dcell_);
+      auto vec_k = detail::k_vector(k, nk_, dcell_);
       auto C_occ = C_[k].leftCols(docc_);
       auto D_real = C_occ.conjugate() * C_occ.transpose();
       auto exponent =
@@ -289,14 +290,14 @@ zRHF::TArray zRHF::compute_density() {
     }
   }
 
-  auto result = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
+  auto result = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, result_eig, tr0, tr1);
   return result;
 }
 
 zRHF::TArray zRHF::transform_real2recip(TArray& matrix) {
   TArray result;
   auto tr0 = matrix.trange().data()[0];
-  auto tr1 = integrals::detail::extend_trange1(tr0, k_size_);
+  auto tr1 = detail::extend_trange1(tr0, k_size_);
   auto& world = matrix.world();
 
   // Perform real->reciprocal transformation with Eigen
@@ -312,9 +313,9 @@ zRHF::TArray zRHF::transform_real2recip(TArray& matrix) {
     if (bmat.norm() < bmat.size() * threshold)
       continue;
     else {
-      auto vec_R = integrals::detail::direct_vector(R, R_max_, dcell_);
+      auto vec_R = detail::direct_vector(R, R_max_, dcell_);
       for (auto k = 0; k < k_size_; ++k) {
-        auto vec_k = integrals::detail::k_vector(k, nk_, dcell_);
+        auto vec_k = detail::k_vector(k, nk_, dcell_);
         auto exponent = std::exp(I * vec_k.dot(vec_R));
         result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
             bmat * exponent;
@@ -322,16 +323,16 @@ zRHF::TArray zRHF::transform_real2recip(TArray& matrix) {
     }
   }
 
-  result = array_ops::eigen_to_array<Tile>(world, result_eig, tr0, tr1);
+  result = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, result_eig, tr0, tr1);
 
   return result;
 }
 
 void zRHF::obsolete() { Wavefunction::obsolete(); }
 
-void zRHF::compute(qc::PropertyBase* pb) {
+void zRHF::compute(PropertyBase* pb) {
   throw std::logic_error("Not implemented!");
 }
 
-}  // end of namespace scf
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc

@@ -3,14 +3,15 @@
 #include "mpqc/chemistry/molecule/molecule.h"
 
 #include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/basis/basis_set.h"
 #include "mpqc/chemistry/qc/basis/shell_vec_functions.h"
 #include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT2("Basis", mpqc::basis::Basis);
+MPQC_CLASS_EXPORT2("Basis", mpqc::lcao::gaussian::Basis);
 
 namespace mpqc {
-
-namespace basis {
+namespace lcao {
+namespace gaussian {
 
 Basis::Basis() = default;
 Basis::~Basis() = default;
@@ -39,7 +40,7 @@ Basis::Basis(const KeyVal &kv) {
 
   std::size_t reblock_size = kv.value<int>("reblock",0);
   if(reblock_size != 0){
-    basis =  reblock(basis, basis::reblock_basis, reblock_size);
+    basis =  reblock(basis, reblock_basis, reblock_size);
   }
 
   shells_ = std::move(basis.shells_);
@@ -58,7 +59,7 @@ int64_t Basis::nfunctions() const {
 TiledArray::TiledRange1 Basis::create_trange1() const {
   auto blocking = std::vector<int64_t>{0};
   for (auto const &shell_vec : shells_) {
-    auto next = blocking.back() + basis::nfunctions(shell_vec);
+    auto next = blocking.back() + ::mpqc::lcao::gaussian::nfunctions(shell_vec);
     blocking.emplace_back(next);
   }
 
@@ -68,7 +69,7 @@ TiledArray::TiledRange1 Basis::create_trange1() const {
 int64_t Basis::max_nprim() const {
   int64_t max = 0;
   for (auto const &shell_vec : shells_) {
-    const auto current = basis::max_nprim(shell_vec);
+    const auto current = ::mpqc::lcao::gaussian::max_nprim(shell_vec);
     max = std::max(current, max);
   }
   return max;
@@ -77,7 +78,7 @@ int64_t Basis::max_nprim() const {
 int64_t Basis::max_am() const {
   int64_t max = 0;
   for (auto const &shell_vec : shells_) {
-    const auto current = basis::max_am(shell_vec);
+    const auto current = ::mpqc::lcao::gaussian::max_am(shell_vec);
     max = std::max(current, max);
   }
   return max;
@@ -196,8 +197,9 @@ Basis merge(const Basis &basis1, const Basis &basis2) {
   shells1.insert(shells1.end(), shells2.begin(),
                  shells2.end());
 
-  return basis::Basis(shells1);
+  return Basis(shells1);
 }
 
-}  // namespace basis
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc

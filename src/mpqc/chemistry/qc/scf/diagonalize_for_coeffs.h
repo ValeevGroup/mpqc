@@ -56,12 +56,12 @@ inline Array2 Coeffs_from_fock(Array2 const &F, Array2 const &S, TA::TiledRange1
 
     auto tr_ao = S.trange().data()[0];
 
-    return array_ops::eigen_to_array<TA::Tensor<double>>(S.world(), C,
+    return array_ops::eigen_to_array<TA::Tensor<double>,TA::SparsePolicy>(S.world(), C,
                                                          tr_ao, tr_i);
 }
 
-} // namespace scf
-} // namespace mpqc
+}  // namespace  scf
+}  // namespace  mpqc
 
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_DIAGONALIZE_FOR_COEFFS_H_

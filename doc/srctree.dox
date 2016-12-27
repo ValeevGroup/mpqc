@@ -11,14 +11,14 @@ CMake build system.
 <dt><tt>doc</tt><dd>This directory contains the files related to
 building the MPQC programming documentation and development samples.
 
-<dt><tt>src/lib/util/external/madworld</tt><dd>This contains additional
+<dt><tt>src/mpqc/util/external/madworld</tt><dd>This contains additional
 functionality related to the MADWorld parallel runtime.
 
-<dt><tt>src/lib/util/external/c++</tt><dd>This contains additional
+<dt><tt>src/mpqc/util/external/c++</tt><dd>This contains additional
 functionality related to the C++ programming language, e.g. functionality
 that was added in the C++14 standard.
 
-<dt><tt>src/lib/util/keyval</tt><dd>This library provides classes that read
+<dt><tt>src/mpqc/util/keyval</tt><dd>This library provides classes that read
   keyword/value pairs from an input file.  See \ref keyval
   for more information.
 

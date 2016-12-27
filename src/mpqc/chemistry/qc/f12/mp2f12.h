@@ -15,12 +15,16 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
-namespace f12 {
+namespace lcao {
 
-class RMP2F12 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
+/**
+ *  \brief MP2F12 method for closed shell
+ */
+
+template <typename Tile>
+class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
  public:
-  using TArray = qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::ArrayType;
-  using Matrix = RowMatrix<double>;
+  using TArray = TA::DistArray<Tile,TA::SparsePolicy>;
 
   /**
    * KeyVal constructor
@@ -38,8 +42,8 @@ class RMP2F12 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
   ~RMP2F12() = default;
 
   double value() override;
-  std::tuple<Matrix, Matrix> compute();
-  void compute(qc::PropertyBase* pb) override;
+  void compute(PropertyBase* pb) override;
+  std::tuple<RowMatrix<double>, RowMatrix<double>> compute();
   void obsolete() override;
 
  private:
@@ -54,11 +58,30 @@ class RMP2F12 : public qc::LCAOWavefunction<TA::TensorD, TA::SparsePolicy> {
   char approximation_;
   TA::SparseShape<float> ijij_ijji_shape_;
   bool cabs_singles_;
-  std::shared_ptr<qc::Wavefunction> ref_wfn_;
+  std::shared_ptr<Wavefunction> ref_wfn_;
 };
 
-class RIRMP2F12 : public RMP2F12 {
+
+/**
+ *  \brief MP2F12 method for closed shell with RI
+ */
+
+template <typename Tile>
+class RIRMP2F12 : public RMP2F12<Tile> {
  public:
+  using TArray = TA::DistArray<Tile,TA::SparsePolicy>;
+  /**
+ * KeyVal constructor
+ * @param kv
+ * keywords: takes all keywords from LCAOWavefunction
+ *
+ * | KeyWord | Type | Default| Description |
+ * |---------|------|--------|-------------|
+ * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
+ * | approaximation | char | C | approaximation to use (C or D) |
+ * | cabs_singles | bool | true | if do CABSSingles calculation |
+ *
+ */
   RIRMP2F12(const KeyVal& kv);
   ~RIRMP2F12() = default;
 
@@ -71,10 +94,12 @@ class RIRMP2F12 : public RMP2F12 {
   virtual double compute_cabs_singles() override;
 };
 
-//extern class RMP2F12;
-//extern class RIRMP2F12;
+extern template class RMP2F12<TA::TensorD>;
+extern template class RIRMP2F12<TA::TensorD>;
 
-}  // end of namespace f12
+}  // namespace lcao
 }  // mpqc
+
+#include "mp2f12_impl.h"
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_MP2F12_H_

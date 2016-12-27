@@ -3,7 +3,8 @@
 #include <numeric>
 
 namespace mpqc {
-namespace basis {
+namespace lcao {
+namespace gaussian {
 
 int64_t max_am(ShellVec const &shell_vec) {
   int64_t am = 0;
@@ -64,5 +65,6 @@ std::vector<std::vector<libint2::Shell>> reblock_basis(
   return result;
 }
 
-}  // namespace basis
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc

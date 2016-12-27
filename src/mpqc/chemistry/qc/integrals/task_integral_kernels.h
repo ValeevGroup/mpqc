@@ -16,7 +16,8 @@
 #include "mpqc/chemistry/qc/integrals/screening/screen_base.h"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
+namespace gaussian {
 namespace detail {
 
 extern double integral_engine_precision;
@@ -45,7 +46,8 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             Screener &screen);
 
 }  // namespace detail
-}  // namespace integrals
+}  // namespace gaussian
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_TASK_INTEGRAL_KERNELS_H_

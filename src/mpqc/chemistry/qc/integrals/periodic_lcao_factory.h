@@ -79,6 +79,15 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
   /// return reference to PeriodicAOFactory object
   AOFactoryType &pao_factory() const { return pao_factory_; }
 
+  /// return OrbitalSpaceRegistry
+  const OrbitalSpaceRegistry<TArray>& orbital_space() const {
+    return *orbital_space_registry_;
+  }
+
+  OrbitalSpaceRegistry<TArray>& orbital_space() {
+    return *orbital_space_registry_;
+  }
+
  private:
   /// compute integrals that has two dimensions
   TArray compute2(const Formula &formula_string);

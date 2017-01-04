@@ -61,8 +61,9 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
    */
   void init() {
     auto unitcell = this->lcao_factory().pao_factory().molecule();
+    auto co_coeff = ref_wfn_->co_coeff();
 
-    mo_insert_gamma_point(this->lcao_factory(), ref_wfn_->co_coeff(),
+    mo_insert_gamma_point(this->lcao_factory(), co_coeff,
                           ref_wfn_->nk(), unitcell, this->occ_block(),
                           this->unocc_block());
   }

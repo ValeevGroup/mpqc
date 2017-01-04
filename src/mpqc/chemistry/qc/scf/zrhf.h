@@ -23,7 +23,7 @@ using VectorzVec = std::vector<Vectorz>;
  */
 template <typename Tile, typename Policy>
 void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
-                           MatrixzVec& C_bz, Vector3i nk, UnitCell& unitcell,
+                           MatrixzVec& C_bz, Vector3i nk, Molecule& unitcell,
                            size_t occ_block, size_t vir_block) {
   auto& orbital_registry = plcao_factory.orbital_space();
   auto& world = plcao_factory.world();

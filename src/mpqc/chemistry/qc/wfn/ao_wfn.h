@@ -88,6 +88,8 @@ class PeriodicAOWavefunction : public Wavefunction {
  public:
   using AOIntegral = gaussian::PeriodicAOFactory<Tile, Policy>;
   using ArrayType = typename AOIntegral::TArray;
+  using MatrixzVec = std::vector<Matrixz>;
+  using VectorzVec = std::vector<Vectorz>;
 
   /**
    *  \brief The KeyVal constructor
@@ -118,6 +120,9 @@ class PeriodicAOWavefunction : public Wavefunction {
   double value() override {
     return 0.0;
   };
+
+  virtual MatrixzVec co_coeff() = 0;
+  virtual Vector3i nk() = 0;
 
   /*! Return a reference to the AOFactory Library
    *

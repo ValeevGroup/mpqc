@@ -9,6 +9,6 @@ namespace lcao {
 
 template class LCAOWavefunction<TA::TensorD, TA::DensePolicy>;
 template class LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;
-
+template class PeriodicLCAOWavefunction<TA::TensorZ, TA::SparsePolicy>;
 }
 }

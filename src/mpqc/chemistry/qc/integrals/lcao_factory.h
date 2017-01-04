@@ -183,7 +183,7 @@ class LCAOFactory : public DescribedClass{
   /// compute integrals that has four dimension
   TArray compute4(const Formula& formula_string);
 
- private:
+ protected:
   /// find the corresponding AO formula, if index is already AO, it will be
   /// ignored
   Formula mo_to_ao(const Formula& formula);
@@ -199,7 +199,7 @@ class LCAOFactory : public DescribedClass{
   /// assert all index in formula are in MO
   void assert_all_mo(const Formula& formula);
 
- private:
+ protected:
   madness::World& world_;
   AOFactoryType& ao_factory_;
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;

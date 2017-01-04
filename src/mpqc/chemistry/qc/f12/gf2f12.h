@@ -5,6 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_GF2F12_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_F12_GF2F12_H_
 
+#include <mpqc/chemistry/units/units.h>
 #include "mpqc/chemistry/qc/f12/f12_intermediates.h"
 #include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
@@ -68,6 +69,12 @@ TA::Array<double, 4, Tile, Policy> d_pqrE(
 
 }  // namespace dyson
 
+/**
+ *  \brief GF2F12 class
+ *  keyval name for this class GF2F12
+ *
+ */
+
 template <typename Tile>
 class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
  public:
@@ -81,6 +88,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
   GF2F12() = default;
   virtual ~GF2F12() = default;
 
+  // clang-format off
   /**
    * KeyVal constructor
    * @param kv
@@ -90,12 +98,12 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
-   * | orbital | int | -1 | orbitals |
-   * | use_cabs | bool | true | if use cabs |
-   * | dyson_method | string | diagonal | dyson_method to use, (diagonal or
-   * nondiagonal ) |
+   * | orbital | int | -1 | target orbital, by default is HOMO |
+   * | use_cabs | bool | true | if includes cabs in F12-V term |
+   * | dyson_method | string | diagonal | dyson_method to use, (diagonal or nondiagonal ) |
    * | max_iter | int | 100 | maximum iteration |
    */
+  // clang-format on
 
   GF2F12(const KeyVal& kv) : LCAOWavefunction<Tile, Policy>(kv) {
     if (kv.exists("ref")) {
@@ -110,11 +118,11 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
     max_iter_ = kv.value<int>("max_iter", 100);
   }
 
-  virtual void compute(PropertyBase* pb) override {
+  void compute(PropertyBase* pb) override {
     throw std::runtime_error("Not Implemented!! \n");
   }
 
-  virtual real_t value() override {
+  real_t value() override {
     using mpqc::utility::print_par;
 
     auto& world = this->lcao_factory().world();
@@ -165,7 +173,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
   }
 
  private:
-  void init() {
+  virtual void init() {
     // init obs
     auto mol = this->lcao_factory().ao_factory().molecule();
     Eigen::VectorXd orbital_energy;
@@ -194,7 +202,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
 
 template <typename Tile>
 void GF2F12<Tile>::compute_diagonal(int max_niter) {
-  auto& world = this->lcao_factory().world();
+  auto& world = this->wfn_world()->world();
 
   auto nfzc = this->trange1_engine()->get_nfrozen();
   auto nocc = this->trange1_engine()->get_active_occ();
@@ -212,7 +220,6 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   // will use only the target orbital to transform ints
   // create an OrbitalSpace here
   {
-    auto& world = this->lcao_factory().world();
     auto& orbital_registry = this->lcao_factory().orbital_space();
     auto p_space = orbital_registry.retrieve(OrbitalIndex(L"p"));
     auto C_p = array_ops::array_to_eigen(p_space.coefs());
@@ -446,7 +453,8 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
 
   if (world.rank() == 0) {
     auto SE_F12 = SE + Sigma_f12(0, 0);
-    auto Hartree2eV = 27.21138602;
+    auto unit_factory = UnitFactory::get_default();
+    auto Hartree2eV = unit_factory->make_unit("eV").from_atomic_units();
     std::string orblabel =
         std::string(orbital_ < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
     printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",

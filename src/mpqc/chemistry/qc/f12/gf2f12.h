@@ -237,6 +237,7 @@ void GF2F12<Tile>::init_target_orbital_diagonal() {
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
   auto x_space =
       OrbitalSpaceTArray(OrbitalIndex(L"x"), OrbitalIndex(L"κ"), C_x_ta);
+  orbital_registry.add(x_space);
 }
 
 template <typename Tile>

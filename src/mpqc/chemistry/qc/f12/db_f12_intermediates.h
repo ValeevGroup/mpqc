@@ -121,8 +121,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_db_df(
 
 template <typename Tile, typename Policy>
 std::tuple<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>
-compute_V_ixjy_ixyj_df(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
-                       bool cabs = true) {
+compute_V_ixjy_ixyj_db_df(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
+                          bool cabs = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   auto v_time0 = mpqc::now(world, accurate_time);

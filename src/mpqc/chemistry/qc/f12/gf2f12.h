@@ -116,6 +116,11 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
     use_cabs_ = kv.value<bool>("use_cabs", true);
     dyson_method_ = kv.value<std::string>("dyson_method", "diagonal");
     max_iter_ = kv.value<int>("max_iter", 100);
+
+    // check method
+    if (dyson_method_ != "diagonal" && dyson_method_ != "nondiagonal") {
+      throw std::runtime_error("GF2F12: unknown value for keyword \"method\"");
+    }
   }
 
   void compute(PropertyBase* pb) override {
@@ -174,6 +179,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
 
   bool use_cabs() const { return use_cabs_; }
   int orbital() const { return orbital_; }
+  const std::string dyson_method() const { return dyson_method_; }
 
  private:
   /// initialize obs and cabs orbitals
@@ -183,8 +189,9 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
   virtual void init_target_orbital_diagonal();
 
   /// compute V_ixjy and V_ixyj term in compute_diagonal and compute_nondiagonal
-  virtual std::tuple<TArray, TArray> compute_V(){
-    return f12::VX_pqrs_pqsr("V", this->lcao_factory(), "i", "x", "j", "y", true, use_cabs_);
+  virtual std::tuple<TArray, TArray> compute_V() {
+    return f12::VX_pqrs_pqsr("V", this->lcao_factory(), "i", "x", "j", "y",
+                             true, use_cabs_);
   }
 
   /// use self-energy in diagonal representation

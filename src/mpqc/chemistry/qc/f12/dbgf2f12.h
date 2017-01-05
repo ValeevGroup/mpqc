@@ -5,8 +5,8 @@
 #ifndef SRC_MPQC_CHEMISTRY_QC_F12_DBGF2F12_H_
 #define SRC_MPQC_CHEMISTRY_QC_F12_DBGF2F12_H_
 
-#include "gf2f12.h"
 #include "db_f12_intermediates.h"
+#include "gf2f12.h"
 
 namespace mpqc {
 namespace lcao {
@@ -38,12 +38,18 @@ class DBGF2F12 : public GF2F12<Tile> {
    */
   // clang-format on
 
-  DBGF2F12(const KeyVal& kv) : GF2F12<Tile>(kv) {}
+  DBGF2F12(const KeyVal& kv) : GF2F12<Tile>(kv) {
+    // check method
+    auto dyson_method = this->dyson_method();
+    if (dyson_method == "nondiagonal") {
+      throw std::invalid_argument(
+          "DBGF2F12: nondiagonal method not implemented! \n");
+    }
+  }
 
   using GF2F12<Tile>::value;
 
  private:
-
   /// override GF2F12's function to initialize obs and cabs orbitals
   void init() override {
     // initialize obs
@@ -88,7 +94,7 @@ class DBGF2F12 : public GF2F12<Tile> {
     } else if (orbital > 0) {
       auto v_space = orbital_registry.retrieve(OrbitalIndex(L"a"));
       auto C_v = array_ops::array_to_eigen(v_space.coefs());
-      auto C_x = C_v.block(0, orbital-1, C_v.rows(), 1);
+      auto C_x = C_v.block(0, orbital - 1, C_v.rows(), 1);
       auto tr_obs = v_space.coefs().trange().data().front();
       C_x_ta = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(world, C_x,
                                                                  tr_obs, tr_x);
@@ -101,7 +107,8 @@ class DBGF2F12 : public GF2F12<Tile> {
 
   /// override GF2F12's function to compute V term
   std::tuple<TArray, TArray> compute_V() override {
-    return f12::compute_V_ixjy_ixyj_df(this->lcao_factory(), this->use_cabs());
+    return f12::compute_V_ixjy_ixyj_db_df(this->lcao_factory(),
+                                          this->use_cabs());
   }
 };
 

@@ -119,7 +119,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
 
     // check method
     if (dyson_method_ != "diagonal" && dyson_method_ != "nondiagonal") {
-      throw std::runtime_error("GF2F12: unknown value for keyword \"method\"");
+      throw std::runtime_error("GF2F12: unknown value for keyword \"dyson_method\"");
     }
   }
 

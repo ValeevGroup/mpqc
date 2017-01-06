@@ -114,7 +114,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // clean all LCAO integral
     this->lcao_factory().registry().purge(world);
 
-    if (reblock_) {
+    if (reblock_ || reblock_inner_) {
       reblock();
     }
 
@@ -1013,43 +1013,61 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     TA::TiledRange1 old_occ = this->trange1_engine_->get_active_occ_tr1();
     TA::TiledRange1 old_vir = this->trange1_engine_->get_vir_tr1();
 
-    auto new_tr1 =
-        std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
-
-    TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
-    TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
-
-    mpqc::detail::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
-    mpqc::detail::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
-
-    this->set_trange1_engine(new_tr1);
-
-    TArray occ_convert =
-        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
-            world, old_occ, new_occ, 1.0);
-
-    TArray vir_convert =
-        array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
-            world, old_vir, new_vir, 1.0);
-
     // get occupied and virtual orbitals
     auto occ_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"i"));
     auto vir_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a"));
 
-    auto new_occ_space = occ_space;
-    new_occ_space("k,i") = occ_space("k,j") * occ_convert("j,i");
+    if(reblock_){
 
-    auto new_vir_space = vir_space;
-    new_vir_space("k,a") = vir_space("k,b") * vir_convert("b,a");
+      auto new_tr1 =
+          std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
 
-    lcao_factory.orbital_space().clear();
-    lcao_factory.orbital_space().add(new_occ_space);
-    lcao_factory.orbital_space().add(new_vir_space);
+      TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
+      TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
+
+      mpqc::detail::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
+      mpqc::detail::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
+
+      this->set_trange1_engine(new_tr1);
+
+      TArray occ_convert =
+          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+              world, old_occ, new_occ, 1.0);
+
+      TArray vir_convert =
+          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+              world, old_vir, new_vir, 1.0);
+
+
+      auto new_occ_space = occ_space;
+      new_occ_space("k,i") = occ_space("k,j") * occ_convert("j,i");
+
+      auto new_vir_space = vir_space;
+      new_vir_space("k,a") = vir_space("k,b") * vir_convert("b,a");
+
+      lcao_factory.orbital_space().clear();
+      lcao_factory.orbital_space().add(new_occ_space);
+      lcao_factory.orbital_space().add(new_vir_space);
+
+      // get t1
+      auto t1 = this->t1();
+      t1("a,i") = t1("b,j") * vir_convert("b,a") * occ_convert("j,i");
+      this->set_t1(t1);
+
+      // get t2
+      auto t2 = this->t2();
+      t2("a,b,i,j") = t2("c,d,k,l") * vir_convert("c,a") * vir_convert("d,b") *
+          occ_convert("k,i") * occ_convert("l,j");
+      this->set_t2(t2);
+    }
 
     if (reblock_inner_) {
+
+      auto& tr1 = this->trange1_engine();
+
       // occ inner
       tr_occ_inner_ =
-          new_tr1->compute_range(new_tr1->get_active_occ(), inner_block_size_);
+          tr1->compute_range(tr1->get_active_occ(), inner_block_size_);
 
       mpqc::detail::parallel_print_range_info(world, tr_occ_inner_,
                                               "CCSD(T) OCC Inner");
@@ -1063,10 +1081,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       OrbitalSpace<TArray> inner_occ_space = OrbitalSpace<TArray>(
           OrbitalIndex(L"m"), OrbitalIndex(L"κ"), inner_occ);
 
+      lcao_factory.orbital_space().remove(OrbitalIndex(L"m"));
       lcao_factory.orbital_space().add(inner_occ_space);
 
       // vir inner
-      tr_vir_inner_ = new_tr1->compute_range(vir, inner_block_size_);
+      tr_vir_inner_ = tr1->compute_range(vir, inner_block_size_);
       mpqc::detail::parallel_print_range_info(world, tr_vir_inner_,
                                               "CCSD(T) Vir Inner");
       auto vir_inner_convert =
@@ -1077,6 +1096,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       inner_vir("k,a") = vir_space("k,b") * vir_inner_convert("b,a");
       OrbitalSpace<TArray> inner_vir_space = OrbitalSpace<TArray>(
           OrbitalIndex(L"a'"), OrbitalIndex(L"κ"), inner_vir);
+
+      lcao_factory.orbital_space().remove(OrbitalIndex(L"a'"));
       lcao_factory.orbital_space().add(inner_vir_space);
 
       utility::print_par(world,
@@ -1084,16 +1105,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                          "for Inner Virtual Orbitals! \n");
     }
 
-    // get t1
-    auto t1 = this->t1();
-    t1("a,i") = t1("b,j") * vir_convert("b,a") * occ_convert("j,i");
-    this->set_t1(t1);
 
-    // get t2
-    auto t2 = this->t2();
-    t2("a,b,i,j") = t2("c,d,k,l") * vir_convert("c,a") * vir_convert("d,b") *
-                    occ_convert("k,i") * occ_convert("l,j");
-    this->set_t2(t2);
   }
 
   void reblock_inner_t2(TArray &t2_left, TArray &t2_right) {

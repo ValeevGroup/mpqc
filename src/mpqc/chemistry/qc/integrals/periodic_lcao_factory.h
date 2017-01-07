@@ -62,7 +62,7 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
     RD_size_ = pao_factory_.RD_size();
 
     // seperate k_points from zRHF::k_points
-    nk_ = decltype(nk_)(kv.value<std::vector<int>>("k_points").data());
+    nk_ = decltype(nk_)(kv.value<std::vector<int>>("ref:k_points").data());
     k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
   }
 
@@ -80,11 +80,11 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
   AOFactoryType &pao_factory() const { return pao_factory_; }
 
   /// return OrbitalSpaceRegistry
-  const OrbitalSpaceRegistry<TArray>& orbital_space() const {
+  const OrbitalSpaceRegistry<TArray> &orbital_space() const {
     return *orbital_space_registry_;
   }
 
-  OrbitalSpaceRegistry<TArray>& orbital_space() {
+  OrbitalSpaceRegistry<TArray> &orbital_space() {
     return *orbital_space_registry_;
   }
 
@@ -94,6 +94,10 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
 
   /// compute integrals that has four dimensions
   TArray compute4(const Formula &formula_string);
+
+  /// find the corresponding AO formula, if index is already AO, it will be
+  /// ignored
+  Formula mo_to_ao(const Formula &formula);
 
   AOFactoryType &pao_factory_;
   UnitCell &unitcell_;
@@ -125,8 +129,6 @@ typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute(const Formula &formula) {
   TArray result;
 
-  ExEnv::out0() << "Computing Periodic LCAO integrals " << utility::to_string(formula.string()) << " ..." << std::endl;
-
   if (formula.rank() == 2) {
     result = compute2(formula);
   } else if (formula.rank() == 4) {
@@ -152,7 +154,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   TArray result;
 
   // get AO formula
-  auto ao_formula = this->mo_to_ao(formula);
+  auto ao_formula = mo_to_ao(formula);
 
   // get AO bases
   auto bra_index0 = ao_formula.bra_indices()[0];
@@ -214,25 +216,25 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   }
 
   // get MO coefficients
-  auto left_index1 = ao_formula.bra_indices()[0];
+  auto left_index1 = formula.bra_indices()[0];
   if (left_index1.is_mo()) {
     auto &left1 = orbital_space_registry_->retrieve(left_index1);
     result("i, q, r, s") = pao_ints("p, q, r, s") * left1("p, i");
   }
 
-  auto left_index2 = ao_formula.bra_indices()[1];
+  auto left_index2 = formula.bra_indices()[1];
   if (left_index2.is_mo()) {
     auto &left2 = orbital_space_registry_->retrieve(left_index2);
     result("p, i, r, s") = result("p, q, r, s") * left2("q, i");
   }
 
-  auto right_index1 = ao_formula.ket_indices()[0];
+  auto right_index1 = formula.ket_indices()[0];
   if (right_index1.is_mo()) {
     auto &right1 = orbital_space_registry_->retrieve(right_index1);
     result("p, q, i, s") = result("p, q, r, s") * right1("r, i");
   }
 
-  auto right_index2 = ao_formula.ket_indices()[1];
+  auto right_index2 = formula.ket_indices()[1];
   if (right_index2.is_mo()) {
     auto &right2 = orbital_space_registry_->retrieve(right_index2);
     result("p, q, r, i") = result("p, q, r, s") * right2("s, i");
@@ -250,6 +252,51 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   ExEnv::out0() << " Time: " << duration << " s" << std::endl;
 
   return result;
+}
+
+template <typename Tile, typename Policy>
+Formula PeriodicLCAOFactory<Tile, Policy>::mo_to_ao(const Formula &formula) {
+  std::vector<OrbitalIndex> ao_left_index, ao_right_index;
+
+  int increment = 0;
+  auto left_index = formula.bra_indices();
+  for (const auto &index : left_index) {
+    // find the correspoding ao index
+    if (index.is_mo()) {
+      auto ao_index =
+          orbital_space_registry_->retrieve(index).ao_index().name();
+      ao_index = ao_index + std::to_wstring(increment);
+      ao_left_index.push_back(ao_index);
+      increment++;
+    }
+    // if already ao, do nothing
+    else {
+      ao_left_index.push_back(index);
+    }
+  }
+
+  auto right_index = formula.ket_indices();
+  for (const auto &index : right_index) {
+    // find the correspoding ao index
+    if (index.is_mo()) {
+      auto ao_index =
+          orbital_space_registry_->retrieve(index).ao_index().name();
+      ao_index = ao_index + std::to_wstring(increment);
+      ao_right_index.push_back(ao_index);
+      increment++;
+    }
+    // if already ao, do nothing
+    else {
+      ao_right_index.push_back(index);
+    }
+  }
+
+  // set formula with ao index
+  auto ao_formula = formula;
+  ao_formula.set_bra_indices(ao_left_index);
+  ao_formula.set_ket_indices(ao_right_index);
+
+  return ao_formula;
 }
 
 }  // namespace lcao

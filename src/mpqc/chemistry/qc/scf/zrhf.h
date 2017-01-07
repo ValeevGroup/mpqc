@@ -23,26 +23,19 @@ using VectorzVec = std::vector<Vectorz>;
  */
 template <typename Tile, typename Policy>
 void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
-                           MatrixzVec& C_bz, Vector3i nk, Molecule& unitcell,
+                           Matrixz& C_gamma_point, Molecule& unitcell,
                            size_t occ_block, size_t vir_block) {
   auto& orbital_registry = plcao_factory.orbital_space();
   auto& world = plcao_factory.world();
 
-  auto k_size = 1 + detail::k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
-
-  int64_t gamma_point;
-  if (k_size % 2 == 1)
-    gamma_point = (k_size - 1) / 2;
-  else
-    throw "# of k points must be odd in order to run gamma-point methods";
-
-  auto C_gamma_point = C_bz[gamma_point];
-
   auto all = C_gamma_point.cols();
   auto occ = unitcell.occupation() / 2;
   auto vir = all - occ;
+  std::size_t n_frozen_core = 0;  // TODO: should be determined by user
 
   Matrixz C_occ = C_gamma_point.leftCols(occ);
+  Matrixz C_corr_occ =
+      C_gamma_point.block(0, n_frozen_core, all, occ - n_frozen_core);
   Matrixz C_vir = C_gamma_point.rightCols(vir);
 
   ExEnv::out0() << "OccBlockSize: " << occ_block << std::endl;
@@ -51,23 +44,44 @@ void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
   auto tre = std::make_shared<TRange1Engine>(occ, all, occ_block, vir_block, 0);
 
   // get all trange1s
-  auto tr_obs = tre->get_all_tr1();
+  auto tr_obs = tre->get_all_tr1();  // TODO: this is not right
   auto tr_occ = tre->get_occ_tr1();
+  auto tr_corr_occ = tre->get_active_occ_tr1();
   auto tr_vir = tre->get_vir_tr1();
+  auto tr_all = tre->get_all_tr1();
+
+  mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ");
+  mpqc::detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
+  mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");
+  mpqc::detail::parallel_print_range_info(world, tr_all, "All");
 
   // convert Eigen matrices to TA
   auto C_occ_ta =
       array_ops::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
+  auto C_corr_occ_ta = array_ops::eigen_to_array<Tile, Policy>(
+      world, C_corr_occ, tr_obs, tr_corr_occ);
   auto C_vir_ta =
       array_ops::eigen_to_array<Tile, Policy>(world, C_vir, tr_obs, tr_vir);
+  auto C_all_ta = array_ops::eigen_to_array<Tile, Policy>(world, C_gamma_point,
+                                                          tr_obs, tr_all);
 
   // insert to registry
-  using OrbitalSpaceRegistry = OrbitalSpace<TA::DistArray<Tile, Policy>>;
-  auto occ_space = OrbitalSpaceRegistry(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
+  using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
+  auto occ_space =
+      OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
   orbital_registry.add(occ_space);
 
-  auto vir_space = OrbitalSpaceRegistry(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_vir_ta);
+  auto corr_occ_space =
+      OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
+  orbital_registry.add(corr_occ_space);
+
+  auto vir_space =
+      OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_vir_ta);
   orbital_registry.add(vir_space);
+
+  auto all_space =
+      OrbitalSpaceTArray(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_all_ta);
+  orbital_registry.add(all_space);
 }
 
 /**
@@ -112,10 +126,13 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
   double value() override;
 
   /// return crystal orbital coefficients
-  MatrixzVec co_coeff() override {return C_;}
+  MatrixzVec co_coeff() override { return C_; }
+
+  /// return crystal orbital energies
+  VectorzVec co_energy() override { return eps_; }
 
   /// return # of k points
-  Vector3i nk() override {return nk_;}
+  Vector3i nk() override { return nk_; }
 
  private:
   /*!

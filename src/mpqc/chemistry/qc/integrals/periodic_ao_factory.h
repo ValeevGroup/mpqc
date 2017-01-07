@@ -1,8 +1,8 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
 
-#include "mpqc/chemistry/qc/integrals/ao_factory_base.h"
 #include "mpqc/chemistry/qc/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/integrals/ao_factory_base.h"
 
 #include <iosfwd>
 #include <vector>
@@ -189,11 +189,10 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
    * \brief KeyVal constructor for PeriodicAOFactory
    * \param kv the KeyVal object
    */
-  PeriodicAOFactory(const KeyVal &kv)
-      : AOFactory<TA::TensorD, Policy>(kv) {
+  PeriodicAOFactory(const KeyVal &kv) : AOFactory<TA::TensorD, Policy>(kv) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
-        prefix = "wfn_world:";
+      prefix = "wfn_world:";
 
     std::string molecule_type = kv.value<std::string>(prefix + "molecule:type");
     if (molecule_type != "UnitCell") {
@@ -204,20 +203,17 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
     unitcell_ = kv.keyval(prefix + "molecule").class_ptr<UnitCell>();
     dcell_ = unitcell_->dcell();
 
-    R_max_ = decltype(R_max_)(
-        kv.value<std::vector<int>>(prefix + "rmax").data());
-    RD_max_ = decltype(RD_max_)(
-        kv.value<std::vector<int>>(prefix + "rdmax").data());
-    RJ_max_ = decltype(RJ_max_)(
-        kv.value<std::vector<int>>(prefix + "rjmax").data());
+    R_max_ =
+        decltype(R_max_)(kv.value<std::vector<int>>(prefix + "rmax").data());
+    RD_max_ =
+        decltype(RD_max_)(kv.value<std::vector<int>>(prefix + "rdmax").data());
+    RJ_max_ =
+        decltype(RJ_max_)(kv.value<std::vector<int>>(prefix + "rjmax").data());
 
     using ::mpqc::lcao::detail::direct_ord_idx;
-    R_size_ =
-        1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
-    RJ_size_ =
-        1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-    RD_size_ =
-        1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
+    R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
+    RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
+    RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
 
     set_oper(Tile());
 
@@ -302,15 +298,15 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
   /// system
   void parse_one_body_periodic(
       const Formula &formula,
-      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-      const Molecule &shifted_mol);
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases, const Molecule &shifted_mol);
 
   /// parse two body formula and set engine_pool and basis array for periodic
   /// system
   void parse_two_body_periodic(
       const Formula &formula,
-      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-      Vector3d shift_coul, bool if_coulomb);
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases, Vector3d shift_coul, bool if_coulomb);
 
   /*!
    * \brief Construct sparse complex integral tensors in parallel.
@@ -375,8 +371,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     auto time0 = mpqc::now(this->world_, false);
     if (formula.oper().type() == Operator::Type::Kinetic ||
         formula.oper().type() == Operator::Type::Overlap) {
-      parse_one_body_periodic(formula, engine_pool, bs_array,
-                              *unitcell_);
+      parse_one_body_periodic(formula, engine_pool, bs_array, *unitcell_);
       result = compute_integrals(this->world_, engine_pool, bs_array);
     } else if (formula.oper().type() == Operator::Type::Nuclear) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
@@ -486,8 +481,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
     const Formula &formula,
-    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-    const Molecule &shifted_mol) {
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases, const Molecule &shifted_mol) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -517,15 +512,14 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
   engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
-      detail::to_libint2_operator_params(oper_type, *this,
-                                         shifted_mol));
+      detail::to_libint2_operator_params(oper_type, *this, shifted_mol));
 }
 
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
     const Formula &formula,
-    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-    Vector3d shift_coul, bool if_coulomb) {
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases, Vector3d shift_coul, bool if_coulomb) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -577,8 +571,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
   engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
-      libint2::BraKet::xx_xx, detail::to_libint2_operator_params(
-                                  oper_type, *this, *unitcell_));
+      libint2::BraKet::xx_xx,
+      detail::to_libint2_operator_params(oper_type, *this, *unitcell_));
 }
 
 template <typename Tile, typename Policy>

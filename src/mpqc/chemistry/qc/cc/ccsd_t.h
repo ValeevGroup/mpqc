@@ -17,29 +17,51 @@ namespace lcao {
 /**
  *  \brief CCSD_T class that compute CCSD(T) triple calculation
  *
+ *  keyword to call this class CCSD(T)
+ *
  */
 
 template <typename Tile, typename Policy>
 class CCSD_T : virtual public CCSD<Tile, Policy> {
  public:
-  //  using Tile = TA::TensorD;
-  //  using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
 
  private:
+  /// if reblock occ and unocc space
   bool reblock_;
+
+  /// if reblock inner contraction occ and unocc space
   bool reblock_inner_;
+
+  /// if replicate integral g_cijk
   bool replicate_;
+
+  /// string represent (T) approach, see keyval constructor for detail
   std::string approach_;
+
+  /// occ reblock size
   std::size_t occ_block_size_;
+
+  /// unocc reblock size
   std::size_t unocc_block_size_;
+
+  /// inner contraction space reblock size
   std::size_t inner_block_size_;
-  std::size_t increase_;
-  double triples_energy_;
+
+  /// inner occ space TiledRange1
   TA::TiledRange1 tr_occ_inner_;
+
+  /// inner unocc space TiledRange1
   TA::TiledRange1 tr_vir_inner_;
 
+  /// increase size in unocc space in iteration of fine grain approach
+  std::size_t increase_;
+
+  /// (T) energy
+  double triples_energy_;
+
  public:
+
   // clang-format off
   /**
    * KeyVal constructor
@@ -52,9 +74,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    * | reblock_occ | int | none | block size to reblock occ |
    * | reblock_unocc | int | none | block size to reblock unocc |
    * | reblock_inner | int | none | block size to reblock inner dimension |
-   * | increase | int | 2 | valid only with approach=fine, number of block in virtual dimension to load at each virtual loop |
-   * | approach | string | coarse | fine grain or coarse grain |
+   * | approach | string | coarse | coarse grain, fine grain or straight approach |
    * | replicate | bool | false | valid only with approach=coarse, if replicate integral g_cijk(smallest integral in (T)) |
+   * | increase | int | 2 | valid only with approach=fine, number of block in virtual dimension to load at each virtual loop |
    */
   // clang-format on
 
@@ -67,8 +89,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     inner_block_size_ = kv.value<int>("reblock_inner", 128);
     increase_ = kv.value<int>("increase", 2);
     approach_ = kv.value<std::string>("approach", "coarse");
-    if(approach_ != "coarse" && approach_!="fine" && approach_!="straight")
-    {
+    if (approach_ != "coarse" && approach_ != "fine" &&
+        approach_ != "straight") {
       throw std::runtime_error("invalid (T) approach! \n");
     }
   }
@@ -114,6 +136,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // clean all LCAO integral
     this->lcao_factory().registry().purge(world);
 
+    // reblock occ and unocc space
     if (reblock_ || reblock_inner_) {
       reblock();
     }
@@ -132,8 +155,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto time1 = mpqc::fenced_now(world);
     auto duration1 = mpqc::duration_in_s(time0, time1);
 
-    ExEnv::out0() << "(T) Energy: " << triples_energy_ << " Time: "
-                  << duration1 << " S \n";
+    ExEnv::out0() << "(T) Energy: " << triples_energy_ << " Time: " << duration1
+                  << " S \n";
   }
 
  private:
@@ -150,6 +173,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     TArray t2_left = t2;
     TArray t2_right = t2;
 
+    // if reblock_inner, needs two copy of T2 with different blocking
     if (reblock_inner_) {
       reblock_inner_t2(t2_left, t2_right);
     }
@@ -160,6 +184,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
     auto n_tr_occ = this->trange1_engine_->get_active_occ_blocks();
     auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
+
+    // TiledRange1 for occ, unocc and inner contraction space
     auto n_tr_occ_inner = n_tr_occ;
     auto n_tr_vir_inner = n_tr_vir;
     if (reblock_inner_) {
@@ -173,7 +199,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     std::size_t n_blocks = n_tr_occ * n_tr_occ * n_tr_occ;
     double mem = (n_occ * n_occ * n_occ * vir_block_size * vir_block_size *
                   vir_block_size * 8) /
-                 (1000000000.0);
+                 1.0e9;
 
     ExEnv::out0() << "Number of blocks at each iteration: " << n_blocks
                   << std::endl;
@@ -198,7 +224,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto &this_world = *tmp_ptr;
     global_world.gop.fence();
 
-    // replicate some array
     TArray g_cjkl(
         this_world, g_cjkl_global.trange(), g_cjkl_global.shape(),
         Policy::default_pmap(this_world,
@@ -206,15 +231,22 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     TArray t1_this(
         this_world, t1.trange(), t1.shape(),
         Policy::default_pmap(this_world, t1.trange().tiles_range().volume()));
+
+    // by default replicate t1 array
     if (size > 1) {
+      // replicate t1 array
       t1_this("a,i") = t1("a,i").set_world(this_world);
     } else {
+      // on 1 node, no need to replicate t1
       t1_this = t1;
     }
 
+    // based on replicate keyword, replicate g_cjkl array
     if (replicate_ && size > 1) {
+      // replicate g_cjkl
       g_cjkl("c,j,k,l") = g_cjkl_global("c,j,k,l").set_world(this_world);
     } else {
+      // don't replicate g_cjkl
       g_cjkl = g_cjkl_global;
     }
 
@@ -306,16 +338,23 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // start (T) calculation
     double triple_energy = 0.0;
 
+    // time spend in reduction
     double reduce_time = 0.0;
+    // time spend in contraction
     double contraction_time = 0.0;
+    // time spend in permutation
     double permutation_time = 0.0;
+
     mpqc::time_point time00;
     mpqc::time_point time01;
+
+    // local iteration
     std::size_t iter = 0;
+
+    // global iteration
     std::size_t global_iter = 0;
 
     // make progress points
-
     const auto divide = 10;
     std::size_t increase = std::max(1.0, std::round(double(n_tr_vir) / divide));
     std::vector<std::size_t> progress_points;
@@ -329,7 +368,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         for (auto c = 0; c <= b; ++c) {
           global_iter++;
 
+          // round-robin distribute the loop
           if (global_iter % size != rank) continue;
+
           // inner loop
           iter++;
 
@@ -476,7 +517,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             time01 = mpqc::now(this_world, accurate_time);
             reduce_time += mpqc::duration_in_s(time00, time01);
             tmp_energy *= 2;
-          } else {
+          }
+          // boundary condition
+          else {
             time00 = mpqc::now(this_world, accurate_time);
             auto ccsd_t_reduce = CCSD_T_ReduceSymm(
                 this->orbital_energy_, this->trange1_engine_->get_occ(),
@@ -489,6 +532,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           triple_energy += tmp_energy;
         }  // loop of c
       }    // loop of b
+
+      // print the progress
       if (rank == 0) {
         print_progress(a, a + 1, progress_points);
       }
@@ -496,9 +541,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     this_world.gop.fence();
     global_world.gop.fence();
 
-    if(this->print_detail()){
-//    if(true){
-      // loop over rank and print
+    if (this->print_detail()) {
+      // loop over all rank and print
       for (auto i = 0; i < size; ++i) {
         global_world.gop.fence();
         if (rank == i) {
@@ -540,6 +584,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       t1_this = TArray();
       g_cjkl = TArray();
 
+      // warning! this line is important, it make sure all Array object was
+      // cleaned before destruction of this_world
       TArray::wait_for_lazy_cleanup(this_world);
       global_world.gop.fence();
       world_ptr.reset();
@@ -650,6 +696,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
     double triple_energy = 0.0;
 
+    // number of unocc blocks to load at each iteration
     std::size_t increase = increase_;
     if (increase > n_tr_vir) {
       increase = n_tr_vir;
@@ -664,7 +711,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         increase * increase * increase * n_tr_occ * n_tr_occ * n_tr_occ;
     double mem = (n_blocks * std::pow(occ_block_size, 3) *
                   std::pow(vir_block_size, 3) * 8) /
-                 (std::pow(1000.0, 3));
+                 1.0e9;
 
     if (t1.world().rank() == 0) {
       std::cout << "Increase in the loop " << increase << std::endl;
@@ -1017,8 +1064,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto occ_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"i"));
     auto vir_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a"));
 
-    if(reblock_){
-
+    if (reblock_) {
       auto new_tr1 =
           std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
 
@@ -1038,7 +1084,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
               world, old_vir, new_vir, 1.0);
 
-
       auto new_occ_space = occ_space;
       new_occ_space("k,i") = occ_space("k,j") * occ_convert("j,i");
 
@@ -1057,13 +1102,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       // get t2
       auto t2 = this->t2();
       t2("a,b,i,j") = t2("c,d,k,l") * vir_convert("c,a") * vir_convert("d,b") *
-          occ_convert("k,i") * occ_convert("l,j");
+                      occ_convert("k,i") * occ_convert("l,j");
       this->set_t2(t2);
     }
 
     if (reblock_inner_) {
-
-      auto& tr1 = this->trange1_engine();
+      auto &tr1 = this->trange1_engine();
 
       // occ inner
       tr_occ_inner_ =
@@ -1104,8 +1148,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                          "Warning!! Using m for Inner Occupied Orbitals and a' "
                          "for Inner Virtual Orbitals! \n");
     }
-
-
   }
 
   void reblock_inner_t2(TArray &t2_left, TArray &t2_right) {

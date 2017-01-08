@@ -1,6 +1,8 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 
+#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/basis/basis_set.h"
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/integrals/periodic_lcao_factory.h"
 #include "mpqc/chemistry/qc/wfn/trange1_engine.h"
@@ -41,15 +43,19 @@ void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
   ExEnv::out0() << "OccBlockSize: " << occ_block << std::endl;
   ExEnv::out0() << "VirBlockSize: " << vir_block << std::endl;
 
+  auto obs_basis =
+      plcao_factory.pao_factory().orbital_basis_registry().retrieve(
+          OrbitalIndex(L"κ"));
   auto tre = std::make_shared<TRange1Engine>(occ, all, occ_block, vir_block, 0);
 
   // get all trange1s
-  auto tr_obs = tre->get_all_tr1();  // TODO: this is not right
-  auto tr_occ = tre->get_occ_tr1();
+  auto tr_obs = obs_basis.create_trange1();
   auto tr_corr_occ = tre->get_active_occ_tr1();
+  auto tr_occ = tre->compute_range(occ, occ_block);
   auto tr_vir = tre->get_vir_tr1();
   auto tr_all = tre->get_all_tr1();
 
+  mpqc::detail::parallel_print_range_info(world, tr_obs, "Obs");
   mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ");
   mpqc::detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
   mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");

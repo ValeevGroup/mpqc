@@ -8,10 +8,10 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 
-#include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/chemistry/qc/integrals/ao_factory.h"
 #include "mpqc/chemistry/qc/integrals/direct_ao_factory.h"
 #include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/wfn/wfn.h"
 
 namespace mpqc {
 namespace lcao {
@@ -21,7 +21,7 @@ namespace lcao {
 /// This models wave function methods expressed in Gaussian AO basis.
 /// \todo factor out the dependence on Gaussian basis into a WavefunctionPolicy
 /// \todo elaborate AOWavefunction documentation
-template<typename Tile, typename Policy>
+template <typename Tile, typename Policy>
 class AOWavefunction : public Wavefunction {
  public:
   using AOIntegral = gaussian::AOFactory<Tile, Policy>;
@@ -31,21 +31,25 @@ class AOWavefunction : public Wavefunction {
   /**
    *  \brief The KeyVal constructor
    *
-   * The KeyVal object will be queried for all keywords of the Wavefunction class,
+   * The KeyVal object will be queried for all keywords of the Wavefunction
+   * class,
    * as well as the following keywords:
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | \c "wfn_world:ao_factory" | integrals::AOFactory | default-constructed integrals::AOFactory | |
-   * | \c "wfn_world:direct_ao_factory" | integrals::DirectAOFactory | default-constructed integrals::DirectAOFactory | |
+   * | \c "wfn_world:ao_factory" | integrals::AOFactory | default-constructed
+   * integrals::AOFactory | |
+   * | \c "wfn_world:direct_ao_factory" | integrals::DirectAOFactory |
+   * default-constructed integrals::DirectAOFactory | |
    */
-  AOWavefunction(const KeyVal &kv) : Wavefunction(kv)
-  {
+  AOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
-    ao_factory_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
+    ao_factory_->set_orbital_basis_registry(
+        this->wfn_world()->basis_registry());
 
-    direct_ao_factory_ = gaussian::construct_direct_ao_factory<Tile,Policy>(kv);
-    direct_ao_factory_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
-
+    direct_ao_factory_ =
+        gaussian::construct_direct_ao_factory<Tile, Policy>(kv);
+    direct_ao_factory_->set_orbital_basis_registry(
+        this->wfn_world()->basis_registry());
   }
   virtual ~AOWavefunction() = default;
 
@@ -60,9 +64,7 @@ class AOWavefunction : public Wavefunction {
     Wavefunction::obsolete();
   }
 
-  double value() override {
-    return 0.0;
-  };
+  double value() override { return 0.0; };
 
   /*! Return a reference to the AOFactory Library
    *
@@ -72,8 +74,9 @@ class AOWavefunction : public Wavefunction {
   AOIntegral &ao_factory() { return *ao_factory_; }
 
   /// return a reference to DirectAOFactory
-  DirectAOIntegral& direct_ao_factory() { return *direct_ao_factory_;}
-private:
+  DirectAOIntegral &direct_ao_factory() { return *direct_ao_factory_; }
+
+ private:
   std::shared_ptr<AOIntegral> ao_factory_;
   std::shared_ptr<DirectAOIntegral> direct_ao_factory_;
 };
@@ -83,7 +86,7 @@ private:
 /// \todo factor out the dependence on Gaussian basis into a WavefunctionPolicy
 /// This models wave function methods expressed in Gaussian AO basis.
 /// \todo elaborate PeriodicAOWavefunction documentation
-template<typename Tile, typename Policy>
+template <typename Tile, typename Policy>
 class PeriodicAOWavefunction : public Wavefunction {
  public:
   using AOIntegral = gaussian::PeriodicAOFactory<Tile, Policy>;
@@ -94,16 +97,18 @@ class PeriodicAOWavefunction : public Wavefunction {
   /**
    *  \brief The KeyVal constructor
    *
-   * The KeyVal object will be queried for all keywords of the Wavefunction class,
+   * The KeyVal object will be queried for all keywords of the Wavefunction
+   * class,
    * as well as the following keywords:
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | \c "wfn_world:ao_factory" | integrals::PeriodicAOFactory | default-constructed integrals::PeriodicAOFactory | |
+   * | \c "wfn_world:ao_factory" | integrals::PeriodicAOFactory |
+   * default-constructed integrals::PeriodicAOFactory | |
    */
-  PeriodicAOWavefunction(const KeyVal &kv) : Wavefunction(kv)
-  {
+  PeriodicAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     ao_factory_ = gaussian::construct_periodic_ao_factory<Tile, Policy>(kv);
-    ao_factory_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
+    ao_factory_->set_orbital_basis_registry(
+        this->wfn_world()->basis_registry());
   }
   virtual ~PeriodicAOWavefunction() = default;
 
@@ -113,13 +118,11 @@ class PeriodicAOWavefunction : public Wavefunction {
 
   /// obsolete, purge the registry in AOIntegral
   void obsolete() override {
-    //ao_factory().registry().purge(wfn_world()->world());
+    // ao_factory().registry().purge(wfn_world()->world());
     Wavefunction::obsolete();
   }
 
-  double value() override {
-    return 0.0;
-  };
+  double value() override { return 0.0; };
 
   virtual MatrixzVec co_coeff() = 0;
   virtual VectorzVec co_energy() = 0;
@@ -132,7 +135,7 @@ class PeriodicAOWavefunction : public Wavefunction {
    */
   AOIntegral &ao_factory() { return *ao_factory_; }
 
-private:
+ private:
   std::shared_ptr<AOIntegral> ao_factory_;
 };
 

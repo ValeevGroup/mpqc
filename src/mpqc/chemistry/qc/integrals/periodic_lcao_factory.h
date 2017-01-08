@@ -190,12 +190,12 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
         auto vec_RD = direct_vector(RD, RD_max_, dcell_);
 
         auto bra0 = bra_basis0;
-        auto bra1 = shift_basis_origin(*bra_basis1, vec_R);
-        auto ket0 = shift_basis_origin(*ket_basis0, vec_RJ);
+        auto bra1 = shift_basis_origin(*bra_basis1, vec_RJ);
+        auto ket0 = shift_basis_origin(*ket_basis0, vec_R);
         auto ket1 = shift_basis_origin(*ket_basis1, vec_RJ + vec_RD);
 
         auto bases =
-            mpqc::lcao::gaussian::BasisVector{{*bra0, *bra1, *ket0, *ket1}};
+            mpqc::lcao::gaussian::BasisVector{{*bra0, *ket0, *bra1, *ket1}};
         auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
             to_libint2_operator(ao_formula.oper().type()),
             make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),

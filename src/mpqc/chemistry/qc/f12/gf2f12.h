@@ -274,8 +274,8 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
   TArray g_oovg = this->lcao_factory().compute(L"<i j|G|a x>[df]");
 
   if (world.rank() == 0) {
-    std::printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
-    std::printf("==== =========== =========== ===========\n");
+    ExEnv::out0() << printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+    ExEnv::out0() << printf("==== =========== =========== ===========\n");
   }
   size_t iter = 0;
   decltype(SE) SE_diff;
@@ -311,7 +311,7 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     SE_diff = SE_updated - SE;
 
     if (world.rank() == 0)
-      std::printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated,
+      ExEnv::out0() << printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated,
                   SE_diff);
 
     SE = SE_updated;
@@ -348,12 +348,12 @@ void GF2F12<Tile>::compute_diagonal(int max_niter) {
     auto Hartree2eV = 27.21138602;
     std::string orblabel =
         std::string(orbital_ < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
-    std::printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
+    ExEnv::out0() << printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
                 orblabel.c_str(), SE * Hartree2eV, SE);
-    std::printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
+    ExEnv::out0() << printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
                 orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
     if (orbital_ > 0)
-      std::printf(
+      ExEnv::out0() << printf(
           "WARNING: non-strongly-orthogonal F12 projector is used for the F12 "
           "correction to EA!!!");
   }
@@ -387,8 +387,8 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
       this->lcao_factory().compute(wconcat("<i j|G|a ", qp_str, ">[df]"));
 
   if (world.rank() == 0) {
-    std::printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
-    std::printf("==== =========== =========== ===========\n");
+    ExEnv::out0() << printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+    ExEnv::out0() << printf("==== =========== =========== ===========\n");
   }
   size_t iter = 0;
   decltype(SE) SE_diff;
@@ -437,7 +437,7 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
     SE_diff = SE_updated - SE;
 
     if (world.rank() == 0)
-      std::printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated,
+      ExEnv::out0() << printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated,
                   SE_diff);
 
     SE = SE_updated;
@@ -494,12 +494,12 @@ void GF2F12<Tile>::compute_nondiagonal(int max_niter) {
     auto Hartree2eV = unit_factory->make_unit("eV").from_atomic_units();
     std::string orblabel =
         std::string(orbital_ < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
-    std::printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
+    ExEnv::out0() << printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
                 orblabel.c_str(), SE * Hartree2eV, SE);
-    std::printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
+    ExEnv::out0() << printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
                 orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
     if (orbital_ > 0)
-      std::printf(
+      ExEnv::out0() << printf(
           "WARNING: non-strongly-orthogonal F12 projector is used for the F12 "
           "correction to EA!!!");
   }

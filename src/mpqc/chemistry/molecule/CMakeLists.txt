@@ -13,8 +13,6 @@ clustering_functions.cpp
 clustering_functions.h
 common.cpp
 common.h
-energy.cpp
-energy.h
 formula.cpp
 formula.h
 linkage.cpp

@@ -45,7 +45,7 @@ public:
 
     ~zRHF() = default;
 
-    void compute(lcao::PropertyBase *pb) override;
+    void compute(PropertyBase *pb) override;
     void obsolete() override;
 
     /*!

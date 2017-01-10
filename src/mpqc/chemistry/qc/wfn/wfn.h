@@ -8,23 +8,54 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_
 
-#include "mpqc/chemistry/molecule/energy.h"
-#include "mpqc/chemistry/qc/wfn/wfn_world.h"
-#include "mpqc/chemistry/qc/properties/propertybase.h"
-
-#include <memory>
 #include <functional>
+#include <memory>
+
+#include "mpqc/chemistry/qc/wfn/wfn_world.h"
 
 namespace mpqc {
-namespace lcao {
+
+/// Wavefunction = opaque function of atoms, only has 2 states: computed and not computed.
+/// TODO It needs some sort of precision tracking to facilitate reuse.
+class Wavefunction : public DescribedClass {
+ public:
+  /**
+   *  \brief The KeyVal constructor
+   *
+   * The KeyVal object will be queried for the following keywords:
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | atoms | Molecule or UnitCell | none | the collection of Atoms |
+   *
+   */
+  Wavefunction(const KeyVal& kv);
+  virtual ~Wavefunction();
+
+  virtual void obsolete() { computed_ = false; }
+  bool computed() const { return computed_; }
+
+  const std::shared_ptr<Molecule>& atoms() const { return atoms(); }
+
+ protected:
+  bool computed_ = false;
+
+  void set_atoms(std::shared_ptr<Molecule> atoms) {
+    atoms_ = atoms;
+  }
+
+ private:
+  std::shared_ptr<Molecule> atoms_;
+};  // class Wavefunction
 
 class PropertyBase;
+
+namespace lcao {
 
 /// Wavefunction computes a wave function (or a wave function-like quantity, like
 /// Green's function or reduced density matrix) in a Gaussian basis.
 
 /// \todo elaborate Wavefunction documentation
-class Wavefunction : public Energy {
+class Wavefunction : public ::mpqc::Wavefunction {
  private:
   /** Pointer to the WfnWorld
    *
@@ -57,7 +88,7 @@ class Wavefunction : public Energy {
   virtual void compute(PropertyBase* pb) = 0;
   virtual double value() = 0;
   virtual void obsolete() {
-    Energy::obsolete();
+    ::mpqc::Wavefunction::obsolete();
   };
 
   const std::shared_ptr<WavefunctionWorld>&

@@ -120,7 +120,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
 
   /// compute function
   double value() override {
-    if (this->energy_ == 0.0) {
+    double result = 0.0;
+    if (!computed()) {
       double ref_energy = ref_wfn_->value();
 
       // initialize
@@ -144,10 +145,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
       T1_ = t1;
       T2_ = t2;
 
-      this->energy_ = ref_energy + ccsd_corr_energy_;
+      result = ref_energy + ccsd_corr_energy_;
     }
 
-    return this->energy_;
+    return result;
   }
 
   void set_trange1_engine(const std::shared_ptr<TRange1Engine> &tr1) {

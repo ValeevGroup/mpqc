@@ -63,12 +63,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   virtual ~CCSD_T() {}
 
-  void compute(lcao::PropertyBase *pb) override {
+  void compute(PropertyBase *pb) override {
     throw std::runtime_error("Not Implemented!!");
   }
 
   double value() override {
-    if (this->energy_ == 0.0) {
+    if (!computed()) {
       auto &world = this->lcao_factory().world();
 
       double ccsd_corr = 0.0;

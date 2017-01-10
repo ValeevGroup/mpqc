@@ -102,7 +102,7 @@ void RHF<Tile,Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 double RHF<Tile,Policy>::value() {
-  if (this->energy_ == 0.0) {
+  if (!computed()) {
     init(kv_);
     solve(max_iter_, converge_);
   }
@@ -111,7 +111,7 @@ double RHF<Tile,Policy>::value() {
 
 template <typename Tile, typename Policy>
 void RHF<Tile,Policy>::obsolete() {
-  this->energy_ = 0.0;
+  ::mpqc::Wavefunction::obsolete();
 
   H_ = array_type();
   S_ = array_type();

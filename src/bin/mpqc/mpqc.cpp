@@ -6,12 +6,12 @@
 #include <libint2.hpp>
 #include <tiledarray.h>
 
+#include "../../mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/mpqc_task.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 
-#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/util/keyval/keyval.h"

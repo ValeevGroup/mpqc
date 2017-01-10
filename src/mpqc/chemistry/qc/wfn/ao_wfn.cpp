@@ -1,5 +1,5 @@
 #include "mpqc/chemistry/qc/wfn/ao_wfn.h"
-#include "mpqc/chemistry/qc/properties/propertybase.h"
+#include "mpqc/chemistry/qc/properties/property.h"
 
 namespace mpqc {
 namespace lcao {

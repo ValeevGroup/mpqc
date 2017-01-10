@@ -17,6 +17,12 @@
 namespace mpqc {
 namespace lcao {
 
+  /**
+   *  \brief CCSD_PNO class
+   *
+   *  keyword to call this class CCSD-PNO
+   */
+
   template <typename Tile, typename Policy>
   class CCSD_PNO : public LCAOWavefunction<Tile, Policy> {
 
@@ -39,6 +45,13 @@ namespace lcao {
    double value() override;
 
   };
+
+#if TA_DEFAULT_POLICY == 0
+extern template class CCSD_PNO<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class CCSD_PNO<TA::TensorD, TA::SparsePolicy>;
+#endif
+
 }  // namespace lcao
 }  // namespace mpqc
 

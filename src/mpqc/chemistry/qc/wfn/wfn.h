@@ -15,7 +15,8 @@
 
 namespace mpqc {
 
-/// Wavefunction = opaque function of atoms, only has 2 states: computed and not computed.
+/// Wavefunction = opaque function of atoms, only has 2 states: computed and not
+/// computed.
 /// TODO It needs some sort of precision tracking to facilitate reuse.
 class Wavefunction : public DescribedClass {
  public:
@@ -39,9 +40,7 @@ class Wavefunction : public DescribedClass {
  protected:
   bool computed_ = false;
 
-  void set_atoms(std::shared_ptr<Molecule> atoms) {
-    atoms_ = atoms;
-  }
+  void set_atoms(std::shared_ptr<Molecule> atoms) { atoms_ = atoms; }
 
  private:
   std::shared_ptr<Molecule> atoms_;
@@ -51,7 +50,8 @@ class PropertyBase;
 
 namespace lcao {
 
-/// Wavefunction computes a wave function (or a wave function-like quantity, like
+/// Wavefunction computes a wave function (or a wave function-like quantity,
+/// like
 /// Green's function or reduced density matrix) in a Gaussian basis.
 
 /// \todo elaborate Wavefunction documentation
@@ -86,13 +86,11 @@ class Wavefunction : public ::mpqc::Wavefunction {
   virtual ~Wavefunction();
 
   virtual void compute(PropertyBase* pb) = 0;
-  virtual double value() = 0;
-  virtual void obsolete() {
-    ::mpqc::Wavefunction::obsolete();
-  };
+  virtual void obsolete() { ::mpqc::Wavefunction::obsolete(); };
 
-  const std::shared_ptr<WavefunctionWorld>&
-  wfn_world() const { return wfn_world_; }
+  const std::shared_ptr<WavefunctionWorld>& wfn_world() const {
+    return wfn_world_;
+  }
 };
 
 }  // namespace lcao

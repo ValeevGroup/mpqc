@@ -45,7 +45,8 @@ class RHF : public AOWavefunction<Tile, Policy> {
 
   virtual ~RHF() = default;
 
-  double value() override;
+
+  double value() override ;
   void obsolete() override;
 
   double energy() const;
@@ -55,7 +56,7 @@ class RHF : public AOWavefunction<Tile, Policy> {
   inline void set_fock(array_type f) {F_ = f;}
   inline array_type const& density() const { return D_; }
   inline array_type const& coefficents() const { return C_; }
-  inline double rhf_energy() const { return this->energy_; }
+  inline const double rhf_energy() const { return rhf_energy_; }
 
   /*! Function to compute the density to the desired accuracy.
    *
@@ -68,6 +69,7 @@ class RHF : public AOWavefunction<Tile, Policy> {
   bool solve(int64_t max_iters, double thresh);
 
  protected:
+  double rhf_energy_;
   double converge_;
   std::size_t max_iter_;
   double repulsion_;

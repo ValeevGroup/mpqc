@@ -22,4 +22,4 @@ set(sources
 #        )
 #endif()
 
-add_mpqc_library(scf sources sources "MPQCwfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "mpqc/chemistry/qc/scf")
+add_mpqc_library(scf sources sources "MPQCproperties;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "mpqc/chemistry/qc/scf")

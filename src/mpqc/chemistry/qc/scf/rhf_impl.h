@@ -102,11 +102,9 @@ void RHF<Tile,Policy>::init_fock_builder() {
 
 template <typename Tile, typename Policy>
 double RHF<Tile,Policy>::value() {
-  if (!computed()) {
-    init(kv_);
-    solve(max_iter_, converge_);
-  }
-  return this->energy_;
+  init(kv_);
+  solve(max_iter_, converge_);
+  return rhf_energy_;
 }
 
 template <typename Tile, typename Policy>
@@ -203,7 +201,7 @@ bool RHF<Tile,Policy>::solve(int64_t max_iters, double thresh) {
   if (iter == max_iters) {
     return false;
   } else {
-    this->energy_ = old_energy;
+    rhf_energy_ = old_energy;
     // store fock matix in registry
     auto& registry = this->ao_factory().registry();
     f_builder_->register_fock(F_, registry);

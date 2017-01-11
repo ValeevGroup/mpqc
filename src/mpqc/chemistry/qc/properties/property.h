@@ -8,8 +8,9 @@
 
 #include <TiledArray/type_traits.h>
 
-#include <mpqc/chemistry/molecule/molecule.h>
-#include <mpqc/util/misc/exception.h>
+#include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/chemistry/qc/wfn/wfn.h"
+#include "mpqc/util/misc/exception.h"
 
 namespace mpqc {
 
@@ -35,11 +36,12 @@ using TiledArray::detail::scalar_type;
 class TimestampFactory {
  public:
   using timestamp_type = uint64_t;
+  static std::atomic<timestamp_type> current_timestamp;
   static timestamp_type make() {
-    std::atomic<timestamp_type> current_timestamp{timestamp_type{0}};
     return current_timestamp++;
   }
 };
+
 
 /// Timestampable<T> is a proxy to T that keeps the timestamp of the last
 /// modification.
@@ -54,8 +56,8 @@ class Timestampable {
       : value_(std::make_shared<T>(val)), timestamp_(get_timestamp()) {}
 
   /// copy ctor keeps the timestamp, deep copies value
-  Timestampable(const Timestampable& other) : timestamp_(other.timestamp_),
-      value_(std::make_shared<T>(T(other))) {}
+  Timestampable(const Timestampable& other)
+      : timestamp_(other.timestamp_), value_(std::make_shared<T>(T(other))) {}
 
   /// retrieve the value_ as a conversion to T
   operator T() {
@@ -82,10 +84,14 @@ class Function {
   typedef Value value_type;
   typedef Parameters parameters_type;
 
-  Function(const std::shared_ptr<Parameters>& params)
-      : params_(params), obsolete_(true) {}
+  Function() = default;
 
-  const Value& value() {
+  Function(const std::shared_ptr<Parameters>& params)
+      : value_(), params_(params), obsolete_(true) {}
+
+  /// Timestampable<Value> will be convert to temporary Value,
+  /// has to return by value here
+  const Value value() {
     if (must_compute()) compute();
     return value_;
   }
@@ -94,7 +100,7 @@ class Function {
   // parameters
   // or obsolete
   bool must_compute() const {
-    if (value_->timestamp() < params_->timestamp() || obsolete_)
+    if (value_.timestamp() < params_.timestamp() || obsolete_)
       return true;
     else
       return false;
@@ -107,14 +113,14 @@ class Function {
   virtual void compute() = 0;
 
   const Timestampable<Value>& get_value() const { return value_; }
-  void set_value(Value v) { value_ = v; }
+  void set_value(Value v) { value_ = Timestampable<Value>(v); }
 
   // allow classes derived from FunctionVisitorBase<Function> to set the value
   friend class FunctionVisitorBase<Function<Value,Parameters>>;
 
  private:
   Timestampable<Value> value_;
-  std::shared_ptr<Parameters> params_;
+  Timestampable<std::shared_ptr<Parameters>> params_;
   bool obsolete_;
 };
 
@@ -139,7 +145,9 @@ class MolecularTaylorExpansionParams {
         precision_(taylor_expansion_precision.begin(),
                    taylor_expansion_precision.end()) {}
   // 3 coords * # of atoms + 1 precision * number of derivatives
-  size_t nparams() const { return molecule_->atoms().size() * 3 + precision_.size(); }
+  size_t nparams() const {
+    return molecule_->atoms().size() * 3 + precision_.size();
+  }
 
   int order() const { return precision_.size() - 1; }
   double desired_precision(int order) const { return precision_.at(order); }
@@ -152,23 +160,35 @@ class MolecularTaylorExpansionParams {
 
 /// N-th order Taylor expansion of a function of \c K variables
 
-/// @tparam Real the real type
-template <typename Real>
+/// @tparam Value can be complex valued or a vector (e.g. expansion of a dipole moment)
+template <typename Value>
 class TaylorExpansion {
  public:
-  TaylorExpansion() : nvars_(0), order_(0), derivs_(order_+1, std::vector<Real>(1, Real(0))) {}
-  TaylorExpansion(size_t nvars, int order) : nvars_(nvars), order_(order), derivs_(order_+1) {
-    derivs_[0].resize(1, Real(0));
-    for(int d=1; d <= order_; ++d) {
-      derivs_[d].resize( (derivs_[d-1].size() * (nvars_ + d - 1)) / d , Real(0));
+  TaylorExpansion()
+      : nvars_(0),
+        order_(0),
+        derivs_(order_ + 1, std::vector<Value>(1, Value(0))) {}
+
+  TaylorExpansion(Value real)
+      : nvars_(1),
+        order_(0),
+        derivs_(1,std::vector<Value>(1,real)) {}
+
+  TaylorExpansion(size_t nvars, int order)
+      : nvars_(nvars), order_(order), derivs_(order_ + 1) {
+    derivs_[0].resize(1, Value(0));
+    for (int d = 1; d <= order_; ++d) {
+      derivs_[d].resize((derivs_[d - 1].size() * (nvars_ + d - 1)) / d,
+                        Value(0));
     }
   }
 
-  /// access a packed set of unique derivatives of order \c N. Derivative \f$ {i_1, i_2, i_3, ... i_N} \f$
+  /// access a packed set of unique derivatives of order \c N. Derivative \f$
+  /// {i_1, i_2, i_3, ... i_N} \f$
   /// where \f$ i_1 \leq i_2 \leq i_3 ... \leq i_N \f$
   /// is stored in position TODO derive the general formula
-  const std::vector<Real> & derivs(int N) const { return derivs_.at(N); }
-  std::vector<Real>& derivs(int N) { return derivs_.at(N); }
+  const std::vector<Value>& derivs(int N) const { return derivs_.at(N); }
+  std::vector<Value>& derivs(int N) { return derivs_.at(N); }
 
  private:
   /// Number of variables
@@ -176,11 +196,13 @@ class TaylorExpansion {
   /// expansion order
   int order_;
   /// values of unique derivatives of each order
-  /// # of unique derivs of order \f$ O = n \times (n+1) \times (n+O-1) / (1 \times 2 \times O)
-  std::vector<std::vector<Real>> derivs_;
+  /// # of unique derivs of order \f$ O = n \times (n+1) \times (n+O-1) / (1
+  /// \times 2 \times O)
+  std::vector<std::vector<Value>> derivs_;
 };
 
-/// molecular taylor expansion = local expansion of a function of molecular coordinates
+/// molecular taylor expansion = local expansion of a function of molecular
+/// coordinates
 /// NB does not depend on fields, need MolecularPropertyInEMField for
 /// something like that
 template <typename Value>
@@ -195,7 +217,8 @@ class MolecularTaylorExpansion
 
   MolecularTaylorExpansion(
       const std::shared_ptr<Molecule>& molecule_,
-      std::initializer_list<typename scalar_type<Value>::type> taylor_expansion_precision)
+      std::initializer_list<typename scalar_type<Value>::type>
+          taylor_expansion_precision)
       : Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams>(
             std::make_shared<MolecularTaylorExpansionParams>(
                 molecule_, taylor_expansion_precision)) {}
@@ -212,20 +235,23 @@ class PropertyBase : public DescribedClass {
   virtual void evaluate() = 0;
 };
 
+/**
+ *
+ * wave function property = molecular property computable from a wave function
+ * base class for ALL properties of wave functions PropertyBase
+ */
 
-/// wave function property = molecular property computable from a wave function
-/// base class for ALL properties of wave functions
-/// PropertyBase
 template <typename Value>
-class WavefunctionProperty : public MolecularTaylorExpansion<Value>, public PropertyBase {
+class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
+                             public PropertyBase {
  public:
   using typename MolecularTaylorExpansion<Value>::value_type;
   using typename MolecularTaylorExpansion<Value>::function_base_type;
-  WavefunctionProperty(
-      Wavefunction* wfn_ptr,
-      std::initializer_list<typename scalar_type<Value>::type> taylor_expansion_precision)
+  WavefunctionProperty(Wavefunction* wfn_ptr,
+                       std::initializer_list<typename scalar_type<Value>::type>
+                           taylor_expansion_precision)
       : MolecularTaylorExpansion<Value>(wfn_ptr->atoms(),
-                                 taylor_expansion_precision),
+                                        taylor_expansion_precision),
         wfn_(wfn_ptr) {
     if (wfn_ptr == nullptr)
       throw ProgrammingError("WavefunctionProperty ctor received null wfn ptr",
@@ -250,19 +276,24 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>, public Prop
 };
 
 ////////////////////////////////////////////////////////////////////////
-// to add a wavefunction property class P:
-// - derive class P from WavefunctionProperty<T> and override
-// P::evaluate()
-// - define class P::EvaluatorBase to be used as a public base classes that
-// can compute it
 
+/**
+ *
+ * to add a wavefunction property class P:
+ * - derive class P from WavefunctionProperty<T> and override
+ * P::evaluate()
+ * - define class P::EvaluatorBase to be used as a public base classes that
+ * can compute it
+ */
 class Energy : public WavefunctionProperty<double> {
  public:
   using typename WavefunctionProperty<double>::function_base_type;
 
 
-  /// every class that can evaluate Energy (e.g. Wavefunction) will publicly
-  /// inherit from Energy::EvaluatorBase
+  /**
+   *  every class that can evaluate Energy (e.g. Wavefunction) will publicly
+   *  inherit from Energy::EvaluatorBase
+   */
   class EvaluatorBase : public FunctionVisitorBase<function_base_type> {
    public:
     /// EvaluatorBase::can_evaluate returns true if \c energy can be computed.

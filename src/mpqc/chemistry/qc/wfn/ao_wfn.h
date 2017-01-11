@@ -8,6 +8,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 
+#include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/chemistry/qc/integrals/ao_factory.h"
 #include "mpqc/chemistry/qc/integrals/direct_ao_factory.h"
@@ -16,13 +17,17 @@
 namespace mpqc {
 namespace lcao {
 
-/// AOWavefunction is a Wavefunction with an gaussian::AOFactory
-
-/// This models wave function methods expressed in Gaussian AO basis.
-/// \todo factor out the dependence on Gaussian basis into a WavefunctionPolicy
-/// \todo elaborate AOWavefunction documentation
+/**
+ * \brief AOWavefunction is a Wavefunction with an gaussian::AOFactory
+ *
+ * By default, AOWavefunction can compute Energy property, through function double value()
+ *
+ * This models wave function methods expressed in Gaussian AO basis.
+ * \todo factor out the dependence on Gaussian basis into a WavefunctionPolicy
+ * \todo elaborate AOWavefunction documentation
+**/
 template<typename Tile, typename Policy>
-class AOWavefunction : public Wavefunction {
+class AOWavefunction : public Wavefunction, public Energy::EvaluatorBase{
  public:
   using AOIntegral = gaussian::AOFactory<Tile, Policy>;
   using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
@@ -53,16 +58,26 @@ class AOWavefunction : public Wavefunction {
     throw std::logic_error("Not Implemented!");
   }
 
+  /// function that return energy, must implement in derived class
+  virtual double value() = 0;
+
+  bool can_evaluate (Energy* energy) override {
+    return true;
+  }
+
+  void evaluate(Energy* energy) override {
+    if(!computed()){
+      double wfn_energy = value();
+      Energy::EvaluatorBase::set_value(energy, wfn_energy);
+    }
+  }
+
   /// obsolete, purge the registry in AOIntegral and DirectAOIntegral
   void obsolete() override {
     ao_factory().registry().purge(wfn_world()->world());
     direct_ao_factory().registry().purge(wfn_world()->world());
     Wavefunction::obsolete();
   }
-
-  double value() override {
-    return 0.0;
-  };
 
   /*! Return a reference to the AOFactory Library
    *
@@ -105,19 +120,8 @@ class PeriodicAOWavefunction : public Wavefunction {
   }
   virtual ~PeriodicAOWavefunction() = default;
 
-  void compute(PropertyBase *pb) override {
-    throw std::logic_error("Not Implemented!");
-  }
-
-  /// obsolete, purge the registry in AOIntegral
-  void obsolete() override {
-    //ao_factory().registry().purge(wfn_world()->world());
-    Wavefunction::obsolete();
-  }
-
-  double value() override {
-    return 0.0;
-  };
+  /// function that return energy, must implement in derived class
+  virtual double value() = 0;
 
   /*! Return a reference to the AOFactory Library
    *

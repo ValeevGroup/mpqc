@@ -38,14 +38,17 @@ class MPQCTask {
 
     auto wfn = keyval_->keyval("wfn").class_ptr<lcao::Wavefunction>();
 
-    //  auto energy_prop = qc::Energy(kv);
-    //  auto energy_prop_ptr = &energy_prop;
-
     // set the sparse_threshold
     const double threshold = keyval_->value<double>("sparse_threshold", 1e-20);
     TiledArray::SparseShape<float>::threshold(threshold);
 
-    const auto value = wfn->value();
+    // Energy Property
+    // TODO KeyVal constructor for all proterties
+    // TODO auto detect Proterty type
+    Energy energy(wfn.get(), {1.0e-9});
+
+    auto value = energy.value().derivs(0)[0];
+
     keyval_->assign("wfn:energy", value);
   }
 

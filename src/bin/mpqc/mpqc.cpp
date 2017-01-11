@@ -6,7 +6,7 @@
 #include <libint2.hpp>
 #include <tiledarray.h>
 
-#include "../../mpqc/chemistry/qc/properties/property.h"
+#include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/mpqc_task.h"
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/external/madworld/parallel_file.h"

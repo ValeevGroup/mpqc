@@ -263,7 +263,7 @@ class Energy : public WavefunctionProperty<double> {
 
   /// every class that can evaluate Energy (e.g. Wavefunction) will publicly
   /// inherit from Energy::EvaluatorBase
-  class EvaluatorBase : public function_base_type {
+  class EvaluatorBase : public FunctionVisitorBase<function_base_type> {
    public:
     /// EvaluatorBase::can_evaluate returns true if \c energy can be computed.
     /// For example, if \c energy demands taylor expansion to 1st order

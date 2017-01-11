@@ -73,6 +73,8 @@ class Timestampable {
   static timestamp_type get_timestamp() { return TimestampFactory::make(); }
 };
 
+template <typename Function> class FunctionVisitorBase;
+
 /// property = function of a sequence of Parameters yielding a Value
 template <typename Value, typename Parameters>
 class Function {
@@ -107,11 +109,25 @@ class Function {
   const Timestampable<Value>& get_value() const { return value_; }
   void set_value(Value v) { value_ = v; }
 
+  // allow classes derived from FunctionVisitorBase<Function> to set the value
+  friend class FunctionVisitorBase<Function<Value,Parameters>>;
+
  private:
   Timestampable<Value> value_;
   std::shared_ptr<Parameters> params_;
   bool obsolete_;
 };
+
+/// FunctionVisitorBase makes possible for Visitors of a child of Function
+/// to call Function::set_value
+template <typename Function>
+class FunctionVisitorBase {
+ protected:
+  static void set_value(Function* f, const typename Function::value_type& value) {
+    f->set_value(value);
+  }
+};
+
 
 /// molecular coordinates + taylor expansion params
 class MolecularTaylorExpansionParams {
@@ -171,12 +187,12 @@ template <typename Value>
 class MolecularTaylorExpansion
     : public Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams> {
  public:
+  typedef Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams> function_base_type;
+
   // make_molecular_params needs to create a MolecularCoordinates object and
-  // set
-  // callbacks
-  // so that Molecule can update its timestamp when Molecule::set_coordinates
-  // is
-  // called
+  // set callbacks so that Molecule can update its timestamp when
+  // Molecule::set_coordinates is called
+
   MolecularTaylorExpansion(
       const std::shared_ptr<Molecule>& molecule_,
       std::initializer_list<typename scalar_type<Value>::type> taylor_expansion_precision)
@@ -192,7 +208,7 @@ class PropertyBase : public DescribedClass {
  public:
   // in a visitor pattern this is the "accept" method
   // the argument, Wavefunction*, does not appear here, it will be a member
-  // of the is derived class
+  // of the derived class
   virtual void evaluate() = 0;
 };
 
@@ -204,6 +220,7 @@ template <typename Value>
 class WavefunctionProperty : public MolecularTaylorExpansion<Value>, public PropertyBase {
  public:
   using typename MolecularTaylorExpansion<Value>::value_type;
+  using typename MolecularTaylorExpansion<Value>::function_base_type;
   WavefunctionProperty(
       Wavefunction* wfn_ptr,
       std::initializer_list<typename scalar_type<Value>::type> taylor_expansion_precision)
@@ -227,7 +244,7 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>, public Prop
     auto updated_value_timestamp = this->get_value().timestamp();
     if (original_value_timestamp == updated_value_timestamp)
       throw ProgrammingError(
-          "WavefunctionProperty::compute() forgot to call set_value?", __FILE__,
+          "WavefunctionProperty::compute(): Wavefunction forgot to call set_value?", __FILE__,
           __LINE__);
   }
 };
@@ -241,9 +258,12 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>, public Prop
 
 class Energy : public WavefunctionProperty<double> {
  public:
+  using typename WavefunctionProperty<double>::function_base_type;
+
+
   /// every class that can evaluate Energy (e.g. Wavefunction) will publicly
   /// inherit from Energy::EvaluatorBase
-  class EvaluatorBase {
+  class EvaluatorBase : public function_base_type {
    public:
     /// EvaluatorBase::can_evaluate returns true if \c energy can be computed.
     /// For example, if \c energy demands taylor expansion to 1st order
@@ -254,9 +274,6 @@ class Energy : public WavefunctionProperty<double> {
     /// and uses set_value to assign the values to \c energy
     virtual void evaluate(Energy* energy) = 0;
   };
-
-  friend class EvaluatorBase;  // hence EnergyEvaluator can call
-                               // Function::set_value()
 
   Energy(Wavefunction* wfn_ptr,
          std::initializer_list<double> taylor_expansion_precision)

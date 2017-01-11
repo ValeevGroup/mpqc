@@ -34,7 +34,7 @@ class Wavefunction : public DescribedClass {
   virtual void obsolete() { computed_ = false; }
   bool computed() const { return computed_; }
 
-  const std::shared_ptr<Molecule>& atoms() const { return atoms(); }
+  const std::shared_ptr<Molecule>& atoms() const { return atoms_; }
 
  protected:
   bool computed_ = false;

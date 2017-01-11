@@ -8,17 +8,18 @@ set(mpqc_headers
 )
 
 add_mpqc_library(mpqc mpqc_sources mpqc_headers
-                 "MPQCutil_keyval;MPQCutil_mad;MPQCutil_options;MPQCwfn" "mpqc")
+        "MPQCutil_keyval;MPQCutil_mad;MPQCutil_options;MPQCwfn" "mpqc")
 
 set (main_source mpqc.cpp)
 add_mpqc_library(main  main_source ""
-                 "MPQCmpqc" "mpqc")
+        "MPQCmpqc" "mpqc")
 
 ################## libmpqc super-library #########################
 
 # add the libraries you need and force their linkage in mpqc.cpp
 # developers will want to trim this list down to the minimum needed
-set(MPQC_LIBS MPQCf12 MPQCcc MPQCmbpt MPQCscf)
+#set(MPQC_LIBS MPQCf12 MPQCcc MPQCmbpt MPQCscf)
+set(MPQC_LIBS MPQCscf)
 
 # create libmpqc, an interface to MPQC_LIBS
 # linking libmpqc in will link in ALL MPQC functionality

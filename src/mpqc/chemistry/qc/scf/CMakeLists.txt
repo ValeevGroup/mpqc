@@ -13,13 +13,13 @@ set(sources
         util.h
    )
 
-if(TA_DEFAULT_POLICY EQUAL 1)
-list(APPEND sources
-        zrhf.h
-        zrhf.cpp
-        pbc/periodic_cond_ortho.h
-        pbc/periodic_soad.h
-        )
-endif()
+#if(TA_DEFAULT_POLICY EQUAL 1)
+#list(APPEND sources
+#        zrhf.h
+#        zrhf.cpp
+#        pbc/periodic_cond_ortho.h
+#        pbc/periodic_soad.h
+#        )
+#endif()
 
 add_mpqc_library(scf sources sources "MPQCwfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "mpqc/chemistry/qc/scf")

@@ -1,0 +1,37 @@
+
+/** \page Input example
+
+MPQC uses JSON for input format
+
+a short example of RHF input
+```
+{
+  "molecule": {
+    "type": "Molecule",
+    "file_name": "water.xyz",
+    "n_cluster": 2
+  },
+  "basis": {
+    "type": "Basis",
+    "name": "aug-cc-pVDZ",
+    "molecule": "$:molecule"
+  },
+  "world":{
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
+    "basis" : "$:basis",
+  },
+  "wfn":{
+    "type": "RHF",
+    "wfn_world": "$:world"
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
+  }
+}
+
+```
+MPQC will check the **property** keyword and evaluate it.
+
+*/

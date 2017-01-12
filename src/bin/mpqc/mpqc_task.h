@@ -14,8 +14,7 @@
 
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
-//TODO not use Energy explicitly
-#include "mpqc/chemistry/qc/properties/energy.h"
+#include "mpqc/chemistry/qc/properties/property.h"
 
 namespace mpqc {
 
@@ -38,20 +37,24 @@ class MPQCTask {
   void run() {
     auto world_popper = TA::push_default_world(world_);
 
-    auto wfn = keyval_->keyval("wfn").class_ptr<lcao::Wavefunction>();
-
     // set the sparse_threshold
     const double threshold = keyval_->value<double>("sparse_threshold", 1e-20);
     TiledArray::SparseShape<float>::threshold(threshold);
 
     // Energy Property
-    // TODO KeyVal constructor for all proterties
-    // TODO auto detect Proterty type
-    Energy energy(wfn.get(), {1.0e-9});
+    // TODO auto detect Property type
+    // TODO need to loop over property
+    auto property = keyval_->keyval("property").class_ptr<mpqc::Property>();
 
-    auto value = energy.value().derivs(0)[0];
+    if(property!= nullptr){
+      property->evaluate();
+    } else{
+      throw InputError("property keyword was not correct from input! ",__FILE__, __LINE__);
+    }
 
-    keyval_->assign("wfn:energy", value);
+    // TODO need to assign result to KeyVal
+    //
+//    keyval_->assign("wfn:energy", value);
   }
 
  private:

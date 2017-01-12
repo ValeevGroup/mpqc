@@ -2,12 +2,12 @@
 // Created by Chong Peng on 1/11/17.
 //
 
-#ifndef MPQC_ENERGY_H
-#define MPQC_ENERGY_H
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
 
-#include "property.h"
+#include "mpqc/chemistry/qc/properties/property.h"
 
-namespace mpqc{
+namespace mpqc {
 
 /**
  *
@@ -37,13 +37,32 @@ public:
     virtual void evaluate(Energy* energy) = 0;
   };
 
+  // clang-format off
+  /**
+   * KeyVal constructor
+   *
+   * keywords for this class
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | wfn | Wavefunction | none | the Wavefunction to use to compute energy  |
+   * | precision | double | 1.0e-8 | precision for energy property |
+   *
+   */
+  // clang-format on
+
+  Energy(const KeyVal& kv) : Energy(get_wfn(kv), get_precision(kv)) {}
+
   Energy(Wavefunction* wfn_ptr,
          std::initializer_list<double> taylor_expansion_precision)
       : WavefunctionProperty<double>(wfn_ptr, taylor_expansion_precision) {}
 
   void evaluate() override;
+
+private:
+  Wavefunction* get_wfn(const KeyVal& kv);
+  std::initializer_list<double> get_precision(const KeyVal& kv);
 };
 
-}
+} // namespace mpqc
 
-#endif //MPQC_ENERGY_H
+#endif //  MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_

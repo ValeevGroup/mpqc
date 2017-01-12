@@ -2,7 +2,11 @@
 // Created by Chong Peng on 1/11/17.
 //
 
-#include "energy.h"
+#include "mpqc/chemistry/qc/properties/energy.h"
+#include "mpqc/util/keyval/forcelink.h"
+
+
+MPQC_CLASS_EXPORT2("Energy", mpqc::Energy);
 
 namespace mpqc{
 
@@ -17,6 +21,16 @@ void Energy::evaluate() {
     throw InputError(oss.str().c_str(), __FILE__, __LINE__);
   }
   evaluator->evaluate(this);
+}
+
+Wavefunction* Energy::get_wfn(const KeyVal& kv) {
+  auto wfn = kv.keyval("wfn").class_ptr<lcao::Wavefunction>();
+  return wfn.get();
+}
+
+std::initializer_list<double> Energy::get_precision(const KeyVal& kv) {
+  double precision = kv.value<double>("precision",1.0e-8);
+  return std::initializer_list<double> {precision};
 }
 
 }

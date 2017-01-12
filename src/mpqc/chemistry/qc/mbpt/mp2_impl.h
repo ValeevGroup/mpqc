@@ -95,8 +95,6 @@ double RMP2<Tile,Policy>::compute() {
                              this->trange1_engine(), false);
 }
 
-template<typename Tile, typename Policy>
-void RMP2<Tile,Policy>::compute(PropertyBase *pb) {}
 
 template<typename Tile, typename Policy>
 const std::shared_ptr<Wavefunction> RMP2<Tile,Policy>::refwfn() const {

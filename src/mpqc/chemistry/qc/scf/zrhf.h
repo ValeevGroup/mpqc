@@ -45,7 +45,6 @@ public:
 
     ~zRHF() = default;
 
-    void compute(PropertyBase *pb) override;
     void obsolete() override;
 
     /*!

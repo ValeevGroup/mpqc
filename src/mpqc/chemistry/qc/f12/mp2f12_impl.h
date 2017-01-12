@@ -105,8 +105,6 @@ void RMP2F12<Tile>::obsolete() {
   ref_wfn_->obsolete();
 }
 
-template <typename Tile>
-void RMP2F12<Tile>::compute(PropertyBase* pb) {}
 
 template <typename Tile>
 std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {

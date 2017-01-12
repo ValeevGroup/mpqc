@@ -46,7 +46,7 @@ class Wavefunction : public DescribedClass {
   std::shared_ptr<Molecule> atoms_;
 };  // class Wavefunction
 
-class PropertyBase;
+class Property;
 
 namespace lcao {
 
@@ -85,7 +85,6 @@ class Wavefunction : public ::mpqc::Wavefunction {
   Wavefunction(const KeyVal& kv);
   virtual ~Wavefunction();
 
-  virtual void compute(PropertyBase* pb) = 0;
   virtual void obsolete() { ::mpqc::Wavefunction::obsolete(); };
 
   const std::shared_ptr<WavefunctionWorld>& wfn_world() const {

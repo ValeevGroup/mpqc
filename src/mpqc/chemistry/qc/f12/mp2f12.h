@@ -42,7 +42,6 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
   ~RMP2F12() = default;
 
   double value() override;
-  void compute(PropertyBase* pb) override;
   std::tuple<RowMatrix<double>, RowMatrix<double>> compute();
   void obsolete() override;
 

@@ -54,9 +54,6 @@ class AOWavefunction : public Wavefunction, public Energy::EvaluatorBase{
   }
   virtual ~AOWavefunction() = default;
 
-  void compute(PropertyBase *pb) override {
-    throw std::logic_error("Not Implemented!");
-  }
 
   /// function that return energy, must implement in derived class
   virtual double value() = 0;

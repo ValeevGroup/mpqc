@@ -68,9 +68,6 @@ class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
     CCSD_T<Tile, TA::SparsePolicy>::obsolete();
   }
 
-  void compute(PropertyBase *pb) override {
-    throw std::runtime_error("Not Implemented!!");
-  }
 };
 
 #if TA_DEFAULT_POLICY == 1

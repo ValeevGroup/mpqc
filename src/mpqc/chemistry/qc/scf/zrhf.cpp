@@ -282,9 +282,6 @@ void zRHF::compute_density() {
 
 void zRHF::obsolete() { Wavefunction::obsolete(); }
 
-void zRHF::compute(PropertyBase* pb) {
-  throw std::logic_error("Not implemented!");
-}
 
 }  // namespace lcao
 }  // namespace mpqc

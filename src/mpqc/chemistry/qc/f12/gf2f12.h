@@ -110,9 +110,6 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
     max_iter_ = kv.value<int>("max_iter", 100);
   }
 
-  virtual void compute(PropertyBase* pb) override {
-    throw std::runtime_error("Not Implemented!! \n");
-  }
 
   virtual real_t value() override {
     using mpqc::utility::print_par;

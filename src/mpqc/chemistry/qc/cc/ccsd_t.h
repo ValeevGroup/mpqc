@@ -63,9 +63,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   virtual ~CCSD_T() {}
 
-  void compute(PropertyBase *pb) override {
-    throw std::runtime_error("Not Implemented!!");
-  }
 
   double value() override {
     if (!computed()) {

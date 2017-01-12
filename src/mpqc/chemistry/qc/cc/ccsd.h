@@ -108,9 +108,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
   double ccsd_corr_energy_;
 
  public:
-  void compute(PropertyBase *pb) override {
-    throw std::runtime_error("Not Implemented!!");
-  }
 
   void obsolete() override {
     ccsd_corr_energy_ = 0.0;

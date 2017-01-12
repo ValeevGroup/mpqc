@@ -36,8 +36,8 @@ using TiledArray::detail::scalar_type;
 class TimestampFactory {
  public:
   using timestamp_type = uint64_t;
-  static std::atomic<timestamp_type> current_timestamp;
   static timestamp_type make() {
+    static std::atomic<timestamp_type> current_timestamp{0};
     return current_timestamp++;
   }
 };

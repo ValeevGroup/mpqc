@@ -159,7 +159,11 @@ int main(int argc, char *argv[]) {
   } catch (std::exception &e) {
     std::cerr << "!! std exception: " << e.what() << "\n";
     rc = 1;
-  } catch (...) {
+  } catch (mpqc::Exception &e){
+    std::cerr << "!! MPQC exception: " << e.what() << "\n";
+    rc = 1;
+  }
+  catch (...) {
     std::cerr << "!! exception: unknown exception\n";
     rc = 1;
   }

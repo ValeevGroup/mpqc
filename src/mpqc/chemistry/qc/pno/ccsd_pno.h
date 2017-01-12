@@ -13,6 +13,7 @@
 #include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/mbpt/denom.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 
 namespace mpqc {
 namespace lcao {
@@ -30,10 +31,17 @@ namespace lcao {
    //const KeyVal kv_;
    std::shared_ptr<Wavefunction> ref_wfn_;
    bool df_;
+   TA::DistArray<Tile, Policy>  t2_mp2_;
 
    void init();
 
-   TA::DistArray<Tile, Policy> compute_mp2_t2();
+   // compute MP2 T2 amplitudes
+   void compute_mp2_t2();
+   // reblock MP2 T2
+   void reblock();
+   // svd decompostion of T2
+   void pno_decom();
+
 
   public:
    CCSD_PNO() = default;
@@ -46,11 +54,11 @@ namespace lcao {
 
   };
 
-#if TA_DEFAULT_POLICY == 0
-extern template class CCSD_PNO<TA::TensorD, TA::DensePolicy>;
-#elif TA_DEFAULT_POLICY == 1
-extern template class CCSD_PNO<TA::TensorD, TA::SparsePolicy>;
-#endif
+//#if TA_DEFAULT_POLICY == 0
+//extern template class CCSD_PNO<TA::TensorD, TA::DensePolicy>;
+//#elif TA_DEFAULT_POLICY == 1
+//extern template class CCSD_PNO<TA::TensorD, TA::SparsePolicy>;
+//#endif
 
 }  // namespace lcao
 }  // namespace mpqc

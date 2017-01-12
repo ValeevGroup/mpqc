@@ -227,7 +227,7 @@ class MolecularTaylorExpansion
 /// this is the base for all properties that MPQC can compute via the input.
 /// MPQC main will read KeyVal and search for a PropertyBase object, compute it
 /// using the given wave function
-class PropertyBase : public DescribedClass {
+class Property : public DescribedClass {
  public:
   // in a visitor pattern this is the "accept" method
   // the argument, Wavefunction*, does not appear here, it will be a member
@@ -243,7 +243,7 @@ class PropertyBase : public DescribedClass {
 
 template <typename Value>
 class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
-                             public PropertyBase {
+                             public Property {
  public:
   using typename MolecularTaylorExpansion<Value>::value_type;
   using typename MolecularTaylorExpansion<Value>::function_base_type;

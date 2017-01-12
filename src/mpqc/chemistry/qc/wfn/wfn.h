@@ -46,8 +46,6 @@ class Wavefunction : public DescribedClass {
   std::shared_ptr<Molecule> atoms_;
 };  // class Wavefunction
 
-class Property;
-
 namespace lcao {
 
 /// Wavefunction computes a wave function (or a wave function-like quantity,

@@ -56,7 +56,7 @@ namespace sc {
     struct OSAR_CoreInts<TwoBodyOper::eri> {
 
         //typedef FJT _FmEvalType; // Curt's Taylor code
-        typedef ::libint2::FmEval_Chebyshev3<double> _FmEvalType; // Frank's Chebyshev code, faster but slower startup
+        typedef ::libint2::FmEval_Chebyshev7<double> _FmEvalType;  // vectorized high-order interpolation
         typedef CoreIntsEngine<_FmEvalType>::Engine FmEvalType;
         Ref<FmEvalType> Fm_Eval_;
 
@@ -288,7 +288,7 @@ class TwoBodyOSARLibint2: public Int2eLibint2 {
     detail::OSAR_CoreInts<OperType> coreints_;
     // r12_m1_g12 requires per-thread local storage
     // negligible overhead for other types
-    libint2::GaussianGmEvalScratch<double, -1> coreints_scratch_;
+    libint2::detail::CoreEvalScratch<libint2::GaussianGmEval<double, -1>> coreints_scratch_;
   
   public:
     TwoBodyOSARLibint2(Integral *,
@@ -344,9 +344,9 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
   const int l3 = bs3_->max_angular_momentum();
   const int l4 = bs4_->max_angular_momentum();
   const int lmax = std::max(std::max(l1,l2),std::max(l3,l4));
-  if (lmax > LIBINT2_MAX_AM_ERI) {
+  if (lmax > LIBINT2_MAX_AM_eri) {
     throw LimitExceeded<int>("TwoBodyOSARLibint2::TwoBodyOSARLibint2() -- maxam of the basis is too high,\
- not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_ERI,lmax);
+ not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_eri,lmax);
   }
 
   /*--- Initialize storage ---*/
@@ -408,7 +408,7 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
   }
 
   if (OperType == TwoBodyOper::r12_m1_g12)
-    coreints_scratch_.init(l1+l2+l3+l4);
+    coreints_scratch_ = libint2::detail::CoreEvalScratch<libint2::GaussianGmEval<double, -1>>(l1+l2+l3+l4);
 
   storage_used_ = storage_needed;
   // Check if storage_ > storage_needed
@@ -489,7 +489,7 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(const TwoBodyOSARLibint2& other
     perm_ints_ = 0;
 
   if (OperType == TwoBodyOper::r12_m1_g12)
-    coreints_scratch_.init(l1+l2+l3+l4);
+    coreints_scratch_ = libint2::detail::CoreEvalScratch<libint2::GaussianGmEval<double, -1>>(l1+l2+l3+l4);
 
   storage_used_ = storage_needed;
   // Check if storage_ > storage_needed

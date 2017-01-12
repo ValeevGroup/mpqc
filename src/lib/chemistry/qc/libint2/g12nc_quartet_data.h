@@ -123,7 +123,7 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, Ope
   else {
 
     // this stores (ss|Oper|ss)^(m) integrals
-    double ss_oper_ss[4*LIBINT2_MAX_AM_ERI+1];
+    double ss_oper_ss[4*LIBINT2_MAX_AM_eri+1];
     std::fill(ss_oper_ss, ss_oper_ss + quartet_info_.am + 1, 0.0);
 
     // f12_coulomb and f12 integrals
@@ -157,9 +157,9 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, Ope
             F = Fm_table_;
           }
 
-          double g_i[4*LIBINT2_MAX_AM_ERI+1];
-          double r_i[4*LIBINT2_MAX_AM_ERI+1];
-          double oorhog_i[4*LIBINT2_MAX_AM_ERI+1];
+          double g_i[4*LIBINT2_MAX_AM_eri+1];
+          double r_i[4*LIBINT2_MAX_AM_eri+1];
+          double oorhog_i[4*LIBINT2_MAX_AM_eri+1];
           g_i[0] = 1.0;
           r_i[0] = 1.0;
           oorhog_i[0] = 1.0;

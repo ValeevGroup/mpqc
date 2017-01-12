@@ -114,7 +114,7 @@ class G12NCLibint2: public Int2eLibint2 {
                              const ContractedGeminal* gket);
     /*--- Compute engines ---*/
     std::vector<Libint_t> Libint_;
-    typedef ::libint2::FmEval_Chebyshev3<double> _FmEvalType;
+    typedef ::libint2::FmEval_Chebyshev7<double> _FmEvalType;
     typedef CoreIntsEngine<_FmEvalType>::Engine FmEvalType;
     Ref<FmEvalType> Fm_Eval_;
     double* Fm_table_;
@@ -122,8 +122,8 @@ class G12NCLibint2: public Int2eLibint2 {
     class ExpensiveMath {
     public:
       ExpensiveMath();
-      double fac[4*LIBINT2_MAX_AM_ERI+1];
-      double bc[4*LIBINT2_MAX_AM_ERI+1][4*LIBINT2_MAX_AM_ERI+1];
+      double fac[4*LIBINT2_MAX_AM_eri+1];
+      double bc[4*LIBINT2_MAX_AM_eri+1][4*LIBINT2_MAX_AM_eri+1];
     };
     ExpensiveMath ExpMath_;
   

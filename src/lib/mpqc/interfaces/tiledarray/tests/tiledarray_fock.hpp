@@ -118,7 +118,7 @@ namespace tests {
             In("i,j") = 2.0 * In("i,j") - In("i,c") * array("c,d") * In("d,j");
         }
 
-        array.get_world().gop.fence();
+        array.world().gop.fence();
         return In;
     }
 

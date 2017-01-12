@@ -107,7 +107,7 @@ namespace curvy_steps {
 
         std::size_t count = 0;
         do{
-            F.get_world().gop.fence();
+            F.world().gop.fence();
             Array2 FPD = F("i,n") * P_i("n,m") * D("m,j");
             Array2 SPEs = S("i,n") * P_i("n,m") * Esymm("m,j");
 
@@ -142,7 +142,7 @@ namespace curvy_steps {
                 std::cout << "The maximum number of iterations was reached"
                           " in conjugate gradient" << std::endl;
         }
-        F.get_world().gop.fence();
+        F.world().gop.fence();
     }
 
     void Density_Update(Array2 &R, const Array2 &S,
@@ -170,7 +170,7 @@ namespace curvy_steps {
 
       //Making the X matrix which is an anti-symmetric matrix that performs the
       //Rotations on R.
-      Array2 XD(S.get_world(), S.trange());
+      Array2 XD(S.world(), S.trange());
       XD.set_all_local(0.0);
 
       //Solving for XD using a modified conjugate gradient method. `
@@ -181,15 +181,15 @@ namespace curvy_steps {
       double scale = 0.1/TA::expressions::norminf(XD("i,j"));
       XD("i,j") = XD("i,j") * std::min(1.0,scale);
 
-      XD.get_world().gop.fence();
+      XD.world().gop.fence();
       //Rotating the Rm to Rn with X
       RotateR(R,XD,S,rotation_order);
 
-      XD.get_world().gop.fence();
+      XD.world().gop.fence();
       //Purifying Rn so that it meets the criteria for a valid density matrix
       Purify(R, S);
 
-      R.get_world().gop.fence();
+      R.world().gop.fence();
     }
 } // namespace curvy_steps
 } // namespace tests

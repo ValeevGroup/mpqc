@@ -56,7 +56,7 @@ namespace tests {
                  (Eri3("i,j,X") * Inv_Eri2("X,Y") * (Eri3("n,m,Y") * D("m,n"))) -
                  (Eri3("i,n,X") * Inv_Eri2("X,Y") * (Eri3("j,m,Y") * D("m,n")));
             F("i,j") = H("i,j") + G("i,j");
-            S.get_world().gop.fence();
+            S.world().gop.fence();
 
             // Computing gradient for DIIS error calculation
             Array2 gradient = 8 * ( S("i,q") * D("q,x") * F("x,j") -
@@ -69,7 +69,7 @@ namespace tests {
             //Energy for this iteration
             energy = TA::expressions::dot( 2.0 * H("i,j") + G("i,j"), D("i,j") );
 
-            S.get_world().gop.fence(); // End of iteration work
+            S.world().gop.fence(); // End of iteration work
             double iterf = madness::wall_time(); // End iteration timer
 
             ++scf_iter;

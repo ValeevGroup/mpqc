@@ -72,19 +72,19 @@ namespace mpqc {
       template<typename RefEngine>
       void get_integrals(const std::vector<shell_range> &s, RefEngine &engine,
                          TensorRef<double, 2, TensorRowMajor> &tile_map) {
-        mpqc::integrals::evaluate(engine, s[0], s[1], tile_map);
+        mpqc::lcao::evaluate(engine, s[0], s[1], tile_map);
       }
 
       template<typename RefEngine>
       void get_integrals(const std::vector<shell_range> &s, RefEngine &engine,
                          TensorRef<double, 3, TensorRowMajor> &tile_map) {
-        mpqc::integrals::evaluate(engine, s[0], s[1], s[2], tile_map);
+        mpqc::lcao::evaluate(engine, s[0], s[1], s[2], tile_map);
       }
 
       template<typename RefEngine>
       void get_integrals(const std::vector<shell_range> &s, RefEngine &engine,
                          TensorRef<double, 4, TensorRowMajor> &tile_map) {
-        mpqc::integrals::evaluate(engine, s[0], s[1], s[2], s[3], tile_map);
+        mpqc::lcao::evaluate(engine, s[0], s[1], s[2], s[3], tile_map);
       }
 
     } // namespace int_details
@@ -171,7 +171,7 @@ namespace mpqc {
      */
     template<typename ShrPtrPool, typename It, class A>
     void make_integral_task(It first, It last, const A &array, ShrPtrPool pool){
-      array.get_world().taskq.add(&integral_task<ShrPtrPool, It, A>, first, last,
+      array.world().taskq.add(&integral_task<ShrPtrPool, It, A>, first, last,
                                   array, pool);
     }
 
@@ -185,8 +185,8 @@ namespace mpqc {
     void fill_tiles(A &array, const ShrPtrPool &pool) {
 
       // get pointers
-      auto begin = array.get_pmap()->begin();
-      auto end = array.get_pmap()->end();
+      auto begin = array.pmap()->begin();
+      auto end = array.pmap()->end();
 
       // Create tasks to fill tiles with data. Boost const reference is used
       // because Integral Engine pool is not copyable, but when sent to the

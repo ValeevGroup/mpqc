@@ -58,8 +58,8 @@ namespace cadf { namespace detail {
 #ifdef LIBINT2_MAX_AM
   constexpr int max_double_fact_l = LIBINT2_MAX_AM;
 #else
-#  ifdef LIBINT2_MAX_AM_ERI
-     constexpr int max_double_fact_l = LIBINT2_MAX_AM_ERI;
+#  ifdef LIBINT2_MAX_AM_eri
+     constexpr int max_double_fact_l = LIBINT2_MAX_AM_eri;
 #  else
      constexpr int max_double_fact_l = 10; // Something reasonably safe
 #  endif
@@ -182,7 +182,7 @@ double CADFCLHF::get_distance_factor(
         and (not dist_factor_overlap_exclude_contracted_
             or (gbs_->shell(ish).nprimitive() == 1
         and gbs_->shell(jsh).nprimitive() == 1))
-        and fabs(ish.am - jsh.am) <= dist_factor_overlap_max_am_diff_
+        and std::abs(ish.am - jsh.am) <= dist_factor_overlap_max_am_diff_
         and sq_ratio > dist_factor_overlap_schwarz_ratio_cutoff_
         and sq_ratio < 1.0
       ) {

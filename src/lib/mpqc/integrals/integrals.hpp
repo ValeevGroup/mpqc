@@ -39,7 +39,7 @@
 #include "shell.hpp"
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
 
     /// @addtogroup ChemistryBasisIntegralRange
     /// @{
@@ -191,7 +191,7 @@ namespace integrals {
 
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
 
     /// @addtogroup ChemistryBasisIntegralRange
     /// @{

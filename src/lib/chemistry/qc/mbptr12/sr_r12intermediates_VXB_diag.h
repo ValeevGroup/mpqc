@@ -59,7 +59,7 @@ namespace sc {
 //      }
 //    }
 //
-//    TArray2 X(Xam.get_world(), Xam.trange());
+//    TArray2 X(Xam.world(), Xam.trange());
 //    X.set(0, tile_X);
     TArray2 X;
     X("a,m") = Xam("a,m") + Xai("a,i") * _2("<i|I|m>");
@@ -543,11 +543,11 @@ namespace sc {
     std::ostringstream Xjab; Xjab << "<" << X_label << " j|g|a b>";
     TArray4d g_Xjab = ijxy(Xjab.str());
     typedef TA::Array<T, 4, LazyTensor<T, 4, sedenom_eval_type > > TArray4dLazy;
-    TArray4dLazy Delta_Xjab(g_Xjab.get_world(), g_Xjab.trange());
+    TArray4dLazy Delta_Xjab(g_Xjab.world(), g_Xjab.trange());
 
     // construct local tiles
-    for(auto t = Delta_Xjab.trange().tiles().begin();
-        t != Delta_Xjab.trange().tiles().end(); ++t)
+    for(auto t = Delta_Xjab.trange().tiles_range().begin();
+        t != Delta_Xjab.trange().tiles_range().end(); ++t)
       if (Delta_Xjab.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -562,11 +562,11 @@ namespace sc {
     std::ostringstream Xajk; Xajk << "<" << X_label << " a|g|j k>";
     TArray4d g_Xajk = ijxy(Xajk.str());
     typedef TA::Array<T, 4, LazyTensor<T, 4, sedenom_eval_type > > TArray4dLazy;
-    TArray4dLazy Delta_Xajk(g_Xajk.get_world(), g_Xajk.trange());
+    TArray4dLazy Delta_Xajk(g_Xajk.world(), g_Xajk.trange());
 
     // construct local tiles
-    for(auto t = Delta_Xajk.trange().tiles().begin();
-        t != Delta_Xajk.trange().tiles().end(); ++t)
+    for(auto t = Delta_Xajk.trange().tiles_range().begin();
+        t != Delta_Xajk.trange().tiles_range().end(); ++t)
       if (Delta_Xajk.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -753,7 +753,7 @@ namespace sc {
     // compute intermediate to reduce memory consumption
     TArray4 g_aAmB;
     g_aAmB("a,A',m,B'") = 2.0 * _4("<a A'|g|m B'>") - _4("<a A'|g|B' m>");
-    TArray4::wait_for_lazy_cleanup(g_aAmB.get_world());
+    TArray4::wait_for_lazy_cleanup(g_aAmB.world());
 
     TArray4d g_aAmn = ijxy("<a A'|g|m n>");
     TArray4d g_ammn = ijxy("<a m|g|m1 n>");
@@ -909,7 +909,7 @@ namespace sc {
                      - (RR_C1 * r_ijapn("k,i,a',n") + RR_C2 * r_ijapn("i,k,a',n"))
                        * r_ijapn("k,j,a',n");
     }
-    TArray4d::wait_for_lazy_cleanup(D_f12_ij.get_world());
+    TArray4d::wait_for_lazy_cleanup(D_f12_ij.world());
 
     // DA'B' = 1/2 R^A'C'_kl R^kl_B'C' (A': all virtual)
     TArray4d r_acpkl = ijxy("<a c'|r|k l>");
@@ -927,7 +927,7 @@ namespace sc {
 //                         - (RR_C1 * _4("<a' m|r|k l>") + RR_C2 * _4("<a' m|r|l k>"))
 //                           * _4("<b' m|r|k l>");
     }
-    TArray4d::wait_for_lazy_cleanup(D_f12_ij.get_world());
+    TArray4d::wait_for_lazy_cleanup(D_f12_ij.world());
 
     D_f12_ab("a,b") = (RR_C1 * r_acpkl("a,c',k,l") + RR_C2 * r_acpkl("a,c',l,k"))
                       * r_acpkl("b,c',k,l");
@@ -953,7 +953,7 @@ namespace sc {
     {
     TArray4 g_temp;
     g_temp("a,b',m,c'") = 2.0 * _4("<a b'|g|m c'>") - _4("<a b'|g|c' m>");
-    TArray4d::wait_for_lazy_cleanup(g_temp.get_world());
+    TArray4d::wait_for_lazy_cleanup(g_temp.world());
 
     gdf12_am("a,m") =  gdf12_am("a,m")
                        // 2nd part
@@ -1016,7 +1016,7 @@ namespace sc {
                       * ( R_C1 * rapn_ka("a',n,k,a") + R_C2 * rapn_ak("a',n,a,k"))
                     );
     }
-    TArray4d::wait_for_lazy_cleanup(Xai_V.get_world());
+    TArray4d::wait_for_lazy_cleanup(Xai_V.world());
 
     TArray4d raap_kl = ijxy("<a a'|r|k l>");
     TArray4d rmap_kl = ijxy("<m a'|r|k l>");
@@ -1498,12 +1498,12 @@ namespace sc {
     pceval_type Delta_ai_gen(TA::array_to_eigen(fab), TA::array_to_eigen(fij));
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2dLazy;
-    TArray2dLazy Delta_ai(fai.get_world(), fai.trange());
+    TArray2dLazy Delta_ai(fai.world(), fai.trange());
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
     // construct local tiles
-    for(auto t = Delta_ai.trange().tiles().begin();
-        t != Delta_ai.trange().tiles().end(); ++t)
+    for(auto t = Delta_ai.trange().tiles_range().begin();
+        t != Delta_ai.trange().tiles_range().end(); ++t)
       if (Delta_ai.is_local(*t)) {
         std::array<std::size_t, 2> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -1522,11 +1522,11 @@ namespace sc {
 
     TArray4d g_abij = ijxy("<a b|g|i j>");
     typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4dLazy;
-    TArray4dLazy Delta_abij(g_abij.get_world(), g_abij.trange());
+    TArray4dLazy Delta_abij(g_abij.world(), g_abij.trange());
 
     // construct local tiles
-    for(auto t = Delta_abij.trange().tiles().begin();
-        t != Delta_abij.trange().tiles().end(); ++t)
+    for(auto t = Delta_abij.trange().tiles_range().begin();
+        t != Delta_abij.trange().tiles_range().end(); ++t)
       if (Delta_abij.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -1652,12 +1652,12 @@ namespace sc {
     pceval_type Delta_ai_gen(TA::array_to_eigen(fab), TA::array_to_eigen(fij));
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2dLazy;
-    TArray2dLazy Delta_ai(fai.get_world(), fai.trange());
+    TArray2dLazy Delta_ai(fai.world(), fai.trange());
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
     // construct local tiles
-    for(auto t = Delta_ai.trange().tiles().begin();
-        t != Delta_ai.trange().tiles().end(); ++t)
+    for(auto t = Delta_ai.trange().tiles_range().begin();
+        t != Delta_ai.trange().tiles_range().end(); ++t)
       if (Delta_ai.is_local(*t)) {
         std::array<std::size_t, 2> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -1676,11 +1676,11 @@ namespace sc {
 
     TArray4d g_abij = ijxy("<a b|g|i j>");
     typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4dLazy;
-    TArray4dLazy Delta_abij(g_abij.get_world(), g_abij.trange());
+    TArray4dLazy Delta_abij(g_abij.world(), g_abij.trange());
 
     // construct local tiles
-    for(auto t = Delta_abij.trange().tiles().begin();
-        t != Delta_abij.trange().tiles().end(); ++t)
+    for(auto t = Delta_abij.trange().tiles_range().begin();
+        t != Delta_abij.trange().tiles_range().end(); ++t)
       if (Delta_abij.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -1948,12 +1948,12 @@ namespace sc {
     pceval_type Delta_ai_gen(TA::array_to_eigen(fab), TA::array_to_eigen(fij));
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2dLazy;
-    TArray2dLazy Delta_ai(fai.get_world(), fai.trange());
+    TArray2dLazy Delta_ai(fai.world(), fai.trange());
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
     // construct local tiles
-    for(auto t = Delta_ai.trange().tiles().begin();
-        t != Delta_ai.trange().tiles().end(); ++t)
+    for(auto t = Delta_ai.trange().tiles_range().begin();
+        t != Delta_ai.trange().tiles_range().end(); ++t)
       if (Delta_ai.is_local(*t)) {
         std::array<std::size_t, 2> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -1972,11 +1972,11 @@ namespace sc {
 
     TArray4d g_abij = ijxy("<a b|g|i j>");
     typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4dLazy;
-    TArray4dLazy Delta_abij(g_abij.get_world(), g_abij.trange());
+    TArray4dLazy Delta_abij(g_abij.world(), g_abij.trange());
 
     // construct local tiles
-    for(auto t = Delta_abij.trange().tiles().begin();
-        t != Delta_abij.trange().tiles().end(); ++t)
+    for(auto t = Delta_abij.trange().tiles_range().begin();
+        t != Delta_abij.trange().tiles_range().end(); ++t)
       if (Delta_abij.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -2487,12 +2487,12 @@ namespace sc {
     pceval_type Delta_ai_gen(TA::array_to_eigen(fab), TA::array_to_eigen(fij));
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2dLazy;
-    TArray2dLazy Delta_ai(fij.get_world(), TR_ai);
+    TArray2dLazy Delta_ai(fij.world(), TR_ai);
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
     // construct local tiles
-    for(auto t = Delta_ai.trange().tiles().begin();
-        t != Delta_ai.trange().tiles().end(); ++t)
+    for(auto t = Delta_ai.trange().tiles_range().begin();
+        t != Delta_ai.trange().tiles_range().end(); ++t)
       if (Delta_ai.is_local(*t)) {
         std::array<std::size_t, 2> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -2511,11 +2511,11 @@ namespace sc {
                                 TA::array_to_eigen(fij),TA::array_to_eigen(fij));
 
     typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4dLazy;
-    TArray4dLazy Delta_abij(fij.get_world(), TR_abij);
+    TArray4dLazy Delta_abij(fij.world(), TR_abij);
 
     // construct local tiles
-    for(auto t = Delta_abij.trange().tiles().begin();
-        t != Delta_abij.trange().tiles().end(); ++t)
+    for(auto t = Delta_abij.trange().tiles_range().begin();
+        t != Delta_abij.trange().tiles_range().end(); ++t)
       if (Delta_abij.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -2527,7 +2527,7 @@ namespace sc {
         Delta_abij.set(*t, tile);
       }
     D_abij("a,b,i,j") = Delta_abij("a,b,i,j");
-    fij.get_world().gop.fence();
+    fij.world().gop.fence();
   }
 
   // compute intermediates needed for T amplitudes
@@ -4105,8 +4105,8 @@ namespace sc {
 //    std::cout << "Iam : " << std::endl << Iam << std::endl;
 
     // frozen-core contribution
-    const std::size_t nocc = Xam.trange().elements().extent()[1];
-    const std::size_t naocc = Xai.trange().elements().extent()[1];
+    const std::size_t nocc = Xam.trange().elements_range().extent()[1];
+    const std::size_t naocc = Xai.trange().elements_range().extent()[1];
     if (nocc != naocc) {
       TArray4d g_ijipk = ijxy("<i j|g|i' k>");
       TArray4d g_abipi = ijxy("<a b|g|i' i>");
@@ -4345,11 +4345,11 @@ namespace sc {
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
     TArray2 Iam = xy("<a|I|m>");
-    TArray2d Delta_am(Iam.get_world(), Iam.trange());
+    TArray2d Delta_am(Iam.world(), Iam.trange());
 
     // construct local tiles
-    for(auto t = Delta_am.trange().tiles().begin();
-        t != Delta_am.trange().tiles().end(); ++t)
+    for(auto t = Delta_am.trange().tiles_range().begin();
+        t != Delta_am.trange().tiles_range().end(); ++t)
       if (Delta_am.is_local(*t)) {
         std::array<std::size_t, 2> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -4392,7 +4392,7 @@ namespace sc {
     ExEnv::out0() << indent
                   << "Compute CABS_singles Xam" << std::endl;
     TArray2 Xam_E2 = Xam_CabsSingles(TmA, Tma);
-    TArray2 Dbn_E2(Xam_E2.get_world(), Xam_E2.trange());
+    TArray2 Dbn_E2(Xam_E2.world(), Xam_E2.trange());
     // solve k_bn A_bnam = X_am
     auto resnorm_E2 = cg_solver2(Orbital_relaxation_Abnam,
                                  Xam_E2,
@@ -4517,8 +4517,8 @@ namespace sc {
 
     // determine if it is frozen-core
     TArray2 Fij = xy("<i|F|j>");
-    const std::size_t nocc = mFmn.trange().elements().extent()[0];
-    const std::size_t naocc = Fij.trange().elements().extent()[0];
+    const std::size_t nocc = mFmn.trange().elements_range().extent()[0];
+    const std::size_t naocc = Fij.trange().elements_range().extent()[0];
 
     // compute integrals needed for MP2 and following calculations of properties
     // dipole integrals
@@ -4590,10 +4590,10 @@ namespace sc {
       pceval_type Delta_ijp_gen(TA::array_to_eigen(Fij), TA::array_to_eigen(Fipjp));
 
       TArray2 Fijp = xy("<i|F|j'>");
-      TArray2d Delta_ijp(Fijp.get_world(), Fijp.trange());
+      TArray2d Delta_ijp(Fijp.world(), Fijp.trange());
       // construct local tiles
-      for(auto t = Delta_ijp.trange().tiles().begin();
-          t != Delta_ijp.trange().tiles().end(); ++t)
+      for(auto t = Delta_ijp.trange().tiles_range().begin();
+          t != Delta_ijp.trange().tiles_range().end(); ++t)
         if (Delta_ijp.is_local(*t)) {
           std::array<std::size_t, 2> index;
           std::copy(t->begin(), t->end(), index.begin());
@@ -4618,12 +4618,12 @@ namespace sc {
 
     typedef detail::diag_precond4<double> pc4eval_type;
     typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4dLazy;
-    TArray4dLazy Delta_ijab(g_ijab.get_world(), g_ijab.trange());
+    TArray4dLazy Delta_ijab(g_ijab.world(), g_ijab.trange());
     pc4eval_type Delta_ijab_gen(TA::array_to_eigen(mFij), TA::array_to_eigen(mFij),
                                 TA::array_to_eigen(mFab),TA::array_to_eigen(mFab));
     // construct local tiles
-    for(auto t = Delta_ijab.trange().tiles().begin();
-        t != Delta_ijab.trange().tiles().end(); ++t)
+    for(auto t = Delta_ijab.trange().tiles_range().begin();
+        t != Delta_ijab.trange().tiles_range().end(); ++t)
       if (Delta_ijab.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -4687,7 +4687,7 @@ namespace sc {
     }
      // *** end of frozen-core ***
 
-    TArray2 Dbn_mp2(X_mp2.get_world(), X_mp2.trange());
+    TArray2 Dbn_mp2(X_mp2.world(), X_mp2.trange());
     auto resnorm_mp2 = cg_solver2(Orbital_relaxation_Abnam,
                                   X_mp2,
                                   Dbn_mp2,
@@ -4902,7 +4902,7 @@ namespace sc {
       Xmp2f12_contri("a,m") = Xmp2f12_contri_nfzc("a,m");
     }
 
-    TArray2 Dbn_mp2f12(Xmp2f12_contri.get_world(), Xmp2f12_contri.trange());
+    TArray2 Dbn_mp2f12(Xmp2f12_contri.world(), Xmp2f12_contri.trange());
     auto resnorm_mp2f12 = cg_solver2(Orbital_relaxation_Abnam,
                                      Xmp2f12_contri,
                                      Dbn_mp2f12,
@@ -5066,7 +5066,7 @@ namespace sc {
       Xam_f12("a,m") = Xam_f12_nfzc("a,m");
     }
 
-    TArray2 Dbn_f12(Xam_f12.get_world(), Xam_f12.trange());
+    TArray2 Dbn_f12(Xam_f12.world(), Xam_f12.trange());
     auto resnorm_f12 = cg_solver2(Orbital_relaxation_Abnam,
                                   Xam_f12,
                                   Dbn_f12,
@@ -5154,19 +5154,19 @@ namespace sc {
       Xam_B("a,m") = Xam_B_nfzc("a,m");
     }
 
-    TArray2 Dbn_V(Xam_V.get_world(), Xam_V.trange());
+    TArray2 Dbn_V(Xam_V.world(), Xam_V.trange());
     auto resnorm_V = cg_solver2(Orbital_relaxation_Abnam,
                                 Xam_V,
                                 Dbn_V,
                                 preconditioner,
                                 conv_target);
-    TArray2 Dbn_X(Xam_X.get_world(), Xam_X.trange());
+    TArray2 Dbn_X(Xam_X.world(), Xam_X.trange());
     auto resnorm_X = cg_solver2(Orbital_relaxation_Abnam,
                                 Xam_X,
                                 Dbn_X,
                                 preconditioner,
                                 conv_target);
-    TArray2 Dbn_B(Xam_B.get_world(), Xam_B.trange());
+    TArray2 Dbn_B(Xam_B.world(), Xam_B.trange());
     auto resnorm_B = cg_solver2(Orbital_relaxation_Abnam,
                                 Xam_B,
                                 Dbn_B,
@@ -5416,7 +5416,7 @@ namespace sc {
     }
 
     // solve the Z-vector equation for CCSD
-    TArray2 Dbn_ccsd(Xam_ccsd.get_world(), Xam_ccsd.trange());
+    TArray2 Dbn_ccsd(Xam_ccsd.world(), Xam_ccsd.trange());
     auto resnorm_ccsd = cg_solver2(Orbital_relaxation_Abnam,
                                    Xam_ccsd,
                                    Dbn_ccsd,
@@ -5513,7 +5513,7 @@ namespace sc {
       Xam_ccsd_f12("a,m") = Xam_ccsd_f12_nfzc("a,m");
     }
 
-    TArray2 Dbn_ccsd_f12(Xam_ccsd_f12.get_world(), Xam_ccsd_f12.trange());
+    TArray2 Dbn_ccsd_f12(Xam_ccsd_f12.world(), Xam_ccsd_f12.trange());
     auto resnorm_ccsd_f12 = cg_solver2(Orbital_relaxation_Abnam,
                                        Xam_ccsd_f12,
                                        Dbn_ccsd_f12,
@@ -5550,7 +5550,7 @@ namespace sc {
       Xam_CVT_cc("a,m") = Xam_CVT_cc_nfzc("a,m");
     }
 
-    TArray2 Dbn_CVT_cc(Xam_CVT_cc.get_world(), Xam_CVT_cc.trange());
+    TArray2 Dbn_CVT_cc(Xam_CVT_cc.world(), Xam_CVT_cc.trange());
     auto resnorm_CVT_cc = cg_solver2(Orbital_relaxation_Abnam,
                                     Xam_CVT_cc,
                                     Dbn_CVT_cc,
@@ -6286,11 +6286,11 @@ namespace sc {
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
     TArray2 Iam = xy("<a|I|m>");
-    TArray2d Delta_am(Iam.get_world(), Iam.trange());
+    TArray2d Delta_am(Iam.world(), Iam.trange());
 
     // construct local tiles
-    for(auto t = Delta_am.trange().tiles().begin();
-        t != Delta_am.trange().tiles().end(); ++t)
+    for(auto t = Delta_am.trange().tiles_range().begin();
+        t != Delta_am.trange().tiles_range().end(); ++t)
       if (Delta_am.is_local(*t)) {
         std::array<std::size_t, 2> index;
         std::copy(t->begin(), t->end(), index.begin());
@@ -6311,8 +6311,8 @@ namespace sc {
 
     // determine if it is frozen-core
     TArray2 Fij = xy("<i|F|j>");
-    const std::size_t nocc = mFmn.trange().elements().extent()[0];
-    const std::size_t naocc = Fij.trange().elements().extent()[0];
+    const std::size_t nocc = mFmn.trange().elements_range().extent()[0];
+    const std::size_t naocc = Fij.trange().elements_range().extent()[0];
 
     // compute terms needed for frozen-core
     TArray2 Delta_ijp_F;
@@ -6323,10 +6323,10 @@ namespace sc {
       pceval_type Delta_ijp_gen(TA::array_to_eigen(Fij), TA::array_to_eigen(Fipjp));
 
       TArray2 Fijp = xy("<i|F|j'>");
-      TArray2d Delta_ijp(Fijp.get_world(), Fijp.trange());
+      TArray2d Delta_ijp(Fijp.world(), Fijp.trange());
       // construct local tiles
-      for(auto t = Delta_ijp.trange().tiles().begin();
-          t != Delta_ijp.trange().tiles().end(); ++t)
+      for(auto t = Delta_ijp.trange().tiles_range().begin();
+          t != Delta_ijp.trange().tiles_range().end(); ++t)
         if (Delta_ijp.is_local(*t)) {
           std::array<std::size_t, 2> index;
           std::copy(t->begin(), t->end(), index.begin());
@@ -6447,7 +6447,7 @@ namespace sc {
     }
 
     // solve the Z-vector equation for CCSD
-    TArray2 Dbn_ccsd(Xam_ccsd.get_world(), Xam_ccsd.trange());
+    TArray2 Dbn_ccsd(Xam_ccsd.world(), Xam_ccsd.trange());
     auto resnorm_ccsd = cg_solver2(Orbital_relaxation_Abnam,
                                    Xam_ccsd,
                                    Dbn_ccsd,
@@ -6585,7 +6585,7 @@ namespace sc {
       Xam_f12b("a,m") = Xam_f12b_nfzc("a,m");
     }
 
-    TArray2 Dbn_f12b(Xam_f12b.get_world(), Xam_f12b.trange());
+    TArray2 Dbn_f12b(Xam_f12b.world(), Xam_f12b.trange());
     auto resnorm_f12b = cg_solver2(Orbital_relaxation_Abnam,
                                    Xam_f12b,
                                    Dbn_f12b,
@@ -6652,21 +6652,21 @@ namespace sc {
       Xam_C("a,m") = Xam_C_nfzc("a,m");
     }
 
-    TArray2 Dbn_C(Xam_C.get_world(), Xam_C.trange());
+    TArray2 Dbn_C(Xam_C.world(), Xam_C.trange());
     auto resnorm_C = cg_solver2(Orbital_relaxation_Abnam,
                                 Xam_C,
                                 Dbn_C,
                                 preconditioner,
                                 conv_target);
 
-//    TArray2 Dbn_CT2L2(Xam_CT2L2.get_world(), Xam_CT2L2.trange());
+//    TArray2 Dbn_CT2L2(Xam_CT2L2.world(), Xam_CT2L2.trange());
 //    auto resnorm_CT2L2 = cg_solver2(Orbital_relaxation_Abnam,
 //                                    Xam_CT2L2,
 //                                    Dbn_CT2L2,
 //                                    preconditioner,
 //                                    conv_target);
 //
-//    TArray2 Dbn_VTL(Xam_VTL.get_world(), Xam_VTL.trange());
+//    TArray2 Dbn_VTL(Xam_VTL.world(), Xam_VTL.trange());
 //    auto resnorm_VTL = cg_solver2(Orbital_relaxation_Abnam,
 //                                  Xam_VTL,
 //                                  Dbn_VTL,
@@ -6792,7 +6792,7 @@ namespace sc {
 //      Array FAi = _2("<A'|F|i>");
 //      std::cout << "<i|F|A'>:" << std::endl << FiA << std::endl;
 //      std::cout << "<A'|F|i>:" << std::endl << FAi << std::endl;
-//      Array FiA_2(FiA.get_world(), FiA.trange());
+//      Array FiA_2(FiA.world(), FiA.trange());
 //      FiA_2("i,A'") = FAi("A',i");
 //      std::cout << "<i|F|A'>=Perm(<A'|F|i>):" << std::endl << FiA_2 << std::endl;
 //      }
@@ -6802,7 +6802,7 @@ namespace sc {
 //      Array g_ab_ij = _4("<a b|g|i j>");
 //      std::cout << "<i j|g|a b>:" << std::endl << g_ij_ab << std::endl;
 //      std::cout << "<a b|g|i j>:" << std::endl << g_ab_ij << std::endl;
-//      Array g_ij_ab_2(g_ij_ab.get_world(), g_ij_ab.trange());
+//      Array g_ij_ab_2(g_ij_ab.world(), g_ij_ab.trange());
 //      g_ij_ab_2("i,j,a,b") = g_ab_ij("a,b,i,j");
 //      std::cout << "<i j|g|a b>=Perm(<a b|g|i j>):" << std::endl << g_ij_ab_2 << std::endl;
 //      Array should_be_zero = g_ij_ab("i,j,a,b") - g_ab_ij("a,b,i,j");
@@ -6854,13 +6854,13 @@ namespace sc {
       // make preconditioner: Delta_iA = <i|F|i> - <A'|F|A'>
       typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
       typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
-      TArray2d Delta_iA(FiA.get_world(), FiA.trange());
+      TArray2d Delta_iA(FiA.world(), FiA.trange());
       pceval_type Delta_iA_gen(TA::array_to_eigen(Fii),
                                TA::array_to_eigen(FAA));
 
       // construct local tiles
-      for(auto t=Delta_iA.trange().tiles().begin();
-          t!=Delta_iA.trange().tiles().end();
+      for(auto t=Delta_iA.trange().tiles_range().begin();
+          t!=Delta_iA.trange().tiles_range().end();
           ++t)
         if (Delta_iA.is_local(*t)) {
           std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
@@ -6931,13 +6931,13 @@ namespace sc {
         // make preconditioner: Delta_ia = <i|F|i> - <a|F|a>
         typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
         typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
-        TArray2d Delta_ia(Xia_1.get_world(), Xia_1.trange());
+        TArray2d Delta_ia(Xia_1.world(), Xia_1.trange());
         pceval_type Delta_ia_gen(TA::array_to_eigen(Fii),
                                  TA::array_to_eigen(Faa));
 
         // construct local tiles
-        for(auto t=Delta_ia.trange().tiles().begin();
-            t!=Delta_ia.trange().tiles().end();
+        for(auto t=Delta_ia.trange().tiles_range().begin();
+            t!=Delta_ia.trange().tiles_range().end();
             ++t)
           if (Delta_ia.is_local(*t)) {
             std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
@@ -6988,13 +6988,13 @@ namespace sc {
       // make preconditioner: Delta_iA = <i|F|i> - <a'|F|a'>
       typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
       typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
-      TArray2d Delta_iA(FiA.get_world(), FiA.trange());
+      TArray2d Delta_iA(FiA.world(), FiA.trange());
       pceval_type Delta_iA_gen(TA::array_to_eigen(Fii),
                                TA::array_to_eigen(FAA));
 
       // construct local tiles
-      for(auto t=Delta_iA.trange().tiles().begin();
-          t!=Delta_iA.trange().tiles().end();
+      for(auto t=Delta_iA.trange().tiles_range().begin();
+          t!=Delta_iA.trange().tiles_range().end();
           ++t)
         if (Delta_iA.is_local(*t)) {
           std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
@@ -7052,13 +7052,13 @@ namespace sc {
         // make preconditioner: Delta_ia = <i|F|i> - <a|F|a>
         typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
         typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
-        TArray2d Delta_ia(Xia_1.get_world(), Xia_1.trange());
+        TArray2d Delta_ia(Xia_1.world(), Xia_1.trange());
         pceval_type Delta_ia_gen(TA::array_to_eigen(Fii),
                                  TA::array_to_eigen(Faa));
 
         // construct local tiles
-        for(auto t=Delta_ia.trange().tiles().begin();
-            t!=Delta_ia.trange().tiles().end();
+        for(auto t=Delta_ia.trange().tiles_range().begin();
+            t!=Delta_ia.trange().tiles_range().end();
             ++t)
           if (Delta_ia.is_local(*t)) {
             std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
@@ -7101,13 +7101,13 @@ namespace sc {
       // make preconditioner: Delta_iA = <i|F|i> - <a|F|a>
       typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
       typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
-      TArray2d Delta_iA(FiA.get_world(), FiA.trange());
+      TArray2d Delta_iA(FiA.world(), FiA.trange());
       pceval_type Delta_iA_gen(TA::array_to_eigen(Fii),
                                TA::array_to_eigen(FAA));
 
       // construct local tiles
-      for(auto t=Delta_iA.trange().tiles().begin();
-          t!=Delta_iA.trange().tiles().end();
+      for(auto t=Delta_iA.trange().tiles_range().begin();
+          t!=Delta_iA.trange().tiles_range().end();
           ++t)
         if (Delta_iA.is_local(*t)) {
           std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
@@ -7171,13 +7171,13 @@ namespace sc {
         // make preconditioner: Delta_ia = <i|F|i> - <a|F|a>
         typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
         typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
-        TArray2d Delta_ia(Xia_1.get_world(), Xia_1.trange());
+        TArray2d Delta_ia(Xia_1.world(), Xia_1.trange());
         pceval_type Delta_ia_gen(TA::array_to_eigen(Fii),
                                  TA::array_to_eigen(Faa));
 
         // construct local tiles
-        for(auto t=Delta_ia.trange().tiles().begin();
-            t!=Delta_ia.trange().tiles().end();
+        for(auto t=Delta_ia.trange().tiles_range().begin();
+            t!=Delta_ia.trange().tiles_range().end();
             ++t)
           if (Delta_ia.is_local(*t)) {
             std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());

@@ -84,10 +84,10 @@ namespace mpqc {
         void
         mat_to_array(const RefMat &matrix, ::TiledArray::Array<double, N> &array){
 
-            auto it = array.get_pmap()->begin();
-            auto end = array.get_pmap()->end();
+            auto it = array.pmap()->begin();
+            auto end = array.pmap()->end();
 
-            madness::World &world = array.get_world();
+            madness::World &world = array.world();
 
             static_assert(N==2, "Feature Not Yet Implimented: Can only copy"
                           " arrays with rank 2");

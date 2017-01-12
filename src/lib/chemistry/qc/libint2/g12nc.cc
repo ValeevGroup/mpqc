@@ -64,9 +64,9 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
   int l3 = bs3_->max_angular_momentum();
   int l4 = bs4_->max_angular_momentum();
   int lmax = max(max(l1,l2),max(l3,l4));
-  if (lmax > LIBINT2_MAX_AM_ERI) {
+  if (lmax > LIBINT2_MAX_AM_eri) {
     throw LimitExceeded<int>("G12Libint2::G12Libint2() -- maxam of the basis is too high,\
- not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_ERI,lmax);
+ not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_eri,lmax);
   }
 
   /*--- Initialize storage ---*/
@@ -226,7 +226,7 @@ G12NCLibint2::storage_required(const Ref<GaussianBasisSet>& b1,
 
 G12NCLibint2::ExpensiveMath::ExpensiveMath()
 {
-  const unsigned int imax = 4*LIBINT2_MAX_AM_ERI;
+  const unsigned int imax = 4*LIBINT2_MAX_AM_eri;
   fac[0] = 1.0;
   for(int i=1; i<=imax; i++) {
     fac[i] = i*fac[i-1];

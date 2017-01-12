@@ -734,11 +734,11 @@ double MP2R12Energy_Diag::VTT_ta() {
                                 TA::array_to_eigen(fab),TA::array_to_eigen(fab));
 
     typedef TA::Array<double, 4, LazyTensor<double, 4, pc4eval_type > > TArray4dLazy;
-    TArray4dLazy Delta_ijab(V2_abab.get_world(), V2_abab.trange());
+    TArray4dLazy Delta_ijab(V2_abab.world(), V2_abab.trange());
 
     // construct local tiles
-    for(auto t = Delta_ijab.trange().tiles().begin();
-        t != Delta_ijab.trange().tiles().end(); ++t)
+    for(auto t = Delta_ijab.trange().tiles_range().begin();
+        t != Delta_ijab.trange().tiles_range().end(); ++t)
       if (Delta_ijab.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());

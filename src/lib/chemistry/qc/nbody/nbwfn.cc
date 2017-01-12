@@ -86,8 +86,6 @@ ManyBodyWavefunction::ManyBodyWavefunction(StateIn& si) : Wavefunction(si) {
 }
 
 ManyBodyWavefunction::~ManyBodyWavefunction() {
-  // this may be necessary if this is a templated class
-  const bool make_sure_class_desc_initialized = (&class_desc_ != 0);
 }
 
 void

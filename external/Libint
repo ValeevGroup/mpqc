@@ -64,21 +64,20 @@ if (LIBINT)
       "
           #include <libint2.hpp>
           #include <libint2/boys.h>
-          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==1 && LIBINT_MICRO_VERSION>=0)
+          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION>=3)
           # error \"Libint2 library is too old\"
           #endif
           int main(int argc, char** argv) {
-            libint2::GaussianGmEvalScratch<double,-1> scr;
-            scr.init(5);
-            // FmEval_Chebyshev3 converted to template in 30ea3cd4474c740bee7713bbc633d60f95b3a4c2
-            libint2::FmEval_Chebyshev3<double> cheb_boys_eval(12,1e-15);
+            libint2::detail::CoreEvalScratch<libint2::GaussianGmEval<double, -1>> scr(5);
+            // FmEval_Chebyshev7 is added in 3c5c2d87e47d59dc1b63a9162d26f4006c070f12
+            libint2::FmEval_Chebyshev7<double> cheb_boys_eval(12,1e-15);
             // libint2::finalize defined in 06be4d68a7b0da073469c40ccf49acb9ed62a18e
             libint2::finalize();
             return 0;
           }
       "  LIBINT_IS_UP_TO_DATE)    
     if (NOT LIBINT_IS_UP_TO_DATE)
-      message(FATAL_ERROR "Libint library is too old: a recent beta of 2.1.0 is required")
+      message(FATAL_ERROR "Libint library is too old: at least beta3 of 2.3.0 is required")
     endif()
     
     # check that libint2 uses one of orderings supported by MPQC
@@ -129,17 +128,13 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
     include(ExternalProject)
 
     if (LIBINT_USE_CHECK0)
-      set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.1.0-beta.check0.tgz)
-      set(LIBINT_URL_HASH MD5=1b27d78487d6f6612943449ec9361754)
+      set(LIBINT_URL https://github.com/evaleev/libint/releases/download/v2.3.0-beta.3/libint-2.3.0-beta.3-test-mpqc3.tgz)
+      set(LIBINT_URL_HASH MD5=4a579be37e5867c444e1e03d00a42ed9)
     else (LIBINT_USE_CHECK0)
-      set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.1.0-beta.tgz)
-      set(LIBINT_URL_HASH MD5=e0a28af51744e7abac0e07f4af3cfb20)
+      set(LIBINT_URL https://github.com/evaleev/libint/releases/download/v2.3.0-beta.3/libint-2.3.0-beta.3.tgz)
+      set(LIBINT_URL_HASH MD5=c693bee22bd21fd8ba0f16f9a1c8e8fe)
     endif (LIBINT_USE_CHECK0)
     
-    if (NOT EXISTS ${LIBINT_URL})
-      message(FATAL_ERROR "Did not find embedded copy of Libint2, something wrong with your source tree")
-    endif (NOT EXISTS ${LIBINT_URL})
-
     message("** Will build Libint from ${LIBINT_URL}")
 
     if (BUILD_SHARED_LIBS)

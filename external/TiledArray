@@ -4,7 +4,7 @@
 # Find TiledArray
 ###################
 
-find_package(TiledArray 0.5.0 CONFIG COMPONENTS tiledarray)
+find_package(TiledArray CONFIG COMPONENTS tiledarray)
 
 if (TILEDARRAY_FOUND)
 
@@ -30,7 +30,7 @@ if (TILEDARRAY_FOUND)
       tile_ranges.push_back(TiledArray::TiledRange1(tile_bounds, tile_bounds+ntiles));
       TiledArray::TiledRange trange_2d(tile_ranges.begin(), tile_ranges.end());
       TiledArray::Array<double,2> array_2d(world, trange_2d);
-      TiledArray::Array<double,2> array_2d_tr(array_2d.get_world(), array_2d.trange());
+      TiledArray::Array<double,2> array_2d_tr(array_2d.world(), array_2d.trange());
       array_2d_tr(\"i,j\") = array_2d(\"j,i\");
       return 0;
     }

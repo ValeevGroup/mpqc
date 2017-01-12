@@ -48,8 +48,8 @@ namespace sc {
 #ifdef LIBINT_MAX_AM
       static const unsigned int lmax_ = LIBINT_MAX_AM;
 #else
-#  ifdef LIBINT2_MAX_AM_ERI
-      static const unsigned int lmax_ = LIBINT2_MAX_AM_ERI;
+#  ifdef LIBINT2_MAX_AM_eri
+      static const unsigned int lmax_ = LIBINT2_MAX_AM_eri;
 #  else
       static const unsigned int lmax_ = LIBINT2_CARTGAUSS_MAX_AM;
 #  endif

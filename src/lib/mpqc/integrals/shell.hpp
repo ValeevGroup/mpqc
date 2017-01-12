@@ -29,7 +29,7 @@
 #define MPQC_INTEGRALS_SHELL_HPP
 
 namespace mpqc {
-namespace integrals {
+namespace lcao {
 
     /**
      * @addtogroup ChemistryBasisIntegralTA

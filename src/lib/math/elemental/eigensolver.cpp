@@ -82,7 +82,7 @@ namespace TA {
      * Get number of tiles to pack low rank dimension into, rule of thumb will be
      * 1/5 the number of tiles of the full dimension
      * */
-    auto ntile_guess = std::max(static_cast<int>(trange1.tiles().second/5), 1);
+    auto ntile_guess = std::max(static_cast<int>(trange1.tiles_range().second/5), 1);
     auto size_guess = occ/ntile_guess; // How many elements per tile.
 
     // Get range for short side
@@ -125,10 +125,10 @@ namespace TA {
 
     // Grab occupied vectors
     TAMatrix C_occ = get_occupied_vectors(esys.second, F.trange().data()[0],
-                                          occ, F.get_world());
+                                          occ, F.world());
     // Contract over occupied index i to form D_{AO}
     TAMatrix D; D("mu,nu") = C_occ("mu,i") * C_occ("nu,i");
-    F.get_world().gop.fence(); // Fence to prevent data from going out of scope
+    F.world().gop.fence(); // Fence to prevent data from going out of scope
 
     return D;
   }
@@ -141,7 +141,7 @@ namespace TA {
     ElemEigenSystem esys = HermitianGenEigensolver(F,S);
 
     return get_occupied_vectors(esys.second, F.trange().data()[0], occ,
-                                F.get_world());
+                                F.world());
   }
 
   ElemTAEigenSystem
@@ -149,14 +149,14 @@ namespace TA {
                 const TAMatrix &S){
 
     // Create matrix to return
-    TAMatrix C(F.get_world(), F.trange());
+    TAMatrix C(F.world(), F.trange());
 
     // Call eigenvalue solver
     ElemEigenSystem esys = HermitianGenEigensolver(F,S);
 
     // Copy back to TA
     TiledArray::elem_to_array(C,esys.second);
-    F.get_world().gop.fence();
+    F.world().gop.fence();
     return std::make_pair(esys.first, C);
   }
 

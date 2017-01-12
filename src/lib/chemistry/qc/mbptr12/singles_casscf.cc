@@ -220,12 +220,12 @@ double CabsSingles::CabsSinglesDyall(const std::string &h0)
 
       typedef DiagPrecond2<double> pceval_type;//!< evaluator of preconditioner
       typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
-      TArray2d Delta_iA(b.get_world(), b.trange());
+      TArray2d Delta_iA(b.world(), b.trange());
 
       pceval_type Delta_iA_gen(TA::array_to_eigen(h_ij), TA::array_to_eigen(F_AB));
       // construct local tiles
-      for (auto t = Delta_iA.trange().tiles().begin();
-          t != Delta_iA.trange().tiles().end(); ++t) {
+      for (auto t = Delta_iA.trange().tiles_range().begin();
+          t != Delta_iA.trange().tiles_range().end(); ++t) {
         if (Delta_iA.is_local(*t)) {
           std::array<std::size_t, 2> index;
           std::copy(t->begin(), t->end(), index.begin());
@@ -339,7 +339,7 @@ double CabsSingles::CabsSinglesFock() {
 
 #if DEBUGG
     std::cout << "b matrix: \n" << b << std::endl;
-    std::cout << " range of b matrix" << b.trange().elements() << std::endl;
+    std::cout << " range of b matrix" << b.trange().elements_range() << std::endl;
 #endif
 
     // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
@@ -348,7 +348,7 @@ double CabsSingles::CabsSinglesFock() {
       typedef DiagPrecond2<double> pceval_type; //!< evaluator of preconditioner
       typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
 
-      TArray2d Delta_iA(b.get_world(), b.trange());
+      TArray2d Delta_iA(b.world(), b.trange());
 
       pceval_type Delta_iA_gen(TA::array_to_eigen(F_ij), TA::array_to_eigen(F_AB));
 

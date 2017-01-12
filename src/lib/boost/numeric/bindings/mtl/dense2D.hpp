@@ -73,11 +73,11 @@ struct adaptor< mtl::dense2D< T, Parameters >, Id, Enable > {
     }
 
     static value_type* begin_value( Id& id ) {
-        return id.elements();
+        return id.elements_range();
     }
 
     static value_type* end_value( Id& id ) {
-        return id.elements() + id.used_memory();
+        return id.elements_range() + id.used_memory();
     }
 
     static std::ptrdiff_t stride1( const Id& id ) {

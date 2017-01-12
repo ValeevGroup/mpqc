@@ -34,7 +34,7 @@
 
 namespace sc {
 
-/// The Units class is used to perform unit converions.
+/// The Units class is used to perform unit conversions.
 class Units: public SavableState {
   protected:
     char *strrep_;

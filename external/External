@@ -8,15 +8,15 @@ include(external/PAPI)
 include(external/MPI)
 include(external/Lapack)
 include(external/Eigen)
-include(external/Libint)
 include(external/OpenBabel2)
 
-# Psi3 is not usable from MPQC without Libint2
-if (HAVE_LIBINT2)
-  include(external/Psi3)
-endif()
-
 if (MPQC_NEW_FEATURES)
+
+  # as of 2.2.0 Libint requires C++11 ... cleanest to make it part of "new" features
+  include(external/Libint)
+  if (HAVE_LIBINT2)
+    include(external/Psi3)
+  endif()
 
   include(external/TiledArray)
   include(external/Python)

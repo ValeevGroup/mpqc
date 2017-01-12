@@ -63,7 +63,7 @@ namespace mpqc {
 	}
 
         /// Get array data into buffer
-        /// @warning buffer must be contigous
+        /// @warning buffer must be contiguous
 	void get(T *buffer) const {
 	    impl_->get(this->range_, buffer);
         }

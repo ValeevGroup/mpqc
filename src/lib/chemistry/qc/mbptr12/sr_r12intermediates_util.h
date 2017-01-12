@@ -319,8 +319,8 @@ namespace sc {
 
     std::shared_ptr<TArray4d> result(new TArray4d(world_, ijxy_trange) );
     // construct local tiles
-    for(auto t=ijxy_trange.tiles().begin();
-        t!=ijxy_trange.tiles().end();
+    for(auto t=ijxy_trange.tiles_range().begin();
+        t!=ijxy_trange.tiles_range().end();
         ++t)
       if (result->is_local(*t))
       {
@@ -411,8 +411,8 @@ namespace sc {
 
     std::shared_ptr<TArray22d> result(new TArray22d(world_, ij_trange) );
     // construct local tiles
-    for(auto t=ij_trange.tiles().begin();
-        t!=ij_trange.tiles().end();
+    for(auto t=ij_trange.tiles_range().begin();
+        t!=ij_trange.tiles_range().end();
         ++t)
       if (result->is_local(*t))
       {
@@ -542,8 +542,8 @@ namespace sc {
 
     std::shared_ptr<TArray2> result(new TArray2(world_, braket_trange) );
     // construct local tiles
-    for(auto t=result->get_pmap()->begin();
-        t!=result->get_pmap()->end();
+    for(auto t=result->pmap()->begin();
+        t!=result->pmap()->end();
         ++t)
       {
 
@@ -655,8 +655,8 @@ namespace sc {
 
     std::shared_ptr<TArray4Tg> result(new TArray4Tg(world_, ijxy_trange) );
     // construct local tiles
-    for(auto t=ijxy_trange.tiles().begin();
-        t!=ijxy_trange.tiles().end();
+    for(auto t=ijxy_trange.tiles_range().begin();
+        t!=ijxy_trange.tiles_range().end();
         ++t)
       if (result->is_local(*t))
       {
@@ -1098,8 +1098,8 @@ namespace sc {
       std::shared_ptr<TArray2> result(new TArray2(world_, output_trange) );
 
       // construct tasks to fill in local tiles
-      for(auto t=result->get_pmap()->begin();
-          t!=result->get_pmap()->end();
+      for(auto t=result->pmap()->begin();
+          t!=result->pmap()->end();
           ++t)
         {
 

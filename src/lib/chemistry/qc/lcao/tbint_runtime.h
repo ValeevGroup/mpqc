@@ -412,8 +412,6 @@ namespace sc {
   template <int NumCenters>
   TwoBodyMOIntsRuntime<NumCenters>::~TwoBodyMOIntsRuntime()
   {
-    // some compilers must be tricked ...
-    const bool make_sure_class_desc_is_initialized = (&class_desc_ == 0);
   }
 
   template <int NumCenters>

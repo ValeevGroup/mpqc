@@ -14,6 +14,8 @@
 
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
+//TODO not use Energy explicitly
+#include "mpqc/chemistry/qc/properties/energy.h"
 
 namespace mpqc {
 

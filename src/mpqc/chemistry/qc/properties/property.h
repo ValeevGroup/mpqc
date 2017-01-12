@@ -277,59 +277,14 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
 
 ////////////////////////////////////////////////////////////////////////
 
-/**
- *
- * to add a wavefunction property class P:
- * - derive class P from WavefunctionProperty<T> and override
- * P::evaluate()
- * - define class P::EvaluatorBase to be used as a public base classes that
- * can compute it
- */
-class Energy : public WavefunctionProperty<double> {
- public:
-  using typename WavefunctionProperty<double>::function_base_type;
 
-
-  /**
-   *  every class that can evaluate Energy (e.g. Wavefunction) will publicly
-   *  inherit from Energy::EvaluatorBase
-   */
-  class EvaluatorBase : public FunctionVisitorBase<function_base_type> {
-   public:
-    /// EvaluatorBase::can_evaluate returns true if \c energy can be computed.
-    /// For example, if \c energy demands taylor expansion to 1st order
-    /// but this wave function does not have analytic nuclear gradients,
-    /// will return false.
-    virtual bool can_evaluate(Energy* energy) = 0;
-    /// EvaluatorBase::evaluate computes the taylor expansion of the energy
-    /// and uses set_value to assign the values to \c energy
-    virtual void evaluate(Energy* energy) = 0;
-  };
-
-  Energy(Wavefunction* wfn_ptr,
-         std::initializer_list<double> taylor_expansion_precision)
-      : WavefunctionProperty<double>(wfn_ptr, taylor_expansion_precision) {}
-
-  void evaluate() override {
-    auto evaluator = dynamic_cast<EvaluatorBase*>(wfn());
-    if (evaluator == nullptr) {
-      std::ostringstream oss;
-      // TODO Must implement DescribedClass::key() instead of using RTTI's
-      // unpredicable output
-      oss << "Wavefunction " << typeid(*wfn()).name()
-          << " cannot compute Energy" << std::endl;
-      throw InputError(oss.str().c_str(), __FILE__, __LINE__);
-    }
-    evaluator->evaluate(this);
-  }
-};
 
 #if 0
   namespace lcao {
 
   // there is a way to automate making lists of properties
   // that a given Wavefunction supports
-  class CCSD : public Wavefunction, public Energy::EvaluatorBase {
+  class CCSD : public Wavefunction, public Energy::Evaluator {
    public:
     bool can_evaluate(Energy* energy) override {
     }
@@ -339,7 +294,7 @@ class Energy : public WavefunctionProperty<double> {
 
   // there is a way to automate making lists of properties
   // that a given Wavefunction supports
-  class GF2F12 : public Wavefunction, public GFRealPole::EvaluatorBase {
+  class GF2F12 : public Wavefunction, public GFRealPole::Evaluator {
    public:
     bool can_evaluate(GFRealPole* pole) override {
     }
@@ -350,7 +305,7 @@ class Energy : public WavefunctionProperty<double> {
 
   namespace mra {
 
-  class SCF : public Wavefunction, public Energy::EvaluatorBase {
+  class SCF : public Wavefunction, public Energy::Evaluator {
    public:
     bool can_evaluate(Energy* energy) override {
     }

@@ -156,7 +156,7 @@ TEST_CASE("KeyVal", "[keyval]") {
       std::shared_ptr<DescribedClass> bptr = std::make_shared<Base>(2);
       KeyVal kv;
       kv.assign("base", bptr);
-      auto bptr1 = kv.class_ptr<Base>("base");
+      auto bptr1 = kv.class_ptr("base");
       REQUIRE(bptr == bptr1);
     }
   }

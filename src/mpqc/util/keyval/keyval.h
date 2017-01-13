@@ -115,6 +115,22 @@ class DescribedClass {
     registry[type_name] = keyval_ctor_wrapper<T>;
   }
 
+  /// query if T is registered
+  /// @tparam T a class
+  /// @return true if T is registered
+  template <typename T>
+  static bool is_registered() {
+    return boost::serialization::guid<T>() != NULL;
+  }
+
+  /// query the class key for T
+  /// @tparam T a class
+  /// @return class key with which T was registered, or empty string if T is not registered
+  template <typename T>
+  static std::string class_key() {
+    return is_registered<T>() ? std::string(boost::serialization::guid<T>()) : std::string();
+  }
+
   /// This class helps with registering DescribedClass with DescribedClass's
   /// static registry.
 
@@ -484,17 +500,18 @@ class KeyVal {
 
   /// return a pointer to an object at the given path
 
-  /// Constructs an object of the type given by the value of
-  /// keyword "type" in this KeyVal object. In order to be constructible
-  /// using this method a type must be derived from DescribedClass <i>and</i>
+  /// Constructs a smart pointer to object of type \c T . If user provided
+  /// keyword "type" in this KeyVal object its value will be used for the object type.
+  /// Otherwise, if \c T is a <i>concrete</i> type,
+  /// this will construct object of type \c T. In either case, the type of
+  /// constructed object must have DescribedClass as its public base <i>and</i>
   /// registered.
-  /// @tparam T a class derived from DescribedClass corresponding to the value
-  /// of path:"type" or its base
+  /// @tparam T a class derived from DescribedClass
   /// @param path the path
   /// @return a std::shared_ptr to \c T ; null pointer will be returned if \c path does not exist.
-  /// @throws KeyVal::bad_input if cannot convert value
-  /// representation to the desired type
-  template <typename T, typename = std::enable_if_t<Describable<T>::value>>
+  /// @throws KeyVal::bad_input if the value of keyword "type" is not a registered class key,
+  /// or if the user did not specifu keyword "type" and class T is abstract or is not registered.
+  template <typename T = DescribedClass, typename = std::enable_if_t<Describable<T>::value>>
   std::shared_ptr<T> class_ptr(const key_type& path = key_type()) const {
     // if this class already exists in the registry under path
     // (e.g. if the ptr was assigned programmatically), return immediately
@@ -518,17 +535,35 @@ class KeyVal {
       return std::shared_ptr<T>();
     }
 
-    // get class name
-    std::string derived_class_name;
+    // compute the type name of the constructed object
+    std::string result_type_name;
     auto type_path = concat_path(abs_path, "type");
-    if (not exists_(type_path))
-      throw KeyVal::bad_input(
-          std::string("missing \"type\" in object at path ") + path, abs_path);
-    derived_class_name =
-        top_tree_->get<std::string>(ptree::path_type{type_path, separator});
+    if (not exists_(
+            type_path)) {  // no user override for type = try to construct T
+      if (std::is_abstract<T>::value) {
+        throw KeyVal::bad_input(
+            std::string(
+                "KeyVal::class_ptr<T>(): T is an abstract class, "
+                "hence keyword \"type\" must be given for object at path " +
+                path),
+            abs_path);
+      }
+      if (!DescribedClass::is_registered<T>()) {
+        throw KeyVal::bad_input(
+            std::string(
+                "KeyVal::class_ptr<T>(): T is an unregistered concrete class, "
+                "hence keyword \"type\" must be given for object at path " +
+                path),
+            abs_path);
+      }
+      result_type_name = DescribedClass::class_key<T>();
+    } else {  // user provided \"type\" keyword, use it to override the type
+      result_type_name =
+          top_tree_->get<std::string>(ptree::path_type{type_path, separator});
+    }
 
     // map class type to its ctor
-    auto ctor = DescribedClass::type_to_keyval_ctor(derived_class_name);
+    auto ctor = DescribedClass::type_to_keyval_ctor(result_type_name);
     auto result = (*ctor)(*this);
     (*class_registry_)[abs_path] = result;
     return std::dynamic_pointer_cast<T>(result);

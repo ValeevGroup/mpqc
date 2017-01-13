@@ -337,6 +337,16 @@ kv.assign("trex", trex);
 assert(kv.class_ptr("trex") == trex);
 @endcode
 
+Note that if the type of the object to be constructed is known at compile time, it is not necessary
+to provide the \c type keyword as long as \c KeyVal::class_ptr<T> is called with the exact type
+rather than the base class type:
+@code
+// must specify trex1::type keyword 
+std::shared_ptr<Animal> trex1 = kv.class_ptr<Animal>("trex1");
+// tref2::type does NOT need to be specified
+std::shared_ptr<Reptile> trex2 = kv.class_ptr<Reptile>("trex2");
+@endcode
+
 \section keyvalarray Array Specification
 
 Input for an array can be specified in several forms. In JSON there is standard

@@ -39,9 +39,10 @@ public:
 
   // clang-format off
   /**
-   * KeyVal constructor
+   * @brief KeyVal constructor
    *
-   * keywords for this class
+   * The KeyVal object will be queried for all keywords of the WavefunctionProperty class,
+   * as well as the following keywords:
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | wfn | Wavefunction | none | the Wavefunction to use to compute energy  |

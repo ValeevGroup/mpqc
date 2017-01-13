@@ -62,7 +62,7 @@ DescribedClass::keyval_ctor_wrapper_type DescribedClass::type_to_keyval_ctor(
   if (registry.find(type_name) == registry.end()) {
     // check if the name was simply misspelled
     std::vector<std::string> candidates;
-    // suggest possible missplelling if distance between type_name and any key
+    // suggest possible misspelling if distance between type_name and any key
     // less than 4 (MPQC3 default)
     for (const auto& e : registry) {
       if (string_distance(type_name, e.first) <= std::size_t(4)) {

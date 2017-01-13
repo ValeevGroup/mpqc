@@ -8,6 +8,8 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PNO_CCSD_PNO_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_PNO_CCSD_PNO_H_
 
+#include <iostream>
+#include <sstream>
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/scf/mo_build.h"
@@ -29,8 +31,9 @@ namespace lcao {
 
   private:
    //const KeyVal kv_;
-   std::shared_ptr<Wavefunction> ref_wfn_;
    bool df_;
+   double tcut_;
+   std::shared_ptr<Wavefunction> ref_wfn_;
    TA::DistArray<Tile, Policy>  t2_mp2_;
 
    void init();

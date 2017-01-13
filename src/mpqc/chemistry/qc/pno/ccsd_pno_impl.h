@@ -56,6 +56,7 @@ namespace mpqc {
       }
 
       df_ = kv.value<bool>("df", false);
+      tcut_ = kv.value<double>("tcut", 1e-6);
     }
 
     template<typename Tile, typename Policy>
@@ -140,47 +141,65 @@ namespace mpqc {
 
     }
 
-
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::pno_decom() {
 
       integer vir = this->trange1_engine_->get_vir();
-      double threshold = 1e-6;
+      double threshold = tcut_;
 
-      auto transfrom = [=](Tile &tile) -> float {
-        // Get the dimensions of the input tile
-        const auto extent = tile.range().extent();
-        const auto a = extent[2];
-        const auto b = extent[3];
+
+//      ExEnv::out0() << indent << "nvir: " << vir << std::endl;
+//      ExEnv::out0() << indent << "tcut: " << tcut_ << std::endl;
+
+      // compute t_ab = d_a{c} t_{c}{d} d_{d}{b} ({}: pno indices)
+      auto transfrom = [=](Tile &in_tile) -> float {
+
+        std::stringstream ss;
+    	ss << "input tile: " << in_tile << std::endl;
+    	Tile test_tile = in_tile;
+
+        // get the dimensions of the input tile
+        const auto extent = in_tile.range().extent();
+        const auto a = extent[0];
+        const auto b = extent[1];
         const auto min_ab = std::min(a,b);
 
-        // Allocate memory for SVD
+        // allocate memory for SVD
         std::unique_ptr<double[]> u_ab(new double[a * b]);
         std::unique_ptr<double[]> v_ba(new double[a * b]);
         std::unique_ptr<double[]> s(new double[min_ab]);
 
-        // Compute the SVD of tile
-        // TODO: change svd function to take JOBZ as parameter
-        tensor::algebra::svd(tile.data(), s.get(), u_ab.get(), v_ba.get(), a, b);
+        // SVD of tile: (t_ab)^T
+        tensor::algebra::svd(in_tile.data(), s.get(), u_ab.get(), v_ba.get(), a, b, 'A');
 
         std::size_t rank = 0;
         for(; rank < min_ab; ++rank) {
-          // Check for s below the truncation threshold
-          if(s.get()[rank] < threshold)
-            break;
+          // check s for the truncation threshold
+//          if(s.get()[rank] < threshold)
+//            break;
 
-          // Fold s into u_ab:
-          //   u_ai = u_a * s_i
+          // fold s into u_ab:
+          //   u_{a} = u_{a} * s_{a}
           madness::cblas::scal(a, s.get()[rank], u_ab.get() + (a * rank), 1);
         }
 
-        // TODO: change the correctness of the following code
-        // Compute the new value for the output tile
-        // t_ab = u_ac * v_bc
-        madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::Trans,
-            a, b, rank, 1.0, u_ab.get(), b, v_ba.get(), min_ab, 0.0, tile.data(), b);
+        ss << "rank: " << rank << std::endl;
 
-        return tile.norm();
+        // compute output tile: (t_ab)^T = u_a{c} * v_{c}b
+        madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::Trans,
+            a, b, rank, 1.0, u_ab.get(), b, v_ba.get(), rank, 0.0, in_tile.data(), b);
+
+//        // test:
+//        // when threshold is small enough, input and output tiles should be the same
+//        madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::Trans,
+//            a, b, rank, 1.0, u_ab.get(), b, v_ba.get(), rank, -1.0, test_tile.data(), b);
+//        ExEnv::out0() << indent << "test svd (t_new - t_old) norm: " << test_tile.norm() << std::endl;
+
+        ss << "output tile: " << in_tile << std::endl;
+
+        std::printf("%s", ss.str().c_str());
+
+        return in_tile.norm();
       };
 
       TA::foreach_inplace(t2_mp2_, transfrom);
@@ -205,14 +224,14 @@ namespace mpqc {
 
       // compute MP2 amplitudes
       compute_mp2_t2();
-      //ExEnv::out0() << indent << "MP2 amplitudes: " << t2_mp2_ << std::endl;
+      ExEnv::out0() << indent << "MP2 amplitudes: " << t2_mp2_ << std::endl;
 
       // reblock MP2 amplitudes
       reblock();
-      //ExEnv::out0() << indent << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
+      ExEnv::out0() << indent << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
 
       // pno decomposition
-      //pno_decom();
+      pno_decom();
       double energy = ref_energy;
 
       return energy;

@@ -30,7 +30,7 @@ namespace mpqc {
 
         // test mp2 energy:
         double mp2 =  TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"), t2_abij("a,b,i,j"));
-        ExEnv::out0() << indent << "Test: MP2 Energy: " << mp2 << std::endl;
+        ExEnv::out0() << "Test: MP2 Energy is " << mp2 << std::endl;
 
         return t2_abij;
       }
@@ -146,56 +146,79 @@ namespace mpqc {
 
       integer vir = this->trange1_engine_->get_vir();
       double threshold = tcut_;
+      ExEnv::out0() << "tcut is " << tcut_ << std::endl;
 
+      std::size_t orb_i = 1, orb_j = 1;
 
-//      ExEnv::out0() << indent << "nvir: " << vir << std::endl;
-//      ExEnv::out0() << indent << "tcut: " << tcut_ << std::endl;
 
       // compute t_ab = d_a{c} t_{c}{d} d_{d}{b} ({}: pno indices)
-      auto transfrom = [=](Tile &in_tile) -> float {
+      auto transfrom = [&](Tile &in_tile) -> float {
 
         std::stringstream ss;
-    	ss << "input tile: " << in_tile << std::endl;
-    	Tile test_tile = in_tile;
+//        ss << "input tile: " << in_tile << std::endl;
+
+        // copy in_tile for test purpose
+        Tile test_tile = in_tile.clone();
 
         // get the dimensions of the input tile
         const auto extent = in_tile.range().extent();
         const auto a = extent[0];
         const auto b = extent[1];
-        const auto min_ab = std::min(a,b);
+        const auto x = std::min(a,b);
 
         // allocate memory for SVD
-        std::unique_ptr<double[]> u_ab(new double[a * b]);
-        std::unique_ptr<double[]> v_ba(new double[a * b]);
-        std::unique_ptr<double[]> s(new double[min_ab]);
+        std::unique_ptr<double[]> u_ax(new double[a * x]);
+        std::unique_ptr<double[]> v_xb(new double[b * x]);
+        std::unique_ptr<double[]> s(new double[x]);
 
         // SVD of tile: (t_ab)^T
-        tensor::algebra::svd(in_tile.data(), s.get(), u_ab.get(), v_ba.get(), a, b, 'A');
+        tensor::algebra::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');
+//        ss << "s: " << std::endl;
+//        for (std::size_t i = 0; i < a; ++i) {
+//          ss << s.get()[i] << "  ";
+//        }
+//        ss << std::endl;
+//        ss << "u: " << std::endl;
+//        for (std::size_t i = 0; i < a; ++i) {
+//          for (int j = 0; j < b; ++j) {
+//            ss << u_ax.get()[i+x*j] << "  ";
+//          }
+//          ss << std::endl;
+//        }
+//        ss << std::endl;
+//        ss << "v: " << std::endl;
+//        for (std::size_t i = 0; i < a; ++i) {
+//          for (int j = 0; j < b; ++j) {
+//            ss << v_xb.get()[i+x*j] << "  ";
+//          }
+//          ss << std::endl;
+//        }
+//        ss << std::endl;
 
         std::size_t rank = 0;
-        for(; rank < min_ab; ++rank) {
+        for(; rank < x; ++rank) {
           // check s for the truncation threshold
-//          if(s.get()[rank] < threshold)
-//            break;
+          if(s.get()[rank] < threshold)
+            break;
 
           // fold s into u_ab:
-          //   u_{a} = u_{a} * s_{a}
-          madness::cblas::scal(a, s.get()[rank], u_ab.get() + (a * rank), 1);
+          // u_{a} = u_{a} * s_{a}
+          madness::cblas::scal(a, s.get()[rank], u_ax.get() + (a * rank), 1);
         }
-
-        ss << "rank: " << rank << std::endl;
+        ss << "pair (" << orb_i << "," << orb_j << ")  rank: " << rank << std::endl;
+        ++orb_i;
+        ++orb_j;
 
         // compute output tile: (t_ab)^T = u_a{c} * v_{c}b
-        madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::Trans,
-            a, b, rank, 1.0, u_ab.get(), b, v_ba.get(), rank, 0.0, in_tile.data(), b);
+        madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::NoTrans,
+            a, b, rank, 1.0, u_ax.get(), a, v_xb.get(), b, 0.0, in_tile.data(), a);
+//        ss << "output tile: " << in_tile << std::endl;
 
-//        // test:
-//        // when threshold is small enough, input and output tiles should be the same
-//        madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::Trans,
-//            a, b, rank, 1.0, u_ab.get(), b, v_ba.get(), rank, -1.0, test_tile.data(), b);
-//        ExEnv::out0() << indent << "test svd (t_new - t_old) norm: " << test_tile.norm() << std::endl;
-
-        ss << "output tile: " << in_tile << std::endl;
+        // test:
+        // when threshold is small enough, input and output tiles should be the same
+        madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::NoTrans,
+            a, b, rank, 1.0, u_ax.get(), a, v_xb.get(), b, -1.0, test_tile.data(), a);
+        ss << "(t_new - t_old).norm(): " << test_tile.norm() << std::endl;
 
         std::printf("%s", ss.str().c_str());
 
@@ -223,14 +246,17 @@ namespace mpqc {
       init();
 
       // compute MP2 amplitudes
+      ExEnv::out0() << std::endl << "Computing MP2 amplitudes" << std::endl;
       compute_mp2_t2();
-      ExEnv::out0() << indent << "MP2 amplitudes: " << t2_mp2_ << std::endl;
+      //ExEnv::out0() << indent << "MP2 amplitudes: " << t2_mp2_ << std::endl;
 
       // reblock MP2 amplitudes
+      ExEnv::out0() << std::endl << "Reblocking MP2 amplitudes" << std::endl;
       reblock();
-      ExEnv::out0() << indent << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
+      //ExEnv::out0() << indent << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
 
       // pno decomposition
+      ExEnv::out0() << std::endl << "Doing PNO decomposition (SVD of MP2 amplitudes)" << std::endl;
       pno_decom();
       double energy = ref_energy;
 

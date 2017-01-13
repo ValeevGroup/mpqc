@@ -84,23 +84,23 @@ integer svd(double *data, double *s, double *u, double *vt, integer rows,
   integer LDU, LDVT;
   switch (JOBZ) {
   case 'A':
-		LDU = rows;
-		LDVT = cols;
-		break;
+    LDU = rows;
+    LDVT = cols;
+    break;
   case 'S':
-	    LDU = std::min(rows, cols);
-	    LDVT = LDU;
-	    break;
+    LDU = std::min(rows, cols);
+    LDVT = LDU;
+    break;
   case 'O':
-	  LDU = 1;
-	  LDVT = cols;
-	  break;
+    LDU = 1;
+    LDVT = cols;
+    break;
   case 'N':
-	  LDU = 1;
-	  LDVT = 1;
-	  break;
+    LDU = 1;
+    LDVT = 1;
+    break;
   default:
-	  std::cout << "Invalid input for JOBZ" << std::endl;
+    std::cout << "Invalid input for JOBZ" << std::endl;
   }
 
   std::unique_ptr<integer[]> iwork{new integer[8 * std::min(rows, cols)]};

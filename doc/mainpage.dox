@@ -22,9 +22,14 @@ without warranty or support. MPQC is distributed under the terms of the General 
   <li> \ref compile
 </ul>
 
-\section userref Command Reference
+\section userref User's Reference
 <ul>
-  <li> \ref mpqc
+  <li> \ref mpqcover
+  <li> \ref mpqccomp
+  <li> \ref mpqcrunning
+  <li> \ref mpqcinp
+  <li> \ref mpqclic
+  <li> \ref mpqcwar
 </ul>
 
 \section develref Developer's Reference

@@ -1,29 +1,24 @@
 {
   "units": "2010CODATA",
   "molecule": {
-    "type": "Molecule",
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
     "n_cluster": 2
   },
   "obs": {
-    "type": "Basis",
     "name": "6-31G",
     "molecule": "$:molecule"
   },
   "dfbs": {
-    "type": "Basis",
     "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
   "ribs":{
-    "type": "Basis",
     "name": "aug-cc-pVDZ",
     "molecule": "$:molecule"
   },
   "world":{
-    "type" : "WfnWorld",
     "molecule" : "$:molecule",
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",

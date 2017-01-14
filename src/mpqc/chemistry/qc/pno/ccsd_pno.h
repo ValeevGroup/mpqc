@@ -40,8 +40,9 @@ namespace lcao {
 
    // compute MP2 T2 amplitudes
    void compute_mp2_t2();
-   // reblock MP2 T2
-   void reblock();
+   // compute the occ and vir matrices for reblocking T2
+   void compute_M_reblock(TA::DistArray<Tile, Policy> &occ_convert,
+                          TA::DistArray<Tile, Policy> &vir_convert);
    // svd decompostion of T2
    void pno_decom();
 

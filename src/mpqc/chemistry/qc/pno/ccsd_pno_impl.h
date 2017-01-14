@@ -86,8 +86,11 @@ namespace mpqc {
                                     this->trange1_engine(), df_);
     }
 
+    // occ_convert(old_i, new_i), vir_convert(old_a, new_a)
     template<typename Tile, typename Policy>
-    void CCSD_PNO<Tile, Policy>::reblock() {
+    void CCSD_PNO<Tile, Policy>::compute_M_reblock(TA::DistArray<Tile, Policy> &occ_convert,
+                                                   TA::DistArray<Tile, Policy> &vir_convert) {
+
       auto &lcao_factory = this->lcao_factory();
       auto &world = lcao_factory.world();
 
@@ -96,49 +99,26 @@ namespace mpqc {
       std::size_t all = this->trange1_engine_->get_all();
       std::size_t n_frozen = this->trange1_engine_->get_nfrozen();
 
-      std::size_t b_occ = 1;
-      std::size_t b_vir = vir;
+      std::size_t occ_blk_size = 1;
+      std::size_t vir_blk_size = vir;
 
       TA::TiledRange1 old_occ = this->trange1_engine_->get_active_occ_tr1();
       TA::TiledRange1 old_vir = this->trange1_engine_->get_vir_tr1();
 
       auto new_tr1 =
-          std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
+          std::make_shared<TRange1Engine>(occ, all, occ_blk_size, vir_blk_size, n_frozen);
 
       TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
       TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
 
-      mpqc::detail::parallel_print_range_info(world, new_occ, "CCSD-PNO Occ");
-      mpqc::detail::parallel_print_range_info(world, new_vir, "CCSD-PNO Vir");
+      mpqc::detail::parallel_print_range_info(world, new_occ, "PNO new Occ");
+      mpqc::detail::parallel_print_range_info(world, new_vir, "PNO new Vir");
 
-      this->trange1_engine_ = new_tr1;
+      occ_convert = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+                       world, old_occ, new_occ, 1.0);
 
-      TA::DistArray<Tile, Policy> occ_convert =
-          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
-              world, old_occ, new_occ, 1.0);
-
-      TA::DistArray<Tile, Policy> vir_convert =
-          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
-              world, old_vir, new_vir, 1.0);
-
-      // get occupied and virtual orbitals
-      auto occ_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"i"));
-      auto vir_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a"));
-
-      auto new_occ_space = occ_space;
-      new_occ_space("k,i") = occ_space("k,j") * occ_convert("j,i");
-
-      auto new_vir_space = vir_space;
-      new_vir_space("k,a") = vir_space("k,b") * vir_convert("b,a");
-
-      lcao_factory.orbital_space().clear();
-      lcao_factory.orbital_space().add(new_occ_space);
-      lcao_factory.orbital_space().add(new_vir_space);
-
-      // obtain t2 with new blocking structure
-      t2_mp2_("a,b,i,j") = t2_mp2_("c,d,k,l") * vir_convert("c,a") * vir_convert("d,b") *
-                      occ_convert("k,i") * occ_convert("l,j");
-
+      vir_convert = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+                       world, old_vir, new_vir, 1.0);
     }
 
     template<typename Tile, typename Policy>
@@ -248,12 +228,17 @@ namespace mpqc {
       // compute MP2 amplitudes
       ExEnv::out0() << std::endl << "Computing MP2 amplitudes" << std::endl;
       compute_mp2_t2();
-      //ExEnv::out0() << indent << "MP2 amplitudes: " << t2_mp2_ << std::endl;
+//      ExEnv::out0() << "MP2 amplitudes: " << t2_mp2_ << std::endl;
 
       // reblock MP2 amplitudes
       ExEnv::out0() << std::endl << "Reblocking MP2 amplitudes" << std::endl;
-      reblock();
-      //ExEnv::out0() << indent << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
+      TA::DistArray<Tile, Policy> occ_convert, vir_convert;
+      compute_M_reblock(occ_convert, vir_convert);
+      // obtain t2 with new blocking structure
+      t2_mp2_("a,b,i,j") = t2_mp2_("c,d,k,l")
+                           * vir_convert("c,a") * vir_convert("d,b")
+                           * occ_convert("k,i") * occ_convert("l,j");
+//      ExEnv::out0() << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
 
       // pno decomposition
       ExEnv::out0() << std::endl << "Doing PNO decomposition (SVD of MP2 amplitudes)" << std::endl;

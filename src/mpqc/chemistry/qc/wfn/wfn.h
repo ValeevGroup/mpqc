@@ -77,7 +77,7 @@ class Wavefunction : public ::mpqc::Wavefunction {
    * | \c "wfn_world" OR \c "..:wfn_world" OR \c "$:wfn_world" |
    * WavefunctionWorld | none | This specifies the WavefunctionWorld object in
    * which this object will live initially. If not found, the contents of this
-   * KeyVal object will be used to construct WavefunctionWorld object |
+   * KeyVal object will be used to construct a new WavefunctionWorld object |
    *
    */
   Wavefunction(const KeyVal& kv);

@@ -28,7 +28,8 @@ Wavefunction::Wavefunction(const KeyVal &kv) : ::mpqc::Wavefunction(kv) {
     wfn_world_ = kv.keyval("$:wfn_world").class_ptr<WavefunctionWorld>();
   }
   else{
-    throw std::runtime_error("Wavefunction could not find wfn_world keyval! \n");
+    wfn_world_ = std::make_shared<WavefunctionWorld>(kv);
+    // TODO decide whether to push the newly-constructed world to kv, and where
   }
 
 }

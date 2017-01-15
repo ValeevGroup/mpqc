@@ -1,8 +1,6 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_GAMMA_POINT_MP2_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_GAMMA_POINT_MP2_H_
 
-#include "mpqc/chemistry/qc/integrals/periodic_ao_factory.h"
-#include "mpqc/chemistry/qc/integrals/periodic_lcao_factory.h"
 #include "mpqc/chemistry/qc/mbpt/mp2.h"
 #include "mpqc/chemistry/qc/scf/zrhf.h"
 
@@ -57,6 +55,55 @@ TA::Array<std::complex<double>, 4, Tile, Policy> d_abij(
 
   auto result = TA::foreach (abij, convert);
   abij.world().gop.fence();
+  return result;
+}
+
+/*!
+ * \brief This computes D_ai = 1 / (e_i - e_a)
+ */
+template <typename Tile, typename Policy>
+TA::DistArray<
+    Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value,
+                                  TA::SparsePolicy>::type>
+d_ai(madness::World &world, const TA::TiledRange &trange, const Vectorz &ens,
+     std::size_t n_occ, std::size_t n_frozen) {
+  typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
+
+  auto make_tile = [&ens, n_occ, n_frozen](range_type &range) {
+
+    auto result_tile = Tile(range);
+
+    // compute index
+    const auto a0 = result_tile.range().lobound()[0];
+    const auto an = result_tile.range().upbound()[0];
+    const auto i0 = result_tile.range().lobound()[1];
+    const auto in = result_tile.range().upbound()[1];
+
+    auto tile_idx = 0;
+    typename Tile::value_type tmp = 1.0;
+    for (auto a = a0; a < an; ++a) {
+      const auto e_a = ens[a + n_occ];
+      for (auto i = i0; i < in; ++i, ++tile_idx) {
+        const auto e_i = ens[i + n_frozen];
+        const auto e_ia = e_i - e_a;
+        const auto result_ai = tmp / e_ia;
+        result_tile[tile_idx] = result_ai;
+      }
+    }
+
+    return result_tile;
+  };
+
+  TA::DistArray<Tile, Policy> result(world, trange);
+
+  for (auto it = result.begin(); it != result.end(); ++it) {
+    madness::Future<Tile> tile =
+        world.taskq.add(make_tile, trange.make_tile_range(it.ordinal()));
+
+    *it = tile;
+  }
+
+  world.gop.fence();
   return result;
 }
 

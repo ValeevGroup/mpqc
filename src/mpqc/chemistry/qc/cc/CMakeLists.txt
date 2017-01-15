@@ -6,6 +6,8 @@ set(sources
         dbccsd.h
         dbccsd.cpp
         diis_ccsd.h
+        gamma_point_ccsd.h
+        gamma_point_ccsd.cpp
         linkage.h
         )
 

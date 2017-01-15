@@ -363,7 +363,39 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   double size = 0.0;
 
-  if (formula.rank() == 2) {
+  if (formula.oper().is_fock()) {
+    utility::print_par(this->world_,
+                       "\nComputing Fock Integral for Periodic System: ",
+                       utility::to_string(formula.string()), "\n");
+
+    auto v_formula = formula;
+    v_formula.set_operator_type(Operator::Type::Nuclear);
+
+    auto t_formula = formula;
+    t_formula.set_operator_type(Operator::Type::Kinetic);
+
+    auto j_formula = formula;
+    j_formula.set_operator_type(Operator::Type::J);
+
+    auto k_formula = formula;
+    k_formula.set_operator_type(Operator::Type::K);
+
+    auto v = this->compute(v_formula);
+    auto t = this->compute(t_formula);
+    auto j = this->compute(j_formula);
+    auto k = this->compute(k_formula);
+
+    auto time0 = mpqc::now(this->world_, false);
+    result("rho, sigma") = v("rho, sigma") + t("rho, sigma");
+    result("rho, sigma") += 2.0 * j("rho, sigma") - k("rho, sigma");
+    auto time1 = mpqc::now(this->world_, false);
+    auto time = mpqc::duration_in_s(time0, time1);
+
+    size = mpqc::detail::array_size(result);
+    utility::print_par(this->world_, " Size: ", size, " GB");
+    utility::print_par(this->world_, " Time: ", time, " s\n");
+
+  } else if (formula.rank() == 2) {
     utility::print_par(this->world_,
                        "\nComputing One Body Integral for Periodic System: ",
                        utility::to_string(formula.string()), "\n");

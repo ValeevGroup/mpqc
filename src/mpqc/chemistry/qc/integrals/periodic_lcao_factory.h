@@ -51,7 +51,8 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
         unitcell_(
             *kv.keyval("wfn_world:molecule").template class_ptr<UnitCell>()),
         orbital_space_registry_(
-            std::make_shared<OrbitalSpaceRegistry<TArray>>()) {
+            std::make_shared<OrbitalSpaceRegistry<TArray>>()),
+        mo_formula_registry_(){
     dcell_ = unitcell_.dcell();
 
     R_max_ = pao_factory_.R_max();
@@ -102,6 +103,7 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
   AOFactoryType &pao_factory_;
   UnitCell &unitcell_;
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
+  FormulaRegistry<TArray> mo_formula_registry_;
 
   /// unitcell and pbc information
   Vector3i R_max_;   ///> range of expansion of Bloch Gaussians in AO Gaussians
@@ -127,21 +129,107 @@ PeriodicLCAOFactory<Tile, Policy>::compute(const std::wstring &formula_string) {
 template <typename Tile, typename Policy>
 typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute(const Formula &formula) {
+  auto iter = mo_formula_registry_.find(formula);
+
   TArray result;
+
+  if (iter != mo_formula_registry_.end()) {
+    result = *(iter->second);
+    utility::print_par(this->world_, "Retrieved Periodic LCAO Integral: ",
+                       utility::to_string(formula.string()));
+    double size = mpqc::detail::array_size(result);
+    utility::print_par(this->world_, " Size: ", size, " GB\n");
+    return result;
+  }
 
   if (formula.rank() == 2) {
     result = compute2(formula);
+    mo_formula_registry_.insert(formula, result);
   } else if (formula.rank() == 4) {
     result = compute4(formula);
+    mo_formula_registry_.insert(formula, result);
   }
 
+  madness::print_meminfo(this->world_.rank(),
+                         "Periodic LCAOFactory: " + utility::to_string(formula.string()));
   return result;
 }
 
 template <typename Tile, typename Policy>
 typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
+  mpqc::time_point time0 = mpqc::now(this->world_, this->accurate_time_);
+
   TArray result;
+
+  // get AO formula
+  auto ao_formula = mo_to_ao(formula);
+
+  // get AO bases
+  auto bra_index = ao_formula.bra_indices()[0];
+  auto ket_index = ao_formula.ket_indices()[0];
+
+  auto bra_basis = pao_factory_.index_to_basis(bra_index);
+  auto ket_basis = pao_factory_.index_to_basis(ket_index);
+
+  TA_ASSERT(bra_basis != nullptr);
+  TA_ASSERT(ket_basis != nullptr);
+
+  using ::mpqc::lcao::detail::direct_vector;
+  using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+  using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
+  using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
+  using ::mpqc::lcao::gaussian::make_engine_pool;
+  using ::mpqc::utility::make_array_of_refs;
+
+  // shift AO bases and compute AO integrals
+  TArray pao_ints;
+  for (auto R = 0; R < R_size_; ++R) {
+    auto vec_R = direct_vector(R, R_max_, dcell_);
+
+    auto bra = bra_basis;
+    auto ket = shift_basis_origin(*ket_basis, vec_R);
+
+    auto bases = mpqc::lcao::gaussian::BasisVector{{*bra, *ket}};
+    auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
+        to_libint2_operator(ao_formula.oper().type()),
+        make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
+        to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
+                                   unitcell_));
+
+    auto ao_int =
+        pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+
+    if (R == 0)
+      pao_ints("p, q") = ao_int("p, q");
+    else
+      pao_ints("p, q") += ao_int("p, q");
+  }
+
+  // get MO coefficients
+  auto left_index = formula.bra_indices()[0];
+  if (left_index.is_mo()) {
+    auto &left = orbital_space_registry_->retrieve(left_index);
+    result("i, q") = pao_ints("p, q") * left("p, i");
+  }
+
+  auto right_index = formula.ket_indices()[0];
+  if (right_index.is_mo()) {
+    auto &right = orbital_space_registry_->retrieve(right_index);
+    result("p, i") = result("p, q") * right("q, i");
+  }
+
+  result.truncate();
+
+  mpqc::time_point time1 = mpqc::now(this->world_, this->accurate_time_);
+
+  auto duration = mpqc::duration_in_s(time0, time1);
+  double size = mpqc::detail::array_size(result);
+
+  ExEnv::out0() << " Transformed Gamma-Point Periodic LCAO Integral: "
+                << utility::to_string(formula.string()) << std::endl;
+  ExEnv::out0() << " Size: " << size << " GB" << std::endl;
+  ExEnv::out0() << " Time: " << duration << " s" << std::endl;
 
   return result;
 }

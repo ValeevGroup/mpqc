@@ -514,14 +514,20 @@ to a source file in the <i>global</i> scope:
     It is the easiest to add these statements to the .cpp file that defines \c T , but any other .cpp
 file will work.
 
-@note Both MPQC_CLASS_EXPORT_KEY() and MPQC_CLASS_EXPORT_KEY2() create a Global Unique ID (GUID) for
-the class using the Boost.Serialization mechanism
+@note Both MPQC_CLASS_EXPORT_KEY() and MPQC_CLASS_EXPORT_KEY2() create a Global Unique ID (GUID)
+for the class using a mechanism similar to that of the Boost.Serialization library.
 (see <a href="http://www.boost.org/doc/libs/1_62_0/libs/serialization/doc/special.html#export">Boost docs</a>
-for more details). Therefore using these macros also makes the type usable with
-Boost.Serialization (note that as of Boost 1.62.0, the Boost.Serialization macros
-are not variadic and should not work for template classes with 2 or more template arguments;
-the MPQC macros use modified variadic versions of the Boost macros and do work fine for
-classes with 2 or more template arguments).
+for more details). However, using these macros does not make the type usable with
+Boost.Serialization, you should use the corresponding BOOST_CLASS_EXPORT() and BOOST_CLASS_EXPORT2()
+macros (in practice you are likely to need to use BOOST_CLASS_EXPORT_KEY(),
+or BOOST_CLASS_EXPORT_KEY2(), and BOOST_CLASS_EXPORT_IMPLEMENT(): read the docs CAREFULLY
+as it is very easy to introduce subtle bugs by misusing the macros).
+
+@note As of Boost 1.62.0, the Boost.Serialization macros BOOST_CLASS_EXPORT_KEY(),
+BOOST_CLASS_EXPORT_KEY2() and BOOST_CLASS_EXPORT_IMPLEMENT() are not variadic
+and should not work for template classes with 2 or more template arguments.
+MPQC provides macros MPQC_BOOST_CLASS_EXPORT_KEY2() and MPQC_BOOST_CLASS_EXPORT_IMPLEMENT()
+that should be used in their place for classes with 2 or more template arguments.
 
 @note If \c T is a template class, you must register each instance of this class you want to construct
 from KeyVal.

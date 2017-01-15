@@ -59,6 +59,19 @@ struct customize_stream<Ch, Traits, E*, void> {
 
 namespace mpqc {
 
+namespace detail {
+template <typename T>
+struct register_keyval_ctor;
+
+/// replaces boost serialization GUID: there is no default implementation of guid()
+/// to avoid the issues with the primary template getting picked up due to incorrect
+/// ordering of specialization and use
+template <typename T>
+const char* guid();
+
+}  // namespace detail
+
+
 class KeyVal;
 
 class DescribedClass;
@@ -109,26 +122,45 @@ class DescribedClass {
 
   template <typename T>
   static void register_keyval_ctor() {
-    const std::string type_name = boost::serialization::guid<T>();
+    const char* guid_T = mpqc::detail::guid<T>();
+    assert(guid_T != nullptr);
+    const std::string type_name(guid_T);
     auto& registry = keyval_ctor_registry();
     assert(registry.find(type_name) == registry.end());
-    registry[type_name] = keyval_ctor_wrapper<T>;
+    registry.insert(std::make_pair(
+        type_name,
+        std::make_pair(keyval_ctor_wrapper<T>, std::cref(typeid(T)))));
   }
 
   /// query if T is registered
   /// @tparam T a class
   /// @return true if T is registered
+  /// @warning cannot call this function before global object initialization has
+  /// completed (i.e. after main() has started)
   template <typename T>
   static bool is_registered() {
-    return boost::serialization::guid<T>() != NULL;
+    const auto& registry = keyval_ctor_registry();
+    for(const auto& elem: registry) {
+      if (typeid(T) == elem.second.second)
+        return true;
+    }
+    return false;
   }
 
   /// query the class key for T
   /// @tparam T a class
   /// @return class key with which T was registered, or empty string if T is not registered
+  /// @warning cannot call this function before global object initialization has
+  /// completed (i.e. after main() has started)
   template <typename T>
-  static std::string class_key() {
-    return is_registered<T>() ? std::string(boost::serialization::guid<T>()) : std::string();
+  static std::string
+  class_key() {
+    const auto& registry = keyval_ctor_registry();
+    for(const auto& elem: registry) {
+      if (typeid(T) == elem.second.second)
+        return elem.first;
+    }
+    return std::string();
   }
 
   /// This class helps with registering DescribedClass with DescribedClass's
@@ -145,7 +177,8 @@ class DescribedClass {
 
  private:
   using keyval_ctor_registry_type =
-      std::map<std::string, keyval_ctor_wrapper_type>;
+      std::map<std::string, std::pair<keyval_ctor_wrapper_type,
+                                      std::reference_wrapper<const std::type_info>>>;
 
   // this is needed to force registry initialization BEFORE its use
   static keyval_ctor_registry_type& keyval_ctor_registry() {
@@ -160,39 +193,51 @@ class DescribedClass {
 };
 }  // namespace mpqc
 
-namespace mpqc {
-namespace detail {
-template <typename T>
-struct register_keyval_ctor;
-}
-}
-
 /// @addtogroup CoreKeyVal
 /// @{
 
+/// MPQC_CLASS_REGISTER_GUID(K,T) associates key \c K as GUID for type \c T
+/// \note this can be placed in a header or a source file.
+#define MPQC_CLASS_REGISTER_GUID(K, ...)                   \
+  namespace mpqc {                                         \
+  namespace detail {                                       \
+    template<> const char* guid<__VA_ARGS__>() { return K; }\
+  } /* detail */                                           \
+  } /* mpqc */                                             \
+/**/
+
 /// MPQC_BOOST_CLASS_EXPORT_KEY2(K,T) associates key \c K with type \c T
-/// \note this is a variadic version of BOOST_CLASS_EXPORT_KEY2
+/// \note this is a variadic version of BOOST_CLASS_EXPORT_KEY2 (see the docs
+///       for Boost.Serialization); unlike BOOST_CLASS_EXPORT_KEY2 this can
+///       register classes with two or more template arguments.
+/// \note this should be placed in a header file (read
+///       Boost.Serialization docs very carefully).
 #define MPQC_BOOST_CLASS_EXPORT_KEY2(K, ...)               \
   namespace boost {                                        \
   namespace serialization {                                \
   template <>                                              \
   struct guid_defined<__VA_ARGS__> : boost::mpl::true_ {}; \
+  namespace ext {                                          \
   template <>                                              \
-  inline const char* guid<__VA_ARGS__>() {                 \
-    return K;                                              \
+  struct guid_impl<__VA_ARGS__> {                          \
+    static inline const char* call() { return K; }         \
+  };                                                       \
   }                                                        \
   } /* serialization */                                    \
   } /* boost */                                            \
 /**/
 
 /// \brief Associates a key (character string) with a class using
-/// Boost.Serialization
 /// and register the class's KeyVal constructor with DescribedClass's registry.
+/// This does not register class with Boost.Serialization, use
+/// MPQC_BOOST_CLASS_EXPORT_KEY2 for that.
 ///
-/// Use MPQC_BOOST_CLASS_EXPORT_KEY2 to skip the KeyVal constructor
+/// Use MPQC_CLASS_EXPORT_KEY2 to skip the KeyVal constructor
 /// registration.
+/// @note this should be placed in a source file, and only occur once for each
+///       class.
 #define MPQC_CLASS_EXPORT_KEY2(K, ...)                                         \
-  MPQC_BOOST_CLASS_EXPORT_KEY2(K, __VA_ARGS__)                                 \
+  MPQC_CLASS_REGISTER_GUID(K, __VA_ARGS__)                                     \
   namespace mpqc {                                                             \
   namespace detail {                                                           \
   template <>                                                                  \
@@ -207,9 +252,10 @@ struct register_keyval_ctor;
   }                                                                            \
 /**/
 
-/// \brief Associates a key (character string) with a class using
-/// Boost.Serialization
+/// \brief Associates a key (character string) with a class
 /// and register the class's KeyVal constructor with DescribedClass's registry.
+/// This does not register class with Boost.Serialization, use
+/// MPQC_BOOST_CLASS_EXPORT_KEY2 for that.
 ///
 /// Identical to MPQC_CLASS_EXPORT_KEY2, but uses class name for the class key.
 /// Use MPQC_BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
@@ -219,9 +265,12 @@ struct register_keyval_ctor;
 /**/
 
 /// \brief Forces the class instantiation so that it can be deserialized with
-/// Boost.Serialization and/or constructed from a KeyVal.
-/// \note this is a variadic version of BOOST_CLASS_EXPORT_IMPLEMENT
-#define MPQC_CLASS_EXPORT_IMPLEMENT(...)                           \
+/// Boost.Serialization.
+/// \note this is a variadic version of BOOST_CLASS_EXPORT_IMPLEMENT,
+///       hence it can register classes with two or more template arguments.
+/// \note this should be placed in a source file (read
+///       Boost.Serialization docs very carefully).
+#define MPQC_BOOST_CLASS_EXPORT_IMPLEMENT(...)                           \
   namespace boost {                                                \
   namespace archive {                                              \
   namespace detail {                                               \

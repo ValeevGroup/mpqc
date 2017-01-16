@@ -227,6 +227,13 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
   }
 };
 
+#if TA_DEFAULT_POLICY == 0
+extern template class GammaPointMP2<TA::TensorZ, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class GammaPointMP2<TA::TensorZ, TA::SparsePolicy>;
+#endif
+
+
 }  // namespace lcao
 
 }  // namespace mpqc

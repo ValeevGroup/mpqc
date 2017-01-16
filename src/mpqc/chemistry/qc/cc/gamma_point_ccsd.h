@@ -1,7 +1,6 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_GAMMA_POINT_CCSD_H
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_CC_GAMMA_POINT_CCSD_H
 
-#include "mpqc/chemistry/qc/cc/ccsd.h"
 #include "mpqc/chemistry/qc/cc/diis_ccsd.h"
 #include "mpqc/chemistry/qc/mbpt/gamma_point_mp2.h"
 #include "mpqc/chemistry/qc/scf/zrhf.h"
@@ -265,11 +264,20 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
       tmp_time0 = mpqc::now(world, accurate_time);
 
       {
-        r2("a,b,i,j") =
-            (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
+        TArray tmp_abic;
+        tmp_abic("a,b,i,c") = g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k");
+        r2("a,b,i,j") = tmp_abic("a,b,i,c") * t1("c,j");
 
-        r2("a,b,i,j") -=
-            (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
+        TArray tmp_akij;
+        tmp_akij("a,k,i,j") = g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j");
+        r2("a,b,i,j") = tmp_akij("a,k,i,j") * t1("b,k");
+
+        // TODO: fix it later. Could be a linker problem.
+//        r2("a,b,i,j") =
+//            (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
+
+//        r2("a,b,i,j") -=
+//            (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
       }
       tmp_time1 = mpqc::now(world, accurate_time);
       tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -554,6 +562,12 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
     return diis;
   }
 };
+
+#if TA_DEFAULT_POLICY == 0
+extern template class GammaPointCCSD<TA::TensorZ, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class GammaPointCCSD<TA::TensorZ, TA::SparsePolicy>;
+#endif
 
 }  // namespace lcao
 }  // namespace mpqc

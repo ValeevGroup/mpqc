@@ -11,4 +11,4 @@ set(sources
         linkage.h
         )
 
-add_mpqc_library(cc sources sources "MPQCscf;MPQCutil_misc" "mpqc/chemistry/qc/cc")
+add_mpqc_library(cc sources sources "MPQCscf;MPQCmbpt;MPQCutil_misc" "mpqc/chemistry/qc/cc")

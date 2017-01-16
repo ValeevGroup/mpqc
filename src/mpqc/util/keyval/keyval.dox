@@ -371,8 +371,8 @@ Keyword \c names equals an array of 3 strings, keyword \c legs equals an array o
 3 integers, etc. The following C++ code can access the data in the corresponding KeyVal:
 @code
 auto names = kv.value<std::vector<std::string>>("names");
-auto names = kv.value<std::vector<int>>("legs");
-auto names = kv.value<std::vector<bool>>("extinct");
+auto legs = kv.value<std::vector<int>>("legs");
+auto extinct = kv.value<std::vector<bool>>("extinct");
 @endcode
 Unfortunately, it is not yet possible to specify an array of objects this way.
 

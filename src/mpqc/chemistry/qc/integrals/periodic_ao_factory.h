@@ -270,6 +270,9 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
    */
   void set_density(TArray D) { D_ = D; }
 
+  /// @return density matrix
+  TArray get_density() { return D_; }
+
   /*!
    * \brief This computes sparse complex array
    *

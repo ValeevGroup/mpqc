@@ -69,7 +69,7 @@ d_ai(madness::World &world, const TA::TiledRange &trange, const Vectorz &ens,
      std::size_t n_occ, std::size_t n_frozen) {
   typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
 
-  auto make_tile = [&ens, n_occ, n_frozen](range_type &range) {
+  auto make_tile = [&ens, n_occ, n_frozen](range_type &range, std::size_t ord, Tile *out_tile, TA::TensorF *norms) {
 
     auto result_tile = Tile(range);
 
@@ -91,19 +91,41 @@ d_ai(madness::World &world, const TA::TiledRange &trange, const Vectorz &ens,
       }
     }
 
-    return result_tile;
+    const auto tile_volume = result_tile.range().volume();
+    const auto tile_norm = result_tile.norm();
+    bool save_norm =
+            tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
+    if (save_norm) {
+        *out_tile = result_tile;
+        (*norms)[ord] = tile_norm;
+    }
   };
 
-  TA::DistArray<Tile, Policy> result(world, trange);
+  const auto tvolume = trange.tiles_range().volume();
+  std::vector<Tile> tiles(tvolume);
+  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
+  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
 
-  for (auto it = result.begin(); it != result.end(); ++it) {
-    madness::Future<Tile> tile =
-        world.taskq.add(make_tile, trange.make_tile_range(it.ordinal()));
-
-    *it = tile;
+  for (auto const ord : *pmap) {
+    world.taskq.add(make_tile, trange.make_tile_range(ord), ord, &tiles[ord],
+                    &tile_norms);
   }
 
   world.gop.fence();
+
+  TA::SparseShape<float> shape(world, tile_norms, trange);
+  TA::DistArray<Tile, Policy> result(world, trange, shape, pmap);
+
+  for (auto const ord : *pmap) {
+    if (result.is_local(ord) && !result.is_zero(ord)) {
+      auto &tile = tiles[ord];
+      assert(!tile.empty());
+      result.set(ord, tile);
+    }
+  }
+
+  world.gop.fence();
+  result.truncate();
   return result;
 }
 

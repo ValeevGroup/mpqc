@@ -52,7 +52,7 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
             *kv.keyval("wfn_world:molecule").template class_ptr<UnitCell>()),
         orbital_space_registry_(
             std::make_shared<OrbitalSpaceRegistry<TArray>>()),
-        mo_formula_registry_(){
+        mo_formula_registry_() {
     dcell_ = unitcell_.dcell();
 
     R_max_ = pao_factory_.R_max();
@@ -92,6 +92,11 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
  private:
   /// compute integrals that has two dimensions
   TArray compute2(const Formula &formula_string);
+
+  /// compute fock integrals <p|F|q>
+  TArray compute_fock_component(Formula &ao_formula,
+                                std::shared_ptr<gaussian::Basis> bra_basis,
+                                std::shared_ptr<gaussian::Basis> ket_basis);
 
   /// compute integrals that has four dimensions
   TArray compute4(const Formula &formula_string);
@@ -150,8 +155,9 @@ PeriodicLCAOFactory<Tile, Policy>::compute(const Formula &formula) {
     mo_formula_registry_.insert(formula, result);
   }
 
-  madness::print_meminfo(this->world_.rank(),
-                         "Periodic LCAOFactory: " + utility::to_string(formula.string()));
+  madness::print_meminfo(
+      this->world_.rank(),
+      "Periodic LCAOFactory: " + utility::to_string(formula.string()));
   return result;
 }
 
@@ -175,35 +181,55 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
 
-  using ::mpqc::lcao::detail::direct_vector;
-  using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
-  using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
-  using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
-  using ::mpqc::lcao::gaussian::make_engine_pool;
-  using ::mpqc::utility::make_array_of_refs;
-
-  // shift AO bases and compute AO integrals
+  // compute periodic AO integrals
   TArray pao_ints;
-  for (auto R = 0; R < R_size_; ++R) {
-    auto vec_R = direct_vector(R, R_max_, dcell_);
+  if (ao_formula.oper().is_fock()) {
+    auto v_formula = ao_formula;
+    v_formula.set_operator_type(Operator::Type::Nuclear);
+    auto t_formula = ao_formula;
+    t_formula.set_operator_type(Operator::Type::Kinetic);
+    auto j_formula = ao_formula;
+    j_formula.set_operator_type(Operator::Type::J);
+    auto k_formula = ao_formula;
+    k_formula.set_operator_type(Operator::Type::K);
 
-    auto bra = bra_basis;
-    auto ket = shift_basis_origin(*ket_basis, vec_R);
+    auto v = compute_fock_component(v_formula, bra_basis, ket_basis);
+    auto t = compute_fock_component(t_formula, bra_basis, ket_basis);
+    auto j = compute_fock_component(j_formula, bra_basis, ket_basis);
+    auto k = compute_fock_component(k_formula, bra_basis, ket_basis);
 
-    auto bases = mpqc::lcao::gaussian::BasisVector{{*bra, *ket}};
-    auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
-        to_libint2_operator(ao_formula.oper().type()),
-        make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
-        to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                   unitcell_));
+    pao_ints("p, q") = v("p, q") + t("p, q") + 2.0 * j("p, q") - k("p, q");
 
-    auto ao_int =
-        pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+  } else {
+    using ::mpqc::lcao::detail::direct_vector;
+    using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+    using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
+    using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
+    using ::mpqc::lcao::gaussian::make_engine_pool;
+    using ::mpqc::utility::make_array_of_refs;
 
-    if (R == 0)
-      pao_ints("p, q") = ao_int("p, q");
-    else
-      pao_ints("p, q") += ao_int("p, q");
+    // shift AO bases and compute AO integrals
+    for (auto R = 0; R < R_size_; ++R) {
+      auto vec_R = direct_vector(R, R_max_, dcell_);
+
+      auto bra = bra_basis;
+      auto ket = shift_basis_origin(*ket_basis, vec_R);
+
+      auto bases = mpqc::lcao::gaussian::BasisVector{{*bra, *ket}};
+      auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
+          to_libint2_operator(ao_formula.oper().type()),
+          make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
+          to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
+                                     unitcell_));
+
+      auto ao_int =
+          pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+
+      if (R == 0)
+        pao_ints("p, q") = ao_int("p, q");
+      else
+        pao_ints("p, q") += ao_int("p, q");
+    }
   }
 
   // get MO coefficients
@@ -232,6 +258,134 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   ExEnv::out0() << " Time: " << duration << " s" << std::endl;
 
   return result;
+}
+
+template <typename Tile, typename Policy>
+typename PeriodicLCAOFactory<Tile, Policy>::TArray
+PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
+    Formula &ao_formula, std::shared_ptr<gaussian::Basis> bra_basis,
+    std::shared_ptr<gaussian::Basis> ket_basis) {
+  ExEnv::out0() << indent << "Computing Periodic AO integral "
+                << utility::to_string(ao_formula.string())
+                << " for PeriodicLCAOFactory." << std::endl;
+
+  TArray result_ta;
+
+  using ::mpqc::lcao::detail::direct_vector;
+  using ::mpqc::lcao::gaussian::detail::shift_basis_origin;
+  using ::mpqc::lcao::gaussian::detail::to_libint2_operator;
+  using ::mpqc::lcao::gaussian::detail::to_libint2_operator_params;
+  using ::mpqc::lcao::gaussian::make_engine_pool;
+  using ::mpqc::utility::make_array_of_refs;
+
+  if (ao_formula.oper().type() == Operator::Type::Nuclear ||
+      ao_formula.oper().type() == Operator::Type::Kinetic) {
+    for (auto R = 0; R < R_size_; ++R) {
+      auto vec_R = direct_vector(R, R_max_, dcell_);
+
+      auto bra = bra_basis;
+      auto ket = shift_basis_origin(*ket_basis, vec_R);
+
+      auto bases = mpqc::lcao::gaussian::BasisVector{{*bra, *ket}};
+      auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
+          to_libint2_operator(ao_formula.oper().type()),
+          make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
+          to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
+                                     unitcell_));
+
+      auto ao_int =
+          pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+
+      if (R == 0)
+        result_ta("p, q") = ao_int("p, q");
+      else
+        result_ta("p, q") += ao_int("p, q");
+    }
+  } else if (ao_formula.oper().type() == Operator::Type::J) {
+    ao_formula.set_operator_type(Operator::Type::Coulomb);
+
+    auto D = pao_factory_.get_density();
+
+    for (auto R = 0; R < R_size_; ++R) {
+      auto vec_R = direct_vector(R, R_max_, dcell_);
+      TArray ao_int;
+
+      for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+
+        auto bra0 = bra_basis;
+        auto bra1 = shift_basis_origin(*ket_basis, vec_R);
+        auto ket0 = shift_basis_origin(*ket_basis, vec_RJ);
+        auto ket1 = shift_basis_origin(*ket_basis, vec_RJ, RD_max_, dcell_);
+
+        auto bases =
+            mpqc::lcao::gaussian::BasisVector{{*bra0, *bra1, *ket0, *ket1}};
+
+        auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
+            to_libint2_operator(ao_formula.oper().type()),
+            make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
+            libint2::BraKet::xx_xx,
+            to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
+                                       unitcell_));
+
+        auto J =
+            pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+        if (RJ == 0)
+          ao_int("mu, nu") = J("mu, nu, lambda, rho") * D("lambda, rho");
+        else
+          ao_int("mu, nu") += J("mu, nu, lambda, rho") * D("lambda, rho");
+      }
+
+      if (R == 0)
+        result_ta("p, q") = ao_int("p, q");
+      else
+        result_ta("p, q") += ao_int("p, q");
+    }
+  } else if (ao_formula.oper().type() == Operator::Type::K) {
+      ao_formula.set_operator_type(Operator::Type::Coulomb);
+
+      auto D = pao_factory_.get_density();
+
+      for (auto R = 0; R < R_size_; ++R) {
+        auto vec_R = direct_vector(R, R_max_, dcell_);
+        TArray ao_int;
+
+        for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+          auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+
+          auto bra0 = bra_basis;
+          auto bra1 = shift_basis_origin(*ket_basis, vec_RJ);
+          auto ket0 = shift_basis_origin(*ket_basis, vec_R);
+          auto ket1 = shift_basis_origin(*ket_basis, vec_RJ, RD_max_, dcell_);
+
+          auto bases =
+              mpqc::lcao::gaussian::BasisVector{{*bra0, *bra1, *ket0, *ket1}};
+
+          auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
+              to_libint2_operator(ao_formula.oper().type()),
+              make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
+              libint2::BraKet::xx_xx,
+              to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
+                                         unitcell_));
+
+          auto K =
+              pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+          if (RJ == 0)
+            ao_int("mu, nu") = K("mu, lambda, nu, rho") * D("lambda, rho");
+          else
+            ao_int("mu, nu") += K("mu, lambda, nu, rho") * D("lambda, rho");
+        }
+
+        if (R == 0)
+          result_ta("p, q") = ao_int("p, q");
+        else
+          result_ta("p, q") += ao_int("p, q");
+      }
+  } else {
+    throw std::runtime_error("Operator type not supported!");
+  }
+
+  return result_ta;
 }
 
 template <typename Tile, typename Policy>

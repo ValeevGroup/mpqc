@@ -80,10 +80,8 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
       gp_ccsd_corr_energy_ = compute_gamma_point_ccsd(t1, t2);
 
       this->energy_ = ref_energy + gp_ccsd_corr_energy_;
-
-      ExEnv::out0() << "\nTotal gamma-point CCSD energy = " << this->energy_
-                    << std::endl;
     }
+
     return this->energy_;
   }
 
@@ -117,7 +115,7 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
    * \return gamma_point CCSD correlation energy
    */
   double compute_gamma_point_ccsd(TArray &t1, TArray &t2) {
-    ExEnv::out0() << "Computing conventional gamma-point MP2 ..." << std::endl;
+    ExEnv::out0() << "Computing conventional gamma-point CCSD ..." << std::endl;
 
     auto &world = this->wfn_world()->world();
     auto accurate_time = this->lcao_factory().accurate_time();
@@ -485,7 +483,7 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
                          "\n Warning!! Exceed Max Iteration! \n");
     }
 
-    ExEnv::out0() << "Gamma-Point CCSD Energy  " << E1 << std::endl;
+    ExEnv::out0() << "Gamma-Point CCSD Energy = " << E1 << std::endl;
 
     return E1;
   }

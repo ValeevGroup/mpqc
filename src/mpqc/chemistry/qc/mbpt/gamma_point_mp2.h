@@ -168,7 +168,7 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
 
       e_mp2_ = compute_gamma_point_mp2();
 
-      ExEnv::out0() << "\nTotal gamma-point MP2 energy = " << e_mp2_
+      ExEnv::out0() << "\nGamma-Point MP2 Energy = " << e_mp2_
                     << std::endl;
 
       this->energy_ = ref_energy + e_mp2_;

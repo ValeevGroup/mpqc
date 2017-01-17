@@ -265,13 +265,12 @@ zRHF::TArray zRHF::compute_density() {
     Matrixz Xt = X.transpose().conjugate();
     auto XtF = Xt * F;
     auto Ft = XtF * X;
+
     // Diagonalize F'
-    Eigen::ComplexEigenSolver<Matrixz> comp_eig_solver(Ft);
-    eps_[k] = comp_eig_solver.eigenvalues();
+    Eigen::SelfAdjointEigenSolver<Matrixz> comp_eig_solver(Ft);
+    eps_[k] = comp_eig_solver.eigenvalues().cast<std::complex<double>>();
     auto Ctemp = comp_eig_solver.eigenvectors();
     C_[k] = X * Ctemp;
-    // Sort eigenvalues and eigenvectors in ascending order
-    detail::sort_eigen(eps_[k], C_[k]);
   }
 
   Matrixz result_eig(tr0.extent(), tr1.extent());

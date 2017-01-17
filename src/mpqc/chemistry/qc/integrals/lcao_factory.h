@@ -406,6 +406,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
       result("i,q,r,s") = ao_factory("p,q,r,s") * left1("p,i");
     }
 
+
     auto left_index2 = formula_string.bra_indices()[1];
     if (left_index2.is_mo()) {
       auto& left2 = orbital_space_registry_->retrieve(left_index2);

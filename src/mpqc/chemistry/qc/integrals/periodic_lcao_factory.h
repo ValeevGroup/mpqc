@@ -331,9 +331,9 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
         auto J =
             pao_factory_.compute_integrals(this->world_, engine_pool, bases);
         if (RJ == 0)
-          ao_int("mu, nu") = J("mu, nu, lambda, rho") * D("lambda, rho");
+          ao_int("p, q") = J("p, q, r, s") * D("r, s");
         else
-          ao_int("mu, nu") += J("mu, nu, lambda, rho") * D("lambda, rho");
+          ao_int("p, q") += J("p, q, r, s") * D("r, s");
       }
 
       if (R == 0)
@@ -371,9 +371,9 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
           auto K =
               pao_factory_.compute_integrals(this->world_, engine_pool, bases);
           if (RJ == 0)
-            ao_int("mu, nu") = K("mu, lambda, nu, rho") * D("lambda, rho");
+            ao_int("p, q") = K("p, r, q, s") * D("r, s");
           else
-            ao_int("mu, nu") += K("mu, lambda, nu, rho") * D("lambda, rho");
+            ao_int("p, q") += K("p, r, q, s") * D("r, s");
         }
 
         if (R == 0)
@@ -436,6 +436,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
         auto ket0 = shift_basis_origin(*ket_basis0, vec_R);
         auto ket1 = shift_basis_origin(*ket_basis1, vec_RJ + vec_RD);
 
+        // compute as in chemists' notation
         auto bases =
             mpqc::lcao::gaussian::BasisVector{{*bra0, *ket0, *bra1, *ket1}};
         auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
@@ -447,10 +448,11 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
         auto ao_int =
             pao_factory_.compute_integrals(this->world_, engine_pool, bases);
 
+        // return as in physicists' notation
         if (sum_count == 0)
-          pao_ints("p, q, r, s") = ao_int("p, q, r, s");
+          pao_ints("p, q, r, s") = ao_int("p, r, q, s");
         else
-          pao_ints("p, q, r, s") += ao_int("p, q, r, s");
+          pao_ints("p, q, r, s") += ao_int("p, r, q, s");
 
         sum_count++;
       }
@@ -463,6 +465,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     auto &left1 = orbital_space_registry_->retrieve(left_index1);
     result("i, q, r, s") = pao_ints("p, q, r, s") * left1("p, i");
   }
+
 
   auto left_index2 = formula.bra_indices()[1];
   if (left_index2.is_mo()) {

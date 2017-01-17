@@ -1,0 +1,130 @@
+MADNESS runtime initialized with 0 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 7ae84733b2c1ca990c1fb91c22d0a72a18aa6dd2
+
+  Using fundamental constants system 2010CODATA
+OBS Basis Trange 
+( tiles = [ 0, 3 ), elements = [ 0, 7 ) )
+Min and Max block size: 1 5
+Average: 2
+
+Screen: qqr
+Threshold: 1e-20
+Precision: 2.22044604925031e-16
+
+Screen: qqr
+Threshold: 1e-20
+Precision: 2.22044604925031e-16
+
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 0]
+	Rj_max (range of Coulomb operation): [0 0 0]
+	Rd_max (Range of density representation): [0 0 0]
+
+Molecule info:
+	C.O.M:     -1.25932609634455 -0.000109460583118095    0.0160230877108331
+	Charge: 0
+	Mass: 18.01471
+
+Elements:
+	Atom: {Z: 8, mass: 15.99903, pos:   -1.3269582278103 -0.105938530313005 0.0187881522386705}
+	Atom: {Z: 1, mass: 1.00784, pos:   -1.93166523974619    1.60017431689441 -0.0217105229834564}
+	Atom: {Z: 1, mass: 1.00784, pos:   0.486644278487139  0.0795980913969628 0.00986247875437893}
+
+Unit cell info:
+	Lattice parameters (in Bohr): [               0                0 5.05002661651656]
+
+zRHF computational parameters:
+  # of k points in each direction: [1 1 1]
+
+Nuclear Repulsion: 9.15671413339663
+
+Computing One Body Integral for Periodic System: < κ |T| λ >
+ Size: 7.30156898498535e-07 GB Time: 0.001320492 s
+
+Computing One Body Integral for Periodic System: < κ |V| λ >
+ Size: 7.30156898498535e-07 GB Time: 0.005167444 s
+
+Computing One Body Integral for Periodic System: < κ | λ >
+ Size: 7.30156898498535e-07 GB Time: 0.000381355 s
+
+Building Fock Matrix from SOAD Guess ...
+
+	overlap condition number = 5.59243634140755 at k = 0
+
+ Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
+    1     -84.534259833167     -75.377545699771     -84.534259833167       0.230549025565                0.039
+    2     -83.629211383797     -74.472497250400       0.905048449370       0.024325357059                0.039
+    3     -84.154409123944     -74.997694990547      -0.525197740146       0.006541099935                0.039
+    4     -84.117375278900     -74.960661145503       0.037033845044       0.001709261657                0.034
+    5     -84.120536169233     -74.963822035837      -0.003160890334       0.000534975788                0.041
+    6     -84.120363370248     -74.963649236852       0.000172798985       0.000185643833                0.040
+    7     -84.120404781952     -74.963690648556      -0.000041411704       0.000071338237                0.032
+    8     -84.120412952403     -74.963698819006      -0.000008170450       0.000029077901                0.042
+    9     -84.120417136783     -74.963703003387      -0.000004184381       0.000012230332                0.033
+   10     -84.120418874458     -74.963704741062      -0.000001737675       0.000005224932                0.040
+   11     -84.120419628557     -74.963705495160      -0.000000754099       0.000002249834                0.033
+   12     -84.120419954540     -74.963705821143      -0.000000325983       0.000000972747                0.041
+   13     -84.120420095884     -74.963705962487      -0.000000141344       0.000000421501                0.034
+   14     -84.120420157215     -74.963706023818      -0.000000061331       0.000000182857                0.041
+   15     -84.120420183842     -74.963706050446      -0.000000026628       0.000000079380                0.037
+   16     -84.120420195407     -74.963706062010      -0.000000011564       0.000000034472                0.040
+   17     -84.120420200430     -74.963706067033      -0.000000005023       0.000000014973                0.038
+   18     -84.120420202612     -74.963706069215      -0.000000002182       0.000000006504                0.043
+   19     -84.120420203560     -74.963706070163      -0.000000000948       0.000000002826                0.033
+   20     -84.120420203972     -74.963706070575      -0.000000000412       0.000000001228                0.040
+   21     -84.120420204151     -74.963706070754      -0.000000000179       0.000000000533                0.034
+   22     -84.120420204229     -74.963706070832      -0.000000000078       0.000000000232                0.040
+   23     -84.120420204262     -74.963706070866      -0.000000000034       0.000000000101                0.043
+   24     -84.120420204277     -74.963706070880      -0.000000000015       0.000000000044                0.034
+   25     -84.120420204283     -74.963706070887      -0.000000000006       0.000000000019                0.040
+
+Periodic Hartree-Fock iterations have converged!
+
+Total Periodic Hartree-Fock energy = -74.9637060708866
+
+Time(s):
+	Init:                               0.093
+	Coulomb term:                       0.457
+	Exchange term:                      0.454
+	Real->Recip trans:                  0.006
+	Diag + Density:                     0.013
+	Total:                              0.952
+
+OccBlockSize: 1
+VirBlockSize: 24
+Obs Trange 
+( tiles = [ 0, 3 ), elements = [ 0, 7 ) )
+Min and Max block size: 1 5
+Average: 2
+
+Occ Trange 
+( tiles = [ 0, 5 ), elements = [ 0, 5 ) )
+Min and Max block size: 1 1
+Average: 1
+
+CorrOcc Trange 
+( tiles = [ 0, 5 ), elements = [ 0, 5 ) )
+Min and Max block size: 1 1
+Average: 1
+
+Vir Trange 
+( tiles = [ 0, 1 ), elements = [ 0, 2 ) )
+Min and Max block size: 2 2
+Average: 2
+
+All Trange 
+( tiles = [ 0, 3 ), elements = [ 0, 7 ) )
+Min and Max block size: 2 3
+Average: 2
+
+Computing conventional gamma-point MP2 ...
+ Transformed Gamma-Point Periodic LCAO Integral: < a b |G| i j >
+ Size: 1.49011611938477e-06 GB
+ Time: 0.022002942 s
+
+Gamma-Point MP2 Energy = -0.0359671710655845
+  Wfn energy is: -74.9996732419522

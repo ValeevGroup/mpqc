@@ -1513,7 +1513,12 @@ CADFCLHF::compute_K()
                       Eigen::OuterStride<>(tot_cols)
                   );
 
+                  // NestByValue seems to have changes irreversibily in 3.3
+#if EIGEN_WORLD_VERSION == 3 && EIGEN_MAJOR_VERSION < 3
                   RowMatrix C(Ctmp.nestByValue());
+#else
+                  RowMatrix C = Ctmp;
+#endif
                   C.resize(jsblk.nbf*ish.nbf, inner_size);
 
                   g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5

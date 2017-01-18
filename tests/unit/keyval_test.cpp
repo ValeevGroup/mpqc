@@ -194,42 +194,85 @@ TEST_CASE("KeyVal", "[keyval]") {
     REQUIRE(c3 == c1);
   }
 
-  SECTION("read complex JSON") {
-    KeyVal kv;
-
-    // clang-format off
-    const char input[] =
-"{                             \
-  \"a\": 0,                    \
-  \"b\": 1.25,                 \
-  \"base\": {                  \
-     \"type\":\"Base\",        \
-     \"value\":\"$:a\"         \
-  },                           \
-  \"nested\" : {               \
-      \"type\" : \"Nested\",   \
-      \"base\" : \"$:base\"    \
-  },                           \
-  \"deriv0\": {                \
-     \"type\":\"Derived<0>\",  \
-     \"value\":\"$:a\",        \
-     \"dvalue\":\"$:b\"        \
-  },                           \
-  \"mpqc\": {                  \
-     \"base\":\"$..:base\",    \
-     \"deriv\":\"$:deriv0\"    \
-  },                           \
-  \"a\": 1                     \
+  // clang-format off
+  const char ref_kv_input_json[] =
+"\
+{                            \
+\"a\": 0,                    \
+\"b\": 1.25,                 \
+\"base\": {                  \
+  \"type\":\"Base\",         \
+  \"value\":\"$:a\"          \
+},                           \
+\"nested\" : {               \
+  \"type\" : \"Nested\",     \
+  \"base\" : \"$:base\"      \
+},                           \
+\"deriv0\": {                \
+  \"type\":\"Derived<0>\",   \
+  \"value\":\"$:a\",         \
+  \"dvalue\":\"$:b\"         \
+},                           \
+\"mpqc\": {                  \
+  \"base\":\"$..:base\",     \
+  \"deriv\":\"$:deriv0\"     \
+},                           \
+\"a\": 1                     \
 }";
-    // clang-format on
+  const char ref_kv_input_xml[] =
+"\
+<?xml version=\"1.0\" encoding=\"utf-8\"?>   \
+<a>0</a>                                      \
+<b>1.25</b>                                   \
+<base>                                        \
+  <type>Base</type>                           \
+  <value>$:a</value>                          \
+</base>                                       \
+<nested>                                      \
+  <type>Nested</type>                         \
+  <base>$:base</base>                         \
+</nested>                                     \
+<deriv0>                                      \
+  <type>Derived&lt;0&gt;</type>               \
+  <value>$:a</value>                          \
+  <dvalue>$:b</dvalue>                        \
+  <d>0</d>                                    \
+</deriv0>                                     \
+<mpqc>                                        \
+  <base>$..:base</base>                       \
+  <deriv>$:deriv0</deriv>                     \
+</mpqc>                                       \
+<a>1</a>";
+  const char ref_kv_input_info[] =
+"\
+a 0                    \
+b 1.25                 \
+base                   \
+{                      \
+    type Base          \
+    value $:a          \
+}                      \
+nested                 \
+{                      \
+    type Nested        \
+    base $:base        \
+}                      \
+deriv0                 \
+{                      \
+    type Derived<0>    \
+    value $:a          \
+    dvalue $:b         \
+    d 0                \
+}                      \
+mpqc                   \
+{                      \
+    base $..:base      \
+    deriv $:deriv0     \
+}                      \
+a 1";
+  // clang-format on
 
-    stringstream iss(input);
-    REQUIRE_NOTHROW(kv.read_json(iss));
-
-    stringstream oss;
-    REQUIRE_NOTHROW(kv.write_json(oss));
-    // std::cout << oss.str();
-
+  auto kv_test = [](const KeyVal& kv) {
     REQUIRE(kv.value<int>("a") == 0);  // "a" specified twice, make sure
                                        // KeyVal::value gets the first
                                        // specification
@@ -254,8 +297,43 @@ TEST_CASE("KeyVal", "[keyval]") {
     kv.keyval("mpqc:deriv").assign("d",0);
     REQUIRE(kv.keyval("deriv0").exists("d"));
     REQUIRE(kv.value<int>("deriv0:d")==0);
+  };
+
+  SECTION("read complex JSON") {
+    KeyVal kv;
+
+    stringstream iss(ref_kv_input_json);
+    REQUIRE_NOTHROW(kv.read_json(iss));
+
+    stringstream oss;
+    REQUIRE_NOTHROW(kv.write_json(oss));
+
+    kv_test(kv);
   }
 
+  SECTION("read complex XML") {
+    KeyVal kv;
+
+    stringstream iss(ref_kv_input_xml);
+    REQUIRE_NOTHROW(kv.read_xml(iss));
+
+    stringstream oss;
+    REQUIRE_NOTHROW(kv.write_xml(oss));
+
+    kv_test(kv);
+  }
+
+  SECTION("read complex INFO") {
+    KeyVal kv;
+
+    stringstream iss(ref_kv_input_info);
+    REQUIRE_NOTHROW(kv.read_info(iss));
+
+    stringstream oss;
+    REQUIRE_NOTHROW(kv.write_info(oss));
+
+    kv_test(kv);
+  }
 
   SECTION("Basis Test"){
 

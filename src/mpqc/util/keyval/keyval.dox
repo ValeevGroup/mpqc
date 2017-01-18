@@ -8,9 +8,12 @@ that can be understood by the KeyVal class. MPQC version 3 and older use a custo
 for input data. MPQC4 abandoned the old format in favor of these popular industry-standard formats
 used for data exchange:
   - <a href="http://json.org/">JSON</a>,
-  - <a href="http://www.w3.org/XML/">XML</a>.
+  - <a href="http://www.w3.org/XML/">XML</a>.<br/>
+Another useful format that can be used is the <a href="http://www.boost.org/doc/libs/master/doc/html/property_tree/parsers.html#property_tree.parsers.info_parser">INFO format</a> understood by the
+Boost.PropertyTree library. It is similar to JSON, but is less verbose and
+supports comments and file inclusions.
 
-The KeyVal class is a means in a C++ program to convert such JSON or XML input to
+The KeyVal class is a means in a C++ program to convert such JSON, XML, or INFO input to
 C++ primitive data (booleans, integers, reals, string) and
 user-defined objects. For example, the following JSON,
 @verbatim
@@ -30,10 +33,10 @@ struct Atom {
 };
 @endcode
 
-KeyVal is more than just an JSON/XML importer: it is a general-purpose component
-for representing "keyword=value" associations in a flexible structured form.
+KeyVal is more than just a structured text importer: it is a general-purpose component
+for representing "keyword=value" associations in a flexible form.
 and can be used in any C++ program that needs such functionality.
-KeyVal objects can be created from JSON- or XML-formatted text, or purely programmatically.
+KeyVal objects can be created from JSON-, XML-, or INFO-formatted text, or purely programmatically.
 For brevity, only the programmatic and JSON-based methods will be illustrated here.
 
   -  \ref keyvalass
@@ -516,7 +519,7 @@ file will work.
 
 @note Both MPQC_CLASS_EXPORT_KEY() and MPQC_CLASS_EXPORT_KEY2() create a Global Unique ID (GUID)
 for the class using a mechanism similar to that of the Boost.Serialization library.
-(see <a href="http://www.boost.org/doc/libs/1_62_0/libs/serialization/doc/special.html#export">Boost docs</a>
+(see <a href="http://www.boost.org/doc/libs/master/libs/serialization/doc/special.html#export">Boost docs</a>
 for more details). However, using these macros does not make the type usable with
 Boost.Serialization, you should use the corresponding BOOST_CLASS_EXPORT() and BOOST_CLASS_EXPORT2()
 macros (in practice you are likely to need to use BOOST_CLASS_EXPORT_KEY(),

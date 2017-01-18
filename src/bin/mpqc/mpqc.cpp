@@ -119,6 +119,24 @@ int try_main(int argc, char *argv[], madness::World& world) {
   // print computation metadata
   //////////////////////////////
 
+  // the input keyval for reference
+  ExEnv::out0() << indent << "Input KeyVal (format=" << to_string(MPQCInit::instance().input_format()) << "):\n";
+  switch(MPQCInit::instance().input_format()) {
+    case MPQCInit::InputFormat::json:
+      kv->write_json(ExEnv::out0());
+      break;
+    case MPQCInit::InputFormat::xml:
+      kv->write_xml(ExEnv::out0());
+      break;
+    case MPQCInit::InputFormat::info:
+      kv->write_info(ExEnv::out0());
+      break;
+    default:
+      throw ProgrammingError("unrecognized input file format returned by MPQCInit::input_format()",
+                             __FILE__, __LINE__);
+  }
+  ExEnv::out0() << std::endl;
+
   // units
   ExEnv::out0() << indent << "Using fundamental constants system "
                 << UnitFactory::get_default()->system() << std::endl;

@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -300,7 +301,7 @@ namespace mpqc {
     KeyVal is a (sub)tree of Key=Value pairs implemented with
     <a
    href="http://theboostcpplibraries.com/boost.propertytree">Boost.PropertyTree</a>.
-    KeyVal extends the standard JSON/XML syntax to allow references as well as
+    KeyVal extends the standard JSON/XML/INFO syntax to allow references as well as
     specification of registered C++ objects. See \ref keyval for the rationale,
    examples,
     and other details.
@@ -618,6 +619,12 @@ class KeyVal {
     return std::dynamic_pointer_cast<T>(result);
   }
 
+  /// read/write KeyVal specified in one of accepted Boost.PropertyTree formats (see
+  /// <a
+  /// href="http://www.boost.org/doc/libs/master/doc/html/property_tree/parsers.html">Boost.PropertyTree
+  /// docs</a>)
+  /// @{
+
   /// write to stream in XML form
   void write_xml(std::basic_ostream<typename key_type::value_type>& os) const {
     boost::property_tree::xml_parser::write_xml(os, *(tree()));
@@ -635,6 +642,16 @@ class KeyVal {
   void read_json(std::basic_istream<key_type::value_type>& is) {
     boost::property_tree::json_parser::read_json(is, *(tree()));
   }
+
+  /// write to stream in INFO form
+  void write_info(std::basic_ostream<typename key_type::value_type>& os) const {
+    boost::property_tree::info_parser::write_info(os, *(tree()));
+  }
+  /// write from stream in INFO form
+  void read_info(std::basic_istream<typename key_type::value_type>& is) {
+    boost::property_tree::info_parser::read_info(is, *(tree()));
+  }
+  /// @}
 
  private:
   std::shared_ptr<ptree> top_tree_;

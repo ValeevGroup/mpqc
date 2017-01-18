@@ -19,19 +19,27 @@ sections:
  <li> \ref mpqcooover
  <li> \ref mpqcoowalk
  <li> \ref mpqcoosamp
+ <li> \ref mpqcoononjson
 </ul>
 
 \section mpqcooover Overview of the Object-Oriented Input
 
 MPQC starts off by creating a KeyVal object that parses the
-input file specified on the command line. MPQC input can be specified
-in one of two industry-standard formats: JSON and XML.
-(in practice we recommend using JSON since it is less verbose
-than XML). The format of the input file
-is documented in the KeyVal documentation\if html (see \ref keyval)\endif.
-The MPQC JSON input that associates keywords and logical groupings of keywords
-with values.  The values can be scalars, arrays, or objects. The keywords
-are organized in a hierarchy
+input file specified on the command line.
+The MPQC input associates keywords with values.
+The values can be scalars, arrays, or groups of keyword/value
+pairs. The latter feature allows to create a hierarchy of keyword/value pairs
+so that each keyword has an absolute path describing its location in a hierarchy.
+The details of MPQC input are documented in the
+KeyVal documentation\if html (see \ref keyval)\endif.
+
+MPQC input can be specified
+in one of two industry-standard formats, JSON and XML, as well as
+the non-standard INFO format developed for the Boost.PropertyTree library.
+In practice we recommend using JSON since it is less verbose
+than XML and, unlike the INFO format, can be manipulated from most programming languages.
+Thus the rest of this document will focus on JSON only; \ref mpqcoononjson
+illustrates the correspondence between JSON, XML, and INFO formats.
 
 The keywords recognized by MPQC are located at the top prefix.  That is, they
 must be nested between the top-level curly brakets.  The primary
@@ -241,6 +249,71 @@ inputs that most nearly matches your problem.  The
 <ul>
   <li> none yet
 </ul>
+
+\section mpqcoononjson Specifying MPQC Input in XML and INFO formats
+
+The correspondence between JSON, XML, and INFO formats is best demonstrated by
+example. The following JSON input (used as the example in \ref mpqcoowalk )
+
+```
+{
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
+  },
+  "wfn":{
+    "type": "RHF",
+    "molecule" : "$:molecule",
+    "basis" : "$:basis"
+  },
+  "molecule": {
+    "file_name": "water.xyz"
+  },
+  "basis": {
+    "name": "aug-cc-pVDZ",
+    "molecule": "$:molecule"
+  }
+}
+```
+is expressed in XML as
+```
+<?xml version="1.0" encoding="utf-8"?>
+<property>
+  <type>Energy</type>
+  <wfn>$:wfn</wfn>
+</property>
+<wfn>
+  <type>RHF</type>
+  <molecule>$:molecule</molecule>
+  <basis>$:basis</basis>
+</wfn>
+<molecule>
+  <file_name>water.xyz</file_name>
+</molecule>
+<basis>
+  <name>aug-cc-pVDZ</name>
+  <molecule>$:molecule</molecule>
+</basis>
+```
+It is expressed in the INFO format as
+```
+property {
+  type Energy
+  wfn  $:wfn
+}
+wfn {
+  type RHF
+  molecule $:molecule
+  basis $:basis
+}
+molecule {
+  file_name water.xyz
+}
+basis {
+  name aug-cc-pVDZ
+  molecule $:molecule
+}
+```
 
 */
 

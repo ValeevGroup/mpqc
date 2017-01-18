@@ -47,14 +47,13 @@ void finalize();
  * \note this object is meant to be manipulated by 1 (usually, main) thread.
  */
 class MPQCInit {
-  std::shared_ptr<GetLongOpt> opt_;
-  char **argv_;
-  int &argc_;
-
-  /// the unique instance
-  static std::unique_ptr<MPQCInit> instance_;
-
  public:
+  /// the format of the input file, described in
+  /// <a
+  /// href="http://www.boost.org/doc/libs/master/doc/html/property_tree/parsers.html">Boost.PropertyTree
+  /// docs</a>.
+  enum class InputFormat { invalid, json, xml, info };
+
   ~MPQCInit();
 
   /// \return the reference to the only instance of this object
@@ -69,6 +68,7 @@ class MPQCInit {
   std::shared_ptr<const GetLongOpt> opt() const {
     return std::const_pointer_cast<const GetLongOpt, GetLongOpt>(opt_);
   }
+  InputFormat input_format() const { return input_format_; }
 
   /// Creates the KeyVal object from the contents of file \c filename .
   /// The file will be read by one of the processes in \c world and broadcast to
@@ -82,6 +82,14 @@ class MPQCInit {
                     const std::string &output_filename = "");
 
  private:
+  std::shared_ptr<GetLongOpt> opt_;
+  char **argv_;
+  int &argc_;
+  InputFormat input_format_;
+
+  /// the unique instance
+  static std::unique_ptr<MPQCInit> instance_;
+
   friend void ::mpqc::initialize(int &argc, char **argv,
                                  const madness::World &world,
                                  std::shared_ptr<GetLongOpt> opt);
@@ -116,6 +124,20 @@ class MPQCInit {
   void init(const std::string &input_filename,
             const std::string &output_filename = "");
 };
+
+inline std::string
+to_string(MPQCInit::InputFormat f) {
+  switch(f) {
+    case MPQCInit::InputFormat::json:
+      return "JSON";
+    case MPQCInit::InputFormat::xml:
+      return "XML";
+    case MPQCInit::InputFormat::info:
+      return "INFO";
+    default:
+      return "invalid";
+  }
+}
 
 /// \brief Creates a default options parser object for an MPQC executable
 ///

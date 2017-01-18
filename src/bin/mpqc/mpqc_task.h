@@ -44,12 +44,12 @@ class MPQCTask {
     // Energy Property
     // TODO auto detect Property type
     // TODO need to loop over property
-    auto property = keyval_->keyval("property").class_ptr<mpqc::Property>();
+    auto property = keyval_->keyval("property").class_ptr<Property>();
 
-    if(property!= nullptr){
+    if (property != nullptr) {
       property->evaluate();
-    } else{
-      throw InputError("property keyword was not correct from input! ",__FILE__, __LINE__);
+    } else {
+      throw InputError("invalid property", __FILE__, __LINE__, "property");
     }
 
     // TODO need to assign result to KeyVal

@@ -485,6 +485,8 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     result("p, q, r, i") = result("p, q, r, s") * right2("s, i");
   }
 
+  result("p, q, r, s") = (1.0 / double(R_size_)) * result("p, q, r, s");
+
   result.truncate();
 
   mpqc::time_point time1 = mpqc::now(this->world_, this->accurate_time_);

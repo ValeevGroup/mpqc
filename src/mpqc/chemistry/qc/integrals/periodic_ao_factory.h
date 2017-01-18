@@ -262,6 +262,9 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
   /// @return the cardinal number of lattices included in density representation
   int64_t RD_size() { return RD_size_; }
 
+  /// @return UnitCell object
+  UnitCell &unitcell() {return *unitcell_;}
+
   /*!
    * \brief This sets the density for coulomb and exchange computations
    * in PeriodicAOFactory

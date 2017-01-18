@@ -190,7 +190,7 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
   void init() {
     auto nk = ref_wfn_->nk();
     auto k_size = 1 + detail::k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
-    auto unitcell = this->lcao_factory().pao_factory().molecule();
+    auto unitcell = this->lcao_factory().pao_factory().unitcell();
 
     int64_t gamma_point;
     if (k_size % 2 == 1)
@@ -222,6 +222,18 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
     std::complex<double> e_complex = TA::dot(
         2.0 * g_abij("a, b, i, j") - g_abij("b, a, i, j"), t2("a, b, i, j"));
     double e_mp2 = e_complex.real();
+
+    Vector3d dcell = this->lcao_factory().pao_factory().unitcell().dcell();
+    int64_t R_size = this->lcao_factory().pao_factory().R_size();
+
+    // Volume of first Brillouin zone
+    double volume = 1.0;
+    for (auto d = 0; d < 3; ++d) {
+        volume *= (dcell(d) == 0.0) ? 1.0 : (2.0 * M_PI / dcell(d));
+    }
+
+    // MP2 energy per unit cell
+    e_mp2 = e_mp2 * std::pow(volume, 3) / R_size;
 
     return e_mp2;
   }

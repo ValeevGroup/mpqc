@@ -34,6 +34,17 @@ namespace mpqc {
 
         return t2_abij;
       }
+
+      inline void print_ccsd(int iter, double dE,
+                             double error, double error_r1, double error_r2,
+                             double E1, double time) {
+        if (iter == 0) {
+          std::printf("%3s \t %10s \t %10s \t %12s \t %12s \t %15s \t %10s \n", "iter", "deltaE",
+                      "residual", "norm (r1)", "norm (r2)", "energy", "total time/s");
+        }
+        std::printf("%3i \t %10.5e \t %10.5e \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n",
+                    iter, dE, error, error_r1, error_r2, E1, time);
+      }
     }
 
     /**
@@ -558,6 +569,9 @@ namespace mpqc {
                   tau("a,b,i,j"));
           dE = std::abs(E0 - E1);
 
+          double error_r1 = r1("a,i").norm().get();
+          double error_r2 = r2("a,b,i,j").norm().get();
+
           if (dE >= this->converge_ || error >= this->converge_) {
               tmp_time0 = mpqc::now(world, accurate_time);
               cc::T1T2<double, Tile, Policy> t(t1, t2);
@@ -585,7 +599,7 @@ namespace mpqc {
               auto duration = mpqc::duration_in_s(time0, time1);
 
               if (world.rank() == 0) {
-                  detail::print_ccsd(iter, dE, error, E1, duration);
+                  detail::print_ccsd(iter, dE, error, error_r1, error_r2, E1, duration);
               }
 
               iter += 1ul;
@@ -594,7 +608,7 @@ namespace mpqc {
               auto duration = mpqc::duration_in_s(time0, time1);
 
               if (world.rank() == 0) {
-                  detail::print_ccsd(iter, dE, error, E1, duration);
+                  detail::print_ccsd(iter, dE, error, error_r1, error_r2, E1, duration);
               }
 
               break;
@@ -655,10 +669,9 @@ namespace mpqc {
                            * occ_convert("i,k") * occ_convert("j,l");
 
       // compute the difference between original T2 and reconstructed T2 from PNO
-      TA::DistArray<Tile, Policy> diff_t2;
-      diff_t2("a,b,i,j") = t2_mp2_old("a,b,i,j") - t2_mp2_("a,b,i,j");
-//      ExEnv::out0() << std::endl << "test: t2 - t2(reblock back): "
-//                                 << diff_t2 << std::endl;
+      ExEnv::out0() << std::endl << "Test: t2 - t2(reblock back): "
+                                 << (t2_mp2_old("a,b,i,j") - t2_mp2_("a,b,i,j")).norm().get()
+                                 << std::endl << std::endl;
 
       // compute CCSD with PNO reconstructed t2 as initial value
       TA::DistArray<Tile, Policy> t1, t2;

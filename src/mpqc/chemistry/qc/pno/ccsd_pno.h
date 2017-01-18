@@ -12,8 +12,9 @@
 #include <sstream>
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/scf/mo_build.h"
+#include "mpqc/chemistry/qc/cc/ccsd.h"
 #include "mpqc/chemistry/qc/mbpt/denom.h"
+#include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 
@@ -27,25 +28,26 @@ namespace lcao {
    */
 
   template <typename Tile, typename Policy>
-  class CCSD_PNO : public LCAOWavefunction<Tile, Policy> {
+  class CCSD_PNO : public CCSD<Tile, Policy> {
 
   private:
-   //const KeyVal kv_;
-   bool df_;
    double tcut_;
-   std::shared_ptr<Wavefunction> ref_wfn_;
    TA::DistArray<Tile, Policy>  t2_mp2_;
-
-   void init();
 
    // compute MP2 T2 amplitudes
    void compute_mp2_t2();
+   // reblock MP2 T2
+//   void reblock();
    // compute the occ and vir matrices for reblocking T2
    void compute_M_reblock(TA::DistArray<Tile, Policy> &occ_convert,
                           TA::DistArray<Tile, Policy> &vir_convert);
    // svd decompostion of T2
    void pno_decom();
 
+   // compute CCSD T2 amplitudes from PNO constructed T2
+   // based on Chong's compute_ccsd_df(TArray &t1, TArray &t2) function
+   double compute_ccsdpno_df(TA::DistArray<Tile, Policy> &t1,
+                             TA::DistArray<Tile, Policy> &t2);
 
   public:
    CCSD_PNO() = default;

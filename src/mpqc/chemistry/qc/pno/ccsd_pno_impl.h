@@ -48,14 +48,7 @@ namespace mpqc {
      * | df      | bool | false  | choice of using density fitting
      */
     template<typename Tile, typename Policy>
-    CCSD_PNO<Tile, Policy>::CCSD_PNO(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv) {
-      if (kv.exists("ref")) {
-        ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
-      } else {
-        throw std::invalid_argument("Default Ref Wfn in CCSD is not support! \n");
-      }
-
-      df_ = kv.value<bool>("df", false);
+    CCSD_PNO<Tile, Policy>::CCSD_PNO(const KeyVal &kv): CCSD<Tile, Policy>(kv) {
       tcut_ = kv.value<double>("tcut", 1e-6);
     }
 
@@ -65,26 +58,54 @@ namespace mpqc {
     }
 
     template<typename Tile, typename Policy>
-    void CCSD_PNO<Tile, Policy>::init() {
-      if (this->trange1_engine_ == nullptr || this->orbital_energy_ == nullptr) {
-        auto mol = this->lcao_factory().ao_factory().molecule();
-        Eigen::VectorXd orbital_energy;
-        this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(this->lcao_factory(),
-                                                                      orbital_energy, mol,
-                                                                      this->is_frozen_core(),
-                                                                      this->occ_block(),
-                                                                      this->unocc_block());
-        this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
-      }
-    }
-
-    template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::compute_mp2_t2() {
 
       auto &lcao_factory = this->lcao_factory();
       t2_mp2_ = detail::compute_mp2_t2(lcao_factory, this->orbital_energy(),
-                                    this->trange1_engine(), df_);
+                                       this->trange1_engine(), this->df_);
     }
+
+//    template<typename Tile, typename Policy>
+//    void CCSD_PNO<Tile, Policy>::reblock() {
+//
+//      auto &lcao_factory = this->lcao_factory();
+//      auto &world = lcao_factory.world();
+//
+//      std::size_t occ = this->trange1_engine()->get_occ();
+//      std::size_t vir = this->trange1_engine()->get_vir();
+//      std::size_t all = this->trange1_engine()->get_all();
+//      std::size_t n_frozen = this->trange1_engine()->get_nfrozen();
+//
+//      std::size_t b_occ = 1;
+//      std::size_t b_vir = vir;
+//
+//      TA::TiledRange1 old_occ = this->trange1_engine()->get_active_occ_tr1();
+//      TA::TiledRange1 old_vir = this->trange1_engine()->get_vir_tr1();
+//
+//      auto new_tr1 =
+//          std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
+//
+//      TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
+//      TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
+//
+//      mpqc::detail::parallel_print_range_info(world, new_occ, "CCSD-PNO Occ");
+//      mpqc::detail::parallel_print_range_info(world, new_vir, "CCSD-PNO Vir");
+//
+//      TA::DistArray<Tile, Policy> occ_convert =
+//          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+//              world, old_occ, new_occ, 1.0);
+//
+//      TA::DistArray<Tile, Policy> vir_convert =
+//          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+//              world, old_vir, new_vir, 1.0);
+//
+//      // obtain t2 with new blocking structure
+//      t2_mp2_("a,b,i,j") = t2_mp2_("c,d,k,l")
+//                           * vir_convert("c,a") * vir_convert("d,b")
+//                           * occ_convert("k,i") * occ_convert("l,j");
+//
+//
+//    }
 
     // occ_convert(old_i, new_i), vir_convert(old_a, new_a)
     template<typename Tile, typename Policy>
@@ -94,16 +115,16 @@ namespace mpqc {
       auto &lcao_factory = this->lcao_factory();
       auto &world = lcao_factory.world();
 
-      std::size_t occ = this->trange1_engine_->get_occ();
-      std::size_t vir = this->trange1_engine_->get_vir();
-      std::size_t all = this->trange1_engine_->get_all();
-      std::size_t n_frozen = this->trange1_engine_->get_nfrozen();
+      std::size_t occ = this->trange1_engine()->get_occ();
+      std::size_t vir = this->trange1_engine()->get_vir();
+      std::size_t all = this->trange1_engine()->get_all();
+      std::size_t n_frozen = this->trange1_engine()->get_nfrozen();
 
       std::size_t occ_blk_size = 1;
       std::size_t vir_blk_size = vir;
 
-      TA::TiledRange1 old_occ = this->trange1_engine_->get_active_occ_tr1();
-      TA::TiledRange1 old_vir = this->trange1_engine_->get_vir_tr1();
+      TA::TiledRange1 old_occ = this->trange1_engine()->get_active_occ_tr1();
+      TA::TiledRange1 old_vir = this->trange1_engine()->get_vir_tr1();
 
       auto new_tr1 =
           std::make_shared<TRange1Engine>(occ, all, occ_blk_size, vir_blk_size, n_frozen);
@@ -124,7 +145,7 @@ namespace mpqc {
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::pno_decom() {
 
-      integer vir = this->trange1_engine_->get_vir();
+      integer vir = this->trange1_engine()->get_vir();
       double threshold = tcut_;
       ExEnv::out0() << "tcut is " << tcut_ << std::endl;
 
@@ -178,7 +199,7 @@ namespace mpqc {
         std::size_t rank = 0;
         for(; rank < x; ++rank) {
           // check s for the truncation threshold
-          if(s.get()[rank] < threshold)
+          if(std::abs(s.get()[rank]) < threshold)
             break;
 
           // fold s into u_ab:
@@ -209,6 +230,387 @@ namespace mpqc {
     }
 
     template<typename Tile, typename Policy>
+    double CCSD_PNO<Tile, Policy>::compute_ccsdpno_df(TA::DistArray<Tile, Policy> &t1,
+                                                      TA::DistArray<Tile, Policy> &t2) {
+
+      using TArray = TA::DistArray<Tile, Policy>;
+
+      auto &world = this->wfn_world()->world();
+      bool accurate_time = this->lcao_factory().accurate_time();
+
+      auto n_occ = this->trange1_engine()->get_occ();
+      auto n_frozen = this->trange1_engine()->get_nfrozen();
+
+      if (world.rank() == 0) {
+          std::cout << "Use DF CCSD Compute" << std::endl;
+      }
+
+      auto tmp_time0 = mpqc::now(world, accurate_time);
+      // get all two electron integrals
+      TArray g_abij = this->get_abij();
+      TArray g_ijkl = this->get_ijkl();
+      TArray g_abcd = this->get_abcd();
+      TArray X_ai = this->get_Xai();
+      TArray g_iajb = this->get_iajb();
+      TArray g_iabc = this->get_iabc();
+      TArray g_aibc = this->get_aibc();
+      TArray g_ijak = this->get_ijak();
+      TArray g_ijka = this->get_ijka();
+      auto tmp_time1 = mpqc::now(world, accurate_time);
+      auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+      if (this->print_detail_) {
+          mpqc::utility::print_par(world, "Integral Prepare Time: ", tmp_time,
+                                   "\n");
+      }
+
+      TArray f_ai = this->get_fock_ai();
+
+      // store d1 to local
+      TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(),
+                                           *this->orbital_energy(), n_occ, n_frozen);
+
+      // initial value for t1
+      t1("a,i") = f_ai("a,i") * d1("a,i");
+      t1.truncate();
+
+      // intitial value for t2 is PNO constructed t2
+
+      TArray tau;
+      tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+
+      double E0 = 0.0;
+      double E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
+                  TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"), tau("a,b,i,j"));
+      double mp2 = E1;
+      double dE = std::abs(E1 - E0);
+
+      mpqc::utility::print_par(world, "MP2 Energy      ", mp2, "\n");
+
+      // optimize t1 and t2
+      std::size_t iter = 0ul;
+      double error = 1.0;
+      TArray r1;
+      TArray r2;
+
+//      bool less = this->kv_.value<bool>("less_memory", false);
+      bool less = false;
+
+      if (world.rank() == 0) {
+          std::cout << "Start Iteration" << std::endl;
+          std::cout << "Max Iteration: " << this->max_iter_ << std::endl;
+          std::cout << "Convergence: " << this->converge_ << std::endl;
+          std::cout << "AccurateTime: " << accurate_time << std::endl;
+          std::cout << "PrintDetail: " << this->print_detail_ << std::endl;
+          if (less) {
+              std::cout << "Less Memory Approach: Yes" << std::endl;
+          } else {
+              std::cout << "Less Memory Approach: No" << std::endl;
+          }
+      }
+
+      auto diis = this->get_diis(world);
+
+      while (iter < this->max_iter_) {
+          // start timer
+          auto time0 = mpqc::fenced_now(world);
+          TArray::wait_for_lazy_cleanup(world);
+
+          auto t1_time0 = mpqc::now(world, accurate_time);
+          TArray h_ki, h_ac;
+          {
+              // intermediates for t1
+              // external index i and a
+              // vir index a b c d
+              // occ index i j k l
+              TArray h_kc;
+
+              // compute residual r1(n) = t1(n+1) - t1(n)
+              // external index i and a
+              tmp_time0 = mpqc::now(world, accurate_time);
+              r1("a,i") = f_ai("a,i") - 2.0 * f_ai("c,k") * t1("c,i") * t1("a,k");
+
+              {
+                  h_ac("a,c") =
+                  -(2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
+                  r1("a,i") += h_ac("a,c") * t1("c,i");
+              }
+
+              {
+                  h_ki("k,i") =
+                  (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
+                  r1("a,i") -= t1("a,k") * h_ki("k,i");
+              }
+
+              {
+                  h_kc("k,c") =
+                  f_ai("c,k") +
+                  (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t1("d,l");
+                  r1("a,i") += h_kc("k,c") * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") +
+                                              t1("c,i") * t1("a,k"));
+              }
+
+              tmp_time1 = mpqc::now(world, accurate_time);
+              tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+              if (this->print_detail_) {
+                  mpqc::utility::print_par(world, "t1 h term time: ", tmp_time, "\n");
+              }
+
+              tmp_time0 = mpqc::now(world, accurate_time);
+              r1("a,i") += (2.0 * g_abij("c,a,k,i") - g_iajb("k,a,i,c")) * t1("c,k");
+
+              r1("a,i") +=
+              (2.0 * g_iabc("k,a,c,d") - g_iabc("k,a,d,c")) * tau("c,d,k,i");
+
+              r1("a,i") -=
+              (2.0 * g_ijak("k,l,c,i") - g_ijak("l,k,c,i")) * tau("c,a,k,l");
+
+              r1("a,i") *= d1("a,i");
+
+              r1("a,i") -= t1("a,i");
+
+              tmp_time1 = mpqc::now(world, accurate_time);
+              tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+              if (this->print_detail_) {
+                  mpqc::utility::print_par(world, "t1 other time: ", tmp_time, "\n");
+              }
+          }
+          auto t1_time1 = mpqc::now(world, accurate_time);
+          auto t1_time = mpqc::duration_in_s(t1_time0, t1_time1);
+          if (this->print_detail_) {
+              mpqc::utility::print_par(world, "t1 total time: ", t1_time, "\n");
+          }
+
+          // intermediates for t2
+          // external index i j a b
+
+          auto t2_time0 = mpqc::now(world, accurate_time);
+
+          // compute residual r2(n) = t2(n+1) - t2(n)
+
+          // permutation part
+          tmp_time0 = mpqc::now(world, accurate_time);
+
+          {
+              r2("a,b,i,j") =
+              (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
+
+              r2("a,b,i,j") -=
+              (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
+          }
+          tmp_time1 = mpqc::now(world, accurate_time);
+          tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+          if (this->print_detail_) {
+              mpqc::utility::print_par(world, "t2 other time: ", tmp_time, "\n");
+          }
+
+          tmp_time0 = mpqc::now(world, accurate_time);
+          {
+              // compute g intermediate
+              TArray g_ki, g_ac;
+
+              g_ki("k,i") = h_ki("k,i") + f_ai("c,k") * t1("c,i") +
+              (2.0 * g_ijka("k,l,i,c") - g_ijka("l,k,i,c")) * t1("c,l");
+
+              g_ac("a,c") = h_ac("a,c") - f_ai("c,k") * t1("a,k") +
+              (2.0 * g_aibc("a,k,c,d") - g_aibc("a,k,d,c")) * t1("d,k");
+
+              r2("a,b,i,j") +=
+              g_ac("a,c") * t2("c,b,i,j") - g_ki("k,i") * t2("a,b,k,j");
+          }
+          tmp_time1 = mpqc::now(world, accurate_time);
+          tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+          if (this->print_detail_) {
+              mpqc::utility::print_par(world, "t2 g term time: ", tmp_time, "\n");
+          }
+
+          tmp_time0 = mpqc::now(world, accurate_time);
+          {
+              TArray j_akic;
+              TArray k_kaic;
+              // compute j and k intermediate
+              {
+                  TArray T;
+
+                  T("d,b,i,l") = 0.5 * t2("d,b,i,l") + t1("d,i") * t1("b,l");
+
+                  j_akic("a,k,i,c") = g_abij("a,c,i,k");
+
+                  j_akic("a,k,i,c") -= g_ijka("l,k,i,c") * t1("a,l");
+
+                  j_akic("a,k,i,c") += g_aibc("a,k,d,c") * t1("d,i");
+
+                  j_akic("a,k,i,c") -= X_ai("x,d,l") * T("d,a,i,l") * X_ai("x,c,k");
+
+                  j_akic("a,k,i,c") += 0.5 *
+                  (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) *
+                  t2("a,d,i,l");
+
+                  k_kaic("k,a,i,c") = g_iajb("k,a,i,c")
+
+                  - g_ijka("k,l,i,c") * t1("a,l")
+
+                  + g_iabc("k,a,d,c") * t1("d,i")
+
+                  - g_abij("d,c,k,l") * T("d,a,i,l");
+                  if (this->print_detail_) {
+                      mpqc::detail::print_size_info(T, "T");
+                      mpqc::detail::print_size_info(j_akic, "J_akic");
+                      mpqc::detail::print_size_info(k_kaic, "K_kaic");
+                  }
+              }
+
+              r2("a,b,i,j") += 0.5 * (2.0 * j_akic("a,k,i,c") - k_kaic("k,a,i,c")) *
+              (2.0 * t2("c,b,k,j") - t2("b,c,k,j"));
+
+              r2("a,b,i,j") += -0.5 * k_kaic("k,a,i,c") * t2("b,c,k,j") -
+              k_kaic("k,b,i,c") * t2("a,c,k,j");
+          }
+          tmp_time1 = mpqc::now(world, accurate_time);
+          tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+          if (this->print_detail_) {
+              mpqc::utility::print_par(world, "t2 j,k term time: ", tmp_time, "\n");
+          }
+
+          // perform the permutation
+          r2("a,b,i,j") = r2("a,b,i,j") + r2("b,a,j,i");
+
+          r2("a,b,i,j") += g_abij("a,b,i,j");
+
+          tmp_time0 = mpqc::now(world, accurate_time);
+          {
+              TArray a_klij;
+              // compute a intermediate
+              a_klij("k,l,i,j") = g_ijkl("k,l,i,j");
+
+              a_klij("k,l,i,j") += g_ijka("k,l,i,c") * t1("c,j");
+
+              a_klij("k,l,i,j") += g_ijak("k,l,c,j") * t1("c,i");
+
+              a_klij("k,l,i,j") += g_abij("c,d,k,l") * tau("c,d,i,j");
+
+              r2("a,b,i,j") += a_klij("k,l,i,j") * tau("a,b,k,l");
+
+              if (this->print_detail_) {
+                  mpqc::detail::print_size_info(a_klij, "A_klij");
+              }
+          }
+          tmp_time1 = mpqc::now(world, accurate_time);
+          tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+          if (this->print_detail_) {
+              mpqc::utility::print_par(world, "t2 a term time: ", tmp_time, "\n");
+          }
+
+          tmp_time0 = mpqc::now(world, accurate_time);
+          {
+              // compute b intermediate
+              if (less) {
+                  // avoid store b_abcd
+                  TArray b_abij;
+                  b_abij("a,b,i,j") = g_abcd("a,b,c,d") * tau("c,d,i,j");
+
+                  b_abij("a,b,i,j") -= g_aibc("a,k,c,d") * tau("c,d,i,j") * t1("b,k");
+
+                  b_abij("a,b,i,j") -= g_iabc("k,b,c,d") * tau("c,d,i,j") * t1("a,k");
+
+                  if (this->print_detail_) {
+                      mpqc::detail::print_size_info(b_abij, "B_abij");
+                  }
+
+                  r2("a,b,i,j") += b_abij("a,b,i,j");
+              } else {
+                  TArray b_abcd;
+
+                  b_abcd("a,b,c,d") = g_abcd("a,b,c,d") -
+                  g_aibc("a,k,c,d") * t1("b,k") -
+                  g_iabc("k,b,c,d") * t1("a,k");
+
+                  if (this->print_detail_) {
+                      mpqc::detail::print_size_info(b_abcd, "B_abcd");
+                  }
+
+                  r2("a,b,i,j") += b_abcd("a,b,c,d") * tau("c,d,i,j");
+              }
+          }
+          tmp_time1 = mpqc::now(world, accurate_time);
+          tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+          if (this->print_detail_) {
+              mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
+          }
+
+          d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+
+          r2("a,b,i,j") -= t2("a,b,i,j");
+
+          t1("a,i") = t1("a,i") + r1("a,i");
+          t2("a,b,i,j") = t2("a,b,i,j") + r2("a,b,i,j");
+          t1.truncate();
+          t2.truncate();
+
+          auto t2_time1 = mpqc::now(world, accurate_time);
+          auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
+          if (this->print_detail_) {
+              mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
+          }
+          // recompute energy
+          E0 = E1;
+          E1 = 2.0 * TA::dot(f_ai("a,i"), t1("a,i")) +
+          TA::dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")),
+                  tau("a,b,i,j"));
+          dE = std::abs(E0 - E1);
+
+          if (dE >= this->converge_ || error >= this->converge_) {
+              tmp_time0 = mpqc::now(world, accurate_time);
+              cc::T1T2<double, Tile, Policy> t(t1, t2);
+              cc::T1T2<double, Tile, Policy> r(r1, r2);
+              error = r.norm() / size(t);
+              diis.extrapolate(t, r);
+
+              // update t1 and t2
+              t1("a,i") = t.first("a,i");
+              t2("a,b,i,j") = t.second("a,b,i,j");
+
+              if (this->print_detail_) {
+                  mpqc::detail::print_size_info(r2, "R2");
+                  mpqc::detail::print_size_info(t2, "T2");
+              }
+
+              tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+              tmp_time1 = mpqc::now(world, accurate_time);
+              tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
+              if (this->print_detail_) {
+                  mpqc::utility::print_par(world, "diis time: ", tmp_time, "\n");
+              }
+
+              auto time1 = mpqc::fenced_now(world);
+              auto duration = mpqc::duration_in_s(time0, time1);
+
+              if (world.rank() == 0) {
+                  detail::print_ccsd(iter, dE, error, E1, duration);
+              }
+
+              iter += 1ul;
+          } else {
+              auto time1 = mpqc::fenced_now(world);
+              auto duration = mpqc::duration_in_s(time0, time1);
+
+              if (world.rank() == 0) {
+                  detail::print_ccsd(iter, dE, error, E1, duration);
+              }
+
+              break;
+          }
+      }
+      if (iter >= this->max_iter_) {
+          utility::print_par(this->wfn_world()->world(),
+                             "\n Warning!! Exceed Max Iteration! \n");
+      }
+      if (world.rank() == 0) {
+          std::cout << "CCSD Energy  " << E1 << std::endl;
+      }
+      return E1;
+    }
+
+    template<typename Tile, typename Policy>
     double CCSD_PNO<Tile, Policy>::value()  {
 
       auto &world = this->wfn_world()->world();
@@ -216,22 +618,25 @@ namespace mpqc {
       double time;
       auto time0 = mpqc::fenced_now(world);
 
-      double ref_energy = ref_wfn_->value();
+      double ref_energy = this->ref_wfn_->value();
 
       auto time1 = mpqc::fenced_now(world);
       time = mpqc::duration_in_s(time0, time1);
       utility::print_par(world, "Total Ref Time: ", time, " S \n");
 
       // initialize
-      init();
+      this->init();
 
       // compute MP2 amplitudes
       ExEnv::out0() << std::endl << "Computing MP2 amplitudes" << std::endl;
       compute_mp2_t2();
 //      ExEnv::out0() << "MP2 amplitudes: " << t2_mp2_ << std::endl;
+      TA::DistArray<Tile, Policy> t2_mp2_old = t2_mp2_.clone();
 
       // reblock MP2 amplitudes
+      // in each block: i=j=1, a=b=nvir
       ExEnv::out0() << std::endl << "Reblocking MP2 amplitudes" << std::endl;
+//      reblock();
       TA::DistArray<Tile, Policy> occ_convert, vir_convert;
       compute_M_reblock(occ_convert, vir_convert);
       // obtain t2 with new blocking structure
@@ -243,7 +648,24 @@ namespace mpqc {
       // pno decomposition
       ExEnv::out0() << std::endl << "Doing PNO decomposition (SVD of MP2 amplitudes)" << std::endl;
       pno_decom();
-      double energy = ref_energy;
+
+      // transform the MP2 amplitudes into its original blocking
+      t2_mp2_("a,b,i,j") = t2_mp2_("c,d,k,l")
+                           * vir_convert("a,c") * vir_convert("b,d")
+                           * occ_convert("i,k") * occ_convert("j,l");
+
+      // compute the difference between original T2 and reconstructed T2 from PNO
+      TA::DistArray<Tile, Policy> diff_t2;
+      diff_t2("a,b,i,j") = t2_mp2_old("a,b,i,j") - t2_mp2_("a,b,i,j");
+//      ExEnv::out0() << std::endl << "test: t2 - t2(reblock back): "
+//                                 << diff_t2 << std::endl;
+
+      // compute CCSD with PNO reconstructed t2 as initial value
+      TA::DistArray<Tile, Policy> t1, t2;
+      t2 = t2_mp2_.clone();
+      double ccsd_energy = compute_ccsdpno_df(t1,t2);
+
+      double energy = ref_energy + ccsd_energy;
 
       return energy;
     }

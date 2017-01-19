@@ -137,8 +137,11 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
   /// return crystal orbital energies
   VectorzVec co_energy() override { return eps_; }
 
-  /// return # of k points
+  /// return # of k points in each direction
   Vector3i nk() override { return nk_; }
+
+  /// return the cardinal number of k points
+  int64_t k_size() override { return k_size_; }
 
  private:
   /*!

@@ -352,6 +352,7 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
       RD_size_;  ///> cardinal # of lattices included in density representation
 
   bool print_detail_;  ///> if true, print a lot more details
+  FormulaRegistry<TArray> ao_formula_registry_;
 };
 
 template <typename Tile, typename Policy>
@@ -368,6 +369,18 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
   BasisVector bs_array;
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   double size = 0.0;
+
+  // retrieve the integral if it is in registry
+  auto iter = ao_formula_registry_.find(formula);
+
+  if (iter != ao_formula_registry_.end()) {
+      result = *(iter->second);
+      utility::print_par(this->world_, "Retrieved Periodic AO Integral: ",
+                         utility::to_string(formula.string()));
+      double size = mpqc::detail::array_size(result);
+      utility::print_par(this->world_, " Size: ", size, " GB\n");
+      return result;
+  }
 
   if (formula.oper().is_fock()) {
     utility::print_par(this->world_,
@@ -401,6 +414,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     utility::print_par(this->world_, " Size: ", size, " GB");
     utility::print_par(this->world_, " Time: ", time, " s\n");
 
+    ao_formula_registry_.insert(formula, result);
+
   } else if (formula.rank() == 2) {
     utility::print_par(this->world_,
                        "\nComputing One Body Integral for Periodic System: ",
@@ -432,6 +447,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     size = mpqc::detail::array_size(result);
     utility::print_par(this->world_, " Size: ", size, " GB");
     utility::print_par(this->world_, " Time: ", time, " s\n");
+
+    ao_formula_registry_.insert(formula, result);
 
   } else if (formula.rank() == 4) {
     auto time_4idx = 0.0;

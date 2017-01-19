@@ -225,15 +225,16 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
 
     Vector3d dcell = this->lcao_factory().pao_factory().unitcell().dcell();
     int64_t R_size = this->lcao_factory().pao_factory().R_size();
+    int64_t k_size = ref_wfn_->k_size();
 
     // Volume of first Brillouin zone
-    double volume = 1.0;
-    for (auto d = 0; d < 3; ++d) {
-        volume *= (dcell(d) == 0.0) ? 1.0 : (2.0 * M_PI / dcell(d));
-    }
+//    double volume = 1.0;
+//    for (auto d = 0; d < 3; ++d) {
+//        volume *= (dcell(d) == 0.0) ? 1.0 : (2.0 * M_PI / dcell(d));
+//    }
 
     // MP2 energy per unit cell
-    e_mp2 = e_mp2 * std::pow(volume, 3) / R_size;
+    e_mp2 = e_mp2 * std::pow(k_size, 3) / R_size;
 
     return e_mp2;
   }

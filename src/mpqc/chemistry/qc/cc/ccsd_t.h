@@ -73,7 +73,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    * |---------|------|--------|-------------|
    * | reblock_occ | int | none | block size to reblock occ |
    * | reblock_unocc | int | none | block size to reblock unocc |
-   * | reblock_inner | int | none | block size to reblock inner dimension |
+   * | reblock_inner | int | size of number of orbital | block size to reblock inner dimension, set to 0 to disable reblock inner |
    * | approach | string | coarse | coarse grain, fine grain or straight approach |
    * | replicate | bool | false | valid only with approach=coarse, if replicate integral g_cijk(smallest integral in (T)) |
    * | increase | int | 2 | valid only with approach=fine, number of block in virtual dimension to load at each virtual loop |
@@ -82,11 +82,16 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   CCSD_T(const KeyVal &kv) : CCSD<Tile, Policy>(kv) {
     reblock_ = kv.exists("reblock_occ") || kv.exists("reblock_unocc");
-    reblock_inner_ = kv.exists("reblock_inner");
-    replicate_ = kv.value<bool>("replicate", false);
+
     occ_block_size_ = kv.value<int>("reblock_occ", 8);
     unocc_block_size_ = kv.value<int>("reblock_unocc", 8);
-    inner_block_size_ = kv.value<int>("reblock_inner", 128);
+    replicate_ = kv.value<bool>("replicate", false);
+
+    // default value is size of total number of orbitals, which makes it 1 block
+    std::size_t n_obs = this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"κ")).nfunctions();
+    inner_block_size_ = kv.value<int>("reblock_inner", n_obs);
+    reblock_inner_ = (inner_block_size_ == 0) ? false : true;
+
     increase_ = kv.value<int>("increase", 2);
     approach_ = kv.value<std::string>("approach", "coarse");
     if (approach_ != "coarse" && approach_ != "fine" &&

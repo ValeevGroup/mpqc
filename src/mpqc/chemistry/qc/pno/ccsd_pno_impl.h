@@ -13,6 +13,7 @@ namespace mpqc {
   namespace lcao {
 
     namespace detail {
+      // compute MP2 T2 amplitudes
       template <typename Tile, typename Policy>
       TA::DistArray<Tile, Policy> compute_mp2_t2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
                                                  const std::shared_ptr<Eigen::VectorXd> &orbital_energy,
@@ -35,6 +36,7 @@ namespace mpqc {
         return t2_abij;
       }
 
+      // print out details of CCSD iterations
       inline void print_ccsd(int iter, double dE,
                              double error, double error_r1, double error_r2,
                              double E1, double time) {
@@ -45,7 +47,7 @@ namespace mpqc {
         std::printf("%3i \t %10.5e \t %10.5e \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n",
                     iter, dE, error, error_r1, error_r2, E1, time);
       }
-    }
+    } // namespace detail
 
     /**
      * KeyVal constructor
@@ -68,6 +70,7 @@ namespace mpqc {
       throw std::runtime_error("Not Implemented!!");
     }
 
+    // compute MP2 T2 amplitudes
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::compute_mp2_t2() {
 
@@ -76,48 +79,7 @@ namespace mpqc {
                                        this->trange1_engine(), this->df_);
     }
 
-//    template<typename Tile, typename Policy>
-//    void CCSD_PNO<Tile, Policy>::reblock() {
-//
-//      auto &lcao_factory = this->lcao_factory();
-//      auto &world = lcao_factory.world();
-//
-//      std::size_t occ = this->trange1_engine()->get_occ();
-//      std::size_t vir = this->trange1_engine()->get_vir();
-//      std::size_t all = this->trange1_engine()->get_all();
-//      std::size_t n_frozen = this->trange1_engine()->get_nfrozen();
-//
-//      std::size_t b_occ = 1;
-//      std::size_t b_vir = vir;
-//
-//      TA::TiledRange1 old_occ = this->trange1_engine()->get_active_occ_tr1();
-//      TA::TiledRange1 old_vir = this->trange1_engine()->get_vir_tr1();
-//
-//      auto new_tr1 =
-//          std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
-//
-//      TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
-//      TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
-//
-//      mpqc::detail::parallel_print_range_info(world, new_occ, "CCSD-PNO Occ");
-//      mpqc::detail::parallel_print_range_info(world, new_vir, "CCSD-PNO Vir");
-//
-//      TA::DistArray<Tile, Policy> occ_convert =
-//          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
-//              world, old_occ, new_occ, 1.0);
-//
-//      TA::DistArray<Tile, Policy> vir_convert =
-//          array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
-//              world, old_vir, new_vir, 1.0);
-//
-//      // obtain t2 with new blocking structure
-//      t2_mp2_("a,b,i,j") = t2_mp2_("c,d,k,l")
-//                           * vir_convert("c,a") * vir_convert("d,b")
-//                           * occ_convert("k,i") * occ_convert("l,j");
-//
-//
-//    }
-
+    // compute converting matrices for reblocking MP2 T2
     // occ_convert(old_i, new_i), vir_convert(old_a, new_a)
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::compute_M_reblock(TA::DistArray<Tile, Policy> &occ_convert,
@@ -153,95 +115,86 @@ namespace mpqc {
                        world, old_vir, new_vir, 1.0);
     }
 
+    // decompose MP2 T2 amplitudes
     template<typename Tile, typename Policy>
-    void CCSD_PNO<Tile, Policy>::pno_decom() {
+    void CCSD_PNO<Tile, Policy>::decom_t2_mp2() {
 
-      integer vir = this->trange1_engine()->get_vir();
       double threshold = tcut_;
       ExEnv::out0() << "tcut is " << tcut_ << std::endl;
 
+      integer vir = this->trange1_engine()->get_vir();
+
       std::size_t orb_i = 1, orb_j = 1;
 
-
-      // compute t_ab = d_a{c} t_{c}{d} d_{d}{b} ({}: pno indices)
+      // decompose and reconstruct T2
       auto transfrom = [&](Tile &in_tile) -> float {
 
-        std::stringstream ss;
-//        ss << "input tile: " << in_tile << std::endl;
+        // copy in_tile which is ab matrix of T^ij
+        Tile tab_tile = in_tile.clone();
 
-        // copy in_tile for test purpose
-        Tile test_tile = in_tile.clone();
-
-        // get the dimensions of the input tile
+        // get the dimensions of input tile
         const auto extent = in_tile.range().extent();
         const auto a = extent[0];
         const auto b = extent[1];
-        const auto x = std::min(a,b);
 
-#define PNO_DECOM 0
-#define T_SVD 1
+        std::stringstream ss;
+        ss << "input tile: " << in_tile << std::endl;
+
+#define PNO_DECOM 1
+#define T2_SVD 0
 
 #if PNO_DECOM
-        // compute density:
-        // Dab = T_ab*(2*T_ab-T_ab')'+T_ab'*(2*T_ab-T_ab')
-//        // 2*T_ab
-//        Tile Tab_2 = TA::scale(in_tile,2.0);
-//        // T_ab'
-//        Tile Tba = TA::permute(in_tile);
-//        // 2*T_ab-T_ab'
-//        auto perm = TA::Permutation({1,0});
-//        Tile tau = TA::subt(Tab_2,Tba);
-//        // T_ab*(2*T_ab-T_ab')'
-//        auto gemm_helper_1 = TA::math::GemmHelper(madness::cblas::NoTrans,
-//                                                  madness::cblas::Trans.
-//                                                  2, 2, 2);
-//        Tile Dab_left = gemm(in_tile,tau, 1.0, gemm_helper_1);
-//        // T_ab'*(2*T_ab-T_ab')
-//        auto gemm_helper_2 = TA::math::GemmHelper(madness::cblas::Trans,
-//                                                  madness::cblas::NoTrans.
-//                                                  2, 2, 2);
-//        Tile Dab_right = TA::gemm(in_tile,tau, 1.0, gemm_helper_2);
-//        Tile Dab = TA::add(Dab_left+Dab_right);
+        auto Tab = TA::eigen_map(tab_tile, a, b);
+        // compute virtual or PNO density
+        TA::EigenMatrixXd Dab = Tab * (4.0 * Tab - 2.0 * Tab.transpose()).transpose()
+                              + Tab.transpose() * (4.0 * Tab - 2.0 * Tab.transpose());
+        // when i=j, Dab = Tab*Tab' + Tab'*Tab
+        if ((Tab - Tab.transpose()).norm() < 1e-10) {
+          ss << "i = j, (Tab - Tab.transpose()).norm(): "
+             << (Tab - Tab.transpose()).norm() << std::endl;
+          Dab = Dab/2.0;
+        }
 
-        auto Tab = TA::eigen_map(in_tile, a, b);
-        TA::EigenMatrixXd Dab = Tab * (2.0 * Tab - Tab.transpose()).transpose()
-                              + Tab.transpose() * (2.0 * Tab - Tab.transpose());
-
+        // compute eigenvalues ans eigenvectors of Dab
         Eigen::SelfAdjointEigenSolver<TA::EigenMatrixXd> es(Dab);
         TA::EigenVectorXd S_es = es.eigenvalues();
         TA::EigenMatrixXd C_es = es.eigenvectors();
-        ss << "S_es: " << std::endl << S_es << std::endl;
-        ss << "C_es: " << std::endl << C_es << std::endl;
 
-        int p_trunc = a - 1;
-        TA::EigenMatrixXd CS_es;
-        for(; p_trunc >= 0; --p_trunc) {
-          // check s for the truncation threshold
-          if(std::abs(S_es(p_trunc)) < threshold)
+        // truncate eigenvectors with corresponding eigenvalues smaller than threshold
+        int pos_trunc = a - 1;
+        for(; pos_trunc >= 0; --pos_trunc) {
+          if(std::abs(S_es(pos_trunc)) < threshold)
             break;
         }
-        int rank = a - p_trunc - 1;
+        int rank = a - pos_trunc - 1;
         if (rank > 0) {
           auto tab_pno = TA::eigen_map(in_tile, a, b);
-          tab_pno.noalias() = C_es.rightCols(rank) * S_es.tail(rank).asDiagonal()
-                             * C_es.rightCols(rank).transpose();
+          tab_pno.noalias() = C_es.rightCols(rank) * C_es.rightCols(rank).transpose()
+                            * Tab
+                            * C_es.rightCols(rank) * C_es.rightCols(rank).transpose();
         } else {
             std::fill(in_tile.begin(), in_tile.end(), 0.0);
         }
 
-        ss << "rank: " << std::endl << rank << std::endl;
+        ss << "Dab: " << std::endl << Dab << std::endl;
+        ss << "S_es: " << std::endl << S_es << std::endl;
+        ss << "C_es: " << std::endl << C_es << std::endl;
+        ss << "pair (" << orb_i << "," << orb_j << ")  rank: " << rank << std::endl;
         ss << "S_es (trunc): " << std::endl << S_es.tail(rank) << std::endl;
         ss << "C_es (trunc): " << std::endl << C_es.rightCols(rank) << std::endl;
 #endif // PNO_DECOM
 
-#if T_SVD
+#if T2_SVD
+        const auto x = std::min(a,b);
+
         // allocate memory for SVD
         std::unique_ptr<double[]> u_ax(new double[a * x]);
         std::unique_ptr<double[]> v_xb(new double[b * x]);
         std::unique_ptr<double[]> s(new double[x]);
 
-//        // SVD of tile: (t_ab)^T
-//        tensor::algebra::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');
+        // SVD of tile: (t_ab)^T
+        tensor::algebra::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');
+//        // print out results for test purpose
 //        ss << "s: " << std::endl;
 //        for (std::size_t i = 0; i < a; ++i) {
 //          ss << s.get()[i] << "  ";
@@ -266,7 +219,7 @@ namespace mpqc {
 
         std::size_t rank = 0;
         for(; rank < x; ++rank) {
-          // check s for the truncation threshold
+          // check singular value for truncation threshold
           if(std::abs(s.get()[rank]) < threshold)
             break;
 
@@ -274,21 +227,22 @@ namespace mpqc {
           // u_{a} = u_{a} * s_{a}
           madness::cblas::scal(a, s.get()[rank], u_ax.get() + (a * rank), 1);
         }
-        ss << "pair (" << orb_i << "," << orb_j << ")  rank: " << rank << std::endl;
-        ++orb_i;
-        ++orb_j;
 
         // compute output tile: (t_ab)^T = u_a{c} * v_{c}b
         madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::NoTrans,
             a, b, rank, 1.0, u_ax.get(), a, v_xb.get(), b, 0.0, in_tile.data(), a);
-//        ss << "output tile: " << in_tile << std::endl;
 
-        // test:
-        // when threshold is small enough, input and output tiles should be the same
-        madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::NoTrans,
-            a, b, rank, 1.0, u_ax.get(), a, v_xb.get(), b, -1.0, test_tile.data(), a);
-        ss << "(t_new - t_old).norm(): " << test_tile.norm() << std::endl;
-#endif // T_SVD
+        ss << "pair (" << orb_i << "," << orb_j << ")  rank: " << rank << std::endl;
+#endif // T2_SVD
+
+        ++orb_i;
+        ++orb_j;
+
+        ss << "output tile: " << in_tile << std::endl;
+
+        // compute the norm of difference between input and output tile
+        ss << "(t_new - t_old).norm(): " << (TA::subt(in_tile, tab_tile)).norm()
+           << std::endl;
 
         std::printf("%s", ss.str().c_str());
 
@@ -699,39 +653,41 @@ namespace mpqc {
       // initialize
       this->init();
 
-      // compute MP2 amplitudes
+      // compute MP2 T2 amplitudes
       ExEnv::out0() << std::endl << "Computing MP2 amplitudes" << std::endl;
       compute_mp2_t2();
-//      ExEnv::out0() << "MP2 amplitudes: " << t2_mp2_ << std::endl;
-      TA::DistArray<Tile, Policy> t2_mp2_old = t2_mp2_.clone();
+      //ExEnv::out0() << "MP2 amplitudes: " << t2_mp2_ << std::endl;
+      // copy MP2 amplitudes for test purpose
+      TA::DistArray<Tile, Policy> t2_mp2_orig = t2_mp2_.clone();
 
-      // reblock MP2 amplitudes
-      // in each block: i=j=1, a=b=nvir
+      // reblock MP2 T2 amplitudes
+      // in each block: n_i=n_j=1, n_a=n_b=nvir
       ExEnv::out0() << std::endl << "Reblocking MP2 amplitudes" << std::endl;
-//      reblock();
+      // compute converting matrices
       TA::DistArray<Tile, Policy> occ_convert, vir_convert;
       compute_M_reblock(occ_convert, vir_convert);
-      // obtain t2 with new blocking structure
+      // obtain MP2 T2 with new blocking structure
       t2_mp2_("a,b,i,j") = t2_mp2_("c,d,k,l")
-                           * vir_convert("c,a") * vir_convert("d,b")
-                           * occ_convert("k,i") * occ_convert("l,j");
-//      ExEnv::out0() << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
+                         * vir_convert("c,a") * vir_convert("d,b")
+                         * occ_convert("k,i") * occ_convert("l,j");
+      //ExEnv::out0() << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
 
-      // pno decomposition
-      ExEnv::out0() << std::endl << "Doing PNO decomposition (SVD of MP2 amplitudes)" << std::endl;
-      pno_decom();
+      // decompose MP2 T2 amplitudes
+      // using either eigen or SVD decomposition
+      ExEnv::out0() << std::endl << "Decomposing MP2 amplitudes" << std::endl;
+      decom_t2_mp2();
 
-      // transform the MP2 amplitudes into its original blocking
+      // transform MP2 T2 amplitudes back into its original blocking structure
       t2_mp2_("a,b,i,j") = t2_mp2_("c,d,k,l")
-                           * vir_convert("a,c") * vir_convert("b,d")
-                           * occ_convert("i,k") * occ_convert("j,l");
+                         * vir_convert("a,c") * vir_convert("b,d")
+                         * occ_convert("i,k") * occ_convert("j,l");
 
-      // compute the difference between original T2 and reconstructed T2 from PNO
-      ExEnv::out0() << std::endl << "Test: t2 - t2(reblock back): "
-                                 << (t2_mp2_old("a,b,i,j") - t2_mp2_("a,b,i,j")).norm().get()
+      // compute the difference between original and decomposed MP2 T2
+      ExEnv::out0() << std::endl << "Test: t2 - t2 (decomposed): "
+                                 << (t2_mp2_orig("a,b,i,j") - t2_mp2_("a,b,i,j")).norm().get()
                                  << std::endl << std::endl;
 
-      // compute CCSD with PNO reconstructed t2 as initial value
+      // compute CCSD with decomposed MP2 T2 as initial guess
       TA::DistArray<Tile, Policy> t1, t2;
       t2 = t2_mp2_.clone();
       double ccsd_energy = compute_ccsdpno_df(t1,t2);

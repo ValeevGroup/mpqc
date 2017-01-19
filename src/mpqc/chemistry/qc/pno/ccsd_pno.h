@@ -36,15 +36,13 @@ namespace lcao {
 
    // compute MP2 T2 amplitudes
    void compute_mp2_t2();
-   // reblock MP2 T2
-//   void reblock();
-   // compute the occ and vir matrices for reblocking T2
+   // compute occ and vir matrices for reblocking MP2 T2
    void compute_M_reblock(TA::DistArray<Tile, Policy> &occ_convert,
                           TA::DistArray<Tile, Policy> &vir_convert);
-   // svd decompostion of T2
-   void pno_decom();
+   // decompose MP2 T2 using PNO (eigen) decomposition or SVD
+   void decom_t2_mp2();
 
-   // compute CCSD T2 amplitudes from PNO constructed T2
+   // compute CCSD with decomposed MP2 T2 as initial values
    // based on Chong's compute_ccsd_df(TArray &t1, TArray &t2) function
    double compute_ccsdpno_df(TA::DistArray<Tile, Policy> &t1,
                              TA::DistArray<Tile, Policy> &t2);

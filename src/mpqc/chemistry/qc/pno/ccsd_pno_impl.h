@@ -178,6 +178,10 @@ namespace mpqc {
         const auto b = extent[1];
         const auto x = std::min(a,b);
 
+#define PNO_DECOM 0
+#define T_SVD 1
+
+#if PNO_DECOM
         // compute density:
         // Dab = T_ab*(2*T_ab-T_ab')'+T_ab'*(2*T_ab-T_ab')
 //        // 2*T_ab
@@ -199,56 +203,66 @@ namespace mpqc {
 //        Tile Dab_right = TA::gemm(in_tile,tau, 1.0, gemm_helper_2);
 //        Tile Dab = TA::add(Dab_left+Dab_right);
 
-//        Tile out_tile = Tile(in_tile.range());
-//        TA::EigenMatrixXd Dab = TA::eigen_map(out_tile, a, b);
-//        TA::EigenMatrixXd Tab = TA::eigen_map(in_tile, a, b);
-//
-//        Dab = Tab * (2.0 * Tab - Tab.transpose()).transpose()
-//            + Tab.transpose() * (2.0 * Tab - Tab.transpose());
-//
-//        Eigen::SelfAdjointEigenSolver<TA::EigenMatrixXd> es(Dab);
-//
-//        TA::EigenVectorXd S_es = es.eigenvalues();
-//        TA::EigenMatrixXd C_es = es.eigenvectors();
-//
-//        ss << "S_es: " << std::endl << S_es << std::endl;
-//        ss << "C_es: " << std::endl << C_es << std::endl;
-//
-//        std::size_t n_trunc = 0;
-//        for(; n_trunc < x; ++n_trunc) {
-//          // check s for the truncation threshold
-//          if(std::abs(S_es(n_trunc)) > threshold)
-//            break;
-//        }
+        auto Tab = TA::eigen_map(in_tile, a, b);
+        TA::EigenMatrixXd Dab = Tab * (2.0 * Tab - Tab.transpose()).transpose()
+                              + Tab.transpose() * (2.0 * Tab - Tab.transpose());
 
+        Eigen::SelfAdjointEigenSolver<TA::EigenMatrixXd> es(Dab);
+        TA::EigenVectorXd S_es = es.eigenvalues();
+        TA::EigenMatrixXd C_es = es.eigenvectors();
+        ss << "S_es: " << std::endl << S_es << std::endl;
+        ss << "C_es: " << std::endl << C_es << std::endl;
+
+        int p_trunc = a - 1;
+        TA::EigenMatrixXd CS_es;
+        for(; p_trunc >= 0; --p_trunc) {
+          // check s for the truncation threshold
+          if(std::abs(S_es(p_trunc)) < threshold)
+            break;
+        }
+        int rank = a - p_trunc - 1;
+        if (rank > 0) {
+          auto tab_pno = TA::eigen_map(in_tile, a, b);
+          tab_pno.noalias() = C_es.rightCols(rank) * S_es.tail(rank).asDiagonal()
+                             * C_es.rightCols(rank).transpose();
+        } else {
+            std::fill(in_tile.begin(), in_tile.end(), 0.0);
+        }
+
+        ss << "rank: " << std::endl << rank << std::endl;
+        ss << "S_es (trunc): " << std::endl << S_es.tail(rank) << std::endl;
+        ss << "C_es (trunc): " << std::endl << C_es.rightCols(rank) << std::endl;
+#endif // PNO_DECOM
+
+#if T_SVD
         // allocate memory for SVD
         std::unique_ptr<double[]> u_ax(new double[a * x]);
         std::unique_ptr<double[]> v_xb(new double[b * x]);
         std::unique_ptr<double[]> s(new double[x]);
 
-        // SVD of tile: (t_ab)^T
-        tensor::algebra::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');
-        ss << "s: " << std::endl;
-        for (std::size_t i = 0; i < a; ++i) {
-          ss << s.get()[i] << "  ";
-        }
-        ss << std::endl;
-        ss << "u: " << std::endl;
-        for (std::size_t i = 0; i < a; ++i) {
-          for (int j = 0; j < b; ++j) {
-            ss << u_ax.get()[i+x*j] << "  ";
-          }
-          ss << std::endl;
-        }
-        ss << std::endl;
-        ss << "v: " << std::endl;
-        for (std::size_t i = 0; i < a; ++i) {
-          for (int j = 0; j < b; ++j) {
-            ss << v_xb.get()[i+x*j] << "  ";
-          }
-          ss << std::endl;
-        }
-        ss << std::endl;
+//        // SVD of tile: (t_ab)^T
+//        tensor::algebra::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');
+//        ss << "s: " << std::endl;
+//        for (std::size_t i = 0; i < a; ++i) {
+//          ss << s.get()[i] << "  ";
+//        }
+//        ss << std::endl;
+//        ss << "u: " << std::endl;
+//        for (std::size_t i = 0; i < a; ++i) {
+//          for (int j = 0; j < b; ++j) {
+//            ss << u_ax.get()[i+x*j] << "  ";
+//          }
+//          ss << std::endl;
+//        }
+//        ss << std::endl;
+//        ss << "v: " << std::endl;
+//        for (std::size_t i = 0; i < a; ++i) {
+//          for (int j = 0; j < b; ++j) {
+//            ss << v_xb.get()[i+x*j] << "  ";
+//          }
+//          ss << std::endl;
+//        }
+//        ss << std::endl;
 
         std::size_t rank = 0;
         for(; rank < x; ++rank) {
@@ -274,6 +288,7 @@ namespace mpqc {
         madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::NoTrans,
             a, b, rank, 1.0, u_ax.get(), a, v_xb.get(), b, -1.0, test_tile.data(), a);
         ss << "(t_new - t_old).norm(): " << test_tile.norm() << std::endl;
+#endif // T_SVD
 
         std::printf("%s", ss.str().c_str());
 

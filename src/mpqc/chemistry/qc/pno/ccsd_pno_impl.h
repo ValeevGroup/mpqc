@@ -137,8 +137,10 @@ namespace mpqc {
         const auto a = extent[0];
         const auto b = extent[1];
 
+        int rank = 0;
+
         std::stringstream ss;
-        ss << "input tile: " << in_tile << std::endl;
+//        ss << "input tile: " << in_tile << std::endl;
 
 #define PNO_DECOM 1
 #define T2_SVD 0
@@ -166,7 +168,8 @@ namespace mpqc {
           if(std::abs(S_es(pos_trunc)) < threshold)
             break;
         }
-        int rank = a - pos_trunc - 1;
+
+        rank = a - pos_trunc - 1;
         if (rank > 0) {
           auto tab_pno = TA::eigen_map(in_tile, a, b);
           tab_pno.noalias() = C_es.rightCols(rank) * C_es.rightCols(rank).transpose()
@@ -176,12 +179,11 @@ namespace mpqc {
             std::fill(in_tile.begin(), in_tile.end(), 0.0);
         }
 
-        ss << "Dab: " << std::endl << Dab << std::endl;
-        ss << "S_es: " << std::endl << S_es << std::endl;
-        ss << "C_es: " << std::endl << C_es << std::endl;
-        ss << "pair (" << orb_i << "," << orb_j << ")  rank: " << rank << std::endl;
-        ss << "S_es (trunc): " << std::endl << S_es.tail(rank) << std::endl;
-        ss << "C_es (trunc): " << std::endl << C_es.rightCols(rank) << std::endl;
+//        ss << "Dab: " << std::endl << Dab << std::endl;
+//        ss << "S_es: " << std::endl << S_es << std::endl;
+//        ss << "C_es: " << std::endl << C_es << std::endl;
+//        ss << "S_es (trunc): " << std::endl << S_es.tail(rank) << std::endl;
+//        ss << "C_es (trunc): " << std::endl << C_es.rightCols(rank) << std::endl;
 #endif // PNO_DECOM
 
 #if T2_SVD
@@ -217,7 +219,6 @@ namespace mpqc {
 //        }
 //        ss << std::endl;
 
-        std::size_t rank = 0;
         for(; rank < x; ++rank) {
           // check singular value for truncation threshold
           if(std::abs(s.get()[rank]) < threshold)
@@ -231,17 +232,16 @@ namespace mpqc {
         // compute output tile: (t_ab)^T = u_a{c} * v_{c}b
         madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::NoTrans,
             a, b, rank, 1.0, u_ax.get(), a, v_xb.get(), b, 0.0, in_tile.data(), a);
-
-        ss << "pair (" << orb_i << "," << orb_j << ")  rank: " << rank << std::endl;
 #endif // T2_SVD
 
         ++orb_i;
         ++orb_j;
 
-        ss << "output tile: " << in_tile << std::endl;
+//        ss << "output tile: " << in_tile << std::endl;
 
         // compute the norm of difference between input and output tile
-        ss << "(t_new - t_old).norm(): " << (TA::subt(in_tile, tab_tile)).norm()
+        ss << "rank: " << rank
+           << "  (t_new - t_old).norm(): " << (TA::subt(in_tile, tab_tile)).norm()
            << std::endl;
 
         std::printf("%s", ss.str().c_str());

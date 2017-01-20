@@ -149,7 +149,7 @@ void zRHF::solve(double thresh) {
     ediff = eprhf - eprhf_old;
     Ddiff("mu, nu") = D_("mu, nu") - D_old("mu, nu");
     rms = Ddiff("mu, nu").norm();
-    if ((rms <= converge_) || fabs(ediff) <= converge_) converged = true;
+    if ((rms <= thresh) || fabs(ediff) <= thresh) converged = true;
 
     auto iter_end = mpqc::fenced_now(world);
     auto iter_duration = mpqc::duration_in_s(iter_start, iter_end);

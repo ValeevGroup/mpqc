@@ -1,5 +1,5 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_FUNCTION_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_FUNCTION_H_
+#ifndef SRC_MPQC_CHEMISTRY_QC_PROPERTIES_PROPERTY_H_
+#define SRC_MPQC_CHEMISTRY_QC_PROPERTIES_PROPERTY_H_
 
 #include <atomic>
 #include <cstdint>
@@ -13,6 +13,7 @@
 #include "mpqc/util/misc/exception.h"
 #include "mpqc/util/misc/task.h"
 
+/// top-level MPQC namespace
 namespace mpqc {
 
 using TiledArray::detail::scalar_type;
@@ -30,6 +31,8 @@ using TiledArray::detail::scalar_type;
 /// CCSD_T::compute_electric_dipole_moment() )
 /// - allow computation of derivatives of properties
 /// - allow precision tracking
+
+/// \brief Produces timestamps
 
 /// Need to recompute is detected by comparing timestamps of property parameters
 /// and value
@@ -370,15 +373,8 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
 /// methods.
 /// @tparam Properties the property type list
 template <typename... Properties>
-class CanEvaluate;
-
-template <typename Property0, typename... RestOfProperties>
-class CanEvaluate<Property0, RestOfProperties...>
-    : public Property0::Evaluator, public CanEvaluate<RestOfProperties...> {};
-
-template <typename Property>
-class CanEvaluate<Property> : public Property::Evaluator {};
+class CanEvaluate : public Properties::Evaluator... {};
 
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
+#endif  // SRC_MPQC_CHEMISTRY_QC_PROPERTIES_PROPERTY_H_

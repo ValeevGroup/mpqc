@@ -1,6 +1,7 @@
 set(sources
     energy.cpp
     energy.h
+    linkage.h
     property.cpp
     property.h
 )

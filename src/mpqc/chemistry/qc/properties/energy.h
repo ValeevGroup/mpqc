@@ -39,22 +39,22 @@ public:
 
   // clang-format off
   /**
-   * @brief KeyVal constructor
+   * @brief The KeyVal constructor
+   * @param kv the KeyVal object to be queried
    *
-   * The KeyVal object will be queried for all keywords of the WavefunctionProperty class,
+   * \c kv will be queried for all keywords of the WavefunctionProperty class,
    * as well as the following keywords:
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | wfn | Wavefunction | none | the Wavefunction that will compute this  |
-   * | precision | {array<real> \| real} | {none \| 1e-8} | target precision for {each \| all} derivative orders|
-   * | deriv_order | int | 0 | the highest derivative order; only queried if precision is not given or is given as an array |
+   *
+   * This constructor overrides the default target precision to 1e-9 .
    */
   // clang-format on
 
-  explicit Energy(const KeyVal& kv) : WavefunctionProperty(kv, get_precision(kv)) {}
+  explicit Energy(const KeyVal& kv) : WavefunctionProperty(kv, 1e-9) {}
 
 private:
-  std::vector<double> get_precision(const KeyVal& kv);
   void do_evaluate() override;
 };
 

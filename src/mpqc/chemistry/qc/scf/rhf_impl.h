@@ -40,7 +40,6 @@ void RHF<Tile,Policy>::init(const KeyVal& kv) {
   }
   occ = occ / 2;
 
-  converge_ = kv.value<double>("converge", 1.0e-7);
   max_iter_ = kv.value<int>("max_iter", 30);
   repulsion_ = mol.nuclear_repulsion();
 
@@ -101,13 +100,6 @@ void RHF<Tile,Policy>::init_fock_builder() {
 }
 
 template <typename Tile, typename Policy>
-double RHF<Tile,Policy>::value() {
-  init(kv_);
-  solve(max_iter_, converge_);
-  return rhf_energy_;
-}
-
-template <typename Tile, typename Policy>
 void RHF<Tile,Policy>::obsolete() {
   ::mpqc::Wavefunction::obsolete();
 
@@ -126,12 +118,17 @@ void RHF<Tile,Policy>::obsolete() {
 }
 
 template <typename Tile, typename Policy>
-double RHF<Tile,Policy>::energy() const {
+double RHF<Tile,Policy>::compute_energy() const {
   return repulsion_ + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
 }
 
 template <typename Tile, typename Policy>
-bool RHF<Tile,Policy>::solve(int64_t max_iters, double thresh) {
+void RHF<Tile,Policy>::solve(int64_t max_iters, double thresh) {
+
+  // for now use same precision for energy and orbital gradient
+  const auto target_energy_precision = thresh;
+  const auto target_orbgrad_precision = thresh;
+
   auto& world = F_.world();
 
   if (world.rank() == 0) {
@@ -147,11 +144,12 @@ bool RHF<Tile,Policy>::solve(int64_t max_iters, double thresh) {
   auto iter = 0;
   auto error = std::numeric_limits<double>::max();
   auto rms_error = std::numeric_limits<double>::max();
-  auto old_energy = energy();
+  auto old_energy = compute_energy();
   const double volume = F_.trange().elements_range().volume();
 
   while (iter < max_iters &&
-         (thresh < (error / old_energy) || thresh < (rms_error / volume))) {
+         (target_energy_precision < (error / old_energy) ||
+          target_orbgrad_precision < (rms_error / volume))) {
     auto s0 = mpqc::fenced_now(world);
 
     madness::print_meminfo(world.rank(), "RHF:before_fock");
@@ -159,7 +157,7 @@ bool RHF<Tile,Policy>::solve(int64_t max_iters, double thresh) {
     auto b1 = mpqc::fenced_now(world);
     madness::print_meminfo(world.rank(), "RHF:after_fock");
 
-    auto current_energy = energy();
+    auto current_energy = compute_energy();
     error = std::abs(old_energy - current_energy);
     old_energy = current_energy;
 
@@ -198,15 +196,13 @@ bool RHF<Tile,Policy>::solve(int64_t max_iters, double thresh) {
     ++iter;
   }
 
-  if (iter == max_iters) {
-    return false;
-  } else {
-    rhf_energy_ = old_energy;
-    // store fock matix in registry
-    auto& registry = this->ao_factory().registry();
-    f_builder_->register_fock(F_, registry);
-    return true;
-  }
+  if (iter == max_iters)
+    throw MaxIterExceeded("RHF SCF did not converge", __FILE__, __LINE__, max_iters);
+
+  energy_ = old_energy;
+  // store fock matix in registry
+  auto& registry = this->ao_factory().registry();
+  f_builder_->register_fock(F_, registry);
 }
 
 template <typename Tile, typename Policy>
@@ -220,6 +216,22 @@ template <typename Tile, typename Policy>
 void RHF<Tile,Policy>::build_F() {
   auto G = f_builder_->operator()(D_, C_);
   F_("i,j") = H_("i,j") + G("i,j");
+}
+
+template <typename Tile, typename Policy>
+bool RHF<Tile,Policy>::can_evaluate(Energy* energy) {
+  // can only evaluate the energy
+  return energy->order() == 0;
+}
+
+template <typename Tile, typename Policy>
+void RHF<Tile,Policy>::evaluate(Energy* result) {
+  if(!this->computed()){
+    init(kv_);
+    solve(max_iter_, result->target_precision(0));
+    this->computed_ = true;
+    set_value(result, energy_);
+  }
 }
 
 /**

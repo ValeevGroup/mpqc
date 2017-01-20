@@ -27,7 +27,7 @@ namespace lcao {
  * \todo elaborate AOWavefunction documentation
 **/
 template<typename Tile, typename Policy>
-class AOWavefunction : public Wavefunction, public Energy::Evaluator {
+class AOWavefunction : public Wavefunction {
  public:
   using AOIntegral = gaussian::AOFactory<Tile, Policy>;
   using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
@@ -53,21 +53,6 @@ class AOWavefunction : public Wavefunction, public Energy::Evaluator {
 
   }
   virtual ~AOWavefunction() = default;
-
-
-  /// function that return energy, must implement in derived class
-  virtual double value() = 0;
-
-  bool can_evaluate (Energy* energy) override {
-    return true;
-  }
-
-  void evaluate(Energy* energy) override {
-    if(!computed()){
-      double wfn_energy = value();
-      Energy::Evaluator::set_value(energy, wfn_energy);
-    }
-  }
 
   /// obsolete, purge the registry in AOIntegral and DirectAOIntegral
   void obsolete() override {
@@ -116,9 +101,6 @@ class PeriodicAOWavefunction : public Wavefunction {
     ao_factory_->set_orbital_basis_registry(this->wfn_world()->basis_registry());
   }
   virtual ~PeriodicAOWavefunction() = default;
-
-  /// function that return energy, must implement in derived class
-  virtual double value() = 0;
 
   /*! Return a reference to the AOFactory Library
    *

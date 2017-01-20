@@ -19,7 +19,7 @@ namespace mpqc {
 namespace lcao {
 
 template <typename Tile, typename Policy>
-class RHF : public AOWavefunction<Tile, Policy> {
+class RHF : public AOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
  public:
   using array_type = TA::DistArray<Tile,Policy>;
 
@@ -32,7 +32,6 @@ class RHF : public AOWavefunction<Tile, Policy> {
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 30 | maximum number of iteration |
    * | density_builder | string | eigen_solve | type of DensityBuilder (eigen_solve->ESolveDensityBuilder, purification->PurificationDensityBuilder) |
    * | localize | bool | false | if localize in DensityBuilder |
@@ -45,32 +44,10 @@ class RHF : public AOWavefunction<Tile, Policy> {
 
   virtual ~RHF() = default;
 
-
-  double value() override ;
   void obsolete() override;
 
-  double energy() const;
-
-  inline array_type const& overlap() const { return S_; }
-  inline array_type const& fock() const { return F_; }
-  inline void set_fock(array_type f) {F_ = f;}
-  inline array_type const& density() const { return D_; }
-  inline array_type const& coefficents() const { return C_; }
-  inline const double rhf_energy() const { return rhf_energy_; }
-
-  /*! Function to compute the density to the desired accuracy.
-   *
-   * Takes some form of integral and does the rhf iterations.  The place to
-   *specialized is in build_fock.
-   *
-   * returns true if the calculation converged to the desired threshold in
-   *fewer than max_iters
-   */
-  bool solve(int64_t max_iters, double thresh);
-
  protected:
-  double rhf_energy_;
-  double converge_;
+  double energy_;
   std::size_t max_iter_;
   double repulsion_;
 
@@ -89,12 +66,39 @@ class RHF : public AOWavefunction<Tile, Policy> {
   std::vector<double> build_times_;
 
  private:
+
+  // to expose these need to wrap into if_computed
+  inline array_type const& overlap() const { return S_; }
+  inline array_type const& fock() const { return F_; }
+  inline array_type const& density() const { return D_; }
+  inline array_type const& coefficents() const { return C_; }
+  inline const double energy() const { return energy_; }
+
+  double compute_energy() const;
+  inline void set_fock(array_type f) {F_ = f;}
+
+  /** Function to compute the density to the desired accuracy.
+   *
+   * Takes some form of integral and does the closed-shell scf iterations.  The place to
+   * specialize is in build_fock.
+   *
+   * @param max_iters the maximum number of iterations
+   * @param thresh the target SCF convergence threshold; SCF is converged if
+   *        the relative energy change, \f$ |E_i - E_{i-1}|/E_i \f$, and the
+   *        per-element AO-basis orbital gradient, \f$ ||\mathbf{F},\mathbf{P}||_2 / n^2 \f$,
+   *        are below \c thresh .
+   * @throws MaxIterExceeded if exceeded the limit on the number of iteration
+   */
+  void solve(int64_t max_iters, double thresh);
+
   void init(const KeyVal& kv);
   virtual void init_fock_builder();
   void compute_density();
   void build_F();
 
- private:
+  bool can_evaluate(Energy* energy) override;
+  void evaluate(Energy* result) override;
+
   const KeyVal kv_;
 };
 

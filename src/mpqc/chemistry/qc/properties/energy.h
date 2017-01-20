@@ -51,17 +51,16 @@ public:
    */
   // clang-format on
 
-  Energy(const KeyVal& kv) : Energy(get_wfn(kv), get_precision(kv)) {}
+  explicit Energy(const KeyVal& kv) : Energy(get_wfn(kv), get_precision(kv)) {}
 
   Energy(Wavefunction* wfn_ptr,
-         std::initializer_list<double> taylor_expansion_precision)
+         std::vector<double> taylor_expansion_precision)
       : WavefunctionProperty<double>(wfn_ptr, taylor_expansion_precision) {}
-
-  void evaluate() override;
 
 private:
   Wavefunction* get_wfn(const KeyVal& kv);
-  std::initializer_list<double> get_precision(const KeyVal& kv);
+  std::vector<double> get_precision(const KeyVal& kv);
+  void do_evaluate() override;
 };
 
 } // namespace mpqc

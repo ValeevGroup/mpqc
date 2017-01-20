@@ -21,7 +21,6 @@ zRHF::zRHF(const KeyVal& kv) : PeriodicAOWavefunction(kv), kv_(kv) {}
 void zRHF::init(const KeyVal& kv) {
   auto& unitcell = *kv.keyval("wfn_world:molecule").class_ptr<UnitCell>();
 
-  converge_ = kv.value<double>("converge", 1.0E-8);  // 1.0E(-N)
   maxiter_ = kv.value<int64_t>("max_iter", 30);
   bool soad_guess = kv.value<bool>("soad_guess", true);
   print_detail_ = kv.value<bool>("print_detail", false);
@@ -91,7 +90,7 @@ void zRHF::init(const KeyVal& kv) {
   init_duration_ = mpqc::duration_in_s(init_start, init_end);
 }
 
-bool zRHF::solve() {
+void zRHF::solve(double thresh) {
   auto& ao_factory = this->ao_factory();
   auto& world = ao_factory.world();
 
@@ -191,43 +190,37 @@ bool zRHF::solve() {
   // save total energy to energy_ no matter if PRHF converges
   energy_ = eprhf + repulsion_;
 
-  if (!converged) {
-    if (world.rank() == 0) {
-      std::cout << "\nPeriodic Hartree-Fock iterations did not converge!\n"
-                << std::endl;
-    }
-    return false;
-  } else {
-    if (world.rank() == 0) {
-      std::cout << "\nPeriodic Hartree-Fock iterations have converged!"
-                << std::endl;
-      std::cout << "\nTotal Periodic Hartree-Fock energy = " << energy_ << std::endl;
+  if (!converged)
+    throw MaxIterExceeded("zRHF: SCF did not converge", __FILE__, __LINE__,
+                          maxiter_);
 
-      if (print_detail_) {
-          Eigen::IOFormat fmt(5);
-          std::cout << "\n k | orbital energies" << std::endl;
-          for (auto k = 0; k < ao_factory.k_size(); ++k) {
-              std::cout << k << " | " << eps_[k].real().transpose().format(fmt) << std::endl;
-          }
+  if (world.rank() == 0) {
+    std::cout << "\nPeriodic Hartree-Fock iterations have converged!"
+              << std::endl;
+    std::cout << "\nTotal Periodic Hartree-Fock energy = " << energy_
+              << std::endl;
+
+    if (print_detail_) {
+      Eigen::IOFormat fmt(5);
+      std::cout << "\n k | orbital energies" << std::endl;
+      for (auto k = 0; k < ao_factory.k_size(); ++k) {
+        std::cout << k << " | " << eps_[k].real().transpose().format(fmt)
+                  << std::endl;
       }
-
-      // print out timings
-      std::cout << mpqc::printf("\nTime(s):\n");
-      std::cout << mpqc::printf("\tInit:                %20.3f\n", init_duration_);
-      std::cout << mpqc::printf("\tCoulomb term:        %20.3f\n", j_duration_);
-      std::cout << mpqc::printf("\tExchange term:       %20.3f\n", k_duration_);
-      std::cout << mpqc::printf("\tReal->Recip trans:   %20.3f\n", trans_duration_);
-      std::cout << mpqc::printf("\tDiag + Density:      %20.3f\n", d_duration_);
-      std::cout << mpqc::printf("\tTotal:               %20.3f\n\n", scf_duration_);
     }
-    return true;
-  }
-}
 
-double zRHF::value() {
-  init(kv_);
-  solve();
-  return energy_;
+    // print out timings
+    std::cout << mpqc::printf("\nTime(s):\n");
+    std::cout << mpqc::printf("\tInit:                %20.3f\n",
+                              init_duration_);
+    std::cout << mpqc::printf("\tCoulomb term:        %20.3f\n", j_duration_);
+    std::cout << mpqc::printf("\tExchange term:       %20.3f\n", k_duration_);
+    std::cout << mpqc::printf("\tReal->Recip trans:   %20.3f\n",
+                              trans_duration_);
+    std::cout << mpqc::printf("\tDiag + Density:      %20.3f\n", d_duration_);
+    std::cout << mpqc::printf("\tTotal:               %20.3f\n\n",
+                              scf_duration_);
+  }
 }
 
 void zRHF::compute_density() {
@@ -281,6 +274,20 @@ void zRHF::compute_density() {
 }
 
 void zRHF::obsolete() { Wavefunction::obsolete(); }
+
+bool zRHF::can_evaluate(Energy* energy) {
+  // can only evaluate the energy
+  return energy->order() == 0;
+}
+
+void zRHF::evaluate(Energy* result) {
+  if(!this->computed()){
+    init(kv_);
+    solve(result->target_precision(0));
+    this->computed_ = true;
+    set_value(result, energy_);
+  }
+}
 
 
 }  // namespace lcao

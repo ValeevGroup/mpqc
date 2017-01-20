@@ -11,6 +11,7 @@
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/util/misc/exception.h"
+#include "mpqc/util/misc/task.h"
 
 namespace mpqc {
 
@@ -42,7 +43,6 @@ class TimestampFactory {
   }
 };
 
-
 /// Timestampable<T> is a proxy to T that keeps the timestamp of the last
 /// modification.
 /// Stores T on heap to support the default_initialized state.
@@ -60,7 +60,7 @@ class Timestampable {
       : timestamp_(other.timestamp_), value_(std::make_shared<T>(T(other))) {}
 
   /// retrieve the value_ as a conversion to T
-  operator T() {
+  operator T() const {
     assert(value_ != nullptr);
     return *value_;
   }
@@ -75,7 +75,14 @@ class Timestampable {
   static timestamp_type get_timestamp() { return TimestampFactory::make(); }
 };
 
-template <typename Function> class FunctionVisitorBase;
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Timestampable<T>& x) {
+  os << T(x);
+  return os;
+}
+
+template <typename Function>
+class FunctionVisitorBase;
 
 /// property = function of a sequence of Parameters yielding a Value
 template <typename Value, typename Parameters>
@@ -106,17 +113,23 @@ class Function {
       return false;
   }
 
-  const std::shared_ptr<Parameters>& params() const { return params_; }
+  std::shared_ptr<Parameters> params() const { return params_; }
 
  protected:
-  /// implement in derived class
-  virtual void compute() = 0;
-
+  /// Direct access to the value of this function, bypasses timestamp check
+  /// @return the current value, i.e. \c value_
   const Timestampable<Value>& get_value() const { return value_; }
+  /// Sets the value of this function, used by the compute() method of derived
+  /// classes
+  /// or by Function visitors via FunctionVisitorBase::set_value() .
+  /// @param v the value to be returned by Function::value()
   void set_value(Value v) { value_ = Timestampable<Value>(v); }
 
+  /// evaluates \c value , implemented by the derived class
+  virtual void compute() = 0;
+
   // allow classes derived from FunctionVisitorBase<Function> to set the value
-  friend class FunctionVisitorBase<Function<Value,Parameters>>;
+  friend class FunctionVisitorBase<Function<Value, Parameters>>;
 
  private:
   Timestampable<Value> value_;
@@ -129,55 +142,55 @@ class Function {
 template <typename Function>
 class FunctionVisitorBase {
  protected:
-  static void set_value(Function* f, const typename Function::value_type& value) {
+  static void set_value(Function* f,
+                        const typename Function::value_type& value) {
     f->set_value(value);
   }
 };
 
-
 /// molecular coordinates + taylor expansion params
+/// @todo use MolecularCoordinates in MolecularTaylorExpansionParams
 class MolecularTaylorExpansionParams {
  public:
   MolecularTaylorExpansionParams(
       const std::shared_ptr<Molecule>& molecule,
-      std::initializer_list<double> taylor_expansion_precision)
+      std::vector<double> taylor_expansion_precision)
       : molecule_(molecule),
         precision_(taylor_expansion_precision.begin(),
                    taylor_expansion_precision.end()) {}
-  // 3 coords * # of atoms + 1 precision * number of derivatives
+  // # of molecular coords + 1 precision * number of derivatives
   size_t nparams() const {
     return molecule_->atoms().size() * 3 + precision_.size();
   }
 
-  int order() const { return precision_.size() - 1; }
-  double desired_precision(int order) const { return precision_.at(order); }
+  /// @return the order of Taylor expansion
+  size_t order() const { return precision_.size() - 1; }
+  /// @param ord the derivatiove order
+  /// @return the target precision for derivatives order \c ord
+  double target_precision(size_t ord) const { return precision_.at(ord); }
 
  private:
   std::shared_ptr<Molecule> molecule_;
   std::vector<double>
-      precision_;  // precision desired for each order of expansion
+      precision_;  // target precision for each order of expansion
 };
 
 /// N-th order Taylor expansion of a function of \c K variables
 
-/// @tparam Value can be complex valued or a vector (e.g. expansion of a dipole moment)
+/// @tparam Value can be complex valued or a vector (e.g. expansion of a dipole
+/// moment)
 template <typename Value>
 class TaylorExpansion {
  public:
-  TaylorExpansion()
-      : nvars_(0),
-        order_(0),
-        derivs_(order_ + 1, std::vector<Value>(1, Value(0))) {}
+  TaylorExpansion() : nvars_(0), derivs_() {}
 
   TaylorExpansion(Value real)
-      : nvars_(1),
-        order_(0),
-        derivs_(1,std::vector<Value>(1,real)) {}
+      : nvars_(1), derivs_(1, std::vector<Value>(1, real)) {}
 
-  TaylorExpansion(size_t nvars, int order)
-      : nvars_(nvars), order_(order), derivs_(order_ + 1) {
+  TaylorExpansion(size_t nvars, size_t order)
+      : nvars_(nvars), derivs_(order + 1) {
     derivs_[0].resize(1, Value(0));
-    for (int d = 1; d <= order_; ++d) {
+    for (int d = 1; d <= order; ++d) {
       derivs_[d].resize((derivs_[d - 1].size() * (nvars_ + d - 1)) / d,
                         Value(0));
     }
@@ -187,19 +200,46 @@ class TaylorExpansion {
   /// {i_1, i_2, i_3, ... i_N} \f$
   /// where \f$ i_1 \leq i_2 \leq i_3 ... \leq i_N \f$
   /// is stored in position TODO derive the general formula
-  const std::vector<Value>& derivs(int N) const { return derivs_.at(N); }
-  std::vector<Value>& derivs(int N) { return derivs_.at(N); }
+  const std::vector<Value>& derivs(size_t N) const { return derivs_.at(N); }
+  std::vector<Value>& derivs(size_t N) { return derivs_.at(N); }
+
+  /// @return the order of the expansion, i.e. the maximum derivative order
+  /// @throw ProgrammingError if this object is not initialized
+  size_t order() const {
+    if (derivs_.empty())
+      throw ProgrammingError(
+          "TaylorExpansion::order called, but the object is not initialized",
+          __FILE__, __LINE__);
+    return derivs_.size() - 1;
+  }
+
+  /// Print to an output stream
+  /// @param os the output stream
+  /// @throw ProgrammingError if this object is not initialized
+  void print(std::ostream& os) const {
+    if (derivs_.empty())
+      throw ProgrammingError(
+          "TaylorExpansion::print called, but the object is not initialized",
+          __FILE__, __LINE__);
+    os << indent << "value: " << printf("%20.15lf", derivs_.at(0).at(0))
+       << std::endl;
+    assert(order() == 0);
+  }
 
  private:
   /// Number of variables
   size_t nvars_;
-  /// expansion order
-  int order_;
   /// values of unique derivatives of each order
   /// # of unique derivs of order \f$ O = n \times (n+1) \times (n+O-1) / (1
   /// \times 2 \times O)
   std::vector<std::vector<Value>> derivs_;
 };
+
+template <typename Value>
+std::ostream& operator<<(std::ostream& os, const TaylorExpansion<Value>& x) {
+  x.print(os);
+  return os;
+}
 
 /// molecular taylor expansion = local expansion of a function of molecular
 /// coordinates
@@ -209,7 +249,8 @@ template <typename Value>
 class MolecularTaylorExpansion
     : public Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams> {
  public:
-  typedef Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams> function_base_type;
+  typedef Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams>
+      function_base_type;
 
   // make_molecular_params needs to create a MolecularCoordinates object and
   // set callbacks so that Molecule can update its timestamp when
@@ -217,22 +258,39 @@ class MolecularTaylorExpansion
 
   MolecularTaylorExpansion(
       const std::shared_ptr<Molecule>& molecule_,
-      std::initializer_list<typename scalar_type<Value>::type>
+      std::vector<typename scalar_type<Value>::type>
           taylor_expansion_precision)
       : Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams>(
             std::make_shared<MolecularTaylorExpansionParams>(
                 molecule_, taylor_expansion_precision)) {}
+
+  /// @return the order of Taylor expansion
+  size_t order() const {
+    return std::static_pointer_cast<MolecularTaylorExpansionParams>(this->params())
+        ->order();
+  }
+
+  /// @param ord the derivatiove order
+  /// @return the target precision for derivatives order \c ord
+  double target_precision(size_t ord) const {
+    return std::static_pointer_cast<MolecularTaylorExpansionParams>(this->params())
+        ->target_precision(ord);
+  }
 };
 
 /// this is the base for all properties that MPQC can compute via the input.
-/// MPQC main will read KeyVal and search for a PropertyBase object, compute it
+/// MPQC main will read KeyVal and search for a Property object, compute it
 /// using the given wave function
-class Property : public DescribedClass {
+class Property : public Task {
  public:
   // in a visitor pattern this is the "accept" method
   // the argument, Wavefunction*, does not appear here, it will be a member
   // of the derived class
   virtual void evaluate() = 0;
+
+ private:
+  /// implements Task::execute()
+  void execute() override final { evaluate(); }
 };
 
 /**
@@ -248,7 +306,7 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
   using typename MolecularTaylorExpansion<Value>::value_type;
   using typename MolecularTaylorExpansion<Value>::function_base_type;
   WavefunctionProperty(Wavefunction* wfn_ptr,
-                       std::initializer_list<typename scalar_type<Value>::type>
+                       std::vector<typename scalar_type<Value>::type>
                            taylor_expansion_precision)
       : MolecularTaylorExpansion<Value>(wfn_ptr->atoms(),
                                         taylor_expansion_precision),
@@ -261,59 +319,50 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
  protected:
   Wavefunction* wfn() { return wfn_; }
 
+  virtual void do_evaluate() = 0;
+
  private:
   Wavefunction* wfn_;
 
-  void compute() {
+  void evaluate() override { this->compute(); }
+
+  void compute() override {
     auto original_value_timestamp = this->get_value().timestamp();
-    this->evaluate();
+    this->do_evaluate();
     auto updated_value_timestamp = this->get_value().timestamp();
     if (original_value_timestamp == updated_value_timestamp)
       throw ProgrammingError(
-          "WavefunctionProperty::compute(): Wavefunction forgot to call set_value?", __FILE__,
-          __LINE__);
+          "WavefunctionProperty::compute(): Wavefunction forgot to call "
+          "set_value?",
+          __FILE__, __LINE__);
+
+    // report the result
+    ExEnv::out0() << indent << "Property \"" << this->class_key()
+                  << "\" computed with Wavefunction \"" << wfn_->class_key()
+                  << "\":" << std::endl
+                  << incindent << this->get_value() << std::endl
+                  << decindent;
   }
 };
 
 ////////////////////////////////////////////////////////////////////////
 
+/// \brief Base for classes that can evaluate \c Properties .
 
+/// This provides to the class that inherits this an ability to visit
+/// each property \c P in \c Properties by overloading
+/// the corresponding \c P::Evaluator::can_evaluate and \c P::Evaluator::evaluate
+/// methods.
+/// @tparam Properties the property type list
+template <typename... Properties>
+class CanEvaluate;
 
-#if 0
-  namespace lcao {
+template <typename Property0, typename... RestOfProperties>
+class CanEvaluate<Property0, RestOfProperties...>
+    : public Property0::Evaluator, public CanEvaluate<RestOfProperties...> {};
 
-  // there is a way to automate making lists of properties
-  // that a given Wavefunction supports
-  class CCSD : public Wavefunction, public Energy::Evaluator {
-   public:
-    bool can_evaluate(Energy* energy) override {
-    }
-    void evaluate(Energy* energy) override {
-    }
-  };
-
-  // there is a way to automate making lists of properties
-  // that a given Wavefunction supports
-  class GF2F12 : public Wavefunction, public GFRealPole::Evaluator {
-   public:
-    bool can_evaluate(GFRealPole* pole) override {
-    }
-    void evaluate(GFRealPole* pole) override {
-    }
-  };
-  }  // namespace lcao
-
-  namespace mra {
-
-  class SCF : public Wavefunction, public Energy::Evaluator {
-   public:
-    bool can_evaluate(Energy* energy) override {
-    }
-    void evaluate(Energy* energy) override {
-    }
-  };
-  }  // namespace mra
-#endif
+template <typename Property>
+class CanEvaluate<Property> : public Property::Evaluator {};
 
 }  // namespace mpqc
 

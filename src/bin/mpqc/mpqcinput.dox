@@ -112,10 +112,10 @@ But first MPQC wants to know which Property specialization it's dealing
 with here: that's given by the value of keyword <tt>type</tt>, in this case
 it's <tt>"Energy"</tt>, which means this will be an object of class Energy .
 
-<pre>
+```
 "property": {
     "type": "Energy",
-</pre>
+```
 <br />
 
 String <tt>"Energy"</tt> is known as the <em>key</em> that globally identifies
@@ -127,9 +127,9 @@ The rest of the keywords in this section are used by the KeyVal constructor of t
 class; these are listed in the documentation of the Energy class. The only such keyword is
 <tt>wfn</tt>:
 
-<pre>
+```
     "wfn": "$:wfn"
-</pre>
+```
 <br />
 
 Note that the value of <tt>wfn</tt>, namely <tt>$:wfn</tt>,
@@ -157,9 +157,9 @@ follow the base classes of Energy up to the Properties class, you'll find that
 The specification of <tt>properties</tt> object is now complete and the keyword block
 closes by a curly braket, followed by a comma since more keywords follow:
 
-<pre>
+```
   },
-</pre>
+```
 <br />
 
 Next we find the <tt>"wfn"</tt> keyword. It provides the object
@@ -170,18 +170,18 @@ Hartree-Fock calculation.  That is done with an object of type RHF.
 Since MPQC will expect any specialization of the Wavefunction class here,
 we must explicitly specify the object type by giving the <tt>type</tt> keyword:
 
-<pre>
+```
   "wfn": {
     "type": "RHF",
-</pre>
+```
 <br />
 
 The rest of keywords in this section are examined by the base classes of RHF:
 
-<pre>
+```
     "molecule" : "$:molecule",
     "basis" : "$:basis"
-</pre>
+```
 <br />
 
 Specifically, the <tt>molecule</tt> keyword specifies the Molecule object
@@ -197,36 +197,36 @@ will be "seen" by the RHF object. This can only be done using references.
 
 A curly braket closes the <tt>wfn</tt> object specification.
 
-<pre>
+```
   },
-</pre>
+```
 <br />
 
 Next we find the <tt>molecule</tt> keyword that has been referred to by the <tt>wfn</tt> object.
 It specifies a Molecule object:
 
-<pre>
+```
   "molecule": {
-</pre>
+```
 <br />
 
 Since Molecule is a concrete class there is no need to give a <tt>type</tt> keyword here.
 
 The atomic coordinates are specified by giving the name of a text file in the
 <a href="https://en.wikipedia.org/wiki/XYZ_file_format">XYZ format</a>.
-<pre>
+```
     "file_name": "water.xyz"
   },
-</pre>
+```
 <br />
 
 Next, a basis set object is given:
-<pre>
+```
   "basis": {
     "name": "aug-cc-pVDZ",
     "molecule": "$:molecule"
   }
-</pre>
+```
 Keyword <tt>name</tt> specifies the basis set name, and keyword <tt>molecule</tt>
 specifies the atomic centers on which to place the basis functions.
 There is no <tt>type</tt> keyword here since Basis is a concrete class.
@@ -235,9 +235,9 @@ There is no comma after the closing curly braket since this is the last keyword
 group in the input file. Now we close off the top-level JSON group with a curly braket
 and we are finished.
 
-<pre>
+```
 }
-</pre>
+```
 <br />
 
 \section mpqcoosamp Sample Object-Oriented Input Files
@@ -295,7 +295,7 @@ is expressed in XML as
   <molecule>$:molecule</molecule>
 </basis>
 ```
-It is expressed in the INFO format as
+The same input is expressed in the INFO format as
 ```
 property {
   type Energy

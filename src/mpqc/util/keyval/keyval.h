@@ -150,7 +150,7 @@ class DescribedClass {
 
   /// query the class key for T
   /// @tparam T a class
-  /// @return class key with which T was registered, or empty string if T is not registered
+  /// @return class key with which T was registered, or empty string if T was not registered
   /// @warning cannot call this function before global object initialization has
   /// completed (i.e. after main() has started)
   template <typename T>
@@ -159,6 +159,20 @@ class DescribedClass {
     const auto& registry = keyval_ctor_registry();
     for(const auto& elem: registry) {
       if (typeid(T) == elem.second.second)
+        return elem.first;
+    }
+    return std::string();
+  }
+
+  /// query the class key for this object
+  /// @return class key with which the class of this object was registered,
+  ///         or empty string if it was not registered
+  /// @warning cannot call this function before global object initialization has
+  /// completed (i.e. after main() has started)
+  std::string class_key() {
+    const auto& registry = keyval_ctor_registry();
+    for(const auto& elem: registry) {
+      if (typeid(*this) == elem.second.second)
         return elem.first;
     }
     return std::string();

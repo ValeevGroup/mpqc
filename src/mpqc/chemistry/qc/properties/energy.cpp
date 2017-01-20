@@ -10,7 +10,7 @@ MPQC_CLASS_EXPORT2("Energy", mpqc::Energy);
 
 namespace mpqc{
 
-void Energy::evaluate() {
+void Energy::do_evaluate() {
   auto evaluator = dynamic_cast<Evaluator*>(wfn());
   if (evaluator == nullptr) {
     std::ostringstream oss;
@@ -28,9 +28,9 @@ Wavefunction* Energy::get_wfn(const KeyVal& kv) {
   return wfn.get();
 }
 
-std::initializer_list<double> Energy::get_precision(const KeyVal& kv) {
+std::vector<double> Energy::get_precision(const KeyVal& kv) {
   double precision = kv.value<double>("precision",1.0e-8);
-  return std::initializer_list<double> {precision};
+  return std::vector<double>{precision};
 }
 
 }

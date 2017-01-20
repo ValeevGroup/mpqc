@@ -41,20 +41,12 @@ class MPQCTask {
     const double threshold = keyval_->value<double>("sparse_threshold", 1e-20);
     TiledArray::SparseShape<float>::threshold(threshold);
 
-    // Energy Property
-    // TODO auto detect Property type
-    // TODO need to loop over property
     auto property = keyval_->keyval("property").class_ptr<Property>();
-
     if (property != nullptr) {
       property->evaluate();
     } else {
       throw InputError("invalid property", __FILE__, __LINE__, "property");
     }
-
-    // TODO need to assign result to KeyVal
-    //
-//    keyval_->assign("wfn:energy", value);
   }
 
  private:

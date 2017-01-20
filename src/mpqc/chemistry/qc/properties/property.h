@@ -316,6 +316,16 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
                              __FILE__, __LINE__);
   }
 
+  /**
+   *    Constructor
+   * @param kv this KeyVal object should have keyword "wfn" which is a Wavefunction Object
+   * @param taylor_expansion_precision the precision has to be parsed from KeyVal in inherited class
+   */
+  WavefunctionProperty(const KeyVal& kv,
+                       std::vector<typename scalar_type<Value>::type>
+                       taylor_expansion_precision)
+      : WavefunctionProperty(get_wfn(kv), taylor_expansion_precision) {}
+
  protected:
   Wavefunction* wfn() { return wfn_; }
 
@@ -342,6 +352,11 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
                   << "\":" << std::endl
                   << incindent << this->get_value() << std::endl
                   << decindent;
+  }
+
+  Wavefunction* get_wfn(const KeyVal& kv) {
+    auto wfn = kv.keyval("wfn").class_ptr<lcao::Wavefunction>();
+    return wfn.get();
   }
 };
 

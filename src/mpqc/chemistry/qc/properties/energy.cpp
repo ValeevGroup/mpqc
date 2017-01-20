@@ -23,10 +23,6 @@ void Energy::do_evaluate() {
   evaluator->evaluate(this);
 }
 
-Wavefunction* Energy::get_wfn(const KeyVal& kv) {
-  auto wfn = kv.keyval("wfn").class_ptr<lcao::Wavefunction>();
-  return wfn.get();
-}
 
 std::vector<double> Energy::get_precision(const KeyVal& kv) {
   double precision = kv.value<double>("precision",1.0e-8);

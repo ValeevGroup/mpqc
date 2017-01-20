@@ -137,6 +137,11 @@ int try_main(int argc, char *argv[], madness::World& world) {
   }
   ExEnv::out0() << std::endl;
 
+
+  /// \warning KeyVal write_json won't support &world address, assign world after print of keyval input
+  kv->assign("world", &world);  // set "$:world" keyword to &world to define
+                                // the default execution context for this input
+
   // units
   ExEnv::out0() << indent << "Using fundamental constants system "
                 << UnitFactory::get_default()->system() << std::endl;

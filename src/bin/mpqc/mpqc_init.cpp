@@ -168,8 +168,6 @@ MPQCInit::make_keyval(madness::World& world, const std::string &filename) {
     throw InputError("did not recognize input file format (recognized formats: JSON, XML, INFO)",
                      __FILE__, __LINE__);
 
-  kv->assign("world", &world);  // set "$:world" keyword to &world to define
-                                // the default execution context for this input
   return kv;
 }
 

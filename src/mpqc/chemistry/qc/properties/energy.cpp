@@ -25,8 +25,15 @@ void Energy::do_evaluate() {
 
 
 std::vector<double> Energy::get_precision(const KeyVal& kv) {
-  double precision = kv.value<double>("precision",1.0e-8);
-  return std::vector<double>{precision};
+  if (kv.exists("precision") && kv.count("precision") > 0) { // given an array of precisions
+    return kv.value<std::vector<double>>("precision");
+  }
+  else {
+    auto deriv_order = kv.value<size_t>("deriv_order",0);
+    std::cout << "Energy::deriv_order = " << deriv_order << std::endl;
+    auto precision = kv.value<double>("precision",1.0e-8);
+    return std::vector<double>(deriv_order+1, precision);
+  }
 }
 
 }

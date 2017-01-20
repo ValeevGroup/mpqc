@@ -23,7 +23,7 @@ public:
 
   /**
    *  every class that can evaluate Energy (e.g. Wavefunction) will publicly
-   *  inherit from Energy::EvaluatorBase
+   *  inherit from Energy::Evaluator
    */
   class Evaluator : public FunctionVisitorBase<function_base_type> {
   public:
@@ -45,9 +45,9 @@ public:
    * as well as the following keywords:
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | wfn | Wavefunction | none | the Wavefunction to use to compute energy  |
-   * | precision | double | 1.0e-8 | precision for energy property |
-   *
+   * | wfn | Wavefunction | none | the Wavefunction that will compute this  |
+   * | precision | {array<real> \| real} | {none \| 1e-8} | target precision for {each \| all} derivative orders|
+   * | deriv_order | int | 0 | the highest derivative order; only queried if precision is not given or is given as an array |
    */
   // clang-format on
 

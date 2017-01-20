@@ -122,15 +122,15 @@ namespace mpqc {
       double threshold = tcut_;
       ExEnv::out0() << "tcut is " << tcut_ << std::endl;
 
-      integer vir = this->trange1_engine()->get_vir();
-
-      std::size_t orb_i = 1, orb_j = 1;
-
       // decompose and reconstruct T2
       auto transfrom = [&](Tile &in_tile) -> float {
 
         // copy in_tile which is ab matrix of T^ij
         Tile tab_tile = in_tile.clone();
+
+        // compute ij pair index
+        const auto orb_i = in_tile.range().upbound()[2];
+        const auto orb_j = in_tile.range().upbound()[3];
 
         // get the dimensions of input tile
         const auto extent = in_tile.range().extent();
@@ -151,11 +151,8 @@ namespace mpqc {
         TA::EigenMatrixXd Dab = Tab * (4.0 * Tab - 2.0 * Tab.transpose()).transpose()
                               + Tab.transpose() * (4.0 * Tab - 2.0 * Tab.transpose());
         // when i=j, Dab = Tab*Tab' + Tab'*Tab
-        if ((Tab - Tab.transpose()).norm() < 1e-10) {
-          ss << "i = j, (Tab - Tab.transpose()).norm(): "
-             << (Tab - Tab.transpose()).norm() << std::endl;
+        if (orb_i == orb_j)
           Dab = Dab/2.0;
-        }
 
         // compute eigenvalues ans eigenvectors of Dab
         Eigen::SelfAdjointEigenSolver<TA::EigenMatrixXd> es(Dab);
@@ -234,13 +231,10 @@ namespace mpqc {
             a, b, rank, 1.0, u_ax.get(), a, v_xb.get(), b, 0.0, in_tile.data(), a);
 #endif // T2_SVD
 
-        ++orb_i;
-        ++orb_j;
-
 //        ss << "output tile: " << in_tile << std::endl;
 
         // compute the norm of difference between input and output tile
-        ss << "rank: " << rank
+        ss << "("<< orb_i << "," << orb_j << ") pair  rank: " << rank
            << "  (t_new - t_old).norm(): " << (TA::subt(in_tile, tab_tile)).norm()
            << std::endl;
 
@@ -674,7 +668,7 @@ namespace mpqc {
 
       // decompose MP2 T2 amplitudes
       // using either eigen or SVD decomposition
-      ExEnv::out0() << std::endl << "Decomposing MP2 amplitudes" << std::endl;
+      ExEnv::out0() << "Decomposing MP2 amplitudes" << std::endl;
       decom_t2_mp2();
 
       // transform MP2 T2 amplitudes back into its original blocking structure

@@ -390,7 +390,7 @@ class KeyVal {
   ///         if \c path does not exist, return an empty KeyVal
   KeyVal keyval(const key_type& path) const {
     auto abs_path = resolve_path(path);
-    return KeyVal(top_tree_, class_registry_, abs_path);
+    return KeyVal(top_tree_, dc_registry_, abs_path);
   }
 
   /// \brief returns a shared_ptr to the (top) tree
@@ -412,8 +412,8 @@ class KeyVal {
   /// @return true if \c path class exists
   bool exists_class(const key_type& path) const {
     bool exist_class = false;
-    auto cptr = class_registry_->find(resolve_path(path));
-    if (cptr != class_registry_->end()) {
+    auto cptr = dc_registry_->find(resolve_path(path));
+    if (cptr != dc_registry_->end()) {
       exist_class = true;
     }
     return exist_class;
@@ -489,7 +489,7 @@ class KeyVal {
   KeyVal& assign(const key_type& path,
                  const std::shared_ptr<DescribedClass>& value) {
     auto abs_path = to_absolute_path(path);
-    (*class_registry_)[abs_path] = value;
+    (*dc_registry_)[abs_path] = value;
     return *this;
   }
 
@@ -604,8 +604,8 @@ class KeyVal {
     // if this class already exists in the registry under path
     // (e.g. if the ptr was assigned programmatically), return immediately
     if (!bypass_registry) {
-      auto cptr = class_registry_->find(path);
-      if (cptr != class_registry_->end())
+      auto cptr = dc_registry_->find(path);
+      if (cptr != dc_registry_->end())
         return std::dynamic_pointer_cast<T>(cptr->second);
     }
 
@@ -615,8 +615,8 @@ class KeyVal {
 
     // if this class already exists, return the ptr
     if (!bypass_registry) {
-      auto cptr = class_registry_->find(abs_path);
-      if (cptr != class_registry_->end())
+      auto cptr = dc_registry_->find(abs_path);
+      if (cptr != dc_registry_->end())
         return std::dynamic_pointer_cast<T>(cptr->second);
     }
 
@@ -659,7 +659,7 @@ class KeyVal {
     // otherwise use self
     auto result = !path.empty() ? (*ctor)(this->keyval(path)) : (*ctor)(*this);
     if (!bypass_registry)
-      (*class_registry_)[abs_path] = result;
+      (*dc_registry_)[abs_path] = result;
     return std::dynamic_pointer_cast<T>(result);
   }
 
@@ -700,22 +700,23 @@ class KeyVal {
 
  private:
   std::shared_ptr<ptree> top_tree_;
-  using class_registry_type =
+  // 'dc' = DescribedClass
+  using dc_registry_type =
       std::map<std::string, std::shared_ptr<DescribedClass>>;
-  std::shared_ptr<class_registry_type> class_registry_;
+  std::shared_ptr<dc_registry_type> dc_registry_;
   const key_type path_;  //!< path from the top of \c top_tree_ to this subtree
 
   /// creates a KeyVal
   KeyVal(const std::shared_ptr<ptree>& top_tree,
-         const std::shared_ptr<class_registry_type>& class_registry,
+         const std::shared_ptr<dc_registry_type>& dc_registry,
          const key_type& path)
-      : top_tree_(top_tree), class_registry_(class_registry), path_(path) {}
+      : top_tree_(top_tree), dc_registry_(dc_registry), path_(path) {}
 
   /// creates a KeyVal using am existing \c ptree
   /// @param pt a ptree
   KeyVal(ptree pt)
       : top_tree_(std::make_shared<ptree>(std::move(pt))),
-        class_registry_(),
+        dc_registry_(),
         path_("") {}
 
   /// given a path that contains ".." elements, returns the equivalent path

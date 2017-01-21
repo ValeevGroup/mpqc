@@ -266,11 +266,11 @@ Note that we eliminated the reptile and bird sections so that all animals appear
 
 Skipping for now the modifications of the C++ classes necessary, see how easy it is to read in these animals as
 objects of Animal class:
-@code
-auto trex = kv.class<Animal>("trex");              assert(trex->extinct() == true);
-auto python = kv.class<Animal>("python");          assert(python->extinct() == false);
-auto bald_eagle = kv.class<Animal>("bald eagle");  assert(bald_eagle->extinct() == false);
-@endcode
+```
+auto trex = kv.class_ptr<Animal>("trex");             assert(trex->extinct() == true);
+auto python = kv.class_ptr<Animal>("python");         assert(python->extinct() == false);
+auto bald_eagle = kv.class_ptr<Animal>("bald eagle"); assert(bald_eagle->extinct() == false);
+```
 KeyVal::class_ptr<T> returns \c std::shared_ptr<T> , hence the pointer dereferencing. Also, the actual types of
 \c trex , \c python , and \c bald_eagle are Reptile, Reptile, and Bird, so we can access their full properties:
 @code

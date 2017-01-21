@@ -268,7 +268,7 @@ class MolecularTaylorExpansion
    */
   // clang-format on
   MolecularTaylorExpansion(const KeyVal& kv)
-      : MolecularTaylorExpansion(kv.keyval("coords").class_ptr<MolecularCoordinates>(),
+      : MolecularTaylorExpansion(kv.class_ptr<MolecularCoordinates>("coords"),
                                  init_precision(kv, default_precision_)) {}
 
   /// @return the order of Taylor expansion
@@ -302,7 +302,7 @@ class MolecularTaylorExpansion
                            double default_precision = default_precision_)
       : MolecularTaylorExpansion(
             (kv.exists("coords")
-                 ? kv.keyval("coords").class_ptr<MolecularCoordinates>()
+                 ? kv.class_ptr<MolecularCoordinates>("coords")
                  : std::make_shared<CartMolecularCoordinates>(mol)),
             init_precision(kv, default_precision)) {}
 
@@ -397,10 +397,10 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
   // clang-format on
   WavefunctionProperty(const KeyVal& kv, double default_precision)
       : MolecularTaylorExpansion<Value>(
-            kv, (kv.keyval("wfn").class_ptr<lcao::Wavefunction>()
-                     ? kv.keyval("wfn").class_ptr<lcao::Wavefunction>()->atoms()
+            kv, (kv.class_ptr<lcao::Wavefunction>("wfn")
+                     ? kv.class_ptr<lcao::Wavefunction>("wfn")->atoms()
                      : nullptr), default_precision) {
-    wfn_ = kv.keyval("wfn").class_ptr<lcao::Wavefunction>().get();
+    wfn_ = kv.class_ptr<lcao::Wavefunction>("wfn").get();
     if (wfn_ == nullptr)
       throw InputError(
           "WavefunctionProperty did not receive a Wavefunction object",

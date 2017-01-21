@@ -74,7 +74,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
    */
   CCSD(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
     if (kv.exists("ref")) {
-      ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
+      ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
     } else {
       throw std::invalid_argument("Default Ref Wfn in CCSD is not support! \n");
     }

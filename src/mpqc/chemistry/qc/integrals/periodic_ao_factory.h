@@ -201,7 +201,7 @@ class PeriodicAOFactory : public DescribedClass {
           "molecule:type has to be UnitCell in order to run PRHF!!");
     }
 
-    unitcell_ = kv.keyval(prefix + "molecule").class_ptr<UnitCell>();
+    unitcell_ = kv.class_ptr<UnitCell>(prefix + "molecule");
     dcell_ = unitcell_->dcell();
 
     R_max_ = decltype(R_max_)(

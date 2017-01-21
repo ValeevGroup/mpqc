@@ -45,7 +45,7 @@ MPQC_CLASS_EXPORT_KEY(Derived<0>);
 struct Nested : public DescribedClass{
 
   Nested(const KeyVal& kv) {
-    auto base = kv.keyval("base").class_ptr<Base>();
+    auto base = kv.class_ptr<Base>("base");
     base_ = base;
   }
 
@@ -277,16 +277,16 @@ a 1";
                                        // KeyVal::value gets the first
                                        // specification
 
-    auto nested = kv.keyval("nested").class_ptr<Nested>();
+    auto nested = kv.class_ptr<Nested>("nested");
 
-    auto b1 = kv.keyval("mpqc:base").class_ptr<Base>();
-    auto b2 = kv.keyval("base").class_ptr<Base>();
+    auto b1 = kv.class_ptr<Base>("mpqc:base");
+    auto b2 = kv.class_ptr<Base>("base");
     REQUIRE(b1 == b2);
-    auto b3 = kv.keyval("mpqc:base").class_ptr<Base>();
+    auto b3 = kv.class_ptr<Base>("mpqc:base");
     REQUIRE(b1 == b3);
     Derived<0> x(kv.keyval("mpqc:deriv"));
-    auto d1 = kv.keyval("mpqc:deriv").class_ptr<Derived<0>>();
-    auto d2 = kv.keyval("deriv0").class_ptr<Derived<0>>();
+    auto d1 = kv.class_ptr<Derived<0>>("mpqc:deriv");
+    auto d2 = kv.class_ptr<Derived<0>>("deriv0");
     Derived<0>* d3 = &x;
     REQUIRE(d1 == d2);
     REQUIRE(d1.get() != d3);
@@ -348,7 +348,7 @@ a 1";
 
     kv.assign("world", &world);
 
-    REQUIRE_NOTHROW(kv.keyval("basis").class_ptr<::mpqc::lcao::gaussian::Basis>());
+    REQUIRE_NOTHROW(kv.class_ptr<::mpqc::lcao::gaussian::Basis>("basis"));
 
   }
 

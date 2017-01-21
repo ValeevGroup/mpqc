@@ -99,7 +99,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
 
   GF2F12(const KeyVal& kv) : LCAOWavefunction<Tile, Policy>(kv) {
     if (kv.exists("ref")) {
-      ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
+      ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
     } else {
       throw std::invalid_argument(
           "Default Ref Wfn in GF2F12 is not support! \n");

@@ -19,7 +19,7 @@ namespace lcao {
 zRHF::zRHF(const KeyVal& kv) : PeriodicAOWavefunction(kv), kv_(kv) {}
 
 void zRHF::init(const KeyVal& kv) {
-  auto& unitcell = *kv.keyval("wfn_world:molecule").class_ptr<UnitCell>();
+  auto& unitcell = *kv.class_ptr<UnitCell>("wfn_world:molecule");
 
   maxiter_ = kv.value<int64_t>("max_iter", 30);
   bool soad_guess = kv.value<bool>("soad_guess", true);

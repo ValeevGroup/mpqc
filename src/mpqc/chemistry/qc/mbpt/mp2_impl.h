@@ -32,7 +32,7 @@ double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
 template<typename Tile, typename Policy>
 RMP2<Tile,Policy>::RMP2(const KeyVal &kv) : LCAOWavefunction<Tile,Policy>(kv) {
   if (kv.exists("ref")) {
-    ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
+    ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
   } else {
     throw std::invalid_argument("Default Ref Wfn in RMP2 is not support! \n");
   }

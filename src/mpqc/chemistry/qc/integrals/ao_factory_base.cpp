@@ -102,7 +102,7 @@ AOFactoryBase::AOFactoryBase(const KeyVal &kv)
   }
   /// Basis will come from wfn_world
   //  orbital_basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
-  mol_ = kv.keyval(prefix + "molecule").class_ptr<Molecule>();
+  mol_ = kv.class_ptr<Molecule>(prefix + "molecule");
 
   // if have auxilary basis
   if(kv.exists( prefix + "aux_basis")){

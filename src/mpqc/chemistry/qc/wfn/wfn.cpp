@@ -17,15 +17,15 @@ Wavefunction::Wavefunction(const KeyVal &kv) : ::mpqc::Wavefunction(kv) {
 
   // first check if wfn_world is provided
   if(kv.exists("wfn_world")){
-    wfn_world_ = kv.keyval("wfn_world").class_ptr<WavefunctionWorld>();
+    wfn_world_ = kv.class_ptr<WavefunctionWorld>("wfn_world");
   }
   // check if wfn_world exist one level above
   else if(kv.exists("..:wfn_world")){
-    wfn_world_ = kv.keyval("..:wfn_world").class_ptr<WavefunctionWorld>();
+    wfn_world_ = kv.class_ptr<WavefunctionWorld>("..:wfn_world");
   }
   // use global (i.e. top-level) wfn_world
   else if(kv.exists("$:wfn_world")){
-    wfn_world_ = kv.keyval("$:wfn_world").class_ptr<WavefunctionWorld>();
+    wfn_world_ = kv.class_ptr<WavefunctionWorld>("$:wfn_world");
   }
   else{
     wfn_world_ = std::make_shared<WavefunctionWorld>(kv);

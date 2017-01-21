@@ -13,7 +13,7 @@ namespace lcao {
 template <typename Tile>
 RMP2F12<Tile>::RMP2F12(const KeyVal& kv) : LCAOWavefunction<Tile,TA::SparsePolicy>(kv) {
   if (kv.exists("ref")) {
-    ref_wfn_ = kv.keyval("ref").class_ptr<Wavefunction>();
+    ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
   } else {
     throw std::invalid_argument(
         "Default Ref Wfn in RMP2F12 is not support! \n");

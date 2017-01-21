@@ -41,7 +41,7 @@ class MPQCTask {
     const double threshold = keyval_->value<double>("sparse_threshold", 1e-20);
     TiledArray::SparseShape<float>::threshold(threshold);
 
-    auto property = keyval_->keyval("property").class_ptr<Property>();
+    auto property = keyval_->class_ptr<Property>("property");
     if (property != nullptr) {
       property->evaluate();
     } else {

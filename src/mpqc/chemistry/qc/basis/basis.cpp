@@ -31,7 +31,7 @@ Basis::Basis(const KeyVal &kv) {
   BasisSet basis_set(basis_name);
 
   // molecule
-  auto mol_ptr = kv.keyval("molecule").class_ptr<mpqc::Molecule>();
+  auto mol_ptr = kv.class_ptr<mpqc::Molecule>("molecule");
 
   // find world from one level above
   madness::World *world = kv.value<madness::World *>("$:world");

@@ -137,7 +137,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
   kv.read_json(ss);
   kv.assign("world", &world);
 
-  auto mol =  kv.keyval("molecule").class_ptr<Molecule>();
+  auto mol =  kv.class_ptr<Molecule>("molecule");
 
   std::size_t occ = (mol->occupation(0) - mol->core_electrons())/2 ;
 

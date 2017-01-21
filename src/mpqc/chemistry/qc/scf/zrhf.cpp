@@ -19,8 +19,6 @@ namespace lcao {
 zRHF::zRHF(const KeyVal& kv) : PeriodicAOWavefunction(kv), kv_(kv) {}
 
 void zRHF::init(const KeyVal& kv) {
-  auto& unitcell = *kv.class_ptr<UnitCell>("wfn_world:molecule");
-
   maxiter_ = kv.value<int64_t>("max_iter", 30);
   bool soad_guess = kv.value<bool>("soad_guess", true);
   print_detail_ = kv.value<bool>("print_detail", false);
@@ -29,6 +27,7 @@ void zRHF::init(const KeyVal& kv) {
   auto& ao_factory = this->ao_factory();
   // retrieve world from pao_factory
   auto& world = ao_factory.world();
+  auto unitcell = ao_factory.unitcell();
 
   auto init_start = mpqc::fenced_now(world);
 
@@ -37,12 +36,12 @@ void zRHF::init(const KeyVal& kv) {
 
   if (world.rank() == 0) {
     std::cout << ao_factory << std::endl;
-    std::cout << unitcell << std::endl;
+    std::cout << *unitcell << std::endl;
   }
 
-  auto charge = unitcell.charge();
-  docc_ = unitcell.occupation(charge) / 2;
-  dcell_ = unitcell.dcell();
+  auto charge = unitcell->charge();
+  docc_ = unitcell->occupation(charge) / 2;
+  dcell_ = unitcell->dcell();
 
   // retrieve unitcell info from pao_factory
   R_max_ = ao_factory.R_max();
@@ -55,7 +54,7 @@ void zRHF::init(const KeyVal& kv) {
   k_size_ = ao_factory.k_size();
 
   // compute nuclear-repulsion energy
-  repulsion_ = unitcell.nuclear_repulsion(RJ_max_);
+  repulsion_ = unitcell->nuclear_repulsion(RJ_max_);
   if (world.rank() == 0)
     std::cout << "\nNuclear Repulsion: " << repulsion_ << std::endl;
 
@@ -73,7 +72,7 @@ void zRHF::init(const KeyVal& kv) {
     }
     F_ = H_;
   } else {
-    F_ = periodic_fock_soad(world, unitcell, H_, ao_factory);
+    F_ = periodic_fock_soad(world, *unitcell, H_, ao_factory);
   }
 
   // transform Fock from real to reciprocal space

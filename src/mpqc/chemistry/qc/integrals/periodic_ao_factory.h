@@ -195,13 +195,8 @@ class PeriodicAOFactory : public DescribedClass {
     std::string prefix = "";
     if (kv.exists_class("wfn_world")) prefix = "wfn_world:";
 
-    std::string molecule_type = kv.value<std::string>(prefix + "molecule:type");
-    if (molecule_type != "UnitCell") {
-      throw std::invalid_argument(
-          "molecule:type has to be UnitCell in order to run PRHF!!");
-    }
-
-    unitcell_ = kv.class_ptr<UnitCell>(prefix + "molecule");
+    // Molecule was already created at this path, bypass registry and construct UnitCell
+    unitcell_ = kv.class_ptr<UnitCell>(prefix + "molecule", true);
     dcell_ = unitcell_->dcell();
 
     R_max_ = decltype(R_max_)(
@@ -250,6 +245,9 @@ class PeriodicAOFactory : public DescribedClass {
    * \return the reciprocal-space integral matrix
    */
   TArray transform_real2recip(TArray &matrix);
+
+  /// @return a shared ptr to the UnitCell object
+  std::shared_ptr<UnitCell> unitcell() const { return unitcell_; }
 
   /// @return the range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i R_max() { return R_max_; }

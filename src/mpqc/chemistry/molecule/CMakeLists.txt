@@ -13,6 +13,8 @@ clustering_functions.cpp
 clustering_functions.h
 common.cpp
 common.h
+coords.cpp
+coords.h
 formula.cpp
 formula.h
 linkage.cpp

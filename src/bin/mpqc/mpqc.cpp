@@ -170,6 +170,9 @@ int main(int argc, char *argv[]) {
   try {
     try_main(argc, argv, *world_ptr);
 
+  } catch (mpqc::Exception &e){
+    std::cerr << "!! MPQC exception: " << e.what() << "\n";
+    rc = 1;
   } catch (TiledArray::Exception &e) {
     std::cerr << "!! TiledArray exception: " << e.what() << "\n";
     rc = 1;
@@ -181,9 +184,6 @@ int main(int argc, char *argv[]) {
     rc = 1;
   } catch (std::exception &e) {
     std::cerr << "!! std exception: " << e.what() << "\n";
-    rc = 1;
-  } catch (mpqc::Exception &e){
-    std::cerr << "!! MPQC exception: " << e.what() << "\n";
     rc = 1;
   }
   catch (...) {

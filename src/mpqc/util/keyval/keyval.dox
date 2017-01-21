@@ -318,6 +318,8 @@ A few comments:
     (see \ref keyvaldescribedclass ).
   - Smart pointers to objects created using KeyVal::class_ptr method are stored in the registry associated
     with that KeyVal's top tree. They will not be destroyed until KeyVal is destroyed as well.
+    This behavior can be bypassed by providing calling KeyVal::class_ptr with the second
+    parameter set to \c true ; the lifetime of the object then must be managed by the user.
   - Every class that we want to construct from KeyVal polymorphically needs to be associated with a
     global unique identifier descriptor (GUID) string (typically, GUID is the class name without the namespace).
     This is done using the MPQC_CLASS_EXPORT_KEY() macro. MPQC_CLASS_EXPORT_KEY(Reptile) registers

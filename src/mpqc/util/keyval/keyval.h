@@ -588,6 +588,8 @@ class KeyVal {
   /// registered.
   /// @tparam T a class derived from DescribedClass
   /// @param path the path; if not provided, use the empty path
+  /// @param bypass_registry if \c true will not query the registry for the existence of the object
+  ///        and will not place the newly-constructed object in the registry
   /// @return a std::shared_ptr to \c T ; null pointer will be returned if \c
   /// path does not exist.
   /// @throws KeyVal::bad_input if the value of keyword "type" is not a
@@ -597,10 +599,11 @@ class KeyVal {
   /// @note ```class_ptr<T>("path")```  is equivalent to ```keyval("path").class_ptr<T>()```
   template <typename T = DescribedClass,
             typename = std::enable_if_t<Describable<T>::value>>
-  std::shared_ptr<T> class_ptr(const key_type& path = key_type()) const {
+  std::shared_ptr<T> class_ptr(const key_type& path = key_type(),
+                               bool bypass_registry = false) const {
     // if this class already exists in the registry under path
     // (e.g. if the ptr was assigned programmatically), return immediately
-    {
+    if (!bypass_registry) {
       auto cptr = class_registry_->find(path);
       if (cptr != class_registry_->end())
         return std::dynamic_pointer_cast<T>(cptr->second);
@@ -611,9 +614,11 @@ class KeyVal {
     auto abs_path = resolve_path(path);
 
     // if this class already exists, return the ptr
-    auto cptr = class_registry_->find(abs_path);
-    if (cptr != class_registry_->end())
-      return std::dynamic_pointer_cast<T>(cptr->second);
+    if (!bypass_registry) {
+      auto cptr = class_registry_->find(abs_path);
+      if (cptr != class_registry_->end())
+        return std::dynamic_pointer_cast<T>(cptr->second);
+    }
 
     // return nullptr if the path does not exist
     if (!this->exists_(abs_path)) {
@@ -653,7 +658,8 @@ class KeyVal {
     // if nonempty path, construct a KeyVal object rooted at that path,
     // otherwise use self
     auto result = !path.empty() ? (*ctor)(this->keyval(path)) : (*ctor)(*this);
-    (*class_registry_)[abs_path] = result;
+    if (!bypass_registry)
+      (*class_registry_)[abs_path] = result;
     return std::dynamic_pointer_cast<T>(result);
   }
 

@@ -24,6 +24,8 @@ public:
   /**
    *  every class that can evaluate Energy (e.g. Wavefunction) will publicly
    *  inherit from Energy::Evaluator
+   *
+   *  @sa CanEvaluate
    */
   class Evaluator : public FunctionVisitorBase<function_base_type> {
   public:

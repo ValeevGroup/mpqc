@@ -164,7 +164,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute(const Formula &formula) {
 template <typename Tile, typename Policy>
 typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
-  mpqc::time_point time0 = mpqc::now(this->world_, this->accurate_time_);
+  auto time0 = mpqc::now(this->world_, this->accurate_time_);
 
   TArray result;
 
@@ -231,6 +231,9 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
         pao_ints("p, q") += ao_int("p, q");
     }
   }
+  auto aobuild_time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto aobuild_duration = mpqc::duration_in_s(time0, aobuild_time1);
+
 
   // get MO coefficients
   auto left_index = formula.bra_indices()[0];
@@ -245,17 +248,19 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     result("p, i") = result("p, q") * right("q, i");
   }
 
-  result.truncate();
-
-  mpqc::time_point time1 = mpqc::now(this->world_, this->accurate_time_);
-
+  auto time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto trans_duration = mpqc::duration_in_s(aobuild_time1, time1);
   auto duration = mpqc::duration_in_s(time0, time1);
-  double size = mpqc::detail::array_size(result);
+
+  result.truncate();
 
   ExEnv::out0() << " Transformed Gamma-Point Periodic LCAO Integral: "
                 << utility::to_string(formula.string()) << std::endl;
+  double size = mpqc::detail::array_size(result);
   ExEnv::out0() << " Size: " << size << " GB" << std::endl;
   ExEnv::out0() << " Time: " << duration << " s" << std::endl;
+  ExEnv::out0() << "    PAO build time: " << aobuild_duration << " s" << std::endl;
+  ExEnv::out0() << "    PAO->CO transform time: " << trans_duration << " s" << std::endl;
 
   return result;
 }
@@ -269,6 +274,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
                 << utility::to_string(ao_formula.string())
                 << " for PeriodicLCAOFactory." << std::endl;
 
+  auto time0 = mpqc::now(this->world_, this->accurate_time_);
   TArray result_ta;
 
   using ::mpqc::lcao::detail::direct_vector;
@@ -384,6 +390,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
   } else {
     throw std::runtime_error("Operator type not supported!");
   }
+  auto time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto duration = mpqc::duration_in_s(time0, time1);
+
+  ExEnv::out0() << "    Time: " << duration << " s\n";
 
   return result_ta;
 }
@@ -391,7 +401,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
 template <typename Tile, typename Policy>
 typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
-  mpqc::time_point time0 = mpqc::now(this->world_, this->accurate_time_);
+  auto time0 = mpqc::now(this->world_, this->accurate_time_);
 
   TArray result;
 
@@ -459,13 +469,15 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     }
   }
 
+  auto aobuild_time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto aobuild_duration = mpqc::duration_in_s(time0, aobuild_time1);
+
   // get MO coefficients
   auto left_index1 = formula.bra_indices()[0];
   if (left_index1.is_mo()) {
     auto &left1 = orbital_space_registry_->retrieve(left_index1);
     result("i, q, r, s") = pao_ints("p, q, r, s") * left1("p, i");
   }
-
 
   auto left_index2 = formula.bra_indices()[1];
   if (left_index2.is_mo()) {
@@ -485,18 +497,19 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     result("p, q, r, i") = result("p, q, r, s") * right2("s, i");
   }
 
-  result("p, q, r, s") = (1.0 / double(R_size_)) * result("p, q, r, s");
+  auto time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto trans_duration = mpqc::duration_in_s(aobuild_time1, time1);
+  auto duration = mpqc::duration_in_s(time0, time1);
 
   result.truncate();
 
-  mpqc::time_point time1 = mpqc::now(this->world_, this->accurate_time_);
-  auto duration = mpqc::duration_in_s(time0, time1);
-  double size = mpqc::detail::array_size(result);
-
   ExEnv::out0() << " Transformed Gamma-Point Periodic LCAO Integral: "
                 << utility::to_string(formula.string()) << std::endl;
+  double size = mpqc::detail::array_size(result);
   ExEnv::out0() << " Size: " << size << " GB" << std::endl;
   ExEnv::out0() << " Time: " << duration << " s" << std::endl;
+  ExEnv::out0() << "    PAO build time: " << aobuild_duration << " s" << std::endl;
+  ExEnv::out0() << "    PAO->CO transform time: " << trans_duration << " s" << std::endl;
 
   return result;
 }

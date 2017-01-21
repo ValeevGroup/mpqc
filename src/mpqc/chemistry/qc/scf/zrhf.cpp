@@ -270,7 +270,18 @@ zRHF::TArray zRHF::compute_density() {
     Eigen::SelfAdjointEigenSolver<Matrixz> comp_eig_solver(Ft);
     eps_[k] = comp_eig_solver.eigenvalues().cast<std::complex<double>>();
     auto Ctemp = comp_eig_solver.eigenvectors();
+
+    // When k=0 (gamma point), reverse phase factor of complex eigenvectors
+    if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2)) {
+        for (auto row = 0; row < Ctemp.rows(); ++row) {
+            for (auto col = 0; col < Ctemp.cols(); ++col) {
+                Ctemp(row, col) = reverse_phase_factor(Ctemp(row, col));
+            }
+        }
+    }
+
     C_[k] = X * Ctemp;
+
   }
 
   Matrixz result_eig(tr0.extent(), tr1.extent());
@@ -325,6 +336,30 @@ zRHF::TArray zRHF::transform_real2recip(TArray& matrix) {
   result = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, result_eig, tr0, tr1);
 
   return result;
+}
+
+std::complex<double> zRHF::reverse_phase_factor(std::complex<double> comp0) {
+    double norm = std::abs(comp0);
+    if (norm == 0.0) {
+        return comp0;
+    } else {
+        double real = comp0.real();
+        double imag = comp0.imag();
+
+        double phi = std::atan(imag/real);
+
+        double R;
+        if (std::cos(phi) != 0.0) {
+            R = real / std::cos(phi);
+        } else {
+            R = imag / std::sin(phi);
+        }
+
+        std::complex<double> comp1 = comp0 * std::exp(-1.0 * I * phi);
+
+        return comp1;
+    }
+
 }
 
 void zRHF::obsolete() { Wavefunction::obsolete(); }

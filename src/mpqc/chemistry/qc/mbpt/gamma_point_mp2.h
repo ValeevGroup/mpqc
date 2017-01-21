@@ -146,6 +146,8 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
       throw std::invalid_argument(
           "Default ref wfn in GammaPointMP2 is not supported!");
     }
+
+    print_detail_ = kv.value<bool>("print_detail", false);
   }
 
   ~GammaPointMP2() = default;
@@ -164,6 +166,7 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
     if (this->energy_ == 0.0) {
       double ref_energy = ref_wfn_->value();
 
+      auto time0 = mpqc::now(this->wfn_world()->world(), false);
       init();
 
       e_mp2_ = compute_gamma_point_mp2();
@@ -172,6 +175,11 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
                     << std::endl;
 
       this->energy_ = ref_energy + e_mp2_;
+      auto time1 = mpqc::now(this->wfn_world()->world(), false);
+      auto duration = mpqc::duration_in_s(time0, time1);
+      if (print_detail_) {
+          ExEnv::out0() << " Total time for gamma-point mp2: " << duration << " s\n";
+      }
     }
     return this->energy_;
   }
@@ -182,6 +190,8 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
   double e_mp2_;
   Matrixz C_;
   Vectorz eps_;
+
+  bool print_detail_;
 
  private:
   /*!
@@ -202,6 +212,7 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
     C_ = ref_wfn_->co_coeff()[gamma_point];
     eps_ = ref_wfn_->co_energy()[gamma_point];
 
+
     mo_insert_gamma_point(this->lcao_factory(), C_, unitcell, this->occ_block(),
                           this->unocc_block());
   }
@@ -211,6 +222,8 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
    * \return gamma-point MP2 energy
    */
   double compute_gamma_point_mp2() {
+    auto &world = this->wfn_world()->world();
+
     ExEnv::out0() << "Computing conventional gamma-point MP2 ..." << std::endl;
 
     auto g_abij = this->lcao_factory().compute(L"<a b|G|i j>");
@@ -219,23 +232,18 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
     std::size_t n_frozen = 0;
     auto t2 = detail::d_abij<Tile, Policy>(g_abij, eps_, n_occ, n_frozen);
 
+    auto time0 = mpqc::now(world, false);
+
     std::complex<double> e_complex = TA::dot(
         2.0 * g_abij("a, b, i, j") - g_abij("b, a, i, j"), t2("a, b, i, j"));
     double e_mp2 = e_complex.real();
 
-    Vector3d dcell = this->lcao_factory().pao_factory().unitcell().dcell();
-    int64_t R_size = this->lcao_factory().pao_factory().R_size();
-    int64_t k_size = ref_wfn_->k_size();
+    auto time1 = mpqc::now(world, false);
+    auto duration = mpqc::duration_in_s(time0, time1);
 
-    // Volume of first Brillouin zone
-//    double volume = 1.0;
-//    for (auto d = 0; d < 3; ++d) {
-//        volume *= (dcell(d) == 0.0) ? 1.0 : (2.0 * M_PI / dcell(d));
-//    }
-
-    // MP2 energy per unit cell
-    e_mp2 = e_mp2 * std::pow(k_size, 3) / R_size;
-
+    if (print_detail_) {
+        ExEnv::out0() << " Time for energy computation (CO transformation not included): " << duration << " s\n";
+    }
     return e_mp2;
   }
 };

@@ -37,7 +37,7 @@ mpqc::detail::ForceLink<RHF<TA::TensorD, TA::SparsePolicy>> fl1;
 mpqc::detail::ForceLink<RIRHF<TA::TensorD, TA::SparsePolicy>> fl2;
 mpqc::detail::ForceLink<DirectRHF<TA::TensorD, TA::SparsePolicy>> fl3;
 mpqc::detail::ForceLink<DirectRIRHF<TA::TensorD, TA::SparsePolicy>> fl4;
-//mpqc::detail::ForceLink<zRHF> fl5;
+mpqc::detail::ForceLink<zRHF> fl5;
 #endif
 }
 

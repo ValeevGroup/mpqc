@@ -332,4 +332,5 @@ Contraction Time: 0.029526946 S
 Reduce Time: 0.0005573 S
 
 (T) Energy      -0.000868413224546661 Time 0.038145392
-  Wfn energy is: -76.3465265572958
+  Property "Energy" computed with Wavefunction "zRHF":
+    value:  -76.3465265572958

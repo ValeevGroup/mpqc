@@ -600,4 +600,5 @@ Transformed LCAO Integral: < m |F| A' >[df] Size: 1.82539224624634e-06 GB Time: 
 E_S: -0.0677592661958523
 Total CABS Singles Time:  0.392276072
 Total F12 Time:  1.020325719
-Wfn energy is: -76.5626967514296
+  Property "Energy" computed with Wavefunction "zRHF":
+    value:  -76.5626967514296

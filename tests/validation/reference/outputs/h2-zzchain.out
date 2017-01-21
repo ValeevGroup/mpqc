@@ -79,4 +79,5 @@ Time(s):
 	Diag + Density:                     0.005
 	Total:                              3.535
 
-  Wfn energy is: -0.994440199332264
+  Property "Energy" computed with Wavefunction "zRHF":
+    value:  -0.994440199332264

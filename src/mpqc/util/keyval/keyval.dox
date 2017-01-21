@@ -196,6 +196,11 @@ Note the use of KeyVal::keyval method to construct a KeyVal object representing 
 whose root is at "bird:bald eagle" of the base KeyVal object. The ability to refer
 to keyword sections in an existing KeyVal is crucial for constructing hierarchies of C++ objects easily.
 
+@note KeyVal objects have reference semantics, hence a copy of `kv` will
+refers to the same tree as `kv` and share `kv`'s mutable internal data, such as
+the internal object registry used by KeyVal::class_ptr (see below).
+The same can be said about the new KeyVal object returned by `kv.keyval()`.
+
 \section keyvalpobj Polymorphic Object Construction
 
 JSON in \ref KeyValPage_Example1 "Example 1" specifies three animals: 2 reptiles and 1 bird. Reptiles and birds are
@@ -469,9 +474,10 @@ The only difference between the examples with and without the value substition:
 in the first case constructing Reptile objects corresponding to keywords \c trex and \c anothertrex
 would produce pointers to the \em same object, whereas in the second case the two pointers would refer
 to two \em different Reptile objects. This feature is implemented by tracking all smart pointers
-produced by KeyVal::class_ptr . The pointer registry is destroyed when the main KeyVal and all
+produced by KeyVal::class_ptr . The object pointer registry is destroyed when the main KeyVal and all
 of its subobjects produced with KeyVal::keyval are destroyed. Therefore it is a good practice
-to delete KeyVal objects as soon as they are no longer needed.
+to delete KeyVal objects as soon as they are no longer needed. N.B. the object registry
+can be bypass by calling KeyVal::class_ptr with the second argument set to \c true .
 
 Value substitution can be used also with the programmatic KeyVal construction:
 @code
@@ -506,8 +512,8 @@ auto mule = kv.class_ptr("mule");
 To support polymorphic object construction (see \ref keyvalpobj) the base class must be
 (publicly) derived from DescribedClass. This potentially adds the overhead of a vtable (DescribedClass
 has a virtual destructor) and can complicate the lifetime management of such objects because their
-smart pointers will survive in a KeyVal registry at least through the lifetime of the owning
-KeyVal object.
+smart pointers will survive in KeyVal object's registry
+at least through the lifetime of the owning KeyVal object.
 
 To be able to construct a class \c T from KeyVal objects do this:
   1. make DescribedClass a public base of \c T, or any of its bases, and

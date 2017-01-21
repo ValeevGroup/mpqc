@@ -37,5 +37,9 @@
     "method" : "df",
     "occ_block_size" : 1,
     "uocc_block_size" : 24
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
   }
 }

@@ -28,6 +28,10 @@
      "soad_guess": true,
      "print_detail": false,
      "max_condition_num": 1e8
+   },
+   "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
    }
 }
 

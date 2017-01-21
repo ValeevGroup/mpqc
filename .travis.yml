@@ -2,37 +2,40 @@ language: cpp
 cache: ccache
 os: linux
 compiler:
-  - gcc
-  - clang
+- gcc
+- clang
 env:
-  - GCC_VERSION=5
+- GCC_VERSION=5
 branches:
   only:
-    - master
+  - master
 sudo: false
 addons:
   apt:
     sources:
-      - george-edison55-precise-backports
-      - ubuntu-toolchain-r-test
-      - boost-latest
-      - kubuntu-backports
-      - llvm-toolchain-precise-3.8
+    - george-edison55-precise-backports
+    - ubuntu-toolchain-r-test
+    - boost-latest
+    - kubuntu-backports
+    - llvm-toolchain-precise-3.8
     packages:
-      - g++-5
-      - libeigen3-dev
-      - libboost1.55-all-dev
-      - libblas-dev
-      - liblapack-dev
-      - libtbb-dev
-      - clang-3.8
-      - cmake
-      - cmake-data
-before_install: 
-     - ./bin/build-mpich-$TRAVIS_OS_NAME.sh
-     - ./bin/build-libint-$TRAVIS_OS_NAME.sh
-     - ./bin/build-TA-$TRAVIS_OS_NAME.sh
-script: ./bin/build-$TRAVIS_OS_NAME.sh
+    - g++-5
+    - libeigen3-dev
+    - libboost1.55-all-dev
+    - libblas-dev
+    - liblapack-dev
+    - libtbb-dev
+    - clang-3.8
+    - cmake
+    - cmake-data
+before_install:
+- "./bin/build-mpich-$TRAVIS_OS_NAME.sh"
+- "./bin/build-libint-$TRAVIS_OS_NAME.sh"
+- "./bin/build-TA-$TRAVIS_OS_NAME.sh"
+script: "./bin/build-$TRAVIS_OS_NAME.sh"
 after_failure:
-  - cat ./_build/mpqc4/CMakeFiles/CMakeOutput.log
-  - cat ./_build/mpqc4/CMakeFiles/CMakeError.log
+- cat ./_build/mpqc4/CMakeFiles/CMakeOutput.log
+- cat ./_build/mpqc4/CMakeFiles/CMakeError.log
+notifications:
+  slack:
+    secure: j8B34Y+L3mCx8Ecgs9b2ZeJjntbrctdGeCkl0MdKimWAiAC4/Lq/uFmqDE4RlxtBo9zxFj0Z3gu62wd9NRLBh8LplLd8PwQ5PHfeNK1o3Kxd/SvM9Ze9LmBjIGyAKTRLaEcTUeuvLAgdCI91WgjYMXuQj7WsxBsO7OxlfiuP8/k=

@@ -8,8 +8,8 @@
 
 #include <TiledArray/type_traits.h>
 
-#include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/molecule/coords.h"
+#include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/util/misc/exception.h"
 #include "mpqc/util/misc/task.h"
@@ -88,7 +88,15 @@ std::ostream& operator<<(std::ostream& os, const Timestampable<T>& x) {
 template <typename Function>
 class FunctionVisitorBase;
 
-/// property = function of a sequence of Parameters yielding a Value
+/// Function maps Parameters to a Value
+
+/// Function keeps parameters and value as part of its state.
+/// It recomputes the value as necessary by keeping track of timestamps
+/// on parameters and value. The value can also be made obsolete explicitly.
+/// Lastly, Function provides support for the Visitor pattern.
+///
+/// @tparam Value the type of values computed by Function
+/// @tparam Parameters the type of parameters used by Function
 template <typename Value, typename Parameters>
 class Function {
  public:
@@ -152,44 +160,19 @@ class FunctionVisitorBase {
   }
 };
 
-/// molecular coordinates + taylor expansion params
-class MolecularTaylorExpansionParams {
- public:
-  MolecularTaylorExpansionParams(
-      const std::shared_ptr<MolecularCoordinates>& coords,
-      std::vector<double> taylor_expansion_precision)
-      : coords_(coords),
-        precision_(taylor_expansion_precision.begin(),
-                   taylor_expansion_precision.end()) {}
-
-  // # of molecular coords + 1 precision * number of derivatives
-  size_t nparams() const { return coords_->size() + precision_.size(); }
-
-  /// @return the order of Taylor expansion
-  size_t order() const { return precision_.size() - 1; }
-  /// @param ord the derivatiove order
-  /// @return the target precision for derivatives order \c ord
-  double target_precision(size_t ord) const { return precision_.at(ord); }
-
- private:
-  std::shared_ptr<MolecularCoordinates> coords_;
-  std::vector<double>
-      precision_;  // target precision for each order of expansion
-};
-
 /// N-th order Taylor expansion of a function of \c K variables
 
 /// @tparam Value can be complex valued or a vector (e.g. expansion of a dipole
 /// moment)
 template <typename Value>
-class TaylorExpansion {
+class TaylorExpansionCoefficients {
  public:
-  TaylorExpansion() : nvars_(0), derivs_() {}
+  TaylorExpansionCoefficients() : nvars_(0), derivs_() {}
 
-  TaylorExpansion(Value real)
+  TaylorExpansionCoefficients(Value real)
       : nvars_(1), derivs_(1, std::vector<Value>(1, real)) {}
 
-  TaylorExpansion(size_t nvars, size_t order)
+  TaylorExpansionCoefficients(size_t nvars, size_t order)
       : nvars_(nvars), derivs_(order + 1) {
     derivs_[0].resize(1, Value(0));
     for (int d = 1; d <= order; ++d) {
@@ -210,7 +193,8 @@ class TaylorExpansion {
   size_t order() const {
     if (derivs_.empty())
       throw ProgrammingError(
-          "TaylorExpansion::order called, but the object is not initialized",
+          "TaylorExpansionCoefficients::order called, but the object is not "
+          "initialized",
           __FILE__, __LINE__);
     return derivs_.size() - 1;
   }
@@ -238,47 +222,27 @@ class TaylorExpansion {
 };
 
 template <typename Value>
-std::ostream& operator<<(std::ostream& os, const TaylorExpansion<Value>& x) {
+std::ostream& operator<<(std::ostream& os,
+                         const TaylorExpansionCoefficients<Value>& x) {
   x.print(os);
   return os;
 }
 
-/// molecular taylor expansion = local expansion of a function of molecular
-/// coordinates
-/// NB does not depend on fields, need MolecularPropertyInEMField for
-/// something like that
-template <typename Value>
-class MolecularTaylorExpansion
-    : public Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams> {
+/// TaylorExpansionFunction<Value> is a Function that returns
+/// TaylorExpansionCoefficients<Value>
+template <typename Value, typename Parameters>
+class TaylorExpansionFunction
+    : public Function<TaylorExpansionCoefficients<Value>, Parameters> {
  public:
-  typedef Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams>
+  typedef Function<TaylorExpansionCoefficients<Value>, Parameters>
       function_base_type;
 
-  // clang-format off
-  /**
-   * @brief The KeyVal constructor
-   * @param kv the KeyVal object to be queried
-   *
-   * The KeyVal object will be query the following keywords:
-   * | KeyWord | Type | Default| Description |
-   * |---------|------|--------|-------------|
-   * | coords | MolecularCoordinates | none | the molecular coordinates  |
-   * | precision | {array<real> \| real} | {none \| 1e-8} | target precision for {each \| all} derivative orders|
-   * | deriv_order | int | 0 | the highest derivative order; only queried if precision is not given or is given as an array |
-   */
-  // clang-format on
-  MolecularTaylorExpansion(const KeyVal& kv)
-      : MolecularTaylorExpansion(kv.class_ptr<MolecularCoordinates>("coords"),
-                                 init_precision(kv, default_precision_)) {}
-
   /// @return the order of Taylor expansion
-  size_t order() const { return params_()->order(); }
+  size_t order() const { return precision_.size() - 1; }
 
-  /// @param ord the derivatiove order
+  /// @param ord the derivative order
   /// @return the target precision for derivatives order \c ord
-  double target_precision(size_t ord) const {
-    return params_()->target_precision(ord);
-  }
+  double target_precision(size_t ord) const { return precision_.at(ord); }
 
  protected:
   /// the default target precision to use if not provided to the constructor
@@ -288,47 +252,42 @@ class MolecularTaylorExpansion
   /**
    * @brief auxiliary KeyVal constructor
    *
-   * Like standard KeyVal ctor, except accepts extra defaults from derived classes. Queries same keywords,
-   * except if keyword \c coords is not given then will use \c mol to construct CartMolecularCoordinates,
-   * and if keyword \c precision is not given then will use \c default_precision .
+   * The KeyVal object will be query the following keywords:
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * | precision | {array<real> \| real} | {none \| 1e-8} | target precision for {each \| all} derivative orders|
+   * | deriv_order | int | 0 | the highest derivative order; only queried if precision is not given or is given as an array |
+   *
+   * @note that if keyword \c precision is not given then will use the \c default_precision parameter.
    *
    * @param kv the KeyVal object to be queried
-   * @param mol the Molecule object to be used to construct default MolecularCoordinates object
+   * @param params the Parameters object that this function depends on
    * @param default_precision the default precision to use
    */
   // clang-format on
-  MolecularTaylorExpansion(const KeyVal& kv,
-                           const std::shared_ptr<Molecule>& mol,
-                           double default_precision = default_precision_)
-      : MolecularTaylorExpansion(
-            (kv.exists("coords")
-                 ? kv.class_ptr<MolecularCoordinates>("coords")
-                 : std::make_shared<CartMolecularCoordinates>(mol)),
-            init_precision(kv, default_precision)) {}
-
- private:
-
-  MolecularTaylorExpansion(
-      std::shared_ptr<MolecularCoordinates> coords,
-      std::vector<typename scalar_type<Value>::type> taylor_expansion_precision)
-      : Function<TaylorExpansion<Value>, MolecularTaylorExpansionParams>(
-            std::make_shared<MolecularTaylorExpansionParams>(
-                coords, taylor_expansion_precision)) {}
-
-
-  std::shared_ptr<MolecularTaylorExpansionParams> params_() const {
-    return std::static_pointer_cast<MolecularTaylorExpansionParams>(
-        this->params());
+  TaylorExpansionFunction(const KeyVal& kv, std::shared_ptr<Parameters> params,
+                          double default_precision = default_precision_)
+      : TaylorExpansionFunction(params, init_precision(kv, default_precision)) {
   }
 
-  std::vector<double> init_precision(
-      const KeyVal& kv, double default_precision) {
+ private:
+  std::vector<double>
+      precision_;  // target precision for each order of expansion
+
+  TaylorExpansionFunction(std::shared_ptr<Parameters> params,
+                          std::vector<double> taylor_expansion_precision)
+      : function_base_type(params), precision_(taylor_expansion_precision) {
+    if (taylor_expansion_precision.empty())
+      throw ProgrammingError("empty precision list", __FILE__, __LINE__);
+  }
+
+  std::vector<double> init_precision(const KeyVal& kv,
+                                     double default_precision) {
     if (kv.exists("precision") &&
         kv.count("precision") > 0) {  // given an array of precisions
       return kv.value<std::vector<double>>("precision");
     } else {
       auto deriv_order = kv.value<size_t>("deriv_order", 0);
-      std::cout << "Energy::deriv_order = " << deriv_order << std::endl;
       auto precision = kv.value<double>("precision", default_precision);
       return std::vector<double>(deriv_order + 1, precision);
     }
@@ -351,18 +310,23 @@ class Property : public Task {
 };
 
 /**
- * \brief wave function property, i.e., a molecular property computable from a
- * wave function
+ * \brief WavefunctionProperty computes a Taylor expansion of a molecular
+ * property
+ *        using a visiting Wavefunction .
  *
- * This is to be used as a base class for ALL properties of Wavefunction classes
+ * This is to be used as a base class for ALL properties of Wavefunction
+ * classes.
  */
 
 template <typename Value>
-class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
-                             public Property {
+class WavefunctionProperty
+    : public TaylorExpansionFunction<Value, MolecularCoordinates>,
+      public Property {
  public:
-  using typename MolecularTaylorExpansion<Value>::value_type;
-  using typename MolecularTaylorExpansion<Value>::function_base_type;
+  using base_type = TaylorExpansionFunction<Value, MolecularCoordinates>;
+  using typename base_type::value_type;  // i.e.
+                                         // TaylorExpansionCoefficients<Value>
+  using typename base_type::function_base_type;
 
   // clang-format off
   /**
@@ -374,14 +338,14 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | wfn | Wavefunction | none | the Wavefunction that will compute this  |
+   * | coords | MolecularCoordinates | CartMolecularCoordinates from the Molecule object of the Wavefunction object | the molecular coordinates  |
    */
   // clang-format on
   WavefunctionProperty(const KeyVal& kv)
-      : WavefunctionProperty(kv, MolecularTaylorExpansion<Value>::default_precision_) {
-  }
+      : WavefunctionProperty(kv, base_type::default_precision_) {}
 
  protected:
-  Wavefunction* wfn() { return wfn_; }
+  std::shared_ptr<Wavefunction> wfn() const { return wfn_; }
 
   virtual void do_evaluate() = 0;
 
@@ -396,11 +360,13 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
    */
   // clang-format on
   WavefunctionProperty(const KeyVal& kv, double default_precision)
-      : MolecularTaylorExpansion<Value>(
-            kv, (kv.class_ptr<lcao::Wavefunction>("wfn")
-                     ? kv.class_ptr<lcao::Wavefunction>("wfn")->atoms()
-                     : nullptr), default_precision) {
-    wfn_ = kv.class_ptr<lcao::Wavefunction>("wfn").get();
+      : base_type(kv,
+                  (kv.class_ptr<MolecularCoordinates>("coord")
+                       ? kv.class_ptr<MolecularCoordinates>("coord")
+                       : std::make_shared<CartMolecularCoordinates>(
+                             kv.class_ptr<lcao::Wavefunction>("wfn")->atoms())),
+                  default_precision) {
+    wfn_ = kv.class_ptr<lcao::Wavefunction>("wfn");
     if (wfn_ == nullptr)
       throw InputError(
           "WavefunctionProperty did not receive a Wavefunction object",
@@ -408,7 +374,7 @@ class WavefunctionProperty : public MolecularTaylorExpansion<Value>,
   }
 
  private:
-  Wavefunction* wfn_;
+  std::shared_ptr<Wavefunction> wfn_;
 
   void evaluate() override { this->compute(); }
 

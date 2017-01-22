@@ -10,7 +10,7 @@ MPQC_CLASS_EXPORT2("Energy", mpqc::Energy);
 namespace mpqc{
 
 void Energy::do_evaluate() {
-  auto evaluator = dynamic_cast<Evaluator*>(wfn());
+  auto evaluator = std::dynamic_pointer_cast<Evaluator>(wfn());
   if (evaluator == nullptr) {
     std::ostringstream oss;
     // TODO Must implement DescribedClass::key() instead of using RTTI's

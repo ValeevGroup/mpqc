@@ -9,14 +9,15 @@
 
 namespace mpqc {
 
-/**
- *
- * to add a wavefunction property class P:
- * - derive class P from WavefunctionProperty<T> and override
- * P::evaluate()
- * - define class P::EvaluatorBase to be used as a public base classes that
- * can compute it
- */
+/*
+* to add a wavefunction property class P:
+* - derive class P from WavefunctionProperty<T> and override
+* P::evaluate()
+* - define class P::EvaluatorBase to be used as a public base classes that
+* can compute it
+*/
+
+/// Taylor expansion of the molecular energy computed by a Wavefunction
 class Energy : public WavefunctionProperty<double> {
 public:
   using typename WavefunctionProperty<double>::function_base_type;

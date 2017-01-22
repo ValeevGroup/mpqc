@@ -7,6 +7,7 @@ void AtomBasedCluster::update_cluster() {
   mass_ = molecule::sum_mass(elements_);
   charge_ = molecule::sum_charge(elements_);
   com_ = molecule::center_of_mass(elements_);
+  natoms_ = molecule::sum_natoms(elements_);
 }
 
 std::vector<Atom> AtomBasedCluster::atoms() const {

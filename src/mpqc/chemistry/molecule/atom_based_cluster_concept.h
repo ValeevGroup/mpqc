@@ -29,6 +29,7 @@ class AtomBasedClusterConcept : public ClusterConcept {
   virtual double mass_() const = 0;
   virtual Vector3d const &com_() const = 0;
   virtual std::vector<Atom> atoms_() const = 0;
+  virtual size_t natoms_() const = 0;
 };
 
 /*
@@ -65,6 +66,8 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
   std::vector<Atom> atoms_() const override final {
     return collapse_to_atoms(element_);
   }
+
+  size_t natoms_() const override final { return natoms(element_); }
 
   std::ostream &print_(std::ostream &os) const override final {
     os << element_;
@@ -103,6 +106,7 @@ class AtomBasedClusterable {
 
   double mass() const { return element_impl_->mass_(); }
   double charge() const { return element_impl_->charge_(); }
+  double natoms() const { return element_impl_->natoms_(); }
 
   std::ostream &print(std::ostream &os) const {
     return element_impl_->print_(os);
@@ -112,6 +116,8 @@ class AtomBasedClusterable {
 inline double mass(AtomBasedClusterable const &ac) { return ac.mass(); }
 
 inline double charge(AtomBasedClusterable const &ac) { return ac.charge(); }
+
+inline size_t natoms(AtomBasedClusterable const &ac) { return ac.natoms(); }
 
 inline Vector3d const &center(AtomBasedClusterable const &ac) {
   return ac.com();

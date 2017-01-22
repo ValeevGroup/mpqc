@@ -33,6 +33,7 @@ class Molecule : public DescribedClass {
   double mass_ = 0.0;
   int64_t charge_ = 0;        /// Net charge (# protons - # electrons)
   int64_t total_charge_ = 0;  // total charge # protons
+  double natoms_ = 0.0;
 
   void init(std::istream &file, bool sort_input);
 
@@ -157,6 +158,9 @@ class Molecule : public DescribedClass {
    * in the Clusterables of the Molecule.
    */
   std::vector<Atom> atoms() const;
+
+  /// @return the number of atoms returned by atoms()
+  size_t natoms() const;
 
   /*! \brief Center of mass of the Molecule.
    *

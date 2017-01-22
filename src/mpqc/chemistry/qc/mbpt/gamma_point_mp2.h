@@ -170,16 +170,16 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
       init();
 
       e_mp2_ = compute_gamma_point_mp2();
+      auto time1 = mpqc::now(this->wfn_world()->world(), false);
+      auto duration = mpqc::duration_in_s(time0, time1);
+      if (print_detail_) {
+          ExEnv::out0() << "\n Total Gamma-Point MP2 time: " << duration << " s\n";
+      }
 
       ExEnv::out0() << "\nGamma-Point MP2 Energy = " << e_mp2_
                     << std::endl;
 
       this->energy_ = ref_energy + e_mp2_;
-      auto time1 = mpqc::now(this->wfn_world()->world(), false);
-      auto duration = mpqc::duration_in_s(time0, time1);
-      if (print_detail_) {
-          ExEnv::out0() << " Total time for gamma-point mp2: " << duration << " s\n";
-      }
     }
     return this->energy_;
   }
@@ -242,7 +242,7 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
     auto duration = mpqc::duration_in_s(time0, time1);
 
     if (print_detail_) {
-        ExEnv::out0() << " Time for energy computation (CO transformation not included): " << duration << " s\n";
+        ExEnv::out0() << " Energy computing time: " << duration << " s\n";
     }
     return e_mp2;
   }

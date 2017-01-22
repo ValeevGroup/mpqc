@@ -29,11 +29,14 @@ def pat_numbers(n):
     return result
 
 def total_energy(file_name):
-    file = open(file_name, 'r')
-    for line in file:
-        match1 = re.match('\A\s*Property "Energy" computed with Wavefunction ".*":\n\s*value:\s*' + pat_numbers(1), line)
-        if match1:
-            return match1.groups()
+    with open(file_name, 'r') as file:
+        ifile = iter(file)
+        for line in ifile:
+            match1 = re.match('\A\s*Property "Energy" computed with Wavefunction ".*":', line)
+            if match1:
+                line = next(ifile)
+                match1 = re.match('\s*value:\s*' + pat_numbers(1), line)
+                return match1.groups()
 
 ##########################################################
 # main

@@ -1,0 +1,97 @@
+
+/** \page develop Using MPQC to Develop New Features
+
+There are two modes in which MPQC can be used in developing software implementation
+of existing and new methods:
+  - __plug-in__: you plug your code into MPQC, e.g. by adding new classes to MPQC;
+  - __plug-out__: you plug MPQC into your project, e.g. by using MPQC classes and functions
+  in your code.
+
+These methods are demonstrated and discussed below.
+
+\section develop-within-mpqc Developing code within MPQC
+
+This approach is useful when you want to extend and replace existing classes in MPQC,
+e.g. you want to add a new Wavefunction class that implements new
+or even an existing electronic structure method.
+
+The pros of this approach are:
+  - the user can take advantage of the MPQC infrastructure, e.g. the build system and
+    test harness;
+  - this approach makes it possible to eventually incorporate the new code into the
+    MPQC master source repository for release
+    and maintenance by the MPQC team.
+
+The recommended approach is to fork the MPQC source repo on Github (you can
+make a private fork, if you want) and develop the new code within that fork.
+An exception to this is if you are a member of the MPQC team: then
+you will want to develop your code on a branch within the main
+repo, as this allows you to take advantage of the Continuous Integration system.
+Since, unlike forks, branches cannot be private; therefore use the fork mechanism
+is you must keep the code private.
+
+You will want to periodically sync with the changes in the main repo by merging in
+changes via the pull request mechanism or by direct git merge. When you are ready
+to marge your changes into the main repo create a pull request for code review and
+incorporation.
+
+\subsection devsampmp2 MP2 Implementation Example
+
+To illustrate how to add a new electronic structure method to MPQC
+let's consider a simple example of developing a new MP2 implementation
+in MPQC.
+
+\subsubsection devsampmp2src MP2 Implementation Example: Source
+
+This example code illustrates a complete MP2 energy
+implementation using the MPQC Toolkit.  First an MP2 class is
+declared and the necesary base class member functions are
+provided.  Next, the class is registered so that it can be created from text input.
+Finally, the member functions are defined.
+
+Note that no main routine is provided.  This is because this file
+is designed to be used to extend the functionality of the mpqc
+executable.  To generate a new mpqc executable with the new class
+available for use, see the \ref devsampmp2mak section.
+
+\include mp2/mp2.cc
+
+\subsubsection devsampmp2mak MP2 Implementation Example: CMakeLists.txt
+
+This example CMakeLists.txt demonstrates how to link in a new class to
+form a new mpqc executable, here named mp2.  The code is given in
+the \ref devsampmp2src section.
+
+\include mp2/CMakeLists.txt
+
+\subsection devsampmp2inp MP2 Implementation Example: Input
+
+This input file can be used with the program illustrated in
+the \ref devsampmp2src section.  It will compute the MP2 energy
+using the new MP2 class.  Note that only the
+\ref mpqcoo "object-oriented input format" can be used with
+user provided classes.
+
+\include mp2/mp2.json
+
+\section develop-outside-mpqc Using MPQC in a separate project
+
+To use MPQC from a standalone project it is necessary to compile MPQC libraries
+and install them to the location specifies by the \c CMAKE_INSTALL_PREFIX CMake variable.
+It is recommended that the MPQC is validated before installation.
+
+To use the MPQC code your program must:
+  - initialize the MPQC package and the dependent components before using any nontrivial MPQC
+    functionality;
+  - release the resources by finalizing the MPQC package after the MPQC functionality is no longer
+    needed.
+
+\subsection mpqcinit Initializing MPQC
+
+notes to be added
+
+\section devcheck Adding Test Cases to the Verification Suite
+
+Note to be added.
+
+*/

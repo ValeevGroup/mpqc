@@ -1,11 +1,11 @@
-/** \page compile_mpqc Compile MPQC
+/** \page mpqccomp Compiling MPQC
 
-## Dependency
+## Prerequisites
 
-    - TiledArray
-    - Libint2
-    - Eigen3
-    - Boost
+- TiledArray
+- Libint2
+- Eigen3
+- Boost
 
 
 

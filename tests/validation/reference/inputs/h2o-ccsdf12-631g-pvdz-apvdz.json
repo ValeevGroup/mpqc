@@ -27,8 +27,7 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:world",
-    "converge": 1.0e-11
+    "wfn_world": "$:world"
   },
   "wfn":{
     "type": "CCSD(F12)",

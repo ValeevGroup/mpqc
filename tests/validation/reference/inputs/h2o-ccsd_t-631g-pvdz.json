@@ -27,8 +27,7 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:world",
-    "converge": 1.0e-11
+    "wfn_world": "$:world"
   },
   "wfn":{
     "type": "CCSD(T)",
@@ -39,5 +38,9 @@
     "unocc_block_size" : 8,
     "reblock_occ" : 4,
     "reblock_unocc" : 8
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
   }
 }

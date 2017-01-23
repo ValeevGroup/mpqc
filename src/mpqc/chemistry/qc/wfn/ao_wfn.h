@@ -8,7 +8,6 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 
-#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
 #include "mpqc/chemistry/qc/integrals/ao_factory.h"
 #include "mpqc/chemistry/qc/integrals/direct_ao_factory.h"

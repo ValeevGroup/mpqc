@@ -8,6 +8,7 @@
 #include <tiledarray.h>
 
 #include "mpqc/mpqc_config.h"
+#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/scf/builder.h"
 #include "mpqc/chemistry/qc/scf/density_builder.h"
 #include "mpqc/chemistry/qc/wfn/ao_wfn.h"

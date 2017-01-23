@@ -96,32 +96,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     approach_ = kv.value<std::string>("approach", "coarse");
     if (approach_ != "coarse" && approach_ != "fine" &&
         approach_ != "straight") {
-      throw std::runtime_error("invalid (T) approach! \n");
+      throw InputError("Invalid (T) approach! \n", __FILE__, __LINE__, "approach");
     }
   }
 
   virtual ~CCSD_T() {}
 
 
-  double value() override {
-    if (!computed()) {
-      auto &world = this->lcao_factory().world();
-
-      double ccsd_corr = 0.0;
-
-      auto time0 = mpqc::fenced_now(world);
-      ccsd_corr = CCSD<Tile, Policy>::value();
-      auto time1 = mpqc::fenced_now(world);
-      auto duration0 = mpqc::duration_in_s(time0, time1);
-      ExEnv::out0() << "CCSD Time " << duration0 << std::endl;
-
-      // compute
-      compute_ccsd_t();
-
-      this->energy_ = ccsd_corr + triples_energy_;
-    }
-    return this->energy_;
-  }
 
   void obsolete() override {
     triples_energy_ = 0.0;
@@ -161,7 +142,27 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                   << " S \n";
   }
 
+  void evaluate(Energy* result) override {
+    if (!this->computed()) {
+      auto &world = this->lcao_factory().world();
+
+      auto time0 = mpqc::fenced_now(world);
+      CCSD<Tile, Policy>::evaluate(result);
+      auto time1 = mpqc::fenced_now(world);
+      auto duration0 = mpqc::duration_in_s(time0, time1);
+      ExEnv::out0() << "CCSD Time " << duration0 << std::endl;
+      double ccsd_energy = result->value().derivs(0)[0];
+
+      // compute
+      compute_ccsd_t();
+
+      this->computed_ = true;
+      this->set_value(result,ccsd_energy + triples_energy_);
+    }
+  }
+
  private:
+
   double compute_ccsd_t_coarse_grain(TArray &t1, TArray &t2) {
     auto &global_world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
@@ -195,7 +196,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       n_tr_vir_inner = tr_vir_inner_.tiles_range().second;
     }
 
-    std::size_t occ_block_size = this->trange1_engine_->get_occ_block_size();
     std::size_t vir_block_size = this->trange1_engine_->get_vir_block_size();
     std::size_t n_occ = this->trange1_engine_->get_active_occ();
     std::size_t n_blocks = n_tr_occ * n_tr_occ * n_tr_occ;

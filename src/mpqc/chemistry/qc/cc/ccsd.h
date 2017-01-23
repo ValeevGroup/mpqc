@@ -7,6 +7,7 @@
 
 #include <tiledarray.h>
 
+#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/cc/diis_ccsd.h"
 #include "mpqc/chemistry/qc/integrals/direct_ao_factory.h"
 #include "mpqc/chemistry/qc/mbpt/denom.h"
@@ -47,7 +48,7 @@ inline void print_ccsd_direct(int iter, double dE, double error, double E1,
  */
 
 template <typename Tile, typename Policy>
-class CCSD : public LCAOWavefunction<Tile, Policy> {
+class CCSD : public LCAOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
@@ -64,9 +65,9 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
+   * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Evaluator RHF for example |
    * | method | string | standard | method to compute ccsd (standard, direct) |
-   * | converge | double | 1.0e-07 | converge limit |
+   * | converge | double | 0, it uses precision provided by Energy | overide default by provide a value|
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
    * | less_memory | bool | false | avoid store another abcd term in standard and df method |
@@ -79,7 +80,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
     if (kv.exists("ref")) {
       ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
     } else {
-      throw std::invalid_argument("Default Ref Wfn in CCSD is not support! \n");
+      throw InputError("Default Ref in CCSD is not support! \n", __FILE__, __LINE__, "ref");
     }
 
     df_ = false;
@@ -89,20 +90,22 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
     }
     if(method_ != "df" && method_!="direct" && method_!="standard")
     {
-      throw std::runtime_error("invalid CCSD method! \n");
+      throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
     }
 
     max_iter_ = kv.value<int>("max_iter", 20);
-    converge_ = kv.value<double>("converge", 1.0e-7);
+    converge_ = kv.value<double>("converge", 0);
     print_detail_ = kv.value<bool>("print_detail", false);
   }
 
   virtual ~CCSD() {}
 
+  /// protected members
  protected:
   TArray T1_;
   TArray T2_;
 
+  /// private members
  private:
   const KeyVal kv_;
   std::shared_ptr<Wavefunction> ref_wfn_;
@@ -120,39 +123,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
     ccsd_corr_energy_ = 0.0;
     LCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
-  }
-
-  /// compute function
-  double value() override {
-    double result = 0.0;
-    if (!computed()) {
-      double ref_energy = ref_wfn_->value();
-
-      // initialize
-      init();
-
-      TArray t1;
-      TArray t2;
-
-      if (method_ == "standard") {
-        ccsd_corr_energy_ = compute_ccsd_conventional(t1, t2);
-      } else if (method_ == "df") {
-        ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
-      } else if (method_ == "direct") {
-        // initialize direct integral class
-        auto direct_ao_factory =
-            gaussian::construct_direct_ao_factory<Tile, Policy>(kv_);
-        direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
-        ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
-      }
-
-      T1_ = t1;
-      T2_ = t2;
-
-      result = ref_energy + ccsd_corr_energy_;
-    }
-
-    return result;
   }
 
   void set_trange1_engine(const std::shared_ptr<TRange1Engine> &tr1) {
@@ -189,7 +159,62 @@ class CCSD : public LCAOWavefunction<Tile, Policy> {
     return direct_ao_array_;
   }
 
- protected:
+protected:
+  bool can_evaluate(Energy* energy) override {
+    // can only evaluate the energy
+    return energy->order() == 0;
+  }
+
+  void evaluate(Energy* result) override {
+    if (this->computed()){
+
+      /// cast ref_wfn to Energy::Evaluator
+      auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
+      if(ref_evaluator == nullptr) {
+        std::ostringstream oss;
+        oss << "RefWavefunction in CCSD" << ref_wfn_->class_key()
+            << " cannot compute Energy" << std::endl;
+        throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+      }
+
+      ref_evaluator->evaluate(result);
+
+      double ref_energy = result->value().derivs(0)[0];
+
+      // initialize
+      init();
+
+      // set the precision
+      if(converge_ == 0.0){
+        // if no user provided converge limit, use the default one from Energy
+        converge_ = result->target_precision(0);
+      }
+
+      TArray t1;
+      TArray t2;
+
+      if (method_ == "standard") {
+        ccsd_corr_energy_ = compute_ccsd_conventional(t1, t2);
+      } else if (method_ == "df") {
+        ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
+      } else if (method_ == "direct") {
+        // initialize direct integral class
+        auto direct_ao_factory =
+            gaussian::construct_direct_ao_factory<Tile, Policy>(kv_);
+        direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
+        ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
+      }
+
+      T1_ = t1;
+      T2_ = t2;
+
+      this->computed_ = true;
+      this->set_value(result, ref_energy + ccsd_corr_energy_);
+    }
+  }
+
+
+private:
   // store all the integrals in memory
   // used as reference for development
   double compute_ccsd_conventional(TArray &t1, TArray &t2) {

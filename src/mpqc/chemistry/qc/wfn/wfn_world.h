@@ -22,7 +22,7 @@ namespace lcao {
 
 /// It provides an execution context (madness::World), a molecule, and
 /// basis and operator registries.
-class WavefunctionWorld : public DescribedClass {
+class WavefunctionWorld : virtual public DescribedClass {
  public:
 
  private:

@@ -15,7 +15,7 @@ using std::stringstream;
 using mpqc::KeyVal;
 using mpqc::DescribedClass;
 
-struct Base : public DescribedClass {
+struct Base : virtual public DescribedClass {
   Base(const KeyVal& kv) : DescribedClass(), value_(kv.value<int>("value")) {}
   Base(int v) : value_(v) {}
   virtual ~Base() {}

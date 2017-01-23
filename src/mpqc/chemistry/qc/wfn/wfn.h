@@ -18,7 +18,7 @@ namespace mpqc {
 /// Wavefunction = opaque function of atoms, only has 2 states: computed and not
 /// computed.
 /// TODO It needs some sort of precision tracking to facilitate reuse.
-class Wavefunction : public DescribedClass {
+class Wavefunction : virtual public DescribedClass {
  public:
   /**
    *  \brief The KeyVal constructor

@@ -175,7 +175,7 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicAOFactory : public DescribedClass {
+class PeriodicAOFactory : virtual public DescribedClass {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using Op = std::function<Tile(TA::TensorZ &&)>;

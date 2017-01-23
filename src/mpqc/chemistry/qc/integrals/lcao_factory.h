@@ -55,7 +55,7 @@ std::shared_ptr<LCAOFactory<Tile,Policy>> construct_lcao_factory(const KeyVal& k
  *
  */
 template <typename Tile, typename Policy>
-class LCAOFactory : public DescribedClass{
+class LCAOFactory : virtual public DescribedClass{
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   // for now hardwire to Gaussians

@@ -33,7 +33,7 @@ using ShellVec = std::vector<Shell>;
 
 /// Basis is a clustered sequence of libint2::Shell objects.
 /// The sequence is represented as a vector of vectors of shells.
-class Basis : public DescribedClass {
+class Basis : virtual public DescribedClass {
  public:
   using Shell = libint2::Shell;
 

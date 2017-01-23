@@ -8,7 +8,7 @@ namespace mpqc {
 /** The MolecularCoordinates abstract class describes the coordinate system used
 to describe a molecule.  It is used to convert a molecule's Cartesian
 coordinates to and from this coordinate system. */
-class MolecularCoordinates : public DescribedClass {
+class MolecularCoordinates : virtual public DescribedClass {
  public:
   MolecularCoordinates(const std::shared_ptr<Molecule>& mol);
   // clang-format off

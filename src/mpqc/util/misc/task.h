@@ -5,7 +5,7 @@ namespace mpqc {
 
 /// this is the base for all tasks that the MPQC can execute
 /// @internal analogous to Runnable in MPQC3
-class Task : public DescribedClass {
+class Task : virtual public DescribedClass {
   /// Executes an action as specified in the derived class.
   virtual void execute() = 0;
 };

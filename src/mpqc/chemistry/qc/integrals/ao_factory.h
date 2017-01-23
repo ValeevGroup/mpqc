@@ -52,7 +52,7 @@ std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
  */
 
 template <typename Tile, typename Policy = TA::SparsePolicy>
-class AOFactory : public AOFactoryBase, public DescribedClass {
+class AOFactory : public AOFactoryBase, virtual public DescribedClass {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
 

@@ -42,7 +42,7 @@ std::shared_ptr<DirectAOFactory<Tile, Policy>> construct_direct_ao_factory(
  */
 
 template <typename Tile, typename Policy>
-class DirectAOFactory : public AOFactoryBase, public DescribedClass {
+class DirectAOFactory : public AOFactoryBase, virtual public DescribedClass {
  public:
   using DirectTArray = DirectArray<Tile, Policy>;
   using TArray = TA::DistArray<DirectTile<Tile>, Policy>;

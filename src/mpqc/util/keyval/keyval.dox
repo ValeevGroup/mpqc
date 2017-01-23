@@ -285,7 +285,7 @@ assert(std::dynamic_pointer_cast<Bird>(bald_eagle)->flys() == true);
 
 Now let's see the actual implementation of Animal, Reptile, and Bird classes:
 @code
-struct Animal : public DescribedClass {
+struct Animal : virtual public DescribedClass {
   Animal(const KeyVal& kv) {
     m_extinct = kv.value<bool>("extinct");
   }

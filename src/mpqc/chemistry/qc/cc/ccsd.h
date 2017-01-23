@@ -166,7 +166,7 @@ protected:
   }
 
   void evaluate(Energy* result) override {
-    if (this->computed()){
+    if (!this->computed()){
 
       /// cast ref_wfn to Energy::Evaluator
       auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);

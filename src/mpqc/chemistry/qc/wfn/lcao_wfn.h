@@ -90,6 +90,12 @@ private:
 
 };
 
+#if TA_DEFAULT_POLICY == 0
+extern template class LCAOWavefunction<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;
+#endif
+
 }
 }
 

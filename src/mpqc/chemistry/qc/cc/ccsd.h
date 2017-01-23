@@ -48,7 +48,7 @@ inline void print_ccsd_direct(int iter, double dE, double error, double E1,
  */
 
 template <typename Tile, typename Policy>
-class CCSD : public LCAOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
+class CCSD : public LCAOWavefunction<Tile, Policy>, public Energy::Evaluator {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
@@ -166,7 +166,7 @@ protected:
   }
 
   void evaluate(Energy* result) override {
-    if (!this->computed()){
+    if (!Wavefunction::computed()){
 
       /// cast ref_wfn to Energy::Evaluator
       auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
@@ -179,7 +179,7 @@ protected:
 
       ref_evaluator->evaluate(result);
 
-      double ref_energy = result->value().derivs(0)[0];
+      double ref_energy = this->get_value(result).derivs(0)[0];
 
       // initialize
       init();

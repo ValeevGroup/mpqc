@@ -112,6 +112,12 @@ private:
   std::shared_ptr<AOIntegral> ao_factory_;
 };
 
+#if TA_DEFAULT_POLICY == 0
+extern template class AOWavefunction<TA::TensorD, TA::DensePolicy>;
+#elif TA_DEFAULT_POLICY == 1
+extern template class AOWavefunction<TA::TensorD, TA::SparsePolicy>;
+#endif
+
 }  // namespace lcao
 }  // namespace mpqc
 

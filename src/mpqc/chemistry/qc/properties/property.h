@@ -1,4 +1,3 @@
-#ifndef SRC_MPQC_CHEMISTRY_QC_PROPERTIES_PROPERTY_H_
 #define SRC_MPQC_CHEMISTRY_QC_PROPERTIES_PROPERTY_H_
 
 #include <atomic>
@@ -68,6 +67,7 @@ class Timestampable {
     assert(value_ != nullptr);
     return *value_;
   }
+
 
   /// @return the current timestamp
   const timestamp_type& timestamp() const { return timestamp_; }
@@ -157,6 +157,10 @@ class FunctionVisitorBase {
   static void set_value(Function* f,
                         const typename Function::value_type& value) {
     f->set_value(value);
+  }
+
+  static const typename Function::value_type get_value(Function* f) {
+    return f->get_value();
   }
 };
 

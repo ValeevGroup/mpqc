@@ -151,7 +151,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       auto time1 = mpqc::fenced_now(world);
       auto duration0 = mpqc::duration_in_s(time0, time1);
       ExEnv::out0() << "CCSD Time " << duration0 << std::endl;
-      double ccsd_energy = result->value().derivs(0)[0];
+      double ccsd_energy = this->get_value(result).derivs(0)[0];
 
       // compute
       compute_ccsd_t();

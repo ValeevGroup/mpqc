@@ -16,6 +16,11 @@ namespace mpqc {
 */
 inline std::vector<Atom> collapse_to_atoms(const Atom &a) { return {a}; }
 
+inline void update(Atom &a, const std::vector<Atom>& atoms, size_t& pos) {
+  a = atoms.at(pos);
+  ++pos;
+}
+
 /*! \brief collapse to atoms takes an iteratable list of types which provide an
  * atoms
  *  function.

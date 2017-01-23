@@ -23,6 +23,12 @@ std::vector<Atom> collapse_to_atoms(AtomBasedCluster const &abc) {
   return abc.atoms();
 }
 
+void update(AtomBasedCluster &abc, const std::vector<Atom>& atoms, size_t& pos) {
+  for (auto &elem : abc.elements_) {
+    update(abc, atoms, pos);
+  }
+}
+
 std::ostream &operator<<(std::ostream &os, AtomBasedCluster const &c) {
   const auto end = c.end();
   const auto last = end - 1;

@@ -32,6 +32,9 @@ class AtomBasedCluster {
   int64_t charge_ = 0.0;
   size_t natoms_ = 0.0;
 
+  friend void update(AtomBasedCluster &abc,
+                                const std::vector<Atom> &atoms, size_t &pos);
+
  public:
   AtomBasedCluster() = default;
   AtomBasedCluster(const AtomBasedCluster &c) = default;
@@ -120,7 +123,16 @@ inline Vector3d const &center_of_mass(AtomBasedCluster const &c) {
 
 inline size_t natoms(AtomBasedCluster const &c) { return c.mass(); }
 
-std::vector<Atom> collapse_to_atoms(AtomBasedCluster const &);
+/// converts an AtomBasedCluster to a vector of Atom's
+/// @param abc the AtomBasedCluster object
+/// @return the atoms sequence
+std::vector<Atom> collapse_to_atoms(AtomBasedCluster const & abc);
+
+/// updatesan AtomBasedCluster using a vector of Atom's
+/// @param abc the AtomBasedCluster object
+/// @param atoms the vector of Atom objects
+/// @param pos the index of the next Atom object in Atoms to be used
+void update(AtomBasedCluster& abc, const std::vector<Atom>& atoms, size_t& pos);
 
 inline void set_center(AtomBasedCluster &c, Vector3d const &point) {
   c.set_com(point);

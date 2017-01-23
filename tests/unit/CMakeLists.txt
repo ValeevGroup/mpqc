@@ -11,6 +11,7 @@ set(utests_src
     formula_test.cpp
     keyval_test.cpp
     libint_test.cpp
+    molecule_test.cpp
     orbital_index_test.cpp
     units_test.cpp
     util_string.cpp

@@ -86,6 +86,13 @@ class DirectAOFactory : public AOFactoryBase, virtual public DescribedClass {
 
   virtual ~DirectAOFactory() noexcept = default;
 
+  void obsolete() {
+    direct_ao_formula_registry_.purge(world_);
+    if(orbital_basis_registry_!= nullptr){
+      orbital_basis_registry_->clear();
+    }
+  }
+
   /// set oper based on Tile type
   template <typename T = Tile>
   void set_oper(typename std::enable_if<std::is_same<T, TA::TensorD>::value,

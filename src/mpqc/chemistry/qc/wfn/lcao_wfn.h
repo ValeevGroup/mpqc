@@ -53,9 +53,9 @@ public:
     return *lcao_factory_;
   }
   void obsolete() override {
-    lcao_factory_->registry().purge(wfn_world()->world());
-    lcao_factory_->orbital_space().clear();
-    lcao_factory_->ao_factory().registry().purge(wfn_world()->world());
+    // obsolete factory
+    lcao_factory_->obsolete();
+    // obsolete wfn
     Wavefunction::obsolete();
   }
 

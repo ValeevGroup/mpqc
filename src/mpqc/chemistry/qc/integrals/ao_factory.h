@@ -91,6 +91,17 @@ class AOFactory : public AOFactoryBase, virtual public DescribedClass {
   AOFactory(AOFactory&&) = default;
   AOFactory& operator=(AOFactory&&) = default;
 
+
+  void obsolete() {
+    ao_formula_registry_.purge(world_);
+    if(orbital_basis_registry_!= nullptr){
+      orbital_basis_registry_->clear();
+    }
+    if(orbital_space_registry_!= nullptr){
+      orbital_space_registry_->clear();
+    }
+  }
+
   /// set oper based on Tile type
   template <typename T = Tile>
   void set_oper(typename std::enable_if<std::is_same<T, TA::TensorD>::value,

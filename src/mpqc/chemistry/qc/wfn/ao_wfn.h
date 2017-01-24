@@ -55,8 +55,8 @@ class AOWavefunction : public Wavefunction {
 
   /// obsolete, purge the registry in AOIntegral and DirectAOIntegral
   void obsolete() override {
-    ao_factory().registry().purge(wfn_world()->world());
-    direct_ao_factory().registry().purge(wfn_world()->world());
+    ao_factory().obsolete();
+    direct_ao_factory().obsolete();
     Wavefunction::obsolete();
   }
 

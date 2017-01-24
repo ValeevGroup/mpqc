@@ -87,6 +87,16 @@ class LCAOFactory : virtual public DescribedClass{
     ao_factory_.set_orbital_space_registry(orbital_space_registry_);
   }
 
+  void obsolete() {
+    // obsolete self
+    mo_formula_registry_.purge(world_);
+    if(orbital_space_registry_!= nullptr){
+      orbital_space_registry_->clear();
+    }
+    // obsolete AOFactory
+    ao_factory_.obsolete();
+  }
+
   /// return reference to madness::World
   madness::World& world() const { return world_; }
 

@@ -1,9 +1,9 @@
 // #include "../molecule/cluster.h"
 
 #include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/chemistry/molecule/common.h"
 
 #include "mpqc/chemistry/qc/basis/basis.h"
-#include "mpqc/chemistry/qc/basis/basis_set.h"
 #include "mpqc/chemistry/qc/basis/shell_vec_functions.h"
 #include "mpqc/util/keyval/forcelink.h"
 
@@ -12,6 +12,54 @@ MPQC_CLASS_EXPORT2("Basis", mpqc::lcao::gaussian::Basis);
 namespace mpqc {
 namespace lcao {
 namespace gaussian {
+
+Basis::Factory::Factory(std::string const &s) : basis_set_name_{s} {}
+
+std::vector<ShellVec> Basis::Factory::get_cluster_shells(Molecule const &mol) const {
+  std::vector<ShellVec> cs;
+  for (auto const &cluster : mol) {
+    const auto libint_atoms = ::mpqc::to_libint_atom(collapse_to_atoms(cluster));
+
+    std::streambuf *cout_sbuf = std::cout.rdbuf();  // Silence libint printing.
+    std::ofstream fout("/dev/null");
+    std::cout.rdbuf(fout.rdbuf());
+    libint2::BasisSet libint_basis(basis_set_name_, libint_atoms);
+    std::cout.rdbuf(cout_sbuf);
+
+    // Shells that go with this cluster
+    ShellVec cluster_shells;
+    cluster_shells.reserve(libint_basis.size());
+
+    for (auto &&shell : libint_basis) {
+      cluster_shells.emplace_back(std::move(shell));
+    }
+
+    cs.emplace_back(std::move(cluster_shells));
+  }
+
+  return cs;
+}
+
+ShellVec Basis::Factory::get_flat_shells(Molecule const &mol) const {
+  ShellVec cs;
+  for (auto const &cluster : mol) {
+    const auto libint_atoms = to_libint_atom(collapse_to_atoms(cluster));
+
+    std::streambuf *cout_sbuf = std::cout.rdbuf();  // Silence libint printing.
+    std::ofstream fout("/dev/null");
+    std::cout.rdbuf(fout.rdbuf());
+    libint2::BasisSet libint_basis(basis_set_name_, libint_atoms);
+    std::cout.rdbuf(cout_sbuf);
+
+    for (auto &&shell : libint_basis) {
+      cs.emplace_back(std::move(shell));
+    }
+  }
+
+  return cs;
+}
+
+////////////////////
 
 Basis::Basis() = default;
 Basis::~Basis() = default;
@@ -28,7 +76,7 @@ Basis::Basis(const KeyVal &kv) {
   std::string basis_name = kv.value<std::string>("name");
 
   // construct basis set
-  BasisSet basis_set(basis_name);
+  Basis::Factory basis_set(basis_name);
 
   // molecule
   auto mol_ptr = kv.class_ptr<mpqc::Molecule>("molecule");
@@ -44,6 +92,10 @@ Basis::Basis(const KeyVal &kv) {
   }
 
   shells_ = std::move(basis.shells_);
+
+  Observer::register_message(mol_ptr.get(), [this](){
+    assert(false && "not yet implemented");
+  });
 }
 
 int64_t Basis::nfunctions() const {
@@ -119,7 +171,7 @@ std::ostream &operator<<(std::ostream &os, Basis const &b) {
   return os;
 }
 
-Basis parallel_construct_basis(madness::World &world, const BasisSet &basis_set,
+Basis parallel_construct_basis(madness::World &world, const Basis::Factory &basis_set,
                                const mpqc::Molecule &mol) {
   Basis basis;
 

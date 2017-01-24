@@ -6,15 +6,15 @@
 #include <memory>
 #include <vector>
 
-#include <libint2/shell.h>
+#include <libint2/basis.h>
 #include <madness/world/array_addons.h>
 #include <tiledarray.h>
 
 #include "mpqc/util/keyval/keyval.h"
 
-#include "mpqc/chemistry/molecule/molecule_fwd.h"
+#include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/basis/basis_fwd.h"
-//#include "mpqc/chemistry/qc/basis/basis_set.h"
+#include "mpqc/util/misc/observer.h"
 
 namespace mpqc {
 namespace lcao {
@@ -33,9 +33,35 @@ using ShellVec = std::vector<Shell>;
 
 /// Basis is a clustered sequence of libint2::Shell objects.
 /// The sequence is represented as a vector of vectors of shells.
-class Basis : virtual public DescribedClass {
+class Basis : virtual public DescribedClass,
+              public utility::Observer {
  public:
-  using Shell = libint2::Shell;
+  using Shell = ::mpqc::lcao::gaussian::Shell;
+
+  /// Factory is a ctor helper
+  class Factory {
+   public:
+    Factory() = delete;  // Can't init a basis without name.
+    Factory(Factory const &b) = default;
+    Factory(Factory &&b) = default;
+    Factory &operator=(Factory const &b) = default;
+    Factory &operator=(Factory &&b) = default;
+
+    /// This ctor creates a Factory that will use default_name for all atoms
+    Factory(std::string const & default_name);
+
+    /*! \brief Constructs a vector of ShellVecs
+     *
+     * Each ShellVec represents the shells for a cluster.
+     */
+    std::vector<ShellVec> get_cluster_shells(Molecule const &) const;
+
+    /*! \brief returns a single vector of all shells in the molecule */
+    ShellVec get_flat_shells(Molecule const &) const;
+
+   private:
+    std::string basis_set_name_;
+  };
 
   /// created an empty Basis
   Basis();
@@ -133,11 +159,11 @@ Basis reblock(Basis const &basis, Op op, Args... args) {
 /**
  * construct basis on MPI process 0 and broadcast to all processes
  * @param world madness::World
- * @param basis_set BasisSet object
+ * @param basis_factory Basis::Factory object
  * @param mol Molecule object
  * @return Basis object
  */
-Basis parallel_construct_basis(madness::World &world, const BasisSet &basis_set,
+Basis parallel_construct_basis(madness::World &world, const Basis::Factory &basis_factory,
                                const mpqc::Molecule &mol);
 /**
  * construct a map that maps column of basis to column of sub_basis, sub_basis has to be a subset of basis

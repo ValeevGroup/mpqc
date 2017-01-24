@@ -9,7 +9,6 @@
 
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/basis/basis.h"
-#include "mpqc/chemistry/qc/basis/basis_set.h"
 
 #include "mpqc/util/meta/make_array.h"
 
@@ -20,8 +19,10 @@ namespace scf {
 
 namespace cadf {
 
-inline lcao::Basis by_atom_basis(
-    Molecule const &mol, lcao::BasisSet const &bs,
+using Basis = ::mpqc::lcao::gaussian::Basis;
+
+inline Basis by_atom_basis(
+    Molecule const &mol, Basis::Factory const &bs,
     std::unordered_map<std::size_t, std::size_t> &atom_to_cluster_map) {
   std::vector<AtomBasedClusterable> atoms;
   std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
@@ -38,12 +39,12 @@ inline lcao::Basis by_atom_basis(
   }
 
   auto sort_atoms_in_mol = false;
-  return lcao::Basis(
+  return Basis(
       bs.get_cluster_shells(Molecule(std::move(atoms), sort_atoms_in_mol)));
 }
 
-inline TA::TiledRange cadf_trange(lcao::Basis const &obs_by_atom,
-                                  lcao::Basis const &dfbs_by_atom) {
+inline TA::TiledRange cadf_trange(Basis const &obs_by_atom,
+                                  Basis const &dfbs_by_atom) {
   std::vector<TA::TiledRange1> trange1s;
   trange1s.emplace_back(dfbs_by_atom.create_trange1());
   trange1s.emplace_back(obs_by_atom.create_trange1());
@@ -53,7 +54,7 @@ inline TA::TiledRange cadf_trange(lcao::Basis const &obs_by_atom,
 }
 
 inline TA::SparseShape<float> cadf_shape(madness::World &world,
-                                         lcao::Basis const &obs,
+                                         Basis const &obs,
                                          TA::TiledRange const &trange) {
   auto &tiles = trange.tiles_range();
   TA::TensorD norms(tiles, 0.0);
@@ -383,8 +384,8 @@ template <typename MetricEngine>
 inline TA::DistArray<TA::TensorD, TA::SparsePolicy>
 compute_atomic_fitting_coeffs(
     madness::World &world, Molecule const &obs_molecule,
-    Molecule const &dfbs_molecule, lcao::BasisSet const &obs_set,
-    lcao::BasisSet const &dfbs_set, MetricEngine const &eng,
+    Molecule const &dfbs_molecule, BasisFactory const &obs_set,
+    BasisFactory const &dfbs_set, MetricEngine const &eng,
     std::unordered_map<std::size_t, std::size_t> &obs_atom_to_cluster_map,
     std::unordered_map<std::size_t, std::size_t> &dfbs_atom_to_cluster_map) {
   auto by_atom_obs =
@@ -394,7 +395,7 @@ compute_atomic_fitting_coeffs(
       cadf::by_atom_basis(dfbs_molecule, dfbs_set, dfbs_atom_to_cluster_map);
 
   const auto dfbs_array =
-      std::vector<lcao::Basis>{{by_atom_dfbs, by_atom_dfbs}};
+      std::vector<Basis>{{by_atom_dfbs, by_atom_dfbs}};
 
   auto M = lcao::dense_integrals(world, eng, dfbs_array);
 
@@ -405,7 +406,7 @@ compute_atomic_fitting_coeffs(
                                            ref_array, libint2::BraKet::xs_xx);
 
   auto three_c_array =
-      std::vector<lcao::Basis>{{by_atom_dfbs, by_atom_obs, by_atom_obs}};
+      std::vector<Basis>{{by_atom_dfbs, by_atom_obs, by_atom_obs}};
 
   auto eri3 = lcao::untruncated_direct_sparse_integrals(world, eri_e,
                                                              three_c_array);

@@ -6,7 +6,6 @@
 
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/basis/basis.h"
-#include "mpqc/chemistry/qc/basis/basis_set.h"
 
 #include "mpqc/math/external/tiledarray/array_info.h"
 #include "mpqc/util/meta/make_array.h"
@@ -197,7 +196,7 @@ fock_from_soad(
 
   // Get minimal basis
   const auto min_bs_shells =
-      parallel_construct_basis(world, gaussian::BasisSet("sto-3g"), clustered_mol)
+      parallel_construct_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol)
           .flattened_shells();
   // Make F scaffolding
   auto const &trange = H.trange();
@@ -258,7 +257,7 @@ fock_from_soad(
 
   // Get minimal basis
   const auto min_bs_shells =
-      parallel_construct_basis(world, gaussian::BasisSet("sto-3g"), clustered_mol)
+      parallel_construct_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol)
           .flattened_shells();
 
   auto const &trange = H.trange();

@@ -6,7 +6,6 @@ namespace mpqc {
 namespace lcao {
 namespace gaussian {
 
-class BasisSet;
 class Basis;
 
 }  // namespace gaussian

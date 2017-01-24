@@ -60,10 +60,12 @@ class CADFFockBuilder : public FockBuilder {
   std::vector<std::array<double, 2>> f_df_sizes_;
 
  public:
+  using BasisFactory = lcao::gaussian::Basis::Factory;
+
   CADFFockBuilder(Molecule const &clustered_mol,
                   Molecule const &df_clustered_mol,
-                  lcao::BasisSet const &obs_set,
-                  lcao::BasisSet const &dfbs_set,
+                  BasisFactory const &obs_set,
+                  BasisFactory const &dfbs_set,
                   lcao::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
                   bool use_forced_shape, double force_threshold,
                   double lcao_chop_threshold = 0.0)
@@ -76,8 +78,8 @@ class CADFFockBuilder : public FockBuilder {
 
   CADFFockBuilder(Molecule const &clustered_mol,
                   Molecule const &df_clustered_mol,
-                  lcao::BasisSet const &obs_set,
-                  lcao::BasisSet const &dfbs_set,
+                  BasisFactory const &obs_set,
+                  BasisFactory const &dfbs_set,
                   lcao::AOFactory<TileType, TA::SparsePolicy> &ao_factory)
       : FockBuilder() {
     // Grab needed ao integrals

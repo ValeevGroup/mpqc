@@ -88,9 +88,11 @@ class ClrCADFFockBuilder : public FockBuilder {
   }
 
  public:
+  using Basis = ::mpqc::lcao::gaussian::Basis;
+
   ClrCADFFockBuilder(
       Molecule const &clustered_mol, Molecule const &df_clustered_mol,
-      lcao::BasisSet const &obs_set, lcao::BasisSet const &dfbs_set,
+      Basis::Factory const &obs_set, Basis::Factory const &dfbs_set,
       lcao::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       bool use_forced_shape, double force_threshold, double lcao_chop_threshold,
       double clr_thresh)
@@ -100,8 +102,8 @@ class ClrCADFFockBuilder : public FockBuilder {
     force_threshold_ = force_threshold;
     lcao_chop_threshold_ = lcao_chop_threshold;
 
-    lcao::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
-    lcao::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
+    Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
+    Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
 
     dE_ = make_three_center_integrals(obs, dfbs);
 
@@ -116,7 +118,7 @@ class ClrCADFFockBuilder : public FockBuilder {
 
   ClrCADFFockBuilder(
       Molecule const &clustered_mol, Molecule const &df_clustered_mol,
-      lcao::BasisSet const &obs_set, lcao::BasisSet const &dfbs_set,
+      Basis::Factory const &obs_set, Basis::Factory const &dfbs_set,
       lcao::AOFactory<TileType, TA::SparsePolicy> &ao_factory,
       double clr_threshold)
       : FockBuilder(), clr_threshold_(clr_threshold) {
@@ -155,8 +157,8 @@ class ClrCADFFockBuilder : public FockBuilder {
     std::unordered_map<std::size_t, std::size_t> obs_atom_to_cluster_map;
     std::unordered_map<std::size_t, std::size_t> dfbs_atom_to_cluster_map;
 
-    lcao::Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
-    lcao::Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
+    Basis obs = ao_factory.orbital_basis_registry().retrieve(L"κ");
+    Basis dfbs = ao_factory.orbital_basis_registry().retrieve(L"Κ");
 
     auto eng_pool = lcao::make_engine_pool(
         libint2::Operator::coulomb, utility::make_array_of_refs(dfbs, dfbs),

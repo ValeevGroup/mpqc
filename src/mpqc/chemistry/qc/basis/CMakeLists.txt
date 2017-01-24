@@ -3,8 +3,6 @@ basis_fwd.h
 basis_registry.cpp
 basis_registry.h
 basis_set_maps.h
-basis_set.cpp
-basis_set.h
 basis.cpp
 basis.h
 cluster_shells.cpp

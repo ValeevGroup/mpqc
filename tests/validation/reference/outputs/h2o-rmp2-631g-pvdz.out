@@ -1,0 +1,230 @@
+MADNESS runtime initialized with 7 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision fce89a3e9019ea9938bbcc75bb0760bb4f6d72ea
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "molecule": {
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "reblock": "4"
+    },
+    "obs": {
+        "name": "6-31G",
+        "molecule": "$:molecule"
+    },
+    "dfbs": {
+        "name": "cc-pVDZ",
+        "molecule": "$:molecule"
+    },
+    "world": {
+        "type": "WfnWorld",
+        "molecule": "$:molecule",
+        "basis": "$:obs",
+        "df_basis": "$:dfbs"
+    },
+    "scf": {
+        "type": "RI-RHF",
+        "wfn_world": "$:world"
+    },
+    "wfn": {
+        "type": "RI-RMP2",
+        "wfn_world": "$:world",
+        "ref": "$:scf",
+        "occ_block_size": "4",
+        "unocc_block_size": "8"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+OBS Basis Trange
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+DF Basis Trange
+( tiles = [ 0, 1 ), elements = [ 0, 24 ) )
+Min and Max block size: 24 24
+Average: 24
+
+Screen:
+Precision: 2.22044604925031e-16
+
+Screen:
+Precision: 2.22044604925031e-16
+
+Computed One Body Integral: < κ | λ > Size: 1.25914812088013e-06 GB Time: 0.011046312 s
+Computed One Body Integral: < κ |V| λ > Size: 1.25914812088013e-06 GB Time: 0.003582089 s
+Computed One Body Integral: < κ |T| λ > Size: 1.25914812088013e-06 GB Time: 0.000345471 s
+Computed One Body Integral: < κ |H| λ > Size: 1.25914812088013e-06 GB Time: 0.000174233 s
+Computed Twobody Two Center Integral: ( Κ |G| Λ ) Size: 4.29153442382812e-06 GB Time: 0.284105652 s
+Computed Twobody Three Center Integral: ( Κ |G| κ λ ) Size: 3.0219554901123e-05 GB Time: 0.41630436 s
+overlap condition number = 50.5531878082312Starting SCF:
+	Threshold: 1e-09
+	Maximum number of iterations: 30
+iteration: 0
+	Energy: -76.1720098211169
+	abs(Energy Change)/energy: 0.00365736590795988
+	(Gradient Norm)/n^2: 0.00233094621894019
+	Scf Time: 0.003441429
+		Density Time: 0.00118353
+		Fock Build Time: 0.001561835
+		DF Fock builder:
+			W time: 0.000263469
+			J time: 0.000324869
+			K time: 0.000484651
+			Total exchange time: 0.00074812
+iteration: 1
+	Energy: -76.2140757286779
+	abs(Energy Change)/energy: 0.000551944075406107
+	(Gradient Norm)/n^2: 0.00111729007317878
+	Scf Time: 0.00368107
+		Density Time: 0.001175449
+		Fock Build Time: 0.001484432
+		DF Fock builder:
+			W time: 0.000226526
+			J time: 0.000327285
+			K time: 0.00034953
+			Total exchange time: 0.000576056
+iteration: 2
+	Energy: -76.2239081527741
+	abs(Energy Change)/energy: 0.000128993964419317
+	(Gradient Norm)/n^2: 0.000143551463877708
+	Scf Time: 0.0039173
+		Density Time: 0.001394773
+		Fock Build Time: 0.001374161
+		DF Fock builder:
+			W time: 0.000232366
+			J time: 0.000306327
+			K time: 0.000367371
+			Total exchange time: 0.000599737
+iteration: 3
+	Energy: -76.2241794040672
+	abs(Energy Change)/energy: 3.55859905899257e-06
+	(Gradient Norm)/n^2: 2.0875807318845e-05
+	Scf Time: 0.00379747
+		Density Time: 0.001142408
+		Fock Build Time: 0.001423142
+		DF Fock builder:
+			W time: 0.000247298
+			J time: 0.000317263
+			K time: 0.000381907
+			Total exchange time: 0.000629205
+iteration: 4
+	Energy: -76.2241830588952
+	abs(Energy Change)/energy: 4.79484045241165e-08
+	(Gradient Norm)/n^2: 1.52468495838879e-06
+	Scf Time: 0.003872773
+		Density Time: 0.001156724
+		Fock Build Time: 0.001332569
+		DF Fock builder:
+			W time: 0.000215308
+			J time: 0.00032286
+			K time: 0.000351217
+			Total exchange time: 0.000566525
+iteration: 5
+	Energy: -76.2241830968484
+	abs(Energy Change)/energy: 4.97916025921476e-10
+	(Gradient Norm)/n^2: 2.57160622466477e-07
+	Scf Time: 0.00398116
+		Density Time: 0.001166352
+		Fock Build Time: 0.00141616
+		DF Fock builder:
+			W time: 0.000256202
+			J time: 0.000316362
+			K time: 0.000381893
+			Total exchange time: 0.000638095
+iteration: 6
+	Energy: -76.2241830985434
+	abs(Energy Change)/energy: 2.22374061480436e-11
+	(Gradient Norm)/n^2: 8.13417220569831e-08
+	Scf Time: 0.00396298
+		Density Time: 0.001178921
+		Fock Build Time: 0.001366234
+		DF Fock builder:
+			W time: 0.000233222
+			J time: 0.000308536
+			K time: 0.000367008
+			Total exchange time: 0.00060023
+iteration: 7
+	Energy: -76.2241830987049
+	abs(Energy Change)/energy: 2.11808790669943e-12
+	(Gradient Norm)/n^2: 5.89483142476459e-09
+	Scf Time: 0.003792387
+		Density Time: 0.001152587
+		Fock Build Time: 0.001293134
+		DF Fock builder:
+			W time: 0.000187016
+			J time: 0.000296748
+			K time: 0.00034386
+			Total exchange time: 0.000530876
+iteration: 8
+	Energy: -76.2241830987058
+	abs(Energy Change)/energy: 1.23047092546572e-14
+	(Gradient Norm)/n^2: 1.52333189640327e-09
+	Scf Time: 0.003943549
+		Density Time: 0.001161659
+		Fock Build Time: 0.001363525
+		DF Fock builder:
+			W time: 0.000202101
+			J time: 0.000327744
+			K time: 0.000364272
+			Total exchange time: 0.000566373
+iteration: 9
+	Energy: -76.224183098706
+	abs(Energy Change)/energy: 2.98295981931083e-15
+	(Gradient Norm)/n^2: 3.29602032471042e-10
+	Scf Time: 0.008988717
+		Density Time: 0.001174487
+		Fock Build Time: 0.006479899
+		DF Fock builder:
+			W time: 0.000198534
+			J time: 0.000309163
+			K time: 0.003153345
+			Total exchange time: 0.003351879
+
+Building ClosedShell OBS MO Orbital
+Retrieved AO Integral: < μ |F| ν >[df] Size: 1.25914812088013e-06 GB
+Retrieved AO Integral: < κ | λ > Size: 1.25914812088013e-06 GB
+Frozen Core: 2 electrons
+OccBlockSize: 4
+VirBlockSize: 8
+Occ Trange
+( tiles = [ 0, 1 ), elements = [ 0, 5 ) )
+Min and Max block size: 5 5
+Average: 5
+
+CorrOcc Trange
+( tiles = [ 0, 1 ), elements = [ 0, 4 ) )
+Min and Max block size: 4 4
+Average: 4
+
+Vir Trange
+( tiles = [ 0, 1 ), elements = [ 0, 8 ) )
+Min and Max block size: 8 8
+Average: 8
+
+Obs Trange
+( tiles = [ 0, 1 ), elements = [ 0, 13 ) )
+Min and Max block size: 13 13
+Average: 13
+
+ClosedShell OBS MO Build Time: 0.001221662 S
+Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
+Transformed LCAO Integral: ( Κ |G| i a ) Size: 5.7220458984375e-06 GB Time: 0.000390221 s
+Retrieved LCAO Integral: ( Κ |G| j b ) Size: 5.7220458984375e-06 GB
+Computed Twobody Two Center Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 0.000807213 s
+Inverse Time: 0.000997057 s
+Transformed LCAO Integral: < i j |G| a b >[df] Size: 7.62939453125e-06 GB Time: 0.000276364 s
+RI-MP2 Energy: -0.116778998382925
+  Property "Energy" computed with Wavefunction "RI-RMP2":
+    value:  -76.340962097088976

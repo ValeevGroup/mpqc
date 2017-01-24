@@ -206,6 +206,34 @@ class FunctionVisitorBase {
   }
 };
 
+namespace detail {
+namespace function {
+
+template <typename T,
+          typename = typename std::enable_if<!std::is_abstract<T>::value>::type>
+std::shared_ptr<typename std::decay<T>::type> clone(T* other) {
+  return std::make_shared<typename std::decay<T>::type>(*other);
+}
+
+template <typename T,
+          typename = typename std::enable_if<!std::is_abstract<T>::value>::type>
+std::shared_ptr<typename std::decay<T>::type> clone(std::shared_ptr<T> other) {
+  return std::make_shared<typename std::decay<T>::type>(*other);
+}
+
+template <typename T>
+std::shared_ptr<typename std::decay<T>::type> clone(T* other) {
+  return other->clone();
+}
+
+template <typename T>
+std::shared_ptr<typename std::decay<T>::type> clone(std::shared_ptr<T> other) {
+  return other->clone();
+}
+
+}  // namespace function
+}  // namespace detail
+
 /// N-th order Taylor expansion of a function of \c K variables
 
 /// @tparam Value can be complex valued or a vector (e.g. expansion of a dipole
@@ -357,8 +385,7 @@ class Property : public Task {
 
 /**
  * \brief WavefunctionProperty computes a Taylor expansion of a molecular
- * property
- *        using a visiting Wavefunction .
+ * property using a visiting Wavefunction .
  *
  * This is to be used as a base class for ALL properties of Wavefunction
  * classes.
@@ -450,8 +477,7 @@ class WavefunctionProperty
 /// This provides to the class that inherits this an ability to visit
 /// each property \c P in \c Properties by overloading
 /// the corresponding \c P::Evaluator::can_evaluate and \c
-/// P::Evaluator::evaluate
-/// methods.
+/// P::Evaluator::evaluate methods.
 /// @tparam Properties the property type list
 template <typename... Properties>
 class CanEvaluate : public Properties::Evaluator... {};

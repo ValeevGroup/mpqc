@@ -56,19 +56,51 @@ class Timestampable {
   using timestamp_type = TimestampFactory::timestamp_type;
 
   Timestampable() : timestamp_(get_timestamp()) {}
-  Timestampable(const T& val)
+  explicit Timestampable(const T& val)
       : value_(std::make_shared<T>(val)), timestamp_(get_timestamp()) {}
+  explicit Timestampable(std::shared_ptr<T> val)
+      : value_(val), timestamp_(get_timestamp()) {}
 
   /// copy ctor keeps the timestamp, deep copies value
   Timestampable(const Timestampable& other)
       : timestamp_(other.timestamp_), value_(std::make_shared<T>(T(other))) {}
 
-  /// retrieve the value_ as a conversion to T
-  operator T() const {
+  Timestampable& operator=(const T& val) {
+    value_ = std::make_shared<T>(val);
+    timestamp_ = get_timestamp();
+    return *this;
+  }
+  Timestampable& operator=(std::shared_ptr<T> val) {
+    value_ = val;
+    timestamp_ = get_timestamp();
+    return *this;
+  }
+
+  /// retrieve a (non-const) reference value_ updates the timestamp
+  operator T&() {
+    assert(value_ != nullptr);
+    timestamp_ = get_timestamp();
+    return *value_;
+  }
+
+  /// retrieve a const reference value_
+  operator const T&() const {
     assert(value_ != nullptr);
     return *value_;
   }
 
+  /// retrieve a shared pointer, updates the timestamp
+  operator std::shared_ptr<T>() {
+    assert(value_ != nullptr);
+    timestamp_ = get_timestamp();
+    return value_;
+  }
+
+  /// retrieve a const shared pointer
+  operator std::shared_ptr<const T>() const {
+    assert(value_ != nullptr);
+    return value_;
+  }
 
   /// @return the current timestamp
   const timestamp_type& timestamp() const { return timestamp_; }
@@ -82,7 +114,7 @@ class Timestampable {
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Timestampable<T>& x) {
-  os << T(x);
+  os << static_cast<const T&>(x);
   return os;
 }
 
@@ -96,8 +128,12 @@ class FunctionVisitorBase;
 /// on parameters and value. The value can also be made obsolete explicitly.
 /// Lastly, Function provides support for the Visitor pattern.
 ///
-/// @tparam Value the type of values computed by Function
-/// @tparam Parameters the type of parameters used by Function
+/// @note both Value and Parameters are managed via shared pointers
+///
+/// @tparam Value the type of value computed by Function; can be an abstract
+/// class
+/// @tparam Parameters the type of parameters used by Function; can be an
+/// abstract class
 template <typename Value, typename Parameters>
 class Function {
  public:
@@ -105,13 +141,14 @@ class Function {
   typedef Parameters parameters_type;
 
   Function() = default;
+  virtual ~Function() = default;
 
-  Function(const std::shared_ptr<Parameters>& params)
+  explicit Function(std::shared_ptr<Parameters> params)
       : value_(), params_(params), obsolete_(true) {}
 
   /// Timestampable<Value> will be convert to temporary Value,
   /// has to return by value here
-  const Value value() {
+  std::shared_ptr<const Value> value() {
     if (must_compute()) compute();
     return value_;
   }
@@ -126,7 +163,11 @@ class Function {
       return false;
   }
 
-  std::shared_ptr<Parameters> params() const { return params_; }
+  std::shared_ptr<const Parameters> params() const { return params_; }
+
+  virtual void set_params(std::shared_ptr<Parameters> params) {
+    params_ = params;
+  }
 
  protected:
   /// Direct access to the value of this function, bypasses timestamp check
@@ -146,7 +187,7 @@ class Function {
 
  private:
   Timestampable<Value> value_;
-  Timestampable<std::shared_ptr<Parameters>> params_;
+  Timestampable<Parameters> params_;
   bool obsolete_;
 };
 

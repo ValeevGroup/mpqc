@@ -35,10 +35,12 @@
     "ref": "$:scf",
     "method" : "df",
     "occ_block_size" : 1,
-    "unocc_block_size" : 24
+    "unocc_block_size" : 24,
+    "converge" : 1.0e-7
   },
   "property" : {
     "type" : "Energy",
-    "wfn" : "$:wfn"
+    "wfn" : "$:wfn",
+    "precision" : 1.0e-11
   }
 }

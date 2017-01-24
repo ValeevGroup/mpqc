@@ -12,13 +12,14 @@
 #include <memory>
 
 #include "mpqc/chemistry/qc/wfn/wfn_world.h"
+#include "mpqc/util/misc/observer.h"
 
 namespace mpqc {
 
 /// Wavefunction = opaque function of atoms, only has 2 states: computed and not
 /// computed.
 /// TODO It needs some sort of precision tracking to facilitate reuse.
-class Wavefunction : virtual public DescribedClass {
+class Wavefunction : virtual public DescribedClass, public utility::Observer {
  public:
   /**
    *  \brief The KeyVal constructor
@@ -55,16 +56,7 @@ namespace lcao {
 /// \todo elaborate Wavefunction documentation
 class Wavefunction : public ::mpqc::Wavefunction {
  private:
-  /** Pointer to the WfnWorld
-   *
-   * \note No need to make this shared Wfn is just a member of the world it
-   *lives in so no ownership here.
-   *
-   * \warning Wfn should never delete or allocate this pointer.
-   *
-   * \note by chong I changed this to shared pointer, for example, MP2 and HF
-   *          will share the same wfn_world
-   */
+  /** Pointer to the WfnWorld */
   std::shared_ptr<WavefunctionWorld> wfn_world_;
 
  public:

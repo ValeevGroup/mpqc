@@ -6,6 +6,9 @@ namespace mpqc{
 Wavefunction::Wavefunction(const KeyVal &kv) {
   if (kv.exists_class("atoms")) {
     atoms_ = kv.class_ptr<Molecule>("atoms");
+    utility::Observer::register_message(atoms_.get(), [this](){
+      this->obsolete();
+    });
   }
 }
 
@@ -32,6 +35,9 @@ Wavefunction::Wavefunction(const KeyVal &kv) : ::mpqc::Wavefunction(kv) {
     // TODO decide whether to push the newly-constructed world to kv, and where
   }
 
+  utility::Observer::register_message(wfn_world_->atoms().get(), [this](){
+    this->obsolete();
+  });
 }
 
 Wavefunction::~Wavefunction() = default;

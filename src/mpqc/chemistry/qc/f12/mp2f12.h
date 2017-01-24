@@ -7,12 +7,12 @@
 
 #include <string>
 
+#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/f12/cabs_singles.h"
 #include "mpqc/chemistry/qc/f12/f12_intermediates.h"
+#include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/integrals/f12_utility.h"
-#include "mpqc/chemistry/qc/mbpt/mp2.h"
-#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
-#include "mpqc/math/external/eigen/eigen.h"
+#include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
 
 namespace mpqc {
 namespace lcao {
@@ -22,10 +22,11 @@ namespace lcao {
  */
 
 template <typename Tile>
-class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
+class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public CanEvaluate<Energy> {
  public:
   using TArray = TA::DistArray<Tile,TA::SparsePolicy>;
 
+  // clang-format off
   /**
    * KeyVal constructor
    * @param kv
@@ -38,19 +39,46 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
    * | cabs_singles | bool | true | if do CABSSingles calculation |
    *
    */
+   // clang-format on
   RMP2F12(const KeyVal& kv);
   ~RMP2F12() = default;
 
-  double value() override;
-  std::tuple<RowMatrix<double>, RowMatrix<double>> compute();
   void obsolete() override;
 
+  const double mp2_corr_energy() const {return mp2_corr_energy_;}
+  const double f12_energy() const {return mp2_f12_energy_;}
+  const double cabs_singles_energy() const {return singles_energy_;}
+ protected:
+
+  bool can_evaluate(Energy* energy) override;
+
+  void evaluate(Energy* result) override;
+
+  /// compute mp2f12 energy
+  /// @return tuple of E_MP2 matrix and E_F12 matrix
+  std::tuple<RowMatrix<double>, RowMatrix<double>> compute();
+
  private:
+
+  /// initialize mp2f12
+  virtual void init();
+
+  /// function to compute B intermediate
   virtual TArray compute_B();
+
+  /// function to compute V intermediate
   virtual TArray compute_V();
+
+  /// function to compute X intermediate
   virtual TArray compute_X();
+
+  /// function to compute C intermediate
   virtual TArray compute_C();
+
+  /// function to compute T2 amplitudes
   virtual std::tuple<TArray, TArray> compute_T();
+
+  /// function to compute CABS singles correction
   virtual double compute_cabs_singles();
 
  protected:
@@ -58,6 +86,15 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
   TA::SparseShape<float> ijij_ijji_shape_;
   bool cabs_singles_;
   std::shared_ptr<Wavefunction> ref_wfn_;
+
+ private:
+  /// MP2 correlation energy
+  double mp2_corr_energy_ = 0.0;
+  /// F12 contribution to MP2F12 energy
+  double mp2_f12_energy_ = 0.0;
+  /// CABS singles energy
+  double singles_energy_ = 0.0;
+
 };
 
 
@@ -85,12 +122,13 @@ class RIRMP2F12 : public RMP2F12<Tile> {
   ~RIRMP2F12() = default;
 
  private:
-  virtual TArray compute_B() override;
-  virtual TArray compute_V() override;
-  virtual TArray compute_X() override;
-  virtual TArray compute_C() override;
-  virtual std::tuple<TArray, TArray> compute_T() override;
-  virtual double compute_cabs_singles() override;
+
+  TArray compute_B() override;
+  TArray compute_V() override;
+  TArray compute_X() override;
+  TArray compute_C() override;
+  std::tuple<TArray, TArray> compute_T() override;
+  double compute_cabs_singles() override;
 };
 
 extern template class RMP2F12<TA::TensorD>;

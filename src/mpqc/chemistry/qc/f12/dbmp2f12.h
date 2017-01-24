@@ -35,9 +35,14 @@ class RIDBRMP2F12 : public RIRMP2F12<Tile> {
   RIDBRMP2F12(const KeyVal& kv);
   virtual ~RIDBRMP2F12() = default;
 
-  double value() override;
+  /// override the evaluate function in RMP2F12
+  void evaluate(Energy* result) override;
 
  private:
+
+  /// override the initialize function in RMP2F12
+  void init() override;
+
   TArray compute_B() override;
   TArray compute_V() override;
   TArray compute_X() override;

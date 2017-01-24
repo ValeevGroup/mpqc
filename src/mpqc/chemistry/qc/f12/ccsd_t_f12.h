@@ -14,18 +14,23 @@ namespace lcao {
 
 /**
  * \brief CCSD(T)F12 class
+ *
+ * KeyVal type: CCSD(T)F12
  */
 
 template <typename Tile>
 class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
                    public CCSD_F12<Tile> {
  public:
+
+  // clang-format off
   /**
    * KeyVal constructor
    * @param kv
    *
-   * keywords : all keywords from CCSD_T and CCSDF12
+   * KeyVal keywords : inherit all keywords from CCSD_T and CCSDF12
    */
+  // clang-format on
 
   CCSD_T_F12(const KeyVal& kv)
       : CCSD<Tile, TA::SparsePolicy>(kv),
@@ -34,39 +39,34 @@ class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
 
   virtual ~CCSD_T_F12() {}
 
-  double value() override {
-    if (this->energy_ == 0.0) {
-      auto& world = this->wfn_world()->world();
-
-      // compute CCSD(F12) first
-      auto ccsdf12_time0 = mpqc::fenced_now(world);
-
-      double ccsd_f12 = CCSD_F12<Tile>::value();
-
-      auto ccsdf12_time1 = mpqc::fenced_now(world);
-      auto ccsdf12_time = mpqc::duration_in_s(ccsdf12_time0, ccsdf12_time1);
-      mpqc::utility::print_par(world, "Total CCSD(F12) Time:  ", ccsdf12_time,
-                               "\n");
-
-      // compute (T) energy
-      this->lcao_factory().ao_factory().registry().purge(world);
-
-
-      CCSD_T<Tile, TA::SparsePolicy>::compute_ccsd_t();
-
-      auto ccsdtf12_time1 = mpqc::fenced_now(world);
-      auto ccsdtf12_time = mpqc::duration_in_s(ccsdf12_time0, ccsdtf12_time1);
-      mpqc::utility::print_par(world, "Total CCSD(T)F12 Time:  ", ccsdtf12_time,
-                               "\n");
-
-      this->energy_ = ccsd_f12 + this->triples_energy();
-    }
-    return this->energy_;
-  }
 
   void obsolete() override {
     CCSD_F12<Tile>::obsolete();
     CCSD_T<Tile, TA::SparsePolicy>::obsolete();
+  }
+
+ protected:
+
+  void evaluate(Energy* result) override {
+    if (!this->computed()) {
+      auto& world = this->wfn_world()->world();
+
+      // compute CCSD(F12) first
+      CCSD_F12<Tile>::evaluate(result);
+      double ccsd_f12_energy = this->get_value(result).derivs(0)[0];
+
+      auto t_time0 = mpqc::fenced_now(world);
+      // compute (T) energy
+      this->lcao_factory().ao_factory().registry().purge(world);
+      CCSD_T<Tile, TA::SparsePolicy>::compute_ccsd_t();
+
+      auto t_time1 = mpqc::fenced_now(world);
+      auto t_time = mpqc::duration_in_s(t_time0, t_time1);
+      mpqc::utility::print_par(world, "(T) Time in CCSD(T)F12:  ", t_time, "\n");
+
+      this->computed_ = true;
+      this->set_value(result, ccsd_f12_energy + this->triples_energy());
+    }
   }
 
 };

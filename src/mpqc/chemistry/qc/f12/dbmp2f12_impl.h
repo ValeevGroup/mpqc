@@ -21,82 +21,55 @@ RIDBRMP2F12<Tile>::RIDBRMP2F12(const KeyVal& kv) : RIRMP2F12<Tile>(kv), kv_(kv) 
 }
 
 template <typename Tile>
-double RIDBRMP2F12<Tile>::value() {
-  if (this->energy_ == 0.0) {
+void RIDBRMP2F12<Tile>::evaluate(Energy* result) {
+  if (this->computed()) {
     auto& world = this->wfn_world()->world();
 
-    double time;
+    // compute MP2F12
+    RIRMP2F12<Tile>::evaluate(result);
+    double mp2f12_energy = this->get_value(result).derivs(0)[0];
+
     auto time0 = mpqc::fenced_now(world);
 
-    double ref_energy = this->ref_wfn_->value();
-
-    auto time1 = mpqc::fenced_now(world);
-    time = mpqc::duration_in_s(time0, time1);
-    utility::print_par(world, "Total Ref Time: ", time, " S \n");
-
-    // initialize
-    auto mol = this->lcao_factory().ao_factory().molecule();
-    Eigen::VectorXd orbital_energy;
-    this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
-        this->lcao_factory(), orbital_energy, mol, this->is_frozen_core(),
-        this->occ_block(), this->unocc_block());
-    this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
-
-    // create shape
-    auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
-    TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
-    this->ijij_ijji_shape_ = f12::make_ijij_ijji_shape(occ4_trange);
-
-    closed_shell_dualbasis_cabs_mo_build_svd(
-        this->lcao_factory(), this->trange1_engine(), "VBS", this->unocc_block());
-
-    // compute
-    RowMatrixXd mp2_eij, f12_eij;
-    std::tie(mp2_eij, f12_eij) = this->compute();
-
-    if (world.rank() == 0) {
-      auto nocc = this->trange1_engine()->get_active_occ();
-      printf(
-          "  i0     i1       eij(mp2)        eij(f12)      eij(mp2-f12) \n"
-              "====== ====== =============== =============== ===============\n");
-      for (int i = 0; i != nocc; ++i)
-        for (int j = i; j != nocc; ++j)
-          printf("%4d   %4d   %15.12lf %15.12lf %15.12lf\n", i, j,
-                 mp2_eij(i, j), f12_eij(i, j), mp2_eij(i, j) + f12_eij(i, j));
-    }
-
-    auto emp2 = mp2_eij.sum();
-    auto ef12 = f12_eij.sum();
-    utility::print_par(world, "E_MP2: ", emp2, "\n");
-    utility::print_par(world, "E_F12: ", ef12, "\n");
-
-    double e_s;
-    if (this->cabs_singles_) {
-      e_s = this->compute_cabs_singles();
-    }
-    utility::print_par(world, "E_S: ", e_s, "\n");
-
-    auto time2 = mpqc::fenced_now(world);
-    time = mpqc::duration_in_s(time1, time2);
-    utility::print_par(world, "Total F12 Time: ", time, " S \n");
-
+    double energy = 0.0;
     if (mp2_method_ == "none") {
-      this->energy_ = ref_energy + emp2 + ef12 + e_s;
+      energy = mp2f12_energy;
     }
     else if(mp2_method_ == "redo") {
       double new_mp2 = compute_new_mp2();
-      this->energy_ = new_mp2 + ef12 + e_s;
+      energy = new_mp2 + this->f12_energy() + this->cabs_singles_energy();
     }
     else if(mp2_method_ == "update"){
       double new_mp2 = compute_new_mp2();
-      this->energy_ = ref_energy + new_mp2 + ef12 + e_s;
+      energy = mp2f12_energy - this->mp2_corr_energy()+ new_mp2;
     }
 
-    auto time3 = mpqc::fenced_now(world);
-    time = mpqc::duration_in_s(time0, time3);
+    this->computed_ = true;
+    this->set_value(result, energy);
+
+    auto time1 = mpqc::fenced_now(world);
+    auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "Total DBMP2F12 Time: ", time, " S \n");
   }
-  return this->energy_;
+}
+
+template< typename Tile>
+void RIDBRMP2F12<Tile>::init() {
+  // initialize
+  auto mol = this->lcao_factory().ao_factory().molecule();
+  Eigen::VectorXd orbital_energy;
+  this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
+      this->lcao_factory(), orbital_energy, mol, this->is_frozen_core(),
+      this->occ_block(), this->unocc_block());
+  this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+
+  // create shape
+  auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
+  TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
+  this->ijij_ijji_shape_ = f12::make_ijij_ijji_shape(occ4_trange);
+
+  closed_shell_dualbasis_cabs_mo_build_svd(
+      this->lcao_factory(), this->trange1_engine(), "VBS", this->unocc_block());
 }
 
 template <typename Tile>
@@ -136,7 +109,9 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
 
     rhf->set_fock(fock);
 
-    new_mp2 = mp2.value();
+    //TODO fix this
+//    new_mp2 = mp2.compute();
+    new_mp2 = 0.0;
   } else if (mp2_method_ == "update") {
     std::size_t n = this->trange1_engine()->get_all();
     std::size_t v = this->trange1_engine()->get_vir();

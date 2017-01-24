@@ -146,18 +146,18 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     if (!this->computed()) {
       auto &world = this->lcao_factory().world();
 
-      auto time0 = mpqc::fenced_now(world);
       CCSD<Tile, Policy>::evaluate(result);
-      auto time1 = mpqc::fenced_now(world);
-      auto duration0 = mpqc::duration_in_s(time0, time1);
-      ExEnv::out0() << "CCSD Time " << duration0 << std::endl;
       double ccsd_energy = this->get_value(result).derivs(0)[0];
 
+      auto time0 = mpqc::fenced_now(world);
       // compute
       compute_ccsd_t();
 
       this->computed_ = true;
       this->set_value(result,ccsd_energy + triples_energy_);
+      auto time1 = mpqc::fenced_now(world);
+      auto duration0 = mpqc::duration_in_s(time0, time1);
+      ExEnv::out0() << "(T) Time in CCSD(T): " << duration0 << std::endl;
     }
   }
 

@@ -42,7 +42,7 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | approx | char | C | approaximation to compute F12 (C or D) |
+   * | approx | char | C | approximation to compute F12 (C or D) |
    * | cabs_singles | bool | true | if do CABSSingles calculation |
    * | vt_couple | bool | true | if couple last two term in VT2 and VT1 term |
    *
@@ -53,12 +53,12 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
 
     approximation_ = kv.value<char>("approx", 'C');
     if (approximation_ != 'C' && approximation_ != 'D') {
-      throw std::runtime_error("Wrong CCSD_F12 Approach");
+      throw InputError("Invalid CCSD_F12 Approximation! \n",__FILE__,__LINE__,"approx");
     }
 
     method_ = kv.value<std::string>("method", "df");
     if (method_ != "standard" && method_ != "df" && method_ != "direct") {
-      throw std::invalid_argument("Invalid Method For CCSD_F12");
+      throw InputError("Invalid Method For CCSD_F12! \n",__FILE__,__LINE__,"method");
     }
 
     f12_energy_ = 0.0;
@@ -67,19 +67,15 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
 
   virtual ~CCSD_F12() = default;
 
-  double value() override {
-    if (this->energy_ == 0.0) {
+  void evaluate(Energy* result) override {
+    if (!this->computed()) {
       auto& world = this->wfn_world()->world();
 
-      auto ccsd_time0 = mpqc::fenced_now(world);
-
       // compute ccsd
-      real_t ccsd = CCSD<Tile, Policy>::value();
+      CCSD<Tile, Policy>::evaluate(result);
+      double ccsd_energy = this->get_value(result).derivs(0)[0];
 
-      auto ccsd_time1 = mpqc::fenced_now(world);
-      auto ccsd_time = mpqc::duration_in_s(ccsd_time0, ccsd_time1);
-      mpqc::utility::print_par(world, "Total CCSD Time:  ", ccsd_time, "\n");
-
+      auto f12_time0 = mpqc::fenced_now(world);
       // initialize CABS orbitals
       init_cabs();
 
@@ -91,20 +87,21 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
       // compute, this will set f12_energy_
       compute_f12();
 
-      if (debug()) utility::print_par(world, "E_F12: ", f12_energy_, "\n");
+      utility::print_par(world, "E_F12: ", f12_energy_, "\n");
 
       // compute cabs singles, this will set singles_energy_
       if (cabs_singles_) {
         compute_cabs_singles();
       }
 
-      auto f12_time0 = mpqc::fenced_now(world);
-      auto f12_time = mpqc::duration_in_s(ccsd_time1, f12_time0);
+      auto f12_time1 = mpqc::fenced_now(world);
+      auto f12_time = mpqc::duration_in_s(f12_time0, f12_time1);
       mpqc::utility::print_par(world, "Total F12 Time:  ", f12_time, "\n");
 
-      this->energy_ = ccsd + f12_energy_ + singles_energy_;
+      this->computed_ = true;
+
+      this->set_value(result, ccsd_energy + f12_energy_ + singles_energy_);
     }
-    return this->energy_;
   }
 
   void obsolete() override {
@@ -119,8 +116,10 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
                                    this->unocc_block());
   }
 
+  /// compute CABS singles correction
   virtual void compute_cabs_singles();
 
+  /// compute CCSD F12 energy
   virtual void compute_f12();
 
   /// standard approach
@@ -133,7 +132,6 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
   double f12_energy_;
   double singles_energy_;
   std::string method_;
-  int debug() const { return 1; }
 
  private:
   bool vt_couple_;
@@ -157,9 +155,7 @@ void CCSD_F12<Tile>::compute_cabs_singles() {
     CABSSingles<Tile> cabs_singles(this->lcao_factory());
     singles_energy_ = cabs_singles.compute(df, false, true);
   }
-  if (debug()) {
-    utility::print_par(world, "E_S: ", singles_energy_, "\n");
-  }
+  utility::print_par(world, "E_S: ", singles_energy_, "\n");
   auto single_time1 = mpqc::fenced_now(world);
   auto single_time = mpqc::duration_in_s(single_time0, single_time1);
   mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time,
@@ -210,7 +206,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
                      .reduce(f12::F12PairEnergyReductor<Tile>(
                          f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
-    if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
+    utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 = eij;
   }
 
@@ -229,7 +225,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
                      .reduce(f12::F12PairEnergyReductor<Tile>(
                          f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     eij *= -1;
-    if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
+    utility::print_par(world, "E_X: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
 
@@ -259,7 +255,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
                     .reduce(f12::F12PairEnergyReductor<Tile>(
                         2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
   Eij_F12 += e_ij;
-  if (debug()) utility::print_par(world, "E_V: ", e_ij.sum(), "\n");
+  utility::print_par(world, "E_V: ", e_ij.sum(), "\n");
 
   return Eij_F12;
 }
@@ -286,7 +282,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
                      .reduce(f12::F12PairEnergyReductor<Tile>(
                          f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
-    if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
+    utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 = eij;
   }
 
@@ -304,7 +300,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
                      .reduce(f12::F12PairEnergyReductor<Tile>(
                          f12::CC_ijij_bar, f12::CC_ijji_bar, n_active_occ));
     eij *= -1;
-    if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
+    utility::print_par(world, "E_X: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
 
@@ -337,7 +333,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
   Matrix eij = V_ijij_ijji("i1,j1,i2,j2")
                    .reduce(f12::F12PairEnergyReductor<Tile>(
                        2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, n_active_occ));
-  if (debug()) utility::print_par(world, "E_V: ", eij.sum(), "\n");
+  utility::print_par(world, "E_V: ", eij.sum(), "\n");
   Eij_F12 += eij;
 
   return Eij_F12;

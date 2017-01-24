@@ -47,6 +47,7 @@ class RHF : public AOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
 
   void obsolete() override;
 
+  inline void set_fock(array_type f) {F_ = f;}
  protected:
   double energy_;
   std::size_t max_iter_;
@@ -76,7 +77,6 @@ class RHF : public AOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
   inline const double energy() const { return energy_; }
 
   double compute_energy() const;
-  inline void set_fock(array_type f) {F_ = f;}
 
   /** Function to compute the density to the desired accuracy.
    *

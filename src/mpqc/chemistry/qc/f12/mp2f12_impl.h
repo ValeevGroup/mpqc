@@ -10,6 +10,10 @@
 namespace mpqc {
 namespace lcao {
 
+///
+/// Member functions for RMP2F12 class
+///
+
 template <typename Tile>
 RMP2F12<Tile>::RMP2F12(const KeyVal& kv) : LCAOWavefunction<Tile,TA::SparsePolicy>(kv) {
   if (kv.exists("ref")) {
@@ -27,36 +31,44 @@ RMP2F12<Tile>::RMP2F12(const KeyVal& kv) : LCAOWavefunction<Tile,TA::SparsePolic
   cabs_singles_ = kv.value<bool>("cabs_singles", true);
 }
 
+
 template <typename Tile>
-double RMP2F12<Tile>::value() {
-  if (this->energy_ == 0.0) {
+void RMP2F12<Tile>::obsolete() {
+  mp2_corr_energy_ = 0.0;
+  mp2_f12_energy_ = 0.0;
+  singles_energy_ = 0.0;
+  LCAOWavefunction<Tile, TA::SparsePolicy>::obsolete();
+  ref_wfn_->obsolete();
+}
+
+template <typename Tile>
+bool RMP2F12<Tile>::can_evaluate(Energy* energy) {
+  // can only evaluate the energy
+  return energy->order() == 0;
+}
+
+template <typename Tile>
+void RMP2F12<Tile>::evaluate(Energy *result) {
+  if (!this->computed()) {
     auto& world = this->wfn_world()->world();
 
-    double time;
-    auto time0 = mpqc::fenced_now(world);
+    /// cast ref_wfn to Energy::Evaluator
+    auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
+    if(ref_evaluator == nullptr) {
+      std::ostringstream oss;
+      oss << "RefWavefunction in CCSD" << ref_wfn_->class_key()
+          << " cannot compute Energy" << std::endl;
+      throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+    }
 
-    double ref_energy = ref_wfn_->value();
+    ref_evaluator->evaluate(result);
+
+    double ref_energy = this->get_value(result).derivs(0)[0];
 
     auto time1 = mpqc::fenced_now(world);
-    time = mpqc::duration_in_s(time0, time1);
-    utility::print_par(world, "Total Ref Time: ", time, " S \n");
 
     // initialize
-    auto mol = this->wfn_world()->atoms();
-    Eigen::VectorXd orbital_energy;
-    this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-        this->lcao_factory(), orbital_energy, *mol, this->is_frozen_core(),
-        this->occ_block(), this->unocc_block());
-
-    this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
-
-    // create shap
-    auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
-    TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
-    ijij_ijji_shape_ = f12::make_ijij_ijji_shape(occ4_trange);
-
-    closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),
-                                   this->unocc_block());
+    init();
 
     // compute
     RowMatrix<double> mp2_eij, f12_eij;
@@ -73,38 +85,28 @@ double RMP2F12<Tile>::value() {
                  mp2_eij(i, j), f12_eij(i, j), mp2_eij(i, j) + f12_eij(i, j));
     }
 
-    auto emp2 = mp2_eij.sum();
-    auto ef12 = f12_eij.sum();
-    utility::print_par(world, "E_MP2: ", emp2, "\n");
-    utility::print_par(world, "E_F12: ", ef12, "\n");
+    mp2_corr_energy_ = mp2_eij.sum();
+    mp2_f12_energy_ = f12_eij.sum();
+    utility::print_par(world, "E_MP2: ", mp2_corr_energy_, "\n");
+    utility::print_par(world, "E_F12: ", mp2_f12_energy_, "\n");
 
-    double e_s;
     if (cabs_singles_) {
-      e_s = compute_cabs_singles();
+      singles_energy_ = compute_cabs_singles();
     }
 
-    utility::print_par(world, "E_S: ", e_s, "\n");
+    utility::print_par(world, "E_S: ", singles_energy_, "\n");
 
-    this->energy_ = ref_energy + emp2 + ef12 + e_s;
+    double energy = ref_energy + mp2_corr_energy_ + mp2_f12_energy_ + singles_energy_;
+
+    this->computed_ = true;
+    this->set_value(result, energy);
 
     auto time2 = mpqc::fenced_now(world);
-    time = mpqc::duration_in_s(time1, time2);
-    utility::print_par(world, "Total F12 Time: ", time, " S \n");
+    auto time = mpqc::duration_in_s(time1, time2);
+    utility::print_par(world, "F12 Time in MP2F12: ", time, " S \n");
 
-    time = mpqc::duration_in_s(time0, time2);
-    utility::print_par(world, "Total MP2F12 Time: ", time, " S \n");
   }
-
-  return this->energy_;
 }
-
-template <typename Tile>
-void RMP2F12<Tile>::obsolete() {
-  this->energy_ = 0.0;
-  LCAOWavefunction<Tile, TA::SparsePolicy>::obsolete();
-  ref_wfn_->obsolete();
-}
-
 
 template <typename Tile>
 std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
@@ -208,6 +210,27 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
   }
 
   return std::make_tuple(Eij_MP2, Eij_F12);
+}
+
+template <typename Tile>
+void RMP2F12<Tile>::init() {
+  auto mol = this->wfn_world()->atoms();
+  Eigen::VectorXd orbital_energy;
+  // initialize obs
+  this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
+      this->lcao_factory(), orbital_energy, *mol, this->is_frozen_core(),
+      this->occ_block(), this->unocc_block());
+
+  this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+
+  // create shape
+  auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
+  TiledArray::TiledRange occ4_trange({occ_tr1, occ_tr1, occ_tr1, occ_tr1});
+  ijij_ijji_shape_ = f12::make_ijij_ijji_shape(occ4_trange);
+
+  // initialize cabs
+  closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),
+                                 this->unocc_block());
 }
 
 template <typename Tile>

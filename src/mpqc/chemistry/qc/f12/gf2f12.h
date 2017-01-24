@@ -111,12 +111,12 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
   }
 
 
-  virtual real_t value() override {
+  virtual real_t value() {
     using mpqc::utility::print_par;
 
     auto& world = this->lcao_factory().world();
 
-    this->energy_ = ref_wfn_->value();
+//    this->energy_ = ref_wfn_->value();
 
     // init
     init();
@@ -158,7 +158,6 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy> {
 
     print_par(world, "Total GF2F12 Time:  ", time, "\n");
 
-    return this->energy_;
   }
 
  private:

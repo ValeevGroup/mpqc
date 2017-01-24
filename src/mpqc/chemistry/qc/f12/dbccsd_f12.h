@@ -32,9 +32,6 @@ class DBCCSD_F12 : public CCSD_F12<Tile> {
   using real_t = typename Tile::scalar_type;
   using Matrix = RowMatrix<real_t>;
 
-  using CCSD_F12<Tile>::value;
-  using CCSD_F12<Tile>::debug;
-
   /**
    * KeyVal constructor
    * @param kv
@@ -88,9 +85,7 @@ void DBCCSD_F12<Tile>::compute_cabs_singles() {
   // non-canonical, don't include F_m^a
   CABSSingles<Tile> cabs_singles(this->lcao_factory());
   this->singles_energy_ = cabs_singles.compute(true, false, false);
-  if (debug()) {
-    utility::print_par(world, "E_S: ", this->singles_energy_, "\n");
-  }
+  utility::print_par(world, "E_S: ", this->singles_energy_, "\n");
   auto single_time1 = mpqc::fenced_now(world);
   auto single_time = mpqc::duration_in_s(single_time0, single_time1);
   mpqc::utility::print_par(world, "Total CABS Singles Time:  ", single_time,
@@ -142,7 +137,7 @@ typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
   Eij_F12 = V_ijij_ijji("i1,j1,i2,j2")
                 .reduce(f12::F12PairEnergyReductor<Tile>(
                     2 * f12::C_ijij_bar, 2 * f12::C_ijji_bar, nocc));
-  if (debug()) utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
+  utility::print_par(world, "E_V: ", Eij_F12.sum(), "\n");
 
   // compute X term
   TArray X_ijij_ijji = f12::compute_X_ijij_ijji_db_df(lcao_factory, ijij_ijji_shape);
@@ -155,7 +150,7 @@ typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
                      .reduce(f12::F12PairEnergyReductor<Tile>(
                          f12::CC_ijij_bar, f12::CC_ijji_bar, nocc));
     eij *= -1;
-    if (debug()) utility::print_par(world, "E_X: ", eij.sum(), "\n");
+    utility::print_par(world, "E_X: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
 
@@ -166,7 +161,7 @@ typename DBCCSD_F12<Tile>::Matrix DBCCSD_F12<Tile>::compute_db_ccsd_f12_df() {
     Matrix eij = B_ijij_ijji("i1,j1,i2,j2")
                      .reduce(f12::F12PairEnergyReductor<Tile>(
                          f12::CC_ijij_bar, f12::CC_ijji_bar, nocc));
-    if (debug()) utility::print_par(world, "E_B: ", eij.sum(), "\n");
+    utility::print_par(world, "E_B: ", eij.sum(), "\n");
     Eij_F12 += eij;
   }
 

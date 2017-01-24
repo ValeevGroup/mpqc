@@ -69,7 +69,10 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
 }  // namespace detail
 
 /**
- * Dual basis MP2 method
+ *  \breif Dual basis MP2 method for closed shell system
+ *
+ * KeyVal type keyword: DBRMP2
+ *
  */
 
 template <typename Tile, typename Policy>
@@ -276,7 +279,10 @@ private:
 };
 
 /**
- * RI-DBRMP2 class, only overide the compute function in DBRMP2 from RMP2
+ *  \breif Dual basis MP2 method for closed shell system with density-fitting
+ *
+ * KeyVal type keyword: RI-DBRMP2
+ *
  */
 template <typename Tile, typename Policy>
 class RIDBRMP2 : public DBRMP2<Tile,Policy>{
@@ -284,7 +290,7 @@ public:
   /**
    * KeyVal constructor
    *
-   * keywords, takes all keywords from DBRMP2
+   * this class inherit all keywords from DBRMP2
    */
 
   RIDBRMP2(const KeyVal& kv) : DBRMP2<Tile,Policy>(kv) {};

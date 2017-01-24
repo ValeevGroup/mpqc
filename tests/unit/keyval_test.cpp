@@ -42,7 +42,7 @@ struct Derived : public Base {
 // not recommended due to complications with the static data initialization,etc)
 MPQC_CLASS_EXPORT_KEY(Derived<0>);
 
-struct Nested : public DescribedClass{
+struct Nested : virtual public DescribedClass{
 
   Nested(const KeyVal& kv) {
     auto base = kv.class_ptr<Base>("base");

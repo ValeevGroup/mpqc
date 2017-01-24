@@ -23,7 +23,6 @@
    "wfn":{
      "type": "zRHF",
      "wfn_world": "$:world",
-     "converge": 1.0e-12,
      "max_iter": 100,
      "soad_guess": true,
      "print_detail": false,
@@ -31,7 +30,8 @@
    },
    "property" : {
     "type" : "Energy",
-    "wfn" : "$:wfn"
+    "wfn" : "$:wfn",
+    "precision" : 1.0e-12
    }
 }
 

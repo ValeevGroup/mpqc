@@ -80,24 +80,31 @@ class DBRMP2 : public RMP2<Tile,Policy> {
 
   DBRMP2() = default;
 
-  virtual ~DBRMP2();
+  virtual ~DBRMP2() = default;
 
   DBRMP2(const KeyVal &kv) : RMP2<Tile,Policy>(kv) {
     method_ = kv.value<std::string>("method", "valeev");
     if( (method_!= "valeev") && (method_!="steele")){
-      throw std::runtime_error("Invalid Method for Dual Basis MP2! \n");
+      throw InputError("Invalid Method for Dual Basis MP2! \n",__FILE__,__LINE__,"method");
     }
   }
 
-  double value() override;
+  void obsolete() override;
 
+  /// function
   virtual double compute_scf_correction();
 
 protected:
+
+  // override RMP2's evaluate function
+  void evaluate(Energy* result) override;
+
+  // override RMP2's init
   void init() override;
 
 private:
   std::string method_;
+  double scf_correction_;
 
   //  std::shared_ptr<TRange1Engine> pulay_build(
   //      integrals::LCAOFactory<Tile, Policy> &lcao_factory,
@@ -282,8 +289,13 @@ public:
 
   RIDBRMP2(const KeyVal& kv) : DBRMP2<Tile,Policy>(kv) {};
   ~RIDBRMP2() = default;
+
+  /// override DBRMP2's compute_scf_correction function
   double compute_scf_correction() override;
+
 private:
+
+  /// override RMP2's compute function
   double compute() override;
 
 };

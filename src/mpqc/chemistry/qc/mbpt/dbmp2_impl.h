@@ -161,18 +161,28 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
 ///
 
 template<typename Tile, typename Policy>
-DBRMP2<Tile,Policy>::~DBRMP2() = default;
+void DBRMP2<Tile,Policy>::obsolete() {
+  scf_correction_ = 0.0;
+  RMP2<Tile,Policy>::obsolete();
+}
 
 
 template<typename Tile, typename Policy>
-double DBRMP2<Tile,Policy>::value() {
-  if (this->energy_ == 0.0) {
-    double mp2_energy = RMP2<Tile,Policy>::value();
+void DBRMP2<Tile,Policy>::evaluate(Energy *result) {
 
+  if(!this->compute()){
+
+    // call RMP2 evaluate function
+    RMP2<Tile,Policy>::evaluate(result);
+
+    double mp2_energy = this->get_value(result).derivs(0)[0];
+
+    // compute scf correction
     double scf_correction = compute_scf_correction();
-    this->energy_ = scf_correction + mp2_energy;
+
+    this->computed_ = true;
+    this->set_value(result, mp2_energy + scf_correction);
   }
-  return this->energy_;
 }
 
 template<typename Tile, typename Policy>

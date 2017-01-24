@@ -6,10 +6,9 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_H_
 
 #include "mpqc/mpqc_config.h"
-#include "mpqc/chemistry/qc/integrals/lcao_factory.h"
+#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/scf/mo_build.h"
 #include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
-#include "mpqc/chemistry/qc/wfn/trange1_engine.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 
 using namespace mpqc;
@@ -83,10 +82,17 @@ double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
 }  // end of namespce detail
 }  // end of namespce mbpt
 
+/**
+ *  \brief MP2 class for closed-shell system
+ *
+ *  KeyVal type of this class RMP2
+ */
 
 template<typename Tile, typename Policy>
-class RMP2 : public lcao::LCAOWavefunction<Tile,Policy> {
+class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public CanEvaluate<Energy> {
  public:
+
+  // clang-format off
   /**
    * KeyVal constructor
    * @param kv
@@ -96,19 +102,36 @@ class RMP2 : public lcao::LCAOWavefunction<Tile,Policy> {
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    */
+  // clang-format on
   RMP2(const KeyVal &kv);
   virtual ~RMP2() = default;
 
-  double value() override;
-  virtual double compute();
-  void compute(lcao::PropertyBase *pb) override;
   void obsolete() override;
+
   const std::shared_ptr<lcao::Wavefunction> refwfn() const;
 
  protected:
+
+  bool can_evaluate(Energy* energy) override;
+
+  void evaluate(Energy* result) override;
+
+  /// function to compute mp2 correlation energy
+  virtual double compute();
+
+  /// initialize orbitals
   virtual void init();
   std::shared_ptr<lcao::Wavefunction> ref_wfn_;
+
+ private:
+   double mp2_corr_energy_;
 };
+
+/**
+ *  \brief MP2 class for closed-shell system with density fitting
+ *
+ *  KeyVal type of this class RI-RMP2
+ */
 
 template <typename Tile, typename Policy>
 class RIRMP2 : public RMP2<Tile, Policy> {
@@ -117,11 +140,13 @@ class RIRMP2 : public RMP2<Tile, Policy> {
   * KeyVal constructor
   * @param kv
   *
-  * keywords: takes all keywords from RMP2
+  * keywords: inherit all keywords from RMP2
   */
   RIRMP2(const KeyVal &kv);
   ~RIRMP2() = default;
-  using RMP2<Tile,Policy>::value;
+
+ protected:
+  /// override the compute function from RMP2
   double compute() override;
 };
 

@@ -34,47 +34,50 @@ RMP2<Tile,Policy>::RMP2(const KeyVal &kv) : LCAOWavefunction<Tile,Policy>(kv) {
   if (kv.exists("ref")) {
     ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
   } else {
-    throw std::invalid_argument("Default Ref Wfn in RMP2 is not support! \n");
+    throw InputError("Default RefWavefunction in RMP2 is not support! \n", __FILE__,__LINE__,"ref");
   }
 }
 
 template<typename Tile, typename Policy>
 void RMP2<Tile,Policy>::obsolete() {
-  this->energy_ = 0.0;
+  mp2_corr_energy_ = 0.0;
   LCAOWavefunction<Tile, Policy>::obsolete();
   ref_wfn_->obsolete();
 }
 
 template<typename Tile, typename Policy>
-double RMP2<Tile,Policy>::value() {
-  if (this->energy_ == 0.0) {
-    auto &world = this->wfn_world()->world();
+bool RMP2<Tile,Policy>::can_evaluate(Energy* energy) {
+  // can only evaluate the energy
+  return energy->order() == 0;
+};
 
-    double time;
-    auto time0 = mpqc::fenced_now(world);
+template<typename Tile, typename Policy>
+void RMP2<Tile,Policy>::evaluate(Energy* result) {
+  if(!this->computed()){
+    /// cast ref_wfn to Energy::Evaluator
+    auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
+    if(ref_evaluator == nullptr) {
+      std::ostringstream oss;
+      oss << "RefWavefunction in CCSD" << ref_wfn_->class_key()
+          << " cannot compute Energy" << std::endl;
+      throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+    }
 
-    double ref_energy = ref_wfn_->value();
+    ref_evaluator->evaluate(result);
 
-    auto time1 = mpqc::fenced_now(world);
-    time = mpqc::duration_in_s(time0, time1);
-    utility::print_par(world, "Total Ref Time: ", time, " S \n");
+    double ref_energy = this->get_value(result).derivs(0)[0];
 
     // initialize
     init();
 
-    double mp2_energy = compute();
+    // compute
+    double mp2_corr_energy_ = compute();
 
-    this->energy_ = mp2_energy + ref_energy;
-
-    auto time2 = mpqc::fenced_now(world);
-    time = mpqc::duration_in_s(time1, time2);
-    utility::print_par(world, "Total MP2 Correlation Time: ", time, " S \n");
-
-    time = mpqc::duration_in_s(time0, time2);
-    utility::print_par(world, "Total MP2 Time: ", time, " S \n");
+    this->computed_ = true;
+    this->set_value(result, ref_energy + mp2_corr_energy_);
   }
-  return this->energy_;
-}
+};
+
 
 template<typename Tile, typename Policy>
 void RMP2<Tile,Policy>::init() {

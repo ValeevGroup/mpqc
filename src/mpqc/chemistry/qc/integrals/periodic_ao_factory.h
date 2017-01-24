@@ -472,6 +472,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
         parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
 
+        // Add a screener here and then pass it into compute integrals
+
         auto time_g0 = mpqc::now(this->world_, false);
         auto J = compute_integrals(this->world_, engine_pool, bs_array);
         auto time_g1 = mpqc::now(this->world_, false);
@@ -498,6 +500,9 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
         parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ,
                                 false);
+
+        // Add screener here
+
         auto time_g0 = mpqc::now(this->world_, false);
         auto K = compute_integrals(this->world_, engine_pool, bs_array);
         auto time_g1 = mpqc::now(this->world_, false);

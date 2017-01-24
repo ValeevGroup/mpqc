@@ -268,7 +268,7 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
 
         TArray tmp_akij;
         tmp_akij("a,k,i,j") = g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j");
-        r2("a,b,i,j") = tmp_akij("a,k,i,j") * t1("b,k");
+        r2("a,b,i,j") -= tmp_akij("a,k,i,j") * t1("b,k");
 
         // TODO: fix it later. Could be a linker problem.
 //        r2("a,b,i,j") =

@@ -8,6 +8,7 @@ set(sources
   exenv.h
   formio.cpp
   formio.h
+  observer.h
   pool.h
   print.cpp
   print.h

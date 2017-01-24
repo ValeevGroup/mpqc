@@ -215,18 +215,12 @@ int64_t Molecule::core_electrons() const {
   return n;
 }
 
-void Molecule::when_updated(std::function<void()> callback) {
-  callbacks_.push_back(callback);
-}
-
 void Molecule::update(const std::vector<Atom> &atoms) {
   size_t pos = 0;  // points to next atoms to be added
   for (auto &element : elements_) {
     ::mpqc::update(element, atoms, pos);
   }
-  for (auto &callback : callbacks_) {
-    callback();
-  }
+  Observable::message();
 }
 
 std::ostream &operator<<(std::ostream &os, Molecule const &mol) {

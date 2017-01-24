@@ -7,6 +7,7 @@
 #include "./atom_based_cluster.h"
 #include "./molecule_fwd.h"
 #include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/misc/observer.h"
 
 namespace mpqc {
 
@@ -25,7 +26,7 @@ namespace mpqc {
  * to atoms.  Its main job is allow for clustering of its clusterables.
  *
  */
-class Molecule : virtual public DescribedClass {
+class Molecule : virtual public DescribedClass, public utility::Observable {
  private:
   std::vector<AtomBasedClusterable> elements_;
 
@@ -34,9 +35,6 @@ class Molecule : virtual public DescribedClass {
   int64_t charge_ = 0;        /// Net charge (# protons - # electrons)
   int64_t total_charge_ = 0;  // total charge # protons
   double natoms_ = 0.0;
-
-  // these will be called every time Molecule::update() is called
-  std::vector<std::function<void()>> callbacks_;
 
   void init(std::istream &file, bool sort_input);
 
@@ -180,10 +178,6 @@ class Molecule : virtual public DescribedClass {
    * also clusterable.
   */
   Vector3d const &com() const { return com_; }
-
-  /// adds a callback to execute when the coordinates are updated
-  /// @param callback the callback to execute
-  void when_updated(std::function<void()> callback);
 };
 
 /// Make Molecules printable

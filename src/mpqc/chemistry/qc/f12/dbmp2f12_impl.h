@@ -143,10 +143,10 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
       // get the basis map
       Eigen::RowVectorXi basis_map;
       {
-        auto vbs =
-            this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"Α"));
-        auto obs =
-            this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"κ"));
+        const auto vbs =
+            *this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"Α"));
+        const auto obs =
+            *this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"κ"));
         basis_map = gaussian::sub_basis_map(vbs, obs);
 
 //        std::cout << "Basis Map" << basis_map << std::endl;
@@ -192,7 +192,7 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
       auto tr_vbs = this->wfn_world()
           ->basis_registry()
           ->retrieve(OrbitalIndex(L"Α"))
-          .create_trange1();
+          ->create_trange1();
       auto tr_corr_occ = this->trange1_engine()->get_active_occ_tr1();
       auto tr_occ = this->trange1_engine()->get_occ_tr1();
       auto tr_vir = this->trange1_engine()->get_vir_tr1();

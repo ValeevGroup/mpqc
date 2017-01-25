@@ -88,7 +88,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     replicate_ = kv.value<bool>("replicate", false);
 
     // default value is size of total number of orbitals, which makes it 1 block
-    std::size_t n_obs = this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"κ")).nfunctions();
+    std::size_t n_obs = this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"κ"))->nfunctions();
     inner_block_size_ = kv.value<int>("reblock_inner", n_obs);
     reblock_inner_ = (inner_block_size_ == 0) ? false : true;
 

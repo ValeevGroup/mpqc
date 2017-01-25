@@ -22,7 +22,7 @@ namespace mpqc {
 template <typename Key, typename Value>
 class Registry {
  public:
-  using container_type = std::map<Key, std::shared_ptr<Value>>;
+  using container_type = std::map<Key, Value>;
   using value_type = typename container_type::value_type;  // std::pair<Key,std::shared_ptr<Value>>
   using iterator = typename container_type::iterator;
   using const_iterator = typename container_type::const_iterator;
@@ -53,7 +53,7 @@ class Registry {
   /// insert {Key,Value} pair
   /// @note \c val is copied
   void insert(const Key& key, const Value& val) {
-    insert(std::make_pair(key, std::make_shared<Value>(val)));
+    registry_[key] = val;
   }
 
   /// insert {Key,std::shared_ptr<Value>} pair
@@ -85,7 +85,7 @@ class Registry {
     if (iter == registry_.end()) {
       throw std::runtime_error("Key not found!");
     }
-    return *(iter->second);
+    return iter->second;
   }
 
   /// find item, return const iterator, if not found, throw
@@ -94,7 +94,7 @@ class Registry {
     if (iter == registry_.cend()) {
       throw std::runtime_error("Key not found!");
     }
-    return *(iter->second);
+    return iter->second;
   }
 
   /// return begin of iterator

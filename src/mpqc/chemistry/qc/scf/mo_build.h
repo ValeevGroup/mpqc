@@ -126,17 +126,17 @@ void closed_shell_cabs_mo_build_svd(
 
   // build the RI basis
 
-  auto abs_basis =
-      ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"α"));
-  auto obs_basis =
-      ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
+  const auto abs_basis =
+      *ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"α"));
+  const auto obs_basis =
+      *ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
 
   gaussian::Basis ri_basis;
   ri_basis = merge(obs_basis, abs_basis);
 
   mpqc::detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                     "RI Basis");
-  ao_factory.orbital_basis_registry().add(OrbitalIndex(L"ρ"), ri_basis);
+  ao_factory.orbital_basis_registry().add(OrbitalIndex(L"ρ"), std::make_shared<gaussian::Basis>(ri_basis));
 
   // integral
   auto S_ribs_inv = ao_factory.compute(L"<ρ|σ>[inv_sqr]");
@@ -389,22 +389,22 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
                      "\nBuilding ClosedShell Dual Basis CABS MO Orbital\n");
 
   // build RI Basis First
-  auto abs_basis =
-      ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"α"));
-  auto vir_basis =
-      ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"Α"));
-  auto obs_basis =
-      ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
+  const auto abs_basis =
+      *ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"α"));
+  const auto vir_basis =
+      *ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"Α"));
+  const auto obs_basis =
+      *ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
 
-  gaussian::Basis ri_basis;
+  std::shared_ptr<gaussian::Basis> ri_basis;
 
   if (ri_method == "VBS") {
-    ri_basis = merge(vir_basis, abs_basis);
-    mpqc::detail::parallel_print_range_info(world, ri_basis.create_trange1(),
+    *ri_basis = merge(vir_basis, abs_basis);
+    mpqc::detail::parallel_print_range_info(world, ri_basis->create_trange1(),
                                       "RI Basis with VBS");
   } else if (ri_method == "OBS") {
-    ri_basis = merge(obs_basis, abs_basis);
-    mpqc::detail::parallel_print_range_info(world, ri_basis.create_trange1(),
+    *ri_basis = merge(obs_basis, abs_basis);
+    mpqc::detail::parallel_print_range_info(world, ri_basis->create_trange1(),
                                       "RI Basis with OBS");
   } else {
     throw std::runtime_error("Invalid RI Method!");
@@ -465,7 +465,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto tr_cabs = lcao_factory.ao_factory()
                      .orbital_basis_registry()
                      .retrieve(OrbitalIndex(L"α"))
-                     .create_trange1();
+                     ->create_trange1();
   auto tr_ribs = S_ribs.trange().data().back();
   auto tr_cabs_mo =
       tre->compute_range(tr_cabs.elements_range().second, vir_blocksize);

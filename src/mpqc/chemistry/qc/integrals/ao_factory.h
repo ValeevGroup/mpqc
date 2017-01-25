@@ -206,7 +206,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
   auto iter = ao_formula_registry_.find(formula);
 
   if (iter != ao_formula_registry_.end()) {
-    result = *(iter->second);
+    result = iter->second;
     utility::print_par(world_, "Retrieved AO Integral: ",
                        utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result);
@@ -225,7 +225,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
 
         // permute the array
         result(formula.to_ta_expression()) =
-            (*(find_permute->second))(permute.to_ta_expression());
+            (find_permute->second)(permute.to_ta_expression());
 
         mpqc::time_point time1 = mpqc::now(world_, accurate_time_);
         double time = mpqc::duration_in_s(time0, time1);

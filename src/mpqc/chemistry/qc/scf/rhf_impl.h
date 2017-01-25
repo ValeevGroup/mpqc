@@ -51,7 +51,7 @@ void RHF<Tile,Policy>::init(const KeyVal& kv) {
   init_fock_builder();
 
   // emultipole integral TODO better interface to compute this
-  auto basis = ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
+  auto basis = *ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
   const auto bs_array = utility::make_array(basis, basis);
   auto multi_pool = gaussian::make_engine_pool(
       libint2::Operator::emultipole1, utility::make_array_of_refs(basis));

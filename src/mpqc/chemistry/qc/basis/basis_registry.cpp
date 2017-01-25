@@ -9,8 +9,8 @@ namespace mpqc {
 namespace lcao {
 
 template <>
-OrbitalRegistry<gaussian::Basis>::OrbitalRegistry(const KeyVal& kv)
-    : Registry<OrbitalIndex, gaussian::Basis>() {
+gaussian::OrbitalBasisRegistry::OrbitalRegistry(const KeyVal& kv)
+    : Registry<OrbitalIndex, std::shared_ptr<gaussian::Basis>>() {
   auto& world = *kv.value<madness::World*>("$:world");
 
   auto basis = kv.class_ptr<gaussian::AtomicBasis>("basis");
@@ -45,7 +45,7 @@ OrbitalRegistry<gaussian::Basis>::OrbitalRegistry(const KeyVal& kv)
 }
 
 template <>
-void OrbitalRegistry<gaussian::Basis>::clear() {
+void gaussian::OrbitalBasisRegistry::clear() {
   // purge bases that do not update their state automatically, i.e. non-AtomicBasis bases
   this->purge_if([](const value_type& val) -> bool {
     return !static_cast<bool>(

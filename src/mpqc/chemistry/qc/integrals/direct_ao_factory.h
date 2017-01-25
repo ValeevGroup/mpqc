@@ -183,7 +183,7 @@ DirectAOFactory<Tile, Policy>::compute(const Formula& formula) {
   auto iter = direct_ao_formula_registry_.find(formula);
 
   if (iter != direct_ao_formula_registry_.end()) {
-    result = *(iter->second);
+    result = iter->second;
     utility::print_par(world_, "Retrieved Direct AO Integral: ");
     utility::print_par(world_, utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result.array());

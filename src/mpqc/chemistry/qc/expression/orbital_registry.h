@@ -37,9 +37,6 @@ class OrbitalRegistry : public Registry<OrbitalIndex, Value> {
   /// @note \c val is copied
   void add(const Key& key, const Value& val) { this->insert(key, val); }
 
-  /// add by Key and std::shared_ptr<Value>
-  void add(const Key& key, std::shared_ptr<Value> val) { this->insert(key, val); }
-
   /// specialize, if needed
   void clear() override { Registry<OrbitalIndex, Value>::clear(); }
 

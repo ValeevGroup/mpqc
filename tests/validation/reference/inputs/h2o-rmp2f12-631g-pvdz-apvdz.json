@@ -1,0 +1,44 @@
+{
+  "units": "2010CODATA",
+  "molecule": {
+    "file_name": "h2o.xyz",
+    "sort_input": true,
+    "charge": 0,
+    "n_cluster": 2
+  },
+  "obs": {
+    "name": "6-31G",
+    "molecule": "$:molecule"
+  },
+  "dfbs": {
+    "name": "cc-pVDZ",
+    "molecule": "$:molecule"
+  },
+  "ribs":{
+    "name": "aug-cc-pVDZ",
+    "molecule": "$:molecule"
+  },
+  "world":{
+    "molecule" : "$:molecule",
+    "basis" : "$:obs",
+    "df_basis" :"$:dfbs",
+    "aux_basis": "$:ribs",
+    "screen": "qqr"
+  },
+  "scf":{
+    "type": "RI-RHF",
+    "wfn_world": "$:world"
+  },
+  "wfn":{
+    "type": "RI-RMP2F12",
+    "wfn_world": "$:world",
+    "ref": "$:scf",
+    "occ_block_size" : 1,
+    "unocc_block_size" : 24
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn",
+    "precision" : 1.0e-11
+  }
+}

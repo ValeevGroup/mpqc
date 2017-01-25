@@ -50,9 +50,15 @@ class Registry {
     }
   }
 
-  /// insert to registry by Key and Value
+  /// insert {Key,Value} pair
+  /// @note \c val is copied
   void insert(const Key& key, const Value& val) {
     insert(std::make_pair(key, std::make_shared<Value>(val)));
+  }
+
+  /// insert {Key,std::shared_ptr<Value>} pair
+  void insert(const Key& key, std::shared_ptr<Value> val) {
+    insert(std::make_pair(key, val));
   }
 
   /// remove Value by Key

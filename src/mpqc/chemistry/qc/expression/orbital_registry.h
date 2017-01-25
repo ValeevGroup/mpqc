@@ -5,6 +5,8 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_REGISTRY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_ORBITAL_REGISTRY_H_
 
+#include <memory>
+
 #include "mpqc/chemistry/qc/expression/formula_registry.h"
 #include "mpqc/chemistry/qc/expression/orbital_space.h"
 
@@ -32,7 +34,11 @@ class OrbitalRegistry : public Registry<OrbitalIndex, Value> {
   void add(const Value& val) { this->insert(val.index(), val); }
 
   /// add by Key and Value
+  /// @note \c val is copied
   void add(const Key& key, const Value& val) { this->insert(key, val); }
+
+  /// add by Key and std::shared_ptr<Value>
+  void add(const Key& key, std::shared_ptr<Value> val) { this->insert(key, val); }
 
   /// specialize, if needed
   void clear() override { Registry<OrbitalIndex, Value>::clear(); }

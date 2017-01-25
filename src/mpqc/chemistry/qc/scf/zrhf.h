@@ -168,7 +168,7 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy> {
    * \param arg_value original complex value
    * \param factor \phi in e^(i \phi)
    */
-  std::complex<double> reverse_phase_factor(std::complex<double> comp0);
+  Matrixz reverse_phase_factor(Matrixz& mat0);
 
   TArray T_;
   TArray V_;

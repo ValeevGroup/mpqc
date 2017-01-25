@@ -7,6 +7,8 @@
 #include "mpqc/chemistry/qc/basis/shell_vec_functions.h"
 #include "mpqc/util/keyval/forcelink.h"
 #include "mpqc/util/misc/exception.h"
+#include "mpqc/util/misc/formio.h"
+#include "mpqc/util/misc/exenv.h"
 
 MPQC_CLASS_EXPORT2("Basis", mpqc::lcao::gaussian::AtomicBasis);
 
@@ -62,6 +64,12 @@ ShellVec Basis::Factory::get_flat_shells(Molecule const &mol) const {
   }
 
   return cs;
+}
+
+std::ostream& operator<<(std::ostream &os, Basis::Factory const &f) {
+  os << indent << "Basis::Factory:\n" << incindent;
+  os << indent << "name = " << f.name() << std::endl;
+  os << decindent;
 }
 
 ////////////////////
@@ -133,17 +141,25 @@ std::vector<Shell> Basis::flattened_shells() const {
 
 std::vector<ShellVec> const &Basis::cluster_shells() const { return shells_; }
 
-std::ostream &operator<<(std::ostream &os, Basis const &b) {
-  unsigned int n = 0;
+std::ostream& operator<<(std::ostream &os, Basis const &b) {
+  os << indent << "Basis:\n" << incindent;
+  size_t clidx = 0;
+  size_t shidx = 0;
   for (auto const &shell_vec : b.cluster_shells()) {
-    os << "Cluster " << n << "\n";
-    ++n;
+    os << indent << "Cluster " << clidx << ":\n" << incindent;
 
     for (auto const &shell : shell_vec) {
-      os << shell << "\n";
+      os << indent << "Shell " << shidx << ":\n" << incindent;
+      os << indent << shell << "\n" << decindent;
+      ++shidx;
     }
+
+    os << decindent;
+
+    ++clidx;
   }
 
+  os << decindent;
   return os;
 }
 
@@ -281,6 +297,20 @@ void AtomicBasis::rebuild_shells() {
         shell.O[xyz] = O_new(xyz);
     }
   }
+}
+
+std::shared_ptr<const Molecule>
+AtomicBasis::molecule() const { return molecule_; }
+
+std::shared_ptr<const Basis::Factory>
+AtomicBasis::factory() const { return factory_; }
+
+std::ostream& operator<<(std::ostream &os, AtomicBasis const &b) {
+  os << indent << "AtomicBasis:\n" << incindent;
+  os << *b.factory();
+  os << *b.molecule();
+  os << static_cast<const Basis&>(b);
+  os << decindent;
 }
 
 }  // namespace gaussian

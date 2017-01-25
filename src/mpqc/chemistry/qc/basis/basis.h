@@ -60,6 +60,9 @@ class Basis : virtual public DescribedClass {
     /*! \brief returns a single vector of all shells in the molecule */
     ShellVec get_flat_shells(Molecule const &) const;
 
+    /// @return the basis set name
+    const std::string& name() const { return basis_set_name_; }
+
    private:
     std::string basis_set_name_;
   };  // Basis::Factory
@@ -128,7 +131,9 @@ class Basis : virtual public DescribedClass {
 /// @return a Basis object in which shells of \c basis1 and \c basis2
 Basis merge(const Basis &basis1, const Basis &basis2);
 
-std::ostream &operator<<(std::ostream &, Basis const &);
+std::ostream& operator<<(std::ostream &os, Basis::Factory const &f);
+
+std::ostream& operator<<(std::ostream &, Basis const &);
 
 /*! \brief reblock allows for reblocking a basis
  *
@@ -186,6 +191,9 @@ class AtomicBasis : public Basis, public utility::Observer {
    */
   AtomicBasis(const KeyVal& kv);
 
+  std::shared_ptr<const Factory> factory() const;
+  std::shared_ptr<const Molecule> molecule() const;
+
  private:
   std::shared_ptr<Factory> factory_;
   std::shared_ptr<Molecule> molecule_;
@@ -195,6 +203,8 @@ class AtomicBasis : public Basis, public utility::Observer {
   // updates shells with the atomic coordinates
   void rebuild_shells();
 };
+
+std::ostream &operator<<(std::ostream &, AtomicBasis const &);
 
 /// @}
 

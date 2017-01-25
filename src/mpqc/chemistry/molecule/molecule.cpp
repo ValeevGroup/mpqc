@@ -220,6 +220,7 @@ void Molecule::update(const std::vector<Atom> &atoms) {
   for (auto &element : elements_) {
     ::mpqc::update(element, atoms, pos);
   }
+  com_ = molecule::center_of_mass(elements_);
   Observable::message();
 }
 

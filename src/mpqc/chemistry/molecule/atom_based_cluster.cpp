@@ -25,8 +25,9 @@ std::vector<Atom> collapse_to_atoms(AtomBasedCluster const &abc) {
 
 void update(AtomBasedCluster &abc, const std::vector<Atom>& atoms, size_t& pos) {
   for (auto &elem : abc.elements_) {
-    update(abc, atoms, pos);
+    update(elem, atoms, pos);
   }
+  abc.com_ = molecule::center_of_mass(abc.elements_);
 }
 
 std::ostream &operator<<(std::ostream &os, AtomBasedCluster const &c) {

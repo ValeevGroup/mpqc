@@ -61,14 +61,19 @@ class AOWavefunction : public Wavefunction {
   }
 
   /*! Return a reference to the AOFactory Library
-   *
-   * \note This reference can't be made const without modifying the
-   * AOFactory library so that certain members are mutable.
    */
   AOIntegral &ao_factory() { return *ao_factory_; }
 
+  /*! Return a const reference to the AOFactory Library
+   */
+  const AOIntegral &ao_factory() const { return *ao_factory_; }
+
   /// return a reference to DirectAOFactory
   DirectAOIntegral& direct_ao_factory() { return *direct_ao_factory_;}
+
+  /// return a const reference to DirectAOFactory
+  const DirectAOIntegral& direct_ao_factory() const { return *direct_ao_factory_;}
+
 private:
   std::shared_ptr<AOIntegral> ao_factory_;
   std::shared_ptr<DirectAOIntegral> direct_ao_factory_;
@@ -102,11 +107,12 @@ class PeriodicAOWavefunction : public Wavefunction {
   virtual ~PeriodicAOWavefunction() = default;
 
   /*! Return a reference to the AOFactory Library
-   *
-   * \note This reference can't be made const without modifying the
-   * AOFactory library so that certain members are mutable.
    */
   AOIntegral &ao_factory() { return *ao_factory_; }
+
+  /*! Return a const reference to the AOFactory Library
+   */
+  const AOIntegral &ao_factory() const { return *ao_factory_; }
 
 private:
   std::shared_ptr<AOIntegral> ao_factory_;

@@ -4,12 +4,16 @@
 namespace mpqc{
 
 Wavefunction::Wavefunction(const KeyVal &kv) {
-  if (kv.exists_class("atoms")) {
-    atoms_ = kv.class_ptr<Molecule>("atoms");
-    utility::Observer::register_message(atoms_.get(), [this](){
-      this->obsolete();
-    });
+  atoms_ = kv.class_ptr<Molecule>("atoms");
+  if (!atoms_) {
+    atoms_ = kv.class_ptr<Molecule>("molecule");
   }
+  if (!atoms_)
+    throw InputError("Wavefunction did not find atoms", __FILE__, __LINE__, "atoms");
+
+  utility::Observer::register_message(atoms_.get(), [this](){
+    this->obsolete();
+  });
 }
 
 Wavefunction::~Wavefunction() = default;

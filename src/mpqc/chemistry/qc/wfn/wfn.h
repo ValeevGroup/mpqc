@@ -29,6 +29,9 @@ class Wavefunction : virtual public DescribedClass, public utility::Observer {
    * |---------|------|--------|-------------|
    * | atoms | Molecule or UnitCell | none | the collection of Atoms |
    *
+   * For compatibility, if keyword \c atoms not found keyword \c molecule will
+   * be queried.
+   *
    */
   Wavefunction(const KeyVal& kv);
   virtual ~Wavefunction();
@@ -36,12 +39,17 @@ class Wavefunction : virtual public DescribedClass, public utility::Observer {
   virtual void obsolete() { computed_ = false; }
   bool computed() const { return computed_; }
 
-  const std::shared_ptr<Molecule>& atoms() const { return atoms_; }
+  std::shared_ptr<Molecule> atoms() { return atoms_; }
+  std::shared_ptr<const Molecule> atoms() const { return atoms_; }
+
+  virtual void print(std::ostream& os = ExEnv::out0()) const {
+    os << indent << "Wavefunction (type = " << this->class_key() << "):\n" << incindent;
+    os << *atoms_;
+    os << decindent;
+  }
 
  protected:
   bool computed_ = false;
-
-  void set_atoms(std::shared_ptr<Molecule> atoms) { atoms_ = atoms; }
 
  private:
   std::shared_ptr<Molecule> atoms_;

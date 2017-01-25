@@ -348,7 +348,7 @@ a 1";
 
     kv.assign("world", &world);
 
-    REQUIRE_NOTHROW(kv.class_ptr<::mpqc::lcao::gaussian::Basis>("basis"));
+    REQUIRE_NOTHROW(kv.class_ptr<::mpqc::lcao::gaussian::AtomicBasis>("basis"));
 
   }
 

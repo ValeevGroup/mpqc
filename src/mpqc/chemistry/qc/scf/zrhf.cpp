@@ -53,11 +53,6 @@ void zRHF::init(const KeyVal& kv) {
   RD_size_ = ao_factory.RD_size();
   k_size_ = ao_factory.k_size();
 
-  // compute nuclear-repulsion energy
-  repulsion_ = unitcell->nuclear_repulsion(RJ_max_);
-  if (world.rank() == 0)
-    std::cout << "\nNuclear Repulsion: " << repulsion_ << std::endl;
-
   T_ = ao_factory.compute(L"<κ|T|λ>");        // Kinetic
   V_ = ao_factory.compute(L"<κ|V|λ>");        // Nuclear-attraction
   S_ = ao_factory.compute(L"<κ|λ>");          // Overlap in real space
@@ -99,6 +94,11 @@ void zRHF::solve(double thresh) {
   auto converged = false;
   auto eprhf = 0.0;
   auto ediff = 0.0;
+
+  // compute nuclear-repulsion energy
+  const auto erep = ao_factory.unitcell()->nuclear_repulsion(RJ_max_);
+  if (world.rank() == 0)
+    std::cout << "\nNuclear Repulsion Energy: " << erep << std::endl;
 
   do {
     auto iter_start = mpqc::fenced_now(world);
@@ -158,7 +158,7 @@ void zRHF::solve(double thresh) {
     if (print_detail_) {
       if (world.rank() == 0) {
         std::cout << "\nPRHF Energy: " << eprhf << "\n"
-                  << "Total Energy: " << eprhf + repulsion_ << "\n"
+                  << "Total Energy: " << eprhf + erep << "\n"
                   << "Delta(E): " << ediff << "\n"
                   << "RMS(D): " << rms << "\n"
                   << "Coulomb Build Time: "
@@ -180,14 +180,14 @@ void zRHF::solve(double thresh) {
                  nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
                  nT.c_str());
         std::cout << mpqc::printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, eprhf,
-               eprhf + repulsion_, ediff, rms, iter_duration);
+               eprhf + erep, ediff, rms, iter_duration);
       }
     }
 
   } while ((iter < maxiter_) && (!converged));
 
-  // save total energy to energy_ no matter if PRHF converges
-  energy_ = eprhf + repulsion_;
+  // save total energy to energy no matter if PRHF converges
+  energy_ = eprhf + erep;
 
   if (!converged)
     throw MaxIterExceeded("zRHF: SCF did not converge", __FILE__, __LINE__,

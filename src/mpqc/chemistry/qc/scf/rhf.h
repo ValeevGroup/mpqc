@@ -51,7 +51,6 @@ class RHF : public AOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
  protected:
   double energy_;
   std::size_t max_iter_;
-  double repulsion_;
 
   array_type H_;
   array_type S_;

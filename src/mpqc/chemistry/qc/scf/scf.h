@@ -36,21 +36,19 @@ class ClosedShellSCF {
   std::vector<double> d_times_;
   std::vector<double> build_times_;
 
-  double repulsion_;
   double scf_energy_;
 
  public:
   ClosedShellSCF() = default;
 
   template <typename FBuilder, typename DBuilder>
-  ClosedShellSCF(array_type const &H, array_type const &S, double rep,
+  ClosedShellSCF(array_type const &H, array_type const &S,
                  FBuilder f_builder, DBuilder d_builder,
                  array_type const &F_guess = array_type{})
       : H_(H),
         S_(S),
         f_builder_(std::make_unique<FBuilder>(std::move(f_builder))),
-        d_builder_(std::make_unique<DBuilder>(std::move(d_builder))),
-        repulsion_(rep) {
+        d_builder_(std::make_unique<DBuilder>(std::move(d_builder))) {
     if (F_guess.is_initialized()) {
       F_ = F_guess;
     } else {
@@ -61,15 +59,14 @@ class ClosedShellSCF {
     compute_density();
   }
 
-  ClosedShellSCF(array_type const &H, array_type const &S, double rep,
+  ClosedShellSCF(array_type const &H, array_type const &S,
                  std::unique_ptr<FockBuilder> &&f_builder,
                  std::unique_ptr<DensityBuilder> &&d_builder,
                  array_type const &F_guess = array_type{})
       : H_(H),
         S_(S),
         f_builder_(std::move(f_builder)),
-        d_builder_(std::move(d_builder)),
-        repulsion_(rep) {
+        d_builder_(std::move(d_builder)) {
     if (F_guess.is_initialized()) {
       F_ = F_guess;
     } else {

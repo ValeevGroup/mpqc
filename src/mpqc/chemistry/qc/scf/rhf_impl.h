@@ -41,7 +41,6 @@ void RHF<Tile,Policy>::init(const KeyVal& kv) {
   occ = occ / 2;
 
   max_iter_ = kv.value<int>("max_iter", 30);
-  repulsion_ = mol.nuclear_repulsion();
 
   // Overlap ints
   S_ = ao_factory.compute(L"<κ|λ>");
@@ -118,8 +117,9 @@ void RHF<Tile,Policy>::obsolete() {
 }
 
 template <typename Tile, typename Policy>
-double RHF<Tile,Policy>::compute_energy() const {
-  return repulsion_ + D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
+double RHF<Tile, Policy>::compute_energy() const {
+  return this->ao_factory().molecule().nuclear_repulsion() +
+         D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
 }
 
 template <typename Tile, typename Policy>

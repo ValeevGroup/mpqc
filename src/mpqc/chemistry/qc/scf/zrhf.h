@@ -84,7 +84,6 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>,
   MatrixcVec X_;
 
   double energy_;
-  double repulsion_;
   int64_t docc_;
 
   const KeyVal kv_;

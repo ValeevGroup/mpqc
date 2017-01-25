@@ -55,6 +55,8 @@ public:
   void obsolete() override {
     // obsolete factory
     lcao_factory_->obsolete();
+    orbital_energy_.reset();
+    trange1_engine_.reset();
     // obsolete wfn
     Wavefunction::obsolete();
   }

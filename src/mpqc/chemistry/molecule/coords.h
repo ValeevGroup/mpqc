@@ -2,6 +2,7 @@
 #define SRC_MPQC_CHEMISTRY_MOLECULE_COORDS_H_
 
 #include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/util/misc/exenv.h"
 
 namespace mpqc {
 
@@ -37,11 +38,48 @@ class MolecularCoordinates : virtual public DescribedClass {
   /// @return pointer to the molecule
   const std::shared_ptr<Molecule> molecule() const { return molecule_; }
 
+  /// clones this object
+  /// @return a clone of this object
+  virtual std::shared_ptr<MolecularCoordinates> clone() const = 0;
+
+  /// prints this object to a std::ostream
+  /// @params os the std::ostream object to which the output will be directed
+  virtual void print(std::ostream& os = ExEnv::out0()) const = 0;
+
+ protected:
+  void update_molecule(const std::vector<Atom>& atoms) {
+    molecule()->update(atoms);
+  }
+
  private:
   std::shared_ptr<Molecule> molecule_;
+
+  template <std::size_t N>
+  friend void increment(MolecularCoordinates*, std::array<size_t, N>,
+                        std::array<double, N>);
+
+  virtual void displace(size_t ncoords, size_t* coords,
+                        double* displacements) = 0;
 };
 
-/** The CartMolecularCoordinates class represents Cartesian coordinates of a Molecule. */
+template <std::size_t N>
+void increment(MolecularCoordinates* coords, std::array<size_t, N> coord_idxs,
+               std::array<double, N> step) {
+  coords->displace(N, &coord_idxs[0], &step[0]);
+}
+
+template <std::size_t N>
+void decrement(MolecularCoordinates* coords, std::array<size_t, N> coord_idxs,
+               std::array<double, N> step) {
+  std::array<double, N> inverse_step;
+  for (size_t i = 0; i != N; ++i) inverse_step[i] = -step[i];
+  increment(coords, coord_idxs, inverse_step);
+}
+
+std::ostream& operator<<(std::ostream& os, const MolecularCoordinates& coord);
+
+/** The CartMolecularCoordinates class represents Cartesian coordinates of a
+ * Molecule. */
 class CartMolecularCoordinates : public MolecularCoordinates {
  public:
   CartMolecularCoordinates(const std::shared_ptr<Molecule>& mol);
@@ -61,6 +99,14 @@ class CartMolecularCoordinates : public MolecularCoordinates {
   /// Reports the number of coordinates
   /// @return the number of coordinates
   size_t size() const override;
+
+  std::shared_ptr<MolecularCoordinates> clone() const override;
+
+  void displace(size_t ncoords, size_t* coords, double* displacements) override;
+
+  /// prints this object to a std::ostream
+  /// @params os the std::ostream object to which the output will be directed
+  void print(std::ostream& os = ExEnv::out0()) const override;
 };
 
 }  // namespace mpqc

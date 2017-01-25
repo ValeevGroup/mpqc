@@ -97,7 +97,7 @@ double RIDBRMP2F12<Tile>::compute_new_mp2() {
     lcao_factory.ao_factory().orbital_basis_registry().remove(
         OrbitalIndex(L"Α"));
 
-    auto mp2 = lcao::RIRMP2<Tile, TA::SparsePolicy>(kv_);
+    lcao::RIRMP2<Tile, TA::SparsePolicy> mp2(kv_);
 
     auto ref = mp2.refwfn();
 

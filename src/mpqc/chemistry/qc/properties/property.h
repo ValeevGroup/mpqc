@@ -284,9 +284,15 @@ class TaylorExpansionCoefficients {
       throw ProgrammingError(
           "TaylorExpansion::print called, but the object is not initialized",
           __FILE__, __LINE__);
-    os << indent << "value: " << printf("%20.15lf", derivs_.at(0).at(0))
+    os << indent << "value = " << printf("%20.15lf", derivs_.at(0).at(0))
        << std::endl;
-    assert(order() == 0);
+    if (order() > 0) {
+      typedef Eigen::Matrix<Value, Eigen::Dynamic, 1> Vector;
+      Eigen::Map<const Vector> grad_map(&derivs_.at(1)[0], derivs_.at(1).size());
+      Vector grad = grad_map;
+      os << indent << "gradient = " << grad << std::endl;
+    }
+    assert(order() < 2);
   }
 
  private:
@@ -457,7 +463,7 @@ class WavefunctionProperty
     os << indent << "wfn:\n" << incindent;
     wfn_->print(os);
     os << decindent;
-    os << "value = " << this->get_value() << std::endl;
+    os << this->get_value() << std::endl;
     os << decindent;
   }
 

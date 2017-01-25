@@ -373,10 +373,13 @@ class TaylorExpansionFunction
 /// using the given wave function
 class Property : public Task {
  public:
-  // in a visitor pattern this is the "accept" method
-  // the argument, Wavefunction*, does not appear here, it will be a member
-  // of the derived class
+
+  /// evaluates this object
   virtual void evaluate() = 0;
+
+  /// prints this object to \c os
+  /// @param os the output stream
+  virtual void print(std::ostream& os = ExEnv::out0()) const = 0;
 
  private:
   /// implements Task::execute()
@@ -446,6 +449,15 @@ class WavefunctionProperty
           __FILE__, __LINE__, "wfn");
   }
 
+  void print(std::ostream& os = ExEnv::out0()) const override {
+    os << indent << "Property \"" << this->class_key() << "\":\n" << incindent;
+    os << indent << "wfn:\n" << incindent;
+    wfn_->print(os);
+    os << decindent;
+    os << "value = " << this->get_value() << std::endl;
+    os << decindent;
+  }
+
  private:
   std::shared_ptr<Wavefunction> wfn_;
 
@@ -460,13 +472,6 @@ class WavefunctionProperty
           "WavefunctionProperty::compute(): Wavefunction forgot to call "
           "set_value?",
           __FILE__, __LINE__);
-
-    // report the result
-    ExEnv::out0() << indent << "Property \"" << this->class_key()
-                  << "\" computed with Wavefunction \"" << wfn_->class_key()
-                  << "\":" << std::endl
-                  << incindent << this->get_value() << std::endl
-                  << decindent;
   }
 };
 

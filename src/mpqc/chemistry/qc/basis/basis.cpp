@@ -1,24 +1,29 @@
 // #include "../molecule/cluster.h"
 
-#include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/molecule/common.h"
+#include "mpqc/chemistry/molecule/molecule.h"
 
 #include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/chemistry/qc/basis/shell_vec_functions.h"
 #include "mpqc/util/keyval/forcelink.h"
+#include "mpqc/util/misc/exception.h"
 
-MPQC_CLASS_EXPORT2("Basis", mpqc::lcao::gaussian::Basis);
+MPQC_CLASS_EXPORT2("Basis", mpqc::lcao::gaussian::AtomicBasis);
 
 namespace mpqc {
 namespace lcao {
 namespace gaussian {
 
 Basis::Factory::Factory(std::string const &s) : basis_set_name_{s} {}
+Basis::Factory::Factory(const KeyVal &kv)
+    : basis_set_name_(kv.value<std::string>("name")) {}
 
-std::vector<ShellVec> Basis::Factory::get_cluster_shells(Molecule const &mol) const {
+std::vector<ShellVec> Basis::Factory::get_cluster_shells(
+    Molecule const &mol) const {
   std::vector<ShellVec> cs;
   for (auto const &cluster : mol) {
-    const auto libint_atoms = ::mpqc::to_libint_atom(collapse_to_atoms(cluster));
+    const auto libint_atoms =
+        ::mpqc::to_libint_atom(collapse_to_atoms(cluster));
 
     std::streambuf *cout_sbuf = std::cout.rdbuf();  // Silence libint printing.
     std::ofstream fout("/dev/null");
@@ -68,35 +73,6 @@ Basis::Basis(Basis &&) = default;
 
 Basis &Basis::operator=(Basis const &) = default;
 Basis &Basis::operator=(Basis &&) = default;
-
-Basis::Basis(std::vector<ShellVec> shells) : shells_(std::move(shells)) {}
-
-Basis::Basis(const KeyVal &kv) {
-  // name of basis
-  std::string basis_name = kv.value<std::string>("name");
-
-  // construct basis set
-  Basis::Factory basis_set(basis_name);
-
-  // molecule
-  auto mol_ptr = kv.class_ptr<mpqc::Molecule>("molecule");
-
-  // find world from one level above
-  madness::World *world = kv.value<madness::World *>("$:world");
-
-  auto basis = parallel_construct_basis(*world, basis_set, *mol_ptr);
-
-  std::size_t reblock_size = kv.value<int>("reblock",0);
-  if(reblock_size != 0){
-    basis =  reblock(basis, reblock_basis, reblock_size);
-  }
-
-  shells_ = std::move(basis.shells_);
-
-  Observer::register_message(mol_ptr.get(), [this](){
-    assert(false && "not yet implemented");
-  });
-}
 
 int64_t Basis::nfunctions() const {
   int64_t nfuncs = 0;
@@ -171,21 +147,7 @@ std::ostream &operator<<(std::ostream &os, Basis const &b) {
   return os;
 }
 
-Basis parallel_construct_basis(madness::World &world, const Basis::Factory &basis_set,
-                               const mpqc::Molecule &mol) {
-  Basis basis;
-
-  if (world.rank() == 0) {
-    basis = Basis(basis_set.get_cluster_shells(mol));
-  }
-
-  world.gop.broadcast_serializable(basis, 0);
-
-  return basis;
-}
-
-Eigen::RowVectorXi sub_basis_map(const Basis& basis, const Basis& sub_basis){
-
+Eigen::RowVectorXi sub_basis_map(const Basis &basis, const Basis &sub_basis) {
   auto shells = basis.flattened_shells();
   auto sub_shells = sub_basis.flattened_shells();
 
@@ -200,9 +162,8 @@ Eigen::RowVectorXi sub_basis_map(const Basis& basis, const Basis& sub_basis){
 
   std::size_t sub_shell_lowbound = 0;
   std::size_t sub_shell_highbound = 0;
-  for(std::size_t i = 0; i < n_sub_shells; i++){
-
-    auto& sub_shell = sub_shells[i];
+  for (std::size_t i = 0; i < n_sub_shells; i++) {
+    auto &sub_shell = sub_shells[i];
     sub_shell_lowbound = sub_shell_highbound;
     sub_shell_highbound += sub_shell.size();
 
@@ -212,44 +173,114 @@ Eigen::RowVectorXi sub_basis_map(const Basis& basis, const Basis& sub_basis){
     bool find = false;
 
     // locate the position in shells
-    for(std::size_t j = 0; j < n_shells; j++){
-
-      auto& shell = shells[j];
+    for (std::size_t j = 0; j < n_shells; j++) {
+      auto &shell = shells[j];
       shell_lowbound = shell_highbound;
       shell_highbound += shell.size();
 
-      if(sub_shell == shell){
+      if (sub_shell == shell) {
         find = true;
 
         // fill in the value
         const std::size_t gap = sub_shell_lowbound - shell_lowbound;
-        for(std::size_t k = shell_lowbound; k < shell_highbound; k++){
-          result[k] =  gap + k + 1;
+        for (std::size_t k = shell_lowbound; k < shell_highbound; k++) {
+          result[k] = gap + k + 1;
         }
 
         break;
-
       }
-
     }
 
-    if(find == false){
+    if (find == false) {
       throw std::runtime_error("\n Not a Sub Basis! \n");
     }
-
   }
 
   return result;
-
 }
 
 Basis merge(const Basis &basis1, const Basis &basis2) {
   auto shells1 = basis1.cluster_shells();
   auto shells2 = basis2.cluster_shells();
-  shells1.insert(shells1.end(), shells2.begin(),
-                 shells2.end());
+  shells1.insert(shells1.end(), shells2.begin(), shells2.end());
 
   return Basis(shells1);
+}
+
+Basis parallel_make_basis(madness::World &world, const Basis::Factory &factory,
+                          const mpqc::Molecule &mol) {
+  Basis basis;
+  if (world.rank() == 0) {
+    auto shells = factory.get_cluster_shells(mol);
+    basis = std::move(shells);
+  }
+
+  world.gop.broadcast_serializable(basis, 0);
+  return basis;
+}
+
+AtomicBasis::AtomicBasis(const KeyVal &kv)
+    : factory_(std::make_shared<Factory>(kv)),
+      molecule_(kv.class_ptr<mpqc::Molecule>("atoms")) {
+  if (!molecule_) {  // use old keyword "molecule"
+    molecule_ = kv.class_ptr<mpqc::Molecule>("molecule");
+  }
+  if (!molecule_)
+    throw InputError("AtomicBasis did not receive atoms", __FILE__, __LINE__,
+                     "atoms");
+
+  auto *world = kv.value<madness::World *>("$:world");
+  static_cast<Basis&>(*this) = parallel_make_basis(*world, *factory_, *molecule_);
+
+  std::size_t reblock_size = kv.value<int>("reblock", 0);
+  if (reblock_size != 0) {
+    static_cast<Basis&>(*this) = reblock(*this, reblock_basis, reblock_size);
+  }
+
+  compute_shell_to_atom();
+
+  auto rebuilder = [this]() { this->rebuild_shells(); };
+  Observer::register_message(molecule_.get(), rebuilder);
+}
+
+namespace detail {
+bool equal(const std::array<double, 3> &arr3,
+                const Eigen::Vector3d &vec3) {
+  return arr3[0] == vec3(0) && arr3[1] == vec3(1) && arr3[2] == vec3(2);
+}
+}  // namespace detail
+
+void AtomicBasis::compute_shell_to_atom() {
+  const auto ncluster = shells_.size();
+  shell_to_atom_.resize(ncluster);
+
+  auto atoms = molecule_->atoms();
+  const auto natoms = atoms.size();
+  size_t current = 0;
+  for (size_t cluster = 0; cluster != ncluster; ++cluster) {
+    for (const auto &shell : shells_[cluster]) {
+      while (!detail::equal(shell.O,atoms[current].center()) && current != natoms) {
+        ++current;
+      }
+      if (current == natoms)
+        throw ProgrammingError("invalid shells_ in AtomicBasis", __FILE__, __LINE__);
+      shell_to_atom_[cluster].push_back(current);
+    }
+  }
+  assert(current == natoms-1);
+}
+
+void AtomicBasis::rebuild_shells() {
+  auto atoms = molecule_->atoms();
+  for(size_t c=0; c != shells_.size(); ++c) {
+    for(size_t s=0; s!=shells_[c].size(); ++s) {
+      auto& shell = shells_[c][s];
+      auto atom = shell_to_atom_[c][s];
+      const auto& O_new = atoms[atom].center();
+      for(int xyz=0; xyz!=3; ++xyz)
+        shell.O[xyz] = O_new(xyz);
+    }
+  }
 }
 
 }  // namespace gaussian

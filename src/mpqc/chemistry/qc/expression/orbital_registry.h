@@ -18,14 +18,14 @@ class OrbitalRegistry : public Registry<OrbitalIndex, Value> {
  public:
   using Key = OrbitalIndex;
   using value_type = typename Registry<Key, Value>::value_type;
-  using element_type = typename Registry<Key, Value>::element_type;
+  using container_type = typename Registry<Key, Value>::container_type;
   using iterator = typename Registry<Key, Value>::iterator;
   using const_iterator = typename Registry<Key, Value>::const_iterator;
 
   OrbitalRegistry() = default;
-  OrbitalRegistry(const element_type& map) : Registry<Key, Value>(map) {}
+  OrbitalRegistry(const container_type& map) : Registry<Key, Value>(map) {}
 
-  // for interface in OrbitalBasisRegistry
+  /// The KeyVal ctor must be provided as a specialization
   OrbitalRegistry(const KeyVal& kv)  {}
 
   /// add Value that has index() function as key type
@@ -33,6 +33,10 @@ class OrbitalRegistry : public Registry<OrbitalIndex, Value> {
 
   /// add by Key and Value
   void add(const Key& key, const Value& val) { this->insert(key, val); }
+
+  /// specialize, if needed
+  void clear() override { Registry<OrbitalIndex, Value>::clear(); }
+
 };
 
 /**

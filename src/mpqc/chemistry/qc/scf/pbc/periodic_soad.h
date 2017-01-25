@@ -45,7 +45,7 @@ TA::DistArray<Tile,Policy> periodic_fock_soad(
 
   // get minimal basis
   auto min_bs =
-      parallel_construct_basis(world, Basis::Factory("sto-3g"), unitcell);
+      parallel_make_basis(world, Basis::Factory("sto-3g"), unitcell);
 
   // transform soad density from Eigen to TA
   auto min_bases = BasisVector{{min_bs, min_bs}};

@@ -1,5 +1,4 @@
 set(sources
-basis_fwd.h
 basis_registry.cpp
 basis_registry.h
 basis_set_maps.h
@@ -7,6 +6,7 @@ basis.cpp
 basis.h
 cluster_shells.cpp
 cluster_shells.h
+linkage.h
 shell_vec_functions.cpp
 shell_vec_functions.h
 )

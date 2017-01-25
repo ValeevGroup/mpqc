@@ -17,16 +17,23 @@ namespace gaussian {
  * Typedef of OrbitalBasisRegistry
  * A Registry that maps OrbitalIndex to a Gaussian Basis
  */
-using OrbitalBasisRegistry = OrbitalRegistry<gaussian::Basis>;
+using OrbitalBasisRegistry = OrbitalRegistry<Basis>;
 
 }  // namespace gaussian
 
 /**
  * KeyVal Constructor for OrbitalBasisRegistry
  */
-
 template <>
 OrbitalRegistry<gaussian::Basis>::OrbitalRegistry(const KeyVal& kv);
+
+/**
+ * specialization of OrbitalRegistry::clear() only removes elements that do not
+ * update their state automatically. Only gaussian::AtomicBasis objects update with
+ * atomic positions.
+ */
+template <>
+void OrbitalRegistry<gaussian::Basis>::clear();
 
 }  // namespace lcao
 }  // namespace mpqc

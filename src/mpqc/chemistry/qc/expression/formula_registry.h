@@ -22,14 +22,14 @@ namespace mpqc {
 template <typename Key, typename Value>
 class Registry {
  public:
-  using value_type = std::pair<Key, std::shared_ptr<Value>>;
-  using element_type = std::map<Key, std::shared_ptr<Value>>;
-  using iterator = typename element_type::iterator;
-  using const_iterator = typename element_type::const_iterator;
+  using container_type = std::map<Key, std::shared_ptr<Value>>;
+  using value_type = typename container_type::value_type;  // std::pair<Key,std::shared_ptr<Value>>
+  using iterator = typename container_type::iterator;
+  using const_iterator = typename container_type::const_iterator;
 
   Registry() = default;
 
-  Registry(const element_type& map) : registry_(map) {}
+  Registry(const container_type& map) : registry_(map) {}
 
   Registry(Registry const&) = default;
   Registry& operator=(Registry const&) = default;
@@ -40,7 +40,7 @@ class Registry {
   virtual ~Registry() = default;
 
   /// return the registry
-  const element_type& registry() const { return registry_; }
+  const container_type& registry() const { return registry_; }
 
   /// insert to registry by std::pair<Key, Value>
   void insert(const value_type& val) {
@@ -59,7 +59,7 @@ class Registry {
   void remove(const Key& key) { registry_.erase(key); }
 
   /// clear the registry
-  void clear() { registry_.clear(); }
+  virtual void clear() { registry_.clear(); }
 
   /// find item, return iterator
   iterator find(const Key& key) { return registry_.find(key); }
@@ -103,7 +103,7 @@ class Registry {
   /// return end of const_iterator
   const_iterator cend() const { return registry_.cend(); }
 
-  /// purges all objects if p(key) == true
+  /// purges all objects if p(value_type) == true
   template <typename Pred>
   void purge_if(const Pred& p) {
     auto i = registry_.begin();
@@ -117,7 +117,7 @@ class Registry {
   }
 
  protected:
-  element_type registry_;
+  container_type registry_;
 };
 
 /**
@@ -129,13 +129,13 @@ template <typename Value>
 class FormulaRegistry : public Registry<Formula, Value> {
  public:
   using Key = Formula;
+  using container_type = typename Registry<Key, Value>::container_type;
   using value_type = typename Registry<Key, Value>::value_type;
-  using element_type = typename Registry<Key, Value>::element_type;
   using iterator = typename Registry<Key, Value>::iterator;
   using const_iterator = typename Registry<Key, Value>::const_iterator;
 
   FormulaRegistry() = default;
-  FormulaRegistry(const element_type& map) : Registry<Key, Value>(map) {}
+  FormulaRegistry(const container_type& map) : Registry<Key, Value>(map) {}
 
   /// prevent from copy and assign of FormulaRegistry
   FormulaRegistry(FormulaRegistry const&) = delete;

@@ -97,9 +97,6 @@ class AOFactory : public AOFactoryBase, virtual public DescribedClass {
     if(orbital_basis_registry_!= nullptr){
       orbital_basis_registry_->clear();
     }
-    if(orbital_space_registry_!= nullptr){
-      orbital_space_registry_->clear();
-    }
   }
 
   /// set oper based on Tile type

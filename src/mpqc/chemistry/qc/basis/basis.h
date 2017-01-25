@@ -13,7 +13,7 @@
 #include "mpqc/util/keyval/keyval.h"
 
 #include "mpqc/chemistry/molecule/molecule.h"
-#include "mpqc/chemistry/qc/basis/basis_fwd.h"
+#include "mpqc/chemistry/qc/basis/basis.h"
 #include "mpqc/util/misc/observer.h"
 
 namespace mpqc {
@@ -23,18 +23,12 @@ namespace gaussian {
 using Shell = libint2::Shell;
 using ShellVec = std::vector<Shell>;
 
-/*
- * \defgroup Basis Basis
- *
- * \brief The Basis module contains information about basis set
- *
- *
- */
+/// @ingroup ChemistryESLCAOBasis
+/// @{
 
 /// Basis is a clustered sequence of libint2::Shell objects.
 /// The sequence is represented as a vector of vectors of shells.
-class Basis : virtual public DescribedClass,
-              public utility::Observer {
+class Basis : virtual public DescribedClass {
  public:
   using Shell = ::mpqc::lcao::gaussian::Shell;
 
@@ -46,6 +40,13 @@ class Basis : virtual public DescribedClass,
     Factory(Factory &&b) = default;
     Factory &operator=(Factory const &b) = default;
     Factory &operator=(Factory &&b) = default;
+
+    /// The KeyVal ctor queries the following keywords:
+    /// | KeyWord | Type | Default| Description |
+    /// |---------|------|--------|-------------|
+    ///  |\c name |string|none    |The basis set name|
+    ///
+    Factory(const KeyVal& kv);
 
     /// This ctor creates a Factory that will use default_name for all atoms
     Factory(std::string const & default_name);
@@ -61,9 +62,9 @@ class Basis : virtual public DescribedClass,
 
    private:
     std::string basis_set_name_;
-  };
+  };  // Basis::Factory
 
-  /// created an empty Basis
+  /// creates an empty Basis
   Basis();
   ~Basis();
   Basis(Basis const &);
@@ -71,22 +72,8 @@ class Basis : virtual public DescribedClass,
   Basis &operator=(Basis const &);
   Basis &operator=(Basis &&);
 
-  /// constructs a Basis object from a vector of shell clusters
-  explicit Basis(std::vector<ShellVec> cs);
-
-  /**
-   * \brief the KeyVal constructor for Basis
-   *
-   * The KeyVal constructor uses the following keywords:
-   *
-   * | KeyWord | Type | Default| Description |
-   * |---------|------|--------|-------------|
-   * |molecule|Molecule|none|keyval to construct molecule|
-   * |name|string|none|basis set name|
-   * |reblock| int | 0 | size to reblock basis |
-   *
-   */
-  Basis(const KeyVal &kv);
+  /// construct a Basis from a clustered sequence of shells
+  Basis(std::vector<ShellVec> shells) : shells_(std::move(shells)) {}
 
   /// @return a reference to the vector of shell clusters
   std::vector<ShellVec> const &cluster_shells() const;
@@ -131,7 +118,7 @@ class Basis : virtual public DescribedClass,
     }
   }
 
- private:
+ protected:
   std::vector<ShellVec> shells_;
 
   friend Basis merge(const Basis &basis1, const Basis &basis2);
@@ -157,15 +144,6 @@ Basis reblock(Basis const &basis, Op op, Args... args) {
 }
 
 /**
- * construct basis on MPI process 0 and broadcast to all processes
- * @param world madness::World
- * @param basis_factory Basis::Factory object
- * @param mol Molecule object
- * @return Basis object
- */
-Basis parallel_construct_basis(madness::World &world, const Basis::Factory &basis_factory,
-                               const mpqc::Molecule &mol);
-/**
  * construct a map that maps column of basis to column of sub_basis, sub_basis has to be a subset of basis
  * @warning the value in index starts with 1, value 0 in index indicates this column is missing in sub_basis
  * This approach uses N^2 algorithm
@@ -175,6 +153,50 @@ Basis parallel_construct_basis(madness::World &world, const Basis::Factory &basi
  * @return a vector of column id of sub_basis
  */
 Eigen::RowVectorXi sub_basis_map(const Basis& basis, const Basis& sub_basis);
+
+/**
+ * construct Basis from a factory and a Molecule on process 0 and broadcast to the entire world
+ * @param world the madness::World
+ * @param factory the Basis::Factory object
+ * @param mol the Molecule object
+ */
+Basis parallel_make_basis(madness::World &world, const Basis::Factory& factory,
+                          const mpqc::Molecule &mol);
+
+/// AtomicBasis is a Basis constructed from a collection of atoms, i.e.
+/// a Molecule( or a UnitCell). Updating
+/// the Molecule object updates this basis as well. Clustering of AtomicBasis
+/// does not have to correspond to the cluster structure of Molecule (e.g.
+/// as a result of reblocking).
+/// @note Shells are organized in the order of increasing atom index.
+class AtomicBasis : public Basis, public utility::Observer {
+ public:
+  using Shell = ::mpqc::lcao::gaussian::Shell;
+
+  /**
+   * \brief the KeyVal constructor for MolecularBasis
+   *
+   * The KeyVal constructor queries all keywords of Basis and Basis::Factory, as well
+   * as the following additional keywords:
+   *
+   * | KeyWord | Type | Default| Description |
+   * |---------|------|--------|-------------|
+   * |atoms| Molecule or UnitCell | none | the Molecule object |
+   * |reblock| int | 0 (i.e., no reblocking) | size to reblock basis |
+   */
+  AtomicBasis(const KeyVal& kv);
+
+ private:
+  std::shared_ptr<Factory> factory_;
+  std::shared_ptr<Molecule> molecule_;
+  std::vector<std::vector<size_t>> shell_to_atom_;  // maps shells_ to the atoms in molecule_
+
+  void compute_shell_to_atom();
+  // updates shells with the atomic coordinates
+  void rebuild_shells();
+};
+
+/// @}
 
 }  // namespace gaussian
 }  // namespace lcao

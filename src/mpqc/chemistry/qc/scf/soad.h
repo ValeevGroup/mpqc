@@ -196,7 +196,7 @@ fock_from_soad(
 
   // Get minimal basis
   const auto min_bs_shells =
-      parallel_construct_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol)
+      parallel_make_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol)
           .flattened_shells();
   // Make F scaffolding
   auto const &trange = H.trange();
@@ -257,7 +257,7 @@ fock_from_soad(
 
   // Get minimal basis
   const auto min_bs_shells =
-      parallel_construct_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol)
+      parallel_make_basis(world, gaussian::Basis::Factory("sto-3g"), clustered_mol)
           .flattened_shells();
 
   auto const &trange = H.trange();

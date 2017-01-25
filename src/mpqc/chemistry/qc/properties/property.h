@@ -56,7 +56,7 @@ class Timestampable {
   using timestamp_type = TimestampFactory::timestamp_type;
 
   Timestampable() : timestamp_(get_timestamp()) {}
-  explicit Timestampable(const T& val)
+  explicit Timestampable(T&& val)
       : value_(std::make_shared<T>(val)), timestamp_(get_timestamp()) {}
   explicit Timestampable(std::shared_ptr<T> val)
       : value_(val), timestamp_(get_timestamp()) {}
@@ -177,7 +177,7 @@ class Function {
   /// classes
   /// or by Function visitors via FunctionVisitorBase::set_value() .
   /// @param v the value to be returned by Function::value()
-  void set_value(Value v) { value_ = Timestampable<Value>(v); }
+  void set_value(Value v) { value_ = Timestampable<Value>(std::move(v)); }
 
   /// evaluates \c value , implemented by the derived class
   virtual void compute() = 0;
@@ -197,11 +197,11 @@ template <typename Function>
 class FunctionVisitorBase {
  protected:
   static void set_value(Function* f,
-                        const typename Function::value_type& value) {
-    f->set_value(value);
+                        typename Function::value_type value) {
+    f->set_value(std::move(value));
   }
 
-  static const typename Function::value_type get_value(Function* f) {
+  static const typename Function::value_type& get_value(Function* f) {
     return f->get_value();
   }
 };
@@ -243,8 +243,11 @@ class TaylorExpansionCoefficients {
  public:
   TaylorExpansionCoefficients() : nvars_(0), derivs_() {}
 
-  TaylorExpansionCoefficients(Value real)
-      : nvars_(1), derivs_(1, std::vector<Value>(1, real)) {}
+  TaylorExpansionCoefficients(Value val)
+      : nvars_(0), derivs_(1, std::vector<Value>(1, val)) {}
+
+  TaylorExpansionCoefficients(std::vector<std::vector<Value>> coefs)
+      : nvars_(coefs.size() > 0 ? coefs[1].size() : 0), derivs_(std::move(coefs)) {}
 
   TaylorExpansionCoefficients(size_t nvars, size_t order)
       : nvars_(nvars), derivs_(order + 1) {
@@ -486,6 +489,317 @@ class WavefunctionProperty
 /// @tparam Properties the property type list
 template <typename... Properties>
 class CanEvaluate : public Properties::Evaluator... {};
+
+////////////////////////////////////////////////////////////////////////
+
+/// Optimizer<Real, Params> seeks stationary points of
+/// TaylorExpansionFunction<Real, Params>
+
+/// It is itself a Function, namely Function<Params, std::tuple<>>.
+template <typename Real, typename Params>
+class Optimizer : public Function<Params, std::tuple<>>,
+                  virtual public DescribedClass {
+ public:
+  typedef TaylorExpansionFunction<Real, Params> function_type;
+
+  Optimizer(const KeyVal& kv) {
+    // obtain target precision
+    precision_ = kv.value<double>("precision", 1e-4);
+
+    // obtain target precision
+    function_ = kv.class_ptr<function_type, std::true_type>("function");
+  }
+
+  std::shared_ptr<function_type> function() const { return function_; }
+  double precision() const { return precision_; }
+
+ private:
+  std::shared_ptr<function_type> function_;
+  double precision_;
+};
+
+/// It is itself a Function, namely Function<Params, OptimizerParams>.
+template <typename Real, typename Params>
+class QuasiNewtonOptimizer : public Optimizer<Real, Params> {
+ public:
+  using base_type = Optimizer<Real, Params>;
+  using typename base_type::function_type;
+  using base_type::function;
+
+  QuasiNewtonOptimizer(const KeyVal& kv) : Optimizer<Real, Params>(kv) {
+    // if function cannot compute gradients, look for numerical gradient
+    if (this->function()->order() < 1) {
+      gradient_ = kv.class_ptr<function_type>("gradient");
+      if (!gradient_)
+        throw InputError(
+            "QuasiNewtonOptimizer: function cannot compute gradients, and "
+            "gradient object not provided",
+            __FILE__, __LINE__, "gradient");
+      if (gradient_->order() < 1)
+        throw InputError(
+            "QuasiNewtonOptimizer: the gradient object cannot compute "
+            "gradients",
+            __FILE__, __LINE__, "gradient");
+    }
+
+    if (this->function()->order() < 2) {
+      guess_hessian_ = kv.class_ptr<function_type>("guess_hessian");
+      if (!guess_hessian_)
+        throw InputError(
+            "QuasiNewtonOptimizer: function cannot compute hessians, and "
+            "guess_hessian object not provided",
+            __FILE__, __LINE__, "guess_hessian");
+    }
+
+    // hessian_update_ = kv.class_ptr<HessianUpdate>("hessian_update");
+
+    max_iter_ = kv.value<size_t>("max_iter", 40);
+  }
+
+ private:
+  size_t max_iter_;
+  std::shared_ptr<function_type> gradient_;
+  std::shared_ptr<function_type> guess_hessian_;
+  // std::shared_ptr<HessianUpdate> hessian_update_;
+
+  using Vector = Eigen::Matrix<Real, Eigen::Dynamic, 1>;
+  using Matrix = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic>;
+
+  void compute() {
+    bool converged = false;
+
+    using TA::detail::size;
+    const auto nparams = size(*(this->function()->params()));
+
+    guess_hessian_->set_params(this->function()->params());
+    auto hess_vec = guess_hessian_->value().derivs(2);
+    // convert hessian to Eigen Matrix
+    assert(hess_vec.size() == nparams * (nparams + 1) / 2);
+    Matrix hess(nparams, nparams);
+    for (auto r = 0, rc = 0; r != nparams; ++r) {
+      for (auto c = 0; c != r; ++c, ++rc) {
+        hess(r, c) = hess(c, r) = hess_vec[rc];
+      }
+    }
+
+    do {
+      auto current_params = this->function()->params();
+      if (gradient_) gradient_->set_params(current_params);
+
+      // compute value and gradient
+      const auto& val_and_grad =
+          gradient_.nonnull() ? gradient_->value() : this->function()->value();
+
+      // extract gradient
+      auto grad_vec = val_and_grad.derivs(1);
+      Vector grad = Eigen::Map<Vector>(&grad_vec[0], grad_vec.size());
+
+      // check convergence
+      converged = grad.norm() < this->precision();
+
+      if (!converged) {
+        // compute step
+        Vector step = -hess.inverse() * grad;
+
+        // update params
+        // this->function()->set_params(this->function()->params() + step);
+        assert(false && "not yet implemented");
+
+        // update hessian
+        // hessian_update_->update(hess, grad);
+      }
+    } while (!converged);
+  }
+};
+
+/// Computes finite-difference approximation to function derivatives
+template <size_t Order, typename Value, typename Parameters>
+class FiniteDifferenceDerivative
+    : public TaylorExpansionFunction<Value, Parameters>,
+      virtual public DescribedClass {
+ public:
+  static_assert(Order == 1,
+                "Only 1st-order FiniteDifferenceDerivative implemented");
+
+  FiniteDifferenceDerivative(const KeyVal& kv)
+      :   FiniteDifferenceDerivative(kv,
+                                     nullptr,
+                                     1e-6)
+  {}
+
+ protected:
+  // tuple of coordinate indices, in decreasing order, specifies each derivative
+  using DerivIdx = std::array<size_t, Order>;
+  // each displacement = set of displacement values for each of N coordinates in
+  // the derivative
+  using Displacement = std::array<double, Order>;
+  // sequence of {displacement,coefficient} pairs, with coefficients including
+  // deltas
+  using LinearCombinationOfDisplacements =
+      std::vector<std::pair<Displacement, double>>;
+
+  FiniteDifferenceDerivative(const KeyVal& kv,
+                             std::shared_ptr<Parameters> params,
+                             double default_target_precision)
+      : TaylorExpansionFunction<Value, Parameters>(kv, params, default_target_precision),
+        delta_(kv.value<double>("delta", 1e-2)),
+        error_order_(kv.value<size_t>("error_order", 0)) {
+    function_ = kv.class_ptr<function_type, std::true_type>("function");
+    if (function_ == nullptr)
+      throw InputError(
+          "FiniteDifferenceDerivative was not given a Function to "
+          "differentiate",
+          __FILE__, __LINE__, "function");
+  }
+
+  /// derived classes may need to customize how displacements are computed
+  /// @param idx the index of the derivative
+  /// @return the stensil formula as a LinearCombinationOfDisplacements
+  virtual LinearCombinationOfDisplacements generate_displacements(
+      DerivIdx idx) const {
+    /// manual implementations of
+    /// FiniteDifferenceDerivative::generate_displacements for different orders
+    LinearCombinationOfDisplacements result;
+    switch (Order) {
+      case 1: {
+        const auto one_over_delta_ = 1 / delta_;
+        result.emplace_back(
+            std::make_pair(Displacement{{delta_}}, one_over_delta_));
+        result.emplace_back(
+            std::make_pair(Displacement{{-delta_}}, -one_over_delta_));
+      } break;
+      default:
+        assert(false && "unreachable");
+    }
+    return result;
+  }
+
+  /// the function to differentiate
+  using function_type = TaylorExpansionFunction<Value, Parameters>;
+  std::shared_ptr<const function_type> function() const { return function_; }
+  double delta() const { return delta_; }
+  size_t error_order() const { return error_order_; }
+
+ private:
+  std::shared_ptr<function_type> function_;
+  /// the list of displacements for each coordinate
+  std::map<DerivIdx, LinearCombinationOfDisplacements> disps_;
+  /// the displacement size
+  double delta_;
+  /// the accuracy of the highest-order derivative in terms of powers of \c
+  /// delta_
+  /// \c error_order=0 means derivative is accurate to \c delta_^2 ,
+  /// \c error_order=1 -- \c \delta^4 , etc.
+  size_t error_order_;
+
+  const std::shared_ptr<function_type>& function() { return function_; }
+
+  void compute() override {
+    // grab ref parameters to reset later
+    using detail::function::clone;
+    auto function_ref_params = clone(function()->params());
+
+    auto ref_params = this->params();
+    using TA::detail::size;
+    const auto nparams = size(*ref_params);
+
+    /////////////////////////
+    // create displacements
+    /////////////////////////
+
+    // loop over unique derivatives
+    for (size_t p = 0; p != nparams; ++p) {
+      // for each derivative generate displacements
+      if (error_order_ > 0) {
+        throw FeatureNotImplemented(
+            "FiniteDifferenceDerivative: only leading order stensil "
+            "implemented yet",
+            __FILE__, __LINE__);
+      }
+
+      auto idx = DerivIdx{{p}};
+      disps_.insert(std::make_pair(idx, generate_displacements(idx)));
+    }
+
+    /////////////////////////
+    // compute
+    /////////////////////////
+    size_t coord = 0;
+    std::vector<Value> grad_vec(nparams);
+    for (const auto& disp : disps_) {
+      Value result = 0;
+      const auto& idx = disp.first;
+      ExEnv::out0() << indent << "displacement " << disp.first[0] << std::endl;
+      using detail::function::clone;
+      auto disp_params = clone(ref_params);
+      for (const auto& term : disp.second) {
+        // apply the displacement
+        increment(disp_params.get(), idx, term.first);
+        function()->set_params(disp_params);
+        // compute
+        auto val = function()->value();
+        result += term.second * val->derivs(0)[0];  // have energies only
+        // revert the displacement
+        decrement(disp_params.get(), idx, term.first);
+      }
+
+      grad_vec[coord] = result;  // computing gradient only
+      ++coord;
+    }
+
+    // reset the parameters
+    function()->set_params(std::const_pointer_cast<Parameters>(ref_params));
+
+    // finalize: set_value
+    // N.B. return 0 for energy
+    std::vector<std::vector<Value>> energy_and_grad(2);
+    energy_and_grad[0].push_back(static_cast<Value>(0));
+    energy_and_grad[1] = std::move(grad_vec);
+    TaylorExpansionCoefficients<Value> value(energy_and_grad);
+    this->set_value(value);
+  }
+
+};
+
+/// Evaluates FiniteDifferenceDerivative with respect to molecular coordinates
+template <size_t Order, typename Value>
+class MolecularFiniteDifferenceDerivative
+    : public FiniteDifferenceDerivative<Order, Value, MolecularCoordinates>,
+      public Property {
+ public:
+  MolecularFiniteDifferenceDerivative(const KeyVal& kv)
+      : FiniteDifferenceDerivative<Order, Value, MolecularCoordinates>(
+            kv, (kv.class_ptr<MolecularCoordinates>("coords")
+                     ? kv.class_ptr<MolecularCoordinates>("coords")
+                     : std::make_shared<CartMolecularCoordinates>(
+                           kv.class_ptr<Molecule>("molecule"))),
+                           default_target_precision_) {}
+
+  constexpr static double default_target_precision_ = 1e-6;
+
+  void print(std::ostream& os = ExEnv::out0()) const override {
+    os << indent << "Property " << this->class_key() << ":" << std::endl << incindent;
+    auto func = this->function();
+    // if function is a Property, use its print method
+    auto func_prop = std::dynamic_pointer_cast<const Property>(func);
+    if (func_prop) {
+      os << indent << "function:\n" << incindent;
+      func_prop->print(os);
+      os << decindent;
+    }
+    else {
+      os << indent << "function = unknown type\n";
+    }
+    os << indent << "delta = " << this->delta() << std::endl;
+    os << indent << "error_order = " << this->error_order() << std::endl;
+    os << indent << "value = " << this->get_value() << std::endl;
+    os << decindent;
+  }
+
+ private:
+  /// overrides Property::evaluate()
+  void evaluate() override { this->value(); }
+};
 
 }  // namespace mpqc
 

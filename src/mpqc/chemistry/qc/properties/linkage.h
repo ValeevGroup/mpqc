@@ -12,6 +12,8 @@ namespace mpqc{
 
 class Energy;
 mpqc::detail::ForceLink<Energy> fl_energy;
+template<> class mpqc::MolecularFiniteDifferenceDerivative<1,double>;
+mpqc::detail::ForceLink<mpqc::MolecularFiniteDifferenceDerivative<1,double>> fl_fdgrad;
 
 }
 

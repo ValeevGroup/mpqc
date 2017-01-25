@@ -94,7 +94,7 @@ class AOFactoryBase {
     return *orbital_basis_registry_;
   }
 
-  const std::shared_ptr<OrbitalBasisRegistry>
+  std::shared_ptr<const OrbitalBasisRegistry>
   orbital_basis_registry_ptr() const {
     return orbital_basis_registry_;
   }
@@ -113,7 +113,7 @@ class AOFactoryBase {
     */
   std::array<std::wstring, 3> get_df_formula(const Formula &formula);
 
-  /// given OrbitalIndex, find the correspoding basis
+  /// given OrbitalIndex, find the corresponding basis
   std::shared_ptr<Basis> index_to_basis(const OrbitalIndex &index) {
     auto iter = orbital_basis_registry_->find(index);
     if (iter == orbital_basis_registry_->end()) {

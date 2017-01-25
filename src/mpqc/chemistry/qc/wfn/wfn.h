@@ -46,6 +46,7 @@ class Wavefunction : virtual public DescribedClass, public utility::Observer {
     os << indent << "Wavefunction (type = " << this->class_key() << "):\n" << incindent;
     os << *atoms_;
     os << decindent;
+    os << std::endl;
   }
 
  protected:

@@ -798,7 +798,7 @@ class MolecularFiniteDifferenceDerivative
     }
     os << indent << "delta = " << this->delta() << std::endl;
     os << indent << "error_order = " << this->error_order() << std::endl;
-    os << indent << "value = " << this->get_value() << std::endl;
+    os << this->get_value() << std::endl;
     os << decindent;
   }
 

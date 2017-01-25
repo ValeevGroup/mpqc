@@ -168,7 +168,7 @@ class DescribedClass {
   ///         or empty string if it was not registered
   /// @warning cannot call this function before global object initialization has
   /// completed (i.e. after main() has started)
-  std::string class_key() {
+  std::string class_key() const {
     const auto& registry = keyval_ctor_registry();
     for (const auto& elem : registry) {
       if (typeid(*this) == elem.second.second) return elem.first;

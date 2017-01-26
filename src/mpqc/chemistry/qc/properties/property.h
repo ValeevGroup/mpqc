@@ -104,6 +104,8 @@ class Timestampable {
 
   /// @return the current timestamp
   const timestamp_type& timestamp() const { return timestamp_; }
+  /// @return the current value
+  std::shared_ptr<const T> value() const { return value_; }
 
  private:
   std::shared_ptr<T> value_;
@@ -295,6 +297,14 @@ class TaylorExpansionCoefficients {
     assert(order() < 2);
   }
 
+  void write(KeyVal& kv) const {
+    kv.assign("value", this->derivs(0).at(0));
+    if (order() > 0) {
+        kv.assign("gradient", this->derivs(1));
+    }
+    assert(order() < 2);
+  }
+
  private:
   /// Number of variables
   size_t nvars_;
@@ -386,9 +396,9 @@ class Property : public Task {
   /// evaluates this object
   virtual void evaluate() = 0;
 
-  /// prints this object to \c os
-  /// @param os the output stream
-  virtual void print(std::ostream& os = ExEnv::out0()) const = 0;
+  /// prints this object to \c kv
+  /// @param kv the output KeyVal object
+  virtual void write(KeyVal& kv) const = 0;
 
  private:
   /// implements Task::execute()
@@ -458,13 +468,9 @@ class WavefunctionProperty
           __FILE__, __LINE__, "wfn");
   }
 
-  void print(std::ostream& os = ExEnv::out0()) const override {
-    os << indent << "Property \"" << this->class_key() << "\":\n" << incindent;
-    os << indent << "wfn:\n" << incindent;
-    wfn_->print(os);
-    os << decindent;
-    os << this->get_value() << std::endl;
-    os << decindent;
+  void write(KeyVal& kv) const override {
+    auto kv_val = kv.keyval("value");
+    this->get_value().value()->write(kv_val);
   }
 
  private:
@@ -783,23 +789,9 @@ class MolecularFiniteDifferenceDerivative
 
   constexpr static double default_target_precision_ = 1e-6;
 
-  void print(std::ostream& os = ExEnv::out0()) const override {
-    os << indent << "Property " << this->class_key() << ":" << std::endl << incindent;
-    auto func = this->function();
-    // if function is a Property, use its print method
-    auto func_prop = std::dynamic_pointer_cast<const Property>(func);
-    if (func_prop) {
-      os << indent << "function:\n" << incindent;
-      func_prop->print(os);
-      os << decindent;
-    }
-    else {
-      os << indent << "function = unknown type\n";
-    }
-    os << indent << "delta = " << this->delta() << std::endl;
-    os << indent << "error_order = " << this->error_order() << std::endl;
-    os << this->get_value() << std::endl;
-    os << decindent;
+  void write(KeyVal& kv) const override {
+    auto kv_val = kv.keyval("value");
+    this->get_value().value()->write(kv_val);
   }
 
  private:

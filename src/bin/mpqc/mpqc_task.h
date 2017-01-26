@@ -44,7 +44,8 @@ class MPQCTask {
     auto property = keyval_->class_ptr<Property>("property");
     if (property != nullptr) {
       property->evaluate();
-      property->print(ExEnv::out0());
+      auto kv_prop = keyval_->keyval("property");
+      property->write(kv_prop);
     } else {
       throw InputError("invalid property", __FILE__, __LINE__, "property");
     }

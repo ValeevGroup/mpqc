@@ -14,7 +14,7 @@
     "name": "sto-3g",
     "molecule": "$:unitcell"
   },
-   "world":{
+   "wfn_world":{
      "molecule" : "$:unitcell",
      "basis" : "$:basis",
      "screen": "qqr",
@@ -22,7 +22,8 @@
    },
    "wfn":{
      "type": "zRHF",
-     "wfn_world": "$:world",
+     "molecule" : "$:unitcell",
+     "wfn_world": "$:wfn_world",
      "converge": 1.0e-7,
      "max_iter": 100,
      "soad_guess": true,

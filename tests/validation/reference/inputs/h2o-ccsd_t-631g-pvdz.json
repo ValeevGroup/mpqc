@@ -18,7 +18,7 @@
     "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
-  "world":{
+  "wfn_world":{
     "type" : "WfnWorld",
     "molecule" : "$:molecule",
     "basis" : "$:obs",
@@ -27,11 +27,12 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:world"
+    "wfn_world": "$:wfn_world"
   },
   "wfn":{
     "type": "CCSD(T)",
-    "wfn_world": "$:world",
+    "wfn_world": "$:wfn_world",
+    "molecule" : "$:molecule",
     "ref": "$:scf",
     "method" : "df",
     "occ_block_size" : 4,

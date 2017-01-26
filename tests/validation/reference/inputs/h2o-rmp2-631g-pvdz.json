@@ -15,7 +15,7 @@
     "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
-  "world":{
+  "wfn_world":{
     "type" : "WfnWorld",
     "molecule" : "$:molecule",
     "basis" : "$:obs",
@@ -23,11 +23,12 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:world"
+    "wfn_world": "$:wfn_world"
   },
   "wfn":{
     "type": "RI-RMP2",
-    "wfn_world": "$:world",
+    "molecule" : "$:molecule",
+    "wfn_world": "$:wfn_world",
     "ref": "$:scf",
     "occ_block_size" : 4,
     "unocc_block_size" : 8

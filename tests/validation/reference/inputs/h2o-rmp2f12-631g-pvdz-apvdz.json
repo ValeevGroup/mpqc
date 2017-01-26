@@ -18,7 +18,7 @@
     "name": "aug-cc-pVDZ",
     "molecule": "$:molecule"
   },
-  "world":{
+  "wfn_world":{
     "molecule" : "$:molecule",
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",
@@ -27,11 +27,12 @@
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:world"
+    "wfn_world": "$:wfn_world"
   },
   "wfn":{
     "type": "RI-RMP2F12",
-    "wfn_world": "$:world",
+    "molecule" : "$:molecule",
+    "wfn_world": "$:wfn_world",
     "ref": "$:scf",
     "occ_block_size" : 1,
     "unocc_block_size" : 24

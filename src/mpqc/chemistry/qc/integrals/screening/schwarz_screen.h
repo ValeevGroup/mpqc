@@ -25,18 +25,38 @@ namespace gaussian {
 class Qmatrix {
  private:
   RowMatrixXd Q_;
-  std::unordered_map<int64_t, int64_t> func_to_shell_map_;
+  std::unordered_map<int64_t, int64_t> func_to_shell_map0_;
+  std::unordered_map<int64_t, int64_t> func_to_shell_map1_;
   Eigen::VectorXd max_elem_in_row_;
   double max_elem_in_Q_;
 
-  // Convert a function index into a shell index
-  int64_t f2s(int64_t a) const {
-    auto it = func_to_shell_map_.find(a);
+  std::pair<int64_t, int64_t> f2s(int64_t a, int64_t b) const {
+    auto it0 = func_to_shell_map0_.find(a);
+    auto it1 = func_to_shell_map1_.find(b);
 
     // If this hits the issue was likely an index that was not the
     // first function in the shell.
-    assert(it != func_to_shell_map_.end());
-    return it->second;
+    assert(it0 != func_to_shell_map0_.end());
+    assert(it1 != func_to_shell_map1_.end());
+    return std::make_pair(it0->second, it1->second);
+  }
+
+  int64_t f2s0(int64_t a) const {
+    auto it0 = func_to_shell_map0_.find(a);
+
+    // If this hits the issue was likely an index that was not the
+    // first function in the shell.
+    assert(it0 != func_to_shell_map0_.end());
+    return it0->second;
+  }
+
+  int64_t f2s1(int64_t a) const {
+    auto it1 = func_to_shell_map1_.find(a);
+
+    // If this hits the issue was likely an index that was not the
+    // first function in the shell.
+    assert(it1 != func_to_shell_map1_.end());
+    return it1->second;
   }
 
  public:
@@ -46,23 +66,29 @@ class Qmatrix {
   Qmatrix &operator=(Qmatrix const &) = default;
   Qmatrix &operator=(Qmatrix &&) = default;
   Qmatrix(RowMatrixXd Q, std::unordered_map<int64_t, int64_t>);
+  Qmatrix(RowMatrixXd Q, 
+      std::unordered_map<int64_t, int64_t>,
+      std::unordered_map<int64_t, int64_t>);
 
   // Get whole matrix
   RowMatrixXd const &Q() const { return Q_; }
+
   // If vector get index
-  double const &Q(int64_t idx) const { return Q_(f2s(idx)); }
+  double const &Q(int64_t idx) const { return Q_(f2s0(idx)); }
+
   // If Matrix get elem
   double const &Q(int64_t row, int64_t col) const {
-    return Q_(f2s(row), f2s(col));
+    const auto idx = f2s(row, col);
+    return Q_(idx.first, idx.second);
   }
 
   double const &max_in_row(int64_t row) const {
-    return max_elem_in_row_(f2s(row));
+    return max_elem_in_row_(f2s0(row));
   }
 
   double max_in_Q() const { return max_elem_in_Q_; }
 
-  int64_t func_to_shell(int64_t func_idx) const { return f2s(func_idx); }
+  // int64_t func_to_shell(int64_t func_idx) const { return f2s(func_idx); }
 };
 
 /*! \brief Class for Schwarz based screening.
@@ -140,34 +166,18 @@ class SchwarzScreen : public Screener {
   }
 
   double four_center_est(int64_t a) const {
-    return max_in_row_ab(a) * max_ab();
-  }
-
-  double four_center_est(int64_t a, int64_t b) const {
-    return Qab(a, b) * max_ab();
-  }
-
-  double four_center_est(int64_t a, int64_t b, int64_t c) const {
-    return Qab(a, b) * max_in_row_ab(c);
-  }
-
-  double four_center_est(int64_t a, int64_t b, int64_t c, int64_t d) const {
-    return Qab(a, b) * Qab(c, d);
-  }
-
-  double four_center_est_2Q(int64_t a) const {
     return max_in_row_ab(a) * max_cd();
   }
 
-  double four_center_est_2Q(int64_t a, int64_t b) const {
+  double four_center_est(int64_t a, int64_t b) const {
     return Qab(a, b) * max_cd();
   }
 
-  double four_center_est_2Q(int64_t a, int64_t b, int64_t c) const {
+  double four_center_est(int64_t a, int64_t b, int64_t c) const {
     return Qab(a, b) * max_in_row_cd(c);
   }
 
-  double four_center_est_2Q(int64_t a, int64_t b, int64_t c, int64_t d) const {
+  double four_center_est(int64_t a, int64_t b, int64_t c, int64_t d) const {
     return Qab(a, b) * Qcd(c, d);
   }
 
@@ -187,10 +197,8 @@ class SchwarzScreen : public Screener {
       assert(Qcd_ != nullptr);
       assert(sizeof...(IDX) <= 3);
       return three_center_est(idx...);
-    } else if (Qcd_ == nullptr) {  // Four center with only 1 matrix
-      return four_center_est(idx...);
     } else {  // Four center with 2 matrices
-      return four_center_est_2Q(idx...);
+      return four_center_est(idx...);
     }
   }
 
@@ -205,15 +213,13 @@ class SchwarzScreen : public Screener {
   /*! \brief Constructor which requires a Q matrix.
    *
    * The threshold for screening defaults to 1e-10, but is settable,
-   * The second array should be used in the event that the Ket and Bra
-   * bases are different.
    *
    * For Density Fitting integrals of type (A|cd) Qab_ represents A and
    * Qcd_ represents c and d, The reverse ordering is not supported.
    * Qab_ will be a vector.
    */
   SchwarzScreen(std::shared_ptr<Qmatrix> Qab,
-                std::shared_ptr<Qmatrix> Qcd = nullptr, double thresh = 1e-10)
+                std::shared_ptr<Qmatrix> Qcd, double thresh = 1e-10)
       : Screener(),
         Qab_(std::move(Qab)),
         Qcd_(std::move(Qcd)),
@@ -332,6 +338,30 @@ inline std::shared_ptr<Qmatrix> compute_Q(madness::World &world,
   return std::make_shared<Qmatrix>(std::move(Q), func_to_shell(shells));
 }
 
+// Compute Q will create a Q matrix for two basis sets.
+template <typename E>
+inline std::shared_ptr<Qmatrix> compute_Q(madness::World &world,
+                                          ShrPool<E> const &eng,
+                                          Basis const &bs0, Basis const &bs1) {
+  const auto shells0 = bs0.flattened_shells();
+  const auto shells1 = bs1.flattened_shells();
+
+  return std::make_shared<Qmatrix>(four_center_Q(world, eng, shells0, shells1),
+                                   func_to_shell(shells0),
+                                   func_to_shell(shells1));
+}
+
+// This overload of Compute Q will create a Q matrix for one basis sets. Usually
+// this will be used for auxiliary bases
+template <typename E>
+inline std::shared_ptr<Qmatrix> compute_Q(madness::World &world,
+                                          ShrPool<E> const &eng,
+                                          Basis const &bs0) {
+  const auto shells = bs.flattened_shells();
+  return std::make_shared<Qmatrix>(auxiliary_Q(world, eng, shells),
+                                   func_to_shell(shells));
+}
+
 }  // namespace  detail;
 
 /*! \brief struct which builds SchwarzScreen screeners */
@@ -339,29 +369,31 @@ class init_schwarz_screen {
  private:
   double threshold = 1e-12;
 
-  // Add more overloads as desired, can have alternate ways of passing bases.
+  // Here we must assume which basis is the auxiliary basis.  For now assume
+  // that the auxiliary basis is the first one.
   template <typename E>
-  SchwarzScreen compute_df(madness::World &world, ShrPool<E> &eng,
-                           Basis const &dfbs, Basis const &obs) const {
+  SchwarzScreen compute_df(
+      madness::World &world, ShrPool<E> &eng,
+      std::vector<lcao::gaussian::Basis> const &bs_array) const {
     auto Q_a = detail::compute_Q(world, eng, dfbs, true);
     auto Q_cd = detail::compute_Q(world, eng, obs);
 
     return SchwarzScreen(std::move(Q_a), std::move(Q_cd), threshold);
   }
 
-  template <typename E>
-  SchwarzScreen compute_4c(madness::World &world, ShrPool<E> &eng,
-                           Basis const &bs) const {
-    auto Q_ab = detail::compute_Q(world, eng, bs);
-    return SchwarzScreen(std::move(Q_ab), nullptr, threshold);
-  }
+  // template <typename E>
+  // SchwarzScreen compute_4c(madness::World &world, ShrPool<E> &eng,
+  //                          Basis const &bs) const {
+  //   auto Q_ab = detail::compute_Q(world, eng, bs);
+  //   return SchwarzScreen(std::move(Q_ab), nullptr, threshold);
+  // }
 
-  // TODO finish this guy mixed basis four center
   template <typename E>
-  SchwarzScreen compute_4c(madness::World &, ShrPool<E> &, Basis const &,
-                           Basis const &) const {
-    assert(false);  // Feature not implemented yet.
-    return SchwarzScreen();
+  SchwarzScreen compute_4c(
+      madness::World &world, ShrPool<E> &eng,
+      std::vector<lcao::gaussian::Basis> const &bs_array) const {
+    auto Q_ab = detail::compute_Q(world, eng, bs_array[0]);
+    return SchwarzScreen(std::move(Q_ab), nullptr, threshold);
   }
 
  public:
@@ -376,13 +408,13 @@ class init_schwarz_screen {
 
   template <typename E>
   SchwarzScreen operator()(madness::World &world, ShrPool<E> &eng,
-                           Basis const &bs0, Basis const &bs1,
+                           std::vector<lcao::gaussian::Basis> const &bs_array,
                            bool mixed_basis_four_center = false) const {
-    if (mixed_basis_four_center) {
-      assert(false);  // This is not yet supported by helper machinary
-      return compute_4c(world, eng, bs0, bs1);
-    } else {
-      return compute_df(world, eng, bs0, bs1);
+    const auto nbasis = bs_array.size();
+    if (nbasis == 4) {
+      return compute_4c(world, eng, bs_array);
+    } else if (nbasis == 3) {
+      return compute_df(world, eng, bs_array);
     }
   }
 };

@@ -14,6 +14,7 @@
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/time.h"
 
+#include <mpqc/chemistry/qc/integrals/screening/schwarz_screen.h>
 #include <unsupported/Eigen/MatrixFunctions>
 
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,

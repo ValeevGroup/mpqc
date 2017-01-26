@@ -69,6 +69,9 @@ TEST_CASE("KeyVal", "[keyval]") {
   // can chain multiple assign calls
   kv.assign(":z:0", true).assign(":z:1", -1.75);
 
+  // can erase
+  REQUIRE_THROWS(kv.assign(":z:2", 5).erase(":z:2").value<int>(":z:2"));
+
   REQUIRE(kv.value<string>(":z:0") == "true");
   REQUIRE_THROWS(kv.value<int>(":z:0"));  // cannot obtain bool as int
   REQUIRE(kv.value<bool>(":z:0") == true);
@@ -350,6 +353,16 @@ a 1";
 
     REQUIRE_NOTHROW(kv.class_ptr<::mpqc::lcao::gaussian::AtomicBasis>("basis"));
 
+  }
+
+  SECTION("clone") {
+    KeyVal kv;
+
+    stringstream iss(ref_kv_input_json);
+    kv.read_json(iss);
+
+    auto kv_clone = kv.clone();
+    kv_test(kv_clone);
   }
 
 }  // end of test case

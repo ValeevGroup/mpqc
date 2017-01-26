@@ -166,6 +166,11 @@ kv.assign("reptile:python:legs", 0).assign("reptile:python:extinct", false);  //
 kv.assign("bird:bald eagle:species", "Haliaeetus leucocephalus").assign("bird:bald eagle:flys", true).assign("bird:bald eagle:extinct", false);
 @endcode
 
+It is of course possible to erase the KeyVal entries:
+@code
+kv.erase("reptile:trex:legs");
+@endcode
+
 So far so good. But why all this complexity? To understand that, let's consider
 how KeyVal helps to construct C++ objects, not just simple data.
 
@@ -200,6 +205,8 @@ to keyword sections in an existing KeyVal is crucial for constructing hierarchie
 refers to the same tree as `kv` and share `kv`'s mutable internal data, such as
 the internal object registry used by KeyVal::class_ptr (see below).
 The same can be said about the new KeyVal object returned by `kv.keyval()`.
+To create a deep copy of a KeyVal object use the KeyVal::clone() method (note that
+the DescribedClass object registry is not copied, only the PropertyTree object).
 
 \section keyvalpobj Polymorphic Object Construction
 

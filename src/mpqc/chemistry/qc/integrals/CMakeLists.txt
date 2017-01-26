@@ -26,5 +26,5 @@ set(sources
         periodic_ao_factory.cpp
 )
 
-add_mpqc_library(integrals sources sources "MPQCexpression;MPQCbasis" "mpqc/chemistry/qc/integrals")
+add_mpqc_library(integrals sources sources "MPQCexpression;MPQCbasis;boost" "mpqc/chemistry/qc/integrals")
 

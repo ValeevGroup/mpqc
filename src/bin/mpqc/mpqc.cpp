@@ -7,8 +7,8 @@
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/properties/property.h"
-#include "mpqc/mpqc_task.h"
 #include "mpqc/mpqc_config.h"
+#include "mpqc/mpqc_task.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 
@@ -22,10 +22,10 @@
 
 // linkage files to force linking in of ALL Wavefunction-based classes
 // this list must be in sync with CMakeLists.txt
-#include "mpqc/chemistry/qc/properties/linkage.h"
-#include "mpqc/chemistry/qc/f12/linkage.h"
 #include "mpqc/chemistry/qc/cc/linkage.h"
+#include "mpqc/chemistry/qc/f12/linkage.h"
 #include "mpqc/chemistry/qc/mbpt/linkage.h"
+#include "mpqc/chemistry/qc/properties/linkage.h"
 #include "mpqc/chemistry/qc/scf/linkage.h"
 #include "mpqc/mpqc_init.h"
 
@@ -53,7 +53,7 @@ void announce() {
 
 }  // namespace mpqc
 
-int try_main(int argc, char *argv[], madness::World& world) {
+int try_main(int argc, char *argv[], madness::World &world) {
   using namespace mpqc;
 
   // define default MPQC options
@@ -70,18 +70,20 @@ int try_main(int argc, char *argv[], madness::World& world) {
   // redirect the output to output_file
   std::ofstream output;
   if (!output_filename.empty()) output.open(output_filename);
-  if (!output.good()) throw FileOperationFailed("failed to open output file",
-                                                __FILE__, __LINE__, output_filename.c_str(),
-                                                FileOperationFailed::OpenW);
+  if (!output.good())
+    throw FileOperationFailed("failed to open output file", __FILE__, __LINE__,
+                              output_filename.c_str(),
+                              FileOperationFailed::OpenW);
   auto cout_streambuf_reset = [](std::streambuf *p) { std::cout.rdbuf(p); };
-  std::unique_ptr<std::streambuf, decltype(cout_streambuf_reset)> cout_buffer_holder(
-      std::cout.rdbuf(), cout_streambuf_reset);
+  std::unique_ptr<std::streambuf, decltype(cout_streambuf_reset)>
+      cout_buffer_holder(std::cout.rdbuf(), cout_streambuf_reset);
   if (!output_filename.empty()) std::cout.rdbuf(output.rdbuf());
 
   MPQCInit::instance().set_basename(input_filename, output_filename);
 
   // make keyval
-  std::shared_ptr<KeyVal> kv = MPQCInit::instance().make_keyval(world, input_filename);
+  std::shared_ptr<KeyVal> kv =
+      MPQCInit::instance().make_keyval(world, input_filename);
 
   // now set up the debugger
   auto debugger = kv->class_ptr<Debugger>("debugger");
@@ -95,7 +97,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
 
   // redirect filenames in KeyVal to the directory given by -p cmdline option
   auto prefix_opt = options->retrieve("p");
-  if (prefix_opt) { // set file prefix, if given
+  if (prefix_opt) {  // set file prefix, if given
     kv->assign("file_prefix", *prefix_opt);
   }
 
@@ -104,8 +106,7 @@ int try_main(int argc, char *argv[], madness::World& world) {
   std::string units_str;
   if (units_opt) {
     units_str = *units_opt;
-  }
-  else {
+  } else {
     if (kv->exists("units")) {
       units_str = kv->value<std::string>("units");
     }
@@ -120,8 +121,9 @@ int try_main(int argc, char *argv[], madness::World& world) {
   //////////////////////////////
 
   // the input keyval for reference
-  ExEnv::out0() << indent << "Input KeyVal (format=" << to_string(MPQCInit::instance().input_format()) << "):\n";
-  switch(MPQCInit::instance().input_format()) {
+  ExEnv::out0() << indent << "Input KeyVal (format="
+                << to_string(MPQCInit::instance().input_format()) << "):\n";
+  switch (MPQCInit::instance().input_format()) {
     case MPQCInit::InputFormat::json:
       kv->write_json(ExEnv::out0());
       break;
@@ -132,8 +134,9 @@ int try_main(int argc, char *argv[], madness::World& world) {
       kv->write_info(ExEnv::out0());
       break;
     default:
-      throw ProgrammingError("unrecognized input file format returned by MPQCInit::input_format()",
-                             __FILE__, __LINE__);
+      throw ProgrammingError(
+          "unrecognized input file format returned by MPQCInit::input_format()",
+          __FILE__, __LINE__);
   }
   ExEnv::out0() << std::endl;
 
@@ -183,20 +186,20 @@ int try_main(int argc, char *argv[], madness::World& world) {
 int main(int argc, char *argv[]) {
   int rc = 0;
 
-  madness::World* world_ptr;
+  madness::World *world_ptr;
   // initialize MADNESS first
   try {
     world_ptr = &madness::initialize(argc, argv);
-  }
-  catch (...) {
-    std::cerr << "!! Failed to initialize MADWorld: " << "\n";
+  } catch (...) {
+    std::cerr << "!! Failed to initialize MADWorld: "
+              << "\n";
     return 1;
   }
 
   try {
     try_main(argc, argv, *world_ptr);
 
-  } catch (mpqc::Exception &e){
+  } catch (mpqc::Exception &e) {
     std::cerr << "!! MPQC exception: " << e.what() << "\n";
     rc = 1;
   } catch (TiledArray::Exception &e) {
@@ -211,8 +214,7 @@ int main(int argc, char *argv[]) {
   } catch (std::exception &e) {
     std::cerr << "!! std exception: " << e.what() << "\n";
     rc = 1;
-  }
-  catch (...) {
+  } catch (...) {
     std::cerr << "!! exception: unknown exception\n";
     rc = 1;
   }

@@ -77,8 +77,9 @@ macro(add_mpqc_library _name _rawlist_source_files _rawlist_public_header_files 
         target_link_libraries(${_libname} PUBLIC ${_dep})
       endif()      
 
-      # import LINK_FLAGS from dependent
-      if (NOT ${_dep}_is_mpqc_hdr_lib)
+      # import LINK_FLAGS from dependent, unless it's an interface library
+      get_property(${_dep}_target_type TARGET ${_dep} PROPERTY TYPE SET)
+      if (NOT ${_dep}_is_mpqc_hdr_lib AND NOT ${_dep}_target_type STREQUAL "INTERFACE_LIBRARY")
         get_property(_dep_LINK_FLAGS_SET TARGET ${_dep} PROPERTY LINK_FLAGS SET)
         if (_dep_LINK_FLAGS_SET)
           get_property(_dep_LINK_FLAGS TARGET ${_dep} PROPERTY LINK_FLAGS)

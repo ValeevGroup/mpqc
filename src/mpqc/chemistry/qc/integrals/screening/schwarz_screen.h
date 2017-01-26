@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include <boost/optional>
+
 namespace mpqc {
 namespace lcao {
 namespace gaussian {
@@ -66,9 +68,8 @@ class Qmatrix {
   Qmatrix &operator=(Qmatrix const &) = default;
   Qmatrix &operator=(Qmatrix &&) = default;
   Qmatrix(RowMatrixXd Q, std::unordered_map<int64_t, int64_t>);
-  Qmatrix(RowMatrixXd Q, 
-      std::unordered_map<int64_t, int64_t>,
-      std::unordered_map<int64_t, int64_t>);
+  Qmatrix(RowMatrixXd Q, std::unordered_map<int64_t, int64_t>,
+          std::unordered_map<int64_t, int64_t>);
 
   // Get whole matrix
   RowMatrixXd const &Q() const { return Q_; }
@@ -218,8 +219,8 @@ class SchwarzScreen : public Screener {
    * Qcd_ represents c and d, The reverse ordering is not supported.
    * Qab_ will be a vector.
    */
-  SchwarzScreen(std::shared_ptr<Qmatrix> Qab,
-                std::shared_ptr<Qmatrix> Qcd, double thresh = 1e-10)
+  SchwarzScreen(std::shared_ptr<Qmatrix> Qab, std::shared_ptr<Qmatrix> Qcd,
+                double thresh = 1e-10)
       : Screener(),
         Qab_(std::move(Qab)),
         Qcd_(std::move(Qcd)),
@@ -415,6 +416,99 @@ class init_schwarz_screen {
       return compute_4c(world, eng, bs_array);
     } else if (nbasis == 3) {
       return compute_df(world, eng, bs_array);
+    }
+  }
+};
+
+/*! \brief Class which holds shell set information for screening.
+ *
+ * Qmatrix should contain a function to shell map for each basis it represents
+ *
+ */
+class QmatrixP {
+ private:
+  using f2s_map = std::unordered_map<int64_t, int64_t>;
+  std::array<f2s_map, 2> f2s_maps; // Function to shell maps for each basis
+
+  RowMatrixXd Q_; // Matrix to hold the integral estimates
+  Eigen::VectorXd max_elem_in_row_; // Max element for each row of Q_
+  double max_elem_in_Q_; // Max val in Q_
+
+
+ public:
+  QmatrixP() = default;
+  QmatrixP(QmatrixP const &) = default;
+  QmatrixP(QmatrixP &&) = default;
+  QmatrixP &operator=(QmatrixP const &) = default;
+  QmatrixP &operator=(QmatrixP &&) = default;
+};
+
+/*! \brief Class for Schwarz based screening.
+ *
+ * We will assume that these screeners are replicated for the integrals they
+ * need and so will not bother with serialization of them.
+ *
+ * SchwarzScreen has support for up to 4 different bases, currently there are
+ * no optimizations made for all four bases being equal to each other.
+ */
+class SchwarzScreenP : public Screener {
+ private:
+  std::shared_ptr<QmatrixP> Qab_;
+  std::shared_ptr<QmatrixP> Qcd_;
+  double thresh_;
+
+  // estimate returns an optional double.  If estimate knows how to estimate
+  // the integral provided it the optional contains the estimation, otherwise
+  // the optional is empty. idx should be a list of function indices for the
+  // integral set we which to estimate
+  template <typename... IDX>
+  boost::optional<double> estimate(IDX... idx) const {
+    return boost::none;
+  }
+
+ public:
+  SchwarzScreenP() = default;
+  SchwarzScreenP(SchwarzScreenP const &) = default;
+  SchwarzScreenP(SchwarzScreenP &&) = default;
+  SchwarzScreenP &operator=(SchwarzScreenP const &) = default;
+  SchwarzScreenP &operator=(SchwarzScreenP &&) = default;
+
+  virtual ~SchwarzScreenP() noexcept = default;
+
+  /*! \brief Constructor which requires two Q matrices
+   *
+   * \param Qab is the Qmatrix needed for mu and nu in (mu nu | rho sigma) and
+   * also the vector needed for X in (X | rho sigma), a current limitation of
+   * Schwarz screening is that all auxillary basis Qs must be placed in Qab_.
+   *
+   * \param Qcd is the Qmatrix needed for rho and sigma in (mu nu | rho sigma)
+   * and (X | rho sigma)
+   *
+   * \param thresh is the screening threshold used when evaluating whether or
+   * not the skip function returns true for Qab(a,b) * Qcd(c,d) <= thresh_.
+   * How Qab and Qcd are determined (infinity norm of a shell set or F norm) is
+   * to be part of the Q matrix construction.
+   */
+  SchwarzScreenP(std::shared_ptr<Qmatrix> Qab, std::shared_ptr<Qmatrix> Qcd,
+                 double thresh = 1e-12);
+
+  /// Reports the threshold being used for skipping integrals
+  double skip_threshold() const;
+
+  /*! skip takes a list of indices and returns true when the integral estimate
+   * is below the threshold and false when it is greater than or equal to the
+   * threshold. See function estimate for the implementation.
+   *
+   * \param idx is a series of indices from which to generate an integral
+   * estimate
+   */
+  template <typename... IDX>
+  bool skip(IDX... idx) const {
+    auto est = estimate(idx);  // optional estimation for set idx
+    if (est) {  // Check that we were able to estimate the integral set
+      return est < thresh_;  // If est below threshold then skip this set
+    } else {         // We were unable to estimate this set for some reason
+      return false;  // thus we should compute the integral
     }
   }
 };

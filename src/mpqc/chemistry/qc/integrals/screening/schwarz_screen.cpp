@@ -36,6 +36,15 @@ Qmatrix::Qmatrix(RowMatrixXd Q,
     }
 }
 
+SchwarzScreenP::SchwarzScreenP(std::shared_ptr<QmatrixP> Qab,
+                std::shared_ptr<QmatrixP> Qcd, double thresh = 1e-12)
+      : Screener(),
+        Qab_(std::move(Qab)),
+        Qcd_(std::move(Qcd)),
+        thresh_(thresh) {}
+
+double SchwarzScreenP::skip_threshold() const {return thresh_;}
+
 }  // namespace  gaussian
 }  // namespace  lcao
 }  // namespace  mpqc

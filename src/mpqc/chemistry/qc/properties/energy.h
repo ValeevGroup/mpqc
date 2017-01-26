@@ -28,7 +28,7 @@ public:
    *
    *  @sa CanEvaluate
    */
-  class Evaluator : public FunctionVisitorBase<function_base_type> {
+  class Evaluator : public math::FunctionVisitorBase<function_base_type> {
   public:
     /// EvaluatorBase::can_evaluate returns true if \c energy can be computed.
     /// For example, if \c energy demands taylor expansion to 1st order

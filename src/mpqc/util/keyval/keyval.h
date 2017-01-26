@@ -500,8 +500,11 @@ class KeyVal {
   /// erases entries located under \c path
   /// @param path the target path
   KeyVal& erase(const key_type& path) {
-    auto abs_path = to_absolute_path(path);
-    top_tree_->erase(abs_path);  // count is ignored
+    auto abs_path = resolve_path(path);
+    key_type abs_path_basename, name;
+    std::tie(abs_path_basename, name) = path_basename(abs_path);
+    top_tree_->get_child(ptree::path_type{abs_path_basename, separator})
+        .erase(name);  // count is ignored
     return *this;
   }
 
@@ -893,6 +896,17 @@ class KeyVal {
     if (last_separator_location == key_type::npos) last_separator_location = 0;
     result.erase(last_separator_location);
     return result;
+  }
+
+  /// returns {basename,key} for the given path; e.g.
+  /// for path ":key1:key2:key3:key4" returns {":key1:key2:key3", "key4"}
+  static std::tuple<key_type, key_type> path_basename(const key_type& path) {
+    auto last_separator_location = path.rfind(separator);
+    if (last_separator_location == key_type::npos) last_separator_location = 0;
+    key_type basename = path;
+    basename.erase(last_separator_location);
+    key_type key = path.substr(last_separator_location + 1);
+    return std::make_tuple(basename, key);
   }
 
   /// checks whether the given path exists; does not resolve path unlike

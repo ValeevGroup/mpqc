@@ -92,6 +92,11 @@ KeyVal::KeyVal()
       dc_registry_(std::make_shared<dc_registry_type>()),
       path_("") {}
 
+KeyVal KeyVal::clone() const {
+  return KeyVal(std::make_shared<ptree>(*this->top_tree()),
+                std::make_shared<dc_registry_type>(), std::string());
+}
+
 std::shared_ptr<KeyVal::ptree> KeyVal::tree() const {
   std::shared_ptr<ptree> result(
       top_tree_, &top_tree_->get_child(ptree::path_type{path_, separator}));

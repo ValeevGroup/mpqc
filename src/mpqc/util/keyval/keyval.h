@@ -370,7 +370,7 @@ class KeyVal {
 
   /// Since this class has reference semantics, the underlying data structures
   /// (ptree and class registry) are not copied.
-  /// @note to clone top-level tree use top_tree())
+  /// @note to clone top-level tree use KeyVal::clone()
   KeyVal(const KeyVal& other) = default;
 
   /// \brief copy assignment
@@ -378,6 +378,10 @@ class KeyVal {
   /// Since this class has reference semantics, the underlying data structures
   /// (ptree and class registry) are not copied.
   KeyVal& operator=(const KeyVal& other) = default;
+
+  /// \brief creates a deep copy of this object
+  /// \note the DescribedClass object registry is not copied
+  KeyVal clone() const;
 
   /// \brief construct a KeyVal representing a subtree located at the given path
 
@@ -490,6 +494,14 @@ class KeyVal {
                  const std::shared_ptr<DescribedClass>& value) {
     auto abs_path = to_absolute_path(path);
     (*dc_registry_)[abs_path] = value;
+    return *this;
+  }
+
+  /// erases entries located under \c path
+  /// @param path the target path
+  KeyVal& erase(const key_type& path) {
+    auto abs_path = to_absolute_path(path);
+    top_tree_->erase(abs_path);  // count is ignored
     return *this;
   }
 

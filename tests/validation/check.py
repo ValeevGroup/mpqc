@@ -12,6 +12,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import sys, re, math
 import json
 
+reload(sys)
+sys.setdefaultencoding("utf-8")
+
 def validate(label, data, refdata, tolerance):
     if not isinstance(data,list):
         data = [data]
@@ -41,7 +44,7 @@ def parse_json(file_name):
             if match:
                 json_lines += line
             if not match:
-                line = line.decode('utf-8')
+                # line = line.decode('utf-8')
                 match = line.find("Output KeyVal (format=JSON):") != -1
 
     result = json.loads(json_lines)

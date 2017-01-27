@@ -91,31 +91,32 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 }
 
 AOFactoryBase::AOFactoryBase(const KeyVal &kv)
-    : world_(*kv.value<madness::World*>("$:world")),
+    : world_(*kv.value<madness::World *>("$:world")),
       orbital_basis_registry_(),
       mol_(),
       gtg_params_() {
-
   std::string prefix = "";
-  if(kv.exists("wfn_world") || kv.exists_class("wfn_world")){
+  if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
     prefix = "wfn_world:";
   }
   /// Basis will come from wfn_world
-  //  orbital_basis_registry_ = std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
+  //  orbital_basis_registry_ =
+  //  std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
   mol_ = kv.keyval(prefix + "molecule").class_ptr<Molecule>();
 
   // if have auxilary basis
-  if(kv.exists( prefix + "aux_basis")){
-    int n_function = kv.value<int>(prefix + "corr_functions",6);
-    double corr_param = kv.value<double>(prefix + "corr_param",0);
+  if (kv.exists(prefix + "aux_basis")) {
+    int n_function = kv.value<int>(prefix + "corr_functions", 6);
+    double corr_param = kv.value<double>(prefix + "corr_param", 0);
     f12::GTGParams gtg_params;
-    if(corr_param != 0){
+    if (corr_param != 0) {
       gtg_params = f12::GTGParams(corr_param, n_function);
-    } else{
-      if(kv.exists(prefix + "vir_basis")){
-        std::string basis_name = kv.value<std::string>(prefix + "vir_basis:name");
+    } else {
+      if (kv.exists(prefix + "vir_basis")) {
+        std::string basis_name =
+            kv.value<std::string>(prefix + "vir_basis:name");
         gtg_params = f12::GTGParams(basis_name, n_function);
-      }else{
+      } else {
         std::string basis_name = kv.value<std::string>(prefix + "basis:name");
         gtg_params = f12::GTGParams(basis_name, n_function);
       }
@@ -133,10 +134,10 @@ AOFactoryBase::AOFactoryBase(const KeyVal &kv)
     }
   }
   // other initialization
-  screen_ = kv.value<std::string>(prefix + "screen","");
-  screen_threshold_ = kv.value<double>(prefix + "threshold",1.0e-10);
+  screen_ = kv.value<std::string>(prefix + "screen", "");
+  screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-10);
   auto default_precision = std::numeric_limits<double>::epsilon();
-  precision_ = kv.value<double>(prefix + "precision",default_precision);
+  precision_ = kv.value<double>(prefix + "precision", default_precision);
   detail::integral_engine_precision = precision_;
 
   utility::print_par(world_, "Screen: ", screen_, "\n");
@@ -145,13 +146,10 @@ AOFactoryBase::AOFactoryBase(const KeyVal &kv)
   }
   utility::print_par(world_, "Precision: ", precision_, "\n");
   utility::print_par(world_, "\n");
-
-
 }
 
 libint2::Engine AOFactoryBase::make_engine(const Operator &oper,
-                                                int64_t max_nprim,
-                                                int64_t max_am) {
+                                           int64_t max_nprim, int64_t max_am) {
   auto op = detail::to_libint2_operator(oper.type());
   auto params = detail::to_libint2_operator_params(oper.type(), *this);
   libint2::Engine engine(op, max_nprim, static_cast<int>(max_am), 0);
@@ -161,17 +159,19 @@ libint2::Engine AOFactoryBase::make_engine(const Operator &oper,
 }
 
 std::shared_ptr<Screener> AOFactoryBase::make_screener_three_center(
-    ShrPool<libint2::Engine> &engine, Basis &basis1,
-    Basis &basis2) {
+    ShrPool<libint2::Engine> &engine, Basis &basis1, Basis &basis2) {
   std::shared_ptr<Screener> p_screen;
   if (screen_.empty()) {
     p_screen = std::make_shared<Screener>(Screener{});
   } else if (screen_ == "qqr") {
     p_screen = std::make_shared<Screener>(Screener{});
   } else if (screen_ == "schwarz") {
-    auto screen_builder = init_schwarz_screen(screen_threshold_);
-    p_screen = std::make_shared<Screener>(
-        screen_builder(world_, engine, basis1, basis2));
+    // auto screen_builder = init_schwarz_screen(screen_threshold_);
+    // p_screen = std::make_shared<Screener>(
+    //     screen_builder(world_, engine, basis1, basis2));
+    p_screen = std::make_shared<gaussian::SchwarzScreen>(
+        gaussian::create_scwharz_screener(
+            world_, engine, BasisVector{{basis1, basis2, basis2}}));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
   }
@@ -184,13 +184,18 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_four_center(
   if (screen_.empty()) {
     p_screen = std::make_shared<Screener>(Screener{});
   } else if (screen_ == "qqr") {
-    auto screen_builder = init_qqr_screen{};
-    p_screen = std::make_shared<Screener>(
-        screen_builder(world_, engine, basis, screen_threshold_));
+    p_screen = std::make_shared<Screener>(Screener{});
+    // No QQR screening at the moment
+    // auto screen_builder = init_qqr_screen{};
+    // p_screen = std::make_shared<Screener>(
+    //     screen_builder(world_, engine, basis, screen_threshold_));
   } else if (screen_ == "schwarz") {
-    auto screen_builder = init_schwarz_screen(screen_threshold_);
-    p_screen = std::make_shared<Screener>(
-        screen_builder(world_, engine, basis));
+    // auto screen_builder = init_schwarz_screen(screen_threshold_);
+    // p_screen =
+    //     std::make_shared<Screener>(screen_builder(world_, engine, basis));
+    p_screen = std::make_shared<gaussian::SchwarzScreen>(
+        gaussian::create_scwharz_screener(world_, engine,
+                                          BasisVector(4, basis)));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
   }
@@ -219,7 +224,7 @@ void AOFactoryBase::parse_one_body(
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
 
-  bases = BasisVector {{*bra_basis, *ket_basis}};
+  bases = BasisVector{{*bra_basis, *ket_basis}};
 
   auto oper_type = formula.oper().type();
   engine_pool = make_engine_pool(
@@ -253,20 +258,20 @@ void AOFactoryBase::parse_two_body_two_center(
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
 
-  bases = BasisVector {{*bra_basis0, *ket_basis0}};
+  bases = BasisVector{{*bra_basis0, *ket_basis0}};
 
   auto oper_type = formula.oper().type();
-  engine_pool = make_engine_pool(
-      detail::to_libint2_operator(oper_type),
-      utility::make_array_of_refs(*bra_basis0, *ket_basis0),
-      libint2::BraKet::xs_xs,
-      detail::to_libint2_operator_params(oper_type, *this));
+  engine_pool =
+      make_engine_pool(detail::to_libint2_operator(oper_type),
+                       utility::make_array_of_refs(*bra_basis0, *ket_basis0),
+                       libint2::BraKet::xs_xs,
+                       detail::to_libint2_operator_params(oper_type, *this));
 }
 
 void AOFactoryBase::parse_two_body_three_center(
     const Formula &formula,
-    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-    std::shared_ptr<Screener> &p_screener) {
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases, std::shared_ptr<Screener> &p_screener) {
   TA_USER_ASSERT(formula.notation() == Formula::Notation::Chemical,
                  "Three Center Integral Must Use Chemical Notation");
 
@@ -288,7 +293,7 @@ void AOFactoryBase::parse_two_body_three_center(
   TA_ASSERT(ket_basis0 != nullptr);
   TA_ASSERT(ket_basis1 != nullptr);
 
-  bases = BasisVector {{*bra_basis0, *ket_basis0, *ket_basis1}};
+  bases = BasisVector{{*bra_basis0, *ket_basis0, *ket_basis1}};
 
   auto oper_type = formula.oper().type();
   engine_pool = make_engine_pool(
@@ -313,8 +318,8 @@ void AOFactoryBase::parse_two_body_three_center(
 
 void AOFactoryBase::parse_two_body_four_center(
     const Formula &formula,
-    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-    std::shared_ptr<Screener> &p_screener) {
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases, std::shared_ptr<Screener> &p_screener) {
   auto bra_indexs = formula.bra_indices();
   auto ket_indexs = formula.ket_indices();
 
@@ -392,7 +397,7 @@ std::array<std::wstring, 3> AOFactoryBase::get_df_formula(
 }
 
 Formula AOFactoryBase::get_jk_formula(const Formula &formula,
-                                           const std::wstring &obs) {
+                                      const std::wstring &obs) {
   Formula result;
 
   Operator oper(L"G");
@@ -402,28 +407,28 @@ Formula AOFactoryBase::get_jk_formula(const Formula &formula,
     if (formula.oper().type() == Operator::Type::J) {
       result.bra_indices().push_back(formula.bra_indices()[0]);
       result.bra_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs+L"4");
-      result.ket_indices().push_back(obs+L"5");
+      result.ket_indices().push_back(obs + L"4");
+      result.ket_indices().push_back(obs + L"5");
 
     } else {
       result.bra_indices().push_back(formula.bra_indices()[0]);
-      result.bra_indices().push_back(obs+L"4");
+      result.bra_indices().push_back(obs + L"4");
       result.ket_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs+L"5");
+      result.ket_indices().push_back(obs + L"5");
     }
   } else {
     result.set_notation(Formula::Notation::Physical);
     if (formula.oper().type() == Operator::Type::K) {
       result.bra_indices().push_back(formula.bra_indices()[0]);
       result.bra_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs+L"4");
-      result.ket_indices().push_back(obs+L"5");
+      result.ket_indices().push_back(obs + L"4");
+      result.ket_indices().push_back(obs + L"5");
 
     } else {
       result.bra_indices().push_back(formula.bra_indices()[0]);
-      result.bra_indices().push_back(obs+L"4");
+      result.bra_indices().push_back(obs + L"4");
       result.ket_indices().push_back(formula.ket_indices()[0]);
-      result.ket_indices().push_back(obs+L"5");
+      result.ket_indices().push_back(obs + L"5");
     }
   }
   return result;
@@ -455,8 +460,7 @@ std::array<Formula, 3> AOFactoryBase::get_jk_df_formula(
   return result;
 }
 
-OrbitalIndex AOFactoryBase::get_jk_orbital_space(
-    const Operator &operation) {
+OrbitalIndex AOFactoryBase::get_jk_orbital_space(const Operator &operation) {
   if (operation.type() == Operator::Type::J ||
       operation.type() == Operator::Type::K) {
     return OrbitalIndex(L"m");
@@ -470,8 +474,7 @@ OrbitalIndex AOFactoryBase::get_jk_orbital_space(
   }
 }
 
-std::array<Formula, 3> AOFactoryBase::get_fock_formula(
-    const Formula &formula) {
+std::array<Formula, 3> AOFactoryBase::get_fock_formula(const Formula &formula) {
   std::array<Formula, 3> result;
   Formula h(formula);
   h.set_operator(Operator(L"H"));

@@ -6,10 +6,10 @@
 #include "mpqc/chemistry/qc/integrals/task_integrals.h"
 #include "mpqc/chemistry/qc/integrals/task_integral_kernels.h"
 
-#include "mpqc/chemistry/qc/integrals/screening/cached_shell_info.h"
+// #include "mpqc/chemistry/qc/integrals/screening/cached_shell_info.h"
 #include "mpqc/chemistry/qc/integrals/screening/screen_base.h"
-#include "mpqc/chemistry/qc/integrals/screening/qqr_screening.h"
-#include "mpqc/chemistry/qc/integrals/screening/qvl_screening.h"
+// #include "mpqc/chemistry/qc/integrals/screening/qqr_screening.h"
+// #include "mpqc/chemistry/qc/integrals/screening/qvl_screening.h"
 #include "mpqc/chemistry/qc/integrals/screening/schwarz_screen.h"
 
 #include "mpqc/chemistry/qc/integrals/direct_tile.h"

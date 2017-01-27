@@ -458,11 +458,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
         parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
 
         auto time_g0 = mpqc::now(world_, false);
-        auto screener = std::make_shared<Screener>(
-            gaussian::SchwarzScreenP());
-
-        auto J = compute_integrals(world_, engine_pool, bs_array,
-                                   std::move(screener));
+        auto J = compute_integrals(world_, engine_pool, bs_array);
 
         auto time_g1 = mpqc::now(world_, false);
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);

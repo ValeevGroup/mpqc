@@ -24,7 +24,7 @@ class PropertyBase;
 /// Green's function or reduced density matrix) in a Gaussian basis.
 
 /// \todo elaborate Wavefunction documentation
-class Wavefunction : public Energy {
+class Wavefunction : public mpqc::Energy {
  private:
   /** Pointer to the WfnWorld
    *
@@ -57,7 +57,7 @@ class Wavefunction : public Energy {
   virtual void compute(PropertyBase* pb) = 0;
   virtual double value() = 0;
   virtual void obsolete() {
-    Energy::obsolete();
+    mpqc::Energy::obsolete();
   };
 
   const std::shared_ptr<WavefunctionWorld>&

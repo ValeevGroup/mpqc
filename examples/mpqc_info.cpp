@@ -25,7 +25,7 @@ double bytes_to_mb(std::size_t num){
   return double(num)/(1e6);
 }
 
-void ao_basis_analysis (Basis& basis, int occ){
+void ao_basis_analysis (const Basis& basis, int occ){
 
 
   auto range = basis.create_trange1();
@@ -53,7 +53,7 @@ void ao_basis_analysis (Basis& basis, int occ){
 
 }
 
-void df_basis_analysis(Basis& basis, Basis& dfbs, int occ){
+void df_basis_analysis(const Basis& basis, const Basis& dfbs, int occ){
 
   auto range = basis.create_trange1();
   std::size_t n = range.elements_range().second;
@@ -84,7 +84,7 @@ void df_basis_analysis(Basis& basis, Basis& dfbs, int occ){
 
 }
 
-void cabs_basis_analysis(Basis& basis, Basis& dfbs, Basis& cabs, int occ){
+void cabs_basis_analysis(const Basis& basis, const Basis& dfbs, const Basis& cabs, int occ){
   auto range = basis.create_trange1();
   std::size_t n = range.elements_range().second;
   std::size_t v = n - occ;
@@ -143,15 +143,15 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   lcao::gaussian::OrbitalBasisRegistry basis_registry(kv);
 
-  auto obs = basis_registry.retrieve(OrbitalIndex(L"λ"));
-  ao_basis_analysis(obs,occ);
+  const auto& obs = basis_registry.retrieve(OrbitalIndex(L"λ"));
+  ao_basis_analysis(*obs,occ);
 
-  auto dfbs = basis_registry.retrieve(OrbitalIndex(L"Κ"));
-  df_basis_analysis(obs,dfbs,occ);
+  const auto& dfbs = basis_registry.retrieve(OrbitalIndex(L"Κ"));
+  df_basis_analysis(*obs,*dfbs,occ);
 
-  auto cabs = basis_registry.retrieve(OrbitalIndex(L"α"));
+  const auto& cabs = basis_registry.retrieve(OrbitalIndex(L"α"));
 
-  cabs_basis_analysis(obs, dfbs, cabs, occ);
+  cabs_basis_analysis(*obs, *dfbs, *cabs, occ);
 
   return 0;
 }

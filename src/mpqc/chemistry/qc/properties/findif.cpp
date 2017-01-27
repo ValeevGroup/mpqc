@@ -1,5 +1,5 @@
 
-#include "mpqc/chemistry/qc/properties/property.h"
+#include "mpqc/chemistry/qc/properties/findif.h"
 #include "mpqc/util/keyval/forcelink.h"
 
 MPQC_CLASS_EXPORT2("FDGradient", mpqc::MolecularFiniteDifferenceDerivative<1,double>);

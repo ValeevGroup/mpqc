@@ -6,16 +6,12 @@
 #include <memory>
 #include <vector>
 
-#include <TiledArray/type_traits.h>
-
 #include "mpqc/chemistry/molecule/coords.h"
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
-#include "mpqc/util/misc/exception.h"
 #include "mpqc/util/misc/task.h"
 #include "mpqc/math/function/function.h"
 #include "mpqc/math/function/taylor.h"
-#include "mpqc/math/function/findif.h"
 
 /// top-level MPQC namespace
 namespace mpqc {
@@ -151,34 +147,6 @@ class WavefunctionProperty
 /// @tparam Properties the property type list
 template <typename... Properties>
 class CanEvaluate : public Properties::Evaluator... {};
-
-////////////////////////////////////////////////////////////////////////
-
-/// Evaluates FiniteDifferenceDerivative with respect to molecular coordinates
-template <size_t Order, typename Value>
-class MolecularFiniteDifferenceDerivative
-    : public math::FiniteDifferenceDerivative<Order, Value, MolecularCoordinates>,
-      public Property {
- public:
-  MolecularFiniteDifferenceDerivative(const KeyVal& kv)
-      : math::FiniteDifferenceDerivative<Order, Value, MolecularCoordinates>(
-            kv, (kv.class_ptr<MolecularCoordinates>("coords")
-                     ? kv.class_ptr<MolecularCoordinates>("coords")
-                     : std::make_shared<CartMolecularCoordinates>(
-                           kv.class_ptr<Molecule>("molecule"))),
-                           default_target_precision_) {}
-
-  constexpr static double default_target_precision_ = 1e-6;
-
-  void write(KeyVal& kv) const override {
-    auto kv_val = kv.keyval("value");
-    this->get_value().value()->write(kv_val);
-  }
-
- private:
-  /// overrides Property::evaluate()
-  void evaluate() override { this->value(); }
-};
 
 }  // namespace mpqc
 

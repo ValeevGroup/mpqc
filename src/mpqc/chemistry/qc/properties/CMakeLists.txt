@@ -1,8 +1,9 @@
 set(sources
     energy.cpp
     energy.h
+    findif.cpp
+    findif.h
     linkage.h
-    property.cpp
     property.h
 )
 

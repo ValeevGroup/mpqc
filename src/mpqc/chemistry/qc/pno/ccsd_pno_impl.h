@@ -72,11 +72,11 @@ namespace mpqc {
 
     // compute MP2 T2 amplitudes
     template<typename Tile, typename Policy>
-    void CCSD_PNO<Tile, Policy>::compute_mp2_t2() {
+    TA::DistArray<Tile, Policy> CCSD_PNO<Tile, Policy>::compute_mp2_t2() {
 
       auto &lcao_factory = this->lcao_factory();
-      t2_mp2_ = detail::compute_mp2_t2(lcao_factory, this->orbital_energy(),
-                                       this->trange1_engine(), this->df_);
+      return detail::compute_mp2_t2(lcao_factory, this->orbital_energy(),
+                                    this->trange1_engine(), this->df_);
     }
 
     // compute converting matrices for reblocking MP2 T2
@@ -115,15 +115,17 @@ namespace mpqc {
                        world, old_vir, new_vir, 1.0);
     }
 
-    // decompose MP2 T2 amplitudes
+    // decompose T2 amplitudes
     template<typename Tile, typename Policy>
-    void CCSD_PNO<Tile, Policy>::decom_t2_mp2() {
+    void CCSD_PNO<Tile, Policy>::decom_t2(TA::DistArray<Tile, Policy> &t2_mp2,
+                                          const TA::DistArray<Tile, Policy> &t2_ccsd,
+                                          bool use_diff_t2) {
 
       double threshold = tcut_;
       ExEnv::out0() << "tcut is " << tcut_ << std::endl;
 
       // decompose and reconstruct T2
-      auto transfrom = [&](Tile &in_tile) -> float {
+      auto decom_1 = [&](Tile &in_tile) -> float {
 
         // copy in_tile which is ab matrix of T^ij
         Tile tab_tile = in_tile.clone();
@@ -243,7 +245,103 @@ namespace mpqc {
         return in_tile.norm();
       };
 
-      TA::foreach_inplace(t2_mp2_, transfrom);
+      // decompose and reconstruct T2
+      auto decom_2 = [&](Tile &tile_mp2, const Tile &tile_ccsd) -> float {
+
+        // copy in_tile which is ab matrix of T^ij
+        Tile tab_mp2 = tile_mp2.clone();
+
+        // compute ij pair index
+        const auto orb_i = tile_mp2.range().upbound_data()[2];
+        const auto orb_j = tile_mp2.range().upbound_data()[3];
+
+        // get the dimensions of input tile
+        const auto extent = tile_mp2.range().extent();
+        const auto a = extent[0];
+        const auto b = extent[1];
+
+        int rank = 0;
+
+        // PNO decomposition using MP2 T2 amplitudes
+        auto Tab_mp2 = TA::eigen_map(tab_mp2, a, b);
+        // compute virtual or PNO density
+        TA::EigenMatrixXd Dab_mp2 = Tab_mp2 * (4.0 * Tab_mp2 - 2.0 * Tab_mp2.transpose()).transpose()
+                                  + Tab_mp2.transpose() * (4.0 * Tab_mp2 - 2.0 * Tab_mp2.transpose());
+        // when i=j, Dab = Tab*Tab' + Tab'*Tab
+        if (orb_i == orb_j)
+          Dab_mp2 = Dab_mp2/2.0;
+
+        // compute eigenvalues ans eigenvectors of Dab
+        Eigen::SelfAdjointEigenSolver<TA::EigenMatrixXd> es_mp2(Dab_mp2);
+        TA::EigenVectorXd S_es_mp2 = es_mp2.eigenvalues();
+        TA::EigenMatrixXd C_es_mp2 = es_mp2.eigenvectors();
+
+        // PNO decomposition using CCSD T2 amplitudes
+        auto Tab_ccsd = TA::eigen_map(tile_ccsd, a, b);
+        // compute virtual or PNO density
+        TA::EigenMatrixXd Dab_ccsd = Tab_ccsd * (4.0 * Tab_ccsd - 2.0 * Tab_ccsd.transpose()).transpose()
+                                   + Tab_ccsd.transpose() * (4.0 * Tab_ccsd - 2.0 * Tab_ccsd.transpose());
+        // when i=j, Dab = Tab*Tab' + Tab'*Tab
+        if (orb_i == orb_j)
+          Dab_ccsd = Dab_ccsd/2.0;
+
+        // compute eigenvalues ans eigenvectors of Dab
+        Eigen::SelfAdjointEigenSolver<TA::EigenMatrixXd> es_ccsd(Dab_ccsd);
+        TA::EigenVectorXd S_es_ccsd = es_ccsd.eigenvalues();
+        TA::EigenMatrixXd C_es_ccsd = es_ccsd.eigenvectors();
+
+        // truncate eigenvectors with corresponding eigenvalues smaller than threshold
+        int pos_trunc = a - 1;
+        for(; pos_trunc >= 0; --pos_trunc) {
+          if(std::abs(S_es_mp2(pos_trunc)) < threshold)
+            break;
+        }
+
+        rank = a - pos_trunc - 1;
+        // use different C and Tab to construct output tile
+        if (rank > 0) {
+          auto tab_pno = TA::eigen_map(tile_mp2, a, b);
+          tab_pno.noalias() = C_es_mp2.rightCols(rank) * C_es_ccsd.rightCols(rank).transpose()
+                            * Tab_ccsd
+                            * C_es_ccsd.rightCols(rank) * C_es_mp2.rightCols(rank).transpose();
+        } else {
+            std::fill(tile_mp2.begin(), tile_mp2.end(), 0.0);
+        }
+
+        std::stringstream ss;
+//        // test: print out all the data
+//        if (orb_i == 2 && orb_j == 4) {
+//          ss << "input tile: " << tab_mp2 << std::endl;
+//          ss << "Tab_mp2: " << std::endl << Tab_mp2 << std::endl;
+//          ss << "Dab_mp2: " << std::endl << Dab_mp2 << std::endl;
+//          ss << "S_es_mp2 (trunc): " << std::endl << S_es_mp2.tail(rank) << std::endl;
+//          ss << "C_es_mp2 (trunc): " << std::endl << C_es_mp2.rightCols(rank) << std::endl;
+//
+//          ss << "Tab_ccsd: " << std::endl << Tab_ccsd << std::endl;
+//          ss << "Dab_ccsd: " << std::endl << Dab_ccsd << std::endl;
+//          ss << "S_es_ccsd (trunc): " << std::endl << S_es_ccsd.tail(rank) << std::endl;
+//          ss << "C_es_ccsd (trunc): " << std::endl << C_es_ccsd.rightCols(rank) << std::endl;
+//
+//          ss << "output tile: " << tile_mp2 << std::endl;
+//        }
+
+        // compute the norm of difference between input and output tile
+        ss << "("<< orb_i << "," << orb_j << ") pair  rank: " << rank
+           << "  (t_new - t_old).norm(): " << (TA::subt(tile_mp2, tab_mp2)).norm()
+           << std::endl;
+
+        std::printf("%s", ss.str().c_str());
+
+        return tile_mp2.norm();
+      };
+
+      if (use_diff_t2) {
+        ExEnv::out0() << std::endl << "Using MP2 and CCSD T2 amplitudes for PNO decomposition" << std::endl;
+        TA::foreach_inplace(t2_mp2, t2_ccsd, decom_2);
+      } else {
+        ExEnv::out0() << std::endl << "Using MP2 T2 amplitudes for PNO decomposition" << std::endl;
+        TA::foreach_inplace(t2_mp2, decom_1);
+      }
     }
 
     template<typename Tile, typename Policy>
@@ -649,41 +747,56 @@ namespace mpqc {
 
       // compute MP2 T2 amplitudes
       ExEnv::out0() << std::endl << "Computing MP2 amplitudes" << std::endl;
-      compute_mp2_t2();
+      TA::DistArray<Tile, Policy> t2_mp2 = compute_mp2_t2();
       //ExEnv::out0() << "MP2 amplitudes: " << t2_mp2_ << std::endl;
       // copy MP2 amplitudes for test purpose
-      TA::DistArray<Tile, Policy> t2_mp2_orig = t2_mp2_.clone();
+      TA::DistArray<Tile, Policy> t2_mp2_orig = t2_mp2.clone();
 
-      // reblock MP2 T2 amplitudes
-      // in each block: n_i=n_j=1, n_a=n_b=nvir
-      ExEnv::out0() << std::endl << "Reblocking MP2 amplitudes" << std::endl;
+      // reblock T2 amplitudes (in each block: n_i=n_j=1, n_a=n_b=nvir)
+      ExEnv::out0() << std::endl << "Reblocking T2 amplitudes" << std::endl;
       // compute converting matrices
       TA::DistArray<Tile, Policy> occ_convert, vir_convert;
       compute_M_reblock(occ_convert, vir_convert);
       // obtain MP2 T2 with new blocking structure
-      t2_mp2_("a,b,i,j") = t2_mp2_("c,d,k,l")
-                         * vir_convert("c,a") * vir_convert("d,b")
-                         * occ_convert("k,i") * occ_convert("l,j");
+      t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
+                        * vir_convert("c,a") * vir_convert("d,b")
+                        * occ_convert("k,i") * occ_convert("l,j");
       //ExEnv::out0() << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
 
-      // decompose MP2 T2 amplitudes
+      bool use_diff_t2 = false;
+      // compute CCSD T2 amplitudes
+      TA::DistArray<Tile, Policy> t1_ccsd, t2_ccsd;
+      if (use_diff_t2) {
+        t2_ccsd = t2_mp2_orig.clone();
+        double ccsd_energy = compute_ccsdpno_df(t1_ccsd, t2_ccsd);
+
+        // obtain CCSD T2 with new blocking structure
+        t2_ccsd("a,b,i,j") = t2_ccsd("c,d,k,l")
+                           * vir_convert("c,a") * vir_convert("d,b")
+                           * occ_convert("k,i") * occ_convert("l,j");
+      }
+
+      // decompose T2 amplitudes
       // using either eigen or SVD decomposition
-      ExEnv::out0() << "Decomposing MP2 amplitudes" << std::endl;
-      decom_t2_mp2();
+      ExEnv::out0() << "Decomposing T2 amplitudes" << std::endl;
+//      // test
+//      TA::DistArray<Tile, Policy> t2_mp2_orig_blk = t2_mp2.clone();
+//      decom_t2(t2_mp2, t2_mp2_orig_blk, use_diff_t2);
+      decom_t2(t2_mp2, t2_ccsd, use_diff_t2);
 
       // transform MP2 T2 amplitudes back into its original blocking structure
-      t2_mp2_("a,b,i,j") = t2_mp2_("c,d,k,l")
+      t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
                          * vir_convert("a,c") * vir_convert("b,d")
                          * occ_convert("i,k") * occ_convert("j,l");
 
       // compute the difference between original and decomposed MP2 T2
       ExEnv::out0() << std::endl << "Test: t2 - t2 (decomposed): "
-                                 << (t2_mp2_orig("a,b,i,j") - t2_mp2_("a,b,i,j")).norm().get()
+                                 << (t2_mp2_orig("a,b,i,j") - t2_mp2("a,b,i,j")).norm().get()
                                  << std::endl << std::endl;
 
       // compute CCSD with decomposed MP2 T2 as initial guess
       TA::DistArray<Tile, Policy> t1, t2;
-      t2 = t2_mp2_.clone();
+      t2 = t2_mp2.clone();
       double ccsd_energy = compute_ccsdpno_df(t1,t2);
 
       double energy = ref_energy + ccsd_energy;

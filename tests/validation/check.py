@@ -44,8 +44,7 @@ def parse_json(file_name):
             if match:
                 json_lines += line
             if not match:
-                # line = line.decode('utf-8')
-                match = line.find("Output KeyVal (format=JSON):") != -1
+                match = re.match('^\s*Output KeyVal \(format=JSON\):',line)
 
     result = json.loads(json_lines)
     return result

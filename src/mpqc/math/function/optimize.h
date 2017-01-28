@@ -10,6 +10,7 @@
 
 #include "mpqc/math/function/function.h"
 #include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/external/c++/iterator"
 
 namespace mpqc {
 namespace math {
@@ -91,7 +92,7 @@ class QuasiNewtonOptimizer : public Optimizer<Real, Params> {
   void compute() {
     bool converged = false;
 
-    using TA::detail::size;
+    using std::size;
     const auto nparams = size(*(this->function()->params()));
 
     guess_hessian_->set_params(this->function()->params());

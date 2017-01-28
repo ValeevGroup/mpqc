@@ -105,9 +105,9 @@ class WavefunctionProperty
                   (kv.class_ptr<MolecularCoordinates>("coord")
                        ? kv.class_ptr<MolecularCoordinates>("coord")
                        : std::make_shared<CartMolecularCoordinates>(
-                             kv.class_ptr<lcao::Wavefunction>("wfn")->atoms())),
+                             kv.class_ptr<Wavefunction>("wfn")->atoms())),
                   default_precision) {
-    wfn_ = kv.class_ptr<lcao::Wavefunction>("wfn");
+    wfn_ = kv.class_ptr<Wavefunction>("wfn");
     if (wfn_ == nullptr)
       throw InputError(
           "WavefunctionProperty did not receive a Wavefunction object",

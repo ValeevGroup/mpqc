@@ -10,6 +10,7 @@
 
 #include "mpqc/math/function/taylor.h"
 #include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/external/c++/iterator"
 
 namespace mpqc {
 namespace math {
@@ -102,7 +103,7 @@ class FiniteDifferenceDerivative
     auto function_ref_params = clone(function()->params());
 
     auto ref_params = this->params();
-    using TA::detail::size;
+    using std::size;
     const auto nparams = size(*ref_params);
 
     /////////////////////////

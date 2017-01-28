@@ -10,7 +10,7 @@
 #include "mpqc_task.h"
 #include "mpqc/util/misc/exenv.h"
 
-#include "mpqc/chemistry/qc/scf/linkage.h"
+#include "mpqc/chemistry/qc/lcao/scf/linkage.h"
 
 madness::World* world_ptr = nullptr;
 

@@ -13,7 +13,7 @@
 #include <madness/world/world.h>
 
 #include "mpqc/util/keyval/keyval.h"
-#include "mpqc/chemistry/qc/wfn/wfn.h"
+#include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/qc/properties/property.h"
 
 namespace mpqc {

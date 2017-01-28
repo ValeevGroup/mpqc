@@ -9,6 +9,7 @@
 #define SRC_MPQC_MATH_FUNCTION_TAYLOR_H_
 
 #include "mpqc/math/function/function.h"
+#include "mpqc/util/misc/exception.h"
 
 namespace mpqc {
 namespace math {

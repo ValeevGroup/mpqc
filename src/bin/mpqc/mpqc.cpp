@@ -12,7 +12,7 @@
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 
-#include "mpqc/chemistry/qc/wfn/wfn.h"
+#include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/assert.h"
@@ -22,11 +22,11 @@
 
 // linkage files to force linking in of ALL Wavefunction-based classes
 // this list must be in sync with CMakeLists.txt
-#include "mpqc/chemistry/qc/cc/linkage.h"
-#include "mpqc/chemistry/qc/f12/linkage.h"
-#include "mpqc/chemistry/qc/mbpt/linkage.h"
+#include "mpqc/chemistry/qc/lcao/cc/linkage.h"
+#include "mpqc/chemistry/qc/lcao/f12/linkage.h"
+#include "mpqc/chemistry/qc/lcao/mbpt/linkage.h"
 #include "mpqc/chemistry/qc/properties/linkage.h"
-#include "mpqc/chemistry/qc/scf/linkage.h"
+#include "mpqc/chemistry/qc/lcao/scf/linkage.h"
 #include "mpqc/mpqc_init.h"
 
 namespace mpqc {

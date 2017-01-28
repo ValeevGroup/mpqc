@@ -5,7 +5,7 @@
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include <madness/world/world.h>
 #include "catch.hpp"
-#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/molecule/linkage.h"
 
 using std::vector;

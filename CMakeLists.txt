@@ -202,11 +202,16 @@ CHECK_FUNCTION_EXISTS (setrlimit         HAVE_SETRLIMIT)
 # Dependencies
 ###############################################################################
 
+if (NOT TARGET MADchem)
+  FIND_PACKAGE(MADNESS CONFIG REQUIRED COMPONENTS chem)
+endif()
+
 # search for TA first, other packages can be found with it
 FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
 include(ValidateTiledArray)
 validate_tiledarray()
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
+
 
 FIND_PACKAGE(TBB REQUIRED)
 FIND_PACKAGE(Boost REQUIRED COMPONENTS serialization)

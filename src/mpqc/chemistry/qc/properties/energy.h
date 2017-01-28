@@ -6,6 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
 
 #include "mpqc/chemistry/qc/properties/property.h"
+#include "mpqc/math/function/optimize.h"
 
 namespace mpqc {
 
@@ -59,6 +60,17 @@ public:
 
 private:
   void do_evaluate() override;
+};
+
+/// StationaryPoint finds stationary points on molecular PES.
+class StationaryPoint : public Property {
+ public:
+  explicit StationaryPoint(const KeyVal& kv);
+ private:
+  std::shared_ptr<Energy> energy_;
+  std::shared_ptr<math::QuasiNewtonOptimizer<double,MolecularCoordinates>> optimizer_;
+
+  void evaluate() override;
 };
 
 } // namespace mpqc

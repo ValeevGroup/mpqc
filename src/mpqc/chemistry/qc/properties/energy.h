@@ -62,6 +62,7 @@ private:
   void do_evaluate() override;
 };
 
+#if 0
 /// StationaryPoint finds stationary points on molecular PES.
 class StationaryPoint : public Property {
  public:
@@ -72,6 +73,7 @@ class StationaryPoint : public Property {
 
   void evaluate() override;
 };
+#endif
 
 } // namespace mpqc
 

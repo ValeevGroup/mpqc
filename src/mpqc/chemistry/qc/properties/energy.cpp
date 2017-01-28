@@ -20,8 +20,10 @@ void Energy::do_evaluate() {
   evaluator->evaluate(this);
 }
 
+#if 0
 void StationaryPoint::evaluate() {
   optimizer_->value();
 }
+#endif
 
 }

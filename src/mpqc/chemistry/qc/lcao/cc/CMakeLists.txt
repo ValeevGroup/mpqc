@@ -5,7 +5,6 @@ set(sources
         ccsd_t.cpp
         dbccsd.h
         dbccsd.cpp
-        diis_ccsd.h
         linkage.h
         )
 

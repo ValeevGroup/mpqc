@@ -8,7 +8,7 @@ set(mpqc_headers
 )
 
 add_mpqc_library(mpqc mpqc_sources mpqc_headers
-                 "MPQCutil_keyval;MPQCutil_mad;MPQCutil_options;MPQCwfn" "mpqc")
+                 "MPQCutil_keyval;MPQCutil_mad;MPQCutil_options;MPQCproperties" "mpqc")
 
 set (main_source mpqc.cpp)
 add_mpqc_library(main  main_source ""

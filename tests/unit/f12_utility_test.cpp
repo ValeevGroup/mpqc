@@ -3,7 +3,7 @@
 //
 
 #include "catch.hpp"
-#include "mpqc/chemistry/qc/integrals/f12_utility.h"
+#include "mpqc/chemistry/qc/lcao/integrals/f12_utility.h"
 
 using namespace mpqc::lcao;
 

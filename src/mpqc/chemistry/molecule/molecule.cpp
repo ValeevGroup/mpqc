@@ -164,6 +164,7 @@ void Molecule::init(std::istream &file, Vector3d const &point) {
   com_ = molecule::center_of_mass(elements_);
   mass_ = molecule::sum_mass(elements_);
   total_charge_ = molecule::sum_charge(elements_);
+  natoms_ = molecule::sum_natoms(elements_);
 
   sort_elements(elements_, point);
 }
@@ -174,6 +175,10 @@ void Molecule::sort_from_point(Vector3d const &point) {
 
 std::vector<Atom> Molecule::atoms() const {
   return collapse_to_atoms(elements_);
+}
+
+size_t Molecule::natoms() const {
+  return natoms_;
 }
 
 double Molecule::nuclear_repulsion() const {
@@ -208,6 +213,15 @@ int64_t Molecule::core_electrons() const {
     }
   }
   return n;
+}
+
+void Molecule::update(const std::vector<Atom> &atoms) {
+  size_t pos = 0;  // points to next atoms to be added
+  for (auto &element : elements_) {
+    ::mpqc::update(element, atoms, pos);
+  }
+  com_ = molecule::center_of_mass(elements_);
+  Observable::message();
 }
 
 std::ostream &operator<<(std::ostream &os, Molecule const &mol) {

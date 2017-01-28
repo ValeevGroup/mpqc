@@ -1,43 +1,23 @@
 /*
  * wfn.h
  *
- *  Created on: Apr 27, 2016
- *      Author: Drew Lewis
+ *  Created on: Jan 28, 2017
+ *      Author: evaleev
  */
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_
+#ifndef SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_
+#define SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_
 
-#include "mpqc/chemistry/molecule/energy.h"
-#include "mpqc/chemistry/qc/wfn/wfn_world.h"
-#include "mpqc/chemistry/qc/properties/propertybase.h"
-
-#include <memory>
-#include <functional>
+#include "mpqc/chemistry/molecule/molecule.h"
+#include "mpqc/util/misc/exenv.h"
+#include "mpqc/util/keyval/keyval.h"
 
 namespace mpqc {
-namespace lcao {
 
-class PropertyBase;
-
-/// Wavefunction computes a wave function (or a wave function-like quantity, like
-/// Green's function or reduced density matrix) in a Gaussian basis.
-
-/// \todo elaborate Wavefunction documentation
-class Wavefunction : public Energy {
- private:
-  /** Pointer to the WfnWorld
-   *
-   * \note No need to make this shared Wfn is just a member of the world it
-   *lives in so no ownership here.
-   *
-   * \warning Wfn should never delete or allocate this pointer.
-   *
-   * \note by chong I changed this to shared pointer, for example, MP2 and HF
-   *          will share the same wfn_world
-   */
-  std::shared_ptr<WavefunctionWorld> wfn_world_;
-
+/// Wavefunction = opaque function of atoms, only has 2 states: computed and not
+/// computed.
+/// TODO It needs some sort of precision tracking to facilitate reuse.
+class Wavefunction : virtual public DescribedClass, public utility::Observer {
  public:
   /**
    *  \brief The KeyVal constructor
@@ -45,26 +25,35 @@ class Wavefunction : public Energy {
    * The KeyVal object will be queried for the following keywords:
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | \c "wfn_world" OR \c "..:wfn_world" OR \c "$:wfn_world" |
-   * WavefunctionWorld | none | This specifies the WavefunctionWorld object in
-   * which this object will live initially. If not found, the contents of this
-   * KeyVal object will be used to construct WavefunctionWorld object |
+   * | atoms | Molecule or UnitCell | none | the collection of Atoms |
+   *
+   * For compatibility, if keyword \c atoms not found keyword \c molecule will
+   * be queried.
    *
    */
   Wavefunction(const KeyVal& kv);
   virtual ~Wavefunction();
 
-  virtual void compute(PropertyBase* pb) = 0;
-  virtual double value() = 0;
-  virtual void obsolete() {
-    Energy::obsolete();
-  };
+  virtual void obsolete() { computed_ = false; }
+  bool computed() const { return computed_; }
 
-  const std::shared_ptr<WavefunctionWorld>&
-  wfn_world() const { return wfn_world_; }
-};
+  std::shared_ptr<Molecule> atoms() { return atoms_; }
+  std::shared_ptr<const Molecule> atoms() const { return atoms_; }
 
-}  // namespace lcao
+  virtual void print(std::ostream& os = ExEnv::out0()) const {
+    os << indent << "Wavefunction (type = " << this->class_key() << "):\n" << incindent;
+    os << *atoms_;
+    os << decindent;
+    os << std::endl;
+  }
+
+ protected:
+  bool computed_ = false;
+
+ private:
+  std::shared_ptr<Molecule> atoms_;
+};  // class Wavefunction
+
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_
+#endif /* SRC_MPQC_CHEMISTRY_QC_WFN_WFN_H_ */

@@ -3,8 +3,8 @@
 //
 
 #include "catch.hpp"
-#include "mpqc/chemistry/qc/expression/formula.h"
-#include "mpqc/chemistry/qc/expression/permutation.h"
+#include "mpqc/chemistry/qc/lcao/expression/formula.h"
+#include "mpqc/chemistry/qc/lcao/expression/permutation.h"
 
 using namespace mpqc;
 

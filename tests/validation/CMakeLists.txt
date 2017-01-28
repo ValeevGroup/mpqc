@@ -6,11 +6,11 @@ if (${PYTHONINTERP_FOUND})
 
   # Find all the input files under ${REF_INPUT_PATH}
   file(GLOB inFiles RELATIVE "${REF_INPUT_PATH}"
-      "${REF_INPUT_PATH}/*.json")
+      "${REF_INPUT_PATH}/*.json" "${REF_INPUT_PATH}/*.xml" "${REF_INPUT_PATH}/*.info")
 
   foreach(infileName ${inFiles})
 
-    string(REGEX REPLACE ".json\$" "" baseName "${infileName}")
+    string(REGEX REPLACE ".(json|xml|info)\$" "" baseName "${infileName}")
                          
     add_test(NAME validation/${baseName}
              COMMAND ${CMAKE_COMMAND}

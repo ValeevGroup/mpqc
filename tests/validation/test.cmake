@@ -33,6 +33,13 @@ execute_process(COMMAND
                 ${CHECK_CMD} ${CHECK_ARGS}
                 RESULT_VARIABLE CHECK_RESULT)
 if(CHECK_RESULT)
+    message(STATUS "\nOUTPUT of " ${testName})
+    execute_process(COMMAND
+            cat
+            ${OUTPUT_FILE_NAME}
+            RESULT_VARIABLE
+            CAT_RESULT
+            )
     message(FATAL_ERROR "Error running ${CHECK_CMD}")
 endif(CHECK_RESULT)
 

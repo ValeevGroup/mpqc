@@ -33,4 +33,4 @@ cmake .. \
     -DMPQC_VALIDATION_TEST_PRINT=true
 
 make -j1 mpqc
-make -j1 check
+setarch `uname -m` -R make -j1 check

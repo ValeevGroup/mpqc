@@ -26,7 +26,7 @@ if (1)
                   RESULT_VARIABLE MPQC_RESULT)
 
   if(MPQC_RESULT)
-    if(MPQC_VALIDATION_TEST_PRINT)
+    if(printOutput)
       message(STATUS "\nOUTPUT of " ${testName})
       execute_process(COMMAND
               cat
@@ -43,7 +43,7 @@ execute_process(COMMAND
                 ${CHECK_CMD} ${CHECK_ARGS}
                 RESULT_VARIABLE CHECK_RESULT)
 if(CHECK_RESULT)
-    if(MPQC_VALIDATION_TEST_PRINT)
+    if(printOutput)
       message(STATUS "\nOUTPUT of " ${testName})
       execute_process(COMMAND
               cat

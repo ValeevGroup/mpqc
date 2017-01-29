@@ -15,6 +15,7 @@ if (${PYTHONINTERP_FOUND})
     add_test(NAME validation/${baseName}-np1
             COMMAND ${CMAKE_COMMAND}
             -DtestName=${baseName}
+            -DprintOutput=${MPQC_VALIDATION_TEST_PRINT}
             -DsrcDir=${CMAKE_CURRENT_SOURCE_DIR}
             -DpythonExec=${PYTHON_EXECUTABLE}
             -DmpiExec=${MPIEXEC}
@@ -29,6 +30,7 @@ if (${PYTHONINTERP_FOUND})
     add_test(NAME validation/${baseName}-np2
              COMMAND ${CMAKE_COMMAND}
               -DtestName=${baseName}
+              -DprintOutput=${MPQC_VALIDATION_TEST_PRINT}
               -DsrcDir=${CMAKE_CURRENT_SOURCE_DIR}
               -DpythonExec=${PYTHON_EXECUTABLE}
               -DmpiExec=${MPIEXEC}

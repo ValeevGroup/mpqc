@@ -38,7 +38,6 @@ cmake ta_src \
       -DCMAKE_C_COMPILER=$CC \
       -DMPI_CXX_COMPILER=$MPICXX \
       -DMPI_C_COMPILER=$MPICC \
-      -DBUILD_SHARED_LIBS=OFF \
       -DCMAKE_BUILD_TYPE=Debug
 
 # Build all libraries, examples, and applications

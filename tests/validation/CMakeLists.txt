@@ -11,8 +11,22 @@ if (${PYTHONINTERP_FOUND})
   foreach(infileName ${inFiles})
 
     string(REGEX REPLACE ".(json|xml|info)\$" "" baseName "${infileName}")
-                         
-    add_test(NAME validation/${baseName}
+
+    add_test(NAME validation/${baseName}-np1
+            COMMAND ${CMAKE_COMMAND}
+            -DtestName=${baseName}
+            -DsrcDir=${CMAKE_CURRENT_SOURCE_DIR}
+            -DpythonExec=${PYTHON_EXECUTABLE}
+            -DmpiExec=${MPIEXEC}
+            -DmpiNPFlags=${MPIEXEC_NUMPROC_FLAG}
+            -DmpiNProc=1
+            -DmpiPre=${MPIEXEC_PREFLAGS}
+            -DmpiPost=${MPIEXEC_POSTFLAGS}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
+    set_tests_properties(validation/${baseName}-np1
+            PROPERTIES DEPENDS ../../src/bin/mpqc/mpqc)
+
+    add_test(NAME validation/${baseName}-np2
              COMMAND ${CMAKE_COMMAND}
               -DtestName=${baseName}
               -DsrcDir=${CMAKE_CURRENT_SOURCE_DIR}
@@ -23,7 +37,7 @@ if (${PYTHONINTERP_FOUND})
               -DmpiPre=${MPIEXEC_PREFLAGS}
               -DmpiPost=${MPIEXEC_POSTFLAGS}
               -P ${CMAKE_CURRENT_SOURCE_DIR}/test.cmake)
-    set_tests_properties(validation/${baseName}
+    set_tests_properties(validation/${baseName}-np2
                          PROPERTIES DEPENDS ../../src/bin/mpqc/mpqc)
     
   endforeach(infileName)

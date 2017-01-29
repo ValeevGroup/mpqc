@@ -9,7 +9,8 @@ set(CHECK_ARGS "${srcDir}/check.py"
 "${srcDir}/reference/outputs/${testName}.out")
 
 set(ENV{MAD_NUM_THREADS} 2)
-if (NOT EXISTS "${OUTPUT_FILE_NAME}")
+#if (NOT EXISTS "${OUTPUT_FILE_NAME}")
+if (1)
 
   set(MPQC_CMD "${CMAKE_BINARY_DIR}/../../src/bin/mpqc/mpqc")
   set(MPQC_ARGS "-p" "${srcDir}/reference/inputs"
@@ -25,13 +26,15 @@ if (NOT EXISTS "${OUTPUT_FILE_NAME}")
                   RESULT_VARIABLE MPQC_RESULT)
 
   if(MPQC_RESULT)
-    message(STATUS "\nOUTPUT of " ${testName})
-    execute_process(COMMAND
-            cat
-            ${OUTPUT_FILE_NAME}
-            RESULT_VARIABLE
-            CAT_RESULT
-            )
+    if(MPQC_VALIDATION_TEST_PRINT)
+      message(STATUS "\nOUTPUT of " ${testName})
+      execute_process(COMMAND
+              cat
+              ${OUTPUT_FILE_NAME}
+              RESULT_VARIABLE
+              CAT_RESULT
+              )
+    endif()
     message(FATAL_ERROR "Error running ${MPQC_CMD}")
   endif()
 endif()
@@ -40,13 +43,16 @@ execute_process(COMMAND
                 ${CHECK_CMD} ${CHECK_ARGS}
                 RESULT_VARIABLE CHECK_RESULT)
 if(CHECK_RESULT)
-    message(STATUS "\nOUTPUT of " ${testName})
-    execute_process(COMMAND
-            cat
-            ${OUTPUT_FILE_NAME}
-            RESULT_VARIABLE
-            CAT_RESULT
-            )
+    if(MPQC_VALIDATION_TEST_PRINT)
+      message(STATUS "\nOUTPUT of " ${testName})
+      execute_process(COMMAND
+              cat
+              ${OUTPUT_FILE_NAME}
+              RESULT_VARIABLE
+              CAT_RESULT
+              )
+    endif()
+
     message(FATAL_ERROR "Error running ${CHECK_CMD}")
 endif(CHECK_RESULT)
 

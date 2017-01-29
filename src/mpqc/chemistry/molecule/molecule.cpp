@@ -6,6 +6,7 @@
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/misc/assert.h"
+#include "mpqc/util/misc/exenv.h"
 #include "mpqc/chemistry/units/units.h"
 
 #include <libint2/atom.h>
@@ -103,6 +104,10 @@ Molecule::Molecule(const KeyVal &kv) {
     com_ = std::move(clustered_mol.com_);
     mass_ = std::move(clustered_mol.mass_);
     total_charge_ = std::move(clustered_mol.total_charge_);
+  }
+  else{
+    mpqc::ExEnv::out0() << "\n\n Warning! \"n_cluster\" is not set in Molecule input! "
+                      << "This might affect parallel performance! \n\n";
   }
 
   // attention, has to get charge at the end

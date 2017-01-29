@@ -30,7 +30,8 @@ cmake .. \
     -DCMAKE_BUILD_TYPE=DEBUG \
     -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument" \
     -DLIBINT2_INSTALL_DIR="$INSTALL_DIR/libint" \
-    -DMPQC_VALIDATION_TEST_PRINT=true
+    -DMPQC_VALIDATION_TEST_PRINT=true \
+    -DBUILD_SHARED_LIBS=OFF
 
 make -j1 mpqc
 make -j1 check

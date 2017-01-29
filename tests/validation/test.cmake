@@ -25,6 +25,13 @@ if (NOT EXISTS "${OUTPUT_FILE_NAME}")
                   RESULT_VARIABLE MPQC_RESULT)
 
   if(MPQC_RESULT)
+    message(STATUS "\nOUTPUT of " ${testName})
+    execute_process(COMMAND
+            cat
+            ${OUTPUT_FILE_NAME}
+            RESULT_VARIABLE
+            CAT_RESULT
+            )
     message(FATAL_ERROR "Error running ${MPQC_CMD}")
   endif()
 endif()

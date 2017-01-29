@@ -17,8 +17,9 @@ fi
 echo $($CC --version)
 echo $($CXX --version)
 
-export MPICC=$HOME/ValeevGroup/_install/mpich/bin/mpicc
-export MPICXX=$HOME/ValeevGroup/_install/mpich/bin/mpicxx
+export MPI_HOME=$HOME/ValeevGroup/_install/mpich
+export MPICC=$MPI_HOME/bin/mpicc
+export MPICXX=$MPI_HOME/bin/mpicxx
 export LD_LIBRARY_PATH=/usr/lib/lapack:/usr/lib/libblas:$LD_LIBRARY_PATH
 
 # Configure TiledArray

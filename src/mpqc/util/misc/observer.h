@@ -17,7 +17,7 @@ namespace utility {
 ///       is managed automatically as long as the observers derive from the
 ///       Observer class.
 /// @sa Observer
-class Observable {
+class Observable : public std::enable_shared_from_this<Observable> {
  public:
   typedef std::map<void *, std::function<void()>> messages_type;
 
@@ -28,8 +28,9 @@ class Observable {
                                                 std::function<void()> message) {
     void *observer_void_ptr = static_cast<void *>(observer);
     messages_.insert(std::make_pair(static_cast<void *>(observer), message));
-    std::shared_ptr<void *> result(new void *, [this](void **ptr) {
-      messages_.erase(*ptr);
+    auto ptr_to_this = this->shared_from_this();  // TODO move-capture ptr_to_this in C++14
+    std::shared_ptr<void *> result(new void *, [ptr_to_this](void **ptr) {
+      ptr_to_this->messages_.erase(*ptr);
       delete ptr;
     });
     *result = observer_void_ptr;
@@ -78,9 +79,9 @@ class Observer {
   virtual ~Observer() = default;
 
  protected:
-  /// registers a message with a Messenger object, will be called whenever
-  /// MessengerBase::update()
-  /// is called on \c messenger
+  /// registers a message with an Observee object, will be called whenever
+  /// Observee::update()
+  /// is called on \c observee
   /// @tparam Observee a class derived from Observable
   template <typename Observee>
   void register_message(Observee *observee, std::function<void()> message) {

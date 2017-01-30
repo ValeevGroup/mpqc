@@ -38,4 +38,4 @@ after_failure:
 - cat ./_build/mpqc4/CMakeFiles/CMakeError.log
 notifications:
   slack:
-    secure: j8B34Y+L3mCx8Ecgs9b2ZeJjntbrctdGeCkl0MdKimWAiAC4/Lq/uFmqDE4RlxtBo9zxFj0Z3gu62wd9NRLBh8LplLd8PwQ5PHfeNK1o3Kxd/SvM9Ze9LmBjIGyAKTRLaEcTUeuvLAgdCI91WgjYMXuQj7WsxBsO7OxlfiuP8/k=
+    secure: aTBPnV/QUvD5zjB82Gz8MwqtjDcxMuAtGY3m2KM4kD54kxZxPXGC7sHb9e/EOHm0qoudTR8aielY99y9mPH3v/5qXvyQKU3md+aE9i+XB2ewm5WXDUXmr8wS63W+9EflXfFeC1JxantyYkZ9n4itCZP7WlY9x7rMfs/+1P5A0Ew=

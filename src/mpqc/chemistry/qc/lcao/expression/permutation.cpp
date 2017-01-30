@@ -107,7 +107,7 @@ std::vector<Formula> permutations(const Formula& formula) {
     if (formula.notation() == Formula::Notation::Chemical) {
       auto permutations1 = detail::permutations_chemical(formula);
 
-      result.insert(result.cend(), permutations1.begin(), permutations1.end());
+      result.insert(result.end(), permutations1.begin(), permutations1.end());
 
       if (formula.bra_indices() != formula.ket_indices()) {
         Formula swap_bra_ket_formula = formula;
@@ -115,7 +115,7 @@ std::vector<Formula> permutations(const Formula& formula) {
         result.push_back(swap_bra_ket_formula);
         auto permutations2 =
             detail::permutations_chemical(swap_bra_ket_formula);
-        result.insert(result.cend(), permutations2.begin(),
+        result.insert(result.end(), permutations2.begin(),
                       permutations2.end());
       }
 
@@ -124,7 +124,7 @@ std::vector<Formula> permutations(const Formula& formula) {
     else if (formula.notation() == Formula::Notation::Physical) {
       auto permutations1 = detail::permutations_physical(formula);
 
-      result.insert(result.cend(), permutations1.begin(), permutations1.end());
+      result.insert(result.end(), permutations1.begin(), permutations1.end());
 
       if ((formula.bra_indices()[0] != formula.bra_indices()[1]) ||
           (formula.ket_indices()[0] != formula.ket_indices()[1])) {
@@ -134,7 +134,7 @@ std::vector<Formula> permutations(const Formula& formula) {
         result.push_back(swap_bra_ket_formula);
         auto permutations2 =
             detail::permutations_physical(swap_bra_ket_formula);
-        result.insert(result.cend(), permutations2.begin(),
+        result.insert(result.end(), permutations2.begin(),
                       permutations2.end());
       }
 

@@ -170,8 +170,9 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_three_center(
     // p_screen = std::make_shared<Screener>(
     //     screen_builder(world_, engine, basis1, basis2));
     p_screen = std::make_shared<gaussian::SchwarzScreen>(
-        gaussian::create_scwharz_screener(
-            world_, engine, BasisVector{{basis1, basis2, basis2}}));
+        gaussian::create_scwharz_screener(world_, engine,
+                                          BasisVector{{basis1, basis2, basis2}},
+                                          screen_threshold_));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
   }
@@ -194,8 +195,8 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_four_center(
     // p_screen =
     //     std::make_shared<Screener>(screen_builder(world_, engine, basis));
     p_screen = std::make_shared<gaussian::SchwarzScreen>(
-        gaussian::create_scwharz_screener(world_, engine,
-                                          BasisVector(4, basis)));
+        gaussian::create_scwharz_screener(world_, engine, BasisVector(4, basis),
+                                          screen_threshold_));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
   }

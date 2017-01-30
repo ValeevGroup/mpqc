@@ -70,6 +70,7 @@ std::ostream& operator<<(std::ostream &os, Basis::Factory const &f) {
   os << indent << "Basis::Factory:\n" << incindent;
   os << indent << "name = " << f.name() << std::endl;
   os << decindent;
+  return os;
 }
 
 ////////////////////
@@ -311,6 +312,7 @@ std::ostream& operator<<(std::ostream &os, AtomicBasis const &b) {
   os << *b.molecule();
   os << static_cast<const Basis&>(b);
   os << decindent;
+  return os;
 }
 
 }  // namespace gaussian

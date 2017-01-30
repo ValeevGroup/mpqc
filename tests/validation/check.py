@@ -12,8 +12,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import sys, re, math
 import json
 
-reload(sys)
-sys.setdefaultencoding("utf-8")
+# reload(sys)
+# sys.setdefaultencoding("utf-8")
 
 def validate(label, data, refdata, tolerance):
     if not isinstance(data,list):
@@ -71,6 +71,5 @@ ref_file_name = sys.argv[2]
 ref_energy = total_energy(ref_file_name)
 
 eok = validate("total energy", energy, ref_energy, 1e-10)
-
 ok = eok
 if not ok: sys.exit(1)

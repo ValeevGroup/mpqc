@@ -734,9 +734,11 @@ class KeyVal {
         dc_registry_(),
         path_("") {}
 
-  /// given a path that contains ".." elements, returns the equivalent path
-  /// without such elements
-  /// @example realpath("tmp:..:x") returns "x"
+  /// given a path that contains \c ".." elements, returns the equivalent path
+  /// without such elements. For example: \c realpath("tmp:..:x") returns \c "x"
+  /// @param path the path optionally including \c ".."
+  /// @return the path with the \c ".." elements resolved
+  /// @note this does not resolve references or convert to absolute path
   /// @throw KeyVal::bad_input if path is invalid; an example is ".." .
   static key_type realpath(const key_type& path) {
     key_type result = path;

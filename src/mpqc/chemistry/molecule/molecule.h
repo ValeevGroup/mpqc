@@ -26,7 +26,7 @@ namespace mpqc {
  * to atoms.  Its main job is allow for clustering of its clusterables.
  *
  */
-class Molecule : virtual public DescribedClass, public utility::Observable {
+class Molecule : virtual public DescribedClass, public utility::Observable<Molecule> {
  private:
   std::vector<AtomBasedClusterable> elements_;
 

@@ -13,11 +13,14 @@ namespace utility {
 /// recipients.
 /// Recipients register callbacks by calling Observable::register_message .
 /// @note Observable holds weak (non-owning) pointers to the observers. Message
-/// lifetime
-///       is managed automatically as long as the observers derive from the
-///       Observer class.
+/// lifetime is managed automatically as long as the observers derive from the
+/// Observer class. Observer will hold std::shared_ptr to this, hence the need for
+/// the std::enable_shared_from_this base.
 /// @sa Observer
-class Observable : public std::enable_shared_from_this<Observable> {
+/// @tparam Derived the derived class for which std::shared_ptr exists (as required
+///                 for std::enable_shared_from_this to be usable)
+template <typename Derived>
+class Observable : public std::enable_shared_from_this<Derived> {
  public:
   typedef std::map<void *, std::function<void()>> messages_type;
 

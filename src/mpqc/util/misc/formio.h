@@ -95,7 +95,9 @@ template <typename Char>
 std::basic_ostream<Char>& operator<<(std::basic_ostream<Char>&, const mpqcprintf<Char>&);
 
 /** This class allows <tt>printf</tt>-like output to be sent
-    to an <tt>ostream</tt>. */
+    to an <tt>ostream</tt>.
+    \attention a 1024-long buffer of Char is used, will throw if run out of space.
+  */
 template <typename Char = char>
 class mpqcprintf {
   private:

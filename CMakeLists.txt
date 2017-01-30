@@ -202,6 +202,9 @@ CHECK_FUNCTION_EXISTS (setrlimit         HAVE_SETRLIMIT)
 # Dependencies
 ###############################################################################
 
+if(TiledArray_INSTALL_DIR)
+  set(TiledArray_DIR ${TiledArray_INSTALL_DIR}/lib/cmake/tiledarray)
+endif()
 # search for TA first, other packages can be found with it
 FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
 include(ValidateTiledArray)

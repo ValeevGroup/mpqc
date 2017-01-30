@@ -199,7 +199,8 @@ class UnitFactory {
   ///    - "2010CODATA" : the 2010 revision of the fundamental constants (see DOI 10.1103/RevModPhys.84.1527 )
   ///    - "2006CODATA" : the 2006 revision of the fundamental constants (see DOI 10.1103/RevModPhys.80.633 ) (the default of Gaussian09)
   ///    - "MPQC2" : the values of constants used by MPQC version 2.3
-  ///    The default is currently "2014CODATA", and may be revised in the future.
+  ///
+  /// The default is currently "2014CODATA", and may be revised in the future.
   UnitFactory(std::string system);
 
   ~UnitFactory() = default;
@@ -219,7 +220,8 @@ class UnitFactory {
   /// \return the singleton UnitFactory object (default initialized with 2014CODATA fundamental constants)
   static std::shared_ptr<const UnitFactory> get_default();
   /// sets the singleton UnitFactory object
-  /// \param system specifies the fundamental constants system
+  /// \param system specifies the fundamental constants system, must be
+  /// acceptable as the input to UnitFactory::UnitFactory() ctor
   static void set_default(const std::string& system);
 
  private:

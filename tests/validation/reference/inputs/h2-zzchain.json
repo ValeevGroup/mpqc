@@ -1,7 +1,6 @@
 {
   "units": "2006CODATA",
   "unitcell": {
-    "type": "UnitCell",
     "charge": 0,
     "file_name": "h2.xyz",
     "sort_input": true,
@@ -12,12 +11,10 @@
     "k_points": [1, 1, 10]
   },
   "basis": {
-    "type": "Basis",
     "name": "sto-3g",
     "molecule": "$:unitcell"
   },
-   "world":{
-     "type" : "WfnWorld",
+   "wfn_world":{
      "molecule" : "$:unitcell",
      "basis" : "$:basis",
      "screen": "qqr",
@@ -25,12 +22,18 @@
    },
    "wfn":{
      "type": "zRHF",
-     "wfn_world": "$:world",
+     "molecule" : "$:unitcell",
+     "wfn_world": "$:wfn_world",
      "converge": 1.0e-7,
      "max_iter": 100,
      "soad_guess": true,
      "print_detail": false,
      "max_condition_num": 1e8
+   },
+   "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn",
+    "precision" : 1.0e-7
    }
 }
 

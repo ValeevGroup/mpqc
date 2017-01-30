@@ -1,30 +1,22 @@
 
 #include "mpqc/chemistry/qc/wfn/wfn.h"
+#include "mpqc/util/misc/exception.h"
 
 namespace mpqc{
-namespace lcao{
 
-Wavefunction::Wavefunction(const KeyVal &kv) : Energy(kv) {
+Wavefunction::Wavefunction(const KeyVal &kv) {
+  atoms_ = kv.class_ptr<Molecule>("atoms");
+  if (!atoms_) {
+    atoms_ = kv.class_ptr<Molecule>("molecule");
+  }
+  if (!atoms_)
+    throw InputError("Wavefunction did not find atoms", __FILE__, __LINE__, "atoms");
 
-  // first check if wfn_world is provided
-  if(kv.exists("wfn_world")){
-    wfn_world_ = kv.keyval("wfn_world").class_ptr<lcao::WavefunctionWorld>();
-  }
-  // check if wfn_world exist one level above
-  else if(kv.exists("..:wfn_world")){
-    wfn_world_ = kv.keyval("..:wfn_world").class_ptr<lcao::WavefunctionWorld>();
-  }
-  // use global (i.e. top-level) wfn_world
-  else if(kv.exists("$:wfn_world")){
-    wfn_world_ = kv.keyval("$:wfn_world").class_ptr<lcao::WavefunctionWorld>();
-  }
-  else{
-    throw std::runtime_error("Wavefunction could not find wfn_world keyval! \n");
-  }
-
+  utility::Observer::register_message(atoms_.get(), [this](){
+    this->obsolete();
+  });
 }
 
 Wavefunction::~Wavefunction() = default;
 
-}  // namespace lcao
 }  // namespace mpqc

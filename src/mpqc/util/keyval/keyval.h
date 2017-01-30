@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -58,6 +59,20 @@ struct customize_stream<Ch, Traits, E*, void> {
 }  // namespace boost::property_tree
 
 namespace mpqc {
+
+namespace detail {
+template <typename T>
+struct register_keyval_ctor;
+
+/// replaces boost serialization GUID: there is no default implementation of
+/// guid()
+/// to avoid the issues with the primary template getting picked up due to
+/// incorrect
+/// ordering of specialization and use
+template <typename T>
+const char* guid();
+
+}  // namespace detail
 
 class KeyVal;
 
@@ -109,10 +124,56 @@ class DescribedClass {
 
   template <typename T>
   static void register_keyval_ctor() {
-    const std::string type_name = boost::serialization::guid<T>();
+    const char* guid_T = mpqc::detail::guid<T>();
+    assert(guid_T != nullptr);
+    const std::string type_name(guid_T);
     auto& registry = keyval_ctor_registry();
     assert(registry.find(type_name) == registry.end());
-    registry[type_name] = keyval_ctor_wrapper<T>;
+    registry.insert(std::make_pair(
+        type_name,
+        std::make_pair(keyval_ctor_wrapper<T>, std::cref(typeid(T)))));
+  }
+
+  /// query if T is registered
+  /// @tparam T a class
+  /// @return true if T is registered
+  /// @warning cannot call this function before global object initialization has
+  /// completed (i.e. after main() has started)
+  template <typename T>
+  static bool is_registered() {
+    const auto& registry = keyval_ctor_registry();
+    for (const auto& elem : registry) {
+      if (typeid(T) == elem.second.second) return true;
+    }
+    return false;
+  }
+
+  /// query the class key for T
+  /// @tparam T a class
+  /// @return class key with which T was registered, or empty string if T was
+  /// not registered
+  /// @warning cannot call this function before global object initialization has
+  /// completed (i.e. after main() has started)
+  template <typename T>
+  static std::string class_key() {
+    const auto& registry = keyval_ctor_registry();
+    for (const auto& elem : registry) {
+      if (typeid(T) == elem.second.second) return elem.first;
+    }
+    return std::string();
+  }
+
+  /// query the class key for this object
+  /// @return class key with which the class of this object was registered,
+  ///         or empty string if it was not registered
+  /// @warning cannot call this function before global object initialization has
+  /// completed (i.e. after main() has started)
+  std::string class_key() const {
+    const auto& registry = keyval_ctor_registry();
+    for (const auto& elem : registry) {
+      if (typeid(*this) == elem.second.second) return elem.first;
+    }
+    return std::string();
   }
 
   /// This class helps with registering DescribedClass with DescribedClass's
@@ -129,7 +190,9 @@ class DescribedClass {
 
  private:
   using keyval_ctor_registry_type =
-      std::map<std::string, keyval_ctor_wrapper_type>;
+      std::map<std::string,
+               std::pair<keyval_ctor_wrapper_type,
+                         std::reference_wrapper<const std::type_info>>>;
 
   // this is needed to force registry initialization BEFORE its use
   static keyval_ctor_registry_type& keyval_ctor_registry() {
@@ -144,39 +207,54 @@ class DescribedClass {
 };
 }  // namespace mpqc
 
-namespace mpqc {
-namespace detail {
-template <typename T>
-struct register_keyval_ctor;
-}
-}
-
 /// @addtogroup CoreKeyVal
 /// @{
 
+/// MPQC_CLASS_REGISTER_GUID(K,T) associates key \c K as GUID for type \c T
+/// \note this can be placed in a header or a source file.
+#define MPQC_CLASS_REGISTER_GUID(K, ...) \
+  namespace mpqc {                       \
+  namespace detail {                     \
+  template <>                            \
+  const char* guid<__VA_ARGS__>() {      \
+    return K;                            \
+  }                                      \
+  } /* detail */                         \
+  } /* mpqc */                           \
+/**/
+
 /// MPQC_BOOST_CLASS_EXPORT_KEY2(K,T) associates key \c K with type \c T
-/// \note this is a variadic version of BOOST_CLASS_EXPORT_KEY2
+/// \note this is a variadic version of BOOST_CLASS_EXPORT_KEY2 (see the docs
+///       for Boost.Serialization); unlike BOOST_CLASS_EXPORT_KEY2 this can
+///       register classes with two or more template arguments.
+/// \note this should be placed in a header file (read
+///       Boost.Serialization docs very carefully).
 #define MPQC_BOOST_CLASS_EXPORT_KEY2(K, ...)               \
   namespace boost {                                        \
   namespace serialization {                                \
   template <>                                              \
   struct guid_defined<__VA_ARGS__> : boost::mpl::true_ {}; \
+  namespace ext {                                          \
   template <>                                              \
-  inline const char* guid<__VA_ARGS__>() {                 \
-    return K;                                              \
+  struct guid_impl<__VA_ARGS__> {                          \
+    static inline const char* call() { return K; }         \
+  };                                                       \
   }                                                        \
   } /* serialization */                                    \
   } /* boost */                                            \
 /**/
 
 /// \brief Associates a key (character string) with a class using
-/// Boost.Serialization
 /// and register the class's KeyVal constructor with DescribedClass's registry.
+/// This does not register class with Boost.Serialization, use
+/// MPQC_BOOST_CLASS_EXPORT_KEY2 for that.
 ///
-/// Use MPQC_BOOST_CLASS_EXPORT_KEY2 to skip the KeyVal constructor
+/// Use MPQC_CLASS_EXPORT_KEY2 to skip the KeyVal constructor
 /// registration.
+/// @note this should be placed in a source file, and only occur once for each
+///       class.
 #define MPQC_CLASS_EXPORT_KEY2(K, ...)                                         \
-  MPQC_BOOST_CLASS_EXPORT_KEY2(K, __VA_ARGS__)                                 \
+  MPQC_CLASS_REGISTER_GUID(K, __VA_ARGS__)                                     \
   namespace mpqc {                                                             \
   namespace detail {                                                           \
   template <>                                                                  \
@@ -191,9 +269,10 @@ struct register_keyval_ctor;
   }                                                                            \
 /**/
 
-/// \brief Associates a key (character string) with a class using
-/// Boost.Serialization
+/// \brief Associates a key (character string) with a class
 /// and register the class's KeyVal constructor with DescribedClass's registry.
+/// This does not register class with Boost.Serialization, use
+/// MPQC_BOOST_CLASS_EXPORT_KEY2 for that.
 ///
 /// Identical to MPQC_CLASS_EXPORT_KEY2, but uses class name for the class key.
 /// Use MPQC_BOOST_CLASS_EXPORT_KEY to skip the KeyVal ctor registration.
@@ -203,9 +282,12 @@ struct register_keyval_ctor;
 /**/
 
 /// \brief Forces the class instantiation so that it can be deserialized with
-/// Boost.Serialization and/or constructed from a KeyVal.
-/// \note this is a variadic version of BOOST_CLASS_EXPORT_IMPLEMENT
-#define MPQC_CLASS_EXPORT_IMPLEMENT(...)                           \
+/// Boost.Serialization.
+/// \note this is a variadic version of BOOST_CLASS_EXPORT_IMPLEMENT,
+///       hence it can register classes with two or more template arguments.
+/// \note this should be placed in a source file (read
+///       Boost.Serialization docs very carefully).
+#define MPQC_BOOST_CLASS_EXPORT_IMPLEMENT(...)                     \
   namespace boost {                                                \
   namespace archive {                                              \
   namespace detail {                                               \
@@ -230,17 +312,19 @@ namespace mpqc {
 /**
     \brief KeyVal specifies C++ primitive data
     (booleans, integers, reals, string) and user-defined objects
-    obtained from JSON/XML input or by programmatic construction.
+    obtained from JSON/XML/INFO input or by programmatic construction.
 
     KeyVal is a (sub)tree of Key=Value pairs implemented with
     <a
    href="http://theboostcpplibraries.com/boost.propertytree">Boost.PropertyTree</a>.
-    KeyVal extends the standard JSON/XML syntax to allow references as well as
-    specification of registered C++ objects. See \ref keyval for the rationale,
-   examples,
-    and other details.
+    KeyVal extends the standard JSON/XML/INFO syntax to allow references as well
+    as specification of registered C++ objects. See \ref keyval for the rationale,
+    examples, and other details.
 
-    @note Since KeyVal is default-constructible and directly mutable, this
+    KeyVal has reference semantics, i.e., copying KeyVal produces a KeyVal that refers to the same
+    PropertyTree object and shares the class registry object with the original KeyVal object.
+
+    @internal Since KeyVal is default-constructible and directly mutable, this
     obsoletes sc::AssignedKeyVal. Its behavior resembles PrefixKeyVal by
     combining prefix with a const tree. Hence this version of KeyVal roughly
     can be viewed as an assignable PrefixKeyVal of old MPQC, but supporting
@@ -282,20 +366,35 @@ class KeyVal {
   /// creates empty KeyVal
   KeyVal();
 
-  /// (mostly shallow) copy ctor (to clone top-level tree use top_tree())
+  /// \brief copy ctor
+
+  /// Since this class has reference semantics, the underlying data structures
+  /// (ptree and class registry) are not copied.
+  /// @note to clone top-level tree use KeyVal::clone()
   KeyVal(const KeyVal& other) = default;
-  /// copy assignment
+
+  /// \brief copy assignment
+
+  /// Since this class has reference semantics, the underlying data structures
+  /// (ptree and class registry) are not copied.
   KeyVal& operator=(const KeyVal& other) = default;
 
-  /// construct a KeyVal representing a subtree located at the given path
-  /// @note corresponds to the old MPQC's PrefixKeyVal
+  /// \brief creates a deep copy of this object
+  /// \note the DescribedClass object registry is not copied
+  KeyVal clone() const;
+
+  /// \brief construct a KeyVal representing a subtree located at the given path
+
+  /// Since this class has reference semantics, the result refers to the same
+  /// underlying data structures (ptree and class registry).
+  /// @internal corresponds to the old MPQC's PrefixKeyVal
   /// @param path the path to the subtree; absolute (within the top_tree) and
   ///        relative (with respect to this KeyVal's subtree) paths are allowed.
   /// @return the KeyVal object corresponding to \c path ;
   ///         if \c path does not exist, return an empty KeyVal
   KeyVal keyval(const key_type& path) const {
     auto abs_path = resolve_path(path);
-    return KeyVal(top_tree_, class_registry_, abs_path);
+    return KeyVal(top_tree_, dc_registry_, abs_path);
   }
 
   /// \brief returns a shared_ptr to the (top) tree
@@ -317,8 +416,8 @@ class KeyVal {
   /// @return true if \c path class exists
   bool exists_class(const key_type& path) const {
     bool exist_class = false;
-    auto cptr = class_registry_->find(resolve_path(path));
-    if (cptr != class_registry_->end()) {
+    auto cptr = dc_registry_->find(resolve_path(path));
+    if (cptr != dc_registry_->end()) {
       exist_class = true;
     }
     return exist_class;
@@ -394,7 +493,18 @@ class KeyVal {
   KeyVal& assign(const key_type& path,
                  const std::shared_ptr<DescribedClass>& value) {
     auto abs_path = to_absolute_path(path);
-    (*class_registry_)[abs_path] = value;
+    (*dc_registry_)[abs_path] = value;
+    return *this;
+  }
+
+  /// erases entries located under \c path
+  /// @param path the target path
+  KeyVal& erase(const key_type& path) {
+    auto abs_path = resolve_path(path);
+    key_type abs_path_basename, name;
+    std::tie(abs_path_basename, name) = path_basename(abs_path);
+    top_tree_->get_child(ptree::path_type{abs_path_basename, separator})
+        .erase(name);  // count is ignored
     return *this;
   }
 
@@ -484,23 +594,33 @@ class KeyVal {
 
   /// return a pointer to an object at the given path
 
-  /// Constructs an object of the type given by the value of
-  /// keyword "type" in this KeyVal object. In order to be constructible
-  /// using this method a type must be derived from DescribedClass <i>and</i>
+  /// Constructs a smart pointer to object of type \c T . If user provided
+  /// keyword "type" in this KeyVal object its value will be used for the object
+  /// type.
+  /// Otherwise, if \c T is a <i>concrete</i> type,
+  /// this will construct object of type \c T. In either case, the type of
+  /// constructed object must have DescribedClass as its public base <i>and</i>
   /// registered.
-  /// @tparam T a class derived from DescribedClass corresponding to the value
-  /// of path:"type" or its base
-  /// @param path the path
-  /// @return a std::shared_ptr to \c T ; null pointer will be returned if \c path does not exist.
-  /// @throws KeyVal::bad_input if cannot convert value
-  /// representation to the desired type
-  template <typename T, typename = std::enable_if_t<Describable<T>::value>>
-  std::shared_ptr<T> class_ptr(const key_type& path = key_type()) const {
+  /// @tparam T a class derived from DescribedClass
+  /// @param path the path; if not provided, use the empty path
+  /// @param bypass_registry if \c true will not query the registry for the existence of the object
+  ///        and will not place the newly-constructed object in the registry
+  /// @return a std::shared_ptr to \c T ; null pointer will be returned if \c
+  /// path does not exist.
+  /// @throws KeyVal::bad_input if the value of keyword "type" is not a
+  /// registered class key,
+  /// or if the user did not specify keyword "type" and class T is abstract or
+  /// is not registered.
+  /// @note ```class_ptr<T>("path")```  is equivalent to ```keyval("path").class_ptr<T>()```
+  template <typename T = DescribedClass,
+            typename = std::enable_if_t<Describable<T>::value>>
+  std::shared_ptr<T> class_ptr(const key_type& path = key_type(),
+                               bool bypass_registry = false) const {
     // if this class already exists in the registry under path
     // (e.g. if the ptr was assigned programmatically), return immediately
-    {
-      auto cptr = class_registry_->find(path);
-      if (cptr != class_registry_->end())
+    if (!bypass_registry) {
+      auto cptr = dc_registry_->find(path);
+      if (cptr != dc_registry_->end())
         return std::dynamic_pointer_cast<T>(cptr->second);
     }
 
@@ -509,30 +629,61 @@ class KeyVal {
     auto abs_path = resolve_path(path);
 
     // if this class already exists, return the ptr
-    auto cptr = class_registry_->find(abs_path);
-    if (cptr != class_registry_->end())
-      return std::dynamic_pointer_cast<T>(cptr->second);
+    if (!bypass_registry) {
+      auto cptr = dc_registry_->find(abs_path);
+      if (cptr != dc_registry_->end())
+        return std::dynamic_pointer_cast<T>(cptr->second);
+    }
 
     // return nullptr if the path does not exist
     if (!this->exists_(abs_path)) {
       return std::shared_ptr<T>();
     }
 
-    // get class name
-    std::string derived_class_name;
+    // compute the type name of the constructed object
+    std::string result_type_name;
     auto type_path = concat_path(abs_path, "type");
-    if (not exists_(type_path))
-      throw KeyVal::bad_input(
-          std::string("missing \"type\" in object at path ") + path, abs_path);
-    derived_class_name =
-        top_tree_->get<std::string>(ptree::path_type{type_path, separator});
+    if (not exists_(type_path)) {
+      // no user override for type = try to construct T
+      if (std::is_abstract<T>::value) {
+        throw KeyVal::bad_input(
+            std::string(
+                "KeyVal::class_ptr<T>(): T is an abstract class, "
+                "hence keyword \"type\" must be given for object at path " +
+                path),
+            abs_path);
+      }
+      if (!DescribedClass::is_registered<T>()) {
+        throw KeyVal::bad_input(
+            std::string(
+                "KeyVal::class_ptr<T>(): T is an unregistered concrete class, "
+                "hence keyword \"type\" must be given for object at path " +
+                path),
+            abs_path);
+      }
+      result_type_name = DescribedClass::class_key<T>();
+    } else {  // user provided \"type\" keyword, use it to override the type
+      result_type_name =
+          top_tree_->get<std::string>(ptree::path_type{type_path, separator});
+    }
 
     // map class type to its ctor
-    auto ctor = DescribedClass::type_to_keyval_ctor(derived_class_name);
-    auto result = (*ctor)(*this);
-    (*class_registry_)[abs_path] = result;
+    auto ctor = DescribedClass::type_to_keyval_ctor(result_type_name);
+    // call the ctor
+    // if nonempty path, construct a KeyVal object rooted at that path,
+    // otherwise use self
+    auto result = !path.empty() ? (*ctor)(this->keyval(path)) : (*ctor)(*this);
+    if (!bypass_registry)
+      (*dc_registry_)[abs_path] = result;
     return std::dynamic_pointer_cast<T>(result);
   }
+
+  /// read/write KeyVal specified in one of accepted Boost.PropertyTree formats
+  /// (see
+  /// <a
+  /// href="http://www.boost.org/doc/libs/master/doc/html/property_tree/parsers.html">Boost.PropertyTree
+  /// docs</a>)
+  /// @{
 
   /// write to stream in XML form
   void write_xml(std::basic_ostream<typename key_type::value_type>& os) const {
@@ -552,29 +703,42 @@ class KeyVal {
     boost::property_tree::json_parser::read_json(is, *(tree()));
   }
 
+  /// write to stream in INFO form
+  void write_info(std::basic_ostream<typename key_type::value_type>& os) const {
+    boost::property_tree::info_parser::write_info(os, *(tree()));
+  }
+  /// write from stream in INFO form
+  void read_info(std::basic_istream<typename key_type::value_type>& is) {
+    boost::property_tree::info_parser::read_info(is, *(tree()));
+  }
+  /// @}
+
  private:
   std::shared_ptr<ptree> top_tree_;
-  using class_registry_type =
+  // 'dc' = DescribedClass
+  using dc_registry_type =
       std::map<std::string, std::shared_ptr<DescribedClass>>;
-  std::shared_ptr<class_registry_type> class_registry_;
-  key_type path_;  //!< path from the top of \c top_tree_ to this subtree
+  std::shared_ptr<dc_registry_type> dc_registry_;
+  const key_type path_;  //!< path from the top of \c top_tree_ to this subtree
 
   /// creates a KeyVal
   KeyVal(const std::shared_ptr<ptree>& top_tree,
-         const std::shared_ptr<class_registry_type>& class_registry,
+         const std::shared_ptr<dc_registry_type>& dc_registry,
          const key_type& path)
-      : top_tree_(top_tree), class_registry_(class_registry), path_(path) {}
+      : top_tree_(top_tree), dc_registry_(dc_registry), path_(path) {}
 
   /// creates a KeyVal using am existing \c ptree
   /// @param pt a ptree
   KeyVal(ptree pt)
       : top_tree_(std::make_shared<ptree>(std::move(pt))),
-        class_registry_(),
+        dc_registry_(),
         path_("") {}
 
-  /// given a path that contains ".." elements, returns the equivalent path
-  /// without such elements
-  /// @example realpath("tmp:..:x") returns "x"
+  /// given a path that contains \c ".." elements, returns the equivalent path
+  /// without such elements. For example: \c realpath("tmp:..:x") returns \c "x"
+  /// @param path the path optionally including \c ".."
+  /// @return the path with the \c ".." elements resolved
+  /// @note this does not resolve references or convert to absolute path
   /// @throw KeyVal::bad_input if path is invalid; an example is ".." .
   static key_type realpath(const key_type& path) {
     key_type result = path;
@@ -734,6 +898,17 @@ class KeyVal {
     if (last_separator_location == key_type::npos) last_separator_location = 0;
     result.erase(last_separator_location);
     return result;
+  }
+
+  /// returns {basename,key} for the given path; e.g.
+  /// for path ":key1:key2:key3:key4" returns {":key1:key2:key3", "key4"}
+  static std::tuple<key_type, key_type> path_basename(const key_type& path) {
+    auto last_separator_location = path.rfind(separator);
+    if (last_separator_location == key_type::npos) last_separator_location = 0;
+    key_type basename = path;
+    basename.erase(last_separator_location);
+    key_type key = path.substr(last_separator_location + 1);
+    return std::make_tuple(basename, key);
   }
 
   /// checks whether the given path exists; does not resolve path unlike

@@ -55,7 +55,7 @@ void finalize() {
 
 MPQCInit::MPQCInit(int &argc, char **argv, std::shared_ptr<GetLongOpt> opt,
                    const madness::World &top_world)
-    : opt_(opt), argv_(argv), argc_(argc) {
+    : opt_(opt), argv_(argv), argc_(argc), input_format_(InputFormat::invalid) {
   if (opt_)
     opt_->enroll("max_memory", GetLongOpt::MandatoryValue,
                  "the available memory");
@@ -120,15 +120,54 @@ void MPQCInit::init_limits() {
 #endif
 }
 
+namespace {
 std::shared_ptr<mpqc::KeyVal>
-MPQCInit::make_keyval(madness::World& world, const std::string &filename) {
+__make_keyval(madness::World& world, const std::string &filename,
+            MPQCInit::InputFormat format) {
+  std::shared_ptr<mpqc::KeyVal> kv;
   std::stringstream ss;
   utility::parallel_read_file(world, filename, ss);
+  kv = std::make_shared<mpqc::KeyVal>();
+  switch(format) {
+    case MPQCInit::InputFormat::xml: kv->read_xml(ss); break;
+    case MPQCInit::InputFormat::json: kv->read_json(ss); break;
+    case MPQCInit::InputFormat::info: kv->read_info(ss); break;
+    default: abort();
+  }
+  return kv;
+}
+}
 
-  std::shared_ptr<mpqc::KeyVal> kv = std::make_shared<mpqc::KeyVal>();
-  kv->read_json(ss);
-  kv->assign("world", &world);  // set "$:world" keyword to &world to define
-                                // the default execution context for this input
+std::shared_ptr<mpqc::KeyVal>
+MPQCInit::make_keyval(madness::World& world, const std::string &filename) {
+  std::shared_ptr<mpqc::KeyVal> kv;
+  try {
+    kv = __make_keyval(world, filename, InputFormat::xml);
+    input_format_ = InputFormat::xml;
+  }
+  catch(...) {
+  }
+  if (input_format_ == InputFormat::invalid) {
+    try {
+      kv = __make_keyval(world, filename, InputFormat::json);
+      input_format_ = InputFormat::json;
+    }
+    catch(std::exception& e) {
+    }
+  }
+  if (input_format_ == InputFormat::invalid) {
+    try {
+      kv = __make_keyval(world, filename, InputFormat::info);
+      input_format_ = InputFormat::info;
+    }
+    catch(...) {
+      std::cout << "failed read_info\n";
+    }
+  }
+  if (input_format_ == InputFormat::invalid)
+    throw InputError("did not recognize input file format (recognized formats: JSON, XML, INFO)",
+                     __FILE__, __LINE__);
+
   return kv;
 }
 
@@ -188,7 +227,7 @@ std::shared_ptr<GetLongOpt> make_options() {
   // parse commandline options
   std::shared_ptr<GetLongOpt> options = std::make_shared<GetLongOpt>();
 
-  options->usage("[options] input_file.json");
+  options->usage("[options] input_file.{json|xml|info}");
   options->enroll("o", GetLongOpt::MandatoryValue, "the name of the output file");
   options->enroll("p", GetLongOpt::MandatoryValue, "prefix for all relative paths in KeyVal");
   options->enroll("W", GetLongOpt::MandatoryValue, "set the working directory",

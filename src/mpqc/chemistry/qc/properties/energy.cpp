@@ -1,12 +1,29 @@
+//
+// Created by Chong Peng on 1/11/17.
+//
+
 #include "mpqc/chemistry/qc/properties/energy.h"
-#include "mpqc/chemistry/qc/wfn/ao_wfn.h"
+#include "mpqc/util/keyval/forcelink.h"
 
-MPQC_CLASS_EXPORT_KEY2("Energy", mpqc::lcao::Energy);
+MPQC_CLASS_EXPORT2("Energy", mpqc::Energy);
 
-using namespace mpqc;
+namespace mpqc{
 
-lcao::Energy::Energy(KeyVal const &kv) : result_() {}
+void Energy::do_evaluate() {
+  auto evaluator = std::dynamic_pointer_cast<Evaluator>(wfn());
+  if (evaluator == nullptr) {
+    std::ostringstream oss;
+    oss << "Wavefunction " << wfn()->class_key()
+        << " cannot compute Energy" << std::endl;
+    throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+  }
+  evaluator->evaluate(this);
+}
 
-void lcao::Energy::apply(Wavefunction *aowfn){
-    result_ = 1.0;
+#if 0
+void StationaryPoint::evaluate() {
+  optimizer_->value();
+}
+#endif
+
 }

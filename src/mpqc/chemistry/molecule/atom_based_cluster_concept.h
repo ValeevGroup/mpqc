@@ -29,6 +29,8 @@ class AtomBasedClusterConcept : public ClusterConcept {
   virtual double mass_() const = 0;
   virtual Vector3d const &com_() const = 0;
   virtual std::vector<Atom> atoms_() const = 0;
+  virtual size_t natoms_() const = 0;
+  virtual void update_(const std::vector<Atom>& atoms, size_t& pos) = 0;
 };
 
 /*
@@ -66,6 +68,12 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
     return collapse_to_atoms(element_);
   }
 
+  void update_(const std::vector<Atom>& atoms, size_t& pos) override final {
+    update(element_, atoms, pos);
+  }
+
+  size_t natoms_() const override final { return natoms(element_); }
+
   std::ostream &print_(std::ostream &os) const override final {
     os << element_;
     return os;
@@ -82,7 +90,7 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
  */
 class AtomBasedClusterable {
  private:
-  std::shared_ptr<const AtomBasedClusterConcept> element_impl_;
+  std::shared_ptr<AtomBasedClusterConcept> element_impl_;
 
  public:
   template <typename C>
@@ -103,6 +111,11 @@ class AtomBasedClusterable {
 
   double mass() const { return element_impl_->mass_(); }
   double charge() const { return element_impl_->charge_(); }
+  double natoms() const { return element_impl_->natoms_(); }
+
+  void update(const std::vector<Atom> &atoms, size_t &pos) const {
+    return element_impl_->update_(atoms, pos);
+  }
 
   std::ostream &print(std::ostream &os) const {
     return element_impl_->print_(os);
@@ -112,6 +125,8 @@ class AtomBasedClusterable {
 inline double mass(AtomBasedClusterable const &ac) { return ac.mass(); }
 
 inline double charge(AtomBasedClusterable const &ac) { return ac.charge(); }
+
+inline size_t natoms(AtomBasedClusterable const &ac) { return ac.natoms(); }
 
 inline Vector3d const &center(AtomBasedClusterable const &ac) {
   return ac.com();
@@ -123,6 +138,10 @@ inline Vector3d const &center_of_mass(AtomBasedClusterable const &ac) {
 
 inline std::vector<Atom> collapse_to_atoms(AtomBasedClusterable const &ac) {
   return ac.atoms();
+}
+
+inline void update(AtomBasedClusterable &ac, const std::vector<Atom>& atoms, size_t& pos) {
+  return ac.update(atoms, pos);
 }
 
 /*! @} */

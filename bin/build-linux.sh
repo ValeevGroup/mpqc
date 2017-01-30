@@ -27,7 +27,7 @@ ls $INSTALL_DIR
 cmake .. \
     -DTiledArray_DIR="$INSTALL_DIR/TA/lib/cmake/tiledarray" \
     -DCMAKE_PREFIX_PATH="$INSTALL_DIR/mpqc4" \
-    -DCMAKE_BUILD_TYPE=DEBUG \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_CXX_FLAGS="-ftemplate-depth=1024 -Wno-unused-command-line-argument" \
     -DLIBINT2_INSTALL_DIR="$INSTALL_DIR/libint" \
     -DMPQC_VALIDATION_TEST_PRINT=true

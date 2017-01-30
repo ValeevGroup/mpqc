@@ -263,7 +263,7 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
   int64_t RD_size() { return RD_size_; }
 
   /// @return UnitCell object
-  UnitCell &unitcell() {return *unitcell_;}
+  UnitCell &unitcell() { return *unitcell_; }
 
   /*!
    * \brief This sets the density for coulomb and exchange computations
@@ -374,12 +374,12 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
   auto iter = ao_formula_registry_.find(formula);
 
   if (iter != ao_formula_registry_.end()) {
-      result = *(iter->second);
-      utility::print_par(this->world_, "Retrieved Periodic AO Integral: ",
-                         utility::to_string(formula.string()));
-      double size = mpqc::detail::array_size(result);
-      utility::print_par(this->world_, " Size: ", size, " GB\n");
-      return result;
+    result = *(iter->second);
+    utility::print_par(this->world_, "Retrieved Periodic AO Integral: ",
+                       utility::to_string(formula.string()));
+    double size = mpqc::detail::array_size(result);
+    utility::print_par(this->world_, " Size: ", size, " GB\n");
+    return result;
   }
 
   if (formula.oper().is_fock()) {
@@ -641,6 +641,7 @@ TA::DistArray<Tile, TA::SparsePolicy>
 PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
     std::shared_ptr<Screener> screen, Op op) {
+  auto time0 = mpqc::now(this->world_, true);
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
@@ -689,15 +690,19 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
   world.gop.fence();
   auto time_f1 = mpqc::now(this->world_, true);
   auto time_f = mpqc::duration_in_s(time_f0, time_f1);
-  if (print_detail_) {
-    utility::print_par(this->world_, " \tsum of task_f time: ", time_f, " s\n");
-  }
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
   TA::DistArray<Tile, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   detail::set_array(tiles, out);
   out.truncate();
+  auto time1 = mpqc::now(this->world_, true);
+  auto time = mpqc::duration_in_s(time0, time1);
+
+  if (print_detail_) {
+    utility::print_par(this->world_, " \tsum of task_f time: ", time_f, " s\n",
+                                     " \ttotal compute time: ", time,   " s\n\n");
+  }
 
   return out;
 }

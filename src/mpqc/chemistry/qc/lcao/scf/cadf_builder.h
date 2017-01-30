@@ -19,7 +19,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/cadf_fitting_coeffs.h"
 #include "mpqc/chemistry/qc/lcao/scf/cadf_helper_functions.h"
 
-#include "../../../math/tensor/clr/tile.h"
+#include "mpqc/math/tensor/clr/tile.h"
 #include <iostream>
 #include <unordered_set>
 #include <vector>

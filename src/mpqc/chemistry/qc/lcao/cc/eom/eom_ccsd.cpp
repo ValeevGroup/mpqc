@@ -4,7 +4,7 @@
  *  Created on: Feb 26, 2016
  *      Author: jinmei
  */
-#include "../eom/eom_ccsd.h"
+#include "mpqc/chemistry/qc/lcao/cc/eom/eom_ccsd.h"
 
 #include <math.h>
 #include <rapidjson/document.h>

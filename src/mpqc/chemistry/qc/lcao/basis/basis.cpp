@@ -1,5 +1,3 @@
-// #include "../molecule/cluster.h"
-
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/chemistry/molecule/molecule.h"
 

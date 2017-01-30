@@ -311,6 +311,20 @@ class SchwarzScreen : public Screener {
                 int64_t size) const override;
 };
 
+/*! \brief Creates a Scwhwarz Screener
+ * 
+ * \param world is a reference to a madness world
+ * 
+ * \param eng is a referenc to a ShrPool<E>
+ * 
+ * \param bs_array is a reference to a vector of basis sets, if the length is 3
+ * then DF integrals are assumed and the first basis is assumed to be the
+ * auxiliary basis if the length is 4 then it is assumed that four center
+ * screening is desired.  There is no requirement that any basis sets be the
+ * same. 
+ * 
+ * \param thresh is the Schwarz Screening threshold, defaults to 1e-12
+ */
 template <typename E>
 SchwarzScreen create_scwharz_screener(TA::World &world, ShrPool<E> const &eng,
                                       std::vector<Basis> const &bs_array,

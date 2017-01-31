@@ -19,8 +19,6 @@ namespace lcao {
 /**
  * \brief AOWavefunction is a Wavefunction with an gaussian::AOFactory
  *
- * By default, AOWavefunction can compute Energy property, through function double value()
- *
  * This models wave function methods expressed in Gaussian AO basis.
  * \todo factor out the dependence on Gaussian basis into a WavefunctionPolicy
  * \todo elaborate AOWavefunction documentation

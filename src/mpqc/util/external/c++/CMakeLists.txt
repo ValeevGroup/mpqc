@@ -1,4 +1,5 @@
 set(public_headers
+    iterator
     memory
     type_traits
    )

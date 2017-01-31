@@ -13,6 +13,7 @@ set(sources
   print.cpp
   print.h
   string.h
+  task.h
   time.h
   timestamp.h
 )

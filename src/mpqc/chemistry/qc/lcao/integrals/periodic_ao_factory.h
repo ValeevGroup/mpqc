@@ -14,6 +14,7 @@
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/time.h"
 
+#include <mpqc/chemistry/qc/lcao/integrals/screening/schwarz_screen.h>
 #include <unsupported/Eigen/MatrixFunctions>
 
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
@@ -210,12 +211,9 @@ class PeriodicAOFactory : virtual public DescribedClass {
 
     using ::mpqc::lcao::detail::direct_ord_idx;
     using ::mpqc::lcao::detail::k_ord_idx;
-    R_size_ =
-        1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
-    RJ_size_ =
-        1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
-    RD_size_ =
-        1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
+    R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
+    RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
+    RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
     k_size_ = 1 + k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
 
     op_ = TA::Noop<TA::TensorZ, true>();
@@ -332,15 +330,15 @@ class PeriodicAOFactory : virtual public DescribedClass {
   /// system
   void parse_one_body_periodic(
       const Formula &formula,
-      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-      const Molecule &shifted_mol);
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases, const Molecule &shifted_mol);
 
   /// parse two body formula and set engine_pool and basis array for periodic
   /// system
   void parse_two_body_periodic(
       const Formula &formula,
-      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-      Vector3d shift_coul, bool if_coulomb);
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases, Vector3d shift_coul, bool if_coulomb);
 
   /*!
    * \brief Construct sparse complex integral tensors in parallel.
@@ -459,6 +457,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 
         auto time_g0 = mpqc::now(world_, false);
         auto J = compute_integrals(world_, engine_pool, bs_array);
+
         auto time_g1 = mpqc::now(world_, false);
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
@@ -521,8 +520,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
     const Formula &formula,
-    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-    const Molecule &shifted_mol) {
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases, const Molecule &shifted_mol) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -559,8 +558,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
     const Formula &formula,
-    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-    Vector3d shift_coul, bool if_coulomb) {
+    std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+    BasisVector &bases, Vector3d shift_coul, bool if_coulomb) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -719,7 +718,8 @@ PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
     }
   }
 
-  result = array_ops::eigen_to_array<Tile,Policy>(world_, result_eig, tr0, tr1);
+  result =
+      array_ops::eigen_to_array<Tile, Policy>(world_, result_eig, tr0, tr1);
 
   return result;
 }

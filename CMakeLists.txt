@@ -211,8 +211,13 @@ include(ValidateTiledArray)
 validate_tiledarray()
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
 
-FIND_PACKAGE(TBB REQUIRED)
+# Treating boost the way suggested in https://rix0r.nl/blog/2015/08/13/cmake-guide/
 FIND_PACKAGE(Boost REQUIRED COMPONENTS serialization)
+add_library(boost INTERFACE IMPORTED)
+set_property(TARGET boost PROPERTY INTERFACE_INCLUDE_DIRECTORIES 
+  ${Boost_INCLUDE_DIRS})
+
+FIND_PACKAGE(TBB REQUIRED)
 FIND_PACKAGE(Eigen3 REQUIRED)
 FIND_PACKAGE(LIBINT2 REQUIRED)
 

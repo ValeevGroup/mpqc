@@ -23,7 +23,7 @@
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",
     "aux_basis": "$:ribs",
-    "screen": "qqr"
+    "screen": "schwarz"
   },
   "scf":{
     "type": "RI-RHF",

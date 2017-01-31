@@ -2,7 +2,7 @@ MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision 469ba108ddde3f105e464138e34a95f7c5a07880
+                 Revision 71c6cc33bef1823082c11777790a0286e0ca6c64
 
   Input KeyVal (format=JSON):
 {
@@ -44,7 +44,7 @@ MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
     "wfn_world": {
         "molecule": "$:unitcell",
         "basis": "$:basis",
-        "screen": "qqr",
+        "screen": "schwarz",
         "threshold": "1.0e-20"
     },
     "wfn": {
@@ -61,18 +61,27 @@ MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
         "type": "Energy",
         "wfn": "$:wfn",
         "precision": "1.0e-7"
-    }
+    },
+    "file_prefix": "\/Users\/work\/software\/mpqc4\/mpqc4_src\/tests\/validation\/reference\/inputs"
 }
 
   Using fundamental constants system 2006CODATA
+
+
+ Warning! "n_cluster" is not set in Molecule input! This might affect parallel performance! 
+
 OBS Basis Trange 
 ( tiles = [ 0, 2 ), elements = [ 0, 2 ) )
 Min and Max block size: 1 1
 Average: 1
 
-Screen: qqr
+Screen: schwarz
 Threshold: 1e-20
 Precision: 2.22044604925031e-16
+
+
+
+ Warning! "n_cluster" is not set in Molecule input! This might affect parallel performance! 
 
 
 Periodic Hartree-Fock computational parameter:
@@ -96,13 +105,13 @@ Unit cell info:
 
 
 Computing One Body Integral for Periodic System: < κ |T| λ >
- Size: 5.36441802978516e-07 GB Time: 0.003225971 s
+ Size: 5.36441802978516e-07 GB Time: 0.004418306 s
 
 Computing One Body Integral for Periodic System: < κ |V| λ >
- Size: 5.36441802978516e-07 GB Time: 0.028951263 s
+ Size: 5.36441802978516e-07 GB Time: 0.028678004 s
 
 Computing One Body Integral for Periodic System: < κ | λ >
- Size: 5.36441802978516e-07 GB Time: 0.001601274 s
+ Size: 5.36441802978516e-07 GB Time: 0.001551088 s
 
 Building Fock Matrix from SOAD Guess ...
 
@@ -120,22 +129,22 @@ Nuclear Repulsion Energy: 4.48810370139753
 
 
  Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
-    1      -5.469800656061      -0.981696954663      -5.469800656061       0.001902180361                0.560
-    2      -5.482540965531      -0.994437264134      -0.012740309470       0.000432058836                0.594
-    3      -5.482543824482      -0.994440123084      -0.000002858950       0.000256141542                0.617
-    4      -5.482543900730      -0.994440199332      -0.000000076248       0.000174358429                0.612
+    1      -5.469800656061      -0.981696954663      -5.469800656061       0.001902180361                0.810
+    2      -5.482540965531      -0.994437264134      -0.012740309470       0.000432058836                0.821
+    3      -5.482543824482      -0.994440123084      -0.000002858950       0.000256141542                0.835
+    4      -5.482543900730      -0.994440199332      -0.000000076248       0.000174358429                1.119
 
 Periodic Hartree-Fock iterations have converged!
 
-Total Periodic Hartree-Fock energy = -0.994440199332263
+Total Periodic Hartree-Fock energy = -0.994440199332262
 
 Time(s):
-	Init:                               0.206
-	Coulomb term:                       1.193
-	Exchange term:                      1.163
+	Init:                               0.219
+	Coulomb term:                       1.790
+	Exchange term:                      1.766
 	Real->Recip trans:                  0.006
 	Diag + Density:                     0.010
-	Total:                              2.383
+	Total:                              3.586
 
   Output KeyVal (format=JSON):
 {
@@ -177,7 +186,7 @@ Time(s):
     "wfn_world": {
         "molecule": "$:unitcell",
         "basis": "$:basis",
-        "screen": "qqr",
+        "screen": "schwarz",
         "threshold": "1.0e-20"
     },
     "wfn": {
@@ -195,7 +204,8 @@ Time(s):
         "wfn": "$:wfn",
         "precision": "1.0e-7",
         "value": {
-            "value": "-0.99444019933226269"
+            "value": "-0.9944401993322618"
         }
     }
 }
+

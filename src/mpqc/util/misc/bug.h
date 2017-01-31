@@ -41,7 +41,7 @@ namespace mpqc {
  * produce a stack traceback showing roughly where the program died.  These
  * attempts will not always succeed.
  */
-class Debugger: public DescribedClass {
+class Debugger: virtual public DescribedClass {
   protected:
     std::string prefix_;
     std::string exec_;

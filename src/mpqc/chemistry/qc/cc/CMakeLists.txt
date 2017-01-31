@@ -1,14 +1,5 @@
-set(sources
-        ccsd.h
-        ccsd.cpp
-        ccsd_t.h
-        ccsd_t.cpp
-        dbccsd.h
-        dbccsd.cpp
-        diis_ccsd.h
-        gamma_point_ccsd.h
-        gamma_point_ccsd.cpp
-        linkage.h
-        )
+set(sources 
+    diis_ccsd.h
+)
 
-add_mpqc_library(cc sources sources "MPQCscf;MPQCmbpt;MPQCutil_misc" "mpqc/chemistry/qc/cc")
+add_mpqc_hdr_library(cc sources "" "mpqc/chemistry/qc/cc")

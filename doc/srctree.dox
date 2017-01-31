@@ -14,18 +14,18 @@ building the MPQC programming documentation and development samples.
 <dt><tt>src/mpqc/util/external/madworld</tt><dd>This contains additional
 functionality related to the MADWorld parallel runtime.
 
-<dt><tt>src/mpqc/util/external/c++</tt><dd>This contains additional
+<dt><tt>src/mpqc/util/external/c++</tt><dd>This directory contains additional
 functionality related to the C++ programming language, e.g. functionality
 that was added in the C++14 standard.
 
-<dt><tt>src/mpqc/util/keyval</tt><dd>This library provides classes that read
+<dt><tt>src/mpqc/util/keyval</tt><dd>This directory contains classes that read
   keyword/value pairs from an input file.  See \ref keyval
   for more information.
 
-<dt><tt>src/mpqc/util/meta</tt><dd>This contains template metaprogramming
+<dt><tt>src/mpqc/util/meta</tt><dd>This directory contains template metaprogramming
 functionality.
 
-<dt><tt>src/mpqc/util/misc</tt><dd>This contains a variety of independent
+<dt><tt>src/mpqc/util/misc</tt><dd>This directory  contains a variety of independent
   classes and functions that don't belong anywhere else. Here one can find
   classes to assist with debugging, provide information about the execution
   environment, help make the output prettier, etc.
@@ -34,52 +34,70 @@ functionality.
   <dd>This contains the GetLongOpt command line argument parsing facility
   written by S. Manoharan, with some modifications.
 
-<dt><tt>src/mpqc/math/clustering</tt><dd>This library provides clustering facilities
+<dt><tt>src/mpqc/math/function</tt><dd>This directory contains function interface and
+various numerical solvers.
+
+<dt><tt>src/mpqc/math/clustering</tt><dd>This directory contains clustering facilities
 (e.g. k-means).
 
-<dt><tt>src/mpqc/math/external/eigen</tt><dd>This provides additional functionality
+<dt><tt>src/mpqc/math/external/eigen</tt><dd>This directory contains
+additional functionality
 related to the Eigen matrix algebra library.
 
-<dt><tt>src/mpqc/math/external/tiledarray</tt><dd>This provides additional functionality
+<dt><tt>src/mpqc/math/external/tiledarray</tt><dd>This directory contains additional functionality
 related to the TiledArray parallel tensor framework.
 
-<dt><tt>src/mpqc/math/linalg</tt><dd>This provides various linear algebra functionality.
+<dt><tt>src/mpqc/math/linalg</tt><dd>This directory contains various linear algebra functionality.
 
-<dt><tt>src/mpqc/math/tensor/clr</tt><dd>This provides the tile algebra needed to
+<dt><tt>src/mpqc/math/tensor/clr</tt><dd>This directory contains the tile algebra needed to
 implement the Clustered Low-Rank tensor format.
 
-<dt><tt>src/mpqc/chemistry/molecule</tt><dd>This library has classes to
+<dt><tt>src/mpqc/chemistry/molecule</tt><dd>This directory contains classes to
   describe molecules and unit cells.
 
-<dt><tt>src/mpqc/chemistry/units</tt><dd>This provides the Units conversion facilities.
+<dt><tt>src/mpqc/chemistry/units</tt><dd>This directory contains the Units conversion facilities.
 See \ref units for more information.
 
-<dt><tt>src/mpqc/chemistry/qc</tt><dd>This directory includes the
+<dt><tt>src/mpqc/chemistry/qc</tt><dd>This directory contains the
 electronic structure (i.e., Quantum Chemistry) functionality.
 
-<dt><tt>src/mpqc/chemistry/qc/basis</tt><dd>The basis library has classes
-  that describe Gaussian basis sets.
+<dt><tt>src/mpqc/chemistry/qc/wfn</tt><dd>This directory contains the representation-independent
+core wave function functionality.
 
-<dt><tt>src/mpqc/chemistry/qc/cc</tt><dd>This includes the coupled-cluster functionality.
+<dt><tt>src/mpqc/chemistry/qc/properties</tt><dd>This directory contains the
+properties computable with wave functions.
 
-<dt><tt>src/mpqc/chemistry/qc/expression</tt><dd>This provides
-the electronic structure Domain-Specific Language (DSL) functionality.
+<dt><tt>src/mpqc/chemistry/qc/cc</tt><dd>This directory contains the representation-independent
+coupled-cluster functionality, e.g. the specialization of the DIIS solver.
 
-<dt><tt>src/mpqc/chemistry/qc/f12</tt><dd>This provides the explicitly-correlated
-(F12) methods.
+<dt><tt>src/mpqc/chemistry/qc/lcao</tt><dd>This directory contains the electronic
+structure functionality using the LCAO (Linear Combination of Atomic Orbitals)
+numerical representation.
 
-<dt><tt>src/mpqc/chemistry/qc/integrals</tt><dd>This provides the classes for
+<dt><tt>src/mpqc/chemistry/qc/lcao/basis</tt><dd>The directory contains classes
+  that describe atomic (Gaussian) basis sets.
+
+<dt><tt>src/mpqc/chemistry/qc/lcao/integrals</tt><dd>This directory contains the classes for
 computing operators in Gaussian atomic orbital (AO) basis, as well as registries of
 operators in AO and LCAO bases.
 
-<dt><tt>src/mpqc/chemistry/qc/mbpt</tt><dd>This library computes second-order
-  perturbation theory energies and gradients.
+<dt><tt>src/mpqc/chemistry/qc/lcao/expression</tt><dd>This directory contains
+the LCAO-specific Domain-Specific Language (DSL) functionality.
 
-<dt><tt>src/mpqc/chemistry/qc/scf</tt><dd>This library computes the Self-Consistent Field
-solutions.
+<dt><tt>src/mpqc/chemistry/qc/lcao/wfn</tt><dd>This directory contains the
+base classes for all LCAO wave function classes.
 
-<dt><tt>src/mpqc/chemistry/qc/mbpt</tt><dd>This library provides the base classes for
-all wave function classes.
+<dt><tt>src/mpqc/chemistry/qc/lcao/scf</tt><dd>This directory contains the LCAO
+solvers for the (one-particle) Self-Consistent Field problems.
+
+<dt><tt>src/mpqc/chemistry/qc/lcao/mbpt</tt><dd>This directory contains many-body
+perturbation theory LCAO solvers.
+
+<dt><tt>src/mpqc/chemistry/qc/lcao/cc</tt><dd>This directory contains coupled-cluster
+LCAO solvers.
+
+<dt><tt>src/mpqc/chemistry/qc/lcao/f12</tt><dd>This directory contains the LCAO
+explicitly-correlated (F12) methods.
 
 <dt><tt>src/bin/mpqc</tt><dd>The Massively Parallel Quantum Chemistry program
   is in this directory.  See \ref mpqc for more information.

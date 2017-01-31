@@ -1,0 +1,100 @@
+
+/** \page mpqcrunning Running MPQC
+
+This chapter explains how to run MPQC in a variety of environments.
+
+The first two sections give general information on running MPQC:
+
+<ul>
+  <li> \ref mpqccomline
+  <li> \ref mpqcenv
+</ul>
+
+The final sections give specific information on running MPQC in
+different environments, as well as optimization hints:
+
+<ul>
+  <li> \ref mpqcmpi
+  <li> \ref mpqcopthints
+</ul>
+
+\section mpqccomline Command Line Options
+
+  MPQC can be given options followed by the input file
+name.  The following command line options are recognized:
+
+<dl>
+
+  <dt><tt>-o</tt><dd>Gives the name of the output file.  The default is the
+                console.
+
+  <dt><tt>-p</tt><dd>Specifies the prefix to prepend to all relative paths
+                in the input file.
+
+  <dt><tt>-W</tt><dd>Sets the working directory.  The default is the
+                current directory.
+
+  <dt><tt>-u</tt><dd>Specifies the default units system to use (see mpqc::UnitFactory).
+
+  <dt><tt>-d</tt><dd>If a debugger object was given in the input, start the
+                debugger running as soon as MPQC is started.
+
+  <dt><tt>-v</tt><dd>Print the version number.
+
+  <dt><tt>-w</tt><dd>Print the warranty information (there is no warranty).
+
+  <dt><tt>-L</tt><dd>Print the license information.
+
+  <dt><tt>-h</tt><dd>Print a list of options.
+
+</dl>
+
+\section mpqcenv Environmental Variables
+
+MPQC looks at several environmental variables that control the behavior
+of the component libraries and runtimes:
+
+<dl>
+
+  <dt><tt>MAD_NUM_THREADS</tt><dd>The maximum number of threads that can execute
+                     work tasks simultaneously. Set this to the number of cores that
+                     each MPI process can access without contention (e.g. the number of
+                     cores in each physical node). The actual number of threads
+                     created may be greater than that.
+
+</dl>
+
+\section mpqcmpi Running on a Distributed Memory Multiprocessor with MPI
+
+Modern MPI implementations expose a huge number of parameters
+that can be controlled by user via environment variables or other means.
+Correct execution of MPQC with most MPI implementations usually does not require changing
+any parameters; the few exceptions are listed below.
+
+\subsection mpqcmpimvapich2 MVAPICH2
+
+Environment variables \c MV2_ENABLE_AFFINITY and \c MV2_USE_LAZY_MEM_UNREGISTER must
+be both set to zero, e.g.:
+```
+  export MV2_ENABLE_AFFINITY=0
+  export MV2_USE_LAZY_MEM_UNREGISTER=0
+```
+
+
+\section mpqcopthints MPQC Optimization Hints
+
+MPQC was designed to execute as efficiently as possible without too much user intervention.
+However, it is sometimes necessary to adjust the default values of parameters.
+
+\subsection mpqcopthintsbuf Communication Buffers
+
+It is recommended to increase the number and size of communication buffers used by the
+MADWorld runtime:
+
+```
+export MAD_SEND_BUFFERS=128
+export MAD_RECV_BUFFERS=128
+export MAD_BUFFER_SIZE=1.5MB
+```
+
+*/

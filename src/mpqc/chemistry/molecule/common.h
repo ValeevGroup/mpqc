@@ -58,6 +58,15 @@ double sum_charge(std::vector<T> const &ts) {
   return total_charge;
 }
 
+template <typename T>
+double sum_natoms(std::vector<T> const &ts) {
+  double total_natoms = 0.0;
+  for (auto const &t : ts) {
+    total_natoms += natoms(t);
+  }
+  return total_natoms;
+}
+
 }  // namespace molecule
 }  // namespace mpqc
 

@@ -37,13 +37,21 @@ macro(add_mpqc_library _name _rawlist_source_files _rawlist_public_header_files 
       $<TARGET_PROPERTY:${_libname},INCLUDE_DIRECTORIES>)
   target_compile_options(${_libname}-obj PRIVATE 
       $<TARGET_PROPERTY:${_libname},COMPILE_OPTIONS>)
-    
-  set_target_properties(${_libname} PROPERTIES PUBLIC_HEADER "${_public_header_files}")
+  
+  # this does not work with hierarchies of header files
+  # see here for possible workaround if frameworks are really needed:
+  #     http://cmake.3232098.n2.nabble.com/Install-header-directory-hierarchy-td5638507.html
+  # set_target_properties(${_libname} PROPERTIES PUBLIC_HEADER "${_public_header_files}")
+  # install manually
+  foreach ( file ${_public_header_files} )
+    get_filename_component( dir ${file} DIRECTORY )
+    install( FILES ${file} DESTINATION ${MPQC_INSTALL_INCLUDEDIR}/${_include_dir}/${dir} COMPONENT ${_name})
+  endforeach()
+  
   
   # Add library to the list of installed components
   install(TARGETS ${_libname} EXPORT mpqc
       COMPONENT ${_name}
-      PUBLIC_HEADER DESTINATION "${MPQC_INSTALL_INCLUDEDIR}/${_include_dir}"
       LIBRARY DESTINATION "${MPQC_INSTALL_LIBDIR}"
       ARCHIVE DESTINATION "${MPQC_INSTALL_LIBDIR}"
       INCLUDES DESTINATION "${MPQC_INSTALL_INCLUDEDIR}")
@@ -77,8 +85,9 @@ macro(add_mpqc_library _name _rawlist_source_files _rawlist_public_header_files 
         target_link_libraries(${_libname} PUBLIC ${_dep})
       endif()      
 
-      # import LINK_FLAGS from dependent
-      if (NOT ${_dep}_is_mpqc_hdr_lib)
+      # import LINK_FLAGS from dependent, unless it's an interface library
+      get_property(${_dep}_target_type TARGET ${_dep} PROPERTY TYPE SET)
+      if (NOT ${_dep}_is_mpqc_hdr_lib AND NOT ${_dep}_target_type STREQUAL "INTERFACE_LIBRARY")
         get_property(_dep_LINK_FLAGS_SET TARGET ${_dep} PROPERTY LINK_FLAGS SET)
         if (_dep_LINK_FLAGS_SET)
           get_property(_dep_LINK_FLAGS TARGET ${_dep} PROPERTY LINK_FLAGS)
@@ -109,10 +118,13 @@ macro(add_mpqc_hdr_library _name _public_header_files _dep_mpqc_comp _include_di
     $<INSTALL_INTERFACE:${MPQC_INSTALL_INCLUDEDIR}>
   )
 
-  # PUBLIC_HEADER property is not supported on INTERFACE targets, hence have to do install manually
-  install(FILES ${${_public_header_files}}
-          DESTINATION ${MPQC_INSTALL_INCLUDEDIR}/${_include_dir}
-          COMPONENT ${_name})
+  # PUBLIC_HEADER property is not supported on INTERFACE targets, and do not work
+  # with hierarchies of headers
+  # hence have to do install manually
+  foreach ( file ${${_public_header_files}} )
+    get_filename_component( dir ${file} DIRECTORY )
+    install( FILES ${file} DESTINATION ${MPQC_INSTALL_INCLUDEDIR}/${_include_dir}/${dir} COMPONENT ${_name})
+  endforeach()
   
   # Add library to the list of installed components
   install(TARGETS ${_libname} EXPORT mpqc

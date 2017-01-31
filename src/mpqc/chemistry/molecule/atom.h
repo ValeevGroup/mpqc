@@ -67,6 +67,9 @@ inline double mass(Atom const &a) { return a.mass(); }
 /// Returns the nuclear charge of the atom.
 inline int64_t charge(Atom const &a) { return a.charge(); }
 
+/// # of atoms in an atom, always returns 1
+inline size_t natoms(Atom const &a) { return 1; }
+
 /*! \brief Returns the center of the atom.
  *
  * Center of mass is part of the clustering interface.

@@ -7,6 +7,7 @@
 #include "./atom_based_cluster.h"
 #include "./molecule_fwd.h"
 #include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/misc/observer.h"
 
 namespace mpqc {
 
@@ -25,7 +26,7 @@ namespace mpqc {
  * to atoms.  Its main job is allow for clustering of its clusterables.
  *
  */
-class Molecule : public DescribedClass {
+class Molecule : virtual public DescribedClass, public utility::Observable<Molecule> {
  private:
   std::vector<AtomBasedClusterable> elements_;
 
@@ -33,10 +34,16 @@ class Molecule : public DescribedClass {
   double mass_ = 0.0;
   int64_t charge_ = 0;        /// Net charge (# protons - # electrons)
   int64_t total_charge_ = 0;  // total charge # protons
+  double natoms_ = 0.0;
 
   void init(std::istream &file, bool sort_input);
 
   void init(std::istream &file, Vector3d const &point);
+
+ public:
+  /// the only way to mutate coordinates is via MolecularCoordinates
+  friend class MolecularCoordinates;
+  void update(const std::vector<Atom> &atoms);
 
  public:
   Molecule() = default;
@@ -46,15 +53,19 @@ class Molecule : public DescribedClass {
    *
    *  | KeyWord | Type | Default| Description |
    *  |---------|------|--------|-------------|
-   *  |file_name|string|none|This gives the name of a XYZ file, from which the
+   *  |\c file_name|string|none|This gives the name of a XYZ file, from which
+   * the
    * nuclear coordinates will be read |
    *  |||| (the XYZ format is described <a
    * href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).|
-   *  |charge|int|0|the charge of this molecule|
-   *  |sort_input|boolean|true|If true, sort atoms from origin {0.0, 0.0, 0.0} |
-   *  |sort_origin|boolean|false|sort atoms from origin {0.0, 0.0, 0.0} |
-   *  |n_cluster|int|0|If nonzero, cluster moleucle by n_cluster|
-   *  |attach_hydrogen|boolean|true|use attach_hydrogen_kmeans when clustering|
+   *  |\c charge|int|0|the charge of this molecule|
+   *  |\c sort_input|boolean|true|If true, sort atoms from origin {0.0, 0.0,
+   * 0.0} |
+   *  |\c sort_origin|boolean|false|sort atoms from origin {0.0, 0.0, 0.0} |
+   *  |\c n_cluster|int|0|If nonzero, divide the Molecule into \c n_cluster
+   * clusters|
+   *  |\c attach_hydrogen|boolean|true|use attach_hydrogen_kmeans when
+   * clustering|
    *
    *
    *
@@ -157,6 +168,9 @@ class Molecule : public DescribedClass {
    * in the Clusterables of the Molecule.
    */
   std::vector<Atom> atoms() const;
+
+  /// @return the number of atoms returned by atoms()
+  size_t natoms() const;
 
   /*! \brief Center of mass of the Molecule.
    *

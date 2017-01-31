@@ -59,10 +59,11 @@ string_distance(const std::string& str1,
 DescribedClass::keyval_ctor_wrapper_type DescribedClass::type_to_keyval_ctor(
     const std::string& type_name) {
   auto& registry = keyval_ctor_registry();
-  if (registry.find(type_name) == registry.end()) {
+  auto iter = registry.find(type_name);
+  if (iter == registry.end()) {
     // check if the name was simply misspelled
     std::vector<std::string> candidates;
-    // suggest possible missplelling if distance between type_name and any key
+    // suggest possible misspelling if distance between type_name and any key
     // less than 4 (MPQC3 default)
     for (const auto& e : registry) {
       if (string_distance(type_name, e.first) <= std::size_t(4)) {
@@ -81,15 +82,20 @@ DescribedClass::keyval_ctor_wrapper_type DescribedClass::type_to_keyval_ctor(
     throw mpqc::InputError(oss.str().c_str(), __FILE__, __LINE__, "type",
                            type_name.c_str());
   }
-  return registry[type_name];
+  return iter->second.first;
 }
 
 ///////////////////////////////////////////////
 
 KeyVal::KeyVal()
     : top_tree_(std::make_shared<ptree>()),
-      class_registry_(std::make_shared<class_registry_type>()),
+      dc_registry_(std::make_shared<dc_registry_type>()),
       path_("") {}
+
+KeyVal KeyVal::clone() const {
+  return KeyVal(std::make_shared<ptree>(*this->top_tree()),
+                std::make_shared<dc_registry_type>(), std::string());
+}
 
 std::shared_ptr<KeyVal::ptree> KeyVal::tree() const {
   std::shared_ptr<ptree> result(

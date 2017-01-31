@@ -1,8 +1,68 @@
-MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
+MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision db02c57f7dd3619a8aa1b4163ceeec710c4b33a2
+                 Revision 469ba108ddde3f105e464138e34a95f7c5a07880
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2006CODATA",
+    "unitcell": {
+        "charge": "0",
+        "file_name": "h2.xyz",
+        "sort_input": "true",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "1.481696"
+        ],
+        "rmax": [
+            "0",
+            "0",
+            "4"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "6"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "4"
+        ],
+        "k_points": [
+            "1",
+            "1",
+            "10"
+        ]
+    },
+    "basis": {
+        "name": "sto-3g",
+        "molecule": "$:unitcell"
+    },
+    "wfn_world": {
+        "molecule": "$:unitcell",
+        "basis": "$:basis",
+        "screen": "qqr",
+        "threshold": "1.0e-20"
+    },
+    "wfn": {
+        "type": "zRHF",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "converge": "1.0e-7",
+        "max_iter": "100",
+        "soad_guess": "true",
+        "print_detail": "false",
+        "max_condition_num": "1e8"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-7"
+    }
+}
 
   Using fundamental constants system 2006CODATA
 OBS Basis Trange 
@@ -35,18 +95,14 @@ Unit cell info:
 	Lattice parameters (in Bohr): [               0                0 2.79999965219213]
 
 
-Nuclear Repulsion: 4.48810370139753
-
 Computing One Body Integral for Periodic System: < κ |T| λ >
- Size: 5.36441802978516e-07 GB Time: 0.001630011 s
+ Size: 5.36441802978516e-07 GB Time: 0.003225971 s
 
 Computing One Body Integral for Periodic System: < κ |V| λ >
- Size: 5.36441802978516e-07 GB Time: 0.025881571 s
+ Size: 5.36441802978516e-07 GB Time: 0.028951263 s
 
 Computing One Body Integral for Periodic System: < κ | λ >
- Size: 5.36441802978516e-07 GB Time: 0.001378564 s
-
-Using SOAD guess for initial Fock ...
+ Size: 5.36441802978516e-07 GB Time: 0.001601274 s
 
 Building Fock Matrix from SOAD Guess ...
 
@@ -60,23 +116,86 @@ Building Fock Matrix from SOAD Guess ...
 	overlap condition number = 11.8947772732314 at k = 7
 	overlap condition number = 4.73737051911483 at k = 8
 	overlap condition number = 1.69815819977789 at k = 9
+Nuclear Repulsion Energy: 4.48810370139753
+
 
  Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
-    1      -5.469800656061      -0.981696954663      -5.469800656061       0.001902180361                1.015
-    2      -5.482540965531      -0.994437264134      -0.012740309470       0.000432058836                0.848
-    3      -5.482543824482      -0.994440123084      -0.000002858950       0.000256141542                0.773
-    4      -5.482543900730      -0.994440199332      -0.000000076248       0.000174358429                0.899
+    1      -5.469800656061      -0.981696954663      -5.469800656061       0.001902180361                0.560
+    2      -5.482540965531      -0.994437264134      -0.012740309470       0.000432058836                0.594
+    3      -5.482543824482      -0.994440123084      -0.000002858950       0.000256141542                0.617
+    4      -5.482543900730      -0.994440199332      -0.000000076248       0.000174358429                0.612
 
 Periodic Hartree-Fock iterations have converged!
 
-Total Periodic Hartree-Fock energy = -0.994440199332264
+Total Periodic Hartree-Fock energy = -0.994440199332263
 
 Time(s):
-	Init:                               0.260
-	Coulomb term:                       1.812
-	Exchange term:                      1.706
-	Real->Recip trans:                  0.004
-	Diag + Density:                     0.005
-	Total:                              3.535
+	Init:                               0.206
+	Coulomb term:                       1.193
+	Exchange term:                      1.163
+	Real->Recip trans:                  0.006
+	Diag + Density:                     0.010
+	Total:                              2.383
 
-  Wfn energy is: -0.994440199332264
+  Output KeyVal (format=JSON):
+{
+    "units": "2006CODATA",
+    "unitcell": {
+        "charge": "0",
+        "file_name": "h2.xyz",
+        "sort_input": "true",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "1.481696"
+        ],
+        "rmax": [
+            "0",
+            "0",
+            "4"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "6"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "4"
+        ],
+        "k_points": [
+            "1",
+            "1",
+            "10"
+        ]
+    },
+    "basis": {
+        "name": "sto-3g",
+        "molecule": "$:unitcell"
+    },
+    "wfn_world": {
+        "molecule": "$:unitcell",
+        "basis": "$:basis",
+        "screen": "qqr",
+        "threshold": "1.0e-20"
+    },
+    "wfn": {
+        "type": "zRHF",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "converge": "1.0e-7",
+        "max_iter": "100",
+        "soad_guess": "true",
+        "print_detail": "false",
+        "max_condition_num": "1e8"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-7",
+        "value": {
+            "value": "-0.99444019933226269"
+        }
+    }
+}

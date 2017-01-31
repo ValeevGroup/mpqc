@@ -1,7 +1,10 @@
 set(sources
-    energy.h
     energy.cpp
-    propertybase.h
+    energy.h
+    findif.cpp
+    findif.h
+    linkage.h
+    property.h
 )
 
-add_mpqc_library(properties sources sources "MPQCwfn" "mpqc/chemistry/qc/properties")
+add_mpqc_library(properties sources sources "MPQCwfn;MPQCmath_function;MPQCutil_misc;MPQCutil_c++;tiledarray" "mpqc/chemistry/qc/properties")

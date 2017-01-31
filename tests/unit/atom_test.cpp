@@ -3,7 +3,7 @@
 
 #include "mpqc/chemistry/molecule/atom.h"
 
-SCENARIO("atoms can be intialized", "[atom]"){
+SCENARIO("atoms can be initialized", "[atom]"){
     GIVEN("a default initalized atom"){
         mpqc::Atom a;
         auto center = a.center();

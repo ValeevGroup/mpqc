@@ -12,17 +12,19 @@ SCENARIO("atoms can be initialized", "[atom]"){
         REQUIRE(center[2] == 0);
 
         REQUIRE(a.mass() == 0);
-        REQUIRE(a.charge() == 0);
+        REQUIRE(a.atomic_number() == 0);
+        REQUIRE(a.charge() == 0.0);
 
         WHEN("the atom is assigned to a new atom"){
-            a = mpqc::Atom({1.0, 2.0, 3.0}, 1.07, 1);
+            a = mpqc::Atom({1.0, 2.0, 3.0}, 1.07, 1, 0.5);
             center = a.center();
             REQUIRE(center[0] == 1);
             REQUIRE(center[1] == 2);
             REQUIRE(center[2] == 3);
 
             REQUIRE(a.mass() == 1.07);
-            REQUIRE(a.charge() == 1);
+            REQUIRE(a.atomic_number() == 1);
+            REQUIRE(a.charge() == 0.5);
         }
     }
 }

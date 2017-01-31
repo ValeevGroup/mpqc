@@ -49,44 +49,6 @@ class Screener {
   inline virtual bool skip(int64_t, int64_t, int64_t, int64_t) const {
     return false;
   }
-
-  /*! \brief a debugging function that should validate that the screener is
-   * working as expected.
-   *
-   * \param a function index of first shell
-   * \param b function index of second shell
-   * \param c function index of third shell
-   * \param d function index of fourth shell
-   *
-   * \param buf is a pointer to the integral buffer
-   *
-   * \param size should be the number of functions in the buffer
-   *
-   * \return true if screening was successful
-   */
-  inline virtual bool validate(int64_t a, int64_t b, int64_t c, int64_t d,
-                        double const *buf, int64_t size) const {
-    return true;
-  }
-
-  /*! \brief a debugging function that should validate that the screener is
-   * working as expected.
-   *
-   *
-   * \param a function index of first shell
-   * \param b function index of second shell
-   * \param c function index of third shell
-   *
-   * \param buf is a pointer to the integral buffer
-   *
-   * \param size should be the number of functions in the buffer
-   *
-   * \return true if screening was successful
-   */
-  inline virtual bool validate(int64_t a, int64_t b, int64_t c, double const *buf,
-                        int64_t size) const {
-    return true;
-  }
 };
 
 }  // namespace  lcao

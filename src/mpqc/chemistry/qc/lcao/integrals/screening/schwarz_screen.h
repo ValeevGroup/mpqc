@@ -285,7 +285,7 @@ class SchwarzScreen : public Screener {
    * to be part of the Q matrix construction.
    */
   SchwarzScreen(std::shared_ptr<Qmatrix> Qab, std::shared_ptr<Qmatrix> Qcd,
-                double thresh = 1e-12);
+                double thresh = SchwarzScreen::default_thresh);
 
   /// Reports the threshold being used for skipping integrals
   double skip_threshold() const;
@@ -302,14 +302,6 @@ class SchwarzScreen : public Screener {
 
   bool skip(int64_t, int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t, int64_t) const override;
-
-  // Overrides the validate function, these functions test the accuracy of the
-  // screening
-  bool validate(int64_t a, int64_t b, int64_t c, double const *buf,
-                int64_t size) const override;
-
-  bool validate(int64_t a, int64_t b, int64_t c, int64_t d, double const *buf,
-                int64_t size) const override;
 };
 
 /*! \brief Creates a Scwhwarz Screener

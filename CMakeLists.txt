@@ -303,7 +303,7 @@ CONFIGURE_FILE(
 
 # sample CMakeLists.txt
 set(sample_dirs "mp2")
-foreach(sample_dir IN LISTS ${sample_dirs})
+foreach(sample_dir ${sample_dirs})
   configure_file(
     ${PROJECT_SOURCE_DIR}/doc/devsamp/${sample_dir}/CMakeLists.txt.in
     ${PROJECT_BINARY_DIR}/doc/devsamp/${sample_dir}/CMakeLists.txt

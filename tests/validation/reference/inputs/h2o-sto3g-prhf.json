@@ -17,7 +17,7 @@
    "wfn_world":{
      "molecule" : "$:unitcell",
      "basis" : "$:basis",
-     "screen": "qqr",
+     "screen": "schwarz",
      "threshold": 1.0e-20
    },
    "wfn":{

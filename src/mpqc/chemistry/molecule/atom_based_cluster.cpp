@@ -5,8 +5,9 @@ namespace mpqc {
 
 void AtomBasedCluster::update_cluster() {
   mass_ = molecule::sum_mass(elements_);
-  charge_ = molecule::sum_charge(elements_);
+  total_atomic_number_ = molecule::sum_atomic_number(elements_);
   com_ = molecule::center_of_mass(elements_);
+  natoms_ = molecule::sum_natoms(elements_);
 }
 
 std::vector<Atom> AtomBasedCluster::atoms() const {
@@ -20,6 +21,13 @@ std::vector<Atom> AtomBasedCluster::atoms() const {
 
 std::vector<Atom> collapse_to_atoms(AtomBasedCluster const &abc) {
   return abc.atoms();
+}
+
+void update(AtomBasedCluster &abc, const std::vector<Atom>& atoms, size_t& pos) {
+  for (auto &elem : abc.elements_) {
+    update(elem, atoms, pos);
+  }
+  abc.com_ = molecule::center_of_mass(abc.elements_);
 }
 
 std::ostream &operator<<(std::ostream &os, AtomBasedCluster const &c) {

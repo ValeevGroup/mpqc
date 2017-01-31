@@ -6,6 +6,7 @@
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/misc/assert.h"
+#include "mpqc/util/misc/exenv.h"
 #include "mpqc/chemistry/units/units.h"
 
 #include <libint2/atom.h>
@@ -58,15 +59,13 @@ Molecule::Molecule(std::vector<ABCbl> c, bool sort_input)
     : elements_(std::move(c)),
       com_(center_of_mass(AtomBasedCluster(elements_))),
       mass_(molecule::sum_mass(elements_)),
-      charge_(0),
-      total_charge_(molecule::sum_charge(elements_)) {
+      total_atomic_number_(molecule::sum_atomic_number(elements_)) {
   if (sort_input) {
     sort_elements(elements_, com_);
   }
 }
 
 Molecule::Molecule(const KeyVal &kv) {
-  //  std::cout << "Construct Molecule" << std::endl;
   auto file_name = kv.value<std::string>("file_name", "");
   MPQC_ASSERT(!file_name.empty());
   if (file_name[0] != '/' && kv.exists("$:file_prefix")) {
@@ -102,13 +101,11 @@ Molecule::Molecule(const KeyVal &kv) {
     elements_ = std::move(clustered_mol.elements_);
     com_ = std::move(clustered_mol.com_);
     mass_ = std::move(clustered_mol.mass_);
-    total_charge_ = std::move(clustered_mol.total_charge_);
+    total_atomic_number_ = clustered_mol.total_atomic_number_;
   }
-
-  // attention, has to get charge at the end
-  charge_ = kv.value<int>("charge", 0);
-  if (charge_ > total_charge_) {
-    throw std::invalid_argument("Charge > Total Charge of Molecule! \n");
+  else{
+    mpqc::ExEnv::out0() << "\n\n Warning! \"n_cluster\" is not set in Molecule input! "
+                      << "This might affect parallel performance! \n\n";
   }
 }
 
@@ -139,7 +136,7 @@ void Molecule::init(std::istream &file, bool sort_input) {
   elements_ = std::move(atoms);
   com_ = molecule::center_of_mass(elements_);
   mass_ = molecule::sum_mass(elements_);
-  total_charge_ = molecule::sum_charge(elements_);
+  total_atomic_number_ = molecule::sum_atomic_number(elements_);
 
   if (sort_input) {
     sort_elements(elements_, com_);
@@ -163,7 +160,8 @@ void Molecule::init(std::istream &file, Vector3d const &point) {
   elements_ = std::move(atoms);
   com_ = molecule::center_of_mass(elements_);
   mass_ = molecule::sum_mass(elements_);
-  total_charge_ = molecule::sum_charge(elements_);
+  total_atomic_number_ = molecule::sum_atomic_number(elements_);
+  natoms_ = molecule::sum_natoms(elements_);
 
   sort_elements(elements_, point);
 }
@@ -174,6 +172,10 @@ void Molecule::sort_from_point(Vector3d const &point) {
 
 std::vector<Atom> Molecule::atoms() const {
   return collapse_to_atoms(elements_);
+}
+
+size_t Molecule::natoms() const {
+  return natoms_;
 }
 
 double Molecule::nuclear_repulsion() const {
@@ -193,7 +195,7 @@ double Molecule::nuclear_repulsion() const {
 int64_t Molecule::core_electrons() const {
   int64_t n = 0;
   for (auto const &a : this->atoms()) {
-    int z = a.charge();
+    auto z = a.atomic_number();
     assert(z != 0);
 
     if (z > 2) n += 2;
@@ -210,9 +212,17 @@ int64_t Molecule::core_electrons() const {
   return n;
 }
 
+void Molecule::update(const std::vector<Atom> &atoms) {
+  size_t pos = 0;  // points to next atoms to be added
+  for (auto &element : elements_) {
+    ::mpqc::update(element, atoms, pos);
+  }
+  com_ = molecule::center_of_mass(elements_);
+  Observable::message();
+}
+
 std::ostream &operator<<(std::ostream &os, Molecule const &mol) {
   os << "Molecule C.O.M: " << mol.com().transpose() << ", ";
-  os << "charge: " << mol.charge() << ", ";
   os << "mass: " << mol.mass() << ", with Elements: {";
 
   auto last = mol.end();

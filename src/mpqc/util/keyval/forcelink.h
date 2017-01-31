@@ -2,7 +2,7 @@
 #ifndef MPQC4_SRC_MPQC_UTIL_KEYVAL_FORCELINK_H_
 #define MPQC4_SRC_MPQC_UTIL_KEYVAL_FORCELINK_H_
 
-#include "keyval.h"
+#include "mpqc/util/keyval/keyval.h"
 
 namespace mpqc {
 namespace detail {

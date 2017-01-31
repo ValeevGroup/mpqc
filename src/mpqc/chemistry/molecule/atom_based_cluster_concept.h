@@ -25,10 +25,12 @@ namespace mpqc {
 class AtomBasedClusterConcept : public ClusterConcept {
  public:
   virtual ~AtomBasedClusterConcept() noexcept = default;
-  virtual int64_t charge_() const = 0;
+  virtual int64_t total_atomic_number_() const = 0;
   virtual double mass_() const = 0;
   virtual Vector3d const &com_() const = 0;
   virtual std::vector<Atom> atoms_() const = 0;
+  virtual size_t natoms_() const = 0;
+  virtual void update_(const std::vector<Atom> &atoms, size_t &pos) = 0;
 };
 
 /*
@@ -59,12 +61,20 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
     return center_of_mass(element_);
   }
 
-  int64_t charge_() const override final { return charge(element_); }
+  int64_t total_atomic_number_() const override final {
+    return total_atomic_number(element_);
+  }
   double mass_() const override final { return mass(element_); }
 
   std::vector<Atom> atoms_() const override final {
     return collapse_to_atoms(element_);
   }
+
+  void update_(const std::vector<Atom> &atoms, size_t &pos) override final {
+    update(element_, atoms, pos);
+  }
+
+  size_t natoms_() const override final { return natoms(element_); }
 
   std::ostream &print_(std::ostream &os) const override final {
     os << element_;
@@ -77,12 +87,12 @@ class AtomBasedClusterModel : public AtomBasedClusterConcept {
  * that is built up from atoms.
  *
  * AtomBasedClusterables must be able to return the total mass of
- * the clusterable as well as the total charge. Finally they need to be
+ * the clusterable as well as the total atomic number. Finally they need to be
  * collapsable to a vector of atoms.
  */
 class AtomBasedClusterable {
  private:
-  std::shared_ptr<const AtomBasedClusterConcept> element_impl_;
+  std::shared_ptr<AtomBasedClusterConcept> element_impl_;
 
  public:
   template <typename C>
@@ -102,7 +112,12 @@ class AtomBasedClusterable {
   std::vector<Atom> atoms() const { return element_impl_->atoms_(); }
 
   double mass() const { return element_impl_->mass_(); }
-  double charge() const { return element_impl_->charge_(); }
+  int64_t total_atomic_number() const { return element_impl_->total_atomic_number_(); }
+  double natoms() const { return element_impl_->natoms_(); }
+
+  void update(const std::vector<Atom> &atoms, size_t &pos) const {
+    return element_impl_->update_(atoms, pos);
+  }
 
   std::ostream &print(std::ostream &os) const {
     return element_impl_->print_(os);
@@ -111,7 +126,9 @@ class AtomBasedClusterable {
 
 inline double mass(AtomBasedClusterable const &ac) { return ac.mass(); }
 
-inline double charge(AtomBasedClusterable const &ac) { return ac.charge(); }
+inline int64_t total_atomic_number(AtomBasedClusterable const &ac) { return ac.total_atomic_number(); }
+
+inline size_t natoms(AtomBasedClusterable const &ac) { return ac.natoms(); }
 
 inline Vector3d const &center(AtomBasedClusterable const &ac) {
   return ac.com();
@@ -123,6 +140,11 @@ inline Vector3d const &center_of_mass(AtomBasedClusterable const &ac) {
 
 inline std::vector<Atom> collapse_to_atoms(AtomBasedClusterable const &ac) {
   return ac.atoms();
+}
+
+inline void update(AtomBasedClusterable &ac, const std::vector<Atom> &atoms,
+                   size_t &pos) {
+  return ac.update(atoms, pos);
 }
 
 /*! @} */

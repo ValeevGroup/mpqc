@@ -1,0 +1,12 @@
+/** \page mpqccomp Compiling MPQC
+
+## Prerequisites
+
+- TiledArray
+- Libint2
+- Eigen3
+- Boost
+
+
+
+*/

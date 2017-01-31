@@ -1,0 +1,19 @@
+#ifndef SRC_MPQC_UTIL_EXTERNAL_CPP_ITERATOR
+#define SRC_MPQC_UTIL_EXTERNAL_CPP_ITERATOR
+
+#include <memory>
+
+// C++17 feature
+#if __cplusplus <= 201402L
+
+#include "TiledArray/utility.h"
+
+namespace std {
+
+using TiledArray::detail::size;
+
+}  // namespace std
+
+#endif  // __cplusplus <= 201402L
+
+#endif  // SRC_MPQC_UTIL_EXTERNAL_CPP_ITERATOR

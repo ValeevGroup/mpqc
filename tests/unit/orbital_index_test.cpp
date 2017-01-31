@@ -4,7 +4,7 @@
 
 #include "catch.hpp"
 
-#include "mpqc/chemistry/qc/expression/orbital_index.h"
+#include "mpqc/chemistry/qc/lcao/expression/orbital_index.h"
 
 using mpqc::lcao::OrbitalIndex;
 

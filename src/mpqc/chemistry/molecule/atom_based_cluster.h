@@ -29,7 +29,11 @@ class AtomBasedCluster {
   std::vector<AtomBasedClusterable> elements_;
   Vector3d com_ = {0, 0, 0};
   double mass_ = 0.0;
-  int64_t charge_ = 0.0;
+  int64_t total_atomic_number_ = 0.0;
+  size_t natoms_ = 0.0;
+
+  friend void update(AtomBasedCluster &abc,
+                                const std::vector<Atom> &atoms, size_t &pos);
 
  public:
   AtomBasedCluster() = default;
@@ -57,10 +61,11 @@ class AtomBasedCluster {
 
   int64_t size() const { return elements_.size(); }
 
-  int64_t charge() const { return charge_; }
+  int64_t total_atomic_number() const { return total_atomic_number_; }
   double mass() const { return mass_; }
 
   std::vector<Atom> atoms() const;
+  size_t natoms() const;
 
   void clear() { elements_.clear(); }
 
@@ -110,13 +115,24 @@ inline Vector3d const &center(AtomBasedCluster const &c) { return c.com(); }
 
 inline double mass(AtomBasedCluster const &c) { return c.mass(); }
 
-inline int64_t charge(AtomBasedCluster const &c) { return c.charge(); }
+inline int64_t total_atomic_number(AtomBasedCluster const &c) { return c.total_atomic_number(); }
 
 inline Vector3d const &center_of_mass(AtomBasedCluster const &c) {
   return c.com();
 }
 
-std::vector<Atom> collapse_to_atoms(AtomBasedCluster const &);
+inline size_t natoms(AtomBasedCluster const &c) { return c.mass(); }
+
+/// converts an AtomBasedCluster to a vector of Atom's
+/// @param abc the AtomBasedCluster object
+/// @return the atoms sequence
+std::vector<Atom> collapse_to_atoms(AtomBasedCluster const & abc);
+
+/// updatesan AtomBasedCluster using a vector of Atom's
+/// @param abc the AtomBasedCluster object
+/// @param atoms the vector of Atom objects
+/// @param pos the index of the next Atom object in Atoms to be used
+void update(AtomBasedCluster& abc, const std::vector<Atom>& atoms, size_t& pos);
 
 inline void set_center(AtomBasedCluster &c, Vector3d const &point) {
   c.set_com(point);

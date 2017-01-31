@@ -41,7 +41,7 @@ void MolecularFormula::compute(const mpqc::Molecule& mol) {
   auto atoms = mol.atoms();
 
   for (const auto& atom : atoms) {
-    auto Z = atom.charge();
+    auto Z = atom.atomic_number();
     if (count.find(Z) == count.end()) count[Z] = 0;
     ++count[Z];
   }

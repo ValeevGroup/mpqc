@@ -13,7 +13,7 @@ std::vector<libint2::Atom> to_libint_atom(std::vector<Atom> const &atoms) {
     const auto &c = atom.center();
 
     libint2::Atom l_atom;
-    l_atom.atomic_number = atom.charge();
+    l_atom.atomic_number = atom.atomic_number();
     l_atom.x = c[0];
     l_atom.y = c[1];
     l_atom.z = c[2];

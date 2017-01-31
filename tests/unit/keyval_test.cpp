@@ -5,7 +5,7 @@
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include <madness/world/world.h>
 #include "catch.hpp"
-#include "mpqc/chemistry/qc/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/molecule/linkage.h"
 
 using std::vector;
@@ -15,7 +15,7 @@ using std::stringstream;
 using mpqc::KeyVal;
 using mpqc::DescribedClass;
 
-struct Base : public DescribedClass {
+struct Base : virtual public DescribedClass {
   Base(const KeyVal& kv) : DescribedClass(), value_(kv.value<int>("value")) {}
   Base(int v) : value_(v) {}
   virtual ~Base() {}
@@ -42,10 +42,10 @@ struct Derived : public Base {
 // not recommended due to complications with the static data initialization,etc)
 MPQC_CLASS_EXPORT_KEY(Derived<0>);
 
-struct Nested : public DescribedClass{
+struct Nested : virtual public DescribedClass{
 
   Nested(const KeyVal& kv) {
-    auto base = kv.keyval("base").class_ptr<Base>();
+    auto base = kv.class_ptr<Base>("base");
     base_ = base;
   }
 
@@ -68,6 +68,9 @@ TEST_CASE("KeyVal", "[keyval]") {
 
   // can chain multiple assign calls
   kv.assign(":z:0", true).assign(":z:1", -1.75);
+
+  // can erase
+  REQUIRE_THROWS(kv.assign(":z:2", 5).erase(":z:2").value<int>(":z:2"));
 
   REQUIRE(kv.value<string>(":z:0") == "true");
   REQUIRE_THROWS(kv.value<int>(":z:0"));  // cannot obtain bool as int
@@ -156,7 +159,7 @@ TEST_CASE("KeyVal", "[keyval]") {
       std::shared_ptr<DescribedClass> bptr = std::make_shared<Base>(2);
       KeyVal kv;
       kv.assign("base", bptr);
-      auto bptr1 = kv.class_ptr<Base>("base");
+      auto bptr1 = kv.class_ptr("base");
       REQUIRE(bptr == bptr1);
     }
   }
@@ -194,56 +197,99 @@ TEST_CASE("KeyVal", "[keyval]") {
     REQUIRE(c3 == c1);
   }
 
-  SECTION("read complex JSON") {
-    KeyVal kv;
-
-    // clang-format off
-    const char input[] =
-"{                             \
-  \"a\": 0,                    \
-  \"b\": 1.25,                 \
-  \"base\": {                  \
-     \"type\":\"Base\",        \
-     \"value\":\"$:a\"         \
-  },                           \
-  \"nested\" : {               \
-      \"type\" : \"Nested\",   \
-      \"base\" : \"$:base\"    \
-  },                           \
-  \"deriv0\": {                \
-     \"type\":\"Derived<0>\",  \
-     \"value\":\"$:a\",        \
-     \"dvalue\":\"$:b\"        \
-  },                           \
-  \"mpqc\": {                  \
-     \"base\":\"$..:base\",    \
-     \"deriv\":\"$:deriv0\"    \
-  },                           \
-  \"a\": 1                     \
+  // clang-format off
+  const char ref_kv_input_json[] =
+"\
+{                            \
+\"a\": 0,                    \
+\"b\": 1.25,                 \
+\"base\": {                  \
+  \"type\":\"Base\",         \
+  \"value\":\"$:a\"          \
+},                           \
+\"nested\" : {               \
+  \"type\" : \"Nested\",     \
+  \"base\" : \"$:base\"      \
+},                           \
+\"deriv0\": {                \
+  \"type\":\"Derived<0>\",   \
+  \"value\":\"$:a\",         \
+  \"dvalue\":\"$:b\"         \
+},                           \
+\"mpqc\": {                  \
+  \"base\":\"$..:base\",     \
+  \"deriv\":\"$:deriv0\"     \
+},                           \
+\"a\": 1                     \
 }";
-    // clang-format on
+  const char ref_kv_input_xml[] =
+"\
+<?xml version=\"1.0\" encoding=\"utf-8\"?>   \
+<a>0</a>                                      \
+<b>1.25</b>                                   \
+<base>                                        \
+  <type>Base</type>                           \
+  <value>$:a</value>                          \
+</base>                                       \
+<nested>                                      \
+  <type>Nested</type>                         \
+  <base>$:base</base>                         \
+</nested>                                     \
+<deriv0>                                      \
+  <type>Derived&lt;0&gt;</type>               \
+  <value>$:a</value>                          \
+  <dvalue>$:b</dvalue>                        \
+  <d>0</d>                                    \
+</deriv0>                                     \
+<mpqc>                                        \
+  <base>$..:base</base>                       \
+  <deriv>$:deriv0</deriv>                     \
+</mpqc>                                       \
+<a>1</a>";
+  const char ref_kv_input_info[] =
+"\
+a 0                    \
+b 1.25                 \
+base                   \
+{                      \
+    type Base          \
+    value $:a          \
+}                      \
+nested                 \
+{                      \
+    type Nested        \
+    base $:base        \
+}                      \
+deriv0                 \
+{                      \
+    type Derived<0>    \
+    value $:a          \
+    dvalue $:b         \
+    d 0                \
+}                      \
+mpqc                   \
+{                      \
+    base $..:base      \
+    deriv $:deriv0     \
+}                      \
+a 1";
+  // clang-format on
 
-    stringstream iss(input);
-    REQUIRE_NOTHROW(kv.read_json(iss));
-
-    stringstream oss;
-    REQUIRE_NOTHROW(kv.write_json(oss));
-    // std::cout << oss.str();
-
+  auto kv_test = [](const KeyVal& kv) {
     REQUIRE(kv.value<int>("a") == 0);  // "a" specified twice, make sure
                                        // KeyVal::value gets the first
                                        // specification
 
-    auto nested = kv.keyval("nested").class_ptr<Nested>();
+    auto nested = kv.class_ptr<Nested>("nested");
 
-    auto b1 = kv.keyval("mpqc:base").class_ptr<Base>();
-    auto b2 = kv.keyval("base").class_ptr<Base>();
+    auto b1 = kv.class_ptr<Base>("mpqc:base");
+    auto b2 = kv.class_ptr<Base>("base");
     REQUIRE(b1 == b2);
-    auto b3 = kv.keyval("mpqc:base").class_ptr<Base>();
+    auto b3 = kv.class_ptr<Base>("mpqc:base");
     REQUIRE(b1 == b3);
     Derived<0> x(kv.keyval("mpqc:deriv"));
-    auto d1 = kv.keyval("mpqc:deriv").class_ptr<Derived<0>>();
-    auto d2 = kv.keyval("deriv0").class_ptr<Derived<0>>();
+    auto d1 = kv.class_ptr<Derived<0>>("mpqc:deriv");
+    auto d2 = kv.class_ptr<Derived<0>>("deriv0");
     Derived<0>* d3 = &x;
     REQUIRE(d1 == d2);
     REQUIRE(d1.get() != d3);
@@ -254,8 +300,43 @@ TEST_CASE("KeyVal", "[keyval]") {
     kv.keyval("mpqc:deriv").assign("d",0);
     REQUIRE(kv.keyval("deriv0").exists("d"));
     REQUIRE(kv.value<int>("deriv0:d")==0);
+  };
+
+  SECTION("read complex JSON") {
+    KeyVal kv;
+
+    stringstream iss(ref_kv_input_json);
+    REQUIRE_NOTHROW(kv.read_json(iss));
+
+    stringstream oss;
+    REQUIRE_NOTHROW(kv.write_json(oss));
+
+    kv_test(kv);
   }
 
+  SECTION("read complex XML") {
+    KeyVal kv;
+
+    stringstream iss(ref_kv_input_xml);
+    REQUIRE_NOTHROW(kv.read_xml(iss));
+
+    stringstream oss;
+    REQUIRE_NOTHROW(kv.write_xml(oss));
+
+    kv_test(kv);
+  }
+
+  SECTION("read complex INFO") {
+    KeyVal kv;
+
+    stringstream iss(ref_kv_input_info);
+    REQUIRE_NOTHROW(kv.read_info(iss));
+
+    stringstream oss;
+    REQUIRE_NOTHROW(kv.write_info(oss));
+
+    kv_test(kv);
+  }
 
   SECTION("Basis Test"){
 
@@ -270,8 +351,18 @@ TEST_CASE("KeyVal", "[keyval]") {
 
     kv.assign("world", &world);
 
-    REQUIRE_NOTHROW(kv.keyval("basis").class_ptr<::mpqc::lcao::gaussian::Basis>());
+    REQUIRE_NOTHROW(kv.class_ptr<::mpqc::lcao::gaussian::AtomicBasis>("basis"));
 
+  }
+
+  SECTION("clone") {
+    KeyVal kv;
+
+    stringstream iss(ref_kv_input_json);
+    kv.read_json(iss);
+
+    auto kv_clone = kv.clone();
+    kv_test(kv_clone);
   }
 
 }  // end of test case

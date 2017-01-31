@@ -9,6 +9,9 @@
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/misc/print.h"
 
+// Eigen matrix algebra library
+#include "mpqc/math/external/eigen/eigen.h"
+
 namespace mpqc {
 namespace lcao {
 
@@ -95,8 +98,14 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     increase_ = kv.value<int>("increase", 2);
     approach_ = kv.value<std::string>("approach", "coarse");
     if (approach_ != "coarse" && approach_ != "fine" &&
-        approach_ != "straight") {
+        approach_ != "straight" && approach_ != "laplace") {
       throw std::runtime_error("invalid (T) approach! \n");
+    }
+
+    // no default reblock inner if use laplace
+    if(approach_ == "laplace"){
+      reblock_ = false;
+      reblock_inner_ = false;
     }
   }
 
@@ -141,11 +150,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // clean all LCAO integral
     this->lcao_factory().registry().purge(world);
 
-    // reblock occ and unocc space
-    if (reblock_ || reblock_inner_) {
-      reblock();
-    }
-
     // start CCSD(T)
     ExEnv::out0() << "\nBegining CCSD(T) " << std::endl;
     TArray t1 = this->t1();
@@ -156,7 +160,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       triples_energy_ = compute_ccsd_t_fine_grain(t1, t2);
     } else if (approach_ == "straight") {
       triples_energy_ = compute_ccsd_t_straight(t1, t2);
+    } else if (approach_ == "laplace") {
+      triples_energy_ = compute_ccsd_t_lt(t1, t2);
     }
+
     auto time1 = mpqc::fenced_now(world);
     auto duration1 = mpqc::duration_in_s(time0, time1);
 
@@ -168,6 +175,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   double compute_ccsd_t_coarse_grain(TArray &t1, TArray &t2) {
     auto &global_world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
+
+    // reblock occ and unocc space
+    if (reblock_ || reblock_inner_) {
+      reblock();
+    }
 
     // get integral
     TArray g_cjkl_global = get_aijk();
@@ -604,6 +616,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto &world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
 
+    // reblock occ and unocc space
+    if (reblock_ || reblock_inner_) {
+      reblock();
+    }
+
     // get integral
     TArray g_cjkl = get_aijk();
     TArray g_abij = get_abij();
@@ -1009,6 +1026,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   // compute and store all t3 amplitudes, not recommanded for performance
   // computing
   double compute_ccsd_t_straight(const TArray &t1, const TArray &t2) {
+
+    // reblock occ and unocc space
+    if (reblock_ || reblock_inner_) {
+      reblock();
+    }
+
     // get integral
     TArray g_cjkl = get_aijk();
     TArray g_dabi = get_abci();
@@ -1047,6 +1070,71 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           2 * (t3("a,b,c,k,j,i") + t3("a,b,c,i,k,j") + t3("a,b,c,j,i,k"))))
             .reduce(ccsd_t_reduce);
     triple_energy = triple_energy / 3.0;
+    return triple_energy;
+  }
+
+  void gauss_quad(int N, double a, double b, Eigen::VectorXd &w, Eigen::VectorXd &x) {
+
+
+    Eigen::MatrixXd J;
+    J.setZero(N,N);
+    for (auto i = 0; i < N; i++) {
+      if (i < N-1) {
+        J(i,i+1) = sqrt(1/(4-pow(i+1,-2)));
+      }
+    }
+    Eigen::MatrixXd Jfin = J+J.transpose();
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Jfin);
+    x = es.eigenvalues();
+    Eigen::MatrixXd V = es.eigenvectors();
+
+    for (int i = 0; i < N; i++) {
+      w(i) = 0.5*2.0*(b-a)*V(0,i)*V(0,i);
+      x(i) = (b-a)*0.5*x(i) + (b+a)*0.5;
+    }
+  }
+
+  double compute_ccsd_t_lt(const TArray &t1, const TArray &t2) {
+    // get integral
+    TArray g_cjkl = get_aijk();
+    TArray g_dabi = get_abci();
+    TArray g_abij = get_abij();
+
+    std::cout << "laplace-transform " << std::endl;
+    int n = 1;
+    Eigen::VectorXd x(n);
+    Eigen::VectorXd w(n);
+    gauss_quad(n, 0, 1, w, x);
+    std::cout << x << std::endl;
+    double xx = x(0);
+    std::cout << xx << std::endl;
+
+    //works only without df
+    TArray f_ai = this->lcao_factory().compute(L"<a|F|i>");
+    auto n_occ = this->trange1_engine()->get_occ();
+    auto n_frozen = this->trange1_engine()->get_nfrozen();
+    //Eigen::VectorXd &e_orb = *this->orbital_energy();
+    //double alpha = 3.0*(e_orb(n_occ) - e_orb(n_occ - 1));
+    //std::cout << "alpha = " << alpha << std::endl;
+
+    std::cout << g_dabi << std::endl;
+
+    TArray g_dabi_lt = g_lt(g_dabi, *this->orbital_energy(), n_occ, n_frozen, xx);
+
+    std::cout << g_dabi_lt << std::endl;
+
+    TArray G;
+    G("e,f") = g_dabi_lt("e,a,b,i") * g_dabi("f,a,b,i");
+
+    TArray T2;
+    T2("e,f") = t2("e,c,j,k") * t2("f,c,j,k");
+
+    double triple_energy = T2("e,f") * G("e,f");
+    std::cout << "triple_energy = " << triple_energy << std::endl;
+    //triple_energy = -triple_energy/alpha;
+    //std::cout << "triple_energy = " << triple_energy << std::endl;
+
     return triple_energy;
   }
 

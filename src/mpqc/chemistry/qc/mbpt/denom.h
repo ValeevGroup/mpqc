@@ -100,6 +100,57 @@ TA::Array<double, 4, Tile, Policy> d_abij(
   return result;
 }
 
+template <typename Tile, typename Policy>
+TA::Array<double, 4, Tile, Policy> g_lt(
+    TA::Array<double, 4, Tile, Policy> &abij, const Eigen::VectorXd &ens,
+    std::size_t n_occ, std::size_t n_frozen, double x) {
+
+//  std::cout << "range = " << abij.trange() << std::endl;
+
+  auto convert = [&ens, n_occ, n_frozen, x](Tile &result_tile,
+                                         const Tile &arg_tile) {
+
+    result_tile = Tile(arg_tile.range());
+
+    // compute index
+    const auto d0 = result_tile.range().lobound()[0];
+    const auto dn = result_tile.range().upbound()[0];
+    const auto a0 = result_tile.range().lobound()[1];
+    const auto an = result_tile.range().upbound()[1];
+    const auto b0 = result_tile.range().lobound()[2];
+    const auto bn = result_tile.range().upbound()[2];
+    const auto i0 = result_tile.range().lobound()[3];
+    const auto in = result_tile.range().upbound()[3];
+
+    double alpha = 3.0*(ens(n_occ) - ens(n_occ - 1));
+
+    auto tile_idx = 0;
+    typename Tile::value_type norm = 0.0;
+    for (auto d = d0; d < dn; ++d) {
+      for (auto a = a0; a < an; ++a) {
+        const auto e_a = ens[a + n_occ];
+        for (auto b = b0; b < bn; ++b) {
+          const auto e_b = ens[b + n_occ];
+          for (auto i = i0; i < in; ++i, ++tile_idx) {
+            const auto e_i = ens[i + n_frozen];
+            const auto exponent = pow(x,e_a/alpha - 1.0/6.0)*pow(x,e_b/alpha - 1.0/6.0)*pow(x,-e_i/alpha - 1.0/6.0);
+//            std::cout << "exponent = " << exponent << std::endl;
+            const double result = arg_tile[tile_idx]*exponent;
+            result_tile[tile_idx] = result;
+            norm += result*result;
+
+          }
+        }
+      }
+    }
+    return std::sqrt(norm);
+  };
+
+  auto result = TA::foreach(abij, convert);
+  abij.world().gop.fence();
+  return result;
+}
+
 // create matrix d("a,i") = 1/(ei - ea)
 template <typename Tile, typename Policy>
 TA::DistArray<

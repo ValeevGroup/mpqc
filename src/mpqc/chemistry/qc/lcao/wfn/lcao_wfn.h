@@ -33,6 +33,7 @@ public:
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
+   * | \c "charge" | int | 0 | the net charge of the molecule |
    * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space block size |
    * | \c "occ_block_size" | int | \c "$obs_block_size" | the target block size of the occupied space |
    * | \c "unocc_block_size" | int | \c "$obs_block_size" | the target block size of the unoccupied space |
@@ -42,6 +43,16 @@ public:
     lcao_factory_ = lcao::detail::construct_lcao_factory<Tile,Policy>(kv);
 
     frozen_core_ = kv.value<bool>("frozen_core",true);
+
+    const auto net_charge = kv.value<int>("charge", 0);
+    if (this->atoms()->total_atomic_number() <= net_charge)
+      throw InputError("net charge cannot be greater than the sum of atomic numbers",
+                       __FILE__, __LINE__, "charge");
+    const auto nelectrons = this->atoms()->total_atomic_number() - net_charge;
+    if (nelectrons % 2 != 0)
+      throw InputError("LCAOWavefunction for now requires an even number of electrons",
+                           __FILE__, __LINE__, "charge");
+    ndocc_ = nelectrons / 2;
     std::size_t mo_block = kv.value<int>("obs_block_size",24);
     occ_block_ = kv.value<int>("occ_block_size",mo_block);
     unocc_block_ = kv.value<int>("unocc_block_size",mo_block);
@@ -72,6 +83,10 @@ public:
   bool is_frozen_core() const {
     return frozen_core_;
   }
+  /// @return # of the doubly-occupied orbitals
+  size_t ndocc() const {
+    return ndocc_;
+  }
   size_t occ_block() const {
     return occ_block_;
   }
@@ -87,6 +102,7 @@ private:
 
   std::shared_ptr<LCAOFactoryType> lcao_factory_;
   bool frozen_core_;
+  std::size_t ndocc_;
   std::size_t occ_block_;
   std::size_t unocc_block_;
 

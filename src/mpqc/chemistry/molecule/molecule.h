@@ -26,14 +26,14 @@ namespace mpqc {
  * to atoms.  Its main job is allow for clustering of its clusterables.
  *
  */
-class Molecule : virtual public DescribedClass, public utility::Observable<Molecule> {
+class Molecule : virtual public DescribedClass,
+                 public utility::Observable<Molecule> {
  private:
   std::vector<AtomBasedClusterable> elements_;
 
   Vector3d com_ = {0, 0, 0};  /// Center of Mass
   double mass_ = 0.0;
-  int64_t charge_ = 0;        /// Net charge (# protons - # electrons)
-  int64_t total_charge_ = 0;  // total charge # protons
+  int64_t total_atomic_number_ = 0;  // sum of atomic numbers of all atoms
   double natoms_ = 0.0;
 
   void init(std::istream &file, bool sort_input);
@@ -48,40 +48,42 @@ class Molecule : virtual public DescribedClass, public utility::Observable<Molec
  public:
   Molecule() = default;
 
-  /** \brief KeyVal constructor for Molecule
-   *
+  // clang-format off
+  /** \brief The KeyVal constructor.
+   *  \param kv the KeyVal object. The following keywords will be queried in \c kv :
    *
    *  | KeyWord | Type | Default| Description |
    *  |---------|------|--------|-------------|
-   *  |\c file_name|string|none|This gives the name of a XYZ file, from which
-   * the
-   * nuclear coordinates will be read |
-   *  |||| (the XYZ format is described <a
-   * href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).|
-   *  |\c charge|int|0|the charge of this molecule|
-   *  |\c sort_input|boolean|true|If true, sort atoms from origin {0.0, 0.0,
-   * 0.0} |
+   *  |\c file_name|string|none|This gives the name of a XYZ file, from which the nuclear coordinates will be read (the XYZ format is described <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>).|
+   *  |\c atoms|array|none|Will query this if \c file_name not given. Each element of the array must specify an Atom object (see the KeyVal ctor of Atom for more info).|
+   *  |\c sort_input|boolean|true|If true, sort atoms from origin {0.0, 0.0, 0.0} |
    *  |\c sort_origin|boolean|false|sort atoms from origin {0.0, 0.0, 0.0} |
-   *  |\c n_cluster|int|0|If nonzero, divide the Molecule into \c n_cluster
-   * clusters|
-   *  |\c attach_hydrogen|boolean|true|use attach_hydrogen_kmeans when
-   * clustering|
+   *  |\c n_cluster|int|0|If nonzero, divide the Molecule into \c n_cluster clusters|
+   *  |\c attach_hydrogen|boolean|true|use attach_hydrogen_kmeans when clustering|
    *
-   *
-   *
-   *  example input:
+   *  example input 1:
    *
    * ~~~~~~~~~~~~~~~~~~~~~{.json}
    *  "molecule": {
-   *    "type": "Molecule",
-   *    "charge": 0,
-   *    "file_name": "water.xyz",
+   *    "file_name": "water20.xyz",
+   *    "sort_input": true,
+   *    "n_cluster": 20
+   *  }
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~
+   *
+   *  example input 2:
+   *
+   * ~~~~~~~~~~~~~~~~~~~~~{.json}
+   *  "molecule": {
+   *    "file_name": "water20.xyz",
    *    "sort_input": true,
    *    "n_cluster": 20
    *  }
    *
    * ~~~~~~~~~~~~~~~~~~~~~
    */
+  // clang-format on
   Molecule(const KeyVal &kv);
 
   /*! \brief Constructor to build Molecule from stream.
@@ -113,14 +115,9 @@ class Molecule : virtual public DescribedClass, public utility::Observable<Molec
   /// Function to set the mass of the Molecule
   void set_mass(double mass) { Molecule::mass_ = mass; }
 
-  /// Function to set the charge of the Molecule
-  void set_charge(int64_t charge) { Molecule::charge_ = charge; }
-
-  /// Charge of the Molecule: charge = (# protons - # electrons)
-  int64_t charge() const { return charge_; }
-
-  /// total nuclear charge # of protons
-  int64_t total_charge() const { return total_charge_; }
+  /// @return the sum of atomic numbers of all atoms
+  /// @sa Atom::atomic_number()
+  int64_t total_atomic_number() const { return total_atomic_number_; }
 
   /// Mass of the Molecule
   double mass() const { return mass_; }
@@ -142,16 +139,6 @@ class Molecule : virtual public DescribedClass, public utility::Observable<Molec
   std::vector<AtomBasedClusterable> const &clusterables() const {
     return elements_;
   }
-
-  /*! \brief Returns the difference between the Molecule's total_charge and the
-   * charge passed into the function.
-   */
-  int64_t occupation(unsigned long charge) const {
-    return total_charge_ - charge;
-  }
-
-  /// return the occupation number
-  int64_t occupation() const { return total_charge_ - charge_; }
 
   /// Computes the number of core electrons in the Molecule.
   int64_t core_electrons() const;

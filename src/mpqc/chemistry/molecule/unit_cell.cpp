@@ -48,7 +48,6 @@ double UnitCell::nuclear_repulsion(Vector3i RJ_max) const {
 std::ostream &operator<<(std::ostream &os, UnitCell const &unitcell) {
     os << "Molecule info:" << std::endl;
     os << "\tC.O.M: " << unitcell.com().transpose() << std::endl;
-    os << "\tCharge: " << unitcell.charge() << std::endl;
     os << "\tMass: " << unitcell.mass() << std::endl;
 
     os << "\nElements:\n";

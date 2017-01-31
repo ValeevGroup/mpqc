@@ -51,11 +51,20 @@ double sum_mass(std::vector<T> const &ts) {
 
 template <typename T>
 double sum_charge(std::vector<T> const &ts) {
-  int64_t total_charge = 0;
+  double total_charge = 0;
   for (auto const &t : ts) {
     total_charge += charge(t);
   }
   return total_charge;
+}
+
+template <typename T>
+int64_t sum_atomic_number(std::vector<T> const &ts) {
+  int64_t total_Z = 0;
+  for (auto const &t : ts) {
+    total_Z += total_atomic_number(t);
+  }
+  return total_Z;
 }
 
 template <typename T>

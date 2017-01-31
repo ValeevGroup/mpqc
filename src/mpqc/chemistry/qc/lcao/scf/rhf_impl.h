@@ -32,13 +32,16 @@ void RHF<Tile,Policy>::init(const KeyVal& kv) {
   auto& world = ao_factory.world();
   auto& mol = ao_factory.molecule();
 
-  // check if even number of electron first
-  std::size_t occ = mol.occupation();
-  if (occ % 2 != 0) {
-    throw std::invalid_argument(
-        "RHF doesn't support ODD number of electrons! \n");
-  }
-  occ = occ / 2;
+  // get the molecular charge
+  const auto charge = kv.value<int>("charge", 0);
+  if (mol.total_atomic_number() <= charge)
+    throw InputError("net charge cannot be greater than the total nuclear charge",
+                     __FILE__, __LINE__, "charge");
+  const auto nelectrons = mol.total_atomic_number() - charge;
+  if (nelectrons % 2 != 0)
+    throw InputError("RHF requires an even number of electrons",
+                         __FILE__, __LINE__, "charge");
+  const auto nocc = nelectrons / 2;
 
   max_iter_ = kv.value<int>("max_iter", 30);
 
@@ -65,14 +68,14 @@ void RHF<Tile,Policy>::init(const KeyVal& kv) {
   std::size_t n_cluster = mol.nclusters();
   if (density_builder == "purification") {
     auto density_builder = scf::PurificationDensityBuilder<Tile,Policy>(
-        S_, r_xyz, occ, n_cluster, t_cut_c, localize);
+        S_, r_xyz, nocc, n_cluster, t_cut_c, localize);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else if (density_builder == "eigen_solve") {
     std::string decompo_type =
         kv.value<std::string>("decompo_type", "conditioned");
     auto density_builder = scf::ESolveDensityBuilder<Tile,Policy>(
-        S_, r_xyz, occ, n_cluster, t_cut_c, decompo_type, localize);
+        S_, r_xyz, nocc, n_cluster, t_cut_c, decompo_type, localize);
     d_builder_ =
         std::make_unique<decltype(density_builder)>(std::move(density_builder));
   } else {

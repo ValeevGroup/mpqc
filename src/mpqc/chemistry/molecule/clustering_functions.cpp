@@ -27,7 +27,7 @@ ABCbls attach_hydrogens(ABCbls const &clusterables) {
   std::vector<AtomBasedCluster> clusters;
   ABCbls hydrogens;
   for (auto const &clusterable : clusterables) {
-    if (clusterable.charge() != 1) {
+    if (clusterable.total_atomic_number() != 1) {
       clusters.emplace_back(clusterable);
     } else {
       hydrogens.emplace_back(clusterable);

@@ -39,8 +39,14 @@ void zRHF::init(const KeyVal& kv) {
     std::cout << *unitcell << std::endl;
   }
 
-  auto charge = unitcell->charge();
-  docc_ = unitcell->occupation(charge) / 2;
+  // the unit cell must be electrically neutral
+  const auto charge = 0;
+  const auto nelectrons = unitcell->total_atomic_number() - charge;
+  if (nelectrons % 2 != 0)
+    throw InputError("zRHF requires an even number of electrons",
+                         __FILE__, __LINE__, "unitcell");
+  docc_ = nelectrons / 2;
+
   dcell_ = unitcell->dcell();
 
   // retrieve unitcell info from pao_factory

@@ -7,6 +7,49 @@
 - Eigen3
 - Boost
 
+## Compile TiledArray
+Please refer to [TiledArry Wiki](https://github.com/ValeevGroup/tiledarray/wiki)
+for information about compiling TiledArray.
+
+## Compile Libint2
+Please refer to [Libint Wiki](https://github.com/evaleev/libint/wiki)
+for information about compiling Libint.
+
+MPQC4 will require libint to compute 2-center and 3-center ERIs.
+Please provide following option when configure libint2
+```
+--enable-eri3=N
+--enable-eri2=N
+```
+
+## Compile MPQC4
+- example configure script
+```
+#!/bin/bash
+
+export MPQC_SOURCE=/path/to/mpqc/source/code/directory
+export TiledArray_INSTALL = /path/to/tiledarray/install/directory
+export LIBINT2_INSTALL = /path/to/libint/install/direcotry
+
+cmake \
+    -DCMAKE_CXX_FLAGS=-std=c++11 \
+    -DTiledArray_INSTALL_DIR= ${TiledArray_INSTALL} \
+    -DLIBINT2_INSTALL_DIR=${LIBINT2_INSTALL} \
+    -DBOOST_ROOT=/path/to/boost/install/direcotry \
+    -DEIGEN3_INCLUDE_DIR=/path/to/eigen3/include/directory \
+    ${MPQC_SOURCE}
+```
+after configure, run `make` and `make install`
+
+- MPQC4 configure variables
+|Variables            |Description|
+|---------------------|-----------|
+| TiledArray_INSTALL_DIR | path to TiledArray install directory |
+| LIBINT2_INSTALL_DIR | path to Libint2 install directory |
+| BOOST_ROOT | root path for Boost |
+| EIGEN3_INCLUDE_DIR | Comma separated list of include directories required to use Eigen 3 |
+| TA_POLICY |  dense or sparse, default sparse. control which policy to use with TiledArray. Some classes may only support sparse |
+| MPQC_VALIDATION_TEST_PRINT | default off, control if print output after validation test failed |
 
 
 */

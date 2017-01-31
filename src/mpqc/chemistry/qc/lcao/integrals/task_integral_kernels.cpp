@@ -89,9 +89,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
     const auto lb0 = lb[0];
     ub[0] += ns0;
 
-#ifdef NDEBUG
     if (!screen.skip(lb0)) {
-#endif  // NDEBUG
       lb[1] = ub[1] = lobound[1];
       for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
         auto const &s1 = sh1[idx1];
@@ -99,9 +97,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
         const auto lb1 = lb[1];
         ub[1] += ns1;
 
-#ifdef NDEBUG
         if (!screen.skip(lb0, lb1)) {
-#endif  // NDEBUG
           lb[2] = ub[2] = lobound[2];
           for (auto idx2 = 0ul; idx2 < end2; ++idx2) {
             auto const &s2 = sh2[idx2];
@@ -117,30 +113,15 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                 TA::remap(map, ints_shell_sets[0], lb, ub);
                 tile.block(lb, ub) = map;
               }
-            } else {
-#ifndef NDEBUG
-              shell_set(eng, s0, s1, s2);
-              assert(ints_shell_sets.size() == 1 &&
-                     "integral_kernel can't handle multi-shell-set engines");
-              if (ints_shell_sets[0] != nullptr) {
-                auto size = ns0 * ns1 * ns2;
-                auto valid =
-                    screen.validate(lb0, lb1, lb2, ints_shell_sets[0], size);
-              }
-#endif  // NDEBUG
             }
 
             lb[2] = ub[2];
           }  // end sh2 for
-#ifdef NDEBUG
-        }  // end 2 shell screen
-#endif     // NDEBUG
+        }    // end 2 shell screen
 
         lb[1] = ub[1];
       }  // end sh1 for
-#ifdef NDEBUG
-    }   // end 1 shell screen
-#endif  // NDEBUG
+    }    // end 1 shell screen
 
     lb[0] = ub[0];
   }
@@ -181,10 +162,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
     const auto lb0 = lb[0];
     ub[0] += ns0;
 
-#ifdef NDEBUG
     if (!screen.skip(lb0)) {
-#endif  // NDEBUG
-
       lb[1] = ub[1] = lobound[1];
       for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
         auto const &s1 = sh1[idx1];
@@ -192,10 +170,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
         const auto lb1 = lb[1];
         ub[1] += ns1;
 
-#ifdef NDEBUG
         if (!screen.skip(lb0, lb1)) {
-#endif  // NDEBUG
-
           lb[2] = ub[2] = lobound[2];
           for (auto idx2 = 0ul; idx2 < end2; ++idx2) {
             auto const &s2 = sh2[idx2];
@@ -203,10 +178,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
             const auto lb2 = lb[2];
             ub[2] += ns2;
 
-#ifdef NDEBUG
             if (!screen.skip(lb0, lb1, lb2)) {
-#endif  // NDEBUG
-
               lb[3] = ub[3] = lobound[3];
               for (auto idx3 = 0ul; idx3 < end3; ++idx3) {
                 auto const &s3 = sh3[idx3];
@@ -223,38 +195,19 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                     TA::remap(map, ints_shell_sets[0], lb, ub);
                     tile.block(lb, ub) = map;
                   }
-                } else {
-#ifndef NDEBUG
-                  shell_set(eng, s0, s1, s2, s3);
-                  assert(
-                      ints_shell_sets.size() == 1 &&
-                      "integral_kernel can't handle multi-shell-set engines");
-                  if (ints_shell_sets[0] != nullptr) {
-                    auto size = ns0 * ns1 * ns2 * ns3;
-                    auto valid = screen.validate(lb0, lb1, lb2, lb3,
-                                                 ints_shell_sets[0], size);
-                  }
-
-#endif  // NDEBUG
                 }
 
                 lb[3] = ub[3];
               }  // for all sh3
-#ifdef NDEBUG
-            }  // Skip from estimation with shells 1, 2, and 3
-#endif         // NDEBUG
+            }    // Skip from estimation with shells 1, 2, and 3
 
             lb[2] = ub[2];
           }  // end sh2 for
-#ifdef NDEBUG
-        }  // Skip from estimation with shell 0 and shell 1
-#endif     // NDEBUG
+        }    // Skip from estimation with shell 0 and shell 1
 
         lb[1] = ub[1];
       }  // end sh1 for
-#ifdef NDEBUG
-    }   // Skip from estimation with shell 0
-#endif  // NDEBUG
+    }    // Skip from estimation with shell 0
 
     lb[0] = ub[0];
   }

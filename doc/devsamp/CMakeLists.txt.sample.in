@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 set(mpqc_root_dir "@CMAKE_INSTALL_PREFIX@")
 
 # replace libmpqc with the particular library you need here
-find_package(mpqc @MADNESS_VERSION@ CONFIG QUIET REQUIRED COMPONENTS libmpqc HINTS ${madness_root_dir})
+find_package(mpqc @MADNESS_VERSION@ CONFIG QUIET REQUIRED COMPONENTS libmpqc HINTS ${mpqc_root_dir})
 
 # replace your_program_name_here with the name of the program you are creating
 set(program "your_program_name_here")
@@ -11,6 +11,6 @@ set(sources ${program}.cpp)
 
 add_executable(${program} EXCLUDE_FROM_ALL ${sources})
 
-# ${program} depends on which MPQC libraries? ...
-target_link_libraries(${program} libmpqc)
-# and potentially on additional libraries
+# ${program} uses MPQC main; it also links in all classes that the MPQC executable links in
+target_link_libraries(${program} MPQCmain libmpqc)
+# add other libraries needed for linking via additional target_link_libraries() calls

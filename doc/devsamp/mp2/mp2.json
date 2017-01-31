@@ -1,0 +1,19 @@
+{
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
+  },
+  "wfn":{
+    "type": "MP2",
+    "molecule" : "$:molecule",
+    "basis" : "$:basis"
+  },
+  "molecule": {
+    "file_name": "water.xyz"
+  },
+  "basis": {
+    "name": "6-31G",
+    "molecule": "$:molecule"
+  }
+}
+

@@ -3,18 +3,29 @@
 #include <iostream>
 #include <map>
 
+#include "mpqc/chemistry/units/units.h"
+#include <libint2/chemistry/elements.h>
+
 namespace mpqc {
 
-static std::map<int, std::string> atom_names = {
-    {1, "H"}, {2, "He"}, {3, "Li"}, {4, "Be"},  {5, "B"},   {6, "C"},
-    {7, "N"}, {8, "O"},  {9, "F"},  {10, "Ne"}, {11, "Na"}, {12, "Mg"}};
+namespace detail {
 
-// Taken from https://en.wikipedia.org/wiki/Atomic_units on 07/08/15
-double bohr_to_ang = 0.52917721092;
+std::string Z_to_element_name(int64_t Z) {
+  using libint2::chemistry::element_info;
+  for (const auto &e : element_info) {
+    if (e.Z == Z) return e.symbol;
+  }
+  abort();
+}
+
+}  // namespace detail
 
 std::string Atom::xyz_string(bool convert_to_angstroms) const {
-  std::string name = atom_names[atomic_number_];
+  std::string name = detail::Z_to_element_name(atomic_number_);
   name += ' ';
+
+  auto unit_factory = UnitFactory::get_default();
+  auto bohr_to_ang = unit_factory->make_unit("angstrom").from_atomic_units();
 
   Vector3d center = center_;
   if (convert_to_angstroms) {

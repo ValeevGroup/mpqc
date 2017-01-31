@@ -23,6 +23,7 @@
 #
 #  Copied from TiledArray on June 21 2015, by Drew Lewis
 
+set (CMAKE_DOCINSTALL_PATH ${CMAKE_INSTALL_PREFIX}/share/doc/mpqc-${MPQC_VERSION})
 
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
@@ -30,4 +31,11 @@ if(DOXYGEN_FOUND)
   add_custom_target (doc
     COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/doc/Doxyfile
     SOURCES ${PROJECT_BINARY_DIR}/doc/Doxyfile)
+  INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION ${CMAKE_DOCINSTALL_PATH}
+          COMPONENT mpqc-docs)
 endif()
+
+INSTALL(FILES ${PROJECT_SOURCE_DIR}/doc/devsamp/mp2/mp2.cpp
+              ${PROJECT_SOURCE_DIR}/doc/devsamp/mp2/mp2.json
+              ${PROJECT_BINARY_DIR}/doc/devsamp/mp2/CMakeLists.txt
+        DESTINATION ${CMAKE_DOCINSTALL_PATH}/examples/mp2 COMPONENT mpqc-docs)

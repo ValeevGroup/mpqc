@@ -302,11 +302,14 @@ CONFIGURE_FILE(
 )
 
 # sample CMakeLists.txt
-configure_file(
-  ${PROJECT_SOURCE_DIR}/doc/devsamp/CMakeLists.txt.sample.in
-  ${PROJECT_BINARY_DIR}/doc/devsamp/CMakeLists.txt.sample
-  @ONLY
-)
+set(sample_dirs "mp2")
+foreach(sample_dir IN LISTS ${sample_dirs})
+  configure_file(
+    ${PROJECT_SOURCE_DIR}/doc/devsamp/${sample_dir}/CMakeLists.txt.in
+    ${PROJECT_BINARY_DIR}/doc/devsamp/${sample_dir}/CMakeLists.txt
+    @ONLY
+  )
+endforeach()
 
 # install config files
 install(FILES ${PROJECT_BINARY_DIR}/mpqc.pc

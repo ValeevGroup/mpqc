@@ -65,11 +65,6 @@ namespace mpqc {
       tcut_ = kv.value<double>("tcut", 1e-6);
     }
 
-    template<typename Tile, typename Policy>
-    void CCSD_PNO<Tile, Policy>::compute(PropertyBase *pb)  {
-      throw std::runtime_error("Not Implemented!!");
-    }
-
     // compute MP2 T2 amplitudes
     template<typename Tile, typename Policy>
     TA::DistArray<Tile, Policy> CCSD_PNO<Tile, Policy>::compute_mp2_t2() {
@@ -678,14 +673,14 @@ namespace mpqc {
 
           if (dE >= this->converge_ || error >= this->converge_) {
               tmp_time0 = mpqc::now(world, accurate_time);
-              cc::T1T2<double, Tile, Policy> t(t1, t2);
-              cc::T1T2<double, Tile, Policy> r(r1, r2);
-              error = r.norm() / size(t);
+              cc::T1T2<TArray, TArray> t(t1, t2);
+              cc::T1T2<TArray, TArray> r(r1, r2);
+              error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
               diis.extrapolate(t, r);
 
               // update t1 and t2
-              t1("a,i") = t.first("a,i");
-              t2("a,b,i,j") = t.second("a,b,i,j");
+              t1("a,i") = t.t1("a,i");
+              t2("a,b,i,j") = t.t2("a,b,i,j");
 
               if (this->print_detail_) {
                   mpqc::detail::print_size_info(r2, "R2");
@@ -728,80 +723,84 @@ namespace mpqc {
       return E1;
     }
 
+    // computing function
     template<typename Tile, typename Policy>
-    double CCSD_PNO<Tile, Policy>::value()  {
+    void CCSD_PNO<Tile, Policy>::evaluate(Energy* result) {
 
-      auto &world = this->wfn_world()->world();
+      if (!this->computed()) {
+        /// cast ref_wfn to Energy::Evaluator
+        auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(this->ref_wfn_);
+        if(ref_evaluator == nullptr) {
+          std::ostringstream oss;
+          oss << "RefWavefunction in CCSD-PNO" << this->ref_wfn_->class_key()
+              << " cannot compute Energy" << std::endl;
+          throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+        }
 
-      double time;
-      auto time0 = mpqc::fenced_now(world);
+        ref_evaluator->evaluate(result);
 
-      double ref_energy = this->ref_wfn_->value();
+        double ref_energy = this->get_value(result).derivs(0)[0];
 
-      auto time1 = mpqc::fenced_now(world);
-      time = mpqc::duration_in_s(time0, time1);
-      utility::print_par(world, "Total Ref Time: ", time, " S \n");
+        // initialize
+        this->init();
 
-      // initialize
-      this->init();
+        // compute MP2 T2 amplitudes
+        ExEnv::out0() << std::endl << "Computing MP2 amplitudes" << std::endl;
+        TA::DistArray<Tile, Policy> t2_mp2 = compute_mp2_t2();
+        //ExEnv::out0() << "MP2 amplitudes: " << t2_mp2_ << std::endl;
+        // copy MP2 amplitudes for test purpose
+        TA::DistArray<Tile, Policy> t2_mp2_orig = t2_mp2.clone();
 
-      // compute MP2 T2 amplitudes
-      ExEnv::out0() << std::endl << "Computing MP2 amplitudes" << std::endl;
-      TA::DistArray<Tile, Policy> t2_mp2 = compute_mp2_t2();
-      //ExEnv::out0() << "MP2 amplitudes: " << t2_mp2_ << std::endl;
-      // copy MP2 amplitudes for test purpose
-      TA::DistArray<Tile, Policy> t2_mp2_orig = t2_mp2.clone();
+        // reblock T2 amplitudes (in each block: n_i=n_j=1, n_a=n_b=nvir)
+        ExEnv::out0() << std::endl << "Reblocking T2 amplitudes" << std::endl;
+        // compute converting matrices
+        TA::DistArray<Tile, Policy> occ_convert, vir_convert;
+        compute_M_reblock(occ_convert, vir_convert);
+        // obtain MP2 T2 with new blocking structure
+        t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
+                          * vir_convert("c,a") * vir_convert("d,b")
+                          * occ_convert("k,i") * occ_convert("l,j");
+        //ExEnv::out0() << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
 
-      // reblock T2 amplitudes (in each block: n_i=n_j=1, n_a=n_b=nvir)
-      ExEnv::out0() << std::endl << "Reblocking T2 amplitudes" << std::endl;
-      // compute converting matrices
-      TA::DistArray<Tile, Policy> occ_convert, vir_convert;
-      compute_M_reblock(occ_convert, vir_convert);
-      // obtain MP2 T2 with new blocking structure
-      t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
-                        * vir_convert("c,a") * vir_convert("d,b")
-                        * occ_convert("k,i") * occ_convert("l,j");
-      //ExEnv::out0() << "MP2 amplitudes after reblocking: " << t2_mp2_ << std::endl;
+        bool use_diff_t2 = false;
+        // compute CCSD T2 amplitudes
+        TA::DistArray<Tile, Policy> t1_ccsd, t2_ccsd;
+        if (use_diff_t2) {
+          t2_ccsd = t2_mp2_orig.clone();
+          double ccsd_energy = compute_ccsdpno_df(t1_ccsd, t2_ccsd);
 
-      bool use_diff_t2 = false;
-      // compute CCSD T2 amplitudes
-      TA::DistArray<Tile, Policy> t1_ccsd, t2_ccsd;
-      if (use_diff_t2) {
-        t2_ccsd = t2_mp2_orig.clone();
-        double ccsd_energy = compute_ccsdpno_df(t1_ccsd, t2_ccsd);
+          // obtain CCSD T2 with new blocking structure
+          t2_ccsd("a,b,i,j") = t2_ccsd("c,d,k,l")
+                             * vir_convert("c,a") * vir_convert("d,b")
+                             * occ_convert("k,i") * occ_convert("l,j");
+        }
 
-        // obtain CCSD T2 with new blocking structure
-        t2_ccsd("a,b,i,j") = t2_ccsd("c,d,k,l")
-                           * vir_convert("c,a") * vir_convert("d,b")
-                           * occ_convert("k,i") * occ_convert("l,j");
+        // decompose T2 amplitudes
+        // using either eigen or SVD decomposition
+        ExEnv::out0() << "Decomposing T2 amplitudes" << std::endl;
+  //      // test
+  //      TA::DistArray<Tile, Policy> t2_mp2_orig_blk = t2_mp2.clone();
+  //      decom_t2(t2_mp2, t2_mp2_orig_blk, use_diff_t2);
+        decom_t2(t2_mp2, t2_ccsd, use_diff_t2);
+
+        // transform MP2 T2 amplitudes back into its original blocking structure
+        t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
+                           * vir_convert("a,c") * vir_convert("b,d")
+                           * occ_convert("i,k") * occ_convert("j,l");
+
+        // compute the difference between original and decomposed MP2 T2
+        ExEnv::out0() << std::endl << "Test: t2 - t2 (decomposed): "
+                                   << (t2_mp2_orig("a,b,i,j") - t2_mp2("a,b,i,j")).norm().get()
+                                   << std::endl << std::endl;
+
+        // compute CCSD with decomposed MP2 T2 as initial guess
+        TA::DistArray<Tile, Policy> t1, t2;
+        t2 = t2_mp2.clone();
+        double ccsd_energy = compute_ccsdpno_df(t1,t2);
+
+        this->computed_ = true;
+        this->set_value(result, ref_energy + ccsd_energy);
       }
-
-      // decompose T2 amplitudes
-      // using either eigen or SVD decomposition
-      ExEnv::out0() << "Decomposing T2 amplitudes" << std::endl;
-//      // test
-//      TA::DistArray<Tile, Policy> t2_mp2_orig_blk = t2_mp2.clone();
-//      decom_t2(t2_mp2, t2_mp2_orig_blk, use_diff_t2);
-      decom_t2(t2_mp2, t2_ccsd, use_diff_t2);
-
-      // transform MP2 T2 amplitudes back into its original blocking structure
-      t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
-                         * vir_convert("a,c") * vir_convert("b,d")
-                         * occ_convert("i,k") * occ_convert("j,l");
-
-      // compute the difference between original and decomposed MP2 T2
-      ExEnv::out0() << std::endl << "Test: t2 - t2 (decomposed): "
-                                 << (t2_mp2_orig("a,b,i,j") - t2_mp2("a,b,i,j")).norm().get()
-                                 << std::endl << std::endl;
-
-      // compute CCSD with decomposed MP2 T2 as initial guess
-      TA::DistArray<Tile, Policy> t1, t2;
-      t2 = t2_mp2.clone();
-      double ccsd_energy = compute_ccsdpno_df(t1,t2);
-
-      double energy = ref_energy + ccsd_energy;
-
-      return energy;
     }
 
 } // namespace lcao

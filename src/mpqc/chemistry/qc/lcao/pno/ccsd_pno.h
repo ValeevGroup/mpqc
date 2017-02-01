@@ -12,10 +12,10 @@
 #include <sstream>
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/cc/ccsd.h"
-#include "mpqc/chemistry/qc/mbpt/denom.h"
-#include "mpqc/chemistry/qc/scf/mo_build.h"
-#include "mpqc/chemistry/qc/wfn/lcao_wfn.h"
+#include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
+#include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
+#include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
+#include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
 
 namespace mpqc {
@@ -53,10 +53,10 @@ namespace lcao {
    CCSD_PNO(const KeyVal &kv);
 
    ~CCSD_PNO() = default;
-   void compute(PropertyBase* pb) override;
-   // compute function
-   double value() override;
 
+  protected:
+   // compute function
+   void evaluate(Energy* result) override;
   };
 
 //#if TA_DEFAULT_POLICY == 0

@@ -48,12 +48,17 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
       : LCAOFactory<TA::TensorD, Policy>(kv),
         pao_factory_(
             *gaussian::construct_periodic_ao_factory<Tile, Policy>(kv)),
-        unitcell_(
-            *kv.keyval("wfn_world:molecule").template class_ptr<UnitCell>()),
         orbital_space_registry_(
             std::make_shared<OrbitalSpaceRegistry<TArray>>()),
         mo_formula_registry_() {
-    dcell_ = unitcell_.dcell();
+    std::string prefix = "";
+    if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
+      prefix = "wfn_world:";
+
+    // Molecule was already created at this path, bypass registry and construct UnitCell
+    unitcell_ = kv.class_ptr<UnitCell>(prefix + "molecule", true);
+
+    dcell_ = unitcell_->dcell();
 
     R_max_ = pao_factory_.R_max();
     RJ_max_ = pao_factory_.RJ_max();
@@ -106,7 +111,7 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
   Formula mo_to_ao(const Formula &formula);
 
   AOFactoryType &pao_factory_;
-  UnitCell &unitcell_;
+  std::shared_ptr<UnitCell> unitcell_;
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
   FormulaRegistry<TArray> mo_formula_registry_;
 
@@ -221,7 +226,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
           to_libint2_operator(ao_formula.oper().type()),
           make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
           to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                     unitcell_));
+                                     *unitcell_));
 
       auto ao_int =
           pao_factory_.compute_integrals(this->world_, engine_pool, bases);
@@ -300,7 +305,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
           to_libint2_operator(ao_formula.oper().type()),
           make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
           to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                     unitcell_));
+                                     *unitcell_));
 
       ao_int = pao_factory_.compute_integrals(this->world_, engine_pool, bases);
 
@@ -309,7 +314,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
 
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         auto shift_mol = direct_vector(RJ, RJ_max_, dcell_);
-        auto shifted_mol = shift_mol_origin(unitcell_, shift_mol);
+        auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
         auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
             to_libint2_operator(ao_formula.oper().type()),
             make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
@@ -343,7 +348,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                       unitcell_));
+                                       *unitcell_));
 
         auto J =
             pao_factory_.compute_integrals(this->world_, engine_pool, bases);
@@ -376,7 +381,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                       unitcell_));
+                                       *unitcell_));
 
         auto K =
             pao_factory_.compute_integrals(this->world_, engine_pool, bases);
@@ -462,7 +467,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
             make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                       unitcell_));
+                                       *unitcell_));
         auto ao_int =
             pao_factory_.compute_integrals(this->world_, engine_pool, bases);
         auto t_pao1 = mpqc::now(this->world_, this->accurate_time_);
@@ -522,10 +527,8 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   ExEnv::out0() << " Time: " << duration << " s" << std::endl;
   ExEnv::out0() << "    PAO build total time:  " << aobuild_duration << " s"
                 << std::endl;
-  ExEnv::out0() << "        part 1: " << pao_build_time << " s"
-                << std::endl;
-  ExEnv::out0() << "        part 2: " << sum_r_time << " s"
-                << std::endl;
+  ExEnv::out0() << "        part 1: " << pao_build_time << " s" << std::endl;
+  ExEnv::out0() << "        part 2: " << sum_r_time << " s" << std::endl;
   ExEnv::out0() << "    PAO->CO transform time: " << trans_duration << " s"
                 << std::endl;
 

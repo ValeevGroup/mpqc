@@ -323,7 +323,7 @@ class SchwarzScreen : public Screener {
  *
  */
 template <typename E>
-SchwarzScreen create_scwharz_screener(
+SchwarzScreen create_schwarz_screener(
     TA::World &world, ShrPool<E> const &eng, std::vector<Basis> const &bs_array,
     double thresh, decltype(detail::inf_norm) norm_func = detail::inf_norm) {
   if (bs_array.size() == 3) {  // One index must be auxiliary assume first

@@ -58,7 +58,7 @@ void RMP2<Tile,Policy>::evaluate(Energy* result) {
     auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
     if(ref_evaluator == nullptr) {
       std::ostringstream oss;
-      oss << "RefWavefunction in CCSD" << ref_wfn_->class_key()
+      oss << "RefWavefunction in MP2" << ref_wfn_->class_key()
           << " cannot compute Energy" << std::endl;
       throw InputError(oss.str().c_str(), __FILE__, __LINE__);
     }
@@ -68,7 +68,7 @@ void RMP2<Tile,Policy>::evaluate(Energy* result) {
     double ref_energy = this->get_value(result).derivs(0)[0];
 
     // initialize
-    init();
+    this->init();
 
     // compute
     double mp2_corr_energy_ = compute();
@@ -78,18 +78,6 @@ void RMP2<Tile,Policy>::evaluate(Energy* result) {
   }
 };
 
-
-template<typename Tile, typename Policy>
-void RMP2<Tile,Policy>::init() {
-  if (this->trange1_engine_ == nullptr || this->orbital_energy_ == nullptr) {
-    auto mol = this->lcao_factory().ao_factory().molecule();
-    Eigen::VectorXd orbital_energy;
-    this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-        this->lcao_factory(), orbital_energy, this->ndocc(), mol, this->is_frozen_core(),
-        this->occ_block(), this->unocc_block());
-    this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
-  }
-}
 
 template<typename Tile, typename Policy>
 double RMP2<Tile,Policy>::compute() {

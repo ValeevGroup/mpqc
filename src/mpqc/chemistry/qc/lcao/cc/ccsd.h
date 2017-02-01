@@ -182,7 +182,7 @@ protected:
       double ref_energy = this->get_value(result).derivs(0)[0];
 
       // initialize
-      init();
+      this->init();
 
       // set the precision
       if(converge_ == 0.0){
@@ -1340,17 +1340,6 @@ private:
   }
 
  private:
-  virtual void init() {
-    if (this->orbital_energy() == nullptr ||
-        this->trange1_engine() == nullptr) {
-      auto mol = this->lcao_factory().ao_factory().molecule();
-      Eigen::VectorXd orbital_energy;
-      this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-          this->lcao_factory(), orbital_energy, this->ndocc(), mol, this->is_frozen_core(),
-          this->occ_block(), this->unocc_block());
-      this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
-    }
-  }
 
   TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>,TA::DistArray<Tile, Policy>>> get_diis(
       const madness::World &world) {

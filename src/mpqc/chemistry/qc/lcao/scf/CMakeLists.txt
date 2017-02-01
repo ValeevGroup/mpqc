@@ -6,6 +6,7 @@ set(sources
         rhf.h
         rhf_impl.h
         rhf.cpp
+        mo_build.h
         orbital_localization.h
         orbital_localization.cpp
         purification_density_build.h

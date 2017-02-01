@@ -120,7 +120,6 @@ class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public CanEvaluate<Ener
   virtual double compute();
 
   /// initialize orbitals
-  virtual void init();
   std::shared_ptr<lcao::Wavefunction> ref_wfn_;
 
  private:

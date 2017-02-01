@@ -3,34 +3,68 @@
 #include <iostream>
 #include <map>
 
+#include "mpqc/chemistry/units/units.h"
+#include <libint2/chemistry/elements.h>
+
 namespace mpqc {
 
-static std::map<int, std::string> atom_names = {
-    {1, "H"}, {2, "He"}, {3, "Li"}, {4, "Be"},  {5, "B"},   {6, "C"},
-    {7, "N"}, {8, "O"},  {9, "F"},  {10, "Ne"}, {11, "Na"}, {12, "Mg"}};
+namespace detail {
 
-// Taken from https://en.wikipedia.org/wiki/Atomic_units on 07/08/15
-double bohr_to_ang = 0.52917721092;
+std::string Z_to_element(int64_t Z) {
+  using libint2::chemistry::element_info;
+  for (const auto &e : element_info) {
+    if (e.Z == Z) return e.symbol;
+  }
+  abort();
+}
+
+int64_t element_to_Z(const std::string& symbol) {
+  using libint2::chemistry::element_info;
+  for (const auto &e : element_info) {
+    if (e.symbol == symbol) return e.Z;
+  }
+  abort();
+}
+
+}  // namespace detail
 
 std::string Atom::xyz_string(bool convert_to_angstroms) const {
-  std::string name = atom_names[atomic_number_];
-  name += ' ';
+  std::string result = detail::Z_to_element(atomic_number_);
+  result += ' ';
+
+  auto unit_factory = UnitFactory::get_default();
+  auto bohr_to_ang = unit_factory->make_unit("angstrom").from_atomic_units();
 
   Vector3d center = center_;
   if (convert_to_angstroms) {
     center *= bohr_to_ang;
   }
 
-  name += (std::to_string(center[0]) + ' ');
-  name += (std::to_string(center[1]) + ' ');
-  name += std::to_string(center[2]);
+  result += (std::to_string(center[0]) + ' ');
+  result += (std::to_string(center[1]) + ' ');
+  result += std::to_string(center[2]);
 
-  return name;
+  return result;
+}
+
+Atom::Atom(const KeyVal& kv) {
+  auto element = kv.value<std::string>("element");
+  if (element.empty())
+    throw InputError("invalid element", __FILE__, __LINE__, "element");
+  atomic_number_ = detail::element_to_Z(element);
+
+  auto xyz = kv.value<std::array<double, 3>>("xyz");
+  center_(0) = xyz[0];
+  center_(1) = xyz[1];
+  center_(2) = xyz[2];
+
+  mass_ = kv.value<double>("mass", 0.0);
+  charge_ = kv.value<double>("charge", static_cast<double>(atomic_number_));
 }
 
 std::ostream &operator<<(std::ostream &os, Atom const &a) {
-  os << "Atom: {Z: " << a.charge() << ", mass: " << a.mass()
-     << ", pos: " << a.center().transpose() << "}";
+  os << "Atom: {Z: " << a.atomic_number() << ", charge: " << a.charge()
+     << ", mass: " << a.mass() << ", pos: " << a.center().transpose() << "}";
   return os;
 }
 

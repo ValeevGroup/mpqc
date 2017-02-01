@@ -33,7 +33,10 @@ void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
   auto& world = plcao_factory.world();
 
   auto all = C_gamma_point.cols();
-  auto occ = unitcell.occupation() / 2;
+
+  // the unit cell must be electrically neutral
+  const auto charge = 0;
+  auto occ = (unitcell.total_atomic_number() - charge) / 2;
   auto vir = all - occ;
   std::size_t n_frozen_core = 0;  // TODO: should be determined by user
 
@@ -51,7 +54,7 @@ void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
   auto tre = std::make_shared<TRange1Engine>(occ, all, occ_block, vir_block, 0);
 
   // get all trange1s
-  auto tr_obs = obs_basis.create_trange1();
+  auto tr_obs = obs_basis->create_trange1();
   auto tr_corr_occ = tre->get_active_occ_tr1();
   auto tr_occ = tre->compute_range(occ, occ_block);
   auto tr_vir = tre->get_vir_tr1();

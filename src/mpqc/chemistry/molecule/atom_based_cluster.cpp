@@ -5,7 +5,7 @@ namespace mpqc {
 
 void AtomBasedCluster::update_cluster() {
   mass_ = molecule::sum_mass(elements_);
-  charge_ = molecule::sum_charge(elements_);
+  total_atomic_number_ = molecule::sum_atomic_number(elements_);
   com_ = molecule::center_of_mass(elements_);
   natoms_ = molecule::sum_natoms(elements_);
 }

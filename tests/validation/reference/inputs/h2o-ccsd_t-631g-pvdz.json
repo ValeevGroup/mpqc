@@ -23,7 +23,7 @@
     "molecule" : "$:molecule",
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",
-    "screen": "qqr"
+    "screen": "schwarz"
   },
   "scf":{
     "type": "RI-RHF",

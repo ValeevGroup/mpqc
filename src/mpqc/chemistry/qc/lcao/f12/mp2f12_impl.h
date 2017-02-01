@@ -218,7 +218,7 @@ void RMP2F12<Tile>::init() {
   Eigen::VectorXd orbital_energy;
   // initialize obs
   this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-      this->lcao_factory(), orbital_energy, *mol, this->is_frozen_core(),
+      this->lcao_factory(), orbital_energy, this->ndocc(), *mol, this->is_frozen_core(),
       this->occ_block(), this->unocc_block());
 
   this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);

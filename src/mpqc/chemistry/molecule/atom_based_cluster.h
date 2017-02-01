@@ -29,7 +29,7 @@ class AtomBasedCluster {
   std::vector<AtomBasedClusterable> elements_;
   Vector3d com_ = {0, 0, 0};
   double mass_ = 0.0;
-  int64_t charge_ = 0.0;
+  int64_t total_atomic_number_ = 0.0;
   size_t natoms_ = 0.0;
 
   friend void update(AtomBasedCluster &abc,
@@ -61,7 +61,7 @@ class AtomBasedCluster {
 
   int64_t size() const { return elements_.size(); }
 
-  int64_t charge() const { return charge_; }
+  int64_t total_atomic_number() const { return total_atomic_number_; }
   double mass() const { return mass_; }
 
   std::vector<Atom> atoms() const;
@@ -115,7 +115,7 @@ inline Vector3d const &center(AtomBasedCluster const &c) { return c.com(); }
 
 inline double mass(AtomBasedCluster const &c) { return c.mass(); }
 
-inline int64_t charge(AtomBasedCluster const &c) { return c.charge(); }
+inline int64_t total_atomic_number(AtomBasedCluster const &c) { return c.total_atomic_number(); }
 
 inline Vector3d const &center_of_mass(AtomBasedCluster const &c) {
   return c.com();

@@ -2,7 +2,7 @@ MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision 469ba108ddde3f105e464138e34a95f7c5a07880
+                 Revision 71c6cc33bef1823082c11777790a0286e0ca6c64
 
   Input KeyVal (format=JSON):
 {
@@ -30,7 +30,7 @@ MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
         "molecule": "$:molecule",
         "basis": "$:obs",
         "df_basis": "$:dfbs",
-        "screen": "qqr"
+        "screen": "schwarz"
     },
     "scf": {
         "type": "RI-RHF",
@@ -50,7 +50,8 @@ MADNESS runtime initialized with 1 threads in the pool and affinity -1 -1 -1
     "property": {
         "type": "Energy",
         "wfn": "$:wfn"
-    }
+    },
+    "file_prefix": "\/Users\/work\/software\/mpqc4\/mpqc4_src\/tests\/validation\/reference\/inputs"
 }
 
   Using fundamental constants system 2010CODATA
@@ -64,20 +65,20 @@ DF Basis Trange
 Min and Max block size: 24 24
 Average: 24
 
-Screen: qqr
+Screen: schwarz
 Threshold: 1e-10
 Precision: 2.22044604925031e-16
 
-Screen: qqr
+Screen: schwarz
 Threshold: 1e-10
 Precision: 2.22044604925031e-16
 
-Computed One Body Integral: < κ | λ > Size: 1.25914812088013e-06 GB Time: 0.001438097 s
-Computed One Body Integral: < κ |V| λ > Size: 1.25914812088013e-06 GB Time: 0.004150457 s
-Computed One Body Integral: < κ |T| λ > Size: 1.25914812088013e-06 GB Time: 0.000740236 s
-Computed One Body Integral: < κ |H| λ > Size: 1.25914812088013e-06 GB Time: 0.000211405 s
-Computed Twobody Two Center Integral: ( Κ |G| Λ ) Size: 4.29153442382812e-06 GB Time: 0.289770543 s
-Computed Twobody Three Center Integral: ( Κ |G| κ λ ) Size: 3.0219554901123e-05 GB Time: 0.946552431 s
+Computed One Body Integral: < κ | λ > Size: 1.25914812088013e-06 GB Time: 0.001455892 s
+Computed One Body Integral: < κ |V| λ > Size: 1.25914812088013e-06 GB Time: 0.004031258 s
+Computed One Body Integral: < κ |T| λ > Size: 1.25914812088013e-06 GB Time: 0.000712963 s
+Computed One Body Integral: < κ |H| λ > Size: 1.25914812088013e-06 GB Time: 0.000186237 s
+Computed Twobody Two Center Integral: ( Κ |G| Λ ) Size: 4.29153442382812e-06 GB Time: 0.276104087 s
+Computed Twobody Three Center Integral: ( Κ |G| κ λ ) Size: 3.0219554901123e-05 GB Time: 0.92970512 s
 overlap condition number = 50.5531878082312Starting SCF:
 	Threshold: 1e-09
 	Maximum number of iterations: 30
@@ -85,122 +86,122 @@ iteration: 0
 	Energy: -76.1720098211169
 	abs(Energy Change)/energy: 0.00365736590795988
 	(Gradient Norm)/n^2: 0.00233094621894019
-	Scf Time: 0.008277864
-		Density Time: 0.003640318
-		Fock Build Time: 0.003444903
+	Scf Time: 0.007706608
+		Density Time: 0.003774863
+		Fock Build Time: 0.00291574
 		DF Fock builder:
-			W time: 0.000562963
-			J time: 0.000556642
-			K time: 0.000868382
-			Total exchange time: 0.001431345
+			W time: 0.000396476
+			J time: 0.000541946
+			K time: 0.000774055
+			Total exchange time: 0.001170531
 iteration: 1
 	Energy: -76.2140757286779
 	abs(Energy Change)/energy: 0.000551944075406107
 	(Gradient Norm)/n^2: 0.00111729007317878
-	Scf Time: 0.007959586
-		Density Time: 0.003469247
-		Fock Build Time: 0.002977069
+	Scf Time: 0.007909848
+		Density Time: 0.003802493
+		Fock Build Time: 0.002653124
 		DF Fock builder:
-			W time: 0.000363098
-			J time: 0.000436904
-			K time: 0.000778032
-			Total exchange time: 0.00114113
+			W time: 0.000389678
+			J time: 0.000489277
+			K time: 0.000641471
+			Total exchange time: 0.001031149
 iteration: 2
 	Energy: -76.2239081527741
 	abs(Energy Change)/energy: 0.000128993964419317
 	(Gradient Norm)/n^2: 0.000143551463877708
-	Scf Time: 0.008635092
-		Density Time: 0.003649852
-		Fock Build Time: 0.003162524
+	Scf Time: 0.00853462
+		Density Time: 0.004000495
+		Fock Build Time: 0.002888007
 		DF Fock builder:
-			W time: 0.000470915
-			J time: 0.000628252
-			K time: 0.000734441
-			Total exchange time: 0.001205356
+			W time: 0.000505236
+			J time: 0.000517016
+			K time: 0.000794421
+			Total exchange time: 0.001299657
 iteration: 3
 	Energy: -76.2241794040672
 	abs(Energy Change)/energy: 3.55859905899257e-06
 	(Gradient Norm)/n^2: 2.0875807318845e-05
-	Scf Time: 0.008472866
-		Density Time: 0.003389496
-		Fock Build Time: 0.003145682
+	Scf Time: 0.008265453
+		Density Time: 0.003718699
+		Fock Build Time: 0.002869122
 		DF Fock builder:
-			W time: 0.000382301
-			J time: 0.000523798
-			K time: 0.000895395
-			Total exchange time: 0.001277696
+			W time: 0.000393208
+			J time: 0.000502706
+			K time: 0.000817932
+			Total exchange time: 0.00121114
 iteration: 4
 	Energy: -76.2241830588952
 	abs(Energy Change)/energy: 4.79484045241165e-08
 	(Gradient Norm)/n^2: 1.52468495838879e-06
-	Scf Time: 0.008674312
-		Density Time: 0.003588441
-		Fock Build Time: 0.002784832
+	Scf Time: 0.007926992
+		Density Time: 0.00328541
+		Fock Build Time: 0.0026638
 		DF Fock builder:
-			W time: 0.00035596
-			J time: 0.000491979
-			K time: 0.000770786
-			Total exchange time: 0.001126746
+			W time: 0.000432828
+			J time: 0.000469371
+			K time: 0.000756875
+			Total exchange time: 0.001189703
 iteration: 5
 	Energy: -76.2241830968484
 	abs(Energy Change)/energy: 4.97916025921476e-10
 	(Gradient Norm)/n^2: 2.57160622466477e-07
-	Scf Time: 0.008748171
-		Density Time: 0.003512465
-		Fock Build Time: 0.003295353
+	Scf Time: 0.008781715
+		Density Time: 0.003597172
+		Fock Build Time: 0.002952197
 		DF Fock builder:
-			W time: 0.000429803
-			J time: 0.000614895
-			K time: 0.000833
-			Total exchange time: 0.001262803
+			W time: 0.000542903
+			J time: 0.000460322
+			K time: 0.00085096
+			Total exchange time: 0.001393863
 iteration: 6
 	Energy: -76.2241830985434
 	abs(Energy Change)/energy: 2.22374061480436e-11
 	(Gradient Norm)/n^2: 8.13417220569831e-08
-	Scf Time: 0.008767876
-		Density Time: 0.003422031
-		Fock Build Time: 0.003246073
+	Scf Time: 0.008144096
+		Density Time: 0.003378581
+		Fock Build Time: 0.00254295
 		DF Fock builder:
-			W time: 0.000429146
-			J time: 0.000602005
-			K time: 0.00090582
-			Total exchange time: 0.001334966
+			W time: 0.000413168
+			J time: 0.000453812
+			K time: 0.000462473
+			Total exchange time: 0.000875641
 iteration: 7
 	Energy: -76.2241830987049
 	abs(Energy Change)/energy: 2.11808790669943e-12
 	(Gradient Norm)/n^2: 5.89483142476459e-09
-	Scf Time: 0.009014722
-		Density Time: 0.003607318
-		Fock Build Time: 0.003293167
+	Scf Time: 0.008706019
+		Density Time: 0.003997175
+		Fock Build Time: 0.002876193
 		DF Fock builder:
-			W time: 0.00047764
-			J time: 0.000580525
-			K time: 0.000753385
-			Total exchange time: 0.001231025
+			W time: 0.000387456
+			J time: 0.000467652
+			K time: 0.000780595
+			Total exchange time: 0.001168051
 iteration: 8
 	Energy: -76.2241830987058
 	abs(Energy Change)/energy: 1.23047092546572e-14
 	(Gradient Norm)/n^2: 1.52333189640327e-09
-	Scf Time: 0.008731447
-		Density Time: 0.003499531
-		Fock Build Time: 0.003200167
+	Scf Time: 0.008266614
+		Density Time: 0.003842174
+		Fock Build Time: 0.00259781
 		DF Fock builder:
-			W time: 0.000443234
-			J time: 0.000547795
-			K time: 0.000831894
-			Total exchange time: 0.001275128
+			W time: 0.000392616
+			J time: 0.000468584
+			K time: 0.000633339
+			Total exchange time: 0.001025955
 iteration: 9
 	Energy: -76.224183098706
 	abs(Energy Change)/energy: 2.98295981931083e-15
 	(Gradient Norm)/n^2: 3.29602032471042e-10
-	Scf Time: 0.00862204
-		Density Time: 0.003475634
-		Fock Build Time: 0.003133507
+	Scf Time: 0.007987754
+		Density Time: 0.003478692
+		Fock Build Time: 0.002676567
 		DF Fock builder:
-			W time: 0.00037253
-			J time: 0.000535037
-			K time: 0.000787116
-			Total exchange time: 0.001159646
+			W time: 0.000445452
+			J time: 0.000441537
+			K time: 0.00085002
+			Total exchange time: 0.001295472
 
 Building ClosedShell OBS MO Orbital
 Retrieved AO Integral: < μ |F| ν >[df] Size: 1.25914812088013e-06 GB
@@ -228,43 +229,43 @@ Obs Trange
 Min and Max block size: 13 13
 Average: 13
 
-ClosedShell OBS MO Build Time: 0.003667518 S
+ClosedShell OBS MO Build Time: 0.00421166 S
 Use DF CCSD Compute
 Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
-Transformed LCAO Integral: ( Κ |G| a i ) Size: 5.7220458984375e-06 GB Time: 0.000488556 s
+Transformed LCAO Integral: ( Κ |G| a i ) Size: 5.7220458984375e-06 GB Time: 0.000420944 s
 Retrieved LCAO Integral: ( Κ |G| b j ) Size: 5.7220458984375e-06 GB
-Computed Twobody Two Center Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 0.001035351 s
-Inverse Time: 0.001358457 s
-Transformed LCAO Integral: < a b |G| i j >[df] Size: 7.62939453125e-06 GB Time: 0.000349968 s
+Computed Twobody Two Center Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB Time: 0.001120581 s
+Inverse Time: 0.001439057 s
+Transformed LCAO Integral: < a b |G| i j >[df] Size: 7.62939453125e-06 GB Time: 0.000341649 s
 Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
-Transformed LCAO Integral: ( Κ |G| i k ) Size: 2.86102294921875e-06 GB Time: 0.000433955 s
+Transformed LCAO Integral: ( Κ |G| i k ) Size: 2.86102294921875e-06 GB Time: 0.00043154 s
 Retrieved LCAO Integral: ( Κ |G| j l ) Size: 2.86102294921875e-06 GB
 Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
-Transformed LCAO Integral: < i j |G| k l >[df] Size: 1.9073486328125e-06 GB Time: 0.000276519 s
+Transformed LCAO Integral: < i j |G| k l >[df] Size: 1.9073486328125e-06 GB Time: 0.00028953 s
 Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
-Transformed LCAO Integral: ( Κ |G| a c ) Size: 1.1444091796875e-05 GB Time: 0.000566627 s
+Transformed LCAO Integral: ( Κ |G| a c ) Size: 1.1444091796875e-05 GB Time: 0.00048997 s
 Retrieved LCAO Integral: ( Κ |G| b d ) Size: 1.1444091796875e-05 GB
 Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
-Transformed LCAO Integral: < a b |G| c d >[df] Size: 3.0517578125e-05 GB Time: 0.00045906 s
-Computed Twobody Two Center Integral: ( Κ |G| Λ )[inv_sqr] Size: 4.29153442382812e-06 GB Time: 0.001059349 s
-Inverse Square Root Time: 0.002603778 s
+Transformed LCAO Integral: < a b |G| c d >[df] Size: 3.0517578125e-05 GB Time: 0.00046636 s
+Computed Twobody Two Center Integral: ( Κ |G| Λ )[inv_sqr] Size: 4.29153442382812e-06 GB Time: 0.001197821 s
+Inverse Square Root Time: 0.002626951 s
 Retrieved LCAO Integral: ( Κ |G| a i ) Size: 5.7220458984375e-06 GB
 Retrieved LCAO Integral: ( Κ |G| i j ) Size: 2.86102294921875e-06 GB
 Retrieved LCAO Integral: ( Κ |G| a b ) Size: 1.1444091796875e-05 GB
 Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
-Transformed LCAO Integral: < i a |G| j b >[df] Size: 7.62939453125e-06 GB Time: 0.000305234 s
-Permuted LCAO Integral: ( Κ |G| i b ) From ( Κ |G| b i ) Size: 5.7220458984375e-06 GB  Time: 6.9561e-05 s
+Transformed LCAO Integral: < i a |G| j b >[df] Size: 7.62939453125e-06 GB Time: 0.000348051 s
+Permuted LCAO Integral: ( Κ |G| i b ) From ( Κ |G| b i ) Size: 5.7220458984375e-06 GB  Time: 7.2427e-05 s
 Retrieved LCAO Integral: ( Κ |G| a c ) Size: 1.1444091796875e-05 GB
 Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
-Transformed LCAO Integral: < i a |G| b c >[df] Size: 1.52587890625e-05 GB Time: 0.000341004 s
-Permuted LCAO Integral: < a i |G| b c >[df] From < i a |G| c b >[df] Size: 1.52587890625e-05 GB  Time: 6.9752e-05 s
+Transformed LCAO Integral: < i a |G| b c >[df] Size: 1.52587890625e-05 GB Time: 0.000334321 s
+Permuted LCAO Integral: < a i |G| b c >[df] From < i a |G| c b >[df] Size: 1.52587890625e-05 GB  Time: 4.9063e-05 s
 Retrieved LCAO Integral: ( Κ |G| i a ) Size: 5.7220458984375e-06 GB
 Retrieved LCAO Integral: ( Κ |G| j k ) Size: 2.86102294921875e-06 GB
 Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
-Transformed LCAO Integral: < i j |G| a k >[df] Size: 3.814697265625e-06 GB Time: 0.000304203 s
-Permuted LCAO Integral: < i j |G| k a >[df] From < j i |G| a k >[df] Size: 3.814697265625e-06 GB  Time: 5.125e-05 s
+Transformed LCAO Integral: < i j |G| a k >[df] Size: 3.814697265625e-06 GB Time: 0.000313768 s
+Permuted LCAO Integral: < i j |G| k a >[df] From < j i |G| a k >[df] Size: 3.814697265625e-06 GB  Time: 7.101e-05 s
 Retrieved AO Integral: < κ0 |F| κ1 >[df] Size: 1.25914812088013e-06 GB
-Transformed LCAO Integral: < a |F| i >[df] Size: 2.38418579101562e-07 GB Time: 0.000317074 s
+Transformed LCAO Integral: < a |F| i >[df] Size: 2.38418579101562e-07 GB Time: 0.000365636 s
 MP2 Energy      -0.116778998382925
 Start Iteration
 Max Iteration: 20
@@ -330,31 +331,31 @@ Warning!! Using m for Inner Occupied Orbitals and a' for Inner Virtual Orbitals!
 
 Begining CCSD(T) 
 Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
-Transformed LCAO Integral: ( Κ |G| a j ) Size: 5.7220458984375e-06 GB Time: 0.000408895 s
+Transformed LCAO Integral: ( Κ |G| a j ) Size: 5.7220458984375e-06 GB Time: 0.000438049 s
 Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
-Transformed LCAO Integral: ( Κ |G| i m ) Size: 2.86102294921875e-06 GB Time: 0.000415004 s
+Transformed LCAO Integral: ( Κ |G| i m ) Size: 2.86102294921875e-06 GB Time: 0.000480192 s
 Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
-Transformed LCAO Integral: < a i |G| j m >[df] Size: 3.814697265625e-06 GB Time: 0.000298646 s
+Transformed LCAO Integral: < a i |G| j m >[df] Size: 3.814697265625e-06 GB Time: 0.000309887 s
 Retrieved LCAO Integral: ( Κ |G| a i ) Size: 5.7220458984375e-06 GB
 Retrieved LCAO Integral: ( Κ |G| b j ) Size: 5.7220458984375e-06 GB
 Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
-Transformed LCAO Integral: < a b |G| i j >[df] Size: 7.62939453125e-06 GB Time: 0.000301464 s
+Transformed LCAO Integral: < a b |G| i j >[df] Size: 7.62939453125e-06 GB Time: 0.00030725 s
 Retrieved AO Integral: ( Κ |G| κ0 κ1 ) Size: 3.0219554901123e-05 GB
-Transformed LCAO Integral: ( Κ |G| a' c ) Size: 1.1444091796875e-05 GB Time: 0.000430396 s
+Transformed LCAO Integral: ( Κ |G| a' c ) Size: 1.1444091796875e-05 GB Time: 0.00047237 s
 Retrieved LCAO Integral: ( Κ |G| b i ) Size: 5.7220458984375e-06 GB
 Retrieved AO Integral: ( Κ |G| Λ )[inv] Size: 4.29153442382812e-06 GB
-Transformed LCAO Integral: < a' b |G| c i >[df] Size: 1.52587890625e-05 GB Time: 0.000374975 s
+Transformed LCAO Integral: < a' b |G| c i >[df] Size: 1.52587890625e-05 GB Time: 0.000317807 s
 Number of blocks at each iteration: 1
 Size of T3 or V3 at each iteration per node: 3x0.000262144 GB
 0% done.
 Process All Time: 
 Iter: 1
-Permutation Time: 0.000569075 S
-Contraction Time: 0.022533213 S
-Reduce Time: 0.000886323 S
+Permutation Time: 0.000506933 S
+Contraction Time: 0.021272434 S
+Reduce Time: 0.000733841 S
 
-(T) Energy: -0.00086841377336898 Time: 0.042200227 S
-(T) Time in CCSD(T): 0.042711081
+(T) Energy: -0.00086841377336898 Time: 0.036695879 S 
+(T) Time in CCSD(T): 0.03726692
   Output KeyVal (format=JSON):
 {
     "units": "2010CODATA",
@@ -381,7 +382,7 @@ Reduce Time: 0.000886323 S
         "molecule": "$:molecule",
         "basis": "$:obs",
         "df_basis": "$:dfbs",
-        "screen": "qqr"
+        "screen": "schwarz"
     },
     "scf": {
         "type": "RI-RHF",

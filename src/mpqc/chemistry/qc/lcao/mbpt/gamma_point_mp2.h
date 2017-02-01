@@ -1,8 +1,8 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_GAMMA_POINT_MP2_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_MBPT_GAMMA_POINT_MP2_H_
 
-#include "mpqc/chemistry/qc/mbpt/mp2.h"
-#include "mpqc/chemistry/qc/scf/zrhf.h"
+#include "mpqc/chemistry/qc/lcao/mbpt/mp2.h"
+#include "mpqc/chemistry/qc/lcao/scf/zrhf.h"
 
 namespace mpqc {
 namespace lcao {
@@ -69,7 +69,8 @@ d_ai(madness::World &world, const TA::TiledRange &trange, const Vectorz &ens,
      std::size_t n_occ, std::size_t n_frozen) {
   typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
 
-  auto make_tile = [&ens, n_occ, n_frozen](range_type &range, std::size_t ord, Tile *out_tile, TA::TensorF *norms) {
+  auto make_tile = [&ens, n_occ, n_frozen](range_type &range, std::size_t ord,
+                                           Tile *out_tile, TA::TensorF *norms) {
 
     auto result_tile = Tile(range);
 
@@ -94,10 +95,10 @@ d_ai(madness::World &world, const TA::TiledRange &trange, const Vectorz &ens,
     const auto tile_volume = result_tile.range().volume();
     const auto tile_norm = result_tile.norm();
     bool save_norm =
-            tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
+        tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
     if (save_norm) {
-        *out_tile = result_tile;
-        (*norms)[ord] = tile_norm;
+      *out_tile = result_tile;
+      (*norms)[ord] = tile_norm;
     }
   };
 
@@ -132,7 +133,8 @@ d_ai(madness::World &world, const TA::TiledRange &trange, const Vectorz &ens,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
+class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy>,
+                      public CanEvaluate<Energy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
 
@@ -152,36 +154,10 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
 
   ~GammaPointMP2() = default;
 
-  void compute(PropertyBase *pb) override {
-    throw std::runtime_error("Not Implemented!!");
-  }
-
   void obsolete() override {
     e_mp2_ = 0.0;
     PeriodicLCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
-  }
-
-  double value() override {
-    if (this->energy_ == 0.0) {
-      double ref_energy = ref_wfn_->value();
-
-      auto time0 = mpqc::now(this->wfn_world()->world(), false);
-      init();
-
-      e_mp2_ = compute_gamma_point_mp2();
-      auto time1 = mpqc::now(this->wfn_world()->world(), false);
-      auto duration = mpqc::duration_in_s(time0, time1);
-      if (print_detail_) {
-          ExEnv::out0() << "\n Total Gamma-Point MP2 time: " << duration << " s\n";
-      }
-
-      ExEnv::out0() << "\nGamma-Point MP2 Energy = " << e_mp2_
-                    << std::endl;
-
-      this->energy_ = ref_energy + e_mp2_;
-    }
-    return this->energy_;
   }
 
  private:
@@ -212,7 +188,6 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
     C_ = ref_wfn_->co_coeff()[gamma_point];
     eps_ = ref_wfn_->co_energy()[gamma_point];
 
-
     mo_insert_gamma_point(this->lcao_factory(), C_, unitcell, this->occ_block(),
                           this->unocc_block());
   }
@@ -228,7 +203,11 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
 
     auto g_abij = this->lcao_factory().compute(L"<a b|G|i j>");
 
-    auto n_occ = this->lcao_factory().pao_factory().molecule().occupation() / 2;
+    const auto charge = 0;
+    const auto nelectrons =
+        this->lcao_factory().pao_factory().unitcell().total_atomic_number() -
+        charge;
+    auto n_occ = nelectrons / 2;
     std::size_t n_frozen = 0;
     auto t2 = detail::d_abij<Tile, Policy>(g_abij, eps_, n_occ, n_frozen);
 
@@ -242,9 +221,49 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy> {
     auto duration = mpqc::duration_in_s(time0, time1);
 
     if (print_detail_) {
-        ExEnv::out0() << " Energy computing time: " << duration << " s\n";
+      ExEnv::out0() << " Energy computing time: " << duration << " s\n";
     }
     return e_mp2;
+  }
+
+  bool can_evaluate(Energy *energy) override {
+    // can only evaluate the energy
+    return energy->order() == 0;
+  }
+
+  void evaluate(Energy *result) override {
+    if (!this->computed()) {
+      /// cast ref_wfn to Energy::Evaluator
+      auto ref_evaluator =
+          std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
+      if (ref_evaluator == nullptr) {
+        std::ostringstream oss;
+        oss << "RefWavefunction in GammaPointCCSD" << ref_wfn_->class_key()
+            << " cannot compute Energy" << std::endl;
+        throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+      }
+
+      ref_evaluator->evaluate(result);
+
+      double ref_energy = this->get_value(result).derivs(0)[0];
+
+      auto time0 = mpqc::now(this->wfn_world()->world(), false);
+      // initialize
+      init();
+
+      e_mp2_ = compute_gamma_point_mp2();
+      auto time1 = mpqc::now(this->wfn_world()->world(), false);
+      auto duration = mpqc::duration_in_s(time0, time1);
+      if (print_detail_) {
+        ExEnv::out0() << "\n Total Gamma-Point MP2 time: " << duration
+                      << " s\n";
+      }
+
+      ExEnv::out0() << "\nGamma-Point MP2 Energy = " << e_mp2_ << std::endl;
+
+      this->computed_ = true;
+      this->set_value(result, ref_energy + e_mp2_);
+    }
   }
 };
 
@@ -253,7 +272,6 @@ extern template class GammaPointMP2<TA::TensorZ, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
 extern template class GammaPointMP2<TA::TensorZ, TA::SparsePolicy>;
 #endif
-
 
 }  // namespace lcao
 

@@ -16,7 +16,7 @@ namespace lcao {
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
-    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
+    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens, std::size_t nocc,
     const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
     std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
@@ -26,8 +26,6 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 
   auto mo_time0 = mpqc::fenced_now(world);
   utility::print_par(world, "\nBuilding ClosedShell OBS MO Orbital\n");
-
-  auto occ = mols.occupation() / 2;
 
   // find fock matrix
   TArray F;
@@ -57,22 +55,22 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 
   ens = es.eigenvalues();
   RowMatrixXd C_all = es.eigenvectors();
-  RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), occ);
+  RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), nocc);
   RowMatrixXd C_corr_occ =
-      C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
-  RowMatrixXd C_vir = C_all.rightCols(S_eig.rows() - occ);
+      C_all.block(0, n_frozen_core, S_eig.rows(), nocc - n_frozen_core);
+  RowMatrixXd C_vir = C_all.rightCols(S_eig.rows() - nocc);
 
   utility::print_par(world, "OccBlockSize: ", occ_blocksize, "\n");
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
   std::size_t all = S.trange().elements_range().extent()[0];
-  auto tre = std::make_shared<TRange1Engine>(occ, all, occ_blocksize,
+  auto tre = std::make_shared<TRange1Engine>(nocc, all, occ_blocksize,
                                              vir_blocksize, n_frozen_core);
 
   // get all the trange1s
   auto tr_obs = S.trange().data().back();
   auto tr_corr_occ = tre->get_active_occ_tr1();
-  auto tr_occ = tre->compute_range(occ, occ_blocksize);
+  auto tr_occ = tre->compute_range(nocc, occ_blocksize);
   auto tr_vir = tre->get_vir_tr1();
   auto tr_all = tre->get_all_tr1();
 
@@ -222,7 +220,7 @@ void closed_shell_cabs_mo_build_svd(
 
 template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
-    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
+    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens, std::size_t nocc,
     const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
     std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
@@ -231,7 +229,6 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
   utility::print_par(world, "\nBuilding ClosedShell Dual Basis MO Orbital\n");
   auto mo_time0 = mpqc::fenced_now(world);
-  std::size_t occ = mols.occupation() / 2;
 
   // solving occupied orbitals
   TArray F;
@@ -257,12 +254,12 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
     n_frozen_core = n_frozen_core / 2;
   }
 
-  Eigen::VectorXd ens_occ = es.eigenvalues().segment(0, occ);
+  Eigen::VectorXd ens_occ = es.eigenvalues().segment(0, nocc);
 //  std::cout << "Energy of Occupied: \n" << ens_occ << std::endl;
   RowMatrixXd C_all = es.eigenvectors();
-  RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), occ);
+  RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), nocc);
   RowMatrixXd C_corr_occ =
-      C_all.block(0, n_frozen_core, S_eig.rows(), occ - n_frozen_core);
+      C_all.block(0, n_frozen_core, S_eig.rows(), nocc - n_frozen_core);
 
   // finished solving occupied orbitals
 
@@ -300,11 +297,11 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   utility::print_par(world, "OccBlockSize: ", occ_blocksize, "\n");
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
-  auto tre = std::make_shared<TRange1Engine>(occ, nbf_vbs, occ_blocksize,
+  auto tre = std::make_shared<TRange1Engine>(nocc, nbf_vbs, occ_blocksize,
                                              vir_blocksize, n_frozen_core);
   auto tr_obs = S.trange().data().back();
   auto tr_vbs = S_vbs.trange().data().back();
-  auto tr_occ = tre->compute_range(occ, occ_blocksize);
+  auto tr_occ = tre->compute_range(nocc, occ_blocksize);
   auto tr_corr_occ = tre->get_active_occ_tr1();
   auto tr_vir = tre->get_vir_tr1();
 

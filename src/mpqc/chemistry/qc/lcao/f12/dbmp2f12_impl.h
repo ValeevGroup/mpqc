@@ -59,7 +59,7 @@ void RIDBRMP2F12<Tile>::init() {
   auto mol = this->lcao_factory().ao_factory().molecule();
   Eigen::VectorXd orbital_energy;
   this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
-      this->lcao_factory(), orbital_energy, mol, this->is_frozen_core(),
+      this->lcao_factory(), orbital_energy, this->ndocc(), mol, this->is_frozen_core(),
       this->occ_block(), this->unocc_block());
   this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
 

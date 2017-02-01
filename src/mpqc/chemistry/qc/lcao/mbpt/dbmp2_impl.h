@@ -14,6 +14,7 @@ template <typename Tile, typename Policy>
 std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
     LCAOFactory<Tile, Policy> &lcao_factory,
     Eigen::VectorXd &ens,
+    std::size_t nocc,
     const Molecule &mols,
     bool frozen_core,
     std::size_t occ_blocksize,
@@ -25,7 +26,6 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
   using TArray = TA::DistArray<Tile, Policy>;
 
   auto mo_time0 = mpqc::fenced_now(world);
-  auto occ = mols.occupation() / 2;
   utility::print_par(
       world,
       "\nBuilding ClosedShell Dual Basis MO Orbital (Steele Approach) \n");
@@ -54,7 +54,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
   }
 
   std::cout << es.eigenvalues() << std::endl;
-  RowMatrixXd C_occ = es.eigenvectors().leftCols(occ);
+  RowMatrixXd C_occ = es.eigenvectors().leftCols(nocc);
 
   // finished solving occupied orbitals
 
@@ -63,10 +63,10 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
   std::size_t n_obs = S.trange().elements_range().extent()[0];
-  auto tre = std::make_shared<TRange1Engine>(occ, n_obs, occ_blocksize,
+  auto tre = std::make_shared<TRange1Engine>(nocc, n_obs, occ_blocksize,
                                              vir_blocksize, n_frozen_core);
   auto tr_obs = S.trange().data().back();
-  auto tr_occ = tre->compute_range(occ, occ_blocksize);
+  auto tr_occ = tre->compute_range(nocc, occ_blocksize);
   auto tr_corr_occ = tre->get_active_occ_tr1();
   mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ");
 
@@ -101,7 +101,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
   } else {
     F_vbs = ao_factory.compute(Formula(L"<Α|F|Β>"));
   }
-  tre = std::make_shared<TRange1Engine>(occ, n_vbs, occ_blocksize,
+  tre = std::make_shared<TRange1Engine>(nocc, n_vbs, occ_blocksize,
                                         vir_blocksize, n_frozen_core);
 
   RowMatrixXd C_vir;
@@ -116,9 +116,9 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
     ens = es.eigenvalues();
     auto env = es.eigenvectors();
 
-    C_occ = env.leftCols(occ);
-    C_corr_occ = C_occ.rightCols(occ - n_frozen_core);
-    C_vir = env.rightCols(n_vbs - occ);
+    C_occ = env.leftCols(nocc);
+    C_corr_occ = C_occ.rightCols(nocc - n_frozen_core);
+    C_vir = env.rightCols(n_vbs - nocc);
   }
 
   // get all the trange1s
@@ -194,11 +194,11 @@ void DBRMP2<Tile,Policy>::init() {
 
     if (method_ == "valeev") {
       this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
-          this->lcao_factory(), orbital_energy, *mol, this->is_frozen_core(),
+          this->lcao_factory(), orbital_energy, this->ndocc(), *mol, this->is_frozen_core(),
           this->occ_block(), this->unocc_block());
     } else if (method_ == "steele") {
       this->trange1_engine_ = detail::closed_shell_dual_basis_mo_build_steele(
-          this->lcao_factory(), orbital_energy, *mol, this->is_frozen_core(),
+          this->lcao_factory(), orbital_energy, this->ndocc(), *mol, this->is_frozen_core(),
           this->occ_block(), this->unocc_block());
     }
     this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);

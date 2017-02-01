@@ -15,6 +15,7 @@
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/util/misc/time.h"
 
+#include <mpqc/chemistry/qc/lcao/integrals/screening/schwarz_screen.h>
 #include <unsupported/Eigen/MatrixFunctions>
 
 typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
@@ -475,6 +476,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
         auto time_g0 = mpqc::now(this->world_, false);
         auto J = compute_integrals(this->world_, engine_pool, bs_array);
         auto time_g1 = mpqc::now(this->world_, false);
+
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
         auto time_contr0 = mpqc::now(this->world_, false);

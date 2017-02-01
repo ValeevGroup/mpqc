@@ -53,9 +53,10 @@ void CartMolecularCoordinates::displace(size_t ncoords, size_t* coords,
     auto r = atoms[atom].center();
     r(xyz) += displacements[c];
     auto mass = atoms[atom].mass();
+    auto Z = atoms[atom].atomic_number();
     auto charge = atoms[atom].charge();
 
-    atoms[atom] = Atom(r, mass, charge);
+    atoms[atom] = Atom(r, mass, Z, charge);
   }
 
   this->update_molecule(atoms);

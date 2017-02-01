@@ -17,39 +17,38 @@ namespace lcao {
  *
  */
 class Screener {
-  public:
-    Screener() = default;
-    Screener(Screener const &) = default;
-    Screener(Screener &&) = default;
-    Screener &operator=(Screener &&) = default;
-    Screener &operator=(Screener const &) = default;
-    virtual ~Screener() noexcept = default;
+ public:
+  Screener() = default;
+  Screener(Screener const &) = default;
+  Screener(Screener &&) = default;
+  Screener &operator=(Screener &&) = default;
+  Screener &operator=(Screener const &) = default;
+  virtual ~Screener() noexcept = default;
 
-    /*! \brief all skips take shell indices and return true or false.
-     *
-     * The index passed to skip should be the lower bound basis functions for
-     * that shell set.  For example if we have shells a, b, c that are all of
-     * size 3 then for the integral (a|c) we the indices pasted to skip should
-     * be skip(0,5).
-     *
-     * When deriving this class it is the developers responsiblity to convert
-     * function indices into shell indices.  The motivation for this is to
-     * simplify the integral kernel code.
-     */
-    virtual bool skip(int64_t) { return false; }
-    virtual bool skip(int64_t) const { return false; }
+  /*! \brief all skips take shell indices and return true or false.
+   *
+   * The index passed to skip should be the lower bound basis functions for
+   * that shell set.  For example if we have shells a, b, c that are all of
+   * size 3 then for the integral (a|c) we the indices pasted to skip should
+   * be skip(0,5).
+   *
+   * When deriving this class it is the developers responsiblity to convert
+   * function indices into shell indices.  The motivation for this is to
+   * simplify the integral kernel code.
+   */
+  inline virtual bool skip(int64_t) { return false; }
+  inline virtual bool skip(int64_t) const { return false; }
 
-    virtual bool skip(int64_t, int64_t) { return false; }
-    virtual bool skip(int64_t, int64_t) const { return false; }
+  inline virtual bool skip(int64_t, int64_t) { return false; }
+  inline virtual bool skip(int64_t, int64_t) const { return false; }
 
-    virtual bool skip(int64_t, int64_t, int64_t) { return false; }
-    virtual bool skip(int64_t, int64_t, int64_t) const { return false; }
+  inline virtual bool skip(int64_t, int64_t, int64_t) { return false; }
+  inline virtual bool skip(int64_t, int64_t, int64_t) const { return false; }
 
-    virtual bool skip(int64_t, int64_t, int64_t, int64_t) { return false; }
-    virtual bool skip(int64_t, int64_t, int64_t, int64_t) const {
-        return false;
-    }
-
+  inline virtual bool skip(int64_t, int64_t, int64_t, int64_t) { return false; }
+  inline virtual bool skip(int64_t, int64_t, int64_t, int64_t) const {
+    return false;
+  }
 };
 
 }  // namespace  lcao

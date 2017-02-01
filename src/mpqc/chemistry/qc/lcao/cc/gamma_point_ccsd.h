@@ -25,7 +25,8 @@ inline void print_gamma_point_ccsd(int iter, double dE, double error, double E1,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
+class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy>,
+                       public CanEvaluate<Energy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
 
@@ -48,10 +49,6 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
 
   ~GammaPointCCSD() {}
 
-  void compute(PropertyBase *pb) override {
-    throw std::runtime_error("Not Implemented!!");
-  }
-
   void obsolete() override {
     gp_ccsd_corr_energy_ = 0.0;
     PeriodicLCAOWavefunction<Tile, Policy>::obsolete();
@@ -67,23 +64,6 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
   double gp_ccsd_corr_energy_;
   Matrixz C_;
   Vectorz eps_;
-
- public:
-  double value() override {
-    if (this->energy_ == 0.0) {
-      double ref_energy = ref_wfn_->value();
-
-      init();
-
-      TArray t1, t2;
-
-      gp_ccsd_corr_energy_ = compute_gamma_point_ccsd(t1, t2);
-
-      this->energy_ = ref_energy + gp_ccsd_corr_energy_;
-    }
-
-    return this->energy_;
-  }
 
  private:
   /*!
@@ -119,7 +99,11 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
 
     auto &world = this->wfn_world()->world();
     auto accurate_time = this->lcao_factory().accurate_time();
-    auto n_occ = this->lcao_factory().pao_factory().molecule().occupation() / 2;
+    const auto charge = 0;
+    const auto nelectrons =
+        this->lcao_factory().pao_factory().unitcell().total_atomic_number() -
+        charge;
+    auto n_occ = nelectrons / 2;
     std::size_t n_frozen = 0;
 
     auto tmp_time0 = mpqc::now(world, accurate_time);
@@ -271,11 +255,13 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
         r2("a,b,i,j") -= tmp_akij("a,k,i,j") * t1("b,k");
 
         // TODO: fix it later. Could be a linker problem.
-//        r2("a,b,i,j") =
-//            (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j");
+        //        r2("a,b,i,j") =
+        //            (g_iabc("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) *
+        //            t1("c,j");
 
-//        r2("a,b,i,j") -=
-//            (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) * t1("b,k");
+        //        r2("a,b,i,j") -=
+        //            (g_ijak("i,j,a,k") + g_abij("a,c,i,k") * t1("c,j")) *
+        //            t1("b,k");
       }
       tmp_time1 = mpqc::now(world, accurate_time);
       tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
@@ -442,14 +428,14 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
 
       if (dE >= converge_ || error >= converge_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<std::complex<double>, Tile, Policy> t(t1, t2);
-        cc::T1T2<std::complex<double>, Tile, Policy> r(r1, r2);
-        error = r.norm() / size(t);
+        cc::T1T2<TArray, TArray> t(t1, t2);
+        cc::T1T2<TArray, TArray> r(r1, r2);
+        error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
         diis.extrapolate(t, r);
 
         // update t1 and t2
-        t1("a,i") = t.first("a,i");
-        t2("a,b,i,j") = t.second("a,b,i,j");
+        t1("a,i") = t.t1("a,i");
+        t2("a,b,i,j") = t.t2("a,b,i,j");
 
         if (print_detail_) {
           mpqc::detail::print_size_info(r2, "R2");
@@ -534,8 +520,8 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
   }
 
   /// returns a DIIS object
-  TA::DIIS<cc::T1T2<std::complex<double>, Tile, Policy>> get_diis(
-      const madness::World &world) {
+  TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>>
+  get_diis(const madness::World &world) {
     int n_diis, strt, ngr, ngrdiis;
     double dmp, mf;
 
@@ -554,10 +540,49 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy> {
       std::cout << "DIIS dmp:  " << dmp << std::endl;
       std::cout << "DIIS mf:  " << mf << std::endl;
     }
-    TA::DIIS<cc::T1T2<std::complex<double>, Tile, Policy>> diis(
-        strt, n_diis, 0.0, ngr, ngrdiis);
+    TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>>
+        diis(strt, n_diis, 0.0, ngr, ngrdiis);
 
     return diis;
+  }
+
+  bool can_evaluate(Energy *energy) override {
+    // can only evaluate the energy
+    return energy->order() == 0;
+  }
+
+  void evaluate(Energy *result) override {
+    if (!this->computed()) {
+      /// cast ref_wfn to Energy::Evaluator
+      auto ref_evaluator =
+          std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
+      if (ref_evaluator == nullptr) {
+        std::ostringstream oss;
+        oss << "RefWavefunction in GammaPointCCSD" << ref_wfn_->class_key()
+            << " cannot compute Energy" << std::endl;
+        throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+      }
+
+      ref_evaluator->evaluate(result);
+
+      double ref_energy = this->get_value(result).derivs(0)[0];
+
+      // initialize
+      init();
+
+      // set the precision
+      if (converge_ == 0.0) {
+        // if no user provided converge limit, use the default one from Energy
+        converge_ = result->target_precision(0);
+      }
+
+      TArray t1, t2;
+
+      gp_ccsd_corr_energy_ = compute_gamma_point_ccsd(t1, t2);
+
+      this->computed_ = true;
+      this->set_value(result, ref_energy + gp_ccsd_corr_energy_);
+    }
   }
 };
 

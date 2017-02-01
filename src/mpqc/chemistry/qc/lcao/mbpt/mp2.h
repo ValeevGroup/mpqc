@@ -79,8 +79,8 @@ double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
                    std::shared_ptr<Eigen::VectorXd> orbital_energy,
                    std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df);
 
-}  // end of namespce detail
-}  // end of namespce mbpt
+}  // namespace detail
+}  // namespace mbpt
 
 /**
  *  \brief MP2 class for closed-shell system

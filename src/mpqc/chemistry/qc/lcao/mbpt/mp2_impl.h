@@ -27,7 +27,7 @@ double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
   return energy_mp2;
 }
 
-} // end of namespace detail
+}  // namespace detail
 
 template<typename Tile, typename Policy>
 RMP2<Tile,Policy>::RMP2(const KeyVal &kv) : LCAOWavefunction<Tile,Policy>(kv) {
@@ -117,7 +117,7 @@ double RIRMP2<Tile,Policy>::compute() {
   return detail::compute_mp2(lcao_factory, this->orbital_energy(),
                              this->trange1_engine(), true);
 }
-}  // end of namespace lcao
-}  // end of namespace mpqc
+}  // namespace lcao
+}  // namespace mpqc
 
 #endif //SRC_MPQC_CHEMISTRY_QC_MBPT_MP2_IMPL_H_

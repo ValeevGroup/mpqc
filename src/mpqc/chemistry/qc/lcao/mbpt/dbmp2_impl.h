@@ -153,7 +153,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dual_basis_mo_build_steele(
 
   return tre;
 }
-} // end of namespace detail
+} // namespace detail
 
 
 ///

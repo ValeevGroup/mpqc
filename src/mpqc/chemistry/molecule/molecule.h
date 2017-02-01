@@ -153,8 +153,8 @@ class Molecule : virtual public DescribedClass,
   /// Computes the number of core electrons in the Molecule.
   int64_t core_electrons() const;
 
-  /// Returns the nuclear repulsion energy of the Molecule.
-  double nuclear_repulsion() const;
+  /// @return the nuclear repulsion energy of the Molecule.
+  double nuclear_repulsion_energy() const;
 
   /*! \brief A vector of all atoms in the Molecule
    *

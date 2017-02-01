@@ -170,7 +170,7 @@ std::vector<Atom> Molecule::atoms() const {
 
 size_t Molecule::natoms() const { return natoms_; }
 
-double Molecule::nuclear_repulsion() const {
+double Molecule::nuclear_repulsion_energy() const {
   auto const &atoms = this->atoms();
 
   double energy = 0.0;

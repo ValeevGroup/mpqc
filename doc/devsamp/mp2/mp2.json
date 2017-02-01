@@ -1,12 +1,24 @@
 {
   "property" : {
     "type" : "Energy",
-    "wfn" : "$:wfn"
+    "wfn" : "$:mp2"
   },
-  "wfn":{
+  "mp2":{
     "type": "MP2",
+    "frozen_core" : false,
+    "atoms" : "$:molecule",
+    "wfn_world" : "$:wfn_world",
+    "ref" : "$:scf"
+  },
+  "wfn_world":{
+    "type" : "WfnWorld",
     "molecule" : "$:molecule",
     "basis" : "$:basis"
+  },
+  "scf":{
+    "type" : "RHF",
+    "atoms" : "$:molecule",
+    "wfn_world" : "$:wfn_world"
   },
   "molecule": {
     "atoms": [

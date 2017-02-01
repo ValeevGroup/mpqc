@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 
+#include "mpqc/chemistry/molecule/atom_masses.h"
 #include "mpqc/chemistry/units/units.h"
 #include <libint2/chemistry/elements.h>
 
@@ -58,7 +59,7 @@ Atom::Atom(const KeyVal& kv) {
   center_(1) = xyz[1];
   center_(2) = xyz[2];
 
-  mass_ = kv.value<double>("mass", 0.0);
+  mass_ = kv.value<double>("mass", molecule::masses::masses.at(atomic_number_));
   charge_ = kv.value<double>("charge", static_cast<double>(atomic_number_));
 }
 

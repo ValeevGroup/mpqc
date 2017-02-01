@@ -44,15 +44,10 @@ public:
   // clang-format off
   /**
    * @brief The KeyVal constructor
-   * @param kv the KeyVal object to be queried
+   * @param kv the KeyVal object, it will be queried for all
+   *        keywords of the WavefunctionProperty class. |
    *
-   * \c kv will be queried for all keywords of the WavefunctionProperty class,
-   * as well as the following keywords:
-   * | KeyWord | Type | Default| Description |
-   * |---------|------|--------|-------------|
-   * | wfn | Wavefunction | none | the Wavefunction that will compute this  |
-   *
-   * This constructor overrides the default target precision to 1e-9 .
+   * @note This constructor overrides the default target precision to 1e-9 .
    */
   // clang-format on
 

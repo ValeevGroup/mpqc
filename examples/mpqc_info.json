@@ -1,24 +1,22 @@
 {
   "molecule": {
-    "type": "Molecule",
-    "file_name": "watermonomer1.xyz",
-    "sort_input": true,
-    "charge": 0,
-    "n_cluster": 72
+    "atoms": [
+      { "element":"O", "xyz" : [-0.702196054,  -0.056060256,   0.009942262]},
+      { "element":"H", "xyz" : [-1.022193224,   0.846775782,  -0.011488714]},
+      { "element":"H", "xyz" : [ 0.257521062,   0.042121496,   0.005218999]}
+    ],
+    "n_cluster": 1
   },
   "basis": {
-    "type": "Basis",
     "name": "cc-pVDZ-F12",
     "reblock" : 20,
     "molecule": "$:molecule"
   },
   "df_basis": {
-    "type": "Basis",
     "name": "aug-cc-pVDZ-RI",
     "molecule": "$:molecule"
   },
   "aux_basis":{
-    "type": "Basis",
     "name": "cc-pVDZ-F12-CABS",
     "molecule": "$:molecule"
   }

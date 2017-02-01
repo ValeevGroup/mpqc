@@ -11,9 +11,10 @@
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/linalg/sqrt_inv.h"
-#include "mpqc/util/external/madworld/parallel_break_point.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
+#include "mpqc/util/misc/exenv.h"
 #include "mpqc/util/misc/time.h"
+
 #include <madness/world/worldmem.h>
 
 namespace mpqc {
@@ -91,10 +92,9 @@ class AOFactory : public AOFactoryBase, virtual public DescribedClass {
   AOFactory(AOFactory&&) = default;
   AOFactory& operator=(AOFactory&&) = default;
 
-
   void obsolete() {
     ao_formula_registry_.purge(world_);
-    if(orbital_basis_registry_!= nullptr){
+    if (orbital_basis_registry_ != nullptr) {
       orbital_basis_registry_->clear();
     }
   }
@@ -157,13 +157,11 @@ class AOFactory : public AOFactoryBase, virtual public DescribedClass {
   TA::DistArray<
       Tile, typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
                                     TA::SparsePolicy>::type>
-  compute_integrals(
-      madness::World& world, ShrPool<libint2::Engine>& engine,
-      BasisVector const& bases,
-      std::shared_ptr<Screener> p_screen =
-          std::make_shared<Screener>(Screener{})) {
-    auto result =
-        sparse_integrals(world, engine, bases, p_screen, op_);
+  compute_integrals(madness::World& world, ShrPool<libint2::Engine>& engine,
+                    BasisVector const& bases,
+                    std::shared_ptr<Screener> p_screen =
+                        std::make_shared<Screener>(Screener{})) {
+    auto result = sparse_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -172,13 +170,11 @@ class AOFactory : public AOFactoryBase, virtual public DescribedClass {
   TA::DistArray<Tile,
                 typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
                                         TA::DensePolicy>::type>
-  compute_integrals(
-      madness::World& world, ShrPool<libint2::Engine>& engine,
-      BasisVector const& bases,
-      std::shared_ptr<Screener> p_screen =
-          std::make_shared<Screener>(Screener{})) {
-    auto result =
-        dense_integrals(world, engine, bases, p_screen, op_);
+  compute_integrals(madness::World& world, ShrPool<libint2::Engine>& engine,
+                    BasisVector const& bases,
+                    std::shared_ptr<Screener> p_screen =
+                        std::make_shared<Screener>(Screener{})) {
+    auto result = dense_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -200,6 +196,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
 template <typename Tile, typename Policy>
 typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
     const Formula& formula) {
+  ExEnv::out0() << incindent;
+
   TArray result;
 
   // find if in registry
@@ -207,11 +205,11 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
 
   if (iter != ao_formula_registry_.end()) {
     result = iter->second;
-    utility::print_par(world_, "Retrieved AO Integral: ",
-                       utility::to_string(formula.string()));
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Retrieved AO Integral: "
+                  << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result);
-    utility::print_par(world_, " Size: ", size, " GB\n");
-    return result;
+    ExEnv::out0() << " Size: " << size << " GB\n";
   } else {
     // find a permutation, currently, it won't store permutation in registry
 
@@ -230,17 +228,17 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
         mpqc::time_point time1 = mpqc::now(world_, accurate_time_);
         double time = mpqc::duration_in_s(time0, time1);
 
-        utility::print_par(world_, "Permuted AO Integral: ",
-                           utility::to_string(formula.string()), " From ",
-                           utility::to_string(permute.string()));
+        ExEnv::out0() << indent;
+        ExEnv::out0() << "Permuted AO Integral: "
+                      << utility::to_string(formula.string()) << " From "
+                      << utility::to_string(permute.string());
         double size = mpqc::detail::array_size(result);
-        utility::print_par(world_, " Size: ", size, " GB ");
-        utility::print_par(world_, " Time: ", time, " s\n");
+        ExEnv::out0() << " Size: " << size << " GB"
+                      << " Time: " << time << " s\n";
 
         // store current array and delete old one
         ao_formula_registry_.insert(formula, result);
         ao_formula_registry_.purge_formula(world_,permute);
-        return result;
       }
     }
 
@@ -259,10 +257,10 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
     madness::print_meminfo(
         world_.rank(), "AOFactory: " + utility::to_string(formula.string()));
 
-    return ao_formula_registry_.retrieve(formula);
+    result = ao_formula_registry_.retrieve(formula);
   }
-  // wait all process to obtain and insert result
-  //        world_.gop.fence();
+  ExEnv::out0() << decindent;
+  return result;
 }
 
 template <typename Tile, typename Policy>
@@ -289,14 +287,15 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
       result("i,j") = -result("i,j");
     }
-    utility::print_par(world_, "Computed Inverse of Integral: ",
-                       utility::to_string(formula.string()));
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Computed Inverse of Integral: "
+                  << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result);
 
     time1 = mpqc::now(world_, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
   }
   // continue with normal step
   else {
@@ -332,11 +331,12 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         time += mpqc::duration_in_s(time0, time1);
       }
 
-      utility::print_par(world_, "Computed One Body Integral: ",
-                         utility::to_string(formula.string()));
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Computed One Body Integral: "
+                    << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result);
-      utility::print_par(world_, " Size: ", size, " GB");
-      utility::print_par(world_, " Time: ", time, " s\n");
+      ExEnv::out0() << " Size: " << size << " GB"
+                    << " Time: " << time << " s\n";
     }
     // use two body engine
     else if (formula.oper().is_twobody()) {
@@ -347,15 +347,15 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       parse_two_body_two_center(formula, engine_pool, bs_array);
       result = compute_integrals(this->world_, engine_pool, bs_array);
 
-
       time1 = mpqc::now(world_, accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
 
-      utility::print_par(world_, "Computed Twobody Two Center Integral: ",
-                         utility::to_string(formula.string()));
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Computed Twobody Two Center Integral: "
+                    << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result);
-      utility::print_par(world_, " Size: ", size, " GB");
-      utility::print_par(world_, " Time: ", time, " s\n");
+      ExEnv::out0() << " Size: " << size << " GB"
+                    << " Time: " << time << " s\n";
     }
     // compute JK, requires orbital space registry
     else if (formula.oper().is_jk()) {
@@ -422,11 +422,13 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         time1 = mpqc::now(world_, accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
       }
-      utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
-                         utility::to_string(formula.string()));
+
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Computed Coulumb/Exchange Integral: "
+                    << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result);
-      utility::print_par(world_, " Size: ", size, " GB");
-      utility::print_par(world_, " Time: ", time, " s\n");
+      ExEnv::out0() << " Size: " << size << " GB"
+                    << " Time: " << time << " s\n";
     }
     // hJ = H + J
     else if (formula.oper().type() == Operator::Type::hJ) {
@@ -446,11 +448,12 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       time1 = mpqc::now(world_, accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
 
-      utility::print_par(world_, "Computed Coulumb/Exchange Integral: ",
-                         utility::to_string(formula.string()));
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Computed Coulumb/Exchange Integral: "
+                    << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result);
-      utility::print_par(world_, " Size: ", size, " GB");
-      utility::print_par(world_, " Time: ", time, " s\n");
+      ExEnv::out0() << " Size: " << size << " GB"
+                    << " Time: " << time << " s\n";
     }
     // compute Fock, requires orbital space registry
     else if (formula.oper().is_fock()) {
@@ -475,11 +478,12 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
       time += mpqc::duration_in_s(time0, time1);
 
-      utility::print_par(world_, "Computed Fock Integral: ",
-                         utility::to_string(formula.string()));
+      ExEnv::out0() << indent;
+      ExEnv::out0() << "Computed Fock Integral: "
+                    << utility::to_string(formula.string());
       double size = mpqc::detail::array_size(result);
-      utility::print_par(world_, " Size: ", size, " GB");
-      utility::print_par(world_, " Time: ", time, " s\n");
+      ExEnv::out0() << " Size: " << size << " GB"
+                    << " Time: " << time << " s\n";
     }
   }
 
@@ -488,7 +492,6 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   // compute inverse square root first in this case
   if (!iterative_inv_sqrt_ &&
       formula.oper().has_option(Operator::Option::Inverse)) {
-
     time0 = mpqc::now(world_, accurate_time_);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -510,11 +513,11 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     } else if (info == Eigen::ComputationInfo::NumericalIssue) {
       utility::print_par(world_,
                          "!!!\nWarning!! NumericalIssue in Cholesky "
-                             "Decomposition\n!!!\n");
+                         "Decomposition\n!!!\n");
     } else if (info == Eigen::ComputationInfo::NoConvergence) {
       utility::print_par(world_,
                          "!!!\nWarning!! NoConvergence in Cholesky "
-                             "Decomposition\n!!!\n");
+                         "Decomposition\n!!!\n");
     }
 
     if (info != Eigen::ComputationInfo::Success) {
@@ -528,8 +531,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
 
     auto tr_result = result.trange().data()[0];
-    result = array_ops::eigen_to_array<Tile,Policy>(
-        result.world(), result_eig, tr_result, tr_result);
+    result = array_ops::eigen_to_array<Tile, Policy>(result.world(), result_eig,
+                                                     tr_result, tr_result);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
@@ -537,7 +540,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
     time1 = mpqc::now(world_, accurate_time_);
     auto inv_time = mpqc::duration_in_s(time0, time1);
-    utility::print_par(world_, "Inverse Time: ", inv_time, " s\n");
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Inverse Time: " << inv_time << " s\n";
   }
 
   // inverse square root of integral
@@ -558,8 +562,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       RowMatrixXd inv_eig = es.operatorInverseSqrt();
 
       auto tr_result = result.trange().data()[0];
-      result = array_ops::eigen_to_array<Tile,Policy>(
-          result.world(), inv_eig, tr_result, tr_result);
+      result = array_ops::eigen_to_array<Tile, Policy>(result.world(), inv_eig,
+                                                       tr_result, tr_result);
     }
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -568,7 +572,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
     time1 = mpqc::now(world_, accurate_time_);
     auto inv_sqrt_time = mpqc::duration_in_s(time0, time1);
-    utility::print_par(world_, "Inverse Square Root Time: ", inv_sqrt_time, " s\n");
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Inverse Square Root Time: " << inv_sqrt_time << " s\n";
   }
 
   return result;
@@ -585,8 +590,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
 
   BasisVector bs_array;
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
-  std::shared_ptr<Screener> p_screener =
-      std::make_shared<Screener>(Screener{});
+  std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
@@ -594,11 +598,12 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
   time1 = mpqc::now(world_, accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
-  utility::print_par(world_, "Computed Twobody Three Center Integral: ",
-                     utility::to_string(formula.string()));
+  ExEnv::out0() << indent;
+  ExEnv::out0() << "Computed Twobody Three Center Integral: "
+                << utility::to_string(formula.string());
   double size = mpqc::detail::array_size(result);
-  utility::print_par(world_, " Size: ", size, " GB");
-  utility::print_par(world_, " Time: ", time, " s\n");
+  ExEnv::out0() << " Size: " << size << " GB"
+                << " Time: " << time << " s\n";
 
   return result;
 }
@@ -631,12 +636,12 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
     time1 = mpqc::now(world_, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
-    utility::print_par(
-        world_, "Computed Twobody Four Center Density-Fitting Integral: ",
-        utility::to_string(formula.string()));
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Computed Twobody Four Center Density-Fitting Integral: "
+                  << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result);
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
 
   } else {
     time0 = mpqc::now(world_, accurate_time_);
@@ -657,19 +662,18 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
     time1 = mpqc::now(world_, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
-    utility::print_par(world_, "Computed Twobody Four Center Integral: ",
-                       utility::to_string(formula.string()));
+    ExEnv::out0() << indent;
+    ExEnv::out0() << "Computed Twobody Four Center Integral: "
+                  << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result);
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
   }
   return result;
 }
 
-extern template
-class AOFactory<TA::TensorD, TA::SparsePolicy>;
-//extern template
-//class AOFactory<TA::TensorD, TA::DensePolicy>;
+extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+extern template class AOFactory<TA::TensorD, TA::DensePolicy>;
 
 }  // namespace gaussian
 }  // namespace lcao

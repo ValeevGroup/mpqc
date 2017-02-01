@@ -16,6 +16,7 @@ using mpqc::KeyVal;
 using mpqc::DescribedClass;
 
 struct Base : virtual public DescribedClass {
+  Base() = default;
   Base(const KeyVal& kv) : DescribedClass(), value_(kv.value<int>("value")) {}
   Base(int v) : value_(v) {}
   virtual ~Base() {}
@@ -338,6 +339,32 @@ a 1";
     kv_test(kv);
   }
 
+  SECTION("clone") {
+    KeyVal kv;
+
+    stringstream iss(ref_kv_input_json);
+    kv.read_json(iss);
+
+    auto kv_clone = kv.clone();
+    kv_test(kv_clone);
+  }
+
+  SECTION("arrays of classes") {
+    const char kv_input[] = \
+        "{ \"bases\" : [ "
+        "  { \"value\" : 0 }, "
+        "  { \"value\" : 1 }, "
+        "  { \"value\" : 2 } ] }";
+    std::istringstream iss(kv_input);
+    KeyVal kv;
+    kv.read_json(iss);
+
+    auto bases = kv.value<std::vector<Base>>("bases");
+    REQUIRE(bases.size() == 3);
+    for (int i=0; i!=3; ++i)
+      REQUIRE(bases[i].value() == i);
+  }
+
   SECTION("Basis Test"){
 
     auto& world = TiledArray::get_default_world();
@@ -353,16 +380,6 @@ a 1";
 
     REQUIRE_NOTHROW(kv.class_ptr<::mpqc::lcao::gaussian::AtomicBasis>("basis"));
 
-  }
-
-  SECTION("clone") {
-    KeyVal kv;
-
-    stringstream iss(ref_kv_input_json);
-    kv.read_json(iss);
-
-    auto kv_clone = kv.clone();
-    kv_test(kv_clone);
   }
 
 }  // end of test case

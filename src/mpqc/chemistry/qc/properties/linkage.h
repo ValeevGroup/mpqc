@@ -11,6 +11,8 @@ namespace mpqc{
 
 class Energy;
 detail::ForceLink<Energy> fl_energy;
+class GFRealPole;
+detail::ForceLink<GFRealPole> fl_gfrealpole;
 template <size_t Order, typename Value> class MolecularFiniteDifferenceDerivative;
 detail::ForceLink<MolecularFiniteDifferenceDerivative<1,double>> fl_fdgrad;
 

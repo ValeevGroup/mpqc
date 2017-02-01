@@ -3,6 +3,8 @@ set(sources
     energy.h
     findif.cpp
     findif.h
+    gfpole.cpp
+    gfpole.h
     linkage.h
     property.h
 )

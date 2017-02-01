@@ -2,11 +2,11 @@
 #ifndef MPQC4_SRC_MPQC_UTIL_META_PREDICATES_H_
 #define MPQC4_SRC_MPQC_UTIL_META_PREDICATES_H_
 
+#include "mpqc/util/meta/get_type.h"
+
 namespace mpqc {
 namespace utility {
 namespace meta {
-
-#include "mpqc/util/meta/get_type.h"
 
 template <typename... Args>
 struct is_homogeneous_parameter_pack;

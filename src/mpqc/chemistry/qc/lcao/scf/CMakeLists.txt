@@ -1,4 +1,6 @@
 set(sources
+        eigen_solve_density_builder.h
+        eigen_solve_density_builder_impl.h
         linkage.cpp
         linkage.h
         rhf.h
@@ -6,8 +8,6 @@ set(sources
         rhf.cpp
         orbital_localization.h
         orbital_localization.cpp
-        eigen_solve_density_builder.h
-        eigen_solve_density_builder_impl.h
         purification_density_build.h
         purification_density_build_impl.h
         util.h

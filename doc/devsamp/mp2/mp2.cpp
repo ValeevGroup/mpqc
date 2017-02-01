@@ -81,6 +81,20 @@ class MP2 : public lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>,
 
     world.gop.fence();
 
+    // lambda function to update residual
+    auto jacobi_update = [&eps_o, &eps_v](TA::TensorD& result_tile) {
+
+      const auto& range = result_tile.range();
+      double norm = 0.0;
+      for (const auto& i : range) {
+        const auto result_abij = result_tile[i] / (eps_o[i[0]] - eps_v[i[1]] +
+                                                   eps_o[i[2]] - eps_v[i[3]]);
+        result_tile[i] = result_abij;
+        norm += result_abij * result_abij;
+      }
+      return std::sqrt(norm);
+    };
+
     // start iteration
     bool converged = false;
     std::size_t iter = 0;
@@ -99,21 +113,8 @@ class MP2 : public lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>,
 
       converged = norm < precision;
 
-      auto jacobi_update = [&eps_o, &eps_v](TA::TensorD& result_tile) {
-
-        auto range = result_tile.range();
-        double norm = 0.0;
-        for (const auto& i : range) {
-          const auto result_abij = result_tile[i] / (eps_o[i[0]] - eps_v[i[1]] +
-                                                     eps_o[i[2]] - eps_v[i[3]]);
-          result_tile[i] = result_abij;
-          norm += result_abij * result_abij;
-        }
-        return std::sqrt(norm);
-      };
-
       if (not converged) {
-        // update residule
+        // update residual
         TA::foreach_inplace(R, jacobi_update);
         world.gop.fence();
         norm = R("i,a,j,b").norm();

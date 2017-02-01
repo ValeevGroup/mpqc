@@ -9,7 +9,11 @@
     "basis" : "$:basis"
   },
   "molecule": {
-    "file_name": "water.xyz"
+    "atoms": [
+      { "element": "O", "xyz":[ 0.00000, -0.07579,  0.00000] },
+      { "element": "H", "xyz":[ 0.86681,  0.60144,  0.00000] },
+      { "element": "H", "xyz":[-0.86681,  0.60144,  0.00000] }
+    ]
   },
   "basis": {
     "name": "6-31G",

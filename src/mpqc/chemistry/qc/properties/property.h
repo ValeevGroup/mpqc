@@ -138,15 +138,15 @@ class WavefunctionProperty
 
 ////////////////////////////////////////////////////////////////////////
 
-/// \brief Base for classes that can evaluate \c Properties .
+/// \brief Base for classes that provide \c Properties .
 
 /// This provides to the class that inherits this an ability to visit
 /// each property \c P in \c Properties by overloading
-/// the corresponding \c P::Evaluator::can_evaluate and \c
-/// P::Evaluator::evaluate methods.
+/// the corresponding \c P::Provider::can_evaluate and \c
+/// P::Provider::evaluate methods.
 /// @tparam Properties the property type list
 template <typename... Properties>
-class CanEvaluate : public Properties::Evaluator... {};
+class Provides : public Properties::Provider... {};
 
 }  // namespace mpqc
 

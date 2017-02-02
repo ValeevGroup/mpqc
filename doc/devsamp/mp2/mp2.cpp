@@ -5,7 +5,7 @@
 using namespace mpqc;
 
 class MP2 : public lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>,
-            public CanEvaluate<Energy> {
+            public Provides<Energy> {
  public:
   MP2(const KeyVal& kv)
       : lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>(kv) {
@@ -23,9 +23,9 @@ class MP2 : public lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>,
 
   void evaluate(Energy* energy) override {
     if (!this->computed()) {
-      /// cast ref_wfn to Energy::Evaluator
+      /// cast ref_wfn to Energy::Provider
       auto ref_evaluator =
-          std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
+          std::dynamic_pointer_cast<typename Energy::Provider>(ref_wfn_);
       if (ref_evaluator == nullptr) {
         std::ostringstream oss;
         oss << "RefWavefunction in MP2" << ref_wfn_->class_key()

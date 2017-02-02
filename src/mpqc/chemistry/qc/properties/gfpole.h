@@ -11,10 +11,10 @@ class GFRealPole : public WavefunctionProperty<double> {
 public:
   using typename WavefunctionProperty<double>::function_base_type;
 
-  class Evaluator : public math::FunctionVisitorBase<function_base_type> {
+  class Provider : public math::FunctionVisitorBase<function_base_type> {
   public:
     virtual bool can_evaluate(GFRealPole* pole) = 0;
-    /// Evaluator::evaluate computes the taylor expansion of the real pole
+    /// Provider::evaluate computes the taylor expansion of the real pole
     /// with respect to the molecular coordinates
     /// and uses set_value to assign the values to \c energy
     virtual void evaluate(GFRealPole* pole) = 0;

@@ -71,7 +71,7 @@ TA::Array<double, 4, Tile, Policy> d_pqrE(
 
 template <typename Tile>
 class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
-               public CanEvaluate<GFRealPole> {
+               public Provides<GFRealPole> {
  public:
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;

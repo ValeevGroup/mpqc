@@ -14,7 +14,7 @@ namespace mpqc {
 * to add a wavefunction property class P:
 * - derive class P from WavefunctionProperty<T> and override
 * P::evaluate()
-* - define class P::EvaluatorBase to be used as a public base classes that
+* - define class P::Provider to be used as a public base classes that
 * can compute it
 */
 
@@ -25,18 +25,18 @@ public:
 
   /**
    *  every class that can evaluate Energy (e.g. Wavefunction) will publicly
-   *  inherit from Energy::Evaluator
+   *  inherit from Energy::Provider
    *
-   *  @sa CanEvaluate
+   *  @sa Provides
    */
-  class Evaluator : public math::FunctionVisitorBase<function_base_type> {
+  class Provider : public math::FunctionVisitorBase<function_base_type> {
   public:
-    /// EvaluatorBase::can_evaluate returns true if \c energy can be computed.
+    /// @return true if \c energy can be computed.
     /// For example, if \c energy demands taylor expansion to 1st order
     /// but this wave function does not have analytic nuclear gradients,
     /// will return false.
     virtual bool can_evaluate(Energy* energy) = 0;
-    /// EvaluatorBase::evaluate computes the taylor expansion of the energy
+    /// Provider::evaluate computes the taylor expansion of the energy
     /// and uses set_value to assign the values to \c energy
     virtual void evaluate(Energy* energy) = 0;
   };

@@ -89,7 +89,7 @@ double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
  */
 
 template<typename Tile, typename Policy>
-class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public CanEvaluate<Energy> {
+class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public Provides<Energy> {
  public:
 
   // clang-format off

@@ -19,7 +19,7 @@ namespace lcao {
  */
 
 class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>,
-             public CanEvaluate<Energy> {
+             public Provides<Energy> {
  public:
   using Tile = TA::TensorZ;
   using TArray =

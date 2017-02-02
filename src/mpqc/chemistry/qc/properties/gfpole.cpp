@@ -16,7 +16,7 @@ GFRealPole::GFRealPole(const KeyVal& kv)
 int GFRealPole::target() const { return target_; }
 
 void GFRealPole::do_evaluate() {
-  auto evaluator = std::dynamic_pointer_cast<Evaluator>(wfn());
+  auto evaluator = std::dynamic_pointer_cast<Provider>(wfn());
   if (evaluator == nullptr) {
     std::ostringstream oss;
     oss << "Wavefunction " << wfn()->class_key() << " cannot compute GFRealPole"

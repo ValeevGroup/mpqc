@@ -159,6 +159,9 @@ int try_main(int argc, char *argv[], madness::World &world) {
   MPQCTask task(world, kv);
   task.run();
   kv->erase("world");
+  if (prefix_opt) {  // unset file prefix, if did previously
+    kv->erase("file_prefix");
+  }
 
   // print the final keyval
   ExEnv::out0() << indent << "Output KeyVal (format="

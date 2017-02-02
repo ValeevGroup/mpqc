@@ -30,7 +30,7 @@ class MP2 : public lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>,
         std::ostringstream oss;
         oss << "RefWavefunction in MP2" << ref_wfn_->class_key()
             << " cannot compute Energy" << std::endl;
-        throw InputError(oss.str().c_str(), __FILE__, __LINE__, "ref_wfn");
+        throw InputError(oss.str().c_str(), __FILE__, __LINE__, "ref");
       }
 
       ref_evaluator->evaluate(energy);
@@ -117,7 +117,6 @@ class MP2 : public lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>,
         // update residual
         TA::foreach_inplace(R, jacobi_update);
         world.gop.fence();
-        norm = R("i,a,j,b").norm();
 
         // update amplitudes
         T("i,a,j,b") += R("i,a,j,b");

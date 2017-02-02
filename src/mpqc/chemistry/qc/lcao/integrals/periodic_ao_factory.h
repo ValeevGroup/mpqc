@@ -311,7 +311,16 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
   void parse_two_body_periodic(
       const Formula &formula,
       std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
-      BasisVector &bases, Vector3d shift_coul, bool if_coulomb);
+      BasisVector &bases, Vector3d shift_coul, bool if_coulomb,
+      std::shared_ptr<Screener> &p_screener);
+
+  /*!
+   * \brief Create a screener for 3- or 4-center integrals
+   * \param engine two-body engine
+   * \param bases a basis vector of length 3 or of length 4
+   * \return shared pointer of screener
+   */
+  std::shared_ptr<Screener> make_screener(ShrPool<libint2::Engine> &engine, BasisVector &bases);
 
   /*!
    * \brief Construct sparse complex integral tensors in parallel.
@@ -454,6 +463,8 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     auto time_contr = 0.0;
     auto time = 0.0;
 
+    std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
+
     if (print_detail_) {
       utility::print_par(this->world_,
                          "\nComputing Two Body Integral for Periodic System: ",
@@ -469,12 +480,12 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         using ::mpqc::lcao::detail::direct_vector;
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-        parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
+        parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true, p_screener);
 
         // Add a screener here and then pass it into compute integrals
 
         auto time_g0 = mpqc::now(this->world_, false);
-        auto J = compute_integrals(this->world_, engine_pool, bs_array);
+        auto J = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
         auto time_g1 = mpqc::now(this->world_, false);
 
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
@@ -499,12 +510,12 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
         using ::mpqc::lcao::detail::direct_vector;
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
         parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ,
-                                false);
+                                false, p_screener);
 
         // Add screener here
 
         auto time_g0 = mpqc::now(this->world_, false);
-        auto K = compute_integrals(this->world_, engine_pool, bs_array);
+        auto K = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
         auto time_g1 = mpqc::now(this->world_, false);
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
@@ -579,7 +590,7 @@ template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
     const Formula &formula,
     std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
-    BasisVector &bases, Vector3d shift_coul, bool if_coulomb) {
+    BasisVector &bases, Vector3d shift_coul, bool if_coulomb, std::shared_ptr<Screener> &p_screener) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -633,6 +644,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
       libint2::BraKet::xx_xx,
       detail::to_libint2_operator_params(oper_type, *this, *unitcell_));
+
+  p_screener = make_screener(engine_pool, bases);
 }
 
 template <typename Tile, typename Policy>
@@ -719,6 +732,22 @@ std::ostream &operator<<(std::ostream &os,
   os << "\tRd_max (Range of density representation): ["
      << pao.RD_max().transpose() << "]" << std::endl;
   return os;
+}
+
+template <typename Tile, typename Policy>
+std::shared_ptr<Screener>
+PeriodicAOFactory<Tile, Policy>::make_screener(ShrPool<libint2::Engine> &engine, BasisVector &bases) {
+    std::shared_ptr<Screener> p_screen;
+    if (this->screen_.empty()) {
+        p_screen = std::make_shared<Screener>(Screener{});
+    } else if (this->screen_ == "qqr") {
+        throw InputError("QQR screening is currently not availible", __FILE__, __LINE__, "screen");
+    } else if (this->screen_ == "schwarz") {
+        p_screen = std::make_shared<Screener>(gaussian::create_scwharz_screener(this->world_, engine, bases, this->screen_threshold_));
+    } else {
+        throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
+    }
+    return p_screen;
 }
 
 }  // namespace gaussian

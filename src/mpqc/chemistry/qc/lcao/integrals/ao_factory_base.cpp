@@ -167,9 +167,10 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_three_center(
     throw std::runtime_error(
         "QQR screening is not avalible for three center integrals");
   } else if (screen_ == "schwarz") {
-    p_screen = std::make_shared<SchwarzScreen>(gaussian::create_scwharz_screener(
-        world_, engine, BasisVector{{basis1, basis2, basis2}},
-        screen_threshold_));
+    p_screen = std::make_shared<gaussian::SchwarzScreen>(
+        gaussian::create_schwarz_screener(world_, engine,
+                                          BasisVector{{basis1, basis2, basis2}},
+                                          screen_threshold_));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
   }
@@ -184,8 +185,9 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_four_center(
   } else if (screen_ == "qqr") {
     throw std::runtime_error("QQR screening is currently not avalible");
   } else if (screen_ == "schwarz") {
-    p_screen = std::make_shared<SchwarzScreen>(gaussian::create_scwharz_screener(
-        world_, engine, BasisVector(4, basis), screen_threshold_));
+    p_screen = std::make_shared<gaussian::SchwarzScreen>(
+        gaussian::create_schwarz_screener(world_, engine, BasisVector(4, basis),
+                                          screen_threshold_));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
   }
@@ -195,15 +197,15 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_four_center(
 std::shared_ptr<Screener> AOFactoryBase::make_screener(
     ShrPool<libint2::Engine> &engine, BasisVector &bases) {
   std::shared_ptr<Screener> p_screen;
-  if (this->screen_.empty()) {
+  if (screen_.empty()) {
     p_screen = std::make_shared<Screener>(Screener{});
-  } else if (this->screen_ == "qqr") {
+  } else if (screen_ == "qqr") {
     throw InputError("QQR screening is currently not availible", __FILE__,
                      __LINE__, "screen");
-  } else if (this->screen_ == "schwarz") {
-    p_screen =
-        std::make_shared<SchwarzScreen>(gaussian::create_scwharz_screener(
-            this->world_, engine, bases, this->screen_threshold_));
+  } else if (screen_ == "schwarz") {
+    p_screen = std::make_shared<gaussian::SchwarzScreen>(
+        gaussian::create_schwarz_screener(world_, engine, bases,
+                                          screen_threshold_));
   } else {
     throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
   }

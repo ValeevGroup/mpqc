@@ -52,8 +52,8 @@ void RMP2F12<Tile>::evaluate(Energy *result) {
   if (!this->computed()) {
     auto& world = this->wfn_world()->world();
 
-    /// cast ref_wfn to Energy::Evaluator
-    auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
+    /// cast ref_wfn to Energy::Provider
+    auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Provider>(ref_wfn_);
     if(ref_evaluator == nullptr) {
       std::ostringstream oss;
       oss << "RefWavefunction in CCSD" << ref_wfn_->class_key()

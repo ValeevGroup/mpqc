@@ -107,7 +107,7 @@ void zRHF::solve(double thresh) {
   auto ediff = 0.0;
 
   // compute nuclear-repulsion energy
-  const auto erep = ao_factory.unitcell().nuclear_repulsion(RJ_max_);
+  const auto erep = ao_factory.unitcell().nuclear_repulsion_energy(RJ_max_);
   if (world.rank() == 0)
     std::cout << "\nNuclear Repulsion Energy: " << erep << std::endl;
 

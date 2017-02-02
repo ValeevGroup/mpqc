@@ -237,6 +237,26 @@ InputError::~InputError() MPQC__NOEXCEPT
 }
 
 ////////////////////////////////////////////////////////////////////////
+// Uncomputable
+
+Uncomputable::Uncomputable(
+    const char *description,
+    const char *file,
+    int line,
+    const char *exception_type) MPQC__NOEXCEPT:
+  Exception(description, file, line, exception_type)
+{
+}
+
+Uncomputable::Uncomputable(const Uncomputable& ref) MPQC__NOEXCEPT:
+  Exception(ref)
+{
+}
+
+Uncomputable::~Uncomputable() MPQC__NOEXCEPT
+{
+}
+////////////////////////////////////////////////////////////////////////
 // ProgrammingError
 
 ProgrammingError::ProgrammingError(

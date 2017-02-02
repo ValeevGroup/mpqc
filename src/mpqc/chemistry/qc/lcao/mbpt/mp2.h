@@ -79,8 +79,8 @@ double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
                    std::shared_ptr<Eigen::VectorXd> orbital_energy,
                    std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df);
 
-}  // end of namespce detail
-}  // end of namespce mbpt
+}  // namespace detail
+}  // namespace mbpt
 
 /**
  *  \brief MP2 class for closed-shell system
@@ -89,7 +89,7 @@ double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
  */
 
 template<typename Tile, typename Policy>
-class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public CanEvaluate<Energy> {
+class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public Provides<Energy> {
  public:
 
   // clang-format off
@@ -120,7 +120,6 @@ class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public CanEvaluate<Ener
   virtual double compute();
 
   /// initialize orbitals
-  virtual void init();
   std::shared_ptr<lcao::Wavefunction> ref_wfn_;
 
  private:

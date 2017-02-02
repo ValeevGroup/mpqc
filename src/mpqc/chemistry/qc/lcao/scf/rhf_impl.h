@@ -121,7 +121,7 @@ void RHF<Tile,Policy>::obsolete() {
 
 template <typename Tile, typename Policy>
 double RHF<Tile, Policy>::compute_energy() const {
-  return this->ao_factory().molecule().nuclear_repulsion() +
+  return this->ao_factory().molecule().nuclear_repulsion_energy() +
          D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
 }
 

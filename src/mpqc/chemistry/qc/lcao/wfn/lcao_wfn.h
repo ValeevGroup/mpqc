@@ -5,6 +5,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
 
+#include <mpqc/chemistry/qc/lcao/scf/mo_build.h>
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/util/keyval/keyval.h"
 #include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
@@ -71,6 +72,17 @@ public:
     trange1_engine_.reset();
     // obsolete wfn
     Wavefunction::obsolete();
+  }
+
+  virtual void init() {
+    if (trange1_engine_ == nullptr || orbital_energy_ == nullptr) {
+      auto mol = this->lcao_factory().ao_factory().molecule();
+      Eigen::VectorXd orbital_energy;
+      trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
+          lcao_factory(), orbital_energy, ndocc(), mol, is_frozen_core(),
+          occ_block(), unocc_block());
+      orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+    }
   }
 
   const std::shared_ptr<TRange1Engine> trange1_engine() const {

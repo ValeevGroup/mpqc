@@ -40,13 +40,13 @@ class TRange1Engine {
 
   TA::TiledRange1 compute_range(std::size_t range, std::size_t block_size);
 
-  /// get TiledRange1 for active occuppied space
+  /// get TiledRange1 for active occupied space
   TA::TiledRange1 get_active_occ_tr1() const { return tr_active_occupied_; }
 
-  /// get TiledRange1 for occuppied space
+  /// get TiledRange1 for occupied space
   TA::TiledRange1 get_occ_tr1() const { return tr_occupied_; }
 
-  /// get TiledRange1 for active virtual occuppied space
+  /// get TiledRange1 for active virtual occupied space
   TA::TiledRange1 get_vir_tr1() const { return tr_virtual_; }
 
   /// /// get TiledRange1 for all obs space

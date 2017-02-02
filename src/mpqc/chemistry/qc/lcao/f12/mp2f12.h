@@ -22,7 +22,7 @@ namespace lcao {
  */
 
 template <typename Tile>
-class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public CanEvaluate<Energy> {
+class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public Provides<Energy> {
  public:
   using TArray = TA::DistArray<Tile,TA::SparsePolicy>;
 

@@ -20,7 +20,7 @@ namespace mpqc {
 namespace lcao {
 
 template <typename Tile, typename Policy>
-class RHF : public AOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
+class RHF : public AOWavefunction<Tile, Policy>, public Provides<Energy> {
  public:
   using array_type = TA::DistArray<Tile,Policy>;
 

@@ -63,10 +63,10 @@ set(TA_POLICY sparse CACHE STRING "Set to TA::DensePolicy(dense) or TA::SparsePo
 set(TA_DEFAULT_POLICY 1)
 if(TA_POLICY STREQUAL sparse)
   set(TA_DEFAULT_POLICY 1)
-  MESSAGE("Sparse")
+  MESSAGE("Set to TA::SparsePolicy")
 elseif(TA_POLICY STREQUAL dense)
   set(TA_DEFAULT_POLICY 0)
-  MESSAGE("Dense")
+  MESSAGE("Set to TA::DensePolicy")
 endif()
 ##########################
 # Standard build variables

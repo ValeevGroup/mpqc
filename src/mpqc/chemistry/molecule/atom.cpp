@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 
+#include "atomic_data.h"
 #include "mpqc/chemistry/units/units.h"
 #include <libint2/chemistry/elements.h>
 
@@ -18,7 +19,7 @@ std::string Z_to_element(int64_t Z) {
   abort();
 }
 
-int64_t element_to_Z(const std::string& symbol) {
+int64_t element_to_Z(const std::string &symbol) {
   using libint2::chemistry::element_info;
   for (const auto &e : element_info) {
     if (e.symbol == symbol) return e.Z;
@@ -47,7 +48,7 @@ std::string Atom::xyz_string(bool convert_to_angstroms) const {
   return result;
 }
 
-Atom::Atom(const KeyVal& kv) {
+Atom::Atom(const KeyVal &kv) {
   auto element = kv.value<std::string>("element");
   if (element.empty())
     throw InputError("invalid element", __FILE__, __LINE__, "element");
@@ -58,7 +59,12 @@ Atom::Atom(const KeyVal& kv) {
   center_(1) = xyz[1];
   center_(2) = xyz[2];
 
-  mass_ = kv.value<double>("mass", 0.0);
+  if (auto most_abundant_mass =
+          AtomicData::get_default()->isotope_mass(atomic_number_)) {
+    mass_ = kv.value<double>("mass", most_abundant_mass.get());
+  } else {  // if don't have the most abundant isotope, expect mass to be given explicitly
+    mass_ = kv.value<double>("mass");
+  }
   charge_ = kv.value<double>("charge", static_cast<double>(atomic_number_));
 }
 

@@ -100,7 +100,7 @@ void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
  */
 
 class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>,
-             public CanEvaluate<Energy> {
+             public Provides<Energy> {
  public:
   using Tile = TA::TensorZ;
   using TArray =

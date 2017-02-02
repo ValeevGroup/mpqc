@@ -233,7 +233,7 @@ class CADFFockBuilder : public FockBuilder {
                shape_time + cut_time;
     }
 
-    fock_builder.AddMember("Forced Sahpe", use_forced_shape_, d.GetAllocator());
+    fock_builder.AddMember("Forced Shape", use_forced_shape_, d.GetAllocator());
     if (use_forced_shape_) {
       fock_builder.AddMember("Forced Shape Threshold", force_threshold_,
                              d.GetAllocator());

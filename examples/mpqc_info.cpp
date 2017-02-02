@@ -139,7 +139,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
 
   auto mol =  kv.class_ptr<Molecule>("molecule");
 
-  std::size_t occ = (mol->occupation(0) - mol->core_electrons())/2 ;
+  std::size_t occ = (mol->total_atomic_number() - mol->core_electrons())/2 ;
 
   lcao::gaussian::OrbitalBasisRegistry basis_registry(kv);
 

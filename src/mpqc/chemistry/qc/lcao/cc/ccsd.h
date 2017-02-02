@@ -48,7 +48,7 @@ inline void print_ccsd_direct(int iter, double dE, double error, double E1,
  */
 
 template <typename Tile, typename Policy>
-class CCSD : public LCAOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
+class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
@@ -65,7 +65,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public CanEvaluate<Energy> {
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Evaluator RHF for example |
+   * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
    * | method | string | standard | method to compute ccsd (standard, direct) |
    * | converge | double | 0, it uses precision provided by Energy | overide default by provide a value|
    * | max_iter | int | 20 | maxmium iteration in CCSD |
@@ -168,8 +168,8 @@ protected:
   void evaluate(Energy* result) override {
     if (!this->computed()){
 
-      /// cast ref_wfn to Energy::Evaluator
-      auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
+      /// cast ref_wfn to Energy::Provider
+      auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Provider>(ref_wfn_);
       if(ref_evaluator == nullptr) {
         std::ostringstream oss;
         oss << "RefWavefunction in CCSD" << ref_wfn_->class_key()
@@ -182,7 +182,7 @@ protected:
       double ref_energy = this->get_value(result).derivs(0)[0];
 
       // initialize
-      init();
+      this->init();
 
       // set the precision
       if(converge_ == 0.0){
@@ -1340,17 +1340,6 @@ private:
   }
 
  private:
-  virtual void init() {
-    if (this->orbital_energy() == nullptr ||
-        this->trange1_engine() == nullptr) {
-      auto mol = this->lcao_factory().ao_factory().molecule();
-      Eigen::VectorXd orbital_energy;
-      this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-          this->lcao_factory(), orbital_energy, this->ndocc(), mol, this->is_frozen_core(),
-          this->occ_block(), this->unocc_block());
-      this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
-    }
-  }
 
   TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>,TA::DistArray<Tile, Policy>>> get_diis(
       const madness::World &world) {

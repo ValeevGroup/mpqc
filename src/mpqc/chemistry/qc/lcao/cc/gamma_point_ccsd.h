@@ -26,7 +26,7 @@ inline void print_gamma_point_ccsd(int iter, double dE, double error, double E1,
 
 template <typename Tile, typename Policy>
 class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy>,
-                       public CanEvaluate<Energy> {
+                       public Provides<Energy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
 
@@ -553,9 +553,9 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy>,
 
   void evaluate(Energy *result) override {
     if (!this->computed()) {
-      /// cast ref_wfn to Energy::Evaluator
+      /// cast ref_wfn to Energy::Provider
       auto ref_evaluator =
-          std::dynamic_pointer_cast<typename Energy::Evaluator>(ref_wfn_);
+          std::dynamic_pointer_cast<typename Energy::Provider>(ref_wfn_);
       if (ref_evaluator == nullptr) {
         std::ostringstream oss;
         oss << "RefWavefunction in GammaPointCCSD" << ref_wfn_->class_key()

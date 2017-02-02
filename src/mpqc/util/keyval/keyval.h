@@ -24,6 +24,7 @@
 #include <boost/serialization/export.hpp>
 
 #include "mpqc/util/external/c++/type_traits"
+#include "mpqc/util/meta/predicates.h"
 
 // serialize all pointers as void*
 // NB XCode 7.3.1 (7D1014) libc++ char stream does not properly deserialize
@@ -75,6 +76,9 @@ const char* guid();
 }  // namespace detail
 
 class KeyVal;
+namespace detail {
+class SubTreeKeyVal;
+}  // namespace detail
 
 class DescribedClass;
 
@@ -309,6 +313,7 @@ class DescribedClass {
 /// @}
 
 namespace mpqc {
+
 /**
     \brief KeyVal specifies C++ primitive data
     (booleans, integers, reals, string) and user-defined objects
@@ -318,11 +323,14 @@ namespace mpqc {
     <a
    href="http://theboostcpplibraries.com/boost.propertytree">Boost.PropertyTree</a>.
     KeyVal extends the standard JSON/XML/INFO syntax to allow references as well
-    as specification of registered C++ objects. See \ref keyval for the rationale,
+    as specification of registered C++ objects. See \ref keyval for the
+   rationale,
     examples, and other details.
 
-    KeyVal has reference semantics, i.e., copying KeyVal produces a KeyVal that refers to the same
-    PropertyTree object and shares the class registry object with the original KeyVal object.
+    KeyVal has reference semantics, i.e., copying KeyVal produces a KeyVal that
+   refers to the same
+    PropertyTree object and shares the class registry object with the original
+   KeyVal object.
 
     @internal Since KeyVal is default-constructible and directly mutable, this
     obsoletes sc::AssignedKeyVal. Its behavior resembles PrefixKeyVal by
@@ -392,7 +400,7 @@ class KeyVal {
   ///        relative (with respect to this KeyVal's subtree) paths are allowed.
   /// @return the KeyVal object corresponding to \c path ;
   ///         if \c path does not exist, return an empty KeyVal
-  KeyVal keyval(const key_type& path) const {
+  virtual KeyVal keyval(const key_type& path) const {
     auto abs_path = resolve_path(path);
     return KeyVal(top_tree_, dc_registry_, abs_path);
   }
@@ -518,20 +526,40 @@ class KeyVal {
   /// @throws KeyVal::bad_input if path not found or cannot convert value
   /// representation to the desired type
   template <typename T,
-            typename = std::enable_if_t<not KeyVal::is_sequence<T>::value>>
+            typename = std::enable_if_t<
+                not KeyVal::is_sequence<T>::value &&
+                not utility::meta::can_construct<T, const KeyVal&>::value>>
   T value(const key_type& path) const {
-    auto abs_path = resolve_path(path);
     T result;
     try {
-      result = top_tree_->get<T>(ptree::path_type{abs_path, separator});
+      if (auto subtree = this->get_subtree(path))
+        result = subtree.get().get_value<T>();
+      else
+        throw KeyVal::bad_input(std::string("path not found"),
+                                to_absolute_path(path));
     } catch (boost::property_tree::ptree_bad_data& x) {
       throw KeyVal::bad_input(
           std::string("value ") + x.data<KeyVal::value_type>() +
               " could not be converted to the desired datatype",
-          abs_path);
+          to_absolute_path(path));
     }
     return result;
   }
+
+  /// return the result of converting the value at the given path to the desired
+  /// type.
+
+  /// @tparam T the desired value type, must be a "simple" type that can be
+  /// accepted by KeyVal::assign()
+  /// @param path the path to the value
+  /// @return value stored at \c path converted to type \c T
+  /// @throws KeyVal::bad_input if path not found or cannot convert value
+  /// representation to the desired type
+  template <typename T>
+  std::enable_if_t<not KeyVal::is_sequence<T>::value &&
+                       utility::meta::can_construct<T, const KeyVal&>::value,
+                   T>
+  value(const key_type& path) const;
 
   /// return value corresponding to a path and convert to a std::vector.
   /// @tparam T the desired value type
@@ -542,38 +570,7 @@ class KeyVal {
   SequenceContainer value(
       const key_type& path,
       std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>* =
-          nullptr) const {
-    auto abs_path = resolve_path(path);
-    using value_type = typename SequenceContainer::value_type;
-    SequenceContainer result;
-    try {
-      auto vec_ptree =
-          top_tree_->get_child(ptree::path_type{abs_path, separator});
-      KeyVal::resize(result, vec_ptree.size());
-      auto iter = result.begin();
-      size_t count = 0;
-      for (const auto& elem_ptree : vec_ptree) {
-        assert(elem_ptree.first == ""  // JSON array spec
-               ||
-               elem_ptree.first ==
-                   std::to_string(
-                       count)  // 0-based array keys, a la ipv2, usable with XML
-               );
-        *iter = elem_ptree.second.get_value<value_type>();
-        ++iter;
-        ++count;
-      }
-      return result;
-    } catch (boost::property_tree::ptree_bad_data& x) {
-      throw KeyVal::bad_input(
-          std::string("value ") + x.data<KeyVal::value_type>() +
-              " could not be converted to the desired datatype",
-          abs_path);
-    } catch (boost::property_tree::ptree_bad_path& x) {
-      throw KeyVal::bad_input(
-          std::string("path ") + x.path<key_type>() + " not found", abs_path);
-    }
-  }
+          nullptr) const;  // implemented after SubTreeKeyval is implemented
 
   /// return value corresponding to a path and convert to the desired type.
   /// @tparam T the desired value type
@@ -583,13 +580,10 @@ class KeyVal {
   template <typename T,
             typename = std::enable_if_t<not KeyVal::is_sequence<T>::value>>
   T value(const key_type& path, const T& default_value) const {
-    auto abs_path = resolve_path(path);
-    T result;
-    if (not exists_(abs_path))
-      result = default_value;
+    if (auto subtree = this->get_subtree(path))
+      return subtree.get().template get_value<T>(default_value);
     else
-      result = top_tree_->get<T>(ptree::path_type{abs_path, separator});
-    return result;
+      return default_value;
   }
 
   /// return a pointer to an object at the given path
@@ -603,7 +597,8 @@ class KeyVal {
   /// registered.
   /// @tparam T a class derived from DescribedClass
   /// @param path the path; if not provided, use the empty path
-  /// @param bypass_registry if \c true will not query the registry for the existence of the object
+  /// @param bypass_registry if \c true will not query the registry for the
+  /// existence of the object
   ///        and will not place the newly-constructed object in the registry
   /// @return a std::shared_ptr to \c T ; null pointer will be returned if \c
   /// path does not exist.
@@ -611,7 +606,8 @@ class KeyVal {
   /// registered class key,
   /// or if the user did not specify keyword "type" and class T is abstract or
   /// is not registered.
-  /// @note ```class_ptr<T>("path")```  is equivalent to ```keyval("path").class_ptr<T>()```
+  /// @note ```class_ptr<T>("path")```  is equivalent to
+  /// ```keyval("path").class_ptr<T>()```
   template <typename T = DescribedClass,
             typename = std::enable_if_t<Describable<T>::value>>
   std::shared_ptr<T> class_ptr(const key_type& path = key_type(),
@@ -673,8 +669,7 @@ class KeyVal {
     // if nonempty path, construct a KeyVal object rooted at that path,
     // otherwise use self
     auto result = !path.empty() ? (*ctor)(this->keyval(path)) : (*ctor)(*this);
-    if (!bypass_registry)
-      (*dc_registry_)[abs_path] = result;
+    if (!bypass_registry) (*dc_registry_)[abs_path] = result;
     return std::dynamic_pointer_cast<T>(result);
   }
 
@@ -907,7 +902,9 @@ class KeyVal {
     if (last_separator_location == key_type::npos) last_separator_location = 0;
     key_type basename = path;
     basename.erase(last_separator_location);
-    key_type key = path.substr(last_separator_location + 1);
+    key_type key = (last_separator_location == 0)
+                       ? path
+                       : path.substr(last_separator_location + 1);
     return std::make_tuple(basename, key);
   }
 
@@ -920,6 +917,16 @@ class KeyVal {
            boost::optional<ptree&>();
   }
 
+ protected:
+  /// returns a reference to a subtree located at (absolute or relative) path.
+  /// @param path the path to the subtree
+  virtual boost::optional<const ptree&> get_subtree(
+      const key_type& path) const {
+    auto abs_path = resolve_path(path);
+    return const_cast<const ptree&>(*top_tree_)
+        .get_child_optional(ptree::path_type{abs_path, separator});
+  }
+
  public:
   /// \brief KeyVal exception
   struct bad_input : public std::runtime_error {
@@ -928,13 +935,113 @@ class KeyVal {
     virtual ~bad_input() noexcept {}
   };
 
+ private:
 };  // KeyVal
 
 /// union of two KeyVal objects
 /// @note obsoletes sc::AggregateKeyVal
 /// @ingroup KeyValCore
 KeyVal operator+(const KeyVal& first, const KeyVal& second);
+
+namespace detail {
+/// is a KeyVal that instead of keeping a path to the root of this subtree has
+/// actual ptree ref
+/// currently only useful for parsing JSON arrays (with their braindead empty
+/// element keys),
+/// specifically is mandatory for arrays of objects
+class SubTreeKeyVal : public KeyVal {
+ public:
+  SubTreeKeyVal(const ptree& tree, const KeyVal& kv)
+      : KeyVal(kv), subtree_(tree) {}
+
+  KeyVal keyval(const key_type& path) const override {
+    if (auto subtree = this->get_subtree(path))
+      return SubTreeKeyVal(subtree.get(), *this);
+    else
+      throw KeyVal::bad_input(
+          std::string("detail::KeyVal::keyval: path not found"),
+          path);
+  }
+
+ private:
+  const ptree& subtree_;
+
+  /// overrides KeyVal::
+  boost::optional<const ptree&> get_subtree(
+      const key_type& path) const override {
+    if (path.empty())  // getting elements of arrays of scalars with give empty
+                       // path
+      return subtree_;
+    else if (path[0] != separator)  // will parse down into the subtree when
+                                    // making arrays of objects
+      return subtree_.get_child_optional(ptree::path_type{path, separator});
+    else  // what should the default be if given absolute path? option 1: use
+          // KeyVal::get_subtree,
+      // else throw, probably did not want SubTreeKeyVal in this case after all
+      throw KeyVal::bad_input("detail::SubTreeKeyVal given an absolute path",
+                              path);
+    // return this->KeyVal::get_subtree(path);
+  }
+};
+}  // namespace detail
+
+template <typename SequenceContainer>
+SequenceContainer KeyVal::value(
+    const key_type& path,
+    std::enable_if_t<KeyVal::is_sequence<SequenceContainer>::value>*) const {
+  using value_type = typename SequenceContainer::value_type;
+  SequenceContainer result;
+
+  if (auto vec_ptree_opt = this->get_subtree(path)) {
+    try {
+      auto vec_ptree = vec_ptree_opt.get();
+      KeyVal::resize(result, vec_ptree.size());
+      auto iter = result.begin();
+      size_t count = 0;
+      for (const auto& elem_ptree : vec_ptree) {
+        assert(elem_ptree.first == ""  // JSON array spec
+               ||
+               elem_ptree.first ==
+                   std::to_string(
+                       count)  // 0-based array keys, a la ipv2, usable with XML
+               );
+        detail::SubTreeKeyVal stree_kv(elem_ptree.second, *this);
+        *iter = stree_kv.value<value_type>("");
+        ++iter;
+        ++count;
+      }
+      return result;
+    } catch (boost::property_tree::ptree_bad_data& x) {
+      throw KeyVal::bad_input(
+          std::string("value ") + x.data<KeyVal::value_type>() +
+              " could not be converted to the desired datatype",
+          resolve_path(path));
+    } catch (boost::property_tree::ptree_bad_path& x) {
+      throw KeyVal::bad_input(
+          std::string("path ") + x.path<key_type>() + " not found", resolve_path(path));
+    }
+  } else
+    throw KeyVal::bad_input(std::string("path not found"),
+                            to_absolute_path(path));
 }
+
+template <typename T>
+std::enable_if_t<not KeyVal::is_sequence<T>::value &&
+                     utility::meta::can_construct<T, const KeyVal&>::value,
+                 T>
+KeyVal::value(const key_type& path) const {
+  const detail::SubTreeKeyVal stree_kv(this->get_subtree(path).get(), *this);
+  return T(stree_kv);
+}
+
+static_assert(utility::meta::can_construct<double, const KeyVal&>::value ==
+                  false,
+              "");
+static_assert(utility::meta::can_construct<std::string, const KeyVal&>::value ==
+                  false,
+              "");
+
+}  // namespace mpqc
 
 /// @}
 

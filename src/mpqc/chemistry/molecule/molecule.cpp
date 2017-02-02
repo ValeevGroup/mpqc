@@ -1,8 +1,8 @@
 #include "mpqc/chemistry/molecule/molecule.h"
 //#include <madness/world/world.h>
 
-#include "clustering_functions.h"
-#include "mpqc/chemistry/molecule/atom_masses.h"
+#include "mpqc/chemistry/molecule/atomic_data.h"
+#include "mpqc/chemistry/molecule/clustering_functions.h"
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/chemistry/units/units.h"
 #include "mpqc/util/external/madworld/parallel_file.h"
@@ -139,8 +139,11 @@ std::vector<AtomBasedClusterable> Molecule::read_xyz(std::istream &file) {
   using ABCbl = AtomBasedClusterable;
   std::vector<ABCbl> atoms;
   for (auto const &l_atom : libint_atoms) {
-    Atom atom({l_atom.x, l_atom.y, l_atom.z},
-              molecule::masses::masses[l_atom.atomic_number],
+    auto most_abundant_mass =
+        AtomicData::get_default()->isotope_mass(l_atom.atomic_number);
+    if (!most_abundant_mass)
+      throw Uncomputable("cannot assign default mass", __FILE__, __LINE__);
+    Atom atom({l_atom.x, l_atom.y, l_atom.z}, most_abundant_mass.get(),
               l_atom.atomic_number);
     atoms.emplace_back(std::move(atom));
   }

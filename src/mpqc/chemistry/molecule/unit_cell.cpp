@@ -2,7 +2,7 @@
 
 #include <libint2/atom.h>
 
-#include "mpqc/chemistry/molecule/atom_masses.h"
+#include "atomic_data.h"
 #include "mpqc/chemistry/molecule/clustering_functions.h"
 #include "mpqc/chemistry/molecule/common.h"
 #include "mpqc/chemistry/molecule/molecule.h"

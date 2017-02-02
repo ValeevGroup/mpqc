@@ -124,13 +124,13 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy>,
     auto f_ai = this->get_fock_ai();
 
     // store d1 to local
-    auto d1 = detail::d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(), eps_,
+    auto d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(), eps_,
                                          n_occ, n_frozen);
 
     // initial guess of t1 and t2
     t1("a, i") = f_ai("a, i") * d1("a, i");
     t1.truncate();
-    t2 = detail::d_abij(g_abij, eps_, n_occ, n_frozen);
+    t2 = d_abij(g_abij, eps_, n_occ, n_frozen);
 
     TArray tau;
     tau("a, b, i, j") = t2("a, b, i, j") + t1("a, i") * t1("b, j");
@@ -403,7 +403,7 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy>,
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      r2 = detail::d_abij(r2, eps_, n_occ, n_frozen);
+      r2 = d_abij(r2, eps_, n_occ, n_frozen);
 
       r2("a,b,i,j") -= t2("a,b,i,j");
 

@@ -94,8 +94,8 @@ class AOFactoryBase {
     return *orbital_basis_registry_;
   }
 
-  std::shared_ptr<const OrbitalBasisRegistry>
-  orbital_basis_registry_ptr() const {
+  std::shared_ptr<const OrbitalBasisRegistry> orbital_basis_registry_ptr()
+      const {
     return orbital_basis_registry_;
   }
   /**
@@ -129,9 +129,10 @@ class AOFactoryBase {
                               int64_t max_am);
 
   /// parse one body formula and set engine_pool and basis array
-  void parse_one_body(const Formula &formula,
-                      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
-                      BasisVector &bases);
+  void parse_one_body(
+      const Formula &formula,
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases);
 
   /// parse two body two center formula and set two body kernel, basis array,
   /// max_nprim and max_am
@@ -144,22 +145,34 @@ class AOFactoryBase {
   /// max_nprim and max_am
   void parse_two_body_three_center(
       const Formula &formula,
-      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-      std::shared_ptr<Screener> &p_screener);
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases, std::shared_ptr<Screener> &p_screener);
 
   /// parse two body four center formula and set two body kernel, basis array,
   /// max_nprim and max_am
   void parse_two_body_four_center(
       const Formula &formula,
-      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool, BasisVector &bases,
-      std::shared_ptr<Screener> &p_screener);
+      std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
+      BasisVector &bases, std::shared_ptr<Screener> &p_screener);
 
+  /// create screener for four center integrals with uniform basis
   std::shared_ptr<Screener> make_screener_four_center(
       ShrPool<libint2::Engine> &engine, Basis &basis);
 
+
+  /// create screener for three center integrals (Q|μν).
+  /// Q is DF basis. μ and ν are standard bases.
   std::shared_ptr<Screener> make_screener_three_center(
-      ShrPool<libint2::Engine> &engine, Basis &dfbasis,
-      Basis &basis);
+      ShrPool<libint2::Engine> &engine, Basis &dfbasis, Basis &basis);
+
+  /*!
+   * \brief Create screener for three- or four-center integrals
+   * \param engine two-body engine
+   * \param bases a basis vector of length 3 or 4 (uniform or nonuniform)
+   * \return shared pointer of screener
+   */
+  std::shared_ptr<Screener> make_screener(ShrPool<libint2::Engine> &engine,
+                                          BasisVector &bases);
 
   /**
    *  Given formula with rank = 2 and J or K operation, return the G integral

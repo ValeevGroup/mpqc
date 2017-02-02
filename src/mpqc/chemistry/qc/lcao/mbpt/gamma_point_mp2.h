@@ -3,134 +3,10 @@
 
 #include "mpqc/chemistry/qc/lcao/mbpt/mp2.h"
 #include "mpqc/chemistry/qc/lcao/scf/zrhf.h"
+#include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 
 namespace mpqc {
 namespace lcao {
-
-namespace detail {
-
-/*!
- * \brief This computes D_abij = g_abij / (e_i + e_j - e_a - a_b)
- */
-template <typename Tile, typename Policy>
-TA::Array<std::complex<double>, 4, Tile, Policy> d_abij(
-    TA::Array<std::complex<double>, 4, Tile, Policy> &abij, const Vectorz &ens,
-    std::size_t n_occ, std::size_t n_frozen) {
-  auto convert = [&ens, n_occ, n_frozen](Tile &result_tile,
-                                         const Tile &arg_tile) {
-
-    result_tile = Tile(arg_tile.range());
-
-    // compute index
-    const auto a0 = result_tile.range().lobound()[0];
-    const auto an = result_tile.range().upbound()[0];
-    const auto b0 = result_tile.range().lobound()[1];
-    const auto bn = result_tile.range().upbound()[1];
-    const auto i0 = result_tile.range().lobound()[2];
-    const auto in = result_tile.range().upbound()[2];
-    const auto j0 = result_tile.range().lobound()[3];
-    const auto jn = result_tile.range().upbound()[3];
-
-    auto tile_idx = 0;
-    float norm = 0.0;
-    for (auto a = a0; a < an; ++a) {
-      const auto e_a = ens[a + n_occ];
-      for (auto b = b0; b < bn; ++b) {
-        const auto e_b = ens[b + n_occ];
-        for (auto i = i0; i < in; ++i) {
-          const auto e_i = ens[i + n_frozen];
-          for (auto j = j0; j < jn; ++j, ++tile_idx) {
-            const auto e_j = ens[j + n_frozen];
-            const auto e_iajb = e_i + e_j - e_a - e_b;
-            const auto old = arg_tile[tile_idx];
-            const auto result_abij = old / (e_iajb);
-            norm += std::abs(result_abij) * std::abs(result_abij);
-            result_tile[tile_idx] = result_abij;
-          }
-        }
-      }
-    }
-    return std::sqrt(norm);
-  };
-
-  auto result = TA::foreach (abij, convert);
-  abij.world().gop.fence();
-  return result;
-}
-
-/*!
- * \brief This computes D_ai = 1 / (e_i - e_a)
- */
-template <typename Tile, typename Policy>
-TA::DistArray<
-    Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value,
-                                  TA::SparsePolicy>::type>
-d_ai(madness::World &world, const TA::TiledRange &trange, const Vectorz &ens,
-     std::size_t n_occ, std::size_t n_frozen) {
-  typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
-
-  auto make_tile = [&ens, n_occ, n_frozen](range_type &range, std::size_t ord,
-                                           Tile *out_tile, TA::TensorF *norms) {
-
-    auto result_tile = Tile(range);
-
-    // compute index
-    const auto a0 = result_tile.range().lobound()[0];
-    const auto an = result_tile.range().upbound()[0];
-    const auto i0 = result_tile.range().lobound()[1];
-    const auto in = result_tile.range().upbound()[1];
-
-    auto tile_idx = 0;
-    typename Tile::value_type tmp = 1.0;
-    for (auto a = a0; a < an; ++a) {
-      const auto e_a = ens[a + n_occ];
-      for (auto i = i0; i < in; ++i, ++tile_idx) {
-        const auto e_i = ens[i + n_frozen];
-        const auto e_ia = e_i - e_a;
-        const auto result_ai = tmp / e_ia;
-        result_tile[tile_idx] = result_ai;
-      }
-    }
-
-    const auto tile_volume = result_tile.range().volume();
-    const auto tile_norm = result_tile.norm();
-    bool save_norm =
-        tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
-    if (save_norm) {
-      *out_tile = result_tile;
-      (*norms)[ord] = tile_norm;
-    }
-  };
-
-  const auto tvolume = trange.tiles_range().volume();
-  std::vector<Tile> tiles(tvolume);
-  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
-  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
-
-  for (auto const ord : *pmap) {
-    world.taskq.add(make_tile, trange.make_tile_range(ord), ord, &tiles[ord],
-                    &tile_norms);
-  }
-
-  world.gop.fence();
-
-  TA::SparseShape<float> shape(world, tile_norms, trange);
-  TA::DistArray<Tile, Policy> result(world, trange, shape, pmap);
-
-  for (auto const ord : *pmap) {
-    if (result.is_local(ord) && !result.is_zero(ord)) {
-      auto &tile = tiles[ord];
-      assert(!tile.empty());
-      result.set(ord, tile);
-    }
-  }
-
-  world.gop.fence();
-  result.truncate();
-  return result;
-}
-
-}  // namespace detail
 
 template <typename Tile, typename Policy>
 class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy>,
@@ -209,7 +85,7 @@ class GammaPointMP2 : public PeriodicLCAOWavefunction<Tile, Policy>,
         charge;
     auto n_occ = nelectrons / 2;
     std::size_t n_frozen = 0;
-    auto t2 = detail::d_abij<Tile, Policy>(g_abij, eps_, n_occ, n_frozen);
+    auto t2 = d_abij(g_abij, eps_, n_occ, n_frozen);
 
     auto time0 = mpqc::now(world, false);
 

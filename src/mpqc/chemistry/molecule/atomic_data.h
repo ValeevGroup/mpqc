@@ -3,6 +3,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_MOLECULE_ATOM_MASSES_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 

@@ -902,7 +902,9 @@ class KeyVal {
     if (last_separator_location == key_type::npos) last_separator_location = 0;
     key_type basename = path;
     basename.erase(last_separator_location);
-    key_type key = path.substr(last_separator_location + 1);
+    key_type key = (last_separator_location == 0)
+                       ? path
+                       : path.substr(last_separator_location + 1);
     return std::make_tuple(basename, key);
   }
 

@@ -123,6 +123,25 @@ class AOFactoryBase {
     }
   }
 
+  /// create screener for four center integrals with uniform basis
+  std::shared_ptr<Screener> make_screener_four_center(
+      ShrPool<libint2::Engine> &engine, Basis &basis);
+
+
+  /// create screener for three center integrals (Q|μν).
+  /// Q is DF basis. μ and ν are standard bases.
+  std::shared_ptr<Screener> make_screener_three_center(
+      ShrPool<libint2::Engine> &engine, Basis &dfbasis, Basis &basis);
+
+  /*!
+   * \brief Create screener for three- or four-center integrals
+   * \param engine two-body engine
+   * \param bases a basis vector of length 3 or 4 (uniform or nonuniform)
+   * \return shared pointer of screener
+   */
+  std::shared_ptr<Screener> make_screener(ShrPool<libint2::Engine> &engine,
+                                          BasisVector &bases);
+
  protected:
   /// parse operation and return one body engine
   libint2::Engine make_engine(const Operator &oper, int64_t max_nprim,
@@ -154,25 +173,6 @@ class AOFactoryBase {
       const Formula &formula,
       std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
       BasisVector &bases, std::shared_ptr<Screener> &p_screener);
-
-  /// create screener for four center integrals with uniform basis
-  std::shared_ptr<Screener> make_screener_four_center(
-      ShrPool<libint2::Engine> &engine, Basis &basis);
-
-
-  /// create screener for three center integrals (Q|μν).
-  /// Q is DF basis. μ and ν are standard bases.
-  std::shared_ptr<Screener> make_screener_three_center(
-      ShrPool<libint2::Engine> &engine, Basis &dfbasis, Basis &basis);
-
-  /*!
-   * \brief Create screener for three- or four-center integrals
-   * \param engine two-body engine
-   * \param bases a basis vector of length 3 or 4 (uniform or nonuniform)
-   * \return shared pointer of screener
-   */
-  std::shared_ptr<Screener> make_screener(ShrPool<libint2::Engine> &engine,
-                                          BasisVector &bases);
 
   /**
    *  Given formula with rank = 2 and J or K operation, return the G integral

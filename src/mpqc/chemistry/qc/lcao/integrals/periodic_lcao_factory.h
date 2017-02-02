@@ -340,18 +340,21 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
         auto ket0 = shift_basis_origin(*bra_basis, vec_RJ);
         auto ket1 = shift_basis_origin(*ket_basis, vec_RJ, RD_max_, dcell_);
 
+        // construct bases, engine_pool, and screener for AO integral computing
         auto bases =
             mpqc::lcao::gaussian::BasisVector{{*bra0, *bra1, *ket0, *ket1}};
-
         auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
             to_libint2_operator(ao_formula.oper().type()),
             make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
                                        *unitcell_));
+        auto p_screener = pao_factory_.make_screener(engine_pool, bases);
 
+        // compute AO-based integrals
         auto J =
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+            pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener);
+        // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = J("p, q, r, s") * D("r, s");
         else
@@ -373,18 +376,21 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
         auto ket0 = shift_basis_origin(*ket_basis, vec_R);
         auto ket1 = shift_basis_origin(*ket_basis, vec_RJ, RD_max_, dcell_);
 
+        // construct bases, engine_pool, and screener for AO integral computing
         auto bases =
             mpqc::lcao::gaussian::BasisVector{{*bra0, *bra1, *ket0, *ket1}};
-
         auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
             to_libint2_operator(ao_formula.oper().type()),
             make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
                                        *unitcell_));
+        auto p_screener = pao_factory_.make_screener(engine_pool, bases);
 
+        // compute AO-based integrals
         auto K =
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+            pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener);
+        // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = K("p, r, q, s") * D("r, s");
         else
@@ -460,6 +466,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
         auto ket1 = shift_basis_origin(*ket_basis1, vec_RJ + vec_RD);
 
         // compute as in chemists' notation
+        // construct bases, engine_pool, and screener for AO integral computing
         auto bases =
             mpqc::lcao::gaussian::BasisVector{{*bra0, *ket0, *bra1, *ket1}};
         auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
@@ -468,12 +475,16 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
                                        *unitcell_));
+        auto p_screener = pao_factory_.make_screener(engine_pool, bases);
+
+        // compute AO-based integrals
         auto ao_int =
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+            pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener);
         auto t_pao1 = mpqc::now(this->world_, this->accurate_time_);
         pao_build_time += mpqc::duration_in_s(t_pao0, t_pao1);
 
         // return as in physicists' notation
+        // sum over R, RJ, and RD
         if (sum_count == 0)
           pao_ints("p, q, r, s") = ao_int("p, r, q, s");
         else

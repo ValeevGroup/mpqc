@@ -208,11 +208,11 @@ void zRHF::solve(double thresh) {
     else
       throw MaxIterExceeded("zRHF: SCF did not converge", __FILE__, __LINE__,
                             maxiter_);
+  } else {
+      ExEnv::out0() << "\nPeriodic Hartree-Fock iterations have converged!\n";
   }
 
   if (world.rank() == 0) {
-    std::cout << "\nPeriodic Hartree-Fock iterations have converged!"
-              << std::endl;
     std::cout << "\nTotal Periodic Hartree-Fock energy = " << energy_
               << std::endl;
 

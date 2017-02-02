@@ -167,9 +167,10 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_three_center(
     throw std::runtime_error(
         "QQR screening is not avalible for three center integrals");
   } else if (screen_ == "schwarz") {
-    p_screen = std::make_shared<Screener>(gaussian::create_schwarz_screener(
-        world_, engine, BasisVector{{basis1, basis2, basis2}},
-        screen_threshold_));
+    p_screen = std::make_shared<gaussian::SchwarzScreen>(
+        gaussian::create_schwarz_screener(world_, engine,
+                                          BasisVector{{basis1, basis2, basis2}},
+                                          screen_threshold_));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
   }
@@ -184,8 +185,9 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_four_center(
   } else if (screen_ == "qqr") {
     throw std::runtime_error("QQR screening is currently not avalible");
   } else if (screen_ == "schwarz") {
-    p_screen = std::make_shared<Screener>(gaussian::create_schwarz_screener(
-        world_, engine, BasisVector(4, basis), screen_threshold_));
+    p_screen = std::make_shared<gaussian::SchwarzScreen>(
+        gaussian::create_schwarz_screener(world_, engine, BasisVector(4, basis),
+                                          screen_threshold_));
   } else {
     throw std::runtime_error("Wrong Screening Method!");
   }

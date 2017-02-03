@@ -1,6 +1,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
 
+#include "mpqc/chemistry/qc/lcao/integrals/ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/integrals/ao_factory_base.h"
 
 #include <iosfwd>
@@ -176,7 +177,7 @@ libint2::any to_libint2_operator_params(Operator::Type mpqc_oper,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicAOFactory : virtual public DescribedClass {
+class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using Op = std::function<Tile(TA::TensorZ &&)>;
@@ -189,36 +190,38 @@ class PeriodicAOFactory : virtual public DescribedClass {
    * \brief KeyVal constructor for PeriodicAOFactory
    * \param kv the KeyVal object
    */
-  PeriodicAOFactory(const KeyVal &kv)
-      : world_(*kv.value<madness::World *>("$:world")) {
-    ao_factory_base_ = std::make_shared<AOFactoryBase>(AOFactoryBase(kv));
-
+  PeriodicAOFactory(const KeyVal &kv) : AOFactory<TA::TensorD, Policy>(kv) {
     std::string prefix = "";
-    if (kv.exists_class("wfn_world")) prefix = "wfn_world:";
+    if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
+      prefix = "wfn_world:";
 
-    // Molecule was already created at this path, bypass registry and construct UnitCell
+    // Molecule was already created at this path, bypass registry and construct
+    // UnitCell
     unitcell_ = kv.class_ptr<UnitCell>(prefix + "molecule", true);
     dcell_ = unitcell_->dcell();
 
-    R_max_ = decltype(R_max_)(
-        kv.value<std::vector<int>>(prefix + "molecule:rmax").data());
-    RD_max_ = decltype(RD_max_)(
-        kv.value<std::vector<int>>(prefix + "molecule:rdmax").data());
-    RJ_max_ = decltype(RJ_max_)(
-        kv.value<std::vector<int>>(prefix + "molecule:rjmax").data());
-    nk_ = decltype(nk_)(
-        kv.value<std::vector<int>>(prefix + "molecule:k_points").data());
+    R_max_ =
+        decltype(R_max_)(kv.value<std::vector<int>>(prefix + "rmax").data());
+    RD_max_ =
+        decltype(RD_max_)(kv.value<std::vector<int>>(prefix + "rdmax").data());
+    RJ_max_ =
+        decltype(RJ_max_)(kv.value<std::vector<int>>(prefix + "rjmax").data());
 
     using ::mpqc::lcao::detail::direct_ord_idx;
-    using ::mpqc::lcao::detail::k_ord_idx;
     R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
     RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
     RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
-    k_size_ = 1 + k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
 
-    op_ = TA::Noop<TA::TensorZ, true>();
+    set_oper(Tile());
 
     print_detail_ = kv.value<bool>("print_detail", false);
+  }
+
+  /// set oper based on Tile type
+  template <typename T = Tile>
+  void set_oper(typename std::enable_if<std::is_same<T, TA::TensorZ>::value,
+                                        T>::type &&t) {
+    op_ = TA::Noop<TA::TensorZ, true>();
   }
 
   ~PeriodicAOFactory() noexcept = default;
@@ -237,13 +240,6 @@ class PeriodicAOFactory : virtual public DescribedClass {
    */
   TArray compute(const Formula &formula);
 
-  /*!
-   * \brief This transforms an integral matrix from real to reciprocal space
-   * \param matrix the real-space integral matrix
-   * \return the reciprocal-space integral matrix
-   */
-  TArray transform_real2recip(TArray &matrix);
-
   /// @return a shared ptr to the UnitCell object
   std::shared_ptr<UnitCell> unitcell() const { return unitcell_; }
 
@@ -256,9 +252,6 @@ class PeriodicAOFactory : virtual public DescribedClass {
   /// @return the range of density representation
   Vector3i RD_max() { return RD_max_; }
 
-  /// @return the direct unit cell params
-  Vector3i nk() { return nk_; }
-
   /// @return the cardinal number of lattices included in Bloch Gaussian
   /// expansion
   int64_t R_size() { return R_size_; }
@@ -269,8 +262,8 @@ class PeriodicAOFactory : virtual public DescribedClass {
   /// @return the cardinal number of lattices included in density representation
   int64_t RD_size() { return RD_size_; }
 
-  /// @return the cardinal number of k points
-  int64_t k_size() { return k_size_; }
+  /// @return UnitCell object
+  UnitCell &unitcell() { return *unitcell_; }
 
   /*!
    * \brief This sets the density for coulomb and exchange computations
@@ -280,27 +273,8 @@ class PeriodicAOFactory : virtual public DescribedClass {
    */
   void set_density(TArray D) { D_ = D; }
 
-  /// @return MADNESS world
-  madness::World &world() { return world_; }
-
-  /// @return AOFactoryBase
-  std::shared_ptr<AOFactoryBase> ao_factory_base() { return ao_factory_base_; }
-
-  /// set OrbitalBasisRegistry
-  void set_orbital_basis_registry(
-      const std::shared_ptr<OrbitalBasisRegistry> &obs) {
-    ao_factory_base_->set_orbital_basis_registry(obs);
-  }
-
-  /// @return the OrbitalBasisRegistry object
-  const OrbitalBasisRegistry &orbital_basis_registry() const {
-    return ao_factory_base_->orbital_basis_registry();
-  }
-
-  /// @return the OrbitalBasisRegistry object
-  OrbitalBasisRegistry &orbital_basis_registry() {
-    return ao_factory_base_->orbital_basis_registry();
-  }
+  /// @return density matrix
+  TArray get_density() { return D_; }
 
   /*!
    * \brief This computes sparse complex array
@@ -338,7 +312,8 @@ class PeriodicAOFactory : virtual public DescribedClass {
   void parse_two_body_periodic(
       const Formula &formula,
       std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
-      BasisVector &bases, Vector3d shift_coul, bool if_coulomb);
+      BasisVector &bases, Vector3d shift_coul, bool if_coulomb,
+      std::shared_ptr<Screener> &p_screener);
 
   /*!
    * \brief Construct sparse complex integral tensors in parallel.
@@ -357,12 +332,9 @@ class PeriodicAOFactory : virtual public DescribedClass {
   TA::DistArray<Tile, TA::SparsePolicy> sparse_complex_integrals(
       madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
       std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-      std::function<Tile(TA::TensorZ &&)> op = TA::Noop<TA::TensorZ, true>());
+      Op op = TA::Noop<TA::TensorZ, true>());
 
   std::shared_ptr<UnitCell> unitcell_;  ///> UnitCell private member
-  std::shared_ptr<AOFactoryBase>
-      ao_factory_base_;  ///> AOFactoryBase private member
-  madness::World &world_;
 
   Op op_;
 
@@ -372,7 +344,6 @@ class PeriodicAOFactory : virtual public DescribedClass {
       0, 0, 0};  ///> range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i RJ_max_ = {0, 0, 0};       ///> range of Coulomb operation
   Vector3i RD_max_ = {0, 0, 0};       ///> range of density representation
-  Vector3i nk_ = {1, 1, 1};           ///> # of k points in each direction
   Vector3d dcell_ = {0.0, 0.0, 0.0};  ///> direct unit cell params (in a.u.)
 
   int64_t
@@ -380,9 +351,9 @@ class PeriodicAOFactory : virtual public DescribedClass {
   int64_t RJ_size_;  ///> cardinal # of lattices included in Coulomb operation
   int64_t
       RD_size_;  ///> cardinal # of lattices included in density representation
-  int64_t k_size_;  ///> cardinal # of k points
 
   bool print_detail_;  ///> if true, print a lot more details
+  FormulaRegistry<TArray> ao_formula_registry_;
 };
 
 template <typename Tile, typename Policy>
@@ -400,17 +371,62 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   double size = 0.0;
 
-  if (formula.rank() == 2) {
-    utility::print_par(world_,
+  // retrieve the integral if it is in registry
+  auto iter = ao_formula_registry_.find(formula);
+
+  if (iter != ao_formula_registry_.end()) {
+    result = iter->second;
+    utility::print_par(this->world_, "Retrieved Periodic AO Integral: ",
+                       utility::to_string(formula.string()));
+    double size = mpqc::detail::array_size(result);
+    utility::print_par(this->world_, " Size: ", size, " GB\n");
+    return result;
+  }
+
+  if (formula.oper().is_fock()) {
+    utility::print_par(this->world_,
+                       "\nComputing Fock Integral for Periodic System: ",
+                       utility::to_string(formula.string()), "\n");
+
+    auto v_formula = formula;
+    v_formula.set_operator_type(Operator::Type::Nuclear);
+
+    auto t_formula = formula;
+    t_formula.set_operator_type(Operator::Type::Kinetic);
+
+    auto j_formula = formula;
+    j_formula.set_operator_type(Operator::Type::J);
+
+    auto k_formula = formula;
+    k_formula.set_operator_type(Operator::Type::K);
+
+    auto v = this->compute(v_formula);
+    auto t = this->compute(t_formula);
+    auto j = this->compute(j_formula);
+    auto k = this->compute(k_formula);
+
+    auto time0 = mpqc::now(this->world_, false);
+    result("rho, sigma") = v("rho, sigma") + t("rho, sigma");
+    result("rho, sigma") += 2.0 * j("rho, sigma") - k("rho, sigma");
+    auto time1 = mpqc::now(this->world_, false);
+    auto time = mpqc::duration_in_s(time0, time1);
+
+    size = mpqc::detail::array_size(result);
+    utility::print_par(this->world_, " Size: ", size, " GB");
+    utility::print_par(this->world_, " Time: ", time, " s\n");
+
+    ao_formula_registry_.insert(formula, result);
+
+  } else if (formula.rank() == 2) {
+    utility::print_par(this->world_,
                        "\nComputing One Body Integral for Periodic System: ",
                        utility::to_string(formula.string()), "\n");
 
-    auto time0 = mpqc::now(world_, false);
+    auto time0 = mpqc::now(this->world_, false);
     if (formula.oper().type() == Operator::Type::Kinetic ||
         formula.oper().type() == Operator::Type::Overlap) {
-      parse_one_body_periodic(formula, engine_pool, bs_array,
-                              ao_factory_base_->molecule());
-      result = compute_integrals(world_, engine_pool, bs_array);
+      parse_one_body_periodic(formula, engine_pool, bs_array, *unitcell_);
+      result = compute_integrals(this->world_, engine_pool, bs_array);
     } else if (formula.oper().type() == Operator::Type::Nuclear) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         using ::mpqc::lcao::detail::direct_vector;
@@ -419,33 +435,38 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
         auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
         parse_one_body_periodic(formula, engine_pool, bs_array, *shifted_mol);
         if (RJ == 0)
-          result = compute_integrals(world_, engine_pool, bs_array);
+          result = compute_integrals(this->world_, engine_pool, bs_array);
         else
           result("mu, nu") +=
-              compute_integrals(world_, engine_pool, bs_array)("mu, nu");
+              compute_integrals(this->world_, engine_pool, bs_array)("mu, nu");
       }
     } else
       throw std::runtime_error("Rank-2 operator type not supported");
-    auto time1 = mpqc::now(world_, false);
+    auto time1 = mpqc::now(this->world_, false);
     auto time = mpqc::duration_in_s(time0, time1);
 
     size = mpqc::detail::array_size(result);
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
+    utility::print_par(this->world_, " Size: ", size, " GB");
+    utility::print_par(this->world_, " Time: ", time, " s\n");
+
+    ao_formula_registry_.insert(formula, result);
 
   } else if (formula.rank() == 4) {
     auto time_4idx = 0.0;
     auto time_contr = 0.0;
     auto time = 0.0;
 
+    std::shared_ptr<Screener> p_screener =
+        std::make_shared<Screener>(Screener{});
+
     if (print_detail_) {
-      utility::print_par(world_,
+      utility::print_par(this->world_,
                          "\nComputing Two Body Integral for Periodic System: ",
                          utility::to_string(formula.string()), "\n");
     }
 
     if (formula.oper().type() == Operator::Type::J) {
-      auto time_j0 = mpqc::now(world_, false);
+      auto time_j0 = mpqc::now(this->world_, false);
 
       auto j_formula = formula;
       j_formula.set_operator_type(Operator::Type::Coulomb);
@@ -453,49 +474,53 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         using ::mpqc::lcao::detail::direct_vector;
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-        parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true);
+        parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true,
+                                p_screener);
 
-        auto time_g0 = mpqc::now(world_, false);
-        auto J = compute_integrals(world_, engine_pool, bs_array);
+        auto time_g0 = mpqc::now(this->world_, false);
+        auto J =
+            compute_integrals(this->world_, engine_pool, bs_array, p_screener);
+        auto time_g1 = mpqc::now(this->world_, false);
 
-        auto time_g1 = mpqc::now(world_, false);
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
-        auto time_contr0 = mpqc::now(world_, false);
+        auto time_contr0 = mpqc::now(this->world_, false);
         if (RJ == 0)
           result("mu, nu") = J("mu, nu, lambda, rho") * D_("lambda, rho");
         else
           result("mu, nu") += J("mu, nu, lambda, rho") * D_("lambda, rho");
-        auto time_contr1 = mpqc::now(world_, false);
+        auto time_contr1 = mpqc::now(this->world_, false);
         time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
       }
-      auto time_j1 = mpqc::now(world_, false);
+      auto time_j1 = mpqc::now(this->world_, false);
       time = mpqc::duration_in_s(time_j0, time_j1);
 
     } else if (formula.oper().type() == Operator::Type::K) {
-      auto time_k0 = mpqc::now(world_, false);
+      auto time_k0 = mpqc::now(this->world_, false);
 
       auto k_formula = formula;
       k_formula.set_operator_type(Operator::Type::Coulomb);
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         using ::mpqc::lcao::detail::direct_vector;
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-        parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ,
-                                false);
-        auto time_g0 = mpqc::now(world_, false);
-        auto K = compute_integrals(world_, engine_pool, bs_array);
-        auto time_g1 = mpqc::now(world_, false);
+        parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ, false,
+                                p_screener);
+
+        auto time_g0 = mpqc::now(this->world_, false);
+        auto K =
+            compute_integrals(this->world_, engine_pool, bs_array, p_screener);
+        auto time_g1 = mpqc::now(this->world_, false);
         time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
-        auto time_contr0 = mpqc::now(world_, false);
+        auto time_contr0 = mpqc::now(this->world_, false);
         if (RJ == 0)
           result("mu, nu") = K("mu, lambda, nu, rho") * D_("lambda, rho");
         else
           result("mu, nu") += K("mu, lambda, nu, rho") * D_("lambda, rho");
-        auto time_contr1 = mpqc::now(world_, false);
+        auto time_contr1 = mpqc::now(this->world_, false);
         time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
       }
-      auto time_k1 = mpqc::now(world_, false);
+      auto time_k1 = mpqc::now(this->world_, false);
       time = mpqc::duration_in_s(time_k0, time_k1);
 
     } else
@@ -503,12 +528,12 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
 
     if (print_detail_) {
       size = mpqc::detail::array_size(result);
-      utility::print_par(world_, " Size: ", size, " GB\n");
-      utility::print_par(world_, " \t4-index g tensor time: ", time_4idx,
+      utility::print_par(this->world_, " Size: ", size, " GB\n");
+      utility::print_par(this->world_, " \t4-index g tensor time: ", time_4idx,
                          " s\n");
-      utility::print_par(world_, " \tg*D contraction time: ", time_contr,
+      utility::print_par(this->world_, " \tg*D contraction time: ", time_contr,
                          " s\n");
-      utility::print_par(world_, " \ttotal time: ", time, " s\n");
+      utility::print_par(this->world_, " \ttotal time: ", time, " s\n");
     }
 
   } else
@@ -534,8 +559,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
   TA_ASSERT(bra_index.is_ao());
   TA_ASSERT(ket_index.is_ao());
 
-  auto bra_basis = ao_factory_base_->index_to_basis(bra_index);
-  auto ket_basis = ao_factory_base_->index_to_basis(ket_index);
+  auto bra_basis = this->index_to_basis(bra_index);
+  auto ket_basis = this->index_to_basis(ket_index);
 
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
@@ -551,15 +576,15 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
   engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
-      detail::to_libint2_operator_params(oper_type, *ao_factory_base_,
-                                         shifted_mol));
+      detail::to_libint2_operator_params(oper_type, *this, shifted_mol));
 }
 
 template <typename Tile, typename Policy>
 void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
     const Formula &formula,
     std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,
-    BasisVector &bases, Vector3d shift_coul, bool if_coulomb) {
+    BasisVector &bases, Vector3d shift_coul, bool if_coulomb,
+    std::shared_ptr<Screener> &p_screener) {
   auto bra_indices = formula.bra_indices();
   auto ket_indices = formula.ket_indices();
 
@@ -576,10 +601,10 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
   TA_ASSERT(ket_index0.is_ao());
   TA_ASSERT(ket_index1.is_ao());
 
-  auto bra_basis0 = ao_factory_base_->index_to_basis(bra_index0);
-  auto bra_basis1 = ao_factory_base_->index_to_basis(bra_index1);
-  auto ket_basis0 = ao_factory_base_->index_to_basis(ket_index0);
-  auto ket_basis1 = ao_factory_base_->index_to_basis(ket_index1);
+  auto bra_basis0 = this->index_to_basis(bra_index0);
+  auto bra_basis1 = this->index_to_basis(bra_index1);
+  auto ket_basis0 = this->index_to_basis(ket_index0);
+  auto ket_basis1 = this->index_to_basis(ket_index1);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(bra_basis1 != nullptr);
@@ -611,8 +636,10 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
   engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
-      libint2::BraKet::xx_xx, detail::to_libint2_operator_params(
-                                  oper_type, *ao_factory_base_, *unitcell_));
+      libint2::BraKet::xx_xx,
+      detail::to_libint2_operator_params(oper_type, *this, *unitcell_));
+
+  p_screener = this->make_screener(engine_pool, bases);
 }
 
 template <typename Tile, typename Policy>
@@ -620,7 +647,8 @@ template <typename E>
 TA::DistArray<Tile, TA::SparsePolicy>
 PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
     madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
-    std::shared_ptr<Screener> screen, std::function<Tile(TA::TensorZ &&)> op) {
+    std::shared_ptr<Screener> screen, Op op) {
+  auto time0 = mpqc::now(this->world_, true);
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
@@ -659,7 +687,7 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
 
   auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
 
-  auto time_f0 = mpqc::now(world_, true);
+  auto time_f0 = mpqc::now(this->world_, true);
   for (auto const ord : *pmap) {
     tiles[ord].first = ord;
     detail::IdxVec idx = trange.tiles_range().idx(ord);
@@ -667,76 +695,36 @@ PeriodicAOFactory<Tile, Policy>::sparse_complex_integrals(
                     &tiles[ord].second);
   }
   world.gop.fence();
-  auto time_f1 = mpqc::now(world_, true);
+  auto time_f1 = mpqc::now(this->world_, true);
   auto time_f = mpqc::duration_in_s(time_f0, time_f1);
-  if (print_detail_) {
-    utility::print_par(world_, " \tsum of task_f time: ", time_f, " s\n");
-  }
 
   TA::SparseShape<float> shape(world, tile_norms, trange);
   TA::DistArray<Tile, TA::SparsePolicy> out(world, trange, shape, pmap);
 
   detail::set_array(tiles, out);
   out.truncate();
+  auto time1 = mpqc::now(this->world_, true);
+  auto time = mpqc::duration_in_s(time0, time1);
 
-  return out;
-}
-
-template <typename Tile, typename Policy>
-typename PeriodicAOFactory<Tile, Policy>::TArray
-PeriodicAOFactory<Tile, Policy>::transform_real2recip(TArray &matrix) {
-  TArray result;
-  auto tr0 = matrix.trange().data()[0];
-  using ::mpqc::lcao::detail::extend_trange1;
-  auto tr1 = extend_trange1(tr0, k_size_);
-
-  // Perform real->reciprocal transformation with Eigen
-  // TODO: perform it with TA (take arg tile from "matrix",
-  // transform it, add it to result tile in "result", construct pmap&shape,
-  // use MADNESSworld ...)
-
-  auto matrix_eig = array_ops::array_to_eigen(matrix);
-  Matrixz result_eig(tr0.extent(), tr1.extent());
-  result_eig.setZero();
-
-  auto threshold = std::numeric_limits<double>::epsilon();
-  for (auto R = 0; R < R_size_; ++R) {
-    auto bmat =
-        matrix_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent());
-    if (bmat.norm() < bmat.size() * threshold)
-      continue;
-    else {
-      using ::mpqc::lcao::detail::direct_vector;
-      using ::mpqc::lcao::detail::k_vector;
-      auto vec_R = direct_vector(R, R_max_, dcell_);
-      for (auto k = 0; k < k_size_; ++k) {
-        auto vec_k = k_vector(k, nk_, dcell_);
-        auto exponent = std::exp(I * vec_k.dot(vec_R));
-        result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
-            bmat * exponent;
-      }
-    }
+  if (print_detail_) {
+    utility::print_par(this->world_, " \tsum of task_f time: ", time_f, " s\n",
+                       " \ttotal compute time: ", time, " s\n\n");
   }
 
-  result =
-      array_ops::eigen_to_array<Tile, Policy>(world_, result_eig, tr0, tr1);
-
-  return result;
+  return out;
 }
 
 /// Make PeriodicAOFactory printable
 template <typename Tile, typename Policy>
 std::ostream &operator<<(std::ostream &os,
                          PeriodicAOFactory<Tile, Policy> &pao) {
-  os << "\nPeriodic Hartree-Fock computational parameter:" << std::endl;
+  os << "\nPeriodicAOFactory computational parameters:" << std::endl;
   os << "\tR_max (range of expansion of Bloch Gaussians in AO Gaussians): ["
      << pao.R_max().transpose() << "]" << std::endl;
   os << "\tRj_max (range of Coulomb operation): [" << pao.RJ_max().transpose()
      << "]" << std::endl;
   os << "\tRd_max (Range of density representation): ["
      << pao.RD_max().transpose() << "]" << std::endl;
-  os << "\t# of k points in each direction: [" << pao.nk().transpose() << "]\n"
-     << std::endl;
   return os;
 }
 

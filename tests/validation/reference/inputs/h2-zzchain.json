@@ -4,11 +4,7 @@
     "charge": 0,
     "file_name": "h2.xyz",
     "sort_input": true,
-    "lattice_param": [0.0, 0.0, 1.481696],
-    "rmax": [0, 0, 4],
-    "rjmax": [0, 0, 6],
-    "rdmax": [0, 0, 4],
-    "k_points": [1, 1, 10]
+    "lattice_param": [0.0, 0.0, 1.481696]
   },
   "basis": {
     "name": "sto-3g",
@@ -18,7 +14,10 @@
      "molecule" : "$:unitcell",
      "basis" : "$:basis",
      "screen": "schwarz",
-     "threshold": 1.0e-20
+     "threshold": 1.0e-20,
+     "rmax": [0, 0, 4],
+     "rjmax": [0, 0, 6],
+     "rdmax": [0, 0, 4]
    },
    "wfn":{
      "type": "zRHF",
@@ -28,12 +27,23 @@
      "max_iter": 100,
      "soad_guess": true,
      "print_detail": false,
-     "max_condition_num": 1e8
+     "max_condition_num": 1e8,
+     "k_points": [1, 1, 10]
    },
    "property" : {
     "type" : "Energy",
     "wfn" : "$:wfn",
     "precision" : 1.0e-7
-   }
+   },
+   "g09_input": [
+                 "#P HF/sto-3g SCF=Tight",
+                 "",
+                 "hydrogen zz-chain, single point calculation",
+                 "",
+                 "0 1",
+                 "H,            0.000000,       0.000000,        0.370426",
+                 "H,            0.000000,       0.000000,       -0.370426",
+                 "TV,           0.000000,       0.000000,        1.481696"
+                ]
 }
 

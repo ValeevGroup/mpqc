@@ -20,7 +20,7 @@ namespace gaussian {
  * \param world MADNESS world
  * \param unitcell UnitCell object
  * \param H core Hamiltonian in real space, should be a complex tile
- * \param pao_factory PeriodicAOFactory object
+ * \param ao_factory PeriodicAOFactory object
  * \param op a functor that takes TA::TensorZ && and returns a valid tile type
  * \return Fock matrix in real space
  */

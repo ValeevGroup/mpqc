@@ -12,6 +12,7 @@
 #include "mpqc/util/external/madworld/parallel_file.h"
 #include "mpqc/util/external/madworld/parallel_print.h"
 #include "mpqc/util/keyval/keyval.h"
+#include "mpqc/util/misc/formio.h"
 
 namespace mpqc {
 namespace lcao {
@@ -25,7 +26,7 @@ void zRHF::init(const KeyVal& kv) {
   max_condition_num_ = kv.value<double>("max_condition_num", 1.0e8);
 
   auto& ao_factory = this->ao_factory();
-  // retrieve world from pao_factory
+  // retrieve world from periodic ao_factory
   auto& world = ao_factory.world();
   auto unitcell = ao_factory.unitcell();
 
@@ -36,33 +37,37 @@ void zRHF::init(const KeyVal& kv) {
 
   if (world.rank() == 0) {
     std::cout << ao_factory << std::endl;
-    std::cout << *unitcell << std::endl;
+    std::cout << unitcell << std::endl;
   }
 
   // the unit cell must be electrically neutral
   const auto charge = 0;
-  const auto nelectrons = unitcell->total_atomic_number() - charge;
+  const auto nelectrons = unitcell.total_atomic_number() - charge;
   if (nelectrons % 2 != 0)
     throw InputError("zRHF requires an even number of electrons",
                          __FILE__, __LINE__, "unitcell");
   docc_ = nelectrons / 2;
+  dcell_ = unitcell.dcell();
 
-  dcell_ = unitcell->dcell();
-
-  // retrieve unitcell info from pao_factory
+  // retrieve unitcell info from periodic ao_factory
   R_max_ = ao_factory.R_max();
   RJ_max_ = ao_factory.RJ_max();
   RD_max_ = ao_factory.RD_max();
-  nk_ = ao_factory.nk();
   R_size_ = ao_factory.R_size();
   RJ_size_ = ao_factory.RJ_size();
   RD_size_ = ao_factory.RD_size();
-  k_size_ = ao_factory.k_size();
 
-  T_ = ao_factory.compute(L"<κ|T|λ>");        // Kinetic
-  V_ = ao_factory.compute(L"<κ|V|λ>");        // Nuclear-attraction
-  S_ = ao_factory.compute(L"<κ|λ>");          // Overlap in real space
-  Sk_ = ao_factory.transform_real2recip(S_);  // Overlap in reciprocal space
+  // read # kpoints from keyval
+  nk_ = decltype(nk_)(kv.value<std::vector<int>>("k_points").data());
+  k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+  ExEnv::out0() << "zRHF computational parameters:" << std::endl;
+  ExEnv::out0() << indent << "# of k points in each direction: ["
+                << nk_.transpose() << "]" << std::endl;
+
+  T_ = ao_factory.compute(L"<κ|T|λ>");  // Kinetic
+  V_ = ao_factory.compute(L"<κ|V|λ>");  // Nuclear-attraction
+  S_ = ao_factory.compute(L"<κ|λ>");    // Overlap in real space
+  Sk_ = transform_real2recip(S_);       // Overlap in reciprocal space
   H_("mu, nu") =
       T_("mu, nu") + V_("mu, nu");  // One-body hamiltonian in real space
 
@@ -73,17 +78,17 @@ void zRHF::init(const KeyVal& kv) {
     }
     F_ = H_;
   } else {
-    F_ = periodic_fock_soad(world, *unitcell, H_, ao_factory);
+    F_ = periodic_fock_soad(world, unitcell, H_, ao_factory);
   }
 
   // transform Fock from real to reciprocal space
-  Fk_ = ao_factory.transform_real2recip(F_);
+  Fk_ = transform_real2recip(F_);
   // compute orthogonalizer matrix
   X_ = utility::conditioned_orthogonalizer(Sk_, k_size_, max_condition_num_);
   // compute guess density
-  compute_density();
+  D_ = compute_density();
 
-  // set density in pao_factory
+  // set density in periodic ao_factory
   ao_factory.set_density(D_);
 
   auto init_end = mpqc::fenced_now(world);
@@ -98,11 +103,11 @@ void zRHF::solve(double thresh) {
   auto rms = 0.0;
   TArray Ddiff;
   auto converged = false;
-  auto eprhf = 0.0;
+  auto ezrhf = 0.0;
   auto ediff = 0.0;
 
   // compute nuclear-repulsion energy
-  const auto erep = ao_factory.unitcell()->nuclear_repulsion_energy(RJ_max_);
+  const auto erep = ao_factory.unitcell().nuclear_repulsion_energy(RJ_max_);
   if (world.rank() == 0)
     std::cout << "\nNuclear Repulsion Energy: " << erep << std::endl;
 
@@ -111,16 +116,16 @@ void zRHF::solve(double thresh) {
     ++iter;
 
     // Save a copy of energy and density
-    auto eprhf_old = eprhf;
+    auto ezrhf_old = ezrhf;
     auto D_old = D_;
 
     if (print_detail_)
       if (world.rank() == 0) std::cout << "\nIteration: " << iter << "\n";
 
-    // compute PRHF energy
+    // compute zRHF energy
     F_("mu, nu") += H_("mu, nu");
     std::complex<double> e_complex = F_("mu, nu") * D_("mu, nu");
-    eprhf = e_complex.real();
+    ezrhf = e_complex.real();
 
     auto j_start = mpqc::fenced_now(world);
     J_ = ao_factory.compute(L"(μ ν| J|κ λ)");  // Coulomb
@@ -138,20 +143,20 @@ void zRHF::solve(double thresh) {
 
     // transform Fock from real to reciprocal space
     auto trans_start = mpqc::fenced_now(world);
-    Fk_ = ao_factory.transform_real2recip(F_);
+    Fk_ = transform_real2recip(F_);
     auto trans_end = mpqc::fenced_now(world);
     trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
 
     // compute new density
     auto d_start = mpqc::fenced_now(world);
-    compute_density();
-    // update density in pao_factory
+    D_ = compute_density();
+    // update density in periodic ao_factory
     ao_factory.set_density(D_);
     auto d_end = mpqc::fenced_now(world);
     d_duration_ += mpqc::duration_in_s(d_start, d_end);
 
     // compute difference with last iteration
-    ediff = eprhf - eprhf_old;
+    ediff = ezrhf - ezrhf_old;
     Ddiff("mu, nu") = D_("mu, nu") - D_old("mu, nu");
     rms = Ddiff("mu, nu").norm();
     if ((rms <= thresh) || fabs(ediff) <= thresh) converged = true;
@@ -163,8 +168,8 @@ void zRHF::solve(double thresh) {
     // Print out information
     if (print_detail_) {
       if (world.rank() == 0) {
-        std::cout << "\nPRHF Energy: " << eprhf << "\n"
-                  << "Total Energy: " << eprhf + erep << "\n"
+        std::cout << "\nzRHF Energy: " << ezrhf << "\n"
+                  << "Total Energy: " << ezrhf + erep << "\n"
                   << "Delta(E): " << ediff << "\n"
                   << "RMS(D): " << rms << "\n"
                   << "Coulomb Build Time: "
@@ -182,33 +187,39 @@ void zRHF::solve(double thresh) {
                   nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
       if (world.rank() == 0) {
         if (iter == 1)
-          std::cout << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n", niter.c_str(),
-                 nEle.c_str(), nTot.c_str(), nDel.c_str(), nRMS.c_str(),
-                 nT.c_str());
-        std::cout << mpqc::printf(" %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, eprhf,
-               eprhf + erep, ediff, rms, iter_duration);
+          std::cout << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n",
+                                    niter.c_str(), nEle.c_str(), nTot.c_str(),
+                                    nDel.c_str(), nRMS.c_str(), nT.c_str());
+        std::cout << mpqc::printf(
+            " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ezrhf,
+            ezrhf + erep, ediff, rms, iter_duration);
       }
     }
 
   } while ((iter < maxiter_) && (!converged));
 
-  // save total energy to energy no matter if PRHF converges
-  energy_ = eprhf + erep;
+  // save total energy to energy no matter if zRHF converges
+  energy_ = ezrhf + erep;
 
-  if (!converged)
-    throw MaxIterExceeded("zRHF: SCF did not converge", __FILE__, __LINE__,
-                          maxiter_);
+  if (!converged) {
+    // TODO read a keyval value to determine
+    if (1)
+      ExEnv::out0() << "\nzRHF: SCF did not converge!\n\n";
+    else
+      throw MaxIterExceeded("zRHF: SCF did not converge", __FILE__, __LINE__,
+                            maxiter_);
+  } else {
+      ExEnv::out0() << "\nPeriodic Hartree-Fock iterations have converged!\n";
+  }
 
   if (world.rank() == 0) {
-    std::cout << "\nPeriodic Hartree-Fock iterations have converged!"
-              << std::endl;
     std::cout << "\nTotal Periodic Hartree-Fock energy = " << energy_
               << std::endl;
 
     if (print_detail_) {
       Eigen::IOFormat fmt(5);
       std::cout << "\n k | orbital energies" << std::endl;
-      for (auto k = 0; k < ao_factory.k_size(); ++k) {
+      for (auto k = 0; k < k_size_; ++k) {
         std::cout << k << " | " << eps_[k].real().transpose().format(fmt)
                   << std::endl;
       }
@@ -228,7 +239,7 @@ void zRHF::solve(double thresh) {
   }
 }
 
-void zRHF::compute_density() {
+zRHF::TArray zRHF::compute_density() {
   auto& ao_factory = this->ao_factory();
   auto& world = ao_factory.world();
 
@@ -245,18 +256,27 @@ void zRHF::compute_density() {
     auto X = X_[k];
     // Symmetrize Fock
     auto F = fock_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent());
-    F = (F + F.transpose().conjugate()) / 2.0;
+    Matrixz F_twice = F + F.transpose().conjugate();
+    // When k=0 (gamma point), reverse phase factor of complex values
+    if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
+      F_twice = reverse_phase_factor(F_twice);
+    F = 0.5 * F_twice;
+
     // Orthogonalize Fock matrix: F' = Xt * F * X
     Matrixz Xt = X.transpose().conjugate();
     auto XtF = Xt * F;
     auto Ft = XtF * X;
+
     // Diagonalize F'
-    Eigen::ComplexEigenSolver<Matrixz> comp_eig_solver(Ft);
-    eps_[k] = comp_eig_solver.eigenvalues();
-    auto Ctemp = comp_eig_solver.eigenvectors();
+    Eigen::SelfAdjointEigenSolver<Matrixz> comp_eig_solver(Ft);
+    eps_[k] = comp_eig_solver.eigenvalues().cast<std::complex<double>>();
+    Matrixz Ctemp = comp_eig_solver.eigenvectors();
+
+    // When k=0 (gamma point), reverse phase factor of complex eigenvectors
+    if (k_size_ > 1 && k_size_ % 2 == 1 && k == ((k_size_ - 1) / 2))
+      Ctemp = reverse_phase_factor(Ctemp);
+
     C_[k] = X * Ctemp;
-    // Sort eigenvalues and eigenvectors in ascending order
-    detail::sort_eigen(eps_[k], C_[k]);
   }
 
   Matrixz result_eig(tr0.extent(), tr1.extent());
@@ -275,7 +295,77 @@ void zRHF::compute_density() {
     }
   }
 
-  D_ = array_ops::eigen_to_array<Tile,TA::SparsePolicy>(world, result_eig, tr0, tr1);
+  auto result = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(
+      world, result_eig, tr0, tr1);
+  return result;
+}
+
+zRHF::TArray zRHF::transform_real2recip(TArray& matrix) {
+  TArray result;
+  auto tr0 = matrix.trange().data()[0];
+  auto tr1 = detail::extend_trange1(tr0, k_size_);
+  auto& world = matrix.world();
+
+  // Perform real->reciprocal transformation with Eigen
+  // TODO: perform it with TA
+  auto matrix_eig = array_ops::array_to_eigen(matrix);
+  Matrixz result_eig(tr0.extent(), tr1.extent());
+  result_eig.setZero();
+
+  auto threshold = std::numeric_limits<double>::epsilon();
+  for (auto R = 0; R < R_size_; ++R) {
+    auto bmat =
+        matrix_eig.block(0, R * tr0.extent(), tr0.extent(), tr0.extent());
+    if (bmat.norm() < bmat.size() * threshold)
+      continue;
+    else {
+      auto vec_R = detail::direct_vector(R, R_max_, dcell_);
+      for (auto k = 0; k < k_size_; ++k) {
+        auto vec_k = detail::k_vector(k, nk_, dcell_);
+        auto exponent = std::exp(I * vec_k.dot(vec_R));
+        result_eig.block(0, k * tr0.extent(), tr0.extent(), tr0.extent()) +=
+            bmat * exponent;
+      }
+    }
+  }
+
+  result = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(world, result_eig,
+                                                             tr0, tr1);
+
+  return result;
+}
+
+Matrixz zRHF::reverse_phase_factor(Matrixz& mat0) {
+  Matrixz result(mat0);
+
+  for (auto row = 0; row < mat0.rows(); ++row) {
+    for (auto col = 0; col < mat0.cols(); ++col) {
+      std::complex<double> comp0 = mat0(row, col);
+
+      double norm = std::abs(comp0);
+      if (norm == 0.0) {
+        result(row, col) = comp0;
+      } else {
+        double real = comp0.real();
+        double imag = comp0.imag();
+
+        double phi = std::atan(imag / real);
+
+        double R;
+        if (std::cos(phi) != 0.0) {
+          R = real / std::cos(phi);
+        } else {
+          R = imag / std::sin(phi);
+        }
+
+        std::complex<double> comp1 = comp0 * std::exp(-1.0 * I * phi);
+
+        result(row, col) = comp1;
+      }
+    }
+  }
+
+  return result;
 }
 
 void zRHF::obsolete() { Wavefunction::obsolete(); }

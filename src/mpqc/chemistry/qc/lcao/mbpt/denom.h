@@ -54,9 +54,9 @@ void d_abij_inplace(TA::Array<double, 4, Tile, Policy> &abij,
   abij.world().gop.fence();
 }
 
-template <typename Tile, typename Policy>
-TA::Array<double, 4, Tile, Policy> d_abij(
-    TA::Array<double, 4, Tile, Policy> &abij, const Eigen::VectorXd &ens,
+template <typename Tile, typename Policy, typename EigenVectorX = Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
+TA::DistArray<Tile, Policy> d_abij(
+    TA::DistArray<Tile, Policy> &abij, const EigenVectorX &ens,
     std::size_t n_occ, std::size_t n_frozen) {
   auto convert = [&ens, n_occ, n_frozen](Tile &result_tile,
                                          const Tile &arg_tile) {
@@ -74,7 +74,7 @@ TA::Array<double, 4, Tile, Policy> d_abij(
     const auto jn = result_tile.range().upbound()[3];
 
     auto tile_idx = 0;
-    typename Tile::value_type norm = 0.0;
+    typename Tile::scalar_type norm = 0.0;
     for (auto a = a0; a < an; ++a) {
       const auto e_a = ens[a + n_occ];
       for (auto b = b0; b < bn; ++b) {
@@ -86,7 +86,7 @@ TA::Array<double, 4, Tile, Policy> d_abij(
             const auto e_iajb = e_i + e_j - e_a - e_b;
             const auto old = arg_tile[tile_idx];
             const auto result_abij = old / (e_iajb);
-            norm += result_abij * result_abij;
+            norm += std::abs(result_abij) * std::abs(result_abij);
             result_tile[tile_idx] = result_abij;
           }
         }
@@ -101,12 +101,12 @@ TA::Array<double, 4, Tile, Policy> d_abij(
 }
 
 // create matrix d("a,i") = 1/(ei - ea)
-template <typename Tile, typename Policy>
+template <typename Tile, typename Policy, typename EigenVectorX = Eigen::Matrix<typename Tile::element_type, Eigen::Dynamic, 1>>
 TA::DistArray<
     Tile, typename std::enable_if<std::is_same<Policy, TA::SparsePolicy>::value,
                                   TA::SparsePolicy>::type>
 create_d_ai(madness::World &world, const TA::TiledRange &trange,
-            const Eigen::VectorXd &ens, std::size_t n_occ,
+            const EigenVectorX ens, std::size_t n_occ,
             std::size_t n_frozen) {
   typedef typename TA::DistArray<Tile, Policy>::range_type range_type;
 

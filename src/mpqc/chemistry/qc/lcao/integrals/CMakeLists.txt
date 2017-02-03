@@ -15,6 +15,7 @@ set(sources
         make_engine.h
         periodic_ao_factory.h
         periodic_ao_factory.cpp
+        periodic_lcao_factory.h
         task_integral_kernels.h
         task_integral_kernels.cpp
         screening/screen_base.h

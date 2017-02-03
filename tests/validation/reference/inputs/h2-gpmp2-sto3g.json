@@ -1,0 +1,50 @@
+{
+  "units": "2006CODATA",
+  "unitcell": {
+    "charge": 0,
+    "file_name": "h2.xyz",
+    "sort_input": true,
+    "n_cluster": 1,
+    "lattice_param": [0.0, 0.0, 1.481696]
+  },
+  "basis": {
+    "name": "sto-3g",
+    "molecule": "$:unitcell"
+  },
+  "wfn_world":{
+    "molecule" : "$:unitcell",
+    "basis" : "$:basis",
+    "screen": "schwarz",
+    "threshold": 1.0e-20,
+    "rmax": [0, 0, 2],
+    "rjmax": [0, 0, 4],
+    "rdmax": [0, 0, 2]
+  },
+  "scf":{
+    "type": "zRHF",
+    "molecule" : "$:unitcell",
+    "wfn_world": "$:wfn_world",
+    "converge": 1.0e-7,
+    "max_iter": 100,
+    "soad_guess": true,
+    "print_detail": false,
+    "max_condition_num": 1e8,
+    "k_points": [1, 1, 7]
+  },
+  "wfn":{
+    "type": "GammaPointMP2",
+    "molecule" : "$:unitcell",
+    "wfn_world": "$:wfn_world",
+    "ref": "$:scf",
+    "print_detail": false,
+    "occ_block_size": 1,
+    "unocc_block_size": 1
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn",
+    "precision" : 1.0e-7
+  }
+}
+
+

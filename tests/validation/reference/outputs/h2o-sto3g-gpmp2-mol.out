@@ -1,0 +1,259 @@
+MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
+
+                 MPQC4: Massively Parallel Quantum Chemistry (v4)
+                                Version 4.0.0-alpha
+                 Revision 9f7e456ed29d06549d3c6ffb2e0dfbf38c5c73a5
+
+  Input KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "unitcell": {
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "2.672359"
+        ]
+    },
+    "basis": {
+        "name": "sto-3g",
+        "molecule": "$:unitcell"
+    },
+    "wfn_world": {
+        "molecule": "$:unitcell",
+        "basis": "$:basis",
+        "screen": "schwarz",
+        "threshold": "1.0e-20",
+        "rmax": [
+            "0",
+            "0",
+            "0"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "0"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "0"
+        ]
+    },
+    "scf": {
+        "type": "zRHF",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "converge": "1.0e-11",
+        "max_iter": "100",
+        "soad_guess": "true",
+        "max_condition_num": "1e8",
+        "k_points": [
+            "1",
+            "1",
+            "1"
+        ]
+    },
+    "wfn": {
+        "type": "GammaPointMP2",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "ref": "$:scf",
+        "occ_block_size": "2",
+        "unocc_block_size": "2"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-7"
+    }
+}
+
+  Using fundamental constants system 2010CODATA
+OBS Basis Trange 
+( tiles = [ 0, 1 ), elements = [ 0, 7 ) )
+Min and Max block size: 7 7
+Average: 7
+
+Screen: schwarz
+Threshold: 1e-20
+Precision: 2.22044604925031e-16
+
+Screen: schwarz
+Threshold: 1e-20
+Precision: 2.22044604925031e-16
+
+
+PeriodicAOFactory computational parameters:
+	R_max (range of expansion of Bloch Gaussians in AO Gaussians): [0 0 0]
+	Rj_max (range of Coulomb operation): [0 0 0]
+	Rd_max (Range of density representation): [0 0 0]
+
+Molecule info:
+	C.O.M: 0 0 0
+	Mass: 18.01471
+
+Elements:
+	AtomBasedCluster: {C. Of Mass:     -1.25932609634455 -0.000109460583118095    0.0160230877108331, elements: {AtomBasedCluster: {C. Of Mass:     -1.25932609634455 -0.000109460583118095    0.0160230877108331, elements: {Atom: {Z: 8, charge: 8, mass: 15.99903, pos:   -1.3269582278103 -0.105938530313005 0.0187881522386705}, Atom: {Z: 1, charge: 1, mass: 1.00784, pos:   -1.93166523974619    1.60017431689441 -0.0217105229834564}, Atom: {Z: 1, charge: 1, mass: 1.00784, pos:   0.486644278487139  0.0795980913969628 0.00986247875437893}}}}}
+
+Unit cell info:
+	Lattice parameters (in Bohr): [               0                0 5.05002661651656]
+
+zRHF computational parameters:
+  # of k points in each direction: [1 1 1]
+
+Computing One Body Integral for Periodic System: < κ |T| λ >
+ Size: 7.30156898498535e-07 GB Time: 0.001514221 s
+
+Computing One Body Integral for Periodic System: < κ |V| λ >
+ Size: 7.30156898498535e-07 GB Time: 0.004497277 s
+
+Computing One Body Integral for Periodic System: < κ | λ >
+ Size: 7.30156898498535e-07 GB Time: 0.000398643 s
+
+Building Fock Matrix from SOAD Guess ...
+
+	overlap condition number = 5.59243634140755 at k = 0
+Nuclear Repulsion Energy: 9.15671413339663
+
+
+ Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
+    1     -84.534259833167     -75.377545699771     -84.534259833167       0.230549025565                0.061
+    2     -83.629211383797     -74.472497250400       0.905048449370       0.024325357059                0.041
+    3     -84.154409123944     -74.997694990547      -0.525197740147       0.006541099935                0.062
+    4     -84.117375278900     -74.960661145503       0.037033845044       0.001709261657                0.063
+    5     -84.120536169233     -74.963822035837      -0.003160890334       0.000534975788                0.082
+    6     -84.120363370248     -74.963649236852       0.000172798985       0.000185643833                0.067
+    7     -84.120404781952     -74.963690648556      -0.000041411704       0.000071338237                0.069
+    8     -84.120412952402     -74.963698819006      -0.000008170450       0.000029077901                0.047
+    9     -84.120417136783     -74.963703003387      -0.000004184381       0.000012230332                0.063
+   10     -84.120418874458     -74.963704741062      -0.000001737675       0.000005224932                0.052
+   11     -84.120419628557     -74.963705495160      -0.000000754099       0.000002249834                0.061
+   12     -84.120419954540     -74.963705821143      -0.000000325983       0.000000972747                0.055
+   13     -84.120420095884     -74.963705962487      -0.000000141344       0.000000421501                0.057
+   14     -84.120420157215     -74.963706023818      -0.000000061331       0.000000182857                0.061
+
+Periodic Hartree-Fock iterations have converged!
+
+Total Periodic Hartree-Fock energy = -74.9637060238181
+
+Time(s):
+	Init:                               0.093
+	Coulomb term:                       0.367
+	Exchange term:                      0.434
+	Real->Recip trans:                  0.004
+	Diag + Density:                     0.009
+	Total:                              0.840
+
+OccBlockSize: 2
+VirBlockSize: 2
+Obs Trange 
+( tiles = [ 0, 1 ), elements = [ 0, 7 ) )
+Min and Max block size: 7 7
+Average: 7
+
+Occ Trange 
+( tiles = [ 0, 2 ), elements = [ 0, 5 ) )
+Min and Max block size: 2 3
+Average: 2
+
+CorrOcc Trange 
+( tiles = [ 0, 2 ), elements = [ 0, 5 ) )
+Min and Max block size: 2 3
+Average: 2
+
+Vir Trange 
+( tiles = [ 0, 1 ), elements = [ 0, 2 ) )
+Min and Max block size: 2 2
+Average: 2
+
+All Trange 
+( tiles = [ 0, 3 ), elements = [ 0, 7 ) )
+Min and Max block size: 2 3
+Average: 2
+
+Computing conventional gamma-point MP2 ...
+ Transformed Gamma-Point Periodic LCAO Integral: < a b |G| i j >
+ Size: 1.49011611938477e-06 GB
+ Time: 0.020958652 s
+    PAO build total time:  0.01929698 s
+        part 1: 0.019053936 s
+        part 2: 9.3222e-05 s
+    PAO->CO transform time: 0.001661672 s
+
+Gamma-Point MP2 Energy = -0.0359671699940233
+  Output KeyVal (format=JSON):
+{
+    "units": "2010CODATA",
+    "unitcell": {
+        "file_name": "h2o.xyz",
+        "sort_input": "true",
+        "charge": "0",
+        "n_cluster": "1",
+        "lattice_param": [
+            "0.0",
+            "0.0",
+            "2.672359"
+        ]
+    },
+    "basis": {
+        "name": "sto-3g",
+        "molecule": "$:unitcell"
+    },
+    "wfn_world": {
+        "molecule": "$:unitcell",
+        "basis": "$:basis",
+        "screen": "schwarz",
+        "threshold": "1.0e-20",
+        "rmax": [
+            "0",
+            "0",
+            "0"
+        ],
+        "rjmax": [
+            "0",
+            "0",
+            "0"
+        ],
+        "rdmax": [
+            "0",
+            "0",
+            "0"
+        ]
+    },
+    "scf": {
+        "type": "zRHF",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "converge": "1.0e-11",
+        "max_iter": "100",
+        "soad_guess": "true",
+        "max_condition_num": "1e8",
+        "k_points": [
+            "1",
+            "1",
+            "1"
+        ]
+    },
+    "wfn": {
+        "type": "GammaPointMP2",
+        "molecule": "$:unitcell",
+        "wfn_world": "$:wfn_world",
+        "ref": "$:scf",
+        "occ_block_size": "2",
+        "unocc_block_size": "2"
+    },
+    "property": {
+        "type": "Energy",
+        "wfn": "$:wfn",
+        "precision": "1.0e-7",
+        "value": {
+            "value": "-74.999673193812114"
+        }
+    },
+    "world": "0x108104fe0"
+}
+

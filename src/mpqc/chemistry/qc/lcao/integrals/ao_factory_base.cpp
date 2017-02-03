@@ -194,6 +194,24 @@ std::shared_ptr<Screener> AOFactoryBase::make_screener_four_center(
   return p_screen;
 }
 
+std::shared_ptr<Screener> AOFactoryBase::make_screener(
+    ShrPool<libint2::Engine> &engine, BasisVector &bases) {
+  std::shared_ptr<Screener> p_screen;
+  if (screen_.empty()) {
+    p_screen = std::make_shared<Screener>(Screener{});
+  } else if (screen_ == "qqr") {
+    throw InputError("QQR screening is currently not availible", __FILE__,
+                     __LINE__, "screen");
+  } else if (screen_ == "schwarz") {
+    p_screen = std::make_shared<gaussian::SchwarzScreen>(
+        gaussian::create_schwarz_screener(world_, engine, bases,
+                                          screen_threshold_));
+  } else {
+    throw InputError("Wrong screening method", __FILE__, __LINE__, "screen");
+  }
+  return p_screen;
+}
+
 void AOFactoryBase::parse_one_body(
     const Formula &formula,
     std::shared_ptr<utility::TSPool<libint2::Engine>> &engine_pool,

@@ -60,6 +60,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   /// increase size in unocc space in iteration of fine grain approach
   std::size_t increase_;
 
+  /// num
+  std::size_t n_laplace_quad_;
+
   /// (T) energy
   double triples_energy_;
 
@@ -80,6 +83,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    * | approach | string | coarse | coarse grain, fine grain or straight approach |
    * | replicate | bool | false | valid only with approach=coarse, if replicate integral g_cijk(smallest integral in (T)) |
    * | increase | int | 2 | valid only with approach=fine, number of block in virtual dimension to load at each virtual loop |
+   * | quadrature_points | int | 4(need to benchmark it) | number of quadrature points for the Laplace transform |
    */
   // clang-format on
 
@@ -107,6 +111,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       reblock_ = false;
       reblock_inner_ = false;
     }
+
+    // set number of quadrature points for the Laplace transform
+    n_laplace_quad_ = kv.value<int>("quadrature_points", 4);
   }
 
   virtual ~CCSD_T() {}
@@ -1120,7 +1127,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
     //definition of number of quadrature points
     //should be included in input as a parameter
-    int n = 3;
+    int n = n_laplace_quad_;
 
     //defining the weights and roots for quadrature
     Eigen::VectorXd x(n);

@@ -9,14 +9,14 @@
 #include "mpqc/chemistry/molecule/coords.h"
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
-#include "mpqc/util/misc/task.h"
 #include "mpqc/math/function/function.h"
 #include "mpqc/math/function/taylor.h"
+#include "mpqc/util/misc/task.h"
 
 /// top-level MPQC namespace
 namespace mpqc {
 
-//using TiledArray::detail::scalar_type;
+// using TiledArray::detail::scalar_type;
 
 /// computing a runtime-typed property for a runtime-typed wave functions calls
 /// for a visitor pattern
@@ -32,13 +32,11 @@ namespace mpqc {
 /// - allow computation of derivatives of properties
 /// - allow precision tracking
 
-
 /// this is the base for all properties that MPQC can compute via the input.
 /// MPQC main will read KeyVal and search for a Property object, compute it
 /// using the given wave function
 class Property : public Task {
  public:
-
   /// evaluates this object
   virtual void evaluate() = 0;
 
@@ -86,7 +84,7 @@ class WavefunctionProperty
       : WavefunctionProperty(kv, base_type::default_precision_) {}
 
  protected:
-  std::shared_ptr<Wavefunction> wfn() const { return wfn_; }
+  const std::shared_ptr<Wavefunction>& wfn() const { return wfn_; }
 
   virtual void do_evaluate() = 0;
 
@@ -101,11 +99,10 @@ class WavefunctionProperty
    */
   // clang-format on
   WavefunctionProperty(const KeyVal& kv, double default_precision)
-      : base_type(kv,
-                  (kv.class_ptr<MolecularCoordinates>("coord")
-                       ? kv.class_ptr<MolecularCoordinates>("coord")
-                       : std::make_shared<CartMolecularCoordinates>(
-                             kv.class_ptr<Wavefunction>("wfn")->atoms())),
+      : base_type(kv, (kv.class_ptr<MolecularCoordinates>("coord")
+                           ? kv.class_ptr<MolecularCoordinates>("coord")
+                           : std::make_shared<CartMolecularCoordinates>(
+                                 kv.class_ptr<Wavefunction>("wfn")->atoms())),
                   default_precision) {
     wfn_ = kv.class_ptr<Wavefunction>("wfn");
     if (wfn_ == nullptr)
@@ -147,6 +144,74 @@ class WavefunctionProperty
 /// @tparam Properties the property type list
 template <typename... Properties>
 class Provides : public Properties::Provider... {};
+
+/// @return true if Provider can provide Property
+template <typename Property, typename Provider>
+bool provides(const std::shared_ptr<Provider>& provider) {
+  return std::dynamic_pointer_cast<Property::Provider>(provider) == nullptr;
+}
+
+namespace detail {
+/// has_provider<T>::value is true if T::Provider is a valid type
+template <typename T>
+struct has_provider {
+  template <typename U>
+  static std::true_type test(typename U::Provider*);
+  template <typename U>
+  static std::false_type test(...);
+  static constexpr const bool value = decltype(test<T>(nullptr))::value;
+};
+
+/// to_pointer<T> converts obj to a pointer:
+/// - if T is a pointer type, will return obj
+/// - if T is a value or a reference, will take the address
+/// - if T is a shared_ptr, will return the corresponding raw pointer
+template <typename T>
+T* to_pointer(T* obj) {
+  return obj;
+}
+template <typename T>
+auto to_pointer(const T& obj)
+    -> std::enable_if_t<utility::meta::is_shared_ptr<T>::value,
+                        decltype(obj.get())> {
+  return obj.get();
+}
+template <typename T>
+typename std::decay<T>::type* to_pointer(T& obj) {
+  return &obj;
+}
+
+/// obtains a description of the object pointer to by \c obj_ptr
+template <typename T>
+std::string description(T* obj_ptr) {
+  auto dc_obj_ptr = dynamic_cast<DescribedClass*>(obj_ptr);
+  if (dc_obj_ptr != nullptr) {
+    return std::string("class ") + dc_obj_ptr->class_key();
+  } else {
+    std::ostringstream oss;
+    oss << "object @ " << obj_ptr << " of type " << typeid(*obj_ptr).name();
+    return oss.str();
+  }
+}
+
+}  // namespace detail
+
+/// Evaluates \c property using \c provider
+template <typename Property, typename Provider>
+std::enable_if_t<detail::has_provider<Property>::value, Property&> operator<<(
+    Property& property, Provider& provider) {
+  auto provider_ptr = detail::to_pointer(provider);
+  auto* evaluator = dynamic_cast<typename Property::Provider*>(provider_ptr);
+  if (evaluator == nullptr) {
+    std::ostringstream oss;
+    oss << detail::description(provider_ptr) << " does not compute "
+        << detail::description(&property)
+        << ", needs to derive from an appropriate Provides<>";
+    throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+  }
+  evaluator->evaluate(&property);
+  return property;
+}
 
 }  // namespace mpqc
 

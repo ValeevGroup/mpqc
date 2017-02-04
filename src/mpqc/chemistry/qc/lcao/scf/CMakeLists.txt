@@ -23,4 +23,4 @@ list(APPEND sources
         )
 endif()
 
-add_mpqc_library(lcao_scf sources sources "MPQCproperties;MPQClcao_wfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "mpqc/chemistry/qc/lcao/scf")
+add_mpqc_library(lcao_scf sources sources "MPQCproperties;MPQClcao_expression;MPQClcao_wfn;MPQCmath_ta;MPQCmath_linalg;MPQCmath_clr" "mpqc/chemistry/qc/lcao/scf")

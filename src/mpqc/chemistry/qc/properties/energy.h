@@ -50,11 +50,24 @@ public:
    * @note This constructor overrides the default target precision to 1e-9 .
    */
   // clang-format on
-
   explicit Energy(const KeyVal& kv) : WavefunctionProperty(kv, 1e-9) {}
+
+  /// This constructor is provided for convenient programmatic construction
+  /// Request to compute energy value using Wavefunction.\c wfn to precision \c prec.
+  /// @param wfn the Wavefunction object that will compute the energy value
+  /// @param prec the targer precision of the energy
+  Energy(std::shared_ptr<Wavefunction> wfn, double prec) :
+    WavefunctionProperty(make_kv(wfn), prec) {}
 
 private:
   void do_evaluate() override;
+
+  static KeyVal make_kv(std::shared_ptr<Wavefunction> wfn) {
+    KeyVal kv;
+    kv.assign("ref", wfn);
+    return kv;
+  }
+
 };
 
 #if 0

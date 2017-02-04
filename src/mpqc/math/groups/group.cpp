@@ -21,7 +21,15 @@ Group::ordinal_type Group::IrrepTable::size() const {
                            __LINE__);
 }
 
+Group::IrrepTable::IrrepTable(std::weak_ptr<const Group> grp) : group_(grp) {}
+
+const std::weak_ptr<const Group>& Group::IrrepTable::group() const {
+  return group_;
+}
+
 namespace groups {
+
+//////////////////////////////////////////////////////
 
 Group::ordinal_type Z1::order() const { return 1; }
 
@@ -36,6 +44,9 @@ bool Z1::Irrep::is_trivial() const { return true; }
 std::vector<std::pair<unsigned int, std::shared_ptr<const Group::Irrep>>>
 Z1::Irrep::tensor_product(std::shared_ptr<const Group::Irrep> other) const {
   return {std::make_pair(1, std::make_shared<Z1::Irrep>())};
+}
+
+Z1::IrrepTable::IrrepTable(std::shared_ptr<const Group> grp) : Group::IrrepTable(grp) {
 }
 
 std::shared_ptr<const Group::Irrep> Z1::IrrepTable::make_irrep(
@@ -57,6 +68,16 @@ SupercellTranslationGroup::SupercellTranslationGroup(Vector3d L, Vector3i n)
 
 Group::ordinal_type SupercellTranslationGroup::order() const {
   return n_(0) * n_(1) * n_(2);
+}
+
+const Vector3d& SupercellTranslationGroup::L() const { return L_; }
+
+const Vector3i& SupercellTranslationGroup::n() const { return n_; }
+
+std::shared_ptr<const Group::IrrepTable>
+SupercellTranslationGroup::irrep_table() const {
+  return std::make_shared<const SupercellTranslationGroup::IrrepTable>(
+      this->shared_from_this());
 }
 
 SupercellTranslationGroup::Irrep::Irrep(std::shared_ptr<const Group> grp,
@@ -92,6 +113,10 @@ SupercellTranslationGroup::Irrep::grp_() const {
     throw ProgrammingError("SupercellTranslationGroup::Irrep: bad group ptr",
                            __FILE__, __LINE__);
 }
+
+SupercellTranslationGroup::IrrepTable::IrrepTable(
+    std::shared_ptr<const Group> grp)
+    : Group::IrrepTable(grp) {}
 
 std::shared_ptr<const SupercellTranslationGroup>
 SupercellTranslationGroup::IrrepTable::grp_() const {

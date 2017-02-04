@@ -4,36 +4,26 @@
 
 using namespace mpqc;
 
-class MP2 : public lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>,
-            public Provides<Energy> {
+using LCAOWfn = lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;
+
+class MP2 : public LCAOWfn, public Provides<Energy> {
  public:
-  MP2(const KeyVal& kv)
-      : lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>(kv) {
-    if (kv.exists("ref")) {
-      ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
-    } else {
-      throw InputError("Default RefWavefunction in MP2 is not support! \n",
-                       __FILE__, __LINE__, "ref");
-    }
+  MP2(const KeyVal& kv) : LCAOWfn(kv) {
+    ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
+    if (!ref_wfn_)
+      throw InputError("missing reference Wavefunction", __FILE__, __LINE__,
+                       "ref");
   }
-  virtual ~MP2() = default;
 
  protected:
   bool can_evaluate(Energy* energy) override { return energy->order() == 0; }
 
   void evaluate(Energy* energy) override {
     if (!this->computed()) {
-      /// cast ref_wfn to Energy::Provider
-      auto ref_evaluator =
-          std::dynamic_pointer_cast<typename Energy::Provider>(ref_wfn_);
-      if (ref_evaluator == nullptr) {
-        std::ostringstream oss;
-        oss << "RefWavefunction in MP2" << ref_wfn_->class_key()
-            << " cannot compute Energy" << std::endl;
-        throw InputError(oss.str().c_str(), __FILE__, __LINE__, "ref");
-      }
-
-      ref_evaluator->evaluate(energy);
+      // compute reference to higher precision than required of correlation energy
+      auto target_ref_precision = energy->target_precision(0) / 100.;
+      auto ref_energy = std::make_shared<Energy>(ref_wfn_, target_ref_precision);
+      *ref_energy << *ref_wfn_;
 
       double ref_energy = this->get_value(energy).derivs(0)[0];
 
@@ -130,7 +120,7 @@ class MP2 : public lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>,
 
   // use default init() in LCAOWavefunction
   void init() override {
-    LCAOWavefunction<TA::TensorD, TA::SparsePolicy>::init();
+    LCAOWfn::init();
   }
 
  private:

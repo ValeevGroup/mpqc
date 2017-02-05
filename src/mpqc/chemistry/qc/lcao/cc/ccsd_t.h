@@ -9,8 +9,11 @@
 #include "mpqc/mpqc_config.h"
 #include "mpqc/util/misc/print.h"
 
-// Eigen matrix algebra library
+//Eigen library
 #include "mpqc/math/external/eigen/eigen.h"
+
+//Laplace transformation of 2-electron integrals and amplitudes (t2 & t1)
+#include "laplace_transform.h"
 
 namespace mpqc {
 namespace lcao {
@@ -1146,7 +1149,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     //loop over number of quadrature points
     for (auto m = 0; m < n; m++) {
 
-      TArray g_dabi_lt = g_lt(g_dabi, *this->orbital_energy(), n_occ, n_frozen, x(m));
+      TArray g_dabi_lt = g_dabi_laplace_transform(g_dabi, *this->orbital_energy(), n_occ, n_frozen, x(m));
       TArray t_lt = t2_lt(t2, *this->orbital_energy(), n_occ, n_frozen, x(m));
 
       double energy_m = 0.0;
@@ -1211,7 +1214,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       energy_m = 6.0*energy_m*w(m);
       triple_energy += energy_m;
 
-      TArray g_cjkl_lt = g_c_lt(g_cjkl, *this->orbital_energy(), n_occ, n_frozen, x(m));
+      TArray g_cjkl_lt = g_cjkl_laplace_transform(g_cjkl, *this->orbital_energy(), n_occ, n_frozen, x(m));
       TArray ta_lt = t22_lt(t2, *this->orbital_energy(), n_occ, n_frozen, x(m));
 
 
@@ -1333,7 +1336,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       energy_muo = 4.0*Wijkabcuo + Wkijabcuo + Wjkiabcuo - 2.0*Wkjiabcuo - 2.0*Wikjabcuo - 2.0*Wjikabcuo;
 
-      TArray g_abij_lt = g_abij_ltfcn(g_abij, *this->orbital_energy(), n_occ, n_frozen, x(m));
+      TArray g_abij_lt = g_abij_laplace_transform(g_abij, *this->orbital_energy(), n_occ, n_frozen, x(m));
       TArray t1_lt = t1_ltfcn(t1, *this->orbital_energy(), n_occ, n_frozen, x(m));
 
       double Wijkabcs = 0.0;

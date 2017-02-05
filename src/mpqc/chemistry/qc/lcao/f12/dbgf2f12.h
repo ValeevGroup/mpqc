@@ -47,7 +47,7 @@ class DBGF2F12 : public GF2F12<Tile> {
     }
   }
 
-  using GF2F12<Tile>::value;
+//  using GF2F12<Tile>::value;
 
  private:
   /// override GF2F12's function to initialize obs and cabs orbitals
@@ -56,7 +56,7 @@ class DBGF2F12 : public GF2F12<Tile> {
     auto mol = this->wfn_world()->atoms();
     Eigen::VectorXd orbital_energy;
     this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
-        this->lcao_factory(), orbital_energy, *mol, this->is_frozen_core(),
+        this->lcao_factory(), orbital_energy, this->ndocc(), *mol, this->is_frozen_core(),
         this->occ_block(), this->unocc_block());
     this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
 
@@ -69,10 +69,10 @@ class DBGF2F12 : public GF2F12<Tile> {
   }
 
   /// override GF2F12's function to compute target orbital
-  void init_target_orbital_diagonal() override {
+  void init_target_orbital_diagonal(int target_orbital) override {
     auto nfzc = this->trange1_engine()->get_nfrozen();
     auto nocc = this->trange1_engine()->get_active_occ();
-    auto orbital = this->orbital();
+    auto orbital = target_orbital;
     auto& world = this->wfn_world()->world();
 
     TArray C_x_ta;

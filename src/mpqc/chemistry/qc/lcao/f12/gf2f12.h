@@ -123,6 +123,9 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
     }
   }
 
+  bool use_cabs() const { return use_cabs_; }
+  const std::string dyson_method() const { return dyson_method_; }
+
  private:
   bool can_evaluate(GFRealPole* pole) override {
     // can only evaluate the pole (not its geometric derivatives)
@@ -174,15 +177,13 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
     print_par(world, "Total GF2F12 Time:  ", time, "\n");
   }
 
-  bool use_cabs() const { return use_cabs_; }
-  const std::string dyson_method() const { return dyson_method_; }
 
  private:
   /// initialize obs and cabs orbitals
-  virtual void init();
+  void init() override;
 
   /// initialize target orbital in compute_diagonal function
-  virtual void init_target_orbital_diagonal();
+  virtual void init_target_orbital_diagonal(int target_orbital);
 
   /// compute V_ixjy and V_ixyj term in compute_diagonal and compute_nondiagonal
   virtual std::tuple<TArray, TArray> compute_V() {
@@ -222,10 +223,10 @@ void GF2F12<Tile>::init() {
 }
 
 template <typename Tile>
-void GF2F12<Tile>::init_target_orbital_diagonal() {
+void GF2F12<Tile>::init_target_orbital_diagonal(int target_orbital) {
   auto nfzc = this->trange1_engine()->get_nfrozen();
   auto nocc = this->trange1_engine()->get_active_occ();
-  const auto orbital = nfzc + nocc + ((orbital_ < 0) ? orbital_ : orbital_ - 1);
+  const auto orbital = nfzc + nocc + ((target_orbital < 0) ? target_orbital : target_orbital - 1);
 
   auto& world = this->wfn_world()->world();
   auto& orbital_registry = this->lcao_factory().orbital_space();
@@ -262,7 +263,7 @@ void GF2F12<Tile>::compute_diagonal(const int target_orbital, const int max_nite
 
   // will use only the target orbital to transform ints
   // create an OrbitalSpace here
-  { init_target_orbital_diagonal(); }
+  { init_target_orbital_diagonal(target_orbital); }
 
   this->lcao_factory().keep_partial_transforms(true);
 
@@ -343,7 +344,7 @@ void GF2F12<Tile>::compute_diagonal(const int target_orbital, const int max_nite
     auto SE_F12 = SE + Sigma_f12(0, 0);
     auto Hartree2eV = 27.21138602;
     std::string orblabel =
-        std::string(target_orbital < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
+        std::string(target_orbital < 0 ? "IP" : "EA") + std::to_string(abs(target_orbital));
     ExEnv::out0() << printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
                 orblabel.c_str(), SE * Hartree2eV, SE);
     ExEnv::out0() << printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
@@ -489,7 +490,7 @@ void GF2F12<Tile>::compute_nondiagonal(const int target_orbital, const int max_n
     auto unit_factory = UnitFactory::get_default();
     auto Hartree2eV = unit_factory->make_unit("eV").from_atomic_units();
     std::string orblabel =
-        std::string(target_orbital < 0 ? "IP" : "EA") + std::to_string(abs(orbital_));
+        std::string(target_orbital < 0 ? "IP" : "EA") + std::to_string(abs(target_orbital));
     ExEnv::out0() << printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
                 orblabel.c_str(), SE * Hartree2eV, SE);
     ExEnv::out0() << printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",

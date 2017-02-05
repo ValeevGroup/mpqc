@@ -1204,6 +1204,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjikabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,i")).dot(t_lt("e,c,j,k") * t_lt("f,c,j,k"));
       }
 
+      this->wfn_world()->world().gop.fence();
       energy_m = 4.0*Wijkabc + Wkijabc + Wjkiabc - 2.0*Wkjiabc - 2.0*Wikjabc - 2.0*Wjikabc;
 
 
@@ -1265,6 +1266,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjikabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,k,n")).dot(ta_lt("a,b,i,m") * ta_lt("b,a,i,n"));
       }
 
+      this->wfn_world()->world().gop.fence();
       energy_mo = 4.0*Wijkabco + Wkijabco + Wjkiabco - 2.0*Wkjiabco - 2.0*Wikjabco - 2.0*Wjikabco;
 
 
@@ -1327,6 +1329,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,j,n")).dot(t_lt("e,c,j,k") * ta_lt("c,b,k,n"));
         Wjikabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("b,a,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,j,k,n"));
       }
+      this->wfn_world()->world().gop.fence();
 
       energy_muo = 4.0*Wijkabcuo + Wkijabcuo + Wjkiabcuo - 2.0*Wkjiabcuo - 2.0*Wikjabcuo - 2.0*Wjikabcuo;
 
@@ -1412,6 +1415,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjikabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n")).dot(t1_lt("c,k") * ta_lt("c,a,k,n"));
       }
 
+      this->wfn_world()->world().gop.fence();
       energy_mos = 4.0*Wijkabcos + Wkijabcos + Wjkiabcos - 2.0*Wkjiabcos - 2.0*Wikjabcos - 2.0*Wjikabcos;
 
 
@@ -1431,7 +1435,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       triple_energy_total += energy_m + energy_mo - 2.0*energy_muo + energy_ms - energy_mos;
     }
-    this->wfn_world()->world().gop.fence();
 
     triple_energy_total = -triple_energy_total/alpha;
     std::cout << "triple_energy_total = " << triple_energy_total/3.0 << std::endl;

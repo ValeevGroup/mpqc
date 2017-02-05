@@ -88,7 +88,7 @@ TEST_CASE("Debugger", "[debugger]") {
     REQUIRE_NOTHROW(d->set_exit_on_signal(0));
   }
 
-  std::shared_ptr<Debugger> d = keyval.keyval("debug").class_ptr<Debugger>();
+  std::shared_ptr<Debugger> d = keyval.class_ptr<Debugger>("debug");
   REQUIRE_NOTHROW(d->set_exec("unit_tests"));
 
   d->traceback("no particular problem");

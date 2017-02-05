@@ -16,13 +16,18 @@ namespace mpqc {
 */
 inline std::vector<Atom> collapse_to_atoms(const Atom &a) { return {a}; }
 
+inline void update(Atom &a, const std::vector<Atom>& atoms, size_t& pos) {
+  a = atoms.at(pos);
+  ++pos;
+}
+
 /*! \brief collapse to atoms takes an iteratable list of types which provide an
  * atoms
  *  function.
  *
  *  The idea is that something like a vector of clusters of clusters will call
  *  call atoms on each cluster of clusters, which will internally call
- *  collapse_to_atoms on it's type recursing until the type being pased to
+ *  collapse_to_atoms on it's type recursing until the type being passed to
  *  collapse_to_atoms is just an atom.
  */
 template <typename T>

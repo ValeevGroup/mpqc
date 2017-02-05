@@ -2,37 +2,44 @@ language: cpp
 cache: ccache
 os: linux
 compiler:
-  - gcc
-  - clang
+- gcc
+- clang
 env:
-  - GCC_VERSION=5
+- GCC_VERSION=5
 branches:
   only:
-    - master
+  - master
 sudo: false
+matrix:
+  # Currently clang is unusable for even TiledArray; OK on recent Ubuntu installs though
+  allow_failures:
+  - compiler: clang
 addons:
   apt:
     sources:
-      - george-edison55-precise-backports
-      - ubuntu-toolchain-r-test
-      - boost-latest
-      - kubuntu-backports
-      - llvm-toolchain-precise-3.8
+    - george-edison55-precise-backports
+    - ubuntu-toolchain-r-test
+    - boost-latest
+    - kubuntu-backports
+    - llvm-toolchain-precise-3.8
     packages:
-      - g++-5
-      - libeigen3-dev
-      - libboost1.55-all-dev
-      - libblas-dev
-      - liblapack-dev
-      - libtbb-dev
-      - clang-3.8
-      - cmake
-      - cmake-data
-before_install: 
-     - ./bin/build-mpich-$TRAVIS_OS_NAME.sh
-     - ./bin/build-libint-$TRAVIS_OS_NAME.sh
-     - ./bin/build-TA-$TRAVIS_OS_NAME.sh
-script: ./bin/build-$TRAVIS_OS_NAME.sh
+    - g++-5
+    - libeigen3-dev
+    - libboost1.55-all-dev
+    - libblas-dev
+    - liblapack-dev
+    - libtbb-dev
+    - clang-3.8
+    - cmake
+    - cmake-data
+before_install:
+- "./bin/build-mpich-$TRAVIS_OS_NAME.sh"
+- "./bin/build-libint-$TRAVIS_OS_NAME.sh"
+- "./bin/build-TA-$TRAVIS_OS_NAME.sh"
+script: "./bin/build-$TRAVIS_OS_NAME.sh"
 after_failure:
-  - cat ./_build/mpqc4/CMakeFiles/CMakeOutput.log
-  - cat ./_build/mpqc4/CMakeFiles/CMakeError.log
+- cat ./_build/mpqc4/CMakeFiles/CMakeOutput.log
+- cat ./_build/mpqc4/CMakeFiles/CMakeError.log
+notifications:
+  slack:
+    secure: aTBPnV/QUvD5zjB82Gz8MwqtjDcxMuAtGY3m2KM4kD54kxZxPXGC7sHb9e/EOHm0qoudTR8aielY99y9mPH3v/5qXvyQKU3md+aE9i+XB2ewm5WXDUXmr8wS63W+9EflXfFeC1JxantyYkZ9n4itCZP7WlY9x7rMfs/+1P5A0Ew=

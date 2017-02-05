@@ -8,9 +8,12 @@ that can be understood by the KeyVal class. MPQC version 3 and older use a custo
 for input data. MPQC4 abandoned the old format in favor of these popular industry-standard formats
 used for data exchange:
   - <a href="http://json.org/">JSON</a>,
-  - <a href="http://www.w3.org/XML/">XML</a>.
+  - <a href="http://www.w3.org/XML/">XML</a>.<br/>
+Another useful format that can be used is the <a href="http://www.boost.org/doc/libs/master/doc/html/property_tree/parsers.html#property_tree.parsers.info_parser">INFO format</a> understood by the
+Boost.PropertyTree library. It is similar to JSON, but is less verbose and
+supports comments and file inclusions.
 
-The KeyVal class is a means in a C++ program to convert such JSON or XML input to
+The KeyVal class is a means in a C++ program to convert such JSON, XML, or INFO input to
 C++ primitive data (booleans, integers, reals, string) and
 user-defined objects. For example, the following JSON,
 @verbatim
@@ -30,10 +33,10 @@ struct Atom {
 };
 @endcode
 
-KeyVal is more than just an JSON/XML importer: it is a general-purpose component
-for representing "keyword=value" associations in a flexible structured form.
+KeyVal is more than just a structured text importer: it is a general-purpose component
+for representing "keyword=value" associations in a flexible form.
 and can be used in any C++ program that needs such functionality.
-KeyVal objects can be created from JSON- or XML-formatted text, or purely programmatically.
+KeyVal objects can be created from JSON-, XML-, or INFO-formatted text, or purely programmatically.
 For brevity, only the programmatic and JSON-based methods will be illustrated here.
 
   -  \ref keyvalass
@@ -163,6 +166,11 @@ kv.assign("reptile:python:legs", 0).assign("reptile:python:extinct", false);  //
 kv.assign("bird:bald eagle:species", "Haliaeetus leucocephalus").assign("bird:bald eagle:flys", true).assign("bird:bald eagle:extinct", false);
 @endcode
 
+It is of course possible to erase the KeyVal entries:
+@code
+kv.erase("reptile:trex:legs");
+@endcode
+
 So far so good. But why all this complexity? To understand that, let's consider
 how KeyVal helps to construct C++ objects, not just simple data.
 
@@ -188,10 +196,19 @@ Then, given a KeyVal object constructed from JSON \ref KeyValPage_Example1 "Exam
 as in \ref KeyValPage_Example2 "Example 2" we can construct a \c Bird object representing a bald eagle as follows:
 @code
 Bird bald_eagle(kv.keyval("bird:bald eagle"));
+// or, alternative syntax:
+// auto bald_eagle = kv.value<Bird>("bird:bald eagle");
 @endcode
-Note the use of KeyVal::keyval method to construct a KeyVal object representing the subtree
+Note the use of the KeyVal::keyval method to construct a KeyVal object representing the subtree
 whose root is at "bird:bald eagle" of the base KeyVal object. The ability to refer
 to keyword sections in an existing KeyVal is crucial for constructing hierarchies of C++ objects easily.
+
+@note KeyVal objects have reference semantics, hence a copy of `kv` will
+refers to the same tree as `kv` and share `kv`'s mutable internal data, such as
+the internal object registry used by KeyVal::class_ptr (see below).
+The same can be said about the new KeyVal object returned by `kv.keyval()`.
+To create a deep copy of a KeyVal object use the KeyVal::clone() method (note that
+the DescribedClass object registry is not copied, only the PropertyTree object).
 
 \section keyvalpobj Polymorphic Object Construction
 
@@ -263,11 +280,11 @@ Note that we eliminated the reptile and bird sections so that all animals appear
 
 Skipping for now the modifications of the C++ classes necessary, see how easy it is to read in these animals as
 objects of Animal class:
-@code
-auto trex = kv.class<Animal>("trex");              assert(trex->extinct() == true);
-auto python = kv.class<Animal>("python");          assert(python->extinct() == false);
-auto bald_eagle = kv.class<Animal>("bald eagle");  assert(bald_eagle->extinct() == false);
-@endcode
+```
+auto trex = kv.class_ptr<Animal>("trex");             assert(trex->extinct() == true);
+auto python = kv.class_ptr<Animal>("python");         assert(python->extinct() == false);
+auto bald_eagle = kv.class_ptr<Animal>("bald eagle"); assert(bald_eagle->extinct() == false);
+```
 KeyVal::class_ptr<T> returns \c std::shared_ptr<T> , hence the pointer dereferencing. Also, the actual types of
 \c trex , \c python , and \c bald_eagle are Reptile, Reptile, and Bird, so we can access their full properties:
 @code
@@ -277,7 +294,7 @@ assert(std::dynamic_pointer_cast<Bird>(bald_eagle)->flys() == true);
 
 Now let's see the actual implementation of Animal, Reptile, and Bird classes:
 @code
-struct Animal : public DescribedClass {
+struct Animal : virtual public DescribedClass {
   Animal(const KeyVal& kv) {
     m_extinct = kv.value<bool>("extinct");
   }
@@ -315,6 +332,8 @@ A few comments:
     (see \ref keyvaldescribedclass ).
   - Smart pointers to objects created using KeyVal::class_ptr method are stored in the registry associated
     with that KeyVal's top tree. They will not be destroyed until KeyVal is destroyed as well.
+    This behavior can be bypassed by providing calling KeyVal::class_ptr with the second
+    parameter set to \c true ; the lifetime of the object then must be managed by the user.
   - Every class that we want to construct from KeyVal polymorphically needs to be associated with a
     global unique identifier descriptor (GUID) string (typically, GUID is the class name without the namespace).
     This is done using the MPQC_CLASS_EXPORT_KEY() macro. MPQC_CLASS_EXPORT_KEY(Reptile) registers
@@ -335,6 +354,16 @@ Keyval kv;
 std::shared_ptr<DescribedClass> trex = std::make_shared<Reptile>(...);
 kv.assign("trex", trex);
 assert(kv.class_ptr("trex") == trex);
+@endcode
+
+Note that if the type of the object to be constructed is known at compile time, it is not necessary
+to provide the \c type keyword as long as \c KeyVal::class_ptr<T> is called with the exact type
+rather than the base class type:
+@code
+// must specify trex1::type keyword 
+std::shared_ptr<Animal> trex1 = kv.class_ptr<Animal>("trex1");
+// tref2::type does NOT need to be specified
+std::shared_ptr<Reptile> trex2 = kv.class_ptr<Reptile>("trex2");
 @endcode
 
 \section keyvalarray Array Specification
@@ -361,11 +390,34 @@ Keyword \c names equals an array of 3 strings, keyword \c legs equals an array o
 3 integers, etc. The following C++ code can access the data in the corresponding KeyVal:
 @code
 auto names = kv.value<std::vector<std::string>>("names");
-auto names = kv.value<std::vector<int>>("legs");
-auto names = kv.value<std::vector<bool>>("extinct");
+auto legs = kv.value<std::vector<int>>("legs");
+auto extinct = kv.value<std::vector<bool>>("extinct");
 @endcode
-Unfortunately, it is not yet possible to specify an array of objects this way.
 
+It is also possible to specify an array of objects:
+@code
+{
+  "values" : [
+    { "value" : 0 },
+    { "value" : 1 },
+    { "value" : 2 }
+  ]
+}
+@endcode
+can be parsed as follows:
+@code
+class Value {
+ public:
+  Value() = default;  // need this to put it into a container
+  Value(const KeyVal& kv) : value_(kv.value<int>("value")) {}
+ private:
+  int value_;
+};
+
+kv.value<std::vector<Value>>("values");
+@endcode
+It is not yet possible to read in polymorphic objects this way.
+        
 @note Elements of an array specified in standard syntax all have same (empty) key,
 i.e. elements of an array corresponding to path \c path are located at path \c path: . This
 scheme for assigning keys is used by Boost.PropertyTree when reading JSON arrays.
@@ -454,9 +506,10 @@ The only difference between the examples with and without the value substition:
 in the first case constructing Reptile objects corresponding to keywords \c trex and \c anothertrex
 would produce pointers to the \em same object, whereas in the second case the two pointers would refer
 to two \em different Reptile objects. This feature is implemented by tracking all smart pointers
-produced by KeyVal::class_ptr . The pointer registry is destroyed when the main KeyVal and all
+produced by KeyVal::class_ptr . The object pointer registry is destroyed when the main KeyVal and all
 of its subobjects produced with KeyVal::keyval are destroyed. Therefore it is a good practice
-to delete KeyVal objects as soon as they are no longer needed.
+to delete KeyVal objects as soon as they are no longer needed. N.B. the object registry
+can be bypass by calling KeyVal::class_ptr with the second argument set to \c true .
 
 Value substitution can be used also with the programmatic KeyVal construction:
 @code
@@ -491,8 +544,8 @@ auto mule = kv.class_ptr("mule");
 To support polymorphic object construction (see \ref keyvalpobj) the base class must be
 (publicly) derived from DescribedClass. This potentially adds the overhead of a vtable (DescribedClass
 has a virtual destructor) and can complicate the lifetime management of such objects because their
-smart pointers will survive in a KeyVal registry at least through the lifetime of the owning
-KeyVal object.
+smart pointers will survive in KeyVal object's registry
+at least through the lifetime of the owning KeyVal object.
 
 To be able to construct a class \c T from KeyVal objects do this:
   1. make DescribedClass a public base of \c T, or any of its bases, and
@@ -504,14 +557,20 @@ to a source file in the <i>global</i> scope:
     It is the easiest to add these statements to the .cpp file that defines \c T , but any other .cpp
 file will work.
 
-@note Both MPQC_CLASS_EXPORT_KEY() and MPQC_CLASS_EXPORT_KEY2() create a Global Unique ID (GUID) for
-the class using the Boost.Serialization mechanism
-(see <a href="http://www.boost.org/doc/libs/1_62_0/libs/serialization/doc/special.html#export">Boost docs</a>
-for more details). Therefore using these macros also makes the type usable with
-Boost.Serialization (note that as of Boost 1.62.0, the Boost.Serialization macros
-are not variadic and should not work for template classes with 2 or more template arguments;
-the MPQC macros use modified variadic versions of the Boost macros and do work fine for
-classes with 2 or more template arguments).
+@note Both MPQC_CLASS_EXPORT_KEY() and MPQC_CLASS_EXPORT_KEY2() create a Global Unique ID (GUID)
+for the class using a mechanism similar to that of the Boost.Serialization library.
+(see <a href="http://www.boost.org/doc/libs/master/libs/serialization/doc/special.html#export">Boost docs</a>
+for more details). However, using these macros does not make the type usable with
+Boost.Serialization, you should use the corresponding BOOST_CLASS_EXPORT() and BOOST_CLASS_EXPORT2()
+macros (in practice you are likely to need to use BOOST_CLASS_EXPORT_KEY(),
+or BOOST_CLASS_EXPORT_KEY2(), and BOOST_CLASS_EXPORT_IMPLEMENT(): read the docs CAREFULLY
+as it is very easy to introduce subtle bugs by misusing the macros).
+
+@note As of Boost 1.62.0, the Boost.Serialization macros BOOST_CLASS_EXPORT_KEY(),
+BOOST_CLASS_EXPORT_KEY2() and BOOST_CLASS_EXPORT_IMPLEMENT() are not variadic
+and should not work for template classes with 2 or more template arguments.
+MPQC provides macros MPQC_BOOST_CLASS_EXPORT_KEY2() and MPQC_BOOST_CLASS_EXPORT_IMPLEMENT()
+that should be used in their place for classes with 2 or more template arguments.
 
 @note If \c T is a template class, you must register each instance of this class you want to construct
 from KeyVal.

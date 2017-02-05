@@ -1,46 +1,47 @@
 {
   "units": "2010CODATA",
   "molecule": {
-    "type": "Molecule",
     "file_name": "h2o.xyz",
     "sort_input": true,
     "charge": 0,
     "n_cluster": 2
   },
   "obs": {
-    "type": "Basis",
     "name": "6-31G",
     "molecule": "$:molecule"
   },
   "dfbs": {
-    "type": "Basis",
     "name": "cc-pVDZ",
     "molecule": "$:molecule"
   },
   "ribs":{
-    "type": "Basis",
     "name": "aug-cc-pVDZ",
     "molecule": "$:molecule"
   },
-  "world":{
-    "type" : "WfnWorld",
+  "wfn_world":{
     "molecule" : "$:molecule",
     "basis" : "$:obs",
     "df_basis" :"$:dfbs",
     "aux_basis": "$:ribs",
-    "screen": "qqr"
+    "screen": "schwarz"
   },
   "scf":{
     "type": "RI-RHF",
-    "wfn_world": "$:world",
-    "converge": 1.0e-11
+    "wfn_world": "$:wfn_world"
   },
   "wfn":{
     "type": "CCSD(F12)",
-    "wfn_world": "$:world",
+    "molecule" : "$:molecule",
+    "wfn_world": "$:wfn_world",
     "ref": "$:scf",
     "method" : "df",
     "occ_block_size" : 1,
-    "uocc_block_size" : 24
+    "unocc_block_size" : 24,
+    "converge" : 1.0e-7
+  },
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn",
+    "precision" : 1.0e-11
   }
 }

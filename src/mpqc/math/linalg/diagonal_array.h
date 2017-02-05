@@ -4,8 +4,8 @@
 
 #include <tiledarray.h>
 
-#include "../src/mpqc/math/tensor/clr/decomposed_tensor.h"
-#include "../tensor/clr/tile.h"
+#include "mpqc/math/tensor/clr/decomposed_tensor.h"
+#include "mpqc/math/tensor/clr/tile.h"
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
 

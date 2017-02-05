@@ -1,33 +1,75 @@
-/*
- * energy.h
- *
- *  Created on: Aug 18, 2016
- *      Author: Drew Lewis
- */
+//
+// Created by Chong Peng on 1/11/17.
+//
+
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
 
-#include "mpqc/util/keyval/keyval.h"
-#include "mpqc/chemistry/qc/properties/propertybase.h"
-
-#include <boost/optional.hpp>
+#include "mpqc/chemistry/qc/properties/property.h"
+#include "mpqc/math/function/optimize.h"
 
 namespace mpqc {
-namespace lcao {
 
-class Energy : public PropertyBase {
- private:
-  boost::optional<double> result_;
+/*
+* to add a wavefunction property class P:
+* - derive class P from WavefunctionProperty<T> and override
+* P::evaluate()
+* - define class P::Provider to be used as a public base classes that
+* can compute it
+*/
 
- public:
-  Energy(KeyVal const &kv);
+/// Taylor expansion of the molecular energy computed by a Wavefunction
+class Energy : public WavefunctionProperty<double> {
+public:
+  using typename WavefunctionProperty<double>::function_base_type;
 
-  void apply(Wavefunction *) override;
+  /**
+   *  every class that can evaluate Energy (e.g. Wavefunction) will publicly
+   *  inherit from Energy::Provider
+   *
+   *  @sa Provides
+   */
+  class Provider : public math::FunctionVisitorBase<function_base_type> {
+  public:
+    /// @return true if \c energy can be computed.
+    /// For example, if \c energy demands taylor expansion to 1st order
+    /// but this wave function does not have analytic nuclear gradients,
+    /// will return false.
+    virtual bool can_evaluate(Energy* energy) = 0;
+    /// Provider::evaluate computes the taylor expansion of the energy
+    /// and uses set_value to assign the values to \c energy
+    virtual void evaluate(Energy* energy) = 0;
+  };
 
-  boost::optional<double> result() { return result_; }
+  // clang-format off
+  /**
+   * @brief The KeyVal constructor
+   * @param kv the KeyVal object, it will be queried for all
+   *        keywords of the WavefunctionProperty class. |
+   *
+   * @note This constructor overrides the default target precision to 1e-9 .
+   */
+  // clang-format on
+
+  explicit Energy(const KeyVal& kv) : WavefunctionProperty(kv, 1e-9) {}
+
+private:
+  void do_evaluate() override;
 };
 
-}  // namespace lcao
-}  // namespace mpqc
+#if 0
+/// StationaryPoint finds stationary points on molecular PES.
+class StationaryPoint : public Property {
+ public:
+  explicit StationaryPoint(const KeyVal& kv);
+ private:
+  std::shared_ptr<Energy> energy_;
+  std::shared_ptr<math::QuasiNewtonOptimizer<double,MolecularCoordinates>> optimizer_;
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_
+  void evaluate() override;
+};
+#endif
+
+} // namespace mpqc
+
+#endif //  MPQC4_SRC_MPQC_CHEMISTRY_QC_PROPERTIES_ENERGY_H_

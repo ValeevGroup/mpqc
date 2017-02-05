@@ -1,0 +1,321 @@
+
+namespace mpqc {
+
+/** \page mpqcinp MPQC Object-Oriented Input
+
+MPQC is an object-oriented program that directly allows the user to
+specify objects that MPQC then manipulates to obtain molecular
+properties such as energies, forces, etc.
+This makes the input very flexible, but very complex.
+However, most calculations should be quite similar to the one of the
+examples given later in this chapter.  The best way to get started is to
+use one of the test input files located in <tt>tests/validation/reference/inputs</tt>
+and modify it to meet your needs.
+
+The object-oriented input format is described in the following
+sections:
+
+<ul>
+ <li> \ref mpqcooover
+ <li> \ref mpqcoowalk
+ <li> \ref mpqcoosamp
+ <li> \ref mpqcoononjson
+</ul>
+
+\section mpqcooover Overview of the Object-Oriented Input
+
+MPQC starts off by creating a KeyVal object that parses the
+input file specified on the command line.
+The MPQC input associates keywords with values.
+The values can be scalars, arrays, or groups of keyword/value
+pairs. The latter feature allows to create a hierarchy of keyword/value pairs
+so that each keyword has an absolute path describing its location in a hierarchy.
+The details of MPQC input are documented in the
+KeyVal documentation\if html (see \ref keyval)\endif.
+
+MPQC input can be specified
+in one of two industry-standard formats, JSON and XML, as well as
+the non-standard INFO format developed for the Boost.PropertyTree library.
+In practice we recommend using JSON since it is less verbose
+than XML and, unlike the INFO format, can be manipulated from most programming languages.
+Thus the rest of this document will focus on JSON only; \ref mpqcoononjson
+illustrates the correspondence between JSON, XML, and INFO formats.
+
+The keywords recognized by MPQC are located at the top prefix.  That is, they
+must be nested between the top-level curly brakets.  The primary
+keywords that MPQC will examine are given below.
+Most of these keywords specify objects, thus they will be groups of key-value pairs
+used to construct the objects by calling the corresponding KeyVal constructors.
+The KeyVal constructors are documented with the source code documentation for each
+class.
+
+<dl>
+
+<dt><tt>property</tt><dd> This keyword specifies the Property object that will
+        be evaluated by calling its Property::evaluate() method.
+        The specialization of Property that is most commonly used is Energy, which computes
+        a Taylor expansion of the molecular energy computed with
+        a Wavefunction object with respect to the nuclear coordinates.
+        There is no default value for this keyword.
+<dt><tt>units</tt><dd> This keyword specifies the units system to be used.
+        The value of this keyword is a string that matches one of the
+        values accepted by the UnitFactory::set_default() method.
+        The default value is "2014CODATA", i.e., the 2014 CODATA revision of the
+        fundamental constants is used.
+
+</dl>
+
+There are also some utility keywords that tell mpqc some technical
+details about how to do the calculation:
+<dl>
+<dt><tt>debugger</tt><dd> This optional keyword gives a Debugger
+        object which can be used to help find the problem
+        if MPQC encounters a catastrophic error.
+</dl>
+
+\section mpqcoowalk A Walk-Through of an Object-Oriented Input File
+
+This example input does a Hartree-Fock calculation on water.
+Following is the entire input, followed by a breakdown with
+descriptions.
+
+```
+{
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
+  },
+  "wfn":{
+    "type": "RHF",
+    "molecule" : "$:molecule",
+    "basis" : "$:basis"
+  },
+  "molecule": {
+    "file_name": "water.xyz"
+  },
+  "basis": {
+    "name": "aug-cc-pVDZ",
+    "molecule": "$:molecule"
+  }
+}
+```
+<br />
+
+First, we specify the molecular property object that MPQC will evaluate.
+MPQC looks for the target property object by looking up keyword
+<tt>property</tt>. This keyword is followed by a <tt>:</tt> and then
+several keyword-value pairs separated
+by commas and enclosed in a pair of matching curly brakets.
+The data between the brakets contain the information
+that will be given to the KeyVal constructor of the particular Property specialization.
+But first MPQC wants to know which Property specialization it's dealing
+with here: that's given by the value of keyword <tt>type</tt>, in this case
+it's <tt>"Energy"</tt>, which means this will be an object of class Energy .
+
+```
+"property": {
+    "type": "Energy",
+```
+<br />
+
+String <tt>"Energy"</tt> is known as the <em>key</em> that globally identifies
+class Energy, and every class that is constructible from
+a KeyVal input must have one. Note the comma after "Energy": it is used in JSON to separate syntactic
+elements like keyword-value pairs and keyword groups.
+
+The rest of the keywords in this section are used by the KeyVal constructor of the Energy
+class; these are listed in the documentation of the Energy class. The only such keyword is
+<tt>wfn</tt>:
+
+```
+    "wfn": "$:wfn"
+```
+<br />
+
+Note that the value of <tt>wfn</tt>, namely <tt>$:wfn</tt>,
+is actually a reference to a Wavefunction object specification elsewhere else
+in the input file.  The leading <tt>$</tt> indicates that this is
+a reference and the keyword following the <tt>$</tt> is the actual location of the
+Wavefunction object specification.
+The <tt>:</tt> in front of the keyword means that the keyword is not
+relative to the current location in the input, but rather relative to the
+root of the tree of keywords (i.e., the top-level JSON curly brakets).
+(this reference could have been also written <em>relative</em> to the current
+position in the keyword hiearchy, as <tt>$..:wfn</tt>).
+Thus, this line grabs the Wavefuntion object that is specified later in the input file.
+<br />
+
+\todo update when WavefunctionProperty parses <tt>wfn</tt>
+An interesting point is that if you look at the documentation for Energy,
+you will see that it doesn't read <tt>wfn</tt> keyword.
+The KeyVal constructor of a derived class will typically
+call the base class KeyVal constructors, hence the derived class will examine all keywords
+of base classes.  If you
+follow the base classes of Energy up to the Properties class, you'll find that
+<tt>wfn</tt> is indeed read by the WavefunctionProperty class.
+
+The specification of <tt>properties</tt> object is now complete and the keyword block
+closes by a curly braket, followed by a comma since more keywords follow:
+
+```
+  },
+```
+<br />
+
+Next we find the <tt>"wfn"</tt> keyword. It provides the object
+referred by the <tt>property</tt> object specification.
+It is a specialization of the (abstract) Wavefunction class
+In this case we will do a spin-restricted
+Hartree-Fock calculation.  That is done with an object of type RHF.
+Since MPQC will expect any specialization of the Wavefunction class here,
+we must explicitly specify the object type by giving the <tt>type</tt> keyword:
+
+```
+  "wfn": {
+    "type": "RHF",
+```
+<br />
+
+The rest of keywords in this section are examined by the base classes of RHF:
+
+```
+    "molecule" : "$:molecule",
+    "basis" : "$:basis"
+```
+<br />
+
+Specifically, the <tt>molecule</tt> keyword specifies the Molecule object
+for which to compute the RHF wave function, and the <tt>basis</tt> keyword
+specifies the Basis object which gives the Gaussian basis in which RHF
+wave function will be computed.
+
+Once again, the values of these keywords are references to object specifications
+given below. Separate Molecule and Basis object specifications could have been
+placed here, but usually it is necessary that several objects refer to the exact same
+object, so that for example the changes to the Molecule object by an optimizer
+will be "seen" by the RHF object. This can only be done using references.
+
+A curly braket closes the <tt>wfn</tt> object specification.
+
+```
+  },
+```
+<br />
+
+Next we find the <tt>molecule</tt> keyword that has been referred to by the <tt>wfn</tt> object.
+It specifies a Molecule object:
+
+```
+  "molecule": {
+```
+<br />
+
+Since Molecule is a concrete class there is no need to give a <tt>type</tt> keyword here.
+
+The atomic coordinates are specified by giving the name of a text file in the
+<a href="https://en.wikipedia.org/wiki/XYZ_file_format">XYZ format</a>.
+```
+    "file_name": "water.xyz"
+  },
+```
+<br />
+
+Next, a basis set object is given:
+```
+  "basis": {
+    "name": "aug-cc-pVDZ",
+    "molecule": "$:molecule"
+  }
+```
+Keyword <tt>name</tt> specifies the basis set name, and keyword <tt>molecule</tt>
+specifies the atomic centers on which to place the basis functions.
+There is no <tt>type</tt> keyword here since Basis is a concrete class.
+
+There is no comma after the closing curly braket since this is the last keyword
+group in the input file. Now we close off the top-level JSON group with a curly braket
+and we are finished.
+
+```
+}
+```
+<br />
+
+\section mpqcoosamp Sample Object-Oriented Input Files
+
+The easiest way to get started with mpqc is to start with one of sample
+inputs that most nearly matches your problem.  The
+<tt>src/bin/mpqc/samples</tt> contains all of the sample inputs below:
+
+<ul>
+  <li> none yet
+</ul>
+
+\section mpqcoononjson Specifying MPQC Input in XML and INFO formats
+
+The correspondence between JSON, XML, and INFO formats is best demonstrated by
+example. The following JSON input (used as the example in \ref mpqcoowalk )
+
+```
+{
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:wfn"
+  },
+  "wfn":{
+    "type": "RHF",
+    "molecule" : "$:molecule",
+    "basis" : "$:basis"
+  },
+  "molecule": {
+    "file_name": "water.xyz"
+  },
+  "basis": {
+    "name": "aug-cc-pVDZ",
+    "molecule": "$:molecule"
+  }
+}
+```
+is expressed in XML as
+```
+<?xml version="1.0" encoding="utf-8"?>
+<property>
+  <type>Energy</type>
+  <wfn>$:wfn</wfn>
+</property>
+<wfn>
+  <type>RHF</type>
+  <molecule>$:molecule</molecule>
+  <basis>$:basis</basis>
+</wfn>
+<molecule>
+  <file_name>water.xyz</file_name>
+</molecule>
+<basis>
+  <name>aug-cc-pVDZ</name>
+  <molecule>$:molecule</molecule>
+</basis>
+```
+The same input is expressed in the INFO format as
+```
+property {
+  type Energy
+  wfn  $:wfn
+}
+wfn {
+  type RHF
+  molecule $:molecule
+  basis $:basis
+}
+molecule {
+  file_name water.xyz
+}
+basis {
+  name aug-cc-pVDZ
+  molecule $:molecule
+}
+```
+
+*/
+
+}  // namespace mpqc
+

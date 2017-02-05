@@ -8,7 +8,7 @@
 #include <tiledarray.h>
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/array_to_eigen.h"
-#include "../external/eigen/eigen.h"
+#include "mpqc/math/external/eigen/eigen.h"
 
 namespace mpqc {
 namespace array_ops {

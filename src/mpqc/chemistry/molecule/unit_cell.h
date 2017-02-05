@@ -79,14 +79,15 @@ class UnitCell : public Molecule {
    *  \endcode
    *
    */
-  UnitCell(const KeyVal& kv);
+  UnitCell(const KeyVal &kv);
 
   /*!
-   * \brief This computes nuclear repulsion energy for one unitcell
-   * \param RJ_max the range of nuclear repulsion interaction
+   * \brief This computes the nuclear repulsion energy of the unit cell with other cell within a range.
+   * \note this includes the intra-cell repulsion.
+   * \param RJ_max the range of nuclear repulsion interaction; all cells with [- \c RJ_max .. RJ_max] are included
    * \return nuclear repulsion energy
    */
-  double nuclear_repulsion(Vector3i RJ_max) const;
+  double nuclear_repulsion_energy(Vector3i RJ_max) const;
 
   ~UnitCell() = default;
 

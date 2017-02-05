@@ -7,4 +7,4 @@ set(sources
     sqrt_inv.h
 )
 
-add_mpqc_hdr_library(math_linalg sources sources "mpqc/math/linalg")
+add_mpqc_hdr_library(math_linalg sources "" "mpqc/math/linalg")

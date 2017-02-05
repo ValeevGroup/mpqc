@@ -2,7 +2,8 @@ set(sources
 atom_based_cluster_concept.h
 atom_based_cluster.cpp
 atom_based_cluster.h
-atom_masses.h
+atomic_data.cpp
+atomic_data.h
 atom.cpp
 atom.h
 cluster_collapse.h
@@ -13,8 +14,8 @@ clustering_functions.cpp
 clustering_functions.h
 common.cpp
 common.h
-energy.cpp
-energy.h
+coords.cpp
+coords.h
 formula.cpp
 formula.h
 linkage.cpp

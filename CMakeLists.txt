@@ -63,10 +63,10 @@ set(TA_POLICY sparse CACHE STRING "Set to TA::DensePolicy(dense) or TA::SparsePo
 set(TA_DEFAULT_POLICY 1)
 if(TA_POLICY STREQUAL sparse)
   set(TA_DEFAULT_POLICY 1)
-  MESSAGE("Sparse")
+  MESSAGE("Set to TA::SparsePolicy")
 elseif(TA_POLICY STREQUAL dense)
   set(TA_DEFAULT_POLICY 0)
-  MESSAGE("Dense")
+  MESSAGE("Set to TA::DensePolicy")
 endif()
 ##########################
 # Standard build variables
@@ -202,14 +202,22 @@ CHECK_FUNCTION_EXISTS (setrlimit         HAVE_SETRLIMIT)
 # Dependencies
 ###############################################################################
 
+if(TiledArray_INSTALL_DIR)
+  set(TiledArray_DIR ${TiledArray_INSTALL_DIR}/lib/cmake/tiledarray)
+endif()
 # search for TA first, other packages can be found with it
 FIND_PACKAGE(TiledArray CONFIG REQUIRED COMPONENTS tiledarray)
 include(ValidateTiledArray)
 validate_tiledarray()
 message(STATUS "Found TiledArray CONFIG at ${TiledArray_CONFIG}")
 
-FIND_PACKAGE(TBB REQUIRED)
+# Treating boost the way suggested in https://rix0r.nl/blog/2015/08/13/cmake-guide/
 FIND_PACKAGE(Boost REQUIRED COMPONENTS serialization)
+add_library(boost INTERFACE IMPORTED)
+set_property(TARGET boost PROPERTY INTERFACE_INCLUDE_DIRECTORIES 
+  ${Boost_INCLUDE_DIRS})
+
+FIND_PACKAGE(TBB REQUIRED)
 FIND_PACKAGE(Eigen3 REQUIRED)
 FIND_PACKAGE(LIBINT2 REQUIRED)
 
@@ -299,11 +307,14 @@ CONFIGURE_FILE(
 )
 
 # sample CMakeLists.txt
-configure_file(
-  ${PROJECT_SOURCE_DIR}/doc/devsamp/CMakeLists.txt.sample.in
-  ${PROJECT_BINARY_DIR}/doc/devsamp/CMakeLists.txt.sample
-  @ONLY
-)
+set(sample_dirs "mp2")
+foreach(sample_dir ${sample_dirs})
+  configure_file(
+    ${PROJECT_SOURCE_DIR}/doc/devsamp/${sample_dir}/CMakeLists.txt.in
+    ${PROJECT_BINARY_DIR}/doc/devsamp/${sample_dir}/CMakeLists.txt
+    @ONLY
+  )
+endforeach()
 
 # install config files
 install(FILES ${PROJECT_BINARY_DIR}/mpqc.pc

@@ -1,0 +1,35 @@
+{
+  "property" : {
+    "type" : "Energy",
+    "wfn" : "$:mp2"
+  },
+  "mp2":{
+    "type": "MP2",
+    "frozen_core" : false,
+    "atoms" : "$:molecule",
+    "wfn_world" : "$:wfn_world",
+    "ref" : "$:scf"
+  },
+  "wfn_world":{
+    "type" : "WfnWorld",
+    "molecule" : "$:molecule",
+    "basis" : "$:basis"
+  },
+  "scf":{
+    "type" : "RHF",
+    "atoms" : "$:molecule",
+    "wfn_world" : "$:wfn_world"
+  },
+  "molecule": {
+    "atoms": [
+      { "element": "O", "xyz":[ 0.00000, -0.07579,  0.00000] },
+      { "element": "H", "xyz":[ 0.86681,  0.60144,  0.00000] },
+      { "element": "H", "xyz":[-0.86681,  0.60144,  0.00000] }
+    ]
+  },
+  "basis": {
+    "name": "6-31G",
+    "molecule": "$:molecule"
+  }
+}
+

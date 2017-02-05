@@ -8,6 +8,7 @@
 #ifndef SRC_MPQC_MATH_GROUPS_GROUP_H_
 #define SRC_MPQC_MATH_GROUPS_GROUP_H_
 
+#include <memory>
 #include <vector>
 
 #include "mpqc/math/external/eigen/eigen.h"

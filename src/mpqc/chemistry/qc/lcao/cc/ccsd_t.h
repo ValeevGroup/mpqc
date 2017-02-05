@@ -149,7 +149,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     } else if (approach_ == "straight") {
       triples_energy_ = compute_ccsd_t_straight(t1, t2);
     } else if (approach_ == "laplace") {
-      triples_energy_ = compute_ccsd_t_lt(t1, t2);
+      triples_energy_ = compute_ccsd_t2_oou_lt(t1, t2);
     }
 
     auto time1 = mpqc::fenced_now(world);
@@ -1102,7 +1102,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   }
 
   //performs Laplace transform perturbative triple correction to CCSD energy
-  double compute_ccsd_t_lt(const TArray &t1, const TArray &t2) {
+  double compute_ccsd_t2_oou_lt(const TArray &t1, const TArray &t2) {
 
     // get integral
     TArray g_cjkl = get_aijk();
@@ -1150,8 +1150,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     for (auto m = 0; m < n; m++) {
 
       TArray g_dabi_lt = g_dabi_laplace_transform(g_dabi, *this->orbital_energy(), n_occ, n_frozen, x(m));
-      TArray t_lt = t2_lt(t2, *this->orbital_energy(), n_occ, n_frozen, x(m));
-
+      TArray t2_oou_lt = t2_oou_laplace_transform(t2, *this->orbital_energy(), n_occ, n_frozen, x(m));
+      this->wfn_world()->world().gop.fence();
       double energy_m = 0.0;
       double energy_ms = 0.0;
       double energy_mo = 0.0;
@@ -1159,52 +1159,52 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       double energy_muo = 0.0;
       double Wijkabc = 0.0;
       {
-        Wijkabc = (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,i")).dot(t_lt("e,c,j,k") * t_lt("f,c,j,k"));
-        Wijkabc += 2.0 * (g_dabi_lt("e,a,b,i") * t_lt("f,a,k,i")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,b,c,j"));
-        Wijkabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i")).dot(t_lt("e,c,j,k") * t_lt("f,b,k,j"));
-        Wijkabc += (g_dabi_lt("e,a,b,i") * t_lt("f,a,j,i")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,c,b,k"));
-        Wijkabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,j")).dot(t_lt("e,c,j,k") * t_lt("f,c,i,k"));
+        Wijkabc = (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,k"));
+        Wijkabc += 2.0 * (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,k,i")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j"));
+        Wijkabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,k,j"));
+        Wijkabc += (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,j,i")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,k"));
+        Wijkabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,j")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,k"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wkijabc = 0.0;
       {
-        Wkijabc  = 2.0 * (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,k")).dot(t_lt("e,c,j,k") * t_lt("f,c,i,j"));
-        Wkijabc += 2.0 * (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,c,i")).dot(t_lt("e,c,j,k") * t_lt("f,a,j,k"));
-        Wkijabc += 2.0 * (g_dabi_lt("e,a,b,i") * t_lt("f,b,k,i")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,c,a,j"));
-        Wkijabc += (g_dabi_lt("e,a,b,i") * t_lt("f,b,j,i")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,a,c,k"));
-        Wkijabc += (g_dabi_lt("e,a,b,i") * t_lt("f,a,i,k")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,c,b,j"));
-        Wkijabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,i")).dot(t_lt("e,c,j,k") * t_lt("f,c,k,j"));
+        Wkijabc  = 2.0 * (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,k")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,j"));
+        Wkijabc += 2.0 * (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,c,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,j,k"));
+        Wkijabc += 2.0 * (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,k,i")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,a,j"));
+        Wkijabc += (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,j,i")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,k"));
+        Wkijabc += (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,i,k")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,j"));
+        Wkijabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,j"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wjkiabc = 0.0;
       {
-        Wjkiabc  = (g_dabi_lt("e,a,b,i") * t_lt("f,b,i,k")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,a,c,j"));
-        Wjkiabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i")).dot(t_lt("e,c,j,k") * t_lt("f,a,k,j"));
-        Wjkiabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,k")).dot(t_lt("e,c,j,k") * t_lt("f,c,j,i"));
+        Wjkiabc  = (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,i,k")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,j"));
+        Wjkiabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,k,j"));
+        Wjkiabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,k")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,i"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wkjiabc = 0.0;
       {
-        Wkjiabc =  (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,k")).dot(t_lt("e,c,j,k") * t_lt("f,c,j,i"));
-        Wkjiabc += 2.0 * (g_dabi_lt("e,a,b,i") * t_lt("f,a,i,k")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,b,c,j"));
-        Wkjiabc += 2.0 * (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,a,i")).dot(t_lt("e,c,j,k") * t_lt("f,b,k,j"));
-        Wkjiabc += 2.0 * (g_dabi_lt("e,a,b,i") * t_lt("f,b,i,j")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,a,c,k"));
-        Wkjiabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i")).dot(t_lt("e,c,j,k") * t_lt("f,a,j,k"));
-        Wkjiabc += 2.0 * (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,j")).dot(t_lt("e,c,j,k") * t_lt("f,c,k,i"));
+        Wkjiabc =  (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,k")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,i"));
+        Wkjiabc += 2.0 * (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,i,k")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j"));
+        Wkjiabc += 2.0 * (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,a,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,k,j"));
+        Wkjiabc += 2.0 * (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,i,j")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,k"));
+        Wkjiabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,j,k"));
+        Wkjiabc += 2.0 * (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,j")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,i"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wikjabc = 0.0;
       {
-        Wikjabc =  (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,i")).dot(t_lt("e,c,j,k") * t_lt("f,c,k,j"));
-        Wikjabc += 2.0 * (g_dabi_lt("e,a,b,i") * t_lt("f,a,j,i")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,b,c,k"));
-        Wikjabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i")).dot(t_lt("e,c,j,k") * t_lt("f,b,j,k"));
-        Wikjabc += 2.0 * (g_dabi_lt("e,a,b,i") * t_lt("f,a,k,i")).dot(t_lt("e,c,j,k") * g_dabi_lt("f,c,b,j"));
+        Wikjabc =  (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,j"));
+        Wikjabc += 2.0 * (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,j,i")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,k"));
+        Wikjabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,j,k"));
+        Wikjabc += 2.0 * (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,k,i")).dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,j"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wjikabc = 0.0;
       {
-        Wjikabc =  (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,j")).dot(t_lt("e,c,j,k") * t_lt("f,c,i,k"));
-        Wjikabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,i")).dot(t_lt("e,c,j,k") * t_lt("f,c,j,k"));
+        Wjikabc =  (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,j")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,k"));
+        Wjikabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,i")).dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,k"));
       }
 
       this->wfn_world()->world().gop.fence();
@@ -1215,58 +1215,58 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       triple_energy += energy_m;
 
       TArray g_cjkl_lt = g_cjkl_laplace_transform(g_cjkl, *this->orbital_energy(), n_occ, n_frozen, x(m));
-      TArray ta_lt = t22_lt(t2, *this->orbital_energy(), n_occ, n_frozen, x(m));
-
+      TArray t2_ouu_lt = t2_ouu_laplace_transform(t2, *this->orbital_energy(), n_occ, n_frozen, x(m));
+      this->wfn_world()->world().gop.fence();
 
       double Wijkabco = 0.0;
       {
-        Wijkabco  = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,k,n")).dot(ta_lt("a,b,i,m") * ta_lt("a,b,i,n"));
-        Wijkabco += 2.0 * (g_cjkl_lt("c,j,k,m") * ta_lt("b,c,j,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("a,k,i,n"));
-        Wijkabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("b,k,j,n")).dot(ta_lt("a,b,i,m") * ta_lt("a,c,i,n"));
-        Wijkabco += (g_cjkl_lt("c,j,k,m") * ta_lt("c,b,k,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("a,j,i,n"));
-        Wijkabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,i,k,n")).dot(ta_lt("a,b,i,m") * ta_lt("b,a,j,n"));
+        Wijkabco  = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,k,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,i,n"));
+        Wijkabco += 2.0 * (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("b,c,j,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,k,i,n"));
+        Wijkabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("b,k,j,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,c,i,n"));
+        Wijkabco += (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("c,b,k,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,j,i,n"));
+        Wijkabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,i,k,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,j,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wkijabco = 0.0;
       {
-        Wkijabco  = 2.0 * (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,i,j,n")).dot(ta_lt("a,b,i,m") * ta_lt("a,b,k,n"));
-        Wkijabco += 2.0 * (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("a,j,k,n")).dot(ta_lt("a,b,i,m") * ta_lt("b,c,i,n"));
-        Wkijabco += 2.0 * (g_cjkl_lt("c,j,k,m") * ta_lt("c,a,j,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("b,k,i,n"));
-        Wkijabco += (g_cjkl_lt("c,j,k,m") * ta_lt("a,c,k,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("b,j,i,n"));
-        Wkijabco += (g_cjkl_lt("c,j,k,m") * ta_lt("c,b,j,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("a,i,k,n"));
-        Wkijabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,k,j,n")).dot(ta_lt("a,b,i,m") * ta_lt("b,a,i,n"));
+        Wkijabco  = 2.0 * (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,i,j,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,k,n"));
+        Wkijabco += 2.0 * (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("a,j,k,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,c,i,n"));
+        Wkijabco += 2.0 * (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("c,a,j,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("b,k,i,n"));
+        Wkijabco += (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("a,c,k,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("b,j,i,n"));
+        Wkijabco += (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("c,b,j,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,i,k,n"));
+        Wkijabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,k,j,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,i,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wjkiabco = 0.0;
       {
 
-        Wjkiabco = (g_cjkl_lt("c,j,k,m") * ta_lt("a,c,j,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("b,i,k,n"));
-        Wjkiabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("a,k,j,n")).dot(ta_lt("a,b,i,m") * ta_lt("c,b,i,n"));
-        Wjkiabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,i,n")).dot(ta_lt("a,b,i,m") * ta_lt("b,a,k,n"));
+        Wjkiabco = (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("a,c,j,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("b,i,k,n"));
+        Wjkiabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("a,k,j,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("c,b,i,n"));
+        Wjkiabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,i,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,k,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wkjiabco = 0.0;
       {
-        Wkjiabco  = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,i,n")).dot(ta_lt("a,b,i,m") * ta_lt("a,b,k,n"));
-        Wkjiabco += 2.0 * (g_cjkl_lt("c,j,k,m") * ta_lt("b,c,j,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("a,i,k,n"));
-        Wkjiabco += 2.0 * (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("b,k,j,n")).dot(ta_lt("a,b,i,m") * ta_lt("c,a,i,n"));
-        Wkjiabco += 2.0 * (g_cjkl_lt("c,j,k,m") * ta_lt("a,c,k,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("b,i,j,n"));
-        Wkjiabco += (g_cjkl_lt("c,j,k,m") *  g_cjkl_lt("a,j,k,n")).dot(ta_lt("a,b,i,m") * ta_lt("c,b,i,n"));
-        Wkjiabco += 2.0 * (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,k,i,n")).dot(ta_lt("a,b,i,m") * ta_lt("b,a,j,n"));
+        Wkjiabco  = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,i,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,k,n"));
+        Wkjiabco += 2.0 * (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("b,c,j,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,i,k,n"));
+        Wkjiabco += 2.0 * (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("b,k,j,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("c,a,i,n"));
+        Wkjiabco += 2.0 * (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("a,c,k,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("b,i,j,n"));
+        Wkjiabco += (g_cjkl_lt("c,j,k,m") *  g_cjkl_lt("a,j,k,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("c,b,i,n"));
+        Wkjiabco += 2.0 * (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,k,i,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,j,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wikjabco = 0.0;
       {
-        Wikjabco  = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,k,j,n")).dot(ta_lt("a,b,i,m") * ta_lt("a,b,i,n"));
-        Wikjabco += 2.0 * (g_cjkl_lt("c,j,k,m") * ta_lt("b,c,k,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("a,j,i,n"));
-        Wikjabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("b,j,k,n")).dot(ta_lt("a,b,i,m") * ta_lt("a,c,i,n"));
-        Wikjabco += 2.0 * (g_cjkl_lt("c,j,k,m") * ta_lt("c,b,j,n")).dot(ta_lt("a,b,i,m") * g_cjkl_lt("a,k,i,n"));
+        Wikjabco  = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,k,j,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,i,n"));
+        Wikjabco += 2.0 * (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("b,c,k,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,j,i,n"));
+        Wikjabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("b,j,k,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,c,i,n"));
+        Wikjabco += 2.0 * (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("c,b,j,n")).dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,k,i,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wjikabco = 0.0;
       {
-        Wjikabco  = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,i,k,n")).dot(ta_lt("a,b,i,m") * ta_lt("a,b,j,n"));
-        Wjikabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,k,n")).dot(ta_lt("a,b,i,m") * ta_lt("b,a,i,n"));
+        Wjikabco  = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,i,k,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,j,n"));
+        Wjikabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,k,n")).dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,i,n"));
       }
 
       this->wfn_world()->world().gop.fence();
@@ -1275,147 +1275,147 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       double Wijkabcuo = 0.0;
       {
-        Wijkabcuo  = (g_dabi_lt("e,a,b,i") * ta_lt("a,b,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,j,k,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,k,i,n")).dot(t_lt("e,c,j,k") * ta_lt("b,c,j,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,j,n")).dot(t_lt("e,c,j,k") * ta_lt("c,a,k,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("a,c,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("b,k,j,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,j,i,n")).dot(t_lt("e,c,j,k") * ta_lt("c,b,k,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("b,a,j,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,i,k,n"));
+        Wijkabcuo  = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,j,k,n"));
+        Wijkabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,k,i,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("b,c,j,n"));
+        Wijkabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,j,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,a,k,n"));
+        Wijkabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,c,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,k,j,n"));
+        Wijkabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,j,i,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,b,k,n"));
+        Wijkabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,j,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,k,n"));
       };
-
+      this->wfn_world()->world().gop.fence();
       double Wkijabcuo = 0.0;
       {
-        Wkijabcuo  = (g_dabi_lt("e,a,b,i") * ta_lt("a,b,k,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,i,j,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("b,c,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("a,j,k,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,k,i,n")).dot(t_lt("e,c,j,k") * ta_lt("c,a,j,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,j,i,n")).dot(t_lt("e,c,j,k") * ta_lt("a,c,k,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,k,n")).dot(t_lt("e,c,j,k") * ta_lt("c,b,j,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("b,a,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,k,j,n"));
+        Wkijabcuo  = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,k,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,j,n"));
+        Wkijabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,c,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,j,k,n"));
+        Wkijabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,k,i,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,a,j,n"));
+        Wkijabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,j,i,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,k,n"));
+        Wkijabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,k,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,b,j,n"));
+        Wkijabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,k,j,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wjkiabcuo = 0.0;
       {
-        Wjkiabcuo  = (g_dabi_lt("e,a,b,i") * ta_lt("a,b,j,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,k,i,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,j,n")).dot(t_lt("e,c,j,k") * ta_lt("b,c,k,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("c,a,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("b,j,k,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,k,n")).dot(t_lt("e,c,j,k") * ta_lt("a,c,j,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("c,b,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("a,k,j,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("b,a,k,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,j,i,n"));
+        Wjkiabcuo  = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,j,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,k,i,n"));
+        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,j,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("b,c,k,n"));
+        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,a,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,j,k,n"));
+        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,k,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,j,n"));
+        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,b,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,k,j,n"));
+        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,k,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,j,i,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wkjiabcuo = 0.0;
       {
-        Wkjiabcuo  = (g_dabi_lt("e,a,b,i") * ta_lt("a,b,k,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,j,i,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,k,n")).dot(t_lt("e,c,j,k") * ta_lt("b,c,j,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("c,a,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("b,k,j,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,j,n")).dot(t_lt("e,c,j,k") * ta_lt("a,c,k,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") *  ta_lt("c,b,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("a,j,k,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("b,a,j,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,k,i,n"));
+        Wkjiabcuo  = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,k,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,j,i,n"));
+        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,k,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("b,c,j,n"));
+        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,a,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,k,j,n"));
+        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,j,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,k,n"));
+        Wkjiabcuo += (g_dabi_lt("e,a,b,i") *  t2_ouu_lt("c,b,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,j,k,n"));
+        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,j,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,k,i,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wikjabcuo = 0.0;
       {
-        Wikjabcuo  = (g_dabi_lt("e,a,b,i") * ta_lt("a,b,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,k,j,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,j,i,n")).dot(t_lt("e,c,j,k") * ta_lt("b,c,k,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,k,n")).dot(t_lt("e,c,j,k") * ta_lt("c,a,j,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("a,c,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("b,j,k,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,k,i,n")).dot(t_lt("e,c,j,k") * ta_lt("c,b,j,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("b,a,k,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,i,j,n"));
+        Wikjabcuo  = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,k,j,n"));
+        Wikjabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,j,i,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("b,c,k,n"));
+        Wikjabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,k,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,a,j,n"));
+        Wikjabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,c,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,j,k,n"));
+        Wikjabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,k,i,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,b,j,n"));
+        Wikjabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,k,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,j,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wjikabcuo = 0.0;
       {
-        Wjikabcuo  = (g_dabi_lt("e,a,b,i") * ta_lt("a,b,j,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,i,k,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("b,c,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("a,k,j,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,j,i,n")).dot(t_lt("e,c,j,k") * ta_lt("c,a,k,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,k,i,n")).dot(t_lt("e,c,j,k") * ta_lt("a,c,j,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,j,n")).dot(t_lt("e,c,j,k") * ta_lt("c,b,k,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * ta_lt("b,a,i,n")).dot(t_lt("e,c,j,k") * g_cjkl_lt("c,j,k,n"));
+        Wjikabcuo  = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,j,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,k,n"));
+        Wjikabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,c,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,k,j,n"));
+        Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,j,i,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,a,k,n"));
+        Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,k,i,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,j,n"));
+        Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,j,n")).dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,b,k,n"));
+        Wjikabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,i,n")).dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,j,k,n"));
       }
       this->wfn_world()->world().gop.fence();
 
       energy_muo = 4.0*Wijkabcuo + Wkijabcuo + Wjkiabcuo - 2.0*Wkjiabcuo - 2.0*Wikjabcuo - 2.0*Wjikabcuo;
 
       TArray g_abij_lt = g_abij_laplace_transform(g_abij, *this->orbital_energy(), n_occ, n_frozen, x(m));
-      TArray t1_lt = t1_ltfcn(t1, *this->orbital_energy(), n_occ, n_frozen, x(m));
+      TArray t1_lt = t1_laplace_transform(t1, *this->orbital_energy(), n_occ, n_frozen, x(m));
 
       double Wijkabcs = 0.0;
       {
-        Wijkabcs = 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,i")).dot(t1_lt("c,k") * t_lt("f,c,j,k"));
-        Wijkabcs += 2.0 * (g_abij_lt("a,b,i,j") * t_lt("f,a,k,i")).dot(t1_lt("c,k") * g_dabi_lt("f,b,c,j"));
-        Wijkabcs += 2.0 * (g_abij_lt("a,b,i,j") * t_lt("f,b,i,j")) * (t1_lt("c,k") * g_dabi_lt("f,c,a,k"));
+        Wijkabcs = 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,i")).dot(t1_lt("c,k") * t2_oou_lt("f,c,j,k"));
+        Wijkabcs += 2.0 * (g_abij_lt("a,b,i,j") * t2_oou_lt("f,a,k,i")).dot(t1_lt("c,k") * g_dabi_lt("f,b,c,j"));
+        Wijkabcs += 2.0 * (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,i,j")) * (t1_lt("c,k") * g_dabi_lt("f,c,a,k"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wkijabcs = 0.0;
       {
-        Wkijabcs  = 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,k")).dot(t1_lt("c,k") * t_lt("f,c,i,j"));
-        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,c,i")).dot(t1_lt("c,k") * t_lt("f,a,j,k"));
-        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * t_lt("f,b,k,i")).dot(t1_lt("c,k") * g_dabi_lt("f,c,a,j"));
-        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * t_lt("f,b,j,i")).dot(t1_lt("c,k") * g_dabi_lt("f,a,c,k"));
-        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * t_lt("f,a,i,k")).dot(t1_lt("c,k") * g_dabi_lt("f,c,b,j"));
-        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,a,i")).dot(t1_lt("c,k") * t_lt("f,c,k,j"));
+        Wkijabcs  = 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,k")).dot(t1_lt("c,k") * t2_oou_lt("f,c,i,j"));
+        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,c,i")).dot(t1_lt("c,k") * t2_oou_lt("f,a,j,k"));
+        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,k,i")).dot(t1_lt("c,k") * g_dabi_lt("f,c,a,j"));
+        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,j,i")).dot(t1_lt("c,k") * g_dabi_lt("f,a,c,k"));
+        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * t2_oou_lt("f,a,i,k")).dot(t1_lt("c,k") * g_dabi_lt("f,c,b,j"));
+        Wkijabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,a,i")).dot(t1_lt("c,k") * t2_oou_lt("f,c,k,j"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wjkiabcs = 0.0;
 
       double Wkjiabcs = 0.0;
       {
-        Wkjiabcs =  2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,k")).dot(t1_lt("c,k") * t_lt("f,c,j,i"));
-        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * t_lt("f,a,i,k")).dot(t1_lt("c,k") * g_dabi_lt("f,b,c,j"));
-        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,c,a,i")).dot(t1_lt("c,k") * t_lt("f,b,k,j"));
-        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * t_lt("f,b,i,j")).dot(t1_lt("c,k") * g_dabi_lt("f,a,c,k"));
-        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,c,b,i")).dot(t1_lt("c,k") * t_lt("f,a,j,k"));
-        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,a,j")).dot(t1_lt("c,k") * t_lt("f,c,k,i"));
+        Wkjiabcs =  2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,k")).dot(t1_lt("c,k") * t2_oou_lt("f,c,j,i"));
+        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * t2_oou_lt("f,a,i,k")).dot(t1_lt("c,k") * g_dabi_lt("f,b,c,j"));
+        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,c,a,i")).dot(t1_lt("c,k") * t2_oou_lt("f,b,k,j"));
+        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,i,j")).dot(t1_lt("c,k") * g_dabi_lt("f,a,c,k"));
+        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,c,b,i")).dot(t1_lt("c,k") * t2_oou_lt("f,a,j,k"));
+        Wkjiabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,a,j")).dot(t1_lt("c,k") * t2_oou_lt("f,c,k,i"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wikjabcs = 0.0;
 
       double Wjikabcs = 0.0;
       {
-        Wjikabcs =  2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,j")).dot(t1_lt("c,k") * t_lt("f,c,i,k"));
-        Wjikabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,c,i")).dot(t1_lt("c,k") * t_lt("f,a,k,j"));
-        Wjikabcs += 2.0 * (g_abij_lt("a,b,i,j") * t_lt("f,b,j,i")).dot(t1_lt("c,k") * g_dabi_lt("f,c,a,k"));
+        Wjikabcs =  2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,j")).dot(t1_lt("c,k") * t2_oou_lt("f,c,i,k"));
+        Wjikabcs += 2.0 * (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,c,i")).dot(t1_lt("c,k") * t2_oou_lt("f,a,k,j"));
+        Wjikabcs += 2.0 * (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,j,i")).dot(t1_lt("c,k") * g_dabi_lt("f,c,a,k"));
       }
       energy_ms = 4.0*Wijkabcs + Wkijabcs + Wjkiabcs - 2.0*Wkjiabcs - 2.0*Wikjabcs - 2.0*Wjikabcs;
-
+      this->wfn_world()->world().gop.fence();
 
 
       double Wijkabcos = 0.0;
       {
-        Wijkabcos  = 2.0 * (g_abij_lt("a,b,i,j") * ta_lt("a,b,i,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,j,k,n"));
-        Wijkabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,k,i,n")).dot(t1_lt("c,k") * ta_lt("b,c,j,n"));
-        Wijkabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,i,j,n")).dot(t1_lt("c,k") * ta_lt("c,a,k,n"));
+        Wijkabcos  = 2.0 * (g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,i,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,j,k,n"));
+        Wijkabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,k,i,n")).dot(t1_lt("c,k") * t2_ouu_lt("b,c,j,n"));
+        Wijkabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,i,j,n")).dot(t1_lt("c,k") * t2_ouu_lt("c,a,k,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wkijabcos = 0.0;
       {
-        Wkijabcos  = 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("c,i,j,n")).dot(t1_lt("c,k") * ta_lt("a,b,k,n"));
-        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,j,k,n")).dot(t1_lt("c,k") * ta_lt("b,c,i,n"));
-        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * ta_lt("c,a,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("b,k,i,n"));
-        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n")).dot(t1_lt("c,k") * ta_lt("a,c,k,n"));
-        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * ta_lt("c,b,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("a,i,k,n"));
-        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * ta_lt("b,a,i,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,k,j,n"));
+        Wkijabcos  = 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("c,i,j,n")).dot(t1_lt("c,k") * t2_ouu_lt("a,b,k,n"));
+        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,j,k,n")).dot(t1_lt("c,k") * t2_ouu_lt("b,c,i,n"));
+        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * t2_ouu_lt("c,a,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("b,k,i,n"));
+        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n")).dot(t1_lt("c,k") * t2_ouu_lt("a,c,k,n"));
+        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * t2_ouu_lt("c,b,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("a,i,k,n"));
+        Wkijabcos += 2.0 * (g_abij_lt("a,b,i,j") * t2_ouu_lt("b,a,i,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,k,j,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wjkiabcos = 0.0;
 
       double Wkjiabcos = 0.0;
       {
-        Wkjiabcos  = 2.0 * (g_abij_lt("a,b,i,j") * ta_lt("a,b,k,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,j,i,n"));
-        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") * ta_lt("b,c,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("a,i,k,n"));
-        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,k,j,n")).dot(t1_lt("c,k") * ta_lt("c,a,i,n"));
-        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,i,j,n")).dot(t1_lt("c,k") * ta_lt("a,c,k,n"));
-        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") *  g_cjkl_lt("a,j,k,n")).dot(t1_lt("c,k") * ta_lt("c,b,i,n"));
-        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") * ta_lt("b,a,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,k,i,n"));
+        Wkjiabcos  = 2.0 * (g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,k,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,j,i,n"));
+        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") * t2_ouu_lt("b,c,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("a,i,k,n"));
+        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,k,j,n")).dot(t1_lt("c,k") * t2_ouu_lt("c,a,i,n"));
+        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,i,j,n")).dot(t1_lt("c,k") * t2_ouu_lt("a,c,k,n"));
+        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") *  g_cjkl_lt("a,j,k,n")).dot(t1_lt("c,k") * t2_ouu_lt("c,b,i,n"));
+        Wkjiabcos += 2.0 * (g_abij_lt("a,b,i,j") * t2_ouu_lt("b,a,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,k,i,n"));
       }
-
+      this->wfn_world()->world().gop.fence();
       double Wikjabcos = 0.0;
 
       double Wjikabcos = 0.0;
       {
-        Wjikabcos  = 2.0 * (g_abij_lt("a,b,i,j") * ta_lt("a,b,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,i,k,n"));
-        Wjikabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,k,j,n")).dot(t1_lt("c,k") * ta_lt("b,c,i,n"));
-        Wjikabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n")).dot(t1_lt("c,k") * ta_lt("c,a,k,n"));
+        Wjikabcos  = 2.0 * (g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,j,n")).dot(t1_lt("c,k") * g_cjkl_lt("c,i,k,n"));
+        Wjikabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,k,j,n")).dot(t1_lt("c,k") * t2_ouu_lt("b,c,i,n"));
+        Wjikabcos += 2.0 * (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n")).dot(t1_lt("c,k") * t2_ouu_lt("c,a,k,n"));
       }
 
       this->wfn_world()->world().gop.fence();

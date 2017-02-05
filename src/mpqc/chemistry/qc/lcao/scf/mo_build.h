@@ -109,7 +109,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   utility::print_par(world, "ClosedShell OBS MO Build Time: ", mo_time, " S\n");
 
   return tre;
-};
+}
 
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(

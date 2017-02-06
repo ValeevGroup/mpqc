@@ -56,6 +56,15 @@ class RHF : public AOWavefunction<Tile, Policy>,
   // this is almost evil
   inline void set_fock(array_type f) { F_ = f; }
 
+  /// these implement Energy::Provider methods
+  bool can_evaluate(Energy* result) override;
+  void evaluate(Energy* result) override;
+
+  /// these implement OrbitalSpace::Provider methods
+  bool can_evaluate(OrbitalSpace<array_type>* result) override;
+  void evaluate(OrbitalSpace<array_type>* result, float target_precision,
+                std::size_t target_blocksize) override;
+
  protected:
   double energy_;
   std::size_t max_iter_;
@@ -113,15 +122,6 @@ class RHF : public AOWavefunction<Tile, Policy>,
   virtual void init_fock_builder();
   void compute_density();
   void build_F();
-
-  /// these implement Energy::Provider methods
-  bool can_evaluate(Energy* result) override;
-  void evaluate(Energy* result) override;
-
-  /// these implement OrbitalSpace::Provider methods
-  bool can_evaluate(OrbitalSpace<array_type>* result) override;
-  void evaluate(OrbitalSpace<array_type>* result, float target_precision,
-                std::size_t target_blocksize) override;
 
   const KeyVal kv_;
 };

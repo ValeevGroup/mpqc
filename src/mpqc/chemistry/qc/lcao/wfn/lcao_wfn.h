@@ -28,7 +28,7 @@ class LCAOWavefunction : public Wavefunction {
   using ArrayType = TA::DistArray<Tile, Policy>;
   using LCAOFactoryType = lcao::LCAOFactory<Tile, Policy>;
 
-// clang-format off
+  // clang-format off
   /**
    *  \brief The KeyVal constructor
    *
@@ -44,7 +44,7 @@ class LCAOWavefunction : public Wavefunction {
    * | \c "unocc_block_size" | int | \c "$obs_block_size" | the target block size of the unoccupied space |
    *
    */
-// clang-format on
+  // clang-format on
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     lcao_factory_ = lcao::detail::construct_lcao_factory<Tile, Policy>(kv);
 
@@ -197,6 +197,7 @@ class PeriodicLCAOWavefunction : public Wavefunction {
   using ArrayType = TA::DistArray<Tile, Policy>;
   using LCAOFactoryType = lcao::PeriodicLCAOFactory<Tile, Policy>;
 
+// clang-format off
   /**
    *  \brief The KeyVal constructor
    *
@@ -205,16 +206,13 @@ class PeriodicLCAOWavefunction : public Wavefunction {
    *
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | \c "frozen_core" | bool | true | if true, core electrons are not
-   * correlated |
-   * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space
-   * block size |
-   * | \c "occ_block_size" | int | \c "$obs_block_size" | the target block size
-   * of the occupied space |
-   * | \c "unocc_block_size" | int | \c "$obs_block_size" | the target block
-   * size of the unoccupied space |
+   * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
+   * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space block size |
+   * | \c "occ_block_size" | int | \c "$obs_block_size" | the target block size of the occupied space |
+   * | \c "unocc_block_size" | int | \c "$obs_block_size" | the target block size of the unoccupied space |
    *
    */
+// clang-format on
   PeriodicLCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     lcao_factory_ =
         lcao::detail::construct_periodic_lcao_factory<Tile, Policy>(kv);

@@ -42,6 +42,9 @@ class OrbitalSpace {
     /// @return true if \c OrbitalSpace can be computed.
     virtual bool can_evaluate(OrbitalSpace* ospace) = 0;
 
+    /// @return true if \c OrbitalSpace is available without additional computation.
+    virtual bool is_available(OrbitalSpace* ospace) = 0;
+
     /// @brief computes an OrbitalSpace and assigns to \c *ospace
 
     /// @param ospace pointer to the OrbitalSpace object that will contain the
@@ -231,6 +234,9 @@ class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
     /// @return true if \c DecoratedOrbitalSpace can be computed.
     virtual bool can_evaluate(DecoratedOrbitalSpace* space) = 0;
 
+    /// @return true if \c DecoratedOrbitalSpace is available without additional computation.
+    virtual bool is_available(DecoratedOrbitalSpace* ospace) = 0;
+
     /// @brief computes an DecoratedOrbitalSpace and assigns to \c *space
 
     /// @param space pointer to the DecoratedOrbitalSpace object that will
@@ -247,6 +253,8 @@ class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
         DecoratedOrbitalSpace* space, float target_precision = 0,
         std::size_t target_lcao_blocksize = default_lcao_blocksize) = 0;
   };
+
+  DecoratedOrbitalSpace() = default;
 
   /**
    * Constructor
@@ -291,12 +299,20 @@ class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
 namespace detail {
 template <std::size_t tag>
 struct AttributeTag {};
-using EnergyAttributeTag = AttributeTag<0>;
+using CanonicalAttributeTag = AttributeTag<0>;
+using PopulatedAttributeTag = AttributeTag<1>;
 }  // namespace detail
 
+/// Canonical orbitals are decorated by energies, in each irrep block appear in
+/// the order of increasing enegry
 template <typename Array>
 using CanonicalOrbitalSpace =
-    DecoratedOrbitalSpace<Array, double, detail::EnergyAttributeTag>;
+    DecoratedOrbitalSpace<Array, double, detail::CanonicalAttributeTag>;
+
+/// Populated orbitals are decorated by occupancies, no order assumed
+template <typename Array>
+using PopulatedOrbitalSpace =
+    DecoratedOrbitalSpace<Array, double, detail::PopulatedAttributeTag>;
 
 /// @}
 

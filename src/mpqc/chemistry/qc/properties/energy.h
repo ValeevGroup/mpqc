@@ -68,7 +68,7 @@ private:
 
   static KeyVal make_kv(std::shared_ptr<Wavefunction> wfn) {
     KeyVal kv;
-    kv.assign("ref", wfn);
+    kv.assign("wfn", wfn);
     return kv;
   }
 

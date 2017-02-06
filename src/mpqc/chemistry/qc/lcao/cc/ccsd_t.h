@@ -1080,6 +1080,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     return triple_energy;
   }
 
+  //this function uses Gauss-Lobatto approach for obtaining quadrature roots and weights.
+  //Taken from paper: Gaussian Quadrature and the Eigenvalue Problem by John A. Gubner.
+  //http://gubner.ece.wisc.edu/gaussquad.pdf
+  //The code is outlined at Example 15: Legendre polynomials
   void gauss_quad(int N, double a, double b, Eigen::VectorXd &w, Eigen::VectorXd &x) {
 
     Eigen::MatrixXd J;
@@ -1095,7 +1099,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     x = es.eigenvalues();
     Eigen::MatrixXd V = es.eigenvectors();
 
-    for (int i = 0; i < N; i++) {
+    for (auto i = 0; i < N; i++) {
       w(i) = 0.5*2.0*(b-a)*V(0,i)*V(0,i);
       x(i) = (b-a)*0.5*x(i) + (b+a)*0.5;
     }
@@ -1440,7 +1444,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     }
 
     triple_energy_total = -triple_energy_total/alpha;
-    std::cout << "triple_energy_total = " << triple_energy_total/3.0 << std::endl;
 
     triple_energy = triple_energy_total/3.0;
 

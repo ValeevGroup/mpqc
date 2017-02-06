@@ -52,7 +52,7 @@ class OrbitalSpace {
     ///        etc.)
     /// @param target_lcao_blocksize optional parameter to determine the average
     ///        blocksize of the LCAO dimension (blocking of the AO dimension is
-    ///        detetermined by the clustering of the Molecule). May be ignored,
+    ///        determined by the clustering of the Molecule). May be ignored,
     ///        hence it is recommended to reblock the coefficients as needed.
     virtual void evaluate(
         OrbitalSpace* ospace, float target_precision = 0,

@@ -38,7 +38,7 @@ class LCAOWavefunction : public Wavefunction {
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
-   * | \c "charge" | int | 0 | the net charge of the molecule |
+   * | \c "charge" | int | 0 | the net charge of the molecule (derived classes may refine the meaning of this keyword) |
    * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space block size |
    * | \c "occ_block_size" | int | \c "$obs_block_size" | the target block size of the occupied space |
    * | \c "unocc_block_size" | int | \c "$obs_block_size" | the target block size of the unoccupied space |
@@ -50,17 +50,17 @@ class LCAOWavefunction : public Wavefunction {
 
     frozen_core_ = kv.value<bool>("frozen_core", true);
 
-    const auto net_charge = kv.value<int>("charge", 0);
-    if (this->atoms()->total_atomic_number() <= net_charge)
+    charge_ = kv.value<int>("charge", 0);
+    if (this->atoms()->total_atomic_number() <= charge_)
       throw InputError(
           "net charge cannot be greater than the sum of atomic numbers",
           __FILE__, __LINE__, "charge");
-    const auto nelectrons = this->atoms()->total_atomic_number() - net_charge;
+    const auto nelectrons = this->atoms()->total_atomic_number() - charge_;
+    // TODO remove this when have open-shell capability
     if (nelectrons % 2 != 0)
       throw InputError(
           "LCAOWavefunction for now requires an even number of electrons",
           __FILE__, __LINE__, "charge");
-    ndocc_ = nelectrons / 2;
     std::size_t mo_block = kv.value<int>("obs_block_size", 24);
     occ_block_ = kv.value<int>("occ_block_size", mo_block);
     unocc_block_ = kv.value<int>("unocc_block_size", mo_block);
@@ -100,26 +100,33 @@ class LCAOWavefunction : public Wavefunction {
                     << " electrons" << std::endl;
       n_frozen_core = n_core_electrons / 2;
     }
+    const auto nelectrons = this->atoms()->total_atomic_number() - charge_;
+    if (nelectrons % 2 != 0)
+      throw ProgrammingError(
+          "LCAOWavefunction::init_sdref: closed-shell determinant requires an "
+          "even number of electrons",
+          __FILE__, __LINE__);
+    const auto ndocc = nelectrons / 2;
 
     // divide the LCAO space into subspaces using Eigen .. boo
     RowMatrixXd C_obs = array_ops::array_to_eigen(obs_space->coefs());
     const auto nobs = C_obs.cols();
     const auto nao = C_obs.rows();
-    RowMatrixXd C_occ = C_obs.block(0, 0, C_obs.rows(), ndocc_);
+    RowMatrixXd C_occ = C_obs.block(0, 0, C_obs.rows(), ndocc);
     RowMatrixXd C_corr_occ =
-        C_occ.block(0, n_frozen_core, nao, ndocc_ - n_frozen_core);
-    RowMatrixXd C_unocc = C_obs.rightCols(nobs - ndocc_);
+        C_occ.block(0, n_frozen_core, nao, ndocc - n_frozen_core);
+    RowMatrixXd C_unocc = C_obs.rightCols(nobs - ndocc);
 
     ExEnv::out0() << indent << "OccBlockSize: " << occ_block_ << std::endl;
     ExEnv::out0() << indent << "UnoccBlockSize: " << unocc_block_ << std::endl;
 
-    auto tre = std::make_shared<TRange1Engine>(ndocc_, nobs, occ_block_,
+    auto tre = std::make_shared<TRange1Engine>(ndocc, nobs, occ_block_,
                                                unocc_block_, n_frozen_core);
 
     // get all the trange1s
     auto tr_ao = obs_space->coefs().trange().data()[0];
     auto tr_corr_occ = tre->get_active_occ_tr1();
-    auto tr_occ = tre->compute_range(ndocc_, occ_block_);
+    auto tr_occ = tre->compute_range(ndocc, occ_block_);
     auto tr_vir = tre->get_vir_tr1();
     auto tr_all = tre->get_all_tr1();
 
@@ -169,8 +176,7 @@ class LCAOWavefunction : public Wavefunction {
   }
 
   bool is_frozen_core() const { return frozen_core_; }
-  /// @return # of the doubly-occupied orbitals
-  size_t ndocc() const { return ndocc_; }
+  int charge() const { return charge_; }
   size_t occ_block() const { return occ_block_; }
   size_t unocc_block() const { return unocc_block_; }
 
@@ -181,7 +187,7 @@ class LCAOWavefunction : public Wavefunction {
  private:
   std::shared_ptr<LCAOFactoryType> lcao_factory_;
   bool frozen_core_;
-  std::size_t ndocc_;
+  int charge_;
   std::size_t occ_block_;
   std::size_t unocc_block_;
 };

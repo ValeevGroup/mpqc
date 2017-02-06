@@ -59,6 +59,10 @@ public:
   Energy(std::shared_ptr<Wavefunction> wfn, double prec) :
     WavefunctionProperty(make_kv(wfn), prec) {}
 
+  double energy() { return this->value()->value(); }
+  const std::vector<double>& gradient() { return this->value()->gradient(); }
+  const std::vector<double>& hessian() { return this->value()->hessian(); }
+
 private:
   void do_evaluate() override;
 

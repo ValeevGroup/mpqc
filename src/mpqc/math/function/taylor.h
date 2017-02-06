@@ -45,6 +45,16 @@ class TaylorExpansionCoefficients {
   const std::vector<Value>& derivs(size_t N) const { return derivs_.at(N); }
   std::vector<Value>& derivs(size_t N) { return derivs_.at(N); }
 
+  /// useful shorthand for derivs(0)[0]
+  /// @ return the function value
+  const Value& value() const { return derivs(0)[0]; }
+  /// useful shorthand for derivs(1)
+  /// @ return the function gradient
+  const std::vector<Value>& gradient() const { return derivs(1); }
+  /// useful shorthand for derivs(2)
+  /// @ return the function gradient
+  const std::vector<Value>& hessian() const { return derivs(2); }
+
   /// @return the order of the expansion, i.e. the maximum derivative order
   /// @throw ProgrammingError if this object is not initialized
   size_t order() const {

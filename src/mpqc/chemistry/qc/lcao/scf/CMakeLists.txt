@@ -1,18 +1,35 @@
 set(sources
-        eigen_solve_density_builder.h
-        eigen_solve_density_builder_impl.h
-        linkage.cpp
-        linkage.h
-        rhf.h
-        rhf_impl.h
-        rhf.cpp
-        mo_build.h
-        orbital_localization.h
-        orbital_localization.cpp
-        purification_density_build.h
-        purification_density_build_impl.h
-        util.h
-   )
+builder.h
+cadf_builder.h
+cadf_builder_forced_shape.h
+cadf_builder_print_only.h
+cadf_fitting_coeffs.h
+cadf_helper_functions.h
+clr_cadf_builder.h
+clusterd_coeffs.h
+density_builder.h
+diagonalize_for_coeffs.h
+eigen_solve_density_builder.h
+eigen_solve_density_builder_impl.h
+linear_cadf_builder.h
+linkage.cpp
+linkage.h
+mo_build.h
+orbital_localization.cpp
+orbital_localization.h
+purification_density_build.h
+purification_density_build_impl.h
+rhf.cpp
+rhf.h
+rhf_impl.h
+soad.h
+ta_shape_tracker.h
+traditional_df_fock_builder.h
+traditional_four_center_fock_builder.h
+util.h
+zrhf.cpp
+zrhf.h
+)
 
 if(TA_DEFAULT_POLICY EQUAL 1)
 list(APPEND sources

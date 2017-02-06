@@ -48,11 +48,12 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     const auto n_frozen = this->trange1_engine()->get_nfrozen();
     const auto n_vir = this->trange1_engine()->get_vir();
 
-    const auto& ens = *this->orbital_energy();
+    auto F = lcao_factory.compute(L"(p|F|q)");
+    const auto eps_p = array_ops::array_to_eigen(T).diagonal();
     // replicated diagonal elements of Fo
-    const auto eps_o = ens.segment(n_frozen, n_active_occ);
+    const auto eps_o = eps_p.segment(n_frozen, n_active_occ);
     // replicated diagonal elements of Fv
-    const auto eps_v = ens.segment(n_frozen + n_active_occ, n_vir);
+    const auto eps_v = eps_p.segment(n_frozen + n_active_occ, n_vir);
 
     // compute integrals
     auto& lcao_factory = this->lcao_factory();

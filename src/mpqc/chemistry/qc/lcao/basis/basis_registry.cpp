@@ -46,7 +46,8 @@ gaussian::OrbitalBasisRegistry::OrbitalRegistry(const KeyVal& kv)
 
 template <>
 void gaussian::OrbitalBasisRegistry::clear() {
-  // purge bases that do not update their state automatically, i.e. non-AtomicBasis bases
+  // purge bases that do not update their state automatically, i.e.
+  // non-AtomicBasis bases
   this->purge_if([](const value_type& val) -> bool {
     return !static_cast<bool>(
         std::dynamic_pointer_cast<gaussian::AtomicBasis>(val.second));

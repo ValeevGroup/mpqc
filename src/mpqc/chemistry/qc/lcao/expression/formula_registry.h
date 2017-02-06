@@ -79,20 +79,24 @@ class Registry {
     return iter != registry_.end();
   }
 
-  /// find item, return iterator, if not found, throw
+  /// find item by key, return non-const reference to the value
+  /// @param key the item key
+  /// @throw ProgrammingError if \c key not found
   Value& retrieve(const Key& key) {
     auto iter = registry_.find(key);
     if (iter == registry_.end()) {
-      throw std::runtime_error("Key not found!");
+      throw ProgrammingError("Registry::retrieve: key not found", __FILE__, __LINE__);
     }
     return iter->second;
   }
 
-  /// find item, return const iterator, if not found, throw
+  /// find item by key, return const reference to the value
+  /// @param key the item key
+  /// @throw ProgrammingError if \c key not found
   const Value& retrieve(const Key& key) const {
     auto iter = registry_.find(key);
     if (iter == registry_.cend()) {
-      throw std::runtime_error("Key not found!");
+      throw ProgrammingError("Registry::retrieve: key not found", __FILE__, __LINE__);
     }
     return iter->second;
   }

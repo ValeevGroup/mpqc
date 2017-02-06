@@ -7,8 +7,6 @@ linkage.cpp
 linkage.h
 spin.cpp
 spin.h
-trange1_engine.cpp
-trange1_engine.h
 wfn_forward.h
 wfn_world.cpp
 wfn_world.h

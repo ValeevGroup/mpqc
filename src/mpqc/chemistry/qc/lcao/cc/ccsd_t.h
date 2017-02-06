@@ -60,6 +60,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   /// (T) energy
   double triples_energy_;
 
+  /// local TRange1Engine to allow reblocking
+  std::shared_ptr<const ::mpqc::utility::TRange1Engine> trange1_engine_;
+  const std::shared_ptr<const ::mpqc::utility::TRange1Engine>& local_trange1_engine() const {
+    return trange1_engine_;
+  }
+
  public:
 
   // clang-format off
@@ -182,11 +188,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     }
 
     // get trange1
-    auto tr_occ = this->trange1_engine_->get_active_occ_tr1();
-    auto tr_vir = this->trange1_engine_->get_vir_tr1();
+    auto tr_occ = this->local_trange1_engine()->get_active_occ_tr1();
+    auto tr_vir = this->local_trange1_engine()->get_vir_tr1();
 
-    auto n_tr_occ = this->trange1_engine_->get_active_occ_blocks();
-    auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
+    auto n_tr_occ = this->local_trange1_engine()->get_active_occ_blocks();
+    auto n_tr_vir = this->local_trange1_engine()->get_vir_blocks();
 
     // TiledRange1 for occ, unocc and inner contraction space
     auto n_tr_occ_inner = n_tr_occ;
@@ -196,8 +202,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       n_tr_vir_inner = tr_vir_inner_.tiles_range().second;
     }
 
-    std::size_t vir_block_size = this->trange1_engine_->get_vir_block_size();
-    std::size_t n_occ = this->trange1_engine_->get_active_occ();
+    std::size_t vir_block_size = this->local_trange1_engine()->get_vir_block_size();
+    std::size_t n_occ = this->local_trange1_engine()->get_active_occ();
     std::size_t n_blocks = n_tr_occ * n_tr_occ * n_tr_occ;
     double mem = (n_occ * n_occ * n_occ * vir_block_size * vir_block_size *
                   vir_block_size * 8) /
@@ -513,8 +519,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           if (b < a && c < b) {
             time00 = mpqc::now(this_world, accurate_time);
             auto ccsd_t_reduce = CCSD_T_Reduce(
-                this->orbital_energy(), this->trange1_engine_->get_occ(),
-                this->trange1_engine_->get_nfrozen(), offset);
+                this->orbital_energy(), this->local_trange1_engine()->get_occ(),
+                this->local_trange1_engine()->get_nfrozen(), offset);
             tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
             time01 = mpqc::now(this_world, accurate_time);
             reduce_time += mpqc::duration_in_s(time00, time01);
@@ -524,8 +530,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           else {
             time00 = mpqc::now(this_world, accurate_time);
             auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                this->orbital_energy(), this->trange1_engine_->get_occ(),
-                this->trange1_engine_->get_nfrozen(), offset);
+                this->orbital_energy(), this->local_trange1_engine()->get_occ(),
+                this->local_trange1_engine()->get_nfrozen(), offset);
             tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
             time01 = mpqc::now(this_world, accurate_time);
             reduce_time += mpqc::duration_in_s(time00, time01);
@@ -615,11 +621,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     }
 
     // get trange1
-    auto tr_occ = this->trange1_engine_->get_active_occ_tr1();
-    auto tr_vir = this->trange1_engine_->get_vir_tr1();
+    auto tr_occ = this->local_trange1_engine()->get_active_occ_tr1();
+    auto tr_vir = this->local_trange1_engine()->get_vir_tr1();
 
-    auto n_tr_occ = this->trange1_engine_->get_active_occ_blocks();
-    auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
+    auto n_tr_occ = this->local_trange1_engine()->get_active_occ_blocks();
+    auto n_tr_vir = this->local_trange1_engine()->get_vir_blocks();
     auto n_tr_occ_inner = n_tr_occ;
     auto n_tr_vir_inner = n_tr_vir;
     if (reblock_inner_) {
@@ -707,8 +713,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     std::size_t b_increase = increase;
     std::size_t c_increase = increase;
 
-    std::size_t occ_block_size = this->trange1_engine_->get_occ_block_size();
-    std::size_t vir_block_size = this->trange1_engine_->get_vir_block_size();
+    std::size_t occ_block_size = this->local_trange1_engine()->get_occ_block_size();
+    std::size_t vir_block_size = this->local_trange1_engine()->get_vir_block_size();
     std::size_t n_blocks =
         increase * increase * increase * n_tr_occ * n_tr_occ * n_tr_occ;
     double mem = (n_blocks * std::pow(occ_block_size, 3) *
@@ -944,8 +950,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           double tmp_energy = 0.0;
           if (b_end < a && c_end < b) {
             auto ccsd_t_reduce = CCSD_T_Reduce(
-                this->orbital_energy(), this->trange1_engine_->get_occ(),
-                this->trange1_engine_->get_nfrozen(), offset);
+                this->orbital_energy(), this->local_trange1_engine()->get_occ(),
+                this->local_trange1_engine()->get_nfrozen(), offset);
             tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
                           (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
                            t3("a,b,c,j,k,i") -
@@ -956,8 +962,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             tmp_energy *= 2;
           } else {
             auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                this->orbital_energy(), this->trange1_engine_->get_occ(),
-                this->trange1_engine_->get_nfrozen(), offset);
+                this->orbital_energy(), this->local_trange1_engine()->get_occ(),
+                this->local_trange1_engine()->get_nfrozen(), offset);
             tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
                           (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
                            t3("a,b,c,j,k,i") -
@@ -1035,8 +1041,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     std::array<std::size_t, 6> offset{{0, 0, 0, 0, 0, 0}};
 
     auto ccsd_t_reduce =
-        CCSD_T_Reduce(this->orbital_energy(), this->trange1_engine_->get_occ(),
-                      this->trange1_engine_->get_nfrozen(), offset);
+        CCSD_T_Reduce(this->orbital_energy(), this->local_trange1_engine()->get_occ(),
+                      this->local_trange1_engine()->get_nfrozen(), offset);
 
     double triple_energy =
         ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
@@ -1054,21 +1060,22 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     std::size_t b_occ = occ_block_size_;
     std::size_t b_vir = unocc_block_size_;
 
-    std::size_t occ = this->trange1_engine_->get_occ();
-    std::size_t vir = this->trange1_engine_->get_vir();
-    std::size_t all = this->trange1_engine_->get_all();
-    std::size_t n_frozen = this->trange1_engine_->get_nfrozen();
+    std::size_t occ = this->local_trange1_engine()->get_occ();
+    std::size_t vir = this->local_trange1_engine()->get_vir();
+    std::size_t all = this->local_trange1_engine()->get_all();
+    std::size_t n_frozen = this->local_trange1_engine()->get_nfrozen();
 
-    TA::TiledRange1 old_occ = this->trange1_engine_->get_active_occ_tr1();
-    TA::TiledRange1 old_vir = this->trange1_engine_->get_vir_tr1();
+    TA::TiledRange1 old_occ = this->local_trange1_engine()->get_active_occ_tr1();
+    TA::TiledRange1 old_vir = this->local_trange1_engine()->get_vir_tr1();
 
     // get occupied and virtual orbitals
     auto occ_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"i"));
     auto vir_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a"));
 
     if (reblock_) {
+      using TRange1Engine = ::mpqc::utility::TRange1Engine;
       auto new_tr1 =
-          std::make_shared<TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
+          std::make_shared<const TRange1Engine>(occ, all, b_occ, b_vir, n_frozen);
 
       TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
       TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
@@ -1076,7 +1083,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       mpqc::detail::parallel_print_range_info(world, new_occ, "CCSD(T) Occ");
       mpqc::detail::parallel_print_range_info(world, new_vir, "CCSD(T) Vir");
 
-      this->set_trange1_engine(new_tr1);
+      this->trange1_engine_ = new_tr1;
 
       TArray occ_convert =
           array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
@@ -1109,11 +1116,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     }
 
     if (reblock_inner_) {
-      auto &tr1 = this->trange1_engine();
+      auto &tr1 = this->local_trange1_engine();
+      using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
       // occ inner
       tr_occ_inner_ =
-          tr1->compute_range(tr1->get_active_occ(), inner_block_size_);
+          TRange1Engine::compute_range(tr1->get_active_occ(), inner_block_size_);
 
       mpqc::detail::parallel_print_range_info(world, tr_occ_inner_,
                                               "CCSD(T) OCC Inner");
@@ -1131,7 +1139,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       lcao_factory.orbital_space().add(inner_occ_space);
 
       // vir inner
-      tr_vir_inner_ = tr1->compute_range(vir, inner_block_size_);
+      tr_vir_inner_ = TRange1Engine::compute_range(vir, inner_block_size_);
       mpqc::detail::parallel_print_range_info(world, tr_vir_inner_,
                                               "CCSD(T) Vir Inner");
       auto vir_inner_convert =

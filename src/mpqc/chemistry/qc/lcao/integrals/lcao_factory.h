@@ -236,8 +236,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
     auto& left1 = orbital_space_registry_->retrieve(left_index1);
     auto& right1 = orbital_space_registry_->retrieve(right_index1);
 
-    auto tr1 = left1.coefs().trange().data()[1];
-    auto tr2 = right1.coefs().trange().data()[1];
+    auto tr1 = left1.trange();
+    auto tr2 = right1.trange();
 
     // create diagonal array
     result = array_ops::create_diagonal_array_from_eigen<Tile,Policy>(world_,tr1,tr2,1.0);

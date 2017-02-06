@@ -8,7 +8,7 @@
 #include "mpqc/chemistry/qc/lcao/expression/orbital_space.h"
 #include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
-#include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/util/keyval/keyval.h"
@@ -70,10 +70,7 @@ class LCAOWavefunction : public Wavefunction {
 
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
   void obsolete() override {
-    // obsolete factory
     lcao_factory_->obsolete();
-    trange1_engine_.reset();
-    // obsolete wfn
     Wavefunction::obsolete();
   }
 
@@ -119,6 +116,7 @@ class LCAOWavefunction : public Wavefunction {
     ExEnv::out0() << indent << "OccBlockSize: " << occ_block_ << std::endl;
     ExEnv::out0() << indent << "UnoccBlockSize: " << unocc_block_ << std::endl;
 
+    using TRange1Engine = ::mpqc::utility::TRange1Engine;
     auto tre = std::make_shared<TRange1Engine>(ndocc, nobs, occ_block_,
                                                unocc_block_, n_frozen_core);
 
@@ -162,21 +160,16 @@ class LCAOWavefunction : public Wavefunction {
     auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
     utility::print_par(world, "closed-shell OBS MO Build Time: ", mo_time,
                        " S\n");
-
-    assert(false && "not yet implemented");
   }
 
-  const std::shared_ptr<TRange1Engine> trange1_engine() const {
-    return trange1_engine_;
+  const std::shared_ptr<const ::mpqc::utility::TRange1Engine>& trange1_engine() const {
+    return lcao_factory_->orbital_space().trange1_engine();
   }
 
   bool is_frozen_core() const { return frozen_core_; }
   int charge() const { return charge_; }
   size_t occ_block() const { return occ_block_; }
   size_t unocc_block() const { return unocc_block_; }
-
- protected:
-  std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
 
  private:
   std::shared_ptr<LCAOFactoryType> lcao_factory_;
@@ -233,7 +226,7 @@ class PeriodicLCAOWavefunction : public Wavefunction {
     Wavefunction::obsolete();
   }
 
-  const std::shared_ptr<TRange1Engine> trange1_engine() const {
+  const std::shared_ptr<::mpqc::utility::TRange1Engine> trange1_engine() const {
     return trange1_engine_;
   }
 
@@ -247,7 +240,7 @@ class PeriodicLCAOWavefunction : public Wavefunction {
 
  protected:
   std::shared_ptr<Eigen::VectorXd> orbital_energy_;
-  std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
+  std::shared_ptr<::mpqc::utility::TRange1Engine> trange1_engine_;
 
  private:
   std::shared_ptr<LCAOFactoryType> lcao_factory_;

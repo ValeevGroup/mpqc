@@ -9,13 +9,13 @@
 
 #include "mpqc/chemistry/qc/lcao/expression/orbital_registry.h"
 #include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
-#include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 
 namespace mpqc {
 namespace lcao {
 
 template <typename Tile, typename Policy>
-std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
+std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
     LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens, std::size_t nocc,
     const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
     std::size_t vir_blocksize) {
@@ -64,6 +64,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
   std::size_t all = S.trange().elements_range().extent()[0];
+  using TRange1Engine = ::mpqc::utility::TRange1Engine;
   auto tre = std::make_shared<TRange1Engine>(nocc, all, occ_blocksize,
                                              vir_blocksize, n_frozen_core);
 
@@ -114,7 +115,7 @@ std::shared_ptr<TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
     LCAOFactory<Tile, Policy> &lcao_factory,
-    const std::shared_ptr<TRange1Engine> tre, std::size_t vir_blocksize) {
+    const std::shared_ptr<::mpqc::utility::TRange1Engine> tre, std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_factory.world();
@@ -219,7 +220,7 @@ void closed_shell_cabs_mo_build_svd(
 };
 
 template <typename Tile, typename Policy>
-std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
+std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
     LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens, std::size_t nocc,
     const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
     std::size_t vir_blocksize) {
@@ -297,6 +298,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
   utility::print_par(world, "OccBlockSize: ", occ_blocksize, "\n");
   utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
 
+  using TRange1Engine = ::mpqc::utility::TRange1Engine;
   auto tre = std::make_shared<TRange1Engine>(nocc, nbf_vbs, occ_blocksize,
                                              vir_blocksize, n_frozen_core);
   auto tr_obs = S.trange().data().back();
@@ -375,7 +377,7 @@ std::shared_ptr<TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
 template <typename Tile, typename Policy>
 void closed_shell_dualbasis_cabs_mo_build_svd(
     LCAOFactory<Tile, Policy> &lcao_factory,
-    const std::shared_ptr<TRange1Engine> tre, std::string ri_method,
+    const std::shared_ptr<::mpqc::utility::TRange1Engine> tre, std::string ri_method,
     std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &orbital_registry = lcao_factory.orbital_space();

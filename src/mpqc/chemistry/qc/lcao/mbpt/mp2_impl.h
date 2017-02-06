@@ -12,7 +12,7 @@ namespace detail {
 template <typename Tile, typename Policy>
 double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
                    std::shared_ptr<Eigen::VectorXd> orbital_energy,
-                   std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df) {
+                   std::shared_ptr<::mpqc::utility::TRange1Engine> tr1_engine, bool df) {
   auto& world = lcao_factory.world();
   TA::DistArray<Tile, Policy> g_ijab;
   g_ijab = lcao_factory.compute(df ? L"<i j|G|a b>[df]" : L"<i j|G|a b>");

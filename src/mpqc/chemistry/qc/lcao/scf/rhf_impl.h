@@ -14,7 +14,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_df_fock_builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/traditional_four_center_fock_builder.h"
-#include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/util/external/c++/memory"
 #include "mpqc/util/misc/time.h"
 #include <madness/world/worldmem.h>
@@ -282,6 +282,7 @@ void RHF<Tile, Policy>::evaluate(OrbitalSpace<array_type>* result,
     auto C = es.eigenvectors();
 
     auto nobs = S_.elements_range().extent()[0];
+    using TRange1Engine = ::mpqc::utility::TRange1Engine;
     auto tre = std::make_shared<TRange1Engine>(
         nelectrons_ / 2, nobs, target_blocksize, target_blocksize, 0);
 

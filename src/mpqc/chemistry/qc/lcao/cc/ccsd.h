@@ -13,7 +13,7 @@
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
-#include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/mpqc_config.h"
 
 
@@ -128,10 +128,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     orbital_energy_.reset();
     LCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
-  }
-
-  void set_trange1_engine(const std::shared_ptr<TRange1Engine> &tr1) {
-    this->trange1_engine_ = tr1;
   }
 
   // get T1 amplitudes

@@ -77,7 +77,7 @@ struct Mp2Energy {
 template <typename Tile, typename Policy>
 double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
                    std::shared_ptr<Eigen::VectorXd> orbital_energy,
-                   std::shared_ptr<mpqc::TRange1Engine> tr1_engine, bool df);
+                   std::shared_ptr<::mpqc::utility::TRange1Engine> tr1_engine, bool df);
 
 }  // namespace detail
 }  // namespace mbpt

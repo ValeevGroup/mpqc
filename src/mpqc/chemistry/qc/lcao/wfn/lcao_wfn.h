@@ -6,9 +6,9 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_LCAO_WFN_H_
 
 #include "mpqc/chemistry/qc/lcao/expression/orbital_space.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
-#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/util/keyval/keyval.h"
@@ -74,13 +74,21 @@ class LCAOWavefunction : public Wavefunction {
     Wavefunction::obsolete();
   }
 
+  /// @brief initializes the orbital spaces associated with a (closed-shell, for
+  /// now)
+  /// single-determinant reference state
+
+  /// @param ref_wfn the reference wave function; expected to provide either
+  ///                CanonicalOrbitalSpace or PopulatedOrbitalSpace
+  /// @param target_ref_precision the precision with which to compute the
+  ///                orbitals (also see OrbitalSpace::Provider::evaluate())
   virtual void init_sdref(std::shared_ptr<lcao::Wavefunction> ref_wfn,
                           double target_ref_precision) {
     using TArray = TA::DistArray<Tile, Policy>;
 
     // initialize the orbital spaces
-    std::shared_ptr<OrbitalSpace<TArray>> obs_space =
-        std::make_shared<OrbitalSpace<TArray>>();
+    std::shared_ptr<CanonicalOrbitalSpace<TArray>> obs_space =
+        std::make_shared<CanonicalOrbitalSpace<TArray>>();
     evaluate(*obs_space, ref_wfn, target_ref_precision);
 
     auto &lcao_factory = this->lcao_factory();
@@ -162,7 +170,8 @@ class LCAOWavefunction : public Wavefunction {
                        " S\n");
   }
 
-  const std::shared_ptr<const ::mpqc::utility::TRange1Engine>& trange1_engine() const {
+  const std::shared_ptr<const ::mpqc::utility::TRange1Engine> &trange1_engine()
+      const {
     return lcao_factory_->orbital_space().trange1_engine();
   }
 
@@ -190,7 +199,7 @@ class PeriodicLCAOWavefunction : public Wavefunction {
   using ArrayType = TA::DistArray<Tile, Policy>;
   using LCAOFactoryType = lcao::PeriodicLCAOFactory<Tile, Policy>;
 
-// clang-format off
+  // clang-format off
   /**
    *  \brief The KeyVal constructor
    *
@@ -205,7 +214,7 @@ class PeriodicLCAOWavefunction : public Wavefunction {
    * | \c "unocc_block_size" | int | \c "$obs_block_size" | the target block size of the unoccupied space |
    *
    */
-// clang-format on
+  // clang-format on
   PeriodicLCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     lcao_factory_ =
         lcao::detail::construct_periodic_lcao_factory<Tile, Policy>(kv);

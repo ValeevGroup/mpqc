@@ -167,10 +167,10 @@ class OrbitalSpace {
   size_t ao_rank() const { return coefs_.elements_range().extent_data()[0]; }
 
   /// @return the TiledRange1 object for this space
-  TA::TiledRange1 trange() const { return coefs_.trange().data()[1]; }
+  const TA::TiledRange1& trange() const { return coefs_.trange().data()[1]; }
 
   /// @return the tiled range object for the AO space that supports this
-  TA::TiledRange1 ao_trange() const { return coefs_.trange().data()[0]; }
+  const TA::TiledRange1& ao_trange() const { return coefs_.trange().data()[0]; }
 
   /// @return the \c std::string object that contains a brief description of
   /// this space

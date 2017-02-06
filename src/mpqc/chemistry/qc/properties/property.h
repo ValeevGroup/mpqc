@@ -171,13 +171,16 @@ T* to_pointer(T* obj) {
   return obj;
 }
 template <typename T>
-auto to_pointer(const T& obj)
-    -> std::enable_if_t<utility::meta::is_shared_ptr<T>::value,
-                        decltype(obj.get())> {
+auto to_pointer(T& obj) -> std::enable_if_t<
+    utility::meta::is_shared_ptr<typename std::decay<T>::type>::value,
+    decltype(obj.get())> {
   return obj.get();
 }
 template <typename T>
-typename std::decay<T>::type* to_pointer(T& obj) {
+std::enable_if_t<
+    !utility::meta::is_shared_ptr<typename std::decay<T>::type>::value,
+    typename std::decay<T>::type*>
+to_pointer(T& obj) {
   return &obj;
 }
 
@@ -197,9 +200,11 @@ std::string description(T* obj_ptr) {
 }  // namespace detail
 
 /// Evaluates \c property using \c provider
-template <typename Property, typename Provider>
-std::enable_if_t<detail::has_provider<Property>::value, Property&> operator<<(
-    Property& property, Provider& provider) {
+template <typename Property, typename Provider, typename... EvaluateArgs>
+std::enable_if_t<(detail::has_provider<Property>::value &&
+                  !std::is_const<Property>::value),
+                 void>
+evaluate(Property& property, Provider& provider, EvaluateArgs... eval_args) {
   auto provider_ptr = detail::to_pointer(provider);
   auto* evaluator = dynamic_cast<typename Property::Provider*>(provider_ptr);
   if (evaluator == nullptr) {
@@ -209,7 +214,14 @@ std::enable_if_t<detail::has_provider<Property>::value, Property&> operator<<(
         << ", needs to derive from an appropriate Provides<>";
     throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
   }
-  evaluator->evaluate(&property);
+  evaluator->evaluate(&property, eval_args...);
+}
+
+/// Evaluates \c property using \c provider
+template <typename Property, typename Provider>
+std::enable_if_t<detail::has_provider<Property>::value, Property&> operator<<(
+    Property& property, Provider& provider) {
+  evaluate(property, provider);
   return property;
 }
 

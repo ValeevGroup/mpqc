@@ -199,6 +199,99 @@ class OrbitalSpace {
   std::vector<Group::ordinal_type> irrep_indices_;
 };  // class OrbitalSpace
 
+/// @brief an OrbitalSpace where each orbital in addition to irrep
+///        has additional attributes
+
+/// @tparam Array the type that represents the expansion coefficients
+/// @tparam Attribute the type of decoration
+/// @tparam AttributeTag useful to distinguish instances of
+/// DecoratedOrbitalSpace with built-in
+///         Attributes
+template <typename Array, typename OrbitalAttribute,
+          typename AttributeTag = std::true_type>
+class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
+ public:
+  /**
+    *  every class that can provide DecoratedOrbitalSpace will publicly
+    *  inherit from DecoratedOrbitalSpace::Provider
+    *
+    *  @sa Provides
+    */
+  class Provider {
+   public:
+    static constexpr const std::size_t default_lcao_blocksize =
+        OrbitalSpace<Array>::Provider::default_lcao_blocksize;
+
+    /// @return true if \c DecoratedOrbitalSpace can be computed.
+    virtual bool can_evaluate(DecoratedOrbitalSpace* space) = 0;
+
+    /// @brief computes an DecoratedOrbitalSpace and assigns to \c *space
+
+    /// @param space pointer to the DecoratedOrbitalSpace object that will
+    ///        contain the result
+    /// @param target_precision optional precision parameter, its use
+    ///        depends on the type of Provider (some Providers will ignore it,
+    ///        some will use as the guidance on the precision of the energy,
+    ///        etc.)
+    /// @param target_lcao_blocksize optional parameter to determine the average
+    ///        blocksize of the LCAO dimension (blocking of the AO dimension is
+    ///        determined by the clustering of the Molecule). May be ignored,
+    ///        hence it is recommended to reblock the coefficients as needed.
+    virtual void evaluate(
+        DecoratedOrbitalSpace* space, float target_precision = 0,
+        std::size_t target_lcao_blocksize = default_lcao_blocksize) = 0;
+  };
+
+  /**
+   * Constructor
+   *
+   *  @param idx     an OrbitalIndex that represents this space; it is converted
+   *                 to the base index
+   *  @param ao_idx  an OrbitalIndex that represents the AO space supporting
+   *                 this space; it is converted to the base index
+   *  @param tarray  a TiledArray::DistArray type
+   *  @param attributes a vector of OrbitalAttribute objects
+   *  @param particle_type_tag an optional particle type tag (default is 0)
+   */
+  DecoratedOrbitalSpace(const OrbitalIndex& idx, const OrbitalIndex& ao_idx,
+                        const Array& tarray,
+                        const std::vector<OrbitalAttribute>& attributes)
+      : OrbitalSpace<Array>(idx, ao_idx, tarray), attributes_(attributes) {}
+
+  ~DecoratedOrbitalSpace() = default;
+
+  /// constructs this DecoratedOrbitalSpace using a visiting Provider
+  /// @tparam Visitor a class derived from OrbitalSpace::Provider
+  template <typename Visitor>
+  void evaluate(std::shared_ptr<Visitor> visitor) {
+    if (auto provider = std::dynamic_pointer_cast<Provider>(visitor)) {
+      provider->evaluate(*this);
+    } else
+      throw ProgrammingError(
+          "DecoratedOrbitalSpace::evaluate: visitor does not provide DecoratedOrbitalSpace "
+          "objects",
+          __FILE__, __LINE__);
+  }
+
+  const std::vector<OrbitalAttribute>& attributes() const {
+    return attributes_;
+  }
+
+ private:
+  std::vector<OrbitalAttribute> attributes_;
+
+};  // class DecoratedOrbitalSpace
+
+namespace detail {
+template <std::size_t tag>
+struct AttributeTag {};
+using EnergyAttributeTag = AttributeTag<0>;
+}  // namespace detail
+
+template <typename Array>
+using CanonicalOrbitalSpace =
+    DecoratedOrbitalSpace<Array, double, detail::EnergyAttributeTag>;
+
 /// @}
 
 }  // namespace lcao

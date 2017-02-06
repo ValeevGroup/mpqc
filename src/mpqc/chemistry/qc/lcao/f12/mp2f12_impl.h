@@ -214,12 +214,13 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
 
 template <typename Tile>
 void RMP2F12<Tile>::init() {
+  assert(false && "this must become LCAOWavefunction::init_sdref");
   auto mol = this->wfn_world()->atoms();
   Eigen::VectorXd orbital_energy;
   // initialize obs
-  this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-      this->lcao_factory(), orbital_energy, this->ndocc(), *mol, this->is_frozen_core(),
-      this->occ_block(), this->unocc_block());
+//  this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
+//      this->lcao_factory(), orbital_energy, this->ndocc(), *mol, this->is_frozen_core(),
+//      this->occ_block(), this->unocc_block());
 
   this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
 

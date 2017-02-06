@@ -72,7 +72,6 @@ class LCAOWavefunction : public Wavefunction {
   void obsolete() override {
     // obsolete factory
     lcao_factory_->obsolete();
-    orbital_energy_.reset();
     trange1_engine_.reset();
     // obsolete wfn
     Wavefunction::obsolete();
@@ -171,17 +170,12 @@ class LCAOWavefunction : public Wavefunction {
     return trange1_engine_;
   }
 
-  const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
-    return orbital_energy_;
-  }
-
   bool is_frozen_core() const { return frozen_core_; }
   int charge() const { return charge_; }
   size_t occ_block() const { return occ_block_; }
   size_t unocc_block() const { return unocc_block_; }
 
  protected:
-  std::shared_ptr<Eigen::VectorXd> orbital_energy_;
   std::shared_ptr<mpqc::TRange1Engine> trange1_engine_;
 
  private:

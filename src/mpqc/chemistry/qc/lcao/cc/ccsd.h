@@ -115,11 +115,17 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   double computed_precision_ = std::numeric_limits<double>::max();
   bool print_detail_;
   double ccsd_corr_energy_;
+  // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
+  std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+
+ protected:
+  std::shared_ptr<const Eigen::VectorXd> orbital_energy() { return orbital_energy_; }
 
  public:
 
   void obsolete() override {
     ccsd_corr_energy_ = 0.0;
+    orbital_energy_.reset();
     LCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
   }
@@ -175,6 +181,8 @@ protected:
       ::mpqc::evaluate(*ref_energy, ref_wfn_);
 
       this->init_sdref(ref_wfn_, target_ref_precision);
+
+      orbital_energy_ = make_orbital_energy();
 
       // set the precision
       target_precision_ = energy->target_precision(0);
@@ -237,12 +245,12 @@ private:
     TArray f_ai = this->get_fock_ai();
 
     // store d1 to local
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
 
-    t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
+    t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -506,7 +514,7 @@ private:
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+      d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
 
       r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -611,12 +619,12 @@ private:
     TArray f_ai = this->get_fock_ai();
 
     // store d1 to local
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
 
-    t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
+    t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -880,7 +888,7 @@ private:
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+      d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
 
       r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -977,12 +985,12 @@ private:
 
     TArray f_ai = this->get_fock_ai();
 
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
 
-    t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
+    t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
 
     //      std::cout << t1 << std::endl;
     //      std::cout << t2 << std::endl;
@@ -1253,7 +1261,7 @@ private:
           mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
         }
 
-        d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+        d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
 
         r2("a,b,i,j") -= t2("a,b,i,j");
       }
@@ -1496,6 +1504,15 @@ private:
     }
   }
 
+  /// <p|f|q>
+  const TArray get_fock_pq() {
+    if (df_) {
+      return this->lcao_factory().compute(L"<p|F|q>[df]");
+    } else {
+      return this->lcao_factory().compute(L"<p|F|q>");
+    }
+  }
+
   /// AO integral-direct computation of (ab|cd) ints contributions to the
   /// doubles resudual
 
@@ -1519,6 +1536,12 @@ private:
           "CCSD: integral-direct implementation used, but direct integral not "
           "initialized");
     }
+  }
+
+  /// computes the MO-basis Fock matrix and extracts the diagonal elements
+  std::shared_ptr<Eigen::VectorXd> make_orbital_energy() {
+    auto Fpq_eig = array_ops::array_to_eigen(this->get_fock_pq());
+    return std::make_shared<Eigen::VectorXd>(Fpq_eig.diagonal());
   }
 };  // class CCSD
 

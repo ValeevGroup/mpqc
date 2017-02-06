@@ -513,7 +513,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           if (b < a && c < b) {
             time00 = mpqc::now(this_world, accurate_time);
             auto ccsd_t_reduce = CCSD_T_Reduce(
-                this->orbital_energy_, this->trange1_engine_->get_occ(),
+                this->orbital_energy(), this->trange1_engine_->get_occ(),
                 this->trange1_engine_->get_nfrozen(), offset);
             tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
             time01 = mpqc::now(this_world, accurate_time);
@@ -524,7 +524,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           else {
             time00 = mpqc::now(this_world, accurate_time);
             auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                this->orbital_energy_, this->trange1_engine_->get_occ(),
+                this->orbital_energy(), this->trange1_engine_->get_occ(),
                 this->trange1_engine_->get_nfrozen(), offset);
             tmp_energy = result("a,b,c,i,j,k").reduce(ccsd_t_reduce);
             time01 = mpqc::now(this_world, accurate_time);
@@ -944,7 +944,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           double tmp_energy = 0.0;
           if (b_end < a && c_end < b) {
             auto ccsd_t_reduce = CCSD_T_Reduce(
-                this->orbital_energy_, this->trange1_engine_->get_occ(),
+                this->orbital_energy(), this->trange1_engine_->get_occ(),
                 this->trange1_engine_->get_nfrozen(), offset);
             tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
                           (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
@@ -956,7 +956,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             tmp_energy *= 2;
           } else {
             auto ccsd_t_reduce = CCSD_T_ReduceSymm(
-                this->orbital_energy_, this->trange1_engine_->get_occ(),
+                this->orbital_energy(), this->trange1_engine_->get_occ(),
                 this->trange1_engine_->get_nfrozen(), offset);
             tmp_energy = ((t3("a,b,c,i,j,k") + v3("a,b,c,i,j,k")) *
                           (4.0 * t3("a,b,c,i,j,k") + t3("a,b,c,k,i,j") +
@@ -1035,7 +1035,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     std::array<std::size_t, 6> offset{{0, 0, 0, 0, 0, 0}};
 
     auto ccsd_t_reduce =
-        CCSD_T_Reduce(this->orbital_energy_, this->trange1_engine_->get_occ(),
+        CCSD_T_Reduce(this->orbital_energy(), this->trange1_engine_->get_occ(),
                       this->trange1_engine_->get_nfrozen(), offset);
 
     double triple_energy =
@@ -1234,12 +1234,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     typedef double result_type;
     typedef Tile argument_type;
 
-    std::shared_ptr<Eigen::VectorXd> vec_;
+    std::shared_ptr<const Eigen::VectorXd> vec_;
     std::size_t n_occ_;
     std::size_t n_frozen_;
     std::array<std::size_t, 6> offset_;
 
-    ReduceBase(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
+    ReduceBase(std::shared_ptr<const Eigen::VectorXd> vec, std::size_t n_occ,
                std::size_t n_frozen, std::array<std::size_t, 6> offset)
         : vec_(std::move(vec)),
           n_occ_(n_occ),
@@ -1261,7 +1261,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     typedef typename ReduceBase::result_type result_type;
     typedef typename ReduceBase::argument_type argument_type;
 
-    CCSD_T_Reduce(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
+    CCSD_T_Reduce(std::shared_ptr<const Eigen::VectorXd> vec, std::size_t n_occ,
                   std::size_t n_frozen, std::array<std::size_t, 6> offset)
         : ReduceBase(vec, n_occ, n_frozen, offset) {}
 
@@ -1324,7 +1324,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     typedef typename ReduceBase::result_type result_type;
     typedef typename ReduceBase::argument_type argument_type;
 
-    CCSD_T_ReduceSymm(std::shared_ptr<Eigen::VectorXd> vec, std::size_t n_occ,
+    CCSD_T_ReduceSymm(std::shared_ptr<const Eigen::VectorXd> vec, std::size_t n_occ,
                       std::size_t n_frozen, std::array<std::size_t, 6> offset)
         : ReduceBase(vec, n_occ, n_frozen, offset) {}
 

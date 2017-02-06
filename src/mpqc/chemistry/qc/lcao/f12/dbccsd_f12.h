@@ -53,10 +53,10 @@ class DBCCSD_F12 : public CCSD_F12<Tile> {
       auto& lcao_factory = this->lcao_factory();
       auto mol = lcao_factory.ao_factory().molecule();
       Eigen::VectorXd orbital_energy;
-      this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
-          lcao_factory, orbital_energy, this->ndocc(), mol, this->is_frozen_core(),
-          this->occ_block(), this->unocc_block());
-      this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+//      this->trange1_engine_ = closed_shell_dualbasis_mo_build_eigen_solve_svd(
+//          lcao_factory, orbital_energy, this->ndocc(), mol, this->is_frozen_core(),
+//          this->occ_block(), this->unocc_block());
+//      this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
     }
   }
 

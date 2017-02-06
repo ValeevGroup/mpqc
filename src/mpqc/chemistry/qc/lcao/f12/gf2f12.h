@@ -163,13 +163,14 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
 
  private:
   void init() {
+    assert(false && "this must become LCAOWavefunction::init_sdref");
     // init obs
     auto mol = this->lcao_factory().ao_factory().molecule();
     Eigen::VectorXd orbital_energy;
-    this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
-        this->lcao_factory(), orbital_energy, this->ndocc(), mol,
-        this->is_frozen_core(), this->occ_block(), this->unocc_block());
-    this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+//    this->trange1_engine_ = closed_shell_obs_mo_build_eigen_solve(
+//        this->lcao_factory(), orbital_energy, this->ndocc(), mol,
+//        this->is_frozen_core(), this->occ_block(), this->unocc_block());
+//    this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
 
     // compute cabs
     closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),

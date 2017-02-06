@@ -19,13 +19,17 @@ namespace lcao {
 
 /// Closed-Shell (Spin-)Restricted SCF
 template <typename Tile, typename Policy>
-class RHF : public AOWavefunction<Tile, Policy>,
-            public Provides<Energy, OrbitalSpace<TA::DistArray<Tile, Policy>>> {
+class RHF
+    : public AOWavefunction<Tile, Policy>,
+      public Provides<Energy,
+                      CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>,
+                      PopulatedOrbitalSpace<TA::DistArray<Tile, Policy>>> {
  public:
   using array_type = TA::DistArray<Tile, Policy>;
 
   RHF() = default;
 
+  // clang-format off
   /**
    * KeyVal constructor for RHF
    *
@@ -34,15 +38,13 @@ class RHF : public AOWavefunction<Tile, Policy>,
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | max_iter | int | 30 | maximum number of iteration |
-   * | density_builder | string | eigen_solve | type of DensityBuilder,
-   * valid values are \c eigen_solve (use ESolveDensityBuilder)
-   * and \c purification (use PurificationDensityBuilder) |
+   * | density_builder | string | eigen_solve | type of DensityBuilder, valid values are \c eigen_solve (use ESolveDensityBuilder) and \c purification (use PurificationDensityBuilder) |
    * | localize | bool | false | if localize in DensityBuilder |
    * | t_cut_c | double | 0.0 | threshold in DensityBuilder, SparsePolicy only |
-   * | decompo_type | string | cholesky_inverse | (cholesky_inverse,
-   * inverse_sqrt, conditioned_inverse) only valid if use ESolveDensityBuilder |
+   * | decompo_type | string | cholesky_inverse | (cholesky_inverse, inverse_sqrt, conditioned_inverse) only valid if use ESolveDensityBuilder |
    *
    */
+  // clang-format on
   RHF(const KeyVal& kv);
 
   virtual ~RHF() = default;
@@ -60,9 +62,20 @@ class RHF : public AOWavefunction<Tile, Policy>,
   bool can_evaluate(Energy* result) override;
   void evaluate(Energy* result) override;
 
-  /// these implement OrbitalSpace::Provider methods
-  bool can_evaluate(OrbitalSpace<array_type>* result) override;
-  void evaluate(OrbitalSpace<array_type>* result, float target_precision,
+  /// these implement CanonicalOrbitalSpace::Provider methods
+  bool can_evaluate(CanonicalOrbitalSpace<array_type>*) override;
+  /// true if using Eigen solver and orbitals are not localized
+  bool is_available(CanonicalOrbitalSpace<array_type>*) override;
+  /// Computes all canonical orbitals, annotated with orbital energies
+  void evaluate(CanonicalOrbitalSpace<array_type>* result, float target_precision,
+                std::size_t target_blocksize) override;
+
+  /// these implement PopulatedOrbitalSpace::Provider methods
+  bool can_evaluate(PopulatedOrbitalSpace<array_type>*) override;
+  /// true if using Eigen solver
+  bool is_available(PopulatedOrbitalSpace<array_type>*) override;
+  /// Computes all or occupied orbitals, annotated with occupancies
+  void evaluate(PopulatedOrbitalSpace<array_type>* result, float target_precision,
                 std::size_t target_blocksize) override;
 
  protected:
@@ -76,7 +89,7 @@ class RHF : public AOWavefunction<Tile, Policy>,
   array_type F_;
   array_type F_diis_;
   array_type D_;
-  array_type C_;
+  array_type C_;  //!< occupied orbitals only
 
   std::unique_ptr<scf::FockBuilder<Tile, Policy>> f_builder_;
   std::unique_ptr<scf::DensityBuilder<Tile, Policy>> d_builder_;
@@ -84,6 +97,10 @@ class RHF : public AOWavefunction<Tile, Policy>,
   std::vector<double> rhf_times_;
   std::vector<double> d_times_;
   std::vector<double> build_times_;
+
+  std::string density_builder_str_;
+  bool localize_;
+  double t_cut_c_;
 
  private:
   // to expose these need to wrap into if_computed
@@ -94,6 +111,9 @@ class RHF : public AOWavefunction<Tile, Policy>,
   inline const double energy() const { return energy_; }
 
   double compute_energy() const;
+
+  // produces canonical eigenvalues and coefficients
+  std::tuple<Eigen::VectorXd, array_type> make_canonical_orbitals(size_t target_blocksize);
 
   /** Function to compute the density to the desired accuracy.
    *

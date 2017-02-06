@@ -1,10 +1,12 @@
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
+#include "mpqc/chemistry/qc/lcao/scf/rhf.h"
 #include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/util/keyval/forcelink.h"
 
 using namespace mpqc;
 
 using LCAOWfn = lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;
+using RHF = lcao::RHF<TA::TensorD, TA::SparsePolicy>;
 
 class MP2 : public LCAOWfn, public Provides<Energy> {
  public:
@@ -15,7 +17,8 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
                        "ref");
   }
 
- protected:
+ private:
+
   bool can_evaluate(Energy* energy) override { return energy->order() == 0; }
 
   void evaluate(Energy* energy) override {
@@ -35,28 +38,29 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
       compute_mp2_energy(target_precision);
 
       this->computed_ = true;
-      this->set_value(energy, ref_energy->value() + mp2_corr_energy_);
+      this->set_value(energy, ref_energy->energy() + mp2_corr_energy_);
       computed_precision_ = target_precision;
     }
   }
 
- private:
-  void compute_mp2(double precision) {
+  void compute_mp2_energy(double precision) {
     auto& world = this->wfn_world()->world();
+
+    auto& lcao_factory = this->lcao_factory();
 
     const auto n_active_occ = this->trange1_engine()->get_active_occ();
     const auto n_frozen = this->trange1_engine()->get_nfrozen();
     const auto n_vir = this->trange1_engine()->get_vir();
 
     auto F = lcao_factory.compute(L"(p|F|q)");
-    const auto eps_p = array_ops::array_to_eigen(T).diagonal();
+    std::cout << "Fock matrix = " << F << std::endl;
+    Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
     // replicated diagonal elements of Fo
     const auto eps_o = eps_p.segment(n_frozen, n_active_occ);
     // replicated diagonal elements of Fv
     const auto eps_v = eps_p.segment(n_frozen + n_active_occ, n_vir);
 
     // compute integrals
-    auto& lcao_factory = this->lcao_factory();
     // G_iajb
     auto G = lcao_factory.compute(L"(i a|G|j b)");
 
@@ -91,7 +95,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     // start iteration
     bool converged = false;
     std::size_t iter = 0;
-    mp2_corr_energy_ = 0.0;
+    mp2_corr_energy_ = +1.0;
     ExEnv::out0() << "Start solving MP2 Energy\n";
     while (not converged) {
       iter++;
@@ -102,11 +106,11 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
                      Fv("b,c") * T("i,a,j,c") - Fo("i,k") * T("k,a,j,b") -
                      Fo("j,k") * T("i,a,k,b");
 
-      auto hylleraas_energy = (G("i,a,j,b") + R("i,a,j,b")).dot(2*T("i,a,j,b") - T("i,b,j,a"));
+      double hylleraas_energy = (G("i,a,j,b") + R("i,a,j,b")).dot(2*T("i,a,j,b") - T("i,b,j,a"));
       ExEnv::out0() << indent << "Iteration: " << iter << " Energy: " << hylleraas_energy << "\n";
 
       const auto delta_energy = hylleraas_energy - mp2_corr_energy_;
-      converged = delta_energy < precision;
+      converged = std::abs(delta_energy) < precision;
       mp2_corr_energy_ = hylleraas_energy;
 
       if (not converged) {
@@ -120,8 +124,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     }
   }
 
- private:
-  std::shared_ptr<lcao::RHF> ref_wfn_;
+  std::shared_ptr<RHF> ref_wfn_;
   double mp2_corr_energy_;
   double computed_precision_ = std::numeric_limits<double>::max();
 };

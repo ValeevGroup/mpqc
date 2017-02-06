@@ -1,5 +1,5 @@
-#include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/lcao/scf/rhf.h"
+#include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/util/keyval/forcelink.h"
 
@@ -10,43 +10,46 @@ using RHF = lcao::RHF<TA::TensorD, TA::SparsePolicy>;
 
 class MP2 : public LCAOWfn, public Provides<Energy> {
  public:
+  using Array = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
+
   MP2(const KeyVal& kv) : LCAOWfn(kv) {
     ref_wfn_ = kv.class_ptr<RHF>("ref");
     if (!ref_wfn_)
-      throw InputError("missing reference RHF wave function", __FILE__, __LINE__,
-                       "ref");
+      throw InputError("missing reference RHF wave function", __FILE__,
+                       __LINE__, "ref");
   }
 
  private:
-
+  /// can only compute energies (not forces or hessians)
   bool can_evaluate(Energy* energy) override { return energy->order() == 0; }
 
+  /// evaluate the energy
   void evaluate(Energy* energy) override {
-
     auto target_precision = energy->target_precision(0);
-    // compute only if never computed, or requested with higher precision than before
-    if (!this->computed() || computed_precision_ > target_precision) {
-
-      // compute reference to higher precision than required of correlation energy
+    // has not been computed to the desired precision (or never computed at all)
+    if (computed_precision_ > target_precision) {
+      // compute reference to higher precision than this wfn
       auto target_ref_precision = target_precision / 100.;
-      auto ref_energy = std::make_shared<Energy>(ref_wfn_, target_ref_precision);
+      auto ref_energy =
+          std::make_shared<Energy>(ref_wfn_, target_ref_precision);
       ref_wfn_->evaluate(ref_energy.get());
 
+      /// use the reference orbitals to populate the orbital space registry
       init_sdref(ref_wfn_, target_ref_precision);
 
-      // compute
-      compute_mp2_energy(target_precision);
+      /// compute
+      double mp2_corr_energy = compute_mp2_energy(target_precision);
 
-      this->computed_ = true;
-      this->set_value(energy, ref_energy->energy() + mp2_corr_energy_);
+      /// commit the result
+      this->set_value(energy, ref_energy->energy() + mp2_corr_energy);
       computed_precision_ = target_precision;
     }
   }
 
-  void compute_mp2_energy(double precision) {
-    auto& world = this->wfn_world()->world();
-
+  /// @return the MP2 correlation energy
+  double compute_mp2_energy(double target_precision) {
     auto& lcao_factory = this->lcao_factory();
+    auto& world = lcao_factory.world();
 
     const auto n_active_occ = this->trange1_engine()->get_active_occ();
     const auto n_frozen = this->trange1_engine()->get_nfrozen();
@@ -70,12 +73,8 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     auto Fv = lcao_factory.compute(L"(a|F|b)");
 
     // T_iajb initialize as 0
-    TA::DistArray<TA::TensorD, TA::SparsePolicy> T(world, G.trange(),
-                                                   G.shape());
-    T.fill(0.0);
-    T.truncate();
-
-    world.gop.fence();
+    T_ = Array(world, G.trange(), G.shape());
+    T_.fill(0.0);
 
     // lambda function to update residual
     auto jacobi_update = [&eps_o, &eps_v](TA::TensorD& result_tile) {
@@ -94,37 +93,38 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     // start iteration
     bool converged = false;
     std::size_t iter = 0;
-    mp2_corr_energy_ = +1.0;
+    double energy = +1.0;
     ExEnv::out0() << "Start solving MP2 Energy\n";
     while (not converged) {
-      iter++;
+      Array R;
+      R("i,a,j,b") = G("i,a,j,b") + Fv("a,c") * T_("i,c,j,b") +
+                     Fv("b,c") * T_("i,a,j,c") - Fo("i,k") * T_("k,a,j,b") -
+                     Fo("j,k") * T_("i,a,k,b");
 
-      TA::DistArray<TA::TensorD, TA::SparsePolicy> R;
+      double updated_energy =
+          (G("i,a,j,b") + R("i,a,j,b")).dot(2 * T_("i,a,j,b") - T_("i,b,j,a"));
+      ExEnv::out0() << indent << "Iteration: " << iter
+                    << " Energy: " << updated_energy << std::endl;
 
-      R("i,a,j,b") = G("i,a,j,b") + Fv("a,c") * T("i,c,j,b") +
-                     Fv("b,c") * T("i,a,j,c") - Fo("i,k") * T("k,a,j,b") -
-                     Fo("j,k") * T("i,a,k,b");
+      computed_precision_ = std::abs(updated_energy - energy);
+      energy = updated_energy;
 
-      double hylleraas_energy = (G("i,a,j,b") + R("i,a,j,b")).dot(2*T("i,a,j,b") - T("i,b,j,a"));
-      ExEnv::out0() << indent << "Iteration: " << iter << " Energy: " << hylleraas_energy << "\n";
-
-      const auto delta_energy = hylleraas_energy - mp2_corr_energy_;
-      converged = std::abs(delta_energy) < precision;
-      mp2_corr_energy_ = hylleraas_energy;
-
+      // update the amplitudes, if needed
+      converged = computed_precision_ <= target_precision;
       if (not converged) {
-        // update residual
         TA::foreach_inplace(R, jacobi_update);
-        world.gop.fence();
-
-        // update amplitudes
-        T("i,a,j,b") += R("i,a,j,b");
+        world.gop
+            .fence();  // <- need a fence for mutating ops like foreach_inplace
+        T_("i,a,j,b") += R("i,a,j,b");
+        ++iter;
       }
     }
+
+    return energy;
   }
 
   std::shared_ptr<RHF> ref_wfn_;
-  double mp2_corr_energy_;
+  Array T_;
   double computed_precision_ = std::numeric_limits<double>::max();
 };
 

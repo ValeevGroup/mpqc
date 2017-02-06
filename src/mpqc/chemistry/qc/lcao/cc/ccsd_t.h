@@ -1060,13 +1060,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     std::size_t b_occ = occ_block_size_;
     std::size_t b_vir = unocc_block_size_;
 
-    std::size_t occ = this->local_trange1_engine()->get_occ();
-    std::size_t vir = this->local_trange1_engine()->get_vir();
-    std::size_t all = this->local_trange1_engine()->get_all();
-    std::size_t n_frozen = this->local_trange1_engine()->get_nfrozen();
+    std::size_t occ = this->trange1_engine()->get_occ();
+    std::size_t vir = this->trange1_engine()->get_vir();
+    std::size_t all = this->trange1_engine()->get_all();
+    std::size_t n_frozen = this->trange1_engine()->get_nfrozen();
 
-    TA::TiledRange1 old_occ = this->local_trange1_engine()->get_active_occ_tr1();
-    TA::TiledRange1 old_vir = this->local_trange1_engine()->get_vir_tr1();
+    TA::TiledRange1 old_occ = this->trange1_engine()->get_active_occ_tr1();
+    TA::TiledRange1 old_vir = this->trange1_engine()->get_vir_tr1();
 
     // get occupied and virtual orbitals
     auto occ_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"i"));

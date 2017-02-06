@@ -124,6 +124,7 @@ class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public Provides<Energy>
 
  private:
    double mp2_corr_energy_;
+   double computed_precision_ = std::numeric_limits<double>::max();
 };
 
 /**

@@ -53,28 +53,23 @@ bool RMP2<Tile,Policy>::can_evaluate(Energy* energy) {
 
 template<typename Tile, typename Policy>
 void RMP2<Tile,Policy>::evaluate(Energy* result) {
-  if(!this->computed()){
-    /// cast ref_wfn to Energy::Provider
-    auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Provider>(ref_wfn_);
-    if(ref_evaluator == nullptr) {
-      std::ostringstream oss;
-      oss << "RefWavefunction in MP2" << ref_wfn_->class_key()
-          << " cannot compute Energy" << std::endl;
-      throw InputError(oss.str().c_str(), __FILE__, __LINE__);
-    }
+  auto target_precision = result->target_precision(0);
+  // compute only if never computed, or requested with higher precision than before
+  if (!this->computed() || computed_precision_ > target_precision) {
 
-    ref_evaluator->evaluate(result);
+    // compute reference to higher precision than required of correlation energy
+    auto target_ref_precision = target_precision / 100.;
+    auto ref_energy = std::make_shared<Energy>(ref_wfn_, target_ref_precision);
+    ::mpqc::evaluate(*ref_energy, ref_wfn_);
 
-    double ref_energy = this->get_value(result).derivs(0)[0];
-
-    // initialize
-    this->init();
+    this->init_sdref(ref_wfn_, target_ref_precision);
 
     // compute
     double mp2_corr_energy_ = compute();
 
     this->computed_ = true;
-    this->set_value(result, ref_energy + mp2_corr_energy_);
+    this->set_value(result, ref_energy->energy() + mp2_corr_energy_);
+    computed_precision_ = target_precision;
   }
 };
 

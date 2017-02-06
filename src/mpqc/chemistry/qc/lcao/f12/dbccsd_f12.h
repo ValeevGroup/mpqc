@@ -46,7 +46,8 @@ class DBCCSD_F12 : public CCSD_F12<Tile> {
 
  private:
   /// overide initialization of CCSD
-  void init() override {
+  void init() {
+    assert(false && "this must become LCAOWavefunction::init_sdref_dualbasis");
     if (this->orbital_energy() == nullptr ||
         this->trange1_engine() == nullptr) {
       auto& lcao_factory = this->lcao_factory();

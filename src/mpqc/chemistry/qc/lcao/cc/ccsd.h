@@ -67,7 +67,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
    * | method | string | standard | method to compute ccsd (standard, direct) |
-   * | converge | double | 0, it uses precision provided by Energy | overide default by provide a value|
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
    * | less_memory | bool | false | avoid store another abcd term in standard and df method |
@@ -94,7 +93,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
 
     max_iter_ = kv.value<int>("max_iter", 20);
-    converge_ = kv.value<double>("converge", 0);
     print_detail_ = kv.value<bool>("print_detail", false);
   }
 
@@ -113,7 +111,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   bool df_;
   std::string method_;
   std::size_t max_iter_;
-  double converge_;
+  double target_precision_;
+  double computed_precision_ = std::numeric_limits<double>::max();
   bool print_detail_;
   double ccsd_corr_energy_;
 
@@ -165,30 +164,20 @@ protected:
     return energy->order() == 0;
   }
 
-  void evaluate(Energy* result) override {
-    if (!this->computed()){
+  void evaluate(Energy* energy) override {
+    auto target_precision = energy->target_precision(0);
+    // compute only if never computed, or requested with higher precision than before
+    if (!this->computed() || computed_precision_ > target_precision) {
 
-      /// cast ref_wfn to Energy::Provider
-      auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Provider>(ref_wfn_);
-      if(ref_evaluator == nullptr) {
-        std::ostringstream oss;
-        oss << "RefWavefunction in CCSD" << ref_wfn_->class_key()
-            << " cannot compute Energy" << std::endl;
-        throw InputError(oss.str().c_str(), __FILE__, __LINE__);
-      }
+      // compute reference to higher precision than required of correlation energy
+      auto target_ref_precision = target_precision / 100.;
+      auto ref_energy = std::make_shared<Energy>(ref_wfn_, target_ref_precision);
+      ::mpqc::evaluate(*ref_energy, ref_wfn_);
 
-      ref_evaluator->evaluate(result);
-
-      double ref_energy = this->get_value(result).derivs(0)[0];
-
-      // initialize
-      this->init();
+      this->init_sdref(ref_wfn_, target_ref_precision);
 
       // set the precision
-      if(converge_ == 0.0){
-        // if no user provided converge limit, use the default one from Energy
-        converge_ = result->target_precision(0);
-      }
+      target_precision_ = energy->target_precision(0);
 
       TArray t1;
       TArray t2;
@@ -209,7 +198,7 @@ protected:
       T2_ = t2;
 
       this->computed_ = true;
-      this->set_value(result, ref_energy + ccsd_corr_energy_);
+      this->set_value(energy, ref_energy->energy() + ccsd_corr_energy_);
     }
   }
 
@@ -278,7 +267,7 @@ private:
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "Target precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
       if (less) {
@@ -538,7 +527,7 @@ private:
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= converge_ || error >= converge_) {
+      if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         cc::T1T2<TArray,TArray> t(t1, t2);
         cc::T1T2<TArray,TArray> r(r1, r2);
@@ -652,7 +641,7 @@ private:
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
       if (less) {
@@ -912,7 +901,7 @@ private:
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= converge_ || error >= converge_) {
+      if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         cc::T1T2<TArray,TArray> t(t1, t2);
         cc::T1T2<TArray,TArray> r(r1, r2);
@@ -1032,7 +1021,7 @@ private:
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
     };
@@ -1287,7 +1276,7 @@ private:
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= converge_ || error >= converge_) {
+      if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         cc::T1T2<TArray,TArray> t(t1, t2);
         cc::T1T2<TArray,TArray> r(r1, r2);

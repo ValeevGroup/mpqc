@@ -103,7 +103,7 @@ protected:
   void evaluate(Energy* result) override;
 
   // override RMP2's init
-  void init() override;
+  void init();
 
 private:
   std::string method_;

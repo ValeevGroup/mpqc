@@ -9,9 +9,9 @@ using LCAOWfn = lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;
 class MP2 : public LCAOWfn, public Provides<Energy> {
  public:
   MP2(const KeyVal& kv) : LCAOWfn(kv) {
-    ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
+    ref_wfn_ = kv.class_ptr<RHF>("ref");
     if (!ref_wfn_)
-      throw InputError("missing reference Wavefunction", __FILE__, __LINE__,
+      throw InputError("missing reference RHF wave function", __FILE__, __LINE__,
                        "ref");
   }
 
@@ -19,22 +19,24 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
   bool can_evaluate(Energy* energy) override { return energy->order() == 0; }
 
   void evaluate(Energy* energy) override {
-    if (!this->computed()) {
+
+    auto target_precision = energy->target_precision(0);
+    // compute only if never computed, or requested with higher precision than before
+    if (!this->computed() || computed_precision_ > target_precision) {
+
       // compute reference to higher precision than required of correlation energy
-      auto target_ref_precision = energy->target_precision(0) / 100.;
+      auto target_ref_precision = target_precision / 100.;
       auto ref_energy = std::make_shared<Energy>(ref_wfn_, target_ref_precision);
-      *ref_energy << *ref_wfn_;
+      ref_wfn_->evaluate(ref_energy.get());
 
-      double ref_energy = this->get_value(energy).derivs(0)[0];
-
-      // initialize
-      this->init();
+      init_sdref(ref_wfn_, target_ref_precision);
 
       // compute
-      compute_mp2(energy->target_precision(0));
+      compute_mp2_energy(target_precision);
 
       this->computed_ = true;
-      this->set_value(energy, ref_energy + mp2_corr_energy_);
+      this->set_value(energy, ref_energy->value() + mp2_corr_energy_);
+      computed_precision_ = target_precision;
     }
   }
 
@@ -88,6 +90,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     // start iteration
     bool converged = false;
     std::size_t iter = 0;
+    mp2_corr_energy_ = 0.0;
     ExEnv::out0() << "Start solving MP2 Energy\n";
     while (not converged) {
       iter++;
@@ -98,10 +101,12 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
                      Fv("b,c") * T("i,a,j,c") - Fo("i,k") * T("k,a,j,b") -
                      Fo("j,k") * T("i,a,k,b");
 
-      double norm = R("i,a,j,b").norm();
-      ExEnv::out0() << "Iteration: " << iter << " Norm: " << norm << "\n";
+      auto hylleraas_energy = (G("i,a,j,b") + R("i,a,j,b")).dot(2*T("i,a,j,b") - T("i,b,j,a"));
+      ExEnv::out0() << indent << "Iteration: " << iter << " Energy: " << hylleraas_energy << "\n";
 
-      converged = norm < precision;
+      const auto delta_energy = hylleraas_energy - mp2_corr_energy_;
+      converged = delta_energy < precision;
+      mp2_corr_energy_ = hylleraas_energy;
 
       if (not converged) {
         // update residual
@@ -112,20 +117,12 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
         T("i,a,j,b") += R("i,a,j,b");
       }
     }
-
-    // compute energy
-    mp2_corr_energy_ = (2 * G("i,a,j,b") - G("i,b,j,a")).dot(T("i,a,j,b"));
-    ExEnv::out0() << "MP2 Correlation Energy = " << mp2_corr_energy_ << "\n";
-  }
-
-  // use default init() in LCAOWavefunction
-  void init() override {
-    LCAOWfn::init();
   }
 
  private:
-  std::shared_ptr<lcao::Wavefunction> ref_wfn_;
+  std::shared_ptr<lcao::RHF> ref_wfn_;
   double mp2_corr_energy_;
+  double computed_precision_ = std::numeric_limits<double>::max();
 };
 
 MPQC_CLASS_EXPORT2("MP2", MP2);

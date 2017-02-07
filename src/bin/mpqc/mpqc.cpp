@@ -25,7 +25,7 @@
 // this list must be in sync with CMakeLists.txt
 #include "mpqc/chemistry/qc/lcao/cc/linkage.h"
 //#include "mpqc/chemistry/qc/lcao/f12/linkage.h"
-//#include "mpqc/chemistry/qc/lcao/mbpt/linkage.h"
+#include "mpqc/chemistry/qc/lcao/mbpt/linkage.h"
 #include "mpqc/chemistry/qc/lcao/scf/linkage.h"
 #include "mpqc/chemistry/qc/properties/linkage.h"
 #include "mpqc/mpqc_init.h"

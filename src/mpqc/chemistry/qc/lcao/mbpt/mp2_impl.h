@@ -11,8 +11,8 @@ namespace lcao {
 namespace detail {
 template <typename Tile, typename Policy>
 double compute_mp2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
-                   std::shared_ptr<Eigen::VectorXd> orbital_energy,
-                   std::shared_ptr<::mpqc::utility::TRange1Engine> tr1_engine, bool df) {
+                   const std::shared_ptr<const Eigen::VectorXd>& orbital_energy,
+                   const std::shared_ptr<const ::mpqc::utility::TRange1Engine>& tr1_engine, bool df) {
   auto& world = lcao_factory.world();
   TA::DistArray<Tile, Policy> g_ijab;
   g_ijab = lcao_factory.compute(df ? L"<i j|G|a b>[df]" : L"<i j|G|a b>");
@@ -65,7 +65,7 @@ void RMP2<Tile,Policy>::evaluate(Energy* result) {
     this->init_sdref(ref_wfn_, target_ref_precision);
 
     // compute
-    double mp2_corr_energy_ = compute();
+    mp2_corr_energy_ = compute();
 
     this->computed_ = true;
     this->set_value(result, ref_energy->energy() + mp2_corr_energy_);
@@ -77,7 +77,7 @@ void RMP2<Tile,Policy>::evaluate(Energy* result) {
 template<typename Tile, typename Policy>
 double RMP2<Tile,Policy>::compute() {
   auto &lcao_factory = this->lcao_factory();
-  return detail::compute_mp2(lcao_factory, this->orbital_energy(),
+  return detail::compute_mp2(lcao_factory, make_orbital_energy(lcao_factory,false),
                              this->trange1_engine(), false);
 }
 
@@ -97,7 +97,7 @@ RIRMP2<Tile,Policy>::RIRMP2(const KeyVal &kv) : RMP2<Tile,Policy>(kv) {}
 template<typename Tile, typename Policy>
 double RIRMP2<Tile,Policy>::compute() {
   auto &lcao_factory = this->lcao_factory();
-  return detail::compute_mp2(lcao_factory, this->orbital_energy(),
+  return detail::compute_mp2(lcao_factory, make_orbital_energy(lcao_factory,true),
                              this->trange1_engine(), true);
 }
 }  // namespace lcao

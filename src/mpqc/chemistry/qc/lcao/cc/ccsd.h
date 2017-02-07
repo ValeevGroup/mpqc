@@ -178,7 +178,7 @@ protected:
 
       this->init_sdref(ref_wfn_, target_ref_precision);
 
-      orbital_energy_ = make_orbital_energy();
+      orbital_energy_ = make_orbital_energy(this->lcao_factory(), df_);
 
       // set the precision
       target_precision_ = energy->target_precision(0);
@@ -1532,12 +1532,6 @@ private:
           "CCSD: integral-direct implementation used, but direct integral not "
           "initialized");
     }
-  }
-
-  /// computes the MO-basis Fock matrix and extracts the diagonal elements
-  std::shared_ptr<Eigen::VectorXd> make_orbital_energy() {
-    auto Fpq_eig = array_ops::array_to_eigen(this->get_fock_pq());
-    return std::make_shared<Eigen::VectorXd>(Fpq_eig.diagonal());
   }
 };  // class CCSD
 

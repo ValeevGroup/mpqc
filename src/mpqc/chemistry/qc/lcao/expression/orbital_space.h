@@ -58,7 +58,7 @@ class OrbitalSpace {
     ///        determined by the clustering of the Molecule). May be ignored,
     ///        hence it is recommended to reblock the coefficients as needed.
     virtual void evaluate(
-        OrbitalSpace* ospace, float target_precision = 0,
+        OrbitalSpace* ospace, double target_precision = 0,
         std::size_t target_lcao_blocksize = default_lcao_blocksize) = 0;
   };
 
@@ -250,7 +250,7 @@ class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
     ///        determined by the clustering of the Molecule). May be ignored,
     ///        hence it is recommended to reblock the coefficients as needed.
     virtual void evaluate(
-        DecoratedOrbitalSpace* space, float target_precision = 0,
+        DecoratedOrbitalSpace* space, double target_precision = 0,
         std::size_t target_lcao_blocksize = default_lcao_blocksize) = 0;
   };
 

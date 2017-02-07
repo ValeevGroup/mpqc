@@ -67,7 +67,7 @@ class RHF
   /// true if using Eigen solver and orbitals are not localized
   bool is_available(CanonicalOrbitalSpace<array_type>*) override;
   /// Computes all canonical orbitals, annotated with orbital energies
-  void evaluate(CanonicalOrbitalSpace<array_type>* result, float target_precision,
+  void evaluate(CanonicalOrbitalSpace<array_type>* result, double target_precision,
                 std::size_t target_blocksize) override;
 
   /// these implement PopulatedOrbitalSpace::Provider methods
@@ -75,7 +75,7 @@ class RHF
   /// true if using Eigen solver
   bool is_available(PopulatedOrbitalSpace<array_type>*) override;
   /// Computes all or occupied orbitals, annotated with occupancies
-  void evaluate(PopulatedOrbitalSpace<array_type>* result, float target_precision,
+  void evaluate(PopulatedOrbitalSpace<array_type>* result, double target_precision,
                 std::size_t target_blocksize) override;
 
  protected:

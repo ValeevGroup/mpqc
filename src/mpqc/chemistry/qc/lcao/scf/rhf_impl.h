@@ -275,7 +275,7 @@ bool RHF<Tile, Policy>::can_evaluate(CanonicalOrbitalSpace<array_type>*) {
 
 template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::evaluate(CanonicalOrbitalSpace<array_type>* result,
-                                 float target_energy_precision,
+                                 double target_energy_precision,
                                  std::size_t target_blocksize) {
   do_evaluate(target_energy_precision);
 
@@ -309,7 +309,7 @@ bool RHF<Tile, Policy>::is_available(PopulatedOrbitalSpace<array_type>*) {
 
 template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::evaluate(PopulatedOrbitalSpace<array_type>* result,
-                                 float target_energy_precision,
+                                 double target_energy_precision,
                                  std::size_t target_blocksize) {
   do_evaluate(target_energy_precision);
 

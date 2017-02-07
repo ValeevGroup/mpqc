@@ -214,7 +214,7 @@ protected:
   }
 
 
-private:
+protected:
   // store all the integrals in memory
   // used as reference for development
   double compute_ccsd_conventional(TArray &t1, TArray &t2) {
@@ -590,6 +590,7 @@ private:
     return E1;
   }
 
+private:
   double compute_ccsd_df(TArray &t1, TArray &t2) {
     auto &world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
@@ -1418,7 +1419,7 @@ private:
   // using physical notation <ab|ij>
 
   /// <ab|ij>
-  const TArray get_abij() {
+  virtual const TArray get_abij() {
     if (df_) {
       return this->lcao_factory().compute(L"<a b|G|i j>[df]");
     } else {
@@ -1427,7 +1428,7 @@ private:
   }
 
   /// <ij|kl>
-  const TArray get_ijkl() {
+  virtual const TArray get_ijkl() {
     if (df_) {
       return this->lcao_factory().compute(L"<i j|G|k l>[df]");
     } else {
@@ -1436,7 +1437,7 @@ private:
   }
 
   /// <ab|cd>
-  const TArray get_abcd() {
+  virtual const TArray get_abcd() {
     if (df_) {
       return this->lcao_factory().compute(L"<a b|G|c d>[df]");
     } else {
@@ -1445,7 +1446,7 @@ private:
   }
 
   /// <ia|bc>
-  const TArray get_iabc() {
+  virtual const TArray get_iabc() {
     if (df_) {
       return this->lcao_factory().compute(L"<i a|G|b c>[df]");
     } else {
@@ -1454,7 +1455,7 @@ private:
   }
 
   /// <ai|bc>
-  const TArray get_aibc() {
+  virtual const TArray get_aibc() {
     if (df_) {
       return this->lcao_factory().compute(L"<a i|G|b c>[df]");
     } else {
@@ -1463,7 +1464,7 @@ private:
   }
 
   /// <ij|ak>
-  const TArray get_ijak() {
+  virtual const TArray get_ijak() {
     if (df_) {
       return this->lcao_factory().compute(L"<i j|G|a k>[df]");
     } else {
@@ -1472,7 +1473,7 @@ private:
   }
 
   /// <ai|jk>
-  const TArray get_aijk() {
+  virtual const TArray get_aijk() {
     if (df_) {
       return this->lcao_factory().compute(L"<a i|G|j k>[df]");
     } else {
@@ -1481,7 +1482,7 @@ private:
   }
 
   /// <ia|jb>
-  const TArray get_iajb() {
+  virtual const TArray get_iajb() {
     if (df_){
       return this->lcao_factory().compute(L"<i a|G|j b>[df]");
     } else {
@@ -1490,7 +1491,7 @@ private:
   }
 
   /// <ij|ka>
-  const TArray get_ijka() {
+  virtual const TArray get_ijka() {
     if (df_) {
       return this->lcao_factory().compute(L"<i j|G|k a>[df]");
     } else {
@@ -1499,7 +1500,7 @@ private:
   }
 
   /// <a|f|i>
-  const TArray get_fock_ai() {
+  virtual const TArray get_fock_ai() {
     if (df_) {
       return this->lcao_factory().compute(L"<a|F|i>[df]");
     } else {

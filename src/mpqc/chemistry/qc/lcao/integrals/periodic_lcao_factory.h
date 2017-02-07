@@ -32,13 +32,53 @@ construct_periodic_lcao_factory(const KeyVal &kv) {
   return periodic_lcao_factory;
 }
 
+/*!
+ * \brief This is the implementation of tensorZ_to_tensorD
+ * \param result_tile
+ * \param arg_tile
+ * \return
+ */
+float take_real(TA::TensorD &result_tile, const TA::TensorZ &arg_tile);
+
+/*!
+ * \brief This takes real or imaginary part from a complex array
+ */
+template <typename Policy>
+TA::DistArray<TA::TensorD, Policy>
+tensorZ_to_tensorD(const TA::DistArray<TA::TensorZ, Policy> &complex_array, bool if_real) {
+    TA::DistArray<TA::TensorD, Policy> result_array;
+
+    if (!if_real)
+        throw FeatureNotImplemented("Taking imaginary parts of complex arrays has not been implemented.", __FILE__, __LINE__);
+
+    const auto rank = complex_array.trange().tiles_range().rank();
+
+    if (rank == 4u) {
+        result_array = TA::foreach<TA::TensorD, TA::TensorZ, decltype(take_real)>(complex_array, take_real);
+        complex_array.world().gop.fence();
+    } else if (rank == 2u) {
+        auto complex_eigen = array_ops::array_to_eigen(complex_array);
+        RowMatrixXd result_eigen;
+        if (if_real)
+          result_eigen = complex_eigen.real();
+        else
+          result_eigen = complex_eigen.imag();
+        auto tr0 = complex_array.trange().data()[0];
+        auto tr1 = complex_array.trange().data()[1];
+        result_array = array_ops::eigen_to_array<TA::TensorD, Policy>(complex_array.world(), result_eigen, tr0, tr1);
+    } else {
+        throw FeatureNotImplemented("The array dimmension must be equal to 2 or 4.", __FILE__, __LINE__);
+    }
+
+    return result_array;
+}
 }  // namespace detail
 
 template <typename Tile, typename Policy>
 class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using AOFactoryType = gaussian::PeriodicAOFactory<Tile, Policy>;
+  using AOFactoryType = gaussian::PeriodicAOFactory<TA::TensorZ, Policy>;
 
   /*!
    * \brief KeyVal constructor for PeriodicLCAOFactory
@@ -47,7 +87,7 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
   PeriodicLCAOFactory(const KeyVal &kv)
       : LCAOFactory<TA::TensorD, Policy>(kv),
         pao_factory_(
-            *gaussian::construct_periodic_ao_factory<Tile, Policy>(kv)),
+            *gaussian::construct_periodic_ao_factory<TA::TensorZ, Policy>(kv)),
         orbital_space_registry_(
             std::make_shared<OrbitalSpaceRegistry<TArray>>()),
         mo_formula_registry_() {
@@ -229,7 +269,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
                                      *unitcell_));
 
       auto ao_int =
-          pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+          detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases), true);
 
       if (R == 0)
         pao_ints("p, q") = ao_int("p, q");
@@ -307,7 +347,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
           to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
                                      *unitcell_));
 
-      ao_int = pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+      ao_int = detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases), true);
 
     } else if (ao_formula.oper().type() == Operator::Type::Nuclear) {
       auto bases = mpqc::lcao::gaussian::BasisVector{{*bra, *ket}};
@@ -322,15 +362,15 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
                                        *shifted_mol));
         if (RJ == 0)
           ao_int =
-              pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+              detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases), true);
         else
-          ao_int("p, q") += pao_factory_.compute_integrals(
-              this->world_, engine_pool, bases)("p, q");
+          ao_int("p, q") +=
+              detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases), true)("p, q");
       }
     } else if (ao_formula.oper().type() == Operator::Type::J) {
       // change operator type to Coulomb for computing integrals
       ao_formula.set_operator_type(Operator::Type::Coulomb);
-      auto D = pao_factory_.get_density();
+      auto D = detail::tensorZ_to_tensorD(pao_factory_.get_density(), true);
 
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
@@ -353,7 +393,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
 
         // compute AO-based integrals
         auto J =
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener);
+            detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener), true);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = J("p, q, r, s") * D("r, s");
@@ -366,7 +406,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
     } else if (ao_formula.oper().type() == Operator::Type::K) {
       // change operator type to Coulomb for computing integrals
       ao_formula.set_operator_type(Operator::Type::Coulomb);
-      auto D = pao_factory_.get_density();
+      auto D = detail::tensorZ_to_tensorD(pao_factory_.get_density(), true);
 
       for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
@@ -389,7 +429,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
 
         // compute AO-based integrals
         auto K =
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener);
+            detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener), true);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = K("p, r, q, s") * D("r, s");
@@ -479,7 +519,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
 
         // compute AO-based integrals
         auto ao_int =
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener);
+            detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener), true);
         auto t_pao1 = mpqc::now(this->world_, this->accurate_time_);
         pao_build_time += mpqc::duration_in_s(t_pao0, t_pao1);
 

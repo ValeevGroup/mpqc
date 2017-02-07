@@ -16,13 +16,12 @@ set(sources
         periodic_ao_factory.h
         periodic_ao_factory.cpp
         periodic_lcao_factory.h
+        periodic_lcao_factory.cpp
         task_integral_kernels.h
         task_integral_kernels.cpp
         screening/screen_base.h
         screening/schwarz_screen.h
         screening/schwarz_screen.cpp
-        periodic_ao_factory.h
-        periodic_ao_factory.cpp
         task_integrals_common.h
         task_integrals.h
 )

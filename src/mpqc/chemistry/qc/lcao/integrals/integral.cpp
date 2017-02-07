@@ -18,7 +18,7 @@ template class DirectAOFactory<TA::TensorD, TA::SparsePolicy>;
 
 template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
 
-template class PeriodicLCAOFactory<TA::TensorZ, TA::SparsePolicy>;
+template class PeriodicLCAOFactory<TA::TensorD, TA::SparsePolicy>;
 
 }  // namespace lcao
 }  // namespace mpqc

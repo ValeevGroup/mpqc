@@ -1193,7 +1193,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   }
 
   /// <ai|jk>
-  const TArray get_aijk() {
+  const TArray get_aijk() override {
     std::wstring post_fix = L"";
     if (this->is_df()) {
       post_fix = L"[df]";
@@ -1221,7 +1221,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   }
 
   /// <ab|ij>
-  const TArray get_abij() {
+  const TArray get_abij() override {
     if (this->is_df()) {
       return this->lcao_factory().compute(L"<a b|G|i j>[df]");
     } else {

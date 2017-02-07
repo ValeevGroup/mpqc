@@ -61,7 +61,7 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>, public Provides
  private:
 
   /// initialize mp2f12
-  virtual void init();
+  virtual void init() override;
 
   /// function to compute B intermediate
   virtual TArray compute_B();

@@ -162,7 +162,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
   }
 
  private:
-  void init() {
+  void init() override {
     // init obs
     auto mol = this->lcao_factory().ao_factory().molecule();
     Eigen::VectorXd orbital_energy;

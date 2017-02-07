@@ -124,7 +124,7 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_obs_mo_build_eigen_
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
     LCAOFactory<Tile, Policy> &lcao_factory,
-    const std::shared_ptr<::mpqc::utility::TRange1Engine> tre, std::size_t vir_blocksize) {
+    const std::shared_ptr<const ::mpqc::utility::TRange1Engine> tre, std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_factory.world();

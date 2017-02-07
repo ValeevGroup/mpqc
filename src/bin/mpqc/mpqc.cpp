@@ -24,7 +24,7 @@
 // linkage files to force linking in of ALL Wavefunction-based classes
 // this list must be in sync with CMakeLists.txt
 #include "mpqc/chemistry/qc/lcao/cc/linkage.h"
-//#include "mpqc/chemistry/qc/lcao/f12/linkage.h"
+#include "mpqc/chemistry/qc/lcao/f12/linkage.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/linkage.h"
 #include "mpqc/chemistry/qc/lcao/scf/linkage.h"
 #include "mpqc/chemistry/qc/properties/linkage.h"

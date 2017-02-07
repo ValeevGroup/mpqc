@@ -53,7 +53,7 @@ class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
 
       // compute CCSD(F12) first
       CCSD_F12<Tile>::evaluate(result);
-      double ccsd_f12_energy = result->energy();
+      double ccsd_f12_energy = this->get_value(result).derivs(0)[0];
 
       auto t_time0 = mpqc::fenced_now(world);
       // compute (T) energy

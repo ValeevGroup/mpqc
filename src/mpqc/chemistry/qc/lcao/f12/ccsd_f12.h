@@ -69,12 +69,12 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
 
   void evaluate(Energy* result) override {
     if (!this->computed()) {
-      auto& world = this->wfn_world()->world();
 
       // compute ccsd
       CCSD<Tile, Policy>::evaluate(result);
-      double ccsd_energy = this->get_value(result).derivs(0)[0];
+      double ccsd_energy = result->energy();
 
+      auto& world = this->wfn_world()->world();
       auto f12_time0 = mpqc::fenced_now(world);
       // initialize CABS orbitals
       init_cabs();

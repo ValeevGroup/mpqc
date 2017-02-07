@@ -110,8 +110,8 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
     if (kv.exists("ref")) {
       ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
     } else {
-      throw std::invalid_argument(
-          "Default Ref Wfn in GF2F12 is not support! \n");
+      throw InputError("Default Ref Wfn in GF2F12 is not support! \n", __FILE__,
+                       __LINE__, "ref");
     }
     use_cabs_ = kv.value<bool>("use_cabs", true);
     dyson_method_ = kv.value<std::string>("dyson_method", "diagonal");
@@ -119,7 +119,8 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
 
     // check method
     if (dyson_method_ != "diagonal" && dyson_method_ != "nondiagonal") {
-      throw std::runtime_error("GF2F12: unknown value for keyword \"dyson_method\"");
+      throw InputError("GF2F12: unknown value for keyword \"dyson_method\"",
+                       __FILE__, __LINE__, "dyson_method");
     }
   }
 
@@ -133,7 +134,6 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
   }
 
   void evaluate(GFRealPole* pole) override {
-    using mpqc::utility::print_par;
     auto target_precision = pole->target_precision(0);
 
     if (!this->computed()) {
@@ -160,12 +160,9 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
         method = Method::diag;
       else if (method_str == "nondiagonal")
         method = Method::nondiag;
-      else
-        throw std::runtime_error(
-            "GF2F12: unknown value for keyword \"method\"");
 
-      print_par(world, "orbital = ", orbital, " method = ", method_str,
-                " cabs = ", std::to_string(use_cabs_), "\n");
+      ExEnv::out0() << "orbital = " << orbital << " method = " << method_str
+                    << " cabs = " << std::to_string(use_cabs_) << "\n";
 
       double result = 0.0;
       if (method == Method::diag)
@@ -178,14 +175,13 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
       auto time1 = mpqc::fenced_now(world);
       auto time = mpqc::duration_in_s(time0, time1);
 
-      print_par(world, "Total GF2F12 Time:  ", time, "\n");
+      ExEnv::out0() << "Total GF2F12 Time:  " << time << " S\n";
     }
   }
 
-
  private:
   /// initialize obs and cabs orbitals
-  void init(double ref_precision) override;
+  virtual void init(double ref_precision);
 
   /// initialize target orbital in compute_diagonal function
   virtual void init_target_orbital_diagonal(int target_orbital);
@@ -212,7 +208,6 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
 
 template <typename Tile>
 void GF2F12<Tile>::init(double ref_precision) {
-
   this->init_sdref(ref_wfn_, ref_precision);
 
   if (use_cabs_) {
@@ -226,7 +221,9 @@ template <typename Tile>
 void GF2F12<Tile>::init_target_orbital_diagonal(int target_orbital) {
   auto nfzc = this->trange1_engine()->get_nfrozen();
   auto nocc = this->trange1_engine()->get_active_occ();
-  const auto orbital = nfzc + nocc + ((target_orbital < 0) ? target_orbital : target_orbital - 1);
+  const auto orbital =
+      nfzc + nocc +
+      ((target_orbital < 0) ? target_orbital : target_orbital - 1);
 
   auto& world = this->wfn_world()->world();
   auto& orbital_registry = this->lcao_factory().orbital_space();
@@ -274,10 +271,8 @@ double GF2F12<Tile>::compute_diagonal(const int target_orbital,
   TArray g_vvog = this->lcao_factory().compute(L"<a b|G|i x>[df]");
   TArray g_oovg = this->lcao_factory().compute(L"<i j|G|a x>[df]");
 
-  if (world.rank() == 0) {
-    ExEnv::out0() << printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
-    ExEnv::out0() << printf("==== =========== =========== ===========\n");
-  }
+  ExEnv::out0() << printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+  ExEnv::out0() << printf("==== =========== =========== ===========\n");
   size_t iter = 0;
   decltype(SE) SE_diff;
   do {
@@ -311,9 +306,8 @@ double GF2F12<Tile>::compute_diagonal(const int target_orbital,
     auto SE_updated = Sigma(0, 0) + orbital_energy->operator()(orbital);
     SE_diff = SE_updated - SE;
 
-    if (world.rank() == 0)
-      ExEnv::out0() << printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated,
-                  SE_diff);
+    ExEnv::out0() << printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE,
+                            SE_updated, SE_diff);
 
     SE = SE_updated;
     ++iter;
@@ -346,17 +340,18 @@ double GF2F12<Tile>::compute_diagonal(const int target_orbital,
 
   if (world.rank() == 0) {
     auto SE_F12 = SE + Sigma_f12(0, 0);
-    auto Hartree2eV = 27.21138602;
-    std::string orblabel =
-        std::string(target_orbital < 0 ? "IP" : "EA") + std::to_string(abs(target_orbital));
+    auto unit_factory = UnitFactory::get_default();
+    auto Hartree2eV = unit_factory->make_unit("eV").from_atomic_units();
+    std::string orblabel = std::string(target_orbital < 0 ? "IP" : "EA") +
+                           std::to_string(abs(target_orbital));
     ExEnv::out0() << printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
-                orblabel.c_str(), SE * Hartree2eV, SE);
+                            orblabel.c_str(), SE * Hartree2eV, SE);
     ExEnv::out0() << printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
-                orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
+                            orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
     if (target_orbital > 0)
       ExEnv::out0() << printf(
           "WARNING: non-strongly-orthogonal F12 projector is used for the F12 "
-          "correction to EA!!!");
+          "correction to EA!!! \n");
   }
 
   return SE;
@@ -393,10 +388,8 @@ double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
   TArray g_oovg =
       this->lcao_factory().compute(wconcat("<i j|G|a ", qp_str, ">[df]"));
 
-  if (world.rank() == 0) {
-    ExEnv::out0() << printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
-    ExEnv::out0() << printf("==== =========== =========== ===========\n");
-  }
+  ExEnv::out0() << printf("Iter     SE2(in)     SE2(out)   SE2(delta)\n");
+  ExEnv::out0() << printf("==== =========== =========== ===========\n");
   size_t iter = 0;
   decltype(SE) SE_diff;
   RowMatrixXd C_dyson;  // Dyson orbital coefficients
@@ -443,8 +436,8 @@ double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
     SE_diff = SE_updated - SE;
 
     if (world.rank() == 0)
-      ExEnv::out0() << printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE, SE_updated,
-                  SE_diff);
+      ExEnv::out0() << printf(" %3ld %10.4lf %10.4lf %10.4lf\n", iter, SE,
+                              SE_updated, SE_diff);
 
     SE = SE_updated;
     ++iter;
@@ -498,16 +491,16 @@ double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
     auto SE_F12 = SE + Sigma_f12(0, 0);
     auto unit_factory = UnitFactory::get_default();
     auto Hartree2eV = unit_factory->make_unit("eV").from_atomic_units();
-    std::string orblabel =
-        std::string(target_orbital < 0 ? "IP" : "EA") + std::to_string(abs(target_orbital));
+    std::string orblabel = std::string(target_orbital < 0 ? "IP" : "EA") +
+                           std::to_string(abs(target_orbital));
     ExEnv::out0() << printf("final       GF2 %6s = %11.3lf eV (%10.4lf a.u.)\n",
-                orblabel.c_str(), SE * Hartree2eV, SE);
+                            orblabel.c_str(), SE * Hartree2eV, SE);
     ExEnv::out0() << printf("final GF2-F12-V %6s = %11.3lf eV (%10.4lf a.u.)\n",
-                orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
+                            orblabel.c_str(), SE_F12 * Hartree2eV, SE_F12);
     if (target_orbital > 0)
       ExEnv::out0() << printf(
           "WARNING: non-strongly-orthogonal F12 projector is used for the F12 "
-          "correction to EA!!!");
+          "correction to EA!!! \n");
   }
   return SE;
 }

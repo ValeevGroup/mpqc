@@ -48,35 +48,34 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
 
   /// @return the MP2 correlation energy
   double compute_mp2_energy(double target_precision) {
-    auto& lcao_factory = this->lcao_factory();
-    auto& world = lcao_factory.world();
+    auto& fac = this->lcao_factory();
+    auto& world = fac.world();
+    auto& ofac = fac.orbital_space();
 
-    const auto n_active_occ = this->trange1_engine()->get_active_occ();
-    const auto n_frozen = this->trange1_engine()->get_nfrozen();
-    const auto n_vir = this->trange1_engine()->get_vir();
+    auto nocc = ofac.retrieve("m").rank();
+    auto nocc_act = ofac.retrieve("i").rank();
+    auto nvir = ofac.retrieve("a").rank();
+    auto nfzc = nocc - nocc_act;
 
-    auto F = lcao_factory.compute(L"(p|F|q)");
+    auto F = fac.compute(L"(p|F|q)");
     Eigen::VectorXd eps_p = array_ops::array_to_eigen(F).diagonal();
     // replicated diagonal elements of Fo
-    const auto eps_o = eps_p.segment(n_frozen, n_active_occ);
+    auto eps_o = eps_p.segment(nfzc, nocc_act);
     // replicated diagonal elements of Fv
-    const auto eps_v = eps_p.segment(n_frozen + n_active_occ, n_vir);
+    auto eps_v = eps_p.segment(nocc, nvir);
 
-    // compute integrals
     // G_iajb
-    auto G = lcao_factory.compute(L"(i a|G|j b)");
-
+    auto G = fac.compute(L"(i a|G|j b)");
     // Fij
-    auto Fo = lcao_factory.compute(L"(i|F|j)");
-
+    auto Fo = fac.compute(L"(i|F|j)");
     // Fab
-    auto Fv = lcao_factory.compute(L"(a|F|b)");
+    auto Fv = fac.compute(L"(a|F|b)");
 
-    // T_iajb initialize as 0
+    // zero out amplitudes
     T_ = Array(world, G.trange(), G.shape());
     T_.fill(0.0);
 
-    // lambda function to update residual
+    // lambda function to update the residual
     auto jacobi_update = [&eps_o, &eps_v](TA::TensorD& result_tile) {
 
       const auto& range = result_tile.range();
@@ -91,9 +90,9 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     };
 
     // start iteration
-    bool converged = false;
-    std::size_t iter = 0;
-    double energy = +1.0;
+    auto converged = false;
+    auto iter = 0;
+    auto energy = +1.0;
     ExEnv::out0() << "Start solving MP2 Energy\n";
     while (not converged) {
       Array R;

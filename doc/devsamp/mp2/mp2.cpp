@@ -62,7 +62,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     // replicated diagonal elements of Fo
     auto eps_o = eps_p.segment(nfzc, nocc_act);
     // replicated diagonal elements of Fv
-    auto eps_v = eps_p.segment(nocc, nvir);
+    auto eps_v = eps_p.tail(nvir);
 
     // G_iajb
     auto G = fac.compute(L"(i a|G|j b)");

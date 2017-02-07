@@ -26,9 +26,6 @@ template <typename Tile>
 class CCSD_F12;
 
 template <typename Tile>
-class DBCCSD_F12;
-
-template <typename Tile>
 class CCSD_T_F12;
 
 template <typename Tile>
@@ -40,7 +37,6 @@ mpqc::detail::ForceLink<RMP2F12<TA::TensorD>> fl1;
 mpqc::detail::ForceLink<RIRMP2F12<TA::TensorD>> fl2;
 //mpqc::detail::ForceLink<RIDBRMP2F12<TA::TensorD>> fl3;
 mpqc::detail::ForceLink<CCSD_F12<TA::TensorD>> fl4;
-//mpqc::detail::ForceLink<DBCCSD_F12<TA::TensorD>> fl5;
 mpqc::detail::ForceLink<CCSD_T_F12<TA::TensorD>> fl6;
 //mpqc::detail::ForceLink<GF2F12<TA::TensorD>> fl7;
 #endif

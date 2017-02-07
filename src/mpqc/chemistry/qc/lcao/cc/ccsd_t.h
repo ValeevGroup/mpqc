@@ -13,7 +13,9 @@
 #include "mpqc/math/external/eigen/eigen.h"
 
 // Laplace transformation of 2-electron integrals and amplitudes (t2 & t1)
-#include "laplace_transform.h"
+#include "mpqc/chemistry/qc/lcao/cc/laplace_transform.h"
+
+#include "mpqc/math/quadrature/gaussian.h"
 
 namespace mpqc {
 namespace lcao {
@@ -1085,26 +1087,26 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   // Gubner.
   // http://gubner.ece.wisc.edu/gaussquad.pdf
   // The code is outlined at Example 15: Legendre polynomials
-  void gauss_quad(int N, double a, double b, Eigen::VectorXd &w,
-                  Eigen::VectorXd &x) {
-    Eigen::MatrixXd J;
-    J.setZero(N, N);
-    for (auto i = 0; i < N; i++) {
-      if (i < N - 1) {
-        J(i, i + 1) = sqrt(1 / (4 - pow(i + 1, -2)));
-      }
-    }
-    Eigen::MatrixXd Jfin = J + J.transpose();
+  // void gauss_quad(int N, double a, double b, Eigen::VectorXd &w,
+  //                 Eigen::VectorXd &x) {
+  //   Eigen::MatrixXd J;
+  //   J.setZero(N, N);
+  //   for (auto i = 0; i < N; i++) {
+  //     if (i < N - 1) {
+  //       J(i, i + 1) = sqrt(1 / (4 - pow(i + 1, -2)));
+  //     }
+  //   }
+  //   Eigen::MatrixXd Jfin = J + J.transpose();
 
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Jfin);
-    x = es.eigenvalues();
-    Eigen::MatrixXd V = es.eigenvectors();
+  //   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Jfin);
+  //   x = es.eigenvalues();
+  //   Eigen::MatrixXd V = es.eigenvectors();
 
-    for (auto i = 0; i < N; i++) {
-      w(i) = 0.5 * 2.0 * (b - a) * V(0, i) * V(0, i);
-      x(i) = (b - a) * 0.5 * x(i) + (b + a) * 0.5;
-    }
-  }
+  //   for (auto i = 0; i < N; i++) {
+  //     w(i) = 0.5 * 2.0 * (b - a) * V(0, i) * V(0, i);
+  //     x(i) = (b - a) * 0.5 * x(i) + (b + a) * 0.5;
+  //   }
+  // }
 
   // performs Laplace transform perturbative triple correction to CCSD energy
   double compute_ccsd_t_laplace_transform(const TArray &t1, const TArray &t2) {
@@ -1141,7 +1143,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // function that evaluates Gaussian weights and roots for quadrature using
     // orthogonal polynomials
     // 0 and 1 are integration intervals
-    gauss_quad(n, 0, 1, w, x);
+    // gauss_quad(n, 0, 1, w, x);
+    mpqc::math::gauss_legendre(n, w, x);
 
     double triple_energy = 0.0;
     double triple_energys = 0.0;

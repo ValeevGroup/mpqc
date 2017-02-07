@@ -16,7 +16,8 @@ namespace lcao {
 
 /// computes the MO-basis Fock matrix and extracts the diagonal elements
 template <typename Tile, typename Policy>
-std::shared_ptr<Eigen::VectorXd> make_orbital_energy(LCAOFactory<Tile,Policy>& lcao_factory, bool df) {
+std::shared_ptr<Eigen::VectorXd> make_orbital_energy(LCAOFactory<Tile,Policy>& lcao_factory) {
+  bool df = lcao_factory.ao_factory().registry().have(Formula(L"<μ|F|ν>[df]"));
   auto str = df ? L"<p|F|q>[df]" : L"<p|F|q>";
   auto Fpq_eig = array_ops::array_to_eigen(lcao_factory.compute(str));
   return std::make_shared<Eigen::VectorXd>(Fpq_eig.diagonal());

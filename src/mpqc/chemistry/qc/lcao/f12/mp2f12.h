@@ -66,9 +66,6 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
   /// initialize mp2f12
   virtual void init(double ref_precision);
 
-  /// initialize orbital energy
-  virtual void init_orbital_energy();
-
   /// function to compute B intermediate
   virtual TArray compute_B();
 
@@ -129,7 +126,6 @@ class RIRMP2F12 : public RMP2F12<Tile> {
   ~RIRMP2F12() = default;
 
  private:
-  void init_orbital_energy() override;
   TArray compute_B() override;
   TArray compute_V() override;
   TArray compute_X() override;

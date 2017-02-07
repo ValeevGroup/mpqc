@@ -178,7 +178,7 @@ protected:
 
       this->init_sdref(ref_wfn_, target_ref_precision);
 
-      orbital_energy_ = make_orbital_energy(this->lcao_factory(), df_);
+      orbital_energy_ = make_orbital_energy(this->lcao_factory());
 
       // set the precision
       target_precision_ = energy->target_precision(0);

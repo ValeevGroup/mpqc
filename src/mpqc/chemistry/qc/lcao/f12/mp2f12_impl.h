@@ -212,7 +212,7 @@ template <typename Tile>
 void RMP2F12<Tile>::init(double ref_precision) {
   this->init_sdref(ref_wfn_, ref_precision);
 
-  init_orbital_energy();
+  this->orbital_energy_ = make_orbital_energy(this->lcao_factory());
 
   // create shape
   auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
@@ -222,11 +222,6 @@ void RMP2F12<Tile>::init(double ref_precision) {
   // initialize cabs
   closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),
                                  this->unocc_block());
-}
-
-template <typename Tile>
-void RMP2F12<Tile>::init_orbital_energy() {
-  this->orbital_energy_ = make_orbital_energy(this->lcao_factory(), false);
 }
 
 template <typename Tile>
@@ -307,11 +302,6 @@ TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_B() {
                                       this->ijij_ijji_shape_);
   }
   return B;
-}
-
-template <typename Tile>
-void RIRMP2F12<Tile>::init_orbital_energy() {
-  this->orbital_energy_ = make_orbital_energy(this->lcao_factory(), true);
 }
 
 template <typename Tile>

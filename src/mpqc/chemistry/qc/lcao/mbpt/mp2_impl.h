@@ -77,7 +77,7 @@ void RMP2<Tile,Policy>::evaluate(Energy* result) {
 template<typename Tile, typename Policy>
 double RMP2<Tile,Policy>::compute() {
   auto &lcao_factory = this->lcao_factory();
-  return detail::compute_mp2(lcao_factory, make_orbital_energy(lcao_factory,false),
+  return detail::compute_mp2(lcao_factory, make_orbital_energy(lcao_factory),
                              this->trange1_engine(), false);
 }
 
@@ -97,7 +97,7 @@ RIRMP2<Tile,Policy>::RIRMP2(const KeyVal &kv) : RMP2<Tile,Policy>(kv) {}
 template<typename Tile, typename Policy>
 double RIRMP2<Tile,Policy>::compute() {
   auto &lcao_factory = this->lcao_factory();
-  return detail::compute_mp2(lcao_factory, make_orbital_energy(lcao_factory,true),
+  return detail::compute_mp2(lcao_factory, make_orbital_energy(lcao_factory),
                              this->trange1_engine(), true);
 }
 }  // namespace lcao

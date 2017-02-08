@@ -494,14 +494,19 @@ class KeyVal {
     return *this;
   }
 
-  /// assign the given pointer to a DescribedClass at the given path (overwrite,
+  /// assign the given pointer to a DescribedClass object at the given path (overwrite,
   /// if necessary)
+  /// @tparam T a class directly derived from DescribedClass
+  /// @param path the path to \c value
+  /// @param value the object pointer to assign to path \c path
   /// @warning these key/value pairs are not part of ptree, hence cannot be
   /// written to JSON/XML
-  KeyVal& assign(const key_type& path,
-                 const std::shared_ptr<DescribedClass>& value) {
+  template <typename T = DescribedClass,
+      typename = std::enable_if_t<Describable<T>::value>>
+      KeyVal& assign(const key_type& path,
+                     const std::shared_ptr<T>& value) {
     auto abs_path = to_absolute_path(path);
-    (*dc_registry_)[abs_path] = value;
+    (*dc_registry_)[abs_path] = std::static_pointer_cast<DescribedClass>(value);
     return *this;
   }
 

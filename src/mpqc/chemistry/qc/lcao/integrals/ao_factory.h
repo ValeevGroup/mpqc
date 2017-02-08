@@ -239,7 +239,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
 
         // store current array and delete old one
         ao_formula_registry_.insert(formula, result);
-        //        ao_formula_registry_.purge_formula(world_,permute);
+        ao_formula_registry_.purge_formula(world_,permute);
         return result;
       }
     }

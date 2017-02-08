@@ -7,7 +7,7 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 
 #include "../../../../../utility/cc_utility.h"
 #include "mpqc/chemistry/qc/cc/diis_ccsd.h"
@@ -29,6 +29,8 @@ class CC2 {
 
   typedef TA::Array<double, 4, LazyTwoElectronTile, Policy>
       DirectTwoElectronArray;
+
+  using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
   CC2(const TArray2 &fock, const Eigen::VectorXd &ens,
       const std::shared_ptr<TRange1Engine> &tre,
@@ -185,7 +187,7 @@ class CC2 {
 
  private:
   Eigen::VectorXd ens_;
-  std::shared_ptr<mpqc::TRange1Engine> tre_;
+  std::shared_ptr<TRange1Engine> tre_;
   std::shared_ptr<cc::CCSDIntermediate<Tile, Policy>> intermediate_;
   TArrayBlock2 fock_;
 };

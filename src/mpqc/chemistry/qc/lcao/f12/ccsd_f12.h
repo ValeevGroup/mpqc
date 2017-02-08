@@ -9,7 +9,7 @@
 
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
 #include "mpqc/chemistry/qc/lcao/f12/f12_intermediates.h"
-#include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/f12/cabs_singles.h"
 #include "mpqc/mpqc_config.h"
 

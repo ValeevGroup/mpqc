@@ -5,6 +5,7 @@
 #include "trange1_engine.h"
 
 namespace mpqc {
+namespace utility {
 
 TA::TiledRange1 TRange1Engine::compute_range(std::size_t range,
                                              std::size_t block_size) {
@@ -58,4 +59,5 @@ void TRange1Engine::init() {
   // std::cout << active_occ_blocks_ << " " << vir_blocks_ << std::endl;
 }
 
+}  // namespace utility
 }  // namespace mpqc

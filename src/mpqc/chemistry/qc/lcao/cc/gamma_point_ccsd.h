@@ -565,7 +565,7 @@ class GammaPointCCSD : public PeriodicLCAOWavefunction<Tile, Policy>,
 
       ref_evaluator->evaluate(result);
 
-      double ref_energy = this->get_value(result).derivs(0)[0];
+      double ref_energy = result->energy();
 
       // initialize
       init();

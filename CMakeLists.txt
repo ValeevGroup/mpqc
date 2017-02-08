@@ -15,7 +15,7 @@ if (MPQC_BUILDID)
   set(MPQC_VERSION "${MPQC_VERSION}-${MPQC_BUILDID}")
 endif(MPQC_BUILDID)
 
-set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(TARGET_ARCH "${CMAKE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}")
 
 ###############################################################################
 # Load up extra CMake packages

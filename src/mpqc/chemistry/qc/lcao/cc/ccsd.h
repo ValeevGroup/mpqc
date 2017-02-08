@@ -13,7 +13,7 @@
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
-#include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/mpqc_config.h"
 
 
@@ -67,7 +67,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
    * | method | string | standard | method to compute ccsd (standard, direct) |
-   * | converge | double | 0, it uses precision provided by Energy | overide default by provide a value|
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
    * | less_memory | bool | false | avoid store another abcd term in standard and df method |
@@ -94,7 +93,6 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
 
     max_iter_ = kv.value<int>("max_iter", 20);
-    converge_ = kv.value<double>("converge", 0);
     print_detail_ = kv.value<bool>("print_detail", false);
   }
 
@@ -113,20 +111,23 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   bool df_;
   std::string method_;
   std::size_t max_iter_;
-  double converge_;
+  double target_precision_;
+  double computed_precision_ = std::numeric_limits<double>::max();
   bool print_detail_;
   double ccsd_corr_energy_;
+  // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
+  std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+
+ protected:
+  std::shared_ptr<const Eigen::VectorXd> orbital_energy() { return orbital_energy_; }
 
  public:
 
   void obsolete() override {
     ccsd_corr_energy_ = 0.0;
+    orbital_energy_.reset();
     LCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
-  }
-
-  void set_trange1_engine(const std::shared_ptr<TRange1Engine> &tr1) {
-    this->trange1_engine_ = tr1;
   }
 
   // get T1 amplitudes
@@ -165,30 +166,22 @@ protected:
     return energy->order() == 0;
   }
 
-  void evaluate(Energy* result) override {
-    if (!this->computed()){
+  void evaluate(Energy* energy) override {
+    auto target_precision = energy->target_precision(0);
+    // compute only if never computed, or requested with higher precision than before
+    if (!this->computed() || computed_precision_ > target_precision) {
 
-      /// cast ref_wfn to Energy::Provider
-      auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Provider>(ref_wfn_);
-      if(ref_evaluator == nullptr) {
-        std::ostringstream oss;
-        oss << "RefWavefunction in CCSD" << ref_wfn_->class_key()
-            << " cannot compute Energy" << std::endl;
-        throw InputError(oss.str().c_str(), __FILE__, __LINE__);
-      }
+      // compute reference to higher precision than required of correlation energy
+      auto target_ref_precision = target_precision / 100.;
+      auto ref_energy = std::make_shared<Energy>(ref_wfn_, target_ref_precision);
+      ::mpqc::evaluate(*ref_energy, ref_wfn_);
 
-      ref_evaluator->evaluate(result);
+      this->init_sdref(ref_wfn_, target_ref_precision);
 
-      double ref_energy = this->get_value(result).derivs(0)[0];
-
-      // initialize
-      this->init();
+      orbital_energy_ = make_orbital_energy(this->lcao_factory());
 
       // set the precision
-      if(converge_ == 0.0){
-        // if no user provided converge limit, use the default one from Energy
-        converge_ = result->target_precision(0);
-      }
+      target_precision_ = energy->target_precision(0);
 
       TArray t1;
       TArray t2;
@@ -209,7 +202,7 @@ protected:
       T2_ = t2;
 
       this->computed_ = true;
-      this->set_value(result, ref_energy + ccsd_corr_energy_);
+      this->set_value(energy, ref_energy->energy() + ccsd_corr_energy_);
     }
   }
 
@@ -248,12 +241,12 @@ private:
     TArray f_ai = this->get_fock_ai();
 
     // store d1 to local
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
 
-    t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
+    t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -278,7 +271,7 @@ private:
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "Target precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
       if (less) {
@@ -517,7 +510,7 @@ private:
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+      d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
 
       r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -538,7 +531,7 @@ private:
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= converge_ || error >= converge_) {
+      if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         cc::T1T2<TArray,TArray> t(t1, t2);
         cc::T1T2<TArray,TArray> r(r1, r2);
@@ -622,12 +615,12 @@ private:
     TArray f_ai = this->get_fock_ai();
 
     // store d1 to local
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
 
-    t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
+    t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
 
     TArray tau;
     tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
@@ -652,7 +645,7 @@ private:
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
       if (less) {
@@ -891,7 +884,7 @@ private:
         mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
       }
 
-      d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+      d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
 
       r2("a,b,i,j") -= t2("a,b,i,j");
 
@@ -912,7 +905,7 @@ private:
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= converge_ || error >= converge_) {
+      if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         cc::T1T2<TArray,TArray> t(t1, t2);
         cc::T1T2<TArray,TArray> r(r1, r2);
@@ -988,12 +981,12 @@ private:
 
     TArray f_ai = this->get_fock_ai();
 
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *this->orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
 
-    t2 = d_abij(g_abij, *this->orbital_energy(), n_occ, n_frozen);
+    t2 = d_abij(g_abij, *orbital_energy(), n_occ, n_frozen);
 
     //      std::cout << t1 << std::endl;
     //      std::cout << t2 << std::endl;
@@ -1032,7 +1025,7 @@ private:
     if (world.rank() == 0) {
       std::cout << "Start Iteration" << std::endl;
       std::cout << "Max Iteration: " << max_iter_ << std::endl;
-      std::cout << "Convergence: " << converge_ << std::endl;
+      std::cout << "Target Precision: " << target_precision_ << std::endl;
       std::cout << "AccurateTime: " << accurate_time << std::endl;
       std::cout << "PrintDetail: " << print_detail_ << std::endl;
     };
@@ -1264,7 +1257,7 @@ private:
           mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
         }
 
-        d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
+        d_abij_inplace(r2, *orbital_energy(), n_occ, n_frozen);
 
         r2("a,b,i,j") -= t2("a,b,i,j");
       }
@@ -1287,7 +1280,7 @@ private:
                    tau("a,b,i,j"));
       dE = std::abs(E0 - E1);
 
-      if (dE >= converge_ || error >= converge_) {
+      if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
         cc::T1T2<TArray,TArray> t(t1, t2);
         cc::T1T2<TArray,TArray> r(r1, r2);
@@ -1504,6 +1497,15 @@ private:
       return this->lcao_factory().compute(L"<a|F|i>[df]");
     } else {
       return this->lcao_factory().compute(L"<a|F|i>");
+    }
+  }
+
+  /// <p|f|q>
+  const TArray get_fock_pq() {
+    if (df_) {
+      return this->lcao_factory().compute(L"<p|F|q>[df]");
+    } else {
+      return this->lcao_factory().compute(L"<p|F|q>");
     }
   }
 

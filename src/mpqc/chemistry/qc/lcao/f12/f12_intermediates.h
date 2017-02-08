@@ -1701,9 +1701,9 @@ VX_pqrs_pqsr(const std::string &target_str,
     if (need_pqsr) {
       const auto left_ps =
           lcao_factory(wconcat(L"(Κ |", opstr, "|", p, " ", s, ")"));
-      const auto right_qr =
-          lcao_factory(wconcat(L"(Λ |", opstr, "|", q, " ", r, ")"));
-      A_pqsr(concatcm(p, q, s, r)) = left_ps * middle * right_qr;
+      const auto right_rq =
+          lcao_factory(wconcat(L"(Λ |", opstr, "|", r, " ", q, ")"));
+      A_pqsr(concatcm(p, q, s, r)) = left_ps * middle * right_rq;
     }
     // remove all generated integrals as they are likely not needed any longer
     lcao_factory.purge_operator(world, to_wstring(opstr));

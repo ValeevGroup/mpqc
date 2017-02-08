@@ -15,7 +15,7 @@
 #include "mpqc/math/external/eigen/eigen.h"
 #include "mpqc/math/tensor/clr/minimize_storage.h"
 
-#include "mpqc/chemistry/qc/lcao/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/lcao/scf/builder.h"
 #include "mpqc/chemistry/qc/lcao/scf/cadf_fitting_coeffs.h"

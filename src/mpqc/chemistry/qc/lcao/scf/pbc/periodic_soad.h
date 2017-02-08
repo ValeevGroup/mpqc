@@ -6,7 +6,7 @@
 
 #include "mpqc/chemistry/molecule/unit_cell.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 
 namespace mpqc {

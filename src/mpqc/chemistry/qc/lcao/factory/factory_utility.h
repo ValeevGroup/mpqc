@@ -2,15 +2,15 @@
 // Created by Chong Peng on 3/2/16.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_FACTORY_UTILITY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_FACTORY_UTILITY_H_
 
 #include <cwchar>
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "integrals.h"
+#include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis_registry.h"
 #include "mpqc/chemistry/qc/lcao/expression/formula.h"
@@ -126,4 +126,4 @@ libint2::Operator to_libint2_operator(Operator::Type mpqc_oper);
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_BASE_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_FACTORY_UTILITY_H_

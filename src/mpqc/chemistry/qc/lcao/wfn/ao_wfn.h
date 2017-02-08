@@ -9,7 +9,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_WFN_AO_WFN_H_
 
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
-#include "mpqc/chemistry/qc/lcao/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/ao_factory.h"
 //#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
 
 namespace mpqc {

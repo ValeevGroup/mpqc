@@ -2,7 +2,7 @@
 // Created by Chong Peng on 4/26/16.
 //
 
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
 //#include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
 
 namespace mpqc {

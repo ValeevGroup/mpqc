@@ -7,7 +7,7 @@
 
 #include "mpqc/chemistry/qc/lcao/expression/orbital_space.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
 //#include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/qc/properties/property.h"

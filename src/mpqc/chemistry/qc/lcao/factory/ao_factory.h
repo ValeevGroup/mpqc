@@ -2,10 +2,10 @@
 // Created by Chong Peng on 10/14/15.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_
 
-#include "ao_factory_detail.h"
+#include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
 #include "mpqc/chemistry/qc/lcao/expression/permutation.h"
 #include "mpqc/chemistry/qc/lcao/integrals/f12_utility.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
@@ -339,6 +339,6 @@ extern template class AOFactory<TA::TensorD, TA::DensePolicy>;
 }  // namespace lcao
 }  // namespace mpqc
 
-#include "mpqc/chemistry/qc/lcao/integrals/ao_factory_impl.h"
+#include "ao_factory_impl.h"
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_AO_FACTORY_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_

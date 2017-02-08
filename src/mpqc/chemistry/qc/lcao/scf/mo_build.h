@@ -8,7 +8,7 @@
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/lcao/expression/orbital_registry.h"
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 
 namespace mpqc {

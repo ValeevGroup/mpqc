@@ -2,8 +2,8 @@
 // Created by Chong Peng on 1/7/16.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_LCAO_FACTORY_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_LCAO_FACTORY_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_LCAO_FACTORY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_LCAO_FACTORY_H_
 
 #include <string>
 #include <vector>
@@ -11,7 +11,7 @@
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/lcao/expression/orbital_registry.h"
-#include "mpqc/chemistry/qc/lcao/integrals/ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/wfn/wfn_world.h"
 #include "mpqc/math/linalg/diagonal_array.h"
 
@@ -663,4 +663,4 @@ extern template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
 }  // namespace integral
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_LCAO_FACTORY_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_LCAO_FACTORY_H_

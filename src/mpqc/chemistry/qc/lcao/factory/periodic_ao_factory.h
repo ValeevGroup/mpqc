@@ -1,8 +1,8 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_PERIODIC_AO_FACTORY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_PERIODIC_AO_FACTORY_H_
 
-#include "mpqc/chemistry/qc/lcao/integrals/ao_factory.h"
-#include "mpqc/chemistry/qc/lcao/integrals/ao_factory_detail.h"
+#include "mpqc/chemistry/qc/lcao/factory/ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
 
 #include <iosfwd>
 #include <vector>
@@ -731,4 +731,4 @@ std::ostream &operator<<(std::ostream &os,
 }  // namespace gaussian
 }  // namespace lcao
 }  // namespace mpqc
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_PERIODIC_AO_FACTORY_H_

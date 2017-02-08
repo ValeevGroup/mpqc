@@ -1,7 +1,7 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_COND_ORTHO_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_PBC_PERIODIC_COND_ORTHO_H_
 
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 
 namespace mpqc {
 namespace utility {

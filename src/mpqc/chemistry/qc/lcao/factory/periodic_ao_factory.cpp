@@ -1,4 +1,4 @@
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 
 namespace mpqc {
 namespace lcao {

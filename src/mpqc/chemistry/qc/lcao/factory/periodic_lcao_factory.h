@@ -1,8 +1,8 @@
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_LCAO_FACTORY_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_LCAO_FACTORY_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_PERIODIC_LCAO_FACTORY_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_PERIODIC_LCAO_FACTORY_H_
 
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
+#include "periodic_ao_factory.h"
 
 namespace mpqc {
 namespace lcao {
@@ -593,4 +593,4 @@ Formula PeriodicLCAOFactory<Tile, Policy>::mo_to_ao(const Formula &formula) {
 
 }  // namespace lcao
 }  // namespace mpqc
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_LCAO_FACTORY_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_PERIODIC_LCAO_FACTORY_H_

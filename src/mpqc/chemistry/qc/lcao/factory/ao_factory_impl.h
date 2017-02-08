@@ -2,8 +2,8 @@
 // Created by Chong Peng on 2/2/17.
 //
 
-#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_INTEGRALS_AO_FACTORY_IMPL_H_
-#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_INTEGRALS_AO_FACTORY_IMPL_H_
+#ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_IMPL_H_
+#define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_IMPL_H_
 
 namespace mpqc {
 namespace lcao {
@@ -898,4 +898,4 @@ void AOFactory<Tile, Policy>::parse_two_body_four_center(
 }  // namespace lcao
 }  // namespace mpqc
 
-#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_INTEGRALS_AO_FACTORY_IMPL_H_
+#endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_IMPL_H_

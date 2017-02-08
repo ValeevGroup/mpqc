@@ -7,7 +7,7 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
 #include "mpqc/util/misc/string.h"
 
 namespace mpqc {

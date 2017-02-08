@@ -50,7 +50,7 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
       }
     }
     gtg_params_ = gtg_params.compute();
-    if (world().rank() == 0) {
+    if (world_.rank() == 0) {
       std::cout << "F12 Correlation Factor: " << gtg_params.exponent
                 << std::endl;
       std::cout << "NFunction: " << gtg_params.n_fit << std::endl;

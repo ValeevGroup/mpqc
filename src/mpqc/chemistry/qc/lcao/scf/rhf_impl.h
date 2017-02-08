@@ -29,8 +29,7 @@ namespace lcao {
 template <typename Tile, typename Policy>
 RHF<Tile, Policy>::RHF(const KeyVal& kv)
     : AOWavefunction<Tile, Policy>(kv), kv_(kv) {
-  auto& ao_factory = this->ao_factory();
-  auto& mol = ao_factory.molecule();
+  auto mol = *this->wfn_world()->atoms();
 
   // get the molecular charge
   const auto charge = kv.value<int>("charge", 0);
@@ -54,8 +53,8 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
 template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::init(const KeyVal& kv) {
   auto& ao_factory = this->ao_factory();
-  auto& world = ao_factory.world();
-  auto& mol = ao_factory.molecule();
+  auto& world = this->wfn_world()->world();
+  const auto& mol = *this->wfn_world()->atoms();
 
   // Overlap ints
   S_ = ao_factory.compute(L"<κ|λ>");
@@ -66,8 +65,8 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
   init_fock_builder();
 
   // emultipole integral TODO better interface to compute this
-  auto basis =
-      *ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
+  const auto& basis =
+      *this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
   const auto bs_array = utility::make_array(basis, basis);
   auto multi_pool = gaussian::make_engine_pool(
       libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
@@ -134,7 +133,7 @@ void RHF<Tile, Policy>::obsolete() {
 
 template <typename Tile, typename Policy>
 double RHF<Tile, Policy>::compute_energy() const {
-  return this->ao_factory().molecule().nuclear_repulsion_energy() +
+  return this->wfn_world()->atoms()->nuclear_repulsion_energy() +
          D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
 }
 
@@ -357,7 +356,7 @@ RHF<Tile,Policy>::make_canonical_orbitals(std::size_t target_blocksize) {
 
   // convert to TA
   auto C_obs = array_ops::eigen_to_array<Tile, Policy>(
-      this->ao_factory().world(), C, tr_ao, tr_all);
+      this->wfn_world()->world(), C, tr_ao, tr_all);
 
   return std::make_tuple(evals, C_obs);
 }

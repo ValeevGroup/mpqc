@@ -103,7 +103,7 @@ class AOFactory : virtual public DescribedClass {
 
   /// @brief Molecule accessor
   /// @return molecule object
-  const Molecule& molecule() const { return *molecule_; }
+//  const Molecule& molecule() const { return *molecule_; }
 
   /// @brief (contracted) Gaussian-types geminal parameters accessor
   /// @return Gaussian-type geminal parameters
@@ -117,11 +117,6 @@ class AOFactory : virtual public DescribedClass {
   void set_orbital_basis_registry(
       const std::shared_ptr<gaussian::OrbitalBasisRegistry>& obs) {
     orbital_basis_registry_ = obs;
-  }
-
-  /// @return the OrbitalBasisRegistry object
-  const OrbitalBasisRegistry& orbital_basis_registry() const {
-    return *orbital_basis_registry_;
   }
 
   /// @return the OrbitalBasisRegistry object

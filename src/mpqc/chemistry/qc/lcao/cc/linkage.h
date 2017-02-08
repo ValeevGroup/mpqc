@@ -21,19 +21,19 @@ class DBCCSD;
 //template <typename Tile, typename Policy>
 //class GammaPointCCSD;
 template <typename Tile, typename Policy>
-class GammaPointCCSDVersion2;
+class GammaPointCCSD;
 
 namespace cc {
 #if TA_DEFAULT_POLICY == 0
 mpqc::detail::ForceLink<CCSD<TA::TensorD, TA::DensePolicy>> fl1;
 mpqc::detail::ForceLink<CCSD_T<TA::TensorD, TA::DensePolicy>> fl2;
 mpqc::detail::ForceLink<DBCCSD<TA::TensorD, TA::DensePolicy>> fl3;
-mpqc::detail::ForceLink<GammaPointCCSDVersion2<TA::TensorD, TA::DensePolicy>> fl4;
+mpqc::detail::ForceLink<GammaPointCCSD<TA::TensorD, TA::DensePolicy>> fl4;
 #elif TA_DEFAULT_POLICY == 1
 mpqc::detail::ForceLink<CCSD<TA::TensorD, TA::SparsePolicy>> fl1;
 mpqc::detail::ForceLink<CCSD_T<TA::TensorD, TA::SparsePolicy>> fl2;
 mpqc::detail::ForceLink<DBCCSD<TA::TensorD, TA::SparsePolicy>> fl3;
-mpqc::detail::ForceLink<GammaPointCCSDVersion2<TA::TensorD, TA::SparsePolicy>> fl4;
+mpqc::detail::ForceLink<GammaPointCCSD<TA::TensorD, TA::SparsePolicy>> fl4;
 #endif
 }  // namespace
 }  // namespace lcao

@@ -26,7 +26,7 @@ class RIDBRMP2;
 //template<typename Tile, typename Policy>
 //class GammaPointMP2;
 template<typename Tile, typename Policy>
-class GammaPointMP2Version2;
+class GammaPointMP2;
 
 namespace mbpt {
 #if TA_DEFAULT_POLICY == 0
@@ -34,14 +34,14 @@ mpqc::detail::ForceLink<RMP2<TA::TensorD, TA::DensePolicy>> fl1;
 mpqc::detail::ForceLink<RIRMP2<TA::TensorD, TA::DensePolicy>> fl2;
 mpqc::detail::ForceLink<DBRMP2<TA::TensorD, TA::DensePolicy>> fl3;
 mpqc::detail::ForceLink<RIDBRMP2<TA::TensorD, TA::DensePolicy>> fl4;
-mpqc::detail::ForceLink<GammaPointMP2Version2<TA::TensorD, TA::DensePolicy>> fl5;
+mpqc::detail::ForceLink<GammaPointMP2<TA::TensorD, TA::DensePolicy>> fl5;
 
 #elif TA_DEFAULT_POLICY == 1
 mpqc::detail::ForceLink<RMP2<TA::TensorD, TA::SparsePolicy>> fl1;
 mpqc::detail::ForceLink<RIRMP2<TA::TensorD, TA::SparsePolicy>> fl2;
 mpqc::detail::ForceLink<DBRMP2<TA::TensorD, TA::SparsePolicy>> fl3;
 mpqc::detail::ForceLink<RIDBRMP2<TA::TensorD, TA::SparsePolicy>> fl4;
-mpqc::detail::ForceLink<GammaPointMP2Version2<TA::TensorD, TA::SparsePolicy>> fl5;
+mpqc::detail::ForceLink<GammaPointMP2<TA::TensorD, TA::SparsePolicy>> fl5;
 
 #endif
 }

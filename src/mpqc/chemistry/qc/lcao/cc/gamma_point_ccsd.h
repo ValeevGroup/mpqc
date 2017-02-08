@@ -26,17 +26,17 @@ inline void print_gamma_point_ccsd(int iter, double dE, double error, double E1,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class GammaPointCCSDVersion2 : public CCSD<Tile, Policy> {
+class GammaPointCCSD : public CCSD<Tile, Policy> {
 
 public:
     using LCAOFactoryType = PeriodicLCAOFactory<Tile, Policy>;
     using TArray = typename CCSD<Tile, Policy>::TArray;
 
-    GammaPointCCSDVersion2() = default;
+    GammaPointCCSD() = default;
 
-    ~GammaPointCCSDVersion2() {}
+    ~GammaPointCCSD() {}
 
-    GammaPointCCSDVersion2(const KeyVal &kv) : CCSD<Tile, Policy>(kv), kv_(kv) {
+    GammaPointCCSD(const KeyVal &kv) : CCSD<Tile, Policy>(kv), kv_(kv) {
         phf_wfn_ = kv.keyval("ref").class_ptr<PeriodicAOWavefunction<TA::TensorZ, Policy>>();
         lcao_factory_ = lcao::detail::construct_periodic_lcao_factory<Tile, Policy>(kv);
 
@@ -131,6 +131,11 @@ private:
         return lcao_factory_->compute(L"<a b |G|i j>");
     }
 
+    /// <ij|ab>
+    const TArray get_ijab() override {
+        return lcao_factory_->compute(L"<i j |G|a b>");
+    }
+
     /// <ij|kl>
     const TArray get_ijkl() override {
       return lcao_factory_->compute(L"<i j|G|k l>");
@@ -174,9 +179,9 @@ private:
 };
 
 #if TA_DEFAULT_POLICY == 0
-extern template class GammaPointCCSDVersion2<TA::TensorD, TA::DensePolicy>;
+extern template class GammaPointCCSD<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
-extern template class GammaPointCCSDVersion2<TA::TensorD, TA::SparsePolicy>;
+extern template class GammaPointCCSD<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace lcao

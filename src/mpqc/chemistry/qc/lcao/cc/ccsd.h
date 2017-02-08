@@ -238,6 +238,7 @@ protected:
     TArray g_aibc = this->get_aibc();
     TArray g_ijak = this->get_ijak();
     TArray g_ijka = this->get_ijka();
+
     auto tmp_time1 = mpqc::now(world, accurate_time);
     auto tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
     if (print_detail_) {
@@ -1425,6 +1426,15 @@ private:
     } else {
       return this->lcao_factory().compute(L"<a b|G|i j>");
     }
+  }
+
+  /// <ij|ab>
+  virtual const TArray get_ijab() {
+      if (df_) {
+        return this->lcao_factory().compute(L"<i j|G|a b>[df]");
+      } else {
+        return this->lcao_factory().compute(L"<i j|G|a b>");
+      }
   }
 
   /// <ij|kl>

@@ -9,15 +9,15 @@ namespace mpqc {
 namespace lcao {
 
 template <typename Tile, typename Policy>
-class GammaPointMP2Version2 : public RMP2<Tile, Policy> {
+class GammaPointMP2 : public RMP2<Tile, Policy> {
 public:
     using LCAOFactoryType = PeriodicLCAOFactory<Tile, Policy>;
 
-    GammaPointMP2Version2() = default;
+    GammaPointMP2() = default;
 
-    ~GammaPointMP2Version2() = default;
+    ~GammaPointMP2() = default;
 
-    GammaPointMP2Version2(const KeyVal &kv) : RMP2<Tile, Policy>(kv) {
+    GammaPointMP2(const KeyVal &kv) : RMP2<Tile, Policy>(kv) {
 
         phf_wfn_ = kv.keyval("ref").class_ptr<PeriodicAOWavefunction<TA::TensorZ, Policy>>();
         lcao_factory_ = lcao::detail::construct_periodic_lcao_factory<Tile,Policy>(kv);
@@ -139,9 +139,9 @@ private:
 };
 
 #if TA_DEFAULT_POLICY == 0
-extern template class GammaPointMP2Version2<TA::TensorD, TA::DensePolicy>;
+extern template class GammaPointMP2<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
-extern template class GammaPointMP2Version2<TA::TensorD, TA::SparsePolicy>;
+extern template class GammaPointMP2<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace lcao

@@ -141,6 +141,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // clean all LCAO integral
     this->lcao_factory().registry().purge(world);
 
+    if(approach_ != "laplace"){
+      // reblock occ and unocc space
+      if (reblock_ || reblock_inner_) {
+        reblock();
+      }
+    }
+
     // start CCSD(T)
     ExEnv::out0() << "\nBegining CCSD(T) " << std::endl;
     TArray t1 = this->t1();
@@ -185,11 +192,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   double compute_ccsd_t_coarse_grain(TArray &t1, TArray &t2) {
     auto &global_world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
-
-    // reblock occ and unocc space
-    if (reblock_ || reblock_inner_) {
-      reblock();
-    }
 
     // get integral
     TArray g_cjkl_global = get_aijk();
@@ -625,11 +627,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto &world = this->wfn_world()->world();
     bool accurate_time = this->lcao_factory().accurate_time();
 
-    // reblock occ and unocc space
-    if (reblock_ || reblock_inner_) {
-      reblock();
-    }
-
     // get integral
     TArray g_cjkl = get_aijk();
     TArray g_abij = get_abij();
@@ -1035,11 +1032,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   // compute and store all t3 amplitudes, not recommanded for performance
   // computing
   double compute_ccsd_t_straight(const TArray &t1, const TArray &t2) {
-    // reblock occ and unocc space
-    if (reblock_ || reblock_inner_) {
-      reblock();
-    }
-
     // get integral
     TArray g_cjkl = get_aijk();
     TArray g_dabi = get_abci();

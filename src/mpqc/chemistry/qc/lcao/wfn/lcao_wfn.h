@@ -10,6 +10,8 @@
 #include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/wfn/trange1_engine.h"
 
+#include "mpqc/util/misc/exception.h"
+
 namespace mpqc{
 namespace lcao{
 

@@ -2,6 +2,12 @@
 #define SRC_MPQC_UTIL_MISC_PROVIDER_H_
 
 #include <memory>
+#include <string>
+#include <sstream>
+#include <type_traits>
+
+#include "mpqc/util/misc/exception.h"
+#include "mpqc/util/keyval/keyval.h"
 
 // This provides syntactic sugar for Acyclic Visitor.
 // We are not using the traditional names since they only confuse users.

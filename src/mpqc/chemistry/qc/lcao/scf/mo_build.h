@@ -8,124 +8,295 @@
 #include <tiledarray.h>
 
 #include "mpqc/chemistry/qc/lcao/expression/orbital_registry.h"
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
+#include "mpqc/util/misc/provider.h"
 
 namespace mpqc {
 namespace lcao {
 
 /// computes the MO-basis Fock matrix and extracts the diagonal elements
 template <typename Tile, typename Policy>
-std::shared_ptr<Eigen::VectorXd> make_orbital_energy(LCAOFactory<Tile,Policy>& lcao_factory) {
+std::shared_ptr<Eigen::VectorXd> make_orbital_energy(
+    LCAOFactory<Tile, Policy> &lcao_factory) {
   bool df = lcao_factory.ao_factory().registry().have(Formula(L"<μ|F|ν>[df]"));
   auto str = df ? L"<p|F|q>[df]" : L"<p|F|q>";
   auto Fpq_eig = array_ops::array_to_eigen(lcao_factory.compute(str));
   return std::make_shared<Eigen::VectorXd>(Fpq_eig.diagonal());
 }
 
+/// @brief populates the LCAOFactory object with
+///        the canonical single-determinant closed-shell reference state orbital
+///        spaces
 
+/// Populates the LCAOFactory object with the occupied, active occupied,
+/// unoccupied, and full orbtial spaces.
+/// @param lcao the LCAOFactory object to be populated
+/// @param wfn provides CanonicalOrbitalSpace, will be computed
+/// @param target_ref_precision the precision with which to compute the
+///                orbitals (also see
+///                CanonicalOrbitalSpace::Provider::evaluate())
+/// @param ndocc the number of doubly occupied orbitals in the reference
+/// @param n_frozen_core the number of frozen core orbitals
+/// @param occ_blksize the target block size for the occupied orbitals
+/// @param unocc_blksize the target block size for the unoccupied orbitals
 template <typename Tile, typename Policy>
-std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_obs_mo_build_eigen_solve(
-    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens, std::size_t nocc,
-    const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
-    std::size_t vir_blocksize) {
-  auto &ao_factory = lcao_factory.ao_factory();
-  auto &orbital_registry = lcao_factory.orbital_space();
-  auto &world = ao_factory.world();
+void make_closed_shell_canonical_sdref_subspaces(
+    std::shared_ptr<LCAOFactory<Tile, Policy>> lcao_factory,
+    std::shared_ptr<
+        typename CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>::Provider>
+        wfn,
+    double target_ref_precision, std::size_t ndocc, std::size_t n_frozen_core,
+    std::size_t occ_blksize, std::size_t unocc_blksize) {
   using TArray = TA::DistArray<Tile, Policy>;
+  using COrbSpace = CanonicalOrbitalSpace<TArray>;
 
-  auto mo_time0 = mpqc::fenced_now(world);
-  utility::print_par(world, "\nBuilding ClosedShell OBS MO Orbital\n");
+  // compute the full canonical pace
+  std::shared_ptr<COrbSpace> p_space = std::make_shared<COrbSpace>();
+  evaluate(*p_space, wfn, target_ref_precision);
+  const auto &eps_p = p_space->attributes();
 
-  // find fock matrix
-  TArray F;
-  if (ao_factory.registry().have(Formula(L"<μ|F|ν>"))) {
-    F = ao_factory.compute(Formula(L"<μ|F|ν>"));
-  } else {
-    F = ao_factory.compute(Formula(L"<μ|F|ν>[df]"));
-  }
+  auto &orbital_registry = lcao_factory->orbital_space();
+  auto &world = lcao_factory->world();
 
-  auto S = ao_factory.compute(L"<κ|λ>");
+  // divide the LCAO space into subspaces using Eigen .. boo
+  RowMatrixXd C_p = array_ops::array_to_eigen(p_space->coefs());
+  const auto n = C_p.cols();
+  const auto nao = C_p.rows();
+  RowMatrixXd C_m = C_p.block(0, 0, C_p.rows(), ndocc);
+  RowMatrixXd C_i = C_m.block(0, n_frozen_core, nao, ndocc - n_frozen_core);
+  RowMatrixXd C_a = C_p.rightCols(n - ndocc);
 
-  RowMatrixXd F_eig = array_ops::array_to_eigen(F);
-  RowMatrixXd S_eig = array_ops::array_to_eigen(S);
-
-  // solve mo coefficients
-  Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
-
-  // start to solve coefficient
-
-  std::size_t n_frozen_core = 0;
-  if (frozen_core) {
-    n_frozen_core = mols.core_electrons();
-    utility::print_par(world, "Frozen Core: ", n_frozen_core, " electrons",
-                       "\n");
-    n_frozen_core = n_frozen_core / 2;
-  }
-
-  ens = es.eigenvalues();
-  RowMatrixXd C_all = es.eigenvectors();
-  RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), nocc);
-  RowMatrixXd C_corr_occ =
-      C_all.block(0, n_frozen_core, S_eig.rows(), nocc - n_frozen_core);
-  RowMatrixXd C_vir = C_all.rightCols(S_eig.rows() - nocc);
-
-  utility::print_par(world, "OccBlockSize: ", occ_blocksize, "\n");
-  utility::print_par(world, "VirBlockSize: ", vir_blocksize, "\n");
-
-  std::size_t all = S.trange().elements_range().extent()[0];
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
-  auto tre = std::make_shared<TRange1Engine>(nocc, all, occ_blocksize,
-                                             vir_blocksize, n_frozen_core);
+  auto tre = std::make_shared<TRange1Engine>(ndocc, n, occ_blksize,
+                                             unocc_blksize, n_frozen_core);
 
   // get all the trange1s
-  auto tr_obs = S.trange().data().back();
-  auto tr_corr_occ = tre->get_active_occ_tr1();
-  auto tr_occ = tre->compute_range(nocc, occ_blocksize);
-  auto tr_vir = tre->get_vir_tr1();
-  auto tr_all = tre->get_all_tr1();
+  auto tr_ao = p_space->coefs().trange().data()[0];
+  auto tr_i = tre->get_active_occ_tr1();
+  auto tr_m = tre->compute_range(ndocc, occ_blksize);
+  auto tr_a = tre->get_vir_tr1();
+  auto tr_p = tre->get_all_tr1();
 
-  mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ");
-  mpqc::detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
-  mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");
-  mpqc::detail::parallel_print_range_info(world, tr_all, "Obs");
+  // convert eigen arrays to TA
+  auto C_m_ta =
+      array_ops::eigen_to_array<Tile, Policy>(world, C_m, tr_ao, tr_m);
+  auto C_i_ta =
+      array_ops::eigen_to_array<Tile, Policy>(world, C_i, tr_ao, tr_i);
+  auto C_a_ta =
+      array_ops::eigen_to_array<Tile, Policy>(world, C_a, tr_ao, tr_a);
 
-  // convert to TA
-  auto C_occ_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_occ, tr_obs, tr_occ);
-  auto C_corr_occ_ta =
-      array_ops::eigen_to_array<Tile,Policy>(world, C_corr_occ, tr_obs, tr_corr_occ);
-  auto C_vir_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_vir, tr_obs, tr_vir);
-  auto C_all_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_all, tr_obs, tr_all);
+  // create orbital spaces and push into registry
+  std::vector<double> eps_m(eps_p.begin(), eps_p.begin() + ndocc);
+  auto m_space =
+      COrbSpace(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_m_ta, eps_m);
+  orbital_registry.add(m_space);
 
-  // insert to registry
-  using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
-  auto occ_space =
-      OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
-  orbital_registry.add(occ_space);
+  std::vector<double> eps_i(eps_m.begin() + n_frozen_core, eps_m.end());
+  auto i_space =
+      COrbSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_i_ta, eps_i);
+  orbital_registry.add(i_space);
 
-  auto corr_occ_space =
-      OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
-  orbital_registry.add(corr_occ_space);
+  std::vector<double> eps_a(eps_p.begin() + ndocc, eps_p.end());
+  auto a_space =
+      COrbSpace(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_a_ta, eps_a);
+  orbital_registry.add(a_space);
 
-  auto vir_space =
-      OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_vir_ta);
-  orbital_registry.add(vir_space);
+  // reblock the full space and add to the regisry
+  auto C_p_ta =
+      array_ops::eigen_to_array<Tile, Policy>(world, C_p, tr_ao, tr_p);
+  auto p_space_reblocked =
+      COrbSpace(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_p_ta, eps_p);
+  orbital_registry.add(p_space_reblocked);
+}
 
-  auto obs_space =
-      OrbitalSpaceTArray(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_all_ta);
-  orbital_registry.add(obs_space);
+/// @brief populates the LCAOFactory object with
+///        the single-determinant closed-shell reference state orbital spaces.
 
-  auto mo_time1 = mpqc::fenced_now(world);
-  auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
-  utility::print_par(world, "ClosedShell OBS MO Build Time: ", mo_time, " S\n");
+/// Populates the LCAOFactory object with the occupied, active occupied,
+/// unoccupied, and full orbital spaces. The input state is either the full
+/// populated set of reference orbitals, or just the occupied subset. In the
+/// latter
+/// case the unoccupied orbitals are formed by svd-based projection of the
+/// occupied
+/// subspace of the occupied orbitals.
+/// @param lcao the LCAOFactory object to be populated
+/// @param wfn provides CanonicalOrbitalSpace, will be computed
+/// @param target_ref_precision the precision with which to compute the
+///                orbitals (also see
+///                CanonicalOrbitalSpace::Provider::evaluate())
+/// @param ndocc the number of doubly occupied orbitals in the reference
+/// @param n_frozen_core the number of frozen core orbitals
+/// @param occ_blksize the target block size for the occupied orbitals
+/// @param unocc_blksize the target block size for the unoccupied orbitals
+template <typename Tile, typename Policy>
+void make_closed_shell_sdref_subspaces(
+    std::shared_ptr<LCAOFactory<Tile, Policy>> lcao_factory,
+    std::shared_ptr<
+        typename PopulatedOrbitalSpace<TA::DistArray<Tile, Policy>>::Provider>
+        wfn,
+    double target_ref_precision, std::size_t ndocc, std::size_t n_frozen_core,
+    std::size_t occ_blksize, std::size_t unocc_blksize) {
+  using TArray = TA::DistArray<Tile, Policy>;
+  using POrbSpace = PopulatedOrbitalSpace<TArray>;
+  using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
-  return tre;
+  // compute a populated space
+  std::shared_ptr<POrbSpace> input_space = std::make_shared<POrbSpace>();
+  evaluate(*input_space, wfn, target_ref_precision);
+
+  // receive either occupied or all orbitals
+  assert(input_space->index() == OrbitalIndex(L"m") ||
+         input_space->index() == OrbitalIndex(L"p"));
+
+  auto &orbital_registry = lcao_factory->orbital_space();
+  auto &world = lcao_factory->world();
+
+  if (input_space->rank() == ndocc) {
+    assert(input_space->index() ==
+           OrbitalIndex(
+               L"m"));  // make sure ndocc is consistent with the occupied space
+
+    const auto &occ_m = input_space->attributes();
+    for (auto occ : occ_m) assert(occ == 2.0);  // all should be doubly occupied
+    auto nao = input_space->ao_rank();
+    auto tr_ao = input_space->trange();
+
+    //////////////////////////////////////////////////////////////////////////////////
+    // rebuild occupied orbital space (in case block size differs)
+    RowMatrixXd C_m_eig = array_ops::array_to_eigen(input_space->coefs());
+    auto C_m = array_ops::eigen_to_array<Tile, Policy>(
+        world, C_m_eig, tr_ao,
+        TRange1Engine::compute_range(C_m_eig.cols(), occ_blksize));
+    auto m_space =
+        POrbSpace(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_m, occ_m);
+    orbital_registry.add(m_space);
+
+    //////////////////////////////////////////////////////////////////////////////////
+    // build active occupied space
+    RowMatrixXd C_i_eig =
+        C_m_eig.block(0, n_frozen_core, nao, ndocc - n_frozen_core);
+    auto C_i = array_ops::eigen_to_array<Tile, Policy>(
+        world, C_i_eig, tr_ao,
+        TRange1Engine::compute_range(C_i_eig.cols(), occ_blksize));
+    std::vector<double> occ_i(occ_m.begin() + n_frozen_core, occ_m.end());
+    auto i_space =
+        POrbSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_m, occ_i);
+    orbital_registry.add(i_space);
+
+    //////////////////////////////////////////////////////////////////////////////////
+    // obtain unoccupieds by projecting occupieds from OBS
+    // should really make PAOs here, but these should be close, although much
+    // more expensive
+    auto &ao_factory = lcao_factory->ao_factory();
+    auto obs_basis =
+        ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"κ"));
+
+    // need some integrals
+    auto S_m_obs = lcao_factory->compute(L"<m|λ>");
+    auto S_obs_inv = ao_factory.compute(L"<κ|λ>[inv_sqr]");
+
+    decltype(S_m_obs) S_m_obs_ortho;
+    S_m_obs_ortho("i,k") = S_m_obs("i,l") * S_obs_inv("l,k");
+    RowMatrixXd S_m_obs_ortho_eig = array_ops::array_to_eigen(S_m_obs_ortho);
+
+    // SVD to obtain the null-space basis of <m|kappa>, i.e. the unoccupied
+    // orbitals
+    Eigen::JacobiSVD<RowMatrixXd> svd(S_m_obs_ortho_eig, Eigen::ComputeFullV);
+    RowMatrixXd V_eig = svd.matrixV();
+    size_t nbf = S_m_obs_ortho_eig.cols();
+    auto n_unocc = nbf - svd.nonzeroSingularValues();
+    RowMatrixXd Vnull(nbf, n_unocc);
+    Vnull = V_eig.block(0, svd.nonzeroSingularValues(), nbf, n_unocc);
+
+    auto C_a = array_ops::eigen_to_array<Tile, Policy>(
+        world, Vnull, obs_basis->create_trange1(),
+        TRange1Engine::compute_range(n_unocc, unocc_blksize));
+    C_a("i,j") = S_obs_inv("i,k") * C_a("k, j");
+    std::vector<double> occ_a(n_unocc, 0);
+    auto a_space =
+        POrbSpace(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_a, occ_a);
+    orbital_registry.add(a_space);
+
+    //////////////////////////////////////////////////////////////////////////////////
+    // make a union of occupied and unoccupied orbs
+    RowMatrixXd C_p_eig = RowMatrixXd::Zero(nao, ndocc + n_unocc);
+    TArray C_p;
+    {
+      RowMatrixXd C_a_eig = array_ops::array_to_eigen(C_a);
+      C_p_eig.block(0, 0, nao, ndocc) << C_m_eig;
+      C_p_eig.block(0, ndocc, nao, ndocc + n_unocc) << C_a_eig;
+
+      auto tr_all = TRange1Engine::join(m_space.trange(), a_space.trange());
+      C_p = array_ops::eigen_to_array<Tile, Policy>(
+          world, C_p_eig, obs_basis->create_trange1(), tr_all);
+
+      std::vector<double> occ_p(C_p_eig.cols(), 0);
+      std::fill(occ_p.begin(), occ_p.begin() + ndocc, 2.0);
+      auto p_space =
+          POrbSpace(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_p, occ_p);
+      orbital_registry.add(p_space);
+    }
+  } else {  // received the full space
+    const auto &p_space = *input_space;
+    const auto &occ_p = p_space.attributes();
+
+    // divide the LCAO space into subspaces using Eigen .. boo
+    RowMatrixXd C_p = array_ops::array_to_eigen(p_space.coefs());
+    const auto n = C_p.cols();
+    const auto nao = C_p.rows();
+    RowMatrixXd C_m = C_p.block(0, 0, C_p.rows(), ndocc);
+    RowMatrixXd C_i = C_m.block(0, n_frozen_core, nao, ndocc - n_frozen_core);
+    RowMatrixXd C_a = C_p.rightCols(n - ndocc);
+
+    auto tre = std::make_shared<TRange1Engine>(ndocc, n, occ_blksize,
+                                               unocc_blksize, n_frozen_core);
+
+    // get all the trange1s
+    auto tr_ao = p_space.coefs().trange().data()[0];
+    auto tr_i = tre->get_active_occ_tr1();
+    auto tr_m = tre->compute_range(ndocc, occ_blksize);
+    auto tr_a = tre->get_vir_tr1();
+    auto tr_p = tre->get_all_tr1();
+
+    // convert eigen arrays to TA
+    auto C_m_ta =
+        array_ops::eigen_to_array<Tile, Policy>(world, C_m, tr_ao, tr_m);
+    auto C_i_ta =
+        array_ops::eigen_to_array<Tile, Policy>(world, C_i, tr_ao, tr_i);
+    auto C_a_ta =
+        array_ops::eigen_to_array<Tile, Policy>(world, C_a, tr_ao, tr_a);
+
+    // create orbital spaces and push into registry
+    std::vector<double> occ_m(occ_p.begin(), occ_p.begin() + ndocc);
+    auto m_space =
+        POrbSpace(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_m_ta, occ_m);
+    orbital_registry.add(m_space);
+
+    std::vector<double> occ_i(occ_m.begin() + n_frozen_core, occ_m.end());
+    auto i_space =
+        POrbSpace(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_i_ta, occ_i);
+    orbital_registry.add(i_space);
+
+    std::vector<double> occ_a(occ_p.begin() + ndocc, occ_p.end());
+    auto a_space =
+        POrbSpace(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_a_ta, occ_a);
+    orbital_registry.add(a_space);
+
+    // reblock the full space and add to the regisry
+    auto C_p_ta =
+        array_ops::eigen_to_array<Tile, Policy>(world, C_p, tr_ao, tr_p);
+    auto p_space_reblocked =
+        POrbSpace(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_p_ta, occ_p);
+    orbital_registry.add(p_space_reblocked);
+  }
 }
 
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
     LCAOFactory<Tile, Policy> &lcao_factory,
-    const std::shared_ptr<const ::mpqc::utility::TRange1Engine> tre, std::size_t vir_blocksize) {
+    const std::shared_ptr<const ::mpqc::utility::TRange1Engine> tre,
+    std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_factory.world();
@@ -144,8 +315,9 @@ void closed_shell_cabs_mo_build_svd(
   ri_basis = merge(obs_basis, abs_basis);
 
   mpqc::detail::parallel_print_range_info(world, ri_basis.create_trange1(),
-                                    "RI Basis");
-  ao_factory.orbital_basis_registry().add(OrbitalIndex(L"ρ"), std::make_shared<gaussian::Basis>(ri_basis));
+                                          "RI Basis");
+  ao_factory.orbital_basis_registry().add(
+      OrbitalIndex(L"ρ"), std::make_shared<gaussian::Basis>(ri_basis));
 
   // integral
   auto S_ribs_inv = ao_factory.compute(L"<ρ|σ>[inv_sqr]");
@@ -155,11 +327,12 @@ void closed_shell_cabs_mo_build_svd(
   // construct cabs
   TA::DistArray<Tile, Policy> C_cabs, C_ri, C_allvir;
   {
-
     // orthogonalize
     decltype(S_obs_inv) S_obs_ribs_ortho;
-    S_obs_ribs_ortho("i,j") = S_obs_inv("i,k") * S_obs_ribs("k,l")*S_ribs_inv("l,j");
-    RowMatrixXd S_obs_ribs_ortho_eigen = array_ops::array_to_eigen(S_obs_ribs_ortho);
+    S_obs_ribs_ortho("i,j") =
+        S_obs_inv("i,k") * S_obs_ribs("k,l") * S_ribs_inv("l,j");
+    RowMatrixXd S_obs_ribs_ortho_eigen =
+        array_ops::array_to_eigen(S_obs_ribs_ortho);
 
     // SVD solve
     Eigen::JacobiSVD<RowMatrixXd> svd(S_obs_ribs_ortho_eigen,
@@ -174,7 +347,8 @@ void closed_shell_cabs_mo_build_svd(
     auto tr_cabs_mo = tre->compute_range(nbf_cabs, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
 
-    C_cabs = array_ops::eigen_to_array<Tile,Policy>(world, Vnull, tr_ribs, tr_cabs_mo);
+    C_cabs = array_ops::eigen_to_array<Tile, Policy>(world, Vnull, tr_ribs,
+                                                     tr_cabs_mo);
     C_cabs("i,j") = S_ribs_inv("i,k") * C_cabs("k, j");
 
     RowMatrixXd C_cabs_eigen = array_ops::array_to_eigen(C_cabs);
@@ -195,19 +369,19 @@ void closed_shell_cabs_mo_build_svd(
       C_allvirtual_eigen.block(0, n_vir, nbf_ribs, nbf_cabs) << C_cabs_eigen;
     }
 
-
     // reblock C_ribs
     auto tr_ribs_mo = tre->compute_range(nbf_ribs, vir_blocksize);
     mpqc::detail::parallel_print_range_info(world, tr_ribs_mo, "RIBS MO");
-    auto ribs_to_mo = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(world, tr_ribs, tr_ribs_mo, 1.0);
-    C_ri("i,j") = S_ribs_inv("i,k")*ribs_to_mo("k,j");
-
+    auto ribs_to_mo = array_ops::create_diagonal_array_from_eigen<Tile, Policy>(
+        world, tr_ribs, tr_ribs_mo, 1.0);
+    C_ri("i,j") = S_ribs_inv("i,k") * ribs_to_mo("k,j");
 
     auto tr_allvir_mo = tre->compute_range(nbf_cabs + n_vir, vir_blocksize);
-    mpqc::detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
+    mpqc::detail::parallel_print_range_info(world, tr_allvir_mo,
+                                            "All Virtual MO");
 
-    C_allvir = array_ops::eigen_to_array<Tile,Policy>(world, C_allvirtual_eigen,
-                                                      tr_ribs, tr_allvir_mo);
+    C_allvir = array_ops::eigen_to_array<Tile, Policy>(
+        world, C_allvirtual_eigen, tr_ribs, tr_allvir_mo);
 
     // insert to orbital space
     using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
@@ -230,10 +404,11 @@ void closed_shell_cabs_mo_build_svd(
 };
 
 template <typename Tile, typename Policy>
-std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_dualbasis_mo_build_eigen_solve_svd(
-    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens, std::size_t nocc,
-    const Molecule &mols, bool frozen_core, std::size_t occ_blocksize,
-    std::size_t vir_blocksize) {
+std::shared_ptr<::mpqc::utility::TRange1Engine>
+closed_shell_dualbasis_mo_build_eigen_solve_svd(
+    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
+    std::size_t nocc, const Molecule &mols, bool frozen_core,
+    std::size_t occ_blocksize, std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &world = ao_factory.world();
   using TArray = TA::DistArray<Tile, Policy>;
@@ -266,7 +441,7 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_dualbasis_mo_build_
   }
 
   Eigen::VectorXd ens_occ = es.eigenvalues().segment(0, nocc);
-//  std::cout << "Energy of Occupied: \n" << ens_occ << std::endl;
+  //  std::cout << "Energy of Occupied: \n" << ens_occ << std::endl;
   RowMatrixXd C_all = es.eigenvectors();
   RowMatrixXd C_occ = C_all.block(0, 0, S_eig.rows(), nocc);
   RowMatrixXd C_corr_occ =
@@ -322,10 +497,12 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_dualbasis_mo_build_
   mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");
 
   // convert to TA
-  auto C_occ_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_occ, tr_obs, tr_occ);
-  auto C_corr_occ_ta =
-      array_ops::eigen_to_array<Tile,Policy>(world, C_corr_occ, tr_obs, tr_corr_occ);
-  auto C_vir_ta = array_ops::eigen_to_array<Tile,Policy>(world, C_vbs, tr_vbs, tr_vir);
+  auto C_occ_ta =
+      array_ops::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
+  auto C_corr_occ_ta = array_ops::eigen_to_array<Tile, Policy>(
+      world, C_corr_occ, tr_obs, tr_corr_occ);
+  auto C_vir_ta =
+      array_ops::eigen_to_array<Tile, Policy>(world, C_vbs, tr_vbs, tr_vir);
 
   // insert to registry
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
@@ -365,7 +542,7 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_dualbasis_mo_build_
   RowMatrixXd C_vir_rotate = es3.eigenvectors();
   C_vbs = C_vbs * C_vir_rotate;
   TArray C_vir_ta_new =
-      array_ops::eigen_to_array<Tile,Policy>(world, C_vbs, tr_vbs, tr_vir);
+      array_ops::eigen_to_array<Tile, Policy>(world, C_vbs, tr_vbs, tr_vir);
 
   // remove old virtual orbitals
   lcao_factory.orbital_space().remove(OrbitalIndex(L"a"));
@@ -387,8 +564,8 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> closed_shell_dualbasis_mo_build_
 template <typename Tile, typename Policy>
 void closed_shell_dualbasis_cabs_mo_build_svd(
     LCAOFactory<Tile, Policy> &lcao_factory,
-    const std::shared_ptr<::mpqc::utility::TRange1Engine> tre, std::string ri_method,
-    std::size_t vir_blocksize) {
+    const std::shared_ptr<::mpqc::utility::TRange1Engine> tre,
+    std::string ri_method, std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
   auto &orbital_registry = lcao_factory.orbital_space();
   auto &world = ao_factory.world();
@@ -410,11 +587,11 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   if (ri_method == "VBS") {
     *ri_basis = merge(vir_basis, abs_basis);
     mpqc::detail::parallel_print_range_info(world, ri_basis->create_trange1(),
-                                      "RI Basis with VBS");
+                                            "RI Basis with VBS");
   } else if (ri_method == "OBS") {
     *ri_basis = merge(obs_basis, abs_basis);
     mpqc::detail::parallel_print_range_info(world, ri_basis->create_trange1(),
-                                      "RI Basis with OBS");
+                                            "RI Basis with OBS");
   } else {
     throw std::runtime_error("Invalid RI Method!");
   }
@@ -481,7 +658,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
   auto tr_allvir_mo = tre->compute_range(nbf_ribs_minus_occ, vir_blocksize);
 
   mpqc::detail::parallel_print_range_info(world, tr_cabs_mo, "CABS MO");
-  TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<Tile,Policy>(
+  TA::DistArray<Tile, Policy> C_cabs = array_ops::eigen_to_array<Tile, Policy>(
       world, C_cabs_eigen, tr_ribs, tr_cabs_mo);
 
   // insert to orbital space
@@ -490,9 +667,11 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
       OrbitalSpaceTArray(OrbitalIndex(L"a'"), OrbitalIndex(L"ρ"), C_cabs);
   orbital_registry.add(C_cabs_space);
 
-  mpqc::detail::parallel_print_range_info(world, tr_allvir_mo, "All Virtual MO");
-  TA::DistArray<Tile, Policy> C_allvir = array_ops::eigen_to_array<Tile,Policy>(
-      world, C_allvir_eigen, tr_ribs, tr_allvir_mo);
+  mpqc::detail::parallel_print_range_info(world, tr_allvir_mo,
+                                          "All Virtual MO");
+  TA::DistArray<Tile, Policy> C_allvir =
+      array_ops::eigen_to_array<Tile, Policy>(world, C_allvir_eigen, tr_ribs,
+                                              tr_allvir_mo);
 
   // insert to orbital space
   auto C_allvir_space =

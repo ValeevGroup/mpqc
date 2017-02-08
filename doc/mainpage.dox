@@ -37,6 +37,7 @@ without warranty or support. MPQC is distributed under the terms of the General 
   <li> \ref namespacetree
   <li> \ref keyval
   <li> \ref units
+  <li> \ref factory
 </ul>
 
 */

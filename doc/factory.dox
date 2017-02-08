@@ -1,0 +1,133 @@
+/** \page factory Using MPQC Factory Interface
+
+## Operators
+
+     - "" -> Overlap
+     - T -> Kinetic
+     - V -> Nuclear
+     - H -> Hcore
+     - I -> Identity
+     - G -> Coulomb(libint::Coulomb)
+     - R -> cGTG(libint::cGTG)
+     - GR -> cGTGCoulomb(libint::cGTG_times_Coulomb)
+     - R2 -> cGTG2(libint::cGTG, parameters will get squared)
+     - dR2 -> DelcGTG2(libint::DelcGTG_square)
+     - J -> J(Coulomb)
+     - hJ -> hJ (H + J)
+     - K -> K(Exchange)
+     - K(α) -> KAlpha(Exchange for Alpha Spin)
+     - K(β) -> KBeta(Exchange for Beta Spin)
+     - F -> Fock
+     - F(α) -> FockAlpha(Fock for Alpha Spin)
+     - F(β) -> FockBeta(Fock for Beta Spin)
+
+## User called functions
+- Return TiledArray array
+`ao_integral.compute(std::wstring)`
+`mo_integral.compute(std::wstring)`
+- Return TiledArray expression
+`ao_integral(std::wstring)`
+`mo_integral(std::wstring)`
+
+## Atomic Integral
+
+- Index
+	 - κ λ  μ ν -> obs(primary orbital basis)
+	 -  Α Β Γ Δ -> vbs(sencodary orbital basis)
+	 - Κ Λ Μ Ν -> dfbs(density fitting basis)
+	 - α β γ δ -> cabs(cabs basis)
+	 - ρ σ τ υ -> ribs(obs + cabs)
+
+- One Electron Integral
+```cpp
+// Overlap
+ao_integral.compute(L"<κ|λ>");
+ao_integral.compute(L"<α|λ>");
+// Kinetic
+ao_integral.compute(L"<κ|T|λ>");
+// Nuclear
+ao_integral.compute(L"<κ|V|λ>");
+// H Core
+ao_integral.compute(L"<κ|H|λ>");
+// Inverse Square Root
+ao_integral.compute(L"<κ|λ>[inv_sqr]");
+```
+- Two Electron Two Center Integral
+
+only chemical notation allowed
+```
+// Coulomb
+ao_integral.compute(L"(Κ|G|Λ)");
+// Inverse
+ao_integral.compute(L"(Κ|G|Λ)[inv]");
+// Inverse Square Root
+ao_integral.compute(L"(Κ|G|Λ)[inv_sqr]");
+```
+- Two Electron Three Center Integral
+
+only chemical notation allowed
+
+density-fitting basis has to go the bra
+```
+// Coulomb
+ao_integral.compute(L"(Κ|G| μ λ )");
+// R12
+ao_integral.compute(L"(Κ|R| μ λ )");
+```
+
+- Two Electron Four Center Integral
+```
+// convention
+ao_integral.compute(L"<μ1 λ1|G| μ2 λ2 >");
+// density fitting
+ao_integral.compute(L"<μ1 λ1|G| μ2 λ2 >[df]");
+// chemical notation
+ao_integral.compute(L"(μ1 λ1|G| μ2 λ2 )");
+ao_integral.compute(L"(μ1 λ1|G| μ2 λ2 )[df]");
+```
+- J, K, and F 
+```
+// Fock
+ao_integral.compute(L"<κ|F|λ>");
+ao_integral.compute(L"<κ|F(α)|λ>");
+ao_integral.compute(L"<κ|F(β)|λ>");
+// Exchange
+ao_integral.compute(L"<κ|K|λ>");
+ao_integral.compute(L"<κ|K(α)|λ>");
+ao_integral.compute(L"<κ|K(β)|λ>");
+```
+
+## LCAO Integral
+
+- Index
+ - m, n -> occ(occupied)
+ - i,j,k,l -> corr_occ (correlated occupied)
+ - m', n' -> frozen_occ (inactive/core occupied)
+ - x, y -> active (active orbital used in MR)
+ - a,b,c,d -> virt (virtual)
+ - p,q,r,s -> any (orbital basis, obs)
+ - a', b', c', d' -> othervirt (cabs = complete basis - orbital basis)
+ - A', B', C', D' -> allvirt (complete virtuals = a + a')
+ - P',Q',R',S' -> allany (complete basis, cbs)
+
+- One Electron Integral
+```
+mo_integral.compute(L"<i|H|a>");
+mo_integral.compute(L"<i|F|a>");
+mo_integral.compute(L"<i|F(α)|a>");
+```
+- Two Electron Four Center Integral
+```
+mo_integral.compute(L"<i j|G|a b>");
+mo_integral.compute(L"(i a|G|j b)");
+mo_integral.compute(L"<i j|R|P' Q'>");
+// density fitting
+mo_integral.compute(L"<i j|G|a b>[df]");
+```
+- Half Transformed Integral
+```
+mo_integral.compute(L"(Κ|G|i a)");
+mo_integral.compute(L"<p q|G|μ ν>");
+```
+
+*/

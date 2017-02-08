@@ -8,10 +8,12 @@ using namespace mpqc;
 using LCAOWfn = lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;
 using RHF = lcao::RHF<TA::TensorD, TA::SparsePolicy>;
 
+/// basic (iterative) MP2 energy
 class MP2 : public LCAOWfn, public Provides<Energy> {
  public:
   using Array = TA::DistArray<TA::TensorD, TA::SparsePolicy>;
 
+  /// the KeyVal ctor
   MP2(const KeyVal& kv) : LCAOWfn(kv) {
     ref_wfn_ = kv.class_ptr<RHF>("ref");
     if (!ref_wfn_)
@@ -20,14 +22,21 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
   }
 
  private:
-  /// can only compute energies (not forces or hessians)
-  bool can_evaluate(Energy* energy) override { return energy->order() == 0; }
+  /// this implements Energy::Provider::can_evaluate()
+  bool can_evaluate(Energy* energy) override {
+    // can only compute energies (not forces or hessians)
+    return energy->order() == 0;
+  }
 
-  /// evaluate the energy
+  /// this implements Energy::Provider::evaluate()
   void evaluate(Energy* energy) override {
+
+    // how precisely to compute the energy
     auto target_precision = energy->target_precision(0);
-    // has not been computed to the desired precision (or never computed at all)
+
+    // if has not been computed to the desired precision (or never computed at all) ...
     if (computed_precision_ > target_precision) {
+
       // compute reference to higher precision than this wfn
       auto target_ref_precision = target_precision / 100.;
       auto ref_energy =
@@ -46,7 +55,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     }
   }
 
-  /// @return the MP2 correlation energy
+  /// this method actually solves the MP1 equations
   double compute_mp2_energy(double target_precision) {
     auto& fac = this->lcao_factory();
     auto& world = fac.world();

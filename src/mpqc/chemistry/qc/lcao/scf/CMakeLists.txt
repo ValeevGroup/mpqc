@@ -27,16 +27,14 @@ ta_shape_tracker.h
 traditional_df_fock_builder.h
 traditional_four_center_fock_builder.h
 util.h
-zrhf.cpp
-zrhf.h
 )
 
 if(TA_DEFAULT_POLICY EQUAL 1)
 list(APPEND sources
-        zrhf.h
-        zrhf.cpp
-        pbc/periodic_cond_ortho.h
-        pbc/periodic_soad.h
+#        zrhf.h
+#        zrhf.cpp
+#        pbc/periodic_cond_ortho.h
+#        pbc/periodic_soad.h
         )
 endif()
 

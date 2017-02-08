@@ -386,11 +386,10 @@ DirectRIRHF<Tile, Policy>::DirectRIRHF(const KeyVal& kv)
 
 template <typename Tile, typename Policy>
 void DirectRIRHF<Tile, Policy>::init_fock_builder() {
-  auto& direct_ao_factory = this->direct_ao_factory();
   auto& ao_factory = this->ao_factory();
 
   auto inv = ao_factory.compute(L"( Κ | G| Λ )");
-  auto eri3 = direct_ao_factory.compute(L"( Κ | G|κ λ)");
+  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)");
 
   scf::DFFockBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3);
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
@@ -404,8 +403,7 @@ DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DirectRHF<Tile, Policy>::init_fock_builder() {
-  auto& direct_ao_factory = this->direct_ao_factory();
-  auto eri4 = direct_ao_factory.compute(L"(μ ν| G|κ λ)");
+  auto eri4 = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
   auto builder =
       scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(std::move(eri4));
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));

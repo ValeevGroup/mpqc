@@ -9,7 +9,6 @@
 
 #include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/cc/diis_ccsd.h"
-#include "mpqc/chemistry/qc/lcao/integrals/direct_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
@@ -51,7 +50,7 @@ template <typename Tile, typename Policy>
 class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
+  using AOFactory = gaussian::AOFactory<Tile,Policy>;
 
   CCSD() = default;
 
@@ -107,7 +106,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
  private:
   const KeyVal kv_;
   std::shared_ptr<Wavefunction> ref_wfn_;
-  typename DirectAOIntegral::DirectTArray direct_ao_array_;
+  typename AOFactory::DirectTArray direct_ao_array_;
   bool df_;
   std::string method_;
   std::size_t max_iter_;
@@ -155,7 +154,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
   bool print_detail() const { return print_detail_; }
 
-  const typename DirectAOIntegral::DirectTArray &get_direct_ao_integral()
+  const typename AOFactory::DirectTArray &get_direct_ao_integral()
       const {
     return direct_ao_array_;
   }
@@ -192,9 +191,7 @@ protected:
         ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
       } else if (method_ == "direct") {
         // initialize direct integral class
-        auto direct_ao_factory =
-            gaussian::construct_direct_ao_factory<Tile, Policy>(kv_);
-        direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
+        direct_ao_array_ = this->lcao_factory().ao_factory().compute_direct(L"(μ ν| G|κ λ)");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
 

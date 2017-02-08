@@ -2,7 +2,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_PERIODIC_AO_FACTORY_H_
 
 #include "mpqc/chemistry/qc/lcao/integrals/ao_factory.h"
-#include "mpqc/chemistry/qc/lcao/integrals/ao_factory_base.h"
+#include "mpqc/chemistry/qc/lcao/integrals/ao_factory_detail.h"
 
 #include <iosfwd>
 #include <vector>

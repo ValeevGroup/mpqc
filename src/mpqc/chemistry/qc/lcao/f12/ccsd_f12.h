@@ -27,7 +27,7 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
   using Policy = TA::SparsePolicy;
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectArray =
-      typename CCSD<Tile, Policy>::DirectAOIntegral::DirectTArray;
+      typename CCSD<Tile, Policy>::AOFactory::DirectTArray;
   using LCAOFactoryType = LCAOFactory<Tile, Policy>;
 
   using real_t = typename Tile::scalar_type;

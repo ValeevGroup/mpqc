@@ -380,7 +380,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
   TArray result;
   if (formula_string.oper().has_option(Operator::Option::DensityFitting)) {
     // get df formula
-    auto df_formulas = ao_factory_.get_df_formula(formula_string);
+    auto df_formulas = gaussian::detail::get_df_formula(formula_string);
 
     auto notation = formula_string.notation();
     // compute integral

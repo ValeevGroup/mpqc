@@ -5,6 +5,7 @@
 #include "trange1_engine.h"
 
 namespace mpqc {
+namespace utility {
 
 TA::TiledRange1 TRange1Engine::compute_range(std::size_t range,
                                              std::size_t block_size) {
@@ -27,6 +28,22 @@ TA::TiledRange1 TRange1Engine::compute_range(std::size_t range,
   return TA::TiledRange1(blocks.begin(), blocks.end());
 }
 
+TA::TiledRange1 TRange1Engine::join(const TA::TiledRange1& range_a, const TA::TiledRange1& range_b) {
+  std::vector<std::size_t> hashmarks;
+  hashmarks.reserve(range_a.tile_extent() + range_b.tile_extent() + 1);
+  // append hashmarks of from the first range
+  for(const auto& t: range_a)
+    hashmarks.push_back(t.first);
+  // shift second's tiles to start at the end of first
+  const auto offset = range_a.elements_range().second - range_b.elements_range().first;
+  for(const auto& t: range_b)
+    hashmarks.push_back(t.first + offset);
+  // add the fence hashmark
+  hashmarks.push_back(range_b.elements_range().second + offset);
+  // done
+  return TA::TiledRange1(hashmarks.begin(), hashmarks.end());
+}
+
 TA::TiledRange1 TRange1Engine::tr_occupied() {
   std::size_t occ = get_occ();
 
@@ -44,7 +61,7 @@ TA::TiledRange1 TRange1Engine::tr_virtual() {
 }
 
 TA::TiledRange1 TRange1Engine::tr_all() {
-  return compute_range(all_, vir_block_size_);
+  return join(tr_occupied(), tr_virtual());
 }
 
 void TRange1Engine::init() {
@@ -58,4 +75,5 @@ void TRange1Engine::init() {
   // std::cout << active_occ_blocks_ << " " << vir_blocks_ << std::endl;
 }
 
+}  // namespace utility
 }  // namespace mpqc

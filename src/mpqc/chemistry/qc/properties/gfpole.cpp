@@ -8,9 +8,10 @@ namespace mpqc {
 GFRealPole::GFRealPole(const KeyVal& kv)
     : WavefunctionProperty(kv, 1e-4), target_(kv.value<int>("target", -1)) {
   if (target_ == 0)
-    throw std::runtime_error(
+    throw InputError(
         "GFRealPole: target must be positive (for particles) or negative (for "
-        "holes)");
+        "holes)",
+        __FILE__, __LINE__, "target");
 }
 
 int GFRealPole::target() const { return target_; }

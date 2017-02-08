@@ -12,6 +12,8 @@ set(sources
         orbital_registry.h
         permutation.h
         permutation.cpp
+        trange1_engine.cpp
+        trange1_engine.h
         )
 
-add_mpqc_library(lcao_expression sources sources "MPQCmath_ta" "mpqc/chemistry/qc/lcao/expression")
+add_mpqc_library(lcao_expression sources sources "MPQCmath_ta;MPQCmath_groups" "mpqc/chemistry/qc/lcao/expression")

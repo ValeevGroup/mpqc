@@ -9,36 +9,21 @@
 #include "mpqc/chemistry/molecule/coords.h"
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/wfn/wfn.h"
-#include "mpqc/util/misc/task.h"
 #include "mpqc/math/function/function.h"
 #include "mpqc/math/function/taylor.h"
+#include "mpqc/util/misc/task.h"
+#include "mpqc/util/misc/provider.h"
 
 /// top-level MPQC namespace
 namespace mpqc {
 
-//using TiledArray::detail::scalar_type;
-
-/// computing a runtime-typed property for a runtime-typed wave functions calls
-/// for a visitor pattern
-/// we want:
-/// - an extensible list of properties (this means not treating energy special
-/// as MPQC did
-///   - this also means not too much recompilation when adding a property
-/// - an extensible list of wave functions:
-///   - not too much work to add a new Wavefunction
-///   - ideally no work is function want a new Wavefunction that computes energy
-/// - avoid N^2 methods (e.g. CCSD::compute_energy(),
-/// CCSD_T::compute_electric_dipole_moment() )
-/// - allow computation of derivatives of properties
-/// - allow precision tracking
-
+// using TiledArray::detail::scalar_type;
 
 /// this is the base for all properties that MPQC can compute via the input.
 /// MPQC main will read KeyVal and search for a Property object, compute it
 /// using the given wave function
 class Property : public Task {
  public:
-
   /// evaluates this object
   virtual void evaluate() = 0;
 
@@ -86,7 +71,7 @@ class WavefunctionProperty
       : WavefunctionProperty(kv, base_type::default_precision_) {}
 
  protected:
-  std::shared_ptr<Wavefunction> wfn() const { return wfn_; }
+  const std::shared_ptr<Wavefunction>& wfn() const { return wfn_; }
 
   virtual void do_evaluate() = 0;
 
@@ -101,11 +86,10 @@ class WavefunctionProperty
    */
   // clang-format on
   WavefunctionProperty(const KeyVal& kv, double default_precision)
-      : base_type(kv,
-                  (kv.class_ptr<MolecularCoordinates>("coord")
-                       ? kv.class_ptr<MolecularCoordinates>("coord")
-                       : std::make_shared<CartMolecularCoordinates>(
-                             kv.class_ptr<Wavefunction>("wfn")->atoms())),
+      : base_type(kv, (kv.class_ptr<MolecularCoordinates>("coord")
+                           ? kv.class_ptr<MolecularCoordinates>("coord")
+                           : std::make_shared<CartMolecularCoordinates>(
+                                 kv.class_ptr<Wavefunction>("wfn")->atoms())),
                   default_precision) {
     wfn_ = kv.class_ptr<Wavefunction>("wfn");
     if (wfn_ == nullptr)
@@ -135,18 +119,6 @@ class WavefunctionProperty
           __FILE__, __LINE__);
   }
 };
-
-////////////////////////////////////////////////////////////////////////
-
-/// \brief Base for classes that provide \c Properties .
-
-/// This provides to the class that inherits this an ability to visit
-/// each property \c P in \c Properties by overloading
-/// the corresponding \c P::Provider::can_evaluate and \c
-/// P::Provider::evaluate methods.
-/// @tparam Properties the property type list
-template <typename... Properties>
-class Provides : public Properties::Provider... {};
 
 }  // namespace mpqc
 

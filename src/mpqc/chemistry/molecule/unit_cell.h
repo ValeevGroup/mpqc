@@ -50,17 +50,6 @@ class UnitCell : public Molecule {
    *  <tr><td><tt>lattice_param</tt><td>int<td>0<td> This gives lattice
    *    parameters (orthohombic, tetragonal, cubic lattice only)
    *
-   *  <tr><td><tt>rmax</tt><td>int<td>0<td> This gives range of expansion of
-   *    Bloch Gaussians in AO Gaussians
-   *
-   *  <tr><td><tt>rdmax</tt><td>int<td>0<td> This gives range of Coulomb
-   *    operation
-   *
-   *  <tr><td><tt>rjmax</tt><td>int<td>0<td> This gives range of density
-   *    representation
-   *
-   *  <tr><td><tt>k_points</tt><td>int<td>0<td> number of k points in each
-   *    direction
    *  </table>
    *
    *  example input:
@@ -71,10 +60,6 @@ class UnitCell : public Molecule {
    *    "file_name": "water.xyz",
    *    "sort_input": true,
    *    "lattice_param": [0.0, 0.0, 2.672359],
-   *    "rmax": [0, 0, 10],
-   *    "rjmax": [0, 0, 20],
-   *    "rdmax": [0, 0, 10],
-   *    "k_points": [1, 1, 20]
    *  }
    *  \endcode
    *

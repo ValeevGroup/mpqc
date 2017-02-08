@@ -119,9 +119,9 @@ class OrbitalIndex {
   /**
    * \brief constructs from a label
    *
-   * Construct OrbitalIndex from a std::wstring
+   * Construct OrbitalIndex from a string object
+   * @tparam String a string type (std::basic_string or const char*)
    * @param symbol
-   * check description of class for mappings
    */
   template <typename String,
             typename = typename std::enable_if<not std::is_same<

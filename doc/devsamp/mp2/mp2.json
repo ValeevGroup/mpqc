@@ -5,22 +5,22 @@
   },
   "mp2":{
     "type": "MP2",
-    "frozen_core" : false,
-    "atoms" : "$:molecule",
+    "frozen_core" : true,
+    "atoms" : "$:water",
     "wfn_world" : "$:wfn_world",
-    "ref" : "$:scf"
+    "ref" : "$:rhf"
   },
   "wfn_world":{
     "type" : "WfnWorld",
-    "molecule" : "$:molecule",
+    "molecule" : "$:water",
     "basis" : "$:basis"
   },
-  "scf":{
-    "type" : "RHF",
-    "atoms" : "$:molecule",
+  "rhf":{
+    "type": "RHF",
+    "atoms" : "$:water",
     "wfn_world" : "$:wfn_world"
   },
-  "molecule": {
+  "water": {
     "atoms": [
       { "element": "O", "xyz":[ 0.00000, -0.07579,  0.00000] },
       { "element": "H", "xyz":[ 0.86681,  0.60144,  0.00000] },
@@ -29,7 +29,7 @@
   },
   "basis": {
     "name": "6-31G",
-    "molecule": "$:molecule"
+    "molecule": "$:water"
   }
 }
 

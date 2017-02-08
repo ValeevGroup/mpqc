@@ -1,6 +1,7 @@
 // Massively Parallel Quantum Chemistry program
 // computes properties of a Wavefunction
 
+#include <chrono>
 #include <sstream>
 
 #include <libint2.hpp>
@@ -25,13 +26,13 @@
 #include "mpqc/chemistry/qc/lcao/cc/linkage.h"
 #include "mpqc/chemistry/qc/lcao/f12/linkage.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/linkage.h"
-#include "mpqc/chemistry/qc/properties/linkage.h"
 #include "mpqc/chemistry/qc/lcao/scf/linkage.h"
+#include "mpqc/chemistry/qc/properties/linkage.h"
 #include "mpqc/mpqc_init.h"
 
 namespace mpqc {
 
-void announce() {
+void announce(madness::World &world) {
   const char title1[] = "MPQC4: Massively Parallel Quantum Chemistry (v4)";
   const char title2[] = "Version " MPQC_VERSION;
   const char title3[] = "Revision " MPQC_REVISION;
@@ -49,6 +50,18 @@ void announce() {
   for (auto i = 0; i < (target_width - sizeof(title3)) / 2; i++)
     ExEnv::out0() << ' ';
   ExEnv::out0() << title3 << std::endl << std::endl;
+
+  ExEnv::out0() << indent << printf("Machine:          %s", TARGET_ARCH) << std::endl
+                << indent << printf("User:             %s@%s", ExEnv::username(),
+                                    ExEnv::hostname())
+                << std::endl;
+  std::time_t tm = std::time(nullptr);
+  ExEnv::out0() << indent << "Start Time:       "
+                << std::put_time(std::gmtime(&tm), "%c %Z") << std::endl;
+
+  auto nproc = world.size();
+  ExEnv::out0() << indent << "Default World:    " << nproc
+                << " MPI process" << (nproc > 1 ? "es" : "") << std::endl << std::endl;
 }
 
 }  // namespace mpqc
@@ -113,8 +126,8 @@ int try_main(int argc, char *argv[], madness::World &world) {
   }
   if (!units_str.empty()) UnitFactory::set_default(units_str);
 
-  // announce ourselves
-  announce();
+  // announce ourselves to the world
+  announce(world);
 
   //////////////////////////////
   // print computation metadata

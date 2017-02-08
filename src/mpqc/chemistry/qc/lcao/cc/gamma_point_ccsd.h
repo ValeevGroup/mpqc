@@ -82,7 +82,7 @@ private:
         C_ = phf_wfn_->co_coeff()[gamma_point].real();
         eps_ = phf_wfn_->co_energy()[gamma_point].real();
 
-        this->trange1_engine_ = mo_insert_gamma_point_version2(*lcao_factory_, C_, unitcell, this->occ_block(),
+        this->trange1_engine_ = mo_insert_gamma_point(*lcao_factory_, C_, unitcell, this->occ_block(),
                               this->unocc_block());
 
         this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(eps_);
@@ -106,7 +106,7 @@ private:
 
           ref_evaluator->evaluate(result);
 
-          double ref_energy = this->get_value(result).derivs(0)[0];
+          double ref_energy = result->energy();
 
           // initialize
           init_gpccsd();

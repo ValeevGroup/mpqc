@@ -3,8 +3,7 @@
 
 #include "mpqc/chemistry/qc/cc/diis_ccsd.h"
 #include "mpqc/chemistry/qc/lcao/cc/ccsd.h"
-#include "mpqc/chemistry/qc/lcao/mbpt/gamma_point_mp2.h"
-#include "mpqc/chemistry/qc/lcao/scf/zrhf.h"
+#include "mpqc/chemistry/qc/lcao/wfn/ao_wfn.h"
 
 namespace mpqc {
 namespace lcao {
@@ -82,10 +81,10 @@ private:
         C_ = phf_wfn_->co_coeff()[gamma_point].real();
         eps_ = phf_wfn_->co_energy()[gamma_point].real();
 
-        this->trange1_engine_ = mo_insert_gamma_point(*lcao_factory_, C_, unitcell, this->occ_block(),
-                              this->unocc_block());
+//        this->trange1_engine_ = mo_insert_gamma_point(*lcao_factory_, C_, unitcell, this->occ_block(),
+//                              this->unocc_block());
 
-        this->orbital_energy_ = std::make_shared<Eigen::VectorXd>(eps_);
+        this->set_orbital_energy(eps_);
     }
 
     bool can_evaluate(Energy* energy) override {

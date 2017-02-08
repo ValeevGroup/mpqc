@@ -689,9 +689,11 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
  * \brief This inserts crystal orbitals to registry for gamma-point methods
  */
 template <typename Tile, typename Policy>
-std::shared_ptr<TRange1Engine> mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
+std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
                            RowMatrixXd& C_gamma_point, UnitCell& unitcell,
                            size_t occ_block, size_t vir_block) {
+  using TRange1Engine = ::mpqc::utility::TRange1Engine;
+
   auto& orbital_registry = plcao_factory.orbital_space();
   auto& world = plcao_factory.world();
 

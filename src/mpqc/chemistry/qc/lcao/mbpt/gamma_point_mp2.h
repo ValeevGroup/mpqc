@@ -62,7 +62,7 @@ private:
 
             auto time0 = mpqc::now(this->wfn_world()->world(), true);
             // initialize
-            init();
+            init_gpmp2();
 
             e_mp2_ = compute_gamma_point_mp2();
             auto time1 = mpqc::now(this->wfn_world()->world(), true);
@@ -83,7 +83,7 @@ private:
     /*!
      * \brief This initializes gamma-point MP2
      */
-    void init() override {
+    void init_gpmp2() {
         auto nk = phf_wfn_->nk();
         auto k_size = 1 + detail::k_ord_idx(nk(0) - 1, nk(1) - 1, nk(2) - 1, nk);
         auto unitcell = lcao_factory_->pao_factory().unitcell();
@@ -98,8 +98,8 @@ private:
         C_ = phf_wfn_->co_coeff()[gamma_point].real();
         eps_ = phf_wfn_->co_energy()[gamma_point].real();
 
-        this->trange1_engine_ = mo_insert_gamma_point(*lcao_factory_, C_, unitcell, this->occ_block(),
-                              this->unocc_block());
+//        this->trange1_engine_ = mo_insert_gamma_point(*lcao_factory_, C_, unitcell, this->occ_block(),
+//                              this->unocc_block());
 
     }
 

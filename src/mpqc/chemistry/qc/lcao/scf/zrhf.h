@@ -1,11 +1,11 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
-#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 
 #include <memory>
 
@@ -21,87 +21,16 @@ namespace lcao {
 using MatrixzVec = std::vector<Matrixz>;
 using VectorzVec = std::vector<Vectorz>;
 
-// TODO move this funciton to elsewhere (e.g. mo_build.h)
-/*!
- * \brief This inserts crystal orbitals to registry for gamma-point methods
- */
-template <typename Tile, typename Policy>
-void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
-                           Matrixz& C_gamma_point, Molecule& unitcell,
-                           size_t occ_block, size_t vir_block) {
-  auto& orbital_registry = plcao_factory.orbital_space();
-  auto& world = plcao_factory.world();
-
-  auto all = C_gamma_point.cols();
-
-  // the unit cell must be electrically neutral
-  const auto charge = 0;
-  auto occ = (unitcell.total_atomic_number() - charge) / 2;
-  auto vir = all - occ;
-  std::size_t n_frozen_core = 0;  // TODO: should be determined by user
-
-  Matrixz C_occ = C_gamma_point.leftCols(occ);
-  Matrixz C_corr_occ =
-      C_gamma_point.block(0, n_frozen_core, all, occ - n_frozen_core);
-  Matrixz C_vir = C_gamma_point.rightCols(vir);
-
-  ExEnv::out0() << "OccBlockSize: " << occ_block << std::endl;
-  ExEnv::out0() << "VirBlockSize: " << vir_block << std::endl;
-
-  auto obs_basis =
-      plcao_factory.pao_factory().orbital_basis_registry().retrieve(
-          OrbitalIndex(L"κ"));
-  using TRange1Engine = ::mpqc::utility::TRange1Engine;
-  auto tre = std::make_shared<TRange1Engine>(occ, all, occ_block, vir_block, 0);
-
-  // get all trange1s
-  auto tr_obs = obs_basis->create_trange1();
-  auto tr_corr_occ = tre->get_active_occ_tr1();
-  auto tr_occ = tre->compute_range(occ, occ_block);
-  auto tr_vir = tre->get_vir_tr1();
-  auto tr_all = tre->get_all_tr1();
-
-  mpqc::detail::parallel_print_range_info(world, tr_obs, "Obs");
-  mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ");
-  mpqc::detail::parallel_print_range_info(world, tr_corr_occ, "CorrOcc");
-  mpqc::detail::parallel_print_range_info(world, tr_vir, "Vir");
-  mpqc::detail::parallel_print_range_info(world, tr_all, "All");
-
-  // convert Eigen matrices to TA
-  auto C_occ_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_occ, tr_obs, tr_occ);
-  auto C_corr_occ_ta = array_ops::eigen_to_array<Tile, Policy>(
-      world, C_corr_occ, tr_obs, tr_corr_occ);
-  auto C_vir_ta =
-      array_ops::eigen_to_array<Tile, Policy>(world, C_vir, tr_obs, tr_vir);
-  auto C_all_ta = array_ops::eigen_to_array<Tile, Policy>(world, C_gamma_point,
-                                                          tr_obs, tr_all);
-
-  // insert to registry
-  using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
-  auto occ_space =
-      OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
-  orbital_registry.add(occ_space);
-
-  auto corr_occ_space =
-      OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
-  orbital_registry.add(corr_occ_space);
-
-  auto vir_space =
-      OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"κ"), C_vir_ta);
-  orbital_registry.add(vir_space);
-
-  auto all_space =
-      OrbitalSpaceTArray(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_all_ta);
-  orbital_registry.add(all_space);
-}
-
 /**
  * complex-valued Restricted Hartree-Fock class
  */
 
-class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>,
-             public Provides<Energy> {
+class zRHF
+    : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>,
+      public Provides<
+          Energy/*,
+          CanonicalOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>,
+          PopulatedOrbitalSpace<TA::DistArray<TA::TensorZ, TA::SparsePolicy>>*/> {
  public:
   using Tile = TA::TensorZ;
   using TArray =

@@ -8,9 +8,10 @@
 #include <memory>
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/expression/operator.h"
 #include "mpqc/chemistry/qc/lcao/expression/orbital_index.h"
 #include "mpqc/math/groups/group.h"
-#include "operator.h"
+#include "mpqc/util/misc/exception.h"
 
 namespace mpqc {
 namespace lcao {

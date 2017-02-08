@@ -82,7 +82,7 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
       utility::print_par(world, "VTCouple: ", vt_couple_, "\n");
 
       // clean LCAO Integrals
-      this->lcao_factory().registry().purge(world);
+      this->lcao_factory().registry().purge();
 
       // compute, this will set f12_energy_
       compute_f12();
@@ -210,12 +210,12 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
     Eij_F12 = eij;
   }
 
-  lcao_factory.ao_factory().registry().purge_operator(world, L"R");
+  lcao_factory.ao_factory().registry().purge_operator(L"R");
 
   // compute X term
   TArray X_ijij_ijji = f12::compute_X_ijij_ijji_df(lcao_factory, ijij_ijji_shape);
 
-  lcao_factory.purge_operator(world, L"R2");
+  lcao_factory.purge_operator(L"R2");
 
   auto Fij = lcao_factory.compute(L"<i|F|j>[df]");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
@@ -290,7 +290,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
   TArray X_ijij_ijji = f12::compute_X_ijij_ijji(lcao_factory, ijij_ijji_shape);
   //    std::cout << "X_ijij_ijji" << std::endl;
   //    std::cout << X_ijij_ijji << std::endl;
-  lcao_factory.purge_operator(world, L"R2");
+  lcao_factory.purge_operator(L"R2");
 
   auto Fij = lcao_factory.compute(L"<i|F|j>");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);

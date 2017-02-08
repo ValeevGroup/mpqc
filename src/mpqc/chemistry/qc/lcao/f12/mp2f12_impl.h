@@ -128,7 +128,7 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
   // compute X term
   {
     TA::DistArray<Tile, TA::SparsePolicy> X_ijij_ijji = compute_X();
-    this->lcao_factory().purge_operator(world, L"R2");
+    this->lcao_factory().purge_operator(L"R2");
 
     RowMatrix<double> Eij_x =
         X_ijij_ijji("i1,j1,i2,j2")
@@ -144,8 +144,8 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
     TA::DistArray<Tile, TA::SparsePolicy> V_ijij_ijji = compute_V();
     // G integral in MO not needed, still need G integral in AO to compute F, K,
     // hJ
-    this->lcao_factory().registry().purge_operator(world, L"G");
-    this->lcao_factory().purge_operator(world, L"GR");
+    this->lcao_factory().registry().purge_operator(L"G");
+    this->lcao_factory().purge_operator(L"GR");
 
     // contribution from V_ijij_ijji
     // NB factor of 2 from the Hylleraas functional

@@ -92,7 +92,7 @@ class AOFactory : virtual public DescribedClass {
   virtual ~AOFactory() noexcept = default;
 
   void obsolete() {
-    ao_formula_registry_.purge(world_);
+    ao_formula_registry_.purge();
     if (orbital_basis_registry_ != nullptr) {
       orbital_basis_registry_->clear();
     }

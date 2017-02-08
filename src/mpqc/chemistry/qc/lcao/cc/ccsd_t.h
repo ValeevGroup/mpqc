@@ -123,7 +123,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto time0 = mpqc::fenced_now(world);
 
     // clean all LCAO integral
-    this->lcao_factory().registry().purge(world);
+    this->lcao_factory().registry().purge();
 
     // reblock occ and unocc space
     if (reblock_ || reblock_inner_) {

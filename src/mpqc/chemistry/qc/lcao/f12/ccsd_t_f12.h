@@ -57,7 +57,7 @@ class CCSD_T_F12 : public CCSD_T<Tile, TA::SparsePolicy>,
 
       auto t_time0 = mpqc::fenced_now(world);
       // compute (T) energy
-      this->lcao_factory().ao_factory().registry().purge(world);
+      this->lcao_factory().ao_factory().registry().purge();
       CCSD_T<Tile, TA::SparsePolicy>::compute_ccsd_t();
 
       auto t_time1 = mpqc::fenced_now(world);

@@ -73,7 +73,7 @@ class LCAOFactory : virtual public DescribedClass {
         ao_factory_(*gaussian::construct_ao_factory<Tile, Policy>(kv)),
         orbital_space_registry_(
             std::make_shared<OrbitalSpaceRegistry<TArray>>()),
-        mo_formula_registry_() {
+        lcao_formula_registry_() {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
       prefix = "wfn_world:";
@@ -86,7 +86,7 @@ class LCAOFactory : virtual public DescribedClass {
 
   void obsolete() {
     // obsolete self
-    mo_formula_registry_.purge(world_);
+    lcao_formula_registry_.purge();
     if (orbital_space_registry_ != nullptr) {
       orbital_space_registry_->clear();
     }
@@ -116,11 +116,11 @@ class LCAOFactory : virtual public DescribedClass {
 
   /// return reference to FormulaRegistry
   const FormulaRegistry<TArray>& registry() const {
-    return mo_formula_registry_;
+    return lcao_formula_registry_;
   }
 
   /// return reference to FormulaRegistry
-  FormulaRegistry<TArray>& registry() { return mo_formula_registry_; }
+  FormulaRegistry<TArray>& registry() { return lcao_formula_registry_; }
 
   /// return accurate time
   bool accurate_time() const { return accurate_time_; }
@@ -150,32 +150,32 @@ class LCAOFactory : virtual public DescribedClass {
   TA::expressions::TsrExpr<TArray, true> operator()(const std::wstring& str) {
     auto formula = Formula(str);
     TArray array = compute(formula);
-    auto& result = mo_formula_registry_.retrieve(formula);
+    auto& result = lcao_formula_registry_.retrieve(formula);
     return result(formula.to_ta_expression());
   };
 
   /// purge formulae that contain Operator described by string \c str
   /// from mo_registry and ao_registry
-  void purge_operator(madness::World& world, const std::wstring& str) {
+  void purge_operator(const std::wstring& str) {
     Operator oper(str);
     Operator::Type oper_type = oper.type();
 
-    mo_formula_registry_.purge_operator(world, oper_type);
-    ao_factory().registry().purge_operator(world, oper_type);
+    lcao_formula_registry_.purge_operator(oper_type);
+    ao_factory().registry().purge_operator(oper_type);
   }
 
   /// purge formulae that contain index described by string \c idx_str
   /// from mo_registry and ao_registry
-  void purge_index(madness::World& world, const std::wstring& idx_str) {
+  void purge_index(const std::wstring& idx_str) {
     OrbitalIndex index(idx_str);
-    mo_formula_registry_.purge_index(world, index);
-    ao_factory().registry().purge_index(world, index);
+    lcao_formula_registry_.purge_index(index);
+    ao_factory().registry().purge_index(index);
   }
 
   /// purge formula described by string \c str
   /// from mo_registry
-  void purge_formula(madness::World& world, const std::wstring& str) {
-    mo_formula_registry_.purge_formula(world, str);
+  void purge_formula(const std::wstring& str) {
+    lcao_formula_registry_.purge_formula(str);
   }
 
  private:
@@ -208,7 +208,7 @@ class LCAOFactory : virtual public DescribedClass {
   madness::World& world_;
   AOFactoryType& ao_factory_;
   std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
-  FormulaRegistry<TArray> mo_formula_registry_;
+  FormulaRegistry<TArray> lcao_formula_registry_;
   bool keep_partial_transforms_;  //!< if true, keep partially-transformed ints
                                   //!(false by default)
   bool accurate_time_;
@@ -593,11 +593,11 @@ template <typename Tile, typename Policy>
 typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
     const Formula& formula) {
   ExEnv::out0() << incindent;
-  auto iter = mo_formula_registry_.find(formula);
+  auto iter = lcao_formula_registry_.find(formula);
 
   TArray result;
 
-  if (iter != mo_formula_registry_.end()) {
+  if (iter != lcao_formula_registry_.end()) {
     result = iter->second;
 
     ExEnv::out0() << indent;
@@ -611,8 +611,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
     typename FormulaRegistry<TArray>::iterator find_permute;
 
     for (auto& permute : permutes) {
-      find_permute = mo_formula_registry_.find(permute);
-      if (find_permute != mo_formula_registry_.end()) {
+      find_permute = lcao_formula_registry_.find(permute);
+      if (find_permute != lcao_formula_registry_.end()) {
         mpqc::time_point time0 = mpqc::now(world_, accurate_time_);
 
         // permute the array
@@ -631,23 +631,23 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
                       << " Time: " << time << " s\n";
 
         // store current array and delete old one
-        mo_formula_registry_.insert(formula, result);
+        lcao_formula_registry_.insert(formula, result);
 
         // TODO need to optimize storage and permutation, there is no need to store multiple copy of permutations
 
-        mo_formula_registry_.purge_formula(world_,permute);
+        lcao_formula_registry_.purge_formula(permute);
       }
     }
 
     if (formula.rank() == 2) {
       result = compute2(formula);
-      mo_formula_registry_.insert(formula, result);
+      lcao_formula_registry_.insert(formula, result);
     } else if (formula.rank() == 3) {
       result = compute3(formula);
-      mo_formula_registry_.insert(formula, result);
+      lcao_formula_registry_.insert(formula, result);
     } else if (formula.rank() == 4) {
       result = compute4(formula);
-      mo_formula_registry_.insert(formula, result);
+      lcao_formula_registry_.insert(formula, result);
     }
     madness::print_meminfo(
         world_.rank(), "LCAOFactory: " + utility::to_string(formula.string()));

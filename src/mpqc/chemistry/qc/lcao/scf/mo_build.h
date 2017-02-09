@@ -32,10 +32,7 @@ std::shared_ptr<Eigen::VectorXd> make_orbital_energy(
 /// Populates the LCAOFactory object with the occupied, active occupied,
 /// unoccupied, and full orbtial spaces.
 /// @param lcao the LCAOFactory object to be populated
-/// @param wfn provides CanonicalOrbitalSpace, will be computed
-/// @param target_ref_precision the precision with which to compute the
-///                orbitals (also see
-///                CanonicalOrbitalSpace::Provider::evaluate())
+/// @param p_space the CanonicalOrbitalSpace object for the full (occupied and unoccupied) space
 /// @param ndocc the number of doubly occupied orbitals in the reference
 /// @param n_frozen_core the number of frozen core orbitals
 /// @param occ_blksize the target block size for the occupied orbitals
@@ -43,17 +40,12 @@ std::shared_ptr<Eigen::VectorXd> make_orbital_energy(
 template <typename Tile, typename Policy>
 void make_closed_shell_canonical_sdref_subspaces(
     std::shared_ptr<LCAOFactory<Tile, Policy>> lcao_factory,
-    std::shared_ptr<
-        typename CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>::Provider>
-        wfn,
-    double target_ref_precision, std::size_t ndocc, std::size_t n_frozen_core,
+    std::shared_ptr<const CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>> p_space,
+    std::size_t ndocc, std::size_t n_frozen_core,
     std::size_t occ_blksize, std::size_t unocc_blksize) {
   using TArray = TA::DistArray<Tile, Policy>;
   using COrbSpace = CanonicalOrbitalSpace<TArray>;
 
-  // compute the full canonical pace
-  std::shared_ptr<COrbSpace> p_space = std::make_shared<COrbSpace>();
-  evaluate(*p_space, wfn, target_ref_precision);
   const auto &eps_p = p_space->attributes();
 
   auto &orbital_registry = lcao_factory->orbital_space();
@@ -290,6 +282,43 @@ void make_closed_shell_sdref_subspaces(
         POrbSpace(OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_p_ta, occ_p);
     orbital_registry.add(p_space_reblocked);
   }
+}
+
+// produces canonical eigenvalues and coefficients
+template <typename Tile, typename Policy>
+std::shared_ptr<CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>>
+make_closed_shell_canonical_orbitals(
+    std::shared_ptr<LCAOFactory<Tile, Policy>> lcao_factory, std::size_t ndocc,
+    std::size_t target_blocksize) {
+  using TArray = TA::DistArray<Tile, Policy>;
+  using TRange1Engine = ::mpqc::utility::TRange1Engine;
+
+  auto &world = lcao_factory->world();
+  auto &ao_factory = lcao_factory->ao_factory();
+
+  RowMatrixXd F_eig = array_ops::array_to_eigen(ao_factory.compute(L"<κ|F|λ>"));
+  auto S = ao_factory.compute(L"<κ|λ>");
+  RowMatrixXd S_eig = array_ops::array_to_eigen(S);
+
+  // solve mo coefficients
+  Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
+  auto evals = es.eigenvalues();
+  auto C = es.eigenvectors();
+
+  // convert coeffs to TA
+  auto nobs = S_eig.rows();
+  using TRange1Engine = ::mpqc::utility::TRange1Engine;
+  auto tre = std::make_shared<TRange1Engine>(
+      ndocc, nobs, target_blocksize, target_blocksize, 0);
+  auto tr_ao = S.trange().data().back();
+  auto tr_all = tre->get_all_tr1();
+  auto C_obs = array_ops::eigen_to_array<Tile, Policy>(world, C, tr_ao, tr_all);
+
+  // convert eigenvalues to std::vec
+  std::vector<double> evals_vec(evals.data(), evals.data() + evals.rows());
+
+  return std::make_shared<CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>>(
+      OrbitalIndex(L"p"), OrbitalIndex(L"κ"), C_obs, evals_vec);
 }
 
 template <typename Tile, typename Policy>

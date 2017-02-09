@@ -112,9 +112,6 @@ class RHF
 
   double compute_energy() const;
 
-  // produces canonical eigenvalues and coefficients
-  std::tuple<Eigen::VectorXd, array_type> make_canonical_orbitals(size_t target_blocksize);
-
   /** Function to compute the density to the desired accuracy.
    *
    * Takes some form of integral and does the closed-shell scf iterations.  The

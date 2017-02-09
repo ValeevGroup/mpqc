@@ -103,37 +103,36 @@ class LCAOWavefunction : public Wavefunction {
 
     // dispatch request for either Canonical or Populated orbitals
     // order of preference:
-    // - free canonical orbs, since these have most information
-    // - free populated orbs, since prefer free always
-    // - computed populated orbs, since this is less expensive
-    // - computed canonical orbs, since this is most expensive
+    // - canonical orbs, since these have most information
+    // - populated orbs, since don't have to compute anything
+    // - compute canonical orbs ourselves, since this costs
     auto canonical_orbs_provider = std::dynamic_pointer_cast<
         typename CanonicalOrbitalSpace<TArray>::Provider>(ref_wfn);
     auto has_canonical_orbs =
-        canonical_orbs_provider &&
-        canonical_orbs_provider->can_evaluate();
-    auto canonical_orbs_are_free =
-        has_canonical_orbs && canonical_orbs_provider->is_available();
+        canonical_orbs_provider && canonical_orbs_provider->can_evaluate();
     auto populated_orbs_provider = std::dynamic_pointer_cast<
         typename PopulatedOrbitalSpace<TArray>::Provider>(ref_wfn);
     auto has_populated_orbs =
-        populated_orbs_provider &&
-        populated_orbs_provider->can_evaluate();
+        populated_orbs_provider && populated_orbs_provider->can_evaluate();
 
-    if (canonical_orbs_are_free || (!has_populated_orbs && has_canonical_orbs)) {
+    if (has_canonical_orbs || !has_populated_orbs) {  // use canonical orbs
+      auto orbs = std::make_shared<CanonicalOrbitalSpace<TArray>>();
+      if (has_canonical_orbs)
+        evaluate(*orbs, canonical_orbs_provider, target_ref_precision);
+      else  // last resort: compute canonical orbitals
+        orbs = make_closed_shell_canonical_orbitals(lcao_factory_, ndocc,
+                                                    unocc_block_);
+
       make_closed_shell_canonical_sdref_subspaces(
-          lcao_factory_, canonical_orbs_provider, target_ref_precision, ndocc,
-          n_frozen_core, occ_block_, unocc_block_);
+          lcao_factory_, std::const_pointer_cast<const CanonicalOrbitalSpace<TArray>>(orbs),
+          ndocc, n_frozen_core, occ_block_, unocc_block_);
     }
     // else ask for populated spaces
-    else if (has_populated_orbs) {
+    else {
       make_closed_shell_sdref_subspaces(
           lcao_factory_, populated_orbs_provider, target_ref_precision, ndocc,
           n_frozen_core, occ_block_, unocc_block_);
-    } else
-      throw ProgrammingError(
-          "ref_wfn does not provide canonical or populated orbitals", __FILE__,
-          __LINE__);
+    }
   }
 
   const std::shared_ptr<const ::mpqc::utility::TRange1Engine> &trange1_engine()

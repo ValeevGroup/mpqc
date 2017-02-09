@@ -43,10 +43,6 @@ class OrbitalSpace {
     /// @return true if \c OrbitalSpace can be computed.
     virtual bool can_evaluate(OrbitalSpace* ospace = nullptr) = 0;
 
-    /// @return true if \c OrbitalSpace is available without additional
-    /// computation.
-    virtual bool is_available(OrbitalSpace* ospace = nullptr) = 0;
-
     /// @brief computes an OrbitalSpace and assigns to \c *ospace
 
     /// @param ospace pointer to the OrbitalSpace object that will contain the
@@ -235,10 +231,6 @@ class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
 
     /// @return true if \c DecoratedOrbitalSpace can be computed.
     virtual bool can_evaluate(DecoratedOrbitalSpace* space = nullptr) = 0;
-
-    /// @return true if \c DecoratedOrbitalSpace is available without additional
-    /// computation.
-    virtual bool is_available(DecoratedOrbitalSpace* ospace = nullptr) = 0;
 
     /// @brief computes an DecoratedOrbitalSpace and assigns to \c *space
 

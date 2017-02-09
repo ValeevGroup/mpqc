@@ -8,22 +8,6 @@
 namespace mpqc {
 namespace lcao {
 
-namespace detail {
-
-inline void print_gamma_point_ccsd(int iter, double dE, double error, double E1,
-                                   double time) {
-  if (iter == 0) {
-    ExEnv::out0() << mpqc::printf("%3s \t %10s \t %10s \t %15s \t %10s \n",
-                                  "iter", "deltaE", "residual", "energy",
-                                  "total time/s");
-  }
-  ExEnv::out0() << mpqc::printf(
-      "%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, error, E1,
-      time);
-}
-
-}  // namespace detail
-
 template <typename Tile, typename Policy>
 class GammaPointCCSD : public CCSD<Tile, Policy> {
 
@@ -106,7 +90,7 @@ private:
 
           ref_evaluator->evaluate(result);
 
-          double ref_energy = result->energy();
+          double ref_energy = this->get_value(result).derivs(0)[0];
 
           // initialize
           init_gpccsd();

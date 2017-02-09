@@ -98,7 +98,9 @@ private:
           // set the precision
           if (converge_ == 0.0) {
             // if no user provided converge limit, use the default one from Energy
-            converge_ = result->target_precision(0);
+              this->set_target_precision(result->target_precision(0));
+          } else {
+              this->set_target_precision(converge_);
           }
 
           TArray t1, t2;

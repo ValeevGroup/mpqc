@@ -157,6 +157,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
   bool print_detail() const { return print_detail_; }
 
+  void set_target_precision(double precision) {
+      target_precision_ = precision;
+  }
+
   const typename DirectAOIntegral::DirectTArray &get_direct_ao_integral()
       const {
     return direct_ao_array_;

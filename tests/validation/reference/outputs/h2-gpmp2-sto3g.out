@@ -2,7 +2,12 @@ MADNESS runtime initialized with 3 threads in the pool and affinity -1 -1 -1
 
                  MPQC4: Massively Parallel Quantum Chemistry (v4)
                                 Version 4.0.0-alpha
-                 Revision 9f7e456ed29d06549d3c6ffb2e0dfbf38c5c73a5
+                 Revision 9f5434871456f1283a938448b382ea65a9cc9bf0
+
+  Machine:          Darwin-16.4.0-x86_64
+  User:             xiaowang@Xiaos-MacBook-Pro.local
+  Start Time:       Fri Feb 10 02:53:39 2017 UTC
+  Default World:    1 MPI process
 
   Input KeyVal (format=JSON):
 {
@@ -96,10 +101,10 @@ PeriodicAOFactory computational parameters:
 
 Molecule info:
 	C.O.M: 0 0 0
-	Mass: 2.01568
+	Mass: 2.01565006446
 
 Elements:
-	AtomBasedCluster: {C. Of Mass: 0 0 0, elements: {Atom: {Z: 1, charge: 1, mass: 1.00784, pos:                  0                  0 -0.700003692500297}, Atom: {Z: 1, charge: 1, mass: 1.00784, pos:                 0                 0 0.700003692500297}}}
+	AtomBasedCluster: {C. Of Mass: 0 0 0, elements: {Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                  0                  0 -0.700003692500297}, Atom: {Z: 1, charge: 1, mass: 1.00782503223, pos:                 0                 0 0.700003692500297}}}
 
 Unit cell info:
 	Lattice parameters (in Bohr): [               0                0 2.79999965219213]
@@ -108,13 +113,13 @@ zRHF computational parameters:
   # of k points in each direction: [1 1 7]
 
 Computing One Body Integral for Periodic System: < κ |T| λ >
- Size: 2.98023223876953e-07 GB Time: 0.013169885 s
+ Size: 2.98023223876953e-07 GB Time: 0.002094188 s
 
 Computing One Body Integral for Periodic System: < κ |V| λ >
- Size: 2.98023223876953e-07 GB Time: 0.009331476 s
+ Size: 2.98023223876953e-07 GB Time: 0.009400607 s
 
 Computing One Body Integral for Periodic System: < κ | λ >
- Size: 2.98023223876953e-07 GB Time: 0.000452321 s
+ Size: 2.98023223876953e-07 GB Time: 0.000476838 s
 
 Building Fock Matrix from SOAD Guess ...
 
@@ -129,26 +134,26 @@ Nuclear Repulsion Energy: 3.96201858517154
 
 
  Iter                E(HF)               E(tot)             Delta(E)               RMS(D)              Time(s)
-    1      -4.946123399254      -0.984104814082      -4.946123399254       0.005794939734                0.088
-    2      -4.963004473239      -1.000985888068      -0.016881073985       0.001202261441                0.086
-    3      -4.962979880805      -1.000961295634       0.000024592434       0.000468551226                0.084
-    4      -4.962974053031      -1.000955467859       0.000005827775       0.000277188119                0.096
-    5      -4.962972788433      -1.000954203262       0.000001264598       0.000171396672                0.079
-    6      -4.962972441002      -1.000953855831       0.000000347431       0.000105761503                0.098
-    7      -4.962972303070      -1.000953717899       0.000000137932       0.000065135847                0.096
-    8      -4.962972231173      -1.000953646001       0.000000071898       0.000040088691                0.112
+    1      -4.946123399254      -0.984104814082      -4.946123399254       0.005794939734                0.136
+    2      -4.963004473239      -1.000985888068      -0.016881073985       0.001202261441                0.112
+    3      -4.962979880805      -1.000961295634       0.000024592434       0.000468551226                0.114
+    4      -4.962974053031      -1.000955467859       0.000005827775       0.000277188119                0.109
+    5      -4.962972788433      -1.000954203262       0.000001264598       0.000171396672                0.136
+    6      -4.962972441002      -1.000953855831       0.000000347431       0.000105761503                0.100
+    7      -4.962972303070      -1.000953717899       0.000000137932       0.000065135847                0.108
+    8      -4.962972231173      -1.000953646001       0.000000071898       0.000040088691                0.136
 
 Periodic Hartree-Fock iterations have converged!
 
 Total Periodic Hartree-Fock energy = -1.00095364600103
 
 Time(s):
-	Init:                               0.078
-	Coulomb term:                       0.362
-	Exchange term:                      0.364
+	Init:                               0.067
+	Coulomb term:                       0.444
+	Exchange term:                      0.493
 	Real->Recip trans:                  0.003
-	Diag + Density:                     0.006
-	Total:                              0.740
+	Diag + Density:                     0.007
+	Total:                              0.952
 
 OccBlockSize: 1
 VirBlockSize: 1
@@ -179,14 +184,14 @@ Average: 1
 
 Computing conventional gamma-point MP2 ...
  Transformed Gamma-Point Periodic LCAO Integral: < a b |G| i j >
- Size: 1.49011611938477e-08 GB
- Time: 0.25872373 s
-    PAO build total time:  0.257803502 s
-        part 1: 0.203735469 s
-        part 2: 0.03733157 s
-    PAO->CO transform time: 0.000920228 s
+ Size: 7.45058059692383e-09 GB
+ Time: 0.229285085 s
+    PAO build total time:  0.228338042 s
+        part 1: 0.180930951 s
+        part 2: 0.031921328 s
+    PAO->CO transform time: 0.000947043 s
 
-Gamma-Point MP2 Energy = -0.00685351460106706
+Gamma-Point MP2 Energy = -0.0152110419936032
   Output KeyVal (format=JSON):
 {
     "units": "2006CODATA",
@@ -255,9 +260,8 @@ Gamma-Point MP2 Energy = -0.00685351460106706
         "wfn": "$:wfn",
         "precision": "1.0e-7",
         "value": {
-            "value": "-1.0078071606020922"
+            "value": "-1.0161646879946293"
         }
-    },
-    "world": "0x108306130"
+    }
 }
 

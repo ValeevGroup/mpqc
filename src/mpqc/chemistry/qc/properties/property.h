@@ -14,10 +14,7 @@
 #include "mpqc/util/misc/task.h"
 #include "mpqc/util/misc/provider.h"
 
-/// top-level MPQC namespace
 namespace mpqc {
-
-// using TiledArray::detail::scalar_type;
 
 /// this is the base for all properties that MPQC can compute via the input.
 /// MPQC main will read KeyVal and search for a Property object, compute it

@@ -44,33 +44,38 @@ float take_real(TA::TensorD &result_tile, const TA::TensorZ &arg_tile);
  * \brief This takes real or imaginary part from a complex array
  */
 template <typename Policy>
-TA::DistArray<TA::TensorD, Policy>
-tensorZ_to_tensorD(const TA::DistArray<TA::TensorZ, Policy> &complex_array, bool if_real) {
-    TA::DistArray<TA::TensorD, Policy> result_array;
+TA::DistArray<TA::TensorD, Policy> tensorZ_to_tensorD(
+    const TA::DistArray<TA::TensorZ, Policy> &complex_array, bool if_real) {
+  TA::DistArray<TA::TensorD, Policy> result_array;
 
-    if (!if_real)
-        throw FeatureNotImplemented("Taking imaginary parts of complex arrays has not been implemented.", __FILE__, __LINE__);
+  if (!if_real)
+    throw FeatureNotImplemented(
+        "Taking imaginary parts of complex arrays has not been implemented.",
+        __FILE__, __LINE__);
 
-    const auto rank = complex_array.trange().tiles_range().rank();
+  const auto rank = complex_array.trange().tiles_range().rank();
 
-    if (rank == 4u) {
-        result_array = TA::foreach<TA::TensorD, TA::TensorZ, decltype(take_real)>(complex_array, take_real);
-        complex_array.world().gop.fence();
-    } else if (rank == 2u) {
-        auto complex_eigen = array_ops::array_to_eigen(complex_array);
-        RowMatrixXd result_eigen;
-        if (if_real)
-          result_eigen = complex_eigen.real();
-        else
-          result_eigen = complex_eigen.imag();
-        auto tr0 = complex_array.trange().data()[0];
-        auto tr1 = complex_array.trange().data()[1];
-        result_array = array_ops::eigen_to_array<TA::TensorD, Policy>(complex_array.world(), result_eigen, tr0, tr1);
-    } else {
-        throw FeatureNotImplemented("The array dimmension must be equal to 2 or 4.", __FILE__, __LINE__);
-    }
+  if (rank == 4u) {
+    result_array = TA::foreach<TA::TensorD, TA::TensorZ, decltype(take_real)>(
+        complex_array, take_real);
+    complex_array.world().gop.fence();
+  } else if (rank == 2u) {
+    auto complex_eigen = array_ops::array_to_eigen(complex_array);
+    RowMatrixXd result_eigen;
+    if (if_real)
+      result_eigen = complex_eigen.real();
+    else
+      result_eigen = complex_eigen.imag();
+    auto tr0 = complex_array.trange().data()[0];
+    auto tr1 = complex_array.trange().data()[1];
+    result_array = array_ops::eigen_to_array<TA::TensorD, Policy>(
+        complex_array.world(), result_eigen, tr0, tr1);
+  } else {
+    throw FeatureNotImplemented("The array dimmension must be equal to 2 or 4.",
+                                __FILE__, __LINE__);
+  }
 
-    return result_array;
+  return result_array;
 }
 }  // namespace detail
 
@@ -95,7 +100,8 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
 
-    // Molecule was already created at this path, bypass registry and construct UnitCell
+    // Molecule was already created at this path, bypass registry and construct
+    // UnitCell
     unitcell_ = kv.class_ptr<UnitCell>(prefix + "molecule", true);
 
     dcell_ = unitcell_->dcell();
@@ -149,6 +155,9 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
   /// find the corresponding AO formula, if index is already AO, it will be
   /// ignored
   Formula mo_to_ao(const Formula &formula);
+
+  /// find the correct range of summation for σ in <μ0 νR|ρR_j σ(R_j+R)>
+  std::vector<int64_t> restricted_latt_range(int64_t R, int64_t RJ);
 
   AOFactoryType &pao_factory_;
   std::shared_ptr<UnitCell> unitcell_;
@@ -268,8 +277,9 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
           to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
                                      *unitcell_));
 
-      auto ao_int =
-          detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases), true);
+      auto ao_int = detail::tensorZ_to_tensorD(
+          pao_factory_.compute_integrals(this->world_, engine_pool, bases),
+          true);
 
       if (R == 0)
         pao_ints("p, q") = ao_int("p, q");
@@ -347,7 +357,9 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
           to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
                                      *unitcell_));
 
-      ao_int = detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases), true);
+      ao_int = detail::tensorZ_to_tensorD(
+          pao_factory_.compute_integrals(this->world_, engine_pool, bases),
+          true);
 
     } else if (ao_formula.oper().type() == Operator::Type::Nuclear) {
       auto bases = mpqc::lcao::gaussian::BasisVector{{*bra, *ket}};
@@ -361,11 +373,13 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
                                        *shifted_mol));
         if (RJ == 0)
-          ao_int =
-              detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases), true);
+          ao_int = detail::tensorZ_to_tensorD(
+              pao_factory_.compute_integrals(this->world_, engine_pool, bases),
+              true);
         else
-          ao_int("p, q") +=
-              detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases), true)("p, q");
+          ao_int("p, q") += detail::tensorZ_to_tensorD(
+              pao_factory_.compute_integrals(this->world_, engine_pool, bases),
+              true)("p, q");
       }
     } else if (ao_formula.oper().type() == Operator::Type::J) {
       // change operator type to Coulomb for computing integrals
@@ -392,8 +406,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
         auto p_screener = pao_factory_.make_screener(engine_pool, bases);
 
         // compute AO-based integrals
-        auto J =
-            detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener), true);
+        auto J = detail::tensorZ_to_tensorD(
+            pao_factory_.compute_integrals(this->world_, engine_pool, bases,
+                                           p_screener),
+            true);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = J("p, q, r, s") * D("r, s");
@@ -428,8 +444,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
         auto p_screener = pao_factory_.make_screener(engine_pool, bases);
 
         // compute AO-based integrals
-        auto K =
-            detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener), true);
+        auto K = detail::tensorZ_to_tensorD(
+            pao_factory_.compute_integrals(this->world_, engine_pool, bases,
+                                           p_screener),
+            true);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = K("p, r, q, s") * D("r, s");
@@ -496,7 +514,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     auto vec_R = direct_vector(R, R_max_, dcell_);
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-      for (auto RD = 0; RD < RD_size_; ++RD) {
+
+      auto selected_RD_list = restricted_latt_range(R, RJ);
+      for (auto RD_idx = 0; RD_idx < selected_RD_list.size(); ++RD_idx) {
+        auto RD = selected_RD_list[RD_idx];
         auto vec_RD = direct_vector(RD, RD_max_, dcell_);
 
         auto t_pao0 = mpqc::now(this->world_, this->accurate_time_);
@@ -518,8 +539,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
         auto p_screener = pao_factory_.make_screener(engine_pool, bases);
 
         // compute AO-based integrals
-        auto ao_int =
-            detail::tensorZ_to_tensorD(pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener), true);
+        auto ao_int = detail::tensorZ_to_tensorD(
+            pao_factory_.compute_integrals(this->world_, engine_pool, bases,
+                                           p_screener),
+            true);
         auto t_pao1 = mpqc::now(this->world_, this->accurate_time_);
         pao_build_time += mpqc::duration_in_s(t_pao0, t_pao1);
 
@@ -629,6 +652,26 @@ Formula PeriodicLCAOFactory<Tile, Policy>::mo_to_ao(const Formula &formula) {
   ao_formula.set_ket_indices(ao_right_index);
 
   return ao_formula;
+}
+
+template <typename Tile, typename Policy>
+std::vector<int64_t> PeriodicLCAOFactory<Tile, Policy>::restricted_latt_range(
+    int64_t R, int64_t RJ) {
+  std::vector<int64_t> result;
+  using ::mpqc::lcao::detail::direct_vector;
+
+  auto vec_max = direct_vector(RJ_size_ - 1, RJ_max_, dcell_);
+  auto distance_max = vec_max.norm();
+  auto vec_R = direct_vector(R, R_max_, dcell_);
+  auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+
+  for (int64_t R_select = 0; R_select < RD_size_; ++R_select) {
+    auto vec_R_select = direct_vector(R_select, RD_max_, dcell_);
+    auto distance = (vec_RJ + vec_R_select - vec_R).norm();
+    if (distance <= distance_max) result.push_back(R_select);
+  }
+
+  return result;
 }
 
 }  // namespace lcao

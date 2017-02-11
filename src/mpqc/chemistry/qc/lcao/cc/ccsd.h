@@ -66,7 +66,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
-   * | method | string | standard | method to compute ccsd (standard, direct) |
+   * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
    * | less_memory | bool | false | avoid store another abcd term in standard and df method |
@@ -83,13 +83,17 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
 
     df_ = false;
-    method_ = kv_.value<std::string>("method", "df");
-    if (method_ == "df" || method_ == "direct") {
-      df_ = true;
-    }
+    auto default_method =
+        this->lcao_factory().ao_factory().basis_registry()->have(L"Κ") ?
+            "df" :
+            "standard";
+    method_ = kv_.value<std::string>("method", default_method);
     if(method_ != "df" && method_!="direct" && method_!="standard")
     {
       throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
+    }
+    if (method_ == "df" || method_ == "direct") {
+      df_ = true;
     }
 
     max_iter_ = kv.value<int>("max_iter", 20);

@@ -132,7 +132,12 @@ class AOFactory : public AOFactoryBase, virtual public DescribedClass {
     return ao_formula_registry_;
   }
 
-  /// return ao formula registry
+  /// @return the orbital basis set registry
+  std::shared_ptr<const OrbitalBasisRegistry> basis_registry() const {
+    return orbital_basis_registry_;
+  }
+
+  /// @return the ao formula registry
   FormulaRegistry<TArray>& registry() { return ao_formula_registry_; }
 
   /// set orbital space registry

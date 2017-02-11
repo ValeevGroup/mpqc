@@ -81,8 +81,10 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     auto Fv = fac.compute(L"(a|F|b)");
 
     // zero out amplitudes
-    T_ = Array(world, G.trange(), G.shape());
-    T_.fill(0.0);
+    if (!T_.is_initialized()) {
+      T_ = Array(world, G.trange(), G.shape());
+      T_.fill(0.0);
+    }
 
     // lambda function to update the residual
     auto jacobi_update = [&eps_o, &eps_v](TA::TensorD& result_tile) {
@@ -129,6 +131,11 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     }
 
     return energy;
+  }
+
+  void obsolete() override {
+    computed_precision_ = std::numeric_limits<double>::max();
+    LCAOWfn::obsolete();
   }
 
   std::shared_ptr<RHF> ref_wfn_;

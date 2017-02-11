@@ -1173,6 +1173,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     mpqc::time_point time21;
     mpqc::time_point time22;
     mpqc::time_point time23;
+    mpqc::time_point time24;
+    mpqc::time_point time25;
 
     double int_transform1 = 0.0;
     double int_transform2 = 0.0;
@@ -1186,6 +1188,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double vvvv_contr_t = 0.0;
     double vvvv_trace = 0.0;
     double ovvvv_new = 0;
+    double o2v4_oo = 0;
+    double o2v4_vo = 0;
 
     // loop over number of quadrature points
     for (auto m = 0; m < n; m++) {
@@ -1230,6 +1234,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,k");
         Wijkabc = TA::dot((G("e,f")),(T("e,f")));
       }
+      time24 = mpqc::now(world, accurate_time);
       {
         //term2
         TArray G;
@@ -1238,6 +1243,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j");
         Wijkabc += 2.0 * (TA::dot((G("e,b,k,f")),(T("e,b,k,f"))));
       }
+      time25 = mpqc::now(world, accurate_time);
+      o2v4_vo += mpqc::duration_in_s(time24, time25);
       /*time14 = mpqc::now(world, accurate_time);
       {
         //term3
@@ -1260,6 +1267,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
       time15 = mpqc::now(world, accurate_time);
       time_vvvv += mpqc::duration_in_s(time14, time15);*/
+      time24 = mpqc::now(world, accurate_time);
       {
         //term4
         TArray G;
@@ -1268,6 +1276,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,b,j,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,k");
         Wijkabc += TA::dot((G("e,b,j,f")),(T("e,b,j,f")));
       }
+      time25 = mpqc::now(world, accurate_time);
+      o2v4_vo += mpqc::duration_in_s(time24, time25);
       {
         //term5
         TArray G;
@@ -1328,6 +1338,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
       time15 = mpqc::now(world, accurate_time);
       time_vvvv += mpqc::duration_in_s(time14, time15);*/
+      time24 = mpqc::now(world, accurate_time);
       {
         //term8
         TArray G;
@@ -1352,6 +1363,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,j");
         Wkijabc += TA::dot((G("e,b,k,f")),(T("e,b,k,f")));
       }
+      time25 = mpqc::now(world, accurate_time);
+      o2v4_vo += mpqc::duration_in_s(time24, time25);
       {
         //term11
         TArray G;
@@ -1373,6 +1386,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                        .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,i"));
       }*/
 
+      time24 = mpqc::now(world, accurate_time);
       {
         //term12
         TArray G;
@@ -1381,6 +1395,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,a,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,j");
         Wjkiabc = TA::dot((G("e,a,k,f")),(T("e,a,k,f")));
       }
+      time25 = mpqc::now(world, accurate_time);
+      o2v4_vo += mpqc::duration_in_s(time24, time25);
       /*time14 = mpqc::now(world, accurate_time);
       {
         //term13
@@ -1442,6 +1458,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,i,k,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,i");
         Wkjiabc = TA::dot((G("e,i,k,f")),(T("e,i,k,f")));
       }
+      time24 = mpqc::now(world, accurate_time);
       {
         //term16
         TArray G;
@@ -1450,6 +1467,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j");
         Wkjiabc += 2.0 * (TA::dot((G("e,b,k,f")),(T("e,b,k,f"))));
       }
+      time25 = mpqc::now(world, accurate_time);
+            o2v4_vo += mpqc::duration_in_s(time24, time25);
       /*time14 = mpqc::now(world, accurate_time);
       {
         //term17
@@ -1472,6 +1491,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
       time15 = mpqc::now(world, accurate_time);
       time_vvvv += mpqc::duration_in_s(time14, time15);*/
+      time24 = mpqc::now(world, accurate_time);
       {
         //term18
         TArray G;
@@ -1480,6 +1500,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,a,j,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,k");
         Wkjiabc += 2.0 * (TA::dot((G("e,a,j,f")),(T("e,a,j,f"))));
       }
+      time25 = mpqc::now(world, accurate_time);
+      o2v4_vo += mpqc::duration_in_s(time24, time25);
       /*time14 = mpqc::now(world, accurate_time);
       {
         //term19
@@ -1535,6 +1557,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,j");
         Wikjabc = TA::dot((G("e,f")),(T("e,f")));
       }
+      time24 = mpqc::now(world, accurate_time);
       {
         //term22
         TArray G;
@@ -1543,6 +1566,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,b,j,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,k");
         Wikjabc += 2.0 * (TA::dot((G("e,b,j,f")),(T("e,b,j,f"))));
       }
+      time25 = mpqc::now(world, accurate_time);
+      o2v4_vo += mpqc::duration_in_s(time24, time25);
       /*time14 = mpqc::now(world, accurate_time);
       {
         //term23
@@ -1565,6 +1590,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       }
       time15 = mpqc::now(world, accurate_time);
       time_vvvv += mpqc::duration_in_s(time14, time15);*/
+      time24 = mpqc::now(world, accurate_time);
       {
         //term24
         TArray G;
@@ -1573,6 +1599,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,j");
         Wikjabc += 2.0 * (TA::dot((G("e,b,k,f")),(T("e,b,k,f"))));
       }
+      time25 = mpqc::now(world, accurate_time);
+      o2v4_vo += mpqc::duration_in_s(time24, time25);
 
       //this->wfn_world()->world().gop.fence();
       double Wjikabc = 0.0;
@@ -2884,6 +2912,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       std::cout << "vvvv contr g: " << vvvv_contr_g << " S \n";
       std::cout << "vvvv contr t: " << vvvv_contr_t << " S \n";
       std::cout << "vvvv trace: " << vvvv_trace << " S \n";
+      std::cout << "o2v4_vo : " << o2v4_vo << " S \n";
       std::cout << "ovvvv new: " << ovvvv_new << " S \n";
       std::cout << "time_t2_oo: " << time_t2_oo << " S \n";
       std::cout << "time_t2_ov: " << time_t2_ov << " S \n";

@@ -53,5 +53,9 @@ trap clean_up SIGHUP SIGINT SIGTERM
 docker build -t mpqc4-dev .
 
 ##############################################################
+# extra admin tasks, uncomment as needed
+# docker save mpqc4-dev | bzip2 > mpqc4-dev.docker.tar.bz2
+
+##############################################################
 # done
 clean_up

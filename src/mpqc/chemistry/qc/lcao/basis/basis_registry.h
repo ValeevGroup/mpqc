@@ -21,9 +21,20 @@ using OrbitalBasisRegistry = OrbitalRegistry<std::shared_ptr<Basis>>;
 
 }  // namespace gaussian
 
+// clang-format off
 /**
- * KeyVal Constructor for OrbitalBasisRegistry
- */
+ * \brief The KeyVal constructor
+ *
+ * \param kv the KeyVal object, it will be queried for the following keywords:
+ *
+ * | KeyWord | Type | Default| Description |
+ * |---------|------|--------|-------------|
+ * | basis | AtomicBasis | none | the orbital basis set|
+ * | df_basis | AtomicBasis | none | an optional density-fitting basis set |
+ * | aux_basis | AtomicBasis | none | an optional auxiliary basis set for the F12 theories |
+ * | vir_basis | AtomicBasis | none | an optional basis set for supporting unoccupied orbitals in dual-basis methods |
+ **/
+// clang-format on
 template <>
 gaussian::OrbitalBasisRegistry::OrbitalRegistry(const KeyVal& kv);
 

@@ -1102,6 +1102,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
   // performs Laplace transform perturbative triple correction to CCSD energy
   double compute_ccsd_t_laplace_transform(const TArray &t1, const TArray &t2) {
+
+    auto &world = this->wfn_world()->world();
+    bool accurate_time = this->lcao_factory().accurate_time();
+
     // get integral
     TArray g_cjkl = get_aijk();
     TArray g_dabi = get_abci();
@@ -1145,12 +1149,53 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double triple_energyuo = 0.0;
     double triple_energy_total = 0.0;
 
+    mpqc::time_point time00;
+    mpqc::time_point time01;
+    mpqc::time_point time02;
+    mpqc::time_point time03;
+    mpqc::time_point time04;
+    mpqc::time_point time05;
+    mpqc::time_point time06;
+    mpqc::time_point time07;
+    mpqc::time_point time08;
+    mpqc::time_point time09;
+    mpqc::time_point time10;
+    mpqc::time_point time11;
+    mpqc::time_point time12;
+    mpqc::time_point time13;
+    mpqc::time_point time14;
+    mpqc::time_point time15;
+    mpqc::time_point time16;
+    mpqc::time_point time17;
+    mpqc::time_point time18;
+    mpqc::time_point time19;
+    mpqc::time_point time20;
+    mpqc::time_point time21;
+
+    double int_transform1 = 0.0;
+    double int_transform2 = 0.0;
+    double int_transform3 = 0.0;
+    double time_t2_vv = 0.0;
+    double time_t2_ov = 0.0;
+    double time_t2_oo = 0.0;
+    double time_t1 = 0.0;
+    double time_vvvv = 0.0;
+    double vvvv_contr_g = 0.0;
+    double vvvv_contr_t = 0.0;
+    double vvvv_trace = 0.0;
+
     // loop over number of quadrature points
     for (auto m = 0; m < n; m++) {
+
+      time00 = mpqc::now(world, accurate_time);
       TArray g_dabi_lt = g_dabi_laplace_transform(
           g_dabi, *this->orbital_energy(), n_occ, n_frozen, x(m));
       TArray t2_oou_lt = t2_oou_laplace_transform(t2, *this->orbital_energy(),
                                                   n_occ, n_frozen, x(m));
+
+      time01 = mpqc::now(world, accurate_time);
+      int_transform1 += mpqc::duration_in_s(time00, time01);
+
       this->wfn_world()->world().gop.fence();
       double energy_m = 0.0;
       double energy_ms = 0.0;
@@ -1173,7 +1218,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wijkabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,j"))
                        .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,k"));
       }*/
-
+      time02 = mpqc::now(world, accurate_time);
       {
         //term1
         TArray G;
@@ -1190,14 +1235,28 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j");
         Wijkabc += 2.0 * (TA::dot((G("e,b,k,f")),(T("e,b,k,f"))));
       }
+      time14 = mpqc::now(world, accurate_time);
       {
         //term3
         TArray G;
         TArray T;
+        time16 = mpqc::now(world, accurate_time);
         G("e,b,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i");
+        time17 = mpqc::now(world, accurate_time);
+        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
+
+        time18 = mpqc::now(world, accurate_time);
         T("e,b,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,k,j");
+        time19 = mpqc::now(world, accurate_time);
+        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
+
+        time20 = mpqc::now(world, accurate_time);
         Wijkabc += TA::dot((G("e,b,c,f")),(T("e,b,c,f")));
+        time21 = mpqc::now(world, accurate_time);
+        vvvv_trace += mpqc::duration_in_s(time20, time21);
       }
+      time15 = mpqc::now(world, accurate_time);
+      time_vvvv += mpqc::duration_in_s(time14, time15);
       {
         //term4
         TArray G;
@@ -1244,14 +1303,28 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,i,k,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,j");
         Wkijabc = 2.0 * (TA::dot((G("e,i,k,f")),(T("e,i,k,f"))));
       }
+      time14 = mpqc::now(world, accurate_time);
       {
         //term7
         TArray G;
         TArray T;
+        time16 = mpqc::now(world, accurate_time);
         G("e,a,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,c,i");
+        time17 = mpqc::now(world, accurate_time);
+        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
+
+        time18 = mpqc::now(world, accurate_time);
         T("e,a,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,j,k");
+        time19 = mpqc::now(world, accurate_time);
+        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
+
+        time20 = mpqc::now(world, accurate_time);
         Wkijabc += 2.0 * (TA::dot((G("e,a,c,f")),(T("e,a,c,f"))));
+        time21 = mpqc::now(world, accurate_time);
+        vvvv_trace += mpqc::duration_in_s(time20, time21);
       }
+      time15 = mpqc::now(world, accurate_time);
+      time_vvvv += mpqc::duration_in_s(time14, time15);
       {
         //term8
         TArray G;
@@ -1305,14 +1378,28 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,a,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,j");
         Wjkiabc = TA::dot((G("e,a,k,f")),(T("e,a,k,f")));
       }
+      time14 = mpqc::now(world, accurate_time);
       {
         //term13
         TArray G;
         TArray T;
+        time16 = mpqc::now(world, accurate_time);
         G("e,a,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i");
+        time17 = mpqc::now(world, accurate_time);
+        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
+
+        time18 = mpqc::now(world, accurate_time);
         T("e,a,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,k,j");
+        time19 = mpqc::now(world, accurate_time);
+        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
+
+        time20 = mpqc::now(world, accurate_time);
         Wjkiabc += TA::dot((G("e,a,c,f")),(T("e,a,c,f")));
+        time21 = mpqc::now(world, accurate_time);
+        vvvv_trace += mpqc::duration_in_s(time20, time21);
       }
+      time15 = mpqc::now(world, accurate_time);
+      time_vvvv += mpqc::duration_in_s(time14, time15);
       {
         //term14
         TArray G;
@@ -1360,14 +1447,28 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j");
         Wkjiabc += 2.0 * (TA::dot((G("e,b,k,f")),(T("e,b,k,f"))));
       }
+      time14 = mpqc::now(world, accurate_time);
       {
         //term17
         TArray G;
         TArray T;
+        time16 = mpqc::now(world, accurate_time);
         G("e,b,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,a,i");
+        time17 = mpqc::now(world, accurate_time);
+        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
+
+        time18 = mpqc::now(world, accurate_time);
         T("e,b,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,k,j");
+        time19 = mpqc::now(world, accurate_time);
+        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
+
+        time20 = mpqc::now(world, accurate_time);
         Wkjiabc += 2.0 * (TA::dot((G("e,b,c,f")),(T("e,b,c,f"))));
+        time21 = mpqc::now(world, accurate_time);
+        vvvv_trace += mpqc::duration_in_s(time20, time21);
       }
+      time15 = mpqc::now(world, accurate_time);
+      time_vvvv += mpqc::duration_in_s(time14, time15);
       {
         //term18
         TArray G;
@@ -1376,14 +1477,28 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,a,j,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,k");
         Wkjiabc += 2.0 * (TA::dot((G("e,a,j,f")),(T("e,a,j,f"))));
       }
+      time14 = mpqc::now(world, accurate_time);
       {
         //term19
         TArray G;
         TArray T;
+        time16 = mpqc::now(world, accurate_time);
         G("e,a,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i");
+        time17 = mpqc::now(world, accurate_time);
+        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
+
+        time18 = mpqc::now(world, accurate_time);
         T("e,a,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,j,k");
+        time19 = mpqc::now(world, accurate_time);
+        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
+
+        time20 = mpqc::now(world, accurate_time);
         Wkjiabc += TA::dot((G("e,a,c,f")),(T("e,a,c,f")));
+        time21 = mpqc::now(world, accurate_time);
+        vvvv_trace += mpqc::duration_in_s(time20, time21);
       }
+      time15 = mpqc::now(world, accurate_time);
+      time_vvvv += mpqc::duration_in_s(time14, time15);
       {
         //term20
         TArray G;
@@ -1425,14 +1540,28 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,b,j,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,k");
         Wikjabc += 2.0 * (TA::dot((G("e,b,j,f")),(T("e,b,j,f"))));
       }
+      time14 = mpqc::now(world, accurate_time);
       {
         //term23
         TArray G;
         TArray T;
+        time16 = mpqc::now(world, accurate_time);
         G("e,b,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i");
+        time17 = mpqc::now(world, accurate_time);
+        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
+
+        time18 = mpqc::now(world, accurate_time);
         T("e,b,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,j,k");
+        time19 = mpqc::now(world, accurate_time);
+        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
+
+        time20 = mpqc::now(world, accurate_time);
         Wikjabc += TA::dot((G("e,b,c,f")),(T("e,b,c,f")));
+        time21 = mpqc::now(world, accurate_time);
+        vvvv_trace += mpqc::duration_in_s(time20, time21);
       }
+      time15 = mpqc::now(world, accurate_time);
+      time_vvvv += mpqc::duration_in_s(time14, time15);
       {
         //term24
         TArray G;
@@ -1474,13 +1603,21 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       energy_m = 6.0 * energy_m * w(m);
 
+      time03 = mpqc::now(world, accurate_time);
+      time_t2_vv += mpqc::duration_in_s(time02, time03);
 
+
+      time04 = mpqc::now(world, accurate_time);
       TArray g_cjkl_lt = g_cjkl_laplace_transform(
           g_cjkl, *this->orbital_energy(), n_occ, n_frozen, x(m));
       TArray t2_ouu_lt = t2_ouu_laplace_transform(t2, *this->orbital_energy(),
                                                   n_occ, n_frozen, x(m));
-      this->wfn_world()->world().gop.fence();
+      time05 = mpqc::now(world, accurate_time);
+      int_transform2 += mpqc::duration_in_s(time04, time05);
 
+      //this->wfn_world()->world().gop.fence();
+
+      time06 = mpqc::now(world, accurate_time);
       double Wijkabco = 0.0;
       /*
       {
@@ -1797,6 +1934,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       energy_mo = 4.0 * Wijkabco + Wkijabco + Wjkiabco - 2.0 * Wkjiabco -
                   2.0 * Wikjabco - 2.0 * Wjikabco;
 
+      time07 = mpqc::now(world, accurate_time);
+      time_t2_oo += mpqc::duration_in_s(time06, time07);
+
+      time08 = mpqc::now(world, accurate_time);
       double Wijkabcuo = 0.0;
       /*
       {
@@ -2199,16 +2340,23 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjikabcuo += TA::dot((G("e,n")),(T("e,n")));
       }
 
+      time09 = mpqc::now(world, accurate_time);
+      time_t2_ov += mpqc::duration_in_s(time08, time09);
+
       //this->wfn_world()->world().gop.fence();
 
       energy_muo = 4.0 * Wijkabcuo + Wkijabcuo + Wjkiabcuo - 2.0 * Wkjiabcuo -
                    2.0 * Wikjabcuo - 2.0 * Wjikabcuo;
 
+      time10 = mpqc::now(world, accurate_time);
       TArray g_abij_lt = g_abij_laplace_transform(
           g_abij, *this->orbital_energy(), n_occ, n_frozen, x(m));
       TArray t1_lt = t1_laplace_transform(t1, *this->orbital_energy(), n_occ,
                                           n_frozen, x(m));
+      time11 = mpqc::now(world, accurate_time);
+      int_transform3 += mpqc::duration_in_s(time10, time11);
 
+      time12 = mpqc::now(world, accurate_time);
       double Wijkabcs = 0.0;
       /*
       {
@@ -2672,6 +2820,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjikabcos += 2.0 * (TA::dot((G("n,a")),(T("n,a"))));
       }
 
+      time13 = mpqc::now(world, accurate_time);
+      time_t1 += mpqc::duration_in_s(time12, time13);
+
       //this->wfn_world()->world().gop.fence();
 
       energy_mos = 4.0 * Wijkabcos + Wkijabcos + Wjkiabcos - 2.0 * Wkjiabcos -
@@ -2694,7 +2845,20 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       triple_energy +=
           energy_m + energy_mo - 2.0 * energy_muo + energy_ms - energy_mos;
     }
-    //this->wfn_world()->world().gop.fence();
+
+    if (t1.world().rank() == 0) {
+      std::cout << "int_transform1: " << int_transform1 << " S \n";
+      std::cout << "int_transform2: " << int_transform2 << " S \n";
+      std::cout << "int_transform3: " << int_transform3 << " S \n";
+      std::cout << "time_t2_vv: " << time_t2_vv << " S \n";
+      std::cout << "time_vvvv : " << time_vvvv << " S \n";
+      std::cout << "vvvv contr g: " << vvvv_contr_g << " S \n";
+      std::cout << "vvvv contr t: " << vvvv_contr_t << " S \n";
+      std::cout << "vvvv trace: " << vvvv_trace << " S \n";
+      std::cout << "time_t2_oo: " << time_t2_oo << " S \n";
+      std::cout << "time_t2_ov: " << time_t2_ov << " S \n";
+      std::cout << "time_t1: " << time_t1 << " S \n";
+    }
 
     triple_energy = -triple_energy / (3.0 * alpha);
 

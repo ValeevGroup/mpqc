@@ -91,10 +91,9 @@ class AOFactory : public AOFactoryBase, virtual public DescribedClass {
   AOFactory(AOFactory&&) = default;
   AOFactory& operator=(AOFactory&&) = default;
 
-
   void obsolete() {
     ao_formula_registry_.purge(world_);
-    if(orbital_basis_registry_!= nullptr){
+    if (orbital_basis_registry_ != nullptr) {
       orbital_basis_registry_->clear();
     }
   }
@@ -162,13 +161,11 @@ class AOFactory : public AOFactoryBase, virtual public DescribedClass {
   TA::DistArray<
       Tile, typename std::enable_if<std::is_same<U, TA::SparsePolicy>::value,
                                     TA::SparsePolicy>::type>
-  compute_integrals(
-      madness::World& world, ShrPool<libint2::Engine>& engine,
-      BasisVector const& bases,
-      std::shared_ptr<Screener> p_screen =
-          std::make_shared<Screener>(Screener{})) {
-    auto result =
-        sparse_integrals(world, engine, bases, p_screen, op_);
+  compute_integrals(madness::World& world, ShrPool<libint2::Engine>& engine,
+                    BasisVector const& bases,
+                    std::shared_ptr<Screener> p_screen =
+                        std::make_shared<Screener>(Screener{})) {
+    auto result = sparse_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -177,13 +174,11 @@ class AOFactory : public AOFactoryBase, virtual public DescribedClass {
   TA::DistArray<Tile,
                 typename std::enable_if<std::is_same<U, TA::DensePolicy>::value,
                                         TA::DensePolicy>::type>
-  compute_integrals(
-      madness::World& world, ShrPool<libint2::Engine>& engine,
-      BasisVector const& bases,
-      std::shared_ptr<Screener> p_screen =
-          std::make_shared<Screener>(Screener{})) {
-    auto result =
-        dense_integrals(world, engine, bases, p_screen, op_);
+  compute_integrals(madness::World& world, ShrPool<libint2::Engine>& engine,
+                    BasisVector const& bases,
+                    std::shared_ptr<Screener> p_screen =
+                        std::make_shared<Screener>(Screener{})) {
+    auto result = dense_integrals(world, engine, bases, p_screen, op_);
     return result;
   }
 
@@ -244,7 +239,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
 
         // store current array and delete old one
         ao_formula_registry_.insert(formula, result);
-        ao_formula_registry_.purge_formula(world_,permute);
+        ao_formula_registry_.purge_formula(world_, permute);
         return result;
       }
     }
@@ -351,7 +346,6 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
       parse_two_body_two_center(formula, engine_pool, bs_array);
       result = compute_integrals(this->world_, engine_pool, bs_array);
-
 
       time1 = mpqc::now(world_, accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
@@ -493,7 +487,6 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   // compute inverse square root first in this case
   if (!iterative_inv_sqrt_ &&
       formula.oper().has_option(Operator::Option::Inverse)) {
-
     time0 = mpqc::now(world_, accurate_time_);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -515,11 +508,11 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     } else if (info == Eigen::ComputationInfo::NumericalIssue) {
       utility::print_par(world_,
                          "!!!\nWarning!! NumericalIssue in Cholesky "
-                             "Decomposition\n!!!\n");
+                         "Decomposition\n!!!\n");
     } else if (info == Eigen::ComputationInfo::NoConvergence) {
       utility::print_par(world_,
                          "!!!\nWarning!! NoConvergence in Cholesky "
-                             "Decomposition\n!!!\n");
+                         "Decomposition\n!!!\n");
     }
 
     if (info != Eigen::ComputationInfo::Success) {
@@ -533,8 +526,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
 
     auto tr_result = result.trange().data()[0];
-    result = array_ops::eigen_to_array<Tile,Policy>(
-        result.world(), result_eig, tr_result, tr_result);
+    result = array_ops::eigen_to_array<Tile, Policy>(result.world(), result_eig,
+                                                     tr_result, tr_result);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
@@ -563,8 +556,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       RowMatrixXd inv_eig = es.operatorInverseSqrt();
 
       auto tr_result = result.trange().data()[0];
-      result = array_ops::eigen_to_array<Tile,Policy>(
-          result.world(), inv_eig, tr_result, tr_result);
+      result = array_ops::eigen_to_array<Tile, Policy>(result.world(), inv_eig,
+                                                       tr_result, tr_result);
     }
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -573,7 +566,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
     time1 = mpqc::now(world_, accurate_time_);
     auto inv_sqrt_time = mpqc::duration_in_s(time0, time1);
-    utility::print_par(world_, "Inverse Square Root Time: ", inv_sqrt_time, " s\n");
+    utility::print_par(world_, "Inverse Square Root Time: ", inv_sqrt_time,
+                       " s\n");
   }
 
   return result;
@@ -590,8 +584,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
 
   BasisVector bs_array;
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
-  std::shared_ptr<Screener> p_screener =
-      std::make_shared<Screener>(Screener{});
+  std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
@@ -671,10 +664,9 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
   return result;
 }
 
-extern template
-class AOFactory<TA::TensorD, TA::SparsePolicy>;
-//extern template
-//class AOFactory<TA::TensorD, TA::DensePolicy>;
+extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+// extern template
+// class AOFactory<TA::TensorD, TA::DensePolicy>;
 
 }  // namespace gaussian
 }  // namespace lcao

@@ -290,7 +290,6 @@ std::shared_ptr<CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>>
 make_closed_shell_canonical_orbitals(
     std::shared_ptr<LCAOFactory<Tile, Policy>> lcao_factory, std::size_t ndocc,
     std::size_t target_blocksize) {
-  using TArray = TA::DistArray<Tile, Policy>;
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
   auto &world = lcao_factory->world();

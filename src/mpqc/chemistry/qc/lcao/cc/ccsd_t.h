@@ -1681,127 +1681,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       int_transform3 += mpqc::duration_in_s(time10, time11);
 
       time12 = mpqc::now(world, accurate_time);
-      double Wijkabcs = 0.0;
-      {
-        //term1
-        TArray G;
-        TArray T;
-        G("f,j") = g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,i");
-        T("f,j") = t1_lt("c,k") * t2_oou_lt("f,c,j,k");
-        Wijkabcs += 2.0 * (TA::dot((G("f,j")),(T("f,j"))));
-      }
-      {
-        //term2
-        TArray G;
-        TArray T;
-        G("b,j,k,f") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,a,k,i");
-        T("b,j,k,f") = t1_lt("c,k") * g_dabi_lt("f,b,c,j");
-        Wijkabcs += 2.0 * (TA::dot((G("b,j,k,f")),(T("b,j,k,f"))));
-      }
-      {
-        //term3
-        TArray G;
-        TArray T;
-        G("f,a") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,i,j");
-        T("f,a") = t1_lt("c,k") * g_dabi_lt("f,c,a,k");
-        Wijkabcs += 2.0 * (TA::dot((G("f,a")),(T("f,a"))));
-      }
-
-      double Wkijabcs = 0.0;
-      {
-        //term4
-        TArray G;
-        TArray T;
-        G("i,j,k,f") = g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,k");
-        T("i,j,k,f") = t1_lt("c,k") * t2_oou_lt("f,c,i,j");
-        Wkijabcs += 2.0 * (TA::dot((G("i,j,k,f")),(T("i,j,k,f"))));
-      }
-      {
-        //term6
-        TArray G;
-        TArray T;
-        G("a,j,k,f") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,k,i");
-        T("a,j,k,f") = t1_lt("c,k") * g_dabi_lt("f,c,a,j");
-        Wkijabcs += 2.0 * (TA::dot((G("a,j,k,f")),(T("a,j,k,f"))));
-      }
-      {
-        //term7
-        TArray G;
-        TArray T;
-        G("f,a") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,j,i");
-        T("f,a") = t1_lt("c,k") * g_dabi_lt("f,a,c,k");
-        Wkijabcs += 2.0 * (TA::dot((G("f,a")),(T("f,a"))));
-      }
-      {
-        //term8
-        TArray G;
-        TArray T;
-        G("b,j,k,f") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,a,i,k");
-        T("b,j,k,f") = t1_lt("c,k") * g_dabi_lt("f,c,b,j");
-        Wkijabcs += 2.0 * (TA::dot((G("b,j,k,f")),(T("b,j,k,f"))));
-      }
-      {
-        //term9
-        TArray G;
-        TArray T;
-        G("f,j") = g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,a,i");
-        T("f,j") = t1_lt("c,k") * t2_oou_lt("f,c,k,j");
-        Wkijabcs += 2.0 * (TA::dot((G("f,j")),(T("f,j"))));
-      }
-      double Wjkiabcs = 0.0;
-
-      double Wkjiabcs = 0.0;
-      {
-        //term10
-        TArray G;
-        TArray T;
-        G("i,j,k,f") = g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,k");
-        T("i,j,k,f") = t1_lt("c,k") * t2_oou_lt("f,c,j,i");
-        Wkjiabcs += 2.0 * (TA::dot((G("i,j,k,f")),(T("i,j,k,f"))));
-      }
-      {
-        //term11
-        TArray G;
-        TArray T;
-        G("j,k,b,f") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,a,i,k");
-        T("j,k,b,f") = t1_lt("c,k") * g_dabi_lt("f,b,c,j");
-        Wkjiabcs += 2.0 * (TA::dot((G("j,k,b,f")),(T("j,k,b,f"))));
-      }
-      {
-        //term13
-        TArray G;
-        TArray T;
-        G("f,a") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,i,j");
-        T("f,a") = t1_lt("c,k") * g_dabi_lt("f,a,c,k");
-        Wkjiabcs += 2.0 * (TA::dot((G("f,a")),(T("f,a"))));
-      }
-      {
-        //term15
-        TArray G;
-        TArray T;
-        G("f,i") = g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,a,j");
-        T("f,i") = t1_lt("c,k") * t2_oou_lt("f,c,k,i");
-        Wkjiabcs += 2.0 * (TA::dot((G("f,i")),(T("f,i"))));
-      }
-      double Wikjabcs = 0.0;
-
-      double Wjikabcs = 0.0;
-      {
-        //term16
-        TArray G;
-        TArray T;
-        G("f,i") = g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,j");
-        T("f,i") = t1_lt("c,k") * t2_oou_lt("f,c,i,k");
-        Wjikabcs += 2.0 * (TA::dot((G("f,i")),(T("f,i"))));
-      }
-      {
-        //term18
-        TArray G;
-        TArray T;
-        G("f,a") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,j,i");
-        T("f,a") = t1_lt("c,k") * g_dabi_lt("f,c,a,k");
-        Wjikabcs += 2.0 * (TA::dot((G("f,a")),(T("f,a"))));
-      }
 
       double E_O2V4_S = 0.0;
       {
@@ -1825,8 +1704,73 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         }
       }
 
-      energy_ms = 4.0 * Wijkabcs + Wkijabcs + Wjkiabcs - 2.0 * Wkjiabcs -
-                  2.0 * Wikjabcs - 2.0 * Wjikabcs + E_O2V4_S;
+      double E_O2V3_S = 0.0;
+      {
+        {
+          TArray T1;
+          T1("f,i") = t1_lt("a,j") * t2_oou_lt("f,a,i,j");
+          TArray G1;
+          TArray G4;
+          G1("f,i") = g_abij_lt("a,b,j,i") * g_dabi_lt("f,a,b,j");
+          G4("f,i") = g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,j");
+          E_O2V3_S = TA::dot((8.0*G1("f,i") - 4.0*G4("f,i")),T1("f,i"));
+        }
+        {
+          TArray T2;
+          T2("f,i") = t1_lt("a,j") * t2_oou_lt("f,a,j,i");
+          TArray G2;
+          TArray G3;
+          G2("f,i") = g_abij_lt("a,b,j,i") * g_dabi_lt("f,b,a,j");
+          G3("f,i") = g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,a,j");
+          E_O2V3_S += TA::dot((2.0*G2("f,i") - 4.0*G3("f,i")),T2("f,i"));
+        }
+      }
+
+      {
+        TArray T1;
+        T1("f,a") = t1_lt("b,i") * g_dabi_lt("f,b,a,i");
+        TArray T2;
+        T2("f,a") = t1_lt("b,i") * g_dabi_lt("f,a,b,i");
+
+        TArray G1;
+        TArray G2;
+        G1("f,a") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,i,j");
+        G2("f,a") = g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,j,i");
+
+        E_O2V3_S += TA::dot((2.0*G1("f,a") - G2("f,a")),(4.0*T1("f,a") - 2.0*T2("f,a")));
+      }
+
+      double E_O3V3_S = 0.0;
+      {
+        TArray T1;
+        TArray T2;
+        TArray G;
+        T1("i,j,k,f") = t1_lt("a,k") * t2_oou_lt("f,a,i,j");
+        T2("i,j,k,f") = t1_lt("a,k") * t2_oou_lt("f,a,j,i");
+        G("i,j,k,f") = g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,k");
+
+        E_O3V3_S = TA::dot((G("i,j,k,f")),(2.0*T1("i,j,k,f") - 4.0*T2("i,j,k,f")));
+      }
+      {
+        TArray T1;
+        TArray T2;
+        TArray G3;
+        T1("a,i,j,f") = t1_lt("b,j") * g_dabi_lt("f,a,b,i");
+        T2("a,i,j,f") = t1_lt("b,j") * g_dabi_lt("f,b,a,i");
+        G3("a,i,j,f") = g_abij_lt("b,a,k,i") * t2_oou_lt("f,b,k,j");
+        {
+          TArray G1;
+          G1("a,i,j,f") = g_abij_lt("b,a,k,i") * t2_oou_lt("f,b,j,k");
+          E_O3V3_S += TA::dot((8.0*G1("a,i,j,f") - 4.0*G3("a,i,j,f")),T1("a,i,j,f"));
+        }
+        {
+          TArray G2;
+          G2("a,i,j,f") = g_abij_lt("a,b,k,i") * t2_oou_lt("f,b,j,k");
+          E_O3V3_S += TA::dot((2.0*G2("a,i,j,f") + 2.0*G3("a,i,j,f")),T2("a,i,j,f"));
+        }
+      }
+
+      energy_ms = E_O2V4_S + E_O2V3_S + E_O3V3_S;
 
       double Wijkabcos = 0.0;
       {

@@ -1179,6 +1179,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     mpqc::time_point time27;
     mpqc::time_point time28;
     mpqc::time_point time29;
+    mpqc::time_point time30;
+    mpqc::time_point time31;
 
     double int_transform1 = 0.0;
     double int_transform2 = 0.0;
@@ -1196,6 +1198,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double o2v4_vo = 0;
     double o2v4_vo_new = 0;
     double o2v4_oo_new = 0;
+    double ov4_new = 0;
+    double o2v4_2_new = 0;
 
     // loop over number of quadrature points
     for (auto m = 0; m < n; m++) {
@@ -1216,424 +1220,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       double energy_mos = 0.0;
       double energy_muo = 0.0;
       double Wijkabc = 0.0;
-      /*
-      {
 
-        Wijkabc = (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,i"))
-                      .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,k"));
-        Wijkabc += 2.0 *
-                   (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,k,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j"));
-        Wijkabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,k,j"));
-        Wijkabc += (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,j,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,k"));
-        Wijkabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,j"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,k"));
-      }*/
       time02 = mpqc::now(world, accurate_time);
-      {
-        //term1
-        TArray G;
-        TArray T;
-        G("e,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,i");
-        T("e,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,k");
-        Wijkabc = TA::dot((G("e,f")),(T("e,f")));
-      }
-      /*time24 = mpqc::now(world, accurate_time);
-      {
-        //term2
-        TArray G;
-        TArray T;
-        G("e,b,k,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,k,i");
-        T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j");
-        Wijkabc += 2.0 * (TA::dot((G("e,b,k,f")),(T("e,b,k,f"))));
-      }
-      time25 = mpqc::now(world, accurate_time);
-      o2v4_vo += mpqc::duration_in_s(time24, time25);*/
-      /*time14 = mpqc::now(world, accurate_time);
-      {
-        //term3
-        TArray G;
-        TArray T;
-        time16 = mpqc::now(world, accurate_time);
-        G("e,b,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i");
-        time17 = mpqc::now(world, accurate_time);
-        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
-
-        time18 = mpqc::now(world, accurate_time);
-        T("e,b,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,k,j");
-        time19 = mpqc::now(world, accurate_time);
-        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
-
-        time20 = mpqc::now(world, accurate_time);
-        Wijkabc += TA::dot((G("e,b,c,f")),(T("e,b,c,f")));
-        time21 = mpqc::now(world, accurate_time);
-        vvvv_trace += mpqc::duration_in_s(time20, time21);
-      }
-      time15 = mpqc::now(world, accurate_time);
-      time_vvvv += mpqc::duration_in_s(time14, time15);*/
-      /*time24 = mpqc::now(world, accurate_time);
-      {
-        //term4
-        TArray G;
-        TArray T;
-        G("e,b,j,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,j,i");
-        T("e,b,j,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,k");
-        Wijkabc += TA::dot((G("e,b,j,f")),(T("e,b,j,f")));
-      }
-      time25 = mpqc::now(world, accurate_time);
-      o2v4_vo += mpqc::duration_in_s(time24, time25);*/
-      /*{
-        //term5
-        TArray G;
-        TArray T;
-        G("e,i,j,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,j");
-        T("e,i,j,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,k");
-        Wijkabc += TA::dot((G("e,i,j,f")),(T("e,i,j,f")));
-      }*/
-
-
-      double Wkijabc = 0.0;
-      /*
-      {
-        Wkijabc = 2.0 *
-                  (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,k"))
-                      .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,j"));
-        Wkijabc += 2.0 *
-                   (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,c,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,j,k"));
-        Wkijabc += 2.0 *
-                   (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,k,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,a,j"));
-        Wkijabc += (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,j,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,k"));
-        Wkijabc += (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,i,k"))
-                       .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,j"));
-        Wkijabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,j"));
-      }*/
-
-      /*{
-        //term6
-        TArray G;
-        TArray T;
-        G("e,i,k,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,k");
-        T("e,i,k,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,j");
-        Wkijabc = 2.0 * (TA::dot((G("e,i,k,f")),(T("e,i,k,f"))));
-      }*/
-      /*time14 = mpqc::now(world, accurate_time);
-      {
-        //term7
-        TArray G;
-        TArray T;
-        time16 = mpqc::now(world, accurate_time);
-        G("e,a,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,c,i");
-        time17 = mpqc::now(world, accurate_time);
-        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
-
-        time18 = mpqc::now(world, accurate_time);
-        T("e,a,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,j,k");
-        time19 = mpqc::now(world, accurate_time);
-        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
-
-        time20 = mpqc::now(world, accurate_time);
-        Wkijabc += 2.0 * (TA::dot((G("e,a,c,f")),(T("e,a,c,f"))));
-        time21 = mpqc::now(world, accurate_time);
-        vvvv_trace += mpqc::duration_in_s(time20, time21);
-      }
-      time15 = mpqc::now(world, accurate_time);
-      time_vvvv += mpqc::duration_in_s(time14, time15);*/
-      /*time24 = mpqc::now(world, accurate_time);
-      {
-        //term8
-        TArray G;
-        TArray T;
-        G("e,a,k,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,k,i");
-        T("e,a,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,a,j");
-        Wkijabc += 2.0 * (TA::dot((G("e,a,k,f")),(T("e,a,k,f"))));
-      }
-      {
-        //term9
-        TArray G;
-        TArray T;
-        G("e,a,j,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,j,i");
-        T("e,a,j,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,k");
-        Wkijabc += TA::dot((G("e,a,j,f")),(T("e,a,j,f")));
-      }
-      {
-        //term10
-        TArray G;
-        TArray T;
-        G("e,b,k,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,i,k");
-        T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,j");
-        Wkijabc += TA::dot((G("e,b,k,f")),(T("e,b,k,f")));
-      }
-      time25 = mpqc::now(world, accurate_time);
-      o2v4_vo += mpqc::duration_in_s(time24, time25);*/
-      {
-        //term11
-        TArray G;
-        TArray T;
-        G("e,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,i");
-        T("e,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,j");
-        Wkijabc += TA::dot((G("e,f")),(T("e,f")));
-      }
-
-      //this->wfn_world()->world().gop.fence();
-      double Wjkiabc = 0.0;
-      /*
-      {
-        Wjkiabc = (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,i,k"))
-                      .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,j"));
-        Wjkiabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,k,j"));
-        Wjkiabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,k"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,i"));
-      }*/
-
-      /*time24 = mpqc::now(world, accurate_time);
-      {
-        //term12
-        TArray G;
-        TArray T;
-        G("e,a,k,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,i,k");
-        T("e,a,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,j");
-        Wjkiabc = TA::dot((G("e,a,k,f")),(T("e,a,k,f")));
-      }
-      time25 = mpqc::now(world, accurate_time);
-      o2v4_vo += mpqc::duration_in_s(time24, time25);*/
-      /*time14 = mpqc::now(world, accurate_time);
-      {
-        //term13
-        TArray G;
-        TArray T;
-        time16 = mpqc::now(world, accurate_time);
-        G("e,a,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i");
-        time17 = mpqc::now(world, accurate_time);
-        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
-
-        time18 = mpqc::now(world, accurate_time);
-        T("e,a,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,k,j");
-        time19 = mpqc::now(world, accurate_time);
-        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
-
-        time20 = mpqc::now(world, accurate_time);
-        Wjkiabc += TA::dot((G("e,a,c,f")),(T("e,a,c,f")));
-        time21 = mpqc::now(world, accurate_time);
-        vvvv_trace += mpqc::duration_in_s(time20, time21);
-      }
-      time15 = mpqc::now(world, accurate_time);
-      time_vvvv += mpqc::duration_in_s(time14, time15);*/
-      /*{
-        //term14
-        TArray G;
-        TArray T;
-        G("e,i,k,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,k");
-        T("e,i,k,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,i");
-        Wjkiabc += TA::dot((G("e,i,k,f")),(T("e,i,k,f")));
-      }*/
-
-      //this->wfn_world()->world().gop.fence();
-      double Wkjiabc = 0.0;
-      /*
-      {
-        Wkjiabc = (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,k"))
-                      .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,i"));
-        Wkjiabc += 2.0 *
-                   (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,i,k"))
-                       .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j"));
-        Wkjiabc += 2.0 *
-                   (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,a,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,k,j"));
-        Wkjiabc += 2.0 *
-                   (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,i,j"))
-                       .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,k"));
-        Wkjiabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,j,k"));
-        Wkjiabc += 2.0 *
-                   (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,j"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,i"));
-      }*/
-
-      /*{
-        //term15
-        TArray G;
-        TArray T;
-        G("e,i,k,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,k");
-        T("e,i,k,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,i");
-        Wkjiabc = TA::dot((G("e,i,k,f")),(T("e,i,k,f")));
-      }*/
-      /*time24 = mpqc::now(world, accurate_time);
-      {
-        //term16
-        TArray G;
-        TArray T;
-        G("e,b,k,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,i,k");
-        T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,j");
-        Wkjiabc += 2.0 * (TA::dot((G("e,b,k,f")),(T("e,b,k,f"))));
-      }
-      time25 = mpqc::now(world, accurate_time);
-            o2v4_vo += mpqc::duration_in_s(time24, time25);*/
-      /*time14 = mpqc::now(world, accurate_time);
-      {
-        //term17
-        TArray G;
-        TArray T;
-        time16 = mpqc::now(world, accurate_time);
-        G("e,b,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,a,i");
-        time17 = mpqc::now(world, accurate_time);
-        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
-
-        time18 = mpqc::now(world, accurate_time);
-        T("e,b,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,k,j");
-        time19 = mpqc::now(world, accurate_time);
-        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
-
-        time20 = mpqc::now(world, accurate_time);
-        Wkjiabc += 2.0 * (TA::dot((G("e,b,c,f")),(T("e,b,c,f"))));
-        time21 = mpqc::now(world, accurate_time);
-        vvvv_trace += mpqc::duration_in_s(time20, time21);
-      }
-      time15 = mpqc::now(world, accurate_time);
-      time_vvvv += mpqc::duration_in_s(time14, time15);*/
-      /*time24 = mpqc::now(world, accurate_time);
-      {
-        //term18
-        TArray G;
-        TArray T;
-        G("e,a,j,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,b,i,j");
-        T("e,a,j,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,a,c,k");
-        Wkjiabc += 2.0 * (TA::dot((G("e,a,j,f")),(T("e,a,j,f"))));
-      }
-      time25 = mpqc::now(world, accurate_time);
-      o2v4_vo += mpqc::duration_in_s(time24, time25);*/
-      /*time14 = mpqc::now(world, accurate_time);
-      {
-        //term19
-        TArray G;
-        TArray T;
-        time16 = mpqc::now(world, accurate_time);
-        G("e,a,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,c,b,i");
-        time17 = mpqc::now(world, accurate_time);
-        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
-
-        time18 = mpqc::now(world, accurate_time);
-        T("e,a,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,a,j,k");
-        time19 = mpqc::now(world, accurate_time);
-        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
-
-        time20 = mpqc::now(world, accurate_time);
-        Wkjiabc += TA::dot((G("e,a,c,f")),(T("e,a,c,f")));
-        time21 = mpqc::now(world, accurate_time);
-        vvvv_trace += mpqc::duration_in_s(time20, time21);
-      }
-      time15 = mpqc::now(world, accurate_time);
-      time_vvvv += mpqc::duration_in_s(time14, time15);*/
-      /*{
-        //term20
-        TArray G;
-        TArray T;
-        G("e,i,j,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,j");
-        T("e,i,j,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,i");
-        Wkjiabc += 2.0 * (TA::dot((G("e,i,j,f")),(T("e,i,j,f"))));
-      }*/
-
-      //this->wfn_world()->world().gop.fence();
-      double Wikjabc = 0.0;
-      /*
-      {
-        Wikjabc = (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,i"))
-                      .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,j"));
-        Wikjabc += 2.0 *
-                   (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,j,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,k"));
-        Wikjabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,j,k"));
-        Wikjabc += 2.0 *
-                   (g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,k,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,j"));
-      }*/
-
-      {
-        //term21
-        TArray G;
-        TArray T;
-        G("e,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,i");
-        T("e,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,k,j");
-        Wikjabc = TA::dot((G("e,f")),(T("e,f")));
-      }
-      /*time24 = mpqc::now(world, accurate_time);
-      {
-        //term22
-        TArray G;
-        TArray T;
-        G("e,b,j,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,j,i");
-        T("e,b,j,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,b,c,k");
-        Wikjabc += 2.0 * (TA::dot((G("e,b,j,f")),(T("e,b,j,f"))));
-      }
-      time25 = mpqc::now(world, accurate_time);
-      o2v4_vo += mpqc::duration_in_s(time24, time25);*/
-      /*time14 = mpqc::now(world, accurate_time);
-      {
-        //term23
-        TArray G;
-        TArray T;
-        time16 = mpqc::now(world, accurate_time);
-        G("e,b,c,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,c,i");
-        time17 = mpqc::now(world, accurate_time);
-        vvvv_contr_g += mpqc::duration_in_s(time16, time17);
-
-        time18 = mpqc::now(world, accurate_time);
-        T("e,b,c,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,b,j,k");
-        time19 = mpqc::now(world, accurate_time);
-        vvvv_contr_t += mpqc::duration_in_s(time18, time19);
-
-        time20 = mpqc::now(world, accurate_time);
-        Wikjabc += TA::dot((G("e,b,c,f")),(T("e,b,c,f")));
-        time21 = mpqc::now(world, accurate_time);
-        vvvv_trace += mpqc::duration_in_s(time20, time21);
-      }
-      time15 = mpqc::now(world, accurate_time);
-      time_vvvv += mpqc::duration_in_s(time14, time15);*/
-      /*time24 = mpqc::now(world, accurate_time);
-      {
-        //term24
-        TArray G;
-        TArray T;
-        G("e,b,k,f") = g_dabi_lt("e,a,b,i") * t2_oou_lt("f,a,k,i");
-        T("e,b,k,f") = t2_oou_lt("e,c,j,k") * g_dabi_lt("f,c,b,j");
-        Wikjabc += 2.0 * (TA::dot((G("e,b,k,f")),(T("e,b,k,f"))));
-      }
-      time25 = mpqc::now(world, accurate_time);
-      o2v4_vo += mpqc::duration_in_s(time24, time25);*/
-
-      //this->wfn_world()->world().gop.fence();
-      double Wjikabc = 0.0;
-      /*
-      {
-        Wjikabc = (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,j"))
-                      .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,k"));
-        Wjikabc += (g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,i"))
-                       .dot(t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,k"));
-      }*/
-
-      /*{
-        //term25
-        TArray G;
-        TArray T;
-        G("e,i,j,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,a,b,j");
-        T("e,i,j,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,i,k");
-        Wjikabc = TA::dot((G("e,i,j,f")),(T("e,i,j,f")));
-      }*/
-      {
-        //term26
-        TArray G;
-        TArray T;
-        G("e,f") = g_dabi_lt("e,a,b,i") * g_dabi_lt("f,b,a,i");
-        T("e,f") = t2_oou_lt("e,c,j,k") * t2_oou_lt("f,c,j,k");
-        Wjikabc += TA::dot((G("e,f")),(T("e,f")));
-      }
 
       time22 = mpqc::now(world, accurate_time);
       //computation of the OV5 terms
@@ -1710,9 +1298,29 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       time29 = mpqc::now(world, accurate_time);
       o2v4_oo_new += mpqc::duration_in_s(time28, time29);
 
+      time30 = mpqc::now(world, accurate_time);
+      //computation of the OV5 terms
+      double E_OV4 = 0;
+      {
+        TArray T1;
+        T1("e,f") = t2_oou_lt("e,a,i,j")*t2_oou_lt("f,a,i,j");
+        TArray T2;
+        T2("e,f") = t2_oou_lt("e,a,i,j")*t2_oou_lt("f,a,j,i");
+        {
+          TArray G;
+          G("e,f") = g_dabi_lt("e,a,b,i")*g_dabi_lt("f,a,b,i");
+          E_OV4 = TA::dot(G("e,f"),4.0*T1("e,f") - 2.0*T2("e,f"));
+        }
+        {
+          TArray G;
+          G("e,f") = g_dabi_lt("e,a,b,i")*g_dabi_lt("f,b,a,i");
+          E_OV4 += TA::dot(G("e,f"),T2("e,f") - 2.0*T1("e,f"));
+        }
+      }
+      time31 = mpqc::now(world, accurate_time);
+      ov4_new += mpqc::duration_in_s(time30, time31);
       //this->wfn_world()->world().gop.fence();
-      energy_m = 4.0 * Wijkabc + Wkijabc + Wjkiabc - 2.0 * Wkjiabc -
-                 2.0 * Wikjabc - 2.0 * Wjikabc + E_OV5 + E_O2V4_vo + E_O2V4_oo;
+      energy_m = E_OV5 + E_O2V4_vo + E_O2V4_oo + E_OV4;
 
       energy_m = 6.0 * energy_m * w(m);
 
@@ -1732,21 +1340,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       time06 = mpqc::now(world, accurate_time);
       double Wijkabco = 0.0;
-      /*
-      {
-        Wijkabco = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,k,n"))
-                       .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,i,n"));
-        Wijkabco += 2.0 *
-                    (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("b,c,j,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,k,i,n"));
-        Wijkabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("b,k,j,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,c,i,n"));
-        Wijkabco += (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("c,b,k,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,j,i,n"));
-        Wijkabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,i,k,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,j,n"));
-      }*/
-
       {
         //term1
         TArray G;
@@ -1790,25 +1383,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       //this->wfn_world()->world().gop.fence();
       double Wkijabco = 0.0;
-      /*
-      {
-        Wkijabco = 2.0 *
-                   (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,i,j,n"))
-                       .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,k,n"));
-        Wkijabco += 2.0 *
-                    (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("a,j,k,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,c,i,n"));
-        Wkijabco += 2.0 *
-                    (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("c,a,j,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("b,k,i,n"));
-        Wkijabco += (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("a,c,k,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("b,j,i,n"));
-        Wkijabco += (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("c,b,j,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,i,k,n"));
-        Wkijabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,k,j,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,i,n"));
-      }*/
-
       {
         //term6
         TArray G;
@@ -1858,19 +1432,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wkijabco += TA::dot((G("m,n")),(T("m,n")));
       }
 
-
-      //this->wfn_world()->world().gop.fence();
       double Wjkiabco = 0.0;
-      /*
-      {
-        Wjkiabco = (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("a,c,j,n"))
-                       .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("b,i,k,n"));
-        Wjkiabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("a,k,j,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("c,b,i,n"));
-        Wjkiabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,i,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,k,n"));
-      }*/
-
       {
         //term12
         TArray G;
@@ -1896,28 +1458,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjkiabco += TA::dot((G("m,i,k,n")),(T("m,i,k,n")));
       }
 
-      //this->wfn_world()->world().gop.fence();
       double Wkjiabco = 0.0;
-      /*
-      {
-        Wkjiabco = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,i,n"))
-                       .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,k,n"));
-        Wkjiabco += 2.0 *
-                    (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("b,c,j,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,i,k,n"));
-        Wkjiabco += 2.0 *
-                    (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("b,k,j,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("c,a,i,n"));
-        Wkjiabco += 2.0 *
-                    (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("a,c,k,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("b,i,j,n"));
-        Wkjiabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("a,j,k,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("c,b,i,n"));
-        Wkjiabco += 2.0 *
-                    (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,k,i,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,j,n"));
-      }*/
-
       {
         //term15
         TArray G;
@@ -1967,22 +1508,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wkjiabco += 2.0 * (TA::dot((G("m,i,j,n")),(T("m,i,j,n"))));
       }
 
-      //this->wfn_world()->world().gop.fence();
       double Wikjabco = 0.0;
-      /*
-      {
-        Wikjabco = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,k,j,n"))
-                       .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,i,n"));
-        Wikjabco += 2.0 *
-                    (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("b,c,k,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,j,i,n"));
-        Wikjabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("b,j,k,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,c,i,n"));
-        Wikjabco += 2.0 *
-                    (g_cjkl_lt("c,j,k,m") * t2_ouu_lt("c,b,j,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * g_cjkl_lt("a,k,i,n"));
-      }*/
-
       {
         //term21
         TArray G;
@@ -2016,16 +1542,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wikjabco += 2.0 * (TA::dot((G("m,k,b,n")),(T("m,k,b,n"))));
       }
 
-      //this->wfn_world()->world().gop.fence();
       double Wjikabco = 0.0;
-      /*
-      {
-        Wjikabco = (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,i,k,n"))
-                       .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("a,b,j,n"));
-        Wjikabco += (g_cjkl_lt("c,j,k,m") * g_cjkl_lt("c,j,k,n"))
-                        .dot(t2_ouu_lt("a,b,i,m") * t2_ouu_lt("b,a,i,n"));
-      }*/
-
       {
         //term25
         TArray G;
@@ -2043,7 +1560,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjikabco += TA::dot((G("m,n")),(T("m,n")));
       }
 
-      //this->wfn_world()->world().gop.fence();
       energy_mo = 4.0 * Wijkabco + Wkijabco + Wjkiabco - 2.0 * Wkjiabco -
                   2.0 * Wikjabco - 2.0 * Wjikabco;
 
@@ -2052,22 +1568,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       time08 = mpqc::now(world, accurate_time);
       double Wijkabcuo = 0.0;
-      /*
-      {
-        Wijkabcuo = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,i,n"))
-                        .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,j,k,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,k,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("b,c,j,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,j,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,a,k,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,c,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,k,j,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,j,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,b,k,n"));
-        Wijkabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,j,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,k,n"));
-      }*/
-
       {
         //term1
         TArray G;
@@ -2093,14 +1593,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wijkabcuo += TA::dot((G("e,j,a,n")),(T("e,j,a,n")));
       }
       {
-        //term4
-        TArray G;
-        TArray T;
-        G("e,b,c,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,c,i,n");
-        T("e,b,c,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,k,j,n");
-        Wijkabcuo += TA::dot((G("e,b,c,n")),(T("e,b,c,n")));
-      }
-      {
         //term5
         TArray G;
         TArray T;
@@ -2117,24 +1609,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wijkabcuo += TA::dot((G("e,i,j,n")),(T("e,i,j,n")));
       }
 
-      //this->wfn_world()->world().gop.fence();
       double Wkijabcuo = 0.0;
-      /*
-      {
-        Wkijabcuo = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,k,n"))
-                        .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,j,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,c,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,j,k,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,k,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,a,j,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,j,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,k,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,k,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,b,j,n"));
-        Wkijabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,k,j,n"));
-      }*/
-
       {
         //term7
         TArray G;
@@ -2142,14 +1617,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         G("e,i,k,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,k,n");
         T("e,i,k,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,j,n");
         Wkijabcuo = TA::dot((G("e,i,k,n")),(T("e,i,k,n")));
-      }
-      {
-        //term8
-        TArray G;
-        TArray T;
-        G("e,a,c,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,c,i,n");
-        T("e,a,c,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,j,k,n");
-        Wkijabcuo += TA::dot((G("e,a,c,n")),(T("e,a,c,n")));
       }
       {
         //term9
@@ -2183,25 +1650,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("e,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,k,j,n");
         Wkijabcuo += TA::dot((G("e,n")),(T("e,n")));
       }
-
-      //this->wfn_world()->world().gop.fence();
       double Wjkiabcuo = 0.0;
-      /*
-      {
-        Wjkiabcuo = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,j,n"))
-                        .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,k,i,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,j,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("b,c,k,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,a,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,j,k,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,k,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,j,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,b,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,k,j,n"));
-        Wjkiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,k,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,j,i,n"));
-      }*/
-
       {
         //term13
         TArray G;
@@ -2219,28 +1668,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjkiabcuo += TA::dot((G("e,j,b,n")),(T("e,j,b,n")));
       }
       {
-        //term15
-        TArray G;
-        TArray T;
-        G("e,b,c,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,a,i,n");
-        T("e,b,c,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,j,k,n");
-        Wjkiabcuo += TA::dot((G("e,b,c,n")),(T("e,b,c,n")));
-      }
-      {
         //term16
         TArray G;
         TArray T;
         G("e,a,k,n") = g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,k,n");
         T("e,a,k,n") = t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,j,n");
         Wjkiabcuo += TA::dot((G("e,a,k,n")),(T("e,a,k,n")));
-      }
-      {
-        //term17
-        TArray G;
-        TArray T;
-        G("e,a,c,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,b,i,n");
-        T("e,a,c,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,k,j,n");
-        Wjkiabcuo += TA::dot((G("e,a,c,n")),(T("e,a,c,n")));
       }
       {
         //term18
@@ -2251,24 +1684,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjkiabcuo += TA::dot((G("e,i,k,n")),(T("e,i,k,n")));
       }
 
-      //this->wfn_world()->world().gop.fence();
       double Wkjiabcuo = 0.0;
-      /*
-      {
-        Wkjiabcuo = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,k,n"))
-                        .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,j,i,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,k,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("b,c,j,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,a,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,k,j,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,j,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,k,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,b,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,j,k,n"));
-        Wkjiabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,j,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,k,i,n"));
-      }*/
-
       {
         //term19
         TArray G;
@@ -2286,28 +1702,12 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wkjiabcuo += TA::dot((G("e,k,b,n")),(T("e,k,b,n")));
       }
       {
-        //term21
-        TArray G;
-        TArray T;
-        G("e,b,c,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,a,i,n");
-        T("e,b,c,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,k,j,n");
-        Wkjiabcuo += TA::dot((G("e,b,c,n")),(T("e,b,c,n")));
-      }
-      {
         //term22
         TArray G;
         TArray T;
         G("e,j,a,n") = g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,j,n");
         T("e,j,a,n") = t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,k,n");
         Wkjiabcuo += TA::dot((G("e,j,a,n")),(T("e,j,a,n")));
-      }
-      {
-        //term23
-        TArray G;
-        TArray T;
-        G("e,a,c,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("c,b,i,n");
-        T("e,a,c,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,j,k,n");
-        Wkjiabcuo += TA::dot((G("e,a,c,n")),(T("e,a,c,n")));
       }
       {
         //term24
@@ -2318,25 +1718,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wkjiabcuo += TA::dot((G("e,i,j,n")),(T("e,i,j,n")));
       }
 
-
-      //this->wfn_world()->world().gop.fence();
       double Wikjabcuo = 0.0;
-      /*
-      {
-        Wikjabcuo = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,i,n"))
-                        .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,k,j,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,j,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("b,c,k,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,i,k,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,a,j,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,c,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,j,k,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,k,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,b,j,n"));
-        Wikjabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,k,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,j,n"));
-      }*/
-
       {
         //term25
         TArray G;
@@ -2362,14 +1744,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wikjabcuo += TA::dot((G("e,k,a,n")),(T("e,k,a,n")));
       }
       {
-        //term28
-        TArray G;
-        TArray T;
-        G("e,b,c,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,c,i,n");
-        T("e,b,c,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("b,j,k,n");
-        Wikjabcuo += TA::dot((G("e,b,c,n")),(T("e,b,c,n")));
-      }
-      {
         //term29
         TArray G;
         TArray T;
@@ -2386,24 +1760,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wikjabcuo += TA::dot((G("e,i,k,n")),(T("e,i,k,n")));
       }
 
-      //this->wfn_world()->world().gop.fence();
       double Wjikabcuo = 0.0;
-      /*
-      {
-        Wjikabcuo = (g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,j,n"))
-                        .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,k,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,c,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,k,j,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,j,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,a,k,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("b,k,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("a,c,j,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * g_cjkl_lt("a,i,j,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * t2_ouu_lt("c,b,k,n"));
-        Wjikabcuo += (g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,a,i,n"))
-                         .dot(t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,j,k,n"));
-      }*/
-
       {
         //term31
         TArray G;
@@ -2411,14 +1768,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         G("e,i,j,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("a,b,j,n");
         T("e,i,j,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("c,i,k,n");
         Wjikabcuo += TA::dot((G("e,i,j,n")),(T("e,i,j,n")));
-      }
-      {
-        //term32
-        TArray G;
-        TArray T;
-        G("e,a,c,n") = g_dabi_lt("e,a,b,i") * t2_ouu_lt("b,c,i,n");
-        T("e,a,c,n") = t2_oou_lt("e,c,j,k") * g_cjkl_lt("a,k,j,n");
-        Wjikabcuo += TA::dot((G("e,a,c,n")),(T("e,a,c,n")));
       }
       {
         //term33
@@ -2453,13 +1802,41 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wjikabcuo += TA::dot((G("e,n")),(T("e,n")));
       }
 
+      time22 = mpqc::now(world, accurate_time);
+      //computation of the O2V4 terms
+      double E_O2V4_2 = 0;
+      {
+        TArray T1;
+        TArray T2;
+
+        T1("e,a,b,n") = t2_oou_lt("e,b,i,j") * g_cjkl_lt("a,j,i,n");
+        T2("e,a,b,n") = t2_oou_lt("e,b,i,j") * g_cjkl_lt("a,i,j,n");
+        {
+          TArray G1;
+          TArray G2;
+          TArray G3;
+          G1("e,a,b,n") = g_dabi_lt("e,c,a,i") * t2_ouu_lt("c,b,i,n");
+          G2("e,a,b,n") = g_dabi_lt("e,a,c,i") * t2_ouu_lt("c,b,i,n");
+          G3("e,a,b,n") = g_dabi_lt("e,c,a,i") * t2_ouu_lt("b,c,i,n");
+          E_O2V4_2 = TA::dot(2.0*G1("e,c,a,i") - G2("e,c,a,i") - G3("e,c,a,i"),(2.0*T1("e,c,a,i") - T2("e,c,a,i")));
+        }
+        {
+          TArray G;
+          G("e,a,b,n") = g_dabi_lt("e,a,c,i") * t2_ouu_lt("b,c,i,n");
+          E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
+        }
+      }
+      time23 = mpqc::now(world, accurate_time);
+      o2v4_2_new += mpqc::duration_in_s(time22, time23);
+
+
       time09 = mpqc::now(world, accurate_time);
       time_t2_ov += mpqc::duration_in_s(time08, time09);
 
-      //this->wfn_world()->world().gop.fence();
+
 
       energy_muo = 4.0 * Wijkabcuo + Wkijabcuo + Wjkiabcuo - 2.0 * Wkjiabcuo -
-                   2.0 * Wikjabcuo - 2.0 * Wjikabcuo;
+                   2.0 * Wikjabcuo - 2.0 * Wjikabcuo + E_O2V4_2;
 
       time10 = mpqc::now(world, accurate_time);
       TArray g_abij_lt = g_abij_laplace_transform(
@@ -2471,18 +1848,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       time12 = mpqc::now(world, accurate_time);
       double Wijkabcs = 0.0;
-      /*
-      {
-        Wijkabcs = 2.0 *
-                   (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,i"))
-                       .dot(t1_lt("c,k") * t2_oou_lt("f,c,j,k"));
-        Wijkabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_oou_lt("f,a,k,i"))
-                        .dot(t1_lt("c,k") * g_dabi_lt("f,b,c,j"));
-        Wijkabcs += 2.0 * (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,i,j")) *
-                    (t1_lt("c,k") * g_dabi_lt("f,c,a,k"));
-      }*/
-
       {
         //term1
         TArray G;
@@ -2508,30 +1873,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wijkabcs += 2.0 * (TA::dot((G("f,a")),(T("f,a"))));
       }
 
-      //this->wfn_world()->world().gop.fence();
       double Wkijabcs = 0.0;
-      /*
-      {
-        Wkijabcs = 2.0 *
-                   (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,k"))
-                       .dot(t1_lt("c,k") * t2_oou_lt("f,c,i,j"));
-        Wkijabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,c,i"))
-                        .dot(t1_lt("c,k") * t2_oou_lt("f,a,j,k"));
-        Wkijabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,k,i"))
-                        .dot(t1_lt("c,k") * g_dabi_lt("f,c,a,j"));
-        Wkijabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,j,i"))
-                        .dot(t1_lt("c,k") * g_dabi_lt("f,a,c,k"));
-        Wkijabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_oou_lt("f,a,i,k"))
-                        .dot(t1_lt("c,k") * g_dabi_lt("f,c,b,j"));
-        Wkijabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,a,i"))
-                        .dot(t1_lt("c,k") * t2_oou_lt("f,c,k,j"));
-      }*/
-
       {
         //term4
         TArray G;
@@ -2580,34 +1922,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("f,j") = t1_lt("c,k") * t2_oou_lt("f,c,k,j");
         Wkijabcs += 2.0 * (TA::dot((G("f,j")),(T("f,j"))));
       }
-
-
-      //this->wfn_world()->world().gop.fence();
       double Wjkiabcs = 0.0;
 
       double Wkjiabcs = 0.0;
-      /*
-      {
-        Wkjiabcs = 2.0 *
-                   (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,k"))
-                       .dot(t1_lt("c,k") * t2_oou_lt("f,c,j,i"));
-        Wkjiabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_oou_lt("f,a,i,k"))
-                        .dot(t1_lt("c,k") * g_dabi_lt("f,b,c,j"));
-        Wkjiabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * g_dabi_lt("f,c,a,i"))
-                        .dot(t1_lt("c,k") * t2_oou_lt("f,b,k,j"));
-        Wkjiabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,i,j"))
-                        .dot(t1_lt("c,k") * g_dabi_lt("f,a,c,k"));
-        Wkjiabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * g_dabi_lt("f,c,b,i"))
-                        .dot(t1_lt("c,k") * t2_oou_lt("f,a,j,k"));
-        Wkjiabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,a,j"))
-                        .dot(t1_lt("c,k") * t2_oou_lt("f,c,k,i"));
-      }*/
-
       {
         //term10
         TArray G;
@@ -2656,25 +1973,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("f,i") = t1_lt("c,k") * t2_oou_lt("f,c,k,i");
         Wkjiabcs += 2.0 * (TA::dot((G("f,i")),(T("f,i"))));
       }
-
-
-      //this->wfn_world()->world().gop.fence();
       double Wikjabcs = 0.0;
 
       double Wjikabcs = 0.0;
-      /*
-      {
-        Wjikabcs = 2.0 *
-                   (g_abij_lt("a,b,i,j") * g_dabi_lt("f,a,b,j"))
-                       .dot(t1_lt("c,k") * t2_oou_lt("f,c,i,k"));
-        Wjikabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * g_dabi_lt("f,b,c,i"))
-                        .dot(t1_lt("c,k") * t2_oou_lt("f,a,k,j"));
-        Wjikabcs += 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_oou_lt("f,b,j,i"))
-                        .dot(t1_lt("c,k") * g_dabi_lt("f,c,a,k"));
-      }*/
-
       {
         //term16
         TArray G;
@@ -2702,22 +2003,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       energy_ms = 4.0 * Wijkabcs + Wkijabcs + Wjkiabcs - 2.0 * Wkjiabcs -
                   2.0 * Wikjabcs - 2.0 * Wjikabcs;
-      //this->wfn_world()->world().gop.fence();
 
       double Wijkabcos = 0.0;
-      /*
-      {
-        Wijkabcos = 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,i,n"))
-                        .dot(t1_lt("c,k") * g_cjkl_lt("c,j,k,n"));
-        Wijkabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,k,i,n"))
-                         .dot(t1_lt("c,k") * t2_ouu_lt("b,c,j,n"));
-        Wijkabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,i,j,n"))
-                         .dot(t1_lt("c,k") * t2_ouu_lt("c,a,k,n"));
-      }*/
-
       {
         //term1
         TArray G;
@@ -2743,30 +2030,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         Wijkabcos += 2.0 * (TA::dot((G("n,a")),(T("n,a"))));
       }
 
-      //this->wfn_world()->world().gop.fence();
       double Wkijabcos = 0.0;
-      /*
-      {
-        Wkijabcos = 2.0 *
-                    (g_abij_lt("a,b,i,j") * g_cjkl_lt("c,i,j,n"))
-                        .dot(t1_lt("c,k") * t2_ouu_lt("a,b,k,n"));
-        Wkijabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,j,k,n"))
-                         .dot(t1_lt("c,k") * t2_ouu_lt("b,c,i,n"));
-        Wkijabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * t2_ouu_lt("c,a,j,n"))
-                         .dot(t1_lt("c,k") * g_cjkl_lt("b,k,i,n"));
-        Wkijabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n"))
-                         .dot(t1_lt("c,k") * t2_ouu_lt("a,c,k,n"));
-        Wkijabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * t2_ouu_lt("c,b,j,n"))
-                         .dot(t1_lt("c,k") * g_cjkl_lt("a,i,k,n"));
-        Wkijabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * t2_ouu_lt("b,a,i,n"))
-                         .dot(t1_lt("c,k") * g_cjkl_lt("c,k,j,n"));
-      }*/
-
       {
         //term4
         TArray G;
@@ -2815,33 +2079,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("n,j") = t1_lt("c,k") * g_cjkl_lt("c,k,j,n");
         Wkijabcos += 2.0 * (TA::dot((G("n,j")),(T("n,j"))));
       }
-
-      //this->wfn_world()->world().gop.fence();
       double Wjkiabcos = 0.0;
 
       double Wkjiabcos = 0.0;
-      /*
-      {
-        Wkjiabcos = 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,k,n"))
-                        .dot(t1_lt("c,k") * g_cjkl_lt("c,j,i,n"));
-        Wkjiabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * t2_ouu_lt("b,c,j,n"))
-                         .dot(t1_lt("c,k") * g_cjkl_lt("a,i,k,n"));
-        Wkjiabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,k,j,n"))
-                         .dot(t1_lt("c,k") * t2_ouu_lt("c,a,i,n"));
-        Wkjiabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,i,j,n"))
-                         .dot(t1_lt("c,k") * t2_ouu_lt("a,c,k,n"));
-        Wkjiabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,j,k,n"))
-                         .dot(t1_lt("c,k") * t2_ouu_lt("c,b,i,n"));
-        Wkjiabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * t2_ouu_lt("b,a,j,n"))
-                         .dot(t1_lt("c,k") * g_cjkl_lt("c,k,i,n"));
-      }*/
-
       {
         //term10
         TArray G;
@@ -2890,24 +2130,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         T("n,i") = t1_lt("c,k") * g_cjkl_lt("c,k,i,n");
         Wkjiabcos += 2.0 * (TA::dot((G("n,i")),(T("n,i"))));
       }
-
-      //this->wfn_world()->world().gop.fence();
       double Wikjabcos = 0.0;
 
       double Wjikabcos = 0.0;
-      /*
-      {
-        Wjikabcos = 2.0 *
-                    (g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,j,n"))
-                        .dot(t1_lt("c,k") * g_cjkl_lt("c,i,k,n"));
-        Wjikabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * g_cjkl_lt("a,k,j,n"))
-                         .dot(t1_lt("c,k") * t2_ouu_lt("b,c,i,n"));
-        Wjikabcos += 2.0 *
-                     (g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n"))
-                         .dot(t1_lt("c,k") * t2_ouu_lt("c,a,k,n"));
-      }*/
-
       {
         //term16
         TArray G;
@@ -2935,8 +2160,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       time13 = mpqc::now(world, accurate_time);
       time_t1 += mpqc::duration_in_s(time12, time13);
-
-      //this->wfn_world()->world().gop.fence();
 
       energy_mos = 4.0 * Wijkabcos + Wkijabcos + Wjkiabcos - 2.0 * Wkjiabcos -
                    2.0 * Wikjabcos - 2.0 * Wjikabcos;
@@ -2971,9 +2194,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       std::cout << "o2v4_vo : " << o2v4_vo << " S \n";
       std::cout << "o2v4_vo_new : " << o2v4_vo_new << " S \n";
       std::cout << "o2v4_oo_new : " << o2v4_oo_new << " S \n";
+      std::cout << "ov4_new : " << ov4_new << " S \n";
       std::cout << "ovvvv new: " << ovvvv_new << " S \n";
       std::cout << "time_t2_oo: " << time_t2_oo << " S \n";
       std::cout << "time_t2_ov: " << time_t2_ov << " S \n";
+      std::cout << "o2v4_2_new: " << o2v4_2_new << " S \n";
       std::cout << "time_t1: " << time_t1 << " S \n";
     }
 

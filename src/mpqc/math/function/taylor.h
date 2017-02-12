@@ -98,7 +98,7 @@ class TaylorExpansionCoefficients {
   size_t nvars_;
   /// values of unique derivatives of each order
   /// # of unique derivs of order \f$ O = n \times (n+1) \times (n+O-1) / (1
-  /// \times 2 \times O)
+  /// \times 2 \times O) \f$
   std::vector<std::vector<Value>> derivs_;
 };
 

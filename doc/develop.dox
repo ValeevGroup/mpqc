@@ -1,19 +1,27 @@
 
 /** \page develop Using MPQC to Develop New Features
 
-There are two modes in which MPQC can be used in developing software implementation
+There are three modes in which MPQC can be used in developing software implementation
 of existing and new methods:
-  - __plug-in__: you plug your code into MPQC, e.g. by adding new classes to MPQC;
-  - __plug-out__: you plug MPQC into your project, e.g. by using MPQC classes and functions
+  - __native__: you develop within the MPQC source tree directly;
+  - __plug-in__: you plug your code into MPQC to extend its functionality, e.g. by adding new classes to MPQC;
+  - __plug-out__: you plug MPQC libraries into your project, e.g. by using MPQC classes and functions
   in your code.
 
 These methods are demonstrated and discussed below.
+- \ref develop-within-mpqc
+  - \ref devcheck
+- \ref extend-mpqc
+  - \ref devsampmp2
+- \ref develop-outside-mpqc
+  - \ref mpqcinit
+
 
 \section develop-within-mpqc Developing code within MPQC
 
 This approach is useful when you want to extend and replace existing classes in MPQC,
-e.g. you want to add a new Wavefunction class that implements new
-or even an existing electronic structure method.
+e.g. you want to add a new Wavefunction class that implements a new
+or existing electronic structure method.
 
 The pros of this approach are:
   - the user can take advantage of the MPQC infrastructure, e.g. the build system and
@@ -35,26 +43,35 @@ changes via the pull request mechanism or by direct git merge. When you are read
 to marge your changes into the main repo create a pull request for code review and
 incorporation.
 
+\subsection devcheck Adding Test Cases to the Verification Suite
+
+Note to be added.
+
+\section extend-mpqc Extending MPQC functionality
+
+It is also possible to extend the functionality of the MPQC executable
+by adding new classes. The *plug-in* style approach
+allows you to keep your source separate from the rest of the MPQC.
+
+To use this approach it is necessary to compile MPQC libraries
+and install them to the location specifies by the \c CMAKE_INSTALL_PREFIX CMake variable.
+It is recommended that the MPQC is validated before installation.
+
 \subsection devsampmp2 MP2 Implementation Example
 
-To illustrate how to add a new electronic structure method to MPQC
-let's consider a simple example of developing a new MP2 implementation
-in MPQC.
+To illustrate how to use the plug-in approach let's consider
+let's consider a simple example of extending the MPQC executable with
+a new implementation of MP2 energy.
 
 \subsubsection devsampmp2src MP2 Implementation Example: Source
 
 This example code illustrates a complete MP2 energy
 implementation using the MPQC Toolkit. The source file can be found at
 `doc/devsamp/mp2/mp2.cpp` in the MPQC source directory.
-
-First an MP2 class is
-declared and the necesary base class member functions are
-provided.  Next, the class is registered so that it can be instantiated
-from the program input as well as linked into the executable.
-
-Note that no main routine is provided.  This is because this file
-is designed to be used to extend the functionality of the mpqc
-executable.  To generate a new mpqc executable with the new class
+Note that the source file does not contain the `main()` function.
+This is because this file
+is designed to be used to extend the functionality of the MPQC
+executable.  To generate a new MPQC executable with the new class
 available for use, see the \ref devsampmp2mak section.
 
 \include mp2/mp2.cpp
@@ -62,7 +79,7 @@ available for use, see the \ref devsampmp2mak section.
 \subsubsection devsampmp2mak MP2 Implementation Example: CMakeLists.txt
 
 This example CMakeLists.txt demonstrates how to link in a new class to
-form a new mpqc executable, here named mp2. This file, located at
+form a new MPQC executable, here named mp2. This file, located at
 `doc/devsamp/mp2/CMakeLists.txt` in the MPQC build directory, was generated from the
 `doc/devsamp/mp2/CMakeLists.txt.in` template located in the MPQC source directory.
 The source code is given in
@@ -77,7 +94,7 @@ the \ref devsampmp2src section.
 
 \include mp2/mp2.json
 
-\section develop-outside-mpqc Using MPQC in a separate project
+\section develop-outside-mpqc Using MPQC as an external library in a separate project
 
 To use MPQC from a standalone project it is necessary to compile MPQC libraries
 and install them to the location specifies by the \c CMAKE_INSTALL_PREFIX CMake variable.
@@ -92,9 +109,5 @@ To use the MPQC code your program must:
 \subsection mpqcinit Initializing MPQC
 
 notes to be added
-
-\section devcheck Adding Test Cases to the Verification Suite
-
-Note to be added.
 
 */

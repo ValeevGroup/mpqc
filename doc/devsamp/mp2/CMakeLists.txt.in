@@ -1,14 +1,18 @@
 cmake_minimum_required(VERSION 3.0)
 
-# Import MPQC package
-# 1. since using MPQC main, require MPQCmain
-# 2. remove/replace libmpqc if don't need the full MPQC functionality
+# change to the location of the mpqc installation (the value of CMAKE_INSTALL_PREFIX variable)
+# e.g. if the mpqc executable is at /usr/local/bin/mpqc, set this to /usr/local
 set(mpqc_root_dir "@CMAKE_INSTALL_PREFIX@")
+
+# Import MPQC package
+# 1. MPQCmain provides MPQC's main (omit if roll your own)
+# 2. libmpqc links in the full MPQC functionality
 find_package(mpqc @MADNESS_VERSION@ CONFIG QUIET REQUIRED COMPONENTS MPQCmain libmpqc HINTS ${mpqc_root_dir})
 
+# add the executable
 set(program mp2)
-set(sources ${program}.cpp)
-add_executable(${program} EXCLUDE_FROM_ALL ${sources})
+add_executable(${program} EXCLUDE_FROM_ALL ${program}.cpp)
 
-# mp2 uses MPQC main; it also links in all classes that the MPQC executable links in
+# mp2 uses MPQC main and links in all classes that the MPQC executable links in
+# replace libmpqc with libMPQCcc, etc., to include only some libs
 target_link_libraries(${program} MPQCmain libmpqc)

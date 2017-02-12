@@ -30,7 +30,7 @@ repo, as this allows you to take advantage of the Continuous Integration system.
 Since, unlike forks, branches cannot be private; therefore use the fork mechanism
 is you must keep the code private.
 
-You will want to periodically sync with the changes in the main repo by merging in
+You will want to periodically (i.e., often) sync with the changes in the main repo by merging in
 changes via the pull request mechanism or by direct git merge. When you are ready
 to marge your changes into the main repo create a pull request for code review and
 incorporation.
@@ -44,33 +44,36 @@ in MPQC.
 \subsubsection devsampmp2src MP2 Implementation Example: Source
 
 This example code illustrates a complete MP2 energy
-implementation using the MPQC Toolkit.  First an MP2 class is
+implementation using the MPQC Toolkit. The source file can be found at
+`doc/devsamp/mp2/mp2.cpp` in the MPQC source directory.
+
+First an MP2 class is
 declared and the necesary base class member functions are
-provided.  Next, the class is registered so that it can be created from text input.
-Finally, the member functions are defined.
+provided.  Next, the class is registered so that it can be instantiated
+from the program input as well as linked into the executable.
 
 Note that no main routine is provided.  This is because this file
 is designed to be used to extend the functionality of the mpqc
 executable.  To generate a new mpqc executable with the new class
 available for use, see the \ref devsampmp2mak section.
 
-\include mp2/mp2.cc
+\include mp2/mp2.cpp
 
 \subsubsection devsampmp2mak MP2 Implementation Example: CMakeLists.txt
 
 This example CMakeLists.txt demonstrates how to link in a new class to
-form a new mpqc executable, here named mp2.  The code is given in
+form a new mpqc executable, here named mp2. This file, located at
+`doc/devsamp/mp2/CMakeLists.txt` in the MPQC build directory, was generated from the
+`doc/devsamp/mp2/CMakeLists.txt.in` template located in the MPQC source directory.
+The source code is given in
 the \ref devsampmp2src section.
 
 \include mp2/CMakeLists.txt
 
 \subsection devsampmp2inp MP2 Implementation Example: Input
 
-This input file can be used with the program illustrated in
-the \ref devsampmp2src section.  It will compute the MP2 energy
-using the new MP2 class.  Note that only the
-\ref mpqcoo "object-oriented input format" can be used with
-user provided classes.
+This input JSON file can be used with the program illustrated in
+the \ref devsampmp2src section.
 
 \include mp2/mp2.json
 

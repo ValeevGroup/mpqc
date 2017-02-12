@@ -13,10 +13,8 @@ using LCAOWfn = lcao::LCAOWavefunction<TA::TensorD, TA::SparsePolicy>;
 // .
 // This class can only compute the energy, this is indicated by deriving it from
 // Provides<Energy> (this introduces virtual methods can_evaluate() and
-// evaluate()
-// that specify, respectively, the ability to compute the energy and how the
-// energy
-// is computed).
+// evaluate() that specify, respectively, the ability to compute the energy and
+// how the energy is computed).
 class MP2 : public LCAOWfn, public Provides<Energy> {
  public:
   // a few abbreviations to make the code less verbose
@@ -24,15 +22,13 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
   using RHF = lcao::RHF<TA::TensorD, TA::SparsePolicy>;
 
   // the KeyVal constructor takes a KeyVal object that represents a keyword
-  // group
-  // of the input file that corresponds to this object (see the "mp2" group in
-  // the
-  // mp2.json file that accompanies this example).
+  // group of the input file that corresponds to this object (see the "mp2"
+  // group in the mp2.json file that accompanies this example).
   // The Keyval object will be queried for all keywords needed by
   // the KeyVal ctor of LCAOWfn, as well as keyword "ref" that specifies
   // the reference wave function.
   MP2(const KeyVal& kv) : LCAOWfn(kv) {
-    ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
+    ref_wfn_ = kv.class_ptr<RHF>("ref");
     if (!ref_wfn_)
       throw InputError("missing reference RHF wave function", __FILE__,
                        __LINE__, "ref");
@@ -53,8 +49,8 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     // how precisely to compute the energy
     auto target_precision = energy->target_precision(0);
 
-    // if has not been computed to the desired precision (or never computed at
-    // all) ...
+    // if has not been computed to the desired precision
+    // (or never computed at all) ...
     if (computed_precision_ > target_precision) {
       // compute reference to higher precision than this wfn
       auto target_ref_precision = target_precision / 100.;
@@ -76,11 +72,12 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
 
   // This function actually solves the MP1 equations and returns the MP2 energy.
   double compute_mp2_energy(double target_precision) {
-    // fac is an LCAOFactory object which evaluates integrals in terms of AOs and LCAOs
+    // fac is an LCAOFactory object which evaluates integrals in terms of AOs
+    // and LCAOs
     auto& fac = this->lcao_factory();
     auto& world = fac.world();
-    // ofac is an OrbitalSpaceRegistry that defines the LCAO spaces that fac can use
-    // ofac was populated by the init_sdref() call above
+    // ofac is an OrbitalSpaceRegistry that defines the LCAO spaces that fac can
+    // use ofac was populated by the init_sdref() call above
     auto& ofac = fac.orbital_space();
 
     auto nocc = ofac.retrieve("m").rank();
@@ -146,8 +143,10 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
       converged = computed_precision_ <= target_precision;
       if (not converged) {
         TA::foreach_inplace(R, jacobi_update);
-        // need a fence here since foreach_inplace mutates the data as a side effect
-        // most TiledArray ops will not need a fence (except to control the resource use)
+        // need a fence here since foreach_inplace mutates the data as a side
+        // effect
+        // most TiledArray ops will not need a fence (except to control the
+        // resource use)
         world.gop.fence();
         T_("i,a,j,b") += R("i,a,j,b");
         ++iter;
@@ -166,7 +165,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     computed_precision_ = std::numeric_limits<double>::max();
   }
 
-  std::shared_ptr<Wavefunction> ref_wfn_;
+  std::shared_ptr<RHF> ref_wfn_;
   Array T_;
   double computed_precision_ = std::numeric_limits<double>::max();
 };
@@ -178,6 +177,5 @@ MPQC_CLASS_EXPORT2("MP2", MP2);
 
 // Creating this variable forces the code for the MP2 class to be linked into
 // the mp2 executable (otherwise the MPQC main function will not see any
-// references
-// to this class and thus the linker will simply skip it).
+// references to this class and thus the linker will simply skip it).
 mpqc::detail::ForceLink<MP2> fl;

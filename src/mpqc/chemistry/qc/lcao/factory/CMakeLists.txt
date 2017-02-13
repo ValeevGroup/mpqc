@@ -4,7 +4,9 @@ set(sources
         factory_utility.cpp
         factory.cpp
         lcao_factory.h
+        periodic_ao_factory.cpp
+        periodic_ao_factory.h
 )
 
-add_mpqc_library(lcao_factory sources sources "MPQClcao_integral" "mpqc/chemistry/qc/lcao/factory")
+add_mpqc_library(lcao_factory sources sources "MPQClcao_integrals" "mpqc/chemistry/qc/lcao/factory")
 

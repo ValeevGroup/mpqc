@@ -1,15 +1,10 @@
 set(sources
-        ../factory/ao_factory.h
-        ../factory/factory_utility.h
-        ../factory/factory_utility.cpp
         direct_task_integrals.h
         direct_tile.h
         f12_utility.cpp
         f12_utility.h
         integrals.h
-        ../factory/factory.cpp
         integral_builder.h
-        ../factory/lcao_factory.h
         libint2_engine.cpp
         make_engine.h
         task_integral_kernels.h

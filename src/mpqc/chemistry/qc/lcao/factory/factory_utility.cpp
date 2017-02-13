@@ -68,9 +68,13 @@ libint2::any to_libint2_operator_params(
     case Operator::Type::cGTG:
     case Operator::Type::cGTGCoulomb:
     case Operator::Type::DelcGTG2: {
+      TA_USER_ASSERT(not gtg_params.empty(),
+                     "Gaussian-type geminal not initialized");
       result = gtg_params;
     } break;
     case Operator::Type::cGTG2: {
+      TA_USER_ASSERT(not gtg_params.empty(),
+                     "Gaussian-type geminal not initialized");
       const auto &cgtg_params = gtg_params;
       const auto ng = cgtg_params.size();
       typename std::decay<decltype(cgtg_params)>::type cgtg2_params;

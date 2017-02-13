@@ -3,6 +3,7 @@
 //
 
 #include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 //#include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
 
 namespace mpqc {
@@ -10,6 +11,7 @@ namespace lcao {
 namespace gaussian {
 
 template class AOFactory<TA::TensorD, TA::SparsePolicy>;
+template class PeriodicAOFactory<TA::TensorZ, TA::SparsePolicy>;
 
 }  // namespace gaussian
 

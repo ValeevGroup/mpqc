@@ -31,10 +31,10 @@ util.h
 
 if(TA_DEFAULT_POLICY EQUAL 1)
 list(APPEND sources
-#        zrhf.h
-#        zrhf.cpp
-#        pbc/periodic_cond_ortho.h
-#        pbc/periodic_soad.h
+        zrhf.h
+        zrhf.cpp
+        pbc/periodic_cond_ortho.h
+        pbc/periodic_soad.h
         )
 endif()
 

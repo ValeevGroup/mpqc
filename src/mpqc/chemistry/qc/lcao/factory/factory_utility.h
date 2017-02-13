@@ -28,9 +28,11 @@ namespace gaussian {
 
 namespace detail {
 
+libint2::Operator to_libint2_operator(Operator::Type mpqc_oper);
+
 libint2::any to_libint2_operator_params(
     Operator::Type mpqc_oper, const Molecule &molecule,
-    const std::vector<std::pair<double, double>> &gtg_params);
+    const std::vector<std::pair<double, double>> &gtg_params = std::vector<std::pair<double, double>>() );
 
 /// make screener
 std::shared_ptr<Screener> make_screener(madness::World &world,
@@ -118,7 +120,6 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula);
 // clang-format on
 OrbitalIndex get_jk_orbital_space(const Operator &operation);
 
-libint2::Operator to_libint2_operator(Operator::Type mpqc_oper);
 
 }  // namespace detail
 

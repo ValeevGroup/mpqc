@@ -5,8 +5,8 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_
 
-#include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
 #include "mpqc/chemistry/qc/lcao/expression/permutation.h"
+#include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
 #include "mpqc/chemistry/qc/lcao/integrals/f12_utility.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/math/external/eigen/eigen.h"
@@ -103,7 +103,7 @@ class AOFactory : virtual public DescribedClass {
 
   /// @brief Molecule accessor
   /// @return molecule object
-//  const Molecule& molecule() const { return *molecule_; }
+  //  const Molecule& molecule() const { return *molecule_; }
 
   /// @brief (contracted) Gaussian-types geminal parameters accessor
   /// @return Gaussian-type geminal parameters
@@ -182,6 +182,7 @@ class AOFactory : virtual public DescribedClass {
   }
 
  protected:
+
   /// compute integrals that has two dimension
   TArray compute2(const Formula& formula_string);
 
@@ -286,6 +287,24 @@ class AOFactory : virtual public DescribedClass {
     return result;
   }
 
+ protected:
+  /// options
+
+  /// screen method
+  std::string screen_;
+
+  /// screen precision
+  double screen_threshold_;
+
+  /// integral precision
+  double precision_;
+
+  /// if do fence before call time
+  bool accurate_time_;
+
+  /// if do iterative inverse square root
+  bool iterative_inv_sqrt_;
+
  private:
   /// madness::World object
   madness::World& world_;
@@ -311,20 +330,6 @@ class AOFactory : virtual public DescribedClass {
   // TODO these specify operator params, need to abstract out better
   gtg_params_t gtg_params_;
 
-  /// screen method
-  std::string screen_;
-
-  /// screen precision
-  double screen_threshold_;
-
-  /// integral precision
-  double precision_;
-
-  /// if do fence before call time
-  bool accurate_time_;
-
-  /// if do iterative inverse square root
-  bool iterative_inv_sqrt_;
 };
 
 extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;

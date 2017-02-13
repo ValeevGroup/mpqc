@@ -657,8 +657,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
 }
 
 extern template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
-// extern template
-// class LCAOFactory<TA::TensorD,TA::DensePolicy>;
+extern template class LCAOFactory<TA::TensorD,TA::DensePolicy>;
 
 }  // namespace integral
 }  // namespace mpqc

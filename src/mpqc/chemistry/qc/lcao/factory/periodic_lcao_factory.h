@@ -55,7 +55,8 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
 
-    // Molecule was already created at this path, bypass registry and construct UnitCell
+    // Molecule was already created at this path, bypass registry and construct
+    // UnitCell
     unitcell_ = kv.class_ptr<UnitCell>(prefix + "molecule", true);
 
     dcell_ = unitcell_->dcell();
@@ -180,8 +181,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   auto bra_index = ao_formula.bra_indices()[0];
   auto ket_index = ao_formula.ket_indices()[0];
 
-  auto bra_basis = pao_factory_.index_to_basis(bra_index);
-  auto ket_basis = pao_factory_.index_to_basis(ket_index);
+  auto bra_basis = gaussian::detail::index_to_basis(
+      pao_factory_.orbital_basis_registry(), bra_index);
+  auto ket_basis = gaussian::detail::index_to_basis(
+      pao_factory_.orbital_basis_registry(), ket_index);
 
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
@@ -225,8 +228,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
       auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
           to_libint2_operator(ao_formula.oper().type()),
           make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
-          to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                     *unitcell_));
+          to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
 
       auto ao_int =
           pao_factory_.compute_integrals(this->world_, engine_pool, bases);
@@ -304,8 +306,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
       auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
           to_libint2_operator(ao_formula.oper().type()),
           make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
-          to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                     *unitcell_));
+          to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
 
       ao_int = pao_factory_.compute_integrals(this->world_, engine_pool, bases);
 
@@ -318,8 +319,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
         auto engine_pool = mpqc::lcao::gaussian::make_engine_pool(
             to_libint2_operator(ao_formula.oper().type()),
             make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
-            to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                       *shifted_mol));
+            to_libint2_operator_params(ao_formula.oper().type(), *shifted_mol));
         if (RJ == 0)
           ao_int =
               pao_factory_.compute_integrals(this->world_, engine_pool, bases);
@@ -347,13 +347,14 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             to_libint2_operator(ao_formula.oper().type()),
             make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
             libint2::BraKet::xx_xx,
-            to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                       *unitcell_));
-        auto p_screener = pao_factory_.make_screener(engine_pool, bases);
+            to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
+        auto p_screener = gaussian::detail::make_screener(
+            this->world_, engine_pool, bases, pao_factory_.screen(),
+            pao_factory_.screen_threshold());
 
         // compute AO-based integrals
-        auto J =
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener);
+        auto J = pao_factory_.compute_integrals(this->world_, engine_pool,
+                                                bases, p_screener);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = J("p, q, r, s") * D("r, s");
@@ -383,13 +384,14 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             to_libint2_operator(ao_formula.oper().type()),
             make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
             libint2::BraKet::xx_xx,
-            to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                       *unitcell_));
-        auto p_screener = pao_factory_.make_screener(engine_pool, bases);
+            to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
+        auto p_screener = gaussian::detail::make_screener(
+            this->world_, engine_pool, bases, pao_factory_.screen(),
+            pao_factory_.screen_threshold());
 
         // compute AO-based integrals
-        auto K =
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener);
+        auto K = pao_factory_.compute_integrals(this->world_, engine_pool,
+                                                bases, p_screener);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = K("p, r, q, s") * D("r, s");
@@ -430,10 +432,14 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   auto ket_index0 = ao_formula.ket_indices()[0];
   auto ket_index1 = ao_formula.ket_indices()[1];
 
-  auto bra_basis0 = pao_factory_.index_to_basis(bra_index0);
-  auto bra_basis1 = pao_factory_.index_to_basis(bra_index1);
-  auto ket_basis0 = pao_factory_.index_to_basis(ket_index0);
-  auto ket_basis1 = pao_factory_.index_to_basis(ket_index1);
+  auto bra_basis0 = gaussian::detail::index_to_basis(
+      pao_factory_.orbital_basis_registry(), bra_index0);
+  auto bra_basis1 = gaussian::detail::index_to_basis(
+      pao_factory_.orbital_basis_registry(), bra_index1);
+  auto ket_basis0 = gaussian::detail::index_to_basis(
+      pao_factory_.orbital_basis_registry(), ket_index0);
+  auto ket_basis1 = gaussian::detail::index_to_basis(
+      pao_factory_.orbital_basis_registry(), ket_index1);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(bra_basis1 != nullptr);
@@ -473,13 +479,14 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
             to_libint2_operator(ao_formula.oper().type()),
             make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
             libint2::BraKet::xx_xx,
-            to_libint2_operator_params(ao_formula.oper().type(), pao_factory_,
-                                       *unitcell_));
-        auto p_screener = pao_factory_.make_screener(engine_pool, bases);
+            to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
+        auto p_screener = gaussian::detail::make_screener(
+            this->world_, engine_pool, bases, pao_factory_.screen(),
+            pao_factory_.screen_threshold());
 
         // compute AO-based integrals
-        auto ao_int =
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases, p_screener);
+        auto ao_int = pao_factory_.compute_integrals(this->world_, engine_pool,
+                                                     bases, p_screener);
         auto t_pao1 = mpqc::now(this->world_, this->accurate_time_);
         pao_build_time += mpqc::duration_in_s(t_pao0, t_pao1);
 

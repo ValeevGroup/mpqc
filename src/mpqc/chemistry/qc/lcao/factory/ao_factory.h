@@ -174,6 +174,10 @@ class AOFactory : virtual public DescribedClass {
     orbital_space_registry_ = regitsry;
   }
 
+  const std::string& screen() const { return screen_; }
+
+  double screen_threshold() const { return screen_threshold_; }
+
  protected:
   /// compute integrals that has two dimension
   TArray compute2(const Formula& formula_string);
@@ -279,24 +283,6 @@ class AOFactory : virtual public DescribedClass {
     return result;
   }
 
- protected:
-  /// options
-
-  /// screen method
-  std::string screen_;
-
-  /// screen precision
-  double screen_threshold_;
-
-  /// integral precision
-  double precision_;
-
-  /// if do fence before call time
-  bool accurate_time_;
-
-  /// if do iterative inverse square root
-  bool iterative_inv_sqrt_;
-
  private:
   /// madness::World object
   madness::World& world_;
@@ -321,6 +307,21 @@ class AOFactory : virtual public DescribedClass {
 
   // TODO these specify operator params, need to abstract out better
   gtg_params_t gtg_params_;
+
+  /// screen method
+  std::string screen_;
+
+  /// screen precision
+  double screen_threshold_;
+
+  /// integral precision
+  double precision_;
+
+  /// if do fence before call time
+  bool accurate_time_;
+
+  /// if do iterative inverse square root
+  bool iterative_inv_sqrt_;
 };
 
 extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;

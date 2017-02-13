@@ -547,8 +547,10 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
   TA_ASSERT(bra_index.is_ao());
   TA_ASSERT(ket_index.is_ao());
 
-  auto bra_basis = detail::index_to_basis(this->orbital_basis_registry(),bra_index);
-  auto ket_basis = detail::index_to_basis(this->orbital_basis_registry(),ket_index);
+  auto bra_basis =
+      detail::index_to_basis(this->orbital_basis_registry(), bra_index);
+  auto ket_basis =
+      detail::index_to_basis(this->orbital_basis_registry(), ket_index);
 
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
@@ -589,10 +591,14 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
   TA_ASSERT(ket_index0.is_ao());
   TA_ASSERT(ket_index1.is_ao());
 
-  auto bra_basis0 = detail::index_to_basis(this->orbital_basis_registry(), bra_index0);
-  auto bra_basis1 = detail::index_to_basis(this->orbital_basis_registry(), bra_index1);
-  auto ket_basis0 = detail::index_to_basis(this->orbital_basis_registry(), ket_index0);
-  auto ket_basis1 = detail::index_to_basis(this->orbital_basis_registry(), ket_index1);
+  auto bra_basis0 =
+      detail::index_to_basis(this->orbital_basis_registry(), bra_index0);
+  auto bra_basis1 =
+      detail::index_to_basis(this->orbital_basis_registry(), bra_index1);
+  auto ket_basis0 =
+      detail::index_to_basis(this->orbital_basis_registry(), ket_index0);
+  auto ket_basis1 =
+      detail::index_to_basis(this->orbital_basis_registry(), ket_index1);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(bra_basis1 != nullptr);
@@ -627,7 +633,8 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
       libint2::BraKet::xx_xx,
       detail::to_libint2_operator_params(oper_type, *unitcell_));
 
-  p_screener = detail::make_screener(this->world(),engine_pool, bases,this->screen_, this->screen_threshold_);
+  p_screener = detail::make_screener(this->world(), engine_pool, bases,
+                                     this->screen(), this->screen_threshold());
 }
 
 template <typename Tile, typename Policy>

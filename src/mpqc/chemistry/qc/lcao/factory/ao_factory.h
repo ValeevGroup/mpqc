@@ -94,6 +94,7 @@ class AOFactory : virtual public DescribedClass {
 
   void obsolete() {
     ao_formula_registry_.purge();
+    direct_ao_formula_registry_.purge();
     if (orbital_basis_registry_ != nullptr) {
       orbital_basis_registry_->clear();
     }

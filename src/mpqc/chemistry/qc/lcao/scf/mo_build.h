@@ -152,7 +152,7 @@ void make_closed_shell_sdref_subspaces(
     const auto &occ_m = input_space->attributes();
     for (auto occ : occ_m) assert(occ == 2.0);  // all should be doubly occupied
     auto nao = input_space->ao_rank();
-    auto tr_ao = input_space->trange();
+    auto tr_ao = input_space->ao_trange();
 
     //////////////////////////////////////////////////////////////////////////////////
     // rebuild occupied orbital space (in case block size differs)
@@ -217,7 +217,7 @@ void make_closed_shell_sdref_subspaces(
     {
       RowMatrixXd C_a_eig = array_ops::array_to_eigen(C_a);
       C_p_eig.block(0, 0, nao, ndocc) << C_m_eig;
-      C_p_eig.block(0, ndocc, nao, ndocc + n_unocc) << C_a_eig;
+      C_p_eig.block(0, ndocc, nao, n_unocc) << C_a_eig;
 
       auto tr_all = TRange1Engine::join(m_space.trange(), a_space.trange());
       C_p = array_ops::eigen_to_array<Tile, Policy>(

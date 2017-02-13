@@ -7,6 +7,7 @@
 
 #include "mpqc/chemistry/qc/lcao/expression/permutation.h"
 #include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
+#include "mpqc/chemistry/qc/lcao/factory/set_oper.h"
 #include "mpqc/chemistry/qc/lcao/integrals/f12_utility.h"
 #include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/math/external/eigen/eigen.h"
@@ -129,14 +130,6 @@ class AOFactory : virtual public DescribedClass {
       const {
     return orbital_basis_registry_;
   }
-
-  /// set oper based on Tile type
-  template <typename T = Tile>
-  void set_oper(typename std::enable_if<std::is_same<T, TA::TensorD>::value,
-                                        T>::type&& t) {
-    op_ = TA::Noop<TA::TensorD, true>();
-  }
-
   /// wrapper to compute function
   TArray compute(const std::wstring&);
 
@@ -182,7 +175,6 @@ class AOFactory : virtual public DescribedClass {
   }
 
  protected:
-
   /// compute integrals that has two dimension
   TArray compute2(const Formula& formula_string);
 
@@ -329,7 +321,6 @@ class AOFactory : virtual public DescribedClass {
 
   // TODO these specify operator params, need to abstract out better
   gtg_params_t gtg_params_;
-
 };
 
 extern template class AOFactory<TA::TensorD, TA::SparsePolicy>;

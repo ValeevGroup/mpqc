@@ -25,7 +25,7 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
   accurate_time_ = kv.value<bool>(prefix + "accurate_time", false);
   iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);
 
-  set_oper(Tile());
+  detail::set_oper<Tile>(op_);
 
   /// Basis will come from wfn_world
   //  orbital_basis_registry_ =

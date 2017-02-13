@@ -10,11 +10,11 @@
 #include <string>
 #include <vector>
 
-#include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/molecule/molecule.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis_registry.h"
 #include "mpqc/chemistry/qc/lcao/expression/formula.h"
 #include "mpqc/chemistry/qc/lcao/expression/orbital_registry.h"
+#include "mpqc/chemistry/qc/lcao/integrals/integrals.h"
 #include "mpqc/chemistry/qc/lcao/integrals/make_engine.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals.h"
 #include "mpqc/util/meta/make_array.h"
@@ -32,7 +32,8 @@ libint2::Operator to_libint2_operator(Operator::Type mpqc_oper);
 
 libint2::any to_libint2_operator_params(
     Operator::Type mpqc_oper, const Molecule &molecule,
-    const std::vector<std::pair<double, double>> &gtg_params = std::vector<std::pair<double, double>>() );
+    const std::vector<std::pair<double, double>> &gtg_params =
+        std::vector<std::pair<double, double>>());
 
 /// make screener
 std::shared_ptr<Screener> make_screener(madness::World &world,
@@ -44,7 +45,6 @@ std::shared_ptr<Screener> make_screener(madness::World &world,
 /// given OrbitalIndex, find the corresponding basis
 std::shared_ptr<Basis> index_to_basis(
     const OrbitalBasisRegistry &basis_registry, const OrbitalIndex &index);
-
 
 ///
 /// Functions to generate formula
@@ -119,7 +119,6 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula);
  */
 // clang-format on
 OrbitalIndex get_jk_orbital_space(const Operator &operation);
-
 
 }  // namespace detail
 

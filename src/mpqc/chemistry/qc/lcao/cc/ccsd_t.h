@@ -1725,7 +1725,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           E_O2V3_S += TA::dot((2.0*G2("f,i") - 4.0*G3("f,i")),T2("f,i"));
         }
       }
-
       {
         TArray T1;
         T1("f,a") = t1_lt("b,i") * g_dabi_lt("f,b,a,i");
@@ -1772,165 +1771,104 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       energy_ms = E_O2V4_S + E_O2V3_S + E_O3V3_S;
 
-      double Wijkabcos = 0.0;
+      double E_O3V2_S = 0.0;
       {
-        //term1
-        TArray G;
-        TArray T;
-        G("n,j") = g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,i,n");
-        T("n,j") = t1_lt("c,k") * g_cjkl_lt("c,j,k,n");
-        Wijkabcos += 2.0 * (TA::dot((G("n,j")),(T("n,j"))));
+        TArray T1;
+        TArray T2;
+        T1("n,i") = t1_lt("a,j") * g_cjkl_lt("a,i,j,n");
+        T2("n,i") = t1_lt("a,j") * g_cjkl_lt("a,j,i,n");
+        {
+          TArray G1;
+          TArray G4;
+          G1("n,i") = g_abij_lt("a,b,j,i") * t2_ouu_lt("a,b,j,n");
+          G4("n,i") = g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,j,n");
+          E_O3V2_S = TA::dot((8.0*G1("n,i") - 4.0*G4("n,i")),T1("n,i"));
+        }
+        {
+          TArray G2;
+          TArray G3;
+          G2("n,i") = g_abij_lt("a,b,j,i") * t2_ouu_lt("b,a,j,n");
+          G3("n,i") = g_abij_lt("a,b,i,j") * t2_ouu_lt("b,a,j,n");
+          E_O3V2_S += TA::dot((2.0*G2("n,i") - 4.0*G3("n,i")),T2("n,i"));
+        }
       }
       {
-        //term2
-        TArray G;
-        TArray T;
-        G("j,k,b,n") = g_abij_lt("a,b,i,j") * g_cjkl_lt("a,k,i,n");
-        T("j,k,b,n") = t1_lt("c,k") * t2_ouu_lt("b,c,j,n");
-        Wijkabcos += 2.0 * (TA::dot((G("j,k,b,n")),(T("j,k,b,n"))));
-      }
-      {
-        //term3
-        TArray G;
-        TArray T;
-        G("n,a") = g_abij_lt("a,b,i,j") * g_cjkl_lt("b,i,j,n");
-        T("n,a") = t1_lt("c,k") * t2_ouu_lt("c,a,k,n");
-        Wijkabcos += 2.0 * (TA::dot((G("n,a")),(T("n,a"))));
+        TArray T1;
+        TArray T2;
+        T1("n,a") = t1_lt("b,i") * t2_ouu_lt("b,a,i,n");
+        T2("n,a") = t1_lt("b,i") * t2_ouu_lt("a,b,i,n");
+        {
+          TArray G;
+          G("n,a") = g_abij_lt("a,b,i,j") * g_cjkl_lt("b,i,j,n");
+          E_O3V2_S += TA::dot((G("n,a")),(8.0*T1("n,a") - 4.0*T2("n,a")));
+        }
+        {
+          TArray G;
+          G("n,a") = g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n");
+          E_O3V2_S += TA::dot((G("n,a")),(2.0*T2("n,a") - 4.0*T1("n,a")));
+        }
       }
 
-      double Wkijabcos = 0.0;
+      double E_O4V2_S = 0.0;
       {
-        //term4
+        TArray G2;
+        G2("i,j,a,n") = g_abij_lt("b,a,i,k") * g_cjkl_lt("b,k,j,n");
+
+        {
+          TArray T1;
+          T1("i,j,a,n") = t1_lt("b,j") * t2_ouu_lt("a,b,i,n");
+          TArray G1;
+          G1("i,j,a,n") = g_abij_lt("b,a,k,i") * g_cjkl_lt("b,j,k,n");
+          TArray G4;
+          G4("i,j,a,n") = g_abij_lt("b,a,i,k") * g_cjkl_lt("b,j,k,n");
+          E_O4V2_S = TA::dot((8.0*G1("i,j,a,n") + 2.0*G2("i,j,a,n") - 4.0*G4("i,j,a,n")),(T1("i,j,a,n")));
+        }
+        {
+          TArray T2;
+          T2("i,j,a,n") = t1_lt("b,j") * t2_ouu_lt("b,a,i,n");
+          TArray G3;
+          G3("i,j,a,n") = g_abij_lt("a,b,i,k") * g_cjkl_lt("b,j,k,n");
+          E_O4V2_S += TA::dot((-4.0*G3("i,j,a,n") - 4.0*G2("i,j,a,n")),(T2("i,j,a,n")));
+        }
+      }
+      double E_O3V3_S2 = 0.0;
+      {
         TArray G;
         TArray T;
         G("a,b,c,n") = g_abij_lt("a,b,i,j") * g_cjkl_lt("c,i,j,n");
         T("a,b,c,n") = t1_lt("c,k") * t2_ouu_lt("a,b,k,n");
-        Wkijabcos += 2.0 * (TA::dot((G("a,b,c,n")),(T("a,b,c,n"))));
+        E_O3V3_S2 = 2.0 * (TA::dot((G("a,b,c,n")),(T("a,b,c,n"))));
       }
       {
-        //term5
-        TArray G;
-        TArray T;
-        G("i,k,b,n") = g_abij_lt("a,b,i,j") * g_cjkl_lt("a,j,k,n");
-        T("i,k,b,n") = t1_lt("c,k") * t2_ouu_lt("b,c,i,n");
-        Wkijabcos += 2.0 * (TA::dot((G("i,k,b,n")),(T("i,k,b,n"))));
-      }
-      {
-        //term6
-        TArray G;
-        TArray T;
-        G("i,b,c,n") = g_abij_lt("a,b,i,j") * t2_ouu_lt("c,a,j,n");
-        T("i,b,c,n") = t1_lt("c,k") * g_cjkl_lt("b,k,i,n");
-        Wkijabcos += 2.0 * (TA::dot((G("i,b,c,n")),(T("i,b,c,n"))));
-      }
-      {
-        //term7
-        TArray G;
-        TArray T;
-        G("n,a") = g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n");
-        T("n,a") = t1_lt("c,k") * t2_ouu_lt("a,c,k,n");
-        Wkijabcos += 2.0 * (TA::dot((G("n,a")),(T("n,a"))));
-      }
-      {
-        //term8
-        TArray G;
-        TArray T;
-        G("i,a,c,n") = g_abij_lt("a,b,i,j") * t2_ouu_lt("c,b,j,n");
-        T("i,a,c,n") = t1_lt("c,k") * g_cjkl_lt("a,i,k,n");
-        Wkijabcos += 2.0 * (TA::dot((G("i,a,c,n")),(T("i,a,c,n"))));
-      }
-      {
-        //term9
-        TArray G;
-        TArray T;
-        G("n,j") = g_abij_lt("a,b,i,j") * t2_ouu_lt("b,a,i,n");
-        T("n,j") = t1_lt("c,k") * g_cjkl_lt("c,k,j,n");
-        Wkijabcos += 2.0 * (TA::dot((G("n,j")),(T("n,j"))));
-      }
-      double Wjkiabcos = 0.0;
-
-      double Wkjiabcos = 0.0;
-      {
-        //term10
         TArray G;
         TArray T;
         G("i,j,k,n") = g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,k,n");
         T("i,j,k,n") = t1_lt("c,k") * g_cjkl_lt("c,j,i,n");
-        Wkjiabcos += 2.0 * (TA::dot((G("i,j,k,n")),(T("i,j,k,n"))));
+        E_O4V2_S += -4.0 * (TA::dot((G("i,j,k,n")),(T("i,j,k,n"))));
       }
       {
-        //term11
-        TArray G;
-        TArray T;
-        G("i,a,c,n") = g_abij_lt("a,b,i,j") * t2_ouu_lt("b,c,j,n");
-        T("i,a,c,n") = t1_lt("c,k") * g_cjkl_lt("a,i,k,n");
-        Wkjiabcos += 2.0 * (TA::dot((G("i,a,c,n")),(T("i,a,c,n"))));
-      }
-      {
-        //term12
-        TArray G;
-        TArray T;
-        G("i,k,a,n") = g_abij_lt("a,b,i,j") * g_cjkl_lt("b,k,j,n");
-        T("i,k,a,n") = t1_lt("c,k") * t2_ouu_lt("c,a,i,n");
-        Wkjiabcos += 2.0 * (TA::dot((G("i,k,a,n")),(T("i,k,a,n"))));
-      }
-      {
-        //term13
-        TArray G;
-        TArray T;
-        G("n,a") = g_abij_lt("a,b,i,j") * g_cjkl_lt("b,i,j,n");
-        T("n,a") = t1_lt("c,k") * t2_ouu_lt("a,c,k,n");
-        Wkjiabcos += 2.0 * (TA::dot((G("n,a")),(T("n,a"))));
-      }
-      {
-        //term14
-        TArray G;
-        TArray T;
-        G("i,k,b,n") = g_abij_lt("a,b,i,j") * g_cjkl_lt("a,j,k,n");
-        T("i,k,b,n") = t1_lt("c,k") * t2_ouu_lt("c,b,i,n");
-        Wkjiabcos += 2.0 * (TA::dot((G("i,k,b,n")),(T("i,k,b,n"))));
-      }
-      {
-        //term15
-        TArray G;
-        TArray T;
-        G("n,i") = g_abij_lt("a,b,i,j") * t2_ouu_lt("b,a,j,n");
-        T("n,i") = t1_lt("c,k") * g_cjkl_lt("c,k,i,n");
-        Wkjiabcos += 2.0 * (TA::dot((G("n,i")),(T("n,i"))));
-      }
-      double Wikjabcos = 0.0;
-
-      double Wjikabcos = 0.0;
-      {
-        //term16
-        TArray G;
-        TArray T;
-        G("n,i") = g_abij_lt("a,b,i,j") * t2_ouu_lt("a,b,j,n");
-        T("n,i") = t1_lt("c,k") * g_cjkl_lt("c,i,k,n");
-        Wjikabcos += 2.0 * (TA::dot((G("n,i")),(T("n,i"))));
-      }
-      {
-        //term17
-        TArray G;
-        TArray T;
-        G("i,k,b,n") = g_abij_lt("a,b,i,j") * g_cjkl_lt("a,k,j,n");
-        T("i,k,b,n") = t1_lt("c,k") * t2_ouu_lt("b,c,i,n");
-        Wjikabcos += 2.0 * (TA::dot((G("i,k,b,n")),(T("i,k,b,n"))));
-      }
-      {
-        //term18
-        TArray G;
-        TArray T;
-        G("n,a") = g_abij_lt("a,b,i,j") * g_cjkl_lt("b,j,i,n");
-        T("n,a") = t1_lt("c,k") * t2_ouu_lt("c,a,k,n");
-        Wjikabcos += 2.0 * (TA::dot((G("n,a")),(T("n,a"))));
+        {
+          TArray G1;
+          TArray T1;
+          G1("i,a,b,n") = g_abij_lt("c,a,i,j") * t2_ouu_lt("b,c,j,n");
+          T1("i,a,b,n") = t1_lt("b,j") * g_cjkl_lt("a,j,i,n");
+          E_O3V3_S2 += 2.0 * (TA::dot((G1("i,a,b,n")),(T1("i,a,b,n"))));
+        }
+        {
+          TArray G2;
+          TArray G3;
+          TArray T2;
+          G2("i,a,b,n") = g_abij_lt("a,c,i,j") * t2_ouu_lt("b,c,j,n");
+          G3("i,a,b,n") = g_abij_lt("a,c,i,j") * t2_ouu_lt("c,b,j,n");
+          T2("i,a,b,n") = t1_lt("b,j") * g_cjkl_lt("a,i,j,n");
+          E_O3V3_S2 += TA::dot((2.0*G2("i,a,b,n") - 4.0*G3("i,a,b,n")),(T2("i,a,b,n")));
+        }
       }
 
       time13 = mpqc::now(world, accurate_time);
       time_t1 += mpqc::duration_in_s(time12, time13);
 
-      energy_mos = 4.0 * Wijkabcos + Wkijabcos + Wjkiabcos - 2.0 * Wkjiabcos -
-                   2.0 * Wikjabcos - 2.0 * Wjikabcos;
+      energy_mos = E_O3V2_S + E_O4V2_S + E_O3V3_S2;
 
       energy_mos = 3.0 * energy_mos;
       energy_mos = energy_mos * w(m);

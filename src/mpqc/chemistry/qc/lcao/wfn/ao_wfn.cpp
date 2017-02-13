@@ -8,7 +8,7 @@ namespace lcao {
 template class AOWavefunction<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
 template class AOWavefunction<TA::TensorD, TA::SparsePolicy>;
-//template class PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>;
+template class PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>;
 #endif
 
 }  // namespace lcao

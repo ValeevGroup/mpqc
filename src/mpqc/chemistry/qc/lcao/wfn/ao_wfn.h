@@ -118,6 +118,7 @@ class PeriodicAOWavefunction : public Wavefunction {
 extern template class AOWavefunction<TA::TensorD, TA::DensePolicy>;
 #elif TA_DEFAULT_POLICY == 1
 extern template class AOWavefunction<TA::TensorD, TA::SparsePolicy>;
+extern template class PeriodicAOWavefunction<TA::TensorD, TA::SparsePolicy>;
 #endif
 
 }  // namespace lcao

@@ -5,23 +5,23 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_FACTORY_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_FACTORY_H_
 
+#include "mpqc/chemistry/qc/lcao/expression/formula_registry.h"
 #include "mpqc/chemistry/qc/lcao/wfn/wfn_world.h"
 #include "mpqc/util/keyval/keyval.h"
-#include "mpqc/chemistry/qc/lcao/expression/formula_registry.h"
 
 namespace mpqc {
 namespace lcao {
 
-template <typename Array, typename DirectArray>
+template <typename Array, typename DirectArray = Array>
 class Factory : virtual public DescribedClass {
  public:
-
   Factory() = default;
 
   Factory(std::shared_ptr<WavefunctionWorld> wfn_world)
       : wfn_world_(wfn_world),
         registry_(),
-        direct_registry_() {}
+        direct_registry_(),
+        orbital_space_registry_(nullptr) {}
 
   /// @return MADNESS world
   madness::World& world() { return wfn_world_->world(); }
@@ -34,34 +34,54 @@ class Factory : virtual public DescribedClass {
     return wfn_world_->basis_registry();
   }
 
-  /// return const registry
-  const FormulaRegistry<Array>& registry() const {
-    return registry_;
+  /// return const orbital registry
+  const OrbitalSpaceRegistry<Array>& orbital_registry() const{
+    TA_USER_ASSERT(orbital_space_registry_ != nullptr,
+                   "OrbitalSpaceRegistry not initialized! \n");
+    return *orbital_space_registry_;
   }
+
+  /// return orbital registry
+  OrbitalSpaceRegistry<Array>& orbital_registry() {
+    TA_USER_ASSERT(orbital_space_registry_ != nullptr,
+                   "OrbitalSpaceRegistry not initialized! \n");
+    return *orbital_space_registry_;
+  }
+
+  void set_orbital_registry(
+      const std::shared_ptr<OrbitalSpaceRegistry<Array>>& obs_registry) {
+    orbital_space_registry_ = obs_registry;
+  }
+
+  /// return const registry
+  const FormulaRegistry<Array>& registry() const { return registry_; }
 
   /// return registry
-  FormulaRegistry<Array>& registry() {
-    return registry_;
-  }
+  FormulaRegistry<Array>& registry() { return registry_; }
 
   /// return const registry
-  const FormulaRegistry<DirectArray>& direct_registry() const {
+  const std::enable_if_t<!std::is_same<Array, DirectArray>::value,
+                         FormulaRegistry<DirectArray>>&
+  direct_registry() const {
     return direct_registry_;
   }
 
   /// return registry
-  FormulaRegistry<DirectArray>& direct_registry() {
+  const std::enable_if_t<!std::is_same<Array, DirectArray>::value,
+                         FormulaRegistry<DirectArray>>&
+  direct_registry() {
     return direct_registry_;
   }
 
   /// wrapper to compute function
-  Array compute(const std::wstring& string){
+  Array compute(const std::wstring& string) {
     auto formula = Formula(string);
     return compute(formula);
   }
 
   /// wrapper to compute direct function
-  DirectArray compute_direct(const std::wstring& str) {
+  std::enable_if_t<!std::is_same<Array, DirectArray>::value, DirectArray>
+  compute_direct(const std::wstring& str) {
     auto formula = Formula(str);
     return compute_direct(formula);
   }
@@ -79,12 +99,17 @@ class Factory : virtual public DescribedClass {
   virtual Array compute(const Formula& formula) = 0;
 
   /// compute direct array
-  virtual DirectArray compute_direct(const Formula& formula) = 0;
-
+  virtual std::enable_if_t<!std::is_same<Array, DirectArray>::value,
+                           DirectArray>
+  compute_direct(const Formula& formula) = 0;
 
  protected:
+  /// registry for Array
   FormulaRegistry<Array> registry_;
+  /// registry for DirectArray
   FormulaRegistry<DirectArray> direct_registry_;
+  /// registry for Orbital Space
+  std::shared_ptr<OrbitalSpaceRegistry<Array>> orbital_space_registry_;
 
  private:
   std::shared_ptr<WavefunctionWorld> wfn_world_;

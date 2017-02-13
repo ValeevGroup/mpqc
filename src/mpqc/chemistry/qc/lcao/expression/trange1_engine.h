@@ -43,6 +43,9 @@ class TRange1Engine {
 
   static TA::TiledRange1 compute_range(std::size_t range, std::size_t block_size);
 
+  /// joins 2 ranges
+  static TA::TiledRange1 join(const TA::TiledRange1& a, const TA::TiledRange1& b);
+
   /// get TiledRange1 for active occupied space
   TA::TiledRange1 get_active_occ_tr1() const { return tr_active_occupied_; }
 

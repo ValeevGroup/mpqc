@@ -12,6 +12,7 @@ set(sources
   pool.h
   print.cpp
   print.h
+  provider.h
   string.h
   task.h
   time.h

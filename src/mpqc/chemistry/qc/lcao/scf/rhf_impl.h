@@ -263,32 +263,30 @@ void RHF<Tile, Policy>::evaluate(Energy* result) {
 }
 
 template <typename Tile, typename Policy>
-bool RHF<Tile, Policy>::is_available(CanonicalOrbitalSpace<array_type>*) {
-  return density_builder_str_ == "eigen_solve" && !localize_;
-}
-
-template <typename Tile, typename Policy>
 bool RHF<Tile, Policy>::can_evaluate(CanonicalOrbitalSpace<array_type>*) {
-  return true;
+  return density_builder_str_ == "eigen_solve" && !localize_;
 }
 
 template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::evaluate(CanonicalOrbitalSpace<array_type>* result,
                                  double target_energy_precision,
                                  std::size_t target_blocksize) {
+  if (!can_evaluate(result))
+    throw ProgrammingError(
+        "RHF: canonical orbitals requested, but can't compute them", __FILE__,
+        __LINE__);
+
   do_evaluate(target_energy_precision);
 
-  // Eigen-based density builder provides full set of canonical orbitals, other build them
-  auto d_eigen_builder_ = dynamic_cast<scf::ESolveDensityBuilder<Tile, Policy>*>(&*d_builder_.get());
-  Eigen::VectorXd eps;
-  array_type C;
-  if (d_eigen_builder_ != nullptr && !d_eigen_builder_->localize()) {
-    eps = d_eigen_builder_->orbital_energies();
-    C = d_eigen_builder_->C();
-  }
-  else {
-    std::tie(eps, C) = make_canonical_orbitals(target_blocksize);
-  }
+  // Eigen-based density builder provides full set of canonical orbitals, other
+  // build them
+  auto d_eigen_builder_ =
+      dynamic_cast<scf::ESolveDensityBuilder<Tile, Policy>*>(
+          &*d_builder_.get());
+  assert(d_eigen_builder_ != nullptr && !d_eigen_builder_->localize());
+
+  auto eps = d_eigen_builder_->orbital_energies();
+  auto C = d_eigen_builder_->C();
 
   std::vector<double> eps_vec(eps.rows());
   std::copy(eps.data(), eps.data() + eps.rows(), eps_vec.begin());
@@ -298,11 +296,6 @@ void RHF<Tile, Policy>::evaluate(CanonicalOrbitalSpace<array_type>* result,
 
 template <typename Tile, typename Policy>
 bool RHF<Tile, Policy>::can_evaluate(PopulatedOrbitalSpace<array_type>*) {
-  return true;
-}
-
-template <typename Tile, typename Policy>
-bool RHF<Tile, Policy>::is_available(PopulatedOrbitalSpace<array_type>*) {
   return density_builder_str_ == "eigen_solve";
 }
 
@@ -310,55 +303,23 @@ template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::evaluate(PopulatedOrbitalSpace<array_type>* result,
                                  double target_energy_precision,
                                  std::size_t target_blocksize) {
+  if (!can_evaluate(result))
+    throw ProgrammingError(
+        "RHF: populatd orbitals requested, but can't compute them", __FILE__,
+        __LINE__);
+
   do_evaluate(target_energy_precision);
 
   if (!C_.is_initialized()) {
-    Eigen::VectorXd eps;
-    array_type C;
-    std::tie(eps, C) = make_canonical_orbitals(target_blocksize);
-    std::vector<double> occupancies(eps.rows(), 0.0);
-    const auto ndocc = nelectrons_ / 2;
-    std::fill(occupancies.begin(), occupancies.begin() + ndocc, 2.0);
-    *result = PopulatedOrbitalSpace<array_type>(OrbitalIndex(L"p"),
-                                                OrbitalIndex(L"κ"), C, occupancies);
+    throw ProgrammingError(
+        "RHF: requested PopulatedOrbitalSpace but not produced by the density "
+        "builder");
   }
-  else {
 
-    // verify the logic of is_available(PopulatedOrbitalSpace)
-    assert(this->is_available(result));
-
-    const auto ndocc = nelectrons_ / 2;
-    std::vector<double> occupancies(ndocc, 2.0);
-    *result = PopulatedOrbitalSpace<array_type>(OrbitalIndex(L"m"),
-                                                OrbitalIndex(L"κ"), C_, occupancies);
-  }
-}
-
-template <typename Tile, typename Policy>
-std::tuple<Eigen::VectorXd, typename RHF<Tile,Policy>::array_type>
-RHF<Tile,Policy>::make_canonical_orbitals(std::size_t target_blocksize) {
-  RowMatrixXd F_eig = array_ops::array_to_eigen(F_);
-  RowMatrixXd S_eig = array_ops::array_to_eigen(S_);
-
-  // solve mo coefficients
-  Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
-  auto evals = es.eigenvalues();
-  auto C = es.eigenvectors();
-
-  auto nobs = S_.elements_range().extent()[0];
-  using TRange1Engine = ::mpqc::utility::TRange1Engine;
-  auto tre = std::make_shared<TRange1Engine>(
-      nelectrons_ / 2, nobs, target_blocksize, target_blocksize, 0);
-
-  // get all the trange1s
-  auto tr_ao = S_.trange().data().back();
-  auto tr_all = tre->get_all_tr1();
-
-  // convert to TA
-  auto C_obs = array_ops::eigen_to_array<Tile, Policy>(
-      this->wfn_world()->world(), C, tr_ao, tr_all);
-
-  return std::make_tuple(evals, C_obs);
+  const auto ndocc = nelectrons_ / 2;
+  std::vector<double> occupancies(ndocc, 2.0);
+  *result = PopulatedOrbitalSpace<array_type>(
+      OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_, occupancies);
 }
 
 /**

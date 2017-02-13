@@ -8,9 +8,10 @@
 #include <memory>
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/expression/operator.h"
 #include "mpqc/chemistry/qc/lcao/expression/orbital_index.h"
 #include "mpqc/math/groups/group.h"
-#include "operator.h"
+#include "mpqc/util/misc/exception.h"
 
 namespace mpqc {
 namespace lcao {
@@ -40,10 +41,7 @@ class OrbitalSpace {
     static constexpr const std::size_t default_lcao_blocksize = 20;
 
     /// @return true if \c OrbitalSpace can be computed.
-    virtual bool can_evaluate(OrbitalSpace* ospace) = 0;
-
-    /// @return true if \c OrbitalSpace is available without additional computation.
-    virtual bool is_available(OrbitalSpace* ospace) = 0;
+    virtual bool can_evaluate(OrbitalSpace* ospace = nullptr) = 0;
 
     /// @brief computes an OrbitalSpace and assigns to \c *ospace
 
@@ -232,10 +230,7 @@ class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
         OrbitalSpace<Array>::Provider::default_lcao_blocksize;
 
     /// @return true if \c DecoratedOrbitalSpace can be computed.
-    virtual bool can_evaluate(DecoratedOrbitalSpace* space) = 0;
-
-    /// @return true if \c DecoratedOrbitalSpace is available without additional computation.
-    virtual bool is_available(DecoratedOrbitalSpace* ospace) = 0;
+    virtual bool can_evaluate(DecoratedOrbitalSpace* space = nullptr) = 0;
 
     /// @brief computes an DecoratedOrbitalSpace and assigns to \c *space
 
@@ -282,7 +277,8 @@ class DecoratedOrbitalSpace : virtual public OrbitalSpace<Array> {
       provider->evaluate(*this);
     } else
       throw ProgrammingError(
-          "DecoratedOrbitalSpace::evaluate: visitor does not provide DecoratedOrbitalSpace "
+          "DecoratedOrbitalSpace::evaluate: visitor does not provide "
+          "DecoratedOrbitalSpace "
           "objects",
           __FILE__, __LINE__);
   }

@@ -13,34 +13,45 @@ gaussian::OrbitalBasisRegistry::OrbitalRegistry(const KeyVal& kv)
     : Registry<OrbitalIndex, std::shared_ptr<gaussian::Basis>>() {
   auto& world = *kv.value<madness::World*>("$:world");
 
+  auto check = [](const std::shared_ptr<gaussian::AtomicBasis>& basis,
+                  const char* basis_keyword) {
+    if (!basis)
+      throw InputError(
+          (std::string("OrbitalBasisRegistry: keyword \"") + basis_keyword + "\" given, but not able to " +
+          "construct AtomicBasis").c_str(),
+          __FILE__, __LINE__, basis_keyword);
+  };
+
   auto basis = kv.class_ptr<gaussian::AtomicBasis>("basis");
-  assert(basis != nullptr);
+  if (!basis)
+    throw InputError("OrbitalBasisRegistry: missing basis", __FILE__, __LINE__,
+                     "basis");
   this->add(OrbitalIndex(L"μ"), basis);
   ::mpqc::detail::parallel_print_range_info(world, basis->create_trange1(),
                                             "OBS Basis");
 
   if (kv.exists("df_basis")) {
     auto df_basis = kv.class_ptr<gaussian::AtomicBasis>("df_basis");
-    assert(df_basis != nullptr);
-    ::mpqc::detail::parallel_print_range_info(
-                         world, df_basis->create_trange1(), "DF Basis");
+    check(df_basis, "df_basis");
+    ::mpqc::detail::parallel_print_range_info(world, df_basis->create_trange1(),
+                                              "DF Basis");
     this->add(OrbitalIndex(L"Κ"), df_basis);
   }
 
   if (kv.exists("aux_basis")) {
     auto aux_basis = kv.class_ptr<gaussian::AtomicBasis>("aux_basis");
-    assert(aux_basis != nullptr);
+    check(aux_basis, "aux_basis");
     this->add(OrbitalIndex(L"α"), aux_basis);
     ::mpqc::detail::parallel_print_range_info(
-                         world, aux_basis->create_trange1(), "AUX Basis");
+        world, aux_basis->create_trange1(), "AUX Basis");
   }
 
   if (kv.exists("vir_basis")) {
     auto vir_basis = kv.class_ptr<gaussian::AtomicBasis>("vir_basis");
-    assert(vir_basis != nullptr);
+    check(vir_basis, "vir_basis");
     this->add(OrbitalIndex(L"Α"), vir_basis);
     ::mpqc::detail::parallel_print_range_info(
-                         world, vir_basis->create_trange1(), "Virtual Basis");
+        world, vir_basis->create_trange1(), "Virtual Basis");
   }
 }
 

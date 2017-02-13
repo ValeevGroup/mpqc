@@ -7,14 +7,13 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/chemistry/qc/cc/diis_ccsd.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
-#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
+#include "mpqc/chemistry/qc/properties/energy.h"
 #include "mpqc/mpqc_config.h"
-
 
 namespace mpqc {
 namespace lcao {
@@ -27,18 +26,18 @@ inline void print_ccsd(int iter, double dE, double error, double E1,
     std::printf("%3s \t %10s \t %10s \t %15s \t %10s \n", "iter", "deltaE",
                 "residual", "energy", "total time/s");
   }
-  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, error, E1,
-              time);
+  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE,
+              error, E1, time);
 }
 
 inline void print_ccsd_direct(int iter, double dE, double error, double E1,
                               double time1, double time2) {
   if (iter == 0) {
     std::printf("%3s \t %10s \t %10s \t %15s \t %10s \t %10s \n", "iter",
-                "deltaE", "residual", "energy", "u time/s" ,"total time/s");
+                "deltaE", "residual", "energy", "u time/s", "total time/s");
   }
-  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter, dE, error, E1,
-              time1, time2);
+  std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \t %10.1f \n", iter,
+              dE, error, E1, time1, time2);
 }
 }
 
@@ -65,7 +64,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
-   * | method | string | standard | method to compute ccsd (standard, direct) |
+   * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
    * | less_memory | bool | false | avoid store another abcd term in standard and df method |
@@ -74,21 +73,24 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   // clang-format on
 
   CCSD(const KeyVal &kv) : LCAOWavefunction<Tile, Policy>(kv), kv_(kv) {
-
     if (kv.exists("ref")) {
       ref_wfn_ = kv.class_ptr<Wavefunction>("ref");
     } else {
-      throw InputError("Default Ref in CCSD is not support! \n", __FILE__, __LINE__, "ref");
+      throw InputError("Default Ref in CCSD is not support! \n", __FILE__,
+                       __LINE__, "ref");
     }
 
     df_ = false;
-    method_ = kv_.value<std::string>("method", "df");
+    auto default_method =
+        this->lcao_factory().ao_factory().basis_registry()->have(L"Κ")
+            ? "df"
+            : "standard";
+    method_ = kv_.value<std::string>("method", default_method);
+    if (method_ != "df" && method_ != "direct" && method_ != "standard") {
+      throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
+    }
     if (method_ == "df" || method_ == "direct") {
       df_ = true;
-    }
-    if(method_ != "df" && method_!="direct" && method_!="standard")
-    {
-      throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
     }
 
     max_iter_ = kv.value<int>("max_iter", 20);
@@ -118,10 +120,11 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   std::shared_ptr<Eigen::VectorXd> orbital_energy_;
 
  protected:
-  std::shared_ptr<const Eigen::VectorXd> orbital_energy() { return orbital_energy_; }
+  std::shared_ptr<const Eigen::VectorXd> orbital_energy() {
+    return orbital_energy_;
+  }
 
  public:
-
   void obsolete() override {
     ccsd_corr_energy_ = 0.0;
     orbital_energy_.reset();
@@ -159,20 +162,22 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     return direct_ao_array_;
   }
 
-protected:
-  bool can_evaluate(Energy* energy) override {
+ protected:
+  bool can_evaluate(Energy *energy) override {
     // can only evaluate the energy
     return energy->order() == 0;
   }
 
-  void evaluate(Energy* energy) override {
+  void evaluate(Energy *energy) override {
     auto target_precision = energy->target_precision(0);
-    // compute only if never computed, or requested with higher precision than before
+    // compute only if never computed, or requested with higher precision than
+    // before
     if (!this->computed() || computed_precision_ > target_precision) {
-
-      // compute reference to higher precision than required of correlation energy
+      // compute reference to higher precision than required of correlation
+      // energy
       auto target_ref_precision = target_precision / 100.;
-      auto ref_energy = std::make_shared<Energy>(ref_wfn_, target_ref_precision);
+      auto ref_energy =
+          std::make_shared<Energy>(ref_wfn_, target_ref_precision);
       ::mpqc::evaluate(*ref_energy, ref_wfn_);
 
       this->init_sdref(ref_wfn_, target_ref_precision);
@@ -203,8 +208,7 @@ protected:
     }
   }
 
-
-private:
+ private:
   // store all the integrals in memory
   // used as reference for development
   double compute_ccsd_conventional(TArray &t1, TArray &t2) {
@@ -238,7 +242,8 @@ private:
     TArray f_ai = this->get_fock_ai();
 
     // store d1 to local
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
+                                          *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
@@ -530,9 +535,10 @@ private:
 
       if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<TArray,TArray> t(t1, t2);
-        cc::T1T2<TArray,TArray> r(r1, r2);
-        error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
+        cc::T1T2<TArray, TArray> t(t1, t2);
+        cc::T1T2<TArray, TArray> r(r1, r2);
+        error = r.norm() /
+                (size(t1) + size(t2));  // error = residual norm per element
         diis.extrapolate(t, r);
 
         // update t1 and t2
@@ -612,7 +618,8 @@ private:
     TArray f_ai = this->get_fock_ai();
 
     // store d1 to local
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
+                                          *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
@@ -904,9 +911,10 @@ private:
 
       if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<TArray,TArray> t(t1, t2);
-        cc::T1T2<TArray,TArray> r(r1, r2);
-        error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
+        cc::T1T2<TArray, TArray> t(t1, t2);
+        cc::T1T2<TArray, TArray> r(r1, r2);
+        error = r.norm() /
+                (size(t1) + size(t2));  // error = residual norm per element
         diis.extrapolate(t, r);
 
         // update t1 and t2
@@ -978,7 +986,8 @@ private:
 
     TArray f_ai = this->get_fock_ai();
 
-    TArray d1 = create_d_ai<Tile,Policy>(f_ai.world(), f_ai.trange(), *orbital_energy(), n_occ, n_frozen);
+    TArray d1 = create_d_ai<Tile, Policy>(f_ai.world(), f_ai.trange(),
+                                          *orbital_energy(), n_occ, n_frozen);
 
     t1("a,i") = f_ai("a,i") * d1("a,i");
     t1.truncate();
@@ -1279,9 +1288,10 @@ private:
 
       if (dE >= target_precision_ || error >= target_precision_) {
         tmp_time0 = mpqc::now(world, accurate_time);
-        cc::T1T2<TArray,TArray> t(t1, t2);
-        cc::T1T2<TArray,TArray> r(r1, r2);
-        error = r.norm() / (size(t1) + size(t2));  // error = residual norm per element
+        cc::T1T2<TArray, TArray> t(t1, t2);
+        cc::T1T2<TArray, TArray> r(r1, r2);
+        error = r.norm() /
+                (size(t1) + size(t2));  // error = residual norm per element
         diis.extrapolate(t, r);
 
         // update t1 and t2
@@ -1304,7 +1314,8 @@ private:
         auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_ccsd_direct(iter, dE, error, E1, duration_u, duration_t);
+          detail::print_ccsd_direct(iter, dE, error, E1, duration_u,
+                                    duration_t);
         }
 
         iter += 1ul;
@@ -1313,7 +1324,8 @@ private:
         auto duration_t = mpqc::duration_in_s(time0, time1);
 
         if (world.rank() == 0) {
-          detail::print_ccsd_direct(iter, dE, error, E1, duration_u, duration_t);
+          detail::print_ccsd_direct(iter, dE, error, E1, duration_u,
+                                    duration_t);
         }
 
         break;
@@ -1330,9 +1342,8 @@ private:
   }
 
  private:
-
-  TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>,TA::DistArray<Tile, Policy>>> get_diis(
-      const madness::World &world) {
+  TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>>
+  get_diis(const madness::World &world) {
     int n_diis, strt, ngr, ngrdiis;
     double dmp, mf;
 
@@ -1351,8 +1362,8 @@ private:
       std::cout << "DIIS dmp:  " << dmp << std::endl;
       std::cout << "DIIS mf:  " << mf << std::endl;
     }
-    TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>,TA::DistArray<Tile, Policy>>> diis(strt, n_diis, 0.0, ngr,
-                                                                                     ngrdiis);
+    TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>>
+        diis(strt, n_diis, 0.0, ngr, ngrdiis);
 
     return diis;
   };
@@ -1472,7 +1483,7 @@ private:
 
   /// <ia|jb>
   const TArray get_iajb() {
-    if (df_){
+    if (df_) {
       return this->lcao_factory().compute(L"<i a|G|j b>[df]");
     } else {
       return this->lcao_factory().compute(L"<i a|G|j b>");

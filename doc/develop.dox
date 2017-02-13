@@ -60,8 +60,11 @@ It is recommended that the MPQC is validated before installation.
 \subsection devsampmp2 MP2 Implementation Example
 
 To illustrate how to use the plug-in approach let's consider
-let's consider a simple example of extending the MPQC executable with
-a new implementation of MP2 energy.
+a simple example in which we extend the MPQC executable with
+a new implementation of MP2 energy. Although MPQC has several
+implementations of MP2 already, they all assume canonical orbitals,
+and whereas our new formulation will not make this assumption
+by solving the MP1 amplitude equations iteratively.
 
 \subsubsection devsampmp2src MP2 Implementation Example: Source
 
@@ -69,21 +72,32 @@ This example code illustrates a complete MP2 energy
 implementation using the MPQC Toolkit. The source file can be found at
 `doc/devsamp/mp2/mp2.cpp` in the MPQC source directory.
 Note that the source file does not contain the `main()` function.
-This is because this file
-is designed to be used to extend the functionality of the MPQC
-executable.  To generate a new MPQC executable with the new class
-available for use, see the \ref devsampmp2mak section.
+Instead the MP2 class defined here will be linked into the MPQC executable
+and will become usable just like any other existing Wavefunction class in MPQC:
+you will be able to use it to compute gradients by finite differences, etc.
+
+To compile the new class and link into the MPQC executable
+see the \ref devsampmp2mak section.
 
 \include mp2/mp2.cpp
 
 \subsubsection devsampmp2mak MP2 Implementation Example: CMakeLists.txt
 
-This example CMakeLists.txt demonstrates how to link in a new class to
-form a new MPQC executable, here named mp2. This file, located at
+Although it is possible to build our example manually, or use Make, it is recommended
+to use CMake. This is because KitWare's CMake tool is used to configure, build, and
+install MPQC itself. Installing MPQC will export key information about the MPQC libraries
+and other prerequisites (e.g., TiledArray and MADWorld runtime)
+that is necessary to compile the code against them
+(e.g., the interlibrary dependencies, the compiler and linker flags, etc.).
+This exported info then makes it incredibly easy to use CMake to build our example
+in a few lines of CMake code. This file, located at
 `doc/devsamp/mp2/CMakeLists.txt` in the MPQC build directory, was generated from the
 `doc/devsamp/mp2/CMakeLists.txt.in` template located in the MPQC source directory.
-The source code is given in
-the \ref devsampmp2src section.
+
+The CMakeLists.txt file how to compile the \c mp2.cpp source and use it to create
+the \c mp2 executable by linking against MPQC libraries. Note that
+the MPQC library names do not appear explicitly: instead we use their CMake target
+names \c MPQCmain and \c libmpqc .
 
 \include mp2/CMakeLists.txt
 
@@ -100,14 +114,24 @@ To use MPQC from a standalone project it is necessary to compile MPQC libraries
 and install them to the location specifies by the \c CMAKE_INSTALL_PREFIX CMake variable.
 It is recommended that the MPQC is validated before installation.
 
-To use the MPQC code your program must:
-  - initialize the MPQC package and the dependent components before using any nontrivial MPQC
-    functionality;
-  - release the resources by finalizing the MPQC package after the MPQC functionality is no longer
-    needed.
+To use the MPQC code your program must do the following before using any nontrivial MPQC functionality:
+  - initialize the MADWorld parallel runtime, by calling \c %madness::initialize() ; this will
+    initialize the MPI runtime by calling MPI_Init_thread ;
+  - initialize the MPQC package and the dependent components (e.g., the Libint2 Gaussian integral library)
+    by calling ::mpqc::initialize();
+
+After the MPQC functionality is no longer needed, you can release resources by calling ::mpqc::finalize() .
+This is not necessary if you are about to exit the program: the MPQC resources are released automatically
+when the program exits. Note that it is possible to call ::mpqc::initialize() again after calling
+::mpqc::finalize().
+
+After the MADWorld runtime is no longer needed, it is recommended to call \c %madness::finalize() .
+You should not call \c %madness::initialize() again after calling \c %madness::finalize()
+because the MPI Standard does not specify whether
+the MPI libraries must support more than one initialize/finalize cycle.
 
 \subsection mpqcinit Initializing MPQC
 
-notes to be added
+notes to be added, for now see src/bin/mpqc/mpqc.cpp
 
 */

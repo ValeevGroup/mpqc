@@ -6,6 +6,7 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_H_
 
 #include "mpqc/chemistry/qc/lcao/expression/permutation.h"
+#include "mpqc/chemistry/qc/lcao/factory/factory.h"
 #include "mpqc/chemistry/qc/lcao/factory/factory_utility.h"
 #include "mpqc/chemistry/qc/lcao/factory/set_oper.h"
 #include "mpqc/chemistry/qc/lcao/integrals/f12_utility.h"

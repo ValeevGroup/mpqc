@@ -2,6 +2,7 @@ set(sources
         ao_factory.h
         factory_utility.h
         factory_utility.cpp
+        factory.h
         factory.cpp
         lcao_factory.h
         periodic_ao_factory.cpp

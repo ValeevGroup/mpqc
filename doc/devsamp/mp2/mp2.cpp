@@ -64,10 +64,11 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
       // this actually computes the energy
       double mp2_corr_energy = compute_mp2_energy(target_precision);
 
-      // commit the result to energy
-      this->set_value(energy, ref_energy->energy() + mp2_corr_energy);
-      computed_precision_ = target_precision;
+      energy_ = ref_energy->energy() + mp2_corr_energy;
     }
+
+    // commit the result to energy
+    this->set_value(energy, energy_);
   }
 
   // This function actually solves the MP1 equations and returns the MP2 energy.
@@ -119,7 +120,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
       return std::sqrt(norm);
     };
 
-    // start iteration
+    // solve the MP1 equations
     auto converged = false;
     auto iter = 0;
     auto energy = +1.0;
@@ -130,7 +131,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
                      Fv("b,c") * T_("i,a,j,c") - Fo("i,k") * T_("k,a,j,b") -
                      Fo("j,k") * T_("i,a,k,b");
 
-      // hylleraas estimate for the energy is quadratic in error in T
+      // estimate the MP2 energy ... the Hylleraas formula is quadratic in error
       double updated_energy =
           (G("i,a,j,b") + R("i,a,j,b")).dot(2 * T_("i,a,j,b") - T_("i,b,j,a"));
       ExEnv::out0() << indent << "Iteration: " << iter
@@ -142,11 +143,12 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
       // update the amplitudes, if needed
       converged = computed_precision_ <= target_precision;
       if (not converged) {
+        // R^{ij}_{ab} -> R^{ij}_{ab} / (F^i_i + F^j_j - F^a_a - F^b_b)
         TA::foreach_inplace(R, jacobi_update);
-        // need a fence here since foreach_inplace mutates the data as a side
-        // effect
-        // most TiledArray ops will not need a fence (except to control the
-        // resource use)
+        // need a fence here since foreach_inplace mutates the contents of R
+        // as a side effect.
+        // N.B. most TiledArray ops will not need a fence (except to control
+        //      the resource use)
         world.gop.fence();
         T_("i,a,j,b") += R("i,a,j,b");
         ++iter;
@@ -163,16 +165,18 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     LCAOWfn::obsolete();
     ref_wfn_->obsolete();
     computed_precision_ = std::numeric_limits<double>::max();
+    energy_ = 0.0;
   }
 
   std::shared_ptr<RHF> ref_wfn_;
   Array T_;
   double computed_precision_ = std::numeric_limits<double>::max();
+  double energy_ = 0.0;
 };
 
 // This macro registers the KeyVal constructor of our MP2 class and associates
 // it with the "MP2" key, so that the KeyVal class knows how to find it when it
-// finds this key as the object type in user input.
+// finds this key as the object type in the user input.
 MPQC_CLASS_EXPORT2("MP2", MP2);
 
 // Creating this variable forces the code for the MP2 class to be linked into

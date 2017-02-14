@@ -158,8 +158,7 @@ int try_main(int argc, char *argv[], madness::World &world) {
                 << UnitFactory::get_default()->system() << std::endl;
 
   // run
-  /// \warning KeyVal write_json won't support &world address, assign world
-  /// after print of keyval input
+  // set the default World to the top-level keyword "world"
   const auto kv_has_top_world = kv->exists("world");
   if (kv_has_top_world) {
     throw InputError("top-level keyword \"world\" is reserved for use by MPQC",

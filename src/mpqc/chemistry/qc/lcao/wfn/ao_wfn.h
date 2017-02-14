@@ -30,6 +30,7 @@ class AOWavefunction : public Wavefunction {
   using DirectArrayType = gaussian::DirectArray<Tile,Policy>;
   using AOFactoryType = lcao::Factory<ArrayType, DirectArrayType>;
 
+  // clang-format off
   /**
    *  \brief The KeyVal constructor
    *
@@ -38,11 +39,9 @@ class AOWavefunction : public Wavefunction {
    * as well as the following keywords:
    * | KeyWord | Type | Default| Description |
    * |---------|------|--------|-------------|
-   * | \c "wfn_world:ao_factory" | integrals::AOFactory | default-constructed
-   * integrals::AOFactory | |
-   * | \c "wfn_world:direct_ao_factory" | integrals::DirectAOFactory |
-   * default-constructed integrals::DirectAOFactory | |
+   * | \c "wfn_world:ao_factory" | integrals::AOFactory | default-constructed integrals::AOFactory | |
    */
+  // clang-format on
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     init_factory(kv);
   }
@@ -64,6 +63,10 @@ class AOWavefunction : public Wavefunction {
 
 private:
 
+  /**
+    *  Default way of initialize factories
+    *  use AOFactory
+    */
   virtual void init_factory(const KeyVal& kv) {
     ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
   }

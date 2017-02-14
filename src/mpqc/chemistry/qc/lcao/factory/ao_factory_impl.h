@@ -13,12 +13,11 @@ template <typename Tile, typename Policy>
 AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
     : Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>(kv),
       gtg_params_() {
+  ExEnv::out0() << "\nConstructing AOFactory: \n";
   std::string prefix = "";
   if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
     prefix = "wfn_world:";
   }
-
-  iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);
 
   detail::set_oper<Tile>(op_);
 
@@ -40,10 +39,10 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
       }
     }
     gtg_params_ = gtg_params.compute();
-    ExEnv::out0() << "F12 Correlation Factor: " << gtg_params.exponent
+    ExEnv::out0() << indent << "F12 Correlation Factor = " << gtg_params.exponent
                   << std::endl;
-    ExEnv::out0() << "NFunction: " << gtg_params.n_fit << std::endl;
-    ExEnv::out0() << "F12 Exponent Coefficient \n";
+    ExEnv::out0() << indent << "NFunction = " << gtg_params.n_fit << std::endl;
+    ExEnv::out0() << indent << "F12 Exponent Coefficient: \n";
     for (auto& pair : gtg_params_) {
       ExEnv::out0() << pair.first << " " << pair.second << std::endl;
     }
@@ -56,11 +55,14 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
   precision_ = kv.value<double>(prefix + "precision", default_precision);
   detail::integral_engine_precision = precision_;
 
-  ExEnv::out0() << "Screen: " << screen_ << "\n";
+  ExEnv::out0() << indent << "Screen = " << (screen_.empty() ? "none" : screen_ )<< "\n";
   if (!screen_.empty()) {
-    ExEnv::out0() << "Threshold: " << screen_threshold_ << "\n";
+    ExEnv::out0() << indent << "Threshold = " << screen_threshold_ << "\n";
   }
-  ExEnv::out0() << "Precision: " << precision_ << "\n\n";
+  ExEnv::out0() << indent << "Precision = " << precision_ << "\n";
+  iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);
+  ExEnv::out0() << indent << "Iterative inverse = "
+                << (iterative_inv_sqrt_ ? "true" : "false") << "\n\n";
 }
 
 template <typename Tile, typename Policy>

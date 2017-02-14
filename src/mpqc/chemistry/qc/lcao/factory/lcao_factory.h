@@ -93,6 +93,13 @@ class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
 
     this->set_orbital_registry(orbital_space_registry);
     ao_factory_.set_orbital_registry(orbital_space_registry);
+    ExEnv::out0() << "\nConstructing LCAOFactory: \n"
+                  << indent
+                  << "Keep partial transform = "
+                  << (keep_partial_transforms_ ? "true" : "false")
+                  << "\nAccurate time = "
+                  << (this->accurate_time_ ? "true" : "false")
+              << "\n\n";
   }
 
   void obsolete() override {
@@ -131,14 +138,14 @@ class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   using Factory<TArray>::compute_direct;
   /// purge formula that contain Operator described by string \c str
   /// from mo_registry and ao_registry
-  void purge_operator(const std::wstring& str) override{
+  void purge_operator(const std::wstring& str) override {
     Factory<TArray>::purge_operator(str);
     ao_factory().purge_operator(str);
   }
 
   /// purge formulae that contain index described by string \c idx_str
   /// from mo_registry and ao_registry
-  void purge_index(const std::wstring& idx_str) override{
+  void purge_index(const std::wstring& idx_str) override {
     Factory<TArray>::purge_index(idx_str);
     ao_factory().purge_index(idx_str);
   }

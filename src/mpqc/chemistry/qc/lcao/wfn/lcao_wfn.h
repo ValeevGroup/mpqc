@@ -28,7 +28,7 @@ class LCAOWavefunction : public Wavefunction {
   using ArrayType = TA::DistArray<Tile, Policy>;
   using DirectArrayType = gaussian::DirectArray<Tile, Policy>;
   using LCAOFactoryType = Factory<ArrayType>;
-  using AOFactoryType = Factory<ArrayType,DirectArrayType>;
+  using AOFactoryType = Factory<ArrayType, DirectArrayType>;
 
   // clang-format off
   /**
@@ -48,7 +48,6 @@ class LCAOWavefunction : public Wavefunction {
    */
   // clang-format on
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-
     init_factory(kv);
     frozen_core_ = kv.value<bool>("frozen_core", true);
 
@@ -69,11 +68,6 @@ class LCAOWavefunction : public Wavefunction {
   }
 
   virtual ~LCAOWavefunction() = default;
-
-  virtual void init_factory(const KeyVal& kv){
-    lcao_factory_ = construct_lcao_factory<Tile, Policy>(kv);
-    ao_factory_ = gaussian::construct_ao_factory<Tile,Policy>(kv);
-  }
 
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
 
@@ -138,7 +132,8 @@ class LCAOWavefunction : public Wavefunction {
                                                     unocc_block_);
 
       make_closed_shell_canonical_sdref_subspaces(
-          lcao_factory_, std::const_pointer_cast<const CanonicalOrbitalSpace<TArray>>(orbs),
+          lcao_factory_,
+          std::const_pointer_cast<const CanonicalOrbitalSpace<TArray>>(orbs),
           ndocc, n_frozen_core, occ_block_, unocc_block_);
     }
     // else ask for populated spaces
@@ -158,6 +153,16 @@ class LCAOWavefunction : public Wavefunction {
   int charge() const { return charge_; }
   size_t occ_block() const { return occ_block_; }
   size_t unocc_block() const { return unocc_block_; }
+
+ private:
+  /**
+    *  Default way of initialize factories
+    *  use LCAOFactory and AOFactory
+    */
+  virtual void init_factory(const KeyVal &kv) {
+    lcao_factory_ = construct_lcao_factory<Tile, Policy>(kv);
+    ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
+  }
 
  private:
   std::shared_ptr<LCAOFactoryType> lcao_factory_;

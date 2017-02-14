@@ -217,9 +217,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     // TiledRange1 for occ, unocc and inner contraction space
     auto n_tr_occ_inner = n_tr_occ;
     auto n_tr_vir_inner = n_tr_vir;
+    std::cout << n_tr_vir_inner << std::endl;
     if (reblock_inner_) {
       n_tr_occ_inner = tr_occ_inner_.tiles_range().second;
       n_tr_vir_inner = tr_vir_inner_.tiles_range().second;
+      std::cout << n_tr_vir_inner << std::endl;
     }
 
     std::size_t vir_block_size = this->trange1_engine_->get_vir_block_size();
@@ -295,6 +297,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         block g_dabi_low{0, a_low, b_low, 0};
         block g_dabi_up{n_tr_vir_inner, a_up, b_up, n_tr_occ};
 
+        std::cout << "a_low = " << a_low << std::endl;
+        std::cout << "g_dabi.trange() = " << g_dabi.trange() << std::endl;
         auto block_g_dabi = g_dabi("d,a,b,i").block(g_dabi_low, g_dabi_up);
 
         // block for t2_cdk
@@ -302,6 +306,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         block t2_dcjk_up{n_tr_vir_inner, c_up, n_tr_occ, n_tr_occ};
 
         auto block_t2_dcjk = t2_left("d,c,j,k").block(t2_dcjk_low, t2_dcjk_up);
+
+        std::cout << "t2_left.trange() = " << t2_left.trange() << std::endl;
 
         // block for g_cjkl
         block g_cjkl_low{c_low, 0, 0, 0};
@@ -326,6 +332,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                (block_t2_abil * block_g_cjkl).set_world(this_world))
                   .set_world(this_world);
         }
+        std::cout << "t3.trange() = " << t3.trange() << std::endl;
       }
     };
 
@@ -1201,6 +1208,27 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double ov4_new = 0;
     double o2v4_2_new = 0;
 
+    // get trange1
+    auto tr_occ = this->trange1_engine_->get_active_occ_tr1();
+    auto tr_vir = this->trange1_engine_->get_vir_tr1();
+    std::cout << "tr_occ = " << tr_occ << std::endl;
+    std::cout << "tr_vir = " << tr_vir << std::endl;
+
+    auto n_tr_occ = this->trange1_engine_->get_active_occ_blocks();
+    auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
+    std::cout << "n_tr_occ = " << n_tr_occ << std::endl;
+    std::cout << "n_tr_vir = " << n_tr_vir << std::endl;
+
+    // TiledRange1 for occ, unocc and inner contraction space
+    auto n_tr_occ_inner = n_tr_occ;
+    auto n_tr_vir_inner = n_tr_vir;
+
+    if (reblock_inner_) {
+      n_tr_occ_inner = tr_occ_inner_.tiles_range().second;
+      n_tr_vir_inner = tr_vir_inner_.tiles_range().second;
+      std::cout << n_tr_vir_inner << std::endl;
+    }
+
     // loop over number of quadrature points
     for (auto m = 0; m < n; m++) {
 
@@ -1226,7 +1254,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       time22 = mpqc::now(world, accurate_time);
       //computation of the OV5 terms
       double E_OV5 = 0;
-      {
+      /*{
         TArray T1;
         TArray T2;
 
@@ -1243,8 +1271,75 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           TArray G;
           G("e,b,a,f") = g_dabi_lt("e,b,c,i")*g_dabi_lt("f,a,c,i");
           E_OV5 += TA::dot(G("e,b,a,f"),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+
+        }
+        std::cout << "E_OV5 = " << E_OV5 << std::endl;
+      }*/
+
+      double E_OV5_block = 0.0;
+      for (auto e = 0; e < n_tr_vir; ++e) {
+        for (auto f = 0; f < n_tr_vir; ++f) {
+
+          std::size_t e_low = e;
+          std::size_t e_up = e + 1;
+          std::size_t f_low = f;
+          std::size_t f_up = f + 1;
+
+          typedef std::vector<std::size_t> block;
+
+          //blocking g_dabi over e
+          block g_dabi_low_e{e_low, 0, 0, 0};
+          block g_dabi_up_e{e_up, n_tr_vir_inner, n_tr_vir_inner, n_tr_occ};
+
+          auto block_g_dabi_lt_e = g_dabi_lt("e,b,c,i").block(g_dabi_low_e, g_dabi_up_e);
+
+          //blocking g_dabi over f
+          block g_dabi_low_f{f_low, 0, 0, 0};
+          block g_dabi_up_f{f_up, n_tr_vir_inner, n_tr_vir_inner, n_tr_occ};
+
+
+          //blocking t2 over e (required for both T1 and T2 intermediates)
+          block t2_oou_lt_low_e{e_low, 0, 0, 0};
+          block t2_oou_lt_up_e{e_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+
+          auto block_t2_oou_lt_e_T12 = t2_oou_lt("e,a,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+
+          //blocking t2 over e (required for T2 intermediate)
+          block t2_oou_lt_low_f{f_low, 0, 0, 0};
+          block t2_oou_lt_up_f{f_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+
+          auto block_t2_oou_lt_f_T2 = t2_oou_lt("f,b,j,i").block(t2_oou_lt_low_f, t2_oou_lt_up_f);
+
+          //blocking t2 over e (required for T1 intermediate)
+          auto block_t2_oou_lt_f_T1 = t2_oou_lt("f,b,i,j").block(t2_oou_lt_low_f, t2_oou_lt_up_f);
+
+          TArray T1;
+          TArray T2;
+
+          T1("e,b,a,f") = block_t2_oou_lt_e_T12*block_t2_oou_lt_f_T1;
+          T2("e,b,a,f") = block_t2_oou_lt_e_T12*block_t2_oou_lt_f_T2;
+
+          {
+            TArray G;
+
+            auto block_g_dabi_lt_f = g_dabi_lt("f,a,c,i").block(g_dabi_low_f, g_dabi_up_f);
+
+            G("e,b,a,f") = block_g_dabi_lt_e*block_g_dabi_lt_f;
+            std::cout << "G.trange() = " << G.trange() << std::endl;
+            E_OV5 += TA::dot((G("e,b,a,f")),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+          }
+          {
+            TArray G;
+
+            auto block_g_dabi_lt_f = g_dabi_lt("f,c,a,i").block(g_dabi_low_f, g_dabi_up_f);
+            auto block_g_dabi_lt_e1 = g_dabi_lt("e,c,b,i").block(g_dabi_low_e, g_dabi_up_e);
+
+            G("e,b,a,f") = block_g_dabi_lt_e1*block_g_dabi_lt_f - block_g_dabi_lt_e*block_g_dabi_lt_f;
+            E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+          }
         }
       }
+
       time23 = mpqc::now(world, accurate_time);
       ovvvv_new += mpqc::duration_in_s(time22, time23);
 

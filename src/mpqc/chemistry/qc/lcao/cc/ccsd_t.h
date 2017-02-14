@@ -1325,7 +1325,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             auto block_g_dabi_lt_f = g_dabi_lt("f,a,c,i").block(g_dabi_low_f, g_dabi_up_f);
 
             G("e,b,a,f") = block_g_dabi_lt_e*block_g_dabi_lt_f;
-            std::cout << "G.trange() = " << G.trange() << std::endl;
             E_OV5 += TA::dot((G("e,b,a,f")),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
           }
           {

@@ -115,22 +115,23 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
       }
     }
 
-    // compute formula
-    if (formula.rank() == 2) {
-      result = compute2(formula);
-      this->registry_.insert(formula, result);
-    } else if (formula.rank() == 3) {
-      result = compute3(formula);
-      this->registry_.insert(formula, result);
-    } else if (formula.rank() == 4) {
-      result = compute4(formula);
-      this->registry_.insert(formula, result);
+    // if formula not find
+    if (!result.is_initialized()) {
+      // compute formula
+      if (formula.rank() == 2) {
+        result = compute2(formula);
+        this->registry_.insert(formula, result);
+      } else if (formula.rank() == 3) {
+        result = compute3(formula);
+        this->registry_.insert(formula, result);
+      } else if (formula.rank() == 4) {
+        result = compute4(formula);
+        this->registry_.insert(formula, result);
+      }
     }
 
     madness::print_meminfo(
         world.rank(), "AOFactory: " + utility::to_string(formula.string()));
-
-    result = this->registry_.retrieve(formula);
   }
   ExEnv::out0() << decindent;
   return result;

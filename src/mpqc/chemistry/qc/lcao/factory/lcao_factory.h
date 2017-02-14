@@ -598,24 +598,25 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
 
         // store current array and delete old one
         this->registry_.insert(formula, result);
-
-        // TODO need to optimize storage and permutation, there is no need to
-        // store multiple copy of permutations
-
         this->registry_.purge_formula(permute);
       }
     }
 
-    if (formula.rank() == 2) {
-      result = compute2(formula);
-      this->registry_.insert(formula, result);
-    } else if (formula.rank() == 3) {
-      result = compute3(formula);
-      this->registry_.insert(formula, result);
-    } else if (formula.rank() == 4) {
-      result = compute4(formula);
-      this->registry_.insert(formula, result);
+    // if not find formula
+
+    if (!result.is_initialized()) {
+      if (formula.rank() == 2) {
+        result = compute2(formula);
+        this->registry_.insert(formula, result);
+      } else if (formula.rank() == 3) {
+        result = compute3(formula);
+        this->registry_.insert(formula, result);
+      } else if (formula.rank() == 4) {
+        result = compute4(formula);
+        this->registry_.insert(formula, result);
+      }
     }
+
     madness::print_meminfo(
         world.rank(), "LCAOFactory: " + utility::to_string(formula.string()));
   }

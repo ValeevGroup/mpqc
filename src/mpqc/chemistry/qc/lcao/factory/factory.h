@@ -132,6 +132,31 @@ class Factory : virtual public DescribedClass {
   //                                  DirectArray>::type
   virtual DirectArray compute_direct(const Formula& formula) = 0;
 
+  /// purge formula that contain Operator described by string \c str
+  /// from registry and direct_registry
+  virtual void purge_operator(const std::wstring& str) {
+    Operator oper(str);
+    Operator::Type oper_type = oper.type();
+
+    registry_.purge_operator(oper_type);
+    direct_registry_.purge_operator(oper_type);
+  }
+
+  /// purge formula that contain index described by string \c idx_str
+  /// from registry and direct_registry
+  virtual void purge_index(const std::wstring& idx_str) {
+    OrbitalIndex index(idx_str);
+    registry_.purge_index(index);
+    direct_registry_.purge_index(index);
+  }
+
+  /// purge formula described by string \c str
+  /// from mo_registry
+  virtual void purge_formula(const std::wstring& str) {
+    registry_.purge_formula(str);
+    direct_registry_.purge_formula(str);
+  }
+
  private:
   std::shared_ptr<WavefunctionWorld> wfn_world_;
 

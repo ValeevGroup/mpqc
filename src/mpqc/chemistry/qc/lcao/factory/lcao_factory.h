@@ -121,26 +121,16 @@ class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   using Factory<TArray>::compute_direct;
   /// purge formula that contain Operator described by string \c str
   /// from mo_registry and ao_registry
-  void purge_operator(const std::wstring& str) {
-    Operator oper(str);
-    Operator::Type oper_type = oper.type();
-
-    this->registry().purge_operator(oper_type);
-    ao_factory().registry().purge_operator(oper_type);
+  void purge_operator(const std::wstring& str) override{
+    Factory<TArray>::purge_operator(str);
+    ao_factory().purge_operator(str);
   }
 
   /// purge formulae that contain index described by string \c idx_str
   /// from mo_registry and ao_registry
-  void purge_index(const std::wstring& idx_str) {
-    OrbitalIndex index(idx_str);
-    this->registry().purge_index(index);
-    ao_factory().registry().purge_index(index);
-  }
-
-  /// purge formula described by string \c str
-  /// from mo_registry
-  void purge_formula(const std::wstring& str) {
-    this->registry().purge_formula(str);
+  void purge_index(const std::wstring& idx_str) override{
+    Factory<TArray>::purge_index(idx_str);
+    ao_factory().purge_index(idx_str);
   }
 
  private:

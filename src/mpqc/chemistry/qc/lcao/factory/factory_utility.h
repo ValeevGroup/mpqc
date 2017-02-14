@@ -123,6 +123,58 @@ OrbitalIndex get_jk_orbital_space(const Operator &operation);
 }  // namespace detail
 
 }  // namespace gaussian
+
+namespace detail {
+/// find the corresponding AO formula, if index is already AO, it will be
+/// ignored
+template <typename Array>
+Formula mo_to_ao(const Formula &formula,
+                 const OrbitalSpaceRegistry<Array> &orbital_registry) {
+  std::vector<OrbitalIndex> ao_left_index, ao_right_index;
+
+  int increment = 0;
+  auto left_index = formula.bra_indices();
+  for (const auto &index : left_index) {
+    // find the correspoding ao index
+    if (index.is_mo()) {
+      auto ao_index = orbital_registry.retrieve(index).ao_index().name();
+      ao_index = ao_index + std::to_wstring(increment);
+      ao_left_index.push_back(ao_index);
+      increment++;
+    }
+    // if already ao, do nothing
+    else {
+      ao_left_index.push_back(index);
+    }
+  }
+
+  auto right_index = formula.ket_indices();
+  for (const auto &index : right_index) {
+    // find the correspoding ao index
+    if (index.is_mo()) {
+      auto ao_index = orbital_registry.retrieve(index).ao_index().name();
+      ao_index = ao_index + std::to_wstring(increment);
+      ao_right_index.push_back(ao_index);
+      increment++;
+    }
+    // if already ao, do nothing
+    else {
+      ao_right_index.push_back(index);
+    }
+  }
+
+  // set formula with ao index
+  auto ao_formula = formula;
+  ao_formula.set_bra_indices(ao_left_index);
+  ao_formula.set_ket_indices(ao_right_index);
+
+  return ao_formula;
+}
+
+/// assert all index in formula are in MO
+void assert_all_mo(const Formula &formula);
+}
+
 }  // namespace lcao
 }  // namespace mpqc
 

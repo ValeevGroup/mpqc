@@ -52,7 +52,7 @@ libint2::Operator to_libint2_operator(Operator::Type mpqc_oper) {
 }
 
 libint2::any to_libint2_operator_params(
-    Operator::Type mpqc_oper, const Molecule& molecule,
+    Operator::Type mpqc_oper, const Molecule &molecule,
     const std::vector<std::pair<double, double>> &gtg_params) {
   TA_USER_ASSERT((Operator::Type::__first_1body_operator <= mpqc_oper &&
                   mpqc_oper <= Operator::Type::__last_1body_operator) ||
@@ -124,8 +124,6 @@ std::shared_ptr<Basis> index_to_basis(
     return iter->second;
   }
 }
-
-
 
 std::array<std::wstring, 3> get_df_formula(const Formula &formula) {
   std::array<std::wstring, 3> result;
@@ -261,7 +259,23 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula) {
 }
 
 }  // namespace detail
-
 }  // namespace gaussian
+
+namespace detail {
+
+void assert_all_mo(const Formula &formula) {
+  auto left = formula.bra_indices();
+  for (auto &index : left) {
+    TA_ASSERT(index.is_mo());
+  }
+
+  auto right = formula.ket_indices();
+  for (auto &index : right) {
+    TA_ASSERT(index.is_mo());
+  }
+}
+
+}  // namespace detail
+
 }  // namespace lcao
 }  // namespace mpqc

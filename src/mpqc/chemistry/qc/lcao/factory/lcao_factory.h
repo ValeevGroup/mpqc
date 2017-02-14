@@ -158,10 +158,6 @@ class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   TArray compute4(const Formula& formula_string);
 
  protected:
-  /// find the corresponding AO formula, if index is already AO, it will be
-  /// ignored
-  Formula mo_to_ao(const Formula& formula);
-
   /// "reduce" by converting to AO at most 1 index in the formula,
   /// the index is chosen to minimize strength reduction (thus recursive
   /// reduction ensures maximum strength reduction)
@@ -169,9 +165,6 @@ class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   ///         are the location and rank of the reduced index
   std::tuple<Formula, std::pair<Formula::Position, size_t>> reduce_formula(
       const Formula& formula);
-
-  /// assert all index in formula are in MO
-  void assert_all_mo(const Formula& formula);
 
  private:
   AOFactoryType& ao_factory_;
@@ -220,7 +213,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   }
 
   // get AO
-  auto ao_formula = mo_to_ao(formula_string);
+  auto ao_formula = detail::mo_to_ao(formula_string, this->orbital_registry());
   auto ao_factory = ao_factory_.compute(ao_formula);
 
   time0 = mpqc::now(world, accurate_time_);
@@ -263,7 +256,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
   TArray result;
   if (not keep_partial_transforms()) {  // compute from AO ints
     // get AO
-    auto ao_formula = mo_to_ao(formula_string);
+    auto ao_formula =
+        detail::mo_to_ao(formula_string, this->orbital_registry());
     auto ao_factory = ao_factory_.compute(ao_formula);
 
     time0 = mpqc::now(world, accurate_time_);
@@ -373,7 +367,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
 
   } else {
     // get AO
-    auto ao_formula = mo_to_ao(formula_string);
+    auto ao_formula =
+        detail::mo_to_ao(formula_string, this->orbital_registry());
     auto ao_factory = ao_factory_.compute(ao_formula);
 
     // convert to MO
@@ -417,51 +412,6 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
                 << " Time: " << time << " s\n";
 
   return result;
-}
-
-template <typename Tile, typename Policy>
-Formula LCAOFactory<Tile, Policy>::mo_to_ao(const Formula& formula) {
-  std::vector<OrbitalIndex> ao_left_index, ao_right_index;
-
-  int increment = 0;
-  auto left_index = formula.bra_indices();
-  for (const auto& index : left_index) {
-    // find the correspoding ao index
-    if (index.is_mo()) {
-      auto ao_index =
-          this->orbital_registry().retrieve(index).ao_index().name();
-      ao_index = ao_index + std::to_wstring(increment);
-      ao_left_index.push_back(ao_index);
-      increment++;
-    }
-    // if already ao, do nothing
-    else {
-      ao_left_index.push_back(index);
-    }
-  }
-
-  auto right_index = formula.ket_indices();
-  for (const auto& index : right_index) {
-    // find the correspoding ao index
-    if (index.is_mo()) {
-      auto ao_index =
-          this->orbital_registry().retrieve(index).ao_index().name();
-      ao_index = ao_index + std::to_wstring(increment);
-      ao_right_index.push_back(ao_index);
-      increment++;
-    }
-    // if already ao, do nothing
-    else {
-      ao_right_index.push_back(index);
-    }
-  }
-
-  // set formula with ao index
-  auto ao_formula = formula;
-  ao_formula.set_bra_indices(ao_left_index);
-  ao_formula.set_ket_indices(ao_right_index);
-
-  return ao_formula;
 }
 
 template <typename Tile, typename Policy>
@@ -537,19 +487,6 @@ LCAOFactory<Tile, Policy>::reduce_formula(const Formula& formula) {
   reduced_formula.set_ket_indices(ket_indices);
 
   return std::make_tuple(reduced_formula, std::make_pair(pos, idx));
-}
-
-template <typename Tile, typename Policy>
-void LCAOFactory<Tile, Policy>::assert_all_mo(const Formula& formula) {
-  auto left = formula.bra_indices();
-  for (auto& index : left) {
-    TA_ASSERT(index.is_mo());
-  }
-
-  auto right = formula.ket_indices();
-  for (auto& index : right) {
-    TA_ASSERT(index.is_mo());
-  }
 }
 
 template <typename Tile, typename Policy>

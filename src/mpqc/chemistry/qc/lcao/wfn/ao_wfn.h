@@ -25,8 +25,10 @@ namespace lcao {
 template<typename Tile, typename Policy>
 class AOWavefunction : public Wavefunction {
  public:
-  using AOIntegral = gaussian::AOFactory<Tile, Policy>;
-  using ArrayType = typename AOIntegral::TArray;
+
+  using Array = TA::DistArray<Tile,Policy>;
+  using DirectArray = gaussian::DirectArray<Tile,Policy>;
+  using AOFactoryType = lcao::Factory<Array, DirectArray>;
 
   /**
    *  \brief The KeyVal constructor
@@ -42,7 +44,7 @@ class AOWavefunction : public Wavefunction {
    * default-constructed integrals::DirectAOFactory | |
    */
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-    ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
+    init_factory(kv);
   }
   virtual ~AOWavefunction() = default;
 
@@ -54,14 +56,19 @@ class AOWavefunction : public Wavefunction {
 
   /*! Return a reference to the AOFactory Library
    */
-  AOIntegral &ao_factory() { return *ao_factory_; }
+  AOFactoryType &ao_factory() { return *ao_factory_; }
 
   /*! Return a const reference to the AOFactory Library
    */
-  const AOIntegral &ao_factory() const { return *ao_factory_; }
+  const AOFactoryType &ao_factory() const { return *ao_factory_; }
 
 private:
-  std::shared_ptr<AOIntegral> ao_factory_;
+
+  virtual void init_factory(const KeyVal& kv) {
+    ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
+  }
+
+  std::shared_ptr<AOFactoryType> ao_factory_;
 };
 
 /// PeriodicAOWavefunction is a Wavefunction with a gaussian::PeriodicAOFactory

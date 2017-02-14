@@ -18,10 +18,11 @@ class Factory : virtual public DescribedClass {
   Factory() = default;
 
   Factory(std::shared_ptr<WavefunctionWorld> wfn_world)
-      : wfn_world_(wfn_world),
-        registry_(),
+      : registry_(),
         direct_registry_(),
-        orbital_space_registry_(nullptr) {}
+        orbital_space_registry_(nullptr),
+        accurate_time_(false),
+        wfn_world_(wfn_world) {}
 
   // clang-format off
   /**
@@ -31,11 +32,11 @@ class Factory : virtual public DescribedClass {
    *  |---------|------|--------|-------------|
    *  |wfn_world| WavefunctionWorld | none | WavefunctionWorld object |
    */
-   // clang-format on
+  // clang-format on
 
   Factory(const KeyVal& kv)
       : Factory(kv.class_ptr<WavefunctionWorld>("wfn_world")) {
-    accurate_time_ = kv.value<bool>("accurate_time",false);
+    accurate_time_ = kv.value<bool>("accurate_time", false);
   }
 
   /// @return MADNESS world
@@ -74,7 +75,7 @@ class Factory : virtual public DescribedClass {
   /// return registry
   FormulaRegistry<Array>& registry() { return registry_; }
 
-  /// return const registry
+  /// return const direct registry
   template <typename T = Array, typename U = DirectArray>
   const typename std::enable_if<!std::is_same<T, U>::value,
                                 FormulaRegistry<DirectArray>>::type&
@@ -82,7 +83,7 @@ class Factory : virtual public DescribedClass {
     return direct_registry_;
   }
 
-  /// return registry
+  /// return direct_registry
   template <typename T = Array, typename U = DirectArray>
   const typename std::enable_if<!std::is_same<T, U>::value,
                                 FormulaRegistry<DirectArray>>::type&
@@ -121,7 +122,7 @@ class Factory : virtual public DescribedClass {
     }
   }
 
-  bool accurate_time() const {return accurate_time_;}
+  bool accurate_time() const { return accurate_time_; }
 
   /// abstract functions
   /// compute array
@@ -157,9 +158,6 @@ class Factory : virtual public DescribedClass {
     direct_registry_.purge_formula(str);
   }
 
- private:
-  std::shared_ptr<WavefunctionWorld> wfn_world_;
-
  protected:
   /// registry for Array
   FormulaRegistry<Array> registry_;
@@ -168,7 +166,10 @@ class Factory : virtual public DescribedClass {
   /// registry for Orbital Space
   std::shared_ptr<OrbitalSpaceRegistry<Array>> orbital_space_registry_;
   /// if do fence when time
-  bool accurate_time_ ;
+  bool accurate_time_;
+
+ private:
+  std::shared_ptr<WavefunctionWorld> wfn_world_;
 };
 
 }  // namespace lcao

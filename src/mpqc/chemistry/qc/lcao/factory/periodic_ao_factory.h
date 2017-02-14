@@ -165,7 +165,7 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift_base,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
+class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using Op = std::function<Tile(TA::TensorZ &&)>;
@@ -178,7 +178,8 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
    * \brief KeyVal constructor for PeriodicAOFactory
    * \param kv the KeyVal object
    */
-  PeriodicAOFactory(const KeyVal &kv) : AOFactory<TA::TensorD, Policy>(kv) {
+  PeriodicAOFactory(const KeyVal &kv)
+      : Factory<TArray>(kv.class_ptr<WavefunctionWorld>("wfn_world")) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -199,6 +200,9 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
     R_size_ = 1 + direct_ord_idx(R_max_(0), R_max_(1), R_max_(2), R_max_);
     RJ_size_ = 1 + direct_ord_idx(RJ_max_(0), RJ_max_(1), RJ_max_(2), RJ_max_);
     RD_size_ = 1 + direct_ord_idx(RD_max_(0), RD_max_(1), RD_max_(2), RD_max_);
+
+    screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
+    screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-10);
 
     set_oper(Tile());
 
@@ -226,10 +230,20 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
    * \param formula the desired Formula type
    * \return the TA::DistArray object
    */
-  TArray compute(const Formula &formula);
+  TArray compute(const Formula &formula) override;
+
+  TArray compute_direct(const Formula &formula) override {
+    throw ProgrammingError("Not Implemented!", __FILE__, __LINE__);
+  }
 
   /// @return a shared ptr to the UnitCell object
   std::shared_ptr<UnitCell> unitcell() const { return unitcell_; }
+
+  /// @return screen method
+  const std::string &screen() const { return screen_; }
+
+  /// @return screen threshold
+  double screen_threshold() const { return screen_threshold_; }
 
   /// @return the range of expansion of Bloch Gaussians in AO Gaussians
   Vector3i R_max() { return R_max_; }
@@ -341,7 +355,8 @@ class PeriodicAOFactory : public AOFactory<TA::TensorD, Policy> {
       RD_size_;  ///> cardinal # of lattices included in density representation
 
   bool print_detail_;  ///> if true, print a lot more details
-  FormulaRegistry<TArray> ao_formula_registry_;
+  std::string screen_;
+  double screen_threshold_;
 };
 
 template <typename Tile, typename Policy>
@@ -360,9 +375,9 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
   double size = 0.0;
 
   // retrieve the integral if it is in registry
-  auto iter = ao_formula_registry_.find(formula);
+  auto iter = this->registry_.find(formula);
 
-  if (iter != ao_formula_registry_.end()) {
+  if (iter != this->registry_.end()) {
     result = iter->second;
     utility::print_par(this->world(), "Retrieved Periodic AO Integral: ",
                        utility::to_string(formula.string()));
@@ -403,7 +418,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     utility::print_par(this->world(), " Size: ", size, " GB");
     utility::print_par(this->world(), " Time: ", time, " s\n");
 
-    ao_formula_registry_.insert(formula, result);
+    this->registry_.insert(formula, result);
 
   } else if (formula.rank() == 2) {
     utility::print_par(this->world(),
@@ -437,7 +452,7 @@ PeriodicAOFactory<Tile, Policy>::compute(const Formula &formula) {
     utility::print_par(this->world(), " Size: ", size, " GB");
     utility::print_par(this->world(), " Time: ", time, " s\n");
 
-    ao_formula_registry_.insert(formula, result);
+    this->registry_.insert(formula, result);
 
   } else if (formula.rank() == 4) {
     auto time_4idx = 0.0;
@@ -547,10 +562,10 @@ void PeriodicAOFactory<Tile, Policy>::parse_one_body_periodic(
   TA_ASSERT(bra_index.is_ao());
   TA_ASSERT(ket_index.is_ao());
 
-  auto bra_basis =
-      detail::index_to_basis(this->orbital_basis_registry(), bra_index);
-  auto ket_basis =
-      detail::index_to_basis(this->orbital_basis_registry(), ket_index);
+  const auto &basis_registry = *this->basis_registry();
+
+  auto bra_basis = detail::index_to_basis(basis_registry, bra_index);
+  auto ket_basis = detail::index_to_basis(basis_registry, ket_index);
 
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
@@ -591,14 +606,12 @@ void PeriodicAOFactory<Tile, Policy>::parse_two_body_periodic(
   TA_ASSERT(ket_index0.is_ao());
   TA_ASSERT(ket_index1.is_ao());
 
-  auto bra_basis0 =
-      detail::index_to_basis(this->orbital_basis_registry(), bra_index0);
-  auto bra_basis1 =
-      detail::index_to_basis(this->orbital_basis_registry(), bra_index1);
-  auto ket_basis0 =
-      detail::index_to_basis(this->orbital_basis_registry(), ket_index0);
-  auto ket_basis1 =
-      detail::index_to_basis(this->orbital_basis_registry(), ket_index1);
+  const auto &basis_registry = *this->basis_registry();
+
+  auto bra_basis0 = detail::index_to_basis(basis_registry, bra_index0);
+  auto bra_basis1 = detail::index_to_basis(basis_registry, bra_index1);
+  auto ket_basis0 = detail::index_to_basis(basis_registry, ket_index0);
+  auto ket_basis1 = detail::index_to_basis(basis_registry, ket_index1);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(bra_basis1 != nullptr);

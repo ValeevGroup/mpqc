@@ -82,7 +82,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
     df_ = false;
     auto default_method =
-        this->lcao_factory().ao_factory().orbital_basis_registry().have(L"Κ")
+        this->lcao_factory().ao_factory().basis_registry()->have(L"Κ")
             ? "df"
             : "standard";
     method_ = kv_.value<std::string>("method", default_method);

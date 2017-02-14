@@ -11,12 +11,9 @@ namespace gaussian {
 
 template <typename Tile, typename Policy>
 AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
-    : world_(*kv.value<madness::World*>("$:world")),
-      orbital_basis_registry_(),
-      molecule_(),
-      gtg_params_(),
-      ao_formula_registry_(),
-      orbital_space_registry_() {
+    : Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>(
+          kv.class_ptr<WavefunctionWorld>("wfn_world")),
+      gtg_params_() {
   std::string prefix = "";
   if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
     prefix = "wfn_world:";
@@ -26,11 +23,6 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
   iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);
 
   detail::set_oper<Tile>(op_);
-
-  /// Basis will come from wfn_world
-  //  orbital_basis_registry_ =
-  //  std::make_shared<basis::OrbitalBasisRegistry>(basis::OrbitalBasisRegistry(kv));
-  molecule_ = kv.class_ptr<Molecule>(prefix + "molecule");
 
   // if have auxilary basis
   if (kv.exists(prefix + "aux_basis")) {
@@ -50,16 +42,14 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
       }
     }
     gtg_params_ = gtg_params.compute();
-    if (world_.rank() == 0) {
-      std::cout << "F12 Correlation Factor: " << gtg_params.exponent
-                << std::endl;
-      std::cout << "NFunction: " << gtg_params.n_fit << std::endl;
-      std::cout << "F12 Exponent Coefficient" << std::endl;
-      for (auto& pair : gtg_params_) {
-        std::cout << pair.first << " " << pair.second << std::endl;
-      }
-      std::cout << std::endl;
+    ExEnv::out0() << "F12 Correlation Factor: " << gtg_params.exponent
+                  << std::endl;
+    ExEnv::out0() << "NFunction: " << gtg_params.n_fit << std::endl;
+    ExEnv::out0() << "F12 Exponent Coefficient \n";
+    for (auto& pair : gtg_params_) {
+      ExEnv::out0() << pair.first << " " << pair.second << std::endl;
     }
+    ExEnv::out0() << std::endl;
   }
   // other initialization
   screen_ = kv.value<std::string>(prefix + "screen", "");
@@ -68,19 +58,11 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
   precision_ = kv.value<double>(prefix + "precision", default_precision);
   detail::integral_engine_precision = precision_;
 
-  utility::print_par(world_, "Screen: ", screen_, "\n");
+  ExEnv::out0() << "Screen: " << screen_ << "\n";
   if (!screen_.empty()) {
-    utility::print_par(world_, "Threshold: ", screen_threshold_, "\n");
+    ExEnv::out0() << "Threshold: " << screen_threshold_ << "\n";
   }
-  utility::print_par(world_, "Precision: ", precision_, "\n");
-  utility::print_par(world_, "\n");
-}
-
-template <typename Tile, typename Policy>
-typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
-    const std::wstring& formula_string) {
-  auto formula = Formula(formula_string);
-  return compute(formula);
+  ExEnv::out0() << "Precision: " << precision_ << "\n\n";
 }
 
 template <typename Tile, typename Policy>
@@ -90,10 +72,12 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
 
   TArray result;
 
-  // find if in registry
-  auto iter = ao_formula_registry_.find(formula);
+  auto& world = this->world();
 
-  if (iter != ao_formula_registry_.end()) {
+  // find if in registry
+  auto iter = this->registry_.find(formula);
+
+  if (iter != this->registry_.end()) {
     result = iter->second;
     ExEnv::out0() << indent;
     ExEnv::out0() << "Retrieved AO Integral: "
@@ -107,15 +91,15 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
     typename FormulaRegistry<TArray>::iterator find_permute;
 
     for (auto& permute : permutes) {
-      find_permute = ao_formula_registry_.find(permute);
-      if (find_permute != ao_formula_registry_.end()) {
-        mpqc::time_point time0 = mpqc::now(world_, accurate_time_);
+      find_permute = this->registry_.find(permute);
+      if (find_permute != this->registry_.end()) {
+        mpqc::time_point time0 = mpqc::now(world, accurate_time_);
 
         // permute the array
         result(formula.to_ta_expression()) =
             (find_permute->second)(permute.to_ta_expression());
 
-        mpqc::time_point time1 = mpqc::now(world_, accurate_time_);
+        mpqc::time_point time1 = mpqc::now(world, accurate_time_);
         double time = mpqc::duration_in_s(time0, time1);
 
         ExEnv::out0() << indent;
@@ -127,27 +111,27 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
                       << " Time: " << time << " s\n";
 
         // store current array and delete old one
-        ao_formula_registry_.insert(formula, result);
-        //        ao_formula_registry_.purge_formula(world_,permute);
+        this->registry_.insert(formula, result);
+        this->registry_.purge_formula(permute);
       }
     }
 
     // compute formula
     if (formula.rank() == 2) {
       result = compute2(formula);
-      ao_formula_registry_.insert(formula, result);
+      this->registry_.insert(formula, result);
     } else if (formula.rank() == 3) {
       result = compute3(formula);
-      ao_formula_registry_.insert(formula, result);
+      this->registry_.insert(formula, result);
     } else if (formula.rank() == 4) {
       result = compute4(formula);
-      ao_formula_registry_.insert(formula, result);
+      this->registry_.insert(formula, result);
     }
 
     madness::print_meminfo(
-        world_.rank(), "AOFactory: " + utility::to_string(formula.string()));
+        world.rank(), "AOFactory: " + utility::to_string(formula.string()));
 
-    result = ao_formula_registry_.retrieve(formula);
+    result = this->registry_.retrieve(formula);
   }
   ExEnv::out0() << decindent;
   return result;
@@ -161,6 +145,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   mpqc::time_point time0;
   mpqc::time_point time1;
   TArray result;
+  auto& world = this->world();
 
   // get the inverse square root instead
   if (iterative_inv_sqrt_ &&
@@ -170,7 +155,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
     result = this->compute(inv_sqrt_formula);
 
-    time0 = mpqc::now(world_, accurate_time_);
+    time0 = mpqc::now(world, accurate_time_);
     result("p,q") = result("p,r") * result("r,q");
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -182,7 +167,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
                   << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result);
 
-    time1 = mpqc::now(world_, accurate_time_);
+    time1 = mpqc::now(world, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
     ExEnv::out0() << " Size: " << size << " GB"
                   << " Time: " << time << " s\n";
@@ -202,22 +187,22 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         auto v = this->compute(v_formula);
         auto t = this->compute(t_formula);
 
-        time0 = mpqc::now(world_, accurate_time_);
+        time0 = mpqc::now(world, accurate_time_);
 
         result("i,j") = v("i,j") + t("i,j");
 
-        time1 = mpqc::now(world_, accurate_time_);
+        time1 = mpqc::now(world, accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
       }
       // one body integral S, V, T...
       else {
-        time0 = mpqc::now(world_, accurate_time_);
+        time0 = mpqc::now(world, accurate_time_);
 
         std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
         parse_one_body(formula, engine_pool, bs_array);
-        result = compute_integrals(this->world_, engine_pool, bs_array);
+        result = compute_integrals(world, engine_pool, bs_array);
 
-        time1 = mpqc::now(world_, accurate_time_);
+        time1 = mpqc::now(world, accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
       }
 
@@ -230,14 +215,14 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
     // use two body engine
     else if (formula.oper().is_twobody()) {
-      time0 = mpqc::now(world_, accurate_time_);
+      time0 = mpqc::now(world, accurate_time_);
 
       // compute integral
       std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
       parse_two_body_two_center(formula, engine_pool, bs_array);
-      result = compute_integrals(this->world_, engine_pool, bs_array);
+      result = compute_integrals(world, engine_pool, bs_array);
 
-      time1 = mpqc::now(world_, accurate_time_);
+      time1 = mpqc::now(world, accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
 
       ExEnv::out0() << indent;
@@ -253,7 +238,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
       // find the density
       auto space_index = detail::get_jk_orbital_space(formula.oper());
-      auto& space = orbital_space_registry_->retrieve(space_index);
+      auto& space = this->orbital_registry().retrieve(space_index);
 
       auto obs = space.ao_index().name();
       if (formula.oper().has_option(Operator::Option::DensityFitting)) {
@@ -263,7 +248,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         auto center = compute(three_center_formula[1]);
         auto right = compute(three_center_formula[2]);
 
-        time0 = mpqc::now(world_, accurate_time_);
+        time0 = mpqc::now(world, accurate_time_);
 
         // J case
         if (formula.oper().type() == Operator::Type::J) {
@@ -276,20 +261,20 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
                           (right("Q,j,l") * space("l,a"));
         }
 
-        time1 = mpqc::now(world_, accurate_time_);
+        time1 = mpqc::now(world, accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
       }
       // four center case
       else {
         // find the density
         auto space_index = detail::get_jk_orbital_space(formula.oper());
-        auto& space = orbital_space_registry_->retrieve(space_index);
+        auto& space = this->orbital_registry().retrieve(space_index);
         auto obs = space.ao_index().name();
         // convert to ao formula
         auto four_center_formula = detail::get_jk_formula(formula, obs);
         auto four_center = this->compute(four_center_formula);
 
-        time0 = mpqc::now(world_, accurate_time_);
+        time0 = mpqc::now(world, accurate_time_);
 
         if (formula.notation() == Formula::Notation::Chemical) {
           if (formula.oper().type() == Operator::Type::J) {
@@ -309,7 +294,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
           }
         }
 
-        time1 = mpqc::now(world_, accurate_time_);
+        time1 = mpqc::now(world, accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
       }
 
@@ -331,11 +316,11 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       auto h = this->compute(h_formula);
       auto j = this->compute(j_formula);
 
-      time0 = mpqc::now(world_, accurate_time_);
+      time0 = mpqc::now(world, accurate_time_);
 
       result("i,j") = h("i,j") + 2 * j("i,j");
 
-      time1 = mpqc::now(world_, accurate_time_);
+      time1 = mpqc::now(world, accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
 
       ExEnv::out0() << indent;
@@ -353,7 +338,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       auto j = compute(formulas[1]);
       auto k = compute(formulas[2]);
 
-      time0 = mpqc::now(world_, accurate_time_);
+      time0 = mpqc::now(world, accurate_time_);
       // if closed shell
       if (formula.oper().type() == Operator::Type::Fock) {
         result("rho,sigma") =
@@ -364,7 +349,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         result("rho,sigma") = h("rho,sigma") + j("rho,sigma") - k("rho,sigma");
       }
 
-      time1 = mpqc::now(world_, accurate_time_);
+      time1 = mpqc::now(world, accurate_time_);
 
       time += mpqc::duration_in_s(time0, time1);
 
@@ -382,7 +367,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   // compute inverse square root first in this case
   if (!iterative_inv_sqrt_ &&
       formula.oper().has_option(Operator::Option::Inverse)) {
-    time0 = mpqc::now(world_, accurate_time_);
+    time0 = mpqc::now(world, accurate_time_);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
@@ -401,17 +386,17 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       RowMatrixXd L_inv_eig = L.inverse();
       result_eig = L_inv_eig.transpose() * L_inv_eig;
     } else if (info == Eigen::ComputationInfo::NumericalIssue) {
-      utility::print_par(world_,
+      utility::print_par(world,
                          "!!!\nWarning!! NumericalIssue in Cholesky "
                          "Decomposition\n!!!\n");
     } else if (info == Eigen::ComputationInfo::NoConvergence) {
-      utility::print_par(world_,
+      utility::print_par(world,
                          "!!!\nWarning!! NoConvergence in Cholesky "
                          "Decomposition\n!!!\n");
     }
 
     if (info != Eigen::ComputationInfo::Success) {
-      utility::print_par(world_, "Using Eigen LU Decomposition Inverse!\n");
+      utility::print_par(world, "Using Eigen LU Decomposition Inverse!\n");
 
       Eigen::FullPivLU<RowMatrixXd> lu(result_eig);
 
@@ -428,7 +413,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
       result("i,j") = -result("i,j");
     }
-    time1 = mpqc::now(world_, accurate_time_);
+    time1 = mpqc::now(world, accurate_time_);
     auto inv_time = mpqc::duration_in_s(time0, time1);
     ExEnv::out0() << indent;
     ExEnv::out0() << "Inverse Time: " << inv_time << " s\n";
@@ -436,7 +421,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
   // inverse square root of integral
   if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
-    time0 = mpqc::now(world_, accurate_time_);
+    time0 = mpqc::now(world, accurate_time_);
     if (formula.oper().type() == Operator::Type::cGTG ||
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
       result("i,j") = -result("i,j");
@@ -460,7 +445,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
       result("i,j") = -result("i,j");
     }
-    time1 = mpqc::now(world_, accurate_time_);
+    time1 = mpqc::now(world, accurate_time_);
     auto inv_sqrt_time = mpqc::duration_in_s(time0, time1);
     ExEnv::out0() << indent;
     ExEnv::out0() << "Inverse Square Root Time: " << inv_sqrt_time << " s\n";
@@ -475,7 +460,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
-  time0 = mpqc::now(world_, accurate_time_);
+  auto& world = this->world();
+  time0 = mpqc::now(world, accurate_time_);
   TArray result;
 
   BasisVector bs_array;
@@ -483,9 +469,9 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
   std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
-  result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
+  result = compute_integrals(this->world(), engine_pool, bs_array, p_screener);
 
-  time1 = mpqc::now(world_, accurate_time_);
+  time1 = mpqc::now(world, accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
   ExEnv::out0() << indent;
@@ -504,6 +490,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
+  auto& world = this->world();
   TArray result;
 
   if (formula.oper().has_option(Operator::Option::DensityFitting)) {
@@ -515,7 +502,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
     auto center = compute(formula_strings[1]);
     auto right = compute(formula_strings[2]);
 
-    time0 = mpqc::now(world_, accurate_time_);
+    time0 = mpqc::now(world, accurate_time_);
 
     if (formula.notation() == Formula::Notation::Chemical) {
       result("i,j,k,l") = left("q,i,j") * center("q,p") * right("p,k,l");
@@ -523,7 +510,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
       result("i,j,k,l") = left("q,i,k") * center("q,p") * right("p,j,l");
     }
 
-    time1 = mpqc::now(world_, accurate_time_);
+    time1 = mpqc::now(world, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
     ExEnv::out0() << indent;
@@ -534,7 +521,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
                   << " Time: " << time << " s\n";
 
   } else {
-    time0 = mpqc::now(world_, accurate_time_);
+    time0 = mpqc::now(world, accurate_time_);
 
     BasisVector bs_array;
     std::shared_ptr<Screener> p_screener =
@@ -542,14 +529,14 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
 
     std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
     parse_two_body_four_center(formula, engine_pool, bs_array, p_screener);
-    result = compute_integrals(this->world_, engine_pool, bs_array, p_screener);
+    result = compute_integrals(world, engine_pool, bs_array, p_screener);
 
     // TODO handle permutation better
     if (formula.notation() == Formula::Notation::Physical) {
       result("i,j,k,l") = result("i,k,j,l");
     }
 
-    time1 = mpqc::now(world_, accurate_time_);
+    time1 = mpqc::now(world, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
     ExEnv::out0() << indent;
@@ -571,33 +558,36 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
 template <typename Tile, typename Policy>
 typename AOFactory<Tile, Policy>::DirectTArray
 AOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
+  ExEnv::out0() << incindent;
+
   DirectTArray result;
 
   // find if in registry
-  auto iter = direct_ao_formula_registry_.find(formula);
+  auto iter = this->direct_registry_.find(formula);
 
-  if (iter != direct_ao_formula_registry_.end()) {
+  if (iter != this->direct_registry_.end()) {
     result = iter->second;
-    utility::print_par(world_, "Retrieved Direct AO Integral: ");
-    utility::print_par(world_, utility::to_string(formula.string()));
+    ExEnv::out0() << indent << "Retrieved Direct AO Integral: "
+                  << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result.array());
-    utility::print_par(world_, " Size: ", size, " GB\n");
-    return result;
+    ExEnv::out0() << " Size: " << size << " GB\n";
 
   } else {
     // compute formula
     if (formula.rank() == 2) {
       result = compute_direct2(formula);
-      direct_ao_formula_registry_.insert(formula, result);
+      this->direct_registry_.insert(formula, result);
     } else if (formula.rank() == 3) {
       result = compute_direct3(formula);
-      direct_ao_formula_registry_.insert(formula, result);
+      this->direct_registry_.insert(formula, result);
     } else if (formula.rank() == 4) {
       result = compute_direct4(formula);
-      direct_ao_formula_registry_.insert(formula, result);
+      this->direct_registry_.insert(formula, result);
     }
-    return result;
   }
+
+  ExEnv::out0() << decindent;
+  return result;
 }
 
 template <typename Tile, typename Policy>
@@ -608,44 +598,45 @@ AOFactory<Tile, Policy>::compute_direct2(const Formula& formula) {
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   mpqc::time_point time0;
   mpqc::time_point time1;
+  auto& world = this->world();
 
   DirectTArray result;
 
   if (formula.oper().is_onebody()) {
-    time0 = mpqc::now(world_, accurate_time_);
+    time0 = mpqc::now(world, accurate_time_);
 
     parse_one_body(formula, engine_pool, bs_array);
-    result = compute_direct_integrals(world_, engine_pool, bs_array);
+    result = compute_direct_integrals(world, engine_pool, bs_array);
 
-    time1 = mpqc::now(world_, accurate_time_);
+    time1 = mpqc::now(world, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
-    utility::print_par(world_, "Computed Direct One Body Integral: ");
-    utility::print_par(world_, utility::to_string(formula.string()));
+    ExEnv::out0() << indent << "Computed Direct One Body Integral: "
+                  << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result.array());
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
+    ExEnv::out0() << " Size: " << size << " GB"
+                  << " Time: " << time << " s\n";
 
   } else if (formula.oper().is_twobody()) {
-    time0 = mpqc::now(world_, accurate_time_);
+    time0 = mpqc::now(world, accurate_time_);
 
     parse_two_body_two_center(formula, engine_pool, bs_array);
-    result = compute_direct_integrals(world_, engine_pool, bs_array);
+    result = compute_direct_integrals(world, engine_pool, bs_array);
 
-    time1 = mpqc::now(world_, accurate_time_);
+    time1 = mpqc::now(world, accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
-    utility::print_par(world_, "Computed Direct Twobody Two Center Integral: ");
-    utility::print_par(world_, utility::to_string(formula.string()));
+    ExEnv::out0() << indent << "Computed Direct Twobody Two Center Integral: "
+                  << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result.array());
-    utility::print_par(world_, " Size: ", size, " GB");
-    utility::print_par(world_, " Time: ", time, " s\n");
+    ExEnv::out0() << " Size: " << size << " GB Time: " << time << " s\n";
   } else {
-    throw std::runtime_error("Unsupported Operator in DirectAOFactory!!\n");
+    throw ProgrammingError("Unsupported Operator in DirectAOFactory!!\n",
+                           __FILE__, __LINE__);
   }
 
   madness::print_meminfo(
-      world_.rank(), utility::wconcat("DirectAOFactory:", formula.string()));
+      world.rank(), utility::wconcat("DirectAOFactory:", formula.string()));
   return result;
 }
 
@@ -655,7 +646,8 @@ AOFactory<Tile, Policy>::compute_direct3(const Formula& formula) {
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
-  time0 = mpqc::now(world_, accurate_time_);
+  auto& world = this->world();
+  time0 = mpqc::now(world, accurate_time_);
   DirectTArray result;
 
   BasisVector bs_array;
@@ -664,18 +656,17 @@ AOFactory<Tile, Policy>::compute_direct3(const Formula& formula) {
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result =
-      compute_direct_integrals(this->world_, engine_pool, bs_array, p_screener);
+      compute_direct_integrals(world, engine_pool, bs_array, p_screener);
 
-  time1 = mpqc::now(world_, accurate_time_);
+  time1 = mpqc::now(world, accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
-  utility::print_par(world_, "Computed Direct Twobody Three Center Integral: ");
-  utility::print_par(world_, utility::to_string(formula.string()));
+  ExEnv::out0() << indent << "Computed Direct Twobody Three Center Integral: "
+                << utility::to_string(formula.string());
   double size = mpqc::detail::array_size(result.array());
-  utility::print_par(world_, " Size: ", size, " GB");
-  utility::print_par(world_, " Time: ", time, " s\n");
+  ExEnv::out0() << " Size: " << size << " GB Time: " << time << " s\n";
   madness::print_meminfo(
-      world_.rank(), utility::wconcat("DirectAOFactory:", formula.string()));
+      world.rank(), utility::wconcat("DirectAOFactory:", formula.string()));
 
   return result;
 }
@@ -684,16 +675,18 @@ template <typename Tile, typename Policy>
 typename AOFactory<Tile, Policy>::DirectTArray
 AOFactory<Tile, Policy>::compute_direct4(const Formula& formula) {
   if (formula.notation() != Formula::Notation::Chemical) {
-    throw std::runtime_error(
-        "Direct AO Integral Only Support Chemical Notation! \n");
+    throw ProgrammingError(
+        "Direct AO Integral Only Support Chemical Notation! \n", __FILE__,
+        __LINE__);
   }
 
   double time = 0.0;
   mpqc::time_point time0;
   mpqc::time_point time1;
+  auto& world = this->world();
   DirectTArray result;
 
-  time0 = mpqc::now(world_, accurate_time_);
+  time0 = mpqc::now(world, accurate_time_);
 
   BasisVector bs_array;
   std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
@@ -702,17 +695,16 @@ AOFactory<Tile, Policy>::compute_direct4(const Formula& formula) {
   parse_two_body_four_center(formula, engine_pool, bs_array, p_screener);
 
   result =
-      compute_direct_integrals(this->world_, engine_pool, bs_array, p_screener);
+      compute_direct_integrals(world, engine_pool, bs_array, p_screener);
 
-  time1 = mpqc::now(world_, accurate_time_);
+  time1 = mpqc::now(world, accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
-  utility::print_par(world_, "Computed Direct Twobody Four Center Integral: ");
-  utility::print_par(world_, utility::to_string(formula.string()));
+  ExEnv::out0() << indent << "Computed Direct Twobody Four Center Integral: "
+                << utility::to_string(formula.string());
   double size = mpqc::detail::array_size(result.array());
-  utility::print_par(world_, " Size: ", size, " GB");
-  utility::print_par(world_, " Time: ", time, " s\n");
-  madness::print_meminfo(world_.rank(),
+  ExEnv::out0() << " Size: " << size << " GB Time: " << time << " s\n";
+  madness::print_meminfo(world.rank(),
                          utility::wconcat("AOFactory:", formula.string()));
   return result;
 }
@@ -734,10 +726,12 @@ void AOFactory<Tile, Policy>::parse_one_body(
   TA_ASSERT(bra_index.is_ao());
   TA_ASSERT(ket_index.is_ao());
 
+  const auto& basis_registry = *this->basis_registry();
+
   auto bra_basis =
-      detail::index_to_basis(*this->orbital_basis_registry_, bra_index);
+      detail::index_to_basis(basis_registry, bra_index);
   auto ket_basis =
-      detail::index_to_basis(*this->orbital_basis_registry_, ket_index);
+      detail::index_to_basis(basis_registry, ket_index);
 
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
@@ -748,7 +742,7 @@ void AOFactory<Tile, Policy>::parse_one_body(
   engine_pool = make_engine_pool(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis, *ket_basis), libint2::BraKet::x_x,
-      detail::to_libint2_operator_params(oper_type, *this->molecule_,
+      detail::to_libint2_operator_params(oper_type, *this->atoms(),
                                          this->gtg_params_));
 }
 
@@ -772,10 +766,12 @@ void AOFactory<Tile, Policy>::parse_two_body_two_center(
   TA_ASSERT(ket_index0.is_ao());
   TA_ASSERT(bra_index0.is_ao());
 
+  const auto& basis_registry = *this->basis_registry();
+
   auto bra_basis0 =
-      detail::index_to_basis(*this->orbital_basis_registry_, bra_index0);
+      detail::index_to_basis(basis_registry, bra_index0);
   auto ket_basis0 =
-      detail::index_to_basis(*this->orbital_basis_registry_, ket_index0);
+      detail::index_to_basis(basis_registry, ket_index0);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
@@ -788,7 +784,7 @@ void AOFactory<Tile, Policy>::parse_two_body_two_center(
                        utility::make_array_of_refs(*bra_basis0, *ket_basis0),
                        libint2::BraKet::xs_xs,
                        detail::to_libint2_operator_params(
-                           oper_type, *this->molecule_, this->gtg_params_));
+                           oper_type, *this->atoms(), this->gtg_params_));
 }
 
 template <typename Tile, typename Policy>
@@ -809,12 +805,14 @@ void AOFactory<Tile, Policy>::parse_two_body_three_center(
   TA_ASSERT(ket_indexs[0].is_ao());
   TA_ASSERT(ket_indexs[1].is_ao());
 
+  const auto& basis_registry = *this->basis_registry();
+
   auto bra_basis0 =
-      detail::index_to_basis(*this->orbital_basis_registry_, bra_indexs[0]);
+      detail::index_to_basis(basis_registry, bra_indexs[0]);
   auto ket_basis0 =
-      detail::index_to_basis(*this->orbital_basis_registry_, ket_indexs[0]);
+      detail::index_to_basis(basis_registry, ket_indexs[0]);
   auto ket_basis1 =
-      detail::index_to_basis(*this->orbital_basis_registry_, ket_indexs[1]);
+      detail::index_to_basis(basis_registry, ket_indexs[1]);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
@@ -827,7 +825,7 @@ void AOFactory<Tile, Policy>::parse_two_body_three_center(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
       libint2::BraKet::xs_xx,
-      detail::to_libint2_operator_params(oper_type, *this->molecule_,
+      detail::to_libint2_operator_params(oper_type, *this->atoms(),
                                          this->gtg_params_));
 
   if (!screen_.empty()) {
@@ -837,10 +835,10 @@ void AOFactory<Tile, Policy>::parse_two_body_three_center(
         detail::to_libint2_operator(oper_type),
         utility::make_array_of_refs(*bra_basis0, *ket_basis0, *ket_basis1),
         libint2::BraKet::xx_xx,
-        detail::to_libint2_operator_params(oper_type, *this->molecule_,
+        detail::to_libint2_operator_params(oper_type, *this->atoms(),
                                            this->gtg_params_));
 
-    p_screener = detail::make_screener(this->world_, screen_engine_pool, bases,
+    p_screener = detail::make_screener(this->world(), screen_engine_pool, bases,
                                        this->screen_, this->screen_threshold_);
   }
 }
@@ -861,14 +859,15 @@ void AOFactory<Tile, Policy>::parse_two_body_four_center(
   TA_ASSERT(bra_indexs[1].is_ao());
   TA_ASSERT(ket_indexs[1].is_ao());
 
+  const auto& basis_registry = *this->basis_registry();
   auto bra_basis0 =
-      detail::index_to_basis(*this->orbital_basis_registry_, bra_indexs[0]);
+      detail::index_to_basis(basis_registry, bra_indexs[0]);
   auto ket_basis0 =
-      detail::index_to_basis(*this->orbital_basis_registry_, ket_indexs[0]);
+      detail::index_to_basis(basis_registry, ket_indexs[0]);
   auto bra_basis1 =
-      detail::index_to_basis(*this->orbital_basis_registry_, bra_indexs[1]);
+      detail::index_to_basis(basis_registry, bra_indexs[1]);
   auto ket_basis1 =
-      detail::index_to_basis(*this->orbital_basis_registry_, ket_indexs[1]);
+      detail::index_to_basis(basis_registry, ket_indexs[1]);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
@@ -886,11 +885,11 @@ void AOFactory<Tile, Policy>::parse_two_body_four_center(
       detail::to_libint2_operator(oper_type),
       utility::make_array_of_refs(bases[0], bases[1], bases[2], bases[3]),
       libint2::BraKet::xx_xx,
-      detail::to_libint2_operator_params(oper_type, *this->molecule_,
+      detail::to_libint2_operator_params(oper_type, *this->atoms(),
                                          this->gtg_params_));
 
-  p_screener = detail::make_screener(this->world_, engine_pool, bases,
-                                     this->screen_, this->screen_threshold_);
+  p_screener = detail::make_screener(this->world(), engine_pool, bases, this->screen_,
+                                     this->screen_threshold_);
 }
 
 }  // namespace gaussian

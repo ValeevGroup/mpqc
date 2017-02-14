@@ -43,9 +43,6 @@ class AOWavefunction : public Wavefunction {
    */
   AOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
-    ao_factory_->set_orbital_basis_registry(
-        this->wfn_world()->basis_registry());
-
   }
   virtual ~AOWavefunction() = default;
 
@@ -93,8 +90,6 @@ class PeriodicAOWavefunction : public Wavefunction {
    */
   PeriodicAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
     ao_factory_ = gaussian::construct_periodic_ao_factory<Tile, Policy>(kv);
-    ao_factory_->set_orbital_basis_registry(
-        this->wfn_world()->basis_registry());
   }
   virtual ~PeriodicAOWavefunction() = default;
 

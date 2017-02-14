@@ -81,7 +81,7 @@ class LCAOFactory : virtual public DescribedClass {
     accurate_time_ = kv.value<bool>(prefix + "accurate_time", false);
     keep_partial_transforms_ =
         kv.value<bool>(prefix + "keep_partial_transform", false);
-    ao_factory_.set_orbital_space_registry(orbital_space_registry_);
+    ao_factory_.set_orbital_registry(orbital_space_registry_);
   }
 
   void obsolete() {

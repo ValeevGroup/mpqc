@@ -55,7 +55,8 @@ std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
  */
 
 template <typename Tile, typename Policy>
-class AOFactory : virtual public DescribedClass {
+class AOFactory
+    : public Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray = DirectArray<Tile, Policy>;
@@ -93,17 +94,6 @@ class AOFactory : virtual public DescribedClass {
   AOFactory& operator=(AOFactory&&) = default;
   virtual ~AOFactory() noexcept = default;
 
-  void obsolete() {
-    ao_formula_registry_.purge();
-    direct_ao_formula_registry_.purge();
-    if (orbital_basis_registry_ != nullptr) {
-      orbital_basis_registry_->clear();
-    }
-  }
-
-  /// @return MADNESS world
-  madness::World& world() { return world_; }
-
   /// @brief Molecule accessor
   /// @return molecule object
   //  const Molecule& molecule() const { return *molecule_; }
@@ -116,65 +106,12 @@ class AOFactory : virtual public DescribedClass {
     return gtg_params_;
   }
 
-  /// set OrbitalBasisRegistry
-  void set_orbital_basis_registry(
-      const std::shared_ptr<gaussian::OrbitalBasisRegistry>& obs) {
-    orbital_basis_registry_ = obs;
-  }
+  using Factory<TArray,DirectTArray>::compute;
+  using Factory<TArray,DirectTArray>::compute_direct;
 
-  /// @return the OrbitalBasisRegistry object
-  OrbitalBasisRegistry& orbital_basis_registry() {
-    return *orbital_basis_registry_;
-  }
+  TArray compute(const Formula& formula) override;
 
-  /// @return the OrbitalBasisRegistry pointer
-  std::shared_ptr<const OrbitalBasisRegistry> orbital_basis_registry_ptr()
-      const {
-    return orbital_basis_registry_;
-  }
-  /// wrapper to compute function
-  TArray compute(const std::wstring&);
-
-  /**
-   *  compute integral by Formula
-   *  this function will look into registry first
-   *  if Formula computed, it will return it from registry
-   *  if not, it will compute it
-   */
-  TArray compute(const Formula&);
-
-  /// wrapper to compute function
-  DirectTArray compute_direct(const std::wstring& str) {
-    auto formula = Formula(str);
-    return compute_direct(formula);
-  }
-
-  /**
-   * compute direct integral by Formula
-   */
-  DirectTArray compute_direct(const Formula&);
-
-  /// compute with str and return expression
-  TA::expressions::TsrExpr<TArray, true> operator()(const std::wstring& str) {
-    auto formula = Formula(str);
-    auto array = compute(formula);
-    auto& result = ao_formula_registry_.retrieve(formula);
-    return result(formula.to_ta_expression());
-  };
-
-  /// return ao formula registry
-  const FormulaRegistry<TArray>& registry() const {
-    return ao_formula_registry_;
-  }
-
-  /// return ao formula registry
-  FormulaRegistry<TArray>& registry() { return ao_formula_registry_; }
-
-  /// set orbital space registry
-  void set_orbital_space_registry(
-      const std::shared_ptr<OrbitalSpaceRegistry<TArray>> regitsry) {
-    orbital_space_registry_ = regitsry;
-  }
+  DirectTArray compute_direct(const Formula& formula) override;
 
   const std::string& screen() const { return screen_; }
 
@@ -286,26 +223,8 @@ class AOFactory : virtual public DescribedClass {
   }
 
  private:
-  /// madness::World object
-  madness::World& world_;
-
   /// function to convert TA::TensorD to Tile
   Op op_;
-
-  /// registry for AO integral
-  FormulaRegistry<TArray> ao_formula_registry_;
-
-  /// registry for direct AO integral
-  FormulaRegistry<DirectTArray> direct_ao_formula_registry_;
-
-  /// registry for basis
-  std::shared_ptr<OrbitalBasisRegistry> orbital_basis_registry_;
-
-  /// registry for orbitals, need to do fock build
-  std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
-
-  /// pointer to molecule
-  std::shared_ptr<Molecule> molecule_;
 
   // TODO these specify operator params, need to abstract out better
   gtg_params_t gtg_params_;

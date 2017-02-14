@@ -49,7 +49,7 @@ void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
   ExEnv::out0() << "VirBlockSize: " << vir_block << std::endl;
 
   auto obs_basis =
-      plcao_factory.pao_factory().orbital_basis_registry().retrieve(
+      plcao_factory.pao_factory().basis_registry()->retrieve(
           OrbitalIndex(L"κ"));
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
   auto tre = std::make_shared<TRange1Engine>(occ, all, occ_block, vir_block, 0);

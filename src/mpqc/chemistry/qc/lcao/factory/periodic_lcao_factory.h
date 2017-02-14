@@ -181,10 +181,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   auto bra_index = ao_formula.bra_indices()[0];
   auto ket_index = ao_formula.ket_indices()[0];
 
-  auto bra_basis = gaussian::detail::index_to_basis(
-      pao_factory_.orbital_basis_registry(), bra_index);
-  auto ket_basis = gaussian::detail::index_to_basis(
-      pao_factory_.orbital_basis_registry(), ket_index);
+  const auto &basis_registry = *pao_factory_.basis_registry();
+
+  auto bra_basis = gaussian::detail::index_to_basis(basis_registry, bra_index);
+  auto ket_basis = gaussian::detail::index_to_basis(basis_registry, ket_index);
 
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
@@ -432,14 +432,16 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   auto ket_index0 = ao_formula.ket_indices()[0];
   auto ket_index1 = ao_formula.ket_indices()[1];
 
-  auto bra_basis0 = gaussian::detail::index_to_basis(
-      pao_factory_.orbital_basis_registry(), bra_index0);
-  auto bra_basis1 = gaussian::detail::index_to_basis(
-      pao_factory_.orbital_basis_registry(), bra_index1);
-  auto ket_basis0 = gaussian::detail::index_to_basis(
-      pao_factory_.orbital_basis_registry(), ket_index0);
-  auto ket_basis1 = gaussian::detail::index_to_basis(
-      pao_factory_.orbital_basis_registry(), ket_index1);
+  const auto &basis_registry = *pao_factory_.basis_registry();
+
+  auto bra_basis0 =
+      gaussian::detail::index_to_basis(basis_registry, bra_index0);
+  auto bra_basis1 =
+      gaussian::detail::index_to_basis(basis_registry, bra_index1);
+  auto ket_basis0 =
+      gaussian::detail::index_to_basis(basis_registry, ket_index0);
+  auto ket_basis1 =
+      gaussian::detail::index_to_basis(basis_registry, ket_index1);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(bra_basis1 != nullptr);

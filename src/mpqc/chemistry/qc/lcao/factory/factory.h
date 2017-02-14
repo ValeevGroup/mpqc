@@ -35,7 +35,7 @@ class Factory : virtual public DescribedClass {
   }
 
   /// return const orbital registry
-  const OrbitalSpaceRegistry<Array>& orbital_registry() const{
+  const OrbitalSpaceRegistry<Array>& orbital_registry() const {
     TA_USER_ASSERT(orbital_space_registry_ != nullptr,
                    "OrbitalSpaceRegistry not initialized! \n");
     return *orbital_space_registry_;
@@ -60,15 +60,17 @@ class Factory : virtual public DescribedClass {
   FormulaRegistry<Array>& registry() { return registry_; }
 
   /// return const registry
-  const std::enable_if_t<!std::is_same<Array, DirectArray>::value,
-                         FormulaRegistry<DirectArray>>&
+  template <typename T = Array, typename U = DirectArray>
+  const typename std::enable_if<!std::is_same<T, U>::value,
+                                FormulaRegistry<DirectArray>>::type&
   direct_registry() const {
     return direct_registry_;
   }
 
   /// return registry
-  const std::enable_if_t<!std::is_same<Array, DirectArray>::value,
-                         FormulaRegistry<DirectArray>>&
+  template <typename T = Array, typename U = DirectArray>
+  const typename std::enable_if<!std::is_same<T, U>::value,
+                                FormulaRegistry<DirectArray>>::type&
   direct_registry() {
     return direct_registry_;
   }
@@ -80,7 +82,8 @@ class Factory : virtual public DescribedClass {
   }
 
   /// wrapper to compute direct function
-  std::enable_if_t<!std::is_same<Array, DirectArray>::value, DirectArray>
+  template <typename T = Array, typename U = DirectArray>
+  typename std::enable_if<!std::is_same<T, U>::value, DirectArray>::type
   compute_direct(const std::wstring& str) {
     auto formula = Formula(str);
     return compute_direct(formula);
@@ -94,14 +97,26 @@ class Factory : virtual public DescribedClass {
     return result(formula.to_ta_expression());
   };
 
+  /// obsolete Factory
+  virtual void obsolete() {
+    registry_.purge();
+    direct_registry_.purge();
+    if (orbital_space_registry_ != nullptr) {
+      orbital_space_registry_->clear();
+    }
+  }
+
   /// abstract functions
   /// compute array
   virtual Array compute(const Formula& formula) = 0;
 
   /// compute direct array
-  virtual std::enable_if_t<!std::is_same<Array, DirectArray>::value,
-                           DirectArray>
-  compute_direct(const Formula& formula) = 0;
+  //  virtual typename std::enable_if<!std::is_same<Array, DirectArray>::value,
+  //                                  DirectArray>::type
+  virtual DirectArray compute_direct(const Formula& formula) = 0;
+
+ private:
+  std::shared_ptr<WavefunctionWorld> wfn_world_;
 
  protected:
   /// registry for Array
@@ -110,9 +125,6 @@ class Factory : virtual public DescribedClass {
   FormulaRegistry<DirectArray> direct_registry_;
   /// registry for Orbital Space
   std::shared_ptr<OrbitalSpaceRegistry<Array>> orbital_space_registry_;
-
- private:
-  std::shared_ptr<WavefunctionWorld> wfn_world_;
 };
 
 }  // namespace lcao

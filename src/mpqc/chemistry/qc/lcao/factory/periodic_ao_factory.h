@@ -179,7 +179,7 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
    * \param kv the KeyVal object
    */
   PeriodicAOFactory(const KeyVal &kv)
-      : Factory<TArray>(kv.class_ptr<WavefunctionWorld>("wfn_world")) {
+      : Factory<TArray>(kv) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";

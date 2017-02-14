@@ -63,7 +63,7 @@ class AOFactory
   using gtg_params_t = std::vector<std::pair<double, double>>;
 
   /// Op is a function pointer that convert TA::Tensor to Tile
-  //  using Op = Tile (*) (TA::TensorD&&);
+  ///  using Op = Tile (*) (TA::TensorD&&);
   using Op = std::function<Tile(TA::TensorD&&)>;
 
  public:
@@ -94,10 +94,6 @@ class AOFactory
   AOFactory& operator=(AOFactory&&) = default;
   virtual ~AOFactory() noexcept = default;
 
-  /// @brief Molecule accessor
-  /// @return molecule object
-  //  const Molecule& molecule() const { return *molecule_; }
-
   /// @brief (contracted) Gaussian-types geminal parameters accessor
   /// @return Gaussian-type geminal parameters
   const gtg_params_t& gtg_params() const {
@@ -106,8 +102,8 @@ class AOFactory
     return gtg_params_;
   }
 
-  using Factory<TArray,DirectTArray>::compute;
-  using Factory<TArray,DirectTArray>::compute_direct;
+  using Factory<TArray, DirectTArray>::compute;
+  using Factory<TArray, DirectTArray>::compute_direct;
 
   TArray compute(const Formula& formula) override;
 
@@ -117,7 +113,7 @@ class AOFactory
 
   double screen_threshold() const { return screen_threshold_; }
 
- protected:
+ private:
   /// compute integrals that has two dimension
   TArray compute2(const Formula& formula_string);
 
@@ -136,7 +132,6 @@ class AOFactory
   /// compute integrals that has two dimension
   DirectTArray compute_direct4(const Formula& formula_string);
 
- private:
   ///
   /// Functions to parse Formula
   ///

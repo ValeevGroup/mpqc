@@ -11,8 +11,7 @@ namespace gaussian {
 
 template <typename Tile, typename Policy>
 AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
-    : Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>(
-          kv.class_ptr<WavefunctionWorld>("wfn_world")),
+    : Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>(kv),
       gtg_params_() {
   std::string prefix = "";
   if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
@@ -655,8 +654,7 @@ AOFactory<Tile, Policy>::compute_direct3(const Formula& formula) {
   std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
-  result =
-      compute_direct_integrals(world, engine_pool, bs_array, p_screener);
+  result = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
 
   time1 = mpqc::now(world, accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
@@ -694,8 +692,7 @@ AOFactory<Tile, Policy>::compute_direct4(const Formula& formula) {
 
   parse_two_body_four_center(formula, engine_pool, bs_array, p_screener);
 
-  result =
-      compute_direct_integrals(world, engine_pool, bs_array, p_screener);
+  result = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
 
   time1 = mpqc::now(world, accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
@@ -728,10 +725,8 @@ void AOFactory<Tile, Policy>::parse_one_body(
 
   const auto& basis_registry = *this->basis_registry();
 
-  auto bra_basis =
-      detail::index_to_basis(basis_registry, bra_index);
-  auto ket_basis =
-      detail::index_to_basis(basis_registry, ket_index);
+  auto bra_basis = detail::index_to_basis(basis_registry, bra_index);
+  auto ket_basis = detail::index_to_basis(basis_registry, ket_index);
 
   TA_ASSERT(bra_basis != nullptr);
   TA_ASSERT(ket_basis != nullptr);
@@ -768,10 +763,8 @@ void AOFactory<Tile, Policy>::parse_two_body_two_center(
 
   const auto& basis_registry = *this->basis_registry();
 
-  auto bra_basis0 =
-      detail::index_to_basis(basis_registry, bra_index0);
-  auto ket_basis0 =
-      detail::index_to_basis(basis_registry, ket_index0);
+  auto bra_basis0 = detail::index_to_basis(basis_registry, bra_index0);
+  auto ket_basis0 = detail::index_to_basis(basis_registry, ket_index0);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
@@ -807,12 +800,9 @@ void AOFactory<Tile, Policy>::parse_two_body_three_center(
 
   const auto& basis_registry = *this->basis_registry();
 
-  auto bra_basis0 =
-      detail::index_to_basis(basis_registry, bra_indexs[0]);
-  auto ket_basis0 =
-      detail::index_to_basis(basis_registry, ket_indexs[0]);
-  auto ket_basis1 =
-      detail::index_to_basis(basis_registry, ket_indexs[1]);
+  auto bra_basis0 = detail::index_to_basis(basis_registry, bra_indexs[0]);
+  auto ket_basis0 = detail::index_to_basis(basis_registry, ket_indexs[0]);
+  auto ket_basis1 = detail::index_to_basis(basis_registry, ket_indexs[1]);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
@@ -860,14 +850,10 @@ void AOFactory<Tile, Policy>::parse_two_body_four_center(
   TA_ASSERT(ket_indexs[1].is_ao());
 
   const auto& basis_registry = *this->basis_registry();
-  auto bra_basis0 =
-      detail::index_to_basis(basis_registry, bra_indexs[0]);
-  auto ket_basis0 =
-      detail::index_to_basis(basis_registry, ket_indexs[0]);
-  auto bra_basis1 =
-      detail::index_to_basis(basis_registry, bra_indexs[1]);
-  auto ket_basis1 =
-      detail::index_to_basis(basis_registry, ket_indexs[1]);
+  auto bra_basis0 = detail::index_to_basis(basis_registry, bra_indexs[0]);
+  auto ket_basis0 = detail::index_to_basis(basis_registry, ket_indexs[0]);
+  auto bra_basis1 = detail::index_to_basis(basis_registry, bra_indexs[1]);
+  auto ket_basis1 = detail::index_to_basis(basis_registry, ket_indexs[1]);
 
   TA_ASSERT(bra_basis0 != nullptr);
   TA_ASSERT(ket_basis0 != nullptr);
@@ -888,8 +874,8 @@ void AOFactory<Tile, Policy>::parse_two_body_four_center(
       detail::to_libint2_operator_params(oper_type, *this->atoms(),
                                          this->gtg_params_));
 
-  p_screener = detail::make_screener(this->world(), engine_pool, bases, this->screen_,
-                                     this->screen_threshold_);
+  p_screener = detail::make_screener(this->world(), engine_pool, bases,
+                                     this->screen_, this->screen_threshold_);
 }
 
 }  // namespace gaussian

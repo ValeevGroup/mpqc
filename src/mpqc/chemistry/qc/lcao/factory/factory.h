@@ -23,6 +23,19 @@ class Factory : virtual public DescribedClass {
         direct_registry_(),
         orbital_space_registry_(nullptr) {}
 
+  // clang-format off
+  /**
+   * KeyVal Constructor
+   *
+   *  | KeyWord | Type | Default| Description |
+   *  |---------|------|--------|-------------|
+   *  |wfn_world| WavefunctionWorld | none | WavefunctionWorld object |
+   */
+   // clang-format on
+
+  Factory(const KeyVal& kv)
+      : Factory(kv.class_ptr<WavefunctionWorld>("wfn_world")) {}
+
   /// @return MADNESS world
   madness::World& world() { return wfn_world_->world(); }
 

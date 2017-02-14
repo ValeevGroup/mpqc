@@ -75,7 +75,6 @@ class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world")) {
       prefix = "wfn_world:";
     }
-    accurate_time_ = kv.value<bool>(prefix + "accurate_time", false);
     keep_partial_transforms_ =
         kv.value<bool>(prefix + "keep_partial_transform", false);
 
@@ -95,9 +94,6 @@ class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
 
   /// return reference to AOFactory object
   AOFactoryType& ao_factory() const { return ao_factory_; }
-
-  /// return accurate time
-  bool accurate_time() const { return accurate_time_; }
 
   /// reports the partial tform flag; if true, partially-transformed integrals
   /// are stored
@@ -171,7 +167,6 @@ class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
 
   bool keep_partial_transforms_;  //!< if true, keep partially-transformed ints
                                   //!(false by default)
-  bool accurate_time_;
 };
 
 template <typename Tile, typename Policy>
@@ -185,7 +180,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   TArray result;
   // Identity matrix
   if (formula_string.oper().type() == Operator::Type::Identity) {
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     auto left_index1 = formula_string.bra_indices()[0];
     auto right_index1 = formula_string.ket_indices()[0];
@@ -200,7 +195,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
         world, tr1, tr2, 1.0);
     result.truncate();
 
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
     ExEnv::out0() << indent;
@@ -216,7 +211,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   auto ao_formula = detail::mo_to_ao(formula_string, this->orbital_registry());
   auto ao_factory = ao_factory_.compute(ao_formula);
 
-  time0 = mpqc::now(world, accurate_time_);
+  time0 = mpqc::now(world, this->accurate_time_);
   // convert to MO
   result = ao_factory;
   // get coefficient
@@ -232,7 +227,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   }
 
   result.truncate();
-  time1 = mpqc::now(world, accurate_time_);
+  time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
   ExEnv::out0() << indent;
@@ -260,7 +255,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
         detail::mo_to_ao(formula_string, this->orbital_registry());
     auto ao_factory = ao_factory_.compute(ao_formula);
 
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     // transform to MO, only convert the right side
     // TODO optimize strength reduction,
@@ -289,7 +284,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
             : (keep_partial_transforms() ? this->compute(reduced_formula)
                                          : this->compute3(reduced_formula));
 
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     const auto reduced_index_position = reduced_index_coord.first;
     const auto reduced_index_rank = reduced_index_coord.second;
@@ -321,7 +316,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
 
   result.truncate();
 
-  time1 = mpqc::now(world, accurate_time_);
+  time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
   ExEnv::out0() << indent;
@@ -354,7 +349,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
 
     TArray center = ao_factory_.compute(df_formulas[1]);
 
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     if (notation == Formula::Notation::Chemical) {
       result("i,j,k,l") = left("q,i,j") * center("q,p") * right("p,k,l");
@@ -362,7 +357,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
       result("i,k,j,l") = left("q,i,j") * center("q,p") * right("p,k,l");
     }
 
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
   } else {
@@ -372,7 +367,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
     auto ao_factory = ao_factory_.compute(ao_formula);
 
     // convert to MO
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     // get coefficient
     auto left_index1 = formula_string.bra_indices()[0];
@@ -398,7 +393,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
       result("p,q,r,i") = result("p,q,r,s") * right2("s,i");
     }
 
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
   }
 
@@ -516,13 +511,13 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
     for (auto& permute : permutes) {
       find_permute = this->registry_.find(permute);
       if (find_permute != this->registry_.end()) {
-        mpqc::time_point time0 = mpqc::now(world, accurate_time_);
+        mpqc::time_point time0 = mpqc::now(world, this->accurate_time_);
 
         // permute the array
         result(formula.to_ta_expression()) =
             (find_permute->second)(permute.to_ta_expression());
 
-        mpqc::time_point time1 = mpqc::now(world, accurate_time_);
+        mpqc::time_point time1 = mpqc::now(world, this->accurate_time_);
         double time = mpqc::duration_in_s(time0, time1);
 
         ExEnv::out0() << indent;

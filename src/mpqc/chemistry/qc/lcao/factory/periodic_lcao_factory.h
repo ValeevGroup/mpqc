@@ -69,8 +69,6 @@ class PeriodicLCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
     nk_ = decltype(nk_)(kv.value<std::vector<int>>("ref:k_points").data());
     k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
 
-    accurate_time_ = kv.value<bool>(prefix + "accurate_time", false);
-
     auto orbital_space_registry =
         std::make_shared<OrbitalSpaceRegistry<TArray>>();
 
@@ -125,7 +123,6 @@ class PeriodicLCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   int64_t
       RD_size_;  ///> cardinal # of lattices included in density representation
   int64_t k_size_;  ///> cardinal # of k points
-  bool accurate_time_;
 };
 
 template <typename Tile, typename Policy>
@@ -164,7 +161,7 @@ template <typename Tile, typename Policy>
 typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
   auto &world = this->world();
-  auto time0 = mpqc::now(world, accurate_time_);
+  auto time0 = mpqc::now(world, this->accurate_time_);
 
   TArray result;
 
@@ -232,7 +229,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
         pao_ints("p, q") += ao_int("p, q");
     }
   }
-  auto aobuild_time1 = mpqc::now(world, accurate_time_);
+  auto aobuild_time1 = mpqc::now(world, this->accurate_time_);
   auto aobuild_duration = mpqc::duration_in_s(time0, aobuild_time1);
 
   // get MO coefficients
@@ -248,7 +245,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
     result("p, i") = result("p, q") * right("q, i");
   }
 
-  auto time1 = mpqc::now(world, accurate_time_);
+  auto time1 = mpqc::now(world, this->accurate_time_);
   auto trans_duration = mpqc::duration_in_s(aobuild_time1, time1);
   auto duration = mpqc::duration_in_s(time0, time1);
 
@@ -277,7 +274,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
                 << " for PeriodicLCAOFactory." << std::endl;
 
   auto &world = this->world();
-  auto time0 = mpqc::now(world, accurate_time_);
+  auto time0 = mpqc::now(world, this->accurate_time_);
   TArray result_ta;
   TArray ao_int;
 
@@ -401,7 +398,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
       result_ta("p, q") += ao_int("p, q");
   }
 
-  auto time1 = mpqc::now(world, accurate_time_);
+  auto time1 = mpqc::now(world, this->accurate_time_);
   auto duration = mpqc::duration_in_s(time0, time1);
 
   ExEnv::out0() << "    Time: " << duration << " s\n";
@@ -413,7 +410,7 @@ template <typename Tile, typename Policy>
 typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
   auto &world = this->world();
-  auto time0 = mpqc::now(world, accurate_time_);
+  auto time0 = mpqc::now(world, this->accurate_time_);
 
   TArray result;
 
@@ -461,7 +458,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       for (auto RD = 0; RD < RD_size_; ++RD) {
         auto vec_RD = direct_vector(RD, RD_max_, dcell_);
 
-        auto t_pao0 = mpqc::now(world, accurate_time_);
+        auto t_pao0 = mpqc::now(world, this->accurate_time_);
         auto bra0 = bra_basis0;
         auto bra1 = shift_basis_origin(*bra_basis1, vec_RJ);
         auto ket0 = shift_basis_origin(*ket_basis0, vec_R);
@@ -483,7 +480,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
         // compute AO-based integrals
         auto ao_int = pao_factory_.compute_integrals(world, engine_pool, bases,
                                                      p_screener);
-        auto t_pao1 = mpqc::now(world, accurate_time_);
+        auto t_pao1 = mpqc::now(world, this->accurate_time_);
         pao_build_time += mpqc::duration_in_s(t_pao0, t_pao1);
 
         // return as in physicists' notation
@@ -492,7 +489,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
           pao_ints("p, q, r, s") = ao_int("p, r, q, s");
         else
           pao_ints("p, q, r, s") += ao_int("p, r, q, s");
-        auto t_sum_r1 = mpqc::now(world, accurate_time_);
+        auto t_sum_r1 = mpqc::now(world, this->accurate_time_);
         sum_r_time += mpqc::duration_in_s(t_pao1, t_sum_r1);
 
         sum_count++;
@@ -500,7 +497,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     }
   }
 
-  auto aobuild_time1 = mpqc::now(world, accurate_time_);
+  auto aobuild_time1 = mpqc::now(world, this->accurate_time_);
   auto aobuild_duration = mpqc::duration_in_s(time0, aobuild_time1);
 
   // get MO coefficients
@@ -528,7 +525,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     result("p, q, r, i") = result("p, q, r, s") * right2("s, i");
   }
 
-  auto time1 = mpqc::now(world, accurate_time_);
+  auto time1 = mpqc::now(world, this->accurate_time_);
   auto trans_duration = mpqc::duration_in_s(aobuild_time1, time1);
   auto duration = mpqc::duration_in_s(time0, time1);
 

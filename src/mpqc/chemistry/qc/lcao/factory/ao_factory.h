@@ -233,9 +233,6 @@ class AOFactory
   /// integral precision
   double precision_;
 
-  /// if do fence before call time
-  bool accurate_time_;
-
   /// if do iterative inverse square root
   bool iterative_inv_sqrt_;
 };

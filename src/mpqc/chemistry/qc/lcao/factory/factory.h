@@ -34,7 +34,9 @@ class Factory : virtual public DescribedClass {
    // clang-format on
 
   Factory(const KeyVal& kv)
-      : Factory(kv.class_ptr<WavefunctionWorld>("wfn_world")) {}
+      : Factory(kv.class_ptr<WavefunctionWorld>("wfn_world")) {
+    accurate_time_ = kv.value<bool>("accurate_time",false);
+  }
 
   /// @return MADNESS world
   madness::World& world() { return wfn_world_->world(); }
@@ -119,6 +121,8 @@ class Factory : virtual public DescribedClass {
     }
   }
 
+  bool accurate_time() const {return accurate_time_;}
+
   /// abstract functions
   /// compute array
   virtual Array compute(const Formula& formula) = 0;
@@ -138,6 +142,8 @@ class Factory : virtual public DescribedClass {
   FormulaRegistry<DirectArray> direct_registry_;
   /// registry for Orbital Space
   std::shared_ptr<OrbitalSpaceRegistry<Array>> orbital_space_registry_;
+  /// if do fence when time
+  bool accurate_time_ ;
 };
 
 }  // namespace lcao

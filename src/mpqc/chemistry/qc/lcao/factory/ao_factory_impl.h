@@ -18,7 +18,6 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
     prefix = "wfn_world:";
   }
 
-  accurate_time_ = kv.value<bool>(prefix + "accurate_time", false);
   iterative_inv_sqrt_ = kv.value<bool>(prefix + "iterative_inv_sqrt", false);
 
   detail::set_oper<Tile>(op_);
@@ -92,13 +91,13 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
     for (auto& permute : permutes) {
       find_permute = this->registry_.find(permute);
       if (find_permute != this->registry_.end()) {
-        mpqc::time_point time0 = mpqc::now(world, accurate_time_);
+        mpqc::time_point time0 = mpqc::now(world, this->accurate_time_);
 
         // permute the array
         result(formula.to_ta_expression()) =
             (find_permute->second)(permute.to_ta_expression());
 
-        mpqc::time_point time1 = mpqc::now(world, accurate_time_);
+        mpqc::time_point time1 = mpqc::now(world, this->accurate_time_);
         double time = mpqc::duration_in_s(time0, time1);
 
         ExEnv::out0() << indent;
@@ -155,7 +154,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
     result = this->compute(inv_sqrt_formula);
 
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
     result("p,q") = result("p,r") * result("r,q");
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -167,7 +166,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
                   << utility::to_string(formula.string());
     double size = mpqc::detail::array_size(result);
 
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
     ExEnv::out0() << " Size: " << size << " GB"
                   << " Time: " << time << " s\n";
@@ -187,22 +186,22 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         auto v = this->compute(v_formula);
         auto t = this->compute(t_formula);
 
-        time0 = mpqc::now(world, accurate_time_);
+        time0 = mpqc::now(world, this->accurate_time_);
 
         result("i,j") = v("i,j") + t("i,j");
 
-        time1 = mpqc::now(world, accurate_time_);
+        time1 = mpqc::now(world, this->accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
       }
       // one body integral S, V, T...
       else {
-        time0 = mpqc::now(world, accurate_time_);
+        time0 = mpqc::now(world, this->accurate_time_);
 
         std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
         parse_one_body(formula, engine_pool, bs_array);
         result = compute_integrals(world, engine_pool, bs_array);
 
-        time1 = mpqc::now(world, accurate_time_);
+        time1 = mpqc::now(world, this->accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
       }
 
@@ -215,14 +214,14 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
     }
     // use two body engine
     else if (formula.oper().is_twobody()) {
-      time0 = mpqc::now(world, accurate_time_);
+      time0 = mpqc::now(world, this->accurate_time_);
 
       // compute integral
       std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
       parse_two_body_two_center(formula, engine_pool, bs_array);
       result = compute_integrals(world, engine_pool, bs_array);
 
-      time1 = mpqc::now(world, accurate_time_);
+      time1 = mpqc::now(world, this->accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
 
       ExEnv::out0() << indent;
@@ -248,7 +247,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         auto center = compute(three_center_formula[1]);
         auto right = compute(three_center_formula[2]);
 
-        time0 = mpqc::now(world, accurate_time_);
+        time0 = mpqc::now(world, this->accurate_time_);
 
         // J case
         if (formula.oper().type() == Operator::Type::J) {
@@ -261,7 +260,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
                           (right("Q,j,l") * space("l,a"));
         }
 
-        time1 = mpqc::now(world, accurate_time_);
+        time1 = mpqc::now(world, this->accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
       }
       // four center case
@@ -274,7 +273,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         auto four_center_formula = detail::get_jk_formula(formula, obs);
         auto four_center = this->compute(four_center_formula);
 
-        time0 = mpqc::now(world, accurate_time_);
+        time0 = mpqc::now(world, this->accurate_time_);
 
         if (formula.notation() == Formula::Notation::Chemical) {
           if (formula.oper().type() == Operator::Type::J) {
@@ -294,7 +293,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
           }
         }
 
-        time1 = mpqc::now(world, accurate_time_);
+        time1 = mpqc::now(world, this->accurate_time_);
         time += mpqc::duration_in_s(time0, time1);
       }
 
@@ -316,11 +315,11 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       auto h = this->compute(h_formula);
       auto j = this->compute(j_formula);
 
-      time0 = mpqc::now(world, accurate_time_);
+      time0 = mpqc::now(world, this->accurate_time_);
 
       result("i,j") = h("i,j") + 2 * j("i,j");
 
-      time1 = mpqc::now(world, accurate_time_);
+      time1 = mpqc::now(world, this->accurate_time_);
       time += mpqc::duration_in_s(time0, time1);
 
       ExEnv::out0() << indent;
@@ -338,7 +337,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       auto j = compute(formulas[1]);
       auto k = compute(formulas[2]);
 
-      time0 = mpqc::now(world, accurate_time_);
+      time0 = mpqc::now(world, this->accurate_time_);
       // if closed shell
       if (formula.oper().type() == Operator::Type::Fock) {
         result("rho,sigma") =
@@ -349,7 +348,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         result("rho,sigma") = h("rho,sigma") + j("rho,sigma") - k("rho,sigma");
       }
 
-      time1 = mpqc::now(world, accurate_time_);
+      time1 = mpqc::now(world, this->accurate_time_);
 
       time += mpqc::duration_in_s(time0, time1);
 
@@ -367,7 +366,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   // compute inverse square root first in this case
   if (!iterative_inv_sqrt_ &&
       formula.oper().has_option(Operator::Option::Inverse)) {
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
@@ -413,7 +412,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
       result("i,j") = -result("i,j");
     }
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     auto inv_time = mpqc::duration_in_s(time0, time1);
     ExEnv::out0() << indent;
     ExEnv::out0() << "Inverse Time: " << inv_time << " s\n";
@@ -421,7 +420,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
   // inverse square root of integral
   if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
     if (formula.oper().type() == Operator::Type::cGTG ||
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
       result("i,j") = -result("i,j");
@@ -445,7 +444,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
       result("i,j") = -result("i,j");
     }
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     auto inv_sqrt_time = mpqc::duration_in_s(time0, time1);
     ExEnv::out0() << indent;
     ExEnv::out0() << "Inverse Square Root Time: " << inv_sqrt_time << " s\n";
@@ -461,7 +460,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
   mpqc::time_point time0;
   mpqc::time_point time1;
   auto& world = this->world();
-  time0 = mpqc::now(world, accurate_time_);
+  time0 = mpqc::now(world, this->accurate_time_);
   TArray result;
 
   BasisVector bs_array;
@@ -471,7 +470,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world(), engine_pool, bs_array, p_screener);
 
-  time1 = mpqc::now(world, accurate_time_);
+  time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
   ExEnv::out0() << indent;
@@ -502,7 +501,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
     auto center = compute(formula_strings[1]);
     auto right = compute(formula_strings[2]);
 
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     if (formula.notation() == Formula::Notation::Chemical) {
       result("i,j,k,l") = left("q,i,j") * center("q,p") * right("p,k,l");
@@ -510,7 +509,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
       result("i,j,k,l") = left("q,i,k") * center("q,p") * right("p,j,l");
     }
 
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
     ExEnv::out0() << indent;
@@ -521,7 +520,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
                   << " Time: " << time << " s\n";
 
   } else {
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     BasisVector bs_array;
     std::shared_ptr<Screener> p_screener =
@@ -536,7 +535,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
       result("i,j,k,l") = result("i,k,j,l");
     }
 
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
     ExEnv::out0() << indent;
@@ -603,12 +602,12 @@ AOFactory<Tile, Policy>::compute_direct2(const Formula& formula) {
   DirectTArray result;
 
   if (formula.oper().is_onebody()) {
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     parse_one_body(formula, engine_pool, bs_array);
     result = compute_direct_integrals(world, engine_pool, bs_array);
 
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
     ExEnv::out0() << indent << "Computed Direct One Body Integral: "
@@ -618,12 +617,12 @@ AOFactory<Tile, Policy>::compute_direct2(const Formula& formula) {
                   << " Time: " << time << " s\n";
 
   } else if (formula.oper().is_twobody()) {
-    time0 = mpqc::now(world, accurate_time_);
+    time0 = mpqc::now(world, this->accurate_time_);
 
     parse_two_body_two_center(formula, engine_pool, bs_array);
     result = compute_direct_integrals(world, engine_pool, bs_array);
 
-    time1 = mpqc::now(world, accurate_time_);
+    time1 = mpqc::now(world, this->accurate_time_);
     time += mpqc::duration_in_s(time0, time1);
 
     ExEnv::out0() << indent << "Computed Direct Twobody Two Center Integral: "
@@ -647,7 +646,7 @@ AOFactory<Tile, Policy>::compute_direct3(const Formula& formula) {
   mpqc::time_point time0;
   mpqc::time_point time1;
   auto& world = this->world();
-  time0 = mpqc::now(world, accurate_time_);
+  time0 = mpqc::now(world, this->accurate_time_);
   DirectTArray result;
 
   BasisVector bs_array;
@@ -657,7 +656,7 @@ AOFactory<Tile, Policy>::compute_direct3(const Formula& formula) {
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
 
-  time1 = mpqc::now(world, accurate_time_);
+  time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
   ExEnv::out0() << indent << "Computed Direct Twobody Three Center Integral: "
@@ -685,7 +684,7 @@ AOFactory<Tile, Policy>::compute_direct4(const Formula& formula) {
   auto& world = this->world();
   DirectTArray result;
 
-  time0 = mpqc::now(world, accurate_time_);
+  time0 = mpqc::now(world, this->accurate_time_);
 
   BasisVector bs_array;
   std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
@@ -695,7 +694,7 @@ AOFactory<Tile, Policy>::compute_direct4(const Formula& formula) {
 
   result = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
 
-  time1 = mpqc::now(world, accurate_time_);
+  time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);
 
   ExEnv::out0() << indent << "Computed Direct Twobody Four Center Integral: "

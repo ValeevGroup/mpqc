@@ -48,7 +48,7 @@ void make_closed_shell_canonical_sdref_subspaces(
 
   const auto &eps_p = p_space->attributes();
 
-  auto &orbital_registry = lcao_factory->orbital_space();
+  auto &orbital_registry = lcao_factory->orbital_registry();
   auto &world = lcao_factory->world();
 
   // divide the LCAO space into subspaces using Eigen .. boo
@@ -141,7 +141,7 @@ void make_closed_shell_sdref_subspaces(
   assert(input_space->index() == OrbitalIndex(L"m") ||
          input_space->index() == OrbitalIndex(L"p"));
 
-  auto &orbital_registry = lcao_factory->orbital_space();
+  auto &orbital_registry = lcao_factory->orbital_registry();
   auto &world = lcao_factory->world();
 
   if (input_space->rank() == ndocc) {
@@ -326,7 +326,7 @@ void closed_shell_cabs_mo_build_svd(
     const std::shared_ptr<const ::mpqc::utility::TRange1Engine> tre,
     std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
-  auto &orbital_registry = lcao_factory.orbital_space();
+  auto &orbital_registry = lcao_factory.orbital_registry();
   auto &world = ao_factory.world();
   // CABS fock build
   auto mo_time0 = mpqc::fenced_now(world);
@@ -536,15 +536,15 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
   using OrbitalSpaceTArray = OrbitalSpace<TA::DistArray<Tile, Policy>>;
   auto occ_space =
       OrbitalSpaceTArray(OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_occ_ta);
-  lcao_factory.orbital_space().add(occ_space);
+  lcao_factory.orbital_registry().add(occ_space);
 
   auto corr_occ_space =
       OrbitalSpaceTArray(OrbitalIndex(L"i"), OrbitalIndex(L"κ"), C_corr_occ_ta);
-  lcao_factory.orbital_space().add(corr_occ_space);
+  lcao_factory.orbital_registry().add(corr_occ_space);
 
   auto vir_space =
       OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"Α"), C_vir_ta);
-  lcao_factory.orbital_space().add(vir_space);
+  lcao_factory.orbital_registry().add(vir_space);
 
   // solve energy in virtual orbital
   TArray F_vbs;
@@ -573,13 +573,13 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
       array_ops::eigen_to_array<Tile, Policy>(world, C_vbs, tr_vbs, tr_vir);
 
   // remove old virtual orbitals
-  lcao_factory.orbital_space().remove(OrbitalIndex(L"a"));
+  lcao_factory.orbital_registry().remove(OrbitalIndex(L"a"));
   lcao_factory.registry().purge_index(world, OrbitalIndex(L"a"));
 
   // add new virtual orbial
   vir_space =
       OrbitalSpaceTArray(OrbitalIndex(L"a"), OrbitalIndex(L"Α"), C_vir_ta_new);
-  lcao_factory.orbital_space().add(vir_space);
+  lcao_factory.orbital_registry().add(vir_space);
 
   auto mo_time1 = mpqc::fenced_now(world);
   auto mo_time = mpqc::duration_in_s(mo_time0, mo_time1);
@@ -595,7 +595,7 @@ void closed_shell_dualbasis_cabs_mo_build_svd(
     const std::shared_ptr<::mpqc::utility::TRange1Engine> tre,
     std::string ri_method, std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
-  auto &orbital_registry = lcao_factory.orbital_space();
+  auto &orbital_registry = lcao_factory.orbital_registry();
   auto &world = ao_factory.world();
   // CABS fock build
   auto mo_time0 = mpqc::fenced_now(world);

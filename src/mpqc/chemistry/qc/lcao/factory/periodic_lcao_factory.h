@@ -35,7 +35,7 @@ construct_periodic_lcao_factory(const KeyVal &kv) {
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
+class PeriodicLCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using AOFactoryType = gaussian::PeriodicAOFactory<Tile, Policy>;
@@ -45,12 +45,9 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
    * \param kv the KeyVal object
    */
   PeriodicLCAOFactory(const KeyVal &kv)
-      : LCAOFactory<TA::TensorD, Policy>(kv),
+      : Factory<TArray>(kv),
         pao_factory_(
-            *gaussian::construct_periodic_ao_factory<Tile, Policy>(kv)),
-        orbital_space_registry_(
-            std::make_shared<OrbitalSpaceRegistry<TArray>>()),
-        mo_formula_registry_() {
+            *gaussian::construct_periodic_ao_factory<Tile, Policy>(kv)) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -71,29 +68,31 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
     // seperate k_points from zRHF::k_points
     nk_ = decltype(nk_)(kv.value<std::vector<int>>("ref:k_points").data());
     k_size_ = 1 + detail::k_ord_idx(nk_(0) - 1, nk_(1) - 1, nk_(2) - 1, nk_);
+
+    accurate_time_ = kv.value<bool>(prefix + "accurate_time", false);
+
+    auto orbital_space_registry =
+        std::make_shared<OrbitalSpaceRegistry<TArray>>();
+
+    this->set_orbital_registry(orbital_space_registry);
   }
 
-  /// wrapper to compute function
-  TArray compute(const std::wstring &formula_string);
+  TArray compute_direct(const Formula &formula) override {
+    throw ProgrammingError("Not Implemented!", __FILE__, __LINE__);
+  }
 
   /*!
    * \brief This computes integrals by Formula
    * \param formula the desired Formula type
    * \return the TA::DistArray object
    */
-  TArray compute(const Formula &formula);
+  TArray compute(const Formula &formula) override;
+
+  using Factory<TArray>::compute;
+  using Factory<TArray>::compute_direct;
 
   /// return reference to PeriodicAOFactory object
   AOFactoryType &pao_factory() const { return pao_factory_; }
-
-  /// return OrbitalSpaceRegistry
-  const OrbitalSpaceRegistry<TArray> &orbital_space() const {
-    return *orbital_space_registry_;
-  }
-
-  OrbitalSpaceRegistry<TArray> &orbital_space() {
-    return *orbital_space_registry_;
-  }
 
  private:
   /// compute integrals that has two dimensions
@@ -113,8 +112,6 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
 
   AOFactoryType &pao_factory_;
   std::shared_ptr<UnitCell> unitcell_;
-  std::shared_ptr<OrbitalSpaceRegistry<TArray>> orbital_space_registry_;
-  FormulaRegistry<TArray> mo_formula_registry_;
 
   /// unitcell and pbc information
   Vector3i R_max_;   ///> range of expansion of Bloch Gaussians in AO Gaussians
@@ -128,41 +125,37 @@ class PeriodicLCAOFactory : public LCAOFactory<TA::TensorD, Policy> {
   int64_t
       RD_size_;  ///> cardinal # of lattices included in density representation
   int64_t k_size_;  ///> cardinal # of k points
+  bool accurate_time_;
 };
 
 template <typename Tile, typename Policy>
 typename PeriodicLCAOFactory<Tile, Policy>::TArray
-PeriodicLCAOFactory<Tile, Policy>::compute(const std::wstring &formula_string) {
-  Formula formula(formula_string);
-  return compute(formula);
-}
-
-template <typename Tile, typename Policy>
-typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute(const Formula &formula) {
-  auto iter = mo_formula_registry_.find(formula);
+  auto iter = this->registry_.find(formula);
+
+  auto &world = this->world();
 
   TArray result;
 
-  if (iter != mo_formula_registry_.end()) {
+  if (iter != this->registry_.end()) {
     result = iter->second;
-    utility::print_par(this->world_, "Retrieved Periodic LCAO Integral: ",
+    utility::print_par(world, "Retrieved Periodic LCAO Integral: ",
                        utility::to_string(formula.string()));
     double size = mpqc::detail::array_size(result);
-    utility::print_par(this->world_, " Size: ", size, " GB\n");
+    utility::print_par(world, " Size: ", size, " GB\n");
     return result;
   }
 
   if (formula.rank() == 2) {
     result = compute2(formula);
-    mo_formula_registry_.insert(formula, result);
+    this->registry_.insert(formula, result);
   } else if (formula.rank() == 4) {
     result = compute4(formula);
-    mo_formula_registry_.insert(formula, result);
+    this->registry_.insert(formula, result);
   }
 
   madness::print_meminfo(
-      this->world_.rank(),
+      world.rank(),
       "Periodic LCAOFactory: " + utility::to_string(formula.string()));
   return result;
 }
@@ -170,7 +163,8 @@ PeriodicLCAOFactory<Tile, Policy>::compute(const Formula &formula) {
 template <typename Tile, typename Policy>
 typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
-  auto time0 = mpqc::now(this->world_, this->accurate_time_);
+  auto &world = this->world();
+  auto time0 = mpqc::now(world, accurate_time_);
 
   TArray result;
 
@@ -230,8 +224,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
           make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
           to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
 
-      auto ao_int =
-          pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+      auto ao_int = pao_factory_.compute_integrals(world, engine_pool, bases);
 
       if (R == 0)
         pao_ints("p, q") = ao_int("p, q");
@@ -239,23 +232,23 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
         pao_ints("p, q") += ao_int("p, q");
     }
   }
-  auto aobuild_time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto aobuild_time1 = mpqc::now(world, accurate_time_);
   auto aobuild_duration = mpqc::duration_in_s(time0, aobuild_time1);
 
   // get MO coefficients
   auto left_index = formula.bra_indices()[0];
   if (left_index.is_mo()) {
-    auto &left = orbital_space_registry_->retrieve(left_index);
+    auto &left = this->orbital_registry().retrieve(left_index);
     result("i, q") = pao_ints("p, q") * left("p, i");
   }
 
   auto right_index = formula.ket_indices()[0];
   if (right_index.is_mo()) {
-    auto &right = orbital_space_registry_->retrieve(right_index);
+    auto &right = this->orbital_registry().retrieve(right_index);
     result("p, i") = result("p, q") * right("q, i");
   }
 
-  auto time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto time1 = mpqc::now(world, accurate_time_);
   auto trans_duration = mpqc::duration_in_s(aobuild_time1, time1);
   auto duration = mpqc::duration_in_s(time0, time1);
 
@@ -283,7 +276,8 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
                 << utility::to_string(ao_formula.string())
                 << " for PeriodicLCAOFactory." << std::endl;
 
-  auto time0 = mpqc::now(this->world_, this->accurate_time_);
+  auto &world = this->world();
+  auto time0 = mpqc::now(world, accurate_time_);
   TArray result_ta;
   TArray ao_int;
 
@@ -308,7 +302,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
           make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
           to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
 
-      ao_int = pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+      ao_int = pao_factory_.compute_integrals(world, engine_pool, bases);
 
     } else if (ao_formula.oper().type() == Operator::Type::Nuclear) {
       auto bases = mpqc::lcao::gaussian::BasisVector{{*bra, *ket}};
@@ -321,11 +315,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             make_array_of_refs(bases[0], bases[1]), libint2::BraKet::x_x,
             to_libint2_operator_params(ao_formula.oper().type(), *shifted_mol));
         if (RJ == 0)
-          ao_int =
-              pao_factory_.compute_integrals(this->world_, engine_pool, bases);
+          ao_int = pao_factory_.compute_integrals(world, engine_pool, bases);
         else
-          ao_int("p, q") += pao_factory_.compute_integrals(
-              this->world_, engine_pool, bases)("p, q");
+          ao_int("p, q") +=
+              pao_factory_.compute_integrals(world, engine_pool, bases)("p, q");
       }
     } else if (ao_formula.oper().type() == Operator::Type::J) {
       // change operator type to Coulomb for computing integrals
@@ -349,12 +342,12 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
         auto p_screener = gaussian::detail::make_screener(
-            this->world_, engine_pool, bases, pao_factory_.screen(),
+            world, engine_pool, bases, pao_factory_.screen(),
             pao_factory_.screen_threshold());
 
         // compute AO-based integrals
-        auto J = pao_factory_.compute_integrals(this->world_, engine_pool,
-                                                bases, p_screener);
+        auto J = pao_factory_.compute_integrals(world, engine_pool, bases,
+                                                p_screener);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = J("p, q, r, s") * D("r, s");
@@ -386,12 +379,12 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
         auto p_screener = gaussian::detail::make_screener(
-            this->world_, engine_pool, bases, pao_factory_.screen(),
+            world, engine_pool, bases, pao_factory_.screen(),
             pao_factory_.screen_threshold());
 
         // compute AO-based integrals
-        auto K = pao_factory_.compute_integrals(this->world_, engine_pool,
-                                                bases, p_screener);
+        auto K = pao_factory_.compute_integrals(world, engine_pool, bases,
+                                                p_screener);
         // sum over RJ
         if (RJ == 0)
           ao_int("p, q") = K("p, r, q, s") * D("r, s");
@@ -408,7 +401,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
       result_ta("p, q") += ao_int("p, q");
   }
 
-  auto time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto time1 = mpqc::now(world, accurate_time_);
   auto duration = mpqc::duration_in_s(time0, time1);
 
   ExEnv::out0() << "    Time: " << duration << " s\n";
@@ -419,7 +412,8 @@ PeriodicLCAOFactory<Tile, Policy>::compute_fock_component(
 template <typename Tile, typename Policy>
 typename PeriodicLCAOFactory<Tile, Policy>::TArray
 PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
-  auto time0 = mpqc::now(this->world_, this->accurate_time_);
+  auto &world = this->world();
+  auto time0 = mpqc::now(world, accurate_time_);
 
   TArray result;
 
@@ -467,7 +461,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       for (auto RD = 0; RD < RD_size_; ++RD) {
         auto vec_RD = direct_vector(RD, RD_max_, dcell_);
 
-        auto t_pao0 = mpqc::now(this->world_, this->accurate_time_);
+        auto t_pao0 = mpqc::now(world, accurate_time_);
         auto bra0 = bra_basis0;
         auto bra1 = shift_basis_origin(*bra_basis1, vec_RJ);
         auto ket0 = shift_basis_origin(*ket_basis0, vec_R);
@@ -483,13 +477,13 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
             libint2::BraKet::xx_xx,
             to_libint2_operator_params(ao_formula.oper().type(), *unitcell_));
         auto p_screener = gaussian::detail::make_screener(
-            this->world_, engine_pool, bases, pao_factory_.screen(),
+            world, engine_pool, bases, pao_factory_.screen(),
             pao_factory_.screen_threshold());
 
         // compute AO-based integrals
-        auto ao_int = pao_factory_.compute_integrals(this->world_, engine_pool,
-                                                     bases, p_screener);
-        auto t_pao1 = mpqc::now(this->world_, this->accurate_time_);
+        auto ao_int = pao_factory_.compute_integrals(world, engine_pool, bases,
+                                                     p_screener);
+        auto t_pao1 = mpqc::now(world, accurate_time_);
         pao_build_time += mpqc::duration_in_s(t_pao0, t_pao1);
 
         // return as in physicists' notation
@@ -498,7 +492,7 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
           pao_ints("p, q, r, s") = ao_int("p, r, q, s");
         else
           pao_ints("p, q, r, s") += ao_int("p, r, q, s");
-        auto t_sum_r1 = mpqc::now(this->world_, this->accurate_time_);
+        auto t_sum_r1 = mpqc::now(world, accurate_time_);
         sum_r_time += mpqc::duration_in_s(t_pao1, t_sum_r1);
 
         sum_count++;
@@ -506,35 +500,35 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
     }
   }
 
-  auto aobuild_time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto aobuild_time1 = mpqc::now(world, accurate_time_);
   auto aobuild_duration = mpqc::duration_in_s(time0, aobuild_time1);
 
   // get MO coefficients
   auto left_index1 = formula.bra_indices()[0];
   if (left_index1.is_mo()) {
-    auto &left1 = orbital_space_registry_->retrieve(left_index1);
+    auto &left1 = this->orbital_registry().retrieve(left_index1);
     result("i, q, r, s") = pao_ints("p, q, r, s") * left1("p, i");
   }
 
   auto left_index2 = formula.bra_indices()[1];
   if (left_index2.is_mo()) {
-    auto &left2 = orbital_space_registry_->retrieve(left_index2);
+    auto &left2 = this->orbital_registry().retrieve(left_index2);
     result("p, i, r, s") = result("p, q, r, s") * left2("q, i");
   }
 
   auto right_index1 = formula.ket_indices()[0];
   if (right_index1.is_mo()) {
-    auto &right1 = orbital_space_registry_->retrieve(right_index1);
+    auto &right1 = this->orbital_registry().retrieve(right_index1);
     result("p, q, i, s") = result("p, q, r, s") * right1("r, i");
   }
 
   auto right_index2 = formula.ket_indices()[1];
   if (right_index2.is_mo()) {
-    auto &right2 = orbital_space_registry_->retrieve(right_index2);
+    auto &right2 = this->orbital_registry().retrieve(right_index2);
     result("p, q, r, i") = result("p, q, r, s") * right2("s, i");
   }
 
-  auto time1 = mpqc::now(this->world_, this->accurate_time_);
+  auto time1 = mpqc::now(world, accurate_time_);
   auto trans_duration = mpqc::duration_in_s(aobuild_time1, time1);
   auto duration = mpqc::duration_in_s(time0, time1);
 
@@ -565,7 +559,7 @@ Formula PeriodicLCAOFactory<Tile, Policy>::mo_to_ao(const Formula &formula) {
     // find the correspoding ao index
     if (index.is_mo()) {
       auto ao_index =
-          orbital_space_registry_->retrieve(index).ao_index().name();
+          this->orbital_registry().retrieve(index).ao_index().name();
       ao_index = ao_index + std::to_wstring(increment);
       ao_left_index.push_back(ao_index);
       increment++;
@@ -581,7 +575,7 @@ Formula PeriodicLCAOFactory<Tile, Policy>::mo_to_ao(const Formula &formula) {
     // find the correspoding ao index
     if (index.is_mo()) {
       auto ao_index =
-          orbital_space_registry_->retrieve(index).ao_index().name();
+          this->orbital_registry().retrieve(index).ao_index().name();
       ao_index = ao_index + std::to_wstring(increment);
       ao_right_index.push_back(ao_index);
       increment++;

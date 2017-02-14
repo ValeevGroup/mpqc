@@ -1371,15 +1371,15 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
   }
 
   TA::DistArray<Tile, TA::SparsePolicy> U;
-  auto Ca = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a")).coefs();
-  auto Cp = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"p")).coefs();
+  auto Ca = lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"a")).coefs();
+  auto Cp = lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"p")).coefs();
   {
     auto time0 = mpqc::now(world, accurate_time);
 
     //    auto Cm =
-    //    lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"m")).coefs();
+    //    lcao_factory.orbital_registry()->retrieve(OrbitalIndex(L"m")).coefs();
     //    auto Ca_prime =
-    //    lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"a'")).coefs();
+    //    lcao_factory.orbital_registry()->retrieve(OrbitalIndex(L"a'")).coefs();
     // compuate intermediate U
     U("i,j,rho,mu") = (t2("a,b,i,j") * Ca("sigma,a") * Ca("nu,b")) *
                       direct_array("rho, sigma, mu, nu");

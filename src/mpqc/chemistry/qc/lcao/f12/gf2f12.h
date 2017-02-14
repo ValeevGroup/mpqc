@@ -226,7 +226,7 @@ void GF2F12<Tile>::init_target_orbital_diagonal(int target_orbital) {
       ((target_orbital < 0) ? target_orbital : target_orbital - 1);
 
   auto& world = this->wfn_world()->world();
-  auto& orbital_registry = this->lcao_factory().orbital_space();
+  auto& orbital_registry = this->lcao_factory().orbital_registry();
   auto p_space = orbital_registry.retrieve(OrbitalIndex(L"p"));
   auto C_p = array_ops::array_to_eigen(p_space.coefs());
   auto C_x = C_p.block(0, orbital, C_p.rows(), 1);
@@ -450,7 +450,7 @@ double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
   // create an OrbitalSpace here
   {
     auto& world = this->lcao_factory().world();
-    auto& orbital_registry = this->lcao_factory().orbital_space();
+    auto& orbital_registry = this->lcao_factory().orbital_registry();
     auto qp_space = orbital_registry.retrieve(OrbitalIndex(qp_str));
     auto C_qp = array_ops::array_to_eigen(qp_space.coefs());
     auto C_qp_dyson = C_qp * C_dyson;

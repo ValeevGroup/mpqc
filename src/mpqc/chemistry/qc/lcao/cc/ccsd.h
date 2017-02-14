@@ -1372,7 +1372,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   /// occ part
   const TArray get_Ci() {
     return this->lcao_factory()
-        .orbital_space()
+        .orbital_registry()
         .retrieve(OrbitalIndex(L"i"))
         .coefs();
   }
@@ -1380,7 +1380,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   /// vir part
   const TArray get_Ca() {
     return this->lcao_factory()
-        .orbital_space()
+        .orbital_registry()
         .retrieve(OrbitalIndex(L"a"))
         .coefs();
   }

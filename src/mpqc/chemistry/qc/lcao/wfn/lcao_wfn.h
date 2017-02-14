@@ -137,7 +137,7 @@ class LCAOWavefunction : public Wavefunction {
 
   const std::shared_ptr<const ::mpqc::utility::TRange1Engine> &trange1_engine()
       const {
-    return lcao_factory_->orbital_space().trange1_engine();
+    return lcao_factory_->orbital_registry().trange1_engine();
   }
 
   bool is_frozen_core() const { return frozen_core_; }
@@ -193,10 +193,9 @@ class PeriodicLCAOWavefunction : public Wavefunction {
   virtual ~PeriodicLCAOWavefunction() = default;
 
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
+
   void obsolete() override {
-    lcao_factory_->registry().purge();
-    lcao_factory_->orbital_space().clear();
-    lcao_factory_->ao_factory().registry().purge();
+    lcao_factory_->obsolete();
     Wavefunction::obsolete();
   }
 

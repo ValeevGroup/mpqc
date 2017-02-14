@@ -112,7 +112,7 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
 
  private:
   virtual void init_cabs() {
-    closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),
+    closed_shell_cabs_mo_build_svd(to_ao_factory(this->ao_factory()), this->trange1_engine(),
                                    this->unocc_block());
   }
 
@@ -149,10 +149,10 @@ void CCSD_F12<Tile>::compute_cabs_singles() {
   bool df = this->is_df();
 
   if (approximation_ == 'D') {
-    CABSSingles<Tile> cabs_singles(this->lcao_factory());
+    CABSSingles<Tile> cabs_singles(to_lcao_factory(this->lcao_factory()));
     singles_energy_ = cabs_singles.compute(df, true, true);
   } else {
-    CABSSingles<Tile> cabs_singles(this->lcao_factory());
+    CABSSingles<Tile> cabs_singles(to_lcao_factory(this->lcao_factory()));
     singles_energy_ = cabs_singles.compute(df, false, true);
   }
   utility::print_par(world, "E_S: ", singles_energy_, "\n");
@@ -180,7 +180,7 @@ void CCSD_F12<Tile>::compute_f12() {
 template <typename Tile>
 typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
     const DirectArray& darray, const char approach) {
-  auto& lcao_factory = this->lcao_factory();
+  auto& lcao_factory = to_lcao_factory(this->lcao_factory());
   auto& world = lcao_factory.world();
   Matrix Eij_F12;
 
@@ -263,7 +263,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
 template <typename Tile>
 typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12(
     const DirectArray& darray) {
-  auto& lcao_factory = this->lcao_factory();
+  auto& lcao_factory = to_lcao_factory(this->lcao_factory());
   auto& world = lcao_factory.world();
   Matrix Eij_F12;
 

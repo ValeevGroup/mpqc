@@ -1179,7 +1179,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   const TArray get_Xab() {
     TArray result;
     TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+        this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center;
     if (reblock_inner_) {
       three_center = this->lcao_factory().compute(L"(Κ|G|a' b)");
@@ -1194,7 +1194,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   const TArray get_Xai() {
     TArray result;
     TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+        this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
     result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
     return result;

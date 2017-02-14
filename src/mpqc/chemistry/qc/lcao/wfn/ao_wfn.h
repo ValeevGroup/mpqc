@@ -26,9 +26,9 @@ template<typename Tile, typename Policy>
 class AOWavefunction : public Wavefunction {
  public:
 
-  using Array = TA::DistArray<Tile,Policy>;
-  using DirectArray = gaussian::DirectArray<Tile,Policy>;
-  using AOFactoryType = lcao::Factory<Array, DirectArray>;
+  using ArrayType = TA::DistArray<Tile,Policy>;
+  using DirectArrayType = gaussian::DirectArray<Tile,Policy>;
+  using AOFactoryType = lcao::Factory<ArrayType, DirectArrayType>;
 
   /**
    *  \brief The KeyVal constructor

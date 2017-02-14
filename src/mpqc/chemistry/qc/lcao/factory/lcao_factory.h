@@ -21,8 +21,6 @@ namespace lcao {
 template <typename Tile, typename Policy>
 class LCAOFactory;
 
-namespace detail {
-
 template <typename Tile, typename Policy>
 std::shared_ptr<LCAOFactory<Tile, Policy>> construct_lcao_factory(
     const KeyVal& kv) {
@@ -39,7 +37,19 @@ std::shared_ptr<LCAOFactory<Tile, Policy>> construct_lcao_factory(
   return lcao_factory;
 };
 
-}  // namespace  detail
+template <typename Tile, typename Policy>
+LCAOFactory<Tile, Policy>& to_lcao_factory(
+    Factory<TA::DistArray<Tile, Policy>>& factory) {
+  return dynamic_cast<LCAOFactory<Tile, Policy>&>(factory);
+};
+
+template <typename Tile, typename Policy>
+std::shared_ptr<LCAOFactory<Tile, Policy>> to_lcao_factory(
+    const std::shared_ptr<Factory<TA::DistArray<Tile, Policy>>>& factory) {
+  auto result = std::dynamic_pointer_cast<LCAOFactory<Tile, Policy>>(factory);
+  TA_ASSERT(result != nullptr);
+  return result;
+};
 
 // TODO MO transform that minimize operations by permutation
 /**

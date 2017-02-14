@@ -26,7 +26,9 @@ template <typename Tile, typename Policy>
 class LCAOWavefunction : public Wavefunction {
  public:
   using ArrayType = TA::DistArray<Tile, Policy>;
-  using LCAOFactoryType = lcao::LCAOFactory<Tile, Policy>;
+  using DirectArrayType = gaussian::DirectArray<Tile, Policy>;
+  using LCAOFactoryType = Factory<ArrayType>;
+  using AOFactoryType = Factory<ArrayType,DirectArrayType>;
 
   // clang-format off
   /**
@@ -46,8 +48,8 @@ class LCAOWavefunction : public Wavefunction {
    */
   // clang-format on
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-    lcao_factory_ = lcao::detail::construct_lcao_factory<Tile, Policy>(kv);
 
+    init_factory(kv);
     frozen_core_ = kv.value<bool>("frozen_core", true);
 
     charge_ = kv.value<int>("charge", 0);
@@ -68,7 +70,19 @@ class LCAOWavefunction : public Wavefunction {
 
   virtual ~LCAOWavefunction() = default;
 
+  virtual void init_factory(const KeyVal& kv){
+    lcao_factory_ = construct_lcao_factory<Tile, Policy>(kv);
+    ao_factory_ = gaussian::construct_ao_factory<Tile,Policy>(kv);
+  }
+
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
+
+  const LCAOFactoryType &lcao_factory() const { return *lcao_factory_; }
+
+  AOFactoryType &ao_factory() { return *ao_factory_; }
+
+  const AOFactoryType &ao_factory() const { return *ao_factory_; }
+
   void obsolete() override {
     lcao_factory_->obsolete();
     Wavefunction::obsolete();
@@ -120,7 +134,7 @@ class LCAOWavefunction : public Wavefunction {
       if (has_canonical_orbs)
         evaluate(*orbs, canonical_orbs_provider, target_ref_precision);
       else  // last resort: compute canonical orbitals
-        orbs = make_closed_shell_canonical_orbitals(lcao_factory_, ndocc,
+        orbs = make_closed_shell_canonical_orbitals(ao_factory_, ndocc,
                                                     unocc_block_);
 
       make_closed_shell_canonical_sdref_subspaces(
@@ -130,7 +144,7 @@ class LCAOWavefunction : public Wavefunction {
     // else ask for populated spaces
     else {
       make_closed_shell_sdref_subspaces(
-          lcao_factory_, populated_orbs_provider, target_ref_precision, ndocc,
+          ao_factory_, populated_orbs_provider, target_ref_precision, ndocc,
           n_frozen_core, occ_block_, unocc_block_);
     }
   }
@@ -147,6 +161,7 @@ class LCAOWavefunction : public Wavefunction {
 
  private:
   std::shared_ptr<LCAOFactoryType> lcao_factory_;
+  std::shared_ptr<AOFactoryType> ao_factory_;
   bool frozen_core_;
   int charge_;
   std::size_t occ_block_;

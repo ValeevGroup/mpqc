@@ -7,9 +7,8 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/lcao/expression/orbital_registry.h"
-#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
 #include "mpqc/util/misc/provider.h"
 
 namespace mpqc {
@@ -32,17 +31,19 @@ std::shared_ptr<Eigen::VectorXd> make_orbital_energy(
 /// Populates the LCAOFactory object with the occupied, active occupied,
 /// unoccupied, and full orbtial spaces.
 /// @param lcao the LCAOFactory object to be populated
-/// @param p_space the CanonicalOrbitalSpace object for the full (occupied and unoccupied) space
+/// @param p_space the CanonicalOrbitalSpace object for the full (occupied and
+/// unoccupied) space
 /// @param ndocc the number of doubly occupied orbitals in the reference
 /// @param n_frozen_core the number of frozen core orbitals
 /// @param occ_blksize the target block size for the occupied orbitals
 /// @param unocc_blksize the target block size for the unoccupied orbitals
 template <typename Tile, typename Policy>
 void make_closed_shell_canonical_sdref_subspaces(
-    std::shared_ptr<LCAOFactory<Tile, Policy>> lcao_factory,
-    std::shared_ptr<const CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>> p_space,
-    std::size_t ndocc, std::size_t n_frozen_core,
-    std::size_t occ_blksize, std::size_t unocc_blksize) {
+    std::shared_ptr<Factory<TA::DistArray<Tile, Policy>>> lcao_factory,
+    std::shared_ptr<const CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>>
+        p_space,
+    std::size_t ndocc, std::size_t n_frozen_core, std::size_t occ_blksize,
+    std::size_t unocc_blksize) {
   using TArray = TA::DistArray<Tile, Policy>;
   using COrbSpace = CanonicalOrbitalSpace<TArray>;
 
@@ -123,7 +124,9 @@ void make_closed_shell_canonical_sdref_subspaces(
 /// @param unocc_blksize the target block size for the unoccupied orbitals
 template <typename Tile, typename Policy>
 void make_closed_shell_sdref_subspaces(
-    std::shared_ptr<LCAOFactory<Tile, Policy>> lcao_factory,
+    std::shared_ptr < Factory<TA::DistArray<Tile, Policy>,
+                              gaussian::DirectArray<Tile, Policy>>>
+                          ao_factory,
     std::shared_ptr<
         typename PopulatedOrbitalSpace<TA::DistArray<Tile, Policy>>::Provider>
         wfn,
@@ -141,8 +144,8 @@ void make_closed_shell_sdref_subspaces(
   assert(input_space->index() == OrbitalIndex(L"m") ||
          input_space->index() == OrbitalIndex(L"p"));
 
-  auto &orbital_registry = lcao_factory->orbital_registry();
-  auto &world = lcao_factory->world();
+  auto &orbital_registry = ao_factory->orbital_registry();
+  auto &world = ao_factory->world();
 
   if (input_space->rank() == ndocc) {
     assert(input_space->index() ==
@@ -180,13 +183,11 @@ void make_closed_shell_sdref_subspaces(
     // obtain unoccupieds by projecting occupieds from OBS
     // should really make PAOs here, but these should be close, although much
     // more expensive
-    auto &ao_factory = lcao_factory->ao_factory();
-    auto obs_basis =
-        ao_factory.basis_registry()->retrieve(OrbitalIndex(L"κ"));
+    auto obs_basis = ao_factory->basis_registry()->retrieve(OrbitalIndex(L"κ"));
 
     // need some integrals
-    auto S_m_obs = lcao_factory->compute(L"<m|λ>");
-    auto S_obs_inv = ao_factory.compute(L"<κ|λ>[inv_sqr]");
+    auto S_m_obs = ao_factory->compute(L"<m|λ>");
+    auto S_obs_inv = ao_factory->compute(L"<κ|λ>[inv_sqr]");
 
     decltype(S_m_obs) S_m_obs_ortho;
     S_m_obs_ortho("i,k") = S_m_obs("i,l") * S_obs_inv("l,k");
@@ -288,15 +289,16 @@ void make_closed_shell_sdref_subspaces(
 template <typename Tile, typename Policy>
 std::shared_ptr<CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>>
 make_closed_shell_canonical_orbitals(
-    std::shared_ptr<LCAOFactory<Tile, Policy>> lcao_factory, std::size_t ndocc,
-    std::size_t target_blocksize) {
+    std::shared_ptr<Factory<TA::DistArray<Tile, Policy>,
+                            gaussian::DirectArray<Tile, Policy>>>
+        ao_factory,
+    std::size_t ndocc, std::size_t target_blocksize) {
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
-  auto &world = lcao_factory->world();
-  auto &ao_factory = lcao_factory->ao_factory();
+  auto &world = ao_factory->world();
 
-  RowMatrixXd F_eig = array_ops::array_to_eigen(ao_factory.compute(L"<κ|F|λ>"));
-  auto S = ao_factory.compute(L"<κ|λ>");
+  RowMatrixXd F_eig = array_ops::array_to_eigen(ao_factory->compute(L"<κ|F|λ>"));
+  auto S = ao_factory->compute(L"<κ|λ>");
   RowMatrixXd S_eig = array_ops::array_to_eigen(S);
 
   // solve mo coefficients
@@ -307,8 +309,8 @@ make_closed_shell_canonical_orbitals(
   // convert coeffs to TA
   auto nobs = S_eig.rows();
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
-  auto tre = std::make_shared<TRange1Engine>(
-      ndocc, nobs, target_blocksize, target_blocksize, 0);
+  auto tre = std::make_shared<TRange1Engine>(ndocc, nobs, target_blocksize,
+                                             target_blocksize, 0);
   auto tr_ao = S.trange().data().back();
   auto tr_all = tre->get_all_tr1();
   auto C_obs = array_ops::eigen_to_array<Tile, Policy>(world, C, tr_ao, tr_all);
@@ -322,11 +324,10 @@ make_closed_shell_canonical_orbitals(
 
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
-    LCAOFactory<Tile, Policy> &lcao_factory,
+    gaussian::AOFactory<Tile, Policy> &ao_factory,
     const std::shared_ptr<const ::mpqc::utility::TRange1Engine> tre,
     std::size_t vir_blocksize) {
-  auto &ao_factory = lcao_factory.ao_factory();
-  auto &orbital_registry = lcao_factory.orbital_registry();
+  auto &orbital_registry = ao_factory.orbital_registry();
   auto &world = ao_factory.world();
   // CABS fock build
   auto mo_time0 = mpqc::fenced_now(world);
@@ -344,8 +345,8 @@ void closed_shell_cabs_mo_build_svd(
 
   mpqc::detail::parallel_print_range_info(world, ri_basis.create_trange1(),
                                           "RI Basis");
-  ao_factory.basis_registry()->add(
-      OrbitalIndex(L"ρ"), std::make_shared<gaussian::Basis>(ri_basis));
+  ao_factory.basis_registry()->add(OrbitalIndex(L"ρ"),
+                                   std::make_shared<gaussian::Basis>(ri_basis));
 
   // integral
   auto S_ribs_inv = ao_factory.compute(L"<ρ|σ>[inv_sqr]");

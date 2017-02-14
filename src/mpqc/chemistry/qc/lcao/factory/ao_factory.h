@@ -41,6 +41,20 @@ std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
   return ao_factory;
 };
 
+template <typename Tile, typename Policy>
+AOFactory<Tile, Policy>& to_ao_factory(
+    Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>& factory) {
+  return dynamic_cast<AOFactory<Tile, Policy>&>(factory);
+};
+
+template <typename Tile, typename Policy>
+std::shared_ptr<AOFactory<Tile, Policy>> to_ao_factory(
+    const std::shared_ptr<Factory<TA::DistArray<Tile, Policy>,
+                                  DirectArray<Tile, Policy>>>& factory) {
+  auto result = std::dynamic_pointer_cast<AOFactory<Tile, Policy>>(factory);
+  TA_ASSERT(result != nullptr);
+  return result;
+};
 // TODO better inverse of two center
 // TODO direct integral
 // TODO Screener for different type of integral

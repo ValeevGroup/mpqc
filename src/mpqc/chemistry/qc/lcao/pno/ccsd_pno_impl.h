@@ -479,6 +479,7 @@ namespace mpqc {
       mpqc::utility::print_par(world, "Initial CCD (PNO) Energy      ", E1, "\n");
 
       // obtain orbital energy
+      auto n_frozen = this->trange1_engine()->get_nfrozen();
       const Eigen::VectorXd e_orb = *this->orbital_energy();
 
       const int nij = nocc * nocc;
@@ -503,14 +504,23 @@ namespace mpqc {
             TArray tab = vec_t2_pno[idx];
             TArray gab = vec_gabij_pno[idx];
             TArray gabcd = vec_gabcd_pno[idx];
-            // r2("a,b") = gab("a,b") + gabcd("a,b,c,d") * tab("c,d");
-            r2 = gab.clone();
-
             TArray fab_ta = vec_fab_pno[idx];
+
+            const TA::TiledRange1 trange1_pno = fab_ta.trange().data()[0];
+            TArray Iab = array_ops::create_diagonal_array_from_eigen<Tile, Policy>
+                         (world, trange1_pno, trange1_pno, 1.0);
+
+            r2("a,b") = gab("a,b")
+                      + gabcd("a,b,c,d") * tab("c,d")
+                      + fab_ta("a,c") * tab("c,b") + fab_ta("b,c") * tab("a,c")
+                      - fab_ta("a,c") * Iab("a,c") * tab("c,b")
+                      - fab_ta("b,c") * Iab("b,c") * tab("a,c");
+            //r2 = gab.clone();
+
             auto fab = array_ops::array_to_eigen(fab_ta);
             const Eigen::VectorXd faa = fab.diagonal();
-            const double e_i = e_orb[i];
-            const double e_j = e_orb[j];
+            const double e_i = e_orb[i + n_frozen];
+            const double e_j = e_orb[j + n_frozen];
             d_ab_inplace(r2, faa, e_i, e_j);
 
             r2("a,b") -= tab("a,b");
@@ -520,12 +530,6 @@ namespace mpqc {
             // update amplitudes and residual
             vec_t2_pno[idx] = tab;
             vecij_r2[idx] = r2;
-
-            auto t2_time1 = mpqc::now(world, accurate_time);
-            auto t2_time = mpqc::duration_in_s(t2_time0, t2_time1);
-            if (this->print_detail_) {
-                mpqc::utility::print_par(world, "t2 total time: ", t2_time, "\n");
-            }
           }
         }
 
@@ -536,12 +540,15 @@ namespace mpqc {
 
         // compute the norm of all the residuals
         const double norm_r2 = norm_vec_tensor(vecij_r2);
-        if (dE > this->converge_ || norm_r2 > this->converge_) {
+        if (dE >= this->converge_ || norm_r2 >= this->converge_) {
           if (world.rank() == 0)
             std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, norm_r2, E1,
                       time);
             ++iter;
         } else {
+          if (world.rank() == 0)
+            std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, norm_r2, E1,
+                      time);
             break;
         }
 
@@ -613,12 +620,10 @@ namespace mpqc {
           std::cout << "PrintDetail: " << this->print_detail_ << std::endl;
       }
 
-      TArray t1(world, f_ai.trange(), f_ai.get_shape());
-      TArray r1(world, f_ai.trange(), f_ai.get_shape());
-      t1.fill(0.0);
-      r1.fill(0.0);
+      if (world.rank() == 0)
+        std::printf("%3s \t %10s \t %10s \t %15s \t %10s \n", "iter", "deltaE",
+                  "residual", "energy", "total time/s");
 
-      auto diis = this->get_diis(world);
       while (iter < this->max_iter_) {
           // start timer
           auto time0 = mpqc::fenced_now(world);
@@ -715,7 +720,7 @@ namespace mpqc {
 //          r2("a,b,i,j") = r2("a,b,i,j") + r2("b,a,j,i");
 //
 //          r2("a,b,i,j") += g_abij("a,b,i,j");
-          r2 = g_abij.clone();
+           r2 = g_abij.clone();
 
 //          tmp_time0 = mpqc::now(world, accurate_time);
 //          {
@@ -737,24 +742,13 @@ namespace mpqc {
 //              mpqc::utility::print_par(world, "t2 a term time: ", tmp_time, "\n");
 //          }
 
-//          tmp_time0 = mpqc::now(world, accurate_time);
-//          {
-//            // compute b intermediate
-//            TArray b_abcd;
-//
-//            b_abcd("a,b,c,d") = g_abcd("a,b,c,d");
-//
-//            if (this->print_detail_) {
-//                mpqc::detail::print_size_info(b_abcd, "B_abcd");
-//            }
-//
-//            r2("a,b,i,j") += b_abcd("a,b,c,d") * t2("c,d,i,j");
-//          }
-//          tmp_time1 = mpqc::now(world, accurate_time);
-//          tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-//          if (this->print_detail_) {
-//              mpqc::utility::print_par(world, "t2 b term time: ", tmp_time, "\n");
-//          }
+          {
+            // compute b intermediate:
+            // TArray b_abcd;
+            // b_abcd ("a,b,c,d") = g_abcd("a,b,c,d");
+
+            r2("a,b,i,j") += g_abcd("a,b,c,d") * t2("c,d,i,j");
+          }
 
           d_abij_inplace(r2, *this->orbital_energy(), n_occ, n_frozen);
 
@@ -772,45 +766,24 @@ namespace mpqc {
           E1 = TA::dot(2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j"), t2("a,b,i,j"));
           dE = std::abs(E0 - E1);
 
-          double error_r1 = 0.0;
           double error_r2 = r2("a,b,i,j").norm().get();
 
-          if (dE >= this->converge_ || error >= this->converge_) {
-              tmp_time0 = mpqc::now(world, accurate_time);
-              cc::T1T2<TArray, TArray> t(t1, t2);
-              cc::T1T2<TArray, TArray> r(r1, r2);
-              error = r.norm() / size(t2);  // error = residual norm per element
-              diis.extrapolate(t, r);
-
-              // update t1 and t2
-              t2("a,b,i,j") = t.t2("a,b,i,j");
-
-              if (this->print_detail_) {
-                  mpqc::detail::print_size_info(r2, "R2");
-                  mpqc::detail::print_size_info(t2, "T2");
-              }
-
-              tmp_time1 = mpqc::now(world, accurate_time);
-              tmp_time = mpqc::duration_in_s(tmp_time0, tmp_time1);
-              if (this->print_detail_) {
-                  mpqc::utility::print_par(world, "diis time: ", tmp_time, "\n");
-              }
-
+          if (dE >= this->converge_ || error_r2 >= this->converge_) {
               auto time1 = mpqc::fenced_now(world);
               auto duration = mpqc::duration_in_s(time0, time1);
 
-              if (world.rank() == 0) {
-                  detail::print_ccsd(iter, dE, error, error_r1, error_r2, E1, duration);
-              }
+              if (world.rank() == 0)
+                std::printf("%3lu \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, error_r2, E1,
+                          time);
 
               iter += 1ul;
           } else {
               auto time1 = mpqc::fenced_now(world);
               auto duration = mpqc::duration_in_s(time0, time1);
 
-              if (world.rank() == 0) {
-                  detail::print_ccsd(iter, dE, error, error_r1, error_r2, E1, duration);
-              }
+              if (world.rank() == 0)
+                std::printf("%3lu \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, error_r2, E1,
+                          time);
 
               break;
           }

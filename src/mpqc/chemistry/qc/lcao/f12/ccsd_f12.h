@@ -251,7 +251,7 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
 
   // VT1 contribution
   {
-    TArray tmp = f12::compute_VT1_ijij_ijji_df(lcao_factory, this->t1(),
+    TArray tmp = f12::compute_VT1_ijij_ijji_df(lcao_factory, ao_factory, this->t1(),
                                                ijij_ijji_shape, vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }

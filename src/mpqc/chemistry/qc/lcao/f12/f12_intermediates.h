@@ -1522,6 +1522,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji(
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
     LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
+    gaussian::AOFactoryBase<Tile, TA::SparsePolicy> &ao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
     const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
   auto &world = lcao_factory.world();
@@ -1547,7 +1548,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
   // now include the second term in V_iaxy
   {
     auto left = lcao_factory(L"( Κ |G|i1 p)");
-    auto center = lcao_factory(L"( Κ |G| Λ )[inv]");
+    auto center = ao_factory(L"( Κ |G| Λ )[inv]");
     auto right = lcao_factory(L"( Λ |G| a q)");
     auto right_array = lcao_factory(L"<i2 j2|R|p q>[df]");
 

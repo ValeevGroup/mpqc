@@ -128,15 +128,15 @@ namespace detail {
 /// find the corresponding AO formula, if index is already AO, it will be
 /// ignored
 template <typename Array>
-Formula mo_to_ao(const Formula &formula,
-                 const OrbitalSpaceRegistry<Array> &orbital_registry) {
+Formula lcao_to_ao(const Formula &formula,
+                   const OrbitalSpaceRegistry<Array> &orbital_registry) {
   std::vector<OrbitalIndex> ao_left_index, ao_right_index;
 
   int increment = 0;
   auto left_index = formula.bra_indices();
   for (const auto &index : left_index) {
     // find the correspoding ao index
-    if (index.is_mo()) {
+    if (index.is_lcao()) {
       auto ao_index = orbital_registry.retrieve(index).ao_index().name();
       ao_index = ao_index + std::to_wstring(increment);
       ao_left_index.push_back(ao_index);
@@ -151,7 +151,7 @@ Formula mo_to_ao(const Formula &formula,
   auto right_index = formula.ket_indices();
   for (const auto &index : right_index) {
     // find the correspoding ao index
-    if (index.is_mo()) {
+    if (index.is_lcao()) {
       auto ao_index = orbital_registry.retrieve(index).ao_index().name();
       ao_index = ao_index + std::to_wstring(increment);
       ao_right_index.push_back(ao_index);
@@ -171,8 +171,11 @@ Formula mo_to_ao(const Formula &formula,
   return ao_formula;
 }
 
-/// assert all index in formula are in MO
-void assert_all_mo(const Formula &formula);
+/// check if all index in formula are in LCAO
+bool if_all_lcao(const Formula &formula);
+
+/// check if all index in formula are in AO
+bool if_all_ao(const Formula &formula);
 }
 
 }  // namespace lcao

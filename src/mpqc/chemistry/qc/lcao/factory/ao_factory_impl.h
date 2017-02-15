@@ -39,7 +39,8 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
       }
     }
     gtg_params_ = gtg_params.compute();
-    ExEnv::out0() << indent << "F12 Correlation Factor = " << gtg_params.exponent
+    ExEnv::out0() << indent
+                  << "F12 Correlation Factor = " << gtg_params.exponent
                   << std::endl;
     ExEnv::out0() << indent << "NFunction = " << gtg_params.n_fit << std::endl;
     ExEnv::out0() << indent << "F12 Exponent Coefficient: \n";
@@ -55,7 +56,8 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
   precision_ = kv.value<double>(prefix + "precision", default_precision);
   detail::integral_engine_precision = precision_;
 
-  ExEnv::out0() << indent << "Screen = " << (screen_.empty() ? "none" : screen_ )<< "\n";
+  ExEnv::out0() << indent << "Screen = " << (screen_.empty() ? "none" : screen_)
+                << "\n";
   if (!screen_.empty()) {
     ExEnv::out0() << indent << "Threshold = " << screen_threshold_ << "\n";
   }
@@ -68,6 +70,9 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
 template <typename Tile, typename Policy>
 typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
     const Formula& formula) {
+  TA_USER_ASSERT(lcao::detail::if_all_ao(formula),
+                 "AOFactory only accept AO index!\n");
+
   ExEnv::out0() << incindent;
 
   TArray result;
@@ -559,6 +564,9 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
 template <typename Tile, typename Policy>
 typename AOFactory<Tile, Policy>::DirectTArray
 AOFactory<Tile, Policy>::compute_direct(const Formula& formula) {
+  TA_USER_ASSERT(lcao::detail::if_all_ao(formula),
+                 "AOFactory only accept AO index!\n");
+
   ExEnv::out0() << incindent;
 
   DirectTArray result;

@@ -156,7 +156,7 @@ class OrbitalIndex {
   bool is_ao() const;
 
   /// if molecular orbital index
-  bool is_mo() const;
+  bool is_lcao() const;
 
   /// return true if is mo in obs
   bool is_mo_in_obs() const;

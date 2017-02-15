@@ -136,6 +136,7 @@ class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
 
   using Factory<TArray>::compute;
   using Factory<TArray>::compute_direct;
+
   /// purge formula that contain Operator described by string \c str
   /// from mo_registry and ao_registry
   void purge_operator(const std::wstring& str) override {
@@ -215,7 +216,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   }
 
   // get AO
-  auto ao_formula = detail::mo_to_ao(formula_string, this->orbital_registry());
+  auto ao_formula = detail::lcao_to_ao(formula_string, this->orbital_registry());
   auto ao_factory = ao_factory_.compute(ao_formula);
 
   time0 = mpqc::now(world, this->accurate_time_);
@@ -223,12 +224,12 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   result = ao_factory;
   // get coefficient
   auto left_index1 = formula_string.bra_indices()[0];
-  if (left_index1.is_mo()) {
+  if (left_index1.is_lcao()) {
     auto& left1 = this->orbital_registry().retrieve(left_index1);
     result("i,r") = result("p,r") * left1("p,i");
   }
   auto right_index1 = formula_string.ket_indices()[0];
-  if (right_index1.is_mo()) {
+  if (right_index1.is_lcao()) {
     auto& right1 = this->orbital_registry().retrieve(right_index1);
     result("p,k") = result("p,r") * right1("r,k");
   }
@@ -259,7 +260,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
   if (not keep_partial_transforms()) {  // compute from AO ints
     // get AO
     auto ao_formula =
-        detail::mo_to_ao(formula_string, this->orbital_registry());
+        detail::lcao_to_ao(formula_string, this->orbital_registry());
     auto ao_factory = ao_factory_.compute(ao_formula);
 
     time0 = mpqc::now(world, this->accurate_time_);
@@ -268,12 +269,12 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute3(
     // TODO optimize strength reduction,
     //      e.g. may need to transform last index first
     auto right_index1 = formula_string.ket_indices()[0];
-    if (right_index1.is_mo()) {
+    if (right_index1.is_lcao()) {
       auto& right1 = this->orbital_registry().retrieve(right_index1);
       result("K,i,q") = ao_factory("K,p,q") * right1("p,i");
     }
     auto right_index2 = formula_string.ket_indices()[1];
-    if (right_index2.is_mo()) {
+    if (right_index2.is_lcao()) {
       auto& right2 = this->orbital_registry().retrieve(right_index2);
       result("K,p,j") = result("K,p,q") * right2("q,j");
     }
@@ -370,7 +371,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
   } else {
     // get AO
     auto ao_formula =
-        detail::mo_to_ao(formula_string, this->orbital_registry());
+        detail::lcao_to_ao(formula_string, this->orbital_registry());
     auto ao_factory = ao_factory_.compute(ao_formula);
 
     // convert to MO
@@ -378,24 +379,24 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
 
     // get coefficient
     auto left_index1 = formula_string.bra_indices()[0];
-    if (left_index1.is_mo()) {
+    if (left_index1.is_lcao()) {
       auto& left1 = this->orbital_registry().retrieve(left_index1);
       result("i,q,r,s") = ao_factory("p,q,r,s") * left1("p,i");
     }
 
     auto left_index2 = formula_string.bra_indices()[1];
-    if (left_index2.is_mo()) {
+    if (left_index2.is_lcao()) {
       auto& left2 = this->orbital_registry().retrieve(left_index2);
       result("p,i,r,s") = result("p,q,r,s") * left2("q,i");
     }
 
     auto right_index1 = formula_string.ket_indices()[0];
-    if (right_index1.is_mo()) {
+    if (right_index1.is_lcao()) {
       auto& right1 = this->orbital_registry().retrieve(right_index1);
       result("p,q,i,s") = result("p,q,r,s") * right1("r,i");
     }
     auto right_index2 = formula_string.ket_indices()[1];
-    if (right_index2.is_mo()) {
+    if (right_index2.is_lcao()) {
       auto& right2 = this->orbital_registry().retrieve(right_index2);
       result("p,q,r,i") = result("p,q,r,s") * right2("s,i");
     }
@@ -427,7 +428,7 @@ LCAOFactory<Tile, Policy>::reduce_formula(const Formula& formula) {
       std::vector<float>& strenth_factors) -> void {
     for (const auto& index : indices) {
       float strength_factor;
-      if (index.is_mo()) {
+      if (index.is_lcao()) {
         const auto& orb_space = this->orbital_registry().retrieve(index);
         const auto rank = orb_space.rank();
         const auto ao_rank = orb_space.ao_rank();
@@ -494,6 +495,8 @@ LCAOFactory<Tile, Policy>::reduce_formula(const Formula& formula) {
 template <typename Tile, typename Policy>
 typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
     const Formula& formula) {
+  TA_USER_ASSERT(!lcao::detail::if_all_ao(formula),
+                 "LCAOFactory cannot accept all AO index!\n");
   ExEnv::out0() << incindent;
 
   auto& world = this->world();
@@ -566,7 +569,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute(
 extern template class LCAOFactory<TA::TensorD, TA::SparsePolicy>;
 extern template class LCAOFactory<TA::TensorD, TA::DensePolicy>;
 
-}  // namespace integral
+}  // namespace lcao
 }  // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_LCAO_FACTORY_H_

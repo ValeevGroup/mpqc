@@ -263,16 +263,38 @@ std::array<Formula, 3> get_fock_formula(const Formula &formula) {
 
 namespace detail {
 
-void assert_all_mo(const Formula &formula) {
+bool if_all_lcao(const Formula &formula) {
   auto left = formula.bra_indices();
   for (auto &index : left) {
-    TA_ASSERT(index.is_mo());
+    if(!index.is_lcao()){
+      return false;
+    }
   }
 
   auto right = formula.ket_indices();
   for (auto &index : right) {
-    TA_ASSERT(index.is_mo());
+    if(!index.is_lcao()){
+      return false;
+    }
   }
+  return true;
+}
+
+bool if_all_ao(const Formula &formula) {
+  auto left = formula.bra_indices();
+  for (auto &index : left) {
+    if(!index.is_ao()){
+      return false;
+    }
+  }
+
+  auto right = formula.ket_indices();
+  for (auto &index : right) {
+    if(!index.is_ao()){
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace detail

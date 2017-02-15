@@ -234,13 +234,13 @@ PeriodicLCAOFactory<Tile, Policy>::compute2(const Formula &formula) {
 
   // get MO coefficients
   auto left_index = formula.bra_indices()[0];
-  if (left_index.is_mo()) {
+  if (left_index.is_lcao()) {
     auto &left = this->orbital_registry().retrieve(left_index);
     result("i, q") = pao_ints("p, q") * left("p, i");
   }
 
   auto right_index = formula.ket_indices()[0];
-  if (right_index.is_mo()) {
+  if (right_index.is_lcao()) {
     auto &right = this->orbital_registry().retrieve(right_index);
     result("p, i") = result("p, q") * right("q, i");
   }
@@ -502,25 +502,25 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
 
   // get MO coefficients
   auto left_index1 = formula.bra_indices()[0];
-  if (left_index1.is_mo()) {
+  if (left_index1.is_lcao()) {
     auto &left1 = this->orbital_registry().retrieve(left_index1);
     result("i, q, r, s") = pao_ints("p, q, r, s") * left1("p, i");
   }
 
   auto left_index2 = formula.bra_indices()[1];
-  if (left_index2.is_mo()) {
+  if (left_index2.is_lcao()) {
     auto &left2 = this->orbital_registry().retrieve(left_index2);
     result("p, i, r, s") = result("p, q, r, s") * left2("q, i");
   }
 
   auto right_index1 = formula.ket_indices()[0];
-  if (right_index1.is_mo()) {
+  if (right_index1.is_lcao()) {
     auto &right1 = this->orbital_registry().retrieve(right_index1);
     result("p, q, i, s") = result("p, q, r, s") * right1("r, i");
   }
 
   auto right_index2 = formula.ket_indices()[1];
-  if (right_index2.is_mo()) {
+  if (right_index2.is_lcao()) {
     auto &right2 = this->orbital_registry().retrieve(right_index2);
     result("p, q, r, i") = result("p, q, r, s") * right2("s, i");
   }
@@ -554,7 +554,7 @@ Formula PeriodicLCAOFactory<Tile, Policy>::mo_to_ao(const Formula &formula) {
   auto left_index = formula.bra_indices();
   for (const auto &index : left_index) {
     // find the correspoding ao index
-    if (index.is_mo()) {
+    if (index.is_lcao()) {
       auto ao_index =
           this->orbital_registry().retrieve(index).ao_index().name();
       ao_index = ao_index + std::to_wstring(increment);
@@ -570,7 +570,7 @@ Formula PeriodicLCAOFactory<Tile, Policy>::mo_to_ao(const Formula &formula) {
   auto right_index = formula.ket_indices();
   for (const auto &index : right_index) {
     // find the correspoding ao index
-    if (index.is_mo()) {
+    if (index.is_lcao()) {
       auto ao_index =
           this->orbital_registry().retrieve(index).ao_index().name();
       ao_index = ao_index + std::to_wstring(increment);

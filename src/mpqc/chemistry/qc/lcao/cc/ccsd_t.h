@@ -1118,8 +1118,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     TArray g_dabi = get_abci();
     TArray g_abij = get_abij();
 
-    std::cout << "Laplace-Transform (T): " << std::endl;
-
     // definition of orbital spaces
     auto n_occ = this->trange1_engine()->get_occ();
     auto n_frozen = this->trange1_engine()->get_nfrozen();
@@ -1196,38 +1194,18 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double time_t2_ov = 0.0;
     double time_t2_oo = 0.0;
     double time_t1 = 0.0;
-    double time_vvvv = 0.0;
-    double vvvv_contr_g = 0.0;
-    double vvvv_contr_t = 0.0;
-    double vvvv_trace = 0.0;
-    double ovvvv_new = 0;
-    double o2v4_oo = 0;
-    double o2v4_vo = 0;
-    double o2v4_vo_new = 0;
-    double o2v4_oo_new = 0;
-    double ov4_new = 0;
-    double o2v4_2_new = 0;
 
     // get trange1
     auto tr_occ = this->trange1_engine_->get_active_occ_tr1();
     auto tr_vir = this->trange1_engine_->get_vir_tr1();
-    std::cout << "tr_occ = " << tr_occ << std::endl;
-    std::cout << "tr_vir = " << tr_vir << std::endl;
 
     auto n_tr_occ = this->trange1_engine_->get_active_occ_blocks();
     auto n_tr_vir = this->trange1_engine_->get_vir_blocks();
-    std::cout << "n_tr_occ = " << n_tr_occ << std::endl;
-    std::cout << "n_tr_vir = " << n_tr_vir << std::endl;
 
     // TiledRange1 for occ, unocc and inner contraction space
     auto n_tr_occ_inner = n_tr_occ;
     auto n_tr_vir_inner = n_tr_vir;
 
-    if (reblock_inner_) {
-      n_tr_occ_inner = tr_occ_inner_.tiles_range().second;
-      n_tr_vir_inner = tr_vir_inner_.tiles_range().second;
-      std::cout << n_tr_vir_inner << std::endl;
-    }
 
     // loop over number of quadrature points
     for (auto m = 0; m < n; m++) {
@@ -1276,7 +1254,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         std::cout << "E_OV5 = " << E_OV5 << std::endl;
       }*/
 
-      double E_OV5_block = 0.0;
+      double E_O2V4_vo = 0;
       for (auto e = 0; e < n_tr_vir; ++e) {
         for (auto f = 0; f < n_tr_vir; ++f) {
 
@@ -1336,16 +1314,53 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             G("e,b,a,f") = block_g_dabi_lt_e1*block_g_dabi_lt_f - block_g_dabi_lt_e*block_g_dabi_lt_f;
             E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
           }
+
+          //computation of the OV5 terms
+          {
+            auto block_g_dabi_lt_e23left = g_dabi_lt("e,a,b,j").block(g_dabi_low_e, g_dabi_up_e);
+            TArray G2left;
+            G2left("e,a,i,f") = block_g_dabi_lt_e23left*block_t2_oou_lt_f_T2;
+            TArray G3left;
+            G3left("e,a,i,f") = block_g_dabi_lt_e23left*block_t2_oou_lt_f_T1;
+
+            auto block_g_dabi_lt_f23right = g_dabi_lt("f,a,b,j").block(g_dabi_low_f, g_dabi_up_f);
+            auto block_t2_oou_lt_e_T2right = t2_oou_lt("e,b,j,i").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+            auto block_t2_oou_lt_e_T1right = t2_oou_lt("e,b,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+            TArray G2right;
+            G2right("f,a,i,e") = block_g_dabi_lt_f23right*block_t2_oou_lt_e_T2right;
+            TArray G3right;
+            G3right("f,a,i,e") = block_g_dabi_lt_f23right*block_t2_oou_lt_e_T1right;
+
+            E_O2V4_vo += TA::dot(G2left("e,a,i,f"),G2right("f,a,i,e") - 4.0*G3right("f,a,i,e"));
+            {
+
+              auto block_g_dabi_lt_e4left = g_dabi_lt("e,b,a,j").block(g_dabi_low_e, g_dabi_up_e);
+              TArray G4left;
+              G4left("e,a,i,f") = block_g_dabi_lt_e4left*block_t2_oou_lt_f_T2;
+
+              auto block_g_dabi_lt_f4right = g_dabi_lt("f,b,a,j").block(g_dabi_low_f, g_dabi_up_f);
+              TArray G4right;
+
+              G4right("f,a,i,e") = block_g_dabi_lt_f4right*block_t2_oou_lt_e_T2right;
+              E_O2V4_vo += TA::dot(G4left("e,a,i,f"),G4right("f,a,i,e") - 4.0*G2right("f,a,i,e"));
+              E_O2V4_vo += TA::dot(G3left("e,a,i,f"),2.0*G4right("f,a,i,e") + G3right("f,a,i,e"));
+              {
+                TArray G1left;
+                G1left("e,a,i,f") = block_g_dabi_lt_e4left*block_t2_oou_lt_f_T1;
+
+                TArray G1right;
+                G1right("f,a,i,e") = block_g_dabi_lt_f4right*block_t2_oou_lt_e_T1right;
+
+                E_O2V4_vo += TA::dot(G1left("e,a,i,f"),8.0*G2right("f,a,i,e") + 4.0*G1right("f,a,i,e") - 4.0*G4right("f,a,i,e") - 4.0*G3right("f,a,i,e"));
+              }
+            }
+          }
         }
       }
 
-      time23 = mpqc::now(world, accurate_time);
-      ovvvv_new += mpqc::duration_in_s(time22, time23);
-
-      time26 = mpqc::now(world, accurate_time);
       //computation of the OV5 terms
-      double E_O2V4_vo = 0;
-      {
+      //double E_O2V4_vo = 0;
+      /*{
         TArray G2;
         G2("e,a,i,f") = g_dabi_lt("e,a,b,j")*t2_oou_lt("f,b,j,i");
         TArray G3;
@@ -1362,11 +1377,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             E_O2V4_vo += TA::dot(G1("e,a,i,f"),8.0*G2("f,a,i,e") + 4.0*G1("f,a,i,e") - 4.0*G4("f,a,i,e") - 4.0*G3("f,a,i,e"));
           }
         }
-      }
-      time27 = mpqc::now(world, accurate_time);
-      o2v4_vo_new += mpqc::duration_in_s(time26, time27);
+      }*/
 
-      time28 = mpqc::now(world, accurate_time);
       //computation of the OV5 terms
       double E_O2V4_oo = 0;
       {
@@ -1389,10 +1401,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           E_O2V4_oo += TA::dot(G2("e,i,j,f"),2.0*T2("e,i,j,f") - 2.0*T3("e,i,j,f") - 2.0*T1("e,i,j,f"));
         }
       }
-      time29 = mpqc::now(world, accurate_time);
-      o2v4_oo_new += mpqc::duration_in_s(time28, time29);
 
-      time30 = mpqc::now(world, accurate_time);
       //computation of the OV5 terms
       double E_OV4 = 0;
       {
@@ -1411,8 +1420,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           E_OV4 += TA::dot(G("e,f"),T2("e,f") - 2.0*T1("e,f"));
         }
       }
-      time31 = mpqc::now(world, accurate_time);
-      ov4_new += mpqc::duration_in_s(time30, time31);
 
       energy_m = E_OV5 + E_O2V4_vo + E_O2V4_oo + E_OV4;
 
@@ -1540,10 +1547,56 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       time08 = mpqc::now(world, accurate_time);
 
-      time22 = mpqc::now(world, accurate_time);
-      //computation of the O2V4 terms
+      //double E_O2V4_vo = 0;
       double E_O2V4_2 = 0;
-      {
+      for (auto e = 0; e < n_tr_vir; ++e) {
+
+        std::size_t e_low = e;
+        std::size_t e_up = e + 1;
+
+        typedef std::vector<std::size_t> block;
+
+        //blocking g_dabi over e
+        block g_dabi_low_e{e_low, 0, 0, 0};
+        block g_dabi_up_e{e_up, n_tr_vir_inner, n_tr_vir_inner, n_tr_occ};
+
+        auto block_g_dabi_lt_e = g_dabi_lt("e,b,c,i").block(g_dabi_low_e, g_dabi_up_e);
+
+        //blocking t2 over e (required for both T1 and T2 intermediates)
+        block t2_oou_lt_low_e{e_low, 0, 0, 0};
+        block t2_oou_lt_up_e{e_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+
+        auto block_t2_oou_lt_e_T1 = t2_oou_lt("e,b,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+
+        TArray T1;
+        TArray T2;
+
+        T1("e,a,b,n") = block_t2_oou_lt_e_T1 * g_cjkl_lt("a,j,i,n");
+        T2("e,a,b,n") = block_t2_oou_lt_e_T1 * g_cjkl_lt("a,i,j,n");
+
+        {
+          TArray G1;
+          TArray G2;
+          TArray G3;
+          auto block_g_dabi_lt_e1 = g_dabi_lt("e,c,a,i").block(g_dabi_low_e, g_dabi_up_e);
+          G1("e,a,b,n") = block_g_dabi_lt_e1 * t2_ouu_lt("c,b,i,n");
+          auto block_g_dabi_lt_e2 = g_dabi_lt("e,a,c,i").block(g_dabi_low_e, g_dabi_up_e);
+          G2("e,a,b,n") = block_g_dabi_lt_e2 * t2_ouu_lt("c,b,i,n");
+          auto block_g_dabi_lt_e3 = g_dabi_lt("e,c,a,i").block(g_dabi_low_e, g_dabi_up_e);
+          G3("e,a,b,n") = block_g_dabi_lt_e3 * t2_ouu_lt("b,c,i,n");
+          E_O2V4_2 += TA::dot(2.0*G1("e,c,a,i") - G2("e,c,a,i") - G3("e,c,a,i"),(2.0*T1("e,c,a,i") - T2("e,c,a,i")));
+        }
+        {
+          TArray G;
+          auto block_g_dabi_lt_e = g_dabi_lt("e,a,c,i").block(g_dabi_low_e, g_dabi_up_e);
+          G("e,a,b,n") = block_g_dabi_lt_e * t2_ouu_lt("b,c,i,n");
+          E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
+        }
+      }
+
+      //computation of the O2V4 terms
+      //double E_O2V4_2 = 0;
+      /*{
         TArray T1;
         TArray T2;
 
@@ -1563,9 +1616,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G("e,a,b,n") = g_dabi_lt("e,a,c,i") * t2_ouu_lt("b,c,i,n");
           E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
         }
-      }
-      time23 = mpqc::now(world, accurate_time);
-      o2v4_2_new += mpqc::duration_in_s(time22, time23);
+      }*/
 
       double E_O3V3_2 = 0;
       {
@@ -1657,7 +1708,48 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       time12 = mpqc::now(world, accurate_time);
 
       double E_O2V4_S = 0.0;
-      {
+      for (auto e = 0; e < n_tr_vir; ++e) {
+
+        std::size_t e_low = e;
+        std::size_t e_up = e + 1;
+
+        typedef std::vector<std::size_t> block;
+
+        //blocking g_dabi over e
+        block g_dabi_low_e{e_low, 0, 0, 0};
+        block g_dabi_up_e{e_up, n_tr_vir_inner, n_tr_vir_inner, n_tr_occ};
+
+        auto block_g_dabi_lt_e = g_dabi_lt("e,c,b,j").block(g_dabi_low_e, g_dabi_up_e);
+
+        //blocking t2 over e (required for both T1 and T2 intermediates)
+        block t2_oou_lt_low_e{e_low, 0, 0, 0};
+        block t2_oou_lt_up_e{e_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+
+        auto block_t2_oou_lt_e_T1 = t2_oou_lt("e,a,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+        auto block_t2_oou_lt_e_T2 = t2_oou_lt("e,a,j,i").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+
+        TArray T1;
+        TArray T2;
+        T1("i,a,b,e") = t1_lt("b,j") * block_t2_oou_lt_e_T1;
+        T2("i,a,b,e") = t1_lt("b,j") * block_t2_oou_lt_e_T2;
+
+        TArray G1;
+        G1("i,a,b,e") = g_abij_lt("a,c,j,i") * block_g_dabi_lt_e;
+
+        {
+          TArray G3;
+          auto block_g_dabi_lt_e3 = g_dabi_lt("e,b,c,j").block(g_dabi_low_e, g_dabi_up_e);
+          G3("i,a,b,e") = g_abij_lt("a,c,j,i") * block_g_dabi_lt_e3;
+          E_O2V4_S += TA::dot((2.0*G1("i,a,b,e") - 4.0*G3("i,a,b,e")),T1("i,a,b,e"));
+        }
+        {
+          TArray G2;
+          auto block_g_dabi_lt_e2 = g_dabi_lt("e,b,c,j").block(g_dabi_low_e, g_dabi_up_e);
+          G2("i,a,b,e") = g_abij_lt("c,a,j,i") * block_g_dabi_lt_e2;
+          E_O2V4_S += TA::dot((-4.0*G2("i,a,b,e") - 4.0*G1("i,a,b,e")),T2("i,a,b,e"));
+        }
+      }
+      /*{
         TArray T1;
         TArray T2;
         T1("i,a,b,f") = t1_lt("b,j") * t2_oou_lt("f,a,i,j");
@@ -1676,7 +1768,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G2("i,a,b,f") = g_abij_lt("c,a,j,i") * g_dabi_lt("f,b,c,j");
           E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));
         }
-      }
+      }*/
 
       double E_O2V3_S = 0.0;
       {
@@ -1867,18 +1959,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       std::cout << "int_transform2: " << int_transform2 << " S \n";
       std::cout << "int_transform3: " << int_transform3 << " S \n";
       std::cout << "time_t2_vv: " << time_t2_vv << " S \n";
-      std::cout << "time_vvvv : " << time_vvvv << " S \n";
-      std::cout << "vvvv contr g: " << vvvv_contr_g << " S \n";
-      std::cout << "vvvv contr t: " << vvvv_contr_t << " S \n";
-      std::cout << "vvvv trace: " << vvvv_trace << " S \n";
-      std::cout << "o2v4_vo : " << o2v4_vo << " S \n";
-      std::cout << "o2v4_vo_new : " << o2v4_vo_new << " S \n";
-      std::cout << "o2v4_oo_new : " << o2v4_oo_new << " S \n";
-      std::cout << "ov4_new : " << ov4_new << " S \n";
-      std::cout << "ovvvv new: " << ovvvv_new << " S \n";
       std::cout << "time_t2_oo: " << time_t2_oo << " S \n";
       std::cout << "time_t2_ov: " << time_t2_ov << " S \n";
-      std::cout << "o2v4_2_new: " << o2v4_2_new << " S \n";
       std::cout << "time_t1: " << time_t1 << " S \n";
     }
 

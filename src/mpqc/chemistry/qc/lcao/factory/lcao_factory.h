@@ -22,6 +22,9 @@ template <typename Tile, typename Policy>
 class LCAOFactory;
 
 template <typename Tile, typename Policy>
+using LCAOFactoryBase = Factory<TA::DistArray<Tile, Policy>>;
+
+template <typename Tile, typename Policy>
 std::shared_ptr<LCAOFactory<Tile, Policy>> construct_lcao_factory(
     const KeyVal& kv) {
   std::shared_ptr<LCAOFactory<Tile, Policy>> lcao_factory;
@@ -39,13 +42,13 @@ std::shared_ptr<LCAOFactory<Tile, Policy>> construct_lcao_factory(
 
 template <typename Tile, typename Policy>
 LCAOFactory<Tile, Policy>& to_lcao_factory(
-    Factory<TA::DistArray<Tile, Policy>>& factory) {
+    LCAOFactoryBase<Tile, Policy>& factory) {
   return dynamic_cast<LCAOFactory<Tile, Policy>&>(factory);
 };
 
 template <typename Tile, typename Policy>
 std::shared_ptr<LCAOFactory<Tile, Policy>> to_lcao_factory(
-    const std::shared_ptr<Factory<TA::DistArray<Tile, Policy>>>& factory) {
+    const std::shared_ptr<LCAOFactoryBase<Tile, Policy>>& factory) {
   auto result = std::dynamic_pointer_cast<LCAOFactory<Tile, Policy>>(factory);
   TA_ASSERT(result != nullptr);
   return result;
@@ -61,7 +64,7 @@ std::shared_ptr<LCAOFactory<Tile, Policy>> to_lcao_factory(
  *
  */
 template <typename Tile, typename Policy>
-class LCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
+class LCAOFactory : public LCAOFactoryBase<Tile,Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   // for now hardwire to Gaussians

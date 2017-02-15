@@ -31,6 +31,7 @@ class Factory : virtual public DescribedClass {
    *  | KeyWord | Type | Default| Description |
    *  |---------|------|--------|-------------|
    *  |wfn_world| WavefunctionWorld | none | WavefunctionWorld object |
+   *  |accurate_time|bool|false|if do fence at timing|
    */
   // clang-format on
 

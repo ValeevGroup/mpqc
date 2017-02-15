@@ -39,7 +39,7 @@ std::shared_ptr<Eigen::VectorXd> make_orbital_energy(
 /// @param unocc_blksize the target block size for the unoccupied orbitals
 template <typename Tile, typename Policy>
 void make_closed_shell_canonical_sdref_subspaces(
-    std::shared_ptr<Factory<TA::DistArray<Tile, Policy>>> lcao_factory,
+    std::shared_ptr<LCAOFactoryBase<Tile, Policy>> lcao_factory,
     std::shared_ptr<const CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>>
         p_space,
     std::size_t ndocc, std::size_t n_frozen_core, std::size_t occ_blksize,
@@ -124,9 +124,7 @@ void make_closed_shell_canonical_sdref_subspaces(
 /// @param unocc_blksize the target block size for the unoccupied orbitals
 template <typename Tile, typename Policy>
 void make_closed_shell_sdref_subspaces(
-    std::shared_ptr < Factory<TA::DistArray<Tile, Policy>,
-                              gaussian::DirectArray<Tile, Policy>>>
-                          ao_factory,
+    std::shared_ptr <gaussian::AOFactoryBase<Tile,Policy>>ao_factory,
     std::shared_ptr<
         typename PopulatedOrbitalSpace<TA::DistArray<Tile, Policy>>::Provider>
         wfn,
@@ -289,9 +287,7 @@ void make_closed_shell_sdref_subspaces(
 template <typename Tile, typename Policy>
 std::shared_ptr<CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>>
 make_closed_shell_canonical_orbitals(
-    std::shared_ptr<Factory<TA::DistArray<Tile, Policy>,
-                            gaussian::DirectArray<Tile, Policy>>>
-        ao_factory,
+    std::shared_ptr<gaussian::AOFactoryBase<Tile,Policy>> ao_factory,
     std::size_t ndocc, std::size_t target_blocksize) {
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
@@ -324,7 +320,7 @@ make_closed_shell_canonical_orbitals(
 
 template <typename Tile, typename Policy>
 void closed_shell_cabs_mo_build_svd(
-    gaussian::AOFactory<Tile, Policy> &ao_factory,
+    gaussian::AOFactoryBase<Tile, Policy> &ao_factory,
     const std::shared_ptr<const ::mpqc::utility::TRange1Engine> tre,
     std::size_t vir_blocksize) {
   auto &orbital_registry = ao_factory.orbital_registry();
@@ -435,7 +431,7 @@ void closed_shell_cabs_mo_build_svd(
 template <typename Tile, typename Policy>
 std::shared_ptr<::mpqc::utility::TRange1Engine>
 closed_shell_dualbasis_mo_build_eigen_solve_svd(
-    LCAOFactory<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
+    LCAOFactoryBase<Tile, Policy> &lcao_factory, Eigen::VectorXd &ens,
     std::size_t nocc, const Molecule &mols, bool frozen_core,
     std::size_t occ_blocksize, std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();
@@ -592,7 +588,7 @@ closed_shell_dualbasis_mo_build_eigen_solve_svd(
 
 template <typename Tile, typename Policy>
 void closed_shell_dualbasis_cabs_mo_build_svd(
-    LCAOFactory<Tile, Policy> &lcao_factory,
+    LCAOFactoryBase<Tile, Policy> &lcao_factory,
     const std::shared_ptr<::mpqc::utility::TRange1Engine> tre,
     std::string ri_method, std::size_t vir_blocksize) {
   auto &ao_factory = lcao_factory.ao_factory();

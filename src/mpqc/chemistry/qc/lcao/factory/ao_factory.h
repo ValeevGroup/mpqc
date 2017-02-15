@@ -26,6 +26,9 @@ namespace gaussian {
 template <typename Tile, typename Policy>
 class AOFactory;
 
+template<typename Tile, typename Policy>
+using AOFactoryBase = Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>;
+
 template <typename Tile, typename Policy>
 std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
     const KeyVal& kv) {
@@ -55,6 +58,9 @@ std::shared_ptr<AOFactory<Tile, Policy>> to_ao_factory(
   TA_ASSERT(result != nullptr);
   return result;
 };
+
+
+
 // TODO better inverse of two center
 // TODO direct integral
 // TODO Screener for different type of integral
@@ -70,7 +76,7 @@ std::shared_ptr<AOFactory<Tile, Policy>> to_ao_factory(
 
 template <typename Tile, typename Policy>
 class AOFactory
-    : public Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>> {
+    : public AOFactoryBase<Tile,Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray = DirectArray<Tile, Policy>;
@@ -87,15 +93,13 @@ class AOFactory
   /**
    * \brief  KeyVal constructor
    *
-   * It takes all the keys to construct OrbitalBasisRegistry and also the following
+   * It takes all the keys to construct Factory and also the following
    *
    *  | KeyWord | Type | Default| Description |
    *  |---------|------|--------|-------------|
-   *  |molecule|Molecule|none|keyval to construct molecule|
    *  |screen|string|none|method of screening, qqr or schwarz |
    *  |threshold|double|1e-10| screening threshold |
    *  |precision|double|std::numeric_limits<double>::epsilon() | integral precision |
-   *  |accurate_time|bool|false|if do fence at timing|
    *  |iterative_inv_sqrt|bool|false| use iterative inverse square root |
    *  |corr_functions|int|6|f12 n of corr function,valid if aux_basis exsist in OrbitalBasisRegistry|
    *  |corr_param|int|0|f12 corr param, ,valid if aux_basis exsist in OrbitalBasisRegistry|

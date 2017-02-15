@@ -188,7 +188,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
 
   /// compute V_ixjy and V_ixyj term in compute_diagonal and compute_nondiagonal
   virtual std::tuple<TArray, TArray> compute_V() {
-    return f12::VX_pqrs_pqsr("V", to_lcao_factory(this->lcao_factory()), "i",
+    return f12::VX_pqrs_pqsr("V", this->lcao_factory(), this->ao_factory(), "i",
                              "x", "j", "y", true, use_cabs_);
   }
 

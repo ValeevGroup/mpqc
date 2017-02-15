@@ -300,10 +300,10 @@ template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_B() {
   TA::DistArray<Tile, TA::SparsePolicy> B;
   if (this->approximation_ == 'C') {
-    B = f12::compute_B_ijij_ijji_C_df(to_lcao_factory(this->lcao_factory()),
+    B = f12::compute_B_ijij_ijji_C_df(this->lcao_factory(),this->ao_factory(),
                                       this->ijij_ijji_shape_);
   } else if (this->approximation_ == 'D') {
-    B = f12::compute_B_ijij_ijji_D_df(to_lcao_factory(this->lcao_factory()),
+    B = f12::compute_B_ijij_ijji_D_df(this->lcao_factory(), this->ao_factory(),
                                       this->ijij_ijji_shape_);
   }
   return B;
@@ -311,19 +311,19 @@ TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_B() {
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_C() {
-  return f12::compute_C_ijab_df(to_lcao_factory(this->lcao_factory()));
+  return f12::compute_C_ijab_df(this->lcao_factory());
 }
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_V() {
-  return f12::compute_V_ijij_ijji_df(to_lcao_factory(this->lcao_factory()),
+  return f12::compute_V_ijij_ijji_df(this->lcao_factory(),this->ao_factory(),
                                      this->ijij_ijji_shape_);
 }
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_X() {
   TA::DistArray<Tile, TA::SparsePolicy> X = f12::compute_X_ijij_ijji_df(
-      to_lcao_factory(this->lcao_factory()), this->ijij_ijji_shape_);
+      this->lcao_factory(), this->ao_factory(), this->ijij_ijji_shape_);
   auto Fij = this->lcao_factory().compute(L"(i|F|j)[df]");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
   f12::convert_X_ijkl(X, Fij_eigen);

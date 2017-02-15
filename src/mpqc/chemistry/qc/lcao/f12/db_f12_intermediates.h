@@ -20,7 +20,7 @@ namespace f12 {
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &shape) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -121,7 +121,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_db_df(
 
 template <typename Tile, typename Policy>
 std::tuple<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>
-compute_V_ixjy_ixyj_db_df(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
+compute_V_ixjy_ixyj_db_df(lcao::LCAOFactoryBase<Tile, Policy> &lcao_factory,
                           bool cabs = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -261,7 +261,7 @@ compute_V_ixjy_ixyj_db_df(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
 
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_xyab_db_df(
-    lcao::LCAOFactory<Tile, Policy> &lcao_factory) {
+    lcao::LCAOFactoryBase<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   auto &ao_factory = lcao_factory.ao_factory();
   bool accurate_time = lcao_factory.accurate_time();
@@ -342,7 +342,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab_db_df(
 
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_iaxy_db_df(
-    lcao::LCAOFactory<Tile, Policy> &lcao_factory) {
+    lcao::LCAOFactoryBase<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   TA::DistArray<Tile, Policy> V_iaxy;
@@ -436,7 +436,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -524,7 +524,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -727,7 +727,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape) {
   auto &world = lcao_factory.world();
@@ -759,7 +759,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_db_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_db_df(
-    lcao::LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    lcao::LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
     const TA::SparseShape<float> &ijij_ijji_shape) {
   auto &world = lcao_factory.world();

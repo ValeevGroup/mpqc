@@ -26,8 +26,9 @@ namespace gaussian {
 template <typename Tile, typename Policy>
 class AOFactory;
 
-template<typename Tile, typename Policy>
-using AOFactoryBase = Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>;
+template <typename Tile, typename Policy>
+using AOFactoryBase =
+    Factory<TA::DistArray<Tile, Policy>, DirectArray<Tile, Policy>>;
 
 template <typename Tile, typename Policy>
 std::shared_ptr<AOFactory<Tile, Policy>> construct_ao_factory(
@@ -59,8 +60,6 @@ std::shared_ptr<AOFactory<Tile, Policy>> to_ao_factory(
   return result;
 };
 
-
-
 // TODO better inverse of two center
 // TODO direct integral
 // TODO Screener for different type of integral
@@ -75,8 +74,7 @@ std::shared_ptr<AOFactory<Tile, Policy>> to_ao_factory(
  */
 
 template <typename Tile, typename Policy>
-class AOFactory
-    : public AOFactoryBase<Tile,Policy> {
+class AOFactory : public AOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray = DirectArray<Tile, Policy>;

@@ -16,9 +16,10 @@ namespace lcao {
 
 /// computes the MO-basis Fock matrix and extracts the diagonal elements
 template <typename Tile, typename Policy>
-std::shared_ptr<Eigen::VectorXd> make_orbital_energy(
-    LCAOFactory<Tile, Policy> &lcao_factory) {
-  bool df = lcao_factory.ao_factory().registry().have(Formula(L"<μ|F|ν>[df]"));
+std::shared_ptr<Eigen::VectorXd> make_diagonal_fpq(
+    LCAOFactoryBase<Tile, Policy> &lcao_factory,
+    gaussian::AOFactoryBase <Tile, Policy> &ao_factory) {
+  bool df = ao_factory.registry().have(Formula(L"<μ|F|ν>[df]"));
   auto str = df ? L"<p|F|q>[df]" : L"<p|F|q>";
   auto Fpq_eig = array_ops::array_to_eigen(lcao_factory.compute(str));
   return std::make_shared<Eigen::VectorXd>(Fpq_eig.diagonal());
@@ -124,7 +125,7 @@ void make_closed_shell_canonical_sdref_subspaces(
 /// @param unocc_blksize the target block size for the unoccupied orbitals
 template <typename Tile, typename Policy>
 void make_closed_shell_sdref_subspaces(
-    std::shared_ptr <gaussian::AOFactoryBase<Tile,Policy>>ao_factory,
+    std::shared_ptr<gaussian::AOFactoryBase<Tile, Policy>> ao_factory,
     std::shared_ptr<
         typename PopulatedOrbitalSpace<TA::DistArray<Tile, Policy>>::Provider>
         wfn,
@@ -287,13 +288,14 @@ void make_closed_shell_sdref_subspaces(
 template <typename Tile, typename Policy>
 std::shared_ptr<CanonicalOrbitalSpace<TA::DistArray<Tile, Policy>>>
 make_closed_shell_canonical_orbitals(
-    std::shared_ptr<gaussian::AOFactoryBase<Tile,Policy>> ao_factory,
+    std::shared_ptr<gaussian::AOFactoryBase<Tile, Policy>> ao_factory,
     std::size_t ndocc, std::size_t target_blocksize) {
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
   auto &world = ao_factory->world();
 
-  RowMatrixXd F_eig = array_ops::array_to_eigen(ao_factory->compute(L"<κ|F|λ>"));
+  RowMatrixXd F_eig =
+      array_ops::array_to_eigen(ao_factory->compute(L"<κ|F|λ>"));
   auto S = ao_factory->compute(L"<κ|λ>");
   RowMatrixXd S_eig = array_ops::array_to_eigen(S);
 

@@ -214,7 +214,7 @@ void RMP2F12<Tile>::init(double ref_precision) {
   this->init_sdref(ref_wfn_, ref_precision);
 
   this->orbital_energy_ =
-      make_orbital_energy(to_lcao_factory(this->lcao_factory()));
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
   // create shape
   auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();

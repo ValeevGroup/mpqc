@@ -64,7 +64,7 @@ std::shared_ptr<LCAOFactory<Tile, Policy>> to_lcao_factory(
  *
  */
 template <typename Tile, typename Policy>
-class LCAOFactory : public LCAOFactoryBase<Tile,Policy> {
+class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   // for now hardwire to Gaussians
@@ -97,12 +97,10 @@ class LCAOFactory : public LCAOFactoryBase<Tile,Policy> {
     this->set_orbital_registry(orbital_space_registry);
     ao_factory_.set_orbital_registry(orbital_space_registry);
     ExEnv::out0() << "\nConstructing LCAOFactory: \n"
-                  << indent
-                  << "Keep partial transform = "
+                  << indent << "Keep partial transform = "
                   << (keep_partial_transforms_ ? "true" : "false")
                   << "\nAccurate time = "
-                  << (this->accurate_time_ ? "true" : "false")
-              << "\n\n";
+                  << (this->accurate_time_ ? "true" : "false") << "\n\n";
   }
 
   void obsolete() override {
@@ -219,7 +217,8 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute2(
   }
 
   // get AO
-  auto ao_formula = detail::lcao_to_ao(formula_string, this->orbital_registry());
+  auto ao_formula =
+      detail::lcao_to_ao(formula_string, this->orbital_registry());
   auto ao_factory = ao_factory_.compute(ao_formula);
 
   time0 = mpqc::now(world, this->accurate_time_);

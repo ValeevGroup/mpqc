@@ -188,8 +188,8 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
 
   /// compute V_ixjy and V_ixyj term in compute_diagonal and compute_nondiagonal
   virtual std::tuple<TArray, TArray> compute_V() {
-    return f12::VX_pqrs_pqsr("V", to_lcao_factory(this->lcao_factory()), "i", "x", "j", "y",
-                             true, use_cabs_);
+    return f12::VX_pqrs_pqsr("V", to_lcao_factory(this->lcao_factory()), "i",
+                             "x", "j", "y", true, use_cabs_);
   }
 
   /// use self-energy in diagonal representation
@@ -212,8 +212,8 @@ void GF2F12<Tile>::init(double ref_precision) {
 
   if (use_cabs_) {
     // compute cabs
-    closed_shell_cabs_mo_build_svd(to_ao_factory(this->ao_factory()), this->trange1_engine(),
-                                   this->unocc_block());
+    closed_shell_cabs_mo_build_svd(to_ao_factory(this->ao_factory()),
+                                   this->trange1_engine(), this->unocc_block());
   }
 }
 
@@ -256,7 +256,8 @@ double GF2F12<Tile>::compute_diagonal(const int target_orbital,
       nfzc + nocc +
       ((target_orbital < 0) ? target_orbital : target_orbital - 1);
 
-  auto orbital_energy = make_orbital_energy(lcao_factory);
+  auto orbital_energy =
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
   auto SE = orbital_energy->operator()(orbital);
 
@@ -373,7 +374,8 @@ double GF2F12<Tile>::compute_nondiagonal(const int target_orbital,
       nfzc + nocc +
       ((target_orbital < 0) ? target_orbital : target_orbital - 1);
 
-  auto orbital_energy = make_orbital_energy(lcao_factory);
+  auto orbital_energy =
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
   auto SE = orbital_energy->operator()(orbital);
 

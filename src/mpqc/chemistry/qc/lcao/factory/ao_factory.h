@@ -99,8 +99,7 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
    *  |threshold|double|1e-10| screening threshold |
    *  |precision|double|std::numeric_limits<double>::epsilon() | integral precision |
    *  |iterative_inv_sqrt|bool|false| use iterative inverse square root |
-   *  |corr_functions|int|6|f12 n of corr function,valid if aux_basis exsist in OrbitalBasisRegistry|
-   *  |corr_param|int|0|f12 corr param, ,valid if aux_basis exsist in OrbitalBasisRegistry|
+   *  |f12_param|string|stg-6g[1]|Slater-type F12 correlation factor (defined if aux_basis exists in OrbitalBasisRegistry); valid format is \c stg-Ng[A] where \c N and \c A are nonzero integer and positive real parameters defining the Slater-type correlation factor as a linear combination of \c N Gaussian geminals: \f$ - \exp(- A r_{12})/A \approx \sum\limits_{i=1}^N c_i \exp(- \alpha_i r_{12}^2) \f$. @sa mpqc::lcao::f12::stg_ng_fit |
    */
   // clang-format on
 

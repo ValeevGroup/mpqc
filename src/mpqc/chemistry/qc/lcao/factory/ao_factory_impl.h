@@ -5,6 +5,9 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_IMPL_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_LCAO_FACTORY_AO_FACTORY_IMPL_H_
 
+#include <regex>
+#include <string>
+
 namespace mpqc {
 namespace lcao {
 namespace gaussian {
@@ -23,19 +26,28 @@ AOFactory<Tile, Policy>::AOFactory(const KeyVal& kv)
 
   // if have auxilary basis
   if (kv.exists(prefix + "aux_basis")) {
-    int n_function = kv.value<int>(prefix + "corr_functions", 6);
-    double corr_param = kv.value<double>(prefix + "corr_param", 0);
+
     f12::GTGParams gtg_params;
-    if (corr_param != 0) {
-      gtg_params = f12::GTGParams(corr_param, n_function);
+    if (kv.exists(prefix + "f12_factor")) {
+      auto f12_factor_str = kv.value<std::string>(prefix + "f12_factor", "stg-6g[1]");
+
+      std::regex f12_factor_regex("(stg|STG)\\-(\\d+)(g|G)\\[([0-9\\-eEdD\\.]+)\\]");
+      std::smatch f12_factor_match;
+      if(std::regex_search(f12_factor_str, f12_factor_match, f12_factor_regex)) {
+        auto n_gtg = std::stoi(f12_factor_match[2]);
+        auto lengthscale = std::stod(f12_factor_match[4]);
+        gtg_params = f12::GTGParams(lengthscale, n_gtg);
+      }
+      else
+        throw InputError("invalid format for the f12_factor value",__FILE__,__LINE__,"f12_factor");
     } else {
       if (kv.exists(prefix + "vir_basis")) {
         std::string basis_name =
             kv.value<std::string>(prefix + "vir_basis:name");
-        gtg_params = f12::GTGParams(basis_name, n_function);
+        gtg_params = f12::GTGParams(basis_name, 6);
       } else {
         std::string basis_name = kv.value<std::string>(prefix + "basis:name");
-        gtg_params = f12::GTGParams(basis_name, n_function);
+        gtg_params = f12::GTGParams(basis_name, 6);
       }
     }
     gtg_params_ = gtg_params.compute();

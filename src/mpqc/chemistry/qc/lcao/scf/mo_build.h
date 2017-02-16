@@ -72,10 +72,10 @@ void make_closed_shell_canonical_sdref_subspaces(
   auto tr_a = tre->get_vir_tr1();
   auto tr_p = tre->get_all_tr1();
 
-  mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ Range");
-  mpqc::detail::parallel_print_range_info(world, tr_corr_occ, "ActiveOcc Range");
-  mpqc::detail::parallel_print_range_info(world, tr_vir, "Unocc Range");
-  mpqc::detail::parallel_print_range_info(world, tr_all, "Obs Range");
+  mpqc::detail::parallel_print_range_info(world, tr_m, "Occ Range");
+  mpqc::detail::parallel_print_range_info(world, tr_i, "ActiveOcc Range");
+  mpqc::detail::parallel_print_range_info(world, tr_a, "Unocc Range");
+  mpqc::detail::parallel_print_range_info(world, tr_p, "Obs Range");
 
   // convert eigen arrays to TA
   auto C_m_ta =

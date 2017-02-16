@@ -18,7 +18,7 @@ namespace lcao {
 template <typename Tile, typename Policy>
 std::shared_ptr<Eigen::VectorXd> make_diagonal_fpq(
     LCAOFactoryBase<Tile, Policy> &lcao_factory,
-    gaussian::AOFactoryBase <Tile, Policy> &ao_factory) {
+    gaussian::AOFactoryBase<Tile, Policy> &ao_factory) {
   bool df = ao_factory.registry().have(Formula(L"<μ|F|ν>[df]"));
   auto str = df ? L"<p|F|q>[df]" : L"<p|F|q>";
   auto Fpq_eig = array_ops::array_to_eigen(lcao_factory.compute(str));
@@ -71,6 +71,11 @@ void make_closed_shell_canonical_sdref_subspaces(
   auto tr_m = tre->compute_range(ndocc, occ_blksize);
   auto tr_a = tre->get_vir_tr1();
   auto tr_p = tre->get_all_tr1();
+
+  mpqc::detail::parallel_print_range_info(world, tr_occ, "Occ Range");
+  mpqc::detail::parallel_print_range_info(world, tr_corr_occ, "ActiveOcc Range");
+  mpqc::detail::parallel_print_range_info(world, tr_vir, "Unocc Range");
+  mpqc::detail::parallel_print_range_info(world, tr_all, "Obs Range");
 
   // convert eigen arrays to TA
   auto C_m_ta =

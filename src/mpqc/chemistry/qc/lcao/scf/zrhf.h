@@ -1,10 +1,10 @@
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 
 #include <memory>
@@ -29,7 +29,7 @@ template <typename Tile, typename Policy>
 void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
                            Matrixz& C_gamma_point, Molecule& unitcell,
                            size_t occ_block, size_t vir_block) {
-  auto& orbital_registry = plcao_factory.orbital_space();
+  auto& orbital_registry = plcao_factory.orbital_registry();
   auto& world = plcao_factory.world();
 
   auto all = C_gamma_point.cols();
@@ -49,7 +49,7 @@ void mo_insert_gamma_point(PeriodicLCAOFactory<Tile, Policy>& plcao_factory,
   ExEnv::out0() << "VirBlockSize: " << vir_block << std::endl;
 
   auto obs_basis =
-      plcao_factory.pao_factory().orbital_basis_registry().retrieve(
+      plcao_factory.pao_factory().basis_registry()->retrieve(
           OrbitalIndex(L"κ"));
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
   auto tre = std::make_shared<TRange1Engine>(occ, all, occ_block, vir_block, 0);
@@ -115,7 +115,7 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>,
    *
    * keywords: takes all keywords from PeriodicAOWavefunction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 30 | maximum number of iteration |

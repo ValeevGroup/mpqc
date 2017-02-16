@@ -134,7 +134,7 @@ class TaylorExpansionFunction
    * @brief auxiliary KeyVal constructor
    *
    * The KeyVal object will be query the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | precision | {array<real> \| real} | {none \| 1e-8} | target precision for {each \| all} derivative orders|
    * | deriv_order | int | 0 | the highest derivative order; only queried if precision is not given or is given as an array |

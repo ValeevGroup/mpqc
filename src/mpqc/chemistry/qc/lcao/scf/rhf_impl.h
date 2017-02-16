@@ -29,8 +29,7 @@ namespace lcao {
 template <typename Tile, typename Policy>
 RHF<Tile, Policy>::RHF(const KeyVal& kv)
     : AOWavefunction<Tile, Policy>(kv), kv_(kv) {
-  auto& ao_factory = this->ao_factory();
-  auto& mol = ao_factory.molecule();
+  auto mol = *this->wfn_world()->atoms();
 
   // get the molecular charge
   const auto charge = kv.value<int>("charge", 0);
@@ -54,8 +53,8 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
 template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::init(const KeyVal& kv) {
   auto& ao_factory = this->ao_factory();
-  auto& world = ao_factory.world();
-  auto& mol = ao_factory.molecule();
+  auto& world = this->wfn_world()->world();
+  const auto& mol = *this->wfn_world()->atoms();
 
   // Overlap ints
   S_ = ao_factory.compute(L"<κ|λ>");
@@ -66,8 +65,8 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
   init_fock_builder();
 
   // emultipole integral TODO better interface to compute this
-  auto basis =
-      *ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
+  const auto& basis =
+      *this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
   const auto bs_array = utility::make_array(basis, basis);
   auto multi_pool = gaussian::make_engine_pool(
       libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
@@ -134,7 +133,7 @@ void RHF<Tile, Policy>::obsolete() {
 
 template <typename Tile, typename Policy>
 double RHF<Tile, Policy>::compute_energy() const {
-  return this->ao_factory().molecule().nuclear_repulsion_energy() +
+  return this->wfn_world()->atoms()->nuclear_repulsion_energy() +
          D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
 }
 
@@ -347,11 +346,10 @@ DirectRIRHF<Tile, Policy>::DirectRIRHF(const KeyVal& kv)
 
 template <typename Tile, typename Policy>
 void DirectRIRHF<Tile, Policy>::init_fock_builder() {
-  auto& direct_ao_factory = this->direct_ao_factory();
   auto& ao_factory = this->ao_factory();
 
   auto inv = ao_factory.compute(L"( Κ | G| Λ )");
-  auto eri3 = direct_ao_factory.compute(L"( Κ | G|κ λ)");
+  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)");
 
   scf::DFFockBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3);
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
@@ -365,8 +363,7 @@ DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DirectRHF<Tile, Policy>::init_fock_builder() {
-  auto& direct_ao_factory = this->direct_ao_factory();
-  auto eri4 = direct_ao_factory.compute(L"(μ ν| G|κ λ)");
+  auto eri4 = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
   auto builder =
       scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(std::move(eri4));
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));

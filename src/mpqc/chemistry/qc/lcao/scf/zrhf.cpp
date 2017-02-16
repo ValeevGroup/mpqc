@@ -32,9 +32,6 @@ void zRHF::init(const KeyVal& kv) {
 
   auto init_start = mpqc::fenced_now(world);
 
-  // set OrbitalBasisRegistry
-  ao_factory.set_orbital_basis_registry(this->wfn_world()->basis_registry());
-
   if (world.rank() == 0) {
     std::cout << ao_factory << std::endl;
     std::cout << unitcell << std::endl;

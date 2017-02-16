@@ -35,7 +35,7 @@ class RHF
    *
    * keywords: takes all keywords from AOWavefunction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | max_iter | int | 30 | maximum number of iteration |
    * | density_builder | string | eigen_solve | type of DensityBuilder, valid values are \c eigen_solve (use ESolveDensityBuilder) and \c purification (use PurificationDensityBuilder) |

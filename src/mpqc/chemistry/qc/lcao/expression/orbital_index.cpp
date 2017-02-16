@@ -109,7 +109,7 @@ bool OrbitalIndex::is_ao() const {
   return index < 0;
 }
 
-bool OrbitalIndex::is_mo() const {
+bool OrbitalIndex::is_lcao() const {
   int index = static_cast<int>(index_);
   return index > 0;
 }

@@ -20,7 +20,7 @@ class MolecularFiniteDifferenceDerivative
    *
    * The KeyVal object will be queried for all keywords of the KeyVal ctor of the math::FiniteDifferenceDerivative class,
    * as well as the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | coords | MolecularCoordinates | CartMolecularCoordinates (must specify the \c atoms keyword) | specifies which molecular coordinates will be used to compute the derivative. The only valid choice is CartMolecularCoordinates |
    * | atoms | Molecule | none | if \c coords is not specified, must specify this keyword to be able to construct CartMolecularCoordinates |

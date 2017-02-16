@@ -27,7 +27,7 @@ using OrbitalBasisRegistry = OrbitalRegistry<std::shared_ptr<Basis>>;
  *
  * \param kv the KeyVal object, it will be queried for the following keywords:
  *
- * | KeyWord | Type | Default| Description |
+ * | Keyword | Type | Default| Description |
  * |---------|------|--------|-------------|
  * | basis | AtomicBasis | none | the orbital basis set|
  * | df_basis | AtomicBasis | none | an optional density-fitting basis set |

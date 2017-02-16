@@ -7,7 +7,7 @@
 
 #include <tiledarray.h>
 
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
 #include "mpqc/util/misc/string.h"
 
 namespace mpqc {
@@ -18,17 +18,17 @@ namespace f12 {
  * MP2-F12 C approach V term with Density Fitting, only ijij ijji part is
  * computed
  * \f$V_{ij}^{ij}\f$  \f$V_{ij}^{ji}\f$
- * @param lcao_factory reference to LCAOFactory, has to use SparsePolicy
+ * @param lcao_factory reference to LCAOFactoryBase, has to use SparsePolicy
  * @param shape SparseShape that has ijij ijji shape
  * @return V(i1,j1,i2,j2)
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_df(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
+    gaussian::AOFactoryBase<Tile, TA::SparsePolicy> &ao_factory,
     TA::SparseShape<float> &shape) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
-  auto &ao_factory = lcao_factory.ao_factory();
   auto v_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> V_ijij_ijji;
@@ -86,13 +86,13 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji_df(
 /**
  * MP2-F12 C approach V term, only ijij ijji part is computed
  * \f$V_{ij}^{ij}\f$  \f$V_{ij}^{ji}\f$
- * @param lcao_factory reference to LCAOFactory, has to use SparsePolicy
+ * @param lcao_factory reference to LCAOFactoryBase, has to use SparsePolicy
  * @param shape SparseShape that has ijij ijji shape
  * @return V(i1,j1,i2,j2)
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -150,17 +150,17 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_V_ijij_ijji(
 /**
  * MP2-F12 C approach X term with DF, only ijij ijji part is computed
  * \f$X_{ij}^{ij}\f$  \f$X_{ij}^{ji}\f$
- * @param lcao_factory reference to LCAOFactory, has to use SparsePolicy
+ * @param lcao_factory reference to LCAOFactoryBase, has to use SparsePolicy
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return X(i1,j1,i2,j2)
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_df(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
+    gaussian::AOFactoryBase<Tile, TA::SparsePolicy> &ao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
-  auto &ao_factory = lcao_factory.ao_factory();
   auto x_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> X_ijij_ijji;
@@ -218,13 +218,13 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji_df(
 /**
  * MP2-F12 C approach X term without DF, only ijij ijji part is computed
  * \f$X_{ij}^{ij}\f$  \f$X_{ij}^{ji}\f$
- * @param lcao_factory reference to LCAOFactory, has to use SparsePolicy
+ * @param lcao_factory reference to LCAOFactoryBase, has to use SparsePolicy
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return X(i1,j1,i2,j2)
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -280,17 +280,17 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_X_ijij_ijji(
 /**
  * MP2-F12 C approach B term, only ijij ijji part is computed
  * \f$B_{ij}^{ij}\f$  \f$B_{ij}^{ji}\f$
- * @param lcao_factory reference to LCAOFactory, has to use SparsePolicy
+ * @param lcao_factory reference to LCAOFactoryBase, has to use SparsePolicy
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return B(i1,j1,i2,j2)
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
+    gaussian::AOFactoryBase<Tile, TA::SparsePolicy> &ao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
-  auto &ao_factory = lcao_factory.ao_factory();
   auto b_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> B_ijij_ijji;
@@ -312,7 +312,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
     utility::print_par(world, "B Term1 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_operator(world, L"dR2");
+  lcao_factory.purge_operator(L"dR2");
 
   {
     auto hJ = lcao_factory(L"<P' | hJ | i2>[df]");
@@ -329,8 +329,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
     utility::print_par(world, "B Term2 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_operator(world, L"hJ");
-  lcao_factory.purge_formula(world, L"<i1 j1|R2|P' j2>[df]");
+  lcao_factory.purge_operator(L"hJ");
+  lcao_factory.purge_formula(L"<i1 j1|R2|P' j2>[df]");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|Q' P'>[df]");
@@ -348,7 +348,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
     utility::print_par(world, "B Term3 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|P' Q'>[df]");
+  lcao_factory.purge_formula(L"<i1 j1|R|P' Q'>[df]");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|P' m>[df]");
@@ -366,7 +366,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
     utility::print_par(world, "B Term4 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|P' m>[df]");
+  lcao_factory.purge_formula(L"<i1 j1|R|P' m>[df]");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|m b'>[df]");
@@ -386,7 +386,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
   }
 
   // P' doesn't appear later
-  lcao_factory.registry().purge_index(world, L"P'");
+  lcao_factory.registry().purge_index(L"P'");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|p a>[df]");
@@ -437,8 +437,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
     utility::print_par(world, "B Term8 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|p a>[df]");
-  lcao_factory.purge_formula(world, L"<i2 j2|R|a' a>[df]");
+  lcao_factory.purge_formula(L"<i1 j1|R|p a>[df]");
+  lcao_factory.purge_formula(L"<i2 j2|R|a' a>[df]");
 
   auto b_time1 = mpqc::now(world, accurate_time);
   auto b_time = mpqc::duration_in_s(b_time0, b_time1);
@@ -452,17 +452,17 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C_df(
 /**
  * MP2-F12 D approach B term, only ijij ijji part is computed
  * \f$B_{ij}^{ij}\f$  \f$B_{ij}^{ji}\f$
- * @param lcao_factory reference to LCAOFactory, has to use SparsePolicy
+ * @param lcao_factory reference to LCAOFactoryBase, has to use SparsePolicy
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return B(i1,j1,i2,j2)
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
+    gaussian::AOFactoryBase<Tile, TA::SparsePolicy> &ao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
-  auto &ao_factory = lcao_factory.ao_factory();
   auto b_time0 = mpqc::now(world, accurate_time);
 
   TA::DistArray<Tile, TA::SparsePolicy> B_ijij_ijji;
@@ -486,7 +486,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
   }
 
   // operator dR2 no longer needed
-  lcao_factory.purge_operator(world, L"dR2");
+  lcao_factory.purge_operator(L"dR2");
 
   {
     auto hJ = lcao_factory(L"<P' | hJ | i2>[df]");
@@ -504,8 +504,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
     utility::print_par(world, "B Term2 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_operator(world, L"hJ");
-  lcao_factory.purge_formula(world, L"<i1 j1|R2|P' j2>[df]");
+  lcao_factory.purge_operator(L"hJ");
+  lcao_factory.purge_formula(L"<i1 j1|R2|P' j2>[df]");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|P' q>[df]");
@@ -523,7 +523,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
     utility::print_par(world, "B Term3 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|P' q>[df]");
+  lcao_factory.purge_formula(L"<i1 j1|R|P' q>[df]");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|P' m>[df]");
@@ -542,7 +542,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
   }
 
   // P' doesn't appear later
-  lcao_factory.registry().purge_index(world, L"P'");
+  lcao_factory.registry().purge_index(L"P'");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|m p>[df]");
@@ -561,7 +561,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
     utility::print_par(world, "B Term5 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|m p>[df]");
+  lcao_factory.purge_formula(L"<i1 j1|R|m p>[df]");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|p a>[df]");
@@ -612,8 +612,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
     utility::print_par(world, "B Term8 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|p a>[df]");
-  lcao_factory.purge_formula(world, L"<i2 j2|R|a' a>[df]");
+  lcao_factory.purge_formula(L"<i1 j1|R|p a>[df]");
+  lcao_factory.purge_formula(L"<i2 j2|R|a' a>[df]");
 
   auto b_time1 = mpqc::now(world, accurate_time);
   auto b_time = mpqc::duration_in_s(b_time0, b_time1);
@@ -627,13 +627,13 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D_df(
 /**
  * MP2-F12 C approach B term without DF, only ijij ijji part is computed
  * \f$B_{ij}^{ij}\f$  \f$B_{ij}^{ji}\f$
- * @param lcao_factory reference to LCAOFactory, has to use SparsePolicy
+ * @param lcao_factory reference to LCAOFactoryBase, has to use SparsePolicy
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return B(i1,j1,i2,j2)
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -655,7 +655,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
     utility::print_par(world, "B Term1 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_operator(world, L"dR2");
+  lcao_factory.purge_operator(L"dR2");
 
   {
     auto hJ = lcao_factory(L"<P' | hJ | i2>");
@@ -673,8 +673,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
     utility::print_par(world, "B Term2 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_operator(world, L"hJ");
-  lcao_factory.purge_formula(world, L"<i1 j1|R2|P' j2>");
+  lcao_factory.purge_operator(L"hJ");
+  lcao_factory.purge_formula(L"<i1 j1|R2|P' j2>");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|P' Q'>");
@@ -692,7 +692,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
     utility::print_par(world, "B Term3 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|P' Q'>");
+  lcao_factory.purge_formula(L"<i1 j1|R|P' Q'>");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|P' m>");
@@ -710,7 +710,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
     utility::print_par(world, "B Term4 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|P' m>");
+  lcao_factory.purge_formula(L"<i1 j1|R|P' m>");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|m b'>");
@@ -730,7 +730,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
   }
 
   // P' doesn't appear later
-  lcao_factory.registry().purge_index(world, L"P'");
+  lcao_factory.registry().purge_index(L"P'");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|p a>");
@@ -781,8 +781,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
     utility::print_par(world, "B Term8 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|p a>");
-  lcao_factory.purge_formula(world, L"<i2 j2|R|a' a>");
+  lcao_factory.purge_formula(L"<i1 j1|R|p a>");
+  lcao_factory.purge_formula(L"<i2 j2|R|a' a>");
 
   auto b_time1 = mpqc::now(world, accurate_time);
   auto b_time = mpqc::duration_in_s(b_time0, b_time1);
@@ -793,13 +793,13 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_C(
 /**
  * MP2-F12 D approach B term, only ijij ijji part is computed
  * \f$B_{ij}^{ij}\f$  \f$B_{ij}^{ji}\f$
- * @param lcao_factory reference to LCAOFactory, has to use SparsePolicy
+ * @param lcao_factory reference to LCAOFactoryBase, has to use SparsePolicy
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return B(i1,j1,i2,j2)
  */
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     TA::SparseShape<float> &ijij_ijji_shape) {
   bool accurate_time = lcao_factory.accurate_time();
   auto &world = lcao_factory.world();
@@ -822,7 +822,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
   }
 
   // operator dR2 no longer needed
-  lcao_factory.purge_operator(world, L"dR2");
+  lcao_factory.purge_operator(L"dR2");
 
   {
     auto hJ = lcao_factory(L"<P' | hJ | i2>");
@@ -840,8 +840,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
     utility::print_par(world, "B Term2 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_operator(world, L"hJ");
-  lcao_factory.purge_formula(world, L"<i1 j1|R2|P' j2>");
+  lcao_factory.purge_operator(L"hJ");
+  lcao_factory.purge_formula(L"<i1 j1|R2|P' j2>");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|P' q>");
@@ -859,7 +859,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
     utility::print_par(world, "B Term3 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|P' q>");
+  lcao_factory.purge_formula(L"<i1 j1|R|P' q>");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|P' m>");
@@ -878,7 +878,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
   }
 
   // P' doesn't appear later
-  lcao_factory.registry().purge_index(world, L"P'");
+  lcao_factory.registry().purge_index(L"P'");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|m p>");
@@ -897,7 +897,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
     utility::print_par(world, "B Term5 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|m p>");
+  lcao_factory.purge_formula(L"<i1 j1|R|m p>");
 
   {
     auto left = lcao_factory(L"<i1 j1|R|p a>");
@@ -948,8 +948,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
     utility::print_par(world, "B Term8 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i1 j1|R|p a>");
-  lcao_factory.purge_formula(world, L"<i2 j2|R|a' a>");
+  lcao_factory.purge_formula(L"<i1 j1|R|p a>");
+  lcao_factory.purge_formula(L"<i2 j2|R|a' a>");
 
   auto b_time1 = mpqc::now(world, accurate_time);
   auto b_time = mpqc::duration_in_s(b_time0, b_time1);
@@ -963,12 +963,12 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_B_ijij_ijji_D(
 /**
  * CC-F12 C approach V term with DF
  * \f$V_{ia}^{xy}\f$
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @return V("i,a,x,y")
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_iaxy_df(
-    LCAOFactory<Tile, Policy> &lcao_factory, bool couple,
+    LCAOFactoryBase<Tile, Policy> &lcao_factory, bool couple,
     bool second = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -987,7 +987,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_df(
     utility::print_par(world, "V Term1 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i a |GR|k l>[df]");
+  lcao_factory.purge_formula(L"<i a |GR|k l>[df]");
 
   if (second) {
     auto left = lcao_factory(L"<i a|G|p q>[df]");
@@ -999,7 +999,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_df(
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "V Term2 Time: ", time, " S\n");
 
-    lcao_factory.purge_formula(world, L"<i a |G|p q>[df]");
+    lcao_factory.purge_formula(L"<i a |G|p q>[df]");
   } else {
     utility::print_par(world, "Skip V Term2 \n");
   }
@@ -1016,7 +1016,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_df(
       utility::print_par(world, "V Term3 Time: ", time, " S\n");
     }
 
-    lcao_factory.purge_formula(world, L"<i a|G|m a'>[df]");
+    lcao_factory.purge_formula(L"<i a|G|m a'>[df]");
 
     {
       auto left = lcao_factory(L"<a i|G|m a'>[df]");
@@ -1029,7 +1029,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_df(
       utility::print_par(world, "V Term4 Time: ", time, " S\n");
     }
 
-    lcao_factory.purge_formula(world, L"<a i|G|m a'>[df]");
+    lcao_factory.purge_formula(L"<a i|G|m a'>[df]");
   } else {
     utility::print_par(world, "Skip V Term3 and Term4 \n");
   }
@@ -1043,12 +1043,12 @@ TA::DistArray<Tile, Policy> compute_V_iaxy_df(
 /**
  * CC-F12 C approach V term without DF
  * \f$V_{ia}^{xy}\f$
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @return V("i,a,x,y")
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_iaxy(
-    LCAOFactory<Tile, Policy> &lcao_factory, bool couple,
+    LCAOFactoryBase<Tile, Policy> &lcao_factory, bool couple,
     bool second = true) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
@@ -1067,7 +1067,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy(
     utility::print_par(world, "V Term1 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i a |GR|k l>");
+  lcao_factory.purge_formula(L"<i a |GR|k l>");
 
   if (second) {
     auto left = lcao_factory(L"<i a|G|p q>");
@@ -1079,7 +1079,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy(
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "V Term2 Time: ", time, " S\n");
 
-    lcao_factory.purge_formula(world, L"<i a |G|p q>");
+    lcao_factory.purge_formula(L"<i a |G|p q>");
   } else {
     utility::print_par(world, "Skip V Term2 \n");
   }
@@ -1095,7 +1095,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy(
       auto time = mpqc::duration_in_s(time0, time1);
       utility::print_par(world, "V Term3 Time: ", time, " S\n");
     }
-    lcao_factory.purge_formula(world, L"<i a |G|m a'>");
+    lcao_factory.purge_formula(L"<i a |G|m a'>");
 
     {
       auto left = lcao_factory(L"<a i|G|m a'>");
@@ -1107,7 +1107,7 @@ TA::DistArray<Tile, Policy> compute_V_iaxy(
       auto time = mpqc::duration_in_s(time0, time1);
       utility::print_par(world, "V Term4 Time: ", time, " S\n");
     }
-    lcao_factory.purge_formula(world, L"<a i |G|m a'>");
+    lcao_factory.purge_formula(L"<a i |G|m a'>");
   } else {
     utility::print_par(world, "Skip V Term3 and Term4 \n");
   }
@@ -1121,12 +1121,12 @@ TA::DistArray<Tile, Policy> compute_V_iaxy(
  * DF-based builder for the V intermediate with general indices,
  * \f$V_{xy}^{ab} \equiv R_{xy}^{\alpha \beta} g_{\alpha \beta}^{a b}\f$, for
  * the use in CC F12.
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @return V("x,y,a,b")
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_xyab_df(
-    LCAOFactory<Tile, Policy> &lcao_factory, bool couple) {
+    LCAOFactoryBase<Tile, Policy> &lcao_factory, bool couple) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
 
@@ -1147,7 +1147,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab_df(
     utility::print_par(world, "V Term1 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i j|GR|a b>[df]");
+  lcao_factory.purge_formula(L"<i j|GR|a b>[df]");
 
   {
     auto right = lcao_factory(L"<a b|G|p q>[df]");
@@ -1160,7 +1160,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab_df(
     utility::print_par(world, "V Term2 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<a b|G|p q>[df]");
+  lcao_factory.purge_formula(L"<a b|G|p q>[df]");
 
   if (couple) {
     auto right = lcao_factory(L"<a b|G|m a'>[df]");
@@ -1174,7 +1174,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab_df(
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "V Term3 Time: ", time, " S\n");
 
-    lcao_factory.purge_formula(world, L"<a b|G|m a'>[df]");
+    lcao_factory.purge_formula(L"<a b|G|m a'>[df]");
   } else {
     utility::print_par(world, "Skip V Term3 \n");
   }
@@ -1189,12 +1189,12 @@ TA::DistArray<Tile, Policy> compute_V_xyab_df(
  * non-DF-based builder for the V intermediate with general indices,
  * \f$V_{xy}^{ab} \equiv R_{xy}^{\alpha \beta} g_{\alpha \beta}^{a b}\f$, for
  * the use in CC F12.
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @return V("x,y,a,b")
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_V_xyab(
-    LCAOFactory<Tile, Policy> &lcao_factory, bool couple) {
+    LCAOFactoryBase<Tile, Policy> &lcao_factory, bool couple) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
 
@@ -1215,7 +1215,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab(
     utility::print_par(world, "V Term1 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<i j|GR|a b>");
+  lcao_factory.purge_formula(L"<i j|GR|a b>");
 
   {
     auto right = lcao_factory(L"<a b|G|p q>");
@@ -1228,7 +1228,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab(
     utility::print_par(world, "V Term2 Time: ", time, " S\n");
   }
 
-  lcao_factory.purge_formula(world, L"<a b|G|p q>");
+  lcao_factory.purge_formula(L"<a b|G|p q>");
 
   if (couple) {
     auto right = lcao_factory(L"<a b|G|m a'>");
@@ -1241,7 +1241,7 @@ TA::DistArray<Tile, Policy> compute_V_xyab(
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "V Term3 Time: ", time, " S\n");
 
-    lcao_factory.purge_formula(world, L"<a b|G|m a'>");
+    lcao_factory.purge_formula(L"<a b|G|m a'>");
   } else {
     utility::print_par(world, "Skip V Term3 \n");
   }
@@ -1255,12 +1255,12 @@ TA::DistArray<Tile, Policy> compute_V_xyab(
 
 /**
  * MP2-F12, CC-F12 C approach C term \f$C_{ij}^{ab} \f$ with DF
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @return C("i,j,a,b")
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_C_ijab_df(
-    LCAOFactory<Tile, Policy> &lcao_factory) {
+    LCAOFactoryBase<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   auto c_time0 = mpqc::now(world, accurate_time);
@@ -1278,7 +1278,7 @@ TA::DistArray<Tile, Policy> compute_C_ijab_df(
   auto time = mpqc::duration_in_s(time0, time1);
   utility::print_par(world, "C Term Time: ", time, " S\n");
 
-  lcao_factory.purge_formula(world, L"<i j|R|a a'>[df]");
+  lcao_factory.purge_formula(L"<i j|R|a a'>[df]");
 
   auto c_time = mpqc::duration_in_s(c_time0, time1);
   utility::print_par(world, "C Term Total Time: ", c_time, " S\n");
@@ -1287,12 +1287,12 @@ TA::DistArray<Tile, Policy> compute_C_ijab_df(
 
 /**
  * MP2-F12, CC-F12 C approach C term \f$C_{ij}^{ab} \f$ without DF
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @return C("i,j,a,b")
  */
 template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> compute_C_ijab(
-    LCAOFactory<Tile, Policy> &lcao_factory) {
+    LCAOFactoryBase<Tile, Policy> &lcao_factory) {
   auto &world = lcao_factory.world();
   bool accurate_time = lcao_factory.accurate_time();
   auto c_time0 = mpqc::now(world, accurate_time);
@@ -1310,7 +1310,7 @@ TA::DistArray<Tile, Policy> compute_C_ijab(
   auto time = mpqc::duration_in_s(time0, time1);
   utility::print_par(world, "C Term Time: ", time, " S\n");
 
-  lcao_factory.purge_formula(world, L"<i j|R|a a'>");
+  lcao_factory.purge_formula(L"<i j|R|a a'>");
 
   auto c_time = mpqc::duration_in_s(c_time0, time1);
   utility::print_par(world, "C Term Total Time: ", c_time, " S\n");
@@ -1320,7 +1320,7 @@ TA::DistArray<Tile, Policy> compute_C_ijab(
 /**
  * CC-F12 C approach VT2 term with direct integral
  * \f$T_{ab}^{ij} * (V_{xy}^{ab} + C_{xy}^{ab})\f$
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @param t2 t2 amplitude
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @param direct_array direct two electron integral \f$V_{\rho \sigma}^{\mu
@@ -1329,11 +1329,11 @@ TA::DistArray<Tile, Policy> compute_C_ijab(
  */
 template <typename Tile, typename DirectArray>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
+    gaussian::AOFactoryBase<Tile, TA::SparsePolicy> &ao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape, DirectArray direct_array) {
   auto &world = lcao_factory.world();
-  auto &ao_factory = lcao_factory.ao_factory();
   bool accurate_time = lcao_factory.accurate_time();
 
   TA::DistArray<Tile, TA::SparsePolicy> V_ijji_ijji;
@@ -1350,7 +1350,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
 
     auto time0 = mpqc::now(world, accurate_time);
     V_xyab("i,j,a,b") += left * middle * right;
-    lcao_factory.registry().purge_operator(world, L"GR");
+    lcao_factory.registry().purge_operator(L"GR");
     auto time1 = mpqc::now(world, accurate_time);
     auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, "VT2 Term1 Time: ", time, " S\n");
@@ -1371,15 +1371,17 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
   }
 
   TA::DistArray<Tile, TA::SparsePolicy> U;
-  auto Ca = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a")).coefs();
-  auto Cp = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"p")).coefs();
+  auto Ca =
+      lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"a")).coefs();
+  auto Cp =
+      lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"p")).coefs();
   {
     auto time0 = mpqc::now(world, accurate_time);
 
     //    auto Cm =
-    //    lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"m")).coefs();
+    //    lcao_factory.orbital_registry()->retrieve(OrbitalIndex(L"m")).coefs();
     //    auto Ca_prime =
-    //    lcao_factory.orbital_space()->retrieve(OrbitalIndex(L"a'")).coefs();
+    //    lcao_factory.orbital_registry()->retrieve(OrbitalIndex(L"a'")).coefs();
     // compuate intermediate U
     U("i,j,rho,mu") = (t2("a,b,i,j") * Ca("sigma,a") * Ca("nu,b")) *
                       direct_array("rho, sigma, mu, nu");
@@ -1416,7 +1418,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
 /**
  * CC-F12 C approach VT2 term with DF
  * \f$T_{ab}^{ij} * (V_{xy}^{ab} + C_{xy}^{ab})\f$
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @param t2 t2 amplitude
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return V("i1,j1,i2,j2")
@@ -1424,7 +1426,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df_direct(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
   auto &world = lcao_factory.world();
@@ -1458,7 +1460,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df(
 /**
  * CC-F12 C approach VT2 term without DF
  * \f$T_{ab}^{ij} * (V_{xy}^{ab} + C_{xy}^{ab})\f$
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @param t2 t2 amplitude
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return V("i1,j1,i2,j2")
@@ -1466,7 +1468,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t2,
     const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
   auto &world = lcao_factory.world();
@@ -1511,7 +1513,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji(
 /**
  * CC-F12 C approach VT1 term with DF
  * \f$T_{a}^{i} * V_{ia}^{xy}\f$
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @param t1 t1 amplitude
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return V("i1,j1,i2,j2")
@@ -1519,7 +1521,8 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT2_ijij_ijji(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
+    gaussian::AOFactoryBase<Tile, TA::SparsePolicy> &ao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
     const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
   auto &world = lcao_factory.world();
@@ -1545,7 +1548,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
   // now include the second term in V_iaxy
   {
     auto left = lcao_factory(L"( Κ |G|i1 p)");
-    auto center = lcao_factory(L"( Κ |G| Λ )[inv]");
+    auto center = ao_factory(L"( Κ |G| Λ )[inv]");
     auto right = lcao_factory(L"( Λ |G| a q)");
     auto right_array = lcao_factory(L"<i2 j2|R|p q>[df]");
 
@@ -1575,7 +1578,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
 /**
  * CC-F12 C approach VT1 term without DF
  * \f$T_{a}^{i} * V_{ia}^{xy}\f$
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @param t1 t1 amplitude
  * @param ijij_ijji_shape SparseShape that has ijij ijji shape
  * @return V("i1,j1,i2,j2")
@@ -1583,7 +1586,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji_df(
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji(
-    LCAOFactory<Tile, TA::SparsePolicy> &lcao_factory,
+    LCAOFactoryBase<Tile, TA::SparsePolicy> &lcao_factory,
     const TA::DistArray<Tile, TA::SparsePolicy> &t1,
     const TA::SparseShape<float> &ijij_ijji_shape, bool couple = true) {
   auto &world = lcao_factory.world();
@@ -1626,7 +1629,7 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji(
  *
  * @tparam String any string type (e.g., std::basic_string and char[])
  * @param target_str std::string, the only valid vales are "V" or "X"
- * @param lcao_factory reference to LCAOFactory
+ * @param lcao_factory reference to LCAOFactoryBase
  * @param p an OrbitalIndex key (must be known to \c lcao_factory )
  * @param q an OrbitalIndex key (must be known to \c lcao_factory )
  * @param r an OrbitalIndex key (must be known to \c lcao_factory )
@@ -1641,9 +1644,11 @@ TA::DistArray<Tile, TA::SparsePolicy> compute_VT1_ijij_ijji(
 template <typename Tile, typename Policy, typename String>
 std::tuple<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>
 VX_pqrs_pqsr(const std::string &target_str,
-             LCAOFactory<Tile, Policy> &lcao_factory,
-             const String &p, const String &q, const String &r, const String &s,
-             bool df = true, bool cabs = true) {
+             LCAOFactoryBase<Tile, Policy> &lcao_factory,
+             gaussian::AOFactoryBase<Tile, Policy> &ao_factory,
+             const String &p,
+             const String &q, const String &r, const String &s, bool df = true,
+             bool cabs = true) {
   using mpqc::utility::concat;
   using mpqc::utility::wconcat;
   using mpqc::utility::concatcm;
@@ -1663,7 +1668,6 @@ VX_pqrs_pqsr(const std::string &target_str,
   const auto methodstr = df ? "[df]" : "";
 
   auto &world = lcao_factory.world();
-  auto &ao_factory = lcao_factory.ao_factory();
   const bool accurate_time = lcao_factory.accurate_time();
 
   const auto equiv_pq = OrbitalIndex(p) == OrbitalIndex(q);
@@ -1706,7 +1710,7 @@ VX_pqrs_pqsr(const std::string &target_str,
       A_pqsr(concatcm(p, q, s, r)) = left_ps * middle * right_rq;
     }
     // remove all generated integrals as they are likely not needed any longer
-    lcao_factory.purge_operator(world, to_wstring(opstr));
+    lcao_factory.purge_operator(to_wstring(opstr));
     const auto time1 = mpqc::now(world, accurate_time);
     const auto time = mpqc::duration_in_s(time0, time1);
     utility::print_par(world, target_str, " Term1 Time: ", time, " S\n");

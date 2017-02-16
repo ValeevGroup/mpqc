@@ -61,7 +61,7 @@ TA::TiledRange1 TRange1Engine::tr_virtual() {
 }
 
 TA::TiledRange1 TRange1Engine::tr_all() {
-  return join(tr_occupied(), tr_virtual());
+  return compute_range(all_, vir_block_size_);
 }
 
 void TRange1Engine::init() {

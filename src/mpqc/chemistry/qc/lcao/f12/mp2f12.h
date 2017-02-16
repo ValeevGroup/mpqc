@@ -33,7 +33,7 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
    * @param kv
    * keywords: takes all keywords from LCAOWavefunction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    * | approaximation | char | C | approaximation to use (C or D) |
@@ -47,7 +47,7 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
   void obsolete() override;
 
   const std::shared_ptr<Eigen::VectorXd> orbital_energy() const {
-    return orbital_energy_;
+    return f_pq_diagonal_;
   }
   const double mp2_corr_energy() const { return mp2_corr_energy_; }
   const double f12_energy() const { return mp2_f12_energy_; }
@@ -89,7 +89,7 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
   TA::SparseShape<float> ijij_ijji_shape_;
   bool cabs_singles_;
   std::shared_ptr<Wavefunction> ref_wfn_;
-  std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+  std::shared_ptr<Eigen::VectorXd> f_pq_diagonal_;
 
  private:
   /// MP2 correlation energy
@@ -115,7 +115,7 @@ class RIRMP2F12 : public RMP2F12<Tile> {
  * @param kv
  * keywords: takes all keywords from LCAOWavefunction
  *
- * | KeyWord | Type | Default| Description |
+ * | Keyword | Type | Default| Description |
  * |---------|------|--------|-------------|
  * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
  * | approaximation | char | C | approaximation to use (C or D) |

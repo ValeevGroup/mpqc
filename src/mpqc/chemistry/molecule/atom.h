@@ -35,7 +35,7 @@ class Atom {
   // clang-format off
   /// \brief The KeyVal constructor
   /// \param kv The KeyVal object. The following keywords will be queried:
-  ///  | KeyWord | Type | Default| Description |
+  ///  | Keyword | Type | Default| Description |
   ///  |---------|------|--------|-------------|
   ///  |\c element|string|none|the element symbol (e.g., H, He, etc.).|
   ///  |\c xyz|array|none|a 3-element array of xyz coordinates.|

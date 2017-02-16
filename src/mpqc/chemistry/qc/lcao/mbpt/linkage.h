@@ -32,7 +32,6 @@ mpqc::detail::ForceLink<RMP2<TA::TensorD, TA::DensePolicy>> fl1;
 mpqc::detail::ForceLink<RIRMP2<TA::TensorD, TA::DensePolicy>> fl2;
 mpqc::detail::ForceLink<DBRMP2<TA::TensorD, TA::DensePolicy>> fl3;
 mpqc::detail::ForceLink<RIDBRMP2<TA::TensorD, TA::DensePolicy>> fl4;
-mpqc::detail::ForceLink<GammaPointMP2<TA::TensorZ, TA::DensePolicy>> fl5;
 
 #elif TA_DEFAULT_POLICY == 1
 mpqc::detail::ForceLink<RMP2<TA::TensorD, TA::SparsePolicy>> fl1;

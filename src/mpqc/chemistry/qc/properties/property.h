@@ -58,7 +58,7 @@ class WavefunctionProperty
    *
    * The KeyVal object will be queried for all keywords of the auxiliary KeyVal ctor of the MolecularTaylorExpansion class,
    * as well as the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | wfn | Wavefunction | none | the Wavefunction that will compute this  |
    * | coords | MolecularCoordinates | CartMolecularCoordinates from the Molecule object of the Wavefunction object | the molecular coordinates  |

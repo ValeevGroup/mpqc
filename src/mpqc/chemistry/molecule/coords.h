@@ -18,7 +18,7 @@ class MolecularCoordinates : virtual public DescribedClass {
    * @param kv the KeyVal object to be queried
    *
    * The KeyVal object will be query the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | molecule | Molecule | none | the molecule  |
    */

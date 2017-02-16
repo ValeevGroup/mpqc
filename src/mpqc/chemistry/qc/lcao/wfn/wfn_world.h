@@ -36,7 +36,7 @@ class WavefunctionWorld : virtual public DescribedClass {
    *
    * The KeyVal object will be queried for all keywords of OrbitalBasisRegistry, and the following keywords:
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | molecule | Molecule | none | |
    **/

@@ -98,7 +98,7 @@ class RMP2 : public lcao::LCAOWavefunction<Tile,Policy>, public Provides<Energy>
    * @param kv
    *
    * keywords: takes all keywords from LCAOWavefunction
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    */

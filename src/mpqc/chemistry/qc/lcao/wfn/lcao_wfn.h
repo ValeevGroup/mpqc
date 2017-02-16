@@ -7,8 +7,8 @@
 
 #include "mpqc/chemistry/qc/lcao/expression/orbital_space.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/util/keyval/keyval.h"
@@ -26,7 +26,9 @@ template <typename Tile, typename Policy>
 class LCAOWavefunction : public Wavefunction {
  public:
   using ArrayType = TA::DistArray<Tile, Policy>;
-  using LCAOFactoryType = lcao::LCAOFactory<Tile, Policy>;
+  using DirectArrayType = gaussian::DirectArray<Tile, Policy>;
+  using LCAOFactoryType = Factory<ArrayType>;
+  using AOFactoryType = Factory<ArrayType, DirectArrayType>;
 
   // clang-format off
   /**
@@ -35,7 +37,7 @@ class LCAOWavefunction : public Wavefunction {
    * The KeyVal object will be queried for all keywords of Wavefunction and
    * LCAOFactory, and the following keywords:
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
    * | \c "charge" | int | 0 | the net charge of the molecule (derived classes may refine the meaning of this keyword) |
@@ -46,8 +48,7 @@ class LCAOWavefunction : public Wavefunction {
    */
   // clang-format on
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-    lcao_factory_ = lcao::detail::construct_lcao_factory<Tile, Policy>(kv);
-
+    init_factory(kv);
     frozen_core_ = kv.value<bool>("frozen_core", true);
 
     charge_ = kv.value<int>("charge", 0);
@@ -69,6 +70,13 @@ class LCAOWavefunction : public Wavefunction {
   virtual ~LCAOWavefunction() = default;
 
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
+
+  const LCAOFactoryType &lcao_factory() const { return *lcao_factory_; }
+
+  AOFactoryType &ao_factory() { return *ao_factory_; }
+
+  const AOFactoryType &ao_factory() const { return *ao_factory_; }
+
   void obsolete() override {
     lcao_factory_->obsolete();
     Wavefunction::obsolete();
@@ -120,24 +128,25 @@ class LCAOWavefunction : public Wavefunction {
       if (has_canonical_orbs)
         evaluate(*orbs, canonical_orbs_provider, target_ref_precision);
       else  // last resort: compute canonical orbitals
-        orbs = make_closed_shell_canonical_orbitals(lcao_factory_, ndocc,
+        orbs = make_closed_shell_canonical_orbitals(ao_factory_, ndocc,
                                                     unocc_block_);
 
       make_closed_shell_canonical_sdref_subspaces(
-          lcao_factory_, std::const_pointer_cast<const CanonicalOrbitalSpace<TArray>>(orbs),
+          lcao_factory_,
+          std::const_pointer_cast<const CanonicalOrbitalSpace<TArray>>(orbs),
           ndocc, n_frozen_core, occ_block_, unocc_block_);
     }
     // else ask for populated spaces
     else {
       make_closed_shell_sdref_subspaces(
-          lcao_factory_, populated_orbs_provider, target_ref_precision, ndocc,
+          ao_factory_, populated_orbs_provider, target_ref_precision, ndocc,
           n_frozen_core, occ_block_, unocc_block_);
     }
   }
 
   const std::shared_ptr<const ::mpqc::utility::TRange1Engine> &trange1_engine()
       const {
-    return lcao_factory_->orbital_space().trange1_engine();
+    return lcao_factory_->orbital_registry().trange1_engine();
   }
 
   bool is_frozen_core() const { return frozen_core_; }
@@ -146,7 +155,18 @@ class LCAOWavefunction : public Wavefunction {
   size_t unocc_block() const { return unocc_block_; }
 
  private:
+  /**
+    *  Default way of initialize factories
+    *  use LCAOFactory and AOFactory
+    */
+  virtual void init_factory(const KeyVal &kv) {
+    lcao_factory_ = construct_lcao_factory<Tile, Policy>(kv);
+    ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
+  }
+
+ private:
   std::shared_ptr<LCAOFactoryType> lcao_factory_;
+  std::shared_ptr<AOFactoryType> ao_factory_;
   bool frozen_core_;
   int charge_;
   std::size_t occ_block_;
@@ -171,7 +191,7 @@ class PeriodicLCAOWavefunction : public Wavefunction {
    * The KeyVal object will be queried for all keywords of Wavefunction and
    * LCAOFactory, and the following keywords:
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
    * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space block size |
@@ -193,10 +213,9 @@ class PeriodicLCAOWavefunction : public Wavefunction {
   virtual ~PeriodicLCAOWavefunction() = default;
 
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
+
   void obsolete() override {
-    lcao_factory_->registry().purge(wfn_world()->world());
-    lcao_factory_->orbital_space().clear();
-    lcao_factory_->ao_factory().registry().purge(wfn_world()->world());
+    lcao_factory_->obsolete();
     Wavefunction::obsolete();
   }
 

@@ -213,7 +213,7 @@ template <typename Tile>
 void RMP2F12<Tile>::init(double ref_precision) {
   this->init_sdref(ref_wfn_, ref_precision);
 
-  this->orbital_energy_ =
+  this->f_pq_diagonal_ =
       make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
   // create shape

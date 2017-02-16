@@ -115,17 +115,17 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   bool print_detail_;
   double ccsd_corr_energy_;
   // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
-  std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+  std::shared_ptr<Eigen::VectorXd> f_pq_diagonal_;
 
  protected:
   std::shared_ptr<const Eigen::VectorXd> orbital_energy() {
-    return orbital_energy_;
+    return f_pq_diagonal_;
   }
 
  public:
   void obsolete() override {
     ccsd_corr_energy_ = 0.0;
-    orbital_energy_.reset();
+    f_pq_diagonal_.reset();
     LCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
   }
@@ -179,7 +179,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
       this->init_sdref(ref_wfn_, target_ref_precision);
 
-      orbital_energy_ =
+      f_pq_diagonal_ =
           make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
       // set the precision

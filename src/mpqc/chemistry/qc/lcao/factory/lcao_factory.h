@@ -99,7 +99,7 @@ class LCAOFactory : public LCAOFactoryBase<Tile, Policy> {
     ExEnv::out0() << "\nConstructing LCAOFactory: \n"
                   << indent << "Keep partial transform = "
                   << (keep_partial_transforms_ ? "true" : "false")
-                  << "\nAccurate time = "
+                  << "\n" << indent << "Accurate time = "
                   << (this->accurate_time_ ? "true" : "false") << "\n\n";
   }
 

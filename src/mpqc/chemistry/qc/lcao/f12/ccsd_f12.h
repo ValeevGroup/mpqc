@@ -113,8 +113,8 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
 
  private:
   virtual void init_cabs() {
-    closed_shell_cabs_mo_build_svd(to_ao_factory(this->ao_factory()),
-                                   this->trange1_engine(), this->unocc_block());
+    closed_shell_cabs_mo_build_svd(this->ao_factory(), this->trange1_engine(),
+                                   this->unocc_block());
   }
 
   /// compute CABS singles correction
@@ -251,8 +251,8 @@ typename CCSD_F12<Tile>::Matrix CCSD_F12<Tile>::compute_ccsd_f12_df(
 
   // VT1 contribution
   {
-    TArray tmp = f12::compute_VT1_ijij_ijji_df(lcao_factory, ao_factory, this->t1(),
-                                               ijij_ijji_shape, vt_couple_);
+    TArray tmp = f12::compute_VT1_ijij_ijji_df(
+        lcao_factory, ao_factory, this->t1(), ijij_ijji_shape, vt_couple_);
     V_ijij_ijji("i1,j1,i2,j2") += tmp("i1,j1,i2,j2");
   }
 

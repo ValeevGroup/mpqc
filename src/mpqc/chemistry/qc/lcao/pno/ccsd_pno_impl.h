@@ -17,7 +17,7 @@ namespace mpqc {
       template <typename Tile, typename Policy>
       TA::DistArray<Tile, Policy> compute_mp2_t2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
                                                  const std::shared_ptr<Eigen::VectorXd> &orbital_energy,
-                                                 const std::shared_ptr<mpqc::TRange1Engine> &trange1_engine,
+                                                 const std::shared_ptr<const ::mpqc::utility::TRange1Engine> &trange1_engine,
                                                  bool df) {
         TA::DistArray<Tile, Policy> g_abij;
         ExEnv::out0() << indent << "Using density fitting: " << df << std::endl;
@@ -95,7 +95,7 @@ namespace mpqc {
     TA::DistArray<Tile, Policy> CCSD_PNO<Tile, Policy>::compute_mp2_t2() {
 
       auto &lcao_factory = this->lcao_factory();
-      return detail::compute_mp2_t2(lcao_factory, this->orbital_energy(),
+      return detail::compute_mp2_t2(lcao_factory, this->orbital_energy_,
                                     this->trange1_engine(), this->df_);
     }
 
@@ -120,7 +120,8 @@ namespace mpqc {
       TA::TiledRange1 old_vir = this->trange1_engine()->get_vir_tr1();
 
       auto new_tr1 =
-          std::make_shared<TRange1Engine>(occ, all, occ_blk_size, vir_blk_size, n_frozen);
+          std::make_shared<::mpqc::utility::TRange1Engine>
+              (occ, all, occ_blk_size, vir_blk_size, n_frozen);
 
       TA::TiledRange1 new_occ = new_tr1->get_active_occ_tr1();
       TA::TiledRange1 new_vir = new_tr1->get_vir_tr1();
@@ -168,12 +169,13 @@ namespace mpqc {
         TA::EigenMatrixXd C_es = es.eigenvectors();
 
         // truncate eigenvectors with corresponding eigenvalues smaller than threshold
-        int pos_trunc = a - 1;
-        for(; pos_trunc >= 0; --pos_trunc) {
-          if(std::abs(S_es(pos_trunc)) < tcut_)
-            break;
-        }
-
+//        int pos_trunc = a - 1;
+//        for(; pos_trunc >= 0; --pos_trunc) {
+//          if(std::abs(S_es(pos_trunc)) < tcut_)
+//            break;
+//        }
+//
+        int pos_trunc = -1;
         const size_t rank = a - pos_trunc - 1;
         if (rank > 0) {
           const size_t a_lo = tab_tile.range().lobound()[0];
@@ -193,7 +195,7 @@ namespace mpqc {
           // print out pair and rank information
           std::stringstream ss;
           ss << "("<< orb_i << "," << orb_j << ") pair  rank: " << rank
-             << std::endl;
+             << " a: " << a << " pos_trunc: " << pos_trunc << std::endl;
           //ss << "dab tile: " << dab_tile << std::endl;
           std::printf("%s", ss.str().c_str());
         }
@@ -540,7 +542,7 @@ namespace mpqc {
 
         // compute the norm of all the residuals
         const double norm_r2 = norm_vec_tensor(vecij_r2);
-        if (dE >= this->converge_ || norm_r2 >= this->converge_) {
+        if (dE >= this->target_precision_ || norm_r2 >= this->target_precision_) {
           if (world.rank() == 0)
             std::printf("%3i \t %10.5e \t %10.5e \t %15.12f \t %10.1f \n", iter, dE, norm_r2, E1,
                       time);
@@ -615,7 +617,7 @@ namespace mpqc {
       if (world.rank() == 0) {
           std::cout << "Start Iteration" << std::endl;
           std::cout << "Max Iteration: " << this->max_iter_ << std::endl;
-          std::cout << "Convergence: " << this->converge_ << std::endl;
+          std::cout << "Target_precision: " << this->target_precision_ << std::endl;
           std::cout << "AccurateTime: " << accurate_time << std::endl;
           std::cout << "PrintDetail: " << this->print_detail_ << std::endl;
       }
@@ -768,7 +770,7 @@ namespace mpqc {
 
           double error_r2 = r2("a,b,i,j").norm().get();
 
-          if (dE >= this->converge_ || error_r2 >= this->converge_) {
+          if (dE >= this->target_precision_ || error_r2 >= this->target_precision_) {
               auto time1 = mpqc::fenced_now(world);
               auto duration = mpqc::duration_in_s(time0, time1);
 
@@ -1096,7 +1098,7 @@ namespace mpqc {
       if (world.rank() == 0) {
           std::cout << "Start Iteration" << std::endl;
           std::cout << "Max Iteration: " << this->max_iter_ << std::endl;
-          std::cout << "Convergence: " << this->converge_ << std::endl;
+          std::cout << "Target_precision: " << this->target_precision_ << std::endl;
           std::cout << "AccurateTime: " << accurate_time << std::endl;
           std::cout << "PrintDetail: " << this->print_detail_ << std::endl;
           if (less) {
@@ -1359,7 +1361,7 @@ namespace mpqc {
           double error_r1 = r1("a,i").norm().get();
           double error_r2 = r2("a,b,i,j").norm().get();
 
-          if (dE >= this->converge_ || error >= this->converge_) {
+          if (dE >= this->target_precision_ || error >= this->target_precision_) {
               tmp_time0 = mpqc::now(world, accurate_time);
               cc::T1T2<TArray, TArray> t(t1, t2);
               cc::T1T2<TArray, TArray> r(r1, r2);
@@ -1465,22 +1467,38 @@ namespace mpqc {
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::evaluate(Energy* result) {
 
+      auto target_precision = result->target_precision(0);
+
       if (!this->computed()) {
-        /// cast ref_wfn to Energy::Evaluator
-        auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(this->ref_wfn_);
-        if(ref_evaluator == nullptr) {
-          std::ostringstream oss;
-          oss << "RefWavefunction in CCSD-PNO" << this->ref_wfn_->class_key()
-              << " cannot compute Energy" << std::endl;
-          throw InputError(oss.str().c_str(), __FILE__, __LINE__);
-        }
+//        /// cast ref_wfn to Energy::Evaluator
+//        auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(this->ref_wfn_);
+//        if(ref_evaluator == nullptr) {
+//          std::ostringstream oss;
+//          oss << "RefWavefunction in CCSD-PNO" << this->ref_wfn_->class_key()
+//              << " cannot compute Energy" << std::endl;
+//          throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+//        }
+//
+//        ref_evaluator->evaluate(result);
+//
+//        double ref_energy = this->get_value(result).derivs(0)[0];
+//
+//        // initialize
+//        this->init();
 
-        ref_evaluator->evaluate(result);
+          // compute reference to higher precision than required of correlation
+          // energy
+        auto target_ref_precision = target_precision / 100.;
+        auto ref_energy =
+            std::make_shared<Energy>(this->ref_wfn_, target_ref_precision);
+        ::mpqc::evaluate(*ref_energy, this->ref_wfn_);
 
-        double ref_energy = this->get_value(result).derivs(0)[0];
+        this->init_sdref(this->ref_wfn_, target_ref_precision);
 
-        // initialize
-        this->init();
+        this->orbital_energy_ = make_orbital_energy(this->lcao_factory());
+
+        // set the precision
+        this->target_precision_ = result->target_precision(0);
 
         // test CCD equation
         double ccd_energy = compute_ccd_df();
@@ -1488,7 +1506,7 @@ namespace mpqc {
         double corr_energy = compute_ccd_pno();
 
         this->computed_ = true;
-        this->set_value(result, ref_energy + corr_energy);
+        this->set_value(result, ref_energy->energy() + corr_energy);
       }
     }
 

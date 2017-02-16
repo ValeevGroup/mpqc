@@ -18,6 +18,7 @@
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
 #include "mpqc/math/tensor/clr/decomposed_tensor_algebra.h"
+#include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
 
 namespace mpqc {
 namespace lcao {

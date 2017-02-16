@@ -103,7 +103,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   TArray T2_;
 
   /// private members
- private:
+ protected:
   const KeyVal kv_;
   std::shared_ptr<Wavefunction> ref_wfn_;
   typename AOFactory::DirectTArray direct_ao_array_;
@@ -1339,7 +1339,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     return E1;
   }
 
- private:
+ protected:
   TA::DIIS<cc::T1T2<TA::DistArray<Tile, Policy>, TA::DistArray<Tile, Policy>>>
   get_diis(const madness::World &world) {
     int n_diis, strt, ngr, ngrdiis;
@@ -1512,6 +1512,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
   }
 
+ private:
   /// AO integral-direct computation of (ab|cd) ints contributions to the
   /// doubles resudual
 

@@ -33,7 +33,7 @@ class Wavefunction : public ::mpqc::Wavefunction {
    *  \brief The KeyVal constructor
    *
    * The KeyVal object will be queried for the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "wfn_world" OR \c "..:wfn_world" OR \c "$:wfn_world" |
    * WavefunctionWorld | none | This specifies the WavefunctionWorld object in

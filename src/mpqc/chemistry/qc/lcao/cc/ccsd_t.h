@@ -75,7 +75,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    *
    * keywords : all keywords for CCSD
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | reblock_occ | int | none | block size to reblock occ |
    * | reblock_unocc | int | none | block size to reblock unocc |

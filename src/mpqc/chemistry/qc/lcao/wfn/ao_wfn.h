@@ -37,7 +37,7 @@ class AOWavefunction : public Wavefunction {
    * The KeyVal object will be queried for all keywords of the Wavefunction
    * class,
    * as well as the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "wfn_world:ao_factory" | integrals::AOFactory | default-constructed integrals::AOFactory | |
    */
@@ -93,7 +93,7 @@ class PeriodicAOWavefunction : public Wavefunction {
    * The KeyVal object will be queried for all keywords of the Wavefunction
    * class,
    * as well as the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "wfn_world:ao_factory" | integrals::PeriodicAOFactory |
    * default-constructed integrals::PeriodicAOFactory | |

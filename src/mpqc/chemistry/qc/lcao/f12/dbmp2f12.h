@@ -28,7 +28,7 @@ class RIDBRMP2F12 : public RIRMP2F12<Tile> {
    *
    * keywords:  takes all keywords from RIRMP2F12 class
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | mp2 | string | none | if to recompute mp2 energy(redo) or update  |
    */

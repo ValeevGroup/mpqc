@@ -28,7 +28,7 @@ class Factory : virtual public DescribedClass {
   /**
    * KeyVal Constructor
    *
-   *  | KeyWord | Type | Default| Description |
+   *  | Keyword | Type | Default| Description |
    *  |---------|------|--------|-------------|
    *  |wfn_world| WavefunctionWorld | none | WavefunctionWorld object |
    *  |accurate_time|bool|false|if do fence at timing|

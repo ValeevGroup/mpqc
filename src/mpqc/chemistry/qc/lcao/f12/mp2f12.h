@@ -33,7 +33,7 @@ class RMP2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
    * @param kv
    * keywords: takes all keywords from LCAOWavefunction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    * | approaximation | char | C | approaximation to use (C or D) |
@@ -115,7 +115,7 @@ class RIRMP2F12 : public RMP2F12<Tile> {
  * @param kv
  * keywords: takes all keywords from LCAOWavefunction
  *
- * | KeyWord | Type | Default| Description |
+ * | Keyword | Type | Default| Description |
  * |---------|------|--------|-------------|
  * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
  * | approaximation | char | C | approaximation to use (C or D) |

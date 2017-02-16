@@ -93,7 +93,7 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
    *
    * It takes all the keys to construct Factory and also the following
    *
-   *  | KeyWord | Type | Default| Description |
+   *  | Keyword | Type | Default| Description |
    *  |---------|------|--------|-------------|
    *  |screen|string|none|method of screening, qqr or schwarz |
    *  |threshold|double|1e-10| screening threshold |

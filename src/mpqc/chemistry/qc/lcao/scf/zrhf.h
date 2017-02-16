@@ -115,7 +115,7 @@ class zRHF : public PeriodicAOWavefunction<TA::TensorZ, TA::SparsePolicy>,
    *
    * keywords: takes all keywords from PeriodicAOWavefunction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 30 | maximum number of iteration |

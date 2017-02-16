@@ -97,7 +97,7 @@ class GF2F12 : public LCAOWavefunction<Tile, TA::SparsePolicy>,
    *
    * keywords: all keywords for LCAOWavefuction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, RHF for example |
    * | use_cabs | bool | true | if includes cabs in F12-V term |

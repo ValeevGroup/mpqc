@@ -37,7 +37,7 @@ class LCAOWavefunction : public Wavefunction {
    * The KeyVal object will be queried for all keywords of Wavefunction and
    * LCAOFactory, and the following keywords:
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
    * | \c "charge" | int | 0 | the net charge of the molecule (derived classes may refine the meaning of this keyword) |
@@ -191,7 +191,7 @@ class PeriodicLCAOWavefunction : public Wavefunction {
    * The KeyVal object will be queried for all keywords of Wavefunction and
    * LCAOFactory, and the following keywords:
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
    * | \c "obs_block_size" | int | 24 | the target OBS (Orbital Basis Set) space block size |

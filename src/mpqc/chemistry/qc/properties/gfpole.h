@@ -25,7 +25,7 @@ public:
    * @brief The KeyVal constructor
    * @param kv the KeyVal object, it will be queried for all
    *        keywords of the WavefunctionProperty class, as well as the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | target | int | -1 | target pole index, defined relative to the Fermi level; e.g., -1 denotes the first pole below the Fermi level, +1 denotes the first one above. In practice the Wavefunction class may use this as a initial guess rather than try to guarantee the index of the computed pole; refer to the documentation of the appropriate Wavefunction class|
    *

@@ -61,7 +61,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
    *
    * keywords : all keywords for LCAOWavefunciton
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
    * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df), the default depends on whether \c df_basis is provided |

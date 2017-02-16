@@ -39,7 +39,7 @@ class CCSD_F12 : virtual public CCSD<Tile, TA::SparsePolicy> {
    *
    * keywords: takes all keywords from CCSD class
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | approx | char | C | approximation to compute F12 (C or D) |
    * | cabs_singles | bool | true | if do CABSSingles calculation |

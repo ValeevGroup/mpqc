@@ -45,7 +45,7 @@ class FiniteDifferenceDerivative
    *
    * The KeyVal object will be queried for all keywords of the protected KeyVal ctor of the TaylorExpansionFunction class,
    * as well as the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | delta | real | 0.01 | the displacement size, in the internal units of Parameters  |
    * | error_order | int | accuracy of the finite difference stencil | controls the stencil order to use: 0 = use the lowest order stensil (accurate to \f$ \mathcal{O}(\delta^2) \f$ ), 1 = next lowest order (accurate to \f$ \mathcal{O}(\delta^24) \f$ ), etc. |

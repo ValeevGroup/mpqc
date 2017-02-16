@@ -1340,7 +1340,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           }
 
           //computation of the OV5 terms
-          {
+          /*{
             auto block_g_dabi_lt_e23left = g_dabi_lt("e,a,b,j").block(g_dabi_low_e, g_dabi_up_e);
             TArray G2left;
             G2left("e,a,i,f") = block_g_dabi_lt_e23left*block_t2_oou_lt_f_T2;
@@ -1377,7 +1377,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
                 E_O2V4_vo += TA::dot(G1left("e,a,i,f"),8.0*G2right("f,a,i,e") + 4.0*G1right("f,a,i,e") - 4.0*G4right("f,a,i,e") - 4.0*G3right("f,a,i,e"));
               }
             }
-          }
+          }*/
         }
       }
       TA::set_default_world(global_world);
@@ -1386,7 +1386,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       //computation of the OV5 terms
       //double E_O2V4_vo = 0;
-      /*{
+      {
         TArray G2;
         G2("e,a,i,f") = g_dabi_lt("e,a,b,j")*t2_oou_lt("f,b,j,i");
         TArray G3;
@@ -1403,7 +1403,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             E_O2V4_vo += TA::dot(G1("e,a,i,f"),8.0*G2("f,a,i,e") + 4.0*G1("f,a,i,e") - 4.0*G4("f,a,i,e") - 4.0*G3("f,a,i,e"));
           }
         }
-      }*/
+      }
 
       //computation of the OV5 terms
       double E_O2V4_oo = 0;

@@ -1,4 +1,4 @@
-//#include "mpqc/chemistry/qc/lcao/cc/gamma_point_ccsd.h"
+#include "mpqc/chemistry/qc/lcao/cc/gamma_point_ccsd.h"
 #include "mpqc/util/keyval/forcelink.h"
 
 #if TA_DEFAULT_POLICY == 0

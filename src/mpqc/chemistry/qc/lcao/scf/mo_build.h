@@ -726,7 +726,7 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(PeriodicLC
                            size_t occ_block, size_t vir_block) {
   using TRange1Engine = ::mpqc::utility::TRange1Engine;
 
-  auto& orbital_registry = plcao_factory.orbital_space();
+  auto& orbital_registry = plcao_factory.orbital_registry();
   auto& world = plcao_factory.world();
 
   auto all = C_gamma_point.cols();
@@ -746,7 +746,7 @@ std::shared_ptr<::mpqc::utility::TRange1Engine> mo_insert_gamma_point(PeriodicLC
   ExEnv::out0() << "VirBlockSize: " << vir_block << std::endl;
 
   auto obs_basis =
-      plcao_factory.pao_factory().orbital_basis_registry().retrieve(
+      plcao_factory.pao_factory().basis_registry()->retrieve(
           OrbitalIndex(L"κ"));
   auto tre = std::make_shared<TRange1Engine>(occ, all, occ_block, vir_block, 0);
 

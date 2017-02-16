@@ -100,7 +100,7 @@ private:
 
         auto trange1_engine = mo_insert_gamma_point(*lcao_factory_, C_, unitcell, this->occ_block(),
                                       this->unocc_block());
-        this->lcao_factory().orbital_space().set_trange1_engine(*trange1_engine);
+        this->lcao_factory().orbital_registry().set_trange1_engine(*trange1_engine);
 //        this->trange1_engine_ = mo_insert_gamma_point(*lcao_factory_, C_, unitcell, this->occ_block(),
 //                              this->unocc_block());
 

@@ -68,7 +68,7 @@ private:
         auto trange1_engine = mo_insert_gamma_point(*lcao_factory_, C_, unitcell, this->occ_block(),
                               this->unocc_block());
         // TODO try to use LCAOWavefunction::init_sdref
-        this->lcao_factory().orbital_space().set_trange1_engine(*trange1_engine);
+        this->lcao_factory().orbital_registry().set_trange1_engine(*trange1_engine);
         this->set_orbital_energy(eps_);
     }
 

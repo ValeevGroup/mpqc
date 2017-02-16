@@ -92,10 +92,7 @@ class PeriodicLCAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   PeriodicLCAOFactory(const KeyVal &kv)
       : Factory<TArray>(kv),
         pao_factory_(
-            *gaussian::construct_periodic_ao_factory<TA::TensorZ, Policy>(kv)),
-        orbital_space_registry_(
-            std::make_shared<OrbitalSpaceRegistry<TArray>>()),
-        mo_formula_registry_() {
+            *gaussian::construct_periodic_ao_factory<TA::TensorZ, Policy>(kv)) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -544,10 +541,10 @@ PeriodicLCAOFactory<Tile, Policy>::compute4(const Formula &formula) {
 
         // compute AO-based integrals
         auto ao_int = detail::tensorZ_to_tensorD(
-            pao_factory_.compute_integrals(this->world_, engine_pool, bases,
+            pao_factory_.compute_integrals(world, engine_pool, bases,
                                            p_screener),
             true);
-        auto t_pao1 = mpqc::now(this->world_, this->accurate_time_);
+        auto t_pao1 = mpqc::now(world, this->accurate_time_);
         pao_build_time += mpqc::duration_in_s(t_pao0, t_pao1);
 
         // return as in physicists' notation

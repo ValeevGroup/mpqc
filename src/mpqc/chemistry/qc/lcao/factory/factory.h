@@ -26,12 +26,14 @@ class Factory : virtual public DescribedClass {
 
   // clang-format off
   /**
-   * KeyVal Constructor
+   * @brief The KeyVal constructor.
+   *
+   * @param kv the KeyVal object, it will be queried for the following keywords:
    *
    *  | Keyword | Type | Default| Description |
    *  |---------|------|--------|-------------|
    *  |wfn_world| WavefunctionWorld | none | WavefunctionWorld object |
-   *  |accurate_time|bool|false|if do fence at timing|
+   *  |accurate_time|bool|false|if true, do fence at timing|
    */
   // clang-format on
 

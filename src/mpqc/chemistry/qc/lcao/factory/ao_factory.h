@@ -89,9 +89,10 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
 
   // clang-format off
   /**
-   * \brief  KeyVal constructor
+   * @brief The KeyVal constructor.
    *
-   * It takes all the keys to construct Factory and also the following
+   * @param kv the KeyVal object, it will be queried for all keywords of the Factory ctor as well as the
+   * following additional keywords:
    *
    *  | Keyword | Type | Default| Description |
    *  |---------|------|--------|-------------|

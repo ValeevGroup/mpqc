@@ -14,4 +14,4 @@ wfn.cpp
 wfn.h
 )
 
-add_mpqc_library(lcao_wfn sources sources "MPQClcao_integrals;MPQCutil_keyval;MPQCmolecule;tiledarray" "mpqc/chemistry/qc/lcao/wfn")
+add_mpqc_library(lcao_wfn sources sources "MPQClcao_factory;MPQCutil_keyval;MPQCmolecule;tiledarray" "mpqc/chemistry/qc/lcao/wfn")

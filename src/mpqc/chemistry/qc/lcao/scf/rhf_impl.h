@@ -29,8 +29,7 @@ namespace lcao {
 template <typename Tile, typename Policy>
 RHF<Tile, Policy>::RHF(const KeyVal& kv)
     : AOWavefunction<Tile, Policy>(kv), kv_(kv) {
-  auto& ao_factory = this->ao_factory();
-  auto& mol = ao_factory.molecule();
+  auto mol = *this->wfn_world()->atoms();
 
   // get the molecular charge
   const auto charge = kv.value<int>("charge", 0);
@@ -54,8 +53,8 @@ RHF<Tile, Policy>::RHF(const KeyVal& kv)
 template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::init(const KeyVal& kv) {
   auto& ao_factory = this->ao_factory();
-  auto& world = ao_factory.world();
-  auto& mol = ao_factory.molecule();
+  auto& world = this->wfn_world()->world();
+  const auto& mol = *this->wfn_world()->atoms();
 
   // Overlap ints
   S_ = ao_factory.compute(L"<κ|λ>");
@@ -66,8 +65,8 @@ void RHF<Tile, Policy>::init(const KeyVal& kv) {
   init_fock_builder();
 
   // emultipole integral TODO better interface to compute this
-  auto basis =
-      *ao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
+  const auto& basis =
+      *this->wfn_world()->basis_registry()->retrieve(OrbitalIndex(L"λ"));
   const auto bs_array = utility::make_array(basis, basis);
   auto multi_pool = gaussian::make_engine_pool(
       libint2::Operator::emultipole1, utility::make_array_of_refs(basis));
@@ -134,7 +133,7 @@ void RHF<Tile, Policy>::obsolete() {
 
 template <typename Tile, typename Policy>
 double RHF<Tile, Policy>::compute_energy() const {
-  return this->ao_factory().molecule().nuclear_repulsion_energy() +
+  return this->wfn_world()->atoms()->nuclear_repulsion_energy() +
          D_("i,j").dot(F_("i,j") + H_("i,j"), D_.world()).get();
 }
 
@@ -264,32 +263,30 @@ void RHF<Tile, Policy>::evaluate(Energy* result) {
 }
 
 template <typename Tile, typename Policy>
-bool RHF<Tile, Policy>::is_available(CanonicalOrbitalSpace<array_type>*) {
-  return density_builder_str_ == "eigen_solve" && !localize_;
-}
-
-template <typename Tile, typename Policy>
 bool RHF<Tile, Policy>::can_evaluate(CanonicalOrbitalSpace<array_type>*) {
-  return true;
+  return density_builder_str_ == "eigen_solve" && !localize_;
 }
 
 template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::evaluate(CanonicalOrbitalSpace<array_type>* result,
                                  double target_energy_precision,
                                  std::size_t target_blocksize) {
+  if (!can_evaluate(result))
+    throw ProgrammingError(
+        "RHF: canonical orbitals requested, but can't compute them", __FILE__,
+        __LINE__);
+
   do_evaluate(target_energy_precision);
 
-  // Eigen-based density builder provides full set of canonical orbitals, other build them
-  auto d_eigen_builder_ = dynamic_cast<scf::ESolveDensityBuilder<Tile, Policy>*>(&*d_builder_.get());
-  Eigen::VectorXd eps;
-  array_type C;
-  if (d_eigen_builder_ != nullptr && !d_eigen_builder_->localize()) {
-    eps = d_eigen_builder_->orbital_energies();
-    C = d_eigen_builder_->C();
-  }
-  else {
-    std::tie(eps, C) = make_canonical_orbitals(target_blocksize);
-  }
+  // Eigen-based density builder provides full set of canonical orbitals, other
+  // build them
+  auto d_eigen_builder_ =
+      dynamic_cast<scf::ESolveDensityBuilder<Tile, Policy>*>(
+          &*d_builder_.get());
+  assert(d_eigen_builder_ != nullptr && !d_eigen_builder_->localize());
+
+  auto eps = d_eigen_builder_->orbital_energies();
+  auto C = d_eigen_builder_->C();
 
   std::vector<double> eps_vec(eps.rows());
   std::copy(eps.data(), eps.data() + eps.rows(), eps_vec.begin());
@@ -299,11 +296,6 @@ void RHF<Tile, Policy>::evaluate(CanonicalOrbitalSpace<array_type>* result,
 
 template <typename Tile, typename Policy>
 bool RHF<Tile, Policy>::can_evaluate(PopulatedOrbitalSpace<array_type>*) {
-  return true;
-}
-
-template <typename Tile, typename Policy>
-bool RHF<Tile, Policy>::is_available(PopulatedOrbitalSpace<array_type>*) {
   return density_builder_str_ == "eigen_solve";
 }
 
@@ -311,55 +303,23 @@ template <typename Tile, typename Policy>
 void RHF<Tile, Policy>::evaluate(PopulatedOrbitalSpace<array_type>* result,
                                  double target_energy_precision,
                                  std::size_t target_blocksize) {
+  if (!can_evaluate(result))
+    throw ProgrammingError(
+        "RHF: populatd orbitals requested, but can't compute them", __FILE__,
+        __LINE__);
+
   do_evaluate(target_energy_precision);
 
   if (!C_.is_initialized()) {
-    Eigen::VectorXd eps;
-    array_type C;
-    std::tie(eps, C) = make_canonical_orbitals(target_blocksize);
-    std::vector<double> occupancies(eps.rows(), 0.0);
-    const auto ndocc = nelectrons_ / 2;
-    std::fill(occupancies.begin(), occupancies.begin() + ndocc, 2.0);
-    *result = PopulatedOrbitalSpace<array_type>(OrbitalIndex(L"p"),
-                                                OrbitalIndex(L"κ"), C, occupancies);
+    throw ProgrammingError(
+        "RHF: requested PopulatedOrbitalSpace but not produced by the density "
+        "builder");
   }
-  else {
 
-    // verify the logic of is_available(PopulatedOrbitalSpace)
-    assert(this->is_available(result));
-
-    const auto ndocc = nelectrons_ / 2;
-    std::vector<double> occupancies(ndocc, 2.0);
-    *result = PopulatedOrbitalSpace<array_type>(OrbitalIndex(L"m"),
-                                                OrbitalIndex(L"κ"), C_, occupancies);
-  }
-}
-
-template <typename Tile, typename Policy>
-std::tuple<Eigen::VectorXd, typename RHF<Tile,Policy>::array_type>
-RHF<Tile,Policy>::make_canonical_orbitals(std::size_t target_blocksize) {
-  RowMatrixXd F_eig = array_ops::array_to_eigen(F_);
-  RowMatrixXd S_eig = array_ops::array_to_eigen(S_);
-
-  // solve mo coefficients
-  Eigen::GeneralizedSelfAdjointEigenSolver<RowMatrixXd> es(F_eig, S_eig);
-  auto evals = es.eigenvalues();
-  auto C = es.eigenvectors();
-
-  auto nobs = S_.elements_range().extent()[0];
-  using TRange1Engine = ::mpqc::utility::TRange1Engine;
-  auto tre = std::make_shared<TRange1Engine>(
-      nelectrons_ / 2, nobs, target_blocksize, target_blocksize, 0);
-
-  // get all the trange1s
-  auto tr_ao = S_.trange().data().back();
-  auto tr_all = tre->get_all_tr1();
-
-  // convert to TA
-  auto C_obs = array_ops::eigen_to_array<Tile, Policy>(
-      this->ao_factory().world(), C, tr_ao, tr_all);
-
-  return std::make_tuple(evals, C_obs);
+  const auto ndocc = nelectrons_ / 2;
+  std::vector<double> occupancies(ndocc, 2.0);
+  *result = PopulatedOrbitalSpace<array_type>(
+      OrbitalIndex(L"m"), OrbitalIndex(L"κ"), C_, occupancies);
 }
 
 /**
@@ -386,11 +346,10 @@ DirectRIRHF<Tile, Policy>::DirectRIRHF(const KeyVal& kv)
 
 template <typename Tile, typename Policy>
 void DirectRIRHF<Tile, Policy>::init_fock_builder() {
-  auto& direct_ao_factory = this->direct_ao_factory();
   auto& ao_factory = this->ao_factory();
 
   auto inv = ao_factory.compute(L"( Κ | G| Λ )");
-  auto eri3 = direct_ao_factory.compute(L"( Κ | G|κ λ)");
+  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)");
 
   scf::DFFockBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3);
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
@@ -404,8 +363,7 @@ DirectRHF<Tile, Policy>::DirectRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {}
 
 template <typename Tile, typename Policy>
 void DirectRHF<Tile, Policy>::init_fock_builder() {
-  auto& direct_ao_factory = this->direct_ao_factory();
-  auto eri4 = direct_ao_factory.compute(L"(μ ν| G|κ λ)");
+  auto eri4 = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
   auto builder =
       scf::FourCenterBuilder<Tile, Policy, decltype(eri4)>(std::move(eri4));
   this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));

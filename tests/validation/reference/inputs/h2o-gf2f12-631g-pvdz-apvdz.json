@@ -28,7 +28,8 @@
     "molecule" : "$:molecule",
     "basis" : "$:basis",
     "df_basis" :"$:df_basis",
-    "aux_basis" : "$:aux_basis"
+    "aux_basis" : "$:aux_basis",
+    "f12_factor" : "stg-6g[1.2]"
   },
   "scf":{
     "type": "RI-RHF",

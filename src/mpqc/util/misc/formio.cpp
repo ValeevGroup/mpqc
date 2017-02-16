@@ -34,7 +34,6 @@
 #include <cstring>
 #include <cstdarg>
 
-using namespace std;
 using namespace mpqc;
 
 char *FormIO::default_basename_ = 0;
@@ -118,15 +117,15 @@ FormIO::init_mp(int me)
 }
 
 void
-FormIO::init_ostream(ostream &o)
+FormIO::init_ostream(std::ostream &o)
 {
   if (!xalloc_inited_) {
       xalloc_inited_ = 1;
-      nindent_ = ios::xalloc();
-      indent_size_ = ios::xalloc();
-      skip_indent_ = ios::xalloc();
-      verbose_ = ios::xalloc();
-      initialized_ = ios::xalloc();
+      nindent_ = std::ios::xalloc();
+      indent_size_ = std::ios::xalloc();
+      skip_indent_ = std::ios::xalloc();
+      verbose_ = std::ios::xalloc();
+      initialized_ = std::ios::xalloc();
     }
 
   if (o.iword(initialized_)) return;
@@ -143,12 +142,12 @@ FormIO::init()
 {
   ready_ = 1;
 
-  init_ostream(cout);
-  init_ostream(cerr);
+  init_ostream(std::cout);
+  init_ostream(std::cerr);
 }
 
-ios&
-FormIO::indent(ios&o)
+std::ios&
+FormIO::indent(std::ios&o)
 {
   if (!ready_) init();
   long &skip = o.iword(skip_indent_);
@@ -166,8 +165,8 @@ FormIO::indent(ios&o)
   return o;
 }
 
-ios&
-FormIO::incindent(ios&o)
+std::ios&
+FormIO::incindent(std::ios&o)
 {
   if (!ready_) init();
   long &n = o.iword(nindent_);
@@ -178,8 +177,8 @@ FormIO::incindent(ios&o)
   return o;
 }
 
-ios&
-FormIO::decindent(ios&o)
+std::ios&
+FormIO::decindent(std::ios&o)
 {
   if (!ready_) init();
   long &n = o.iword(nindent_);
@@ -192,103 +191,103 @@ FormIO::decindent(ios&o)
 }
 
 long
-FormIO::getindent(ios&o)
+FormIO::getindent(std::ios&o)
 {
   if (!ready_) init();
   return o.iword(nindent_);
 }
 
 void
-FormIO::setindent(ios&o, long n)
+FormIO::setindent(std::ios&o, long n)
 {
   if (!ready_) init();
   o.iword(nindent_) = n;
 }
 
 long
-FormIO::getverbose(ios&o)
+FormIO::getverbose(std::ios&o)
 {
   if (!ready_) init();
   return o.iword(verbose_);
 }
 
 void
-FormIO::setverbose(ios&o, long n)
+FormIO::setverbose(std::ios&o, long n)
 {
   if (!ready_) init();
   o.iword(verbose_) = n;
 }
 
-ios&
-FormIO::skipnextindent(ios&o)
+std::ios&
+FormIO::skipnextindent(std::ios&o)
 {
   if (!ready_) init();
   o.iword(skip_indent_)++;
   return o;
 }
 
-ostream&
-FormIO::copyright(ostream& o)
+std::ostream&
+FormIO::copyright(std::ostream& o)
 {
   o << indent
-    << "Copyright (C) 2016 Virginia Tech."
-    << endl;
+    << "Copyright (C) 2014-2017 Virginia Tech."
+    << std::endl;
 
   return o;
 }
 
-ostream&
-FormIO::license(ostream& o)
+std::ostream&
+FormIO::license(std::ostream& o)
 {
   o << indent
     << "This program is open-source software; you can redistribute it and/or modify"
-    << endl << indent
+    << std::endl << indent
     << "it under the terms of the GNU General Public License as published by"
-    << endl << indent
+    << std::endl << indent
     << "the Free Software Foundation; either version 3 of the License, or"
-    << endl << indent
+    << std::endl << indent
     << "(at your option) any later version."
-    << endl;
+    << std::endl;
 
   return o;
 }
 
-ostream&
-FormIO::warranty(ostream& o)
+std::ostream&
+FormIO::warranty(std::ostream& o)
 {
   o << indent
     << "This program is distributed in the hope that it will be useful,"
-    << endl << indent
+    << std::endl << indent
     << "but WITHOUT ANY WARRANTY; without even the implied warranty of"
-    << endl << indent
+    << std::endl << indent
     << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
-    << endl << indent
+    << std::endl << indent
     << "GNU General Public License for more details."
-    << endl;
+    << std::endl;
 
   return o;
 }
 
-ios&
-mpqc::indent(ios& o)
+std::ios&
+mpqc::indent(std::ios& o)
 {
   return FormIO::indent(o);
 }
 
-ios&
-mpqc::decindent(ios& o)
+std::ios&
+mpqc::decindent(std::ios& o)
 {
   return FormIO::decindent(o);
 }
 
-ios&
-mpqc::incindent(ios& o)
+std::ios&
+mpqc::incindent(std::ios& o)
 {
   return FormIO::incindent(o);
 }
 
-ios&
-mpqc::skipnextindent(ios& o)
+std::ios&
+mpqc::skipnextindent(std::ios& o)
 {
   return FormIO::skipnextindent(o);
 }

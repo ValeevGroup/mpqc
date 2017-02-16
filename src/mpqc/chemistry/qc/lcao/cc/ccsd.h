@@ -9,7 +9,6 @@
 
 #include "mpqc/chemistry/qc/cc/diis_ccsd.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
-#include "mpqc/chemistry/qc/lcao/integrals/direct_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/mbpt/denom.h"
 #include "mpqc/chemistry/qc/lcao/scf/mo_build.h"
 #include "mpqc/chemistry/qc/lcao/wfn/lcao_wfn.h"
@@ -50,7 +49,7 @@ template <typename Tile, typename Policy>
 class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
-  using DirectAOIntegral = gaussian::DirectAOFactory<Tile, Policy>;
+  using AOFactory = gaussian::AOFactory<Tile, Policy>;
 
   CCSD() = default;
 
@@ -62,10 +61,10 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
    *
    * keywords : all keywords for LCAOWavefunciton
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | ref | Wavefunction | none | reference Wavefunction, need to be a Energy::Provider RHF for example |
-   * | method | string | standard | method to compute ccsd (standard, direct) |
+   * | method | string | standard or df | method to compute ccsd (valid choices are: standard, direct, df), the default depends on whether \c df_basis is provided |
    * | max_iter | int | 20 | maxmium iteration in CCSD |
    * | print_detail | bool | false | if print more information in CCSD iteration |
    * | less_memory | bool | false | avoid store another abcd term in standard and df method |
@@ -82,12 +81,14 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
     }
 
     df_ = false;
-    method_ = kv_.value<std::string>("method", "df");
-    if (method_ == "df" || method_ == "direct") {
-      df_ = true;
-    }
+    auto default_method =
+        this->lcao_factory().basis_registry()->have(L"Κ") ? "df" : "standard";
+    method_ = kv_.value<std::string>("method", default_method);
     if (method_ != "df" && method_ != "direct" && method_ != "standard") {
       throw InputError("Invalid CCSD method! \n", __FILE__, __LINE__, "method");
+    }
+    if (method_ == "df" || method_ == "direct") {
+      df_ = true;
     }
 
     max_iter_ = kv.value<int>("max_iter", 20);
@@ -105,7 +106,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
  private:
   const KeyVal kv_;
   std::shared_ptr<Wavefunction> ref_wfn_;
-  typename DirectAOIntegral::DirectTArray direct_ao_array_;
+  typename AOFactory::DirectTArray direct_ao_array_;
   bool df_;
   std::string method_;
   std::size_t max_iter_;
@@ -114,20 +115,21 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   bool print_detail_;
   double ccsd_corr_energy_;
   // diagonal elements of the Fock matrix (not necessarily the eigenvalues)
-  std::shared_ptr<Eigen::VectorXd> orbital_energy_;
+  std::shared_ptr<Eigen::VectorXd> f_pq_diagonal_;
 
  protected:
   std::shared_ptr<const Eigen::VectorXd> orbital_energy() {
-    return orbital_energy_;
+    return f_pq_diagonal_;
   }
+
   void set_orbital_energy(const Eigen::VectorXd &orbital_energy) {
-    orbital_energy_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
+    f_pq_diagonal_ = std::make_shared<Eigen::VectorXd>(orbital_energy);
   }
 
  public:
   void obsolete() override {
     ccsd_corr_energy_ = 0.0;
-    orbital_energy_.reset();
+    f_pq_diagonal_.reset();
     LCAOWavefunction<Tile, Policy>::obsolete();
     ref_wfn_->obsolete();
   }
@@ -161,8 +163,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
       target_precision_ = precision;
   }
 
-  const typename DirectAOIntegral::DirectTArray &get_direct_ao_integral()
-      const {
+  const typename AOFactory::DirectTArray &get_direct_ao_integral() const {
     return direct_ao_array_;
   }
 
@@ -186,7 +187,8 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
 
       this->init_sdref(ref_wfn_, target_ref_precision);
 
-      orbital_energy_ = make_orbital_energy(this->lcao_factory());
+      f_pq_diagonal_ =
+          make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
       // set the precision
       target_precision_ = energy->target_precision(0);
@@ -200,9 +202,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
         ccsd_corr_energy_ = compute_ccsd_df(t1, t2);
       } else if (method_ == "direct") {
         // initialize direct integral class
-        auto direct_ao_factory =
-            gaussian::construct_direct_ao_factory<Tile, Policy>(kv_);
-        direct_ao_array_ = direct_ao_factory->compute(L"(μ ν| G|κ λ)");
+        direct_ao_array_ = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
         ccsd_corr_energy_ = compute_ccsd_direct(t1, t2);
       }
 
@@ -1380,7 +1380,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   /// occ part
   const TArray get_Ci() {
     return this->lcao_factory()
-        .orbital_space()
+        .orbital_registry()
         .retrieve(OrbitalIndex(L"i"))
         .coefs();
   }
@@ -1388,7 +1388,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   /// vir part
   const TArray get_Ca() {
     return this->lcao_factory()
-        .orbital_space()
+        .orbital_registry()
         .retrieve(OrbitalIndex(L"a"))
         .coefs();
   }
@@ -1396,8 +1396,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   /// get three center integral (X|ab)
   const TArray get_Xab() {
     TArray result;
-    TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|a b)");
     result("K,a,b") = sqrt("K,Q") * three_center("Q,a,b");
     return result;
@@ -1406,8 +1405,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   /// get three center integral (X|ij)
   const TArray get_Xij() {
     TArray result;
-    TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|i j)");
     result("K,i,j") = sqrt("K,Q") * three_center("Q,i,j");
     return result;
@@ -1416,8 +1414,7 @@ class CCSD : public LCAOWavefunction<Tile, Policy>, public Provides<Energy> {
   /// get three center integral (X|ai)
   const TArray get_Xai() {
     TArray result;
-    TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+    TArray sqrt = this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
     result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
     return result;

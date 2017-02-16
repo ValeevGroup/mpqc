@@ -62,7 +62,7 @@ class Molecule : virtual public DescribedClass,
   /** \brief The KeyVal constructor.
    *  \param kv the KeyVal object. The following keywords will be queried in \c kv :
    *
-   *  | KeyWord | Type | Default| Description |
+   *  | Keyword | Type | Default| Description |
    *  |---------|------|--------|-------------|
    *  |\c file_name|string|none|This gives the name of a XYZ file, from which the nuclear coordinates will be read (the XYZ format is described <a href="http://en.wikipedia.org/wiki/XYZ_file_format">here</a>). Only rank 0 in the current madness::World will read the file.|
    *  |\c atoms|array|none|Will query this if \c file_name not given. Each element of the array must specify an Atom object (see the KeyVal ctor of Atom for more info).|

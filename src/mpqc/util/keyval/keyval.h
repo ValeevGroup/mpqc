@@ -611,8 +611,8 @@ class KeyVal {
   /// registered class key,
   /// or if the user did not specify keyword "type" and class T is abstract or
   /// is not registered.
-  /// @note ```class_ptr<T>("path")```  is equivalent to
-  /// ```keyval("path").class_ptr<T>()```
+  /// @note `class_ptr<T>("path")`  is equivalent to
+  /// `keyval("path").class_ptr<T>()`
   template <typename T = DescribedClass,
             typename = std::enable_if_t<Describable<T>::value>>
   std::shared_ptr<T> class_ptr(const key_type& path = key_type(),

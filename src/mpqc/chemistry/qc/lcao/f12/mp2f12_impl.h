@@ -101,7 +101,8 @@ void RMP2F12<Tile>::evaluate(Energy* result) {
 
 template <typename Tile>
 std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
-  auto& world = this->lcao_factory().world();
+  auto& lcao_factory = to_lcao_factory(this->lcao_factory());
+  auto& world = lcao_factory.world();
 
   utility::print_par(world, "\n Computing MP2F12 ", approximation_,
                      " Approximation \n");
@@ -128,7 +129,7 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
   // compute X term
   {
     TA::DistArray<Tile, TA::SparsePolicy> X_ijij_ijji = compute_X();
-    this->lcao_factory().purge_operator(world, L"R2");
+    lcao_factory.purge_operator(L"R2");
 
     RowMatrix<double> Eij_x =
         X_ijij_ijji("i1,j1,i2,j2")
@@ -144,8 +145,8 @@ std::tuple<RowMatrix<double>, RowMatrix<double>> RMP2F12<Tile>::compute() {
     TA::DistArray<Tile, TA::SparsePolicy> V_ijij_ijji = compute_V();
     // G integral in MO not needed, still need G integral in AO to compute F, K,
     // hJ
-    this->lcao_factory().registry().purge_operator(world, L"G");
-    this->lcao_factory().purge_operator(world, L"GR");
+    lcao_factory.registry().purge_operator(L"G");
+    lcao_factory.purge_operator(L"GR");
 
     // contribution from V_ijij_ijji
     // NB factor of 2 from the Hylleraas functional
@@ -212,7 +213,8 @@ template <typename Tile>
 void RMP2F12<Tile>::init(double ref_precision) {
   this->init_sdref(ref_wfn_, ref_precision);
 
-  this->orbital_energy_ = make_orbital_energy(this->lcao_factory());
+  this->f_pq_diagonal_ =
+      make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
   // create shape
   auto occ_tr1 = this->trange1_engine()->get_active_occ_tr1();
@@ -220,35 +222,38 @@ void RMP2F12<Tile>::init(double ref_precision) {
   ijij_ijji_shape_ = f12::make_ijij_ijji_shape(occ4_trange);
 
   // initialize cabs
-  closed_shell_cabs_mo_build_svd(this->lcao_factory(), this->trange1_engine(),
-                                 this->unocc_block());
+  closed_shell_cabs_mo_build_svd(to_ao_factory(this->ao_factory()),
+                                 this->trange1_engine(), this->unocc_block());
 }
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RMP2F12<Tile>::compute_B() {
   TA::DistArray<Tile, TA::SparsePolicy> B;
   if (approximation_ == 'C') {
-    B = f12::compute_B_ijij_ijji_C(this->lcao_factory(), ijij_ijji_shape_);
+    B = f12::compute_B_ijij_ijji_C(to_lcao_factory(this->lcao_factory()),
+                                   ijij_ijji_shape_);
   } else if (approximation_ == 'D') {
-    B = f12::compute_B_ijij_ijji_D(this->lcao_factory(), ijij_ijji_shape_);
+    B = f12::compute_B_ijij_ijji_D(to_lcao_factory(this->lcao_factory()),
+                                   ijij_ijji_shape_);
   }
   return B;
 }
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RMP2F12<Tile>::compute_C() {
-  return f12::compute_C_ijab(this->lcao_factory());
+  return f12::compute_C_ijab(to_lcao_factory(this->lcao_factory()));
 }
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RMP2F12<Tile>::compute_V() {
-  return f12::compute_V_ijij_ijji(this->lcao_factory(), ijij_ijji_shape_);
+  return f12::compute_V_ijij_ijji(to_lcao_factory(this->lcao_factory()),
+                                  ijij_ijji_shape_);
 }
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RMP2F12<Tile>::compute_X() {
-  TA::DistArray<Tile, TA::SparsePolicy> X =
-      f12::compute_X_ijij_ijji(this->lcao_factory(), ijij_ijji_shape_);
+  TA::DistArray<Tile, TA::SparsePolicy> X = f12::compute_X_ijij_ijji(
+      to_lcao_factory(this->lcao_factory()), ijij_ijji_shape_);
   auto Fij = this->lcao_factory().compute(L"(i|F|j)");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
   f12::convert_X_ijkl(X, Fij_eigen);
@@ -272,7 +277,7 @@ RMP2F12<Tile>::compute_T() {
 template <typename Tile>
 double RMP2F12<Tile>::compute_cabs_singles() {
   double es;
-  CABSSingles<Tile> cabs_singles(this->lcao_factory());
+  CABSSingles<Tile> cabs_singles(to_lcao_factory(this->lcao_factory()));
 
   if (approximation_ == 'D') {
     es = cabs_singles.compute(false, true, true);
@@ -295,10 +300,10 @@ template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_B() {
   TA::DistArray<Tile, TA::SparsePolicy> B;
   if (this->approximation_ == 'C') {
-    B = f12::compute_B_ijij_ijji_C_df(this->lcao_factory(),
+    B = f12::compute_B_ijij_ijji_C_df(this->lcao_factory(),this->ao_factory(),
                                       this->ijij_ijji_shape_);
   } else if (this->approximation_ == 'D') {
-    B = f12::compute_B_ijij_ijji_D_df(this->lcao_factory(),
+    B = f12::compute_B_ijij_ijji_D_df(this->lcao_factory(), this->ao_factory(),
                                       this->ijij_ijji_shape_);
   }
   return B;
@@ -311,14 +316,14 @@ TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_C() {
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_V() {
-  return f12::compute_V_ijij_ijji_df(this->lcao_factory(),
+  return f12::compute_V_ijij_ijji_df(this->lcao_factory(),this->ao_factory(),
                                      this->ijij_ijji_shape_);
 }
 
 template <typename Tile>
 TA::DistArray<Tile, TA::SparsePolicy> RIRMP2F12<Tile>::compute_X() {
-  TA::DistArray<Tile, TA::SparsePolicy> X =
-      f12::compute_X_ijij_ijji_df(this->lcao_factory(), this->ijij_ijji_shape_);
+  TA::DistArray<Tile, TA::SparsePolicy> X = f12::compute_X_ijij_ijji_df(
+      this->lcao_factory(), this->ao_factory(), this->ijij_ijji_shape_);
   auto Fij = this->lcao_factory().compute(L"(i|F|j)[df]");
   auto Fij_eigen = array_ops::array_to_eigen(Fij);
   f12::convert_X_ijkl(X, Fij_eigen);
@@ -343,7 +348,7 @@ RIRMP2F12<Tile>::compute_T() {
 template <typename Tile>
 double RIRMP2F12<Tile>::compute_cabs_singles() {
   double es;
-  CABSSingles<Tile> cabs_singles(this->lcao_factory());
+  CABSSingles<Tile> cabs_singles(to_lcao_factory(this->lcao_factory()));
 
   if (this->approximation_ == 'D') {
     es = cabs_singles.compute(true, true, true);

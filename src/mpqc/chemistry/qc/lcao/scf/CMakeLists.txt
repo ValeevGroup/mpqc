@@ -27,8 +27,6 @@ ta_shape_tracker.h
 traditional_df_fock_builder.h
 traditional_four_center_fock_builder.h
 util.h
-zrhf.cpp
-zrhf.h
 )
 
 if(TA_DEFAULT_POLICY EQUAL 1)

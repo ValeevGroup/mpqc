@@ -75,7 +75,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
    *
    * keywords : all keywords for CCSD
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | reblock_occ | int | none | block size to reblock occ |
    * | reblock_unocc | int | none | block size to reblock unocc |
@@ -123,7 +123,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto time0 = mpqc::fenced_now(world);
 
     // clean all LCAO integral
-    this->lcao_factory().registry().purge(world);
+    this->lcao_factory().registry().purge();
 
     // reblock occ and unocc space
     if (reblock_ || reblock_inner_) {
@@ -1069,8 +1069,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     TA::TiledRange1 old_vir = this->trange1_engine()->get_vir_tr1();
 
     // get occupied and virtual orbitals
-    auto occ_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"i"));
-    auto vir_space = lcao_factory.orbital_space().retrieve(OrbitalIndex(L"a"));
+    auto occ_space = lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"i"));
+    auto vir_space = lcao_factory.orbital_registry().retrieve(OrbitalIndex(L"a"));
 
     if (reblock_) {
       using TRange1Engine = ::mpqc::utility::TRange1Engine;
@@ -1099,9 +1099,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       auto new_vir_space = vir_space;
       new_vir_space("k,a") = vir_space("k,b") * vir_convert("b,a");
 
-      lcao_factory.orbital_space().clear();
-      lcao_factory.orbital_space().add(new_occ_space);
-      lcao_factory.orbital_space().add(new_vir_space);
+      lcao_factory.orbital_registry().clear();
+      lcao_factory.orbital_registry().add(new_occ_space);
+      lcao_factory.orbital_registry().add(new_vir_space);
 
       // get t1
       auto t1 = this->t1();
@@ -1135,8 +1135,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       OrbitalSpace<TArray> inner_occ_space = OrbitalSpace<TArray>(
           OrbitalIndex(L"m"), OrbitalIndex(L"κ"), inner_occ);
 
-      lcao_factory.orbital_space().remove(OrbitalIndex(L"m"));
-      lcao_factory.orbital_space().add(inner_occ_space);
+      lcao_factory.orbital_registry().remove(OrbitalIndex(L"m"));
+      lcao_factory.orbital_registry().add(inner_occ_space);
 
       // vir inner
       tr_vir_inner_ = TRange1Engine::compute_range(vir, inner_block_size_);
@@ -1151,8 +1151,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       OrbitalSpace<TArray> inner_vir_space = OrbitalSpace<TArray>(
           OrbitalIndex(L"a'"), OrbitalIndex(L"κ"), inner_vir);
 
-      lcao_factory.orbital_space().remove(OrbitalIndex(L"a'"));
-      lcao_factory.orbital_space().add(inner_vir_space);
+      lcao_factory.orbital_registry().remove(OrbitalIndex(L"a'"));
+      lcao_factory.orbital_registry().add(inner_vir_space);
 
       utility::print_par(world,
                          "Warning!! Using m for Inner Occupied Orbitals and a' "
@@ -1179,7 +1179,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   const TArray get_Xab() {
     TArray result;
     TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+        this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center;
     if (reblock_inner_) {
       three_center = this->lcao_factory().compute(L"(Κ|G|a' b)");
@@ -1194,7 +1194,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
   const TArray get_Xai() {
     TArray result;
     TArray sqrt =
-        this->lcao_factory().ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
+        this->ao_factory().compute(L"(Κ|G| Λ)[inv_sqr]");
     TArray three_center = this->lcao_factory().compute(L"(Κ|G|a i)");
     result("K,a,i") = sqrt("K,Q") * three_center("Q,a,i");
     return result;

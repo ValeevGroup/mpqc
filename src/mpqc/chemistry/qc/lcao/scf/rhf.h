@@ -35,7 +35,7 @@ class RHF
    *
    * keywords: takes all keywords from AOWavefunction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | max_iter | int | 30 | maximum number of iteration |
    * | density_builder | string | eigen_solve | type of DensityBuilder, valid values are \c eigen_solve (use ESolveDensityBuilder) and \c purification (use PurificationDensityBuilder) |
@@ -62,18 +62,18 @@ class RHF
   bool can_evaluate(Energy* result) override;
   void evaluate(Energy* result) override;
 
-  /// these implement CanonicalOrbitalSpace::Provider methods
+  // these implement CanonicalOrbitalSpace::Provider methods
+
+  /// @return true if using eigen solver and orbitals are not localized
   bool can_evaluate(CanonicalOrbitalSpace<array_type>* = nullptr) override;
-  /// true if using Eigen solver and orbitals are not localized
-  bool is_available(CanonicalOrbitalSpace<array_type>* = nullptr) override;
   /// Computes all canonical orbitals, annotated with orbital energies
   void evaluate(CanonicalOrbitalSpace<array_type>* result, double target_precision,
                 std::size_t target_blocksize) override;
 
-  /// these implement PopulatedOrbitalSpace::Provider methods
+  // these implement PopulatedOrbitalSpace::Provider methods
+
+  /// @return true if using eigen solver
   bool can_evaluate(PopulatedOrbitalSpace<array_type>* = nullptr) override;
-  /// true if using Eigen solver
-  bool is_available(PopulatedOrbitalSpace<array_type>* = nullptr) override;
   /// Computes all or occupied orbitals, annotated with occupancies
   void evaluate(PopulatedOrbitalSpace<array_type>* result, double target_precision,
                 std::size_t target_blocksize) override;
@@ -111,9 +111,6 @@ class RHF
   inline const double energy() const { return energy_; }
 
   double compute_energy() const;
-
-  // produces canonical eigenvalues and coefficients
-  std::tuple<Eigen::VectorXd, array_type> make_canonical_orbitals(size_t target_blocksize);
 
   /** Function to compute the density to the desired accuracy.
    *

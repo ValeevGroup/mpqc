@@ -7,8 +7,8 @@
 
 #include "mpqc/chemistry/qc/lcao/expression/orbital_space.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
-#include "mpqc/chemistry/qc/lcao/integrals/lcao_factory.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/lcao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_lcao_factory.h"
 #include "mpqc/chemistry/qc/lcao/wfn/wfn.h"
 #include "mpqc/chemistry/qc/properties/property.h"
 #include "mpqc/util/keyval/keyval.h"
@@ -26,7 +26,9 @@ template <typename Tile, typename Policy>
 class LCAOWavefunction : public Wavefunction {
  public:
   using ArrayType = TA::DistArray<Tile, Policy>;
-  using LCAOFactoryType = lcao::LCAOFactory<Tile, Policy>;
+  using DirectArrayType = gaussian::DirectArray<Tile, Policy>;
+  using LCAOFactoryType = Factory<ArrayType>;
+  using AOFactoryType = Factory<ArrayType, DirectArrayType>;
 
   // clang-format off
   /**
@@ -35,7 +37,7 @@ class LCAOWavefunction : public Wavefunction {
    * The KeyVal object will be queried for all keywords of Wavefunction and
    * LCAOFactory, and the following keywords:
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | \c "frozen_core" | bool | true | if true, core electrons are not correlated |
    * | \c "charge" | int | 0 | the net charge of the molecule (derived classes may refine the meaning of this keyword) |
@@ -46,8 +48,7 @@ class LCAOWavefunction : public Wavefunction {
    */
   // clang-format on
   LCAOWavefunction(const KeyVal &kv) : Wavefunction(kv) {
-    lcao_factory_ = lcao::detail::construct_lcao_factory<Tile, Policy>(kv);
-
+    init_factory(kv);
     frozen_core_ = kv.value<bool>("frozen_core", true);
 
     charge_ = kv.value<int>("charge", 0);
@@ -69,6 +70,13 @@ class LCAOWavefunction : public Wavefunction {
   virtual ~LCAOWavefunction() = default;
 
   LCAOFactoryType &lcao_factory() { return *lcao_factory_; }
+
+  const LCAOFactoryType &lcao_factory() const { return *lcao_factory_; }
+
+  AOFactoryType &ao_factory() { return *ao_factory_; }
+
+  const AOFactoryType &ao_factory() const { return *ao_factory_; }
+
   void obsolete() override {
     lcao_factory_->obsolete();
     Wavefunction::obsolete();
@@ -103,42 +111,42 @@ class LCAOWavefunction : public Wavefunction {
 
     // dispatch request for either Canonical or Populated orbitals
     // order of preference:
-    // - free canonical orbs, since these have most information
-    // - free populated orbs, since prefer free always
-    // - computed populated orbs, since this is less expensive
-    // - computed canonical orbs, since this is most expensive
+    // - canonical orbs, since these have most information
+    // - populated orbs, since don't have to compute anything
+    // - compute canonical orbs ourselves, since this costs
     auto canonical_orbs_provider = std::dynamic_pointer_cast<
         typename CanonicalOrbitalSpace<TArray>::Provider>(ref_wfn);
     auto has_canonical_orbs =
-        canonical_orbs_provider &&
-        canonical_orbs_provider->can_evaluate();
-    auto canonical_orbs_are_free =
-        has_canonical_orbs && canonical_orbs_provider->is_available();
+        canonical_orbs_provider && canonical_orbs_provider->can_evaluate();
     auto populated_orbs_provider = std::dynamic_pointer_cast<
         typename PopulatedOrbitalSpace<TArray>::Provider>(ref_wfn);
     auto has_populated_orbs =
-        populated_orbs_provider &&
-        populated_orbs_provider->can_evaluate();
+        populated_orbs_provider && populated_orbs_provider->can_evaluate();
 
-    if (canonical_orbs_are_free || (!has_populated_orbs && has_canonical_orbs)) {
+    if (has_canonical_orbs || !has_populated_orbs) {  // use canonical orbs
+      auto orbs = std::make_shared<CanonicalOrbitalSpace<TArray>>();
+      if (has_canonical_orbs)
+        evaluate(*orbs, canonical_orbs_provider, target_ref_precision);
+      else  // last resort: compute canonical orbitals
+        orbs = make_closed_shell_canonical_orbitals(ao_factory_, ndocc,
+                                                    unocc_block_);
+
       make_closed_shell_canonical_sdref_subspaces(
-          lcao_factory_, canonical_orbs_provider, target_ref_precision, ndocc,
-          n_frozen_core, occ_block_, unocc_block_);
+          lcao_factory_,
+          std::const_pointer_cast<const CanonicalOrbitalSpace<TArray>>(orbs),
+          ndocc, n_frozen_core, occ_block_, unocc_block_);
     }
     // else ask for populated spaces
-    else if (has_populated_orbs) {
+    else {
       make_closed_shell_sdref_subspaces(
-          lcao_factory_, populated_orbs_provider, target_ref_precision, ndocc,
+          ao_factory_, populated_orbs_provider, target_ref_precision, ndocc,
           n_frozen_core, occ_block_, unocc_block_);
-    } else
-      throw ProgrammingError(
-          "ref_wfn does not provide canonical or populated orbitals", __FILE__,
-          __LINE__);
+    }
   }
 
   const std::shared_ptr<const ::mpqc::utility::TRange1Engine> &trange1_engine()
       const {
-    return lcao_factory_->orbital_space().trange1_engine();
+    return lcao_factory_->orbital_registry().trange1_engine();
   }
 
   bool is_frozen_core() const { return frozen_core_; }
@@ -147,13 +155,23 @@ class LCAOWavefunction : public Wavefunction {
   size_t unocc_block() const { return unocc_block_; }
 
  private:
+  /**
+    *  Default way of initialize factories
+    *  use LCAOFactory and AOFactory
+    */
+  virtual void init_factory(const KeyVal &kv) {
+    lcao_factory_ = construct_lcao_factory<Tile, Policy>(kv);
+    ao_factory_ = gaussian::construct_ao_factory<Tile, Policy>(kv);
+  }
+
+ private:
   std::shared_ptr<LCAOFactoryType> lcao_factory_;
+  std::shared_ptr<AOFactoryType> ao_factory_;
   bool frozen_core_;
   int charge_;
   std::size_t occ_block_;
   std::size_t unocc_block_;
 };
-
 
 #if TA_DEFAULT_POLICY == 0
 extern template class LCAOWavefunction<TA::TensorD, TA::DensePolicy>;

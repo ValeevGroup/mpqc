@@ -13,7 +13,7 @@ TEST_CASE("Orbital Index", "[orbital_index]") {
     OrbitalIndex m(L"m");
     REQUIRE(m.index() == OrbitalIndex::Type::occ);
     REQUIRE(m.is_ao() == false);
-    REQUIRE(m.is_mo() == true);
+    REQUIRE(m.is_lcao() == true);
     REQUIRE(m.is_mo_in_obs() == true);
     REQUIRE(m.is_mo_in_abs() == false);
     REQUIRE(m.is_mo_in_ribs() == false);
@@ -48,7 +48,7 @@ TEST_CASE("Orbital Index", "[orbital_index]") {
 
     OrbitalIndex k1(L"κ");
     REQUIRE(k1.index() == OrbitalIndex::Type::obs);
-    REQUIRE(k1.is_mo() == false);
+    REQUIRE(k1.is_lcao() == false);
     REQUIRE(k1.is_ao() == true);
     REQUIRE(k1.to_ta_expression() == "kappa");
 

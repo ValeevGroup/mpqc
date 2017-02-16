@@ -1,4 +1,4 @@
-/** \page factory Using MPQC Factory Interface
+/** \page factory Using MPQC LCAO and AO Factory Interfaces
 
 ## Operators
 
@@ -39,7 +39,8 @@
 	 - ρ σ τ υ -> ribs(obs + cabs)
 
 - One Electron Integral
-```cpp
+\code
+cpp
 // Overlap
 ao_integral.compute(L"<κ|λ>");
 ao_integral.compute(L"<α|λ>");
@@ -51,32 +52,32 @@ ao_integral.compute(L"<κ|V|λ>");
 ao_integral.compute(L"<κ|H|λ>");
 // Inverse Square Root
 ao_integral.compute(L"<κ|λ>[inv_sqr]");
-```
+\endcode
 - Two Electron Two Center Integral
 
 only chemical notation allowed
-```
+\code
 // Coulomb
 ao_integral.compute(L"(Κ|G|Λ)");
 // Inverse
 ao_integral.compute(L"(Κ|G|Λ)[inv]");
 // Inverse Square Root
 ao_integral.compute(L"(Κ|G|Λ)[inv_sqr]");
-```
+\endcode
 - Two Electron Three Center Integral
 
 only chemical notation allowed
 
 density-fitting basis has to go the bra
-```
+\code
 // Coulomb
 ao_integral.compute(L"(Κ|G| μ λ )");
 // R12
 ao_integral.compute(L"(Κ|R| μ λ )");
-```
+\endcode
 
 - Two Electron Four Center Integral
-```
+\code
 // convention
 ao_integral.compute(L"<μ1 λ1|G| μ2 λ2 >");
 // density fitting
@@ -84,9 +85,9 @@ ao_integral.compute(L"<μ1 λ1|G| μ2 λ2 >[df]");
 // chemical notation
 ao_integral.compute(L"(μ1 λ1|G| μ2 λ2 )");
 ao_integral.compute(L"(μ1 λ1|G| μ2 λ2 )[df]");
-```
+\endcode
 - J, K, and F 
-```
+\code
 // Fock
 ao_integral.compute(L"<κ|F|λ>");
 ao_integral.compute(L"<κ|F(α)|λ>");
@@ -95,7 +96,7 @@ ao_integral.compute(L"<κ|F(β)|λ>");
 ao_integral.compute(L"<κ|K|λ>");
 ao_integral.compute(L"<κ|K(α)|λ>");
 ao_integral.compute(L"<κ|K(β)|λ>");
-```
+\endcode
 
 ## LCAO Integral
 
@@ -111,23 +112,23 @@ ao_integral.compute(L"<κ|K(β)|λ>");
  - P',Q',R',S' -> allany (complete basis, cbs)
 
 - One Electron Integral
-```
+\code
 mo_integral.compute(L"<i|H|a>");
 mo_integral.compute(L"<i|F|a>");
 mo_integral.compute(L"<i|F(α)|a>");
-```
+\endcode
 - Two Electron Four Center Integral
-```
+\code
 mo_integral.compute(L"<i j|G|a b>");
 mo_integral.compute(L"(i a|G|j b)");
 mo_integral.compute(L"<i j|R|P' Q'>");
 // density fitting
 mo_integral.compute(L"<i j|G|a b>[df]");
-```
+\endcode
 - Half Transformed Integral
-```
+\code
 mo_integral.compute(L"(Κ|G|i a)");
 mo_integral.compute(L"<p q|G|μ ν>");
-```
+\endcode
 
 */

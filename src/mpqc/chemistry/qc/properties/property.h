@@ -14,10 +14,7 @@
 #include "mpqc/util/misc/task.h"
 #include "mpqc/util/misc/provider.h"
 
-/// top-level MPQC namespace
 namespace mpqc {
-
-// using TiledArray::detail::scalar_type;
 
 /// this is the base for all properties that MPQC can compute via the input.
 /// MPQC main will read KeyVal and search for a Property object, compute it
@@ -61,7 +58,7 @@ class WavefunctionProperty
    *
    * The KeyVal object will be queried for all keywords of the auxiliary KeyVal ctor of the MolecularTaylorExpansion class,
    * as well as the following keywords:
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | wfn | Wavefunction | none | the Wavefunction that will compute this  |
    * | coords | MolecularCoordinates | CartMolecularCoordinates from the Molecule object of the Wavefunction object | the molecular coordinates  |

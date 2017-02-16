@@ -2,10 +2,8 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_SCF_ZRHF_H_
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/expression/trange1_engine.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_lcao_factory.h"
 
 #include <memory>
 
@@ -44,7 +42,7 @@ class zRHF
    *
    * keywords: takes all keywords from PeriodicAOWavefunction
    *
-   * | KeyWord | Type | Default| Description |
+   * | Keyword | Type | Default| Description |
    * |---------|------|--------|-------------|
    * | converge | double | 1.0e-07 | converge limit |
    * | max_iter | int | 30 | maximum number of iteration |

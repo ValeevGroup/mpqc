@@ -6,7 +6,7 @@
 
 #include "mpqc/chemistry/molecule/unit_cell.h"
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
-#include "mpqc/chemistry/qc/lcao/integrals/periodic_ao_factory.h"
+#include "mpqc/chemistry/qc/lcao/factory/periodic_ao_factory.h"
 #include "mpqc/chemistry/qc/lcao/scf/soad.h"
 
 namespace mpqc {
@@ -58,7 +58,7 @@ TA::DistArray<Tile,Policy> periodic_fock_soad(
   Vector3d zero_shift_base(0.0, 0.0, 0.0);
   auto R_max = pao_factory.R_max();
   auto normal_bs =
-      *pao_factory.orbital_basis_registry().retrieve(OrbitalIndex(L"λ"));
+      *pao_factory.basis_registry()->retrieve(OrbitalIndex(L"λ"));
   auto normal_bs0 = std::make_shared<Basis>(normal_bs);
   auto normal_bs1 =
       detail::shift_basis_origin(*normal_bs0, zero_shift_base, R_max, dcell);

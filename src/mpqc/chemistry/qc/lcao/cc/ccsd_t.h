@@ -1207,6 +1207,25 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     auto n_tr_vir_inner = n_tr_vir;
 
 
+    auto& global_world = this->wfn_world()->world();
+    // split global_world
+    const auto rank = global_world.rank();
+    const auto size = global_world.size();
+
+    madness::World *tmp_ptr;
+    std::shared_ptr<madness::World> world_ptr;
+
+    if (size > 1) {
+      SafeMPI::Group group = global_world.mpi.comm().Get_group().Incl(1, &rank);
+      SafeMPI::Intracomm comm = global_world.mpi.comm().Create(group);
+      world_ptr = std::shared_ptr<madness::World>(new madness::World(comm));
+      tmp_ptr = world_ptr.get();
+    } else {
+      tmp_ptr = &global_world;
+    }
+    auto &this_world = *tmp_ptr;
+    global_world.gop.fence();
+
     // loop over number of quadrature points
     for (auto m = 0; m < n; m++) {
 
@@ -1254,9 +1273,14 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         std::cout << "E_OV5 = " << E_OV5 << std::endl;
       }*/
 
+      TA::set_default_world(this_world);
+      std::size_t global_iter = 0;
       double E_O2V4_vo = 0;
       for (auto e = 0; e < n_tr_vir; ++e) {
         for (auto f = 0; f < n_tr_vir; ++f) {
+          ++ global_iter;
+
+          if( global_iter % size != rank) continue;
 
           std::size_t e_low = e;
           std::size_t e_up = e + 1;
@@ -1333,7 +1357,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
             E_O2V4_vo += TA::dot(G2left("e,a,i,f"),G2right("f,a,i,e") - 4.0*G3right("f,a,i,e"));
             {
-
               auto block_g_dabi_lt_e4left = g_dabi_lt("e,b,a,j").block(g_dabi_low_e, g_dabi_up_e);
               TArray G4left;
               G4left("e,a,i,f") = block_g_dabi_lt_e4left*block_t2_oou_lt_f_T2;
@@ -1357,6 +1380,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           }
         }
       }
+      TA::set_default_world(global_world);
+      global_world.gop.sum(E_OV5);
+      global_world.gop.sum(E_O2V4_vo);
 
       //computation of the OV5 terms
       //double E_O2V4_vo = 0;
@@ -1549,7 +1575,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       //double E_O2V4_vo = 0;
       double E_O2V4_2 = 0;
-      for (auto e = 0; e < n_tr_vir; ++e) {
+      /*for (auto e = 0; e < n_tr_vir; ++e) {
 
         std::size_t e_low = e;
         std::size_t e_up = e + 1;
@@ -1592,11 +1618,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G("e,a,b,n") = block_g_dabi_lt_e * t2_ouu_lt("b,c,i,n");
           E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
         }
-      }
+      }*/
 
       //computation of the O2V4 terms
       //double E_O2V4_2 = 0;
-      /*{
+      {
         TArray T1;
         TArray T2;
 
@@ -1616,7 +1642,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G("e,a,b,n") = g_dabi_lt("e,a,c,i") * t2_ouu_lt("b,c,i,n");
           E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
         }
-      }*/
+      }
 
       double E_O3V3_2 = 0;
       {
@@ -1708,7 +1734,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       time12 = mpqc::now(world, accurate_time);
 
       double E_O2V4_S = 0.0;
-      for (auto e = 0; e < n_tr_vir; ++e) {
+      /*for (auto e = 0; e < n_tr_vir; ++e) {
 
         std::size_t e_low = e;
         std::size_t e_up = e + 1;
@@ -1748,8 +1774,8 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G2("i,a,b,e") = g_abij_lt("c,a,j,i") * block_g_dabi_lt_e2;
           E_O2V4_S += TA::dot((-4.0*G2("i,a,b,e") - 4.0*G1("i,a,b,e")),T2("i,a,b,e"));
         }
-      }
-      /*{
+      }*/
+      {
         TArray T1;
         TArray T2;
         T1("i,a,b,f") = t1_lt("b,j") * t2_oou_lt("f,a,i,j");
@@ -1768,7 +1794,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G2("i,a,b,f") = g_abij_lt("c,a,j,i") * g_dabi_lt("f,b,c,j");
           E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));
         }
-      }*/
+      }
 
       double E_O2V3_S = 0.0;
       {

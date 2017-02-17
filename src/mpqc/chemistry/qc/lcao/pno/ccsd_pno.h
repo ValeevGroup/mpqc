@@ -23,6 +23,8 @@
 namespace mpqc {
 namespace lcao {
 
+  enum DecomType {eigen_decom, svd};
+
   /**
    *  \brief CCSD_PNO class
    *
@@ -48,14 +50,12 @@ namespace lcao {
                              TA::DistArray<Tile, Policy> &t2);
 
    // function for testing PNO decomposition ideas
-   double test_pno_decom(const bool use_diff_t2,
-                         const TA::DistArray<Tile, Policy> &t2_mp2_orig,
-                         const TA::DistArray<Tile, Policy> &occ_convert,
-                         const TA::DistArray<Tile, Policy> &vir_convert);
+   double pno_simul(const bool use_diff_t2 = false);
    // decompose T2 using PNO (eigen) decomposition or SVD
+   void decom_t2(TA::DistArray<Tile, Policy> &t2_mp2, const DecomType = eigen_decom);
+   // decompose T2 with MP2 and CCSD components
    void decom_t2(TA::DistArray<Tile, Policy> &t2_mp2,
-                 const TA::DistArray<Tile, Policy> &t2_ccsd,
-                 bool use_diff_t2 = false);
+                 const TA::DistArray<Tile, Policy> &t2_ccsd);
 
    // compute PNO coefficients: d^ij_a aij
    // where each tile is the size of a * aij (aij is PNO)

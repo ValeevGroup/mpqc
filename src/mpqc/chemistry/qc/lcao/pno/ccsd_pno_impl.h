@@ -9,7 +9,6 @@
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_PNO_CCSD_PNO_IMPL_H_
 
 namespace mpqc {
-
   namespace lcao {
 
     namespace detail {
@@ -169,13 +168,12 @@ namespace mpqc {
         TA::EigenMatrixXd C_es = es.eigenvectors();
 
         // truncate eigenvectors with corresponding eigenvalues smaller than threshold
-//        int pos_trunc = a - 1;
-//        for(; pos_trunc >= 0; --pos_trunc) {
-//          if(std::abs(S_es(pos_trunc)) < tcut_)
-//            break;
-//        }
-//
-        int pos_trunc = -1;
+        int pos_trunc = a - 1;
+        for(; pos_trunc >= 0; --pos_trunc) {
+          if(std::abs(S_es(pos_trunc)) < tcut_)
+            break;
+        }
+
         const size_t rank = a - pos_trunc - 1;
         if (rank > 0) {
           const size_t a_lo = tab_tile.range().lobound()[0];
@@ -194,8 +192,7 @@ namespace mpqc {
 
           // print out pair and rank information
           std::stringstream ss;
-          ss << "("<< orb_i << "," << orb_j << ") pair  rank: " << rank
-             << " a: " << a << " pos_trunc: " << pos_trunc << std::endl;
+          ss << "("<< orb_i << "," << orb_j << ") pair  rank: " << rank << std::endl;
           //ss << "dab tile: " << dab_tile << std::endl;
           std::printf("%s", ss.str().c_str());
         }
@@ -803,14 +800,12 @@ namespace mpqc {
     // decompose T2 amplitudes
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::decom_t2(TA::DistArray<Tile, Policy> &t2_mp2,
-                                          const TA::DistArray<Tile, Policy> &t2_ccsd,
-                                          bool use_diff_t2) {
+                                          const DecomType decom_method) {
 
       double threshold = tcut_;
-      ExEnv::out0() << "tcut is " << tcut_ << std::endl;
 
       // decompose and reconstruct T2
-      auto decom_1 = [&](Tile &in_tile) -> float {
+      auto decom = [&](Tile &in_tile) -> float {
 
         // copy in_tile which is ab matrix of T^ij
         Tile tab_tile = in_tile.clone();
@@ -826,103 +821,78 @@ namespace mpqc {
 
         int rank = 0;
 
-        std::stringstream ss;
-//        ss << "input tile: " << in_tile << std::endl;
+        switch(decom_method) {
+        // use eigen decomposition
+        case eigen_decom: {
+          auto Tab = TA::eigen_map(tab_tile, a, b);
+          // compute virtual or PNO density
+          TA::EigenMatrixXd Dab = Tab * (4.0 * Tab - 2.0 * Tab.transpose()).transpose()
+                                + Tab.transpose() * (4.0 * Tab - 2.0 * Tab.transpose());
+          // when i=j, Dab = Tab*Tab' + Tab'*Tab
+          if (orb_i == orb_j)
+            Dab = Dab/2.0;
 
-#define PNO_DECOM 1
-#define T2_SVD 0
+          // compute eigenvalues ans eigenvectors of Dab
+          Eigen::SelfAdjointEigenSolver<TA::EigenMatrixXd> es(Dab);
+          TA::EigenVectorXd S_es = es.eigenvalues();
+          TA::EigenMatrixXd C_es = es.eigenvectors();
 
-#if PNO_DECOM
-        auto Tab = TA::eigen_map(tab_tile, a, b);
-        // compute virtual or PNO density
-        TA::EigenMatrixXd Dab = Tab * (4.0 * Tab - 2.0 * Tab.transpose()).transpose()
-                              + Tab.transpose() * (4.0 * Tab - 2.0 * Tab.transpose());
-        // when i=j, Dab = Tab*Tab' + Tab'*Tab
-        if (orb_i == orb_j)
-          Dab = Dab/2.0;
+          // truncate eigenvectors with corresponding eigenvalues smaller than threshold
+          int pos_trunc = a - 1;
+          for(; pos_trunc >= 0; --pos_trunc) {
+            if(std::abs(S_es(pos_trunc)) < threshold)
+              break;
+          }
 
-        // compute eigenvalues ans eigenvectors of Dab
-        Eigen::SelfAdjointEigenSolver<TA::EigenMatrixXd> es(Dab);
-        TA::EigenVectorXd S_es = es.eigenvalues();
-        TA::EigenMatrixXd C_es = es.eigenvectors();
+          rank = a - pos_trunc - 1;
+          if (rank > 0) {
+            auto tab_pno = TA::eigen_map(in_tile, a, b);
+            tab_pno.noalias() = C_es.rightCols(rank) * C_es.rightCols(rank).transpose()
+                              * Tab
+                              * C_es.rightCols(rank) * C_es.rightCols(rank).transpose();
+          } else {
+              std::fill(in_tile.begin(), in_tile.end(), 0.0);
+          }
 
-        // truncate eigenvectors with corresponding eigenvalues smaller than threshold
-        int pos_trunc = a - 1;
-        for(; pos_trunc >= 0; --pos_trunc) {
-          if(std::abs(S_es(pos_trunc)) < threshold)
-            break;
+          break;
         }
+        // use singular value decompostion
+        case svd: {
+          const auto x = std::min(a,b);
 
-        rank = a - pos_trunc - 1;
-        if (rank > 0) {
-          auto tab_pno = TA::eigen_map(in_tile, a, b);
-          tab_pno.noalias() = C_es.rightCols(rank) * C_es.rightCols(rank).transpose()
-                            * Tab
-                            * C_es.rightCols(rank) * C_es.rightCols(rank).transpose();
-        } else {
-            std::fill(in_tile.begin(), in_tile.end(), 0.0);
+          // allocate memory for SVD
+          std::unique_ptr<double[]> u_ax(new double[a * x]);
+          std::unique_ptr<double[]> v_xb(new double[b * x]);
+          std::unique_ptr<double[]> s(new double[x]);
+
+          // SVD of tile: (t_ab)^T
+          tensor::algebra::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');
+
+          for(; rank < x; ++rank) {
+            // check singular value for truncation threshold
+            if(std::abs(s.get()[rank]) < threshold)
+              break;
+
+            // fold s into u_ab:
+            // u_{a} = u_{a} * s_{a}
+            madness::cblas::scal(a, s.get()[rank], u_ax.get() + (a * rank), 1);
+          }
+
+          // compute output tile: (t_ab)^T = u_a{c} * v_{c}b
+          madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::NoTrans,
+              a, b, rank, 1.0, u_ax.get(), a, v_xb.get(), b, 0.0, in_tile.data(), a);
+
+          break;
         }
-
-//        ss << "Dab: " << std::endl << Dab << std::endl;
-//        ss << "S_es: " << std::endl << S_es << std::endl;
-//        ss << "C_es: " << std::endl << C_es << std::endl;
-//        ss << "S_es (trunc): " << std::endl << S_es.tail(rank) << std::endl;
-//        ss << "C_es (trunc): " << std::endl << C_es.rightCols(rank) << std::endl;
-#endif // PNO_DECOM
-
-#if T2_SVD
-        const auto x = std::min(a,b);
-
-        // allocate memory for SVD
-        std::unique_ptr<double[]> u_ax(new double[a * x]);
-        std::unique_ptr<double[]> v_xb(new double[b * x]);
-        std::unique_ptr<double[]> s(new double[x]);
-
-        // SVD of tile: (t_ab)^T
-        tensor::algebra::svd(in_tile.data(), s.get(), u_ax.get(), v_xb.get(), a, b, 'A');
-//        // print out results for test purpose
-//        ss << "s: " << std::endl;
-//        for (std::size_t i = 0; i < a; ++i) {
-//          ss << s.get()[i] << "  ";
-//        }
-//        ss << std::endl;
-//        ss << "u: " << std::endl;
-//        for (std::size_t i = 0; i < a; ++i) {
-//          for (int j = 0; j < b; ++j) {
-//            ss << u_ax.get()[i+x*j] << "  ";
-//          }
-//          ss << std::endl;
-//        }
-//        ss << std::endl;
-//        ss << "v: " << std::endl;
-//        for (std::size_t i = 0; i < a; ++i) {
-//          for (int j = 0; j < b; ++j) {
-//            ss << v_xb.get()[i+x*j] << "  ";
-//          }
-//          ss << std::endl;
-//        }
-//        ss << std::endl;
-
-        for(; rank < x; ++rank) {
-          // check singular value for truncation threshold
-          if(std::abs(s.get()[rank]) < threshold)
-            break;
-
-          // fold s into u_ab:
-          // u_{a} = u_{a} * s_{a}
-          madness::cblas::scal(a, s.get()[rank], u_ax.get() + (a * rank), 1);
-        }
-
-        // compute output tile: (t_ab)^T = u_a{c} * v_{c}b
-        madness::cblas::gemm(madness::cblas::NoTrans, madness::cblas::NoTrans,
-            a, b, rank, 1.0, u_ax.get(), a, v_xb.get(), b, 0.0, in_tile.data(), a);
-#endif // T2_SVD
-
-//        ss << "output tile: " << in_tile << std::endl;
+        default:
+          throw std::runtime_error("Invalid decomposition type for decomposing MP2 T2!");
+          break;
+        } // end of switch
 
         // compute the norm of difference between input and output tile
+        std::stringstream ss;
         ss << "("<< orb_i << "," << orb_j << ") pair  rank: " << rank
-           << "  (t_new - t_old).norm(): " << (TA::subt(in_tile, tab_tile)).norm()
+           << "  norm of (t_new - t_old): " << (TA::subt(in_tile, tab_tile)).norm()
            << std::endl;
 
         std::printf("%s", ss.str().c_str());
@@ -930,8 +900,20 @@ namespace mpqc {
         return in_tile.norm();
       };
 
+      ExEnv::out0() << std::endl << "Using MP2 T2 amplitudes for PNO decomposition" << std::endl;
+      ExEnv::out0() << "Tcut is " << tcut_ << std::endl;
+      TA::foreach_inplace(t2_mp2, decom);
+    }
+
+    // decompose T2 amplitudes
+    template<typename Tile, typename Policy>
+    void CCSD_PNO<Tile, Policy>::decom_t2(TA::DistArray<Tile, Policy> &t2_mp2,
+                                          const TA::DistArray<Tile, Policy> &t2_ccsd) {
+
+      double threshold = tcut_;
+
       // decompose and reconstruct T2
-      auto decom_2 = [&](Tile &tile_mp2, const Tile &tile_ccsd) -> float {
+      auto decom = [&](Tile &tile_mp2, const Tile &tile_ccsd) -> float {
 
         // copy in_tile which is ab matrix of T^ij
         Tile tab_mp2 = tile_mp2.clone();
@@ -994,25 +976,9 @@ namespace mpqc {
         }
 
         std::stringstream ss;
-//        // test: print out all the data
-//        if (orb_i == 2 && orb_j == 4) {
-//          ss << "input tile: " << tab_mp2 << std::endl;
-//          ss << "Tab_mp2: " << std::endl << Tab_mp2 << std::endl;
-//          ss << "Dab_mp2: " << std::endl << Dab_mp2 << std::endl;
-//          ss << "S_es_mp2 (trunc): " << std::endl << S_es_mp2.tail(rank) << std::endl;
-//          ss << "C_es_mp2 (trunc): " << std::endl << C_es_mp2.rightCols(rank) << std::endl;
-//
-//          ss << "Tab_ccsd: " << std::endl << Tab_ccsd << std::endl;
-//          ss << "Dab_ccsd: " << std::endl << Dab_ccsd << std::endl;
-//          ss << "S_es_ccsd (trunc): " << std::endl << S_es_ccsd.tail(rank) << std::endl;
-//          ss << "C_es_ccsd (trunc): " << std::endl << C_es_ccsd.rightCols(rank) << std::endl;
-//
-//          ss << "output tile: " << tile_mp2 << std::endl;
-//        }
-
         // compute the norm of difference between input and output tile
         ss << "("<< orb_i << "," << orb_j << ") pair  rank: " << rank
-           << "  (t_new - t_old).norm(): " << (TA::subt(tile_mp2, tab_mp2)).norm()
+           << "  norm of (t_new - t_old): " << (TA::subt(tile_mp2, tab_mp2)).norm()
            << std::endl;
 
         std::printf("%s", ss.str().c_str());
@@ -1020,13 +986,9 @@ namespace mpqc {
         return tile_mp2.norm();
       };
 
-      if (use_diff_t2) {
-        ExEnv::out0() << std::endl << "Using MP2 and CCSD T2 amplitudes for PNO decomposition" << std::endl;
-        TA::foreach_inplace(t2_mp2, t2_ccsd, decom_2);
-      } else {
-        ExEnv::out0() << std::endl << "Using MP2 T2 amplitudes for PNO decomposition" << std::endl;
-        TA::foreach_inplace(t2_mp2, decom_1);
-      }
+      ExEnv::out0() << std::endl << "Using MP2 and CCSD T2 amplitudes for PNO decomposition" << std::endl;
+      ExEnv::out0() << "Tcut is " << tcut_ << std::endl;
+      TA::foreach_inplace(t2_mp2, t2_ccsd, decom);
     }
 
     template<typename Tile, typename Policy>
@@ -1415,20 +1377,36 @@ namespace mpqc {
 
     // test PNO decomposition
     template<typename Tile, typename Policy>
-    double CCSD_PNO<Tile, Policy>::test_pno_decom(const bool use_diff_t2,
-                                                  const TA::DistArray<Tile, Policy> &t2_mp2_orig,
-                                                  const TA::DistArray<Tile, Policy> &occ_convert,
-                                                  const TA::DistArray<Tile, Policy> &vir_convert) {
+    double CCSD_PNO<Tile, Policy>::pno_simul(const bool use_diff_t2) {
+
+      using TArray = TA::DistArray<Tile, Policy>;
+
+      auto &world = this->wfn_world()->world();
+      bool accurate_time = this->lcao_factory().accurate_time();
+
+      // obtain MP2 T2 amplitudes
+      ExEnv::out0() << std::endl << "Computing MP2 amplitudes" << std::endl;
+      TArray t2_mp2_orig = compute_mp2_t2();
+
+      // compute converting matrices for reblocking T2 amplitudes
+      // in each block: n_i=n_j=1, n_a=n_b=nvir
+      TArray occ_convert, vir_convert;
+      compute_M_reblock(occ_convert, vir_convert);
 
       // obtain MP2 T2 with new blocking structure
-      TA::DistArray<Tile, Policy> t2_mp2 = t2_mp2_orig.clone();
+      TArray t2_mp2 = t2_mp2_orig.clone();
       t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
                         * vir_convert("c,a") * vir_convert("d,b")
                         * occ_convert("k,i") * occ_convert("l,j");
 
-      // compute CCSD T2 amplitudes
-      TA::DistArray<Tile, Policy> t1_ccsd, t2_ccsd;
-      if (use_diff_t2) {
+      ExEnv::out0() << "Decomposing T2 amplitudes" << std::endl;
+      if (!use_diff_t2) {
+        // using either eigen or SVD decomposition
+        decom_t2(t2_mp2);
+      } else {
+        // compute CCSD T2 amplitudes
+        TA::DistArray<Tile, Policy> t1_ccsd, t2_ccsd;
+
         t2_ccsd = t2_mp2_orig.clone();
         double ccsd_energy = compute_ccsdpno_df(t1_ccsd, t2_ccsd);
 
@@ -1436,15 +1414,13 @@ namespace mpqc {
         t2_ccsd("a,b,i,j") = t2_ccsd("c,d,k,l")
                            * vir_convert("c,a") * vir_convert("d,b")
                            * occ_convert("k,i") * occ_convert("l,j");
-      }
 
-      // decompose T2 amplitudes
-      // using either eigen or SVD decomposition
-      ExEnv::out0() << "Decomposing T2 amplitudes" << std::endl;
-//      // test
-//      TA::DistArray<Tile, Policy> t2_mp2_orig_blk = t2_mp2.clone();
-//      decom_t2(t2_mp2, t2_mp2_orig_blk, use_diff_t2);
-      decom_t2(t2_mp2, t2_ccsd, use_diff_t2);
+        // decompose T2 amplitudes
+//        // test
+//        TA::DistArray<Tile, Policy> t2_mp2_orig_blk = t2_mp2.clone();
+//        decom_t2(t2_mp2, t2_mp2_orig_blk);
+        decom_t2(t2_mp2, t2_ccsd);
+      }
 
       // transform MP2 T2 amplitudes back into its original blocking structure
       t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
@@ -1452,14 +1428,16 @@ namespace mpqc {
                          * occ_convert("i,k") * occ_convert("j,l");
 
       // compute the difference between original and decomposed MP2 T2
-      ExEnv::out0() << std::endl << "Test: t2 - t2 (decomposed): "
-                                 << (t2_mp2_orig("a,b,i,j") - t2_mp2("a,b,i,j")).norm().get()
-                                 << std::endl << std::endl;
+      ExEnv::out0() << "Norm of (t2 - t2 (decomposed)): "
+                    << (t2_mp2_orig("a,b,i,j") - t2_mp2("a,b,i,j")).norm().get()
+                    << std::endl << std::endl;
 
       // compute CCSD with decomposed MP2 T2 as initial guess
       TA::DistArray<Tile, Policy> t1, t2;
       t2 = t2_mp2.clone();
 
+      ExEnv::out0() << std::endl
+                    << "Computing CCSD with decomposed MP2 T2 as initial guess" << std::endl;
       return compute_ccsdpno_df(t1,t2);
     }
 
@@ -1470,24 +1448,9 @@ namespace mpqc {
       auto target_precision = result->target_precision(0);
 
       if (!this->computed()) {
-//        /// cast ref_wfn to Energy::Evaluator
-//        auto ref_evaluator = std::dynamic_pointer_cast<typename Energy::Evaluator>(this->ref_wfn_);
-//        if(ref_evaluator == nullptr) {
-//          std::ostringstream oss;
-//          oss << "RefWavefunction in CCSD-PNO" << this->ref_wfn_->class_key()
-//              << " cannot compute Energy" << std::endl;
-//          throw InputError(oss.str().c_str(), __FILE__, __LINE__);
-//        }
-//
-//        ref_evaluator->evaluate(result);
-//
-//        double ref_energy = this->get_value(result).derivs(0)[0];
-//
-//        // initialize
-//        this->init();
 
-          // compute reference to higher precision than required of correlation
-          // energy
+        // compute reference to higher precision than required of correlation
+        // energy
         auto target_ref_precision = target_precision / 100.;
         auto ref_energy =
             std::make_shared<Energy>(this->ref_wfn_, target_ref_precision);
@@ -1500,9 +1463,13 @@ namespace mpqc {
         // set the precision
         this->target_precision_ = result->target_precision(0);
 
-        // test CCD equation
-        double ccd_energy = compute_ccd_df();
+        // PNO simulation
+//        double ccsd_pno_sim = pno_simul(true);
+//        double corr_energy = ccsd_pno_sim;
 
+        // CCD computation
+        double ccd_energy = compute_ccd_df();
+        // PNO-CCD computation
         double corr_energy = compute_ccd_pno();
 
         this->computed_ = true;

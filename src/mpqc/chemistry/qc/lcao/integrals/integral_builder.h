@@ -168,6 +168,20 @@ std::shared_ptr<DirectIntegralBuilder<Tile, Engine>> make_direct_integral_builde
       std::move(op));
 }
 
+/*!
+ * \brief Function to make detection of template parameters easier for complex
+ * tensor types, see DirectIntegralBuilder for details.
+ */
+template <typename Tile, typename Engine>
+std::shared_ptr<DirectIntegralBuilder<Tile, Engine>> make_direct_integral_builder(
+    madness::World &world, ShrPool<Engine> shr_epool,
+    std::shared_ptr<BasisVector> shr_bases, std::shared_ptr<Screener> shr_screen,
+    std::function<Tile(TA::TensorZ &&)> op) {
+  return std::make_shared<DirectIntegralBuilder<Tile, Engine>>(
+      world, std::move(shr_epool), std::move(shr_bases), std::move(shr_screen),
+      std::move(op));
+}
+
 }  // namespace gaussian
 }  // namespace lcao
 }  // namespace mpqc

@@ -165,7 +165,7 @@ std::shared_ptr<Basis> shift_basis_origin(Basis &basis, Vector3d shift_base,
 }  // namespace detail
 
 template <typename Tile, typename Policy>
-class PeriodicAOFactory : public AOFactoryBase<Tile, Policy> {
+class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray = DirectArray<Tile, Policy>;
@@ -180,7 +180,7 @@ class PeriodicAOFactory : public AOFactoryBase<Tile, Policy> {
    * \brief KeyVal constructor for PeriodicAOFactory
    * \param kv the KeyVal object
    */
-  PeriodicAOFactory(const KeyVal &kv) : AOFactoryBase<Tile, Policy>(kv) {
+  PeriodicAOFactory(const KeyVal &kv) : Factory<TArray>(kv) {
     std::string prefix = "";
     if (kv.exists("wfn_world") || kv.exists_class("wfn_world"))
       prefix = "wfn_world:";
@@ -220,7 +220,7 @@ class PeriodicAOFactory : public AOFactoryBase<Tile, Policy> {
   ~PeriodicAOFactory() noexcept = default;
 
   /// wrapper to compute function
-  //  TArray compute(const std::wstring &);
+  TArray compute(const std::wstring &);
 
   /*!
    * \brief This computes integral by Formula
@@ -234,7 +234,7 @@ class PeriodicAOFactory : public AOFactoryBase<Tile, Policy> {
   TArray compute(const Formula &formula) override;
 
   /// This computes integral direct by Formula
-  DirectTArray compute_direct(const Formula &formula) override;
+  TArray compute_direct(const Formula &formula) override;
 
   /*!
    * \brief This computes sparse complex array
@@ -312,10 +312,10 @@ class PeriodicAOFactory : public AOFactoryBase<Tile, Policy> {
   TArray compute4(const Formula &formula);
 
   /// compute integrals that has two dimension for periodic systems
-  DirectTArray compute_direct2(const Formula &formula);
+//  TArray compute_direct2(const Formula &formula);
 
   /// compute integrals that has two dimension for periodic systems
-  DirectTArray compute_direct4(const Formula &formula);
+  TArray compute_direct4(const Formula &formula);
 
   /// parse one body formula and set engine_pool and basis array for periodic
   /// system
@@ -382,13 +382,13 @@ class PeriodicAOFactory : public AOFactoryBase<Tile, Policy> {
   double screen_threshold_;
 };
 
-// template <typename Tile, typename Policy>
-// typename PeriodicAOFactory<Tile, Policy>::TArray
-// PeriodicAOFactory<Tile, Policy>::compute(const std::wstring &formula_string)
-// {
-//  auto formula = Formula(formula_string);
-//  return compute(formula);
-//}
+ template <typename Tile, typename Policy>
+ typename PeriodicAOFactory<Tile, Policy>::TArray
+ PeriodicAOFactory<Tile, Policy>::compute(const std::wstring &formula_string)
+ {
+  auto formula = Formula(formula_string);
+  return compute(formula);
+}
 
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
@@ -552,16 +552,15 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
 }
 
 template <typename Tile, typename Policy>
-typename PeriodicAOFactory<Tile, Policy>::DirectTArray
+typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::compute_direct(const Formula &formula) {
   TA_USER_ASSERT(lcao::detail::if_all_ao(formula),
                  "AOFactory only accept AO index!\n");
-
-  DirectTArray result;
+  TArray result;
   // retrieve the integral if it is in registry
-  auto iter = this->direct_registry_.find(formula);
+  auto iter = this->registry_.find(formula);
 
-  if (iter != this->direct_registry_.end()) {
+  if (iter != this->registry_.end()) {
     result = iter->second;
     utility::print_par(this->world(), "Retrieved Periodic AO Integral: ",
                        utility::to_string(formula.string()));
@@ -570,8 +569,8 @@ PeriodicAOFactory<Tile, Policy>::compute_direct(const Formula &formula) {
     return result;
   } else {
     if (formula.rank() == 2) {
-      result = compute_direct2(formula);
-      this->direct_registry_.insert(formula, result);
+      result = compute2(formula);
+      this->registry_.insert(formula, result);
     } else if (formula.rank() == 4) {
       result = compute_direct4(formula);
     } else
@@ -581,54 +580,53 @@ PeriodicAOFactory<Tile, Policy>::compute_direct(const Formula &formula) {
   return result;
 }
 
+//template <typename Tile, typename Policy>
+//PeriodicAOFactory::TArray PeriodicAOFactory<Tile, Policy>::compute_direct2(const Formula &formula) {
+//  BasisVector bs_array;
+//  DirectTArray result;
+//  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
+//  auto &world = this->world();
+//  double size = 0.0;
+
+//  ExEnv::out0() << "\nComputing One Body Integral Direct for Periodic System: "
+//                << utility::to_string(formula.string()) << std::endl;
+
+//  auto time0 = mpqc::now(this->world(), false);
+//  if (formula.oper().type() == Operator::Type::Kinetic ||
+//      formula.oper().type() == Operator::Type::Overlap) {
+//    parse_one_body_periodic(formula, engine_pool, bs_array, *unitcell_);
+//    result = compute_direct_integrals(world, engine_pool, bs_array);
+//  } else if (formula.oper().type() == Operator::Type::Nuclear) {
+//    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
+//      using ::mpqc::lcao::detail::direct_vector;
+//      using ::mpqc::lcao::detail::shift_mol_origin;
+//      auto shift_mol = direct_vector(RJ, RJ_max_, dcell_);
+//      auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
+//      parse_one_body_periodic(formula, engine_pool, bs_array, *shifted_mol);
+//      if (RJ == 0)
+//        result = compute_direct_integrals(world, engine_pool, bs_array);
+//      else
+//        result("mu, nu") +=
+//            compute_direct_integrals(world, engine_pool, bs_array)("mu, nu");
+//    }
+//  } else
+//    throw ProgrammingError("Rank-2 operator type not supported", __FILE__,
+//                           __LINE__);
+//  auto time1 = mpqc::now(this->world(), false);
+//  auto time = mpqc::duration_in_s(time0, time1);
+
+//  size = mpqc::detail::array_size(result.array());
+//  utility::print_par(this->world(), " Size: ", size, " GB");
+//  utility::print_par(this->world(), " Time: ", time, " s\n");
+
+//  return result;
+//}
+
 template <typename Tile, typename Policy>
-typename PeriodicAOFactory<Tile, Policy>::DirectTArray
-PeriodicAOFactory<Tile, Policy>::compute_direct2(const Formula &formula) {
-  BasisVector bs_array;
-  DirectTArray result;
-  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
-  auto &world = this->world();
-  double size = 0.0;
-
-  ExEnv::out0() << "\nComputing One Body Integral Direct for Periodic System: "
-                << utility::to_string(formula.string()) << std::endl;
-
-  auto time0 = mpqc::now(this->world(), false);
-  if (formula.oper().type() == Operator::Type::Kinetic ||
-      formula.oper().type() == Operator::Type::Overlap) {
-    parse_one_body_periodic(formula, engine_pool, bs_array, *unitcell_);
-    result = compute_direct_integrals(world, engine_pool, bs_array);
-  } else if (formula.oper().type() == Operator::Type::Nuclear) {
-    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-      using ::mpqc::lcao::detail::direct_vector;
-      using ::mpqc::lcao::detail::shift_mol_origin;
-      auto shift_mol = direct_vector(RJ, RJ_max_, dcell_);
-      auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
-      parse_one_body_periodic(formula, engine_pool, bs_array, *shifted_mol);
-      if (RJ == 0)
-        result = compute_direct_integrals(world, engine_pool, bs_array);
-      else
-        result("mu, nu") +=
-            compute_direct_integrals(world, engine_pool, bs_array)("mu, nu");
-    }
-  } else
-    throw ProgrammingError("Rank-2 operator type not supported", __FILE__,
-                           __LINE__);
-  auto time1 = mpqc::now(this->world(), false);
-  auto time = mpqc::duration_in_s(time0, time1);
-
-  size = mpqc::detail::array_size(result);
-  utility::print_par(this->world(), " Size: ", size, " GB");
-  utility::print_par(this->world(), " Time: ", time, " s\n");
-
-  return result;
-}
-
-template <typename Tile, typename Policy>
-typename PeriodicAOFactory<Tile, Policy>::DirectTArray
+typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
   BasisVector bs_array;
-  DirectTArray result;
+  TArray result;
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   auto &world = this->world();
   double size = 0.0;

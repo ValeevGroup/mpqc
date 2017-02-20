@@ -169,7 +169,7 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
  public:
   using TArray = TA::DistArray<Tile, Policy>;
   using DirectTArray = DirectArray<Tile, Policy>;
-  using Op = std::function<Tile(TA::TensorZ &&)>;
+  using Op = std::function<Tile(TA::TensorD &&)>;
 
  public:
   PeriodicAOFactory() = default;
@@ -205,16 +205,12 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
     screen_ = kv.value<std::string>(prefix + "screen", "schwarz");
     screen_threshold_ = kv.value<double>(prefix + "threshold", 1.0e-10);
 
-    set_oper(Tile());
+    auto convert_op = [](TA::TensorD &&arg) -> TA::TensorZ {
+      return TA::TensorZ(arg.range(), arg.data());
+    };
+    op_ = convert_op;
 
     print_detail_ = kv.value<bool>("print_detail", false);
-  }
-
-  /// set oper based on Tile type
-  template <typename T = Tile>
-  void set_oper(typename std::enable_if<std::is_same<T, TA::TensorZ>::value,
-                                        T>::type &&t) {
-    op_ = TA::Noop<TA::TensorZ, true>();
   }
 
   ~PeriodicAOFactory() noexcept = default;
@@ -232,6 +228,9 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
    * \return the TA::DistArray object
    */
   TArray compute(const Formula &formula) override;
+
+  /// wrapper to compute_direct
+  TArray compute_direct(const std::wstring &);
 
   /// This computes integral direct by Formula
   TArray compute_direct(const Formula &formula) override;
@@ -312,7 +311,7 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   TArray compute4(const Formula &formula);
 
   /// compute integrals that has two dimension for periodic systems
-//  TArray compute_direct2(const Formula &formula);
+  //  TArray compute_direct2(const Formula &formula);
 
   /// compute integrals that has two dimension for periodic systems
   TArray compute_direct4(const Formula &formula);
@@ -346,17 +345,17 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
    * \param screen should be a std::shared_ptr to a Screener.
    */
   template <typename E>
-  TArray sparse_complex_integrals(
-      madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
-      std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-      Op op = TA::Noop<TA::TensorZ, true>());
+  TArray sparse_complex_integrals(madness::World &world, ShrPool<E> shr_pool,
+                                  BasisVector const &bases,
+                                  std::shared_ptr<Screener> screen, Op op);
 
   /// This constructs direct sparse complex integral tensors in parallel
   template <typename E>
-  DirectTArray direct_sparse_complex_integrals(
-      madness::World &world, ShrPool<E> shr_pool, BasisVector const &bases,
-      std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
-      Op op = TA::Noop<TA::TensorZ, true>());
+  DirectTArray direct_sparse_complex_integrals(madness::World &world,
+                                               ShrPool<E> shr_pool,
+                                               BasisVector const &bases,
+                                               std::shared_ptr<Screener> screen,
+                                               Op op);
 
  private:
   std::shared_ptr<UnitCell> unitcell_;  ///> UnitCell private member
@@ -382,10 +381,9 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   double screen_threshold_;
 };
 
- template <typename Tile, typename Policy>
- typename PeriodicAOFactory<Tile, Policy>::TArray
- PeriodicAOFactory<Tile, Policy>::compute(const std::wstring &formula_string)
- {
+template <typename Tile, typename Policy>
+typename PeriodicAOFactory<Tile, Policy>::TArray
+PeriodicAOFactory<Tile, Policy>::compute(const std::wstring &formula_string) {
   auto formula = Formula(formula_string);
   return compute(formula);
 }
@@ -553,6 +551,14 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
 
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
+PeriodicAOFactory<Tile, Policy>::compute_direct(
+    const std::wstring &formula_string) {
+  auto formula = Formula(formula_string);
+  return compute_direct(formula);
+}
+
+template <typename Tile, typename Policy>
+typename PeriodicAOFactory<Tile, Policy>::TArray
 PeriodicAOFactory<Tile, Policy>::compute_direct(const Formula &formula) {
   TA_USER_ASSERT(lcao::detail::if_all_ao(formula),
                  "AOFactory only accept AO index!\n");
@@ -579,48 +585,6 @@ PeriodicAOFactory<Tile, Policy>::compute_direct(const Formula &formula) {
 
   return result;
 }
-
-//template <typename Tile, typename Policy>
-//PeriodicAOFactory::TArray PeriodicAOFactory<Tile, Policy>::compute_direct2(const Formula &formula) {
-//  BasisVector bs_array;
-//  DirectTArray result;
-//  std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
-//  auto &world = this->world();
-//  double size = 0.0;
-
-//  ExEnv::out0() << "\nComputing One Body Integral Direct for Periodic System: "
-//                << utility::to_string(formula.string()) << std::endl;
-
-//  auto time0 = mpqc::now(this->world(), false);
-//  if (formula.oper().type() == Operator::Type::Kinetic ||
-//      formula.oper().type() == Operator::Type::Overlap) {
-//    parse_one_body_periodic(formula, engine_pool, bs_array, *unitcell_);
-//    result = compute_direct_integrals(world, engine_pool, bs_array);
-//  } else if (formula.oper().type() == Operator::Type::Nuclear) {
-//    for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
-//      using ::mpqc::lcao::detail::direct_vector;
-//      using ::mpqc::lcao::detail::shift_mol_origin;
-//      auto shift_mol = direct_vector(RJ, RJ_max_, dcell_);
-//      auto shifted_mol = shift_mol_origin(*unitcell_, shift_mol);
-//      parse_one_body_periodic(formula, engine_pool, bs_array, *shifted_mol);
-//      if (RJ == 0)
-//        result = compute_direct_integrals(world, engine_pool, bs_array);
-//      else
-//        result("mu, nu") +=
-//            compute_direct_integrals(world, engine_pool, bs_array)("mu, nu");
-//    }
-//  } else
-//    throw ProgrammingError("Rank-2 operator type not supported", __FILE__,
-//                           __LINE__);
-//  auto time1 = mpqc::now(this->world(), false);
-//  auto time = mpqc::duration_in_s(time0, time1);
-
-//  size = mpqc::detail::array_size(result.array());
-//  utility::print_par(this->world(), " Size: ", size, " GB");
-//  utility::print_par(this->world(), " Time: ", time, " s\n");
-
-//  return result;
-//}
 
 template <typename Tile, typename Policy>
 typename PeriodicAOFactory<Tile, Policy>::TArray
@@ -656,7 +620,7 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
                               p_screener);
 
       auto time_g0 = mpqc::now(world, false);
-      auto J =
+      auto g =
           compute_direct_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, false);
 
@@ -664,9 +628,9 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
 
       auto time_contr0 = mpqc::now(world, false);
       if (RJ == 0)
-        result("mu, nu") = J("mu, nu, lambda, rho") * D_("lambda, rho");
+        result("mu, nu") = g("mu, nu, lambda, rho") * D_("lambda, rho");
       else
-        result("mu, nu") += J("mu, nu, lambda, rho") * D_("lambda, rho");
+        result("mu, nu") += g("mu, nu, lambda, rho") * D_("lambda, rho");
       auto time_contr1 = mpqc::now(world, false);
       time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
     }
@@ -685,16 +649,16 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
                               p_screener);
 
       auto time_g0 = mpqc::now(world, false);
-      auto K =
+      auto g =
           compute_direct_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, false);
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, false);
       if (RJ == 0)
-        result("mu, nu") = K("mu, lambda, nu, rho") * D_("lambda, rho");
+        result("mu, nu") = g("mu, lambda, nu, rho") * D_("lambda, rho");
       else
-        result("mu, nu") += K("mu, lambda, nu, rho") * D_("lambda, rho");
+        result("mu, nu") += g("mu, lambda, nu, rho") * D_("lambda, rho");
       auto time_contr1 = mpqc::now(world, false);
       time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
     }
@@ -922,7 +886,7 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
 
     // This is why builder was made into a shared_ptr.
     auto &builder = *builder_ptr;
-    auto ta_tile = builder.integrals(idx, std::move(rng));
+    auto ta_tile = builder.integrals(idx, rng);
 
     const auto tile_volume = ta_tile.range().volume();
     const auto tile_norm = ta_tile.norm();

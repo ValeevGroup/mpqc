@@ -125,12 +125,12 @@ void zRHF::solve(double thresh) {
     ezrhf = e_complex.real();
 
     auto j_start = mpqc::fenced_now(world);
-    J_ = ao_factory.compute(L"(μ ν| J|κ λ)");  // Coulomb
+    J_ = ao_factory.compute_direct(L"(μ ν| J|κ λ)");  // Coulomb
     auto j_end = mpqc::fenced_now(world);
     j_duration_ += mpqc::duration_in_s(j_start, j_end);
 
     auto k_start = mpqc::fenced_now(world);
-    K_ = ao_factory.compute(L"(μ ν| K|κ λ)");  // Exchange
+    K_ = ao_factory.compute_direct(L"(μ ν| K|κ λ)");  // Exchange
     auto k_end = mpqc::fenced_now(world);
     k_duration_ += mpqc::duration_in_s(k_start, k_end);
 

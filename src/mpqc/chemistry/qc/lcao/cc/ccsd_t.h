@@ -1234,9 +1234,27 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           g_dabi, *this->orbital_energy(), n_occ, n_frozen, x(m));
       TArray t2_oou_lt = t2_oou_laplace_transform(t2, *this->orbital_energy(),
                                                   n_occ, n_frozen, x(m));
-
       time01 = mpqc::now(world, accurate_time);
       int_transform1 += mpqc::duration_in_s(time00, time01);
+
+
+      time04 = mpqc::now(world, accurate_time);
+      TArray g_cjkl_lt = g_cjkl_laplace_transform(
+          g_cjkl, *this->orbital_energy(), n_occ, n_frozen, x(m));
+      TArray t2_ouu_lt = t2_ouu_laplace_transform(t2, *this->orbital_energy(),
+          n_occ, n_frozen, x(m));
+      time05 = mpqc::now(world, accurate_time);
+      int_transform2 += mpqc::duration_in_s(time04, time05);
+
+
+      time10 = mpqc::now(world, accurate_time);
+      TArray g_abij_lt = g_abij_laplace_transform(
+          g_abij, *this->orbital_energy(), n_occ, n_frozen, x(m));
+      TArray t1_lt = t1_laplace_transform(t1, *this->orbital_energy(), n_occ,
+          n_frozen, x(m));
+      time11 = mpqc::now(world, accurate_time);
+      int_transform3 += mpqc::duration_in_s(time10, time11);
+
 
       this->wfn_world()->world().gop.fence();
       double energy_m = 0.0;
@@ -1250,7 +1268,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       time22 = mpqc::now(world, accurate_time);
       //computation of the OV5 terms
-      double E_OV5 = 0;
+      double E_O2V4_vo = 0;
       /*{
         TArray T1;
         TArray T2;
@@ -1273,119 +1291,226 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
         std::cout << "E_OV5 = " << E_OV5 << std::endl;
       }*/
 
+      double E_OV5 = 0;
+      double E_O2V4_2 = 0;
+      double E_O2V4_S = 0.0;
+      double E_O3V3_S2 = 0.0;
       TA::set_default_world(this_world);
       std::size_t global_iter = 0;
-      double E_O2V4_vo = 0;
-      for (auto e = 0; e < n_tr_vir; ++e) {
-        for (auto f = 0; f < n_tr_vir; ++f) {
+      for (auto a = 0; a < n_tr_vir; ++a) {
+        for (auto b = 0; b < n_tr_vir; ++b) {
           ++ global_iter;
 
           if( global_iter % size != rank) continue;
 
-          std::size_t e_low = e;
-          std::size_t e_up = e + 1;
-          std::size_t f_low = f;
-          std::size_t f_up = f + 1;
+          std::size_t a_low = a;
+          std::size_t a_up = a + 1;
+          std::size_t b_low = b;
+          std::size_t b_up = b + 1;
 
           typedef std::vector<std::size_t> block;
 
-          //blocking g_dabi over e
-          block g_dabi_low_e{e_low, 0, 0, 0};
-          block g_dabi_up_e{e_up, n_tr_vir_inner, n_tr_vir_inner, n_tr_occ};
+          //blocking g_dabi over b
+          block g_dabi_low_b{0, b_low, 0, 0};
+          block g_dabi_up_b{n_tr_vir_inner, b_up, n_tr_vir_inner, n_tr_occ};
 
-          auto block_g_dabi_lt_e = g_dabi_lt("e,b,c,i").block(g_dabi_low_e, g_dabi_up_e);
+          auto block_g_dabi_lt_b = g_dabi_lt("e,b,c,i").block(g_dabi_low_b, g_dabi_up_b);
 
-          //blocking g_dabi over f
-          block g_dabi_low_f{f_low, 0, 0, 0};
-          block g_dabi_up_f{f_up, n_tr_vir_inner, n_tr_vir_inner, n_tr_occ};
+          //blocking g_dabi over a
+          block g_dabi_low_a{0, a_low, 0, 0};
+          block g_dabi_up_a{n_tr_vir_inner, a_up, n_tr_vir_inner, n_tr_occ};
+          auto block_g_dabi_lt_a = g_dabi_lt("f,a,c,i").block(g_dabi_low_a, g_dabi_up_a);
 
+          //blocking t2 over a (required for both T1 and T2 intermediates)
+          block t2_oou_lt_low_a{0, a_low, 0, 0};
+          block t2_oou_lt_up_a{n_tr_vir_inner, a_up, n_tr_occ, n_tr_occ};
 
-          //blocking t2 over e (required for both T1 and T2 intermediates)
-          block t2_oou_lt_low_e{e_low, 0, 0, 0};
-          block t2_oou_lt_up_e{e_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+          auto block_t2_oou_lt_a_T12 = t2_oou_lt("e,a,i,j").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
 
-          auto block_t2_oou_lt_e_T12 = t2_oou_lt("e,a,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
+          //blocking t2 over b (required for T2 intermediate)
+          block t2_oou_lt_low_b{0, b_low, 0, 0};
+          block t2_oou_lt_up_b{n_tr_vir_inner, b_up, n_tr_occ, n_tr_occ};
 
-          //blocking t2 over e (required for T2 intermediate)
-          block t2_oou_lt_low_f{f_low, 0, 0, 0};
-          block t2_oou_lt_up_f{f_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+          auto block_t2_oou_lt_b_T2 = t2_oou_lt("f,b,j,i").block(t2_oou_lt_low_b, t2_oou_lt_up_b);
 
-          auto block_t2_oou_lt_f_T2 = t2_oou_lt("f,b,j,i").block(t2_oou_lt_low_f, t2_oou_lt_up_f);
-
-          //blocking t2 over e (required for T1 intermediate)
-          auto block_t2_oou_lt_f_T1 = t2_oou_lt("f,b,i,j").block(t2_oou_lt_low_f, t2_oou_lt_up_f);
+          //blocking t2 over b (required for T1 intermediate)
+          auto block_t2_oou_lt_b_T1 = t2_oou_lt("f,b,i,j").block(t2_oou_lt_low_b, t2_oou_lt_up_b);
 
           TArray T1;
           TArray T2;
 
-          T1("e,b,a,f") = block_t2_oou_lt_e_T12*block_t2_oou_lt_f_T1;
-          T2("e,b,a,f") = block_t2_oou_lt_e_T12*block_t2_oou_lt_f_T2;
+          T1("e,b,a,f") = block_t2_oou_lt_a_T12*block_t2_oou_lt_b_T1;
+          T2("e,b,a,f") = block_t2_oou_lt_a_T12*block_t2_oou_lt_b_T2;
 
           {
             TArray G;
 
-            auto block_g_dabi_lt_f = g_dabi_lt("f,a,c,i").block(g_dabi_low_f, g_dabi_up_f);
-
-            G("e,b,a,f") = block_g_dabi_lt_e*block_g_dabi_lt_f;
+            G("e,b,a,f") = block_g_dabi_lt_b*block_g_dabi_lt_a;
             E_OV5 += TA::dot((G("e,b,a,f")),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
           }
           {
             TArray G;
 
-            auto block_g_dabi_lt_f = g_dabi_lt("f,c,a,i").block(g_dabi_low_f, g_dabi_up_f);
-            auto block_g_dabi_lt_e1 = g_dabi_lt("e,c,b,i").block(g_dabi_low_e, g_dabi_up_e);
+            block g_dabi_low_ca{0, 0, a_low, 0};
+            block g_dabi_up_ca{n_tr_vir_inner, n_tr_vir_inner, a_up, n_tr_occ};
+            auto block_g_dabi_lt_ca = g_dabi_lt("f,c,a,i").block(g_dabi_low_ca, g_dabi_up_ca);
 
-            G("e,b,a,f") = block_g_dabi_lt_e1*block_g_dabi_lt_f - block_g_dabi_lt_e*block_g_dabi_lt_f;
+            block g_dabi_low_cb{0, 0, b_low, 0};
+            block g_dabi_up_cb{n_tr_vir_inner, n_tr_vir_inner, b_up, n_tr_occ};
+            auto block_g_dabi_lt_cb = g_dabi_lt("e,c,b,i").block(g_dabi_low_cb, g_dabi_up_cb);
+
+            G("e,b,a,f") = block_g_dabi_lt_cb*block_g_dabi_lt_ca - block_g_dabi_lt_b*block_g_dabi_lt_ca;
             E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
           }
 
-          //computation of the OV5 terms
-          /*{
-            auto block_g_dabi_lt_e23left = g_dabi_lt("e,a,b,j").block(g_dabi_low_e, g_dabi_up_e);
-            TArray G2left;
-            G2left("e,a,i,f") = block_g_dabi_lt_e23left*block_t2_oou_lt_f_T2;
-            TArray G3left;
-            G3left("e,a,i,f") = block_g_dabi_lt_e23left*block_t2_oou_lt_f_T1;
+          //Mixed term contributions
+          {
+            TArray T1;
+            TArray T2;
 
-            auto block_g_dabi_lt_f23right = g_dabi_lt("f,a,b,j").block(g_dabi_low_f, g_dabi_up_f);
-            auto block_t2_oou_lt_e_T2right = t2_oou_lt("e,b,j,i").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
-            auto block_t2_oou_lt_e_T1right = t2_oou_lt("e,b,i,j").block(t2_oou_lt_low_e, t2_oou_lt_up_e);
-            TArray G2right;
-            G2right("f,a,i,e") = block_g_dabi_lt_f23right*block_t2_oou_lt_e_T2right;
-            TArray G3right;
-            G3right("f,a,i,e") = block_g_dabi_lt_f23right*block_t2_oou_lt_e_T1right;
+            auto block_t2_oou_lt_eb = t2_oou_lt("e,b,i,j").block(t2_oou_lt_low_b, t2_oou_lt_up_b);
 
-            E_O2V4_vo += TA::dot(G2left("e,a,i,f"),G2right("f,a,i,e") - 4.0*G3right("f,a,i,e"));
+            block g_cjkl_low_a{a_low, 0, 0, 0};
+            block g_cjkl_up_a{a_up, n_tr_occ, n_tr_occ, n_tr_occ};
+
+            auto block_g_dabi_lt_bji = g_cjkl_lt("a,j,i,n").block(g_cjkl_low_a, g_cjkl_up_a);
+            auto block_g_dabi_lt_bij = g_cjkl_lt("a,i,j,n").block(g_cjkl_low_a, g_cjkl_up_a);
+
+            T1("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bji;
+            T2("e,a,b,n") = block_t2_oou_lt_eb * block_g_dabi_lt_bij;
             {
-              auto block_g_dabi_lt_e4left = g_dabi_lt("e,b,a,j").block(g_dabi_low_e, g_dabi_up_e);
-              TArray G4left;
-              G4left("e,a,i,f") = block_g_dabi_lt_e4left*block_t2_oou_lt_f_T2;
+              TArray G1;
+              TArray G2;
+              TArray G3;
 
-              auto block_g_dabi_lt_f4right = g_dabi_lt("f,b,a,j").block(g_dabi_low_f, g_dabi_up_f);
-              TArray G4right;
+              auto block_t2_ouu_lt_cb = t2_ouu_lt("c,b,i,n").block(t2_oou_lt_low_b, t2_oou_lt_up_b);
 
-              G4right("f,a,i,e") = block_g_dabi_lt_f4right*block_t2_oou_lt_e_T2right;
-              E_O2V4_vo += TA::dot(G4left("e,a,i,f"),G4right("f,a,i,e") - 4.0*G2right("f,a,i,e"));
-              E_O2V4_vo += TA::dot(G3left("e,a,i,f"),2.0*G4right("f,a,i,e") + G3right("f,a,i,e"));
-              {
-                TArray G1left;
-                G1left("e,a,i,f") = block_g_dabi_lt_e4left*block_t2_oou_lt_f_T1;
+              block t2_oou_lt_low_bc{b_low, 0, 0, 0};
+              block t2_oou_lt_up_bc{b_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+              auto block_t2_ouu_lt_bc = t2_ouu_lt("b,c,i,n").block(t2_oou_lt_low_bc, t2_oou_lt_up_bc);
 
-                TArray G1right;
-                G1right("f,a,i,e") = block_g_dabi_lt_f4right*block_t2_oou_lt_e_T1right;
+              auto block_g_dabi_lt_ac = g_dabi_lt("e,a,c,i").block(g_dabi_low_a, g_dabi_up_a);
 
-                E_O2V4_vo += TA::dot(G1left("e,a,i,f"),8.0*G2right("f,a,i,e") + 4.0*G1right("f,a,i,e") - 4.0*G4right("f,a,i,e") - 4.0*G3right("f,a,i,e"));
-              }
+              block g_dabi_low_ca{0, 0, a_low, 0};
+              block g_dabi_up_ca{n_tr_vir_inner, n_tr_vir_inner, a_up, n_tr_occ};
+              auto block_g_dabi_lt_ca = g_dabi_lt("e,c,a,i").block(g_dabi_low_ca, g_dabi_up_ca);
+
+              G1("e,a,b,n") = block_g_dabi_lt_ca * block_t2_ouu_lt_cb;
+              G2("e,a,b,n") = block_g_dabi_lt_ac * block_t2_ouu_lt_cb;
+              G3("e,a,b,n") = block_g_dabi_lt_ca * block_t2_ouu_lt_bc;
+              E_O2V4_2 += TA::dot(2.0*G1("e,c,a,i") - G2("e,c,a,i") - G3("e,c,a,i"),(2.0*T1("e,c,a,i") - T2("e,c,a,i")));
+
+              TArray G;
+              G("e,a,b,n") = block_g_dabi_lt_ac * block_t2_ouu_lt_bc;
+              E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
             }
-          }*/
+          }
+
+          {
+
+            block t1_lt_low_b{b_low, 0};
+            block t1_lt_up_b{b_up, n_tr_occ};
+            auto block_t1_lt_b = t1_lt("b,j").block(t1_lt_low_b, t1_lt_up_b);
+
+            auto block_t2_oou_lt_faij = t2_oou_lt("f,a,i,j").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
+            auto block_t2_oou_lt_faji = t2_oou_lt("f,a,j,i").block(t2_oou_lt_low_a, t2_oou_lt_up_a);
+            TArray T1;
+            TArray T2;
+            T1("i,a,b,f") = block_t1_lt_b * block_t2_oou_lt_faij;
+            T2("i,a,b,f") = block_t1_lt_b * block_t2_oou_lt_faji;
+
+            block g_dabi_low_cb{0, 0, b_low, 0};
+            block g_dabi_up_cb{n_tr_vir_inner, n_tr_vir_inner, b_up, n_tr_occ};
+            auto block_g_dabi_lt_cb = g_dabi_lt("f,c,b,j").block(g_dabi_low_cb, g_dabi_up_cb);
+
+            auto block_g_dabi_lt_bc = g_dabi_lt("f,b,c,j").block(g_dabi_low_b, g_dabi_up_b);
+
+            block g_abij_lt_low_ac{a_low, 0, 0, 0};
+            block g_abij_lt_up_ac{a_up, n_tr_vir_inner, n_tr_occ, n_tr_occ};
+            auto block_g_abij_lt_ac = g_abij_lt("a,c,j,i").block(g_abij_lt_low_ac, g_abij_lt_up_ac);
+
+            block g_abij_lt_low_ca{0, a_low, 0, 0};
+            block g_abij_lt_up_ca{n_tr_vir_inner, a_up, n_tr_occ, n_tr_occ};
+            auto block_g_abij_lt_ca = g_abij_lt("c,a,j,i").block(g_abij_lt_low_ca, g_abij_lt_up_ca);
+
+            TArray G1;
+            G1("i,a,b,f") = block_g_abij_lt_ac * block_g_dabi_lt_cb;
+
+            TArray G3;
+            G3("i,a,b,f") = block_g_abij_lt_ac * block_g_dabi_lt_bc;
+            E_O2V4_S += TA::dot((2.0*G1("i,a,b,f") - 4.0*G3("i,a,b,f")),T1("i,a,b,f"));
+
+
+            TArray G2;
+            G2("i,a,b,f") = block_g_abij_lt_ca * block_g_dabi_lt_bc;
+            E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));
+
+            {
+              block g_abij_lt_low_ab{a_low, b_low, 0, 0};
+              block g_abij_lt_up_ab{a_up, b_up, n_tr_occ, n_tr_occ};
+              auto block_g_abij_lt_ab = g_abij_lt("a,b,i,j").block(g_abij_lt_low_ab, g_abij_lt_up_ab);
+              auto block_t2_ouu_lt_ab = t2_ouu_lt("a,b,k,n").block(g_abij_lt_low_ab, g_abij_lt_up_ab);
+              TArray G;
+              TArray T;
+              G("a,b,c,n") = block_g_abij_lt_ab * g_cjkl_lt("c,i,j,n");
+              T("a,b,c,n") = t1_lt("c,k") * block_t2_ouu_lt_ab;
+              E_O3V3_S2 += 2.0 * (TA::dot((G("a,b,c,n")),(T("a,b,c,n"))));
+            }
+          }
+
         }
       }
       TA::set_default_world(global_world);
       global_world.gop.sum(E_OV5);
+      global_world.gop.sum(E_O2V4_2);
+      global_world.gop.sum(E_O2V4_S);
+      global_world.gop.sum(E_O3V3_S2);
+
+
+      E_O2V4_vo = 0.0;
+      TA::set_default_world(this_world);
+      global_iter = 0;
+      for (auto a = 0; a < n_tr_vir; ++a) {
+
+        ++ global_iter;
+        if( global_iter % size != rank) continue;
+
+        std::size_t a_low = a;
+        std::size_t a_up = a + 1;
+
+        typedef std::vector<std::size_t> block;
+        {
+          //blocking g_dabi over a & b
+          block g_dabi_low_ab{0, a_low, 0, 0};
+          block g_dabi_up_ab{n_tr_vir_inner, a_up, n_tr_vir_inner, n_tr_occ};
+          auto block_g_dabi_lt_ab = g_dabi_lt("e,a,b,j").block(g_dabi_low_ab, g_dabi_up_ab);
+
+          TArray G2;
+          G2("e,a,i,f") = block_g_dabi_lt_ab*t2_oou_lt("f,b,j,i");
+          TArray G3;
+          G3("e,a,i,f") = block_g_dabi_lt_ab*t2_oou_lt("f,b,i,j");
+          E_O2V4_vo += TA::dot(G2("e,a,i,f"),G2("f,a,i,e") - 4.0*G3("f,a,i,e"));
+          {
+            block g_dabi_low_ba{0, 0, a_low, 0};
+            block g_dabi_up_ba{n_tr_vir_inner, n_tr_vir_inner, a_up, n_tr_occ};
+            auto block_g_dabi_lt_ba = g_dabi_lt("e,b,a,j").block(g_dabi_low_ba, g_dabi_up_ba);
+            TArray G4;
+            G4("e,a,i,f") = block_g_dabi_lt_ba*t2_oou_lt("f,b,j,i");
+            E_O2V4_vo += TA::dot(G4("e,a,i,f"),G4("f,a,i,e") - 4.0*G2("f,a,i,e"));
+            E_O2V4_vo += TA::dot(G3("e,a,i,f"),2.0*G4("f,a,i,e") + G3("f,a,i,e"));
+            {
+              TArray G1;
+              G1("e,a,i,f") = block_g_dabi_lt_ba*t2_oou_lt("f,b,i,j");
+              E_O2V4_vo += TA::dot(G1("e,a,i,f"),8.0*G2("f,a,i,e") + 4.0*G1("f,a,i,e") - 4.0*G4("f,a,i,e") - 4.0*G3("f,a,i,e"));
+            }
+          }
+        }
+      }
+      TA::set_default_world(global_world);
       global_world.gop.sum(E_O2V4_vo);
 
       //computation of the OV5 terms
-      //double E_O2V4_vo = 0;
+      /*E_O2V4_vo = 0;
       {
         TArray G2;
         G2("e,a,i,f") = g_dabi_lt("e,a,b,j")*t2_oou_lt("f,b,j,i");
@@ -1404,6 +1529,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           }
         }
       }
+      std::cout << "E_O2V4_vo2 = " << E_O2V4_vo << std::endl;*/
 
       //computation of the OV5 terms
       double E_O2V4_oo = 0;
@@ -1455,13 +1581,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       time_t2_vv += mpqc::duration_in_s(time02, time03);
 
 
-      time04 = mpqc::now(world, accurate_time);
-      TArray g_cjkl_lt = g_cjkl_laplace_transform(
-          g_cjkl, *this->orbital_energy(), n_occ, n_frozen, x(m));
-      TArray t2_ouu_lt = t2_ouu_laplace_transform(t2, *this->orbital_energy(),
-                                                  n_occ, n_frozen, x(m));
-      time05 = mpqc::now(world, accurate_time);
-      int_transform2 += mpqc::duration_in_s(time04, time05);
 
       time06 = mpqc::now(world, accurate_time);
 
@@ -1574,7 +1693,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       time08 = mpqc::now(world, accurate_time);
 
       //double E_O2V4_vo = 0;
-      double E_O2V4_2 = 0;
+      //double E_O2V4_2 = 0;
       /*for (auto e = 0; e < n_tr_vir; ++e) {
 
         std::size_t e_low = e;
@@ -1622,7 +1741,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       //computation of the O2V4 terms
       //double E_O2V4_2 = 0;
-      {
+      /*{
         TArray T1;
         TArray T2;
 
@@ -1642,7 +1761,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G("e,a,b,n") = g_dabi_lt("e,a,c,i") * t2_ouu_lt("b,c,i,n");
           E_O2V4_2 += TA::dot(G("e,c,a,i"),(-2.0*T2("e,c,a,i") + T1("e,c,a,i")));
         }
-      }
+      }*/
 
       double E_O3V3_2 = 0;
       {
@@ -1723,17 +1842,10 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       energy_muo = E_O2V4_2 + E_O2V3_2 + E_O3V3_2;
 
-      time10 = mpqc::now(world, accurate_time);
-      TArray g_abij_lt = g_abij_laplace_transform(
-          g_abij, *this->orbital_energy(), n_occ, n_frozen, x(m));
-      TArray t1_lt = t1_laplace_transform(t1, *this->orbital_energy(), n_occ,
-                                          n_frozen, x(m));
-      time11 = mpqc::now(world, accurate_time);
-      int_transform3 += mpqc::duration_in_s(time10, time11);
 
       time12 = mpqc::now(world, accurate_time);
 
-      double E_O2V4_S = 0.0;
+      //double E_O2V4_S = 0.0;
       /*for (auto e = 0; e < n_tr_vir; ++e) {
 
         std::size_t e_low = e;
@@ -1775,7 +1887,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           E_O2V4_S += TA::dot((-4.0*G2("i,a,b,e") - 4.0*G1("i,a,b,e")),T2("i,a,b,e"));
         }
       }*/
-      {
+      /*{
         TArray T1;
         TArray T2;
         T1("i,a,b,f") = t1_lt("b,j") * t2_oou_lt("f,a,i,j");
@@ -1794,7 +1906,7 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G2("i,a,b,f") = g_abij_lt("c,a,j,i") * g_dabi_lt("f,b,c,j");
           E_O2V4_S += TA::dot((-4.0*G2("i,a,b,f") - 4.0*G1("i,a,b,f")),T2("i,a,b,f"));
         }
-      }
+      }*/
 
       double E_O2V3_S = 0.0;
       {
@@ -1922,14 +2034,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           G3("i,j,a,n") = g_abij_lt("a,b,i,k") * g_cjkl_lt("b,j,k,n");
           E_O4V2_S += TA::dot((-4.0*G3("i,j,a,n") - 4.0*G2("i,j,a,n")),(T2("i,j,a,n")));
         }
-      }
-      double E_O3V3_S2 = 0.0;
-      {
-        TArray G;
-        TArray T;
-        G("a,b,c,n") = g_abij_lt("a,b,i,j") * g_cjkl_lt("c,i,j,n");
-        T("a,b,c,n") = t1_lt("c,k") * t2_ouu_lt("a,b,k,n");
-        E_O3V3_S2 = 2.0 * (TA::dot((G("a,b,c,n")),(T("a,b,c,n"))));
       }
       {
         TArray G;

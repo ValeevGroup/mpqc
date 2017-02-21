@@ -14,10 +14,11 @@ namespace mpqc {
     namespace detail {
       /// compute MP2 T2 amplitudes
       template <typename Tile, typename Policy>
-      TA::DistArray<Tile, Policy> compute_mp2_t2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
-                                                 const std::shared_ptr<Eigen::VectorXd> &orbital_energy,
-                                                 const std::shared_ptr<const ::mpqc::utility::TRange1Engine> &trange1_engine,
-                                                 bool df) {
+      TA::DistArray<Tile, Policy> compute_mp2_t2(LCAOFactoryBase<Tile, Policy> &lcao_factory,
+          const std::shared_ptr<const Eigen::VectorXd> &orbital_energy,
+          const std::shared_ptr<const ::mpqc::utility::TRange1Engine> &trange1_engine,
+          bool df) {
+
         TA::DistArray<Tile, Policy> g_abij;
         ExEnv::out0() << indent << "Using density fitting: " << df << std::endl;
         g_abij = lcao_factory.compute(df ? L"<a b|G|i j>[df]" : L"<a b|G|i j>");
@@ -36,9 +37,8 @@ namespace mpqc {
       }
 
       /// print out details of CCSD iterations
-      inline void print_ccsd(int iter, double dE,
-                             double error, double error_r1, double error_r2,
-                             double E1, double time) {
+      inline void print_ccsd(int iter, double dE, double error, double error_r1, double error_r2,
+          double E1, double time) {
         if (iter == 0) {
           std::printf("%3s \t %10s \t %10s \t %12s \t %12s \t %15s \t %10s \n", "iter", "deltaE",
                       "residual", "norm (r1)", "norm (r2)", "energy", "total time/s");
@@ -50,8 +50,8 @@ namespace mpqc {
       /// compute PNO CCD energy
       template <typename Tile, typename Policy>
       double get_eccd_pno(const int nocc,
-                          const std::vector<TA::DistArray<Tile, Policy>>& vec_t2_pno,
-                          const std::vector<TA::DistArray<Tile, Policy>>& vec_gabij_pno) {
+          const std::vector<TA::DistArray<Tile, Policy>>& vec_t2_pno,
+          const std::vector<TA::DistArray<Tile, Policy>>& vec_gabij_pno) {
 
         double E_ccd = 0.0;
         for(int i = 0; i < nocc; ++i) {
@@ -81,15 +81,13 @@ namespace mpqc {
 
     template<typename Tile, typename Policy>
     TA::DistArray<Tile, Policy> CCSD_PNO<Tile, Policy>::compute_mp2_t2() {
-
-      auto &lcao_factory = this->lcao_factory();
-      return detail::compute_mp2_t2(lcao_factory, this->orbital_energy_,
-                                    this->trange1_engine(), this->df_);
+      return detail::compute_mp2_t2(this->lcao_factory(), this->orbital_energy(),
+          this->trange1_engine(), this->df_);
     }
 
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::compute_M_reblock(TA::DistArray<Tile, Policy> &occ_convert,
-                                                   TA::DistArray<Tile, Policy> &vir_convert) {
+        TA::DistArray<Tile, Policy> &vir_convert) {
 
       auto &lcao_factory = this->lcao_factory();
       auto &world = lcao_factory.world();
@@ -192,7 +190,7 @@ namespace mpqc {
 
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::comput_vec_pnocoef(const TA::DistArray<Tile, Policy>& t2_mp2,
-                                                    const TA::TiledRange1& trange1_a) {
+        const TA::TiledRange1& trange1_a) {
 
       TA::DistArray<Tile, Policy> dab_ij = compute_pno_coef(t2_mp2);
 
@@ -206,9 +204,9 @@ namespace mpqc {
 
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::comput_vecij_ab(const TA::DistArray<Tile, Policy>& ab_ij,
-                                                 const TA::TiledRange1& trange1_a,
-                                                 std::vector<TA::DistArray<Tile, Policy>>& vecij_dab,
-                                                 const bool compute_pno_coef) {
+        const TA::TiledRange1& trange1_a,
+        std::vector<TA::DistArray<Tile, Policy>>& vecij_dab,
+        const bool compute_pno_coef) {
 
        auto &world = this->wfn_world()->world();
        const int ni = ab_ij.trange().elements_range().extent()[2];
@@ -324,8 +322,8 @@ namespace mpqc {
 
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::get_abij_pno(const TA::DistArray<Tile, Policy>& ab_ij,
-                                              const TA::TiledRange1& trange1_a,
-                                              std::vector<TA::DistArray<Tile, Policy>>& vecij_pno) {
+        const TA::TiledRange1& trange1_a,
+        std::vector<TA::DistArray<Tile, Policy>>& vecij_pno) {
 
       // reblock abij array
       const int size_vecij = vecij_pno.size();
@@ -778,7 +776,7 @@ namespace mpqc {
 
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::decom_t2(TA::DistArray<Tile, Policy> &t2_mp2,
-                                          const DecomType decom_method) {
+        const DecomType decom_method) {
 
       double threshold = tcut_;
 
@@ -885,7 +883,7 @@ namespace mpqc {
 
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::decom_t2(TA::DistArray<Tile, Policy> &t2_mp2,
-                                          const TA::DistArray<Tile, Policy> &t2_ccsd) {
+        const TA::DistArray<Tile, Policy> &t2_ccsd) {
 
       double threshold = tcut_;
 
@@ -970,7 +968,7 @@ namespace mpqc {
 
     template<typename Tile, typename Policy>
     double CCSD_PNO<Tile, Policy>::compute_ccsdpno_df(TA::DistArray<Tile, Policy> &t1,
-                                                      TA::DistArray<Tile, Policy> &t2) {
+        TA::DistArray<Tile, Policy> &t2) {
 
       using TArray = TA::DistArray<Tile, Policy>;
 
@@ -1432,7 +1430,8 @@ namespace mpqc {
 
         this->init_sdref(this->ref_wfn_, target_ref_precision);
 
-        this->orbital_energy_ = make_orbital_energy(this->lcao_factory());
+        this->f_pq_diagonal_ =
+            make_diagonal_fpq(this->lcao_factory(), this->ao_factory());
 
         // set the precision
         this->target_precision_ = result->target_precision(0);

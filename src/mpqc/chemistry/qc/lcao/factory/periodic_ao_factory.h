@@ -492,16 +492,20 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
                               p_screener);
 
       auto time_g0 = mpqc::now(world, false);
-      auto J = compute_integrals(world, engine_pool, bs_array, p_screener);
+      auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, false);
 
+      if (print_detail_) {
+          double size = mpqc::detail::array_size(g);
+          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB" << std::endl;
+      }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, false);
       if (RJ == 0)
-        result("mu, nu") = J("mu, nu, lambda, rho") * D_("lambda, rho");
+        result("mu, nu") = g("mu, nu, lambda, rho") * D_("lambda, rho");
       else
-        result("mu, nu") += J("mu, nu, lambda, rho") * D_("lambda, rho");
+        result("mu, nu") += g("mu, nu, lambda, rho") * D_("lambda, rho");
       auto time_contr1 = mpqc::now(world, false);
       time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
     }
@@ -520,15 +524,20 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
                               p_screener);
 
       auto time_g0 = mpqc::now(world, false);
-      auto K = compute_integrals(world, engine_pool, bs_array, p_screener);
+      auto g = compute_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, false);
+
+      if (print_detail_) {
+          double size = mpqc::detail::array_size(g);
+          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB" << std::endl;
+      }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, false);
       if (RJ == 0)
-        result("mu, nu") = K("mu, lambda, nu, rho") * D_("lambda, rho");
+        result("mu, nu") = g("mu, lambda, nu, rho") * D_("lambda, rho");
       else
-        result("mu, nu") += K("mu, lambda, nu, rho") * D_("lambda, rho");
+        result("mu, nu") += g("mu, lambda, nu, rho") * D_("lambda, rho");
       auto time_contr1 = mpqc::now(world, false);
       time_contr += mpqc::duration_in_s(time_contr0, time_contr1);
     }
@@ -624,6 +633,10 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
           compute_direct_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, false);
 
+      if (print_detail_) {
+          double size = mpqc::detail::array_size(g.array());
+          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB" << std::endl;
+      }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, false);
@@ -652,6 +665,11 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
       auto g =
           compute_direct_integrals(world, engine_pool, bs_array, p_screener);
       auto time_g1 = mpqc::now(world, false);
+
+      if (print_detail_) {
+          double size = mpqc::detail::array_size(g.array());
+          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB" << std::endl;
+      }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, false);

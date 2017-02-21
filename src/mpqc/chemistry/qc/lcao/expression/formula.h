@@ -8,8 +8,10 @@
 #include <vector>
 
 #include "greek_to_english_name.h"
-#include "operator.h"
+#include "mpqc/chemistry/qc/lcao/expression/operator.h"
 #include "orbital_index.h"
+
+#include <iostream>
 
 using mpqc::lcao::OrbitalIndex;
 using mpqc::Operator;
@@ -66,6 +68,13 @@ class Formula {
    *  @param formula a properly formatted std::wstring
    */
   Formula(std::wstring formula);
+
+  /**
+   *  Make Formula printable
+   *  @param ostream the stream the Formula should be printed into
+   *  @param Formula the formula to be printed
+   */
+  friend std::ostream& operator<<(std::ostream&, Formula const&);
 
   /// reconstruct a std::wstring representation of the formula
   /// @sa Formula::to_ta_expression()
@@ -151,6 +160,7 @@ class Formula {
   std::vector<OrbitalIndex> ket_indices_;
 };
 
+
 template <typename Transformer>
 std::string Formula::to_ta_expression(Transformer transform_op) const {
   std::string ta_expression;
@@ -177,6 +187,6 @@ std::string Formula::to_ta_expression(Transformer transform_op) const {
 
   return ta_expression;
 }
-}
+} // namespace mpqc
 
 #endif  // MPQC4_SRC_MPQC_CHEMISTRY_QC_EXPRESSION_FORMULA_H_

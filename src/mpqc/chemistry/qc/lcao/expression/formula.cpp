@@ -112,6 +112,19 @@ std::size_t Formula::rank() const {
   return (bra_indices_.size() + ket_indices_.size());
 }
 
+std::ostream &operator<<(std::ostream &os, Formula const &f) {
+  os << f.oper_;
+  // for(auto &bi : bra_indices_){
+  //   os << bi << " ";
+  // }
+  // os << "Ket Indices: ";
+  // for(auto &ki : ket_indices_){
+  //   os << ki << " ";
+  // }
+
+  return os;
+}
+
 std::vector<OrbitalIndex> Formula::check_orbital_index(
     std::wstring index_array) {
   std::vector<std::wstring> split_index;

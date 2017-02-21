@@ -133,7 +133,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute(
       }
     }
 
-    // if formula not find
+    // if formula not found
     if (!result.is_initialized()) {
       // compute formula
       if (formula.rank() == 2) {
@@ -485,6 +485,8 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute3(
   BasisVector bs_array;
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
   std::shared_ptr<Screener> p_screener = std::make_shared<Screener>(Screener{});
+
+  ExEnv::out0() << "Formula: " << formula << "\n";
 
   parse_two_body_three_center(formula, engine_pool, bs_array, p_screener);
   result = compute_integrals(this->world(), engine_pool, bs_array, p_screener);

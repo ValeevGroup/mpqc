@@ -643,6 +643,9 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
         parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true,
                                 p_screener);
 
+        // std::cout << "In compute 4 J\n" <<
+        // p_screener->norm_estimate(bs_array) << std::endl;
+
         auto time_g0 = mpqc::now(world, false);
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
         auto time_g1 = mpqc::now(world, false);
@@ -678,6 +681,9 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
         auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
         parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ, false,
                                 p_screener);
+
+        // std::cout << "In compute 4 K\n" <<
+        // p_screener->norm_estimate(bs_array) << std::endl;
 
         auto time_g0 = mpqc::now(world, false);
         g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
@@ -903,7 +909,7 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
   // Build the Trange and Shape Tensor
   auto trange = detail::create_trange(bases);
   const auto tvolume = trange.tiles_range().volume();
-  TA::TensorF tile_norms(trange.tiles_range(), 0.0);
+  TA::TensorF tile_norms = screen->norm_estimate(world, bases);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<BasisVector>(bases);
@@ -913,50 +919,31 @@ PeriodicAOFactory<Tile, Policy>::direct_sparse_complex_integrals(
   auto builder = make_direct_integral_builder(world, std::move(shr_pool),
                                               std::move(shr_bases),
                                               std::move(screen), std::move(op));
+
   auto direct_array = DirectArray<Tile, Policy, E>(std::move(builder));
   auto builder_ptr = direct_array.builder();
   using DirectTileType = DirectTile<Tile, E>;
-  std::vector<std::pair<int64_t, DirectTileType>> tiles(tvolume);
 
-  auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng,
-                    TA::TensorF *tile_norms_ptr, DirectTileType *out_tile) {
+  auto task_f = [=](int64_t ord, detail::IdxVec idx, TA::Range rng) {
 
-    // This is why builder was made into a shared_ptr.
-    auto &builder = *builder_ptr;
-    auto ta_tile = builder.integrals(idx, rng);
+    return DirectTileType(idx, std::move(rng), std::move(builder_ptr));
 
-    const auto tile_volume = ta_tile.range().volume();
-    const auto tile_norm = ta_tile.norm();
-
-    // Keep tile if it was significant.
-    bool save_norm =
-        tile_norm >= tile_volume * TA::SparseShape<float>::threshold();
-    if (save_norm) {
-      *out_tile = DirectTileType(idx, std::move(rng), std::move(builder_ptr));
-
-      auto &norms = *tile_norms_ptr;
-      norms[ord] = tile_norm;
-    }
   };
 
-  auto pmap = TA::SparsePolicy::default_pmap(world, tvolume);
-  for (auto const ord : *pmap) {
-    detail::IdxVec idx = trange.tiles_range().idx(ord);
-    tiles[ord].first = ord;
-    auto range = trange.make_tile_range(ord);
-    world.taskq.add(task_f, ord, idx, range, &tile_norms, &tiles[ord].second);
-  }
-  world.gop.fence();
-
   TA::SparseShape<float> shape(world, tile_norms, trange);
-  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange, shape,
-                                                      pmap);
+  TA::DistArray<DirectTileType, TA::SparsePolicy> out(world, trange,
+                                                      std::move(shape));
+  auto pmap = out.get_pmap();
 
-  for (auto it : *out.pmap()) {
-    if (!out.is_zero(it)) {
-      out.set(it, std::move(tiles[it].second));
+  for (auto const ord : *pmap) {
+    if (!out.is_zero(ord)) {
+      detail::IdxVec idx = trange.tiles_range().idx(ord);
+      auto range = trange.make_tile_range(ord);
+      auto tile_fut = world.taskq.add(task_f, ord, idx, range);
+      out.set(ord, tile_fut);
     }
   }
+  world.gop.fence();
 
   direct_array.set_array(std::move(out));
   return direct_array;

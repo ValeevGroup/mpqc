@@ -79,7 +79,7 @@ class MP2 : public LCAOWfn, public Provides<Energy> {
     auto& world = fac.world();
     // ofac is an OrbitalSpaceRegistry that defines the LCAO spaces that fac can
     // use ofac was populated by the init_sdref() call above
-    auto& ofac = fac.orbital_space();
+    auto& ofac = fac.orbital_registry();
 
     auto nocc = ofac.retrieve("m").rank();
     auto nocc_act = ofac.retrieve("i").rank();

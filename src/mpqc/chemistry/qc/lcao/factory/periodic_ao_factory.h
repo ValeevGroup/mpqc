@@ -630,10 +630,6 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
       gj_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
     }
 
-    if (gk_.empty()) {
-      gk_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
-    }
-
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       using ::mpqc::lcao::detail::direct_vector;
 
@@ -674,6 +670,11 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
 
     auto k_formula = formula;
     k_formula.set_operator_type(Operator::Type::Coulomb);
+
+    if (gk_.empty()) {
+      gk_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
+    }
+
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       using ::mpqc::lcao::detail::direct_vector;
       DirectTArray &g = gk_[RJ];

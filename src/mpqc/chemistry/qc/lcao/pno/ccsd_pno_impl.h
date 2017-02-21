@@ -12,7 +12,7 @@ namespace mpqc {
   namespace lcao {
 
     namespace detail {
-      // compute MP2 T2 amplitudes
+      /// compute MP2 T2 amplitudes
       template <typename Tile, typename Policy>
       TA::DistArray<Tile, Policy> compute_mp2_t2(lcao::LCAOFactory<Tile, Policy> &lcao_factory,
                                                  const std::shared_ptr<Eigen::VectorXd> &orbital_energy,
@@ -35,7 +35,7 @@ namespace mpqc {
         return t2_abij;
       }
 
-      // print out details of CCSD iterations
+      /// print out details of CCSD iterations
       inline void print_ccsd(int iter, double dE,
                              double error, double error_r1, double error_r2,
                              double E1, double time) {
@@ -47,6 +47,7 @@ namespace mpqc {
                     iter, dE, error, error_r1, error_r2, E1, time);
       }
 
+      /// compute PNO CCD energy
       template <typename Tile, typename Policy>
       double get_eccd_pno(const int nocc,
                           const std::vector<TA::DistArray<Tile, Policy>>& vec_t2_pno,
@@ -71,25 +72,13 @@ namespace mpqc {
         return E_ccd;
       }
 
-    } // namespace detail
+    } // end of namespace detail
 
-    /**
-     * KeyVal constructor
-     * @param kv
-     *
-     * keywords : all keywords for LCAOWavefunciton
-     *
-     * | KeyWord | Type | Default| Description |
-     * |---------|------|--------|-------------|
-     * | ref     | wfn  | none   | reference wavefunction, RHF for example |
-     * | df      | bool | false  | choice of using density fitting
-     */
     template<typename Tile, typename Policy>
     CCSD_PNO<Tile, Policy>::CCSD_PNO(const KeyVal &kv): CCSD<Tile, Policy>(kv) {
       tcut_ = kv.value<double>("tcut", 1e-6);
     }
 
-    // compute MP2 T2 amplitudes
     template<typename Tile, typename Policy>
     TA::DistArray<Tile, Policy> CCSD_PNO<Tile, Policy>::compute_mp2_t2() {
 
@@ -98,8 +87,6 @@ namespace mpqc {
                                     this->trange1_engine(), this->df_);
     }
 
-    // compute converting matrices for reblocking MP2 T2
-    // occ_convert(old_i, new_i), vir_convert(old_a, new_a)
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::compute_M_reblock(TA::DistArray<Tile, Policy> &occ_convert,
                                                    TA::DistArray<Tile, Policy> &vir_convert) {
@@ -135,7 +122,6 @@ namespace mpqc {
                        world, old_vir, new_vir, 1.0);
     }
 
-    // obtain PNO coefficients
     template<typename Tile, typename Policy>
     TA::DistArray<Tile, Policy>
     CCSD_PNO<Tile, Policy>::compute_pno_coef(const TA::DistArray<Tile, Policy> &t2_mp2) {
@@ -204,8 +190,6 @@ namespace mpqc {
       return result;
     }
 
-    // obtain the PNO coefficients in a vector
-    // each vector entry contain ab matrix
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::comput_vec_pnocoef(const TA::DistArray<Tile, Policy>& t2_mp2,
                                                     const TA::TiledRange1& trange1_a) {
@@ -220,9 +204,6 @@ namespace mpqc {
       comput_vecij_ab(dab_ij, trange1_a, vecij_dab_, true);
     }
 
-    // construct vector<TArray> for a tensor abij,
-    // for abij, tile is indexed by ij and has size a*b
-    // each vector entry contain ab matrix
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::comput_vecij_ab(const TA::DistArray<Tile, Policy>& ab_ij,
                                                  const TA::TiledRange1& trange1_a,
@@ -311,7 +292,6 @@ namespace mpqc {
 
      }
 
-    // compute PNO transformed F^a_b
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::get_fab_pno(std::vector<TA::DistArray<Tile, Policy>>& vecij_fab) {
 
@@ -342,7 +322,6 @@ namespace mpqc {
       }
     }
 
-    // compute PNO transformed T2^ab_ij or G^ab_ij
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::get_abij_pno(const TA::DistArray<Tile, Policy>& ab_ij,
                                               const TA::TiledRange1& trange1_a,
@@ -797,7 +776,6 @@ namespace mpqc {
       return E1;
     }
 
-    // decompose T2 amplitudes
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::decom_t2(TA::DistArray<Tile, Policy> &t2_mp2,
                                           const DecomType decom_method) {
@@ -905,7 +883,6 @@ namespace mpqc {
       TA::foreach_inplace(t2_mp2, decom);
     }
 
-    // decompose T2 amplitudes
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::decom_t2(TA::DistArray<Tile, Policy> &t2_mp2,
                                           const TA::DistArray<Tile, Policy> &t2_ccsd) {
@@ -1375,7 +1352,6 @@ namespace mpqc {
       return E1;
     }
 
-    // test PNO decomposition
     template<typename Tile, typename Policy>
     double CCSD_PNO<Tile, Policy>::pno_simul() {
 
@@ -1440,7 +1416,6 @@ namespace mpqc {
       return compute_ccsdpno_df(t1,t2);
     }
 
-    // computing function
     template<typename Tile, typename Policy>
     void CCSD_PNO<Tile, Policy>::evaluate(Energy* result) {
 
@@ -1476,7 +1451,7 @@ namespace mpqc {
       }
     }
 
-} // namespace lcao
-} // namespace mpqc
+} // end of namespace lcao
+} // end of namespace mpqc
 
 #endif // MPQC4_SRC_MPQC_CHEMISTRY_QC_PNO_CCSD_PNO_IMPL_H_

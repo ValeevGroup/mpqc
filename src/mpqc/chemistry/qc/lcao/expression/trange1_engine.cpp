@@ -7,7 +7,7 @@
 namespace mpqc {
 namespace utility {
 
-TA::TiledRange1 TRange1Engine::compute_range(std::size_t range,
+TA::TiledRange1 compute_trange1(std::size_t range,
                                              std::size_t block_size) {
   std::vector<std::size_t> blocks;
   blocks.push_back(0);
@@ -28,7 +28,7 @@ TA::TiledRange1 TRange1Engine::compute_range(std::size_t range,
   return TA::TiledRange1(blocks.begin(), blocks.end());
 }
 
-TA::TiledRange1 TRange1Engine::join(const TA::TiledRange1& range_a, const TA::TiledRange1& range_b) {
+TA::TiledRange1 join_trange1(const TA::TiledRange1& range_a, const TA::TiledRange1& range_b) {
   std::vector<std::size_t> hashmarks;
   hashmarks.reserve(range_a.tile_extent() + range_b.tile_extent() + 1);
   // append hashmarks of from the first range
@@ -47,21 +47,21 @@ TA::TiledRange1 TRange1Engine::join(const TA::TiledRange1& range_a, const TA::Ti
 TA::TiledRange1 TRange1Engine::tr_occupied() {
   std::size_t occ = get_occ();
 
-  return compute_range(occ, occ_block_size_);
+  return compute_trange1(occ, occ_block_size_);
 }
 
 TA::TiledRange1 TRange1Engine::tr_active_occupied() {
   std::size_t active_occ = get_active_occ();
 
-  return compute_range(active_occ, occ_block_size_);
+  return compute_trange1(active_occ, occ_block_size_);
 }
 
 TA::TiledRange1 TRange1Engine::tr_virtual() {
-  return compute_range(vir_, vir_block_size_);
+  return compute_trange1(vir_, vir_block_size_);
 }
 
 TA::TiledRange1 TRange1Engine::tr_all() {
-  return compute_range(all_, vir_block_size_);
+  return compute_trange1(all_, vir_block_size_);
 }
 
 void TRange1Engine::init() {

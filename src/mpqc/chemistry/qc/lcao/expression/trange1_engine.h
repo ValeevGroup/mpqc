@@ -12,6 +12,14 @@
 namespace mpqc {
 namespace utility {
 
+namespace detail{
+
+TA::TiledRange1 join_trange1(const TA::TiledRange1 &a, const TA::TiledRange1 &b);
+
+TA::TiledRange1 compute_trange1(std::size_t range, std::size_t block_size);
+
+}
+
 /// TODO document
 class TRange1Engine {
  public:
@@ -40,11 +48,6 @@ class TRange1Engine {
   }
 
   void init();
-
-  static TA::TiledRange1 compute_range(std::size_t range, std::size_t block_size);
-
-  /// joins 2 ranges
-  static TA::TiledRange1 join(const TA::TiledRange1& a, const TA::TiledRange1& b);
 
   /// get TiledRange1 for active occupied space
   TA::TiledRange1 get_active_occ_tr1() const { return tr_active_occupied_; }

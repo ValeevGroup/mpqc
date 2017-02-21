@@ -5,6 +5,7 @@ set(utests_src
     atom_test.cpp
     bug_test.cpp
     clustering_test.cpp
+    davidson_diag.cpp
     exception_test.cpp
     f12_utility_test.cpp
     formio_test.cpp

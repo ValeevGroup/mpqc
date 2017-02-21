@@ -1377,7 +1377,7 @@ namespace mpqc {
 
     // test PNO decomposition
     template<typename Tile, typename Policy>
-    double CCSD_PNO<Tile, Policy>::pno_simul(const bool use_diff_t2) {
+    double CCSD_PNO<Tile, Policy>::pno_simul() {
 
       using TArray = TA::DistArray<Tile, Policy>;
 
@@ -1400,27 +1400,26 @@ namespace mpqc {
                         * occ_convert("k,i") * occ_convert("l,j");
 
       ExEnv::out0() << "Decomposing T2 amplitudes" << std::endl;
-      if (!use_diff_t2) {
-        // using either eigen or SVD decomposition
-        decom_t2(t2_mp2);
-      } else {
-        // compute CCSD T2 amplitudes
-        TA::DistArray<Tile, Policy> t1_ccsd, t2_ccsd;
-
-        t2_ccsd = t2_mp2_orig.clone();
-        double ccsd_energy = compute_ccsdpno_df(t1_ccsd, t2_ccsd);
-
-        // obtain CCSD T2 with new blocking structure
-        t2_ccsd("a,b,i,j") = t2_ccsd("c,d,k,l")
-                           * vir_convert("c,a") * vir_convert("d,b")
-                           * occ_convert("k,i") * occ_convert("l,j");
-
-        // decompose T2 amplitudes
-//        // test
-//        TA::DistArray<Tile, Policy> t2_mp2_orig_blk = t2_mp2.clone();
-//        decom_t2(t2_mp2, t2_mp2_orig_blk);
-        decom_t2(t2_mp2, t2_ccsd);
-      }
+      decom_t2(t2_mp2);
+//      // decompose T2 with MP2 and CCSD components
+//      {
+//        // compute CCSD T2 amplitudes
+//        TA::DistArray<Tile, Policy> t1_ccsd, t2_ccsd;
+//
+//        t2_ccsd = t2_mp2_orig.clone();
+//        double ccsd_energy = compute_ccsdpno_df(t1_ccsd, t2_ccsd);
+//
+//        // obtain CCSD T2 with new blocking structure
+//        t2_ccsd("a,b,i,j") = t2_ccsd("c,d,k,l")
+//                           * vir_convert("c,a") * vir_convert("d,b")
+//                           * occ_convert("k,i") * occ_convert("l,j");
+//
+//        // decompose T2 amplitudes
+////        // test
+////        TA::DistArray<Tile, Policy> t2_mp2_orig_blk = t2_mp2.clone();
+////        decom_t2(t2_mp2, t2_mp2_orig_blk);
+//        decom_t2(t2_mp2, t2_ccsd);
+//      }
 
       // transform MP2 T2 amplitudes back into its original blocking structure
       t2_mp2("a,b,i,j") = t2_mp2("c,d,k,l")
@@ -1463,8 +1462,8 @@ namespace mpqc {
         // set the precision
         this->target_precision_ = result->target_precision(0);
 
-        // PNO simulation
-//        double ccsd_pno_sim = pno_simul(true);
+//        // PNO simulation
+//        double ccsd_pno_sim = pno_simul();
 //        double corr_energy = ccsd_pno_sim;
 
         // CCD computation

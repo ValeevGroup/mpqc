@@ -50,7 +50,7 @@ namespace lcao {
                              TA::DistArray<Tile, Policy> &t2);
 
    // function for testing PNO decomposition ideas
-   double pno_simul(const bool use_diff_t2 = false);
+   double pno_simul();
    // decompose T2 using PNO (eigen) decomposition or SVD
    void decom_t2(TA::DistArray<Tile, Policy> &t2_mp2, const DecomType = eigen_decom);
    // decompose T2 with MP2 and CCSD components

@@ -206,6 +206,9 @@ class Qmatrix {
   /// Will return the largest value in Q_.row(a).
   double operator()(int64_t a) const;
 
+  /// Will return max in row but not do a f2s lookup
+  double max_in_row(int64_t a) const;
+
   /// Will return the value Q_(a,b)
   double operator()(int64_t a, int64_t b) const;
 

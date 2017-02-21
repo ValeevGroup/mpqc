@@ -19,6 +19,10 @@ double Qmatrix::operator()(int64_t a) const {
   return max_elem_in_row_[f2s(f2s_maps_[0], a)];
 }
 
+double Qmatrix::max_in_row(int64_t a) const {
+  return max_elem_in_row_[a];
+}
+
 double Qmatrix::operator()(int64_t a, int64_t b) const {
   return Q_(f2s(f2s_maps_[0], a), f2s(f2s_maps_[1], b));
 }
@@ -198,15 +202,23 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
             const auto nsh3 = cs3[c3].size();
 
             auto task_f = [=](float *out) {
+              auto &Qab = Qab_->Q();
+              auto &Qcd = Qcd_->Q();
+
               float norm = 0.0;
               for (auto a = sh0; a < nsh0 + sh0; ++a) {
                 for (auto b = sh1; b < nsh1 + sh1; ++b) {
-                  const auto ab = Qab()(a,b);
+                  const auto ab = Qab(a, b);
 
-                  for (auto c = sh2; c < nsh2 + sh2; ++c) {
-                    for (auto d = sh3; d < nsh3 + sh3; ++d) {
-                      const auto val = ab * Qcd()(c, d);
-                      norm += val;
+                  if (ab * Qcd_->operator()() >= thresh2_) {
+                    for (auto c = sh2; c < nsh2 + sh2; ++c) {
+                      if (ab * Qcd_->max_in_row(c) >= thresh2_) {
+                        for (auto d = sh3; d < nsh3 + sh3; ++d) {
+                          const auto val = ab * Qcd(c, d);
+
+                          norm += val;
+                        }
+                      }
                     }
                   }
                 }

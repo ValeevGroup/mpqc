@@ -379,6 +379,8 @@ class PeriodicAOFactory : public Factory<TA::DistArray<Tile, Policy>> {
   bool print_detail_;  ///> if true, print a lot more details
   std::string screen_;
   double screen_threshold_;
+  std::vector<DirectTArray> gj_;
+  std::vector<DirectTArray> gk_;
 };
 
 template <typename Tile, typename Policy>
@@ -496,8 +498,9 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       auto time_g1 = mpqc::now(world, false);
 
       if (print_detail_) {
-          double size = mpqc::detail::array_size(g);
-          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB" << std::endl;
+        double size = mpqc::detail::array_size(g);
+        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+                      << std::endl;
       }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
@@ -528,8 +531,9 @@ PeriodicAOFactory<Tile, Policy>::compute4(const Formula &formula) {
       auto time_g1 = mpqc::now(world, false);
 
       if (print_detail_) {
-          double size = mpqc::detail::array_size(g);
-          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB" << std::endl;
+        double size = mpqc::detail::array_size(g);
+        ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+                      << std::endl;
       }
       time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
@@ -622,22 +626,34 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
     auto j_formula = formula;
     j_formula.set_operator_type(Operator::Type::Coulomb);
 
+    if (gj_.empty()) {
+      gj_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
+    }
+
+    if (gk_.empty()) {
+      gk_ = std::vector<DirectTArray>(RJ_size_, DirectTArray());
+    }
+
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       using ::mpqc::lcao::detail::direct_vector;
-      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-      parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true,
-                              p_screener);
 
-      auto time_g0 = mpqc::now(world, false);
-      auto g =
-          compute_direct_integrals(world, engine_pool, bs_array, p_screener);
-      auto time_g1 = mpqc::now(world, false);
+      DirectTArray &g = gj_[RJ];
+      if (!g.array().is_initialized()) {
+        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+        parse_two_body_periodic(j_formula, engine_pool, bs_array, vec_RJ, true,
+                                p_screener);
 
-      if (print_detail_) {
+        auto time_g0 = mpqc::now(world, false);
+        g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
+        auto time_g1 = mpqc::now(world, false);
+
+        if (print_detail_) {
           double size = mpqc::detail::array_size(g.array());
-          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB" << std::endl;
+          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+                        << std::endl;
+        }
+        time_4idx += mpqc::duration_in_s(time_g0, time_g1);
       }
-      time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, false);
       if (RJ == 0)
@@ -657,20 +673,23 @@ PeriodicAOFactory<Tile, Policy>::compute_direct4(const Formula &formula) {
     k_formula.set_operator_type(Operator::Type::Coulomb);
     for (auto RJ = 0; RJ < RJ_size_; ++RJ) {
       using ::mpqc::lcao::detail::direct_vector;
-      auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
-      parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ, false,
-                              p_screener);
+      DirectTArray &g = gk_[RJ];
+      if (!g.array().is_initialized()) {
+        auto vec_RJ = direct_vector(RJ, RJ_max_, dcell_);
+        parse_two_body_periodic(k_formula, engine_pool, bs_array, vec_RJ, false,
+                                p_screener);
 
-      auto time_g0 = mpqc::now(world, false);
-      auto g =
-          compute_direct_integrals(world, engine_pool, bs_array, p_screener);
-      auto time_g1 = mpqc::now(world, false);
+        auto time_g0 = mpqc::now(world, false);
+        g = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
+        auto time_g1 = mpqc::now(world, false);
 
-      if (print_detail_) {
+        if (print_detail_) {
           double size = mpqc::detail::array_size(g.array());
-          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB" << std::endl;
+          ExEnv::out0() << " Size of 4-index g tensor:" << size << " GB"
+                        << std::endl;
+        }
+        time_4idx += mpqc::duration_in_s(time_g0, time_g1);
       }
-      time_4idx += mpqc::duration_in_s(time_g0, time_g1);
 
       auto time_contr0 = mpqc::now(world, false);
       if (RJ == 0)

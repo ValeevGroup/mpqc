@@ -10,6 +10,7 @@ set(sources
         task_integral_kernels.h
         task_integral_kernels.cpp
         screening/screen_base.h
+        screening/screen_base.cpp
         screening/schwarz_screen.h
         screening/schwarz_screen.cpp
         task_integrals_common.h

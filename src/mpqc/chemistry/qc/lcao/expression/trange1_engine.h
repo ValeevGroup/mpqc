@@ -12,13 +12,9 @@
 namespace mpqc {
 namespace utility {
 
-namespace detail{
-
 TA::TiledRange1 join_trange1(const TA::TiledRange1 &a, const TA::TiledRange1 &b);
 
 TA::TiledRange1 compute_trange1(std::size_t range, std::size_t block_size);
-
-}
 
 /// TODO document
 class TRange1Engine {

@@ -23,8 +23,8 @@ namespace detail {
 //    const TA::DistArray<Tile, Policy>& left,
 //    const TA::DistArray<Tile, Policy>& right) {
 //  TA::DistArray<Tile, Policy> result;
-//  const auto left_rank = left.size();
-//  const auto right_rank = right.size();
+//  const auto left_rank = left.trange().rank();
+//  const auto right_rank = right.trange().rank();
 //
 //  if (left_rank == 2 && right_rank == 2) {
 //    result("i,j") = left("i,k") * right("k,j");
@@ -39,11 +39,11 @@ namespace detail {
 //};
 
 template <typename Tile, typename Policy>
-RowMatrix<typename TA::DistArray<Tile, Policy>::value_type> dot_product(
+RowMatrix<typename TA::DistArray<Tile, Policy>::element_type> dot_product(
     const TA::DistArray<Tile, Policy>& left,
     const TA::DistArray<Tile, Policy>& right) {
-  const auto left_rank = left.size();
-  const auto right_rank = right.size();
+  const auto left_rank = left.trange().rank();
+  const auto right_rank = right.trange().rank();
   TA::DistArray<Tile, Policy> result;
 
   if (left_rank == 2 && right_rank == 2) {
@@ -62,7 +62,7 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> transpose(
     const TA::DistArray<Tile, Policy>& array) {
   TA::DistArray<Tile, Policy> result;
-  const auto rank = array.size();
+  const auto rank = array.trange().rank();
 
   if (rank == 2) {
     result("i,j") = array("j,i");
@@ -77,17 +77,16 @@ TA::DistArray<Tile, Policy> transpose(
 
 template <typename Tile, typename Policy>
 void eigen_to_datatype(
-    const RowMatrix<typename TA::DistArray<Tile, Policy>::value_type>&
+    const RowMatrix<typename TA::DistArray<Tile, Policy>::element_type>&
         eigen_matrix,
-    TA::DistArray<Tile, Policy>& ta_array) {
-  const auto cols = eigen_matrix.cols();
-  const auto rows = eigen_matrix.rows();
+    TA::DistArray<Tile, Policy>& ta_array, const TA::DistArray<Tile, Policy>& V) {
+  const std::size_t cols = eigen_matrix.cols();
   // block this by one tile
-  TA::TiledRange1 col_tr = {0, cols};
-  TA::TiledRange1 row_tr = {0, rows};
+  TA::TiledRange1 col_tr{0, cols};
+  auto row_tr = V.trange().data()[1];
 
   ta_array = array_ops::eigen_to_array<Tile, Policy>(
-      TA::get_default_world(), eigen_matrix, col_tr, row_tr);
+      TA::get_default_world(), eigen_matrix, row_tr, col_tr);
 };
 
 /*
@@ -97,16 +96,16 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> orthognolize(
     const TA::DistArray<Tile, Policy>& left,
     const TA::DistArray<Tile, Policy>& right) {
-  const auto left_rank = left.size();
-  const auto right_rank = right.size();
+  const auto left_rank = left.trange().rank();
+  const auto right_rank = right.trange().rank();
 
-  const auto rows_trange1 = left.trange()[0];
+  const auto rows_trange1 = left.trange().data()[0];
   // assert same number of cols
-  TA_ASSERT(rows_trange1.extent() == right.trange()[0].extent());
+  TA_ASSERT(rows_trange1.extent() == right.trange().data()[0].extent());
 
   if (left_rank == 2 && right_rank == 2) {
-    auto left_trange1 = left.trange()[1];
-    auto right_trange1 = right.trange()[1];
+    auto left_trange1 = left.trange().data()[1];
+    auto right_trange1 = right.trange().data()[1];
 
     auto left_eigen = array_ops::array_to_eigen(left);
     auto right_eigen = array_ops::array_to_eigen(right);
@@ -123,10 +122,10 @@ TA::DistArray<Tile, Policy> orthognolize(
 
     // convert Q into TA::DistArray
     auto left_merge_right_trange1 =
-        utility::detail::join_trange1(left_trange1, right_trange1);
+        utility::join_trange1(left_trange1, right_trange1);
 
     auto result =
-        array_ops::eigen_to_array(TA::get_default_world(), left_merge_right,
+        array_ops::eigen_to_array<Tile,Policy>(TA::get_default_world(), left_merge_right,
                                   rows_trange1, left_merge_right_trange1);
 
     return result;
@@ -144,15 +143,15 @@ template <typename Tile, typename Policy>
 TA::DistArray<Tile, Policy> davidson_diag_residual(
     TA::DistArray<Tile, Policy>& HB, TA::DistArray<Tile, Policy>& B,
     TA::DistArray<Tile, Policy>& V,
-    const RowVector<typename TA::DistArray<Tile, Policy>::element_type>& E){
+    const EigenVector<typename TA::DistArray<Tile, Policy>::element_type>& E){
 
-  const auto HB_rank = HB.size();
-  const auto B_rank = B.size();
+  const auto HB_rank = HB.trange().rank();
+  const auto B_rank = B.trange().rank();
 
   if(HB_rank == 2 and B_rank == 2){
       TA::DistArray<Tile,Policy> BV;
       BV("i,j") = B("i,k")*V("k,j");
-      HB("i,j") = HB("i,k")*BV("k,j");
+      HB("i,j") = HB("i,k")*V("k,j");
 
       // lambda to update BV
       auto update = [&E] (Tile& result_tile) {
@@ -196,12 +195,12 @@ template <typename D>
 class SymmDavidsonDiag {
  public:
   using value_type = typename D::element_type;
-  using result_type = RowVector<value_type>;
+  using result_type = EigenVector<value_type>;
 
   SymmDavidsonDiag(unsigned int n_roots, unsigned int n_guess)
       : n_roots_(n_roots), n_guess_(n_guess) {}
 
-  RowVector<value_type> extrapolate(D& HB, D& B) {
+  EigenVector<value_type> extrapolate(D& HB, D& B) {
     // subspace
     // dot_product will return a replicated Eigen Matrix
     RowMatrix<value_type> G = detail::dot_product(detail::transpose(B), HB);
@@ -213,8 +212,8 @@ class SymmDavidsonDiag {
       // this return eigenvalue and eigenvector with size n_guess
       Eigen::EigenSolver<RowMatrix<value_type>> es(G);
       RowMatrix<value_type> v = es.eigenvectors().real().leftCols(n_guess_);
-      E = es.real().eigenvalues().segment(0, n_guess_);
-      detail::eigen_to_datatype(v, V);
+      E = es.eigenvalues().real().segment(0, n_guess_);
+      detail::eigen_to_datatype(v, V, B);
     }
 
     // compute residual

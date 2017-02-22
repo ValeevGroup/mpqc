@@ -3,9 +3,9 @@
 //
 
 #include "mpqc/math/linalg/davidson_diag.h"
+#include "mpqc/math/tensor/clr/array_to_eigen.h"
 
 #include "catch.hpp"
-#include <tiledarray.h>
 
 using namespace mpqc;
 
@@ -15,8 +15,8 @@ TEST_CASE("Davidson Algorithm", "[davidson]") {
   const auto sparse = 0.01;
   const auto n_roots = 3;
   const auto n_guess = 3;
-  const auto converge = 1.0e-5;
-  const auto max_iter = 10;
+  const auto converge = 1.0e-6;
+  const auto max_iter = 20;
 
   // initialize matrix
   RowMatrix<double> A = RowMatrix<double>::Zero(n, n);

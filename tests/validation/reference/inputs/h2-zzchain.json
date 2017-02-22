@@ -4,6 +4,7 @@
     "charge": 0,
     "file_name": "h2.xyz",
     "sort_input": true,
+    "n_cluster": 1,
     "lattice_param": [0.0, 0.0, 1.481696]
   },
   "basis": {
@@ -15,25 +16,24 @@
      "basis" : "$:basis",
      "screen": "schwarz",
      "threshold": 1.0e-20,
-     "rmax": [0, 0, 4],
-     "rjmax": [0, 0, 6],
-     "rdmax": [0, 0, 4]
+     "rmax": [0, 0, 2],
+     "rjmax": [0, 0, 3],
+     "rdmax": [0, 0, 2]
    },
    "wfn":{
      "type": "zRHF",
      "molecule" : "$:unitcell",
      "wfn_world": "$:wfn_world",
-     "converge": 1.0e-7,
      "max_iter": 100,
      "soad_guess": true,
      "print_detail": false,
      "max_condition_num": 1e8,
-     "k_points": [1, 1, 10]
+     "k_points": [1, 1, 5]
    },
    "property" : {
     "type" : "Energy",
     "wfn" : "$:wfn",
-    "precision" : 1.0e-7
+    "precision" : 1.0e-11
    },
    "g09_input": [
                  "#P HF/sto-3g SCF=Tight",

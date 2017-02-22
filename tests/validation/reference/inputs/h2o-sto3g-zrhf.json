@@ -4,6 +4,7 @@
     "charge": 0,
     "file_name": "h2o.xyz",
     "sort_input": true,
+    "n_cluster": 1,
     "lattice_param": [0.0, 0.0, 2.672359]
   },
   "basis": {
@@ -32,7 +33,7 @@
    "property" : {
     "type" : "Energy",
     "wfn" : "$:wfn",
-    "precision" : 1.0e-12
+    "precision" : 1.0e-11
    },
   "g09_input": [
                 "#P HF/sto-3g SCF=Tight",

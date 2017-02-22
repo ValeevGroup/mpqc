@@ -1,9 +1,11 @@
 [![Build Status](https://travis-ci.com/ValeevGroup/mpqc4.svg?token=2pDpbi3swi4zsJxpapq7&branch=master)](https://travis-ci.com/ValeevGroup/mpqc4)
 
-<img src=https://github.com/ValeevGroup/mpqc4/wiki/images/mpqc_logo_med.png width=115>
-
 # Synopsis
-The Massively Parallel Quantum Chemistry (MPQC) platform is a research package for *ab initio* simulation of the electronic structure of molecules and periodic solids. The current (4th) version of the package, or __MPQC4__, is a modern reenvisioning of the conceptual design of the original MPQC platform using the massively-parallel tensor framework [TiledArray](https://github.com/ValeevGroup/tiledarray), distributed task-based programming model and runtime [MADWorld](https://github.com/m-a-d-n-e-s-s/madness), and the Gaussian integrals library [Libint](https://github.com/evaleev/libint).
+
+![MPQC Logo](https://github.com/ValeevGroup/mpqc4/wiki/images/mpqc_logo_med.png)
+
+The Massively Parallel Quantum Chemistry (MPQC) platform is a research package for *ab initio* simulation of the electronic structure of molecules and periodic solids.
+The current (4th) version of the package, or __MPQC4__, is a modern reenvisioning of the conceptual design of the original MPQC platform using the massively-parallel tensor framework [TiledArray](https://github.com/ValeevGroup/tiledarray), distributed task-based programming model and runtime [MADWorld](https://github.com/m-a-d-n-e-s-s/madness), and the Gaussian integrals library [Libint](https://github.com/evaleev/libint).
 
 # Developers
 MPQC4 is developed by the [Valeev Group](http://research.valeyev.net) at [Virginia Tech](http://www.vt.edu).

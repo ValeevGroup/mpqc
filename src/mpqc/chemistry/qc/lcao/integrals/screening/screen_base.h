@@ -1,12 +1,8 @@
-
-
 #ifndef MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_SCREEN_BASE_H_
 #define MPQC4_SRC_MPQC_CHEMISTRY_QC_INTEGRALS_SCREENING_SCREEN_BASE_H_
 
 #include "mpqc/chemistry/qc/lcao/basis/basis.h"
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
-
-#include <tiledarray.h>
 
 namespace mpqc {
 namespace lcao {
@@ -50,25 +46,14 @@ class Screener {
   virtual bool skip(int64_t, int64_t, int64_t, int64_t) const;
 
   /*! \brief returns an estimate of shape norms for the given basis vector.
-   *
+   * 
    * The base class just returns the tensor full of
-   * std::numeric_limits<float>::max() values, this may lead to overflow issues
-   * if the tensor is never truncated.
+   * std::numeric_limits<float>::max() values, this may lead to
+   * overflow issues if the tensor is never truncated.
    */
   virtual TA::Tensor<float> norm_estimate(
+      madness::World &world,
       std::vector<gaussian::Basis> const &bs_array) const;
-
-  /*! \brief returns an estimate of shape norms for the given basis vector.
-   *
-   * The base class just returns the tensor full of
-   * std::numeric_limits<float>::max() values, this may lead to overflow issues
-   * if the tensor is never truncated. 
-   * 
-   * \note this function computes in parallel.
-   */
-  virtual TA::Tensor<float> norm_estimate(madness::World &world,
-      std::vector<gaussian::Basis> const &bs_array) const;
-
 };
 
 }  // namespace  lcao

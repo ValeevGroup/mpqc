@@ -306,22 +306,14 @@ class SchwarzScreen : public Screener {
   bool skip(int64_t, int64_t, int64_t, int64_t) override;
   bool skip(int64_t, int64_t, int64_t, int64_t) const override;
 
-  /*! \brief returns an estimate of shape norms for the given basis vector. 
-   * 
-   * This will use the outer product of Qab * Qcd to determine the shape.
+  /*! \brief returns an estimate of shape norms for the given basis vector.
+   *
+   * This will use the outer product of Qab * Qcd to determine the
+   * shape.
    */
   TA::Tensor<float> norm_estimate(
+      madness::World &world,
       std::vector<gaussian::Basis> const &bs_array) const override;
-
-  /*! \brief returns an estimate of shape norms for the given basis vector. 
-   * 
-   * This will use the outer product of Qab * Qcd to determine the shape.
-   * 
-   * \note Parallel version.
-   */
-  TA::Tensor<float> norm_estimate(madness::World &world,
-      std::vector<gaussian::Basis> const &bs_array) const override;
-
 };
 
 /*! \brief Creates a Schwarz Screener

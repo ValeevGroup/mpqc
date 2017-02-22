@@ -19,9 +19,7 @@ double Qmatrix::operator()(int64_t a) const {
   return max_elem_in_row_[f2s(f2s_maps_[0], a)];
 }
 
-double Qmatrix::max_in_row(int64_t a) const {
-  return max_elem_in_row_[a];
-}
+double Qmatrix::max_in_row(int64_t a) const { return max_elem_in_row_[a]; }
 
 double Qmatrix::operator()(int64_t a, int64_t b) const {
   return Q_(f2s(f2s_maps_[0], a), f2s(f2s_maps_[1], b));
@@ -87,30 +85,24 @@ boost::optional<double> SchwarzScreen::estimate(int64_t a, int64_t b, int64_t c,
 }
 
 TA::Tensor<float> SchwarzScreen::norm_estimate(
-    std::vector<gaussian::Basis> const &bs_array) const {
+    madness::World &world, std::vector<gaussian::Basis> const &bs_array) const {
   const auto ndims = bs_array.size();
+  auto trange = gaussian::detail::create_trange(bs_array);
+  auto norms = TA::Tensor<float>(trange.tiles_range(), 0.0);
 
-  if (ndims != 4) {
-    // Eventually do 3 center code here
-  } else {
-    auto trange = gaussian::detail::create_trange(bs_array);
-    auto norms = TA::Tensor<float>(trange.tiles_range(), 0.0);
-
+  if (ndims == 3) {
     auto const &bs0 = bs_array[0];
     auto const &bs1 = bs_array[1];
     auto const &bs2 = bs_array[2];
-    auto const &bs3 = bs_array[3];
 
     // Get shells for each cluster
     auto const &cs0 = bs0.cluster_shells();
     auto const &cs1 = bs1.cluster_shells();
     auto const &cs2 = bs2.cluster_shells();
-    auto const &cs3 = bs3.cluster_shells();
 
     const auto csize0 = cs0.size();
     const auto csize1 = cs1.size();
     const auto csize2 = cs2.size();
-    const auto csize3 = cs3.size();
 
     auto sh0 = 0;
     for (auto c0 = 0ul; c0 < csize0; ++c0) {
@@ -122,53 +114,36 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
         const auto nsh1 = cs1[c1].size();
 
         for (auto c2 = 0ul; c2 < csize2; ++c2) {
-          auto sh3 = 0;
           const auto nsh2 = cs2[c2].size();
 
-          for (auto c3 = 0ul; c3 < csize3; ++c3) {
-            const auto nsh3 = cs3[c3].size();
+          auto task_f = [=](float *out) {
+            auto &Qab = Qab_->Q();
+            auto &Qcd = Qcd_->Q();
 
             float norm = 0.0;
 
             for (auto a = sh0; a < nsh0 + sh0; ++a) {
+              const auto Qa = Qab(a);
+
               for (auto b = sh1; b < nsh1 + sh1; ++b) {
                 for (auto c = sh2; c < nsh2 + sh2; ++c) {
-                  for (auto d = sh3; d < nsh3 + sh3; ++d) {
-                    const auto val =
-                        std::sqrt(Qab()(a, b)) * std::sqrt(Qcd()(c, d));
-                    norm += val * val;
-                  }
+                  const auto val = a * Qcd(b, c);
+                  norm += val;
                 }
               }
             }
 
-            norms(c0, c1, c2, c3) = std::sqrt(norm);
+            *out = std::sqrt(norm);
+          };
 
-            sh3 += nsh3;
-          }
+          world.taskq.add(task_f, &norms(c0, c1, c2));
           sh2 += nsh2;
         }
         sh1 += nsh1;
       }
       sh0 += nsh0;
-    }
-
-    return norms;
-  }
-
-  return Screener::norm_estimate(bs_array);
-}
-
-TA::Tensor<float> SchwarzScreen::norm_estimate(
-    madness::World &world, std::vector<gaussian::Basis> const &bs_array) const {
-  const auto ndims = bs_array.size();
-
-  if (ndims != 4) {
-    // Eventually do 3 center code here
-  } else {
-    auto trange = gaussian::detail::create_trange(bs_array);
-    auto norms = TA::Tensor<float>(trange.tiles_range(), 0.0);
-
+    } // End estimate
+  } else if (ndims == 4) {
     auto const &bs0 = bs_array[0];
     auto const &bs1 = bs_array[1];
     auto const &bs2 = bs_array[2];
@@ -236,14 +211,14 @@ TA::Tensor<float> SchwarzScreen::norm_estimate(
         sh1 += nsh1;
       }
       sh0 += nsh0;
-    }
-
-    world.gop.fence();
-
-    return norms;
+    } // End estimate
+  } else {
+    norms = Screener::norm_estimate(world, bs_array);
   }
+  world.gop.fence();
 
-  return Screener::norm_estimate(bs_array);
+
+  return norms;
 }
 
 }  // namespace  gaussian

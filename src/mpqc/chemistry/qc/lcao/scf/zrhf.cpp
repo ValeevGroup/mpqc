@@ -110,7 +110,6 @@ void zRHF::solve(double thresh) {
 
   do {
     auto iter_start = mpqc::fenced_now(world);
-    ++iter;
 
     // Save a copy of energy and density
     auto ezrhf_old = ezrhf;
@@ -118,11 +117,6 @@ void zRHF::solve(double thresh) {
 
     if (print_detail_)
       if (world.rank() == 0) std::cout << "\nIteration: " << iter << "\n";
-
-    // compute zRHF energy
-    F_("mu, nu") += H_("mu, nu");
-    std::complex<double> e_complex = F_("mu, nu") * D_("mu, nu");
-    ezrhf = e_complex.real();
 
     auto j_start = mpqc::fenced_now(world);
     J_ = ao_factory.compute_direct(L"(μ ν| J|κ λ)");  // Coulomb
@@ -143,6 +137,10 @@ void zRHF::solve(double thresh) {
     Fk_ = transform_real2recip(F_);
     auto trans_end = mpqc::fenced_now(world);
     trans_duration_ += mpqc::duration_in_s(trans_start, trans_end);
+
+    // compute zRHF energy
+    std::complex<double> e_complex = (H_("mu, nu") + F_("mu, nu")) * D_("mu, nu");
+    ezrhf = e_complex.real();
 
     // compute new density
     auto d_start = mpqc::fenced_now(world);
@@ -182,16 +180,16 @@ void zRHF::solve(double thresh) {
     } else {
       std::string niter = "Iter", nEle = "E(HF)", nTot = "E(tot)",
                   nDel = "Delta(E)", nRMS = "RMS(D)", nT = "Time(s)";
-      if (world.rank() == 0) {
-        if (iter == 1)
-          std::cout << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n",
-                                    niter.c_str(), nEle.c_str(), nTot.c_str(),
-                                    nDel.c_str(), nRMS.c_str(), nT.c_str());
-        std::cout << mpqc::printf(
-            " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ezrhf,
-            ezrhf + erep, ediff, rms, iter_duration);
-      }
+      if (iter == 0)
+        ExEnv::out0() << mpqc::printf("\n\n %4s %20s %20s %20s %20s %20s\n",
+                                  niter.c_str(), nEle.c_str(), nTot.c_str(),
+                                  nDel.c_str(), nRMS.c_str(), nT.c_str());
+      ExEnv::out0() << mpqc::printf(
+          " %4d %20.12f %20.12f %20.12f %20.12f %20.3f\n", iter, ezrhf,
+          ezrhf + erep, ediff, rms, iter_duration);
+
     }
+    ++iter;
 
   } while ((iter < maxiter_) && (!converged));
 
@@ -325,6 +323,7 @@ zRHF::TArray zRHF::transform_real2recip(TArray& matrix) {
       }
     }
   }
+
 
   result = array_ops::eigen_to_array<Tile, TA::SparsePolicy>(world, result_eig,
                                                              tr0, tr1);

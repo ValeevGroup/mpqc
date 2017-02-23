@@ -24,7 +24,7 @@ TEST_CASE("Gram Schmidt", "[gram-schmidt]") {
 
   // initialize vector
   for (auto i = 0; i < v; i++) {
-    auto vec = EigenVector<double>::Random(n);
+    EigenVector<double> vec = double(i+1)*EigenVector<double>::Random(n);
     vecs[i] = array_ops::eigen_to_array<TA::TensorD, TA::DensePolicy>(
         TA::get_default_world(), vec, tr_n, tr_v);
   }

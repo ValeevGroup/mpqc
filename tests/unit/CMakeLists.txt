@@ -10,6 +10,7 @@ set(utests_src
     f12_utility_test.cpp
     formio_test.cpp
     formula_test.cpp
+    gram_schmidt.cpp
     keyval_test.cpp
     libint_test.cpp
     molecule_test.cpp

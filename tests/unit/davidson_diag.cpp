@@ -30,7 +30,7 @@ TEST_CASE("Davidson Algorithm", "[davidson]") {
   Eigen::SelfAdjointEigenSolver<RowMatrix<double>> es(A);
   auto e = es.eigenvalues().segment(0, n_roots);
 
-  std::cout << e << std::endl;
+//  std::cout << e << std::endl;
 
   TA::TiledRange1 tr_n{0, 50, 100, 150, n};
   TA::TiledRange1 tr_guess{0, 1};
@@ -53,7 +53,7 @@ TEST_CASE("Davidson Algorithm", "[davidson]") {
 
   EigenVector<double> eig = EigenVector<double>::Zero(n_roots);
   for (auto i = 0; i < max_iter; i++) {
-    std::cout << "Iter: " << i << std::endl;
+//    std::cout << "Iter: " << i << std::endl;
     const auto n_v = guess_ta.size();
     std::vector<TA::DistArray<TA::TensorD, TA::DensePolicy>> HB(n_v);
 
@@ -63,8 +63,8 @@ TEST_CASE("Davidson Algorithm", "[davidson]") {
 
     EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta);
 
-    std::cout << eig_new << std::endl;
-    std::cout << "norm= " << (eig - eig_new).norm() << "\n";
+//    std::cout << eig_new << std::endl;
+//    std::cout << "norm= " << (eig - eig_new).norm() << "\n";
 
     if ((eig - eig_new).norm() < converge) {
       break;

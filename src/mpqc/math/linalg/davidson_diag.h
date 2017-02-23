@@ -90,7 +90,7 @@ class SymmDavidsonDiag {
         RowMatrix<element_type> v = es.eigenvectors().real();
         EigenVector<element_type> e = es.eigenvalues().real();
 
-        std::cout << es.eigenvalues() << std::endl;
+//        std::cout << es.eigenvalues() << std::endl;
 
         for (auto i = 0; i < n_v; ++i) {
           eg.emplace_back(e[i], v.col(i));

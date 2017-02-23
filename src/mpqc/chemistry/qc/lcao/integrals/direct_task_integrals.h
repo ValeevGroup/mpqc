@@ -86,7 +86,6 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     std::shared_ptr<Screener> screen = std::make_shared<Screener>(Screener{}),
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>()) {
   const auto trange = detail::create_trange(bases);
-  const auto tvolume = trange.tiles_range().volume();
   TA::TensorF tile_norms = screen->norm_estimate(world, bases);
 
   // Copy the Bases for the Integral Builder

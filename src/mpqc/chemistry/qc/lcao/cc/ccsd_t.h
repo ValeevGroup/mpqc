@@ -1195,6 +1195,11 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
     double time_t2_oo = 0.0;
     double time_t1 = 0.0;
 
+    double time_T_OV5 = 0.0;
+    double time_G_OV5 = 0.0;
+    double time_trace = 0.0;
+
+
     // get trange1
     auto tr_occ = this->trange1_engine_->get_active_occ_tr1();
     auto tr_vir = this->trange1_engine_->get_vir_tr1();
@@ -1266,7 +1271,6 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
 
       time02 = mpqc::now(world, accurate_time);
 
-      time22 = mpqc::now(world, accurate_time);
       //computation of the OV5 terms
       double E_O2V4_vo = 0;
       /*{
@@ -1339,18 +1343,31 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
           TArray T1;
           TArray T2;
 
+          time20 = mpqc::now(world, accurate_time);
+
           T1("e,b,a,f") = block_t2_oou_lt_a_T12*block_t2_oou_lt_b_T1;
           T2("e,b,a,f") = block_t2_oou_lt_a_T12*block_t2_oou_lt_b_T2;
+
+          time21 = mpqc::now(world, accurate_time);
+          time_T_OV5 += mpqc::duration_in_s(time20, time21);
 
           {
             TArray G;
 
+            time22 = mpqc::now(world, accurate_time);
             G("e,b,a,f") = block_g_dabi_lt_b*block_g_dabi_lt_a;
+            time23 = mpqc::now(world, accurate_time);
+            time_G_OV5 += mpqc::duration_in_s(time22, time23);
+
+            time24 = mpqc::now(world, accurate_time);
             E_OV5 += TA::dot((G("e,b,a,f")),(T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+            time25 = mpqc::now(world, accurate_time);
+            time_trace += mpqc::duration_in_s(time24, time25);
           }
           {
             TArray G;
 
+            time22 = mpqc::now(world, accurate_time);
             block g_dabi_low_ca{0, 0, a_low, 0};
             block g_dabi_up_ca{n_tr_vir_inner, n_tr_vir_inner, a_up, n_tr_occ};
             auto block_g_dabi_lt_ca = g_dabi_lt("f,c,a,i").block(g_dabi_low_ca, g_dabi_up_ca);
@@ -1360,7 +1377,13 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
             auto block_g_dabi_lt_cb = g_dabi_lt("e,c,b,i").block(g_dabi_low_cb, g_dabi_up_cb);
 
             G("e,b,a,f") = block_g_dabi_lt_cb*block_g_dabi_lt_ca - block_g_dabi_lt_b*block_g_dabi_lt_ca;
+            time23 = mpqc::now(world, accurate_time);
+            time_G_OV5 += mpqc::duration_in_s(time22, time23);
+
+            time24 = mpqc::now(world, accurate_time);
             E_OV5 += TA::dot((G("e,b,a,f")),(4.0*T2("e,b,a,f") - 2.0*T1("e,b,a,f")));
+            time25 = mpqc::now(world, accurate_time);
+            time_trace += mpqc::duration_in_s(time24, time25);
           }
 
           //Mixed term contributions
@@ -1465,6 +1488,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       global_world.gop.sum(E_O2V4_2);
       global_world.gop.sum(E_O2V4_S);
       global_world.gop.sum(E_O3V3_S2);
+      global_world.gop.sum(time_G_OV5);
+      global_world.gop.sum(time_T_OV5);
+      global_world.gop.sum(time_trace);
 
 
       E_O2V4_vo = 0.0;
@@ -2092,6 +2118,9 @@ class CCSD_T : virtual public CCSD<Tile, Policy> {
       std::cout << "time_t2_oo: " << time_t2_oo << " S \n";
       std::cout << "time_t2_ov: " << time_t2_ov << " S \n";
       std::cout << "time_t1: " << time_t1 << " S \n";
+      std::cout << "time_G_OV5: " << time_G_OV5 << " S \n";
+      std::cout << "time_T_OV5: " << time_T_OV5 << " S \n";
+      std::cout << "time_trace: " << time_trace << " S \n";
     }
 
     triple_energy = -triple_energy / (3.0 * alpha);

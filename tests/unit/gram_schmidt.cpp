@@ -15,7 +15,7 @@ TEST_CASE("Gram Schmidt", "[gram-schmidt]") {
   using Array = TA::DistArray<TA::TensorD, TA::DensePolicy>;
 
   const auto n = 400;  // vector size
-  const auto v = 20;   // number of vector
+  const auto v = 40;   // number of vector
 
   TA::TiledRange1 tr_n{0, 100, 200, 300, n};
   TA::TiledRange1 tr_v{0, 1};
@@ -31,8 +31,7 @@ TEST_CASE("Gram Schmidt", "[gram-schmidt]") {
 
   gram_schmidt(vecs);
 
-//  const double tolerance = std::numeric_limits<double>::epsilon();
-  const double tolerance = 1.0e-15;
+  const double tolerance = std::numeric_limits<double>::epsilon()*100;
 
   for (auto i = 0; i < v; ++i) {
     for (auto j = i; j < v; ++j) {
@@ -40,11 +39,11 @@ TEST_CASE("Gram Schmidt", "[gram-schmidt]") {
 //      std::cout << "i= " << i << " j= " << j << " dot= " << test << std::endl;
       if(i == j){
         // test if normalized
-        REQUIRE( (test - 1.0) <= tolerance);
+        REQUIRE( test == Approx(1.0).epsilon(tolerance));
       }
       else{
         // test if orthogonalized
-        REQUIRE( test <= tolerance );
+        REQUIRE( test == Approx(0.0).epsilon(tolerance));
       }
     }
   }

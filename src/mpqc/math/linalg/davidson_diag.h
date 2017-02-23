@@ -110,15 +110,16 @@ class SymmDavidsonDiag {
     // compute residual
     value_type residual(n_guess_);
     for (auto i = 0; i < n_guess_; ++i) {
-      // initialize redidual as 0
+      // initialize residual as 0
       residual[i] = copy(B[i]);
       zero(residual[i]);
       const auto e_i = -E[i];
+
       for (auto j = 0; j < n_v; ++j) {
         D tmp = copy(residual[i]);
         zero(tmp);
-        axpy(tmp, e_i, B[i]);
-        plus(tmp, HB[i]);
+        axpy(tmp, e_i, B[j]);
+        plus(tmp, HB[j]);
         scale(tmp, C(j, i));
         plus(residual[i], tmp);
       }

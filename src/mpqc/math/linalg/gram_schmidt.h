@@ -17,10 +17,12 @@
  */
 
 template <typename D>
-void gram_schmidt(std::vector<D>& V) {
+void gram_schmidt(std::vector<D>& V, std::size_t start=0) {
   const auto k = V.size();
 
-  for (auto i = 0; i < k; ++i) {
+  TA_ASSERT(start < k);
+
+  for (auto i = start; i < k; ++i) {
     for (auto j = 0; j < i; ++j) {
       typename D::element_type tmp = dot_product(V[i], V[j]);
       axpy(V[i], -tmp, V[j]);

@@ -126,8 +126,8 @@ class SymmDavidsonDiag {
 
     B.insert(B.end(), residual.begin(), residual.end());
 
-    // orthognolize residual with B
-    gram_schmidt(B);
+    // orthognolize new residual with original B
+    gram_schmidt(B, n_v);
 
     return E.segment(0, n_roots_);
   }

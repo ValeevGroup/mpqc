@@ -20,17 +20,24 @@ template <typename D>
 void gram_schmidt(std::vector<D>& V) {
   const auto k = V.size();
 
-  // normalize
-  scale(V[0], 1.0 / std::sqrt(dot_product(V[0], V[0])));
-
-  for (auto i = 1; i < k; ++i) {
+  for (auto i = 0; i < k; ++i) {
     for (auto j = 0; j < i; ++j) {
-      const auto tmp = dot_product(V[i], V[j]);
+      typename D::element_type tmp = dot_product(V[i], V[j]);
       axpy(V[i], -tmp, V[j]);
     }
     // normalize
-    scale(V[i], 1.0 / std::sqrt(dot_product(V[i], V[i])));
+    scale(V[i], 1.0 / norm2(V[i]));
   }
+
+  // test
+
+//  for(auto i = 0; i < k; ++i){
+//    for(auto j = i ; j < k; ++j ){
+//      const auto test = dot_product(V[i], V[j]);
+//      std::cout << "i= " << i << " j= " << j << " dot= " << test << std::endl;
+//    }
+//  }
+
 }
 
 #endif  // SRC_MPQC_MATH_LINALG_GRAM_SCHMIDT_H_

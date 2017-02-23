@@ -64,6 +64,7 @@ TEST_CASE("Davidson Algorithm", "[davidson]") {
     EigenVector<double> eig_new = dvd.extrapolate(HB, guess_ta);
 
     std::cout << eig_new << std::endl;
+    std::cout << "norm= " << (eig - eig_new).norm() << "\n";
 
     if ((eig - eig_new).norm() < converge) {
       break;

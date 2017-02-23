@@ -20,7 +20,7 @@ inline void plus(TA::DistArray<Tile, Policy>& y,
                  const TA::DistArray<Tile, Policy>& x) {
   const std::string vars =
       TA::detail::dummy_annotation(y.trange().tiles_range().rank());
-  y(vars) = y(vars) + x(vars);
+  y(vars) += x(vars);
 }
 
 /**
@@ -48,9 +48,8 @@ class SymmDavidsonDiag {
         : eigen_value(value), eigen_vector(vector) {}
 
     /// move constructor
-    //    EigenPair(const element_type&& value, const result_type&& vector)
-    //        : eigen_value(std::move(value)), eigen_vector(std::move(vector))
-    //        {}
+    EigenPair(const element_type&& value, const result_type&& vector)
+        : eigen_value(std::move(value)), eigen_vector(std::move(vector)) {}
 
     ~EigenPair() = default;
 
@@ -91,6 +90,8 @@ class SymmDavidsonDiag {
         RowMatrix<element_type> v = es.eigenvectors().real();
         EigenVector<element_type> e = es.eigenvalues().real();
 
+        std::cout << es.eigenvalues() << std::endl;
+
         for (auto i = 0; i < n_v; ++i) {
           eg.emplace_back(e[i], v.col(i));
         }
@@ -122,12 +123,6 @@ class SymmDavidsonDiag {
         plus(residual[i], tmp);
       }
     }
-
-    // normalize redidual vector
-    //    for(auto i = 0; i < n_guess_; ++i){
-    //      const auto norm = norm2(residual[i]);
-    //      scale(residual[i], 1.0/norm);
-    //    }
 
     B.insert(B.end(), residual.begin(), residual.end());
 

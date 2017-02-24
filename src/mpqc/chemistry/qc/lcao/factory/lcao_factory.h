@@ -347,7 +347,7 @@ typename LCAOFactory<Tile, Policy>::TArray LCAOFactory<Tile, Policy>::compute4(
   mpqc::time_point time1;
   auto& world = this->world();
   TArray result;
-  if (formula_string.oper().has_option(Operator::Option::DensityFitting)) {
+  if (formula_string.has_option(Formula::Option::DensityFitting)) {
     // get df formula
     auto df_formulas = gaussian::detail::get_df_formula(formula_string);
 

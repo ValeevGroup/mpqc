@@ -67,12 +67,14 @@ TEST_CASE("Formula Expression", "[formula]") {
 
   SECTION("option test case") {
     Formula couloumb(L"<p q1|R|a' A'1> [df]");
-    REQUIRE(couloumb.oper().has_option(Operator::Option::DensityFitting) ==
+    REQUIRE(couloumb.has_option(Formula::Option::DensityFitting) ==
             true);
 
     Formula couloumb1(L"<p q1|R|a' A'1> [df, inv_sqr]");
     Formula couloumb2(L"<p q1|R|a' A'1> [inv_sqr, df]");
-    REQUIRE(couloumb1.oper().option() == couloumb2.oper().option());
+    REQUIRE(couloumb1.option() == couloumb2.option());
+    REQUIRE(couloumb1 == couloumb2);
+    REQUIRE(couloumb != couloumb1);
   }
 
   SECTION("equality test case") {

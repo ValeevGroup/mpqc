@@ -47,6 +47,11 @@ struct append_count {
  *
  *  @sa OrbitalIndex for description of index
  *  @sa Operation for description of operation and option
+ *
+ *  Dictionary of wstring to options
+ *  - df -> DensityFitting
+ *  - inv -> Inverse
+ *  - inv_sqr -> InverseSquareRoot
  */
 class Formula {
  public:

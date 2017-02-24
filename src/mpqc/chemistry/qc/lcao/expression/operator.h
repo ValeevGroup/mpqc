@@ -37,10 +37,6 @@ namespace mpqc {
  *  - F(α) -> FockAlpha(Fock for Alpha Spin)
  *  - F(β) -> FockBeta(Fock for Beta Spin)
  *
- *  Dictionary of wstring to options
- *  - df -> DensityFitting
- *  - inv -> Inverse
- *  - inv_sqr -> InverseSquareRoot
  */
 
 class Operator {

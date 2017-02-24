@@ -38,26 +38,26 @@ class SymmDavidsonDiag {
   using result_type = EigenVector<element_type>;
   using value_type = std::vector<D>;
 
- private:
-  struct EigenPair {
-    element_type eigen_value;
-    result_type eigen_vector;
-
-    /// constructor
-    EigenPair(const element_type& value, const result_type& vector)
-        : eigen_value(value), eigen_vector(vector) {}
-
-    /// move constructor
-    EigenPair(const element_type&& value, const result_type&& vector)
-        : eigen_value(std::move(value)), eigen_vector(std::move(vector)) {}
-
-    ~EigenPair() = default;
-
-    // sort by eigen value
-    bool operator<(const EigenPair& other) const {
-      return eigen_value < other.eigen_value;
-    }
-  };
+// private:
+//  struct EigenPair {
+//    element_type eigen_value;
+//    result_type eigen_vector;
+//
+//    /// constructor
+//    EigenPair(const element_type& value, const result_type& vector)
+//        : eigen_value(value), eigen_vector(vector) {}
+//
+//    /// move constructor
+//    EigenPair(const element_type&& value, const result_type&& vector)
+//        : eigen_value(std::move(value)), eigen_vector(std::move(vector)) {}
+//
+//    ~EigenPair() = default;
+//
+//    // sort by eigen value
+//    bool operator<(const EigenPair& other) const {
+//      return eigen_value < other.eigen_value;
+//    }
+//  };
 
  public:
   /**
@@ -101,27 +101,14 @@ class SymmDavidsonDiag {
       // this return eigenvalue and eigenvector with size n_guess
       Eigen::SelfAdjointEigenSolver<RowMatrix<element_type>> es(G);
 
-      // sort eigenvalue and eigenvector
-      std::vector<EigenPair> eg;
-      {
         RowMatrix<element_type> v = es.eigenvectors();
         EigenVector<element_type> e = es.eigenvalues();
 
         //        std::cout << es.eigenvalues() << std::endl;
 
-        for (auto i = 0; i < n_v; ++i) {
-          eg.emplace_back(e[i], v.col(i));
-        }
+      E = e.segment(0,n_roots_);
+      C = v.leftCols(n_roots_);
 
-        std::sort(eg.begin(), eg.end());
-      }
-
-      // obtain eigenvalue and eigenvector
-
-      for (auto i = 0; i < n_roots_; ++i) {
-        E[i] = eg[i].eigen_value;
-        C.col(i) = eg[i].eigen_vector;
-      }
     }
 
     // compute residual

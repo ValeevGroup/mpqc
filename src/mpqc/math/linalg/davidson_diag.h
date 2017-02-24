@@ -38,39 +38,42 @@ class SymmDavidsonDiag {
   using result_type = EigenVector<element_type>;
   using value_type = std::vector<D>;
 
-// private:
-//  struct EigenPair {
-//    element_type eigen_value;
-//    result_type eigen_vector;
-//
-//    /// constructor
-//    EigenPair(const element_type& value, const result_type& vector)
-//        : eigen_value(value), eigen_vector(vector) {}
-//
-//    /// move constructor
-//    EigenPair(const element_type&& value, const result_type&& vector)
-//        : eigen_value(std::move(value)), eigen_vector(std::move(vector)) {}
-//
-//    ~EigenPair() = default;
-//
-//    // sort by eigen value
-//    bool operator<(const EigenPair& other) const {
-//      return eigen_value < other.eigen_value;
-//    }
-//  };
+ private:
+  struct EigenPair {
+    element_type eigen_value;
+    result_type eigen_vector;
+
+    /// constructor
+    EigenPair(const element_type& value, const result_type& vector)
+        : eigen_value(value), eigen_vector(vector) {}
+
+    /// move constructor
+    EigenPair(const element_type&& value, const result_type&& vector)
+        : eigen_value(std::move(value)), eigen_vector(std::move(vector)) {}
+
+    ~EigenPair() = default;
+
+    // sort by eigen value
+    bool operator<(const EigenPair& other) const {
+      return eigen_value < other.eigen_value;
+    }
+  };
 
  public:
   /**
    *
    * @param n_roots number of lowest roots to solve
    * @param n_guess max number of guess vector
+   * @param symmetric if matrix is symmetric
    */
-  SymmDavidsonDiag(unsigned int n_roots, unsigned int n_guess)
-      : n_roots_(n_roots), n_guess_(n_guess) {}
+  SymmDavidsonDiag(unsigned int n_roots, unsigned int n_guess,
+                   bool symmetric = true)
+      : n_roots_(n_roots), n_guess_(n_guess), symmetric_(symmetric) {}
 
   /**
    *
-   * @tparam Pred preconditioner object, which has void Pred(const element_type & e,
+   * @tparam Pred preconditioner object, which has void Pred(const element_type
+   * & e,
    * D& residual) to update residual
    *
    * @param HB product with A and guess vector
@@ -97,17 +100,50 @@ class SymmDavidsonDiag {
     // do eigen solve locally
     result_type E(n_roots_);
     RowMatrix<element_type> C(n_v, n_roots_);
-    {
-      // this return eigenvalue and eigenvector with size n_guess
+
+    // symmetric matrix
+    if (symmetric_) {
+      // this return eigenvalue and eigenvector
       Eigen::SelfAdjointEigenSolver<RowMatrix<element_type>> es(G);
 
-        RowMatrix<element_type> v = es.eigenvectors();
-        EigenVector<element_type> e = es.eigenvalues();
+      RowMatrix<element_type> v = es.eigenvectors();
+      EigenVector<element_type> e = es.eigenvalues();
 
-        //        std::cout << es.eigenvalues() << std::endl;
+      //        std::cout << es.eigenvalues() << std::endl;
 
-      E = e.segment(0,n_roots_);
+      E = e.segment(0, n_roots_);
       C = v.leftCols(n_roots_);
+    }
+    // non-symmetric matrix
+    else {
+
+      Eigen::RealSchur<RowMatrix<element_type>> rs(G);
+
+      RowMatrix<element_type> T = rs.matrixT();
+      RowMatrix<element_type> U = rs.matrixU();
+
+      // do eigen solve on T
+      Eigen::EigenSolver<RowMatrix<element_type>> es(T);
+
+
+      // sort eigen values
+      std::vector<EigenPair> eg;
+      {
+        RowMatrix<element_type> v = es.eigenvectors().real();
+        EigenVector<element_type> e = es.eigenvalues().real();
+
+        for (auto i = 0; i < n_v; ++i) {
+          eg.emplace_back(e[i], v.col(i));
+        }
+
+        std::sort(eg.begin(), eg.end());
+      }
+
+      // obtain final eigen value and eigen vector
+      for (auto i = 0; i < n_roots_; ++i) {
+        E[i] = eg[i].eigen_value;
+        C.col(i) = U * eg[i].eigen_vector;
+      }
 
     }
 
@@ -130,7 +166,7 @@ class SymmDavidsonDiag {
     }
 
     // precondition
-    for(auto i = 0; i < n_roots_; i++){
+    for (auto i = 0; i < n_roots_; i++) {
       pred(E[i], residual[i]);
     }
 
@@ -150,6 +186,7 @@ class SymmDavidsonDiag {
   }
 
  private:
+  bool symmetric_;
   unsigned int n_roots_;
   unsigned int n_guess_;
 };

@@ -54,7 +54,7 @@ TEST_CASE("Symmetric Davidson Algorithm", "[symm-davidson]") {
         TA::get_default_world(), guess.col(i), tr_n, tr_guess);
   }
 
-  SymmDavidsonDiag<Array> dvd(n_roots, n_guess);
+  DavidsonDiag<Array> dvd(n_roots, n_guess);
 
   EigenVector<double> diagonal = A.diagonal();
 
@@ -146,7 +146,7 @@ TEST_CASE("Nonsymmetric Davidson Algorithm", "[nonsymm-davidson]") {
         TA::get_default_world(), guess.col(i), tr_n, tr_guess);
   }
 
-  SymmDavidsonDiag<Array> dvd(n_roots, n_guess, false);
+  DavidsonDiag<Array> dvd(n_roots, n_guess, false);
 
   EigenVector<double> diagonal = A.diagonal();
 

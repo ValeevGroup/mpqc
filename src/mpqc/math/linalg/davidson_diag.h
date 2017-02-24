@@ -32,7 +32,7 @@ inline void plus(TA::DistArray<Tile, Policy>& y,
  */
 
 template <typename D>
-class SymmDavidsonDiag {
+class DavidsonDiag {
  public:
   using element_type = typename D::element_type;
   using result_type = EigenVector<element_type>;
@@ -66,7 +66,7 @@ class SymmDavidsonDiag {
    * @param n_guess max number of guess vector
    * @param symmetric if matrix is symmetric
    */
-  SymmDavidsonDiag(unsigned int n_roots, unsigned int n_guess,
+  DavidsonDiag(unsigned int n_roots, unsigned int n_guess,
                    bool symmetric = true)
       : n_roots_(n_roots), n_guess_(n_guess), symmetric_(symmetric) {}
 
@@ -117,6 +117,7 @@ class SymmDavidsonDiag {
     // non-symmetric matrix
     else {
 
+      // unitary transform to upper triangular matrix
       Eigen::RealSchur<RowMatrix<element_type>> rs(G);
 
       RowMatrix<element_type> T = rs.matrixT();
@@ -186,9 +187,9 @@ class SymmDavidsonDiag {
   }
 
  private:
-  bool symmetric_;
   unsigned int n_roots_;
   unsigned int n_guess_;
+  bool symmetric_;
 };
 
 }  // namespace mpqc

@@ -99,13 +99,13 @@ class SymmDavidsonDiag {
     RowMatrix<element_type> C(n_v, n_roots_);
     {
       // this return eigenvalue and eigenvector with size n_guess
-      Eigen::EigenSolver<RowMatrix<element_type>> es(G);
+      Eigen::SelfAdjointEigenSolver<RowMatrix<element_type>> es(G);
 
       // sort eigenvalue and eigenvector
       std::vector<EigenPair> eg;
       {
-        RowMatrix<element_type> v = es.eigenvectors().real();
-        EigenVector<element_type> e = es.eigenvalues().real();
+        RowMatrix<element_type> v = es.eigenvectors();
+        EigenVector<element_type> e = es.eigenvalues();
 
         //        std::cout << es.eigenvalues() << std::endl;
 

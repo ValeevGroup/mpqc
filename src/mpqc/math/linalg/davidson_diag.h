@@ -60,10 +60,27 @@ class SymmDavidsonDiag {
   };
 
  public:
+  /**
+   *
+   * @param n_roots number of lowest roots to solve
+   * @param n_guess max number of guess vector
+   */
   SymmDavidsonDiag(unsigned int n_roots, unsigned int n_guess)
       : n_roots_(n_roots), n_guess_(n_guess) {}
 
-  EigenVector<element_type> extrapolate(value_type& HB, value_type& B) {
+  /**
+   *
+   * @tparam Pred preconditioner object, which has void Pred(const element_type & e,
+   * D& residual) to update residual
+   *
+   * @param HB product with A and guess vector
+   * @param B  guess vector
+   * @param pred preconditioner
+   * @return B updated guess vector
+   */
+  template <typename Pred>
+  EigenVector<element_type> extrapolate(value_type& HB, value_type& B,
+                                        const Pred& pred) {
     TA_ASSERT(HB.size() == B.size());
     // size of vector
     const auto n_v = B.size();
@@ -78,8 +95,8 @@ class SymmDavidsonDiag {
     }
 
     // do eigen solve locally
-    result_type E(n_guess_);
-    RowMatrix<element_type> C(n_v, n_guess_);
+    result_type E(n_roots_);
+    RowMatrix<element_type> C(n_v, n_roots_);
     {
       // this return eigenvalue and eigenvector with size n_guess
       Eigen::EigenSolver<RowMatrix<element_type>> es(G);
@@ -90,7 +107,7 @@ class SymmDavidsonDiag {
         RowMatrix<element_type> v = es.eigenvectors().real();
         EigenVector<element_type> e = es.eigenvalues().real();
 
-//        std::cout << es.eigenvalues() << std::endl;
+        //        std::cout << es.eigenvalues() << std::endl;
 
         for (auto i = 0; i < n_v; ++i) {
           eg.emplace_back(e[i], v.col(i));
@@ -101,15 +118,15 @@ class SymmDavidsonDiag {
 
       // obtain eigenvalue and eigenvector
 
-      for (auto i = 0; i < n_guess_; ++i) {
+      for (auto i = 0; i < n_roots_; ++i) {
         E[i] = eg[i].eigen_value;
         C.col(i) = eg[i].eigen_vector;
       }
     }
 
     // compute residual
-    value_type residual(n_guess_);
-    for (auto i = 0; i < n_guess_; ++i) {
+    value_type residual(n_roots_);
+    for (auto i = 0; i < n_roots_; ++i) {
       // initialize residual as 0
       residual[i] = copy(B[i]);
       zero(residual[i]);
@@ -124,6 +141,18 @@ class SymmDavidsonDiag {
         plus(residual[i], tmp);
       }
     }
+
+    // precondition
+    for(auto i = 0; i < n_roots_; i++){
+      pred(E[i], residual[i]);
+    }
+
+    // extra vector
+    //    unsigned int n_extra = n_guess_ - (n_v + n_roots_);
+    // delete first n_extra vector
+    //    if( n_extra > 0 ){
+    //
+    //    }
 
     B.insert(B.end(), residual.begin(), residual.end());
 

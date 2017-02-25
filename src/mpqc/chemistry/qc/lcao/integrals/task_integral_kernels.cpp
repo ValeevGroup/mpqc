@@ -10,7 +10,7 @@ namespace detail {
 
 double integral_engine_precision = 0.0;
 
- TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 2> shell_ptrs,
                             Screener &) {
   set_eng_precision(eng);
@@ -18,6 +18,9 @@ double integral_engine_precision = 0.0;
   auto const &lobound = rng.lobound();
   std::array<std::size_t, 2> lb = {{lobound[0], lobound[1]}};
   std::array<std::size_t, 2> ub = lb;
+
+  const auto tile_start0 = lb[0];
+  const auto tile_start1 = lb[1];
 
   auto tile = TA::TensorD(std::move(rng), 0.0);
 
@@ -27,6 +30,9 @@ double integral_engine_precision = 0.0;
   auto const &sh1 = *shell_ptrs[1];
   const auto end0 = sh0.size();
   const auto end1 = sh1.size();
+
+  auto ext = tile.range().extent_data();
+  auto tile_ptr_first = tile.data();
 
   for (auto idx0 = 0ul; idx0 < end0; ++idx0) {
     auto const &s0 = sh0[idx0];
@@ -43,17 +49,21 @@ double integral_engine_precision = 0.0;
       assert(ints_shell_sets.size() == 1 &&
              "integral_kernel can't handle multi-shell-set engines");
       if (ints_shell_sets[0] != nullptr) {
+        const auto ints_ptr = ints_shell_sets[0];
         auto shell_ord = 0ul;
         const auto lb0 = lb[0];
         const auto ub0 = ub[0];
         const auto lb1 = lb[1];
         const auto ub1 = ub[1];
         for (auto el0 = lb0; el0 < ub0; ++el0) {
-            for (auto el1 = lb1; el1 < ub1; ++el1, ++shell_ord) {
-                tile(el0, el1) = ints_shell_sets[0][shell_ord];
-            }
+          const auto el0_pre = ext[1] * (el0 - tile_start0);
+          auto tile_ptr = tile_ptr_first + el0_pre;
+
+          for (auto el1 = lb1; el1 < ub1; ++el1, ++shell_ord) {
+            tile_ptr[el1 - tile_start1] = ints_ptr[shell_ord];
+          }
         }
-     }
+      }
 
       lb[1] = ub[1];
     }
@@ -63,7 +73,7 @@ double integral_engine_precision = 0.0;
   return tile;
 }
 
- TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 3> shell_ptrs,
                             Screener &screen) {
   eng.set_precision(integral_engine_precision);
@@ -71,6 +81,10 @@ double integral_engine_precision = 0.0;
   auto const &lobound = rng.lobound();
   std::array<std::size_t, 3> lb = {{lobound[0], lobound[1], lobound[2]}};
   std::array<std::size_t, 3> ub = lb;
+
+  const auto tile_start0 = lb[0];
+  const auto tile_start1 = lb[1];
+  const auto tile_start2 = lb[2];
 
   auto tile = TA::TensorD(std::move(rng), 0.0);
 
@@ -82,6 +96,9 @@ double integral_engine_precision = 0.0;
   const auto end0 = sh0.size();
   const auto end1 = sh1.size();
   const auto end2 = sh2.size();
+
+  auto ext = tile.range().extent_data();
+  auto tile_ptr_first = tile.data();
 
   for (auto idx0 = 0ul; idx0 < end0; ++idx0) {
     auto const &s0 = sh0[idx0];
@@ -119,13 +136,16 @@ double integral_engine_precision = 0.0;
                 const auto lb2 = lb[2];
                 const auto ub2 = ub[2];
                 for (auto el0 = lb0; el0 < ub0; ++el0) {
-                    for (auto el1 = lb1; el1 < ub1; ++el1) {
-                        for (auto el2 = lb2; el2 < ub2; ++el2, ++shell_ord) {
-                            tile(el0, el1, el2) = ints_ptr[shell_ord];
-                        }
+                  const auto el0_pre = ext[2] * ext[1] * (el0 - tile_start0);
+                  auto tile_ptr0 = tile_ptr_first + el0_pre;
+                  for (auto el1 = lb1; el1 < ub1; ++el1) {
+                    const auto el1_pre = ext[2] * (el1 - tile_start1);
+                    auto tile_ptr1 = tile_ptr0 + el1_pre;
+                    for (auto el2 = lb2; el2 < ub2; ++el2, ++shell_ord) {
+                      tile_ptr1[el2 - tile_start2] = ints_ptr[shell_ord];
                     }
+                  }
                 }
-
               }
             }
 
@@ -143,7 +163,7 @@ double integral_engine_precision = 0.0;
   return tile;
 }
 
- TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 4> shell_ptrs,
                             Screener &screen) {
   eng.set_precision(integral_engine_precision);
@@ -152,6 +172,11 @@ double integral_engine_precision = 0.0;
   std::array<std::size_t, 4> lb = {
       {lobound[0], lobound[1], lobound[2], lobound[3]}};
   std::array<std::size_t, 4> ub = lb;
+
+  const auto tile_start0 = lb[0];
+  const auto tile_start1 = lb[1];
+  const auto tile_start2 = lb[2];
+  const auto tile_start3 = lb[3];
 
   auto tile = TA::TensorD(std::move(rng), 0.0);
 
@@ -165,6 +190,9 @@ double integral_engine_precision = 0.0;
   const auto end1 = sh1.size();
   const auto end2 = sh2.size();
   const auto end3 = sh3.size();
+
+  auto ext = tile.range().extent_data();
+  auto tile_ptr_first = tile.data();
 
   for (auto idx0 = 0ul; idx0 < end0; ++idx0) {
     auto const &s0 = sh0[idx0];
@@ -202,27 +230,33 @@ double integral_engine_precision = 0.0;
                       ints_shell_sets.size() == 1 &&
                       "integral_kernel can't handle multi-shell-set engines");
                   if (ints_shell_sets[0] != nullptr) {
-                      const auto ints_ptr = ints_shell_sets[0];
-                      auto shell_ord = 0ul;
-                      const auto lb0 = lb[0];
-                      const auto ub0 = ub[0];
-                      const auto lb1 = lb[1];
-                      const auto ub1 = ub[1];
-                      const auto lb2 = lb[2];
-                      const auto ub2 = ub[2];
-                      const auto lb3 = lb[3];
-                      const auto ub3 = ub[3];
-                      for (auto el0 = lb0; el0 < ub0; ++el0) {
-                          for (auto el1 = lb1; el1 < ub1; ++el1) {
-                              for (auto el2 = lb2; el2 < ub2; ++el2) {
-                                  for (auto el3 = lb3; el3 < ub3; ++el3) {
-                                      tile(el0, el1, el2, el3) =
-                                      ints_ptr[shell_ord];
-                                  }
-                              }
+                    const auto ints_ptr = ints_shell_sets[0];
+                    auto shell_ord = 0ul;
+                    const auto lb0 = lb[0];
+                    const auto ub0 = ub[0];
+                    const auto lb1 = lb[1];
+                    const auto ub1 = ub[1];
+                    const auto lb2 = lb[2];
+                    const auto ub2 = ub[2];
+                    const auto lb3 = lb[3];
+                    const auto ub3 = ub[3];
+                    for (auto el0 = lb0; el0 < ub0; ++el0) {
+                      const auto el0_pre =
+                          ext[3] * ext[2] * ext[1] * (el0 - tile_start0);
+                      auto tile_ptr0 = tile_ptr_first + el0_pre;
+                      for (auto el1 = lb1; el1 < ub1; ++el1) {
+                        const auto el1_pre =
+                            ext[3] * ext[2] * (el1 - tile_start1);
+                        auto tile_ptr1 = tile_ptr0 + el1_pre;
+                        for (auto el2 = lb2; el2 < ub2; ++el2) {
+                          const auto el2_pre = ext[3] * (el2 - tile_start2);
+                          auto tile_ptr2 = tile_ptr1 + el2_pre;
+                          for (auto el3 = lb3; el3 < ub3; ++el3, ++shell_ord) {
+                            tile_ptr2[el3 - tile_start3] = ints_ptr[shell_ord];
                           }
+                        }
                       }
-
+                    }
                   }
                 }
 
@@ -243,7 +277,6 @@ double integral_engine_precision = 0.0;
 
   return tile;
 }
-
 
 }  // namespace detail
 }  // namespace gaussian

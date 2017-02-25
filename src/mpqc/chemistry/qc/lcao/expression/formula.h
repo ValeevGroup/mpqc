@@ -7,6 +7,8 @@
 
 #include <vector>
 
+#include "mpqc/math/groups/petite_list.h"
+
 #include "greek_to_english_name.h"
 #include "operator.h"
 #include "orbital_index.h"
@@ -50,7 +52,7 @@ class Formula {
 
   static const std::map<Option, std::wstring> option_to_string;
 
-  Formula() : notation_(Notation::Invalid) {}
+  Formula() : notation_(Notation::Invalid), symm_(math::PetiteList::Symmetry::e) {}
   Formula(Formula const &) = default;
   Formula(Formula &&) = default;
   Formula &operator=(Formula const &) = default;
@@ -146,6 +148,11 @@ class Formula {
 
   /// @}
 
+  /// Symmetry accessor
+  math::PetiteList::Symmetry symmetry() const {
+    return symm_;
+  }
+
   /// @name Option functions
   /// @{
 
@@ -187,6 +194,7 @@ class Formula {
   Operator oper_;
   Notation notation_;
   std::vector<Option> option_;
+  math::PetiteList::Symmetry symm_;
   std::vector<OrbitalIndex> bra_indices_;
   std::vector<OrbitalIndex> ket_indices_;
 };

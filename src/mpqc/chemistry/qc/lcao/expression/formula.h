@@ -35,23 +35,8 @@ struct append_count {
 }
 
 /**
- * \brief Formula class that represent quantum mechanical expressions
- *
- * format for formula
- *
- *  - Physical Notation
- *  <index1 index2|operation|index3 index4>[option1,option2]
- *
- *  - Chemical Notation
- *  (index1 index2|operation|index3 index4)[option]
- *
- *  @sa OrbitalIndex for description of index
- *  @sa Operation for description of operation and option
- *
- *  Dictionary of wstring to options
- *  - df -> DensityFitting
- *  - inv -> Inverse
- *  - inv_sqr -> InverseSquareRoot
+ * \brief Formula parses a string represnetation of quantum mechanical matrix elements and
+ *        related expressions.
  */
 class Formula {
  public:
@@ -65,9 +50,6 @@ class Formula {
 
   static const std::map<Option, std::wstring> option_to_string;
 
-  /**
-   * Compiler generated functions
-   */
   Formula() : notation_(Notation::Invalid) {}
   Formula(Formula const &) = default;
   Formula(Formula &&) = default;
@@ -75,9 +57,21 @@ class Formula {
   Formula &operator=(Formula &&) = default;
 
   /**
-   *  Constructor
-   *  @param formula a properly formatted std::wstring
-   */
+ *  Constructor parses the string in one of the following formats:
+ *  - Physical Notation
+ *  <index1 index2|operator|index3 index4>[option1,option2]
+ *
+ *  - Chemical Notation
+ *  (index1 index2|operator|index3 index4)[option]
+ *
+ *  where the index keys \c index1 , \c \index2 , etc. are parsed by ::mpqc::lcao::OrbitalIndex,
+ *  the operator key \c operator
+ *  is parsed by Operator , and the option keys can be one of the following:
+ *  - \c df -> Option::DensityFitting
+ *  - \c inv -> Option::Inverse
+ *  - \c inv_sqr -> Option::InverseSquareRoot
+ *  - \c <symm> -> math::PetiteList::Symmetry
+ */
   Formula(std::wstring formula);
 
   /// reconstruct a std::wstring representation of the formula
@@ -119,9 +113,9 @@ class Formula {
     bra_indices_ = ket_idxs;
   }
 
-  /**
-   * Notation Functions
-   */
+  /// @name Notation functions
+  /// @{
+
   /// Notation accessor
   const Notation &notation() const {
     TA_USER_ASSERT(notation_ != Notation::Invalid, "invalid Notation")
@@ -134,6 +128,11 @@ class Formula {
     notation_ = notation;
   }
 
+  /// @}
+
+  /// @name Operator functions
+  /// @{
+
   /// set Operator
   void set_operator(const Operator &oper) { oper_ = oper; }
 
@@ -145,29 +144,33 @@ class Formula {
   /// Operator accessor
   const Operator &oper() const { return oper_; }
 
-  /**
-   * Option Functions
-   */
+  /// @}
 
-  /// return options options_
+  /// @name Option functions
+  /// @{
+
+  /// @return the vector of Options
   const std::vector<Option> option() const { return option_; }
 
   /// set option option_
   void set_option(const std::vector<Option> &option) { option_ = option; }
 
-  /// return string that correspond to options_ wraped in []
+  /// return string that correspond to options_ wrapped in []
   const std::wstring option_string() const;
 
-  /// return true if have Option op
+  /// @return true if have Option op
   bool has_option(Formula::Option op) const;
 
-  /**
-   *  Comparison Functions
-   */
+  /// @}
+
+  /// @name Comparison operators
+  /// @{
 
   bool operator<(const Formula &other) const;
   bool operator==(const Formula &other) const;
   bool operator!=(const Formula &other) const { return !(*this == other); }
+
+  /// @}
 
   /// converts this to a TA expression annotation
   /// @tparam Transformer a unary functor class

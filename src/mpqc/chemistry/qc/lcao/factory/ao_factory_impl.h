@@ -167,9 +167,9 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
   // get the inverse square root instead
   if (iterative_inv_sqrt_ &&
-      formula.oper().has_option(Operator::Option::Inverse)) {
+      formula.has_option(Formula::Option::Inverse)) {
     auto inv_sqrt_formula = formula;
-    inv_sqrt_formula.set_operator_option({Operator::Option::InverseSquareRoot});
+    inv_sqrt_formula.set_option({Formula::Option::InverseSquareRoot});
 
     result = this->compute(inv_sqrt_formula);
 
@@ -259,7 +259,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
       auto& space = this->orbital_registry().retrieve(space_index);
 
       auto obs = space.ao_index().name();
-      if (formula.oper().has_option(Operator::Option::DensityFitting)) {
+      if (formula.has_option(Formula::Option::DensityFitting)) {
         auto three_center_formula = detail::get_jk_df_formula(formula, obs);
 
         auto left = compute(three_center_formula[0]);
@@ -384,7 +384,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
 
   // compute inverse square root first in this case
   if (!iterative_inv_sqrt_ &&
-      formula.oper().has_option(Operator::Option::Inverse)) {
+      formula.has_option(Formula::Option::Inverse)) {
     time0 = mpqc::now(world, this->accurate_time_);
 
     if (formula.oper().type() == Operator::Type::cGTG ||
@@ -438,7 +438,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   }
 
   // inverse square root of integral
-  if (formula.oper().has_option(Operator::Option::InverseSquareRoot)) {
+  if (formula.has_option(Formula::Option::InverseSquareRoot)) {
     time0 = mpqc::now(world, this->accurate_time_);
     if (formula.oper().type() == Operator::Type::cGTG ||
         formula.oper().type() == Operator::Type::cGTGCoulomb) {
@@ -511,7 +511,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute4(
   auto& world = this->world();
   TArray result;
 
-  if (formula.oper().has_option(Operator::Option::DensityFitting)) {
+  if (formula.has_option(Formula::Option::DensityFitting)) {
     // convert formula to df formula
     auto formula_strings = detail::get_df_formula(formula);
 

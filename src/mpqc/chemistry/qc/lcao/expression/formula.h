@@ -47,6 +47,11 @@ struct append_count {
  *
  *  @sa OrbitalIndex for description of index
  *  @sa Operation for description of operation and option
+ *
+ *  Dictionary of wstring to options
+ *  - df -> DensityFitting
+ *  - inv -> Inverse
+ *  - inv_sqr -> InverseSquareRoot
  */
 class Formula {
  public:
@@ -55,6 +60,14 @@ class Formula {
   /// Position = Bra or Ket
   enum class Position { Invalid = -1, Bra = 0, Ket = 1 };
 
+  /// Types of Options
+  enum class Option { DensityFitting = 0, Inverse = 1, InverseSquareRoot = 2 };
+
+  static const std::map<Option, std::wstring> option_to_string;
+
+  /**
+   * Compiler generated functions
+   */
   Formula() : notation_(Notation::Invalid) {}
   Formula(Formula const &) = default;
   Formula(Formula &&) = default;
@@ -70,6 +83,19 @@ class Formula {
   /// reconstruct a std::wstring representation of the formula
   /// @sa Formula::to_ta_expression()
   std::wstring string() const;
+
+  /**
+   *  index functions
+   */
+
+  /// dimension of formula(2, 3 or 4)
+  std::size_t rank() const;
+
+  /// @return true if this contains \c index
+  bool has_index(const OrbitalIndex &index) const;
+
+  /// @return true if it only contains AO indices
+  bool is_ao() const;
 
   /// return bra_index
   const std::vector<OrbitalIndex> &bra_indices() const { return bra_indices_; }
@@ -93,8 +119,14 @@ class Formula {
     bra_indices_ = ket_idxs;
   }
 
-  /// set Operator
-  void set_operator(const Operator &oper) { oper_ = oper; }
+  /**
+   * Notation Functions
+   */
+  /// Notation accessor
+  const Notation &notation() const {
+    TA_USER_ASSERT(notation_ != Notation::Invalid, "invalid Notation")
+    return notation_;
+  }
 
   /// set Notation
   void set_notation(const Notation &notation) {
@@ -102,32 +134,36 @@ class Formula {
     notation_ = notation;
   }
 
+  /// set Operator
+  void set_operator(const Operator &oper) { oper_ = oper; }
+
   /// set Operator type @sa Operator::Type
   void set_operator_type(const Operator::Type &oper_type) {
     oper_.set_type(oper_type);
   }
 
-  /// set Option in Operator
-  void set_operator_option(const std::vector<Operator::Option> & option){
-    oper_.set_option(option);
-  }
   /// Operator accessor
   const Operator &oper() const { return oper_; }
 
-  /// Notation accessor
-  const Notation &notation() const {
-    TA_USER_ASSERT(notation_ != Notation::Invalid, "invalid Notation")
-    return notation_;
-  }
+  /**
+   * Option Functions
+   */
 
-  /// @return true if this contains \c index
-  bool has_index(const OrbitalIndex &index) const;
+  /// return options options_
+  const std::vector<Option> option() const { return option_; }
 
-  /// @return true if it only contains AO indices
-  bool is_ao() const;
+  /// set option option_
+  void set_option(const std::vector<Option> &option) { option_ = option; }
 
-  /// dimension of formula(2, 3 or 4)
-  std::size_t rank() const;
+  /// return string that correspond to options_ wraped in []
+  const std::wstring option_string() const;
+
+  /// return true if have Option op
+  bool has_option(Formula::Option op) const;
+
+  /**
+   *  Comparison Functions
+   */
 
   bool operator<(const Formula &other) const;
   bool operator==(const Formula &other) const;
@@ -147,6 +183,7 @@ class Formula {
  private:
   Operator oper_;
   Notation notation_;
+  std::vector<Option> option_;
   std::vector<OrbitalIndex> bra_indices_;
   std::vector<OrbitalIndex> ket_indices_;
 };

@@ -12,6 +12,11 @@
 
 namespace mpqc {
 
+const std::map<Formula::Option, std::wstring> Formula::option_to_string = {
+    {Formula::Option::DensityFitting, L"df"},
+    {Formula::Option::Inverse, L"inv"},
+    {Formula::Option::InverseSquareRoot, L"inv_sqr"}};
+
 Formula::Formula(std::wstring string) {
   if (string.empty()) {
     throw std::runtime_error(utility::to_string(string) + " Empty Formula! \n");
@@ -58,11 +63,36 @@ Formula::Formula(std::wstring string) {
   auto option_left = std::find(string.cbegin(), string.cend(), L'[');
   auto option_right = std::find(string.cbegin(), string.cend(), L']');
 
-  std::wstring option;
+  std::wstring opt;
 
   if ((option_left != string.cend()) && (option_right != string.cend())) {
     TA_ASSERT(option_left < option_right);
-    option = std::wstring(option_left + 1, option_right);
+    opt = std::wstring(option_left + 1, option_right);
+  }
+
+  // parse option
+  // split string by , and space
+  if (!opt.empty()) {
+    std::vector<std::wstring> split_option;
+    boost::split(split_option, opt, boost::is_any_of(L", "),
+                 boost::token_compress_on);
+
+    std::vector<Formula::Option> result;
+    for (const auto& op : split_option) {
+      auto iter = std::find_if(
+          begin(option_to_string), end(option_to_string),
+          [=](const std::pair<Formula::Option, std::wstring> item) -> bool {
+            return item.second == op;
+          });
+      if (iter == option_to_string.end()) {
+        throw std::runtime_error(utility::to_string(op) +
+                                 " Invalid Option! \n");
+      } else {
+        result.push_back(iter->first);
+      }
+    }
+    std::sort(result.begin(), result.end());
+    option_ = result;
   }
 
   // split the formula by |
@@ -74,7 +104,7 @@ Formula::Formula(std::wstring string) {
     std::wstring left_formula = std::move(split_formula[0]);
     std::wstring right_formula = std::move(split_formula[1]);
 
-    oper_ = Operator(L" ", option);
+    oper_ = Operator(L" ");
     bra_indices_ = check_orbital_index(left_formula);
     ket_indices_ = check_orbital_index(right_formula);
 
@@ -83,7 +113,7 @@ Formula::Formula(std::wstring string) {
     std::wstring operation = std::move(split_formula[1]);
     std::wstring right_formula = std::move(split_formula[2]);
 
-    oper_ = Operator(operation, option);
+    oper_ = Operator(operation);
     bra_indices_ = check_orbital_index(left_formula);
     ket_indices_ = check_orbital_index(right_formula);
 
@@ -135,6 +165,8 @@ std::vector<OrbitalIndex> Formula::check_orbital_index(
 bool Formula::operator<(const Formula& other) const {
   if (oper() != other.oper()) {
     return oper() < other.oper();
+  } else if (option_ != other.option_) {
+    return option_ < other.option_;
   } else if ((this->rank() != 2) && (notation_ != other.notation())) {
     return notation_ < other.notation();
   } else if (bra_indices() != other.bra_indices()) {
@@ -150,7 +182,8 @@ bool Formula::operator==(const Formula& other) const {
     return (oper_ == other.oper_) && (bra_indices_ == other.bra_indices_) &&
            (ket_indices_ == other.ket_indices_);
   } else {
-    return (oper_ == other.oper_) && (bra_indices_ == other.bra_indices_) &&
+    return (oper_ == other.oper_) && (option_ == other.option_) &&
+           (bra_indices_ == other.bra_indices_) &&
            (ket_indices_ == other.ket_indices_) &&
            (notation_ == other.notation_);
   }
@@ -180,7 +213,7 @@ std::wstring Formula::string() const {
     result = L"< " + result + L" >";
   }
   // add option
-  result = result + oper_.option_string();
+  result = result + option_string();
 
   return result;
 }
@@ -215,4 +248,21 @@ bool Formula::is_ao() const {
   return true;
 }
 
+bool Formula::has_option(Formula::Option op) const {
+  auto df = std::find(option_.cbegin(), option_.cend(), op);
+  return (df != option_.cend());
+}
+
+const std::wstring Formula::option_string() const {
+  std::wstring result;
+  if (option_.empty()) {
+    return result;
+  }
+  for (const auto& option : option_) {
+    result += option_to_string.find(option)->second + L",";
+  }
+  result = L"[" + result;
+  result.back() = L']';
+  return result;
+}
 }  // namespace mpqc

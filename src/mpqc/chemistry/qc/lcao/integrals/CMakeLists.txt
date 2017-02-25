@@ -1,4 +1,6 @@
 set(sources
+        density_fitting/cadf_coeffs.h
+        density_fitting/cadf_coeffs.cpp
         direct_task_integrals.h
         direct_tile.h
         f12_utility.cpp

@@ -356,6 +356,36 @@ void DirectRIRHF<Tile, Policy>::init_fock_builder() {
 }
 
 /**
+ * CadfRHF member functions
+ */
+template <typename Tile, typename Policy>
+CadfRHF<Tile, Policy>::CadfRHF(const KeyVal& kv) : RHF<Tile, Policy>(kv) {
+  force_shape_threshold_ = kv.value<double>("force_shape_threshold", 0.0);
+  tcutc_ = kv.value<double>("tcutc", 0.0);
+}
+
+template <typename Tile, typename Policy>
+void CadfRHF<Tile, Policy>::init_fock_builder() {
+  auto& ao_factory = this->ao_factory();
+
+  auto inv = ao_factory.compute(L"( Κ | G| Λ )");
+  auto C = ao_factory.compute(L"( Κ | Cadf|κ λ)");
+  auto eri4 = this->ao_factory().compute_direct(L"(μ ν| G|κ λ)");
+
+  double error =
+      (eri4("p,q,r,s") - C("X, p, q") * inv("X,Y") * C("Y,r,s")).norm();
+  ExEnv::out0() << "Error norm from non-robust fit: " << error
+                << ", avg error per element "
+                << error /
+                       double(eri4.array().trange().elements_range().volume())
+                << std::endl;
+
+  auto eri3 = ao_factory.compute_direct(L"( Κ | G|κ λ)");
+  scf::DFFockBuilder<Tile, Policy, decltype(eri3)> builder(inv, eri3);
+  this->f_builder_ = std::make_unique<decltype(builder)>(std::move(builder));
+}
+
+/**
  * DirectRHF member functions
  */
 template <typename Tile, typename Policy>

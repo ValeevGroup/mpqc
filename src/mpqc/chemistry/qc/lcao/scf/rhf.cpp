@@ -9,7 +9,6 @@
 template class mpqc::lcao::RHF<TA::TensorD, TA::DensePolicy>;
 MPQC_CLASS_EXPORT2("RHF", mpqc::lcao::RHF<TA::TensorD, TA::DensePolicy>);
 
-
 template class mpqc::lcao::RIRHF<TA::TensorD, TA::DensePolicy>;
 MPQC_CLASS_EXPORT2("RI-RHF", mpqc::lcao::RIRHF<TA::TensorD, TA::DensePolicy>);
 
@@ -17,11 +16,13 @@ template class mpqc::lcao::DirectRHF<TA::TensorD, TA::DensePolicy>;
 MPQC_CLASS_EXPORT2("Direct-RHF",
                    mpqc::lcao::DirectRHF<TA::TensorD, TA::DensePolicy>);
 
-
 template class mpqc::lcao::DirectRIRHF<TA::TensorD, TA::DensePolicy>;
 MPQC_CLASS_EXPORT2("Direct-RI-RHF",
                    mpqc::lcao::DirectRIRHF<TA::TensorD, TA::DensePolicy>);
 
+template class mpqc::lcao::CadfRHF<TA::TensorD, TA::DensePolicy>;
+MPQC_CLASS_EXPORT2("Cadf-RHF",
+                   mpqc::lcao::CadfRHF<TA::TensorD, TA::DensePolicy>);
 
 #elif TA_DEFAULT_POLICY == 1
 
@@ -38,4 +39,8 @@ MPQC_CLASS_EXPORT2("Direct-RHF",
 template class mpqc::lcao::DirectRIRHF<TA::TensorD, TA::SparsePolicy>;
 MPQC_CLASS_EXPORT2("Direct-RI-RHF",
                    mpqc::lcao::DirectRIRHF<TA::TensorD, TA::SparsePolicy>);
+
+template class mpqc::lcao::CadfRHF<TA::TensorD, TA::SparsePolicy>;
+MPQC_CLASS_EXPORT2("Cadf-RHF",
+                   mpqc::lcao::CadfRHF<TA::TensorD, TA::SparsePolicy>);
 #endif

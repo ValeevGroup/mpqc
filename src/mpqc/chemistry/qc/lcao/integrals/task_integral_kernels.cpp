@@ -10,7 +10,7 @@ namespace detail {
 
 double integral_engine_precision = 0.0;
 
-TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 2> shell_ptrs,
                             Screener &) {
   set_eng_precision(eng);
@@ -20,10 +20,6 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
   std::array<std::size_t, 2> ub = lb;
 
   auto tile = TA::TensorD(std::move(rng), 0.0);
-
-  // this makes a map we can resize later.
-  double dummy = 0.0;
-  auto map = TA::make_const_map(&dummy, {0, 0}, {1, 1});
 
   const auto &ints_shell_sets = eng.results();
 
@@ -47,9 +43,17 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
       assert(ints_shell_sets.size() == 1 &&
              "integral_kernel can't handle multi-shell-set engines");
       if (ints_shell_sets[0] != nullptr) {
-        TA::remap(map, ints_shell_sets[0], lb, ub);
-        tile.block(lb, ub) = map;
-      }
+        auto shell_ord = 0ul;
+        const auto lb0 = lb[0];
+        const auto ub0 = ub[0];
+        const auto lb1 = lb[1];
+        const auto ub1 = ub[1];
+        for (auto el0 = lb0; el0 < ub0; ++el0) {
+            for (auto el1 = lb1; el1 < ub1; ++el1, ++shell_ord) {
+                tile(el0, el1) = ints_shell_sets[0][shell_ord];
+            }
+        }
+     }
 
       lb[1] = ub[1];
     }
@@ -59,7 +63,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
   return tile;
 }
 
-TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 3> shell_ptrs,
                             Screener &screen) {
   eng.set_precision(integral_engine_precision);
@@ -69,10 +73,6 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
   std::array<std::size_t, 3> ub = lb;
 
   auto tile = TA::TensorD(std::move(rng), 0.0);
-
-  // this makes a map we can resize later.
-  double dummy = 0.0;
-  auto map = TA::make_const_map(&dummy, {0, 0, 0}, {1, 1, 1});
 
   const auto &ints_shell_sets = eng.results();
 
@@ -110,8 +110,22 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
               assert(ints_shell_sets.size() == 1 &&
                      "integral_kernel can't handle multi-shell-set engines");
               if (ints_shell_sets[0] != nullptr) {
-                TA::remap(map, ints_shell_sets[0], lb, ub);
-                tile.block(lb, ub) = map;
+                const auto ints_ptr = ints_shell_sets[0];
+                auto shell_ord = 0ul;
+                const auto lb0 = lb[0];
+                const auto ub0 = ub[0];
+                const auto lb1 = lb[1];
+                const auto ub1 = ub[1];
+                const auto lb2 = lb[2];
+                const auto ub2 = ub[2];
+                for (auto el0 = lb0; el0 < ub0; ++el0) {
+                    for (auto el1 = lb1; el1 < ub1; ++el1) {
+                        for (auto el2 = lb2; el2 < ub2; ++el2, ++shell_ord) {
+                            tile(el0, el1, el2) = ints_ptr[shell_ord];
+                        }
+                    }
+                }
+
               }
             }
 
@@ -129,7 +143,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
   return tile;
 }
 
-TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
+ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 4> shell_ptrs,
                             Screener &screen) {
   eng.set_precision(integral_engine_precision);
@@ -140,10 +154,6 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
   std::array<std::size_t, 4> ub = lb;
 
   auto tile = TA::TensorD(std::move(rng), 0.0);
-
-  // this makes a map we can resize later.
-  double dummy = 0.0;
-  auto map = TA::make_const_map(&dummy, {0, 0, 0, 0}, {1, 1, 1, 1});
 
   const auto &ints_shell_sets = eng.results();
 
@@ -192,8 +202,27 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                       ints_shell_sets.size() == 1 &&
                       "integral_kernel can't handle multi-shell-set engines");
                   if (ints_shell_sets[0] != nullptr) {
-                    TA::remap(map, ints_shell_sets[0], lb, ub);
-                    tile.block(lb, ub) = map;
+                      const auto ints_ptr = ints_shell_sets[0];
+                      auto shell_ord = 0ul;
+                      const auto lb0 = lb[0];
+                      const auto ub0 = ub[0];
+                      const auto lb1 = lb[1];
+                      const auto ub1 = ub[1];
+                      const auto lb2 = lb[2];
+                      const auto ub2 = ub[2];
+                      const auto lb3 = lb[3];
+                      const auto ub3 = ub[3];
+                      for (auto el0 = lb0; el0 < ub0; ++el0) {
+                          for (auto el1 = lb1; el1 < ub1; ++el1) {
+                              for (auto el2 = lb2; el2 < ub2; ++el2) {
+                                  for (auto el3 = lb3; el3 < ub3; ++el3) {
+                                      tile(el0, el1, el2, el3) =
+                                      ints_ptr[shell_ord];
+                                  }
+                              }
+                          }
+                      }
+
                   }
                 }
 
@@ -214,6 +243,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
 
   return tile;
 }
+
 
 }  // namespace detail
 }  // namespace gaussian

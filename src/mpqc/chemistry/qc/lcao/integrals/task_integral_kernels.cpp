@@ -31,7 +31,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
   const auto end0 = sh0.size();
   const auto end1 = sh1.size();
 
-  auto ext = tile.range().extent_data();
+  auto ext1 = tile.range().extent_data()[1];
   auto tile_ptr_first = tile.data();
 
   for (auto idx0 = 0ul; idx0 < end0; ++idx0) {
@@ -51,16 +51,16 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
       if (ints_shell_sets[0] != nullptr) {
         const auto ints_ptr = ints_shell_sets[0];
         auto shell_ord = 0ul;
-        const auto lb0 = lb[0];
-        const auto ub0 = ub[0];
-        const auto lb1 = lb[1];
-        const auto ub1 = ub[1];
+        const auto lb0 = lb[0] - tile_start0;
+        const auto ub0 = ub[0] - tile_start0;
+        const auto lb1 = lb[1] - tile_start1;
+        const auto ub1 = ub[1] - tile_start1;
         for (auto el0 = lb0; el0 < ub0; ++el0) {
-          const auto el0_pre = ext[1] * (el0 - tile_start0);
+          const auto el0_pre = ext1 * el0;
           auto tile_ptr = tile_ptr_first + el0_pre;
 
           for (auto el1 = lb1; el1 < ub1; ++el1, ++shell_ord) {
-            tile_ptr[el1 - tile_start1] = ints_ptr[shell_ord];
+            tile_ptr[el1] = ints_ptr[shell_ord];
           }
         }
       }
@@ -98,6 +98,8 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
   const auto end2 = sh2.size();
 
   auto ext = tile.range().extent_data();
+  auto ext2 = ext[2];
+  auto ext12 = ext[1] * ext[2];
   auto tile_ptr_first = tile.data();
 
   for (auto idx0 = 0ul; idx0 < end0; ++idx0) {
@@ -129,20 +131,20 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
               if (ints_shell_sets[0] != nullptr) {
                 const auto ints_ptr = ints_shell_sets[0];
                 auto shell_ord = 0ul;
-                const auto lb0 = lb[0];
-                const auto ub0 = ub[0];
-                const auto lb1 = lb[1];
-                const auto ub1 = ub[1];
-                const auto lb2 = lb[2];
-                const auto ub2 = ub[2];
+                const auto lb0 = lb[0] - tile_start0;
+                const auto ub0 = ub[0] - tile_start0;
+                const auto lb1 = lb[1] - tile_start1;
+                const auto ub1 = ub[1] - tile_start1;
+                const auto lb2 = lb[2] - tile_start2;
+                const auto ub2 = ub[2] - tile_start2;
                 for (auto el0 = lb0; el0 < ub0; ++el0) {
-                  const auto el0_pre = ext[2] * ext[1] * (el0 - tile_start0);
+                  const auto el0_pre = ext12 * el0;
                   auto tile_ptr0 = tile_ptr_first + el0_pre;
                   for (auto el1 = lb1; el1 < ub1; ++el1) {
-                    const auto el1_pre = ext[2] * (el1 - tile_start1);
+                    const auto el1_pre = ext2 * el1;
                     auto tile_ptr1 = tile_ptr0 + el1_pre;
                     for (auto el2 = lb2; el2 < ub2; ++el2, ++shell_ord) {
-                      tile_ptr1[el2 - tile_start2] = ints_ptr[shell_ord];
+                      tile_ptr1[el2] = ints_ptr[shell_ord];
                     }
                   }
                 }
@@ -192,6 +194,9 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
   const auto end3 = sh3.size();
 
   auto ext = tile.range().extent_data();
+  auto ext3 = ext[3];
+  auto ext23 = ext[2] * ext[3];
+  auto ext123 = ext[1] * ext[2] * ext[3];
   auto tile_ptr_first = tile.data();
 
   for (auto idx0 = 0ul; idx0 < end0; ++idx0) {
@@ -232,27 +237,25 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                   if (ints_shell_sets[0] != nullptr) {
                     const auto ints_ptr = ints_shell_sets[0];
                     auto shell_ord = 0ul;
-                    const auto lb0 = lb[0];
-                    const auto ub0 = ub[0];
-                    const auto lb1 = lb[1];
-                    const auto ub1 = ub[1];
-                    const auto lb2 = lb[2];
-                    const auto ub2 = ub[2];
-                    const auto lb3 = lb[3];
-                    const auto ub3 = ub[3];
+                    const auto lb0 = lb[0] - tile_start0;
+                    const auto ub0 = ub[0] - tile_start0;
+                    const auto lb1 = lb[1] - tile_start1;
+                    const auto ub1 = ub[1] - tile_start1;
+                    const auto lb2 = lb[2] - tile_start2;
+                    const auto ub2 = ub[2] - tile_start2;
+                    const auto lb3 = lb[3] - tile_start3;
+                    const auto ub3 = ub[3] - tile_start3;
                     for (auto el0 = lb0; el0 < ub0; ++el0) {
-                      const auto el0_pre =
-                          ext[3] * ext[2] * ext[1] * (el0 - tile_start0);
+                      const auto el0_pre = ext123 * el0;
                       auto tile_ptr0 = tile_ptr_first + el0_pre;
                       for (auto el1 = lb1; el1 < ub1; ++el1) {
-                        const auto el1_pre =
-                            ext[3] * ext[2] * (el1 - tile_start1);
+                        const auto el1_pre = ext23 * el1;
                         auto tile_ptr1 = tile_ptr0 + el1_pre;
                         for (auto el2 = lb2; el2 < ub2; ++el2) {
-                          const auto el2_pre = ext[3] * (el2 - tile_start2);
+                          const auto el2_pre = ext3 * el2;
                           auto tile_ptr2 = tile_ptr1 + el2_pre;
                           for (auto el3 = lb3; el3 < ub3; ++el3, ++shell_ord) {
-                            tile_ptr2[el3 - tile_start3] = ints_ptr[shell_ord];
+                            tile_ptr2[el3] = ints_ptr[shell_ord];
                           }
                         }
                       }

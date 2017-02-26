@@ -70,8 +70,7 @@ Formula::Formula(std::wstring string) {
     opt = std::wstring(option_left + 1, option_right);
   }
 
-  // parse option
-  // split string by , and space
+  // parse options (separators = {",", " "})
   if (!opt.empty()) {
     std::vector<std::wstring> split_option;
     boost::split(split_option, opt, boost::is_any_of(L", "),
@@ -79,20 +78,33 @@ Formula::Formula(std::wstring string) {
 
     std::vector<Formula::Option> result;
     for (const auto& op : split_option) {
-      auto iter = std::find_if(
+      // check if this is one of Options
+      auto opt_iter = std::find_if(
           begin(option_to_string), end(option_to_string),
           [=](const std::pair<Formula::Option, std::wstring> item) -> bool {
             return item.second == op;
           });
-      if (iter == option_to_string.end()) {
-        throw std::runtime_error(utility::to_string(op) +
-                                 " Invalid Option! \n");
-      } else {
-        result.push_back(iter->first);
-      }
+      const auto has_opt = (opt_iter != option_to_string.end());
+
+      // or math::PetiteList::Symmetry
+      auto op_str = utility::to_string(op);
+      auto symm_iter = std::find_if(
+          begin(math::PetiteList::symmetry_to_string), end(math::PetiteList::symmetry_to_string),
+          [=](const std::pair<math::PetiteList::Symmetry, std::string> item) -> bool {
+            return item.second == op_str;
+          });
+      const auto has_symm = (symm_iter != math::PetiteList::symmetry_to_string.end());
+
+      if (!has_opt && !has_symm)
+        throw ProgrammingError((utility::to_string(op) +
+                                 " Invalid Option! \n").c_str(), __FILE__, __LINE__);
+      if (has_opt)
+        result.push_back(opt_iter->first);
+      if (has_symm)
+        symm_ = symm_iter->first;
     }
     std::sort(result.begin(), result.end());
-    option_ = result;
+    options_ = result;
   }
 
   // split the formula by |
@@ -165,8 +177,8 @@ std::vector<OrbitalIndex> Formula::check_orbital_index(
 bool Formula::operator<(const Formula& other) const {
   if (oper() != other.oper()) {
     return oper() < other.oper();
-  } else if (option_ != other.option_) {
-    return option_ < other.option_;
+  } else if (options_ != other.options_) {
+    return options_ < other.options_;
   } else if ((this->rank() != 2) && (notation_ != other.notation())) {
     return notation_ < other.notation();
   } else if (bra_indices() != other.bra_indices()) {
@@ -182,7 +194,7 @@ bool Formula::operator==(const Formula& other) const {
     return (oper_ == other.oper_) && (bra_indices_ == other.bra_indices_) &&
            (ket_indices_ == other.ket_indices_);
   } else {
-    return (oper_ == other.oper_) && (option_ == other.option_) &&
+    return (oper_ == other.oper_) && (options_ == other.options_) &&
            (bra_indices_ == other.bra_indices_) &&
            (ket_indices_ == other.ket_indices_) &&
            (notation_ == other.notation_);
@@ -212,7 +224,24 @@ std::wstring Formula::string() const {
   } else {
     result = L"< " + result + L" >";
   }
-  // add option
+
+  // append options
+  auto option_string = [=]() -> std::wstring {
+    std::wstring result;
+    if (options_.empty()) {
+      return result;
+    }
+    for (const auto& option : options_) {
+      result += option_to_string.find(option)->second + L",";
+    }
+    result = L"[" + result;
+    // include symmetry, if not trivial
+    if (symm_ != math::PetiteList::Symmetry::e)
+      result += L"," + utility::to_wstring(to_string(symm_));
+    result.back() = L']';
+    return result;
+  };
+
   result = result + option_string();
 
   return result;
@@ -248,21 +277,14 @@ bool Formula::is_ao() const {
   return true;
 }
 
-bool Formula::has_option(Formula::Option op) const {
-  auto df = std::find(option_.cbegin(), option_.cend(), op);
-  return (df != option_.cend());
+void Formula::set_option(Option op) {
+  if (!has_option(op))
+    options_.push_back(op);
 }
 
-const std::wstring Formula::option_string() const {
-  std::wstring result;
-  if (option_.empty()) {
-    return result;
-  }
-  for (const auto& option : option_) {
-    result += option_to_string.find(option)->second + L",";
-  }
-  result = L"[" + result;
-  result.back() = L']';
-  return result;
+bool Formula::has_option(Formula::Option op) const {
+  auto df = std::find(options_.cbegin(), options_.cend(), op);
+  return (df != options_.cend());
 }
+
 }  // namespace mpqc

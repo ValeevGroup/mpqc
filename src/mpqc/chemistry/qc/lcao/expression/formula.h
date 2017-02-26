@@ -153,20 +153,15 @@ class Formula {
     return symm_;
   }
 
-  /// @name Option functions
+  /// @name Formula options functions
   /// @{
 
-  /// @return the vector of Options
-  const std::vector<Option> option() const { return option_; }
+  /// Calling this ensures that \c has_option(op) will return \c true
+  void set_option(Option op);
 
-  /// set option option_
-  void set_option(const std::vector<Option> &option) { option_ = option; }
-
-  /// return string that correspond to options_ wrapped in []
-  const std::wstring option_string() const;
-
-  /// @return true if have Option op
-  bool has_option(Formula::Option op) const;
+  /// @param op a Formula::Option object
+  /// @return true if this formula has option \c op
+  bool has_option(Option op) const;
 
   /// @}
 
@@ -193,7 +188,7 @@ class Formula {
  private:
   Operator oper_;
   Notation notation_;
-  std::vector<Option> option_;
+  std::vector<Option> options_;
   math::PetiteList::Symmetry symm_;
   std::vector<OrbitalIndex> bra_indices_;
   std::vector<OrbitalIndex> ket_indices_;

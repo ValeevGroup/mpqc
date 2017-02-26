@@ -8,6 +8,8 @@
 #include <regex>
 #include <string>
 
+#include "mpqc/math/groups/petite_list.h"
+
 namespace mpqc {
 namespace lcao {
 namespace gaussian {
@@ -169,7 +171,7 @@ typename AOFactory<Tile, Policy>::TArray AOFactory<Tile, Policy>::compute2(
   if (iterative_inv_sqrt_ &&
       formula.has_option(Formula::Option::Inverse)) {
     auto inv_sqrt_formula = formula;
-    inv_sqrt_formula.set_option({Formula::Option::InverseSquareRoot});
+    inv_sqrt_formula.set_option(Formula::Option::InverseSquareRoot);
 
     result = this->compute(inv_sqrt_formula);
 
@@ -713,8 +715,9 @@ AOFactory<Tile, Policy>::compute_direct4(const Formula& formula) {
   std::shared_ptr<utility::TSPool<libint2::Engine>> engine_pool;
 
   parse_two_body_four_center(formula, engine_pool, bs_array, p_screener);
+  auto plist = math::PetiteList::make(formula.symmetry());
 
-  result = compute_direct_integrals(world, engine_pool, bs_array, p_screener);
+  result = compute_direct_integrals(world, engine_pool, bs_array, p_screener, plist);
 
   time1 = mpqc::now(world, this->accurate_time_);
   time += mpqc::duration_in_s(time0, time1);

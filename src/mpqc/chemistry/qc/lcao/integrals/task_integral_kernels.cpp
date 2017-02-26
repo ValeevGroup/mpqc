@@ -1,4 +1,5 @@
 #include "mpqc/chemistry/qc/lcao/integrals/task_integral_kernels.h"
+#include "mpqc/math/groups/petite_list.h"
 
 #include <TiledArray/tensor/tensor_map.h>
 
@@ -12,7 +13,7 @@ double integral_engine_precision = 0.0;
 
 TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 2> shell_ptrs,
-                            Screener &) {
+                            Screener &, const math::PetiteList& plist) {
   set_eng_precision(eng);
 
   auto const &lobound = rng.lobound();
@@ -35,24 +36,38 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
   for (auto idx0 = 0ul; idx0 < end0; ++idx0) {
     auto const &s0 = sh0[idx0];
     const auto ns0 = s0.size();
+    const auto lb0 = lb[0];
     ub[0] += ns0;
 
-    lb[1] = ub[1] = lobound[1];
-    for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
-      auto const &s1 = sh1[idx1];
-      const auto ns1 = s1.size();
-      ub[1] += ns1;
+    if (plist.is_canonical(lb0)) {
+      lb[1] = ub[1] = lobound[1];
+      for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
+        auto const &s1 = sh1[idx1];
+        const auto ns1 = s1.size();
+        const auto lb1 = lb[1];
+        ub[1] += ns1;
 
-      shell_set(eng, s0, s1);
-      assert(ints_shell_sets.size() == 1 &&
+        if (plist.is_canonical(lb0, lb1)) {
+          shell_set(eng, s0, s1);
+          const auto ns01 = ns0 * ns1;
+          assert(ints_shell_sets.size() == 1 &&
              "integral_kernel can't handle multi-shell-set engines");
-      if (ints_shell_sets[0] != nullptr) {
-        TA::remap(map, ints_shell_sets[0], lb, ub);
-        tile.block(lb, ub) = map;
-      }
+          if (ints_shell_sets[0] != nullptr) {
+            const double permutational_multiplicity = plist.multiplicity(lb0,lb1);
+            double* data = const_cast<double*>(ints_shell_sets[0]);
+            for(long i=0; i!=ns01; ++i) {
+              data[i] *= permutational_multiplicity;
+            }
 
-      lb[1] = ub[1];
-    }
+            TA::remap(map, ints_shell_sets[0], lb, ub);
+            tile.block(lb, ub) = map;
+          }
+        }
+
+        lb[1] = ub[1];
+      }  // end sh1 for
+    }    // end 1 shell screen
+
     lb[0] = ub[0];
   }
 
@@ -61,7 +76,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
 
 TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 3> shell_ptrs,
-                            Screener &screen) {
+                            Screener &screen, const math::PetiteList& plist) {
   eng.set_precision(integral_engine_precision);
 
   auto const &lobound = rng.lobound();
@@ -89,7 +104,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
     const auto lb0 = lb[0];
     ub[0] += ns0;
 
-    if (!screen.skip(lb0)) {
+    if (plist.is_canonical(lb0) && !screen.skip(lb0)) {
       lb[1] = ub[1] = lobound[1];
       for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
         auto const &s1 = sh1[idx1];
@@ -97,19 +112,27 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
         const auto lb1 = lb[1];
         ub[1] += ns1;
 
-        if (!screen.skip(lb0, lb1)) {
+        if (plist.is_canonical(lb0, lb1) && !screen.skip(lb0, lb1)) {
           lb[2] = ub[2] = lobound[2];
+          const auto ns01 = ns0 * ns1;
           for (auto idx2 = 0ul; idx2 < end2; ++idx2) {
             auto const &s2 = sh2[idx2];
             const auto ns2 = s2.size();
             const auto lb2 = lb[2];
             ub[2] += ns2;
 
-            if (!screen.skip(lb0, lb1, lb2)) {
+            if (plist.is_canonical(lb0, lb1, lb2) && !screen.skip(lb0, lb1, lb2)) {
               shell_set(eng, s0, s1, s2);
+              const auto ns012 = ns01 * ns2;
               assert(ints_shell_sets.size() == 1 &&
                      "integral_kernel can't handle multi-shell-set engines");
               if (ints_shell_sets[0] != nullptr) {
+                const double permutational_multiplicity = plist.multiplicity(lb0,lb1,lb2);
+                double* data = const_cast<double*>(ints_shell_sets[0]);
+                for(long i=0; i!=ns012; ++i) {
+                  data[i] *= permutational_multiplicity;
+                }
+
                 TA::remap(map, ints_shell_sets[0], lb, ub);
                 tile.block(lb, ub) = map;
               }
@@ -131,7 +154,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
 
 TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 4> shell_ptrs,
-                            Screener &screen) {
+                            Screener &screen, const math::PetiteList& plist) {
   eng.set_precision(integral_engine_precision);
 
   auto const &lobound = rng.lobound();
@@ -162,7 +185,7 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
     const auto lb0 = lb[0];
     ub[0] += ns0;
 
-    if (!screen.skip(lb0)) {
+    if (plist.is_canonical(lb0) && !screen.skip(lb0)) {
       lb[1] = ub[1] = lobound[1];
       for (auto idx1 = 0ul; idx1 < end1; ++idx1) {
         auto const &s1 = sh1[idx1];
@@ -170,28 +193,38 @@ TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
         const auto lb1 = lb[1];
         ub[1] += ns1;
 
-        if (!screen.skip(lb0, lb1)) {
+        if (plist.is_canonical(lb0, lb1) && !screen.skip(lb0, lb1)) {
           lb[2] = ub[2] = lobound[2];
+          const auto ns01 = ns0 * ns1;
           for (auto idx2 = 0ul; idx2 < end2; ++idx2) {
             auto const &s2 = sh2[idx2];
             const auto ns2 = s2.size();
             const auto lb2 = lb[2];
             ub[2] += ns2;
 
-            if (!screen.skip(lb0, lb1, lb2)) {
+            if (plist.is_canonical(lb0, lb1, lb2) && !screen.skip(lb0, lb1, lb2)) {
               lb[3] = ub[3] = lobound[3];
+              const auto ns012 = ns01 * ns2;
               for (auto idx3 = 0ul; idx3 < end3; ++idx3) {
                 auto const &s3 = sh3[idx3];
                 const auto ns3 = s3.size();
                 const auto lb3 = lb[3];
                 ub[3] += ns3;
 
-                if (!screen.skip(lb0, lb1, lb2, lb3)) {
+                if (plist.is_canonical(lb0, lb1, lb2, lb3) && !screen.skip(lb0, lb1, lb2, lb3)) {
                   shell_set(eng, s0, s1, s2, s3);
+                  const auto ns0123 = ns012 * ns3;
                   assert(
                       ints_shell_sets.size() == 1 &&
                       "integral_kernel can't handle multi-shell-set engines");
                   if (ints_shell_sets[0] != nullptr) {
+
+                    const double permutational_multiplicity = plist.multiplicity(lb0,lb1,lb2,lb3);
+                    double* data = const_cast<double*>(ints_shell_sets[0]);
+                    for(long i=0; i!=ns0123; ++i) {
+                      data[i] *= permutational_multiplicity;
+                    }
+
                     TA::remap(map, ints_shell_sets[0], lb, ub);
                     tile.block(lb, ub) = map;
                   }

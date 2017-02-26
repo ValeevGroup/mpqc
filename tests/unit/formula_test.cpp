@@ -72,8 +72,10 @@ TEST_CASE("Formula Expression", "[formula]") {
 
     Formula coulomb1(L"<p q1|R|a' A'1> [df, inv_sqr]");
     Formula coulomb2(L"<p q1|R|a' A'1> [inv_sqr, df]");
-    REQUIRE(coulomb1.has_option(Formula::Option::DensityFitting)) && coulomb2.has_option(Formula::Option::DensityFitting));
-    REQUIRE(coulomb1.has_option(Formula::Option::InverseSquareRoot)) && coulomb2.has_option(Formula::Option::InverseSquareRoot));
+    REQUIRE((coulomb1.has_option(Formula::Option::DensityFitting) &&
+             coulomb2.has_option(Formula::Option::DensityFitting)));
+    REQUIRE((coulomb1.has_option(Formula::Option::InverseSquareRoot) &&
+             coulomb2.has_option(Formula::Option::InverseSquareRoot)));
     REQUIRE(coulomb1 == coulomb2);
     REQUIRE(coulomb != coulomb1);
   }

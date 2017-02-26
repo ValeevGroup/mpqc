@@ -52,7 +52,7 @@ class Formula {
 
   static const std::map<Option, std::wstring> option_to_string;
 
-  Formula() : notation_(Notation::Invalid), symm_(math::PetiteList::Symmetry::e) {}
+  Formula() {}
   Formula(Formula const &) = default;
   Formula(Formula &&) = default;
   Formula &operator=(Formula const &) = default;
@@ -187,9 +187,9 @@ class Formula {
 
  private:
   Operator oper_;
-  Notation notation_;
+  Notation notation_ = Notation::Invalid;
   std::vector<Option> options_;
-  math::PetiteList::Symmetry symm_;
+  math::PetiteList::Symmetry symm_ = math::PetiteList::Symmetry::e;
   std::vector<OrbitalIndex> bra_indices_;
   std::vector<OrbitalIndex> ket_indices_;
 };

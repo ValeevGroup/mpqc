@@ -217,7 +217,7 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
                                std::make_shared<Screener>(Screener{}),
                            std::shared_ptr<const math::PetiteList> plist =
                                math::PetiteList::make_trivial()) {
-    auto result = direct_sparse_integrals(world, engine, bases, p_screen, op_);
+    auto result = direct_sparse_integrals(world, engine, bases, p_screen, op_, plist);
     return result;
   }
 
@@ -233,7 +233,7 @@ class AOFactory : public AOFactoryBase<Tile, Policy> {
                                std::make_shared<Screener>(Screener{}),
                            std::shared_ptr<const math::PetiteList> plist =
                                math::PetiteList::make_trivial()) {
-    auto result = direct_dense_integrals(world, engine, bases, p_screen, op_);
+    auto result = direct_dense_integrals(world, engine, bases, p_screen, op_, plist);
     return result;
   }
 

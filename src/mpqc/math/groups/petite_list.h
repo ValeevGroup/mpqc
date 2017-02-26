@@ -224,7 +224,7 @@ struct TupleCanonicalizer<PetiteList::Symmetry::ab_ab> {
   }
   template <typename I>
   static bool is_canonical(I idx0, I idx1, I idx2, I idx3) {
-    return idx0 > idx2 || (idx0 == idx2 && idx1 > idx3);
+    return idx0 > idx2 || (idx0 == idx2 && idx1 >= idx3);
   }
   template <typename I>
   static int64_t multiplicity(I idx0) {

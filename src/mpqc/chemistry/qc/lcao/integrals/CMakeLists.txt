@@ -17,5 +17,5 @@ set(sources
         task_integrals.h
 )
 
-add_mpqc_library(lcao_integrals sources sources "MPQClcao_expression;MPQClcao_basis;MPQCmath_groups" "mpqc/chemistry/qc/lcao/integrals")
+add_mpqc_library(lcao_integrals sources sources "MPQClcao_expression;MPQClcao_basis;MPQCmath_groups;MPQCutil_misc" "mpqc/chemistry/qc/lcao/integrals")
 

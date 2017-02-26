@@ -179,6 +179,8 @@ bool Formula::operator<(const Formula& other) const {
     return oper() < other.oper();
   } else if (options_ != other.options_) {
     return options_ < other.options_;
+  } else if (symm_ != other.symm_) {
+    return symm_ < other.symm_;
   } else if ((this->rank() != 2) && (notation_ != other.notation())) {
     return notation_ < other.notation();
   } else if (bra_indices() != other.bra_indices()) {
@@ -195,7 +197,7 @@ bool Formula::operator==(const Formula& other) const {
            (ket_indices_ == other.ket_indices_);
   } else {
     return (oper_ == other.oper_) && (options_ == other.options_) &&
-           (bra_indices_ == other.bra_indices_) &&
+           (symm_ == other.symm_) && (bra_indices_ == other.bra_indices_) &&
            (ket_indices_ == other.ket_indices_) &&
            (notation_ == other.notation_);
   }
@@ -228,16 +230,18 @@ std::wstring Formula::string() const {
   // append options
   auto option_string = [=]() -> std::wstring {
     std::wstring result;
-    if (options_.empty()) {
+    const auto has_options = !options_.empty();
+    const auto has_symm = symm_ != math::PetiteList::Symmetry::e;
+    if (!has_options && !has_symm) {
       return result;
     }
+    result = L"[";
     for (const auto& option : options_) {
       result += option_to_string.find(option)->second + L",";
     }
-    result = L"[" + result;
     // include symmetry, if not trivial
-    if (symm_ != math::PetiteList::Symmetry::e)
-      result += L"," + utility::to_wstring(to_string(symm_));
+    if (has_symm)
+      result += utility::to_wstring(to_string(symm_)) + L",";
     result.back() = L']';
     return result;
   };

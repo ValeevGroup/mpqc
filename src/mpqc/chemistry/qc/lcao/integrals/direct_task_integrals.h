@@ -87,7 +87,7 @@ DirectArray<Tile, TA::SparsePolicy, Engine> direct_sparse_integrals(
     std::function<Tile(TA::TensorD &&)> op = TA::Noop<TA::TensorD, true>(),
     std::shared_ptr<const math::PetiteList> plist = math::PetiteList::make_trivial()) {
   const auto trange = detail::create_trange(bases);
-  TA::TensorF tile_norms = screen->norm_estimate(world, bases);
+  TA::TensorF tile_norms = screen->norm_estimate(world, bases, *plist);
 
   // Copy the Bases for the Integral Builder
   auto shr_bases = std::make_shared<BasisVector>(bases);

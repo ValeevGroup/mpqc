@@ -14,6 +14,7 @@
 
 #include "mpqc/chemistry/qc/lcao/integrals/task_integrals_common.h"
 #include "mpqc/chemistry/qc/lcao/integrals/screening/screen_base.h"
+#include "mpqc/math/groups/petite_list.h"
 
 namespace mpqc {
 namespace lcao {
@@ -36,15 +37,15 @@ inline void shell_set(Engine &e, Shells &&... shells) {
 
 TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 2> shell_ptrs,
-                            Screener &);
+                            Screener &screen, const math::PetiteList& plist);
 
 TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 3> shell_ptrs,
-                            Screener &screen);
+                            Screener &screen, const math::PetiteList& plist);
 
 TA::TensorD integral_kernel(Engine &eng, TA::Range &&rng,
                             std::array<ShellVec const *, 4> shell_ptrs,
-                            Screener &screen);
+                            Screener &screen, const math::PetiteList& plist);
 
 }  // namespace detail
 }  // namespace gaussian

@@ -23,6 +23,7 @@ namespace detail {
 extern double integral_engine_precision;
 
 using Engine = libint2::Engine;
+using data_pointer = TA::TensorD::pointer;
 
 inline void set_eng_precision(Engine &eng) {
   eng.set_precision(integral_engine_precision);
